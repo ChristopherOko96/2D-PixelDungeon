@@ -1,7 +1,9 @@
 # === IDE and Editor ===
 .vs/
-.vscode/settings.json
+.vscode/
 .idea/
+# Unity regenerates the solution file; *.sln alone misses the newer .slnx format
+*.slnx
 *.swp
 *.swo
 *~
