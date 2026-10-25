@@ -1,13 +1,19 @@
 extends Control
-## Read-only floor diagram. Room coordinates and progress come from the host.
+## Read-only Isaac-style minimap. The host only sends rooms the party has visited
+## or stands next to; this draws them on their grid with the doors between them.
 
 const CURRENT := Color("#72dcc8")
 const CLEARED := Color("#ac925d")
-const UPCOMING := Color("#555366")
+const VISITED := Color("#6f6a82")
+const UNSEEN := Color("#2c2a38")
+const UNSEEN_EDGE := Color("#555366")
+const BOSS := Color("#b84a4f")
+const TREASURE := Color("#efc76a")
 const INK := Color("#151520")
 const CONNECTOR := Color("#383643")
-const MAX_ROOMS := 10
-const DEFAULT_SIZE := Vector2(264, 40)
+const MAX_ROOMS := 12
+const DEFAULT_SIZE := Vector2(264, 108)
+const DIRECTION_OFFSETS := {"north": Vector2i(0, -1), "east": Vector2i(1, 0), "south": Vector2i(0, 1), "west": Vector2i(-1, 0)}
 
 var _rooms: Array[Dictionary] = []
 var _current_id := ""
@@ -20,8 +26,9 @@ func _ready() -> void:
 	resized.connect(queue_redraw)
 
 
-## Shows up to ten floor rooms, preserving their host-supplied grid coordinates.
-## The current room is turquoise; cleared rooms are gold; bosses carry a crown.
+## Shows up to twelve known rooms at their host-supplied grid coordinates.
+## Current room is turquoise, cleared rooms gold, visited rooms grey, rooms only
+## seen through a door are dark outlines; boss and treasure carry their marks.
 func set_floor(rooms: Array, current_id: String) -> void:
 	_rooms.clear()
 	for value: Variant in rooms:
@@ -38,49 +45,45 @@ func _draw() -> void:
 		return
 	var minimum: Vector2i = _coordinates(_rooms[0])
 	var maximum: Vector2i = minimum
+	var by_cell: Dictionary = {}
 	for room: Dictionary in _rooms:
 		var cell: Vector2i = _coordinates(room)
-		minimum.x = mini(minimum.x, cell.x)
-		minimum.y = mini(minimum.y, cell.y)
-		maximum.x = maxi(maximum.x, cell.x)
-		maximum.y = maxi(maximum.y, cell.y)
+		by_cell[cell] = room
+		minimum = Vector2i(mini(minimum.x, cell.x), mini(minimum.y, cell.y))
+		maximum = Vector2i(maxi(maximum.x, cell.x), maxi(maximum.y, cell.y))
 	var available := Vector2(size.x if size.x > 0.0 else DEFAULT_SIZE.x, size.y if size.y > 0.0 else DEFAULT_SIZE.y)
-	var span := Vector2(maximum - minimum)
-	var spacing := Vector2(
-		maxf(1.0, floorf(minf(24.0, (available.x - 20.0) / maxf(span.x, 1.0)))),
-		maxf(1.0, floorf(minf(14.0, (available.y - 24.0) / maxf(span.y, 1.0))))
-	)
-	var origin: Vector2 = ((available - span * spacing) * 0.5).floor()
-	var points: Array[Vector2] = []
+	var cells_across := Vector2(maximum - minimum) + Vector2.ONE
+	# Square cells at a 3:2 room aspect keep the map readable at any floor shape.
+	var step: float = floorf(minf(28.0, minf((available.x - 8.0) / cells_across.x, (available.y - 8.0) / cells_across.y / 0.7)))
+	step = maxf(step, 6.0)
+	var cell_size := Vector2(step, floorf(step * 0.7))
+	var origin: Vector2 = ((available - cells_across * cell_size) * 0.5).floor()
+	var room_size: Vector2 = (cell_size - Vector2(4, 4)).max(Vector2(2, 2))
+	# Corridors first, so room boxes sit on top of them.
 	for room: Dictionary in _rooms:
-		points.append((origin + Vector2(_coordinates(room) - minimum) * spacing).floor())
-	# The floor is an ordered route. Two cells can touch after a bend without
-	# creating a shortcut, so only connect consecutive rooms on that route.
-	for first: int in range(_rooms.size() - 1):
-		var second: int = first + 1
-		var difference: Vector2i = _coordinates(_rooms[first]) - _coordinates(_rooms[second])
-		if absi(difference.x) + absi(difference.y) == 1:
-			draw_line(points[first], points[second], CONNECTOR, 2.0)
-	var half_width: float = minf(7.0, maxf(1.0, floorf(spacing.x * 0.3)))
-	var half_height: float = minf(4.0, maxf(1.0, floorf(spacing.y * 0.3)))
-	for index: int in range(_rooms.size()):
-		var room: Dictionary = _rooms[index]
-		var point: Vector2 = points[index]
+		var cell: Vector2i = _coordinates(room)
+		var center: Vector2 = origin + (Vector2(cell - minimum) + Vector2(0.5, 0.5)) * cell_size
+		for side: Variant in room.get("doors", []):
+			var offset: Vector2i = DIRECTION_OFFSETS.get(str(side), Vector2i.ZERO)
+			if by_cell.has(cell + offset):
+				draw_line(center, center + Vector2(offset) * cell_size * 0.5, CONNECTOR, 2.0)
+	for room: Dictionary in _rooms:
+		var cell: Vector2i = _coordinates(room)
+		var center: Vector2 = origin + (Vector2(cell - minimum) + Vector2(0.5, 0.5)) * cell_size
+		var bounds := Rect2((center - room_size * 0.5).floor(), room_size)
 		var is_current: bool = str(room.get("id", "")) == _current_id
-		var color: Color = CURRENT if is_current else (CLEARED if bool(room.get("cleared", false)) else UPCOMING)
-		var bounds := Rect2(point - Vector2(half_width, half_height), Vector2(half_width * 2, half_height * 2))
-		draw_rect(bounds.grow(2), INK)
+		var visited: bool = bool(room.get("visited", false))
+		var color: Color = CURRENT if is_current else CLEARED if bool(room.get("cleared", false)) else VISITED if visited else UNSEEN
+		draw_rect(bounds.grow(1), INK)
 		draw_rect(bounds, color)
-		if bool(room.get("boss", false)):
-			draw_rect(bounds.grow(2), color, false, 1.0)
-			var crown_offset := Vector2(0, -half_height - 5)
-			for other_room: Dictionary in _rooms:
-				if _coordinates(other_room) == _coordinates(room) + Vector2i.UP:
-					crown_offset = Vector2(half_width + 8, 0)
-					break
-			_draw_crown(point + crown_offset, color)
-		elif is_current:
-			draw_rect(Rect2(point - Vector2(1, 1), Vector2(2, 2)), INK)
+		if not visited and not is_current:
+			draw_rect(bounds, UNSEEN_EDGE, false, 1.0)
+		match str(room.get("kind", "")):
+			"boss":
+				draw_rect(bounds.grow(1), BOSS, false, 1.0)
+				_draw_crown(center + Vector2(0, 2), BOSS if not is_current else INK)
+			"treasure":
+				_draw_gem(center, TREASURE if not is_current else INK)
 
 
 func _coordinates(room: Dictionary) -> Vector2i:
@@ -91,3 +94,8 @@ func _draw_crown(point: Vector2, color: Color) -> void:
 	draw_rect(Rect2(point + Vector2(-4, 0), Vector2(8, 3)), color)
 	for offset: int in [-4, -1, 2]:
 		draw_rect(Rect2(point + Vector2(offset, -2), Vector2(2, 2)), color)
+
+
+func _draw_gem(point: Vector2, color: Color) -> void:
+	draw_rect(Rect2(point + Vector2(-1, -3), Vector2(2, 6)), color)
+	draw_rect(Rect2(point + Vector2(-3, -1), Vector2(6, 2)), color)

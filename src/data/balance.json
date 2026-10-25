@@ -3,8 +3,15 @@
   "player": {"hp": 8, "speed": 190, "damage": 2, "shot_interval": 0.2, "invulnerability": 0.85},
   "bullet": {"speed": 600, "lifetime": 1.2, "radius": 5, "max_count": 48},
   "enemy": {"hp": 8, "hp_per_extra_player": 3, "speed": 55, "radius": 13, "damage": 1},
-  "boss": {"hp": 70, "hp_per_extra_player": 24, "speed": 35, "radius": 24, "shot_interval": 1.8, "bullet_speed": 145, "bullet_count": 10},
-  "rooms": {"enemy_counts": [3, 5, 1]},
+  "boss": {"hp": 70, "hp_per_extra_player": 24, "speed": 35, "radius": 24},
+  "rooms": {"min_count": 6, "max_count": 10, "enemies_min": 3, "enemies_max": 5, "shooters_max": 2},
+  "shooter": {"hp": 6, "hp_per_extra_player": 2, "speed": 45, "radius": 13, "keep_min": 150, "keep_max": 260},
+  "attacks": {
+    "shooter": {"pattern": "aimed", "windup": 0.4, "active": 0.08, "recovery": 0.3, "interval": 1.4, "bullet_speed": 170, "damage": 1},
+    "boss": {"pattern": "ring", "windup": 0.65, "active": 0.12, "recovery": 0.5, "interval": 1.4, "count": 10, "bullet_speed": 145, "damage": 1}
+  },
+  "death": {"duration": 0.45, "boss_duration": 1.2, "kick": 420, "boss_kick": 90},
+  "knockback": {"enemy": 260, "boss": 60, "player": 220, "decay": 1400, "flash": 0.12},
   "perks": [
     {"id": "ember", "name": "GLUTKERN", "description": "+1 Projektilschaden", "stat": "damage", "amount": 1},
     {"id": "shadow", "name": "SCHATTENSCHRITT", "description": "+25 Bewegungstempo", "stat": "speed", "amount": 25},

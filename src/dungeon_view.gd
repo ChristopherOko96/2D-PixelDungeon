@@ -13,34 +13,80 @@ const MUTED := Color("#77728b")
 const PLAYER_COLORS := [
 	Color("#72dcc8"), Color("#edb563"), Color("#bc91de"), Color("#ed8a91")
 ]
-const PLAYER_TEXTURES := [
-	preload("res://assets/sprites/player_1.png"), preload("res://assets/sprites/player_2.png"),
-	preload("res://assets/sprites/player_3.png"), preload("res://assets/sprites/player_4.png")
-]
-const SLIME_TEXTURE := preload("res://assets/sprites/slime.png")
-const BOSS_TEXTURE := preload("res://assets/sprites/boss.png")
 const TORCH_TEXTURE := preload("res://assets/sprites/torch.png")
 const FLOOR_TEXTURE := preload("res://assets/sprites/floor_stone.png")
+
+# 0x72 DungeonTileset II characters (16 px wide), drawn at an integer 2x scale.
+# Index matches PLAYER_COLORS, so each player colour keeps its own hero.
+const HERO_SPRITES := ["knight_m", "elf_f", "wizzard_m", "lizard_m"]
+const ENEMY_SPRITES := {"chaser": "goblin", "shooter": "orc_shaman", "boss": "big_demon"}
+const SPRITE_ROOT := "res://assets/sprites/0x72/"
+const FRAMES_PER_SECOND := 8.0
+const Feedback = preload("res://src/vfx/feedback.gd")
+const Sfx = preload("res://src/vfx/sfx.gd")
+const MAX_SHAKE_PIXELS := 9.0
 
 var _snapshot: Dictionary = {}
 var _local_peer: int = 1
 var _clock: float = 0.0
+# name -> {"idle": [Texture2D x4], "run": [Texture2D x4], "hit": Texture2D or null}
+var _sprites: Dictionary = {}
+# Texture -> white silhouette of it, for hit flashes without a per-sprite shader.
+var _flash_textures: Dictionary = {}
+var _feedback := Feedback.new()
+var _base_position := Vector2.ZERO
+var _shake_rng := RandomNumberGenerator.new()
 
 
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_base_position = position
+	for name: String in HERO_SPRITES + ENEMY_SPRITES.values():
+		var entry := {"idle": [], "run": [], "hit": null}
+		for state: String in ["idle", "run"]:
+			for frame: int in range(4):
+				var texture: Texture2D = load("%s%s_%s_anim_f%d.png" % [SPRITE_ROOT, name, state, frame])
+				entry[state].append(texture)
+				_flash_textures[texture] = _silhouette(texture)
+		var hit_path := "%s%s_hit_anim_f0.png" % [SPRITE_ROOT, name]
+		if ResourceLoader.exists(hit_path):
+			entry.hit = load(hit_path)
+			_flash_textures[entry.hit] = _silhouette(entry.hit)
+		_sprites[name] = entry
+	var sfx := Sfx.new()
+	add_child(sfx)
+	_feedback.sfx = sfx
 
 
 ## Updates the displayed snapshot. Coordinates are local to the 896 × 480 room.
+## During hitstop the shown frame is held; feedback still sees every snapshot.
 func set_state(snapshot: Dictionary, local_peer: int) -> void:
-	_snapshot = snapshot
 	_local_peer = local_peer
+	_feedback.observe(snapshot, local_peer)
+	if _feedback.hitstop <= 0.0 or snapshot.is_empty():
+		_snapshot = snapshot
 	queue_redraw()
 
 
 func _process(delta: float) -> void:
-	_clock += delta
+	if _feedback.hitstop <= 0.0:
+		_clock += delta
+	_feedback.update(delta)
+	# Shake grows with the square of trauma; whole pixels keep the art crisp.
+	var strength: float = _feedback.shake * _feedback.shake * MAX_SHAKE_PIXELS
+	position = _base_position + Vector2(_shake_rng.randf_range(-1, 1), _shake_rng.randf_range(-1, 1)).round() * roundf(strength)
 	queue_redraw()
+
+
+func _silhouette(texture: Texture2D) -> Texture2D:
+	var image: Image = texture.get_image()
+	image.convert(Image.FORMAT_RGBA8)
+	for y in range(image.get_height()):
+		for x in range(image.get_width()):
+			var alpha: float = image.get_pixel(x, y).a
+			if alpha > 0.0:
+				image.set_pixel(x, y, Color(1, 1, 1, alpha))
+	return ImageTexture.create_from_image(image)
 
 
 func _draw() -> void:
@@ -55,11 +101,13 @@ func _draw() -> void:
 	var phase: String = str(_snapshot.get("phase", "lobby"))
 	if phase == "reward" or phase == "victory":
 		_draw_pedestal(phase == "victory")
+	_feedback.particles.draw_stains(self)
 	var enemies: Array = _snapshot.get("enemies", [])
 	var players: Dictionary = _snapshot.get("players", {})
 	for enemy_value: Variant in enemies:
 		var enemy: Dictionary = enemy_value
-		_draw_shadow(_position(enemy), 25.0 if bool(enemy.get("boss", false)) else 14.0)
+		if float(enemy.get("dying_p", -1.0)) < 0.5:
+			_draw_shadow(_position(enemy), 25.0 if bool(enemy.get("boss", false)) else 14.0)
 	for peer_key: Variant in players:
 		var player: Dictionary = players[peer_key]
 		_draw_shadow(_position(player), 14.0)
@@ -70,6 +118,7 @@ func _draw() -> void:
 	var bullets: Array = _snapshot.get("bullets", [])
 	for bullet_value: Variant in bullets:
 		_draw_bullet(bullet_value)
+	_feedback.particles.draw_particles(self)
 	_draw_motes()
 
 
@@ -204,24 +253,62 @@ func _draw_walls() -> void:
 		_box(4, y + 2, 3, 27, Color("#63556c"))
 		_box(876, y + 1, 16, 29, Color("#484054"))
 		_box(877, y + 2, 3, 27, Color("#63556c"))
-	# Recessed north doorway and descending steps.
-	_box(408, 0, 80, 40, Color("#161522"))
-	_box(402, 0, 8, 42, Color("#796171"))
-	_box(486, 0, 8, 42, Color("#796171"))
-	_box(414, 18, 68, 4, Color("#3d354a"))
-	_box(414, 27, 68, 4, Color("#4f4358"))
-	_box(414, 36, 68, 4, Color("#645267"))
-	var phase: String = str(_snapshot.get("phase", "lobby"))
-	if phase == "combat":
-		for x: int in range(420, 482, 12):
-			_box(x, 0, 4, 34, Color("#776277"))
-		_box(413, 13, 71, 4, Color("#9e7a80"))
+	_draw_doors()
 	# Corner stone caps sit in front of the masonry.
 	for point: Vector2 in [Vector2(18, 30), Vector2(850, 30), Vector2(18, 420), Vector2(850, 420)]:
 		_box(point.x, point.y, 28, 28, Color("#252233"))
 		_box(point.x + 2, point.y + 2, 24, 19, Color("#65546c"))
 		_box(point.x + 4, point.y + 3, 20, 3, Color("#8c7183"))
 		_box(point.x + 7, point.y + 9, 10, 7, Color("#493e55"))
+
+
+## Recessed doorways on every wall that leads to a neighbouring room. Bars close
+## them while the host keeps the room locked; the frame shows what lies beyond
+## once that room is on the map (red for the boss, gold for treasure).
+func _draw_doors() -> void:
+	var doors: Variant = _room_layout().get("doors", {})
+	if not doors is Dictionary:
+		return
+	var open: bool = bool(_snapshot.get("doors_open", false))
+	for side: Variant in doors:
+		var frame: Color = _door_frame(str(doors[side]))
+		var vertical: bool = side == "north" or side == "south"
+		# Each doorway is drawn in its own frame: x/y along the wall, depth inward.
+		var opening: Rect2
+		match side:
+			"north": opening = Rect2(408, 0, 80, 40)
+			"south": opening = Rect2(408, 444, 80, 36)
+			"west": opening = Rect2(0, 208, 28, 80)
+			"east": opening = Rect2(868, 208, 28, 80)
+			_: continue
+		draw_rect(opening, Color("#161522"))
+		if vertical:
+			_box(opening.position.x - 6, opening.position.y, 8, opening.size.y + 2, frame)
+			_box(opening.end.x - 2, opening.position.y, 8, opening.size.y + 2, frame)
+			for step: int in range(3):
+				var y: float = opening.position.y + 18 + step * 9 if side == "north" else opening.end.y - 22 - step * 9
+				_box(opening.position.x + 6, y, opening.size.x - 12, 4, Color("#3d354a").lerp(Color("#645267"), step / 2.0))
+		else:
+			_box(opening.position.x, opening.position.y - 6, opening.size.x + 2, 8, frame)
+			_box(opening.position.x, opening.end.y - 2, opening.size.x + 2, 8, frame)
+		if not open:
+			if vertical:
+				for x: int in range(int(opening.position.x) + 12, int(opening.end.x) - 6, 12):
+					_box(x, opening.position.y, 4, opening.size.y - 4, Color("#776277"))
+				_box(opening.position.x + 5, opening.position.y + opening.size.y * 0.35, opening.size.x - 9, 4, Color("#9e7a80"))
+			else:
+				for y: int in range(int(opening.position.y) + 12, int(opening.end.y) - 6, 12):
+					_box(opening.position.x, y, opening.size.x, 4, Color("#776277"))
+				_box(opening.position.x + opening.size.x * 0.4, opening.position.y + 5, 4, opening.size.y - 9, Color("#9e7a80"))
+
+
+func _door_frame(room_id: String) -> Color:
+	for value: Variant in _snapshot.get("floor_map", []):
+		if value is Dictionary and str(value.get("id", "")) == room_id:
+			match str(value.get("kind", "")):
+				"boss": return Color("#b84a4f")
+				"treasure": return GOLD
+	return Color("#796171")
 
 
 func _draw_brazier(point: Vector2, offset: float) -> void:
@@ -265,13 +352,21 @@ func _draw_player(player: Dictionary, peer_id: int) -> void:
 		draw_rect(Rect2(point.x - 20, point.y + 8, 40, 15), ring_color, false, 2.0)
 		_box(point.x - 4, point.y - 24, 8, 3, color)
 		_box(point.x - 2, point.y - 21, 4, 3, color)
-	# Each adventurer is an actual native 32 × 32 PNG, rendered one-to-one.
-	draw_texture_rect(PLAYER_TEXTURES[_sprite_index(color)], Rect2(point - Vector2(16, 16), Vector2(32, 32)), false)
 	# Optional aim vector; no input is sampled by the presentation layer.
 	var aim := Vector2(float(player.get("ax", 1.0)), float(player.get("ay", 0.0)))
 	if aim.length_squared() < 0.01:
 		aim = Vector2.RIGHT
 	aim = aim.normalized()
+	# Heroes run while moving in any direction and face where they aim (Isaac-style);
+	# while invulnerable they show the hit frame and blink.
+	var hero: Dictionary = _sprites[HERO_SPRITES[_sprite_index(color)]]
+	var hurt: bool = bool(player.get("hurt", false))
+	var texture: Texture2D = _frame(hero, bool(player.get("moving", false)), peer_id)
+	var pose: Dictionary = _feedback.pose("p%d" % peer_id, player, _clock)
+	if hurt:
+		if hero.hit != null and fmod(_clock, 0.24) < 0.12: texture = hero.hit
+		pose.alpha *= 0.45 if fmod(_clock, 0.16) < 0.08 else 1.0
+	_draw_sprite(texture, point, -1.0 if aim.x < -0.1 else 1.0, 16.0, pose)
 	var hand: Vector2 = point + aim * 11.0 + Vector2(0, 3)
 	draw_line(hand, hand + aim * 10.0, INK, 7.0)
 	draw_line(hand, hand + aim * 10.0, Color("#c3b3ad"), 3.0)
@@ -296,20 +391,47 @@ func _sprite_index(color: Color) -> int:
 func _draw_enemy(enemy: Dictionary) -> void:
 	var point: Vector2 = _position(enemy).round()
 	var is_boss: bool = bool(enemy.get("boss", false))
-	var size: float = 2.0 if is_boss else 1.0
-	var bounce: float = floorf(sin(_clock * 4.0 + point.x * 0.02) * 2.0)
-	point.y += bounce
-	# Boss uses the same 32 × 32 source grid at an explicit integer 2× scale.
-	var texture: Texture2D = BOSS_TEXTURE if is_boss else SLIME_TEXTURE
-	draw_texture_rect(texture, Rect2(point - Vector2(16, 16) * size, Vector2(32, 32) * size), false)
+	var kind: String = "boss" if is_boss else str(enemy.get("kind", "chaser"))
+	var sprite: Dictionary = _sprites[ENEMY_SPRITES.get(kind, "goblin")]
+	var id: int = int(enemy.get("id", 0))
+	var dying: bool = float(enemy.get("dying_p", -1.0)) >= 0.0
+	var texture: Texture2D = _frame(sprite, bool(enemy.get("moving", false)) and not dying, id * 3)
+	var feet: float = 24.0 if is_boss else 16.0
+	_draw_sprite(texture, point, float(enemy.get("face", -1.0)), feet, _feedback.pose("e%d" % id, enemy, _clock))
 	var hp: float = float(enemy.get("hp", 1.0))
 	var max_hp: float = maxf(float(enemy.get("max_hp", hp)), 1.0)
-	if hp < max_hp or is_boss:
+	if not dying and (hp < max_hp or is_boss):
 		var bar_width: float = 48.0 if is_boss else 26.0
-		var bar_y: float = point.y - 54.0 if is_boss else point.y - 24.0
+		var bar_y: float = point.y + feet - float(texture.get_height() * 2) - 8.0
 		_box(point.x - bar_width / 2.0 - 2, bar_y - 2, bar_width + 4, 7, INK)
 		_box(point.x - bar_width / 2.0, bar_y, bar_width, 3, Color("#5e354d"))
 		_box(point.x - bar_width / 2.0, bar_y, floorf(bar_width * clampf(hp / max_hp, 0.0, 1.0)), 3, Color("#ef8a9a"))
+
+
+## Current idle or run frame; `phase` desynchronises actors that started together.
+func _frame(sprite: Dictionary, moving: bool, phase: int) -> Texture2D:
+	var frames: Array = sprite.run if moving else sprite.idle
+	return frames[(int(_clock * FRAMES_PER_SECOND) + absi(phase)) % frames.size()]
+
+
+## Draws a 0x72 frame at 2x, standing with its feet `feet` px below `point` and
+## mirrored when `face` is negative (the source art faces right). `pose` comes
+## from the feedback layer: squash & stretch and lean pivot on the feet, so
+## deformation never lifts an actor off the floor; the flash is a white
+## silhouette drawn over the frame in the flash colour.
+func _draw_sprite(texture: Texture2D, point: Vector2, face: float, feet: float, pose: Dictionary) -> void:
+	var size := Vector2(texture.get_width(), texture.get_height()) * 2.0
+	var scale: Vector2 = pose.get("scale", Vector2.ONE)
+	var alpha: float = float(pose.get("alpha", 1.0))
+	var anchor: Vector2 = point + Vector2(0, feet) + Vector2(pose.get("offset", Vector2.ZERO))
+	draw_set_transform(anchor, float(pose.get("lean", 0.0)), Vector2((-1.0 if face < 0.0 else 1.0) * scale.x, scale.y))
+	var rect := Rect2(Vector2(-size.x * 0.5, -size.y), size)
+	draw_texture_rect(texture, rect, false, Color(1, 1, 1, alpha))
+	var flash: float = float(pose.get("flash", 0.0))
+	if flash > 0.0 and _flash_textures.has(texture):
+		var color: Color = pose.get("flash_color", Color.WHITE)
+		draw_texture_rect(_flash_textures[texture], rect, false, Color(color, flash * alpha))
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 func _draw_bullet(bullet: Dictionary) -> void:

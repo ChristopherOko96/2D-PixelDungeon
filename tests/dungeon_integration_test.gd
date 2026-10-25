@@ -38,12 +38,20 @@ func _test_room_and_geometry(game: Node, layout: Dictionary) -> void:
 	var snapshot: Dictionary = game._make_snapshot()
 	check(game.run_seed == 24680, "explicit seed is used by the host")
 	check(snapshot.room_layout == layout, "snapshot carries the chosen geometry")
-	check(snapshot.floor_map.size() == 3, "snapshot carries the bounded three-room floor")
-	check(snapshot.floor_map[2].boss and not snapshot.floor_map[0].boss, "only the final room is the boss")
-	check(not snapshot.floor_map[0].cleared, "active room is initially uncleared")
-	check(snapshot.generator_version == 1, "snapshot identifies the generator version")
+	check(snapshot.room_count == game.floor_layouts.size() and snapshot.room_count >= 6, "snapshot reports the 6-10 room floor size")
+	check(snapshot.floor_map.size() == layout.doors.size() + 1, "minimap starts with the start room and its neighbours only")
+	check(snapshot.floor_map.all(func(item: Dictionary) -> bool: return item.kind != "boss" or layout.doors.values().has(item.id)), "the boss stays hidden until the party sees it")
+	check(snapshot.doors_open and snapshot.floor_map[0].cleared, "the start room is cleared and its doors are open")
+	check(snapshot.generator_version == 2, "snapshot identifies the generator version")
 	check(game.players[1].pos == layout.player_spawns[0], "host spawns at its clear template slot")
-	check(game.enemies[0].pos == layout.enemy_spawns[0], "enemy spawns at its clear template slot")
+	var normal: int = -1
+	for i in range(game.floor_layouts.size()):
+		if game.floor_layouts[i].kind == "normal": normal = i; break
+	game._enter_room(normal, "west")
+	check(game.enemies[0].pos == game.current_layout.enemy_spawns[0], "enemy spawns at its clear template slot")
+	game._enter_room(normal, "east")
+	check(game.enemies[0].pos.x < 448.0, "an east arrival meets mirrored enemy spawns")
+	layout = game.current_layout
 	# An authored fixture isolates the game simulation from randomized selection.
 	var fixture := layout.duplicate(true)
 	fixture.obstacles = [[384, 160, 64, 96]]
@@ -68,17 +76,21 @@ func _test_room_and_geometry(game: Node, layout: Dictionary) -> void:
 	game._add_bullet(Vector2(350, 200), Vector2(600, 0), 0, 1)
 	game._simulate_bullets(0.25)
 	check(game.bullets.is_empty() and game.players[1].hp == health, "hostile bullet sweep stops at cover before the player")
-	game.room = 2
-	game._spawn_room()
+	game.enemies.clear()
+	game._check_room_end()
+	var boss: int = -1
+	for i in range(game.floor_layouts.size()):
+		if game.floor_layouts[i].boss: boss = i
+	game._enter_room(boss, "north")
 	check(game.current_layout.id != first_id, "room transition selects a new stable room ID")
-	snapshot = game._make_snapshot()
-	check(snapshot.floor_map[0].cleared and not snapshot.floor_map[1].cleared, "floor map records completed rooms")
 	check(game.bullets.is_empty(), "room transition clears prior projectiles")
-	game.room = 3
-	game._spawn_room()
-	check(game.current_layout.boss and game.enemies[0].boss, "final template and encounter agree on boss room")
-	game.phase = "victory"
+	check(game.current_layout.boss and game.enemies[0].boss, "boss template and encounter agree on boss room")
 	snapshot = game._make_snapshot()
-	check(snapshot.floor_map.all(func(item: Dictionary) -> bool: return item.cleared), "victory marks the entire floor cleared")
+	var entries := {}
+	for item: Dictionary in snapshot.floor_map: entries[item.id] = item
+	check(entries.has(first_id) and entries[first_id].cleared, "minimap keeps the cleared start room")
+	check(entries.has(game.current_layout.id) and entries[game.current_layout.id].kind == "boss", "minimap marks the boss once the party is there")
+	check(not snapshot.doors_open, "boss room doors are locked during the fight")
 	game._begin_run()
 	check(game.current_layout.id == first_id, "fixed-seed restart reproduces the first room ID")
+	check(game.room_states.values().all(func(item: Dictionary) -> bool: return item.visited == (item == game.room_states[first_id])), "a restart forgets the previous floor progress")

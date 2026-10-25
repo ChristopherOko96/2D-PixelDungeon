@@ -20,6 +20,15 @@ Zusätzlich zu Isaac dient Vampire Survivors als Spielgefühl-Referenz; große
 Gegnermengen sind kein Ziel des ersten Prototyps. Idle-Animationen für Feuer,
 Spieler und Umgebung gehören in einen späteren Polishing-Schritt.
 
+**Stockwerk nach Isaac, Entscheidung vom 25.10.2026 (Projektinhaber):** Ein
+Stockwerk hat zufällig 6–10 verzweigte Räume mit Türen; der Boss liegt in der
+vom Start entferntesten Sackgasse, dazu ein Schatzraum. Türen bleiben zu, bis
+ein Raum geräumt ist; wer durch eine offene Tür geht, nimmt die Gruppe mit.
+Perks gibt es im Schatzraum und nach dem Boss. Umsetzung:
+[Story 002](../production/epics/dungeon-rooms/story-002-isaac-floor.md).
+Als Grafik-Folgeschritt ist das 0x72-Set (16×16, doppelt gezeichnet auf das
+32er-Raster) beschlossen.
+
 ## Core loop
 - Einen Raum betreten, die Gegner mit Schüssen und Ausweichen besiegen.
 - Nach jedem abgeschlossenen Kampfraum einen Perk beziehungsweise eine

@@ -6,22 +6,63 @@ extends RefCounted
 ## Geometry is conservative circle-vs-grown-AABB, not Godot physics determinism.
 
 const SCHEMA_VERSION: int = 1
-const GENERATOR_VERSION: int = 1
-const MIN_ROOMS: int = 3
-const MAX_ROOMS: int = 10
+const GENERATOR_VERSION: int = 2
+const MIN_ROOMS: int = 5
+const MAX_ROOMS: int = 12
 const EPSILON: float = 0.00001
 # Subpixel separation keeps swept wall contact outside the closed navigation
 # obstruction, including after Vector2's single-precision coordinate rounding.
 const CONTACT_MARGIN: float = 0.001
+# Door order is part of the generator contract: it fixes RNG draws and door keys.
+const DIRECTION_NAMES: Array[String] = ["north", "east", "south", "west"]
+const DIRECTION_VECTORS: Array[Vector2i] = [Vector2i(0, -1), Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0)]
+const OPPOSITE: Dictionary = {"north": "south", "east": "west", "south": "north", "west": "east"}
+# Doors use the player's collision radius (game.gd moves players with 12 px).
+const DOOR_ACTOR_RADIUS: float = 12.0
+# Matches the 80 px opening dungeon_view.gd draws, so a player who visibly stands
+# in the doorway always goes through (a 64 px trigger missed players at its edge).
+const DOOR_HALF_WIDTH: float = 40.0
+const DOOR_TRIGGER_MARGIN: float = 4.0
+const ENTRY_DEPTH: float = 48.0
+const MAX_GRID_EXTENT: int = 4
+const MAX_TOPOLOGY_ATTEMPTS: int = 32
 
-## Builds a repeatable connected floor; invalid data or counts return no rooms.
-## First rooms rotate through seeded normal templates; only the final is a boss.
+## Picks the floor's room count from the run seed, inclusive of both limits.
+## Uses its own generator so the count never shifts the layout's RNG stream.
+static func room_count_for_seed(seed: int, minimum: int, maximum: int) -> int:
+	var low: int = clampi(mini(minimum, maximum), MIN_ROOMS, MAX_ROOMS)
+	var high: int = clampi(maxi(minimum, maximum), MIN_ROOMS, MAX_ROOMS)
+	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+	rng.seed = hash("room-count:%d" % seed)
+	return rng.randi_range(low, high)
+
+## Builds a repeatable branching floor after The Binding of Isaac; invalid data or
+## counts return no rooms. Rooms form a loop-free tree on the grid: a cell is only
+## added where exactly one occupied neighbour (its parent) touches it, so grid
+## adjacency and doors coincide. Room 0 is the start; the boss is the dead end
+## farthest from it (breadth-first distance), the treasure room another dead end.
 static func generate(seed: int, room_count: int, config: Dictionary) -> Array[Dictionary]:
 	var rooms: Array[Dictionary] = []
 	if room_count < MIN_ROOMS or room_count > MAX_ROOMS or not validate_config(config).is_empty():
 		return rooms
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.seed = seed
+	var cells: Array[Vector2i] = []
+	for attempt: int in range(MAX_TOPOLOGY_ATTEMPTS):
+		cells = _grow_tree(room_count, rng)
+		if cells.size() == room_count and _dead_ends(cells).size() >= 2:
+			break
+		cells = []
+	if cells.is_empty():
+		return rooms
+	var distances: Array[int] = _distances(cells)
+	var leaves: Array[int] = _dead_ends(cells)
+	var boss_index: int = leaves[0]
+	for leaf: int in leaves:
+		if distances[leaf] > distances[boss_index]:
+			boss_index = leaf
+	leaves.erase(boss_index)
+	var treasure_index: int = leaves[rng.randi_range(0, leaves.size() - 1)]
 	var normals: Array[Dictionary] = []
 	var bosses: Array[Dictionary] = []
 	for template: Dictionary in config.templates:
@@ -30,40 +71,91 @@ static func generate(seed: int, room_count: int, config: Dictionary) -> Array[Di
 		else:
 			normals.append(template)
 	_shuffle(normals, rng)
-	var coordinate: Vector2i = Vector2i.ZERO
-	var occupied: Dictionary = {}
-	var last_template: String = ""
+	var normal_turn: int = 0
+	var cell_index: Dictionary = {}
 	for index: int in range(room_count):
-		if index > 0:
-			# Monotonic X guarantees an available next cell. Vertical steps retain
-			# the compact three-row map used by the floor HUD.
-			var choices: Array[Vector2i] = [Vector2i.RIGHT, Vector2i.RIGHT]
-			for direction: Vector2i in [Vector2i.UP, Vector2i.DOWN]:
-				var candidate: Vector2i = coordinate + direction
-				if absi(candidate.y) <= 1 and not occupied.has(candidate):
-					choices.append(direction)
-			coordinate += choices[rng.randi_range(0, choices.size() - 1)]
-		occupied[coordinate] = true
+		cell_index[cells[index]] = index
+		var kind: String = "normal"
+		if index == 0:
+			kind = "start"
+		elif index == boss_index:
+			kind = "boss"
+		elif index == treasure_index:
+			kind = "treasure"
 		var template: Dictionary
-		if index == room_count - 1:
+		if kind == "boss":
 			template = bosses[rng.randi_range(0, bosses.size() - 1)]
 		else:
-			if index > 0 and index % normals.size() == 0:
+			if normal_turn > 0 and normal_turn % normals.size() == 0:
+				var last_template: String = normals[normals.size() - 1].id
 				_shuffle(normals, rng)
 				if normals[0].id == last_template:
 					var swap: Dictionary = normals[0]
 					normals[0] = normals[1]
 					normals[1] = swap
-			template = normals[index % normals.size()]
-		last_template = template.id
+			template = normals[normal_turn % normals.size()]
+			normal_turn += 1
 		var layout: Dictionary = _make_layout(template, config)
 		layout.id = _room_id(seed, index)
-		layout.grid_x = coordinate.x
-		layout.grid_y = coordinate.y
-		layout.prev_id = "" if index == 0 else _room_id(seed, index - 1)
-		layout.next_id = "" if index == room_count - 1 else _room_id(seed, index + 1)
+		layout.kind = kind
+		layout.boss = kind == "boss"
+		layout.grid_x = cells[index].x
+		layout.grid_y = cells[index].y
+		layout.distance = distances[index]
 		rooms.append(layout)
+	for index: int in range(room_count):
+		var doors: Dictionary = {}
+		for side: int in range(DIRECTION_NAMES.size()):
+			var neighbour: Vector2i = cells[index] + DIRECTION_VECTORS[side]
+			if cell_index.has(neighbour):
+				doors[DIRECTION_NAMES[side]] = rooms[cell_index[neighbour]].id
+		rooms[index].doors = doors
 	return rooms
+
+## Centre of the doorway on one wall of the play bounds, in room pixels.
+static func door_center(direction: String, layout: Dictionary) -> Vector2:
+	var bounds: Rect2 = _rect(layout.play_bounds)
+	match direction:
+		"north":
+			return Vector2(bounds.get_center().x, bounds.position.y)
+		"south":
+			return Vector2(bounds.get_center().x, bounds.end.y)
+		"west":
+			return Vector2(bounds.position.x, bounds.get_center().y)
+		"east":
+			return Vector2(bounds.end.x, bounds.get_center().y)
+	return bounds.get_center()
+
+## True when an actor of `radius` stands in the doorway of `direction`'s wall.
+static func at_door(pos: Vector2, direction: String, radius: float, layout: Dictionary) -> bool:
+	if not pos.is_finite() or not OPPOSITE.has(direction) or not _geometry_valid(layout):
+		return false
+	var center: Vector2 = door_center(direction, layout)
+	var reach: float = radius + DOOR_TRIGGER_MARGIN
+	if direction == "north" or direction == "south":
+		return absf(pos.x - center.x) <= DOOR_HALF_WIDTH and absf(pos.y - center.y) <= reach
+	return absf(pos.y - center.y) <= DOOR_HALF_WIDTH and absf(pos.x - center.x) <= reach
+
+## Point just inside the doorway where an arriving party gathers.
+static func entry_point(direction: String, layout: Dictionary) -> Vector2:
+	return door_center(direction, layout) + _inward(direction) * ENTRY_DEPTH
+
+## Four player positions inside the doorway on `direction`'s wall. A point without
+## player clearance falls back to the nearest free floor cell, so arrivals never
+## start inside cover.
+static func entry_spawns(direction: String, layout: Dictionary) -> Array[Vector2]:
+	var result: Array[Vector2] = []
+	if not OPPOSITE.has(direction) or not _geometry_valid(layout):
+		return result
+	var inward: Vector2 = _inward(direction)
+	var across: Vector2 = Vector2(-inward.y, inward.x)
+	var base: Vector2 = entry_point(direction, layout)
+	for offset: Vector2 in [Vector2(-26, 0), Vector2(26, 0), Vector2(-26, 40), Vector2(26, 40)]:
+		var point: Vector2 = base + across * offset.x + inward * offset.y
+		if segment_blocked(point, point, DOOR_ACTOR_RADIUS, layout):
+			point = _nearest_free_point(point, DOOR_ACTOR_RADIUS, layout)
+		result.append(point)
+	return result
 
 ## Returns actionable validation errors; never repairs malformed configuration.
 ## All spawn positions and all navigation lattice cells must remain connected at
@@ -155,6 +247,19 @@ static func validate_config(config: Dictionary) -> PackedStringArray:
 			continue
 		if not _floor_connected(layout, radius):
 			errors.append("Template %s has disconnected floor or unreachable spawns" % label)
+			continue
+		# Every template can sit anywhere on the floor, so all four doorways must be
+		# walkable for a player and reachable from the room's own player spawns.
+		for direction: String in DIRECTION_NAMES:
+			var arrival: Vector2 = entry_point(direction, layout)
+			var doorway: Vector2 = door_center(direction, layout) + _inward(direction) * DOOR_ACTOR_RADIUS
+			if segment_blocked(arrival, doorway, DOOR_ACTOR_RADIUS, layout) or find_path(arrival, layout.player_spawns[0], DOOR_ACTOR_RADIUS, layout).is_empty():
+				errors.append("Template %s blocks the %s doorway" % [label, direction])
+		for index: int in range(layout.enemy_spawns.size()):
+			var mirrored: Vector2 = spawn_for_enemy(index, layout, "east")
+			if segment_blocked(mirrored, mirrored, radius, layout):
+				errors.append("Template %s has a mirrored enemy spawn without actor clearance" % label)
+				break
 	if normals < 3 or bosses < 1:
 		errors.append("Dungeon requires at least three normal templates and one boss template")
 	return errors
@@ -209,9 +314,15 @@ static func spawn_for_player(index: int, layout: Dictionary) -> Vector2:
 	return _spawn(index, layout.get("player_spawns", []))
 
 ## Returns authored enemy spawn positions, wrapping nonnegative slot indices.
+## Templates place enemies on the east side; a party entering through the east
+## door gets them mirrored to the west so nobody spawns in contact range.
 ## Empty or invalid layout spawn data returns Vector2.ZERO.
-static func spawn_for_enemy(index: int, layout: Dictionary) -> Vector2:
-	return _spawn(index, layout.get("enemy_spawns", []))
+static func spawn_for_enemy(index: int, layout: Dictionary, entry_direction: String = "") -> Vector2:
+	var point: Vector2 = _spawn(index, layout.get("enemy_spawns", []))
+	if entry_direction == "east" and _numbers(layout.get("play_bounds"), 4):
+		var bounds: Rect2 = _rect(layout.play_bounds)
+		point.x = bounds.position.x + bounds.end.x - point.x
+	return point
 
 ## Finds collision-free waypoints on a cardinal tile lattice, including `to`.
 ## Endpoints clamp to this actor's floor clearance so larger enemies can chase a
@@ -277,6 +388,76 @@ static func find_path(from: Vector2, to: Vector2, radius: float, layout: Diction
 
 static func _room_id(seed: int, index: int) -> String:
 	return "v%d-s%d-r%02d" % [GENERATOR_VERSION, seed, index + 1]
+
+static func _grow_tree(count: int, rng: RandomNumberGenerator) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = [Vector2i.ZERO]
+	var occupied: Dictionary = {Vector2i.ZERO: true}
+	var guard: int = 0
+	while cells.size() < count and guard < count * 64:
+		guard += 1
+		var parent: Vector2i = cells[rng.randi_range(0, cells.size() - 1)]
+		var candidate: Vector2i = parent + DIRECTION_VECTORS[rng.randi_range(0, DIRECTION_VECTORS.size() - 1)]
+		if occupied.has(candidate) or absi(candidate.x) > MAX_GRID_EXTENT or absi(candidate.y) > MAX_GRID_EXTENT:
+			continue
+		var touching: int = 0
+		for direction: Vector2i in DIRECTION_VECTORS:
+			if occupied.has(candidate + direction):
+				touching += 1
+		if touching != 1:
+			continue
+		occupied[candidate] = true
+		cells.append(candidate)
+	return cells
+
+static func _neighbour_count(cells: Array[Vector2i], index: int) -> int:
+	var count: int = 0
+	for direction: Vector2i in DIRECTION_VECTORS:
+		if cells.has(cells[index] + direction):
+			count += 1
+	return count
+
+# Dead ends other than the start room, in room order.
+static func _dead_ends(cells: Array[Vector2i]) -> Array[int]:
+	var result: Array[int] = []
+	for index: int in range(1, cells.size()):
+		if _neighbour_count(cells, index) == 1:
+			result.append(index)
+	return result
+
+static func _distances(cells: Array[Vector2i]) -> Array[int]:
+	var result: Array[int] = []
+	result.resize(cells.size())
+	result.fill(-1)
+	result[0] = 0
+	var queue: Array[int] = [0]
+	var cursor: int = 0
+	while cursor < queue.size():
+		var current: int = queue[cursor]
+		cursor += 1
+		for direction: Vector2i in DIRECTION_VECTORS:
+			var next: int = cells.find(cells[current] + direction)
+			if next >= 0 and result[next] < 0:
+				result[next] = result[current] + 1
+				queue.append(next)
+	return result
+
+static func _inward(direction: String) -> Vector2:
+	var side: int = DIRECTION_NAMES.find(direction)
+	return -Vector2(DIRECTION_VECTORS[side]) if side >= 0 else Vector2.ZERO
+
+static func _nearest_free_point(point: Vector2, radius: float, layout: Dictionary) -> Vector2:
+	var tile: float = float(layout.get("tile_size", 32))
+	var best: Vector2 = point
+	var best_distance: float = INF
+	var cells: Dictionary = _floor_cells(layout, radius)
+	for cell: Vector2i in cells:
+		var candidate: Vector2 = Vector2(cell) * tile
+		var distance: float = candidate.distance_squared_to(point)
+		# Ties resolve by coordinate so every peer picks the same cell.
+		if distance < best_distance or (distance == best_distance and (candidate.x < best.x or (candidate.x == best.x and candidate.y < best.y))):
+			best = candidate
+			best_distance = distance
+	return best
 
 static func _shuffle(values: Array[Dictionary], rng: RandomNumberGenerator) -> void:
 	for index: int in range(values.size() - 1, 0, -1):
