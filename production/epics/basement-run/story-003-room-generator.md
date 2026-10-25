@@ -27,10 +27,11 @@
 ## Acceptance Criteria
 
 - [ ] Room templates are prefabs with a defined size, doors and enemy spawn points.
-- [ ] A generator assembles a connected floor from templates with a tunable room count (about 6-10), using a seed.
+- [ ] A generator assembles a grid-connected floor from templates; the room count is random per run within a tunable range (default 6-10), derived from the run seed.
 - [ ] The same seed always produces the same layout.
-- [ ] Every room is reachable from the start room; the last room is reserved for the boss.
+- [ ] Every room is reachable from the start room; the boss room is a dead end at the greatest distance from the start, so the rooms to clear before the boss differ from run to run (The Binding of Isaac model, decided 2026-10-25).
 - [ ] Doors lock while enemies live and open when the room is cleared.
+- [ ] A minimap shows visited and adjacent rooms, with the boss room marked once seen.
 - [ ] Entering a room spawns its enemies; moving between rooms works (camera snaps to the room).
 - [ ] Retained screenshot of a generated floor or a room transition in `production/qa/evidence/`.
 

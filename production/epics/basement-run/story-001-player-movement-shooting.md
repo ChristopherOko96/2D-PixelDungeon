@@ -1,7 +1,7 @@
 # Story 001: Player movement and twin-stick shooting
 
 > **Epic**: basement-run
-> **Status**: In Progress
+> **Status**: Complete
 > **Layer**: N/A (minimal)
 > **Type**: Visual/Feel
 > **Estimate**: M
@@ -82,3 +82,12 @@
 
 - Depends on: None
 - Unlocks: `production/epics/basement-run/story-002-enemy-hearts-damage.md`, `production/epics/basement-run/story-003-room-generator.md`
+
+---
+
+## Completion Notes
+**Completed**: 2026-10-25
+**Criteria**: 8/8 passing (right-stick aim and despawn-after-lifetime not hands-on tested)
+**Deviations**: Advisory — implemented and engine-checked inline by the orchestrating session instead of the gameplay-programmer and unity-specialist agents. Aim input changed to mouse-first by user decision (criterion 2).
+**Test Evidence**: `production/qa/evidence/story-001-player-movement-shooting/01-player-shooting.png`, sign-off in `production/qa/evidence/story-001-player-movement-shooting-evidence.md`
+**Reviewed by**: self, no independent review
