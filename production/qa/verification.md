@@ -26,7 +26,38 @@ Die gezielten Prüfungen des korrigierten Stands bestehen ohne Godot-Fehler:
 Prüfläufe: `20261025-084000-932cc6aa`, `20261025-084000-b6a71f1d` und
 `20261025-084000-5219fb92` unter lokalem `Logs/network-smoke/`.
 [Godot-Quellstelle](https://github.com/godotengine/godot/blob/4.7.2-stable/modules/multiplayer/scene_multiplayer.cpp#L373-L400).
-Der aktuelle Entwicklungsbranch ist `codex/v2` im [V2-Fork](../../docs/V2-PUBLISH.de.md).
+Dieser erste Stand wurde auf `codex/v2` im V2-Fork veröffentlicht. Das aktuelle
+Ziel auf späteren Nutzerwunsch ist `codex_v2` im Repository des Bruders;
+siehe [Veröffentlichungsnotizen](../../docs/V2-PUBLISH.de.md).
+
+## Raumgenerator vom 25.10.2026
+
+Geprüft mit Godot `4.7.2.stable.official.ed1daf0bf`, Compatibility, Windows.
+
+| Prüfung | Ergebnis |
+| --- | --- |
+| Daten, Seed, IDs, Konnektivität, Spawns, Körper- und Projektilgeometrie, Wegsuche | `DUNGEON_GENERATOR checked=4146 failures=0` |
+| Einbindung in Spawns, Bewegung, beide Projektilarten, Raumwechsel, Karte und Neustart | `DUNGEON_INTEGRATION checked=22 failures=0` |
+| Bestehende Spielregeln | `GAME_RULES checked=21 failures=0` |
+| Import/Parse | `Dev.ps1 Check` erfolgreich, alle vier Spielskripte geladen |
+| Codex-Studio | `Studio.ps1 Check`: 25 bestanden, ein Windows-Symlinktest übersprungen; Commit-Validator erfolgreich |
+| Zwei unabhängige Prozesse | `dungeon_network_smoke.ps1`: Seed 24680, alle drei Räume mit gleichen IDs, Vorlagen, Version 1 und SHA256; sechs Perks, Boss und Sieg auf beiden Seiten; beide Exit 0 |
+| Vier unabhängige Prozesse | `network_smoke.ps1 -Players 4`: Host plus drei Clients in Lobby, alle Snapshots erhalten, gleichzeitiger Abbau sauber |
+| Sichtprüfung | Echte Hauptspielaufnahme mit Säulen, Raumkarte, 32×32-Spieler/Gegnern und freiem HUD; Ergebnis unten |
+
+Zwei-Prozess-Lauf: `Logs/dungeon-network-smoke/20261025-143347-eb805108`.
+Vierer-Lobby: `Logs/network-smoke/20261025-143347-c644ff3e`.
+Diese ignorierten lokalen Logs gehören nicht zum Commit; der Test ist wiederholbar.
+Keine `SCRIPT ERROR`-/Godot-Fehler in den Prozessprüfungen. Der Generator-Test
+wurde vor Implementierung rot gesehen; die neue Integrationsprüfung scheiterte
+am alten Spielstand mit zwei Fehlern und besteht nach der Integration.
+
+![Raumgenerator im Hauptspiel](evidence/godot-seeded-dungeon.png)
+
+Der Nachweis gilt für lokale Funktionen über Loopback. Vier-Spieler-Kampf,
+reales LAN/WAN, künstliche Latenz/Paketverlust, Bandbreite und Dauerleistung
+sind weiterhin nicht durch diese Tests belegt. Die Route ist linear und wird
+gemeinsam über das bestehende Ready-Gate durchlaufen; keine freie Türerkundung.
 
 ## Ursprüngliche Prüfung vom 24.10.2026
 

@@ -1,10 +1,10 @@
 # Basement Run / Pixel Dungeon V2 (Godot)
 
-Diese V2-Entwicklung liegt im separaten Fork
-[Wugu7/2D-PixelDungeon-V2](https://github.com/Wugu7/2D-PixelDungeon-V2)
-auf dem Branch [`codex/v2`](https://github.com/Wugu7/2D-PixelDungeon-V2/tree/codex/v2).
-Das [Original von ChristopherOko96](https://github.com/ChristopherOko96/2D-PixelDungeon)
-und dessen `main` bleiben eine getrennte Entwicklungslinie.
+Diese Godot-Entwicklung liegt auf Wunsch des Nutzers im Repository seines Bruders
+[ChristopherOko96/2D-PixelDungeon](https://github.com/ChristopherOko96/2D-PixelDungeon)
+auf dem Branch [`codex_v2`](https://github.com/ChristopherOko96/2D-PixelDungeon/tree/codex_v2).
+`main` bleibt unverändert. Der zuvor angelegte separate V2-Fork bleibt erhalten;
+die [Veröffentlichungsnotizen](docs/V2-PUBLISH.de.md) erklären den Verlauf.
 V2 bezeichnet diesen Entwicklungsstand, noch keine fertige 2.0-Veröffentlichung.
 
 Godot-Projekt für einen 2D-Pixel-Dungeon-Crawler nach dem Vorbild von The Binding

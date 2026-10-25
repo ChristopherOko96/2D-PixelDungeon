@@ -47,6 +47,7 @@ func _draw() -> void:
 	_draw_floor()
 	_draw_chamber_details()
 	_draw_walls()
+	_draw_obstacles()
 	_draw_brazier(Vector2(72, 78), 0.0)
 	_draw_brazier(Vector2(824, 78), 1.8)
 	_draw_brazier(Vector2(72, 402), 2.5)
@@ -80,9 +81,24 @@ func _position(entity: Dictionary) -> Vector2:
 	return Vector2(float(entity.get("x", 448.0)), float(entity.get("y", 240.0)))
 
 
+func _room_layout() -> Dictionary:
+	var layout: Variant = _snapshot.get("room_layout", {})
+	return layout if layout is Dictionary else {}
+
+
+func _room_accent() -> Color:
+	var fallback := Color("#ab856b")
+	var value: Variant = _room_layout().get("accent_color", fallback)
+	if value is Color:
+		return value
+	if value is String:
+		return Color.from_string(value, fallback)
+	return fallback
+
+
 func _draw_floor() -> void:
 	draw_rect(Rect2(Vector2.ZERO, ROOM_SIZE), GROUT)
-	var room_seed: int = int(_snapshot.get("seed", 0))
+	var room_seed: int = int(_snapshot.get("seed", 0)) + str(_room_layout().get("template_id", "")).hash() % 997
 	for row: int in range(15):
 		for column: int in range(28):
 			var tile_hash: int = absi(column * 73 + row * 137 + room_seed % 997)
@@ -102,13 +118,15 @@ func _draw_floor() -> void:
 	# A worn inset border gives the chamber a deliberate architectural shape.
 	draw_rect(Rect2(47, 47, 802, 386), Color("#6b566b"), false, 2.0)
 	draw_rect(Rect2(52, 52, 792, 376), Color("#282637"), false, 2.0)
+	var accent: Color = _room_accent()
 	for x: int in range(96, 816, 64):
-		_box(x, 46, 6, 4, Color("#ab856b"))
-		_box(x, 430, 6, 4, Color("#ab856b"))
+		_box(x, 46, 6, 4, accent)
+		_box(x, 430, 6, 4, accent)
 
 
 func _draw_chamber_details() -> void:
 	var center := Vector2(448, 240)
+	var accent: Color = _room_accent().darkened(0.4)
 	var outline := PackedVector2Array([
 		center + Vector2(-54, -72), center + Vector2(54, -72),
 		center + Vector2(72, -54), center + Vector2(72, 54),
@@ -118,8 +136,8 @@ func _draw_chamber_details() -> void:
 	])
 	draw_polyline(outline, Color("#514456"), 3.0)
 	draw_rect(Rect2(405, 197, 86, 86), Color("#4c4051"), false, 2.0)
-	draw_line(Vector2(421, 240), Vector2(475, 240), Color("#645061"), 3.0)
-	draw_line(Vector2(448, 213), Vector2(448, 267), Color("#645061"), 3.0)
+	draw_line(Vector2(421, 240), Vector2(475, 240), accent, 3.0)
+	draw_line(Vector2(448, 213), Vector2(448, 267), accent, 3.0)
 	for point: Vector2 in [Vector2(124, 131), Vector2(749, 345), Vector2(153, 365), Vector2(732, 108)]:
 		_box(point.x, point.y + 4, 16, 5, Color("#222130"))
 		_box(point.x + 2, point.y, 6, 6, Color("#625366"))
@@ -130,6 +148,42 @@ func _draw_chamber_details() -> void:
 	_box(704, 382, 4, 8, Color("#c4b19b"))
 	for index: int in range(4):
 		draw_rect(Rect2(181 + index * 8, 100 + index * 3, 8, 5), Color("#80717d"), false, 1.0)
+
+
+func _draw_obstacles() -> void:
+	var obstacles: Array = _room_layout().get("obstacles", [])
+	var accent: Color = _room_accent()
+	for value: Variant in obstacles:
+		var footprint: Rect2 = _obstacle_rect(value)
+		if footprint.size.x <= 0.0 or footprint.size.y <= 0.0:
+			continue
+		_box(footprint.position.x + 4, footprint.end.y, footprint.size.x - 8, 4, Color(0.05, 0.04, 0.09, 0.5))
+		_box(footprint.position.x + 8, footprint.end.y + 4, footprint.size.x - 16, 2, Color(0.05, 0.04, 0.09, 0.22))
+		# The solid masonry occupies the exact authoritative collision footprint.
+		# Cap highlights stay inside it, so cover never disguises a walkable edge.
+		draw_rect(footprint, INK)
+		draw_rect(Rect2(footprint.position + Vector2(2, 2), footprint.size - Vector2(4, 4)), STONE_DARK)
+		for row: int in range(int(ceilf(footprint.size.y / 32.0))):
+			for column: int in range(int(ceilf(footprint.size.x / 32.0))):
+				var point: Vector2 = footprint.position + Vector2(column * 32, row * 32)
+				var tile_size := Vector2(minf(32.0, footprint.end.x - point.x), minf(32.0, footprint.end.y - point.y))
+				draw_rect(Rect2(point + Vector2(2, 2), tile_size - Vector2(4, 4)), STONE)
+				_box(point.x + 3, point.y + 3, tile_size.x - 6, 3, STONE_LIGHT)
+				_box(point.x + 3, point.y + tile_size.y - 6, tile_size.x - 6, 3, STONE_DARK)
+		# A broad dark lower face and a restrained colored cap separate solid cover
+		# from the textured floor without competing with players or projectiles.
+		_box(footprint.position.x + 2, footprint.end.y - 10, footprint.size.x - 4, 8, Color("#242131"))
+		_box(footprint.position.x + 3, footprint.position.y + 3, footprint.size.x - 6, 3, accent.darkened(0.16))
+		_box(footprint.position.x + 3, footprint.position.y + 6, 3, footprint.size.y - 18, STONE_LIGHT)
+		_box(footprint.end.x - 6, footprint.position.y + 6, 3, footprint.size.y - 18, STONE_DARK)
+
+
+func _obstacle_rect(value: Variant) -> Rect2:
+	if value is Array and value.size() == 4:
+		return Rect2(float(value[0]), float(value[1]), float(value[2]), float(value[3]))
+	if value is Dictionary:
+		return Rect2(float(value.get("x", 0)), float(value.get("y", 0)), float(value.get("w", 0)), float(value.get("h", 0)))
+	return Rect2()
 
 
 func _draw_walls() -> void:

@@ -1,9 +1,10 @@
 # Basement Run — development notes
 
-- Work on a feature branch (`codex/…`); never edit or merge directly on `main`.
-- The V2 publication line is `codex/v2` in `Wugu7/2D-PixelDungeon-V2`.
-  Remote `v2` is the publication target; `origin` is the original repository.
-  Do not push to the original or merge into main without explicit authorization.
+- Work on a feature branch (`codex/…` by default); never edit or merge directly on `main`.
+- The user explicitly requested publication to `codex_v2` in the brother's
+  `ChristopherOko96/2D-PixelDungeon` repository on 2026-10-25. Remote `origin`
+  is this publication target. Preserve that exact branch name for this delivery.
+  The earlier `v2` remote / `codex/v2` fork remains historical. Do not merge into main.
 - Product scope lives in `design/game-brief.md`. The multiplayer requirement from
   2026-10-24 supersedes the original single-player exclusion. The user's later
   engine correction explicitly selects Godot and rules out downloading Unity.

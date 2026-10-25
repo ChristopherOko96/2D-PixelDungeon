@@ -4,9 +4,10 @@ Status: **Entwurf**, Stand 24.10.2026. Zukünftige Spielregeln und Messziele sin
 Vorschläge. Der vorhandene kleine Entwicklungsstand ersetzt keinen Nachweis eines
 vollständigen Dungeon-Spiels oder belastbarer Vier-Spieler-Performance.
 
-Veröffentlichungslinie seit 25.10.2026: `codex/v2` im separaten Fork
-`Wugu7/2D-PixelDungeon-V2`. Die spätere Unity-Linie des Original-Repositories
-bleibt getrennt. Details: [V2-Fork](../docs/V2-PUBLISH.de.md).
+Aktuelles Veröffentlichungsziel auf ausdrücklichen Nutzerwunsch vom 25.10.2026:
+`codex_v2` in `ChristopherOko96/2D-PixelDungeon`. Der vorherige V2-Fork bleibt
+erhalten; die Unity-Linie auf `main` bleibt getrennt.
+Details: [Veröffentlichung](../docs/V2-PUBLISH.de.md).
 
 ## Ziel und Herkunft der Anforderungen
 
@@ -29,6 +30,17 @@ ausgeführten Spieltests. Die aktuelle Godot-Grundlage wurde neu im eigenen Bran
 angelegt; die folgenden Umsetzungsnachweise gelten für diesen Entwicklungsstand.
 
 ## Aktueller Umsetzungsstand
+
+- Der nächste fehlende Kernschritt aus Baufolge 4 / Phase 3 ist umgesetzt:
+  [Raumgenerator-Story](epics/dungeon-rooms/story-001-seeded-rooms.md).
+  Drei normale Vorlagen plus Bossvorlage ergeben einen verbundenen Drei-Raum-Lauf
+  mit Seed, Generatorversion und stabilen IDs. Der Host überträgt die gewählte
+  Geometrie; Säulen blockieren Bewegung und beide Projektilarten. Gegner umgehen
+  Deckung, eine kleine Raumkarte zeigt Fortschritt und Boss. 4146 Generator-
+  und 22 Integrationsprüfungen sowie die bisherigen 21 Spielregeln bestehen.
+  Zwei echte Prozesse beenden alle drei identischen Layouts mit sechs Perks;
+  die Vierer-Lobby besteht weiterhin. Bild und genaue Prüfgrenzen stehen im
+  [Prüfbericht](qa/verification.md#raumgenerator-vom-25102026).
 
 - Phase 0 ist als lokale Entwicklungsgrundlage eingerichtet: portable Godot-
   Version geprüft, `Doctor` und Import-/Parseprüfung erfolgreich. Grafischer
@@ -74,9 +86,9 @@ angelegt; die folgenden Umsetzungsnachweise gelten für diesen Entwicklungsstand
   Acht ist ausschließlich eine spätere Erweiterungsoption; es gehört nicht zur
   aktuellen Abnahme und rechtfertigt kein höheres aktives Sitzungslimit.
 - Der kleine spielbare Entwicklungsstand umfasst drei Räume einschließlich Boss
-  sowie fünf einfache Perks. Ein vollständiges produktionsreifes Stockwerk,
-  zusätzliche Raumvorlagen und ausgearbeitete Perk-Kombinationen bleiben weitere
-  Arbeitspakete.
+  aus mehreren Vorlagen sowie fünf einfache Perks. Verzweigte Erkundung, ein
+  vollständiges produktionsreifes Stockwerk und ausgearbeitete Perk-Kombinationen
+  bleiben weitere Arbeitspakete.
 - Vorschlag: Windows-PC und Koop im gemeinsamen Raum zuerst. Keine Konten,
   Metaprogression, laufenden Spielbeitritte oder automatische Hostmigration im
   ersten Stand. Gamepad, weitere Plattformen und Persistenz anschließend bewerten.

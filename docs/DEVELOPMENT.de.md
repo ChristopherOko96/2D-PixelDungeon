@@ -12,7 +12,7 @@ PowerShell-Wrapper wie die folgenden Befehle.
 
 Das Repository in PowerShell öffnen. Alle folgenden Befehle werden im
 Repositoryverzeichnis ausgeführt. Der Branch für diese Arbeit heißt
-`codex/v2` im separaten Fork `Wugu7/2D-PixelDungeon-V2`; nicht auf `main` wechseln.
+`codex_v2` in `ChristopherOko96/2D-PixelDungeon`; nicht auf `main` wechseln.
 
 ```powershell
 ./scripts/Dev.ps1 Doctor
@@ -128,11 +128,20 @@ aus. `studio-tests/` testet Studio-Anweisungen, nicht das Dungeon-Spiel.
 
 ## Spielregeln und Netzwerk getrennt prüfen
 
+Der Raumgenerator ist seit 25.10.2026 integriert: drei aus Vorlagen gewählte
+Räume einschließlich Boss, blockierende Säulen, Gegnerwege und Raumkarte.
+[Datenformat und Grenzen](DUNGEON.de.md) sowie die
+[abgeschlossene Story](../production/epics/dungeon-rooms/story-001-seeded-rooms.md)
+beschreiben den Stand. Für einen reproduzierbaren Lauf kann Godot mit
+`-- --host --auto-start --seed 24680` gestartet werden.
+
 Die eingebaute `SceneTree`-Prüfsuite braucht kein zusätzliches Test-Addon:
 
 ```powershell
 $godot = '../tools/godot-4.7.2/Godot_v4.7.2-stable_win64_console.exe'
 & $godot --headless --path . --script res://tests/game_rules.gd
+& $godot --headless --path . --script res://tests/dungeon_generator_test.gd
+& $godot --headless --path . --script res://tests/dungeon_integration_test.gd
 ```
 
 Bei einem persönlichen Enginepfad `$godot` entsprechend setzen. Die Suite
@@ -148,6 +157,7 @@ Prozesse anschließend auf:
 ./tests/network_smoke.ps1 -Players 2
 ./tests/network_smoke.ps1 -Players 4
 ./tests/network_smoke.ps1 -Players 4 -DisconnectOrder reverse
+./tests/dungeon_network_smoke.ps1 -Seed 24680
 ```
 
 Bei einem eigenen Enginepfad zusätzlich `-GodotPath $godot` übergeben. Mit zwei
@@ -156,6 +166,9 @@ drei unabhängigen Clients. Ausgaben bleiben in
 `Logs/network-smoke/<eindeutiger-lauf>/`. Die Vier-Teilnehmer-Prüfung belegt weder
 einen vollständigen Vier-Spieler-Lauf noch Leistung oder LAN-/WAN-Verbindung.
 Ergebnisse tatsächlich ausgeführter Prüfungen stehen im folgenden Status.
+Der zusätzliche Dungeon-Smoke verlangt einen vollständigen Zwei-Prozess-Lauf
+mit drei identischen Raumkennungen, Vorlagen und Layout-Prüfsummen, allen
+Belohnungsphasen und Sieg auf beiden Seiten. Logs: `Logs/dungeon-network-smoke/`.
 
 ## Prüfstatus dieser Einrichtung
 
@@ -200,10 +213,13 @@ Trennen. Die folgenden ursprünglichen Nachweise bleiben als Verlauf erhalten.
   In diesem Zeitfenster erschien keine ausdrückliche Ablehnungsmeldung.
 - Vollständiger Vier-Spieler-Kampf unter künstlicher Latenz, zwei reale
   LAN-Rechner, WAN und Belastungsmessung: **noch ausstehend**.
-- Kleiner spielbarer Prototyp: drei Kampfräume einschließlich Boss, fünf einfache
-  datenbasierte Perks und gemeinsamer Raumwechsel. Neue Raumvorlagen, weitere
-  Pixel-Assets und Animationen, ausgearbeitete Perk-Kombinationen und ein produktionsreifes
-  Stockwerk bleiben weitere Arbeit.
+- Kleiner spielbarer Prototyp: drei Kampfräume aus drei normalen Vorlagen und
+  einer Bossvorlage, fünf einfache datenbasierte Perks, Raumkarte und gemeinsamer
+  Raumwechsel. Dungeon-Prüfung: 4146 Generator-/Geometrieprüfungen, 22
+  Integrationsprüfungen und 21 bestehende Spielregeln bestanden. Zwei Prozesse
+  beenden den Lauf mit drei übereinstimmenden Layouts und sechs persönlichen
+  Perks. Weitere Pixel-Assets, Animationen, ausgearbeitete Perk-Kombinationen
+  und ein produktionsreifes Stockwerk bleiben weitere Arbeit.
 - Prototypregel: Gefallene Spieler kehren am nächsten Raum mit 50 % ihres
   maximalen Lebens zurück; nur lebende Teilnehmer müssen bereit bestätigen.
   Dies ist noch keine abgestimmte Regel für die spätere Veröffentlichung.

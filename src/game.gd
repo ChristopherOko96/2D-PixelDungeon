@@ -4,8 +4,14 @@ extends Node2D
 const WORLD_SIZE := Vector2(896, 480)
 const WORLD_OFFSET := Vector2(32, 156)
 const PLAYER_COLORS := [Color("72dcc8"), Color("edb563"), Color("bc91de"), Color("ed8a91")]
+const Dungeon = preload("res://src/dungeon/dungeon_generator.gd")
 
 var balance: Dictionary = {}
+var dungeon_config: Dictionary = {}
+var floor_layouts: Array[Dictionary] = []
+var current_layout: Dictionary = {}
+var requested_seed := -1
+var last_layout_id := ""
 var state: Dictionary = {}
 var players: Dictionary = {}
 var commands: Dictionary = {}
@@ -37,6 +43,7 @@ var view: Node2D
 var ui: Control
 var phase_label: Label
 var party_label: Label
+var floor_map: Control
 var status_label: Label
 var session_label: Label
 var address_input: LineEdit
@@ -56,6 +63,12 @@ func _ready() -> void:
 		get_tree().quit(1)
 		return
 	balance = parsed
+	var room_data = JSON.parse_string(FileAccess.get_file_as_string("res://assets/data/dungeon_rooms.json"))
+	if not room_data is Dictionary or not Dungeon.validate_config(room_data).is_empty():
+		push_error("Missing or invalid assets/data/dungeon_rooms.json")
+		get_tree().quit(1)
+		return
+	dungeon_config = room_data
 	Engine.physics_ticks_per_second = 60
 	launched_at = Time.get_ticks_msec() / 1000.0
 	# Clients only talk to the host; membership comes from authoritative snapshots.
@@ -98,6 +111,8 @@ func _read_arguments() -> void:
 				if i + 1 < args.size(): auto_exit = maxf(0.0, args[i + 1].to_float())
 			"--smoke-role":
 				if i + 1 < args.size(): smoke_role = args[i + 1]
+			"--seed":
+				if i + 1 < args.size() and args[i + 1].is_valid_int(): requested_seed = maxi(0, args[i + 1].to_int())
 	if should_host:
 		_host_session()
 	elif not address.is_empty():
@@ -172,6 +187,9 @@ func _host_session() -> void:
 	packet_sequence = 0
 	received_sequence = -1
 	seen_snapshot = false
+	floor_layouts.clear()
+	current_layout.clear()
+	last_layout_id = ""
 	multiplayer.multiplayer_peer = peer
 	_add_player(1)
 	status_message = "Lobby offen · UDP %d · Host + bis zu %d Freunde. Der Host startet." % [port, int(balance.network.max_players) - 1]
@@ -196,6 +214,7 @@ func _join_session() -> void:
 	received_sequence = -1
 	seen_snapshot = false
 	state.clear()
+	last_layout_id = ""
 	multiplayer.multiplayer_peer = peer
 	status_message = "Verbinde mit %s:%d …" % [address, _port()]
 
@@ -226,6 +245,9 @@ func _leave_session(message: String = "Verbindung beendet.") -> void:
 	state.clear()
 	enemies.clear()
 	bullets.clear()
+	floor_layouts.clear()
+	current_layout.clear()
+	last_layout_id = ""
 	phase = "menu"
 	status_message = message
 	view.set_state({}, 0)
@@ -276,6 +298,15 @@ func _send_local_input() -> void:
 				nearest = target
 		aim = (nearest - position).normalized()
 		movement = aim if distance > 250.0 * 250.0 else -aim if distance < 150.0 * 150.0 else Vector2.ZERO
+		var layout: Dictionary = state.get("room_layout", {})
+		if not layout.is_empty():
+			# Test clients use the received geometry, just like the renderer. Their
+			# inputs still pass through the same authoritative simulation as keys.
+			if Dungeon.segment_blocked(position, nearest, float(balance.bullet.radius), layout):
+				var path := Dungeon.find_path(position, nearest, 12.0, layout)
+				movement = (path[0] - position).normalized() if not path.is_empty() else Vector2.ZERO
+			elif Dungeon.segment_blocked(position, position + movement * 32.0, 12.0, layout):
+				movement = Vector2.ZERO
 		fire = true
 	input_sequence += 1
 	if hosting: _accept_input(1, movement, aim, fire, input_sequence)
@@ -325,9 +356,16 @@ func _server_action(id: int, action: String, value: int) -> void:
 
 
 func _begin_run() -> void:
+	var seed_value := requested_seed if requested_seed >= 0 else randi_range(10000, 99999)
+	var generated := Dungeon.generate(seed_value, balance.rooms.enemy_counts.size(), dungeon_config)
+	if generated.is_empty():
+		status_message = "Dungeon konnte nicht erstellt werden. Raumdaten prüfen."
+		return
 	peer.refuse_new_connections = true
 	room = 1
-	run_seed = randi_range(10000, 99999)
+	run_seed = seed_value
+	floor_layouts = generated
+	last_layout_id = ""
 	var ids := players.keys()
 	players.clear()
 	for id in ids: _add_player(id)
@@ -337,6 +375,8 @@ func _begin_run() -> void:
 
 
 func _spawn_room() -> void:
+	if room < 1 or room > floor_layouts.size(): return
+	current_layout = floor_layouts[room - 1]
 	phase = "combat"
 	enemies.clear()
 	bullets.clear()
@@ -344,23 +384,21 @@ func _spawn_room() -> void:
 	var index := 0
 	for id in players:
 		var player: Dictionary = players[id]
-		player.pos = Vector2(150 + index * 52, 210 + (index % 2) * 50)
+		player.pos = Dungeon.spawn_for_player(index, current_layout)
 		player.ready = false
 		player.picked = false
 		player.shot_timer = 0.0
 		player.invulnerable = 1.0
 		if player.hp <= 0: player.hp = maxi(1, int(ceil(player.max_hp * 0.5)))
 		index += 1
-	var rng := RandomNumberGenerator.new()
-	rng.seed = run_seed + room * 997
 	var counts: Array = balance.rooms.enemy_counts
-	var boss_room := room == counts.size()
+	var boss_room: bool = current_layout.boss
 	var count := int(counts[room - 1])
 	for i in range(count):
 		var boss := boss_room and i == 0
 		var definition: Dictionary = balance.boss if boss else balance.enemy
 		var hp := int(definition.hp + maxi(0, players.size() - 1) * definition.hp_per_extra_player)
-		enemies.append({"pos": Vector2(rng.randf_range(560, 800), rng.randf_range(100, 390)), "hp": hp, "max_hp": hp, "boss": boss, "radius": float(definition.radius), "speed": float(definition.speed), "shot_timer": 1.0})
+		enemies.append({"pos": Dungeon.spawn_for_enemy(i, current_layout), "hp": hp, "max_hp": hp, "boss": boss, "radius": float(definition.radius), "speed": float(definition.speed), "shot_timer": 1.0, "nav_timer": 0.0, "nav_path": PackedVector2Array()})
 	print("ROOM_STARTED room=%d enemies=%d boss=%s" % [room, count, boss_room])
 
 
@@ -373,11 +411,12 @@ func _simulate_players(delta: float) -> void:
 		if player.hp <= 0: continue
 		var command: Dictionary = commands.get(id, {})
 		if command.is_empty() or now - command.time > float(balance.network.input_timeout): continue
-		player.pos += command.move * player.speed * delta
-		player.pos = player.pos.clamp(Vector2(32, 32), Vector2(864, 448))
+		player.pos = Dungeon.move_actor(player.pos, command.move * player.speed * delta, 12.0, current_layout)
 		if command.fire and player.shot_timer <= 0.0:
 			player.shot_timer = player.shot_interval
-			_add_bullet(player.pos + command.aim * 15.0, command.aim * float(balance.bullet.speed), id, player.damage)
+			var muzzle: Vector2 = player.pos + command.aim * 15.0
+			if not Dungeon.segment_blocked(player.pos, muzzle, float(balance.bullet.radius), current_layout):
+				_add_bullet(muzzle, command.aim * float(balance.bullet.speed), id, player.damage)
 
 
 func _add_bullet(position: Vector2, velocity: Vector2, owner: int, damage: float) -> void:
@@ -396,9 +435,18 @@ func _simulate_enemies(delta: float) -> void:
 				distance = candidate
 				target = id
 		if target < 0: continue
-		var direction: Vector2 = (players[target].pos - enemy.pos).normalized()
-		enemy.pos += direction * enemy.speed * delta
-		if enemy.pos.distance_to(players[target].pos) < enemy.radius + 12.0: _damage_player(target, int(balance.enemy.damage))
+		enemy.nav_timer = float(enemy.get("nav_timer", 0.0)) - delta
+		if enemy.nav_timer <= 0.0:
+			enemy.nav_path = Dungeon.find_path(enemy.pos, players[target].pos, enemy.radius, current_layout)
+			enemy.nav_timer = 0.3
+		var path: PackedVector2Array = enemy.get("nav_path", PackedVector2Array())
+		while not path.is_empty() and enemy.pos.distance_to(path[0]) < 4.0:
+			path.remove_at(0)
+		enemy.nav_path = path
+		var direction: Vector2 = (path[0] - enemy.pos).normalized() if not path.is_empty() else Vector2.ZERO
+		enemy.pos = Dungeon.move_actor(enemy.pos, direction * enemy.speed * delta, enemy.radius, current_layout)
+		if enemy.pos.distance_to(players[target].pos) < enemy.radius + 12.0 and not Dungeon.segment_blocked(enemy.pos, players[target].pos, 0.0, current_layout):
+			_damage_player(target, int(balance.enemy.damage))
 		if enemy.boss:
 			enemy.shot_timer -= delta
 			if enemy.shot_timer <= 0.0:
@@ -412,9 +460,10 @@ func _simulate_enemies(delta: float) -> void:
 func _simulate_bullets(delta: float) -> void:
 	for i in range(bullets.size() - 1, -1, -1):
 		var bullet: Dictionary = bullets[i]
+		var previous: Vector2 = bullet.pos
 		bullet.pos += bullet.velocity * delta
 		bullet.life -= delta
-		var removed: bool = bullet.life <= 0.0 or not Rect2(Vector2.ZERO, WORLD_SIZE).has_point(bullet.pos)
+		var removed: bool = bullet.life <= 0.0 or Dungeon.segment_blocked(previous, bullet.pos, float(balance.bullet.radius), current_layout)
 		if not removed and bullet.owner == 0:
 			for id in players:
 				if players[id].hp > 0 and bullet.pos.distance_to(players[id].pos) < 12.0 + float(balance.bullet.radius):
@@ -496,7 +545,11 @@ func _make_snapshot() -> Dictionary:
 	var visible_bullets: Array = []
 	for bullet in bullets: visible_bullets.append({"x": bullet.pos.x, "y": bullet.pos.y, "owner": bullet.owner})
 	packet_sequence += 1
-	return {"players": visible_players, "enemies": visible_enemies, "bullets": visible_bullets, "room": room, "phase": phase, "seed": run_seed, "seq": packet_sequence, "peer_count": players.size(), "perk_options": perk_options}
+	var map_rooms: Array[Dictionary] = []
+	for i in range(floor_layouts.size()):
+		var layout: Dictionary = floor_layouts[i]
+		map_rooms.append({"id": layout.id, "title": layout.title, "boss": layout.boss, "grid_x": layout.grid_x, "grid_y": layout.grid_y, "cleared": i < room - 1 or phase == "victory" or (i == room - 1 and phase == "reward")})
+	return {"players": visible_players, "enemies": visible_enemies, "bullets": visible_bullets, "room": room, "phase": phase, "seed": run_seed, "seq": packet_sequence, "peer_count": players.size(), "perk_options": perk_options, "room_layout": current_layout.duplicate(true), "floor_map": map_rooms, "generator_version": Dungeon.GENERATOR_VERSION}
 
 
 func _broadcast_state(reliable: bool) -> void:
@@ -540,6 +593,11 @@ func _apply_snapshot(snapshot: Dictionary) -> void:
 	state = snapshot
 	phase = snapshot.phase
 	room = snapshot.room
+	var layout: Dictionary = snapshot.get("room_layout", {})
+	if not layout.is_empty() and str(layout.id) != last_layout_id:
+		last_layout_id = layout.id
+		var signature := var_to_bytes(layout).hex_encode().sha256_text()
+		print("ROOM_LAYOUT id=%s template=%s version=%d signature=%s" % [layout.id, layout.template_id, layout.generator_version, signature])
 	if not seen_snapshot or phase != last_phase:
 		print("SNAPSHOT_RECEIVED phase=%s players=%d room=%d" % [phase, snapshot.players.size(), room])
 		seen_snapshot = true
@@ -565,6 +623,10 @@ func _build_ui() -> void:
 	party_label = _label("", Vector2(968, 219), Vector2(264, 140), 15, Color("c7cbda"))
 	party_label.add_theme_font_size_override("font_size", 13)
 	party_label.add_theme_constant_override("line_spacing", -2)
+	floor_map = preload("res://src/dungeon/dungeon_map.gd").new()
+	floor_map.position = Vector2(968, 312)
+	floor_map.size = Vector2(264, 40)
+	ui.add_child(floor_map)
 	address_input = LineEdit.new()
 	address_input.position = Vector2(968, 366)
 	address_input.size = Vector2(174, 36)
@@ -642,6 +704,8 @@ func _refresh_ui() -> void:
 	if phase == "connecting": session_label.text = "CLIENT · VERBINDET …"
 	var names := {"menu": "DIE LOBBY", "connecting": "VERBINDEN …", "lobby": "EURE GRUPPE", "combat": "RAUM %02d / 03" % room, "reward": "WÄHLE DEINEN PERK", "dead": "DIE TIEFE SIEGT", "victory": "BOSS BESIEGT"}
 	phase_label.text = names.get(phase, phase.to_upper())
+	floor_map.visible = active and not state.get("floor_map", []).is_empty()
+	floor_map.set_floor(state.get("floor_map", []), str(state.get("room_layout", {}).get("id", "")))
 	party_label.text = ("Ein kurzer Dungeon-Lauf.\nDrei Räume. Fünf mögliche Perks.\nBis zu %d separate Clients.\n\nDirekte IP benötigt erreichbaren\nUDP-Port; kein Relay enthalten." % maximum_players) if not active else ""
 	var index := 1
 	for id in visible_players:
@@ -651,7 +715,7 @@ func _refresh_ui() -> void:
 		party_label.text += "SPIELER %02d%s  ·  %s\n" % [index, suffix, condition]
 		index += 1
 	status_label.text = status_message
-	if phase == "combat": status_label.text = "Raum %d · Seed %d · Besiegt alle Gegner und wählt danach euren nächsten Perk." % [room, state.get("seed", 0)]
+	if phase == "combat": status_label.text = "Raum %d · %s · Seed %d · Besiegt alle Gegner." % [room, state.get("room_layout", {}).get("title", ""), state.get("seed", 0)]
 	elif phase == "reward": status_label.text = "Pro lebendem Spieler genau ein Perk. Danach müssen alle lebenden Spieler bereit sein."
 	elif phase == "victory": status_label.text = "Geschafft. Ihr habt alle drei Räume und den Boss besiegt. Der Host kann einen neuen Lauf starten."
 	elif phase == "dead": status_label.text = "Alle Wanderer sind gefallen. Der Host kann den Lauf mit einem neuen Seed neu starten."

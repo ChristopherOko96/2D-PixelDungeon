@@ -73,7 +73,10 @@ Spieler und Umgebung gehören in einen späteren Polishing-Schritt.
   nach gemeinsamer Bereitschaft. Kein getrenntes Erkunden im ersten MVP.
 - **Verbindungsvorschlag:** Erst localhost/LAN, anschließend Internet-Verbindung
   über UDP-Portfreigabe, VPN oder einen separat zu untersuchenden Relay-Dienst.
-- Diese Regeln und Netzwerkfunktionen sind geplant und noch nicht implementiert.
+- Implementierter Prototyp: Host mit bis zu drei Clients, persönliche
+  Perkauswahl, gemeinsames Ready-Gate und ein aus Vorlagen erzeugter
+  Drei-Raum-Lauf. Die genannten Spielregeln bleiben Produktvorschläge;
+  Nachweise und offene Punkte stehen im Entwicklungsplan.
 
 Ausführliche Bestandsaufnahme: [Projektanalyse](../docs/PROJECT-REVIEW.de.md).
 Umsetzung und Abnahmekriterien: [Entwicklungsplan](../production/development-plan.md).
