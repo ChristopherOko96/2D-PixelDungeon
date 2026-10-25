@@ -3,7 +3,7 @@
 | Field | Value |
 |-------|-------|
 | **Engine Version** | Unity 6.3 LTS |
-| **Installed at pin time** | NOT DETERMINED (probed 2026-10-24) — no editor under `C:/Program Files/Unity/Hub/Editor/`, none found under `D:/Burka`; install location unknown to the user. Re-run `/setup-engine` or set `engine.path` via `/settings` once known. |
+| **Installed at pin time** | 6000.3.26f1 (de8167e7440c) at `D:/Unity/Editors/6000.3.26f1/Editor/Unity.exe`, verified 2026-10-25 against `ProjectSettings/ProjectVersion.txt` and a clean batch import (0 compiler errors). Matches the pin: no version gap. |
 | **Release Date** | December 2025 |
 | **Latest editor on the pinned line** | 6000.3.26f1 (Oct 8, 2026) |
 | **Project Pinned** | 2026-02-13 |

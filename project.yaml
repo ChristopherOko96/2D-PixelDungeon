@@ -39,7 +39,7 @@ engine:
   language: "C#"
   rendering: "URP (2D Renderer)"   # skill table default is URP; 2D Renderer matches the 2D brief
   physics: "Unity Physics 2D"      # skill table default is PhysX (3D); this project is 2D
-  # TODO: engine.path not set — Unity editor location unknown; set it via /settings
+  path: "D:/Unity/Editors/6000.3.26f1/Editor/Unity.exe"
 
 specialists:
   code: "unity-specialist"
@@ -57,10 +57,10 @@ naming:
   scenes: PascalCase
 
 commands:
-  # TODO: build, test and smoke need the Unity editor's full path, which is unknown.
-  # Set them via /settings once the editor is installed. Build target: Windows 64-bit
-  # (-buildTarget Win64 -buildWindows64Player Builds/Win64/BasementRun.exe).
-  build: "[TO BE CONFIGURED]"
-  test: "[TO BE CONFIGURED]"
+  # build: Windows 64-bit only. -buildTarget is left out on purpose — its value is not
+  # sourceable from docs/engine-reference/unity/. A build needs a scene in Build Settings.
+  build: '"D:/Unity/Editors/6000.3.26f1/Editor/Unity.exe" -batchmode -quit -projectPath . -buildWindows64Player Builds/Win64/BasementRun.exe'
+  # test: EditMode only; a results file with testcasecount="0" means no test was compiled.
+  test: '"D:/Unity/Editors/6000.3.26f1/Editor/Unity.exe" -batchmode -runTests -projectPath . -testPlatform EditMode -testResults test-results/editmode.xml'
   run: "Builds/Win64/BasementRun.exe -screen-width 1280 -screen-height 720 -screen-fullscreen 0"
-  smoke: "[TO BE CONFIGURED]"
+  smoke: '"D:/Unity/Editors/6000.3.26f1/Editor/Unity.exe" -batchmode -quit -projectPath . -logFile -'
