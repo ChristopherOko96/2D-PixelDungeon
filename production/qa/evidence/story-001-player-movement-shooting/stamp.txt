@@ -1,0 +1,7 @@
+Reviewed-Content-Hash: Assets/Scripts/Player/PlayerController.cs b36cc6adaca5c3c62b68bf6ff70e189d7141d6be
+Reviewed-Content-Hash: Assets/Scripts/Player/PlayerStats.cs 2ab9236a581cd50c39ec18fc6189dc9a0a4a358e
+Reviewed-Content-Hash: Assets/Scripts/Combat/Projectile.cs 9ab23546829a8d2bb05be289e2b7dfcd989b1907
+Reviewed-Content-Hash: Assets/Editor/TestRoomBuilder.cs 38009715edf74f06df5943e8d56e8cd9a4897d94
+Reviewed-Content-Hash: Assets/Scenes/TestRoom.unity c8288f501d66c86d463d976a05e64fa5d495c4fa
+Reviewed-Content-Hash: Assets/Data/PlayerStats.asset 5dd142c731b9199b6f9f9abcbf134049bf067832
+Reviewed-Content-Hash: Assets/Prefabs/Projectile.prefab f0902bb60bbaa05780a3aa37d52bb5341e1db584
