@@ -1,0 +1,12 @@
+{
+  "engine": "Godot",
+  "editorVersion": "4.7.2",
+  "versionPrefix": "4.7.2.stable",
+  "edition": "standard",
+  "language": "GDScript",
+  "renderer": "gl_compatibility",
+  "entryScene": "res://src/main.tscn",
+  "networkTransport": "ENet",
+  "defaultPort": 7777,
+  "maximumPlayers": 4
+}

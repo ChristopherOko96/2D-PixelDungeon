@@ -10,10 +10,11 @@
 
 ## Engine & Language
 
-- **Engine**: Unity 6.3 LTS
-- **Language**: C#
-- **Rendering**: Universal Render Pipeline (2D Renderer)
-- **Physics**: Unity Physics 2D
+- **Engine**: Godot 4.7.2 (explicit user override, 2026-10-24)
+- **Language**: GDScript
+- **Rendering**: Compatibility (OpenGL), 2D pixel art
+- **Physics**: Godot Physics 2D
+- **Networking**: Godot high-level multiplayer with ENet; host authoritative
 
 ## Input & Platform
 
@@ -30,11 +31,11 @@
 ## Naming Conventions
 
 - **Classes**: PascalCase (e.g., `PlayerController`)
-- **Variables**: Public fields/properties PascalCase (e.g., `MoveSpeed`); private fields _camelCase (e.g., `_moveSpeed`); methods PascalCase (e.g., `TakeDamage()`)
-- **Signals/Events**: PascalCase C# events (e.g., `HealthChanged`)
-- **Files**: PascalCase matching class (e.g., `PlayerController.cs`)
+- **Variables**: snake_case; private fields/functions may use an underscore prefix
+- **Signals/Events**: snake_case (e.g., `health_changed`)
+- **Files**: snake_case (e.g., `player_controller.gd`)
 - **Scenes/Prefabs**: PascalCase (e.g., `Player.prefab`)
-- **Constants**: PascalCase or UPPER_SNAKE_CASE
+- **Constants**: UPPER_SNAKE_CASE
 
 ## Performance Budgets
 
@@ -45,7 +46,8 @@
 
 ## Testing
 
-- **Framework**: NUnit (Unity Test Framework)
+- **Framework**: Godot headless import/parse plus separate-process ENet smoke tests;
+  a gameplay unit-test addon is not configured yet
 - **Minimum Coverage**: [TO BE CONFIGURED]
 - **Required Tests**: Balance formulas, gameplay systems, networking (if applicable)
 
@@ -70,12 +72,13 @@
 <!-- Read by /code-review, /architecture-decision, /architecture-review, and team skills -->
 <!-- to know which specialist to spawn for engine-specific validation. -->
 
-- **Primary**: unity-specialist
-- **Language/Code Specialist**: unity-specialist (C# review — primary covers it)
-- **Shader Specialist**: unity-shader-specialist (Shader Graph, HLSL, URP/HDRP materials)
-- **UI Specialist**: unity-ui-specialist (UI Toolkit UXML/USS, UGUI Canvas, runtime UI)
-- **Additional Specialists**: unity-dots-specialist (ECS, Jobs system, Burst compiler), unity-addressables-specialist (asset loading, memory management, content catalogs)
-- **Routing Notes**: Invoke primary for architecture and general C# code review. Invoke DOTS specialist for any ECS/Jobs/Burst code. Invoke shader specialist for rendering and visual effects. Invoke UI specialist for all interface implementation. Invoke Addressables specialist for asset management systems.
+- **Primary**: godot-specialist
+- **Language/Code Specialist**: godot-gdscript-specialist
+- **Shader Specialist**: godot-shader-specialist
+- **UI Specialist**: godot-specialist (Control nodes and themes)
+- **Additional Specialists**: None required for the initial GDScript slice
+- **Routing Notes**: Use the Godot references. Unity and Unreal references remain
+  historical studio resources and do not define the current engine.
 
 ### File Extension Routing
 
@@ -84,9 +87,8 @@
 
 | File Extension / Type | Specialist to Spawn |
 |-----------------------|---------------------|
-| Game code (.cs files) | unity-specialist |
-| Shader / material files (.shader, .shadergraph, .mat) | unity-shader-specialist |
-| UI / screen files (.uxml, .uss, Canvas prefabs) | unity-ui-specialist |
-| Scene / prefab / level files (.unity, .prefab) | unity-specialist |
-| Native extension / plugin files (.dll, native plugins) | unity-specialist |
-| General architecture review | unity-specialist |
+| Game code (.gd files) | godot-gdscript-specialist |
+| Shader / material files (.gdshader, .tres) | godot-shader-specialist |
+| UI / scene files (.tscn, Control nodes) | godot-specialist |
+| Native extension / plugin files | godot-gdextension-specialist when introduced |
+| General architecture review | godot-specialist |

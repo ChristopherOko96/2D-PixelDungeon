@@ -622,6 +622,7 @@ fi
 # review-scope.sh; keep the three lists the same. Only top-level files count as
 # system GDDs: archive/ and reviews/ copies under design/gdd/ are not checked.
 DESIGN_FILES=$(echo "$STAGED" | grep -E '^design/gdd/[^/]+\.md$' \
+  | grep -vE '/(AGENTS(\.override)?|CLAUDE(\.local)?)\.md$' \
   | grep -vE '/(game-concept|systems-index|game-pillars|gdd-cross-review-[^/]*|gameplay-tags|fixture-swap-ledger|entity-registry|sound-bible)\.md$')
 if [ -n "$DESIGN_FILES" ]; then
     WORKFLOW="standard"

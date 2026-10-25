@@ -67,6 +67,8 @@ dist/
 # catches it. Fresh clones hit this trap reliably.
 # Keep this un-ignore, or run `godot --headless --import` once after cloning.
 !**/.godot/global_script_class_cache.cfg
+# This project regenerates its root cache through scripts/Dev.ps1 Check.
+/.godot/
 *.translation
 export_presets.cfg
 # Uncomment if using Godot:
@@ -138,6 +140,7 @@ node_modules/
 .env
 .env.local
 .env.*.local
+scripts/godot.local.json
 *.pem
 *.key
 credentials.json

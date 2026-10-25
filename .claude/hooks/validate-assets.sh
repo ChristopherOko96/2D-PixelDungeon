@@ -91,6 +91,10 @@ case "$REL_PATH" in
 esac
 
 FILENAME=$(basename "$REL_PATH")
+# Repository instructions are scaffolding, not game assets.
+case "$FILENAME" in
+    AGENTS.md|AGENTS.override.md|CLAUDE.md|CLAUDE.local.md) exit 0 ;;
+esac
 WARNINGS=""   # Style/convention issues -- exit 0 with advisory message
 ERRORS=""     # Build-breaking issues -- exit 2 so Claude hears about it
 

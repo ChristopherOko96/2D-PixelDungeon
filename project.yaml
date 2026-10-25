@@ -34,33 +34,35 @@ modes:
   automation: guided
 
 engine:
-  name: "Unity"
-  version: "6.3 LTS"
-  language: "C#"
-  rendering: "URP (2D Renderer)"   # skill table default is URP; 2D Renderer matches the 2D brief
-  physics: "Unity Physics 2D"      # skill table default is PhysX (3D); this project is 2D
-  # TODO: engine.path not set — Unity editor location unknown; set it via /settings
+  name: "Godot"
+  version: "4.7.2"
+  language: "GDScript"
+  rendering: "Compatibility"
+  physics: "Godot Physics 2D"
+  # Engine changed from Unity by explicit user instruction on 2026-10-24.
+  # Portable installation is resolved by scripts/Dev.ps1; path stays local.
+
+platform:
+  multiplayer: true
+  online: true
 
 specialists:
-  code: "unity-specialist"
-  shader: "unity-shader-specialist"
-  ui: "unity-ui-specialist"
-  additional: ["unity-dots-specialist", "unity-addressables-specialist"]
+  code: "godot-gdscript-specialist"
+  shader: "godot-shader-specialist"
+  ui: "godot-specialist"
+  additional: []
 
 naming:
   classes: PascalCase
-  variables: camelCase
-  constants: SCREAMING_SNAKE   # UNVERIFIED — not sourceable from
-                               # docs/engine-reference/unity/; confirm before relying on it
-  signals: PascalCase On<Event>
-  files: PascalCase
-  scenes: PascalCase
+  variables: snake_case
+  constants: SCREAMING_SNAKE
+  signals: snake_case
+  files: snake_case
+  scenes: snake_case
 
 commands:
-  # TODO: build, test and smoke need the Unity editor's full path, which is unknown.
-  # Set them via /settings once the editor is installed. Build target: Windows 64-bit
-  # (-buildTarget Win64 -buildWindows64Player Builds/Win64/BasementRun.exe).
-  build: "[TO BE CONFIGURED]"
-  test: "[TO BE CONFIGURED]"
-  run: "Builds/Win64/BasementRun.exe -screen-width 1280 -screen-height 720 -screen-fullscreen 0"
-  smoke: "[TO BE CONFIGURED]"
+  # Export builds need matching export templates; no unverified build command.
+  build: "[TO BE CONFIGURED — install Godot export templates first]"
+  test: "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/Dev.ps1 Check"
+  run: "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/Dev.ps1 Run"
+  smoke: "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/Dev.ps1 Check"

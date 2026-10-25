@@ -5,11 +5,11 @@ Each agent owns a specific domain, enforcing separation of concerns and quality.
 
 ## Technology Stack
 
-- **Engine**: Unity 6.3 LTS
-- **Language**: C#
+- **Engine**: Godot 4.7.2 (explicit user change, 2026-10-24)
+- **Language**: GDScript
 - **Version Control**: Git with trunk-based development
-- **Build System**: Unity Build Pipeline
-- **Asset Pipeline**: Unity Asset Import Pipeline + Addressables
+- **Build System**: Godot export pipeline (export templates required)
+- **Asset Pipeline**: Godot import pipeline
 
 > **Note**: Engine-specialist agents exist for Godot, Unity, and Unreal with
 > dedicated sub-specialists. Use the set matching your engine.
@@ -26,7 +26,7 @@ Each agent owns a specific domain, enforcing separation of concerns and quality.
      session. It defaults to Godot (the template's example engine); skills that
      need the pinned version read docs/engine-reference/<engine>/VERSION.md on
      demand regardless of this import. -->
-@docs/engine-reference/unity/VERSION.md
+@docs/engine-reference/godot/VERSION.md
 
 
 ## Technical Preferences

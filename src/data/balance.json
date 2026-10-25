@@ -1,0 +1,15 @@
+{
+  "network": {"port": 7777, "max_players": 4, "input_hz": 20, "snapshot_hz": 20, "input_timeout": 0.3},
+  "player": {"hp": 8, "speed": 190, "damage": 2, "shot_interval": 0.2, "invulnerability": 0.85},
+  "bullet": {"speed": 600, "lifetime": 1.2, "radius": 5, "max_count": 48},
+  "enemy": {"hp": 8, "hp_per_extra_player": 3, "speed": 55, "radius": 13, "damage": 1},
+  "boss": {"hp": 70, "hp_per_extra_player": 24, "speed": 35, "radius": 24, "shot_interval": 1.8, "bullet_speed": 145, "bullet_count": 10},
+  "rooms": {"enemy_counts": [3, 5, 1]},
+  "perks": [
+    {"id": "ember", "name": "GLUTKERN", "description": "+1 Projektilschaden", "stat": "damage", "amount": 1},
+    {"id": "shadow", "name": "SCHATTENSCHRITT", "description": "+25 Bewegungstempo", "stat": "speed", "amount": 25},
+    {"id": "heart", "name": "BLUTHERZ", "description": "+2 maximale LP · heilt 2 LP", "stat": "max_hp", "amount": 2},
+    {"id": "quick", "name": "SCHNELLFEUER", "description": "15 % kürzere Schusspause", "stat": "shot_interval", "amount": 0.85},
+    {"id": "mend", "name": "MONDTAU", "description": "Heilt bis zu 4 LP", "stat": "heal", "amount": 4}
+  ]
+}

@@ -1,3 +1,46 @@
+# Basement Run / Pixel Dungeon V2 (Godot)
+
+Diese V2-Entwicklung liegt im separaten Fork
+[Wugu7/2D-PixelDungeon-V2](https://github.com/Wugu7/2D-PixelDungeon-V2)
+auf dem Branch [`codex/v2`](https://github.com/Wugu7/2D-PixelDungeon-V2/tree/codex/v2).
+Das [Original von ChristopherOko96](https://github.com/ChristopherOko96/2D-PixelDungeon)
+und dessen `main` bleiben eine getrennte Entwicklungslinie.
+V2 bezeichnet diesen Entwicklungsstand, noch keine fertige 2.0-Veröffentlichung.
+
+Godot-Projekt für einen 2D-Pixel-Dungeon-Crawler nach dem Vorbild von The Binding
+of Isaac mit Einflüssen von Vampire Survivors. Aktuelles Limit: **vier Spieler**
+in getrennten Clients, mit verbindlichem **32×32-Pixel-Art-Raster**. Das Spiel befindet
+sich am Anfang der Entwicklung. Godot 4.7.2 und GDScript ersetzen auf ausdrücklichen
+Nutzerwunsch die ursprüngliche Unity-Konfiguration. Der Entwicklungsprototyp
+ist die Grundlage für die geplanten Dungeon- und Multiplayer-Systeme.
+
+- [Was bisher konkret geplant war](docs/PROJECT-REVIEW.de.md)
+- [Entwicklungsumgebung und Befehle](docs/DEVELOPMENT.de.md)
+- [Entwicklungsplan mit Abnahmekriterien](production/development-plan.md)
+- [Aktueller Spielbrief](design/game-brief.md)
+- [Inventar der 568 ursprünglichen Markdown-Dateien](docs/MARKDOWN-INVENTORY.md)
+- [V2-Fork, Branches und enthaltene Workflows](docs/V2-PUBLISH.de.md)
+
+## Codex-Studio
+
+Die projektlokale Anbindung aus
+[chuanglibs/Claude-Code-Game-Studios-Codex](https://github.com/chuanglibs/Claude-Code-Game-Studios-Codex)
+ist für unsere **74 Workflows und 49 Rollen** angepasst. `Codex-Studio.cmd`
+startet Codex im Projektordner; `scripts/Studio.ps1 Check` prüft die Anbindung.
+Im Codex-Chat führt `$studio-help` zu den Workflows für das bestehende Spiel.
+
+[Einrichtung und Weiterarbeiten](docs/codex/README.md) ·
+[Prüfbericht](docs/codex/SETUP-REPORT.de.md) · [中文说明](README.zh-CN.md)
+
+Godot, die Vier-Spieler-Grenze und das 32×32-Raster bleiben gesetzt. Die
+Codex-Dateien ergänzen die neueren gemeinsamen Quellen dieses Projekts.
+
+Die folgende Dokumentation gehört zum übernommenen **Claude Code Game Studios**
+Framework. Dessen Rollen, Vorlagen und Tests beschreiben Werkzeuge für die
+Entwicklung und keine bereits vorhandenen Spielfunktionen.
+
+---
+
 <p align="center">
   <h1 align="center">Claude Code Game Studios</h1>
   <p align="center">

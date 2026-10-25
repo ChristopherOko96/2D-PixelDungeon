@@ -204,8 +204,8 @@ fi
 # Only the GDDs at the top of design/gdd/ count, as in the commit check: copies
 # in a subfolder such as archive/ are not the project's design.
 if [ -d "design/gdd" ]; then
-  DESIGN_FILES=$(find design/gdd -maxdepth 1 -type f -name "*.md" 2>/dev/null | wc -l)
-  SUB_DESIGN_FILES=$(find design/gdd -mindepth 2 -type f -name "*.md" 2>/dev/null | wc -l)
+  DESIGN_FILES=$(find design/gdd -maxdepth 1 -type f -name "*.md" ! -name "AGENTS.md" ! -name "AGENTS.override.md" ! -name "CLAUDE.md" ! -name "CLAUDE.local.md" 2>/dev/null | wc -l)
+  SUB_DESIGN_FILES=$(find design/gdd -mindepth 2 -type f -name "*.md" ! -name "AGENTS.md" ! -name "AGENTS.override.md" ! -name "CLAUDE.md" ! -name "CLAUDE.local.md" 2>/dev/null | wc -l)
 else
   DESIGN_FILES=0
   SUB_DESIGN_FILES=0
@@ -251,12 +251,17 @@ if [ -d "prototypes" ]; then
 fi
 
 # --- Check 3: Core systems without architecture docs ---
-if [ "$DOC_CHECKS" = true ] && [ -n "$CODE_ROOT" ] && { [ -d "$CODE_ROOT/core" ] || [ -d "$CODE_ROOT/engine" ]; }; then
+# An instruction-only directory does not establish an implemented system.
+CORE_FILES=""
+if [ "$DOC_CHECKS" = true ] && [ -n "$CODE_ROOT" ]; then
+  CORE_FILES=$(find "$CODE_ROOT/core" "$CODE_ROOT/engine" -type f ! -name "AGENTS.md" ! -name "AGENTS.override.md" ! -name "CLAUDE.md" ! -name "CLAUDE.local.md" 2>/dev/null | head -1)
+fi
+if [ -n "$CORE_FILES" ]; then
   if [ ! -d "docs/architecture" ]; then
     echo "⚠️  GAP: Core engine/systems exist but no docs/architecture/ directory"
     echo "    Suggested action: Create docs/architecture/ and run /architecture-decision"
   else
-    ADR_COUNT=$(find docs/architecture -type f -name "*.md" 2>/dev/null | wc -l)
+    ADR_COUNT=$(find docs/architecture -type f -name "*.md" ! -name "AGENTS.md" ! -name "AGENTS.override.md" ! -name "CLAUDE.md" ! -name "CLAUDE.local.md" 2>/dev/null | wc -l)
     ADR_COUNT=$(echo "$ADR_COUNT" | tr -d ' ')
 
     if [ "$ADR_COUNT" -lt 3 ]; then
@@ -275,7 +280,7 @@ if [ "$DOC_CHECKS" = true ] && [ -n "$CODE_ROOT" ] && [ -d "$CODE_ROOT/gameplay"
     while IFS= read -r system_dir; do
       system_dir=$(echo "$system_dir" | sed 's|\\|/|g')
       system_name=$(basename "$system_dir")
-      file_count=$(find "$system_dir" -type f 2>/dev/null | wc -l)
+      file_count=$(find "$system_dir" -type f ! -name "AGENTS.md" ! -name "AGENTS.override.md" ! -name "CLAUDE.md" ! -name "CLAUDE.local.md" 2>/dev/null | wc -l)
       file_count=$(echo "$file_count" | tr -d ' ')
 
       # If system has 5+ files, check for corresponding design doc
