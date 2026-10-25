@@ -1,12 +1,12 @@
 # Story 002: Enemy with simple AI, hearts, damage and death
 
 > **Epic**: basement-run
-> **Status**: Ready
+> **Status**: In Progress
 > **Layer**: N/A (minimal)
 > **Type**: Logic
 > **Estimate**: M
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: —
+> **Last Updated**: 2026-10-25
 
 ## Context
 
@@ -53,11 +53,21 @@
 ## Files
 
 - `Assets/Scripts/Combat/Health.cs`
+- `Assets/Scripts/Combat/IDamageable.cs`
+- `Assets/Scripts/Combat/Projectile.cs`
+- `Assets/Scripts/Player/PlayerHealth.cs`
+- `Assets/Scripts/Player/PlayerStats.cs`
+- `Assets/Scripts/Player/PlayerController.cs`
 - `Assets/Scripts/Enemies/ChaserEnemy.cs`
 - `Assets/Scripts/Enemies/EnemyStats.cs`
 - `Assets/Scripts/UI/HeartsHud.cs`
 - `Assets/Scripts/Core/RunController.cs`
-- `Assets/Tests/EditMode/HealthTests.cs`
+- `Assets/Scripts/Visual/SpriteFrameAnimator.cs`
+- `Assets/Editor/TestRoomBuilder.cs`
+- `Assets/Scenes/TestRoom.unity`
+- `Assets/Data/GoblinStats.asset`
+- `Assets/Prefabs/Goblin.prefab`
+- `Assets/Art/Sprites/0x72/LICENSE-NOTE.md`
 
 ---
 

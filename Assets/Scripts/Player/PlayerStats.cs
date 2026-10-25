@@ -21,4 +21,13 @@ public class PlayerStats : ScriptableObject
 
     /// <summary>Stick deflection below which the gamepad is treated as idle.</summary>
     [Range(0f, 0.9f)] public float StickDeadzone = 0.25f;
+
+    /// <summary>Hearts at the start of a run. Damage counts in half hearts.</summary>
+    [Min(1)] public int MaxHearts = 3;
+
+    /// <summary>Seconds of invulnerability after taking a hit.</summary>
+    [Min(0f)] public float InvulnerabilitySeconds = 1f;
+
+    /// <summary>Damage one projectile deals to an enemy.</summary>
+    [Min(1)] public int ShotDamage = 1;
 }

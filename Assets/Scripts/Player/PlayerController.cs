@@ -11,6 +11,7 @@ public class PlayerController : MonoBehaviour
 {
     [SerializeField] private PlayerStats _stats;
     [SerializeField] private Projectile _projectilePrefab;
+    [SerializeField] private SpriteFrameAnimator _animator;
 
     private Rigidbody2D _body;
     private Camera _camera;
@@ -28,10 +29,17 @@ public class PlayerController : MonoBehaviour
     private void Update()
     {
         _move = ReadMove();
-        if (TryReadAim(out Vector2 aim) && Time.time >= _nextShotTime)
+        bool aiming = TryReadAim(out Vector2 aim);
+        if (aiming && Time.time >= _nextShotTime)
         {
             Shoot(aim);
             _nextShotTime = Time.time + 1f / _stats.FireRate;
+        }
+
+        if (_animator != null)
+        {
+            _animator.Running = _move != Vector2.zero;
+            _animator.Face(aiming ? aim.x : _move.x);
         }
     }
 
@@ -99,6 +107,6 @@ public class PlayerController : MonoBehaviour
     private void Shoot(Vector2 direction)
     {
         Projectile shot = Instantiate(_projectilePrefab, _body.position, Quaternion.identity);
-        shot.Launch(direction, _stats.ProjectileSpeed, _stats.ProjectileLifetime, gameObject);
+        shot.Launch(direction, _stats.ProjectileSpeed, _stats.ProjectileLifetime, _stats.ShotDamage, gameObject);
     }
 }
