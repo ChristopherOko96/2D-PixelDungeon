@@ -1,0 +1,110 @@
+{
+ "g_cutthroat": {
+  "idle": 4,
+  "walk": 4,
+  "windup": 2,
+  "strike": 2
+ },
+ "g_spearman": {
+  "idle": 4,
+  "walk": 4,
+  "windup": 2,
+  "strike": 2
+ },
+ "g_archer": {
+  "idle": 4,
+  "walk": 4,
+  "windup": 2,
+  "strike": 2
+ },
+ "g_shieldbearer": {
+  "idle": 4,
+  "walk": 4,
+  "windup": 2,
+  "strike": 2
+ },
+ "g_bomber": {
+  "idle": 4,
+  "walk": 4,
+  "windup": 2,
+  "strike": 2
+ },
+ "g_trapper": {
+  "idle": 4,
+  "walk": 4,
+  "windup": 2,
+  "strike": 2
+ },
+ "g_shaman": {
+  "idle": 4,
+  "walk": 4,
+  "windup": 2,
+  "strike": 2
+ },
+ "g_captain": {
+  "idle": 4,
+  "walk": 4,
+  "windup": 2,
+  "strike": 2
+ },
+ "o_brute": {
+  "idle": 4,
+  "walk": 4,
+  "windup": 2,
+  "strike": 2
+ },
+ "o_warlord": {
+  "idle": 4,
+  "walk": 4,
+  "windup": 2,
+  "strike": 2
+ },
+ "g_skirmisher": {
+  "idle": 4,
+  "walk": 4,
+  "windup": 2,
+  "strike": 2
+ },
+ "g_hunter": {
+  "idle": 4,
+  "walk": 4,
+  "windup": 2,
+  "strike": 2
+ },
+ "g_phalanx": {
+  "idle": 4,
+  "walk": 4,
+  "windup": 2,
+  "strike": 2
+ },
+ "g_flailer": {
+  "idle": 4,
+  "walk": 4,
+  "windup": 2,
+  "strike": 2
+ },
+ "o_bonecaller": {
+  "idle": 4,
+  "walk": 4,
+  "windup": 2,
+  "strike": 2
+ },
+ "o_berserker": {
+  "idle": 4,
+  "walk": 4,
+  "windup": 2,
+  "strike": 2
+ },
+ "o_chieftain": {
+  "idle": 4,
+  "walk": 4,
+  "windup": 2,
+  "strike": 2
+ },
+ "o_blackknight": {
+  "idle": 4,
+  "walk": 4,
+  "windup": 2,
+  "strike": 2
+ }
+}

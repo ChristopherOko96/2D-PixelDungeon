@@ -144,6 +144,8 @@ scripts/godot.local.json
 *.pem
 *.key
 credentials.json
+# Firebase project keys for this machine (see docs/firebase-setup.md).
+firebase.local.json
 secrets.json
 
 # === Large Binary Assets (use Git LFS instead) ===

@@ -1,0 +1,170 @@
+{
+ "cleave": {
+  "frames": 12,
+  "size": [
+   146,
+   91
+  ],
+  "anchored": true
+ },
+ "idle": {
+  "frames": 5,
+  "size": [
+   104,
+   80
+  ],
+  "anchored": true
+ },
+ "boulder": {
+  "frames": 7,
+  "size": [
+   48,
+   49
+  ],
+  "anchored": false
+ },
+ "channel": {
+  "frames": 10,
+  "size": [
+   122,
+   93
+  ],
+  "anchored": true
+ },
+ "quake": {
+  "frames": 7,
+  "size": [
+   146,
+   91
+  ],
+  "anchored": true
+ },
+ "quake_burst": {
+  "frames": 1,
+  "size": [
+   152,
+   53
+  ],
+  "anchored": false
+ },
+ "barrage": {
+  "frames": 10,
+  "size": [
+   158,
+   86
+  ],
+  "anchored": true
+ },
+ "rock": {
+  "frames": 2,
+  "size": [
+   99,
+   51
+  ],
+  "anchored": false
+ },
+ "rage": {
+  "frames": 6,
+  "size": [
+   144,
+   93
+  ],
+  "anchored": true
+ },
+ "thorns": {
+  "frames": 6,
+  "size": [
+   122,
+   70
+  ],
+  "anchored": false
+ },
+ "throw": {
+  "frames": 1,
+  "size": [
+   125,
+   66
+  ],
+  "anchored": true
+ },
+ "unarmed": {
+  "frames": 1,
+  "size": [
+   129,
+   61
+  ],
+  "anchored": true
+ },
+ "catch": {
+  "frames": 1,
+  "size": [
+   139,
+   66
+  ],
+  "anchored": true
+ },
+ "walk": {
+  "frames": 7,
+  "size": [
+   150,
+   70
+  ],
+  "anchored": true
+ },
+ "death": {
+  "frames": 9,
+  "size": [
+   135,
+   82
+  ],
+  "anchored": true
+ },
+ "spike": {
+  "frames": 1,
+  "size": [
+   51,
+   53
+  ],
+  "anchored": false
+ },
+ "slash": {
+  "frames": 1,
+  "size": [
+   59,
+   48
+  ],
+  "anchored": false
+ },
+ "axe": {
+  "frames": 2,
+  "size": [
+   87,
+   55
+  ],
+  "anchored": false
+ },
+ "axe_spin": {
+  "frames": 1,
+  "size": [
+   65,
+   65
+  ],
+  "anchored": false
+ },
+ "burst": {
+  "frames": 1,
+  "size": [
+   112,
+   72
+  ],
+  "anchored": false
+ },
+ "blast": {
+  "frames": 5,
+  "size": [
+   112,
+   101
+  ],
+  "anchored": false
+ }
+}
