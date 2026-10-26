@@ -13,7 +13,8 @@ const Particles = preload("res://src/vfx/particles.gd")
 
 const BLOOD := {"chaser": Color("6fbf4f"), "shooter": Color("b4543f"), "boss": Color("9b4fd4"), "player": Color("d8484f"),
 	"golem": Color("7fd9c4"), "molgrax": Color("ff6a2a"), "glutling": Color("d8402f"), "schattling": Color("8b4fd0"), "funkenball": Color("ff7a3c"),
-	"blutqualle": Color("a8202f"), "stachelwaechter": Color("b8402f"), "leerenpriester": Color("8b4fd0"), "krabbenteufel": Color("c8402f"), "fackelteufel": Color("ff8a3c"), "imp": Color("d6503f"), "skelet": Color("e8e2d0"), "necromancer": Color("8b5fd0"), "tiny_zombie": Color("7fae4f")}
+	"blutqualle": Color("a8202f"), "stachelwaechter": Color("b8402f"), "leerenpriester": Color("8b4fd0"), "krabbenteufel": Color("c8402f"), "fackelteufel": Color("ff8a3c"), "imp": Color("d6503f"), "skelet": Color("e8e2d0"), "necromancer": Color("8b5fd0"), "tiny_zombie": Color("7fae4f"),
+	"n_axe": Color("c8302f"), "n_hex": Color("9b4fd4"), "n_crab": Color("d8502f"), "n_wing": Color("ff6a3c")}
 ## Seconds a turn takes: the sprite narrows and widens again (heavier for bosses).
 const TURN_TIME := 0.1
 const BOSS_TURN_TIME := 0.22

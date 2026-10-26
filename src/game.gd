@@ -88,6 +88,8 @@ var player_classes: Dictionary = {}
 var room_loot: Dictionary = {}
 var loot: Array = []
 var next_loot_id := 0
+## The portal to the next floor in a beaten endless boss room (INF: none).
+var portal := Vector2.INF
 var ability_buttons: Array[Button] = []
 var ability_label: Label
 var class_button: Button
@@ -223,7 +225,7 @@ func _track_run(local_player: Dictionary, delta: float) -> void:
 func _physics_process(delta: float) -> void:
 	if not active: return
 	input_clock += delta
-	if phase in ["combat", "explore"] and input_clock >= 1.0 / float(balance.network.input_hz):
+	if phase in ["combat", "explore", "reward"] and input_clock >= 1.0 / float(balance.network.input_hz):
 		input_clock = 0.0
 		_send_local_input()
 	if not hosting: return
@@ -236,14 +238,23 @@ func _physics_process(delta: float) -> void:
 		abilities.update(delta)
 		_simulate_bullets(delta)
 		_simulate_orbs(delta)
+		_burn_in_lava()
 		_check_room_end()
 	elif phase == "explore":
 		_simulate_players(delta)
 		_simulate_bullets(delta)
 		_simulate_orbs(delta)
 		_open_chests()
+		_burn_in_lava()
 		_check_doors()
-	elif phase in ["reward", "victory"]:
+	elif phase == "reward":
+		# Heroes may walk around while choosing; after an endless boss the
+		# portal takes whoever has picked a perk down to the next floor.
+		_simulate_players(delta)
+		_simulate_bullets(delta)
+		_simulate_orbs(delta)
+		_check_portal()
+	elif phase == "victory":
 		# Orbs still on the floor after the last kill keep flying to the players.
 		_simulate_orbs(delta)
 	snapshot_clock += delta
@@ -520,10 +531,10 @@ func _server_action(id: int, action: String, value: int) -> void:
 
 ## Chests: sometimes one stands in a cleared room. Walking into it opens it
 ## and grants that hero a small random boost (balance.chest.boosts).
-func _maybe_place_chest() -> void:
+func _maybe_place_chest(certain: bool = false) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash("chest:%d:%s" % [run_seed, current_layout.get("id", "")])
-	if rng.randf() > float(balance.chest.room_chance): return
+	if rng.randf() > float(balance.chest.room_chance) and not certain: return
 	var spot: Vector2 = Dungeon.move_actor(Dungeon.spawn_for_player(0, current_layout), Vector2(70, 0), 16.0, current_layout)
 	loot.append({"id": next_loot_id, "pos": spot, "open": false})
 	next_loot_id += 1
@@ -578,10 +589,115 @@ func _generate_floor(seed_value: int) -> bool:
 		return false
 	run_seed = seed_value
 	floor_layouts = generated
+	_furnish_floor()
 	room_states.clear()
 	for layout in floor_layouts: room_states[layout.id] = {"visited": false, "cleared": false}
 	last_layout_id = ""
 	return true
+
+
+## A new floor's extras, seeded by run and floor: one ordinary room becomes the
+## mini-boss's room (when the floor has one and keeps at least one ordinary
+## room), and every room gets props and lava pools from the floor's decor
+## theme. They are stored on the layouts, so clients get them with the room.
+func _furnish_floor() -> void:
+	var roster := _floor_roster()
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash("furnish:%d:%d" % [run_seed, floor_number])
+	var normals: Array = []
+	for layout in floor_layouts:
+		if str(layout.get("kind", "")) == "normal": normals.append(layout)
+	if roster.has("miniboss") and normals.size() >= 2:
+		var chosen: Dictionary = normals[rng.randi_range(0, normals.size() - 1)]
+		chosen.kind = "miniboss"
+		chosen.miniboss = str(roster.miniboss)
+	var theme: Dictionary = balance.decor.get(str(roster.get("decor", "")), {})
+	for layout in floor_layouts: _furnish_room(layout, theme, rng)
+
+
+## Props for one room: up to two hangings on the top wall (clear of the north
+## door), a centrepiece against it in mini-boss and boss rooms, loose floor
+## props, and lava pools in combat rooms. Props are scenery; lava burns.
+func _furnish_room(layout: Dictionary, theme: Dictionary, rng: RandomNumberGenerator) -> void:
+	var props: Array = []
+	var pools: Array = []
+	layout.props = props
+	layout.lava = pools
+	if theme.is_empty(): return
+	var kind: String = str(layout.get("kind", "normal"))
+	var hangings: Array = theme.hangings
+	for i in range(rng.randi_range(1, 2)):
+		var x: float = roundf(rng.randf_range(150.0, 746.0))
+		var clear: bool = absf(x - 448.0) > 90.0
+		for other in props: clear = clear and absf(x - float(other.x)) > 90.0
+		if clear: props.append({"n": str(hangings[rng.randi_range(0, hangings.size() - 1)]), "x": x, "y": 40.0, "wall": true, "r": 0.0})
+	if kind in ["miniboss", "boss"]:
+		var centre: Array = theme.centerpiece
+		var spot := Vector2(250.0 if rng.randf() < 0.5 else 646.0, 96.0)
+		if _free_spot(layout, spot, 34.0, props): props.append({"n": str(centre[rng.randi_range(0, centre.size() - 1)]), "x": spot.x, "y": spot.y, "r": 34.0})
+	var loose: Array = theme.props
+	for i in range(rng.randi_range(1, int(theme.props_max))):
+		for attempt in range(10):
+			var spot := _random_spot(layout, rng)
+			if _free_spot(layout, spot, 16.0, props):
+				props.append({"n": str(loose[rng.randi_range(0, loose.size() - 1)]), "x": spot.x, "y": spot.y, "r": 16.0})
+				break
+	if kind in ["normal", "miniboss"]:
+		var sizes: Dictionary = balance.decor.lava_radius
+		for i in range(rng.randi_range(0, int(theme.lava))):
+			var name: String = str(sizes.keys()[rng.randi_range(0, sizes.size() - 1)])
+			for attempt in range(10):
+				var spot := _random_spot(layout, rng)
+				if _free_spot(layout, spot, float(sizes[name]) + 8.0, props + pools):
+					pools.append({"n": name, "x": spot.x, "y": spot.y, "r": float(sizes[name])})
+					break
+
+
+func _random_spot(layout: Dictionary, rng: RandomNumberGenerator) -> Vector2:
+	var bounds: Array = layout.play_bounds
+	return Vector2(roundf(rng.randf_range(float(bounds[0]), float(bounds[0]) + float(bounds[2]))), roundf(rng.randf_range(float(bounds[1]), float(bounds[1]) + float(bounds[3]))))
+
+
+## Whether something of `radius` may stand at `point`: inside the floor, off
+## the cover, away from doorways, spawn points, the room centre (pedestal and
+## portal) and the props already placed.
+func _free_spot(layout: Dictionary, point: Vector2, radius: float, placed: Array) -> bool:
+	var bounds: Array = layout.play_bounds
+	if not Rect2(float(bounds[0]), float(bounds[1]), float(bounds[2]), float(bounds[3])).grow(-radius - 6.0).has_point(point): return false
+	for value in layout.get("obstacles", []):
+		if Rect2(float(value[0]), float(value[1]), float(value[2]), float(value[3])).grow(radius + 8.0).has_point(point): return false
+	for side in layout.get("doors", {}):
+		if point.distance_to(Dungeon.door_center(str(side), layout)) < 100.0: return false
+	for spawn in layout.get("player_spawns", []) + layout.get("enemy_spawns", []):
+		if point.distance_to(spawn) < radius + 30.0: return false
+	if point.distance_to(Vector2(448, 240)) < radius + 70.0: return false
+	for other in placed:
+		if not other.get("wall", false) and point.distance_to(Vector2(float(other.x), float(other.y))) < radius + float(other.r) + 12.0: return false
+	return true
+
+
+## Lava pools burn whoever stands in them (the usual hit invulnerability
+## spaces the damage out); enemies do not mind the heat.
+func _burn_in_lava() -> void:
+	for value in current_layout.get("lava", []):
+		var pool: Dictionary = value
+		for id in players:
+			if players[id].hp > 0 and players[id].pos.distance_to(Vector2(float(pool.x), float(pool.y))) < float(pool.r):
+				_damage_player(id, int(balance.decor.lava_damage))
+
+
+## Endless boss room: a hero who has picked a perk and steps into the portal
+## is ready; when every living hero is, the party goes down.
+func _check_portal() -> void:
+	if not portal.is_finite() or reward_kind != "boss": return
+	for id in players:
+		var player: Dictionary = players[id]
+		if player.hp > 0 and player.picked and not player.ready and player.pos.distance_to(portal) < 34.0:
+			player.ready = true
+			print("PORTAL_ENTERED peer=%d" % id)
+			_advance_if_ready()
+			_broadcast_state(true)
+			return
 
 
 ## Endless mode: the party keeps level, stats, perks and EXP, heals a little
@@ -624,6 +740,7 @@ func _enter_room(index: int, entry_side: String) -> void:
 		if collector >= 0: _collect_orb(collector, orb)
 	orbs.clear()
 	calm_clock = 0.0
+	portal = Vector2.INF
 	abilities.clear()
 	if not room_loot.has(current_layout.id): room_loot[current_layout.id] = []
 	loot = room_loot[current_layout.id]
@@ -654,7 +771,8 @@ func _enter_room(index: int, entry_side: String) -> void:
 	else:
 		phase = "combat"
 		var kinds: Array[String] = [str(_floor_roster().boss)]
-		if kind != "boss": kinds = _enemy_kinds_for(current_layout)
+		if kind == "miniboss": kinds = [str(current_layout.miniboss)]
+		elif kind != "boss": kinds = _enemy_kinds_for(current_layout)
 		count = kinds.size()
 		var spawns: int = current_layout.get("enemy_spawns", []).size()
 		var elite_rng := RandomNumberGenerator.new()
@@ -675,7 +793,7 @@ func _spawn_enemy(kind: String, pos: Vector2, index: int) -> Dictionary:
 	var definition := _definition(kind)
 	var scaling := _floor_scaling()
 	var hp := int(round((float(definition.hp) + maxi(0, players.size() - 1) * float(definition.hp_per_extra_player)) * float(scaling.hp)))
-	var boss: bool = kind in ["boss", "golem", "molgrax", "o_warlord"]
+	var boss: bool = kind in ["boss", "golem", "molgrax", "o_warlord"] or balance.minibosses.has(kind)
 	# Ranged enemies wait a moment before their first shot, so arrivals can react.
 	var enemy := {"pos": pos, "hp": hp, "max_hp": hp, "boss": boss, "kind": kind, "extra_shots": floori(float(floor_number - 1) / 3.0) if endless else 0, "radius": float(definition.radius), "speed": float(definition.speed) * float(scaling.speed), "shot_timer": 1.0 + 0.4 * index, "nav_timer": 0.0, "nav_path": PackedVector2Array(), "knock": Vector2.ZERO, "hit_timer": 0.0, "face": -1.0, "moving": false, "id": next_enemy_id, "attack": "", "attack_time": 0.0}
 	next_enemy_id += 1
@@ -701,6 +819,7 @@ func _kind(enemy: Dictionary) -> String:
 ## Stats of an enemy kind: the original three have their own sections in
 ## balance.json, the deeper floors' kinds live in `mobs`.
 func _definition(kind: String) -> Dictionary:
+	if balance.minibosses.has(kind): return balance.minibosses[kind]
 	match kind:
 		"boss": return balance.boss
 		"golem": return balance.golem
@@ -953,6 +1072,7 @@ func _attack_for(enemy: Dictionary) -> Dictionary:
 	if enemy.get("kind", "") == "golem": return balance.golem_moves.get(str(enemy.get("move", "cleave")), {})
 	if enemy.get("kind", "") == "molgrax": return balance.molgrax_moves.get(str(enemy.get("move", "swipe")), {})
 	if enemy.get("kind", "") == "o_warlord": return balance.warlord_moves.get(str(enemy.get("move", "cleave")), {})
+	if balance.minibosses.has(str(enemy.get("kind", ""))): return balance.minibosses[enemy.kind].moves.get(str(enemy.get("move", "")), {})
 	if enemy.get("boss", false): return balance.boss_moves.get(str(enemy.get("move", "volley")), {})
 	return balance.attacks.get(str(enemy.get("kind", "")), {})
 
@@ -1410,10 +1530,13 @@ func _check_room_end() -> void:
 		bullets.clear()
 		abilities.clear()
 		room_states[current_layout.id].cleared = true
-		if current_layout.get("kind", "") == "boss": _open_reward("boss")
+		if current_layout.get("kind", "") == "boss":
+			_open_reward("boss")
+			if endless: portal = Dungeon._nearest_free_point(Vector2(448, 112), 26.0, current_layout)
 		else:
 			phase = "explore"
-			_maybe_place_chest()
+			# A beaten mini-boss always leaves a chest.
+			_maybe_place_chest(current_layout.get("kind", "") == "miniboss")
 		print("ROOM_CLEARED room=%d phase=%s" % [room, phase])
 		_broadcast_state(true)
 
@@ -1484,7 +1607,7 @@ func _make_snapshot() -> Dictionary:
 		var dying_length: float = maxf(float(balance.death.boss_duration if enemy.boss else balance.death.duration), 0.001)
 		var entry := {"x": enemy.pos.x, "y": enemy.pos.y, "hp": enemy.hp, "max_hp": enemy.max_hp, "boss": enemy.boss, "kind": enemy.get("kind", "chaser"), "face": enemy.get("face", -1.0), "moving": enemy.get("moving", false), "hit": float(enemy.get("hit_timer", 0.0)) > 0.0,
 			"id": int(enemy.get("id", -1)), "hits": int(enemy.get("hits", 0)), "dx": hit_dir.x, "dy": hit_dir.y, "attacks": int(enemy.get("attacks", 0)),
-			"attack": attack, "attack_p": clampf(1.0 - float(enemy.get("attack_time", 0.0)) / maxf(attack_length, 0.001), 0.0, 1.0),
+			"attack": attack, "pattern": str(_attack_for(enemy).get("pattern", "")) if not attack.is_empty() else "", "attack_p": clampf(1.0 - float(enemy.get("attack_time", 0.0)) / maxf(attack_length, 0.001), 0.0, 1.0),
 			"dying_p": clampf(1.0 - float(enemy.get("dying", 0.0)) / dying_length, 0.0, 1.0) if enemy.hp <= 0 else -1.0}
 		entry.elite = enemy.get("elite", false)
 		entry.healed = int(enemy.get("healed", 0))
@@ -1527,7 +1650,7 @@ func _make_snapshot() -> Dictionary:
 				if room_states.get(neighbour_id, {}).get("visited", false): seen = true
 		if not seen: continue
 		map_rooms.append({"id": layout.id, "title": layout.title, "kind": layout.get("kind", "normal"), "boss": layout.boss, "grid_x": layout.grid_x, "grid_y": layout.grid_y, "visited": status.get("visited", false), "cleared": status.get("cleared", false), "doors": layout.get("doors", {}).keys()})
-	return {"players": visible_players, "enemies": visible_enemies, "bullets": visible_bullets, "orbs": visible_orbs, "loot": visible_loot, "hazards": abilities.snapshot(), "boss_bar": _boss_bar(), "room": room, "phase": phase, "seed": run_seed, "seq": packet_sequence, "peer_count": players.size(), "perk_options": perk_options, "reward_kind": reward_kind, "room_layout": current_layout.duplicate(true), "floor_map": map_rooms, "room_count": floor_layouts.size(), "rooms_cleared": _rooms_cleared(), "rooms_total": rooms_cleared_before + _rooms_cleared(), "floor": floor_number, "endless": endless, "doors_open": phase == "explore", "generator_version": Dungeon.GENERATOR_VERSION}
+	return {"players": visible_players, "enemies": visible_enemies, "bullets": visible_bullets, "orbs": visible_orbs, "loot": visible_loot, "hazards": abilities.snapshot(), "boss_bar": _boss_bar(), "room": room, "phase": phase, "seed": run_seed, "seq": packet_sequence, "peer_count": players.size(), "perk_options": perk_options, "reward_kind": reward_kind, "room_layout": current_layout.duplicate(true), "floor_map": map_rooms, "room_count": floor_layouts.size(), "rooms_cleared": _rooms_cleared(), "rooms_total": rooms_cleared_before + _rooms_cleared(), "floor": floor_number, "portal": {"x": portal.x, "y": portal.y} if portal.is_finite() and phase == "reward" else {}, "endless": endless, "doors_open": phase == "explore", "generator_version": Dungeon.GENERATOR_VERSION}
 
 
 func _choice_cards(player: Dictionary) -> Array:
@@ -1542,7 +1665,7 @@ func _choice_cards(player: Dictionary) -> Array:
 func _boss_bar() -> Dictionary:
 	for enemy in enemies:
 		if enemy.get("boss", false):
-			return {"name": str(_definition(_kind(enemy)).get("name", "")), "hp": enemy.hp, "max_hp": enemy.max_hp}
+			return {"name": str(_definition(_kind(enemy)).get("name", "")), "hp": enemy.hp, "max_hp": enemy.max_hp, "mini": balance.minibosses.has(_kind(enemy))}
 	return {}
 
 
@@ -1680,11 +1803,13 @@ func _build_ui() -> void:
 ## endless floor, its start or its boss room, and a deep floor.
 func _debug_entries() -> Array:
 	var entries: Array = [{"label": "STORY · START", "endless": false, "floor": 1, "room": ""},
+		{"label": "STORY · NEBENBOSS %s" % str(_definition(str(balance.story_floor.miniboss)).name).split(",")[0], "endless": false, "floor": 1, "room": "miniboss"},
 		{"label": "STORY · BOSS %s" % str(balance.boss.name).split(",")[0], "endless": false, "floor": 1, "room": "boss"}]
 	var floors: Array = balance.floors
 	for i in range(floors.size()):
 		var boss_name: String = str(_definition(str(floors[i].boss)).get("name", "")).split(",")[0]
 		entries.append({"label": "ENDLOS %d · START" % (i + 1), "endless": true, "floor": i + 1, "room": ""})
+		entries.append({"label": "ENDLOS %d · NEBENBOSS %s" % [i + 1, str(_definition(str(floors[i].miniboss)).name).split(",")[0]], "endless": true, "floor": i + 1, "room": "miniboss"})
 		entries.append({"label": "ENDLOS %d · BOSS %s" % [i + 1, boss_name], "endless": true, "floor": i + 1, "room": "boss"})
 	entries.append({"label": "ENDLOS 8 · TIEF (VIELE ELITEN)", "endless": true, "floor": 8, "room": ""})
 	entries.append({"label": "ENDLOS 12 · SEHR TIEF", "endless": true, "floor": 12, "room": ""})
@@ -1780,6 +1905,7 @@ func _refresh_ui() -> void:
 	if phase == "combat": status_label.text = "%s · Seed %d · Die Türen bleiben zu, bis alle Gegner besiegt sind." % [state.get("room_layout", {}).get("title", ""), state.get("seed", 0)]
 	elif phase == "explore": status_label.text = "%s · Die Türen sind offen. Wer hindurchgeht, nimmt die ganze Gruppe mit." % state.get("room_layout", {}).get("title", "")
 	elif phase == "reward" and state.get("reward_kind", "") == "treasure": status_label.text = "Schatzkammer: Jeder lebende Spieler wählt einen Perk. Danach öffnen sich die Türen."
+	elif phase == "reward" and not state.get("portal", {}).is_empty(): status_label.text = "Wähle deinen Perk und tritt dann ins Portal. Wenn alle drin sind, geht es tiefer hinab."
 	elif phase == "reward": status_label.text = "Pro lebendem Spieler genau ein Perk. Danach müssen alle lebenden Spieler bereit sein."
 	elif phase == "victory": status_label.text = "Geschafft. Ihr habt %d Räume geräumt und den Boss besiegt. Der Host kann einen neuen Lauf starten." % int(state.get("rooms_cleared", 0))
 	elif phase == "dead" and bool(state.get("endless", false)): status_label.text = "Endlos-Modus: gefallen auf Stockwerk %d nach %d geräumten Räumen. Ein neuer Lauf beginnt wieder auf Stockwerk 1." % [int(state.get("floor", 1)), int(state.get("rooms_total", 0))]

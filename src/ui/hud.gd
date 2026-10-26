@@ -280,10 +280,12 @@ func _draw_boss_bar() -> void:
 	var font: Font = ThemeDB.fallback_font
 	var ratio: float = clampf(float(_boss.get("hp", 0)) / maxf(float(_boss.get("max_hp", 1)), 1.0), 0.0, 1.0)
 	var shake := Vector2(roundf(sin(_clock * 80.0) * 2.0), 0) if _boss_hit > 0.0 else Vector2.ZERO
-	var bar := Rect2(Vector2(220, 186) + shake, Vector2(520, 12))
-	var name: String = str(_boss.get("name", ""))
-	draw_string(font, Vector2(220, 180) + shake + Vector2(1, 1), name, HORIZONTAL_ALIGNMENT_CENTER, 520, 16, INK)
-	draw_string(font, Vector2(220, 180) + shake, name, HORIZONTAL_ALIGNMENT_CENTER, 520, 16, Color("ff9a7a"))
+	# A mini-boss gets a shorter bar, marked as such.
+	var mini: bool = bool(_boss.get("mini", false))
+	var bar := Rect2(Vector2(320 if mini else 220, 186) + shake, Vector2(320 if mini else 520, 10 if mini else 12))
+	var name: String = ("NEBENBOSS · " if mini else "") + str(_boss.get("name", ""))
+	draw_string(font, Vector2(220, 180) + shake + Vector2(1, 1), name, HORIZONTAL_ALIGNMENT_CENTER, 520, 14 if mini else 16, INK)
+	draw_string(font, Vector2(220, 180) + shake, name, HORIZONTAL_ALIGNMENT_CENTER, 520, 14 if mini else 16, Color("e0a0ff") if mini else Color("ff9a7a"))
 	draw_rect(bar.grow(3), INK)
 	draw_rect(bar, Color("2a1418"))
 	draw_rect(Rect2(bar.position, Vector2(bar.size.x * _boss_trail, bar.size.y)), Color("f4e2c8"))

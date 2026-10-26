@@ -124,7 +124,7 @@ func fire(enemy: Dictionary, attack: Dictionary, target: int) -> void:
 				var spoke := Vector2.RIGHT.rotated(TAU * i / ring + _rng.randf() * 0.5)
 				game._add_bullet(enemy.pos + spoke * enemy.radius, spoke * float(attack.ring_speed), 0, 1.0, -1.0, "flame")
 		"eruption":
-			# Rings of lava burst outward from the boss, one after another.
+			# Rings of lava (or spikes) burst outward from the boss, one after another.
 			for ring in range(int(attack.rings)):
 				var distance: float = float(attack.ring_gap) * float(ring + 1)
 				var count := int(attack.per_ring) + ring * 2
@@ -132,7 +132,7 @@ func fire(enemy: Dictionary, attack: Dictionary, target: int) -> void:
 				for i in range(count):
 					var point: Vector2 = enemy.pos + Vector2.RIGHT.rotated(turn + TAU * i / count) * distance
 					if Dungeon.segment_blocked(enemy.pos, point, 0.0, game.current_layout): continue
-					_add_hazard("lava", point, float(attack.warn) + float(attack.ring_delay) * ring, float(attack.radius), int(attack.damage))
+					_add_hazard(str(attack.get("hazard", "lava")), point, float(attack.warn) + float(attack.ring_delay) * ring, float(attack.radius), int(attack.damage))
 		"void":
 			for id in players:
 				if players[id].hp > 0: _add_hazard("void", players[id].pos, float(attack.warn), float(attack.radius), int(attack.damage))
@@ -208,7 +208,7 @@ func active(enemy: Dictionary, attack: Dictionary, target: int, delta: float) ->
 				var arms := int(attack.arms)
 				for arm in range(arms):
 					var aim := Vector2.RIGHT.rotated(float(enemy.spiral) + TAU * arm / arms)
-					game._add_bullet(enemy.pos + aim * enemy.radius + Vector2(0, -18), aim * float(attack.bullet_speed), 0, float(attack.damage), -1.0, "bolt")
+					game._add_bullet(enemy.pos + aim * enemy.radius + Vector2(0, -18), aim * float(attack.bullet_speed), 0, float(attack.damage), -1.0, str(attack.get("projectile", "bolt")))
 		"thorns":
 			enemy.wave_timer = float(enemy.wave_timer) - delta
 			if enemy.wave_timer <= 0.0 and int(enemy.wave) < int(attack.waves):

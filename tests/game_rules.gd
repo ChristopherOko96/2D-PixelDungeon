@@ -102,6 +102,7 @@ func _initialize() -> void:
 	_test_infernal(game)
 	_test_classes_and_loot(game)
 	_test_orcs_and_depth(game)
+	_test_minibosses_and_decor(game)
 
 	var boss: int = _first_index(game, "boss")
 	game._enter_room(boss, "north")
@@ -960,6 +961,152 @@ func _test_beam_dodge(game: Node) -> void:
 	game.players[200].hp = game.players[200].max_hp
 	game.enemies.clear()
 	game.current_layout = saved_layout
+	game.phase = "explore"
+
+## Mini-bosses: one room per floor holds a named demon with its own moves and
+## ultimate, weaker than the floor boss, and leaves a chest. Rooms get props
+## and lava pools from the floor's theme; after an endless boss a portal leads
+## down.
+func _test_minibosses_and_decor(game: Node) -> void:
+	var saved_layouts: Array[Dictionary] = game.floor_layouts.duplicate()
+	var saved_states: Dictionary = game.room_states.duplicate(true)
+	var saved_layout: Dictionary = game.current_layout
+	var saved_seed: int = game.run_seed
+	var minis := 0
+	var normals := 0
+	for layout in game.floor_layouts:
+		if layout.kind == "miniboss": minis += 1
+		if layout.kind == "normal": normals += 1
+	check(minis == 1 and normals >= 1, "a floor has one mini-boss room and keeps ordinary rooms")
+	var mini_index := _first_index(game, "miniboss")
+	check(str(game.floor_layouts[mini_index].miniboss) == str(game.balance.story_floor.miniboss), "the story floor's mini-boss is the one from its roster")
+	game._enter_room(mini_index, "north")
+	var demon: Dictionary = game.enemies[0] if not game.enemies.is_empty() else {}
+	check(game.phase == "combat" and game.enemies.size() == 1 and demon.get("boss", false), "the mini-boss room locks with the mini-boss alone")
+	var bar: Dictionary = game._make_snapshot().boss_bar
+	check(bar.get("mini", false) and bar.name == game.balance.minibosses[demon.kind].name, "the mini-boss shows its name on a mini-boss bar")
+	check(int(game.balance.minibosses[demon.kind].hp) < int(game.balance.boss.hp) * 0.8, "a mini-boss is clearly weaker than the floor boss")
+	# With the ordinary chest chance at zero the mini-boss still leaves one.
+	var chance: float = game.balance.chest.room_chance
+	game.balance.chest.room_chance = 0.0
+	game.enemies.clear()
+	game._check_room_end()
+	game.balance.chest.room_chance = chance
+	check(game.phase == "explore" and game.loot.size() == 1, "a beaten mini-boss always leaves a chest")
+
+	# Each demon uses every move, and its ultimate once below half health.
+	var saved_open := _open_room(game)
+	for kind in game.balance.minibosses:
+		game.enemies.clear()
+		game.bullets.clear()
+		game.abilities.clear()
+		var boss: Dictionary = game._spawn_enemy(kind, Vector2(600, 248), 0)
+		var seen := {}
+		for step in range(1600):
+			for id in game.players:
+				game.players[id].invulnerable = 99.0
+				game.players[id].hp = game.players[id].max_hp
+				game.players[id].pos = Vector2(300, 248)
+			if step == 800: boss.hp = int(boss.max_hp * 0.4)
+			game._simulate_enemies(0.05)
+			game.abilities.update(0.05)
+			game._simulate_bullets(0.05)
+			if boss.attack != "": seen[boss.move] = true
+			if game.enemies.size() > 4: game.enemies = [boss]
+			boss.hp = maxi(boss.hp, 1)
+		var moves: Array = game.balance.minibosses[kind].sequence.duplicate()
+		moves.append(game.balance.minibosses[kind].ultimate.move)
+		var missing: Array = []
+		for move in moves:
+			if not seen.has(move): missing.append(move)
+		check(missing.is_empty(), "%s uses all its moves and its ultimate (missing %s)" % [kind, missing])
+	game.enemies.clear()
+	game.bullets.clear()
+	game.abilities.clear()
+	for id in game.players:
+		game.players[id].invulnerable = 0.0
+		game.players[id].hp = game.players[id].max_hp
+	game.current_layout = saved_open
+
+	# Props: seeded, off the cover and away from the doorways.
+	var props_ok := true
+	var any_props := false
+	for layout in game.floor_layouts:
+		for prop in layout.get("props", []):
+			any_props = true
+			if prop.get("wall", false): continue
+			var point := Vector2(prop.x, prop.y)
+			for side in layout.get("doors", {}):
+				if point.distance_to(Dungeon.door_center(side, layout)) < 100.0: props_ok = false
+			for value in layout.obstacles:
+				if Rect2(value[0], value[1], value[2], value[3]).has_point(point): props_ok = false
+	check(any_props and props_ok, "rooms get props that keep clear of cover and doorways")
+	var first_props: Array = game.floor_layouts[1].props.duplicate(true)
+	game._generate_floor(game.run_seed)
+	check(game.floor_layouts[1].props == first_props, "the same seed furnishes the same rooms")
+
+	# Lava on the infernal endless floor: only in combat rooms, and it burns.
+	game.endless = true
+	game.floor_number = 1
+	game._generate_floor(13579)
+	var pools := 0
+	var pools_ok := true
+	for layout in game.floor_layouts:
+		pools += layout.lava.size()
+		if not layout.lava.is_empty() and not layout.kind in ["normal", "miniboss"]: pools_ok = false
+	check(pools > 0 and pools_ok, "infernal floors have lava pools, only in combat rooms")
+	var hot: Dictionary = {}
+	for layout in game.floor_layouts:
+		if not layout.lava.is_empty(): hot = layout
+	game.current_layout = hot
+	var hero: Dictionary = game.players[1]
+	var helper: Dictionary = game.players[200]
+	helper.pos = Vector2(-500, -500)
+	hero.invulnerable = 0.0
+	hero.hp = hero.max_hp
+	hero.pos = Vector2(hot.lava[0].x, hot.lava[0].y)
+	game._burn_in_lava()
+	check(hero.hp == hero.max_hp - int(game.balance.decor.lava_damage), "standing in lava burns")
+	hero.invulnerable = 0.0
+	hero.hp = hero.max_hp
+	hero.pos = Vector2(hot.lava[0].x + hot.lava[0].r + 20.0, hot.lava[0].y)
+	game._burn_in_lava()
+	check(hero.hp == hero.max_hp, "next to the lava it is safe")
+
+	# The portal after an endless boss.
+	game.room_states.clear()
+	for layout in game.floor_layouts: game.room_states[layout.id] = {"visited": false, "cleared": false}
+	game._enter_room(_first_index(game, "boss"), "north")
+	game.enemies.clear()
+	game._check_room_end()
+	var gate: Dictionary = game._make_snapshot().portal
+	check(game.phase == "reward" and not gate.is_empty(), "an endless boss opens a portal")
+	for id in game.players: game.players[id].picked = true
+	hero.pos = Vector2(gate.x, gate.y)
+	helper.pos = Vector2(gate.x + 200.0, gate.y)
+	game._check_portal()
+	check(hero.ready and not helper.ready and game.floor_number == 1, "a hero in the portal waits for the others")
+	helper.pos = Vector2(gate.x, gate.y)
+	game._check_portal()
+	check(game.floor_number == 2 and game.portal == Vector2.INF, "when everyone is in the portal the party goes down")
+	var labels: Array = []
+	for entry in game._debug_entries():
+		if entry.room == "miniboss": labels.append(entry.label)
+	check(labels.size() == game.balance.floors.size() + 1, "the debug level list has every mini-boss")
+
+	game.endless = false
+	game.floor_number = 1
+	game.enemies.clear()
+	game.loot.clear()
+	game.floor_layouts = saved_layouts
+	game.room_states = saved_states
+	game.current_layout = saved_layout
+	game.run_seed = saved_seed
+	game.rooms_cleared_before = 0
+	for id in game.players:
+		game.players[id].ready = false
+		game.players[id].picked = false
+		game.players[id].hp = game.players[id].max_hp
 	game.phase = "explore"
 
 func _first_index(game: Node, kind: String) -> int:

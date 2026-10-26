@@ -400,7 +400,9 @@
       "shooter",
       "g_archer",
       "g_spearman"
-    ]
+    ],
+    "miniboss": "n_axe",
+    "decor": "crypt"
   },
   "floors": [
     {
@@ -416,7 +418,9 @@
         "funkenball",
         "g_archer",
         "g_spearman"
-      ]
+      ],
+      "miniboss": "n_hex",
+      "decor": "infernal"
     },
     {
       "boss": "golem",
@@ -431,7 +435,9 @@
         "skelet",
         "fackelteufel",
         "g_bomber"
-      ]
+      ],
+      "miniboss": "n_crab",
+      "decor": "stone"
     },
     {
       "boss": "o_warlord",
@@ -448,7 +454,9 @@
         "g_bomber",
         "g_shaman",
         "g_trapper"
-      ]
+      ],
+      "miniboss": "n_axe",
+      "decor": "orc"
     },
     {
       "boss": "boss",
@@ -464,7 +472,9 @@
         "necromancer",
         "g_hunter",
         "o_bonecaller"
-      ]
+      ],
+      "miniboss": "n_wing",
+      "decor": "infernal"
     },
     {
       "boss": "golem",
@@ -479,7 +489,9 @@
         "o_bonecaller",
         "g_bomber",
         "schattling"
-      ]
+      ],
+      "miniboss": "n_crab",
+      "decor": "stone"
     }
   ],
   "rooms": {
@@ -1481,5 +1493,425 @@
         "text": "HEILT 1 HERZ"
       }
     ]
+  },
+  "minibosses": {
+    "n_axe": {
+      "name": "VARGOTH, DER AXTSCHLÄCHTER",
+      "hp": 110,
+      "hp_per_extra_player": 40,
+      "speed": 42,
+      "radius": 22,
+      "move_pause": 0.85,
+      "sequence": [
+        "hack",
+        "rush",
+        "throw",
+        "hack",
+        "stomp"
+      ],
+      "ultimate": {
+        "move": "whirl",
+        "hp_ratio": 0.5,
+        "every": 5
+      },
+      "moves": {
+        "hack": {
+          "pattern": "cleave",
+          "windup": 0.6,
+          "lock": 0.2,
+          "active": 0.22,
+          "recovery": 0.5,
+          "reach": 80,
+          "arc": 2.0,
+          "lunge": 150,
+          "count": 5,
+          "spread": 1.0,
+          "bullet_speed": 210,
+          "damage": 1,
+          "projectile": "slash"
+        },
+        "rush": {
+          "pattern": "dash",
+          "windup": 0.65,
+          "lock": 0.2,
+          "active": 0.5,
+          "recovery": 0.7,
+          "speed": 440,
+          "damage": 2
+        },
+        "throw": {
+          "pattern": "axe",
+          "windup": 0.5,
+          "lock": 0.2,
+          "active": 1.2,
+          "recovery": 0.4,
+          "reach": 360,
+          "radius": 22,
+          "damage": 1
+        },
+        "stomp": {
+          "pattern": "quake",
+          "windup": 0.7,
+          "active": 0.5,
+          "recovery": 0.6,
+          "lines": 3,
+          "angle": 0.5,
+          "steps": 5,
+          "spacing": 52,
+          "step_delay": 0.08,
+          "warn": 0.35,
+          "radius": 26,
+          "damage": 1
+        },
+        "whirl": {
+          "pattern": "spiral",
+          "windup": 0.9,
+          "active": 2.2,
+          "recovery": 1.0,
+          "arms": 3,
+          "turn": 2.4,
+          "rate": 0.14,
+          "bullet_speed": 170,
+          "damage": 1,
+          "projectile": "slash"
+        }
+      }
+    },
+    "n_hex": {
+      "name": "ZYRA, DIE SEELENHEXE",
+      "hp": 95,
+      "hp_per_extra_player": 34,
+      "speed": 38,
+      "radius": 18,
+      "move_pause": 0.8,
+      "keep_min": 170,
+      "keep_max": 280,
+      "sequence": [
+        "hexbolt",
+        "seeker",
+        "pillar",
+        "hexbolt",
+        "swirl"
+      ],
+      "ultimate": {
+        "move": "soulstorm",
+        "hp_ratio": 0.5,
+        "every": 5
+      },
+      "moves": {
+        "hexbolt": {
+          "pattern": "voidcast",
+          "windup": 0.6,
+          "active": 0.1,
+          "recovery": 0.45,
+          "count": 3,
+          "spread": 0.5,
+          "bullet_speed": 200,
+          "lead": 0.25,
+          "damage": 1,
+          "warn": 0.8,
+          "radius": 30,
+          "projectile": "void"
+        },
+        "seeker": {
+          "pattern": "orb",
+          "windup": 0.55,
+          "active": 0.1,
+          "recovery": 0.4,
+          "bullet_speed": 125,
+          "homing": 1.9,
+          "life": 4.5,
+          "damage": 1
+        },
+        "pillar": {
+          "pattern": "pillar",
+          "hazard": "void",
+          "windup": 0.45,
+          "active": 0.1,
+          "recovery": 0.4,
+          "warn": 0.7,
+          "radius": 30,
+          "damage": 1
+        },
+        "swirl": {
+          "pattern": "spiral",
+          "windup": 0.7,
+          "active": 1.6,
+          "recovery": 0.7,
+          "arms": 4,
+          "turn": 1.8,
+          "rate": 0.2,
+          "bullet_speed": 140,
+          "damage": 1,
+          "projectile": "void"
+        },
+        "soulstorm": {
+          "pattern": "void",
+          "windup": 1.0,
+          "active": 0.3,
+          "recovery": 0.7,
+          "summon": "schattling",
+          "count": 2,
+          "max_summons": 3,
+          "warn": 0.8,
+          "radius": 34,
+          "damage": 2
+        }
+      }
+    },
+    "n_crab": {
+      "name": "KRAGGAR, DIE PANZERKRABBE",
+      "hp": 130,
+      "hp_per_extra_player": 46,
+      "speed": 34,
+      "radius": 24,
+      "move_pause": 0.9,
+      "sequence": [
+        "snap",
+        "slam",
+        "rocks",
+        "snap",
+        "spines"
+      ],
+      "ultimate": {
+        "move": "spikering",
+        "hp_ratio": 0.5,
+        "every": 5
+      },
+      "moves": {
+        "snap": {
+          "pattern": "dash",
+          "windup": 0.55,
+          "lock": 0.15,
+          "active": 0.4,
+          "recovery": 0.6,
+          "speed": 400,
+          "damage": 1,
+          "spikes": 4,
+          "spacing": 40,
+          "warn": 0.3,
+          "radius": 22
+        },
+        "slam": {
+          "pattern": "pound",
+          "windup": 0.7,
+          "active": 0.15,
+          "recovery": 0.6,
+          "radius": 64,
+          "count": 10,
+          "bullet_speed": 160,
+          "damage": 1
+        },
+        "rocks": {
+          "pattern": "barrage",
+          "windup": 0.55,
+          "active": 0.7,
+          "recovery": 0.5,
+          "count": 3,
+          "bullet_speed": 220,
+          "lead": 0.5,
+          "jitter": 0.06,
+          "damage": 1,
+          "projectile": "rock",
+          "lift": 20
+        },
+        "spines": {
+          "pattern": "thorns",
+          "hazard": "spike",
+          "windup": 0.7,
+          "active": 1.4,
+          "recovery": 0.7,
+          "waves": 2,
+          "wave_every": 0.6,
+          "warn": 0.7,
+          "random": 3,
+          "radius": 30,
+          "damage": 1
+        },
+        "spikering": {
+          "pattern": "eruption",
+          "hazard": "spike",
+          "windup": 0.9,
+          "active": 0.8,
+          "recovery": 0.8,
+          "rings": 3,
+          "ring_gap": 80,
+          "per_ring": 7,
+          "ring_delay": 0.25,
+          "warn": 0.55,
+          "radius": 28,
+          "damage": 2
+        }
+      }
+    },
+    "n_wing": {
+      "name": "AZRAEL, DER SCHWINGENTEUFEL",
+      "hp": 120,
+      "hp_per_extra_player": 42,
+      "speed": 46,
+      "radius": 22,
+      "move_pause": 0.8,
+      "sequence": [
+        "firebrand",
+        "swoop",
+        "flameslash",
+        "firebomb",
+        "swoop"
+      ],
+      "ultimate": {
+        "move": "firestorm",
+        "hp_ratio": 0.5,
+        "every": 5
+      },
+      "moves": {
+        "swoop": {
+          "pattern": "dash",
+          "windup": 0.55,
+          "lock": 0.15,
+          "active": 0.45,
+          "recovery": 0.6,
+          "speed": 500,
+          "damage": 2
+        },
+        "firebrand": {
+          "pattern": "torch",
+          "windup": 0.55,
+          "active": 0.1,
+          "recovery": 0.5,
+          "bullet_speed": 220,
+          "lead": 0.35,
+          "damage": 1,
+          "ring": 8,
+          "ring_speed": 120
+        },
+        "firebomb": {
+          "pattern": "boulder",
+          "hazard": "bomb",
+          "blast": "fire",
+          "shard": "flame",
+          "windup": 0.55,
+          "active": 0.2,
+          "recovery": 0.5,
+          "flight": 0.85,
+          "lead": 0.4,
+          "radius": 46,
+          "count": 6,
+          "bullet_speed": 140,
+          "damage": 1,
+          "lift": 30
+        },
+        "flameslash": {
+          "pattern": "cleave",
+          "windup": 0.6,
+          "lock": 0.2,
+          "active": 0.22,
+          "recovery": 0.5,
+          "reach": 85,
+          "arc": 2.0,
+          "lunge": 140,
+          "count": 5,
+          "spread": 1.1,
+          "bullet_speed": 210,
+          "damage": 1,
+          "projectile": "flame"
+        },
+        "firestorm": {
+          "pattern": "thorns",
+          "hazard": "flame",
+          "windup": 1.1,
+          "active": 2.0,
+          "recovery": 1.2,
+          "waves": 3,
+          "wave_every": 0.6,
+          "warn": 0.75,
+          "random": 5,
+          "radius": 34,
+          "damage": 2
+        }
+      }
+    }
+  },
+  "decor": {
+    "lava_damage": 1,
+    "lava_radius": {
+      "lava_s": 13,
+      "lava_m": 17,
+      "lava_l": 21
+    },
+    "crypt": {
+      "hangings": [
+        "chains",
+        "cage",
+        "banner"
+      ],
+      "props": [
+        "bones",
+        "skulls",
+        "rune_r",
+        "rune_s",
+        "rune_x"
+      ],
+      "centerpiece": [
+        "altar"
+      ],
+      "props_max": 3,
+      "lava": 0
+    },
+    "infernal": {
+      "hangings": [
+        "chains",
+        "cage_lit",
+        "banner"
+      ],
+      "props": [
+        "crystal",
+        "crystals",
+        "spire",
+        "totem",
+        "skulls",
+        "bones"
+      ],
+      "centerpiece": [
+        "cauldron",
+        "altar"
+      ],
+      "props_max": 4,
+      "lava": 2
+    },
+    "stone": {
+      "hangings": [
+        "chains",
+        "cage"
+      ],
+      "props": [
+        "rune_r",
+        "rune_s",
+        "rune_x",
+        "crystal",
+        "bones"
+      ],
+      "centerpiece": [
+        "altar"
+      ],
+      "props_max": 3,
+      "lava": 1
+    },
+    "orc": {
+      "hangings": [
+        "banner",
+        "cage",
+        "chains"
+      ],
+      "props": [
+        "bones",
+        "skulls",
+        "totem"
+      ],
+      "centerpiece": [
+        "cauldron"
+      ],
+      "props_max": 4,
+      "lava": 0
+    }
   }
 }

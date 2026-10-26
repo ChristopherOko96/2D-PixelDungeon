@@ -28,6 +28,11 @@ const ARROW_TEXTURE := preload("res://assets/sprites/0x72/weapon_arrow.png")
 # Goblins and orcs: one standing figure each, cut by scripts/slice_orc_sheets.py;
 # they move through the feedback layer's poses (breath, hop, windup, turn).
 const ORC_ROOT := "res://assets/sprites/orcs/"
+## The four demon mini-bosses: standing figures with derived frames, drawn
+## like the orcs (scripts/slice_nebenbosse_sheet.py, animate_orc_figures.py).
+const NEBENBOSS_ROOT := "res://assets/sprites/nebenbosse/"
+## Room props from the same sheet: wall hangings, floor decoration, lava, portal.
+const PROP_ROOT := "res://assets/sprites/props/"
 const CHEST_CLOSED := preload("res://assets/sprites/0x72/chest_full_open_anim_f0.png")
 const CHEST_OPEN := preload("res://assets/sprites/0x72/chest_full_open_anim_f2.png")
 const ENEMY_SPRITES := {"chaser": "goblin", "shooter": "orc_shaman", "boss": "big_demon", "imp": "imp", "skelet": "skelet", "necromancer": "necromancer", "tiny_zombie": "tiny_zombie"}
@@ -73,6 +78,7 @@ var _weapon_textures: Dictionary = {}
 var _orcs: Dictionary = {}
 # Goblin/orc -> {animation -> Array[Texture2D]} built by scripts/animate_orc_figures.py.
 var _orc_frames: Dictionary = {}
+var _props: Dictionary = {}
 var _feedback := Feedback.new()
 var _base_position := Vector2.ZERO
 var _shake_rng := RandomNumberGenerator.new()
@@ -112,19 +118,23 @@ func _ready() -> void:
 					frames.append(load("%s%s/%s_f%d.png" % [INFERNAL_ROOT, creature, animation, frame]))
 				sets[animation] = frames
 			_infernal[creature] = sets
-	var orcs: Variant = JSON.parse_string(FileAccess.get_file_as_string(ORC_ROOT + "manifest.json"))
-	if orcs is Dictionary:
-		for name: String in orcs: _orcs[name] = load(ORC_ROOT + name + ".png")
-	var orc_frames: Variant = JSON.parse_string(FileAccess.get_file_as_string(ORC_ROOT + "frames/frames.json"))
-	if orc_frames is Dictionary:
-		for name: String in orc_frames:
-			var sets := {}
-			for animation: String in orc_frames[name]:
-				var list: Array = []
-				for frame in range(int(orc_frames[name][animation])):
-					list.append(load("%sframes/%s_%s_f%d.png" % [ORC_ROOT, name, animation, frame]))
-				sets[animation] = list
-			_orc_frames[name] = sets
+	for root: String in [ORC_ROOT, NEBENBOSS_ROOT]:
+		var orcs: Variant = JSON.parse_string(FileAccess.get_file_as_string(root + "manifest.json"))
+		if orcs is Dictionary:
+			for name: String in orcs: _orcs[name] = load(root + name + ".png")
+		var orc_frames: Variant = JSON.parse_string(FileAccess.get_file_as_string(root + "frames/frames.json"))
+		if orc_frames is Dictionary:
+			for name: String in orc_frames:
+				var sets := {}
+				for animation: String in orc_frames[name]:
+					var list: Array = []
+					for frame in range(int(orc_frames[name][animation])):
+						list.append(load("%sframes/%s_%s_f%d.png" % [root, name, animation, frame]))
+					sets[animation] = list
+				_orc_frames[name] = sets
+	var props: Variant = JSON.parse_string(FileAccess.get_file_as_string(PROP_ROOT + "manifest.json"))
+	if props is Dictionary:
+		for name: String in props: _props[name] = load(PROP_ROOT + name + ".png")
 	for weapon_id: String in WEAPON_SPRITES:
 		_weapon_textures[weapon_id] = load("%s%s.png" % [SPRITE_ROOT, WEAPON_SPRITES[weapon_id]])
 	var sfx := Sfx.new()
@@ -166,8 +176,10 @@ func _silhouette(texture: Texture2D) -> Texture2D:
 func _draw() -> void:
 	_draw_floor()
 	_draw_chamber_details()
+	_draw_lava()
 	_draw_walls()
 	_draw_obstacles()
+	_draw_props()
 	_draw_brazier(Vector2(72, 78), 0.0)
 	_draw_brazier(Vector2(824, 78), 1.8)
 	_draw_brazier(Vector2(72, 402), 2.5)
@@ -175,6 +187,7 @@ func _draw() -> void:
 	var phase: String = str(_snapshot.get("phase", "lobby"))
 	if phase == "reward" or phase == "victory":
 		_draw_pedestal(phase == "victory")
+	_draw_portal()
 	_feedback.particles.draw_stains(self)
 	_draw_orbs()
 	_draw_loot()
@@ -207,6 +220,70 @@ func _draw() -> void:
 	_draw_hazards(true)
 	_feedback.particles.draw_particles(self)
 	_draw_motes()
+
+
+## Lava pools of the room: a glowing, breathing pool with embers rising.
+func _draw_lava() -> void:
+	for value: Variant in _room_layout().get("lava", []):
+		var pool: Dictionary = value
+		var point := Vector2(float(pool.get("x", 0.0)), float(pool.get("y", 0.0)))
+		var radius: float = float(pool.get("r", 16.0))
+		var glow: float = 0.5 + 0.5 * sin(_clock * 2.4 + point.x * 0.05)
+		draw_circle(point, radius + 10.0, Color(1.0, 0.35, 0.1, 0.08 + 0.06 * glow))
+		var texture: Texture2D = _props.get(str(pool.get("n", "lava_m")))
+		if texture != null:
+			var size := Vector2(texture.get_width(), texture.get_height()) * 1.5
+			draw_texture_rect(texture, Rect2(point - size * 0.5, size), false, Color(1.0, 0.9 + 0.1 * glow, 0.9 + 0.1 * glow))
+		for k in range(3):
+			var rise: float = fmod(_clock * 0.8 + k * 0.33 + point.y * 0.01, 1.0)
+			var drift: float = sin(_clock * 3.0 + k * 2.0) * radius * 0.4
+			_box(point.x + drift + (k - 1) * radius * 0.4, point.y - rise * 26.0, 2, 2, Color(1.0, 0.7, 0.3, 1.0 - rise))
+
+
+## Scenery: hangings sit on the top wall, the rest stands on the floor with a
+## shadow. The crystals and the lit cage glow softly.
+func _draw_props() -> void:
+	for value: Variant in _room_layout().get("props", []):
+		var prop: Dictionary = value
+		var texture: Texture2D = _props.get(str(prop.get("n", "")))
+		if texture == null:
+			continue
+		var point := Vector2(float(prop.get("x", 0.0)), float(prop.get("y", 0.0)))
+		var size := Vector2(texture.get_width(), texture.get_height())
+		var name: String = str(prop.get("n", ""))
+		if name in ["crystal", "crystals", "spire", "cage_lit", "cauldron", "altar"]:
+			var tint := Color(0.7, 0.35, 1.0) if name.begins_with("crystal") else Color(1.0, 0.4, 0.15)
+			draw_circle(point + Vector2(0, -size.y * 0.4) if not bool(prop.get("wall", false)) else point + Vector2(0, size.y * 0.6), size.x * 0.6, Color(tint, 0.07 + 0.04 * sin(_clock * 2.0 + point.x)))
+		if bool(prop.get("wall", false)):
+			# Hangings sway a little on their chains.
+			var sway: float = sin(_clock * 1.3 + point.x) * 0.03
+			draw_set_transform(point + Vector2(0, -6), sway, Vector2.ONE)
+			draw_texture_rect(texture, Rect2(Vector2(-size.x * 0.5, 0), size), false)
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		else:
+			_box(point.x - size.x * 0.4, point.y - 3, size.x * 0.8, 5, Color(0.05, 0.04, 0.09, 0.45))
+			draw_texture_rect(texture, Rect2(point - Vector2(size.x * 0.5, size.y), size), false)
+
+
+## The portal to the next floor after an endless boss: it opens, pulses and
+## pulls motes into its middle.
+func _draw_portal() -> void:
+	var gate: Dictionary = _snapshot.get("portal", {})
+	if gate.is_empty() or not _props.has("portal"):
+		return
+	var point := Vector2(float(gate.get("x", 448.0)), float(gate.get("y", 112.0)))
+	var texture: Texture2D = _props.portal
+	var pulse: float = 1.0 + 0.04 * sin(_clock * 3.0)
+	var size := Vector2(texture.get_width(), texture.get_height()) * pulse
+	draw_circle(point, size.x * 0.62, Color(0.55, 0.25, 0.95, 0.12 + 0.05 * sin(_clock * 2.0)))
+	draw_texture_rect(texture, Rect2(point - size * 0.5, size), false)
+	for k in range(8):
+		var t: float = fmod(_clock * 0.7 + k / 8.0, 1.0)
+		var angle: float = k * TAU / 8.0 + _clock * 1.5
+		var mote: Vector2 = point + Vector2.RIGHT.rotated(angle) * size.x * 0.75 * (1.0 - t)
+		_box(mote.x, mote.y, 3, 3, Color(0.85, 0.6, 1.0, t))
+	var font: Font = ThemeDB.fallback_font
+	draw_string(font, point + Vector2(-60, size.y * 0.5 + 16), "PORTAL", HORIZONTAL_ALIGNMENT_CENTER, 120, 12, Color("#d6b3ff", 0.6 + 0.3 * sin(_clock * 4.0)))
 
 
 func _box(x: float, y: float, width: float, height: float, color: Color) -> void:
@@ -795,17 +872,32 @@ func _golem_loop(animation: String, fps: float, phase: int, first: int = 0) -> T
 	return frames[first + (int(_clock * fps) + absi(phase)) % count]
 
 
-## Mob telegraphs: the imp's dash lane and the necromancer's summoning circle.
+## Attack telegraphs by pattern: the dash lane, the cleave cone and the pound
+## ring (mobs and mini-bosses), plus the necromancer's summoning circle.
 func _draw_mob_telegraph(enemy: Dictionary) -> void:
 	if str(enemy.get("attack", "")) != "windup" or float(enemy.get("dying_p", -1.0)) >= 0.0:
 		return
 	var point: Vector2 = _position(enemy)
 	var p: float = float(enemy.get("attack_p", 0.0))
+	var aim := Vector2(float(enemy.get("aim_x", 1.0)), float(enemy.get("aim_y", 0.0))).normalized()
+	var blink: float = 0.2 if p > 0.7 and fmod(_clock, 0.1) < 0.05 else 0.0
+	var mini: bool = str(enemy.get("kind", "")).begins_with("n_")
+	# The big bosses draw their own telegraphs.
+	var pattern: String = str(enemy.get("pattern", "")) if mini or not bool(enemy.get("boss", false)) else ""
+	match pattern:
+		"dash":
+			var width: float = float(enemy.get("radius", 12.0)) * 0.9 if mini else 10.0
+			draw_line(point + Vector2(0, 8), point + Vector2(0, 8) + aim * (220.0 if mini else 140.0), Color(WARN, 0.15 + 0.35 * p + blink), width)
+		"cleave":
+			var reach: float = 90.0 if mini else 72.0
+			var cone := PackedVector2Array([point])
+			for k in range(9):
+				cone.append(point + aim.rotated(-1.0 + 2.0 * k / 8.0) * reach)
+			draw_colored_polygon(cone, Color(WARN, 0.08 + 0.22 * p + blink))
+		"pound":
+			draw_arc(point + Vector2(0, 8), 60.0, 0.0, TAU, 40, Color(WARN, 0.25 + 0.45 * p + blink), 2.0)
+			draw_circle(point + Vector2(0, 8), 60.0 * p, Color(WARN, 0.1))
 	match str(enemy.get("kind", "")):
-		"imp":
-			var aim := Vector2(float(enemy.get("aim_x", 1.0)), float(enemy.get("aim_y", 0.0))).normalized()
-			var alpha: float = 0.15 + 0.35 * p + (0.2 if p > 0.7 and fmod(_clock, 0.1) < 0.05 else 0.0)
-			draw_line(point + Vector2(0, 8), point + Vector2(0, 8) + aim * 140.0, Color(WARN, alpha), 10.0)
 		"necromancer":
 			draw_arc(point + Vector2(0, 12), 16.0 + 14.0 * p, 0.0, TAU, 24, Color("#a77be8", 0.3 + 0.5 * p), 2.0)
 			draw_arc(point + Vector2(0, 12), 30.0 - 10.0 * p, _clock * 3.0, _clock * 3.0 + PI, 12, Color("#d6b3ff", 0.6 * p), 2.0)

@@ -10,13 +10,16 @@ Frames keep the source size so the feet stay on the same line. Output:
 assets/sprites/orcs/frames/<name>_<animation>_f<N>.png and frames.json.
 
 Run after slice_orc_sheets.py: python -I scripts/animate_orc_figures.py
+The demon mini-bosses use the same frames: pass their folder name,
+python -I scripts/animate_orc_figures.py nebenbosse
 """
 import json
 import os
+import sys
 from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FOLDER = os.path.join(ROOT, "assets", "sprites", "orcs")
+FOLDER = os.path.join(ROOT, "assets", "sprites", sys.argv[1] if len(sys.argv) > 1 else "orcs")
 OUT = os.path.join(FOLDER, "frames")
 SKIP = {"trap"}
 LEG_SHARE = 0.3
