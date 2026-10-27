@@ -1,0 +1,426 @@
+{
+ "glutling": {
+  "idle": {
+   "frames": 5,
+   "size": [
+    49,
+    41
+   ]
+  },
+  "dash": {
+   "frames": 1,
+   "size": [
+    90,
+    39
+   ]
+  },
+  "attack": {
+   "frames": 1,
+   "size": [
+    91,
+    42
+   ]
+  },
+  "hurt": {
+   "frames": 1,
+   "size": [
+    50,
+    44
+   ]
+  },
+  "death": {
+   "frames": 1,
+   "size": [
+    60,
+    34
+   ]
+  },
+  "fire_patch": {
+   "frames": 1,
+   "size": [
+    73,
+    46
+   ]
+  }
+ },
+ "schattling": {
+  "idle": {
+   "frames": 5,
+   "size": [
+    50,
+    41
+   ]
+  },
+  "dash": {
+   "frames": 1,
+   "size": [
+    92,
+    38
+   ]
+  },
+  "attack": {
+   "frames": 1,
+   "size": [
+    85,
+    39
+   ]
+  },
+  "hurt": {
+   "frames": 1,
+   "size": [
+    47,
+    44
+   ]
+  },
+  "death": {
+   "frames": 1,
+   "size": [
+    63,
+    35
+   ]
+  },
+  "void_cloud": {
+   "frames": 1,
+   "size": [
+    56,
+    47
+   ]
+  },
+  "void_orb": {
+   "frames": 1,
+   "size": [
+    46,
+    24
+   ]
+  }
+ },
+ "funkenball": {
+  "idle": {
+   "frames": 5,
+   "size": [
+    73,
+    36
+   ]
+  },
+  "attack": {
+   "frames": 1,
+   "size": [
+    205,
+    36
+   ]
+  },
+  "beam": {
+   "frames": 1,
+   "size": [
+    149,
+    31
+   ]
+  },
+  "hurt": {
+   "frames": 1,
+   "size": [
+    46,
+    38
+   ]
+  },
+  "death": {
+   "frames": 1,
+   "size": [
+    87,
+    32
+   ]
+  }
+ },
+ "blutqualle": {
+  "idle": {
+   "frames": 7,
+   "size": [
+    47,
+    50
+   ]
+  },
+  "hurt": {
+   "frames": 1,
+   "size": [
+    34,
+    48
+   ]
+  },
+  "death": {
+   "frames": 1,
+   "size": [
+    72,
+    41
+   ]
+  },
+  "blood_pillar": {
+   "frames": 1,
+   "size": [
+    48,
+    51
+   ]
+  },
+  "blood_splash": {
+   "frames": 1,
+   "size": [
+    72,
+    37
+   ]
+  }
+ },
+ "stachelwaechter": {
+  "idle": {
+   "frames": 5,
+   "size": [
+    58,
+    47
+   ]
+  },
+  "claw": {
+   "frames": 1,
+   "size": [
+    78,
+    46
+   ]
+  },
+  "attack": {
+   "frames": 1,
+   "size": [
+    80,
+    48
+   ]
+  },
+  "charge": {
+   "frames": 1,
+   "size": [
+    119,
+    45
+   ]
+  },
+  "hurt": {
+   "frames": 1,
+   "size": [
+    54,
+    47
+   ]
+  },
+  "death": {
+   "frames": 1,
+   "size": [
+    69,
+    41
+   ]
+  }
+ },
+ "leerenpriester": {
+  "idle": {
+   "frames": 4,
+   "size": [
+    46,
+    48
+   ]
+  },
+  "attack": {
+   "frames": 2,
+   "size": [
+    74,
+    48
+   ]
+  },
+  "hurt": {
+   "frames": 1,
+   "size": [
+    46,
+    47
+   ]
+  },
+  "death": {
+   "frames": 1,
+   "size": [
+    67,
+    44
+   ]
+  },
+  "void_circle": {
+   "frames": 1,
+   "size": [
+    46,
+    46
+   ]
+  }
+ },
+ "krabbenteufel": {
+  "idle": {
+   "frames": 4,
+   "size": [
+    50,
+    43
+   ]
+  },
+  "attack": {
+   "frames": 2,
+   "size": [
+    101,
+    43
+   ]
+  },
+  "hurt": {
+   "frames": 1,
+   "size": [
+    57,
+    40
+   ]
+  },
+  "death": {
+   "frames": 1,
+   "size": [
+    70,
+    36
+   ]
+  },
+  "spikes": {
+   "frames": 1,
+   "size": [
+    82,
+    40
+   ]
+  }
+ },
+ "fackelteufel": {
+  "idle": {
+   "frames": 4,
+   "size": [
+    64,
+    43
+   ]
+  },
+  "attack": {
+   "frames": 2,
+   "size": [
+    71,
+    42
+   ]
+  },
+  "hurt": {
+   "frames": 1,
+   "size": [
+    62,
+    43
+   ]
+  },
+  "death": {
+   "frames": 1,
+   "size": [
+    75,
+    40
+   ]
+  },
+  "fireball": {
+   "frames": 1,
+   "size": [
+    66,
+    26
+   ]
+  },
+  "fire_ring": {
+   "frames": 1,
+   "size": [
+    65,
+    42
+   ]
+  },
+  "flame_pillar": {
+   "frames": 1,
+   "size": [
+    62,
+    47
+   ]
+  }
+ },
+ "molgrax": {
+  "idle": {
+   "frames": 5,
+   "size": [
+    111,
+    92
+   ]
+  },
+  "walk": {
+   "frames": 10,
+   "size": [
+    125,
+    91
+   ]
+  },
+  "swipe": {
+   "frames": 7,
+   "size": [
+    205,
+    83
+   ]
+  },
+  "slam": {
+   "frames": 10,
+   "size": [
+    131,
+    82
+   ]
+  },
+  "throw": {
+   "frames": 6,
+   "size": [
+    136,
+    81
+   ]
+  },
+  "fireball": {
+   "frames": 1,
+   "size": [
+    165,
+    57
+   ]
+  },
+  "void": {
+   "frames": 11,
+   "size": [
+    142,
+    80
+   ]
+  },
+  "eruption": {
+   "frames": 8,
+   "size": [
+    169,
+    81
+   ]
+  },
+  "lava_wave": {
+   "frames": 1,
+   "size": [
+    219,
+    81
+   ]
+  },
+  "rage": {
+   "frames": 8,
+   "size": [
+    178,
+    80
+   ]
+  },
+  "stagger": {
+   "frames": 8,
+   "size": [
+    124,
+    60
+   ]
+  },
+  "death": {
+   "frames": 9,
+   "size": [
+    127,
+    66
+   ]
+  }
+ }
+}

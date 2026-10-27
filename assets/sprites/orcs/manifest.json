@@ -1,0 +1,116 @@
+{
+ "g_cutthroat": {
+  "size": [
+   40,
+   42
+  ]
+ },
+ "g_spearman": {
+  "size": [
+   31,
+   48
+  ]
+ },
+ "g_archer": {
+  "size": [
+   42,
+   42
+  ]
+ },
+ "g_shieldbearer": {
+  "size": [
+   35,
+   44
+  ]
+ },
+ "g_bomber": {
+  "size": [
+   39,
+   42
+  ]
+ },
+ "trap": {
+  "size": [
+   39,
+   18
+  ]
+ },
+ "g_trapper": {
+  "size": [
+   38,
+   40
+  ]
+ },
+ "g_shaman": {
+  "size": [
+   34,
+   48
+  ]
+ },
+ "g_captain": {
+  "size": [
+   45,
+   46
+  ]
+ },
+ "o_brute": {
+  "size": [
+   46,
+   56
+  ]
+ },
+ "o_warlord": {
+  "size": [
+   121,
+   106
+  ]
+ },
+ "g_skirmisher": {
+  "size": [
+   42,
+   38
+  ]
+ },
+ "g_hunter": {
+  "size": [
+   37,
+   40
+  ]
+ },
+ "g_phalanx": {
+  "size": [
+   46,
+   42
+  ]
+ },
+ "g_flailer": {
+  "size": [
+   49,
+   40
+  ]
+ },
+ "o_bonecaller": {
+  "size": [
+   52,
+   58
+  ]
+ },
+ "o_berserker": {
+  "size": [
+   63,
+   62
+  ]
+ },
+ "o_chieftain": {
+  "size": [
+   69,
+   68
+  ]
+ },
+ "o_blackknight": {
+  "size": [
+   64,
+   62
+  ]
+ }
+}
