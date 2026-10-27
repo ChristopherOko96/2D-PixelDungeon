@@ -21,18 +21,42 @@ func definition(kind: String) -> Dictionary:
 	result.kind = kind
 	return result
 
+## Floor plan of the crypt (balance "enemy_roster.floor_plan", repeating every
+## `cycle` floors): the boss floor's last room holds the Leerenrufer, mini-boss
+## floors a mini-boss, every other floor's last room a strong group.
+func final_room_role(floor_index: int) -> String:
+	var plan: Dictionary = _settings().get("floor_plan",{})
+	var cycle: int = maxi(1,int(plan.get("cycle",10)))
+	var step: int = posmod(floor_index-1,cycle)+1
+	if step == int(plan.get("boss_floor",10)): return "boss"
+	if plan.get("minibosses",{}).has(str(step)): return str(plan.minibosses[str(step)])
+	return "strong_group"
+
+
 ## Keep boss slots intact and introduce new roles gradually with seeded variation.
 func choose_kind(room: int, index: int, _count: int, boss_room: bool, rng: RandomNumberGenerator) -> String:
+	var floor_index: int = int(_game.get("floor_index")) if _game != null and _game.get("floor_index") != null else 1
+	var encounter: Dictionary = _settings().get("encounter",{})
 	if boss_room:
-		if index == 0: return "boss"
+		var role := final_room_role(floor_index)
+		if role == "strong_group":
+			var group: Array = _settings().get("floor_plan",{}).get("strong_group",["necromancer","void_bomber","void_bomber","skeleton_guard","skeleton_archer","skeleton"])
+			return str(group[index%group.size()])
+		if index == 0: return role
 		return "skeleton_archer" if index%2 == 1 else "skeleton_guard"
 	if index == 0: return "skeleton_guard"
 	if index == 1: return "skeleton_archer"
-	var encounter: Dictionary = _settings().get("encounter",{})
 	var necro_from: int = int(encounter.get("necromancer_from_room",3))
 	var necro_max: int = int(encounter.get("necromancer_max_per_room",2))
 	if room >= necro_from and index%3 == 2 and index/3 < necro_max: return "necromancer"
-	return "skeleton_guard" if rng.randi_range(0,1) == 0 else "skeleton_archer"
+	if floor_index >= int(encounter.get("bomber_from_floor",2)) and index%4 == 3: return "void_bomber"
+	var pool: Array = ["skeleton","skeleton_guard","skeleton_archer"]
+	if floor_index >= int(encounter.get("zombies_from_floor",2)): pool.append_array(["tiny_zombie","ice_zombie"])
+	return str(pool[rng.randi_range(0,pool.size()-1)])
+
+
+func _parts() -> RefCounted:
+	return _game.get("body_parts") if _game != null else null
 
 ## Handle one living enemy after the caller has applied stun/freeze/knockback.
 ## Returning true prevents legacy contact damage or chase AI from running again.
@@ -57,8 +81,14 @@ func step(enemy: Dictionary, target_id: int, delta: float) -> bool:
 	if float(enemy.shot_timer) <= 0 and distance <= float(data.attack_range) and visible:
 		var kind: String = str(data.attack)
 		if str(enemy.kind) == "necromancer" and _can_summon(enemy): kind = "summon"
-		_begin_attack(enemy,target_id,target.pos,kind)
-		return true
+		# Mini-bosses roar every few attacks, and always when their arm is gone.
+		var parts := _parts()
+		var roar_every: int = int(data.get("roar_every",0))
+		if roar_every > 0 and (int(enemy.get("attacks",0))%roar_every == roar_every-1 or (parts != null and not parts.can(enemy,"attack"))): kind = "roar"
+		var need: String = "cast" if kind in ["soul","summon"] else "" if kind in ["roar","fuse"] else "attack"
+		if need.is_empty() or parts == null or parts.can(enemy,need):
+			_begin_attack(enemy,target_id,target.pos,kind)
+			return true
 	_move(enemy,target.pos,data,visible,delta)
 	return true
 
@@ -122,14 +152,42 @@ func _release(enemy: Dictionary) -> bool:
 		if not spawned: enemy.summon_failures = int(enemy.get("summon_failures",0))+1
 		return spawned
 	var aim: Vector2 = enemy.attack_aim
-	if kind == "slash":
-		var target_id: int = int(enemy.attack_target)
-		var target: Dictionary = _game.players.get(target_id,{})
-		if target.is_empty() or int(target.get("hp",0)) <= 0: return true
-		var offset: Vector2 = Vector2(target.pos)-Vector2(enemy.pos)
-		if offset.length() <= float(data.get("range",56)) and offset.normalized().dot(aim) >= float(data.get("arc_dot",0.35)) and not Dungeon.segment_blocked(enemy.pos,target.pos,0.0,_game.current_layout):
-			_game._damage_player(target_id,int(data.get("damage",1)),aim)
+	if kind in ["slash","bite","slam"]:
+		# Melee: every living player in range and arc in front (slam hits all of them).
+		var hit_all: bool = kind == "slam"
+		var targets: Array = _game.players.keys() if hit_all else [int(enemy.attack_target)]
+		for target_id: int in targets:
+			var target: Dictionary = _game.players.get(target_id,{})
+			if target.is_empty() or int(target.get("hp",0)) <= 0: continue
+			var offset: Vector2 = Vector2(target.pos)-Vector2(enemy.pos)
+			if offset.length() <= float(data.get("range",56)) and offset.normalized().dot(aim) >= float(data.get("arc_dot",0.35)) and not Dungeon.segment_blocked(enemy.pos,target.pos,0.0,_game.current_layout):
+				_game._damage_player(target_id,int(data.get("damage",1)),aim if offset.is_zero_approx() else offset.normalized())
+		if kind == "slam": _game.add_fx("slam",Vector2(enemy.pos)+aim*float(data.get("range",56))*0.5,float(data.get("range",56)))
 		return true
+	if kind == "fuse":
+		# Leerenbomber: burst in a void explosion, hurting players nearby (not
+		# through walls), and vanish without a kill reward.
+		var radius: float = float(data.get("radius",72))
+		for target_id in _game.players:
+			var target: Dictionary = _game.players[target_id]
+			if int(target.get("hp",0)) <= 0: continue
+			var offset: Vector2 = Vector2(target.pos)-Vector2(enemy.pos)
+			if offset.length() <= radius+float(_game.balance.player.radius) and not Dungeon.segment_blocked(enemy.pos,target.pos,0.0,_game.current_layout):
+				_game._damage_player(target_id,int(data.get("damage",2)),offset.normalized() if not offset.is_zero_approx() else aim)
+		_game.add_fx("void_burst",Vector2(enemy.pos),radius)
+		enemy.exploded = true
+		enemy.hp = 0.0
+		enemy.dying = float(_game.balance.death.duration)
+		return true
+	if kind == "roar":
+		# Mini-boss shockwave: a ring of slow bullets around the body.
+		var count: int = int(data.get("bullet_count",10))
+		var fired := false
+		for index in range(count):
+			var direction := Vector2.from_angle(TAU*index/count+float(enemy.get("attacks",0))*0.31)
+			var bullet: Dictionary = _game._add_bullet(Vector2(enemy.pos)+direction*float(enemy.radius),direction*float(data.get("bullet_speed",150)),0,float(data.get("damage",1)),{"style":"roar","radius":float(data.get("bullet_radius",6)),"life":float(data.get("bullet_lifetime",3)),"caster_id":int(enemy.id)})
+			fired = fired or not bullet.is_empty()
+		return fired
 	var radius: float = float(data.get("bullet_radius",5))
 	var muzzle: Vector2 = Vector2(enemy.pos)+aim*float(data.get("muzzle_offset",18))
 	if Dungeon.segment_blocked(enemy.pos,muzzle,radius,_game.current_layout): return false
@@ -175,6 +233,8 @@ func _move(enemy: Dictionary, target_point: Vector2, data: Dictionary, visible: 
 	var scale: float = 1.0
 	var combat: Variant = _game.get("perk_combat")
 	if combat != null: scale = float(combat.speed_scale(enemy))
+	var parts := _parts()
+	if parts != null: scale *= float(parts.speed_scale(enemy))
 	enemy.pos = Dungeon.move_actor(enemy.pos,direction*float(enemy.speed)*scale*delta,radius,_game.current_layout)
 	enemy.moving = before.distance_squared_to(enemy.pos) > 0.001
 	# Skeletons face their target, so a pursuing guard's shield orientation is clear.
@@ -187,6 +247,9 @@ func guard_multiplier(enemy: Dictionary, incoming_direction: Vector2, feedback: 
 	if not feedback or str(enemy.get("kind","")) != "skeleton_guard" or float(enemy.get("hp",0)) <= 0: return 1.0
 	if not str(enemy.get("attack","")).is_empty() or float(enemy.get("hitstun",0.0)) > 0 or enemy.get("statuses",{}).has("freeze"): return 1.0
 	if incoming_direction.length_squared() <= 0.00001: return 1.0
+	# A broken shield no longer blocks.
+	var parts := _parts()
+	if parts != null and not parts.can(enemy,"block"): return 1.0
 	var facing: Vector2 = enemy.get("facing_dir",Vector2(float(enemy.get("face",1.0)),0))
 	var data: Dictionary = definition("skeleton_guard")
 	return float(data.get("guard_multiplier",0.35)) if facing.normalized().dot(-incoming_direction.normalized()) >= float(data.get("guard_cone_dot",0.5)) else 1.0

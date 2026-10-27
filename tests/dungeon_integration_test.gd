@@ -93,7 +93,13 @@ func _test_room_and_geometry(game: Node, layout: Dictionary) -> void:
 	check(game.bullets.is_empty(), "room transition clears prior projectiles")
 	game.room = game.floor_layouts.size()
 	game._spawn_room()
-	check(game.current_layout.boss and game.enemies.any(func(enemy: Dictionary) -> bool: return enemy.boss), "final template and encounter agree on boss room")
+	# Floor plan: the final room's boss template holds a strong group on floor 1
+	# and the Leerenrufer on floor 10.
+	check(game.current_layout.boss and not game.enemies.any(func(enemy: Dictionary) -> bool: return enemy.boss), "floor 1's final room is a strong group without a boss")
+	game.floor_index = 10
+	game._spawn_room()
+	check(game.current_layout.boss and game.enemies.any(func(enemy: Dictionary) -> bool: return enemy.boss), "final template and encounter agree on boss room (floor 10)")
+	game.floor_index = 1
 	for floor_room: Dictionary in game.floor_layouts:
 		if str(floor_room.id) not in game.cleared_room_ids: game.cleared_room_ids.append(str(floor_room.id))
 	game.phase = "explore"

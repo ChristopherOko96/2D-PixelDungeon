@@ -3,6 +3,7 @@ extends SceneTree
 
 class HostFixture extends Node:
 	var balance: Dictionary = {}
+	var floor_index: int = 1
 	var current_layout: Dictionary = {"id":"crypt-ai-fixture","world_size":[768,512],"play_bounds":[32,32,704,448],"obstacles":[],"exits":[],"tile_size":32}
 	var players: Dictionary = {1:{"pos":Vector2(420,256),"hp":8}}
 	var enemies: Array = []
@@ -101,8 +102,11 @@ func _test_catalog_and_seeded_mixing() -> void:
 			if room == 1: check(kind != "necromancer","entrance does not introduce necromancers")
 			if room < 10: check(kind != "boss","normal room cannot select a boss")
 		check(mixed.size() >= 2,"normal encounter mixes distinct enemy silhouettes")
-	check(ai.choose_kind(10,0,3,true,first_rng) == "boss","boss retains the first boss-room slot")
+	# The Leerenrufer holds the first slot of the final room on floor 10.
+	host.floor_index = 10
+	check(ai.choose_kind(10,0,3,true,first_rng) == "boss","boss retains the first boss-room slot on floor 10")
 	check(ai.choose_kind(10,1,3,true,first_rng) != ai.choose_kind(10,2,3,true,first_rng),"two boss companions use distinct roles")
+	host.floor_index = 1
 
 func _test_archer_lock_release_and_recovery() -> void:
 	_reset()

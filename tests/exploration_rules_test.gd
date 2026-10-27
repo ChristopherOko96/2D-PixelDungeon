@@ -99,7 +99,9 @@ func _initialize() -> void:
 		check(game.room == destination and game.phase == "combat", "a client activates the shared entrance to room%d" % destination)
 		check(bool(game.current_layout.boss) == (destination == boss_room), "only the final configured room is a boss encounter")
 		if destination == boss_room:
-			check(game.enemies.filter(func(enemy: Dictionary): return enemy.boss).size() == 1, "the actual boss entrance spawns exactly one boss entity")
+			# Floor plan: on floor 1 the final room holds a strong group (the
+			# Leerenrufer waits on floor 10, see crypt_bosses_test).
+			check(game.enemies.filter(func(enemy: Dictionary): return enemy.boss).is_empty() and game.enemies.size() == int(game.balance.enemy_roster.floor_plan.strong_group_count), "the final entrance of floor 1 spawns the strong group")
 		_complete_room(game)
 	check(game.room == boss_room and game.phase == "explore", "boss reward leaves the complete floor freely explorable")
 	var completed_snapshot: Dictionary = game._make_snapshot()

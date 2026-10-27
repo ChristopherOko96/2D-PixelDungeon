@@ -107,18 +107,20 @@ func _test_debug_room_jump_starts_in_that_room_with_earlier_rooms_cleared() -> v
 	var game = await _new_game()
 	var entries: Array = game.main_menu.debug_entries
 	var count: int = game._run_room_count()
-	check(entries.size() == count + 1, "the debug list has every room of floor 1 plus floor 2")
-	check(str(entries[count - 1].label).contains("BOSS"), "the last room entry is labelled as the boss room")
+	# Floor 1 rooms, floor 2, the three mini-boss floors and the Leerenrufer's floor.
+	check(entries.size() == count + 5, "the debug list has every room of floor 1, floor 2, the mini-bosses and the boss")
+	check(str(entries[count - 1].label).contains("ENDRAUM"), "floor 1's last room is labelled as its final room")
+	check(str(entries[-1].label).contains("LEERENRUFER") and int(entries[-1].floor) == 10, "the last entry is the Leerenrufer on floor 10")
 	# Act: a debug pick also goes through the hero choice.
-	game.main_menu._pick_debug(entries[count - 1])
+	game.main_menu._pick_debug(entries[-1])
 	game.main_menu._choose_class("mage")
 	# Assert
 	var bosses := 0
 	for enemy: Dictionary in game.enemies:
-		if bool(enemy.boss): bosses += 1
-	check(game.phase == "combat" and game.room == count and game.floor_index == 1, "the boss entry starts in the last room")
+		if bool(enemy.boss) and str(enemy.get("rig","")) == "void": bosses += 1
+	check(game.phase == "combat" and game.room == count and game.floor_index == 10, "the boss entry starts in floor 10's last room")
 	check(game.cleared_room_ids.size() == count - 1, "all rooms before the jump target count as cleared")
-	check(bosses == 1, "the jumped-to boss room spawns exactly one boss")
+	check(bosses == 1, "the jumped-to boss room spawns exactly one Leerenrufer")
 	check(game.main_menu.take_debug_start().is_empty(), "a debug jump is consumed once")
 	game.queue_free()
 	await process_frame
@@ -127,8 +129,11 @@ func _test_debug_floor_two_starts_on_the_next_floor() -> void:
 	# Arrange
 	var game = await _new_game()
 	var entries: Array = game.main_menu.debug_entries
+	var floor_two: Dictionary = {}
+	for entry: Dictionary in entries:
+		if int(entry.floor) == 2: floor_two = entry
 	# Act
-	game.main_menu._pick_debug(entries[entries.size() - 1])
+	game.main_menu._pick_debug(floor_two)
 	game.main_menu._choose_class("archer")
 	# Assert
 	check(game.floor_index == 2 and game.room == 1 and game.phase == "combat", "the floor 2 entry starts in room 1 of floor 2")

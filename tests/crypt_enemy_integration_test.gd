@@ -71,8 +71,9 @@ func _test_campaign_spawns_varied_crypt_roles_and_only_final_boss() -> void:
 			else:
 				kinds[str(enemy.kind)] = true
 				if str(enemy.kind) == "necromancer": necromancers += 1
-				check(str(enemy.kind) in ["skeleton_guard","skeleton_archer","necromancer"],"ordinary spawns use the three crypt roles in room%d" % index)
-		check(bosses == (1 if index == 10 else 0),"the only boss appears in room10, checked room%d" % index)
+				# Floor 1: the skeleton roles and necromancers; bombers only in the final strong group.
+				check(str(enemy.kind) in ["skeleton","skeleton_guard","skeleton_archer","necromancer"] or (index == 10 and str(enemy.kind) == "void_bomber"),"ordinary spawns use the crypt roles of floor 1 in room%d" % index)
+		check(bosses == 0,"floor 1 has no boss (the Leerenrufer waits on floor 10), checked room%d" % index)
 		var necro_limit: int = int(game.balance.get("enemy_roster",{}).get("encounter",{}).get("necromancer_max_per_room",1))
 		check(necromancers <= necro_limit,"actual room%d respects its configured necromancer cap" % index)
 		if index == 1:
@@ -80,8 +81,18 @@ func _test_campaign_spawns_varied_crypt_roles_and_only_final_boss() -> void:
 		if index >= 3:
 			for kind: String in kinds: late_kinds[kind] = true
 		if index == 10:
-			check(game.enemies.size() == 3 and kinds.size() == 2,"boss encounter retains one boss and two distinct ordinary companions")
+			check(game.enemies.size() == int(game.balance.enemy_roster.floor_plan.strong_group_count) and kinds.has("void_bomber") and kinds.has("necromancer"),"floor 1 ends in a strong group with bombers and a necromancer")
 	check(late_kinds.has("necromancer"),"later ordinary encounters actually include necromancers")
+	# Floor 10: one Leerenrufer with two distinct ordinary companions.
+	game.floor_index = 10
+	game.room = 10
+	game._spawn_room()
+	var boss_count: int = 0
+	var companions: Dictionary = {}
+	for enemy: Dictionary in game.enemies:
+		if bool(enemy.boss): boss_count += 1
+		else: companions[str(enemy.kind)] = true
+	check(boss_count == 1 and game.enemies.size() == 3 and companions.size() == 2,"boss encounter on floor 10 retains one boss and two distinct ordinary companions")
 
 func _summoning_available() -> bool:
 	var available: bool = game.has_method("spawn_crypt_minion")

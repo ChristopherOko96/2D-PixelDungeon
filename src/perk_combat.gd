@@ -136,7 +136,15 @@ func melee(id: int, aim: Vector2) -> void:
 	for enemy: Dictionary in targets:
 		var offset: Vector2 = Vector2(enemy.pos)-Vector2(player.pos)
 		var push: Vector2 = offset.normalized() if offset.length() > 0.1 else direction
+		# Body parts: the blade meets the part on the side facing the swordsman.
+		_pending_part(enemy,Vector2(enemy.pos)-push*float(enemy.radius)*0.8)
 		hit({"owner":id,"damage":damage,"velocity":push,"primary":true,"critical":critical,"distance":0.0,"pos":Vector2(enemy.pos),"melee":true},enemy)
+
+
+## Area and melee damage choose the rigged enemy's part nearest to `point`.
+func _pending_part(enemy: Dictionary, point: Vector2) -> void:
+	var parts: Variant = _game.get("body_parts")
+	if parts != null and parts.has_parts(enemy): parts.set_pending(enemy,parts.part_near(enemy,point))
 
 ## Mage orbs (step 2): when a splash projectile ends - hit, wall or end of its
 ## flight - it bursts for half its damage on every living enemy in the radius.
@@ -150,6 +158,7 @@ func splash(bullet: Dictionary) -> void:
 		if float(enemy.hp) <= 0: continue
 		if point.distance_to(enemy.pos) >= radius+float(enemy.radius): continue
 		var push: Vector2 = (Vector2(enemy.pos)-point).normalized() if point.distance_to(enemy.pos) > 0.1 else Vector2.RIGHT
+		_pending_part(enemy,point)
 		_game._damage_enemy(enemy,float(bullet.damage)*_m("splash_damage_scale",0.5),push,owner,true)
 	_event("blast",point,point)
 
@@ -392,6 +401,7 @@ func _area(point: Vector2, radius: float, damage: float, owner: int, excluded: A
 	for target: Dictionary in _nearby(point,radius,excluded):
 		if _secondary_left <= 0: break
 		_secondary_left -= 1
+		_pending_part(target,point)
 		_game._damage_enemy(target,damage,(Vector2(target.pos)-point).normalized(),owner,false)
 	_event("blast",point,point)
 

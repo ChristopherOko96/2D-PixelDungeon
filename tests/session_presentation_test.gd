@@ -1,6 +1,7 @@
 extends SceneTree
 ## Host protocol integration: native32 actors, death cues and queued exits.
 const Game = preload("res://src/game.gd")
+const Dungeon = preload("res://src/dungeon/dungeon_generator.gd")
 var checked := 0
 var failures: Array[String] = []
 
@@ -54,21 +55,31 @@ func _run() -> void:
 	check(enemy.hits == 1,"a dead enemy cannot create duplicate hit/death cues")
 	game._simulate_enemies(float(game.balance.death.duration)+0.01)
 	check(game.enemies.all(func(value: Dictionary): return value.id != identity),"dead actors leave only after the animation interval")
-	# The boss lives in the final room of the ten-room crypt (Story015), with two
-	# companions (encounter.boss_enemies); isolate the boss to count its burst.
+	# The Leerenrufer lives in the final room of floor 10 (enemy_roster.floor_plan)
+	# with two companions (encounter.boss_enemies); isolate it to observe one move.
+	game.floor_index = 10
 	game.room = game.floor_layouts.size()
 	game._spawn_room()
 	var boss: Dictionary = {}
 	for candidate: Dictionary in game.enemies:
 		if bool(candidate.boss): boss = candidate
-	check(not boss.is_empty(),"the final room spawns the boss")
+	check(not boss.is_empty() and str(boss.get("rig","")) == "void","the final room of floor 10 spawns the Leerenrufer")
 	game.enemies = [boss]
 	boss.shot_timer = 0.0
 	game.bullets.clear()
+	# The player stands in clear sight of the boss, inside its attack range.
+	for offset: Vector2 in [Vector2(-140,0),Vector2(140,0),Vector2(0,140),Vector2(0,-140)]:
+		var spot: Vector2 = Vector2(boss.pos)+offset
+		if not Dungeon.segment_blocked(boss.pos,spot,float(game.balance.player.radius),game.current_layout):
+			game.players[1].pos = spot
+			break
+	game.players[1].invulnerable = 99.0
 	game._simulate_enemies(0.01)
-	check(boss.attack == "windup" and game.bullets.is_empty(),"boss animation anticipates its radial shot")
-	game._simulate_enemies(float(game.balance.attacks.boss.windup)+0.01)
-	check(boss.attacks == 1 and game.bullets.size() == int(game.balance.boss.bullet_count),"active attack emits one burst and one feedback counter")
+	var move: String = str(boss.get("attack_kind",""))
+	check(boss.attack == "windup" and game.bullets.is_empty() and move in ["salve","beam","summon"],"the boss telegraphs its move before it lands")
+	game._simulate_enemies(float(game.balance.void_boss.attacks[move].windup)+0.01)
+	var landed: bool = (move == "salve" and game.bullets.size() == int(game.balance.void_boss.attacks.salve.count)) or (move == "beam" and boss.has("beam_to")) or (move == "summon" and game.enemies.size() > 1)
+	check(boss.attacks == 1 and landed,"the move lands once with one feedback counter (%s)" % move)
 	game._begin_run()
 	game.enemies.clear()
 	game._check_room_end()

@@ -7,20 +7,34 @@
   "enemy_roster": {
     "schema_version": 1,
     "definitions": {
-      "skeleton_archer": {"display_name":"SKELETTBOGENSCHÜTZE","hp":7,"hp_per_extra_player":2,"speed":59,"radius":12,"damage":1,"attack":"arrow","range_min":170,"range_max":290,"attack_range":420,"initial_cooldown":0.9},
-      "necromancer": {"display_name":"NEKROMANT","hp":12,"hp_per_extra_player":4,"speed":43,"radius":13,"damage":1,"attack":"soul","range_min":190,"range_max":315,"attack_range":440,"initial_cooldown":1.5},
-      "skeleton_guard": {"display_name":"SCHILDSKELETT","hp":11,"hp_per_extra_player":3,"speed":66,"radius":13,"damage":1,"attack":"slash","range_min":0,"range_max":46,"attack_range":54,"initial_cooldown":0.45,"guard_multiplier":0.35,"guard_cone_dot":0.5}
+      "skeleton_archer": {"display_name":"SKELETTBOGENSCHÜTZE","hp":7,"hp_per_extra_player":2,"speed":59,"radius":12,"damage":1,"attack":"arrow","range_min":170,"range_max":290,"attack_range":420,"initial_cooldown":0.9,"rig":"skel_archer"},
+      "necromancer": {"display_name":"NEKROMANT","hp":12,"hp_per_extra_player":4,"speed":43,"radius":13,"damage":1,"attack":"soul","range_min":190,"range_max":315,"attack_range":440,"initial_cooldown":1.5,"rig":"necro"},
+      "skeleton_guard": {"display_name":"SCHILDSKELETT","hp":11,"hp_per_extra_player":3,"speed":66,"radius":13,"damage":1,"attack":"slash","range_min":0,"range_max":46,"attack_range":54,"initial_cooldown":0.45,"guard_multiplier":0.35,"guard_cone_dot":0.5,"rig":"skel_guard"},
+      "skeleton": {"display_name":"SKELETT","hp":9,"hp_per_extra_player":3,"speed":70,"radius":12,"damage":1,"attack":"slash","range_min":0,"range_max":44,"attack_range":52,"initial_cooldown":0.5,"rig":"skeleton"},
+      "tiny_zombie": {"display_name":"MINI-ZOMBIE","hp":5,"hp_per_extra_player":2,"speed":98,"radius":10,"damage":1,"attack":"bite","range_min":0,"range_max":30,"attack_range":36,"initial_cooldown":0.3,"rig":"tiny_zombie"},
+      "ice_zombie": {"display_name":"EIS-ZOMBIE","hp":13,"hp_per_extra_player":4,"speed":48,"radius":12,"damage":1,"attack":"slash","range_min":0,"range_max":44,"attack_range":52,"initial_cooldown":0.6,"rig":"ice_zombie"},
+      "void_bomber": {"display_name":"LEERENBOMBER","hp":3,"hp_per_extra_player":1,"speed":118,"radius":10,"damage":2,"attack":"fuse","range_min":0,"range_max":0,"attack_range":46,"initial_cooldown":0.2,"rig":"bomber"},
+      "moderkoloss": {"display_name":"MODERKOLOSS","hp":46,"hp_per_extra_player":15,"speed":40,"radius":22,"damage":2,"attack":"slam","range_min":0,"range_max":58,"attack_range":70,"initial_cooldown":1,"rig":"big_zombie","miniboss":true,"roar_every":3},
+      "frostleiche": {"display_name":"FROSTLEICHE","hp":56,"hp_per_extra_player":19,"speed":40,"radius":22,"damage":2,"attack":"slam","range_min":0,"range_max":58,"attack_range":70,"initial_cooldown":1,"rig":"frost_corpse","miniboss":true,"roar_every":3},
+      "knochenkoloss": {"display_name":"KNOCHENKOLOSS","hp":66,"hp_per_extra_player":22,"speed":40,"radius":22,"damage":2,"attack":"slam","range_min":0,"range_max":58,"attack_range":70,"initial_cooldown":1,"rig":"bone_colossus","miniboss":true,"roar_every":3}
     },
     "attacks": {
       "arrow": {"windup":0.65,"active":0.08,"recovery":0.45,"cooldown":1.4,"bullet_speed":230,"bullet_radius":3,"bullet_lifetime":3.4,"damage":1,"muzzle_offset":18},
       "soul": {"windup":0.9,"active":0.12,"recovery":0.6,"cooldown":2.2,"bullet_speed":155,"bullet_radius":5,"bullet_lifetime":4,"damage":1,"muzzle_offset":20},
       "summon": {"windup":1.2,"active":0.18,"recovery":0.85,"cooldown":2.8,"summon_offset":72},
-      "slash": {"windup":0.48,"active":0.12,"recovery":0.6,"cooldown":1.35,"range":56,"arc_dot":0.35,"damage":1}
+      "slash": {"windup":0.48,"active":0.12,"recovery":0.6,"cooldown":1.35,"range":56,"arc_dot":0.35,"damage":1},
+      "bite": {"windup":0.3,"active":0.08,"recovery":0.4,"cooldown":0.9,"range":40,"arc_dot":0.2,"damage":1},
+      "fuse": {"windup":0.6,"active":0.05,"recovery":0.05,"cooldown":9,"radius":72,"damage":2},
+      "slam": {"windup":0.75,"active":0.12,"recovery":0.8,"cooldown":1.6,"range":80,"arc_dot":0.1,"damage":2},
+      "roar": {"windup":0.9,"active":0.15,"recovery":0.7,"cooldown":1.8,"bullet_count":10,"bullet_speed":150,"bullet_radius":6,"bullet_lifetime":3,"damage":1}
     },
-    "encounter": {"necromancer_from_room":3,"necromancer_max_per_room":1,"summon_every_attacks":3,"retreat_distance":144,"path_arrival_distance":8,"minimum_repath_interval":0.2},
-    "limits": {"max_enemies":12,"max_active_summons":2,"max_summons_per_caster":2,"max_summon_failures":2,"min_spawn_distance":112,"summon_enemy_spacing":32}
+    "encounter": {"necromancer_from_room":3,"necromancer_max_per_room":1,"summon_every_attacks":3,"retreat_distance":144,"path_arrival_distance":8,"minimum_repath_interval":0.2,"bomber_from_floor":2,"zombies_from_floor":2},
+    "limits": {"max_enemies":12,"max_active_summons":2,"max_summons_per_caster":2,"max_summon_failures":2,"min_spawn_distance":112,"summon_enemy_spacing":32},
+    "floor_plan": {"cycle":10,"boss_floor":10,"minibosses":{"3":"moderkoloss","6":"frostleiche","9":"knochenkoloss"},"strong_group_count":6,"strong_group":["necromancer","void_bomber","void_bomber","skeleton_guard","skeleton_archer","skeleton"]}
   },
-  "boss": {"display_name": "DER SCHLÄFER DER TIEFE", "hp": 70, "hp_per_extra_player": 24, "speed": 35, "radius": 24, "shot_interval": 1.8, "bullet_speed": 145, "bullet_count": 10},
+  "boss": {"display_name": "DER LEERENRUFER", "hp": 70, "hp_per_extra_player": 24, "speed": 35, "radius": 24, "shot_interval": 1.8, "bullet_speed": 145, "bullet_count": 10, "rig": "void"},
+  "void_boss": {"attack_range":520,"keep_min":150,"keep_max":250,"beam_cooldown":7,"summon_when_below":2,"limits":{"max_active_summons":4,"max_summons":24},"attacks":{"beam":{"windup":0.9,"active":1.7,"recovery":0.7,"cooldown":1.2,"turn_rate":0.55,"width":22,"tick":0.25,"damage":1,"range":560},"salve":{"windup":0.7,"active":0.1,"recovery":0.5,"cooldown":1,"count":3,"spread":0.3,"bullet_speed":170,"bullet_radius":6,"bullet_lifetime":3.5,"damage":1,"claw_x":22,"claw_y":-8},"summon":{"windup":1,"active":0.2,"recovery":0.8,"cooldown":1.4,"count":2,"offset":72,"kinds":["skeleton_archer","void_bomber"]}}},
+  "lighting": {"enabled":true,"player_radius":150,"darkness":0.82,"torch_radius":120,"beam_radius":68,"burst_radius":110},
   "rooms": {"enemy_counts": [3, 5, 1]},
   "exploration": {"interaction_radius": 56, "party_radius": 112, "seed_stride": 7919, "floor_hp_step": 0.15, "max_hp_multiplier": 3.0},
   "feedback": {"player_hitstun": 0.18, "enemy_hitstun": 0.12, "boss_hitstun": 0.06, "hit_flash": 0.16, "player_knockback": 95, "enemy_knockback": 60, "boss_knockback": 18, "knockback_decay": 12, "enemy_stun_cooldown": 0.2, "boss_stun_cooldown": 0.65},
