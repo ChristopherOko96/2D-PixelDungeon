@@ -1,10 +1,16 @@
 # Basement Run — development notes
 
-- Work on a feature branch (`codex/…` by default); never edit or merge directly on `main`.
+- Work on a feature branch (`codex/…` by default); never edit `main` directly.
 - The user explicitly requested publication to `codex_v2` in the brother's
   `ChristopherOko96/2D-PixelDungeon` repository on 2026-10-25. Remote `origin`
   is this publication target. Preserve that exact branch name for this delivery.
-  The earlier `v2` remote / `codex/v2` fork remains historical. Do not merge into main.
+  The earlier `v2` remote / `codex/v2` fork remains historical.
+- 2026-10-27, user decision: codex_v2 BECAME main. It was merged into main with
+  "our version wins" (a merge commit with main's 357d509 as first parent and the
+  codex_v2 tree as content; no force push, the brother's commits stay in the
+  history). Unported main features (Firebase login, deferred balance keys) are
+  only in the history. From now on: keep working on codex_v2 and bring it to main
+  only when the user asks.
 - Product scope lives in `design/game-brief.md`. The multiplayer requirement from
   2026-10-24 supersedes the original single-player exclusion. The user's later
   engine correction explicitly selects Godot and rules out downloading Unity.
@@ -645,6 +651,48 @@ approval gate above still applies to every new actor/boss art.
   candle columns), "16x16 dungeon ii wall reconfig", the fan sheets and the
   Enchanted Forest / Fantasy RPG NPC packs in the user's download folder have no
   licence note; clarify before committing any of them to the repo.
+- The user's reference folder moved to `C:\Users\Cylor\Desktop\Sprite Sheet 0x72`
+  (same contents). On 2026-10-27 the user sent the 0x72 pack's sample map as the
+  target look for rooms (dark grey outside, columns, banner rows, arched doors,
+  wall fountains).
+
+## Playable 0x72 crypt (2026-10-27, user-approved plan, one push)
+
+- Scope: the review set is now in the game for crypt floors 1-10. W1-W3
+  (later worlds) and the lizard stay preview-only.
+- Rigs: `assets/data/rigs.json` is generated from the review page by
+  `production/art-proof/0x72-style/export_rigs.js` (never edit by hand);
+  `src/rig/rig_library.gd` cuts parts (shared instance), `rig_poses.gd` is the
+  1:1 port of the page's POSES, `rig_renderer.gd` draws rigs, debris, beams,
+  pools and void effects from snapshot fields only.
+- Body parts (host, `src/combat/body_parts.gd`): part HP = weight share of the
+  enemy's max HP. Every hit counts fully against the total HP (big hits stay
+  lethal); the hit part breaks when its own HP is gone; a broken vital part
+  kills at once; lost parts disable "attack"/"cast"/"block"/"beam"/"summon";
+  legs slow (0.6 / 0.35), a skeleton torso 0.7; regrow returns half HP.
+  Projectiles hit the part whose rest-pose pixels they cross (precise test after
+  a broad phase); melee/splash/area hit the nearest part; statuses pick a seeded
+  part. The Leerenrufer's eye is only hittable during its beam.
+- Roster and floor plan (balance.json `enemy_roster`): skeleton, shield
+  skeleton, archer, necromancer, tiny/ice zombie, Leerenbomber (fuse, burst
+  radius 72, 2 damage; shot down = harmless pop). Final rooms per 10-floor cycle:
+  3/6/9 mini-bosses (Moderkoloss/Frostleiche/Knochenkoloss: slam + roar ring),
+  10 Der Leerenrufer (`src/combat/void_boss_ai.gd`, balance `void_boss`: beam,
+  salve, summon archers + bombers, max 4), other floors a strong group of 6.
+  `balance.boss` is now the Leerenrufer ("rig": "void"); the old radial burst
+  only remains for unrigged bosses.
+- Dark crypt (`src/vfx/darkness.gd`, `assets/shaders/canvas_vfx_darkness.gdshader`,
+  balance `lighting`): live runs only. Player radius 150, torches 120, beam,
+  pools, bursts, magic shots light up.
+- 0x72 rooms (`src/crypt_0x72_art.gd`): live crypt rooms are baked with the
+  review rules plus the sample-map look (dark grey outside, columns on single
+  obstacle cells, banner pairs, lava wall fountains, arched doors on north/south
+  exits closed during combat, bars across side exits). Editor and previews keep
+  the classic look. Debug list: floor 3/6/9 mini-bosses and floor 10 Leerenrufer.
+- Snapshot: enemies carry rig, lost, exposed, beam, miniboss, summoned,
+  exploded; root `fx_events`. RULESET_VERSION 6.
+- Tests: rig_library, body_parts, crypt_bosses (+ updated main_menu_flow and
+  session_presentation). Evidence: production/qa/evidence/0x72-playable/.
 
 ## Codex studio integration
 
