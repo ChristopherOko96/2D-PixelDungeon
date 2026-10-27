@@ -432,6 +432,220 @@
   Lovecraft boss intent, quiet crypt, four-player cap,48perks and custom map.
   This approval gate originates directly from the user's latest request.
 
+## Feature decisions: merging main into the target design (2026-10-27)
+
+Recorded with Claude Code after comparing `origin/main` (brother, up to 357d509)
+with `codex_v2` (1c3ed6b). This is the agreed TARGET design, not implemented
+yet: main's features are NOT merged into codex_v2. Where this section conflicts
+with earlier sections or `design/game-brief.md`, this section wins. The art
+approval gate above still applies to every new actor/boss art.
+
+- Dungeon per floor: Isaac-style branching, loop-free room tree (main's generator
+  idea), treasure room, minimap. Rooms come from the user's editor / crypt room
+  library, so templates must expose compatible door ports per side. Replaces the
+  fixed linear ten-room chain.
+- Doors: a player presses E at an open door and goes to a waiting screen
+  ("waiting for party", countdown). Others have ~10 s (data-driven in
+  balance.json) to press E themselves; when all have pressed or the timer ends,
+  the host moves everyone and the next room loads for all at once. Replaces both
+  "E with party gathered nearby" and main's "walk through and drag the party".
+- Modes: Story = 4 worlds x 10 floors = 40 floors, once downwards. Endless is a
+  separate main-menu mode that mixes the worlds with rising difficulty.
+- Worlds change every 10 floors. Floors 1-10: undead only (no demons, orcs or
+  goblins). Then main's worlds (stone, orc, infernal) with their enemies,
+  decor and lava. Exact world order after the crypt is still open.
+- Bosses: not every floor has a boss. Stronger/elite enemies may appear on any
+  floor; roughly every 3rd floor a mini-boss (larger HP bar, special moves);
+  floor 10 of each world has the big boss. Crypt mini-bosses are NEW undead
+  designs (main's demon mini-bosses belong to other worlds). Crypt big boss is
+  now Der Leerenrufer (void creature from the user's sheet, user decision
+  2026-10-27: void beam, necromantic magic, summons skeleton archers); Der
+  Schläfer der Tiefe is parked for later. Use main's phase/telegraph/ultimate
+  boss framework.
+- Crypt decor: light decor is now allowed (main's crypt set: chains, bones,
+  skulls, altar in boss rooms). Supersedes "quiet first prototype, no room
+  dressing"; quiet 32px materials and warm torches otherwise remain.
+- Classes: main's swordsman (melee sword cone), archer (bow) and mage (staff,
+  exploding orbs) with main's 0x72 figures. Lizard is a later 4th class.
+  Duplicate classes per party are allowed. Replaces the four look-only
+  player skins.
+- Skills: each class has 4 active skills on keys 1-4, cooldowns only, no mana.
+  Left click stays the basic attack. Key 1 is available from the start; keys
+  2/3/4 unlock at levels 3/6/10. Key 4 is always the class ultimate (long
+  cooldown). Pattern: 1 main skill, 2 ranged/area, 3 movement, 4 ultimate.
+  All 12 skills, their values and level-up perks are agreed with the user in
+  `docs/KLASSEN-FAEHIGKEITEN.de.md` (source of truth, values = starting points):
+  swordsman Wirbelklinge / Klingenwelle / Ansturm / Rage;
+  archer Salve / Ballistapfeil / Rückwärtssprung / Pfeilfaust-Schuss;
+  mage Feuerball / Kettenblitz / Blinzeln / Fusionsmagie: Photoneneis (5 s channel).
+  The three ultimates are the user's own designs; keep their core behavior.
+  Level-up pool also contains main's passive class perks. Skill damage scales
+  as a multiple of weapon damage; one shared crit system (Rage + Präzision).
+- Progression: EXP orbs and level-ups (main). A level-up offers class perks
+  that modify that class's skills (e.g. 2 fireballs instead of 1); keys 1-4
+  pick the offered card. Bosses drop a general perk (e.g. more skill damage,
+  faster attacks). NO perk cards after normal rooms any more. The existing 48
+  perks are to be re-sorted into general boss perks and class skill modifiers;
+  projectile-pattern perks must not be offered to melee.
+- Chests: treasure room holds a guaranteed large chest; normal rooms keep main's
+  small chance of a small chest (run-only stat boosts).
+- Keep from codex_v2: dungeon editor, animation studio, art reference, ENet
+  session protocol/interpolation, ESC pause menu, Pixel Operator 8, fullscreen.
+  Take from main: main menu (story/endless, options, debug level list), boss
+  phases/ultimate and HP bars, newer feedback/VFX, EXP, classes, chests.
+- Still open: floors without a boss - what sits in the farthest dead end
+  (stairs down?); whether mini-bosses also drop a general perk; how level-up
+  cards on 1-4 interact with casting skills while the offer is open; world
+  order after the crypt; whether main's Firebase accounts are wanted.
+- Integration method (user decision): NO big `git merge origin/main`. A test
+  merge-tree showed 14 conflicting files (game.gd ~2150 conflict lines,
+  balance.json, dungeon_view.gd, generator, vfx, tests). Base stays codex_v2;
+  port main's features module by module, keeping the game playable and tested
+  after every step. The brother keeps working on main: after each step, fetch
+  origin/main and port new commits too. Ported from main up to: 357d509.
+- Implementation order (user approved):
+  0 prep: copy main's standalone modules (player/progression, player/loadout,
+    combat/abilities, ui/hud, main_menu, newer vfx), sprites/monster art, and
+    merge balance.json key by key, without wiring;
+  1 main menu with story/endless frame and debug level list;
+  2 classes + basic attacks (sword melee, bow, staff) with main's 0x72 figures;
+  3 EXP + level-ups (cards on keys 1-4), remove per-room perk cards;
+  4 skills 1-4 per docs/KLASSEN-FAEHIGKEITEN.de.md, shared crit system:
+    all key-1 skills, then 2+3, then ultimates;
+  5 Isaac floors from editor rooms, door timer + waiting screen, minimap,
+    treasure room + chests;
+  6 floor structure: 40 floors, worlds every 10, mini-boss ~every 3rd floor,
+    boss on 10, endless mode, main's boss phases/worlds/enemies/decor, crypt decor;
+  7 new art via the art gate (Schläfer 0x72, undead mini-bosses), boss perks
+    from the 48, level curve retuned for 40 floors.
+- Step 0 DONE (2026-10-27, uncommitted): copied unchanged from origin/main
+  357d509, NOT wired: src/player/{progression,loadout}.gd, src/combat/abilities.gd,
+  src/ui/hud.gd, src/main_menu.gd, src/online/progress.gd, tests
+  progression_test/loadout_test, 44 missing 0x72 images (skelet, necromancer,
+  tiny_zombie, imp, weapons, hearts, chest), sprite folders golem/infernal/
+  nebenbosse/orcs/props, 5 slicing/animation scripts, main's stories 002-011 in
+  production/epics/main-port/ (reference only). Firebase (account.gd, firebase.gd,
+  config, rules, .gitignore entry) deliberately NOT copied - decision pending.
+  balance.json: only main's 24 NEW top-level sections added; existing local
+  values unchanged. DEFERRED to the wiring steps: main's 37 keys inside existing
+  sections (boss.name/move_pause/sequence/ultimate - boss.name would rename the
+  local boss because game.gd reads definition.name first; rooms.min_count/
+  max_count/enemies_min/enemies_max/shooters_max; attacks.* for main's enemy
+  kinds) and 6 differing values kept local (bullet.max_count 48 vs 140,
+  boss.hp 70 vs 160, boss.hp_per_extra_player 24 vs 60, death.duration 0.8 vs
+  0.45, death.boss_duration 1.6 vs 1.2, perks text punctuation). Checks: Godot
+  import 0 errors, new scripts parse, progression 48/0, loadout 15/0,
+  game_rules 24/0, perk_rules 667/0. Not a gameplay run (nothing wired yet).
+- Step 1 DONE (2026-10-27, uncommitted): the game opens on main's title screen
+  (src/main_menu.gd, adapted: Pixel Operator 8 sizes 16/24/32/64, inherits the
+  game theme, centered on any canvas, skeleton/necromancer chasers, account row
+  hidden without an account, hero choice skipped while class_order is empty,
+  Endless shown disabled "ENDLOS · BALD" until step 6, fullscreen applied via
+  game.toggle_fullscreen, shake via dungeon_view.shake_scale). Story = solo run
+  of the current crypt; Mehrspieler = existing lobby (solo button hidden, new
+  HAUPTMENÜ button); every ended session returns to the menu; CLI sessions and
+  the editor preview skip it. Debug list: crypt rooms 1..N (earlier rooms marked
+  cleared) and floor 2. Bug fixed: the port field read "7777.0" (JSON float),
+  so _port() returned 0 and solo/story could not start outside tests; regression
+  test watched failing first. Tests: main_menu_flow_test 20/0; pause_menu_test's
+  leave check now expects the main menu. Evidence: production/qa/evidence/
+  main-menu-step1/ (scripts/capture_main_menu.gd, real windowed run).
+- Test repair (2026-10-27, uncommitted): five suites failing in committed
+  1c3ed6b were OUTDATED TESTS, not game bugs, and now pass:
+  pause_menu 26/0 (reward cards open automatically since Story021; Escape now
+  hides/reopens them), reward_cards 20/0 (font is Pixel Operator 8; cards show and
+  grant personal perk_offers), dungeon_integration 23/0 (ten rooms, boss last,
+  per-template 32 px sizes, seeded crypt spawns checked for clear cells and
+  spawn_min_distance), session_presentation 20/0 (WORLD_SIZE == DESIGN_SIZE; boss
+  and stairs in the final room; the 'rect' SCRIPT ERROR came from the test passing
+  an empty exit), dungeon_editor_integration 32/0 (reads the fixed four-template
+  fixture tests/fixtures/dungeon_rooms_rect4.json instead of the live crypt
+  library; preview check now expects no socket at all - OfflineMultiplayerPeer).
+- STILL FAILING, also identical in 1c3ed6b, not yet analysed: dungeon_generator
+  17 (16x "authored floor is fully connected for boss-sized actors", 1x "normal
+  room obstacles differ"), dungeon_ports 48 (west/east door meets wall),
+  editor_tile_replacement 2 (legacy pillar fixture), freeform_geometry 2 (boss
+  test, compatible ports), editor_grid_render 2 (green/red overlay not visible,
+  GPU). The four *_render tests are GPU tests: run them WITH a window
+  (`--path . --resolution 1280x720 -s ...`); headless they wait forever.
+  Windowed: actor_render_anchor 10/0, freeform_render 4/0, walkability_render 3/0.
+  All other 40 suites pass headless.
+- Step 2 DONE (2026-10-27, uncommitted): hero classes and basic attacks.
+  src/player/hero_class.gd applies balance.classes/weapons and sets the PERK BASE
+  (damage, speed, shot_interval, max_hp), so all 48 perks still stack on top.
+  default_class = archer equals the old player values (unchanged for tests/CLI).
+  Swordsman: perk_combat.melee() - cone reach 64 / arc 2 rad, wall-checked,
+  same modifiers and hit path as shots (crit, elements, on-hit perks). Mage:
+  orbs 380 px/s, 1.5 s, splash 40 px at half damage via perk_combat.splash()
+  whenever the orb ends (hit, wall, flight time); not budget-limited. Archer:
+  bow == old shot. 11 perks carry `projectile_only` and are never offered to
+  melee players (user decision): piercer, ricochet, scatter, twin, backshot,
+  sidewinder, homing, orbit, longshot, echo, split. Class choice: solo via the
+  menu hero cards (16 px layout), multiplayer via the lobby button "< NAME >"
+  (host-validated "class" action, lobby phase only, own player only).
+  game.player_classes survives run restarts, cleared on leave/disconnect.
+  Rendering: classed players use main's 0x72 figures (knight/elf/wizard) with
+  weapon sprites, sword swing crescent from the snapshot swing counter, colour
+  ring per player; chibi actor bank stays for enemies and unclassed actors.
+  Bullets: player "arrow" = 0x72 arrow sprite, "magic" = emerald orb. New "swing"
+  sound. RULESET_VERSION 4 -> 5. Tests: hero_class_test 24/0, main_menu_flow
+  22/0. Evidence (STAGED scenes): production/qa/evidence/hero-classes-step2/.
+- Art approval (user, 2026-10-27): activating main's existing 0x72 figures
+  (knight, elf, wizard) as the three class figures in step 2 is APPROVED.
+  Chibi32 art stays in the repo, inactive. This approval covers only these
+  existing figures; new generated art still needs the style-proof gate.
+
+## Art direction: everything in the 0x72 style, part-rigged (2026-10-27)
+
+- User request: heroes, ALL enemies and the crypt tiles must match the main
+  menu's 0x72 DungeonTileset II look. Smooth, many animations (display refresh,
+  60/144 Hz). Later combat: break body parts piece by piece (skeletons), aim at
+  boss parts (part HP sums to total HP; head = instant death; destroyed arm
+  disables its attack; parts may regrow). Art first, combat after approval.
+- Chosen approach (user): original 0x72 pixels, each figure split into parts and
+  animated per frame (cutout rig), plus other packs in the same style for props.
+  Small 0x72 figures have NO visible arms (knight/necromancer/skeleton): their
+  breakable parts are weapon, legs, torso and head; real arms exist on big
+  figures (big_zombie). Missing roles (skeleton archer/guard, undead mini-bosses)
+  are kitbashed from pack parts; Der Schläfer der Tiefe has no template.
+- Style proof, NOT approved yet, nothing wired into the game: production/
+  art-proof/0x72-style/ (README there), review page
+  https://claude.ai/artifact/75dUCYWVttCgPT5eE6UMHg (F1-F4 figures, R1 room,
+  P1 props). APPROVED by the user on 2026-10-27 ("F1-F4, R1, P1: Ja"):
+  the 0x72 part-rig look, breakable parts and the room rendering are the
+  accepted direction. Next: the complete set (all heroes, all enemies incl.
+  mini-bosses and boss, all crypt rooms/props) as a second review before
+  anything is imported into the game.
+- Complete set built (2026-10-27), WAITING for per-item review:
+  https://claude.ai/artifact/R4sftXCTQZFXXN4VQhdYAZ (H1-H4 heroes, K1-K6 crypt
+  enemies, N1-N3 mini-bosses Moderkoloss/Frostleiche/Knochenkoloss = big_zombie
+  palette swaps, B1 Der Schläfer der Tiefe = NEW pixel art from sleeper.json with
+  procedural breakable/regrowing tentacles, W1-W3 later-world 0x72 enemies
+  auto-split, R1-R10 all rooms of seed 4242, P1 props). Kitbashed: skeleton
+  archer (skelet + bow, string drawn per frame), skeleton guard (skelet + knife +
+  NEW 9x11 shield). Sources/scripts: production/art-proof/0x72-style/README.md.
+- Boss swap (user, 2026-10-27): B1 is now Der Leerenrufer, the black void
+  creature from the bottom-left of a sheet the user sent
+  (production/art-proof/0x72-style/sources/user_sheet_void.png, 8 frames).
+  The Schläfer (tentacle boss) is parked: sleeper.json and its code stay, it is
+  just not shown. make_void.gd cuts the frames, aligns them on their centre of
+  mass and adds a ragged veil (the sheet cuts the figure off at the bottom);
+  void.json holds the new parts (claws, 3-state void eye, soul-skull
+  projectile). Moves: Leerenstrahl (eye beam, warning line, slow tracking,
+  stops at walls), Seelensalve (3 soul skulls from the front claw), Beschwörung
+  (2 skeleton archers rise from void pools, max 4, crumble with the boss).
+  Parts: core 90 vital, eye 20 (only open during the beam; no beam while lost,
+  regrows 12 s), front claw 15 (no salvo), back claw 15 (no summoning), claws
+  regrow 8 s. Shown on the same review page (version 2). Sheet origin and
+  licence are UNKNOWN. On 2026-10-27 the user decided to push everything to the
+  public repo anyway, including this sheet, the dungeontiles-extended torches
+  and the built review pages (production/art-proof/0x72-style/out/ is now
+  tracked). Clarify or replace them before the game is released.
+- Licences: 0x72 DungeonTileset II = CC0. dungeontiles-extended (torches,
+  candle columns), "16x16 dungeon ii wall reconfig", the fan sheets and the
+  Enchanted Forest / Fantasy RPG NPC packs in the user's download folder have no
+  licence note; clarify before committing any of them to the repo.
+
 ## Codex studio integration
 
 - This game already exists. Read `docs/codex/runtime.md` before applying studio
