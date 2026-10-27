@@ -46,6 +46,9 @@ bin/
 !addons/gdUnit4/bin/
 obj/
 out/
+# ...but keep the 0x72 art proof review pages and renders, so the review set
+# can be opened from the checkout (production/art-proof/0x72-style/README.md).
+!production/art-proof/0x72-style/out/
 dist/
 *.exe
 *.dll

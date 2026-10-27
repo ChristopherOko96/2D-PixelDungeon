@@ -1,0 +1,998 @@
+<title>0x72 Krypta-Stilprobe</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a torch-lit dossier - one column of numbered exhibits (F1-F4, R1, P1), each a stage with its controls. */
+:root {
+  --void: #13111c;
+  --stone: #1f1b28;
+  --stone-2: #2b2535;
+  --line: #3d3448;
+  --bone: #efe6d6;
+  --muted: #a99d93;
+  --torch: #f0a03a;
+  --blood: #da4e38;
+  --teal: #72d6ce;
+  --font-display: "Silkscreen", "Courier New", monospace;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", Consolas, monospace;
+  color-scheme: dark;
+}
+html, body { background: var(--void); color: var(--bone); }
+body { font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 28px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 36px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 400; letter-spacing: 0.02em; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(26px, 4vw, 40px); color: var(--torch); }
+h2 { font-size: 20px; }
+h3 { font-size: 15px; }
+p { margin: 0; max-width: 68ch; }
+.lead { color: var(--muted); }
+header { display: grid; gap: 14px; }
+.howto { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; font-size: 14px; color: var(--muted); }
+.howto code, .tag { font-family: var(--font-mono); font-size: 12.5px; color: var(--torch); background: var(--stone-2); border: 1px solid var(--line); padding: 1px 6px; border-radius: 3px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: 13px; color: var(--muted); }
+.toolbar .fps { font-family: var(--font-mono); color: var(--teal); font-variant-numeric: tabular-nums; }
+section { display: grid; gap: 14px; }
+.section-head { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 540px), 1fr)); gap: 18px; }
+.card { background: var(--stone); border: 1px solid var(--line); border-radius: 4px; padding: 14px; display: grid; gap: 10px; min-width: 0; }
+.card-head { display: flex; gap: 10px; align-items: baseline; justify-content: space-between; flex-wrap: wrap; }
+.stage { background: #0d0b13; border: 1px solid var(--line); display: grid; place-items: center; overflow: hidden; min-height: 120px; }
+canvas { image-rendering: pixelated; image-rendering: crisp-edges; display: block; max-width: 100%; }
+.stage canvas { cursor: crosshair; }
+.row { display: flex; flex-wrap: wrap; gap: 6px; }
+button { font-family: var(--font-body); font-size: 13px; color: var(--bone); background: var(--stone-2); border: 1px solid var(--line); border-radius: 3px; padding: 5px 10px; cursor: pointer; }
+button:hover { border-color: var(--torch); }
+button:focus-visible { outline: 2px solid var(--torch); outline-offset: 1px; }
+button[aria-pressed="true"] { border-color: var(--torch); color: var(--torch); }
+button.hurt { border-color: #6b2f2a; }
+button.hurt:hover { border-color: var(--blood); color: #ffb3a6; }
+button:disabled { opacity: 0.4; cursor: default; }
+.label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.note { font-size: 13.5px; color: var(--muted); }
+.parts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 4px 12px; font-size: 13px; }
+.part { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+.bar { grid-column: 1 / -1; height: 4px; background: var(--stone-2); }
+.bar i { display: block; height: 100%; background: var(--blood); transition: width 0.15s; }
+.part.gone { color: #6f6560; text-decoration: line-through; }
+.status { font-family: var(--font-mono); font-size: 12.5px; color: var(--teal); min-height: 1.4em; }
+.compare { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
+.room-stage { overflow-x: auto; background: #0d0b13; border: 1px solid var(--line); }
+.room-stage canvas { cursor: crosshair; }
+.props { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 12px; }
+.prop { background: var(--stone); border: 1px solid var(--line); padding: 10px; display: grid; gap: 6px; justify-items: center; font-size: 12.5px; color: var(--muted); text-align: center; }
+.open { display: grid; gap: 8px; }
+.open li { max-width: 80ch; }
+.lic { font-family: var(--font-mono); font-size: 12px; }
+.ok { color: var(--teal); }
+.warn { color: var(--torch); }
+@media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Krypta-Stilprobe 0x72</h1>
+    <p class="lead">Alle Figuren und Kacheln stammen Pixel für Pixel aus dem 0x72-Paket (plus Fackeln aus der Erweiterung). Neu ist nur die Bewegung: Jede Figur ist in Körperteile zerlegt, die das Spiel in jedem Bild neu bewegt. Dadurch läuft alles in der Bildrate deines Monitors, ob 60 oder 144 Hz, und Teile können abgeschlagen werden.</p>
+    <div class="howto">
+      <span>Antworte im Chat pro Kennung, z. B. <code>F2: Ja</code> oder <code>R1: Nein, Boden heller</code>.</span>
+      <span>Auf Skelett und Riesen-Zombie kannst du <b>auf Körperteile klicken</b>.</span>
+    </div>
+    <div class="toolbar" role="group" aria-label="Darstellung">
+      <span class="label">Raster</span>
+      <button id="grid-game" aria-pressed="true">Spiel (2×)</button>
+      <button id="grid-strict" aria-pressed="false">Streng (1×)</button>
+      <span class="label">Tempo</span>
+      <button id="speed-1" aria-pressed="true">Normal</button>
+      <button id="speed-q" aria-pressed="false">Zeitlupe ¼</button>
+      <button id="pause" aria-pressed="false">Pause</button>
+      <span class="fps" id="fps">– Bilder/s</span>
+    </div>
+  </header>
+
+  <section aria-labelledby="figs">
+    <div class="section-head"><h2 id="figs">Figuren</h2><span class="note">Jede Figur läuft automatisch durch ihre Animationen. Mit den Knöpfen spielst du eine gezielt ab.</span></div>
+    <div class="grid" id="cards"></div>
+  </section>
+
+  <section aria-labelledby="room">
+    <div class="section-head"><h2 id="room">R1 · Generierter Krypta-Raum</h2><span class="tag" id="room-meta"></span></div>
+    <p class="note">Ein echter Raum aus eurem Dungeon-Generator. Boden und Wände kommen aus den Generator-Daten, gezeichnet mit Original-0x72-Kacheln. Fackeln und Kerzensäulen sind animiert. Der Ritter und die Skelette laufen frei herum, Klicks auf ein Skelett schlagen Teile ab.</p>
+    <div class="toolbar">
+      <button id="light" aria-pressed="true">Licht an</button>
+      <button id="room-zoom" aria-pressed="false">Zoom 2×</button>
+      <button id="room-reset">Figuren zurücksetzen</button>
+    </div>
+    <div class="room-stage"><canvas id="room-canvas" aria-label="Generierter Krypta-Raum mit Figuren"></canvas></div>
+  </section>
+
+  <section aria-labelledby="props">
+    <div class="section-head"><h2 id="props">P1 · Requisiten und Kacheln</h2></div>
+    <div class="props" id="prop-list"></div>
+  </section>
+
+  <section aria-labelledby="open">
+    <h2 id="open">Offene Punkte</h2>
+    <ul class="open">
+      <li><b>Lizenzen:</b> <span class="lic ok">0x72 DungeonTileset II: CC0</span>. Für die Fackeln und Kerzensäulen aus <span class="lic warn">dungeontiles-extended</span>, den Wand-Umbau, die Fan-Blätter und die Wald- und NPC-Figuren gibt es keinen Lizenzhinweis. Bevor davon etwas ins Repo kommt, braucht es die Quelle und die Lizenz.</li>
+      <li><b>Keine Arme bei kleinen Figuren:</b> Ritter, Nekromant und Skelett haben im 0x72-Stil keine sichtbaren Arme. Waffen schweben neben der Figur. Zerstörbar sind deshalb Waffe, Beine, Rumpf und Kopf. Echte Arme gibt es bei großen Figuren wie dem Riesen-Zombie.</li>
+      <li><b>Neu zu bauen:</b> Skelett-Bogenschütze, Schildskelett und die untoten Nebenbosse aus Originalteilen. Der Schläfer der Tiefe hat keine Vorlage im Paket und wäre die einzige wirklich neue Figur.</li>
+      <li><b>Spiel:</b> Noch ist nichts eingebaut. Nach deinem Ja überträgt sich das Teile-System 1:1 nach Godot, danach folgen die Kampfregeln für Körperteile.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+const ASSETS = {"knight":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAcCAYAAABoMT8aAAAAAXNSR0IArs4c6QAAARVJREFUOI3tlLFKA0EQhr+VVNaS9sjAVaYRtE8R4SrxIUSfwMInsEhrYcRHsAjBIqCFb2BjPWArlmK7Ng7s7u1uBEmXv5nb2d1///lnONhiC3D2ISI+d0BVXS4fEYiIX42HAOxNvqMDhzdfVRJnl7u3DwByRDWSgaq6Drwd6MCvxkM+X3Z7aoolGEIfTIkpCxGqGaSbp48PANza+jfORg0A7f5RXEJJ2uvdU7SeZpSqqisSABycH/dyz9dnkZKdGkGoxOL06j7aX0uwDpsnMB8smgeGqolpJwDa5fxvBLkOzEYN7XJeH6Tcq4bLDGmPIPdyqGCR5P7dhWIJ74lZzclFNM5FArscGmWzn+Z7EBGf+7WV8gA/SiplHc86txgAAAAASUVORK5CYII=","skelet":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAKVJREFUOI1jYBhowIjMUVJS+k+Mpnv37sH1saBLbpzbzqBl4YJTs6q2KQqfiRgb8QGcBqhqm2LYhs6nrQs2zm1n2Di3HcVmGB8ZYAQiDCAH5O2rp5HEKolzAbEAbzqAOdk/GdVW5HSAEygpKf3/+/3t/7/f3/7Hl8CwegGbBlyGYDgFphAWcDAAiwmCzldSUvp/ef/K/0pKSigYJka0C5BtwyYGAwCN1UUSyex6MQAAAABJRU5ErkJggg==","necro":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAXCAYAAAAC9s/ZAAAAAXNSR0IArs4c6QAAAK9JREFUOI1jYBgFo4CBgRHGUFJS+k+Kxnv37jEyMDAwsCAL2nKbEKX58NczcDYTKbZiAyy4JBz+/MDtAmIMYGBgYOhmfIMhVvpfBIVPsRfwGnD57GaGy2c3o/BJMoAYgDcMdI19MfilDESGwQEWDowAK/0vwnCAhYM4A9ANwaaZgQGalGHJGFdKdPjzA6758Ncz8GSM4gJiNGMDLMgKcQFkucNocnADmn9ewWkAPgAAmGU0Q+IJwjMAAAAASUVORK5CYII=","zombie":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAkCAYAAADo6zjiAAAAAXNSR0IArs4c6QAAAaNJREFUWIXtVbtqw0AQnISA1apw6UagIqW4zj+QFG4FIb+Q2sTgOpCQ2r8QDGpdOD+g7lAZiEBNigRUqJUqpzAnZFm+3Tvl0Wga+fZOO+Pd2RMwYMCAAf+MM9sXPc/bndrLsoyd98KW/PLBr9dvyxTz7QQb6ewDS+y4IowroMhnojyIP19/YL6dHKw5Iqxa0K7ATJTYSKcWxSW3EqDrfRcoIVYeCKcCIvAhk1R7LoolmctKgIIIfCxW63r9eHcDAAcxCucmhKbl57zDroDnebtwKo7KGk7F0dlmjGoDS4Ai74IIfG2MEkC2oEneTCyTFE8vrwBAPnUgx1AJUOTKYF2iurBYrbWjqBXQJgf2/zyKZWfv24hi+TP3gEzSWoQIfESxZM04B8b3gExSsvzNCyqC/sPEEtAkonrePtN7CgCQVy7Ac7y1AI6I+9srKwHkFFhlbaGXB1zX7UVeFIV2nxRAJegLowqMnRHyssLYGbEJ3j+/tPtsEypSE3IO2ALyskJeVvXvPxcA/E4VWCZUPsjLijRl0zMcA7M+x+3Yqbk2OavwDfQmtc3Oqe+3AAAAAElFTkSuQmCC","knight_sword":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAdCAYAAACT4f2eAAAAAXNSR0IArs4c6QAAAIVJREFUOI1jYEADSkpK/5WUlP6ji2Mo2nb6/P+/399iKGZCVjRl5Vq4xO2rpxmQFTMxEAlGFdJZIQogKq6JtppqiWIA3chCKH/A5WHugmUqdAyTY4HpRLYWG2BEMR4HuHfvHiOGe4gOHncdOYadVx5hmIqhcOeVRwzuOnKEFeIyEQPgKnsAtv9mr8si8jcAAAAASUVORK5CYII=","rusty_sword":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAoAAAAVCAYAAAB/sn/zAAAAAXNSR0IArs4c6QAAAOhJREFUKJFjYEADSkpK/5WUlP6jizOhKwrYsoYh1MqYAZtiuKKia+f+F1079//v97f/y2NCUUxGMfFaag5WQzAUas2eQpxCmIlVqRkYClmw6W6bPYOBgYGBYbW2KWGr0U1FUYhLEQpQUlL672FtBQ+ev9/f4g4ekq1mYEB4CAZQfA0PHkVpDI2MOOMUDbAwMDAwGLcVwQU+T17GwJsbBWczMDAw3Hr+goGRgYEBd0qBgnv37jGiCCgpKf0PXTHlv4e1FUaaxPC1rJ4V3Gq8Ch9fOsYgq2dFWKGsnhXD40vH8DkZ4U5sngMAMkZZblv+MQUAAAAASUVORK5CYII=","red_staff":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAeCAYAAAARgF8NAAAAAXNSR0IArs4c6QAAAIlJREFUKJFjYIACJSWl/0pKSv8Z0AATTDJXjh1djoGBgYGBESY5+dFPDMl79+4xMiEL7NARY7h99TQDAwMDw2I7ZgYlJaX/TBja0K1AdgPMmsV2zAyxh/4y3Lt3j5EFWXWuHDuDmcIfTF/cu3ePEdmRMN1wBfjAqIJRBYNNAUqyn/zoJwPDI1QFAG3gKrCKvJjBAAAAAElFTkSuQmCC","floor_1":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAHtJREFUOI1jVFJS+s8ABWqSEgy3nr9gQAZqkhJw9q3nLzDUMCopKf1HVkQK0FeUZmAiVzMMMFGkm4GBgQndzyQbQKkXKApEBgYKw0BfUZoyAy7ef0pZGFDsAgaGgQ5Eig2gShiwhFoZwzkX7z+Fm3zx/lMGfUVpFMXYxABX8iFpcNCrDgAAAABJRU5ErkJggg==","wall_mid":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAIpJREFUOI1jLI8J/c/AwMCw+thZhlArYwZsAF0Omc9y8f5TuAQyGx2gy8H4TNgU33r+AqdB6HKMSkpK/3GqJgKwhFoZo/iJlLBgYICGgZqkBAO5YYE1DAgB5HCgThjgAoTCg4EBLR1gA/jk1SQlUMMAX/zjAtQLA3z+xSdPdF7AJU8wHaCHC9XzAgCC3VmeKAx14AAAAABJRU5ErkJggg==","wall_top_mid":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAFZJREFUOI1jYBgFo2AUMDAwMDAqKSn9p8QAlo7sCAYGBgaGiqkrGNQkJRiSghwwFFVMXcEAU4fOZ0JWiE0zQRdoGulDmSsYEGwIKK2ZyNDdko9FDsEHAFo0E9Bac+v6AAAAAElFTkSuQmCC","wall_outer_mid_left":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAEJJREFUOI1jZCABKCkp/e/IjoDzK6auYGAhxQAGBgYGTSN9JN4KBkZSXYAuRrIL0L3ARKoB6GAYGDAajYMhFgbeAADG5w+5PSmgzQAAAABJRU5ErkJggg==","wall_banner_red":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAATtJREFUOI2Vkr9qwlAYxX9KwKEUS/+EOFYwONjJTSnSrS8QSqGPUHAsCE6+QfElpPQFuopuDqFOyZApJJSSPZMOIdd8N7dDz3Jzz/3Ovd93chpvL94B4GO7wxsNMUE/q+6bfhTjRzEAk+mM/i5nMp1R8n4Us1x9Ch5QZ43H8egAECQpAF/9Z9bRN4t8r16ctwYAgnM7DgBWKaxi3PthHg7EfhPaoqbUWd5oKGfMTiIdJo8sP4pxO46abZ3ljHu1OjW3jqZO3N/eGcWry99a+2DyoG1+/Sm7FiYKDwQy8wVALQu2dVZ4UMUrMe9XxfcmtIWZeu3Fzbn0IEhSlu0HJV7k+9rv02HMQSmGIjxlJvTaIElPHqgsZIWoOu9iu2PeGhhzIKLsdhy16viLr+VALzK1LTrodruH2rX/wBFx7qcw0ColMQAAAABJRU5ErkJggg==","skull":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAG5JREFUOI1jYBgFwwAw4pK4vH/l/+vnLsL5YcVtWNViFby8f+V/ZD7MIFyGYAAlJaX/l/ev/K+kpPQfxl7VW/Ufm1omokxkYGDQNNInVinECzCbYVhJSQmrC1hwGXLv3j1GBgaG//7JlcTbPDQBAHe7MF3GxAHqAAAAAElFTkSuQmCC","crate":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAYCAYAAADzoH0MAAAAAXNSR0IArs4c6QAAAJ9JREFUOI1jYBjygJGBgYFBSUnpPzma7927x8gC4+TKsTMwMDAwXH7MxqAr+wuDjc6f/OgnAwMDAwMTWe5GAqMGDAYD4Okg3o8VyvrPwMCAjY3KnzzlJ6oBCzf9pswFDAyQlEYMQE6dGGGgK/uLQVf2F8OB/5+xstHBwMcC7QyAZW90NjpAiYWebPR4xwb+MyzchMMActIC3ABYCUN3AADxezKLfvoY2QAAAABJRU5ErkJggg==","room":"data:image/png;base64,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","wall_torch_0":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAYCAYAAADzoH0MAAAAAXNSR0IArs4c6QAAAQRJREFUOI1jYBgFgxy869P7f8vP4j8+NUy4JI4mqP5/c4CLQcThG2WuOJqgitcFOMEtPwuCzmdgwOMFBgYGBhGHbwxkhcEtP4v/Ig7fGHhsBeB8kgxQ23SC8c0BLoYvhz8QDESiXECyAQwMDAxvDnAxMOusZ+CxFcAbFhgGWBsb/f9ZWMjAwMDAcDfcm+FB8y+GNwe4GC7YOzEoKSlhGMKILqCkpPRfUlCAgZeDgyEpyIGBgYGBYd66Awyff/xgeP7+A8O9e/cw9GAAJSWl/0XXzv3/+/3t/7/f3/4vunbuPzbbCRpSHhP6f1VvFV7NeBMSMYCgAWfP3ybfdCUlJdL9TncAABNJY66FJTSFAAAAAElFTkSuQmCC","candle_column_0":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAgCAYAAAAbifjMAAAAAXNSR0IArs4c6QAAAKBJREFUSIljYBgFeEG/g+Z/QmqYKLUEpwH9Dpr/zRT+EHQFQReYKfwhzwXoriHZAJjNptmSDPi8gmGAkpLSf5hi02xJFEOUlJQwDKFNLEj7BjIwMDAwnJ76HIUm2gAGBgaGp7qhKJphfHTAgs95uDThNUBNUoLh7PnbWBWrSUow3Lt3D78Bt56/wGkbNjna5YVRA4gHWBMSvqgcBaMAGwAA84cxBSohoKUAAAAASUVORK5CYII=","wall_torch_1":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAYCAYAAADzoH0MAAAAAXNSR0IArs4c6QAAAPBJREFUOI1jYBgFeMGv03b/Calhwif55fAHyl3xrk+PoCtwgqMJquRrhoFbfhZ4DcEbBrf8LP6LOHzDawhOA2CaeWwF8LoQrwsYGAjHBFYDiLUdrwt4bAUYmHXWMzAwMDDgCwecBjxo/sXw90og6WFgbWz0/4K9E9yQB82/GN4c4GK4YO/EoKSkhOEKRnQBJSWl/5KCAgy8HBwM3S35DNfPXWSYt+4Aw+cfPxiev//AcO/ePQw9GEBJSel/0bVz//9+f/v/7/e3/4uunfuPzXaChpTHhP5f1VuFVzPBdEAIEDTg7Pnb5JuupKREut/pDgCEdWEnBo9plwAAAABJRU5ErkJggg==","candle_column_1":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAgCAYAAAAbifjMAAAAAXNSR0IArs4c6QAAAKlJREFUSIljYBjeoN9B8z8hNUyEFBxNUMVrCF4DzBT+EHQJTgOIcT5eA2C2o7OJMgDZdtNsSbwuwhsGMM34AIYBHtZWWG0yU/iDVQ6rC9D9jM8lWA14qhvKwMDAwHB66nMUmmgDsBkC46MDFpxG49FE0ABNI33sqtcdwBBiRBdQUlL6ryYpgVX/recvGO7du4eih2BmIgRGDaCCAVjTwa3nLyg1dxSMMAAA75swmTCJJw4AAAAASUVORK5CYII=","wall_torch_2":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAYCAYAAADzoH0MAAAAAXNSR0IArs4c6QAAAQxJREFUOI1jYBj+4F2f3v+BdcEtPwu4C44mqBLnGmSF7/r0/iMbQrLtv07b/SfLEGI1M+EzhFlnPQOPrQADAwPu2GAk5AoRh28MDAwMDG8OcDGobTqBoR6nC2CaYS7ABfB6AaaZx1aAQcThGwO2sCAYBuiGEWWAtbER3CaYIQ+af2ENAxZ0ASUlpf/5UR4MP430Ge6Ge8PFL9g7MShdefX/3r17KIZgmKikpPRfUlCAgZeDg6G7JZ/h+rmLDPPWHWD4/OMHw/P3HxjQDcAKlJSU/hddO/f/7/e3//9+f/u/6Nq5/0pKSqSlRCUlpf/lMaH/V/VW4dWMNxaIAQQNOHv+NvmmKykpke53ugMA9rl4KJJ9a3IAAAAASUVORK5CYII=","candle_column_2":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAgCAYAAAAbifjMAAAAAXNSR0IArs4c6QAAAKhJREFUSIljYBgFBEG/g+Z/mmpmwidppvCHoCE4DSDW6VgN6HfQ/G+m8AfuCrJcwMDAwGCaLUnQNRgGKCkp/Ue2FWaIkpLSfyUlJQyDcLoAppGBAeKNjuwI4lwAA6enPsclhQJYsAk+1Q1lkL68mihDsBoAM4QsF6hJSjCcPX8bq2I1SQmGe/fu4Tfg1vMXOG3DJoc3HRADRg2gggFYExK+qBwFowAbAADMqzDn6IvgHQAAAABJRU5ErkJggg==","wall_torch_3":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAYCAYAAADzoH0MAAAAAXNSR0IArs4c6QAAAQhJREFUOI1jYBgFgxzc8rP4f8vP4j8+NUz4NIs4fCNoCU4DGBgYGHhsBQgagNP2d316KM4/mqCK1Sss+G3/wHCLAWKI2oITjNjUYRWEuUKhlo3hy+EPDAwMDAxvDnAxqG3CNARrGMA0M+usx2U+fgMYGBgYmHXWM/y9EkgwIPHGAswF+AzBCEQlJaX/PwsLGe6Ge6OIX7B3YlC68ur/vXv3UMIBI1CUlJT+SwoKMPBycDB0t+QzXD93kWHeugMMn3/8YHj+/gMDugFYgZKS0v+ia+f+//3+9v/f72//F107919JSQlvksZqSHlM6P9VvVV4NeMNRGIAQQPOnr9NvulKSkqk+53uAABiLmIC17glTAAAAABJRU5ErkJggg==","candle_column_3":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAgCAYAAAAbifjMAAAAAXNSR0IArs4c6QAAAKVJREFUSIljYBj+oN9B8z8+eSZKNBM0gIGBgcFM4Q95BvQ7aP6HacbnEpwGwDSbZksymCn8wWkIVgOI8TteA5BtRxcjaICHtdV/dM0wNkyOoAtIATgNOD31OVY2UQY81Q2Fa4RphomhAxZcJuPSQJQBmkb62FWvO4AhxIguoKSk9F9NUgKr/lvPXzDcu3cPRQ/tYmHUAOIB1nRw6/kLSs0dBSMMAABfsDMyr5b+EQAAAABJRU5ErkJggg==","wall_torch_4":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAYCAYAAADzoH0MAAAAAXNSR0IArs4c6QAAAP5JREFUOI1jYBgFQwDc8rP4j0+eCZ/k0QTV/yIO3wgaQtAFv07b/cdlCF4XwMCD5l8MaptOMJJswC0/i/8iDt/wGk7QBTy2Agz4wgGnAbf8LP4r1LIxfDn8gTIX8GfuZ+CxFSDNAGtjo/8MDAwMzDrrGZBpbIAFXUBJSel/fpQHw08jfYa74d5w8Z+FhQzWTzv/Hz17DiU2MKJGSUnpv6SgAAMvBwdDUpADg6aRPkNpzUSGzz9+MDx//4Hh3r17WKMTw5Cia+f+//3+9v/f72//F107919JSYm01KikpPS/PCb0/6reKryaiUqJ+ABBA86ev02+6UpKSqT7ne4AADkDXS/eEuRzAAAAAElFTkSuQmCC","candle_column_4":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAgCAYAAAAbifjMAAAAAXNSR0IArs4c6QAAAKRJREFUSIljYBjeoN9B8z8hNUyUWoLXADOFP5QZwMDAwHA0QfU/Pq/gNIAY/xPlAtNsSbxewWpAv4PmfzOFPwym2ZIEXYRhgJKSEoZCmCuwyWF1ATGhj9eAp7qhDAwMDAynpz5HoYk2AJshMD46YMHnPFya8BqgJinBcPb8bayK1SQlGO7du4ffgFvPX+C0DZscbTPTqAHEAawJCV9UjoJRgA0AALuHMgc1PLenAAAAAElFTkSuQmCC","wall_torch_5":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAYCAYAAADzoH0MAAAAAXNSR0IArs4c6QAAARxJREFUOI1jYBgFgxz8Om33n2JD3vXp4TWEiZDm65e+U+wIhlt+FjhdwUKMRoVaNoZbDBb/1TadYCTagFt+Fv8VatkYvhz+wPDl8DcGBgYurOpwhoHaphOMD5p/wfkKtWxYvYLTAJgLGBgYGHhsBRiYddbjUooJrI2N/t/ys/j/9/vb/79O2/3/+/3tf1wBiREGSkpK//OjPBh+Gukz3A33hop6M/wsLGSwftr5/+jZcygBiRGqSkpK/yUFBRh4OTgYkoIcGDSN9BlKayYyfP7xg+H5+w8M9+7dw9CDAZSUlP4XXTv3/+/3t///fn/7v+jauf9KSkqkJWslJaX/5TGh/1f1VuHVjDcpEwMIGnD2/G3yTVdSUiLd73QHAM7ab+vLigxOAAAAAElFTkSuQmCC","candle_column_5":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAgCAYAAAAbifjMAAAAAXNSR0IArs4c6QAAAKlJREFUSIljYBgFOEG/g+Z/YtQxUWoRTgPMFP5QZgADAwPD0QRVgt4g6AVCYYHVAJgm02xJBjOFP3gNwTDAw9oKrhldHCZH0AXIAQhzRVKQA/FeYGBgYDg99TkuKRTAgk3wqW4og/Tl1XBDnuqGkmYAIU0EDdA00seuet0BDCFGdAElJaX/apISWPXfev6C4d69eyh6aJcXRg0gHmBNB7eev6DU3FEwwgAAdWAt6wmhmfMAAAAASUVORK5CYII=","wall_torch_6":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAYCAYAAADzoH0MAAAAAXNSR0IArs4c6QAAARNJREFUOI1jYBgFBMG7Pr3/ZGs+mqD6H5keGPCuT+//LT8LnC5gwiUBc/abA1wMIg7fGHAZgtMA6wW3GW/5WfwXcfjGwGMrQIqjUcEtPwvyvADTLOLwDa8FOA1A1qxQy0ZaGNzys/ivUMvGwMDAwMBjK8DArLOedBd8OfyBoGYGBgYGFnQBJSWl/xfsnRgMDuxjeHPgFwMDgzcDAwMDw8/CQgbrp53/j549x4isnhGbAZKCAgy8HBwMSUEODJpG+gylNRMZPv/4wfD8/QeGe/fuYejBAEpKSv+Lrp37//f72/9/v7/9X3Tt3H8lJSXS8oOSktL/8pjQ/6t6q/BqxpsOiAEEDTh7/jb5pispKZHud7oDAATqabJqpIUAAAAAAElFTkSuQmCC","candle_column_6":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAgCAYAAAAbifjMAAAAAXNSR0IArs4c6QAAAKNJREFUSIljYBgFtAf9Dpr/8ckzUWoBCz7Jowmq/xkY/uA1AKcLkJ2Ozxs4DTBTgNhsmi0JZ2MDGF5QUlL6nyvHzsDA8IfBNFsSRZyBgYHh3r17jARdYKaAqpmBgYGhIzsCqwtoEwtPdUMZGKauRuWTYgAhTXgNUJOUYDh7/jZWxWqSEgz37t3Db8Ct5y9w2oZNjuJAHDWAVikRX1SOglGADQAAe3oq622u92kAAAAASUVORK5CYII=","wall_torch_7":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAYCAYAAADzoH0MAAAAAXNSR0IArs4c6QAAAP9JREFUOI1jYBgF9AHv+vT+k6zpaIIq6ZqwgVt+FngNYiKkWcThG0FDcGr+ddruP1makQ1516eH1xCcXoA5n8dWAK8lWA245WfxX6GWjYGBgYHhy+EPDAq1bDjDAacLmHXWw21n1llPmgvQDbkb7s2Q+PQXVjUs6ALWxkb/fxYWMtwN90YRn9FTzuCfXPn/3r17jMjiKBwGBgYGJSWl/5KCAgy8HBwM3S35DNfPXWSYt+4Aw+cfPxiev//AgG4AVqCkpPS/6Nq5/3+/v/3/9/vb/0XXzv1XUlIiLT0oKSn9L48J/b+qtwqvZryBSAwgaMDZ87fJN11JSYl0v9MdAABut2k71HetVQAAAABJRU5ErkJggg==","candle_column_7":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAgCAYAAAAbifjMAAAAAXNSR0IArs4c6QAAAJpJREFUSIljYBgFtANHE1T/E6OOiZAh/Q6aeA3CawDZLkC21UzhDwM+V+B1gWm2JEFDMAzwsLZCUYhsCLocTheYKfyBa0Q2hCgXwMDpqc+xsoky4KluKFwjTDNMDB2w4DIZlwaiDNA00seuet0BDCFGdAElJaX/apISWPXfev6C4d69eyh6aJMSRw0gDWBNB7eev6DU3FEwwgAAHBUxLpyCjRkAAAAASUVORK5CYII="};
+const ROOM = {"candles":[[272,104],[736,104],[272,504],[720,504]],"enemies":[[864,320],[896,320],[928,352],[864,384],[896,384]],"floor":[[3,17],[4,17],[5,17],[6,17],[7,17],[8,17],[9,17],[10,17],[11,17],[12,17],[13,17],[3,18],[4,18],[5,18],[6,18],[7,18],[8,18],[9,18],[10,18],[11,18],[12,18],[13,18],[3,19],[4,19],[5,19],[6,19],[7,19],[8,19],[9,19],[10,19],[11,19],[12,19],[13,19],[3,20],[4,20],[5,20],[6,20],[7,20],[8,20],[9,20],[10,20],[11,20],[12,20],[13,20],[3,21],[4,21],[5,21],[6,21],[7,21],[8,21],[9,21],[10,21],[11,21],[12,21],[13,21],[3,22],[4,22],[5,22],[6,22],[7,22],[8,22],[9,22],[10,22],[11,22],[12,22],[13,22],[3,23],[4,23],[5,23],[6,23],[7,23],[8,23],[9,23],[10,23],[11,23],[12,23],[13,23],[3,24],[4,24],[5,24],[6,24],[7,24],[8,24],[9,24],[10,24],[11,24],[12,24],[13,24],[3,25],[4,25],[5,25],[6,25],[7,25],[8,25],[9,25],[10,25],[11,25],[12,25],[13,25],[3,26],[4,26],[5,26],[6,26],[7,26],[8,26],[9,26],[10,26],[11,26],[12,26],[13,26],[3,27],[4,27],[5,27],[6,27],[7,27],[8,27],[9,27],[10,27],[11,27],[12,27],[13,27],[50,17],[51,17],[52,17],[53,17],[54,17],[55,17],[56,17],[57,17],[58,17],[59,17],[60,17],[50,18],[51,18],[52,18],[53,18],[54,18],[55,18],[56,18],[57,18],[58,18],[59,18],[60,18],[50,19],[51,19],[52,19],[53,19],[54,19],[55,19],[56,19],[57,19],[58,19],[59,19],[60,19],[50,20],[51,20],[52,20],[53,20],[54,20],[55,20],[56,20],[57,20],[58,20],[59,20],[60,20],[50,21],[51,21],[52,21],[53,21],[54,21],[55,21],[56,21],[57,21],[58,21],[59,21],[60,21],[50,22],[51,22],[52,22],[53,22],[54,22],[55,22],[56,22],[57,22],[58,22],[59,22],[60,22],[50,23],[51,23],[52,23],[53,23],[54,23],[55,23],[56,23],[57,23],[58,23],[59,23],[60,23],[50,24],[51,24],[52,24],[53,24],[54,24],[55,24],[56,24],[57,24],[58,24],[59,24],[60,24],[50,25],[51,25],[52,25],[53,25],[54,25],[55,25],[56,25],[57,25],[58,25],[59,25],[60,25],[50,26],[51,26],[52,26],[53,26],[54,26],[55,26],[56,26],[57,26],[58,26],[59,26],[60,26],[50,27],[51,27],[52,27],[53,27],[54,27],[55,27],[56,27],[57,27],[58,27],[59,27],[60,27],[8,5],[9,5],[10,5],[11,5],[12,5],[13,5],[14,5],[15,5],[16,5],[17,5],[18,5],[19,5],[20,5],[21,5],[22,5],[23,5],[24,5],[25,5],[26,5],[8,6],[9,6],[10,6],[11,6],[12,6],[13,6],[14,6],[15,6],[16,6],[17,6],[18,6],[19,6],[20,6],[21,6],[22,6],[23,6],[24,6],[25,6],[26,6],[8,7],[9,7],[10,7],[11,7],[12,7],[13,7],[14,7],[15,7],[16,7],[17,7],[18,7],[19,7],[20,7],[21,7],[22,7],[23,7],[24,7],[25,7],[26,7],[8,8],[9,8],[10,8],[11,8],[12,8],[13,8],[14,8],[15,8],[16,8],[17,8],[18,8],[19,8],[20,8],[21,8],[22,8],[23,8],[24,8],[25,8],[26,8],[8,9],[9,9],[10,9],[11,9],[12,9],[13,9],[14,9],[15,9],[16,9],[17,9],[18,9],[19,9],[20,9],[21,9],[22,9],[23,9],[24,9],[25,9],[26,9],[8,10],[9,10],[10,10],[11,10],[12,10],[13,10],[14,10],[15,10],[16,10],[17,10],[18,10],[19,10],[20,10],[21,10],[22,10],[23,10],[24,10],[25,10],[26,10],[8,11],[9,11],[10,11],[11,11],[12,11],[13,11],[14,11],[15,11],[16,11],[17,11],[18,11],[19,11],[20,11],[21,11],[22,11],[23,11],[24,11],[25,11],[26,11],[8,12],[9,12],[10,12],[11,12],[12,12],[13,12],[14,12],[15,12],[16,12],[17,12],[18,12],[19,12],[20,12],[21,12],[22,12],[23,12],[24,12],[25,12],[26,12],[8,13],[9,13],[10,13],[11,13],[12,13],[13,13],[14,13],[15,13],[16,13],[17,13],[18,13],[19,13],[20,13],[21,13],[22,13],[23,13],[24,13],[25,13],[26,13],[8,14],[9,14],[10,14],[11,14],[12,14],[13,14],[14,14],[15,14],[16,14],[17,14],[18,14],[19,14],[20,14],[21,14],[22,14],[23,14],[24,14],[25,14],[26,14],[8,15],[9,15],[10,15],[11,15],[12,15],[13,15],[14,15],[15,15],[16,15],[17,15],[18,15],[19,15],[20,15],[21,15],[22,15],[23,15],[24,15],[25,15],[26,15],[37,5],[38,5],[39,5],[40,5],[41,5],[42,5],[43,5],[44,5],[45,5],[46,5],[47,5],[48,5],[49,5],[50,5],[51,5],[52,5],[53,5],[54,5],[37,6],[38,6],[39,6],[40,6],[41,6],[42,6],[43,6],[44,6],[45,6],[46,6],[47,6],[48,6],[49,6],[50,6],[51,6],[52,6],[53,6],[54,6],[37,7],[38,7],[39,7],[40,7],[41,7],[42,7],[43,7],[44,7],[45,7],[46,7],[47,7],[48,7],[49,7],[50,7],[51,7],[52,7],[53,7],[54,7],[37,8],[38,8],[39,8],[40,8],[41,8],[42,8],[43,8],[44,8],[45,8],[46,8],[47,8],[48,8],[49,8],[50,8],[51,8],[52,8],[53,8],[54,8],[37,9],[38,9],[39,9],[40,9],[41,9],[42,9],[43,9],[44,9],[45,9],[46,9],[47,9],[48,9],[49,9],[50,9],[51,9],[52,9],[53,9],[54,9],[37,10],[38,10],[39,10],[40,10],[41,10],[42,10],[43,10],[44,10],[45,10],[46,10],[47,10],[48,10],[49,10],[50,10],[51,10],[52,10],[53,10],[54,10],[37,11],[38,11],[39,11],[40,11],[41,11],[42,11],[43,11],[44,11],[45,11],[46,11],[47,11],[48,11],[49,11],[50,11],[51,11],[52,11],[53,11],[54,11],[37,12],[38,12],[39,12],[40,12],[41,12],[42,12],[43,12],[44,12],[45,12],[46,12],[47,12],[48,12],[49,12],[50,12],[51,12],[52,12],[53,12],[54,12],[37,13],[38,13],[39,13],[40,13],[41,13],[42,13],[43,13],[44,13],[45,13],[46,13],[47,13],[48,13],[49,13],[50,13],[51,13],[52,13],[53,13],[54,13],[37,14],[38,14],[39,14],[40,14],[41,14],[42,14],[43,14],[44,14],[45,14],[46,14],[47,14],[48,14],[49,14],[50,14],[51,14],[52,14],[53,14],[54,14],[37,15],[38,15],[39,15],[40,15],[41,15],[42,15],[43,15],[44,15],[45,15],[46,15],[47,15],[48,15],[49,15],[50,15],[51,15],[52,15],[53,15],[54,15],[8,30],[9,30],[10,30],[11,30],[12,30],[13,30],[14,30],[15,30],[16,30],[17,30],[18,30],[19,30],[20,30],[21,30],[22,30],[23,30],[24,30],[25,30],[8,31],[9,31],[10,31],[11,31],[12,31],[13,31],[14,31],[15,31],[16,31],[17,31],[18,31],[19,31],[20,31],[21,31],[22,31],[23,31],[24,31],[25,31],[8,32],[9,32],[10,32],[11,32],[12,32],[13,32],[14,32],[15,32],[16,32],[17,32],[18,32],[19,32],[20,32],[21,32],[22,32],[23,32],[24,32],[25,32],[8,33],[9,33],[10,33],[11,33],[12,33],[13,33],[14,33],[15,33],[16,33],[17,33],[18,33],[19,33],[20,33],[21,33],[22,33],[23,33],[24,33],[25,33],[8,34],[9,34],[10,34],[11,34],[12,34],[13,34],[14,34],[15,34],[16,34],[17,34],[18,34],[19,34],[20,34],[21,34],[22,34],[23,34],[24,34],[25,34],[8,35],[9,35],[10,35],[11,35],[12,35],[13,35],[14,35],[15,35],[16,35],[17,35],[18,35],[19,35],[20,35],[21,35],[22,35],[23,35],[24,35],[25,35],[8,36],[9,36],[10,36],[11,36],[12,36],[13,36],[14,36],[15,36],[16,36],[17,36],[18,36],[19,36],[20,36],[21,36],[22,36],[23,36],[24,36],[25,36],[8,37],[9,37],[10,37],[11,37],[12,37],[13,37],[14,37],[15,37],[16,37],[17,37],[18,37],[19,37],[20,37],[21,37],[22,37],[23,37],[24,37],[25,37],[8,38],[9,38],[10,38],[11,38],[12,38],[13,38],[14,38],[15,38],[16,38],[17,38],[18,38],[19,38],[20,38],[21,38],[22,38],[23,38],[24,38],[25,38],[8,39],[9,39],[10,39],[11,39],[12,39],[13,39],[14,39],[15,39],[16,39],[17,39],[18,39],[19,39],[20,39],[21,39],[22,39],[23,39],[24,39],[25,39],[36,30],[37,30],[38,30],[39,30],[40,30],[41,30],[42,30],[43,30],[44,30],[45,30],[46,30],[47,30],[48,30],[49,30],[50,30],[51,30],[52,30],[53,30],[54,30],[36,31],[37,31],[38,31],[39,31],[40,31],[41,31],[42,31],[43,31],[44,31],[45,31],[46,31],[47,31],[48,31],[49,31],[50,31],[51,31],[52,31],[53,31],[54,31],[36,32],[37,32],[38,32],[39,32],[40,32],[41,32],[42,32],[43,32],[44,32],[45,32],[46,32],[47,32],[48,32],[49,32],[50,32],[51,32],[52,32],[53,32],[54,32],[36,33],[37,33],[38,33],[39,33],[40,33],[41,33],[42,33],[43,33],[44,33],[45,33],[46,33],[47,33],[48,33],[49,33],[50,33],[51,33],[52,33],[53,33],[54,33],[36,34],[37,34],[38,34],[39,34],[40,34],[41,34],[42,34],[43,34],[44,34],[45,34],[46,34],[47,34],[48,34],[49,34],[50,34],[51,34],[52,34],[53,34],[54,34],[36,35],[37,35],[38,35],[39,35],[40,35],[41,35],[42,35],[43,35],[44,35],[45,35],[46,35],[47,35],[48,35],[49,35],[50,35],[51,35],[52,35],[53,35],[54,35],[36,36],[37,36],[38,36],[39,36],[40,36],[41,36],[42,36],[43,36],[44,36],[45,36],[46,36],[47,36],[48,36],[49,36],[50,36],[51,36],[52,36],[53,36],[54,36],[36,37],[37,37],[38,37],[39,37],[40,37],[41,37],[42,37],[43,37],[44,37],[45,37],[46,37],[47,37],[48,37],[49,37],[50,37],[51,37],[52,37],[53,37],[54,37],[36,38],[37,38],[38,38],[39,38],[40,38],[41,38],[42,38],[43,38],[44,38],[45,38],[46,38],[47,38],[48,38],[49,38],[50,38],[51,38],[52,38],[53,38],[54,38],[36,39],[37,39],[38,39],[39,39],[40,39],[41,39],[42,39],[43,39],[44,39],[45,39],[46,39],[47,39],[48,39],[49,39],[50,39],[51,39],[52,39],[53,39],[54,39],[27,8],[27,9],[27,10],[27,11],[27,12],[28,8],[28,9],[28,10],[28,11],[28,12],[29,8],[29,9],[29,10],[29,11],[29,12],[30,8],[30,9],[30,10],[30,11],[30,12],[31,8],[31,9],[31,10],[31,11],[31,12],[32,8],[32,9],[32,10],[32,11],[32,12],[33,8],[33,9],[33,10],[33,11],[33,12],[34,8],[34,9],[34,10],[34,11],[34,12],[35,8],[35,9],[35,10],[35,11],[35,12],[36,8],[36,9],[36,10],[36,11],[36,12],[44,16],[45,16],[46,16],[47,16],[48,16],[44,17],[45,17],[46,17],[47,17],[48,17],[44,18],[45,18],[46,18],[47,18],[48,18],[44,19],[45,19],[46,19],[47,19],[48,19],[44,20],[45,20],[46,20],[47,20],[48,20],[44,21],[45,21],[46,21],[47,21],[48,21],[44,22],[45,22],[46,22],[47,22],[48,22],[44,23],[45,23],[46,23],[47,23],[48,23],[44,24],[45,24],[46,24],[47,24],[48,24],[44,25],[45,25],[46,25],[47,25],[48,25],[44,26],[45,26],[46,26],[47,26],[48,26],[44,27],[45,27],[46,27],[47,27],[48,27],[44,28],[45,28],[46,28],[47,28],[48,28],[44,29],[45,29],[46,29],[47,29],[48,29],[26,33],[26,34],[26,35],[26,36],[26,37],[27,33],[27,34],[27,35],[27,36],[27,37],[28,33],[28,34],[28,35],[28,36],[28,37],[29,33],[29,34],[29,35],[29,36],[29,37],[30,33],[30,34],[30,35],[30,36],[30,37],[31,33],[31,34],[31,35],[31,36],[31,37],[32,33],[32,34],[32,35],[32,36],[32,37],[33,33],[33,34],[33,35],[33,36],[33,37],[34,33],[34,34],[34,35],[34,36],[34,37],[35,33],[35,34],[35,35],[35,36],[35,37],[15,16],[16,16],[17,16],[18,16],[19,16],[15,17],[16,17],[17,17],[18,17],[19,17],[15,18],[16,18],[17,18],[18,18],[19,18],[15,19],[16,19],[17,19],[18,19],[19,19],[15,20],[16,20],[17,20],[18,20],[19,20],[15,21],[16,21],[17,21],[18,21],[19,21],[15,22],[16,22],[17,22],[18,22],[19,22],[15,23],[16,23],[17,23],[18,23],[19,23],[15,24],[16,24],[17,24],[18,24],[19,24],[15,25],[16,25],[17,25],[18,25],[19,25],[15,26],[16,26],[17,26],[18,26],[19,26],[15,27],[16,27],[17,27],[18,27],[19,27],[15,28],[16,28],[17,28],[18,28],[19,28],[15,29],[16,29],[17,29],[18,29],[19,29],[14,20],[14,21],[14,22],[14,23],[14,24],[49,20],[49,21],[49,22],[49,23],[49,24],[43,22],[43,23],[43,24],[43,25],[43,26],[43,27],[43,28],[43,29]],"players":[[120,328],[152,328],[120,360],[152,360]],"torches":[[128,56],[224,56],[320,56],[416,56],[608,56],[704,56],[800,56],[512,104],[896,248],[224,296],[128,456],[224,456],[320,456],[608,456],[800,456],[416,504],[512,504]],"meta":{"seed":4242,"room":2,"template":"crypt_03"}};
+
+// ---------------------------------------------------------------- assets
+const IMG = {};
+function loadImages() {
+  return Promise.all(Object.entries(ASSETS).map(([key, src]) => new Promise((resolve) => {
+    const image = new Image();
+    image.onload = () => { IMG[key] = image; resolve(); };
+    image.onerror = () => resolve();
+    image.src = src;
+  })));
+}
+
+// ---------------------------------------------------------------- settings
+const settings = { S: 2, speed: 1, paused: false, light: true };
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+if (reduceMotion) settings.paused = true;
+
+// ---------------------------------------------------------------- maths
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, k) => a + (b - a) * k;
+const easeOut = (k) => 1 - Math.pow(1 - clamp(k, 0, 1), 3);
+const easeIn = (k) => Math.pow(clamp(k, 0, 1), 2);
+const easeInOut = (k) => { k = clamp(k, 0, 1); return k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; };
+const seg = (u, a, b) => clamp((u - a) / (b - a), 0, 1);
+const rnd = (a, b) => a + Math.random() * (b - a);
+
+// ---------------------------------------------------------------- rig definitions
+// Rects are inclusive pixel boxes [x0,y0,x1,y1] on the original frame; each
+// opaque pixel belongs to the first part whose box contains it.
+const DEFS = {
+  knight: { img: "knight", ground: [8, 27], width: 11, parts: [
+    { id: "foot_l", rects: [[3, 25, 6, 27]], pivot: [5, 25], parent: null, z: 1 },
+    { id: "foot_r", rects: [[9, 25, 12, 27]], pivot: [10, 25], parent: null, z: 1 },
+    { id: "plume", rects: [[0, 8, 11, 11]], pivot: [6, 12], parent: "body", z: 3 },
+    { id: "body", rects: [[3, 12, 14, 25]], pivot: [8, 25], parent: null, z: 2 },
+  ], weapon: { img: "knight_sword", grip: [4.5, 25.5], hand: [13, 21], parent: "body", rest: 0.35, z: 4, tip: [4.5, 1] } },
+  skeleton: { img: "skelet", ground: [8, 15], width: 9, parts: [
+    { id: "leg_l", rects: [[4, 14, 7, 15]], pivot: [6, 14], parent: null, z: 1, hp: 2, label: "Linkes Bein" },
+    { id: "leg_r", rects: [[8, 14, 11, 15]], pivot: [10, 14], parent: null, z: 1, hp: 2, label: "Rechtes Bein" },
+    { id: "torso", rects: [[4, 11, 11, 13]], pivot: [8, 13], parent: null, z: 2, hp: 3, label: "Rumpf" },
+    { id: "skull", rects: [[3, 2, 12, 10]], pivot: [8, 10], parent: "torso", z: 3, hp: 3, label: "Schädel" },
+  ], weapon: { img: "rusty_sword", grip: [4.5, 18], hand: [11, 13], parent: "torso", rest: 0.55, z: 4, tip: [4.5, 1], hp: 1, label: "Waffe" } },
+  necro: { img: "necro", ground: [7, 22], width: 12, float: true, parts: [
+    { id: "robe", rects: [[0, 19, 15, 22]], pivot: [7, 22], parent: null, z: 1, hp: 6, label: "Kutte" },
+    { id: "hood", rects: [[0, 8, 15, 18]], pivot: [7, 19], parent: "robe", z: 2, hp: 6, label: "Kopf" },
+  ], weapon: { img: "red_staff", grip: [3.5, 18], hand: [14, 17], parent: "hood", rest: 0.12, z: 3, tip: [2.5, 3], hp: 2, label: "Stab" } },
+  zombie: { img: "zombie", ground: [16, 35], width: 18, parts: [
+    { id: "arm", rects: [[11, 16, 12, 16], [10, 17, 12, 17], [9, 18, 12, 18], [8, 19, 11, 19], [8, 20, 11, 20], [7, 21, 12, 21], [7, 22, 12, 22], [7, 23, 11, 23], [7, 24, 10, 24], [7, 25, 10, 25], [7, 26, 10, 26]], pivot: [12, 17], parent: "torso", z: 4, hp: 20, label: "Arm" },
+    { id: "leg_l", rects: [[7, 29, 15, 35]], pivot: [11, 29], parent: null, z: 1, hp: 15, label: "Linkes Bein" },
+    { id: "leg_r", rects: [[16, 29, 25, 35]], pivot: [20, 29], parent: null, z: 1, hp: 15, label: "Rechtes Bein" },
+    { id: "head", rects: [[12, 9, 25, 21]], pivot: [18, 21], parent: "torso", z: 3, hp: 30, label: "Kopf" },
+    { id: "torso", rects: [[7, 22, 25, 28]], pivot: [16, 28], parent: null, z: 2, hp: 40, label: "Rumpf" },
+  ] },
+};
+
+const RIGS = {};
+function buildRig(name) {
+  const def = DEFS[name];
+  const source = IMG[def.img];
+  const w = source.width, h = source.height;
+  const base = document.createElement("canvas");
+  base.width = w; base.height = h;
+  const bctx = base.getContext("2d");
+  bctx.drawImage(source, 0, 0);
+  const data = bctx.getImageData(0, 0, w, h).data;
+  const owner = new Int16Array(w * h).fill(-1);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (data[(y * w + x) * 4 + 3] < 128) continue;
+    for (let i = 0; i < def.parts.length; i++) {
+      if (def.parts[i].rects.some(([x0, y0, x1, y1]) => x >= x0 && x <= x1 && y >= y0 && y <= y1)) { owner[y * w + x] = i; break; }
+    }
+  }
+  const parts = def.parts.map((part, index) => {
+    const canvas = document.createElement("canvas"); canvas.width = w; canvas.height = h;
+    const white = document.createElement("canvas"); white.width = w; white.height = h;
+    const ctx = canvas.getContext("2d"), wctx = white.getContext("2d");
+    const out = ctx.createImageData(w, h), wout = wctx.createImageData(w, h);
+    const mask = new Uint8Array(w * h);
+    let cx = 0, cy = 0, n = 0;
+    for (let p = 0; p < w * h; p++) {
+      if (owner[p] !== index) continue;
+      mask[p] = 1; n++; cx += p % w; cy += Math.floor(p / w);
+      for (let c = 0; c < 4; c++) out.data[p * 4 + c] = data[p * 4 + c];
+      wout.data[p * 4] = 255; wout.data[p * 4 + 1] = 255; wout.data[p * 4 + 2] = 255; wout.data[p * 4 + 3] = 255;
+    }
+    ctx.putImageData(out, 0, 0); wctx.putImageData(wout, 0, 0);
+    return { ...part, canvas, white, mask, center: [n ? cx / n + 0.5 : part.pivot[0], n ? cy / n + 0.5 : part.pivot[1]] };
+  });
+  let weapon = null;
+  if (def.weapon) {
+    const img = IMG[def.weapon.img];
+    const canvas = document.createElement("canvas"); canvas.width = img.width; canvas.height = img.height;
+    canvas.getContext("2d").drawImage(img, 0, 0);
+    const wd = canvas.getContext("2d").getImageData(0, 0, img.width, img.height);
+    const white = document.createElement("canvas"); white.width = img.width; white.height = img.height;
+    const wo = white.getContext("2d").createImageData(img.width, img.height);
+    const mask = new Uint8Array(img.width * img.height);
+    for (let p = 0; p < img.width * img.height; p++) if (wd.data[p * 4 + 3] > 127) { mask[p] = 1; wo.data[p * 4] = wo.data[p * 4 + 1] = wo.data[p * 4 + 2] = wo.data[p * 4 + 3] = 255; }
+    white.getContext("2d").putImageData(wo, 0, 0);
+    weapon = { ...def.weapon, id: "weapon", canvas, white, mask, w: img.width, h: img.height, center: [img.width / 2, img.height / 2] };
+  }
+  RIGS[name] = { def, w, h, parts, weapon, byId: Object.fromEntries(parts.map((p) => [p.id, p])) };
+}
+
+// ---------------------------------------------------------------- actors
+// Clip durations in seconds; looping clips have no duration.
+const CLIPS = {
+  knight: { attack: 0.42, dodge: 0.45, hit: 0.32, death: 1.4, cheer: 0.8 },
+  skeleton: { attack: 0.62, hit: 0.3, rise: 1.1, collapse: 0.05 },
+  necro: { cast: 0.95, summon: 1.4, hit: 0.32, death: 1.6 },
+  zombie: { slam: 1.15, roar: 1.0, hit: 0.3, death: 1.6 },
+};
+
+function makeActor(type, x, y, opts = {}) {
+  const rig = RIGS[type];
+  const actor = { type, rig, x, y, face: 1, t: rnd(0, 3), clip: null, ct: 0, base: "idle", moving: false, vx: 0,
+    flash: 0, alpha: 1, dead: false, lost: {}, hp: {}, regrow: 0, trail: [], shake: 0, events: {}, home: [x, y],
+    minX: opts.minX ?? x - 20, maxX: opts.maxX ?? x + 20, speed: opts.speed ?? 14, target: null, wanderTimer: rnd(0.5, 2), onChange: opts.onChange || null };
+  for (const part of rig.parts) if (part.hp) actor.hp[part.id] = part.hp;
+  if (rig.weapon && rig.weapon.hp) actor.hp.weapon = rig.weapon.hp;
+  actor.maxHp = Object.values(actor.hp).reduce((a, b) => a + b, 0);
+  return actor;
+}
+
+function play(actor, clip) {
+  if (actor.dead && clip !== "rise") return;
+  actor.clip = clip; actor.ct = 0; actor.events = {};
+  if (clip === "hit") actor.flash = 1;
+}
+
+// ---------------------------------------------------------------- poses
+function blank() { return { whole: { dx: 0, dy: 0, rot: 0, sx: 1, sy: 1, pivot: null }, parts: {}, weapon: { dx: 0, dy: 0, rot: 0 }, trail: false }; }
+function P(pose, id) { return pose.parts[id] || (pose.parts[id] = { dx: 0, dy: 0, rot: 0, sx: 1, sy: 1, alpha: 1 }); }
+
+function walkLegs(pose, idL, idR, ph, stride, lift) {
+  P(pose, idL).dx = Math.sin(ph) * stride; P(pose, idL).dy = -Math.max(0, Math.cos(ph)) * lift;
+  P(pose, idR).dx = -Math.sin(ph) * stride; P(pose, idR).dy = -Math.max(0, -Math.cos(ph)) * lift;
+}
+
+const POSES = {
+  knight(a) {
+    const pose = blank(), t = a.t, b = Math.sin(t * TAU / 1.3);
+    pose.whole.sy = 1 + 0.025 * b; pose.whole.sx = 1 - 0.018 * b;
+    P(pose, "plume").rot = 0.06 * Math.sin(t * TAU / 1.3 + 0.8);
+    pose.weapon.rot = 0.05 * b; pose.weapon.dy = -0.5 * b;
+    if (a.moving) {
+      const ph = t * TAU / 0.42;
+      pose.whole.dy = -Math.abs(Math.sin(ph)) * 1.6; pose.whole.rot = 0.07; pose.whole.sy = 1; pose.whole.sx = 1;
+      walkLegs(pose, "foot_l", "foot_r", ph, 2.2, 1.4);
+      P(pose, "plume").rot = -0.28 - 0.1 * Math.sin(ph * 2);
+      pose.weapon.rot = 0.22 * Math.sin(ph);
+    }
+    const u = a.clip ? a.ct / CLIPS.knight[a.clip] : 0;
+    if (a.clip === "attack") {
+      if (u < 0.33) { const k = easeInOut(u / 0.33); pose.weapon.rot = -2.1 * k; pose.whole.rot = -0.1 * k; pose.whole.dx = -1 * k; }
+      else if (u < 0.55) { const k = easeOut(seg(u, 0.33, 0.55)); pose.weapon.rot = -2.1 + 3.8 * k; pose.whole.rot = -0.1 + 0.24 * k; pose.whole.dx = -1 + 3.4 * k; pose.whole.sx = 1 + 0.08 * k; pose.trail = true; }
+      else { const k = easeInOut(seg(u, 0.55, 1)); pose.weapon.rot = 1.7 * (1 - k); pose.whole.rot = 0.14 * (1 - k); pose.whole.dx = 2.4 * (1 - k); }
+      P(pose, "plume").rot += u < 0.5 ? 0.3 : -0.2 * (1 - u);
+    } else if (a.clip === "dodge") {
+      const k = easeInOut(u);
+      pose.whole.pivot = [8, 19]; pose.whole.rot = TAU * k; pose.whole.sy = 1 - 0.25 * Math.sin(Math.PI * u); pose.whole.dy = -2 * Math.sin(Math.PI * u);
+      pose.weapon.rot = -0.6;
+    } else if (a.clip === "hit") {
+      const k = 1 - easeOut(u);
+      pose.whole.dx = -3 * k; pose.whole.rot = -0.18 * k; P(pose, "plume").rot = 0.6 * Math.sin(u * 22) * k; pose.weapon.rot = 0.4 * k;
+    } else if (a.clip === "death" || (a.dead && a.type === "knight")) {
+      const uu = a.dead && !a.clip ? 1 : u;
+      const fall = easeIn(seg(uu, 0.25, 0.62));
+      pose.whole.rot = -0.12 * Math.sin(uu * 40) * (1 - seg(uu, 0, 0.25)) - (Math.PI / 2) * fall;
+      pose.whole.pivot = [3, 27]; pose.whole.dy = 2 * fall;
+      P(pose, "plume").rot = 0.5 * fall; P(pose, "foot_l").rot = 0.6 * fall;
+      pose.weapon.rot = 1.3 * fall;
+    } else if (a.clip === "cheer") {
+      const j = Math.sin(Math.PI * u); pose.whole.dy = -6 * j; pose.weapon.rot = -1.9 * j; pose.weapon.dy = -3 * j; P(pose, "plume").rot = -0.3 * j;
+    }
+    return pose;
+  },
+
+  skeleton(a) {
+    const pose = blank(), t = a.t;
+    const legs = !a.lost.leg_l || !a.lost.leg_r, torso = !a.lost.torso;
+    P(pose, "skull").dy = -0.5 * Math.sin(t * TAU / 1.1);
+    // Occasional bone rattle.
+    if (Math.sin(t * 0.9) > 0.985) P(pose, "skull").rot = 0.09 * Math.sin(t * 70);
+    pose.weapon.rot = 0.06 * Math.sin(t * TAU / 1.1);
+    if (!torso) {
+      // Skull alone: hops along the floor.
+      const hop = Math.abs(Math.sin(t * TAU / 0.9));
+      const s = P(pose, "skull"); s.dy = 5 - hop * (a.moving ? 4 : 1.2); s.sy = 1 - 0.18 * (1 - hop); s.sx = 1 + 0.12 * (1 - hop);
+      s.rot = a.moving ? 0.15 * Math.sin(t * TAU / 0.9) : 0;
+      return pose;
+    }
+    if (!legs) {
+      // No legs: the body drags itself with its arms.
+      const ph = t * TAU / 0.9;
+      const tr = P(pose, "torso"); tr.dy = 2; tr.rot = (a.moving ? 0.16 : 0.05) * Math.sin(ph); tr.dx = (a.moving ? 1 : 0.3) * Math.sin(ph);
+      P(pose, "skull").rot = 0.08 * Math.sin(ph + 1);
+      pose.weapon.rot = 0.3 * Math.sin(ph);
+    } else if (a.moving) {
+      const ph = t * TAU / 0.5;
+      walkLegs(pose, "leg_l", "leg_r", ph, 1.4, 1.1);
+      if (a.lost.leg_l || a.lost.leg_r) { pose.whole.rot = 0.18 * Math.sin(ph); pose.whole.dy = -Math.abs(Math.sin(ph)) * 2; }
+      P(pose, "torso").rot = 0.06 * Math.sin(ph);
+      P(pose, "skull").dy = -Math.abs(Math.sin(ph)) * 1; P(pose, "skull").rot = 0.05 * Math.sin(ph + 1);
+      pose.weapon.rot = 0.25 * Math.sin(ph);
+    }
+    const u = a.clip ? a.ct / CLIPS.skeleton[a.clip] : 0;
+    if (a.clip === "attack") {
+      // Slow, shaking windup (a readable telegraph), then a fast strike.
+      if (u < 0.6) { const k = easeOut(u / 0.6); pose.weapon.rot = -1.9 * k + 0.05 * Math.sin(a.ct * 60) * k; P(pose, "skull").rot = -0.12 * k; P(pose, "skull").dx = -1 * k; }
+      else if (u < 0.75) { const k = easeOut(seg(u, 0.6, 0.75)); pose.weapon.rot = -1.9 + 3.4 * k; P(pose, "skull").rot = -0.12 + 0.25 * k; P(pose, "skull").dx = -1 + 2 * k; pose.trail = true; }
+      else { const k = easeInOut(seg(u, 0.75, 1)); pose.weapon.rot = 1.5 * (1 - k); P(pose, "skull").rot = 0.13 * (1 - k); P(pose, "skull").dx = (1 - k); }
+    } else if (a.clip === "hit") {
+      const k = 1 - easeOut(u);
+      P(pose, "skull").rot = 0.25 * Math.sin(u * 30) * k; P(pose, "skull").dx = -2 * k; P(pose, "torso").dx = -1 * k;
+    } else if (a.clip === "rise") {
+      // Bones fly from where they lay back into place.
+      for (const part of a.rig.parts) {
+        const from = a.riseFrom && a.riseFrom[part.id]; if (!from) continue;
+        const k = easeInOut(seg(u, part.id === "skull" ? 0.35 : 0.05, part.id === "skull" ? 1 : 0.7));
+        const p = P(pose, part.id); p.dx += (1 - k) * from.dx; p.dy += (1 - k) * from.dy - Math.sin(Math.PI * k) * 6; p.rot += (1 - k) * from.rot;
+      }
+      if (a.riseFrom && a.riseFrom.weapon) { const k = easeInOut(seg(u, 0.5, 1)); pose.weapon.dx = (1 - k) * a.riseFrom.weapon.dx; pose.weapon.dy = (1 - k) * a.riseFrom.weapon.dy; pose.weapon.rot += (1 - k) * 2; }
+    }
+    return pose;
+  },
+
+  necro(a) {
+    const pose = blank(), t = a.t, f = Math.sin(t * TAU / 1.8);
+    pose.whole.dy = -3 - 1.5 * f;
+    const robe = P(pose, "robe"); robe.sx = 1 + 0.05 * Math.sin(t * TAU / 0.9); robe.rot = 0.05 * Math.sin(t * TAU / 0.9 + 0.5);
+    pose.weapon.dy = -0.8 * Math.sin(t * TAU / 1.8 + 0.4); pose.weapon.rot = 0.05 * Math.sin(t * TAU / 2.2);
+    if (a.moving) { pose.whole.rot = 0.08; robe.rot -= 0.12; }
+    const u = a.clip ? a.ct / CLIPS.necro[a.clip] : 0;
+    if (a.clip === "cast") {
+      const raise = easeOut(seg(u, 0, 0.5)), drop = easeInOut(seg(u, 0.62, 1));
+      pose.weapon.rot = -0.5 * raise * (1 - drop); pose.weapon.dy += -4 * raise * (1 - drop);
+      pose.whole.rot = -0.06 * raise * (1 - drop);
+      P(pose, "hood").dy = -1 * raise * (1 - drop);
+    } else if (a.clip === "summon") {
+      const raise = easeOut(seg(u, 0, 0.3)), slam = easeIn(seg(u, 0.3, 0.38)), back = easeInOut(seg(u, 0.6, 1));
+      pose.weapon.dy += (-5 * raise + 8 * slam) * (1 - back); pose.whole.dy += 2 * slam * (1 - back);
+    } else if (a.clip === "hit") {
+      const k = 1 - easeOut(u); pose.whole.dx = -2.5 * k; pose.whole.rot = -0.15 * k;
+    } else if (a.clip === "death" || a.dead) {
+      const uu = a.dead && !a.clip ? 1 : u;
+      const k = easeInOut(seg(uu, 0.1, 0.8));
+      pose.whole.dy = lerp(pose.whole.dy, 0, k); pose.whole.pivot = [7, 22]; pose.whole.sy = 1 - 0.75 * k;
+      P(pose, "hood").alpha = 1 - easeIn(seg(uu, 0.4, 1)); P(pose, "robe").alpha = 1 - easeIn(seg(uu, 0.55, 1));
+    }
+    return pose;
+  },
+
+  zombie(a) {
+    const pose = blank(), t = a.t, b = Math.sin(t * TAU / 1.6);
+    const legs = !a.lost.leg_l || !a.lost.leg_r;
+    pose.whole.sy = 1 + 0.03 * b; pose.whole.sx = 1 - 0.02 * b;
+    P(pose, "head").rot = 0.04 * Math.sin(t * TAU / 1.6 + 1); P(pose, "arm").rot = 0.08 * Math.sin(t * TAU / 1.6 + 0.4);
+    if (!legs) { P(pose, "torso").dy = 7; }
+    if (a.moving) {
+      const ph = t * TAU / 0.8;
+      if (legs) { pose.whole.dy = -Math.abs(Math.sin(ph)) * 2; walkLegs(pose, "leg_l", "leg_r", ph, 2.5, 1.6); }
+      pose.whole.rot = 0.06 * Math.sin(ph); P(pose, "arm").rot = 0.3 * Math.sin(ph); P(pose, "head").dy = -Math.abs(Math.sin(ph));
+      if (!legs) { P(pose, "torso").rot = 0.1 * Math.sin(ph); }
+    }
+    if (a.regrow > 0) { const k = 1 - a.regrow / 1.2; const arm = P(pose, "arm"); arm.sx = arm.sy = lerp(0.15, 1, easeOut(k)); }
+    const u = a.clip ? a.ct / CLIPS.zombie[a.clip] : 0;
+    if (a.clip === "slam") {
+      const up = easeInOut(seg(u, 0, 0.45)), down = easeIn(seg(u, 0.45, 0.56)), back = easeInOut(seg(u, 0.7, 1));
+      const arm = P(pose, "arm"); arm.rot = (-2.3 * up + 3.0 * down) * (1 - back);
+      pose.whole.rot = (-0.1 * up + 0.2 * down) * (1 - back); pose.whole.dx = 3 * down * (1 - back);
+      P(pose, "head").rot = (-0.15 * up + 0.2 * down) * (1 - back);
+      if (u > 0.45 && u < 0.62) pose.trail = true;
+    } else if (a.clip === "roar") {
+      const k = Math.sin(Math.PI * u); P(pose, "head").rot = -0.3 * k + 0.05 * Math.sin(a.ct * 50) * k; P(pose, "head").dy = -2 * k; pose.whole.sx = 1 + 0.06 * k;
+    } else if (a.clip === "hit") {
+      const k = 1 - easeOut(u); pose.whole.dx = -2 * k; P(pose, "head").rot = -0.2 * k;
+    } else if (a.clip === "death" || a.dead) {
+      const uu = a.dead && !a.clip ? 1 : u;
+      const fall = easeIn(seg(uu, 0.2, 0.7)); pose.whole.pivot = [26, 35]; pose.whole.rot = (Math.PI / 2.2) * fall; pose.whole.dy = 3 * fall;
+    }
+    return pose;
+  },
+};
+
+// ---------------------------------------------------------------- transforms
+function wholeMatrix(a, pose, ox, oy) {
+  const rig = a.rig, g = rig.def.ground, w = pose.whole, pv = w.pivot || g;
+  return new DOMMatrix()
+    .translate(ox + a.x + w.dx * a.face, oy + a.y + w.dy)
+    .scale(a.face, 1)
+    .translate(-g[0], -g[1])
+    .translate(pv[0], pv[1]).rotate(w.rot * 180 / Math.PI).scale(w.sx, w.sy).translate(-pv[0], -pv[1]);
+}
+function localMatrix(part, p) {
+  return new DOMMatrix().translate(part.pivot[0] + p.dx, part.pivot[1] + p.dy).rotate(p.rot * 180 / Math.PI).scale(p.sx, p.sy).translate(-part.pivot[0], -part.pivot[1]);
+}
+function solve(a, pose, ox, oy) {
+  const base = wholeMatrix(a, pose, ox, oy), world = {};
+  const get = (id) => {
+    if (world[id]) return world[id];
+    const part = a.rig.byId[id], p = pose.parts[id] || { dx: 0, dy: 0, rot: 0, sx: 1, sy: 1 };
+    const parent = part.parent && !a.lost[part.parent] ? get(part.parent) : base;
+    return (world[id] = parent.multiply(localMatrix(part, p)));
+  };
+  for (const part of a.rig.parts) get(part.id);
+  const wp = a.rig.weapon;
+  if (wp && !a.lost.weapon) {
+    const parent = !a.lost[wp.parent] ? world[wp.parent] : base;
+    const wpo = pose.weapon;
+    world.weapon = parent.multiply(new DOMMatrix().translate(wp.hand[0] + wpo.dx, wp.hand[1] + wpo.dy).rotate((wp.rest + wpo.rot) * 180 / Math.PI).translate(-wp.grip[0], -wp.grip[1]));
+  }
+  return world;
+}
+
+// ---------------------------------------------------------------- drawing helpers
+function setT(ctx, m, S) {
+  ctx.setTransform(S * m.a, S * m.b, S * m.c, S * m.d, Math.round(S * m.e), Math.round(S * m.f));
+}
+function pixel(ctx, x, y, S, color, alpha = 1, size = 1) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = alpha; ctx.fillStyle = color;
+  ctx.fillRect(Math.round(x * S), Math.round(y * S), size * S, size * S);
+  ctx.globalAlpha = 1;
+}
+function shadow(ctx, x, y, width, S, alpha = 0.35) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = `rgba(5,3,10,${alpha})`;
+  const half = Math.round(width / 2);
+  for (let row = -1; row <= 1; row++) {
+    const span = row === 0 ? half : half - 2;
+    ctx.fillRect(Math.round((x - span) * S), Math.round((y + row) * S), span * 2 * S, S);
+  }
+}
+
+// Debris: detached parts that fall, bounce and settle on the floor.
+function detach(world, a, scene, id, impulse = 1) {
+  const part = id === "weapon" ? a.rig.weapon : a.rig.byId[id];
+  if (!part || a.lost[id] || !world[id]) return;
+  const m = world[id];
+  const c = m.transformPoint({ x: part.center[0], y: part.center[1] });
+  const angle = Math.atan2(m.b, m.a);
+  scene.debris.push({ canvas: part.canvas, center: part.center, x: c.x, y: a.y + (scene.oy || 0) + rnd(-2, 3), z: (a.y + (scene.oy || 0)) - c.y,
+    vx: rnd(-28, 28) * impulse + a.face * 8, vz: rnd(35, 70) * impulse, ang: angle, spin: rnd(-10, 10) * impulse, face: a.face, life: 0, owner: a, id });
+  a.lost[id] = true;
+  for (let i = 0; i < 6; i++) scene.particles.push({ x: c.x, y: c.y, z: 0, vx: rnd(-30, 30), vy: rnd(-30, 10), vz: 0, life: 0, max: rnd(0.25, 0.5), color: "#fdf7ed", grav: 120 });
+}
+
+function stepDebris(scene, dt) {
+  for (const d of scene.debris) {
+    d.life += dt;
+    if (!d.rest) {
+      d.vz -= 260 * dt; d.z += d.vz * dt; d.x += d.vx * dt; d.ang += d.spin * dt;
+      if (d.z <= 0) { d.z = 0; d.vz = -d.vz * 0.35; d.vx *= 0.55; d.spin *= 0.45; if (Math.abs(d.vz) < 12) { d.rest = true; d.vz = 0; } }
+    }
+  }
+  scene.debris = scene.debris.filter((d) => d.life < (scene.debrisLife || 7));
+  for (const p of scene.particles) { p.life += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += (p.grav || 0) * dt; }
+  scene.particles = scene.particles.filter((p) => p.life < p.max);
+}
+
+function drawDebris(ctx, scene, S) {
+  for (const d of scene.debris) {
+    const fade = clamp(((scene.debrisLife || 7) - d.life) / 1, 0, 1);
+    shadow(ctx, d.x, d.y, 6, S, 0.25 * fade);
+    ctx.globalAlpha = fade;
+    setT(ctx, new DOMMatrix().translate(d.x, d.y - d.z).rotate(d.ang * 180 / Math.PI).scale(d.face, 1).translate(-d.center[0], -d.center[1]), S);
+    ctx.drawImage(d.canvas, 0, 0);
+    ctx.globalAlpha = 1;
+  }
+  for (const p of scene.particles) pixel(ctx, p.x, p.y, S, p.color, 1 - p.life / p.max);
+}
+
+// Draws one actor (parts, weapon, flash, swing trail) into ctx at raster S.
+function drawActor(ctx, a, scene, S, ox, oy) {
+  const pose = POSES[a.type](a);
+  const world = solve(a, pose, ox, oy);
+  a.lastWorld = world; a.lastPose = pose;
+  if (!(a.type === "necro" && a.dead && !a.clip)) shadow(ctx, ox + a.x, oy + a.y, a.rig.def.width, S, a.type === "necro" ? 0.28 : 0.35);
+  const items = a.rig.parts.filter((p) => !a.lost[p.id]).map((p) => ({ part: p, z: p.z }));
+  if (a.rig.weapon && !a.lost.weapon) items.push({ part: a.rig.weapon, z: a.rig.weapon.z });
+  items.sort((p, q) => p.z - q.z);
+  for (const { part } of items) {
+    const m = world[part.id]; if (!m) continue;
+    const alpha = (pose.parts[part.id] && pose.parts[part.id].alpha !== undefined ? pose.parts[part.id].alpha : 1) * a.alpha;
+    if (alpha <= 0.01) continue;
+    setT(ctx, m, S); ctx.globalAlpha = alpha; ctx.drawImage(part.canvas, 0, 0);
+    if (a.flash > 0) { ctx.globalAlpha = alpha * Math.min(1, a.flash * 1.6); ctx.drawImage(part.white, 0, 0); }
+    ctx.globalAlpha = 1;
+  }
+  // Swing trail: recent weapon-tip positions, drawn as fading pixels.
+  const wp = a.rig.weapon;
+  if (wp && !a.lost.weapon && world.weapon) {
+    const tip = world.weapon.transformPoint({ x: wp.tip[0], y: wp.tip[1] });
+    if (pose.trail) a.trail.push({ x: tip.x, y: tip.y, age: 0 });
+  }
+  if (a.type === "zombie" && pose.trail && world.arm && !a.lost.arm) {
+    const fist = world.arm.transformPoint({ x: 8, y: 26 }); a.trail.push({ x: fist.x, y: fist.y, age: 0 });
+  }
+  for (let i = 1; i < a.trail.length; i++) {
+    const p0 = a.trail[i - 1], p1 = a.trail[i], steps = Math.ceil(Math.hypot(p1.x - p0.x, p1.y - p0.y) * S);
+    for (let s = 0; s <= steps; s++) {
+      const k = s / Math.max(1, steps);
+      pixel(ctx, lerp(p0.x, p1.x, k), lerp(p0.y, p1.y, k), S, "#eaf8ff", 0.65 * (1 - p1.age / 0.12), 1);
+    }
+  }
+}
+
+function stepActor(a, scene, dt) {
+  a.t += dt; a.flash = Math.max(0, a.flash - dt * 4);
+  for (const p of a.trail) p.age += dt;
+  a.trail = a.trail.filter((p) => p.age < 0.12);
+  if (a.regrow > 0) { a.regrow -= dt; if (a.regrow <= 0) a.regrow = 0; }
+  if (a.clip) {
+    a.ct += dt;
+    clipEvents(a, scene);
+    const dur = CLIPS[a.type][a.clip];
+    if (a.ct >= dur) {
+      const ended = a.clip; a.clip = null;
+      if (ended === "death" || ended === "collapse") { a.dead = true; }
+      if (ended === "rise") { a.dead = false; a.lost = {}; a.riseFrom = null; for (const k in a.hp) a.hp[k] = partHp(a, k); a.onChange && a.onChange(); }
+    }
+  }
+  // Movement (patrol or wander); attacks and deaths stop it.
+  const busy = a.dead || (a.clip && a.clip !== "hit");
+  a.moving = false;
+  if (!busy && a.walk) {
+    let speed = a.speed;
+    if (a.type === "skeleton" && a.lost.torso) speed *= 0.7;
+    else if (a.type === "skeleton" && a.lost.leg_l && a.lost.leg_r) speed *= 0.35;
+    else if ((a.lost.leg_l || a.lost.leg_r) && a.type !== "necro") speed *= 0.6;
+    if (a.target) {
+      const dx = a.target[0] - a.x, dy = a.target[1] - a.y, dist = Math.hypot(dx, dy);
+      if (dist < 1) { a.target = null; a.wanderTimer = rnd(0.6, 2.4); }
+      else { a.moving = true; a.x += dx / dist * speed * dt; a.y += dy / dist * speed * dt; if (Math.abs(dx) > 0.5) a.face = Math.sign(dx); }
+    } else if ((a.wanderTimer -= dt) <= 0 && scene.pickTarget) { a.target = scene.pickTarget(a); }
+  }
+}
+
+function partHp(a, id) { const part = id === "weapon" ? a.rig.weapon : a.rig.byId[id]; return part && part.hp ? part.hp : 0; }
+
+function clipEvents(a, scene) {
+  const once = (key, fn) => { if (!a.events[key]) { a.events[key] = true; fn(); } };
+  const world = a.lastWorld; if (!world) return;
+  if (a.type === "knight" && a.clip === "death" && a.ct > 0.45) once("drop", () => detach(world, a, scene, "weapon", 0.6));
+  // In the room the knight's strike knocks a random part off the enemy in front.
+  if (a.type === "knight" && a.clip === "attack" && a.ct > 0.2 && scene.actors) once("strike", () => {
+    const target = scene.actors.find((o) => o !== a && !o.dead && o.clip !== "rise" && Math.abs(o.y - a.y) < 12 && (o.x - a.x) * a.face > -2 && Math.abs(o.x - a.x) < 24);
+    if (!target) return;
+    const alive = Object.keys(target.hp).filter((id) => target.hp[id] > 0 && (target.type !== "skeleton" || id !== "skull" || Math.random() < 0.3));
+    if (alive.length) damage(target, scene, alive[Math.floor(Math.random() * alive.length)], target.type === "skeleton" ? 1 : 3);
+  });
+  if (a.type === "necro" && a.clip === "cast") {
+    const tip = world.weapon && world.weapon.transformPoint({ x: a.rig.weapon.tip[0], y: a.rig.weapon.tip[1] });
+    if (tip && a.ct < 0.5 && Math.random() < 0.9) { const ang = rnd(0, TAU), r = rnd(9, 14); scene.particles.push({ x: tip.x + Math.cos(ang) * r, y: tip.y + Math.sin(ang) * r, vx: -Math.cos(ang) * r / 0.3, vy: -Math.sin(ang) * r / 0.3, life: 0, max: 0.3, color: Math.random() < 0.5 ? "#c06bd8" : "#f2b8ff" }); }
+    if (tip && a.ct > 0.55) once("release", () => { for (let i = 0; i < 18; i++) { const ang = i / 18 * TAU; scene.particles.push({ x: tip.x, y: tip.y, vx: Math.cos(ang) * 55, vy: Math.sin(ang) * 55, life: 0, max: 0.4, color: "#e48cff" }); } });
+  }
+  if (a.type === "necro" && a.clip === "summon") {
+    const ox = scene.ox || 0, oy = scene.oy || 0;
+    if (a.ct > 0.35) once("ring", () => { scene.rings.push({ x: ox + a.x + 10 * a.face, y: oy + a.y, r: 1, life: 0, max: 0.9 }); });
+    if (a.ct > 0.4 && a.ct < 1.2 && Math.random() < 0.5) scene.particles.push({ x: ox + a.x + 10 * a.face + rnd(-8, 8), y: oy + a.y + rnd(-2, 2), vx: rnd(-4, 4), vy: rnd(-40, -20), life: 0, max: 0.6, color: Math.random() < 0.6 ? "#efe6d6" : "#8a6fd1" });
+  }
+  if (a.type === "necro" && a.clip === "death" && a.ct > 0.3) {
+    once("drop", () => detach(world, a, scene, "weapon", 0.6));
+    if (Math.random() < 0.6) scene.particles.push({ x: (scene.ox || 0) + a.x + rnd(-6, 6), y: (scene.oy || 0) + a.y - rnd(2, 14), vx: rnd(-6, 6), vy: rnd(-26, -12), life: 0, max: 0.8, color: "#7a3d78" });
+  }
+  if (a.type === "zombie" && a.clip === "slam" && a.ct > 0.56 * CLIPS.zombie.slam) once("impact", () => {
+    scene.shake = 0.25;
+    const fist = world.arm ? world.arm.transformPoint({ x: 8, y: 26 }) : { x: (scene.ox || 0) + a.x + 14 * a.face, y: (scene.oy || 0) + a.y };
+    for (let i = 0; i < 16; i++) scene.particles.push({ x: fist.x, y: (scene.oy || 0) + a.y, vx: rnd(-50, 50), vy: rnd(-40, -5), life: 0, max: rnd(0.3, 0.6), color: Math.random() < 0.5 ? "#7b6a5e" : "#a99d93", grav: 140 });
+  });
+  if (a.type === "zombie" && a.clip === "death" && a.ct > 0.9) once("break", () => { for (const id of ["arm", "head"]) if (!a.lost[id]) detach(world, a, scene, id, 0.5); });
+}
+
+// ---------------------------------------------------------------- damage
+// Damage a part: small enemies lose it on 0 HP. Skull/head/torso loss kills.
+function damage(a, scene, id, amount) {
+  if (a.dead || a.clip === "rise" || !(id in a.hp) || a.hp[id] <= 0) { return null; }
+  a.hp[id] = Math.max(0, a.hp[id] - amount);
+  a.flash = 1;
+  if (!a.clip || a.clip === "hit") play(a, "hit");
+  let message = `${labelOf(a, id)} getroffen`;
+  if (a.hp[id] === 0) {
+    const world = a.lastWorld;
+    if (a.type === "skeleton") {
+      if (id === "skull") { kill(a, scene); message = "Schädel zerschlagen: tot"; }
+      else if (id === "torso") { detach(world, a, scene, "torso"); detach(world, a, scene, "leg_l"); detach(world, a, scene, "leg_r"); a.hp.leg_l = a.hp.leg_r = 0; message = "Rumpf zerschlagen: nur noch der Schädel hüpft"; }
+      else if (id === "weapon") { detach(world, a, scene, "weapon", 1.3); message = "Waffe weggeschlagen: kein Schwertangriff mehr"; }
+      else { detach(world, a, scene, id); message = (a.lost.leg_l && a.lost.leg_r) ? "Beide Beine ab: es kriecht" : "Bein ab: es humpelt"; }
+    } else if (a.type === "zombie") {
+      if (id === "head" || id === "torso") { kill(a, scene); message = `${labelOf(a, id)} zerstört: Boss besiegt`; }
+      else if (id === "arm") { detach(world, a, scene, "arm", 0.8); message = "Arm abgerissen: Schlagangriff deaktiviert. Er wächst in 6 s nach."; a.regrowAt = 6; }
+      else { detach(world, a, scene, id); message = (a.lost.leg_l && a.lost.leg_r) ? "Beine zerstört: er schleppt sich" : "Bein zerstört: langsamer"; }
+    } else if (a.type === "necro") {
+      if (id === "weapon") { detach(world, a, scene, "weapon", 1.1); message = "Stab zerbrochen: keine Zauber mehr"; }
+      else { play(a, "death"); message = "Nekromant besiegt"; }
+    }
+  }
+  a.onChange && a.onChange();
+  return message;
+}
+function labelOf(a, id) { const part = id === "weapon" ? a.rig.weapon : a.rig.byId[id]; return part && part.label ? part.label : id; }
+function kill(a, scene) {
+  const world = a.lastWorld;
+  if (a.type === "skeleton") {
+    a.riseFrom = null;
+    for (const id of ["weapon", "skull", "torso", "leg_l", "leg_r"]) detach(world, a, scene, id, 1);
+    a.dead = true; a.clip = null;
+    for (const k in a.hp) a.hp[k] = 0;
+  } else { play(a, "death"); for (const k in a.hp) a.hp[k] = 0; }
+}
+// Skeleton: bones on the floor reassemble.
+function rise(a, scene) {
+  const from = {};
+  for (const d of scene.debris.filter((d) => d.owner === a)) {
+    const part = d.id === "weapon" ? a.rig.weapon : a.rig.byId[d.id];
+    const rest = a.lastWorld && a.lastWorld[d.id];
+    from[d.id] = { dx: (d.x - ((scene.ox || 0) + a.x)) * a.face, dy: -(d.z) + (d.y - ((scene.oy || 0) + a.y)) + 4, rot: d.ang };
+  }
+  scene.debris = scene.debris.filter((d) => d.owner !== a);
+  for (const id of ["skull", "torso", "leg_l", "leg_r", "weapon"]) if (!from[id]) from[id] = { dx: rnd(-10, 10), dy: rnd(2, 5), rot: rnd(-2, 2) };
+  a.lost = {}; a.dead = false; a.riseFrom = from;
+  play(a, "rise");
+}
+
+function hitTest(a, px, py) {
+  const world = a.lastWorld; if (!world || a.dead) return null;
+  const items = a.rig.parts.filter((p) => !a.lost[p.id]).map((p) => p);
+  if (a.rig.weapon && !a.lost.weapon) items.push(a.rig.weapon);
+  items.sort((p, q) => q.z - p.z);
+  for (const part of items) {
+    const m = world[part.id]; if (!m) continue;
+    const local = m.inverse().transformPoint({ x: px, y: py });
+    const x = Math.floor(local.x), y = Math.floor(local.y);
+    const w = part.id === "weapon" ? part.w : a.rig.w, h = part.id === "weapon" ? part.h : a.rig.h;
+    if (x >= 0 && y >= 0 && x < w && y < h && part.mask[y * w + x]) return part.id;
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------- cards
+const CARD_SPECS = [
+  { id: "F1", type: "knight", title: "Ritter", kind: "Held · Schwertkämpfer", w: 84, h: 56, ground: 46, walk: [18, 66],
+    clips: [["Stehen", "idle"], ["Laufen", "run"], ["Schwerthieb", "attack"], ["Ausweichrolle", "dodge"], ["Treffer", "hit"], ["Jubeln", "cheer"], ["Tod", "death"]],
+    auto: ["idle", 1.6, "run", 2.6, "attack", 0, "idle", 0.8, "attack", 0, "dodge", 0, "idle", 1.2, "hit", 0, "cheer", 0],
+    note: "Federbusch, Helm-Körper und Füße bewegen sich einzeln. Das Schwert hängt am Körper und zieht beim Hieb eine Spur." },
+  { id: "F2", type: "skeleton", title: "Skelett", kind: "Gegner · zerstörbar", w: 84, h: 52, ground: 44, walk: [18, 66], parts: true,
+    clips: [["Stehen", "idle"], ["Gehen", "run"], ["Angriff", "attack"], ["Treffer", "hit"], ["Zusammenfallen", "kill"], ["Auferstehen", "rise"]],
+    damage: [["Waffe wegschlagen", "weapon"], ["Bein abschlagen", "leg"], ["Rumpf zerschlagen", "torso"], ["Schädel treffen", "skull"]],
+    auto: ["run", 2.4, "attack", 0, "idle", 1.2, "run", 1.6, "attack", 0],
+    note: "Klick auf ein Teil: Beine weg → es kriecht, Rumpf weg → nur der Schädel hüpft, Schädel weg → tot. Ohne Waffe greift es nicht mehr an." },
+  { id: "F3", type: "necro", title: "Nekromant", kind: "Gegner · Zauberer", w: 84, h: 56, ground: 46, walk: [22, 62], parts: true,
+    clips: [["Schweben", "idle"], ["Gleiten", "run"], ["Zauber", "cast"], ["Beschwörung", "summon"], ["Treffer", "hit"], ["Tod", "death"]],
+    damage: [["Stab zerbrechen", "weapon"]],
+    auto: ["idle", 1.4, "cast", 0, "run", 2.2, "summon", 0, "idle", 1.0],
+    note: "Schwebt und lädt Zauber am Stab auf. Ohne Stab kann er nicht mehr zaubern." },
+  { id: "F4", type: "zombie", title: "Riesen-Zombie", kind: "Boss-Beispiel · auf Teile zielen", w: 110, h: 70, ground: 60, walk: [30, 80], parts: true,
+    clips: [["Stehen", "idle"], ["Stampfen", "run"], ["Faustschlag", "slam"], ["Brüllen", "roar"], ["Treffer", "hit"]],
+    damage: [["Arm treffen", "arm"], ["Bein treffen", "leg"], ["Kopf treffen", "head"]],
+    auto: ["idle", 1.2, "slam", 0, "run", 2.4, "roar", 0, "slam", 0],
+    note: "Gesamt-LP = Summe der Teile. Arm zerstört → kein Faustschlag, bis er nach 6 s nachwächst. Kopf oder Rumpf zerstört → besiegt. Ein Klick macht 5 Schaden am getroffenen Teil." },
+];
+
+const scenes = [];
+function makeCard(spec) {
+  const card = document.createElement("article"); card.className = "card";
+  card.innerHTML = `<div class="card-head"><h3>${spec.id} · ${spec.title}</h3><span class="label">${spec.kind}</span></div>
+    <div class="stage"><canvas aria-label="${spec.title} animiert"></canvas></div>
+    <div class="compare"><span>Vorlage (Original-Pixel):</span><canvas class="orig"></canvas></div>
+    <div class="row clips" role="group" aria-label="Animationen"></div>
+    ${spec.damage ? '<div class="row dmg" role="group" aria-label="Teile treffen"></div>' : ""}
+    <div class="status" aria-live="polite"></div>
+    ${spec.parts ? '<div class="parts"></div>' : ""}
+    <p class="note">${spec.note}</p>`;
+  document.getElementById("cards").appendChild(card);
+  const canvas = card.querySelector(".stage canvas");
+  const status = card.querySelector(".status");
+  const scene = { spec, canvas, ctx: canvas.getContext("2d"), debris: [], particles: [], rings: [], ox: 0, oy: 0, shake: 0, autoIndex: 0, autoTimer: 0, auto: true, debrisLife: spec.type === "skeleton" ? 999 : 7 };
+  const actor = makeActor(spec.type, (spec.walk[0] + spec.walk[1]) / 2, spec.ground, { speed: spec.type === "zombie" ? 10 : 14 });
+  actor.onChange = () => renderParts(scene);
+  scene.actor = actor;
+  scene.pickTarget = (a) => [a.x < (spec.walk[0] + spec.walk[1]) / 2 ? spec.walk[1] : spec.walk[0], spec.ground];
+  // Original preview
+  const orig = card.querySelector(".orig"), img = IMG[DEFS[spec.type].img];
+  orig.width = img.width * 3; orig.height = img.height * 3;
+  const octx = orig.getContext("2d"); octx.imageSmoothingEnabled = false; octx.drawImage(img, 0, 0, orig.width, orig.height);
+  // Clip buttons
+  const clipRow = card.querySelector(".clips");
+  for (const [label, clip] of spec.clips) {
+    const button = document.createElement("button"); button.textContent = label;
+    button.addEventListener("click", () => { scene.auto = false; trigger(scene, clip); });
+    clipRow.appendChild(button);
+  }
+  const autoButton = document.createElement("button"); autoButton.textContent = "Automatisch"; autoButton.setAttribute("aria-pressed", "true");
+  autoButton.addEventListener("click", () => { scene.auto = !scene.auto; autoButton.setAttribute("aria-pressed", String(scene.auto)); });
+  clipRow.appendChild(autoButton); scene.autoButton = autoButton;
+  if (spec.damage) {
+    const row = card.querySelector(".dmg");
+    for (const [label, target] of spec.damage) {
+      const button = document.createElement("button"); button.className = "hurt"; button.textContent = label;
+      button.addEventListener("click", () => {
+        let id = target;
+        if (target === "leg") id = !actor.lost.leg_l ? "leg_l" : "leg_r";
+        const amount = actor.type === "zombie" ? 999 : 999;
+        const message = damage(actor, scene, id, amount);
+        status.textContent = message || "Schon zerstört. Setze die Figur zurück.";
+      });
+      row.appendChild(button);
+    }
+    const reset = document.createElement("button"); reset.textContent = "Zurücksetzen";
+    reset.addEventListener("click", () => { resetActor(scene); status.textContent = actor.type === "skeleton" ? "Die Knochen setzen sich wieder zusammen" : "Zurückgesetzt"; });
+    row.appendChild(reset);
+  }
+  canvas.addEventListener("click", (event) => {
+    const rect = canvas.getBoundingClientRect();
+    const px = (event.clientX - rect.left) / rect.width * spec.w, py = (event.clientY - rect.top) / rect.height * spec.h;
+    const id = hitTest(actor, px, py);
+    if (!id) return;
+    if (!spec.parts) { play(actor, "hit"); status.textContent = "Treffer"; return; }
+    status.textContent = damage(actor, scene, id, actor.type === "zombie" ? 5 : 1) || "";
+  });
+  scene.status = status; scene.partsEl = card.querySelector(".parts");
+  renderParts(scene);
+  scenes.push(scene);
+  return scene;
+}
+
+function resetActor(scene) {
+  const a = scene.actor;
+  if (a.type === "skeleton") { rise(a, scene); return; }
+  scene.debris = []; a.lost = {}; a.dead = false; a.clip = null; a.regrow = 0; a.regrowAt = 0;
+  for (const k in a.hp) a.hp[k] = partHp(a, k);
+  renderParts(scene);
+}
+
+function trigger(scene, clip) {
+  const a = scene.actor;
+  if (clip === "kill") { if (!a.dead) kill(a, scene); renderParts(scene); return; }
+  if (clip === "rise") { if (a.dead || Object.keys(a.lost).length) rise(a, scene); return; }
+  if (a.dead) { scene.status.textContent = "Besiegt. Erst zurücksetzen."; return; }
+  if (clip === "idle") { a.walk = false; a.target = null; a.clip = null; return; }
+  if (clip === "run") { a.walk = true; a.wanderTimer = 0; return; }
+  if (clip === "attack" && a.type === "skeleton" && a.lost.weapon) { scene.status.textContent = "Ohne Waffe kein Angriff"; return; }
+  if (clip === "slam" && a.type === "zombie" && a.lost.arm) { scene.status.textContent = "Arm fehlt: Faustschlag deaktiviert"; return; }
+  if ((clip === "cast" || clip === "summon") && a.type === "necro" && a.lost.weapon) { scene.status.textContent = "Stab zerbrochen: kein Zauber"; return; }
+  if (clip === "death") { kill(a, scene); renderParts(scene); return; }
+  if (clip === "hit") { a.flash = 1; }
+  play(a, clip);
+}
+
+function runAuto(scene, dt) {
+  if (!scene.auto) return;
+  const a = scene.actor, seq = scene.spec.auto;
+  if (a.dead) { scene.deadTimer = (scene.deadTimer || 0) + dt; if (scene.deadTimer > 2.5) { scene.deadTimer = 0; resetActor(scene); } return; }
+  if (a.clip) return;
+  scene.autoTimer -= dt;
+  if (scene.autoTimer > 0) return;
+  const step = seq[scene.autoIndex % seq.length], hold = seq[(scene.autoIndex + 1) % seq.length];
+  scene.autoIndex += 2;
+  if (step === "idle") { a.walk = false; a.target = null; }
+  else if (step === "run") { a.walk = true; a.wanderTimer = 0; }
+  else { a.walk = false; a.target = null; trigger(scene, step); }
+  scene.autoTimer = hold;
+}
+
+function renderParts(scene) {
+  if (!scene.partsEl) return;
+  const a = scene.actor;
+  const ids = Object.keys(a.hp);
+  const total = ids.reduce((s, id) => s + a.hp[id], 0);
+  scene.partsEl.innerHTML = `<div class="part" style="grid-column:1/-1"><span>Gesamt-LP</span><b style="font-family:var(--font-mono)">${total} / ${a.maxHp}</b><div class="bar"><i style="width:${total / a.maxHp * 100}%"></i></div></div>` +
+    ids.map((id) => { const max = partHp(a, id); const gone = a.hp[id] <= 0; return `<div class="part${gone ? " gone" : ""}"><span>${labelOf(a, id)}</span><span style="font-family:var(--font-mono)">${a.hp[id]}/${max}</span><div class="bar"><i style="width:${a.hp[id] / max * 100}%"></i></div></div>`; }).join("");
+}
+
+// Stage background: a strip of wall with caps over 0x72 floor tiles.
+function drawStageBg(ctx, w, h, S, ground) {
+  ctx.setTransform(S, 0, 0, S, 0, 0); ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = "#13111c"; ctx.fillRect(0, 0, w, h);
+  const top = ground - 30;
+  for (let x = -8; x < w; x += 16) for (let y = top + 12; y < h; y += 16) ctx.drawImage(IMG.floor_1, x, y);
+  for (let x = -8; x < w; x += 16) { ctx.drawImage(IMG.wall_mid, x, top - 4); ctx.drawImage(IMG.wall_top_mid, x, top - 20); }
+  ctx.fillStyle = "#13111c"; ctx.fillRect(0, 0, w, Math.max(0, top - 8));
+}
+
+function drawCard(scene, dt) {
+  const { spec, canvas, ctx, actor } = scene, S = settings.S;
+  if (canvas.width !== spec.w * S) { canvas.width = spec.w * S; canvas.height = spec.h * S; fitCanvas(scene); }
+  ctx.imageSmoothingEnabled = false;
+  const shakeX = scene.shake > 0 ? Math.round(rnd(-1, 1)) : 0;
+  scene.shake = Math.max(0, scene.shake - dt);
+  drawStageBg(ctx, spec.w, spec.h, S, spec.ground);
+  for (const ring of scene.rings) {
+    ring.life += dt; const k = ring.life / ring.max, r = 2 + k * 14;
+    for (let i = 0; i < 36; i++) { const ang = i / 36 * TAU; pixel(ctx, ring.x + Math.cos(ang) * r, ring.y + Math.sin(ang) * r * 0.45, S, "#a46fe0", 1 - k); }
+  }
+  scene.rings = scene.rings.filter((r) => r.life < r.max);
+  drawDebris(ctx, scene, S);
+  drawActor(ctx, actor, scene, S, shakeX, 0);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+}
+
+function fitCanvas(scene) {
+  const { spec, canvas } = scene;
+  const stage = canvas.parentElement, avail = Math.max(120, stage.clientWidth - 2);
+  const zoom = Math.max(1, Math.floor(avail / (spec.w * settings.S)));
+  canvas.style.width = `${spec.w * settings.S * zoom}px`;
+}
+
+// Zombie arm regrowth.
+function zombieUpdate(scene, dt) {
+  const a = scene.actor;
+  if (a.type !== "zombie" || !a.lost.arm || a.dead || !a.regrowAt) return;
+  a.regrowAt -= dt;
+  if (a.regrowAt <= 0) {
+    a.regrowAt = 0; a.lost.arm = false; a.hp.arm = 10; a.regrow = 1.2; a.flash = 0.6;
+    scene.debris = scene.debris.filter((d) => !(d.owner === a && d.id === "arm"));
+    scene.status.textContent = "Der Arm ist nachgewachsen (10 LP)";
+    for (let i = 0; i < 14; i++) scene.particles.push({ x: (scene.ox || 0) + a.x - 4 * a.face, y: (scene.oy || 0) + a.y - 18, vx: rnd(-30, 30), vy: rnd(-30, 10), life: 0, max: 0.5, color: "#97da3f" });
+    renderParts(scene);
+  }
+}
+
+// ---------------------------------------------------------------- room scene
+const room = { canvas: null, ctx: null, img: null, debris: [], particles: [], rings: [], actors: [], ox: 0, oy: 0, debrisLife: 12, zoom: 1, floorSet: new Set() };
+function setupRoom() {
+  room.canvas = document.getElementById("room-canvas"); room.ctx = room.canvas.getContext("2d");
+  room.img = IMG.room; room.canvas.width = room.img.width; room.canvas.height = room.img.height;
+  for (const [x, y] of ROOM.floor) room.floorSet.add(`${x},${y}`);
+  document.getElementById("room-meta").textContent = `Seed ${ROOM.meta.seed} · Raum ${ROOM.meta.room} · Vorlage ${ROOM.meta.template} · ${ROOM.floor.length} Bodenzellen`;
+  room.pickTarget = (a) => {
+    for (let i = 0; i < 30; i++) {
+      const tx = a.home[0] + rnd(-90, 90), ty = a.home[1] + rnd(-60, 60);
+      if (walkable(tx, ty) && walkable(tx - 6, ty) && walkable(tx + 6, ty) && pathClear(a.x, a.y, tx, ty)) return [tx, ty];
+    }
+    return null;
+  };
+  resetRoom();
+  fitRoom();
+}
+function walkable(x, y) { return room.floorSet.has(`${Math.floor(x / 16)},${Math.floor(y / 16)}`) && room.floorSet.has(`${Math.floor(x / 16)},${Math.floor((y - 8) / 16)}`); }
+function pathClear(x0, y0, x1, y1) { const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 4); for (let i = 0; i <= n; i++) if (!walkable(lerp(x0, x1, i / n), lerp(y0, y1, i / n))) return false; return true; }
+function resetRoom() {
+  room.debris = []; room.particles = []; room.actors = [];
+  const knight = makeActor("knight", ROOM.players[0][0], ROOM.players[0][1] + 6, { speed: 22 }); knight.walk = true; knight.home = [knight.x + 60, knight.y]; room.actors.push(knight);
+  ROOM.enemies.slice(0, 4).forEach(([x, y], i) => { const s = makeActor(i === 3 ? "necro" : "skeleton", x, y + 6, { speed: 12 }); s.walk = true; room.actors.push(s); });
+}
+function fitRoom() { room.canvas.style.width = room.zoom === 2 ? `${room.img.width * 2}px` : "100%"; }
+function drawRoom(dt) {
+  const ctx = room.ctx; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(room.img, 0, 0);
+  const frame = Math.floor(performance.now() / 100) % 8;
+  for (const [x, y] of ROOM.torches) ctx.drawImage(IMG[`wall_torch_${frame}`], x, y);
+  for (const [x, y] of ROOM.candles) ctx.drawImage(IMG[`candle_column_${(frame + 3) % 8}`], x, y);
+  // Simple behaviour: skeletons and the necromancer occasionally attack/cast when the knight is close.
+  const knight = room.actors[0];
+  for (const a of room.actors) {
+    stepActor(a, room, dt);
+    if (a === knight || a.dead || a.clip) continue;
+    const d = Math.hypot(a.x - knight.x, a.y - knight.y);
+    if (d < 26 && Math.random() < dt * 0.8) { a.face = Math.sign(knight.x - a.x) || 1; trigger({ actor: a, status: { textContent: "" } }, a.type === "necro" ? "cast" : "attack"); }
+    if (a.type === "necro" && Math.random() < dt * 0.15) trigger({ actor: a, status: { textContent: "" } }, "cast");
+  }
+  if (!knight.clip && !knight.dead) {
+    const near = room.actors.find((a) => a !== knight && !a.dead && Math.hypot(a.x - knight.x, a.y - knight.y) < 18);
+    if (near && Math.random() < dt * 1.5) { knight.face = Math.sign(near.x - knight.x) || 1; play(knight, "attack"); }
+  }
+  for (const a of room.actors) if (a.dead && a.type === "skeleton") { a.deadTimer = (a.deadTimer || 0) + dt; if (a.deadTimer > 6) { a.deadTimer = 0; rise(a, room); } }
+  stepDebris(room, dt);
+  drawDebris(ctx, room, 1);
+  const order = [...room.actors].sort((p, q) => p.y - q.y);
+  for (const a of order) drawActor(ctx, a, room, 1, 0, 0);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  if (settings.light) {
+    if (!room.dark) { room.dark = document.createElement("canvas"); room.dark.width = room.canvas.width; room.dark.height = room.canvas.height; }
+    const d = room.dark.getContext("2d");
+    d.globalCompositeOperation = "source-over"; d.fillStyle = "rgba(8,6,14,0.62)"; d.fillRect(0, 0, room.dark.width, room.dark.height);
+    d.globalCompositeOperation = "destination-out";
+    const t = performance.now() / 1000;
+    const lights = ROOM.torches.map(([x, y], i) => [x + 8, y + 10, 70 + 6 * Math.sin(t * 9 + i)]).concat(ROOM.candles.map(([x, y], i) => [x + 8, y + 6, 58 + 5 * Math.sin(t * 11 + i)]));
+    const kn = room.actors[0]; lights.push([kn.x, kn.y - 10, 46]);
+    for (const [x, y, r] of lights) { const g = d.createRadialGradient(x, y, 4, x, y, r); g.addColorStop(0, "rgba(0,0,0,0.95)"); g.addColorStop(1, "rgba(0,0,0,0)"); d.fillStyle = g; d.fillRect(x - r, y - r, r * 2, r * 2); }
+    ctx.drawImage(room.dark, 0, 0);
+    ctx.globalCompositeOperation = "lighter";
+    for (const [x, y] of ROOM.torches) { const g = ctx.createRadialGradient(x + 8, y + 8, 2, x + 8, y + 8, 30); g.addColorStop(0, "rgba(240,150,60,0.22)"); g.addColorStop(1, "rgba(240,150,60,0)"); ctx.fillStyle = g; ctx.fillRect(x - 22, y - 22, 60, 60); }
+    ctx.globalCompositeOperation = "source-over";
+  }
+}
+
+// ---------------------------------------------------------------- props
+function buildProps() {
+  const list = document.getElementById("prop-list");
+  const items = [
+    ["Wandfackel (8 Bilder)", "torch", "Erweiterung · Lizenz offen"], ["Kerzensäule (8 Bilder)", "candle", "Erweiterung · Lizenz offen"],
+    ["Banner", "wall_banner_red", "0x72 · CC0"], ["Schädel", "skull", "0x72 · CC0"], ["Kiste", "crate", "0x72 · CC0"],
+    ["Ziegelfront", "wall_mid", "0x72 · CC0"], ["Mauerkrone", "wall_top_mid", "0x72 · CC0"], ["Seitenwand", "wall_outer_mid_left", "0x72 · CC0"], ["Boden", "floor_1", "0x72 · CC0"],
+  ];
+  for (const [label, key, source] of items) {
+    const el = document.createElement("div"); el.className = "prop";
+    const c = document.createElement("canvas"); c.width = 16 * 4; c.height = 24 * 4; c.dataset.key = key;
+    el.appendChild(c);
+    el.insertAdjacentHTML("beforeend", `<span>${label}</span><span class="lic ${source.includes("CC0") ? "ok" : "warn"}">${source}</span>`);
+    list.appendChild(el);
+  }
+}
+function drawProps() {
+  const frame = Math.floor(performance.now() / 100) % 8;
+  for (const c of document.querySelectorAll("#prop-list canvas")) {
+    const ctx = c.getContext("2d"); ctx.imageSmoothingEnabled = false; ctx.clearRect(0, 0, c.width, c.height);
+    const key = c.dataset.key;
+    const img = key === "torch" ? IMG[`wall_torch_${frame}`] : key === "candle" ? IMG[`candle_column_${frame}`] : IMG[key];
+    if (img) ctx.drawImage(img, (c.width - img.width * 4) / 2, c.height - img.height * 4, img.width * 4, img.height * 4);
+  }
+}
+
+// ---------------------------------------------------------------- loop
+let last = performance.now(), fpsTime = 0, fpsFrames = 0;
+function frame(now) {
+  const raw = Math.min(0.05, (now - last) / 1000); last = now;
+  fpsFrames++; fpsTime += raw;
+  if (fpsTime > 0.5) { document.getElementById("fps").textContent = `${Math.round(fpsFrames / fpsTime)} Bilder/s`; fpsFrames = 0; fpsTime = 0; }
+  const dt = settings.paused ? 0 : raw * settings.speed;
+  for (const scene of scenes) {
+    runAuto(scene, dt);
+    stepActor(scene.actor, scene, dt);
+    zombieUpdate(scene, dt);
+    stepDebris(scene, dt);
+    drawCard(scene, dt);
+  }
+  drawRoom(dt);
+  drawProps();
+  requestAnimationFrame(frame);
+}
+
+function bindToolbar() {
+  const toggle = (on, off) => { on.setAttribute("aria-pressed", "true"); off.setAttribute("aria-pressed", "false"); };
+  const game = document.getElementById("grid-game"), strict = document.getElementById("grid-strict");
+  game.onclick = () => { settings.S = 2; toggle(game, strict); scenes.forEach(fitCanvas); };
+  strict.onclick = () => { settings.S = 1; toggle(strict, game); scenes.forEach(fitCanvas); };
+  const s1 = document.getElementById("speed-1"), sq = document.getElementById("speed-q");
+  s1.onclick = () => { settings.speed = 1; toggle(s1, sq); };
+  sq.onclick = () => { settings.speed = 0.25; toggle(sq, s1); };
+  const pause = document.getElementById("pause");
+  pause.setAttribute("aria-pressed", String(settings.paused)); pause.textContent = settings.paused ? "Abspielen" : "Pause";
+  pause.onclick = () => { settings.paused = !settings.paused; pause.setAttribute("aria-pressed", String(settings.paused)); pause.textContent = settings.paused ? "Abspielen" : "Pause"; };
+  const light = document.getElementById("light");
+  light.onclick = () => { settings.light = !settings.light; light.setAttribute("aria-pressed", String(settings.light)); light.textContent = settings.light ? "Licht an" : "Licht aus"; };
+  const zoom = document.getElementById("room-zoom");
+  zoom.onclick = () => { room.zoom = room.zoom === 1 ? 2 : 1; zoom.setAttribute("aria-pressed", String(room.zoom === 2)); fitRoom(); };
+  document.getElementById("room-reset").onclick = resetRoom;
+  room.canvas.addEventListener("click", (event) => {
+    const rect = room.canvas.getBoundingClientRect();
+    const px = (event.clientX - rect.left) / rect.width * room.canvas.width, py = (event.clientY - rect.top) / rect.height * room.canvas.height;
+    for (const a of [...room.actors].sort((p, q) => q.y - p.y)) {
+      if (a.type === "knight") continue;
+      const id = hitTest(a, px, py);
+      if (id) { damage(a, room, id, a.type === "skeleton" ? 1 : 3); break; }
+    }
+  });
+  window.addEventListener("resize", () => scenes.forEach(fitCanvas));
+}
+
+loadImages().then(() => {
+  for (const name of Object.keys(DEFS)) buildRig(name);
+  CARD_SPECS.forEach(makeCard);
+  setupRoom();
+  buildProps();
+  bindToolbar();
+  scenes.forEach(fitCanvas);
+  requestAnimationFrame(frame);
+});
+</script>
