@@ -74,6 +74,45 @@ Der gemeinsame Übergang bleibt Kampf → persönlicher Perk → alle Lebenden
 bereit → nächster Raum. Die gezeichnete Tür ist dekorativ. Ein berührtes Tor
 ersetzt das Ready-Gate nicht. Nach der Bossbelohnung folgt der Sieg.
 
+## Große Stockwerkskarte (Generator 4, in Arbeit)
+
+Stand: 27.10.2026, Etappe 1 des Plans für zusammenhängende Karten. Das Modul
+`src/dungeon/floor_map_generator.gd` baut ein ganzes Stockwerk als eine Tile-Karte.
+Das Spiel nutzt es noch nicht; Kamera, Kollision und Ablauf folgen in Etappe 2 und 3.
+
+Quelle der Parameter: `assets/data/dungeon_floormap.json`.
+
+| Feld | Bedeutung und aktueller Wert |
+| --- | --- |
+| `schema_version` | Datenstrukturversion, `1` |
+| `generator_version` | `4` |
+| `tile_size` | `32` Pixel pro Tile |
+| `map_tiles` | `[96,64]`: Kartengröße in Tiles |
+| `cell_tiles` | `[32,21]`: Zellgröße; die Karte ist ein Zellraster (hier 3×3), jede Zelle trägt einen Raum. Muss eine Vorlage (28×15) plus 2 Tiles Rand fassen |
+| `room_count` | `[7,9]`: Räume je Stockwerk, höchstens so viele wie Zellen |
+| `corridor_width` | `3`: Gangbreite in Tiles; Gänge laufen nur im 4 Tiles breiten Streifen zwischen Zellen |
+| `template_chance` | `0.5`: Anteil normaler Räume aus `dungeon_rooms.json`, der Rest wird erzeugt |
+| `small_room_min` / `small_room_max` | `[14,8]` / `[22,12]`: Innenmaß erzeugter Räume |
+| `small_room_pillars` | `2`: höchstens so viele Einzelsäulen in erzeugten Räumen |
+| `max_actor_radius` | `24`: Körperradius, für den erzeugte Spawns frei sein müssen |
+
+Ablauf: Ein Spannbaum über die Zellen bestimmt, welche Räume verbunden sind.
+Der Start ist die Wurzel, der Boss das entfernteste Blatt, der Schatzraum ein
+anderes Blatt. Bossräume nutzen immer eine Bossvorlage in voller Größe, damit
+die Bossmuster unverändert passen. Ausschnitte und Säulen der Vorlagen werden
+zu Wand-Tiles. Verbundene Räume erhalten 3 Tiles breite Türöffnungen in den
+zugewandten Wänden und einen L- oder Z-förmigen Gang.
+
+Ergebnis: `tiles` (Codes 0 Wand, 1 Raumboden, 2 Gang, 3 Türöffnung, zeilenweise
+`width`×`height`), `rooms` (je `id`, `kind`, `rect` mit Wänden, `floor`,
+`template_id`, `solid`, `player_spawns`, `enemy_spawns`, `doors`, `distance`,
+`cell`) und `edges`. Gleiche Daten und gleicher Seed ergeben dieselbe Karte.
+
+Prüfung: `tests/floor_map_test.gd` erzeugt 150 Seeds und prüft unter anderem
+Zusammenhang aller begehbaren Tiles, Raumabstände, Wände nur mit Türöffnungen,
+freie Spawns und 3×3-Gangbreite. Kartenbilder:
+`production/qa/evidence/floor-map-v4/`.
+
 ## Prüfen und reproduzieren
 
 ```powershell

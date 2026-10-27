@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "generator_version": 4,
+  "tile_size": 32,
+  "map_tiles": [96, 64],
+  "cell_tiles": [32, 21],
+  "room_count": [7, 9],
+  "corridor_width": 3,
+  "template_chance": 0.5,
+  "small_room_min": [14, 8],
+  "small_room_max": [22, 12],
+  "small_room_pillars": 2,
+  "max_actor_radius": 24
+}
