@@ -6,7 +6,7 @@ extends RefCounted
 ## Geometry is conservative circle-vs-grown-AABB, not Godot physics determinism.
 
 const SCHEMA_VERSION: int = 1
-const GENERATOR_VERSION: int = 2
+const GENERATOR_VERSION: int = 3
 const MIN_ROOMS: int = 5
 const MAX_ROOMS: int = 12
 const EPSILON: float = 0.00001
@@ -224,6 +224,23 @@ static func validate_config(config: Dictionary) -> PackedStringArray:
 				geometry_valid = false
 		if not geometry_valid:
 			errors.append("Template %s obstacles must be positive tile rectangles within play_bounds" % label)
+			continue
+		# Cutouts shape the room (cross, steps, corridors); they may reach past
+		# the play bounds into the walls, but must overlap the floor.
+		for cutout: Variant in template.get("cutouts_tiles", []):
+			if not _numbers(cutout, 4):
+				geometry_valid = false
+				continue
+			for component: Variant in cutout:
+				if not _integer(component):
+					geometry_valid = false
+			if not geometry_valid:
+				continue
+			var overlap: Rect2 = _clipped_cutout(cutout, config).intersection(bounds)
+			if overlap.size.x <= 0.0 or overlap.size.y <= 0.0:
+				geometry_valid = false
+		if not geometry_valid:
+			errors.append("Template %s cutouts must be integer tile rectangles overlapping play_bounds" % label)
 			continue
 		var points_valid: bool = true
 		for key: String in ["player_spawns", "enemy_spawns"]:
@@ -466,10 +483,23 @@ static func _shuffle(values: Array[Dictionary], rng: RandomNumberGenerator) -> v
 		values[index] = values[other]
 		values[other] = swap
 
+## A cutout tile rectangle in pixels, clipped to the world so it stays on the
+## tile grid (the play bounds' top edge is not); the walls hide the overlap.
+static func _clipped_cutout(cutout: Array, config: Dictionary) -> Rect2:
+	var tile: float = float(config.tile_size)
+	var rect: Rect2 = Rect2(float(cutout[0]) * tile, float(cutout[1]) * tile, float(cutout[2]) * tile, float(cutout[3]) * tile)
+	return rect.intersection(Rect2(Vector2.ZERO, Vector2(float(config.world_size[0]), float(config.world_size[1]))))
+
 static func _make_layout(template: Dictionary, config: Dictionary) -> Dictionary:
 	var obstacles: Array = []
 	for obstacle: Array in template.obstacles_tiles:
 		obstacles.append([float(obstacle[0]) * float(config.tile_size), float(obstacle[1]) * float(config.tile_size), float(obstacle[2]) * float(config.tile_size), float(obstacle[3]) * float(config.tile_size)])
+	# Cutouts collide like cover; they are listed again so the view can tell them apart.
+	var cutouts: Array = []
+	for cutout: Array in template.get("cutouts_tiles", []):
+		var rect: Rect2 = _clipped_cutout(cutout, config)
+		cutouts.append([rect.position.x, rect.position.y, rect.size.x, rect.size.y])
+	obstacles.append_array(cutouts)
 	var players: Array[Vector2] = []
 	var enemies: Array[Vector2] = []
 	for point: Array in template.player_spawns:
@@ -480,7 +510,7 @@ static func _make_layout(template: Dictionary, config: Dictionary) -> Dictionary
 		"accent_color": template.get("accent_color", "536b72"),
 		"generator_version": int(config.generator_version), "tile_size": int(config.tile_size),
 		"world_size": config.world_size.duplicate(), "play_bounds": config.play_bounds.duplicate(),
-		"obstacles": obstacles, "player_spawns": players, "enemy_spawns": enemies}
+		"obstacles": obstacles, "cutouts": cutouts, "player_spawns": players, "enemy_spawns": enemies}
 
 static func _spawn(index: int, points: Array) -> Vector2:
 	if points.is_empty():

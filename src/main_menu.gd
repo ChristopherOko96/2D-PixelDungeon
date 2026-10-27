@@ -17,8 +17,10 @@ const SCREEN := Vector2(1280, 720)
 const SPRITE_ROOT := "res://assets/sprites/0x72/"
 const HEROES := ["knight_m", "elf_f", "wizzard_m", "lizard_m"]
 const CHASERS := ["goblin", "goblin", "orc_shaman"]
-const FLOOR_TEXTURE := preload("res://assets/sprites/floor_stone.png")
-const TORCH_TEXTURE := preload("res://assets/sprites/torch.png")
+const FLOOR_TEXTURE := preload("res://assets/sprites/0x72/floor_1.png")
+const WALL_TEXTURE := preload("res://assets/sprites/0x72/wall_mid.png")
+const WALL_CAP := preload("res://assets/sprites/0x72/wall_top_mid.png")
+const TORCH_ROOT := "res://assets/sprites/0x72_extended/wall_torch_anim_f%d.png"
 const SETTINGS_PATH := "user://settings.cfg"
 const GOLD := Color("edbf75")
 const MUTED := Color("8e96ac")
@@ -38,6 +40,7 @@ var settings := {"volume": 80, "fullscreen": false, "shake": true}
 # Starts mid-chase so the heroes are on screen from the first frame.
 var _clock := 7.0
 var _frames: Dictionary = {}
+var _torch_frames: Array = []
 var _buttons: Array[Button] = []
 var _account_label: Label
 var _progress_label: Label
@@ -70,6 +73,8 @@ func _ready() -> void:
 		for frame in range(4):
 			run.append(load("%s%s_run_anim_f%d.png" % [SPRITE_ROOT, name, frame]))
 		_frames[name] = run
+	for frame in range(8):
+		_torch_frames.append(load(TORCH_ROOT % frame))
 	_label("BASEMENT RUN", Vector2(0, 54), Vector2(SCREEN.x, 90), 72, GOLD, HORIZONTAL_ALIGNMENT_CENTER)
 	_label("IN DIE TIEFE.", Vector2(0, 140), Vector2(SCREEN.x, 28), 18, MUTED, HORIZONTAL_ALIGNMENT_CENTER)
 	_buttons.append(_button("STORY-MODUS", Vector2(470, 200), Vector2(340, 62), 28, _open_classes.bind(false)))
@@ -121,11 +126,10 @@ func show_toast(text: String) -> void:
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, SCREEN), Color("0b0d14"))
 	# Back wall with torches, then the stone floor the chase runs across.
-	for column in range(21):
-		var x := column * 64.0
-		draw_rect(Rect2(x + 2, FLOOR_TOP - 76, 60, 30), Color("2a2638"))
-		draw_rect(Rect2(x + 3, FLOOR_TOP - 75, 58, 4), Color("3b3450"))
-		draw_rect(Rect2(x + 2, FLOOR_TOP - 44, 60, 40), Color("231f30"))
+	for column in range(41):
+		draw_texture_rect_region(WALL_CAP, Rect2(column * 32.0, FLOOR_TOP - 72, 32, 8), Rect2(0, 12, 16, 4), Color(0.75, 0.75, 0.8))
+		draw_texture_rect(WALL_TEXTURE, Rect2(column * 32.0, FLOOR_TOP - 64, 32, 32), false, Color(0.75, 0.75, 0.8))
+		draw_texture_rect(WALL_TEXTURE, Rect2(column * 32.0, FLOOR_TOP - 32, 32, 32), false, Color(0.75, 0.75, 0.8))
 	for column in range(41):
 		draw_texture_rect(FLOOR_TEXTURE, Rect2(column * 32.0, FLOOR_TOP, 32, 32), false, Color(0.7, 0.7, 0.78))
 		draw_texture_rect(FLOOR_TEXTURE, Rect2(column * 32.0 + 16.0, FLOOR_TOP + 32, 32, 32), false, Color(0.55, 0.55, 0.62))
@@ -136,7 +140,7 @@ func _draw() -> void:
 		var flicker := sin(_clock * 7.0 + index * 1.7)
 		draw_circle(torch, 70.0, Color(1.0, 0.5, 0.25, 0.05 + 0.012 * flicker))
 		draw_circle(torch, 36.0, Color(1.0, 0.55, 0.3, 0.08 + 0.02 * flicker))
-		draw_texture_rect(TORCH_TEXTURE, Rect2(torch - Vector2(16, 20), Vector2(32, 32)), false)
+		draw_texture_rect(_torch_frames[(int(_clock * 8.0) + index * 3) % _torch_frames.size()], Rect2(torch - Vector2(16, 30), Vector2(32, 48)), false)
 	# The chase: four heroes run right, goblins and a shaman on their heels.
 	var lead := fmod(_clock * 95.0, SCREEN.x + 760.0) - 300.0
 	for index in range(HEROES.size()):

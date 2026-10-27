@@ -42,7 +42,7 @@ func _test_room_and_geometry(game: Node, layout: Dictionary) -> void:
 	check(snapshot.floor_map.size() == layout.doors.size() + 1, "minimap starts with the start room and its neighbours only")
 	check(snapshot.floor_map.all(func(item: Dictionary) -> bool: return item.kind != "boss" or layout.doors.values().has(item.id)), "the boss stays hidden until the party sees it")
 	check(snapshot.doors_open and snapshot.floor_map[0].cleared, "the start room is cleared and its doors are open")
-	check(snapshot.generator_version == 2, "snapshot identifies the generator version")
+	check(snapshot.generator_version == 3, "snapshot identifies the generator version")
 	check(game.players[1].pos == layout.player_spawns[0], "host spawns at its clear template slot")
 	var normal: int = -1
 	for i in range(game.floor_layouts.size()):
@@ -60,7 +60,7 @@ func _test_room_and_geometry(game: Node, layout: Dictionary) -> void:
 	game.commands[1] = {"move": Vector2.RIGHT, "aim": Vector2.RIGHT, "fire": false, "time": Time.get_ticks_msec() / 1000.0}
 	game._simulate_players(0.5)
 	check(game.players[1].pos.x <= 372.001, "player cannot cross a pillar in a long frame")
-	game.enemies = [{"pos": Vector2(350, 200), "hp": 8, "max_hp": 8, "boss": false, "radius": 13.0, "speed": 55.0, "shot_timer": 1.0, "nav_timer": 0.0, "nav_path": PackedVector2Array()}]
+	game.enemies = [{"pos": Vector2(350, 200), "hp": 8, "max_hp": 8, "boss": false, "aggro": true, "radius": 13.0, "speed": 55.0, "shot_timer": 1.0, "nav_timer": 0.0, "nav_path": PackedVector2Array()}]
 	game.players[1].pos = Vector2(500, 200)
 	game._simulate_enemies(0.5)
 	check(game.enemies[0].pos.x <= 371.001, "chasing enemy respects pillar collision")

@@ -15,3 +15,8 @@ Only the frames this game draws are copied here, unchanged: the idle, run and
 hit frames of `knight_m`, `elf_f`, `wizzard_m` and `lizard_m`, and the idle and
 run frames of `goblin`, `orc_shaman` and `big_demon`. They are drawn at an
 integer 2x scale, so each source pixel covers 2x2 on the game's 32 px grid.
+
+Added 2026-10-27 for the room shell: `floor_1` … `floor_8`, `wall_top_mid`,
+`wall_mid`, `wall_hole_1`, `wall_hole_2`, `wall_edge_mid_left`,
+`wall_edge_mid_right`, `wall_outer_mid_left`, `wall_outer_mid_right`,
+`doors_leaf_closed` and `doors_leaf_open`.

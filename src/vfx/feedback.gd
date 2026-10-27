@@ -14,7 +14,10 @@ const Particles = preload("res://src/vfx/particles.gd")
 const BLOOD := {"chaser": Color("6fbf4f"), "shooter": Color("b4543f"), "boss": Color("9b4fd4"), "player": Color("d8484f"),
 	"golem": Color("7fd9c4"), "molgrax": Color("ff6a2a"), "glutling": Color("d8402f"), "schattling": Color("8b4fd0"), "funkenball": Color("ff7a3c"),
 	"blutqualle": Color("a8202f"), "stachelwaechter": Color("b8402f"), "leerenpriester": Color("8b4fd0"), "krabbenteufel": Color("c8402f"), "fackelteufel": Color("ff8a3c"), "imp": Color("d6503f"), "skelet": Color("e8e2d0"), "necromancer": Color("8b5fd0"), "tiny_zombie": Color("7fae4f"),
-	"n_axe": Color("c8302f"), "n_hex": Color("9b4fd4"), "n_crab": Color("d8502f"), "n_wing": Color("ff6a3c")}
+	"n_axe": Color("c8302f"), "n_hex": Color("9b4fd4"), "n_crab": Color("d8502f"), "n_wing": Color("ff6a3c"),
+	"chort": Color("c8302f"), "wogol": Color("7fae4f"), "doc": Color("b4543f"), "pumpkin_dude": Color("e88a2f"), "big_zombie": Color("7fae4f"), "angel": Color("f4e8b0"),
+	"seraph": Color("ffd76a"), "rot_king": Color("7fae4f"), "hell_prince": Color("ff6a2a"), "ogre_warchief": Color("b4543f"),
+	"winged_chort": Color("c8302f"), "soul_caller": Color("8b5fd0"), "crystal_wogol": Color("78e6f0"), "golden_angel": Color("ffd76a")}
 ## Seconds a turn takes: the sprite narrows and widens again (heavier for bosses).
 const TURN_TIME := 0.1
 const BOSS_TURN_TIME := 0.22
@@ -41,7 +44,9 @@ const MOVE_SOUNDS := {"volley": ["inflate", "enemy_shoot"], "rings": ["windup", 
 	"boulder": ["inflate", "jump"], "channel": ["charge", "enemy_shoot"], "thorns": ["roar", "slam"],
 	"swipe": ["windup", "dash"], "fireball": ["inflate", "enemy_shoot"], "eruption": ["roar", "slam"], "void": ["charge", "slam"], "inferno": ["roar", "slam"]}
 ## Creatures whose own frames show their death; the generic flatten is skipped.
-const OWN_DEATH := ["golem", "molgrax", "glutling", "schattling", "funkenball", "blutqualle", "stachelwaechter", "leerenpriester", "krabbenteufel", "fackelteufel"]
+const OWN_DEATH := ["glutling", "schattling", "funkenball", "blutqualle", "stachelwaechter", "leerenpriester", "krabbenteufel", "fackelteufel",
+	"shooter", "o_brute", "o_berserker", "o_chieftain", "seraph", "rot_king", "hell_prince", "ogre_warchief",
+	"winged_chort", "soul_caller", "crystal_wogol", "golden_angel"]
 
 var particles := Particles.new()
 ## Optional sound player with play(name); null in tests and headless runs.
@@ -163,11 +168,8 @@ func pose(key: String, entity: Dictionary, clock: float) -> Dictionary:
 		scale *= Vector2(move_pose.scale)
 		lean += float(move_pose.lean)
 		offset += Vector2(move_pose.offset)
-	elif boss and str(entity.get("kind", "")) in ["golem", "molgrax"]:
-		# Their sheets animate every move; only the breath and kicks apply.
-		pass
 	elif boss and attack == "windup":
-		# Bosses without move frames (the orc warlord): a heavy rise and lean back,
+		# Bosses without move frames (all but the demon): a heavy rise and lean back,
 		# trembling more as the attack nears.
 		var heave: float = ease(p, 0.5)
 		scale *= Vector2(1.0 - 0.1 * heave, 1.0 + 0.16 * heave)

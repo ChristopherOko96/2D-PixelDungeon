@@ -4,17 +4,51 @@ extends Node2D
 
 const ROOM_SIZE := Vector2(896, 480)
 const INK := Color("#10101c")
-const GROUT := Color("#242334")
-const STONE := Color("#363348")
-const STONE_LIGHT := Color("#454058")
-const STONE_DARK := Color("#2c293e")
 const GOLD := Color("#efc76a")
 const MUTED := Color("#77728b")
 const PLAYER_COLORS := [
 	Color("#72dcc8"), Color("#edb563"), Color("#bc91de"), Color("#ed8a91")
 ]
-const TORCH_TEXTURE := preload("res://assets/sprites/torch.png")
-const FLOOR_TEXTURE := preload("res://assets/sprites/floor_stone.png")
+# Room shell from 0x72 DungeonTileset II: 16 px tiles drawn at 2x on the 32 px grid.
+const FLOOR_TILES := [
+	preload("res://assets/sprites/0x72/floor_1.png"), preload("res://assets/sprites/0x72/floor_2.png"),
+	preload("res://assets/sprites/0x72/floor_3.png"), preload("res://assets/sprites/0x72/floor_4.png"),
+	preload("res://assets/sprites/0x72/floor_5.png"), preload("res://assets/sprites/0x72/floor_6.png"),
+	preload("res://assets/sprites/0x72/floor_7.png"), preload("res://assets/sprites/0x72/floor_8.png")
+]
+const WALL_FACE := preload("res://assets/sprites/0x72/wall_mid.png")
+const WALL_FACE_HOLES := [preload("res://assets/sprites/0x72/wall_hole_1.png"), preload("res://assets/sprites/0x72/wall_hole_2.png")]
+# Only the bottom 4 source rows are drawn: the lit top edge of a wall seen from above.
+const WALL_CAP := preload("res://assets/sprites/0x72/wall_top_mid.png")
+# Vertical wall edges; the 5 px strip sits on the left / right of the 16 px tile.
+const EDGE_STRIP_LEFT := preload("res://assets/sprites/0x72/wall_edge_mid_left.png")
+const EDGE_STRIP_RIGHT := preload("res://assets/sprites/0x72/wall_edge_mid_right.png")
+const DOOR_CLOSED := preload("res://assets/sprites/0x72/doors_leaf_closed.png")
+const DOOR_OPEN := preload("res://assets/sprites/0x72/doors_leaf_open.png")
+# Wall torch from Dungeon Tileset II Extended, 16 x 24 px per frame.
+const TORCH_FRAMES := [
+	preload("res://assets/sprites/0x72_extended/wall_torch_anim_f0.png"), preload("res://assets/sprites/0x72_extended/wall_torch_anim_f1.png"),
+	preload("res://assets/sprites/0x72_extended/wall_torch_anim_f2.png"), preload("res://assets/sprites/0x72_extended/wall_torch_anim_f3.png"),
+	preload("res://assets/sprites/0x72_extended/wall_torch_anim_f4.png"), preload("res://assets/sprites/0x72_extended/wall_torch_anim_f5.png"),
+	preload("res://assets/sprites/0x72_extended/wall_torch_anim_f6.png"), preload("res://assets/sprites/0x72_extended/wall_torch_anim_f7.png")
+]
+const TORCH_X := [104.0, 296.0, 600.0, 792.0]
+## 0x72 wall banners; each floor theme names its colour (balance.themes).
+const BANNERS := {"red": preload("res://assets/sprites/0x72/wall_banner_red.png"), "blue": preload("res://assets/sprites/0x72/wall_banner_blue.png"),
+	"green": preload("res://assets/sprites/0x72/wall_banner_green.png"), "yellow": preload("res://assets/sprites/0x72/wall_banner_yellow.png")}
+const BANNER_X := [200.0, 696.0]
+const CRACK_GLOW := Color("#ff5a20")
+const MOSS_DARK := Color("#4f7a2e")
+const MOSS_LIGHT := Color("#7fa848")
+const GOLD_INLAY := Color("#e8c152")
+const COBWEB := Color("#c8d4e4")
+# Top of a wall, the dark mass behind its lit edges.
+const WALL_TOP := Color("#1a1621")
+# Door marker for an ordinary room; boss and treasure rooms get their own colour.
+const DOOR_PLAIN := Color("#796171")
+const BAR := Color("#aa8d7a")
+const BAR_LIGHT := Color("#d3bfa9")
+const BAR_INK := Color("#222222")
 
 # 0x72 DungeonTileset II characters (16 px wide), drawn at an integer 2x scale.
 # Index matches PLAYER_COLORS, so each player colour keeps its own hero.
@@ -28,6 +62,15 @@ const ARROW_TEXTURE := preload("res://assets/sprites/0x72/weapon_arrow.png")
 # Goblins and orcs: one standing figure each, cut by scripts/slice_orc_sheets.py;
 # they move through the feedback layer's poses (breath, hop, windup, turn).
 const ORC_ROOT := "res://assets/sprites/orcs/"
+## Kinds drawn from full 5-row sheets (kind -> [folder under assets/sprites,
+## sheet, pixel scale]). Idle and run come from 0x72 models (the bosses add
+## pixel parts to them); attack, hit and death are derived from those frames.
+const SHEET_KINDS := {"shooter": ["orcs_0x72", "orc_shaman", 2.0], "o_brute": ["orcs_0x72", "orc_warrior", 2.0],
+	"o_berserker": ["orcs_0x72", "masked_orc", 2.0], "o_chieftain": ["orcs_0x72", "ogre", 2.0],
+	"seraph": ["bosses_0x72", "seraph", 3.0], "rot_king": ["bosses_0x72", "rot_king", 2.0], "hell_prince": ["bosses_0x72", "hell_prince", 2.0],
+	"ogre_warchief": ["bosses_0x72", "ogre_warchief", 2.0], "winged_chort": ["bosses_0x72", "winged_chort", 3.0],
+	"soul_caller": ["bosses_0x72", "soul_caller", 3.0], "crystal_wogol": ["bosses_0x72", "crystal_wogol", 3.0],
+	"golden_angel": ["bosses_0x72", "golden_angel", 3.0]}
 ## The four demon mini-bosses: standing figures with derived frames, drawn
 ## like the orcs (scripts/slice_nebenbosse_sheet.py, animate_orc_figures.py).
 const NEBENBOSS_ROOT := "res://assets/sprites/nebenbosse/"
@@ -35,7 +78,8 @@ const NEBENBOSS_ROOT := "res://assets/sprites/nebenbosse/"
 const PROP_ROOT := "res://assets/sprites/props/"
 const CHEST_CLOSED := preload("res://assets/sprites/0x72/chest_full_open_anim_f0.png")
 const CHEST_OPEN := preload("res://assets/sprites/0x72/chest_full_open_anim_f2.png")
-const ENEMY_SPRITES := {"chaser": "goblin", "shooter": "orc_shaman", "boss": "big_demon", "imp": "imp", "skelet": "skelet", "necromancer": "necromancer", "tiny_zombie": "tiny_zombie"}
+const ENEMY_SPRITES := {"chaser": "goblin", "shooter": "orc_shaman", "boss": "big_demon", "imp": "imp", "skelet": "skelet", "necromancer": "necromancer", "tiny_zombie": "tiny_zombie",
+	"chort": "chort", "wogol": "wogol", "doc": "doc", "pumpkin_dude": "pumpkin_dude", "big_zombie": "big_zombie", "angel": "angel"}
 # The stone golem (floor 2 boss) has its own frame sets, cut from its sheet by
 # scripts/slice_golem_sheet.py and listed in its manifest.
 const GOLEM_ROOT := "res://assets/sprites/golem/"
@@ -84,6 +128,11 @@ var _base_position := Vector2.ZERO
 var _shake_rng := RandomNumberGenerator.new()
 ## 0 turns screen shake off (player option), 1 is full strength.
 var shake_scale := 1.0
+# Fog of war: the room it belongs to, the cells already seen there, and this
+# frame's light sources (living heroes).
+var _fog_room := ""
+var _fog_seen: Dictionary = {}
+var _fog_lights: Array[Vector2] = []
 
 
 func _ready() -> void:
@@ -132,6 +181,24 @@ func _ready() -> void:
 						list.append(load("%sframes/%s_%s_f%d.png" % [root, name, animation, frame]))
 					sets[animation] = list
 				_orc_frames[name] = sets
+	var manifests := {}
+	for kind: String in SHEET_KINDS:
+		var folder: String = "res://assets/sprites/%s/" % SHEET_KINDS[kind][0]
+		var sheet: String = SHEET_KINDS[kind][1]
+		if not manifests.has(folder):
+			manifests[folder] = JSON.parse_string(FileAccess.get_file_as_string(folder + "manifest.json"))
+		var sheets: Variant = manifests[folder]
+		if not (sheets is Dictionary and sheets.has(sheet)):
+			continue
+		var anims := {}
+		for row: Array in sheets[sheet].rows:
+			var list: Array = []
+			for frame in range(int(row[1])):
+				list.append(load("%sframes/%s_%s_anim_f%d.png" % [folder, sheet, row[0], frame]))
+			anims[row[0]] = list
+		_orc_frames[kind] = {"idle": anims.idle, "walk": anims.run, "windup": anims.attack.slice(0, 2),
+			"strike": anims.attack.slice(2, 4), "hit": anims.hit, "death": anims.death}
+		_orcs[kind] = anims.idle[0]
 	var props: Variant = JSON.parse_string(FileAccess.get_file_as_string(PROP_ROOT + "manifest.json"))
 	if props is Dictionary:
 		for name: String in props: _props[name] = load(PROP_ROOT + name + ".png")
@@ -175,15 +242,12 @@ func _silhouette(texture: Texture2D) -> Texture2D:
 
 func _draw() -> void:
 	_draw_floor()
-	_draw_chamber_details()
 	_draw_lava()
 	_draw_walls()
 	_draw_obstacles()
 	_draw_props()
-	_draw_brazier(Vector2(72, 78), 0.0)
-	_draw_brazier(Vector2(824, 78), 1.8)
-	_draw_brazier(Vector2(72, 402), 2.5)
-	_draw_brazier(Vector2(824, 402), 0.8)
+	for index: int in range(TORCH_X.size()):
+		_draw_torch(TORCH_X[index], index * 1.7)
 	var phase: String = str(_snapshot.get("phase", "lobby"))
 	if phase == "reward" or phase == "victory":
 		_draw_pedestal(phase == "victory")
@@ -191,9 +255,17 @@ func _draw() -> void:
 	_feedback.particles.draw_stains(self)
 	_draw_orbs()
 	_draw_loot()
-	var enemies: Array = _snapshot.get("enemies", [])
 	var players: Dictionary = _snapshot.get("players", {})
-	for enemy_value: Variant in enemies:
+	_fog_lights.clear()
+	for peer_key: Variant in players:
+		if int(players[peer_key].get("hp", 0)) > 0:
+			_fog_lights.append(_position(players[peer_key]))
+	# Enemies in the dark are not drawn at all; their floor warnings still are.
+	var enemies: Array = []
+	for enemy_value: Variant in _snapshot.get("enemies", []):
+		if not _fog_active() or _light_at(_position(enemy_value)) > 0.15:
+			enemies.append(enemy_value)
+	for enemy_value: Variant in _snapshot.get("enemies", []):
 		_draw_boss_floor(enemy_value)
 		_draw_mob_telegraph(enemy_value)
 	_draw_hazards(false)
@@ -220,6 +292,45 @@ func _draw() -> void:
 	_draw_hazards(true)
 	_feedback.particles.draw_particles(self)
 	_draw_motes()
+	_draw_fog()
+
+
+## Fog of war runs in ordinary rooms; boss and mini-boss arenas stay lit.
+func _fog_active() -> bool:
+	var layout: Dictionary = _room_layout()
+	return not _snapshot.get("fog", {}).is_empty() and not layout.is_empty() and not str(layout.get("kind", "")) in ["boss", "miniboss"]
+
+
+## 0 (dark) to 1 (lit): full light within the heroes' light radius, fading out
+## over `fade` pixels beyond it.
+func _light_at(point: Vector2) -> float:
+	var fog: Dictionary = _snapshot.get("fog", {})
+	var light := 0.0
+	for source: Vector2 in _fog_lights:
+		light = maxf(light, 1.0 - clampf((point.distance_to(source) - float(fog.light_radius)) / float(fog.fade), 0.0, 1.0))
+	return light
+
+
+## Darkness over the room in `fog.cell` squares: lit around each living hero,
+## dimmed where the party has already been this visit, nearly black elsewhere.
+func _draw_fog() -> void:
+	if not _fog_active():
+		return
+	var fog: Dictionary = _snapshot.get("fog", {})
+	var room_id: String = str(_room_layout().get("id", ""))
+	if room_id != _fog_room:
+		_fog_room = room_id
+		_fog_seen.clear()
+	var cell: float = float(fog.cell)
+	for row: int in range(int(ceilf(480.0 / cell))):
+		for column: int in range(int(ceilf(896.0 / cell))):
+			var light: float = _light_at(Vector2((column + 0.5) * cell, (row + 0.5) * cell))
+			var key: int = row * 1000 + column
+			if light > 0.5:
+				_fog_seen[key] = true
+			var alpha: float = (float(fog.memory_alpha) if _fog_seen.has(key) else float(fog.dark_alpha)) * (1.0 - light)
+			if alpha > 0.01:
+				draw_rect(Rect2(column * cell, row * cell, cell, cell), Color(0.02, 0.015, 0.04, alpha))
 
 
 ## Lava pools of the room: a glowing, breathing pool with embers rising.
@@ -299,96 +410,98 @@ func _room_layout() -> Dictionary:
 	return layout if layout is Dictionary else {}
 
 
-func _room_accent() -> Color:
-	var fallback := Color("#ab856b")
-	var value: Variant = _room_layout().get("accent_color", fallback)
-	if value is Color:
-		return value
-	if value is String:
-		return Color.from_string(value, fallback)
-	return fallback
-
-
-func _draw_floor() -> void:
-	draw_rect(Rect2(Vector2.ZERO, ROOM_SIZE), GROUT)
+## Seeded per room, so the cracked tiles stay put while the room is shown.
+func _tile_hash(column: int, row: int) -> int:
 	var room_seed: int = int(_snapshot.get("seed", 0)) + str(_room_layout().get("template_id", "")).hash() % 997
+	return absi(hash([column, row, room_seed]))
+
+
+## The floor's look sent with the room: tile tints, banner colour and detail.
+func _theme() -> Dictionary:
+	var theme: Variant = _room_layout().get("theme", {})
+	return theme if theme is Dictionary else {}
+
+
+func _theme_color(key: String) -> Color:
+	var value: String = str(_theme().get(key, ""))
+	return Color(value) if value.is_valid_html_color() else Color.WHITE
+
+
+## 0x72 floor tinted by the floor's theme, with about one cracked or stained
+## tile in twelve, then the theme's detail on top: glowing lava cracks (hell),
+## moss (orc camp), cobwebs (crypt) or gold inlays (heaven temple).
+func _draw_floor() -> void:
+	var tint: Color = _theme_color("floor")
 	for row: int in range(15):
 		for column: int in range(28):
-			var tile_hash: int = absi(column * 73 + row * 137 + room_seed % 997)
-			var modulation := Color.WHITE
-			if tile_hash % 7 < 2:
-				modulation = Color(0.84, 0.84, 0.88)
-			elif tile_hash % 11 == 0:
-				modulation = Color(1.08, 1.03, 1.07)
-			var x: float = float(column * 32)
-			var y: float = float(row * 32)
-			draw_texture_rect(FLOOR_TEXTURE, Rect2(x, y, 32, 32), false, modulation)
-			if tile_hash % 9 == 0:
-				_box(x + 8, y + 10, 7, 2, Color("#50485e"))
-				_box(x + 15, y + 12, 2, 5, Color("#252334"))
-			if tile_hash % 13 == 0:
-				_box(x + 23, y + 23, 3, 2, Color("#55485c"))
-	# A worn inset border gives the chamber a deliberate architectural shape.
-	draw_rect(Rect2(47, 47, 802, 386), Color("#6b566b"), false, 2.0)
-	draw_rect(Rect2(52, 52, 792, 376), Color("#282637"), false, 2.0)
-	var accent: Color = _room_accent()
-	for x: int in range(96, 816, 64):
-		_box(x, 46, 6, 4, accent)
-		_box(x, 430, 6, 4, accent)
+			var tile_hash: int = _tile_hash(column, row)
+			var texture: Texture2D = FLOOR_TILES[0] if tile_hash % 12 != 0 else FLOOR_TILES[1 + tile_hash / 12 % 7]
+			draw_texture_rect(texture, Rect2(column * 32, row * 32, 32, 32), false, tint)
+	var detail: String = str(_theme().get("detail", ""))
+	for row: int in range(1, 15):
+		for column: int in range(1, 27):
+			var tile_hash: int = _tile_hash(column, row + 100)
+			var origin := Vector2(column * 32, row * 32)
+			match detail:
+				"cracks":
+					if tile_hash % 4 == 0:
+						# A jagged glowing crack across the tile, breathing with the lava.
+						var glow: float = 0.55 + 0.45 * sin(_clock * 2.0 + float(tile_hash % 17))
+						var y: float = 6.0 + float(tile_hash % 20)
+						for step: int in range(8):
+							y = clampf(y + float((tile_hash >> step) % 3) * 2.0 - 2.0, 2.0, 28.0)
+							_box(origin.x + step * 4, origin.y + y, 4, 2, Color(CRACK_GLOW, 0.55 + 0.35 * glow))
+						draw_circle(origin + Vector2(16, 16), 12.0, Color(CRACK_GLOW, 0.05 * glow))
+				"moss":
+					if tile_hash % 5 == 0:
+						for k: int in range(6):
+							var spot := Vector2(float((tile_hash >> (k * 3)) % 26), float((tile_hash >> (k * 3 + 2)) % 26))
+							_box(origin.x + spot.x, origin.y + spot.y, 4, 2, MOSS_DARK if k % 2 == 0 else MOSS_LIGHT)
+				"cobweb":
+					if tile_hash % 11 == 0:
+						for k: int in range(5):
+							_box(origin.x + k * 3, origin.y + k * 3, 2, 1, Color(COBWEB, 0.5))
+							_box(origin.x + 12 - k * 3, origin.y + k * 3, 2, 1, Color(COBWEB, 0.35))
+				"gold":
+					if (column + row) % 4 == 0:
+						_box(origin.x + 14, origin.y + 12, 4, 8, Color(GOLD_INLAY, 0.8))
+						_box(origin.x + 12, origin.y + 14, 8, 4, Color(GOLD_INLAY, 0.8))
+						_box(origin.x + 15, origin.y + 15, 2, 2, Color("#fff4c8"))
 
 
-func _draw_chamber_details() -> void:
-	var center := Vector2(448, 240)
-	var accent: Color = _room_accent().darkened(0.4)
-	var outline := PackedVector2Array([
-		center + Vector2(-54, -72), center + Vector2(54, -72),
-		center + Vector2(72, -54), center + Vector2(72, 54),
-		center + Vector2(54, 72), center + Vector2(-54, 72),
-		center + Vector2(-72, 54), center + Vector2(-72, -54),
-		center + Vector2(-54, -72)
-	])
-	draw_polyline(outline, Color("#514456"), 3.0)
-	draw_rect(Rect2(405, 197, 86, 86), Color("#4c4051"), false, 2.0)
-	draw_line(Vector2(421, 240), Vector2(475, 240), accent, 3.0)
-	draw_line(Vector2(448, 213), Vector2(448, 267), accent, 3.0)
-	for point: Vector2 in [Vector2(124, 131), Vector2(749, 345), Vector2(153, 365), Vector2(732, 108)]:
-		_box(point.x, point.y + 4, 16, 5, Color("#222130"))
-		_box(point.x + 2, point.y, 6, 6, Color("#625366"))
-		_box(point.x + 12, point.y + 5, 4, 3, Color("#7d666d"))
-	# Loose bones and a broken chain: small, restrained floor storytelling.
-	_box(682, 385, 24, 3, Color("#b2a18c"))
-	_box(681, 382, 4, 8, Color("#c4b19b"))
-	_box(704, 382, 4, 8, Color("#c4b19b"))
-	for index: int in range(4):
-		draw_rect(Rect2(181 + index * 8, 100 + index * 3, 8, 5), Color("#80717d"), false, 1.0)
-
-
+## Cover is a free-standing block of the same wall: a dark top ringed by lit
+## edges above a brick face. Everything stays inside the collision footprint,
+## so cover never disguises a walkable edge.
+## Cutouts that shape the room (cross, steps, corridors) are drawn the same way,
+## as large blocks of wall, tinted like the room's walls.
 func _draw_obstacles() -> void:
 	var obstacles: Array = _room_layout().get("obstacles", [])
-	var accent: Color = _room_accent()
+	var tint: Color = _theme_color("wall")
 	for value: Variant in obstacles:
 		var footprint: Rect2 = _obstacle_rect(value)
 		if footprint.size.x <= 0.0 or footprint.size.y <= 0.0:
 			continue
 		_box(footprint.position.x + 4, footprint.end.y, footprint.size.x - 8, 4, Color(0.05, 0.04, 0.09, 0.5))
-		_box(footprint.position.x + 8, footprint.end.y + 4, footprint.size.x - 16, 2, Color(0.05, 0.04, 0.09, 0.22))
-		# The solid masonry occupies the exact authoritative collision footprint.
-		# Cap highlights stay inside it, so cover never disguises a walkable edge.
-		draw_rect(footprint, INK)
-		draw_rect(Rect2(footprint.position + Vector2(2, 2), footprint.size - Vector2(4, 4)), STONE_DARK)
-		for row: int in range(int(ceilf(footprint.size.y / 32.0))):
-			for column: int in range(int(ceilf(footprint.size.x / 32.0))):
-				var point: Vector2 = footprint.position + Vector2(column * 32, row * 32)
-				var tile_size := Vector2(minf(32.0, footprint.end.x - point.x), minf(32.0, footprint.end.y - point.y))
-				draw_rect(Rect2(point + Vector2(2, 2), tile_size - Vector2(4, 4)), STONE)
-				_box(point.x + 3, point.y + 3, tile_size.x - 6, 3, STONE_LIGHT)
-				_box(point.x + 3, point.y + tile_size.y - 6, tile_size.x - 6, 3, STONE_DARK)
-		# A broad dark lower face and a restrained colored cap separate solid cover
-		# from the textured floor without competing with players or projectiles.
-		_box(footprint.position.x + 2, footprint.end.y - 10, footprint.size.x - 4, 8, Color("#242131"))
-		_box(footprint.position.x + 3, footprint.position.y + 3, footprint.size.x - 6, 3, accent.darkened(0.16))
-		_box(footprint.position.x + 3, footprint.position.y + 6, 3, footprint.size.y - 18, STONE_LIGHT)
-		_box(footprint.end.x - 6, footprint.position.y + 6, 3, footprint.size.y - 18, STONE_DARK)
+		var face: float = minf(32.0, footprint.size.y - 8.0)
+		var top := Rect2(footprint.position, Vector2(footprint.size.x, footprint.size.y - face))
+		draw_rect(top, WALL_TOP)
+		for column: int in range(int(ceilf(footprint.size.x / 32.0))):
+			var x: float = footprint.position.x + column * 32
+			var width: float = minf(32.0, footprint.end.x - x)
+			_draw_tile_part(WALL_CAP, Vector2(x, top.position.y), width, 8.0, 12.0, tint)
+			# Faces shorter than a tile keep their lower rows, where the floor meets the bricks.
+			draw_texture_rect_region(WALL_FACE, Rect2(x, top.end.y, width, face), Rect2(0, 16.0 - face * 0.5, width * 0.5, face * 0.5), tint)
+		for row: int in range(int(ceilf(top.size.y / 32.0))):
+			var y: float = top.position.y + row * 32
+			var height: float = minf(32.0, top.end.y - y)
+			draw_texture_rect_region(EDGE_STRIP_LEFT, Rect2(footprint.position.x, y, 10, height), Rect2(0, 0, 5, height * 0.5), tint)
+			draw_texture_rect_region(EDGE_STRIP_RIGHT, Rect2(footprint.end.x - 10, y, 10, height), Rect2(11, 0, 5, height * 0.5), tint)
+
+
+## Draws a horizontal band of a 16 px tile at 2x: `rows` screen pixels tall,
+## starting at source row `source_row`.
+func _draw_tile_part(texture: Texture2D, point: Vector2, width: float, rows: float, source_row: float, tint: Color = Color.WHITE) -> void:
+	draw_texture_rect_region(texture, Rect2(point, Vector2(width, rows)), Rect2(0, source_row, width * 0.5, rows * 0.5), tint)
 
 
 func _obstacle_rect(value: Variant) -> Rect2:
@@ -399,36 +512,34 @@ func _obstacle_rect(value: Variant) -> Rect2:
 	return Rect2()
 
 
+## Wall faces on the top and bottom, lit edges down both sides, all from the
+## 0x72 set; the dark wall tops fill whatever lies outside the edges.
 func _draw_walls() -> void:
-	_box(0, 0, 896, 40, INK)
-	_box(0, 448, 896, 32, INK)
-	_box(0, 0, 24, 480, INK)
-	_box(872, 0, 24, 480, INK)
-	for column: int in range(14):
-		var x: float = float(column * 64)
-		_box(x + 2, 3, 61, 18, Color("#575064"))
-		_box(x + 3, 4, 59, 3, Color("#726477"))
-		_box(x + 2, 23, 61, 10, Color("#3a334b"))
-		_box(x + 3, 449, 59, 15, Color("#51475c"))
-		_box(x + 4, 449, 57, 3, Color("#766373"))
-	for row: int in range(14):
-		var y: float = float(row * 32 + 16)
-		_box(3, y + 1, 16, 29, Color("#484054"))
-		_box(4, y + 2, 3, 27, Color("#63556c"))
-		_box(876, y + 1, 16, 29, Color("#484054"))
-		_box(877, y + 2, 3, 27, Color("#63556c"))
+	var tint: Color = _theme_color("wall")
+	for column: int in range(28):
+		var x: float = column * 32
+		var tile_hash: int = _tile_hash(column, 40)
+		var face: Texture2D = WALL_FACE if tile_hash % 9 != 0 else WALL_FACE_HOLES[tile_hash % 2]
+		_draw_tile_part(WALL_CAP, Vector2(x, 0), 32, 8, 12, tint)
+		draw_texture_rect(face, Rect2(x, 8, 32, 32), false, tint)
+		_draw_tile_part(WALL_CAP, Vector2(x, 448), 32, 8, 12, tint)
+		_draw_tile_part(WALL_FACE, Vector2(x, 456), 32, 24, 0, tint)
+	_box(0, 0, 14, 480, WALL_TOP)
+	_box(882, 0, 14, 480, WALL_TOP)
+	for row: int in range(15):
+		draw_texture_rect(EDGE_STRIP_RIGHT, Rect2(-8, row * 32, 32, 32), false, tint)
+		draw_texture_rect(EDGE_STRIP_LEFT, Rect2(872, row * 32, 32, 32), false, tint)
+	var banner: Texture2D = BANNERS.get(str(_theme().get("banner", "")))
+	if banner != null:
+		for x: float in BANNER_X:
+			draw_texture_rect(banner, Rect2(x - 16, 8, 32, 32), false)
 	_draw_doors()
-	# Corner stone caps sit in front of the masonry.
-	for point: Vector2 in [Vector2(18, 30), Vector2(850, 30), Vector2(18, 420), Vector2(850, 420)]:
-		_box(point.x, point.y, 28, 28, Color("#252233"))
-		_box(point.x + 2, point.y + 2, 24, 19, Color("#65546c"))
-		_box(point.x + 4, point.y + 3, 20, 3, Color("#8c7183"))
-		_box(point.x + 7, point.y + 9, 10, 7, Color("#493e55"))
 
 
-## Recessed doorways on every wall that leads to a neighbouring room. Bars close
-## them while the host keeps the room locked; the frame shows what lies beyond
-## once that room is on the map (red for the boss, gold for treasure).
+## Doorways to neighbouring rooms. The north wall gets a real door that is shut
+## while the host keeps the room locked; the other walls open onto the floor
+## and close with iron bars. A boss or treasure room beyond tints the door once
+## it is on the map.
 func _draw_doors() -> void:
 	var doors: Variant = _room_layout().get("doors", {})
 	if not doors is Dictionary:
@@ -436,34 +547,48 @@ func _draw_doors() -> void:
 	var open: bool = bool(_snapshot.get("doors_open", false))
 	for side: Variant in doors:
 		var frame: Color = _door_frame(str(doors[side]))
-		var vertical: bool = side == "north" or side == "south"
-		# Each doorway is drawn in its own frame: x/y along the wall, depth inward.
+		var tint: Color = Color.WHITE if frame == DOOR_PLAIN else Color.WHITE.lerp(frame, 0.55)
+		if side == "north":
+			draw_rect(Rect2(422, -8, 52, 48), Color("#100d14"))
+			draw_texture_rect(DOOR_OPEN if open else DOOR_CLOSED, Rect2(416, -16, 64, 64), false, tint)
+			continue
 		var opening: Rect2
 		match side:
-			"north": opening = Rect2(408, 0, 80, 40)
-			"south": opening = Rect2(408, 444, 80, 36)
-			"west": opening = Rect2(0, 208, 28, 80)
-			"east": opening = Rect2(868, 208, 28, 80)
+			"south": opening = Rect2(416, 448, 64, 32)
+			"west": opening = Rect2(0, 208, 24, 80)
+			"east": opening = Rect2(872, 208, 24, 80)
 			_: continue
-		draw_rect(opening, Color("#161522"))
-		if vertical:
-			_box(opening.position.x - 6, opening.position.y, 8, opening.size.y + 2, frame)
-			_box(opening.end.x - 2, opening.position.y, 8, opening.size.y + 2, frame)
-			for step: int in range(3):
-				var y: float = opening.position.y + 18 + step * 9 if side == "north" else opening.end.y - 22 - step * 9
-				_box(opening.position.x + 6, y, opening.size.x - 12, 4, Color("#3d354a").lerp(Color("#645267"), step / 2.0))
+		# The floor runs on through the gap; lit edges frame it.
+		for row: int in range(int(ceilf(opening.size.y / 32.0))):
+			for column: int in range(int(ceilf(opening.size.x / 32.0))):
+				var point: Vector2 = opening.position + Vector2(column * 32, row * 32)
+				var size := Vector2(minf(32.0, opening.end.x - point.x), minf(32.0, opening.end.y - point.y))
+				draw_texture_rect_region(FLOOR_TILES[0], Rect2(point, size), Rect2(Vector2.ZERO, size * 0.5), _theme_color("floor"))
+		if side == "south":
+			draw_texture_rect(EDGE_STRIP_RIGHT, Rect2(opening.position.x - 32, 448, 32, 32), false)
+			draw_texture_rect(EDGE_STRIP_LEFT, Rect2(opening.end.x, 448, 32, 32), false)
+			_box(opening.position.x, opening.position.y, opening.size.x, 3, frame)
 		else:
-			_box(opening.position.x, opening.position.y - 6, opening.size.x + 2, 8, frame)
-			_box(opening.position.x, opening.end.y - 2, opening.size.x + 2, 8, frame)
+			_draw_tile_part(WALL_CAP, Vector2(opening.position.x, opening.position.y - 8), opening.size.x, 8, 12)
+			_draw_tile_part(WALL_CAP, Vector2(opening.position.x, opening.end.y), opening.size.x, 8, 12)
+			_box(opening.end.x - 3 if side == "west" else opening.position.x, opening.position.y, 3, opening.size.y, frame)
 		if not open:
-			if vertical:
-				for x: int in range(int(opening.position.x) + 12, int(opening.end.x) - 6, 12):
-					_box(x, opening.position.y, 4, opening.size.y - 4, Color("#776277"))
-				_box(opening.position.x + 5, opening.position.y + opening.size.y * 0.35, opening.size.x - 9, 4, Color("#9e7a80"))
+			if side == "south":
+				for x: int in range(int(opening.position.x) + 6, int(opening.end.x) - 4, 12):
+					_draw_bar(Rect2(x, opening.position.y, 6, opening.size.y))
 			else:
-				for y: int in range(int(opening.position.y) + 12, int(opening.end.y) - 6, 12):
-					_box(opening.position.x, y, opening.size.x, 4, Color("#776277"))
-				_box(opening.position.x + opening.size.x * 0.4, opening.position.y + 5, 4, opening.size.y - 9, Color("#9e7a80"))
+				for y: int in range(int(opening.position.y) + 6, int(opening.end.y) - 4, 12):
+					_draw_bar(Rect2(opening.position.x, y, opening.size.x, 6))
+
+
+## One iron bar in the 0x72 wall palette: dark outline, stone fill, lit edge.
+func _draw_bar(bar: Rect2) -> void:
+	draw_rect(bar, BAR_INK)
+	draw_rect(bar.grow(-1), BAR)
+	if bar.size.x < bar.size.y:
+		_box(bar.position.x + 1, bar.position.y + 1, 1, bar.size.y - 2, BAR_LIGHT)
+	else:
+		_box(bar.position.x + 1, bar.position.y + 1, bar.size.x - 2, 1, BAR_LIGHT)
 
 
 func _door_frame(room_id: String) -> Color:
@@ -475,13 +600,13 @@ func _door_frame(room_id: String) -> Color:
 	return Color("#796171")
 
 
-func _draw_brazier(point: Vector2, offset: float) -> void:
+## A burning wall torch on the top wall face, with a soft flickering glow.
+func _draw_torch(x: float, offset: float) -> void:
 	var flicker: float = sin(_clock * 7.0 + offset)
-	var glow := Color(0.98, 0.46, 0.24, 0.055 + 0.015 * flicker)
-	_box(point.x - 36, point.y - 36, 72, 72, glow)
-	_box(point.x - 24, point.y - 24, 48, 48, glow)
-	draw_texture_rect(TORCH_TEXTURE, Rect2(point - Vector2(16, 20), Vector2(32, 32)), false, Color(1.0 + flicker * 0.06, 1.0, 1.0))
-	_box(point.x + 10, point.y - 22 - floorf(fmod(_clock * 10.0 + offset * 4.0, 14.0)), 2, 3, Color("#edac68"))
+	draw_circle(Vector2(x, 26), 44.0, Color(0.98, 0.46, 0.24, 0.05 + 0.015 * flicker))
+	draw_circle(Vector2(x, 26), 24.0, Color(0.98, 0.5, 0.26, 0.07 + 0.02 * flicker))
+	var frame: int = int(_clock * FRAMES_PER_SECOND + offset * 3.0) % TORCH_FRAMES.size()
+	draw_texture_rect(TORCH_FRAMES[frame], Rect2(x - 16, -4, 32, 48), false)
 
 
 func _draw_shadow(point: Vector2, half_width: float) -> void:
@@ -568,30 +693,32 @@ func _sprite_index(color: Color) -> int:
 
 
 func _draw_enemy(enemy: Dictionary) -> void:
-	if str(enemy.get("kind", "")) == "golem" and not _golem.is_empty():
+	var kind: String = str(enemy.get("kind", "chaser"))
+	if kind == "golem" and not _golem.is_empty():
 		_draw_golem(enemy)
 		return
-	if _infernal.has(str(enemy.get("kind", ""))):
+	if _infernal.has(kind):
 		_draw_infernal(enemy)
 		return
-	if _orcs.has(str(enemy.get("kind", ""))):
+	if _orcs.has(kind):
 		_draw_orc(enemy)
 		return
 	var point: Vector2 = _position(enemy).round()
 	var is_boss: bool = bool(enemy.get("boss", false))
-	var kind: String = "boss" if is_boss else str(enemy.get("kind", "chaser"))
-	var sprite: Dictionary = _sprites[ENEMY_SPRITES.get(kind, "goblin")]
+	var sprite_name: String = ENEMY_SPRITES.get(kind, ENEMY_SPRITES.boss if is_boss else "goblin")
+	var pixel_scale := 2.0
+	var sprite: Dictionary = _sprites[sprite_name]
 	var id: int = int(enemy.get("id", 0))
 	var dying: bool = float(enemy.get("dying_p", -1.0)) >= 0.0
 	var texture: Texture2D = _frame(sprite, bool(enemy.get("moving", false)) and not dying, id * 3)
 	var feet: float = 24.0 if is_boss else 16.0
-	_draw_sprite(texture, point, float(enemy.get("face", -1.0)), feet, _feedback.pose("e%d" % id, enemy, _clock))
+	_draw_sprite(texture, point, float(enemy.get("face", -1.0)), feet, _feedback.pose("e%d" % id, enemy, _clock), pixel_scale)
 	var hp: float = float(enemy.get("hp", 1.0))
 	var max_hp: float = maxf(float(enemy.get("max_hp", hp)), 1.0)
 	# Bosses show their health in the HUD's top bar instead.
 	if not dying and hp < max_hp and not is_boss:
 		var bar_width: float = 48.0 if is_boss else 26.0
-		var bar_y: float = point.y + feet - float(texture.get_height() * 2) - 8.0
+		var bar_y: float = point.y + feet - float(texture.get_height()) * pixel_scale - 8.0
 		_box(point.x - bar_width / 2.0 - 2, bar_y - 2, bar_width + 4, 7, INK)
 		_box(point.x - bar_width / 2.0, bar_y, bar_width, 3, Color("#5e354d"))
 		_box(point.x - bar_width / 2.0, bar_y, floorf(bar_width * clampf(hp / max_hp, 0.0, 1.0)), 3, Color("#ef8a9a"))
@@ -1199,8 +1326,13 @@ func _draw_orc(enemy: Dictionary) -> void:
 	# wind up and lunging on the strike.
 	var sets: Dictionary = _orc_frames.get(kind, {})
 	var attack: String = str(enemy.get("attack", ""))
-	if not sets.is_empty() and float(enemy.get("dying_p", -1.0)) < 0.0:
-		if attack == "windup": texture = _pick(sets.windup, float(enemy.get("attack_p", 0.0)))
+	# Sheet kinds are 16 px art drawn at their own scale and bring hit and death frames.
+	var pixel_scale: float = float(SHEET_KINDS[kind][2]) if SHEET_KINDS.has(kind) else 1.0
+	if sets.has("death") and float(enemy.get("dying_p", -1.0)) >= 0.0:
+		texture = _pick(sets.death, float(enemy.dying_p) / 0.7)
+	elif not sets.is_empty() and float(enemy.get("dying_p", -1.0)) < 0.0:
+		if sets.has("hit") and bool(enemy.get("hit", false)): texture = sets.hit[int(_clock * 12.0) % sets.hit.size()]
+		elif attack == "windup": texture = _pick(sets.windup, float(enemy.get("attack_p", 0.0)))
 		elif attack == "active": texture = sets.strike[0]
 		elif attack == "recovery": texture = sets.strike[1]
 		elif bool(enemy.get("moving", false)) or bool(enemy.get("dash", false)): texture = sets.walk[(int(_clock * 10.0) + id) % sets.walk.size()]
@@ -1216,11 +1348,11 @@ func _draw_orc(enemy: Dictionary) -> void:
 	if bool(enemy.get("hasted", false)) and not dying:
 		_box(point.x - 10 + roundf(sin(_clock * 30.0 + id) * 8.0), point.y + 10, 3, 3, Color("#ffd76a"))
 	var feet: float = float(enemy.get("radius", 12.0)) * 0.6 + 6.0
-	_draw_sprite(texture, point, float(enemy.get("face", -1.0)), feet, pose, 1.0)
+	_draw_sprite(texture, point, float(enemy.get("face", -1.0)), feet, pose, pixel_scale)
 	var hp: float = float(enemy.get("hp", 1.0))
 	var max_hp: float = maxf(float(enemy.get("max_hp", hp)), 1.0)
 	if not dying and hp < max_hp and not bool(enemy.get("boss", false)):
-		var bar_y: float = point.y + feet - float(texture.get_height()) * float(Vector2(pose.scale).y) - 6.0
+		var bar_y: float = point.y + feet - float(texture.get_height()) * pixel_scale * float(Vector2(pose.scale).y) - 6.0
 		_box(point.x - 15, bar_y - 2, 30, 7, INK)
 		_box(point.x - 13, bar_y, 26, 3, Color("#5e354d"))
 		_box(point.x - 13, bar_y, floorf(26.0 * clampf(hp / max_hp, 0.0, 1.0)), 3, Color("#ef8a9a") if not elite else Color("#ff5a3a"))

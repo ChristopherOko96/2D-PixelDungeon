@@ -22,6 +22,7 @@ func _initialize() -> void:
 	_test_obstacle_paths()
 	_test_doors()
 	_test_authored_config()
+	_test_cutouts()
 	_finish()
 
 func _check(condition: bool, description: String) -> void:
@@ -44,7 +45,7 @@ func _fixture_config() -> Dictionary:
 			"player_spawns": [[150, 210], [202, 260], [254, 210], [306, 260]],
 			"enemy_spawns": [[640, 120], [736, 176], [800, 240], [672, 304], [768, 384]]
 		})
-	return {"schema_version": 1, "generator_version": 2, "tile_size": 32,
+	return {"schema_version": 1, "generator_version": 3, "tile_size": 32,
 		"world_size": [896, 480], "play_bounds": [32, 48, 832, 400],
 		"max_actor_radius": 24, "templates": templates}
 
@@ -71,10 +72,31 @@ func _test_invalid_config_rejected() -> void:
 	disconnected.templates[0].obstacles_tiles = [[12, 2, 2, 12]]
 	_check(not _generator.validate_config(disconnected).is_empty(), "a wall severing floor connectivity is rejected")
 	var unsupported: Dictionary = valid.duplicate(true)
-	unsupported.generator_version = 3
+	unsupported.generator_version = 4
 	_check(_generator.generate(1, 6, unsupported).is_empty(), "unsupported generator version fails closed")
 	for count: int in [0, 4, 13]:
 		_check(_generator.generate(1, count, valid).is_empty(), "unsupported room count %d fails closed" % count)
+
+## Room shapes: cutouts are solid like cover, stay on the tile grid and must not
+## seal a doorway; malformed cutouts are rejected.
+func _test_cutouts() -> void:
+	var config: Dictionary = _fixture_config()
+	config.templates[0].cutouts_tiles = [[1, 1, 3, 3], [5, 12, 3, 3]]
+	_check(_generator.validate_config(config).is_empty(), "corner cutouts that keep the doorways open are valid")
+	var layout: Dictionary = _generator._make_layout(config.templates[0], config)
+	_check(layout.cutouts.size() == 2 and layout.obstacles.size() == 4, "cutouts are listed and collide like cover")
+	_check(layout.cutouts[0][1] == 32.0 and int(layout.cutouts[0][0]) % 32 == 0, "a cutout reaching into the wall stays on the tile grid")
+	_check(_generator.segment_blocked(Vector2(80, 80), Vector2(80, 80), 12.0, layout), "standing inside a cutout is blocked")
+	_check(not _generator.segment_blocked(Vector2(448, 240), Vector2(448, 240), 12.0, layout), "the room centre stays free")
+	var sealed: Dictionary = _fixture_config()
+	sealed.templates[0].cutouts_tiles = [[12, 1, 5, 3]]
+	_check(not _generator.validate_config(sealed).is_empty(), "a cutout over the north doorway is rejected")
+	var fractional: Dictionary = _fixture_config()
+	fractional.templates[0].cutouts_tiles = [[1.5, 1, 2, 2]]
+	_check(not _generator.validate_config(fractional).is_empty(), "a cutout off the tile grid is rejected")
+	var outside: Dictionary = _fixture_config()
+	outside.templates[0].cutouts_tiles = [[40, 1, 2, 2]]
+	_check(not _generator.validate_config(outside).is_empty(), "a cutout that misses the floor is rejected")
 
 func _test_seed_stability_and_topology() -> void:
 	var config: Dictionary = _fixture_config()
@@ -106,7 +128,7 @@ func _test_seed_stability_and_topology() -> void:
 			by_id[room.id] = room
 			by_cell[cell] = room
 			kinds[room.kind] = int(kinds.get(room.kind, 0)) + 1
-			_check(int(room.generator_version) == 2, "room records generator version")
+			_check(int(room.generator_version) == 3, "room records generator version")
 			_check(room.boss == (room.kind == "boss"), "boss flag matches the room kind")
 			order.append(room.template_id)
 		_check(floor_layout[0].kind == "start" and kinds.get("start", 0) == 1, "the first room is the only start room")

@@ -161,7 +161,7 @@ func _test_knockback_and_shooters(game: Node) -> void:
 	game._simulate_enemies(0.05)
 	check(enemy.pos.x > before_x, "enemy knockback beats its chase toward the player")
 
-	var shooter := {"pos": Vector2(500, 248), "hp": 6, "max_hp": 6, "boss": false, "kind": "shooter", "radius": 13.0, "speed": 45.0, "shot_timer": 0.0, "nav_timer": 0.0, "nav_path": PackedVector2Array()}
+	var shooter := {"pos": Vector2(500, 248), "hp": 6, "max_hp": 6, "boss": false, "aggro": true, "kind": "shooter", "radius": 13.0, "speed": 45.0, "shot_timer": 0.0, "nav_timer": 0.0, "nav_path": PackedVector2Array()}
 	game.enemies = [shooter]
 	game.bullets.clear()
 	game._simulate_enemies(0.016)
@@ -431,7 +431,7 @@ func _test_orcs_and_depth(game: Node) -> void:
 	game.phase = "combat"
 	game.endless = true
 	game.floor_number = 3
-	check(game._floor_roster().boss == "o_warlord" and game._floor_roster().ranged.has("g_bomber"), "endless floor 3 is the orc floor with Grumskar")
+	check(game._floor_roster().boss == "hell_prince" and game._floor_roster().melee.has("chort"), "endless floor 3 is hell with Azrakor")
 	for id in game.players:
 		game.players[id].pos = Vector2(300, 248)
 		game.players[id].invulnerable = 99.0
@@ -502,8 +502,17 @@ func _test_orcs_and_depth(game: Node) -> void:
 	hero.rooted = 0.0
 	hero.hp = hero.max_hp
 	hero.invulnerable = 99.0
+	# Aggro in the running game: an unaware enemy far away stands still until hit.
+	var sleeper: Dictionary = game._spawn_enemy("chaser", Vector2(820, 420), 3)
+	var sleeper_start: Vector2 = sleeper.pos
+	game._simulate_enemies(0.2)
+	check(sleeper.pos == sleeper_start and not sleeper.aggro, "an enemy that has not noticed anyone stays put")
+	game._hit_enemy(sleeper, 1.0, Vector2.RIGHT, 1)
+	check(sleeper.aggro and sleeper.aggro_target == 1, "a hit wakes the enemy and locks it onto the shooter")
+	game.enemies.erase(sleeper)
 	var berserker: Dictionary = game._spawn_enemy("o_berserker", Vector2(700, 248), 4)
 	berserker.hp = int(berserker.max_hp / 3)
+	berserker.aggro = true
 	game._simulate_enemies(0.02)
 	check(berserker.get("raging", false), "a hurt berserker flies into a rage")
 
@@ -677,9 +686,24 @@ func _test_infernal(game: Node) -> void:
 	game.phase = "combat"
 	game.endless = true
 	game.floor_number = 1
-	check(game._floor_roster().boss == "molgrax" and game._floor_roster().melee.has("glutling"), "endless floor 1 brings Molgrax and the infernal creatures")
+	check(game._floor_roster().boss == "rot_king" and game._floor_roster().melee.has("tiny_zombie"), "endless floor 1 is the crypt with Morgrul and the undead")
 	game.endless = false
-	check(game._floor_roster().boss == "boss" and game._floor_roster().melee.has("chaser") and game._floor_roster().melee.has("g_skirmisher"), "the story mixes its goblins with the new orc goblins, demon boss")
+	check(game._floor_roster().boss == "hell_prince" and game._floor_roster().melee.has("chaser") and game._floor_roster().melee.has("imp"), "the story keeps goblins and imps with Azrakor")
+	# Only the new bosses lead a floor; the old ones are gone from every roster.
+	var new_bosses := ["seraph", "rot_king", "hell_prince", "ogre_warchief"]
+	var new_minis := ["winged_chort", "soul_caller", "crystal_wogol", "golden_angel"]
+	var all_rosters: Array = [game.balance.story_floor] + game.balance.floors
+	check(all_rosters.all(func(roster: Dictionary) -> bool: return new_bosses.has(str(roster.boss)) and new_minis.has(str(roster.miniboss))), "every floor uses only the new bosses and mini-bosses")
+	var seraph: Dictionary = game._spawn_enemy("seraph", Vector2(400, 240), 0)
+	check(seraph.boss and seraph.max_hp >= 220 and str(game._definition("seraph").name).begins_with("SERAPHIEL"), "a new floor boss spawns as a boss with its own stats")
+	seraph.move = "lightfan"
+	check(str(game._attack_for(seraph).get("projectile", "")) == "spear", "a new boss's move comes from its own move list")
+	game.enemies.erase(seraph)
+	# Only 0x72 pixel monsters spawn as normal enemies, on every floor.
+	var pixel_kinds := ["chaser", "shooter", "imp", "skelet", "necromancer", "tiny_zombie", "chort", "wogol", "doc", "pumpkin_dude", "big_zombie", "angel",
+		"o_brute", "o_berserker", "o_chieftain"]
+	var rosters: Array = [game.balance.story_floor] + game.balance.floors
+	check(rosters.all(func(roster: Dictionary) -> bool: return (roster.melee + roster.ranged).all(func(kind: Variant) -> bool: return pixel_kinds.has(str(kind)))), "every floor spawns only 0x72 pixel monsters")
 	game.endless = true
 	for id in game.players:
 		game.players[id].pos = Vector2(300, 248)
@@ -741,7 +765,7 @@ func _test_golem_and_mobs(game: Node) -> void:
 	game.phase = "combat"
 	game.endless = true
 	game.floor_number = 2
-	check(game._floor_roster().boss == "golem" and game._floor_roster().ranged.has("skelet"), "floor 2 brings the golem, imps and skeletons")
+	check(game._floor_roster().boss == "ogre_warchief" and game._floor_roster().melee.has("o_brute"), "floor 2 is the orc camp with Brugg")
 	var golem: Dictionary = game._spawn_enemy("golem", Vector2(600, 248), 0)
 	check(golem.boss and golem.radius == float(game.balance.golem.radius), "the golem spawns as a boss with its own stats")
 	for id in game.players:
@@ -860,6 +884,7 @@ func _test_golem_and_mobs(game: Node) -> void:
 	game.enemies.clear()
 	var necro: Dictionary = game._spawn_enemy("necromancer", Vector2(560, 248), 0)
 	necro.shot_timer = 0.0
+	necro.aggro = true
 	for step in range(80): game._simulate_enemies(0.02)
 	var zombies := 0
 	for other in game.enemies:
@@ -912,8 +937,9 @@ func _test_endless(game: Node) -> void:
 	check(hero.level == 4 and is_equal_approx(hero.damage, 5.0) and hero.hp == 3 + int(game.balance.endless.heal_per_floor), "heroes keep level and stats and heal a little")
 	check(game._make_snapshot().floor == 2 and game._make_snapshot().endless and game._make_snapshot().rooms_total == cleared_first + 1, "the snapshot carries the floor and all rooms cleared so far")
 	game._enter_room(_first_index(game, "boss"), "north")
-	var golem_base: int = int(game.balance.golem.hp) + int(game.balance.golem.hp_per_extra_player) * (game.players.size() - 1)
-	check(floor_one_boss_hp > 0 and game.enemies[0].kind == "golem" and game.enemies[0].max_hp > golem_base and game.enemies[0].speed > float(game.balance.golem.speed), "floor 2 brings the golem, tougher and faster than its base values")
+	var chief: Dictionary = game.balance.bosses.ogre_warchief
+	var chief_base: int = int(chief.hp) + int(chief.hp_per_extra_player) * (game.players.size() - 1)
+	check(floor_one_boss_hp > 0 and game.enemies[0].kind == "ogre_warchief" and game.enemies[0].max_hp > chief_base and game.enemies[0].speed > float(chief.speed), "floor 2 brings Brugg, tougher and faster than his base values")
 	check(game._floor_scaling().pause < 1.0, "the boss pauses less between moves on deeper floors")
 	game.floor_number = 50
 	check(game._floor_scaling().speed <= float(game.balance.endless.speed_max) and game._floor_scaling().pause >= float(game.balance.endless.pause_min), "endless scaling is capped so it stays playable")
@@ -1045,9 +1071,9 @@ func _test_minibosses_and_decor(game: Node) -> void:
 	game._generate_floor(game.run_seed)
 	check(game.floor_layouts[1].props == first_props, "the same seed furnishes the same rooms")
 
-	# Lava on the infernal endless floor: only in combat rooms, and it burns.
+	# Lava on the infernal endless floor (hell, floor 3): only in combat rooms, and it burns.
 	game.endless = true
-	game.floor_number = 1
+	game.floor_number = 3
 	game._generate_floor(13579)
 	var pools := 0
 	var pools_ok := true
@@ -1085,10 +1111,10 @@ func _test_minibosses_and_decor(game: Node) -> void:
 	hero.pos = Vector2(gate.x, gate.y)
 	helper.pos = Vector2(gate.x + 200.0, gate.y)
 	game._check_portal()
-	check(hero.ready and not helper.ready and game.floor_number == 1, "a hero in the portal waits for the others")
+	check(hero.ready and not helper.ready and game.floor_number == 3, "a hero in the portal waits for the others")
 	helper.pos = Vector2(gate.x, gate.y)
 	game._check_portal()
-	check(game.floor_number == 2 and game.portal == Vector2.INF, "when everyone is in the portal the party goes down")
+	check(game.floor_number == 4 and game.portal == Vector2.INF, "when everyone is in the portal the party goes down")
 	var labels: Array = []
 	for entry in game._debug_entries():
 		if entry.room == "miniboss": labels.append(entry.label)

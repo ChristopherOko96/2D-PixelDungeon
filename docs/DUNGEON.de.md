@@ -14,7 +14,7 @@ Raums, ohne den HUD-Versatz `(32,156)`.
 | Feld | Bedeutung und aktueller Wert |
 | --- | --- |
 | `schema_version` | Datenstrukturversion, unterstützt: `1` |
-| `generator_version` | Version der Raumfolge und stabilen IDs, unterstützt: `1` |
+| `generator_version` | Version der Raumfolge und stabilen IDs, unterstützt: `3` (seit 27.10.2026: Raumformen über `cutouts_tiles`) |
 | `tile_size` | `32` Pixel pro Tile, passend zu den 32×32-Quellsprites |
 | `world_size` | `[896,480]`: 28×15 Tiles große Zeichenfläche |
 | `play_bounds` | `[32,48,832,400]`: x, y, Breite, Höhe des begehbaren Bodens innerhalb der Außenmauern |
@@ -30,6 +30,7 @@ Jede Vorlage hat folgende Felder:
 | `boss` | `true` nur für Bossvorlagen |
 | `accent_color` | Optionale Hex-Farbe; Renderer verwendet sonst seine violette Grundfarbe |
 | `obstacles_tiles` | Liste `[x,y,w,h]` ganzzahliger Tile-Rechtecke; Multiplikation mit `32` ergibt die solide Pixelgeometrie |
+| `cutouts_tiles` | Optional, Standard leer. Liste `[x,y,w,h]` ganzzahliger Tile-Rechtecke, die den Raum formen (Kreuz, Treppe, Gang). Sie dürfen in die Außenmauern ragen, werden auf die Zeichenfläche beschnitten, kollidieren wie Deckung und erscheinen im Layout zusätzlich unter `cutouts`. Alle vier Türen und die Raummitte müssen frei bleiben. |
 | `player_spawns` | Mindestens vier freie `[x,y]`-Pixelpositionen für Host und drei Clients |
 | `enemy_spawns` | Mindestens fünf freie `[x,y]`-Pixelpositionen für die derzeit höchstens fünf Gegner pro Raum |
 

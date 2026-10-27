@@ -8,6 +8,7 @@ const Dungeon = preload("res://src/dungeon/dungeon_generator.gd")
 const Progression = preload("res://src/player/progression.gd")
 const Account = preload("res://src/online/account.gd")
 const Abilities = preload("res://src/combat/abilities.gd")
+const Aggro = preload("res://src/combat/aggro.gd")
 const Loadout = preload("res://src/player/loadout.gd")
 
 var balance: Dictionary = {}
@@ -599,7 +600,8 @@ func _generate_floor(seed_value: int) -> bool:
 ## A new floor's extras, seeded by run and floor: one ordinary room becomes the
 ## mini-boss's room (when the floor has one and keeps at least one ordinary
 ## room), and every room gets props and lava pools from the floor's decor
-## theme. They are stored on the layouts, so clients get them with the room.
+## theme plus the floor's look from balance.themes. They are stored on the
+## layouts, so clients get them with the room.
 func _furnish_floor() -> void:
 	var roster := _floor_roster()
 	var rng := RandomNumberGenerator.new()
@@ -612,7 +614,12 @@ func _furnish_floor() -> void:
 		chosen.kind = "miniboss"
 		chosen.miniboss = str(roster.miniboss)
 	var theme: Dictionary = balance.decor.get(str(roster.get("decor", "")), {})
-	for layout in floor_layouts: _furnish_room(layout, theme, rng)
+	for layout in floor_layouts:
+		_furnish_room(layout, theme, rng)
+		# The floor's look (tile colours, banners, details) travels with each room.
+		var look_name := str(roster.get("theme", "kerker"))
+		layout.theme = balance.themes.get(look_name, {}).duplicate()
+		layout.theme.name = look_name
 
 
 ## Props for one room: up to two hangings on the top wall (clear of the north
@@ -793,9 +800,10 @@ func _spawn_enemy(kind: String, pos: Vector2, index: int) -> Dictionary:
 	var definition := _definition(kind)
 	var scaling := _floor_scaling()
 	var hp := int(round((float(definition.hp) + maxi(0, players.size() - 1) * float(definition.hp_per_extra_player)) * float(scaling.hp)))
-	var boss: bool = kind in ["boss", "golem", "molgrax", "o_warlord"] or balance.minibosses.has(kind)
+	var boss: bool = kind in ["boss", "golem", "molgrax", "o_warlord"] or balance.minibosses.has(kind) or balance.bosses.has(kind)
 	# Ranged enemies wait a moment before their first shot, so arrivals can react.
-	var enemy := {"pos": pos, "hp": hp, "max_hp": hp, "boss": boss, "kind": kind, "extra_shots": floori(float(floor_number - 1) / 3.0) if endless else 0, "radius": float(definition.radius), "speed": float(definition.speed) * float(scaling.speed), "shot_timer": 1.0 + 0.4 * index, "nav_timer": 0.0, "nav_path": PackedVector2Array(), "knock": Vector2.ZERO, "hit_timer": 0.0, "face": -1.0, "moving": false, "id": next_enemy_id, "attack": "", "attack_time": 0.0}
+	# Bosses start angry; everyone else waits until a player is noticed (see Aggro).
+	var enemy := {"pos": pos, "hp": hp, "max_hp": hp, "boss": boss, "kind": kind, "aggro": boss, "extra_shots": floori(float(floor_number - 1) / 3.0) if endless else 0, "radius": float(definition.radius), "speed": float(definition.speed) * float(scaling.speed), "shot_timer": 1.0 + 0.4 * index, "nav_timer": 0.0, "nav_path": PackedVector2Array(), "knock": Vector2.ZERO, "hit_timer": 0.0, "face": -1.0, "moving": false, "id": next_enemy_id, "attack": "", "attack_time": 0.0}
 	next_enemy_id += 1
 	enemies.append(enemy)
 	return enemy
@@ -817,9 +825,11 @@ func _kind(enemy: Dictionary) -> String:
 
 
 ## Stats of an enemy kind: the original three have their own sections in
-## balance.json, the deeper floors' kinds live in `mobs`.
+## balance.json, the deeper floors' kinds live in `mobs`, the data-driven floor
+## bosses in `bosses` and the mini-bosses in `minibosses`.
 func _definition(kind: String) -> Dictionary:
 	if balance.minibosses.has(kind): return balance.minibosses[kind]
+	if balance.bosses.has(kind): return balance.bosses[kind]
 	match kind:
 		"boss": return balance.boss
 		"golem": return balance.golem
@@ -1003,15 +1013,12 @@ func _simulate_enemies(delta: float) -> void:
 			enemy.dying = float(enemy.get("dying", 0.0)) - delta
 			enemy.moving = false
 			continue
-		var target := -1
-		var distance := INF
-		for id in players:
-			if players[id].hp <= 0: continue
-			var candidate: float = enemy.pos.distance_squared_to(players[id].pos)
-			if candidate < distance:
-				distance = candidate
-				target = id
-		if target < 0: continue
+		# Aggro: unaware enemies stand still; a locked one hunts its player to the end.
+		var target: int = Aggro.pick_target(enemy, players, _sees, balance.aggro)
+		if target < 0:
+			enemy.moving = false
+			continue
+		Aggro.alert_pack(enemy, enemies, balance.aggro)
 		enemy.nav_timer = float(enemy.get("nav_timer", 0.0)) - delta
 		if enemy.nav_timer <= 0.0:
 			enemy.nav_path = Dungeon.find_path(enemy.pos, players[target].pos, enemy.radius, current_layout)
@@ -1049,6 +1056,11 @@ func _simulate_enemies(delta: float) -> void:
 			_update_attack(enemy, delta, target, in_sight)
 
 
+## Line of sight for aggro: a shot-sized line between the two points is unblocked.
+func _sees(from: Vector2, to: Vector2) -> bool:
+	return not Dungeon.segment_blocked(from, to, float(balance.bullet.radius), current_layout)
+
+
 ## Facing: flips toward the target, but not while an attack is aimed (the
 ## swing or charge keeps its direction), and bosses turn with some weight: only
 ## when the target is clearly on the other side, at most every 0.4 s.
@@ -1073,6 +1085,7 @@ func _attack_for(enemy: Dictionary) -> Dictionary:
 	if enemy.get("kind", "") == "molgrax": return balance.molgrax_moves.get(str(enemy.get("move", "swipe")), {})
 	if enemy.get("kind", "") == "o_warlord": return balance.warlord_moves.get(str(enemy.get("move", "cleave")), {})
 	if balance.minibosses.has(str(enemy.get("kind", ""))): return balance.minibosses[enemy.kind].moves.get(str(enemy.get("move", "")), {})
+	if balance.bosses.has(str(enemy.get("kind", ""))): return balance.bosses[enemy.kind].moves.get(str(enemy.get("move", "")), {})
 	if enemy.get("boss", false): return balance.boss_moves.get(str(enemy.get("move", "volley")), {})
 	return balance.attacks.get(str(enemy.get("kind", "")), {})
 
@@ -1090,7 +1103,7 @@ func _update_attack(enemy: Dictionary, delta: float, target: int, in_sight: bool
 	match str(enemy.get("attack", "")):
 		"":
 			enemy.shot_timer -= delta * ((1.5 if float(enemy.get("haste", 0.0)) > 0.0 else 1.0) * (1.6 if enemy.get("raging", false) else 1.0) * (1.25 if enemy.get("elite", false) else 1.0))
-			var range_ok: bool = not _attack_for(enemy).has("range") or enemy.pos.distance_to(target_pos) <= float(_attack_for(enemy).range)
+			var range_ok: bool = Aggro.in_attack_range(enemy, _attack_for(enemy), enemy.pos.distance_to(target_pos), balance.aggro)
 			if enemy.shot_timer <= 0.0 and (in_sight or boss) and range_ok and not enemy.get("axe_out", false):
 				if boss: enemy.move = _next_boss_move(enemy)
 				enemy.attack = "windup"
@@ -1390,6 +1403,8 @@ func _hit_enemy(enemy: Dictionary, damage: float, direction: Vector2, killer: in
 	enemy.hit_timer = float(balance.knockback.flash)
 	enemy.hits = int(enemy.get("hits", 0)) + 1
 	enemy.hit_dir = direction
+	# Whoever hurts an enemy becomes its target, even from out of its sight.
+	if players.has(killer): Aggro.lock(enemy, killer)
 	if enemy.hp <= 0:
 		enemy.hp = 0
 		enemy.attack = ""
@@ -1650,7 +1665,7 @@ func _make_snapshot() -> Dictionary:
 				if room_states.get(neighbour_id, {}).get("visited", false): seen = true
 		if not seen: continue
 		map_rooms.append({"id": layout.id, "title": layout.title, "kind": layout.get("kind", "normal"), "boss": layout.boss, "grid_x": layout.grid_x, "grid_y": layout.grid_y, "visited": status.get("visited", false), "cleared": status.get("cleared", false), "doors": layout.get("doors", {}).keys()})
-	return {"players": visible_players, "enemies": visible_enemies, "bullets": visible_bullets, "orbs": visible_orbs, "loot": visible_loot, "hazards": abilities.snapshot(), "boss_bar": _boss_bar(), "room": room, "phase": phase, "seed": run_seed, "seq": packet_sequence, "peer_count": players.size(), "perk_options": perk_options, "reward_kind": reward_kind, "room_layout": current_layout.duplicate(true), "floor_map": map_rooms, "room_count": floor_layouts.size(), "rooms_cleared": _rooms_cleared(), "rooms_total": rooms_cleared_before + _rooms_cleared(), "floor": floor_number, "portal": {"x": portal.x, "y": portal.y} if portal.is_finite() and phase == "reward" else {}, "endless": endless, "doors_open": phase == "explore", "generator_version": Dungeon.GENERATOR_VERSION}
+	return {"players": visible_players, "enemies": visible_enemies, "bullets": visible_bullets, "orbs": visible_orbs, "loot": visible_loot, "hazards": abilities.snapshot(), "boss_bar": _boss_bar(), "room": room, "phase": phase, "seed": run_seed, "seq": packet_sequence, "peer_count": players.size(), "perk_options": perk_options, "reward_kind": reward_kind, "fog": balance.fog, "room_layout": current_layout.duplicate(true), "floor_map": map_rooms, "room_count": floor_layouts.size(), "rooms_cleared": _rooms_cleared(), "rooms_total": rooms_cleared_before + _rooms_cleared(), "floor": floor_number, "portal": {"x": portal.x, "y": portal.y} if portal.is_finite() and phase == "reward" else {}, "endless": endless, "doors_open": phase == "explore", "generator_version": Dungeon.GENERATOR_VERSION}
 
 
 func _choice_cards(player: Dictionary) -> Array:

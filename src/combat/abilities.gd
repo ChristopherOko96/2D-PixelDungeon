@@ -182,6 +182,9 @@ func _summon(enemy: Dictionary, attack: Dictionary) -> void:
 		var minion: Dictionary = game._spawn_enemy(str(attack.summon), spot, 0)
 		minion.summoner = enemy.id
 		minion.shot_timer = 0.8
+		# Summoned creatures arrive angry, hunting their summoner's target.
+		minion.aggro = true
+		minion.aggro_target = int(enemy.get("aggro_target", -1))
 
 
 func active(enemy: Dictionary, attack: Dictionary, target: int, delta: float) -> void:
