@@ -42,6 +42,10 @@ const MOSS_DARK := Color("#4f7a2e")
 const MOSS_LIGHT := Color("#7fa848")
 const GOLD_INLAY := Color("#e8c152")
 const COBWEB := Color("#c8d4e4")
+## The visible world area, matching game.gd's WORLD_SIZE.
+const VIEW_SIZE := Vector2(896, 480)
+## Tile codes of big floor maps (floor_map_generator.gd).
+const FloorMap = preload("res://src/dungeon/floor_map_generator.gd")
 # Top of a wall, the dark mass behind its lit edges.
 const WALL_TOP := Color("#1a1621")
 # Door marker for an ordinary room; boss and treasure rooms get their own colour.
@@ -133,6 +137,10 @@ var shake_scale := 1.0
 var _fog_room := ""
 var _fog_seen: Dictionary = {}
 var _fog_lights: Array[Vector2] = []
+var _lit_arenas: Array[Rect2] = []
+## Big maps: top-left world pixel of the visible 896 x 480 view (zero in rooms).
+## The shared camera follows the party's middle and stops at the map's edges.
+var camera_origin := Vector2.ZERO
 
 
 func _ready() -> void:
@@ -225,8 +233,30 @@ func _process(delta: float) -> void:
 	_feedback.update(delta)
 	# Shake grows with the square of trauma; whole pixels keep the art crisp.
 	var strength: float = _feedback.shake * _feedback.shake * MAX_SHAKE_PIXELS * shake_scale
-	position = _base_position + Vector2(_shake_rng.randf_range(-1, 1), _shake_rng.randf_range(-1, 1)).round() * roundf(strength)
+	camera_origin = _camera_origin()
+	position = _base_position - camera_origin + Vector2(_shake_rng.randf_range(-1, 1), _shake_rng.randf_range(-1, 1)).round() * roundf(strength)
 	queue_redraw()
+
+
+## The shared camera: centred on the living heroes (all heroes when none
+## lives), clamped to the map, on whole pixels. Rooms never scroll.
+func _camera_origin() -> Vector2:
+	var layout: Dictionary = _room_layout()
+	if not layout.has("tiles"):
+		return Vector2.ZERO
+	var points: Array[Vector2] = []
+	var players: Dictionary = _snapshot.get("players", {})
+	for peer_key: Variant in players:
+		if int(players[peer_key].get("hp", 0)) > 0: points.append(_position(players[peer_key]))
+	if points.is_empty():
+		for peer_key: Variant in players: points.append(_position(players[peer_key]))
+	if points.is_empty():
+		return camera_origin
+	var centre := Vector2.ZERO
+	for point: Vector2 in points: centre += point
+	centre /= float(points.size())
+	var world := Vector2(float(layout.width), float(layout.height)) * float(layout.tile_size)
+	return (centre - VIEW_SIZE * 0.5).clamp(Vector2.ZERO, (world - VIEW_SIZE).max(Vector2.ZERO)).round()
 
 
 func _silhouette(texture: Texture2D) -> Texture2D:
@@ -241,13 +271,16 @@ func _silhouette(texture: Texture2D) -> Texture2D:
 
 
 func _draw() -> void:
-	_draw_floor()
-	_draw_lava()
-	_draw_walls()
-	_draw_obstacles()
-	_draw_props()
-	for index: int in range(TORCH_X.size()):
-		_draw_torch(TORCH_X[index], index * 1.7)
+	if _room_layout().has("tiles"):
+		_draw_map()
+	else:
+		_draw_floor()
+		_draw_lava()
+		_draw_walls()
+		_draw_obstacles()
+		_draw_props()
+		for index: int in range(TORCH_X.size()):
+			_draw_torch(TORCH_X[index], index * 1.7)
 	var phase: String = str(_snapshot.get("phase", "lobby"))
 	if phase == "reward" or phase == "victory":
 		_draw_pedestal(phase == "victory")
@@ -257,9 +290,16 @@ func _draw() -> void:
 	_draw_loot()
 	var players: Dictionary = _snapshot.get("players", {})
 	_fog_lights.clear()
+	_lit_arenas.clear()
+	var layout: Dictionary = _room_layout()
 	for peer_key: Variant in players:
 		if int(players[peer_key].get("hp", 0)) > 0:
 			_fog_lights.append(_position(players[peer_key]))
+			if layout.has("tiles"):
+				var index: int = FloorMap.room_at(layout, _position(players[peer_key]))
+				if index >= 0 and str(layout.rooms[index].kind) in ["boss", "miniboss"]:
+					var floor_rect: Array = layout.rooms[index].floor
+					_lit_arenas.append(Rect2(float(floor_rect[0]) * 32.0, float(floor_rect[1]) * 32.0, float(floor_rect[2]) * 32.0, float(floor_rect[3]) * 32.0).grow(32.0))
 	# Enemies in the dark are not drawn at all; their floor warnings still are.
 	var enemies: Array = []
 	for enemy_value: Variant in _snapshot.get("enemies", []):
@@ -302,9 +342,12 @@ func _fog_active() -> bool:
 
 
 ## 0 (dark) to 1 (lit): full light within the heroes' light radius, fading out
-## over `fade` pixels beyond it.
+## over `fade` pixels beyond it. On a big map a boss or mini-boss arena with a
+## hero inside is lit completely.
 func _light_at(point: Vector2) -> float:
 	var fog: Dictionary = _snapshot.get("fog", {})
+	for arena: Rect2 in _lit_arenas:
+		if arena.has_point(point): return 1.0
 	var light := 0.0
 	for source: Vector2 in _fog_lights:
 		light = maxf(light, 1.0 - clampf((point.distance_to(source) - float(fog.light_radius)) / float(fog.fade), 0.0, 1.0))
@@ -322,8 +365,9 @@ func _draw_fog() -> void:
 		_fog_room = room_id
 		_fog_seen.clear()
 	var cell: float = float(fog.cell)
-	for row: int in range(int(ceilf(480.0 / cell))):
-		for column: int in range(int(ceilf(896.0 / cell))):
+	# Only the cells in view; on a big map the memory covers the whole floor.
+	for row: int in range(floori(camera_origin.y / cell), ceili((camera_origin.y + VIEW_SIZE.y) / cell)):
+		for column: int in range(floori(camera_origin.x / cell), ceili((camera_origin.x + VIEW_SIZE.x) / cell)):
 			var light: float = _light_at(Vector2((column + 0.5) * cell, (row + 0.5) * cell))
 			var key: int = row * 1000 + column
 			if light > 0.5:
@@ -440,33 +484,105 @@ func _draw_floor() -> void:
 	var detail: String = str(_theme().get("detail", ""))
 	for row: int in range(1, 15):
 		for column: int in range(1, 27):
-			var tile_hash: int = _tile_hash(column, row + 100)
-			var origin := Vector2(column * 32, row * 32)
-			match detail:
-				"cracks":
-					if tile_hash % 4 == 0:
-						# A jagged glowing crack across the tile, breathing with the lava.
-						var glow: float = 0.55 + 0.45 * sin(_clock * 2.0 + float(tile_hash % 17))
-						var y: float = 6.0 + float(tile_hash % 20)
-						for step: int in range(8):
-							y = clampf(y + float((tile_hash >> step) % 3) * 2.0 - 2.0, 2.0, 28.0)
-							_box(origin.x + step * 4, origin.y + y, 4, 2, Color(CRACK_GLOW, 0.55 + 0.35 * glow))
-						draw_circle(origin + Vector2(16, 16), 12.0, Color(CRACK_GLOW, 0.05 * glow))
-				"moss":
-					if tile_hash % 5 == 0:
-						for k: int in range(6):
-							var spot := Vector2(float((tile_hash >> (k * 3)) % 26), float((tile_hash >> (k * 3 + 2)) % 26))
-							_box(origin.x + spot.x, origin.y + spot.y, 4, 2, MOSS_DARK if k % 2 == 0 else MOSS_LIGHT)
-				"cobweb":
-					if tile_hash % 11 == 0:
-						for k: int in range(5):
-							_box(origin.x + k * 3, origin.y + k * 3, 2, 1, Color(COBWEB, 0.5))
-							_box(origin.x + 12 - k * 3, origin.y + k * 3, 2, 1, Color(COBWEB, 0.35))
-				"gold":
-					if (column + row) % 4 == 0:
-						_box(origin.x + 14, origin.y + 12, 4, 8, Color(GOLD_INLAY, 0.8))
-						_box(origin.x + 12, origin.y + 14, 8, 4, Color(GOLD_INLAY, 0.8))
-						_box(origin.x + 15, origin.y + 15, 2, 2, Color("#fff4c8"))
+			_draw_floor_detail(column, row, detail)
+
+
+## One floor tile's theme detail: glowing lava cracks, moss, cobwebs or gold.
+func _draw_floor_detail(column: int, row: int, detail: String) -> void:
+	var tile_hash: int = _tile_hash(column, row + 100)
+	var origin := Vector2(column * 32, row * 32)
+	match detail:
+		"cracks":
+			if tile_hash % 4 == 0:
+				# A jagged glowing crack across the tile, breathing with the lava.
+				var glow: float = 0.55 + 0.45 * sin(_clock * 2.0 + float(tile_hash % 17))
+				var y: float = 6.0 + float(tile_hash % 20)
+				for step: int in range(8):
+					y = clampf(y + float((tile_hash >> step) % 3) * 2.0 - 2.0, 2.0, 28.0)
+					_box(origin.x + step * 4, origin.y + y, 4, 2, Color(CRACK_GLOW, 0.55 + 0.35 * glow))
+				draw_circle(origin + Vector2(16, 16), 12.0, Color(CRACK_GLOW, 0.05 * glow))
+		"moss":
+			if tile_hash % 5 == 0:
+				for k: int in range(6):
+					var spot := Vector2(float((tile_hash >> (k * 3)) % 26), float((tile_hash >> (k * 3 + 2)) % 26))
+					_box(origin.x + spot.x, origin.y + spot.y, 4, 2, MOSS_DARK if k % 2 == 0 else MOSS_LIGHT)
+		"cobweb":
+			if tile_hash % 11 == 0:
+				for k: int in range(5):
+					_box(origin.x + k * 3, origin.y + k * 3, 2, 1, Color(COBWEB, 0.5))
+					_box(origin.x + 12 - k * 3, origin.y + k * 3, 2, 1, Color(COBWEB, 0.35))
+		"gold":
+			if (column + row) % 4 == 0:
+				_box(origin.x + 14, origin.y + 12, 4, 8, Color(GOLD_INLAY, 0.8))
+				_box(origin.x + 12, origin.y + 14, 8, 4, Color(GOLD_INLAY, 0.8))
+				_box(origin.x + 15, origin.y + 15, 2, 2, Color("#fff4c8"))
+
+
+## A big floor map, only the tiles in view: themed floor with details, then
+## walls assembled from 0x72 parts around every walkable tile: a brick face
+## with its lit top edge where floor lies below, a dark top with lit edges
+## elsewhere, and wall torches and banners on the rooms' north walls.
+func _draw_map() -> void:
+	var layout: Dictionary = _room_layout()
+	var first: Vector2i = Vector2i(floori(camera_origin.x / 32.0) - 1, floori(camera_origin.y / 32.0) - 1)
+	var last: Vector2i = Vector2i(ceili((camera_origin.x + VIEW_SIZE.x) / 32.0) + 1, ceili((camera_origin.y + VIEW_SIZE.y) / 32.0) + 1)
+	var floor_tint: Color = _theme_color("floor")
+	var wall_tint: Color = _theme_color("wall")
+	var detail: String = str(_theme().get("detail", ""))
+	for row: int in range(first.y, last.y):
+		for column: int in range(first.x, last.x):
+			if not FloorMap.walkable(FloorMap.tile_at(layout, column, row)):
+				continue
+			var tile_hash: int = _tile_hash(column, row)
+			var texture: Texture2D = FLOOR_TILES[0] if tile_hash % 12 != 0 else FLOOR_TILES[1 + tile_hash / 12 % 7]
+			draw_texture_rect(texture, Rect2(column * 32, row * 32, 32, 32), false, floor_tint)
+			_draw_floor_detail(column, row, detail)
+	for row: int in range(first.y, last.y):
+		for column: int in range(first.x, last.x):
+			if FloorMap.walkable(FloorMap.tile_at(layout, column, row)):
+				continue
+			var open_below: bool = FloorMap.walkable(FloorMap.tile_at(layout, column, row + 1))
+			var open_above: bool = FloorMap.walkable(FloorMap.tile_at(layout, column, row - 1))
+			var open_left: bool = FloorMap.walkable(FloorMap.tile_at(layout, column - 1, row))
+			var open_right: bool = FloorMap.walkable(FloorMap.tile_at(layout, column + 1, row))
+			if not (open_below or open_above or open_left or open_right):
+				# Outer corners: fill them dark so walls close without notches.
+				for corner: Vector2i in [Vector2i(-1, -1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(1, 1)]:
+					if FloorMap.walkable(FloorMap.tile_at(layout, column + corner.x, row + corner.y)):
+						draw_rect(Rect2(column * 32, row * 32, 32, 32), WALL_TOP)
+						break
+				continue
+			var x: float = column * 32
+			var y: float = row * 32
+			draw_rect(Rect2(x, y, 32, 32), WALL_TOP)
+			if open_below:
+				var tile_hash: int = _tile_hash(column, row + 40)
+				var face: Texture2D = WALL_FACE if tile_hash % 9 != 0 else WALL_FACE_HOLES[tile_hash % 2]
+				draw_texture_rect(face, Rect2(x, y + 8, 32, 24), false, wall_tint)
+				_draw_tile_part(WALL_CAP, Vector2(x, y), 32, 8, 12, wall_tint)
+			elif open_above:
+				_draw_tile_part(WALL_CAP, Vector2(x, y), 32, 8, 12, wall_tint)
+				_draw_tile_part(WALL_FACE, Vector2(x, y + 8), 32, 24, 0, wall_tint)
+			if open_left and not open_below:
+				draw_texture_rect_region(EDGE_STRIP_LEFT, Rect2(x, y, 10, 32), Rect2(0, 0, 5, 16), wall_tint)
+			if open_right and not open_below:
+				draw_texture_rect_region(EDGE_STRIP_RIGHT, Rect2(x + 22, y, 10, 32), Rect2(11, 0, 5, 16), wall_tint)
+	var banner: Texture2D = BANNERS.get(str(_theme().get("banner", "")))
+	var view := Rect2(camera_origin - Vector2(64, 64), VIEW_SIZE + Vector2(128, 128))
+	for map_room: Variant in layout.get("rooms", []):
+		var rect: Array = map_room.rect
+		var wall_y: float = float(rect[1]) * 32.0
+		for k: int in range(1, int(rect[2]) / 5):
+			var column: int = int(rect[0]) + k * 5
+			if FloorMap.tile_at(layout, column, int(rect[1])) != FloorMap.SOLID or not FloorMap.walkable(FloorMap.tile_at(layout, column, int(rect[1]) + 1)):
+				continue
+			var x: float = column * 32 + 16
+			if not view.has_point(Vector2(x, wall_y)):
+				continue
+			if k % 2 == 1:
+				_draw_torch(x, float(column) * 0.7, wall_y - 8.0)
+			elif banner != null:
+				draw_texture_rect(banner, Rect2(x - 16, wall_y + 8, 32, 32), false)
 
 
 ## Cover is a free-standing block of the same wall: a dark top ringed by lit
@@ -601,12 +717,13 @@ func _door_frame(room_id: String) -> Color:
 
 
 ## A burning wall torch on the top wall face, with a soft flickering glow.
-func _draw_torch(x: float, offset: float) -> void:
+## A wall torch at `x`; `top` shifts it down from the room's top wall (big maps).
+func _draw_torch(x: float, offset: float, top: float = 0.0) -> void:
 	var flicker: float = sin(_clock * 7.0 + offset)
-	draw_circle(Vector2(x, 26), 44.0, Color(0.98, 0.46, 0.24, 0.05 + 0.015 * flicker))
-	draw_circle(Vector2(x, 26), 24.0, Color(0.98, 0.5, 0.26, 0.07 + 0.02 * flicker))
+	draw_circle(Vector2(x, 26 + top), 44.0, Color(0.98, 0.46, 0.24, 0.05 + 0.015 * flicker))
+	draw_circle(Vector2(x, 26 + top), 24.0, Color(0.98, 0.5, 0.26, 0.07 + 0.02 * flicker))
 	var frame: int = int(_clock * FRAMES_PER_SECOND + offset * 3.0) % TORCH_FRAMES.size()
-	draw_texture_rect(TORCH_FRAMES[frame], Rect2(x - 16, -4, 32, 48), false)
+	draw_texture_rect(TORCH_FRAMES[frame], Rect2(x - 16, -4 + top, 32, 48), false)
 
 
 func _draw_shadow(point: Vector2, half_width: float) -> void:
@@ -803,7 +920,8 @@ func _draw_motes() -> void:
 		var x: float = float(105 + (index * 157) % 680)
 		var y: float = 75.0 + fmod(float(index * 59) - _clock * 7.0 + 720.0, 330.0)
 		var alpha: float = 0.14 + 0.08 * sin(_clock * 1.5 + float(index))
-		_box(x, y, 2, 2, Color(0.94, 0.76, 0.59, alpha))
+		# Motes float in the view, so on a big map they travel with the camera.
+		_box(camera_origin.x + x, camera_origin.y + y, 2, 2, Color(0.94, 0.76, 0.59, alpha))
 
 
 

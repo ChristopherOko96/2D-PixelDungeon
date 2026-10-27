@@ -108,6 +108,19 @@ Ergebnis: `tiles` (Codes 0 Wand, 1 Raumboden, 2 Gang, 3 Türöffnung, zeilenweis
 `template_id`, `solid`, `player_spawns`, `enemy_spawns`, `doors`, `distance`,
 `cell`) und `edges`. Gleiche Daten und gleicher Seed ergeben dieselbe Karte.
 
+Spielen (Etappe 2, vorläufig): Mit `--bigmap` nutzt ein Lauf die große Karte,
+zum Beispiel `-- --host --auto-start --endless --bigmap --seed 4242`. Kollision,
+Schüsse und Wegfindung laufen dann über das Tile-Raster
+(`src/dungeon/tile_geometry.gd`, über dieselben Funktionen in
+`dungeon_generator.gd`). Eine gemeinsame Kamera folgt der Gruppenmitte; die Leine
+(`balance.camera`: Bildausschnitt 896×480, Rand 40 px) hält alle Helden im Bild.
+Wände setzen sich aus 0x72-Teilen zusammen, Fackeln und Banner hängen an den
+Nordwänden, der Nebel merkt sich das ganze Stockwerk. Alle Räume sind von Beginn
+an besetzt; Gegner wachen über das Aggro-System auf, Boss und Nebenboss erst,
+wenn ein Held ihre Arena betritt. Bis Etappe 3 endet ein Stockwerk mit dem Boss;
+Gänge sperren noch nicht, Truhen, Schatzraum und Minikarte fehlen noch, und der
+Host schickt die Karte noch mit jedem Snapshot. `tests/big_map_test.gd` prüft den Modus.
+
 Prüfung: `tests/floor_map_test.gd` erzeugt 150 Seeds und prüft unter anderem
 Zusammenhang aller begehbaren Tiles, Raumabstände, Wände nur mit Türöffnungen,
 freie Spawns und 3×3-Gangbreite. Kartenbilder:

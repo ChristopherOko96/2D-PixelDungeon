@@ -2583,5 +2583,12 @@
     "dark_alpha": 0.93,
     "memory_alpha": 0.62,
     "cell": 16
+  },
+  "camera": {
+    "view": [
+      896,
+      480
+    ],
+    "leash_margin": 40
   }
 }

@@ -5,6 +5,8 @@ extends RefCounted
 ## plain pixel rectangle arrays and Vector2 spawns, safe for Godot Variant RPCs.
 ## Geometry is conservative circle-vs-grown-AABB, not Godot physics determinism.
 
+## Large floor maps (layouts with `tiles`) collide on their tile grid instead.
+const TileGeometry = preload("res://src/dungeon/tile_geometry.gd")
 const SCHEMA_VERSION: int = 1
 const GENERATOR_VERSION: int = 3
 const MIN_ROOMS: int = 5
@@ -285,6 +287,8 @@ static func validate_config(config: Dictionary) -> PackedStringArray:
 ## The fixed axis order permits wall sliding and prevents large-step tunneling.
 ## Starting positions must be valid; malformed movement leaves position unchanged.
 static func move_actor(pos: Vector2, delta: Vector2, radius: float, layout: Dictionary) -> Vector2:
+	if layout.has("tiles"):
+		return TileGeometry.move_actor(layout, pos, delta, radius)
 	if not pos.is_finite() or not delta.is_finite() or not is_finite(radius) or radius < 0.0 or not _geometry_valid(layout):
 		return pos
 	var bounds: Rect2 = _rect(layout.play_bounds).grow(-radius)
@@ -315,6 +319,8 @@ static func move_actor(pos: Vector2, delta: Vector2, radius: float, layout: Dict
 ## Includes the full segment, so high-speed projectiles cannot cross thin pillars.
 ## Invalid geometry or non-finite input is treated as blocked.
 static func segment_blocked(from: Vector2, to: Vector2, radius: float, layout: Dictionary) -> bool:
+	if layout.has("tiles"):
+		return TileGeometry.segment_blocked(layout, from, to, radius)
 	if not from.is_finite() or not to.is_finite() or not is_finite(radius) or radius < 0.0 or not _geometry_valid(layout):
 		return true
 	var bounds: Rect2 = _rect(layout.play_bounds).grow(-radius)
@@ -347,6 +353,8 @@ static func spawn_for_enemy(index: int, layout: Dictionary, entry_direction: Str
 ## non-finite/inside-wall endpoints and unreachable goals return [].
 ## Callers may cache routes and consume waypoints; no scene/physics state is used.
 static func find_path(from: Vector2, to: Vector2, radius: float, layout: Dictionary) -> PackedVector2Array:
+	if layout.has("tiles"):
+		return TileGeometry.find_path(layout, from, to, radius)
 	var result: PackedVector2Array = []
 	if not from.is_finite() or not to.is_finite() or not is_finite(radius) or radius < 0.0 or not _geometry_valid(layout):
 		return result
@@ -463,6 +471,8 @@ static func _inward(direction: String) -> Vector2:
 	return -Vector2(DIRECTION_VECTORS[side]) if side >= 0 else Vector2.ZERO
 
 static func _nearest_free_point(point: Vector2, radius: float, layout: Dictionary) -> Vector2:
+	if layout.has("tiles"):
+		return TileGeometry.nearest_free_point(layout, point, radius)
 	var tile: float = float(layout.get("tile_size", 32))
 	var best: Vector2 = point
 	var best_distance: float = INF

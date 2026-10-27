@@ -9,10 +9,15 @@ const Progression = preload("res://src/player/progression.gd")
 const Account = preload("res://src/online/account.gd")
 const Abilities = preload("res://src/combat/abilities.gd")
 const Aggro = preload("res://src/combat/aggro.gd")
+const FloorMap = preload("res://src/dungeon/floor_map_generator.gd")
 const Loadout = preload("res://src/player/loadout.gd")
 
 var balance: Dictionary = {}
 var dungeon_config: Dictionary = {}
+## Big-map mode (`--bigmap`): a whole floor is one tile map (floor_map_generator.gd)
+## with a following camera; `floormap_config` is assets/data/dungeon_floormap.json.
+var big_map := false
+var floormap_config: Dictionary = {}
 var floor_layouts: Array[Dictionary] = []
 var current_layout: Dictionary = {}
 var requested_seed := -1
@@ -118,6 +123,9 @@ func _ready() -> void:
 		get_tree().quit(1)
 		return
 	dungeon_config = room_data
+	var map_data = JSON.parse_string(FileAccess.get_file_as_string("res://assets/data/dungeon_floormap.json"))
+	if map_data is Dictionary and FloorMap.validate(map_data, room_data).is_empty():
+		floormap_config = map_data
 	Engine.physics_ticks_per_second = 60
 	launched_at = Time.get_ticks_msec() / 1000.0
 	# Clients only talk to the host; membership comes from authoritative snapshots.
@@ -133,9 +141,16 @@ func _ready() -> void:
 	abilities = Abilities.new(self)
 	account = Account.new()
 	add_child(account)
+	# The world is drawn inside a clipping frame, so a scrolling big map never
+	# spills over the HUD; the view moves inside it with the camera.
+	var world_frame := Control.new()
+	world_frame.position = WORLD_OFFSET
+	world_frame.size = WORLD_SIZE
+	world_frame.clip_contents = true
+	world_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(world_frame)
 	view = preload("res://src/dungeon_view.gd").new()
-	view.position = WORLD_OFFSET
-	add_child(view)
+	world_frame.add_child(view)
 	_build_ui()
 	_read_arguments()
 	_refresh_ui()
@@ -168,6 +183,7 @@ func _read_arguments() -> void:
 			"--debug-room":
 				if i + 1 < args.size(): debug_room = args[i + 1]
 			"--endless": endless = true
+			"--bigmap": big_map = not floormap_config.is_empty()
 			"--class":
 				if i + 1 < args.size(): player_classes[1] = args[i + 1]
 			"--debug-floor":
@@ -405,9 +421,11 @@ func _send_local_input() -> void:
 	if local_player.is_empty() or local_player.get("hp", 0) <= 0: return
 	var movement := Vector2(float(Input.is_physical_key_pressed(KEY_D)) - float(Input.is_physical_key_pressed(KEY_A)), float(Input.is_physical_key_pressed(KEY_S)) - float(Input.is_physical_key_pressed(KEY_W))).limit_length()
 	var position := Vector2(local_player.x, local_player.y)
-	var mouse := get_global_mouse_position() - WORLD_OFFSET
+	var on_screen := get_global_mouse_position() - WORLD_OFFSET
+	# The view scrolls on big maps: aim at the world point under the cursor.
+	var mouse: Vector2 = on_screen + view.camera_origin
 	var aim := (mouse - position).normalized()
-	var fire := Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and Rect2(Vector2.ZERO, WORLD_SIZE).has_point(mouse)
+	var fire := Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and Rect2(Vector2.ZERO, WORLD_SIZE).has_point(on_screen)
 	if not smoke_role.is_empty() and not state.get("enemies", []).is_empty():
 		var nearest := Vector2.ZERO
 		var distance := INF
@@ -563,7 +581,9 @@ func _begin_run() -> void:
 	var seed_value := requested_seed if requested_seed >= 0 else randi_range(10000, 99999)
 	floor_number = debug_floor if endless else 1
 	rooms_cleared_before = 0
-	if not _generate_floor(seed_value): return
+	if big_map:
+		if not _generate_big_floor(seed_value): return
+	elif not _generate_floor(seed_value): return
 	peer.refuse_new_connections = true
 	var ids := players.keys()
 	players.clear()
@@ -573,6 +593,9 @@ func _begin_run() -> void:
 	room_loot.clear()
 	print("RUN_STARTED seed=%d players=%d rooms=%d" % [run_seed, players.size(), floor_layouts.size()])
 	if endless: print("ENDLESS_STARTED floor=1")
+	if big_map:
+		_enter_big_floor()
+		return
 	var first_room := 0
 	for i in range(floor_layouts.size()):
 		if not debug_room.is_empty() and str(floor_layouts[i].get("kind", "")) == debug_room: first_room = i
@@ -712,12 +735,108 @@ func _check_portal() -> void:
 func _next_floor() -> void:
 	rooms_cleared_before += _rooms_cleared()
 	floor_number += 1
-	if not _generate_floor(absi(hash("floor:%d:%d" % [run_seed, floor_number])) % 90000 + 10000): return
+	var next_seed: int = absi(hash("floor:%d:%d" % [run_seed, floor_number])) % 90000 + 10000
+	if big_map:
+		if not _generate_big_floor(next_seed): return
+	elif not _generate_floor(next_seed): return
 	for player in players.values():
 		if player.hp > 0: player.hp = mini(player.max_hp, player.hp + int(balance.endless.heal_per_floor))
 		else: player.hp = maxi(1, int(ceil(player.max_hp * 0.5)))
 	print("FLOOR_STARTED floor=%d seed=%d rooms=%d" % [floor_number, run_seed, floor_layouts.size()])
-	_enter_room(0, "")
+	if big_map: _enter_big_floor()
+	else: _enter_room(0, "")
+
+
+## Big-map mode: builds the floor's tile map and wraps it as the one layout of
+## the floor. The map's rooms keep their kinds; one ordinary room becomes the
+## mini-boss's room, and the floor's look comes from balance.themes.
+func _generate_big_floor(seed_value: int) -> bool:
+	var map: Dictionary = FloorMap.generate(seed_value, floormap_config, dungeon_config)
+	if map.is_empty():
+		status_message = "Stockwerkskarte konnte nicht erstellt werden. Kartendaten prüfen."
+		return false
+	run_seed = seed_value
+	var roster := _floor_roster()
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash("furnish:%d:%d" % [run_seed, floor_number])
+	var normals: Array = map.rooms.filter(func(entry: Dictionary) -> bool: return entry.kind == "normal")
+	if roster.has("miniboss") and normals.size() >= 2:
+		var chosen: Dictionary = normals[rng.randi_range(0, normals.size() - 1)]
+		chosen.kind = "miniboss"
+		chosen.miniboss = str(roster.miniboss)
+	var size: float = float(map.tile_size)
+	map.id = "map-s%d" % seed_value
+	map.kind = "floor"
+	map.title = "STOCKWERK %d" % floor_number
+	map.boss = false
+	map.play_bounds = [0.0, 0.0, float(map.width) * size, float(map.height) * size]
+	map.world_size = [float(map.width) * size, float(map.height) * size]
+	map.obstacles = []
+	map.player_spawns = map.rooms[0].player_spawns
+	map.enemy_spawns = []
+	map.doors = {}
+	map.props = []
+	map.lava = []
+	var look_name := str(roster.get("theme", "kerker"))
+	map.theme = balance.themes.get(look_name, {}).duplicate()
+	map.theme.name = look_name
+	floor_layouts = [map]
+	room_states.clear()
+	room_states[map.id] = {"visited": false, "cleared": false}
+	last_layout_id = ""
+	return true
+
+
+## Big-map mode: the party starts in the start room and every other room is
+## filled at once: mobs in ordinary rooms, the mini-boss and the boss in theirs.
+## Nobody is angry yet; the aggro system wakes them as the party comes close.
+func _enter_big_floor() -> void:
+	room = 1
+	current_layout = floor_layouts[0]
+	room_states[current_layout.id].visited = true
+	orbs.clear()
+	calm_clock = 0.0
+	portal = Vector2.INF
+	abilities.clear()
+	room_loot[current_layout.id] = []
+	loot = room_loot[current_layout.id]
+	enemies.clear()
+	bullets.clear()
+	commands.clear()
+	var slot := 0
+	for id in players:
+		var player: Dictionary = players[id]
+		player.pos = current_layout.player_spawns[slot % current_layout.player_spawns.size()]
+		player.ready = false
+		player.picked = false
+		player.shot_timer = 0.0
+		player.invulnerable = 1.0
+		slot += 1
+	phase = "combat"
+	var elite_chance: float = minf(float(balance.depth.elite_max), float(balance.depth.elite_per_floor) * float(floor_number - 1)) if endless else 0.0
+	var count := 0
+	for index in range(current_layout.rooms.size()):
+		var map_room: Dictionary = current_layout.rooms[index]
+		var kinds: Array[String] = []
+		match str(map_room.kind):
+			"normal": kinds = _enemy_kinds_for(map_room)
+			"miniboss": kinds = [str(map_room.miniboss)]
+			"boss": kinds = [str(_floor_roster().boss)]
+		var spawns: Array = map_room.enemy_spawns
+		var elite_rng := RandomNumberGenerator.new()
+		elite_rng.seed = hash("elite:%d:%s" % [run_seed, map_room.id])
+		for i in range(kinds.size()):
+			if spawns.is_empty(): break
+			var spot: Vector2 = spawns[i % spawns.size()]
+			if i >= spawns.size(): spot = Dungeon.move_actor(spot, Vector2.RIGHT.rotated(float(i) * 2.3) * 34.0, 14.0, current_layout)
+			var creature := _spawn_enemy(kinds[i], spot, i)
+			creature.room = index
+			if str(map_room.kind) == "boss": creature.floor_boss = true
+			# Bosses and mini-bosses wait in their arena until a hero walks in.
+			if creature.boss: creature.wake_room = index
+			if not creature.boss and elite_rng.randf() < elite_chance: _make_elite(creature)
+			count += 1
+	print("MAP_STARTED seed=%d rooms=%d enemies=%d" % [run_seed, current_layout.rooms.size(), count])
 
 
 ## Endless difficulty for the current floor: enemy health, speed and the boss's
@@ -902,6 +1021,7 @@ func _room_index(id: String) -> int:
 
 func _simulate_players(delta: float) -> void:
 	var now := Time.get_ticks_msec() / 1000.0
+	var leash := _leash_box()
 	for id in players:
 		var player: Dictionary = players[id]
 		player.shot_timer = maxf(0.0, player.shot_timer - delta)
@@ -923,7 +1043,12 @@ func _simulate_players(delta: float) -> void:
 		player.rooted = maxf(0.0, float(player.get("rooted", 0.0)) - delta)
 		player.move = command.move if player.rooted <= 0.0 else Vector2.ZERO
 		player.aim = command.aim
+		var before: Vector2 = player.pos
 		player.pos = Dungeon.move_actor(player.pos, player.move * player.speed * delta, 12.0, current_layout)
+		# The shared camera's leash: a step that would leave the party's view is not taken.
+		if leash.has_area():
+			if player.pos.x < leash.position.x or player.pos.x > leash.end.x: player.pos.x = before.x
+			if player.pos.y < leash.position.y or player.pos.y > leash.end.y: player.pos.y = before.y
 		if command.fire and player.shot_timer <= 0.0:
 			player.shot_timer = player.shot_interval
 			if player.get("melee", false): _swing(id, command.aim)
@@ -1013,6 +1138,11 @@ func _simulate_enemies(delta: float) -> void:
 			enemy.dying = float(enemy.get("dying", 0.0)) - delta
 			enemy.moving = false
 			continue
+		if enemy.has("wake_room") and not enemy.get("awake", false):
+			if not _party_in_room(int(enemy.wake_room)):
+				enemy.moving = false
+				continue
+			enemy.awake = true
 		# Aggro: unaware enemies stand still; a locked one hunts its player to the end.
 		var target: int = Aggro.pick_target(enemy, players, _sees, balance.aggro)
 		if target < 0:
@@ -1054,6 +1184,40 @@ func _simulate_enemies(delta: float) -> void:
 			_damage_player(target, contact_damage, enemy.pos)
 		if enemy.boss or balance.attacks.has(enemy.get("kind", "chaser")):
 			_update_attack(enemy, delta, target, in_sight)
+
+
+## Big map: the area every living hero must stay in so the shared camera shows
+## the whole party: the view (minus `leash_margin`) centred on the party's
+## middle. Empty outside big maps or with fewer than two living heroes.
+func _leash_box() -> Rect2:
+	if not current_layout.has("tiles"): return Rect2()
+	var living: Array[Vector2] = []
+	for player in players.values():
+		if player.hp > 0: living.append(player.pos)
+	if living.size() < 2: return Rect2()
+	var centre := Vector2.ZERO
+	for point in living: centre += point
+	centre /= float(living.size())
+	var half: Vector2 = Vector2(float(balance.camera.view[0]), float(balance.camera.view[1])) * 0.5 - Vector2.ONE * float(balance.camera.leash_margin)
+	return Rect2(centre - half, half * 2.0)
+
+
+## Big map: whether a living hero stands on the floor of map room `index`.
+func _party_in_room(index: int) -> bool:
+	for player in players.values():
+		if player.hp > 0 and FloorMap.room_at(current_layout, player.pos) == index: return true
+	return false
+
+
+## The area a boss's room-wide moves (thorns waves) cover: its own room on a
+## big map, otherwise the whole room.
+func _arena_rect(enemy: Dictionary) -> Rect2:
+	if current_layout.has("tiles") and enemy.has("room"):
+		var floor_rect: Array = current_layout.rooms[int(enemy.room)].floor
+		var size: float = float(current_layout.tile_size)
+		return Rect2(float(floor_rect[0]) * size, float(floor_rect[1]) * size, float(floor_rect[2]) * size, float(floor_rect[3]) * size)
+	var bounds: Array = current_layout.play_bounds
+	return Rect2(float(bounds[0]), float(bounds[1]), float(bounds[2]), float(bounds[3]))
 
 
 ## Line of sight for aggro: a shot-sized line between the two points is unblocked.
@@ -1541,11 +1705,20 @@ func _check_room_end() -> void:
 			enemy.air = 0.0
 		print("TEAM_WIPE room=%d" % room)
 		_broadcast_state(true)
-	elif enemies.is_empty():
+	elif enemies.is_empty() or (current_layout.get("kind", "") == "floor" and not enemies.any(func(enemy: Dictionary) -> bool: return enemy.get("floor_boss", false))):
+		# Big map (until rooms lock in stage 3): the floor ends when its boss falls;
+		# whatever still roams the map is gone with it.
+		enemies.clear()
 		bullets.clear()
 		abilities.clear()
 		room_states[current_layout.id].cleared = true
-		if current_layout.get("kind", "") == "boss":
+		if current_layout.get("kind", "") == "floor":
+			_open_reward("boss")
+			var boss_room: Dictionary = current_layout.rooms.filter(func(entry: Dictionary) -> bool: return entry.kind == "boss")[0]
+			var arena: Array = boss_room.floor
+			var size: float = float(current_layout.tile_size)
+			if endless: portal = Dungeon._nearest_free_point(Vector2(float(arena[0]) + float(arena[2]) * 0.5, float(arena[1]) + 3.0) * size, 26.0, current_layout)
+		elif current_layout.get("kind", "") == "boss":
 			_open_reward("boss")
 			if endless: portal = Dungeon._nearest_free_point(Vector2(448, 112), 26.0, current_layout)
 		else:
@@ -1658,6 +1831,8 @@ func _make_snapshot() -> Dictionary:
 	# Clients only learn rooms the party has visited or stands next to (Isaac minimap).
 	var map_rooms: Array[Dictionary] = []
 	for layout in floor_layouts:
+		# The big map has its own minimap later (stage 3); it is not a grid room.
+		if layout.has("tiles"): continue
 		var status: Dictionary = room_states.get(layout.id, {})
 		var seen: bool = status.get("visited", false)
 		if not seen:
@@ -1676,10 +1851,11 @@ func _choice_cards(player: Dictionary) -> Array:
 	return cards
 
 
-## The boss of the current room for the HUD's top bar: name and health.
+## The boss of the current room for the HUD's top bar: name and health. On a
+## big map only a boss whose arena the party has entered shows its bar.
 func _boss_bar() -> Dictionary:
 	for enemy in enemies:
-		if enemy.get("boss", false):
+		if enemy.get("boss", false) and (not enemy.has("wake_room") or enemy.get("awake", false)):
 			return {"name": str(_definition(_kind(enemy)).get("name", "")), "hp": enemy.hp, "max_hp": enemy.max_hp, "mini": balance.minibosses.has(_kind(enemy))}
 	return {}
 
@@ -1729,7 +1905,7 @@ func _apply_snapshot(snapshot: Dictionary) -> void:
 	if not layout.is_empty() and str(layout.id) != last_layout_id:
 		last_layout_id = layout.id
 		var signature := var_to_bytes(layout).hex_encode().sha256_text()
-		print("ROOM_LAYOUT id=%s template=%s version=%d signature=%s" % [layout.id, layout.template_id, layout.generator_version, signature])
+		print("ROOM_LAYOUT id=%s template=%s version=%d signature=%s" % [layout.id, layout.get("template_id", "map"), layout.generator_version, signature])
 	if not seen_snapshot or phase != last_phase:
 		print("SNAPSHOT_RECEIVED phase=%s players=%d room=%d" % [phase, snapshot.get("players", {}).size(), room])
 		seen_snapshot = true

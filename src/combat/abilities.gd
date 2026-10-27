@@ -220,7 +220,7 @@ func active(enemy: Dictionary, attack: Dictionary, target: int, delta: float) ->
 				enemy.attacks = int(enemy.get("attacks", 0)) + 1
 				# Thorns rise under every living player and at random spots; the
 				# warning is long enough to step out at walking speed.
-				var bounds := Rect2(game.current_layout.play_bounds[0], game.current_layout.play_bounds[1], game.current_layout.play_bounds[2], game.current_layout.play_bounds[3]).grow(-30.0)
+				var bounds: Rect2 = game._arena_rect(enemy).grow(-30.0)
 				for id in players:
 					if players[id].hp > 0: _add_hazard(str(attack.get("hazard", "thorns")), players[id].pos, float(attack.warn), float(attack.radius), int(attack.damage))
 				for i in range(int(attack.random)):
