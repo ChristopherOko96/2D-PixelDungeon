@@ -1,0 +1,67 @@
+{
+  "passed": true,
+  "port": 53353,
+  "results": [
+    {
+      "client_admitted": true,
+      "max_pending": 0,
+      "max_players": 0,
+      "mode": "valid",
+      "passed": true,
+      "seen_snapshot": true,
+      "status": "Spielversion geprüft. Warte auf den Start durch den Host.",
+      "unauthorized_member": false
+    },
+    {
+      "client_admitted": false,
+      "max_pending": 0,
+      "max_players": 0,
+      "mode": "protocol",
+      "passed": true,
+      "seen_snapshot": false,
+      "status": "Beitritt abgelehnt: Netzwerkversion passt nicht. Bitte dieselbe Spielversion verwenden.",
+      "unauthorized_member": false
+    },
+    {
+      "client_admitted": false,
+      "max_pending": 0,
+      "max_players": 0,
+      "mode": "content",
+      "passed": true,
+      "seen_snapshot": false,
+      "status": "Beitritt abgelehnt: Raum- oder Balance-Daten unterscheiden sich. Bitte denselben Projektstand verwenden.",
+      "unauthorized_member": false
+    },
+    {
+      "client_admitted": false,
+      "max_pending": 0,
+      "max_players": 0,
+      "mode": "malformed",
+      "passed": true,
+      "seen_snapshot": false,
+      "status": "Beitritt abgelehnt: Ungültige Versionsdaten. Bitte dieselbe Spielversion verwenden.",
+      "unauthorized_member": false
+    },
+    {
+      "client_admitted": false,
+      "max_pending": 0,
+      "max_players": 0,
+      "mode": "silent",
+      "passed": true,
+      "seen_snapshot": false,
+      "status": "Beitritt abgelehnt: Versionsprüfung dauerte zu lange. Bitte denselben Spielstand verwenden.",
+      "unauthorized_member": false
+    },
+    {
+      "client_admitted": false,
+      "max_pending": 1,
+      "max_players": 2,
+      "mode": "host",
+      "passed": true,
+      "seen_snapshot": true,
+      "status": "Lobby offen · UDP 53353 · Host + bis zu 3 Freunde. Der Host startet.",
+      "unauthorized_member": false
+    }
+  ],
+  "log_root": "repo:/Logs/session-protocol/20261026-201409-028c029c"
+}

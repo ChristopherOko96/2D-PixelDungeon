@@ -1,0 +1,95 @@
+{
+	"black_corner_center_samples": [
+		"000000ff",
+		"000000ff",
+		"000000ff",
+		"000000ff",
+		"000000ff"
+	],
+	"cases": [
+		{
+			"fade_size": "(1280.0, 720.0)",
+			"file": "01-window-1280x720.png",
+			"fullscreen": false,
+			"hud_position": "(24.0, 18.0)",
+			"logical_viewport": "(1280.0, 720.0)",
+			"menu_position": "(1114.0, 18.0)",
+			"modal_size": "(1280.0, 720.0)",
+			"pause": false,
+			"save_error": 0,
+			"window_size": "(1280, 720)",
+			"world_clip": "[P: (0.0, 0.0), S: (1280.0, 720.0)]"
+		},
+		{
+			"fade_size": "(1280.0, 800.0)",
+			"file": "02-window-1600x1000.png",
+			"fullscreen": false,
+			"hud_position": "(24.0, 18.0)",
+			"logical_viewport": "(1280.0, 800.0)",
+			"menu_position": "(1114.0, 18.0)",
+			"modal_size": "(1280.0, 800.0)",
+			"pause": false,
+			"save_error": 0,
+			"window_size": "(1600, 1000)",
+			"world_clip": "[P: (0.0, 0.0), S: (1280.0, 800.0)]"
+		},
+		{
+			"fade_size": "(1280.0, 720.0)",
+			"file": "03-fullscreen-game.png",
+			"fullscreen": true,
+			"hud_position": "(24.0, 18.0)",
+			"logical_viewport": "(1280.0, 720.0)",
+			"menu_position": "(1114.0, 18.0)",
+			"modal_size": "(1280.0, 720.0)",
+			"pause": false,
+			"save_error": 0,
+			"window_size": "(1920, 1080)",
+			"world_clip": "[P: (0.0, 0.0), S: (1280.0, 720.0)]"
+		},
+		{
+			"fade_size": "(1280.0, 720.0)",
+			"file": "04-fullscreen-display-menu.png",
+			"fullscreen": true,
+			"hud_position": "(24.0, 18.0)",
+			"logical_viewport": "(1280.0, 720.0)",
+			"menu_position": "(1114.0, 18.0)",
+			"modal_size": "(1280.0, 720.0)",
+			"pause": true,
+			"save_error": 0,
+			"window_size": "(1920, 1080)",
+			"world_clip": "[P: (0.0, 0.0), S: (1280.0, 720.0)]"
+		},
+		{
+			"fade_size": "(1280.0, 720.0)",
+			"file": "05-fullscreen-black-fade.png",
+			"fullscreen": true,
+			"hud_position": "(24.0, 18.0)",
+			"logical_viewport": "(1280.0, 720.0)",
+			"menu_position": "(1114.0, 18.0)",
+			"modal_size": "(1280.0, 720.0)",
+			"pause": false,
+			"save_error": 0,
+			"window_size": "(1920, 1080)",
+			"world_clip": "[P: (0.0, 0.0), S: (1280.0, 720.0)]"
+		},
+		{
+			"fade_size": "(1280.0, 800.0)",
+			"file": "06-window-restored.png",
+			"fullscreen": false,
+			"hud_position": "(24.0, 18.0)",
+			"logical_viewport": "(1280.0, 800.0)",
+			"menu_position": "(1114.0, 18.0)",
+			"modal_size": "(1280.0, 800.0)",
+			"pause": false,
+			"save_error": 0,
+			"window_size": "(1600, 1000)",
+			"world_clip": "[P: (0.0, 0.0), S: (1280.0, 800.0)]"
+		}
+	],
+	"escape_preserves_fullscreen": true,
+	"fullscreen_actual_size": "(1920, 1080)",
+	"fullscreen_mode": 4,
+	"monitor_size": "(1920, 1080)",
+	"scope": "actual normal prototype; direct input-handler F11/AltEnter/ESC and window-size changes; simulation held for still captures; no playthrough/network/performance suite",
+	"window_rectangle_restored": true
+}

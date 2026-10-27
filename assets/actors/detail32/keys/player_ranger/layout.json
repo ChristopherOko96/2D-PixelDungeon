@@ -1,0 +1,173 @@
+{
+	"canvas": [
+		32.0,
+		32.0
+	],
+	"frames": [
+		{
+			"bounds": [
+				8,
+				5,
+				15,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "south_idle"
+		},
+		{
+			"bounds": [
+				10,
+				5,
+				18,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "east_idle"
+		},
+		{
+			"bounds": [
+				10,
+				5,
+				13,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "north_idle"
+		},
+		{
+			"bounds": [
+				5,
+				5,
+				18,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "west_idle"
+		},
+		{
+			"bounds": [
+				10,
+				3,
+				15,
+				28
+			],
+			"foot_end_y": 31,
+			"key": "south_move"
+		},
+		{
+			"bounds": [
+				7,
+				3,
+				19,
+				28
+			],
+			"foot_end_y": 31,
+			"key": "east_move"
+		},
+		{
+			"bounds": [
+				9,
+				3,
+				14,
+				28
+			],
+			"foot_end_y": 31,
+			"key": "north_move"
+		},
+		{
+			"bounds": [
+				8,
+				3,
+				19,
+				28
+			],
+			"foot_end_y": 31,
+			"key": "west_move"
+		},
+		{
+			"bounds": [
+				6,
+				3,
+				16,
+				28
+			],
+			"foot_end_y": 31,
+			"key": "south_attack"
+		},
+		{
+			"bounds": [
+				9,
+				6,
+				22,
+				25
+			],
+			"foot_end_y": 31,
+			"key": "east_attack"
+		},
+		{
+			"bounds": [
+				5,
+				4,
+				17,
+				27
+			],
+			"foot_end_y": 31,
+			"key": "north_attack"
+		},
+		{
+			"bounds": [
+				6,
+				4,
+				21,
+				27
+			],
+			"foot_end_y": 31,
+			"key": "west_attack"
+		},
+		{
+			"bounds": [
+				12,
+				7,
+				13,
+				24
+			],
+			"foot_end_y": 31,
+			"key": "south_hurt"
+		},
+		{
+			"bounds": [
+				10,
+				7,
+				15,
+				24
+			],
+			"foot_end_y": 31,
+			"key": "east_hurt"
+		},
+		{
+			"bounds": [
+				7,
+				7,
+				14,
+				24
+			],
+			"foot_end_y": 31,
+			"key": "north_hurt"
+		},
+		{
+			"bounds": [
+				6,
+				7,
+				15,
+				24
+			],
+			"foot_end_y": 31,
+			"key": "west_hurt"
+		}
+	],
+	"palette_colors": 128,
+	"source": "res://assets/actors/detail32/source/player_ranger_detail_sheet.png",
+	"target_idle_height": 26.0,
+	"uniform_scale": 0.089041095890411,
+	"world_scale": 2.0
+}

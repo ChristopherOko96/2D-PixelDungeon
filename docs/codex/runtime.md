@@ -30,7 +30,9 @@ reviewed helper. Preserve its local overrides, `project.yaml` precedence and rig
 expansion. `.claude/docs/technical-preferences.md` is the legacy fallback, not
 the primary store. Current settings are Godot 4.7.2, GDScript, Compatibility,
 minimal rigor and guided automation. Current cap: four total players.
-Source pixel assets: 32×32. Existing tests and provisional game rules are recorded
+Current world grid: 32×32, superseding the 16-pixel revision on 2026-10-26.
+Original atlases and transferred 0x72 animation frames retain their source sizes
+and use integer scaling; generated fallback PNGs are32×32. Existing tests and provisional game rules are recorded
 in `docs/DEVELOPMENT.de.md` and `production/development-plan.md`.
 
 Some source skills contain Claude preprocessing:

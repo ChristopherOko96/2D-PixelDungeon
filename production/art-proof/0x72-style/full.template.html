@@ -1,0 +1,1550 @@
+<title>0x72 Krypta-Gesamtsatz</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: the approved torch-lit dossier, now as a full catalogue - heroes, crypt enemies, bosses, later worlds, the crypt floor and props. */
+:root {
+  --void: #13111c;
+  --stone: #1f1b28;
+  --stone-2: #2b2535;
+  --line: #3d3448;
+  --bone: #efe6d6;
+  --muted: #a99d93;
+  --torch: #f0a03a;
+  --blood: #da4e38;
+  --teal: #72d6ce;
+  --jade: #97da3f;
+  --font-display: "Silkscreen", "Courier New", monospace;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", Consolas, monospace;
+  color-scheme: dark;
+}
+html, body { background: var(--void); color: var(--bone); }
+body { font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 28px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 40px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 400; letter-spacing: 0.02em; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(26px, 4vw, 40px); color: var(--torch); }
+h2 { font-size: 20px; }
+h3 { font-size: 14px; }
+p { margin: 0; max-width: 72ch; }
+.lead { color: var(--muted); }
+header { display: grid; gap: 14px; }
+nav { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; }
+nav a { color: var(--teal); text-decoration: none; border-bottom: 1px dotted var(--line); }
+nav a:hover { color: var(--torch); }
+.howto { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; font-size: 14px; color: var(--muted); }
+code, .tag { font-family: var(--font-mono); font-size: 12.5px; color: var(--torch); background: var(--stone-2); border: 1px solid var(--line); padding: 1px 6px; border-radius: 3px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; font-size: 13px; color: var(--muted); }
+.fps { font-family: var(--font-mono); color: var(--teal); font-variant-numeric: tabular-nums; }
+section { display: grid; gap: 14px; scroll-margin-top: 12px; }
+.section-head { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); gap: 16px; }
+.grid.wide { grid-template-columns: repeat(auto-fit, minmax(min(100%, 560px), 1fr)); }
+.card { background: var(--stone); border: 1px solid var(--line); border-radius: 4px; padding: 12px; display: grid; gap: 9px; min-width: 0; align-content: start; }
+.card-head { display: flex; gap: 8px; align-items: baseline; justify-content: space-between; flex-wrap: wrap; }
+.stage { background: #0d0b13; border: 1px solid var(--line); display: grid; place-items: center; overflow: hidden; min-height: 110px; }
+canvas { image-rendering: pixelated; image-rendering: crisp-edges; display: block; max-width: 100%; }
+.stage canvas, .room-stage canvas { cursor: crosshair; }
+.row { display: flex; flex-wrap: wrap; gap: 5px; }
+button { font-family: var(--font-body); font-size: 12.5px; color: var(--bone); background: var(--stone-2); border: 1px solid var(--line); border-radius: 3px; padding: 4px 9px; cursor: pointer; }
+button:hover { border-color: var(--torch); }
+button:focus-visible { outline: 2px solid var(--torch); outline-offset: 1px; }
+button[aria-pressed="true"] { border-color: var(--torch); color: var(--torch); }
+button.hurt { border-color: #6b2f2a; }
+button.hurt:hover { border-color: var(--blood); color: #ffb3a6; }
+.label { font-size: 11.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.note { font-size: 13px; color: var(--muted); }
+.status { font-family: var(--font-mono); font-size: 12px; color: var(--teal); min-height: 1.4em; }
+details { font-size: 13px; }
+summary { cursor: pointer; color: var(--muted); }
+.parts { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 4px 12px; margin-top: 6px; }
+.part { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center; font-size: 12.5px; }
+.part span:last-child { font-family: var(--font-mono); }
+.bar { grid-column: 1 / -1; height: 4px; background: var(--stone-2); }
+.bar i { display: block; height: 100%; background: var(--blood); }
+.part.gone { color: #6f6560; text-decoration: line-through; }
+.badge { font-family: var(--font-mono); font-size: 11px; padding: 0 5px; border-radius: 3px; border: 1px solid var(--line); }
+.badge.new { color: var(--jade); border-color: #3f5f2a; }
+.badge.kit { color: var(--teal); border-color: #2c5a57; }
+.badge.orig { color: var(--muted); }
+.badge.user { color: #d9a8ff; border-color: #5f2d56; }
+.thumbs { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.thumb { background: var(--stone); border: 1px solid var(--line); padding: 6px; display: grid; gap: 4px; text-align: left; color: var(--muted); font-size: 12px; }
+.thumb[aria-pressed="true"] { border-color: var(--torch); color: var(--torch); }
+.thumb img { image-rendering: pixelated; width: 100%; height: auto; }
+.room-stage { overflow-x: auto; background: #0d0b13; border: 1px solid var(--line); }
+.props { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; }
+.prop { background: var(--stone); border: 1px solid var(--line); padding: 8px; display: grid; gap: 5px; justify-items: center; font-size: 12px; color: var(--muted); text-align: center; }
+.lic { font-family: var(--font-mono); font-size: 11.5px; }
+.ok { color: var(--teal); }
+.warn { color: var(--torch); }
+.open { display: grid; gap: 8px; }
+.open li { max-width: 86ch; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Krypta-Gesamtsatz 0x72</h1>
+    <p class="lead">Der vollständige Satz auf Basis der freigegebenen Stilprobe: alle Helden, alle Gegner der Krypta mit Nebenbossen und Endboss, die Gegner der späteren Welten, alle zehn Räume einer Krypta-Ebene und die Requisiten. Jede Figur ist in Teile zerlegt und läuft in der Bildrate deines Monitors.</p>
+    <nav aria-label="Abschnitte"><a href="#helden">Helden</a><a href="#krypta">Krypta-Gegner</a><a href="#nebenbosse">Nebenbosse</a><a href="#boss">Endboss</a><a href="#welten">Welten 2–4</a><a href="#ebene">Krypta-Ebene</a><a href="#requisiten">Requisiten</a><a href="#offen">Offene Punkte</a></nav>
+    <div class="howto">
+      <span>Feedback pro Kennung, z. B. <code>H2: Ja</code>, <code>B1: Strahl breiter</code>.</span>
+      <span><span class="badge orig">Original</span> 0x72-Pixel · <span class="badge kit">Zusammengesetzt</span> aus Paketteilen · <span class="badge new">Neu gezeichnet</span> in 0x72-Palette</span>
+    </div>
+    <div class="toolbar" role="group" aria-label="Darstellung">
+      <span class="label">Raster</span>
+      <button id="grid-game" aria-pressed="true">Spiel (2×)</button>
+      <button id="grid-strict" aria-pressed="false">Streng (1×)</button>
+      <span class="label">Tempo</span>
+      <button id="speed-1" aria-pressed="true">Normal</button>
+      <button id="speed-q" aria-pressed="false">Zeitlupe ¼</button>
+      <button id="pause" aria-pressed="false">Pause</button>
+      <span class="fps" id="fps">– Bilder/s</span>
+    </div>
+  </header>
+
+  <section id="helden" aria-labelledby="h-helden">
+    <div class="section-head"><h2 id="h-helden">Helden</h2><span class="note">Die drei Klassen und die Echse für später. Jeder Held greift mit seiner Klassenwaffe an.</span></div>
+    <div class="grid" data-group="heroes"></div>
+  </section>
+
+  <section id="krypta" aria-labelledby="h-krypta">
+    <div class="section-head"><h2 id="h-krypta">Krypta-Gegner · Etage 1–10</h2><span class="note">Nur Untote. Klicke auf Teile, um sie abzuschlagen.</span></div>
+    <div class="grid" data-group="crypt"></div>
+  </section>
+
+  <section id="nebenbosse" aria-labelledby="h-neben">
+    <div class="section-head"><h2 id="h-neben">Nebenbosse · etwa jede 3. Etage</h2><span class="note">Der Riesen-Zombie in drei Untoten-Varianten: dieselben Pixel, andere Farben. Gesamt-LP = Summe der Teile.</span></div>
+    <div class="grid wide" data-group="mini"></div>
+  </section>
+
+  <section id="boss" aria-labelledby="h-boss">
+    <div class="section-head"><h2 id="h-boss">Endboss · Etage 10</h2><span class="note">Der Leerenrufer aus deinem Blatt. Leerenstrahl, nekromantische Seelensalve, beschwört Skelett-Bogenschützen. Der Schläfer der Tiefe ist zurückgestellt.</span></div>
+    <div class="grid wide" data-group="boss"></div>
+  </section>
+
+  <section id="welten" aria-labelledby="h-welten">
+    <div class="section-head"><h2 id="h-welten">Welten 2–4 · Ausblick</h2><span class="note">Gegner aus dem 0x72-Paket für die späteren Welten, automatisch zerlegt. Die Reihenfolge der Welten ist noch offen.</span></div>
+    <div class="grid wide" data-group="worlds"></div>
+  </section>
+
+  <section id="ebene" aria-labelledby="h-ebene">
+    <div class="section-head"><h2 id="h-ebene">Krypta-Ebene · R1–R10</h2><span class="tag" id="room-meta"></span></div>
+    <p class="note">Alle zehn Räume einer Ebene aus eurem Generator (Seed 4242). R1 ist der Eingang, R10 der Bossraum mit Treppe. Wähle einen Raum: Held:innen und Gegner kämpfen darin automatisch, Klicks auf Gegner schlagen Teile ab.</p>
+    <div class="thumbs" id="thumbs"></div>
+    <div class="toolbar">
+      <button id="light" aria-pressed="true">Licht an</button>
+      <button id="room-zoom" aria-pressed="false">Zoom 2×</button>
+      <button id="room-reset">Figuren zurücksetzen</button>
+    </div>
+    <div class="room-stage"><canvas id="room-canvas" aria-label="Krypta-Raum mit kämpfenden Figuren"></canvas></div>
+  </section>
+
+  <section id="requisiten" aria-labelledby="h-props">
+    <div class="section-head"><h2 id="h-props">P1 · Requisiten und Kacheln</h2></div>
+    <div class="props" id="prop-list"></div>
+  </section>
+
+  <section id="offen" aria-labelledby="h-offen">
+    <h2 id="h-offen">Offene Punkte</h2>
+    <ul class="open">
+      <li><b>Lizenzen:</b> <span class="lic ok">0x72 DungeonTileset II: CC0</span>. Fackeln und Kerzensäulen kommen aus <span class="lic warn">dungeontiles-extended</span> ohne Lizenzhinweis. Vor dem Einbau ins Repo klären oder durch eigene Fackeln ersetzen.</li>
+      <li><b>Leerenrufer (B1):</b> Die 8 Körperbilder stammen aus deinem Blatt. <span class="lic warn">Herkunft und Lizenz offen</span>: Bitte nenne die Quelle, bevor das Wesen ins Repo kommt. Das Blatt schneidet die Figur unten ab; der ausfransende Unterteil, die Klauen, das Leerenauge und das Schädel-Geschoss sind neu gezeichnet.</li>
+      <li><b>Zurückgestellt:</b> der Schläfer der Tiefe (Tentakel-Boss). Seine Daten bleiben in <code>sleeper.json</code>, er ist nur nicht mehr auf dieser Seite.</li>
+      <li><b>Neu gezeichnet:</b> der Schild des Schildskeletts, in der 0x72-Palette mit schwarzer Kontur, aber nicht vom Original-Künstler.</li>
+      <li><b>Seitentüren:</b> 0x72 hat nur Türen von vorn. Ost-/West-Durchgänge sind Öffnungen mit Kerzensäulen. Mit den Isaac-Etagen (Schritt 5) bekommen Nord-/Süd-Türen die Original-Türblätter.</li>
+      <li><b>Welten 2–4:</b> Für die Stein-Welt gibt es im Paket keinen Boss. Infrage kämen der Golem aus dem Enchanted-Forest-Paket (Lizenz offen) oder ein Farbwechsel des Ogers.</li>
+      <li><b>Nächster Schritt nach deinem Ja:</b> das Teile-System 1:1 nach Godot übertragen und die Figuren ins Spiel einbauen, danach die Kampfregeln für Körperteile.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+/*__ASSETS__*/
+/*__ROOMS__*/
+/*__SLEEPER__*/
+/*__VOID__*/
+
+// ================================================================= basics
+const IMG = {};
+function loadImages() {
+  return Promise.all(Object.entries(ASSETS).map(([key, src]) => new Promise((resolve) => {
+    const image = new Image(); image.onload = () => { IMG[key] = image; resolve(); }; image.onerror = () => resolve(); image.src = src;
+  })));
+}
+const settings = { S: 2, speed: 1, paused: window.matchMedia("(prefers-reduced-motion: reduce)").matches, light: true };
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, k) => a + (b - a) * k;
+const easeOut = (k) => 1 - Math.pow(1 - clamp(k, 0, 1), 3);
+const easeIn = (k) => Math.pow(clamp(k, 0, 1), 2);
+const easeInOut = (k) => { k = clamp(k, 0, 1); return k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; };
+const seg = (u, a, b) => clamp((u - a) / (b - a), 0, 1);
+const rnd = (a, b) => a + Math.random() * (b - a);
+const pick = (list) => list[Math.floor(Math.random() * list.length)];
+
+// New pixel art (0x72 palette): the skeleton guard's shield.
+const SHIELD = { palette: { A: "#222222", M: "#b6cbcf", W: "#aa8d7a", w: "#775c55", B: "#72d6ce" }, rows: [
+  "..AAAAA..", ".AMMMMMA.", "AMWWwWWMA", "AMWWBWWMA", "AMWBBBWMA", "AMwWBWwMA", "AMWWWWWMA", ".AMWwWMA.", "..AMWMA..", "...AMA...", "....A...." ] };
+function pixelsToCanvas(rows, palette) {
+  const c = document.createElement("canvas"); c.width = rows[0].length; c.height = rows.length;
+  const ctx = c.getContext("2d");
+  rows.forEach((row, y) => [...row].forEach((ch, x) => { if (palette[ch]) { ctx.fillStyle = palette[ch]; ctx.fillRect(x, y, 1, 1); } }));
+  return c;
+}
+function mirrorHalves(halves) { return halves.map((h) => h + [...h].reverse().join("")); }
+
+// ================================================================= rig definitions
+// Rects are inclusive pixel boxes [x0,y0,x1,y1] on the original frame; each
+// opaque pixel belongs to the first part whose box contains it.
+const BONE = "Knochen";
+const DEFS = {
+  // ---- heroes
+  knight: { img: "knight", family: "hero", attack: "sword", ground: [8, 27], width: 11, parts: [
+    { id: "foot_l", rects: [[3, 25, 6, 27]], pivot: [5, 25], parent: null, z: 1 },
+    { id: "foot_r", rects: [[9, 25, 12, 27]], pivot: [10, 25], parent: null, z: 1 },
+    { id: "plume", rects: [[0, 8, 11, 11]], pivot: [6, 12], parent: "body", z: 3 },
+    { id: "body", rects: [[3, 12, 14, 25]], pivot: [8, 25], parent: null, z: 2 } ],
+    items: [{ id: "weapon", img: "knight_sword", grip: [4.5, 25.5], hand: [13, 21], parent: "body", rest: 0.35, z: 4, tip: [4.5, 1] }] },
+  elf: { img: "elf", family: "hero", attack: "bow", ground: [7, 27], width: 11, parts: [
+    { id: "foot_l", rects: [[0, 26, 6, 27]], pivot: [4, 26], parent: null, z: 1 },
+    { id: "foot_r", rects: [[7, 26, 15, 27]], pivot: [9, 26], parent: null, z: 1 },
+    { id: "body", rects: [[0, 21, 15, 25]], pivot: [7, 25], parent: null, z: 2 },
+    { id: "head", rects: [[0, 12, 15, 20]], pivot: [7, 21], parent: "body", z: 3 } ],
+    items: [{ id: "weapon", img: "bow", bow: true, grip: [10.5, 13], hand: [14, 22], parent: "body", rest: 0, z: 4, tip: [7.5, 13] }] },
+  wizard: { img: "wizard", family: "hero", attack: "staff", ground: [8, 27], width: 11, parts: [
+    { id: "robe", rects: [[3, 23, 15, 27]], pivot: [8, 27], parent: null, z: 1 },
+    { id: "head", rects: [[3, 17, 15, 22]], pivot: [8, 23], parent: "robe", z: 2 },
+    { id: "hat", rects: [[0, 9, 15, 16]], pivot: [8, 16], parent: "head", z: 3 } ],
+    items: [{ id: "weapon", img: "green_staff", grip: [3.5, 18], hand: [14, 22], parent: "robe", rest: 0.1, z: 4, tip: [2.5, 3] }] },
+  lizard: { img: "lizard", family: "hero", attack: "claw", ground: [8, 27], width: 11, parts: [
+    { id: "foot_l", rects: [[3, 25, 7, 27]], pivot: [5, 25], parent: null, z: 1 },
+    { id: "foot_r", rects: [[8, 25, 12, 27]], pivot: [10, 25], parent: null, z: 1 },
+    { id: "body", rects: [[0, 20, 15, 24]], pivot: [8, 24], parent: null, z: 2 },
+    { id: "head", rects: [[0, 9, 15, 19]], pivot: [8, 20], parent: "body", z: 3 } ] },
+  // ---- crypt
+  skeleton: skeletonDef([{ id: "weapon", img: "rusty_sword", grip: [4.5, 18], hand: [11, 13], parent: "torso", rest: 0.55, z: 4, tip: [4.5, 1], hp: 1, label: "Schwert", disables: "attack" }]),
+  skel_archer: skeletonDef([{ id: "weapon", img: "bow", bow: true, grip: [10.5, 13], hand: [12, 12], parent: "torso", rest: 0, z: 4, tip: [7.5, 13], hp: 1, label: "Bogen", disables: "attack" }], "bow"),
+  skel_guard: skeletonDef([
+    { id: "weapon", img: "knife", grip: [3, 10], hand: [5, 13], parent: "torso", rest: -0.3, z: 0, tip: [3, 1], hp: 1, label: "Dolch", disables: "attack" },
+    { id: "shield", img: "shield", grip: [4, 5], hand: [12, 11], parent: "torso", rest: 0, z: 5, tip: [4, 5], hp: 3, label: "Schild", disables: "block" } ], "guard"),
+  necro: { img: "necro", family: "necro", ground: [7, 22], width: 12, parts: [
+    { id: "robe", rects: [[0, 19, 15, 22]], pivot: [7, 22], parent: null, z: 1, hp: 6, label: "Kutte", vital: true },
+    { id: "hood", rects: [[0, 8, 15, 18]], pivot: [7, 19], parent: "robe", z: 2, hp: 6, label: "Kopf", vital: true } ],
+    items: [{ id: "weapon", img: "red_staff", grip: [3.5, 18], hand: [14, 17], parent: "hood", rest: 0.12, z: 3, tip: [2.5, 3], hp: 2, label: "Stab", disables: "cast" }] },
+  tiny_zombie: { img: "tiny_zombie", family: "biped", ground: [8, 15], width: 8, parts: [
+    { id: "foot_l", rects: [[4, 13, 7, 15]], pivot: [6, 13], parent: null, z: 1, hp: 1, label: "Linker Fuß" },
+    { id: "foot_r", rects: [[8, 13, 12, 15]], pivot: [10, 13], parent: null, z: 1, hp: 1, label: "Rechter Fuß" },
+    { id: "head", rects: [[4, 6, 12, 12]], pivot: [8, 13], parent: null, z: 2, hp: 2, label: "Kopf", vital: true } ] },
+  ice_zombie: { img: "ice_zombie", family: "skeleton", ground: [8, 15], width: 8, parts: [
+    { id: "leg_l", rects: [[4, 14, 7, 15]], pivot: [6, 14], parent: null, z: 1, hp: 2, label: "Linkes Bein" },
+    { id: "leg_r", rects: [[8, 14, 11, 15]], pivot: [10, 14], parent: null, z: 1, hp: 2, label: "Rechtes Bein" },
+    { id: "torso", rects: [[4, 10, 11, 13]], pivot: [8, 13], parent: null, z: 2, hp: 3, label: "Rumpf", alsoDetach: ["leg_l", "leg_r"] },
+    { id: "skull", rects: [[4, 0, 11, 9]], pivot: [8, 10], parent: "torso", z: 3, hp: 3, label: "Kopf", vital: true } ], items: [] },
+  // ---- bosses
+  big_zombie: bruteDef("big_zombie", null),
+  frost_corpse: bruteDef("big_zombie", { "#4ba747": "#b6cbcf", "#97da3f": "#fdf7ed", "#775c55": "#417089", "#aa8d7a": "#72d6ce", "#483b3a": "#2a2a3a" }),
+  bone_colossus: bruteDef("big_zombie", { "#4ba747": "#8a8a8a", "#97da3f": "#c9c9c9", "#775c55": "#aa8d7a", "#aa8d7a": "#fdf7ed", "#483b3a": "#5f2d56", "#333333": "#3d2140" }),
+};
+function skeletonDef(items, variant = "sword") {
+  return { img: "skelet", family: "skeleton", variant, ground: [8, 15], width: 9, parts: [
+    { id: "leg_l", rects: [[4, 14, 7, 15]], pivot: [6, 14], parent: null, z: 1, hp: 2, label: "Linkes Bein" },
+    { id: "leg_r", rects: [[8, 14, 11, 15]], pivot: [10, 14], parent: null, z: 1, hp: 2, label: "Rechtes Bein" },
+    { id: "torso", rects: [[4, 11, 11, 13]], pivot: [8, 13], parent: null, z: 2, hp: 3, label: "Rumpf", alsoDetach: ["leg_l", "leg_r"] },
+    { id: "skull", rects: [[3, 2, 12, 10]], pivot: [8, 10], parent: "torso", z: 3, hp: 3, label: "Schädel", vital: true } ], items };
+}
+function bruteDef(img, recolor) {
+  return { img, recolor, family: "brute", ground: [16, 35], width: 18, parts: [
+    { id: "arm", rects: [[11, 16, 12, 16], [10, 17, 12, 17], [9, 18, 12, 18], [8, 19, 11, 19], [8, 20, 11, 20], [7, 21, 12, 21], [7, 22, 12, 22], [7, 23, 11, 23], [7, 24, 10, 24], [7, 25, 10, 25], [7, 26, 10, 26]], pivot: [12, 17], parent: "torso", z: 4, hp: 20, label: "Arm", disables: "attack", regrow: 6 },
+    { id: "leg_l", rects: [[7, 29, 15, 35]], pivot: [11, 29], parent: null, z: 1, hp: 15, label: "Linkes Bein" },
+    { id: "leg_r", rects: [[16, 29, 25, 35]], pivot: [20, 29], parent: null, z: 1, hp: 15, label: "Rechtes Bein" },
+    { id: "head", rects: [[12, 9, 25, 21]], pivot: [18, 21], parent: "torso", z: 3, hp: 30, label: "Kopf", vital: true },
+    { id: "torso", rects: [[7, 22, 25, 28]], pivot: [16, 28], parent: null, z: 2, hp: 40, label: "Rumpf", vital: true } ], items: [] };
+}
+
+// Later worlds: automatically split figures (head / body / feet).
+const AUTO = {
+  goblin: { img: "goblin", kind: "small", weapon: "knife" }, masked_orc: { img: "masked_orc", kind: "small", weapon: "spear" },
+  orc_warrior: { img: "orc_warrior", kind: "small", weapon: "axe" }, orc_shaman: { img: "orc_shaman", kind: "small", weapon: "red_staff" },
+  ogre: { img: "ogre", kind: "big", weapon: "big_hammer" }, imp: { img: "imp", kind: "small" }, chort: { img: "chort", kind: "small", weapon: "cleaver" },
+  wogol: { img: "wogol", kind: "small", weapon: "mace" }, big_demon: { img: "big_demon", kind: "big" },
+  muddy: { img: "muddy", kind: "blob" }, swampy: { img: "swampy", kind: "blob" }, slug: { img: "slug", kind: "blob" }, tiny_slug: { img: "tiny_slug", kind: "blob" },
+};
+const WEAPON_GRIPS = { knife: [3, 10], spear: [3, 22], axe: [4.5, 16], red_staff: [3.5, 18], big_hammer: [5, 30], cleaver: [4.5, 15], mace: [5, 19] };
+
+function sourceCanvas(def) {
+  const img = def.img === "shield" ? pixelsToCanvas(SHIELD.rows, SHIELD.palette) : IMG[def.img];
+  const c = document.createElement("canvas"); c.width = img.width; c.height = img.height;
+  const ctx = c.getContext("2d"); ctx.drawImage(img, 0, 0);
+  if (def.recolor) {
+    const data = ctx.getImageData(0, 0, c.width, c.height);
+    const map = Object.fromEntries(Object.entries(def.recolor).map(([a, b]) => [a.slice(1).toLowerCase(), b]));
+    for (let p = 0; p < data.data.length; p += 4) {
+      const hex = [0, 1, 2].map((i) => data.data[p + i].toString(16).padStart(2, "0")).join("");
+      if (map[hex]) { const v = parseInt(map[hex].slice(1), 16); data.data[p] = v >> 16; data.data[p + 1] = (v >> 8) & 255; data.data[p + 2] = v & 255; }
+    }
+    ctx.putImageData(data, 0, 0);
+  }
+  return c;
+}
+
+function autoDef(name) {
+  const spec = AUTO[name], img = IMG[spec.img];
+  const c = document.createElement("canvas"); c.width = img.width; c.height = img.height;
+  const ctx = c.getContext("2d"); ctx.drawImage(img, 0, 0);
+  const d = ctx.getImageData(0, 0, c.width, c.height).data;
+  let top = c.height, bottom = 0, left = c.width, right = 0;
+  for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) if (d[(y * c.width + x) * 4 + 3] > 127) { top = Math.min(top, y); bottom = Math.max(bottom, y); left = Math.min(left, x); right = Math.max(right, x); }
+  const h = bottom - top + 1, mid = Math.round((left + right) / 2), cx = mid;
+  const def = { img: spec.img, family: spec.kind === "blob" ? "blob" : "biped", ground: [cx, bottom], width: Math.max(8, right - left - 2), auto: true, parts: [], items: [] };
+  if (spec.kind === "blob") {
+    def.parts = [{ id: "body", rects: [[0, 0, c.width - 1, c.height - 1]], pivot: [cx, bottom], parent: null, z: 1, hp: 3, label: "Körper", vital: true }];
+  } else {
+    const feet = spec.kind === "big" ? 6 : 2, headEnd = top + Math.round((h - feet) * (spec.kind === "big" ? 0.5 : 0.62));
+    def.parts = [
+      { id: "foot_l", rects: [[0, bottom - feet + 1, mid - 1, bottom]], pivot: [mid - 2, bottom - feet + 1], parent: null, z: 1, hp: 2, label: "Linkes Bein" },
+      { id: "foot_r", rects: [[mid, bottom - feet + 1, c.width - 1, bottom]], pivot: [mid + 2, bottom - feet + 1], parent: null, z: 1, hp: 2, label: "Rechtes Bein" },
+      { id: "body", rects: [[0, headEnd + 1, c.width - 1, bottom - feet]], pivot: [cx, bottom - feet], parent: null, z: 2, hp: 3, label: "Körper", vital: true },
+      { id: "head", rects: [[0, 0, c.width - 1, headEnd]], pivot: [cx, headEnd + 1], parent: "body", z: 3, hp: 3, label: "Kopf", vital: true } ];
+    if (spec.weapon) {
+      const wi = IMG[spec.weapon], grip = WEAPON_GRIPS[spec.weapon] || [wi.width / 2, wi.height * 0.7];
+      def.items = [{ id: "weapon", img: spec.weapon, grip, hand: [right, Math.round(lerp(headEnd, bottom - feet, 0.6))], parent: "body", rest: 0.45, z: 4, tip: [wi.width / 2, 1], hp: 1, label: "Waffe", disables: "attack" }];
+    }
+  }
+  return def;
+}
+
+// ================================================================= rig building
+const RIGS = {};
+function bakeMask(canvas) {
+  const w = canvas.width, h = canvas.height, d = canvas.getContext("2d").getImageData(0, 0, w, h).data;
+  const mask = new Uint8Array(w * h), white = document.createElement("canvas"); white.width = w; white.height = h;
+  const wctx = white.getContext("2d"), wo = wctx.createImageData(w, h);
+  let cx = 0, cy = 0, n = 0;
+  for (let p = 0; p < w * h; p++) if (d[p * 4 + 3] > 127) { mask[p] = 1; n++; cx += p % w; cy += Math.floor(p / w); wo.data[p * 4] = wo.data[p * 4 + 1] = wo.data[p * 4 + 2] = wo.data[p * 4 + 3] = 255; }
+  wctx.putImageData(wo, 0, 0);
+  return { mask, white, center: [n ? cx / n + 0.5 : w / 2, n ? cy / n + 0.5 : h / 2] };
+}
+function buildRig(name, def) {
+  const source = sourceCanvas(def), w = source.width, h = source.height;
+  const data = source.getContext("2d").getImageData(0, 0, w, h).data;
+  const owner = new Int16Array(w * h).fill(-1);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (data[(y * w + x) * 4 + 3] < 128) continue;
+    for (let i = 0; i < def.parts.length; i++) if (def.parts[i].rects.some(([x0, y0, x1, y1]) => x >= x0 && x <= x1 && y >= y0 && y <= y1)) { owner[y * w + x] = i; break; }
+  }
+  const parts = def.parts.map((part, index) => {
+    const canvas = document.createElement("canvas"); canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext("2d"), out = ctx.createImageData(w, h);
+    for (let p = 0; p < w * h; p++) if (owner[p] === index) for (let c = 0; c < 4; c++) out.data[p * 4 + c] = data[p * 4 + c];
+    ctx.putImageData(out, 0, 0);
+    return { ...part, canvas, w, h, ...bakeMask(canvas) };
+  });
+  const items = (def.items || []).map((item) => {
+    const canvas = sourceCanvas({ img: item.img });
+    if (item.bow) { // remove the string; it is drawn per frame so it can be pulled
+      const ctx = canvas.getContext("2d"), d = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      for (let p = 0; p < canvas.width * canvas.height; p++) { const x = p % canvas.width; if (x >= 7 && x <= 8 && d.data[p * 4] === 0xd3 && d.data[p * 4 + 1] === 0xbf) d.data[p * 4 + 3] = 0; }
+      ctx.putImageData(d, 0, 0);
+    }
+    return { ...item, canvas, w: canvas.width, h: canvas.height, isItem: true, ...bakeMask(canvas) };
+  });
+  RIGS[name] = { name, def, w, h, parts, items, byId: Object.fromEntries([...parts, ...items].map((p) => [p.id, p])) };
+}
+
+// ================================================================= actors
+const CLIPS = {
+  hero: { attack: 0.5, dodge: 0.45, hit: 0.32, death: 1.4, cheer: 0.8 },
+  skeleton: { attack: 0.7, block: 0.9, hit: 0.3, rise: 1.1 },
+  necro: { attack: 0.95, summon: 1.4, hit: 0.32, death: 1.6 },
+  biped: { attack: 0.55, hit: 0.3, death: 0.9 },
+  blob: { attack: 0.6, hit: 0.3, death: 0.9 },
+  brute: { attack: 1.15, roar: 1.0, hit: 0.3, death: 1.6 },
+  sleeper: { attack: 0.9, slam: 1.3, gaze: 1.4, hit: 0.3, death: 2.2 },
+  void: { attack: 1.2, beam: 2.8, summon: 1.8, hit: 0.3, death: 2.4 },
+};
+function makeActor(type, x, y, opts = {}) {
+  const rig = RIGS[type], family = rig.def.family;
+  const a = { type, rig, family, x, y, face: opts.face || 1, t: rnd(0, 3), clip: null, ct: 0, moving: false, walk: false,
+    flash: 0, alpha: 1, dead: false, lost: {}, hp: {}, regrowIn: {}, regrowing: {}, trail: [], events: {}, home: [x, y], speed: opts.speed ?? 14, target: null, wanderTimer: rnd(0.4, 2), onChange: null, team: opts.team || "enemy", cooldown: rnd(0.5, 2) };
+  for (const p of [...rig.parts, ...rig.items]) if (p.hp) a.hp[p.id] = p.hp;
+  if (family === "sleeper") { a.tentacles = SLEEPER.tentacle.roots.map((r, i) => ({ id: `t${i}`, root: r, len: SLEEPER.tentacle.segments, cut: false, pts: [] })); a.tentacles.forEach((t) => (a.hp[t.id] = 15)); }
+  if (family === "void") { a.minions = []; a.beamCd = 0; }
+  a.maxHp = Object.values(a.hp).reduce((s, v) => s + v, 0);
+  return a;
+}
+function play(a, clip) { if (a.dead && clip !== "rise") return; a.clip = clip; a.ct = 0; a.events = {}; if (clip === "hit") a.flash = 1; }
+const durationOf = (a, clip) => CLIPS[a.family][clip] || 0.5;
+
+// ================================================================= poses
+function blank() { return { whole: { dx: 0, dy: 0, rot: 0, sx: 1, sy: 1, pivot: null }, parts: {}, items: {}, trail: false, pull: 0 }; }
+function P(pose, id) { return pose.parts[id] || (pose.parts[id] = { dx: 0, dy: 0, rot: 0, sx: 1, sy: 1, alpha: 1 }); }
+function I(pose, id) { return pose.items[id] || (pose.items[id] = { dx: 0, dy: 0, rot: 0 }); }
+function walkLegs(pose, l, r, ph, stride, lift) {
+  P(pose, l).dx = Math.sin(ph) * stride; P(pose, l).dy = -Math.max(0, Math.cos(ph)) * lift;
+  P(pose, r).dx = -Math.sin(ph) * stride; P(pose, r).dy = -Math.max(0, -Math.cos(ph)) * lift;
+}
+function strikeCurve(pose, u, a0, a1, windEnd, hitEnd, id = "weapon") {
+  // Returns 0..1 lunge and sets the item rotation: wind up, strike, recover.
+  const w = I(pose, id);
+  if (u < windEnd) { const k = easeInOut(u / windEnd); w.rot = a0 * k; return -0.3 * k; }
+  if (u < hitEnd) { const k = easeOut(seg(u, windEnd, hitEnd)); w.rot = lerp(a0, a1, k); pose.trail = true; return -0.3 + 1.3 * k; }
+  const k = easeInOut(seg(u, hitEnd, 1)); w.rot = a1 * (1 - k); return (1 - k);
+}
+function bowDraw(pose, u, release = 0.62) {
+  // Pull the string, release the arrow, string vibrates.
+  if (u < release) { pose.pull = easeOut(u / release) * 5; pose.nock = true; }
+  else { const k = seg(u, release, 1); pose.pull = -1.2 * Math.sin(k * 30) * (1 - k); }
+}
+
+const POSES = {
+  hero(a) {
+    const pose = blank(), t = a.t, b = Math.sin(t * TAU / 1.3), has = (id) => !!a.rig.byId[id];
+    pose.whole.sy = 1 + 0.025 * b; pose.whole.sx = 1 - 0.018 * b;
+    if (has("plume")) P(pose, "plume").rot = 0.06 * Math.sin(t * TAU / 1.3 + 0.8);
+    if (has("hat")) P(pose, "hat").rot = 0.05 * Math.sin(t * TAU / 1.3 + 0.6);
+    if (has("head")) P(pose, "head").dy = -0.4 * b;
+    if (has("robe")) { P(pose, "robe").sx = 1 + 0.03 * Math.sin(t * TAU / 0.9); }
+    I(pose, "weapon").rot = 0.05 * b; I(pose, "weapon").dy = -0.5 * b;
+    if (a.moving) {
+      const ph = t * TAU / 0.42;
+      pose.whole.dy = -Math.abs(Math.sin(ph)) * 1.6; pose.whole.rot = 0.07; pose.whole.sy = pose.whole.sx = 1;
+      if (has("foot_l")) walkLegs(pose, "foot_l", "foot_r", ph, 2.2, 1.4);
+      if (has("plume")) P(pose, "plume").rot = -0.28 - 0.1 * Math.sin(ph * 2);
+      if (has("hat")) P(pose, "hat").rot = -0.2 - 0.08 * Math.sin(ph * 2);
+      if (has("robe")) P(pose, "robe").rot = -0.08 + 0.06 * Math.sin(ph);
+      I(pose, "weapon").rot = 0.2 * Math.sin(ph);
+    }
+    const u = a.clip ? a.ct / durationOf(a, a.clip) : 0, style = a.rig.def.attack;
+    if (a.clip === "attack") {
+      if (style === "sword") { const l = strikeCurve(pose, u, -2.1, 1.7, 0.33, 0.55); pose.whole.dx = 2.4 * l; pose.whole.rot = 0.12 * l; if (has("plume")) P(pose, "plume").rot += -0.3 * l; }
+      else if (style === "bow") { bowDraw(pose, u); I(pose, "weapon").rot = 0; pose.whole.rot = -0.05 * (u < 0.62 ? easeOut(u / 0.62) : 1 - seg(u, 0.62, 1)); if (u > 0.62) pose.whole.dx = -1.5 * (1 - seg(u, 0.62, 1)); }
+      else if (style === "staff") { const raise = easeOut(seg(u, 0, 0.45)), thrust = easeOut(seg(u, 0.45, 0.6)), back = easeInOut(seg(u, 0.6, 1)); I(pose, "weapon").rot = (-0.7 * raise + 1.2 * thrust) * (1 - back); I(pose, "weapon").dx = 3 * thrust * (1 - back); if (has("hat")) P(pose, "hat").rot -= 0.2 * raise * (1 - back); }
+      else if (style === "claw") { const coil = easeInOut(seg(u, 0, 0.4)), snap = easeOut(seg(u, 0.4, 0.55)), back = easeInOut(seg(u, 0.6, 1)); pose.whole.dx = (-2 * coil + 7 * snap) * (1 - back); pose.whole.rot = (-0.1 * coil + 0.25 * snap) * (1 - back); P(pose, "head").rot = (-0.3 * coil + 0.4 * snap) * (1 - back); }
+    } else if (a.clip === "dodge") {
+      pose.whole.pivot = [8, a.rig.def.ground[1] - 8]; pose.whole.rot = TAU * easeInOut(u); pose.whole.sy = 1 - 0.25 * Math.sin(Math.PI * u); pose.whole.dy = -2 * Math.sin(Math.PI * u);
+    } else if (a.clip === "hit") {
+      const k = 1 - easeOut(u); pose.whole.dx = -3 * k; pose.whole.rot = -0.18 * k; if (has("plume")) P(pose, "plume").rot = 0.6 * Math.sin(u * 22) * k; if (has("hat")) P(pose, "hat").rot = 0.5 * Math.sin(u * 22) * k;
+    } else if (a.clip === "death" || a.dead) {
+      const uu = a.dead && !a.clip ? 1 : u, fall = easeIn(seg(uu, 0.25, 0.62));
+      pose.whole.rot = -0.12 * Math.sin(uu * 40) * (1 - seg(uu, 0, 0.25)) - (Math.PI / 2) * fall; pose.whole.pivot = [3, a.rig.def.ground[1]]; pose.whole.dy = 2 * fall;
+      if (has("plume")) P(pose, "plume").rot = 0.5 * fall; if (has("hat")) P(pose, "hat").dx = -3 * fall;
+    } else if (a.clip === "cheer") {
+      const j = Math.sin(Math.PI * u); pose.whole.dy = -6 * j; I(pose, "weapon").rot = -1.9 * j; I(pose, "weapon").dy = -3 * j;
+    }
+    return pose;
+  },
+
+  skeleton(a) {
+    const pose = blank(), t = a.t, head = a.rig.byId.skull ? "skull" : "head";
+    const legs = !a.lost.leg_l || !a.lost.leg_r, torso = !a.lost.torso, variant = a.rig.def.variant;
+    P(pose, head).dy = -0.5 * Math.sin(t * TAU / 1.1);
+    if (Math.sin(t * 0.9) > 0.985) P(pose, head).rot = 0.09 * Math.sin(t * 70);
+    I(pose, "weapon").rot = 0.06 * Math.sin(t * TAU / 1.1);
+    if (!torso) {
+      const hop = Math.abs(Math.sin(t * TAU / 0.9)), s = P(pose, head);
+      s.dy = 5 - hop * (a.moving ? 4 : 1.2); s.sy = 1 - 0.18 * (1 - hop); s.sx = 1 + 0.12 * (1 - hop); s.rot = a.moving ? 0.15 * Math.sin(t * TAU / 0.9) : 0;
+      return pose;
+    }
+    if (!legs) {
+      const ph = t * TAU / 0.9, tr = P(pose, "torso");
+      tr.dy = 2; tr.rot = (a.moving ? 0.16 : 0.05) * Math.sin(ph); tr.dx = (a.moving ? 1 : 0.3) * Math.sin(ph);
+      P(pose, head).rot = 0.08 * Math.sin(ph + 1); I(pose, "weapon").rot = 0.3 * Math.sin(ph);
+    } else if (a.moving) {
+      const ph = t * TAU / 0.5;
+      walkLegs(pose, "leg_l", "leg_r", ph, 1.4, 1.1);
+      if (a.lost.leg_l || a.lost.leg_r) { pose.whole.rot = 0.18 * Math.sin(ph); pose.whole.dy = -Math.abs(Math.sin(ph)) * 2; }
+      P(pose, "torso").rot = 0.06 * Math.sin(ph); P(pose, head).dy = -Math.abs(Math.sin(ph)); P(pose, head).rot = 0.05 * Math.sin(ph + 1);
+      I(pose, "weapon").rot = 0.25 * Math.sin(ph);
+    }
+    if (variant === "guard" && !a.lost.shield) { I(pose, "shield").dy = -0.4 * Math.sin(t * TAU / 1.1); }
+    const u = a.clip ? a.ct / durationOf(a, a.clip) : 0;
+    if (a.clip === "attack") {
+      if (variant === "bow") { bowDraw(pose, u, 0.7); P(pose, head).rot = -0.08 * (u < 0.7 ? easeOut(u / 0.7) : 1 - seg(u, 0.7, 1)); }
+      else if (variant === "guard") { const s = easeOut(seg(u, 0.45, 0.6)), back = easeInOut(seg(u, 0.65, 1)); I(pose, "weapon").dx = 5 * s * (1 - back); I(pose, "weapon").rot = (-0.3 + 1.9 * s) * (1 - back); I(pose, "shield").dx = -1 * s * (1 - back); if (s > 0 && s < 1) pose.trail = true; }
+      else { if (u < 0.6) { const k = easeOut(u / 0.6); I(pose, "weapon").rot = -1.9 * k + 0.05 * Math.sin(a.ct * 60) * k; P(pose, head).rot = -0.12 * k; P(pose, head).dx = -1 * k; }
+        else if (u < 0.75) { const k = easeOut(seg(u, 0.6, 0.75)); I(pose, "weapon").rot = -1.9 + 3.4 * k; P(pose, head).rot = -0.12 + 0.25 * k; P(pose, head).dx = -1 + 2 * k; pose.trail = true; }
+        else { const k = easeInOut(seg(u, 0.75, 1)); I(pose, "weapon").rot = 1.5 * (1 - k); P(pose, head).rot = 0.13 * (1 - k); P(pose, head).dx = 1 - k; } }
+    } else if (a.clip === "block") {
+      const k = Math.sin(Math.PI * clamp(u * 1.2, 0, 1)); I(pose, "shield").dx = 2 * k; I(pose, "shield").dy = -1 * k; P(pose, head).dx = -1 * k; P(pose, "torso").rot = -0.06 * k;
+    } else if (a.clip === "hit") {
+      const k = 1 - easeOut(u); P(pose, head).rot = 0.25 * Math.sin(u * 30) * k; P(pose, head).dx = -2 * k; P(pose, "torso").dx = -1 * k;
+    } else if (a.clip === "rise") {
+      for (const part of [...a.rig.parts, ...a.rig.items]) {
+        const from = a.riseFrom && a.riseFrom[part.id]; if (!from) continue;
+        const k = easeInOut(seg(u, part.id === head ? 0.35 : part.isItem ? 0.5 : 0.05, part.id === head || part.isItem ? 1 : 0.7));
+        const p = part.isItem ? I(pose, part.id) : P(pose, part.id);
+        p.dx += (1 - k) * from.dx; p.dy += (1 - k) * from.dy - Math.sin(Math.PI * k) * 6; p.rot += (1 - k) * from.rot;
+      }
+    }
+    return pose;
+  },
+
+  necro(a) {
+    const pose = blank(), t = a.t, f = Math.sin(t * TAU / 1.8);
+    pose.whole.dy = -3 - 1.5 * f;
+    const robe = P(pose, "robe"); robe.sx = 1 + 0.05 * Math.sin(t * TAU / 0.9); robe.rot = 0.05 * Math.sin(t * TAU / 0.9 + 0.5);
+    I(pose, "weapon").dy = -0.8 * Math.sin(t * TAU / 1.8 + 0.4); I(pose, "weapon").rot = 0.05 * Math.sin(t * TAU / 2.2);
+    if (a.moving) { pose.whole.rot = 0.08; robe.rot -= 0.12; }
+    const u = a.clip ? a.ct / durationOf(a, a.clip) : 0;
+    if (a.clip === "attack") { const raise = easeOut(seg(u, 0, 0.5)), drop = easeInOut(seg(u, 0.62, 1)); I(pose, "weapon").rot = -0.5 * raise * (1 - drop); I(pose, "weapon").dy += -4 * raise * (1 - drop); pose.whole.rot = -0.06 * raise * (1 - drop); P(pose, "hood").dy = -raise * (1 - drop); }
+    else if (a.clip === "summon") { const raise = easeOut(seg(u, 0, 0.3)), slam = easeIn(seg(u, 0.3, 0.38)), back = easeInOut(seg(u, 0.6, 1)); I(pose, "weapon").dy += (-5 * raise + 8 * slam) * (1 - back); pose.whole.dy += 2 * slam * (1 - back); }
+    else if (a.clip === "hit") { const k = 1 - easeOut(u); pose.whole.dx = -2.5 * k; pose.whole.rot = -0.15 * k; }
+    else if (a.clip === "death" || a.dead) { const uu = a.dead && !a.clip ? 1 : u, k = easeInOut(seg(uu, 0.1, 0.8)); pose.whole.dy = lerp(pose.whole.dy, 0, k); pose.whole.pivot = [7, 22]; pose.whole.sy = 1 - 0.75 * k; P(pose, "hood").alpha = 1 - easeIn(seg(uu, 0.4, 1)); P(pose, "robe").alpha = 1 - easeIn(seg(uu, 0.55, 1)); }
+    return pose;
+  },
+
+  biped(a) {
+    const pose = blank(), t = a.t, b = Math.sin(t * TAU / 1.2), has = (id) => !!a.rig.byId[id];
+    const legs = !a.lost.foot_l || !a.lost.foot_r;
+    pose.whole.sy = 1 + 0.03 * b; pose.whole.sx = 1 - 0.02 * b;
+    if (has("head")) P(pose, "head").rot = 0.04 * Math.sin(t * TAU / 1.2 + 1);
+    I(pose, "weapon").rot = 0.06 * b;
+    if (!legs) { pose.whole.dy = 2; }
+    if (a.moving) {
+      const ph = t * TAU / 0.46;
+      if (legs) { pose.whole.dy = -Math.abs(Math.sin(ph)) * 1.4; if (has("foot_l")) walkLegs(pose, "foot_l", "foot_r", ph, 1.6, 1.2); }
+      pose.whole.rot = 0.06 + 0.04 * Math.sin(ph); I(pose, "weapon").rot = 0.25 * Math.sin(ph);
+      if (has("head")) P(pose, "head").dy = -Math.abs(Math.sin(ph)) * 0.8;
+    }
+    const u = a.clip ? a.ct / durationOf(a, a.clip) : 0;
+    if (a.clip === "attack") {
+      const coil = easeInOut(seg(u, 0, 0.45)), snap = easeOut(seg(u, 0.45, 0.6)), back = easeInOut(seg(u, 0.65, 1));
+      pose.whole.dx = (-1.5 * coil + 5 * snap) * (1 - back); pose.whole.rot = (-0.12 * coil + 0.2 * snap) * (1 - back);
+      if (a.rig.items.length) { I(pose, "weapon").rot = (-1.8 * coil + 3.2 * snap) * (1 - back); if (snap > 0 && snap < 1) pose.trail = true; }
+      if (has("head")) P(pose, "head").rot += (-0.15 * coil + 0.25 * snap) * (1 - back);
+    } else if (a.clip === "hit") {
+      const k = 1 - easeOut(u); pose.whole.dx = -3 * k; pose.whole.rot = -0.2 * k;
+    } else if (a.clip === "death" || a.dead) {
+      const uu = a.dead && !a.clip ? 1 : u, k = easeIn(seg(uu, 0, 0.6));
+      pose.whole.rot = (Math.PI / 2) * k * -1; pose.whole.pivot = [a.rig.def.ground[0] - 5, a.rig.def.ground[1]]; pose.whole.dy = 1 * k;
+      for (const p of a.rig.parts) P(pose, p.id).alpha = 1 - easeIn(seg(uu, 0.6, 1));
+    }
+    return pose;
+  },
+
+  blob(a) {
+    const pose = blank(), t = a.t, b = Math.sin(t * TAU / 1.0);
+    pose.whole.sy = 1 + 0.06 * b; pose.whole.sx = 1 - 0.06 * b;
+    if (a.moving) { const hop = Math.abs(Math.sin(t * TAU / 0.7)); pose.whole.dy = -hop * 4; pose.whole.sy = 1 + 0.15 * hop - 0.12 * (1 - hop); pose.whole.sx = 1 - 0.1 * hop + 0.12 * (1 - hop); }
+    const u = a.clip ? a.ct / durationOf(a, a.clip) : 0;
+    if (a.clip === "attack") { const c = easeInOut(seg(u, 0, 0.45)), s = easeOut(seg(u, 0.45, 0.6)), back = easeInOut(seg(u, 0.65, 1)); pose.whole.sy = (1 - 0.3 * c + 0.4 * s) * (1 - back) + back; pose.whole.sx = (1 + 0.3 * c - 0.2 * s) * (1 - back) + back; pose.whole.dx = 6 * s * (1 - back); pose.whole.dy = -4 * s * (1 - back); }
+    else if (a.clip === "hit") { const k = 1 - easeOut(u); pose.whole.sx = 1 + 0.3 * k; pose.whole.sy = 1 - 0.3 * k; }
+    else if (a.clip === "death" || a.dead) { const uu = a.dead && !a.clip ? 1 : u, k = easeOut(uu); pose.whole.sy = 1 - 0.85 * k; pose.whole.sx = 1 + 0.6 * k; P(pose, "body").alpha = 1 - easeIn(seg(uu, 0.5, 1)); }
+    return pose;
+  },
+
+  brute(a) {
+    const pose = blank(), t = a.t, b = Math.sin(t * TAU / 1.6), legs = !a.lost.leg_l || !a.lost.leg_r;
+    pose.whole.sy = 1 + 0.03 * b; pose.whole.sx = 1 - 0.02 * b;
+    P(pose, "head").rot = 0.04 * Math.sin(t * TAU / 1.6 + 1); P(pose, "arm").rot = 0.08 * Math.sin(t * TAU / 1.6 + 0.4);
+    if (!legs) P(pose, "torso").dy = 7;
+    if (a.moving) {
+      const ph = t * TAU / 0.8;
+      if (legs) { pose.whole.dy = -Math.abs(Math.sin(ph)) * 2; walkLegs(pose, "leg_l", "leg_r", ph, 2.5, 1.6); }
+      pose.whole.rot = 0.06 * Math.sin(ph); P(pose, "arm").rot = 0.3 * Math.sin(ph); P(pose, "head").dy = -Math.abs(Math.sin(ph));
+      if (!legs) P(pose, "torso").rot = 0.1 * Math.sin(ph);
+    }
+    if (a.regrowing.arm) { const k = 1 - a.regrowing.arm / 1.2, arm = P(pose, "arm"); arm.sx = arm.sy = lerp(0.15, 1, easeOut(k)); }
+    const u = a.clip ? a.ct / durationOf(a, a.clip) : 0;
+    if (a.clip === "attack") {
+      const up = easeInOut(seg(u, 0, 0.45)), down = easeIn(seg(u, 0.45, 0.56)), back = easeInOut(seg(u, 0.7, 1));
+      P(pose, "arm").rot = (-2.3 * up + 3.0 * down) * (1 - back); pose.whole.rot = (-0.1 * up + 0.2 * down) * (1 - back); pose.whole.dx = 3 * down * (1 - back);
+      P(pose, "head").rot = (-0.15 * up + 0.2 * down) * (1 - back); if (u > 0.45 && u < 0.62) pose.trail = true;
+    } else if (a.clip === "roar") { const k = Math.sin(Math.PI * u); P(pose, "head").rot = -0.3 * k + 0.05 * Math.sin(a.ct * 50) * k; P(pose, "head").dy = -2 * k; pose.whole.sx = 1 + 0.06 * k; }
+    else if (a.clip === "hit") { const k = 1 - easeOut(u); pose.whole.dx = -2 * k; P(pose, "head").rot = -0.2 * k; }
+    else if (a.clip === "death" || a.dead) { const uu = a.dead && !a.clip ? 1 : u, fall = easeIn(seg(uu, 0.2, 0.7)); pose.whole.pivot = [26, 35]; pose.whole.rot = (Math.PI / 2.2) * fall; pose.whole.dy = 3 * fall; }
+    return pose;
+  },
+
+  sleeper(a) {
+    const pose = blank(), t = a.t;
+    pose.whole.dy = -6 - 2 * Math.sin(t * TAU / 2.4);
+    P(pose, "mantle").sy = 1 + 0.03 * Math.sin(t * TAU / 2.4); P(pose, "mantle").sx = 1 - 0.02 * Math.sin(t * TAU / 2.4);
+    P(pose, "fin_l").rot = -0.12 * Math.sin(t * TAU / 1.7); P(pose, "fin_r").rot = 0.12 * Math.sin(t * TAU / 1.7);
+    const u = a.clip ? a.ct / durationOf(a, a.clip) : 0;
+    if (a.clip === "gaze") { const k = Math.sin(Math.PI * u); P(pose, "mantle").sx += 0.06 * k; P(pose, "mantle").sy += 0.06 * k; pose.glow = k; }
+    else if (a.clip === "hit") { const k = 1 - easeOut(u); pose.whole.dx = -2 * k; P(pose, "mantle").rot = -0.1 * k; }
+    else if (a.clip === "death" || a.dead) { const uu = a.dead && !a.clip ? 1 : u, k = easeInOut(uu); pose.whole.dy = lerp(pose.whole.dy, 6, k); for (const id of ["mantle", "fin_l", "fin_r", "eye3"]) P(pose, id).alpha = 1 - easeIn(seg(uu, 0.5, 1)); pose.limp = k; }
+    if (a.moving) pose.whole.rot = 0.05 * Math.sin(t * TAU / 1.2);
+    return pose;
+  },
+
+  // Leerenrufer: the 8 sheet frames play as a flickering body; claws, eye,
+  // aura and beam are layered on top. The front claw (claw_r) casts the soul
+  // salvo, the back claw (claw_l) summons.
+  void(a) {
+    const pose = blank(), t = a.t;
+    let frame = Math.floor(t * VOID.frame.fps) % 8, eye = 0;
+    pose.whole.dy = -5 - 2 * Math.sin(t * TAU / 2.2);
+    pose.whole.sx = 1 + 0.025 * Math.sin(t * TAU / 1.1); pose.whole.sy = 1 - 0.02 * Math.sin(t * TAU / 1.1);
+    pose.aura = 0.5 + 0.2 * Math.sin(t * TAU / 1.6);
+    if ((t % 3.7) < 0.1) pose.glitch = 1;
+    const cl = P(pose, "claw_l"), cr = P(pose, "claw_r");
+    cl.rot = 0.12 * Math.sin(t * TAU / 1.9); cr.rot = -0.12 * Math.sin(t * TAU / 1.9 + 0.7);
+    if (a.moving) { pose.whole.rot = 0.07; cl.rot += 0.3; cr.rot += 0.3; }
+    for (const id of ["claw_l", "claw_r"]) if (a.regrowing[id]) { const k = 1 - a.regrowing[id] / 1.2, c = P(pose, id); c.sx = c.sy = lerp(0.15, 1, easeOut(k)); }
+    if (a.regrowing.eye) P(pose, "eye").alpha = 1 - a.regrowing.eye / 1.2;
+    const u = a.clip ? a.ct / durationOf(a, a.clip) : 0;
+    if (a.clip === "attack") {
+      const raise = easeOut(seg(u, 0, 0.45)), fling = easeOut(seg(u, 0.5, 0.6)), back = easeInOut(seg(u, 0.68, 1));
+      cr.rot += (-2.5 * raise + 1.3 * fling) * (1 - back);
+      pose.whole.rot = (-0.08 * raise + 0.16 * fling) * (1 - back); pose.whole.dx = 2.5 * fling * (1 - back);
+      pose.aura += 0.3 * raise * (1 - back);
+      if (u > 0.3 && u < 0.6) eye = 1;
+    } else if (a.clip === "beam") {
+      const charge = easeInOut(seg(u, 0, 0.3)), fire = u >= 0.3 && u < 0.86, rest = easeInOut(seg(u, 0.86, 1));
+      eye = u < 0.12 ? 0 : u < 0.22 ? 1 : u < 0.88 ? 2 : u < 0.94 ? 1 : 0;
+      pose.whole.sx -= 0.07 * charge * (1 - rest); pose.whole.sy += 0.06 * charge * (1 - rest);
+      cl.rot += 0.9 * charge * (1 - rest); cr.rot -= 0.9 * charge * (1 - rest);
+      if (fire) { pose.whole.dx = (Math.sin(a.ct * 90) > 0 ? 0.5 : -0.5) - 1.5 * easeOut(seg(u, 0.3, 0.36)); cl.rot += 0.08 * Math.sin(a.ct * 70); cr.rot += 0.08 * Math.sin(a.ct * 77); frame = Math.floor(a.ct * 18) % 8; }
+      pose.aura += 0.45 * charge * (1 - rest);
+      pose.beam = { warn: u < 0.3 ? seg(u, 0.04, 0.3) : 0, k: fire ? easeOut(seg(u, 0.3, 0.35)) * (1 - easeIn(seg(u, 0.8, 0.86))) : 0 };
+    } else if (a.clip === "summon") {
+      const raise = easeOut(seg(u, 0, 0.32)), slam = easeIn(seg(u, 0.32, 0.4)), back = easeInOut(seg(u, 0.62, 1));
+      cl.rot += (2.6 * raise - 2.3 * slam) * (1 - back); cr.rot += -0.6 * raise * (1 - back);
+      pose.whole.dy += (-3 * raise + 5 * slam) * (1 - back);
+      pose.whole.sy += (0.05 * raise - 0.12 * slam) * (1 - back); pose.whole.sx += 0.1 * slam * (1 - back);
+      pose.aura += 0.5 * raise * (1 - back);
+      eye = u > 0.2 && u < 0.7 ? 1 : 0;
+    } else if (a.clip === "hit") {
+      const k = 1 - easeOut(u); pose.whole.dx = -2 * k; pose.whole.sx += 0.12 * k; pose.whole.sy -= 0.1 * k; frame = (frame + 3) % 8; if (k > 0.5) pose.glitch = 1;
+    } else if (a.clip === "death" || a.dead) {
+      const uu = a.dead && !a.clip ? 1 : u, implode = easeIn(seg(uu, 0.55, 0.85));
+      pose.whole.pivot = [22, 22]; pose.whole.dx = (Math.sin(a.ct * 80) > 0 ? 0.7 : -0.7) * (1 - implode);
+      pose.whole.sx = lerp(pose.whole.sx + 0.08 * Math.sin(uu * 30), 0.05, implode); pose.whole.sy = lerp(pose.whole.sy, 0.05, implode); pose.whole.rot = 2 * TAU * implode * implode;
+      eye = uu < 0.85 ? 2 : 0; pose.aura = 1.1 * (1 - implode); frame = Math.floor(a.ct * 24) % 8;
+      for (const id of ["core", "eye", "claw_l", "claw_r"]) P(pose, id).alpha = a.dead && !a.clip ? 0 : 1 - seg(uu, 0.82, 0.88);
+    }
+    pose.frames = { core: frame, eye };
+    return pose;
+  },
+};
+
+// ================================================================= transforms
+function wholeMatrix(a, pose, ox, oy) {
+  const g = a.rig.def.ground, w = pose.whole, pv = w.pivot || g;
+  return new DOMMatrix().translate(ox + a.x + w.dx * a.face, oy + a.y + w.dy).scale(a.face, 1).translate(-g[0], -g[1])
+    .translate(pv[0], pv[1]).rotate(w.rot * 180 / Math.PI).scale(w.sx, w.sy).translate(-pv[0], -pv[1]);
+}
+function localMatrix(part, p) { return new DOMMatrix().translate(part.pivot[0] + p.dx, part.pivot[1] + p.dy).rotate(p.rot * 180 / Math.PI).scale(p.sx, p.sy).translate(-part.pivot[0], -part.pivot[1]); }
+function solve(a, pose, ox, oy) {
+  const base = wholeMatrix(a, pose, ox, oy), world = { base };
+  const get = (id) => {
+    if (world[id]) return world[id];
+    const part = a.rig.byId[id], p = pose.parts[id] || { dx: 0, dy: 0, rot: 0, sx: 1, sy: 1 };
+    const parent = part.parent && !a.lost[part.parent] ? get(part.parent) : base;
+    return (world[id] = parent.multiply(localMatrix(part, p)));
+  };
+  for (const part of a.rig.parts) get(part.id);
+  for (const item of a.rig.items) {
+    if (a.lost[item.id]) continue;
+    const parent = !a.lost[item.parent] && world[item.parent] ? world[item.parent] : base, o = pose.items[item.id] || { dx: 0, dy: 0, rot: 0 };
+    world[item.id] = parent.multiply(new DOMMatrix().translate(item.hand[0] + o.dx, item.hand[1] + o.dy).rotate((item.rest + o.rot) * 180 / Math.PI).translate(-item.grip[0], -item.grip[1]));
+  }
+  return world;
+}
+
+// ================================================================= drawing
+function setT(ctx, m, S) { ctx.setTransform(S * m.a, S * m.b, S * m.c, S * m.d, Math.round(S * m.e), Math.round(S * m.f)); }
+function pixel(ctx, x, y, S, color, alpha = 1, size = 1) { ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = alpha; ctx.fillStyle = color; ctx.fillRect(Math.round(x * S), Math.round(y * S), size * S, size * S); ctx.globalAlpha = 1; }
+function shadow(ctx, x, y, width, S, alpha = 0.35) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = `rgba(5,3,10,${alpha})`; const half = Math.round(width / 2);
+  for (let row = -1; row <= 1; row++) { const span = row === 0 ? half : half - 2; if (span > 0) ctx.fillRect(Math.round((x - span) * S), Math.round((y + row) * S), span * 2 * S, S); }
+}
+function disc(ctx, x, y, r, S, color) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = color; const R = Math.ceil(r);
+  for (let dy = -R; dy <= R; dy++) for (let dx = -R; dx <= R; dx++) if (dx * dx + dy * dy <= r * r + 0.3) ctx.fillRect(Math.round((x + dx) * S), Math.round((y + dy) * S), S, S);
+}
+function line(ctx, x0, y0, x1, y1, S, color, alpha = 1) {
+  const n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) * S));
+  for (let i = 0; i <= n; i++) pixel(ctx, lerp(x0, x1, i / n), lerp(y0, y1, i / n), S, color, alpha);
+}
+
+function detach(world, a, scene, id, impulse = 1) {
+  const part = a.rig.byId[id];
+  if (!part || a.lost[id] || !world || !world[id]) { a.lost[id] = true; return; }
+  const m = world[id], c = m.transformPoint({ x: part.center[0], y: part.center[1] });
+  const ground = a.y + (scene.oy || 0), fr = part.frames ? part.frames[(a.lastPose && a.lastPose.frames && a.lastPose.frames[id]) || 0] : part;
+  // Summoned bones and void parts dissolve faster than normal debris.
+  scene.debris.push({ canvas: fr.canvas, center: part.center, x: c.x, y: ground + rnd(-2, 3), z: ground - c.y, vx: rnd(-28, 28) * impulse + a.face * 8, vz: rnd(35, 70) * impulse,
+    ang: Math.atan2(m.b, m.a), spin: rnd(-10, 10) * impulse, face: a.face, life: 0, owner: a, id, max: a.summoned ? 2.5 : a.family === "void" ? 4 : undefined });
+  a.lost[id] = true;
+  for (let i = 0; i < 6; i++) scene.particles.push({ x: c.x, y: c.y, vx: rnd(-30, 30), vy: rnd(-30, 10), life: 0, max: rnd(0.25, 0.5), color: a.family === "void" ? pick(["#5f2d56", "#a46fe0"]) : "#fdf7ed", grav: 120 });
+}
+function stepWorld(scene, dt) {
+  for (const d of scene.debris) {
+    d.life += dt;
+    if (!d.rest) { d.vz -= 260 * dt; d.z += d.vz * dt; d.x += d.vx * dt; d.ang += d.spin * dt;
+      if (d.z <= 0) { d.z = 0; d.vz = -d.vz * 0.35; d.vx *= 0.55; d.spin *= 0.45; if (Math.abs(d.vz) < 12) { d.rest = true; d.vz = 0; } } }
+  }
+  scene.debris = scene.debris.filter((d) => d.life < (d.max || scene.debrisLife || 7));
+  for (const p of scene.particles) { p.life += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += (p.grav || 0) * dt; }
+  scene.particles = scene.particles.filter((p) => p.life < p.max);
+  for (const r of scene.rings) r.life += dt;
+  scene.rings = scene.rings.filter((r) => r.life < r.max);
+  if (scene.pools) { for (const p of scene.pools) p.life += dt; scene.pools = scene.pools.filter((p) => p.life < p.max); }
+  for (const pr of scene.projectiles) {
+    pr.life += dt; pr.x += pr.vx * dt; pr.y += pr.vy * dt;
+    if (pr.kind === "orb" && Math.random() < 0.6) scene.particles.push({ x: pr.x, y: pr.y, vx: rnd(-6, 6), vy: rnd(-6, 6), life: 0, max: 0.25, color: pr.color || "#6fe3a0" });
+    if (pr.kind === "skull") {
+      // Soul skulls weave slightly and leave a violet trail.
+      if (Math.random() < 0.7) scene.particles.push({ x: pr.x - pr.vx * 0.03, y: pr.y - pr.vy * 0.03, vx: rnd(-5, 5), vy: rnd(-8, 2), life: 0, max: 0.35, color: pick(["#c06bd8", "#5f2d56", "#3d2140"]) });
+      const n = Math.hypot(pr.vx, pr.vy), ang = Math.atan2(pr.vy, pr.vx) + Math.sin(pr.life * 9 + pr.wob) * 0.9 * dt;
+      pr.vx = Math.cos(ang) * n; pr.vy = Math.sin(ang) * n;
+    }
+    const hit = scene.onProjectile ? scene.onProjectile(pr) : false;
+    if (hit || pr.life > pr.max || pr.x < -10 || pr.x > (scene.w || 9999) + 10) { pr.done = true; if (pr.kind === "orb" || pr.kind === "skull") burst(scene, pr.x, pr.y, pr.color || "#6fe3a0"); }
+  }
+  scene.projectiles = scene.projectiles.filter((p) => !p.done);
+}
+function burst(scene, x, y, color) {
+  scene.rings.push({ x, y, r0: 2, r1: 9, life: 0, max: 0.35, color, flat: 1 });
+  for (let i = 0; i < 14; i++) { const ang = i / 14 * TAU; scene.particles.push({ x, y, vx: Math.cos(ang) * 50, vy: Math.sin(ang) * 50, life: 0, max: 0.3, color }); }
+}
+function drawWorldFx(ctx, scene, S, layer) {
+  if (layer === "under") {
+    for (const p of scene.pools || []) drawPool(ctx, p, S);
+    for (const r of scene.rings) { const k = r.life / r.max, rad = lerp(r.r0, r.r1, k); for (let i = 0; i < 36; i++) { const ang = i / 36 * TAU; pixel(ctx, r.x + Math.cos(ang) * rad, r.y + Math.sin(ang) * rad * (r.flat ?? 0.45), S, r.color, 1 - k); } }
+    for (const d of scene.debris) {
+      const fade = clamp(((d.max || scene.debrisLife || 7) - d.life) / 1, 0, 1);
+      shadow(ctx, d.x, d.y, 6, S, 0.25 * fade); ctx.globalAlpha = fade;
+      if (d.disc) { disc(ctx, d.x, d.y - d.z, d.r + 1, S, "#222222"); disc(ctx, d.x, d.y - d.z, d.r, S, d.color); }
+      else { setT(ctx, new DOMMatrix().translate(d.x, d.y - d.z).rotate(d.ang * 180 / Math.PI).scale(d.face, 1).translate(-d.center[0], -d.center[1]), S); ctx.drawImage(d.canvas, 0, 0); }
+      ctx.globalAlpha = 1;
+    }
+    return;
+  }
+  for (const pr of scene.projectiles) {
+    if (pr.kind === "arrow") { setT(ctx, new DOMMatrix().translate(pr.x, pr.y).rotate(Math.atan2(pr.vy, pr.vx) * 180 / Math.PI + 90).translate(-3.5, -10.5), S); ctx.drawImage(IMG.arrow, 0, 0); ctx.setTransform(1, 0, 0, 1, 0, 0); }
+    else if (pr.kind === "skull") { disc(ctx, pr.x, pr.y, 3.5, S, "rgba(192,107,216,0.35)"); setT(ctx, new DOMMatrix().translate(Math.round(pr.x), Math.round(pr.y)).scale(pr.vx < 0 ? -1 : 1, 1).translate(-2.5, -2), S); ctx.drawImage(IMG.void_skull, 0, 0); ctx.setTransform(1, 0, 0, 1, 0, 0); }
+    else { disc(ctx, pr.x, pr.y, 2.6, S, "#222222"); disc(ctx, pr.x, pr.y, 1.8, S, pr.color || "#6fe3a0"); pixel(ctx, pr.x - 0.5, pr.y - 0.5, S, "#f2fff6"); }
+  }
+  for (const p of scene.particles) pixel(ctx, p.x, p.y, S, p.color, 1 - p.life / p.max);
+}
+
+function drawActor(ctx, a, scene, S, ox, oy) {
+  const pose = POSES[a.family](a), world = solve(a, pose, ox, oy);
+  a.lastWorld = world; a.lastPose = pose;
+  const floating = a.family === "necro" || a.family === "sleeper" || a.family === "void";
+  const ghost = floating && a.dead && !a.clip;
+  if (!ghost) shadow(ctx, ox + a.x, oy + a.y, a.rig.def.width, S, floating ? 0.28 : 0.35);
+  if (a.family === "sleeper") drawTentacles(ctx, a, world, pose, scene, S, "back");
+  const items = [...a.rig.parts, ...a.rig.items].filter((p) => !a.lost[p.id] && world[p.id]).sort((p, q) => p.z - q.z);
+  const alphaOf = (part) => { const pp = pose.parts[part.id]; return (pp && pp.alpha !== undefined ? pp.alpha : 1) * a.alpha; };
+  const frameOf = (part) => (part.frames ? part.frames[(pose.frames && pose.frames[part.id]) || 0] : part);
+  if (pose.aura > 0) {
+    // Violet rim around the whole silhouette, so the black body reads on dark floors.
+    const offsets = pose.glitch ? [[2, 0], [-2, 0], [0, 1], [0, -1]] : [[1, 0], [-1, 0], [0, 1], [0, -1]];
+    for (const part of items) {
+      const alpha = alphaOf(part), fr = frameOf(part); if (alpha <= 0.01 || !fr.aura) continue;
+      setT(ctx, world[part.id], S); ctx.globalAlpha = clamp(pose.aura, 0, 1) * alpha;
+      for (const [dx, dy] of offsets) ctx.drawImage(fr.aura, dx, dy);
+    }
+    ctx.globalAlpha = 1;
+  }
+  for (const part of items) {
+    const m = world[part.id], alpha = alphaOf(part), fr = frameOf(part);
+    if (alpha <= 0.01) continue;
+    setT(ctx, m, S); ctx.globalAlpha = alpha; ctx.drawImage(fr.canvas, 0, 0);
+    if (a.flash > 0) { ctx.globalAlpha = alpha * Math.min(1, a.flash * 1.6); ctx.drawImage(fr.white, 0, 0); }
+    ctx.globalAlpha = 1;
+    if (part.bow) drawBowString(ctx, a, part, m, pose, S);
+  }
+  if (a.family === "sleeper") { drawTentacles(ctx, a, world, pose, scene, S, "front"); drawSleeperEyes(ctx, a, world, pose, S); }
+  if (a.family === "void") { if (pose.beam) drawVoidBeam(ctx, a, scene, pose, world, S); else a.beamSeg = null; }
+  // Swing trail from the weapon tip (or the brute's fist).
+  const wp = a.rig.byId.weapon;
+  if (pose.trail && wp && world.weapon && !a.lost.weapon) { const tip = world.weapon.transformPoint({ x: wp.tip[0], y: wp.tip[1] }); a.trail.push({ x: tip.x, y: tip.y, age: 0 }); }
+  if (pose.trail && a.family === "brute" && world.arm && !a.lost.arm) { const fist = world.arm.transformPoint({ x: 8, y: 26 }); a.trail.push({ x: fist.x, y: fist.y, age: 0 }); }
+  for (let i = 1; i < a.trail.length; i++) line(ctx, a.trail[i - 1].x, a.trail[i - 1].y, a.trail[i].x, a.trail[i].y, S, "#eaf8ff", 0.65 * (1 - a.trail[i].age / 0.12));
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+}
+function drawBowString(ctx, a, bow, m, pose, S) {
+  const pull = pose.pull || 0, top = m.transformPoint({ x: 7.5, y: 3.5 }), bottom = m.transformPoint({ x: 7.5, y: 22.5 }), mid = m.transformPoint({ x: 7.5 - pull, y: 13 });
+  line(ctx, top.x, top.y, mid.x, mid.y, S, "#d3bfa9"); line(ctx, mid.x, mid.y, bottom.x, bottom.y, S, "#d3bfa9");
+  if (pose.nock) { const head = m.transformPoint({ x: 7.5 - pull + 13, y: 13 }); setT(ctx, new DOMMatrix().translate(mid.x, mid.y).rotate(Math.atan2(head.y - mid.y, head.x - mid.x) * 180 / Math.PI + 90).translate(-3.5, -1), S); ctx.drawImage(IMG.arrow, 0, 0); }
+}
+
+// ---- Schläfer der Tiefe: procedural tentacles and glowing eyes.
+function tentacleChain(a, tent, base, pose, index) {
+  const cfg = SLEEPER.tentacle, root = base.transformPoint({ x: tent.root + 8.5, y: cfg.root_y + 0.5 }), t = a.t;
+  const spread = (index - 2.5) * 0.26, u = a.clip ? a.ct / durationOf(a, a.clip) : 0;
+  let angle = Math.PI / 2 + spread * a.face, x = root.x, y = root.y;
+  const n = tent.cut ? 3 : Math.round(lerp(3, cfg.segments, tent.grow ?? 1)), pts = [];
+  for (let s = 0; s < n; s++) {
+    const k = s / (cfg.segments - 1);
+    let wave = 0.22 * Math.sin(t * 2.2 - s * 0.7 + index * 1.3) * (0.4 + k);
+    if (pose.limp) wave *= 1 - pose.limp;
+    if (a.clip === "attack" && index === a.lashIndex) { const lash = Math.sin(Math.PI * clamp(u * 1.15, 0, 1)); wave += (-1.2 * (s / n) * lash) * a.face; }
+    if (a.clip === "slam" && (index === 2 || index === 3)) { const up = easeInOut(seg(u, 0, 0.5)), down = easeIn(seg(u, 0.5, 0.62)), back = easeInOut(seg(u, 0.7, 1)); wave += (-0.35 * up * (s < 4 ? 2.5 : 1) + 0.5 * down) * (1 - back) * (index === 2 ? 1 : -1) * a.face; }
+    angle += wave * 0.6;
+    const r = lerp(cfg.radius_start, cfg.radius_end, k);
+    pts.push({ x, y, r });
+    x += Math.cos(angle) * cfg.spacing; y += Math.sin(angle) * cfg.spacing;
+  }
+  tent.pts = pts;
+  return pts;
+}
+function drawTentacles(ctx, a, world, pose, scene, S, layer) {
+  if (!world.mantle) return;
+  a.tentacles.forEach((tent, i) => {
+    if ((layer === "back") !== (i === 0 || i === 5)) return;
+    const pts = tentacleChain(a, tent, world.mantle, pose, i);
+    for (const p of pts) disc(ctx, p.x, p.y, p.r + 1, S, "#222222");
+    pts.forEach((p, s) => { disc(ctx, p.x, p.y, p.r, S, s % 2 ? "#1f4b4f" : "#2f6f6a"); if (p.r >= 2 && s % 2 === 0) pixel(ctx, p.x - 0.5, p.y + p.r - 1.5, S, "#7fc7b8"); });
+    if (a.flash > 0) for (const p of pts) disc(ctx, p.x, p.y, p.r, S, `rgba(255,255,255,${Math.min(1, a.flash * 1.6)})`);
+    if (pose.trail || (a.clip === "attack" && i === a.lashIndex)) { const tip = pts[pts.length - 1]; a.trail.push({ x: tip.x, y: tip.y, age: 0 }); }
+  });
+}
+function drawSleeperEyes(ctx, a, world, pose, S) {
+  const glow = pose.glow || 0, blink = (a.t % 4.2) < 0.12;
+  for (const [i, e] of SLEEPER.eyes.entries()) {
+    if (i === 2 && a.lost.eye3) continue;
+    const m = world.mantle; if (!m) continue;
+    if (blink && !a.dead) { setT(ctx, m, S); ctx.fillStyle = "#2f6f6a"; ctx.fillRect(e[0] + 8, e[1], e[2], e[3]); ctx.setTransform(1, 0, 0, 1, 0, 0); }
+    if (glow > 0) { const c = m.transformPoint({ x: e[0] + 8 + e[2] / 2, y: e[1] + e[3] / 2 }); disc(ctx, c.x, c.y, 2 + glow * 2, S, `rgba(226,255,154,${0.35 * glow})`); }
+  }
+}
+
+// ---- Leerenrufer: beam, summoning pools.
+function voidEye(a, world) {
+  const w = world || a.lastWorld, [ex, ey] = VOID.eye.at;
+  if (w && w.eye && !a.lost.eye) return w.eye.transformPoint({ x: ex + 3.5, y: ey + 2.5 });
+  return w && w.core ? w.core.transformPoint({ x: 22, y: 23 }) : { x: a.x, y: a.y - 20 };
+}
+// The beam runs at eye height; it stops where the floor below it ends (room)
+// or at the stage edge (cards).
+function beamEnd(scene, a, o, ang) {
+  const lift = (scene.oy || 0) + a.y - o.y;
+  let x = o.x, y = o.y;
+  for (let s = 0; s < 320; s += 2) {
+    const nx = x + Math.cos(ang) * 2, ny = y + Math.sin(ang) * 2;
+    if (scene.actors ? !walkable(nx, ny + lift) : (nx < 0 || nx > scene.w || ny < 0 || ny > scene.h)) break;
+    x = nx; y = ny;
+  }
+  return { x, y };
+}
+function drawVoidBeam(ctx, a, scene, pose, world, S) {
+  const o = voidEye(a, world), ang = a.beamAngle ?? (a.face > 0 ? 0 : Math.PI), end = beamEnd(scene, a, o, ang), t = a.t, k = pose.beam.k;
+  const len = Math.hypot(end.x - o.x, end.y - o.y) || 1, ux = (end.x - o.x) / len, uy = (end.y - o.y) / len;
+  a.beamSeg = k > 0 ? { x0: o.x, y0: o.y, x1: end.x, y1: end.y } : null;
+  if (pose.beam.warn > 0) {
+    // Warning line while the eye charges.
+    const flick = 0.35 + 0.35 * Math.sin(a.ct * 40);
+    for (let s = 4; s < len; s += 2) if (Math.floor(s / 2) % 3 !== 0) pixel(ctx, o.x + ux * s, o.y + uy * s, S, "#a46fe0", flick * pose.beam.warn);
+    disc(ctx, o.x, o.y, 1 + 2 * pose.beam.warn, S, `rgba(192,107,216,${0.5 * pose.beam.warn})`);
+  }
+  if (k <= 0) return;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  for (const [r0, color] of [[3.4, "#222222"], [2.6, "#5f2d56"], [1.7, "#a46fe0"], [0.8, "#f2b8ff"]]) {
+    ctx.fillStyle = color;
+    for (let s = 0; s <= len; s++) {
+      const wob = r0 > 1 ? 0.55 * Math.sin(s * 0.33 - t * 38) + 0.35 * Math.sin(s * 0.11 + t * 21) : 0;
+      const r = (r0 + wob) * k * (s < 6 ? lerp(0.5, 1, s / 6) : 1);
+      if (r < 0.45) continue;
+      const side = Math.max(1, Math.round(2 * r)), cx = o.x + ux * s, cy = o.y + uy * s;
+      ctx.fillRect(Math.round((cx - side / 2) * S), Math.round((cy - side / 2) * S), side * S, side * S);
+    }
+  }
+  const f = 3 + Math.sin(t * 50);
+  disc(ctx, o.x, o.y, (f + 0.5) * k, S, "#a46fe0"); disc(ctx, o.x, o.y, f * 0.55 * k, S, "#f2b8ff");
+  disc(ctx, end.x, end.y, (f + 1.5) * k, S, "#5f2d56"); disc(ctx, end.x, end.y, f * k, S, "#a46fe0"); disc(ctx, end.x, end.y, f * 0.5 * k, S, "#f2b8ff");
+}
+function drawPool(ctx, p, S) {
+  const k = p.life / p.max, g = easeOut(seg(k, 0, 0.12)) * (1 - easeIn(seg(k, 0.7, 1))), rx = p.r * g, ry = rx * 0.45;
+  if (rx < 1) return;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  for (let yy = -Math.ceil(ry); yy <= Math.ceil(ry); yy++) {
+    const half = rx * Math.sqrt(Math.max(0, 1 - (yy / (ry + 0.5)) ** 2)); if (half < 0.5) continue;
+    ctx.fillStyle = "#5f2d56"; ctx.fillRect(Math.round((p.x - half) * S), Math.round((p.y + yy) * S), Math.max(1, Math.round(half * 2)) * S, S);
+    if (half > 1.5) { ctx.fillStyle = "#13111c"; ctx.fillRect(Math.round((p.x - half + 1) * S), Math.round((p.y + yy) * S), Math.round(half * 2 - 2) * S, S); }
+  }
+  for (let i = 0; i < 3; i++) { const ang = p.life * 2 + i * TAU / 3; pixel(ctx, p.x + Math.cos(ang) * rx * 0.6, p.y + Math.sin(ang) * ry * 0.6, S, "#a46fe0", 0.8); }
+}
+function distToSeg(px, py, s) { const dx = s.x1 - s.x0, dy = s.y1 - s.y0, l2 = dx * dx + dy * dy || 1, k = clamp(((px - s.x0) * dx + (py - s.y0) * dy) / l2, 0, 1); return Math.hypot(px - (s.x0 + dx * k), py - (s.y0 + dy * k)); }
+function aimAngle(a, from) { return a.aimAt ? Math.atan2(a.aimAt[1] - from.y, a.aimAt[0] - from.x) : (a.face > 0 ? 0 : Math.PI); }
+function summonSpots(a, scene) {
+  if (scene.actors) {
+    const spots = [];
+    for (let i = 0; i < 30 && spots.length < 2; i++) {
+      const ang = rnd(0, TAU), r = rnd(24, 42), x = a.x + Math.cos(ang) * r, y = a.y + Math.sin(ang) * r * 0.7;
+      if (walkable(x, y) && walkable(x - 6, y) && walkable(x + 6, y) && spots.every(([sx, sy]) => Math.hypot(sx - x, sy - y) > 18)) spots.push([x, y]);
+    }
+    return spots;
+  }
+  return [34, 60].map((d, i) => [clamp(a.x + a.face * d, 14, scene.w - 14), scene.spec.ground + (i ? 3 : -2)]);
+}
+function aliveMinions(a) { return (a.minions || []).filter((m) => !m.dead).length; }
+function summonArcher(master, scene, x, y) {
+  if (aliveMinions(master) >= 4) return;
+  const m = makeActor("skel_archer", x, y, { face: master.face, speed: 18, team: master.team });
+  Object.assign(m, { summoned: true, master, life: 0, home: [x, y], walk: !!scene.actors, cooldown: rnd(0.8, 1.6), alpha: 0 });
+  const from = {};
+  for (const p of [...m.rig.parts, ...m.rig.items]) from[p.id] = { dx: rnd(-3, 3), dy: rnd(8, 13), rot: rnd(-1.2, 1.2) };
+  m.riseFrom = from; play(m, "rise");
+  master.minions.push(m);
+  (scene.actors || (scene.minions = scene.minions || [])).push(m);
+}
+function voidEvents(a, scene, u, dt, once) {
+  const world = a.lastWorld, ox = scene.ox || 0, oy = scene.oy || 0, eye = voidEye(a, world);
+  const clawTip = (id) => { const p = a.rig.byId[id]; return world[id] && !a.lost[id] ? world[id].transformPoint({ x: p.tip[0], y: p.tip[1] }) : eye; };
+  const gather = (at, colors, r0 = 9, r1 = 14) => { const ang = rnd(0, TAU), r = rnd(r0, r1); scene.particles.push({ x: at.x + Math.cos(ang) * r, y: at.y + Math.sin(ang) * r, vx: -Math.cos(ang) * r / 0.3, vy: -Math.sin(ang) * r / 0.3, life: 0, max: 0.3, color: pick(colors) }); };
+  if (a.clip === "attack") {
+    // Nekrotische Seelensalve: three soul skulls in a fan from the front claw.
+    const tip = clawTip("claw_r");
+    if (u < 0.55 && Math.random() < 0.9) gather(tip, ["#c06bd8", "#f2b8ff", "#5f2d56"]);
+    if (u > 0.56) once("salve", () => {
+      const base = aimAngle(a, tip);
+      for (const off of [-0.3, 0, 0.3]) scene.projectiles.push({ kind: "skull", x: tip.x, y: tip.y, vx: Math.cos(base + off) * 80, vy: Math.sin(base + off) * 80, life: 0, max: 1.9, owner: a, color: "#c06bd8", wob: rnd(0, TAU) });
+      scene.shake = Math.max(scene.shake || 0, 0.08);
+    });
+  }
+  if (a.clip === "beam") {
+    if (u < 0.3) { if (Math.random() < 0.95) gather(eye, ["#a46fe0", "#f2b8ff", "#222222"], 10, 18); once("aim", () => { a.beamAngle = aimAngle(a, eye); a.beamBase = a.beamAngle; }); }
+    else if (u < 0.86) {
+      // Room: the beam turns slowly after its target. Cards: a slow sweep.
+      if (scene.actors && a.aimTarget && !a.aimTarget.dead) {
+        const want = Math.atan2(a.aimTarget.y - 8 - eye.y, a.aimTarget.x - eye.x), diff = Math.atan2(Math.sin(want - a.beamAngle), Math.cos(want - a.beamAngle));
+        a.beamAngle += clamp(diff, -0.55 * dt, 0.55 * dt);
+      } else if (!scene.actors) a.beamAngle = a.beamBase + 0.16 * Math.sin((u - 0.3) * 9);
+      scene.shake = Math.max(scene.shake || 0, 0.04);
+      const s = a.beamSeg;
+      if (s) {
+        for (let i = 0; i < 2; i++) scene.particles.push({ x: s.x1, y: s.y1, vx: -Math.cos(a.beamAngle) * rnd(20, 70) + rnd(-30, 30), vy: -Math.sin(a.beamAngle) * rnd(20, 70) + rnd(-40, 10), life: 0, max: rnd(0.2, 0.45), color: pick(["#f2b8ff", "#a46fe0", "#222222"]), grav: 90 });
+        if (Math.random() < 0.5) { const k = rnd(0, 1); scene.particles.push({ x: lerp(s.x0, s.x1, k), y: lerp(s.y0, s.y1, k), vx: rnd(-8, 8), vy: rnd(-14, -4), life: 0, max: 0.4, color: pick(["#222222", "#3d2140"]) }); }
+        if (scene.actors && (a.beamTick = (a.beamTick || 0) + dt) > 0.25) {
+          a.beamTick = 0;
+          for (const o of scene.actors) if (o.team !== a.team && !o.dead && distToSeg(o.x, o.y - 8, s) < 7) { if (Object.keys(o.hp).length) hitRandom(o, scene, 2); else if (!o.clip) play(o, "hit"); }
+        }
+      }
+    }
+  }
+  if (a.clip === "summon") {
+    const hand = clawTip("claw_l");
+    if (u < 0.36 && Math.random() < 0.8) scene.particles.push({ x: hand.x + rnd(-2, 2), y: hand.y + rnd(-2, 2), vx: rnd(-6, 6), vy: rnd(-30, -12), life: 0, max: 0.5, color: pick(["#a46fe0", "#c06bd8", "#efe6d6"]) });
+    if (u > 0.36) once("circles", () => {
+      a.summonSpots = summonSpots(a, scene);
+      for (const [x, y] of a.summonSpots) { scene.rings.push({ x, y, r0: 1, r1: 13, life: 0, max: 1.1, color: "#a46fe0" }); scene.pools.push({ x, y, r: 9, life: 0, max: 3 }); }
+      scene.shake = 0.18;
+    });
+    if (u > 0.36 && u < 0.95 && a.summonSpots) for (const [x, y] of a.summonSpots) if (Math.random() < 0.45) scene.particles.push({ x: x + rnd(-7, 7), y: y + rnd(-2, 2), vx: rnd(-3, 3), vy: rnd(-34, -14), life: 0, max: 0.55, color: pick(["#efe6d6", "#a46fe0", "#5f2d56"]) });
+    if (u > 0.5) once("raise", () => { for (const [x, y] of a.summonSpots || []) summonArcher(a, scene, x, y); });
+  }
+  if (a.clip === "death") {
+    if (u > 0.12) once("claws", () => { for (const id of ["claw_l", "claw_r"]) if (!a.lost[id]) detach(world, a, scene, id, 0.7); });
+    if (u > 0.2 && u < 0.85 && Math.random() < 0.8) gather(eye, ["#222222", "#3d2140", "#a46fe0"], 16, 26);
+    if (u > 0.85) once("implode", () => {
+      scene.shake = 0.35;
+      scene.rings.push({ x: eye.x, y: eye.y, r0: 2, r1: 26, life: 0, max: 0.6, color: "#a46fe0", flat: 1 }, { x: ox + a.x, y: oy + a.y, r0: 2, r1: 20, life: 0, max: 0.8, color: "#5f2d56" });
+      for (let i = 0; i < 40; i++) { const ang = rnd(0, TAU), sp = rnd(30, 110); scene.particles.push({ x: eye.x, y: eye.y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, life: 0, max: rnd(0.3, 0.8), color: pick(["#222222", "#222222", "#3d2140", "#a46fe0", "#f2b8ff"]) }); }
+    });
+  }
+}
+function voidAct(a) {
+  const options = [];
+  if (canDo(a, "cast")) options.push("attack", "attack");
+  if (canDo(a, "beam") && a.beamCd <= 0) options.push("beam", "beam");
+  if (canDo(a, "summon") && aliveMinions(a) < 2) options.push("summon");
+  if (!options.length) return;
+  const clip = pick(options); if (clip === "beam") a.beamCd = 7;
+  play(a, clip);
+}
+
+// ================================================================= behaviour
+function stepActor(a, scene, dt) {
+  a.t += dt; a.flash = Math.max(0, a.flash - dt * 4); a.cooldown -= dt;
+  for (const p of a.trail) p.age += dt; a.trail = a.trail.filter((p) => p.age < 0.12);
+  for (const id of Object.keys(a.regrowing)) { a.regrowing[id] -= dt; if (a.regrowing[id] <= 0) delete a.regrowing[id]; }
+  for (const id of Object.keys(a.regrowIn)) { a.regrowIn[id] -= dt; if (a.regrowIn[id] <= 0) { delete a.regrowIn[id]; regrowPart(a, scene, id); } }
+  if (a.tentacles) for (const tent of a.tentacles) if (tent.grow !== undefined && tent.grow < 1) tent.grow = Math.min(1, tent.grow + dt / 1.5);
+  if (a.summoned && a.alpha < 1) a.alpha = Math.min(1, a.alpha + dt / 0.4);
+  if (a.family === "void") {
+    a.beamCd -= dt;
+    // Void drips from the ragged bottom, and the odd violet mote rising.
+    const core = a.lastWorld && a.lastWorld.core;
+    if (core && !a.dead && a.clip !== "death") {
+      if (Math.random() < dt * 10) { const p = core.transformPoint({ x: 22 + rnd(-7, 7), y: 41 }); scene.particles.push({ x: p.x, y: p.y, vx: rnd(-3, 3), vy: rnd(4, 12), life: 0, max: rnd(0.4, 0.8), color: pick(["#222222", "#3d2140"]) }); }
+      if (Math.random() < dt * 3) { const p = core.transformPoint({ x: 22 + rnd(-10, 10), y: rnd(8, 30) }); scene.particles.push({ x: p.x, y: p.y, vx: rnd(-3, 3), vy: rnd(-14, -6), life: 0, max: rnd(0.5, 0.9), color: pick(["#5f2d56", "#a46fe0"]) }); }
+    }
+  }
+  if (a.clip) {
+    a.ct += dt; clipEvents(a, scene, dt);
+    if (a.ct >= durationOf(a, a.clip)) {
+      const ended = a.clip; a.clip = null;
+      if (ended === "death") a.dead = true;
+      if (ended === "rise") { a.dead = false; a.lost = {}; a.riseFrom = null; for (const k in a.hp) a.hp[k] = maxHpOf(a, k); a.onChange && a.onChange(); }
+    }
+  }
+  const busy = a.dead || (a.clip && a.clip !== "hit");
+  a.moving = false;
+  if (!busy && a.walk) {
+    let speed = a.speed;
+    if (a.family === "skeleton" && a.lost.torso) speed *= 0.7;
+    else if ((a.lost.leg_l && a.lost.leg_r) || (a.lost.foot_l && a.lost.foot_r)) speed *= 0.35;
+    else if (a.lost.leg_l || a.lost.leg_r || a.lost.foot_l || a.lost.foot_r) speed *= 0.6;
+    if (a.target) {
+      const dx = a.target[0] - a.x, dy = a.target[1] - a.y, dist = Math.hypot(dx, dy);
+      if (dist < 1) { if (a.path && a.path.length) a.target = a.path.shift(); else { a.target = null; a.wanderTimer = rnd(0.6, 2.4); } }
+      else { a.moving = true; a.x += dx / dist * speed * dt; a.y += dy / dist * speed * dt; if (Math.abs(dx) > 0.5) a.face = Math.sign(dx); }
+    } else if ((a.wanderTimer -= dt) <= 0 && scene.pickTarget) a.target = scene.pickTarget(a);
+  }
+}
+function maxHpOf(a, id) { if (id.startsWith("t") && a.tentacles) return 15; const p = a.rig.byId[id]; return p && p.hp ? p.hp : 0; }
+function labelOf(a, id) { if (id.startsWith("t") && a.tentacles) return `Tentakel ${Number(id.slice(1)) + 1}`; const p = a.rig.byId[id]; return p && p.label ? p.label : id; }
+function canDo(a, action) { return ![...a.rig.parts, ...a.rig.items].some((p) => p.disables === action && a.lost[p.id]); }
+function tipOf(a, id = "weapon") { const it = a.rig.byId[id], m = a.lastWorld && a.lastWorld[id]; return it && m ? m.transformPoint({ x: it.tip[0], y: it.tip[1] }) : { x: a.x, y: a.y - 8 }; }
+
+function clipEvents(a, scene, dt = 0) {
+  const once = (key, fn) => { if (!a.events[key]) { a.events[key] = true; fn(); } };
+  const world = a.lastWorld; if (!world) return;
+  const u = a.ct / durationOf(a, a.clip), ox = scene.ox || 0, oy = scene.oy || 0;
+  if (a.family === "void") { voidEvents(a, scene, u, dt, once); return; }
+  const style = a.rig.def.attack || a.rig.def.variant;
+  // Projectiles fly toward the current target (room) or straight ahead (cards).
+  const aim = (from, speed) => { if (!a.aimAt) return [speed * a.face, 0]; const dx = a.aimAt[0] - from.x, dy = a.aimAt[1] - from.y, n = Math.hypot(dx, dy) || 1; return [dx / n * speed, dy / n * speed]; };
+  if (a.clip === "attack") {
+    if (style === "bow" && u > (a.family === "skeleton" ? 0.7 : 0.62)) once("shoot", () => { const tip = tipOf(a), [vx, vy] = aim(tip, 180); scene.projectiles.push({ kind: "arrow", x: tip.x, y: tip.y, vx, vy, life: 0, max: 0.9, owner: a }); });
+    if (style === "staff" && u > 0.55) once("shoot", () => { const tip = tipOf(a), [vx, vy] = aim(tip, 95); scene.projectiles.push({ kind: "orb", x: tip.x + 2 * a.face, y: tip.y, vx, vy, life: 0, max: 1.2, owner: a, color: "#6fe3a0", splash: true }); });
+    if (a.family === "necro") {
+      const tip = tipOf(a);
+      if (u < 0.5 && Math.random() < 0.9) { const ang = rnd(0, TAU), r = rnd(9, 14); scene.particles.push({ x: tip.x + Math.cos(ang) * r, y: tip.y + Math.sin(ang) * r, vx: -Math.cos(ang) * r / 0.3, vy: -Math.sin(ang) * r / 0.3, life: 0, max: 0.3, color: Math.random() < 0.5 ? "#c06bd8" : "#f2b8ff" }); }
+      if (u > 0.58) once("release", () => { const [vx, vy] = aim(tip, 70); scene.projectiles.push({ kind: "orb", x: tip.x, y: tip.y, vx, vy, life: 0, max: 1.6, owner: a, color: "#c06bd8" }); });
+    }
+    if (a.family === "brute" && u > 0.56) once("impact", () => { scene.shake = 0.25; const f = world.arm ? world.arm.transformPoint({ x: 8, y: 26 }) : { x: ox + a.x + 14 * a.face }; for (let i = 0; i < 16; i++) scene.particles.push({ x: f.x, y: oy + a.y, vx: rnd(-50, 50), vy: rnd(-40, -5), life: 0, max: rnd(0.3, 0.6), color: pick(["#7b6a5e", "#a99d93"]), grav: 140 }); });
+    if (a.family === "sleeper" && u > 0.5) once("lash", () => { scene.shake = 0.12; });
+  }
+  if (a.clip === "summon" && a.family === "necro") {
+    if (u > 0.25) once("ring", () => scene.rings.push({ x: ox + a.x + 10 * a.face, y: oy + a.y, r0: 1, r1: 16, life: 0, max: 0.9, color: "#a46fe0" }));
+    if (u > 0.3 && u < 0.85 && Math.random() < 0.5) scene.particles.push({ x: ox + a.x + 10 * a.face + rnd(-8, 8), y: oy + a.y + rnd(-2, 2), vx: rnd(-4, 4), vy: rnd(-40, -20), life: 0, max: 0.6, color: pick(["#efe6d6", "#8a6fd1"]) });
+  }
+  if (a.clip === "slam" && a.family === "sleeper" && u > 0.6) once("slam", () => { scene.shake = 0.3; for (const side of [-1, 1]) for (let i = 0; i < 12; i++) scene.particles.push({ x: ox + a.x + side * 10, y: oy + a.y, vx: rnd(-40, 40), vy: rnd(-40, -8), life: 0, max: rnd(0.3, 0.6), color: pick(["#2f6f6a", "#7fc7b8", "#a99d93"]), grav: 140 }); });
+  if (a.clip === "gaze" && a.family === "sleeper" && u > 0.55) once("beam", () => { for (let i = 0; i < 20; i++) scene.particles.push({ x: ox + a.x + 6 * a.face, y: oy + a.y - 20, vx: a.face * rnd(60, 140), vy: rnd(-12, 12), life: 0, max: 0.5, color: pick(["#97da3f", "#e2ff9a"]) }); });
+  if (a.clip === "death") {
+    if ((a.family === "hero" || a.family === "necro") && u > 0.3) once("drop", () => detach(world, a, scene, "weapon", 0.6));
+    if (a.family === "brute" && u > 0.6) once("break", () => { for (const id of ["arm", "head"]) if (!a.lost[id]) detach(world, a, scene, id, 0.5); });
+    if (a.family === "necro" && Math.random() < 0.6) scene.particles.push({ x: ox + a.x + rnd(-6, 6), y: oy + a.y - rnd(2, 14), vx: rnd(-6, 6), vy: rnd(-26, -12), life: 0, max: 0.8, color: "#7a3d78" });
+  }
+  // Heroes in the room: the knight's strike hits the enemy in front.
+  if (a.clip === "attack" && style === "sword" && u > 0.4 && scene.actors) once("strike", () => {
+    const target = scene.actors.find((o) => o.team !== a.team && !o.dead && o.clip !== "rise" && Math.abs(o.y - a.y) < 12 && (o.x - a.x) * a.face > -2 && Math.abs(o.x - a.x) < 24);
+    if (target) hitRandom(target, scene, target.family === "skeleton" ? 1 : 3);
+  });
+  if (a.clip === "attack" && style === "claw" && u > 0.5 && scene.actors) once("bite", () => {
+    const target = scene.actors.find((o) => o.team !== a.team && !o.dead && Math.abs(o.y - a.y) < 12 && Math.abs(o.x - a.x) < 22);
+    if (target) hitRandom(target, scene, 2);
+  });
+}
+
+// ================================================================= damage
+function hitRandom(a, scene, amount) {
+  const alive = Object.keys(a.hp).filter((id) => a.hp[id] > 0 && !a.lost[id]);
+  if (!alive.length) return;
+  const vitals = alive.filter((id) => { const p = a.rig.byId[id]; return p && p.vital; });
+  const choice = Math.random() < 0.25 && vitals.length ? pick(vitals) : pick(alive.filter((id) => !vitals.includes(id)).concat(vitals.length && alive.length === vitals.length ? vitals : []));
+  damage(a, scene, choice || pick(alive), amount);
+}
+function damage(a, scene, id, amount) {
+  if (a.dead || a.clip === "rise" || !(id in a.hp) || a.hp[id] <= 0) return null;
+  if (a.rig.def.variant === "guard" && id !== "shield" && !a.lost.shield && a.clip === "block") { a.hp.shield = Math.max(0, a.hp.shield - amount); a.flash = 0.6; if (a.hp.shield === 0) detach(a.lastWorld, a, scene, "shield", 1.2); a.onChange && a.onChange(); return a.hp.shield ? "Vom Schild geblockt" : "Schild zerbrochen"; }
+  a.hp[id] = Math.max(0, a.hp[id] - amount); a.flash = 1;
+  if (!a.clip || a.clip === "hit") play(a, "hit");
+  let message = `${labelOf(a, id)} getroffen`;
+  if (a.hp[id] === 0) {
+    const part = a.rig.byId[id];
+    if (id.startsWith("t") && a.tentacles) { cutTentacle(a, scene, id); message = `${labelOf(a, id)} abgetrennt, wächst in 8 s nach`; }
+    else if (part && part.vital) { kill(a, scene); message = `${labelOf(a, id)} zerstört: besiegt`; }
+    else {
+      detach(a.lastWorld, a, scene, id, part && part.isItem ? 1.3 : 1);
+      for (const extra of (part && part.alsoDetach) || []) { detach(a.lastWorld, a, scene, extra); a.hp[extra] = 0; }
+      if (part && part.regrow) a.regrowIn[id] = part.regrow;
+      if (id === "eye3") a.regrowIn.eye3 = 10;
+      if (a.family === "void") { message = `${labelOf(a, id)} zerstört: ${{ beam: "kein Leerenstrahl", cast: "keine Seelensalve", summon: "keine Beschwörung" }[part.disables]}, wächst in ${part.regrow} s nach`; a.onChange && a.onChange(); return message; }
+      message =part && part.disables === "attack" ? `${labelOf(a, id)} ab: Angriff deaktiviert` : part && part.disables === "cast" ? `${labelOf(a, id)} zerbrochen: keine Zauber` : part && part.disables === "block" ? "Schild zerbrochen: kein Blocken" : id === "eye3" ? "Drittes Auge zerstört: kein Blick-Angriff" : `${labelOf(a, id)} zerstört`;
+      if (a.family === "skeleton" && a.lost.torso) message = "Rumpf zerschlagen: nur noch der Kopf hüpft";
+      else if (a.lost.leg_l && a.lost.leg_r && (id === "leg_l" || id === "leg_r")) message = "Beide Beine ab: es kriecht";
+    }
+  }
+  a.onChange && a.onChange();
+  return message;
+}
+function cutTentacle(a, scene, id) {
+  const tent = a.tentacles[Number(id.slice(1))];
+  for (const p of tent.pts.slice(3)) scene.debris.push({ disc: true, r: p.r, color: "#2f6f6a", x: p.x, y: a.y + (scene.oy || 0) + rnd(-2, 3), z: (a.y + (scene.oy || 0)) - p.y, vx: rnd(-30, 30), vz: rnd(20, 60), ang: 0, spin: 0, face: 1, life: 0, owner: a, id });
+  tent.cut = true; a.regrowIn[id] = 8;
+}
+function regrowPart(a, scene, id) {
+  if (a.dead) return;
+  if (id.startsWith("t") && a.tentacles) { const tent = a.tentacles[Number(id.slice(1))]; tent.cut = false; tent.grow = 0; a.hp[id] = 8; }
+  else { a.lost[id] = false; a.hp[id] = Math.ceil(maxHpOf(a, id) / 2); a.regrowing[id] = 1.2; }
+  a.flash = 0.5;
+  scene.debris = scene.debris.filter((d) => !(d.owner === a && d.id === id));
+  for (let i = 0; i < 12; i++) scene.particles.push({ x: (scene.ox || 0) + a.x, y: (scene.oy || 0) + a.y - 16, vx: rnd(-30, 30), vy: rnd(-30, 10), life: 0, max: 0.5, color: a.family === "sleeper" ? "#7fc7b8" : a.family === "void" ? "#a46fe0" : "#97da3f" });
+  if (scene.status) scene.status.textContent = `${labelOf(a, id)} ist nachgewachsen`;
+  a.onChange && a.onChange();
+}
+function kill(a, scene) {
+  const world = a.lastWorld;
+  for (const k in a.hp) a.hp[k] = 0;
+  if (a.family === "skeleton") { a.riseFrom = null; for (const p of [...a.rig.items, ...a.rig.parts]) detach(world, a, scene, p.id, 1); a.dead = true; a.clip = null; }
+  else if (a.family === "biped" || a.family === "blob") { play(a, "death"); for (const it of a.rig.items) detach(world, a, scene, it.id, 0.8); }
+  else play(a, "death");
+  // Summoned archers crumble into void dust; the master takes them with it.
+  if (a.summoned) for (let i = 0; i < 14; i++) scene.particles.push({ x: (scene.ox || 0) + a.x + rnd(-5, 5), y: (scene.oy || 0) + a.y - rnd(0, 14), vx: rnd(-10, 10), vy: rnd(-26, -6), life: 0, max: rnd(0.4, 0.8), color: pick(["#5f2d56", "#a46fe0", "#222222"]) });
+  if (a.minions) for (const m of a.minions) if (!m.dead) kill(m, scene);
+  a.onChange && a.onChange();
+}
+function rise(a, scene) {
+  const from = {};
+  for (const d of scene.debris.filter((d) => d.owner === a)) from[d.id] = { dx: (d.x - ((scene.ox || 0) + a.x)) * a.face, dy: -d.z + (d.y - ((scene.oy || 0) + a.y)) + 4, rot: d.ang };
+  scene.debris = scene.debris.filter((d) => d.owner !== a);
+  for (const p of [...a.rig.parts, ...a.rig.items]) if (!from[p.id]) from[p.id] = { dx: rnd(-10, 10), dy: rnd(2, 5), rot: rnd(-2, 2) };
+  a.lost = {}; a.dead = false; a.riseFrom = from; play(a, "rise");
+}
+function resetActor(a, scene) {
+  if (a.family === "skeleton") { rise(a, scene); return; }
+  scene.debris = scene.debris.filter((d) => d.owner !== a); a.lost = {}; a.dead = false; a.clip = null; a.regrowIn = {}; a.regrowing = {};
+  if (a.tentacles) a.tentacles.forEach((t) => { t.cut = false; t.grow = 1; });
+  if (a.minions) { for (const m of a.minions) if (!m.dead) kill(m, scene); a.beamSeg = null; a.beamCd = 0; }
+  for (const k in a.hp) a.hp[k] = maxHpOf(a, k);
+  a.onChange && a.onChange();
+}
+function hitTest(a, px, py) {
+  const world = a.lastWorld; if (!world || a.dead) return null;
+  if (a.tentacles) for (const [i, tent] of a.tentacles.entries()) if (!tent.cut) for (const p of tent.pts.slice(3)) if (Math.hypot(px - p.x, py - p.y) <= p.r + 0.8) return `t${i}`;
+  const list = [...a.rig.parts, ...a.rig.items].filter((p) => !a.lost[p.id] && world[p.id]).sort((p, q) => q.z - p.z);
+  for (const part of list) {
+    const local = world[part.id].inverse().transformPoint({ x: px, y: py }), x = Math.floor(local.x), y = Math.floor(local.y);
+    const fr = part.frames ? part.frames[(a.lastPose && a.lastPose.frames && a.lastPose.frames[part.id]) || 0] : part;
+    if (x >= 0 && y >= 0 && x < part.w && y < part.h && fr.mask[y * part.w + x]) return part.id;
+  }
+  return null;
+}
+
+// ================================================================= sleeper rig
+function buildSleeper() {
+  const mantle = IMG.sleeper_mantle, fin = IMG.sleeper_fin, w = 44, h = 34;
+  const c = document.createElement("canvas"); c.width = w; c.height = h; const ctx = c.getContext("2d");
+  ctx.drawImage(fin, 2, 9); ctx.save(); ctx.translate(42, 9); ctx.scale(-1, 1); ctx.drawImage(fin, 0, 0); ctx.restore(); ctx.drawImage(mantle, 8, 0);
+  IMG.sleeper_full = c;
+  const def = { img: "sleeper_full", family: "sleeper", ground: [22, 33], width: 22, parts: [
+    { id: "eye3", rects: [[19, 5, 24, 8]], pivot: [22, 8], parent: "mantle", z: 3, hp: 20, label: "Drittes Auge", disables: "gaze" },
+    { id: "fin_l", rects: [[0, 8, 9, 21]], pivot: [9, 12], parent: "mantle", z: 1, hp: 15, label: "Linke Flosse", regrow: 10 },
+    { id: "fin_r", rects: [[34, 8, 43, 21]], pivot: [34, 12], parent: "mantle", z: 1, hp: 15, label: "Rechte Flosse", regrow: 10 },
+    { id: "mantle", rects: [[8, 0, 35, 22]], pivot: [22, 22], parent: null, z: 2, hp: 80, label: "Mantel (Kern)", vital: true } ], items: [] };
+  DEFS.sleeper = def;
+  // Tentacle roots are given in mantle coordinates; the mantle starts at x = 8 in the sheet.
+}
+
+// ================================================================= void boss rig (Leerenrufer)
+// Built directly instead of from rects: the body is a flipbook of the 8 sheet
+// frames, the eye has three states, and both claws overlap the body.
+function buildVoid() {
+  const F = VOID.frame, w = F.w, h = F.h, pal = VOID.palette;
+  const sized = (img, x, y, flip = false) => {
+    const c = document.createElement("canvas"); c.width = w; c.height = h; const ctx = c.getContext("2d");
+    if (flip) { ctx.translate(x + img.width, y); ctx.scale(-1, 1); ctx.drawImage(img, 0, 0); } else ctx.drawImage(img, x, y);
+    return c;
+  };
+  const tint = (canvas, color) => { const c = document.createElement("canvas"); c.width = w; c.height = h; const ctx = c.getContext("2d"); ctx.drawImage(canvas, 0, 0); ctx.globalCompositeOperation = "source-in"; ctx.fillStyle = color; ctx.fillRect(0, 0, w, h); return c; };
+  const layer = (canvas) => ({ canvas, ...bakeMask(canvas), aura: tint(canvas, "#5f2d56") });
+  const part = (spec, canvases) => { const frames = canvases.map(layer); return { ...spec, ...frames[0], w, h, frames: canvases.length > 1 ? frames : null }; };
+  const claw = pixelsToCanvas(VOID.claw_left, pal), [px, py] = VOID.claw_pivot, [sx, sy] = VOID.shoulder_left, [tx, ty] = VOID.claw_tip;
+  const rsx = w - 1 - sx, rx = rsx - (claw.width - 1 - px), [ex, ey] = VOID.eye.at;
+  const parts = [
+    part({ id: "core", pivot: [F.center_x, F.bottom], parent: null, z: 2, hp: 90, label: "Leerenkern", vital: true }, [0, 1, 2, 3, 4, 5, 6, 7].map((i) => sized(IMG[`void_body_${i}`], 0, 0))),
+    part({ id: "eye", pivot: [ex + 3, ey + 2], parent: "core", z: 3, hp: 20, label: "Leerenauge", disables: "beam", regrow: 12 }, ["closed", "half", "open"].map((s) => sized(pixelsToCanvas(VOID.eye[s], pal), ex, ey))),
+    part({ id: "claw_l", pivot: [sx, sy], parent: "core", z: 4, hp: 15, label: "Hintere Klaue", disables: "summon", regrow: 8, tip: [sx - px + tx + 0.5, sy - py + ty + 0.5] }, [sized(claw, sx - px, sy - py)]),
+    part({ id: "claw_r", pivot: [rsx, sy], parent: "core", z: 4, hp: 15, label: "Vordere Klaue", disables: "cast", regrow: 8, tip: [rx + (claw.width - 1 - tx) + 0.5, sy - py + ty + 0.5] }, [sized(claw, rx, sy - py, true)]),
+  ];
+  const def = { img: null, family: "void", ground: [F.center_x, h - 1], width: 20, parts, items: [] };
+  RIGS.void = { name: "void", def, w, h, parts, items: [], byId: Object.fromEntries(parts.map((p) => [p.id, p])) };
+  IMG.void_skull = pixelsToCanvas(VOID.skull, pal);
+}
+
+// ================================================================= cards
+const CARDS = [
+  { group: "heroes", id: "H1", type: "knight", title: "Schwertkämpfer", tag: "orig", w: 84, h: 56, ground: 46, clips: ["attack", "dodge", "hit", "cheer", "death"], note: "Schwerthieb im Kegel vor sich, mit Spur." },
+  { group: "heroes", id: "H2", type: "elf", title: "Bogenschützin", tag: "orig", w: 104, h: 56, ground: 46, clips: ["attack", "dodge", "hit", "cheer", "death"], note: "Die Sehne wird pro Bild gespannt, der Pfeil fliegt als Geschoss." },
+  { group: "heroes", id: "H3", type: "wizard", title: "Magier", tag: "orig", w: 104, h: 56, ground: 46, clips: ["attack", "dodge", "hit", "cheer", "death"], note: "Stab-Stoß mit grüner Kugel, die am Ende explodiert." },
+  { group: "heroes", id: "H4", type: "lizard", title: "Echse (spätere Klasse)", tag: "orig", w: 84, h: 56, ground: 46, clips: ["attack", "dodge", "hit", "cheer", "death"], note: "Platzhalter-Angriff: Sprung mit Biss." },
+  { group: "crypt", id: "K1", type: "skeleton", title: "Skelett", tag: "orig", w: 84, h: 52, ground: 44, clips: ["attack", "hit", "kill", "rise"], destroy: true, note: "Beine weg → kriecht, Rumpf weg → Schädel hüpft." },
+  { group: "crypt", id: "K2", type: "skel_archer", title: "Skelett-Bogenschütze", tag: "kit", w: 110, h: 52, ground: 44, clips: ["attack", "hit", "kill", "rise"], destroy: true, note: "Skelett + Original-Bogen. Ohne Bogen kein Schuss." },
+  { group: "crypt", id: "K3", type: "skel_guard", title: "Schildskelett", tag: "kit", w: 84, h: 52, ground: 44, clips: ["attack", "block", "hit", "kill", "rise"], destroy: true, note: "Schild (neu gezeichnet, 3 LP) blockt Treffer, solange es deckt." },
+  { group: "crypt", id: "K4", type: "necro", title: "Nekromant", tag: "orig", w: 104, h: 56, ground: 46, clips: ["attack", "summon", "hit", "death"], destroy: true, note: "Seelenkugel und Beschwörung. Ohne Stab kein Zauber." },
+  { group: "crypt", id: "K5", type: "tiny_zombie", title: "Mini-Zombie", tag: "orig", w: 84, h: 48, ground: 40, clips: ["attack", "hit", "death"], destroy: true, note: "Schnell, schwach, beißt." },
+  { group: "crypt", id: "K6", type: "ice_zombie", title: "Eis-Zombie", tag: "orig", w: 84, h: 52, ground: 44, clips: ["attack", "hit", "kill", "rise"], destroy: true, note: "Zerfällt wie ein Skelett in Kopf, Rumpf und Beine." },
+  { group: "mini", id: "N1", type: "big_zombie", title: "Moderkoloss", tag: "orig", w: 120, h: 72, ground: 62, clips: ["attack", "roar", "hit", "death"], destroy: true, note: "Etwa Etage 3. Arm ab → kein Faustschlag, wächst nach 6 s nach." },
+  { group: "mini", id: "N2", type: "frost_corpse", title: "Frostleiche", tag: "kit", w: 120, h: 72, ground: 62, clips: ["attack", "roar", "hit", "death"], destroy: true, note: "Etwa Etage 6. Farbvariante in den Eis-Zombie-Farben." },
+  { group: "mini", id: "N3", type: "bone_colossus", title: "Knochenkoloss", tag: "kit", w: 120, h: 72, ground: 62, clips: ["attack", "roar", "hit", "death"], destroy: true, note: "Etwa Etage 9. Farbvariante in Knochen- und Nekromanten-Farben." },
+  { group: "boss", id: "B1", type: "void", title: "Der Leerenrufer", tag: "user", w: 240, h: 100, ground: 86, clips: ["attack", "beam", "summon", "hit", "death"], labels: { attack: "Seelensalve" }, destroy: true,
+    note: "Leerenstrahl aus dem Auge (mit Vorwarnlinie, schwenkt langsam nach), Seelensalve aus drei Seelenschädeln, Beschwörung von zwei Skelett-Bogenschützen (höchstens vier). Gesamt-LP = Kern 90 + Auge 20 + zwei Klauen je 15. Das Leerenauge ist nur beim Strahl offen und nur dann gut zu treffen. Auge weg: kein Strahl. Vordere Klaue weg: keine Seelensalve. Hintere Klaue weg: keine Beschwörung. Alles wächst nach." },
+];
+const CLIP_LABELS = { attack: "Angriff", dodge: "Ausweichen", hit: "Treffer", cheer: "Jubeln", death: "Tod", kill: "Zusammenfallen", rise: "Auferstehen", block: "Blocken", summon: "Beschwörung", roar: "Brüllen", slam: "Doppelschlag", gaze: "Blick", beam: "Leerenstrahl" };
+const BADGES = { orig: "Original", kit: "Zusammengesetzt", new: "Neu gezeichnet", user: "Dein Blatt + Ergänzungen" };
+const scenes = [];
+
+function newScene(canvas, w, h) { return { canvas, ctx: canvas.getContext("2d"), w, h, debris: [], particles: [], rings: [], projectiles: [], pools: [], minions: [], ox: 0, oy: 0, shake: 0 }; }
+const heavy = (a) => a.family === "brute" || a.family === "sleeper" || a.family === "void";
+
+function makeCard(spec) {
+  const card = document.createElement("article"); card.className = "card";
+  card.innerHTML = `<div class="card-head"><h3>${spec.id} · ${spec.title}</h3><span class="badge ${spec.tag}">${BADGES[spec.tag]}</span></div>
+    <div class="stage"><canvas aria-label="${spec.title}, animiert"></canvas></div>
+    <div class="row clips" role="group" aria-label="Animationen"></div>
+    ${spec.destroy ? '<div class="row dmg" role="group" aria-label="Teile treffen"></div>' : ""}
+    <div class="status" aria-live="polite"></div>
+    ${spec.destroy ? '<details><summary>Teile und Lebenspunkte</summary><div class="parts"></div></details>' : ""}
+    <p class="note">${spec.note}</p>`;
+  document.querySelector(`[data-group="${spec.group}"]`).appendChild(card);
+  const canvas = card.querySelector("canvas"), scene = newScene(canvas, spec.w, spec.h);
+  Object.assign(scene, { spec, status: card.querySelector(".status"), partsEl: card.querySelector(".parts"), auto: true, autoTimer: 0.5, debrisLife: RIGS[spec.type].def.family === "skeleton" ? 999 : 7 });
+  const family = RIGS[spec.type].def.family;
+  const a = makeActor(spec.type, family === "void" ? spec.w * 0.3 : spec.w / 2 - 6, spec.ground, { speed: family === "brute" || family === "void" ? 10 : 14 });
+  a.onChange = () => renderParts(scene); scene.actor = a;
+  scene.pickTarget = family === "void" ? () => [spec.w * rnd(0.2, 0.42), spec.ground] : (o) => [o.x < spec.w / 2 ? spec.w * 0.72 : spec.w * 0.28, spec.ground];
+  const row = card.querySelector(".clips");
+  const walkBtn = button(a.family === "sleeper" || a.family === "necro" || a.family === "void" ? "Schweben" : "Gehen", () => { scene.auto = false; a.walk = !a.walk; a.wanderTimer = 0; });
+  row.appendChild(walkBtn);
+  for (const clip of spec.clips) row.appendChild(button((spec.labels && spec.labels[clip]) || CLIP_LABELS[clip], () => { scene.auto = false; trigger(scene, clip); }));
+  const auto = button("Automatisch", () => { scene.auto = !scene.auto; auto.setAttribute("aria-pressed", String(scene.auto)); }); auto.setAttribute("aria-pressed", "true"); row.appendChild(auto);
+  if (spec.destroy) {
+    const dmg = card.querySelector(".dmg");
+    dmg.appendChild(Object.assign(button("Zufälliges Teil treffen", () => { scene.status.textContent = hitRandomMsg(a, scene); }), { className: "hurt" }));
+    dmg.appendChild(button("Zurücksetzen", () => { resetActor(a, scene); scene.status.textContent = a.family === "skeleton" ? "Die Knochen setzen sich zusammen" : "Zurückgesetzt"; }));
+  }
+  canvas.addEventListener("click", (event) => {
+    const rect = canvas.getBoundingClientRect(), px = (event.clientX - rect.left) / rect.width * spec.w, py = (event.clientY - rect.top) / rect.height * spec.h;
+    const id = hitTest(a, px, py); if (!id) return;
+    if (!spec.destroy) { play(a, "hit"); scene.status.textContent = "Treffer"; return; }
+    scene.status.textContent = damage(a, scene, id, heavy(a) ? 5 : 1) || "";
+  });
+  renderParts(scene); scenes.push(scene);
+}
+function button(label, fn) { const b = document.createElement("button"); b.textContent = label; b.addEventListener("click", fn); return b; }
+function hitRandomMsg(a, scene) { const before = JSON.stringify(a.hp); hitRandom(a, scene, 999); return before === JSON.stringify(a.hp) ? "Besiegt. Erst zurücksetzen." : "Teil abgeschlagen"; }
+
+function trigger(scene, clip) {
+  const a = scene.actor;
+  if (clip === "kill") { if (!a.dead) kill(a, scene); return; }
+  if (clip === "rise") { if (a.dead || Object.keys(a.lost).length) rise(a, scene); return; }
+  if (a.dead) { if (scene.status) scene.status.textContent = "Besiegt. Erst zurücksetzen."; return; }
+  if (clip === "death") { kill(a, scene); return; }
+  const need = a.family === "void" ? { attack: "cast", beam: "beam", summon: "summon" }[clip] : clip === "attack" ? (a.family === "necro" ? "cast" : "attack") : clip === "summon" ? "cast" : clip === "block" ? "block" : clip === "gaze" ? "gaze" : null;
+  if (need && !canDo(a, need)) { if (scene.status) scene.status.textContent = "Das zuständige Teil fehlt: Aktion deaktiviert"; return; }
+  if (a.family === "void" && clip === "summon" && aliveMinions(a) >= 4) { if (scene.status) scene.status.textContent = "Höchstens vier Diener gleichzeitig"; return; }
+  if (a.family === "brute" && clip === "attack" && a.lost.arm) { if (scene.status) scene.status.textContent = "Arm fehlt: Faustschlag deaktiviert"; return; }
+  if (a.family === "sleeper" && clip === "attack") { const alive = a.tentacles.map((t, i) => (!t.cut ? i : -1)).filter((i) => i >= 0); if (!alive.length) { scene.status.textContent = "Keine Tentakel mehr"; return; } a.lashIndex = alive.includes(4) ? 4 : pick(alive); }
+  play(a, clip);
+}
+function runAuto(scene, dt) {
+  if (!scene.auto) return;
+  const a = scene.actor;
+  if (a.dead) { scene.deadTimer = (scene.deadTimer || 0) + dt; if (scene.deadTimer > 2.5) { scene.deadTimer = 0; resetActor(a, scene); } return; }
+  if (a.clip) return;
+  scene.autoTimer -= dt; if (scene.autoTimer > 0) return;
+  const r = Math.random();
+  if (r < 0.45) { a.walk = true; a.wanderTimer = 0; scene.autoTimer = rnd(1.6, 2.6); }
+  else if (a.family === "void") { a.walk = false; a.target = null; const options = ["attack", "beam", "beam"].filter((c) => canDo(a, { attack: "cast", beam: "beam" }[c])); if (aliveMinions(a) < 2 && canDo(a, "summon")) options.push("summon", "summon"); if (options.length) trigger(scene, pick(options)); scene.autoTimer = rnd(0.8, 1.6); }
+  else { a.walk = false; a.target = null; const options = scene.spec.clips.filter((c) => !["death", "kill", "rise"].includes(c)); trigger(scene, r < 0.8 ? "attack" : pick(options)); scene.autoTimer = rnd(0.6, 1.4); }
+}
+// Summoned archers on a card: shoot now and then, crumble after 8 s.
+function stepMinions(scene, dt) {
+  if (!scene.minions.length) return;
+  for (const m of scene.minions) {
+    stepActor(m, scene, dt); m.life += dt;
+    if (m.dead) { m.deadTime = (m.deadTime || 0) + dt; continue; }
+    if (m.life > 8) { kill(m, scene); continue; }
+    if (!m.clip && m.cooldown <= 0 && canDo(m, "attack")) { play(m, "attack"); m.cooldown = rnd(1.6, 2.6); }
+  }
+  const gone = scene.minions.filter((m) => m.dead && m.deadTime > 2.6);
+  if (!gone.length) return;
+  scene.minions = scene.minions.filter((m) => !gone.includes(m));
+  for (const m of gone) if (m.master) m.master.minions = m.master.minions.filter((x) => x !== m);
+}
+function renderParts(scene) {
+  if (!scene.partsEl) return;
+  const a = scene.actor, ids = Object.keys(a.hp), total = ids.reduce((s, id) => s + a.hp[id], 0);
+  scene.partsEl.innerHTML = `<div class="part" style="grid-column:1/-1"><span>Gesamt-LP</span><span>${total} / ${a.maxHp}</span><div class="bar"><i style="width:${total / a.maxHp * 100}%"></i></div></div>` +
+    ids.map((id) => { const max = maxHpOf(a, id), gone = a.hp[id] <= 0; return `<div class="part${gone ? " gone" : ""}"><span>${labelOf(a, id)}</span><span>${a.hp[id]}/${max}</span><div class="bar"><i style="width:${a.hp[id] / max * 100}%"></i></div></div>`; }).join("");
+}
+
+function drawStageBg(ctx, w, h, S, ground) {
+  ctx.setTransform(S, 0, 0, S, 0, 0); ctx.imageSmoothingEnabled = false; ctx.fillStyle = "#13111c"; ctx.fillRect(0, 0, w, h);
+  const top = ground - 30;
+  for (let x = -8; x < w; x += 16) for (let y = top + 12; y < h; y += 16) ctx.drawImage(IMG.floor_1, x, y);
+  for (let x = -8; x < w; x += 16) { ctx.drawImage(IMG.wall_mid, x, top - 4); ctx.drawImage(IMG.wall_top_mid, x, top - 20); }
+  ctx.fillStyle = "#13111c"; ctx.fillRect(0, 0, w, Math.max(0, top - 8));
+}
+function fitCanvas(scene) {
+  const stage = scene.canvas.parentElement, avail = Math.max(120, stage.clientWidth - 2), zoom = Math.max(1, Math.floor(avail / (scene.w * settings.S)));
+  scene.canvas.style.width = `${scene.w * settings.S * zoom}px`;
+}
+function drawCard(scene, dt) {
+  const { spec, canvas, ctx, actor } = scene, S = settings.S;
+  if (canvas.width !== spec.w * S) { canvas.width = spec.w * S; canvas.height = spec.h * S; fitCanvas(scene); }
+  ctx.imageSmoothingEnabled = false;
+  const sx = scene.shake > 0 ? Math.round(rnd(-1, 1)) : 0; scene.shake = Math.max(0, scene.shake - dt);
+  drawStageBg(ctx, spec.w, spec.h, S, spec.ground);
+  drawWorldFx(ctx, scene, S, "under");
+  for (const a of [actor, ...scene.minions].sort((p, q) => p.y - q.y)) drawActor(ctx, a, scene, S, a === actor ? sx : 0, 0);
+  drawWorldFx(ctx, scene, S, "over");
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+}
+
+// ---- group stages for the later worlds
+const WORLDS = [
+  { id: "W1", title: "Stein-Welt", figures: ["muddy", "swampy", "slug", "tiny_slug"], note: "Schlamm- und Schleimwesen. Ein Boss fehlt im Paket." },
+  { id: "W2", title: "Ork-Welt", figures: ["goblin", "masked_orc", "orc_warrior", "orc_shaman", "ogre"], note: "Boss: Oger mit Hammer." },
+  { id: "W3", title: "Inferno-Welt", figures: ["imp", "chort", "wogol", "big_demon"], note: "Boss: großer Dämon." },
+];
+function makeWorld(spec) {
+  const card = document.createElement("article"); card.className = "card";
+  card.innerHTML = `<div class="card-head"><h3>${spec.id} · ${spec.title}</h3><span class="badge orig">Original</span></div><div class="stage"><canvas aria-label="${spec.title}, Gegner animiert"></canvas></div><div class="row" role="group"></div><div class="status" aria-live="polite"></div><p class="note">${spec.note}</p>`;
+  document.querySelector('[data-group="worlds"]').appendChild(card);
+  const w = 200, h = 70, ground = 60, canvas = card.querySelector("canvas"), scene = newScene(canvas, w, h);
+  Object.assign(scene, { spec: { w, h, ground }, group: true, status: card.querySelector(".status"), auto: true });
+  scene.actors = spec.figures.map((name, i) => { const a = makeActor(name, 22 + i * ((w - 44) / Math.max(1, spec.figures.length - 1)), ground - (i % 2) * 6, { speed: 12 }); a.walk = true; a.home = [a.x, a.y]; return a; });
+  scene.pickTarget = (a) => [clamp(a.home[0] + rnd(-18, 18), 12, w - 12), clamp(a.home[1] + rnd(-4, 4), ground - 10, ground)];
+  const row = card.querySelector(".row");
+  row.appendChild(button("Alle angreifen", () => scene.actors.forEach((a) => { if (!a.dead && canDo(a, "attack")) play(a, "attack"); })));
+  row.appendChild(button("Alle treffen", () => scene.actors.forEach((a) => !a.dead && play(a, "hit"))));
+  row.appendChild(Object.assign(button("Alle besiegen", () => scene.actors.forEach((a) => !a.dead && kill(a, scene))), { className: "hurt" }));
+  row.appendChild(button("Zurücksetzen", () => scene.actors.forEach((a) => resetActor(a, scene))));
+  canvas.addEventListener("click", (event) => {
+    const rect = canvas.getBoundingClientRect(), px = (event.clientX - rect.left) / rect.width * w, py = (event.clientY - rect.top) / rect.height * h;
+    for (const a of [...scene.actors].sort((p, q) => q.y - p.y)) { const id = hitTest(a, px, py); if (id) { scene.status.textContent = damage(a, scene, id, 1) || ""; break; } }
+  });
+  scenes.push(scene);
+}
+function drawGroup(scene, dt) {
+  const { canvas, ctx } = scene, S = settings.S, { w, h, ground } = scene.spec;
+  if (canvas.width !== w * S) { canvas.width = w * S; canvas.height = h * S; fitCanvas(scene); }
+  drawStageBg(ctx, w, h, S, ground); drawWorldFx(ctx, scene, S, "under");
+  for (const a of [...scene.actors].sort((p, q) => p.y - q.y)) drawActor(ctx, a, scene, S, 0, 0);
+  drawWorldFx(ctx, scene, S, "over"); ctx.setTransform(1, 0, 0, 1, 0, 0);
+}
+function stepGroup(scene, dt) {
+  for (const a of scene.actors) {
+    stepActor(a, scene, dt);
+    if (a.dead) { a.deadTimer = (a.deadTimer || 0) + dt; if (a.deadTimer > 3) { a.deadTimer = 0; resetActor(a, scene); } }
+    else if (!a.clip && Math.random() < dt * 0.25 && canDo(a, "attack")) play(a, "attack");
+  }
+}
+
+// ================================================================= crypt floor (rooms)
+const room = { canvas: null, ctx: null, debris: [], particles: [], rings: [], projectiles: [], pools: [], actors: [], ox: 0, oy: 0, debrisLife: 12, zoom: 1, current: 1, floorSet: new Set() };
+function setupRooms() {
+  room.canvas = document.getElementById("room-canvas"); room.ctx = room.canvas.getContext("2d");
+  const thumbs = document.getElementById("thumbs");
+  for (let i = 1; i <= 10; i++) {
+    const data = ROOMS[i], b = document.createElement("button"); b.className = "thumb"; b.setAttribute("aria-pressed", String(i === 1));
+    b.innerHTML = `<img src="${ASSETS[`room_${i}`]}" alt=""><span><b>R${i}</b> · ${data.template}${i === 1 ? " · Eingang" : data.boss ? " · Boss" : ""}</span>`;
+    b.addEventListener("click", () => { document.querySelectorAll(".thumb").forEach((t) => t.setAttribute("aria-pressed", "false")); b.setAttribute("aria-pressed", "true"); loadRoom(i); });
+    thumbs.appendChild(b);
+  }
+  room.pickTarget = (a) => { for (let i = 0; i < 30; i++) { const tx = a.home[0] + rnd(-110, 110), ty = a.home[1] + rnd(-70, 70); if (walkable(tx, ty) && walkable(tx - 6, ty) && walkable(tx + 6, ty) && pathClear(a.x, a.y, tx, ty)) return [tx, ty]; } return null; };
+  room.onProjectile = (pr) => {
+    for (const o of room.actors) {
+      if (o.team === pr.owner.team || o.dead) continue;
+      if (Math.abs(o.x - pr.x) < 7 && pr.y > o.y - 22 && pr.y < o.y + 2) { if (pr.kind === "orb") for (const n of room.actors) { if (n.team !== pr.owner.team && !n.dead && Math.hypot(n.x - pr.x, n.y - 8 - pr.y) < 18) hitRandom(n, room, 1); } else hitRandom(o, room, 1); return true; }
+    }
+    return !walkable(pr.x, pr.y + 10);
+  };
+  loadRoom(1); fitRoom();
+}
+function loadRoom(i) {
+  const data = ROOMS[i]; room.current = i; room.img = IMG[`room_${i}`]; room.data = data;
+  room.canvas.width = room.img.width; room.canvas.height = room.img.height; room.dark = null;
+  room.floorSet = new Set(data.floor.map(([x, y]) => `${x},${y}`));
+  document.getElementById("room-meta").textContent = `R${i} · Vorlage ${data.template} · ${data.floor.length} Bodenzellen${data.boss ? " · Bossraum" : ""}`;
+  resetRoom();
+}
+// Breadth-first search over walkable floor cells (16 px), 8 directions without
+// corner cutting. Returns waypoints at cell feet positions, or null.
+function findPath(x0, y0, x1, y1) {
+  const cell = (x, y) => [Math.floor(x / 16), Math.floor((y - 4) / 16)];
+  const ok = (cx, cy) => room.floorSet.has(`${cx},${cy}`) && room.floorSet.has(`${cx},${cy - 1}`);
+  const [sx, sy] = cell(x0, y0), [tx, ty] = cell(x1, y1);
+  if (!ok(tx, ty)) return null;
+  const key = (x, y) => y * 1000 + x, prev = new Map([[key(sx, sy), -1]]), queue = [[sx, sy]];
+  const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+  for (let head = 0; head < queue.length && head < 4000; head++) {
+    const [cx, cy] = queue[head];
+    if (cx === tx && cy === ty) {
+      const out = []; let k = key(cx, cy);
+      while (k !== -1 && k !== key(sx, sy)) { const x = k % 1000, y = Math.floor(k / 1000); out.unshift([x * 16 + 8, y * 16 + 12]); k = prev.get(k); }
+      return out.filter((_, i) => i % 2 === 1 || i === out.length - 1);
+    }
+    for (const [dx, dy] of dirs) {
+      const nx = cx + dx, ny = cy + dy, nk = key(nx, ny);
+      if (prev.has(nk) || !ok(nx, ny) || (dx && dy && (!ok(cx + dx, cy) || !ok(cx, cy + dy)))) continue;
+      prev.set(nk, key(cx, cy)); queue.push([nx, ny]);
+    }
+  }
+  return null;
+}
+function nearestFloor(x, y) {
+  let best = null, bestD = Infinity;
+  for (const [cx, cy] of room.data.floor) { const px = cx * 16 + 8, py = cy * 16 + 12, d = Math.hypot(px - x, py - y); if (d < bestD && walkable(px, py) && walkable(px - 6, py) && walkable(px + 6, py)) { bestD = d; best = [px, py]; } }
+  return best || [x, y];
+}
+function walkable(x, y) { return room.floorSet.has(`${Math.floor(x / 16)},${Math.floor(y / 16)}`) && room.floorSet.has(`${Math.floor(x / 16)},${Math.floor((y - 8) / 16)}`); }
+function pathClear(x0, y0, x1, y1) { const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 4); for (let i = 0; i <= n; i++) if (!walkable(lerp(x0, x1, i / n), lerp(y0, y1, i / n))) return false; return true; }
+function resetRoom() {
+  const data = room.data; room.debris = []; room.particles = []; room.projectiles = []; room.rings = []; room.pools = []; room.actors = [];
+  // Preview staging: heroes left of the centre, enemies right of it, so the
+  // fight starts within seconds (the game itself spawns at doors/slots).
+  const W = room.img.width, H = room.img.height;
+  ["knight", "elf", "wizard"].forEach((type, i) => { const [x, y] = nearestFloor(W * 0.36 - i * 24, H * 0.5 + (i - 1) * 30); const a = makeActor(type, x, y, { speed: 30, team: "hero" }); a.walk = true; a.home = [x, y]; room.actors.push(a); });
+  const roster = data.boss ? ["void", "skeleton", "skel_guard"] : ["skeleton", "skel_archer", "skel_guard", "necro", pick(["tiny_zombie", "ice_zombie"])];
+  roster.forEach((type, i) => {
+    const [x, y] = nearestFloor(W * (type === "void" ? 0.6 : 0.62) + (i % 2) * 24, H * 0.5 + ((i % 3) - 1) * 34);
+    const a = makeActor(type, x, y, { speed: type === "void" ? 10 : 18, face: -1 }); a.walk = true; a.home = [x, y]; room.actors.push(a);
+  });
+}
+function fitRoom() { room.canvas.style.width = room.zoom === 2 ? `${room.canvas.width * 2}px` : "100%"; }
+function drawRoom(dt) {
+  const ctx = room.ctx, data = room.data; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(room.img, 0, 0);
+  const frame = Math.floor(performance.now() / 100) % 8;
+  for (const [x, y] of data.torches) ctx.drawImage(IMG[`wall_torch_${frame}`], x, y);
+  for (const [x, y] of data.candles) ctx.drawImage(IMG[`candle_column_${(frame + 3) % 8}`], x, y);
+  for (const a of [...room.actors]) {
+    stepActor(a, room, dt);
+    if (a.dead) {
+      a.deadTimer = (a.deadTimer || 0) + dt;
+      if (a.summoned) { if (a.deadTimer > 2.6) { room.actors = room.actors.filter((x) => x !== a); if (a.master) a.master.minions = a.master.minions.filter((x) => x !== a); } continue; }
+      if (a.deadTimer > (a.family === "skeleton" ? 6 : 8)) { a.deadTimer = 0; a.family === "skeleton" ? rise(a, room) : resetActor(a, room); }
+      continue;
+    }
+    if (a.clip || a.cooldown > 0) continue;
+    const foes = room.actors.filter((o) => o.team !== a.team && !o.dead);
+    const near = foes.map((o) => [o, Math.hypot(o.x - a.x, o.y - a.y)]).sort((p, q) => p[1] - q[1])[0];
+    if (!near) continue;
+    const [o, d] = near, style = a.rig.def.attack || a.rig.def.variant, boss = a.family === "void", ranged = style === "bow" || style === "staff" || a.family === "necro" || boss;
+    const reach = boss ? 170 : ranged ? 150 : a.family === "sleeper" ? 40 : a.family === "brute" ? 26 : 20;
+    if (d < reach && Math.abs(o.y - a.y) < (boss ? 70 : ranged ? 40 : 14)) {
+      a.face = Math.sign(o.x - a.x) || 1; a.walk = false; a.target = null; a.aimAt = [o.x, o.y - 8]; a.aimTarget = o;
+      if (boss) voidAct(a);
+      else if (a.family === "sleeper") trigger({ actor: a, status: { textContent: "" } }, pick(["attack", "attack", "slam", "gaze"]));
+      else if (canDo(a, a.family === "necro" ? "cast" : "attack")) play(a, "attack");
+      a.cooldown = boss ? rnd(1.2, 2.2) : rnd(0.8, 1.8);
+      setTimeout(() => { a.walk = true; }, 600);
+    } else if (!a.target || Math.random() < dt * 2) {
+      // Close in on the nearest foe along the floor grid: melee to arm's
+      // length, ranged to a safe distance.
+      const side = Math.sign(a.x - o.x) || 1, keep = boss ? 90 : ranged ? 70 : a.family === "sleeper" ? 30 : 14;
+      let goal = [o.x + side * keep, o.y + (ranged ? rnd(-10, 10) : 0)];
+      if (!walkable(goal[0], goal[1])) goal = [o.x, o.y];
+      const path = findPath(a.x, a.y, goal[0], goal[1]);
+      a.walk = true;
+      if (path && path.length) { a.path = path; a.target = a.path.shift(); } else a.target = room.pickTarget(a);
+    }
+  }
+  stepWorld(room, dt);
+  drawWorldFx(ctx, room, 1, "under");
+  for (const a of [...room.actors].sort((p, q) => p.y - q.y)) drawActor(ctx, a, room, 1, 0, 0);
+  drawWorldFx(ctx, room, 1, "over");
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  if (settings.light) {
+    if (!room.dark) { room.dark = document.createElement("canvas"); room.dark.width = room.canvas.width; room.dark.height = room.canvas.height; }
+    const d = room.dark.getContext("2d"), t = performance.now() / 1000;
+    d.globalCompositeOperation = "source-over"; d.fillStyle = "rgba(8,6,14,0.62)"; d.fillRect(0, 0, room.dark.width, room.dark.height); d.globalCompositeOperation = "destination-out";
+    const lights = data.torches.map(([x, y], i) => [x + 8, y + 10, 70 + 6 * Math.sin(t * 9 + i)]).concat(data.candles.map(([x, y], i) => [x + 8, y + 6, 58 + 5 * Math.sin(t * 11 + i)]));
+    for (const a of room.actors) if (a.team === "hero" && !a.dead) lights.push([a.x, a.y - 10, 44]);
+    // Void light: a faint pool around the boss, the beam, summoning pools and soul skulls.
+    const beams = room.actors.filter((a) => a.beamSeg).map((a) => a.beamSeg), beamDots = [];
+    for (const s of beams) { const n = Math.ceil(Math.hypot(s.x1 - s.x0, s.y1 - s.y0) / 18); for (let i = 0; i <= n; i++) beamDots.push([lerp(s.x0, s.x1, i / n), lerp(s.y0, s.y1, i / n)]); }
+    for (const a of room.actors) if (a.family === "void" && !a.dead) lights.push([a.x, a.y - 18, 30]);
+    for (const [x, y] of beamDots) lights.push([x, y, 34]);
+    for (const p of room.pools) lights.push([p.x, p.y, 22]);
+    for (const pr of room.projectiles) if (pr.kind === "skull" || pr.kind === "orb") lights.push([pr.x, pr.y, 16]);
+    for (const [x, y, r] of lights) { const g = d.createRadialGradient(x, y, 4, x, y, r); g.addColorStop(0, "rgba(0,0,0,0.95)"); g.addColorStop(1, "rgba(0,0,0,0)"); d.fillStyle = g; d.fillRect(x - r, y - r, r * 2, r * 2); }
+    ctx.drawImage(room.dark, 0, 0);
+    ctx.globalCompositeOperation = "lighter";
+    for (const [x, y] of data.torches) { const g = ctx.createRadialGradient(x + 8, y + 8, 2, x + 8, y + 8, 30); g.addColorStop(0, "rgba(240,150,60,0.22)"); g.addColorStop(1, "rgba(240,150,60,0)"); ctx.fillStyle = g; ctx.fillRect(x - 22, y - 22, 60, 60); }
+    for (const [x, y] of beamDots) { const g = ctx.createRadialGradient(x, y, 2, x, y, 26); g.addColorStop(0, "rgba(164,111,224,0.28)"); g.addColorStop(1, "rgba(164,111,224,0)"); ctx.fillStyle = g; ctx.fillRect(x - 26, y - 26, 52, 52); }
+    ctx.globalCompositeOperation = "source-over";
+  }
+}
+
+// ================================================================= props
+const PROPS = [
+  ["Wandfackel", "anim:wall_torch:8", "Erweiterung · Lizenz offen"], ["Kerzensäule", "anim:candle_column:8", "Erweiterung · Lizenz offen"],
+  ["Truhe", "anim:chest:3", "0x72 · CC0"], ["Stachelfalle", "anim:spikes:4", "0x72 · CC0"], ["Brunnen", "anim:fountain:3", "0x72 · CC0"],
+  ["Tür zu", "doors_leaf_closed", "0x72 · CC0"], ["Tür offen", "doors_leaf_open", "0x72 · CC0"], ["Treppe", "floor_stairs", "0x72 · CC0"],
+  ["Säule", "column", "0x72 · CC0"], ["Banner rot", "wall_banner_red", "0x72 · CC0"], ["Banner blau", "wall_banner_blue", "0x72 · CC0"], ["Banner grün", "wall_banner_green", "0x72 · CC0"],
+  ["Schädel", "skull", "0x72 · CC0"], ["Kiste", "crate", "0x72 · CC0"], ["Ziegelfront", "wall_mid", "0x72 · CC0"], ["Boden", "floor_1", "0x72 · CC0"],
+  ["Schild", "shield", "Neu gezeichnet"],
+];
+function buildProps() {
+  const list = document.getElementById("prop-list");
+  for (const [label, key, source] of PROPS) {
+    const el = document.createElement("div"); el.className = "prop";
+    const c = document.createElement("canvas"); c.width = 128; c.height = 128; c.dataset.key = key; c.style.width = "64px";
+    el.appendChild(c); el.insertAdjacentHTML("beforeend", `<span>${label}</span><span class="lic ${source.includes("CC0") ? "ok" : "warn"}">${source}</span>`);
+    list.appendChild(el);
+  }
+}
+let shieldCanvas = null;
+function drawProps() {
+  const now = performance.now();
+  for (const c of document.querySelectorAll("#prop-list canvas")) {
+    const ctx = c.getContext("2d"); ctx.imageSmoothingEnabled = false; ctx.clearRect(0, 0, c.width, c.height);
+    const key = c.dataset.key; let img;
+    if (key.startsWith("anim:")) { const [, base, n] = key.split(":"); img = IMG[`${base}_${Math.floor(now / (base === "chest" ? 400 : 100)) % Number(n)}`]; }
+    else if (key === "shield") img = shieldCanvas || (shieldCanvas = pixelsToCanvas(SHIELD.rows, SHIELD.palette));
+    else img = IMG[key];
+    if (!img) continue;
+    const scale = Math.max(1, Math.floor(Math.min(128 / img.width, 128 / img.height)));
+    ctx.drawImage(img, Math.round((c.width - img.width * scale) / 2), c.height - img.height * scale, img.width * scale, img.height * scale);
+  }
+}
+
+// ================================================================= loop
+let last = performance.now(), fpsTime = 0, fpsFrames = 0;
+function frame(now) {
+  const raw = Math.min(0.05, (now - last) / 1000); last = now; fpsFrames++; fpsTime += raw;
+  if (fpsTime > 0.5) { document.getElementById("fps").textContent = `${Math.round(fpsFrames / fpsTime)} Bilder/s`; fpsFrames = 0; fpsTime = 0; }
+  const dt = settings.paused ? 0 : raw * settings.speed;
+  for (const scene of scenes) {
+    if (scene.group) { stepGroup(scene, dt); stepWorld(scene, dt); drawGroup(scene, dt); continue; }
+    runAuto(scene, dt); stepActor(scene.actor, scene, dt); stepMinions(scene, dt); stepWorld(scene, dt); drawCard(scene, dt);
+  }
+  drawRoom(dt); drawProps();
+  requestAnimationFrame(frame);
+}
+function bindToolbar() {
+  const toggle = (on, off) => { on.setAttribute("aria-pressed", "true"); off.setAttribute("aria-pressed", "false"); };
+  const game = document.getElementById("grid-game"), strict = document.getElementById("grid-strict");
+  game.onclick = () => { settings.S = 2; toggle(game, strict); };
+  strict.onclick = () => { settings.S = 1; toggle(strict, game); };
+  const s1 = document.getElementById("speed-1"), sq = document.getElementById("speed-q");
+  s1.onclick = () => { settings.speed = 1; toggle(s1, sq); }; sq.onclick = () => { settings.speed = 0.25; toggle(sq, s1); };
+  const pause = document.getElementById("pause"), sync = () => { pause.setAttribute("aria-pressed", String(settings.paused)); pause.textContent = settings.paused ? "Abspielen" : "Pause"; };
+  sync(); pause.onclick = () => { settings.paused = !settings.paused; sync(); };
+  const light = document.getElementById("light");
+  light.onclick = () => { settings.light = !settings.light; light.setAttribute("aria-pressed", String(settings.light)); light.textContent = settings.light ? "Licht an" : "Licht aus"; };
+  const zoom = document.getElementById("room-zoom");
+  zoom.onclick = () => { room.zoom = room.zoom === 1 ? 2 : 1; zoom.setAttribute("aria-pressed", String(room.zoom === 2)); fitRoom(); };
+  document.getElementById("room-reset").onclick = resetRoom;
+  room.canvas.addEventListener("click", (event) => {
+    const rect = room.canvas.getBoundingClientRect(), px = (event.clientX - rect.left) / rect.width * room.canvas.width, py = (event.clientY - rect.top) / rect.height * room.canvas.height;
+    for (const a of [...room.actors].sort((p, q) => q.y - p.y)) { if (a.team === "hero") continue; const id = hitTest(a, px, py); if (id) { damage(a, room, id, heavy(a) ? 5 : 1); break; } }
+  });
+  window.addEventListener("resize", () => scenes.forEach(fitCanvas));
+}
+
+loadImages().then(() => {
+  buildSleeper();
+  for (const name of Object.keys(DEFS)) buildRig(name, DEFS[name]);
+  buildVoid();
+  for (const name of Object.keys(AUTO)) { DEFS[name] = autoDef(name); buildRig(name, DEFS[name]); }
+  CARDS.forEach(makeCard); WORLDS.forEach(makeWorld);
+  setupRooms(); buildProps(); bindToolbar();
+  scenes.forEach(fitCanvas);
+  requestAnimationFrame(frame);
+});
+</script>

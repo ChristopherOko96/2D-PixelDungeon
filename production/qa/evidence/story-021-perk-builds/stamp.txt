@@ -1,0 +1,14 @@
+Reviewed-Content-Hash: src/game.gd 99ecdc69e6a2549ae256611232ab562eae0b444c
+Reviewed-Content-Hash: src/perk_rules.gd a05193f43d3f07f85fd6fefe83598986ad56865e
+Reviewed-Content-Hash: src/perk_combat.gd f7117bdf39693d3dbe79d2fea2a087da6006d5ca
+Reviewed-Content-Hash: src/perk_icons.gd 96cffc3f59ade802491d969367f1a45090201309
+Reviewed-Content-Hash: src/data/balance.json 2d63b3a9e00d65b58270eab886b9f4fce235464a
+Reviewed-Content-Hash: src/dungeon_view.gd 425d1c3943bca22bfc5d127babd3226307ef6f25
+Reviewed-Content-Hash: src/session_protocol.gd 8b35649567585f1916d1ed1da24434f5bd471ffd
+Reviewed-Content-Hash: src/reward_overlay.gd c120563825784aecea0a05b975329b1497482e04
+Reviewed-Content-Hash: src/pause_menu.gd 3204e576f9a259cb4acdc5851b35a5bf2c71488a
+Reviewed-Content-Hash: tests/perk_rules_test.gd f871e4d6c494ce05aa0888be3c041211d49ea00b
+Reviewed-Content-Hash: tests/perk_combat_test.gd 6387096ad1225fc791fec713e07a9120d3293b84
+Reviewed-Content-Hash: tests/perk_ui_test.gd c1159d19127d8196c24a2bdb1418c5d8056b1c7b
+Reviewed-Content-Hash: tests/perk_network_peer.gd cf9eafdfc38120d104ff85420a784bb6503c8b26
+Reviewed-Content-Hash: tests/perk_network_smoke.ps1 ccc8ffdd7ae168836739afe7b871fe3a0c728b24

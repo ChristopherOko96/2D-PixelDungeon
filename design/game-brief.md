@@ -1,5 +1,59 @@
 # Game Brief: Basement Run
 
+## Aktueller verbindlicher Stand,26.10.2026
+
+Die jüngsten Nutzerkorrekturen haben Vorrang vor den historischen Abschnitten:
+
+- **Festgelegte Krypta-Art-Direction:** Ruhige32px-Schieferkrypta mit warmem
+  Feuer und dazu passende Untote: Skelettbogenschütze, Nekromant und
+  Schildkrieger. Gemeinsame2px-Pixelblöcke, Konturen, Knochen-/Violettpalette
+  und bestehendes Wobble-/Treffer-/Todessystem. Neue Rollen und Animationen
+  sind im Prototyp; [Stilstandard und Regeln](../docs/CRYPT-ENEMIES.de.md).
+- **Core-Design vor weiterer Online-Abnahme:** Der Nutzer stellt LAN-/Online-
+  und Lastabnahme vorerst zurück. Story021 erweitert den Katalog auf48eigene
+  kombinierbare Perks: Schussmuster/Flugbahnen, Elemente, bedingte Treffer,
+  Schutz und Risiko. Persönliche geeignete Dreierangebote, feste Stapelgrenzen
+  und freie Synergien. [Katalog und Regeln](../docs/PERKS.de.md).
+- **Godot, maximal vier Gesamtspieler**, getrennte Clients mit autoritativem Host.
+- **Crypt of the Damned:** zehn verschiedene große Karten pro Ebene; Eingang
+  zuerst, acht normale Karten ohne Wiederholung gemischt, Boss nur in Raum10.
+  Nach dem Kampf erscheinen persönliche Belohnungskarten automatisch. Gesäuberte
+  Räume bleiben begehbar; E an Türen verbindet die Räume. Die separate Boss-
+  Treppe führt nach Abschluss der Ebene in eine neu erzeugte Krypta-Ebene.
+- **Ruhiger erster Pixelstil:**32×32-Weltraster, ursprüngliche Schieferböden,
+  klare erhöhte Mauerkanten und warmes oranges Feuer. Zurzeit keine Möbel,
+  Pflanzen, Grabdekoration oder Nebel. Künftige Assets müssen diesen Stil treffen.
+- **Lesbarkeit und Vollbild:** lokal gebündelte Pixel Operator8 in16/24/32px;
+  1280×720-Designbasis, Spielansicht über die ganze Fenster-/Bildschirmfläche,
+  unverzerrte Anpassung anderer Seitenverhältnisse. Herzen oben links im Spiel;
+  Details über ESC. Vollbild mit F11, Alt+Enter oder ESC→Anzeige.
+- Der Editor erstellt Raumvorlagen auf freier Fläche; der persönliche gespeicherte
+  Entwurf bleibt erhalten.
+- **Netzwerkstand:** begrenzte Client-Positionsinterpolation mit Raum-/Laufgrenzen
+  und Mauereckenprüfung; Versions-/Datenabgleich vor der Spieleraufnahme.
+  Solo sowie zwei/vier lokale Prozesse haben den aktuellen Zehn-Raum-Lauf,
+  Boss, Abstieg und Neustart nach verdientem Perk bestanden. Ein lokaler Vierer-
+  Störlauf mit100ms nominaler RTT/1% UDP-Verlust und ein sichtbarer1080p-Vierer-
+  Kampagnenlauf sind dokumentiert. Echte LAN-Hardware/30Minuten und persönliche
+  Stil-/Spielgefühl-Abnahme stehen aus; laut Nutzer ist nur dieser PC vorhanden.
+
+[Umsetzung, Ergebnisse und Grenzen](../docs/GAMEDEV-UMSETZUNG.de.md).
+
+**Neueste Editor-Korrektur26.10.2026:** Eine neue Raumvorlage beginnt auf einer
+vollständig freien weißen/schwarzen Zeichenfläche. Boden, frei geformte Kontur,
+Wände, Türen und Startplätze werden ausdrücklich gesetzt. Es gibt keinen
+automatischen Außenrahmen oder vorgegebenen Eingang. Die frühere Beschreibung
+rechteckiger dekorierbarer Räume gilt nur noch für bestehende Vorlagen.
+
+
+**Maßgebliche Fortschreibung26.10.2026:** Wieder32×32-Weltraster. Der Editor
+erstellt frei dimensionierte rechteckige Raumvorlagen (12–64 ×10–48 Felder)
+aus einer leeren Vorlage, mit Einzel-Tile-Palette und Q/E-Drehung. Der Generator
+kombiniert sie zu Dungeons. Eine sanfte Kamera folgt dem eigenen Charakter und
+schwenkt leicht zur Maus. Die weiter unten dokumentierte16×16-Korrektur ist
+damit historisch. Sounds/Animationen des Godot-Standes von `main` sind übernommen;
+Tür und Treppe verwenden Schwarzblenden mit jeweils passendem Sound.
+
 **One-sentence pitch:** Du kämpfst dich alleine oder gemeinsam mit bis zu vier Spielern in separaten Clients per Twin-Stick-Schießen durch Pixel-Dungeon-Räume und baust aus Raum-Belohnungen einen starken Build.
 
 **Scope-Änderung vom 24.10.2026:** Der ursprüngliche Entwurf des Projektinhabers
@@ -19,15 +73,6 @@ lediglich eine spätere Ausbauoption. Verbindliche visuelle Grundlage:
 Zusätzlich zu Isaac dient Vampire Survivors als Spielgefühl-Referenz; große
 Gegnermengen sind kein Ziel des ersten Prototyps. Idle-Animationen für Feuer,
 Spieler und Umgebung gehören in einen späteren Polishing-Schritt.
-
-**Stockwerk nach Isaac, Entscheidung vom 25.10.2026 (Projektinhaber):** Ein
-Stockwerk hat zufällig 6–10 verzweigte Räume mit Türen; der Boss liegt in der
-vom Start entferntesten Sackgasse, dazu ein Schatzraum. Türen bleiben zu, bis
-ein Raum geräumt ist; wer durch eine offene Tür geht, nimmt die Gruppe mit.
-Perks gibt es im Schatzraum und nach dem Boss. Umsetzung:
-[Story 002](../production/epics/dungeon-rooms/story-002-isaac-floor.md).
-Als Grafik-Folgeschritt ist das 0x72-Set (16×16, doppelt gezeichnet auf das
-32er-Raster) beschlossen.
 
 ## Core loop
 - Einen Raum betreten, die Gegner mit Schüssen und Ausweichen besiegen.
@@ -54,7 +99,7 @@ Als Grafik-Folgeschritt ist das 0x72-Set (16×16, doppelt gezeichnet auf das
 
 ## Out of scope — not building this
 - Meta-Progression und Freischaltungen
-- Mehrere Stockwerke
+- Weitere Themenwelten; der implementierte Abstieg verwendet erneut die Krypta-Bibliothek
 - Shop und Spezialräume
 - Speichersystem
 - Story und Dialoge
@@ -83,8 +128,8 @@ Als Grafik-Folgeschritt ist das 0x72-Set (16×16, doppelt gezeichnet auf das
 - **Verbindungsvorschlag:** Erst localhost/LAN, anschließend Internet-Verbindung
   über UDP-Portfreigabe, VPN oder einen separat zu untersuchenden Relay-Dienst.
 - Implementierter Prototyp: Host mit bis zu drei Clients, persönliche
-  Perkauswahl, gemeinsames Ready-Gate und ein aus Vorlagen erzeugter
-  Drei-Raum-Lauf. Die genannten Spielregeln bleiben Produktvorschläge;
+  Perkauswahl, gemeinsame Freigabe der Erkundung und ein aus Vorlagen erzeugter
+  Zehn-Raum-Lauf mit Boss10. Die damaligen Vorschläge oben sind historische Einordnung;
   Nachweise und offene Punkte stehen im Entwicklungsplan.
 
 Ausführliche Bestandsaufnahme: [Projektanalyse](../docs/PROJECT-REVIEW.de.md).
@@ -101,3 +146,23 @@ Pixel-Art-Präzisierung ersetzt diese lose Vorgabe. Ausführliche Idle-Animation
 und weitere Umgebungsdetails folgen beim Polishing.
 
 **Reference game:** The Binding of Isaac. Der MVP übernimmt nur den Kern: Raum-Roguelike mit Twin-Stick-Schießen und Item-Builds, ohne die Meta-Ebene.
+
+## Verbindliche Fortschreibung vom 25.10.2026
+
+Die jüngste Nutzerkorrektur ersetzt die oben historisch genannte 32×32-Vorgabe
+durch **16×16** für Tile-Raster und Figurenquellen. Die gelieferten vier
+Dungeon-Atlanten sowie UI-, Item- und Animationssheets bestimmen den Grafikstil:
+sichtbare Wandoberkanten und senkrechte Flächen für räumliche Tiefe, helle
+Böden, dunkle Konturen, Herzen-HUD, animiertes Feuer und Treffer-Effekte.
+
+Der Nutzer erweitert auch den ursprünglichen Umfang „ein Stockwerk“: Nach
+Kampf und persönlicher Belohnung bleibt die Ebene frei begehbar. Gesäuberte
+Räume dürfen rückwärts besucht werden. Der gemeinsame Raumwechsel wird an
+einer passenden Tür mit E ausgelöst; nach dem Boss geht es über eine separate
+Innentreppe in die nächste erzeugte Ebene. Perks und Lebenszustand bleiben
+beim Abstieg erhalten. Neue Ebenen bestehen vorerst aus demselben kleinen
+Drei-Raum-Baukasten; zusätzliche Themenwelten sind damit nicht umgesetzt.
+
+HP-Anzeigen, kurzer Hitstun, Rückstoß und Schadensblinken gehören zum aktuellen
+Kampf. Vier Gesamtspieler bleiben die Grenze. Diese Fortschreibung geht den
+älteren Raster-, Build-order- und Out-of-scope-Aussagen oben vor.

@@ -1,0 +1,368 @@
+{
+	"actor": "skeleton_guard",
+	"canvas": [
+		28,
+		32
+	],
+	"direction_source": "independently generated front/east/rear/west views",
+	"directions": [
+		"south",
+		"east",
+		"north",
+		"west"
+	],
+	"foot_end_y": 31,
+	"frames": [
+		{
+			"clipped": false,
+			"direction": "south",
+			"origin": [
+				6,
+				11
+			],
+			"path": "assets/actors/keys/skeleton_guard/south_idle.png",
+			"pose": "idle",
+			"projected_size": [
+				15,
+				20
+			],
+			"source_bounds": [
+				134,
+				63,
+				154,
+				207
+			],
+			"used_end_y": 31
+		},
+		{
+			"clipped": false,
+			"direction": "east",
+			"origin": [
+				7,
+				11
+			],
+			"path": "assets/actors/keys/skeleton_guard/east_idle.png",
+			"pose": "idle",
+			"projected_size": [
+				14,
+				20
+			],
+			"source_bounds": [
+				484,
+				63,
+				142,
+				207
+			],
+			"used_end_y": 31
+		},
+		{
+			"clipped": false,
+			"direction": "north",
+			"origin": [
+				6,
+				11
+			],
+			"path": "assets/actors/keys/skeleton_guard/north_idle.png",
+			"pose": "idle",
+			"projected_size": [
+				15,
+				20
+			],
+			"source_bounds": [
+				818,
+				63,
+				157,
+				204
+			],
+			"used_end_y": 31
+		},
+		{
+			"clipped": false,
+			"direction": "west",
+			"origin": [
+				7,
+				11
+			],
+			"path": "assets/actors/keys/skeleton_guard/west_idle.png",
+			"pose": "idle",
+			"projected_size": [
+				13,
+				20
+			],
+			"source_bounds": [
+				1157,
+				63,
+				141,
+				209
+			],
+			"used_end_y": 31
+		},
+		{
+			"clipped": false,
+			"direction": "south",
+			"origin": [
+				6,
+				11
+			],
+			"path": "assets/actors/keys/skeleton_guard/south_move.png",
+			"pose": "move",
+			"projected_size": [
+				16,
+				20
+			],
+			"source_bounds": [
+				118,
+				325,
+				169,
+				205
+			],
+			"used_end_y": 31
+		},
+		{
+			"clipped": false,
+			"direction": "east",
+			"origin": [
+				6,
+				11
+			],
+			"path": "assets/actors/keys/skeleton_guard/east_move.png",
+			"pose": "move",
+			"projected_size": [
+				16,
+				20
+			],
+			"source_bounds": [
+				482,
+				322,
+				172,
+				208
+			],
+			"used_end_y": 31
+		},
+		{
+			"clipped": false,
+			"direction": "north",
+			"origin": [
+				6,
+				10
+			],
+			"path": "assets/actors/keys/skeleton_guard/north_move.png",
+			"pose": "move",
+			"projected_size": [
+				16,
+				21
+			],
+			"source_bounds": [
+				819,
+				324,
+				169,
+				219
+			],
+			"used_end_y": 31
+		},
+		{
+			"clipped": false,
+			"direction": "west",
+			"origin": [
+				6,
+				11
+			],
+			"path": "assets/actors/keys/skeleton_guard/west_move.png",
+			"pose": "move",
+			"projected_size": [
+				16,
+				20
+			],
+			"source_bounds": [
+				1141,
+				323,
+				170,
+				207
+			],
+			"used_end_y": 31
+		},
+		{
+			"clipped": false,
+			"direction": "south",
+			"origin": [
+				2,
+				13
+			],
+			"path": "assets/actors/keys/skeleton_guard/south_attack.png",
+			"pose": "attack",
+			"projected_size": [
+				24,
+				18
+			],
+			"source_bounds": [
+				64,
+				589,
+				246,
+				189
+			],
+			"used_end_y": 31
+		},
+		{
+			"clipped": false,
+			"direction": "east",
+			"origin": [
+				2,
+				13
+			],
+			"path": "assets/actors/keys/skeleton_guard/east_attack.png",
+			"pose": "attack",
+			"projected_size": [
+				23,
+				18
+			],
+			"source_bounds": [
+				449,
+				585,
+				236,
+				193
+			],
+			"used_end_y": 31
+		},
+		{
+			"clipped": false,
+			"direction": "north",
+			"origin": [
+				0,
+				13
+			],
+			"path": "assets/actors/keys/skeleton_guard/north_attack.png",
+			"pose": "attack",
+			"projected_size": [
+				27,
+				18
+			],
+			"source_bounds": [
+				770,
+				589,
+				279,
+				189
+			],
+			"used_end_y": 31
+		},
+		{
+			"clipped": false,
+			"direction": "west",
+			"origin": [
+				3,
+				13
+			],
+			"path": "assets/actors/keys/skeleton_guard/west_attack.png",
+			"pose": "attack",
+			"projected_size": [
+				21,
+				18
+			],
+			"source_bounds": [
+				1114,
+				587,
+				223,
+				191
+			],
+			"used_end_y": 31
+		},
+		{
+			"clipped": false,
+			"direction": "south",
+			"origin": [
+				4,
+				12
+			],
+			"path": "assets/actors/keys/skeleton_guard/south_hurt.png",
+			"pose": "hurt",
+			"projected_size": [
+				19,
+				19
+			],
+			"source_bounds": [
+				98,
+				829,
+				200,
+				196
+			],
+			"used_end_y": 31
+		},
+		{
+			"clipped": false,
+			"direction": "east",
+			"origin": [
+				6,
+				12
+			],
+			"path": "assets/actors/keys/skeleton_guard/east_hurt.png",
+			"pose": "hurt",
+			"projected_size": [
+				16,
+				19
+			],
+			"source_bounds": [
+				470,
+				829,
+				165,
+				196
+			],
+			"used_end_y": 31
+		},
+		{
+			"clipped": false,
+			"direction": "north",
+			"origin": [
+				3,
+				12
+			],
+			"path": "assets/actors/keys/skeleton_guard/north_hurt.png",
+			"pose": "hurt",
+			"projected_size": [
+				21,
+				19
+			],
+			"source_bounds": [
+				780,
+				829,
+				217,
+				196
+			],
+			"used_end_y": 31
+		},
+		{
+			"clipped": false,
+			"direction": "west",
+			"origin": [
+				6,
+				12
+			],
+			"path": "assets/actors/keys/skeleton_guard/west_hurt.png",
+			"pose": "hurt",
+			"projected_size": [
+				16,
+				19
+			],
+			"source_bounds": [
+				1172,
+				826,
+				169,
+				199
+			],
+			"used_end_y": 31
+		}
+	],
+	"idle_height": 20,
+	"nominal_body_box": [
+		16,
+		24
+	],
+	"poses": [
+		"idle",
+		"move",
+		"attack",
+		"hurt"
+	],
+	"schema_version": 1,
+	"source_extraction": "sixteen largest eight-connected alpha silhouettes, ordered by row then column",
+	"uniform_idle_scale": 0.0956937799043062,
+	"world_scale": 2
+}

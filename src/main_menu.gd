@@ -1,10 +1,16 @@
 extends Control
 ## Title screen: Story mode on top, Endless below, then multiplayer, options and
 ## quit. A small pixel scene plays behind it (torch-lit wall, heroes chased by
-## goblins). Top right shows the account (guest or signed-in e-mail) with the
-## saved progress; bottom right the game version. Login and options open as
-## panels over the menu. Owns no game state; it reports choices by signal and
+## the crypt's undead). Top right shows the account (guest or signed-in e-mail)
+## with the saved progress; bottom right the game version. Login and options open
+## as panels over the menu. Owns no game state; it reports choices by signal and
 ## stores options in user://settings.cfg.
+##
+## Ported from origin/main (357d509). codex_v2 changes: Pixel Operator 8 sizes
+## (multiples of 8), the account row hides without an account, the hero choice
+## is skipped while `class_order` is empty, Endless can be shown as "coming soon",
+## the window mode is left to the game (it owns fullscreen), and the scene fills
+## any canvas size around the centered 1280x720 composition.
 
 ## A solo run with the chosen mode and hero class.
 signal start_requested(endless: bool, class_id: String)
@@ -13,10 +19,11 @@ signal quit_requested
 signal settings_changed(settings: Dictionary)
 
 const Progress = preload("res://src/online/progress.gd")
+const PixelStyle = preload("res://src/pixel_style.gd")
 const SCREEN := Vector2(1280, 720)
 const SPRITE_ROOT := "res://assets/sprites/0x72/"
 const HEROES := ["knight_m", "elf_f", "wizzard_m", "lizard_m"]
-const CHASERS := ["goblin", "goblin", "orc_shaman"]
+const CHASERS := ["skelet", "skelet", "necromancer"]
 const FLOOR_TEXTURE := preload("res://assets/sprites/floor_stone.png")
 const TORCH_TEXTURE := preload("res://assets/sprites/torch.png")
 const SETTINGS_PATH := "user://settings.cfg"
@@ -32,6 +39,12 @@ var class_order: Array = []
 var weapons: Dictionary = {}
 ## Debug level list: {label, endless, floor, room}; set by the game.
 var debug_entries: Array = []
+## False until the endless mode exists: the button is shown disabled.
+var endless_available := true
+var _endless_button: Button
+# The visible canvas around the centered composition (see set_canvas_size).
+var _canvas_origin := Vector2.ZERO
+var _canvas_size := SCREEN
 var _debug_start: Dictionary = {}
 var _debug_panel: Panel
 var settings := {"volume": 80, "fullscreen": false, "shake": true}
@@ -61,29 +74,39 @@ var _class_frames: Array = []
 
 
 func _ready() -> void:
-	position = Vector2.ZERO
+	position = _canvas_origin
 	size = SCREEN
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	# Inherits the game's Pixel Operator 8 theme; standalone use gets its own.
+	if get_parent() == null or not (get_parent() is Control and (get_parent() as Control).theme != null):
+		theme = PixelStyle.create_theme()
 	for name: String in HEROES + CHASERS:
 		var run: Array = []
 		for frame in range(4):
 			run.append(load("%s%s_run_anim_f%d.png" % [SPRITE_ROOT, name, frame]))
 		_frames[name] = run
-	_label("BASEMENT RUN", Vector2(0, 54), Vector2(SCREEN.x, 90), 72, GOLD, HORIZONTAL_ALIGNMENT_CENTER)
-	_label("IN DIE TIEFE.", Vector2(0, 140), Vector2(SCREEN.x, 28), 18, MUTED, HORIZONTAL_ALIGNMENT_CENTER)
-	_buttons.append(_button("STORY-MODUS", Vector2(470, 200), Vector2(340, 62), 28, _open_classes.bind(false)))
-	_buttons.append(_button("ENDLOS-MODUS", Vector2(470, 274), Vector2(340, 52), 22, _open_classes.bind(true)))
-	_buttons.append(_button("MEHRSPIELER", Vector2(470, 338), Vector2(340, 44), 18, multiplayer_requested.emit))
-	_buttons.append(_button("OPTIONEN", Vector2(470, 394), Vector2(340, 44), 18, _open_options))
-	_buttons.append(_button("BEENDEN", Vector2(470, 450), Vector2(340, 44), 18, quit_requested.emit))
-	_button("LEVEL-AUSWAHL (DEBUG)", Vector2(16, 676), Vector2(220, 30), 12, _open_debug)
+	_label("BASEMENT RUN", Vector2(0, 54), Vector2(SCREEN.x, 90), 64, GOLD, HORIZONTAL_ALIGNMENT_CENTER)
+	_label("IN DIE TIEFE.", Vector2(0, 140), Vector2(SCREEN.x, 28), 16, MUTED, HORIZONTAL_ALIGNMENT_CENTER)
+	_buttons.append(_button("STORY-MODUS", Vector2(470, 200), Vector2(340, 62), 32, _open_classes.bind(false)))
+	_endless_button = _button("ENDLOS-MODUS" if endless_available else "ENDLOS · BALD", Vector2(470, 274), Vector2(340, 52), 24, _open_classes.bind(true))
+	_endless_button.disabled = not endless_available
+	_endless_button.tooltip_text = "" if endless_available else "Der Endlos-Modus folgt in einem späteren Schritt."
+	_buttons.append(_endless_button)
+	_buttons.append(_button("MEHRSPIELER", Vector2(470, 338), Vector2(340, 44), 16, multiplayer_requested.emit))
+	_buttons.append(_button("OPTIONEN", Vector2(470, 394), Vector2(340, 44), 16, _open_options))
+	_buttons.append(_button("BEENDEN", Vector2(470, 450), Vector2(340, 44), 16, quit_requested.emit))
+	_button("LEVEL-AUSWAHL (DEBUG)", Vector2(16, 676), Vector2(264, 32), 16, _open_debug)
 	_buttons[0].grab_focus()
-	_account_label = _label("", Vector2(820, 20), Vector2(300, 22), 15, TEXT, HORIZONTAL_ALIGNMENT_RIGHT)
-	_progress_label = _label("", Vector2(620, 44), Vector2(500, 20), 12, MUTED, HORIZONTAL_ALIGNMENT_RIGHT)
-	_account_button = _button("ANMELDEN", Vector2(1132, 18), Vector2(124, 44), 14, _on_account_button)
-	_label("v" + str(ProjectSettings.get_setting("application/config/version", "0.0.0")), Vector2(1080, 690), Vector2(184, 20), 13, MUTED, HORIZONTAL_ALIGNMENT_RIGHT)
-	_toast = _label("", Vector2(0, 498), Vector2(SCREEN.x, 24), 15, GOLD, HORIZONTAL_ALIGNMENT_CENTER)
+	_account_label = _label("", Vector2(820, 20), Vector2(300, 22), 16, TEXT, HORIZONTAL_ALIGNMENT_RIGHT)
+	_progress_label = _label("", Vector2(620, 44), Vector2(500, 20), 16, MUTED, HORIZONTAL_ALIGNMENT_RIGHT)
+	_account_button = _button("ANMELDEN", Vector2(1132, 18), Vector2(124, 44), 16, _on_account_button)
+	# Without online accounts the whole account row stays hidden.
+	for node: Control in [_account_label, _progress_label, _account_button]: node.visible = account != null
+	var version := str(ProjectSettings.get_setting("application/config/version", ""))
+	if not version.is_empty():
+		_label("v" + version, Vector2(1080, 690), Vector2(184, 20), 16, MUTED, HORIZONTAL_ALIGNMENT_RIGHT)
+	_toast = _label("", Vector2(0, 498), Vector2(SCREEN.x, 24), 16, GOLD, HORIZONTAL_ALIGNMENT_CENTER)
 	_build_login_panel()
 	_build_options_panel()
 	_build_class_panel()
@@ -116,42 +139,66 @@ func show_toast(text: String) -> void:
 	_toast_time = 3.0
 
 
+## Centers the 1280x720 composition on the visible canvas; the background scene
+## fills the whole canvas. `origin` is the composition's top-left on the canvas.
+func set_canvas_size(dimensions: Vector2, origin: Vector2) -> void:
+	_canvas_size = dimensions
+	_canvas_origin = origin
+	position = origin
+	queue_redraw()
+
+
+## Mirrors the game's real window mode in the options (F11 can change it too).
+func set_fullscreen_checked(on: bool) -> void:
+	settings.fullscreen = on
+	if _fullscreen_check != null: _fullscreen_check.set_pressed_no_signal(on)
+
+
 # --- Pixel scene ------------------------------------------------------------
 
 func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO, SCREEN), Color("0b0d14"))
+	# The visible canvas in local coordinates; wider screens extend the scene.
+	var canvas := Rect2(-_canvas_origin, _canvas_size)
+	draw_rect(canvas, Color("0b0d14"))
 	# Back wall with torches, then the stone floor the chase runs across.
-	for column in range(21):
+	var first_wall := floori(canvas.position.x / 64.0) - 1
+	for column in range(first_wall, ceili(canvas.end.x / 64.0) + 1):
 		var x := column * 64.0
 		draw_rect(Rect2(x + 2, FLOOR_TOP - 76, 60, 30), Color("2a2638"))
 		draw_rect(Rect2(x + 3, FLOOR_TOP - 75, 58, 4), Color("3b3450"))
 		draw_rect(Rect2(x + 2, FLOOR_TOP - 44, 60, 40), Color("231f30"))
-	for column in range(41):
+	var first_tile := floori(canvas.position.x / 32.0) - 1
+	for column in range(first_tile, ceili(canvas.end.x / 32.0) + 1):
 		draw_texture_rect(FLOOR_TEXTURE, Rect2(column * 32.0, FLOOR_TOP, 32, 32), false, Color(0.7, 0.7, 0.78))
 		draw_texture_rect(FLOOR_TEXTURE, Rect2(column * 32.0 + 16.0, FLOOR_TOP + 32, 32, 32), false, Color(0.55, 0.55, 0.62))
 		draw_texture_rect(FLOOR_TEXTURE, Rect2(column * 32.0, FLOOR_TOP + 64, 32, 32), false, Color(0.4, 0.4, 0.47))
 		draw_texture_rect(FLOOR_TEXTURE, Rect2(column * 32.0 + 16.0, FLOOR_TOP + 96, 32, 32), false, Color(0.28, 0.28, 0.34))
+	# Taller screens: the floor fades into darkness below the composition.
+	if canvas.end.y > FLOOR_TOP + 128.0:
+		draw_rect(Rect2(canvas.position.x, FLOOR_TOP + 128.0, canvas.size.x, canvas.end.y - FLOOR_TOP - 128.0), Color(0.04, 0.05, 0.08))
 	for index in range(5):
 		var torch := Vector2(110 + index * 265, FLOOR_TOP - 60)
 		var flicker := sin(_clock * 7.0 + index * 1.7)
 		draw_circle(torch, 70.0, Color(1.0, 0.5, 0.25, 0.05 + 0.012 * flicker))
 		draw_circle(torch, 36.0, Color(1.0, 0.55, 0.3, 0.08 + 0.02 * flicker))
 		draw_texture_rect(TORCH_TEXTURE, Rect2(torch - Vector2(16, 20), Vector2(32, 32)), false)
-	# The chase: four heroes run right, goblins and a shaman on their heels.
-	var lead := fmod(_clock * 95.0, SCREEN.x + 760.0) - 300.0
+	# The chase: four heroes run right, skeletons and a necromancer on their heels.
+	var lead := canvas.position.x + fmod(_clock * 95.0, canvas.size.x + 760.0) - 300.0
 	for index in range(HEROES.size()):
 		_draw_runner(HEROES[index], lead - index * 70.0, index)
 	for index in range(CHASERS.size()):
 		_draw_runner(CHASERS[index], lead - 400.0 - index * 62.0, index + 4)
 	# Dust motes drifting up through the torchlight.
 	for index in range(26):
-		var x := fmod(index * 197.0 + sin(_clock * 0.4 + index) * 30.0, SCREEN.x)
+		var x := canvas.position.x + fmod(index * 197.0 + sin(_clock * 0.4 + index) * 30.0, canvas.size.x)
 		var y := fmod(700.0 - _clock * (8.0 + index % 5 * 3.0) - index * 61.0, 720.0)
 		if y < 0.0: y += 720.0
 		draw_rect(Rect2(roundf(x), roundf(y), 2, 2), Color(0.95, 0.78, 0.6, 0.12 + 0.08 * sin(_clock * 1.5 + index)))
-	# Darken the top so the title reads.
+	# Darken the top so the title reads; taller screens get the darkest band above.
+	if canvas.position.y < 0.0:
+		draw_rect(Rect2(canvas.position.x, canvas.position.y, canvas.size.x, -canvas.position.y), Color(0.04, 0.05, 0.08, 0.6))
 	for band in range(8):
-		draw_rect(Rect2(0, band * 24.0, SCREEN.x, 24), Color(0.04, 0.05, 0.08, 0.6 - band * 0.07))
+		draw_rect(Rect2(canvas.position.x, band * 24.0, canvas.size.x, 24), Color(0.04, 0.05, 0.08, 0.6 - band * 0.07))
 
 
 func _draw_runner(name: String, x: float, seed: int) -> void:
@@ -199,7 +246,7 @@ func _build_login_panel() -> void:
 	_login_status.position = Vector2(30, 236)
 	_login_status.size = Vector2(360, 66)
 	_login_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_login_status.add_theme_font_size_override("font_size", 13)
+	_login_status.add_theme_font_size_override("font_size", 16)
 	_login_status.add_theme_color_override("font_color", GOLD)
 	_login_panel.add_child(_login_status)
 	_panel_button(_login_panel, "ZURÜCK", Vector2(30, 306), Vector2(360, 38), _close_panels)
@@ -232,19 +279,20 @@ func _submit_login(create: bool) -> void:
 ## hearts and starting weapon). Choosing one starts the run.
 func _build_class_panel() -> void:
 	_class_panel = Panel.new()
-	_class_panel.size = Vector2(800, 420)
-	_class_panel.position = (SCREEN - _class_panel.size) * 0.5 + Vector2(0, 30)
+	# Taller than on main: Pixel Operator 8 at 16 px needs more room per line.
+	_class_panel.size = Vector2(800, 496)
+	_class_panel.position = (SCREEN - _class_panel.size) * 0.5 + Vector2(0, 20)
 	_class_panel.add_theme_stylebox_override("panel", _style(Color("1a1d29"), GOLD))
 	_class_panel.visible = false
 	add_child(_class_panel)
 	_class_title = _panel_label(_class_panel, "WÄHLE DEINEN HELDEN", Vector2(30, 18))
 	_class_title.size.x = 740
-	_class_title.add_theme_font_size_override("font_size", 22)
+	_class_title.add_theme_font_size_override("font_size", 24)
 	_class_title.add_theme_color_override("font_color", GOLD)
 	for i in range(class_order.size()):
 		var id: String = str(class_order[i])
 		var hero: Dictionary = classes[id]
-		var card := _make_button("", Vector2(236, 290), 14, func(): _choose_class(id))
+		var card := _make_button("", Vector2(236, 370), 16, func(): _choose_class(id))
 		card.position = Vector2(30 + i * 252, 62)
 		_class_panel.add_child(card)
 		var frames: Array = []
@@ -255,17 +303,21 @@ func _build_class_panel() -> void:
 		picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		picture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		picture.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		picture.size = Vector2(64, 112)
-		picture.position = Vector2(86, 14)
+		# 0x72 figure at 3x (48x84) leaves room for 16 px text below.
+		picture.size = Vector2(48, 84)
+		picture.position = Vector2(94, 10)
 		picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		card.add_child(picture)
 		_class_heroes.append(picture)
 		var weapon: Dictionary = weapons.get(str(hero.weapon), {})
 		# The hero's numbers, so the choice is informed: hearts, weapon and how it hits.
 		var reach: String = ("NAHKAMPF %d" % int(weapon.get("reach", 0))) if str(weapon.get("type", "")) == "melee" else ("REICHWEITE %.1f" % (float(weapon.get("speed", 0)) * float(weapon.get("life", 0)) / 100.0))
-		var lines := [[str(hero.name), 18, GOLD, 136], [str(hero.description), 13, TEXT, 162],
-			["%d HERZEN · %s" % [ceili(float(hero.hp) / 2.0), str(weapon.get("name", ""))], 13, Color("ef8a9a"), 214],
-			["SCHADEN %s · %.1f/s\n%s · TEMPO %d" % [str(weapon.get("damage", 0)), 1.0 / maxf(float(weapon.get("interval", 1.0)), 0.01), reach, int(hero.speed)], 12, MUTED, 236]]
+		# One fact per line: 16 px Pixel Operator 8 fits about 20 characters per card.
+		var damage: float = float(weapon.get("damage", 0))
+		var damage_text: String = str(int(damage)) if is_equal_approx(damage, roundf(damage)) else "%.1f" % damage
+		var lines := [[str(hero.name), 16, GOLD, 100, 22], [str(hero.description), 16, TEXT, 124, 120],
+			["%d HERZEN\n%s" % [ceili(float(hero.hp) / 2.0), str(weapon.get("name", ""))], 16, Color("ef8a9a"), 248, 40],
+			["SCHADEN %s\n%.1f ANGRIFFE/S\n%s\nTEMPO %d" % [damage_text, 1.0 / maxf(float(weapon.get("interval", 1.0)), 0.01), reach, int(hero.speed)], 16, MUTED, 290, 80]]
 		for line: Array in lines:
 			var label := Label.new()
 			label.text = line[0]
@@ -277,8 +329,8 @@ func _build_class_panel() -> void:
 			# Lies over the card on the panel (clicks pass through to the card).
 			_class_panel.add_child(label)
 			label.position = card.position + Vector2(12, line[3])
-			label.size = Vector2(212, 70)
-	_panel_button(_class_panel, "ZURÜCK", Vector2(30, 366), Vector2(740, 38), _close_panels)
+			label.size = Vector2(212, line[4])
+	_panel_button(_class_panel, "ZURÜCK", Vector2(30, 444), Vector2(740, 38), _close_panels)
 
 
 ## Debug: every level as a button; a pick goes through the hero choice and
@@ -290,7 +342,7 @@ func _build_debug_panel() -> void:
 	for i in range(debug_entries.size()):
 		var entry: Dictionary = debug_entries[i]
 		var button := _panel_button(_debug_panel, str(entry.label), Vector2(30 + (i % 2) * 375, 62 + (i / 2) * 40), Vector2(365, 34), func(): _pick_debug(entry))
-		button.add_theme_font_size_override("font_size", 13)
+		button.add_theme_font_size_override("font_size", 16)
 	_panel_button(_debug_panel, "ZURÜCK", Vector2(30, 420), Vector2(740, 36), _close_panels)
 
 
@@ -300,6 +352,12 @@ func _open_debug() -> void:
 
 
 func _pick_debug(entry: Dictionary) -> void:
+	if class_order.is_empty():
+		# No hero classes yet: start the picked level straight away.
+		_close_panels()
+		_debug_start = entry
+		start_requested.emit(bool(entry.endless), "")
+		return
 	_open_classes(bool(entry.endless))
 	_debug_start = entry
 	_class_title.text = "WÄHLE DEINEN HELDEN · " + str(entry.label)
@@ -315,6 +373,10 @@ func take_debug_start() -> Dictionary:
 func _open_classes(endless: bool) -> void:
 	_close_panels()
 	_debug_start = {}
+	if class_order.is_empty():
+		# No hero classes yet: the mode button starts the run directly.
+		start_requested.emit(endless, "")
+		return
 	_class_endless = endless
 	_class_title.text = "WÄHLE DEINEN HELDEN · " + ("ENDLOS-MODUS" if endless else "STORY-MODUS")
 	_class_panel.visible = true
@@ -331,8 +393,8 @@ func _build_options_panel() -> void:
 	_options_panel = _panel("OPTIONEN")
 	_panel_label(_options_panel, "Lautstärke", Vector2(30, 76)).size.x = 120
 	_volume_slider = HSlider.new()
-	_volume_slider.position = Vector2(160, 80)
-	_volume_slider.size = Vector2(230, 24)
+	_volume_slider.position = Vector2(210, 80)
+	_volume_slider.size = Vector2(180, 24)
 	_volume_slider.min_value = 0
 	_volume_slider.max_value = 100
 	_volume_slider.step = 5
@@ -340,7 +402,9 @@ func _build_options_panel() -> void:
 	_options_panel.add_child(_volume_slider)
 	_fullscreen_check = _check(_options_panel, "Vollbild", Vector2(30, 126), func(on: bool): _set_setting("fullscreen", on))
 	_shake_check = _check(_options_panel, "Bildschirmwackeln", Vector2(30, 176), func(on: bool): _set_setting("shake", on))
-	_panel_label(_options_panel, "Version " + str(ProjectSettings.get_setting("application/config/version", "0.0.0")), Vector2(30, 240)).add_theme_color_override("font_color", MUTED)
+	var version := str(ProjectSettings.get_setting("application/config/version", ""))
+	if not version.is_empty():
+		_panel_label(_options_panel, "Version " + version, Vector2(30, 240)).add_theme_color_override("font_color", MUTED)
 	_panel_button(_options_panel, "ZURÜCK", Vector2(30, 306), Vector2(360, 38), _close_panels)
 
 
@@ -371,9 +435,7 @@ func _load_settings() -> void:
 func _apply_settings() -> void:
 	var volume: float = clampf(float(settings.volume) / 100.0, 0.0, 1.0)
 	AudioServer.set_bus_volume_db(0, linear_to_db(volume) if volume > 0.0 else -80.0)
-	if DisplayServer.get_name() != "headless":
-		var mode := DisplayServer.WINDOW_MODE_FULLSCREEN if bool(settings.fullscreen) else DisplayServer.WINDOW_MODE_WINDOWED
-		if DisplayServer.window_get_mode() != mode: DisplayServer.window_set_mode(mode)
+	# The game applies `fullscreen` with its own toggle, which keeps the window rect.
 	settings_changed.emit(settings)
 
 
@@ -397,7 +459,7 @@ func _panel(title: String) -> Panel:
 	panel.visible = false
 	add_child(panel)
 	var heading := _panel_label(panel, title, Vector2(30, 20))
-	heading.add_theme_font_size_override("font_size", 22)
+	heading.add_theme_font_size_override("font_size", 24)
 	heading.add_theme_color_override("font_color", GOLD)
 	return panel
 
@@ -407,7 +469,7 @@ func _panel_label(panel: Panel, text: String, at: Vector2) -> Label:
 	label.text = text
 	label.position = at
 	label.size = Vector2(360, 26)
-	label.add_theme_font_size_override("font_size", 15)
+	label.add_theme_font_size_override("font_size", 16)
 	label.add_theme_color_override("font_color", TEXT)
 	panel.add_child(label)
 	return label
@@ -429,14 +491,14 @@ func _check(panel: Panel, text: String, at: Vector2, callback: Callable) -> Chec
 	check.text = text
 	check.position = at
 	check.size = Vector2(360, 36)
-	check.add_theme_font_size_override("font_size", 15)
+	check.add_theme_font_size_override("font_size", 16)
 	check.toggled.connect(callback)
 	panel.add_child(check)
 	return check
 
 
 func _panel_button(panel: Panel, text: String, at: Vector2, dimensions: Vector2, callback: Callable) -> Button:
-	var button := _make_button(text, dimensions, 15, callback)
+	var button := _make_button(text, dimensions, 16, callback)
 	button.position = at
 	panel.add_child(button)
 	return button

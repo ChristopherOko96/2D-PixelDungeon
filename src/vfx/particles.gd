@@ -31,17 +31,6 @@ func burst(origin: Vector2, color: Color, count: int, speed: float, life: float,
 			"color": Color(color.r * shade, color.g * shade, color.b * shade, color.a), "size": maxf(1.0, roundf(size * _rng.randf_range(0.6, 1.2))), "drag": drag})
 
 
-## Spawns `count` particles on a circle of `radius` that rush into `center`
-## within `life` seconds: energy gathering before a big attack.
-func implode(center: Vector2, color: Color, count: int, radius: float, life: float) -> void:
-	for i in range(count):
-		if _particles.size() >= MAX_PARTICLES:
-			_particles.pop_front()
-		var start: Vector2 = center + Vector2.RIGHT.rotated(_rng.randf() * TAU) * radius
-		_particles.append({"pos": start, "vel": (center - start) / maxf(life, 0.01), "life": life, "max_life": life,
-			"color": color, "size": 2.0 + float(_rng.randi() % 2), "drag": 0.0})
-
-
 ## Leaves a splat of a few overlapping rectangles that stays until clear().
 func stain(origin: Vector2, color: Color, radius: float) -> void:
 	if _stains.size() >= MAX_STAINS:

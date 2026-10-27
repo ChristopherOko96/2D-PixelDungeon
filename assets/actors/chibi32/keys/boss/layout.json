@@ -1,0 +1,173 @@
+{
+	"canvas": [
+		32.0,
+		32.0
+	],
+	"frames": [
+		{
+			"bounds": [
+				2,
+				4,
+				29,
+				27
+			],
+			"foot_end_y": 31,
+			"key": "south_idle"
+		},
+		{
+			"bounds": [
+				4,
+				4,
+				26,
+				27
+			],
+			"foot_end_y": 31,
+			"key": "east_idle"
+		},
+		{
+			"bounds": [
+				2,
+				4,
+				29,
+				27
+			],
+			"foot_end_y": 31,
+			"key": "north_idle"
+		},
+		{
+			"bounds": [
+				2,
+				4,
+				26,
+				27
+			],
+			"foot_end_y": 31,
+			"key": "west_idle"
+		},
+		{
+			"bounds": [
+				3,
+				1,
+				29,
+				30
+			],
+			"foot_end_y": 31,
+			"key": "south_move"
+		},
+		{
+			"bounds": [
+				2,
+				2,
+				28,
+				29
+			],
+			"foot_end_y": 31,
+			"key": "east_move"
+		},
+		{
+			"bounds": [
+				5,
+				1,
+				27,
+				30
+			],
+			"foot_end_y": 31,
+			"key": "north_move"
+		},
+		{
+			"bounds": [
+				3,
+				2,
+				27,
+				29
+			],
+			"foot_end_y": 31,
+			"key": "west_move"
+		},
+		{
+			"bounds": [
+				2,
+				4,
+				30,
+				27
+			],
+			"foot_end_y": 31,
+			"key": "south_attack"
+		},
+		{
+			"bounds": [
+				3,
+				4,
+				29,
+				27
+			],
+			"foot_end_y": 31,
+			"key": "east_attack"
+		},
+		{
+			"bounds": [
+				0,
+				4,
+				29,
+				27
+			],
+			"foot_end_y": 31,
+			"key": "north_attack"
+		},
+		{
+			"bounds": [
+				1,
+				4,
+				28,
+				27
+			],
+			"foot_end_y": 31,
+			"key": "west_attack"
+		},
+		{
+			"bounds": [
+				4,
+				3,
+				27,
+				28
+			],
+			"foot_end_y": 31,
+			"key": "south_hurt"
+		},
+		{
+			"bounds": [
+				4,
+				3,
+				25,
+				28
+			],
+			"foot_end_y": 31,
+			"key": "east_hurt"
+		},
+		{
+			"bounds": [
+				6,
+				5,
+				24,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "north_hurt"
+		},
+		{
+			"bounds": [
+				4,
+				4,
+				23,
+				27
+			],
+			"foot_end_y": 31,
+			"key": "west_hurt"
+		}
+	],
+	"palette_colors": 64,
+	"source": "res://assets/actors/chibi32/source/boss_chibi_sheet.png",
+	"target_idle_height": 28.0,
+	"uniform_scale": 0.099009900990099,
+	"world_scale": 3.0
+}

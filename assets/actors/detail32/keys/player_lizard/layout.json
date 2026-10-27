@@ -1,0 +1,173 @@
+{
+	"canvas": [
+		32.0,
+		32.0
+	],
+	"frames": [
+		{
+			"bounds": [
+				8,
+				6,
+				15,
+				25
+			],
+			"foot_end_y": 31,
+			"key": "south_idle"
+		},
+		{
+			"bounds": [
+				7,
+				5,
+				19,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "east_idle"
+		},
+		{
+			"bounds": [
+				5,
+				5,
+				17,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "north_idle"
+		},
+		{
+			"bounds": [
+				5,
+				5,
+				20,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "west_idle"
+		},
+		{
+			"bounds": [
+				11,
+				5,
+				16,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "south_move"
+		},
+		{
+			"bounds": [
+				7,
+				5,
+				21,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "east_move"
+		},
+		{
+			"bounds": [
+				5,
+				5,
+				17,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "north_move"
+		},
+		{
+			"bounds": [
+				6,
+				5,
+				21,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "west_move"
+		},
+		{
+			"bounds": [
+				11,
+				6,
+				15,
+				25
+			],
+			"foot_end_y": 31,
+			"key": "south_attack"
+		},
+		{
+			"bounds": [
+				8,
+				6,
+				24,
+				25
+			],
+			"foot_end_y": 31,
+			"key": "east_attack"
+		},
+		{
+			"bounds": [
+				2,
+				6,
+				18,
+				25
+			],
+			"foot_end_y": 31,
+			"key": "north_attack"
+		},
+		{
+			"bounds": [
+				0,
+				6,
+				25,
+				25
+			],
+			"foot_end_y": 31,
+			"key": "west_attack"
+		},
+		{
+			"bounds": [
+				5,
+				6,
+				16,
+				25
+			],
+			"foot_end_y": 31,
+			"key": "south_hurt"
+		},
+		{
+			"bounds": [
+				8,
+				5,
+				18,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "east_hurt"
+		},
+		{
+			"bounds": [
+				6,
+				6,
+				15,
+				25
+			],
+			"foot_end_y": 31,
+			"key": "north_hurt"
+		},
+		{
+			"bounds": [
+				5,
+				5,
+				17,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "west_hurt"
+		}
+	],
+	"palette_colors": 128,
+	"source": "res://assets/actors/detail32/source/player_lizard_detail_sheet.png",
+	"target_idle_height": 26.0,
+	"uniform_scale": 0.089041095890411,
+	"world_scale": 2.0
+}

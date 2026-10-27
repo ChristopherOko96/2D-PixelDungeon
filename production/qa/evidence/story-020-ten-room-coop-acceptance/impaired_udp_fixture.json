@@ -1,0 +1,103 @@
+{
+  "Result": "PASS",
+  "Scope": "Local UDP impairment; not real LAN/WAN",
+  "Players": 4,
+  "OneWayDelayMs": 50.0,
+  "NominalRttMs": 100.0,
+  "Loss": 0.01,
+  "HostPort": 65173,
+  "Logs": "repo:/Logs/impaired-campaign/20261026-201504-78920fd9",
+  "ProxyStats": [
+    {
+      "scope": "local loopback UDP fixture; not two-machine LAN/WAN",
+      "listen_port": 65174,
+      "target_port": 65173,
+      "one_way_delay_ms": 50.0,
+      "nominal_rtt_ms": 100.0,
+      "configured_datagram_loss": 0.01,
+      "elapsed_s": 192.5853672000012,
+      "directions": {
+        "client_to_host": {
+          "received": 7247,
+          "dropped": 68,
+          "forwarded": 7179,
+          "bytes_forwarded": 201995
+        },
+        "host_to_client": {
+          "received": 6349,
+          "dropped": 50,
+          "forwarded": 6299,
+          "bytes_forwarded": 5908669
+        }
+      },
+      "queue_overflow": 0,
+      "transport_errors": 0,
+      "endpoint_close_notifications": 1,
+      "error_codes": {
+        "ConnectionResetError:10054": 1
+      },
+      "pending_on_stop": 0
+    },
+    {
+      "scope": "local loopback UDP fixture; not two-machine LAN/WAN",
+      "listen_port": 65175,
+      "target_port": 65173,
+      "one_way_delay_ms": 50.0,
+      "nominal_rtt_ms": 100.0,
+      "configured_datagram_loss": 0.01,
+      "elapsed_s": 192.54896459999873,
+      "directions": {
+        "client_to_host": {
+          "received": 7338,
+          "dropped": 62,
+          "forwarded": 7276,
+          "bytes_forwarded": 202668
+        },
+        "host_to_client": {
+          "received": 6333,
+          "dropped": 52,
+          "forwarded": 6281,
+          "bytes_forwarded": 5898603
+        }
+      },
+      "queue_overflow": 0,
+      "transport_errors": 0,
+      "endpoint_close_notifications": 1,
+      "error_codes": {
+        "ConnectionResetError:10054": 1
+      },
+      "pending_on_stop": 0
+    },
+    {
+      "scope": "local loopback UDP fixture; not two-machine LAN/WAN",
+      "listen_port": 65176,
+      "target_port": 65173,
+      "one_way_delay_ms": 50.0,
+      "nominal_rtt_ms": 100.0,
+      "configured_datagram_loss": 0.01,
+      "elapsed_s": 192.63001359999907,
+      "directions": {
+        "client_to_host": {
+          "received": 7382,
+          "dropped": 69,
+          "forwarded": 7313,
+          "bytes_forwarded": 202426
+        },
+        "host_to_client": {
+          "received": 6360,
+          "dropped": 56,
+          "forwarded": 6304,
+          "bytes_forwarded": 5920808
+        }
+      },
+      "queue_overflow": 0,
+      "transport_errors": 0,
+      "endpoint_close_notifications": 1,
+      "error_codes": {
+        "ConnectionResetError:10054": 1
+      },
+      "pending_on_stop": 0
+    }
+  ],
+  "Error": ""
+}

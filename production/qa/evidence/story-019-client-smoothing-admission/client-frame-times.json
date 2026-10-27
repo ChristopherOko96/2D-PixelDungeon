@@ -1,0 +1,23 @@
+{
+	"authoritative_updates": 167,
+	"average_fps": 125.407684268418,
+	"buffer_size": 8,
+	"bullets_max": 9,
+	"duration_s": 8.005889,
+	"enemies_max": 4,
+	"frames": 1004,
+	"fullscreen": true,
+	"gpu": "AMD Radeon RX 6600",
+	"interpolated_frames": 489,
+	"max_ms": 28.287,
+	"median_ms": 7.285,
+	"p95_ms": 15.355,
+	"passed": true,
+	"players": 4,
+	"position_steps_between_packets": 427,
+	"scope": "visible real client with3 other loopback processes;2s warmup/8s sample; normal host-authoritative bot combat, no stat changes; not LAN/WAN or long-term load",
+	"target_p95_ms": 16.667,
+	"visual_updates": 970,
+	"window_focused": true,
+	"window_size": "(1920, 1080)"
+}

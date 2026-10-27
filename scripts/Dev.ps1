@@ -1,12 +1,13 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('Doctor', 'Open', 'Run', 'Host', 'Join', 'Check')]
+    [ValidateSet('Doctor', 'Open', 'Run', 'Host', 'Join', 'Check', 'DungeonEditor', 'AnimationStudio')]
     [string]$Action = 'Doctor',
     [string]$GodotPath,
     [ValidatePattern('^[A-Za-z0-9_.:\-\[\]]+$')]
     [string]$Address = '127.0.0.1',
     [ValidateRange(1, 65535)]
-    [int]$Port = 7777
+    [int]$Port = 7777,
+    [string]$DungeonFile
 )
 
 $ErrorActionPreference = 'Stop'
@@ -146,14 +147,29 @@ switch ($Action) {
     }
     'Run' {
         $arguments = @('--path', $repositoryRoot, '--windowed')
+        if ($DungeonFile) { $arguments += @('--', '--dungeon', $DungeonFile) }
         Start-Process -FilePath $editorPath -ArgumentList (ConvertTo-ProcessArguments $arguments) `
             -WorkingDirectory $repositoryRoot | Out-Null
     }
     'Host' {
         $arguments = @('--path', $repositoryRoot, '--windowed', '--', '--host', '--port', [string]$Port)
+        if ($DungeonFile) { $arguments += @('--dungeon', $DungeonFile) }
         $process = Start-Process -FilePath $editorPath -ArgumentList (ConvertTo-ProcessArguments $arguments) `
             -WorkingDirectory $repositoryRoot -PassThru
         Write-Host "Started host process $($process.Id), UDP port $Port."
+    }
+    'DungeonEditor' {
+        $arguments = @('--path', $repositoryRoot, '--windowed', 'res://src/dungeon_editor.tscn', '--', '--blank')
+        if ($DungeonFile) { $arguments = @('--path', $repositoryRoot, '--windowed', 'res://src/dungeon_editor.tscn', '--', '--draft', $DungeonFile) }
+        # Explicit interactive authoring window, also used by Dungeon-Editor.cmd.
+        Start-Process -FilePath $editorPath -ArgumentList (ConvertTo-ProcessArguments $arguments) `
+            -WorkingDirectory $repositoryRoot -WindowStyle Normal | Out-Null
+    }
+    'AnimationStudio' {
+        $arguments = @('--path', $repositoryRoot, '--windowed', 'res://src/animation_studio.tscn')
+        # Explicit interactive preview window, also used by Animation-Studio.cmd.
+        Start-Process -FilePath $editorPath -ArgumentList (ConvertTo-ProcessArguments $arguments) `
+            -WorkingDirectory $repositoryRoot -WindowStyle Normal | Out-Null
     }
     'Join' {
         $arguments = @('--path', $repositoryRoot, '--windowed', '--', '--join', $Address, '--port', [string]$Port)

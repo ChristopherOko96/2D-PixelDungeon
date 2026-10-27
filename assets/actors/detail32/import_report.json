@@ -1,0 +1,1390 @@
+{
+	"actors": {
+		"boss": {
+			"canvas": [
+				32.0,
+				32.0
+			],
+			"frames": [
+				{
+					"bounds": [
+						3,
+						4,
+						26,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "south_idle"
+				},
+				{
+					"bounds": [
+						6,
+						4,
+						23,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "east_idle"
+				},
+				{
+					"bounds": [
+						2,
+						5,
+						27,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "north_idle"
+				},
+				{
+					"bounds": [
+						4,
+						4,
+						23,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "west_idle"
+				},
+				{
+					"bounds": [
+						0,
+						3,
+						25,
+						28
+					],
+					"foot_end_y": 31,
+					"key": "south_move"
+				},
+				{
+					"bounds": [
+						3,
+						3,
+						25,
+						28
+					],
+					"foot_end_y": 31,
+					"key": "east_move"
+				},
+				{
+					"bounds": [
+						5,
+						3,
+						25,
+						28
+					],
+					"foot_end_y": 31,
+					"key": "north_move"
+				},
+				{
+					"bounds": [
+						4,
+						3,
+						24,
+						28
+					],
+					"foot_end_y": 31,
+					"key": "west_move"
+				},
+				{
+					"bounds": [
+						4,
+						3,
+						28,
+						28
+					],
+					"foot_end_y": 31,
+					"key": "south_attack"
+				},
+				{
+					"bounds": [
+						4,
+						6,
+						28,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "east_attack"
+				},
+				{
+					"bounds": [
+						4,
+						4,
+						28,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "north_attack"
+				},
+				{
+					"bounds": [
+						5,
+						5,
+						27,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "west_attack"
+				},
+				{
+					"bounds": [
+						5,
+						4,
+						22,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "south_hurt"
+				},
+				{
+					"bounds": [
+						10,
+						4,
+						22,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "east_hurt"
+				},
+				{
+					"bounds": [
+						5,
+						5,
+						20,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "north_hurt"
+				},
+				{
+					"bounds": [
+						3,
+						5,
+						21,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "west_hurt"
+				}
+			],
+			"palette_colors": 128,
+			"source": "res://assets/actors/detail32/source/boss_detail_sheet.png",
+			"target_idle_height": 28.0,
+			"uniform_scale": 0.0967741935483871,
+			"world_scale": 3.0
+		},
+		"necromancer": {
+			"canvas": [
+				32.0,
+				32.0
+			],
+			"frames": [
+				{
+					"bounds": [
+						9,
+						6,
+						16,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "south_idle"
+				},
+				{
+					"bounds": [
+						10,
+						6,
+						15,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "east_idle"
+				},
+				{
+					"bounds": [
+						9,
+						5,
+						17,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "north_idle"
+				},
+				{
+					"bounds": [
+						11,
+						7,
+						13,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "west_idle"
+				},
+				{
+					"bounds": [
+						8,
+						5,
+						17,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "south_move"
+				},
+				{
+					"bounds": [
+						7,
+						7,
+						18,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "east_move"
+				},
+				{
+					"bounds": [
+						7,
+						5,
+						17,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "north_move"
+				},
+				{
+					"bounds": [
+						10,
+						7,
+						16,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "west_move"
+				},
+				{
+					"bounds": [
+						5,
+						6,
+						24,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "south_attack"
+				},
+				{
+					"bounds": [
+						8,
+						6,
+						21,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "east_attack"
+				},
+				{
+					"bounds": [
+						5,
+						4,
+						21,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "north_attack"
+				},
+				{
+					"bounds": [
+						5,
+						5,
+						21,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "west_attack"
+				},
+				{
+					"bounds": [
+						9,
+						7,
+						16,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "south_hurt"
+				},
+				{
+					"bounds": [
+						11,
+						9,
+						17,
+						22
+					],
+					"foot_end_y": 31,
+					"key": "east_hurt"
+				},
+				{
+					"bounds": [
+						7,
+						8,
+						18,
+						23
+					],
+					"foot_end_y": 31,
+					"key": "north_hurt"
+				},
+				{
+					"bounds": [
+						9,
+						9,
+						14,
+						22
+					],
+					"foot_end_y": 31,
+					"key": "west_hurt"
+				}
+			],
+			"palette_colors": 128,
+			"source": "res://assets/actors/detail32/source/necromancer_detail_sheet.png",
+			"target_idle_height": 26.0,
+			"uniform_scale": 0.0915492957746479,
+			"world_scale": 2.0
+		},
+		"player_arcanist": {
+			"canvas": [
+				32.0,
+				32.0
+			],
+			"frames": [
+				{
+					"bounds": [
+						9,
+						5,
+						15,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "south_idle"
+				},
+				{
+					"bounds": [
+						9,
+						5,
+						16,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "east_idle"
+				},
+				{
+					"bounds": [
+						9,
+						5,
+						17,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "north_idle"
+				},
+				{
+					"bounds": [
+						8,
+						5,
+						14,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "west_idle"
+				},
+				{
+					"bounds": [
+						9,
+						5,
+						17,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "south_move"
+				},
+				{
+					"bounds": [
+						7,
+						5,
+						18,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "east_move"
+				},
+				{
+					"bounds": [
+						8,
+						4,
+						18,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "north_move"
+				},
+				{
+					"bounds": [
+						9,
+						5,
+						15,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "west_move"
+				},
+				{
+					"bounds": [
+						6,
+						4,
+						21,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "south_attack"
+				},
+				{
+					"bounds": [
+						7,
+						4,
+						20,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "east_attack"
+				},
+				{
+					"bounds": [
+						5,
+						4,
+						23,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "north_attack"
+				},
+				{
+					"bounds": [
+						6,
+						4,
+						19,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "west_attack"
+				},
+				{
+					"bounds": [
+						6,
+						8,
+						18,
+						23
+					],
+					"foot_end_y": 31,
+					"key": "south_hurt"
+				},
+				{
+					"bounds": [
+						9,
+						7,
+						17,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "east_hurt"
+				},
+				{
+					"bounds": [
+						8,
+						8,
+						19,
+						23
+					],
+					"foot_end_y": 31,
+					"key": "north_hurt"
+				},
+				{
+					"bounds": [
+						5,
+						7,
+						18,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "west_hurt"
+				}
+			],
+			"palette_colors": 128,
+			"source": "res://assets/actors/detail32/source/player_arcanist_detail_sheet.png",
+			"target_idle_height": 26.0,
+			"uniform_scale": 0.0909090909090909,
+			"world_scale": 2.0
+		},
+		"player_lizard": {
+			"canvas": [
+				32.0,
+				32.0
+			],
+			"frames": [
+				{
+					"bounds": [
+						8,
+						6,
+						15,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "south_idle"
+				},
+				{
+					"bounds": [
+						7,
+						5,
+						19,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "east_idle"
+				},
+				{
+					"bounds": [
+						5,
+						5,
+						17,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "north_idle"
+				},
+				{
+					"bounds": [
+						5,
+						5,
+						20,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "west_idle"
+				},
+				{
+					"bounds": [
+						11,
+						5,
+						16,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "south_move"
+				},
+				{
+					"bounds": [
+						7,
+						5,
+						21,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "east_move"
+				},
+				{
+					"bounds": [
+						5,
+						5,
+						17,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "north_move"
+				},
+				{
+					"bounds": [
+						6,
+						5,
+						21,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "west_move"
+				},
+				{
+					"bounds": [
+						11,
+						6,
+						15,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "south_attack"
+				},
+				{
+					"bounds": [
+						8,
+						6,
+						24,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "east_attack"
+				},
+				{
+					"bounds": [
+						2,
+						6,
+						18,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "north_attack"
+				},
+				{
+					"bounds": [
+						0,
+						6,
+						25,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "west_attack"
+				},
+				{
+					"bounds": [
+						5,
+						6,
+						16,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "south_hurt"
+				},
+				{
+					"bounds": [
+						8,
+						5,
+						18,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "east_hurt"
+				},
+				{
+					"bounds": [
+						6,
+						6,
+						15,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "north_hurt"
+				},
+				{
+					"bounds": [
+						5,
+						5,
+						17,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "west_hurt"
+				}
+			],
+			"palette_colors": 128,
+			"source": "res://assets/actors/detail32/source/player_lizard_detail_sheet.png",
+			"target_idle_height": 26.0,
+			"uniform_scale": 0.089041095890411,
+			"world_scale": 2.0
+		},
+		"player_ranger": {
+			"canvas": [
+				32.0,
+				32.0
+			],
+			"frames": [
+				{
+					"bounds": [
+						8,
+						5,
+						15,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "south_idle"
+				},
+				{
+					"bounds": [
+						10,
+						5,
+						18,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "east_idle"
+				},
+				{
+					"bounds": [
+						10,
+						5,
+						13,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "north_idle"
+				},
+				{
+					"bounds": [
+						5,
+						5,
+						18,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "west_idle"
+				},
+				{
+					"bounds": [
+						10,
+						3,
+						15,
+						28
+					],
+					"foot_end_y": 31,
+					"key": "south_move"
+				},
+				{
+					"bounds": [
+						7,
+						3,
+						19,
+						28
+					],
+					"foot_end_y": 31,
+					"key": "east_move"
+				},
+				{
+					"bounds": [
+						9,
+						3,
+						14,
+						28
+					],
+					"foot_end_y": 31,
+					"key": "north_move"
+				},
+				{
+					"bounds": [
+						8,
+						3,
+						19,
+						28
+					],
+					"foot_end_y": 31,
+					"key": "west_move"
+				},
+				{
+					"bounds": [
+						6,
+						3,
+						16,
+						28
+					],
+					"foot_end_y": 31,
+					"key": "south_attack"
+				},
+				{
+					"bounds": [
+						9,
+						6,
+						22,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "east_attack"
+				},
+				{
+					"bounds": [
+						5,
+						4,
+						17,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "north_attack"
+				},
+				{
+					"bounds": [
+						6,
+						4,
+						21,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "west_attack"
+				},
+				{
+					"bounds": [
+						12,
+						7,
+						13,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "south_hurt"
+				},
+				{
+					"bounds": [
+						10,
+						7,
+						15,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "east_hurt"
+				},
+				{
+					"bounds": [
+						7,
+						7,
+						14,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "north_hurt"
+				},
+				{
+					"bounds": [
+						6,
+						7,
+						15,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "west_hurt"
+				}
+			],
+			"palette_colors": 128,
+			"source": "res://assets/actors/detail32/source/player_ranger_detail_sheet.png",
+			"target_idle_height": 26.0,
+			"uniform_scale": 0.089041095890411,
+			"world_scale": 2.0
+		},
+		"player_warden": {
+			"canvas": [
+				32.0,
+				32.0
+			],
+			"frames": [
+				{
+					"bounds": [
+						8,
+						5,
+						16,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "south_idle"
+				},
+				{
+					"bounds": [
+						10,
+						6,
+						15,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "east_idle"
+				},
+				{
+					"bounds": [
+						7,
+						5,
+						16,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "north_idle"
+				},
+				{
+					"bounds": [
+						7,
+						6,
+						15,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "west_idle"
+				},
+				{
+					"bounds": [
+						9,
+						5,
+						16,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "south_move"
+				},
+				{
+					"bounds": [
+						8,
+						4,
+						17,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "east_move"
+				},
+				{
+					"bounds": [
+						8,
+						5,
+						16,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "north_move"
+				},
+				{
+					"bounds": [
+						7,
+						4,
+						18,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "west_move"
+				},
+				{
+					"bounds": [
+						7,
+						5,
+						18,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "south_attack"
+				},
+				{
+					"bounds": [
+						9,
+						6,
+						18,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "east_attack"
+				},
+				{
+					"bounds": [
+						5,
+						5,
+						18,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "north_attack"
+				},
+				{
+					"bounds": [
+						5,
+						7,
+						19,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "west_attack"
+				},
+				{
+					"bounds": [
+						8,
+						6,
+						16,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "south_hurt"
+				},
+				{
+					"bounds": [
+						10,
+						6,
+						15,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "east_hurt"
+				},
+				{
+					"bounds": [
+						8,
+						8,
+						14,
+						23
+					],
+					"foot_end_y": 31,
+					"key": "north_hurt"
+				},
+				{
+					"bounds": [
+						8,
+						6,
+						16,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "west_hurt"
+				}
+			],
+			"palette_colors": 128,
+			"source": "res://assets/actors/detail32/source/player_warden_detail_sheet.png",
+			"target_idle_height": 26.0,
+			"uniform_scale": 0.0858085808580858,
+			"world_scale": 2.0
+		},
+		"skeleton_archer": {
+			"canvas": [
+				32.0,
+				32.0
+			],
+			"frames": [
+				{
+					"bounds": [
+						9,
+						5,
+						15,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "south_idle"
+				},
+				{
+					"bounds": [
+						11,
+						5,
+						13,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "east_idle"
+				},
+				{
+					"bounds": [
+						8,
+						5,
+						15,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "north_idle"
+				},
+				{
+					"bounds": [
+						8,
+						5,
+						14,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "west_idle"
+				},
+				{
+					"bounds": [
+						9,
+						6,
+						17,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "south_move"
+				},
+				{
+					"bounds": [
+						9,
+						6,
+						15,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "east_move"
+				},
+				{
+					"bounds": [
+						10,
+						6,
+						15,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "north_move"
+				},
+				{
+					"bounds": [
+						9,
+						6,
+						14,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "west_move"
+				},
+				{
+					"bounds": [
+						8,
+						7,
+						19,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "south_attack"
+				},
+				{
+					"bounds": [
+						10,
+						7,
+						20,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "east_attack"
+				},
+				{
+					"bounds": [
+						5,
+						7,
+						19,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "north_attack"
+				},
+				{
+					"bounds": [
+						3,
+						8,
+						19,
+						23
+					],
+					"foot_end_y": 31,
+					"key": "west_attack"
+				},
+				{
+					"bounds": [
+						4,
+						5,
+						17,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "south_hurt"
+				},
+				{
+					"bounds": [
+						10,
+						5,
+						17,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "east_hurt"
+				},
+				{
+					"bounds": [
+						5,
+						8,
+						18,
+						23
+					],
+					"foot_end_y": 31,
+					"key": "north_hurt"
+				},
+				{
+					"bounds": [
+						5,
+						5,
+						16,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "west_hurt"
+				}
+			],
+			"palette_colors": 128,
+			"source": "res://assets/actors/detail32/source/skeleton_archer_detail_sheet.png",
+			"target_idle_height": 26.0,
+			"uniform_scale": 0.0863787375415282,
+			"world_scale": 2.0
+		},
+		"skeleton_guard": {
+			"canvas": [
+				32.0,
+				32.0
+			],
+			"frames": [
+				{
+					"bounds": [
+						9,
+						5,
+						17,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "south_idle"
+				},
+				{
+					"bounds": [
+						11,
+						5,
+						12,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "east_idle"
+				},
+				{
+					"bounds": [
+						7,
+						5,
+						18,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "north_idle"
+				},
+				{
+					"bounds": [
+						7,
+						5,
+						13,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "west_idle"
+				},
+				{
+					"bounds": [
+						7,
+						6,
+						19,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "south_move"
+				},
+				{
+					"bounds": [
+						8,
+						5,
+						13,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "east_move"
+				},
+				{
+					"bounds": [
+						9,
+						5,
+						18,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "north_move"
+				},
+				{
+					"bounds": [
+						5,
+						5,
+						19,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "west_move"
+				},
+				{
+					"bounds": [
+						7,
+						6,
+						20,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "south_attack"
+				},
+				{
+					"bounds": [
+						8,
+						7,
+						23,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "east_attack"
+				},
+				{
+					"bounds": [
+						8,
+						7,
+						22,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "north_attack"
+				},
+				{
+					"bounds": [
+						0,
+						7,
+						23,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "west_attack"
+				},
+				{
+					"bounds": [
+						7,
+						6,
+						18,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "south_hurt"
+				},
+				{
+					"bounds": [
+						8,
+						6,
+						14,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "east_hurt"
+				},
+				{
+					"bounds": [
+						6,
+						7,
+						20,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "north_hurt"
+				},
+				{
+					"bounds": [
+						8,
+						6,
+						17,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "west_hurt"
+				}
+			],
+			"palette_colors": 128,
+			"source": "res://assets/actors/detail32/source/skeleton_guard_detail_sheet.png",
+			"target_idle_height": 26.0,
+			"uniform_scale": 0.0866666666666667,
+			"world_scale": 2.0
+		}
+	},
+	"schema_version": 1,
+	"visual_revision": "crypt_detail32_eldritch_v1"
+}

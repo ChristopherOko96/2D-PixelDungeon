@@ -1,0 +1,19 @@
+"""Encode unchanged GPU captures as an inspection GIF; no art generation/editing."""
+import json
+from pathlib import Path
+from PIL import Image
+
+root = Path(__file__).resolve().parents[1] / "outputs" / "2D-PixelDungeon"
+evidence = root / "production/qa/evidence/story-024-detail32-eldritch"
+catalog = json.loads((root / "assets/data/actor_animations.json").read_text(encoding="utf-8"))
+timings = {item["id"]: item["duration"] for item in catalog["actions"]}
+clips = ["walk_forward", "attack_primary", "hit_front", "death_fall", "charge_loop", "idle_look"]
+frames, durations = [], []
+for stage, clip in enumerate(clips):
+    tick = max(20, round(timings[clip] * 1000 / 6 / 10) * 10)
+    for frame in range(6):
+        with Image.open(evidence / "frames" / f"{stage*8+frame:02d}.png") as captured:
+            frames.append(captured.convert("P", palette=Image.Palette.ADAPTIVE, colors=128, dither=Image.Dither.NONE))
+        durations.append(tick + (300 if frame == 5 else 0))
+frames[0].save(evidence / "07-eight-actors-animation.gif", save_all=True, append_images=frames[1:], duration=durations, loop=0, disposal=2, optimize=False)
+print(f"ACTOR_GIF frames={len(frames)} duration_ms={sum(durations)} source=unaltered_GPU_captures")

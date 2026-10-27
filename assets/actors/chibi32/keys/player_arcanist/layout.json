@@ -1,0 +1,173 @@
+{
+	"canvas": [
+		32.0,
+		32.0
+	],
+	"frames": [
+		{
+			"bounds": [
+				7,
+				5,
+				17,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "south_idle"
+		},
+		{
+			"bounds": [
+				10,
+				5,
+				17,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "east_idle"
+		},
+		{
+			"bounds": [
+				8,
+				5,
+				18,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "north_idle"
+		},
+		{
+			"bounds": [
+				7,
+				5,
+				17,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "west_idle"
+		},
+		{
+			"bounds": [
+				9,
+				5,
+				17,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "south_move"
+		},
+		{
+			"bounds": [
+				8,
+				6,
+				18,
+				25
+			],
+			"foot_end_y": 31,
+			"key": "east_move"
+		},
+		{
+			"bounds": [
+				8,
+				6,
+				18,
+				25
+			],
+			"foot_end_y": 31,
+			"key": "north_move"
+		},
+		{
+			"bounds": [
+				8,
+				6,
+				17,
+				25
+			],
+			"foot_end_y": 31,
+			"key": "west_move"
+		},
+		{
+			"bounds": [
+				6,
+				5,
+				22,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "south_attack"
+		},
+		{
+			"bounds": [
+				7,
+				5,
+				20,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "east_attack"
+		},
+		{
+			"bounds": [
+				5,
+				6,
+				23,
+				25
+			],
+			"foot_end_y": 31,
+			"key": "north_attack"
+		},
+		{
+			"bounds": [
+				6,
+				6,
+				20,
+				25
+			],
+			"foot_end_y": 31,
+			"key": "west_attack"
+		},
+		{
+			"bounds": [
+				6,
+				7,
+				19,
+				24
+			],
+			"foot_end_y": 31,
+			"key": "south_hurt"
+		},
+		{
+			"bounds": [
+				8,
+				7,
+				20,
+				24
+			],
+			"foot_end_y": 31,
+			"key": "east_hurt"
+		},
+		{
+			"bounds": [
+				6,
+				9,
+				20,
+				22
+			],
+			"foot_end_y": 31,
+			"key": "north_hurt"
+		},
+		{
+			"bounds": [
+				4,
+				7,
+				20,
+				24
+			],
+			"foot_end_y": 31,
+			"key": "west_hurt"
+		}
+	],
+	"palette_colors": 64,
+	"source": "res://assets/actors/chibi32/source/player_arcanist_chibi_sheet.png",
+	"target_idle_height": 26.0,
+	"uniform_scale": 0.0878378378378378,
+	"world_scale": 2.0
+}

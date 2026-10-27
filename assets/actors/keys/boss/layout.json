@@ -1,0 +1,368 @@
+{
+	"actor": "boss",
+	"canvas": [
+		48,
+		48
+	],
+	"direction_source": "independently generated front/east/rear/west views",
+	"directions": [
+		"south",
+		"east",
+		"north",
+		"west"
+	],
+	"foot_end_y": 47,
+	"frames": [
+		{
+			"clipped": false,
+			"direction": "south",
+			"origin": [
+				3,
+				15
+			],
+			"path": "assets/actors/keys/boss/south_idle.png",
+			"pose": "idle",
+			"projected_size": [
+				41,
+				32
+			],
+			"source_bounds": [
+				48,
+				32,
+				288,
+				227
+			],
+			"used_end_y": 47
+		},
+		{
+			"clipped": false,
+			"direction": "east",
+			"origin": [
+				8,
+				15
+			],
+			"path": "assets/actors/keys/boss/east_idle.png",
+			"pose": "idle",
+			"projected_size": [
+				32,
+				32
+			],
+			"source_bounds": [
+				418,
+				34,
+				226,
+				225
+			],
+			"used_end_y": 47
+		},
+		{
+			"clipped": false,
+			"direction": "north",
+			"origin": [
+				4,
+				15
+			],
+			"path": "assets/actors/keys/boss/north_idle.png",
+			"pose": "idle",
+			"projected_size": [
+				39,
+				32
+			],
+			"source_bounds": [
+				741,
+				33,
+				277,
+				226
+			],
+			"used_end_y": 47
+		},
+		{
+			"clipped": false,
+			"direction": "west",
+			"origin": [
+				8,
+				15
+			],
+			"path": "assets/actors/keys/boss/west_idle.png",
+			"pose": "idle",
+			"projected_size": [
+				32,
+				32
+			],
+			"source_bounds": [
+				1106,
+				34,
+				229,
+				225
+			],
+			"used_end_y": 47
+		},
+		{
+			"clipped": false,
+			"direction": "south",
+			"origin": [
+				4,
+				13
+			],
+			"path": "assets/actors/keys/boss/south_move.png",
+			"pose": "move",
+			"projected_size": [
+				40,
+				34
+			],
+			"source_bounds": [
+				48,
+				300,
+				282,
+				240
+			],
+			"used_end_y": 47
+		},
+		{
+			"clipped": false,
+			"direction": "east",
+			"origin": [
+				9,
+				14
+			],
+			"path": "assets/actors/keys/boss/east_move.png",
+			"pose": "move",
+			"projected_size": [
+				30,
+				33
+			],
+			"source_bounds": [
+				428,
+				298,
+				216,
+				233
+			],
+			"used_end_y": 47
+		},
+		{
+			"clipped": false,
+			"direction": "north",
+			"origin": [
+				5,
+				13
+			],
+			"path": "assets/actors/keys/boss/north_move.png",
+			"pose": "move",
+			"projected_size": [
+				38,
+				34
+			],
+			"source_bounds": [
+				744,
+				300,
+				268,
+				242
+			],
+			"used_end_y": 47
+		},
+		{
+			"clipped": false,
+			"direction": "west",
+			"origin": [
+				8,
+				14
+			],
+			"path": "assets/actors/keys/boss/west_move.png",
+			"pose": "move",
+			"projected_size": [
+				32,
+				33
+			],
+			"source_bounds": [
+				1106,
+				300,
+				225,
+				231
+			],
+			"used_end_y": 47
+		},
+		{
+			"clipped": false,
+			"direction": "south",
+			"origin": [
+				0,
+				13
+			],
+			"path": "assets/actors/keys/boss/south_attack.png",
+			"pose": "attack",
+			"projected_size": [
+				47,
+				34
+			],
+			"source_bounds": [
+				23,
+				571,
+				336,
+				244
+			],
+			"used_end_y": 47
+		},
+		{
+			"clipped": false,
+			"direction": "east",
+			"origin": [
+				4,
+				14
+			],
+			"path": "assets/actors/keys/boss/east_attack.png",
+			"pose": "attack",
+			"projected_size": [
+				39,
+				33
+			],
+			"source_bounds": [
+				400,
+				583,
+				276,
+				232
+			],
+			"used_end_y": 47
+		},
+		{
+			"clipped": false,
+			"direction": "north",
+			"origin": [
+				1,
+				13
+			],
+			"path": "assets/actors/keys/boss/north_attack.png",
+			"pose": "attack",
+			"projected_size": [
+				46,
+				34
+			],
+			"source_bounds": [
+				718,
+				573,
+				325,
+				242
+			],
+			"used_end_y": 47
+		},
+		{
+			"clipped": false,
+			"direction": "west",
+			"origin": [
+				4,
+				14
+			],
+			"path": "assets/actors/keys/boss/west_attack.png",
+			"pose": "attack",
+			"projected_size": [
+				40,
+				33
+			],
+			"source_bounds": [
+				1073,
+				584,
+				281,
+				231
+			],
+			"used_end_y": 47
+		},
+		{
+			"clipped": false,
+			"direction": "south",
+			"origin": [
+				5,
+				13
+			],
+			"path": "assets/actors/keys/boss/south_hurt.png",
+			"pose": "hurt",
+			"projected_size": [
+				37,
+				34
+			],
+			"source_bounds": [
+				47,
+				851,
+				266,
+				239
+			],
+			"used_end_y": 47
+		},
+		{
+			"clipped": false,
+			"direction": "east",
+			"origin": [
+				7,
+				13
+			],
+			"path": "assets/actors/keys/boss/east_hurt.png",
+			"pose": "hurt",
+			"projected_size": [
+				33,
+				34
+			],
+			"source_bounds": [
+				422,
+				851,
+				237,
+				240
+			],
+			"used_end_y": 47
+		},
+		{
+			"clipped": false,
+			"direction": "north",
+			"origin": [
+				5,
+				13
+			],
+			"path": "assets/actors/keys/boss/north_hurt.png",
+			"pose": "hurt",
+			"projected_size": [
+				37,
+				34
+			],
+			"source_bounds": [
+				737,
+				851,
+				263,
+				240
+			],
+			"used_end_y": 47
+		},
+		{
+			"clipped": false,
+			"direction": "west",
+			"origin": [
+				7,
+				13
+			],
+			"path": "assets/actors/keys/boss/west_hurt.png",
+			"pose": "hurt",
+			"projected_size": [
+				34,
+				34
+			],
+			"source_bounds": [
+				1091,
+				851,
+				238,
+				240
+			],
+			"used_end_y": 47
+		}
+	],
+	"idle_height": 32,
+	"nominal_body_box": [
+		32,
+		40
+	],
+	"poses": [
+		"idle",
+		"move",
+		"attack",
+		"hurt"
+	],
+	"schema_version": 1,
+	"source_extraction": "sixteen largest eight-connected alpha silhouettes, ordered by row then column",
+	"uniform_idle_scale": 0.140969162995595,
+	"world_scale": 2
+}

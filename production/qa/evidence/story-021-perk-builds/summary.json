@@ -1,0 +1,58 @@
+{
+  "date": "2026-10-26",
+  "story": 21,
+  "branch": "codex_v2",
+  "catalogue_count": 48,
+  "scope": "focused gameplay and presentation fixtures; not a played full campaign, LAN or FPS acceptance",
+  "checks": {
+    "rules_catalogue": [
+      667,
+      0
+    ],
+    "actual_combat": [
+      100,
+      0
+    ],
+    "ui": [
+      159,
+      0
+    ],
+    "game_rules": [
+      24,
+      0
+    ],
+    "exploration": [
+      85,
+      0
+    ],
+    "protocol": [
+      20,
+      0
+    ],
+    "interpolation": [
+      53,
+      0
+    ]
+  },
+  "network": "two real local processes with controlled reward-phase fixture; network.json",
+  "gpu": "1280x720 Compatibility RX6600; actual game controls and simulated bullet/status fixture, not earned builds",
+  "images": [
+    "01-element-cards.png",
+    "02-combination-cards.png",
+    "03-grouped-inventory.png",
+    "04-combined-projectiles.png"
+  ],
+  "pending": "user play/long-term balance feedback; further LAN/online/load acceptance deferred by user",
+  "source_sha256": {
+    "src/game.gd": "e4a4b22cd54a9a9454a788c5fc3ec3c0489a5f953c86c8b302fb656a4f0d4412",
+    "src/perk_rules.gd": "e3f0af09bdfd2b54f83eb6f2e1cd2cd0ddc2b09b19dc39e9b939dffb3d900014",
+    "src/perk_combat.gd": "d8aa34cb250c555330042aff30ed4770b764f0d8c9fed567c357549ef8e83ea4",
+    "src/data/balance.json": "b8195b70f2a234bc132376e9922c5db6526e7362b3a154dd85cda1fba57b85c2",
+    "src/session_protocol.gd": "5959dfc6ea00a84bb34911de93a546e24bbce54eb9784848b85117655356c1d9",
+    "src/dungeon_view.gd": "72b49199b5b7b0156e846d005de112b1115be19b7a33b708a9d5ed722e058520",
+    "src/reward_overlay.gd": "02c3016caddbe34c563a5cb322a8ebe2d8aba7fa942dda9cc7c5233ab26903c7",
+    "src/pause_menu.gd": "71f0f45598ed966f918a9420037c39a41fe4309671ca172d578f8f2b3504dad9",
+    "src/perk_icons.gd": "2d73d23402e085b971e086964459c82ccd37d302383ee2230ecc1cb2289549c1",
+    "assets/data/custom_dungeons/dungeon_mein_entwurf.json": "b8afdce111e0005407e1ce0bcf4427276efed51cc987c65099671c82701bbf16"
+  }
+}

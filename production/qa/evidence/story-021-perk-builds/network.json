@@ -1,0 +1,32 @@
+{
+  "passed": true,
+  "scope": "controlled two-process loopback reward fixture; not played campaign/LAN/performance",
+  "results": [
+    {
+      "explored": true,
+      "failures": [],
+      "offer_ids": [
+        "piercer",
+        "backshot",
+        "shield"
+      ],
+      "passed": true,
+      "role": "host",
+      "scope": "controlled loopback reward fixture, not played campaign/LAN/benchmark",
+      "selected": "piercer"
+    },
+    {
+      "explored": true,
+      "failures": [],
+      "offer_ids": [
+        "heart",
+        "shield",
+        "quick"
+      ],
+      "passed": true,
+      "role": "client",
+      "scope": "controlled loopback reward fixture, not played campaign/LAN/benchmark",
+      "selected": "shield"
+    }
+  ]
+}

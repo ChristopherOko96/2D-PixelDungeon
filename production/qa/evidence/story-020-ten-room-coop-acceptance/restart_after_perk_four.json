@@ -1,0 +1,243 @@
+{
+  "Result": "PASS",
+  "Players": 4,
+  "Scenario": "restart_after_reward",
+  "Seed": 42026,
+  "Port": 52333,
+  "ClientPorts": [],
+  "Scope": "Independent localhost processes; not real LAN or GPU performance",
+  "Started": "2026-10-26T20:21:45.1590731+01:00",
+  "Logs": "repo:/Logs/ten-room-campaign/20261026-202145-bd59755f",
+  "DungeonSHA256": "6E88D0A716209A842B3D582C90153F7B53984D0EE07A1644F02547A540B93B71",
+  "Reports": [
+    {
+      "actual_view_frames": 5458,
+      "backtrack_returned": false,
+      "black_frames": {
+        "1": 4
+      },
+      "earned_before_wipe": 1,
+      "earned_perks": 0,
+      "elapsed_seconds": 58.53,
+      "errors": [],
+      "expected_reward_grants": 1,
+      "layouts": [
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 1,
+          "id": "v4-s42026-r01",
+          "room": 1,
+          "signature": "a26b450a19aa782a051f91e8bcbef9d8d2230fab429fa54f4d0bfa49ea4ea731",
+          "template": "crypt_01"
+        },
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 1,
+          "id": "v4-s42026-r02",
+          "room": 2,
+          "signature": "a9b75c46ed3876673a061b5887240d28ed09a3391cb9d5580470e16e033d9754",
+          "template": "crypt_09"
+        }
+      ],
+      "observed_wipe": true,
+      "peer_id": 1,
+      "players": 4,
+      "restart_requested": true,
+      "result": "PASS",
+      "reward_eligibility": {
+        "1:v4-s42026-r01": true
+      },
+      "reward_rooms": [
+        "1:v4-s42026-r01"
+      ],
+      "role": "host",
+      "scenario": "restart_after_reward",
+      "scope": "normal authoritative bot inputs and actual reward button signals; independent local process; not LAN or subjective play acceptance",
+      "seed": 42026,
+      "sound_kinds": [
+        "door"
+      ],
+      "sounds": {
+        "1": 1
+      },
+      "starting_enemy_count": 5,
+      "swaps": {
+        "1": 1
+      }
+    },
+    {
+      "actual_view_frames": 5540,
+      "backtrack_returned": false,
+      "black_frames": {
+        "1": 23
+      },
+      "earned_before_wipe": 1,
+      "earned_perks": 0,
+      "elapsed_seconds": 51.006,
+      "errors": [],
+      "expected_reward_grants": 1,
+      "layouts": [
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 1,
+          "id": "v4-s42026-r01",
+          "room": 1,
+          "signature": "a26b450a19aa782a051f91e8bcbef9d8d2230fab429fa54f4d0bfa49ea4ea731",
+          "template": "crypt_01"
+        },
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 1,
+          "id": "v4-s42026-r02",
+          "room": 2,
+          "signature": "a9b75c46ed3876673a061b5887240d28ed09a3391cb9d5580470e16e033d9754",
+          "template": "crypt_09"
+        }
+      ],
+      "observed_wipe": true,
+      "peer_id": 1289955615,
+      "players": 4,
+      "restart_requested": false,
+      "result": "PASS",
+      "reward_eligibility": {
+        "1:v4-s42026-r01": true
+      },
+      "reward_rooms": [
+        "1:v4-s42026-r01"
+      ],
+      "role": "client",
+      "scenario": "restart_after_reward",
+      "scope": "normal authoritative bot inputs and actual reward button signals; independent local process; not LAN or subjective play acceptance",
+      "seed": 42026,
+      "sound_kinds": [
+        "door"
+      ],
+      "sounds": {
+        "1": 1
+      },
+      "starting_enemy_count": 5,
+      "swaps": {
+        "1": 1
+      }
+    },
+    {
+      "actual_view_frames": 5542,
+      "backtrack_returned": false,
+      "black_frames": {
+        "1": 24
+      },
+      "earned_before_wipe": 1,
+      "earned_perks": 0,
+      "elapsed_seconds": 51.018,
+      "errors": [],
+      "expected_reward_grants": 1,
+      "layouts": [
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 1,
+          "id": "v4-s42026-r01",
+          "room": 1,
+          "signature": "a26b450a19aa782a051f91e8bcbef9d8d2230fab429fa54f4d0bfa49ea4ea731",
+          "template": "crypt_01"
+        },
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 1,
+          "id": "v4-s42026-r02",
+          "room": 2,
+          "signature": "a9b75c46ed3876673a061b5887240d28ed09a3391cb9d5580470e16e033d9754",
+          "template": "crypt_09"
+        }
+      ],
+      "observed_wipe": true,
+      "peer_id": 136894144,
+      "players": 4,
+      "restart_requested": false,
+      "result": "PASS",
+      "reward_eligibility": {
+        "1:v4-s42026-r01": true
+      },
+      "reward_rooms": [
+        "1:v4-s42026-r01"
+      ],
+      "role": "client",
+      "scenario": "restart_after_reward",
+      "scope": "normal authoritative bot inputs and actual reward button signals; independent local process; not LAN or subjective play acceptance",
+      "seed": 42026,
+      "sound_kinds": [
+        "door"
+      ],
+      "sounds": {
+        "1": 1
+      },
+      "starting_enemy_count": 5,
+      "swaps": {
+        "1": 1
+      }
+    },
+    {
+      "actual_view_frames": 5545,
+      "backtrack_returned": false,
+      "black_frames": {
+        "1": 23
+      },
+      "earned_before_wipe": 1,
+      "earned_perks": 0,
+      "elapsed_seconds": 50.834,
+      "errors": [],
+      "expected_reward_grants": 1,
+      "layouts": [
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 1,
+          "id": "v4-s42026-r01",
+          "room": 1,
+          "signature": "a26b450a19aa782a051f91e8bcbef9d8d2230fab429fa54f4d0bfa49ea4ea731",
+          "template": "crypt_01"
+        },
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 1,
+          "id": "v4-s42026-r02",
+          "room": 2,
+          "signature": "a9b75c46ed3876673a061b5887240d28ed09a3391cb9d5580470e16e033d9754",
+          "template": "crypt_09"
+        }
+      ],
+      "observed_wipe": true,
+      "peer_id": 1863652553,
+      "players": 4,
+      "restart_requested": false,
+      "result": "PASS",
+      "reward_eligibility": {
+        "1:v4-s42026-r01": true
+      },
+      "reward_rooms": [
+        "1:v4-s42026-r01"
+      ],
+      "role": "client",
+      "scenario": "restart_after_reward",
+      "scope": "normal authoritative bot inputs and actual reward button signals; independent local process; not LAN or subjective play acceptance",
+      "seed": 42026,
+      "sound_kinds": [
+        "door"
+      ],
+      "sounds": {
+        "1": 1
+      },
+      "starting_enemy_count": 5,
+      "swaps": {
+        "1": 1
+      }
+    }
+  ],
+  "ElapsedSeconds": 64.959
+}

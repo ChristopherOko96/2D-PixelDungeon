@@ -1,0 +1,30 @@
+{
+  "passed": true,
+  "scope": "controlled two-process loopback enemy replication fixture; not played campaign/LAN/performance",
+  "results": [
+    {
+      "failures": [],
+      "kinds": [
+        "skeleton_guard",
+        "skeleton_archer",
+        "necromancer"
+      ],
+      "observed": true,
+      "passed": true,
+      "role": "host",
+      "scope": "controlled local two-process enemy replication fixture; not played campaign/LAN/performance"
+    },
+    {
+      "failures": [],
+      "kinds": [
+        "skeleton_guard",
+        "skeleton_archer",
+        "necromancer"
+      ],
+      "observed": true,
+      "passed": true,
+      "role": "client",
+      "scope": "controlled local two-process enemy replication fixture; not played campaign/LAN/performance"
+    }
+  ]
+}

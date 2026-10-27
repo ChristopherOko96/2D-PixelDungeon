@@ -1,0 +1,108 @@
+{
+  "date": "2026-10-26",
+  "scope": "single-PC real processes; no two-machine LAN/WAN proof",
+  "campaigns": {
+    "solo": {
+      "result": "PASS",
+      "players": 1,
+      "scenario": "campaign",
+      "elapsed_seconds": 188.089,
+      "evidence": "solo.json"
+    },
+    "two_peers": {
+      "result": "PASS",
+      "players": 2,
+      "scenario": "campaign",
+      "elapsed_seconds": 190.926,
+      "evidence": "two_peers.json"
+    },
+    "four_peers": {
+      "result": "PASS",
+      "players": 4,
+      "scenario": "campaign",
+      "elapsed_seconds": 193.756,
+      "evidence": "four_peers.json"
+    },
+    "restart_after_perk_two": {
+      "result": "PASS",
+      "players": 2,
+      "scenario": "restart_after_reward",
+      "elapsed_seconds": 53.832,
+      "evidence": "restart_after_perk_two.json"
+    },
+    "restart_after_perk_four": {
+      "result": "PASS",
+      "players": 4,
+      "scenario": "restart_after_reward",
+      "elapsed_seconds": 64.959,
+      "evidence": "restart_after_perk_four.json"
+    },
+    "impaired_four_peers": {
+      "result": "PASS",
+      "players": 4,
+      "scenario": "campaign",
+      "elapsed_seconds": 192.109,
+      "evidence": "impaired_four_peers.json"
+    }
+  },
+  "logic_checks": {
+    "interpolation": [
+      53,
+      0
+    ],
+    "protocol": [
+      20,
+      0
+    ],
+    "membership": [
+      5,
+      0
+    ],
+    "feedback_reset": [
+      3,
+      0
+    ],
+    "game_rules": [
+      24,
+      0
+    ],
+    "exploration": [
+      85,
+      0
+    ]
+  },
+  "hardware_lan": "not available: user confirmed only this PC",
+  "subjective_acceptance": "reserved for user",
+  "visible_four_player_campaign": {
+    "evidence": "visible-four-campaign/client-frame-times.json",
+    "passed": true,
+    "gpu": "AMD Radeon RX 6600",
+    "resolution": [
+      1920,
+      1080
+    ],
+    "duration_s": 144.021293,
+    "average_fps": 143.680143185494,
+    "p95_ms": 8.035,
+    "max_ms": 97.191,
+    "boss_combat_p95_ms": 8.35,
+    "testbot_private_navigation_warmup": {
+      "duration_ms": 2228.175,
+      "purpose": "testbot-only private navigation; no game state changes",
+      "radius": 12.0,
+      "rooms": 10,
+      "seed": 42026
+    },
+    "scope": "one visible GPU client plus three local processes; one hardware/seed run, no universal FPS guarantee"
+  },
+  "source_sha256": {
+    "src/game.gd": "cbacd51733415f7137a7a2a27a1631dea5b9bb272c5da5b82fa462737c3c3ba2",
+    "src/session_protocol.gd": "495997ca146d34b3b4f1d78ba544a78f04eebd87d3d4845c588d839ade40485e",
+    "src/snapshot_interpolator.gd": "21154468490a6a9e05d65578897b3a7ed8167d38aba498b01ee549e71ce783b4",
+    "src/dungeon_view.gd": "73e1784cde17ac9dc73ba2a10b8d0aa28de17304f1eb4508032accf28b6fac25",
+    "src/vfx/feedback.gd": "fd687d51f8bedd22baacb46c5f50763a21dcf55daa88e50e2a6b9da7708d7ed3",
+    "src/data/balance.json": "8f2c194447c894dfcd3fc927c0d15226ff563bbfc0d73a634a689616dc6c3e21",
+    "assets/data/dungeon_rooms.json": "6e88d0a716209a842b3d582c90153f7b53984d0ee07a1644f02547a540b93b71",
+    "assets/data/custom_dungeons/dungeon_mein_entwurf.json": "b8afdce111e0005407e1ce0bcf4427276efed51cc987c65099671c82701bbf16"
+  }
+}

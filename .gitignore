@@ -46,6 +46,9 @@ bin/
 !addons/gdUnit4/bin/
 obj/
 out/
+# ...but keep the 0x72 art proof review pages and renders, so the review set
+# can be opened from the checkout (production/art-proof/0x72-style/README.md).
+!production/art-proof/0x72-style/out/
 dist/
 *.exe
 *.dll
@@ -144,8 +147,6 @@ scripts/godot.local.json
 *.pem
 *.key
 credentials.json
-# Firebase project keys for this machine (see docs/firebase-setup.md).
-firebase.local.json
 secrets.json
 
 # === Large Binary Assets (use Git LFS instead) ===

@@ -1,0 +1,103 @@
+{
+	"active_library": "res://assets/data/dungeon_rooms.json",
+	"capture_mode": "normal prototype, direct room opening, simulation held for photos",
+	"editor_preview": false,
+	"note": "These are actual GPU viewport captures. No full playthrough or network/performance evidence.",
+	"rooms": [
+		{
+			"boss": false,
+			"room": 1,
+			"template": "crypt_01",
+			"title": "CRYPT OF THE DAMNED · Vorhalle der Verdammten"
+		},
+		{
+			"boss": false,
+			"room": 2,
+			"template": "crypt_09",
+			"title": "CRYPT OF THE DAMNED · Trauerhallen"
+		},
+		{
+			"boss": false,
+			"room": 3,
+			"template": "crypt_04",
+			"title": "CRYPT OF THE DAMNED · Kapelle der verlorenen Seelen"
+		},
+		{
+			"boss": false,
+			"room": 4,
+			"template": "crypt_05",
+			"title": "CRYPT OF THE DAMNED · Verschlungene Katakomben"
+		},
+		{
+			"boss": false,
+			"room": 5,
+			"template": "crypt_03",
+			"title": "CRYPT OF THE DAMNED · Sarkophaghof"
+		},
+		{
+			"boss": false,
+			"room": 6,
+			"template": "crypt_08",
+			"title": "CRYPT OF THE DAMNED · Grab der Namenlosen"
+		},
+		{
+			"boss": false,
+			"room": 7,
+			"template": "crypt_02",
+			"title": "CRYPT OF THE DAMNED · Knochengalerien"
+		},
+		{
+			"boss": false,
+			"room": 8,
+			"template": "crypt_06",
+			"title": "CRYPT OF THE DAMNED · Garten der Graburnen"
+		},
+		{
+			"boss": false,
+			"room": 9,
+			"template": "crypt_07",
+			"title": "CRYPT OF THE DAMNED · Reliquienarchiv"
+		},
+		{
+			"boss": true,
+			"room": 10,
+			"template": "crypt_10",
+			"title": "CRYPT OF THE DAMNED · Thron der Verdammten"
+		}
+	],
+	"seed": 42026,
+	"shots": [
+		{
+			"boss_count": 0,
+			"enemies": 5,
+			"file": "01-einstieg.png",
+			"phase": "combat",
+			"room": 1,
+			"template": "crypt_01"
+		},
+		{
+			"boss_count": 0,
+			"enemies": 6,
+			"file": "08-garten.png",
+			"phase": "combat",
+			"room": 8,
+			"template": "crypt_06"
+		},
+		{
+			"boss_count": 0,
+			"enemies": 8,
+			"file": "09-archiv.png",
+			"phase": "combat",
+			"room": 9,
+			"template": "crypt_07"
+		},
+		{
+			"boss_count": 1,
+			"enemies": 3,
+			"file": "10-boss.png",
+			"phase": "combat",
+			"room": 10,
+			"template": "crypt_10"
+		}
+	]
+}

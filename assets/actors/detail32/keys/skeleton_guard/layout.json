@@ -1,0 +1,173 @@
+{
+	"canvas": [
+		32.0,
+		32.0
+	],
+	"frames": [
+		{
+			"bounds": [
+				9,
+				5,
+				17,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "south_idle"
+		},
+		{
+			"bounds": [
+				11,
+				5,
+				12,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "east_idle"
+		},
+		{
+			"bounds": [
+				7,
+				5,
+				18,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "north_idle"
+		},
+		{
+			"bounds": [
+				7,
+				5,
+				13,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "west_idle"
+		},
+		{
+			"bounds": [
+				7,
+				6,
+				19,
+				25
+			],
+			"foot_end_y": 31,
+			"key": "south_move"
+		},
+		{
+			"bounds": [
+				8,
+				5,
+				13,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "east_move"
+		},
+		{
+			"bounds": [
+				9,
+				5,
+				18,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "north_move"
+		},
+		{
+			"bounds": [
+				5,
+				5,
+				19,
+				26
+			],
+			"foot_end_y": 31,
+			"key": "west_move"
+		},
+		{
+			"bounds": [
+				7,
+				6,
+				20,
+				25
+			],
+			"foot_end_y": 31,
+			"key": "south_attack"
+		},
+		{
+			"bounds": [
+				8,
+				7,
+				23,
+				24
+			],
+			"foot_end_y": 31,
+			"key": "east_attack"
+		},
+		{
+			"bounds": [
+				8,
+				7,
+				22,
+				24
+			],
+			"foot_end_y": 31,
+			"key": "north_attack"
+		},
+		{
+			"bounds": [
+				0,
+				7,
+				23,
+				24
+			],
+			"foot_end_y": 31,
+			"key": "west_attack"
+		},
+		{
+			"bounds": [
+				7,
+				6,
+				18,
+				25
+			],
+			"foot_end_y": 31,
+			"key": "south_hurt"
+		},
+		{
+			"bounds": [
+				8,
+				6,
+				14,
+				25
+			],
+			"foot_end_y": 31,
+			"key": "east_hurt"
+		},
+		{
+			"bounds": [
+				6,
+				7,
+				20,
+				24
+			],
+			"foot_end_y": 31,
+			"key": "north_hurt"
+		},
+		{
+			"bounds": [
+				8,
+				6,
+				17,
+				25
+			],
+			"foot_end_y": 31,
+			"key": "west_hurt"
+		}
+	],
+	"palette_colors": 128,
+	"source": "res://assets/actors/detail32/source/skeleton_guard_detail_sheet.png",
+	"target_idle_height": 26.0,
+	"uniform_scale": 0.0866666666666667,
+	"world_scale": 2.0
+}

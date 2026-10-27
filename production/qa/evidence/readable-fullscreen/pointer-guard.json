@@ -1,0 +1,8 @@
+{
+	"fresh_world_click_fires": true,
+	"held_drag_out_fires": false,
+	"scope": "local GUI input check only; no simulated combat or network suite",
+	"ui_click_fires": false,
+	"ui_hovered_button": true,
+	"world_click_fires": true
+}

@@ -1,0 +1,70 @@
+{
+  "latency": {
+    "scope": "local loopback UDP fixture; not two-machine LAN/WAN",
+    "listen_port": 61915,
+    "target_port": 61914,
+    "one_way_delay_ms": 50.0,
+    "nominal_rtt_ms": 100.0,
+    "configured_datagram_loss": 0.0,
+    "elapsed_s": 0.5669188999963808,
+    "directions": {
+      "client_to_host": {
+        "received": 4,
+        "dropped": 0,
+        "forwarded": 4,
+        "bytes_forwarded": 28
+      },
+      "host_to_client": {
+        "received": 4,
+        "dropped": 0,
+        "forwarded": 4,
+        "bytes_forwarded": 28
+      }
+    },
+    "queue_overflow": 0,
+    "transport_errors": 0,
+    "pending_on_stop": 0,
+    "probes_sent": 4,
+    "probes_received": 4,
+    "measured_round_trip_ms": [
+      109.76239999581594,
+      109.33439999644179,
+      103.7205000029644,
+      104.15800000191666
+    ]
+  },
+  "loss": {
+    "scope": "local loopback UDP fixture; not two-machine LAN/WAN",
+    "listen_port": 56145,
+    "target_port": 61914,
+    "one_way_delay_ms": 0.0,
+    "nominal_rtt_ms": 0.0,
+    "configured_datagram_loss": 0.01,
+    "elapsed_s": 0.5212193000043044,
+    "directions": {
+      "client_to_host": {
+        "received": 600,
+        "dropped": 8,
+        "forwarded": 592,
+        "bytes_forwarded": 5220
+      },
+      "host_to_client": {
+        "received": 592,
+        "dropped": 5,
+        "forwarded": 587,
+        "bytes_forwarded": 5175
+      }
+    },
+    "queue_overflow": 0,
+    "transport_errors": 0,
+    "pending_on_stop": 0,
+    "probes_sent": 600,
+    "probes_received": 587,
+    "measured_round_trip_ms": [
+      0.6224000026122667,
+      0.2632999967318028,
+      0.25740000273799524,
+      0.3045999983442016
+    ]
+  }
+}

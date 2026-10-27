@@ -1,0 +1,998 @@
+<title>0x72 Krypta-Stilprobe</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Silkscreen&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a torch-lit dossier - one column of numbered exhibits (F1-F4, R1, P1), each a stage with its controls. */
+:root {
+  --void: #13111c;
+  --stone: #1f1b28;
+  --stone-2: #2b2535;
+  --line: #3d3448;
+  --bone: #efe6d6;
+  --muted: #a99d93;
+  --torch: #f0a03a;
+  --blood: #da4e38;
+  --teal: #72d6ce;
+  --font-display: "Silkscreen", "Courier New", monospace;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", Consolas, monospace;
+  color-scheme: dark;
+}
+html, body { background: var(--void); color: var(--bone); }
+body { font-family: var(--font-body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 28px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 36px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 400; letter-spacing: 0.02em; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(26px, 4vw, 40px); color: var(--torch); }
+h2 { font-size: 20px; }
+h3 { font-size: 15px; }
+p { margin: 0; max-width: 68ch; }
+.lead { color: var(--muted); }
+header { display: grid; gap: 14px; }
+.howto { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; font-size: 14px; color: var(--muted); }
+.howto code, .tag { font-family: var(--font-mono); font-size: 12.5px; color: var(--torch); background: var(--stone-2); border: 1px solid var(--line); padding: 1px 6px; border-radius: 3px; }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; font-size: 13px; color: var(--muted); }
+.toolbar .fps { font-family: var(--font-mono); color: var(--teal); font-variant-numeric: tabular-nums; }
+section { display: grid; gap: 14px; }
+.section-head { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 540px), 1fr)); gap: 18px; }
+.card { background: var(--stone); border: 1px solid var(--line); border-radius: 4px; padding: 14px; display: grid; gap: 10px; min-width: 0; }
+.card-head { display: flex; gap: 10px; align-items: baseline; justify-content: space-between; flex-wrap: wrap; }
+.stage { background: #0d0b13; border: 1px solid var(--line); display: grid; place-items: center; overflow: hidden; min-height: 120px; }
+canvas { image-rendering: pixelated; image-rendering: crisp-edges; display: block; max-width: 100%; }
+.stage canvas { cursor: crosshair; }
+.row { display: flex; flex-wrap: wrap; gap: 6px; }
+button { font-family: var(--font-body); font-size: 13px; color: var(--bone); background: var(--stone-2); border: 1px solid var(--line); border-radius: 3px; padding: 5px 10px; cursor: pointer; }
+button:hover { border-color: var(--torch); }
+button:focus-visible { outline: 2px solid var(--torch); outline-offset: 1px; }
+button[aria-pressed="true"] { border-color: var(--torch); color: var(--torch); }
+button.hurt { border-color: #6b2f2a; }
+button.hurt:hover { border-color: var(--blood); color: #ffb3a6; }
+button:disabled { opacity: 0.4; cursor: default; }
+.label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.note { font-size: 13.5px; color: var(--muted); }
+.parts { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 4px 12px; font-size: 13px; }
+.part { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
+.bar { grid-column: 1 / -1; height: 4px; background: var(--stone-2); }
+.bar i { display: block; height: 100%; background: var(--blood); transition: width 0.15s; }
+.part.gone { color: #6f6560; text-decoration: line-through; }
+.status { font-family: var(--font-mono); font-size: 12.5px; color: var(--teal); min-height: 1.4em; }
+.compare { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
+.room-stage { overflow-x: auto; background: #0d0b13; border: 1px solid var(--line); }
+.room-stage canvas { cursor: crosshair; }
+.props { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 12px; }
+.prop { background: var(--stone); border: 1px solid var(--line); padding: 10px; display: grid; gap: 6px; justify-items: center; font-size: 12.5px; color: var(--muted); text-align: center; }
+.open { display: grid; gap: 8px; }
+.open li { max-width: 80ch; }
+.lic { font-family: var(--font-mono); font-size: 12px; }
+.ok { color: var(--teal); }
+.warn { color: var(--torch); }
+@media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Krypta-Stilprobe 0x72</h1>
+    <p class="lead">Alle Figuren und Kacheln stammen Pixel für Pixel aus dem 0x72-Paket (plus Fackeln aus der Erweiterung). Neu ist nur die Bewegung: Jede Figur ist in Körperteile zerlegt, die das Spiel in jedem Bild neu bewegt. Dadurch läuft alles in der Bildrate deines Monitors, ob 60 oder 144 Hz, und Teile können abgeschlagen werden.</p>
+    <div class="howto">
+      <span>Antworte im Chat pro Kennung, z. B. <code>F2: Ja</code> oder <code>R1: Nein, Boden heller</code>.</span>
+      <span>Auf Skelett und Riesen-Zombie kannst du <b>auf Körperteile klicken</b>.</span>
+    </div>
+    <div class="toolbar" role="group" aria-label="Darstellung">
+      <span class="label">Raster</span>
+      <button id="grid-game" aria-pressed="true">Spiel (2×)</button>
+      <button id="grid-strict" aria-pressed="false">Streng (1×)</button>
+      <span class="label">Tempo</span>
+      <button id="speed-1" aria-pressed="true">Normal</button>
+      <button id="speed-q" aria-pressed="false">Zeitlupe ¼</button>
+      <button id="pause" aria-pressed="false">Pause</button>
+      <span class="fps" id="fps">– Bilder/s</span>
+    </div>
+  </header>
+
+  <section aria-labelledby="figs">
+    <div class="section-head"><h2 id="figs">Figuren</h2><span class="note">Jede Figur läuft automatisch durch ihre Animationen. Mit den Knöpfen spielst du eine gezielt ab.</span></div>
+    <div class="grid" id="cards"></div>
+  </section>
+
+  <section aria-labelledby="room">
+    <div class="section-head"><h2 id="room">R1 · Generierter Krypta-Raum</h2><span class="tag" id="room-meta"></span></div>
+    <p class="note">Ein echter Raum aus eurem Dungeon-Generator. Boden und Wände kommen aus den Generator-Daten, gezeichnet mit Original-0x72-Kacheln. Fackeln und Kerzensäulen sind animiert. Der Ritter und die Skelette laufen frei herum, Klicks auf ein Skelett schlagen Teile ab.</p>
+    <div class="toolbar">
+      <button id="light" aria-pressed="true">Licht an</button>
+      <button id="room-zoom" aria-pressed="false">Zoom 2×</button>
+      <button id="room-reset">Figuren zurücksetzen</button>
+    </div>
+    <div class="room-stage"><canvas id="room-canvas" aria-label="Generierter Krypta-Raum mit Figuren"></canvas></div>
+  </section>
+
+  <section aria-labelledby="props">
+    <div class="section-head"><h2 id="props">P1 · Requisiten und Kacheln</h2></div>
+    <div class="props" id="prop-list"></div>
+  </section>
+
+  <section aria-labelledby="open">
+    <h2 id="open">Offene Punkte</h2>
+    <ul class="open">
+      <li><b>Lizenzen:</b> <span class="lic ok">0x72 DungeonTileset II: CC0</span>. Für die Fackeln und Kerzensäulen aus <span class="lic warn">dungeontiles-extended</span>, den Wand-Umbau, die Fan-Blätter und die Wald- und NPC-Figuren gibt es keinen Lizenzhinweis. Bevor davon etwas ins Repo kommt, braucht es die Quelle und die Lizenz.</li>
+      <li><b>Keine Arme bei kleinen Figuren:</b> Ritter, Nekromant und Skelett haben im 0x72-Stil keine sichtbaren Arme. Waffen schweben neben der Figur. Zerstörbar sind deshalb Waffe, Beine, Rumpf und Kopf. Echte Arme gibt es bei großen Figuren wie dem Riesen-Zombie.</li>
+      <li><b>Neu zu bauen:</b> Skelett-Bogenschütze, Schildskelett und die untoten Nebenbosse aus Originalteilen. Der Schläfer der Tiefe hat keine Vorlage im Paket und wäre die einzige wirklich neue Figur.</li>
+      <li><b>Spiel:</b> Noch ist nichts eingebaut. Nach deinem Ja überträgt sich das Teile-System 1:1 nach Godot, danach folgen die Kampfregeln für Körperteile.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+/*__ASSETS__*/
+/*__ROOM__*/
+
+// ---------------------------------------------------------------- assets
+const IMG = {};
+function loadImages() {
+  return Promise.all(Object.entries(ASSETS).map(([key, src]) => new Promise((resolve) => {
+    const image = new Image();
+    image.onload = () => { IMG[key] = image; resolve(); };
+    image.onerror = () => resolve();
+    image.src = src;
+  })));
+}
+
+// ---------------------------------------------------------------- settings
+const settings = { S: 2, speed: 1, paused: false, light: true };
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+if (reduceMotion) settings.paused = true;
+
+// ---------------------------------------------------------------- maths
+const TAU = Math.PI * 2;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, k) => a + (b - a) * k;
+const easeOut = (k) => 1 - Math.pow(1 - clamp(k, 0, 1), 3);
+const easeIn = (k) => Math.pow(clamp(k, 0, 1), 2);
+const easeInOut = (k) => { k = clamp(k, 0, 1); return k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2; };
+const seg = (u, a, b) => clamp((u - a) / (b - a), 0, 1);
+const rnd = (a, b) => a + Math.random() * (b - a);
+
+// ---------------------------------------------------------------- rig definitions
+// Rects are inclusive pixel boxes [x0,y0,x1,y1] on the original frame; each
+// opaque pixel belongs to the first part whose box contains it.
+const DEFS = {
+  knight: { img: "knight", ground: [8, 27], width: 11, parts: [
+    { id: "foot_l", rects: [[3, 25, 6, 27]], pivot: [5, 25], parent: null, z: 1 },
+    { id: "foot_r", rects: [[9, 25, 12, 27]], pivot: [10, 25], parent: null, z: 1 },
+    { id: "plume", rects: [[0, 8, 11, 11]], pivot: [6, 12], parent: "body", z: 3 },
+    { id: "body", rects: [[3, 12, 14, 25]], pivot: [8, 25], parent: null, z: 2 },
+  ], weapon: { img: "knight_sword", grip: [4.5, 25.5], hand: [13, 21], parent: "body", rest: 0.35, z: 4, tip: [4.5, 1] } },
+  skeleton: { img: "skelet", ground: [8, 15], width: 9, parts: [
+    { id: "leg_l", rects: [[4, 14, 7, 15]], pivot: [6, 14], parent: null, z: 1, hp: 2, label: "Linkes Bein" },
+    { id: "leg_r", rects: [[8, 14, 11, 15]], pivot: [10, 14], parent: null, z: 1, hp: 2, label: "Rechtes Bein" },
+    { id: "torso", rects: [[4, 11, 11, 13]], pivot: [8, 13], parent: null, z: 2, hp: 3, label: "Rumpf" },
+    { id: "skull", rects: [[3, 2, 12, 10]], pivot: [8, 10], parent: "torso", z: 3, hp: 3, label: "Schädel" },
+  ], weapon: { img: "rusty_sword", grip: [4.5, 18], hand: [11, 13], parent: "torso", rest: 0.55, z: 4, tip: [4.5, 1], hp: 1, label: "Waffe" } },
+  necro: { img: "necro", ground: [7, 22], width: 12, float: true, parts: [
+    { id: "robe", rects: [[0, 19, 15, 22]], pivot: [7, 22], parent: null, z: 1, hp: 6, label: "Kutte" },
+    { id: "hood", rects: [[0, 8, 15, 18]], pivot: [7, 19], parent: "robe", z: 2, hp: 6, label: "Kopf" },
+  ], weapon: { img: "red_staff", grip: [3.5, 18], hand: [14, 17], parent: "hood", rest: 0.12, z: 3, tip: [2.5, 3], hp: 2, label: "Stab" } },
+  zombie: { img: "zombie", ground: [16, 35], width: 18, parts: [
+    { id: "arm", rects: [[11, 16, 12, 16], [10, 17, 12, 17], [9, 18, 12, 18], [8, 19, 11, 19], [8, 20, 11, 20], [7, 21, 12, 21], [7, 22, 12, 22], [7, 23, 11, 23], [7, 24, 10, 24], [7, 25, 10, 25], [7, 26, 10, 26]], pivot: [12, 17], parent: "torso", z: 4, hp: 20, label: "Arm" },
+    { id: "leg_l", rects: [[7, 29, 15, 35]], pivot: [11, 29], parent: null, z: 1, hp: 15, label: "Linkes Bein" },
+    { id: "leg_r", rects: [[16, 29, 25, 35]], pivot: [20, 29], parent: null, z: 1, hp: 15, label: "Rechtes Bein" },
+    { id: "head", rects: [[12, 9, 25, 21]], pivot: [18, 21], parent: "torso", z: 3, hp: 30, label: "Kopf" },
+    { id: "torso", rects: [[7, 22, 25, 28]], pivot: [16, 28], parent: null, z: 2, hp: 40, label: "Rumpf" },
+  ] },
+};
+
+const RIGS = {};
+function buildRig(name) {
+  const def = DEFS[name];
+  const source = IMG[def.img];
+  const w = source.width, h = source.height;
+  const base = document.createElement("canvas");
+  base.width = w; base.height = h;
+  const bctx = base.getContext("2d");
+  bctx.drawImage(source, 0, 0);
+  const data = bctx.getImageData(0, 0, w, h).data;
+  const owner = new Int16Array(w * h).fill(-1);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (data[(y * w + x) * 4 + 3] < 128) continue;
+    for (let i = 0; i < def.parts.length; i++) {
+      if (def.parts[i].rects.some(([x0, y0, x1, y1]) => x >= x0 && x <= x1 && y >= y0 && y <= y1)) { owner[y * w + x] = i; break; }
+    }
+  }
+  const parts = def.parts.map((part, index) => {
+    const canvas = document.createElement("canvas"); canvas.width = w; canvas.height = h;
+    const white = document.createElement("canvas"); white.width = w; white.height = h;
+    const ctx = canvas.getContext("2d"), wctx = white.getContext("2d");
+    const out = ctx.createImageData(w, h), wout = wctx.createImageData(w, h);
+    const mask = new Uint8Array(w * h);
+    let cx = 0, cy = 0, n = 0;
+    for (let p = 0; p < w * h; p++) {
+      if (owner[p] !== index) continue;
+      mask[p] = 1; n++; cx += p % w; cy += Math.floor(p / w);
+      for (let c = 0; c < 4; c++) out.data[p * 4 + c] = data[p * 4 + c];
+      wout.data[p * 4] = 255; wout.data[p * 4 + 1] = 255; wout.data[p * 4 + 2] = 255; wout.data[p * 4 + 3] = 255;
+    }
+    ctx.putImageData(out, 0, 0); wctx.putImageData(wout, 0, 0);
+    return { ...part, canvas, white, mask, center: [n ? cx / n + 0.5 : part.pivot[0], n ? cy / n + 0.5 : part.pivot[1]] };
+  });
+  let weapon = null;
+  if (def.weapon) {
+    const img = IMG[def.weapon.img];
+    const canvas = document.createElement("canvas"); canvas.width = img.width; canvas.height = img.height;
+    canvas.getContext("2d").drawImage(img, 0, 0);
+    const wd = canvas.getContext("2d").getImageData(0, 0, img.width, img.height);
+    const white = document.createElement("canvas"); white.width = img.width; white.height = img.height;
+    const wo = white.getContext("2d").createImageData(img.width, img.height);
+    const mask = new Uint8Array(img.width * img.height);
+    for (let p = 0; p < img.width * img.height; p++) if (wd.data[p * 4 + 3] > 127) { mask[p] = 1; wo.data[p * 4] = wo.data[p * 4 + 1] = wo.data[p * 4 + 2] = wo.data[p * 4 + 3] = 255; }
+    white.getContext("2d").putImageData(wo, 0, 0);
+    weapon = { ...def.weapon, id: "weapon", canvas, white, mask, w: img.width, h: img.height, center: [img.width / 2, img.height / 2] };
+  }
+  RIGS[name] = { def, w, h, parts, weapon, byId: Object.fromEntries(parts.map((p) => [p.id, p])) };
+}
+
+// ---------------------------------------------------------------- actors
+// Clip durations in seconds; looping clips have no duration.
+const CLIPS = {
+  knight: { attack: 0.42, dodge: 0.45, hit: 0.32, death: 1.4, cheer: 0.8 },
+  skeleton: { attack: 0.62, hit: 0.3, rise: 1.1, collapse: 0.05 },
+  necro: { cast: 0.95, summon: 1.4, hit: 0.32, death: 1.6 },
+  zombie: { slam: 1.15, roar: 1.0, hit: 0.3, death: 1.6 },
+};
+
+function makeActor(type, x, y, opts = {}) {
+  const rig = RIGS[type];
+  const actor = { type, rig, x, y, face: 1, t: rnd(0, 3), clip: null, ct: 0, base: "idle", moving: false, vx: 0,
+    flash: 0, alpha: 1, dead: false, lost: {}, hp: {}, regrow: 0, trail: [], shake: 0, events: {}, home: [x, y],
+    minX: opts.minX ?? x - 20, maxX: opts.maxX ?? x + 20, speed: opts.speed ?? 14, target: null, wanderTimer: rnd(0.5, 2), onChange: opts.onChange || null };
+  for (const part of rig.parts) if (part.hp) actor.hp[part.id] = part.hp;
+  if (rig.weapon && rig.weapon.hp) actor.hp.weapon = rig.weapon.hp;
+  actor.maxHp = Object.values(actor.hp).reduce((a, b) => a + b, 0);
+  return actor;
+}
+
+function play(actor, clip) {
+  if (actor.dead && clip !== "rise") return;
+  actor.clip = clip; actor.ct = 0; actor.events = {};
+  if (clip === "hit") actor.flash = 1;
+}
+
+// ---------------------------------------------------------------- poses
+function blank() { return { whole: { dx: 0, dy: 0, rot: 0, sx: 1, sy: 1, pivot: null }, parts: {}, weapon: { dx: 0, dy: 0, rot: 0 }, trail: false }; }
+function P(pose, id) { return pose.parts[id] || (pose.parts[id] = { dx: 0, dy: 0, rot: 0, sx: 1, sy: 1, alpha: 1 }); }
+
+function walkLegs(pose, idL, idR, ph, stride, lift) {
+  P(pose, idL).dx = Math.sin(ph) * stride; P(pose, idL).dy = -Math.max(0, Math.cos(ph)) * lift;
+  P(pose, idR).dx = -Math.sin(ph) * stride; P(pose, idR).dy = -Math.max(0, -Math.cos(ph)) * lift;
+}
+
+const POSES = {
+  knight(a) {
+    const pose = blank(), t = a.t, b = Math.sin(t * TAU / 1.3);
+    pose.whole.sy = 1 + 0.025 * b; pose.whole.sx = 1 - 0.018 * b;
+    P(pose, "plume").rot = 0.06 * Math.sin(t * TAU / 1.3 + 0.8);
+    pose.weapon.rot = 0.05 * b; pose.weapon.dy = -0.5 * b;
+    if (a.moving) {
+      const ph = t * TAU / 0.42;
+      pose.whole.dy = -Math.abs(Math.sin(ph)) * 1.6; pose.whole.rot = 0.07; pose.whole.sy = 1; pose.whole.sx = 1;
+      walkLegs(pose, "foot_l", "foot_r", ph, 2.2, 1.4);
+      P(pose, "plume").rot = -0.28 - 0.1 * Math.sin(ph * 2);
+      pose.weapon.rot = 0.22 * Math.sin(ph);
+    }
+    const u = a.clip ? a.ct / CLIPS.knight[a.clip] : 0;
+    if (a.clip === "attack") {
+      if (u < 0.33) { const k = easeInOut(u / 0.33); pose.weapon.rot = -2.1 * k; pose.whole.rot = -0.1 * k; pose.whole.dx = -1 * k; }
+      else if (u < 0.55) { const k = easeOut(seg(u, 0.33, 0.55)); pose.weapon.rot = -2.1 + 3.8 * k; pose.whole.rot = -0.1 + 0.24 * k; pose.whole.dx = -1 + 3.4 * k; pose.whole.sx = 1 + 0.08 * k; pose.trail = true; }
+      else { const k = easeInOut(seg(u, 0.55, 1)); pose.weapon.rot = 1.7 * (1 - k); pose.whole.rot = 0.14 * (1 - k); pose.whole.dx = 2.4 * (1 - k); }
+      P(pose, "plume").rot += u < 0.5 ? 0.3 : -0.2 * (1 - u);
+    } else if (a.clip === "dodge") {
+      const k = easeInOut(u);
+      pose.whole.pivot = [8, 19]; pose.whole.rot = TAU * k; pose.whole.sy = 1 - 0.25 * Math.sin(Math.PI * u); pose.whole.dy = -2 * Math.sin(Math.PI * u);
+      pose.weapon.rot = -0.6;
+    } else if (a.clip === "hit") {
+      const k = 1 - easeOut(u);
+      pose.whole.dx = -3 * k; pose.whole.rot = -0.18 * k; P(pose, "plume").rot = 0.6 * Math.sin(u * 22) * k; pose.weapon.rot = 0.4 * k;
+    } else if (a.clip === "death" || (a.dead && a.type === "knight")) {
+      const uu = a.dead && !a.clip ? 1 : u;
+      const fall = easeIn(seg(uu, 0.25, 0.62));
+      pose.whole.rot = -0.12 * Math.sin(uu * 40) * (1 - seg(uu, 0, 0.25)) - (Math.PI / 2) * fall;
+      pose.whole.pivot = [3, 27]; pose.whole.dy = 2 * fall;
+      P(pose, "plume").rot = 0.5 * fall; P(pose, "foot_l").rot = 0.6 * fall;
+      pose.weapon.rot = 1.3 * fall;
+    } else if (a.clip === "cheer") {
+      const j = Math.sin(Math.PI * u); pose.whole.dy = -6 * j; pose.weapon.rot = -1.9 * j; pose.weapon.dy = -3 * j; P(pose, "plume").rot = -0.3 * j;
+    }
+    return pose;
+  },
+
+  skeleton(a) {
+    const pose = blank(), t = a.t;
+    const legs = !a.lost.leg_l || !a.lost.leg_r, torso = !a.lost.torso;
+    P(pose, "skull").dy = -0.5 * Math.sin(t * TAU / 1.1);
+    // Occasional bone rattle.
+    if (Math.sin(t * 0.9) > 0.985) P(pose, "skull").rot = 0.09 * Math.sin(t * 70);
+    pose.weapon.rot = 0.06 * Math.sin(t * TAU / 1.1);
+    if (!torso) {
+      // Skull alone: hops along the floor.
+      const hop = Math.abs(Math.sin(t * TAU / 0.9));
+      const s = P(pose, "skull"); s.dy = 5 - hop * (a.moving ? 4 : 1.2); s.sy = 1 - 0.18 * (1 - hop); s.sx = 1 + 0.12 * (1 - hop);
+      s.rot = a.moving ? 0.15 * Math.sin(t * TAU / 0.9) : 0;
+      return pose;
+    }
+    if (!legs) {
+      // No legs: the body drags itself with its arms.
+      const ph = t * TAU / 0.9;
+      const tr = P(pose, "torso"); tr.dy = 2; tr.rot = (a.moving ? 0.16 : 0.05) * Math.sin(ph); tr.dx = (a.moving ? 1 : 0.3) * Math.sin(ph);
+      P(pose, "skull").rot = 0.08 * Math.sin(ph + 1);
+      pose.weapon.rot = 0.3 * Math.sin(ph);
+    } else if (a.moving) {
+      const ph = t * TAU / 0.5;
+      walkLegs(pose, "leg_l", "leg_r", ph, 1.4, 1.1);
+      if (a.lost.leg_l || a.lost.leg_r) { pose.whole.rot = 0.18 * Math.sin(ph); pose.whole.dy = -Math.abs(Math.sin(ph)) * 2; }
+      P(pose, "torso").rot = 0.06 * Math.sin(ph);
+      P(pose, "skull").dy = -Math.abs(Math.sin(ph)) * 1; P(pose, "skull").rot = 0.05 * Math.sin(ph + 1);
+      pose.weapon.rot = 0.25 * Math.sin(ph);
+    }
+    const u = a.clip ? a.ct / CLIPS.skeleton[a.clip] : 0;
+    if (a.clip === "attack") {
+      // Slow, shaking windup (a readable telegraph), then a fast strike.
+      if (u < 0.6) { const k = easeOut(u / 0.6); pose.weapon.rot = -1.9 * k + 0.05 * Math.sin(a.ct * 60) * k; P(pose, "skull").rot = -0.12 * k; P(pose, "skull").dx = -1 * k; }
+      else if (u < 0.75) { const k = easeOut(seg(u, 0.6, 0.75)); pose.weapon.rot = -1.9 + 3.4 * k; P(pose, "skull").rot = -0.12 + 0.25 * k; P(pose, "skull").dx = -1 + 2 * k; pose.trail = true; }
+      else { const k = easeInOut(seg(u, 0.75, 1)); pose.weapon.rot = 1.5 * (1 - k); P(pose, "skull").rot = 0.13 * (1 - k); P(pose, "skull").dx = (1 - k); }
+    } else if (a.clip === "hit") {
+      const k = 1 - easeOut(u);
+      P(pose, "skull").rot = 0.25 * Math.sin(u * 30) * k; P(pose, "skull").dx = -2 * k; P(pose, "torso").dx = -1 * k;
+    } else if (a.clip === "rise") {
+      // Bones fly from where they lay back into place.
+      for (const part of a.rig.parts) {
+        const from = a.riseFrom && a.riseFrom[part.id]; if (!from) continue;
+        const k = easeInOut(seg(u, part.id === "skull" ? 0.35 : 0.05, part.id === "skull" ? 1 : 0.7));
+        const p = P(pose, part.id); p.dx += (1 - k) * from.dx; p.dy += (1 - k) * from.dy - Math.sin(Math.PI * k) * 6; p.rot += (1 - k) * from.rot;
+      }
+      if (a.riseFrom && a.riseFrom.weapon) { const k = easeInOut(seg(u, 0.5, 1)); pose.weapon.dx = (1 - k) * a.riseFrom.weapon.dx; pose.weapon.dy = (1 - k) * a.riseFrom.weapon.dy; pose.weapon.rot += (1 - k) * 2; }
+    }
+    return pose;
+  },
+
+  necro(a) {
+    const pose = blank(), t = a.t, f = Math.sin(t * TAU / 1.8);
+    pose.whole.dy = -3 - 1.5 * f;
+    const robe = P(pose, "robe"); robe.sx = 1 + 0.05 * Math.sin(t * TAU / 0.9); robe.rot = 0.05 * Math.sin(t * TAU / 0.9 + 0.5);
+    pose.weapon.dy = -0.8 * Math.sin(t * TAU / 1.8 + 0.4); pose.weapon.rot = 0.05 * Math.sin(t * TAU / 2.2);
+    if (a.moving) { pose.whole.rot = 0.08; robe.rot -= 0.12; }
+    const u = a.clip ? a.ct / CLIPS.necro[a.clip] : 0;
+    if (a.clip === "cast") {
+      const raise = easeOut(seg(u, 0, 0.5)), drop = easeInOut(seg(u, 0.62, 1));
+      pose.weapon.rot = -0.5 * raise * (1 - drop); pose.weapon.dy += -4 * raise * (1 - drop);
+      pose.whole.rot = -0.06 * raise * (1 - drop);
+      P(pose, "hood").dy = -1 * raise * (1 - drop);
+    } else if (a.clip === "summon") {
+      const raise = easeOut(seg(u, 0, 0.3)), slam = easeIn(seg(u, 0.3, 0.38)), back = easeInOut(seg(u, 0.6, 1));
+      pose.weapon.dy += (-5 * raise + 8 * slam) * (1 - back); pose.whole.dy += 2 * slam * (1 - back);
+    } else if (a.clip === "hit") {
+      const k = 1 - easeOut(u); pose.whole.dx = -2.5 * k; pose.whole.rot = -0.15 * k;
+    } else if (a.clip === "death" || a.dead) {
+      const uu = a.dead && !a.clip ? 1 : u;
+      const k = easeInOut(seg(uu, 0.1, 0.8));
+      pose.whole.dy = lerp(pose.whole.dy, 0, k); pose.whole.pivot = [7, 22]; pose.whole.sy = 1 - 0.75 * k;
+      P(pose, "hood").alpha = 1 - easeIn(seg(uu, 0.4, 1)); P(pose, "robe").alpha = 1 - easeIn(seg(uu, 0.55, 1));
+    }
+    return pose;
+  },
+
+  zombie(a) {
+    const pose = blank(), t = a.t, b = Math.sin(t * TAU / 1.6);
+    const legs = !a.lost.leg_l || !a.lost.leg_r;
+    pose.whole.sy = 1 + 0.03 * b; pose.whole.sx = 1 - 0.02 * b;
+    P(pose, "head").rot = 0.04 * Math.sin(t * TAU / 1.6 + 1); P(pose, "arm").rot = 0.08 * Math.sin(t * TAU / 1.6 + 0.4);
+    if (!legs) { P(pose, "torso").dy = 7; }
+    if (a.moving) {
+      const ph = t * TAU / 0.8;
+      if (legs) { pose.whole.dy = -Math.abs(Math.sin(ph)) * 2; walkLegs(pose, "leg_l", "leg_r", ph, 2.5, 1.6); }
+      pose.whole.rot = 0.06 * Math.sin(ph); P(pose, "arm").rot = 0.3 * Math.sin(ph); P(pose, "head").dy = -Math.abs(Math.sin(ph));
+      if (!legs) { P(pose, "torso").rot = 0.1 * Math.sin(ph); }
+    }
+    if (a.regrow > 0) { const k = 1 - a.regrow / 1.2; const arm = P(pose, "arm"); arm.sx = arm.sy = lerp(0.15, 1, easeOut(k)); }
+    const u = a.clip ? a.ct / CLIPS.zombie[a.clip] : 0;
+    if (a.clip === "slam") {
+      const up = easeInOut(seg(u, 0, 0.45)), down = easeIn(seg(u, 0.45, 0.56)), back = easeInOut(seg(u, 0.7, 1));
+      const arm = P(pose, "arm"); arm.rot = (-2.3 * up + 3.0 * down) * (1 - back);
+      pose.whole.rot = (-0.1 * up + 0.2 * down) * (1 - back); pose.whole.dx = 3 * down * (1 - back);
+      P(pose, "head").rot = (-0.15 * up + 0.2 * down) * (1 - back);
+      if (u > 0.45 && u < 0.62) pose.trail = true;
+    } else if (a.clip === "roar") {
+      const k = Math.sin(Math.PI * u); P(pose, "head").rot = -0.3 * k + 0.05 * Math.sin(a.ct * 50) * k; P(pose, "head").dy = -2 * k; pose.whole.sx = 1 + 0.06 * k;
+    } else if (a.clip === "hit") {
+      const k = 1 - easeOut(u); pose.whole.dx = -2 * k; P(pose, "head").rot = -0.2 * k;
+    } else if (a.clip === "death" || a.dead) {
+      const uu = a.dead && !a.clip ? 1 : u;
+      const fall = easeIn(seg(uu, 0.2, 0.7)); pose.whole.pivot = [26, 35]; pose.whole.rot = (Math.PI / 2.2) * fall; pose.whole.dy = 3 * fall;
+    }
+    return pose;
+  },
+};
+
+// ---------------------------------------------------------------- transforms
+function wholeMatrix(a, pose, ox, oy) {
+  const rig = a.rig, g = rig.def.ground, w = pose.whole, pv = w.pivot || g;
+  return new DOMMatrix()
+    .translate(ox + a.x + w.dx * a.face, oy + a.y + w.dy)
+    .scale(a.face, 1)
+    .translate(-g[0], -g[1])
+    .translate(pv[0], pv[1]).rotate(w.rot * 180 / Math.PI).scale(w.sx, w.sy).translate(-pv[0], -pv[1]);
+}
+function localMatrix(part, p) {
+  return new DOMMatrix().translate(part.pivot[0] + p.dx, part.pivot[1] + p.dy).rotate(p.rot * 180 / Math.PI).scale(p.sx, p.sy).translate(-part.pivot[0], -part.pivot[1]);
+}
+function solve(a, pose, ox, oy) {
+  const base = wholeMatrix(a, pose, ox, oy), world = {};
+  const get = (id) => {
+    if (world[id]) return world[id];
+    const part = a.rig.byId[id], p = pose.parts[id] || { dx: 0, dy: 0, rot: 0, sx: 1, sy: 1 };
+    const parent = part.parent && !a.lost[part.parent] ? get(part.parent) : base;
+    return (world[id] = parent.multiply(localMatrix(part, p)));
+  };
+  for (const part of a.rig.parts) get(part.id);
+  const wp = a.rig.weapon;
+  if (wp && !a.lost.weapon) {
+    const parent = !a.lost[wp.parent] ? world[wp.parent] : base;
+    const wpo = pose.weapon;
+    world.weapon = parent.multiply(new DOMMatrix().translate(wp.hand[0] + wpo.dx, wp.hand[1] + wpo.dy).rotate((wp.rest + wpo.rot) * 180 / Math.PI).translate(-wp.grip[0], -wp.grip[1]));
+  }
+  return world;
+}
+
+// ---------------------------------------------------------------- drawing helpers
+function setT(ctx, m, S) {
+  ctx.setTransform(S * m.a, S * m.b, S * m.c, S * m.d, Math.round(S * m.e), Math.round(S * m.f));
+}
+function pixel(ctx, x, y, S, color, alpha = 1, size = 1) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = alpha; ctx.fillStyle = color;
+  ctx.fillRect(Math.round(x * S), Math.round(y * S), size * S, size * S);
+  ctx.globalAlpha = 1;
+}
+function shadow(ctx, x, y, width, S, alpha = 0.35) {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = `rgba(5,3,10,${alpha})`;
+  const half = Math.round(width / 2);
+  for (let row = -1; row <= 1; row++) {
+    const span = row === 0 ? half : half - 2;
+    ctx.fillRect(Math.round((x - span) * S), Math.round((y + row) * S), span * 2 * S, S);
+  }
+}
+
+// Debris: detached parts that fall, bounce and settle on the floor.
+function detach(world, a, scene, id, impulse = 1) {
+  const part = id === "weapon" ? a.rig.weapon : a.rig.byId[id];
+  if (!part || a.lost[id] || !world[id]) return;
+  const m = world[id];
+  const c = m.transformPoint({ x: part.center[0], y: part.center[1] });
+  const angle = Math.atan2(m.b, m.a);
+  scene.debris.push({ canvas: part.canvas, center: part.center, x: c.x, y: a.y + (scene.oy || 0) + rnd(-2, 3), z: (a.y + (scene.oy || 0)) - c.y,
+    vx: rnd(-28, 28) * impulse + a.face * 8, vz: rnd(35, 70) * impulse, ang: angle, spin: rnd(-10, 10) * impulse, face: a.face, life: 0, owner: a, id });
+  a.lost[id] = true;
+  for (let i = 0; i < 6; i++) scene.particles.push({ x: c.x, y: c.y, z: 0, vx: rnd(-30, 30), vy: rnd(-30, 10), vz: 0, life: 0, max: rnd(0.25, 0.5), color: "#fdf7ed", grav: 120 });
+}
+
+function stepDebris(scene, dt) {
+  for (const d of scene.debris) {
+    d.life += dt;
+    if (!d.rest) {
+      d.vz -= 260 * dt; d.z += d.vz * dt; d.x += d.vx * dt; d.ang += d.spin * dt;
+      if (d.z <= 0) { d.z = 0; d.vz = -d.vz * 0.35; d.vx *= 0.55; d.spin *= 0.45; if (Math.abs(d.vz) < 12) { d.rest = true; d.vz = 0; } }
+    }
+  }
+  scene.debris = scene.debris.filter((d) => d.life < (scene.debrisLife || 7));
+  for (const p of scene.particles) { p.life += dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += (p.grav || 0) * dt; }
+  scene.particles = scene.particles.filter((p) => p.life < p.max);
+}
+
+function drawDebris(ctx, scene, S) {
+  for (const d of scene.debris) {
+    const fade = clamp(((scene.debrisLife || 7) - d.life) / 1, 0, 1);
+    shadow(ctx, d.x, d.y, 6, S, 0.25 * fade);
+    ctx.globalAlpha = fade;
+    setT(ctx, new DOMMatrix().translate(d.x, d.y - d.z).rotate(d.ang * 180 / Math.PI).scale(d.face, 1).translate(-d.center[0], -d.center[1]), S);
+    ctx.drawImage(d.canvas, 0, 0);
+    ctx.globalAlpha = 1;
+  }
+  for (const p of scene.particles) pixel(ctx, p.x, p.y, S, p.color, 1 - p.life / p.max);
+}
+
+// Draws one actor (parts, weapon, flash, swing trail) into ctx at raster S.
+function drawActor(ctx, a, scene, S, ox, oy) {
+  const pose = POSES[a.type](a);
+  const world = solve(a, pose, ox, oy);
+  a.lastWorld = world; a.lastPose = pose;
+  if (!(a.type === "necro" && a.dead && !a.clip)) shadow(ctx, ox + a.x, oy + a.y, a.rig.def.width, S, a.type === "necro" ? 0.28 : 0.35);
+  const items = a.rig.parts.filter((p) => !a.lost[p.id]).map((p) => ({ part: p, z: p.z }));
+  if (a.rig.weapon && !a.lost.weapon) items.push({ part: a.rig.weapon, z: a.rig.weapon.z });
+  items.sort((p, q) => p.z - q.z);
+  for (const { part } of items) {
+    const m = world[part.id]; if (!m) continue;
+    const alpha = (pose.parts[part.id] && pose.parts[part.id].alpha !== undefined ? pose.parts[part.id].alpha : 1) * a.alpha;
+    if (alpha <= 0.01) continue;
+    setT(ctx, m, S); ctx.globalAlpha = alpha; ctx.drawImage(part.canvas, 0, 0);
+    if (a.flash > 0) { ctx.globalAlpha = alpha * Math.min(1, a.flash * 1.6); ctx.drawImage(part.white, 0, 0); }
+    ctx.globalAlpha = 1;
+  }
+  // Swing trail: recent weapon-tip positions, drawn as fading pixels.
+  const wp = a.rig.weapon;
+  if (wp && !a.lost.weapon && world.weapon) {
+    const tip = world.weapon.transformPoint({ x: wp.tip[0], y: wp.tip[1] });
+    if (pose.trail) a.trail.push({ x: tip.x, y: tip.y, age: 0 });
+  }
+  if (a.type === "zombie" && pose.trail && world.arm && !a.lost.arm) {
+    const fist = world.arm.transformPoint({ x: 8, y: 26 }); a.trail.push({ x: fist.x, y: fist.y, age: 0 });
+  }
+  for (let i = 1; i < a.trail.length; i++) {
+    const p0 = a.trail[i - 1], p1 = a.trail[i], steps = Math.ceil(Math.hypot(p1.x - p0.x, p1.y - p0.y) * S);
+    for (let s = 0; s <= steps; s++) {
+      const k = s / Math.max(1, steps);
+      pixel(ctx, lerp(p0.x, p1.x, k), lerp(p0.y, p1.y, k), S, "#eaf8ff", 0.65 * (1 - p1.age / 0.12), 1);
+    }
+  }
+}
+
+function stepActor(a, scene, dt) {
+  a.t += dt; a.flash = Math.max(0, a.flash - dt * 4);
+  for (const p of a.trail) p.age += dt;
+  a.trail = a.trail.filter((p) => p.age < 0.12);
+  if (a.regrow > 0) { a.regrow -= dt; if (a.regrow <= 0) a.regrow = 0; }
+  if (a.clip) {
+    a.ct += dt;
+    clipEvents(a, scene);
+    const dur = CLIPS[a.type][a.clip];
+    if (a.ct >= dur) {
+      const ended = a.clip; a.clip = null;
+      if (ended === "death" || ended === "collapse") { a.dead = true; }
+      if (ended === "rise") { a.dead = false; a.lost = {}; a.riseFrom = null; for (const k in a.hp) a.hp[k] = partHp(a, k); a.onChange && a.onChange(); }
+    }
+  }
+  // Movement (patrol or wander); attacks and deaths stop it.
+  const busy = a.dead || (a.clip && a.clip !== "hit");
+  a.moving = false;
+  if (!busy && a.walk) {
+    let speed = a.speed;
+    if (a.type === "skeleton" && a.lost.torso) speed *= 0.7;
+    else if (a.type === "skeleton" && a.lost.leg_l && a.lost.leg_r) speed *= 0.35;
+    else if ((a.lost.leg_l || a.lost.leg_r) && a.type !== "necro") speed *= 0.6;
+    if (a.target) {
+      const dx = a.target[0] - a.x, dy = a.target[1] - a.y, dist = Math.hypot(dx, dy);
+      if (dist < 1) { a.target = null; a.wanderTimer = rnd(0.6, 2.4); }
+      else { a.moving = true; a.x += dx / dist * speed * dt; a.y += dy / dist * speed * dt; if (Math.abs(dx) > 0.5) a.face = Math.sign(dx); }
+    } else if ((a.wanderTimer -= dt) <= 0 && scene.pickTarget) { a.target = scene.pickTarget(a); }
+  }
+}
+
+function partHp(a, id) { const part = id === "weapon" ? a.rig.weapon : a.rig.byId[id]; return part && part.hp ? part.hp : 0; }
+
+function clipEvents(a, scene) {
+  const once = (key, fn) => { if (!a.events[key]) { a.events[key] = true; fn(); } };
+  const world = a.lastWorld; if (!world) return;
+  if (a.type === "knight" && a.clip === "death" && a.ct > 0.45) once("drop", () => detach(world, a, scene, "weapon", 0.6));
+  // In the room the knight's strike knocks a random part off the enemy in front.
+  if (a.type === "knight" && a.clip === "attack" && a.ct > 0.2 && scene.actors) once("strike", () => {
+    const target = scene.actors.find((o) => o !== a && !o.dead && o.clip !== "rise" && Math.abs(o.y - a.y) < 12 && (o.x - a.x) * a.face > -2 && Math.abs(o.x - a.x) < 24);
+    if (!target) return;
+    const alive = Object.keys(target.hp).filter((id) => target.hp[id] > 0 && (target.type !== "skeleton" || id !== "skull" || Math.random() < 0.3));
+    if (alive.length) damage(target, scene, alive[Math.floor(Math.random() * alive.length)], target.type === "skeleton" ? 1 : 3);
+  });
+  if (a.type === "necro" && a.clip === "cast") {
+    const tip = world.weapon && world.weapon.transformPoint({ x: a.rig.weapon.tip[0], y: a.rig.weapon.tip[1] });
+    if (tip && a.ct < 0.5 && Math.random() < 0.9) { const ang = rnd(0, TAU), r = rnd(9, 14); scene.particles.push({ x: tip.x + Math.cos(ang) * r, y: tip.y + Math.sin(ang) * r, vx: -Math.cos(ang) * r / 0.3, vy: -Math.sin(ang) * r / 0.3, life: 0, max: 0.3, color: Math.random() < 0.5 ? "#c06bd8" : "#f2b8ff" }); }
+    if (tip && a.ct > 0.55) once("release", () => { for (let i = 0; i < 18; i++) { const ang = i / 18 * TAU; scene.particles.push({ x: tip.x, y: tip.y, vx: Math.cos(ang) * 55, vy: Math.sin(ang) * 55, life: 0, max: 0.4, color: "#e48cff" }); } });
+  }
+  if (a.type === "necro" && a.clip === "summon") {
+    const ox = scene.ox || 0, oy = scene.oy || 0;
+    if (a.ct > 0.35) once("ring", () => { scene.rings.push({ x: ox + a.x + 10 * a.face, y: oy + a.y, r: 1, life: 0, max: 0.9 }); });
+    if (a.ct > 0.4 && a.ct < 1.2 && Math.random() < 0.5) scene.particles.push({ x: ox + a.x + 10 * a.face + rnd(-8, 8), y: oy + a.y + rnd(-2, 2), vx: rnd(-4, 4), vy: rnd(-40, -20), life: 0, max: 0.6, color: Math.random() < 0.6 ? "#efe6d6" : "#8a6fd1" });
+  }
+  if (a.type === "necro" && a.clip === "death" && a.ct > 0.3) {
+    once("drop", () => detach(world, a, scene, "weapon", 0.6));
+    if (Math.random() < 0.6) scene.particles.push({ x: (scene.ox || 0) + a.x + rnd(-6, 6), y: (scene.oy || 0) + a.y - rnd(2, 14), vx: rnd(-6, 6), vy: rnd(-26, -12), life: 0, max: 0.8, color: "#7a3d78" });
+  }
+  if (a.type === "zombie" && a.clip === "slam" && a.ct > 0.56 * CLIPS.zombie.slam) once("impact", () => {
+    scene.shake = 0.25;
+    const fist = world.arm ? world.arm.transformPoint({ x: 8, y: 26 }) : { x: (scene.ox || 0) + a.x + 14 * a.face, y: (scene.oy || 0) + a.y };
+    for (let i = 0; i < 16; i++) scene.particles.push({ x: fist.x, y: (scene.oy || 0) + a.y, vx: rnd(-50, 50), vy: rnd(-40, -5), life: 0, max: rnd(0.3, 0.6), color: Math.random() < 0.5 ? "#7b6a5e" : "#a99d93", grav: 140 });
+  });
+  if (a.type === "zombie" && a.clip === "death" && a.ct > 0.9) once("break", () => { for (const id of ["arm", "head"]) if (!a.lost[id]) detach(world, a, scene, id, 0.5); });
+}
+
+// ---------------------------------------------------------------- damage
+// Damage a part: small enemies lose it on 0 HP. Skull/head/torso loss kills.
+function damage(a, scene, id, amount) {
+  if (a.dead || a.clip === "rise" || !(id in a.hp) || a.hp[id] <= 0) { return null; }
+  a.hp[id] = Math.max(0, a.hp[id] - amount);
+  a.flash = 1;
+  if (!a.clip || a.clip === "hit") play(a, "hit");
+  let message = `${labelOf(a, id)} getroffen`;
+  if (a.hp[id] === 0) {
+    const world = a.lastWorld;
+    if (a.type === "skeleton") {
+      if (id === "skull") { kill(a, scene); message = "Schädel zerschlagen: tot"; }
+      else if (id === "torso") { detach(world, a, scene, "torso"); detach(world, a, scene, "leg_l"); detach(world, a, scene, "leg_r"); a.hp.leg_l = a.hp.leg_r = 0; message = "Rumpf zerschlagen: nur noch der Schädel hüpft"; }
+      else if (id === "weapon") { detach(world, a, scene, "weapon", 1.3); message = "Waffe weggeschlagen: kein Schwertangriff mehr"; }
+      else { detach(world, a, scene, id); message = (a.lost.leg_l && a.lost.leg_r) ? "Beide Beine ab: es kriecht" : "Bein ab: es humpelt"; }
+    } else if (a.type === "zombie") {
+      if (id === "head" || id === "torso") { kill(a, scene); message = `${labelOf(a, id)} zerstört: Boss besiegt`; }
+      else if (id === "arm") { detach(world, a, scene, "arm", 0.8); message = "Arm abgerissen: Schlagangriff deaktiviert. Er wächst in 6 s nach."; a.regrowAt = 6; }
+      else { detach(world, a, scene, id); message = (a.lost.leg_l && a.lost.leg_r) ? "Beine zerstört: er schleppt sich" : "Bein zerstört: langsamer"; }
+    } else if (a.type === "necro") {
+      if (id === "weapon") { detach(world, a, scene, "weapon", 1.1); message = "Stab zerbrochen: keine Zauber mehr"; }
+      else { play(a, "death"); message = "Nekromant besiegt"; }
+    }
+  }
+  a.onChange && a.onChange();
+  return message;
+}
+function labelOf(a, id) { const part = id === "weapon" ? a.rig.weapon : a.rig.byId[id]; return part && part.label ? part.label : id; }
+function kill(a, scene) {
+  const world = a.lastWorld;
+  if (a.type === "skeleton") {
+    a.riseFrom = null;
+    for (const id of ["weapon", "skull", "torso", "leg_l", "leg_r"]) detach(world, a, scene, id, 1);
+    a.dead = true; a.clip = null;
+    for (const k in a.hp) a.hp[k] = 0;
+  } else { play(a, "death"); for (const k in a.hp) a.hp[k] = 0; }
+}
+// Skeleton: bones on the floor reassemble.
+function rise(a, scene) {
+  const from = {};
+  for (const d of scene.debris.filter((d) => d.owner === a)) {
+    const part = d.id === "weapon" ? a.rig.weapon : a.rig.byId[d.id];
+    const rest = a.lastWorld && a.lastWorld[d.id];
+    from[d.id] = { dx: (d.x - ((scene.ox || 0) + a.x)) * a.face, dy: -(d.z) + (d.y - ((scene.oy || 0) + a.y)) + 4, rot: d.ang };
+  }
+  scene.debris = scene.debris.filter((d) => d.owner !== a);
+  for (const id of ["skull", "torso", "leg_l", "leg_r", "weapon"]) if (!from[id]) from[id] = { dx: rnd(-10, 10), dy: rnd(2, 5), rot: rnd(-2, 2) };
+  a.lost = {}; a.dead = false; a.riseFrom = from;
+  play(a, "rise");
+}
+
+function hitTest(a, px, py) {
+  const world = a.lastWorld; if (!world || a.dead) return null;
+  const items = a.rig.parts.filter((p) => !a.lost[p.id]).map((p) => p);
+  if (a.rig.weapon && !a.lost.weapon) items.push(a.rig.weapon);
+  items.sort((p, q) => q.z - p.z);
+  for (const part of items) {
+    const m = world[part.id]; if (!m) continue;
+    const local = m.inverse().transformPoint({ x: px, y: py });
+    const x = Math.floor(local.x), y = Math.floor(local.y);
+    const w = part.id === "weapon" ? part.w : a.rig.w, h = part.id === "weapon" ? part.h : a.rig.h;
+    if (x >= 0 && y >= 0 && x < w && y < h && part.mask[y * w + x]) return part.id;
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------- cards
+const CARD_SPECS = [
+  { id: "F1", type: "knight", title: "Ritter", kind: "Held · Schwertkämpfer", w: 84, h: 56, ground: 46, walk: [18, 66],
+    clips: [["Stehen", "idle"], ["Laufen", "run"], ["Schwerthieb", "attack"], ["Ausweichrolle", "dodge"], ["Treffer", "hit"], ["Jubeln", "cheer"], ["Tod", "death"]],
+    auto: ["idle", 1.6, "run", 2.6, "attack", 0, "idle", 0.8, "attack", 0, "dodge", 0, "idle", 1.2, "hit", 0, "cheer", 0],
+    note: "Federbusch, Helm-Körper und Füße bewegen sich einzeln. Das Schwert hängt am Körper und zieht beim Hieb eine Spur." },
+  { id: "F2", type: "skeleton", title: "Skelett", kind: "Gegner · zerstörbar", w: 84, h: 52, ground: 44, walk: [18, 66], parts: true,
+    clips: [["Stehen", "idle"], ["Gehen", "run"], ["Angriff", "attack"], ["Treffer", "hit"], ["Zusammenfallen", "kill"], ["Auferstehen", "rise"]],
+    damage: [["Waffe wegschlagen", "weapon"], ["Bein abschlagen", "leg"], ["Rumpf zerschlagen", "torso"], ["Schädel treffen", "skull"]],
+    auto: ["run", 2.4, "attack", 0, "idle", 1.2, "run", 1.6, "attack", 0],
+    note: "Klick auf ein Teil: Beine weg → es kriecht, Rumpf weg → nur der Schädel hüpft, Schädel weg → tot. Ohne Waffe greift es nicht mehr an." },
+  { id: "F3", type: "necro", title: "Nekromant", kind: "Gegner · Zauberer", w: 84, h: 56, ground: 46, walk: [22, 62], parts: true,
+    clips: [["Schweben", "idle"], ["Gleiten", "run"], ["Zauber", "cast"], ["Beschwörung", "summon"], ["Treffer", "hit"], ["Tod", "death"]],
+    damage: [["Stab zerbrechen", "weapon"]],
+    auto: ["idle", 1.4, "cast", 0, "run", 2.2, "summon", 0, "idle", 1.0],
+    note: "Schwebt und lädt Zauber am Stab auf. Ohne Stab kann er nicht mehr zaubern." },
+  { id: "F4", type: "zombie", title: "Riesen-Zombie", kind: "Boss-Beispiel · auf Teile zielen", w: 110, h: 70, ground: 60, walk: [30, 80], parts: true,
+    clips: [["Stehen", "idle"], ["Stampfen", "run"], ["Faustschlag", "slam"], ["Brüllen", "roar"], ["Treffer", "hit"]],
+    damage: [["Arm treffen", "arm"], ["Bein treffen", "leg"], ["Kopf treffen", "head"]],
+    auto: ["idle", 1.2, "slam", 0, "run", 2.4, "roar", 0, "slam", 0],
+    note: "Gesamt-LP = Summe der Teile. Arm zerstört → kein Faustschlag, bis er nach 6 s nachwächst. Kopf oder Rumpf zerstört → besiegt. Ein Klick macht 5 Schaden am getroffenen Teil." },
+];
+
+const scenes = [];
+function makeCard(spec) {
+  const card = document.createElement("article"); card.className = "card";
+  card.innerHTML = `<div class="card-head"><h3>${spec.id} · ${spec.title}</h3><span class="label">${spec.kind}</span></div>
+    <div class="stage"><canvas aria-label="${spec.title} animiert"></canvas></div>
+    <div class="compare"><span>Vorlage (Original-Pixel):</span><canvas class="orig"></canvas></div>
+    <div class="row clips" role="group" aria-label="Animationen"></div>
+    ${spec.damage ? '<div class="row dmg" role="group" aria-label="Teile treffen"></div>' : ""}
+    <div class="status" aria-live="polite"></div>
+    ${spec.parts ? '<div class="parts"></div>' : ""}
+    <p class="note">${spec.note}</p>`;
+  document.getElementById("cards").appendChild(card);
+  const canvas = card.querySelector(".stage canvas");
+  const status = card.querySelector(".status");
+  const scene = { spec, canvas, ctx: canvas.getContext("2d"), debris: [], particles: [], rings: [], ox: 0, oy: 0, shake: 0, autoIndex: 0, autoTimer: 0, auto: true, debrisLife: spec.type === "skeleton" ? 999 : 7 };
+  const actor = makeActor(spec.type, (spec.walk[0] + spec.walk[1]) / 2, spec.ground, { speed: spec.type === "zombie" ? 10 : 14 });
+  actor.onChange = () => renderParts(scene);
+  scene.actor = actor;
+  scene.pickTarget = (a) => [a.x < (spec.walk[0] + spec.walk[1]) / 2 ? spec.walk[1] : spec.walk[0], spec.ground];
+  // Original preview
+  const orig = card.querySelector(".orig"), img = IMG[DEFS[spec.type].img];
+  orig.width = img.width * 3; orig.height = img.height * 3;
+  const octx = orig.getContext("2d"); octx.imageSmoothingEnabled = false; octx.drawImage(img, 0, 0, orig.width, orig.height);
+  // Clip buttons
+  const clipRow = card.querySelector(".clips");
+  for (const [label, clip] of spec.clips) {
+    const button = document.createElement("button"); button.textContent = label;
+    button.addEventListener("click", () => { scene.auto = false; trigger(scene, clip); });
+    clipRow.appendChild(button);
+  }
+  const autoButton = document.createElement("button"); autoButton.textContent = "Automatisch"; autoButton.setAttribute("aria-pressed", "true");
+  autoButton.addEventListener("click", () => { scene.auto = !scene.auto; autoButton.setAttribute("aria-pressed", String(scene.auto)); });
+  clipRow.appendChild(autoButton); scene.autoButton = autoButton;
+  if (spec.damage) {
+    const row = card.querySelector(".dmg");
+    for (const [label, target] of spec.damage) {
+      const button = document.createElement("button"); button.className = "hurt"; button.textContent = label;
+      button.addEventListener("click", () => {
+        let id = target;
+        if (target === "leg") id = !actor.lost.leg_l ? "leg_l" : "leg_r";
+        const amount = actor.type === "zombie" ? 999 : 999;
+        const message = damage(actor, scene, id, amount);
+        status.textContent = message || "Schon zerstört. Setze die Figur zurück.";
+      });
+      row.appendChild(button);
+    }
+    const reset = document.createElement("button"); reset.textContent = "Zurücksetzen";
+    reset.addEventListener("click", () => { resetActor(scene); status.textContent = actor.type === "skeleton" ? "Die Knochen setzen sich wieder zusammen" : "Zurückgesetzt"; });
+    row.appendChild(reset);
+  }
+  canvas.addEventListener("click", (event) => {
+    const rect = canvas.getBoundingClientRect();
+    const px = (event.clientX - rect.left) / rect.width * spec.w, py = (event.clientY - rect.top) / rect.height * spec.h;
+    const id = hitTest(actor, px, py);
+    if (!id) return;
+    if (!spec.parts) { play(actor, "hit"); status.textContent = "Treffer"; return; }
+    status.textContent = damage(actor, scene, id, actor.type === "zombie" ? 5 : 1) || "";
+  });
+  scene.status = status; scene.partsEl = card.querySelector(".parts");
+  renderParts(scene);
+  scenes.push(scene);
+  return scene;
+}
+
+function resetActor(scene) {
+  const a = scene.actor;
+  if (a.type === "skeleton") { rise(a, scene); return; }
+  scene.debris = []; a.lost = {}; a.dead = false; a.clip = null; a.regrow = 0; a.regrowAt = 0;
+  for (const k in a.hp) a.hp[k] = partHp(a, k);
+  renderParts(scene);
+}
+
+function trigger(scene, clip) {
+  const a = scene.actor;
+  if (clip === "kill") { if (!a.dead) kill(a, scene); renderParts(scene); return; }
+  if (clip === "rise") { if (a.dead || Object.keys(a.lost).length) rise(a, scene); return; }
+  if (a.dead) { scene.status.textContent = "Besiegt. Erst zurücksetzen."; return; }
+  if (clip === "idle") { a.walk = false; a.target = null; a.clip = null; return; }
+  if (clip === "run") { a.walk = true; a.wanderTimer = 0; return; }
+  if (clip === "attack" && a.type === "skeleton" && a.lost.weapon) { scene.status.textContent = "Ohne Waffe kein Angriff"; return; }
+  if (clip === "slam" && a.type === "zombie" && a.lost.arm) { scene.status.textContent = "Arm fehlt: Faustschlag deaktiviert"; return; }
+  if ((clip === "cast" || clip === "summon") && a.type === "necro" && a.lost.weapon) { scene.status.textContent = "Stab zerbrochen: kein Zauber"; return; }
+  if (clip === "death") { kill(a, scene); renderParts(scene); return; }
+  if (clip === "hit") { a.flash = 1; }
+  play(a, clip);
+}
+
+function runAuto(scene, dt) {
+  if (!scene.auto) return;
+  const a = scene.actor, seq = scene.spec.auto;
+  if (a.dead) { scene.deadTimer = (scene.deadTimer || 0) + dt; if (scene.deadTimer > 2.5) { scene.deadTimer = 0; resetActor(scene); } return; }
+  if (a.clip) return;
+  scene.autoTimer -= dt;
+  if (scene.autoTimer > 0) return;
+  const step = seq[scene.autoIndex % seq.length], hold = seq[(scene.autoIndex + 1) % seq.length];
+  scene.autoIndex += 2;
+  if (step === "idle") { a.walk = false; a.target = null; }
+  else if (step === "run") { a.walk = true; a.wanderTimer = 0; }
+  else { a.walk = false; a.target = null; trigger(scene, step); }
+  scene.autoTimer = hold;
+}
+
+function renderParts(scene) {
+  if (!scene.partsEl) return;
+  const a = scene.actor;
+  const ids = Object.keys(a.hp);
+  const total = ids.reduce((s, id) => s + a.hp[id], 0);
+  scene.partsEl.innerHTML = `<div class="part" style="grid-column:1/-1"><span>Gesamt-LP</span><b style="font-family:var(--font-mono)">${total} / ${a.maxHp}</b><div class="bar"><i style="width:${total / a.maxHp * 100}%"></i></div></div>` +
+    ids.map((id) => { const max = partHp(a, id); const gone = a.hp[id] <= 0; return `<div class="part${gone ? " gone" : ""}"><span>${labelOf(a, id)}</span><span style="font-family:var(--font-mono)">${a.hp[id]}/${max}</span><div class="bar"><i style="width:${a.hp[id] / max * 100}%"></i></div></div>`; }).join("");
+}
+
+// Stage background: a strip of wall with caps over 0x72 floor tiles.
+function drawStageBg(ctx, w, h, S, ground) {
+  ctx.setTransform(S, 0, 0, S, 0, 0); ctx.imageSmoothingEnabled = false;
+  ctx.fillStyle = "#13111c"; ctx.fillRect(0, 0, w, h);
+  const top = ground - 30;
+  for (let x = -8; x < w; x += 16) for (let y = top + 12; y < h; y += 16) ctx.drawImage(IMG.floor_1, x, y);
+  for (let x = -8; x < w; x += 16) { ctx.drawImage(IMG.wall_mid, x, top - 4); ctx.drawImage(IMG.wall_top_mid, x, top - 20); }
+  ctx.fillStyle = "#13111c"; ctx.fillRect(0, 0, w, Math.max(0, top - 8));
+}
+
+function drawCard(scene, dt) {
+  const { spec, canvas, ctx, actor } = scene, S = settings.S;
+  if (canvas.width !== spec.w * S) { canvas.width = spec.w * S; canvas.height = spec.h * S; fitCanvas(scene); }
+  ctx.imageSmoothingEnabled = false;
+  const shakeX = scene.shake > 0 ? Math.round(rnd(-1, 1)) : 0;
+  scene.shake = Math.max(0, scene.shake - dt);
+  drawStageBg(ctx, spec.w, spec.h, S, spec.ground);
+  for (const ring of scene.rings) {
+    ring.life += dt; const k = ring.life / ring.max, r = 2 + k * 14;
+    for (let i = 0; i < 36; i++) { const ang = i / 36 * TAU; pixel(ctx, ring.x + Math.cos(ang) * r, ring.y + Math.sin(ang) * r * 0.45, S, "#a46fe0", 1 - k); }
+  }
+  scene.rings = scene.rings.filter((r) => r.life < r.max);
+  drawDebris(ctx, scene, S);
+  drawActor(ctx, actor, scene, S, shakeX, 0);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+}
+
+function fitCanvas(scene) {
+  const { spec, canvas } = scene;
+  const stage = canvas.parentElement, avail = Math.max(120, stage.clientWidth - 2);
+  const zoom = Math.max(1, Math.floor(avail / (spec.w * settings.S)));
+  canvas.style.width = `${spec.w * settings.S * zoom}px`;
+}
+
+// Zombie arm regrowth.
+function zombieUpdate(scene, dt) {
+  const a = scene.actor;
+  if (a.type !== "zombie" || !a.lost.arm || a.dead || !a.regrowAt) return;
+  a.regrowAt -= dt;
+  if (a.regrowAt <= 0) {
+    a.regrowAt = 0; a.lost.arm = false; a.hp.arm = 10; a.regrow = 1.2; a.flash = 0.6;
+    scene.debris = scene.debris.filter((d) => !(d.owner === a && d.id === "arm"));
+    scene.status.textContent = "Der Arm ist nachgewachsen (10 LP)";
+    for (let i = 0; i < 14; i++) scene.particles.push({ x: (scene.ox || 0) + a.x - 4 * a.face, y: (scene.oy || 0) + a.y - 18, vx: rnd(-30, 30), vy: rnd(-30, 10), life: 0, max: 0.5, color: "#97da3f" });
+    renderParts(scene);
+  }
+}
+
+// ---------------------------------------------------------------- room scene
+const room = { canvas: null, ctx: null, img: null, debris: [], particles: [], rings: [], actors: [], ox: 0, oy: 0, debrisLife: 12, zoom: 1, floorSet: new Set() };
+function setupRoom() {
+  room.canvas = document.getElementById("room-canvas"); room.ctx = room.canvas.getContext("2d");
+  room.img = IMG.room; room.canvas.width = room.img.width; room.canvas.height = room.img.height;
+  for (const [x, y] of ROOM.floor) room.floorSet.add(`${x},${y}`);
+  document.getElementById("room-meta").textContent = `Seed ${ROOM.meta.seed} · Raum ${ROOM.meta.room} · Vorlage ${ROOM.meta.template} · ${ROOM.floor.length} Bodenzellen`;
+  room.pickTarget = (a) => {
+    for (let i = 0; i < 30; i++) {
+      const tx = a.home[0] + rnd(-90, 90), ty = a.home[1] + rnd(-60, 60);
+      if (walkable(tx, ty) && walkable(tx - 6, ty) && walkable(tx + 6, ty) && pathClear(a.x, a.y, tx, ty)) return [tx, ty];
+    }
+    return null;
+  };
+  resetRoom();
+  fitRoom();
+}
+function walkable(x, y) { return room.floorSet.has(`${Math.floor(x / 16)},${Math.floor(y / 16)}`) && room.floorSet.has(`${Math.floor(x / 16)},${Math.floor((y - 8) / 16)}`); }
+function pathClear(x0, y0, x1, y1) { const n = Math.ceil(Math.hypot(x1 - x0, y1 - y0) / 4); for (let i = 0; i <= n; i++) if (!walkable(lerp(x0, x1, i / n), lerp(y0, y1, i / n))) return false; return true; }
+function resetRoom() {
+  room.debris = []; room.particles = []; room.actors = [];
+  const knight = makeActor("knight", ROOM.players[0][0], ROOM.players[0][1] + 6, { speed: 22 }); knight.walk = true; knight.home = [knight.x + 60, knight.y]; room.actors.push(knight);
+  ROOM.enemies.slice(0, 4).forEach(([x, y], i) => { const s = makeActor(i === 3 ? "necro" : "skeleton", x, y + 6, { speed: 12 }); s.walk = true; room.actors.push(s); });
+}
+function fitRoom() { room.canvas.style.width = room.zoom === 2 ? `${room.img.width * 2}px` : "100%"; }
+function drawRoom(dt) {
+  const ctx = room.ctx; ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(room.img, 0, 0);
+  const frame = Math.floor(performance.now() / 100) % 8;
+  for (const [x, y] of ROOM.torches) ctx.drawImage(IMG[`wall_torch_${frame}`], x, y);
+  for (const [x, y] of ROOM.candles) ctx.drawImage(IMG[`candle_column_${(frame + 3) % 8}`], x, y);
+  // Simple behaviour: skeletons and the necromancer occasionally attack/cast when the knight is close.
+  const knight = room.actors[0];
+  for (const a of room.actors) {
+    stepActor(a, room, dt);
+    if (a === knight || a.dead || a.clip) continue;
+    const d = Math.hypot(a.x - knight.x, a.y - knight.y);
+    if (d < 26 && Math.random() < dt * 0.8) { a.face = Math.sign(knight.x - a.x) || 1; trigger({ actor: a, status: { textContent: "" } }, a.type === "necro" ? "cast" : "attack"); }
+    if (a.type === "necro" && Math.random() < dt * 0.15) trigger({ actor: a, status: { textContent: "" } }, "cast");
+  }
+  if (!knight.clip && !knight.dead) {
+    const near = room.actors.find((a) => a !== knight && !a.dead && Math.hypot(a.x - knight.x, a.y - knight.y) < 18);
+    if (near && Math.random() < dt * 1.5) { knight.face = Math.sign(near.x - knight.x) || 1; play(knight, "attack"); }
+  }
+  for (const a of room.actors) if (a.dead && a.type === "skeleton") { a.deadTimer = (a.deadTimer || 0) + dt; if (a.deadTimer > 6) { a.deadTimer = 0; rise(a, room); } }
+  stepDebris(room, dt);
+  drawDebris(ctx, room, 1);
+  const order = [...room.actors].sort((p, q) => p.y - q.y);
+  for (const a of order) drawActor(ctx, a, room, 1, 0, 0);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  if (settings.light) {
+    if (!room.dark) { room.dark = document.createElement("canvas"); room.dark.width = room.canvas.width; room.dark.height = room.canvas.height; }
+    const d = room.dark.getContext("2d");
+    d.globalCompositeOperation = "source-over"; d.fillStyle = "rgba(8,6,14,0.62)"; d.fillRect(0, 0, room.dark.width, room.dark.height);
+    d.globalCompositeOperation = "destination-out";
+    const t = performance.now() / 1000;
+    const lights = ROOM.torches.map(([x, y], i) => [x + 8, y + 10, 70 + 6 * Math.sin(t * 9 + i)]).concat(ROOM.candles.map(([x, y], i) => [x + 8, y + 6, 58 + 5 * Math.sin(t * 11 + i)]));
+    const kn = room.actors[0]; lights.push([kn.x, kn.y - 10, 46]);
+    for (const [x, y, r] of lights) { const g = d.createRadialGradient(x, y, 4, x, y, r); g.addColorStop(0, "rgba(0,0,0,0.95)"); g.addColorStop(1, "rgba(0,0,0,0)"); d.fillStyle = g; d.fillRect(x - r, y - r, r * 2, r * 2); }
+    ctx.drawImage(room.dark, 0, 0);
+    ctx.globalCompositeOperation = "lighter";
+    for (const [x, y] of ROOM.torches) { const g = ctx.createRadialGradient(x + 8, y + 8, 2, x + 8, y + 8, 30); g.addColorStop(0, "rgba(240,150,60,0.22)"); g.addColorStop(1, "rgba(240,150,60,0)"); ctx.fillStyle = g; ctx.fillRect(x - 22, y - 22, 60, 60); }
+    ctx.globalCompositeOperation = "source-over";
+  }
+}
+
+// ---------------------------------------------------------------- props
+function buildProps() {
+  const list = document.getElementById("prop-list");
+  const items = [
+    ["Wandfackel (8 Bilder)", "torch", "Erweiterung · Lizenz offen"], ["Kerzensäule (8 Bilder)", "candle", "Erweiterung · Lizenz offen"],
+    ["Banner", "wall_banner_red", "0x72 · CC0"], ["Schädel", "skull", "0x72 · CC0"], ["Kiste", "crate", "0x72 · CC0"],
+    ["Ziegelfront", "wall_mid", "0x72 · CC0"], ["Mauerkrone", "wall_top_mid", "0x72 · CC0"], ["Seitenwand", "wall_outer_mid_left", "0x72 · CC0"], ["Boden", "floor_1", "0x72 · CC0"],
+  ];
+  for (const [label, key, source] of items) {
+    const el = document.createElement("div"); el.className = "prop";
+    const c = document.createElement("canvas"); c.width = 16 * 4; c.height = 24 * 4; c.dataset.key = key;
+    el.appendChild(c);
+    el.insertAdjacentHTML("beforeend", `<span>${label}</span><span class="lic ${source.includes("CC0") ? "ok" : "warn"}">${source}</span>`);
+    list.appendChild(el);
+  }
+}
+function drawProps() {
+  const frame = Math.floor(performance.now() / 100) % 8;
+  for (const c of document.querySelectorAll("#prop-list canvas")) {
+    const ctx = c.getContext("2d"); ctx.imageSmoothingEnabled = false; ctx.clearRect(0, 0, c.width, c.height);
+    const key = c.dataset.key;
+    const img = key === "torch" ? IMG[`wall_torch_${frame}`] : key === "candle" ? IMG[`candle_column_${frame}`] : IMG[key];
+    if (img) ctx.drawImage(img, (c.width - img.width * 4) / 2, c.height - img.height * 4, img.width * 4, img.height * 4);
+  }
+}
+
+// ---------------------------------------------------------------- loop
+let last = performance.now(), fpsTime = 0, fpsFrames = 0;
+function frame(now) {
+  const raw = Math.min(0.05, (now - last) / 1000); last = now;
+  fpsFrames++; fpsTime += raw;
+  if (fpsTime > 0.5) { document.getElementById("fps").textContent = `${Math.round(fpsFrames / fpsTime)} Bilder/s`; fpsFrames = 0; fpsTime = 0; }
+  const dt = settings.paused ? 0 : raw * settings.speed;
+  for (const scene of scenes) {
+    runAuto(scene, dt);
+    stepActor(scene.actor, scene, dt);
+    zombieUpdate(scene, dt);
+    stepDebris(scene, dt);
+    drawCard(scene, dt);
+  }
+  drawRoom(dt);
+  drawProps();
+  requestAnimationFrame(frame);
+}
+
+function bindToolbar() {
+  const toggle = (on, off) => { on.setAttribute("aria-pressed", "true"); off.setAttribute("aria-pressed", "false"); };
+  const game = document.getElementById("grid-game"), strict = document.getElementById("grid-strict");
+  game.onclick = () => { settings.S = 2; toggle(game, strict); scenes.forEach(fitCanvas); };
+  strict.onclick = () => { settings.S = 1; toggle(strict, game); scenes.forEach(fitCanvas); };
+  const s1 = document.getElementById("speed-1"), sq = document.getElementById("speed-q");
+  s1.onclick = () => { settings.speed = 1; toggle(s1, sq); };
+  sq.onclick = () => { settings.speed = 0.25; toggle(sq, s1); };
+  const pause = document.getElementById("pause");
+  pause.setAttribute("aria-pressed", String(settings.paused)); pause.textContent = settings.paused ? "Abspielen" : "Pause";
+  pause.onclick = () => { settings.paused = !settings.paused; pause.setAttribute("aria-pressed", String(settings.paused)); pause.textContent = settings.paused ? "Abspielen" : "Pause"; };
+  const light = document.getElementById("light");
+  light.onclick = () => { settings.light = !settings.light; light.setAttribute("aria-pressed", String(settings.light)); light.textContent = settings.light ? "Licht an" : "Licht aus"; };
+  const zoom = document.getElementById("room-zoom");
+  zoom.onclick = () => { room.zoom = room.zoom === 1 ? 2 : 1; zoom.setAttribute("aria-pressed", String(room.zoom === 2)); fitRoom(); };
+  document.getElementById("room-reset").onclick = resetRoom;
+  room.canvas.addEventListener("click", (event) => {
+    const rect = room.canvas.getBoundingClientRect();
+    const px = (event.clientX - rect.left) / rect.width * room.canvas.width, py = (event.clientY - rect.top) / rect.height * room.canvas.height;
+    for (const a of [...room.actors].sort((p, q) => q.y - p.y)) {
+      if (a.type === "knight") continue;
+      const id = hitTest(a, px, py);
+      if (id) { damage(a, room, id, a.type === "skeleton" ? 1 : 3); break; }
+    }
+  });
+  window.addEventListener("resize", () => scenes.forEach(fitCanvas));
+}
+
+loadImages().then(() => {
+  for (const name of Object.keys(DEFS)) buildRig(name);
+  CARD_SPECS.forEach(makeCard);
+  setupRoom();
+  buildProps();
+  bindToolbar();
+  scenes.forEach(fitCanvas);
+  requestAnimationFrame(frame);
+});
+</script>

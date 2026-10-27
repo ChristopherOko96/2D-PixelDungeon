@@ -1,0 +1,436 @@
+{
+	"actor": "player_arcanist",
+	"canvas": [
+		24,
+		32
+	],
+	"foot_end_y": 31,
+	"keys": [
+		{
+			"foot_anchor_clamped": false,
+			"key": "south_idle",
+			"origin": [
+				3,
+				11
+			],
+			"projected_size": [
+				19,
+				20
+			],
+			"rgba_sha256": "8b93d43deaaddc54e628f114309d30c30502d3b5b6cfc81e04c9f6e701fdb82c",
+			"source_bounds": [
+				136,
+				67,
+				192,
+				205
+			],
+			"used_rect": [
+				3,
+				11,
+				19,
+				20
+			]
+		},
+		{
+			"foot_anchor_clamped": false,
+			"key": "east_idle",
+			"origin": [
+				3,
+				11
+			],
+			"projected_size": [
+				19,
+				20
+			],
+			"rgba_sha256": "5174d38801b8b5ddd16ed4e205eae1b11ecfc1e9a44506782e6f015a0f06567b",
+			"source_bounds": [
+				463,
+				68,
+				194,
+				204
+			],
+			"used_rect": [
+				3,
+				11,
+				19,
+				20
+			]
+		},
+		{
+			"foot_anchor_clamped": false,
+			"key": "north_idle",
+			"origin": [
+				2,
+				11
+			],
+			"projected_size": [
+				19,
+				20
+			],
+			"rgba_sha256": "771cb16ebb24415aa076921cb777bda3c6d9e45296b9bb2d9b2a1dab793c0bc2",
+			"source_bounds": [
+				781,
+				68,
+				192,
+				204
+			],
+			"used_rect": [
+				2,
+				11,
+				19,
+				20
+			]
+		},
+		{
+			"foot_anchor_clamped": false,
+			"key": "west_idle",
+			"origin": [
+				2,
+				11
+			],
+			"projected_size": [
+				19,
+				20
+			],
+			"rgba_sha256": "525497c29e332d2f6c24a9b06a370bb2aa1c8f7a29aa6534b051c7777969ab6d",
+			"source_bounds": [
+				1097,
+				68,
+				193,
+				204
+			],
+			"used_rect": [
+				2,
+				11,
+				19,
+				20
+			]
+		},
+		{
+			"foot_anchor_clamped": false,
+			"key": "south_move",
+			"origin": [
+				4,
+				10
+			],
+			"projected_size": [
+				20,
+				21
+			],
+			"rgba_sha256": "13791ff2f64eaafe5d9a834f8f2c23eb2a3a223f937223771ab4c9ba39529af8",
+			"source_bounds": [
+				136,
+				328,
+				204,
+				215
+			],
+			"used_rect": [
+				4,
+				10,
+				20,
+				21
+			]
+		},
+		{
+			"foot_anchor_clamped": false,
+			"key": "east_move",
+			"origin": [
+				3,
+				10
+			],
+			"projected_size": [
+				20,
+				21
+			],
+			"rgba_sha256": "45e8f96a2132e6e637e9504fb1301e80891eba4c09b99adc9fa84f8311608f97",
+			"source_bounds": [
+				453,
+				328,
+				205,
+				215
+			],
+			"used_rect": [
+				3,
+				10,
+				20,
+				21
+			]
+		},
+		{
+			"foot_anchor_clamped": false,
+			"key": "north_move",
+			"origin": [
+				3,
+				10
+			],
+			"projected_size": [
+				20,
+				21
+			],
+			"rgba_sha256": "62c4b9ef49d98b561f6b87e7536baad7fdbaf86b3c7f3d6b407f2e9c98325bb3",
+			"source_bounds": [
+				781,
+				328,
+				205,
+				215
+			],
+			"used_rect": [
+				3,
+				10,
+				20,
+				21
+			]
+		},
+		{
+			"foot_anchor_clamped": false,
+			"key": "west_move",
+			"origin": [
+				2,
+				10
+			],
+			"projected_size": [
+				19,
+				21
+			],
+			"rgba_sha256": "d855e2787e90234c15f7a769f051d910f7301bbfb9fe9cd647e8cb2947e75bf9",
+			"source_bounds": [
+				1097,
+				328,
+				193,
+				215
+			],
+			"used_rect": [
+				2,
+				10,
+				19,
+				21
+			]
+		},
+		{
+			"foot_anchor_clamped": true,
+			"key": "south_attack",
+			"origin": [
+				0,
+				10
+			],
+			"projected_size": [
+				24,
+				21
+			],
+			"rgba_sha256": "6098066ce16589eaf0852526193d0e19b9672a1b7155b61a33952e84863c06f0",
+			"source_bounds": [
+				114,
+				577,
+				248,
+				215
+			],
+			"used_rect": [
+				0,
+				10,
+				24,
+				21
+			]
+		},
+		{
+			"foot_anchor_clamped": true,
+			"key": "east_attack",
+			"origin": [
+				1,
+				10
+			],
+			"projected_size": [
+				23,
+				21
+			],
+			"rgba_sha256": "dfce8f740588ebb7bd5cc4960bacd06d4a9843d38b2dc56c65eb740ab6f663b3",
+			"source_bounds": [
+				452,
+				577,
+				239,
+				215
+			],
+			"used_rect": [
+				1,
+				10,
+				23,
+				21
+			]
+		},
+		{
+			"foot_anchor_clamped": true,
+			"key": "north_attack",
+			"origin": [
+				0,
+				10
+			],
+			"projected_size": [
+				22,
+				21
+			],
+			"rgba_sha256": "2ff6fc23e8f8e89090bc74800d2946501bdab19ce855b3cc675db2e6397ce880",
+			"source_bounds": [
+				747,
+				577,
+				226,
+				215
+			],
+			"used_rect": [
+				0,
+				10,
+				22,
+				21
+			]
+		},
+		{
+			"foot_anchor_clamped": true,
+			"key": "west_attack",
+			"origin": [
+				0,
+				10
+			],
+			"projected_size": [
+				22,
+				21
+			],
+			"rgba_sha256": "e957020a44c4c59717a826b24dcb651e278b96b9d6f36b4a4905e6e3d75e9942",
+			"source_bounds": [
+				1086,
+				577,
+				227,
+				215
+			],
+			"used_rect": [
+				0,
+				10,
+				22,
+				21
+			]
+		},
+		{
+			"foot_anchor_clamped": false,
+			"key": "south_hurt",
+			"origin": [
+				0,
+				10
+			],
+			"projected_size": [
+				22,
+				21
+			],
+			"rgba_sha256": "5610d802c6d389c2df78bd5c3edc10abe615cac5c577a824511a0b2206063ce6",
+			"source_bounds": [
+				125,
+				824,
+				226,
+				217
+			],
+			"used_rect": [
+				0,
+				10,
+				22,
+				21
+			]
+		},
+		{
+			"foot_anchor_clamped": false,
+			"key": "east_hurt",
+			"origin": [
+				0,
+				10
+			],
+			"projected_size": [
+				21,
+				21
+			],
+			"rgba_sha256": "e2d5003e194e4d4ceca45e7200044e2afa847c336da208e7c0b09455b18129ce",
+			"source_bounds": [
+				441,
+				825,
+				216,
+				216
+			],
+			"used_rect": [
+				0,
+				10,
+				21,
+				21
+			]
+		},
+		{
+			"foot_anchor_clamped": false,
+			"key": "north_hurt",
+			"origin": [
+				3,
+				10
+			],
+			"projected_size": [
+				21,
+				21
+			],
+			"rgba_sha256": "7dd5c3959a66651eef86580395bb43cc09ebfdaa1bde47302af3f61ada7ce780",
+			"source_bounds": [
+				770,
+				826,
+				215,
+				215
+			],
+			"used_rect": [
+				3,
+				10,
+				21,
+				21
+			]
+		},
+		{
+			"foot_anchor_clamped": false,
+			"key": "west_hurt",
+			"origin": [
+				3,
+				10
+			],
+			"projected_size": [
+				21,
+				21
+			],
+			"rgba_sha256": "c401fa352e56efa093d49a57c77abf8b88e4c11d641191ab0418009faff841c6",
+			"source_bounds": [
+				1097,
+				826,
+				216,
+				215
+			],
+			"used_rect": [
+				3,
+				10,
+				21,
+				21
+			]
+		}
+	],
+	"mirrored_directions": [],
+	"nominal_idle_height": 20,
+	"palette_colors": 20,
+	"source": "res://assets/actors/source/player_arcanist_poses_sheet.png",
+	"source_direction_order": [
+		"south",
+		"east",
+		"north",
+		"west"
+	],
+	"source_grid": [
+		4,
+		4
+	],
+	"source_pose_order": [
+		"idle",
+		"move",
+		"attack",
+		"hurt"
+	],
+	"source_size": [
+		1448,
+		1086
+	],
+	"uniform_scale_from_idle": 0.0975609756097561,
+	"unique_key_images": 16
+}

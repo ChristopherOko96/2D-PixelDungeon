@@ -1,0 +1,436 @@
+{
+	"actor": "player_ranger",
+	"canvas": [
+		24,
+		32
+	],
+	"foot_end_y": 31,
+	"keys": [
+		{
+			"foot_anchor_clamped": false,
+			"key": "south_idle",
+			"origin": [
+				5,
+				11
+			],
+			"projected_size": [
+				16,
+				20
+			],
+			"rgba_sha256": "6a5be0e6447d7a8076c37e4b37b754b15f30a31f03a1c4837840d123b59a5b7d",
+			"source_bounds": [
+				62,
+				52,
+				203,
+				253
+			],
+			"used_rect": [
+				5,
+				11,
+				16,
+				20
+			]
+		},
+		{
+			"foot_anchor_clamped": false,
+			"key": "east_idle",
+			"origin": [
+				5,
+				11
+			],
+			"projected_size": [
+				16,
+				20
+			],
+			"rgba_sha256": "93637602b122f494a995b5bf2bb3e1c256d8f91f52a1b483d43591a77c7a855a",
+			"source_bounds": [
+				385,
+				56,
+				204,
+				250
+			],
+			"used_rect": [
+				5,
+				11,
+				16,
+				20
+			]
+		},
+		{
+			"foot_anchor_clamped": false,
+			"key": "north_idle",
+			"origin": [
+				4,
+				11
+			],
+			"projected_size": [
+				15,
+				20
+			],
+			"rgba_sha256": "42e41e93e4260264ac1bd6fd2daa4b413a3b337b699bdb71a4dcdef6108e1c3f",
+			"source_bounds": [
+				687,
+				56,
+				193,
+				248
+			],
+			"used_rect": [
+				4,
+				11,
+				15,
+				20
+			]
+		},
+		{
+			"foot_anchor_clamped": false,
+			"key": "west_idle",
+			"origin": [
+				2,
+				11
+			],
+			"projected_size": [
+				17,
+				20
+			],
+			"rgba_sha256": "f2ef62cc5bb4f714dabc7968eb3561d52796b8e60ff3084cd3f9a33d321f9d8d",
+			"source_bounds": [
+				990,
+				56,
+				209,
+				249
+			],
+			"used_rect": [
+				2,
+				11,
+				17,
+				20
+			]
+		},
+		{
+			"foot_anchor_clamped": false,
+			"key": "south_move",
+			"origin": [
+				4,
+				11
+			],
+			"projected_size": [
+				16,
+				20
+			],
+			"rgba_sha256": "fbeaef42f34d3aafff5e183e928eef6a310751449dff56b017f003408fad18f1",
+			"source_bounds": [
+				64,
+				348,
+				206,
+				257
+			],
+			"used_rect": [
+				4,
+				11,
+				16,
+				20
+			]
+		},
+		{
+			"foot_anchor_clamped": false,
+			"key": "east_move",
+			"origin": [
+				5,
+				11
+			],
+			"projected_size": [
+				15,
+				20
+			],
+			"rgba_sha256": "53bba75de9a31505c7abd327bbbb7b04577604cd3937a2418102310d33034454",
+			"source_bounds": [
+				386,
+				349,
+				196,
+				256
+			],
+			"used_rect": [
+				5,
+				11,
+				15,
+				20
+			]
+		},
+		{
+			"foot_anchor_clamped": false,
+			"key": "north_move",
+			"origin": [
+				3,
+				11
+			],
+			"projected_size": [
+				16,
+				20
+			],
+			"rgba_sha256": "097570c97e3fccbe7533ad4b61179e3fe1dc60ec3a0060293ff83a5380921dc4",
+			"source_bounds": [
+				688,
+				348,
+				199,
+				256
+			],
+			"used_rect": [
+				3,
+				11,
+				16,
+				20
+			]
+		},
+		{
+			"foot_anchor_clamped": false,
+			"key": "west_move",
+			"origin": [
+				4,
+				11
+			],
+			"projected_size": [
+				15,
+				20
+			],
+			"rgba_sha256": "83e73db725de8a1d47e869a5e8951a3cf62c98b9bdb430cdb91e84f85ea49905",
+			"source_bounds": [
+				995,
+				348,
+				195,
+				257
+			],
+			"used_rect": [
+				4,
+				11,
+				15,
+				20
+			]
+		},
+		{
+			"foot_anchor_clamped": false,
+			"key": "south_attack",
+			"origin": [
+				5,
+				12
+			],
+			"projected_size": [
+				19,
+				19
+			],
+			"rgba_sha256": "5fed66d19b2c009e10c9aab0e6fbc9b3790cee8fd20b7694dfe532b03ed34c32",
+			"source_bounds": [
+				65,
+				649,
+				242,
+				238
+			],
+			"used_rect": [
+				5,
+				12,
+				19,
+				19
+			]
+		},
+		{
+			"foot_anchor_clamped": false,
+			"key": "east_attack",
+			"origin": [
+				5,
+				12
+			],
+			"projected_size": [
+				19,
+				19
+			],
+			"rgba_sha256": "8064ce05714e5fc329c147491f4e13d1368626db3b74389dc1ed6e5b147f8d01",
+			"source_bounds": [
+				377,
+				650,
+				240,
+				239
+			],
+			"used_rect": [
+				5,
+				12,
+				19,
+				19
+			]
+		},
+		{
+			"foot_anchor_clamped": false,
+			"key": "north_attack",
+			"origin": [
+				1,
+				12
+			],
+			"projected_size": [
+				18,
+				19
+			],
+			"rgba_sha256": "14ada033d1c0e9fc446ab365dfb634ac3fc5ac0bf172d20fb4800ff532bda4a3",
+			"source_bounds": [
+				659,
+				650,
+				227,
+				239
+			],
+			"used_rect": [
+				1,
+				12,
+				18,
+				19
+			]
+		},
+		{
+			"foot_anchor_clamped": true,
+			"key": "west_attack",
+			"origin": [
+				0,
+				12
+			],
+			"projected_size": [
+				20,
+				19
+			],
+			"rgba_sha256": "87ce7856800b2c51fc04e727ea7a176a5d7553ed26a6f585756966c437aef39e",
+			"source_bounds": [
+				947,
+				650,
+				256,
+				239
+			],
+			"used_rect": [
+				0,
+				12,
+				20,
+				19
+			]
+		},
+		{
+			"foot_anchor_clamped": false,
+			"key": "south_hurt",
+			"origin": [
+				3,
+				11
+			],
+			"projected_size": [
+				18,
+				20
+			],
+			"rgba_sha256": "e64f1bcc92f602cd041e9a6dd6450c964b2f9ebbacd04493212dc0e7f6b51614",
+			"source_bounds": [
+				58,
+				945,
+				225,
+				252
+			],
+			"used_rect": [
+				3,
+				11,
+				18,
+				20
+			]
+		},
+		{
+			"foot_anchor_clamped": false,
+			"key": "east_hurt",
+			"origin": [
+				2,
+				11
+			],
+			"projected_size": [
+				17,
+				20
+			],
+			"rgba_sha256": "c265c4eacf8a0555789dd53e7bb0bab6c46c5940b312d2c4acc2382889c955e6",
+			"source_bounds": [
+				366,
+				943,
+				211,
+				252
+			],
+			"used_rect": [
+				2,
+				11,
+				17,
+				20
+			]
+		},
+		{
+			"foot_anchor_clamped": false,
+			"key": "north_hurt",
+			"origin": [
+				5,
+				11
+			],
+			"projected_size": [
+				16,
+				20
+			],
+			"rgba_sha256": "d68a5187a5e36c66dd6ba8283171559a975528fbce430e24e9dc2d1ba3ae574a",
+			"source_bounds": [
+				690,
+				937,
+				198,
+				259
+			],
+			"used_rect": [
+				5,
+				11,
+				16,
+				20
+			]
+		},
+		{
+			"foot_anchor_clamped": false,
+			"key": "west_hurt",
+			"origin": [
+				3,
+				11
+			],
+			"projected_size": [
+				17,
+				20
+			],
+			"rgba_sha256": "ce361616d151accecd06b39123616d04c47ef8614cbcd05c35976a499ceb215a",
+			"source_bounds": [
+				994,
+				945,
+				214,
+				257
+			],
+			"used_rect": [
+				3,
+				11,
+				17,
+				20
+			]
+		}
+	],
+	"mirrored_directions": [],
+	"nominal_idle_height": 20,
+	"palette_colors": 20,
+	"source": "res://assets/actors/source/player_ranger_poses_sheet.png",
+	"source_direction_order": [
+		"south",
+		"east",
+		"north",
+		"west"
+	],
+	"source_grid": [
+		4,
+		4
+	],
+	"source_pose_order": [
+		"idle",
+		"move",
+		"attack",
+		"hurt"
+	],
+	"source_size": [
+		1263,
+		1246
+	],
+	"uniform_scale_from_idle": 0.0790513833992095,
+	"unique_key_images": 16
+}

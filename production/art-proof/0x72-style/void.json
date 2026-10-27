@@ -1,0 +1,111 @@
+{
+  "_note": "Der Leerenrufer (Leeren-Kreatur), Endboss der Krypta. Body frames come from the user's sheet (sources/user_sheet_void.png, bottom-left, 8 frames) via make_void.gd. Claws, the void eye and the skull projectile are new pixel art in the same silhouette style. Claw rows are the LEFT claw; the right claw is its mirror image.",
+  "sheet": {
+    "band_y": 976,
+    "max_x": 263,
+    "bottom_row": 1023,
+    "ink": [
+      "222222",
+      "ffffff"
+    ]
+  },
+  "frame": {
+    "w": 44,
+    "h": 44,
+    "center_x": 22,
+    "bottom": 35,
+    "veil": 8,
+    "fps": 9
+  },
+  "palette": {
+    "A": "#222222",
+    "D": "#3d2140",
+    "V": "#5f2d56",
+    "G": "#c06bd8",
+    "P": "#a46fe0",
+    "W": "#f2b8ff",
+    "K": "#13111c",
+    "S": "#3d2140"
+  },
+  "claw_left": [
+    "......AA.",
+    ".....AAAA",
+    "....AAAA.",
+    "....AASA.",
+    "...AAAA..",
+    "...AASA..",
+    "..AAAA...",
+    "..AAAAA..",
+    ".AASAAA..",
+    ".AAAPAAA.",
+    "AAAAAAAA.",
+    "AGAAAAGA.",
+    ".A.AGA.A.",
+    "....A...."
+  ],
+  "claw_pivot": [
+    7,
+    1
+  ],
+  "claw_tip": [
+    4,
+    12
+  ],
+  "shoulder_left": [
+    13,
+    17
+  ],
+  "eye": {
+    "closed": [
+      ".......",
+      ".......",
+      ".AGGGA.",
+      ".......",
+      "......."
+    ],
+    "half": [
+      ".......",
+      ".AAAAA.",
+      "AGWKWGA",
+      ".AAAAA.",
+      "......."
+    ],
+    "open": [
+      "..AAA..",
+      ".AGWGA.",
+      "AGWKWGA",
+      ".AGWGA.",
+      "..AAA.."
+    ],
+    "at": [
+      19,
+      21
+    ]
+  },
+  "skull": [
+    ".AAA.",
+    "AWWWA",
+    "AKWKA",
+    ".AWA."
+  ],
+  "bomber": {
+    "_note": "Leerenbomber: the purple skull row of the same sheet (8 frames, 10x14 on dark brown). Cut by make_void.gd into 16x16 cells, x centred, the sheet bob kept.",
+    "band": [
+      192,
+      798,
+      130,
+      22
+    ],
+    "background": [
+      "483b3a",
+      "775c55"
+    ],
+    "cell": [
+      16,
+      16
+    ],
+    "top_row": 802,
+    "frames": 8,
+    "fps": 10
+  }
+}

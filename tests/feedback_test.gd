@@ -102,63 +102,6 @@ func _initialize() -> void:
 	feedback.observe({"room_layout": {"id": "room-b"}, "enemies": [], "players": {1: player}}, 1)
 	check(feedback.shake > 0.0 and feedback.pose("p1", player, 0.0).flash > 0.9, "after a run restart the first hit reacts again")
 
-	# Boss moves: each move has its own anticipation pose.
-	var big := {"id": 20, "x": 450.0, "y": 240.0, "hp": 50, "max_hp": 94, "boss": true, "kind": "boss", "face": 1.0, "hits": 0, "attacks": 0, "impacts": 0, "attack": "windup", "attack_p": 0.9, "dying_p": -1.0, "move": "slam", "ox": 460.0, "oy": 218.0, "bx": 40.0, "by": 218.0}
-	var room_c := {"room_layout": {"id": "room-c"}, "enemies": [big], "players": {}}
-	feedback.observe(room_c, 1)
-	var squat: Dictionary = feedback.pose("e20", big, 0.0)
-	big.move = "volley"
-	var swell: Dictionary = feedback.pose("e20", big, 0.0)
-	big.move = "charge"
-	var rear: Dictionary = feedback.pose("e20", big, 0.0)
-	check(squat.scale.y < 0.75 and swell.scale.x > 1.1 and swell.scale.y > 1.1 and rear.lean < -0.2, "jump squats, volley swells, charge rears back: anticipation differs per move")
-	big.move = "slam"
-	big.attack = "active"
-	big.attack_p = 0.5
-	check(feedback.pose("e20", big, 0.0).offset.y < -120.0, "the jumping boss is drawn high in the air")
-	big.attack = "recovery"
-	big.impacts = 1
-	feedback.shake = 0.0
-	feedback.hitstop = 0.0
-	feedback.observe({"room_layout": {"id": "room-c"}, "enemies": [big.duplicate()], "players": {}}, 1)
-	check(feedback.shake >= 0.7 and feedback.hitstop > 0.0, "a landing shakes the screen hard and adds hitstop")
-	big.move = "beam"
-	big.attack = "active"
-	big.attack_p = 0.3
-	feedback.hitstop = 0.0
-	feedback.shake = 0.0
-	feedback.observe({"room_layout": {"id": "room-c"}, "enemies": [big.duplicate()], "players": {}}, 1)
-	var sparks_before: int = feedback.particles.count()
-	for step in range(10): feedback.update(1.0 / 60.0)
-	check(feedback.shake > 0.25 and feedback.particles.count() > sparks_before, "the active beam keeps the screen rumbling and throws sparks where it hits")
-	big.move = "charge"
-	big.attack = "active"
-	feedback.observe({"room_layout": {"id": "room-c"}, "enemies": [big.duplicate()], "players": {}}, 1)
-	for step in range(10): feedback.update(1.0 / 60.0)
-	check(not feedback.ghosts.is_empty(), "a charging boss leaves an afterimage trail")
-
-	# Turning: a face change narrows the body, then it widens facing the new way.
-	var turner := {"id": 30, "x": 300.0, "y": 240.0, "hp": 5, "max_hp": 5, "kind": "imp", "face": 1.0, "hits": 0, "attacks": 0, "attack": "", "dying_p": -1.0}
-	feedback.observe({"room_layout": {"id": "room-c"}, "enemies": [turner.duplicate()], "players": {}}, 1)
-	turner.face = -1.0
-	feedback.observe({"room_layout": {"id": "room-c"}, "enemies": [turner.duplicate()], "players": {}}, 1)
-	var narrow: float = feedback.pose("e30", turner, 0.0).scale.x
-	for step in range(20): feedback.update(1.0 / 60.0)
-	check(narrow < 0.4 and feedback.pose("e30", turner, 0.0).scale.x > 0.9, "turning around narrows the sprite and widens it again")
-
-	# Orbs and level-ups.
-	var hero := {"x": 300.0, "y": 240.0, "hp": 6, "max_hp": 8, "shots": 0, "hurts": 0, "level_ups": 0, "pickups": 0}
-	feedback.observe({"room_layout": {"id": "room-c"}, "enemies": [], "players": {1: hero.duplicate()}, "orbs": [{"id": 5, "x": 310.0, "y": 240.0, "v": 3}]}, 1)
-	feedback.particles.clear()
-	hero.pickups = 1
-	hero.level_ups = 1
-	hero.hp = 7
-	feedback.observe({"room_layout": {"id": "room-c"}, "enemies": [], "players": {1: hero.duplicate()}, "orbs": []}, 1)
-	check(feedback.particles.count() > 40, "collecting an orb and levelling up burst with particles")
-	check(feedback.pose("p1", hero, 0.0).level_up > 0.9, "a level-up starts the light pillar")
-	for step in range(90): feedback.update(1.0 / 60.0)
-	check(feedback.pose("p1", hero, 0.0).level_up == 0.0, "the level-up effect ends cleanly")
-
 	print("FEEDBACK checked=%d failures=%d" % [checked, failures.size()])
 	quit(0 if failures.is_empty() else 1)
 

@@ -1,0 +1,605 @@
+{
+  "schema_version": 1,
+  "native_frame_size": 64,
+  "frames_per_animation": 4,
+  "animations": [
+    {
+      "id": "living_000",
+      "key": "grave_lily",
+      "name": "Grablilie",
+      "draw_size": [
+        32,
+        32
+      ],
+      "fps": 3.0,
+      "theme": "garden",
+      "effect_regions": [
+        {
+          "shape": "rect",
+          "rect": [
+            10,
+            3,
+            47,
+            40
+          ],
+          "mode": "replace"
+        }
+      ],
+      "animated_part": "flower heads and leaves; pot fixed",
+      "static_body_frame": 0
+    },
+    {
+      "id": "living_001",
+      "key": "ghost_flower",
+      "name": "Geisterblume",
+      "draw_size": [
+        32,
+        32
+      ],
+      "fps": 3.0,
+      "theme": "garden",
+      "effect_regions": [
+        {
+          "shape": "ellipse",
+          "center": [
+            32,
+            31
+          ],
+          "radii": [
+            20,
+            17
+          ],
+          "mode": "replace"
+        }
+      ],
+      "animated_part": "petals; stone bed fixed",
+      "static_body_frame": 0
+    },
+    {
+      "id": "living_002",
+      "key": "thorn_bush",
+      "name": "Dornstrauch",
+      "draw_size": [
+        64,
+        64
+      ],
+      "fps": 2.5,
+      "theme": "garden",
+      "effect_regions": [
+        {
+          "shape": "rect",
+          "rect": [
+            12,
+            3,
+            44,
+            32
+          ],
+          "mode": "replace"
+        }
+      ],
+      "animated_part": "upper branches; stone bed fixed",
+      "static_body_frame": 0
+    },
+    {
+      "id": "living_003",
+      "key": "ivy_planter",
+      "name": "Efeu im Steinbeet",
+      "draw_size": [
+        64,
+        64
+      ],
+      "fps": 2.5,
+      "theme": "garden",
+      "effect_regions": [
+        {
+          "shape": "rect",
+          "rect": [
+            8,
+            5,
+            51,
+            18
+          ],
+          "mode": "foliage_only"
+        },
+        {
+          "shape": "ellipse",
+          "center": [
+            13,
+            38
+          ],
+          "radii": [
+            5,
+            18
+          ],
+          "mode": "foliage_only"
+        },
+        {
+          "shape": "ellipse",
+          "center": [
+            55,
+            32
+          ],
+          "radii": [
+            5,
+            16
+          ],
+          "mode": "foliage_only"
+        }
+      ],
+      "animated_part": "ivy leaves; planter fixed",
+      "static_body_frame": 0
+    },
+    {
+      "id": "living_004",
+      "key": "blue_mushroom",
+      "name": "Blaue Leuchtpilze",
+      "draw_size": [
+        32,
+        32
+      ],
+      "fps": 3.0,
+      "theme": "garden",
+      "effect_regions": [
+        {
+          "shape": "ellipse",
+          "center": [
+            32,
+            15
+          ],
+          "radii": [
+            9,
+            8
+          ],
+          "mode": "color_only"
+        },
+        {
+          "shape": "ellipse",
+          "center": [
+            20,
+            25
+          ],
+          "radii": [
+            6,
+            5
+          ],
+          "mode": "color_only"
+        },
+        {
+          "shape": "ellipse",
+          "center": [
+            43,
+            23
+          ],
+          "radii": [
+            6,
+            5
+          ],
+          "mode": "color_only"
+        }
+      ],
+      "animated_part": "cap light; stems and rubble fixed",
+      "static_body_frame": 0
+    },
+    {
+      "id": "living_005",
+      "key": "red_mushroom",
+      "name": "Rote Kryptenpilze",
+      "draw_size": [
+        32,
+        32
+      ],
+      "fps": 3.0,
+      "theme": "garden",
+      "effect_regions": [
+        {
+          "shape": "ellipse",
+          "center": [
+            32,
+            13
+          ],
+          "radii": [
+            9,
+            7
+          ],
+          "mode": "color_only"
+        },
+        {
+          "shape": "ellipse",
+          "center": [
+            22,
+            24
+          ],
+          "radii": [
+            6,
+            5
+          ],
+          "mode": "color_only"
+        },
+        {
+          "shape": "ellipse",
+          "center": [
+            41,
+            25
+          ],
+          "radii": [
+            6,
+            5
+          ],
+          "mode": "color_only"
+        },
+        {
+          "shape": "rect",
+          "rect": [
+            18,
+            0,
+            31,
+            7
+          ],
+          "mode": "replace"
+        }
+      ],
+      "animated_part": "cap light and spores; stems and rubble fixed",
+      "static_body_frame": 0
+    },
+    {
+      "id": "living_006",
+      "key": "soul_brazier",
+      "name": "Seelenfeuerschale",
+      "draw_size": [
+        64,
+        64
+      ],
+      "fps": 8.0,
+      "theme": "crypt",
+      "effect_regions": [
+        {
+          "shape": "rect",
+          "rect": [
+            12,
+            0,
+            42,
+            23
+          ],
+          "mode": "cyan_only"
+        },
+        {
+          "shape": "ellipse",
+          "center": [
+            32,
+            23
+          ],
+          "radii": [
+            13,
+            3
+          ],
+          "mode": "cyan_only"
+        }
+      ],
+      "animated_part": "cyan flame; brazier and rim fixed",
+      "static_body_frame": 0
+    },
+    {
+      "id": "living_007",
+      "key": "candle_cluster",
+      "name": "Grabkerzen",
+      "draw_size": [
+        32,
+        32
+      ],
+      "fps": 8.0,
+      "theme": "crypt",
+      "effect_regions": [
+        {
+          "shape": "rect",
+          "rect": [
+            19,
+            7,
+            13,
+            20
+          ],
+          "mode": "warm_only",
+          "frame_source_offsets": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              2
+            ],
+            [
+              0,
+              -1
+            ],
+            [
+              0,
+              0
+            ]
+          ]
+        },
+        {
+          "shape": "rect",
+          "rect": [
+            34,
+            0,
+            13,
+            20
+          ],
+          "mode": "warm_only",
+          "frame_source_offsets": [
+            [
+              0,
+              0
+            ],
+            [
+              0,
+              -2
+            ],
+            [
+              0,
+              10
+            ],
+            [
+              0,
+              0
+            ]
+          ]
+        }
+      ],
+      "animated_part": "flames; wax and candle bodies fixed",
+      "static_body_frame": 0
+    },
+    {
+      "id": "living_008",
+      "key": "hanging_lantern",
+      "name": "Seelenlaterne",
+      "draw_size": [
+        32,
+        32
+      ],
+      "fps": 5.0,
+      "theme": "crypt",
+      "effect_regions": [
+        {
+          "shape": "ellipse",
+          "center": [
+            26,
+            35
+          ],
+          "radii": [
+            5,
+            6
+          ],
+          "mode": "color_only",
+          "base_color": "cyan",
+          "source_color": "cyan"
+        }
+      ],
+      "animated_part": "cyan glass light; post and lantern fixed",
+      "static_body_frame": 0
+    },
+    {
+      "id": "living_009",
+      "key": "ritual_rune",
+      "name": "Pulsierende Rune",
+      "draw_size": [
+        32,
+        32
+      ],
+      "fps": 4.0,
+      "theme": "crypt",
+      "effect_regions": [
+        {
+          "shape": "ellipse",
+          "center": [
+            32,
+            33
+          ],
+          "radii": [
+            21,
+            21
+          ],
+          "mode": "color_only",
+          "base_min_luma": 0.6
+        }
+      ],
+      "animated_part": "bright rune glyphs; stone plate fixed",
+      "static_body_frame": 0
+    },
+    {
+      "id": "living_010",
+      "key": "cursed_tome",
+      "name": "Verfluchtes Buch",
+      "draw_size": [
+        64,
+        64
+      ],
+      "fps": 4.0,
+      "theme": "archive",
+      "effect_regions": [
+        {
+          "shape": "polygon",
+          "points": [
+            [
+              30,
+              0
+            ],
+            [
+              52,
+              0
+            ],
+            [
+              52,
+              32
+            ],
+            [
+              31,
+              34
+            ]
+          ],
+          "mode": "replace"
+        }
+      ],
+      "animated_part": "turning right page; book stand fixed",
+      "static_body_frame": 0
+    },
+    {
+      "id": "living_011",
+      "key": "leaking_urn",
+      "name": "Sickernde Graburne",
+      "draw_size": [
+        64,
+        64
+      ],
+      "fps": 4.0,
+      "theme": "ossuary",
+      "effect_regions": [
+        {
+          "shape": "rect",
+          "rect": [
+            40,
+            34,
+            10,
+            19
+          ],
+          "mode": "cyan_only",
+          "preserve_base_when_empty": true
+        }
+      ],
+      "animated_part": "cyan dripping liquid; urn and vegetation fixed",
+      "static_body_frame": 0
+    },
+    {
+      "id": "living_012",
+      "key": "spirit_well",
+      "name": "Seelenbrunnen",
+      "draw_size": [
+        64,
+        64
+      ],
+      "fps": 5.0,
+      "theme": "garden",
+      "effect_regions": [
+        {
+          "shape": "ellipse",
+          "center": [
+            32,
+            26
+          ],
+          "radii": [
+            16,
+            7
+          ],
+          "mode": "color_only",
+          "base_color": "cyan",
+          "source_color": "cyan"
+        }
+      ],
+      "animated_part": "water surface colors; complete stone rim and body fixed",
+      "static_body_frame": 0
+    },
+    {
+      "id": "living_013",
+      "key": "root_cluster",
+      "name": "Knorrige Wurzeln",
+      "draw_size": [
+        64,
+        64
+      ],
+      "fps": 2.5,
+      "theme": "garden",
+      "effect_regions": [
+        {
+          "shape": "ellipse",
+          "center": [
+            29,
+            17
+          ],
+          "radii": [
+            7,
+            11
+          ],
+          "mode": "foliage_only"
+        },
+        {
+          "shape": "ellipse",
+          "center": [
+            45,
+            34
+          ],
+          "radii": [
+            6,
+            8
+          ],
+          "mode": "foliage_only"
+        },
+        {
+          "shape": "ellipse",
+          "center": [
+            20,
+            28
+          ],
+          "radii": [
+            4,
+            6
+          ],
+          "mode": "foliage_only"
+        }
+      ],
+      "animated_part": "leaf tips; roots and rubble fixed",
+      "static_body_frame": 0
+    },
+    {
+      "id": "living_014",
+      "key": "butterfly_swarm",
+      "name": "Geisterfalter",
+      "draw_size": [
+        32,
+        32
+      ],
+      "fps": 6.0,
+      "theme": "garden",
+      "effect_regions": [
+        {
+          "shape": "rect",
+          "rect": [
+            0,
+            0,
+            64,
+            64
+          ],
+          "mode": "replace"
+        }
+      ],
+      "animated_part": "free butterflies, intentionally moving",
+      "static_body_frame": 0
+    },
+    {
+      "id": "living_015",
+      "key": "wisp_cluster",
+      "name": "Irrlichter",
+      "draw_size": [
+        32,
+        32
+      ],
+      "fps": 6.0,
+      "theme": "crypt",
+      "effect_regions": [
+        {
+          "shape": "rect",
+          "rect": [
+            0,
+            0,
+            64,
+            64
+          ],
+          "mode": "replace"
+        }
+      ],
+      "animated_part": "free wisps, intentionally moving",
+      "static_body_frame": 0
+    }
+  ],
+  "effect_masks_version": 1,
+  "animation_composition": "frame0_static_body_with_masked_effects"
+}
