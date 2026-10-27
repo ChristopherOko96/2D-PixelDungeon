@@ -1,26 +1,40 @@
 extends Node
-## Small synthesized sound effects, generated once at startup so the game needs
-## no audio files. A fixed pool of players lets rapid hits overlap without
-## cutting each other off; each play gets a slight pitch variation.
+## Sound effects. Recorded effects come from assets/data/audio_sfx.json: each
+## event has a few variants (assets/audio/sfx/<event>_<n>.wav, cut by
+## scripts/prepare_sfx.js); a play picks one at random, never the same twice
+## in a row, with the event's volume, pitch and spread. Events without files
+## fall back to the small synthesized sounds below. A fixed pool of players
+## lets rapid hits overlap without cutting each other off.
 
 const MIX_RATE := 22050
-const VOICES := 10
+const VOICES := 16
+const BASE_DB := -8.0
+const TABLE_PATH := "res://assets/data/audio_sfx.json"
 
 var _streams: Dictionary = {}
+## event -> Array of AudioStream variants (recorded effects).
+var _files: Dictionary = {}
+## event -> {volume_db, spread, pitch, min_interval}.
+var _meta: Dictionary = {}
+var _last_variant: Dictionary = {}
+var _last_time: Dictionary = {}
 var _players: Array[AudioStreamPlayer] = []
 var _next := 0
 var _rng := RandomNumberGenerator.new()
 var last_effect := ""
 var play_count := 0
+## Which material a rigged enemy sounds like ("bone", "flesh", "void").
+var rig_materials: Dictionary = {}
 
 
 func _ready() -> void:
 	_rng.seed = 7
 	for i in range(VOICES):
 		var player := AudioStreamPlayer.new()
-		player.volume_db = -8.0
+		player.volume_db = BASE_DB
 		add_child(player)
 		_players.append(player)
+	_load_table()
 	# name: [seconds, start Hz, end Hz, wave, noise share, volume]
 	var recipes := {
 		"shoot": [0.07, 920.0, 520.0, "square", 0.0, 0.35],
@@ -41,16 +55,64 @@ func _ready() -> void:
 		_streams[name] = _synthesize(recipe[0], recipe[1], recipe[2], recipe[3], recipe[4], recipe[5])
 
 
-## Plays a named effect; unknown names are ignored.
+## Loads the recorded variants listed in the sound table; missing files are
+## skipped, so an incomplete asset folder never breaks the game.
+func _load_table() -> void:
+	if not FileAccess.file_exists(TABLE_PATH): return
+	var table: Variant = JSON.parse_string(FileAccess.get_file_as_string(TABLE_PATH))
+	if not table is Dictionary: return
+	rig_materials = table.get("rig_materials", {})
+	var folder: String = str(table.get("output", "res://assets/audio/sfx/"))
+	for name: String in table.get("events", {}):
+		var spec: Dictionary = table.events[name]
+		var variants: Array[AudioStream] = []
+		for index in range(int(spec.get("variants", 1))):
+			var path := "%s%s_%d.wav" % [folder, name, index]
+			if ResourceLoader.exists(path):
+				var stream: AudioStream = load(path)
+				if stream != null: variants.append(stream)
+		if variants.is_empty(): continue
+		_files[name] = variants
+		_meta[name] = {"volume_db": float(spec.get("volume_db", 0.0)), "spread": float(spec.get("spread", 0.04)),
+			"pitch": float(spec.get("pitch", 1.0)), "min_interval": float(spec.get("min_interval", 0.0))}
+
+
+## True when `name` can be played (recorded or synthesized).
+func has_effect(name: String) -> bool:
+	return _files.has(name) or _streams.has(name)
+
+
+## Number of recorded variants of an event (0 for synthesized ones).
+func variant_count(name: String) -> int:
+	return _files.get(name, []).size()
+
+
+## Plays a named effect; unknown names are ignored. Recorded effects use their
+## table spread; `pitch_spread` only applies to synthesized ones.
 func play(name: String, pitch_spread: float = 0.08) -> void:
-	if not _streams.has(name) or _players.is_empty():
+	if not has_effect(name) or _players.is_empty():
 		return
+	var now := Time.get_ticks_msec() / 1000.0
+	var meta: Dictionary = _meta.get(name, {})
+	if float(meta.get("min_interval", 0.0)) > 0.0 and now - float(_last_time.get(name, -INF)) < float(meta.min_interval): return
+	_last_time[name] = now
 	last_effect = name
 	play_count += 1
 	var player: AudioStreamPlayer = _players[_next]
 	_next = (_next + 1) % _players.size()
-	player.stream = _streams[name]
-	player.pitch_scale = 1.0 + _rng.randf_range(-pitch_spread, pitch_spread)
+	if _files.has(name):
+		var variants: Array = _files[name]
+		var index := _rng.randi_range(0, variants.size() - 1)
+		if variants.size() > 1 and index == int(_last_variant.get(name, -1)): index = (index + 1) % variants.size()
+		_last_variant[name] = index
+		player.stream = variants[index]
+		player.volume_db = BASE_DB + float(meta.volume_db)
+		var spread := float(meta.spread)
+		player.pitch_scale = float(meta.pitch) * (1.0 + _rng.randf_range(-spread, spread))
+	else:
+		player.stream = _streams[name]
+		player.volume_db = BASE_DB
+		player.pitch_scale = 1.0 + _rng.randf_range(-pitch_spread, pitch_spread)
 	# Dedicated/headless test processes select the real PCM but own no output
 	# device. Avoid starting mixer playback that can outlive their short lifetime.
 	if DisplayServer.get_name() == "headless": return
@@ -62,8 +124,10 @@ func stop_all() -> void:
 	for player: AudioStreamPlayer in _players: player.stop()
 
 
-## Read-only PCM access for asset verification and developer audio previews.
+## Read-only PCM access for asset verification and developer audio previews:
+## the first recorded variant, else the synthesized stream.
 func effect_stream(name: String) -> AudioStreamWAV:
+	if _files.has(name) and _files[name][0] is AudioStreamWAV: return _files[name][0]
 	return _streams.get(name)
 
 

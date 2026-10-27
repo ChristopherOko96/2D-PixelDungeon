@@ -1,0 +1,57 @@
+{
+  "_note": "Sound events of the game. Each event names a source WAV from the user's sound folder (C:/Users/Cylor/Desktop/Sound Pixel Combat, read-only); scripts/prepare_sfx.js cuts it into short mono variants res://assets/audio/sfx/<event>_<n>.wav. Pixel Combat files (*_HY_PC.wav) hold 6 takes every 4 s; 'variants' takes the first n. volume_db is added to the voice level, spread is the random pitch range, pitch a fixed pitch factor, min_interval the shortest gap between two plays, max_seconds cuts long tails. Events without files fall back to the synthesized sounds in src/vfx/sfx.gd.",
+  "output": "res://assets/audio/sfx/",
+  "rig_materials": {
+    "skeleton": "bone", "skel_archer": "bone", "skel_guard": "bone", "ice_zombie": "bone", "bone_colossus": "bone",
+    "tiny_zombie": "flesh", "big_zombie": "flesh", "frost_corpse": "flesh", "necro": "flesh",
+    "void": "void", "bomber": "void"
+  },
+  "events": {
+    "swing": {"src": "DSGNMisc_MELEE-Sword Slash_HY_PC.wav", "variants": 4, "volume_db": -4, "spread": 0.05},
+    "shoot_arrow": {"src": "SWSH_MOVEMENT-Bamboo Whip_HY_PC.wav", "variants": 4, "volume_db": -9, "spread": 0.06},
+    "shoot_magic": {"src": "MAGSpel_CAST-Sphere Quick_HY_PC.wav", "variants": 4, "volume_db": -8, "spread": 0.05},
+    "hurt": {"src": "FGHTImpt_HIT-Strong Smack_HY_PC.wav", "variants": 3, "volume_db": -3, "spread": 0.04},
+    "step": {"src": "FEETMisc_STEP-Boots on Concrete Dungeon_HY_PC.wav", "variants": 6, "volume_db": -17, "spread": 0.06, "max_seconds": 0.32},
+    "perk": {"src": "MAGAngl_BUFF-Buff Pickup_HY_PC.wav", "variants": 1, "volume_db": -6, "max_seconds": 1.4},
+
+    "hit_bone": {"src": "DSGNMisc_HIT-Hit Rattle_HY_PC.wav", "variants": 6, "volume_db": -6, "spread": 0.07, "min_interval": 0.04},
+    "hit_flesh": {"src": "FGHTImpt_MELEE-Gut Punch_HY_PC.wav", "variants": 4, "volume_db": -7, "spread": 0.07, "min_interval": 0.04},
+    "hit_void": {"src": "DSGNMisc_HIT-Spell Hit_HY_PC.wav", "variants": 4, "volume_db": -7, "spread": 0.07, "min_interval": 0.04},
+    "break_bone": {"src": "Combat and Gore/bone_snap.wav", "volume_db": -4, "spread": 0.08},
+    "break_flesh": {"src": "Combat and Gore/crunch_splat.wav", "volume_db": -5, "spread": 0.06},
+    "break_void": {"src": "DSGNMisc_SKILL IMPACT-Crunchy Energy_HY_PC.wav", "variants": 2, "volume_db": -7, "max_seconds": 1.0},
+    "regrow": {"src": "MAGAngl_BUFF-Simple Heal_HY_PC.wav", "variants": 2, "volume_db": -13, "max_seconds": 1.2},
+    "block": {"src": "DSGNMisc_MELEE-Sword Parry_HY_PC.wav", "variants": 3, "volume_db": -6, "spread": 0.05},
+    "kill_bone": {"src": "Combat and Gore/crunch.wav", "volume_db": -4, "spread": 0.06},
+    "kill_flesh": {"src": "Combat and Gore/crunch_splat_2.wav", "volume_db": -4, "spread": 0.06},
+    "kill_necro": {"src": "DSGNMisc_SKILL IMPACT-Energy Dissipate_HY_PC.wav", "variants": 2, "volume_db": -5},
+    "bomber_pop": {"src": "DSGNImpt_EXPLOSION-Smaller Flare_HY_PC.wav", "variants": 3, "volume_db": -7},
+
+    "attack_slash": {"src": "WHSH_MOVEMENT-Simple Whoosh_HY_PC.wav", "variants": 4, "volume_db": -10, "spread": 0.08},
+    "attack_bite": {"src": "Combat and Gore/crunch_quick.wav", "volume_db": -9, "spread": 0.1},
+    "attack_arrow": {"src": "SWSH_MOVEMENT-Bamboo Whip_HY_PC.wav", "variants": 4, "volume_db": -12, "pitch": 0.8, "spread": 0.05},
+    "attack_soul": {"src": "DSGNTonl_SKILL RELEASE-Dark Energy Sphere_HY_PC.wav", "variants": 3, "volume_db": -8},
+    "attack_summon": {"src": "MAGSpel_CAST-Sharp Summon_HY_PC.wav", "variants": 2, "volume_db": -7, "max_seconds": 1.4},
+    "attack_slam": {"src": "DSGNImpt_EXPLOSION-Thud_HY_PC.wav", "variants": 3, "volume_db": -2},
+    "attack_roar": {"src": "DSGNImpt_EXPLOSION-Eruption_HY_PC.wav", "variants": 2, "volume_db": -5, "max_seconds": 1.6},
+    "attack_salve": {"src": "DSGNTonl_SKILL RELEASE-Mind Eraser_HY_PC.wav", "variants": 3, "volume_db": -6},
+    "attack_beam": {"src": "DSGNMisc_SKILL IMPACT-Mecha Purple Laser_HY_PC.wav", "variants": 3, "volume_db": -3},
+    "windup_beam": {"src": "DSGNSynth_CAST-Mecha Laser Prepare_HY_PC.wav", "variants": 2, "volume_db": -4},
+    "windup_fuse": {"src": "MAGSpel_CAST-Zap Up_HY_PC.wav", "variants": 3, "volume_db": -7, "max_seconds": 0.8},
+    "windup_summon": {"src": "MAGSpel_CAST-Sharpest Summon_HY_PC.wav", "variants": 2, "volume_db": -7, "max_seconds": 1.4},
+    "void_burst": {"src": "DSGNImpt_EXPLOSION-Mana Bomb_HY_PC.wav", "variants": 3, "volume_db": -2},
+    "blast": {"src": "DSGNImpt_EXPLOSION-Small Flare_HY_PC.wav", "variants": 3, "volume_db": -10, "min_interval": 0.06},
+    "boss_kill": {"src": "DSGNImpt_EXPLOSION-Magisplosion_HY_PC.wav", "variants": 1, "volume_db": 0},
+    "boss_intro": {"src": "Musical Effects/horror_sting.wav", "volume_db": -4},
+
+    "door": {"src": "Weapons/harsh_thud.wav", "volume_db": -7},
+    "stairs": {"src": "Musical Effects/harpsichord_mystery.wav", "volume_db": -6},
+    "doors_lock": {"src": "UIMisc_INTERFACE-Lock_HY_PC.wav", "variants": 2, "volume_db": -7},
+    "room_clear": {"src": "Musical Effects/harpsichord_chime_positive.wav", "volume_db": -6},
+    "boss_defeated": {"src": "Musical Effects/harpsichord_level_complete.wav", "volume_db": -6},
+    "team_wipe": {"src": "Musical Effects/harpsichord_defeated.wav", "volume_db": -6},
+
+    "ui_click": {"src": "UIClick_INTERFACE-Positive Click_HY_PC.wav", "variants": 2, "volume_db": -8, "spread": 0.03},
+    "ui_back": {"src": "UI/cancel.wav", "volume_db": -9}
+  }
+}

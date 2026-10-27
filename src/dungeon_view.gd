@@ -371,6 +371,11 @@ func play_transition_sound(kind: String) -> void:
 	if audio_enabled and _sfx != null and kind in ["door","stairs"]: _sfx.play(kind,0.03)
 
 
+## Menu and lobby buttons: "ui_click" or "ui_back". Silent previews stay silent.
+func play_ui_sound(name: String) -> void:
+	if audio_enabled and _sfx != null and name in ["ui_click","ui_back"]: _sfx.play(name,0.0)
+
+
 ## Drops previous-run particles, springs, flash, hitstop and shake immediately.
 func reset_feedback() -> void:
 	_feedback = Feedback.new()

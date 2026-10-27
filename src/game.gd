@@ -260,6 +260,9 @@ func _ready() -> void:
 	world_clip.add_child(view)
 	view.set_audio_enabled(true)
 	_build_ui()
+	# Every button in the menus, lobby and pause screen clicks (assets/data/audio_sfx.json).
+	for node: Node in find_children("*", "BaseButton", true, false): _hook_button_sound(node)
+	get_tree().node_added.connect(_on_node_added)
 	var transition_layer := CanvasLayer.new()
 	transition_layer.layer = 100
 	add_child(transition_layer)
@@ -1570,7 +1573,7 @@ func _make_snapshot(advance_sequence: bool = true) -> Dictionary:
 		var point: Vector2 = enemy.get("summon_point",enemy.pos) if str(enemy.get("attack_kind","")) == "summon" else enemy.get("attack_point",enemy.pos)
 		# Part rigs: which figure, which parts are gone, the open eye and the beam.
 		if body_parts.has_parts(enemy):
-			visible_enemies[-1].merge({"rig":str(enemy.rig),"lost":Array(enemy.parts_lost).duplicate(),"exposed":str(enemy.get("exposed_action","")),"part_breaks":int(enemy.get("part_breaks",0))})
+			visible_enemies[-1].merge({"rig":str(enemy.rig),"lost":Array(enemy.parts_lost).duplicate(),"exposed":str(enemy.get("exposed_action","")),"part_breaks":int(enemy.get("part_breaks",0)),"part_regrows":int(enemy.get("part_regrows",0))})
 		if bool(enemy.get("miniboss",false)): visible_enemies[-1].miniboss = true
 		if bool(enemy.get("summoned",false)): visible_enemies[-1].summoned = true
 		if bool(enemy.get("exploded",false)): visible_enemies[-1].exploded = true
@@ -1859,6 +1862,22 @@ func _debug_jump(target_floor: int, target_room: int) -> void:
 	room = number
 	_spawn_room()
 	_broadcast_state(true)
+
+
+func _on_node_added(node: Node) -> void:
+	if node is BaseButton and is_ancestor_of(node): _hook_button_sound(node)
+
+
+## Connects one button to the UI click sound; back/leave buttons sound softer.
+func _hook_button_sound(button: BaseButton) -> void:
+	var callback := _button_sound.bind(button)
+	if not button.pressed.is_connected(callback): button.pressed.connect(callback)
+
+
+func _button_sound(button: BaseButton) -> void:
+	var label := str(button.get("text")).to_upper() if "text" in button else ""
+	var back := label.contains("ZURÜCK") or label.contains("VERLASSEN") or label.contains("ABBRECHEN") or label.contains("SCHLIESSEN") or label.contains("BEENDEN")
+	view.play_ui_sound("ui_back" if back else "ui_click")
 
 
 func _open_main_menu() -> void:

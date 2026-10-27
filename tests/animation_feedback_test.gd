@@ -49,11 +49,19 @@ func _run() -> void:
 	check(view._sfx != null and view._sfx._streams.size() >= 10,"the brother's synthesized sound pool plus stairs is available")
 	var door: AudioStreamWAV = view._sfx.effect_stream("door")
 	var stairs: AudioStreamWAV = view._sfx.effect_stream("stairs")
-	check(door != null and stairs != null and door.mix_rate == 22050 and stairs.mix_rate == 22050,"door and stair audio are real22kHz PCM streams")
+	# Since the sound pass (assets/data/audio_sfx.json) both are recorded effects.
+	# Godot imports them as QOA (its default compressed WAV format).
+	check(door != null and stairs != null and door.mix_rate >= 44100 and stairs.mix_rate >= 44100 and door.format in [AudioStreamWAV.FORMAT_QOA, AudioStreamWAV.FORMAT_16_BITS],"door and stair audio are recorded streams")
 	check(door.data.size() > 1000 and stairs.data.size() > door.data.size() and stairs.data != door.data,"stairs have a distinct longer descending-step waveform")
-	var peak := 0
-	for index in range(0,stairs.data.size(),2): peak = maxi(peak,absi(stairs.data.decode_s16(index)))
-	check(peak > 1000,"the generated staircase stream contains audible nonzero samples")
+	# Raw samples can only be read from uncompressed PCM; QOA data is checked for content.
+	var audible := false
+	if stairs.format == AudioStreamWAV.FORMAT_16_BITS:
+		var peak := 0
+		for index in range(0,stairs.data.size(),2): peak = maxi(peak,absi(stairs.data.decode_s16(index)))
+		audible = peak > 1000
+	else:
+		audible = stairs.data.size() > 1000 and stairs.data.count(0) < stairs.data.size() / 2
+	check(audible,"the staircase stream contains audible nonzero samples")
 	view.play_transition_sound("stairs")
 	check(view._sfx.last_effect == "stairs" and view._sfx.play_count == 1,"an explicit staircase transition selects the staircase sound once")
 	if DisplayServer.get_name() == "headless": check(view._sfx._players.all(func(player: AudioStreamPlayer): return not player.playing),"headless bot processes do not create hardware audio playback")

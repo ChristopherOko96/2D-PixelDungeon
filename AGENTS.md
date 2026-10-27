@@ -694,6 +694,28 @@ approval gate above still applies to every new actor/boss art.
 - Tests: rig_library, body_parts, crypt_bosses (+ updated main_menu_flow and
   session_presentation). Evidence: production/qa/evidence/0x72-playable/.
 
+## Sound pass (2026-10-27)
+
+- Recorded effects replace most synthesized beeps. Table:
+  `assets/data/audio_sfx.json` (event -> source, variants, volume_db, spread,
+  pitch, min_interval, max_seconds; rig -> material bone/flesh/void). Files:
+  `assets/audio/sfx/<event>_<n>.wav`, cut by `scripts/prepare_sfx.js` from the
+  user's folder `C:\Users\Cylor\Desktop\Sound Pixel Combat` (Pixel Combat
+  files hold 6 takes every 4 s). Godot imports them as QOA.
+- `src/vfx/sfx.gd` picks a random variant (never twice in a row), throttles
+  fast hits and falls back to the synthesized sounds for unknown events.
+  `src/vfx/feedback.gd` maps snapshot changes to events: material hits/kills/
+  part breaks, block, regrow, per-move attack and telegraph sounds (beam, fuse,
+  summon), void burst (fx event), blast (perk event), boss sting once per room,
+  doors lock / room clear / team wipe / boss and mini-boss defeated, class shots
+  (bow, magic), local footsteps every 0.3 s, perk chime. Menu buttons click via
+  `game._hook_button_sound` -> `view.play_ui_sound`.
+- Licence of the sound packs is unknown (see assets/audio/sfx/license_note.md);
+  the user decided on 2026-10-27 to push them to the public repo anyway.
+  Clarify or replace them before a release.
+- Tests: `tests/audio_sfx_test.gd`; `animation_feedback_test` accepts recorded
+  (QOA) door/stairs streams.
+
 ## Codex studio integration
 
 - This game already exists. Read `docs/codex/runtime.md` before applying studio

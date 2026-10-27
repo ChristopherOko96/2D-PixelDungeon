@@ -27,6 +27,16 @@ var hitstop := 0.0
 
 var _actors: Dictionary = {}
 var _room_id := ""
+## Sound flow (assets/data/audio_sfx.json): room phase, one boss sting per room,
+## fx/perk events played once, the local hero's footsteps.
+const STEP_INTERVAL := 0.3
+var _phase := ""
+var _boss_announced := false
+var _fx_seen: Dictionary = {}
+var _blasts: Dictionary = {}
+var _local_moving := false
+var _step_timer := 0.0
+var _clock := 0.0
 
 
 ## Compares a snapshot with the last one and fires the reactions for anything
@@ -36,6 +46,7 @@ func observe(snapshot: Dictionary, local_peer: int) -> void:
 	var room_id: String = str(layout.get("id", "")) if layout is Dictionary else ""
 	if not room_id.is_empty():
 		room_id = "%s:%s:%s:%s" % [snapshot.get("run_seed",0),snapshot.get("floor_index",0),room_id,snapshot.get("room_layout_revision",0)]
+	var phase := str(snapshot.get("phase", ""))
 	if room_id != _room_id:
 		# The room-transition controller chooses door versus stairs explicitly.
 		# Snapshot changes never replay a second or incorrect transition sound.
@@ -44,6 +55,26 @@ func observe(snapshot: Dictionary, local_peer: int) -> void:
 		particles.clear()
 		shake = 0.0
 		hitstop = 0.0
+		_boss_announced = false
+		_fx_seen.clear()
+		# A fresh fight locks the doors behind the party.
+		if not room_id.is_empty() and phase == "combat": _play("doors_lock")
+		_phase = phase
+	if phase != _phase:
+		if _phase == "combat" and phase == "reward": _play("room_clear")
+		elif phase == "dead": _play("team_wipe")
+		_phase = phase
+	for event: Dictionary in snapshot.get("fx_events", []):
+		var id := int(event.get("id", 0))
+		if _fx_seen.has(id): continue
+		_fx_seen[id] = true
+		if str(event.get("kind", "")) == "void_burst": _play("void_burst")
+	for event: Dictionary in snapshot.get("perk_events", []):
+		if str(event.get("kind", "")) != "blast": continue
+		var key := "%d:%d" % [int(event.get("x", 0)), int(event.get("y", 0))]
+		if _blasts.has(key): continue
+		_blasts[key] = _clock
+		_play("blast")
 	var seen: Dictionary = {}
 	for value: Variant in snapshot.get("enemies", []):
 		var enemy: Dictionary = value
@@ -62,9 +93,20 @@ func observe(snapshot: Dictionary, local_peer: int) -> void:
 
 ## Advances springs, flashes, shake and particles. Hitstop freezes all of it.
 func update(delta: float) -> void:
+	_clock += delta
+	for key: String in _blasts.keys():
+		if _clock - float(_blasts[key]) > 1.0: _blasts.erase(key)
 	if hitstop > 0.0:
 		hitstop = maxf(0.0, hitstop - delta)
 		return
+	# The local hero's footsteps while walking.
+	if _local_moving:
+		_step_timer -= delta
+		if _step_timer <= 0.0:
+			_step_timer = STEP_INTERVAL
+			_play("step")
+	else:
+		_step_timer = 0.05
 	shake = maxf(0.0, shake - delta * 1.8)
 	particles.update(delta)
 	for state: Dictionary in _actors.values():
@@ -126,6 +168,13 @@ func _actor(key: String, entity: Dictionary, first_counter: String, second_count
 			first_counter: int(entity.get(first_counter, 0)), second_counter: int(entity.get(second_counter, 0)),
 			"dying": float(entity.get("dying_p", -1.0)) >= 0.0}
 		_actors[key].blocks = int(entity.get("blocks",0))
+		_actors[key].part_breaks = int(entity.get("part_breaks",0))
+		_actors[key].part_regrows = int(entity.get("part_regrows",0))
+		_actors[key].last_perk = str(entity.get("last_perk",""))
+		# A boss or mini-boss announces itself once per room.
+		if (bool(entity.get("boss",false)) or bool(entity.get("miniboss",false))) and not _actors[key].dying and not _boss_announced:
+			_boss_announced = true
+			_play("boss_intro")
 	return _actors[key]
 
 
@@ -146,7 +195,7 @@ func _observe_enemy(state: Dictionary, enemy: Dictionary) -> void:
 		particles.burst(origin, blood, 70 if boss else 24, 260.0 if boss else 190.0, 0.9 if boss else 0.6, direction, 1.3, 4.0 if boss else 3.0)
 		particles.burst(origin, DUST, 30 if boss else 10, 120.0, 0.7, Vector2.ZERO, PI, 4.0, 3.0)
 		particles.stain(origin + Vector2(0, 12), blood, 34.0 if boss else 16.0)
-		_play("boss_kill" if boss else "kill")
+		_play_death(enemy, boss)
 		_add_shake(0.95 if boss else 0.32)
 		hitstop = maxf(hitstop, 0.18 if boss else 0.07)
 	elif hits > int(state.hits):
@@ -160,7 +209,7 @@ func _observe_enemy(state: Dictionary, enemy: Dictionary) -> void:
 		_kick(state, Vector2(0.14, -0.12) if boss else Vector2(0.34, -0.3), direction.x * (0.1 if boss else 0.3))
 		particles.burst(origin - direction * 6.0, SPARK, 6, 170.0, 0.22, -direction, 0.7, 2.0, 8.0)
 		particles.burst(origin, blood, 6 if boss else 4, 130.0, 0.45, direction, 0.6, 3.0)
-		_play("boss_hit" if boss else "hit")
+		_play_any(["hit_" + _material(enemy), "boss_hit" if boss else "hit"])
 		# No hitstop on ordinary boss hits: under sustained fire it would freeze
 		# the picture several times a second. Hitstop is kept for kills and hurts.
 		_add_shake(0.14 if boss else 0.08)
@@ -171,19 +220,56 @@ func _observe_enemy(state: Dictionary, enemy: Dictionary) -> void:
 		_flash(state,Color("dfd7b6"),0.12,0.65)
 		_kick(state,Vector2(0.18,-0.12),direction.x*0.12)
 		particles.burst(origin-direction*8,SPARK,5,130,0.22,-direction,0.8,2,6)
+		_play("block")
+	# Body parts: a part breaks off (bone snaps, flesh tears) or grows back.
+	var breaks: int = int(enemy.get("part_breaks",0))
+	if breaks > int(state.get("part_breaks",0)):
+		state.part_breaks = breaks
+		if not dying: _play_any(["break_" + _material(enemy)])
+	var regrows: int = int(enemy.get("part_regrows",0))
+	if regrows > int(state.get("part_regrows",0)):
+		state.part_regrows = regrows
+		_play("regrow")
 	if attacks > int(state.get("attacks", 0)):
 		# Active frame: snap forward out of the windup and overshoot back.
 		state.attacks = attacks
 		_kick(state, Vector2(0.32, -0.28) * (0.6 if boss else 1.0), float(enemy.get("face", 1.0)) * 0.35)
 		var attack_color: Color = Color("89b4a7") if kind == "necromancer" else Color("d2bf94") if kind in ["skeleton_archer","skeleton_guard"] else Color("f19791")
 		particles.burst(origin, attack_color, 14 if boss else 7, 150.0, 0.3, Vector2.ZERO, PI, 2.0, 7.0)
-		_play("enemy_shoot", 0.12)
+		# Each move sounds like itself; the bomber's fuse ends in its burst (fx event).
+		var move := str(enemy.get("attack_kind", ""))
+		if move != "fuse": _play_any(["attack_" + move, "enemy_shoot"], 0.12)
 		if boss:
 			_add_shake(0.2)
 	var attack := str(enemy.get("attack", ""))
 	if attack == "windup" and state.attack != "windup":
-		_play("windup", 0.05)
+		# Important telegraphs (beam, fuse, summoning) have their own sound;
+		# rigged figures stay quiet otherwise, older figures keep the beep.
+		var telegraph := "windup_" + str(enemy.get("attack_kind", ""))
+		if _has(telegraph): _play(telegraph)
+		elif not enemy.has("rig"): _play("windup", 0.05)
 	state.attack = attack
+
+
+## "bone", "flesh" or "void" for rigged enemies (audio_sfx.json), else "".
+func _material(enemy: Dictionary) -> String:
+	if sfx == null or not "rig_materials" in sfx: return ""
+	return str(sfx.rig_materials.get(str(enemy.get("rig", "")), ""))
+
+
+func _play_death(enemy: Dictionary, boss: bool) -> void:
+	var rig := str(enemy.get("rig", ""))
+	if boss:
+		_play("boss_kill")
+		if rig == "void": _play("boss_defeated")
+		return
+	if rig == "bomber":
+		# A burst already sounds through its fx event; shot down it only pops.
+		if not bool(enemy.get("exploded", false)): _play("bomber_pop")
+		return
+	if rig == "necro": _play_any(["kill_necro", "kill"])
+	else: _play_any(["kill_" + _material(enemy), "kill"])
+	if bool(enemy.get("miniboss", false)): _play("boss_defeated")
 
 
 func _observe_player(state: Dictionary, player: Dictionary, local: bool) -> void:
@@ -199,7 +285,9 @@ func _observe_player(state: Dictionary, player: Dictionary, local: bool) -> void
 		var aim := Vector2(float(player.get("ax", 1.0)), float(player.get("ay", 0.0)))
 		_kick(state, Vector2(0.12, -0.1), -aim.x * 0.12)
 		if local:
-			_play("shoot", 0.1)
+			# The class weapon decides the sound: bow string, magic orb, else the old blip.
+			var class_id := str(player.get("class_id", ""))
+			_play_any(["shoot_arrow" if class_id == "archer" else "shoot_magic" if class_id == "mage" else "", "shoot"], 0.1)
 	# Melee swings (swordsman) count separately from shots.
 	var swings := int(player.get("swings", 0))
 	if swings < int(state.get("swings", 0)): state.swings = swings
@@ -218,6 +306,13 @@ func _observe_player(state: Dictionary, player: Dictionary, local: bool) -> void
 		_play("hurt", 0.05)
 		_add_shake(0.5 if local else 0.15)
 		hitstop = maxf(hitstop, 0.05 if local else 0.0)
+	if local:
+		_local_moving = bool(player.get("moving", false)) and float(player.get("hp", 1)) > 0
+		# A newly picked perk chimes for the player who took it.
+		var perk := str(player.get("last_perk", ""))
+		if perk != str(state.get("last_perk", "")):
+			state.last_perk = perk
+			if not perk.is_empty(): _play("perk")
 
 
 func _flash(state: Dictionary, color: Color, seconds: float, strength: float = 1.0) -> void:
@@ -243,3 +338,17 @@ func _add_shake(amount: float) -> void:
 func _play(name: String, spread: float = 0.08) -> void:
 	if sfx != null:
 		sfx.play(name, spread)
+
+
+func _has(name: String) -> bool:
+	return sfx != null and sfx.has_method("has_effect") and sfx.has_effect(name)
+
+
+## Plays the first of `names` that exists (a specific sound before its fallback).
+func _play_any(names: Array, spread: float = 0.08) -> void:
+	if sfx == null: return
+	for name: String in names:
+		if name.is_empty(): continue
+		if not sfx.has_method("has_effect") or sfx.has_effect(name):
+			sfx.play(name, spread)
+			return
