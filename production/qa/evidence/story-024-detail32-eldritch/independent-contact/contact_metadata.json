@@ -1,0 +1,92 @@
+{
+	"actors": {
+		"boss": {
+			"atlas_sha256": "45e57a18e78d1bbed9cc13a7921c8727b7c4d58d5f857fda26f7c0ed3b7322f2",
+			"contact": "res://production/qa/evidence/story-024-detail32-eldritch/independent-contact/boss_six_actions.png",
+			"frame_size": [
+				39.0,
+				46.0
+			]
+		},
+		"necromancer": {
+			"atlas_sha256": "42e1cf85ce528a7821f979fce69e3c76867b8e2662b7fd4cf7680956ce10a307",
+			"contact": "res://production/qa/evidence/story-024-detail32-eldritch/independent-contact/necromancer_six_actions.png",
+			"frame_size": [
+				36.0,
+				46.0
+			]
+		},
+		"player_arcanist": {
+			"atlas_sha256": "b2689fb9c85c3317c69f842004953d3d9800e8e4278ec007cec09df2d90c48e1",
+			"contact": "res://production/qa/evidence/story-024-detail32-eldritch/independent-contact/player_arcanist_six_actions.png",
+			"frame_size": [
+				36.0,
+				45.0
+			]
+		},
+		"player_lizard": {
+			"atlas_sha256": "eac031250612ff06960a0258c93094ad1185082646d012a6c053e402fff6b1ee",
+			"contact": "res://production/qa/evidence/story-024-detail32-eldritch/independent-contact/player_lizard_six_actions.png",
+			"frame_size": [
+				36.0,
+				46.0
+			]
+		},
+		"player_ranger": {
+			"atlas_sha256": "49588d22ed61ed5e08d685ca046f30fa9a0fe5c0171a69fdad949ed7cc04801f",
+			"contact": "res://production/qa/evidence/story-024-detail32-eldritch/independent-contact/player_ranger_six_actions.png",
+			"frame_size": [
+				36.0,
+				44.0
+			]
+		},
+		"player_warden": {
+			"atlas_sha256": "fc154797e2a8dc676620aa08be661c2ed52cb4fbe590a5430f624f57cd4dca65",
+			"contact": "res://production/qa/evidence/story-024-detail32-eldritch/independent-contact/player_warden_six_actions.png",
+			"frame_size": [
+				36.0,
+				46.0
+			]
+		},
+		"skeleton_archer": {
+			"atlas_sha256": "91d4e671caaa7d6b386f4a8fd1237e017d14ca062ba075492feed8f7baea35db",
+			"contact": "res://production/qa/evidence/story-024-detail32-eldritch/independent-contact/skeleton_archer_six_actions.png",
+			"frame_size": [
+				36.0,
+				45.0
+			]
+		},
+		"skeleton_guard": {
+			"atlas_sha256": "ce4870eb5f0dea76d1c9c4e464b19cafe87e32fc8537c60fd5d7b231e0f38ea8",
+			"contact": "res://production/qa/evidence/story-024-detail32-eldritch/independent-contact/skeleton_guard_six_actions.png",
+			"frame_size": [
+				36.0,
+				46.0
+			]
+		}
+	},
+	"clips": [
+		"idle_breathe",
+		"walk_forward",
+		"attack_primary",
+		"hit_front",
+		"death_fall",
+		"charge_release"
+	],
+	"directions": [
+		"south",
+		"east",
+		"north",
+		"west"
+	],
+	"frames": [
+		0,
+		1,
+		2,
+		3,
+		4,
+		5
+	],
+	"purpose": "Independent visual contact sheets of existing baked frames; no production sources changed",
+	"scale": 2
+}

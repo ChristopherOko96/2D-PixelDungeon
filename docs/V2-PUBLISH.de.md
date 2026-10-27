@@ -2,6 +2,20 @@
 
 Stand: 25.10.2026.
 
+## Weiterer Zwischenstand vom27.10.2026
+
+Der Nutzer beauftragt erneut Commit und Upload des bisherigen Arbeitsstands
+auf `origin/codex_v2`. Enthalten sind der freie Dungeon-Editor, zehn Kryptakarten
+mit Boss10, UI/Schrift/Vollbild,48Perks, Kryptagegner, vier Spielerfiguren und
+die48-Abläufe-Animationsbibliothek samt Werkstatt, Quellen und Nachweisen.
+
+Die neu gewählte B-Art und die unterschiedlichen Schwert-/Stab-Spielweisen
+sind als [Vorschlag zur Freigabe](STYLE-B-CLASS-PREVIEW.de.md) enthalten.
+Sie sind noch kein implementierter Klassenumbau. Die aktuell aktive
+Chibi32-Revision ist damit ein technischer Zwischenstand, keine erklärte
+ästhetische Freigabe. Historische Artquellen und verworfene Zwischenentwürfe
+bleiben nachvollziehbar erhalten. `main` ist nicht das Uploadziel.
+
 ## Aktuelles Ziel auf Nutzerwunsch
 
 Am 25.10.2026 hat der Nutzer ausdrücklich angefordert, die bisherigen Änderungen

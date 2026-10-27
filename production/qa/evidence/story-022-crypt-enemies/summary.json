@@ -1,0 +1,74 @@
+{
+  "date": "2026-10-26",
+  "story": 22,
+  "branch": "codex_v2",
+  "roles": [
+    "skeleton_archer",
+    "necromancer",
+    "skeleton_guard"
+  ],
+  "native_frames": {
+    "count": 36,
+    "canvas": [
+      32,
+      48
+    ],
+    "pixel_block": [
+      2,
+      2
+    ],
+    "world_scale": 1,
+    "feet_used_end_y": 46
+  },
+  "checks": {
+    "ai": [
+      171,
+      0
+    ],
+    "game_integration": [
+      127,
+      0
+    ],
+    "art_feedback": [
+      82,
+      0
+    ],
+    "shield_perk": [
+      4,
+      0
+    ],
+    "perk_regression": [
+      100,
+      0
+    ],
+    "feedback_regression": [
+      19,
+      0
+    ],
+    "game_rules": [
+      24,
+      0
+    ],
+    "exploration": [
+      85,
+      0
+    ]
+  },
+  "network": "two real local processes; controlled actor/attack/shield/summon/projectile replication fixture; network.json",
+  "gpu": "original renderer at3x inspection zoom plus normal art reference; animation contains thirty captured GPU frames",
+  "scope": "focused fixtures and art demonstration, no earned campaign/LAN/FPS acceptance",
+  "pending": "subjective user art/feel evaluation; further online/load acceptance deferred by user",
+  "source_sha256": {
+    "src/crypt_enemy_ai.gd": "f83e3c62bc1b2c0d9c6d76793d06e4ef989b8352a284482b4307d9042bdc349f",
+    "src/crypt_enemy_sprites.gd": "60ae75dcae15fbc314b2205700bc7ba476a8a741ad0d942906bf9ed7ad0aa368",
+    "src/game.gd": "17653c55a85c3fbdb66b9e1dfb9b7a443891f7e76ee7a5381c0069cca833e201",
+    "src/dungeon_view.gd": "eef0dcd722a34be73b123dfe56bbd28b7e7304afab603a1515b30f9945d2571b",
+    "src/vfx/feedback.gd": "98a447d6a099008b45fdf69ceddd9bfbd0299bb4af9bc63e5830db40100f5862",
+    "src/perk_combat.gd": "1e3d1a5065d395292247d9d66c4aea9a5e3a181eb8b538eb8e01f0969d4deaf0",
+    "src/art_reference.gd": "c4636ccde95995493114d4f457a8ce7e1673be25d034fc81f5b6c28cfea26497",
+    "src/data/balance.json": "072aa691a9a3f7f4d07e475390bdce6b52ddeadd34504ab897872419e31b5ed0",
+    "src/session_protocol.gd": "7a60622340880a63acf1eaa940e67f6744a9b62a2b61794980e9b45f437b5d4a",
+    "assets/data/dungeon_rooms.json": "6e88d0a716209a842b3d582c90153f7b53984d0ee07a1644f02547a540b93b71",
+    "assets/data/custom_dungeons/dungeon_mein_entwurf.json": "b8afdce111e0005407e1ce0bcf4427276efed51cc987c65099671c82701bbf16"
+  }
+}

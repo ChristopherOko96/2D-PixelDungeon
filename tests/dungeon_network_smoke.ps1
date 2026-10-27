@@ -1,11 +1,12 @@
 <#
 .SYNOPSIS
-Proves a seeded three-room dungeon run with two independent local Godot peers.
+Proves two seeded dungeon floors with two or four independent local Godot peers.
 .DESCRIPTION
 The existing smoke bots play combat through ordinary host-authoritative inputs.
 This script never grants damage, clears enemies, or changes the game state.
-It requires matching room identities, templates and layout hashes on both peers,
-all three combat/reward phases, a boss clear, and victory on both processes.
+It requires six matching room identities, templates and layout hashes on every
+peer, both floors' combat/reward phases, spatial door/stair transitions and
+continued exploration after the second boss. Native tile size is thirty-two pixels.
 Coverage is local functional replication, not LAN/WAN or performance evidence.
 Only processes started here are stopped in finally. Diagnostic logs are retained.
 #>
@@ -16,8 +17,10 @@ param(
     [int]$Port = 0,
     [ValidateRange(1, 2147483647)]
     [int]$Seed = 24680,
-    [ValidateRange(15, 75)]
-    [int]$RunSeconds = 45
+    [ValidateSet(2, 4)]
+    [int]$Players = 2,
+    [ValidateRange(30, 110)]
+    [int]$RunSeconds = 75
 )
 
 Set-StrictMode -Version Latest
@@ -34,6 +37,11 @@ if (-not (Test-Path -LiteralPath $GodotPath -PathType Leaf)) {
 $GodotPath = (Resolve-Path -LiteralPath $GodotPath).Path
 if (-not (Test-Path -LiteralPath (Join-Path $projectRoot 'src\game.gd') -PathType Leaf)) {
     throw 'src/game.gd is missing.'
+}
+$roomConfiguration = Get-Content -LiteralPath (Join-Path $projectRoot 'assets\data\dungeon_rooms.json') -Raw | ConvertFrom-Json
+if ($roomConfiguration.tile_size -ne 32 -or $roomConfiguration.generator_version -ne 4 -or
+    $roomConfiguration.world_size[0] -ne 896 -or $roomConfiguration.world_size[1] -ne 480) {
+    throw 'This check requires native 32-pixel dungeon data, generator version 4 and a 896x480 world.'
 }
 if ($Port -gt 0 -and $Port -lt 1024) {
     throw 'Pass -Port 0 for automatic selection, or a port from 1024 to 65535.'
@@ -117,8 +125,8 @@ function Assert-RoomSequence {
     param([string]$OutputText, [string]$Pattern, [string]$Description)
     $matchesForSequence = [regex]::Matches($OutputText, $Pattern)
     $rooms = @($matchesForSequence | ForEach-Object { [int]$_.Groups[1].Value })
-    if (($rooms -join ',') -ne '1,2,3') {
-        throw "$Description must report rooms 1,2,3 once and in order; found '$($rooms -join ',')'. Logs: $logRoot"
+    if (($rooms -join ',') -ne '1,2,3,1,2,3') {
+        throw "$Description must report two floors of rooms 1,2,3 in order; found '$($rooms -join ',')'. Logs: $logRoot"
     }
 }
 
@@ -126,8 +134,8 @@ function Get-RoomLayouts {
     param([string]$OutputText, [string]$ProcessName)
     $lines = [regex]::Matches($OutputText, '(?m)^ROOM_LAYOUT[^\r\n]*\r?$')
     $matchesForLayout = [regex]::Matches($OutputText, '(?m)^ROOM_LAYOUT id=(\S+) template=(\S+) version=(\d+) signature=([a-fA-F0-9]{64})\r?$')
-    if ($lines.Count -ne 3 -or $matchesForLayout.Count -ne 3) {
-        throw "$ProcessName must report three valid ROOM_LAYOUT lines; found $($lines.Count) lines and $($matchesForLayout.Count) valid hashes. Logs: $logRoot"
+    if ($lines.Count -ne 6 -or $matchesForLayout.Count -ne 6) {
+        throw "$ProcessName must report six valid ROOM_LAYOUT lines; found $($lines.Count) lines and $($matchesForLayout.Count) valid hashes. Logs: $logRoot"
     }
     foreach ($layout in $matchesForLayout) {
         [pscustomobject]@{
@@ -140,18 +148,24 @@ function Get-RoomLayouts {
 }
 
 try {
-    # Act: two real processes use the same requested seed and ordinary bot inputs.
-    Write-Host "Starting seeded dungeon check: host + client, seed $Seed, UDP $Port."
-    $hostArguments = @('--host', '--seed', "$Seed", '--smoke-role', 'host', '--auto-start', '--port', "$Port", '--auto-exit', "$RunSeconds")
-    $clientSeconds = $RunSeconds - 3
-    $clientArguments = @('--join', '127.0.0.1', '--seed', "$Seed", '--smoke-role', 'client', '--port', "$Port", '--auto-exit', "$clientSeconds")
+    # Act: real processes use ordinary bot inputs, including walking to exits.
+    Write-Host "Starting two-floor dungeon check: $Players peers, seed $Seed, UDP $Port."
+    $hostArguments = @('--host', '--seed', "$Seed", '--smoke-role', 'host', '--auto-start', '--wait-players', "$Players", '--smoke-floors', '2', '--port', "$Port", '--auto-exit', "$RunSeconds")
     $hostEntry = Start-DungeonProcess -Name 'host' -GameArguments $hostArguments
     Wait-ForMarker -Entry $hostEntry -Pattern '(?m)^SESSION_HOSTED\b'
-    $clientEntry = Start-DungeonProcess -Name 'client' -GameArguments $clientArguments
-    Wait-ForMarker -Entry $clientEntry -Pattern '(?m)^CLIENT_CONNECTED\b'
-    Wait-ForMarker -Entry $hostEntry -Pattern '(?m)^PEER_JOINED[^\r\n]*count=2\r?$'
-    Wait-ForMarker -Entry $hostEntry -Pattern ("(?m)^RUN_STARTED seed=$Seed players=2\r?$")
-    Wait-ForMarker -Entry $clientEntry -Pattern '(?m)^SNAPSHOT_RECEIVED phase=combat players=2 room=1\r?$'
+    for ($index = 1; $index -lt $Players; $index++) {
+        # Startup is sequential. Later clients must still finish before the host;
+        # subtract actual elapsed startup time instead of a fixed three seconds.
+        $clientSeconds = [Math]::Max(5, $RunSeconds - [Math]::Ceiling($timer.Elapsed.TotalSeconds) - 3)
+        $clientArguments = @('--join', '127.0.0.1', '--seed', "$Seed", '--smoke-role', 'client', '--smoke-floors', '2', '--port', "$Port", '--auto-exit', "$clientSeconds")
+        $clientEntry = Start-DungeonProcess -Name "client-$index" -GameArguments $clientArguments
+        Wait-ForMarker -Entry $clientEntry -Pattern '(?m)^CLIENT_CONNECTED\b'
+    }
+    Wait-ForMarker -Entry $hostEntry -Pattern ("(?m)^PEER_JOINED[^\r\n]*count=$Players\r?$")
+    Wait-ForMarker -Entry $hostEntry -Pattern ("(?m)^RUN_STARTED seed=$Seed players=$Players\r?$")
+    foreach ($entry in $owned) {
+        Wait-ForMarker -Entry $entry -Pattern ("(?m)^SNAPSHOT_RECEIVED phase=combat players=$Players room=1\r?$")
+    }
     while ($true) {
         Assert-NoProcessErrors
         $running = @($owned | Where-Object { $_.Process.Refresh(); -not $_.Process.HasExited })
@@ -171,49 +185,55 @@ try {
     }
     Assert-NoProcessErrors
     $hostOutput = Get-ProcessOutput -Entry $hostEntry
-    $clientOutput = Get-ProcessOutput -Entry $clientEntry
     Assert-RoomSequence -OutputText $hostOutput -Pattern '(?m)^ROOM_STARTED room=(\d+)\b[^\r\n]*\r?$' -Description 'Host combat starts'
     Assert-RoomSequence -OutputText $hostOutput -Pattern '(?m)^ROOM_CLEARED room=(\d+) phase=reward\r?$' -Description 'Host combat clears'
     foreach ($entry in $owned) {
         $output = Get-ProcessOutput -Entry $entry
-        Assert-RoomSequence -OutputText $output -Pattern '(?m)^SNAPSHOT_RECEIVED phase=combat players=2 room=(\d+)\r?$' -Description "$($entry.Name) combat snapshots"
-        Assert-RoomSequence -OutputText $output -Pattern '(?m)^SNAPSHOT_RECEIVED phase=reward players=2 room=(\d+)\r?$' -Description "$($entry.Name) reward snapshots"
-        if ($output -notmatch '(?m)^SNAPSHOT_RECEIVED phase=victory players=2 room=3\r?$' -or
-            $output -notmatch '(?m)^AUTO_EXIT phase=victory PLAYER_COUNT=\d+\r?$') {
-            throw "$($entry.Name) did not receive and retain the final victory. Logs: $logRoot"
+        Assert-RoomSequence -OutputText $output -Pattern ("(?m)^SNAPSHOT_RECEIVED phase=combat players=$Players room=(\d+)\r?$") -Description "$($entry.Name) combat snapshots"
+        Assert-RoomSequence -OutputText $output -Pattern ("(?m)^SNAPSHOT_RECEIVED phase=reward players=$Players room=(\d+)\r?$") -Description "$($entry.Name) reward snapshots"
+        $receivedFloors = @([regex]::Matches($output, '(?m)^FLOOR_RECEIVED floor=(\d+) seed=\d+\r?$') | ForEach-Object { [int]$_.Groups[1].Value })
+        if (($receivedFloors -join ',') -ne '1,2' -or
+            $output -notmatch ("(?m)^SNAPSHOT_RECEIVED phase=explore players=$Players room=3\r?$") -or
+            $output -notmatch '(?m)^AUTO_EXIT phase=explore PLAYER_COUNT=\d+\r?$') {
+            throw "$($entry.Name) did not receive both floors and remain freely exploring after the final boss. Logs: $logRoot"
         }
     }
-    if ($hostOutput -notmatch '(?im)^ROOM_STARTED room=3\b[^\r\n]*\bboss=true\r?$' -or
-        [regex]::Matches($hostOutput, '(?m)^RUN_COMPLETED players=2\r?$').Count -ne 1) {
-        throw "The host did not complete exactly one two-player run ending in a boss room. Logs: $logRoot"
+    $clearedFloors = @([regex]::Matches($hostOutput, ("(?m)^FLOOR_CLEARED floor=(\d+) players=$Players\r?$")) | ForEach-Object { [int]$_.Groups[1].Value })
+    if ([regex]::Matches($hostOutput, '(?im)^ROOM_STARTED room=3\b[^\r\n]*\bboss=true\r?$').Count -ne 2 -or
+        ($clearedFloors -join ',') -ne '1,2') {
+        throw "The host did not clear both three-room floors ending in bosses. Logs: $logRoot"
     }
-    $perks = [regex]::Matches($hostOutput, '(?m)^PERK_SELECTED peer=(\d+) room=(\d+) perk=(\S+)\r?$')
-    $perkKeys = @($perks | ForEach-Object { '{0}:{1}' -f $_.Groups[1].Value, $_.Groups[2].Value })
-    $rewardRooms = @($perks | ForEach-Object { [int]$_.Groups[2].Value } | Sort-Object -Unique)
-    if (($rewardRooms -join ',') -ne '1,2,3' -or @($perkKeys | Sort-Object -Unique).Count -ne $perkKeys.Count) {
-        throw "Each cleared room must grant perks without duplicate peer/room grants. Logs: $logRoot"
+    $perks = [regex]::Matches($hostOutput, '(?m)^PERK_SELECTED peer=(\d+) room=(\d+) perk=(\S+) floor=(\d+)\r?$')
+    $perkKeys = @($perks | ForEach-Object { '{0}:{1}:{2}' -f $_.Groups[4].Value, $_.Groups[1].Value, $_.Groups[2].Value })
+    $rewardRooms = @($perks | ForEach-Object { '{0}:{1}' -f $_.Groups[4].Value, $_.Groups[2].Value } | Sort-Object -Unique)
+    if ($perks.Count -ne 6 * $Players -or ($rewardRooms -join ',') -ne '1:1,1:2,1:3,2:1,2:2,2:3' -or
+        @($perkKeys | Sort-Object -Unique).Count -ne $perkKeys.Count) {
+        throw "Each of the six cleared rooms must grant one perk per member without duplicate floor/peer/room grants. Logs: $logRoot"
     }
     $hostLayouts = @(Get-RoomLayouts -OutputText $hostOutput -ProcessName 'Host')
-    $clientLayouts = @(Get-RoomLayouts -OutputText $clientOutput -ProcessName 'Client')
-    if (@($hostLayouts.Id | Sort-Object -Unique).Count -ne 3) {
+    if (@($hostLayouts.Id | Sort-Object -Unique).Count -ne 6) {
         throw "The dungeon reused a stable room ID within the run. Logs: $logRoot"
     }
-    for ($index = 0; $index -lt 3; $index++) {
-        $expected = $hostLayouts[$index]
-        $actual = $clientLayouts[$index]
-        if ($expected.Version -ne 1 -or $actual.Version -ne 1 -or
-            $expected.Id -cne $actual.Id -or $expected.Template -cne $actual.Template -or
-            $expected.Signature -cne $actual.Signature) {
-            throw "Host/client room $($index + 1) identity, template, generator version or layout hash differs. Logs: $logRoot"
+    foreach ($entry in $owned) {
+        $layouts = @(Get-RoomLayouts -OutputText (Get-ProcessOutput -Entry $entry) -ProcessName $entry.Name)
+        for ($index = 0; $index -lt 6; $index++) {
+            $expected = $hostLayouts[$index]
+            $actual = $layouts[$index]
+            if ($expected.Version -ne 4 -or $actual.Version -ne 4 -or
+                $expected.Id -cne $actual.Id -or $expected.Template -cne $actual.Template -or
+                $expected.Signature -cne $actual.Signature) {
+                throw "Host/$($entry.Name) layout $($index + 1) identity, template, version or hash differs. Logs: $logRoot"
+            }
         }
     }
-    Write-Host 'PASS: two real peers completed combat, rewards and boss victory in all three matching dungeon rooms.'
+    Write-Host "PASS: $Players real peers completed two floors, six matching layouts, personal rewards and free exploration."
     Write-Host 'Coverage: localhost bot gameplay and layout replication; LAN/WAN and performance remain unverified.'
     [pscustomobject]@{
         Result = 'PASS'
-        Players = 2
+        Players = $Players
         Seed = $Seed
-        RoomsCleared = 3
+        FloorsCleared = 2
+        RoomsCleared = 6
         PerksSelected = $perks.Count
         Layouts = $hostLayouts
         ElapsedSeconds = [Math]::Round($timer.Elapsed.TotalSeconds, 1)

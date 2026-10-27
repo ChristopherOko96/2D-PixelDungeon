@@ -1,0 +1,1390 @@
+{
+	"actors": {
+		"boss": {
+			"canvas": [
+				32.0,
+				32.0
+			],
+			"frames": [
+				{
+					"bounds": [
+						2,
+						4,
+						29,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "south_idle"
+				},
+				{
+					"bounds": [
+						4,
+						4,
+						26,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "east_idle"
+				},
+				{
+					"bounds": [
+						2,
+						4,
+						29,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "north_idle"
+				},
+				{
+					"bounds": [
+						2,
+						4,
+						26,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "west_idle"
+				},
+				{
+					"bounds": [
+						3,
+						1,
+						29,
+						30
+					],
+					"foot_end_y": 31,
+					"key": "south_move"
+				},
+				{
+					"bounds": [
+						2,
+						2,
+						28,
+						29
+					],
+					"foot_end_y": 31,
+					"key": "east_move"
+				},
+				{
+					"bounds": [
+						5,
+						1,
+						27,
+						30
+					],
+					"foot_end_y": 31,
+					"key": "north_move"
+				},
+				{
+					"bounds": [
+						3,
+						2,
+						27,
+						29
+					],
+					"foot_end_y": 31,
+					"key": "west_move"
+				},
+				{
+					"bounds": [
+						2,
+						4,
+						30,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "south_attack"
+				},
+				{
+					"bounds": [
+						3,
+						4,
+						29,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "east_attack"
+				},
+				{
+					"bounds": [
+						0,
+						4,
+						29,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "north_attack"
+				},
+				{
+					"bounds": [
+						1,
+						4,
+						28,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "west_attack"
+				},
+				{
+					"bounds": [
+						4,
+						3,
+						27,
+						28
+					],
+					"foot_end_y": 31,
+					"key": "south_hurt"
+				},
+				{
+					"bounds": [
+						4,
+						3,
+						25,
+						28
+					],
+					"foot_end_y": 31,
+					"key": "east_hurt"
+				},
+				{
+					"bounds": [
+						6,
+						5,
+						24,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "north_hurt"
+				},
+				{
+					"bounds": [
+						4,
+						4,
+						23,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "west_hurt"
+				}
+			],
+			"palette_colors": 64,
+			"source": "res://assets/actors/chibi32/source/boss_chibi_sheet.png",
+			"target_idle_height": 28.0,
+			"uniform_scale": 0.099009900990099,
+			"world_scale": 3.0
+		},
+		"necromancer": {
+			"canvas": [
+				32.0,
+				32.0
+			],
+			"frames": [
+				{
+					"bounds": [
+						7,
+						5,
+						18,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "south_idle"
+				},
+				{
+					"bounds": [
+						9,
+						6,
+						18,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "east_idle"
+				},
+				{
+					"bounds": [
+						8,
+						5,
+						19,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "north_idle"
+				},
+				{
+					"bounds": [
+						10,
+						7,
+						14,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "west_idle"
+				},
+				{
+					"bounds": [
+						8,
+						4,
+						18,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "south_move"
+				},
+				{
+					"bounds": [
+						7,
+						6,
+						19,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "east_move"
+				},
+				{
+					"bounds": [
+						7,
+						4,
+						18,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "north_move"
+				},
+				{
+					"bounds": [
+						11,
+						6,
+						17,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "west_move"
+				},
+				{
+					"bounds": [
+						4,
+						5,
+						25,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "south_attack"
+				},
+				{
+					"bounds": [
+						6,
+						4,
+						22,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "east_attack"
+				},
+				{
+					"bounds": [
+						4,
+						4,
+						22,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "north_attack"
+				},
+				{
+					"bounds": [
+						5,
+						5,
+						22,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "west_attack"
+				},
+				{
+					"bounds": [
+						7,
+						6,
+						18,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "south_hurt"
+				},
+				{
+					"bounds": [
+						10,
+						9,
+						20,
+						22
+					],
+					"foot_end_y": 31,
+					"key": "east_hurt"
+				},
+				{
+					"bounds": [
+						7,
+						8,
+						19,
+						23
+					],
+					"foot_end_y": 31,
+					"key": "north_hurt"
+				},
+				{
+					"bounds": [
+						7,
+						8,
+						16,
+						23
+					],
+					"foot_end_y": 31,
+					"key": "west_hurt"
+				}
+			],
+			"palette_colors": 64,
+			"source": "res://assets/actors/chibi32/source/necromancer_chibi_sheet.png",
+			"target_idle_height": 26.0,
+			"uniform_scale": 0.0931899641577061,
+			"world_scale": 2.0
+		},
+		"player_arcanist": {
+			"canvas": [
+				32.0,
+				32.0
+			],
+			"frames": [
+				{
+					"bounds": [
+						7,
+						5,
+						17,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "south_idle"
+				},
+				{
+					"bounds": [
+						10,
+						5,
+						17,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "east_idle"
+				},
+				{
+					"bounds": [
+						8,
+						5,
+						18,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "north_idle"
+				},
+				{
+					"bounds": [
+						7,
+						5,
+						17,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "west_idle"
+				},
+				{
+					"bounds": [
+						9,
+						5,
+						17,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "south_move"
+				},
+				{
+					"bounds": [
+						8,
+						6,
+						18,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "east_move"
+				},
+				{
+					"bounds": [
+						8,
+						6,
+						18,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "north_move"
+				},
+				{
+					"bounds": [
+						8,
+						6,
+						17,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "west_move"
+				},
+				{
+					"bounds": [
+						6,
+						5,
+						22,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "south_attack"
+				},
+				{
+					"bounds": [
+						7,
+						5,
+						20,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "east_attack"
+				},
+				{
+					"bounds": [
+						5,
+						6,
+						23,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "north_attack"
+				},
+				{
+					"bounds": [
+						6,
+						6,
+						20,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "west_attack"
+				},
+				{
+					"bounds": [
+						6,
+						7,
+						19,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "south_hurt"
+				},
+				{
+					"bounds": [
+						8,
+						7,
+						20,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "east_hurt"
+				},
+				{
+					"bounds": [
+						6,
+						9,
+						20,
+						22
+					],
+					"foot_end_y": 31,
+					"key": "north_hurt"
+				},
+				{
+					"bounds": [
+						4,
+						7,
+						20,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "west_hurt"
+				}
+			],
+			"palette_colors": 64,
+			"source": "res://assets/actors/chibi32/source/player_arcanist_chibi_sheet.png",
+			"target_idle_height": 26.0,
+			"uniform_scale": 0.0878378378378378,
+			"world_scale": 2.0
+		},
+		"player_lizard": {
+			"canvas": [
+				32.0,
+				32.0
+			],
+			"frames": [
+				{
+					"bounds": [
+						9,
+						6,
+						17,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "south_idle"
+				},
+				{
+					"bounds": [
+						7,
+						5,
+						23,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "east_idle"
+				},
+				{
+					"bounds": [
+						7,
+						5,
+						16,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "north_idle"
+				},
+				{
+					"bounds": [
+						4,
+						5,
+						21,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "west_idle"
+				},
+				{
+					"bounds": [
+						11,
+						5,
+						16,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "south_move"
+				},
+				{
+					"bounds": [
+						5,
+						5,
+						21,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "east_move"
+				},
+				{
+					"bounds": [
+						5,
+						5,
+						17,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "north_move"
+				},
+				{
+					"bounds": [
+						5,
+						5,
+						22,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "west_move"
+				},
+				{
+					"bounds": [
+						9,
+						7,
+						17,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "south_attack"
+				},
+				{
+					"bounds": [
+						7,
+						6,
+						23,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "east_attack"
+				},
+				{
+					"bounds": [
+						1,
+						6,
+						19,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "north_attack"
+				},
+				{
+					"bounds": [
+						1,
+						6,
+						25,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "west_attack"
+				},
+				{
+					"bounds": [
+						8,
+						4,
+						17,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "south_hurt"
+				},
+				{
+					"bounds": [
+						7,
+						4,
+						21,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "east_hurt"
+				},
+				{
+					"bounds": [
+						7,
+						5,
+						15,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "north_hurt"
+				},
+				{
+					"bounds": [
+						5,
+						4,
+						19,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "west_hurt"
+				}
+			],
+			"palette_colors": 64,
+			"source": "res://assets/actors/chibi32/source/player_lizard_chibi_sheet.png",
+			"target_idle_height": 26.0,
+			"uniform_scale": 0.0884353741496599,
+			"world_scale": 2.0
+		},
+		"player_ranger": {
+			"canvas": [
+				32.0,
+				32.0
+			],
+			"frames": [
+				{
+					"bounds": [
+						9,
+						5,
+						14,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "south_idle"
+				},
+				{
+					"bounds": [
+						9,
+						5,
+						18,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "east_idle"
+				},
+				{
+					"bounds": [
+						9,
+						5,
+						13,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "north_idle"
+				},
+				{
+					"bounds": [
+						5,
+						5,
+						18,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "west_idle"
+				},
+				{
+					"bounds": [
+						10,
+						5,
+						14,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "south_move"
+				},
+				{
+					"bounds": [
+						6,
+						6,
+						19,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "east_move"
+				},
+				{
+					"bounds": [
+						10,
+						6,
+						13,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "north_move"
+				},
+				{
+					"bounds": [
+						7,
+						6,
+						18,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "west_move"
+				},
+				{
+					"bounds": [
+						9,
+						7,
+						16,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "south_attack"
+				},
+				{
+					"bounds": [
+						7,
+						7,
+						21,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "east_attack"
+				},
+				{
+					"bounds": [
+						6,
+						7,
+						17,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "north_attack"
+				},
+				{
+					"bounds": [
+						5,
+						8,
+						21,
+						23
+					],
+					"foot_end_y": 31,
+					"key": "west_attack"
+				},
+				{
+					"bounds": [
+						11,
+						7,
+						13,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "south_hurt"
+				},
+				{
+					"bounds": [
+						10,
+						8,
+						17,
+						23
+					],
+					"foot_end_y": 31,
+					"key": "east_hurt"
+				},
+				{
+					"bounds": [
+						6,
+						8,
+						14,
+						23
+					],
+					"foot_end_y": 31,
+					"key": "north_hurt"
+				},
+				{
+					"bounds": [
+						6,
+						8,
+						16,
+						23
+					],
+					"foot_end_y": 31,
+					"key": "west_hurt"
+				}
+			],
+			"palette_colors": 64,
+			"source": "res://assets/actors/chibi32/source/player_ranger_chibi_sheet.png",
+			"target_idle_height": 26.0,
+			"uniform_scale": 0.0858085808580858,
+			"world_scale": 2.0
+		},
+		"player_warden": {
+			"canvas": [
+				32.0,
+				32.0
+			],
+			"frames": [
+				{
+					"bounds": [
+						8,
+						6,
+						17,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "south_idle"
+				},
+				{
+					"bounds": [
+						9,
+						5,
+						18,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "east_idle"
+				},
+				{
+					"bounds": [
+						6,
+						5,
+						18,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "north_idle"
+				},
+				{
+					"bounds": [
+						5,
+						5,
+						17,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "west_idle"
+				},
+				{
+					"bounds": [
+						8,
+						6,
+						17,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "south_move"
+				},
+				{
+					"bounds": [
+						6,
+						6,
+						20,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "east_move"
+				},
+				{
+					"bounds": [
+						8,
+						6,
+						17,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "north_move"
+				},
+				{
+					"bounds": [
+						7,
+						6,
+						19,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "west_move"
+				},
+				{
+					"bounds": [
+						7,
+						9,
+						20,
+						22
+					],
+					"foot_end_y": 31,
+					"key": "south_attack"
+				},
+				{
+					"bounds": [
+						7,
+						9,
+						19,
+						22
+					],
+					"foot_end_y": 31,
+					"key": "east_attack"
+				},
+				{
+					"bounds": [
+						5,
+						9,
+						20,
+						22
+					],
+					"foot_end_y": 31,
+					"key": "north_attack"
+				},
+				{
+					"bounds": [
+						4,
+						9,
+						20,
+						22
+					],
+					"foot_end_y": 31,
+					"key": "west_attack"
+				},
+				{
+					"bounds": [
+						8,
+						11,
+						17,
+						20
+					],
+					"foot_end_y": 31,
+					"key": "south_hurt"
+				},
+				{
+					"bounds": [
+						7,
+						11,
+						19,
+						20
+					],
+					"foot_end_y": 31,
+					"key": "east_hurt"
+				},
+				{
+					"bounds": [
+						8,
+						11,
+						17,
+						20
+					],
+					"foot_end_y": 31,
+					"key": "north_hurt"
+				},
+				{
+					"bounds": [
+						7,
+						11,
+						19,
+						20
+					],
+					"foot_end_y": 31,
+					"key": "west_hurt"
+				}
+			],
+			"palette_colors": 64,
+			"source": "res://assets/actors/chibi32/source/player_warden_chibi_sheet.png",
+			"target_idle_height": 26.0,
+			"uniform_scale": 0.0773809523809524,
+			"world_scale": 2.0
+		},
+		"skeleton_archer": {
+			"canvas": [
+				32.0,
+				32.0
+			],
+			"frames": [
+				{
+					"bounds": [
+						8,
+						6,
+						18,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "south_idle"
+				},
+				{
+					"bounds": [
+						9,
+						5,
+						17,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "east_idle"
+				},
+				{
+					"bounds": [
+						7,
+						5,
+						18,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "north_idle"
+				},
+				{
+					"bounds": [
+						7,
+						5,
+						17,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "west_idle"
+				},
+				{
+					"bounds": [
+						9,
+						6,
+						18,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "south_move"
+				},
+				{
+					"bounds": [
+						7,
+						6,
+						16,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "east_move"
+				},
+				{
+					"bounds": [
+						9,
+						6,
+						17,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "north_move"
+				},
+				{
+					"bounds": [
+						8,
+						6,
+						16,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "west_move"
+				},
+				{
+					"bounds": [
+						5,
+						8,
+						21,
+						23
+					],
+					"foot_end_y": 31,
+					"key": "south_attack"
+				},
+				{
+					"bounds": [
+						8,
+						9,
+						20,
+						22
+					],
+					"foot_end_y": 31,
+					"key": "east_attack"
+				},
+				{
+					"bounds": [
+						6,
+						8,
+						21,
+						23
+					],
+					"foot_end_y": 31,
+					"key": "north_attack"
+				},
+				{
+					"bounds": [
+						3,
+						8,
+						20,
+						23
+					],
+					"foot_end_y": 31,
+					"key": "west_attack"
+				},
+				{
+					"bounds": [
+						5,
+						6,
+						19,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "south_hurt"
+				},
+				{
+					"bounds": [
+						8,
+						6,
+						19,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "east_hurt"
+				},
+				{
+					"bounds": [
+						5,
+						6,
+						19,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "north_hurt"
+				},
+				{
+					"bounds": [
+						3,
+						6,
+						18,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "west_hurt"
+				}
+			],
+			"palette_colors": 64,
+			"source": "res://assets/actors/chibi32/source/skeleton_archer_chibi_sheet.png",
+			"target_idle_height": 26.0,
+			"uniform_scale": 0.0846905537459283,
+			"world_scale": 2.0
+		},
+		"skeleton_guard": {
+			"canvas": [
+				32.0,
+				32.0
+			],
+			"frames": [
+				{
+					"bounds": [
+						7,
+						5,
+						19,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "south_idle"
+				},
+				{
+					"bounds": [
+						10,
+						5,
+						14,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "east_idle"
+				},
+				{
+					"bounds": [
+						6,
+						5,
+						18,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "north_idle"
+				},
+				{
+					"bounds": [
+						4,
+						5,
+						18,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "west_idle"
+				},
+				{
+					"bounds": [
+						7,
+						6,
+						20,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "south_move"
+				},
+				{
+					"bounds": [
+						8,
+						6,
+						15,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "east_move"
+				},
+				{
+					"bounds": [
+						8,
+						6,
+						19,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "north_move"
+				},
+				{
+					"bounds": [
+						5,
+						6,
+						19,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "west_move"
+				},
+				{
+					"bounds": [
+						7,
+						6,
+						21,
+						25
+					],
+					"foot_end_y": 31,
+					"key": "south_attack"
+				},
+				{
+					"bounds": [
+						7,
+						7,
+						25,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "east_attack"
+				},
+				{
+					"bounds": [
+						7,
+						7,
+						25,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "north_attack"
+				},
+				{
+					"bounds": [
+						1,
+						7,
+						22,
+						24
+					],
+					"foot_end_y": 31,
+					"key": "west_attack"
+				},
+				{
+					"bounds": [
+						7,
+						4,
+						19,
+						27
+					],
+					"foot_end_y": 31,
+					"key": "south_hurt"
+				},
+				{
+					"bounds": [
+						8,
+						5,
+						16,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "east_hurt"
+				},
+				{
+					"bounds": [
+						5,
+						5,
+						20,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "north_hurt"
+				},
+				{
+					"bounds": [
+						7,
+						5,
+						18,
+						26
+					],
+					"foot_end_y": 31,
+					"key": "west_hurt"
+				}
+			],
+			"palette_colors": 64,
+			"source": "res://assets/actors/chibi32/source/skeleton_guard_chibi_sheet.png",
+			"target_idle_height": 26.0,
+			"uniform_scale": 0.0858085808580858,
+			"world_scale": 2.0
+		}
+	},
+	"schema_version": 1,
+	"visual_revision": "crypt_chibi32_eldritch_v1"
+}

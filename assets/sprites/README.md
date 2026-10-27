@@ -1,6 +1,20 @@
 # Original 32 × 32 pixel sprites
 
-Every PNG in this folder is a real **32 × 32 RGBA source image**, drawn on an integer pixel grid with a small palette. All eight images are original project assets generated from [generate_pixel_assets.gd](../../scripts/generate_pixel_assets.gd); no remote images or external art packages are required.
+Current actors are the native32 chibi revision under `assets/actors/chibi32/`,
+including the blue-green eldritch boss. [Current art and source prompts](../../docs/CHIBI32-ELDRITCH.de.md).
+This directory preserves fallback/legacy material and the original quiet terrain.
+
+The eight top-level PNGs are **32 × 32 RGBA fallback images**, generated from
+[generate_pixel_assets.gd](../../scripts/generate_pixel_assets.gd). The active
+renderer uses the new directional actor bank under `assets/actors/`, with
+48 action sequences per character. The original idle/run/hit frames under
+`0x72/`, transferred from the brother's Godot `main` at65c72a9, remain preserved
+as references and fallback art. These retain their source dimensions
+(for example16×28 actors) and render at integer2×. Preserve
+[their license/source note](0x72/LICENSE-NOTE.md).
+
+Current actor sources, rig, animation studio and rebuild steps:
+[ACTOR-ANIMATIONS.de.md](../../docs/ACTOR-ANIMATIONS.de.md).
 
 | Files | Display |
 | --- | --- |
@@ -19,4 +33,6 @@ Godot_v4.7.2-stable_win64_console.exe --headless --path . --script scripts/gener
 Godot_v4.7.2-stable_win64_console.exe --headless --path . --editor --import --quit
 ```
 
-Regenerating overwrites these PNGs; retain any manual sprite changes in the generator or remove the corresponding generation step first. Static character source frames are the current base; character idle and expanded fire/environment frame animation remain later polish.
+Regenerating overwrites the eight fallback PNGs, never the0x72 frames. Retain
+manual fallback changes in the generator. Fire uses the supplied item animation
+sheet; the live renderer includes character idle/run/hit frames and feedback.

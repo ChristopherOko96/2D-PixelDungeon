@@ -1,0 +1,219 @@
+{
+  "schema_version": 1,
+  "themes": {
+    "entrance": {
+      "layout": "paired_rows",
+      "focal": "crypt_011",
+      "primary": [
+        "living_007",
+        "living_008"
+      ],
+      "secondary": [
+        "crypt_003",
+        "living_006"
+      ],
+      "accent": [
+        "living_015"
+      ],
+      "focal_solid": false,
+      "safety_radius": 112,
+      "spacing_cells": 2,
+      "aisle_half_width": 1,
+      "max_clusters_per_chamber": 2,
+      "max_props_per_chamber": 14
+    },
+    "ossuary": {
+      "layout": "paired_rows",
+      "focal": "crypt_000",
+      "primary": [
+        "crypt_004",
+        "living_011"
+      ],
+      "secondary": [
+        "crypt_007",
+        "living_007"
+      ],
+      "accent": [
+        "living_015"
+      ],
+      "focal_solid": false,
+      "safety_radius": 112,
+      "spacing_cells": 2,
+      "aisle_half_width": 1,
+      "max_clusters_per_chamber": 2,
+      "max_props_per_chamber": 14
+    },
+    "tombs": {
+      "layout": "memorial",
+      "focal": "crypt_001",
+      "primary": [
+        "crypt_000",
+        "crypt_004"
+      ],
+      "secondary": [
+        "living_011",
+        "living_007"
+      ],
+      "accent": [
+        "living_009"
+      ],
+      "focal_solid": false,
+      "safety_radius": 112,
+      "spacing_cells": 2,
+      "aisle_half_width": 1,
+      "max_clusters_per_chamber": 2,
+      "max_props_per_chamber": 14
+    },
+    "chapel": {
+      "layout": "altar",
+      "focal": "crypt_002",
+      "primary": [
+        "living_007",
+        "living_006"
+      ],
+      "secondary": [
+        "crypt_010",
+        "living_008"
+      ],
+      "accent": [
+        "living_009",
+        "living_015"
+      ],
+      "focal_solid": false,
+      "safety_radius": 112,
+      "spacing_cells": 2,
+      "aisle_half_width": 1,
+      "max_clusters_per_chamber": 2,
+      "max_props_per_chamber": 14
+    },
+    "catacombs": {
+      "layout": "paired_rows",
+      "focal": "crypt_008",
+      "primary": [
+        "living_004",
+        "living_005"
+      ],
+      "secondary": [
+        "living_013",
+        "crypt_007"
+      ],
+      "accent": [
+        "living_015"
+      ],
+      "focal_solid": false,
+      "safety_radius": 112,
+      "spacing_cells": 2,
+      "aisle_half_width": 1,
+      "max_clusters_per_chamber": 2,
+      "max_props_per_chamber": 14
+    },
+    "cursed_garden": {
+      "layout": "garden_beds",
+      "focal": "living_012",
+      "primary": [
+        "living_000",
+        "living_001",
+        "living_003"
+      ],
+      "secondary": [
+        "living_002",
+        "living_004",
+        "living_005",
+        "living_013"
+      ],
+      "accent": [
+        "living_014",
+        "living_015"
+      ],
+      "max_clusters_per_chamber": 4,
+      "max_props_per_chamber": 18,
+      "focal_solid": false,
+      "safety_radius": 112,
+      "spacing_cells": 2,
+      "aisle_half_width": 1
+    },
+    "archive": {
+      "layout": "archive",
+      "focal": "living_010",
+      "primary": [
+        "crypt_009"
+      ],
+      "secondary": [
+        "living_010",
+        "living_007"
+      ],
+      "accent": [
+        "living_009"
+      ],
+      "focal_solid": false,
+      "safety_radius": 112,
+      "spacing_cells": 2,
+      "aisle_half_width": 1,
+      "max_clusters_per_chamber": 2,
+      "max_props_per_chamber": 14
+    },
+    "lost_graves": {
+      "layout": "memorial",
+      "focal": "crypt_010",
+      "primary": [
+        "crypt_004",
+        "living_000"
+      ],
+      "secondary": [
+        "living_007",
+        "living_011"
+      ],
+      "accent": [
+        "living_015"
+      ],
+      "focal_solid": false,
+      "safety_radius": 112,
+      "spacing_cells": 2,
+      "aisle_half_width": 1,
+      "max_clusters_per_chamber": 2,
+      "max_props_per_chamber": 14
+    },
+    "mourning": {
+      "layout": "memorial",
+      "focal": "crypt_010",
+      "primary": [
+        "living_007",
+        "living_001"
+      ],
+      "secondary": [
+        "crypt_004",
+        "living_008"
+      ],
+      "accent": [
+        "living_015"
+      ],
+      "focal_solid": false,
+      "safety_radius": 112,
+      "spacing_cells": 2,
+      "aisle_half_width": 1,
+      "max_clusters_per_chamber": 2,
+      "max_props_per_chamber": 14
+    },
+    "throne": {
+      "layout": "ritual",
+      "focal": "crypt_002",
+      "primary": [
+        "living_006",
+        "living_007"
+      ],
+      "secondary": [
+        "living_009",
+        "living_011"
+      ],
+      "accent": [
+        "living_015"
+      ],
+      "focal_solid": false,
+      "safety_radius": 112,
+      "spacing_cells": 2,
+      "aisle_half_width": 1,
+      "max_clusters_per_chamber": 2,
+      "max_props_per_chamber": 14
+    }
+  }
+}

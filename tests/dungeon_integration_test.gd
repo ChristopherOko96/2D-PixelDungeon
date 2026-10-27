@@ -15,6 +15,8 @@ func _initialize() -> void:
 	var game = Game.new()
 	root.add_child(game)
 	await process_frame
+	game.set_process(false)
+	game.set_physics_process(false)
 	game.port_input.text = "18891"
 	game._host_session()
 	check(game.hosting, "test host starts")
@@ -41,7 +43,8 @@ func _test_room_and_geometry(game: Node, layout: Dictionary) -> void:
 	check(snapshot.floor_map.size() == 3, "snapshot carries the bounded three-room floor")
 	check(snapshot.floor_map[2].boss and not snapshot.floor_map[0].boss, "only the final room is the boss")
 	check(not snapshot.floor_map[0].cleared, "active room is initially uncleared")
-	check(snapshot.generator_version == 1, "snapshot identifies the generator version")
+	check(snapshot.generator_version == 4, "snapshot identifies generator version four")
+	check(int(layout.tile_size) == 32 and Vector2(float(layout.world_size[0]), float(layout.world_size[1])) == Vector2(896, 480), "room geometry uses the native thirty-two-pixel tile grid")
 	check(game.players[1].pos == layout.player_spawns[0], "host spawns at its clear template slot")
 	check(game.enemies[0].pos == layout.enemy_spawns[0], "enemy spawns at its clear template slot")
 	# An authored fixture isolates the game simulation from randomized selection.
@@ -51,8 +54,8 @@ func _test_room_and_geometry(game: Node, layout: Dictionary) -> void:
 	game.players[1].pos = Vector2(350, 200)
 	game.commands[1] = {"move": Vector2.RIGHT, "aim": Vector2.RIGHT, "fire": false, "time": Time.get_ticks_msec() / 1000.0}
 	game._simulate_players(0.5)
-	check(game.players[1].pos.x <= 372.001, "player cannot cross a pillar in a long frame")
-	game.enemies = [{"pos": Vector2(350, 200), "hp": 8, "max_hp": 8, "boss": false, "radius": 13.0, "speed": 55.0, "shot_timer": 1.0, "nav_timer": 0.0, "nav_path": PackedVector2Array()}]
+	check(game.players[1].pos.x >= 371.99 and game.players[1].pos.x <= 372.001, "native player radius stops precisely before the pillar in a long frame")
+	game.enemies = [{"pos": Vector2(350, 200), "hp": 8, "max_hp": 8, "boss": false, "radius": 13, "speed": 55, "shot_timer": 1.0, "nav_timer": 0.0, "nav_path": PackedVector2Array()}]
 	game.players[1].pos = Vector2(500, 200)
 	game._simulate_enemies(0.5)
 	check(game.enemies[0].pos.x <= 371.001, "chasing enemy respects pillar collision")
@@ -68,6 +71,8 @@ func _test_room_and_geometry(game: Node, layout: Dictionary) -> void:
 	game._add_bullet(Vector2(350, 200), Vector2(600, 0), 0, 1)
 	game._simulate_bullets(0.25)
 	check(game.bullets.is_empty() and game.players[1].hp == health, "hostile bullet sweep stops at cover before the player")
+	# Map completion follows authoritative encounter IDs, never a room index jump.
+	game.cleared_room_ids.append(first_id)
 	game.room = 2
 	game._spawn_room()
 	check(game.current_layout.id != first_id, "room transition selects a new stable room ID")
@@ -77,8 +82,10 @@ func _test_room_and_geometry(game: Node, layout: Dictionary) -> void:
 	game.room = 3
 	game._spawn_room()
 	check(game.current_layout.boss and game.enemies[0].boss, "final template and encounter agree on boss room")
-	game.phase = "victory"
+	for floor_room: Dictionary in game.floor_layouts:
+		if str(floor_room.id) not in game.cleared_room_ids: game.cleared_room_ids.append(str(floor_room.id))
+	game.phase = "explore"
 	snapshot = game._make_snapshot()
-	check(snapshot.floor_map.all(func(item: Dictionary) -> bool: return item.cleared), "victory marks the entire floor cleared")
+	check(snapshot.floor_map.all(func(item: Dictionary) -> bool: return item.cleared), "cleared IDs mark the entire completed floor while exploration remains active")
 	game._begin_run()
 	check(game.current_layout.id == first_id, "fixed-seed restart reproduces the first room ID")

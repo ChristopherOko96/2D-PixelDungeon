@@ -1,0 +1,17 @@
+Reviewed-Content-Hash: src/crypt_enemy_ai.gd 7694f8e81dff1eef1a39cc0fe7025e7c3dde2151
+Reviewed-Content-Hash: src/crypt_enemy_sprites.gd 0c6027075cbac5a8cc8fb99f90269f00333b14d6
+Reviewed-Content-Hash: src/game.gd ab88ce420e9e56160a81ea0688990285fa438161
+Reviewed-Content-Hash: src/dungeon_view.gd 71ec3a50dbd46fbee959381f57305c2cca5034d2
+Reviewed-Content-Hash: src/vfx/feedback.gd b3101257afe4fca982480f0709b38acdb7de250f
+Reviewed-Content-Hash: src/perk_combat.gd 559e973bd57c492e1a13710a80123180e306d28a
+Reviewed-Content-Hash: src/art_reference.gd 67841bb0496b6279d7c32b55e9086d300b67618c
+Reviewed-Content-Hash: src/data/balance.json 2a80a178306fbedee1399c36e51551365b3659a6
+Reviewed-Content-Hash: src/session_protocol.gd 0e4c3632dc203d1a171d864d60be727d4c4825fd
+Reviewed-Content-Hash: scripts/import_crypt_enemies.gd 2f81f1ff59946bf7599638b1c15765389dc2361f
+Reviewed-Content-Hash: tests/crypt_enemy_ai_test.gd c37421ba237a8fa2e8a5ac0eb83dea7bc13628ba
+Reviewed-Content-Hash: tests/crypt_enemy_integration_test.gd 62c0c98ca7a1606520ace6fa3becbd503ecbcb3c
+Reviewed-Content-Hash: tests/crypt_enemy_visual_test.gd d6ea3eb3cc0007c9e8a1306c5eb853f784585452
+Reviewed-Content-Hash: tests/crypt_enemy_perk_guard_test.gd 12b543c418792662b22fed64b773426c4fcc64f1
+Reviewed-Content-Hash: tests/crypt_enemy_network_peer.gd d8557dd8b9c95d96c2a9e3d0b7fc1554e1eb9e73
+Reviewed-Content-Hash: tests/crypt_enemy_network_smoke.ps1 aa40dd9d390ef1240e49507076e7e78485d2ec21
+Reviewed-Content-Hash: src/dungeon_view.gd fcc25e3b3543be3e06a0b0809fb30a176450c61b

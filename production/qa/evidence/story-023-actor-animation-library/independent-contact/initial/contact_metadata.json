@@ -1,0 +1,92 @@
+{
+  "actors": {
+    "boss": {
+      "atlas_sha256": "7285cae0d8a7a5d901d408b9c793d0f4299a7cadc8d7f8df121898be4fac61c2",
+      "contact": "res://production/qa/evidence/story-023-actor-animation-library/independent-contact/initial/boss_six_actions.png",
+      "frame_size": [
+        55.0,
+        69.0
+      ]
+    },
+    "necromancer": {
+      "atlas_sha256": "3f0552388914463adbb2156a2360dc98d050f8824641af767590e89c4c431523",
+      "contact": "res://production/qa/evidence/story-023-actor-animation-library/independent-contact/initial/necromancer_six_actions.png",
+      "frame_size": [
+        28.0,
+        44.0
+      ]
+    },
+    "player_arcanist": {
+      "atlas_sha256": "d8f37db9fd1d6587fb7cf1ac329894730f8964e219ea45d779b60d03352d140f",
+      "contact": "res://production/qa/evidence/story-023-actor-animation-library/independent-contact/initial/player_arcanist_six_actions.png",
+      "frame_size": [
+        35.0,
+        44.0
+      ]
+    },
+    "player_lizard": {
+      "atlas_sha256": "b24c986d3f9ca8397e41ba0b94c71131495d0f0efac1cfa70abef1f3573157ac",
+      "contact": "res://production/qa/evidence/story-023-actor-animation-library/independent-contact/initial/player_lizard_six_actions.png",
+      "frame_size": [
+        32.0,
+        45.0
+      ]
+    },
+    "player_ranger": {
+      "atlas_sha256": "a1b2ec9c01cb3aef99a1262a2af17319b13746778a63ce32b479ec3aa952ee2a",
+      "contact": "res://production/qa/evidence/story-023-actor-animation-library/independent-contact/initial/player_ranger_six_actions.png",
+      "frame_size": [
+        30.0,
+        43.0
+      ]
+    },
+    "player_warden": {
+      "atlas_sha256": "e85baa193b9b4b76d08be136c5a0eb423f7cec19cfa7ecf00eb8ea2c93371dda",
+      "contact": "res://production/qa/evidence/story-023-actor-animation-library/independent-contact/initial/player_warden_six_actions.png",
+      "frame_size": [
+        30.0,
+        44.0
+      ]
+    },
+    "skeleton_archer": {
+      "atlas_sha256": "67ec94717cb7e1070a15acecbb1f3ac884dbc999b5d94daea22704e4d7a5c5e4",
+      "contact": "res://production/qa/evidence/story-023-actor-animation-library/independent-contact/initial/skeleton_archer_six_actions.png",
+      "frame_size": [
+        30.0,
+        45.0
+      ]
+    },
+    "skeleton_guard": {
+      "atlas_sha256": "f5f860cff0de2821c95e5cbf2945497ef4512e7df47f6f28018c8c2b662d9cfc",
+      "contact": "res://production/qa/evidence/story-023-actor-animation-library/independent-contact/initial/skeleton_guard_six_actions.png",
+      "frame_size": [
+        33.0,
+        46.0
+      ]
+    }
+  },
+  "clips": [
+    "idle_breathe",
+    "walk_forward",
+    "attack_primary",
+    "hit_front",
+    "death_fall",
+    "charge_release"
+  ],
+  "directions": [
+    "south",
+    "east",
+    "north",
+    "west"
+  ],
+  "frames": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "purpose": "Independent visual contact sheets of existing baked frames; no production sources changed",
+  "scale": 2
+}

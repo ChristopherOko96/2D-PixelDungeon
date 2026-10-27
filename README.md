@@ -7,6 +7,27 @@ auf dem Branch [`codex_v2`](https://github.com/ChristopherOko96/2D-PixelDungeon/
 die [Veröffentlichungsnotizen](docs/V2-PUBLISH.de.md) erklären den Verlauf.
 V2 bezeichnet diesen Entwicklungsstand, noch keine fertige 2.0-Veröffentlichung.
 
+**Aktuell in Abstimmung:** Zielstil B (originaler0x72-Ritter) sowie eigenständiger
+Ritter-Nahkampf und Magier-Stabzauber. Die [kleine Stil-/Klassenprobe](docs/STYLE-B-CLASS-PREVIEW.de.md)
+liegt zur Freigabe vor; diese neue Richtung ist noch nicht ins Spiel übernommen.
+
+Aktuelle Grafikrevision: **32×32-Chibis** mit größeren Köpfen, kurzen sichtbaren
+Beinen und klaren Händen/Stiefeln. Der Hüter ist jetzt ein Lovecraft-artiges
+Tentakelwesen. [Aktueller Stand und Bilder](docs/CHIBI32-ELDRITCH.de.md).
+
+Vier neue Spieler, Bogenschütze, Nekromant,
+Schildkrieger und Boss besitzen jeweils **48 Animationsabläufe** in vier
+Blickrichtungen. **`Animation-Studio.cmd`** öffnet die Werkstatt mit Wiedergabe,
+Einzelbildern, Tempo und Zoom. Vorbereitete Aktionen sind ausdrücklich markiert;
+sie gewähren keine zusätzlichen Fähigkeiten.
+[Katalog, Bedienung und Herkunft](docs/ACTOR-ANIMATIONS.de.md).
+Die ruhige32px-Krypta mit warmem Feuer bleibt erhalten.
+
+Aktueller Core-Ausbau: **48 eigene kombinierbare Perks** mit persönlichen
+Angeboten, Stapelgrenzen, Schussmustern, Elementen und Schutz-/Risikoeffekten.
+[Perkkatalog, Buildbeispiele und geprüfter Umfang](docs/PERKS.de.md).
+Weitere Online-/LAN-/Lastabnahme ist zugunsten des Core-Designs zurückgestellt.
+
 Godot-Projekt für einen 2D-Pixel-Dungeon-Crawler nach dem Vorbild von The Binding
 of Isaac mit Einflüssen von Vampire Survivors. Aktuelles Limit: **vier Spieler**
 in getrennten Clients, mit verbindlichem **32×32-Pixel-Art-Raster**. Das Spiel befindet
@@ -14,12 +35,63 @@ sich am Anfang der Entwicklung. Godot 4.7.2 und GDScript ersetzen auf ausdrückl
 Nutzerwunsch die ursprüngliche Unity-Konfiguration. Der Entwicklungsprototyp
 ist die Grundlage für die geplanten Dungeon- und Multiplayer-Systeme.
 
+Die aktuellen Nutzer-Tilesets, UI-Herzen, Feueranimationen und Itemgrafiken sind
+integriert. Räume werden passend zu ihrer Geometrie zusammengesetzt. Nach dem
+Kampf: Perk wählen, Bereitschaft bestätigen und frei weiterlaufen. Mit **E** an
+der Tür wechselt die versammelte Gruppe den Raum; nach dem Boss führt eine
+eigene Treppe auf die nächste zufällige Ebene. Gesäuberte Räume bleiben frei
+begehbar. [Steuerung, Daten und Prüfungen](docs/EXPLORATION.de.md).
+
+Aktueller Ausbau vom 26.10.2026: Figurenanimationen, Treffer-/Todeseffekte und
+synthetisierte Sounds aus dem Godot-Stand von `main` sind übernommen. Türen und
+Treppen wechseln den Raum unter einer schwarzen Aus-/Einblendung; der Abstieg
+hat einen eigenen Sound. [Animationen und Übergänge](docs/ANIMATIONEN-UEBERGAENGE.de.md).
+
 - [Was bisher konkret geplant war](docs/PROJECT-REVIEW.de.md)
 - [Entwicklungsumgebung und Befehle](docs/DEVELOPMENT.de.md)
 - [Entwicklungsplan mit Abnahmekriterien](production/development-plan.md)
 - [Aktueller Spielbrief](design/game-brief.md)
 - [Inventar der 568 ursprünglichen Markdown-Dateien](docs/MARKDOWN-INVENTORY.md)
 - [V2-Fork, Branches und enthaltene Workflows](docs/V2-PUBLISH.de.md)
+
+## Spielansicht und Pausenmenü
+
+Im Spiel bleiben die Herzen oben links. **Esc** öffnet Übersicht, Bossdetails,
+Karte, Gruppe/Perks, Belohnung, Steuerung und Sitzung. Solo pausiert die Welt;
+im Mehrspieler bleibt sie aktiv. Nach einem Kampf erscheint die persönliche
+Perkauswahl automatisch als drei schwebende Karten vor der sichtbaren Welt. Alle Spiel-UIs
+verwenden die gebündelte Pixel-Schrift Pixel Operator8. Die Spielansicht nutzt
+die ganze Fensterfläche. F11, Alt+Enter oder ESC→Anzeige schalten Vollbild um.
+[Aktuelles UI-Review und nächste Schritte](docs/UI-VOLLBILD-REVIEW.de.md).
+
+Clientglättung und Versions-/Datenabgleich sind umgesetzt. Die aktuelle
+Zehn-Raum-Kampagne ist lokal mit Solo/zwei/vier Prozessen einschließlich Boss,
+Treppe, Perk-Neustart und UDP-Störung geprüft.
+[Ergebnisse, Bildzeiten und verbleibende LAN-Abnahme](docs/GAMEDEV-UMSETZUNG.de.md).
+[Bedienung](docs/SPIELMENUE.de.md) · [Karten und Grafikquellen](docs/BELOHNUNGEN.de.md).
+
+## Eigene Dungeons gestalten
+
+**`Dungeon-Editor.cmd` doppelklicken** oder `src/dungeon_editor.tscn` in Godot
+mit **F6** starten. **LEERER RAUM** beginnt auf einer weißen oder schwarzen
+Zeichenfläche ohne Boden, Außenmauern oder Türen. Du malst den Grundriss selbst,
+setzt Wände auf einer eigenen Ebene und platzierst echte Türen frei.
+Breite und Höhe sind pro Vorlage einstellbar. Die Tile-Palette bietet280 einzelne Grafikzellen;
+**Q/E** dreht den Pinsel, Linksklick setzt und Rechtsklick löscht.
+Startpunkte, Türen und Ausstattung lassen sich setzen und direkt im Spiel testen.
+Entwürfe bleiben separat gespeichert; die geprüfte Übernahme sichert den
+vorherigen Datenstand. Der Generator kombiniert diese Raumvorlagen zufällig zu
+Dungeons. [Schritt-für-Schritt-Anleitung](docs/DUNGEON-EDITOR.de.md).
+
+Die Spielkamera folgt dem eigenen Charakter mit leichtem Mausschwenk. Große
+Räume werden durch ein festes Sichtfenster betrachtet; das HUD bleibt stehen.
+
+## Grafikabstimmung
+
+Für die weitere Grafikabstimmung gibt es die im Editor sichtbare Szene
+`src/art_reference.tscn` (**F6**). Sie zeigt Raum, Figuren/Effekte und HUD
+einzeln oder zusammen; alle Herzen sind eine zusammenhängende Grafik.
+[Bedienung und Referenzen Brotato/Isaac](docs/ART-DIRECTION.de.md).
 
 ## Codex-Studio
 
@@ -32,7 +104,7 @@ Im Codex-Chat führt `$studio-help` zu den Workflows für das bestehende Spiel.
 [Einrichtung und Weiterarbeiten](docs/codex/README.md) ·
 [Prüfbericht](docs/codex/SETUP-REPORT.de.md) · [中文说明](README.zh-CN.md)
 
-Godot, die Vier-Spieler-Grenze und das 32×32-Raster bleiben gesetzt. Die
+Godot, die Vier-Spieler-Grenze und das aktuelle 32×32-Raster bleiben gesetzt. Die
 Codex-Dateien ergänzen die neueren gemeinsamen Quellen dieses Projekts.
 
 Die folgende Dokumentation gehört zum übernommenen **Claude Code Game Studios**

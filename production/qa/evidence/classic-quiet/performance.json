@@ -1,0 +1,339 @@
+{
+  "date": "2026-10-26",
+  "engine": "Godot4.7.2 Compatibility / AMD Radeon RX6600",
+  "view_cpu": {
+    "after": {
+      "draw_cpu_max_us": 510,
+      "draw_cpu_median_us": 353,
+      "draw_cpu_p95_us": 386,
+      "prepare_us": 38466
+    },
+    "before": {
+      "draw_cpu_max_us": 19300,
+      "draw_cpu_median_us": 15343,
+      "draw_cpu_p95_us": 17079,
+      "prepare_us": 86
+    },
+    "samples": 120,
+    "scope": "isolated actual GPU view, 1 player/6 enemies, same garden room, draw callback CPU only; not whole-game FPS",
+    "tiles": 1769
+  },
+  "navigation_cpu": {
+    "after": {
+      "blocked_segments": 0,
+      "cold_prepare_us": 50327,
+      "nonempty": 10,
+      "ten_queries_us": 11223
+    },
+    "before": {
+      "blocked_segments": 0,
+      "cold_prepare_us": 6,
+      "nonempty": 10,
+      "ten_queries_us": 1878081
+    },
+    "obstacles": 27,
+    "routes": [
+      [
+        [
+          1728.0,
+          640.0
+        ],
+        [
+          240.0,
+          656.0
+        ]
+      ],
+      [
+        [
+          1728.0,
+          640.0
+        ],
+        [
+          304.0,
+          656.0
+        ]
+      ],
+      [
+        [
+          1728.0,
+          640.0
+        ],
+        [
+          240.0,
+          720.0
+        ]
+      ],
+      [
+        [
+          1728.0,
+          640.0
+        ],
+        [
+          304.0,
+          720.0
+        ]
+      ],
+      [
+        [
+          1792.0,
+          640.0
+        ],
+        [
+          240.0,
+          656.0
+        ]
+      ],
+      [
+        [
+          1792.0,
+          640.0
+        ],
+        [
+          304.0,
+          656.0
+        ]
+      ],
+      [
+        [
+          1792.0,
+          640.0
+        ],
+        [
+          240.0,
+          720.0
+        ]
+      ],
+      [
+        [
+          1792.0,
+          640.0
+        ],
+        [
+          304.0,
+          720.0
+        ]
+      ],
+      [
+        [
+          1856.0,
+          704.0
+        ],
+        [
+          240.0,
+          656.0
+        ]
+      ],
+      [
+        [
+          1856.0,
+          704.0
+        ],
+        [
+          304.0,
+          656.0
+        ]
+      ]
+    ],
+    "template": "crypt_06"
+  },
+  "initial_hidden_window_probe": {
+    "average_fps": 50.4689279633506,
+    "duration_s": 6.003694,
+    "enemies": 6,
+    "frame_interval_ms": {
+      "max": 34.067,
+      "median": 21.661,
+      "p95": 33.057
+    },
+    "frames": 303,
+    "gpu": "AMD Radeon RX6600 / OpenGL Compatibility",
+    "network_sequences_observed": 121,
+    "phase_at_end": "combat",
+    "physics_cpu_ms": {
+      "max": 2.41,
+      "median": 1.825,
+      "p95": 2.41
+    },
+    "player_hp_at_end": 8,
+    "process_cpu_ms": {
+      "max": 127.748,
+      "median": 31.814,
+      "p95": 32.445
+    },
+    "scope": "six-second real solo host garden combat; no scripted input, no room-clear, no multiplayer performance claim",
+    "visual_ticks_observed": 279
+  },
+  "visible_live_game": {
+    "average_fps": 143.976435856665,
+    "callback_ms": {
+      "apply_snapshot": {
+        "max": 0.124,
+        "mean": 0.0855916666666667,
+        "median": 0.085,
+        "p95": 0.098,
+        "samples": 120,
+        "sum": 10.271
+      },
+      "broadcast_state": {
+        "max": 0.216,
+        "mean": 0.180141666666667,
+        "median": 0.177,
+        "p95": 0.208,
+        "samples": 120,
+        "sum": 21.617
+      },
+      "make_snapshot_network": {
+        "max": 0.116,
+        "mean": 0.08665,
+        "median": 0.086,
+        "p95": 0.096,
+        "samples": 120,
+        "sum": 10.398
+      },
+      "make_snapshot_visual": {
+        "max": 0.132,
+        "mean": 0.0741717451523546,
+        "median": 0.083,
+        "p95": 0.097,
+        "samples": 361,
+        "sum": 26.776
+      },
+      "physics_process": {
+        "max": 1.859,
+        "mean": 0.725883656509695,
+        "median": 0.598,
+        "p95": 1.481,
+        "samples": 361,
+        "sum": 262.044
+      },
+      "presentation_state": {
+        "max": 0.032,
+        "mean": 0.00719328703703699,
+        "median": 0.006,
+        "p95": 0.015,
+        "samples": 1728,
+        "sum": 12.4299999999999
+      },
+      "process": {
+        "max": 0.259,
+        "mean": 0.113636574074074,
+        "median": 0.112,
+        "p95": 0.163,
+        "samples": 864,
+        "sum": 98.1820000000001
+      },
+      "refresh_local_visual_state": {
+        "max": 0.143,
+        "mean": 0.0830498614958449,
+        "median": 0.092,
+        "p95": 0.109,
+        "samples": 361,
+        "sum": 29.981
+      },
+      "refresh_ui": {
+        "max": 0.079,
+        "mean": 0.0608421052631579,
+        "median": 0.061,
+        "p95": 0.077,
+        "samples": 57,
+        "sum": 3.468
+      },
+      "send_local_input": {
+        "max": 0.071,
+        "mean": 0.05045,
+        "median": 0.049,
+        "p95": 0.062,
+        "samples": 120,
+        "sum": 6.054
+      },
+      "simulate_bullets": {
+        "max": 0.004,
+        "mean": 0.00229639889196676,
+        "median": 0.002,
+        "p95": 0.003,
+        "samples": 361,
+        "sum": 0.829000000000001
+      },
+      "simulate_enemies": {
+        "max": 1.561,
+        "mean": 0.458437673130194,
+        "median": 0.276,
+        "p95": 1.214,
+        "samples": 361,
+        "sum": 165.496
+      },
+      "simulate_players": {
+        "max": 0.103,
+        "mean": 0.0752216066481992,
+        "median": 0.075,
+        "p95": 0.092,
+        "samples": 361,
+        "sum": 27.1549999999999
+      },
+      "step_world": {
+        "max": 1.675,
+        "mean": 0.547094182825485,
+        "median": 0.366,
+        "p95": 1.308,
+        "samples": 361,
+        "sum": 197.501
+      },
+      "update_camera": {
+        "max": 0.205,
+        "mean": 0.0419560185185186,
+        "median": 0.041,
+        "p95": 0.055,
+        "samples": 864,
+        "sum": 36.25
+      }
+    },
+    "display_backend": "Windows",
+    "duration_s": 6.000982,
+    "enemies_end": 6,
+    "enemies_start": 6,
+    "frame_ms": {
+      "max": 9.114,
+      "mean": 6.94556712962964,
+      "median": 6.945,
+      "p95": 8.29,
+      "samples": 864,
+      "sum": 6000.97
+    },
+    "frames": 864,
+    "gpu": "AMD Radeon RX 6600",
+    "hp_end": 8,
+    "hp_start": 8,
+    "max_fps": 0,
+    "network_sequences": 121,
+    "performance_physics_monitor_ms": {
+      "max": 2.021,
+      "mean": 1.83536689814815,
+      "median": 1.839,
+      "p95": 2.021,
+      "samples": 864,
+      "sum": 1585.757
+    },
+    "performance_process_monitor_ms": {
+      "max": 7.564,
+      "mean": 7.36634027777777,
+      "median": 7.308,
+      "p95": 7.564,
+      "samples": 864,
+      "sum": 6364.51799999999
+    },
+    "phase": "combat",
+    "room": 8,
+    "scope": "visible console-launched normal solo Garden combat;1s warmup,6s sample; no player/enemy stat changes; no scripted input",
+    "seed": 42026,
+    "template": "crypt_06",
+    "visual_ticks": 362,
+    "vsync_mode": 1,
+    "window_focused": true
+  },
+  "limits": [
+    "Component CPU timings are not whole-game FPS.",
+    "Initial live probe used a hidden window; visible-window profile is separate.",
+    "Only focused performance measurements and actual GPU still captures; no full playthrough or broad suites.",
+    "No four-player performance or final user visual acceptance claimed."
+  ]
+}

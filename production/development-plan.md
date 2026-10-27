@@ -1,6 +1,194 @@
 # Entwicklungsplan: Basement Run mit Godot und Multiplayer
 
-Status: **Entwurf**, Stand 24.10.2026. Zukünftige Spielregeln und Messziele sind
+## Aktuell: Krypta-Stil festgelegt und drei Untotenrollen
+
+Der Nutzer priorisiert die Art Direction vor der Balanceabnahme. Story022
+setzt den bisherigen ruhigen32px-Kryptastil als Standard fort und ergänzt
+Skelettbogenschütze, Nekromant und Schildkrieger.36Idle-/Lauf-/Angriffsframes,
+gemeinsamePixelgröße/Palette und die vorhandenen Wobble-/Treffer-/Todeseffekte.
+Rollen sind im normalen Seed-Lauf gemischt, der Nekromant ab Raum3 und höchstens
+einmal pro Raum; Beschwörungen bleiben hart begrenzt. Boss ausschließlich10.
+
+AI171/0, Gameintegration127/0, Assets/Feedback82/0, Schild-/Überschuss4/0,
+Perks100/0 und Feedback19/0. Kontrollierte2-Prozess-Replikation bestanden.
+Sichtbare GPU-Animationen im Originalrenderer und aktualisierte F6-Werkstatt
+vorhanden. Persönliches Stil-/Spielgefühl bleibt zu bewerten, weitere Online-/
+Lastabnahme ist zurückgestellt. [Stilstandard, Gegner und Bilder](../docs/CRYPT-ENEMIES.de.md).
+
+## Aktueller Core-Ausbau:48 kombinierbare Perks
+
+Der Nutzer priorisiert Core-Design und stellt weitere LAN-/Online-/Lastabnahme
+vorerst zurück. Story021 erweitert fünf einfache Segen auf48eigene Perks mit
+unterschiedlichen Schuss-, Flug-, Element-, Schutz- und bedingten Wirkungen.
+Drei persönliche Angebote berücksichtigen Stapelgrenzen, Voraussetzungen,
+fehlende Heilung und bestehende Tags. Keine festen Klassen oder Setzwänge.
+
+Gezielte Regeln/Katalog667/0, tatsächliche Kampf-/Kombinationsprüfungen100/0,
+UI159/0; bestehende Spiel-/Erkundungsregeln24/0 und85/0. Zwei echte lokale
+Prozesse prüfen persönliche Karten, Wahlbestätigung, doppelte/ungültige Wahl
+und Inventarreplikation in einer kontrollierten Belohnungsfixture. Sichtbare
+GPU-Prüfansichten von Karten, Inventar und Projektil-/Statuseffekten sind
+gesichert. Keine neue vollständige Kampagnen-, LAN- oder FPS-Abnahme für diesen
+Perkstand. Langfristige Balance und persönliches Spielgefühl bleiben zu bewerten.
+
+[Perkkatalog und Buildbeispiele](../docs/PERKS.de.md),
+[Story021](epics/dungeon-rooms/story-021-perk-builds.md).
+
+## Aktuell ausgeführt: Clientglättung, Aufnahmeprüfung und Koopnachweise
+
+Story019 implementiert bounded Clientinterpolation, stabile Projektilkennungen,
+Serverzeit und Protokoll-/Regel-/Engine-/Datenabgleich vor Lobbyrechten. Story020
+belegt aktuelle Solo-/Zwei-/Vier-Prozess-Zehnerläufe, Rückweg ohne Farming,
+Boss10, Abstieg und echte Perk/Wipe/Neustartfälle. Vierer-UDP-Störung ebenfalls
+bestanden.190 gezielte Logikprüfungen und sechs reale Aufnahmerollen ohne Fehler.
+
+Sichtbarer1080p-Vierer-Client über alle zehn Räume/Boss/Treppe:143,68FPS im Mittel,
+p958,035ms; jedes Raum-Kampf-p95 unter16,667ms. Private Testbotnavigation wurde
+vorher vorbereitet, weil deren kalter Wegaufbau sonst die Renderprobe belastet;
+Grenzwerte unverändert, vorherige Fehlmessung und Diagnose bleiben dokumentiert.
+
+Nutzer bestätigt nur einen PC. Echte Zwei-Rechner-/30Minuten-LAN-Abnahme und
+persönliches Stil-/Spielgefühl bleiben offen, statt lokale Prozesse als LAN
+auszugeben. [Prüfbericht](../docs/GAMEDEV-UMSETZUNG.de.md),
+[vorbereiteter LAN-Ablauf](../docs/LAN-ABNAHME.de.md).
+
+## Aktuell: lesbare Schrift, ganze Spielfläche und Review
+
+Story018 integriert Pixel Operator8 samt Lizenz, klare16/24/32px-Typografie und
+ein Spielbild über die gesamte Fensterfläche. F11/Alt+Enter/ESC→Anzeige schalten
+Vollbild um; Kamera, HUD, Eingaben, Dimmer und Schwarzblenden passen sich an.
+Gefundene Lobby- und Kartentextüberläufe wurden korrigiert. Gezielte GPU-
+Sichtprüfung von Fenster/Vollbild/anderen Formaten, keine breite Spieltestserie.
+
+Als Nächstes: manuelle Abnahme des aktuellen Zehn-Raum-Laufs, danach
+Clientglättung/Versionsabgleich und belegte Zwei-/Vier-Spieler-LAN-Läufe mit
+Bildzeitmessung. Neue Dekoration folgt erst nach Stilfeedback.
+[Review und konkrete nächste Schritte](../docs/UI-VOLLBILD-REVIEW.de.md).
+
+## Aktuell: ruhiger erster Prototyp und Rucklerkorrektur
+
+Story017 setzt die neueste Nutzerkorrektur um: originale ruhige 32px-Böden des
+ersten Godot-Prototyps 44c9b80, klare erhöhte Mauerkanten und warmes oranges
+Originalfeuer. Die gesättigte Pack-Restaurierung aus Story016 ist überholt.
+Aktive Räume verwenden `classic_quiet` ohne Raumdekoration, Truhen,
+Belohnungssockel oder Nebel. Spätere Assets müssen zu diesem Stil passen.
+
+Boden und Wandzeilen werden bei Raumänderung vorbereitet; Wand-/Figuren-Tiefe
+bleibt erhalten. Kollisions-/Navigationsdaten und unveränderte Raumgeometrie in
+Snapshots werden zwischengespeichert. Ein isoliertes CPU-Profil derselben
+Gartenansicht ergab 15,343→0,353 ms mediane Zeichenzeit; zehn gleiche blockierte
+Pfadanfragen 1878,081→11,223 ms gesamt. Bedingungen und einmalige Vorbereitung
+stehen in Story017. Eine sichtbare sechssekündige Solo-Gartenmessung mit sechs
+Gegnern ergab144FPS auf derRX6600, Bildzeit p95=8,29ms. Vier-Spieler-Leistung
+und die manuelle Stil-/Spielabnahme bleiben offen. Keine breite
+Spiel-/Unit-/Netzwerktestserie wurde für diese Korrektur ausgeführt.
+
+Zehn aktive Karten, Boss nur in Raum10, Editorfunktionen, Belohnungskarten und
+Schwarzblenden bleiben erhalten. Der persönliche Entwurf bleibt unverändert.
+[Story017](epics/dungeon-rooms/story-017-quiet-classic-performance.md),
+[aktueller Stil und Grenzen](../docs/ORIGINAL-TILE-RESTORE.de.md).
+
+Die folgenden Abschnitte beschreiben frühere Entwicklungsstände; bei
+widersprüchlichen Grafikangaben gilt die oben stehende aktuelle Korrektur.
+
+## Historisch: zurück zu den Original-Tiles
+
+Story016 deaktiviert die abgelehnte dichte Steinoptik. Zehn aktive Karten sind
+auf die vier gelieferten Paletten umgestellt; Original-Pack-Requisiten, ruhige
+Böden und warme Fackeln orientieren sich an den Nutzer-Atlanten und dem ersten
+Godot-Prototyp44c9b80. Geometrie/Kollision und Boss10 sind unverändert.
+[Umsetzung und Grenzen](../docs/ORIGINAL-TILE-RESTORE.de.md).
+
+
+## Aktiv: zehn Karten im normalen Prototyp
+
+Story015 übernimmt die aktuelle Krypta-Bibliothek nach ausdrücklichem Auftrag in
+F5/Dev Run. Eingang zuerst, acht normale Vorlagen ohne Wiederholung gemischt,
+Boss allein in Raum10 (mit zwei normalen Begleitern). Die frühere aktive Datei
+ist gesichert, der persönliche Quellentwurf unverändert. Normale Initialisierung,
+zehn verschiedene Layouts und der tatsächliche Boss-Spawn wurden in einer
+gezielten Bildsession beobachtet. Die Räume wurden für Fotos direkt geöffnet;
+kein vollständiger Durchlauf und keine breite Testserie.
+[Bilder und Bedingungen](qa/evidence/current-prototype/README.md).
+
+
+## Aktuell: ausgewählten Raum selbst spielen und die neue Art Direction beurteilen
+
+Story014 stellt einen direkten Offline-Spielstart für den ausgewählten Entwurf
+bereit. Der Editor blockiert nicht mehr an anderen Räumen oder einer Drei-Raum-
+Folge. Im aktualisierten Gartenfenster kann der Nutzer jetzt selbst starten.
+Die manuelle Spiel-/Bildbewertung bleibt ausdrücklich offen.
+
+16Umgebungsanimationen und Themenregeln ergänzen Blumenbeete, Bücherreihen und
+Ritual-/Grabgruppen. Auf die jüngste Nutzerkorrektur folgen neue Steintiles im
+Stil der Requisiten und statische Frame0-Körper mit getrennten Effektmasken.
+Originale, Geometrie und Kollision bleiben erhalten. Nur Import, Syntax und
+Art-Authoring ausgeführt; keine automatisierten Spieltests.
+
+
+## Aktueller Kandidat: Crypt of the Damned
+
+Story013 bereitet eine getrennte Zehnerbibliothek zur manuellen Abnahme vor.
+Nach zwei abgelehnten Bildreihen wurde die Kopie ganzer Räume verworfen. Der
+Generator verwendet unabhängige Kammergraphen und eine vollständige deterministische
+Wandkontur mit Original-Tiles. Weitere Teile: Krypta-Einrichtung, Tore, Nebel,
+zufällige Gegnerstarts und automatisch einfliegende Belohnungskarten.
+Auf Nutzerwunsch keine Spiel-/Unit-/Netzwerktests; nur Asset-Import und Syntax.
+Die optische Abnahme ist offen. Der eigene Entwurf und die normale aktive
+Bibliothek bleiben erhalten. [Anleitung](../docs/CRYPT-OF-THE-DAMNED.de.md).
+
+
+## Ganze Flächen statt einzelner Tiles
+
+Nach Nutzerklärung ergänzt Story011 den Modus **Bereich auswählen**, sichtbare
+Ersetzen-/Löschen-Buttons, Strg+A, Entf/Rücktaste und Esc. Die Flächenaktion ist
+jeweils ein Undo-Schritt. Modell24/0, UI20/0, Editorregressionen und grafische
+Prüfung bestanden. [Bedienung](../docs/DUNGEON-EDITOR.de.md).
+
+
+## Aktuelle Editor-Reparatur
+
+Story010 behebt das Übermalen auf derselben Zelle und ergänzt sichtbare
+Kollisionen im Raster. ERSETZEN ist standardmäßig aktiv; ausgeschaltet lässt
+sich eine Ebene unter einer anderen bearbeiten. Rasterfarben und Schraffuren
+zeigen Boden, Wand und fehlenden Boden. Replacement29/0, Klassifikation17/0,
+OpenGL-Pixel6/0 und bestehende Editor-/Geometrieprüfungen bestanden.
+[Bedienung](../docs/DUNGEON-EDITOR.de.md).
+
+
+## Neueste Editor-Korrektur: freie Konturen
+
+Story009 ersetzt den automatisch eingerichteten Rechteckraum bei neuen Vorlagen
+durch eine vollständig leere Zeichenfläche. Nur gemalter Boden ist begehbar;
+Boden und Wand/Deko haben eigene Ebenen. Türkoordinate, Richtung und Grafik werden
+vom Autor gesetzt. Die Raumplanung verbindet vorhandene passende Gegenrichtungen.
+Startplätze und Bossabstieg werden ausdrücklich platziert. Alte Vorlagen bleiben
+erhalten. Anleitung: [Freier Dungeon-Editor](../docs/DUNGEON-EDITOR.de.md).
+
+
+## Aktueller Stand vom 26.10.2026
+
+Die jüngste Nutzerkorrektur setzt wieder **32×32** als Weltraster. Der neue
+Godot-Stand des Bruders auf `main` wurde gelesen; Sounds,0x72-Animationen und
+Feedback sind selektiv übernommen. Tür-/Treppenwechsel erhalten eine gemeinsame
+Schwarzblende und getrennte Sounds. Details stehen in Story007 und
+[Animationen/Übergänge](../docs/ANIMATIONEN-UEBERGAENGE.de.md).
+
+Der anschließende Editorauftrag ergänzt **LEERER RAUM**, eigene Maße pro Vorlage,
+eine Palette aus280 separaten32×32-PNGs und Q/E-Vierteldrehung. Solide Zellen
+wirken in der Hostkollision. Der Generator kombiniert kleine und große Vorlagen;
+die Spielkamera folgt lokal mit leichtem Mausschwenk, das HUD bleibt fest.
+[Editoranleitung](../docs/DUNGEON-EDITOR.de.md), Story008 und
+[Prüfbericht](qa/verification.md) halten Umfang und Nachweise fest.
+
+Änderungen liegen lokal auf `codex_v2`. Kein neuer Commit, Push oder Merge in
+`main` wurde durch diese Aufträge vorgenommen. Die unten aufgeführten Stände
+beschreiben die vorherige Entwicklung;16-Pixel-Raster und fester Außenrahmen
+sind durch die aktuelle Korrektur überholt. `main` ist inzwischen ebenfalls
+Godot; die ursprüngliche Unity-Linie ist historisch.
+
+
+Status: **Fortgeschriebener Prototypplan**, Stand 25.10.2026. Zukünftige Spielregeln und Messziele sind
 Vorschläge. Der vorhandene kleine Entwicklungsstand ersetzt keinen Nachweis eines
 vollständigen Dungeon-Spiels oder belastbarer Vier-Spieler-Performance.
 
@@ -29,7 +217,65 @@ implementiertes Spiel. `studio-tests/` prüft dieses Studio-Gerüst und enthält
 ausgeführten Spieltests. Die aktuelle Godot-Grundlage wurde neu im eigenen Branch
 angelegt; die folgenden Umsetzungsnachweise gelten für diesen Entwicklungsstand.
 
-## Aktueller Umsetzungsstand
+## Aktueller Ausbau: Nutzer-Tilesets, Erkundung und Trefferfeedback
+
+Nach Ablehnung der ersten Belohnungsansicht umgesetzt: drei transparente,
+frei stehende Karten mit großen Pixel-Symbolen. Die Auswahl steht separat vor
+der Welt; der Menürahmen ist ausgeblendet. Lokal gebündelte **Pixelify Sans**
+ersetzt die Systemschrift in allen Spiel-/Werkstatt-UIs. Fünf neue Symbole mit
+eingebauter Bildgenerierung erzeugt und als16×16-RGBA aufbereitet; Prompts,
+Originale und Schriftlizenz erhalten. Story006:20 Kartenprüfungen,25 Menüprüfungen,
+bestehende Suiten, zwei echte Clients mit unterschiedlichen Karten/Hostbestätigung
+und anschließender Erkundung bestanden. [Bedienung](../docs/BELOHNUNGEN.de.md).
+
+Aktueller UI-Auftrag umgesetzt: eigene Herzen oben links, mittige Spielwelt,
+Raum/Boss/Karte/Gruppe/Perks und Sitzungsdaten im [Esc-Menü](../docs/SPIELMENUE.de.md).
+Solo pausiert die Simulation; Mehrspieler-Menüs bleiben persönlich bei weiter
+laufender Welt. Perk-/Ready-Aktionen und Erkundung bleiben erhalten. Story005:
+25 neue Integrationsprüfungen, bestehende Suiten, echter Host-/Client-Menütest,
+Vierer-Lauf über zwei Ebenen und visuelle Prüfung der sechs Menüseiten bestanden.
+
+Auf Nutzerwunsch ist ein [Dungeon-Baukasten](../docs/DUNGEON-EDITOR.de.md)
+ergänzt:16×16-Wandpinsel, Startpunkte, gekoppelte Türen, Boss-Innentreppe,
+Feuer/Truhe, Raumfarben sowie zufällige Auswahl oder feste Drei-Raum-Folge.
+Entwürfe sind separat und rückgängig bearbeitbar. Nur eine geprüfte Übernahme
+ersetzt mit Sicherung die aktive Datei. Ein echter lokaler Raumtest erhält
+beim Zurückkehren den Entwurf. Story004 erfasst Umfang und Grenzen: vorhandener
+448×240-Außenrahmen, bis zu64 Raumvorlagen, weiterhin höchstens vier Spieler.
+Autorentest18/0, Datei-/Spielintegration25/0, bestehende Suiten und Vier-Prozess-
+Lauf über zwei Ebenen mit Generator3 bestanden; Oberfläche/Testlauf angesehen.
+
+Zusätzlicher nächster Grafikschritt umgesetzt: eine feste, direkt im Godot-
+Editor sichtbare [Artstyle-Werkstatt](../docs/ART-DIRECTION.de.md) mit separaten
+Ansichten für Raum, Figuren/Effekte und HUD. Alle Herzen bilden eine Grafik.
+Die Referenz ist für weitere Stilabstimmung vorgesehen; der Nutzer hat den
+Gesamt-Artstyle noch nicht als endgültig bestätigt. Online-Referenzen sind
+insbesondere **Brotato** und The Binding of Isaac. Story003 dokumentiert die
+Werkstatt sowie deren getrennte Grafik-/Editorprüfung.
+
+Die jüngste Korrektur ersetzt 32×32 durch **16×16**. Native Welt: 448×240 mit
+ganzzahliger 2×-Anzeige. Originale Dungeon-, UI-, Item- und Animationssheets
+bestimmen jetzt Boden, räumliche Wände, Durchgänge, Herzen, Feuer und Perkicons.
+Der Nutzer verlangt sichtbare Wandoberkanten und vertikale Innenflächen wie in
+seiner animierten Referenz; ein flacher Rahmen und Treppensymbole als Seitentür
+erfüllen diesen Auftrag nicht.
+
+Der bisher automatische Ready→Raumwechsel wurde ersetzt: Ready schaltet freie
+Erkundung frei, E an einer räumlichen Tür mit der versammelten Gruppe wechselt
+den Raum. Zurückgehen in gesäuberte Räume erzeugt keine Gegner, Belohnungen oder
+wiederholte Wiederbelebung. Nach dem Boss bleibt die Ebene begehbar; die separate
+Innentreppe führt in die nächste erzeugte Ebene und erhält den Build.
+HP-Anzeigen, Hitstun, abgefangener Rückstoß und Trefferanimationen sind integriert.
+Details und Parameter: [Erkundung](../docs/EXPLORATION.de.md).
+
+Tatsächliche Nachweise: 4146 Generator-, 1585 Port-, 23 Integrations-, 22 Spielregel-
+und 51 Erkundungsprüfungen bestanden. Zwei und vier getrennte Prozesse haben
+je zwei Ebenen mit sechs identischen Layouts, zwölf beziehungsweise 24 Perks,
+Türen, Treppen und anschließender Erkundung durchlaufen. Vier-Spieler-Kampf ist
+damit lokal funktional belegt; LAN/WAN, Latenz/Paketverlust und Leistung bleiben
+offen. [Prüfbericht](qa/verification.md#native16-erkundung-und-trefferfeedback).
+
+## Basis vor diesem Ausbau
 
 - Der nächste fehlende Kernschritt aus Baufolge 4 / Phase 3 ist umgesetzt:
   [Raumgenerator-Story](epics/dungeon-rooms/story-001-seeded-rooms.md).
@@ -95,8 +341,9 @@ angelegt; die folgenden Umsetzungsnachweise gelten für diesen Entwicklungsstand
 
 ## Pixelgrafik und übersichtlicher Kampf
 
-Verbindliche Gestaltungsrichtung: echte **32×32-PNG-Sprites** auf einem
-32-Pixel-Grundraster, Nearest-Filterung und keine Glättung. NEU @assets/sprites/
+Verbindliche aktuelle Gestaltungsrichtung: echte **16×16-PNG-Sprites** auf einem
+16-Pixel-Grundraster, Nearest-Filterung und keine Glättung. Dies ersetzt die
+frühere 32×32-Anforderung. @assets/sprites/
 enthält die Rasterdateien; NEU @scripts/generate_pixel_assets.gd ist der
 Generator. Die tatsächlichen PNG-Maße werden vor einer Erfolgsaussage geprüft.
 Vergrößerte primitive Formen allein erfüllen diese Anforderung nicht.
@@ -108,7 +355,7 @@ Schadensrückmeldung. Im nächsten Grafikdurchgang Idle-/Schussanimationen und
 Umgebungsdetails gezielt verbessern. Weitere Bodenvarianten sind für diesen
 ersten Umfang nicht erforderlich.
 
-**Abnahme:** PNG-Metadaten bestätigen 32×32 bei den Basissprites. Eine aktuelle
+**Abnahme:** PNG-Metadaten bestätigen 16×16 bei den Basissprites. Eine aktuelle
 Spielaufnahme zeigt scharfe Pixelkanten und auch mit vier Teilnehmern erkennbare
 Spieler, Gegner und Projektilrichtungen. Ein Rastermaß allein belegt noch keine
 übersichtliche Kampfszene.
@@ -260,6 +507,27 @@ solange kein echter WAN-Test vorliegt. Fehler führen zu weiterer Arbeit oder ei
 ausdrücklich kleineren Grenze, nicht zu einer unbelegten Vier-Spieler-Zusage.
 Eine spätere Erweiterung auf acht benötigt einen eigenen Umfangsentscheid und
 erneute Kapazitäts-, Lesbarkeits- und Belastungsprüfungen.
+
+## Aktueller Figurenstand,27.10.2026
+
+Story024 ersetzt die Story023-Grafiken durch32×32-Chibis und einen blaugrünen
+Lovecraft-Tentakelboss. Die zunächst erwogenen64px/adulten Proportionen wurden
+durch die beiden jüngsten Nutzerkorrekturen ersetzt. Native Bilder und alte
+Quellen sind getrennt erhalten; Karten-/Höllenthema wird aus den drei Referenzen
+nicht übernommen. [Aktuelle Art und Nachweise](../docs/CHIBI32-ELDRITCH.de.md).
+
+Story023 ergänzt vier neue Spieler und je48 eigene Bewegungsabläufe für die
+acht Spieler-/Gegner-/Bossfiguren. Vier Richtungen zählen nicht als weitere
+Aktionen. Die Bank nutzt generierte Richtungs-Keyposen mit gebackenen
+Körperteilkurven.35 Aktionen sind rollenabhängig an vorhandene Spielzustände
+angebunden,13 für spätere Mechaniken vorbereitet. Animation-Studio.cmd erlaubt
+den direkten Vergleich mit Zeitlupe und Einzelbildern.
+
+Nächster GameDev-Schritt ist jetzt die persönliche Figuren-/Animationsabnahme
+im Studio und im normalen Prototyp: Silhouetten, Schuss-/Treffergewicht,
+Rückwärts-/Seitwärtsbewegung und lesbarer Tod. Konkretes Feedback steuert den
+nächsten Polishing-Durchgang. Neue Klassenfähigkeiten und weitere Online-/Last-
+Abnahme bleiben getrennte Aufgaben. [Umfang und Nachweise](../docs/ACTOR-ANIMATIONS.de.md).
 
 ## Abhängigkeiten und Risiken
 

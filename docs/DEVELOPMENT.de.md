@@ -7,8 +7,13 @@ bestimmt diese Entwicklungsumgebung nicht mehr.
 ## Schnellstart unter Windows
 
 Im Explorer startet `Spielen.cmd` den Spielstand per Doppelklick;
-`Godot-Editor.cmd` öffnet das Projekt im Editor. Beide verwenden denselben
+`Godot-Editor.cmd` öffnet das Projekt im Editor. `Dungeon-Editor.cmd` startet den
+[Baukasten für eigene Räume](DUNGEON-EDITOR.de.md). Sie verwenden denselben
 PowerShell-Wrapper wie die folgenden Befehle.
+
+`Animation-Studio.cmd` öffnet die [Figurenwerkstatt](ACTOR-ANIMATIONS.de.md):
+acht Figuren mit je48 Aktionen in vier Blickrichtungen. Alternativ:
+`./scripts/Dev.ps1 AnimationStudio` oder `src/animation_studio.tscn` mit F6.
 
 Das Repository in PowerShell öffnen. Alle folgenden Befehle werden im
 Repositoryverzeichnis ausgeführt. Der Branch für diese Arbeit heißt
@@ -88,13 +93,24 @@ Firewall, Routerweiterleitung und NAT sind gesondert zu prüfen. Ein Relay,
 Matchmakingdienst oder öffentlich gehosteter Server ist nicht eingerichtet.
 Eine erfolgreiche lokale Verbindung belegt kein funktionierendes Internetspiel.
 
+## Spielansicht und Menü
+
+Im laufenden Spiel bleiben die eigenen Herzen oben links. **Esc** öffnet
+Raum-/Bossdetails, Karte, Gruppe/Perks, Belohnung, Steuerung und Sitzung.
+Solo hält das Menü die Simulation an; im Mehrspieler bleibt die Welt aktiv.
+Nach einem Raumerfolg führt Esc direkt zur Perkauswahl. Die Menüübernahme
+ändert keine Raumgeometrie. [Bedienung](SPIELMENUE.de.md).
+
 ## Darstellung und Lesbarkeit
 
-Die aktuelle Gestaltungsanforderung sind **echte 32×32-PNG-Sprites** auf einem
-32-Pixel-Grundraster, mit Nearest-Filterung und ohne Glättung. Die Dateien werden
-unter `assets/sprites/` angelegt; der zugehörige Generator ist
-`scripts/generate_pixel_assets.gd`. Die tatsächlichen PNG-Abmessungen werden
-separat geprüft und bis dahin nicht als nachgewiesen ausgegeben.
+Seit der Nutzerkorrektur vom26.10.2026 gilt wieder ein **32×32-Grundraster**
+in einer896×480-Welt bei1×-Zoom, mit Nearest-Filterung und ohne Glättung.
+Die acht generierten Fallback-PNGs unter `assets/sprites/` sind32×32;
+Generator: `scripts/generate_pixel_assets.gd`. Originale der gelieferten
+Sheets und der aus `main` übernommenen0x72-Frames bleiben erhalten und werden
+ganzzahlig auf die Welt projiziert. Die0x72-Figuren sind ursprünglich16×28
+und werden2× gezeichnet. [Animationen, Sounds und Schwarzblenden](ANIMATIONEN-UEBERGAENGE.de.md).
+[Freies Erkunden, Türen, Treppen und Trefferreaktionen](EXPLORATION.de.md).
 
 Die Kampfszene soll in Richtung The Binding of Isaac und Vampire Survivors
 verständlich bleiben: vier klar unterscheidbare Spielerfarben, erkennbare Gegner
@@ -113,6 +129,7 @@ diesen ersten Stand.
 | `Host` | Eigenen Hostprozess auf dem angegebenen UDP-Port starten | Verbindungen und Spielablauf anschließend prüfen |
 | `Join` | Eigenen Clientprozess mit Zieladresse und Port starten | Verbindungsversuch ist noch kein erfolgreicher Beitritt |
 | `Check` | Headless-Import und Laden aller `src/**/*.gd` mit dem vorhandenen Parsehelfer | Keine vollständigen Spieltests, keine Netzwerk-/Exportprüfung |
+| `DungeonEditor` | Dungeon-Baukasten zum Malen, Speichern und Testen eigener Raumvorlagen | Erst „Im Spiel verwenden“ übernimmt geprüfte Daten; Hauptspiel danach neu starten |
 
 `Check` wertet Exitcode und Ausgabe aus. `SCRIPT ERROR`, Parsefehler oder
 fehlgeschlagene Skriptladung zählen auch bei Exitcode 0 als Fehler. Ein Aufruf
@@ -142,6 +159,8 @@ $godot = '../tools/godot-4.7.2/Godot_v4.7.2-stable_win64_console.exe'
 & $godot --headless --path . --script res://tests/game_rules.gd
 & $godot --headless --path . --script res://tests/dungeon_generator_test.gd
 & $godot --headless --path . --script res://tests/dungeon_integration_test.gd
+& $godot --headless --path . --script res://tests/dungeon_ports_test.gd
+& $godot --headless --path . --script res://tests/exploration_rules_test.gd
 ```
 
 Bei einem persönlichen Enginepfad `$godot` entsprechend setzen. Die Suite
@@ -158,6 +177,7 @@ Prozesse anschließend auf:
 ./tests/network_smoke.ps1 -Players 4
 ./tests/network_smoke.ps1 -Players 4 -DisconnectOrder reverse
 ./tests/dungeon_network_smoke.ps1 -Seed 24680
+./tests/dungeon_network_smoke.ps1 -Players 4 -Seed 24680
 ```
 
 Bei einem eigenen Enginepfad zusätzlich `-GodotPath $godot` übergeben. Mit zwei
@@ -166,9 +186,10 @@ drei unabhängigen Clients. Ausgaben bleiben in
 `Logs/network-smoke/<eindeutiger-lauf>/`. Die Vier-Teilnehmer-Prüfung belegt weder
 einen vollständigen Vier-Spieler-Lauf noch Leistung oder LAN-/WAN-Verbindung.
 Ergebnisse tatsächlich ausgeführter Prüfungen stehen im folgenden Status.
-Der zusätzliche Dungeon-Smoke verlangt einen vollständigen Zwei-Prozess-Lauf
-mit drei identischen Raumkennungen, Vorlagen und Layout-Prüfsummen, allen
-Belohnungsphasen und Sieg auf beiden Seiten. Logs: `Logs/dungeon-network-smoke/`.
+Der zusätzliche Dungeon-Smoke verlangt jetzt zwei vollständige Ebenen mit
+wahlweise zwei oder vier Prozessen: sechs identische Raumkennungen, Vorlagen
+und Layout-Prüfsummen, alle Belohnungen, physische Tür-/Treppenübergänge und
+weiterhin freie Erkundung nach dem zweiten Boss. Logs: `Logs/dungeon-network-smoke/`.
 
 ## Prüfstatus dieser Einrichtung
 

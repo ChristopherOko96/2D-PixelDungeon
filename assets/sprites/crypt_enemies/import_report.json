@@ -1,0 +1,655 @@
+{
+	"canvas": [
+		32,
+		48
+	],
+	"effective_canvas": [
+		16,
+		24
+	],
+	"roles": {
+		"necromancer": {
+			"frames": [
+				{
+					"frame": 0,
+					"projected_size": [
+						14,
+						15
+					],
+					"source_bounds": [
+						94,
+						98,
+						236,
+						257
+					],
+					"target_origin": [
+						1,
+						8
+					]
+				},
+				{
+					"frame": 1,
+					"projected_size": [
+						14,
+						15
+					],
+					"source_bounds": [
+						449,
+						98,
+						233,
+						257
+					],
+					"target_origin": [
+						1,
+						8
+					]
+				},
+				{
+					"frame": 2,
+					"projected_size": [
+						14,
+						15
+					],
+					"source_bounds": [
+						794,
+						95,
+						233,
+						260
+					],
+					"target_origin": [
+						1,
+						8
+					]
+				},
+				{
+					"frame": 3,
+					"projected_size": [
+						14,
+						15
+					],
+					"source_bounds": [
+						1153,
+						97,
+						233,
+						258
+					],
+					"target_origin": [
+						1,
+						8
+					]
+				},
+				{
+					"frame": 4,
+					"projected_size": [
+						14,
+						16
+					],
+					"source_bounds": [
+						105,
+						432,
+						239,
+						266
+					],
+					"target_origin": [
+						1,
+						7
+					]
+				},
+				{
+					"frame": 5,
+					"projected_size": [
+						14,
+						16
+					],
+					"source_bounds": [
+						454,
+						433,
+						231,
+						264
+					],
+					"target_origin": [
+						1,
+						7
+					]
+				},
+				{
+					"frame": 6,
+					"projected_size": [
+						14,
+						16
+					],
+					"source_bounds": [
+						804,
+						431,
+						228,
+						268
+					],
+					"target_origin": [
+						1,
+						7
+					]
+				},
+				{
+					"frame": 7,
+					"projected_size": [
+						14,
+						16
+					],
+					"source_bounds": [
+						1154,
+						431,
+						236,
+						268
+					],
+					"target_origin": [
+						1,
+						7
+					]
+				},
+				{
+					"frame": 8,
+					"projected_size": [
+						15,
+						16
+					],
+					"source_bounds": [
+						84,
+						742,
+						257,
+						273
+					],
+					"target_origin": [
+						0,
+						7
+					]
+				},
+				{
+					"frame": 9,
+					"projected_size": [
+						14,
+						16
+					],
+					"source_bounds": [
+						435,
+						750,
+						239,
+						265
+					],
+					"target_origin": [
+						1,
+						7
+					]
+				},
+				{
+					"frame": 10,
+					"projected_size": [
+						19,
+						15
+					],
+					"source_bounds": [
+						760,
+						766,
+						325,
+						249
+					],
+					"target_origin": [
+						-2,
+						8
+					]
+				},
+				{
+					"frame": 11,
+					"projected_size": [
+						18,
+						15
+					],
+					"source_bounds": [
+						1085,
+						760,
+						304,
+						255
+					],
+					"target_origin": [
+						-1,
+						8
+					]
+				}
+			],
+			"source_size": [
+				1446,
+				1087
+			],
+			"uniform_scale": 0.0593220338983051
+		},
+		"skeleton_archer": {
+			"frames": [
+				{
+					"frame": 0,
+					"projected_size": [
+						14,
+						16
+					],
+					"source_bounds": [
+						93,
+						96,
+						227,
+						254
+					],
+					"target_origin": [
+						1,
+						7
+					]
+				},
+				{
+					"frame": 1,
+					"projected_size": [
+						14,
+						16
+					],
+					"source_bounds": [
+						441,
+						96,
+						223,
+						255
+					],
+					"target_origin": [
+						1,
+						7
+					]
+				},
+				{
+					"frame": 2,
+					"projected_size": [
+						14,
+						16
+					],
+					"source_bounds": [
+						789,
+						96,
+						220,
+						255
+					],
+					"target_origin": [
+						1,
+						7
+					]
+				},
+				{
+					"frame": 3,
+					"projected_size": [
+						14,
+						16
+					],
+					"source_bounds": [
+						1143,
+						96,
+						220,
+						255
+					],
+					"target_origin": [
+						1,
+						7
+					]
+				},
+				{
+					"frame": 4,
+					"projected_size": [
+						14,
+						16
+					],
+					"source_bounds": [
+						97,
+						429,
+						226,
+						256
+					],
+					"target_origin": [
+						1,
+						7
+					]
+				},
+				{
+					"frame": 5,
+					"projected_size": [
+						14,
+						16
+					],
+					"source_bounds": [
+						449,
+						429,
+						220,
+						259
+					],
+					"target_origin": [
+						1,
+						7
+					]
+				},
+				{
+					"frame": 6,
+					"projected_size": [
+						14,
+						16
+					],
+					"source_bounds": [
+						797,
+						429,
+						224,
+						259
+					],
+					"target_origin": [
+						1,
+						7
+					]
+				},
+				{
+					"frame": 7,
+					"projected_size": [
+						14,
+						17
+					],
+					"source_bounds": [
+						1148,
+						419,
+						220,
+						269
+					],
+					"target_origin": [
+						1,
+						6
+					]
+				},
+				{
+					"frame": 8,
+					"projected_size": [
+						16,
+						16
+					],
+					"source_bounds": [
+						81,
+						760,
+						263,
+						252
+					],
+					"target_origin": [
+						0,
+						7
+					]
+				},
+				{
+					"frame": 9,
+					"projected_size": [
+						16,
+						16
+					],
+					"source_bounds": [
+						433,
+						760,
+						263,
+						252
+					],
+					"target_origin": [
+						0,
+						7
+					]
+				},
+				{
+					"frame": 10,
+					"projected_size": [
+						20,
+						16
+					],
+					"source_bounds": [
+						761,
+						752,
+						324,
+						260
+					],
+					"target_origin": [
+						-2,
+						7
+					]
+				},
+				{
+					"frame": 11,
+					"projected_size": [
+						17,
+						16
+					],
+					"source_bounds": [
+						1085,
+						759,
+						281,
+						253
+					],
+					"target_origin": [
+						-1,
+						7
+					]
+				}
+			],
+			"source_size": [
+				1447,
+				1087
+			],
+			"uniform_scale": 0.0616740088105727
+		},
+		"skeleton_guard": {
+			"frames": [
+				{
+					"frame": 0,
+					"projected_size": [
+						14,
+						16
+					],
+					"source_bounds": [
+						92,
+						96,
+						224,
+						260
+					],
+					"target_origin": [
+						1,
+						7
+					]
+				},
+				{
+					"frame": 1,
+					"projected_size": [
+						14,
+						16
+					],
+					"source_bounds": [
+						440,
+						96,
+						230,
+						261
+					],
+					"target_origin": [
+						1,
+						7
+					]
+				},
+				{
+					"frame": 2,
+					"projected_size": [
+						14,
+						16
+					],
+					"source_bounds": [
+						794,
+						96,
+						228,
+						261
+					],
+					"target_origin": [
+						1,
+						7
+					]
+				},
+				{
+					"frame": 3,
+					"projected_size": [
+						14,
+						16
+					],
+					"source_bounds": [
+						1150,
+						96,
+						226,
+						261
+					],
+					"target_origin": [
+						1,
+						7
+					]
+				},
+				{
+					"frame": 4,
+					"projected_size": [
+						15,
+						17
+					],
+					"source_bounds": [
+						85,
+						432,
+						234,
+						264
+					],
+					"target_origin": [
+						0,
+						6
+					]
+				},
+				{
+					"frame": 5,
+					"projected_size": [
+						15,
+						17
+					],
+					"source_bounds": [
+						432,
+						432,
+						233,
+						264
+					],
+					"target_origin": [
+						0,
+						6
+					]
+				},
+				{
+					"frame": 6,
+					"projected_size": [
+						14,
+						17
+					],
+					"source_bounds": [
+						792,
+						431,
+						226,
+						265
+					],
+					"target_origin": [
+						1,
+						6
+					]
+				},
+				{
+					"frame": 7,
+					"projected_size": [
+						14,
+						17
+					],
+					"source_bounds": [
+						1139,
+						427,
+						227,
+						269
+					],
+					"target_origin": [
+						1,
+						6
+					]
+				},
+				{
+					"frame": 8,
+					"projected_size": [
+						15,
+						15
+					],
+					"source_bounds": [
+						82,
+						775,
+						238,
+						246
+					],
+					"target_origin": [
+						0,
+						8
+					]
+				},
+				{
+					"frame": 9,
+					"projected_size": [
+						17,
+						18
+					],
+					"source_bounds": [
+						416,
+						745,
+						265,
+						281
+					],
+					"target_origin": [
+						-1,
+						5
+					]
+				},
+				{
+					"frame": 10,
+					"projected_size": [
+						20,
+						16
+					],
+					"source_bounds": [
+						768,
+						774,
+						317,
+						249
+					],
+					"target_origin": [
+						-2,
+						7
+					]
+				},
+				{
+					"frame": 11,
+					"projected_size": [
+						18,
+						16
+					],
+					"source_bounds": [
+						1085,
+						768,
+						281,
+						255
+					],
+					"target_origin": [
+						-1,
+						7
+					]
+				}
+			],
+			"source_size": [
+				1446,
+				1087
+			],
+			"uniform_scale": 0.0625
+		}
+	},
+	"source_grid": [
+		4,
+		3
+	]
+}

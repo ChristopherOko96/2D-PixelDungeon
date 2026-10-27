@@ -1,0 +1,409 @@
+{
+  "Result": "PASS",
+  "Players": 2,
+  "Scenario": "campaign",
+  "Seed": 42026,
+  "Port": 53081,
+  "ClientPorts": [],
+  "Scope": "Independent localhost processes; not real LAN or GPU performance",
+  "Started": "2026-10-26T20:02:04.9426669+01:00",
+  "Logs": "repo:/Logs/ten-room-campaign/20261026-200204-8816f7bb",
+  "DungeonSHA256": "6E88D0A716209A842B3D582C90153F7B53984D0EE07A1644F02547A540B93B71",
+  "Reports": [
+    {
+      "backtrack_returned": true,
+      "black_frames": {
+        "1": 3,
+        "2": 13,
+        "3": 8,
+        "4": 5,
+        "5": 3,
+        "6": 3,
+        "7": 4,
+        "8": 4,
+        "9": 4,
+        "10": 4,
+        "11": 3,
+        "12": 4
+      },
+      "earned_perks": 10,
+      "elapsed_seconds": 182.768,
+      "errors": [],
+      "expected_reward_grants": 10,
+      "layouts": [
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 1,
+          "id": "v4-s42026-r01",
+          "room": 1,
+          "signature": "a26b450a19aa782a051f91e8bcbef9d8d2230fab429fa54f4d0bfa49ea4ea731",
+          "template": "crypt_01"
+        },
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 1,
+          "id": "v4-s42026-r02",
+          "room": 2,
+          "signature": "a9b75c46ed3876673a061b5887240d28ed09a3391cb9d5580470e16e033d9754",
+          "template": "crypt_09"
+        },
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 1,
+          "id": "v4-s42026-r03",
+          "room": 3,
+          "signature": "63045d84d0c6d55cf7129cfc024e7059a09743dc81d5dc212e8759cf843b59b3",
+          "template": "crypt_04"
+        },
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 1,
+          "id": "v4-s42026-r04",
+          "room": 4,
+          "signature": "a75fe834c0793276d492fedffbddde9372353b193bf61da028383527f08e5c85",
+          "template": "crypt_05"
+        },
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 1,
+          "id": "v4-s42026-r05",
+          "room": 5,
+          "signature": "deefe24d60faa60e3f9113d188c18c89cf3a1b16a5ed799ff856ac846859b2f6",
+          "template": "crypt_03"
+        },
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 1,
+          "id": "v4-s42026-r06",
+          "room": 6,
+          "signature": "13e00265065f133c0a09089e41f09dcf5f073b16aff3f3dbaf8655663ba5a468",
+          "template": "crypt_08"
+        },
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 1,
+          "id": "v4-s42026-r07",
+          "room": 7,
+          "signature": "2c1733ca651c64ebf8f4ce8472d53e428df67992d514e4f6d5060783b9b66c35",
+          "template": "crypt_02"
+        },
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 1,
+          "id": "v4-s42026-r08",
+          "room": 8,
+          "signature": "ed9180a612c3d451b438848fb3043826c75b435cc53ee302ca13fa7db8f1570a",
+          "template": "crypt_06"
+        },
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 1,
+          "id": "v4-s42026-r09",
+          "room": 9,
+          "signature": "bb76854c85e9d7da5dccf7a6df63fc53aea592d28117c4b789eac895639b8b8d",
+          "template": "crypt_07"
+        },
+        {
+          "boss": true,
+          "boss_entities": 1,
+          "floor": 1,
+          "id": "v4-s42026-r10",
+          "room": 10,
+          "signature": "ae3932d6aa63a720628c102b041c04f4b0ef347b5c3436220cab88b488e81485",
+          "template": "crypt_10"
+        },
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 2,
+          "id": "v4-s49945-r01",
+          "room": 1,
+          "signature": "513ae0a3c5df513441a9d72f46b05cd5d6ab5b8c66582645299464ccb468d8e1",
+          "template": "crypt_01"
+        }
+      ],
+      "observed_wipe": false,
+      "peer_id": 1,
+      "players": 2,
+      "restart_requested": false,
+      "result": "PASS",
+      "reward_eligibility": {
+        "1:v4-s42026-r01": true,
+        "1:v4-s42026-r02": true,
+        "1:v4-s42026-r03": true,
+        "1:v4-s42026-r04": true,
+        "1:v4-s42026-r05": true,
+        "1:v4-s42026-r06": true,
+        "1:v4-s42026-r07": true,
+        "1:v4-s42026-r08": true,
+        "1:v4-s42026-r09": true,
+        "1:v4-s42026-r10": true
+      },
+      "reward_rooms": [
+        "1:v4-s42026-r01",
+        "1:v4-s42026-r02",
+        "1:v4-s42026-r03",
+        "1:v4-s42026-r04",
+        "1:v4-s42026-r05",
+        "1:v4-s42026-r06",
+        "1:v4-s42026-r07",
+        "1:v4-s42026-r08",
+        "1:v4-s42026-r09",
+        "1:v4-s42026-r10"
+      ],
+      "role": "host",
+      "scenario": "campaign",
+      "scope": "normal authoritative bot inputs and actual reward button signals; independent local process; not LAN or subjective play acceptance",
+      "seed": 42026,
+      "sound_kinds": [
+        "door",
+        "door",
+        "door",
+        "door",
+        "door",
+        "door",
+        "door",
+        "door",
+        "door",
+        "door",
+        "door",
+        "stairs"
+      ],
+      "sounds": {
+        "1": 1,
+        "2": 1,
+        "3": 1,
+        "4": 1,
+        "5": 1,
+        "6": 1,
+        "7": 1,
+        "8": 1,
+        "9": 1,
+        "10": 1,
+        "11": 1,
+        "12": 1
+      },
+      "swaps": {
+        "1": 1,
+        "2": 1,
+        "3": 1,
+        "4": 1,
+        "5": 1,
+        "6": 1,
+        "7": 1,
+        "8": 1,
+        "9": 1,
+        "10": 1,
+        "11": 1,
+        "12": 1
+      }
+    },
+    {
+      "backtrack_returned": true,
+      "black_frames": {
+        "1": 26,
+        "2": 12,
+        "3": 10,
+        "4": 20,
+        "5": 29,
+        "6": 21,
+        "7": 32,
+        "8": 46,
+        "9": 27,
+        "10": 27,
+        "11": 26,
+        "12": 601
+      },
+      "earned_perks": 10,
+      "elapsed_seconds": 175.421,
+      "errors": [],
+      "expected_reward_grants": 10,
+      "layouts": [
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 1,
+          "id": "v4-s42026-r01",
+          "room": 1,
+          "signature": "a26b450a19aa782a051f91e8bcbef9d8d2230fab429fa54f4d0bfa49ea4ea731",
+          "template": "crypt_01"
+        },
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 1,
+          "id": "v4-s42026-r02",
+          "room": 2,
+          "signature": "a9b75c46ed3876673a061b5887240d28ed09a3391cb9d5580470e16e033d9754",
+          "template": "crypt_09"
+        },
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 1,
+          "id": "v4-s42026-r03",
+          "room": 3,
+          "signature": "63045d84d0c6d55cf7129cfc024e7059a09743dc81d5dc212e8759cf843b59b3",
+          "template": "crypt_04"
+        },
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 1,
+          "id": "v4-s42026-r04",
+          "room": 4,
+          "signature": "a75fe834c0793276d492fedffbddde9372353b193bf61da028383527f08e5c85",
+          "template": "crypt_05"
+        },
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 1,
+          "id": "v4-s42026-r05",
+          "room": 5,
+          "signature": "deefe24d60faa60e3f9113d188c18c89cf3a1b16a5ed799ff856ac846859b2f6",
+          "template": "crypt_03"
+        },
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 1,
+          "id": "v4-s42026-r06",
+          "room": 6,
+          "signature": "13e00265065f133c0a09089e41f09dcf5f073b16aff3f3dbaf8655663ba5a468",
+          "template": "crypt_08"
+        },
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 1,
+          "id": "v4-s42026-r07",
+          "room": 7,
+          "signature": "2c1733ca651c64ebf8f4ce8472d53e428df67992d514e4f6d5060783b9b66c35",
+          "template": "crypt_02"
+        },
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 1,
+          "id": "v4-s42026-r08",
+          "room": 8,
+          "signature": "ed9180a612c3d451b438848fb3043826c75b435cc53ee302ca13fa7db8f1570a",
+          "template": "crypt_06"
+        },
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 1,
+          "id": "v4-s42026-r09",
+          "room": 9,
+          "signature": "bb76854c85e9d7da5dccf7a6df63fc53aea592d28117c4b789eac895639b8b8d",
+          "template": "crypt_07"
+        },
+        {
+          "boss": true,
+          "boss_entities": 1,
+          "floor": 1,
+          "id": "v4-s42026-r10",
+          "room": 10,
+          "signature": "ae3932d6aa63a720628c102b041c04f4b0ef347b5c3436220cab88b488e81485",
+          "template": "crypt_10"
+        },
+        {
+          "boss": false,
+          "boss_entities": 0,
+          "floor": 2,
+          "id": "v4-s49945-r01",
+          "room": 1,
+          "signature": "513ae0a3c5df513441a9d72f46b05cd5d6ab5b8c66582645299464ccb468d8e1",
+          "template": "crypt_01"
+        }
+      ],
+      "observed_wipe": false,
+      "peer_id": 1248611793,
+      "players": 2,
+      "restart_requested": false,
+      "result": "PASS",
+      "reward_eligibility": {
+        "1:v4-s42026-r01": true,
+        "1:v4-s42026-r02": true,
+        "1:v4-s42026-r03": true,
+        "1:v4-s42026-r04": true,
+        "1:v4-s42026-r05": true,
+        "1:v4-s42026-r06": true,
+        "1:v4-s42026-r07": true,
+        "1:v4-s42026-r08": true,
+        "1:v4-s42026-r09": true,
+        "1:v4-s42026-r10": true
+      },
+      "reward_rooms": [
+        "1:v4-s42026-r01",
+        "1:v4-s42026-r02",
+        "1:v4-s42026-r03",
+        "1:v4-s42026-r04",
+        "1:v4-s42026-r05",
+        "1:v4-s42026-r06",
+        "1:v4-s42026-r07",
+        "1:v4-s42026-r08",
+        "1:v4-s42026-r09",
+        "1:v4-s42026-r10"
+      ],
+      "role": "client",
+      "scenario": "campaign",
+      "scope": "normal authoritative bot inputs and actual reward button signals; independent local process; not LAN or subjective play acceptance",
+      "seed": 42026,
+      "sound_kinds": [
+        "door",
+        "door",
+        "door",
+        "door",
+        "door",
+        "door",
+        "door",
+        "door",
+        "door",
+        "door",
+        "door",
+        "stairs"
+      ],
+      "sounds": {
+        "1": 1,
+        "2": 1,
+        "3": 1,
+        "4": 1,
+        "5": 1,
+        "6": 1,
+        "7": 1,
+        "8": 1,
+        "9": 1,
+        "10": 1,
+        "11": 1,
+        "12": 1
+      },
+      "swaps": {
+        "1": 1,
+        "2": 1,
+        "3": 1,
+        "4": 1,
+        "5": 1,
+        "6": 1,
+        "7": 1,
+        "8": 1,
+        "9": 1,
+        "10": 1,
+        "11": 1,
+        "12": 1
+      }
+    }
+  ],
+  "ElapsedSeconds": 190.926
+}

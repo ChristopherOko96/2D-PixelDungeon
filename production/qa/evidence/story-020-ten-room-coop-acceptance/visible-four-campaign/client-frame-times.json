@@ -1,0 +1,137 @@
+{
+	"authoritative_updates": 2912,
+	"average_fps": 143.680143185494,
+	"boss_photo_taken": true,
+	"bot_navigation_warmup": {
+		"duration_ms": 2228.175,
+		"purpose": "testbot-only private navigation; no game state changes",
+		"radius": 12.0,
+		"rooms": 10,
+		"seed": 42026
+	},
+	"buffer_size": 1,
+	"bullets_max": 34,
+	"duration_s": 144.021293,
+	"enemies_max": 8,
+	"frames": 20693,
+	"full_campaign": true,
+	"fullscreen": true,
+	"gpu": "AMD Radeon RX 6600",
+	"interpolated_frames": 15185,
+	"layout_ids": [
+		"v4-s42026-r01",
+		"v4-s42026-r02",
+		"v4-s42026-r03",
+		"v4-s42026-r04",
+		"v4-s42026-r05",
+		"v4-s42026-r06",
+		"v4-s42026-r07",
+		"v4-s42026-r08",
+		"v4-s42026-r09",
+		"v4-s42026-r10",
+		"v4-s49945-r01"
+	],
+	"max_ms": 97.191,
+	"median_ms": 6.96,
+	"p95_ms": 8.035,
+	"passed": true,
+	"players": 4,
+	"position_steps_between_packets": 12615,
+	"rooms": {
+		"1": {
+			"bullets_max": 10,
+			"combat_frames": 726,
+			"combat_p95_ms": 8.05,
+			"enemies_max": 4,
+			"frames": 1697,
+			"max_ms": 16.026,
+			"p95_ms": 7.951
+		},
+		"10": {
+			"bullets_max": 34,
+			"combat_frames": 1200,
+			"combat_p95_ms": 8.35,
+			"enemies_max": 3,
+			"frames": 1770,
+			"max_ms": 97.191,
+			"p95_ms": 8.186
+		},
+		"2": {
+			"bullets_max": 14,
+			"combat_frames": 1640,
+			"combat_p95_ms": 8.158,
+			"enemies_max": 8,
+			"frames": 2308,
+			"max_ms": 31.21,
+			"p95_ms": 8.007
+		},
+		"3": {
+			"bullets_max": 18,
+			"combat_frames": 1527,
+			"combat_p95_ms": 7.991,
+			"enemies_max": 8,
+			"frames": 2354,
+			"max_ms": 21.542,
+			"p95_ms": 7.923
+		},
+		"4": {
+			"bullets_max": 18,
+			"combat_frames": 2187,
+			"combat_p95_ms": 8.124,
+			"enemies_max": 8,
+			"frames": 2565,
+			"max_ms": 23.168,
+			"p95_ms": 8.086
+		},
+		"5": {
+			"bullets_max": 20,
+			"combat_frames": 1657,
+			"combat_p95_ms": 7.983,
+			"enemies_max": 6,
+			"frames": 2143,
+			"max_ms": 21.292,
+			"p95_ms": 7.957
+		},
+		"6": {
+			"bullets_max": 18,
+			"combat_frames": 1399,
+			"combat_p95_ms": 8.122,
+			"enemies_max": 8,
+			"frames": 1978,
+			"max_ms": 24.1,
+			"p95_ms": 8.041
+		},
+		"7": {
+			"bullets_max": 26,
+			"combat_frames": 1673,
+			"combat_p95_ms": 8.032,
+			"enemies_max": 5,
+			"frames": 2172,
+			"max_ms": 23.317,
+			"p95_ms": 7.99
+		},
+		"8": {
+			"bullets_max": 28,
+			"combat_frames": 1393,
+			"combat_p95_ms": 8.211,
+			"enemies_max": 6,
+			"frames": 1922,
+			"max_ms": 22.295,
+			"p95_ms": 8.135
+		},
+		"9": {
+			"bullets_max": 27,
+			"combat_frames": 1386,
+			"combat_p95_ms": 8.195,
+			"enemies_max": 8,
+			"frames": 1757,
+			"max_ms": 22.666,
+			"p95_ms": 8.108
+		}
+	},
+	"scope": "visible real client through all10 rooms/boss/stairs with3 other loopback processes;2s initial warmup; normal host-authoritative bot inputs; not real LAN/WAN",
+	"target_p95_ms": 16.667,
+	"visual_updates": 18899,
+	"window_focused": true,
+	"window_size": "(1920, 1080)"
+}

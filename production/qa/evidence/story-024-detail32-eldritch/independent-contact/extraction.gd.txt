@@ -1,0 +1,71 @@
+extends SceneTree
+
+const OUT: String = "res://production/qa/evidence/story-024-detail32-eldritch/independent-contact/"
+const CLIPS: Array[String] = ["idle_breathe","walk_forward","attack_primary","hit_front","death_fall","charge_release"]
+const WORDS: Array[String] = ["IDLE","WALK","ATTACK","HIT","DEATH","CHARGE"]
+const FONT: Dictionary = {
+	"A":[14,17,17,31,17,17,17],"C":[14,17,16,16,16,17,14],"D":[30,17,17,17,17,17,30],"E":[31,16,16,30,16,16,31],
+	"G":[14,17,16,23,17,17,14],"H":[17,17,17,31,17,17,17],"I":[31,4,4,4,4,4,31],"K":[17,18,20,24,20,18,17],
+	"L":[16,16,16,16,16,16,31],"N":[17,25,25,21,19,19,17],"O":[14,17,17,17,17,17,14],"R":[30,17,17,30,20,18,17],
+	"S":[15,16,16,14,1,1,30],"T":[31,4,4,4,4,4,4],"U":[17,17,17,17,17,17,14],"W":[17,17,17,21,21,21,10]}
+
+func _initialize() -> void:
+	DirAccess.make_dir_recursive_absolute(OUT)
+	var catalog: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://assets/data/actor_animations.json"))
+	var index: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(str(catalog.index_path)))
+	var all_actions: Array = index.action_ids
+	var summary: Dictionary = {"purpose":"Independent visual contact sheets of existing baked frames; no production sources changed","clips":CLIPS,"directions":["south","east","north","west"],"frames":[0,1,2,3,4,5],"scale":2,"actors":{}}
+	for actor: Dictionary in catalog.actors:
+		var identifier: String = actor.id
+		var entry: Dictionary = index.actors[identifier]
+		var atlas: Image = Image.new()
+		atlas.load_png_from_buffer(FileAccess.get_file_as_bytes(entry.atlas))
+		var frame_size: Vector2i = Vector2i(entry.frame_size[0],entry.frame_size[1])
+		var label_width: int = 40
+		var panel: Vector2i = Vector2i(label_width+frame_size.x*6,12+frame_size.y*6)
+		var picture: Image = Image.create(panel.x*2,panel.y*2,false,Image.FORMAT_RGBA8)
+		picture.fill(Color("12101b"))
+		for direction: int in range(4):
+			var corner: Vector2i = Vector2i(direction%2*panel.x,direction/2*panel.y)
+			_text(picture,str(catalog.directions[direction]).to_upper(),corner+Vector2i(2,2))
+			for row: int in range(CLIPS.size()):
+				_text(picture,WORDS[row],corner+Vector2i(1,12+row*frame_size.y+3))
+				for frame: int in range(6):
+					var destination: Vector2i = corner+Vector2i(label_width+frame*frame_size.x,12+row*frame_size.y)
+					picture.fill_rect(Rect2i(destination,frame_size),Color("242130") if frame%2 == 0 else Color("302b3e"))
+					var region: Rect2i = Rect2i(Vector2i((direction*6+frame)*frame_size.x,all_actions.find(CLIPS[row])*frame_size.y),frame_size)
+					picture.blend_rect(atlas,region,destination)
+		picture.resize(picture.get_width()*2,picture.get_height()*2,Image.INTERPOLATE_NEAREST)
+		var path: String = OUT+identifier+"_six_actions.png"
+		picture.save_png(path)
+		summary.actors[identifier] = {"contact":path,"frame_size":entry.frame_size,"atlas_sha256":FileAccess.get_sha256(entry.atlas)}
+		print("BAKED_CONTACT ",identifier," ",path)
+	var output: FileAccess = FileAccess.open(OUT+"contact_metadata.json",FileAccess.WRITE)
+	output.store_string(JSON.stringify(summary,"\t")+"\n")
+	_focus(index,"boss",[["south","attack_primary"],["north","attack_primary"],["south","charge_release"],["south","hit_front"]])
+	_focus(index,"necromancer",[["south","idle_breathe"],["south","attack_primary"],["south","hit_front"],["north","attack_primary"]])
+	quit()
+
+func _focus(index: Dictionary, actor: String, pairs: Array) -> void:
+	var entry: Dictionary = index.actors[actor]
+	var atlas: Image = Image.new()
+	atlas.load_png_from_buffer(FileAccess.get_file_as_bytes(entry.atlas))
+	var size: Vector2i = Vector2i(entry.frame_size[0],entry.frame_size[1])
+	var result: Image = Image.create(size.x*6,size.y*pairs.size(),false,Image.FORMAT_RGBA8)
+	for row: int in range(pairs.size()):
+		var direction: int = index.directions.find(pairs[row][0])
+		var action: int = index.action_ids.find(pairs[row][1])
+		for frame: int in range(6):
+			var destination: Vector2i = Vector2i(frame*size.x,row*size.y)
+			result.fill_rect(Rect2i(destination,size),Color("242130") if frame%2 == 0 else Color("302b3e"))
+			result.blend_rect(atlas,Rect2i(Vector2i((direction*6+frame)*size.x,action*size.y),size),destination)
+	result.resize(result.get_width()*4,result.get_height()*4,Image.INTERPOLATE_NEAREST)
+	result.save_png(OUT+actor+"_focus.png")
+
+func _text(destination: Image, word: String, origin: Vector2i) -> void:
+	for index: int in range(word.length()):
+		var glyph: Array = FONT.get(word[index],[])
+		for y: int in range(glyph.size()):
+			for x: int in range(5):
+				if int(glyph[y]) & (1 << (4-x)):
+					destination.set_pixelv(origin+Vector2i(index*6+x,y),Color("e0d9c4"))

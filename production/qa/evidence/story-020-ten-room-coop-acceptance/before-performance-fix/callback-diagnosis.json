@@ -1,0 +1,505 @@
+{
+  "authoritative_updates": 1201,
+  "average_fps": 143.102746809249,
+  "boss_photo_taken": false,
+  "buffer_size": 4,
+  "bullets_max": 22,
+  "callback_profile": {
+    "rooms": {
+      "1": {
+        "callbacks": {
+          "apply_snapshot": {
+            "count": 230,
+            "max_ms": 2.466,
+            "mean_ms": 0.416421739130435,
+            "median_ms": 0.392,
+            "p95_ms": 0.707
+          },
+          "encoded_state": {
+            "count": 230,
+            "max_ms": 2.661,
+            "mean_ms": 0.552039130434782,
+            "median_ms": 0.529,
+            "p95_ms": 0.859
+          },
+          "local_input": {
+            "count": 225,
+            "max_ms": 1.264,
+            "mean_ms": 0.463528888888889,
+            "median_ms": 0.373,
+            "p95_ms": 0.988
+          },
+          "motion_actor": {
+            "count": 948,
+            "max_ms": 0.135,
+            "mean_ms": 0.026457805907173,
+            "median_ms": 0.019,
+            "p95_ms": 0.056
+          },
+          "motion_bullet": {
+            "count": 412,
+            "max_ms": 0.065,
+            "mean_ms": 0.0178640776699029,
+            "median_ms": 0.016,
+            "p95_ms": 0.026
+          },
+          "physics": {
+            "count": 670,
+            "max_ms": 1.296,
+            "mean_ms": 0.169658208955224,
+            "median_ms": 0.01,
+            "p95_ms": 0.857
+          },
+          "process": {
+            "count": 1587,
+            "max_ms": 120.606,
+            "mean_ms": 0.368407687460617,
+            "median_ms": 0.287,
+            "p95_ms": 0.463
+          },
+          "view_draw": {
+            "count": 1587,
+            "max_ms": 0.865,
+            "mean_ms": 0.412647132955261,
+            "median_ms": 0.398,
+            "p95_ms": 0.627
+          },
+          "view_process": {
+            "count": 1587,
+            "max_ms": 0.127,
+            "mean_ms": 0.0315545053560177,
+            "median_ms": 0.023,
+            "p95_ms": 0.069
+          }
+        },
+        "obstacles": 19
+      },
+      "2": {
+        "callbacks": {
+          "apply_snapshot": {
+            "count": 332,
+            "max_ms": 9.977,
+            "mean_ms": 0.630301204819277,
+            "median_ms": 0.593,
+            "p95_ms": 1.127
+          },
+          "encoded_state": {
+            "count": 332,
+            "max_ms": 14.765,
+            "mean_ms": 0.807277108433735,
+            "median_ms": 0.75,
+            "p95_ms": 1.34
+          },
+          "local_input": {
+            "count": 319,
+            "max_ms": 54.641,
+            "mean_ms": 0.598329153605016,
+            "median_ms": 0.23,
+            "p95_ms": 1.28
+          },
+          "motion_actor": {
+            "count": 2107,
+            "max_ms": 0.125,
+            "mean_ms": 0.0280602752728996,
+            "median_ms": 0.021,
+            "p95_ms": 0.057
+          },
+          "motion_bullet": {
+            "count": 930,
+            "max_ms": 0.172,
+            "mean_ms": 0.0226440860215054,
+            "median_ms": 0.019,
+            "p95_ms": 0.034
+          },
+          "physics": {
+            "count": 954,
+            "max_ms": 54.667,
+            "mean_ms": 0.213787211740042,
+            "median_ms": 0.01,
+            "p95_ms": 0.978
+          },
+          "process": {
+            "count": 2273,
+            "max_ms": 17.015,
+            "mean_ms": 0.371735151781786,
+            "median_ms": 0.36,
+            "p95_ms": 0.605
+          },
+          "view_draw": {
+            "count": 2273,
+            "max_ms": 1.175,
+            "mean_ms": 0.493930488341399,
+            "median_ms": 0.475,
+            "p95_ms": 0.805
+          },
+          "view_process": {
+            "count": 2273,
+            "max_ms": 0.188,
+            "mean_ms": 0.0433963924329079,
+            "median_ms": 0.033,
+            "p95_ms": 0.099
+          }
+        },
+        "obstacles": 27
+      },
+      "3": {
+        "callbacks": {
+          "apply_snapshot": {
+            "count": 321,
+            "max_ms": 10.887,
+            "mean_ms": 0.540464174454829,
+            "median_ms": 0.462,
+            "p95_ms": 0.963
+          },
+          "encoded_state": {
+            "count": 321,
+            "max_ms": 14.274,
+            "mean_ms": 0.705993769470405,
+            "median_ms": 0.614,
+            "p95_ms": 1.179
+          },
+          "local_input": {
+            "count": 298,
+            "max_ms": 31.512,
+            "mean_ms": 0.513355704697986,
+            "median_ms": 0.245,
+            "p95_ms": 0.927
+          },
+          "motion_actor": {
+            "count": 1535,
+            "max_ms": 0.076,
+            "mean_ms": 0.0223355048859935,
+            "median_ms": 0.016,
+            "p95_ms": 0.049
+          },
+          "motion_bullet": {
+            "count": 1294,
+            "max_ms": 0.116,
+            "mean_ms": 0.0157488408037093,
+            "median_ms": 0.014,
+            "p95_ms": 0.024
+          },
+          "physics": {
+            "count": 893,
+            "max_ms": 31.542,
+            "mean_ms": 0.185371780515118,
+            "median_ms": 0.01,
+            "p95_ms": 0.762
+          },
+          "process": {
+            "count": 2138,
+            "max_ms": 13.496,
+            "mean_ms": 0.369242282507015,
+            "median_ms": 0.359,
+            "p95_ms": 0.6
+          },
+          "view_draw": {
+            "count": 2138,
+            "max_ms": 1.12,
+            "mean_ms": 0.491282507015903,
+            "median_ms": 0.476,
+            "p95_ms": 0.768
+          },
+          "view_process": {
+            "count": 2138,
+            "max_ms": 0.172,
+            "mean_ms": 0.0429579045837231,
+            "median_ms": 0.032,
+            "p95_ms": 0.1
+          }
+        },
+        "obstacles": 16
+      },
+      "4": {
+        "callbacks": {
+          "apply_snapshot": {
+            "count": 337,
+            "max_ms": 7.845,
+            "mean_ms": 0.72807121661721,
+            "median_ms": 0.649,
+            "p95_ms": 1.359
+          },
+          "encoded_state": {
+            "count": 337,
+            "max_ms": 12.935,
+            "mean_ms": 0.918035608308605,
+            "median_ms": 0.825,
+            "p95_ms": 1.631
+          },
+          "local_input": {
+            "count": 325,
+            "max_ms": 48.147,
+            "mean_ms": 0.631732307692308,
+            "median_ms": 0.284,
+            "p95_ms": 1.114
+          },
+          "motion_actor": {
+            "count": 1765,
+            "max_ms": 0.112,
+            "mean_ms": 0.0281048158640225,
+            "median_ms": 0.022,
+            "p95_ms": 0.057
+          },
+          "motion_bullet": {
+            "count": 1940,
+            "max_ms": 0.216,
+            "mean_ms": 0.023485567010309,
+            "median_ms": 0.019,
+            "p95_ms": 0.036
+          },
+          "physics": {
+            "count": 972,
+            "max_ms": 48.174,
+            "mean_ms": 0.225850823045268,
+            "median_ms": 0.011,
+            "p95_ms": 0.909
+          },
+          "process": {
+            "count": 2324,
+            "max_ms": 18.193,
+            "mean_ms": 0.433990963855422,
+            "median_ms": 0.413,
+            "p95_ms": 0.692
+          },
+          "view_draw": {
+            "count": 2324,
+            "max_ms": 1.443,
+            "mean_ms": 0.549601979345955,
+            "median_ms": 0.51,
+            "p95_ms": 0.863
+          },
+          "view_process": {
+            "count": 2324,
+            "max_ms": 0.162,
+            "mean_ms": 0.0437805507745263,
+            "median_ms": 0.035,
+            "p95_ms": 0.092
+          }
+        },
+        "obstacles": 26
+      },
+      "5": {
+        "callbacks": {
+          "apply_snapshot": {
+            "count": 4,
+            "max_ms": 11.337,
+            "mean_ms": 3.006,
+            "median_ms": 0.309,
+            "p95_ms": 11.337
+          },
+          "encoded_state": {
+            "count": 4,
+            "max_ms": 17.73,
+            "mean_ms": 4.69375,
+            "median_ms": 0.45,
+            "p95_ms": 17.73
+          }
+        },
+        "obstacles": 22
+      }
+    },
+    "slow_events": [
+      {
+        "callback": "process",
+        "ms": 120.606,
+        "room": "1",
+        "seq": 245
+      },
+      {
+        "callback": "encoded_state",
+        "ms": 14.765,
+        "room": "2",
+        "seq": 373
+      },
+      {
+        "callback": "process",
+        "ms": 17.015,
+        "room": "2",
+        "seq": 376
+      },
+      {
+        "callback": "local_input",
+        "ms": 54.641,
+        "room": "2",
+        "seq": 382
+      },
+      {
+        "callback": "physics",
+        "ms": 54.667,
+        "room": "2",
+        "seq": 382
+      },
+      {
+        "callback": "apply_snapshot",
+        "ms": 10.887,
+        "room": "3",
+        "seq": 705
+      },
+      {
+        "callback": "encoded_state",
+        "ms": 14.274,
+        "room": "3",
+        "seq": 705
+      },
+      {
+        "callback": "process",
+        "ms": 13.496,
+        "room": "3",
+        "seq": 707
+      },
+      {
+        "callback": "local_input",
+        "ms": 31.512,
+        "room": "3",
+        "seq": 728
+      },
+      {
+        "callback": "physics",
+        "ms": 31.542,
+        "room": "3",
+        "seq": 728
+      },
+      {
+        "callback": "encoded_state",
+        "ms": 12.935,
+        "room": "4",
+        "seq": 1026
+      },
+      {
+        "callback": "process",
+        "ms": 18.193,
+        "room": "4",
+        "seq": 1026
+      },
+      {
+        "callback": "local_input",
+        "ms": 48.147,
+        "room": "4",
+        "seq": 1052
+      },
+      {
+        "callback": "physics",
+        "ms": 48.174,
+        "room": "4",
+        "seq": 1052
+      },
+      {
+        "callback": "apply_snapshot",
+        "ms": 11.337,
+        "room": "5",
+        "seq": 1363
+      },
+      {
+        "callback": "encoded_state",
+        "ms": 17.73,
+        "room": "5",
+        "seq": 1363
+      }
+    ],
+    "view_preparations": [
+      {
+        "layout": "",
+        "ms": 8.85,
+        "room": 0
+      },
+      {
+        "layout": "",
+        "ms": 3.442,
+        "room": 1
+      },
+      {
+        "layout": "v4-s42026-r01",
+        "ms": 51.594,
+        "room": 1
+      },
+      {
+        "layout": "v4-s42026-r02",
+        "ms": 16.697,
+        "room": 2
+      },
+      {
+        "layout": "v4-s42026-r03",
+        "ms": 13.171,
+        "room": 3
+      },
+      {
+        "layout": "v4-s42026-r04",
+        "ms": 17.777,
+        "room": 4
+      }
+    ]
+  },
+  "diagnostic_only": true,
+  "duration_s": 58.15402,
+  "enemies_max": 8,
+  "frames": 8322,
+  "full_campaign": true,
+  "fullscreen": true,
+  "gpu": "AMD Radeon RX 6600",
+  "interpolated_frames": 5562,
+  "layout_ids": [
+    "v4-s42026-r01",
+    "v4-s42026-r02",
+    "v4-s42026-r03",
+    "v4-s42026-r04",
+    "v4-s42026-r05"
+  ],
+  "max_ms": 149.149,
+  "median_ms": 6.957,
+  "p95_ms": 7.989,
+  "passed": false,
+  "players": 4,
+  "position_steps_between_packets": 4756,
+  "rooms": {
+    "1": {
+      "bullets_max": 10,
+      "combat_frames": 729,
+      "combat_p95_ms": 7.861,
+      "enemies_max": 4,
+      "frames": 1586,
+      "max_ms": 149.149,
+      "p95_ms": 7.857
+    },
+    "2": {
+      "bullets_max": 14,
+      "combat_frames": 1585,
+      "combat_p95_ms": 8.283,
+      "enemies_max": 8,
+      "frames": 2273,
+      "max_ms": 62.561,
+      "p95_ms": 8.034
+    },
+    "3": {
+      "bullets_max": 17,
+      "combat_frames": 1330,
+      "combat_p95_ms": 8.088,
+      "enemies_max": 8,
+      "frames": 2138,
+      "max_ms": 39.246,
+      "p95_ms": 7.994
+    },
+    "4": {
+      "bullets_max": 22,
+      "combat_frames": 2047,
+      "combat_p95_ms": 8.139,
+      "enemies_max": 8,
+      "frames": 2324,
+      "max_ms": 57.124,
+      "p95_ms": 8.077
+    },
+    "5": {
+      "bullets_max": 0,
+      "combat_frames": 1,
+      "combat_p95_ms": 26.17,
+      "enemies_max": 6,
+      "frames": 1,
+      "max_ms": 26.17,
+      "p95_ms": 26.17
+    }
+  },
+  "scope": "visible real client through all10 rooms/boss/stairs with3 other loopback processes;2s initial warmup; normal host-authoritative bot inputs; not real LAN/WAN",
+  "target_p95_ms": 16.667,
+  "visual_updates": 7751,
+  "window_focused": true,
+  "window_size": "(1920, 1080)"
+}

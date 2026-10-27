@@ -1,0 +1,116 @@
+extends SceneTree
+## Controlled GPU animation catalogue, not a played campaign or FPS sample.
+const Bank = preload("res://src/actor_animation_bank.gd")
+const PixelStyle = preload("res://src/pixel_style.gd")
+const EVIDENCE := "res://production/qa/evidence/story-024-detail32-eldritch/"
+
+class Grid extends Node2D:
+	var bank: RefCounted
+	var ids: Array[String] = []
+	var clip: String = "walk_forward"
+	var direction: String = "south"
+	var elapsed: float = 0.0
+	func _draw() -> void:
+		for index: int in range(ids.size()):
+			var point := Vector2(172+(index%4)*312,340+(index/4 as int)*240)
+			var frame: Dictionary = bank.sample(ids[index],clip,direction,elapsed,true)
+			if frame.is_empty(): continue
+			var zoom: float = 4.0
+			draw_line(point+Vector2(-100,1),point+Vector2(100,1),Color("393541"),1)
+			var location := point-Vector2(frame.anchor.x,frame.anchor.y)*zoom
+			draw_texture_rect(frame.texture,Rect2(location,Vector2(frame.width,frame.height)*zoom),false)
+
+var grid: Grid
+var stage_label: Label
+
+func _initialize() -> void:
+	_run.call_deferred()
+
+func _label(parent: Node, text: String, point: Vector2, dimensions: Vector2, pixels: int) -> Label:
+	var label := Label.new()
+	label.text = text
+	label.position = point
+	label.size = dimensions
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.add_theme_font_size_override("font_size",pixels)
+	label.add_theme_color_override("font_color",Color("dfcfac"))
+	parent.add_child(label)
+	return label
+
+func _run() -> void:
+	DirAccess.make_dir_recursive_absolute(EVIDENCE+"frames")
+	root.size = Vector2i(1280,720)
+	root.title = "Krypta · acht Figuren und48 Animationen"
+	var bank: RefCounted = Bank.new()
+	if not bank.prepare():
+		printerr("ACTOR_CAPTURE_FAIL: bank unavailable")
+		quit(1)
+		return
+	var panel := Control.new()
+	panel.theme = PixelStyle.create_theme()
+	root.add_child(panel)
+	var background := ColorRect.new()
+	background.size = Vector2(1280,720)
+	background.color = Color("111019")
+	panel.add_child(background)
+	_label(panel,"CRYPT OF THE DAMNED",Vector2(16,24),Vector2(1248,48),32)
+	_label(panel,"32×32 CHIBIS · 8 Figuren · je48 Abläufe",Vector2(16,84),Vector2(1248,32),16)
+	stage_label = _label(panel,"",Vector2(16,130),Vector2(1248,32),24)
+	grid = Grid.new()
+	grid.bank = bank
+	grid.ids = bank.actors()
+	grid.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	panel.add_child(grid)
+	for index: int in range(grid.ids.size()):
+		_label(panel,str(bank.catalog().actors[index].name),Vector2(16+(index%4)*312,364+(index/4 as int)*240),Vector2(312,32),16)
+	_label(panel,"Direkte GPU-Wiedergabe · 4× Quellpixel · bewusste Animationsvorschau",Vector2(16,670),Vector2(1248,32),16)
+	var clips := ["walk_forward","attack_primary","hit_front","death_fall","charge_loop","idle_look"]
+	var names := ["Laufen · vorne","Angriff · rechts","Treffer · hinten","Fallen · links","Aufladen · vorne","Umschauen · rechts"]
+	for stage: int in range(clips.size()):
+		grid.clip = clips[stage]
+		grid.direction = ["south","east","north","west"][stage%4]
+		stage_label.text = names[stage]
+		for frame: int in range(8):
+			grid.elapsed = bank.duration(grid.clip)*float(frame%6)/6.0
+			grid.queue_redraw()
+			await process_frame
+			await RenderingServer.frame_post_draw
+			root.get_texture().get_image().save_png(EVIDENCE+"frames/%02d.png"%(stage*8+frame))
+		if stage == 0: root.get_texture().get_image().save_png(EVIDENCE+"01-eight-actors.png")
+	panel.queue_free()
+	await process_frame
+	var studio: Control = load("res://src/animation_studio.tscn").instantiate()
+	root.add_child(studio)
+	await process_frame
+	studio.choose_actor("boss")
+	studio.choose_clip("idle_breathe")
+	if studio.playing: studio._toggle_playback()
+	studio.elapsed = studio.bank.duration("idle_breathe")*0.5
+	await process_frame
+	await RenderingServer.frame_post_draw
+	root.get_texture().get_image().save_png(EVIDENCE+"02-animation-studio.png")
+	studio.queue_free()
+	await process_frame
+	var reference: Node = load("res://src/art_reference.tscn").instantiate()
+	root.add_child(reference)
+	await create_timer(0.6).timeout
+	await RenderingServer.frame_post_draw
+	root.get_texture().get_image().save_png(EVIDENCE+"03-crypt-reference.png")
+	reference.queue_free()
+	await process_frame
+	var game: Node = load("res://src/main.tscn").instantiate()
+	root.add_child(game)
+	await process_frame
+	game.session_bind_ip = "127.0.0.1"
+	game.port_input.text = str(47000+OS.get_process_id()%10000)
+	game.requested_seed = 42026
+	game._host_session()
+	game._begin_run()
+	await create_timer(1.2).timeout
+	await RenderingServer.frame_post_draw
+	root.get_texture().get_image().save_png(EVIDENCE+"04-prototype-solo.png")
+	print("ACTOR_CAPTURE observed=8 actors clips=6 frames=48 studio=1 reference=1 game=solo_start scope=GPU_preview_and_solo_start")
+	game._leave_session()
+	game.queue_free()
+	await process_frame
+	quit()

@@ -43,7 +43,7 @@ func _fixture_config() -> Dictionary:
 			"player_spawns": [[150, 210], [202, 260], [254, 210], [306, 260]],
 			"enemy_spawns": [[640, 120], [736, 176], [800, 240], [672, 304], [768, 384]]
 		})
-	return {"schema_version": 1, "generator_version": 1, "tile_size": 32,
+	return {"schema_version": 1, "generator_version": 4, "tile_size": 32,
 		"world_size": [896, 480], "play_bounds": [32, 48, 832, 400],
 		"max_actor_radius": 24, "templates": templates}
 
@@ -70,7 +70,7 @@ func _test_invalid_config_rejected() -> void:
 	disconnected.templates[0].obstacles_tiles = [[12, 2, 2, 12]]
 	_check(not _generator.validate_config(disconnected).is_empty(), "a wall severing floor connectivity is rejected")
 	var unsupported: Dictionary = valid.duplicate(true)
-	unsupported.generator_version = 2
+	unsupported.generator_version = 5
 	_check(_generator.generate(1, 3, unsupported).is_empty(), "unsupported generator version fails closed")
 	for count: int in [0, 2, 11]:
 		_check(_generator.generate(1, count, valid).is_empty(), "unsupported room count %d fails closed" % count)
@@ -96,7 +96,7 @@ func _test_seed_stability_and_topology() -> void:
 			ids[room.id] = true
 			coordinates[coordinate] = true
 			_check(room.boss == (index == floor_layout.size() - 1), "only final room is the boss")
-			_check(int(room.generator_version) == 1, "room records generator version")
+			_check(int(room.generator_version) == 4, "room records generator version")
 			_check(room.prev_id == ("" if index == 0 else floor_layout[index - 1].id), "previous room link is stable")
 			_check(room.next_id == ("" if index == floor_layout.size() - 1 else floor_layout[index + 1].id), "next room link is stable")
 			if index > 0:
@@ -124,7 +124,7 @@ func _test_spawns_and_connected_floor() -> void:
 			_check(_generator.spawn_for_player(999, room) == room.player_spawns[999 % room.player_spawns.size()], "spawn helper wraps deterministic index")
 
 func _all_floor_cells_connected(room: Dictionary, radius: float) -> bool:
-	# Independent BFS builds the traversable floor on a 16px lattice and sweeps
+	# Independent BFS builds the traversable floor on a16px lattice and sweeps
 	# every connecting edge. It detects isolated pockets as well as blocked spawns.
 	var cells: Dictionary = {}
 	for y: int in range(80, 417, 16):
@@ -149,40 +149,40 @@ func _all_floor_cells_connected(room: Dictionary, radius: float) -> bool:
 	return visited.size() == cells.size()
 
 func _test_swept_shots_and_actor_sliding() -> void:
-	var room: Dictionary = {"play_bounds": [32, 48, 832, 400], "obstacles": [[384, 128, 32, 192]]}
-	_check(_generator.segment_blocked(Vector2(340, 200), Vector2(480, 200), 5.0, room), "fast bullet sweep hits a thin wall")
-	_check(_generator.segment_blocked(Vector2(384, 100), Vector2(384, 350), 5.0, room), "parallel grazing sweep hits expanded wall")
-	_check(not _generator.segment_blocked(Vector2(100, 350), Vector2(800, 350), 5.0, room), "sweep through open lane stays clear")
-	_check(_generator.segment_blocked(Vector2(100, 100), Vector2(-10, 100), 5.0, room), "sweep leaving physical bounds is blocked")
-	_check(_generator.segment_blocked(Vector2(NAN, 0), Vector2.ZERO, 5.0, room), "non-finite sweep fails closed")
-	var hit: Vector2 = _generator.move_actor(Vector2(340, 200), Vector2(150, 0), 12.0, room)
-	_check(is_equal_approx(hit.x, 372.0) and is_equal_approx(hit.y, 200.0), "large actor step stops at expanded wall without tunneling")
-	var slide: Vector2 = _generator.move_actor(Vector2(340, 200), Vector2(100, 60), 12.0, room)
-	_check(is_equal_approx(slide.x, 372.0) and is_equal_approx(slide.y, 260.0), "diagonal actor movement slides along wall")
-	var boundary: Vector2 = _generator.move_actor(Vector2(100, 100), Vector2(-1000, -1000), 24.0, room)
-	_check(boundary == Vector2(56, 72), "actor radius stays within physical floor bounds")
-	_check(_generator.move_actor(Vector2(100, 100), Vector2(NAN, 0), 12.0, room) == Vector2(100, 100), "invalid movement does not corrupt actor position")
-	_check(not _generator.segment_blocked(hit, hit, 12.0, room), "an actor stopped by a wall remains a valid navigation endpoint")
-	var route_after_contact: PackedVector2Array = _generator.find_path(hit, Vector2(500, 200), 12.0, room.merged({"tile_size": 32}))
+	var room: Dictionary = {"play_bounds": [16, 24, 416, 200], "obstacles": [[192, 64, 16, 96]]}
+	_check(_generator.segment_blocked(Vector2(170, 100), Vector2(240, 100), 2.5, room), "fast bullet sweep hits a thin wall")
+	_check(_generator.segment_blocked(Vector2(192, 50), Vector2(192, 175), 2.5, room), "parallel grazing sweep hits expanded wall")
+	_check(not _generator.segment_blocked(Vector2(50, 175), Vector2(400, 175), 2.5, room), "sweep through open lane stays clear")
+	_check(_generator.segment_blocked(Vector2(50, 50), Vector2(-5, 50), 2.5, room), "sweep leaving physical bounds is blocked")
+	_check(_generator.segment_blocked(Vector2(NAN, 0), Vector2.ZERO, 2.5, room), "non-finite sweep fails closed")
+	var hit: Vector2 = _generator.move_actor(Vector2(170, 100), Vector2(75, 0), 6.0, room)
+	_check(is_equal_approx(hit.x, 186.0) and is_equal_approx(hit.y, 100.0), "large actor step stops at expanded wall without tunneling")
+	var slide: Vector2 = _generator.move_actor(Vector2(170, 100), Vector2(50, 30), 6.0, room)
+	_check(is_equal_approx(slide.x, 186.0) and is_equal_approx(slide.y, 130.0), "diagonal actor movement slides along wall")
+	var boundary: Vector2 = _generator.move_actor(Vector2(50, 50), Vector2(-500, -500), 12.0, room)
+	_check(boundary == Vector2(28, 36), "actor radius stays within physical floor bounds")
+	_check(_generator.move_actor(Vector2(50, 50), Vector2(NAN, 0), 6.0, room) == Vector2(50, 50), "invalid movement does not corrupt actor position")
+	_check(not _generator.segment_blocked(hit, hit, 6.0, room), "an actor stopped by a wall remains a valid navigation endpoint")
+	var route_after_contact: PackedVector2Array = _generator.find_path(hit, Vector2(250, 100), 6.0, room.merged({"tile_size": 16}))
 	_check(not route_after_contact.is_empty(), "a chasing actor can route around a wall after touching it")
 
 func _test_obstacle_paths() -> void:
-	var wall_room: Dictionary = {"tile_size": 32, "play_bounds": [32, 48, 832, 400], "obstacles": [[384, 128, 32, 192]]}
-	var route: PackedVector2Array = _generator.find_path(Vector2(340, 200), Vector2(500, 200), 24.0, wall_room)
+	var wall_room: Dictionary = {"tile_size": 16, "play_bounds": [16, 24, 416, 200], "obstacles": [[192, 64, 16, 96]]}
+	var route: PackedVector2Array = _generator.find_path(Vector2(170, 100), Vector2(250, 100), 12.0, wall_room)
 	_check(route.size() >= 2, "blocked direct chase gets waypoints around a pillar")
-	var previous: Vector2 = Vector2(340, 200)
+	var previous: Vector2 = Vector2(170, 100)
 	for waypoint: Vector2 in route:
-		_check(not _generator.segment_blocked(previous, waypoint, 24.0, wall_room), "every routed segment clears boss radius")
+		_check(not _generator.segment_blocked(previous, waypoint, 12.0, wall_room), "every routed segment clears boss radius")
 		previous = waypoint
-	_check(previous == Vector2(500, 200), "route reaches exact requested endpoint")
-	var direct: PackedVector2Array = _generator.find_path(Vector2(100, 380), Vector2(800, 380), 13.0, wall_room)
-	_check(direct == PackedVector2Array([Vector2(800, 380)]), "clear chase returns only the target")
-	var sealed: Dictionary = {"tile_size": 32, "play_bounds": [32, 48, 832, 400], "obstacles": [[384, 48, 32, 400]]}
-	_check(_generator.find_path(Vector2(100, 200), Vector2(800, 200), 13.0, sealed).is_empty(), "unreachable target returns no route")
-	_check(_generator.find_path(Vector2(400, 200), Vector2(800, 200), 13.0, wall_room).is_empty(), "inside-wall endpoint returns no route")
-	_check(_generator.find_path(Vector2(NAN, 200), Vector2(800, 200), 13.0, wall_room).is_empty(), "non-finite route endpoint fails closed")
-	var edge_target: PackedVector2Array = _generator.find_path(Vector2(100, 380), Vector2(44, 436), 24.0, wall_room)
-	_check(not edge_target.is_empty() and edge_target[edge_target.size() - 1] == Vector2(56, 424), "boss route adapts a smaller player's edge target to boss clearance")
+	_check(previous == Vector2(250, 100), "route reaches exact requested endpoint")
+	var direct: PackedVector2Array = _generator.find_path(Vector2(50, 190), Vector2(400, 190), 6.5, wall_room)
+	_check(direct == PackedVector2Array([Vector2(400, 190)]), "clear chase returns only the target")
+	var sealed: Dictionary = {"tile_size": 16, "play_bounds": [16, 24, 416, 200], "obstacles": [[192, 24, 16, 200]]}
+	_check(_generator.find_path(Vector2(50, 100), Vector2(400, 100), 6.5, sealed).is_empty(), "unreachable target returns no route")
+	_check(_generator.find_path(Vector2(200, 100), Vector2(400, 100), 6.5, wall_room).is_empty(), "inside-wall endpoint returns no route")
+	_check(_generator.find_path(Vector2(NAN, 100), Vector2(400, 100), 6.5, wall_room).is_empty(), "non-finite route endpoint fails closed")
+	var edge_target: PackedVector2Array = _generator.find_path(Vector2(50, 190), Vector2(22, 218), 12.0, wall_room)
+	_check(not edge_target.is_empty() and edge_target[edge_target.size() - 1] == Vector2(28, 212), "boss route adapts a smaller player's edge target to boss clearance")
 
 func _test_authored_config() -> void:
 	var file: FileAccess = FileAccess.open("res://assets/data/dungeon_rooms.json", FileAccess.READ)
@@ -213,7 +213,7 @@ func _test_authored_config() -> void:
 			_check(_all_floor_cells_connected(room, 24.0), "authored floor is fully connected for boss-sized actors")
 			for obstacle: Array in room.obstacles:
 				for component: Variant in obstacle:
-					_check(fmod(float(component), 32.0) == 0.0, "obstacle geometry aligns to 32px grid")
+					_check(fmod(float(component), 32.0) == 0.0, "obstacle geometry aligns to32px grid")
 	# Explicitly cover every authored template, including those not selected by a
 	# particular run, and both enemy radii independently from grid connectivity.
 	for template: Dictionary in config.templates:

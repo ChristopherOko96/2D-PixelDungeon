@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "visual_revision": "crypt_detail32_eldritch_v1",
+  "reference_scope": "Supplied hell sheets and room demonstrate pixel density ONLY, not content/palette/world direction.",
+  "source_root": "res://assets/actors/detail32/source/",
+  "key_root": "res://assets/actors/detail32/keys/",
+  "alpha_threshold": 0.6,
+  "palette_limit": 128,
+  "directions": [
+    "south",
+    "east",
+    "north",
+    "west"
+  ],
+  "poses": [
+    "idle",
+    "move",
+    "attack",
+    "hurt"
+  ],
+  "actors": [
+    {
+      "id": "player_warden",
+      "name": "Wächter",
+      "canvas": [
+        32,
+        32
+      ],
+      "idle_height": 26,
+      "render_scale": 2,
+      "base_feet": 16,
+      "source": "player_warden_detail_sheet.png"
+    },
+    {
+      "id": "player_ranger",
+      "name": "Späherin",
+      "canvas": [
+        32,
+        32
+      ],
+      "idle_height": 26,
+      "render_scale": 2,
+      "base_feet": 16,
+      "source": "player_ranger_detail_sheet.png"
+    },
+    {
+      "id": "player_arcanist",
+      "name": "Arkanist",
+      "canvas": [
+        32,
+        32
+      ],
+      "idle_height": 26,
+      "render_scale": 2,
+      "base_feet": 16,
+      "source": "player_arcanist_detail_sheet.png"
+    },
+    {
+      "id": "player_lizard",
+      "name": "Echsenjäger",
+      "canvas": [
+        32,
+        32
+      ],
+      "idle_height": 26,
+      "render_scale": 2,
+      "base_feet": 16,
+      "source": "player_lizard_detail_sheet.png"
+    },
+    {
+      "id": "skeleton_archer",
+      "name": "Skelettbogenschütze",
+      "canvas": [
+        32,
+        32
+      ],
+      "idle_height": 26,
+      "render_scale": 2,
+      "base_feet": 16,
+      "source": "skeleton_archer_detail_sheet.png"
+    },
+    {
+      "id": "necromancer",
+      "name": "Nekromant",
+      "canvas": [
+        32,
+        32
+      ],
+      "idle_height": 26,
+      "render_scale": 2,
+      "base_feet": 16,
+      "source": "necromancer_detail_sheet.png"
+    },
+    {
+      "id": "skeleton_guard",
+      "name": "Schildkrieger",
+      "canvas": [
+        32,
+        32
+      ],
+      "idle_height": 26,
+      "render_scale": 2,
+      "base_feet": 16,
+      "source": "skeleton_guard_detail_sheet.png"
+    },
+    {
+      "id": "boss",
+      "name": "Der Schläfer der Tiefe",
+      "canvas": [
+        32,
+        32
+      ],
+      "idle_height": 28,
+      "render_scale": 3,
+      "base_feet": 24,
+      "source": "boss_detail_sheet.png"
+    }
+  ]
+}
