@@ -34,6 +34,11 @@ const Living = preload("res://src/living_sprite_library.gd")
 const UnifiedSkin = preload("res://src/unified_dungeon_skin.gd")
 const ORIGINAL_TORCH: Texture2D = preload("res://assets/sprites/torch.png")
 const ClassicArt = preload("res://src/classic_dungeon_art.gd")
+const RigRenderer = preload("res://src/rig/rig_renderer.gd")
+const Darkness = preload("res://src/vfx/darkness.gd")
+const Crypt72 = preload("res://src/crypt_0x72_art.gd")
+## Hero class -> part rig of its 0x72 figure (assets/data/rigs.json).
+const CLASS_RIGS := {"swordsman":"knight","archer":"elf","mage":"wizard"}
 
 @export var style_profile: Resource = preload("res://assets/data/art_style_reference.tres")
 
@@ -75,6 +80,17 @@ var _weapon_textures: Dictionary = {}
 # Per peer: last seen swing counter and the local clock when that swing began.
 var _swing_seen: Dictionary = {}
 var _swing_started: Dictionary = {}
+## Part-rigged figures, debris and void effects (src/rig/rig_renderer.gd).
+var _rigs: RefCounted
+## Dark crypt (live runs only, set by the game): balance.json "lighting".
+var darkness_enabled := false
+var lighting: Dictionary = {}
+var _darkness: Node2D
+## 0x72 crypt rooms (live runs only, set by the game) and the baked room.
+var crypt_0x72_enabled := false
+var _crypt72: RefCounted
+## Wall torches of the 0x72 room (world px), lit in the dark crypt.
+var _room_torches: Array[Vector2] = []
 
 
 func _ready() -> void:
@@ -82,6 +98,11 @@ func _ready() -> void:
 	_base_position = position
 	_actors_ready = _actor_bank.prepare()
 	_actor_motion.configure(_actor_bank.catalog())
+	_rigs = RigRenderer.new()
+	if not Engine.is_editor_hint():
+		_darkness = Darkness.new()
+		_darkness.visible = false
+		add_child(_darkness)
 	for texture: Texture2D in _crypt_sprites.prepare():
 		_flash_textures[texture] = _silhouette(texture)
 		_crypt_bounds[texture] = texture.get_image().get_used_rect()
@@ -114,6 +135,7 @@ func set_state(snapshot: Dictionary, local_peer: int) -> void:
 	if not snapshot.has("seq") or sequence != _observed_sequence:
 		_feedback.observe(snapshot,local_peer)
 		_actor_motion.observe(snapshot)
+		if _rigs != null: _rigs.observe(snapshot)
 		_observed_sequence = sequence
 	if key != _layout_key or _feedback.hitstop <= 0 or snapshot.is_empty(): _accept_state(snapshot)
 	queue_redraw()
@@ -177,6 +199,16 @@ func _prepare_presentation(snapshot: Dictionary) -> void:
 	var fire_points: Array = layout.get("brazier_spawns",[] if freeform else [Vector2(72,78),Vector2(824,78),Vector2(72,402),Vector2(824,402)])
 	for index in range(fire_points.size()):
 		_fire_entries.append({"kind":"brazier","y":float(fire_points[index].y)+16,"point":fire_points[index],"offset":offsets[index%offsets.size()]})
+	# Live crypt rooms in the approved 0x72 look: one baked image replaces the
+	# classic floor, wall rows and braziers (candle columns stand there instead).
+	_crypt72 = null
+	_room_torches.clear()
+	if crypt_0x72_enabled and bool(layout.get("crypt_profile",false)) and not empty_layout and not Engine.is_editor_hint():
+		_crypt72 = Crypt72.new()
+		_crypt72.bake(layout,hash(str(layout.get("id","")))^int(snapshot.get("run_seed",0)))
+		_room_torches = _crypt72.light_points()
+		_room_entries.clear()
+		_fire_entries.clear()
 
 func _process(delta: float) -> void:
 	if not is_visible_in_tree(): return
@@ -187,8 +219,10 @@ func _process(delta: float) -> void:
 	if _feedback.hitstop <= 0:
 		_clock += delta
 		_actor_motion.advance(delta)
+		if _rigs != null: _rigs.step(delta)
 	_feedback.update(delta)
 	if _feedback.hitstop <= 0 and not _pending_snapshot.is_empty(): _accept_state(_pending_snapshot)
+	_update_darkness()
 	var strength := roundf(_feedback.shake*_feedback.shake*9.0*shake_scale)
 	position = _base_position+Vector2(_shake_rng.randf_range(-1,1),_shake_rng.randf_range(-1,1)).round()*strength
 	queue_redraw()
@@ -205,18 +239,23 @@ func _draw() -> void:
 	var actors_visible: bool = layers.get("actors", true)
 	var props_visible: bool = layers.get("props", true)
 	_effects_visible = layers.get("effects", true)
-	if room_visible:
+	if room_visible and _crypt72 != null:
+		_crypt72.draw_room(self)
+		_crypt72.draw_props(self,ambient_time,str(_snapshot.get("phase","")) == "combat")
+	elif room_visible:
 		if _classic_enabled and _snapshot.has("editor_background"):
 			var dimensions: Array = layout.get("world_size",[896,480])
 			draw_rect(Rect2(0,0,float(dimensions[0]),float(dimensions[1])),_snapshot.editor_background)
 		elif _classic_enabled: _classic.draw_background(self,layout)
 		else: Tiles.draw_room(self,render_snapshot)
-	if room_visible:
+	if room_visible and _crypt72 == null:
 		if _classic_enabled: _classic.draw_floor(self)
 		else:
 			Palette.draw(self,_base_cells,1.0,Vector2.ZERO,1.0,ambient_time)
 			if layout.get("crypt_profile",false): CryptArt.draw_floor_shadows(self,layout)
 	if _effects_visible: _feedback.particles.draw_stains(self)
+	var rigs_on: bool = _rigs != null and _rigs.is_ready()
+	if rigs_on and actors_visible: _rigs.draw_under(self)
 	var enemies: Array = _snapshot.get("enemies", [])
 	var players: Dictionary = _snapshot.get("players", {})
 	var depth_entries: Array[Dictionary] = []
@@ -224,7 +263,8 @@ func _draw() -> void:
 	if room_visible: depth_entries.append_array(_room_entries)
 	for enemy_value: Variant in enemies:
 		if not actors_visible: continue
-		if float(enemy_value.get("dying_p",-1)) < 1.0: _draw_shadow(_position(enemy_value), 24.0 if bool(enemy_value.get("boss", false)) else 14.0)
+		# Rigged figures draw their own shadow under their feet.
+		if float(enemy_value.get("dying_p",-1)) < 1.0 and not (rigs_on and enemy_value.has("rig")): _draw_shadow(_position(enemy_value), 24.0 if bool(enemy_value.get("boss", false)) else 14.0)
 		depth_entries.append({"kind":"enemy","y":_position(enemy_value).y,"data":enemy_value})
 	for peer_key: Variant in players:
 		if not actors_visible: continue
@@ -255,10 +295,43 @@ func _draw() -> void:
 			"bullet": _draw_bullet(entry.data)
 			"reward": _draw_pedestal()
 	if room_visible and not _classic_enabled: Tiles.draw_foreground(self,render_snapshot)
+	if rigs_on and actors_visible and _effects_visible: _rigs.draw_over(self,_snapshot)
 	if _effects_visible:
 		_draw_perk_events()
 		_feedback.particles.draw_particles(self)
 		if not freeform and not _classic_enabled: _draw_motes()
+
+
+## Dark crypt: every living player carries a light circle; braziers, torches,
+## magic shots and void effects light the dark too. Hidden outside live runs.
+func _update_darkness() -> void:
+	if _darkness == null: return
+	var on: bool = darkness_enabled and not _snapshot.is_empty() and bool(lighting.get("enabled", true))
+	_darkness.visible = on
+	if not on: return
+	_darkness.configure(lighting)
+	var size: Array = _presentation_layout.get("world_size", [1280, 720])
+	_darkness.set_world_size(Vector2(float(size[0]), float(size[1])))
+	var lights: Array = []
+	var flicker: float = 4.0 * sin(_clock * 9.0)
+	for value: Variant in _snapshot.get("players", {}).values():
+		var player: Dictionary = value
+		var point := _position(player)
+		lights.append(Vector3(point.x, point.y - 8.0, float(lighting.get("player_radius", 150)) * (1.0 if float(player.get("hp", 1)) > 0 else 0.45)))
+	for entry: Dictionary in _fire_entries:
+		var point: Vector2 = entry.point
+		lights.append(Vector3(point.x, point.y - 12.0, float(lighting.get("torch_radius", 120)) + flicker))
+	for torch: Vector2 in _room_torches:
+		lights.append(Vector3(torch.x, torch.y, float(lighting.get("torch_radius", 120)) * 0.8 + flicker))
+	if _rigs != null and _rigs.is_ready(): lights.append_array(_rigs.lights(_snapshot))
+	for bullet: Dictionary in _snapshot.get("bullets", []):
+		if str(bullet.get("style", "")) in ["magic", "void_skull", "soul"]:
+			var point := _position(bullet)
+			lights.append(Vector4(point.x, point.y, 46.0, 0.8))
+	for exit: Dictionary in _presentation_layout.get("exits", []):
+		var rect: Array = exit.get("rect", [])
+		if rect.size() == 4: lights.append(Vector4(float(rect[0]) + float(rect[2]) * 0.5, float(rect[1]) + float(rect[3]) * 0.5, 56.0, 0.5))
+	_darkness.set_lights(lights)
 
 
 ## Freezes all presentation animation for reference comparisons and screenshots.
@@ -302,6 +375,7 @@ func play_transition_sound(kind: String) -> void:
 func reset_feedback() -> void:
 	_feedback = Feedback.new()
 	_actor_motion.reset()
+	if _rigs != null: _rigs.reset()
 	_feedback.sfx = _sfx if audio_enabled else null
 	_clock = 0.0
 	_observed_sequence = ""
@@ -442,12 +516,17 @@ func _draw_class_hero(player: Dictionary, peer_id: int) -> void:
 	aim = aim.normalized()
 	var hero: Dictionary = _sprites[CLASS_SPRITES[str(player.class_id)]]
 	var hurt: bool = float(player.get("invulnerable", 0.0)) > 0.0
-	var texture: Texture2D = _frame(hero, bool(player.get("moving", false)), peer_id)
-	var pose: Dictionary = _feedback.pose("p%d" % peer_id, player, _clock)
-	if hurt:
-		if hero.hit != null and fmod(_clock, 0.24) < 0.12: texture = hero.hit
-		pose.alpha *= 0.45 if fmod(_clock, 0.16) < 0.08 else 1.0
-	_draw_sprite(texture, point, -1.0 if aim.x < -0.1 else 1.0, 16.0, pose)
+	var face: float = -1.0 if aim.x < -0.1 else 1.0
+	if _rigs != null and _rigs.is_ready() and CLASS_RIGS.has(str(player.class_id)):
+		# Part rig of the class figure: bob, walk, plume/hat sway, hit recoil.
+		_rigs.draw_hero(self, "p%d" % peer_id, player, point, CLASS_RIGS[str(player.class_id)], face, (0.45 if fmod(_clock, 0.16) < 0.08 else 1.0) if hurt else 1.0)
+	else:
+		var texture: Texture2D = _frame(hero, bool(player.get("moving", false)), peer_id)
+		var pose: Dictionary = _feedback.pose("p%d" % peer_id, player, _clock)
+		if hurt:
+			if hero.hit != null and fmod(_clock, 0.24) < 0.12: texture = hero.hit
+			pose.alpha *= 0.45 if fmod(_clock, 0.16) < 0.08 else 1.0
+		_draw_sprite(texture, point, face, 16.0, pose)
 	_draw_class_weapon(player, peer_id, point, aim)
 	if show_player_health: _draw_health(point + Vector2(0,-44), hp, float(player.get("max_hp", hp)), 32.0, color)
 
@@ -512,6 +591,9 @@ func _sprite_index(color: Color) -> int:
 func _draw_enemy(enemy: Dictionary) -> void:
 	var point: Vector2 = _position(enemy).round()
 	var is_boss: bool = bool(enemy.get("boss", false))
+	if enemy.has("rig") and _rigs != null and _rigs.is_ready():
+		_draw_rig_enemy(enemy, point, is_boss)
+		return
 	var kind: String = "boss" if is_boss else str(enemy.get("kind", "chaser"))
 	var sprite: Dictionary = _sprites[ENEMY_SPRITES.get(kind, "goblin")]
 	var id: int = int(enemy.get("id", 0))
@@ -547,6 +629,29 @@ func _draw_enemy(enemy: Dictionary) -> void:
 		_box(point.x - bar_width / 2.0 - 2, bar_y - 2, bar_width + 4, 7, INK)
 		_box(point.x - bar_width / 2.0, bar_y, bar_width, 3, Color("#5e354d"))
 		_box(point.x - bar_width / 2.0, bar_y, floorf(bar_width * clampf(hp / max_hp, 0.0, 1.0)), 3, Color("#ef8a9a"))
+
+
+## Part-rigged enemy (0x72 figures, Leerenrufer, Leerenbomber): the rig, its
+## telegraph, statuses and the health bar above the figure's top. Bosses and
+## mini-bosses get a wider bar with their name.
+func _draw_rig_enemy(enemy: Dictionary, point: Vector2, is_boss: bool) -> void:
+	var dying: bool = float(enemy.get("dying_p", -1.0)) >= 0.0
+	if _effects_visible and not dying: _draw_enemy_telegraph(enemy, point)
+	var top: float = _rigs.draw_enemy(self, enemy, point)
+	if is_nan(top) or dying: return
+	var statuses: Array = enemy.get("statuses", [])
+	for index: int in range(statuses.size()):
+		var tint: Color = Color("f7a34b") if statuses[index] == "burn" else Color("a8d568") if statuses[index] == "poison" else Color("8fd8e6")
+		_box(point.x-12+index*8, top-14, 5, 3, tint)
+	var hp: float = float(enemy.get("hp", 1.0))
+	var max_hp: float = maxf(float(enemy.get("max_hp", hp)), 1.0)
+	var big: bool = is_boss or bool(enemy.get("miniboss", false))
+	if hp < max_hp or big:
+		var bar_width: float = 72.0 if is_boss else 52.0 if big else 26.0
+		var bar_y: float = top - 8.0
+		_box(point.x - bar_width / 2.0 - 2, bar_y - 2, bar_width + 4, 7, INK)
+		_box(point.x - bar_width / 2.0, bar_y, bar_width, 3, Color("#5e354d"))
+		_box(point.x - bar_width / 2.0, bar_y, floorf(bar_width * clampf(hp / max_hp, 0.0, 1.0)), 3, Color("#c06bd8") if is_boss else Color("#ef8a9a"))
 
 
 ## Current idle or run frame; `phase` desynchronises actors that started together.
@@ -601,6 +706,22 @@ func _draw_bullet(bullet: Dictionary) -> void:
 		_box(point.x-4,point.y-4,8,8,Color("6ca9a1"))
 		_box(point.x-2,point.y-3,4,5,Color("c3d9ba"))
 		return
+	if owner == 0 and style == "void_skull":
+		# Leerenrufer's soul skull: the void.json skull at 2x in a violet glow.
+		var skull: Texture2D = _rigs.library.rig("void").get("skull") if _rigs != null and _rigs.is_ready() else null
+		draw_circle(point,9.0+sin(_clock*20.0)*1.5,Color("c06bd8",0.3))
+		if skull != null:
+			var flip: float = -1.0 if float(bullet.get("vx",1)) < 0.0 else 1.0
+			draw_set_transform(point,0.0,Vector2(2.0*flip,2.0))
+			draw_texture(skull,-Vector2(skull.get_width(),skull.get_height())*0.5)
+			draw_set_transform(Vector2.ZERO,0.0,Vector2.ONE)
+		return
+	if owner == 0 and style == "roar":
+		# Mini-boss shockwave: pale bone orbs.
+		_box(point.x-6,point.y-6,12,12,INK)
+		_box(point.x-4,point.y-4,8,8,Color("a99d93"))
+		_box(point.x-2,point.y-2,4,4,Color("efe6d6"))
+		return
 	if owner > 0 and style == "arrow":
 		# Archer arrow: the 0x72 arrow sprite along its flight (art points up).
 		var flight: Vector2 = Vector2(float(bullet.get("vx",1)),float(bullet.get("vy",0)))
@@ -634,7 +755,19 @@ func _draw_enemy_telegraph(enemy: Dictionary, point: Vector2) -> void:
 	var target: Vector2 = Vector2(float(enemy.get("tx",point.x)),float(enemy.get("ty",point.y))).round()
 	# Knockback can displace a charging caster; the shot keeps its locked direction.
 	if kind in ["arrow","soul"]: target = (point+aim*point.distance_to(target)).round()
-	var tint: Color = Color("e5c58a",0.55) if kind in ["arrow","slash"] else Color("87bcae",0.65)
+	var tint: Color = Color("e5c58a",0.55) if kind in ["arrow","slash","bite","slam"] else Color("c06bd8",0.7) if kind in ["fuse","salve"] else Color("87bcae",0.65)
+	if kind == "fuse":
+		# Leerenbomber: the burst radius (balance enemy_roster.attacks.fuse.radius) blinks.
+		if fmod(_clock*8.0,1.0) < 0.6:
+			for index: int in range(24):
+				var offset: Vector2 = (Vector2.from_angle(index*TAU/24)*Vector2(72,40)).round()
+				_box(point.x+offset.x-1,point.y+16+offset.y-1,3,3,tint)
+		return
+	if kind == "slam":
+		for index: int in range(7):
+			var end: Vector2 = point+aim.rotated((index-3)*0.32)*64
+			_box(end.x-2,end.y-2,4,4,tint)
+		return
 	if kind == "summon":
 		for index: int in range(8):
 			var offset: Vector2 = (Vector2.from_angle(index*TAU/8)*18).round()
