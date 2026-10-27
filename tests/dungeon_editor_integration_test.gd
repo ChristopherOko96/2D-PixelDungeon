@@ -23,8 +23,10 @@ func _run() -> void:
 	var draft_path := folder.path_join("dungeon_draft.json")
 	owned_files.append(path)
 	owned_files.append(draft_path)
-	var source: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://assets/data/dungeon_rooms.json"))
-	var original := JSON.stringify(source,"",true)
+	# Fixed four-template rect library (tests/fixtures/README.md): the paint
+	# coordinates below belong to that geometry, not to the active crypt rooms.
+	var source: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/dungeon_rooms_rect4.json"))
+	var original := JSON.stringify(JSON.parse_string(FileAccess.get_file_as_string("res://assets/data/dungeon_rooms.json")),"",true)
 	var saved := Store.write_config(path,source)
 	Store.write_config(draft_path,source)
 	check(saved.error.is_empty(), "first draft save succeeds")
@@ -180,7 +182,9 @@ func _run() -> void:
 	editor._test_room()
 	check(is_instance_valid(editor._test_game) and editor._test_game.hosting and not editor.visible, "Solo Test opens the selected room with the real game")
 	if is_instance_valid(editor._test_game):
-		check(editor._test_game.session_bind_ip == "127.0.0.1", "solo preview binds only to loopback")
+		# Since the selected-room revision the preview opens no socket at all
+		# (OfflineMultiplayerPeer), which is stricter than binding to loopback.
+		check(editor._test_game.peer == null and editor._test_game.multiplayer.multiplayer_peer is OfflineMultiplayerPeer, "solo preview opens no network socket")
 		editor._return_from_test()
 		check(editor.visible and editor.model.template().theme == "moss", "returning from playtest keeps the editor draft")
 	await process_frame

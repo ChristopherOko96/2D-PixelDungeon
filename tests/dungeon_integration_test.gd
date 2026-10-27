@@ -2,6 +2,7 @@ extends SceneTree
 ## Verifies authoritative geometry at the game boundary, separately from pure generation.
 
 const Game = preload("res://src/game.gd")
+const Dungeon = preload("res://src/dungeon/dungeon_generator.gd")
 var checked := 0
 var failures: Array[String] = []
 
@@ -40,13 +41,24 @@ func _test_room_and_geometry(game: Node, layout: Dictionary) -> void:
 	var snapshot: Dictionary = game._make_snapshot()
 	check(game.run_seed == 24680, "explicit seed is used by the host")
 	check(snapshot.room_layout == layout, "snapshot carries the chosen geometry")
-	check(snapshot.floor_map.size() == 3, "snapshot carries the bounded three-room floor")
-	check(snapshot.floor_map[2].boss and not snapshot.floor_map[0].boss, "only the final room is the boss")
+	# The active crypt campaign has ten rooms (Story015), not the old three.
+	var room_count: int = game.floor_layouts.size()
+	check(room_count == game._run_room_count() and snapshot.floor_map.size() == room_count, "snapshot carries the whole configured floor")
+	var boss_rooms: Array = snapshot.floor_map.filter(func(item: Dictionary) -> bool: return item.boss)
+	check(boss_rooms.size() == 1 and snapshot.floor_map[room_count - 1].boss, "only the final room is the boss")
 	check(not snapshot.floor_map[0].cleared, "active room is initially uncleared")
 	check(snapshot.generator_version == 4, "snapshot identifies generator version four")
-	check(int(layout.tile_size) == 32 and Vector2(float(layout.world_size[0]), float(layout.world_size[1])) == Vector2(896, 480), "room geometry uses the native thirty-two-pixel tile grid")
+	# Crypt templates may set their own size (AGENTS.md); it stays on the 32 px grid.
+	check(int(layout.tile_size) == 32 and int(layout.world_size[0]) % 32 == 0 and int(layout.world_size[1]) % 32 == 0, "room geometry uses the native thirty-two-pixel tile grid")
 	check(game.players[1].pos == layout.player_spawns[0], "host spawns at its clear template slot")
-	check(game.enemies[0].pos == layout.enemy_spawns[0], "enemy spawns at its clear template slot")
+	# Since Story022 the host picks seeded crypt spawn cells instead of fixed slots:
+	# never inside geometry and never closer than spawn_min_distance to a player.
+	var minimum := float(layout.get("encounter", {}).get("spawn_min_distance", 288))
+	var spawns_clear: bool = not game.enemies.is_empty()
+	for enemy: Dictionary in game.enemies:
+		if Dungeon.segment_blocked(enemy.pos, enemy.pos, float(enemy.radius), layout) or enemy.pos.distance_to(game.players[1].pos) < minimum:
+			spawns_clear = false
+	check(spawns_clear, "enemies spawn on clear cells at a safe distance from the arriving player")
 	# An authored fixture isolates the game simulation from randomized selection.
 	var fixture := layout.duplicate(true)
 	fixture.obstacles = [[384, 160, 64, 96]]
@@ -79,9 +91,9 @@ func _test_room_and_geometry(game: Node, layout: Dictionary) -> void:
 	snapshot = game._make_snapshot()
 	check(snapshot.floor_map[0].cleared and not snapshot.floor_map[1].cleared, "floor map records completed rooms")
 	check(game.bullets.is_empty(), "room transition clears prior projectiles")
-	game.room = 3
+	game.room = game.floor_layouts.size()
 	game._spawn_room()
-	check(game.current_layout.boss and game.enemies[0].boss, "final template and encounter agree on boss room")
+	check(game.current_layout.boss and game.enemies.any(func(enemy: Dictionary) -> bool: return enemy.boss), "final template and encounter agree on boss room")
 	for floor_room: Dictionary in game.floor_layouts:
 		if str(floor_room.id) not in game.cleared_room_ids: game.cleared_room_ids.append(str(floor_room.id))
 	game.phase = "explore"

@@ -200,6 +200,15 @@ func _observe_player(state: Dictionary, player: Dictionary, local: bool) -> void
 		_kick(state, Vector2(0.12, -0.1), -aim.x * 0.12)
 		if local:
 			_play("shoot", 0.1)
+	# Melee swings (swordsman) count separately from shots.
+	var swings := int(player.get("swings", 0))
+	if swings < int(state.get("swings", 0)): state.swings = swings
+	if swings > int(state.get("swings", 0)):
+		state.swings = swings
+		var swing_aim := Vector2(float(player.get("ax", 1.0)), float(player.get("ay", 0.0)))
+		_kick(state, Vector2(0.1, -0.08), swing_aim.x * 0.16)
+		if local:
+			_play("swing", 0.1)
 	var hurts := int(player.get("hurts", 0))
 	if hurts > int(state.hurts):
 		state.hurts = hurts

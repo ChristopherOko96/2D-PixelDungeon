@@ -1,0 +1,257 @@
+{
+  "schema_version": 1,
+  "generator_version": 4,
+  "tile_size": 32,
+  "world_size": [
+    896,
+    480
+  ],
+  "play_bounds": [
+    32,
+    48,
+    832,
+    400
+  ],
+  "max_actor_radius": 24,
+  "templates": [
+    {
+      "id": "split_pillars",
+      "title": "DIE SAULENKAMMER",
+      "boss": false,
+      "accent_color": "536b72",
+      "obstacles_tiles": [
+        [
+          11,
+          3,
+          2,
+          2
+        ],
+        [
+          15,
+          10,
+          2,
+          2
+        ]
+      ],
+      "player_spawns": [
+        [
+          150,
+          210
+        ],
+        [
+          202,
+          260
+        ],
+        [
+          254,
+          210
+        ],
+        [
+          306,
+          260
+        ]
+      ],
+      "enemy_spawns": [
+        [
+          640,
+          120
+        ],
+        [
+          736,
+          176
+        ],
+        [
+          800,
+          240
+        ],
+        [
+          672,
+          304
+        ],
+        [
+          768,
+          384
+        ]
+      ]
+    },
+    {
+      "id": "broken_gallery",
+      "title": "DIE ZERBROCHENE GALERIE",
+      "boss": false,
+      "accent_color": "6c5c73",
+      "obstacles_tiles": [
+        [
+          14,
+          3,
+          3,
+          1
+        ],
+        [
+          11,
+          10,
+          2,
+          1
+        ],
+        [
+          17,
+          11,
+          1,
+          1
+        ]
+      ],
+      "player_spawns": [
+        [
+          150,
+          210
+        ],
+        [
+          202,
+          260
+        ],
+        [
+          254,
+          210
+        ],
+        [
+          306,
+          260
+        ]
+      ],
+      "enemy_spawns": [
+        [
+          640,
+          120
+        ],
+        [
+          736,
+          176
+        ],
+        [
+          800,
+          240
+        ],
+        [
+          672,
+          304
+        ],
+        [
+          768,
+          384
+        ]
+      ]
+    },
+    {
+      "id": "buried_crossing",
+      "title": "DIE VERSCHUTTETE KREUZUNG",
+      "boss": false,
+      "accent_color": "72694f",
+      "obstacles_tiles": [
+        [
+          12,
+          3,
+          1,
+          2
+        ],
+        [
+          17,
+          4,
+          1,
+          1
+        ],
+        [
+          14,
+          10,
+          2,
+          2
+        ]
+      ],
+      "player_spawns": [
+        [
+          150,
+          210
+        ],
+        [
+          202,
+          260
+        ],
+        [
+          254,
+          210
+        ],
+        [
+          306,
+          260
+        ]
+      ],
+      "enemy_spawns": [
+        [
+          640,
+          120
+        ],
+        [
+          736,
+          176
+        ],
+        [
+          800,
+          240
+        ],
+        [
+          672,
+          304
+        ],
+        [
+          768,
+          384
+        ]
+      ]
+    },
+    {
+      "id": "heart_of_stone",
+      "title": "DAS STEINERNE HERZ",
+      "boss": true,
+      "accent_color": "805252",
+      "obstacles_tiles": [],
+      "player_spawns": [
+        [
+          150,
+          210
+        ],
+        [
+          202,
+          260
+        ],
+        [
+          254,
+          210
+        ],
+        [
+          306,
+          260
+        ]
+      ],
+      "enemy_spawns": [
+        [
+          688,
+          240
+        ],
+        [
+          736,
+          176
+        ],
+        [
+          800,
+          240
+        ],
+        [
+          672,
+          304
+        ],
+        [
+          768,
+          384
+        ]
+      ]
+    }
+  ]
+}

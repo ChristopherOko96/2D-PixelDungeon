@@ -19,6 +19,12 @@ const HERO_SPRITES := ["knight_m","elf_f","wizzard_m","lizard_m"]
 const PLAYER_ACTORS := ["player_warden","player_ranger","player_arcanist","player_lizard"]
 const ENEMY_SPRITES := {"chaser":"goblin","shooter":"orc_shaman","boss":"big_demon"}
 const SPRITE_ROOT := "res://assets/sprites/0x72/"
+# Hero classes (step 2, from main): class -> 0x72 figure, weapon -> 0x72 sprite
+# (drawn blade-up in the art). Players with a class use these, not the chibi bank.
+const CLASS_SPRITES := {"swordsman":"knight_m","archer":"elf_f","mage":"wizzard_m"}
+const WEAPON_SPRITES := {"sword":"weapon_regular_sword","bow":"weapon_bow","staff":"weapon_green_magic_staff"}
+const ARROW_TEXTURE := preload("res://assets/sprites/0x72/weapon_arrow.png")
+const SWING_TIME := 0.18
 const FRAMES_PER_SECOND := 8.0
 const Feedback = preload("res://src/vfx/feedback.gd")
 const Sfx = preload("res://src/vfx/sfx.gd")
@@ -47,6 +53,8 @@ var _feedback := Feedback.new()
 var _sfx: Node
 var _base_position := Vector2.ZERO
 var _shake_rng := RandomNumberGenerator.new()
+## Camera shake strength from the options (1 = full, 0 = off); presentation only.
+var shake_scale := 1.0
 var _classic := ClassicArt.new()
 var _crypt_sprites := CryptEnemySprites.new()
 var _crypt_bounds: Dictionary = {}
@@ -63,6 +71,10 @@ var _fire_entries: Array[Dictionary] = []
 var _pending_snapshot: Dictionary = {}
 var _observed_sequence := ""
 var _accepted_visual := ""
+var _weapon_textures: Dictionary = {}
+# Per peer: last seen swing counter and the local clock when that swing began.
+var _swing_seen: Dictionary = {}
+var _swing_started: Dictionary = {}
 
 
 func _ready() -> void:
@@ -85,6 +97,8 @@ func _ready() -> void:
 			entry.hit = load(hit_path)
 			_flash_textures[entry.hit] = _silhouette(entry.hit)
 		_sprites[name] = entry
+	for weapon_id: String in WEAPON_SPRITES:
+		_weapon_textures[weapon_id] = load("%s%s.png" % [SPRITE_ROOT,WEAPON_SPRITES[weapon_id]])
 	if audio_enabled: set_audio_enabled(true)
 	if style_profile != null and not style_profile.changed.is_connected(_invalidate_presentation):
 		style_profile.changed.connect(_invalidate_presentation)
@@ -175,7 +189,7 @@ func _process(delta: float) -> void:
 		_actor_motion.advance(delta)
 	_feedback.update(delta)
 	if _feedback.hitstop <= 0 and not _pending_snapshot.is_empty(): _accept_state(_pending_snapshot)
-	var strength := roundf(_feedback.shake*_feedback.shake*9.0)
+	var strength := roundf(_feedback.shake*_feedback.shake*9.0*shake_scale)
 	position = _base_position+Vector2(_shake_rng.randf_range(-1,1),_shake_rng.randf_range(-1,1)).round()*strength
 	queue_redraw()
 
@@ -355,6 +369,9 @@ func _player_color(player: Dictionary, peer_id: int) -> Color:
 	return fallback
 
 func _draw_player(player: Dictionary, peer_id: int) -> void:
+	if CLASS_SPRITES.has(str(player.get("class_id",""))):
+		_draw_class_hero(player, peer_id)
+		return
 	var point: Vector2 = _position(player).round()
 	var color: Color = _player_color(player, peer_id)
 	var hp: float = float(player.get("hp", 1))
@@ -401,6 +418,75 @@ func _draw_player(player: Dictionary, peer_id: int) -> void:
 	if show_player_health and bool(player.get("ready", false)):
 		_box(point.x + 15, point.y - 22, 8, 3, color)
 		_box(point.x + 18, point.y - 25, 3, 9, color)
+
+## Hero-class player (step 2, ported from main): the class's 0x72 figure at 2x,
+## facing the aim, with the class weapon in hand. Every player keeps a ring in
+## their own colour so identical classes stay distinguishable; the local
+## player's ring is the brighter teal one.
+func _draw_class_hero(player: Dictionary, peer_id: int) -> void:
+	var point: Vector2 = _position(player).round()
+	var color: Color = _player_color(player, peer_id)
+	var hp: float = float(player.get("hp", 1))
+	if hp <= 0:
+		_box(point.x - 11, point.y + 2, 22, 9, INK)
+		_box(point.x - 8, point.y + 3, 16, 5, color.darkened(0.6))
+		_box(point.x - 4, point.y - 8, 8, 3, MUTED)
+		_box(point.x - 1, point.y - 11, 3, 10, MUTED)
+		return
+	if peer_id == _local_peer:
+		draw_rect(Rect2(point.x - 20, point.y + 8, 40, 15), Color(0.45, 0.91, 0.81, 0.7), false, 2.0)
+	else:
+		draw_rect(Rect2(point.x - 16, point.y + 10, 32, 10), Color(color, 0.6), false, 2.0)
+	var aim := Vector2(float(player.get("ax", 1.0)), float(player.get("ay", 0.0)))
+	if aim.length_squared() < 0.01: aim = Vector2.RIGHT
+	aim = aim.normalized()
+	var hero: Dictionary = _sprites[CLASS_SPRITES[str(player.class_id)]]
+	var hurt: bool = float(player.get("invulnerable", 0.0)) > 0.0
+	var texture: Texture2D = _frame(hero, bool(player.get("moving", false)), peer_id)
+	var pose: Dictionary = _feedback.pose("p%d" % peer_id, player, _clock)
+	if hurt:
+		if hero.hit != null and fmod(_clock, 0.24) < 0.12: texture = hero.hit
+		pose.alpha *= 0.45 if fmod(_clock, 0.16) < 0.08 else 1.0
+	_draw_sprite(texture, point, -1.0 if aim.x < -0.1 else 1.0, 16.0, pose)
+	_draw_class_weapon(player, peer_id, point, aim)
+	if show_player_health: _draw_health(point + Vector2(0,-44), hp, float(player.get("max_hp", hp)), 32.0, color)
+
+
+## The class weapon at the hero's hand, pointing where they aim. While a sword
+## swing plays, the blade sweeps through the swing arc with a pale crescent.
+func _draw_class_weapon(player: Dictionary, peer_id: int, point: Vector2, aim: Vector2) -> void:
+	var weapons: Array = player.get("weapons", [])
+	var weapon_id: String = str(weapons[0]) if not weapons.is_empty() else ""
+	if not _weapon_textures.has(weapon_id): return
+	var texture: Texture2D = _weapon_textures[weapon_id]
+	var melee: bool = bool(player.get("melee", false))
+	var hand: Vector2 = point + aim * 10.0 + Vector2(0, 2)
+	var angle: float = aim.angle()
+	# A higher swing counter than last seen starts the swing animation locally.
+	var swings: int = int(player.get("swings", 0))
+	if swings < int(_swing_seen.get(peer_id, 0)): _swing_seen[peer_id] = swings
+	if swings > int(_swing_seen.get(peer_id, 0)):
+		_swing_seen[peer_id] = swings
+		_swing_started[peer_id] = _clock
+	var elapsed: float = _clock - float(_swing_started.get(peer_id, -INF))
+	if melee and elapsed >= 0.0 and elapsed < SWING_TIME:
+		var progress: float = elapsed / SWING_TIME
+		var swing_angle: float = float(player.get("swing_angle", angle))
+		var arc: float = minf(float(player.get("swing_arc", 2.0)), TAU)
+		var reach: float = float(player.get("reach", 64.0))
+		var start: float = swing_angle - arc * 0.5
+		angle = start + arc * ease(progress, 0.4)
+		var fade: float = 1.0 - progress
+		draw_arc(point, reach * 0.85, start, angle, 24, Color("#eaf8ff", 0.55 * fade), 10.0 * fade + 2.0)
+		draw_arc(point, reach * 0.85, start, angle, 24, Color.WHITE, 2.0)
+		hand = point + Vector2.RIGHT.rotated(angle) * 12.0 + Vector2(0, 2)
+	var size := Vector2(texture.get_width(), texture.get_height()) * 2.0
+	# The art points up; turn it along the aim. Swords are held by the grip,
+	# bows and staffs in the middle.
+	draw_set_transform(hand, angle + PI * 0.5, Vector2.ONE)
+	draw_texture_rect(texture, Rect2(Vector2(-size.x * 0.5, -size.y * (0.9 if melee else 0.5)), size), false)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
 
 func _draw_health(point: Vector2, hp: float, maximum: float, width: float, color: Color) -> void:
 	_box(point.x - width / 2.0 - 1, point.y - 1, width + 2, 4, INK)
@@ -514,6 +600,23 @@ func _draw_bullet(bullet: Dictionary) -> void:
 		_box(point.x-6,point.y-6,12,12,INK)
 		_box(point.x-4,point.y-4,8,8,Color("6ca9a1"))
 		_box(point.x-2,point.y-3,4,5,Color("c3d9ba"))
+		return
+	if owner > 0 and style == "arrow":
+		# Archer arrow: the 0x72 arrow sprite along its flight (art points up).
+		var flight: Vector2 = Vector2(float(bullet.get("vx",1)),float(bullet.get("vy",0)))
+		var arrow_size := Vector2(ARROW_TEXTURE.get_width(),ARROW_TEXTURE.get_height())*2.0
+		draw_set_transform(point,flight.angle()+PI*0.5,Vector2.ONE)
+		draw_texture_rect(ARROW_TEXTURE,Rect2(-arrow_size*0.5,arrow_size),false)
+		draw_set_transform(Vector2.ZERO,0.0,Vector2.ONE)
+		return
+	if owner > 0 and style == "magic":
+		# Mage orb: a glowing emerald core matching the staff (element tint if any).
+		var tints: Dictionary = {"cinder":Color("f7b46b"),"venom":Color("b8d878"),"frost":Color("9bdde6"),"storm":Color("baabe9")}
+		var tint: Color = tints.get(str(bullet.get("element","")),Color("6fe3a0"))
+		var pulse: float = 0.5+0.5*sin(_clock*18.0)
+		draw_circle(point,10.0+pulse*2.0,Color(tint,0.18))
+		draw_circle(point,6.0,Color(tint,0.85))
+		draw_circle(point,3.0,Color("f2fff6"))
 		return
 	var colors: Dictionary = {"cinder":Color("f7b46b"),"venom":Color("b8d878"),"frost":Color("9bdde6"),"storm":Color("baabe9")}
 	var color: Color = colors.get(str(bullet.get("element","")),Color("#f3ce7d")) if owner > 0 else Color("#f19791")

@@ -66,9 +66,12 @@ func _run() -> void:
 	game._check_room_end()
 	game._broadcast_state(true)
 	game._refresh_ui()
-	check(game.phase == "reward" and not game.pause_open and game.context_hint.visible, "room completion stays uncluttered and offers a reward hint")
+	# Since Story021 the personal reward cards open automatically after a clear.
+	check(game.phase == "reward" and game.pause_open and game.reward_overlay.visible and not game.pause_menu.visible and game.reward_overlay.cards[0].is_visible_in_tree(), "room completion opens the separate reward cards automatically")
 	game._input(escape)
-	check(game.reward_overlay.visible and not game.pause_menu.visible and game.reward_overlay.cards[0].is_visible_in_tree(), "Escape opens separate reward cards after a clear")
+	check(not game.pause_open and not game.reward_overlay.visible and game.context_hint.visible, "Escape hides the cards and leaves an uncluttered reward hint")
+	game._input(escape)
+	check(game.reward_overlay.visible and not game.pause_menu.visible and game.reward_overlay.cards[0].is_visible_in_tree(), "Escape reopens the separate reward cards")
 	game.action_times.clear()
 	game.reward_overlay.cards[0].pressed.emit()
 	game._refresh_ui()
@@ -103,7 +106,7 @@ func _run() -> void:
 	check(game.heart_hud.get_health_image().get_data() == load("res://src/health_strip.gd").make_image(7,8).get_data(), "the compact HUD receives authoritative damage as a half-heart image")
 	game.set_pause_open(true)
 	game._leave_session()
-	check(not game.pause_open and not game.pause_menu.visible and game.lobby_ui.visible and not game.heart_hud.visible, "leaving restores the lobby and clears local pause state")
+	check(not game.pause_open and not game.pause_menu.visible and game.main_menu.visible and not game.lobby_ui.visible and not game.heart_hud.visible, "leaving returns to the main menu and clears local pause state")
 	game.queue_free()
 	await process_frame
 	finish()

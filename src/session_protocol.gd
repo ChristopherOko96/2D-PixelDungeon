@@ -3,7 +3,8 @@ extends RefCounted
 ## wire fields/meaning change incompatibly; bump RULESET_VERSION for incompatible
 ## authoritative rules. Data changes are detected independently by content SHA256.
 const PROTOCOL_VERSION := 4
-const RULESET_VERSION := 4
+# 5: hero classes (melee swordsman, splash mage, class action in the lobby).
+const RULESET_VERSION := 5
 const MAX_HELLO_BYTES := 512
 const FIELDS := ["protocol","rules","engine","generator","content"]
 

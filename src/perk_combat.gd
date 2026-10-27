@@ -77,7 +77,8 @@ func shoot(id: int, aim: Vector2) -> void:
 	var critical: bool = _rng.randf() < _b(player,"crit")
 	if critical: damage *= _m("crit_multiplier",1.75)
 	damage = minf(damage,float(player.damage)*_m("damage_multiplier_cap",8))
-	var speed: float = float(_game.balance.bullet.speed)
+	# Class weapons (step 2) bring their own projectile speed; legacy players use the bullet default.
+	var speed: float = float(player.get("shot_speed",0.0)) if float(player.get("shot_speed",0.0)) > 0.0 else float(_game.balance.bullet.speed)
 	if _b(player,"heavy") > 0: speed *= _m("heavy_speed_scale",0.8)
 	var patterns: Array[Dictionary] = [{"aim":direction,"scale":1.0,"offset":Vector2.ZERO}]
 	if _b(player,"twin") > 0:
@@ -102,11 +103,66 @@ func shoot(id: int, aim: Vector2) -> void:
 			_spawn_projectile(player,id,pattern.aim,pattern.offset,damage*float(pattern.scale)*_b(player,"echo"),speed*_m("echo_speed_scale",0.85),critical,false,bool(pattern.get("short",false)))
 	player.shots = int(player.get("shots",0))+1
 
+## Swordsman basic attack (step 2): one swing hits every living enemy inside
+## the weapon's reach and arc in front of the player, never through walls. Uses
+## the same damage modifiers as shots and the same hit path, so crits, elements
+## and on-hit perks also work for melee. Projectile-only perks are not offered
+## to melee players (PerkRules.offer).
+func melee(id: int, aim: Vector2) -> void:
+	if not _game.players.has(id): return
+	var player: Dictionary = _game.players[id]
+	var direction: Vector2 = aim.normalized()
+	if direction.is_zero_approx(): direction = Vector2.RIGHT
+	var damage: float = float(player.damage)
+	if _b(player,"heavy") > 0: damage *= 1.0+_b(player,"heavy")
+	if not bool(player.get("moving",false)): damage *= 1.0+_b(player,"focus")
+	if _low_health(player): damage *= 1.0+_b(player,"berserk")
+	var critical: bool = _rng.randf() < _b(player,"crit")
+	if critical: damage *= _m("crit_multiplier",1.75)
+	damage = minf(damage,float(player.damage)*_m("damage_multiplier_cap",8))
+	var reach: float = float(player.get("reach",0.0))
+	var arc: float = float(player.get("arc",0.0))
+	player.swings = int(player.get("swings",0))+1
+	player.swing_angle = direction.angle()
+	player.swing_arc = arc
+	var targets: Array[Dictionary] = []
+	for enemy: Dictionary in _game.enemies:
+		if float(enemy.hp) <= 0: continue
+		var offset: Vector2 = Vector2(enemy.pos)-Vector2(player.pos)
+		if offset.length() > reach+float(enemy.radius): continue
+		if offset.length() > 0.1 and absf(direction.angle_to(offset)) > arc*0.5: continue
+		if Dungeon.segment_blocked(player.pos,enemy.pos,0.0,_game.current_layout): continue
+		targets.append(enemy)
+	for enemy: Dictionary in targets:
+		var offset: Vector2 = Vector2(enemy.pos)-Vector2(player.pos)
+		var push: Vector2 = offset.normalized() if offset.length() > 0.1 else direction
+		hit({"owner":id,"damage":damage,"velocity":push,"primary":true,"critical":critical,"distance":0.0,"pos":Vector2(enemy.pos),"melee":true},enemy)
+
+## Mage orbs (step 2): when a splash projectile ends - hit, wall or end of its
+## flight - it bursts for half its damage on every living enemy in the radius.
+## A class weapon effect, so it does not use the secondary-effect budget.
+func splash(bullet: Dictionary) -> void:
+	var radius: float = float(bullet.get("splash",0.0))
+	var owner: int = int(bullet.get("owner",0))
+	if radius <= 0.0 or owner <= 0: return
+	var point: Vector2 = bullet.pos
+	for enemy: Dictionary in _game.enemies:
+		if float(enemy.hp) <= 0: continue
+		if point.distance_to(enemy.pos) >= radius+float(enemy.radius): continue
+		var push: Vector2 = (Vector2(enemy.pos)-point).normalized() if point.distance_to(enemy.pos) > 0.1 else Vector2.RIGHT
+		_game._damage_enemy(enemy,float(bullet.damage)*_m("splash_damage_scale",0.5),push,owner,true)
+	_event("blast",point,point)
+
 func _spawn_projectile(player: Dictionary, id: int, aim: Vector2, offset: Vector2, damage: float, speed: float, critical: bool, primary: bool, short_range: bool = false) -> void:
 	var muzzle: Vector2 = player.pos + offset + aim*(float(_game.balance.player.radius)+1.5)
 	if Dungeon.segment_blocked(player.pos,muzzle,float(_game.balance.bullet.radius),_game.current_layout): return
 	var metadata: Dictionary = {"pierce":int(_b(player,"piercer")),"bounces":int(_b(player,"ricochet")),"hit_ids":[],"origin":Vector2(player.pos),"distance":0.0,"primary":primary,"critical":critical,"age":0.0,"base_angle":aim.angle(),"element":element(player)}
-	if short_range: metadata.life = float(_game.balance.bullet.lifetime)*_m("scatter_lifetime_scale",0.7)
+	# Class weapon flight time, explosion radius (mage) and look ("arrow"/"magic").
+	var lifetime: float = float(player.get("shot_life",0.0)) if float(player.get("shot_life",0.0)) > 0.0 else float(_game.balance.bullet.lifetime)
+	metadata.life = lifetime
+	if float(player.get("splash",0.0)) > 0.0: metadata.splash = float(player.splash)
+	if not str(player.get("projectile","")).is_empty(): metadata.style = str(player.projectile)
+	if short_range: metadata.life = lifetime*_m("scatter_lifetime_scale",0.7)
 	_game._add_bullet(muzzle,aim*clampf(speed,_m("projectile_speed_min",120),_m("projectile_speed_max",900)),id,damage,metadata)
 
 ## The projectile's element is a small presentation hint, never a damage command.

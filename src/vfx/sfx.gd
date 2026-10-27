@@ -24,6 +24,8 @@ func _ready() -> void:
 	# name: [seconds, start Hz, end Hz, wave, noise share, volume]
 	var recipes := {
 		"shoot": [0.07, 920.0, 520.0, "square", 0.0, 0.35],
+		# Swordsman swing (step 2): a short airy whoosh.
+		"swing": [0.12, 620.0, 180.0, "sine", 0.6, 0.4],
 		"enemy_shoot": [0.12, 420.0, 210.0, "square", 0.15, 0.4],
 		"windup": [0.16, 160.0, 320.0, "sine", 0.0, 0.3],
 		"hit": [0.07, 180.0, 90.0, "square", 0.55, 0.55],

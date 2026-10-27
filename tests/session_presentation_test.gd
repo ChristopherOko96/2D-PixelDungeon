@@ -33,7 +33,8 @@ func _run() -> void:
 	game._host_session()
 	game.requested_seed = 3
 	game._begin_run()
-	check(Game.WORLD_SIZE == Vector2(896,480) and Game.WORLD_ZOOM == Vector2.ONE,"32-pixel world is rendered one-to-one")
+	# Since the fullscreen revision (Story018) the live world fills the 1280x720 design base.
+	check(Game.WORLD_SIZE == Game.DESIGN_SIZE and Game.WORLD_ZOOM == Vector2.ONE,"32-pixel world is rendered one-to-one")
 	check(game.dungeon_config.tile_size == 32 and game.dungeon_config.generator_version == 4,"game uses native32 authored-room templates")
 	game.players[1].invulnerable = 0.0
 	game._damage_player(1,1)
@@ -53,9 +54,15 @@ func _run() -> void:
 	check(enemy.hits == 1,"a dead enemy cannot create duplicate hit/death cues")
 	game._simulate_enemies(float(game.balance.death.duration)+0.01)
 	check(game.enemies.all(func(value: Dictionary): return value.id != identity),"dead actors leave only after the animation interval")
-	game.room = 3
+	# The boss lives in the final room of the ten-room crypt (Story015), with two
+	# companions (encounter.boss_enemies); isolate the boss to count its burst.
+	game.room = game.floor_layouts.size()
 	game._spawn_room()
-	var boss: Dictionary = game.enemies[0]
+	var boss: Dictionary = {}
+	for candidate: Dictionary in game.enemies:
+		if bool(candidate.boss): boss = candidate
+	check(not boss.is_empty(),"the final room spawns the boss")
+	game.enemies = [boss]
 	boss.shot_timer = 0.0
 	game.bullets.clear()
 	game._simulate_enemies(0.01)
@@ -84,7 +91,8 @@ func _run() -> void:
 	check(game.enemies[0].pos == enemy_position,"incoming enemies cannot attack during fade-in")
 	game._step_transition(1.0)
 	check(not game._make_snapshot().transition.active,"completed transition metadata remains identifiable for late clients")
-	game.room = 3
+	# Interior stairs exist only in the final (boss) room.
+	game.room = game.floor_layouts.size()
 	game._spawn_room()
 	game.enemies.clear()
 	game.cleared_room_ids.clear()

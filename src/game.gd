@@ -21,6 +21,8 @@ const SessionProtocol = preload("res://src/session_protocol.gd")
 const PerkRules = preload("res://src/perk_rules.gd")
 const PerkCombat = preload("res://src/perk_combat.gd")
 const CryptEnemyAI = preload("res://src/crypt_enemy_ai.gd")
+const MainMenu = preload("res://src/main_menu.gd")
+const HeroClass = preload("res://src/player/hero_class.gd")
 
 var balance: Dictionary = {}
 var dungeon_config: Dictionary = {}
@@ -90,6 +92,15 @@ var pause_open := false
 var reward_overlay: Control
 var reward_open := false
 var menu_button: Button
+## Title screen (ported from main). Shown while no session runs and the player
+## has not switched to the multiplayer lobby; leaving a session returns to it.
+var main_menu: MainMenu
+var menu_open := true
+var lobby_menu_button: Button
+## Host-side hero class per peer id, chosen in the menu (solo) or the lobby.
+## Survives run restarts; cleared when the peer leaves or the session ends.
+var player_classes: Dictionary = {}
+var class_button: Button
 var context_hint: Label
 var _fire_needs_release := false
 var _ui_phase := "menu"
@@ -247,6 +258,9 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_apply_display_layout)
 	_apply_display_layout(true)
 	if not editor_preview_mode: _read_arguments()
+	# Command-line sessions (smoke tests) and the editor preview skip the menu.
+	if editor_preview_mode or active: menu_open = false
+	else: _apply_menu_settings(main_menu.settings)
 	_refresh_ui()
 	queue_redraw()
 
@@ -289,6 +303,7 @@ func toggle_fullscreen() -> void:
 		_windowed_mode = window.mode
 		_windowed_rect = Rect2i(window.position,window.size)
 		window.mode = Window.MODE_EXCLUSIVE_FULLSCREEN
+	if is_instance_valid(main_menu): main_menu.set_fullscreen_checked(is_fullscreen())
 	_fire_needs_release = true
 	_apply_display_layout(true)
 	_refresh_ui()
@@ -324,6 +339,7 @@ func _apply_display_layout(force: bool = false) -> void:
 	reward_overlay.position = origin
 	pause_menu.set_canvas_size(dimensions,origin)
 	reward_overlay.set_canvas_size(dimensions,origin)
+	if is_instance_valid(main_menu): main_menu.set_canvas_size(dimensions,origin)
 	pause_menu.set_display_state(is_fullscreen(),dimensions)
 	_camera_room_id = ""
 	_update_camera(0)
@@ -622,6 +638,7 @@ func _leave_session(message: String = "Verbindung beendet.") -> void:
 	peer = null
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
 	players.clear()
+	player_classes.clear()
 	perk_options.clear()
 	perk_offers.clear()
 	perk_combat.reset()
@@ -637,6 +654,8 @@ func _leave_session(message: String = "Verbindung beendet.") -> void:
 	last_layout_id = ""
 	last_floor_seen = 0
 	phase = "menu"
+	# Every ended session (solo or multiplayer) returns to the main menu.
+	menu_open = true
 	status_message = message
 	view.set_state({}, 0)
 	_refresh_ui()
@@ -660,6 +679,7 @@ func _peer_disconnected(id: int) -> void:
 	_rejected_peers.erase(id)
 	_admitted_peers.erase(id)
 	perk_offers.erase(id)
+	player_classes.erase(id)
 	if not players.has(id): return
 	players.erase(id)
 	commands.erase(id)
@@ -773,6 +793,7 @@ func _add_player(id: int) -> void:
 	players[id] = {"pos": Vector2(150 + index * 52, 210 + (index % 2) * 50), "hp": int(balance.player.hp), "max_hp": int(balance.player.hp), "color": color, "ready": false, "picked": false, "perks": [], "damage": float(balance.player.damage), "speed": float(balance.player.speed), "shot_interval": float(balance.player.shot_interval), "shot_timer": 0.0, "invulnerable": 0.0, "hitstun": 0.0, "hit_flash": 0.0, "knockback": Vector2.ZERO,"shots":0,"hurts":0,"moving":false,"aim":Vector2.RIGHT,"face":1.0}
 	players[id].merge({"skin":PLAYER_SKINS[PLAYER_COLORS.find(color)],"motion":Vector2.ZERO,"blocks":0,"interacts":0,"hit_direction":Vector2.ZERO,"last_hit_damage":0})
 	PerkRules.initialize_player(players[id],balance)
+	HeroClass.apply(players[id],str(player_classes.get(id,"")),balance)
 	perk_combat.bind(self)
 
 
@@ -899,6 +920,12 @@ func _server_action(id: int, action: String, value: int) -> void:
 		_advance_if_ready()
 	elif action == "interact" and phase == "explore":
 		_use_exit(id)
+	elif action == "class" and phase == "lobby":
+		# Each peer picks only its own class, by index into balance.class_order.
+		var order: Array = balance.get("class_order", [])
+		if value < 0 or value >= order.size(): return
+		player_classes[id] = str(order[value])
+		HeroClass.apply(players[id], player_classes[id], balance)
 	else: return
 	_broadcast_state(true)
 
@@ -1140,7 +1167,8 @@ func _simulate_players(delta: float) -> void:
 		if absf(command.aim.x) > 0.01: player.face = signf(command.aim.x)
 		if command.fire and phase != "reward" and player.shot_timer <= 0.0:
 			player.shot_timer = perk_combat.shot_interval(player)
-			perk_combat.shoot(id,command.aim)
+			if bool(player.get("melee",false)): perk_combat.melee(id,command.aim)
+			else: perk_combat.shoot(id,command.aim)
 
 
 func _add_bullet(position: Vector2, velocity: Vector2, owner: int, damage: float, metadata: Dictionary = {}) -> Dictionary:
@@ -1285,7 +1313,10 @@ func _simulate_bullets(delta: float) -> void:
 					removed = true
 					break
 				bullet.pierce = int(bullet.pierce)-1
-		if removed: bullets.remove_at(i)
+		if removed:
+			# Mage orbs burst wherever they end (hit, wall or flight time).
+			if int(bullet.owner) > 0 and float(bullet.get("splash",0.0)) > 0.0: perk_combat.splash(bullet)
+			bullets.remove_at(i)
 
 
 func _damage_player(id: int, damage: int, direction: Vector2 = Vector2.ZERO) -> void:
@@ -1467,6 +1498,8 @@ func _make_snapshot(advance_sequence: bool = true) -> Dictionary:
 		var motion: Vector2 = player.get("motion",Vector2.ZERO)
 		var hit_direction: Vector2 = player.get("hit_direction",Vector2.ZERO)
 		visible_players[id].merge({"skin":str(player.get("skin",PLAYER_SKINS[0])),"mx":motion.x,"my":motion.y,"blocks":int(player.get("blocks",0)),"interacts":int(player.get("interacts",0)),"last_hit_damage":float(player.get("last_hit_damage",0)),"hit_dx":hit_direction.x,"hit_dy":hit_direction.y,"shot_interval":perk_combat.shot_interval(player)})
+		# Hero class presentation (step 2): class, held weapon and melee swing cue.
+		visible_players[id].merge({"class_id":str(player.get("class_id","")),"weapons":Array(player.get("weapons",[])).duplicate(),"weapon_index":int(player.get("weapon_index",0)),"melee":bool(player.get("melee",false)),"reach":float(player.get("reach",0.0)),"swings":int(player.get("swings",0)),"swing_angle":float(player.get("swing_angle",0.0)),"swing_arc":float(player.get("swing_arc",0.0))})
 	var visible_enemies: Array = []
 	for enemy in enemies:
 		var direction: Vector2 = enemy.get("direction",Vector2.ZERO)
@@ -1633,16 +1666,22 @@ func _build_ui() -> void:
 	port_input = LineEdit.new()
 	port_input.position = Vector2(1150, 366)
 	port_input.size = Vector2(82, 36)
-	port_input.text = str(balance.network.port)
+	# JSON numbers load as floats; "7777.0" would fail _port() (fix from main 2adbc07).
+	port_input.text = str(int(balance.network.port))
 	ui.add_child(port_input)
 	host_button = _button("HOSTEN", Vector2(968, 418), Vector2(126, 42), _host_session)
 	join_button = _button("BEITRETEN", Vector2(1106, 418), Vector2(126, 42), _join_session)
 	solo_button = _button("SOLO ERKUNDEN", Vector2(968, 474), Vector2(264, 46), func():
 		_host_session()
 		if active and hosting: _server_action(1, "start", 0))
+	# Solo now starts from the main menu's story button; the lobby leads back there.
+	solo_button.visible = false
+	lobby_menu_button = _button("HAUPTMENÜ", Vector2(968, 474), Vector2(264, 46), _open_main_menu)
+	# In a running lobby each player cycles their own hero class (host-validated).
+	class_button = _button("KLASSE", Vector2(968, 418), Vector2(264, 42), _cycle_class)
 	action_button = _button("RUN STARTEN", Vector2(968, 538), Vector2(264, 42), _main_action)
 	leave_button = _button("LOBBY VERLASSEN", Vector2(968, 589), Vector2(264, 32), _leave_or_return)
-	_label("WASD  BEWEGEN    MAUS  ZIELEN    LINKSKLICK  FEUERN    E  TÜR / TREPPE", Vector2(32, 656), Vector2(896, 28), 13, Color("b18ccb"))
+	_label("WASD  BEWEGEN    MAUS  ZIELEN    LINKSKLICK  ANGREIFEN    E  TÜR / TREPPE", Vector2(32, 656), Vector2(896, 28), 13, Color("b18ccb"))
 	_label("01—%02d · EIN LAUF" % _run_room_count(), Vector2(952, 656), Vector2(296, 28), 16, Color("737d94"))
 	# Preserve the connection/lobby UI as one hideable group.
 	var lobby_children := ui.get_children()
@@ -1679,6 +1718,100 @@ func _build_ui() -> void:
 	reward_overlay.ready_requested.connect(_menu_action)
 	reward_overlay.close_requested.connect(func(): set_pause_open(false))
 	reward_overlay.menu_requested.connect(func(): set_pause_open(true,"overview"))
+	_build_main_menu()
+
+
+## Title screen from main. Story opens the hero choice (step 2). Online accounts
+## (Firebase, not decided) and the endless mode (step 6) are not wired yet, so
+## Endless shows as coming soon.
+func _build_main_menu() -> void:
+	main_menu = MainMenu.new()
+	main_menu.account = null
+	main_menu.classes = balance.get("classes",{})
+	main_menu.class_order = balance.get("class_order",[])
+	main_menu.weapons = balance.get("weapons",{})
+	main_menu.endless_available = false
+	main_menu.debug_entries = _debug_entries()
+	ui.add_child(main_menu)
+	main_menu.start_requested.connect(_start_solo)
+	main_menu.settings_changed.connect(_apply_menu_settings)
+	main_menu.multiplayer_requested.connect(func():
+		menu_open = false
+		_refresh_ui())
+	main_menu.quit_requested.connect(func(): get_tree().quit())
+	# Saved fullscreen is applied in _ready, only when the game opens on the menu.
+	view.shake_scale = 1.0 if bool(main_menu.settings.get("shake", true)) else 0.0
+
+
+## Debug level list for the current crypt floor: every room of floor 1 (the
+## last one is the boss) and the start of floor 2.
+func _debug_entries() -> Array:
+	var entries: Array = []
+	var count := _run_room_count()
+	for number in range(1, count + 1):
+		var label := "KRYPTA · RAUM %02d" % number
+		if number == 1: label += " · EINGANG"
+		elif number == count: label += " · BOSS"
+		entries.append({"label": label, "endless": false, "floor": 1, "room": number})
+	entries.append({"label": "EBENE 2 · START", "endless": false, "floor": 2, "room": 1})
+	return entries
+
+
+## Story button / debug pick: a solo host run, optionally jumping to a level.
+func _start_solo(_endless_mode: bool = false, class_id: String = "") -> void:
+	menu_open = false
+	var jump: Dictionary = main_menu.take_debug_start()
+	# The solo host is always peer 1; its class applies when the player is added.
+	player_classes[1] = HeroClass.resolve(class_id, balance)
+	_host_session()
+	if not (active and hosting):
+		menu_open = true
+		main_menu.show_toast(status_message)
+		_refresh_ui()
+		return
+	_server_action(1, "start", 0)
+	if not jump.is_empty() and phase == "combat": _debug_jump(int(jump.floor), int(jump.room))
+	_refresh_ui()
+
+
+## Debug only: moves a fresh solo run to `target_room` of `target_floor`. Rooms
+## before it count as cleared, so doors and the map behave as after playing them.
+func _debug_jump(target_floor: int, target_room: int) -> void:
+	if target_floor > 1: _enter_next_floor()
+	var number := clampi(target_room, 1, floor_layouts.size())
+	if number == room: return
+	for index in range(number - 1):
+		var identifier := str(floor_layouts[index].id)
+		if not cleared_room_ids.has(identifier): cleared_room_ids.append(identifier)
+	room = number
+	_spawn_room()
+	_broadcast_state(true)
+
+
+func _open_main_menu() -> void:
+	menu_open = true
+	_refresh_ui()
+
+
+## Lobby: asks the host for the next hero class in balance.class_order.
+func _cycle_class() -> void:
+	var order: Array = balance.get("class_order",[])
+	if order.is_empty(): return
+	var local: Dictionary = state.get("players",{}).get(multiplayer.get_unique_id(),{})
+	var current: int = order.find(str(local.get("class_id","")))
+	_send_action("class",(current+1)%order.size())
+
+
+func _class_label(class_id: String) -> String:
+	return str(balance.get("classes",{}).get(class_id,{}).get("name",class_id)).to_upper()
+
+
+## Options from the main menu: fullscreen uses the game's own toggle (keeps the
+## window rectangle), screen shake scales the view's camera shake.
+func _apply_menu_settings(settings: Dictionary) -> void:
+	view.shake_scale = 1.0 if bool(settings.get("shake", true)) else 0.0
+	if DisplayServer.get_name() != "headless" and bool(settings.get("fullscreen", false)) != is_fullscreen():
+		toggle_fullscreen()
 
 
 func _style(background: Color, border: Color) -> StyleBoxFlat:
@@ -1745,7 +1878,9 @@ func _refresh_ui() -> void:
 		_fire_needs_release = true
 		automatic_reward = true
 		_send_local_input()
-	lobby_ui.visible = not in_run
+	var menu_visible := is_instance_valid(main_menu) and menu_open and not active and not editor_preview_mode
+	if is_instance_valid(main_menu): main_menu.visible = menu_visible
+	lobby_ui.visible = not in_run and not menu_visible
 	heart_hud.visible = in_run
 	if heart_hud.visible: heart_hud.set_state(state,local_id)
 	_apply_display_layout()
@@ -1801,7 +1936,11 @@ func _refresh_lobby_ui(visible_players: Dictionary, local_id: int, local_player:
 	elif phase == "explore": status_label.text = "Ebene %d frei erkunden · Team am Ausgang sammeln · E an einer Tür oder der Treppe drücken." % state.get("floor_index", 1)
 	elif phase == "victory": status_label.text = "Geschafft. Ihr habt alle %d Räume und den Boss besiegt. Der Host kann einen neuen Lauf starten." % state.get("floor_map",[]).size()
 	elif phase == "dead": status_label.text = "Alle Wanderer sind gefallen. Der Host kann den Lauf mit einem neuen Seed neu starten."
-	for node in [address_input, port_input, host_button, join_button, solo_button]: node.visible = not active
+	for node in [address_input, port_input, host_button, join_button, lobby_menu_button]: node.visible = not active
+	class_button.visible = active and phase == "lobby" and not local_player.is_empty()
+	# Plain ASCII arrows: Pixel Operator 8 has no ► glyph.
+	if class_button.visible: class_button.text = "< %s >" % _class_label(str(local_player.get("class_id","")))
+	class_button.tooltip_text = "Klasse wechseln (gilt ab dem Laufstart)"
 	leave_button.visible = active
 	action_button.visible = active
 	action_button.disabled = true

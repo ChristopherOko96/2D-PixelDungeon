@@ -95,6 +95,8 @@ static func offer(player: Dictionary, balance: Dictionary, rng: RandomNumberGene
 		var id: String = str(definition.get("id",""))
 		var maximum: int = int(definition.get("max_stacks",1))
 		if maximum > 0 and stack_count(player,id) >= maximum: continue
+		# Projectile-only perks change shots and do nothing for a melee class.
+		if bool(definition.get("projectile_only",false)) and bool(player.get("melee",false)): continue
 		if str(definition.get("stat","")) == "heal" and int(player.get("hp",0)) >= int(player.get("max_hp",0)): continue
 		var required: Array = definition.get("requires_any",[])
 		var all_satisfied: bool = true

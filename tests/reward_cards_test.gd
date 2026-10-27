@@ -34,7 +34,9 @@ func _run() -> void:
 	game._begin_run()
 	game.enemies.clear()
 	game._check_room_end()
-	game.perk_options = game.balance.perks.slice(0,3)
+	# Since Story021 every player gets personal offers (perk_offers); the cards
+	# show and grant those, so the test no longer overrides perk_options.
+	var offers: Array = game.perk_offers.get(1, [])
 	game._broadcast_state(true)
 	game.show_rewards()
 	check(game.reward_overlay.visible and not game.pause_menu.visible, "reward cards hide the complete opaque pause panel")
@@ -45,7 +47,8 @@ func _run() -> void:
 	check(cards[0].get_theme_stylebox("normal").bg_color.a < 1.0, "card bodies are translucent too")
 	var icon = cards[0].get_node("Icon")
 	check(icon.texture != null and icon.size.x >= 80 and icon.mouse_filter == Control.MOUSE_FILTER_IGNORE, "a large centered sprite stays clickable through its image")
-	check(not game.ui.theme.default_font is SystemFont and game.ui.theme.default_font.get_font_name().contains("Pixelify"), "game menus use the bundled pixel font")
+	# Pixel Operator 8 replaced Pixelify Sans in the 2026-10-26 typography revision.
+	check(not game.ui.theme.default_font is SystemFont and game.ui.theme.default_font.get_font_name().contains("Pixel Operator"), "game menus use the bundled pixel font")
 	check(root.gui_get_focus_owner() == cards[0], "first available card receives keyboard focus")
 	var right := InputEventAction.new()
 	right.action = "ui_right"
@@ -66,7 +69,7 @@ func _run() -> void:
 	Input.parse_input_event(accept)
 	await process_frame
 	game._refresh_ui()
-	check(game.players[1].perks == [game.perk_options[1].id], "a card requests the matching authoritative perk")
+	check(offers.size() == 3 and game.players[1].perks == [offers[1].id], "a card requests the matching authoritative perk")
 	cards[1].pressed.emit()
 	check(game.players[1].perks.size() == 1, "duplicate card activation grants no duplicate perk")
 	check(not game.reward_overlay.ready_button.disabled and root.gui_get_focus_owner() == game.reward_overlay.ready_button, "acknowledged selection enables and focuses Ready")
