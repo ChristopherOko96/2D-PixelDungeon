@@ -87,5 +87,25 @@
     "AWWWA",
     "AKWKA",
     ".AWA."
-  ]
+  ],
+  "bomber": {
+    "_note": "Leerenbomber: the purple skull row of the same sheet (8 frames, 10x14 on dark brown). Cut by make_void.gd into 16x16 cells, x centred, the sheet bob kept.",
+    "band": [
+      192,
+      798,
+      130,
+      22
+    ],
+    "background": [
+      "483b3a",
+      "775c55"
+    ],
+    "cell": [
+      16,
+      16
+    ],
+    "top_row": 802,
+    "frames": 8,
+    "fps": 10
+  }
 }

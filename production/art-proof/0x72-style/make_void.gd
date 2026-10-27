@@ -22,8 +22,55 @@ func _initialize() -> void:
 	for state in ["closed", "half", "open"]:
 		_paint(cfg.eye[state], palette).save_png(out.path_join("void_eye_%s.png" % state))
 	_preview(frames, claw, out)
-	print("VOID frames=%d size=%s" % [frames.size(), frames[0].get_size()])
+	var bomber := _cut_bomber(sheet)
+	for i in range(bomber.size()):
+		bomber[i].save_png(out.path_join("void_bomber_f%d.png" % i))
+	print("VOID frames=%d size=%s bomber=%d" % [frames.size(), frames[0].get_size(), bomber.size()])
 	quit()
+
+# Leerenbomber: every non-background pixel in the band, grouped into connected
+# frames left to right, x centred in a 16x16 cell, the sheet's bob kept.
+func _cut_bomber(sheet: Image) -> Array[Image]:
+	var data: Dictionary = cfg.bomber
+	var band := Rect2i(int(data.band[0]), int(data.band[1]), int(data.band[2]), int(data.band[3]))
+	var background: Array = data.background
+	var ink := func(p: Vector2i) -> bool:
+		return band.has_point(p) and sheet.get_pixelv(p).a > 0.5 and not (sheet.get_pixelv(p).to_html(false) in background)
+	var seen := {}
+	var comps := []
+	for y in range(band.position.y, band.end.y):
+		for x in range(band.position.x, band.end.x):
+			var start := Vector2i(x, y)
+			if seen.has(start) or not ink.call(start): continue
+			var stack := [start]
+			var pixels := []
+			seen[start] = true
+			while not stack.is_empty():
+				var p: Vector2i = stack.pop_back()
+				pixels.append(p)
+				for dy in [-1, 0, 1]:
+					for dx in [-1, 0, 1]:
+						var q := p + Vector2i(dx, dy)
+						if seen.has(q) or not ink.call(q): continue
+						seen[q] = true
+						stack.append(q)
+			if pixels.size() >= 30: comps.append(pixels)
+	comps.sort_custom(func(a, b): return _mean_x(a) < _mean_x(b))
+	var frames: Array[Image] = []
+	var cell := Vector2i(int(data.cell[0]), int(data.cell[1]))
+	for pixels in comps.slice(0, int(data.frames)):
+		var left := 9999
+		var right := -1
+		for p: Vector2i in pixels:
+			left = mini(left, p.x)
+			right = maxi(right, p.x)
+		var shift := Vector2i(cell.x / 2 - (left + right + 1) / 2, -int(data.top_row))
+		var image := Image.create(cell.x, cell.y, false, Image.FORMAT_RGBA8)
+		for p: Vector2i in pixels:
+			var q := p + shift
+			if q.x >= 0 and q.y >= 0 and q.x < cell.x and q.y < cell.y: image.set_pixelv(q, sheet.get_pixelv(p))
+		frames.append(image)
+	return frames
 
 func _ink(image: Image, x: int, y: int) -> bool:
 	return image.get_pixel(x, y).to_html(false) in cfg.sheet.ink

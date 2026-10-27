@@ -41,5 +41,10 @@ zerstörbaren Körperteilen. Erst nach der Freigabe wird etwas ins Spiel überno
   öffentlich ins Repo zu pushen, auch das Blatt mit dem Leeren-Wesen und die
   Fackeln/Kerzensäulen aus dungeontiles-extended, obwohl deren Lizenz offen ist.
   Vor einer Veröffentlichung des Spiels klären oder ersetzen.
+- **Im Spiel (ab 27.10.2026):** Der Gesamtsatz ist für die Krypta spielbar.
+  `export_rigs.js` schreibt die Teile-Zerlegung dieser Seite nach
+  `assets/data/rigs.json`; das Spiel liest nur diese Datei. Nach einer
+  Änderung an `DEFS` in `full.template.html` also `node export_rigs.js` ausführen.
+  `make_void.gd` schneidet auch die Leerenbomber-Bilder aus.
 - **Hilfsskripte:** `slice_frames.gd` (Einzelbilder ausschneiden), `serve.js`
   (lokaler Server für die Vorschau auf Port 8765).
