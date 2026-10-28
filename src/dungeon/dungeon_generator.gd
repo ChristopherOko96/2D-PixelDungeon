@@ -17,6 +17,7 @@ const THEMES: Array[String] = ["rose", "moss", "amber", "violet"]
 const Palette = preload("res://src/tile_palette.gd")
 const CryptGenerator = preload("res://src/dungeon/crypt_generator.gd")
 const Decor = preload("res://src/dungeon/decor_catalog.gd")
+const OpenFloor = preload("res://src/dungeon/open_floor.gd")
 # Private, bounded runtime caches. Only collision arrays participate: artwork,
 # room IDs and mutable editor presentation never determine reachability.
 const NAVIGATION_CACHE_LIMIT: int = 32
@@ -133,6 +134,43 @@ static func generate(seed: int, room_count: int, config: Dictionary, selected_id
 			if stairs.is_empty():
 				return []
 			layout.exits.append(stairs)
+	return rooms
+
+## One open endless floor (src/dungeon/open_floor.gd) as a single layout with
+## the stairs down in its boss room. Uses the crypt style and rendering of
+## `config`; returns [] when the floor cannot be built or the stairs cannot be
+## reached from the party spawn.
+static func generate_open_floor(seed: int, floor_index: int, config: Dictionary, data: Dictionary) -> Array[Dictionary]:
+	var rooms: Array[Dictionary] = []
+	if data.is_empty() or not config.get("crypt_style_source") is Dictionary: return rooms
+	var template: Dictionary = OpenFloor.make_template(seed, floor_index, data)
+	var source := config.duplicate()
+	source.templates = [template]
+	source.crypt_procedural = true
+	var realized: Dictionary = CryptGenerator.realize(source, seed)
+	var built: Dictionary = realized.templates[0]
+	var layout: Dictionary = _make_layout(built, realized)
+	for key: String in ["open_floor", "rooms", "start_room", "boss_room", "chest_spawns", "chest_range", "crate_range"]:
+		layout[key] = built[key].duplicate(true) if built[key] is Array else built[key]
+	# Corridors may open a room's north wall; chests keep only spots that still
+	# have a wall above them.
+	var floor_cells := {}
+	for cell: Dictionary in layout.painted_tiles:
+		if str(cell.get("layer", "")) == "floor": floor_cells[Vector2i(int(cell.x), int(cell.y))] = true
+	layout.chest_spawns = layout.chest_spawns.filter(func(spot: Array) -> bool: return floor_cells.has(Vector2i(int(spot[0]), int(spot[1]))) and not floor_cells.has(Vector2i(int(spot[0]), int(spot[1]) - 1)))
+	layout.boss_spawns = []
+	for point: Array in built.boss_spawns: layout.boss_spawns.append(Vector2(float(point[0]), float(point[1])))
+	layout.id = _room_id(seed, 0)
+	layout.grid_x = 0
+	layout.grid_y = 0
+	layout.prev_id = ""
+	layout.next_id = ""
+	layout.theme = built.theme
+	layout.exits = []
+	var stairs: Dictionary = _make_stairs(layout)
+	if stairs.is_empty(): return rooms
+	layout.exits.append(stairs)
+	rooms.append(layout)
 	return rooms
 
 ## Presentation draft for the room editor. Blocked gateways remain visible.

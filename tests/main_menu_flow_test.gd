@@ -1,7 +1,8 @@
 extends SceneTree
 ## Main menu wiring (step 1 of the main port): the game opens on the title
-## screen, story starts a solo crypt run, multiplayer opens the lobby, leaving
-## returns to the menu, and the debug level list jumps to rooms and floor 2.
+## screen, the story choice starts a solo crypt run, multiplayer opens the lobby, leaving
+## returns to the menu, the debug level list jumps to rooms and floor 2, and the
+## level choice lists the worlds (crypt, Hell-Dungeon with start and boss per floor).
 ## Uses a disposable loopback host like pause_menu_test.
 const Game = preload("res://src/game.gd")
 var checked := 0
@@ -32,11 +33,14 @@ func _new_game() -> Node:
 
 func _run() -> void:
 	await _test_default_port_field_is_a_valid_port()
-	await _test_opens_on_menu_with_endless_disabled_and_no_account()
+	await _test_opens_on_menu_with_story_first_endless_soon_and_no_account()
+	await _test_story_choice_lists_numbered_stories_and_locks_unfinished_ones()
+	await _test_story_two_frostgruft_requests_its_own_scene_with_the_hero()
 	await _test_multiplayer_opens_lobby_and_lobby_returns_to_menu()
-	await _test_story_starts_solo_run_and_leaving_returns_to_menu()
+	await _test_story_one_starts_solo_run_and_leaving_returns_to_menu()
 	await _test_debug_room_jump_starts_in_that_room_with_earlier_rooms_cleared()
 	await _test_debug_floor_two_starts_on_the_next_floor()
+	await _test_level_choice_lists_worlds_and_hell_floors()
 	await _test_shake_option_scales_view_shake()
 	finish()
 
@@ -58,11 +62,12 @@ func _test_default_port_field_is_a_valid_port() -> void:
 	game.queue_free()
 	await process_frame
 
-func _test_opens_on_menu_with_endless_disabled_and_no_account() -> void:
+func _test_opens_on_menu_with_story_first_endless_soon_and_no_account() -> void:
 	# Arrange / Act
 	var game = await _new_game()
 	# Assert
 	check(game.main_menu.visible and not game.lobby_ui.visible and not game.active, "the game opens on the main menu, not the lobby")
+	check(game.main_menu._buttons[0].text == "STORY-MODUS", "story is the first menu entry")
 	check(game.main_menu._endless_button.disabled and game.main_menu._endless_button.text.ends_with("BALD"), "endless is shown as coming soon")
 	check(not game.main_menu._account_button.visible and not game.main_menu._account_label.visible, "without online accounts the account row is hidden")
 	check(not game.solo_button.visible, "solo starts from the menu, not from the lobby")
@@ -83,16 +88,56 @@ func _test_multiplayer_opens_lobby_and_lobby_returns_to_menu() -> void:
 	game.queue_free()
 	await process_frame
 
-func _test_story_starts_solo_run_and_leaving_returns_to_menu() -> void:
+func _test_story_choice_lists_numbered_stories_and_locks_unfinished_ones() -> void:
 	# Arrange
 	var game = await _new_game()
-	# Act: story opens the hero choice (step 2); picking a hero starts the run.
-	game.main_menu._open_classes(false)
-	check(game.main_menu._class_panel.visible and not game.active, "story first shows the hero cards")
+	var menu = game.main_menu
+	# Act
+	menu._open_stories()
+	# Assert
+	check(menu._story_panel.visible and menu._story_cards.size() == menu.stories.size() and menu.stories.size() >= 3, "the story button lists every story (%d)" % menu.stories.size())
+	var playable: Array = menu.stories.filter(func(story: Dictionary) -> bool: return bool(story.get("playable", false)))
+	check(not playable.is_empty() and str(menu.stories[0].id) == "krypta" and not menu._story_cards[0].disabled, "story 1, the crypt, is playable")
+	var locked_ok := true
+	for i in range(menu.stories.size()):
+		if menu._story_cards[i].disabled == bool(menu.stories[i].get("playable", false)): locked_ok = false
+	check(locked_ok, "unfinished stories are locked")
+	game.queue_free()
+	await process_frame
+
+func _test_story_two_frostgruft_requests_its_own_scene_with_the_hero() -> void:
+	# Arrange: the game's own handler would swap the scene, so only this test listens.
+	var game = await _new_game()
+	var menu = game.main_menu
+	for c: Dictionary in menu.story_scene_requested.get_connections():
+		menu.story_scene_requested.disconnect(c.callable)
+	var requested: Array = []
+	menu.story_scene_requested.connect(func(path: String, class_id: String): requested.append([path, class_id]))
+	menu._open_stories()
+	# Act: the story first shows the hero cards, the hero choice opens the scene
+	menu._choose_story("frostgruft")
+	var heroes_first: bool = menu._class_panel.visible and requested.is_empty()
+	menu._choose_class("mage")
+	# Assert
+	check(not menu._story_cards[1].disabled, "story 2, the Frostgruft, is playable")
+	check(heroes_first, "story 2 first shows the hero cards")
+	check(requested == [["res://src/hell/frost_dungeon.tscn", "mage"]] and not menu._class_panel.visible and not game.active, "the hero choice asks for the frost scene with that class instead of the crypt run")
+	check(ResourceLoader.exists("res://src/hell/frost_dungeon.tscn"), "the frost scene exists")
+	game.queue_free()
+	await process_frame
+
+func _test_story_one_starts_solo_run_and_leaving_returns_to_menu() -> void:
+	# Arrange
+	var game = await _new_game()
+	# Act: story 1 opens the hero choice; picking a hero starts the run.
+	game.main_menu._open_stories()
+	game.main_menu._choose_story("krypta")
+	check(game.main_menu._class_panel.visible and not game.main_menu._story_panel.visible and not game.active, "a story first shows the hero cards")
 	game.main_menu._choose_class("swordsman")
 	game._refresh_ui()
 	# Assert
-	check(game.active and game.hosting and game.phase == "combat" and game.room == 1 and game.floor_index == 1, "story starts a solo run in room 1 of floor 1")
+	check(game.active and game.hosting and game.phase == "combat" and game.room == 1 and game.floor_index == 1, "story 1 starts a solo run in room 1 of floor 1")
+	check(game.story_id == "krypta" and not game.open_floors and game.floor_layouts.size() == game._run_room_count(), "story 1 plays the crypt's chain of rooms")
 	check(game.players[1].class_id == "swordsman" and game.players[1].melee and game.players[1].max_hp == 10, "the chosen hero class is applied to the solo player")
 	check(not game.main_menu.visible and not game.lobby_ui.visible and game.run_hud.visible, "during the run neither menu nor lobby is visible")
 	# Act
@@ -137,6 +182,40 @@ func _test_debug_floor_two_starts_on_the_next_floor() -> void:
 	game.main_menu._choose_class("archer")
 	# Assert
 	check(game.floor_index == 2 and game.room == 1 and game.phase == "combat", "the floor 2 entry starts in room 1 of floor 2")
+	game.queue_free()
+	await process_frame
+
+func _test_level_choice_lists_worlds_and_hell_floors() -> void:
+	# Arrange
+	var game = await _new_game()
+	var menu = game.main_menu
+	var picks: Array = []
+	menu.hell_requested.connect(func(floor_number: int, boss: bool): picks.append([floor_number, boss]))
+	# Act: the debug button opens the world choice first.
+	menu._open_debug()
+	# Assert
+	check(menu._debug_panel.visible and not menu._crypt_panel.visible and not menu._hell_panel.visible, "the level choice opens on the world list")
+	var labels: Array = []
+	for node: Node in menu.get_children():
+		if node is Button: labels.append((node as Button).text)
+	check(not labels.has("HELL-DUNGEON (NEU)"), "the title screen keeps only the level-choice button bottom left")
+	# Act: open each world.
+	menu._open_world("crypt")
+	check(menu._crypt_panel.visible and not menu._debug_panel.visible, "the crypt world shows its rooms and floors")
+	menu._open_world("hell")
+	check(menu._hell_panel.visible and not menu._crypt_panel.visible, "the Hell-Dungeon world shows its floors")
+	check(menu.hell_entries.size() == 10 and int(menu.hell_entries[0].floor) == 1 and int(menu.hell_entries[9].floor) == 10, "the Hell-Dungeon lists its ten floors in order")
+	var hell_buttons: Array = []
+	for node: Node in menu._hell_panel.get_children():
+		if node is Button: hell_buttons.append(node)
+	check(hell_buttons.size() == 21, "each hell floor has a start and a boss button, plus back")
+	check((hell_buttons[1] as Button).text.begins_with("BOSS · "), "the boss button names the floor's boss")
+	# Act: press floor 3's start and floor 3's boss without leaving the crypt scene.
+	menu.hell_requested.disconnect(game._start_hell)
+	(hell_buttons[4] as Button).pressed.emit()
+	(hell_buttons[5] as Button).pressed.emit()
+	# Assert
+	check(picks == [[3, false], [3, true]], "start and boss buttons request that floor at the entrance or the boss")
 	game.queue_free()
 	await process_frame
 

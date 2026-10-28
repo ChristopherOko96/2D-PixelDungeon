@@ -15,6 +15,11 @@ extends Control
 ## A solo run with the chosen mode and hero class.
 signal start_requested(endless: bool, class_id: String)
 signal multiplayer_requested
+## Debug pick in the Hell-Dungeon world: start that floor at its entrance, or
+## right in its boss room when boss is true (src/hell/hell_dungeon.tscn).
+signal hell_requested(floor_number: int, boss: bool)
+## The player picked a hero for a story that runs in its own scene (story "scene" in story_campaigns.json).
+signal story_scene_requested(scene_path: String, class_id: String)
 signal quit_requested
 signal settings_changed(settings: Dictionary)
 ## The Dungeon-Werkstatt saved the room library; the game uses `config` now.
@@ -46,16 +51,26 @@ var account: Node
 var classes: Dictionary = {}
 var class_order: Array = []
 var weapons: Dictionary = {}
-## Debug level list: {label, endless, floor, room}; set by the game.
+## Debug level list of the crypt world: {label, endless, floor, room}; set by the game.
 var debug_entries: Array = []
+## Debug floors of the Hell-Dungeon world: {floor, title, boss}; set by the game.
+var hell_entries: Array = []
 ## False until the endless mode exists: the button is shown disabled.
 var endless_available := true
 var _endless_button: Button
+## Story campaigns in menu order (assets/data/story_campaigns.json), set by the game.
+var stories: Array = []
+## The story picked for the next solo start; empty until a story card is chosen.
+var selected_story := ""
+var _story_panel: Panel
+var _story_cards: Array[Button] = []
 # The visible canvas around the centered composition (see set_canvas_size).
 var _canvas_origin := Vector2.ZERO
 var _canvas_size := SCREEN
 var _debug_start: Dictionary = {}
 var _debug_panel: Panel
+var _crypt_panel: Panel
+var _hell_panel: Panel
 var settings := {"volume": 80, "music": 70, "effects": 85, "fullscreen": false, "shake": true}
 # Starts mid-chase so the heroes are on screen from the first frame.
 var _clock := 7.0
@@ -119,7 +134,7 @@ func _ready() -> void:
 	title.add_theme_constant_override("shadow_offset_y", 6)
 	title.add_theme_constant_override("shadow_offset_x", 0)
 	_label("STEIG HINAB. ÜBERLEBE DIE KRYPTA.", Vector2(0, 146), Vector2(SCREEN.x, 28), 16, CryptUI.SAND, HORIZONTAL_ALIGNMENT_CENTER)
-	_buttons.append(_button("STORY-MODUS", Vector2(470, 204), Vector2(340, 62), 32, _open_classes.bind(false)))
+	_buttons.append(_button("STORY-MODUS", Vector2(470, 204), Vector2(340, 62), 32, _open_stories))
 	_endless_button = _button("ENDLOS-MODUS" if endless_available else "ENDLOS · BALD", Vector2(470, 274), Vector2(340, 48), 24, _open_classes.bind(true))
 	_endless_button.disabled = not endless_available
 	_endless_button.tooltip_text = "" if endless_available else "Der Endlos-Modus folgt in einem späteren Schritt."
@@ -142,6 +157,7 @@ func _ready() -> void:
 	_toast = _label("", Vector2(0, 520), Vector2(SCREEN.x, 24), 16, GOLD, HORIZONTAL_ALIGNMENT_CENTER)
 	_build_login_panel()
 	_build_options_panel()
+	_build_story_panel()
 	_build_class_panel()
 	_build_debug_panel()
 	_load_settings()
@@ -313,6 +329,49 @@ func _submit_login(create: bool) -> void:
 
 ## Before a solo run: three hero cards (animated sprite, name, description,
 ## hearts and starting weapon). Choosing one starts the run.
+## Story choice: one card per campaign, numbered; locked stories show BALD.
+func _build_story_panel() -> void:
+	_story_panel = _panel("WÄHLE DEINE STORY")
+	_story_panel.size = Vector2(800, 470)
+	_story_panel.position = (SCREEN - _story_panel.size) * 0.5 + Vector2(0, 20)
+	_story_cards.clear()
+	for i in range(stories.size()):
+		var story: Dictionary = stories[i]
+		var playable := bool(story.get("playable", false))
+		var card := _panel_button(_story_panel, "", Vector2(30, 62 + i * 112), Vector2(740, 102), func(): _choose_story(str(story.id)))
+		card.disabled = not playable
+		_story_cards.append(card)
+		var lines := [["STORY %d" % int(story.get("number", i + 1)), 16, MUTED, Vector2(20, 12)],
+			[str(story.get("title", "")), 24, GOLD if playable else MUTED, Vector2(20, 34)],
+			[str(story.get("subtitle", "")) if playable else "BALD · " + str(story.get("subtitle", "")), 16, TEXT if playable else MUTED, Vector2(20, 70)]]
+		for line: Array in lines:
+			var label := Label.new()
+			label.text = line[0]
+			label.position = line[3]
+			label.size = Vector2(700, 26)
+			label.add_theme_font_size_override("font_size", line[1])
+			label.add_theme_color_override("font_color", line[2])
+			label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			card.add_child(label)
+	_panel_button(_story_panel, "ZURÜCK", Vector2(30, 420), Vector2(740, 36), _close_panels)
+
+
+func _open_stories() -> void:
+	_close_panels()
+	_story_panel.visible = true
+	for card: Button in _story_cards:
+		if not card.disabled:
+			card.grab_focus()
+			break
+
+
+func _choose_story(id: String) -> void:
+	selected_story = id
+	_open_classes(false)
+	for story: Dictionary in stories:
+		if str(story.id) == id: _class_title.text = "WÄHLE DEINEN HELDEN · STORY %d" % int(story.get("number", 1))
+
+
 func _build_class_panel() -> void:
 	_class_panel = Panel.new()
 	# Taller than on main: Pixel Operator 8 at 16 px needs more room per line.
@@ -369,18 +428,49 @@ func _build_class_panel() -> void:
 	_panel_button(_class_panel, "ZURÜCK", Vector2(30, 444), Vector2(740, 38), _close_panels)
 
 
-## Debug: every level as a button; a pick goes through the hero choice and
-## then starts right there.
+## Debug: the level choice first lists the built worlds, one below the other.
+## A world shows its levels; a crypt pick goes through the hero choice and
+## then starts right there, a hell pick starts that floor (entrance or boss).
 func _build_debug_panel() -> void:
-	_debug_panel = _panel("LEVEL-AUSWAHL (DEBUG)")
-	_debug_panel.size = Vector2(800, 470)
+	_debug_panel = _panel("LEVEL-AUSWAHL (DEBUG) · WELT WÄHLEN")
+	_debug_panel.size = Vector2(800, 320)
 	_debug_panel.position = (SCREEN - _debug_panel.size) * 0.5 + Vector2(0, 20)
+	_world_button(_debug_panel, "KRYPTA", "Räume, Ebenen, Minibosse, Leerenrufer", Vector2(30, 66), _open_world.bind("crypt"))
+	_world_button(_debug_panel, "HELL-DUNGEON", "10 Etagen, Start und Boss je Etage", Vector2(30, 152), _open_world.bind("hell"))
+	_panel_button(_debug_panel, "ZURÜCK", Vector2(30, 258), Vector2(365, 36), _close_panels)
+	_panel_button(_debug_panel, "KLANGWERKSTATT", Vector2(405, 258), Vector2(365, 36), open_sound_workshop)
+	_crypt_panel = _panel("WELT · KRYPTA")
+	_crypt_panel.size = Vector2(800, 470)
+	_crypt_panel.position = (SCREEN - _crypt_panel.size) * 0.5 + Vector2(0, 20)
 	for i in range(debug_entries.size()):
 		var entry: Dictionary = debug_entries[i]
-		var button := _panel_button(_debug_panel, str(entry.label), Vector2(30 + (i % 2) * 375, 62 + (i / 2) * 40), Vector2(365, 34), func(): _pick_debug(entry))
+		var button := _panel_button(_crypt_panel, str(entry.label), Vector2(30 + (i % 2) * 375, 62 + (i / 2) * 40), Vector2(365, 34), func(): _pick_debug(entry))
 		button.add_theme_font_size_override("font_size", 16)
-	_panel_button(_debug_panel, "ZURÜCK", Vector2(30, 420), Vector2(365, 36), _close_panels)
-	_panel_button(_debug_panel, "KLANGWERKSTATT", Vector2(405, 420), Vector2(365, 36), open_sound_workshop)
+	_panel_button(_crypt_panel, "ZURÜCK ZU DEN WELTEN", Vector2(30, 420), Vector2(740, 36), _open_debug)
+	_hell_panel = _panel("WELT · HELL-DUNGEON")
+	_hell_panel.size = Vector2(960, 520)
+	_hell_panel.position = (SCREEN - _hell_panel.size) * 0.5 + Vector2(0, 20)
+	for i in range(hell_entries.size()):
+		var entry: Dictionary = hell_entries[i]
+		var y := 62.0 + i * 40.0
+		var label := _panel_label(_hell_panel, "ETAGE %d · %s" % [int(entry.floor), str(entry.title).to_upper()], Vector2(30, y + 6))
+		label.size = Vector2(400, 26)
+		_panel_button(_hell_panel, "START", Vector2(440, y), Vector2(110, 34), hell_requested.emit.bind(int(entry.floor), false))
+		_panel_button(_hell_panel, "BOSS · " + str(entry.boss).to_upper(), Vector2(560, y), Vector2(370, 34), hell_requested.emit.bind(int(entry.floor), true))
+	_panel_button(_hell_panel, "ZURÜCK ZU DEN WELTEN", Vector2(30, 470), Vector2(900, 36), _open_debug)
+
+
+func _world_button(panel: Panel, title: String, hint: String, at: Vector2, callback: Callable) -> Button:
+	var button := _panel_button(panel, title + "\n" + hint, at, Vector2(740, 74), callback)
+	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	button.add_theme_color_override("font_color", GOLD)
+	return button
+
+
+func _open_world(world: String) -> void:
+	_close_panels()
+	var panel := _crypt_panel if world == "crypt" else _hell_panel
+	panel.visible = true
 
 
 ## Opens the Dungeon-Werkstatt over the menu at `room_id` (or the first room).
@@ -448,7 +538,19 @@ func _open_classes(endless: bool) -> void:
 
 func _choose_class(id: String) -> void:
 	_close_panels()
+	var scene := _story_scene() if not _class_endless else ""
+	if scene != "":
+		story_scene_requested.emit(scene, id)
+		return
 	start_requested.emit(_class_endless, id)
+
+
+## The scene of the chosen story, or "" when it plays as a crypt run.
+func _story_scene() -> String:
+	for story: Dictionary in stories:
+		if str(story.id) == selected_story:
+			return str(story.get("scene", ""))
+	return ""
 
 
 # --- Options ----------------------------------------------------------------
@@ -515,7 +617,10 @@ func _close_panels() -> void:
 	_login_panel.visible = false
 	_options_panel.visible = false
 	if _debug_panel != null: _debug_panel.visible = false
+	if _crypt_panel != null: _crypt_panel.visible = false
+	if _hell_panel != null: _hell_panel.visible = false
 	if _class_panel != null: _class_panel.visible = false
+	if _story_panel != null: _story_panel.visible = false
 	_password_input.text = ""
 	_refresh_account()
 	_buttons[0].grab_focus()

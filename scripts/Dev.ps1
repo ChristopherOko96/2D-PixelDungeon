@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('Doctor', 'Open', 'Run', 'Host', 'Join', 'Check', 'DungeonEditor', 'AnimationStudio')]
+    [ValidateSet('Doctor', 'Open', 'Run', 'Host', 'Join', 'Check', 'DungeonEditor', 'AnimationStudio', 'HellDungeon')]
     [string]$Action = 'Doctor',
     [string]$GodotPath,
     [ValidatePattern('^[A-Za-z0-9_.:\-\[\]]+$')]
@@ -168,6 +168,12 @@ switch ($Action) {
     'AnimationStudio' {
         $arguments = @('--path', $repositoryRoot, '--windowed', 'res://src/animation_studio.tscn')
         # Explicit interactive preview window, also used by Animation-Studio.cmd.
+        Start-Process -FilePath $editorPath -ArgumentList (ConvertTo-ProcessArguments $arguments) `
+            -WorkingDirectory $repositoryRoot -WindowStyle Normal | Out-Null
+    }
+    'HellDungeon' {
+        $arguments = @('--path', $repositoryRoot, '--windowed', 'res://src/hell/hell_dungeon.tscn')
+        # Single-player hell floors, also used by Hell-Dungeon.cmd.
         Start-Process -FilePath $editorPath -ArgumentList (ConvertTo-ProcessArguments $arguments) `
             -WorkingDirectory $repositoryRoot -WindowStyle Normal | Out-Null
     }

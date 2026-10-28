@@ -51,7 +51,8 @@ func place_floor(layouts: Array, seed_value: int) -> void:
 	var rooms: Array = []
 	for index in range(layouts.size()):
 		var layout: Dictionary = layouts[index]
-		if bool(layout.get("boss", false)) or index == layouts.size() - 1: continue
+		# An open floor is one map: its chests go into its middle rooms instead.
+		if (bool(layout.get("boss", false)) or index == layouts.size() - 1) and not bool(layout.get("open_floor", false)): continue
 		rooms.append(layout)
 	_place_chests(rooms)
 	for layout: Dictionary in rooms: _place_authored_mimics(layout)
@@ -64,6 +65,10 @@ func _place_chests(rooms: Array) -> void:
 	if rooms.is_empty(): return
 	var wanted := _rng.randi_range(int(_value("per_floor_min", 3)), int(_value("per_floor_max", 5)))
 	var per_room := int(_value("per_room", 2))
+	# Open floors bring their own chest count; all chests share the one map.
+	if rooms.size() == 1 and rooms[0].has("chest_range"):
+		wanted = _rng.randi_range(int(rooms[0].chest_range[0]), int(rooms[0].chest_range[1]))
+		per_room = wanted
 	var placed := 0
 	var order: Array = rooms.duplicate()
 	for index in range(order.size() - 1, 0, -1):
@@ -125,7 +130,7 @@ func _place_authored_mimics(layout: Dictionary) -> void:
 
 ## Crates in small groups along the walls (wall above or beside the cell).
 func _place_crates(layout: Dictionary) -> void:
-	var range_values: Array = _data.get("crates_per_room", [3, 7])
+	var range_values: Array = layout.get("crate_range", _data.get("crates_per_room", [3, 7]))
 	var wanted := _rng.randi_range(int(range_values[0]), int(range_values[1]))
 	var spots := _spots(layout, true)
 	var room_id := str(layout.id)
@@ -160,7 +165,7 @@ func _solidify(layout: Dictionary) -> void:
 		if str(entry.get("layer", "")) == "floor" and not bool(entry.get("solid", false)): floor_cells[Vector2i(int(entry.x), int(entry.y))] = true
 	var anchors: Array[Vector2i] = []
 	for exit: Dictionary in layout.get("exits", []): anchors.append(_cell(Dungeon._rect(exit.rect).get_center()))
-	for point: Variant in Array(layout.get("player_spawns", [])) + Array(layout.get("enemy_spawns", [])): anchors.append(_cell(Vector2(point)))
+	for point: Variant in Array(layout.get("player_spawns", [])) + Array(layout.get("enemy_spawns", [])) + Array(layout.get("boss_spawns", [])): anchors.append(_cell(Vector2(point)))
 	var blocked := {}
 	var kept: Array = []
 	for item: Dictionary in list:
