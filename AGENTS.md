@@ -716,6 +716,205 @@ approval gate above still applies to every new actor/boss art.
 - Tests: `tests/audio_sfx_test.gd`; `animation_feedback_test` accepts recorded
   (QOA) door/stairs streams.
 
+## Delve Disaster UI and build feedback (2026-10-28)
+
+- User feedback after testing the build: camera zoom 1.5 (`camera.zoom`), a
+  lighter crypt with a soft edge vignette (`lighting`,
+  `assets/shaders/canvas_post_vignette.gdshader`), much stronger monsters and
+  bosses (balance.json), bosses and mini-bosses drawn 3x (export_rigs.js
+  `scales`).
+- Name: **Delve Disaster** (project name, title, lobby, window). The user://
+  folder follows the project name, so old local settings start fresh.
+- One theme for every screen: `src/ui/crypt_ui.gd` (0x72 palette, bevelled
+  pixel frames drawn in code; the 0x72 pack has only hearts, coins and four
+  buttons). Run HUD `src/ui/run_hud.gd` + `assets/data/ui_run_hud.json`:
+  hearts top left, boss / mini-boss bar with name top centre (replaces the
+  bars over bosses), floor, room and mini-map top right, team level, skill
+  slots 1-4 and EXP bar bottom centre. The HUD hides while pause or reward
+  screens are open. Evidence: `production/qa/evidence/ui-delve-disaster/`
+  (`scripts/capture_ui.gd`). Test: `tests/run_hud_test.gd`.
+
+## Hero skills, team EXP, perks, walls and gore (2026-10-28)
+
+- User decisions: level-up cards hold class cards only, bosses and mini-bosses
+  drop general perks, no cards after normal rooms; cards are picked by mouse
+  during the fight; the Ultimate (level 10) arrives around floor 5; all three
+  Ultimates break inner walls. Details: `docs/KLASSEN-FAEHIGKEITEN.de.md`
+  "Umsetzungsstand".
+- Data: `assets/data/hero_skills.json` (skills, upgrades, passives, icons,
+  sounds, leveling 48 x L^1.2, EXP per kind, orbs, wall and status values).
+  `perk_rules.room_rewards` (default false) switches the old per-room cards
+  back on; tests of the reward overlay set it.
+- Host: `src/combat/hero_skills.gd` (keys as an input bitmask plus mouse
+  point; cooldowns, second charges, dashes, channels, zones, delayed casts,
+  skill projectiles), `src/player/class_perks.gd` (catalog, offers, passives
+  applied inside `PerkRules.rebuild`), `src/player/team_progress.gd` (orbs,
+  one team level, per-hero card queues), `src/dungeon/wall_breaker.gd`
+  (inner wall = wall cell with floor on both sides within 2 cells; rebuilds
+  the void mask; `game.walls_broken` bumps the layout revision).
+  Mirror-image decoys: `game.decoys`, read by `crypt_enemy_ai`.
+- Client: `src/vfx/skill_fx.gd`, `src/ui/level_cards.gd`,
+  `src/ui/skill_icons.gd` (class weapon + glyph/badge, so no bow on sword
+  cards). Gore: `assets/data/vfx_gore.json` (bone chips, slime, frost,
+  blood, void ichor; splats on hits and deaths, drip trails below 60 % HP).
+  Visual resets follow `room_serial` (room entries), not wall breaks.
+- Capture tools may set `game.scripted_skills` / `scripted_target`; never in
+  play. Evidence: `production/qa/evidence/hero-skills/`
+  (`scripts/capture_skills.gd`). Test: `tests/hero_skills_test.gd`.
+- Still open: the 28 boss abilities (`docs/BOSS-FAEHIGKEITEN.de.md`,
+  approved), then the editor rework.
+
+## Floor route, chests and effect sprites (2026-10-28)
+
+- User decisions: 6 rooms per floor (`campaign_room_count` in
+  dungeon_rooms.json; EXP curve 30 x L^1.2 keeps the Ultimate near floor 5,
+  measured ~450 EXP per floor); doors only in walls; 3-5 chests per floor at
+  random, in rooms ("pre-built" rooms via the editor later); chest perks are
+  active at once; consumable items wait for the user's own item list
+  ("Beides", items still to come); effects built directly, reviewed by
+  screenshot.
+- Gates: `Dungeon._crypt_wall_door` moves every crypt door into a north wall
+  face (two wall cells with floor below; frame cells beside), chosen by the
+  neighbour's side (`toward`), 5 cells from other exits. `door_cell` is the
+  arch's left wall cell, `forward` marks the way on. The 0x72 renderer draws the
+  arch there; an open gate shows a stairwell (`assets/sprites/fx/stairwell_down`
+  for the way on, `stairwell_up` for the way back, user idea) and a gold
+  chevron over the onward gate. The prompt names the target ("E · WEITER ZU
+  RAUM 3 / 6", "E · ZURÜCK ...", "E · HINAB ZU EBENE 2").
+  `tests/dungeon_ports_test.gd` checks gates in walls (its 48 old failures are
+  gone with the old floor doors).
+- Chests: `src/dungeon/chests.gd` + `assets/data/loot_chests.json` (template
+  `chest_spawns` [x, y] cells first, else north-wall floor spots; 3 hits from
+  any attack; drop = a general perk the breaker's class can use; walk over to
+  take; state per room). 0x72 chest frames (CC0). Test `tests/chests_test.gd`.
+- Effects: `scripts/make_fx_sprites.gd` draws 25 pixel-art strips into
+  `assets/sprites/fx/` + `assets/data/vfx_sprites.json` (slash, rage slash,
+  whirl, sparks, fire/frost/arcane/magic/stone/void/poison/blood bursts, orb,
+  fireball, blade wave, dust, blink smoke, beam strip, level-up, pickup, rage
+  aura, splinters). The 0x72 pack has no attack effects; the only one found (a
+  bow hit in the "wall reconfig" pack) has no licence note and is not used.
+  Player: `src/vfx/fx_sprites.gd`, used by feedback.gd (hits, kills, swings,
+  chests, walls) and skill_fx.gd (skills, beam, aura, chests, loot).
+- Evidence: `production/qa/evidence/flow-chests-fx/`
+  (`scripts/capture_flow.gd`; capture-only `game.scripted_fire`).
+
+## Hordes, solid breakables, wall hits, magic fades (2026-10-28)
+
+- User decisions: rooms are no longer gates you must clear; doors work during
+  fights; hordes "Groß" (floor 1: quota 25 per room, 15 alive at once; floor
+  10: 50 / 25); waves until the quota is spent, then the room is quiet; stairs
+  open at once except on boss floors (3, 6, 9, 10, ...) until the floor's boss
+  or mini-boss falls.
+- Hordes: `src/dungeon/hordes.gd` + `assets/data/combat_hordes.json` (waves in
+  a 280-650 px ring around the heroes, out of sight first; leaving returns the
+  living to the quota; a known room skips its opening group, a boss room whose
+  boss lives spawns it again; `exp_scale` 0.25 keeps the level pace).
+  `game.stairs_open()`, `game.floor_boss_down`. `hordes.enabled = false` gives
+  the old single encounters; smoke-role network runs and the tests of the old
+  reward flow (pause_menu, reward_cards, exploration_rules,
+  crypt_enemy_integration, hero_skills) use that. Test `tests/hordes_test.gd`.
+  Measured: 24 alive, 129 fps average, 74 minimum, host step at most 6.2 ms.
+- Breakables: crates are host objects now (not baked into the floor image),
+  3-7 per room in small groups along walls, 2 hits, no loot until the user's
+  item list. Chests and crates are solid 32 px cells (`layout.obstacles`,
+  `layout.breakable_obstacles`); a flood fill keeps doors, stairs and spawns
+  connected; breaking one frees its cell (`game.layout_changed()`).
+- Wall hits: `game.wall_hit` reports contact, normal and style (arrow, metal,
+  magic, fire, frost, arcane, void, poison, stone) for shots into walls and
+  sword swings against them; feedback.gd draws stone chips, a crack decal
+  (`particles.crack`), sparks for metal and arrows, splashes along the wall for
+  magic.
+- Visual boundary: `FxSprites.spawn(..., clip = true)` cuts an effect where
+  rays from its centre leave the room's floor cells, so effects never show
+  through walls. Feedback and skill events clip by default.
+- Magic fades: every animation eases out; magic (MAGIC list in fx_sprites.gd)
+  lingers on its last frame with a soft glow; the Photoneneis beam fades and
+  thins for 0.35 s after it ends; chain lightning eases out into an afterglow;
+  magic orbs and fireballs leave fading trails.
+
+## Spell look: Photoneneis, bloom, pixel physics (2026-10-28)
+
+- User request (game feel): effects AND sprites stop at walls, a Noita-like
+  pixel feel, the Photoneneis rebuilt from the Leerenrufer's beam as ice and
+  fire, wider and scarier, bloom for spells, better spell sprites. HP bar
+  instead of hearts is planned for later (not built).
+- Photoneneis: `skill_fx.gd` `_draw_photon` / `_photon` draw it like
+  `rig_renderer._draw_beam`: pixel squares every 2 px in 7 layers (navy
+  outline, ice sheath, frost, fire, ember, white core), slow ice swell, fast
+  fire flicker, surges running outwards, two fire threads winding through the
+  ice, glinting crystals, an impact bulb with frost spikes that stops at walls
+  (`fx.reach` + `FxSprites.clipped_disc`), a muzzle flare. It grows in 0.14 s,
+  thins out over 0.35 s, sprays ice shards, embers and frost flakes, and
+  leaves frost and soot pixels on the floor (`particles.scatter`). Hit width
+  in `hero_skills.json` photon `width` 24 -> 36 to match. Local rumble while
+  it burns (`feedback.BEAM_RUMBLE`). Drawing costs about 1.3 ms per beam.
+- Bloom: `src/vfx/glow.gd`, a Node2D with BLEND_MODE_ADD above the darkness,
+  shown only with the dark crypt (live runs, so editor and reference renders
+  are unchanged). Soft dot and band textures; sources: beam, bullets, magic
+  sprites and sparks (`FxSprites.draw_glow`), zones, chain lightning,
+  level-ups, EXP orbs, loot, torches and braziers, glowing particles, void
+  rigs. Strengths in `assets/data/vfx_glow.json`. Spells also add lights to
+  the darkness (`skill_fx.lights`, `FxSprites.lights`, fireballs).
+- Pixel physics: `src/vfx/particles.gd` rewritten. Particles have a height
+  with gravity, bounce on the floor and off wall cells (never through a wall),
+  and debris settles as floor pixels. Modes debris, spark, dust, ember, frost
+  in `assets/data/vfx_particles.json`. Splats, drips, stains and cracks are
+  painted into 128 px pixel chunks (2 world px per pixel) that last until the
+  room changes: liquids only on floor cells, cracks into the wall struck. No
+  stain cap any more (`max_stains` removed from vfx_gore.json);
+  `particles.stain_count()` replaces `_stains` in tests. Test:
+  `tests/particles_physics_test.gd` (12 checks).
+- Sprites stop at walls: `FxSprites.draw_loop(..., clip = true)` for
+  fireballs, magic orbs and blade waves near walls.
+- Spell sprites (`scripts/make_fx_sprites.gd`): explosions are 9 frames of
+  noise-edged puffs lit from the top left that cool and dither away, with
+  smoke, ice shards and a crystal ring (frost), stars and a rune ring
+  (arcane); new fireball (6 frames, flame tongues, embers), magic orb (lit,
+  orbiting sparks) and blink (motes rush in, flash, scatter). The unused beam
+  strip and `FxSprites.draw_strip` were removed.
+- Evidence: `production/qa/evidence/spells-bloom/` via
+  `scripts/capture_spells.gd` (prints frame times), plus 08-zauber-sprites-4x.png
+  (the new spell sheets at 4x). Measured on floor 2 with a horde: before
+  trimming the beam 8.3 ms per frame without it and 12.8 ms with it; after
+  trimming (wide layers every 4 px, 1.3 ms per beam) 6.9 ms either way, worst
+  frame 12.4 ms. Full suite: only the known old failures.
+
+## Living floor, Noita stage 1 (2026-10-28)
+
+- User question: can we simulate pixels like Noita? Answer given: a full
+  falling-sand world is not sensible here (top-down instead of side view,
+  GDScript speed, no compute shaders in the Compatibility renderer, tile walls
+  carry collision, enemy navigation, wall breaking, the editor and co-op).
+  Three stages offered; the user chose stage 1 (visual only, each client
+  computes its own, nothing is sent over the network). Stage 2 (materials with
+  gameplay: oil, water, poison, fire, ice reacting on a fine floor grid) is
+  the recommended later step, after the user's item list. Stage 3 (all-pixel
+  world) was advised against.
+- Built in `src/vfx/particles.gd` (settings in `assets/data/vfx_particles.json`
+  sections kick, liquid, ember, frost, smoke_color, mode smoke):
+  - `kick(point, radius, strength)`: blasts lift loose debris pixels (all of
+    them) and pool or stain pixels (a share) back into the air; frost stays
+    frost when thrown, water splashes away.
+  - Pools: every `splat` keeps creeping from its rim for a few seconds (more
+    along the hit direction, never into walls, budgeted so it always stops),
+    then dries darker.
+  - `embers(point, radius, count)`: glowing floor pixels from fire that
+    flicker yellow to dark red, glow in the bloom layer, puff smoke
+    (`smoke()`) and leave soot.
+  - `frost(point, radius, count, color)`: frost pixels (and settled frost
+    particles) melt to water after 6-10 s; the water dries away. Frost is
+    tracked per pixel (`_frozen`, colour at freezing), so frost lying on bone
+    chips melts too, and frost painted over (soot, blood) stays as it is.
+- Triggers: skill bursts kick (fire bursts also leave embers and smoke, frost
+  bursts frost), whirl, charge and backflip kick (`skill_fx._floor_reaction`);
+  wall breaks, crate breaks, bomber/void bursts and deaths kick, fire wall hits
+  leave embers (`feedback.gd`); the Photoneneis leaves melting frost.
+- Tests: `tests/particles_physics_test.gd` 26 checks, including two
+  regression tests seen failing first (thrown frost never melted; frost on
+  debris never melted). Evidence `production/qa/evidence/floor-life/` (full
+  shots plus 4x close-ups) via `scripts/capture_floor_life.gd`, which prints
+  frame times: 10.3 ms mean, 22 ms worst with 25 embers on a horde floor.
+
 ## Codex studio integration
 
 - This game already exists. Read `docs/codex/runtime.md` before applying studio

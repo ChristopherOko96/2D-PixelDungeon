@@ -9,8 +9,38 @@ design (2026-10-27)“. Alle Zahlen sind Startwerte; beim Umsetzen gehören sie 
 
 ## Umsetzungsstand
 
-**Schritt 2 (27.10.2026) umgesetzt: Klassen und Grundangriffe.** Die Tasten 1–4
-und die Level-Up-Perks unten sind noch nicht gebaut (Schritte 3 und 4).
+**28.10.2026 umgesetzt: alle 12 Fähigkeiten, ihre 48 Upgrades, die Klassen-Passiven,
+geteilte Team-EXP und das neue Perk-System.** Entscheidungen des Nutzers dazu:
+
+- **Perks:** Level-ups geben drei Klassen-Karten (Upgrades freigeschalteter Fähigkeiten
+  und Klassen-Passive). Bosse und Nebenbosse geben eine Wahl aus den allgemeinen Perks.
+  Nach normalen Räumen gibt es keine Karten mehr (`perk_rules.room_rewards` = false;
+  der alte Modus bleibt für Tests schaltbar).
+- **Wahl im Kampf:** Die Karten erscheinen rechts, das Spiel läuft weiter, gewählt
+  wird per Mausklick. Tasten 1–4 bleiben Fähigkeiten.
+- **Tempo:** Ultimate (Level 10) etwa zu Beginn von Etage 5. Kurve 48 × Level^1,2;
+  gemessen rund 780 EXP pro Etage (Seed 4242).
+- **EXP:** Gegner lassen grüne EXP-Kugeln fallen; sie fliegen zum nächsten Helden
+  und füllen eine gemeinsame Team-Leiste. Alle leveln gleichzeitig, jeder Held heilt
+  ein Herz und bekommt eigene Karten.
+- **Wände:** Alle drei Ultimates brechen Innenwände (Pfeilfaust beim Aufprall,
+  Photoneneis nach 0,6 s auf derselben Stelle, Hiebe während Rage). Innenwände sind
+  Mauerzellen mit Boden auf beiden Seiten; Außenwände und Zellen an Türen bleiben.
+- **Icons:** Jede Karte zeigt die Waffe der eigenen Klasse (0x72-Sprite) mit
+  Effekt-Zeichen; allgemeine Waffen-Perks bekommen ebenfalls die Klassenwaffe.
+
+Werte: `assets/data/hero_skills.json`. Code: `src/combat/hero_skills.gd`,
+`src/player/class_perks.gd`, `src/player/team_progress.gd`,
+`src/dungeon/wall_breaker.gd`, `src/ui/skill_icons.gd`, `src/ui/level_cards.gd`,
+`src/vfx/skill_fx.gd`. Test `tests/hero_skills_test.gd`, Nachweis
+`production/qa/evidence/hero-skills/`.
+
+Abweichungen von den Tabellen unten: Rückwärtssprung heißt im Spiel kurz
+„Rücksprung“; Pfeilfaust und Klingenwelle prallen an Wänden mit einem schmalen Kern
+ab, damit sie durch Gänge fliegen. Der Level-Up-Konflikt mit den Tasten 1–4 ist durch
+die Mauswahl gelöst.
+
+**Schritt 2 (27.10.2026): Klassen und Grundangriffe.**
 
 - Klassenwahl: Solo über die Heldenkarten nach „Story-Modus“, Mehrspieler über den
   Knopf „< KLASSE >“ in der Lobby (vom Host geprüft, nur vor dem Laufstart).

@@ -114,8 +114,14 @@ static func generate(seed: int, room_count: int, config: Dictionary) -> Array[Di
 			var direction: Vector2i = Vector2i(other.grid_x - layout.grid_x, other.grid_y - layout.grid_y)
 			var side: String = "east" if direction.x > 0 else "west" if direction.x < 0 else "south" if direction.y > 0 else "north"
 			var exit: Dictionary = _make_door(side, neighbor + 1, layout)
+			# Crypt rooms: the door moves into a wall (an arched gate in a north
+			# wall face), never standing on the open floor.
+			if layout.get("crypt_profile", false):
+				var walled: Dictionary = _crypt_wall_door(side, neighbor + 1, layout)
+				if not walled.is_empty(): exit = walled
 			if exit.is_empty():
 				return []
+			exit.forward = neighbor > index
 			layout.exits.append(exit)
 		if index == rooms.size() - 1:
 			# The boss arena has a dedicated down stair; it never doubles as a
@@ -469,6 +475,63 @@ static func _make_door(side: String, target_room: int, layout: Dictionary) -> Di
 	if entry_spawns.size() < 4: return {}
 	exit.entry_spawns = entry_spawns
 	return exit
+
+## A door towards `side`: crypt rooms get a gate in a wall (_crypt_wall_door),
+## other rooms keep their authored or lane door. `forward` marks the way on.
+static func _walled_door(side: String, target_room: int, layout: Dictionary, forward: bool) -> Dictionary:
+	var exit: Dictionary = _make_door(side, target_room, layout)
+	if layout.get("crypt_profile", false):
+		var walled := _crypt_wall_door(side, target_room, layout)
+		if not walled.is_empty(): exit = walled
+	if not exit.is_empty(): exit.forward = forward
+	return exit
+
+## A crypt door set into a wall: two wall cells of a north-facing wall (floor
+## directly below, no floor above, wall cells on both sides for the frame). The
+## face nearest the neighbour's side wins (west: leftmost, east: rightmost,
+## north: topmost, south: lowest), keeping 5 cells from other exits. The exit
+## trigger is the floor in front of the gate; `door_cell` is the gate's left
+## wall cell, which the 0x72 renderer draws the arch over. {} when no face fits.
+static func _crypt_wall_door(side: String, target_room: int, layout: Dictionary) -> Dictionary:
+	if layout.get("player_spawns", []).is_empty(): return {}
+	var floor_cells := {}
+	var wall_cells := {}
+	for entry: Dictionary in layout.get("painted_tiles", []):
+		var cell := Vector2i(int(entry.x), int(entry.y))
+		if str(entry.get("layer", "")) == "floor" and not bool(entry.get("solid", false)): floor_cells[cell] = true
+	for entry: Dictionary in layout.get("painted_tiles", []):
+		var cell := Vector2i(int(entry.x), int(entry.y))
+		if bool(entry.get("solid", false)) and not floor_cells.has(cell): wall_cells[cell] = true
+	var taken: Array[Vector2] = []
+	for exit: Dictionary in layout.get("exits", []): taken.append(_rect(exit.rect).get_center())
+	var radius := float(layout.tile_size) * 0.375
+	var best: Dictionary = {}
+	var best_score := INF
+	for cell: Vector2i in wall_cells:
+		var right := cell + Vector2i.RIGHT
+		if not wall_cells.has(right) or not wall_cells.has(cell + Vector2i.LEFT) or not wall_cells.has(right + Vector2i.RIGHT): continue
+		if not floor_cells.has(cell + Vector2i.DOWN) or not floor_cells.has(right + Vector2i.DOWN): continue
+		if floor_cells.has(cell + Vector2i.UP) or floor_cells.has(right + Vector2i.UP): continue
+		var center := Vector2((cell.x + 1) * 32.0, (cell.y + 1) * 32.0 + 16.0)
+		var crowded := false
+		for other: Vector2 in taken:
+			if other.distance_to(center) < 160.0: crowded = true
+		if crowded: continue
+		var score: float = {"west": cell.x * 100.0 - cell.y, "east": -cell.x * 100.0 - cell.y, "north": cell.y * 100.0 + absf(cell.x - 32.0), "south": -cell.y * 100.0 + absf(cell.x - 32.0)}.get(side, 0.0)
+		if score >= best_score: continue
+		if segment_blocked(center, center, radius, layout) or find_path(layout.player_spawns[0], center, radius, layout).is_empty(): continue
+		best_score = score
+		best = {"cell": cell, "center": center}
+	if best.is_empty(): return {}
+	var gate: Vector2i = best.cell
+	var region := Rect2(Vector2(best.center) - Vector2(16, 16), Vector2(32, 32))
+	var result := {"id": "%s-gate-%d-%d-to-r%02d" % [layout.get("id", "authored"), gate.x, gate.y, target_room], "kind": "door", "side": "north",
+		"rect": [region.position.x, region.position.y, 32.0, 32.0], "target_room": target_room, "door_cell": [gate.x, gate.y], "toward": side,
+		"tile": "items_002", "rotation": 0}
+	var slots := _entry_slots(result, layout)
+	if slots.size() != 4: return {}
+	result.entry_spawns = slots
+	return result
 
 static func _door_region(side: String, layout: Dictionary) -> Rect2:
 	var bounds: Rect2 = _rect(layout.play_bounds)
@@ -875,8 +938,8 @@ static func _generate_freeform(seed: int, count: int, config: Dictionary) -> Arr
 		for template: Dictionary in config.templates:
 			if template.id == layout.template_id: layout.theme = template.get("theme",THEMES[posmod(seed+index,THEMES.size())])
 		layout.exits = []
-		if index > 0: layout.exits.append(_make_door(layout.incoming,index,layout))
-		if index < count-1: layout.exits.append(_make_door(layout.outgoing,index+2,layout))
+		if index > 0: layout.exits.append(_walled_door(layout.incoming,index,layout,false))
+		if index < count-1: layout.exits.append(_walled_door(layout.outgoing,index+2,layout,true))
 		if index == count-1: layout.exits.append(_make_stairs(layout))
 		for exit: Dictionary in layout.exits:
 			if exit.is_empty(): return []

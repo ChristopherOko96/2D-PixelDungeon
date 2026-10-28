@@ -8,6 +8,10 @@ extends RefCounted
 ## snapshot still sees the counter move and reacts once.
 
 const Particles = preload("res://src/vfx/particles.gd")
+const GORE_PATH := "res://assets/data/vfx_gore.json"
+const SKILLS_PATH := "res://assets/data/hero_skills.json"
+static var _gore: Dictionary = {}
+static var _skill_sounds: Dictionary = {}
 
 const BLOOD := {"chaser": Color("6fbf4f"), "shooter": Color("b4543f"), "boss": Color("9b4fd4"), "player": Color("d8484f"),"skeleton_archer":Color("c5b68c"),"skeleton_guard":Color("c5b68c"),"necromancer":Color("786c8a")}
 const SPARK := Color("fff1c2")
@@ -18,10 +22,14 @@ const STIFFNESS := 320.0
 const DAMPING := 13.0
 
 var particles := Particles.new()
+## Effect animations (FxSprites), set by the view; null in tests.
+var fx: RefCounted = null
 ## Optional sound player with play(name); null in tests and headless runs.
 var sfx: Node = null
 ## Screen-shake trauma 0..1; the view squares it for the offset.
 var shake := 0.0
+## Trauma held while the local hero's Photoneneis burns (a 1 px rumble).
+const BEAM_RUMBLE := 0.3
 ## Seconds left in which the view holds the current frame (hitstop).
 var hitstop := 0.0
 
@@ -37,6 +45,35 @@ var _blasts: Dictionary = {}
 var _local_moving := false
 var _step_timer := 0.0
 var _clock := 0.0
+var _team_level := 0
+
+
+## Gore table (vfx_gore.json), cached.
+static func _gore_data() -> Dictionary:
+	if _gore.is_empty():
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(GORE_PATH)) if FileAccess.file_exists(GORE_PATH) else null
+		_gore = parsed if parsed is Dictionary else {"materials": {}, "kinds": {}}
+	return _gore
+
+
+## What an enemy (or "player") is made of: {material, color, stain, ...}.
+static func gore(kind: String) -> Dictionary:
+	var data := _gore_data()
+	var name := str(data.get("kinds", {}).get(kind, data.get("default", "blood")))
+	var material: Dictionary = data.get("materials", {}).get(name, {}).duplicate()
+	material.material = name
+	return material
+
+
+## Sound event of a hero skill (hero_skills.json "sound"), cached.
+static func skill_sound(skill_id: String) -> String:
+	if _skill_sounds.is_empty():
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(SKILLS_PATH)) if FileAccess.file_exists(SKILLS_PATH) else null
+		_skill_sounds["_"] = ""
+		if parsed is Dictionary:
+			for block: Dictionary in parsed.get("classes", {}).values():
+				for skill: Dictionary in block.get("skills", []): _skill_sounds[str(skill.id)] = str(skill.get("sound", ""))
+	return str(_skill_sounds.get(skill_id, ""))
 
 
 ## Compares a snapshot with the last one and fires the reactions for anything
@@ -45,7 +82,8 @@ func observe(snapshot: Dictionary, local_peer: int) -> void:
 	var layout: Variant = snapshot.get("room_layout", {})
 	var room_id: String = str(layout.get("id", "")) if layout is Dictionary else ""
 	if not room_id.is_empty():
-		room_id = "%s:%s:%s:%s" % [snapshot.get("run_seed",0),snapshot.get("floor_index",0),room_id,snapshot.get("room_layout_revision",0)]
+		# Room entries, not wall breaks (which also bump the layout revision), reset effects.
+		room_id = "%s:%s:%s:%s" % [snapshot.get("run_seed",0),snapshot.get("floor_index",0),room_id,snapshot.get("room_serial",snapshot.get("room_layout_revision",0))]
 	var phase := str(snapshot.get("phase", ""))
 	if room_id != _room_id:
 		# The room-transition controller chooses door versus stairs explicitly.
@@ -53,6 +91,7 @@ func observe(snapshot: Dictionary, local_peer: int) -> void:
 		_room_id = room_id
 		_actors.clear()
 		particles.clear()
+		if fx != null: fx.clear()
 		shake = 0.0
 		hitstop = 0.0
 		_boss_announced = false
@@ -68,12 +107,52 @@ func observe(snapshot: Dictionary, local_peer: int) -> void:
 		var id := int(event.get("id", 0))
 		if _fx_seen.has(id): continue
 		_fx_seen[id] = true
-		if str(event.get("kind", "")) == "void_burst": _play("void_burst")
+		var fx_kind := str(event.get("kind", ""))
+		var fx_point := Vector2(float(event.get("x", 0.0)), float(event.get("y", 0.0)))
+		if fx_kind == "void_burst":
+			particles.kick(fx_point, 56.0, 1.3)
+			_play("void_burst")
+			_fx_spawn("void_burst", fx_point, 0.0, 1.3)
+		elif fx_kind == "wall_hit": _wall_hit(fx_point, Vector2(float(event.get("nx", 0.0)), float(event.get("ny", 0.0))), str(event.get("style", "arrow")))
+		elif fx_kind == "crate_break":
+			particles.kick(fx_point, 20.0, 0.6)
+			particles.burst(fx_point, Color("a8743e"), 18, 210.0, 0.7, Vector2.ZERO, PI, 4.0, 4.0)
+			particles.burst(fx_point, Color("5e3c22"), 10, 140.0, 0.8, Vector2.ZERO, PI, 3.0, 3.0)
+			particles.splat(fx_point + Vector2(0, 6), Color("4a3020"), 0.5, 9.0)
+			_fx_spawn("wood_burst", fx_point, 0.0, 1.5)
+			_fx_spawn("dust", fx_point + Vector2(0, 4), 0.0, 1.6)
+			_play_any(["break_bone", "block"], 0.05)
+		elif fx_kind == "enemy_spawn":
+			_fx_spawn("dust", fx_point + Vector2(0, 6), 0.0, 2.2)
+			particles.burst(fx_point, Color("5a4e48"), 8, 90.0, 0.5, Vector2.UP, 1.2, 3.0, 3.0, "dust")
+		elif fx_kind == "level_up": _fx_spawn("level_up", fx_point + Vector2(0, 12), 0.0, 1.2)
+		elif fx_kind == "chest_open":
+			particles.burst(fx_point, Color("b8864a"), 16, 200.0, 0.6, Vector2.ZERO, PI, 3.0, 4.0)
+			_fx_spawn("wood_burst", fx_point, 0.0, 1.4)
+			_fx_spawn("pickup", fx_point + Vector2(0, -8), 0.0, 1.5)
+			_play_any(["break_bone", "block"], 0.05)
+		elif fx_kind == "loot_taken":
+			_fx_spawn("pickup", fx_point, 0.0, 1.6)
+			_play("perk")
+		elif fx_kind == "wall_break":
+			particles.kick(fx_point, 48.0, 1.3)
+			# Rubble: stone chunks and dust where an inner wall gave way.
+			particles.burst(fx_point, Color("8f7f70"), 18, 220.0, 0.7, Vector2.ZERO, PI, 4.0, 4.0)
+			particles.burst(fx_point, Color("c9b49a"), 12, 120.0, 0.9, Vector2.ZERO, PI, 3.0, 2.0)
+			particles.stain(fx_point, Color("5a4e48"), 14.0)
+			_add_shake(0.35)
+			_fx_spawn("stone_burst", fx_point, 0.0, 0.9)
+			_play_any(["break_bone", "blast"], 0.05)
+	# Team level-up fanfare, once per new level.
+	var team_level := int(snapshot.get("team", {}).get("level", 0))
+	if team_level > _team_level and _team_level > 0: _play("room_clear")
+	if team_level > 0: _team_level = team_level
 	for event: Dictionary in snapshot.get("perk_events", []):
 		if str(event.get("kind", "")) != "blast": continue
 		var key := "%d:%d" % [int(event.get("x", 0)), int(event.get("y", 0))]
 		if _blasts.has(key): continue
 		_blasts[key] = _clock
+		_fx_spawn("magic_burst", Vector2(float(event.get("x", 0)), float(event.get("y", 0))), 0.0, 1.2)
 		_play("blast")
 	var seen: Dictionary = {}
 	for value: Variant in snapshot.get("enemies", []):
@@ -159,6 +238,39 @@ func pose(key: String, entity: Dictionary, clock: float, authored_animation: boo
 		"flash_color": state.get("flash_color", Color.WHITE)}
 
 
+## Starts an effect animation when the view supplied the player; effects are
+## cut at walls (they never show through to the other side).
+func _fx_spawn(name: String, point: Vector2, rotation: float = 0.0, scale: float = 1.0, tint: Color = Color.WHITE, speed: float = 1.0) -> void:
+	if fx != null: fx.spawn(name, point, rotation, scale, tint, speed, true)
+
+
+const WALL_STYLES := {"fire": ["fire_burst", Color("ff9a3a"), Color("3a2418")], "frost": ["frost_burst", Color("bfeaf2"), Color("3a6a7a")], "arcane": ["arcane_burst", Color("c8a8ff"), Color("3a2a5a")], "magic": ["magic_burst", Color("8ff0b8"), Color("244a3a")], "void": ["void_burst", Color("c890f0"), Color("3a1e4a")], "poison": ["poison_burst", Color("a8e05a"), Color("2a4a1a")]}
+
+
+## Something struck a wall at `point` (normal back to the floor): stone chips
+## drop, a crack remains; metal and arrows spark, magic splashes along the wall.
+func _wall_hit(point: Vector2, normal: Vector2, style: String) -> void:
+	if normal == Vector2.ZERO: normal = Vector2.DOWN
+	var out := point + normal * 4.0
+	var along := normal.orthogonal()
+	particles.burst(out, Color("8f7f70"), 5, 120.0, 0.55, normal + Vector2(0, 0.6), 0.9, 2.0, 2.5)
+	particles.burst(out, Color("c9b49a"), 3, 70.0, 0.7, Vector2(0, 1), 0.5, 2.0, 1.5)
+	particles.crack(point, normal)
+	if WALL_STYLES.has(style):
+		var data: Array = WALL_STYLES[style]
+		_fx_spawn(str(data[0]), out, 0.0, 0.55)
+		if style == "fire":
+			particles.embers(out, 6.0, 3)
+			particles.smoke(out, 2, 3.0)
+		for side in [-1.0, 1.0]: particles.burst(out, data[1], 6, 150.0, 0.45, along * side + normal * 0.25, 0.35, 2.0, 4.0, "spark")
+		particles.splat(point, data[2], 0.35, 4.0, along)
+	else:
+		particles.burst(out, Color("fff2b0"), 7, 260.0, 0.22, normal, 0.8, 2.0, 7.0, "spark")
+		_fx_spawn("hit_spark", out, randf() * TAU, 0.7, Color(1.0, 0.95, 0.75))
+		_fx_spawn("dust", out, 0.0, 0.7)
+		if style == "metal": _play_any(["block"], 0.08)
+
+
 func _actor(key: String, entity: Dictionary, first_counter: String, second_counter: String) -> Dictionary:
 	if not _actors.has(key):
 		# A new actor starts from its current counters, so joining mid-fight or
@@ -183,18 +295,25 @@ func _observe_enemy(state: Dictionary, enemy: Dictionary) -> void:
 	var boss: bool = kind == "boss"
 	var origin := Vector2(float(enemy.get("x", 0.0)), float(enemy.get("y", 0.0)))
 	var direction := Vector2(float(enemy.get("dx", 0.0)), float(enemy.get("dy", 0.0)))
-	var blood: Color = BLOOD.get(kind, BLOOD.chaser)
+	var material := gore(kind)
+	var blood: Color = Color(str(material.get("color", "c8323a")))
+	var stain_color: Color = Color(str(material.get("stain", "7a1a22")))
+	var stain_alpha: float = float(material.get("stain_alpha", 0.6))
 	var hits := int(enemy.get("hits", 0))
 	var dying: bool = float(enemy.get("dying_p", -1.0)) >= 0.0
 	if dying and not state.dying:
 		# Killing blow: everything at once, strongest on the boss.
+		particles.kick(origin + Vector2(0, 10), 48.0 if boss else 20.0, 1.0 if boss else 0.5)
 		state.dying = true
 		state.hits = hits
 		_flash(state, Color.WHITE, 0.14)
 		_kick(state, Vector2(0.45, -0.4) * (0.5 if boss else 1.0), direction.x * 0.5)
 		particles.burst(origin, blood, 70 if boss else 24, 260.0 if boss else 190.0, 0.9 if boss else 0.6, direction, 1.3, 4.0 if boss else 3.0)
-		particles.burst(origin, DUST, 30 if boss else 10, 120.0, 0.7, Vector2.ZERO, PI, 4.0, 3.0)
-		particles.stain(origin + Vector2(0, 12), blood, 34.0 if boss else 16.0)
+		particles.burst(origin, DUST, 30 if boss else 10, 120.0, 0.7, Vector2.ZERO, PI, 4.0, 3.0, "dust")
+		particles.splat(origin + Vector2(0, 10), stain_color, stain_alpha, float(material.get("death_splat", 18)) * (2.0 if boss else 1.0), direction)
+		if bool(material.get("chips", false)): particles.burst(origin, blood, 16 if boss else 10, 210.0, 0.8, direction, 1.2, 4.0, 4.0)
+		var death_fx: String = {"bone": "stone_burst", "slime": "poison_burst", "frost": "frost_burst", "void": "void_burst", "blood": "blood_burst"}.get(str(material.get("material", "blood")), "blood_burst")
+		_fx_spawn(death_fx, origin + Vector2(0, -8), 0.0, 2.2 if boss else 1.0)
 		_play_death(enemy, boss)
 		_add_shake(0.95 if boss else 0.32)
 		hitstop = maxf(hitstop, 0.18 if boss else 0.07)
@@ -207,19 +326,30 @@ func _observe_enemy(state: Dictionary, enemy: Dictionary) -> void:
 		else:
 			_flash(state, HIT_FLASH, 0.08, 0.85)
 		_kick(state, Vector2(0.14, -0.12) if boss else Vector2(0.34, -0.3), direction.x * (0.1 if boss else 0.3))
-		particles.burst(origin - direction * 6.0, SPARK, 6, 170.0, 0.22, -direction, 0.7, 2.0, 8.0)
+		particles.burst(origin - direction * 6.0, SPARK, 6, 170.0, 0.22, -direction, 0.7, 2.0, 8.0, "spark")
+		_fx_spawn("hit_spark", origin - direction * 10.0 + Vector2(0, -10), float(hits) * 0.7, 1.3 if boss else 1.0)
 		particles.burst(origin, blood, 6 if boss else 4, 130.0, 0.45, direction, 0.6, 3.0)
+		# Liquids spray onto the floor behind the target; bone only chips.
+		if float(material.get("hit_splat", 0)) > 0.0: particles.splat(origin + Vector2(0, 8) + direction * 10.0, stain_color, stain_alpha * 0.85, float(material.hit_splat) * (1.6 if boss else 1.0), direction)
+		elif bool(material.get("chips", false)): particles.burst(origin, blood, 5, 160.0, 0.5, direction, 0.8, 3.0, 5.0)
 		_play_any(["hit_" + _material(enemy), "boss_hit" if boss else "hit"])
 		# No hitstop on ordinary boss hits: under sustained fire it would freeze
 		# the picture several times a second. Hitstop is kept for kills and hurts.
 		_add_shake(0.14 if boss else 0.08)
+	# Wounded enemies leave a drip trail where they walk.
+	var health_share := float(enemy.get("hp", 1.0)) / maxf(float(enemy.get("max_hp", 1.0)), 1.0)
+	if not dying and float(material.get("drip_every", 0)) > 0.0 and health_share < float(material.get("drip_below", 0.0)):
+		var last: Vector2 = state.get("drip_at", origin)
+		if not state.has("drip_at") or origin.distance_to(last) >= float(material.drip_every):
+			state.drip_at = origin
+			particles.drip(origin + Vector2(0, 10), stain_color, stain_alpha, 3.0 if boss else 2.0)
 	var attacks := int(enemy.get("attacks", 0))
 	var blocks: int = int(enemy.get("blocks",0))
 	if blocks > int(state.get("blocks",0)):
 		state.blocks = blocks
 		_flash(state,Color("dfd7b6"),0.12,0.65)
 		_kick(state,Vector2(0.18,-0.12),direction.x*0.12)
-		particles.burst(origin-direction*8,SPARK,5,130,0.22,-direction,0.8,2,6)
+		particles.burst(origin-direction*8,SPARK,5,130,0.22,-direction,0.8,2,6,"spark")
 		_play("block")
 	# Body parts: a part breaks off (bone snaps, flesh tears) or grows back.
 	var breaks: int = int(enemy.get("part_breaks",0))
@@ -235,7 +365,7 @@ func _observe_enemy(state: Dictionary, enemy: Dictionary) -> void:
 		state.attacks = attacks
 		_kick(state, Vector2(0.32, -0.28) * (0.6 if boss else 1.0), float(enemy.get("face", 1.0)) * 0.35)
 		var attack_color: Color = Color("89b4a7") if kind == "necromancer" else Color("d2bf94") if kind in ["skeleton_archer","skeleton_guard"] else Color("f19791")
-		particles.burst(origin, attack_color, 14 if boss else 7, 150.0, 0.3, Vector2.ZERO, PI, 2.0, 7.0)
+		particles.burst(origin, attack_color, 14 if boss else 7, 150.0, 0.3, Vector2.ZERO, PI, 2.0, 7.0, "dust")
 		# Each move sounds like itself; the bomber's fuse ends in its burst (fx event).
 		var move := str(enemy.get("attack_kind", ""))
 		if move != "fuse": _play_any(["attack_" + move, "enemy_shoot"], 0.12)
@@ -295,6 +425,10 @@ func _observe_player(state: Dictionary, player: Dictionary, local: bool) -> void
 		state.swings = swings
 		var swing_aim := Vector2(float(player.get("ax", 1.0)), float(player.get("ay", 0.0)))
 		_kick(state, Vector2(0.1, -0.08), swing_aim.x * 0.16)
+		var raging: bool = player.get("skills", {}).has("rage")
+		var swing_angle := float(player.get("swing_angle", swing_aim.angle()))
+		var reach := maxf(40.0, float(player.get("reach", 64.0)))
+		_fx_spawn("slash_rage" if raging else "slash", origin + Vector2(0, -12), swing_angle, reach / 52.0, Color.WHITE, 1.6 if raging else 1.0)
 		if local:
 			_play("swing", 0.1)
 	var hurts := int(player.get("hurts", 0))
@@ -303,10 +437,28 @@ func _observe_player(state: Dictionary, player: Dictionary, local: bool) -> void
 		_flash(state, Color("ff4a4a"), 0.18)
 		_kick(state, Vector2(0.3, -0.32), 0.0)
 		particles.burst(origin, BLOOD.player, 10, 160.0, 0.5, Vector2.ZERO, PI, 3.0)
+		var hero_blood := gore("player")
+		particles.splat(origin + Vector2(0, 8), Color(str(hero_blood.get("stain", "7a1a22"))), float(hero_blood.get("stain_alpha", 0.6)), 5.0, Vector2(float(player.get("hit_dx", 0.0)), float(player.get("hit_dy", 0.0))))
 		_play("hurt", 0.05)
 		_add_shake(0.5 if local else 0.15)
 		hitstop = maxf(hitstop, 0.05 if local else 0.0)
+	# Hero skills: each cast sounds like itself (hero_skills.json "sound").
+	var casts := int(player.get("skill_casts", 0))
+	if casts < int(state.get("skill_casts", 0)): state.skill_casts = casts
+	if casts > int(state.get("skill_casts", 0)):
+		state.skill_casts = casts
+		var cast_sound := skill_sound(str(player.get("last_skill", "")))
+		if not cast_sound.is_empty(): _play(cast_sound, 0.05)
+		_kick(state, Vector2(0.2, -0.18), 0.0)
+	# Photoneneis: a jolt when it ignites, then a steady rumble while it burns.
+	var beaming: bool = player.get("skills", {}).has("beam") and float(player.get("hp", 0)) > 0
+	if beaming and not bool(state.get("beaming", false)): _add_shake(0.45 if local else 0.15)
+	if beaming and local: shake = maxf(shake, BEAM_RUMBLE)
+	state.beaming = beaming
 	if local:
+		var card := str(player.get("last_card", ""))
+		if card != str(state.get("last_card", card)) and not card.is_empty(): _play("perk")
+		state.last_card = card
 		_local_moving = bool(player.get("moving", false)) and float(player.get("hp", 1)) > 0
 		# A newly picked perk chimes for the player who took it.
 		var perk := str(player.get("last_perk", ""))

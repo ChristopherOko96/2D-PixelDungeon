@@ -1,0 +1,167 @@
+{
+  "_note": "Hero skills (keys 1-4), their level-up upgrades and the class passives, from docs/KLASSEN-FAEHIGKEITEN.de.md. Damage values are multiples of the class weapon's damage. Times in seconds, distances in world pixels, slows as a share of speed (0.4 = 40 % slower). 'max' is how often a card can be taken. Icons: 'base' is a 0x72 weapon sprite, 'glyph' the drawn effect, 'badge' the small corner mark of an upgrade or passive (src/ui/skill_icons.gd).",
+  "schema_version": 1,
+  "leveling": {"base": 30, "exponent": 1.2, "heal": 2, "cards": 3, "max_level": 40},
+  "exp": {
+    "skeleton": 10, "skeleton_archer": 10, "skeleton_guard": 12, "necromancer": 18,
+    "tiny_zombie": 6, "ice_zombie": 14, "void_bomber": 6,
+    "moderkoloss": 120, "frostleiche": 140, "knochenkoloss": 160, "boss": 300,
+    "default": 8, "summoned_scale": 0.5
+  },
+  "orbs": {"max_orbs": 8, "burst_speed_min": 90, "burst_speed_max": 190, "friction": 5.0, "settle": 0.45, "magnet_radius": 130, "magnet_accel": 1700, "max_speed": 600, "collect_radius": 18, "vacuum_after": 0.8, "radius": 4},
+  "boss_perks": {"cards": 3},
+  "walls": {"fist_radius": 52, "beam_break_time": 0.6, "beam_radius": 34, "rage_reach_bonus": 10},
+  "status": {"boss_slow_scale": 0.5, "boss_push_scale": 0.25},
+  "classes": {
+    "swordsman": {
+      "weapon_icon": "weapon_knight_sword",
+      "color": "e06a4e",
+      "skills": [
+        {"id": "whirl", "sound": "swing", "key": "1", "name": "WIRBELKLINGE", "unlock": 1, "cooldown": 6, "radius": 80, "damage": 2.0, "duration": 0.35, "move_scale": 0.5, "knockback": 420,
+          "description": "Rundumhieb um dich herum, 2x Schaden, starker Rückstoß.",
+          "icon": {"base": "weapon_knight_sword", "glyph": "swirl"},
+          "upgrades": [
+            {"id": "double_whirl", "name": "DOPPELWIRBEL", "description": "Zweite Umdrehung direkt danach (70 % Schaden).", "max": 1, "damage": 0.7, "badge": "double"},
+            {"id": "pull", "name": "SOG", "description": "Zieht Gegner im Umkreis von 140 px vorher heran.", "max": 1, "radius": 140, "distance": 40, "badge": "magnet"},
+            {"id": "ember_whirl", "name": "GLUTWIRBEL", "description": "Setzt in Brand: 1 Schaden/s für 3 s.", "max": 1, "dps": 1, "time": 3, "badge": "fire"},
+            {"id": "wide_swing", "name": "WEITER SCHWUNG", "description": "+20 % Radius.", "max": 2, "radius": 0.2, "badge": "wide"}
+          ]},
+        {"id": "wave", "sound": "attack_slash", "key": "2", "name": "KLINGENWELLE", "unlock": 3, "cooldown": 5, "range": 320, "width": 48, "speed": 520, "damage": 1.5,
+          "description": "Sichelwelle zur Maus, durchdringt alle Gegner, 1,5x Schaden.",
+          "icon": {"base": "weapon_knight_sword", "glyph": "crescent"},
+          "upgrades": [
+            {"id": "wave_fan", "name": "WELLENFÄCHER", "description": "3 Wellen im Fächer, je 70 % Schaden.", "max": 1, "count": 3, "spread": 0.35, "damage": 0.7, "badge": "fan"},
+            {"id": "boomerang", "name": "BUMERANG", "description": "Die Welle kehrt zurück und trifft erneut.", "max": 1, "badge": "return"},
+            {"id": "heavy_wave", "name": "SCHWERE WELLE", "description": "+50 % Schaden, größer, fliegt langsamer.", "max": 1, "damage": 0.5, "size": 0.4, "speed": -0.3, "badge": "up"},
+            {"id": "far_throw", "name": "WEITWURF", "description": "+30 % Flugweite.", "max": 2, "range": 0.3, "badge": "range"}
+          ]},
+        {"id": "charge", "sound": "attack_bite", "key": "3", "name": "ANSTURM", "unlock": 6, "cooldown": 8, "distance": 160, "duration": 0.2, "damage": 1.0,
+          "description": "Sprint zur Maus, unverwundbar, trifft alles auf dem Weg.",
+          "icon": {"base": "weapon_knight_sword", "glyph": "dash"},
+          "upgrades": [
+            {"id": "second_charge", "name": "ZWEITE LADUNG", "description": "Zwei Anstürme hintereinander.", "max": 1, "window": 1.5, "badge": "double"},
+            {"id": "shockwave", "name": "SCHOCKWELLE", "description": "Stoß am Ende: 64 px, 1x Schaden, 0,5 s betäubt.", "max": 1, "radius": 64, "damage": 1.0, "stun": 0.5, "badge": "ring"},
+            {"id": "battle_frenzy", "name": "KAMPFRAUSCH", "description": "Danach 3 s lang 30 % schnellere Hiebe.", "max": 1, "time": 3, "rate": 0.3, "badge": "clock"},
+            {"id": "shoulder", "name": "SCHULTERSTOSS", "description": "Getroffene fliegen weit weg und sind 0,8 s betäubt.", "max": 1, "knockback": 720, "stun": 0.8, "badge": "push"}
+          ]},
+        {"id": "rage", "sound": "attack_roar", "key": "4", "name": "RAGE", "unlock": 10, "cooldown": 20, "duration": 6, "rate": 0.5, "crit": 0.25, "crit_mult": 2.0, "ultimate": true,
+          "description": "Zweite Klinge: 6 s doppelt so schnelle Hiebe, 25 % Krit. Hiebe zerschlagen Innenwände.",
+          "icon": {"base": "weapon_knight_sword", "glyph": "rage"},
+          "upgrades": [
+            {"id": "bloodrush", "name": "BLUTRAUSCH", "description": "Jeder Kill in Rage verlängert sie um 0,5 s (max. +3 s).", "max": 1, "extend": 0.5, "cap": 3, "badge": "skull"},
+            {"id": "sharp_blades", "name": "SCHARFE KLINGEN", "description": "+15 % Krit-Chance in Rage.", "max": 2, "crit": 0.15, "badge": "crit"},
+            {"id": "executioner", "name": "HENKERSSTREICH", "description": "Krits in Rage +50 % Schaden.", "max": 2, "crit_mult": 0.5, "badge": "up"},
+            {"id": "unleashed", "name": "ENTFESSELT", "description": "In Rage laden Fähigkeiten 1-3 doppelt so schnell.", "max": 1, "recharge": 2.0, "badge": "clock"}
+          ]}
+      ],
+      "passives": [
+        {"id": "sw_heavy", "name": "SCHWERER HIEB", "description": "+25 % Schaden.", "max": 3, "stat": "damage_mult", "amount": 1.25, "icon": {"base": "weapon_knight_sword", "badge": "up"}},
+        {"id": "sw_swift", "name": "FLINKE KLINGE", "description": "12 % schnellere Hiebe.", "max": 3, "stat": "rate_mult", "amount": 0.88, "icon": {"base": "weapon_knight_sword", "badge": "clock"}},
+        {"id": "sw_vigor", "name": "EISERNE HAUT", "description": "+1 Herz.", "max": 3, "stat": "max_hp", "amount": 2, "icon": {"base": "weapon_knight_sword", "badge": "heart"}},
+        {"id": "sw_bloodlust", "name": "BLUTDURST", "description": "Jeder 6. Kill heilt (Stufe 2: jeder 4.).", "max": 2, "stat": "build", "key": "vampire", "values": [6, 4], "icon": {"base": "weapon_knight_sword", "badge": "drop"}},
+        {"id": "sw_parry", "name": "PARADE", "description": "Hiebe zerschlagen gegnerische Geschosse.", "max": 1, "stat": "flag", "key": "parry", "icon": {"base": "weapon_knight_sword", "badge": "shield"}}
+      ]
+    },
+    "archer": {
+      "weapon_icon": "weapon_bow",
+      "color": "7fc26b",
+      "skills": [
+        {"id": "volley", "sound": "shoot_arrow", "key": "1", "name": "SALVE", "unlock": 1, "cooldown": 5, "count": 5, "spread": 1.05, "damage": 1.5,
+          "description": "Fächer aus 5 Pfeilen über 60°, je 1,5x Schaden.",
+          "icon": {"base": "weapon_bow", "glyph": "fan"},
+          "upgrades": [
+            {"id": "wide_volley", "name": "BREITE SALVE", "description": "+2 Pfeile.", "max": 2, "count": 2, "badge": "plus"},
+            {"id": "double_volley", "name": "DOPPELSALVE", "description": "Zweite Salve 0,15 s später (60 % Schaden).", "max": 1, "delay": 0.15, "damage": 0.6, "badge": "double"},
+            {"id": "splinter", "name": "SPLITTERPFEILE", "description": "Treffer spalten sich in 2 Pfeile (35 % Schaden).", "max": 1, "count": 2, "damage": 0.35, "badge": "shards"},
+            {"id": "poison_tips", "name": "GIFTSPITZEN", "description": "Gift: 0,8 Schaden/s für 3 s.", "max": 1, "dps": 0.8, "time": 3, "badge": "poison"}
+          ]},
+        {"id": "ballista", "sound": "attack_arrow", "key": "2", "name": "BALLISTAPFEIL", "unlock": 3, "cooldown": 7, "charge": 1.0, "damage_min": 3, "damage_max": 8, "range": 900, "speed": 1100, "move_scale": 0.5, "radius": 7, "hold": true,
+          "description": "Halten zum Aufladen, loslassen: durchbohrt alles, 3x bis 8x Schaden.",
+          "icon": {"base": "weapon_arrow", "glyph": "pierce"},
+          "upgrades": [
+            {"id": "quick_draw", "name": "SCHNELLSPANNER", "description": "40 % kürzere Ladezeit.", "max": 1, "charge": -0.4, "badge": "clock"},
+            {"id": "poison_trail", "name": "GIFTSPUR", "description": "Der Pfeil hinterlässt 2 s lang eine Giftspur.", "max": 1, "time": 2, "dps": 1, "width": 22, "badge": "poison"},
+            {"id": "hunters_mark", "name": "JÄGERMAL", "description": "Getroffene 4 s markiert: +25 % Schaden von allen.", "max": 1, "time": 4, "bonus": 0.25, "badge": "target"},
+            {"id": "heavy_tip", "name": "WUCHTSPITZE", "description": "+30 % Schaden.", "max": 2, "damage": 0.3, "badge": "up"}
+          ]},
+        {"id": "backflip", "sound": "step", "key": "3", "name": "RÜCKSPRUNG", "unlock": 6, "cooldown": 8, "distance": 140, "duration": 0.25, "caltrop_radius": 48, "caltrop_time": 4, "slow": 0.4,
+          "description": "Sprung weg von der Maus, unverwundbar, lässt Krähenfüße zurück.",
+          "icon": {"base": "weapon_bow", "glyph": "leap"},
+          "upgrades": [
+            {"id": "blast_trap", "name": "SPRENGFALLE", "description": "Krähenfüße explodieren beim ersten Kontakt (64 px, 3x).", "max": 1, "radius": 64, "damage": 3, "badge": "burst"},
+            {"id": "second_leap", "name": "ZWEITE LADUNG", "description": "Zwei Sprünge hintereinander.", "max": 1, "window": 1.5, "badge": "double"},
+            {"id": "tailwind", "name": "RÜCKENWIND", "description": "Danach 3 s lang 30 % schnellere Schüsse.", "max": 1, "time": 3, "rate": 0.3, "badge": "wind"},
+            {"id": "ice_thorns", "name": "EISDORNEN", "description": "Verlangsamung 60 % statt 40 %.", "max": 1, "slow": 0.6, "badge": "snow"}
+          ]},
+        {"id": "fist", "sound": "attack_beam", "key": "4", "name": "PFEILFAUST", "unlock": 10, "cooldown": 18, "windup": 0.3, "width": 64, "speed": 500, "range": 480, "damage": 4, "burst_radius": 80, "burst_damage": 10, "slow": 0.7, "slow_time": 4, "boss_push": 32, "ultimate": true,
+          "description": "Riesenpfeil schiebt Gegner mit; an Wänden platzt er (10x) und bricht Innenwände.",
+          "icon": {"base": "weapon_arrow", "glyph": "fist"},
+          "upgrades": [
+            {"id": "wall_breaker", "name": "MAUERBRECHER", "description": "+50 % Explosionsschaden.", "max": 2, "burst": 0.5, "badge": "wall"},
+            {"id": "blast_tip", "name": "SPRENGSPITZE", "description": "Platzt auch ohne Wand am Ende (60 % Schaden).", "max": 1, "damage": 0.6, "badge": "burst"},
+            {"id": "frost_core", "name": "FROSTKERN", "description": "Verlangsamung startet bei 90 % und hält 2 s länger.", "max": 1, "slow": 0.9, "time": 2, "badge": "snow"},
+            {"id": "shard_hail", "name": "SPLITTERHAGEL", "description": "Die Explosion schleudert 6 Splitter (je 1x).", "max": 1, "count": 6, "damage": 1, "badge": "shards"}
+          ]}
+      ],
+      "passives": [
+        {"id": "ar_multishot", "name": "MEHRFACHSCHUSS", "description": "+1 Pfeil im Fächer (Grundangriff).", "max": 3, "stat": "build", "key": "multishot", "values": [1, 2, 3], "icon": {"base": "weapon_bow", "badge": "plus"}},
+        {"id": "ar_pierce", "name": "DURCHSCHLAG", "description": "Pfeile durchbohren +1 Gegner (alle Pfeile).", "max": 2, "stat": "build", "key": "piercer", "values": [1, 2], "icon": {"base": "weapon_arrow", "badge": "pierce"}},
+        {"id": "ar_rapid", "name": "SCHNELLFEUER", "description": "12 % schnellere Schüsse.", "max": 3, "stat": "rate_mult", "amount": 0.88, "icon": {"base": "weapon_bow", "badge": "clock"}},
+        {"id": "ar_eagle", "name": "ADLERAUGE", "description": "+20 % Reichweite und Pfeiltempo.", "max": 2, "stat": "shot_speed_mult", "amount": 1.2, "icon": {"base": "weapon_bow", "badge": "eye"}},
+        {"id": "ar_crit", "name": "PRÄZISION", "description": "+15 % Krit-Chance (alle Pfeile).", "max": 3, "stat": "build_add", "key": "crit", "amount": 0.15, "icon": {"base": "weapon_arrow", "badge": "crit"}},
+        {"id": "ar_fleet", "name": "LEICHTFUSS", "description": "+15 Lauftempo.", "max": 3, "stat": "speed", "amount": 15, "icon": {"base": "weapon_bow", "badge": "wind"}},
+        {"id": "ar_ricochet", "name": "ABPRALLER", "description": "Pfeile prallen einmal von Wänden ab.", "max": 1, "stat": "build", "key": "ricochet", "values": [1], "icon": {"base": "weapon_arrow", "badge": "return"}}
+      ]
+    },
+    "mage": {
+      "weapon_icon": "weapon_green_magic_staff",
+      "color": "8f7ce0",
+      "skills": [
+        {"id": "fireball", "sound": "shoot_magic", "key": "1", "name": "FEUERBALL", "unlock": 1, "cooldown": 4, "speed": 300, "range": 500, "radius": 64, "damage": 3, "burn_dps": 1, "burn_time": 3,
+          "description": "Explodiert bei Treffer oder Wand: 64 px, 3x Schaden, Brand.",
+          "icon": {"base": "weapon_red_magic_staff", "glyph": "fireball"},
+          "upgrades": [
+            {"id": "twin_fire", "name": "ZWILLINGSFEUER", "description": "2 Feuerbälle statt einem, auf Stufe 2 drei.", "max": 2, "spread": 0.22, "badge": "double"},
+            {"id": "brand", "name": "BRANDMAL", "description": "Brennende Gegner explodieren beim Tod (48 px, 80 %).", "max": 1, "radius": 48, "damage": 0.8, "badge": "skull"},
+            {"id": "wildfire", "name": "GROSSBRAND", "description": "+30 % Explosionsradius.", "max": 2, "radius": 0.3, "badge": "wide"},
+            {"id": "lava_trail", "name": "LAVASPUR", "description": "Die Flugbahn brennt 2 s nach.", "max": 1, "time": 2, "dps": 1, "width": 20, "badge": "fire"}
+          ]},
+        {"id": "chain", "sound": "attack_soul", "key": "2", "name": "KETTENBLITZ", "unlock": 3, "cooldown": 7, "range": 360, "jump_range": 120, "jumps": 4, "damage": 2.5, "falloff": 0.15, "stun": 0.2,
+          "description": "Blitz auf den Gegner an der Maus, springt auf 4 weitere.",
+          "icon": {"base": "weapon_green_magic_staff", "glyph": "bolt"},
+          "upgrades": [
+            {"id": "more_jumps", "name": "WEITERE SPRÜNGE", "description": "+2 Sprünge.", "max": 2, "jumps": 2, "badge": "plus"},
+            {"id": "overload", "name": "ÜBERLADUNG", "description": "+40 % Schaden gegen verlangsamte Gegner.", "max": 1, "bonus": 0.4, "badge": "up"},
+            {"id": "storm_field", "name": "GEWITTERFELD", "description": "Am letzten Ziel 2 s Gewitter (48 px).", "max": 1, "radius": 48, "time": 2, "dps": 1.5, "badge": "ring"},
+            {"id": "feedback", "name": "RÜCKKOPPLUNG", "description": "Jeder Sprung verkürzt die Abklingzeit um 0,3 s.", "max": 1, "refund": 0.3, "badge": "clock"}
+          ]},
+        {"id": "blink", "sound": "void_burst", "key": "3", "name": "BLINZELN", "unlock": 6, "cooldown": 7, "distance": 180, "invulnerable": 0.3,
+          "description": "Teleport bis 180 px zur Maus, nie durch Wände.",
+          "icon": {"base": "weapon_green_magic_staff", "glyph": "blink"},
+          "upgrades": [
+            {"id": "arcane_rift", "name": "ARKANRISS", "description": "Explosion am Startpunkt (64 px, 2x Schaden).", "max": 1, "radius": 64, "damage": 2, "badge": "burst"},
+            {"id": "second_blink", "name": "ZWEITE LADUNG", "description": "Zwei Teleporte hintereinander.", "max": 1, "window": 1.5, "badge": "double"},
+            {"id": "mirror_image", "name": "SPIEGELBILD", "description": "Ein Abbild bleibt 2 s stehen und lockt Gegner an.", "max": 1, "time": 2, "badge": "mirror"},
+            {"id": "phase_shield", "name": "PHASENSCHILD", "description": "Danach 3 s lang ein Schutztreffer.", "max": 1, "time": 3, "badge": "shield"}
+          ]},
+        {"id": "photon", "sound": "windup_beam", "key": "4", "name": "PHOTONENEIS", "unlock": 10, "cooldown": 20, "duration": 5, "length": 400, "width": 36, "turn": 3.14159, "dps": 4, "tick": 0.25, "ignite_dps": 1.5, "ignite_time": 4, "slow": 0.5, "slow_decay": 3, "move_scale": 0.3, "hold": true, "ultimate": true,
+          "description": "Halten: Strahl aus Eis und Feuer bis 5 s, schmilzt Innenwände.",
+          "icon": {"base": "weapon_red_magic_staff", "glyph": "beam"},
+          "upgrades": [
+            {"id": "long_breath", "name": "LANGER ATEM", "description": "+1 s Strahldauer.", "max": 2, "time": 1, "badge": "clock"},
+            {"id": "prism", "name": "PRISMA", "description": "Spaltet sich am ersten Gegner in 2 Nebenstrahlen (50 %).", "max": 1, "damage": 0.5, "angle": 0.45, "length": 220, "badge": "fan"},
+            {"id": "ember_core", "name": "GLUTKERN", "description": "Brand +50 % Schaden.", "max": 1, "ignite": 0.5, "badge": "fire"},
+            {"id": "frostbite", "name": "FROSTBISS", "description": "Verlangsamung startet bei 70 % und klingt über 5 s ab.", "max": 1, "slow": 0.7, "decay": 5, "badge": "snow"}
+          ]}
+      ],
+      "passives": [
+        {"id": "mg_focus", "name": "FOKUS", "description": "+25 % Schaden.", "max": 3, "stat": "damage_mult", "amount": 1.25, "icon": {"base": "weapon_green_magic_staff", "badge": "up"}},
+        {"id": "mg_haste", "name": "ARKANE EILE", "description": "12 % schnellere Zauber.", "max": 3, "stat": "rate_mult", "amount": 0.88, "icon": {"base": "weapon_green_magic_staff", "badge": "clock"}},
+        {"id": "mg_nova", "name": "NOVA", "description": "+30 % Explosionsradius der Kugeln.", "max": 3, "stat": "splash_mult", "amount": 1.3, "icon": {"base": "weapon_green_magic_staff", "badge": "wide"}},
+        {"id": "mg_seeker", "name": "SUCHENDE KUGELN", "description": "Kugeln folgen Gegnern.", "max": 2, "stat": "build", "key": "homing", "values": [1.6, 2.6], "icon": {"base": "weapon_green_magic_staff", "badge": "target"}},
+        {"id": "mg_shield", "name": "ARKANSCHILD", "description": "Blockt alle 12 s einen Treffer.", "max": 1, "stat": "flag", "key": "arcane_shield", "recharge": 12, "icon": {"base": "weapon_green_magic_staff", "badge": "shield"}},
+        {"id": "mg_double", "name": "DOPPELZAUBER", "description": "Jedem Zauber folgt ein zweiter (50 %, Stufe 2: 80 %).", "max": 2, "stat": "build", "key": "double_cast", "values": [0.5, 0.8], "delay": 0.12, "icon": {"base": "weapon_green_magic_staff", "badge": "double"}}
+      ]
+    }
+  }
+}

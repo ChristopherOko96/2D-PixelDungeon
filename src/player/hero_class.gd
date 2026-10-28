@@ -40,6 +40,9 @@ static func apply(player: Dictionary, requested: String, balance: Dictionary) ->
 	player.shot_speed = 0.0 if player.melee else float(held.get("speed", 0.0))
 	player.shot_life = 0.0 if player.melee else float(held.get("life", 0.0))
 	player.splash = float(held.get("splash", 0.0))
+	# Unmodified weapon values; class passives (Adlerauge, Nova) scale from these.
+	player._class_shot_speed = player.shot_speed
+	player._class_splash = player.splash
 	player.projectile = str(held.get("projectile", ""))
 	player._perk_base = {
 		"damage": float(held.get("damage", 2.0)),

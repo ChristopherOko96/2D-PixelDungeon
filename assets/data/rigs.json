@@ -41,6 +41,12 @@
    ]
   }
  },
+ "scales": {
+  "void": 3,
+  "big_zombie": 3,
+  "frost_corpse": 3,
+  "bone_colossus": 3
+ },
  "rigs": {
   "knight": {
    "img": "knight",

@@ -1,0 +1,11 @@
+{
+  "_note": "Run HUD layout (src/ui/run_hud.gd): margins, heart scale, panel widths, boss bar, skill slot size (px) and gap. Skill names and icons come from assets/data/hero_skills.json.",
+  "margin": 20,
+  "heart_scale": 2,
+  "hearts_per_row": 10,
+  "map_panel_width": 244,
+  "boss_bar_width": 560,
+  "boss_chip_speed": 0.35,
+  "slot_height": 72,
+  "slot_gap": 8
+}

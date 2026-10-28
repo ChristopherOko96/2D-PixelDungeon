@@ -56,6 +56,8 @@ func shot_interval(player: Dictionary) -> float:
 	if _b(player,"heavy") > 0: interval *= _m("heavy_interval_scale",1.3)
 	if bool(player.get("moving",false)): interval *= maxf(0.1,1.0-_b(player,"momentum"))
 	if _low_health(player): interval *= maxf(0.1,1.0-_b(player,"adrenaline"))
+	# Hero skills: Rage, Kampfrausch, Rückenwind (HeroSkills.interval_scale).
+	interval *= float(player.get("skill_rate",1.0))
 	return maxf(float(_game.balance.get("perk_rules",{}).get("min_shot_interval",0.06)),interval)
 
 func _low_health(player: Dictionary) -> bool:
@@ -87,6 +89,9 @@ func shoot(id: int, aim: Vector2) -> void:
 	if _b(player,"scatter") > 0:
 		for sign_value: float in [-1.0,1.0]: patterns.append({"aim":direction.rotated(_m("scatter_angle",0.25)*sign_value),"scale":_b(player,"scatter"),"offset":Vector2.ZERO,"short":true})
 	if _b(player,"backshot") > 0: patterns.append({"aim":-direction,"scale":_b(player,"backshot"),"offset":Vector2.ZERO})
+	# Mehrfachschuss (archer passive): extra arrows beside the aim, basic attack only.
+	for extra: int in range(int(_b(player,"multishot"))):
+		patterns.append({"aim":direction.rotated(_m("multishot_angle",0.12)*float(extra/2+1)*(1.0 if extra%2 == 0 else -1.0)),"scale":1.0,"offset":Vector2.ZERO})
 	if _b(player,"sidewinder") > 0:
 		for sign_value: float in [-1.0,1.0]: patterns.append({"aim":direction.orthogonal()*sign_value,"scale":_b(player,"sidewinder"),"offset":Vector2.ZERO})
 	var limit: int = int(_m("max_pellets_per_volley",9))
@@ -120,6 +125,12 @@ func melee(id: int, aim: Vector2) -> void:
 	var critical: bool = _rng.randf() < _b(player,"crit")
 	if critical: damage *= _m("crit_multiplier",1.75)
 	damage = minf(damage,float(player.damage)*_m("damage_multiplier_cap",8))
+	# Rage adds its own crit chance and multiplier (HeroSkills.crit).
+	if not critical and _rng.randf() < float(player.get("skill_crit",0.0)):
+		critical = true
+		damage *= float(player.get("skill_crit_mult",2.0))
+	elif critical and float(player.get("skill_crit_mult",0.0)) > _m("crit_multiplier",1.75):
+		damage *= float(player.skill_crit_mult)/_m("crit_multiplier",1.75)
 	var reach: float = float(player.get("reach",0.0))
 	var arc: float = float(player.get("arc",0.0))
 	player.swings = int(player.get("swings",0))+1
@@ -133,6 +144,10 @@ func melee(id: int, aim: Vector2) -> void:
 		if offset.length() > 0.1 and absf(direction.angle_to(offset)) > arc*0.5: continue
 		if Dungeon.segment_blocked(player.pos,enemy.pos,0.0,_game.current_layout): continue
 		targets.append(enemy)
+	# The swing also strikes chests in reach, and clangs off a wall in front.
+	if _game.get("chests") != null: _game.chests.hit_arc(player.pos,direction,reach,arc,id)
+	if _game.has_method("wall_hit") and Dungeon.segment_blocked(player.pos,Vector2(player.pos)+direction*reach*0.85,0.0,_game.current_layout):
+		_game.wall_hit(player.pos,Vector2(player.pos)+direction*reach*0.85,"metal")
 	for enemy: Dictionary in targets:
 		var offset: Vector2 = Vector2(enemy.pos)-Vector2(player.pos)
 		var push: Vector2 = offset.normalized() if offset.length() > 0.1 else direction
@@ -154,6 +169,7 @@ func splash(bullet: Dictionary) -> void:
 	var owner: int = int(bullet.get("owner",0))
 	if radius <= 0.0 or owner <= 0: return
 	var point: Vector2 = bullet.pos
+	if _game.get("chests") != null: _game.chests.hit_circle(point,radius,owner,Array(bullet.get("chest_ids",[])))
 	for enemy: Dictionary in _game.enemies:
 		if float(enemy.hp) <= 0: continue
 		if point.distance_to(enemy.pos) >= radius+float(enemy.radius): continue
@@ -184,7 +200,7 @@ func element(player: Dictionary) -> String:
 func steer(bullet: Dictionary, delta: float) -> void:
 	bullet.age = float(bullet.get("age",0.0))+delta
 	var player: Dictionary = _game.players.get(int(bullet.owner),{})
-	if player.is_empty(): return
+	if player.is_empty() or bool(bullet.get("no_steer",false)): return
 	var velocity: Vector2 = bullet.velocity
 	var angle: float = velocity.angle()
 	if _b(player,"homing") > 0:
@@ -297,6 +313,8 @@ func step_statuses(delta: float) -> void:
 			var status: Dictionary = statuses[key]
 			var elapsed: float = minf(delta,float(status.time))
 			status.time = maxf(0.0,float(status.time)-delta)
+			# Skill slows (Pfeilfaust, Photoneneis) fade linearly to nothing.
+			if status.has("decay"): status.power = float(status.start)*clampf(float(status.time)/float(status.decay),0.0,1.0)
 			if key in ["burn","poison"]:
 				status.tick = float(status.tick)+elapsed
 				var period: float = _m("status_tick",0.5)
@@ -342,6 +360,9 @@ func room_cleared() -> void:
 func incoming(id: int, damage: int, direction: Vector2) -> int:
 	var player: Dictionary = _game.players[id]
 	var runtime: Dictionary = _runtime(player)
+	if _game.get("hero_skills") != null and _game.hero_skills.absorbs(player):
+		_absorb(player)
+		return 0
 	if int(player.get("reserve_shield",0)) > 0:
 		player.reserve_shield = int(player.reserve_shield)-1
 		_absorb(player)

@@ -1,0 +1,18 @@
+{
+  "_note": "What a hit leaves behind, per enemy kind (src/vfx/feedback.gd, particles.gd). material: bone (chips and dust, no liquid), slime, frost, blood, void. color: particles; stain: floor splat colour; stain_alpha: splat opacity. hit_splat and death_splat are splat radii in px; drip_below is the health share under which a wounded enemy leaves a drip trail, drip_every the px walked between drops. Purely visual.",
+  "materials": {
+    "bone":  {"color": "e6dcc6", "stain": "8f877a", "stain_alpha": 0.35, "hit_splat": 0, "death_splat": 14, "drip_below": 0.0, "drip_every": 0, "chips": true},
+    "slime": {"color": "7fbf3a", "stain": "4f8a24", "stain_alpha": 0.6, "hit_splat": 7, "death_splat": 22, "drip_below": 0.6, "drip_every": 18},
+    "frost": {"color": "9fe3ee", "stain": "4f9fb0", "stain_alpha": 0.55, "hit_splat": 6, "death_splat": 20, "drip_below": 0.6, "drip_every": 20},
+    "blood": {"color": "c8323a", "stain": "7a1a22", "stain_alpha": 0.65, "hit_splat": 7, "death_splat": 22, "drip_below": 0.6, "drip_every": 16},
+    "void":  {"color": "b06ad8", "stain": "5a2a7a", "stain_alpha": 0.6, "hit_splat": 7, "death_splat": 26, "drip_below": 0.6, "drip_every": 18}
+  },
+  "kinds": {
+    "skeleton": "bone", "skeleton_archer": "bone", "skeleton_guard": "bone", "knochenkoloss": "bone",
+    "tiny_zombie": "slime", "moderkoloss": "slime",
+    "ice_zombie": "frost", "frostleiche": "frost",
+    "necromancer": "blood", "player": "blood",
+    "void_bomber": "void", "boss": "void"
+  },
+  "default": "blood"
+}

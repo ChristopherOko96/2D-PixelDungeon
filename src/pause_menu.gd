@@ -6,8 +6,9 @@ signal main_action_pressed
 signal reward_requested
 signal display_mode_requested
 
-const Hud = preload("res://src/dungeon_hud.gd")
+const CryptUI = preload("res://src/ui/crypt_ui.gd")
 const PerkIcons = preload("res://src/perk_icons.gd")
+const ClassPerks = preload("res://src/player/class_perks.gd")
 const SECTIONS := ["overview","map","party","reward","controls","display","session"]
 const TITLES := ["Übersicht","Karte","Gruppe & Perks","Belohnung","Steuerung","Anzeige","Sitzung"]
 var section := "overview"
@@ -31,16 +32,25 @@ func _ready() -> void:
 	size = Vector2(1280,720)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	shade = ColorRect.new()
-	shade.color = Color(0.025,0.008,0.04,0.83)
+	shade.color = Color(CryptUI.INK,0.82)
 	shade.size = size
 	add_child(shade)
 	var panel := Panel.new()
 	panel.position = Vector2(160,64)
 	panel.size = Vector2(960,592)
-	panel.add_theme_stylebox_override("panel",Hud.panel_style(Color("291538"),Color("9564a5")))
 	add_child(panel)
-	_text(self,"Pause",Vector2(192,86),Vector2(620,38),32)
+	# The page area sits in its own inset, apart from the section list.
+	var inset := Panel.new()
+	inset.position = Vector2(420,164)
+	inset.size = Vector2(680,398)
+	inset.add_theme_stylebox_override("panel",CryptUI.box("inset"))
+	inset.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(inset)
+	var heading := CryptUI.heading("PAUSE",32)
+	heading.position = Vector2(192,84)
+	add_child(heading)
 	pause_note = _text(self,"",Vector2(432,128),Vector2(656,26),13)
+	pause_note.add_theme_color_override("font_color",CryptUI.SAND)
 	for index in range(SECTIONS.size()):
 		var key: String = SECTIONS[index]
 		navigation[key] = _button(self,TITLES[index],Vector2(192,160+index*50),Vector2(208,38),select_section.bind(key))
@@ -64,7 +74,7 @@ func _ready() -> void:
 	party_details = _text(party_scroll,"",Vector2.ZERO,Vector2(620,378),15)
 	party_details.custom_minimum_size = Vector2(620,378)
 	party_details.add_theme_constant_override("line_spacing",4)
-	_text(pages.controls,"Bewegen: WASD\nZielen: Maus\nSchießen: Linksklick\nTür / Treppe nutzen: E\nMenü öffnen / schließen: Esc\nVollbild / Fenster: F11 oder Alt + Enter\n\nNach einem Kampf: Einen Segen auswählen,\ndann weiter erkunden.\n\nFür den Raumwechsel das lebende Team\nam Ausgang sammeln.",Vector2.ZERO,Vector2(640,378),16)
+	_text(pages.controls,"Bewegen: WASD\nZielen: Maus\nAngreifen: Linksklick\nFähigkeiten: 1 2 3 4 (2 ab Level 3, 3 ab 6, 4 ab 10)\nBallistapfeil, Photoneneis: Taste halten\nTür / Treppe nutzen: E\nMenü öffnen / schließen: Esc\nVollbild / Fenster: F11 oder Alt + Enter\n\nGegner lassen grüne EXP fallen; das Team\nlevelt gemeinsam. Karten rechts per Klick.\n\nFür den Raumwechsel das lebende Team\nam Ausgang sammeln.",Vector2.ZERO,Vector2(640,378),16)
 	display_status = _text(pages.display,"",Vector2.ZERO,Vector2(640,64),24)
 	display_mode_button = _button(pages.display,"Vollbild einschalten",Vector2(0,96),Vector2(416,44),func(): display_mode_requested.emit())
 	_text(pages.display,"F11 oder Alt + Enter wechseln die Ansicht.\nEsc öffnet weiterhin das Pausenmenü.\n\nDie Spielansicht nutzt die gesamte Fläche.\nHerzen und Menü bleiben am Bildschirmrand.",Vector2(0,172),Vector2(640,198),16)
@@ -107,7 +117,14 @@ func select_section(key: String) -> void:
 	section = key
 	for id: String in pages:
 		pages[id].visible = id == key
-		navigation[id].add_theme_color_override("font_color",Color("ffcf68") if id == key else Color("cbb3dc"))
+		# The open section keeps the raised hover frame and gold text.
+		var button: Button = navigation[id]
+		if id == key:
+			button.add_theme_color_override("font_color",CryptUI.GOLD)
+			button.add_theme_stylebox_override("normal",CryptUI.box("button_hover"))
+		else:
+			button.remove_theme_color_override("font_color")
+			button.remove_theme_stylebox_override("normal")
 
 ## Displays authoritative snapshots. Buttons only request ordinary game actions.
 func set_state(snapshot: Dictionary, local_id: int, host: bool, port: int, solo_paused: bool) -> void:
@@ -140,7 +157,7 @@ func set_state(snapshot: Dictionary, local_id: int, host: bool, port: int, solo_
 		var reserve: int = int(member.get("reserve_shield",0))
 		if shields+reserve > 0: condition += " · Schutz %d + %d Reserve" % [shields,reserve]
 		if member.get("ready",false) and phase == "reward": condition += " · BEREIT"
-		party_text += "Spieler %d%s · %s\n%s\n\n" % [index," · Du" if int(id) == local_id else "",condition,_inventory_text(member.get("perks",[]))]
+		party_text += "Spieler %d%s · %s\n%s\n%s\n\n" % [index," · Du" if int(id) == local_id else "",condition,_class_text(str(member.get("class_id","")),member.get("class_perks",[])),_inventory_text(member.get("perks",[]))]
 		index += 1
 	if party_details.text != party_text:
 		party_details.text = party_text
@@ -153,6 +170,17 @@ func set_state(snapshot: Dictionary, local_id: int, host: bool, port: int, solo_
 	main_action_button.text = "Neuer Lauf" if host else "Der Host startet den nächsten Lauf"
 	main_action_button.disabled = not host
 	session_details.text = "%s · Port %d\n%d / %d Wanderer\n\nLauf-Seed: %s\nEbenen-Seed: %s\nGenerator: %s\n\nWenn der Host geht, endet der Lauf für alle.\n\nZum Hauptmenü beendet deine Verbindung." % ["Host" if host else "Client",port,players.size(),maximum_players,snapshot.get("run_seed","—"),snapshot.get("seed","—"),snapshot.get("generator_version","—")]
+
+## Class cards from level-ups, e.g. "Klasse: Schwerer Hieb x2, Doppelwirbel".
+func _class_text(class_id: String, owned: Array) -> String:
+	if owned.is_empty(): return "Klasse: noch keine Level-Karten"
+	var counts: Dictionary = {}
+	for value: Variant in owned: counts[str(value)] = int(counts.get(str(value),0))+1
+	var names: Array[String] = []
+	for id: String in counts:
+		var card: Dictionary = ClassPerks.find(class_id,id)
+		names.append(str(card.get("name",id)).capitalize()+(" x%d" % int(counts[id]) if int(counts[id]) > 1 else ""))
+	return "Klasse: "+", ".join(names)
 
 func _inventory_text(owned: Array) -> String:
 	if owned.is_empty(): return "Noch keine Perks"
@@ -187,7 +215,7 @@ func _text(parent: Control, value: String, point: Vector2, dimensions: Vector2, 
 	label.size = dimensions
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.add_theme_font_size_override("font_size",16 if font_size < 20 else 24 if font_size < 28 else 32)
-	label.add_theme_color_override("font_color",Color("cbb3dc"))
+	label.add_theme_color_override("font_color",CryptUI.BONE)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(label)
 	return label
@@ -198,9 +226,7 @@ func _button(parent: Control, value: String, point: Vector2, dimensions: Vector2
 	button.position = point
 	button.size = dimensions
 	button.add_theme_font_size_override("font_size",16)
-	button.add_theme_stylebox_override("normal",Hud.panel_style(Color("35203f"),Color("674374")))
-	button.add_theme_stylebox_override("hover",Hud.panel_style(Color("553163"),Color("ffcf68")))
-	button.add_theme_stylebox_override("pressed",Hud.panel_style(Color("472340"),Color("edbc81")))
+	# Frames and colours come from the shared crypt theme (CryptUI).
 	button.pressed.connect(action)
 	parent.add_child(button)
 	return button

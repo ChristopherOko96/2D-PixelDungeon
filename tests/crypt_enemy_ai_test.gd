@@ -220,7 +220,7 @@ func _test_guard_telegraph_dodge_and_damage() -> void:
 	host.enemies = [enemy]
 	ai.step(enemy,1,0.01)
 	ai.step(enemy,1,float(_attack("slash").windup)+0.01)
-	check(host.damage_calls == 1 and int(host.players[1].hp) == 7,"a completed undodged slash applies one actual damage call")
+	check(host.damage_calls == 1 and int(host.players[1].hp) == 8 - int(_attack("slash").damage),"a completed undodged slash applies one actual damage call")
 	var position: Vector2 = enemy.pos
 	ai.step(enemy,1,0.02)
 	check(enemy.pos == position and host.damage_calls == 1,"attack recovery neither moves nor repeats melee damage")

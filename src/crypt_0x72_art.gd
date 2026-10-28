@@ -12,6 +12,9 @@ const T := 16
 const SCALE := 2.0
 const TILES := "res://assets/sprites/0x72/"
 const PROPS := "res://assets/sprites/crypt_props/"
+## Behind an open gate: steps down (the way on, deeper) or up (the way back).
+const STAIRWELL_DOWN := preload("res://assets/sprites/fx/stairwell_down.png")
+const STAIRWELL_UP := preload("res://assets/sprites/fx/stairwell_up.png")
 ## Outside the rooms: the dark grey of the reference map.
 const VOID := Color("232223")
 const FRAMES := 8
@@ -143,7 +146,7 @@ func _decorate(image: Image, room: Dictionary, floor_cells: Dictionary, walls: D
 	# pairs between them, now and then a lava fountain or a broken brick.
 	var fountain_left := 1 + rng.randi_range(0, 1)
 	for p: Vector2i in faces:
-		if not clear.call(p, 2.5): continue
+		if not clear.call(p, 3.1): continue
 		var step := posmod(p.x, 6)
 		if step == 2: torches.append(Vector2(p.x * T, p.y * T - 8) * SCALE)
 		elif (step == 4 or step == 5) and rng.randf() < 0.85: _stamp(image, banner, p)
@@ -157,7 +160,6 @@ func _decorate(image: Image, room: Dictionary, floor_cells: Dictionary, walls: D
 		if not by_wall or not clear.call(p, 3.0) or Vector2(p).distance_to(centre) < 6.0: continue
 		var roll := rng.randf()
 		if roll < 0.035: _stamp(image, "skull", p)
-		elif roll < 0.05: _stamp(image, "crate", p)
 	for point: Variant in room.get("brazier_spawns", []):
 		var cell := Vector2i(Vector2(point) / 32.0)
 		candles.append(Vector2(cell.x * T, cell.y * T - 8) * SCALE)
@@ -167,6 +169,12 @@ func _decorate(image: Image, room: Dictionary, floor_cells: Dictionary, walls: D
 			_stamp(image, "floor_stairs", cell)
 			continue
 		var side := str(exit.get("side", ""))
+		if exit.has("door_cell"):
+			# A gate set into a north wall: the arch covers the two wall cells
+			# (face and cap row); torches flank it; the onward gate is marked.
+			var gate := Vector2i(int(exit.door_cell[0]), int(exit.door_cell[1]))
+			doors.append({"pos": Vector2(gate.x * T, (gate.y - 1) * T) * SCALE, "side": side, "kind": "arch", "forward": bool(exit.get("forward", false))})
+			continue
 		var inward := 1 if side == "west" else -1 if side == "east" else 0
 		if inward != 0:
 			candles.append(Vector2((cell.x + inward) * T, (cell.y - 1) * T - 8) * SCALE)
@@ -199,10 +207,18 @@ func draw_props(canvas: CanvasItem, clock: float, locked: bool = false) -> void:
 	for door: Dictionary in doors:
 		var at: Vector2 = door.pos
 		if str(door.kind) == "arch":
+			if not locked: canvas.draw_texture_rect(STAIRWELL_DOWN if bool(door.get("forward", false)) else STAIRWELL_UP, Rect2(at, cell * 2.0), false)
 			canvas.draw_texture_rect(_pieces.doors_leaf_closed if locked else _pieces.doors_leaf_open, Rect2(at, cell * 2.0), false)
 			canvas.draw_texture_rect(_pieces.doors_frame_left, Rect2(at - Vector2(cell.x, 0), Vector2(cell.x, cell.y * 2.0)), false)
 			canvas.draw_texture_rect(_pieces.doors_frame_right, Rect2(at + Vector2(cell.x * 2.0, 0), Vector2(cell.x, cell.y * 2.0)), false)
 			canvas.draw_texture_rect(_pieces.doors_frame_top, Rect2(at - Vector2(0, cell.y), Vector2(cell.x * 2.0, cell.y)), false)
+			if bool(door.get("forward", false)) and not locked:
+				# The way on: a pulsing gold chevron above the open gate.
+				var pulse := 0.5 + 0.5 * sin(clock * 4.0)
+				var tip := at + Vector2(cell.x, -cell.y * 1.4 - pulse * 4.0)
+				for row in range(3):
+					canvas.draw_rect(Rect2(tip + Vector2(-10 + row * 4, row * 4), Vector2(20 - row * 8, 4)), Color(0.98, 0.8, 0.35, 0.6 + 0.4 * pulse))
+				canvas.draw_circle(at + Vector2(cell.x, cell.y), 34.0, Color(1.0, 0.8, 0.4, 0.06 + 0.05 * pulse))
 		elif locked:
 			# Iron bars across a side doorway while the room is fought in.
 			for i in range(4):

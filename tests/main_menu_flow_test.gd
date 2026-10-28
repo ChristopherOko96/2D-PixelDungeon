@@ -94,7 +94,7 @@ func _test_story_starts_solo_run_and_leaving_returns_to_menu() -> void:
 	# Assert
 	check(game.active and game.hosting and game.phase == "combat" and game.room == 1 and game.floor_index == 1, "story starts a solo run in room 1 of floor 1")
 	check(game.players[1].class_id == "swordsman" and game.players[1].melee and game.players[1].max_hp == 10, "the chosen hero class is applied to the solo player")
-	check(not game.main_menu.visible and not game.lobby_ui.visible and game.heart_hud.visible, "during the run neither menu nor lobby is visible")
+	check(not game.main_menu.visible and not game.lobby_ui.visible and game.run_hud.visible, "during the run neither menu nor lobby is visible")
 	# Act
 	game._leave_session()
 	# Assert

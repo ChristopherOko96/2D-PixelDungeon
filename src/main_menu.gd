@@ -20,16 +20,18 @@ signal settings_changed(settings: Dictionary)
 
 const Progress = preload("res://src/online/progress.gd")
 const PixelStyle = preload("res://src/pixel_style.gd")
+const CryptUI = preload("res://src/ui/crypt_ui.gd")
 const SCREEN := Vector2(1280, 720)
 const SPRITE_ROOT := "res://assets/sprites/0x72/"
 const HEROES := ["knight_m", "elf_f", "wizzard_m", "lizard_m"]
 const CHASERS := ["skelet", "skelet", "necromancer"]
-const FLOOR_TEXTURE := preload("res://assets/sprites/floor_stone.png")
-const TORCH_TEXTURE := preload("res://assets/sprites/torch.png")
+const PROPS_ROOT := "res://assets/sprites/crypt_props/"
+## Backdrop tiles are 16 px 0x72 tiles drawn at 3x.
+const TILE := 48.0
 const SETTINGS_PATH := "user://settings.cfg"
-const GOLD := Color("edbf75")
-const MUTED := Color("8e96ac")
-const TEXT := Color("d9dceb")
+const GOLD := CryptUI.GOLD
+const MUTED := CryptUI.MUTED
+const TEXT := CryptUI.BONE
 const FLOOR_TOP := 592.0
 
 ## Set by the game before the menu enters the tree.
@@ -51,6 +53,8 @@ var settings := {"volume": 80, "fullscreen": false, "shake": true}
 # Starts mid-chase so the heroes are on screen from the first frame.
 var _clock := 7.0
 var _frames: Dictionary = {}
+var _tiles: Dictionary = {}
+var _torch: Array[Texture2D] = []
 var _buttons: Array[Button] = []
 var _account_label: Label
 var _progress_label: Label
@@ -80,23 +84,38 @@ func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	# Inherits the game's Pixel Operator 8 theme; standalone use gets its own.
 	if get_parent() == null or not (get_parent() is Control and (get_parent() as Control).theme != null):
-		theme = PixelStyle.create_theme()
+		theme = CryptUI.create_theme()
 	for name: String in HEROES + CHASERS:
 		var run: Array = []
 		for frame in range(4):
 			run.append(load("%s%s_run_anim_f%d.png" % [SPRITE_ROOT, name, frame]))
 		_frames[name] = run
-	_label("BASEMENT RUN", Vector2(0, 54), Vector2(SCREEN.x, 90), 64, GOLD, HORIZONTAL_ALIGNMENT_CENTER)
-	_label("IN DIE TIEFE.", Vector2(0, 140), Vector2(SCREEN.x, 28), 16, MUTED, HORIZONTAL_ALIGNMENT_CENTER)
-	_buttons.append(_button("STORY-MODUS", Vector2(470, 200), Vector2(340, 62), 32, _open_classes.bind(false)))
-	_endless_button = _button("ENDLOS-MODUS" if endless_available else "ENDLOS · BALD", Vector2(470, 274), Vector2(340, 52), 24, _open_classes.bind(true))
+	for tile: String in ["floor_1", "floor_2", "floor_3", "floor_4", "floor_5", "floor_6", "floor_7", "floor_8", "wall_mid", "wall_top_mid", "wall_banner_red", "wall_banner_blue", "wall_hole_1"]:
+		_tiles[tile] = load(SPRITE_ROOT + tile + ".png")
+	for frame in range(8): _torch.append(load("%swall_torch_f%d.png" % [PROPS_ROOT, frame]))
+	# The menu card: one framed column for the mode buttons.
+	var card := Panel.new()
+	card.position = Vector2(446, 184)
+	card.size = Vector2(388, 308)
+	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(card)
+	var title := _label(CryptUI.GAME_TITLE, Vector2(0, 52), Vector2(SCREEN.x, 90), 64, GOLD, HORIZONTAL_ALIGNMENT_CENTER)
+	title.add_theme_color_override("font_outline_color", CryptUI.INK)
+	title.add_theme_constant_override("outline_size", 12)
+	title.add_theme_color_override("font_shadow_color", CryptUI.BLOOD_DARK)
+	title.add_theme_constant_override("shadow_offset_y", 6)
+	title.add_theme_constant_override("shadow_offset_x", 0)
+	_label("STEIG HINAB. ÜBERLEBE DIE KRYPTA.", Vector2(0, 146), Vector2(SCREEN.x, 28), 16, CryptUI.SAND, HORIZONTAL_ALIGNMENT_CENTER)
+	_buttons.append(_button("STORY-MODUS", Vector2(470, 204), Vector2(340, 62), 32, _open_classes.bind(false)))
+	_endless_button = _button("ENDLOS-MODUS" if endless_available else "ENDLOS · BALD", Vector2(470, 278), Vector2(340, 48), 24, _open_classes.bind(true))
 	_endless_button.disabled = not endless_available
 	_endless_button.tooltip_text = "" if endless_available else "Der Endlos-Modus folgt in einem späteren Schritt."
 	_buttons.append(_endless_button)
 	_buttons.append(_button("MEHRSPIELER", Vector2(470, 338), Vector2(340, 44), 16, multiplayer_requested.emit))
-	_buttons.append(_button("OPTIONEN", Vector2(470, 394), Vector2(340, 44), 16, _open_options))
-	_buttons.append(_button("BEENDEN", Vector2(470, 450), Vector2(340, 44), 16, quit_requested.emit))
+	_buttons.append(_button("OPTIONEN", Vector2(470, 390), Vector2(340, 44), 16, _open_options))
+	_buttons.append(_button("BEENDEN", Vector2(470, 442), Vector2(340, 36), 16, quit_requested.emit))
 	_button("LEVEL-AUSWAHL (DEBUG)", Vector2(16, 676), Vector2(264, 32), 16, _open_debug)
+	_buttons[0].add_theme_color_override("font_color", GOLD)
 	_buttons[0].grab_focus()
 	_account_label = _label("", Vector2(820, 20), Vector2(300, 22), 16, TEXT, HORIZONTAL_ALIGNMENT_RIGHT)
 	_progress_label = _label("", Vector2(620, 44), Vector2(500, 20), 16, MUTED, HORIZONTAL_ALIGNMENT_RIGHT)
@@ -106,7 +125,7 @@ func _ready() -> void:
 	var version := str(ProjectSettings.get_setting("application/config/version", ""))
 	if not version.is_empty():
 		_label("v" + version, Vector2(1080, 690), Vector2(184, 20), 16, MUTED, HORIZONTAL_ALIGNMENT_RIGHT)
-	_toast = _label("", Vector2(0, 498), Vector2(SCREEN.x, 24), 16, GOLD, HORIZONTAL_ALIGNMENT_CENTER)
+	_toast = _label("", Vector2(0, 520), Vector2(SCREEN.x, 24), 16, GOLD, HORIZONTAL_ALIGNMENT_CENTER)
 	_build_login_panel()
 	_build_options_panel()
 	_build_class_panel()
@@ -159,29 +178,32 @@ func set_fullscreen_checked(on: bool) -> void:
 func _draw() -> void:
 	# The visible canvas in local coordinates; wider screens extend the scene.
 	var canvas := Rect2(-_canvas_origin, _canvas_size)
-	draw_rect(canvas, Color("0b0d14"))
-	# Back wall with torches, then the stone floor the chase runs across.
-	var first_wall := floori(canvas.position.x / 64.0) - 1
-	for column in range(first_wall, ceili(canvas.end.x / 64.0) + 1):
-		var x := column * 64.0
-		draw_rect(Rect2(x + 2, FLOOR_TOP - 76, 60, 30), Color("2a2638"))
-		draw_rect(Rect2(x + 3, FLOOR_TOP - 75, 58, 4), Color("3b3450"))
-		draw_rect(Rect2(x + 2, FLOOR_TOP - 44, 60, 40), Color("231f30"))
-	var first_tile := floori(canvas.position.x / 32.0) - 1
-	for column in range(first_tile, ceili(canvas.end.x / 32.0) + 1):
-		draw_texture_rect(FLOOR_TEXTURE, Rect2(column * 32.0, FLOOR_TOP, 32, 32), false, Color(0.7, 0.7, 0.78))
-		draw_texture_rect(FLOOR_TEXTURE, Rect2(column * 32.0 + 16.0, FLOOR_TOP + 32, 32, 32), false, Color(0.55, 0.55, 0.62))
-		draw_texture_rect(FLOOR_TEXTURE, Rect2(column * 32.0, FLOOR_TOP + 64, 32, 32), false, Color(0.4, 0.4, 0.47))
-		draw_texture_rect(FLOOR_TEXTURE, Rect2(column * 32.0 + 16.0, FLOOR_TOP + 96, 32, 32), false, Color(0.28, 0.28, 0.34))
-	# Taller screens: the floor fades into darkness below the composition.
-	if canvas.end.y > FLOOR_TOP + 128.0:
-		draw_rect(Rect2(canvas.position.x, FLOOR_TOP + 128.0, canvas.size.x, canvas.end.y - FLOOR_TOP - 128.0), Color(0.04, 0.05, 0.08))
-	for index in range(5):
-		var torch := Vector2(110 + index * 265, FLOOR_TOP - 60)
+	draw_rect(canvas, CryptUI.INK)
+	# 0x72 crypt wall (top edge, two brick rows) with banners and torches, then
+	# the floor the chase runs across, fading into the dark.
+	var first := floori(canvas.position.x / TILE) - 1
+	var wall_top := FLOOR_TOP - TILE * 2.0
+	for column in range(first, ceili(canvas.end.x / TILE) + 1):
+		var x := column * TILE
+		var tint := Color(0.62, 0.58, 0.58)
+		draw_texture_rect(_tiles.wall_top_mid, Rect2(x, wall_top, TILE, TILE), false, tint)
+		var feature := posmod(column, 6)
+		var brick: Texture2D = _tiles.wall_banner_red if feature == 1 else _tiles.wall_banner_blue if feature == 4 else _tiles.wall_hole_1 if posmod(column, 11) == 7 else _tiles.wall_mid
+		draw_texture_rect(brick, Rect2(x, wall_top + TILE, TILE, TILE), false, tint)
+		for row in range(4):
+			var shade := 0.72 - row * 0.15
+			var variant: Texture2D = _tiles["floor_%d" % (1 + posmod(column * 7 + row * 3, 8))] if posmod(column + row * 5, 4) == 0 else _tiles.floor_1
+			draw_texture_rect(variant, Rect2(x, FLOOR_TOP + row * TILE, TILE, TILE), false, Color(shade, shade * 0.95, shade * 0.95))
+	if canvas.end.y > FLOOR_TOP + TILE * 4.0:
+		draw_rect(Rect2(canvas.position.x, FLOOR_TOP + TILE * 4.0, canvas.size.x, canvas.end.y - FLOOR_TOP - TILE * 4.0), CryptUI.INK)
+	var torch_frame := int(_clock * 10.0) % _torch.size()
+	var first_torch := floori(canvas.position.x / (TILE * 6.0)) - 1
+	for index in range(first_torch, ceili(canvas.end.x / (TILE * 6.0)) + 1):
+		var torch := Vector2(index * TILE * 6.0 + TILE * 3.0, wall_top + TILE * 0.9)
 		var flicker := sin(_clock * 7.0 + index * 1.7)
-		draw_circle(torch, 70.0, Color(1.0, 0.5, 0.25, 0.05 + 0.012 * flicker))
-		draw_circle(torch, 36.0, Color(1.0, 0.55, 0.3, 0.08 + 0.02 * flicker))
-		draw_texture_rect(TORCH_TEXTURE, Rect2(torch - Vector2(16, 20), Vector2(32, 32)), false)
+		draw_circle(torch + Vector2(0, 20), 120.0, Color(1.0, 0.55, 0.25, 0.05 + 0.012 * flicker))
+		draw_circle(torch + Vector2(0, 20), 60.0, Color(1.0, 0.6, 0.3, 0.07 + 0.02 * flicker))
+		draw_texture_rect(_torch[torch_frame], Rect2(torch - Vector2(24, 24), Vector2(48, 72)), false)
 	# The chase: four heroes run right, skeletons and a necromancer on their heels.
 	var lead := canvas.position.x + fmod(_clock * 95.0, canvas.size.x + 760.0) - 300.0
 	for index in range(HEROES.size()):
@@ -196,9 +218,9 @@ func _draw() -> void:
 		draw_rect(Rect2(roundf(x), roundf(y), 2, 2), Color(0.95, 0.78, 0.6, 0.12 + 0.08 * sin(_clock * 1.5 + index)))
 	# Darken the top so the title reads; taller screens get the darkest band above.
 	if canvas.position.y < 0.0:
-		draw_rect(Rect2(canvas.position.x, canvas.position.y, canvas.size.x, -canvas.position.y), Color(0.04, 0.05, 0.08, 0.6))
-	for band in range(8):
-		draw_rect(Rect2(canvas.position.x, band * 24.0, canvas.size.x, 24), Color(0.04, 0.05, 0.08, 0.6 - band * 0.07))
+		draw_rect(Rect2(canvas.position.x, canvas.position.y, canvas.size.x, -canvas.position.y), Color(CryptUI.INK, 0.85))
+	for band in range(10):
+		draw_rect(Rect2(canvas.position.x, band * 24.0, canvas.size.x, 24), Color(CryptUI.INK, 0.85 - band * 0.08))
 
 
 func _draw_runner(name: String, x: float, seed: int) -> void:
@@ -282,7 +304,7 @@ func _build_class_panel() -> void:
 	# Taller than on main: Pixel Operator 8 at 16 px needs more room per line.
 	_class_panel.size = Vector2(800, 496)
 	_class_panel.position = (SCREEN - _class_panel.size) * 0.5 + Vector2(0, 20)
-	_class_panel.add_theme_stylebox_override("panel", _style(Color("1a1d29"), GOLD))
+	_class_panel.add_theme_stylebox_override("panel", CryptUI.box("panel"))
 	_class_panel.visible = false
 	add_child(_class_panel)
 	_class_title = _panel_label(_class_panel, "WÄHLE DEINEN HELDEN", Vector2(30, 18))
@@ -455,7 +477,7 @@ func _panel(title: String) -> Panel:
 	var panel := Panel.new()
 	panel.size = Vector2(420, 370)
 	panel.position = (SCREEN - panel.size) * 0.5 + Vector2(0, 20)
-	panel.add_theme_stylebox_override("panel", _style(Color("1a1d29"), GOLD))
+	panel.add_theme_stylebox_override("panel", CryptUI.box("panel"))
 	panel.visible = false
 	add_child(panel)
 	var heading := _panel_label(panel, title, Vector2(30, 20))
@@ -529,21 +551,7 @@ func _make_button(text: String, dimensions: Vector2, font_size: int, callback: C
 	button.text = text
 	button.size = dimensions
 	button.add_theme_font_size_override("font_size", font_size)
-	button.add_theme_color_override("font_color", GOLD)
-	button.add_theme_color_override("font_disabled_color", Color("767d91"))
-	button.add_theme_stylebox_override("normal", _style(Color(0.16, 0.17, 0.22, 0.92), Color("61523a")))
-	button.add_theme_stylebox_override("hover", _style(Color("383846"), GOLD))
-	button.add_theme_stylebox_override("focus", _style(Color("383846"), GOLD))
-	button.add_theme_stylebox_override("pressed", _style(Color("3e3a34"), Color("72dcc8")))
-	button.add_theme_stylebox_override("disabled", _style(Color("222532"), Color("35394b")))
+	# Frames and colours come from the shared crypt theme (CryptUI).
 	button.pressed.connect(callback)
 	return button
 
-
-func _style(background: Color, border: Color) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = background
-	style.border_color = border
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(3)
-	return style

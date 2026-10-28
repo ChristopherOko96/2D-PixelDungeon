@@ -1,0 +1,25 @@
+{
+  "_note": "Pixel particle physics and living floor pixels (src/vfx/particles.gd). Particles fly in the floor plane with a height above it. gravity: px/s^2 pulling the height down; bounce: share of the fall speed kept when a particle hits the floor (below bounce_min px/s it stops); wall_bounce: share of the speed kept when it hits a wall cell; ground_friction: extra drag per second while sliding on the floor; settle_speed: below this px/s a resting debris particle becomes a floor pixel for good; spawn_height: default height in px of a burst above the floor point under it. modes: gravity (factor of gravity, negative rises), lift ([min, max] upward px/s at the start), settle (lands and stays as a floor pixel), glow (lights up in the bloom layer), fade (fades out over its life instead of staying solid). max_particles caps the live particles (the oldest settles or vanishes first). kick: blasts lift floor pixels again; every loose debris pixel in reach flies, a pool or stain pixel only with stain_share; speed px/s at the centre, lift [min, max] px/s, at most max_particles per blast. liquid: splats keep creeping outwards; spread_rate pixels per second per pool, budget_scale x the splat's pixel radius squared = pixels it may still try, reach_scale x radius = how far from its centre, dry_after s after it stops it dries darker by dry_darken; max_pools spread at once (the oldest dries first). ember: glowing floor pixels left by fire, life [min, max] s, smoke_rate puffs per second at full heat, colours hot to cool, soot left behind, at most max. frost: frost pixels melt to water after melt_after [min, max] s, water dries away after evaporate_after s (+-30 %), at most max waiting. smoke_color: colour of smoke puffs. Purely visual.",
+  "schema_version": 2,
+  "max_particles": 600,
+  "gravity": 620,
+  "bounce": 0.35,
+  "bounce_min": 70,
+  "wall_bounce": 0.4,
+  "ground_friction": 9,
+  "settle_speed": 12,
+  "spawn_height": 10,
+  "modes": {
+    "debris": {"gravity": 1.0, "lift": [40, 150], "settle": true, "glow": false, "fade": false},
+    "spark": {"gravity": 0.45, "lift": [20, 110], "settle": false, "glow": true, "fade": true},
+    "dust": {"gravity": 0.0, "lift": [0, 0], "settle": false, "glow": false, "fade": true},
+    "ember": {"gravity": -0.12, "lift": [10, 60], "settle": false, "glow": true, "fade": true},
+    "frost": {"gravity": 0.6, "lift": [0, 70], "settle": true, "glow": true, "fade": false},
+    "smoke": {"gravity": -0.06, "lift": [10, 30], "settle": false, "glow": false, "fade": true}
+  },
+  "kick": {"stain_share": 0.25, "speed": 260, "lift": [60, 200], "max_particles": 140},
+  "liquid": {"spread_rate": 45, "budget_scale": 0.9, "reach_scale": 2.2, "dry_after": 5.0, "dry_darken": 0.35, "max_pools": 48},
+  "ember": {"life": [1.5, 4.0], "smoke_rate": 1.2, "colors": ["ffe08a", "ff8a2a", "a8361c"], "soot": "1c1416", "soot_alpha": 0.6, "max": 500},
+  "frost": {"melt_after": [6.0, 10.0], "water": "3a6a9e", "water_alpha": 0.45, "evaporate_after": 8.0, "max": 4000},
+  "smoke_color": "2e2a2c"
+}

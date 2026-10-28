@@ -139,8 +139,8 @@ func _run() -> void:
 	game.enemies = [boss]
 	game.bullets.clear()
 	var hp_before: float = float(boss.hp)
-	var below: Vector2 = Vector2(boss.pos) + Vector2(-90, 70)
-	game._add_bullet(below, Vector2(900, 0), 1, 3.0, {"hit_ids": [], "primary": true})
+	var below: Vector2 = Vector2(boss.pos) + Vector2(-240, game.body_parts.reach(boss) + 20.0)
+	game._add_bullet(below, Vector2(900, 0), 1, 3.0, {"hit_ids": [], "primary": true, "life": 0.6})
 	for i in range(12): game._simulate_bullets(1.0 / 60.0)
 	check(is_equal_approx(float(boss.hp), hp_before), "a shot passing below the figure does not hit")
 	print("CRYPT_BOSSES checked=%d failures=%d" % [checked, failures.size()])

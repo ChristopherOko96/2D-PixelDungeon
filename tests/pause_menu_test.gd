@@ -30,12 +30,16 @@ func _run() -> void:
 	port.close()
 	game.session_bind_ip = "127.0.0.1"
 	game._host_session()
+	# The per-room reward flow is tested on single encounters (no hordes).
+	game.hordes.enabled = false
+	# This test covers the per-room reward overlay, now an optional mode.
+	game.balance.perk_rules.room_rewards = true
 	game.requested_seed = 24680
 	game._begin_run()
 	game._broadcast_state(true)
 	game._refresh_ui()
 	check(not game.pause_open and not game.pause_menu.visible and not game.lobby_ui.visible, "combat hides all permanent lobby/info panels")
-	check(game.heart_hud.visible and game.heart_hud.health_only and game.heart_hud.position.x < 300 and game.heart_hud.position.y < 120, "only a compact upper-left heart HUD remains")
+	check(game.run_hud.visible and game.run_hud.position == Vector2.ZERO and game.run_hud.size == game.get_viewport_rect().size, "the run HUD frames the whole playfield")
 	check(not game.floor_map.is_visible_in_tree() and not game.party_label.is_visible_in_tree(), "map and player details are absent from the playfield")
 	var escape := InputEventKey.new()
 	escape.keycode = KEY_ESCAPE
@@ -103,10 +107,10 @@ func _run() -> void:
 	game.players[1].hp = 7
 	game._broadcast_state(true)
 	game._refresh_ui()
-	check(game.heart_hud.get_health_image().get_data() == load("res://src/health_strip.gd").make_image(7,8).get_data(), "the compact HUD receives authoritative damage as a half-heart image")
+	check(game.run_hud.local_hearts() == ["full","full","full","half"], "the HUD receives authoritative damage as 0x72 half hearts")
 	game.set_pause_open(true)
 	game._leave_session()
-	check(not game.pause_open and not game.pause_menu.visible and game.main_menu.visible and not game.lobby_ui.visible and not game.heart_hud.visible, "leaving returns to the main menu and clears local pause state")
+	check(not game.pause_open and not game.pause_menu.visible and game.main_menu.visible and not game.lobby_ui.visible and not game.run_hud.visible, "leaving returns to the main menu and clears local pause state")
 	game.queue_free()
 	await process_frame
 	finish()

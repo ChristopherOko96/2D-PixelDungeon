@@ -1,0 +1,21 @@
+{
+  "_note": "Enemy hordes per room (src/dungeon/hordes.gd). quota: enemies a room sends in total, alive: how many may live at once; both rise linearly from floor 1 to floor 10 and stay at the floor-10 value after. The room's authored opening group counts towards the quota; waves of wave_min-wave_max follow every wave_interval seconds from spots between spawn_distance and spawn_max_distance px from the nearest hero (out of sight preferred). Boss rooms use boss_room_scale of the quota for adds. A room is quiet once its quota is spent and everything is dead; leaving early returns the living to the quota. exp_scale multiplies every kill's EXP so the larger hordes keep the level pace (Ultimate near floor 5).",
+  "schema_version": 1,
+  "enabled": true,
+  "quota": [
+    25,
+    50
+  ],
+  "alive": [
+    15,
+    25
+  ],
+  "wave_interval": 2.5,
+  "first_wave_delay": 1.2,
+  "wave_min": 3,
+  "wave_max": 6,
+  "spawn_distance": 280,
+  "boss_room_scale": 0.5,
+  "exp_scale": 0.25,
+  "spawn_max_distance": 650
+}

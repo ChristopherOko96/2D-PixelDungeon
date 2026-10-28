@@ -82,7 +82,7 @@ func reach(enemy: Dictionary) -> float:
 		var box: Rect2 = part.bounds
 		for corner: Vector2 in [box.position, Vector2(box.end.x, box.position.y), box.end, Vector2(box.position.x, box.end.y)]:
 			result = maxf(result, corner.distance_to(anchor))
-	_reach[name] = result * RigLibrary.PIXEL_SCALE
+	_reach[name] = result * float(data.get("scale", RigLibrary.PIXEL_SCALE))
 	return float(_reach[name])
 
 

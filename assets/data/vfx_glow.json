@@ -1,0 +1,15 @@
+{
+  "_note": "Additive light layer over the dark crypt (src/vfx/glow.gd), the game's bloom. enabled switches it off entirely; strength scales every light; scales multiplies single sources: beam (Photoneneis and prisms), bullets (fireballs, magic orbs, void skulls, shards), spells (pixel-art magic bursts, skill zones, chain lightning, level-up), torches (wall torches and braziers), orbs (EXP orbs and dropped perks), particles (sparks and embers), void (Leerenrufer beam, void bodies and pools). 1.0 is the tuned look; 0 hides that source.",
+  "schema_version": 1,
+  "enabled": true,
+  "strength": 1.0,
+  "scales": {
+    "beam": 1.0,
+    "bullets": 1.0,
+    "spells": 1.0,
+    "torches": 1.0,
+    "orbs": 1.0,
+    "particles": 1.0,
+    "void": 1.0
+  }
+}

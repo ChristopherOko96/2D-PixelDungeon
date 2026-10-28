@@ -1,0 +1,22 @@
+{
+  "_note": "Breakable chests (src/dungeon/chests.gd). per_floor_min/max: chests placed at random over a floor's rooms (never the boss room), at most per_room in one room. Room templates may list chest_spawns as [x, y] cells (editor); without them spots along a north wall are chosen, at least clearance cells from doors and spawns. A chest takes 'hits' hits from any attack. drops: weighted table; kind 'perk' rolls a general perk (balance.perks) the finder's class can use. Consumable items will be added as further kinds. Crates: crates_per_room [min,max] in small groups along the walls, crate_hits hits, no loot yet (the user's item list will fill it). Chests and crates are solid 32 px cells (layout.obstacles, breakable_obstacles) until they break.",
+  "schema_version": 1,
+  "per_floor_min": 3,
+  "per_floor_max": 5,
+  "per_room": 2,
+  "hits": 3,
+  "radius": 14,
+  "pickup_radius": 22,
+  "clearance": 3,
+  "drops": [
+    {
+      "kind": "perk",
+      "weight": 1
+    }
+  ],
+  "crates_per_room": [
+    3,
+    7
+  ],
+  "crate_hits": 2
+}

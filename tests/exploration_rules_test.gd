@@ -21,6 +21,10 @@ func _initialize() -> void:
 	game.set_physics_process(false)
 	game.port_input.text = "18896"
 	game._host_session()
+	# Authored single encounters are tested here; hordes have tests/hordes_test.gd.
+	game.hordes.enabled = false
+	# This test covers the per-room reward cards, now an optional mode.
+	game.balance.perk_rules.room_rewards = true
 	check(game.hosting, "isolated test host starts")
 	if not game.hosting:
 		_finish(game)

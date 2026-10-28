@@ -240,7 +240,7 @@ func _start_rise(a: Dictionary, rig: Dictionary, enemy: Dictionary) -> void:
 	var from: Dictionary = {}
 	for part: Dictionary in rig.parts + rig.items: from[part.id] = {"dx": _rng.randf_range(-3, 3), "dy": _rng.randf_range(8, 13), "rot": _rng.randf_range(-1.2, 1.2)}
 	a.rise_from = from
-	var feet := Vector2(float(enemy.get("x", 0)), float(enemy.get("y", 0))) + Vector2(0, (float(rig.ground.y) - float(rig.center.y)) * S)
+	var feet := Vector2(float(enemy.get("x", 0)), float(enemy.get("y", 0))) + Vector2(0, (float(rig.ground.y) - float(rig.center.y)) * _scale(rig))
 	_pools.append({"x": feet.x, "y": feet.y, "r": 18.0, "life": 0.0, "max": 2.6})
 
 
@@ -276,20 +276,21 @@ func _detach(a: Dictionary, rig: Dictionary, id: String, impulse: float) -> void
 	if part.get("frames") is Array and not part.frames.is_empty(): texture = part.frames[int(a.get("frame_" + id, 0)) % part.frames.size()].texture
 	_debris.append({"key": a.key, "id": id, "texture": texture, "center": part.center, "x": center.x, "y": ground + _rng.randf_range(-4, 6), "z": ground - center.y,
 		"vx": _rng.randf_range(-56, 56) * impulse, "vz": _rng.randf_range(70, 140) * impulse, "ang": xform.get_rotation(), "spin": _rng.randf_range(-10, 10) * impulse,
-		"face": signf(xform.x.x) if absf(xform.x.x) > 0.01 else 1.0, "life": 0.0, "max": 3.0 if str(a.key).begins_with("e") and str(rig.family) == "skeleton" else 5.0, "rest": false})
+		"face": signf(xform.x.x) if absf(xform.x.x) > 0.01 else 1.0, "scale": _scale(rig), "life": 0.0, "max": 3.0 if str(a.key).begins_with("e") and str(rig.family) == "skeleton" else 5.0, "rest": false})
 	for i in range(6): _particles.append({"x": center.x, "y": center.y, "vx": _rng.randf_range(-60, 60), "vy": _rng.randf_range(-60, 20), "life": 0.0, "max": _rng.randf_range(0.25, 0.5),
 		"color": VIOLET_DARK if str(rig.family) in ["void", "bomber"] else Color("fdf7ed"), "grav": 240.0})
 
 
 func _draw_rig(canvas: CanvasItem, a: Dictionary, rig: Dictionary, point: Vector2, face: float, flash: float, with_items: bool) -> float:
 	var pose: Dictionary = RigPoses.pose(rig, a)
+	var S: float = _scale(rig)
 	var feet := point + Vector2(0, (float(rig.ground.y) - float(rig.center.y)) * S)
 	a.feet = feet
 	var world := _solve(rig, a, pose, feet, face, with_items)
 	a.world = world
 	var dying: bool = str(a.clip) == "death"
 	if not dying or not (str(rig.family) in ["void", "necro"]):
-		canvas.draw_rect(Rect2(feet.x - float(rig.width), feet.y - 2, float(rig.width) * 2.0, 6), SHADOW)
+		canvas.draw_rect(Rect2(feet.x - float(rig.width) * S * 0.5, feet.y - S, float(rig.width) * S, 3.0 * S), SHADOW)
 	var layers: Array = []
 	for part: Dictionary in rig.parts:
 		if not a.lost.has(part.id) and world.has(part.id): layers.append(part)
@@ -356,6 +357,7 @@ func _draw_bow_string(canvas: CanvasItem, pose: Dictionary) -> void:
 
 
 func _solve(rig: Dictionary, a: Dictionary, pose: Dictionary, feet: Vector2, face: float, with_items: bool) -> Dictionary:
+	var S: float = _scale(rig)
 	var whole: Dictionary = pose.whole
 	var ground: Vector2 = rig.ground
 	var pivot: Vector2 = whole.pivot if whole.pivot is Vector2 else ground
@@ -385,6 +387,11 @@ func _part_world(rig: Dictionary, a: Dictionary, pose: Dictionary, world: Dictio
 	return world[id]
 
 
+## World pixels per source pixel of a rig (bosses are drawn 3x larger).
+static func _scale(rig: Dictionary) -> float:
+	return float(rig.get("scale", S))
+
+
 static func _t(offset: Vector2) -> Transform2D:
 	return Transform2D(0.0, offset)
 
@@ -401,7 +408,7 @@ func draw_under(canvas: CanvasItem) -> void:
 	for d: Dictionary in _debris:
 		var fade := clampf(float(d.max) - float(d.life), 0.0, 1.0)
 		canvas.draw_rect(Rect2(float(d.x) - 8, float(d.y) - 2, 16, 4), Color(SHADOW, 0.3 * fade))
-		var xform := _t(Vector2(float(d.x), float(d.y) - float(d.z)).round()) * Transform2D(float(d.ang), Vector2.ZERO) * _s(Vector2(float(d.face) * S, S)) * _t(-Vector2(d.center))
+		var xform := _t(Vector2(float(d.x), float(d.y) - float(d.z)).round()) * Transform2D(float(d.ang), Vector2.ZERO) * _s(Vector2(float(d.face) * float(d.get("scale", S)), float(d.get("scale", S)))) * _t(-Vector2(d.center))
 		canvas.draw_set_transform_matrix(xform)
 		canvas.draw_texture(d.texture, Vector2.ZERO, Color(1, 1, 1, fade))
 	canvas.draw_set_transform_matrix(Transform2D.IDENTITY)

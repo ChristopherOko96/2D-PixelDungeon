@@ -66,7 +66,8 @@ func step(enemy: Dictionary, target_id: int, delta: float) -> bool:
 	var data: Dictionary = definition(str(enemy.get("kind","")))
 	if data.is_empty(): return false
 	if float(enemy.get("hp",0)) <= 0: return true
-	var target: Dictionary = _game.players.get(target_id,{})
+	# Negative ids are mirror-image decoys (HeroSkills); they draw but never take hits.
+	var target: Dictionary = _game.players.get(target_id,_game.decoys.get(target_id,{})) if "decoys" in _game else _game.players.get(target_id,{})
 	if target.is_empty() or int(target.get("hp",0)) <= 0: return true
 	if float(enemy.get("hitstun",0.0)) > 0 or enemy.get("statuses",{}).has("freeze"): return true
 	var attack: String = str(enemy.get("attack",""))

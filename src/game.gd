@@ -10,7 +10,9 @@ const WORLD_ZOOM := Vector2.ONE
 const PLAYER_COLORS := [Color("72dcc8"), Color("edb563"), Color("bc91de"), Color("ed8a91")]
 const PLAYER_SKINS := ["player_warden", "player_ranger", "player_arcanist", "player_lizard"]
 const Dungeon = preload("res://src/dungeon/dungeon_generator.gd")
-const DungeonHud = preload("res://src/dungeon_hud.gd")
+const RunHud = preload("res://src/ui/run_hud.gd")
+const CryptUI = preload("res://src/ui/crypt_ui.gd")
+const LevelCards = preload("res://src/ui/level_cards.gd")
 const PauseMenu = preload("res://src/pause_menu.gd")
 const RewardOverlay = preload("res://src/reward_overlay.gd")
 const PixelStyle = preload("res://src/pixel_style.gd")
@@ -23,6 +25,10 @@ const PerkCombat = preload("res://src/perk_combat.gd")
 const CryptEnemyAI = preload("res://src/crypt_enemy_ai.gd")
 const MainMenu = preload("res://src/main_menu.gd")
 const HeroClass = preload("res://src/player/hero_class.gd")
+const TeamProgress = preload("res://src/player/team_progress.gd")
+const HeroSkills = preload("res://src/combat/hero_skills.gd")
+const Chests = preload("res://src/dungeon/chests.gd")
+const Hordes = preload("res://src/dungeon/hordes.gd")
 const BodyParts = preload("res://src/combat/body_parts.gd")
 const VoidBossAI = preload("res://src/combat/void_boss_ai.gd")
 
@@ -47,11 +53,28 @@ var bullets: Array = []
 var perk_options: Array = []
 var perk_offers: Dictionary = {}
 var perk_combat := PerkCombat.new()
+## Shared team EXP, orbs and level-up/boss card choices (host).
+var team_progress := TeamProgress.new()
+## Hero skills on keys 1-4 (host).
+var hero_skills := HeroSkills.new()
+## Breakable loot chests and their drops, per room of the floor (host).
+var chests := Chests.new()
+## Enemy hordes: waves per room until its quota is spent (host).
+var hordes := Hordes.new()
+## True once this floor's boss or mini-boss fell (opens the stairs on boss floors).
+var floor_boss_down := false
 var _perk_rng := RandomNumberGenerator.new()
 var crypt_ai := CryptEnemyAI.new()
 ## Host-side body parts of rigged enemies (part HP, lost parts, regrowth).
 var body_parts := BodyParts.new()
 var void_ai := VoidBossAI.new()
+## Capture tools only: held skill keys and mouse point instead of the real
+## keyboard and mouse (-1 / INF = off). Never set in play.
+var scripted_skills := -1
+var scripted_target := Vector2.INF
+var scripted_fire := false
+## Mirror-image decoys enemies may chase this step: negative id -> {pos, hp}.
+var decoys: Dictionary = {}
 ## Short-lived host effects for clients (void bursts, slams): id, kind, x, y, r, life.
 var fx_events: Array[Dictionary] = []
 var _next_fx_id := 1
@@ -84,7 +107,10 @@ var ui: Control
 var phase_label: Label
 var party_label: Label
 var floor_map: Control
-var heart_hud: Control
+## The run HUD (hearts, boss bar, floor and map, skill slots).
+var run_hud: Control
+## Level-up / boss card choice at the right edge (mouse).
+var level_cards: Control
 var status_label: Label
 var session_label: Label
 var address_input: LineEdit
@@ -120,6 +146,8 @@ var _transition_token := 0
 var _next_enemy_id := 1
 var _next_bullet_id := 1
 var world_clip: Control
+## Screen-space camera vignette over the world (balance lighting.vignette).
+var vignette: ColorRect
 var room_camera := RoomCamera.new()
 var _camera_room_id := ""
 var _auto_reward_key := ""
@@ -130,6 +158,8 @@ var _editor_preview_notice := ""
 # Room geometry is immutable after generation. Only its small revision travels
 # with ordinary simulation snapshots; reliable packets seed each client's cache.
 var _room_layout_revision := 0
+## Counts room entries (not wall breaks), so visual feedback resets per entry only.
+var _room_serial := 0
 var _sent_layout_by_peer: Dictionary = {}
 var _received_layouts: Dictionary = {}
 var _received_layout_epoch := ""
@@ -216,6 +246,10 @@ func _ready() -> void:
 		return
 	balance = parsed
 	perk_combat.bind(self)
+	team_progress.bind(self)
+	hero_skills.bind(self)
+	chests.bind(self)
+	hordes.bind(self)
 	crypt_ai.bind(self)
 	void_ai.bind(self)
 	if not snapshot_interpolator.configure(balance.get("network",{})):
@@ -232,7 +266,7 @@ func _ready() -> void:
 		dungeon_config = room_data
 	if dungeon_config.has("campaign_title"):
 		var title_suffix := " · Raumvorschau" if editor_preview_mode else " · Vorschau" if dungeon_file_path != "res://assets/data/dungeon_rooms.json" else ""
-		get_window().title = str(dungeon_config.campaign_title)+title_suffix
+		get_window().title = CryptUI.GAME_TITLE+title_suffix
 	Engine.physics_ticks_per_second = 60
 	launched_at = Time.get_ticks_msec() / 1000.0
 	# Clients only talk to the host; membership comes from authoritative snapshots.
@@ -249,6 +283,7 @@ func _ready() -> void:
 	view.show_player_health = false
 	# Live runs: 0x72 crypt rooms and the dark crypt (balance.json "lighting").
 	view.lighting = balance.get("lighting",{})
+	view._skill_fx.balance = balance
 	view.crypt_0x72_enabled = not editor_preview_mode
 	world_clip = Control.new()
 	world_clip.position = WORLD_OFFSET
@@ -258,6 +293,18 @@ func _ready() -> void:
 	add_child(world_clip)
 	view.scale = WORLD_ZOOM
 	world_clip.add_child(view)
+	# Camera vignette over the world (not the HUD): only the view edges darken.
+	vignette = ColorRect.new()
+	vignette.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	vignette.set_anchors_preset(Control.PRESET_FULL_RECT)
+	var vignette_material := ShaderMaterial.new()
+	vignette_material.shader = preload("res://assets/shaders/canvas_post_vignette.gdshader")
+	var vignette_settings: Dictionary = balance.get("lighting",{}).get("vignette",{})
+	for key: String in ["strength","inner","outer"]:
+		if vignette_settings.has(key): vignette_material.set_shader_parameter(key,float(vignette_settings[key]))
+	vignette.material = vignette_material
+	vignette.visible = false
+	world_clip.add_child(vignette)
 	view.set_audio_enabled(true)
 	_build_ui()
 	# Every button in the menus, lobby and pause screen clicks (assets/data/audio_sfx.json).
@@ -281,12 +328,11 @@ func _ready() -> void:
 
 
 func _draw() -> void:
-	draw_rect(get_viewport_rect(), Color("08060f") if dungeon_config.get("campaign_title","") == "Crypt of the Damned" else Color("170d24"))
+	draw_rect(get_viewport_rect(), CryptUI.INK)
 	if _in_run(): return
 	var origin := ((get_viewport_rect().size-DESIGN_SIZE)*0.5).floor()
-	draw_rect(Rect2(origin+Vector2(24,18),Vector2(1232,74)),Color("251136"))
-	draw_rect(Rect2(origin+Vector2(24,18),Vector2(1232,74)),Color("6b347e"),false,2)
-	draw_line(origin+Vector2(32,98),origin+Vector2(1248,98),Color("4e245f"),2)
+	CryptUI.draw_box(self,"panel",Rect2(origin+Vector2(24,18),Vector2(1232,74)))
+	CryptUI.draw_box(self,"inset",Rect2(origin+LOBBY_WORLD_OFFSET-Vector2(8,8),LOBBY_WORLD_SIZE+Vector2(16,16)))
 
 
 func _in_run() -> bool:
@@ -343,11 +389,14 @@ func _apply_display_layout(force: bool = false) -> void:
 	lobby_ui.size = DESIGN_SIZE
 	world_clip.position = WORLD_OFFSET if in_run else origin+LOBBY_WORLD_OFFSET
 	world_clip.size = dimensions if in_run else LOBBY_WORLD_SIZE
-	heart_hud.position = Vector2(24,18)
-	heart_hud.size = Vector2(minf(464,dimensions.x-48),38)
-	menu_button.position = Vector2(dimensions.x-menu_button.size.x-24,18)
+	run_hud.position = Vector2.ZERO
+	run_hud.size = dimensions
+	var map_panel: Rect2 = run_hud.map_panel_rect()
+	menu_button.size = Vector2(map_panel.size.x,36)
+	menu_button.position = Vector2(map_panel.position.x,map_panel.end.y+8)
+	level_cards.position = Vector2(dimensions.x-level_cards.size.x-20,menu_button.position.y+menu_button.size.y+12)
 	var hint_height := 72.0 if editor_preview_mode else 30.0
-	context_hint.position = Vector2(24,dimensions.y-hint_height-16)
+	context_hint.position = Vector2(24,run_hud.skill_bar_top()-hint_height-10)
 	context_hint.size = Vector2(dimensions.x-48,hint_height)
 	modal_guard.size = dimensions
 	pause_menu.position = origin
@@ -416,6 +465,8 @@ func _read_arguments() -> void:
 				if i + 1 < args.size(): smoke_floor_limit = clampi(args[i + 1].to_int(), 1, 3)
 			"--wait-players":
 				if i + 1 < args.size(): wait_players = clampi(args[i + 1].to_int(), 1, 4)
+	# Network smoke runs keep single encounters, so bots finish rooms quickly.
+	if not smoke_role.is_empty(): hordes.enabled = false
 	if should_host:
 		_host_session()
 	elif not address.is_empty():
@@ -449,7 +500,21 @@ func _process(delta: float) -> void:
 		if not pause_open and not smoke_role.is_empty() and active and phase == "explore":
 			_smoke_interact()
 	transition_view.update(delta)
+	# HUD corners fade while the local hero stands near them.
+	if run_hud != null and run_hud.visible:
+		var me: Dictionary = state.get("players", {}).get(multiplayer.get_unique_id() if active else 1, {})
+		var to_screen := view.get_global_transform_with_canvas()
+		var gates: Array = []
+		for exit: Dictionary in state.get("room_layout", {}).get("exits", []):
+			var rect: Array = exit.rect
+			gates.append(to_screen * Vector2(float(rect[0]) + 16.0, float(rect[1]) - 32.0))
+		run_hud.set_focus(to_screen * Vector2(float(me.get("x", 0)), float(me.get("y", 0))) if not me.is_empty() else Vector2.INF, gates)
+		menu_button.modulate.a = run_hud.right_alpha()
 	view.darkness_enabled = active and not editor_preview_mode and phase in ["combat","explore","reward","dead"]
+	if vignette != null:
+		vignette.visible = view.darkness_enabled
+		vignette.size = world_clip.size
+		vignette.material.set_shader_parameter("aspect",world_clip.size.x/maxf(1.0,world_clip.size.y))
 	if not state.is_empty(): view.set_state(_presentation_state(), multiplayer.get_unique_id() if active else 0)
 	_update_camera(delta)
 
@@ -495,12 +560,17 @@ func _update_camera(delta: float) -> void:
 	var player: Dictionary = shown.get("players",{}).get(local_id,{})
 	if player.is_empty(): return
 	var point := Vector2(player.x,player.y)
+	# Zoomed camera (balance camera.zoom): the room camera works in world pixels
+	# of the visible area; the view scales them up (2x art becomes 3x at 1.5).
+	var zoom: float = maxf(1.0,float(balance.get("camera",{}).get("zoom",1.0)))
+	view.scale = Vector2(zoom,zoom)
+	var visible: Vector2 = world_clip.size/zoom
 	if _camera_room_id != str(layout.id):
 		_camera_room_id = str(layout.id)
-		room_camera.reset(point,world,world_clip.size)
-	var mouse_delta := get_global_mouse_position()-view.to_global(point)
+		room_camera.reset(point,world,visible)
+	var mouse_delta := (get_global_mouse_position()-view.to_global(point))/zoom
 	var frozen: bool = pause_open or is_transitioning() or player.get("hp",0) <= 0
-	view.set_world_origin(room_camera.update(point,mouse_delta,world,world_clip.size,delta,balance.get("camera",{}),frozen))
+	view.set_world_origin((room_camera.update(point,mouse_delta,world,visible,delta,balance.get("camera",{}),frozen)*zoom).round())
 
 
 func _physics_process(delta: float) -> void:
@@ -525,9 +595,16 @@ func _physics_process(delta: float) -> void:
 
 func _step_world(delta: float) -> void:
 	perk_combat.step_events(delta)
+	# Short effect events age in every phase (wall hits happen outside fights too).
+	for event: Dictionary in fx_events: event.life = float(event.life)-delta
+	fx_events = fx_events.filter(func(event: Dictionary) -> bool: return float(event.life) > 0.0)
 	if phase in ["combat", "reward", "explore"]:
 		_simulate_players(delta)
+		hero_skills.step(delta)
+		team_progress.step(delta)
+		chests.step(delta)
 	if phase == "combat":
+		hordes.step(delta)
 		_simulate_enemies(delta)
 	if phase in ["combat", "explore"]:
 		_simulate_bullets(delta)
@@ -821,12 +898,13 @@ func _send_local_input() -> void:
 			commands[1].move = Vector2.ZERO
 			commands[1].fire = false
 		input_sequence += 1
-		if hosting: _accept_input(1,Vector2.ZERO,Vector2.RIGHT,false,input_sequence)
+		if hosting: _accept_input(1,Vector2.ZERO,Vector2.RIGHT,false,input_sequence,0)
 		elif peer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTED: _input_packet.rpc_id(1,Vector2.ZERO,Vector2.RIGHT,false,input_sequence)
 		return
 	var movement := Vector2(float(Input.is_physical_key_pressed(KEY_D)) - float(Input.is_physical_key_pressed(KEY_A)), float(Input.is_physical_key_pressed(KEY_S)) - float(Input.is_physical_key_pressed(KEY_W))).limit_length()
 	var position := Vector2(local_player.x, local_player.y)
 	var mouse := view.to_local(get_global_mouse_position())
+	if scripted_target.is_finite(): mouse = scripted_target
 	var aim := (mouse - position).normalized()
 	var mouse_pressed := Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT)
 	if not mouse_pressed: _fire_needs_release = false
@@ -866,9 +944,18 @@ func _send_local_input() -> void:
 			if position.distance_to(destination) > 10.0:
 				var path := Dungeon.find_path(position, destination, float(balance.player.radius), state.get("room_layout", {}))
 				if not path.is_empty(): movement = (path[0] - position).normalized()
+	# Keys 1-4 as a bitmask, and the mouse point in world pixels (skill targets).
+	var skill_keys := 0
+	for index in range(4):
+		if Input.is_physical_key_pressed(KEY_1 + index): skill_keys |= 1 << index
+	if not smoke_role.is_empty(): skill_keys = 0
+	if scripted_skills >= 0: skill_keys = scripted_skills
+	if scripted_fire:
+		fire = true
+		aim = (mouse - position).normalized()
 	input_sequence += 1
-	if hosting: _accept_input(1, movement, aim, fire, input_sequence)
-	else: _input_packet.rpc_id(1, movement, aim, fire, input_sequence)
+	if hosting: _accept_input(1, movement, aim, fire, input_sequence, skill_keys, mouse)
+	else: _input_packet.rpc_id(1, movement, aim, fire, input_sequence, skill_keys, mouse)
 
 
 func _smoke_exit() -> Dictionary:
@@ -893,18 +980,19 @@ func _exit_center(exit: Dictionary) -> Vector2:
 
 
 @rpc("any_peer", "call_remote", "unreliable_ordered", 0)
-func _input_packet(movement: Vector2, aim: Vector2, fire: bool, sequence: int) -> void:
+func _input_packet(movement: Vector2, aim: Vector2, fire: bool, sequence: int, skill_keys: int = 0, target: Vector2 = Vector2.INF) -> void:
 	var id := multiplayer.get_remote_sender_id()
-	if hosting and _admitted_peers.has(id): _accept_input(id, movement, aim, fire, sequence)
+	if hosting and _admitted_peers.has(id): _accept_input(id, movement, aim, fire, sequence, skill_keys, target)
 
 
-func _accept_input(id: int, movement: Vector2, aim: Vector2, fire: bool, sequence: int) -> void:
+func _accept_input(id: int, movement: Vector2, aim: Vector2, fire: bool, sequence: int, skill_keys: int = 0, target: Vector2 = Vector2.INF) -> void:
 	if not players.has(id) or phase not in ["combat", "reward", "explore"] or players[id].hp <= 0: return
 	if not movement.is_finite() or not aim.is_finite() or sequence < 0: return
 	var now := Time.get_ticks_msec() / 1000.0
 	var previous: Dictionary = commands.get(id, {})
 	if sequence <= int(previous.get("sequence", -1)) or now - float(previous.get("time", -1.0)) < 0.025: return
-	commands[id] = {"move": movement.limit_length(), "aim": aim.normalized() if aim.length_squared() > 0.0001 else Vector2.RIGHT, "fire": fire, "sequence": sequence, "time": now}
+	commands[id] = {"move": movement.limit_length(), "aim": aim.normalized() if aim.length_squared() > 0.0001 else Vector2.RIGHT, "fire": fire, "sequence": sequence, "time": now, "skills": clampi(skill_keys, 0, 15)}
+	if target.is_finite(): commands[id].target = target
 
 
 func _send_action(action: String, value: int = 0) -> void:
@@ -936,6 +1024,10 @@ func _server_action(id: int, action: String, value: int) -> void:
 		_advance_if_ready()
 	elif action == "interact" and phase == "explore":
 		_use_exit(id)
+	elif action == "card" and phase in ["combat", "explore", "reward"]:
+		# Level-up or boss card, picked by mouse while the game runs.
+		if not team_progress.pick(players[id], value): return
+		print("CARD_PICKED peer=%d card=%s level=%d" % [id, str(players[id].get("last_card","")), int(team_progress.team.level)])
 	elif action == "class" and phase == "lobby":
 		# Each peer picks only its own class, by index into balance.class_order.
 		var order: Array = balance.get("class_order", [])
@@ -1027,6 +1119,11 @@ func _begin_run() -> void:
 		players[id].color = previous_players[id].color
 		players[id].skin = str(previous_players[id].get("skin",PLAYER_SKINS[PLAYER_COLORS.find(players[id].color)]))
 	commands.clear()
+	team_progress.reset(seed_value)
+	hero_skills.reset(seed_value)
+	chests.place_floor(floor_layouts, seed_value)
+	hordes.reset(seed_value)
+	floor_boss_down = false
 	_spawn_room()
 	print("RUN_STARTED seed=%d players=%d" % [run_seed, players.size()])
 	print("FLOOR_ENTERED floor=%d seed=%d" % [floor_index, floor_seed])
@@ -1037,8 +1134,13 @@ func _spawn_room(from_room: int = 0) -> void:
 	void_ai.bind(self)
 	fx_events.clear()
 	if room < 1 or room > floor_layouts.size(): return
+	if phase == "combat": hordes.leave()
 	current_layout = floor_layouts[room - 1]
 	_room_layout_revision += 1
+	_room_serial += 1
+	# EXP left on the floor is collected; ground effects and channels end.
+	team_progress.collect_all()
+	hero_skills.room_changed()
 	_local_visual_state = {}
 	var revisiting := cleared_room_ids.has(str(current_layout.id))
 	phase = "explore" if revisiting else "combat"
@@ -1069,6 +1171,7 @@ func _spawn_room(from_room: int = 0) -> void:
 	var counts: Array = balance.rooms.enemy_counts
 	var boss_room: bool = current_layout.boss
 	var count := int(counts[mini(room-1,counts.size()-1)])
+	var returning: bool = hordes.enabled and hordes.known(str(current_layout.id)) and not (boss_room and not floor_boss_down)
 	var spawn_points: Array[Vector2] = []
 	if current_layout.get("crypt_profile",false) and not editor_preview_mode:
 		var rng := RandomNumberGenerator.new()
@@ -1080,6 +1183,7 @@ func _spawn_room(from_room: int = 0) -> void:
 			count = int(balance.get("enemy_roster",{}).get("floor_plan",{}).get("strong_group_count",6))
 		spawn_points = _crypt_enemy_positions(rng,count,encounter)
 		count = mini(count,spawn_points.size())
+	if returning: count = 0
 	if editor_preview_mode:
 		count = mini(count,current_layout.enemy_spawns.size())
 		if count == 0:
@@ -1113,6 +1217,7 @@ func _spawn_room(from_room: int = 0) -> void:
 		if target >= 0:
 			enemy.nav_path = Dungeon.find_path(enemy.pos,players[target].pos,enemy.radius,current_layout)
 		enemy.nav_timer = repath_interval*float(i+1)/float(enemies.size())
+	hordes.enter(count, boss_room)
 	print("ROOM_STARTED room=%d enemies=%d boss=%s" % [room, count, boss_room])
 
 
@@ -1132,9 +1237,67 @@ func _create_enemy(kind: String, point: Vector2) -> Dictionary:
 
 
 ## Queues a short host effect for clients (void burst, slam); clients play each id once.
-func add_fx(kind: String, point: Vector2, radius: float) -> void:
-	fx_events.append({"id":_next_fx_id,"kind":kind,"x":point.x,"y":point.y,"r":radius,"life":0.6})
+func add_fx(kind: String, point: Vector2, radius: float, extra: Dictionary = {}) -> void:
+	var event := {"id":_next_fx_id,"kind":kind,"x":point.x,"y":point.y,"r":radius,"life":0.6}
+	event.merge(extra,true)
+	fx_events.append(event)
 	_next_fx_id += 1
+
+
+## A shot or blade met a wall: the contact point on the wall, its normal (back
+## towards the floor) and what struck it, for chips, sparks and splashes.
+func wall_hit(from: Vector2, to: Vector2, style: String) -> void:
+	var recent := 0
+	for event: Dictionary in fx_events:
+		if str(event.kind) == "wall_hit" and float(event.life) > 0.5: recent += 1
+	if recent >= 8: return
+	var low := 0.0
+	var high := 1.0
+	for step in range(7):
+		var middle := (low + high) * 0.5
+		if Dungeon.segment_blocked(from,from.lerp(to,middle),0.0,current_layout): high = middle
+		else: low = middle
+	var contact := from.lerp(to,low)
+	var travel := to-from
+	var normal := -travel.normalized()
+	if Dungeon.segment_blocked(contact,contact+Vector2(signf(travel.x)*6.0,0.0),0.0,current_layout) and not Dungeon.segment_blocked(contact,contact+Vector2(0.0,signf(travel.y)*6.0),0.0,current_layout): normal = Vector2(-signf(travel.x),0.0)
+	elif Dungeon.segment_blocked(contact,contact+Vector2(0.0,signf(travel.y)*6.0),0.0,current_layout) and not Dungeon.segment_blocked(contact,contact+Vector2(signf(travel.x)*6.0,0.0),0.0,current_layout): normal = Vector2(0.0,-signf(travel.y))
+	add_fx("wall_hit",contact,8.0,{"style":style,"nx":normal.x,"ny":normal.y})
+
+
+## What a shot is made of, for its wall effect.
+func _shot_style(bullet: Dictionary) -> String:
+	var skill := str(bullet.get("skill",""))
+	if skill == "fireball": return "fire"
+	if skill == "fist": return "frost"
+	if skill == "wave": return "metal"
+	match str(bullet.get("element","")):
+		"cinder": return "fire"
+		"frost": return "frost"
+		"storm": return "arcane"
+		"venom": return "poison"
+	match str(bullet.get("style","")):
+		"magic": return "magic"
+		"soul","void_skull": return "void"
+		"roar": return "stone"
+	return "arrow"
+
+
+## The room's collision changed (a chest or crate broke): clients get the
+## new layout; navigation follows the obstacles automatically.
+func layout_changed() -> void:
+	_room_layout_revision += 1
+	_broadcast_state(true)
+
+
+## An ultimate broke inner wall cells (WallBreaker already changed the layout):
+## clients get the new layout with rubble effects; navigation follows the new
+## obstacles automatically.
+func walls_broken(points: Array[Vector2]) -> void:
+	_room_layout_revision += 1
+	for point: Vector2 in points: add_fx("wall_break", point, 16.0)
+	print("WALL_BROKEN room=%d cells=%d" % [room, points.size()])
+	_broadcast_state(true)
 
 
 ## Summons must originate from a live caster and an unoccupied, reachable floor.
@@ -1198,16 +1361,20 @@ func _simulate_players(delta: float) -> void:
 		if player.hitstun > 0.0: continue
 		var command: Dictionary = commands.get(id, {})
 		if command.is_empty() or now - command.time > float(balance.network.input_timeout): continue
-		var before: Vector2 = player.pos
-		player.pos = Dungeon.move_actor(player.pos, command.move * player.speed * delta, float(balance.player.radius), current_layout)
-		player.moving = player.pos.distance_squared_to(before) > 0.001
-		player.motion = (player.pos-before)/maxf(delta,0.000001)
 		player.aim = command.aim
 		if absf(command.aim.x) > 0.01: player.face = signf(command.aim.x)
-		if command.fire and phase != "reward" and player.shot_timer <= 0.0:
+		hero_skills.handle_input(id, player, command)
+		var move_scale: float = hero_skills.move_scale(player)
+		if move_scale > 0.0:
+			var before: Vector2 = player.pos
+			player.pos = Dungeon.move_actor(player.pos, command.move * player.speed * move_scale * delta, float(balance.player.radius), current_layout)
+			player.moving = player.pos.distance_squared_to(before) > 0.001
+			player.motion = (player.pos-before)/maxf(delta,0.000001)
+		if command.fire and phase != "reward" and player.shot_timer <= 0.0 and hero_skills.can_attack(player):
 			player.shot_timer = perk_combat.shot_interval(player)
 			if bool(player.get("melee",false)): perk_combat.melee(id,command.aim)
 			else: perk_combat.shoot(id,command.aim)
+			hero_skills.basic_attack(id, player, command.aim)
 
 
 func _add_bullet(position: Vector2, velocity: Vector2, owner: int, damage: float, metadata: Dictionary = {}) -> Dictionary:
@@ -1229,8 +1396,7 @@ func _add_bullet(position: Vector2, velocity: Vector2, owner: int, damage: float
 
 func _simulate_enemies(delta: float) -> void:
 	perk_combat.step_statuses(delta)
-	for event: Dictionary in fx_events: event.life = float(event.life)-delta
-	fx_events = fx_events.filter(func(event: Dictionary) -> bool: return float(event.life) > 0.0)
+	decoys.clear()
 	# Summoning may append a new actor; it first participates on the next tick.
 	for enemy in enemies.duplicate():
 		enemy.moving = false
@@ -1260,6 +1426,15 @@ func _simulate_enemies(delta: float) -> void:
 				distance = candidate
 				target = id
 		if target < 0: continue
+		# Spiegelbild: normal enemies near a decoy chase the decoy instead.
+		if not enemy.boss and not bool(enemy.get("miniboss",false)):
+			for zone: Dictionary in hero_skills.zones:
+				if str(zone.kind) == "decoy" and enemy.pos.distance_to(zone.pos) <= float(zone.radius):
+					target = -int(zone.id)
+					decoys[target] = {"pos": Vector2(zone.pos), "hp": 1}
+		if target < 0:
+			if crypt_ai.step(enemy,target,delta): enemy.motion = (enemy.pos-simulation_start)/maxf(delta,0.000001)
+			continue
 		if void_ai.step(enemy,target,delta) or crypt_ai.step(enemy,target,delta):
 			enemy.motion = (enemy.pos-simulation_start)/maxf(delta,0.000001)
 			continue
@@ -1322,12 +1497,20 @@ func _simulate_bullets(delta: float) -> void:
 		bullet.pos += bullet.velocity * delta
 		bullet.distance = float(bullet.get("distance",0.0))+previous.distance_to(bullet.pos)
 		bullet.life -= delta
-		var blocked: bool = Dungeon.segment_blocked(previous,bullet.pos,radius,current_layout)
+		# Wide skill shots (blade wave, Pfeilfaust) hit enemies with their full width
+		# but meet walls with a thin core, so they fly through corridors.
+		var wall_radius: float = float(bullet.get("wall_radius",radius))
+		var blocked: bool = Dungeon.segment_blocked(previous,bullet.pos,wall_radius,current_layout)
 		var removed: bool = bullet.life <= 0.0
+		# A player shot that runs into a chest or crate strikes it.
+		if blocked and int(bullet.owner) > 0 and chests.hit_segment(previous,bullet.pos,radius+10.0,int(bullet.owner),bullet):
+			if int(bullet.get("pierce",0)) <= 0: removed = true
+			blocked = false
 		if blocked and not removed:
+			wall_hit(previous,bullet.pos,_shot_style(bullet))
 			if int(bullet.get("bounces",0)) > 0:
-				var blocked_x: bool = Dungeon.segment_blocked(previous,Vector2(bullet.pos.x,previous.y),radius,current_layout)
-				var blocked_y: bool = Dungeon.segment_blocked(previous,Vector2(previous.x,bullet.pos.y),radius,current_layout)
+				var blocked_x: bool = Dungeon.segment_blocked(previous,Vector2(bullet.pos.x,previous.y),wall_radius,current_layout)
+				var blocked_y: bool = Dungeon.segment_blocked(previous,Vector2(previous.x,bullet.pos.y),wall_radius,current_layout)
 				if blocked_x: bullet.velocity.x = -bullet.velocity.x
 				if blocked_y: bullet.velocity.y = -bullet.velocity.y
 				if not blocked_x and not blocked_y: bullet.velocity = -bullet.velocity
@@ -1360,11 +1543,18 @@ func _simulate_bullets(delta: float) -> void:
 				bullet.hit_ids.append(int(enemy.id))
 				body_parts.set_pending(enemy,str(impact_parts.get(int(enemy.id),"")))
 				perk_combat.hit(bullet,enemy)
+				if bullet.has("skill") or bool(bullet.get("splinter",false)): hero_skills.bullet_hit(bullet,enemy)
 				if int(bullet.get("pierce",0)) <= 0:
 					removed = true
 					break
 				bullet.pierce = int(bullet.pierce)-1
+		if not removed and int(bullet.owner) > 0:
+			# Player shots break chests (each chest once per shot).
+			if chests.hit_segment(previous,bullet.pos,radius,int(bullet.owner),bullet):
+				if int(bullet.get("pierce",0)) <= 0: removed = true
 		if removed:
+			# Skill shots: fireball and Pfeilfaust bursts, the returning blade wave.
+			if bullet.has("skill") and hero_skills.bullet_end(bullet,blocked,previous): continue
 			# Mage orbs burst wherever they end (hit, wall or flight time).
 			if int(bullet.owner) > 0 and float(bullet.get("splash",0.0)) > 0.0: perk_combat.splash(bullet)
 			bullets.remove_at(i)
@@ -1394,6 +1584,7 @@ func _damage_enemy(enemy: Dictionary, damage: float, direction: Vector2 = Vector
 			enemy.blocks = int(enemy.get("blocks",0))+1
 			damage *= guard
 	var boss: bool = enemy.boss
+	damage *= hero_skills.damage_scale(enemy)
 	if body_parts.has_parts(enemy):
 		# The part at the impact point takes the damage; all of it counts against the total HP.
 		var impact: String = body_parts.take_pending(enemy)
@@ -1416,6 +1607,9 @@ func _damage_enemy(enemy: Dictionary, damage: float, direction: Vector2 = Vector
 		enemy.dying = float(balance.death.boss_duration if boss else balance.death.duration)
 		enemy.knockback = direction.normalized()*float(balance.death.boss_kick if boss else balance.death.kick)
 		perk_combat.killed(enemy,owner,kill_effects)
+		team_progress.enemy_killed(enemy)
+		if bool(enemy.get("boss",false)) or bool(enemy.get("miniboss",false)): floor_boss_down = true
+		hero_skills.enemy_killed(enemy,owner)
 	# Return resolved damage before HP clamping, so lethal surplus remains measurable.
 	return damage
 
@@ -1430,11 +1624,18 @@ func _check_room_end() -> void:
 		bullets.clear()
 		print("TEAM_WIPE room=%d" % room)
 		_broadcast_state(true)
-	elif enemies.is_empty():
+	elif enemies.is_empty() and not hordes.pending():
 		if str(current_layout.id) not in cleared_room_ids: cleared_room_ids.append(str(current_layout.id))
 		bullets.clear()
-		phase = "reward"
 		perk_combat.room_cleared()
+		if not bool(balance.get("perk_rules",{}).get("room_rewards",false)):
+			# Perks come from level-ups and bosses now; a cleared room opens at once.
+			phase = "explore"
+			print("ROOM_CLEARED room=%d phase=%s" % [room, phase])
+			if cleared_room_ids.size() == floor_layouts.size(): print("FLOOR_CLEARED floor=%d players=%d" % [floor_index, players.size()])
+			_broadcast_state(true)
+			return
+		phase = "reward"
 		perk_offers.clear()
 		for id in players:
 			perk_offers[id] = PerkRules.offer(players[id],balance,_perk_rng,3) if int(players[id].hp) > 0 else []
@@ -1470,7 +1671,7 @@ func _use_exit(id: int) -> void:
 	if editor_preview_mode:
 		status_message = "Einzelraum-Vorschau: Zurück zum Editor beendet diesen Raum. Die Raumfolge wird hier nicht gestartet."
 		return
-	if not _transition_state.is_empty() or phase != "explore" or not players.has(id) or players[id].hp <= 0: return
+	if not _transition_state.is_empty() or phase not in ["explore", "combat"] or not players.has(id) or players[id].hp <= 0: return
 	var nearest: Dictionary = {}
 	var distance := INF
 	for exit: Dictionary in current_layout.get("exits", []):
@@ -1483,12 +1684,21 @@ func _use_exit(id: int) -> void:
 	for player: Dictionary in players.values():
 		if player.hp > 0 and (player.pos.distance_to(center) > float(balance.exploration.party_radius) or player.hitstun > 0.0): return
 	if nearest.kind == "stairs":
-		if cleared_room_ids.size() != floor_layouts.size(): return
+		if not stairs_open(): return
 		_queue_transition(id,nearest)
 		return
 	var target := int(nearest.target_room)
 	if target < 1 or target > floor_layouts.size(): return
 	_queue_transition(id,nearest)
+
+
+## The stairs down: open, except on boss floors (3, 6, 9, 10, ...) until the
+## floor's boss or mini-boss has fallen. Without hordes the old rule holds:
+## every room of the floor must be cleared.
+func stairs_open() -> bool:
+	if not hordes.enabled: return cleared_room_ids.size() == floor_layouts.size()
+	if crypt_ai.final_room_role(floor_index) == "strong_group": return true
+	return floor_boss_down
 
 
 func _queue_transition(id: int, exit: Dictionary) -> void:
@@ -1537,6 +1747,9 @@ func _enter_next_floor() -> void:
 	floor_layouts = generated
 	cleared_room_ids.clear()
 	room = 1
+	chests.place_floor(floor_layouts, next_seed)
+	hordes.reset(next_seed)
+	floor_boss_down = false
 	_spawn_room()
 	print("FLOOR_ENTERED floor=%d seed=%d" % [floor_index, floor_seed])
 
@@ -1548,6 +1761,15 @@ func _make_snapshot(advance_sequence: bool = true) -> Dictionary:
 		var aim: Vector2 = player.get("aim",Vector2.RIGHT)
 		visible_players[id] = {"x": player.pos.x, "y": player.pos.y, "hp": player.hp, "max_hp": player.max_hp, "color": player.color, "ready": player.ready, "picked": player.picked, "perks": player.perks.duplicate(), "hitstun": player.get("hitstun", 0.0), "hit_flash": player.get("hit_flash", 0.0), "invulnerable": player.invulnerable,"shots":player.get("shots",0),"hurts":player.get("hurts",0),"moving":player.get("moving",false),"face":player.get("face",1.0),"ax":aim.x,"ay":aim.y}
 		visible_players[id].build = player.get("build",{}).duplicate()
+		# Hero skills, class cards and the open card choice (level-up / boss).
+		visible_players[id].skills = hero_skills.player_state(player)
+		visible_players[id].class_perks = Array(player.get("class_perks",[])).duplicate()
+		visible_players[id].offer = Array(player.get("offer",[])).duplicate(true)
+		visible_players[id].offer_kind = str(player.get("offer_kind",""))
+		visible_players[id].offer_pending = Array(player.get("offer_queue",[])).size()
+		visible_players[id].skill_casts = int(player.get("skill_casts",0))
+		visible_players[id].last_skill = str(player.get("last_skill",""))
+		visible_players[id].last_card = str(player.get("last_card",""))
 		visible_players[id].last_perk = str(player.get("last_perk",""))
 		visible_players[id].shield = int(player.get("perk_runtime",{}).get("shield",0))+int(player.get("perk_runtime",{}).get("soul_shield",0))
 		visible_players[id].reserve_shield = int(player.get("reserve_shield",0))
@@ -1587,7 +1809,7 @@ func _make_snapshot(advance_sequence: bool = true) -> Dictionary:
 	for i in range(floor_layouts.size()):
 		var layout: Dictionary = floor_layouts[i]
 		map_rooms.append({"id": layout.id, "title": layout.title, "boss": layout.boss, "grid_x": layout.grid_x, "grid_y": layout.grid_y, "cleared": str(layout.id) in cleared_room_ids})
-	return {"server_time":Time.get_ticks_usec()/1000000.0,"players": visible_players, "enemies": visible_enemies, "bullets": visible_bullets, "room": room, "phase": phase, "seed": floor_seed, "run_seed": run_seed, "run_serial": run_serial, "floor_index": floor_index, "cleared_room_ids": cleared_room_ids.duplicate(), "seq": packet_sequence, "peer_count": players.size(), "max_players":int(balance.network.max_players), "perk_options": perk_options, "perk_offers":perk_offers.duplicate(), "perk_events":perk_combat.visual_events(), "room_layout": current_layout, "room_layout_revision": _room_layout_revision, "floor_map": map_rooms, "generator_version": Dungeon.GENERATOR_VERSION, "boss_name":balance.boss.get("display_name","BOSS"),"fx_events":fx_events.duplicate(true),"transition":(_transition_state if not _transition_state.is_empty() else _last_transition_state).duplicate()}
+	return {"server_time":Time.get_ticks_usec()/1000000.0,"players": visible_players, "enemies": visible_enemies, "bullets": visible_bullets, "room": room, "phase": phase, "seed": floor_seed, "run_seed": run_seed, "run_serial": run_serial, "floor_index": floor_index, "cleared_room_ids": cleared_room_ids.duplicate(), "seq": packet_sequence, "peer_count": players.size(), "max_players":int(balance.network.max_players), "perk_options": perk_options, "perk_offers":perk_offers.duplicate(), "perk_events":perk_combat.visual_events(), "room_layout": current_layout, "room_layout_revision": _room_layout_revision, "room_serial": _room_serial, "floor_map": map_rooms, "generator_version": Dungeon.GENERATOR_VERSION, "boss_name":balance.boss.get("display_name","BOSS"),"fx_events":fx_events.duplicate(true),"team":team_progress.snapshot(),"loot_chests":chests.snapshot(),"horde":hordes.snapshot(),"stairs_open":stairs_open(),"skill_fx":hero_skills.snapshot(),"transition":(_transition_state if not _transition_state.is_empty() else _last_transition_state).duplicate()}
 
 
 func _broadcast_state(reliable: bool) -> void:
@@ -1698,24 +1920,22 @@ func _build_ui() -> void:
 	add_child(canvas)
 	ui = Control.new()
 	ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	ui.theme = PixelStyle.create_theme()
+	ui.theme = CryptUI.create_theme()
 	canvas.add_child(ui)
-	heart_hud = DungeonHud.new()
-	heart_hud.position = Vector2(368, 22)
-	heart_hud.size = Vector2(560, 64)
-	ui.add_child(heart_hud)
 	var panel := Panel.new()
 	panel.position = Vector2(944, 156)
 	panel.size = Vector2(304, 480)
-	panel.add_theme_stylebox_override("panel", _style(Color("291538"), Color("764890")))
 	ui.add_child(panel)
-	_label(str(dungeon_config.get("campaign_title","BASEMENT RUN")).to_upper(), Vector2(32, 25), Vector2(600, 38), 28, Color("ffcf68"))
-	_label("IN DIE TIEFE. ZUSAMMEN.", Vector2(34, 65), Vector2(320, 22), 12, Color("b18ccb"))
-	session_label = _label("ENTWICKLUNGSPROTOTYP", Vector2(952, 35), Vector2(296, 50), 14, Color("72dcc8"))
-	status_label = _label("", Vector2(32, 112), Vector2(1216, 36), 15, Color("b6bdce"))
+	var title := _label(CryptUI.GAME_TITLE, Vector2(44, 26), Vector2(600, 38), 32, CryptUI.GOLD)
+	title.add_theme_color_override("font_outline_color", CryptUI.INK)
+	title.add_theme_constant_override("outline_size", 6)
+	_label("MEHRSPIELER · " + str(dungeon_config.get("campaign_title","Die Krypta")).to_upper(), Vector2(46, 62), Vector2(600, 22), 16, CryptUI.SAND)
+	session_label = _label("ENTWICKLUNGSPROTOTYP", Vector2(944, 30), Vector2(296, 50), 16, CryptUI.SAND)
+	session_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	status_label = _label("", Vector2(32, 110), Vector2(1216, 36), 16, CryptUI.BONE)
 	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	phase_label = _label("DIE LOBBY", Vector2(968, 178), Vector2(264, 30), 22, Color("edbf75"))
-	party_label = _label("", Vector2(968, 219), Vector2(264, 140), 15, Color("c7cbda"))
+	phase_label = _label("DIE LOBBY", Vector2(968, 178), Vector2(264, 30), 24, CryptUI.GOLD)
+	party_label = _label("", Vector2(968, 219), Vector2(264, 140), 16, CryptUI.BONE)
 	party_label.add_theme_font_size_override("font_size", 16)
 	party_label.add_theme_constant_override("line_spacing", 2)
 	floor_map = preload("res://src/dungeon/dungeon_map.gd").new()
@@ -1746,20 +1966,26 @@ func _build_ui() -> void:
 	class_button = _button("KLASSE", Vector2(968, 418), Vector2(264, 42), _cycle_class)
 	action_button = _button("RUN STARTEN", Vector2(968, 538), Vector2(264, 42), _main_action)
 	leave_button = _button("LOBBY VERLASSEN", Vector2(968, 589), Vector2(264, 32), _leave_or_return)
-	_label("WASD  BEWEGEN    MAUS  ZIELEN    LINKSKLICK  ANGREIFEN    E  TÜR / TREPPE", Vector2(32, 656), Vector2(896, 28), 13, Color("b18ccb"))
-	_label("01—%02d · EIN LAUF" % _run_room_count(), Vector2(952, 656), Vector2(296, 28), 16, Color("737d94"))
+	_label("WASD BEWEGEN · MAUS ZIELEN · LINKSKLICK ANGREIFEN · E TÜR / TREPPE", Vector2(32, 656), Vector2(896, 28), 16, CryptUI.MUTED)
+	_label("%d RÄUME JE EBENE" % _run_room_count(), Vector2(952, 656), Vector2(296, 28), 16, CryptUI.MUTED)
 	# Preserve the connection/lobby UI as one hideable group.
 	var lobby_children := ui.get_children()
 	lobby_ui = Control.new()
 	lobby_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui.add_child(lobby_ui)
 	for child: Node in lobby_children: child.reparent(lobby_ui)
-	heart_hud.reparent(ui)
-	heart_hud.health_only = true
-	heart_hud.position = Vector2(208,74)
-	heart_hud.size = Vector2(464,38)
-	menu_button = _button("MENÜ [ESC]",Vector2(960,76),Vector2(128,32),func(): set_pause_open(true,"reward" if phase == "reward" else "overview"))
-	context_hint = _label("",Vector2(192,620),Vector2(896,30),14,Color("edbf75"))
+	run_hud = RunHud.new()
+	run_hud.classes = balance.get("classes",{})
+	run_hud.room_count = _run_room_count()
+	run_hud.visible = false
+	ui.add_child(run_hud)
+	level_cards = LevelCards.new()
+	ui.add_child(level_cards)
+	level_cards.picked.connect(func(index: int): _send_action("card", index))
+	menu_button = _button("MENÜ · ESC",Vector2(960,76),Vector2(244,36),func(): set_pause_open(true,"reward" if phase == "reward" else "overview"))
+	context_hint = _label("",Vector2(192,620),Vector2(896,30),16,CryptUI.GOLD)
+	context_hint.add_theme_color_override("font_outline_color", CryptUI.INK)
+	context_hint.add_theme_constant_override("outline_size", 4)
 	context_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	if editor_preview_mode:
 		context_hint.size = Vector2(896,72)
@@ -1906,15 +2132,6 @@ func _apply_menu_settings(settings: Dictionary) -> void:
 		toggle_fullscreen()
 
 
-func _style(background: Color, border: Color) -> StyleBoxFlat:
-	var style := StyleBoxFlat.new()
-	style.bg_color = background
-	style.border_color = border
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(0)
-	return style
-
-
 func _label(text: String, position: Vector2, dimensions: Vector2, font_size: int, color: Color) -> Label:
 	var label := Label.new()
 	label.text = text
@@ -1933,12 +2150,7 @@ func _button(text: String, position: Vector2, dimensions: Vector2, callback: Cal
 	button.position = position
 	button.size = dimensions
 	button.add_theme_font_size_override("font_size", 16)
-	button.add_theme_color_override("font_color", Color("edbf75"))
-	button.add_theme_color_override("font_disabled_color", Color("767d91"))
-	button.add_theme_stylebox_override("normal", _style(Color("422052"), Color("a86da8")))
-	button.add_theme_stylebox_override("hover", _style(Color("643070"), Color("ffcf68")))
-	button.add_theme_stylebox_override("pressed", _style(Color("552945"), Color("ffcf68")))
-	button.add_theme_stylebox_override("disabled", _style(Color("26172f"), Color("51335d")))
+	# Frames and colours come from the shared crypt theme (CryptUI).
 	button.pressed.connect(callback)
 	ui.add_child(button)
 	return button
@@ -1973,13 +2185,16 @@ func _refresh_ui() -> void:
 	var menu_visible := is_instance_valid(main_menu) and menu_open and not active and not editor_preview_mode
 	if is_instance_valid(main_menu): main_menu.visible = menu_visible
 	lobby_ui.visible = not in_run and not menu_visible
-	heart_hud.visible = in_run
-	if heart_hud.visible: heart_hud.set_state(state,local_id)
 	_apply_display_layout()
 	if pause_open and (not in_run or (_ui_phase == "reward" and phase == "explore" and reward_open)):
 		pause_open = false
 		reward_open = false
 		_fire_needs_release = true
+	# The run HUD steps aside while the pause or reward screen is open.
+	run_hud.visible = in_run and not pause_open
+	if run_hud.visible: run_hud.set_state(state,local_id)
+	level_cards.set_state(state,local_id)
+	if not run_hud.visible: level_cards.visible = false
 	menu_button.visible = in_run and not pause_open
 	pause_menu.visible = in_run and pause_open and not reward_open
 	if pause_menu.visible:
@@ -1997,7 +2212,11 @@ func _refresh_ui() -> void:
 		var position := Vector2(local_player.x,local_player.y)
 		for exit: Dictionary in state.get("room_layout",{}).get("exits",[]):
 			if position.distance_to(_exit_center(exit)) <= float(balance.exploration.interaction_radius):
-				context_hint.text = "E · NÄCHSTE EBENE" if exit.kind == "stairs" else "E · TÜR NUTZEN"
+				# Say where a door leads: on to the next room or back.
+				var floor_number := int(state.get("floor_index", 1))
+				if exit.kind == "stairs": context_hint.text = ("E · HINAB ZU EBENE %d" % (floor_number + 1)) if bool(state.get("stairs_open", true)) else "TREPPE VERSPERRT · BESIEGT DEN WÄCHTER DER EBENE"
+				elif bool(exit.get("forward", false)): context_hint.text = "E · WEITER ZU RAUM %d / %d" % [int(exit.target_room), _run_room_count()]
+				else: context_hint.text = "E · ZURÜCK ZU RAUM %d" % int(exit.target_room)
 	context_hint.visible = in_run and not pause_open and not context_hint.text.is_empty()
 	if editor_preview_mode and in_run and not pause_open:
 		context_hint.text = "VORSCHAU · WASD bewegen · Maus zielen / schießen · Zurück oben\n"+_editor_preview_notice
@@ -2017,11 +2236,14 @@ func _refresh_lobby_ui(visible_players: Dictionary, local_id: int, local_player:
 	var index := 1
 	for id in visible_players:
 		var player: Dictionary = visible_players[id]
-		var suffix := " · DU" if int(id) == local_id else ""
+		var suffix := (" · DU" if int(id) == local_id else "") + (" · HOST" if int(id) == 1 else "")
 		var condition := "%d/%d LP" % [player.hp, player.max_hp] if player.hp > 0 else "GEFALLEN"
 		if phase == "reward" and player.ready: condition += " · BEREIT"
-		party_label.text += "P%d%s · %s\n" % [index, suffix, condition]
+		# Two lines per hero: slot and class, then health and role.
+		party_label.text += "P%d · %s\n  %s%s\n" % [index, _class_label(str(player.get("class_id",""))), condition, suffix]
 		index += 1
+	if active:
+		for free in range(index, maximum_players + 1): party_label.text += "P%d · FREIER PLATZ\n" % free
 	status_label.text = status_message
 	if phase == "combat": status_label.text = "Ebene %d · Raum %d · %s · Besiegt alle Gegner." % [state.get("floor_index", 1), room, state.get("room_layout", {}).get("title", "")]
 	elif phase == "reward": status_label.text = "Raum gesichert. Wählt je einen Perk und bestätigt BEREIT. Ihr könnt weiterlaufen."

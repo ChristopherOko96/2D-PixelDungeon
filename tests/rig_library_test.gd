@@ -62,4 +62,4 @@ func _initialize() -> void:
 ## Inverse of RigLibrary.to_source for a source point.
 func _world(library, name: String, origin: Vector2, face: float, source: Vector2) -> Vector2:
 	var rig: Dictionary = library.rig(name)
-	return Vector2(origin.x + (source.x - rig.ground.x) * 2.0 * (-1.0 if face < 0 else 1.0), origin.y + (source.y - rig.center.y - rig.hover) * 2.0)
+	return Vector2(origin.x + (source.x - rig.ground.x) * float(rig.scale) * (-1.0 if face < 0 else 1.0), origin.y + (source.y - rig.center.y - rig.hover) * float(rig.scale))

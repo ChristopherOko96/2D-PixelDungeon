@@ -25,6 +25,8 @@ func _run() -> void:
 	game.port_input.text = str(45000+OS.get_process_id()%10000)
 	game.requested_seed = 42026
 	game._host_session()
+	# Authored single encounters are tested here; hordes have tests/hordes_test.gd.
+	game.hordes.enabled = false
 	check(game.hosting and game.active,"controlled host fixture starts on an owned local port")
 	_test_campaign_spawns_varied_crypt_roles_and_only_final_boss()
 	_test_summons_validate_space_owner_and_budgets()
@@ -57,10 +59,11 @@ func _enemy(identifier: int, kind: String, point: Vector2, hp: float = 100.0) ->
 	return {"id":identifier,"kind":kind,"pos":point,"hp":hp,"max_hp":hp,"boss":false,"radius":13.0,"speed":0.0,"damage":1,"shot_timer":0.0,"nav_timer":10.0,"nav_path":PackedVector2Array(),"hitstun":0.0,"hit_flash":0.0,"knockback":Vector2.ZERO,"stun_cooldown":0.0,"hits":0,"attacks":0,"moving":false,"face":-1.0,"direction":Vector2.ZERO,"facing_dir":Vector2.RIGHT,"attack":"","attack_time":0.0,"attack_length":1.0,"attack_kind":"arrow" if kind == "skeleton_archer" else "soul" if kind == "necromancer" else "slash","attack_aim":Vector2.LEFT,"attack_target":1,"summon_point":Vector2(448,512),"summons_cast":0,"dying":0.0,"blocks":0}
 
 func _test_campaign_spawns_varied_crypt_roles_and_only_final_boss() -> void:
-	# Arrange a normal generated ten-room host campaign, without completing rooms.
+	# Arrange a normal generated host floor (configured room count), without completing rooms.
 	game._begin_run()
+	var final_room: int = game.floor_layouts.size()
 	var late_kinds: Dictionary = {}
-	for index: int in range(1,11):
+	for index: int in range(1,final_room+1):
 		game.room = index
 		game._spawn_room()
 		var kinds: Dictionary = {}
@@ -72,7 +75,7 @@ func _test_campaign_spawns_varied_crypt_roles_and_only_final_boss() -> void:
 				kinds[str(enemy.kind)] = true
 				if str(enemy.kind) == "necromancer": necromancers += 1
 				# Floor 1: the skeleton roles and necromancers; bombers only in the final strong group.
-				check(str(enemy.kind) in ["skeleton","skeleton_guard","skeleton_archer","necromancer"] or (index == 10 and str(enemy.kind) == "void_bomber"),"ordinary spawns use the crypt roles of floor 1 in room%d" % index)
+				check(str(enemy.kind) in ["skeleton","skeleton_guard","skeleton_archer","necromancer"] or (index == final_room and str(enemy.kind) == "void_bomber"),"ordinary spawns use the crypt roles of floor 1 in room%d" % index)
 		check(bosses == 0,"floor 1 has no boss (the Leerenrufer waits on floor 10), checked room%d" % index)
 		var necro_limit: int = int(game.balance.get("enemy_roster",{}).get("encounter",{}).get("necromancer_max_per_room",1))
 		check(necromancers <= necro_limit,"actual room%d respects its configured necromancer cap" % index)
@@ -80,12 +83,12 @@ func _test_campaign_spawns_varied_crypt_roles_and_only_final_boss() -> void:
 			check(kinds.has("skeleton_guard") and kinds.has("skeleton_archer") and not kinds.has("necromancer"),"first encounter introduces the guard and archer before necromancy")
 		if index >= 3:
 			for kind: String in kinds: late_kinds[kind] = true
-		if index == 10:
+		if index == final_room:
 			check(game.enemies.size() == int(game.balance.enemy_roster.floor_plan.strong_group_count) and kinds.has("void_bomber") and kinds.has("necromancer"),"floor 1 ends in a strong group with bombers and a necromancer")
 	check(late_kinds.has("necromancer"),"later ordinary encounters actually include necromancers")
 	# Floor 10: one Leerenrufer with two distinct ordinary companions.
 	game.floor_index = 10
-	game.room = 10
+	game.room = final_room
 	game._spawn_room()
 	var boss_count: int = 0
 	var companions: Dictionary = {}

@@ -30,6 +30,10 @@ func _run() -> void:
 	probe.close()
 	game.session_bind_ip = "127.0.0.1"
 	game._host_session()
+	# The per-room reward flow is tested on single encounters (no hordes).
+	game.hordes.enabled = false
+	# This test covers the per-room reward cards, now an optional mode.
+	game.balance.perk_rules.room_rewards = true
 	game.requested_seed = 3
 	game._begin_run()
 	game.enemies.clear()

@@ -38,6 +38,8 @@ func load_data(path: String = DATA_PATH) -> bool:
 		if not built.is_empty(): rigs[name] = built
 	if data.has("void"): rigs["void"] = _build_void(data.void)
 	if data.has("bomber"): rigs["bomber"] = _build_bomber(data.bomber)
+	# Size factors (bosses are drawn 3x): world pixels per source pixel.
+	for name: String in rigs: rigs[name].scale = PIXEL_SCALE * float(data.get("scales", {}).get(name, 1.0))
 	ready = not rigs.is_empty()
 	return ready
 
@@ -308,7 +310,8 @@ func to_source(name: String, origin: Vector2, face: float, point: Vector2) -> Ve
 	var center: Vector2 = data.center
 	var sign := -1.0 if face < 0.0 else 1.0
 	# Floating figures are drawn `hover` pixels higher than their rest pose.
-	return Vector2(ground.x + (point.x - origin.x) / PIXEL_SCALE * sign, center.y + float(data.hover) + (point.y - origin.y) / PIXEL_SCALE)
+	var scale := float(data.get("scale", PIXEL_SCALE))
+	return Vector2(ground.x + (point.x - origin.x) / scale * sign, center.y + float(data.hover) + (point.y - origin.y) / scale)
 
 
 ## The breakable part with an opaque rest-pose pixel nearest to a world point,
@@ -319,7 +322,7 @@ func part_at(name: String, origin: Vector2, face: float, point: Vector2, alive: 
 	var data := rig(name)
 	if data.is_empty(): return ""
 	var local := to_source(name, origin, face, point)
-	var radius := maxf(0.5, reach / PIXEL_SCALE)
+	var radius := maxf(0.5, reach / float(data.get("scale", PIXEL_SCALE)))
 	var best := ""
 	var best_distance := INF
 	var best_z := -999

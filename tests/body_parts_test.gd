@@ -92,8 +92,8 @@ func _initialize() -> void:
 	var boss := _enemy(6, 140.0)
 	parts.attach(boss, "void")
 	var void_rig: Dictionary = library.rig("void")
-	var eye_y: float = 300.0 + (float(void_rig.eye_center.y) - float(void_rig.center.y) - float(void_rig.hover)) * 2.0
-	var eye_x: float = 400.0 + (float(void_rig.eye_center.x) - float(void_rig.ground.x)) * 2.0
+	var eye_y: float = 300.0 + (float(void_rig.eye_center.y) - float(void_rig.center.y) - float(void_rig.hover)) * float(void_rig.scale)
+	var eye_x: float = 400.0 + (float(void_rig.eye_center.x) - float(void_rig.ground.x)) * float(void_rig.scale)
 	check(parts.segment_part(boss, Vector2(eye_x - 1, eye_y), Vector2(eye_x + 1, eye_y), 2.0) == "core", "outside the beam a shot at the eye hits the core")
 	boss.exposed_action = "beam"
 	check(parts.segment_part(boss, Vector2(eye_x - 1, eye_y), Vector2(eye_x + 1, eye_y), 2.0) == "eye", "during the beam the eye is hit")

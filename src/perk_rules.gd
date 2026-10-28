@@ -2,6 +2,8 @@ extends RefCounted
 ## Host-side catalog, derived build values and bounded personal reward offers.
 ## Combat consumes build coefficients; this module never simulates world effects.
 
+const ClassPerks = preload("res://src/player/class_perks.gd")
+
 ## Captures immutable baseline stats once, then restores derived build fields.
 ## Calling this for an existing run neither heals nor compounds previous perks.
 static func initialize_player(player: Dictionary, balance: Dictionary) -> void:
@@ -46,12 +48,18 @@ static func rebuild(player: Dictionary, balance: Dictionary) -> void:
 			"max_hp": maximum_hp += int(amount)*owned
 			"shot_interval": interval *= pow(amount,owned)
 			"effect": build[id] = amount*owned
-	player["damage"] = clampf(damage,0.1,float(settings.get("max_damage",16.0)))
-	player["speed"] = clampf(speed,1.0,float(settings.get("max_speed",340.0)))
-	player["shot_interval"] = maxf(float(settings.get("min_shot_interval",0.06)),interval)
-	player["max_hp"] = clampi(maximum_hp,1,int(settings.get("max_hp",32)))
-	player["hp"] = clampi(int(player.get("hp",maximum_hp)),0,int(player.max_hp))
+	player["damage"] = damage
+	player["speed"] = speed
+	player["shot_interval"] = interval
+	player["max_hp"] = maximum_hp
 	player["build"] = build
+	# Class passives from level-up cards (hero_skills.json) stack on top.
+	ClassPerks.apply(player)
+	player["damage"] = clampf(float(player.damage),0.1,float(settings.get("max_damage",16.0)))
+	player["speed"] = clampf(float(player.speed),1.0,float(settings.get("max_speed",340.0)))
+	player["shot_interval"] = maxf(float(settings.get("min_shot_interval",0.06)),float(player.shot_interval))
+	player["max_hp"] = clampi(int(player.max_hp),1,int(settings.get("max_hp",32)))
+	player["hp"] = clampi(int(player.get("hp",player.max_hp)),0,int(player.max_hp))
 
 ## Resolves IDs against host data, checks ownership caps and applies one grant.
 ## Caller-supplied effect fields are ignored, including spoofed amount/stat data.

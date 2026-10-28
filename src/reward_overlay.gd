@@ -6,6 +6,7 @@ signal close_requested
 signal menu_requested
 
 const PixelStyle = preload("res://src/pixel_style.gd")
+const CryptUI = preload("res://src/ui/crypt_ui.gd")
 const PerkIcons = preload("res://src/perk_icons.gd")
 const KINDS := {"damage":"Kraft","speed":"Bewegung","max_hp":"Vitalität","shot_interval":"Tempo","heal":"Heilung"}
 var cards: Array[Button] = []
@@ -64,29 +65,30 @@ func _process(delta: float) -> void:
 func _ready() -> void:
 	size = Vector2(1280,720)
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	theme = PixelStyle.create_theme()
+	theme = CryptUI.create_theme()
 	shade = ColorRect.new()
-	shade.color = Color(0.025,0.01,0.055,0.32)
+	shade.color = Color(CryptUI.INK,0.55)
 	shade.size = size
 	add_child(shade)
-	heading = _label(self,"Deine Belohnung",Vector2(240,60),Vector2(800,48),32,Color("ffe2ac"))
+	heading = _label(self,"Deine Belohnung",Vector2(240,60),Vector2(800,48),32,CryptUI.GOLD)
+	heading.add_theme_constant_override("outline_size",6)
 	subtitle = _label(self,"Wähle einen Segen für deinen Lauf.",Vector2(240,112),Vector2(800,32),16)
-	pause_note = _label(self,"",Vector2(240,148),Vector2(800,28),16,Color("c6b4d7"))
+	pause_note = _label(self,"",Vector2(240,148),Vector2(800,28),16,CryptUI.SAND)
 	for index in range(3):
 		var card := Button.new()
 		card.name = "Card%d" % index
 		card.position = Vector2(152+index*336,176)
 		card.size = Vector2(304,400)
 		card.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-		card.add_theme_stylebox_override("normal",_card_style(Color("c5a6d2"),0.53))
-		card.add_theme_stylebox_override("hover",_card_style(Color("ffe2ac"),0.70))
-		card.add_theme_stylebox_override("pressed",_card_style(Color("ffe2ac"),0.78))
-		card.add_theme_stylebox_override("focus",_card_style(Color("ffe2ac"),0.0))
+		card.add_theme_stylebox_override("normal",_card_style(CryptUI.STONE_LIGHT,0.53))
+		card.add_theme_stylebox_override("hover",_card_style(CryptUI.GOLD,0.70))
+		card.add_theme_stylebox_override("pressed",_card_style(CryptUI.GOLD,0.78))
+		card.add_theme_stylebox_override("focus",_card_style(CryptUI.GOLD,0.0))
 		card.pressed.connect(_choose.bind(index))
 		add_child(card)
 		cards.append(card)
 		_label(card,"",Vector2(16,14),Vector2(272,24),16).name = "Kind"
-		_label(card,"",Vector2(16,40),Vector2(272,36),16,Color("c6b4d7")).name = "Meta"
+		_label(card,"",Vector2(16,40),Vector2(272,36),16,CryptUI.SAND).name = "Meta"
 		var icon := TextureRect.new()
 		icon.name = "Icon"
 		icon.position = Vector2(104,72)
@@ -96,20 +98,20 @@ func _ready() -> void:
 		icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		card.add_child(icon)
-		_label(card,"",Vector2(16,176),Vector2(272,40),24,Color("fff2d8")).name = "Title"
+		_label(card,"",Vector2(16,176),Vector2(272,40),24,CryptUI.CREAM).name = "Title"
 		_label(card,"",Vector2(16,216),Vector2(272,112),16).name = "Effect"
-		var tags: Label = _label(card,"",Vector2(16,332),Vector2(272,36),16,Color("c6b4d7"))
+		var tags: Label = _label(card,"",Vector2(16,332),Vector2(272,36),16,CryptUI.SAND)
 		tags.name = "Tags"
 		tags.max_lines_visible = 2
 		tags.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		_label(card,"",Vector2(16,372),Vector2(272,24),16,Color("f4d383")).name = "Choice"
+		_label(card,"",Vector2(16,372),Vector2(272,24),16,CryptUI.GOLD).name = "Choice"
 	for index in range(cards.size()):
 		cards[index].focus_neighbor_left = cards[posmod(index-1,cards.size())].get_path()
 		cards[index].focus_neighbor_right = cards[(index+1)%cards.size()].get_path()
 	ready_button = _button("Weiter erkunden",Vector2(432,584),Vector2(416,44),_ready_action)
 	close_button = _button("Zurück zum Spiel",Vector2(448,640),Vector2(384,36),func(): close_requested.emit())
 	_button("Pause",Vector2(48,64),Vector2(128,36),func(): menu_requested.emit())
-	_label(self,"Links / Rechts wählen · Enter bestätigen · Esc schließen",Vector2(160,688),Vector2(960,24),16,Color("c6b4d7"))
+	_label(self,"Links / Rechts wählen · Enter bestätigen · Esc schließen",Vector2(160,688),Vector2(960,24),16,CryptUI.SAND)
 	visible = false
 
 ## Displays host-confirmed choices and readiness, including after reopening.
@@ -206,15 +208,19 @@ func _icon(id: String) -> Texture2D:
 
 func _card_style(tint: Color, opacity: float) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.10,0.045,0.15,opacity)
-	style.border_color = Color(tint,0.82)
+	# Crypt-stone card with the perk's tint as a 2 px pixel border; opacity 0 is
+	# the focus ring alone.
+	style.bg_color = Color(0.13,0.10,0.10,minf(0.96,opacity+0.3)) if opacity > 0 else Color.TRANSPARENT
+	style.draw_center = opacity > 0
+	style.border_color = Color(tint,0.9)
 	style.set_border_width_all(2)
-	style.shadow_color = Color(0.025,0.005,0.04,0.35 if opacity > 0 else 0)
+	style.set_corner_radius_all(0)
+	style.shadow_color = Color(CryptUI.INK,0.6 if opacity > 0 else 0.0)
 	style.shadow_size = 0
 	style.shadow_offset = Vector2(0,6)
 	return style
 
-func _label(parent: Control, value: String, point: Vector2, dimensions: Vector2, font_size: int, color: Color = Color("eadcf0")) -> Label:
+func _label(parent: Control, value: String, point: Vector2, dimensions: Vector2, font_size: int, color: Color = CryptUI.BONE) -> Label:
 	var label := Label.new()
 	label.text = value
 	label.position = point
@@ -224,7 +230,7 @@ func _label(parent: Control, value: String, point: Vector2, dimensions: Vector2,
 	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	label.add_theme_font_size_override("font_size",font_size)
 	label.add_theme_color_override("font_color",color)
-	label.add_theme_color_override("font_outline_color",Color("180b22"))
+	label.add_theme_color_override("font_outline_color",CryptUI.INK)
 	label.add_theme_constant_override("outline_size",2)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(label)
@@ -236,10 +242,7 @@ func _button(value: String, point: Vector2, dimensions: Vector2, action: Callabl
 	button.position = point
 	button.size = dimensions
 	button.add_theme_font_size_override("font_size",24 if dimensions.y > 40 else 16)
-	button.add_theme_color_override("font_color",Color("ffe2ac"))
-	button.add_theme_stylebox_override("normal",_card_style(Color("ad88b9"),0.65))
-	button.add_theme_stylebox_override("hover",_card_style(Color("ffe2ac"),0.8))
-	button.add_theme_stylebox_override("pressed",_card_style(Color("ffe2ac"),0.9))
+	# Frames and colours come from the shared crypt theme (CryptUI).
 	button.pressed.connect(action)
 	add_child(button)
 	return button

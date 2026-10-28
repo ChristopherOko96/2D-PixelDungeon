@@ -44,17 +44,30 @@ func _initialize() -> void:
 				check(target_index >= 0 and target_index < rooms.size() and absi(target_index - index) == 1, "door targets an actual adjacent route room")
 				var target: Dictionary = rooms[target_index]
 				var expected_side: String = "east" if target.grid_x > room.grid_x else "west" if target.grid_x < room.grid_x else "south" if target.grid_y > room.grid_y else "north"
-				check(exit.side == expected_side, "door follows logical room direction")
+				# Crypt gates sit in a north wall face; the logical direction is `toward`.
+				var direction: String = str(exit.get("toward", exit.side))
+				check(direction == expected_side, "door follows logical room direction")
 				var opposites := {"east": "west", "west": "east", "north": "south", "south": "north"}
 				var reciprocal: Array = target.exits.filter(func(value: Dictionary) -> bool: return value.kind == "door" and int(value.target_room) == index + 1)
-				check(reciprocal.size() == 1 and reciprocal[0].side == opposites[exit.side], "adjacent room has exactly one opposite return door")
-				var other_region: Rect2 = Rect2(float(reciprocal[0].rect[0]), float(reciprocal[0].rect[1]), float(reciprocal[0].rect[2]), float(reciprocal[0].rect[3]))
-				check(is_equal_approx(region.position.y, other_region.position.y) if exit.side in ["east", "west"] else is_equal_approx(region.position.x, other_region.position.x), "opposite doorways share the same lane")
-				match exit.side:
-					"north": check(is_equal_approx(region.position.y, bounds.position.y), "north door meets north wall")
-					"south": check(is_equal_approx(region.end.y, bounds.end.y), "south door meets south wall")
-					"east": check(is_equal_approx(region.end.x, bounds.end.x), "east door meets east wall")
-					"west": check(is_equal_approx(region.position.x, bounds.position.x), "west door meets west wall")
+				check(reciprocal.size() == 1 and str(reciprocal[0].get("toward", reciprocal[0].side)) == opposites[direction], "adjacent room has exactly one opposite return door")
+				if exit.has("door_cell"):
+					# A gate: both arch cells are wall, the trigger right below is floor.
+					var gate := Vector2i(int(exit.door_cell[0]), int(exit.door_cell[1]))
+					var cells := {}
+					for tile: Dictionary in room.painted_tiles:
+						var key := Vector2i(int(tile.x), int(tile.y))
+						if bool(tile.get("solid", false)): cells[key] = "wall"
+						elif str(tile.get("layer", "")) == "floor" and not cells.has(key): cells[key] = "floor"
+					check(cells.get(gate, "") == "wall" and cells.get(gate + Vector2i.RIGHT, "") == "wall", "a crypt gate is set into a wall, never onto the floor")
+					check(Vector2i(int(region.get_center().x / 32.0), int(region.get_center().y / 32.0)).y == gate.y + 1, "the gate's trigger is the floor right in front of it")
+				else:
+					var other_region: Rect2 = Rect2(float(reciprocal[0].rect[0]), float(reciprocal[0].rect[1]), float(reciprocal[0].rect[2]), float(reciprocal[0].rect[3]))
+					check(is_equal_approx(region.position.y, other_region.position.y) if exit.side in ["east", "west"] else is_equal_approx(region.position.x, other_region.position.x), "opposite doorways share the same lane")
+					match exit.side:
+						"north": check(is_equal_approx(region.position.y, bounds.position.y), "north door meets north wall")
+						"south": check(is_equal_approx(region.end.y, bounds.end.y), "south door meets south wall")
+						"east": check(is_equal_approx(region.end.x, bounds.end.x), "east door meets east wall")
+						"west": check(is_equal_approx(region.position.x, bounds.position.x), "west door meets west wall")
 				var entries: Array[Vector2] = []
 				for slot: int in range(4):
 					var entry: Vector2 = generator.entry_for_player(int(exit.target_room), slot, room)

@@ -37,6 +37,9 @@ const ClassicArt = preload("res://src/classic_dungeon_art.gd")
 const RigRenderer = preload("res://src/rig/rig_renderer.gd")
 const Darkness = preload("res://src/vfx/darkness.gd")
 const Crypt72 = preload("res://src/crypt_0x72_art.gd")
+const SkillFx = preload("res://src/vfx/skill_fx.gd")
+const FxSprites = preload("res://src/vfx/fx_sprites.gd")
+const Glow = preload("res://src/vfx/glow.gd")
 ## Hero class -> part rig of its 0x72 figure (assets/data/rigs.json).
 const CLASS_RIGS := {"swordsman":"knight","archer":"elf","mage":"wizard"}
 
@@ -82,10 +85,17 @@ var _swing_seen: Dictionary = {}
 var _swing_started: Dictionary = {}
 ## Part-rigged figures, debris and void effects (src/rig/rig_renderer.gd).
 var _rigs: RefCounted
+## Hero skills, EXP orbs and ultimates (src/vfx/skill_fx.gd).
+var _skill_fx := SkillFx.new()
+## Pixel-art effect animations (assets/sprites/fx), shared by feedback and skills.
+var _fx := FxSprites.new()
+var _fx_layout_key := ""
 ## Dark crypt (live runs only, set by the game): balance.json "lighting".
 var darkness_enabled := false
 var lighting: Dictionary = {}
 var _darkness: Node2D
+## Bloom over the dark crypt (src/vfx/glow.gd): shown with the darkness.
+var _glow: Glow
 ## 0x72 crypt rooms (live runs only, set by the game) and the baked room.
 var crypt_0x72_enabled := false
 var _crypt72: RefCounted
@@ -94,6 +104,8 @@ var _room_torches: Array[Vector2] = []
 
 
 func _ready() -> void:
+	_feedback.fx = _fx
+	_skill_fx.fx = _fx
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_base_position = position
 	_actors_ready = _actor_bank.prepare()
@@ -103,6 +115,11 @@ func _ready() -> void:
 		_darkness = Darkness.new()
 		_darkness.visible = false
 		add_child(_darkness)
+		# Added after the darkness, so spells light up the dark around them.
+		_glow = Glow.new()
+		_glow.source = _draw_glow
+		add_child(_glow)
+		_glow.visible = false
 	for texture: Texture2D in _crypt_sprites.prepare():
 		_flash_textures[texture] = _silhouette(texture)
 		_crypt_bounds[texture] = texture.get_image().get_used_rect()
@@ -221,8 +238,12 @@ func _process(delta: float) -> void:
 		_actor_motion.advance(delta)
 		if _rigs != null: _rigs.step(delta)
 	_feedback.update(delta)
+	_fx.update(delta)
 	if _feedback.hitstop <= 0 and not _pending_snapshot.is_empty(): _accept_state(_pending_snapshot)
 	_update_darkness()
+	if _glow != null:
+		_glow.visible = _glow.enabled and _darkness != null and _darkness.visible
+		if _glow.visible: _glow.queue_redraw()
 	var strength := roundf(_feedback.shake*_feedback.shake*9.0*shake_scale)
 	position = _base_position+Vector2(_shake_rng.randf_range(-1,1),_shake_rng.randf_range(-1,1)).round()*strength
 	queue_redraw()
@@ -241,7 +262,7 @@ func _draw() -> void:
 	_effects_visible = layers.get("effects", true)
 	if room_visible and _crypt72 != null:
 		_crypt72.draw_room(self)
-		_crypt72.draw_props(self,ambient_time,str(_snapshot.get("phase","")) == "combat")
+		_crypt72.draw_props(self,ambient_time,false)
 	elif room_visible:
 		if _classic_enabled and _snapshot.has("editor_background"):
 			var dimensions: Array = layout.get("world_size",[896,480])
@@ -253,7 +274,15 @@ func _draw() -> void:
 		else:
 			Palette.draw(self,_base_cells,1.0,Vector2.ZERO,1.0,ambient_time)
 			if layout.get("crypt_profile",false): CryptArt.draw_floor_shadows(self,layout)
-	if _effects_visible: _feedback.particles.draw_stains(self)
+	if _effects_visible:
+		if _fx_layout_key != _layout_key:
+			_fx_layout_key = _layout_key
+			_fx.set_layout(layout)
+		# Particles bounce off this room's walls and settle on its floor.
+		if _feedback.particles.layout_key != _layout_key: _feedback.particles.set_layout(layout, _layout_key)
+		_skill_fx.particles = _feedback.particles
+		_feedback.particles.draw_stains(self)
+		_skill_fx.draw_ground(self,_snapshot,_clock)
 	var rigs_on: bool = _rigs != null and _rigs.is_ready()
 	if rigs_on and actors_visible: _rigs.draw_under(self)
 	var enemies: Array = _snapshot.get("enemies", [])
@@ -271,6 +300,15 @@ func _draw() -> void:
 		var player: Dictionary = players[peer_key]
 		_draw_shadow(_position(player), 14.0)
 		depth_entries.append({"kind":"player","y":_position(player).y,"data":player,"peer":int(peer_key)})
+	# Breakable chests and dropped loot stand on the floor like actors.
+	var loot_state: Dictionary = _snapshot.get("loot_chests", {})
+	for chest: Dictionary in loot_state.get("chests", []):
+		if props_visible: depth_entries.append({"kind":"chest","y":float(chest.y)+10.0,"data":chest})
+	for item: Dictionary in loot_state.get("loot", []):
+		if props_visible: depth_entries.append({"kind":"loot","y":float(item.y),"data":item})
+	var local_hero: Dictionary = players.get(_local_peer, {})
+	_skill_fx.local_class = str(local_hero.get("class_id",""))
+	_skill_fx.local_point = Vector2(float(local_hero.get("x",0)),float(local_hero.get("y",0))) if not local_hero.is_empty() else Vector2.INF
 	for bullet_value: Variant in _snapshot.get("bullets", []):
 		if not _effects_visible: continue
 		depth_entries.append({"kind":"bullet","y":_position(bullet_value).y,"data":bullet_value})
@@ -293,12 +331,16 @@ func _draw() -> void:
 			"enemy": _draw_enemy(entry.data)
 			"player": _draw_player(entry.data,entry.peer)
 			"bullet": _draw_bullet(entry.data)
+			"chest": _skill_fx.draw_chest(self,entry.data,_clock)
+			"loot": _skill_fx.draw_loot(self,entry.data,_clock)
 			"reward": _draw_pedestal()
 	if room_visible and not _classic_enabled: Tiles.draw_foreground(self,render_snapshot)
 	if rigs_on and actors_visible and _effects_visible: _rigs.draw_over(self,_snapshot)
 	if _effects_visible:
 		_draw_perk_events()
+		_skill_fx.draw_over(self,_snapshot,_clock)
 		_feedback.particles.draw_particles(self)
+		_fx.draw(self)
 		if not freeform and not _classic_enabled: _draw_motes()
 
 
@@ -323,15 +365,41 @@ func _update_darkness() -> void:
 		lights.append(Vector3(point.x, point.y - 12.0, float(lighting.get("torch_radius", 120)) + flicker))
 	for torch: Vector2 in _room_torches:
 		lights.append(Vector3(torch.x, torch.y, float(lighting.get("torch_radius", 120)) * 0.8 + flicker))
+	# Spells light the dark around them: the Photoneneis, lava, magic bursts.
+	lights.append_array(_skill_fx.lights(_snapshot))
+	lights.append_array(_fx.lights())
 	if _rigs != null and _rigs.is_ready(): lights.append_array(_rigs.lights(_snapshot))
 	for bullet: Dictionary in _snapshot.get("bullets", []):
-		if str(bullet.get("style", "")) in ["magic", "void_skull", "soul"]:
+		var style := str(bullet.get("style", ""))
+		if style in ["magic", "void_skull", "soul", "fireball", "fist"]:
 			var point := _position(bullet)
-			lights.append(Vector4(point.x, point.y, 46.0, 0.8))
+			lights.append(Vector4(point.x, point.y, 84.0 if style == "fireball" else 46.0, 0.9 if style == "fireball" else 0.8))
 	for exit: Dictionary in _presentation_layout.get("exits", []):
 		var rect: Array = exit.get("rect", [])
 		if rect.size() == 4: lights.append(Vector4(float(rect[0]) + float(rect[2]) * 0.5, float(rect[1]) + float(rect[3]) * 0.5, 56.0, 0.5))
 	_darkness.set_lights(lights)
+
+
+## Bloom: everything bright adds soft light over the dark crypt (the glow
+## node calls this each frame; vfx_glow.json scales each source).
+func _draw_glow(canvas: CanvasItem) -> void:
+	if _snapshot.is_empty() or not _effects_visible: return
+	var torches := _glow.level("torches")
+	for torch: Vector2 in _room_torches:
+		Glow.dot(canvas, torch, 42.0 + 3.0 * sin(_clock * 9.0 + torch.x), Color(1.0, 0.62, 0.28, 0.2 * torches))
+	for entry: Dictionary in _fire_entries:
+		var point: Vector2 = entry.point
+		Glow.dot(canvas, point + Vector2(0, -12), 50.0 + 3.0 * sin(_clock * 8.0 + float(entry.offset)), Color(1.0, 0.6, 0.25, 0.22 * torches))
+	var bullets := _glow.level("bullets")
+	for bullet: Dictionary in _snapshot.get("bullets", []):
+		_skill_fx.bullet_glow(canvas, bullet, _position(bullet), _clock, bullets)
+	_skill_fx.draw_glow(canvas, _snapshot, _clock, _glow)
+	_fx.draw_glow(canvas, _glow.level("spells"))
+	_feedback.particles.draw_glow(canvas, _glow.level("particles"))
+	if _rigs != null and _rigs.is_ready():
+		var void_level := _glow.level("void")
+		for light: Vector3 in _rigs.lights(_snapshot):
+			Glow.dot(canvas, Vector2(light.x, light.y), light.z * 0.75, Color(0.66, 0.4, 1.0, 0.26 * void_level))
 
 
 ## Freezes all presentation animation for reference comparisons and screenshots.
@@ -379,6 +447,8 @@ func play_ui_sound(name: String) -> void:
 ## Drops previous-run particles, springs, flash, hitstop and shake immediately.
 func reset_feedback() -> void:
 	_feedback = Feedback.new()
+	_fx.clear()
+	_feedback.fx = _fx
 	_actor_motion.reset()
 	if _rigs != null: _rigs.reset()
 	_feedback.sfx = _sfx if audio_enabled else null
@@ -650,13 +720,14 @@ func _draw_rig_enemy(enemy: Dictionary, point: Vector2, is_boss: bool) -> void:
 		_box(point.x-12+index*8, top-14, 5, 3, tint)
 	var hp: float = float(enemy.get("hp", 1.0))
 	var max_hp: float = maxf(float(enemy.get("max_hp", hp)), 1.0)
+	# Bosses and mini-bosses show their health in the run HUD's top bar instead.
 	var big: bool = is_boss or bool(enemy.get("miniboss", false))
-	if hp < max_hp or big:
-		var bar_width: float = 72.0 if is_boss else 52.0 if big else 26.0
+	if hp < max_hp and not big:
+		var bar_width := 26.0
 		var bar_y: float = top - 8.0
 		_box(point.x - bar_width / 2.0 - 2, bar_y - 2, bar_width + 4, 7, INK)
 		_box(point.x - bar_width / 2.0, bar_y, bar_width, 3, Color("#5e354d"))
-		_box(point.x - bar_width / 2.0, bar_y, floorf(bar_width * clampf(hp / max_hp, 0.0, 1.0)), 3, Color("#c06bd8") if is_boss else Color("#ef8a9a"))
+		_box(point.x - bar_width / 2.0, bar_y, floorf(bar_width * clampf(hp / max_hp, 0.0, 1.0)), 3, Color("#ef8a9a"))
 
 
 ## Current idle or run frame; `phase` desynchronises actors that started together.
@@ -699,6 +770,7 @@ func _draw_bullet(bullet: Dictionary) -> void:
 	var point: Vector2 = _position(bullet).round()
 	var owner: int = int(bullet.get("owner", 1))
 	var style: String = str(bullet.get("style",""))
+	if owner > 0 and _skill_fx.draw_bullet(self,bullet,_clock): return
 	if owner == 0 and style == "arrow":
 		var aim: Vector2 = Vector2(float(bullet.get("vx",1)),float(bullet.get("vy",0))).normalized()
 		draw_line((point-aim*8).round(),(point+aim*7).round(),INK,4,false)
@@ -741,6 +813,14 @@ func _draw_bullet(bullet: Dictionary) -> void:
 		var tint: Color = tints.get(str(bullet.get("element","")),Color("6fe3a0"))
 		var pulse: float = 0.5+0.5*sin(_clock*18.0)
 		draw_circle(point,10.0+pulse*2.0,Color(tint,0.18))
+		if _fx.has("magic_orb"):
+			# A fading trail of smaller orbs behind the flying one.
+			var flight: Vector2 = Vector2(float(bullet.get("vx",1)),float(bullet.get("vy",0))).normalized()
+			var orb_tint: Color = Color.WHITE if str(bullet.get("element","")).is_empty() else tint.lightened(0.3)
+			for ghost in range(1,4):
+				_fx.draw_loop(self,"magic_orb",point-flight*ghost*7.0,0.0,1.3-ghost*0.25,_clock-ghost*0.06,Color(orb_tint,0.5-ghost*0.13),true)
+			_fx.draw_loop(self,"magic_orb",point,0.0,1.3,_clock+float(bullet.get("id",0))*0.1,orb_tint,true)
+			return
 		draw_circle(point,6.0,Color(tint,0.85))
 		draw_circle(point,3.0,Color("f2fff6"))
 		return
@@ -770,7 +850,7 @@ func _draw_enemy_telegraph(enemy: Dictionary, point: Vector2) -> void:
 		return
 	if kind == "slam":
 		for index: int in range(7):
-			var end: Vector2 = point+aim.rotated((index-3)*0.32)*64
+			var end: Vector2 = point+aim.rotated((index-3)*0.32)*110
 			_box(end.x-2,end.y-2,4,4,tint)
 		return
 	if kind == "summon":
