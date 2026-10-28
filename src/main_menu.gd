@@ -17,12 +17,17 @@ signal start_requested(endless: bool, class_id: String)
 signal multiplayer_requested
 signal quit_requested
 signal settings_changed(settings: Dictionary)
+## The Dungeon-Werkstatt saved the room library; the game uses `config` now.
+signal rooms_saved(config: Dictionary)
+## The Dungeon-Werkstatt asks to test-play a room.
+signal room_test_requested(room_id: String, floor: int, class_id: String)
 
 const Progress = preload("res://src/online/progress.gd")
 const PixelStyle = preload("res://src/pixel_style.gd")
 const CryptUI = preload("res://src/ui/crypt_ui.gd")
 const AudioMix = preload("res://src/audio/audio_mix.gd")
 const SoundWorkshop = preload("res://src/ui/sound_workshop.gd")
+const RoomEditor = preload("res://src/editor/room_editor.gd")
 const SCREEN := Vector2(1280, 720)
 const SPRITE_ROOT := "res://assets/sprites/0x72/"
 const HEROES := ["knight_m", "elf_f", "wizzard_m", "lizard_m"]
@@ -74,6 +79,8 @@ var _volume_slider: HSlider
 var _sliders: Dictionary = {}
 ## Klangwerkstatt (debug menu), made when first opened.
 var sound_workshop: Control
+## Dungeon-Werkstatt (main menu EDITOR), made when first opened.
+var room_editor: Control
 var _fullscreen_check: CheckButton
 var _shake_check: CheckButton
 var _class_panel: Panel
@@ -102,7 +109,7 @@ func _ready() -> void:
 	# The menu card: one framed column for the mode buttons.
 	var card := Panel.new()
 	card.position = Vector2(446, 184)
-	card.size = Vector2(388, 308)
+	card.size = Vector2(388, 336)
 	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(card)
 	var title := _label(CryptUI.GAME_TITLE, Vector2(0, 52), Vector2(SCREEN.x, 90), 64, GOLD, HORIZONTAL_ALIGNMENT_CENTER)
@@ -113,13 +120,14 @@ func _ready() -> void:
 	title.add_theme_constant_override("shadow_offset_x", 0)
 	_label("STEIG HINAB. ÜBERLEBE DIE KRYPTA.", Vector2(0, 146), Vector2(SCREEN.x, 28), 16, CryptUI.SAND, HORIZONTAL_ALIGNMENT_CENTER)
 	_buttons.append(_button("STORY-MODUS", Vector2(470, 204), Vector2(340, 62), 32, _open_classes.bind(false)))
-	_endless_button = _button("ENDLOS-MODUS" if endless_available else "ENDLOS · BALD", Vector2(470, 278), Vector2(340, 48), 24, _open_classes.bind(true))
+	_endless_button = _button("ENDLOS-MODUS" if endless_available else "ENDLOS · BALD", Vector2(470, 274), Vector2(340, 48), 24, _open_classes.bind(true))
 	_endless_button.disabled = not endless_available
 	_endless_button.tooltip_text = "" if endless_available else "Der Endlos-Modus folgt in einem späteren Schritt."
 	_buttons.append(_endless_button)
-	_buttons.append(_button("MEHRSPIELER", Vector2(470, 338), Vector2(340, 44), 16, multiplayer_requested.emit))
-	_buttons.append(_button("OPTIONEN", Vector2(470, 390), Vector2(340, 44), 16, _open_options))
-	_buttons.append(_button("BEENDEN", Vector2(470, 442), Vector2(340, 36), 16, quit_requested.emit))
+	_buttons.append(_button("MEHRSPIELER", Vector2(470, 330), Vector2(340, 40), 16, multiplayer_requested.emit))
+	_buttons.append(_button("EDITOR", Vector2(470, 378), Vector2(340, 40), 16, open_room_editor.bind("")))
+	_buttons.append(_button("OPTIONEN", Vector2(470, 426), Vector2(340, 40), 16, _open_options))
+	_buttons.append(_button("BEENDEN", Vector2(470, 474), Vector2(340, 36), 16, quit_requested.emit))
 	_button("LEVEL-AUSWAHL (DEBUG)", Vector2(16, 676), Vector2(264, 32), 16, _open_debug)
 	_buttons[0].add_theme_color_override("font_color", GOLD)
 	_buttons[0].grab_focus()
@@ -375,6 +383,18 @@ func _build_debug_panel() -> void:
 	_panel_button(_debug_panel, "KLANGWERKSTATT", Vector2(405, 420), Vector2(365, 36), open_sound_workshop)
 
 
+## Opens the Dungeon-Werkstatt over the menu at `room_id` (or the first room).
+func open_room_editor(room_id: String = "") -> void:
+	_close_panels()
+	if room_editor == null:
+		room_editor = RoomEditor.new()
+		add_child(room_editor)
+		room_editor.saved.connect(func(config: Dictionary): rooms_saved.emit(config))
+		room_editor.test_requested.connect(func(id: String, floor: int, class_id: String): room_test_requested.emit(id, floor, class_id))
+		room_editor.closed.connect(func(): _buttons[0].grab_focus())
+	room_editor.open(room_id)
+
+
 ## Opens the Klangwerkstatt over the menu (sound and music choices).
 func open_sound_workshop() -> void:
 	_close_panels()
@@ -400,6 +420,11 @@ func _pick_debug(entry: Dictionary) -> void:
 	_open_classes(bool(entry.endless))
 	_debug_start = entry
 	_class_title.text = "WÄHLE DEINEN HELDEN · " + str(entry.label)
+
+
+## Sets a debug jump without the level list (the Dungeon-Werkstatt test play).
+func queue_debug_start(entry: Dictionary) -> void:
+	_debug_start = entry.duplicate()
 
 
 ## The pending debug jump, once; empty for normal starts.

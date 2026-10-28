@@ -4,7 +4,7 @@
   "leveling": {"base": 30, "exponent": 1.2, "heal": 2, "cards": 3, "max_level": 40},
   "exp": {
     "skeleton": 10, "skeleton_archer": 10, "skeleton_guard": 12, "necromancer": 18,
-    "tiny_zombie": 6, "ice_zombie": 14, "void_bomber": 6,
+    "tiny_zombie": 6, "mimic": 24, "ice_zombie": 14, "void_bomber": 6,
     "moderkoloss": 120, "frostleiche": 140, "knochenkoloss": 160, "boss": 300,
     "default": 8, "summoned_scale": 0.5
   },

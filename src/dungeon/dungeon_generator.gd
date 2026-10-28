@@ -16,6 +16,7 @@ const CONTACT_MARGIN: float = 0.001
 const THEMES: Array[String] = ["rose", "moss", "amber", "violet"]
 const Palette = preload("res://src/tile_palette.gd")
 const CryptGenerator = preload("res://src/dungeon/crypt_generator.gd")
+const Decor = preload("res://src/dungeon/decor_catalog.gd")
 # Private, bounded runtime caches. Only collision arrays participate: artwork,
 # room IDs and mutable editor presentation never determine reachability.
 const NAVIGATION_CACHE_LIMIT: int = 32
@@ -48,12 +49,14 @@ static func upgrade_config(config: Dictionary) -> Dictionary:
 
 ## Builds a repeatable connected floor; invalid data or counts return no rooms.
 ## First rooms rotate through seeded normal templates; only the final is a boss.
-static func generate(seed: int, room_count: int, config: Dictionary) -> Array[Dictionary]:
+## `selected_id` forces one room into the floor (first, or last for a boss
+## room): the editor's test play.
+static func generate(seed: int, room_count: int, config: Dictionary, selected_id: String = "") -> Array[Dictionary]:
 	config = CryptGenerator.realize(config,seed)
 	var rooms: Array[Dictionary] = []
 	if room_count < MIN_ROOMS or room_count > MAX_ROOMS or not validate_config(config).is_empty():
 		return rooms
-	if _has_freeform(config): return _generate_freeform(seed,room_count,config)
+	if _has_freeform(config): return _generate_freeform(seed,room_count,config,selected_id)
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.seed = seed
 	var normals: Array[Dictionary] = []
@@ -245,6 +248,10 @@ static func validate_config(config: Dictionary) -> PackedStringArray:
 				continue
 		if not valid_painted_tiles(template.get("painted_tiles",[]),room_bounds):
 			errors.append("Template %s has invalid painted tiles" % label)
+			continue
+		var room_cells := Vector2i(int(room_bounds.end.x / 32.0), int(room_bounds.end.y / 32.0))
+		if (template.has("decor") and not Decor.valid_list(template.decor, room_cells, 2048)) or (template.has("decor_areas") and not Decor.valid_list(template.decor_areas, room_cells, 6144)) or (template.has("auto_decor") and not template.auto_decor is bool):
+			errors.append("Template %s has invalid decor" % label)
 			continue
 		for obstacle: Variant in template.obstacles_tiles:
 			if not _numbers(obstacle, 4):
@@ -654,6 +661,14 @@ static func _make_layout(template: Dictionary, config: Dictionary) -> Dictionary
 	if not overrides.is_empty(): _apply_collision_overrides(layout)
 	for key: String in ["reward_spawn","stairs_spawn"]:
 		if template.has(key): layout[key] = Vector2(float(template[key][0]),float(template[key][1]))
+	# Chest spots painted in the editor (cells); chests.gd prefers them.
+	if template.has("chest_spawns"): layout.chest_spawns = template.chest_spawns.duplicate(true)
+	if template.has("mimic_spawns"): layout.mimic_spawns = template.mimic_spawns.duplicate(true)
+	# Decor from the editor (drawn by crypt_0x72_art.gd; solid pieces are
+	# already in obstacles_tiles).
+	for key: String in ["decor", "decor_areas"]:
+		if template.get(key) is Array: layout[key] = template[key].duplicate(true)
+	if template.has("auto_decor"): layout.auto_decor = bool(template.auto_decor)
 	if template.has("brazier_spawns"):
 		layout.brazier_spawns = []
 		for point: Array in template.brazier_spawns: layout.brazier_spawns.append(Vector2(float(point[0]),float(point[1])))
@@ -923,8 +938,8 @@ static func _search_freeform(sequence: Array[Dictionary], occupied: Dictionary, 
 			previous.outgoing = ""
 	return false
 
-static func _generate_freeform(seed: int, count: int, config: Dictionary) -> Array[Dictionary]:
-	var plan := _plan_freeform(seed,count,config)
+static func _generate_freeform(seed: int, count: int, config: Dictionary, selected_id: String = "") -> Array[Dictionary]:
+	var plan := _plan_freeform(seed,count,config,selected_id)
 	var rooms: Array[Dictionary] = []
 	if plan.size() != count: return rooms
 	for index in range(count):

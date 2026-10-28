@@ -1,0 +1,29 @@
+{
+	"_doc": "Layout suggestions of the Dungeon-Werkstatt (src/editor/room_shaper.gd, button GRUNDRISS). All sizes in cells (32 px). corridor_width: corridors stay at least 2 wide, the game's big enemies need it. labyrinth: a chain of chambers (main path from west to east, sometimes up or down) joined by straight corridors, plus side chambers off the path (dead ends with a chest) and now and then a loop. chambers: [min, max] chambers on the main path; small/large: [min width, min height, max width, max height]; large_every: every n-th chamber on the path is large (2: small, large, small, large ...), the rhythm of narrow and wide; corridor: [min, max] length; side_rooms: [min, max]; loop_chance: chance of one shortcut between chambers two steps apart; turn_weights: how often the path goes east, north or south. throne: a small antechamber in the south, a corridor north and a great hall with the throne spot under its north wall; alcoves: a pair of side niches; hall: [min width, min height, max width, max height]. min_room / room: smallest room the style needs and the size it asks for when the room is smaller. attempts: tries until the game accepts a suggestion.",
+	"schema_version": 1,
+	"corridor_width": 2,
+	"attempts": 14,
+	"styles": {
+		"labyrinth": {
+			"min_room": [36, 24],
+			"room": [48, 32],
+			"chambers": [3, 5],
+			"small": [5, 4, 7, 6],
+			"large": [9, 7, 13, 10],
+			"large_every": 2,
+			"corridor": [3, 7],
+			"side_rooms": [1, 2],
+			"loop_chance": 0.35,
+			"turn_weights": {"east": 4.0, "north": 1.5, "south": 1.5}
+		},
+		"throne": {
+			"min_room": [40, 32],
+			"room": [48, 36],
+			"antechamber": [9, 6],
+			"corridor": [4, 6],
+			"hall": [20, 13, 28, 17],
+			"alcoves": true,
+			"alcove": [3, 4]
+		}
+	}
+}

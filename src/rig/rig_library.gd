@@ -38,6 +38,7 @@ func load_data(path: String = DATA_PATH) -> bool:
 		if not built.is_empty(): rigs[name] = built
 	if data.has("void"): rigs["void"] = _build_void(data.void)
 	if data.has("bomber"): rigs["bomber"] = _build_bomber(data.bomber)
+	if data.has("mimic"): rigs["mimic"] = _build_flipbook("mimic", data.mimic, "body")
 	# Size factors (bosses are drawn 3x): world pixels per source pixel.
 	for name: String in rigs: rigs[name].scale = PIXEL_SCALE * float(data.get("scales", {}).get(name, 1.0))
 	ready = not rigs.is_empty()
@@ -272,20 +273,26 @@ func _union_image(layers: Array[Dictionary]) -> Image:
 
 ## Leerenbomber: one vital skull, a 10 fps flipbook of the sheet's frames.
 func _build_bomber(data: Dictionary) -> Dictionary:
+	return _build_flipbook("bomber", data, "skull")
+
+
+## A one-part figure drawn as a flipbook (bomber, mimic): the family is the
+## rig's name, its pose picks the frame.
+func _build_flipbook(name: String, data: Dictionary, part_id: String) -> Dictionary:
 	var frames: Array[Dictionary] = []
 	for path: String in data.frames:
 		var image := _image(path)
 		if image != null: frames.append(_layer(image))
 	if frames.is_empty(): return {}
 	var part: Dictionary = frames[0].duplicate()
-	part.merge(_part_fields(_spec(data.get("parts", {}), "skull")), true)
+	part.merge(_part_fields(_spec(data.get("parts", {}), part_id)), true)
 	part.frames = frames
 	part.pivot = _vec(data.ground)
 	var bounds: Rect2 = frames[0].bounds
 	for layer: Dictionary in frames: bounds = bounds.merge(layer.bounds)
 	part.bounds = bounds
 	part.image = _union_image(frames)
-	var rig := _finish("bomber", {"family": "bomber", "ground": data.ground, "width": data.get("width", 8)}, [part], [], _union_image(frames))
+	var rig := _finish(name, {"family": name, "ground": data.ground, "width": data.get("width", 8)}, [part], [], _union_image(frames))
 	rig.fps = float(data.get("fps", 10))
 	return rig
 

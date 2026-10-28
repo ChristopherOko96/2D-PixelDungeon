@@ -7,8 +7,8 @@ bestimmt diese Entwicklungsumgebung nicht mehr.
 ## Schnellstart unter Windows
 
 Im Explorer startet `Spielen.cmd` den Spielstand per Doppelklick;
-`Godot-Editor.cmd` öffnet das Projekt im Editor. `Dungeon-Editor.cmd` startet den
-[Baukasten für eigene Räume](DUNGEON-EDITOR.de.md). Sie verwenden denselben
+`Godot-Editor.cmd` öffnet das Projekt im Editor. `Dungeon-Editor.cmd` startet das Spiel direkt in der
+[Dungeon-Werkstatt](DUNGEON-EDITOR.de.md). Sie verwenden denselben
 PowerShell-Wrapper wie die folgenden Befehle.
 
 `Animation-Studio.cmd` öffnet die [Figurenwerkstatt](ACTOR-ANIMATIONS.de.md):

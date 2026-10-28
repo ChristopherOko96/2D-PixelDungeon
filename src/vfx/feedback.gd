@@ -141,6 +141,15 @@ func observe(snapshot: Dictionary, local_peer: int) -> void:
 			_fx_spawn("wood_burst", fx_point, 0.0, 1.4)
 			_fx_spawn("pickup", fx_point + Vector2(0, -8), 0.0, 1.5)
 			_play_any(["chest_open", "break_bone"], 0.05)
+		elif fx_kind == "mimic_spring":
+			# The chest was a Mimik: splinters, a snap and a hard shake.
+			particles.kick(fx_point, 24.0, 0.8)
+			particles.burst(fx_point, Color("b8864a"), 14, 220.0, 0.6, Vector2.ZERO, PI, 3.0, 4.0)
+			particles.burst(fx_point, Color("c8323a"), 6, 160.0, 0.5, Vector2.UP, 1.0, 3.0, 3.0)
+			_fx_spawn("wood_burst", fx_point, 0.0, 1.6)
+			_add_shake(0.4)
+			_play_any(["attack_bite", "chest_open"], 0.0)
+			_play_any(["attack_roar", "hurt"], 0.05)
 		elif fx_kind == "loot_taken":
 			_fx_spawn("pickup", fx_point, 0.0, 1.6)
 			_play("perk")

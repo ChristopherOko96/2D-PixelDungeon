@@ -44,6 +44,10 @@ const PHOTON_CORE := Color("fffbe6")
 const PHOTON_LAYERS := [[19.0, PHOTON_NAVY, 0], [16.0, Color("23508c"), 0], [12.5, PHOTON_ICE, 0], [9.0, PHOTON_FROST, 1], [6.5, PHOTON_FIRE, 2], [4.0, PHOTON_EMBER, 2], [1.8, PHOTON_CORE, 3]]
 const ELEMENT_TINTS := {"cinder": Color("f7b46b"), "venom": Color("b8d878"), "frost": Color("9bdde6"), "storm": Color("baabe9")}
 var _chest_hits: Dictionary = {}
+## Chest id -> clock when it was first seen open / chests seen at all.
+var _chest_opened: Dictionary = {}
+var _chest_seen: Dictionary = {}
+var _open_reach := -1.0
 var balance: Dictionary = {}
 var local_class := ""
 var local_point := Vector2.INF
@@ -498,17 +502,48 @@ func draw_chest(canvas: CanvasItem, chest: Dictionary, clock: float) -> void:
 			canvas.draw_line(point + Vector2(-7, -9) + shake, point + Vector2(0, 0) + shake, Color("1e120a"), 2.0)
 			canvas.draw_line(point + Vector2(0, 0) + shake, point + Vector2(6, -4) + shake, Color("1e120a"), 2.0)
 		return
+	# Chests open with E: the lid swings up over 0.2 s the moment it opens
+	# (a chest already open when first seen shows open at once).
+	var opened: bool = bool(chest.get("open", false))
+	if opened and not _chest_opened.has(id): _chest_opened[id] = clock if _chest_seen.has(id) else clock - 1.0
+	_chest_seen[id] = true
+	frame = 0
+	if opened: frame = 2 if clock - float(_chest_opened[id]) > 0.1 else 1
+	var lift := 0.0
+	if opened: lift = 3.0 * maxf(0.0, 1.0 - (clock - float(_chest_opened[id])) / 0.25)
 	canvas.draw_rect(Rect2(point + Vector2(-13, 9), Vector2(26, 5)), Color(0, 0, 0, 0.3))
-	canvas.draw_texture_rect(CHEST_FRAMES[frame], Rect2(point - Vector2(16, 20) + shake.round(), size), false)
-	if not bool(chest.get("open", false)):
-		# Cracks for every hit taken; a soft glow invites a swing.
-		var damage := float(hits) / maxf(1.0, float(chest.get("max", 3)))
-		if damage > 0.0:
-			canvas.draw_line(point + Vector2(-8, -8) + shake, point + Vector2(-2, 2) + shake, Color("2a1a10"), 2.0)
-		if damage > 0.5:
-			canvas.draw_line(point + Vector2(9, -10) + shake, point + Vector2(3, 4) + shake, Color("2a1a10"), 2.0)
+	canvas.draw_texture_rect(CHEST_FRAMES[frame], Rect2(point - Vector2(16, 20 + lift), size), false)
+	if not opened:
+		# A soft glow invites a look; close enough, the key shows.
 		var glow := 0.5 + 0.5 * sin(clock * 3.0 + float(id))
 		canvas.draw_circle(point + Vector2(0, -4), 22.0, Color(1.0, 0.85, 0.4, 0.04 + 0.04 * glow))
+		if local_point.is_finite() and local_point.distance_to(point) <= _chest_reach(): _draw_open_hint(canvas, point + Vector2(0, -30))
+
+
+## How close the hero must stand for E to open a chest (the host rule in
+## loot_chests.json: open_radius plus the hero radius).
+func _chest_reach() -> float:
+	if _open_reach < 0.0:
+		var data: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://assets/data/loot_chests.json"))
+		var radius: float = float(balance.get("player", {}).get("radius", 12)) if balance is Dictionary else 12.0
+		var reach := (float(data.get("open_radius", 30)) if data is Dictionary else 30.0) + radius
+		if balance.is_empty(): return reach
+		_open_reach = reach
+	return _open_reach
+
+
+## "E ÖFFNEN" above a chest: a key cap and the word, in the pixel font.
+func _draw_open_hint(canvas: CanvasItem, at: Vector2) -> void:
+	var font := PixelStyle.create_font()
+	var text := "ÖFFNEN"
+	var width := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
+	var left := at.x - (width + 26.0) * 0.5
+	var cap := Rect2(Vector2(left, at.y - 15.0), Vector2(20, 20))
+	canvas.draw_rect(cap, INK)
+	canvas.draw_rect(cap.grow(-2.0), Color("edbf75"))
+	canvas.draw_string(font, cap.position + Vector2(5, 16), "E", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, INK)
+	canvas.draw_string_outline(font, Vector2(left + 26.0, at.y), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, 4, INK)
+	canvas.draw_string(font, Vector2(left + 26.0, at.y), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color("fdf7ed"))
 
 
 ## A dropped perk: its class-matching icon bobbing in a golden glow, with its

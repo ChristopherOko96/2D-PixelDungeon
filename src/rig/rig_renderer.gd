@@ -271,6 +271,10 @@ func _start_death(a: Dictionary, rig: Dictionary, enemy: Dictionary) -> void:
 			if bool(enemy.get("summoned", false)): _burst_at(feet - Vector2(0, 14), VIOLET_DARK, 14, 50.0)
 		"bomber":
 			if not bool(enemy.get("exploded", false)): _burst_at(feet - Vector2(0, 16), VIOLET, 18, 90.0)
+		"mimic":
+			# Splinters and a glint of gold when the chest beast falls.
+			_burst_at(feet - Vector2(0, 12), Color("b8743a"), 14, 80.0)
+			_burst_at(feet - Vector2(0, 14), Color("f4c64e"), 6, 60.0)
 		"biped", "hero", "necro":
 			for item: Dictionary in rig.items: _detach(a, rig, item.id, 0.8)
 		"brute":

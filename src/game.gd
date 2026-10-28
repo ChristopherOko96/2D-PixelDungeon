@@ -10,6 +10,7 @@ const WORLD_ZOOM := Vector2.ONE
 const PLAYER_COLORS := [Color("72dcc8"), Color("edb563"), Color("bc91de"), Color("ed8a91")]
 const PLAYER_SKINS := ["player_warden", "player_ranger", "player_arcanist", "player_lizard"]
 const Dungeon = preload("res://src/dungeon/dungeon_generator.gd")
+const RoomPool = preload("res://src/editor/room_pool.gd")
 const RunHud = preload("res://src/ui/run_hud.gd")
 const CryptUI = preload("res://src/ui/crypt_ui.gd")
 const LevelCards = preload("res://src/ui/level_cards.gd")
@@ -153,6 +154,11 @@ var _camera_room_id := ""
 var _auto_reward_key := ""
 signal editor_return_requested
 var editor_preview_mode := false
+## Dungeon-Werkstatt test play: the room forced into its floor, and whether
+## leaving the run reopens the editor.
+var test_room_id := ""
+var test_room_floor := 0
+var return_to_room_editor := false
 var _editor_preview_layout: Dictionary = {}
 var _editor_preview_notice := ""
 # Room geometry is immutable after generation. Only its small revision travels
@@ -450,6 +456,8 @@ func _read_arguments() -> void:
 	for i in range(args.size()):
 		match args[i]:
 			"--host": should_host = true
+			# Dungeon-Editor.cmd: straight into the Dungeon-Werkstatt.
+			"--werkstatt": if is_instance_valid(main_menu): main_menu.open_room_editor.call_deferred("")
 			"--auto-start": auto_start = true
 			"--join":
 				if i + 1 < args.size(): address = args[i + 1]
@@ -752,6 +760,12 @@ func _leave_session(message: String = "Verbindung beendet.") -> void:
 	status_message = message
 	view.set_state({}, 0)
 	_refresh_ui()
+	# A test run from the Dungeon-Werkstatt goes back to the room it tested.
+	if return_to_room_editor and is_instance_valid(main_menu):
+		return_to_room_editor = false
+		main_menu.open_room_editor.call_deferred(test_room_id)
+	test_room_id = ""
+	test_room_floor = 0
 
 
 func _peer_connected(id: int) -> void:
@@ -1022,8 +1036,10 @@ func _server_action(id: int, action: String, value: int) -> void:
 	elif action == "ready" and phase == "reward" and players[id].hp > 0 and players[id].picked:
 		players[id].ready = true
 		_advance_if_ready()
-	elif action == "interact" and phase == "explore":
-		_use_exit(id)
+	elif action == "interact" and phase in ["explore", "combat"]:
+		# E opens a chest within reach (also mid-fight); otherwise it takes a gate.
+		if players.has(id) and chests.interact(id): return
+		if phase == "explore": _use_exit(id)
 	elif action == "card" and phase in ["combat", "explore", "reward"]:
 		# Level-up or boss card, picked by mouse while the game runs.
 		if not team_progress.pick(players[id], value): return
@@ -1083,7 +1099,7 @@ func _begin_run() -> void:
 		start_editor_preview()
 		return
 	var seed_value := requested_seed if requested_seed >= 0 else randi_range(10000, 99999)
-	var generated := Dungeon.generate(seed_value, _run_room_count(), dungeon_config)
+	var generated := Dungeon.generate(seed_value, _run_room_count(), _floor_pool(1), test_room_id if test_room_floor == 1 else "")
 	if generated.is_empty():
 		status_message = "Dungeon konnte nicht erstellt werden. Raumdaten prüfen."
 		return
@@ -1610,6 +1626,7 @@ func _damage_enemy(enemy: Dictionary, damage: float, direction: Vector2 = Vector
 		team_progress.enemy_killed(enemy)
 		if bool(enemy.get("boss",false)) or bool(enemy.get("miniboss",false)): floor_boss_down = true
 		hero_skills.enemy_killed(enemy,owner)
+		if str(enemy.get("kind","")) == "mimic": chests.mimic_defeated(enemy,owner)
 	# Return resolved damage before HP clamping, so lethal surplus remains measurable.
 	return damage
 
@@ -1740,7 +1757,7 @@ func _enter_next_floor() -> void:
 	if editor_preview_mode: return
 	var next_floor := floor_index + 1
 	var next_seed := int((run_seed + (next_floor - 1) * int(balance.exploration.seed_stride)) % 2147483647)
-	var generated := Dungeon.generate(next_seed, _run_room_count(), dungeon_config)
+	var generated := Dungeon.generate(next_seed, _run_room_count(), _floor_pool(next_floor), test_room_id if test_room_floor == next_floor else "")
 	if generated.is_empty(): return
 	floor_index = next_floor
 	floor_seed = next_seed
@@ -2030,6 +2047,8 @@ func _build_main_menu() -> void:
 		menu_open = false
 		_refresh_ui())
 	main_menu.quit_requested.connect(func(): get_tree().quit())
+	main_menu.rooms_saved.connect(_use_saved_rooms)
+	main_menu.room_test_requested.connect(_start_room_test)
 	# Saved fullscreen is applied in _ready, only when the game opens on the menu.
 	view.shake_scale = 1.0 if bool(main_menu.settings.get("shake", true)) else 0.0
 
@@ -2054,6 +2073,30 @@ func _debug_entries() -> Array:
 		entries.append({"label": "EBENE %d · %s" % [int(key), names.get(str(plan.minibosses[key]), str(plan.minibosses[key]).to_upper())], "endless": false, "floor": int(key), "room": count})
 	entries.append({"label": "EBENE %d · LEERENRUFER" % int(plan.get("boss_floor",10)), "endless": false, "floor": int(plan.get("boss_floor",10)), "room": count})
 	return entries
+
+
+## The rooms a floor may use (room_pool.gd): each room's floor range, plus
+## the room being test-played.
+func _floor_pool(floor_number: int) -> Dictionary:
+	return RoomPool.for_floor(dungeon_config, floor_number, _run_room_count(), test_room_id)
+
+
+## The Dungeon-Werkstatt saved the room library: new runs use it at once.
+func _use_saved_rooms(config: Dictionary) -> void:
+	if Dungeon.validate_config(config).is_empty(): dungeon_config = config.duplicate(true)
+
+
+## Dungeon-Werkstatt test play: a solo run on `floor_number` that contains
+## `room_id` and starts in it (a boss room is the floor's last room).
+func _start_room_test(room_id: String, floor_number: int, class_id: String) -> void:
+	var boss := false
+	for room: Dictionary in dungeon_config.get("templates", []):
+		if str(room.id) == room_id: boss = bool(room.get("boss", false))
+	test_room_id = room_id
+	test_room_floor = maxi(1, floor_number)
+	return_to_room_editor = true
+	main_menu.queue_debug_start({"label": "TEST", "endless": false, "floor": test_room_floor, "room": _run_room_count() if boss else 1})
+	_start_solo(false, class_id)
 
 
 ## Story button / debug pick: a solo host run, optionally jumping to a level.

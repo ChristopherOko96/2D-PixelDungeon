@@ -6,12 +6,17 @@ extends RefCounted
 ## fronts with caps where floor lies north or south, side strips where floor
 ## lies west or east, banners/holes on north faces, sparse skulls and crates
 ## by the walls, stairs. Wall torches and candle columns are animated on top.
+## Decor the author placed in the Dungeon-Werkstatt (`decor_areas`: floor
+## styles and carpets, `decor`: wall pieces and objects, see decor_catalog.gd)
+## is drawn too; with `auto_decor` false the room shows only that decor.
 ## Presentation only: collision and exits come from the layout.
 
+const Decor = preload("res://src/dungeon/decor_catalog.gd")
 const T := 16
 const SCALE := 2.0
 const TILES := "res://assets/sprites/0x72/"
 const PROPS := "res://assets/sprites/crypt_props/"
+const DECOR := "res://assets/sprites/decor/"
 ## Behind an open gate: steps down (the way on, deeper) or up (the way back).
 const STAIRWELL_DOWN := preload("res://assets/sprites/fx/stairwell_down.png")
 const STAIRWELL_UP := preload("res://assets/sprites/fx/stairwell_up.png")
@@ -24,16 +29,30 @@ var texture: Texture2D
 ## Top-left corners (world px) of the animated 16x24 props, drawn at 2x.
 var torches: Array[Vector2] = []
 var candles: Array[Vector2] = []
-## Wall fountains (lava): wall cell top-left in world px.
+## Wall fountains: wall cell top-left in world px; `fountain_colors` holds
+## "red" (lava, gives light) or "blue" (water) for each.
 var fountains: Array[Vector2] = []
+var fountain_colors: Array[String] = []
+## Open fires on the floor (cell top-left, world px), animated, give light.
+var flames: Array[Vector2] = []
+## Light shafts from the ceiling: the lit floor spot (cell centre, world px).
+var shafts: Array[Vector2] = []
+## How far up (px) a shaft reaches and how wide it lands.
+const SHAFT_HEIGHT := 230.0
+const SHAFT_FOOT := 34.0
 ## Arched doors on north/south exits and barred side exits: {pos, side, kind}.
 var doors: Array[Dictionary] = []
+## What the bake decorated by itself, as decor entries [x, y, id, variant]:
+## the editor turns it into the room's own decor when the author starts
+## decorating, so nothing jumps away.
+var auto_items: Array = []
 var world_size := Vector2.ZERO
 var _tiles: Dictionary = {}
 var _torch_frames: Array[Texture2D] = []
 var _candle_frames: Array[Texture2D] = []
-var _fountain_mid: Array[Texture2D] = []
-var _fountain_basin: Array[Texture2D] = []
+var _fire_frames: Array[Texture2D] = []
+var _fountain_mid: Dictionary = {"red": [], "blue": []}
+var _fountain_basin: Dictionary = {"red": [], "blue": []}
 var _pieces: Dictionary = {}
 
 
@@ -41,9 +60,11 @@ func _init() -> void:
 	for i in range(FRAMES):
 		_torch_frames.append(load(PROPS + "wall_torch_f%d.png" % i))
 		_candle_frames.append(load(PROPS + "candle_column_f%d.png" % i))
-	for i in range(3):
-		_fountain_mid.append(load(TILES + "wall_fountain_mid_red_anim_f%d.png" % i))
-		_fountain_basin.append(load(TILES + "wall_fountain_basin_red_anim_f%d.png" % i))
+		_fire_frames.append(load(DECOR + "fire_f%d.png" % i))
+	for color: String in ["red", "blue"]:
+		for i in range(3):
+			_fountain_mid[color].append(load(TILES + "wall_fountain_mid_%s_anim_f%d.png" % [color, i]))
+			_fountain_basin[color].append(load(TILES + "wall_fountain_basin_%s_anim_f%d.png" % [color, i]))
 	for name: String in ["wall_fountain_top_1", "doors_frame_left", "doors_frame_right", "doors_frame_top", "doors_leaf_closed", "doors_leaf_open"]:
 		_pieces[name] = load(TILES + name + ".png")
 
@@ -68,7 +89,11 @@ func bake(room: Dictionary, seed_value: int) -> void:
 	torches.clear()
 	candles.clear()
 	fountains.clear()
+	fountain_colors.clear()
+	flames.clear()
+	shafts.clear()
 	doors.clear()
+	auto_items.clear()
 	var dimensions: Array = room.get("world_size", [1280, 720])
 	world_size = Vector2(float(dimensions[0]), float(dimensions[1]))
 	var size := Vector2i(int(world_size.x) / 32, int(world_size.y) / 32)
@@ -88,6 +113,7 @@ func bake(room: Dictionary, seed_value: int) -> void:
 	for p: Vector2i in floor_cells:
 		var roll := rng.randf()
 		_stamp(image, "floor_1" if roll < 0.94 else "floor_%d" % rng.randi_range(2, 8), p)
+	_paint_areas(image, room, floor_cells)
 	# Single obstacle cells become round columns (3 tiles tall, base on the cell).
 	var columns: Array[Vector2i] = []
 	for p: Vector2i in walls.keys():
@@ -123,10 +149,67 @@ func bake(room: Dictionary, seed_value: int) -> void:
 	for cap: Vector2i in caps: _stamp(image, "wall_top_mid", cap)
 	for p: Vector2i in columns: _stamp(image, "column", p, Vector2i(0, -2 * T))
 	_decorate(image, room, floor_cells, walls, rng)
+	_place_decor(image, room, floor_cells)
 	texture = ImageTexture.create_from_image(image)
 
 
+## Floor styles replace the floor tile; carpets lie on top and frame
+## themselves (each cell looks at its four neighbours of the same carpet).
+func _paint_areas(image: Image, room: Dictionary, floor_cells: Dictionary) -> void:
+	var carpets: Dictionary = {}
+	for entry: Variant in room.get("decor_areas", []):
+		if not entry is Array or entry.size() < 3: continue
+		var p := Vector2i(int(entry[0]), int(entry[1]))
+		var id := str(entry[2])
+		if not floor_cells.has(p): continue
+		match Decor.kind(id):
+			"floor":
+				var tile := Decor.image(Decor.tile_path(id, int(entry[3]) if entry.size() > 3 else 0))
+				if tile != null: image.blend_rect(tile, Rect2i(Vector2i.ZERO, tile.get_size()), p * T)
+			"carpet": carpets[p] = id
+	for p: Vector2i in carpets:
+		var id: String = carpets[p]
+		var same := func(q: Vector2i) -> bool: return str(carpets.get(q, "")) == id
+		var cell := Decor.carpet_cell(Decor.image(Decor.tile_path(id)), same.call(p + Vector2i.UP), same.call(p + Vector2i.RIGHT), same.call(p + Vector2i.DOWN), same.call(p + Vector2i.LEFT))
+		image.blend_rect(cell, Rect2i(0, 0, T, T), p * T)
+
+
+## The author's wall pieces and objects, top rows first so lower pieces
+## overlap the ones behind them. Animated pieces join the torch, fountain and
+## fire lists. A piece whose spot is gone (floor changed) is skipped.
+func _place_decor(image: Image, room: Dictionary, floor_cells: Dictionary) -> void:
+	var entries: Array = room.get("decor", []).filter(func(entry: Variant) -> bool: return entry is Array and entry.size() >= 3)
+	entries.sort_custom(func(a: Array, b: Array) -> bool: return int(a[1]) < int(b[1]) or (int(a[1]) == int(b[1]) and int(a[0]) < int(b[0])))
+	for entry: Array in entries:
+		var id := str(entry[2])
+		var item := Decor.item(id)
+		if item.is_empty() or Decor.is_area(id): continue
+		var p := Vector2i(int(entry[0]), int(entry[1]))
+		var variant := int(entry[3]) if entry.size() > 3 else 0
+		if str(item.kind) == "wall":
+			if not Decor.wall_spot(floor_cells, p): continue
+		elif not floor_cells.has(p): continue
+		match str(item.get("draw", "stamp")):
+			"torch": torches.append(Vector2(p.x * T, p.y * T - 8) * SCALE)
+			"fountain":
+				fountains.append(Vector2(p * T) * SCALE)
+				fountain_colors.append(str(item.get("color", "red")))
+			"fire": flames.append(Vector2(p * T) * SCALE)
+			"shaft": shafts.append(Vector2(p * T) * SCALE + Vector2(16, 16))
+			_:
+				var tile := Decor.image(Decor.tile_path(id, variant))
+				if tile != null: image.blend_rect(tile, Rect2i(Vector2i.ZERO, tile.get_size()), p * T + Decor.offset(id))
+				if item.has("below"):
+					var under := Decor.image(Decor.SPRITES + str(item.below) + ".png")
+					if under != null: image.blend_rect(under, Rect2i(Vector2i.ZERO, under.get_size()), (p + Vector2i.DOWN) * T)
+
+
 func _decorate(image: Image, room: Dictionary, floor_cells: Dictionary, walls: Dictionary, rng: RandomNumberGenerator) -> void:
+	# Without auto decor only the gameplay pieces follow (candles, gates, stairs).
+	var auto := bool(room.get("auto_decor", true))
+	var taken: Dictionary = {}
+	for entry: Variant in room.get("decor", []):
+		if entry is Array and entry.size() >= 3: taken[Vector2i(int(entry[0]), int(entry[1]))] = true
 	var keep_clear: Array[Vector2] = []
 	for exit: Dictionary in room.get("exits", []):
 		keep_clear.append(Vector2(float(exit.rect[0]) + 16.0, float(exit.rect[1]) + 16.0) / 32.0)
@@ -141,25 +224,39 @@ func _decorate(image: Image, room: Dictionary, floor_cells: Dictionary, walls: D
 		if floor_cells.has(p + Vector2i.DOWN) and not floor_cells.has(p + Vector2i.UP): faces.append(p)
 	faces.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return a.y < b.y or (a.y == b.y and a.x < b.x))
 	var banners := ["wall_banner_red", "wall_banner_blue", "wall_banner_green", "wall_banner_yellow"]
-	var banner: String = banners[rng.randi_range(0, banners.size() - 1)]
+	var choice := rng.randi_range(0, banners.size() - 1)
+	var banner: String = banners[choice]
 	# North walls, as on the reference map: a torch every 6 cells, banners in
 	# pairs between them, now and then a lava fountain or a broken brick.
 	var fountain_left := 1 + rng.randi_range(0, 1)
 	for p: Vector2i in faces:
-		if not clear.call(p, 3.1): continue
+		if not auto: break
+		if not clear.call(p, 3.1) or taken.has(p): continue
 		var step := posmod(p.x, 6)
-		if step == 2: torches.append(Vector2(p.x * T, p.y * T - 8) * SCALE)
-		elif (step == 4 or step == 5) and rng.randf() < 0.85: _stamp(image, banner, p)
-		elif step == 0 and fountain_left > 0 and floor_cells.has(p + Vector2i(0, 2)) and rng.randf() < 0.35:
+		if step == 2:
+			torches.append(Vector2(p.x * T, p.y * T - 8) * SCALE)
+			auto_items.append([p.x, p.y, "wall_torch", 0])
+		elif (step == 4 or step == 5) and rng.randf() < 0.85:
+			_stamp(image, banner, p)
+			auto_items.append([p.x, p.y, "banner", choice])
+		elif step == 0 and fountain_left > 0 and floor_cells.has(p + Vector2i(0, 2)) and not taken.has(p + Vector2i.DOWN) and rng.randf() < 0.35:
 			fountains.append(Vector2(p * T) * SCALE)
+			fountain_colors.append("red")
+			auto_items.append([p.x, p.y, "fountain_lava", 0])
 			fountain_left -= 1
-		elif rng.randf() < 0.08: _stamp(image, "wall_hole_1" if rng.randf() < 0.5 else "wall_hole_2", p)
+		elif rng.randf() < 0.08:
+			var hole := 0 if rng.randf() < 0.5 else 1
+			_stamp(image, "wall_hole_%d" % (hole + 1), p)
+			auto_items.append([p.x, p.y, "wall_hole", hole])
 	var centre := world_size / 64.0
 	for p: Vector2i in floor_cells:
+		if not auto: break
 		var by_wall: bool = walls.has(p + Vector2i.UP) or walls.has(p + Vector2i.LEFT) or walls.has(p + Vector2i.RIGHT)
-		if not by_wall or not clear.call(p, 3.0) or Vector2(p).distance_to(centre) < 6.0: continue
+		if not by_wall or not clear.call(p, 3.0) or Vector2(p).distance_to(centre) < 6.0 or taken.has(p): continue
 		var roll := rng.randf()
-		if roll < 0.035: _stamp(image, "skull", p)
+		if roll < 0.035:
+			_stamp(image, "skull", p)
+			auto_items.append([p.x, p.y, "skull", 0])
 	for point: Variant in room.get("brazier_spawns", []):
 		var cell := Vector2i(Vector2(point) / 32.0)
 		candles.append(Vector2(cell.x * T, cell.y * T - 8) * SCALE)
@@ -198,12 +295,16 @@ func draw_props(canvas: CanvasItem, clock: float, locked: bool = false) -> void:
 	var frame := int(floor(clock * FPS))
 	for point: Vector2 in torches: canvas.draw_texture_rect(_torch_frames[frame % FRAMES], Rect2(point, Vector2(16, 24) * SCALE), false)
 	for point: Vector2 in candles: canvas.draw_texture_rect(_candle_frames[(frame + 3) % FRAMES], Rect2(point, Vector2(16, 24) * SCALE), false)
+	for index in range(flames.size()): canvas.draw_texture_rect(_fire_frames[(frame + index * 3) % FRAMES], Rect2(flames[index], Vector2(T, T) * SCALE), false)
+	for index in range(shafts.size()): draw_shaft(canvas, shafts[index], clock + float(index) * 1.7)
 	var slow := int(floor(clock * 6.0)) % 3
 	var cell := Vector2(T, T) * SCALE
-	for point: Vector2 in fountains:
+	for index in range(fountains.size()):
+		var point := fountains[index]
+		var color := fountain_colors[index] if index < fountain_colors.size() else "red"
 		canvas.draw_texture_rect(_pieces.wall_fountain_top_1, Rect2(point - Vector2(0, cell.y), cell), false)
-		canvas.draw_texture_rect(_fountain_mid[slow], Rect2(point, cell), false)
-		canvas.draw_texture_rect(_fountain_basin[slow], Rect2(point + Vector2(0, cell.y), cell), false)
+		canvas.draw_texture_rect(_fountain_mid[color][slow], Rect2(point, cell), false)
+		canvas.draw_texture_rect(_fountain_basin[color][slow], Rect2(point + Vector2(0, cell.y), cell), false)
 	for door: Dictionary in doors:
 		var at: Vector2 = door.pos
 		if str(door.kind) == "arch":
@@ -228,10 +329,34 @@ func draw_props(canvas: CanvasItem, clock: float, locked: bool = false) -> void:
 			canvas.draw_rect(Rect2(at.x, at.y + 4.0, cell.x, 4.0), Color("222222"))
 
 
+## A beam of light from the ceiling onto `foot`: a warm cone that sways
+## slowly, a pool of light on the floor and dust drifting down through it.
+func draw_shaft(canvas: CanvasItem, foot: Vector2, clock: float) -> void:
+	var warm := Color(1.0, 0.93, 0.7)
+	var top := foot + Vector2(7.0 * sin(clock * 0.6), -SHAFT_HEIGHT)
+	canvas.draw_polygon(PackedVector2Array([top + Vector2(-12, 0), top + Vector2(12, 0), foot + Vector2(SHAFT_FOOT, 4), foot + Vector2(-SHAFT_FOOT, 4)]),
+		PackedColorArray([Color(warm, 0.0), Color(warm, 0.0), Color(warm, 0.2), Color(warm, 0.2)]))
+	canvas.draw_polygon(PackedVector2Array([top + Vector2(-5, 0), top + Vector2(5, 0), foot + Vector2(14, 2), foot + Vector2(-14, 2)]),
+		PackedColorArray([Color(warm, 0.0), Color(warm, 0.0), Color(warm, 0.16), Color(warm, 0.16)]))
+	canvas.draw_set_transform(foot + Vector2(0, 4), 0.0, Vector2(1.0, 0.36))
+	canvas.draw_circle(Vector2.ZERO, SHAFT_FOOT + 4.0, Color(warm, 0.12))
+	canvas.draw_circle(Vector2.ZERO, SHAFT_FOOT * 0.6, Color(warm, 0.12))
+	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	for index in range(18):
+		var fall := fposmod(clock * 0.07 + float(index) * 0.1379, 1.0)
+		var along := top.lerp(foot, fall)
+		var half := lerpf(12.0, SHAFT_FOOT, fall)
+		var x := along.x + sin(clock * 0.9 + float(index) * 2.3) * half * 0.8
+		var alpha := clampf(sin(fall * PI) * (0.45 + 0.45 * sin(clock * 4.0 + float(index) * 1.7)), 0.0, 1.0)
+		canvas.draw_rect(Rect2(Vector2(x, along.y).round(), Vector2(2, 2)), Color(1.0, 0.97, 0.85, alpha))
+
+
 ## Light points (world px) of torches and candle flames for the dark crypt.
 func light_points() -> Array[Vector2]:
 	var result: Array[Vector2] = []
 	for point: Vector2 in torches: result.append(point + Vector2(16, 20))
 	for point: Vector2 in candles: result.append(point + Vector2(16, 12))
-	for point: Vector2 in fountains: result.append(point + Vector2(16, 40))
+	for point: Vector2 in flames: result.append(point + Vector2(16, 14))
+	for index in range(fountains.size()):
+		if index >= fountain_colors.size() or fountain_colors[index] == "red": result.append(fountains[index] + Vector2(16, 40))
 	return result

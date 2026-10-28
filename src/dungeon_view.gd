@@ -378,6 +378,9 @@ func _update_darkness() -> void:
 		lights.append(Vector3(point.x, point.y - 12.0, float(lighting.get("torch_radius", 120)) + flicker))
 	for torch: Vector2 in _room_torches:
 		lights.append(Vector3(torch.x, torch.y, float(lighting.get("torch_radius", 120)) * 0.8 + flicker))
+	# Light shafts (decor): a bright, steady pool where the beam lands.
+	if _crypt72 != null:
+		for shaft: Vector2 in _crypt72.shafts: lights.append(Vector4(shaft.x, shaft.y - 20.0, float(lighting.get("shaft_radius", 150)), 1.0))
 	# Spells light the dark around them: the Photoneneis, lava, magic bursts.
 	lights.append_array(_skill_fx.lights(_snapshot))
 	lights.append_array(_fx.lights())
@@ -403,6 +406,14 @@ func _draw_glow(canvas: CanvasItem) -> void:
 	for entry: Dictionary in _fire_entries:
 		var point: Vector2 = entry.point
 		Glow.dot(canvas, point + Vector2(0, -12), 50.0 + 3.0 * sin(_clock * 8.0 + float(entry.offset)), Color(1.0, 0.6, 0.25, 0.22 * torches))
+	if _crypt72 != null:
+		# Light shafts glow along the beam and bloom where they land.
+		var ambient := _environment_clock if _environment_animation_enabled else _clock
+		for index in range(_crypt72.shafts.size()):
+			var foot: Vector2 = _crypt72.shafts[index]
+			var top := foot + Vector2(7.0 * sin((ambient + float(index) * 1.7) * 0.6), -Crypt72.SHAFT_HEIGHT)
+			Glow.line(canvas, top, foot, 46.0, Color(1.0, 0.9, 0.62, 0.1 * torches))
+			Glow.dot(canvas, foot, 64.0, Color(1.0, 0.88, 0.6, 0.22 * torches))
 	var bullets := _glow.level("bullets")
 	for bullet: Dictionary in _snapshot.get("bullets", []):
 		_skill_fx.bullet_glow(canvas, bullet, _position(bullet), _clock, bullets)
