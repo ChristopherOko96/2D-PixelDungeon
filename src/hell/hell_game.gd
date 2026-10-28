@@ -20,6 +20,11 @@ const HeroKit = preload("res://src/hell/hero_kit.gd")
 const RelicKit = preload("res://src/hell/relic_kit.gd")
 const CardKit = preload("res://src/hell/card_kit.gd")
 const SubKit = preload("res://src/hell/sub_kit.gd")
+const FrostFeel = preload("res://src/hell/frost_feel.gd")
+const FrostCombat = preload("res://src/hell/frost_combat.gd")
+const FrostItems = preload("res://src/hell/frost_items.gd")
+const FrostBag = preload("res://src/hell/frost_bag.gd")
+const FrostRunHud = preload("res://src/hell/frost_run_hud.gd")
 const MetaStore = preload("res://src/hell/meta_store.gd")
 const FrostHud = preload("res://src/hell/frost_hud.gd")
 const HEART := "res://assets/sprites/0x72/ui_heart_%s.png"
@@ -114,6 +119,10 @@ var meta: Dictionary = {}
 var meta_path := MetaStore.SAVE_PATH
 ## The run's subclass kit (src/hell/sub_kit.gd); empty for the standard subclass.
 var sub_kit: Dictionary = {}
+## Story 1's combat feel (theme.feel, src/hell/frost_feel.gd); null in worlds without it.
+var feel: FrostFeel
+## The hero shot whose hit is being dealt (for the weapon's shot effects); {} otherwise.
+var cur_shot: Dictionary = {}
 var pending: Array = []
 ## Hearts of the HUD (0x72 full, half, empty).
 var hearts: Dictionary = {}
@@ -182,6 +191,8 @@ func _ready() -> void:
 			frames.append(load(HERO % [hero.get("sprite", "knight_m"), kind, f]))
 		hero_frames[kind] = frames
 	skills = HeroKit.load_skills(self, class_id)
+	if theme.has("feel"):
+		feel = FrostFeel.new(self, theme.feel)
 	for k in ["full", "half", "empty"]:
 		hearts[k] = load(HEART % k)
 	if theme.has("talents") and FileAccess.file_exists(str(theme.talents)):
@@ -391,7 +402,7 @@ func load_floor(n: int, carry: bool) -> void:
 			"speed_mul": state.speed_mul, "range": state.range, "buffs": state.buffs, "skill": state.skill,
 			"level": state.level, "exp": state.exp, "skill_cd": {}, "relic": state.relic, "relic_on": state.relic_on, "upgrades": state.upgrades,
 			"offer": state.offer, "cards_due": state.cards_due, "relic_floor": state.relic_floor, "relic_item": state.relic_item,
-			"talent": state.talent, "crystals_run": state.crystals_run}
+			"talent": state.talent, "crystals_run": state.crystals_run, "bag": state.get("bag", {})}
 		keep.skill.active = false
 	state = {"floor": n, "keys": {"A": false, "B": false, "C": false}, "used": {"A": false, "B": false, "C": false},
 		"visited": {start.index: true}, "room": start.index, "banner": {"text": W.title, "sub": "Etage %d · %s" % [n, W.circle], "t": 0.0},
@@ -403,6 +414,10 @@ func load_floor(n: int, carry: bool) -> void:
 	state.phoenix_life = str(state.talent.get("master", "")) == "phoenix"
 	if not carry:
 		RelicKit.choose_run(self)
+		FrostItems.new_run(self)
+	FrostItems.equip_look(self)
+	if feel != null:
+		feel.reset()
 	RelicKit.place(self)
 	_relic_texture()
 	mobs = []
@@ -596,6 +611,21 @@ func _near_door(r: Dictionary, p: Vector2, dist: float) -> bool:
 # ---------- input ----------
 
 func _unhandled_input(event: InputEvent) -> void:
+	if feel != null and event is InputEventMouseButton and event.pressed:
+		if FrostBag.click(self, get_viewport().get_mouse_position(), get_viewport_rect().size):
+			get_viewport().set_input_as_handled()
+			return
+		if int(state.get("throw_slot", -1)) >= 0:
+			if event.button_index == MOUSE_BUTTON_LEFT:
+				FrostItems.act(self, "throw", int(state.throw_slot), get_global_mouse_position())
+			state.throw_slot = -1
+			get_viewport().set_input_as_handled()
+			return
+	if feel != null and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_I:
+		FrostBag.toggle(self)
+		return
+	if feel != null and FrostBag.is_open(self):
+		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and not (state.get("offer", []) as Array).is_empty():
 		var picked := FrostHud.card_at(self, get_viewport().get_mouse_position(), get_viewport_rect().size)
 		if picked >= 0:
@@ -616,6 +646,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not skills.is_empty() and skill_keys.has(event.keycode):
 		var key: String = skill_keys[event.keycode]
 		if event.pressed:
+			if not FrostCombat.can_cast(self, key):
+				return
 			if not RelicKit.press(self, key) and not SubKit.press(self, key):
 				HeroKit.press(self, key)
 		elif not RelicKit.release(self, key):
@@ -646,7 +678,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				_relic_texture()
 				_toast(("%s in der Hand." % theme[state.relic].name) if state.relic_on else ("%s in der Hand." % weapon.get("name", "Waffe")))
 		KEY_5:
-			if not skills.is_empty() and not SubKit.master(self):
+			if not skills.is_empty() and FrostCombat.can_cast(self, "5") and not SubKit.master(self):
 				HeroKit.master_press(self)
 		KEY_C, KEY_TAB:
 			state.status = not state.get("status", false)
@@ -679,13 +711,28 @@ func _toast(text: String) -> void:
 func _hurt(why: String, n := 1) -> void:
 	if state.inv > 0.0 or state.dead > 0.0:
 		return
-	if SubKit.guard(self):
+	if SubKit.guard(self) or FrostCombat.guard(self):
+		state.inv = float(balance.player.invulnerable)
 		return
-	state.hp = maxi(0, state.hp - n)
 	state.inv = float(balance.player.invulnerable)
+	_lose_hp(n + FrostCombat.extra_hurt(self), why)
+
+
+## Damage over time (poison, burn, blood toll, a potion): lands through the
+## short invulnerability after a hit, but not while dying.
+func dot_hurt(n: int, why: String) -> void:
+	if state.dead > 0.0 or state.won:
+		return
+	_lose_hp(n, why)
+
+
+func _lose_hp(n: int, why: String) -> void:
+	state.hp = maxi(0, state.hp - n)
 	state.flash = 0.25
 	_sound("hurt")
 	_sound("hurt_voice")
+	if feel != null:
+		feel.on_hurt()
 	if state.hp == 0 and state.get("phoenix_life", false):
 		state.phoenix_life = false
 		state.hp = maxi(2, state.max_hp / 2)
@@ -781,6 +828,7 @@ func act() -> void:
 					_toast("Truhe geöffnet: %s genommen!" % key_name[e.loot.key])
 				elif e.get("state", "") == "":
 					e.state = "open"
+					FrostItems.drop_loot(self, FrostItems.roll(self, "chest"), Vector2(e.x, e.y + 60))
 					_toast("Truhe geöffnet: %d Runensteine%s" % [e.loot.gems, " und ein Herz" if e.loot.get("heart", false) else ""])
 				else:
 					e.state = "empty"
@@ -875,8 +923,16 @@ func _solve_group(group: String) -> void:
 
 
 func _fire(dir: Vector2) -> void:
-	if state.cool > 0.0 or dir == Vector2.ZERO or not hold.is_empty():
+	if state.cool > 0.0 or dir == Vector2.ZERO or not hold.is_empty() or not FrostCombat.can_attack(self):
 		return
+	var first := shots.size()
+	_attack(dir)
+	if state.cool > 0.0:
+		state.cool *= FrostCombat.rate(self)
+		FrostCombat.after_attack(self, first)
+
+
+func _attack(dir: Vector2) -> void:
 	state.cool = float(state.rate) * HeroKit.rate_scale(self) * CardKit.rate_mult(self)
 	player.aim = dir.normalized()
 	if absf(dir.x) > 0.01:
@@ -923,11 +979,13 @@ func _damage_mob(m: Dictionary, push: Vector2, mult := 1.0) -> bool:
 	var factor := BossKit.damage_factor(self, m) if m.has("kit") else 1.0
 	if factor <= 0.0:
 		return false
-	m.hp -= float(state.dmg) * factor * mult * HeroKit.crit(self) * CardKit.damage_mult(self) * SubKit.factor(self, m)
+	var dealt: float = float(state.dmg) * factor * mult * HeroKit.crit(self) * CardKit.damage_mult(self) * SubKit.factor(self, m) * FrostCombat.hit_factor(self, m)
+	m.hp -= dealt
 	_sound("hit_" + str(def.get("material", "void")))
 	m.hit = 0.12
 	# kit bosses stand firm: no knockback
 	m.k = Vector2.ZERO if m.has("kit") else push * (0.05 if m.kind == "boss" else 0.25)
+	FrostCombat.after_hit(self, m, push, dealt)
 	return true
 
 
@@ -973,6 +1031,7 @@ func _spawn_mob(room: int, pos: Vector2, kind: String) -> void:
 
 func _start_fight(r: Dictionary) -> void:
 	r.fight = true
+	FrostItems.on_fight(self)
 	var me := Vector2(player.x, player.y)
 	var cells: Array = []
 	for c: Vector2i in r.cells:
@@ -1020,6 +1079,7 @@ func _clear_room(r: Dictionary, at: Vector2) -> void:
 	elif r.type == "boss":
 		state.boss_dead = true
 		RelicKit.drop(self, at)
+		FrostItems.drop_loot(self, FrostItems.roll(self, "gold_crate"), at + Vector2(0, 60))
 		eshots = []
 		zones = []
 		state.storm = false
@@ -1069,6 +1129,7 @@ func _hit_breakable(e: Dictionary, at: Vector2) -> void:
 	if not Rules.hit_breakable(e):
 		return
 	_burst(Vector2(e.x, e.y - 40), 40)
+	FrostItems.drop_loot(self, FrostItems.roll(self, "crate"), Vector2(e.x, e.y + 40))
 	if e.type == "skullheap":
 		_open_secret(W.doors[int(e.door)])
 		_toast("Der Schädelhaufen zerfällt. Ein versteckter Gang öffnet sich!")
@@ -1169,7 +1230,11 @@ func _update_clone(dt: float) -> void:
 
 func _process(delta: float) -> void:
 	var dt := minf(delta, 0.05)
-	_update(dt)
+	if feel != null and (feel.hitstop > 0.0 or FrostBag.is_open(self)):
+		feel.hitstop = maxf(0.0, feel.hitstop - dt)
+		feel.sprites.update(dt * 0.25)
+	else:
+		_update(dt)
 	actors.queue_redraw()
 	glow.queue_redraw()
 	dark.queue_redraw()
@@ -1211,6 +1276,9 @@ func _update(dt: float) -> void:
 	HeroKit.update(self, dt)
 	RelicKit.update(self, dt)
 	SubKit.update(self, dt)
+	FrostCombat.update(self, dt)
+	if feel != null:
+		feel.update(dt)
 	if not (state.get("offer", []) as Array).is_empty():
 		state.offer_t = float(state.get("offer_t", 0.0)) + dt
 	_update_music()
@@ -1248,10 +1316,12 @@ func _update_player(dt: float) -> void:
 	var liquid: Dictionary = theme.liquid
 	var slow: float = float(balance.player.lava_slow) if float(liquid.slow) < 0.0 else float(liquid.slow)
 	var chill := float(theme.get("chill_speed", 1.0)) if state.chill > 0.0 else 1.0
-	var speed := float(hero.get("speed", balance.player.speed)) * float(state.speed_mul) * chill * HeroKit.move_scale(self) * CardKit.speed_mult(self) * (slow if here == 2 else 1.0) * (0.5 if state.slow > 0.0 else 1.0)
-	player.moving = move != Vector2.ZERO
+	var speed := float(hero.get("speed", balance.player.speed)) * float(state.speed_mul) * chill * HeroKit.move_scale(self) * CardKit.speed_mult(self) * (slow if here == 2 else 1.0) * (0.5 if state.slow > 0.0 else 1.0) * FrostCombat.move_scale(self)
+	player.moving = move != Vector2.ZERO and speed > 0.0
 	var want := move.normalized() * speed if player.moving else Vector2.ZERO
-	if here == 2 and liquid.slide:
+	if feel != null and FrostCombat.HeroFx.slip(self) > 0.0:
+		player.vel = (player.vel as Vector2).lerp(want, 1.0 - pow(0.08, dt))
+	elif here == 2 and liquid.slide:
 		# glaze ice: the hero keeps sliding; grip = share of the old speed left after one second
 		player.vel = (player.vel as Vector2).lerp(want, 1.0 - pow(float(liquid.grip), dt))
 	else:
@@ -1313,6 +1383,7 @@ func _update_shots(dt: float) -> void:
 					if not box_blocked(Rect2(m.p.x + step.x - m.r * 0.7, m.p.y + step.y - m.r * 0.7, m.r * 1.4, m.r * 0.7), true):
 						m.p += step
 		var big := float(s.get("big", 1.0))
+		cur_shot = s
 		for m: Dictionary in mobs:
 			if _hittable(m) and not (s.get("hits", []) as Array).has(m) and s.p.distance_to(m.p - Vector2(0, m.cy)) < m.r + 12.0 * big:
 				_burst(s.p, 6)
@@ -1335,6 +1406,7 @@ func _update_shots(dt: float) -> void:
 					break
 				_explode(s, m)
 				break
+		cur_shot = {}
 		if s.t <= 0.0 and s.has("burst") and not s.get("done", false):
 			_explode(s, {})
 	shots = shots.filter(func(s: Dictionary) -> bool: return s.t > 0.0)
@@ -1358,7 +1430,12 @@ func _update_shots(dt: float) -> void:
 			s.t = 0.0 if not s.get("fist", false) else s.t
 			if s.has("chill"):
 				state.chill = maxf(state.chill, float(s.chill))
-			_hurt("von Feuer getroffen")
+			if s.has("dmg"):
+				FrostCombat.FrostMoves.shot_hit(self, s)
+			else:
+				_hurt("von Feuer getroffen")
+		if s.t <= 0.0 and s.has("end_pool"):
+			FrostCombat.FrostMoves.shot_end(self, s)
 	eshots = eshots.filter(func(s: Dictionary) -> bool: return s.t > 0.0)
 
 
@@ -1415,7 +1492,7 @@ func _update_mobs(dt: float) -> void:
 				var od := off.length()
 				if od > 0.0 and od < m.r + o.r:
 					v += off / od * 120.0
-		if m.get("hold", false):
+		if m.get("hold", false) or m.get("mv_hold", false):
 			v = Vector2.ZERO
 		v *= HeroKit.tick_mob(self, m, dt)
 		v += m.k
@@ -1477,6 +1554,7 @@ func _update_mobs(dt: float) -> void:
 		_sound("kill_" + str((m.def as Dictionary).get("material", "void")))
 		HeroKit.gain(self, HeroKit.exp_for(self, m))
 		SubKit.on_kill(self, m)
+		FrostCombat.after_kill(self, m)
 		# a splitting enemy (e.g. ice slime) leaves smaller ones behind
 		var kids := MobRules.split_children(m.def)
 		for i in range(kids.size()):
@@ -1775,6 +1853,7 @@ func _view_rect() -> Rect2:
 func _draw_actors(l: Layer) -> void:
 	var view := _view_rect().grow(220)
 	var t: float = state.t
+	FrostCombat.draw_under(self, l, t)
 	_draw_zones(l, t)
 	for e: Dictionary in W.ents:
 		if not view.has_point(Vector2(e.x, e.y)):
@@ -1835,6 +1914,7 @@ func _draw_actors(l: Layer) -> void:
 	_draw_skill_fx(l, t)
 	RelicKit.draw(self, l, t)
 	SubKit.draw(self, l, t)
+	FrostCombat.draw_over(self, l, t)
 	for s: Dictionary in shots:
 		if SubKit.draw_shot(self, l, s, t):
 			continue
@@ -1873,6 +1953,8 @@ func _draw_actors(l: Layer) -> void:
 		l.draw_circle(s.p, 8.0 * big, col("shot_core"))
 	# hell monster shots glow on the additive layer instead
 	for s: Dictionary in (eshots if monsters == null else []):
+		if FrostCombat.FrostMoves.draw_shot(l, s, t):
+			continue
 		var r := 30.0 if s.get("fist", false) else 15.0
 		l.draw_circle(s.p, r, col("eshot_glow"))
 		l.draw_circle(s.p, r * 0.47, col("eshot_core"))
@@ -2103,7 +2185,7 @@ func _draw_mob_sprite(l: Layer, m: Dictionary, t: float) -> void:
 	var im: Texture2D = tex.get(MobRules.frame_name(look, int(t * float(look.get("fps", 8)) + m.seed)))
 	if im == null:
 		return
-	var size := im.get_size() * float(m.ds) * grow
+	var size := im.get_size() * float(m.ds) * grow * FrostFeel.squash(m)
 	var tint := Color(3, 3, 3) if m.hit > 0.0 else (Color(1.6, 1.8, 2.2) if m.dash > 0.0 else _color(m.get("tint", [1, 1, 1])))
 	if float(m.get("inv", 0.0)) > 0.0:
 		tint.a = 0.45 + 0.35 * sin(t * 30.0)
@@ -2157,7 +2239,9 @@ func _draw_hero(l: Layer, t: float) -> void:
 	var look := SubKit.look(self)
 	var frames: Array = look.frames["run" if player.moving else "idle"]
 	var im: Texture2D = frames[int(player.anim) % 4]
-	var size := im.get_size() * float(theme.hero_scale) * float(look.scale)
+	var size := im.get_size() * float(theme.hero_scale) * float(look.scale) * FrostFeel.squash(player)
+	if feel != null:
+		look.tint *= FrostCombat.HeroFx.tint(self)
 	var pos := Vector2(player.x, player.y - size.y + 6)
 	if player.face < 0:
 		l.draw_set_transform(pos + Vector2(size.x / 2.0, 0), 0.0, Vector2(-1, 1))
@@ -2268,6 +2352,11 @@ func _draw_dark(l: Layer) -> void:
 ## Draws the HUD into the screen-space control.
 func draw_hud(h: Control) -> void:
 	var size := h.size
+	_draw_hud_main(h, size)
+	FrostCombat.draw_hud(self, h, size)
+
+
+func _draw_hud_main(h: Control, size: Vector2) -> void:
 	var th: Dictionary = W.theme
 	if float(th.grade) > 0.0:
 		var grade := col("grade")
@@ -2280,6 +2369,132 @@ func draw_hud(h: Control) -> void:
 		h.draw_rect(Rect2(Vector2.ZERO, size), Color(0.8, 0.08, 0.08, state.flash))
 	if state.white > 0.0:
 		h.draw_rect(Rect2(Vector2.ZERO, size), Color(1, 0.925, 0.82, minf(1.0, state.white)))
+	var crypt_hud := FrostRunHud.on(self)
+	FrostHud.crypt = crypt_hud
+	if crypt_hud:
+		FrostRunHud.hero_panel(self, h)
+	else:
+		_draw_hero_hud(h, size)
+	if crypt_hud:
+		FrostRunHud.controls(h, size)
+	else:
+		var who := "%s · %s · " % [str(sub_kit.name).to_upper() if not sub_kit.is_empty() else hero.name, RelicKit.wielded(self).name if relic_on() else weapon.name] if not hero.is_empty() else ""
+		var keys_hint := "F1-F10 Etage · T Waffe wechseln" if not skills.is_empty() else "1-0 Etage"
+		_text(h, who + "Etage %d · %s · %s · Q Klon · M Karte · Esc Menü" % [state.floor, W.title, keys_hint], Vector2(20, size.y - 38), 16, Color(col("sub"), 0.7))
+	if not skills.is_empty() and crypt_hud:
+		if not (state.get("offer", []) as Array).is_empty():
+			FrostHud.cards(self, h, size)
+		FrostRunHud.skill_bar(self, h, size)
+	elif not skills.is_empty():
+		_draw_skill_bar(h, size)
+	var boss_mob: Dictionary = {}
+	for m: Dictionary in mobs:
+		if m.kind == "boss":
+			boss_mob = m
+	# the banner moves below the guardian's bar while it stands
+	var b: Dictionary = state.banner
+	var ba := clampf(b.t / 0.4, 0.0, 1.0) if b.t < 2.6 else maxf(0.0, 1.0 - (b.t - 2.6) / 0.8)
+	var banner_y := 66.0 if boss_mob.is_empty() else 172.0
+	if theme.get("styled_hud", false):
+		FrostHud.banner(self, h, size, banner_y + 20.0)
+	elif ba > 0.0:
+		_text(h, b.text, Vector2(0, banner_y), 32, Color(gold, ba), size.x)
+		_text(h, String(b.sub).to_upper(), Vector2(0, banner_y + 30), 16, Color(col("sub"), ba), size.x)
+	if not boss_mob.is_empty() and crypt_hud:
+		FrostRunHud.boss_bar(self, h, size, boss_mob)
+	elif not boss_mob.is_empty():
+		# the guardian's bar sits at the top, between hearts and minimap
+		var bw := 600.0
+		var bx := size.x / 2.0 - bw / 2.0
+		var by := 46.0
+		h.draw_rect(Rect2(bx - 10, by - 38, bw + 20, 68), Color(0.02, 0.03, 0.08, 0.92))
+		h.draw_rect(Rect2(bx - 10, by - 38, bw + 20, 68), Color(col("boss_bar"), 0.6), false, 2.0)
+		var bars: int = boss_mob.phase_hp.size() if boss_mob.has("kit") else 1
+		var phase_i: int = int(boss_mob.phase) if boss_mob.has("kit") else 0
+		var gap := 8.0
+		var sw := (bw - gap * (bars - 1)) / bars
+		for i in range(bars):
+			# spent bars empty, the current one draining, later ones full
+			var sx := bx + i * (sw + gap)
+			var fill: float = 0.0 if i < phase_i else (1.0 if i > phase_i else clampf(boss_mob.hp / boss_mob.max, 0.0, 1.0))
+			h.draw_rect(Rect2(sx, by, sw, 18), col("boss_back"))
+			h.draw_rect(Rect2(sx, by, sw * fill, 18), col("boss_bar") if float(boss_mob.get("inv", 0.0)) <= 0.0 else Color(1, 1, 1, 0.85))
+			h.draw_rect(Rect2(sx, by, sw, 18), Color(ink, 0.7), false, 1.5)
+		var pname := str(BossKit.phase(boss_mob).get("name", "")) if boss_mob.has("kit") else ""
+		var title: String = str(W.boss.name) + (" · " + pname if pname != "" else "") + ("" if boss_mob.has("kit") else " (Platzhalter)")
+		if monsters != null:
+			title = monsters.boss_label(boss_mob)
+		_text(h, title, Vector2(bx, by - 12), 16, gold)
+		var total := 0.0
+		var left := maxf(0.0, boss_mob.hp)
+		if boss_mob.has("kit"):
+			for i in range(bars):
+				total += float(boss_mob.phase_hp[i])
+				if i > phase_i:
+					left += float(boss_mob.phase_hp[i])
+		else:
+			total = boss_mob.max
+		var pct := "%d %%" % int(ceil(left / maxf(1.0, total) * 100.0))
+		_text(h, pct, Vector2(bx + bw - FONT.get_string_size(pct, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x, by - 12), 20, ink)
+	var cr: Dictionary = W.rooms[state.room]
+	if cr.fight and not crypt_hud:
+		var left := 0
+		for m: Dictionary in mobs:
+			if m.room == cr.index:
+				left += 1
+		_text(h, "Verriegelt · noch %d Gegner" % left, Vector2(0, 128 if boss_mob.is_empty() else 112), 20, col("warn"), size.x)
+	var n := _nearest()
+	if not n.is_empty() and state.dead <= 0.0 and not state.won:
+		var label := say(n.label)
+		if crypt_hud:
+			FrostRunHud.prompt(self, h, size, n.p, label)
+	if not n.is_empty() and state.dead <= 0.0 and not state.won and not crypt_hud:
+		var label := say(n.label)
+		var sp := _to_screen(n.p, size) - Vector2(0, 70)
+		var w := FONT.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x + 60.0
+		h.draw_rect(Rect2(sp.x - w / 2.0, sp.y - 21, w, 42), Color(0.02, 0.03, 0.08, 0.92))
+		h.draw_rect(Rect2(sp.x - w / 2.0, sp.y - 21, w, 42), accent, false, 2.0)
+		h.draw_rect(Rect2(sp.x - w / 2.0 + 8, sp.y - 13, 26, 26), Color(accent, 0.25))
+		_text(h, "E", Vector2(sp.x - w / 2.0 + 14, sp.y + 7), 18, col("prompt_key"))
+		_text(h, label, Vector2(sp.x - w / 2.0 + 44, sp.y + 7), 18, ink)
+	var toasts: Array = state.toasts if not crypt_hud else []
+	if crypt_hud:
+		FrostRunHud.toasts(self, h, size)
+	for i in range(toasts.size()):
+		var tt: Dictionary = toasts[i]
+		# hints stack above the skill bar: bigger text, dark box, accent edge on the left
+		var ty := size.y - 52.0 - (toasts.size() - 1 - i) * 48.0 - (124.0 if not skills.is_empty() else 0.0)
+		var fade := minf(1.0, tt.t * 2.0)
+		var w := FONT.get_string_size(tt.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x + 48.0
+		h.draw_rect(Rect2(size.x / 2.0 - w / 2.0, ty - 21, w, 42), Color(0.02, 0.03, 0.08, 0.92 * fade))
+		h.draw_rect(Rect2(size.x / 2.0 - w / 2.0, ty - 21, 5, 42), Color(accent, fade))
+		_text(h, tt.text, Vector2(0, ty + 7), 20, Color(ink, fade), size.x)
+	if theme.placeholder_note:
+		_text(h, "Figur: Platzhalter" if monsters != null else "Figur und Gegner: Platzhalter", Vector2(20, size.y - 14), 16, Color(ink, 0.45))
+	if state.dead > 0.0:
+		h.draw_rect(Rect2(Vector2.ZERO, size), Color(0.12, 0, 0, 0.55))
+	var mission_top := 200.0
+	if crypt_hud and not state.map:
+		mission_top = FrostRunHud.floor_panel(self, h, size)
+	else:
+		_draw_map(h, size, state.map)
+	if theme.get("styled_hud", false) and not state.map and not state.won:
+		FrostHud.mission(self, h, size, mission_top)
+		if state.get("status", false):
+			FrostHud.status(self, h, size)
+	if state.won:
+		h.draw_rect(Rect2(Vector2.ZERO, size), Color(0.04, 0.01, 0.02, 0.8))
+		_text(h, say("Die Hölle ist bezwungen") if W.final else "Etage %d geschafft" % state.floor, Vector2(0, size.y / 2.0 - 30), 32, gold, size.x)
+		_text(h, say("%d von %d Räumen erkundet · %d Runensteine · %d Herzen" % [state.visited.size(), W.rooms.size(), state.gems, state.max_hp / 2]), Vector2(0, size.y / 2.0 + 16), 16, ink, size.x)
+		_text(h, "E: von vorn beginnen" if W.final else "E: weiter zu Etage %d" % (state.floor + 1), Vector2(0, size.y / 2.0 + 52), 16, col("prompt_key"), size.x)
+		if not meta.is_empty():
+			var cur: Dictionary = meta_data.currency
+			_text(h, "+%d %s  ·  zusammen %d  ·  im Hauptmenü unter TALENTE ausgeben" % [int(state.get("crystals_floor", 0)), cur.name, int(meta.crystals)], Vector2(0, size.y / 2.0 + 92), 20, gold, size.x)
+
+
+## Hearts, keys, runes, flames, level and EXP, the clone and blessings (the
+## Hell-Dungeon's HUD; the Frostgruft draws Story 1's hero panel instead).
+func _draw_hero_hud(h: Control, size: Vector2) -> void:
 	# hearts: two half hearts each, drawn with the 0x72 full / half / empty heart
 	var hs := 32.0
 	var hh := 32.0
@@ -2322,102 +2537,6 @@ func draw_hud(h: Control) -> void:
 	if not (state.buffs as Array).is_empty():
 		var names: Array = (state.buffs as Array).map(func(b: String) -> String: return b.get_slice(":", 0))
 		_text(h, "Segen: " + ", ".join(PackedStringArray(names)), Vector2(22, line), 16, Color(1, 0.89, 0.55, 0.85))
-	var who := "%s · %s · " % [str(sub_kit.name).to_upper() if not sub_kit.is_empty() else hero.name, RelicKit.wielded(self).name if relic_on() else weapon.name] if not hero.is_empty() else ""
-	var keys_hint := "F1-F10 Etage · T Waffe wechseln" if not skills.is_empty() else "1-0 Etage"
-	_text(h, who + "Etage %d · %s · %s · Q Klon · M Karte · Esc Menü" % [state.floor, W.title, keys_hint], Vector2(20, size.y - 38), 16, Color(col("sub"), 0.7))
-	if not skills.is_empty():
-		_draw_skill_bar(h, size)
-	var boss_mob: Dictionary = {}
-	for m: Dictionary in mobs:
-		if m.kind == "boss":
-			boss_mob = m
-	# the banner moves below the guardian's bar while it stands
-	var b: Dictionary = state.banner
-	var ba := clampf(b.t / 0.4, 0.0, 1.0) if b.t < 2.6 else maxf(0.0, 1.0 - (b.t - 2.6) / 0.8)
-	var banner_y := 66.0 if boss_mob.is_empty() else 172.0
-	if theme.get("styled_hud", false):
-		FrostHud.banner(self, h, size, banner_y + 20.0)
-	elif ba > 0.0:
-		_text(h, b.text, Vector2(0, banner_y), 32, Color(gold, ba), size.x)
-		_text(h, String(b.sub).to_upper(), Vector2(0, banner_y + 30), 16, Color(col("sub"), ba), size.x)
-	if not boss_mob.is_empty():
-		# the guardian's bar sits at the top, between hearts and minimap
-		var bw := 600.0
-		var bx := size.x / 2.0 - bw / 2.0
-		var by := 46.0
-		h.draw_rect(Rect2(bx - 10, by - 38, bw + 20, 68), Color(0.02, 0.03, 0.08, 0.92))
-		h.draw_rect(Rect2(bx - 10, by - 38, bw + 20, 68), Color(col("boss_bar"), 0.6), false, 2.0)
-		var bars: int = boss_mob.phase_hp.size() if boss_mob.has("kit") else 1
-		var phase_i: int = int(boss_mob.phase) if boss_mob.has("kit") else 0
-		var gap := 8.0
-		var sw := (bw - gap * (bars - 1)) / bars
-		for i in range(bars):
-			# spent bars empty, the current one draining, later ones full
-			var sx := bx + i * (sw + gap)
-			var fill: float = 0.0 if i < phase_i else (1.0 if i > phase_i else clampf(boss_mob.hp / boss_mob.max, 0.0, 1.0))
-			h.draw_rect(Rect2(sx, by, sw, 18), col("boss_back"))
-			h.draw_rect(Rect2(sx, by, sw * fill, 18), col("boss_bar") if float(boss_mob.get("inv", 0.0)) <= 0.0 else Color(1, 1, 1, 0.85))
-			h.draw_rect(Rect2(sx, by, sw, 18), Color(ink, 0.7), false, 1.5)
-		var pname := str(BossKit.phase(boss_mob).get("name", "")) if boss_mob.has("kit") else ""
-		var title: String = str(W.boss.name) + (" · " + pname if pname != "" else "") + ("" if boss_mob.has("kit") else " (Platzhalter)")
-		if monsters != null:
-			title = monsters.boss_label(boss_mob)
-		_text(h, title, Vector2(bx, by - 12), 16, gold)
-		var total := 0.0
-		var left := maxf(0.0, boss_mob.hp)
-		if boss_mob.has("kit"):
-			for i in range(bars):
-				total += float(boss_mob.phase_hp[i])
-				if i > phase_i:
-					left += float(boss_mob.phase_hp[i])
-		else:
-			total = boss_mob.max
-		var pct := "%d %%" % int(ceil(left / maxf(1.0, total) * 100.0))
-		_text(h, pct, Vector2(bx + bw - FONT.get_string_size(pct, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x, by - 12), 20, ink)
-	var cr: Dictionary = W.rooms[state.room]
-	if cr.fight:
-		var left := 0
-		for m: Dictionary in mobs:
-			if m.room == cr.index:
-				left += 1
-		_text(h, "Verriegelt · noch %d Gegner" % left, Vector2(0, 128 if boss_mob.is_empty() else 112), 20, col("warn"), size.x)
-	var n := _nearest()
-	if not n.is_empty() and state.dead <= 0.0 and not state.won:
-		var sp := _to_screen(n.p, size) - Vector2(0, 70)
-		var label := say(n.label)
-		var w := FONT.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x + 60.0
-		h.draw_rect(Rect2(sp.x - w / 2.0, sp.y - 21, w, 42), Color(0.02, 0.03, 0.08, 0.92))
-		h.draw_rect(Rect2(sp.x - w / 2.0, sp.y - 21, w, 42), accent, false, 2.0)
-		h.draw_rect(Rect2(sp.x - w / 2.0 + 8, sp.y - 13, 26, 26), Color(accent, 0.25))
-		_text(h, "E", Vector2(sp.x - w / 2.0 + 14, sp.y + 7), 18, col("prompt_key"))
-		_text(h, label, Vector2(sp.x - w / 2.0 + 44, sp.y + 7), 18, ink)
-	var toasts: Array = state.toasts
-	for i in range(toasts.size()):
-		var tt: Dictionary = toasts[i]
-		# hints stack above the skill bar: bigger text, dark box, accent edge on the left
-		var ty := size.y - 52.0 - (toasts.size() - 1 - i) * 48.0 - (124.0 if not skills.is_empty() else 0.0)
-		var fade := minf(1.0, tt.t * 2.0)
-		var w := FONT.get_string_size(tt.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x + 48.0
-		h.draw_rect(Rect2(size.x / 2.0 - w / 2.0, ty - 21, w, 42), Color(0.02, 0.03, 0.08, 0.92 * fade))
-		h.draw_rect(Rect2(size.x / 2.0 - w / 2.0, ty - 21, 5, 42), Color(accent, fade))
-		_text(h, tt.text, Vector2(0, ty + 7), 20, Color(ink, fade), size.x)
-	if theme.placeholder_note:
-		_text(h, "Figur: Platzhalter" if monsters != null else "Figur und Gegner: Platzhalter", Vector2(20, size.y - 14), 16, Color(ink, 0.45))
-	if state.dead > 0.0:
-		h.draw_rect(Rect2(Vector2.ZERO, size), Color(0.12, 0, 0, 0.55))
-	_draw_map(h, size, state.map)
-	if theme.get("styled_hud", false) and not state.map and not state.won:
-		FrostHud.mission(self, h, size)
-		if state.get("status", false):
-			FrostHud.status(self, h, size)
-	if state.won:
-		h.draw_rect(Rect2(Vector2.ZERO, size), Color(0.04, 0.01, 0.02, 0.8))
-		_text(h, say("Die Hölle ist bezwungen") if W.final else "Etage %d geschafft" % state.floor, Vector2(0, size.y / 2.0 - 30), 32, gold, size.x)
-		_text(h, say("%d von %d Räumen erkundet · %d Runensteine · %d Herzen" % [state.visited.size(), W.rooms.size(), state.gems, state.max_hp / 2]), Vector2(0, size.y / 2.0 + 16), 16, ink, size.x)
-		_text(h, "E: von vorn beginnen" if W.final else "E: weiter zu Etage %d" % (state.floor + 1), Vector2(0, size.y / 2.0 + 52), 16, col("prompt_key"), size.x)
-		if not meta.is_empty():
-			var cur: Dictionary = meta_data.currency
-			_text(h, "+%d %s  ·  zusammen %d  ·  im Hauptmenü unter TALENTE ausgeben" % [int(state.get("crystals_floor", 0)), cur.name, int(meta.crystals)], Vector2(0, size.y / 2.0 + 92), 20, gold, size.x)
 
 
 ## The skill bar at the bottom: one slot per key with icon, key, cooldown shade
@@ -2496,16 +2615,22 @@ func _door_color(d: Dictionary) -> Color:
 	return col("door")
 
 
-func _draw_map(h: Control, screen: Vector2, big: bool) -> void:
+## The map: big (M) over the whole screen, else the minimap top right, or
+## inside `area` (the crypt HUD's floor panel) without a backdrop of its own.
+func _draw_map(h: Control, screen: Vector2, big: bool, area := Rect2()) -> void:
 	var known := Rules.known_rooms(W.doors, state.visited)
 	var s: float = minf((screen.x - 60.0) / W.cols, (screen.y - 110.0) / W.rows) if big else minf(250.0 / W.cols, 170.0 / W.rows)
+	if not big and area.has_area():
+		s = minf(area.size.x / W.cols, area.size.y / W.rows)
 	var mw: float = W.cols * s
 	var mh: float = W.rows * s
 	var origin := Vector2((screen.x - mw) / 2.0, (screen.y - mh) / 2.0 + 10.0) if big else Vector2(screen.x - mw - 16.0, 16.0)
+	if not big and area.has_area():
+		origin = area.get_center() - Vector2(mw, mh) / 2.0
 	if big:
 		h.draw_rect(Rect2(Vector2.ZERO, screen), Color(0.03, 0.01, 0.02, 0.93))
 		_text(h, "%s · Etage %d" % [W.title, state.floor], Vector2(0, 40), 32, gold, screen.x)
-	else:
+	elif not area.has_area():
 		h.draw_rect(Rect2(origin - Vector2(8, 8), Vector2(mw, mh) + Vector2(16, 16)), Color(0.04, 0.02, 0.02, 0.8))
 	h.draw_set_transform(origin, 0.0, Vector2(s, s))
 	for d: Dictionary in W.doors:

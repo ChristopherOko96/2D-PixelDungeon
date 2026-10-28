@@ -1,1424 +1,1600 @@
 {
-  "_note": "Story 2 Die Frostgruft on the Hell-Dungeon runtime (src/hell/hell_game.gd, theme_path). Keys override THEME_DEFAULT there. weapon_scale: held weapons and arrows (smaller than the hero, sits in the hand). classes: hero per class (menu choice, class_id): sprite (0x72 name), hp (half hearts), speed (px/s) and weapon (melee: damage per hit, cooldown s, reach px, arc rad; projectile: damage, cooldown s, speed px/s, life s, shot arrow/magic, splash px radius). Values are the main game's (src/data/balance.json) scaled to this world (about x2.4). liquid: what grid cell 2 is (frost: glaze ice, hurt false, slow 1 = full speed, slide true, grip = share of the old speed left after one second). keys: name, hint, minimap colour, tint and skin sprite per key. words: hell phrase -> frost phrase, applied to toasts, prompts and end texts (longest first). colors: see THEME_DEFAULT. mobs: enemy kinds by id (name, sprite = skin name, with frames > 1 the prefix of _f0.._fN, fps, hp, speed px/s, radius px, behavior chase / shooter (keep_away px, fire_every s, shot_speed px/s) / dasher (dash_every s, dash_speed px/s, dash_time s) / puller (pull_radius px, pull px/s) / shield (shield_arc rad, blocks hits from the front) / turret (fire_every s, fan shots, spread rad, shot_speed), chill = s the hero is slowed after a touch, split = {into, count} on death). roster: kinds per room by floor (from = first floor, weight). bosses: guardian look per floor (sprite, frames, fps, scale); boss_adds: kinds the guardian summons. chill_speed: speed factor while chilled (ice zombie touch). boss_kits: guardians with their own fight per floor: phases (share of the floor boss hp, or hp list), every = s between attacks, title = toast on entering, look/tint = new look, guard = damage factor while its summoned crystals stand, storm = darker room, last_stand = below share: safe circles, then rest s with rest_damage factor; attacks do = summon(kind,count,around,guard) / ring(count,speed,chill) / fan(count,spread rad,speed,chill) / stomp(rings,count,gap rad,speed,pause s) / breath(duration,turn rad,rate s,speed,chill) / spiral(arms,duration,rate,speed) / charge(speed,time,windup) / icicles(count,radius,delay,spread px) / teleport_center(windup,push px) / fist(speed,back s) / fist_hunt(count,time,speed) / chill_zones(count,radius,time). Guardians with a kit take no knockback. phase_break: s invulnerable, push px and a shard ring between phases. mobs exp: experience per kill; material: bone/flesh/void for hit and kill sounds. leveling: need(level) = base * level^exponent experience, heal half hearts on level-up, boss_exp for guardians (mini = floors 3/6/9), skills = the class skills (hero_skills.json; distances x scale), slow_boss_scale. gravity_staff: mage relic of floor 4 (ball replaces the attack: damage x weapon, pull radius/strength px; wall: key, length, thickness px, time s; bar: drawn with the right mouse, max_length px, lasts time s, holds shots for hold s). sounds: game event -> audio_sfx.json event (\"\" = the skill's own sound). music: play the music states. gravity_staff short: slot label under the skill bar. relics: random relic shrine per run on one of floors (in their secret room), the relic from the hero class's pool (none = no shrine), sealed by four plates stepped in order. gravity_staff / gravity_hammer: class relics; attack (ball / hammer swing) replaces the weapon and is stronger; skills on keys 1-4 open at their level (unlock) with cooldowns and values. cards: level-up upgrade cards per class, relic and 'all' (max = how often; values are shares, e.g. damage 0.15 = +15 %); three are offered per level-up. styled_hud: framed banner, mission list, status sheet (C / Tab) and level-up cards (src/hell/frost_hud.gd). relics.drop boss: the relic lies in a chest the guardian of the relic floor drops. shadow_dagger: archer relic (melee stab with backstab x2 on enemies not facing you; shadow step through up to hits enemies, blade cyclone around you, smoke bomb = enemies lose you and slow, thousand blades = blade rain on an area). sounds: master skills use their own. talents: the talent trees and soul crystals file (assets/data/frost_talents.json); master_cooldown: s for the key 5 master skill.",
-  "floors": "res://assets/data/frost_floors.json",
-  "sprites": "res://assets/sprites/frost/",
-  "balance": "res://assets/data/hell_balance.json",
-  "pixel": true,
-  "hero_scale": 3.0,
-  "weapon_scale": 2.0,
-  "chill_speed": 0.6,
-  "key_in_chest": true,
-  "default_class": "archer",
-  "classes": {
-    "swordsman": {
-      "name": "SCHWERTKÄMPFER",
-      "sprite": "knight_m",
-      "hp": 14,
-      "speed": 340,
-      "weapon": {
-        "name": "SCHWERT",
-        "type": "melee",
-        "damage": 2.5,
-        "cooldown": 0.4,
-        "reach": 150,
-        "arc": 2.0,
-        "sprite": "weapon_regular_sword"
-      }
-    },
-    "archer": {
-      "name": "BOGENSCHÜTZE",
-      "sprite": "elf_f",
-      "hp": 12,
-      "speed": 370,
-      "weapon": {
-        "name": "KURZBOGEN",
-        "type": "projectile",
-        "shot": "arrow",
-        "damage": 1.0,
-        "cooldown": 0.22,
-        "speed": 1050,
-        "life": 0.8,
-        "sprite": "weapon_bow"
-      }
-    },
-    "mage": {
-      "name": "MAGIER",
-      "sprite": "wizzard_m",
-      "hp": 10,
-      "speed": 350,
-      "weapon": {
-        "name": "SMARAGDSTAB",
-        "type": "projectile",
-        "shot": "magic",
-        "damage": 1.75,
-        "cooldown": 0.4,
-        "speed": 700,
-        "life": 1.0,
-        "splash": 110,
-        "sprite": "weapon_green_magic_staff"
-      }
-    }
+ "_note": "Story 2 Die Frostgruft on the Hell-Dungeon runtime (src/hell/hell_game.gd, theme_path). Keys override THEME_DEFAULT there. weapon_scale: held weapons and arrows (smaller than the hero, sits in the hand). classes: hero per class (menu choice, class_id): sprite (0x72 name), hp (half hearts), speed (px/s) and weapon (melee: damage per hit, cooldown s, reach px, arc rad; projectile: damage, cooldown s, speed px/s, life s, shot arrow/magic, splash px radius). Values are the main game's (src/data/balance.json) scaled to this world (about x2.4). liquid: what grid cell 2 is (frost: glaze ice, hurt false, slow 1 = full speed, slide true, grip = share of the old speed left after one second). keys: name, hint, minimap colour, tint and skin sprite per key. words: hell phrase -> frost phrase, applied to toasts, prompts and end texts (longest first). colors: see THEME_DEFAULT. mobs: enemy kinds by id (name, sprite = skin name, with frames > 1 the prefix of _f0.._fN, fps, hp, speed px/s, radius px, behavior chase / shooter (keep_away px, fire_every s, shot_speed px/s) / dasher (dash_every s, dash_speed px/s, dash_time s) / puller (pull_radius px, pull px/s) / shield (shield_arc rad, blocks hits from the front) / turret (fire_every s, fan shots, spread rad, shot_speed), chill = s the hero is slowed after a touch, split = {into, count} on death). roster: kinds per room by floor (from = first floor, weight). bosses: guardian look per floor (sprite, frames, fps, scale); boss_adds: kinds the guardian summons. chill_speed: speed factor while chilled (ice zombie touch). boss_kits: guardians with their own fight per floor: phases (share of the floor boss hp, or hp list), every = s between attacks, title = toast on entering, look/tint = new look, guard = damage factor while its summoned crystals stand, storm = darker room, last_stand = below share: safe circles, then rest s with rest_damage factor; attacks do = summon(kind,count,around,guard) / ring(count,speed,chill) / fan(count,spread rad,speed,chill) / stomp(rings,count,gap rad,speed,pause s) / breath(duration,turn rad,rate s,speed,chill) / spiral(arms,duration,rate,speed) / charge(speed,time,windup) / icicles(count,radius,delay,spread px) / teleport_center(windup,push px) / fist(speed,back s) / fist_hunt(count,time,speed) / chill_zones(count,radius,time). Guardians with a kit take no knockback. phase_break: s invulnerable, push px and a shard ring between phases. mobs exp: experience per kill; material: bone/flesh/void for hit and kill sounds. leveling: need(level) = base * level^exponent experience, heal half hearts on level-up, boss_exp for guardians (mini = floors 3/6/9), skills = the class skills (hero_skills.json; distances x scale), slow_boss_scale. gravity_staff: mage relic of floor 4 (ball replaces the attack: damage x weapon, pull radius/strength px; wall: key, length, thickness px, time s; bar: drawn with the right mouse, max_length px, lasts time s, holds shots for hold s). sounds: game event -> audio_sfx.json event (\"\" = the skill's own sound). music: play the music states. gravity_staff short: slot label under the skill bar. relics: random relic shrine per run on one of floors (in their secret room), the relic from the hero class's pool (none = no shrine), sealed by four plates stepped in order. gravity_staff / gravity_hammer: class relics; attack (ball / hammer swing) replaces the weapon and is stronger; skills on keys 1-4 open at their level (unlock) with cooldowns and values. cards: level-up upgrade cards per class, relic and 'all' (max = how often; values are shares, e.g. damage 0.15 = +15 %); three are offered per level-up. styled_hud: framed banner, mission list, status sheet (C / Tab) and level-up cards (src/hell/frost_hud.gd). relics.drop boss: the relic lies in a chest the guardian of the relic floor drops. shadow_dagger: archer relic (melee stab with backstab x2 on enemies not facing you; shadow step through up to hits enemies, blade cyclone around you, smoke bomb = enemies lose you and slow, thousand blades = blade rain on an area). sounds: master skills use their own. talents: the talent trees and soul crystals file (assets/data/frost_talents.json); master_cooldown: s for the key 5 master skill.",
+ "floors": "res://assets/data/frost_floors.json",
+ "sprites": "res://assets/sprites/frost/",
+ "balance": "res://assets/data/hell_balance.json",
+ "pixel": true,
+ "hero_scale": 3.0,
+ "weapon_scale": 2.0,
+ "chill_speed": 0.6,
+ "key_in_chest": true,
+ "default_class": "archer",
+ "classes": {
+  "swordsman": {
+   "name": "SCHWERTKÄMPFER",
+   "sprite": "knight_m",
+   "hp": 14,
+   "speed": 340,
+   "weapon": {
+    "name": "SCHWERT",
+    "type": "melee",
+    "damage": 2.5,
+    "cooldown": 0.4,
+    "reach": 150,
+    "arc": 2.0,
+    "sprite": "weapon_regular_sword"
+   }
   },
-  "mobs": {
-    "ice_zombie": {
-      "name": "Eis-Zombie",
-      "sprite": "mob_ice_zombie_f",
-      "frames": 4,
-      "fps": 6,
-      "hp": 7,
-      "speed": 90,
-      "radius": 30,
-      "behavior": "chase",
-      "chill": 1.5,
-      "exp": 8,
-      "material": "flesh"
-    },
-    "frost_skeleton": {
-      "name": "Frost-Skelett",
-      "sprite": "mob_frost_skeleton_f",
-      "frames": 4,
-      "fps": 10,
-      "hp": 4,
-      "speed": 170,
-      "radius": 26,
-      "behavior": "shooter",
-      "keep_away": 300,
-      "fire_every": 2.2,
-      "shot_speed": 420,
-      "exp": 7,
-      "material": "bone"
-    },
-    "ice_slime": {
-      "name": "Eisschleim",
-      "sprite": "mob_ice_slime_0",
-      "frames": 1,
-      "hp": 6,
-      "speed": 100,
-      "radius": 38,
-      "behavior": "chase",
-      "split": {
-        "into": "ice_slime_m",
-        "count": 2
-      },
-      "exp": 6,
-      "material": "void"
-    },
-    "ice_slime_m": {
-      "name": "Eisschleim",
-      "sprite": "mob_ice_slime_1",
-      "frames": 1,
-      "hp": 3,
-      "speed": 130,
-      "radius": 28,
-      "behavior": "chase",
-      "split": {
-        "into": "ice_slime_s",
-        "count": 2
-      },
-      "exp": 3,
-      "material": "void"
-    },
-    "ice_slime_s": {
-      "name": "Eisschleim",
-      "sprite": "mob_ice_slime_2",
-      "frames": 1,
-      "hp": 1.5,
-      "speed": 170,
-      "radius": 20,
-      "behavior": "chase",
-      "exp": 2,
-      "material": "void"
-    },
-    "frost_imp": {
-      "name": "Frostkobold",
-      "sprite": "mob_frost_imp_f",
-      "frames": 8,
-      "fps": 12,
-      "hp": 2.5,
-      "speed": 190,
-      "radius": 22,
-      "behavior": "dasher",
-      "dash_every": 2.0,
-      "dash_speed": 650,
-      "dash_time": 0.3,
-      "exp": 4,
-      "material": "void"
-    },
-    "frost_whirl": {
-      "name": "Frostwirbel",
-      "sprite": "mob_frost_whirl_0",
-      "frames": 1,
-      "hp": 5,
-      "speed": 110,
-      "radius": 30,
-      "behavior": "puller",
-      "pull_radius": 380,
-      "pull": 140,
-      "exp": 9,
-      "material": "void"
-    },
-    "ice_knight": {
-      "name": "Eisritter",
-      "sprite": "mob_ice_knight_f",
-      "frames": 8,
-      "fps": 10,
-      "hp": 8,
-      "speed": 120,
-      "radius": 30,
-      "behavior": "shield",
-      "shield_arc": 1.6,
-      "exp": 12,
-      "material": "bone"
-    },
-    "ice_crystal": {
-      "name": "Eiskristall",
-      "sprite": "mob_ice_crystal_0",
-      "frames": 1,
-      "hp": 6,
-      "speed": 0,
-      "radius": 30,
-      "behavior": "turret",
-      "fire_every": 2.6,
-      "fan": 5,
-      "spread": 0.9,
-      "shot_speed": 380,
-      "exp": 10,
-      "material": "void"
-    }
+  "archer": {
+   "name": "BOGENSCHÜTZE",
+   "sprite": "elf_f",
+   "hp": 12,
+   "speed": 370,
+   "weapon": {
+    "name": "KURZBOGEN",
+    "type": "projectile",
+    "shot": "arrow",
+    "damage": 1.0,
+    "cooldown": 0.22,
+    "speed": 1050,
+    "life": 0.8,
+    "sprite": "weapon_bow"
+   }
   },
-  "roster": [
+  "mage": {
+   "name": "MAGIER",
+   "sprite": "wizzard_m",
+   "hp": 10,
+   "speed": 350,
+   "weapon": {
+    "name": "SMARAGDSTAB",
+    "type": "projectile",
+    "shot": "magic",
+    "damage": 1.75,
+    "cooldown": 0.4,
+    "speed": 700,
+    "life": 1.0,
+    "splash": 110,
+    "sprite": "weapon_green_magic_staff"
+   }
+  }
+ },
+ "mobs": {
+  "ice_zombie": {
+   "name": "Eis-Zombie",
+   "sprite": "mob_ice_zombie_f",
+   "frames": 4,
+   "fps": 6,
+   "hp": 7,
+   "speed": 90,
+   "radius": 30,
+   "behavior": "chase",
+   "chill": 1.5,
+   "exp": 8,
+   "material": "flesh"
+  },
+  "frost_skeleton": {
+   "name": "Frost-Skelett",
+   "sprite": "mob_frost_skeleton_f",
+   "frames": 4,
+   "fps": 10,
+   "hp": 4,
+   "speed": 170,
+   "radius": 26,
+   "behavior": "shooter",
+   "keep_away": 300,
+   "fire_every": 2.2,
+   "shot_speed": 420,
+   "exp": 7,
+   "material": "bone"
+  },
+  "ice_slime": {
+   "name": "Eisschleim",
+   "sprite": "mob_ice_slime_0",
+   "frames": 1,
+   "hp": 6,
+   "speed": 100,
+   "radius": 38,
+   "behavior": "chase",
+   "split": {
+    "into": "ice_slime_m",
+    "count": 2
+   },
+   "exp": 6,
+   "material": "void"
+  },
+  "ice_slime_m": {
+   "name": "Eisschleim",
+   "sprite": "mob_ice_slime_1",
+   "frames": 1,
+   "hp": 3,
+   "speed": 130,
+   "radius": 28,
+   "behavior": "chase",
+   "split": {
+    "into": "ice_slime_s",
+    "count": 2
+   },
+   "exp": 3,
+   "material": "void"
+  },
+  "ice_slime_s": {
+   "name": "Eisschleim",
+   "sprite": "mob_ice_slime_2",
+   "frames": 1,
+   "hp": 1.5,
+   "speed": 170,
+   "radius": 20,
+   "behavior": "chase",
+   "exp": 2,
+   "material": "void"
+  },
+  "frost_imp": {
+   "name": "Frostkobold",
+   "sprite": "mob_frost_imp_f",
+   "frames": 8,
+   "fps": 12,
+   "hp": 2.5,
+   "speed": 190,
+   "radius": 22,
+   "behavior": "dasher",
+   "dash_every": 2.0,
+   "dash_speed": 650,
+   "dash_time": 0.3,
+   "exp": 4,
+   "material": "void"
+  },
+  "frost_whirl": {
+   "name": "Frostwirbel",
+   "sprite": "mob_frost_whirl_0",
+   "frames": 1,
+   "hp": 5,
+   "speed": 110,
+   "radius": 30,
+   "behavior": "puller",
+   "pull_radius": 380,
+   "pull": 140,
+   "exp": 9,
+   "material": "void"
+  },
+  "ice_knight": {
+   "name": "Eisritter",
+   "sprite": "mob_ice_knight_f",
+   "frames": 8,
+   "fps": 10,
+   "hp": 8,
+   "speed": 120,
+   "radius": 30,
+   "behavior": "shield",
+   "shield_arc": 1.6,
+   "exp": 12,
+   "material": "bone"
+  },
+  "ice_crystal": {
+   "name": "Eiskristall",
+   "sprite": "mob_ice_crystal_0",
+   "frames": 1,
+   "hp": 6,
+   "speed": 0,
+   "radius": 30,
+   "behavior": "turret",
+   "fire_every": 2.6,
+   "fan": 5,
+   "spread": 0.9,
+   "shot_speed": 380,
+   "exp": 10,
+   "material": "void"
+  }
+ },
+ "roster": [
+  {
+   "kind": "ice_zombie",
+   "from": 1,
+   "weight": 3
+  },
+  {
+   "kind": "frost_skeleton",
+   "from": 1,
+   "weight": 2
+  },
+  {
+   "kind": "ice_slime",
+   "from": 2,
+   "weight": 2
+  },
+  {
+   "kind": "frost_imp",
+   "from": 3,
+   "weight": 3
+  },
+  {
+   "kind": "frost_whirl",
+   "from": 4,
+   "weight": 1
+  },
+  {
+   "kind": "ice_knight",
+   "from": 5,
+   "weight": 2
+  },
+  {
+   "kind": "ice_crystal",
+   "from": 6,
+   "weight": 1
+  }
+ ],
+ "bosses": {
+  "1": {
+   "sprite": "mob_ice_slime_0",
+   "frames": 1,
+   "scale": 2.2
+  },
+  "2": {
+   "sprite": "mob_frost_imp_f",
+   "frames": 8,
+   "fps": 12,
+   "scale": 2.4
+  },
+  "3": {
+   "sprite": "mob_frost_necromancer_f",
+   "frames": 4,
+   "fps": 6,
+   "scale": 2.4
+  },
+  "4": {
+   "sprite": "mob_frost_whirl_0",
+   "frames": 1,
+   "scale": 2.0
+  },
+  "5": {
+   "sprite": "mob_ice_crystal_0",
+   "frames": 1,
+   "scale": 1.8
+  },
+  "6": {
+   "sprite": "mob_frost_corpse_f",
+   "frames": 4,
+   "fps": 6,
+   "scale": 1.6
+  },
+  "7": {
+   "sprite": "mob_ice_knight_f",
+   "frames": 8,
+   "fps": 10,
+   "scale": 2.2
+  },
+  "8": {
+   "sprite": "mob_ice_crystal_0",
+   "frames": 1,
+   "scale": 2.2
+  },
+  "9": {
+   "sprite": "mob_frost_commander",
+   "frames": 1,
+   "scale": 1.6
+  },
+  "10": {
+   "sprite": "boss_golem_p1_f",
+   "frames": 6,
+   "fps": 6,
+   "scale": 1.0
+  }
+ },
+ "boss_adds": [
+  "ice_zombie",
+  "frost_skeleton"
+ ],
+ "boss_kits": {
+  "3": {
+   "phases": [
     {
-      "kind": "ice_zombie",
-      "from": 1,
-      "weight": 3
+     "share": 0.5,
+     "every": 2.2,
+     "attacks": [
+      {
+       "do": "summon",
+       "kind": "ice_zombie",
+       "count": 2
+      },
+      {
+       "do": "fan",
+       "count": 3,
+       "spread": 0.5,
+       "speed": 300,
+       "chill": 1.2
+      }
+     ]
     },
     {
-      "kind": "frost_skeleton",
-      "from": 1,
-      "weight": 2
-    },
-    {
-      "kind": "ice_slime",
-      "from": 2,
-      "weight": 2
-    },
-    {
-      "kind": "frost_imp",
-      "from": 3,
-      "weight": 3
-    },
-    {
-      "kind": "frost_whirl",
-      "from": 4,
-      "weight": 1
-    },
-    {
-      "kind": "ice_knight",
-      "from": 5,
-      "weight": 2
-    },
-    {
-      "kind": "ice_crystal",
-      "from": 6,
-      "weight": 1
+     "share": 0.5,
+     "every": 1.8,
+     "title": "Der Frostnekromant ruft die Kälte",
+     "attacks": [
+      {
+       "do": "summon",
+       "kind": "frost_skeleton",
+       "count": 2
+      },
+      {
+       "do": "ring",
+       "count": 12,
+       "speed": 260,
+       "chill": 1.0
+      },
+      {
+       "do": "fan",
+       "count": 5,
+       "spread": 0.8,
+       "speed": 320,
+       "chill": 1.2
+      }
+     ]
     }
-  ],
-  "bosses": {
-    "1": {
-      "sprite": "mob_ice_slime_0",
-      "frames": 1,
-      "scale": 2.2
+   ]
+  },
+  "6": {
+   "phases": [
+    {
+     "share": 0.5,
+     "every": 2.4,
+     "attacks": [
+      {
+       "do": "stomp",
+       "rings": 3,
+       "count": 20,
+       "gap": 0.9,
+       "speed": 280,
+       "pause": 0.5
+      },
+      {
+       "do": "breath",
+       "duration": 2.0,
+       "turn": 1.6,
+       "rate": 0.07,
+       "speed": 360,
+       "chill": 1.0
+      }
+     ]
     },
-    "2": {
-      "sprite": "mob_frost_imp_f",
-      "frames": 8,
-      "fps": 12,
-      "scale": 2.4
+    {
+     "share": 0.5,
+     "every": 2.0,
+     "title": "Die Frostleiche bricht auf",
+     "tint": [
+      1.3,
+      1.5,
+      2.0
+     ],
+     "attacks": [
+      {
+       "do": "charge",
+       "speed": 900,
+       "time": 0.7,
+       "windup": 0.6
+      },
+      {
+       "do": "icicles",
+       "count": 6,
+       "radius": 70,
+       "delay": 1.0,
+       "spread": 320
+      },
+      {
+       "do": "stomp",
+       "rings": 3,
+       "count": 24,
+       "gap": 0.8,
+       "speed": 320,
+       "pause": 0.4
+      }
+     ]
+    }
+   ]
+  },
+  "9": {
+   "shield_arc": 1.6,
+   "phases": [
+    {
+     "share": 0.5,
+     "every": 2.4,
+     "attacks": [
+      {
+       "do": "summon",
+       "kind": "ice_knight",
+       "count": 2
+      },
+      {
+       "do": "charge",
+       "speed": 850,
+       "time": 0.6,
+       "windup": 0.7
+      },
+      {
+       "do": "fan",
+       "count": 3,
+       "spread": 0.4,
+       "speed": 420
+      }
+     ]
     },
-    "3": {
-      "sprite": "mob_frost_necromancer_f",
-      "frames": 4,
-      "fps": 6,
-      "scale": 2.4
-    },
-    "4": {
-      "sprite": "mob_frost_whirl_0",
-      "frames": 1,
-      "scale": 2.0
-    },
-    "5": {
-      "sprite": "mob_ice_crystal_0",
-      "frames": 1,
-      "scale": 1.8
-    },
-    "6": {
-      "sprite": "mob_frost_corpse_f",
-      "frames": 4,
-      "fps": 6,
-      "scale": 1.6
-    },
-    "7": {
-      "sprite": "mob_ice_knight_f",
-      "frames": 8,
-      "fps": 10,
-      "scale": 2.2
-    },
-    "8": {
-      "sprite": "mob_ice_crystal_0",
-      "frames": 1,
-      "scale": 2.2
-    },
-    "9": {
-      "sprite": "mob_frost_commander",
-      "frames": 1,
-      "scale": 1.6
-    },
-    "10": {
+    {
+     "share": 0.5,
+     "every": 2.0,
+     "title": "Der Frostkommandant wirft den Umhang ab",
+     "tint": [
+      1.2,
+      1.4,
+      2.0
+     ],
+     "attacks": [
+      {
+       "do": "ring",
+       "count": 16,
+       "speed": 300
+      },
+      {
+       "do": "charge",
+       "speed": 950,
+       "time": 0.6,
+       "windup": 0.6
+      },
+      {
+       "do": "summon",
+       "kind": "ice_knight",
+       "count": 2
+      },
+      {
+       "do": "fan",
+       "count": 5,
+       "spread": 0.7,
+       "speed": 440
+      }
+     ]
+    }
+   ]
+  },
+  "10": {
+   "hp": [
+    150,
+    150,
+    150
+   ],
+   "phases": [
+    {
+     "name": "Eispanzer",
+     "look": {
       "sprite": "boss_golem_p1_f",
       "frames": 6,
       "fps": 6,
       "scale": 1.0
+     },
+     "every": 2.2,
+     "attacks": [
+      {
+       "do": "fist",
+       "speed": 620,
+       "back": 0.75
+      },
+      {
+       "do": "stomp",
+       "rings": 3,
+       "count": 24,
+       "gap": 0.8,
+       "speed": 300,
+       "pause": 0.5
+      },
+      {
+       "do": "icicles",
+       "count": 6,
+       "radius": 80,
+       "delay": 1.0,
+       "spread": 420
+      }
+     ]
+    },
+    {
+     "name": "Gletscherkern",
+     "title": "Hrimgar: Der Panzer bricht, der Kern glüht",
+     "look": {
+      "sprite": "boss_golem_p2_f",
+      "frames": 6,
+      "fps": 7,
+      "scale": 1.0
+     },
+     "every": 2.0,
+     "guard": 0.5,
+     "attacks": [
+      {
+       "do": "teleport_center",
+       "windup": 0.6,
+       "push": 160
+      },
+      {
+       "do": "summon",
+       "kind": "ice_crystal",
+       "count": 4,
+       "around": 220,
+       "guard": true
+      },
+      {
+       "do": "breath",
+       "duration": 2.4,
+       "turn": 6.283,
+       "rate": 0.06,
+       "speed": 340,
+       "chill": 2.0
+      },
+      {
+       "do": "chill_zones",
+       "count": 4,
+       "radius": 110,
+       "time": 6.0
+      }
+     ]
+    },
+    {
+     "name": "Schneesturm",
+     "title": "Hrimgar ruft den Schneesturm",
+     "look": {
+      "sprite": "boss_golem_p3_f",
+      "frames": 6,
+      "fps": 9,
+      "scale": 1.0
+     },
+     "every": 1.6,
+     "storm": true,
+     "attacks": [
+      {
+       "do": "spiral",
+       "arms": 2,
+       "duration": 2.5,
+       "rate": 0.08,
+       "speed": 320
+      },
+      {
+       "do": "fist_hunt",
+       "count": 2,
+       "time": 5.0,
+       "speed": 260
+      },
+      {
+       "do": "charge",
+       "speed": 1000,
+       "time": 0.8,
+       "windup": 0.7
+      }
+     ],
+     "last_stand": {
+      "below": 0.15,
+      "safe": 3,
+      "radius": 110,
+      "windup": 1.6,
+      "rest": 4.0,
+      "rest_damage": 1.5
+     }
     }
+   ]
+  }
+ },
+ "phase_break": {
+  "inv": 2.0,
+  "push": 160,
+  "ring": 18,
+  "ring_speed": 420
+ },
+ "liquid": {
+  "hurt": false,
+  "slow": 1.0,
+  "slide": true,
+  "grip": 0.08
+ },
+ "keys": {
+  "A": {
+   "name": "Goldschlüssel",
+   "hint": "fällt, wenn ein Kampfraum vor dem Tor besiegt ist.",
+   "color": "#e8c25a",
+   "tint": [
+    1,
+    1,
+    1
+   ],
+   "sprite": "key_gold"
   },
-  "boss_adds": [
-    "ice_zombie",
-    "frost_skeleton"
+  "B": {
+   "name": "Eisschlüssel",
+   "hint": "liegt in einer Truhe oder fällt in einem Seitenraum.",
+   "color": "#4fb4ff",
+   "tint": [
+    1,
+    1,
+    1
+   ],
+   "sprite": "key_ice"
+  },
+  "C": {
+   "name": "Kristallschlüssel",
+   "hint": "liegt in einer Truhe oder fällt in einem Kampfraum nahe der Wächterhalle.",
+   "color": "#f2f8ff",
+   "tint": [
+    1,
+    1,
+    1
+   ],
+   "sprite": "key_crystal"
+  }
+ },
+ "words": [
+  [
+   "Die Hölle ist bezwungen",
+   "Die Frostgruft ist bezwungen"
   ],
-  "boss_kits": {
-    "3": {
-      "phases": [
-        {
-          "share": 0.5,
-          "every": 2.2,
-          "attacks": [
-            {
-              "do": "summon",
-              "kind": "ice_zombie",
-              "count": 2
-            },
-            {
-              "do": "fan",
-              "count": 3,
-              "spread": 0.5,
-              "speed": 300,
-              "chill": 1.2
-            }
-          ]
-        },
-        {
-          "share": 0.5,
-          "every": 1.8,
-          "title": "Der Frostnekromant ruft die Kälte",
-          "attacks": [
-            {
-              "do": "summon",
-              "kind": "frost_skeleton",
-              "count": 2
-            },
-            {
-              "do": "ring",
-              "count": 12,
-              "speed": 260,
-              "chill": 1.0
-            },
-            {
-              "do": "fan",
-              "count": 5,
-              "spread": 0.8,
-              "speed": 320,
-              "chill": 1.2
-            }
-          ]
-        }
-      ]
-    },
-    "6": {
-      "phases": [
-        {
-          "share": 0.5,
-          "every": 2.4,
-          "attacks": [
-            {
-              "do": "stomp",
-              "rings": 3,
-              "count": 20,
-              "gap": 0.9,
-              "speed": 280,
-              "pause": 0.5
-            },
-            {
-              "do": "breath",
-              "duration": 2.0,
-              "turn": 1.6,
-              "rate": 0.07,
-              "speed": 360,
-              "chill": 1.0
-            }
-          ]
-        },
-        {
-          "share": 0.5,
-          "every": 2.0,
-          "title": "Die Frostleiche bricht auf",
-          "tint": [
-            1.3,
-            1.5,
-            2.0
-          ],
-          "attacks": [
-            {
-              "do": "charge",
-              "speed": 900,
-              "time": 0.7,
-              "windup": 0.6
-            },
-            {
-              "do": "icicles",
-              "count": 6,
-              "radius": 70,
-              "delay": 1.0,
-              "spread": 320
-            },
-            {
-              "do": "stomp",
-              "rings": 3,
-              "count": 24,
-              "gap": 0.8,
-              "speed": 320,
-              "pause": 0.4
-            }
-          ]
-        }
-      ]
-    },
-    "9": {
-      "shield_arc": 1.6,
-      "phases": [
-        {
-          "share": 0.5,
-          "every": 2.4,
-          "attacks": [
-            {
-              "do": "summon",
-              "kind": "ice_knight",
-              "count": 2
-            },
-            {
-              "do": "charge",
-              "speed": 850,
-              "time": 0.6,
-              "windup": 0.7
-            },
-            {
-              "do": "fan",
-              "count": 3,
-              "spread": 0.4,
-              "speed": 420
-            }
-          ]
-        },
-        {
-          "share": 0.5,
-          "every": 2.0,
-          "title": "Der Frostkommandant wirft den Umhang ab",
-          "tint": [
-            1.2,
-            1.4,
-            2.0
-          ],
-          "attacks": [
-            {
-              "do": "ring",
-              "count": 16,
-              "speed": 300
-            },
-            {
-              "do": "charge",
-              "speed": 950,
-              "time": 0.6,
-              "windup": 0.6
-            },
-            {
-              "do": "summon",
-              "kind": "ice_knight",
-              "count": 2
-            },
-            {
-              "do": "fan",
-              "count": 5,
-              "spread": 0.7,
-              "speed": 440
-            }
-          ]
-        }
-      ]
-    },
-    "10": {
-      "hp": [
-        150,
-        150,
-        150
-      ],
-      "phases": [
-        {
-          "name": "Eispanzer",
-          "look": {
-            "sprite": "boss_golem_p1_f",
-            "frames": 6,
-            "fps": 6,
-            "scale": 1.0
-          },
-          "every": 2.2,
-          "attacks": [
-            {
-              "do": "fist",
-              "speed": 620,
-              "back": 0.75
-            },
-            {
-              "do": "stomp",
-              "rings": 3,
-              "count": 24,
-              "gap": 0.8,
-              "speed": 300,
-              "pause": 0.5
-            },
-            {
-              "do": "icicles",
-              "count": 6,
-              "radius": 80,
-              "delay": 1.0,
-              "spread": 420
-            }
-          ]
-        },
-        {
-          "name": "Gletscherkern",
-          "title": "Hrimgar: Der Panzer bricht, der Kern glüht",
-          "look": {
-            "sprite": "boss_golem_p2_f",
-            "frames": 6,
-            "fps": 7,
-            "scale": 1.0
-          },
-          "every": 2.0,
-          "guard": 0.5,
-          "attacks": [
-            {
-              "do": "teleport_center",
-              "windup": 0.6,
-              "push": 160
-            },
-            {
-              "do": "summon",
-              "kind": "ice_crystal",
-              "count": 4,
-              "around": 220,
-              "guard": true
-            },
-            {
-              "do": "breath",
-              "duration": 2.4,
-              "turn": 6.283,
-              "rate": 0.06,
-              "speed": 340,
-              "chill": 2.0
-            },
-            {
-              "do": "chill_zones",
-              "count": 4,
-              "radius": 110,
-              "time": 6.0
-            }
-          ]
-        },
-        {
-          "name": "Schneesturm",
-          "title": "Hrimgar ruft den Schneesturm",
-          "look": {
-            "sprite": "boss_golem_p3_f",
-            "frames": 6,
-            "fps": 9,
-            "scale": 1.0
-          },
-          "every": 1.6,
-          "storm": true,
-          "attacks": [
-            {
-              "do": "spiral",
-              "arms": 2,
-              "duration": 2.5,
-              "rate": 0.08,
-              "speed": 320
-            },
-            {
-              "do": "fist_hunt",
-              "count": 2,
-              "time": 5.0,
-              "speed": 260
-            },
-            {
-              "do": "charge",
-              "speed": 1000,
-              "time": 0.8,
-              "windup": 0.7
-            }
-          ],
-          "last_stand": {
-            "below": 0.15,
-            "safe": 3,
-            "radius": 110,
-            "windup": 1.6,
-            "rest": 4.0,
-            "rest_damage": 1.5
-          }
-        }
-      ]
-    }
-  },
-  "phase_break": {
-    "inv": 2.0,
-    "push": 160,
-    "ring": 18,
-    "ring_speed": 420
-  },
-  "liquid": {
-    "hurt": false,
-    "slow": 1.0,
-    "slide": true,
-    "grip": 0.08
-  },
-  "keys": {
-    "A": {
-      "name": "Goldschlüssel",
-      "hint": "fällt, wenn ein Kampfraum vor dem Tor besiegt ist.",
-      "color": "#e8c25a",
-      "tint": [
-        1,
-        1,
-        1
-      ],
-      "sprite": "key_gold"
-    },
-    "B": {
-      "name": "Eisschlüssel",
-      "hint": "liegt in einer Truhe oder fällt in einem Seitenraum.",
-      "color": "#4fb4ff",
-      "tint": [
-        1,
-        1,
-        1
-      ],
-      "sprite": "key_ice"
-    },
-    "C": {
-      "name": "Kristallschlüssel",
-      "hint": "liegt in einer Truhe oder fällt in einem Kampfraum nahe der Wächterhalle.",
-      "color": "#f2f8ff",
-      "tint": [
-        1,
-        1,
-        1
-      ],
-      "sprite": "key_crystal"
-    }
-  },
-  "words": [
-    [
-      "Die Hölle ist bezwungen",
-      "Die Frostgruft ist bezwungen"
-    ],
-    [
-      "Die Hölle verlassen",
-      "Die Frostgruft verlassen"
-    ],
-    [
-      "Riesentresor",
-      "Frosttresor"
-    ],
-    [
-      "Runensteine",
-      "Eissplitter"
-    ],
-    [
-      "Runenplatten",
-      "Eisplatten"
-    ],
-    [
-      "Runenplatte",
-      "Eisplatte"
-    ],
-    [
-      "Alle Runen leuchten",
-      "Alle Platten leuchten"
-    ],
-    [
-      "Feuerschalen",
-      "Frostflammen"
-    ],
-    [
-      "Feuerschale",
-      "Frostflamme"
-    ],
-    [
-      "Alle Schalen brennen",
-      "Alle Flammen brennen"
-    ],
-    [
-      "Das Portal erwacht erst",
-      "Die Treppe öffnet sich erst"
-    ],
-    [
-      "Die Portalkammer ist offen",
-      "Die Treppe nach unten ist frei"
-    ],
-    [
-      "Portal erloschen",
-      "Treppe versperrt"
-    ],
-    [
-      "Portal zu Etage",
-      "Treppe zu Etage"
-    ],
-    [
-      "von Feuer getroffen",
-      "von Eissplittern getroffen"
-    ],
-    [
-      "von Glutlingen verbrannt",
-      "von Frostwesen erwischt"
-    ],
-    [
-      "vom Glutschlot verbrannt",
-      "vom Frostschlot erfroren"
-    ],
-    [
-      "Der Schädelhaufen zerfällt",
-      "Der Eiskristall zerspringt"
-    ],
-    [
-      "Das Siegel bricht: drei Dämonen springen heraus!",
-      "Die Mimic-Truhe beißt: drei Frostwesen springen heraus!"
-    ],
-    [
-      "Das Siegel bricht",
-      "Die Mimic-Truhe springt auf"
-    ],
-    [
-      "In die Grube gestürzt",
-      "Ins Eisloch gestürzt"
-    ],
-    [
-      "Aus der Grube zurück zum Start",
-      "Aus dem Eisloch zurück zum Start"
-    ]
+  [
+   "Die Hölle verlassen",
+   "Die Frostgruft verlassen"
   ],
+  [
+   "Riesentresor",
+   "Frosttresor"
+  ],
+  [
+   "Runensteine",
+   "Eissplitter"
+  ],
+  [
+   "Runenplatten",
+   "Eisplatten"
+  ],
+  [
+   "Runenplatte",
+   "Eisplatte"
+  ],
+  [
+   "Alle Runen leuchten",
+   "Alle Platten leuchten"
+  ],
+  [
+   "Feuerschalen",
+   "Frostflammen"
+  ],
+  [
+   "Feuerschale",
+   "Frostflamme"
+  ],
+  [
+   "Alle Schalen brennen",
+   "Alle Flammen brennen"
+  ],
+  [
+   "Das Portal erwacht erst",
+   "Die Treppe öffnet sich erst"
+  ],
+  [
+   "Die Portalkammer ist offen",
+   "Die Treppe nach unten ist frei"
+  ],
+  [
+   "Portal erloschen",
+   "Treppe versperrt"
+  ],
+  [
+   "Portal zu Etage",
+   "Treppe zu Etage"
+  ],
+  [
+   "von Feuer getroffen",
+   "von Eissplittern getroffen"
+  ],
+  [
+   "von Glutlingen verbrannt",
+   "von Frostwesen erwischt"
+  ],
+  [
+   "vom Glutschlot verbrannt",
+   "vom Frostschlot erfroren"
+  ],
+  [
+   "Der Schädelhaufen zerfällt",
+   "Der Eiskristall zerspringt"
+  ],
+  [
+   "Das Siegel bricht: drei Dämonen springen heraus!",
+   "Die Mimic-Truhe beißt: drei Frostwesen springen heraus!"
+  ],
+  [
+   "Das Siegel bricht",
+   "Die Mimic-Truhe springt auf"
+  ],
+  [
+   "In die Grube gestürzt",
+   "Ins Eisloch gestürzt"
+  ],
+  [
+   "Aus der Grube zurück zum Start",
+   "Aus dem Eisloch zurück zum Start"
+  ]
+ ],
+ "colors": {
+  "ink": "#e6f2ff",
+  "accent": "#7ff6ff",
+  "gold": "#cfe8ff",
+  "sub": [
+   0.56,
+   0.78,
+   1.0
+  ],
+  "warn": "#ff8aa6",
+  "prompt_key": "#7ff6ff",
+  "shot_glow": [
+   0.5,
+   0.85,
+   1.0,
+   0.45
+  ],
+  "shot_core": [
+   0.92,
+   0.98,
+   1.0
+  ],
+  "eshot_glow": [
+   0.55,
+   0.45,
+   1.0,
+   0.5
+  ],
+  "eshot_core": [
+   0.85,
+   0.9,
+   1.0
+  ],
+  "ember": "#cfe8ff",
+  "ember_big": "#8cc8f2",
+  "ember_gold": "#ffffff",
+  "shade": [
+   0.01,
+   0.02,
+   0.06
+  ],
+  "shade_grade": [
+   0,
+   0.04,
+   0.24
+  ],
+  "grade": [
+   0.1,
+   0.3,
+   0.7
+  ],
+  "vignette": [
+   0.05,
+   0.15,
+   0.4
+  ],
+  "vignette_glow": [
+   0.1,
+   0.2,
+   0.4
+  ],
+  "boss_back": "#16213e",
+  "boss_bar": "#7ff6ff",
+  "map_here": "#2f63c4",
+  "map_cleared": "#1a2442",
+  "map_seen": "#1d3b8a",
+  "map_edge_seen": "#6479a6",
+  "map_edge": "#2c3a60",
+  "door": "#435683",
+  "mob_gross": [
+   0.6,
+   0.85,
+   1.4
+  ],
+  "mob_spucker": [
+   0.75,
+   0.6,
+   1.6
+  ],
+  "mob_boss": [
+   0.7,
+   1.0,
+   1.6
+  ],
+  "mob_boss_final": [
+   0.9,
+   0.9,
+   1.8
+  ]
+ },
+ "leveling": {
+  "base": 60,
+  "exponent": 1.3,
+  "heal": 2,
+  "max_level": 20,
+  "boss_exp": {
+   "guardian": 120,
+   "mini": 250
+  },
+  "skills": "res://assets/data/hero_skills.json",
+  "scale": 2.4,
+  "slow_boss_scale": 0.5
+ },
+ "gravity_staff": {
+  "name": "GRAVITATIONSSTAB",
+  "classes": [
+   "mage"
+  ],
+  "sprite": "weapon_gravity_staff",
+  "tint": [
+   0.75,
+   0.5,
+   1.6
+  ],
+  "ball": {
+   "name": "GRAVITATIONSBALL",
+   "damage": 2.6,
+   "cooldown": 0.36,
+   "speed": 560,
+   "life": 1.2,
+   "pull_radius": 190,
+   "pull": 280,
+   "burst": 140,
+   "short": "BALL"
+  },
+  "wall": {
+   "name": "GRAVITATIONSWAND",
+   "key": "1",
+   "cooldown": 10,
+   "length": 300,
+   "thickness": 34,
+   "time": 5.0,
+   "short": "WAND"
+  },
+  "bar": {
+   "name": "SCHWERKRAFTLEISTE",
+   "key": "2",
+   "cooldown": 8,
+   "max_length": 420,
+   "time": 4.0,
+   "hold": 2.5,
+   "width": 26,
+   "short": "LEISTE"
+  },
+  "skills": [
+   {
+    "id": "g_wall",
+    "key": "1",
+    "unlock": 1,
+    "name": "GRAVITATIONSWAND",
+    "short": "WAND",
+    "cooldown": 10
+   },
+   {
+    "id": "g_bar",
+    "key": "2",
+    "unlock": 3,
+    "name": "SCHWERKRAFTLEISTE",
+    "short": "LEISTE",
+    "cooldown": 8,
+    "hint": "2 halten oder rechte Maus ziehen"
+   },
+   {
+    "id": "g_rock",
+    "key": "3",
+    "unlock": 6,
+    "name": "STEINWURF",
+    "short": "STEINWURF",
+    "cooldown": 7,
+    "lift": 0.45,
+    "speed": 760,
+    "life": 1.1,
+    "damage": 4.0,
+    "burst": 130
+   },
+   {
+    "id": "g_golem",
+    "key": "4",
+    "unlock": 10,
+    "name": "STEINGOLEM",
+    "short": "GOLEM",
+    "cooldown": 30,
+    "time": 15,
+    "hp": 40,
+    "speed": 230,
+    "damage": 2.0,
+    "every": 0.9,
+    "reach": 120,
+    "scale": 2.0
+   }
+  ]
+ },
+ "sounds": {
+  "shot_arrow": "shoot_arrow",
+  "shot_magic": "shoot_magic",
+  "swing": "swing",
+  "hit_flesh": "hit_flesh",
+  "hit_bone": "hit_bone",
+  "hit_void": "hit_void",
+  "kill_flesh": "kill_flesh",
+  "kill_bone": "kill_bone",
+  "kill_void": "break_void",
+  "hurt": "hurt",
+  "hurt_voice": "hurt_voice",
+  "chest": "chest_open",
+  "gate_open": "door",
+  "gate_locked": "doors_lock",
+  "fight_start": "doors_lock",
+  "stairs": "stairs",
+  "room_clear": "room_clear",
+  "key": "perk",
+  "level_up": "perk",
+  "boss_intro": "boss_intro",
+  "boss_phase": "attack_roar",
+  "boss_dead": "boss_defeated",
+  "boss_summon": "attack_summon",
+  "boss_ring": "attack_salve",
+  "boss_stomp": "attack_slam",
+  "boss_breath": "attack_beam",
+  "boss_charge": "attack_bite",
+  "boss_windup": "windup_summon",
+  "enemy_shot": "attack_arrow",
+  "block": "block",
+  "blast": "blast",
+  "plate": "ui_click",
+  "plate_wrong": "ui_back",
+  "puzzle_solved": "regrow",
+  "secret": "collapse_bone",
+  "relic": "perk",
+  "step": "step",
+  "skill_1": "",
+  "skill_2": "",
+  "skill_3": "",
+  "skill_4": "",
+  "blink": "void_burst",
+  "beam": "windup_beam",
+  "no_cooldown": "ui_back"
+ },
+ "music": true,
+ "placeholder_note": false,
+ "relics": {
+  "floors": [
+   3,
+   4,
+   5,
+   6
+  ],
+  "pools": {
+   "mage": [
+    "gravity_staff"
+   ],
+   "swordsman": [
+    "gravity_hammer"
+   ],
+   "archer": [
+    "shadow_dagger"
+   ]
+  },
+  "order": [
+   3,
+   1,
+   4,
+   2
+  ],
+  "label": "Reliktsiegel",
+  "drop": "boss"
+ },
+ "gravity_hammer": {
+  "name": "GRAVITATIONSHAMMER",
+  "classes": [
+   "swordsman"
+  ],
+  "sprite": "weapon_gravity_hammer",
+  "tint": [
+   0.75,
+   0.5,
+   1.6
+  ],
+  "attack": {
+   "name": "HAMMERSCHLAG",
+   "short": "SCHLAG",
+   "damage": 4.5,
+   "cooldown": 0.55,
+   "reach": 180,
+   "arc": 2.4,
+   "pull": 90
+  },
+  "skills": [
+   {
+    "id": "h_leap",
+    "key": "1",
+    "unlock": 1,
+    "name": "SPRUNGSCHLAG",
+    "short": "SPRUNG",
+    "cooldown": 7,
+    "distance": 380,
+    "time": 0.35,
+    "radius": 200,
+    "damage": 2.5,
+    "pull": 120
+   },
+   {
+    "id": "h_field",
+    "key": "2",
+    "unlock": 3,
+    "name": "GRAVITATIONSFELD",
+    "short": "FELD",
+    "cooldown": 11,
+    "radius": 230,
+    "time": 3.0,
+    "pull": 160,
+    "slow": 0.6,
+    "dps": 0.6
+   },
+   {
+    "id": "h_wave",
+    "key": "3",
+    "unlock": 6,
+    "name": "FELSENWELLE",
+    "short": "FELSEN",
+    "cooldown": 8,
+    "count": 6,
+    "step": 110,
+    "every": 0.08,
+    "radius": 80,
+    "damage": 2.0
+   },
+   {
+    "id": "h_meteor",
+    "key": "4",
+    "unlock": 10,
+    "name": "METEOR",
+    "short": "METEOR",
+    "cooldown": 22,
+    "delay": 1.0,
+    "radius": 230,
+    "damage": 8.0
+   }
+  ]
+ },
+ "cards": {
+  "all": [
+   {
+    "id": "vigor",
+    "name": "EISERNE HAUT",
+    "desc": "+1 Herz.",
+    "max": 3,
+    "hearts": 2
+   }
+  ],
+  "swordsman": [
+   {
+    "id": "sw_heavy",
+    "name": "SCHWERER HIEB",
+    "desc": "+15 % Schaden.",
+    "max": 3,
+    "damage": 0.15
+   },
+   {
+    "id": "sw_swift",
+    "name": "FLINKE KLINGE",
+    "desc": "10 % schnellere Hiebe.",
+    "max": 3,
+    "rate": 0.1
+   },
+   {
+    "id": "double_whirl",
+    "name": "DOPPELWIRBEL",
+    "desc": "Wirbelklinge dreht sich zweimal (2. Runde 60 %).",
+    "max": 1,
+    "skill": "1",
+    "damage": 0.6
+   },
+   {
+    "id": "wide_swing",
+    "name": "WEITER SCHWUNG",
+    "desc": "Wirbelklinge +20 % Radius.",
+    "max": 2,
+    "skill": "1",
+    "radius": 0.2
+   },
+   {
+    "id": "wave_fan",
+    "name": "WELLENFÄCHER",
+    "desc": "Klingenwelle: 3 Wellen im Fächer (je 60 %).",
+    "max": 1,
+    "skill": "2",
+    "count": 3,
+    "spread": 0.35,
+    "damage": 0.6
+   },
+   {
+    "id": "shockwave",
+    "name": "SCHOCKWELLE",
+    "desc": "Ansturm endet mit einem Stoß (1x, betäubt 0,5 s).",
+    "max": 1,
+    "skill": "3",
+    "radius": 160,
+    "damage": 1.0,
+    "stun": 0.5
+   },
+   {
+    "id": "sharp_blades",
+    "name": "SCHARFE KLINGEN",
+    "desc": "Rage: +10 % Krit-Chance.",
+    "max": 2,
+    "skill": "4",
+    "crit": 0.1
+   }
+  ],
+  "archer": [
+   {
+    "id": "ar_rapid",
+    "name": "SCHNELLFEUER",
+    "desc": "10 % schnellere Schüsse.",
+    "max": 3,
+    "rate": 0.1
+   },
+   {
+    "id": "ar_fleet",
+    "name": "LEICHTFUSS",
+    "desc": "+6 % Lauftempo.",
+    "max": 3,
+    "speed": 0.06
+   },
+   {
+    "id": "wide_volley",
+    "name": "BREITE SALVE",
+    "desc": "Salve +2 Pfeile.",
+    "max": 2,
+    "skill": "1",
+    "count": 2
+   },
+   {
+    "id": "poison_tips",
+    "name": "GIFTSPITZEN",
+    "desc": "Salve vergiftet: 0,8x Schaden/s für 3 s.",
+    "max": 1,
+    "skill": "1",
+    "dps": 0.8,
+    "time": 3
+   },
+   {
+    "id": "quick_draw",
+    "name": "SCHNELLSPANNER",
+    "desc": "Ballistapfeil lädt 40 % schneller.",
+    "max": 1,
+    "skill": "2",
+    "charge": 0.4
+   },
+   {
+    "id": "heavy_tip",
+    "name": "WUCHTSPITZE",
+    "desc": "Ballistapfeil +25 % Schaden.",
+    "max": 2,
+    "skill": "2",
+    "damage": 0.25
+   },
+   {
+    "id": "ice_thorns",
+    "name": "EISDORNEN",
+    "desc": "Krähenfüße verlangsamen 60 % statt 40 %.",
+    "max": 1,
+    "skill": "3",
+    "slow": 0.6
+   },
+   {
+    "id": "wall_breaker",
+    "name": "MAUERBRECHER",
+    "desc": "Pfeilfaust: +40 % Explosionsschaden.",
+    "max": 2,
+    "skill": "4",
+    "burst": 0.4
+   }
+  ],
+  "mage": [
+   {
+    "id": "mg_focus",
+    "name": "FOKUS",
+    "desc": "+15 % Schaden.",
+    "max": 3,
+    "damage": 0.15
+   },
+   {
+    "id": "mg_haste",
+    "name": "ARKANE EILE",
+    "desc": "10 % schnellere Zauber.",
+    "max": 3,
+    "rate": 0.1
+   },
+   {
+    "id": "twin_fire",
+    "name": "ZWILLINGSFEUER",
+    "desc": "Feuerball: ein zweiter Feuerball (Stufe 2: drei).",
+    "max": 2,
+    "skill": "1",
+    "spread": 0.22
+   },
+   {
+    "id": "wildfire",
+    "name": "GROSSBRAND",
+    "desc": "Feuerball +25 % Explosionsradius.",
+    "max": 2,
+    "skill": "1",
+    "radius": 0.25
+   },
+   {
+    "id": "more_jumps",
+    "name": "WEITERE SPRÜNGE",
+    "desc": "Kettenblitz +2 Sprünge.",
+    "max": 2,
+    "skill": "2",
+    "jumps": 2
+   },
+   {
+    "id": "arcane_rift",
+    "name": "ARKANRISS",
+    "desc": "Blinzeln: Explosion am Startpunkt (2x).",
+    "max": 1,
+    "skill": "3",
+    "radius": 150,
+    "damage": 2.0
+   },
+   {
+    "id": "long_breath",
+    "name": "LANGER ATEM",
+    "desc": "Photoneneis +1 s.",
+    "max": 2,
+    "skill": "4",
+    "time": 1.0
+   }
+  ],
+  "gravity_staff": [
+   {
+    "id": "twin_ball",
+    "name": "ZWILLINGSBALL",
+    "desc": "Gravitationsball: ein zweiter Ball.",
+    "max": 1,
+    "spread": 0.18
+   },
+   {
+    "id": "dense_wall",
+    "name": "DICHTE WAND",
+    "desc": "Gravitationswand +40 % Länge und Dauer.",
+    "max": 2,
+    "skill": "1",
+    "size": 0.4
+   },
+   {
+    "id": "heavy_rock",
+    "name": "SPLITTERFELS",
+    "desc": "Steinwurf zerspringt in 4 Splitter (je 1x).",
+    "max": 1,
+    "skill": "3",
+    "count": 4,
+    "damage": 1.0
+   },
+   {
+    "id": "golem_core",
+    "name": "GOLEMKERN",
+    "desc": "Steingolem +50 % Leben und Schaden.",
+    "max": 1,
+    "skill": "4",
+    "boost": 0.5
+   }
+  ],
+  "gravity_hammer": [
+   {
+    "id": "wide_smash",
+    "name": "WUCHTIGER SCHLAG",
+    "desc": "Hammerschlag +20 % Reichweite.",
+    "max": 2,
+    "reach": 0.2
+   },
+   {
+    "id": "aftershock",
+    "name": "NACHBEBEN",
+    "desc": "Sprungschlag bebt 0,4 s später nach (60 %).",
+    "max": 1,
+    "skill": "1",
+    "damage": 0.6
+   },
+   {
+    "id": "deep_field",
+    "name": "TIEFES FELD",
+    "desc": "Gravitationsfeld +30 % Sog und Radius.",
+    "max": 1,
+    "skill": "2",
+    "boost": 0.3
+   },
+   {
+    "id": "meteor_shower",
+    "name": "METEORSCHAUER",
+    "desc": "Meteor: zwei weitere kleine Einschläge (je 40 %).",
+    "max": 1,
+    "skill": "4",
+    "count": 2,
+    "damage": 0.4
+   }
+  ],
+  "shadow_dagger": [
+   {
+    "id": "long_shadow",
+    "name": "LANGER SCHATTEN",
+    "desc": "Schattenschritt trifft +1 Gegner.",
+    "max": 2,
+    "skill": "1",
+    "hits": 1
+   },
+   {
+    "id": "sharp_edge",
+    "name": "SCHARFE SCHNEIDE",
+    "desc": "Dolchstich +20 % Schaden.",
+    "max": 2,
+    "damage": 0.2
+   },
+   {
+    "id": "thick_smoke",
+    "name": "DICHTER RAUCH",
+    "desc": "Rauchbombe hält 1 s länger.",
+    "max": 2,
+    "skill": "3",
+    "time": 1.0
+   },
+   {
+    "id": "blade_cyclone",
+    "name": "KLINGENZYKLON",
+    "desc": "Klingenwirbel +30 % Radius.",
+    "max": 1,
+    "skill": "2",
+    "radius": 0.3
+   }
+  ]
+ },
+ "styled_hud": true,
+ "shadow_dagger": {
+  "name": "SCHATTENDOLCH",
+  "classes": [
+   "archer"
+  ],
+  "sprite": "weapon_shadow_dagger",
+  "tint": [
+   0.7,
+   0.6,
+   1.4
+  ],
+  "attack": {
+   "name": "DOLCHSTICH",
+   "short": "STICH",
+   "damage": 1.8,
+   "cooldown": 0.2,
+   "reach": 130,
+   "arc": 1.3,
+   "pull": 0,
+   "backstab": 2.0
+  },
+  "skills": [
+   {
+    "id": "d_step",
+    "key": "1",
+    "unlock": 1,
+    "name": "SCHATTENSCHRITT",
+    "short": "SCHRITT",
+    "cooldown": 6,
+    "range": 650,
+    "hits": 3,
+    "every": 0.14,
+    "damage": 1.6
+   },
+   {
+    "id": "d_blades",
+    "key": "2",
+    "unlock": 3,
+    "name": "KLINGENWIRBEL",
+    "short": "WIRBEL",
+    "cooldown": 9,
+    "time": 3.0,
+    "radius": 130,
+    "every": 0.25,
+    "damage": 0.9
+   },
+   {
+    "id": "d_smoke",
+    "key": "3",
+    "unlock": 6,
+    "name": "RAUCHBOMBE",
+    "short": "RAUCH",
+    "cooldown": 14,
+    "time": 3.5,
+    "radius": 210,
+    "slow": 0.5
+   },
+   {
+    "id": "d_thousand",
+    "key": "4",
+    "unlock": 10,
+    "name": "TAUSEND KLINGEN",
+    "short": "KLINGEN",
+    "cooldown": 26,
+    "time": 2.5,
+    "radius": 230,
+    "every": 0.1,
+    "damage": 0.7
+   }
+  ]
+ },
+ "talents": "res://assets/data/frost_talents.json",
+ "master_cooldown": 45,
+ "feel": {
+  "_note": "Story 1's combat feel (src/hell/frost_feel.gd): scale = crypt effect sprites to this world; hitstop in seconds, shake in pixels; blood = chip colour per enemy material; step_every / idle_gap in seconds, idle_range in pixels.",
+  "scale": 3.0,
+  "hitstop_hit": 0.03,
+  "hitstop_crit": 0.07,
+  "hitstop_kill": 0.05,
+  "hitstop_hurt": 0.09,
+  "shake_crit": 6,
+  "shake_kill": 5,
+  "shake_hurt": 14,
+  "shake_blast": 8,
+  "blood": {
+   "flesh": "7fb0d0",
+   "bone": "e6dcc6",
+   "void": "9fe3ee"
+  },
   "colors": {
-    "ink": "#e6f2ff",
-    "accent": "#7ff6ff",
-    "gold": "#cfe8ff",
-    "sub": [
-      0.56,
-      0.78,
-      1.0
+   "hurt": "d8484f"
+  },
+  "step_every": 0.3,
+  "idle_gap": 1.6,
+  "idle_range": 760
+ },
+ "moves": {
+  "_note": "Story 1's enemy moves (src/hell/frost_moves.gd, moves from assets/data/combat_boss_moves.json). scale: crypt pixels to this world; damage_scale: crypt half hearts to hits here (at least 1). sets per enemy kind; guardian = floor guardians without a boss kit. summon_map: crypt kinds to frost kinds.",
+  "scale": 2.4,
+  "damage_scale": 0.5,
+  "summon_map": {
+   "tiny_zombie": "ice_slime_s",
+   "skeleton_guard": "ice_knight",
+   "skeleton": "frost_skeleton"
+  },
+  "sets": {
+   "guardian": {
+    "every": [
+     2.4,
+     3.6
     ],
-    "warn": "#ff8aa6",
-    "prompt_key": "#7ff6ff",
-    "shot_glow": [
-      0.5,
-      0.85,
-      1.0,
-      0.45
-    ],
-    "shot_core": [
-      0.92,
-      0.98,
-      1.0
-    ],
-    "eshot_glow": [
-      0.55,
-      0.45,
-      1.0,
-      0.5
-    ],
-    "eshot_core": [
-      0.85,
-      0.9,
-      1.0
-    ],
-    "ember": "#cfe8ff",
-    "ember_big": "#8cc8f2",
-    "ember_gold": "#ffffff",
-    "shade": [
-      0.01,
-      0.02,
-      0.06
-    ],
-    "shade_grade": [
-      0,
-      0.04,
-      0.24
-    ],
-    "grade": [
-      0.1,
-      0.3,
-      0.7
-    ],
-    "vignette": [
-      0.05,
-      0.15,
-      0.4
-    ],
-    "vignette_glow": [
-      0.1,
-      0.2,
-      0.4
-    ],
-    "boss_back": "#16213e",
-    "boss_bar": "#7ff6ff",
-    "map_here": "#2f63c4",
-    "map_cleared": "#1a2442",
-    "map_seen": "#1d3b8a",
-    "map_edge_seen": "#6479a6",
-    "map_edge": "#2c3a60",
-    "door": "#435683",
-    "mob_gross": [
-      0.6,
-      0.85,
-      1.4
-    ],
-    "mob_spucker": [
-      0.75,
-      0.6,
-      1.6
-    ],
-    "mob_boss": [
-      0.7,
-      1.0,
-      1.6
-    ],
-    "mob_boss_final": [
-      0.9,
-      0.9,
-      1.8
+    "rage_below": 0.4,
+    "moves": [
+     {
+      "move": "ice_fan",
+      "weight": 3
+     },
+     {
+      "move": "frost_nova",
+      "weight": 2,
+      "near": 130,
+      "cooldown": 6
+     },
+     {
+      "move": "hail",
+      "weight": 3,
+      "cooldown": 4
+     },
+     {
+      "move": "ice_slide",
+      "weight": 2,
+      "cooldown": 7,
+      "far": 110
+     },
+     {
+      "move": "ice_armor",
+      "weight": 1,
+      "cooldown": 12
+     },
+     {
+      "move": "frost_raise",
+      "weight": 1,
+      "cooldown": 14,
+      "hp_below": 0.6
+     }
     ]
-  },
-  "leveling": {
-    "base": 60,
-    "exponent": 1.3,
-    "heal": 2,
-    "max_level": 20,
-    "boss_exp": {
-      "guardian": 120,
-      "mini": 250
-    },
-    "skills": "res://assets/data/hero_skills.json",
-    "scale": 2.4,
-    "slow_boss_scale": 0.5
-  },
-  "gravity_staff": {
-    "name": "GRAVITATIONSSTAB",
-    "classes": [
-      "mage"
+   },
+   "ice_zombie": {
+    "every": [
+     3.5,
+     5.5
     ],
-    "sprite": "weapon_gravity_staff",
-    "tint": [
-      0.75,
-      0.5,
-      1.6
-    ],
-    "ball": {
-      "name": "GRAVITATIONSBALL",
-      "damage": 2.6,
-      "cooldown": 0.36,
-      "speed": 560,
-      "life": 1.2,
-      "pull_radius": 190,
-      "pull": 280,
-      "burst": 140,
-      "short": "BALL"
-    },
-    "wall": {
-      "name": "GRAVITATIONSWAND",
-      "key": "1",
-      "cooldown": 10,
-      "length": 300,
-      "thickness": 34,
-      "time": 5.0,
-      "short": "WAND"
-    },
-    "bar": {
-      "name": "SCHWERKRAFTLEISTE",
-      "key": "2",
-      "cooldown": 8,
-      "max_length": 420,
-      "time": 4.0,
-      "hold": 2.5,
-      "width": 26,
-      "short": "LEISTE"
-    },
-    "skills": [
-      {
-        "id": "g_wall",
-        "key": "1",
-        "unlock": 1,
-        "name": "GRAVITATIONSWAND",
-        "short": "WAND",
-        "cooldown": 10
-      },
-      {
-        "id": "g_bar",
-        "key": "2",
-        "unlock": 3,
-        "name": "SCHWERKRAFTLEISTE",
-        "short": "LEISTE",
-        "cooldown": 8,
-        "hint": "2 halten oder rechte Maus ziehen"
-      },
-      {
-        "id": "g_rock",
-        "key": "3",
-        "unlock": 6,
-        "name": "STEINWURF",
-        "short": "STEINWURF",
-        "cooldown": 7,
-        "lift": 0.45,
-        "speed": 760,
-        "life": 1.1,
-        "damage": 4.0,
-        "burst": 130
-      },
-      {
-        "id": "g_golem",
-        "key": "4",
-        "unlock": 10,
-        "name": "STEINGOLEM",
-        "short": "GOLEM",
-        "cooldown": 30,
-        "time": 15,
-        "hp": 40,
-        "speed": 230,
-        "damage": 2.0,
-        "every": 0.9,
-        "reach": 120,
-        "scale": 2.0
-      }
+    "moves": [
+     {
+      "move": "frost_breath",
+      "weight": 3,
+      "near": 140
+     },
+     {
+      "move": "frost_patch",
+      "weight": 2,
+      "cooldown": 6
+     }
     ]
-  },
-  "sounds": {
-    "shot_arrow": "shoot_arrow",
-    "shot_magic": "shoot_magic",
-    "swing": "swing",
-    "hit_flesh": "hit_flesh",
-    "hit_bone": "hit_bone",
-    "hit_void": "hit_void",
-    "kill_flesh": "kill_flesh",
-    "kill_bone": "kill_bone",
-    "kill_void": "break_void",
-    "hurt": "hurt",
-    "hurt_voice": "hurt_voice",
-    "chest": "chest_open",
-    "gate_open": "door",
-    "gate_locked": "doors_lock",
-    "fight_start": "doors_lock",
-    "stairs": "stairs",
-    "room_clear": "room_clear",
-    "key": "perk",
-    "level_up": "perk",
-    "boss_intro": "boss_intro",
-    "boss_phase": "attack_roar",
-    "boss_dead": "boss_defeated",
-    "boss_summon": "attack_summon",
-    "boss_ring": "attack_salve",
-    "boss_stomp": "attack_slam",
-    "boss_breath": "attack_beam",
-    "boss_charge": "attack_bite",
-    "boss_windup": "windup_summon",
-    "enemy_shot": "attack_arrow",
-    "block": "block",
-    "blast": "blast",
-    "plate": "ui_click",
-    "plate_wrong": "ui_back",
-    "puzzle_solved": "regrow",
-    "secret": "collapse_bone",
-    "relic": "perk",
-    "step": "step",
-    "skill_1": "",
-    "skill_2": "",
-    "skill_3": "",
-    "skill_4": "",
-    "blink": "void_burst",
-    "beam": "windup_beam",
-    "no_cooldown": "ui_back"
-  },
-  "music": true,
-  "placeholder_note": false,
-  "relics": {
-    "floors": [
-      3,
-      4,
-      5,
-      6
+   },
+   "frost_skeleton": {
+    "every": [
+     3.5,
+     5.5
     ],
-    "pools": {
-      "mage": [
-        "gravity_staff"
-      ],
-      "swordsman": [
-        "gravity_hammer"
-      ],
-      "archer": [
-        "shadow_dagger"
-      ]
-    },
-    "order": [
-      3,
-      1,
-      4,
-      2
-    ],
-    "label": "Reliktsiegel",
-    "drop": "boss"
-  },
-  "gravity_hammer": {
-    "name": "GRAVITATIONSHAMMER",
-    "classes": [
-      "swordsman"
-    ],
-    "sprite": "weapon_gravity_hammer",
-    "tint": [
-      0.75,
-      0.5,
-      1.6
-    ],
-    "attack": {
-      "name": "HAMMERSCHLAG",
-      "short": "SCHLAG",
-      "damage": 4.5,
-      "cooldown": 0.55,
-      "reach": 180,
-      "arc": 2.4,
-      "pull": 90
-    },
-    "skills": [
-      {
-        "id": "h_leap",
-        "key": "1",
-        "unlock": 1,
-        "name": "SPRUNGSCHLAG",
-        "short": "SPRUNG",
-        "cooldown": 7,
-        "distance": 380,
-        "time": 0.35,
-        "radius": 200,
-        "damage": 2.5,
-        "pull": 120
-      },
-      {
-        "id": "h_field",
-        "key": "2",
-        "unlock": 3,
-        "name": "GRAVITATIONSFELD",
-        "short": "FELD",
-        "cooldown": 11,
-        "radius": 230,
-        "time": 3.0,
-        "pull": 160,
-        "slow": 0.6,
-        "dps": 0.6
-      },
-      {
-        "id": "h_wave",
-        "key": "3",
-        "unlock": 6,
-        "name": "FELSENWELLE",
-        "short": "FELSEN",
-        "cooldown": 8,
-        "count": 6,
-        "step": 110,
-        "every": 0.08,
-        "radius": 80,
-        "damage": 2.0
-      },
-      {
-        "id": "h_meteor",
-        "key": "4",
-        "unlock": 10,
-        "name": "METEOR",
-        "short": "METEOR",
-        "cooldown": 22,
-        "delay": 1.0,
-        "radius": 230,
-        "damage": 8.0
-      }
+    "moves": [
+     {
+      "move": "arrow_volley",
+      "weight": 3
+     },
+     {
+      "move": "dodge_leap",
+      "weight": 2,
+      "near": 90
+     }
     ]
-  },
-  "cards": {
-    "all": [
-      {
-        "id": "vigor",
-        "name": "EISERNE HAUT",
-        "desc": "+1 Herz.",
-        "max": 3,
-        "hearts": 2
-      }
+   },
+   "ice_knight": {
+    "every": [
+     4.0,
+     6.0
     ],
-    "swordsman": [
-      {
-        "id": "sw_heavy",
-        "name": "SCHWERER HIEB",
-        "desc": "+15 % Schaden.",
-        "max": 3,
-        "damage": 0.15
-      },
-      {
-        "id": "sw_swift",
-        "name": "FLINKE KLINGE",
-        "desc": "10 % schnellere Hiebe.",
-        "max": 3,
-        "rate": 0.1
-      },
-      {
-        "id": "double_whirl",
-        "name": "DOPPELWIRBEL",
-        "desc": "Wirbelklinge dreht sich zweimal (2. Runde 60 %).",
-        "max": 1,
-        "skill": "1",
-        "damage": 0.6
-      },
-      {
-        "id": "wide_swing",
-        "name": "WEITER SCHWUNG",
-        "desc": "Wirbelklinge +20 % Radius.",
-        "max": 2,
-        "skill": "1",
-        "radius": 0.2
-      },
-      {
-        "id": "wave_fan",
-        "name": "WELLENFÄCHER",
-        "desc": "Klingenwelle: 3 Wellen im Fächer (je 60 %).",
-        "max": 1,
-        "skill": "2",
-        "count": 3,
-        "spread": 0.35,
-        "damage": 0.6
-      },
-      {
-        "id": "shockwave",
-        "name": "SCHOCKWELLE",
-        "desc": "Ansturm endet mit einem Stoß (1x, betäubt 0,5 s).",
-        "max": 1,
-        "skill": "3",
-        "radius": 160,
-        "damage": 1.0,
-        "stun": 0.5
-      },
-      {
-        "id": "sharp_blades",
-        "name": "SCHARFE KLINGEN",
-        "desc": "Rage: +10 % Krit-Chance.",
-        "max": 2,
-        "skill": "4",
-        "crit": 0.1
-      }
-    ],
-    "archer": [
-      {
-        "id": "ar_rapid",
-        "name": "SCHNELLFEUER",
-        "desc": "10 % schnellere Schüsse.",
-        "max": 3,
-        "rate": 0.1
-      },
-      {
-        "id": "ar_fleet",
-        "name": "LEICHTFUSS",
-        "desc": "+6 % Lauftempo.",
-        "max": 3,
-        "speed": 0.06
-      },
-      {
-        "id": "wide_volley",
-        "name": "BREITE SALVE",
-        "desc": "Salve +2 Pfeile.",
-        "max": 2,
-        "skill": "1",
-        "count": 2
-      },
-      {
-        "id": "poison_tips",
-        "name": "GIFTSPITZEN",
-        "desc": "Salve vergiftet: 0,8x Schaden/s für 3 s.",
-        "max": 1,
-        "skill": "1",
-        "dps": 0.8,
-        "time": 3
-      },
-      {
-        "id": "quick_draw",
-        "name": "SCHNELLSPANNER",
-        "desc": "Ballistapfeil lädt 40 % schneller.",
-        "max": 1,
-        "skill": "2",
-        "charge": 0.4
-      },
-      {
-        "id": "heavy_tip",
-        "name": "WUCHTSPITZE",
-        "desc": "Ballistapfeil +25 % Schaden.",
-        "max": 2,
-        "skill": "2",
-        "damage": 0.25
-      },
-      {
-        "id": "ice_thorns",
-        "name": "EISDORNEN",
-        "desc": "Krähenfüße verlangsamen 60 % statt 40 %.",
-        "max": 1,
-        "skill": "3",
-        "slow": 0.6
-      },
-      {
-        "id": "wall_breaker",
-        "name": "MAUERBRECHER",
-        "desc": "Pfeilfaust: +40 % Explosionsschaden.",
-        "max": 2,
-        "skill": "4",
-        "burst": 0.4
-      }
-    ],
-    "mage": [
-      {
-        "id": "mg_focus",
-        "name": "FOKUS",
-        "desc": "+15 % Schaden.",
-        "max": 3,
-        "damage": 0.15
-      },
-      {
-        "id": "mg_haste",
-        "name": "ARKANE EILE",
-        "desc": "10 % schnellere Zauber.",
-        "max": 3,
-        "rate": 0.1
-      },
-      {
-        "id": "twin_fire",
-        "name": "ZWILLINGSFEUER",
-        "desc": "Feuerball: ein zweiter Feuerball (Stufe 2: drei).",
-        "max": 2,
-        "skill": "1",
-        "spread": 0.22
-      },
-      {
-        "id": "wildfire",
-        "name": "GROSSBRAND",
-        "desc": "Feuerball +25 % Explosionsradius.",
-        "max": 2,
-        "skill": "1",
-        "radius": 0.25
-      },
-      {
-        "id": "more_jumps",
-        "name": "WEITERE SPRÜNGE",
-        "desc": "Kettenblitz +2 Sprünge.",
-        "max": 2,
-        "skill": "2",
-        "jumps": 2
-      },
-      {
-        "id": "arcane_rift",
-        "name": "ARKANRISS",
-        "desc": "Blinzeln: Explosion am Startpunkt (2x).",
-        "max": 1,
-        "skill": "3",
-        "radius": 150,
-        "damage": 2.0
-      },
-      {
-        "id": "long_breath",
-        "name": "LANGER ATEM",
-        "desc": "Photoneneis +1 s.",
-        "max": 2,
-        "skill": "4",
-        "time": 1.0
-      }
-    ],
-    "gravity_staff": [
-      {
-        "id": "twin_ball",
-        "name": "ZWILLINGSBALL",
-        "desc": "Gravitationsball: ein zweiter Ball.",
-        "max": 1,
-        "spread": 0.18
-      },
-      {
-        "id": "dense_wall",
-        "name": "DICHTE WAND",
-        "desc": "Gravitationswand +40 % Länge und Dauer.",
-        "max": 2,
-        "skill": "1",
-        "size": 0.4
-      },
-      {
-        "id": "heavy_rock",
-        "name": "SPLITTERFELS",
-        "desc": "Steinwurf zerspringt in 4 Splitter (je 1x).",
-        "max": 1,
-        "skill": "3",
-        "count": 4,
-        "damage": 1.0
-      },
-      {
-        "id": "golem_core",
-        "name": "GOLEMKERN",
-        "desc": "Steingolem +50 % Leben und Schaden.",
-        "max": 1,
-        "skill": "4",
-        "boost": 0.5
-      }
-    ],
-    "gravity_hammer": [
-      {
-        "id": "wide_smash",
-        "name": "WUCHTIGER SCHLAG",
-        "desc": "Hammerschlag +20 % Reichweite.",
-        "max": 2,
-        "reach": 0.2
-      },
-      {
-        "id": "aftershock",
-        "name": "NACHBEBEN",
-        "desc": "Sprungschlag bebt 0,4 s später nach (60 %).",
-        "max": 1,
-        "skill": "1",
-        "damage": 0.6
-      },
-      {
-        "id": "deep_field",
-        "name": "TIEFES FELD",
-        "desc": "Gravitationsfeld +30 % Sog und Radius.",
-        "max": 1,
-        "skill": "2",
-        "boost": 0.3
-      },
-      {
-        "id": "meteor_shower",
-        "name": "METEORSCHAUER",
-        "desc": "Meteor: zwei weitere kleine Einschläge (je 40 %).",
-        "max": 1,
-        "skill": "4",
-        "count": 2,
-        "damage": 0.4
-      }
-    ],
-    "shadow_dagger": [
-      {
-        "id": "long_shadow",
-        "name": "LANGER SCHATTEN",
-        "desc": "Schattenschritt trifft +1 Gegner.",
-        "max": 2,
-        "skill": "1",
-        "hits": 1
-      },
-      {
-        "id": "sharp_edge",
-        "name": "SCHARFE SCHNEIDE",
-        "desc": "Dolchstich +20 % Schaden.",
-        "max": 2,
-        "damage": 0.2
-      },
-      {
-        "id": "thick_smoke",
-        "name": "DICHTER RAUCH",
-        "desc": "Rauchbombe hält 1 s länger.",
-        "max": 2,
-        "skill": "3",
-        "time": 1.0
-      },
-      {
-        "id": "blade_cyclone",
-        "name": "KLINGENZYKLON",
-        "desc": "Klingenwirbel +30 % Radius.",
-        "max": 1,
-        "skill": "2",
-        "radius": 0.3
-      }
+    "moves": [
+     {
+      "move": "shield_bash",
+      "weight": 3,
+      "near": 160
+     },
+     {
+      "move": "whirl_slash",
+      "weight": 2,
+      "near": 90
+     }
     ]
-  },
-  "styled_hud": true,
-  "shadow_dagger": {
-    "name": "SCHATTENDOLCH",
-    "classes": [
-      "archer"
+   },
+   "frost_imp": {
+    "every": [
+     3.0,
+     5.0
     ],
-    "sprite": "weapon_shadow_dagger",
-    "tint": [
-      0.7,
-      0.6,
-      1.4
-    ],
-    "attack": {
-      "name": "DOLCHSTICH",
-      "short": "STICH",
-      "damage": 1.8,
-      "cooldown": 0.2,
-      "reach": 130,
-      "arc": 1.3,
-      "pull": 0,
-      "backstab": 2.0
-    },
-    "skills": [
-      {
-        "id": "d_step",
-        "key": "1",
-        "unlock": 1,
-        "name": "SCHATTENSCHRITT",
-        "short": "SCHRITT",
-        "cooldown": 6,
-        "range": 650,
-        "hits": 3,
-        "every": 0.14,
-        "damage": 1.6
-      },
-      {
-        "id": "d_blades",
-        "key": "2",
-        "unlock": 3,
-        "name": "KLINGENWIRBEL",
-        "short": "WIRBEL",
-        "cooldown": 9,
-        "time": 3.0,
-        "radius": 130,
-        "every": 0.25,
-        "damage": 0.9
-      },
-      {
-        "id": "d_smoke",
-        "key": "3",
-        "unlock": 6,
-        "name": "RAUCHBOMBE",
-        "short": "RAUCH",
-        "cooldown": 14,
-        "time": 3.5,
-        "radius": 210,
-        "slow": 0.5
-      },
-      {
-        "id": "d_thousand",
-        "key": "4",
-        "unlock": 10,
-        "name": "TAUSEND KLINGEN",
-        "short": "KLINGEN",
-        "cooldown": 26,
-        "time": 2.5,
-        "radius": 230,
-        "every": 0.1,
-        "damage": 0.7
-      }
+    "moves": [
+     {
+      "move": "pounce",
+      "weight": 3
+     },
+     {
+      "move": "void_blink",
+      "weight": 1
+     }
     ]
-  },
-  "talents": "res://assets/data/frost_talents.json",
-  "master_cooldown": 45
+   },
+   "frost_whirl": {
+    "every": [
+     4.0,
+     6.0
+    ],
+    "moves": [
+     {
+      "move": "frost_patch",
+      "weight": 1
+     }
+    ]
+   },
+   "ice_crystal": {
+    "every": [
+     4.0,
+     6.0
+    ],
+    "moves": [
+     {
+      "move": "hail",
+      "weight": 1,
+      "cooldown": 6
+     }
+    ]
+   }
+  }
+ },
+ "items": {
+  "_note": "Story 1's items (src/hell/frost_items.gd, data assets/data/items.json): scale = crypt pixels to this world, damage_scale = crypt damage to this world's. Bag on key I.",
+  "scale": 2.4,
+  "damage_scale": 0.5
+ },
+ "hud": "crypt"
 }

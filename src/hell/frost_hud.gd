@@ -10,13 +10,27 @@ const RelicKit = preload("res://src/hell/relic_kit.gd")
 const CardKit = preload("res://src/hell/card_kit.gd")
 const HeroKit = preload("res://src/hell/hero_kit.gd")
 const FONT := preload("res://assets/fonts/pixel_operator8.ttf")
+const CryptUI = preload("res://src/ui/crypt_ui.gd")
 const PANEL := Color(0.02, 0.04, 0.1, 0.9)
 const EDGE := Color(0.5, 0.8, 1.0)
 const GLOW := Color(0.5, 0.95, 1.0)
 
 
-## A panel: dark fill, double edge and small diamonds on the corners.
+## True while the game draws Story 1's HUD (src/hell/frost_run_hud.gd): panels in the crypt's frames.
+static var crypt := false
+
+
+## A panel: dark fill, double edge and small diamonds on the corners; with the
+## crypt HUD a bevelled stone frame like src/ui/crypt_ui.gd "panel".
 static func frame(h: Control, r: Rect2, edge: Color = EDGE, alpha := 1.0) -> void:
+	if crypt:
+		h.draw_rect(r, Color(0.13, 0.10, 0.10, 0.94 * alpha))
+		h.draw_rect(r, Color(CryptUI.INK, alpha), false, 2.0)
+		h.draw_rect(Rect2(r.position + Vector2(2, 2), Vector2(r.size.x - 4, 4)), Color(CryptUI.STONE_LIGHT, alpha))
+		h.draw_rect(Rect2(r.position + Vector2(2, 2), Vector2(4, r.size.y - 4)), Color(CryptUI.STONE_LIGHT, alpha))
+		h.draw_rect(Rect2(Vector2(r.position.x + 2, r.end.y - 6), Vector2(r.size.x - 4, 4)), Color(CryptUI.SHADOW, alpha))
+		h.draw_rect(Rect2(Vector2(r.end.x - 6, r.position.y + 2), Vector2(4, r.size.y - 4)), Color(CryptUI.SHADOW, alpha))
+		return
 	h.draw_rect(r, Color(PANEL, PANEL.a * alpha))
 	h.draw_rect(r, Color(edge, 0.85 * alpha), false, 2.0)
 	h.draw_rect(r.grow(-5), Color(edge, 0.25 * alpha), false, 1.0)
@@ -60,7 +74,7 @@ static func goals(g: Node) -> Array:
 
 ## The mission list under the minimap; the current main goal pulses, a goal that
 ## just finished flashes and plays a sound once.
-static func mission(g: Node, h: Control, size: Vector2) -> void:
+static func mission(g: Node, h: Control, size: Vector2, top := 200.0) -> void:
 	var list := goals(g)
 	var seen: Dictionary = g.state.get("goal_done", {})
 	for it: Dictionary in list:
@@ -74,11 +88,11 @@ static func mission(g: Node, h: Control, size: Vector2) -> void:
 	for it: Dictionary in list:
 		w = maxf(w, FONT.get_string_size(str(it.text), HORIZONTAL_ALIGNMENT_LEFT, -1, 14 if it.main else 12).x + 52.0)
 	w = minf(w, 420.0)
-	var x := size.x - w - 10.0
-	var y := 200.0
+	var x := size.x - w - (20.0 if crypt else 10.0)
+	var y := top
 	var lines := list.size()
 	frame(h, Rect2(x, y, w, 40 + lines * 26), EDGE)
-	g._text(h, "AUFTRAG · ETAGE %d" % int(g.state.floor), Vector2(x + 14, y + 24), 16, GLOW)
+	g._text(h, "AUFTRAG · ETAGE %d" % int(g.state.floor), Vector2(x + 14, y + 24), 16, CryptUI.GOLD if crypt else GLOW)
 	var current_set := false
 	var ly := y + 52.0
 	for it: Dictionary in list:
