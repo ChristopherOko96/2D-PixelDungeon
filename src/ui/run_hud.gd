@@ -252,6 +252,8 @@ func _draw_floor_panel() -> void:
 	var floor_index := int(_snapshot.get("floor_index", 1))
 	_text(panel.position + Vector2(14, 32), "EBENE %d" % floor_index, 24, CryptUI.GOLD)
 	var room_text := "RAUM %02d / %02d" % [int(_snapshot.get("room", 1)), maxi(room_count, int(_snapshot.get("room", 1)))]
+	# An open floor is one map without numbered rooms.
+	if bool(_snapshot.get("room_layout", {}).get("open_floor", false)): room_text = "OFFENE KARTE"
 	_text(panel.position + Vector2(14, 54), room_text, 16, CryptUI.BONE)
 	var phase := str(_snapshot.get("phase", ""))
 	var tag: String = {"combat": "KAMPF", "reward": "GESICHERT", "explore": "ERKUNDEN", "dead": "GEFALLEN", "victory": "SIEG"}.get(phase, "")

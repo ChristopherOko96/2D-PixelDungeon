@@ -1,5 +1,6 @@
 {
   "network": {"port": 7777, "max_players": 4, "input_hz": 20, "snapshot_hz": 20, "input_timeout": 0.3, "admission_timeout": 8.0, "admission_reject_grace": 0.3, "interpolation_delay": 0.1, "interpolation_max_snapshots": 8, "interpolation_max_gap": 0.25, "interpolation_teleport_distance": 256.0},
+  "aggro": {"range": 230, "call_range": 160, "attack_range": 360},
   "navigation": {"repath_interval": 0.3},
   "player": {"hp": 8, "speed": 152, "stride": 32, "radius": 12, "damage": 2, "shot_interval": 0.2, "invulnerability": 0.85},
   "bullet": {"speed": 600, "lifetime": 1.2, "radius": 5, "max_count": 48},

@@ -7,15 +7,20 @@ const path = require('path');
 const core = require('./hell_core.js');
 
 const root = path.resolve(__dirname, '..', '..');
-const manifest = JSON.parse(fs.readFileSync(path.join(root, 'assets/sprites/hell/manifest.json'), 'utf8'));
-const SIZES = {};
-for (const [k, v] of Object.entries(manifest)) SIZES[k] = [v.w, v.h];
+// Sprite sizes from a manifest, as the core needs them for placement.
+function sizesFrom(manifestPath) {
+  const manifest = JSON.parse(fs.readFileSync(path.join(root, manifestPath), 'utf8'));
+  const sizes = {};
+  for (const [k, v] of Object.entries(manifest)) sizes[k] = [v.w, v.h];
+  return sizes;
+}
 
 const r1 = v => Math.round(v * 10) / 10;
 const TILE_NAMES = ['floor_00', 'floor_01', 'floor_02', 'floor_03', 'floor_04', 'floor_05', 'floor_06', 'floor_07', 'floor_08', 'floor_09', 'floor_10', 'floor_11'];
 
-function bake(n) {
-  const W = core.buildFloor(n, SIZES);
+// One floor as the Godot schema (docs/HELL-DUNGEON.de.md); opts go to core.buildFloor.
+function bake(n, SIZES, opts) {
+  const W = core.buildFloor(n, SIZES, opts);
   const quick = core.criticalRooms(W);
   const roomIndex = r => r.index;
   return {
@@ -53,8 +58,11 @@ function bake(n) {
   };
 }
 
+module.exports = { bake, sizesFrom, root };
+if (require.main !== module) return;
+const SIZES = sizesFrom('assets/sprites/hell/manifest.json');
 const floors = [];
-for (let n = 1; n <= 10; n++) floors.push(bake(n));
+for (let n = 1; n <= 10; n++) floors.push(bake(n, SIZES));
 const out = path.join(root, 'assets/data/hell_floors.json');
 fs.writeFileSync(out, JSON.stringify({ schema: 1, source: 'tools/hell_dungeon/hell_core.js', floors }));
 console.log('baked', floors.length, 'floors ->', path.relative(root, out), (fs.statSync(out).size / 1e6).toFixed(2), 'MB');

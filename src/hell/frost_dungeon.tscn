@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/hell/hell_game.gd" id="1_hell"]
+
+[node name="FrostDungeon" type="Node2D"]
+script = ExtResource("1_hell")
+theme_path = "res://assets/data/frost_theme.json"

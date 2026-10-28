@@ -10,6 +10,7 @@ const WORLD_ZOOM := Vector2.ONE
 const PLAYER_COLORS := [Color("72dcc8"), Color("edb563"), Color("bc91de"), Color("ed8a91")]
 const PLAYER_SKINS := ["player_warden", "player_ranger", "player_arcanist", "player_lizard"]
 const Dungeon = preload("res://src/dungeon/dungeon_generator.gd")
+const OpenFloor = preload("res://src/dungeon/open_floor.gd")
 const RunHud = preload("res://src/ui/run_hud.gd")
 const CryptUI = preload("res://src/ui/crypt_ui.gd")
 const LevelCards = preload("res://src/ui/level_cards.gd")
@@ -31,6 +32,7 @@ const TeamProgress = preload("res://src/player/team_progress.gd")
 const HeroSkills = preload("res://src/combat/hero_skills.gd")
 const Chests = preload("res://src/dungeon/chests.gd")
 const Hordes = preload("res://src/dungeon/hordes.gd")
+const Aggro = preload("res://src/combat/aggro.gd")
 const BodyParts = preload("res://src/combat/body_parts.gd")
 const VoidBossAI = preload("res://src/combat/void_boss_ai.gd")
 
@@ -65,6 +67,14 @@ var chests := Chests.new()
 var hordes := Hordes.new()
 ## True once this floor's boss or mini-boss fell (opens the stairs on boss floors).
 var floor_boss_down := false
+## Endless runs play open floors (src/dungeon/open_floor.gd): one map per floor
+## with rooms, corridors, chests and sleeping groups. Set by the menu and by
+## `--endless`; tests and network smoke runs keep the chain of rooms.
+var open_floors := false
+## The story being played (assets/data/story_campaigns.json). Only "krypta" is
+## playable so far; it runs on dungeon_rooms.json like every room-chain run.
+var story_id := "krypta"
+var open_floor_data: Dictionary = {}
 var _perk_rng := RandomNumberGenerator.new()
 var crypt_ai := CryptEnemyAI.new()
 ## Host-side body parts of rigged enemies (part HP, lost parts, regrowth).
@@ -463,6 +473,7 @@ func _read_arguments() -> void:
 				if i + 1 < args.size(): smoke_role = args[i + 1]
 			"--seed":
 				if i + 1 < args.size() and args[i + 1].is_valid_int(): requested_seed = maxi(0, args[i + 1].to_int())
+			"--endless": open_floors = true
 			"--smoke-floors":
 				if i + 1 < args.size(): smoke_floor_limit = clampi(args[i + 1].to_int(), 1, 3)
 			"--wait-players":
@@ -1080,12 +1091,21 @@ func _crypt_enemy_positions(rng: RandomNumberGenerator, count: int, encounter: D
 	return picked
 
 
+## The floor `number` of this run: an open map in endless runs, otherwise the
+## chain of rooms from the room library.
+func _generate_floor(seed_value: int, number: int) -> Array[Dictionary]:
+	if open_floors:
+		if open_floor_data.is_empty(): open_floor_data = OpenFloor.load_data()
+		return Dungeon.generate_open_floor(seed_value, number, dungeon_config, open_floor_data)
+	return Dungeon.generate(seed_value, _run_room_count(), dungeon_config)
+
+
 func _begin_run() -> void:
 	if editor_preview_mode:
 		start_editor_preview()
 		return
 	var seed_value := requested_seed if requested_seed >= 0 else randi_range(10000, 99999)
-	var generated := Dungeon.generate(seed_value, _run_room_count(), dungeon_config)
+	var generated := _generate_floor(seed_value, 1)
 	if generated.is_empty():
 		status_message = "Dungeon konnte nicht erstellt werden. Raumdaten prüfen."
 		return
@@ -1170,6 +1190,9 @@ func _spawn_room(from_room: int = 0) -> void:
 	if revisiting:
 		print("ROOM_REVISITED room=%d floor=%d" % [room, floor_index])
 		return
+	if current_layout.get("open_floor", false) and not editor_preview_mode:
+		_spawn_open_floor()
+		return
 	var counts: Array = balance.rooms.enemy_counts
 	var boss_room: bool = current_layout.boss
 	var count := int(counts[mini(room-1,counts.size()-1)])
@@ -1223,6 +1246,32 @@ func _spawn_room(from_room: int = 0) -> void:
 	print("ROOM_STARTED room=%d enemies=%d boss=%s" % [room, count, boss_room])
 
 
+## Fills an open floor: a sleeping group in every middle room, the floor's
+## final group (boss, mini-boss or strong group) in the boss room, also asleep
+## until a hero comes into sight (src/combat/aggro.gd). No hordes on open floors.
+func _spawn_open_floor() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = floor_seed + 4099
+	var radii: Array = [float(balance.enemy.radius), float(balance.boss.radius)]
+	for definition: Dictionary in balance.get("enemy_roster",{}).get("definitions",{}).values():
+		var radius: float = float(definition.get("radius",balance.enemy.radius))
+		if radius not in radii: radii.append(radius)
+	Dungeon.prepare_navigation(current_layout,radii)
+	var points: Array = current_layout.enemy_spawns
+	for i in range(points.size()):
+		enemies.append(_create_enemy(crypt_ai.choose_kind(floor_index+1,i,points.size(),false,rng),points[i]))
+	var guards: Array = current_layout.boss_spawns
+	var plan: Dictionary = balance.get("enemy_roster",{}).get("floor_plan",{})
+	var final_count: int = int(plan.get("strong_group_count",6)) if crypt_ai.final_room_role(floor_index) == "strong_group" else int(current_layout.get("encounter",{}).get("boss_enemies",3))
+	for i in range(mini(final_count,guards.size())):
+		var guard: Dictionary = _create_enemy(crypt_ai.choose_kind(floor_index+1,i,final_count,true,rng),guards[i])
+		guard.aggro = false
+		guard.asleep = true
+		enemies.append(guard)
+	for i in range(enemies.size()): enemies[i].nav_timer = _navigation_interval()*float(i+1)/float(enemies.size())
+	print("ROOM_STARTED room=%d enemies=%d boss=true open_floor=true" % [room, enemies.size()])
+
+
 ## One host-side factory supplies both initial enemies and validated summons.
 func _create_enemy(kind: String, point: Vector2) -> Dictionary:
 	var definition: Dictionary = balance.boss.duplicate() if kind == "boss" else balance.enemy.duplicate()
@@ -1231,6 +1280,8 @@ func _create_enemy(kind: String, point: Vector2) -> Dictionary:
 	var hp: int = int(ceil((float(definition.hp)+maxi(0,players.size()-1)*float(definition.hp_per_extra_player))*multiplier))
 	var result: Dictionary = {"pos":point,"hp":hp,"max_hp":hp,"boss":kind == "boss","radius":float(definition.radius),"speed":float(definition.speed),"shot_timer":1.0,"nav_timer":0.0,"nav_path":PackedVector2Array(),"hitstun":0.0,"hit_flash":0.0,"knockback":Vector2.ZERO,"stun_cooldown":0.0,"id":_next_enemy_id,"kind":kind,"hits":0,"attacks":0,"blocks":0,"moving":false,"face":-1.0,"direction":Vector2.ZERO,"attack":"","attack_time":0.0,"attack_kind":"","attack_length":1.0,"attack_aim":Vector2.LEFT,"facing_dir":Vector2.LEFT,"summons_cast":0,"caster_id":0,"summoned":false,"enemy_name":str(definition.get("name",definition.get("display_name","Kryptawesen"))),"dying":0.0}
 	_next_enemy_id += 1
+	# Bosses start angry; everyone else waits until a hero is noticed (see Aggro).
+	result.aggro = result.boss
 	result.shot_timer = float(definition.get("initial_cooldown",1.0))
 	if bool(definition.get("miniboss",false)): result.miniboss = true
 	# Rigged figures split their HP over body parts (src/combat/body_parts.gd).
@@ -1336,10 +1387,16 @@ func spawn_crypt_minion(caster_id: int, point: Vector2, kind: String = "skeleton
 	var minion: Dictionary = _create_enemy(kind,point)
 	minion.caster_id = caster_id
 	minion.summoned = true
+	minion.aggro = true
 	minion.nav_timer = _navigation_interval()
 	enemies.append(minion)
 	caster.summons_cast = int(caster.get("summons_cast",0))+1
 	return true
+
+
+## Line of sight for aggro: nothing solid lies between the two points.
+func _sees(from: Vector2, to: Vector2) -> bool:
+	return not Dungeon.segment_blocked(from, to, 0.0, current_layout)
 
 
 func _navigation_interval() -> float:
@@ -1419,15 +1476,10 @@ func _simulate_enemies(delta: float) -> void:
 		enemy.knockback = push.move_toward(Vector2.ZERO, float(balance.feedback.enemy_knockback) * float(balance.feedback.knockback_decay) * delta)
 		if enemy.hitstun > 0.0: continue
 		if perk_combat.frozen(enemy): continue
-		var target := -1
-		var distance := INF
-		for id in players:
-			if players[id].hp <= 0: continue
-			var candidate: float = enemy.pos.distance_squared_to(players[id].pos)
-			if candidate < distance:
-				distance = candidate
-				target = id
+		# Aggro: unaware enemies stand still; a locked one hunts its hero to the end.
+		var target: int = Aggro.pick_target(enemy, players, _sees, balance.aggro)
 		if target < 0: continue
+		Aggro.alert_pack(enemy, enemies, balance.aggro)
 		# Spiegelbild: normal enemies near a decoy chase the decoy instead.
 		if not enemy.boss and not bool(enemy.get("miniboss",false)):
 			for zone: Dictionary in hero_skills.zones:
@@ -1580,6 +1632,8 @@ func _damage_player(id: int, damage: int, direction: Vector2 = Vector2.ZERO) -> 
 
 func _damage_enemy(enemy: Dictionary, damage: float, direction: Vector2 = Vector2.ZERO, owner: int = 0, kill_effects: bool = true, feedback: bool = true) -> float:
 	if damage <= 0.0 or enemy.hp <= 0: return 0.0
+	# A hurt enemy turns on the hero who hurt it, even from out of sight.
+	if players.has(owner): Aggro.lock(enemy, owner)
 	if feedback and kill_effects:
 		var guard: float = crypt_ai.guard_multiplier(enemy,direction,true)
 		if guard < 1.0:
@@ -1742,7 +1796,7 @@ func _enter_next_floor() -> void:
 	if editor_preview_mode: return
 	var next_floor := floor_index + 1
 	var next_seed := int((run_seed + (next_floor - 1) * int(balance.exploration.seed_stride)) % 2147483647)
-	var generated := Dungeon.generate(next_seed, _run_room_count(), dungeon_config)
+	var generated := _generate_floor(next_seed, next_floor)
 	if generated.is_empty(): return
 	floor_index = next_floor
 	floor_seed = next_seed
@@ -2014,9 +2068,10 @@ func _build_ui() -> void:
 	_build_main_menu()
 
 
-## Title screen from main. Story opens the hero choice (step 2). Online accounts
-## (Firebase, not decided) and the endless mode (step 6) are not wired yet, so
-## Endless shows as coming soon.
+## Title screen from main. Story opens the story choice
+## (assets/data/story_campaigns.json), then the hero choice. Endless (open
+## floors, src/dungeon/open_floor.gd) shows as coming soon. Online accounts
+## (Firebase, not decided) are not wired yet.
 func _build_main_menu() -> void:
 	main_menu = MainMenu.new()
 	main_menu.account = null
@@ -2024,6 +2079,7 @@ func _build_main_menu() -> void:
 	main_menu.class_order = balance.get("class_order",[])
 	main_menu.weapons = balance.get("weapons",{})
 	main_menu.endless_available = false
+	main_menu.stories = _load_stories()
 	main_menu.debug_entries = _debug_entries()
 	main_menu.hell_entries = _hell_entries()
 	ui.add_child(main_menu)
@@ -2034,6 +2090,7 @@ func _build_main_menu() -> void:
 		_refresh_ui())
 	main_menu.quit_requested.connect(func(): get_tree().quit())
 	main_menu.hell_requested.connect(_start_hell)
+	main_menu.story_scene_requested.connect(_open_story_scene)
 	# Saved fullscreen is applied in _ready, only when the game opens on the menu.
 	view.shake_scale = 1.0 if bool(main_menu.settings.get("shake", true)) else 0.0
 
@@ -2056,6 +2113,25 @@ func _start_hell(floor_number: int, boss: bool) -> void:
 	tree.root.add_child(hell)
 	tree.current_scene = hell
 	queue_free()
+
+## Swaps the menu for a story's own scene (e.g. the Frostgruft) with the chosen hero class.
+func _open_story_scene(path: String, class_id: String) -> void:
+	var scene: Node = (load(path) as PackedScene).instantiate()
+	if "class_id" in scene:
+		scene.class_id = class_id
+	var tree := get_tree()
+	var old := tree.current_scene
+	tree.root.add_child(scene)
+	tree.current_scene = scene
+	if old != null:
+		old.queue_free()
+
+
+## The story campaigns of the main menu; [] when the file is missing.
+func _load_stories() -> Array:
+	var path := "res://assets/data/story_campaigns.json"
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path)) if FileAccess.file_exists(path) else null
+	return parsed.get("stories", []) if parsed is Dictionary else []
 
 
 ## Debug level list for the current crypt floor: every room of floor 1 (the
@@ -2084,6 +2160,10 @@ func _debug_entries() -> Array:
 func _start_solo(_endless_mode: bool = false, class_id: String = "") -> void:
 	menu_open = false
 	var jump: Dictionary = main_menu.take_debug_start()
+	# Endless runs play open floors; stories and debug jumps play the chain of
+	# rooms of their room library.
+	open_floors = _endless_mode
+	story_id = main_menu.selected_story if not main_menu.selected_story.is_empty() else "krypta"
 	# The solo host is always peer 1; its class applies when the player is added.
 	player_classes[1] = HeroClass.resolve(class_id, balance)
 	_host_session()

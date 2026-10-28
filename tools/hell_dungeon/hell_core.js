@@ -22,11 +22,11 @@ const FLOORS = [
   { n: 10, title: 'Thron der Tiefe', circle: 3, seed: 11010, gc: 8, gr: 7, path: 18, rooms: 30, lava: .75, river: .6, spikes: .55, vents: .6, holes: .45, pits: .45, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, final: true, boss: { name: 'Ignaroth · Obsidianform', hp: 340, summon: 2.4, ring: 1.6, final: true } },
 ];
 // look per floor: darkness, red grade, ember density, hot floor share
-function themeFor(n) {
+function themeFor(n, P = FLOORS[n]) {
   const t = (n - 1) / 9;
-  return { dark: .6 + t * .2, grade: t * .16, vignette: .25 + t * .45, embers: 2 + Math.round(t * 5), hot: .18 + t * .4, wallGlow: t, circle: FLOORS[n].circle };
+  return { dark: .6 + t * .2, grade: t * .16, vignette: .25 + t * .45, embers: 2 + Math.round(t * 5), hot: .18 + t * .4, wallGlow: t, circle: P.circle };
 }
-function difficultyFor(n) { return { hp: 1 + (n - 1) * .16, speed: 1 + (n - 1) * .04, extra: Math.floor((n - 1) / 3), shooters: !!FLOORS[n].shooters }; }
+function difficultyFor(n, P = FLOORS[n]) { return { hp: 1 + (n - 1) * .16, speed: 1 + (n - 1) * .04, extra: Math.floor((n - 1) / 3), shooters: !!P.shooters }; }
 
 // ---------- floor 1: the approved handmade layout ----------
 const F1 = {
@@ -217,9 +217,9 @@ function rootOnPath(r) { let cur = r; while (cur && !cur.onPath) cur = cur.paren
 function isBehindLock(r, doors, boss) { let cur = r; while (cur.parent) { const d = doors.find(x => x.b === cur); if (d && d.kind === 'lock' && d.key !== 'A') return true; if (cur === boss) return true; cur = cur.parent; } return false; }
 
 // turn a generated layout into room records with names, shapes and features
-function describe(P, gen, rnd) {
-  const circle = P.circle, A = NAME_A[circle], used = new Set();
-  const nameOf = () => { for (let k = 0; k < 50; k++) { const n = A[Math.floor(rnd() * A.length)] + NAME_B[Math.floor(rnd() * NAME_B.length)]; const cap = n[0].toUpperCase() + n.slice(1); if (!used.has(cap)) { used.add(cap); return cap; } } return 'Kammer'; };
+function describe(P, gen, rnd, names = NAME_A, suffixes = NAME_B) {
+  const circle = P.circle, A = names[circle], used = new Set();
+  const nameOf = () => { for (let k = 0; k < 50; k++) { const n = A[Math.floor(rnd() * A.length)] + suffixes[Math.floor(rnd() * suffixes.length)]; const cap = n[0].toUpperCase() + n.slice(1); if (!used.has(cap)) { used.add(cap); return cap; } } return 'Kammer'; };
   const special = {
     start: ['Abstieg zur ' + P.n + '. Etage', 'Eingang', 'icon_door'], boss: ['Hort: ' + P.boss.name, P.boss.final ? 'Letzter Kampf' : P.boss.mini ? 'Zwischenboss' : 'Endkampf', 'icon_demon_big'],
     portal: ['Portalkammer', 'Schatzkammer', 'portal'], vault: ['Riesentresor', 'Tresorraum', 'icon_chest'], treasure: ['Beutekammer', 'Schatzraum', 'icon_chest'],
@@ -290,11 +290,12 @@ const KEY_NAMES = { A: 'Glutschlüssel', B: 'Knochenschlüssel', C: 'Dämonensch
 
 function hash(x, y, s = 0) { let h = (x * 374761393 + y * 668265263 + s * 2147483647) | 0; h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
 
-function buildFloor(n, SIZES) {
-  const P = FLOORS[n], theme = themeFor(n);
-  const plan = P.handmade ? JSON.parse(JSON.stringify(F1)) : describe(P, generate(P), mulberry32(P.seed + 99));
+// opts (other themes, e.g. tools/frost_dungeon): floors replaces FLOORS, names NAME_A, suffixes NAME_B, circles CIRCLES.
+function buildFloor(n, SIZES, opts = {}) {
+  const P = (opts.floors || FLOORS)[n], theme = themeFor(n, P);
+  const plan = P.handmade ? JSON.parse(JSON.stringify(F1)) : describe(P, generate(P), mulberry32(P.seed + 99), opts.names, opts.suffixes);
   const GC = plan.gc, GR = plan.gr, COLS = GC * SW, ROWS = GR * SH;
-  const W = { n, title: P.title, circle: CIRCLES[P.circle], theme, boss: P.boss, diff: difficultyFor(n), final: !!P.final, COLS, ROWS, C, SW, SH,
+  const W = { n, title: P.title, circle: (opts.circles || CIRCLES)[P.circle], theme, boss: P.boss, diff: difficultyFor(n, P), final: !!P.final, COLS, ROWS, C, SW, SH,
     grid: new Uint8Array(COLS * ROWS), roomAt: new Int16Array(COLS * ROWS).fill(-1), holeAt: new Uint8Array(COLS * ROWS), tileAt: new Array(COLS * ROWS),
     rooms: plan.rooms, doors: [], props: [], decals: [], wallDecor: [], ents: [], lights: [], groups: plan.groups || {}, occupied: new Set() };
   const idx = (x, y) => y * COLS + x, inGrid = (x, y) => x >= 0 && y >= 0 && x < COLS && y < ROWS;
@@ -591,7 +592,7 @@ function autoDress(W, r, SIZES) {
   const walk = t => t === 1 || t === 2 || t === 3, cell = (x, y) => W.grid[idx(x, y)];
   const inRoom = (x, y) => W.roomAt[idx(x, y)] === r.index;
   const free = (x, y) => inRoom(x, y) && cell(x, y) === 1 && !W.occupied.has(idx(x, y));
-  const circle = FLOORS[W.n].circle;
+  const circle = W.theme.circle;
   const banner = BANNERS[(r.index + W.n) % BANNERS.length];
   for (const d of r.doors) {
     if (d.dir === 'v' && inRoom(d.x0, d.y1 + 1)) {

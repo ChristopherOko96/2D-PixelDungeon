@@ -3,7 +3,8 @@
 Stand 28.10.2026. Neuer Einzelspieler-Modus mit zehn Etagen im Höllenstil aus `rooms.zip`.
 Start: Hauptmenü → **LEVEL-AUSWAHL (DEBUG)** → Welt **HELL-DUNGEON** → je Etage **START** (Eingang) oder
 **BOSS** (direkt im Bossraum, der Kampf beginnt sofort); außerdem `Hell-Dungeon.cmd` oder `scripts/Dev.ps1 HellDungeon`.
-Die Spielfigur ist ein Platzhalter. Monster und Bosse stammen aus der Vorschau (`tools/hell_dungeon/hell_monsters.js`).
+Die Spielfigur ist ein Platzhalter. Monster und Bosse stammen aus der Vorschau (`tools/hell_dungeon/hell_monsters.js`);
+Themen-Welten mit eigenen Gegnern (`mobs` im Thema, z. B. die Frostgruft) behalten ihre eigenen.
 
 ## Regeln
 
@@ -88,12 +89,13 @@ Der Modus ist bewusst vom vernetzten Krypta-Spiel (`src/game.gd`) getrennt: kein
 | `player` | `hp` (halbe Herzen zu Beginn), `max_hp_cap`, `speed` (px/s), `lava_slow` (Faktor), `invulnerable` (s nach Treffer), `half_width`/`height` (Kollisionsbox) |
 | `shot` | `speed` (px/s), `life` (s), `cooldown` (s) |
 | `enemy_shot` | `speed`, `ring_speed` (px/s), `life` (s), `hit_radius` (px) |
-| `monsters` | `hit_mob`/`hit_boss` (halbe Herzen je Treffer), `contact_reach` (px), `lord_face_deadzone` (px), `echo_hp_share` (Anteil der Boss-LP je Echo), `echo_kinds` (Angriffe der Echos), `burrow_speed` (px/s), `flight_altitude` und `immune_altitude` (px) und `spawn_grow` (s) |
+| `mobs` | Platzhalter-Gegner der Themen-Welten ohne eigene Werte: je Art `hp`, `speed`, `scale`, `radius`; `spucker.fire_every` (s), `keep_away` (px); `boss.max_adds` |
+| `monsters` | Höllen-Monster: `hit_mob`/`hit_boss` (halbe Herzen je Treffer), `contact_reach` (px), `lord_face_deadzone` (px), `echo_hp_share` (Anteil der Boss-LP je Echo), `echo_kinds` (Angriffe der Echos), `burrow_speed` (px/s), `flight_altitude` und `immune_altitude` (px) `spawn_grow` (s) und `seal_demon` (Monster-ID der Siegel-Dämonen) |
 | `hazards` | `spike_period` (s je Phase), `vent_period`, `vent_burst` (s), `vent_radius` (px) |
 | `drops` | Wahrscheinlichkeit für Herz und Runenstein nach einem Kampf |
 | `vault` | Runensteine `gems_base` + `gems_per_floor` × Etage, `heart_containers` |
 | `view` | sichtbare Weltbreite, Basisbreite, Licht der Figur, max. Lichter im Shader, Helligkeitsstufen |
-| `seal` | `bless_chance` (Anteil Segen), `demons` (Anzahl), `demon_kind` (Monster-ID aus `hell_monsters.json`) |
+| `seal` | `bless_chance` (Anteil Segen), `demons` (Anzahl), `demon_kind` (Gegnerart in Themen-Welten) |
 | `blessings` | `dmg` (+Schaden), `rate_mul`/`rate_min` (Schussabstand), `speed_mul`, `range_mul`, `heart` (halbe Herzen) |
 | `pit` | `damage` (halbe Herzen), `reach_x`/`reach_y` (px um die Grubenmitte) |
 | `clone` | `floor` (Etage des Bosses mit Skill), `duration` (s), `fire_every` (s), `range` (px), `follow`/`weave` (px) |
@@ -104,6 +106,38 @@ Der Modus ist bewusst vom vernetzten Krypta-Spiel (`src/game.gd`) getrennt: kein
 Nach Änderungen an `tools/hell_dungeon/hell_monsters.js`: `node tools/hell_dungeon/export_monsters.js`
 schreibt Atlanten und `hell_monsters.json`, danach Godot einmal importieren lassen.
 Kampfwerte stehen in `STATS` der JS-Datei, die Etagen-Zuordnung in `FLOORS`.
+
+## Themen: Frostgruft (Story 2)
+
+`hell_game.gd` liest optional eine Thema-Datei (`theme_path`). Ohne sie gilt `THEME_DEFAULT`, also der Hölle-Look.
+`src/hell/frost_dungeon.tscn` setzt `assets/data/frost_theme.json`: Etagen aus `assets/data/frost_floors.json`,
+Skin aus `assets/sprites/frost/` (0x72, Superdark, Nijikokun; `tools/frost_dungeon/`), scharfe Pixel, Held ×3,
+Schlüssel aus Schlüsselräumen in Truhen (`key_in_chest`), Zelle 2 als Glatteis statt Lava (`liquid`: rutschen, kein
+Schaden), eigene Schlüsselnamen, Farben und Wortersetzungen (`words`). Heldenklassen (`classes`, `class_id`):
+Schwertkämpfer (Schwerthieb im Bogen, 7 Herzen), Bogenschütze (Pfeile, 6 Herzen), Magier (Magiekugel mit Flächenschaden,
+5 Herzen); Waffen ×2 in der Hand (`weapon_scale`). Gegner (`mobs`, `roster`, Regeln in `src/hell/mob_rules.gd`):
+Eis-Zombie (verlangsamt bei Berührung), Frost-Skelett (hält Abstand, wirft Splitter), Eisschleim (teilt sich groß → mittel
+→ klein), Frostkobold (Sprint auf den Helden), Frostwirbel (zieht den Helden an), Eisritter (Schild blockt von vorn),
+Eiskristall (steht, schießt Fächer); sie kommen je nach Etage dazu. Wächter tragen das Aussehen ihrer Etage (`bosses`).
+Eigene Kämpfe (`boss_kits`, `src/hell/boss_kit.gd`): Frostnekromant (Etage 3), Frostleiche (6) und Frostkommandant (9, Schild
+vorn) mit je zwei Phasen; Hrimgar (10) mit drei Lebensbalken: Eispanzer (Faust-Bumerang, Stampfringe mit Lücke, Eiszapfen),
+Gletscherkern (Sprung in die Mitte, schützende Kristalle mit halbem Schaden, kreisender Frostatem, Kältefelder),
+Schneesturm (dunkler Raum, Splitterspirale, jagende Fäuste, Ansturm; unter 15 % Ewiger Frost mit sicheren Kreisen, danach
+Erschöpfung). Kit-Bosse haben keinen Rückstoß; zwischen den Phasen 2 s unverwundbar, Splitterring, Stoß (`phase_break`).
+Heldenentwicklung (`src/hell/hero_kit.gd`, `leveling`): Erfahrung je Kill, Level-up mit Ring, Banner, Heilung und
+Sound; Fähigkeiten aus `assets/data/hero_skills.json` auf 1–4, frei ab Level 1/3/6/10, Entfernungen ×2,4; Leiste unten.
+Gravitationsstab (`gravity_staff`): Geheimraum Etage 4 hinter der rissigen Eiswand, vier Platten in Reihenfolge brechen das
+Siegel; nur der Magier nimmt ihn. Angriff wird zum Gravitationsball (zieht Gegner), Taste 1 Gravitationswand (hält Gegner
+und Geschosse auf), rechte Maus ziehen = Schwerkraftleiste (hält Geschosse kurz an); Leiste wird dunkelviolett, T wechselt.
+Sounds (`sounds`) und Musik (`music`) über `src/vfx/sfx.gd` und `src/audio/music.gd`. Bossbalken oben, Lebensbalken über
+verletzten Gegnern. In der Frostgruft: F1–F10 Etage (mit Fortschritt), Bild↑ ein Level (Debug).
+Relikte (`relics`, `src/hell/relic_kit.gd`): je Lauf ein Schrein im Geheimraum einer zufälligen Etage (3–6) mit dem
+Relikt der Klasse: Magier Gravitationsstab (Ball stärker als der Stab; Wand, Leiste, Steinwurf, Steingolem), Schwertkämpfer
+Gravitationshammer (Hammerschlag; Sprungschlag, Gravitationsfeld, Felsenwelle, Meteor); Fähigkeiten 1–4 frei ab Level
+1/3/6/10. Bogenschütze folgt. Level-up-Karten (`cards`, `src/hell/card_kit.gd`): 3 Karten, Taste 7/8/9 oder Klick, kleine
+Schritte mit Höchststufe. HUD (`styled_hud`, `src/hell/frost_hud.gd`): 0x72-Herzen, gerahmtes Banner, Auftrag mit
+Haupt- und Nebenzielen unter der Minikarte, Statusfenster (C / Tab). Gestartet über Hauptmenü → STORY-MODUS → Story 2 → Heldenwahl. Tests: `tests/frost_floor_data_test.gd`, `tests/frost_runtime_test.gd`; Nachweise:
+`production/qa/evidence/frost-floors/` (`scripts/capture_frost_dungeon.gd`, `scripts/capture_frost_classes.gd`, `scripts/capture_frost_monsters.gd`, `scripts/capture_frost_bosses.gd`); Regeltests `tests/mob_rules_test.gd`, `tests/boss_kit_test.gd`, `tests/hero_kit_test.gd`, `tests/relic_card_test.gd`; Aufnahmen auch `scripts/capture_frost_skills.gd`, `scripts/capture_frost_hud.gd`.
 
 ## Grenzen
 

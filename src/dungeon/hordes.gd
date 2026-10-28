@@ -114,6 +114,8 @@ func step(delta: float) -> void:
 		var kind: String = game.crypt_ai.choose_kind(int(game.room), int(state.spawned), int(state.total), false, _rng)
 		var enemy: Dictionary = game._create_enemy(kind, point)
 		enemy.wave = true
+		# Waves come for the party, so they start angry (see src/combat/aggro.gd).
+		enemy.aggro = true
 		enemy.nav_timer = _rng.randf_range(0.0, 0.4)
 		game.enemies.append(enemy)
 		game.add_fx("enemy_spawn", point, 18.0)

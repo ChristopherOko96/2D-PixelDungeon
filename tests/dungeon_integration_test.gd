@@ -70,6 +70,9 @@ func _test_room_and_geometry(game: Node, layout: Dictionary) -> void:
 	game.enemies = [{"pos": Vector2(350, 200), "hp": 8, "max_hp": 8, "boss": false, "radius": 13, "speed": 55, "shot_timer": 1.0, "nav_timer": 0.0, "nav_path": PackedVector2Array()}]
 	game.players[1].pos = Vector2(500, 200)
 	game._simulate_enemies(0.5)
+	check(game.enemies[0].pos == Vector2(350, 200) and not bool(game.enemies[0].get("aggro", false)), "an enemy that cannot see the hero behind the pillar stays put")
+	game.enemies[0].aggro = true
+	game._simulate_enemies(0.5)
 	check(game.enemies[0].pos.x <= 371.001, "chasing enemy respects pillar collision")
 	check(game.enemies[0].pos.distance_to(Vector2(350, 200)) > 1.0, "chasing enemy starts following a route around cover")
 	# Both projectile owners must hit the pillar before an actor behind it.
