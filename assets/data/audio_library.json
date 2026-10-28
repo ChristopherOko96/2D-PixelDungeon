@@ -1,0 +1,3749 @@
+{
+ "_note": "Sound library (scripts/prepare_audio_library.js): every pack with its source, licence and files. seconds = length; mean_db / peak_db = measured level in dBFS; gain_db levels the file to a mean of -20 dBFS without its peak passing -1 dBFS. The sound table (audio_sfx.json) and the music table (audio_music.json) pick files from here; the Klangwerkstatt lists them.",
+ "schema_version": 1,
+ "packs": {
+  "kenney_impact": {
+   "name": "Kenney Impact Sounds",
+   "author": "Kenney (kenney.nl)",
+   "url": "https://kenney.nl/assets/impact-sounds",
+   "via": "https://github.com/Boyquotes/kenney-impact-sounds-for-godot",
+   "license": "CC0 1.0",
+   "files": [
+    {
+     "path": "res://assets/audio/library/kenney_impact/footstep_carpet_000.ogg",
+     "name": "footstep_carpet_000",
+     "seconds": 0.145,
+     "mean_db": -23.7,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/footstep_carpet_001.ogg",
+     "name": "footstep_carpet_001",
+     "seconds": 0.145,
+     "mean_db": -19.6,
+     "peak_db": -1.1,
+     "gain_db": -0.4
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/footstep_carpet_002.ogg",
+     "name": "footstep_carpet_002",
+     "seconds": 0.145,
+     "mean_db": -19.6,
+     "peak_db": -1.1,
+     "gain_db": -0.4
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/footstep_carpet_003.ogg",
+     "name": "footstep_carpet_003",
+     "seconds": 0.145,
+     "mean_db": -22.9,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/footstep_carpet_004.ogg",
+     "name": "footstep_carpet_004",
+     "seconds": 0.145,
+     "mean_db": -22.9,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/footstep_concrete_000.ogg",
+     "name": "footstep_concrete_000",
+     "seconds": 0.106,
+     "mean_db": -20.9,
+     "peak_db": -0.9,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/footstep_concrete_001.ogg",
+     "name": "footstep_concrete_001",
+     "seconds": 0.108,
+     "mean_db": -22.4,
+     "peak_db": -1.2,
+     "gain_db": 0.2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/footstep_concrete_002.ogg",
+     "name": "footstep_concrete_002",
+     "seconds": 0.113,
+     "mean_db": -22.7,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/footstep_concrete_003.ogg",
+     "name": "footstep_concrete_003",
+     "seconds": 0.11,
+     "mean_db": -21.7,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/footstep_concrete_004.ogg",
+     "name": "footstep_concrete_004",
+     "seconds": 0.114,
+     "mean_db": -21.2,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/footstep_grass_000.ogg",
+     "name": "footstep_grass_000",
+     "seconds": 0.778,
+     "mean_db": -29.9,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/footstep_grass_001.ogg",
+     "name": "footstep_grass_001",
+     "seconds": 0.674,
+     "mean_db": -28.8,
+     "peak_db": -1.2,
+     "gain_db": 0.2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/footstep_grass_002.ogg",
+     "name": "footstep_grass_002",
+     "seconds": 0.692,
+     "mean_db": -29.5,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/footstep_grass_003.ogg",
+     "name": "footstep_grass_003",
+     "seconds": 0.669,
+     "mean_db": -29.4,
+     "peak_db": -0.9,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/footstep_grass_004.ogg",
+     "name": "footstep_grass_004",
+     "seconds": 0.59,
+     "mean_db": -28.5,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/footstep_snow_000.ogg",
+     "name": "footstep_snow_000",
+     "seconds": 0.374,
+     "mean_db": -22.3,
+     "peak_db": -0.9,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/footstep_snow_001.ogg",
+     "name": "footstep_snow_001",
+     "seconds": 0.374,
+     "mean_db": -18.7,
+     "peak_db": -1,
+     "gain_db": -1.3
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/footstep_snow_002.ogg",
+     "name": "footstep_snow_002",
+     "seconds": 0.374,
+     "mean_db": -18.8,
+     "peak_db": -1,
+     "gain_db": -1.2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/footstep_snow_003.ogg",
+     "name": "footstep_snow_003",
+     "seconds": 0.374,
+     "mean_db": -23,
+     "peak_db": -0.9,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/footstep_snow_004.ogg",
+     "name": "footstep_snow_004",
+     "seconds": 0.374,
+     "mean_db": -21.9,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/footstep_wood_000.ogg",
+     "name": "footstep_wood_000",
+     "seconds": 0.25,
+     "mean_db": -21.2,
+     "peak_db": -0.9,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/footstep_wood_001.ogg",
+     "name": "footstep_wood_001",
+     "seconds": 0.252,
+     "mean_db": -20,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/footstep_wood_002.ogg",
+     "name": "footstep_wood_002",
+     "seconds": 0.251,
+     "mean_db": -19.4,
+     "peak_db": -0.9,
+     "gain_db": -0.6
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/footstep_wood_003.ogg",
+     "name": "footstep_wood_003",
+     "seconds": 0.252,
+     "mean_db": -21.5,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/footstep_wood_004.ogg",
+     "name": "footstep_wood_004",
+     "seconds": 0.248,
+     "mean_db": -19.5,
+     "peak_db": -1,
+     "gain_db": -0.5
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_bell_heavy_000.ogg",
+     "name": "impact_bell_heavy_000",
+     "seconds": 1.48,
+     "mean_db": -26.3,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_bell_heavy_001.ogg",
+     "name": "impact_bell_heavy_001",
+     "seconds": 1.741,
+     "mean_db": -24.6,
+     "peak_db": -1.2,
+     "gain_db": 0.2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_bell_heavy_002.ogg",
+     "name": "impact_bell_heavy_002",
+     "seconds": 0.697,
+     "mean_db": -23.8,
+     "peak_db": -0.8,
+     "gain_db": -0.2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_bell_heavy_003.ogg",
+     "name": "impact_bell_heavy_003",
+     "seconds": 0.654,
+     "mean_db": -24.6,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_bell_heavy_004.ogg",
+     "name": "impact_bell_heavy_004",
+     "seconds": 0.301,
+     "mean_db": -22.2,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_generic_light_000.ogg",
+     "name": "impact_generic_light_000",
+     "seconds": 0.139,
+     "mean_db": -21,
+     "peak_db": -1.2,
+     "gain_db": 0.2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_generic_light_001.ogg",
+     "name": "impact_generic_light_001",
+     "seconds": 0.118,
+     "mean_db": -20,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_generic_light_002.ogg",
+     "name": "impact_generic_light_002",
+     "seconds": 0.14,
+     "mean_db": -21.2,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_generic_light_003.ogg",
+     "name": "impact_generic_light_003",
+     "seconds": 0.138,
+     "mean_db": -20.6,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_generic_light_004.ogg",
+     "name": "impact_generic_light_004",
+     "seconds": 0.14,
+     "mean_db": -20.5,
+     "peak_db": -0.9,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_glass_heavy_000.ogg",
+     "name": "impact_glass_heavy_000",
+     "seconds": 0.241,
+     "mean_db": -22.4,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_glass_heavy_001.ogg",
+     "name": "impact_glass_heavy_001",
+     "seconds": 0.429,
+     "mean_db": -25.3,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_glass_heavy_002.ogg",
+     "name": "impact_glass_heavy_002",
+     "seconds": 0.247,
+     "mean_db": -23.1,
+     "peak_db": -0.9,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_glass_heavy_003.ogg",
+     "name": "impact_glass_heavy_003",
+     "seconds": 0.172,
+     "mean_db": -19.5,
+     "peak_db": -0.9,
+     "gain_db": -0.5
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_glass_heavy_004.ogg",
+     "name": "impact_glass_heavy_004",
+     "seconds": 0.399,
+     "mean_db": -24.1,
+     "peak_db": -1.2,
+     "gain_db": 0.2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_glass_light_000.ogg",
+     "name": "impact_glass_light_000",
+     "seconds": 0.21,
+     "mean_db": -21.8,
+     "peak_db": -1.6,
+     "gain_db": 0.6
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_glass_light_001.ogg",
+     "name": "impact_glass_light_001",
+     "seconds": 0.21,
+     "mean_db": -21.3,
+     "peak_db": -0.9,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_glass_light_002.ogg",
+     "name": "impact_glass_light_002",
+     "seconds": 0.21,
+     "mean_db": -19.9,
+     "peak_db": -1.2,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_glass_light_003.ogg",
+     "name": "impact_glass_light_003",
+     "seconds": 0.21,
+     "mean_db": -21,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_glass_light_004.ogg",
+     "name": "impact_glass_light_004",
+     "seconds": 0.21,
+     "mean_db": -20.5,
+     "peak_db": -0.8,
+     "gain_db": -0.2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_glass_medium_000.ogg",
+     "name": "impact_glass_medium_000",
+     "seconds": 0.543,
+     "mean_db": -25.4,
+     "peak_db": -1.2,
+     "gain_db": 0.2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_glass_medium_001.ogg",
+     "name": "impact_glass_medium_001",
+     "seconds": 0.543,
+     "mean_db": -25.2,
+     "peak_db": -0.9,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_glass_medium_002.ogg",
+     "name": "impact_glass_medium_002",
+     "seconds": 0.543,
+     "mean_db": -25.6,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_glass_medium_003.ogg",
+     "name": "impact_glass_medium_003",
+     "seconds": 0.543,
+     "mean_db": -25.5,
+     "peak_db": -1.3,
+     "gain_db": 0.3
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_glass_medium_004.ogg",
+     "name": "impact_glass_medium_004",
+     "seconds": 0.543,
+     "mean_db": -24.5,
+     "peak_db": -1.4,
+     "gain_db": 0.4
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_metal_heavy_000.ogg",
+     "name": "impact_metal_heavy_000",
+     "seconds": 0.168,
+     "mean_db": -20.4,
+     "peak_db": -0.9,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_metal_heavy_001.ogg",
+     "name": "impact_metal_heavy_001",
+     "seconds": 0.359,
+     "mean_db": -23.6,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_metal_heavy_002.ogg",
+     "name": "impact_metal_heavy_002",
+     "seconds": 0.117,
+     "mean_db": -18.6,
+     "peak_db": -1.2,
+     "gain_db": -1.4
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_metal_heavy_003.ogg",
+     "name": "impact_metal_heavy_003",
+     "seconds": 0.207,
+     "mean_db": -21.2,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_metal_heavy_004.ogg",
+     "name": "impact_metal_heavy_004",
+     "seconds": 0.134,
+     "mean_db": -19.4,
+     "peak_db": -1.3,
+     "gain_db": -0.6
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_metal_light_000.ogg",
+     "name": "impact_metal_light_000",
+     "seconds": 0.351,
+     "mean_db": -21.1,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_metal_light_001.ogg",
+     "name": "impact_metal_light_001",
+     "seconds": 0.252,
+     "mean_db": -20,
+     "peak_db": -0.9,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_metal_light_002.ogg",
+     "name": "impact_metal_light_002",
+     "seconds": 0.236,
+     "mean_db": -20.6,
+     "peak_db": -1.4,
+     "gain_db": 0.4
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_metal_light_003.ogg",
+     "name": "impact_metal_light_003",
+     "seconds": 0.482,
+     "mean_db": -20.7,
+     "peak_db": -1.5,
+     "gain_db": 0.5
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_metal_light_004.ogg",
+     "name": "impact_metal_light_004",
+     "seconds": 0.213,
+     "mean_db": -20.6,
+     "peak_db": -1.3,
+     "gain_db": 0.3
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_metal_medium_000.ogg",
+     "name": "impact_metal_medium_000",
+     "seconds": 0.272,
+     "mean_db": -21.5,
+     "peak_db": -1.2,
+     "gain_db": 0.2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_metal_medium_001.ogg",
+     "name": "impact_metal_medium_001",
+     "seconds": 0.143,
+     "mean_db": -19.5,
+     "peak_db": -1.2,
+     "gain_db": -0.5
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_metal_medium_002.ogg",
+     "name": "impact_metal_medium_002",
+     "seconds": 0.119,
+     "mean_db": -21.1,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_metal_medium_003.ogg",
+     "name": "impact_metal_medium_003",
+     "seconds": 0.254,
+     "mean_db": -21.7,
+     "peak_db": -1.4,
+     "gain_db": 0.4
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_metal_medium_004.ogg",
+     "name": "impact_metal_medium_004",
+     "seconds": 0.109,
+     "mean_db": -20.4,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_mining_000.ogg",
+     "name": "impact_mining_000",
+     "seconds": 0.937,
+     "mean_db": -20.6,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_mining_001.ogg",
+     "name": "impact_mining_001",
+     "seconds": 0.869,
+     "mean_db": -21.1,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_mining_002.ogg",
+     "name": "impact_mining_002",
+     "seconds": 0.805,
+     "mean_db": -22.9,
+     "peak_db": -1.2,
+     "gain_db": 0.2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_mining_003.ogg",
+     "name": "impact_mining_003",
+     "seconds": 0.992,
+     "mean_db": -23.4,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_mining_004.ogg",
+     "name": "impact_mining_004",
+     "seconds": 0.83,
+     "mean_db": -19.8,
+     "peak_db": -0.9,
+     "gain_db": -0.2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_plank_medium_000.ogg",
+     "name": "impact_plank_medium_000",
+     "seconds": 0.779,
+     "mean_db": -23.9,
+     "peak_db": -1.2,
+     "gain_db": 0.2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_plank_medium_001.ogg",
+     "name": "impact_plank_medium_001",
+     "seconds": 0.779,
+     "mean_db": -20.6,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_plank_medium_002.ogg",
+     "name": "impact_plank_medium_002",
+     "seconds": 0.779,
+     "mean_db": -21,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_plank_medium_003.ogg",
+     "name": "impact_plank_medium_003",
+     "seconds": 0.779,
+     "mean_db": -21.7,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_plank_medium_004.ogg",
+     "name": "impact_plank_medium_004",
+     "seconds": 0.779,
+     "mean_db": -25.2,
+     "peak_db": -0.9,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_plate_heavy_000.ogg",
+     "name": "impact_plate_heavy_000",
+     "seconds": 0.489,
+     "mean_db": -22.6,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_plate_heavy_001.ogg",
+     "name": "impact_plate_heavy_001",
+     "seconds": 0.352,
+     "mean_db": -17.4,
+     "peak_db": -0.9,
+     "gain_db": -2.6
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_plate_heavy_002.ogg",
+     "name": "impact_plate_heavy_002",
+     "seconds": 0.494,
+     "mean_db": -21.8,
+     "peak_db": -1.4,
+     "gain_db": 0.4
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_plate_heavy_003.ogg",
+     "name": "impact_plate_heavy_003",
+     "seconds": 0.347,
+     "mean_db": -17.8,
+     "peak_db": -1.2,
+     "gain_db": -2.2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_plate_heavy_004.ogg",
+     "name": "impact_plate_heavy_004",
+     "seconds": 0.559,
+     "mean_db": -21.7,
+     "peak_db": -0.6,
+     "gain_db": -0.4
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_plate_light_000.ogg",
+     "name": "impact_plate_light_000",
+     "seconds": 0.542,
+     "mean_db": -25.5,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_plate_light_001.ogg",
+     "name": "impact_plate_light_001",
+     "seconds": 0.655,
+     "mean_db": -27.4,
+     "peak_db": -1.3,
+     "gain_db": 0.3
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_plate_light_002.ogg",
+     "name": "impact_plate_light_002",
+     "seconds": 0.489,
+     "mean_db": -25.3,
+     "peak_db": -0.9,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_plate_light_003.ogg",
+     "name": "impact_plate_light_003",
+     "seconds": 0.528,
+     "mean_db": -24.5,
+     "peak_db": -1.2,
+     "gain_db": 0.2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_plate_light_004.ogg",
+     "name": "impact_plate_light_004",
+     "seconds": 0.657,
+     "mean_db": -26.3,
+     "peak_db": -1.3,
+     "gain_db": 0.3
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_plate_medium_000.ogg",
+     "name": "impact_plate_medium_000",
+     "seconds": 0.609,
+     "mean_db": -25.6,
+     "peak_db": -1.4,
+     "gain_db": 0.4
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_plate_medium_001.ogg",
+     "name": "impact_plate_medium_001",
+     "seconds": 0.616,
+     "mean_db": -24.4,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_plate_medium_002.ogg",
+     "name": "impact_plate_medium_002",
+     "seconds": 0.515,
+     "mean_db": -24.2,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_plate_medium_003.ogg",
+     "name": "impact_plate_medium_003",
+     "seconds": 0.654,
+     "mean_db": -22.3,
+     "peak_db": -1.2,
+     "gain_db": 0.2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_plate_medium_004.ogg",
+     "name": "impact_plate_medium_004",
+     "seconds": 0.534,
+     "mean_db": -21.7,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_punch_heavy_000.ogg",
+     "name": "impact_punch_heavy_000",
+     "seconds": 0.649,
+     "mean_db": -18,
+     "peak_db": -1,
+     "gain_db": -2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_punch_heavy_001.ogg",
+     "name": "impact_punch_heavy_001",
+     "seconds": 0.536,
+     "mean_db": -17.5,
+     "peak_db": -1.2,
+     "gain_db": -2.5
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_punch_heavy_002.ogg",
+     "name": "impact_punch_heavy_002",
+     "seconds": 0.457,
+     "mean_db": -16.6,
+     "peak_db": -1,
+     "gain_db": -3.4
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_punch_heavy_003.ogg",
+     "name": "impact_punch_heavy_003",
+     "seconds": 0.474,
+     "mean_db": -17.2,
+     "peak_db": -0.9,
+     "gain_db": -2.8
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_punch_heavy_004.ogg",
+     "name": "impact_punch_heavy_004",
+     "seconds": 0.536,
+     "mean_db": -17.4,
+     "peak_db": -1,
+     "gain_db": -2.6
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_punch_medium_000.ogg",
+     "name": "impact_punch_medium_000",
+     "seconds": 0.431,
+     "mean_db": -17.2,
+     "peak_db": -1.1,
+     "gain_db": -2.8
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_punch_medium_001.ogg",
+     "name": "impact_punch_medium_001",
+     "seconds": 0.405,
+     "mean_db": -16.9,
+     "peak_db": -1.1,
+     "gain_db": -3.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_punch_medium_002.ogg",
+     "name": "impact_punch_medium_002",
+     "seconds": 0.541,
+     "mean_db": -18.7,
+     "peak_db": -0.8,
+     "gain_db": -1.3
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_punch_medium_003.ogg",
+     "name": "impact_punch_medium_003",
+     "seconds": 0.455,
+     "mean_db": -18.2,
+     "peak_db": -0.9,
+     "gain_db": -1.8
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_punch_medium_004.ogg",
+     "name": "impact_punch_medium_004",
+     "seconds": 0.543,
+     "mean_db": -18.6,
+     "peak_db": -1,
+     "gain_db": -1.4
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_soft_heavy_000.ogg",
+     "name": "impact_soft_heavy_000",
+     "seconds": 0.505,
+     "mean_db": -17.4,
+     "peak_db": -0.9,
+     "gain_db": -2.6
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_soft_heavy_001.ogg",
+     "name": "impact_soft_heavy_001",
+     "seconds": 0.572,
+     "mean_db": -17.4,
+     "peak_db": -1,
+     "gain_db": -2.6
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_soft_heavy_002.ogg",
+     "name": "impact_soft_heavy_002",
+     "seconds": 0.572,
+     "mean_db": -17.1,
+     "peak_db": -0.9,
+     "gain_db": -2.9
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_soft_heavy_003.ogg",
+     "name": "impact_soft_heavy_003",
+     "seconds": 0.544,
+     "mean_db": -16.6,
+     "peak_db": -1,
+     "gain_db": -3.4
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_soft_heavy_004.ogg",
+     "name": "impact_soft_heavy_004",
+     "seconds": 0.501,
+     "mean_db": -16.8,
+     "peak_db": -1,
+     "gain_db": -3.2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_soft_medium_000.ogg",
+     "name": "impact_soft_medium_000",
+     "seconds": 0.118,
+     "mean_db": -14.2,
+     "peak_db": -1,
+     "gain_db": -5.8
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_soft_medium_001.ogg",
+     "name": "impact_soft_medium_001",
+     "seconds": 0.183,
+     "mean_db": -14.8,
+     "peak_db": -0.9,
+     "gain_db": -5.2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_soft_medium_002.ogg",
+     "name": "impact_soft_medium_002",
+     "seconds": 0.135,
+     "mean_db": -14.1,
+     "peak_db": -1,
+     "gain_db": -5.9
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_soft_medium_003.ogg",
+     "name": "impact_soft_medium_003",
+     "seconds": 0.14,
+     "mean_db": -14.2,
+     "peak_db": -0.9,
+     "gain_db": -5.8
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_soft_medium_004.ogg",
+     "name": "impact_soft_medium_004",
+     "seconds": 0.147,
+     "mean_db": -14.4,
+     "peak_db": -1,
+     "gain_db": -5.6
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_tin_medium_000.ogg",
+     "name": "impact_tin_medium_000",
+     "seconds": 0.159,
+     "mean_db": -20.9,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_tin_medium_001.ogg",
+     "name": "impact_tin_medium_001",
+     "seconds": 0.174,
+     "mean_db": -22.5,
+     "peak_db": -1.5,
+     "gain_db": 0.5
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_tin_medium_002.ogg",
+     "name": "impact_tin_medium_002",
+     "seconds": 0.134,
+     "mean_db": -21.5,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_tin_medium_003.ogg",
+     "name": "impact_tin_medium_003",
+     "seconds": 0.215,
+     "mean_db": -23.1,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_tin_medium_004.ogg",
+     "name": "impact_tin_medium_004",
+     "seconds": 0.179,
+     "mean_db": -23.1,
+     "peak_db": -1.2,
+     "gain_db": 0.2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_wood_heavy_000.ogg",
+     "name": "impact_wood_heavy_000",
+     "seconds": 0.313,
+     "mean_db": -19.6,
+     "peak_db": -0.9,
+     "gain_db": -0.4
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_wood_heavy_001.ogg",
+     "name": "impact_wood_heavy_001",
+     "seconds": 0.313,
+     "mean_db": -19.7,
+     "peak_db": -0.9,
+     "gain_db": -0.3
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_wood_heavy_002.ogg",
+     "name": "impact_wood_heavy_002",
+     "seconds": 0.313,
+     "mean_db": -18.9,
+     "peak_db": -1,
+     "gain_db": -1.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_wood_heavy_003.ogg",
+     "name": "impact_wood_heavy_003",
+     "seconds": 0.313,
+     "mean_db": -20.4,
+     "peak_db": -0.9,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_wood_heavy_004.ogg",
+     "name": "impact_wood_heavy_004",
+     "seconds": 0.313,
+     "mean_db": -20.1,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_wood_light_000.ogg",
+     "name": "impact_wood_light_000",
+     "seconds": 0.266,
+     "mean_db": -22.3,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_wood_light_001.ogg",
+     "name": "impact_wood_light_001",
+     "seconds": 0.266,
+     "mean_db": -24,
+     "peak_db": -0.9,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_wood_light_002.ogg",
+     "name": "impact_wood_light_002",
+     "seconds": 0.266,
+     "mean_db": -22,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_wood_light_003.ogg",
+     "name": "impact_wood_light_003",
+     "seconds": 0.266,
+     "mean_db": -23.7,
+     "peak_db": -0.9,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_wood_light_004.ogg",
+     "name": "impact_wood_light_004",
+     "seconds": 0.266,
+     "mean_db": -24.7,
+     "peak_db": -1.2,
+     "gain_db": 0.2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_wood_medium_000.ogg",
+     "name": "impact_wood_medium_000",
+     "seconds": 0.333,
+     "mean_db": -22.6,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_wood_medium_001.ogg",
+     "name": "impact_wood_medium_001",
+     "seconds": 0.333,
+     "mean_db": -22.5,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_wood_medium_002.ogg",
+     "name": "impact_wood_medium_002",
+     "seconds": 0.333,
+     "mean_db": -22.6,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_wood_medium_003.ogg",
+     "name": "impact_wood_medium_003",
+     "seconds": 0.333,
+     "mean_db": -22.7,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/kenney_impact/impact_wood_medium_004.ogg",
+     "name": "impact_wood_medium_004",
+     "seconds": 0.333,
+     "mean_db": -22.1,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    }
+   ]
+  },
+  "kenney_rpg": {
+   "name": "50 RPG sound effects",
+   "author": "Kenney (kenney.nl)",
+   "url": "https://opengameart.org/content/50-rpg-sound-effects",
+   "via": "",
+   "license": "CC0 1.0",
+   "files": [
+    {
+     "path": "res://assets/audio/library/kenney_rpg/belthandle1.ogg",
+     "name": "belthandle1",
+     "seconds": 0.277,
+     "mean_db": -28.2,
+     "peak_db": -3.3,
+     "gain_db": 2.3
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/belthandle2.ogg",
+     "name": "belthandle2",
+     "seconds": 0.477,
+     "mean_db": -32,
+     "peak_db": -4.2,
+     "gain_db": 3.2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/bookclose.ogg",
+     "name": "bookclose",
+     "seconds": 0.231,
+     "mean_db": -18.8,
+     "peak_db": 0,
+     "gain_db": -1.2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/bookflip1.ogg",
+     "name": "bookflip1",
+     "seconds": 0.769,
+     "mean_db": -29.8,
+     "peak_db": 0,
+     "gain_db": -1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/bookflip2.ogg",
+     "name": "bookflip2",
+     "seconds": 0.43,
+     "mean_db": -37,
+     "peak_db": -8.3,
+     "gain_db": 7.3
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/bookflip3.ogg",
+     "name": "bookflip3",
+     "seconds": 0.231,
+     "mean_db": -32.1,
+     "peak_db": -4.6,
+     "gain_db": 3.6
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/bookopen.ogg",
+     "name": "bookopen",
+     "seconds": 0.154,
+     "mean_db": -33.6,
+     "peak_db": -11.5,
+     "gain_db": 10.5
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/bookplace1.ogg",
+     "name": "bookplace1",
+     "seconds": 0.277,
+     "mean_db": -18,
+     "peak_db": 0,
+     "gain_db": -2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/bookplace2.ogg",
+     "name": "bookplace2",
+     "seconds": 0.354,
+     "mean_db": -18.2,
+     "peak_db": 0,
+     "gain_db": -1.8
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/bookplace3.ogg",
+     "name": "bookplace3",
+     "seconds": 0.261,
+     "mean_db": -17.5,
+     "peak_db": 0,
+     "gain_db": -2.5
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/chop.ogg",
+     "name": "chop",
+     "seconds": 0.24,
+     "mean_db": -18.5,
+     "peak_db": 0,
+     "gain_db": -1.5
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/cloth1.ogg",
+     "name": "cloth1",
+     "seconds": 0.661,
+     "mean_db": -24.6,
+     "peak_db": -3.5,
+     "gain_db": 2.5
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/cloth2.ogg",
+     "name": "cloth2",
+     "seconds": 0.415,
+     "mean_db": -28.7,
+     "peak_db": -7.9,
+     "gain_db": 6.9
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/cloth3.ogg",
+     "name": "cloth3",
+     "seconds": 0.477,
+     "mean_db": -29.3,
+     "peak_db": -10.1,
+     "gain_db": 9.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/cloth4.ogg",
+     "name": "cloth4",
+     "seconds": 0.384,
+     "mean_db": -34.6,
+     "peak_db": -14.6,
+     "gain_db": 13.6
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/clothbelt.ogg",
+     "name": "clothbelt",
+     "seconds": 0.723,
+     "mean_db": -31.1,
+     "peak_db": -4.3,
+     "gain_db": 3.3
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/clothbelt2.ogg",
+     "name": "clothbelt2",
+     "seconds": 0.753,
+     "mean_db": -31.2,
+     "peak_db": -6.7,
+     "gain_db": 5.7
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/creak1.ogg",
+     "name": "creak1",
+     "seconds": 0.661,
+     "mean_db": -25.8,
+     "peak_db": -6.7,
+     "gain_db": 5.7
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/creak2.ogg",
+     "name": "creak2",
+     "seconds": 0.83,
+     "mean_db": -26,
+     "peak_db": -7,
+     "gain_db": 6
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/creak3.ogg",
+     "name": "creak3",
+     "seconds": 0.338,
+     "mean_db": -21.7,
+     "peak_db": -7.4,
+     "gain_db": 1.7
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/doorclose_1.ogg",
+     "name": "doorclose_1",
+     "seconds": 0.675,
+     "mean_db": -17.3,
+     "peak_db": 0,
+     "gain_db": -2.7
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/doorclose_2.ogg",
+     "name": "doorclose_2",
+     "seconds": 0.612,
+     "mean_db": -18.8,
+     "peak_db": -2.4,
+     "gain_db": -1.2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/doorclose_3.ogg",
+     "name": "doorclose_3",
+     "seconds": 0.714,
+     "mean_db": -13.1,
+     "peak_db": 0,
+     "gain_db": -6.9
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/doorclose_4.ogg",
+     "name": "doorclose_4",
+     "seconds": 0.603,
+     "mean_db": -18.2,
+     "peak_db": 0,
+     "gain_db": -1.8
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/dooropen_1.ogg",
+     "name": "dooropen_1",
+     "seconds": 0.919,
+     "mean_db": -20.2,
+     "peak_db": 0,
+     "gain_db": -1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/dooropen_2.ogg",
+     "name": "dooropen_2",
+     "seconds": 1.413,
+     "mean_db": -22.7,
+     "peak_db": 0,
+     "gain_db": -1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/drawknife1.ogg",
+     "name": "drawknife1",
+     "seconds": 0.4,
+     "mean_db": -44.7,
+     "peak_db": -24.3,
+     "gain_db": 18
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/drawknife2.ogg",
+     "name": "drawknife2",
+     "seconds": 0.446,
+     "mean_db": -41.3,
+     "peak_db": -23,
+     "gain_db": 18
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/drawknife3.ogg",
+     "name": "drawknife3",
+     "seconds": 0.477,
+     "mean_db": -38.6,
+     "peak_db": -11.4,
+     "gain_db": 10.4
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/dropleather.ogg",
+     "name": "dropleather",
+     "seconds": 0.415,
+     "mean_db": -18.7,
+     "peak_db": -0.1,
+     "gain_db": -1.3
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/footstep00.ogg",
+     "name": "footstep00",
+     "seconds": 0.249,
+     "mean_db": -19.7,
+     "peak_db": 0,
+     "gain_db": -1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/footstep01.ogg",
+     "name": "footstep01",
+     "seconds": 0.282,
+     "mean_db": -18.3,
+     "peak_db": 0,
+     "gain_db": -1.7
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/footstep02.ogg",
+     "name": "footstep02",
+     "seconds": 0.242,
+     "mean_db": -22.1,
+     "peak_db": -1.2,
+     "gain_db": 0.2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/footstep03.ogg",
+     "name": "footstep03",
+     "seconds": 0.269,
+     "mean_db": -20.1,
+     "peak_db": 0,
+     "gain_db": -1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/footstep04.ogg",
+     "name": "footstep04",
+     "seconds": 0.323,
+     "mean_db": -25.1,
+     "peak_db": -3.5,
+     "gain_db": 2.5
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/footstep05.ogg",
+     "name": "footstep05",
+     "seconds": 0.276,
+     "mean_db": -26.2,
+     "peak_db": -3,
+     "gain_db": 2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/footstep06.ogg",
+     "name": "footstep06",
+     "seconds": 0.242,
+     "mean_db": -21.9,
+     "peak_db": -0.3,
+     "gain_db": -0.7
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/footstep07.ogg",
+     "name": "footstep07",
+     "seconds": 0.256,
+     "mean_db": -21.6,
+     "peak_db": 0,
+     "gain_db": -1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/footstep08.ogg",
+     "name": "footstep08",
+     "seconds": 0.256,
+     "mean_db": -17,
+     "peak_db": 0,
+     "gain_db": -3
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/footstep09.ogg",
+     "name": "footstep09",
+     "seconds": 0.215,
+     "mean_db": -23.5,
+     "peak_db": -6.1,
+     "gain_db": 3.5
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/handlecoins.ogg",
+     "name": "handlecoins",
+     "seconds": 0.846,
+     "mean_db": -28.8,
+     "peak_db": 0,
+     "gain_db": -1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/handlecoins2.ogg",
+     "name": "handlecoins2",
+     "seconds": 0.338,
+     "mean_db": -34,
+     "peak_db": -10.7,
+     "gain_db": 9.7
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/handlesmallleather.ogg",
+     "name": "handlesmallleather",
+     "seconds": 0.338,
+     "mean_db": -35.7,
+     "peak_db": -11.6,
+     "gain_db": 10.6
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/handlesmallleather2.ogg",
+     "name": "handlesmallleather2",
+     "seconds": 0.307,
+     "mean_db": -39.9,
+     "peak_db": -16.5,
+     "gain_db": 15.5
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/knifeslice.ogg",
+     "name": "knifeslice",
+     "seconds": 0.6,
+     "mean_db": -21.5,
+     "peak_db": -1.3,
+     "gain_db": 0.3
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/knifeslice2.ogg",
+     "name": "knifeslice2",
+     "seconds": 0.569,
+     "mean_db": -19.1,
+     "peak_db": 0,
+     "gain_db": -1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/metalclick.ogg",
+     "name": "metalclick",
+     "seconds": 0.446,
+     "mean_db": -34.3,
+     "peak_db": -6.9,
+     "gain_db": 5.9
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/metallatch.ogg",
+     "name": "metallatch",
+     "seconds": 0.261,
+     "mean_db": -20.5,
+     "peak_db": 0,
+     "gain_db": -1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/metalpot1.ogg",
+     "name": "metalpot1",
+     "seconds": 1.46,
+     "mean_db": -15.9,
+     "peak_db": 0,
+     "gain_db": -4.1
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/metalpot2.ogg",
+     "name": "metalpot2",
+     "seconds": 0.938,
+     "mean_db": -13.8,
+     "peak_db": 0,
+     "gain_db": -6.2
+    },
+    {
+     "path": "res://assets/audio/library/kenney_rpg/metalpot3.ogg",
+     "name": "metalpot3",
+     "seconds": 0.907,
+     "mean_db": -11.7,
+     "peak_db": 0,
+     "gain_db": -8.3
+    }
+   ]
+  },
+  "bones": {
+   "name": "Bones rattle (from blukotek, CC0) and Bones 2",
+   "author": "congusbongus; AntumDeluge",
+   "url": "https://opengameart.org/content/bones-rattle ; https://opengameart.org/content/bones-2",
+   "via": "",
+   "license": "CC0 1.0",
+   "files": [
+    {
+     "path": "res://assets/audio/library/bones/bones-2.ogg",
+     "name": "bones-2",
+     "seconds": 1.131,
+     "mean_db": -25,
+     "peak_db": -6.3,
+     "gain_db": 5
+    },
+    {
+     "path": "res://assets/audio/library/bones/bones_rattle_0.ogg",
+     "name": "bones_rattle_0",
+     "seconds": 0.141,
+     "mean_db": -24.9,
+     "peak_db": -1.3,
+     "gain_db": 0.3
+    },
+    {
+     "path": "res://assets/audio/library/bones/bones_rattle_1.ogg",
+     "name": "bones_rattle_1",
+     "seconds": 0.108,
+     "mean_db": -25.7,
+     "peak_db": -1.7,
+     "gain_db": 0.7
+    },
+    {
+     "path": "res://assets/audio/library/bones/bones_rattle_2.ogg",
+     "name": "bones_rattle_2",
+     "seconds": 0.136,
+     "mean_db": -22.3,
+     "peak_db": -0.9,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/library/bones/bones_rattle_3.ogg",
+     "name": "bones_rattle_3",
+     "seconds": 0.119,
+     "mean_db": -25.3,
+     "peak_db": -1.7,
+     "gain_db": 0.7
+    },
+    {
+     "path": "res://assets/audio/library/bones/bones_rattle_4.ogg",
+     "name": "bones_rattle_4",
+     "seconds": 0.09,
+     "mean_db": -26,
+     "peak_db": -1.5,
+     "gain_db": 0.5
+    },
+    {
+     "path": "res://assets/audio/library/bones/bones_rattle_5.ogg",
+     "name": "bones_rattle_5",
+     "seconds": 0.134,
+     "mean_db": -26.4,
+     "peak_db": -2,
+     "gain_db": 1
+    },
+    {
+     "path": "res://assets/audio/library/bones/bones_rattle_6.ogg",
+     "name": "bones_rattle_6",
+     "seconds": 0.153,
+     "mean_db": -26.1,
+     "peak_db": -0.9,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/library/bones/bones_rattle_7.ogg",
+     "name": "bones_rattle_7",
+     "seconds": 0.067,
+     "mean_db": -23.2,
+     "peak_db": -0.9,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/library/bones/bones_rattle_8.ogg",
+     "name": "bones_rattle_8",
+     "seconds": 0.117,
+     "mean_db": -25,
+     "peak_db": -1.4,
+     "gain_db": 0.4
+    },
+    {
+     "path": "res://assets/audio/library/bones/bones_rattle_9.ogg",
+     "name": "bones_rattle_9",
+     "seconds": 0.101,
+     "mean_db": -23.3,
+     "peak_db": -1.8,
+     "gain_db": 0.8
+    }
+   ]
+  },
+  "creatures_1": {
+   "name": "80 CC0 creature SFX",
+   "author": "rubberduck",
+   "url": "https://opengameart.org/content/80-cc0-creature-sfx",
+   "via": "",
+   "license": "CC0 1.0",
+   "files": [
+    {
+     "path": "res://assets/audio/library/creatures_1/alien_01.ogg",
+     "name": "alien_01",
+     "seconds": 0.695,
+     "mean_db": -26.3,
+     "peak_db": -0.9,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/alien_02.ogg",
+     "name": "alien_02",
+     "seconds": 0.783,
+     "mean_db": -21.7,
+     "peak_db": -0.2,
+     "gain_db": -0.8
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/alien_03.ogg",
+     "name": "alien_03",
+     "seconds": 0.829,
+     "mean_db": -20.5,
+     "peak_db": 0,
+     "gain_db": -1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/alien_04.ogg",
+     "name": "alien_04",
+     "seconds": 0.72,
+     "mean_db": -26,
+     "peak_db": 0,
+     "gain_db": -1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/alien_05.ogg",
+     "name": "alien_05",
+     "seconds": 0.453,
+     "mean_db": -27.2,
+     "peak_db": -2.7,
+     "gain_db": 1.7
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/alien_06.ogg",
+     "name": "alien_06",
+     "seconds": 0.417,
+     "mean_db": -19.7,
+     "peak_db": 0,
+     "gain_db": -1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/barking_01.ogg",
+     "name": "barking_01",
+     "seconds": 0.398,
+     "mean_db": -18.6,
+     "peak_db": -0.7,
+     "gain_db": -1.4
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/barking_02.ogg",
+     "name": "barking_02",
+     "seconds": 0.459,
+     "mean_db": -18.6,
+     "peak_db": 0,
+     "gain_db": -1.4
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/breath.ogg",
+     "name": "breath",
+     "seconds": 0.67,
+     "mean_db": -33.2,
+     "peak_db": -12.4,
+     "gain_db": 11.4
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/bug_01.ogg",
+     "name": "bug_01",
+     "seconds": 0.579,
+     "mean_db": -28.1,
+     "peak_db": -2.3,
+     "gain_db": 1.3
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/bug_02.ogg",
+     "name": "bug_02",
+     "seconds": 0.574,
+     "mean_db": -26.5,
+     "peak_db": 0,
+     "gain_db": -1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/bug_03.ogg",
+     "name": "bug_03",
+     "seconds": 0.354,
+     "mean_db": -21.7,
+     "peak_db": -0.9,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/bug_04.ogg",
+     "name": "bug_04",
+     "seconds": 0.445,
+     "mean_db": -17.9,
+     "peak_db": 0,
+     "gain_db": -2.1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/burble_01.ogg",
+     "name": "burble_01",
+     "seconds": 0.992,
+     "mean_db": -25,
+     "peak_db": -5,
+     "gain_db": 4
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/burble_02.ogg",
+     "name": "burble_02",
+     "seconds": 0.926,
+     "mean_db": -24.5,
+     "peak_db": -2.1,
+     "gain_db": 1.1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/burp_01.ogg",
+     "name": "burp_01",
+     "seconds": 0.688,
+     "mean_db": -14.7,
+     "peak_db": -1.4,
+     "gain_db": -5.3
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/burp_02.ogg",
+     "name": "burp_02",
+     "seconds": 0.819,
+     "mean_db": -16.6,
+     "peak_db": -2.5,
+     "gain_db": -3.4
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/cough_01.ogg",
+     "name": "cough_01",
+     "seconds": 0.428,
+     "mean_db": -15.5,
+     "peak_db": 0,
+     "gain_db": -4.5
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/cough_02.ogg",
+     "name": "cough_02",
+     "seconds": 0.35,
+     "mean_db": -19,
+     "peak_db": 0,
+     "gain_db": -1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/cough_03.ogg",
+     "name": "cough_03",
+     "seconds": 0.835,
+     "mean_db": -18.5,
+     "peak_db": -0.9,
+     "gain_db": -1.5
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/cute_01.ogg",
+     "name": "cute_01",
+     "seconds": 0.39,
+     "mean_db": -22.4,
+     "peak_db": -9.1,
+     "gain_db": 2.4
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/cute_02.ogg",
+     "name": "cute_02",
+     "seconds": 0.462,
+     "mean_db": -24,
+     "peak_db": -12.4,
+     "gain_db": 4
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/cute_03.ogg",
+     "name": "cute_03",
+     "seconds": 0.611,
+     "mean_db": -28.9,
+     "peak_db": -11.8,
+     "gain_db": 8.9
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/cute_04.ogg",
+     "name": "cute_04",
+     "seconds": 0.514,
+     "mean_db": -18.1,
+     "peak_db": -3.7,
+     "gain_db": -1.9
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/cute_05.ogg",
+     "name": "cute_05",
+     "seconds": 0.507,
+     "mean_db": -21.7,
+     "peak_db": -8.1,
+     "gain_db": 1.7
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/cute_06.ogg",
+     "name": "cute_06",
+     "seconds": 0.442,
+     "mean_db": -23.8,
+     "peak_db": -11.5,
+     "gain_db": 3.8
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/cute_07.ogg",
+     "name": "cute_07",
+     "seconds": 0.293,
+     "mean_db": -23.5,
+     "peak_db": -10.2,
+     "gain_db": 3.5
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/cute_08.ogg",
+     "name": "cute_08",
+     "seconds": 0.384,
+     "mean_db": -24.4,
+     "peak_db": -11.5,
+     "gain_db": 4.4
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/cute_09.ogg",
+     "name": "cute_09",
+     "seconds": 0.605,
+     "mean_db": -22.5,
+     "peak_db": -11.1,
+     "gain_db": 2.5
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/cute_10.ogg",
+     "name": "cute_10",
+     "seconds": 0.481,
+     "mean_db": -24.8,
+     "peak_db": -12.9,
+     "gain_db": 4.8
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/eat_01.ogg",
+     "name": "eat_01",
+     "seconds": 0.582,
+     "mean_db": -24,
+     "peak_db": -3.2,
+     "gain_db": 2.2
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/eat_02.ogg",
+     "name": "eat_02",
+     "seconds": 0.39,
+     "mean_db": -20.2,
+     "peak_db": -1.8,
+     "gain_db": 0.2
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/eat_03.ogg",
+     "name": "eat_03",
+     "seconds": 0.272,
+     "mean_db": -23,
+     "peak_db": -1.5,
+     "gain_db": 0.5
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/eat_04.ogg",
+     "name": "eat_04",
+     "seconds": 0.45,
+     "mean_db": -24,
+     "peak_db": 0,
+     "gain_db": -1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/grunt_01.ogg",
+     "name": "grunt_01",
+     "seconds": 0.933,
+     "mean_db": -22.3,
+     "peak_db": -6.4,
+     "gain_db": 2.3
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/grunt_02.ogg",
+     "name": "grunt_02",
+     "seconds": 0.535,
+     "mean_db": -16.6,
+     "peak_db": -8.2,
+     "gain_db": -3.4
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/grunt_03.ogg",
+     "name": "grunt_03",
+     "seconds": 0.666,
+     "mean_db": -21.4,
+     "peak_db": -5.2,
+     "gain_db": 1.4
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/grunt_04.ogg",
+     "name": "grunt_04",
+     "seconds": 0.611,
+     "mean_db": -18.5,
+     "peak_db": -0.3,
+     "gain_db": -1.5
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/grunt_05.ogg",
+     "name": "grunt_05",
+     "seconds": 0.65,
+     "mean_db": -22.4,
+     "peak_db": -2.5,
+     "gain_db": 1.5
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/howl.ogg",
+     "name": "howl",
+     "seconds": 0.717,
+     "mean_db": -15.9,
+     "peak_db": -2.4,
+     "gain_db": -4.1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/hurt_01.ogg",
+     "name": "hurt_01",
+     "seconds": 0.495,
+     "mean_db": -21.6,
+     "peak_db": -2.3,
+     "gain_db": 1.3
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/hurt_02.ogg",
+     "name": "hurt_02",
+     "seconds": 0.48,
+     "mean_db": -15.7,
+     "peak_db": -1,
+     "gain_db": -4.3
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/hurt_03.ogg",
+     "name": "hurt_03",
+     "seconds": 0.458,
+     "mean_db": -14.5,
+     "peak_db": 0,
+     "gain_db": -5.5
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/hurt_04.ogg",
+     "name": "hurt_04",
+     "seconds": 0.349,
+     "mean_db": -10.7,
+     "peak_db": 0,
+     "gain_db": -9.3
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/hurt_05.ogg",
+     "name": "hurt_05",
+     "seconds": 0.45,
+     "mean_db": -17.4,
+     "peak_db": -2.4,
+     "gain_db": -2.6
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/misc_01.ogg",
+     "name": "misc_01",
+     "seconds": 0.579,
+     "mean_db": -23.7,
+     "peak_db": -4.3,
+     "gain_db": 3.3
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/misc_02.ogg",
+     "name": "misc_02",
+     "seconds": 0.378,
+     "mean_db": -18.5,
+     "peak_db": -1.3,
+     "gain_db": -1.5
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/misc_03.ogg",
+     "name": "misc_03",
+     "seconds": 0.248,
+     "mean_db": -22.3,
+     "peak_db": -3.9,
+     "gain_db": 2.3
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/misc_04.ogg",
+     "name": "misc_04",
+     "seconds": 0.485,
+     "mean_db": -18.2,
+     "peak_db": -1.9,
+     "gain_db": -1.8
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/misc_05.ogg",
+     "name": "misc_05",
+     "seconds": 0.789,
+     "mean_db": -18.5,
+     "peak_db": -0.4,
+     "gain_db": -1.5
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/misc_06.ogg",
+     "name": "misc_06",
+     "seconds": 0.456,
+     "mean_db": -24.3,
+     "peak_db": -2.6,
+     "gain_db": 1.6
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/misc_07.ogg",
+     "name": "misc_07",
+     "seconds": 0.478,
+     "mean_db": -26.2,
+     "peak_db": -0.3,
+     "gain_db": -0.7
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/misc_08.ogg",
+     "name": "misc_08",
+     "seconds": 0.501,
+     "mean_db": -21,
+     "peak_db": -3.1,
+     "gain_db": 1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/misc_09.ogg",
+     "name": "misc_09",
+     "seconds": 0.651,
+     "mean_db": -17.7,
+     "peak_db": -3,
+     "gain_db": -2.3
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/monster_01.ogg",
+     "name": "monster_01",
+     "seconds": 0.998,
+     "mean_db": -21,
+     "peak_db": 0,
+     "gain_db": -1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/monster_02.ogg",
+     "name": "monster_02",
+     "seconds": 0.577,
+     "mean_db": -23.3,
+     "peak_db": -2.4,
+     "gain_db": 1.4
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/monster_03.ogg",
+     "name": "monster_03",
+     "seconds": 0.779,
+     "mean_db": -18.5,
+     "peak_db": -0.5,
+     "gain_db": -1.5
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/monster_04.ogg",
+     "name": "monster_04",
+     "seconds": 1.275,
+     "mean_db": -16.2,
+     "peak_db": -2.1,
+     "gain_db": -3.8
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/monster_05.ogg",
+     "name": "monster_05",
+     "seconds": 0.428,
+     "mean_db": -24.3,
+     "peak_db": -3,
+     "gain_db": 2
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/monster_06.ogg",
+     "name": "monster_06",
+     "seconds": 0.834,
+     "mean_db": -15.4,
+     "peak_db": -0.8,
+     "gain_db": -4.6
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/monster_07.ogg",
+     "name": "monster_07",
+     "seconds": 1.131,
+     "mean_db": -15.8,
+     "peak_db": -0.3,
+     "gain_db": -4.2
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/nose.ogg",
+     "name": "nose",
+     "seconds": 0.349,
+     "mean_db": -18.1,
+     "peak_db": -0.3,
+     "gain_db": -1.9
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/ooh.ogg",
+     "name": "ooh",
+     "seconds": 0.739,
+     "mean_db": -19.9,
+     "peak_db": -4.1,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/roar_01.ogg",
+     "name": "roar_01",
+     "seconds": 0.373,
+     "mean_db": -21.5,
+     "peak_db": -10.7,
+     "gain_db": 1.5
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/roar_02.ogg",
+     "name": "roar_02",
+     "seconds": 0.903,
+     "mean_db": -19.2,
+     "peak_db": -3.3,
+     "gain_db": -0.8
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/roar_03.ogg",
+     "name": "roar_03",
+     "seconds": 0.458,
+     "mean_db": -17.5,
+     "peak_db": 0,
+     "gain_db": -2.5
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/scream_01.ogg",
+     "name": "scream_01",
+     "seconds": 0.96,
+     "mean_db": -16,
+     "peak_db": 0,
+     "gain_db": -4
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/scream_02.ogg",
+     "name": "scream_02",
+     "seconds": 0.96,
+     "mean_db": -15.8,
+     "peak_db": 0,
+     "gain_db": -4.2
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/snore.ogg",
+     "name": "snore",
+     "seconds": 0.442,
+     "mean_db": -32.4,
+     "peak_db": -13.2,
+     "gain_db": 12.2
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/spit_01.ogg",
+     "name": "spit_01",
+     "seconds": 0.488,
+     "mean_db": -25.7,
+     "peak_db": 0,
+     "gain_db": -1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/spit_02.ogg",
+     "name": "spit_02",
+     "seconds": 0.687,
+     "mean_db": -21.7,
+     "peak_db": -1.4,
+     "gain_db": 0.4
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/spit_03.ogg",
+     "name": "spit_03",
+     "seconds": 0.363,
+     "mean_db": -26.8,
+     "peak_db": -5.5,
+     "gain_db": 4.5
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/troll_01.ogg",
+     "name": "troll_01",
+     "seconds": 0.571,
+     "mean_db": -20.3,
+     "peak_db": -8.6,
+     "gain_db": 0.3
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/troll_02.ogg",
+     "name": "troll_02",
+     "seconds": 0.794,
+     "mean_db": -16.4,
+     "peak_db": -1.8,
+     "gain_db": -3.6
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/troll_03.ogg",
+     "name": "troll_03",
+     "seconds": 0.42,
+     "mean_db": -13.9,
+     "peak_db": -0.9,
+     "gain_db": -6.1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/weird_01.ogg",
+     "name": "weird_01",
+     "seconds": 0.604,
+     "mean_db": -23,
+     "peak_db": -7.3,
+     "gain_db": 3
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/weird_02.ogg",
+     "name": "weird_02",
+     "seconds": 0.458,
+     "mean_db": -19.1,
+     "peak_db": -4.1,
+     "gain_db": -0.9
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/weird_03.ogg",
+     "name": "weird_03",
+     "seconds": 0.388,
+     "mean_db": -24.3,
+     "peak_db": -4.2,
+     "gain_db": 3.2
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/weird_04.ogg",
+     "name": "weird_04",
+     "seconds": 0.304,
+     "mean_db": -13.1,
+     "peak_db": -1.9,
+     "gain_db": -6.9
+    },
+    {
+     "path": "res://assets/audio/library/creatures_1/weird_05.ogg",
+     "name": "weird_05",
+     "seconds": 0.673,
+     "mean_db": -13.2,
+     "peak_db": 0,
+     "gain_db": -6.8
+    }
+   ]
+  },
+  "creatures_2": {
+   "name": "80 CC0 creature SFX #2",
+   "author": "rubberduck",
+   "url": "https://opengameart.org/content/80-cc0-creture-sfx-2",
+   "via": "",
+   "license": "CC0 1.0",
+   "files": [
+    {
+     "path": "res://assets/audio/library/creatures_2/alien_07.ogg",
+     "name": "alien_07",
+     "seconds": 0.538,
+     "mean_db": -19.6,
+     "peak_db": 0,
+     "gain_db": -1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/alien_08.ogg",
+     "name": "alien_08",
+     "seconds": 0.655,
+     "mean_db": -25.5,
+     "peak_db": -7.3,
+     "gain_db": 5.5
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/alien_09.ogg",
+     "name": "alien_09",
+     "seconds": 0.602,
+     "mean_db": -27.9,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/alien_10.ogg",
+     "name": "alien_10",
+     "seconds": 0.611,
+     "mean_db": -24.7,
+     "peak_db": -0.9,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/alien_11.ogg",
+     "name": "alien_11",
+     "seconds": 0.309,
+     "mean_db": -25.4,
+     "peak_db": -0.5,
+     "gain_db": -0.5
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/alien_12.ogg",
+     "name": "alien_12",
+     "seconds": 0.443,
+     "mean_db": -23,
+     "peak_db": -2.9,
+     "gain_db": 1.9
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/attack_01.ogg",
+     "name": "attack_01",
+     "seconds": 0.188,
+     "mean_db": -24.2,
+     "peak_db": -1.4,
+     "gain_db": 0.4
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/attack_02.ogg",
+     "name": "attack_02",
+     "seconds": 0.69,
+     "mean_db": -23.8,
+     "peak_db": -2,
+     "gain_db": 1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/attack_03.ogg",
+     "name": "attack_03",
+     "seconds": 0.51,
+     "mean_db": -21.2,
+     "peak_db": 0,
+     "gain_db": -1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/attack_04.ogg",
+     "name": "attack_04",
+     "seconds": 1.019,
+     "mean_db": -23,
+     "peak_db": 0,
+     "gain_db": -1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/attack_05.ogg",
+     "name": "attack_05",
+     "seconds": 0.133,
+     "mean_db": -21.4,
+     "peak_db": -1.6,
+     "gain_db": 0.6
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/breath_02.ogg",
+     "name": "breath_02",
+     "seconds": 0.356,
+     "mean_db": -18.3,
+     "peak_db": -0.1,
+     "gain_db": -1.7
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/bug_05.ogg",
+     "name": "bug_05",
+     "seconds": 0.335,
+     "mean_db": -21.4,
+     "peak_db": -0.5,
+     "gain_db": -0.5
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/bug_06.ogg",
+     "name": "bug_06",
+     "seconds": 0.419,
+     "mean_db": -23.7,
+     "peak_db": -2.3,
+     "gain_db": 1.3
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/bug_07.ogg",
+     "name": "bug_07",
+     "seconds": 0.455,
+     "mean_db": -25.7,
+     "peak_db": 0,
+     "gain_db": -1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/bug_08.ogg",
+     "name": "bug_08",
+     "seconds": 0.35,
+     "mean_db": -21.2,
+     "peak_db": -1.3,
+     "gain_db": 0.3
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/bug_09.ogg",
+     "name": "bug_09",
+     "seconds": 0.3,
+     "mean_db": -25.8,
+     "peak_db": 0,
+     "gain_db": -1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/bug_10.ogg",
+     "name": "bug_10",
+     "seconds": 0.378,
+     "mean_db": -22.1,
+     "peak_db": 0,
+     "gain_db": -1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/bug_11.ogg",
+     "name": "bug_11",
+     "seconds": 0.345,
+     "mean_db": -24,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/bug_12.ogg",
+     "name": "bug_12",
+     "seconds": 0.304,
+     "mean_db": -21.7,
+     "peak_db": -2.9,
+     "gain_db": 1.7
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/bug_13.ogg",
+     "name": "bug_13",
+     "seconds": 0.281,
+     "mean_db": -21.5,
+     "peak_db": -0.1,
+     "gain_db": -0.9
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/die_01.ogg",
+     "name": "die_01",
+     "seconds": 0.472,
+     "mean_db": -17.2,
+     "peak_db": -0.4,
+     "gain_db": -2.8
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/die_02.ogg",
+     "name": "die_02",
+     "seconds": 0.656,
+     "mean_db": -18,
+     "peak_db": -0.5,
+     "gain_db": -2
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/die_03.ogg",
+     "name": "die_03",
+     "seconds": 0.656,
+     "mean_db": -16.6,
+     "peak_db": -0.5,
+     "gain_db": -3.4
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/die_04.ogg",
+     "name": "die_04",
+     "seconds": 0.781,
+     "mean_db": -20.3,
+     "peak_db": -0.4,
+     "gain_db": -0.6
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/grunt_06.ogg",
+     "name": "grunt_06",
+     "seconds": 0.629,
+     "mean_db": -14.8,
+     "peak_db": 0,
+     "gain_db": -5.2
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/grunt_07.ogg",
+     "name": "grunt_07",
+     "seconds": 0.775,
+     "mean_db": -10.9,
+     "peak_db": -0.5,
+     "gain_db": -9.1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/grunt_08.ogg",
+     "name": "grunt_08",
+     "seconds": 0.571,
+     "mean_db": -14.6,
+     "peak_db": -2.5,
+     "gain_db": -5.4
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/grunt_09.ogg",
+     "name": "grunt_09",
+     "seconds": 0.679,
+     "mean_db": -14.7,
+     "peak_db": -0.4,
+     "gain_db": -5.3
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/human_01.ogg",
+     "name": "human_01",
+     "seconds": 0.623,
+     "mean_db": -19.2,
+     "peak_db": -1.4,
+     "gain_db": -0.8
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/human_02.ogg",
+     "name": "human_02",
+     "seconds": 0.751,
+     "mean_db": -20,
+     "peak_db": -1.2,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/human_03.ogg",
+     "name": "human_03",
+     "seconds": 0.772,
+     "mean_db": -16.4,
+     "peak_db": -0.1,
+     "gain_db": -3.6
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/human_04.ogg",
+     "name": "human_04",
+     "seconds": 0.657,
+     "mean_db": -18.9,
+     "peak_db": -2.6,
+     "gain_db": -1.1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/human_05.ogg",
+     "name": "human_05",
+     "seconds": 0.623,
+     "mean_db": -19.6,
+     "peak_db": -1.3,
+     "gain_db": -0.4
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/human_06.ogg",
+     "name": "human_06",
+     "seconds": 0.751,
+     "mean_db": -20.4,
+     "peak_db": -1.2,
+     "gain_db": 0.2
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/human_07.ogg",
+     "name": "human_07",
+     "seconds": 0.772,
+     "mean_db": -16.1,
+     "peak_db": -0.4,
+     "gain_db": -3.9
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/human_08.ogg",
+     "name": "human_08",
+     "seconds": 0.657,
+     "mean_db": -18.8,
+     "peak_db": -2.5,
+     "gain_db": -1.2
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/misc_10.ogg",
+     "name": "misc_10",
+     "seconds": 0.793,
+     "mean_db": -18.2,
+     "peak_db": 0,
+     "gain_db": -1.8
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/misc_11.ogg",
+     "name": "misc_11",
+     "seconds": 0.723,
+     "mean_db": -16.4,
+     "peak_db": -1.2,
+     "gain_db": -3.6
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/misc_12.ogg",
+     "name": "misc_12",
+     "seconds": 0.313,
+     "mean_db": -15.4,
+     "peak_db": -1.4,
+     "gain_db": -4.6
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/misc_13.ogg",
+     "name": "misc_13",
+     "seconds": 0.653,
+     "mean_db": -23.3,
+     "peak_db": -2.3,
+     "gain_db": 1.3
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/misc_14.ogg",
+     "name": "misc_14",
+     "seconds": 0.481,
+     "mean_db": -18.7,
+     "peak_db": -0.7,
+     "gain_db": -1.3
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/misc_15.ogg",
+     "name": "misc_15",
+     "seconds": 0.352,
+     "mean_db": -13.6,
+     "peak_db": 0,
+     "gain_db": -6.4
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/misc_16.ogg",
+     "name": "misc_16",
+     "seconds": 0.562,
+     "mean_db": -23.6,
+     "peak_db": -0.3,
+     "gain_db": -0.7
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/misc_17.ogg",
+     "name": "misc_17",
+     "seconds": 0.451,
+     "mean_db": -18.7,
+     "peak_db": -2.4,
+     "gain_db": -1.3
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/misc_18.ogg",
+     "name": "misc_18",
+     "seconds": 0.452,
+     "mean_db": -18.4,
+     "peak_db": -0.4,
+     "gain_db": -1.6
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/misc_19.ogg",
+     "name": "misc_19",
+     "seconds": 0.301,
+     "mean_db": -15.1,
+     "peak_db": 0,
+     "gain_db": -4.9
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/misc_20.ogg",
+     "name": "misc_20",
+     "seconds": 0.364,
+     "mean_db": -19.7,
+     "peak_db": -3.9,
+     "gain_db": -0.3
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/misc_21.ogg",
+     "name": "misc_21",
+     "seconds": 0.355,
+     "mean_db": -26.8,
+     "peak_db": -1.3,
+     "gain_db": 0.3
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/misc_22.ogg",
+     "name": "misc_22",
+     "seconds": 0.333,
+     "mean_db": -24.2,
+     "peak_db": -0.4,
+     "gain_db": -0.6
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/monster_08.ogg",
+     "name": "monster_08",
+     "seconds": 0.481,
+     "mean_db": -20.1,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/monster_09.ogg",
+     "name": "monster_09",
+     "seconds": 0.55,
+     "mean_db": -14.2,
+     "peak_db": -1.2,
+     "gain_db": -5.8
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/monster_10.ogg",
+     "name": "monster_10",
+     "seconds": 0.493,
+     "mean_db": -17.1,
+     "peak_db": -0.9,
+     "gain_db": -2.9
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/monster_11.ogg",
+     "name": "monster_11",
+     "seconds": 0.407,
+     "mean_db": -21.3,
+     "peak_db": -0.5,
+     "gain_db": -0.5
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/monster_12.ogg",
+     "name": "monster_12",
+     "seconds": 0.609,
+     "mean_db": -14.5,
+     "peak_db": 0,
+     "gain_db": -5.5
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/monster_13.ogg",
+     "name": "monster_13",
+     "seconds": 0.696,
+     "mean_db": -23.6,
+     "peak_db": -6.5,
+     "gain_db": 3.6
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/monster_14.ogg",
+     "name": "monster_14",
+     "seconds": 0.518,
+     "mean_db": -26.8,
+     "peak_db": -0.8,
+     "gain_db": -0.2
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/monster_15.ogg",
+     "name": "monster_15",
+     "seconds": 0.395,
+     "mean_db": -16.1,
+     "peak_db": -0.6,
+     "gain_db": -3.9
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/monster_16.ogg",
+     "name": "monster_16",
+     "seconds": 0.72,
+     "mean_db": -20.8,
+     "peak_db": -0.8,
+     "gain_db": -0.2
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/monster_17.ogg",
+     "name": "monster_17",
+     "seconds": 0.871,
+     "mean_db": -21.9,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/monster_18.ogg",
+     "name": "monster_18",
+     "seconds": 0.788,
+     "mean_db": -25.8,
+     "peak_db": -0.8,
+     "gain_db": -0.2
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/monster_19.ogg",
+     "name": "monster_19",
+     "seconds": 1.422,
+     "mean_db": -20.5,
+     "peak_db": -1.3,
+     "gain_db": 0.3
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/monster_20.ogg",
+     "name": "monster_20",
+     "seconds": 1.523,
+     "mean_db": -16.6,
+     "peak_db": -1,
+     "gain_db": -3.4
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/roar_04.ogg",
+     "name": "roar_04",
+     "seconds": 0.906,
+     "mean_db": -15.5,
+     "peak_db": -1.4,
+     "gain_db": -4.5
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/roar_05.ogg",
+     "name": "roar_05",
+     "seconds": 1.127,
+     "mean_db": -18.5,
+     "peak_db": -0.7,
+     "gain_db": -1.5
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/roar_06.ogg",
+     "name": "roar_06",
+     "seconds": 0.946,
+     "mean_db": -21.9,
+     "peak_db": -1.6,
+     "gain_db": 0.6
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/slime_01.ogg",
+     "name": "slime_01",
+     "seconds": 0.539,
+     "mean_db": -27.2,
+     "peak_db": -1.1,
+     "gain_db": 0.1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/slime_02.ogg",
+     "name": "slime_02",
+     "seconds": 0.534,
+     "mean_db": -21,
+     "peak_db": -0.7,
+     "gain_db": -0.3
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/slime_03.ogg",
+     "name": "slime_03",
+     "seconds": 0.454,
+     "mean_db": -24.6,
+     "peak_db": -0.7,
+     "gain_db": -0.3
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/slime_04.ogg",
+     "name": "slime_04",
+     "seconds": 0.537,
+     "mean_db": -26,
+     "peak_db": -0.8,
+     "gain_db": -0.2
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/slime_05.ogg",
+     "name": "slime_05",
+     "seconds": 0.603,
+     "mean_db": -33.4,
+     "peak_db": -6.2,
+     "gain_db": 5.2
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/slime_06.ogg",
+     "name": "slime_06",
+     "seconds": 0.448,
+     "mean_db": -23.7,
+     "peak_db": -2.7,
+     "gain_db": 1.7
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/slime_07.ogg",
+     "name": "slime_07",
+     "seconds": 0.376,
+     "mean_db": -21.1,
+     "peak_db": -3.7,
+     "gain_db": 1.1
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/slime_08.ogg",
+     "name": "slime_08",
+     "seconds": 0.63,
+     "mean_db": -25.4,
+     "peak_db": -4.4,
+     "gain_db": 3.4
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/snore_02.ogg",
+     "name": "snore_02",
+     "seconds": 0.931,
+     "mean_db": -25,
+     "peak_db": -5.7,
+     "gain_db": 4.7
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/stomp_01.ogg",
+     "name": "stomp_01",
+     "seconds": 0.443,
+     "mean_db": -16.4,
+     "peak_db": -0.6,
+     "gain_db": -3.6
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/weird_06.ogg",
+     "name": "weird_06",
+     "seconds": 0.922,
+     "mean_db": -25,
+     "peak_db": -5.2,
+     "gain_db": 4.2
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/weird_07.ogg",
+     "name": "weird_07",
+     "seconds": 0.423,
+     "mean_db": -18.1,
+     "peak_db": -3.3,
+     "gain_db": -1.9
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/weird_08.ogg",
+     "name": "weird_08",
+     "seconds": 0.383,
+     "mean_db": -20.4,
+     "peak_db": -4.8,
+     "gain_db": 0.4
+    },
+    {
+     "path": "res://assets/audio/library/creatures_2/weird_09.ogg",
+     "name": "weird_09",
+     "seconds": 0.328,
+     "mean_db": -14.4,
+     "peak_db": -0.6,
+     "gain_db": -5.6
+    }
+   ]
+  },
+  "pixel_combat": {
+   "name": "Pixel Combat recordings (first sound pass)",
+   "author": "unknown pack, see assets/audio/sfx/license_note.md",
+   "url": "",
+   "via": "",
+   "license": "unknown",
+   "files": [
+    {
+     "path": "res://assets/audio/sfx/attack_arrow_0.wav",
+     "name": "attack_arrow_0",
+     "seconds": 0.324,
+     "mean_db": -19.9,
+     "peak_db": -1,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/sfx/attack_arrow_1.wav",
+     "name": "attack_arrow_1",
+     "seconds": 0.344,
+     "mean_db": -19.7,
+     "peak_db": -1,
+     "gain_db": -0.3
+    },
+    {
+     "path": "res://assets/audio/sfx/attack_arrow_2.wav",
+     "name": "attack_arrow_2",
+     "seconds": 0.344,
+     "mean_db": -19.2,
+     "peak_db": -1,
+     "gain_db": -0.8
+    },
+    {
+     "path": "res://assets/audio/sfx/attack_arrow_3.wav",
+     "name": "attack_arrow_3",
+     "seconds": 0.344,
+     "mean_db": -19.8,
+     "peak_db": -1,
+     "gain_db": -0.2
+    },
+    {
+     "path": "res://assets/audio/sfx/attack_beam_0.wav",
+     "name": "attack_beam_0",
+     "seconds": 0.954,
+     "mean_db": -17.5,
+     "peak_db": -1,
+     "gain_db": -2.5
+    },
+    {
+     "path": "res://assets/audio/sfx/attack_beam_1.wav",
+     "name": "attack_beam_1",
+     "seconds": 0.954,
+     "mean_db": -18.2,
+     "peak_db": -1,
+     "gain_db": -1.8
+    },
+    {
+     "path": "res://assets/audio/sfx/attack_beam_2.wav",
+     "name": "attack_beam_2",
+     "seconds": 0.964,
+     "mean_db": -17.4,
+     "peak_db": -1,
+     "gain_db": -2.6
+    },
+    {
+     "path": "res://assets/audio/sfx/attack_bite_0.wav",
+     "name": "attack_bite_0",
+     "seconds": 0.348,
+     "mean_db": -18.1,
+     "peak_db": -1,
+     "gain_db": -1.9
+    },
+    {
+     "path": "res://assets/audio/sfx/attack_roar_0.wav",
+     "name": "attack_roar_0",
+     "seconds": 1.6,
+     "mean_db": -16.7,
+     "peak_db": -1,
+     "gain_db": -3.3
+    },
+    {
+     "path": "res://assets/audio/sfx/attack_roar_1.wav",
+     "name": "attack_roar_1",
+     "seconds": 1.164,
+     "mean_db": -16.1,
+     "peak_db": -1,
+     "gain_db": -3.9
+    },
+    {
+     "path": "res://assets/audio/sfx/attack_salve_0.wav",
+     "name": "attack_salve_0",
+     "seconds": 1.024,
+     "mean_db": -22.1,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/sfx/attack_salve_1.wav",
+     "name": "attack_salve_1",
+     "seconds": 0.884,
+     "mean_db": -22.5,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/sfx/attack_salve_2.wav",
+     "name": "attack_salve_2",
+     "seconds": 0.794,
+     "mean_db": -23.6,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/sfx/attack_slam_0.wav",
+     "name": "attack_slam_0",
+     "seconds": 1.364,
+     "mean_db": -20.7,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/sfx/attack_slam_1.wav",
+     "name": "attack_slam_1",
+     "seconds": 1.064,
+     "mean_db": -18.9,
+     "peak_db": -1,
+     "gain_db": -1.1
+    },
+    {
+     "path": "res://assets/audio/sfx/attack_slam_2.wav",
+     "name": "attack_slam_2",
+     "seconds": 1.524,
+     "mean_db": -21.2,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/sfx/attack_slash_0.wav",
+     "name": "attack_slash_0",
+     "seconds": 0.284,
+     "mean_db": -16.7,
+     "peak_db": -1,
+     "gain_db": -3.3
+    },
+    {
+     "path": "res://assets/audio/sfx/attack_slash_1.wav",
+     "name": "attack_slash_1",
+     "seconds": 0.294,
+     "mean_db": -16.7,
+     "peak_db": -1,
+     "gain_db": -3.3
+    },
+    {
+     "path": "res://assets/audio/sfx/attack_slash_2.wav",
+     "name": "attack_slash_2",
+     "seconds": 0.294,
+     "mean_db": -16.7,
+     "peak_db": -1,
+     "gain_db": -3.3
+    },
+    {
+     "path": "res://assets/audio/sfx/attack_slash_3.wav",
+     "name": "attack_slash_3",
+     "seconds": 0.284,
+     "mean_db": -16.7,
+     "peak_db": -1,
+     "gain_db": -3.3
+    },
+    {
+     "path": "res://assets/audio/sfx/attack_soul_0.wav",
+     "name": "attack_soul_0",
+     "seconds": 0.724,
+     "mean_db": -12.6,
+     "peak_db": -1,
+     "gain_db": -7.4
+    },
+    {
+     "path": "res://assets/audio/sfx/attack_soul_1.wav",
+     "name": "attack_soul_1",
+     "seconds": 0.714,
+     "mean_db": -13.2,
+     "peak_db": -1,
+     "gain_db": -6.8
+    },
+    {
+     "path": "res://assets/audio/sfx/attack_soul_2.wav",
+     "name": "attack_soul_2",
+     "seconds": 0.724,
+     "mean_db": -13.2,
+     "peak_db": -1,
+     "gain_db": -6.8
+    },
+    {
+     "path": "res://assets/audio/sfx/attack_summon_0.wav",
+     "name": "attack_summon_0",
+     "seconds": 1.4,
+     "mean_db": -19.9,
+     "peak_db": -1,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/sfx/attack_summon_1.wav",
+     "name": "attack_summon_1",
+     "seconds": 1.4,
+     "mean_db": -20.7,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/sfx/blast_0.wav",
+     "name": "blast_0",
+     "seconds": 1.364,
+     "mean_db": -20.9,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/sfx/blast_1.wav",
+     "name": "blast_1",
+     "seconds": 1.594,
+     "mean_db": -19.5,
+     "peak_db": -1,
+     "gain_db": -0.5
+    },
+    {
+     "path": "res://assets/audio/sfx/blast_2.wav",
+     "name": "blast_2",
+     "seconds": 1.474,
+     "mean_db": -21.3,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/sfx/block_0.wav",
+     "name": "block_0",
+     "seconds": 0.784,
+     "mean_db": -17.5,
+     "peak_db": -1,
+     "gain_db": -2.5
+    },
+    {
+     "path": "res://assets/audio/sfx/block_1.wav",
+     "name": "block_1",
+     "seconds": 0.834,
+     "mean_db": -17.8,
+     "peak_db": -1,
+     "gain_db": -2.2
+    },
+    {
+     "path": "res://assets/audio/sfx/block_2.wav",
+     "name": "block_2",
+     "seconds": 0.804,
+     "mean_db": -17.8,
+     "peak_db": -1,
+     "gain_db": -2.2
+    },
+    {
+     "path": "res://assets/audio/sfx/bomber_pop_0.wav",
+     "name": "bomber_pop_0",
+     "seconds": 1.084,
+     "mean_db": -18.4,
+     "peak_db": -1,
+     "gain_db": -1.6
+    },
+    {
+     "path": "res://assets/audio/sfx/bomber_pop_1.wav",
+     "name": "bomber_pop_1",
+     "seconds": 1.134,
+     "mean_db": -17.6,
+     "peak_db": -1,
+     "gain_db": -2.4
+    },
+    {
+     "path": "res://assets/audio/sfx/bomber_pop_2.wav",
+     "name": "bomber_pop_2",
+     "seconds": 1.234,
+     "mean_db": -18.6,
+     "peak_db": -1,
+     "gain_db": -1.4
+    },
+    {
+     "path": "res://assets/audio/sfx/boss_defeated_0.wav",
+     "name": "boss_defeated_0",
+     "seconds": 3.634,
+     "mean_db": -17.6,
+     "peak_db": -1,
+     "gain_db": -2.4
+    },
+    {
+     "path": "res://assets/audio/sfx/boss_intro_0.wav",
+     "name": "boss_intro_0",
+     "seconds": 0.83,
+     "mean_db": -17.3,
+     "peak_db": -1,
+     "gain_db": -2.7
+    },
+    {
+     "path": "res://assets/audio/sfx/boss_kill_0.wav",
+     "name": "boss_kill_0",
+     "seconds": 0.954,
+     "mean_db": -15.7,
+     "peak_db": -1,
+     "gain_db": -4.3
+    },
+    {
+     "path": "res://assets/audio/sfx/break_bone_0.wav",
+     "name": "break_bone_0",
+     "seconds": 0.929,
+     "mean_db": -18.4,
+     "peak_db": -1,
+     "gain_db": -1.6
+    },
+    {
+     "path": "res://assets/audio/sfx/break_flesh_0.wav",
+     "name": "break_flesh_0",
+     "seconds": 0.755,
+     "mean_db": -21.6,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/sfx/break_void_0.wav",
+     "name": "break_void_0",
+     "seconds": 1,
+     "mean_db": -17.7,
+     "peak_db": -1,
+     "gain_db": -2.3
+    },
+    {
+     "path": "res://assets/audio/sfx/break_void_1.wav",
+     "name": "break_void_1",
+     "seconds": 1,
+     "mean_db": -16.7,
+     "peak_db": -1,
+     "gain_db": -3.3
+    },
+    {
+     "path": "res://assets/audio/sfx/door_0.wav",
+     "name": "door_0",
+     "seconds": 0.508,
+     "mean_db": -18.6,
+     "peak_db": -1,
+     "gain_db": -1.4
+    },
+    {
+     "path": "res://assets/audio/sfx/doors_lock_0.wav",
+     "name": "doors_lock_0",
+     "seconds": 0.464,
+     "mean_db": -19.4,
+     "peak_db": -1,
+     "gain_db": -0.6
+    },
+    {
+     "path": "res://assets/audio/sfx/doors_lock_1.wav",
+     "name": "doors_lock_1",
+     "seconds": 0.504,
+     "mean_db": -17.7,
+     "peak_db": -1,
+     "gain_db": -2.3
+    },
+    {
+     "path": "res://assets/audio/sfx/hit_bone_0.wav",
+     "name": "hit_bone_0",
+     "seconds": 0.474,
+     "mean_db": -17.2,
+     "peak_db": -1,
+     "gain_db": -2.8
+    },
+    {
+     "path": "res://assets/audio/sfx/hit_bone_1.wav",
+     "name": "hit_bone_1",
+     "seconds": 0.504,
+     "mean_db": -17.1,
+     "peak_db": -1,
+     "gain_db": -2.9
+    },
+    {
+     "path": "res://assets/audio/sfx/hit_bone_2.wav",
+     "name": "hit_bone_2",
+     "seconds": 0.204,
+     "mean_db": -16,
+     "peak_db": -1,
+     "gain_db": -4
+    },
+    {
+     "path": "res://assets/audio/sfx/hit_bone_3.wav",
+     "name": "hit_bone_3",
+     "seconds": 0.534,
+     "mean_db": -19.4,
+     "peak_db": -1,
+     "gain_db": -0.6
+    },
+    {
+     "path": "res://assets/audio/sfx/hit_bone_4.wav",
+     "name": "hit_bone_4",
+     "seconds": 0.244,
+     "mean_db": -17.2,
+     "peak_db": -1,
+     "gain_db": -2.8
+    },
+    {
+     "path": "res://assets/audio/sfx/hit_bone_5.wav",
+     "name": "hit_bone_5",
+     "seconds": 0.434,
+     "mean_db": -17.8,
+     "peak_db": -1,
+     "gain_db": -2.2
+    },
+    {
+     "path": "res://assets/audio/sfx/hit_flesh_0.wav",
+     "name": "hit_flesh_0",
+     "seconds": 0.454,
+     "mean_db": -15,
+     "peak_db": -1,
+     "gain_db": -5
+    },
+    {
+     "path": "res://assets/audio/sfx/hit_flesh_1.wav",
+     "name": "hit_flesh_1",
+     "seconds": 0.464,
+     "mean_db": -16.5,
+     "peak_db": -1,
+     "gain_db": -3.5
+    },
+    {
+     "path": "res://assets/audio/sfx/hit_flesh_2.wav",
+     "name": "hit_flesh_2",
+     "seconds": 0.464,
+     "mean_db": -16.8,
+     "peak_db": -1,
+     "gain_db": -3.2
+    },
+    {
+     "path": "res://assets/audio/sfx/hit_flesh_3.wav",
+     "name": "hit_flesh_3",
+     "seconds": 0.474,
+     "mean_db": -15.4,
+     "peak_db": -1,
+     "gain_db": -4.6
+    },
+    {
+     "path": "res://assets/audio/sfx/hit_void_0.wav",
+     "name": "hit_void_0",
+     "seconds": 0.554,
+     "mean_db": -22.4,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/sfx/hit_void_1.wav",
+     "name": "hit_void_1",
+     "seconds": 0.534,
+     "mean_db": -22.8,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/sfx/hit_void_2.wav",
+     "name": "hit_void_2",
+     "seconds": 0.564,
+     "mean_db": -22.4,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/sfx/hit_void_3.wav",
+     "name": "hit_void_3",
+     "seconds": 0.534,
+     "mean_db": -22.9,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/sfx/hurt_0.wav",
+     "name": "hurt_0",
+     "seconds": 0.334,
+     "mean_db": -17.9,
+     "peak_db": -1,
+     "gain_db": -2.1
+    },
+    {
+     "path": "res://assets/audio/sfx/hurt_1.wav",
+     "name": "hurt_1",
+     "seconds": 0.344,
+     "mean_db": -16.4,
+     "peak_db": -1,
+     "gain_db": -3.6
+    },
+    {
+     "path": "res://assets/audio/sfx/hurt_2.wav",
+     "name": "hurt_2",
+     "seconds": 0.354,
+     "mean_db": -15.4,
+     "peak_db": -1,
+     "gain_db": -4.6
+    },
+    {
+     "path": "res://assets/audio/sfx/kill_bone_0.wav",
+     "name": "kill_bone_0",
+     "seconds": 1.08,
+     "mean_db": -20,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/sfx/kill_flesh_0.wav",
+     "name": "kill_flesh_0",
+     "seconds": 0.604,
+     "mean_db": -22,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/sfx/kill_necro_0.wav",
+     "name": "kill_necro_0",
+     "seconds": 0.834,
+     "mean_db": -14.6,
+     "peak_db": -1,
+     "gain_db": -5.4
+    },
+    {
+     "path": "res://assets/audio/sfx/kill_necro_1.wav",
+     "name": "kill_necro_1",
+     "seconds": 0.794,
+     "mean_db": -16.2,
+     "peak_db": -1,
+     "gain_db": -3.8
+    },
+    {
+     "path": "res://assets/audio/sfx/perk_0.wav",
+     "name": "perk_0",
+     "seconds": 1.4,
+     "mean_db": -30.9,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/sfx/regrow_0.wav",
+     "name": "regrow_0",
+     "seconds": 1.2,
+     "mean_db": -18.4,
+     "peak_db": -1,
+     "gain_db": -1.6
+    },
+    {
+     "path": "res://assets/audio/sfx/regrow_1.wav",
+     "name": "regrow_1",
+     "seconds": 1.2,
+     "mean_db": -14.6,
+     "peak_db": -1,
+     "gain_db": -5.4
+    },
+    {
+     "path": "res://assets/audio/sfx/room_clear_0.wav",
+     "name": "room_clear_0",
+     "seconds": 1.034,
+     "mean_db": -17.4,
+     "peak_db": -1,
+     "gain_db": -2.6
+    },
+    {
+     "path": "res://assets/audio/sfx/shoot_arrow_0.wav",
+     "name": "shoot_arrow_0",
+     "seconds": 0.324,
+     "mean_db": -19.9,
+     "peak_db": -1,
+     "gain_db": -0.1
+    },
+    {
+     "path": "res://assets/audio/sfx/shoot_arrow_1.wav",
+     "name": "shoot_arrow_1",
+     "seconds": 0.344,
+     "mean_db": -19.7,
+     "peak_db": -1,
+     "gain_db": -0.3
+    },
+    {
+     "path": "res://assets/audio/sfx/shoot_arrow_2.wav",
+     "name": "shoot_arrow_2",
+     "seconds": 0.344,
+     "mean_db": -19.2,
+     "peak_db": -1,
+     "gain_db": -0.8
+    },
+    {
+     "path": "res://assets/audio/sfx/shoot_arrow_3.wav",
+     "name": "shoot_arrow_3",
+     "seconds": 0.344,
+     "mean_db": -19.8,
+     "peak_db": -1,
+     "gain_db": -0.2
+    },
+    {
+     "path": "res://assets/audio/sfx/shoot_magic_0.wav",
+     "name": "shoot_magic_0",
+     "seconds": 0.614,
+     "mean_db": -16.9,
+     "peak_db": -1,
+     "gain_db": -3.1
+    },
+    {
+     "path": "res://assets/audio/sfx/shoot_magic_1.wav",
+     "name": "shoot_magic_1",
+     "seconds": 0.614,
+     "mean_db": -16.4,
+     "peak_db": -1,
+     "gain_db": -3.6
+    },
+    {
+     "path": "res://assets/audio/sfx/shoot_magic_2.wav",
+     "name": "shoot_magic_2",
+     "seconds": 0.614,
+     "mean_db": -16.8,
+     "peak_db": -1,
+     "gain_db": -3.2
+    },
+    {
+     "path": "res://assets/audio/sfx/shoot_magic_3.wav",
+     "name": "shoot_magic_3",
+     "seconds": 0.604,
+     "mean_db": -15.6,
+     "peak_db": -1,
+     "gain_db": -4.4
+    },
+    {
+     "path": "res://assets/audio/sfx/stairs_0.wav",
+     "name": "stairs_0",
+     "seconds": 1.414,
+     "mean_db": -15.5,
+     "peak_db": -1,
+     "gain_db": -4.5
+    },
+    {
+     "path": "res://assets/audio/sfx/step_0.wav",
+     "name": "step_0",
+     "seconds": 0.32,
+     "mean_db": -17.1,
+     "peak_db": -1,
+     "gain_db": -2.9
+    },
+    {
+     "path": "res://assets/audio/sfx/step_1.wav",
+     "name": "step_1",
+     "seconds": 0.32,
+     "mean_db": -18.1,
+     "peak_db": -1,
+     "gain_db": -1.9
+    },
+    {
+     "path": "res://assets/audio/sfx/step_2.wav",
+     "name": "step_2",
+     "seconds": 0.32,
+     "mean_db": -16.7,
+     "peak_db": -1,
+     "gain_db": -3.3
+    },
+    {
+     "path": "res://assets/audio/sfx/step_3.wav",
+     "name": "step_3",
+     "seconds": 0.32,
+     "mean_db": -18.8,
+     "peak_db": -1,
+     "gain_db": -1.2
+    },
+    {
+     "path": "res://assets/audio/sfx/step_4.wav",
+     "name": "step_4",
+     "seconds": 0.32,
+     "mean_db": -17.1,
+     "peak_db": -1,
+     "gain_db": -2.9
+    },
+    {
+     "path": "res://assets/audio/sfx/step_5.wav",
+     "name": "step_5",
+     "seconds": 0.32,
+     "mean_db": -18.1,
+     "peak_db": -1,
+     "gain_db": -1.9
+    },
+    {
+     "path": "res://assets/audio/sfx/swing_0.wav",
+     "name": "swing_0",
+     "seconds": 0.594,
+     "mean_db": -16.6,
+     "peak_db": -1,
+     "gain_db": -3.4
+    },
+    {
+     "path": "res://assets/audio/sfx/swing_1.wav",
+     "name": "swing_1",
+     "seconds": 0.614,
+     "mean_db": -16.7,
+     "peak_db": -1,
+     "gain_db": -3.3
+    },
+    {
+     "path": "res://assets/audio/sfx/swing_2.wav",
+     "name": "swing_2",
+     "seconds": 0.604,
+     "mean_db": -18.2,
+     "peak_db": -1,
+     "gain_db": -1.8
+    },
+    {
+     "path": "res://assets/audio/sfx/swing_3.wav",
+     "name": "swing_3",
+     "seconds": 0.614,
+     "mean_db": -16.9,
+     "peak_db": -1,
+     "gain_db": -3.1
+    },
+    {
+     "path": "res://assets/audio/sfx/team_wipe_0.wav",
+     "name": "team_wipe_0",
+     "seconds": 2.998,
+     "mean_db": -15.4,
+     "peak_db": -1,
+     "gain_db": -4.6
+    },
+    {
+     "path": "res://assets/audio/sfx/ui_back_0.wav",
+     "name": "ui_back_0",
+     "seconds": 0.152,
+     "mean_db": -9,
+     "peak_db": -1,
+     "gain_db": -11
+    },
+    {
+     "path": "res://assets/audio/sfx/ui_click_0.wav",
+     "name": "ui_click_0",
+     "seconds": 0.304,
+     "mean_db": -24.6,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/sfx/ui_click_1.wav",
+     "name": "ui_click_1",
+     "seconds": 0.304,
+     "mean_db": -25.5,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/sfx/void_burst_0.wav",
+     "name": "void_burst_0",
+     "seconds": 1.024,
+     "mean_db": -16,
+     "peak_db": -1,
+     "gain_db": -4
+    },
+    {
+     "path": "res://assets/audio/sfx/void_burst_1.wav",
+     "name": "void_burst_1",
+     "seconds": 0.904,
+     "mean_db": -16.9,
+     "peak_db": -1,
+     "gain_db": -3.1
+    },
+    {
+     "path": "res://assets/audio/sfx/void_burst_2.wav",
+     "name": "void_burst_2",
+     "seconds": 1.084,
+     "mean_db": -17.2,
+     "peak_db": -1,
+     "gain_db": -2.8
+    },
+    {
+     "path": "res://assets/audio/sfx/windup_beam_0.wav",
+     "name": "windup_beam_0",
+     "seconds": 1.324,
+     "mean_db": -20.9,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/sfx/windup_beam_1.wav",
+     "name": "windup_beam_1",
+     "seconds": 1.364,
+     "mean_db": -21.5,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/sfx/windup_fuse_0.wav",
+     "name": "windup_fuse_0",
+     "seconds": 0.8,
+     "mean_db": -20.5,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/sfx/windup_fuse_1.wav",
+     "name": "windup_fuse_1",
+     "seconds": 0.8,
+     "mean_db": -16.8,
+     "peak_db": -1,
+     "gain_db": -3.2
+    },
+    {
+     "path": "res://assets/audio/sfx/windup_fuse_2.wav",
+     "name": "windup_fuse_2",
+     "seconds": 0.8,
+     "mean_db": -15.8,
+     "peak_db": -1,
+     "gain_db": -4.2
+    },
+    {
+     "path": "res://assets/audio/sfx/windup_summon_0.wav",
+     "name": "windup_summon_0",
+     "seconds": 1.384,
+     "mean_db": -21.2,
+     "peak_db": -1,
+     "gain_db": 0
+    },
+    {
+     "path": "res://assets/audio/sfx/windup_summon_1.wav",
+     "name": "windup_summon_1",
+     "seconds": 1.324,
+     "mean_db": -21.2,
+     "peak_db": -1,
+     "gain_db": 0
+    }
+   ]
+  }
+ },
+ "music": {
+  "dungeon_ambience": {
+   "name": "Dungeon Ambience",
+   "author": "yd",
+   "url": "https://opengameart.org/content/dungeon-ambience",
+   "license": "CC0 1.0",
+   "path": "res://assets/audio/music/dungeon_ambience.ogg",
+   "seconds": 206,
+   "mean_db": -41.9,
+   "peak_db": -19.2,
+   "gain_db": 18
+  },
+  "dungeon_wind_drips": {
+   "name": "Loopable Dungeon Ambience",
+   "author": "JaggedStone",
+   "url": "https://opengameart.org/content/loopable-dungeon-ambience",
+   "license": "CC0 1.0",
+   "path": "res://assets/audio/music/dungeon_wind_drips.ogg",
+   "seconds": 94.31,
+   "mean_db": -29.7,
+   "peak_db": -3.1,
+   "gain_db": 2.1
+  },
+  "heavy_dungeon": {
+   "name": "Heavy Dungeon (160 BPM)",
+   "author": "MintoDog",
+   "url": "https://opengameart.org/node/181405",
+   "license": "CC0 1.0",
+   "path": "res://assets/audio/music/heavy_dungeon.ogg",
+   "seconds": 96,
+   "mean_db": -13.9,
+   "peak_db": -0.9,
+   "gain_db": -6.1
+  },
+  "heavy_boss_battle_1": {
+   "name": "Heavy Boss Battle 1 (200 BPM)",
+   "author": "MintoDog",
+   "url": "https://opengameart.org/node/183631",
+   "license": "CC0 1.0",
+   "path": "res://assets/audio/music/heavy_boss_battle_1.ogg",
+   "seconds": 108,
+   "mean_db": -13.2,
+   "peak_db": -1,
+   "gain_db": -6.8
+  },
+  "determined_pursuit": {
+   "name": "Determined Pursuit (epic orchestra loop)",
+   "author": "Emma_MA",
+   "url": "https://opengameart.org/content/determined-pursuit-epic-orchestra-loop",
+   "license": "CC0 1.0",
+   "path": "res://assets/audio/music/determined_pursuit.ogg",
+   "seconds": 108,
+   "mean_db": -15.1,
+   "peak_db": -1.6,
+   "gain_db": -4.9
+  }
+ }
+}

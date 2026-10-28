@@ -77,7 +77,7 @@ func _test_class_values_come_from_balance() -> void:
 	var bow := _fresh("archer", balance)
 	var staff := _fresh("mage", balance)
 	# Assert
-	check(sword.max_hp == 10 and sword.hp == 10 and is_equal_approx(sword.speed, 185.0) and is_equal_approx(sword.damage, 5.0) and is_equal_approx(sword.shot_interval, 0.4), "swordsman: 5 hearts, speed 185, sword 5 damage every 0.4 s")
+	check(sword.max_hp == 10 and sword.hp == 10 and is_equal_approx(sword.speed, 148.0) and is_equal_approx(sword.damage, 5.0) and is_equal_approx(sword.shot_interval, 0.4), "swordsman: 5 hearts, speed 148 (20 % slower since 2026-10-28), sword 5 damage every 0.4 s")
 	check(sword.melee and is_equal_approx(sword.reach, 64.0) and is_equal_approx(sword.arc, 2.0) and is_zero_approx(sword.shot_speed), "swordsman attacks in melee with the sword's reach and arc")
 	check(bow.max_hp == 8 and not bow.melee and is_equal_approx(bow.shot_speed, 600.0) and is_equal_approx(bow.shot_life, 1.2) and bow.projectile == "arrow", "archer: 4 hearts and arrows")
 	check(staff.max_hp == 6 and not staff.melee and is_equal_approx(staff.damage, 3.5) and is_equal_approx(staff.splash, 40.0) and staff.projectile == "magic", "mage: 3 hearts and splashing magic orbs")

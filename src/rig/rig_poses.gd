@@ -96,7 +96,8 @@ static func hero(rig: Dictionary, a: Dictionary) -> Dictionary:
 	if has.call("head"): P(pose, "head").dy = -0.4 * b
 	if has.call("robe"): P(pose, "robe").sx = 1.0 + 0.03 * sin(t * TAU / 0.9)
 	if a.moving:
-		var ph := t * TAU / 0.42
+		# One full stride (both feet) per cycle; set from the hero's speed.
+		var ph := t * TAU / float(a.get("cycle", 0.42))
 		pose.whole.dy = -absf(sin(ph)) * 1.6
 		pose.whole.rot = 0.07
 		pose.whole.sy = 1.0

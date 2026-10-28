@@ -915,6 +915,62 @@ approval gate above still applies to every new actor/boss art.
   shots plus 4x close-ups) via `scripts/capture_floor_life.gd`, which prints
   frame times: 10.3 ms mean, 22 ms worst with 25 embers on a horde floor.
 
+## Sound, music and mix (2026-10-28)
+
+- User request (/gamedev:audio-design): sounds that fit (skeletons like
+  Minecraft's bone clatter, not crackling), a clear "I was hit" sound, footsteps
+  that match the walking, heroes slower (fair, slightly hard), a sound picker,
+  sounds at different levels instead of one, background music. Decisions:
+  download the CC0 packs, heroes -20 %, metal and orchestra both in the
+  picker, picker in the debug menu.
+- Library: `scripts/prepare_audio_library.js <downloads>` copies the CC0 packs
+  to `assets/audio/library/<pack>/` (Kenney Impact Sounds via the GitHub copy
+  Boyquotes/kenney-impact-sounds-for-godot because the listed one was gone,
+  Kenney RPG Audio, bones rattle + Bones 2, rubberduck's two creature packs)
+  and five CC0 tracks to `assets/audio/music/` (Dungeon Ambience by yd,
+  Loopable Dungeon Ambience by JaggedStone, MintoDog's Heavy Dungeon and
+  Heavy Boss Battle 1, Emma_MA's Determined Pursuit). ffmpeg measures every
+  file; `gain_db` in `assets/data/audio_library.json` levels it to -20 dBFS
+  mean. Sources and licences: `assets/audio/library/CREDITS.md`. The first
+  pass's recordings stay as pack `pixel_combat` (licence still unknown).
+- Mix: `src/audio/audio_mix.gd` + `assets/data/audio_mix.json` create the buses
+  Music, Ambience, SFX (with Focus inside), UI; Music and Ambience duck under
+  Focus (sidechain compressor), a hard limiter guards Master. Categories give
+  every event its bus and level (focus 0, hero -3, impact -4, enemy -7, world
+  -7, ally -10, step -13, idle -15 dB). Options: Gesamt, Musik, Effekte
+  sliders (squared, 0 mutes), saved in user://settings.cfg.
+- Sound table schema 2 (`assets/data/audio_sfx.json`): files, category,
+  label, volume_db, spread, pitch, min_interval, with (a layer). New defaults:
+  your hero hit = Kenney heavy punch + human grunt (Focus, the music dips),
+  allies hit quieter; skeleton hit = dry wood clack + bone rattle, part break =
+  wood + rattle, death = heavy wood + falling bones, walking skeletons rattle
+  now and then near you (idle_bone); zombie hit = soft thud, death = creature
+  die, walking zombies groan (idle_flesh); mini-boss roar = creature roars;
+  stone footsteps; Kenney door; crate and chest wood. Hero skills play at the
+  hero level whatever sound they borrow. `src/vfx/sfx.gd` plays it all,
+  previews files and reloads when `Sfx.table_version` changes.
+- Music: `src/audio/music.gd` + `assets/data/audio_music.json`, states menu,
+  explore, combat, boss (`Music.decide` from the snapshot; mini-bosses count
+  as boss), 1.8 s crossfade, fights calm down only after 6 s, wind and drips
+  under explore and combat. The view owns it next to the sound player;
+  `view.music_in_run` comes from the game.
+- Speed and steps: heroes 148 / 152 / 144 px/s (were 185 / 190 / 180),
+  `balance.player.stride` 32 px per footfall; the snapshot sends `step_time`,
+  the hero rig swings its legs over two steps and reports every touch-down
+  (`rig_renderer.track_steps`, `footfalls`); the view plays `step` for you and
+  `step_ally` for others. Without rigs feedback.gd keeps a timer at step_time.
+- Klangwerkstatt: `src/ui/sound_workshop.gd`, debug menu button. Lists the
+  four music states, the ambience and every event by its German label; shows
+  variants, level, pitch, category; the library (by pack, with search) can be
+  heard and added; SPEICHERN writes both tables, the game reloads them. The
+  music hushes while it is open.
+- Tests: `tests/audio_music_test.gd` (38: buses, ducking, limiter, sliders,
+  music states and calm hold, footfalls per speed, workshop edit and save),
+  `tests/audio_sfx_test.gd` (181: every event's files, categories, layers,
+  buses, levels). Evidence `production/qa/evidence/audio-mix/` via
+  `scripts/capture_audio_ui.gd`. Not checked by ear: the defaults were chosen
+  from names, lengths and levels; the user picks by listening.
+
 ## Codex studio integration
 
 - This game already exists. Read `docs/codex/runtime.md` before applying studio

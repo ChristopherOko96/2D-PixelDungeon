@@ -79,6 +79,8 @@ export_presets.cfg
 
 # === Engine: Unity ===
 [Ll]ibrary/
+# The game's sound library is not Unity's Library folder; keep it in Git.
+!assets/audio/library/
 [Tt]emp/
 [Oo]bj/
 [Bb]uild/

@@ -15,12 +15,16 @@ extends Control
 ## A solo run with the chosen mode and hero class.
 signal start_requested(endless: bool, class_id: String)
 signal multiplayer_requested
+## The player picked the Hell-Dungeon mode (src/hell/hell_dungeon.tscn).
+signal hell_requested
 signal quit_requested
 signal settings_changed(settings: Dictionary)
 
 const Progress = preload("res://src/online/progress.gd")
 const PixelStyle = preload("res://src/pixel_style.gd")
 const CryptUI = preload("res://src/ui/crypt_ui.gd")
+const AudioMix = preload("res://src/audio/audio_mix.gd")
+const SoundWorkshop = preload("res://src/ui/sound_workshop.gd")
 const SCREEN := Vector2(1280, 720)
 const SPRITE_ROOT := "res://assets/sprites/0x72/"
 const HEROES := ["knight_m", "elf_f", "wizzard_m", "lizard_m"]
@@ -55,7 +59,7 @@ var _canvas_origin := Vector2.ZERO
 var _canvas_size := SCREEN
 var _debug_start: Dictionary = {}
 var _debug_panel: Panel
-var settings := {"volume": 80, "fullscreen": false, "shake": true}
+var settings := {"volume": 80, "music": 70, "effects": 85, "fullscreen": false, "shake": true}
 # Starts mid-chase so the heroes are on screen from the first frame.
 var _clock := 7.0
 var _frames: Dictionary = {}
@@ -74,6 +78,10 @@ var _login_status: Label
 var _login_buttons: Array[Button] = []
 var _options_panel: Panel
 var _volume_slider: HSlider
+## Volume sliders by setting key ("volume", "music", "effects").
+var _sliders: Dictionary = {}
+## Klangwerkstatt (debug menu), made when first opened.
+var sound_workshop: Control
 var _fullscreen_check: CheckButton
 var _shake_check: CheckButton
 var _class_panel: Panel
@@ -122,6 +130,7 @@ func _ready() -> void:
 	_buttons.append(_button("BEENDEN", Vector2(470, 442), Vector2(340, 36), 16, quit_requested.emit))
 	_button("LEVEL-AUSWAHL (DEBUG)", Vector2(16, 676), Vector2(264, 32), 16, _open_debug)
 	_buttons[0].add_theme_color_override("font_color", GOLD)
+	_button("HELL-DUNGEON (NEU)", Vector2(16, 636), Vector2(264, 32), 16, hell_requested.emit)
 	_buttons[0].grab_focus()
 	_account_label = _label("", Vector2(820, 20), Vector2(300, 22), 16, TEXT, HORIZONTAL_ALIGNMENT_RIGHT)
 	_progress_label = _label("", Vector2(620, 44), Vector2(500, 20), 16, MUTED, HORIZONTAL_ALIGNMENT_RIGHT)
@@ -415,7 +424,18 @@ func _build_debug_panel() -> void:
 		var entry: Dictionary = debug_entries[i]
 		var button := _panel_button(_debug_panel, str(entry.label), Vector2(30 + (i % 2) * 375, 62 + (i / 2) * 40), Vector2(365, 34), func(): _pick_debug(entry))
 		button.add_theme_font_size_override("font_size", 16)
-	_panel_button(_debug_panel, "ZURÜCK", Vector2(30, 420), Vector2(740, 36), _close_panels)
+	_panel_button(_debug_panel, "ZURÜCK", Vector2(30, 420), Vector2(365, 36), _close_panels)
+	_panel_button(_debug_panel, "KLANGWERKSTATT", Vector2(405, 420), Vector2(365, 36), open_sound_workshop)
+
+
+## Opens the Klangwerkstatt over the menu (sound and music choices).
+func open_sound_workshop() -> void:
+	_close_panels()
+	if sound_workshop == null:
+		sound_workshop = SoundWorkshop.new()
+		add_child(sound_workshop)
+		sound_workshop.closed.connect(_open_debug)
+	sound_workshop.open()
 
 
 func _open_debug() -> void:
@@ -463,21 +483,27 @@ func _choose_class(id: String) -> void:
 
 func _build_options_panel() -> void:
 	_options_panel = _panel("OPTIONEN")
-	_panel_label(_options_panel, "Lautstärke", Vector2(30, 76)).size.x = 120
-	_volume_slider = HSlider.new()
-	_volume_slider.position = Vector2(210, 80)
-	_volume_slider.size = Vector2(180, 24)
-	_volume_slider.min_value = 0
-	_volume_slider.max_value = 100
-	_volume_slider.step = 5
-	_volume_slider.value_changed.connect(func(value: float): _set_setting("volume", int(value)))
-	_options_panel.add_child(_volume_slider)
-	_fullscreen_check = _check(_options_panel, "Vollbild", Vector2(30, 126), func(on: bool): _set_setting("fullscreen", on))
-	_shake_check = _check(_options_panel, "Bildschirmwackeln", Vector2(30, 176), func(on: bool): _set_setting("shake", on))
+	# Three sliders: everything, music with ambience, effects with menu clicks.
+	var rows := [["volume", "Gesamt", 70], ["music", "Musik", 110], ["effects", "Effekte", 150]]
+	for row: Array in rows:
+		_panel_label(_options_panel, str(row[1]), Vector2(30, float(row[2]) - 4)).size.x = 160
+		var slider := HSlider.new()
+		slider.position = Vector2(210, float(row[2]))
+		slider.size = Vector2(180, 24)
+		slider.min_value = 0
+		slider.max_value = 100
+		slider.step = 5
+		var key: String = row[0]
+		slider.value_changed.connect(func(value: float): _set_setting(key, int(value)))
+		_options_panel.add_child(slider)
+		_sliders[key] = slider
+	_volume_slider = _sliders.volume
+	_fullscreen_check = _check(_options_panel, "Vollbild", Vector2(30, 196), func(on: bool): _set_setting("fullscreen", on))
+	_shake_check = _check(_options_panel, "Bildschirmwackeln", Vector2(30, 240), func(on: bool): _set_setting("shake", on))
 	var version := str(ProjectSettings.get_setting("application/config/version", ""))
 	if not version.is_empty():
-		_panel_label(_options_panel, "Version " + version, Vector2(30, 240)).add_theme_color_override("font_color", MUTED)
-	_panel_button(_options_panel, "ZURÜCK", Vector2(30, 306), Vector2(360, 38), _close_panels)
+		_panel_label(_options_panel, "Version " + version, Vector2(30, 284)).add_theme_color_override("font_color", MUTED)
+	_panel_button(_options_panel, "ZURÜCK", Vector2(30, 316), Vector2(360, 38), _close_panels)
 
 
 func _open_options() -> void:
@@ -498,15 +524,15 @@ func _load_settings() -> void:
 	var file := ConfigFile.new()
 	if file.load(SETTINGS_PATH) == OK:
 		for name: String in settings: settings[name] = file.get_value("options", name, settings[name])
-	_volume_slider.set_value_no_signal(float(settings.volume))
+	for key: String in _sliders: _sliders[key].set_value_no_signal(float(settings[key]))
 	_fullscreen_check.set_pressed_no_signal(bool(settings.fullscreen))
 	_shake_check.set_pressed_no_signal(bool(settings.shake))
 	_apply_settings()
 
 
 func _apply_settings() -> void:
-	var volume: float = clampf(float(settings.volume) / 100.0, 0.0, 1.0)
-	AudioServer.set_bus_volume_db(0, linear_to_db(volume) if volume > 0.0 else -80.0)
+	AudioMix.ensure_buses()
+	for key: String in ["volume", "music", "effects"]: AudioMix.set_slider(key, clampf(float(settings[key]) / 100.0, 0.0, 1.0))
 	# The game applies `fullscreen` with its own toggle, which keeps the window rect.
 	settings_changed.emit(settings)
 

@@ -6,6 +6,7 @@ extends SceneTree
 
 const Sfx = preload("res://src/vfx/sfx.gd")
 const Feedback = preload("res://src/vfx/feedback.gd")
+const AudioMix = preload("res://src/audio/audio_mix.gd")
 var checked := 0
 var failures: Array[String] = []
 
@@ -17,7 +18,7 @@ class FakeSfx extends Node:
 	var rig_materials: Dictionary = {}
 	func has_effect(name: String) -> bool:
 		return known.has(name)
-	func play(name: String, _spread: float = 0.0) -> void:
+	func play(name: String, _spread: float = 0.0, _category: String = "") -> void:
 		played.append(name)
 
 
@@ -39,11 +40,35 @@ func _run() -> void:
 	root.add_child(sfx)
 	await process_frame
 	for name: String in table.events:
-		var wanted := int(table.events[name].get("variants", 1))
-		check(sfx.variant_count(name) == wanted, "%s loads all %d recorded variants (%d)" % [name, wanted, sfx.variant_count(name)])
+		var wanted: int = table.events[name].get("files", []).size()
+		check(wanted > 0 and sfx.variant_count(name) == wanted, "%s loads all %d listed files (%d)" % [name, wanted, sfx.variant_count(name)])
+		var category := str(table.events[name].get("category", ""))
+		check(AudioMix.data().categories.has(category), "%s names a mix category (%s)" % [name, category])
+		var layer := str(table.events[name].get("with", ""))
+		check(layer.is_empty() or table.events.has(layer), "%s layers an existing event (%s)" % [name, layer])
 	check(sfx.has_effect("windup") and sfx.variant_count("windup") == 0, "synthesized sounds stay as the fallback")
-	var stream: AudioStreamWAV = sfx.effect_stream("door")
-	check(stream != null and stream.mix_rate >= 44100 and not stream.stereo, "door is a recorded mono stream")
+	var stream: AudioStream = sfx.effect_stream("door")
+	check(stream != null and stream.get_length() > 0.2, "door is a recorded stream")
+	# Mix: every event plays on its category's bus at its category's level.
+	sfx.play("hurt")
+	check(sfx.last_bus == "Focus", "your hero being hit plays on the Focus bus the music ducks under (%s)" % sfx.last_bus)
+	sfx.play("step")
+	check(sfx.last_bus == "SFX", "footsteps play on the effects bus")
+	sfx.play("ui_click")
+	check(sfx.last_bus == "UI", "menu clicks play on the UI bus")
+	var before: int = sfx.play_count
+	sfx.play("shoot_magic", 0.05, "focus")
+	check(sfx.last_bus == "Focus" and sfx.play_count == before + 1, "a category override moves a sound to another bus")
+	var hurt_player: AudioStreamPlayer = sfx._players[(sfx._next - 1 + sfx._players.size()) % sfx._players.size()]
+	var hero_level: float = hurt_player.volume_db
+	sfx.play("idle_bone")
+	var idle_player: AudioStreamPlayer = sfx._players[(sfx._next - 1 + sfx._players.size()) % sfx._players.size()]
+	check(idle_player.volume_db < hero_level - 6.0, "an idle rattle sits well below your own sounds (%.1f vs %.1f dB)" % [idle_player.volume_db, hero_level])
+	# Layers: a hit on your hero is a punch plus a grunt, counted as one sound.
+	var layered_before: int = sfx.play_count
+	var next_before: int = sfx._next
+	sfx.play("hurt")
+	check(sfx.play_count == layered_before + 1 and (sfx._next - next_before + sfx._players.size()) % sfx._players.size() == 2, "a hit on your hero plays the punch and the grunt together")
 	# Act/assert: no variant twice in a row.
 	var repeats := 0
 	var previous := -1
@@ -104,7 +129,12 @@ func _run() -> void:
 	feedback.observe(snapshot, 1)
 	feedback.update(0.06)
 	feedback.update(0.31)
-	check(fake.played.count("step") == 2, "walking plays footsteps every 0.3 s (%s)" % str(fake.played))
+	check(fake.played.count("step") == 2, "walking without a rig plays footsteps at the hero's step time (%s)" % str(fake.played))
+	fake.played.clear()
+	feedback.rig_footsteps = true
+	feedback.update(0.5)
+	check(fake.played.count("step") == 0, "with hero rigs the touch-downs play the steps, not the timer")
+	feedback.rig_footsteps = false
 	hero.moving = false
 	feedback.observe(snapshot, 1)
 	fake.played.clear()
