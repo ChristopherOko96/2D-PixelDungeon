@@ -87,6 +87,7 @@ func handle_input(id: int, player: Dictionary, command: Dictionary) -> void:
 		var bit := 1 << index
 		var skill := _skill(player, index)
 		if skill.is_empty() or not ClassPerks.unlocked(str(player.class_id), index, _level()): continue
+		if int(player.get("sealed_skill", -1)) == index: continue
 		if bool(skill.get("hold", false)):
 			if keys & bit and not (previous & bit): _hold_start(id, player, index, skill)
 			elif previous & bit and not (keys & bit): _hold_end(id, player, index, skill)
@@ -117,8 +118,9 @@ func _spent(player: Dictionary, index: int, skill: Dictionary) -> void:
 
 
 func _cooldown(player: Dictionary, index: int, skill: Dictionary) -> void:
-	player.skill_cd[index] = float(skill.get("cooldown", 5.0))
-	player.skill_cd_max[index] = float(skill.get("cooldown", 5.0))
+	var scale := float(player.get("cooldown_scale", 1.0))
+	player.skill_cd[index] = float(skill.get("cooldown", 5.0)) * scale
+	player.skill_cd_max[index] = float(skill.get("cooldown", 5.0)) * scale
 
 
 func _press(id: int, player: Dictionary, index: int, skill: Dictionary, target: Vector2) -> void:

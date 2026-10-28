@@ -90,15 +90,19 @@ func _run() -> void:
 	game._server_action(1, "interact", 0)
 	check(bool(chest.open), "E next to the chest opens it")
 	check(Dungeon.segment_blocked(chest.pos, chest.pos, 0.0, game.current_layout), "an opened chest still stands in the way")
+	# A chest drops one perk and often an item (assets/data/items.json drops.chest).
 	var drops: Array = game.chests.loot.get(chest_room_id, [])
-	check(drops.size() == 1 and str(drops[0].kind) == "perk" and not str(drops[0].perk).is_empty(), "the chest drops a perk")
-	var definition: Dictionary = game.PerkRules.find(game.balance, str(drops[0].perk)) if not drops.is_empty() else {}
+	var perk_drops: Array = drops.filter(func(drop: Dictionary) -> bool: return str(drop.kind) == "perk")
+	check(perk_drops.size() == 1 and not str(perk_drops[0].perk).is_empty(), "the chest drops a perk")
+	check(drops.all(func(drop: Dictionary) -> bool: return str(drop.kind) in ["perk", "item"]), "anything else a chest drops is an item")
+	var definition: Dictionary = game.PerkRules.find(game.balance, str(perk_drops[0].perk)) if not perk_drops.is_empty() else {}
 	check(not bool(definition.get("projectile_only", false)), "a swordsman's chest never drops a projectile-only perk")
 	var snapshot: Dictionary = game._make_snapshot()
-	check(snapshot.loot_chests.chests.size() >= 1 and snapshot.loot_chests.loot.size() == 1, "clients see the chest and its loot")
-	# Walking over the loot takes the perk.
-	if not drops.is_empty(): hero.pos = Vector2(drops[0].pos)
-	for step in range(40): game.chests.step(1.0 / 60.0)
+	check(snapshot.loot_chests.chests.size() >= 1 and snapshot.loot_chests.loot.size() == drops.size(), "clients see the chest and its loot")
+	# Walking over the loot takes it.
+	for drop: Dictionary in drops.duplicate():
+		hero.pos = Vector2(drop.pos)
+		for step in range(40): game.chests.step(1.0 / 60.0)
 	check(Array(hero.perks).size() == perks_before + 1 and Array(game.chests.loot.get(chest_room_id, [])).is_empty(), "walking over the loot grants the perk")
 
 	# Crates still break: one shot counts once, explosions count too.
@@ -134,9 +138,12 @@ func _run() -> void:
 	check(int(hero.hp) == hp_before - bite, "the Mimik bites the opener (%d -> %d)" % [hp_before, int(hero.hp)])
 	check(game.phase == "combat", "the room fights again")
 	check(not beast.is_empty() and str(beast[0].get("rig", beast[0].get("body_rig", "mimic"))) != "" and game.crypt_ai.definition("mimic").get("rig", "") == "mimic", "the Mimik has its own figure")
-	var loot_before: int = Array(game.chests.loot.get(chest_room_id, [])).size()
+	var count_kind := func(kind: String) -> int: return Array(game.chests.loot.get(chest_room_id, [])).filter(func(drop: Dictionary) -> bool: return str(drop.kind) == kind).size()
+	var perks_lying: int = count_kind.call("perk")
+	var items_lying: int = count_kind.call("item")
 	if not beast.is_empty(): game._damage_enemy(beast[0], 9999.0, Vector2.RIGHT, 1)
-	check(Array(game.chests.loot.get(chest_room_id, [])).size() == loot_before + 2, "a fallen Mimik drops two perks")
+	check(count_kind.call("perk") == perks_lying + 2, "a fallen Mimik drops two perks")
+	check(count_kind.call("item") >= items_lying + 1, "a fallen Mimik also drops a weapon")
 	game.enemies.clear()
 	game._check_room_end()
 	check(game.phase == "explore", "with the Mimik gone the room is calm again")

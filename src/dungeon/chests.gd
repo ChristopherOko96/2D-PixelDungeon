@@ -25,6 +25,8 @@ var _next_id := 1
 var _rng := RandomNumberGenerator.new()
 ## Mimik rolls use their own stream, so chest and crate spots stay as before.
 var _mimic_rng := RandomNumberGenerator.new()
+## What attacks can break: crates and the bosses' temporary blocks.
+const BREAKABLE := ["crate", "ice_block", "bone_cage", "gold_crate"]
 
 
 func bind(owner: Node) -> void:
@@ -53,6 +55,7 @@ func place_floor(layouts: Array, seed_value: int) -> void:
 		rooms.append(layout)
 	_place_chests(rooms)
 	for layout: Dictionary in rooms: _place_authored_mimics(layout)
+	_place_gold_crate(rooms)
 	for layout: Dictionary in layouts: _place_crates(layout)
 	for layout: Dictionary in layouts: _solidify(layout)
 
@@ -83,6 +86,21 @@ func _place_chests(rooms: Array) -> void:
 			chests[room_id] = taken
 			_next_id += 1
 			placed += 1
+
+
+## Now and then a golden crate on the floor: breakable, full of good loot.
+func _place_gold_crate(rooms: Array) -> void:
+	var spec: Dictionary = game.inventory.data.get("gold_crate", {}) if game != null and "inventory" in game else {}
+	if spec.is_empty() or rooms.is_empty() or _mimic_rng.randf() > float(spec.get("per_floor", 0.5)): return
+	var layout: Dictionary = rooms[_mimic_rng.randi_range(0, rooms.size() - 1)]
+	var room_id := str(layout.id)
+	var taken: Array = chests.get(room_id, [])
+	for spot: Vector2 in _spots(layout, true):
+		if taken.any(func(other: Dictionary) -> bool: return Vector2(other.pos).distance_to(spot) < 64.0): continue
+		taken.append({"id": _next_id, "kind": "gold_crate", "pos": spot, "hits": 0, "max": int(spec.get("hits", 4)), "open": false})
+		_next_id += 1
+		chests[room_id] = taken
+		return
 
 
 ## True when the next random chest of this floor is a Mimik.
@@ -264,7 +282,7 @@ func hit_arc(origin: Vector2, aim: Vector2, reach: float, arc: float, owner: int
 
 
 func _breakable(chest: Dictionary) -> bool:
-	return not bool(chest.open) and str(chest.get("kind", "chest")) == "crate"
+	return not bool(chest.open) and str(chest.get("kind", "chest")) in BREAKABLE
 
 
 func _hit(chest: Dictionary, _owner: int, direction: Vector2) -> void:
@@ -274,8 +292,49 @@ func _hit(chest: Dictionary, _owner: int, direction: Vector2) -> void:
 	chest.open = true
 	# The broken crate no longer blocks: its cell leaves the room's collision.
 	_free_cell(chest)
-	game.add_fx("crate_break", chest.pos, 20.0)
+	var kind := str(chest.get("kind", "crate"))
+	game.add_fx("crate_break" if kind in ["crate", "gold_crate"] else kind + "_break", chest.pos, 20.0)
+	if kind in ["crate", "gold_crate"]: _drop_items(kind, _owner, Vector2(chest.pos) + Vector2(0, 26))
+	if kind not in ["crate", "gold_crate"]: _here().erase(chest)
 	game.layout_changed()
+
+
+## Items from a crate, chest, Mimik or gold crate for the hero who opened it.
+func _drop_items(source: String, owner: int, point: Vector2) -> void:
+	if game == null or not "inventory" in game: return
+	var player: Dictionary = game.players.get(owner, {})
+	var class_id := str(player.get("class_id", "")) if not player.is_empty() else str(game.players.values()[0].get("class_id", "")) if not game.players.is_empty() else ""
+	var items: Array = game.inventory.roll(source, int(game.get("floor_index")) if game.get("floor_index") != null else 1, class_id)
+	for index in range(items.size()): drop_item(items[index], point + Vector2((float(index) - float(items.size() - 1) * 0.5) * 30.0, 0))
+
+
+## An item on the floor; a hero walking over it takes it.
+func drop_item(item: Dictionary, point: Vector2) -> void:
+	var list: Array = loot.get(_room_id(), [])
+	list.append({"id": _next_id, "kind": "item", "item": item, "pos": point, "age": 0.0})
+	_next_id += 1
+	loot[_room_id()] = list
+
+
+## A boss's temporary block (ice wall, bone cage) on a free floor cell: solid,
+## breakable with `hits` hits, gone by itself after `time` seconds.
+func add_block(kind: String, cell: Vector2i, hits: int, time: float) -> bool:
+	var rect := [float(cell.x) * 32.0, float(cell.y) * 32.0, 32.0, 32.0]
+	var centre := Vector2(cell) * 32.0 + Vector2(16, 16)
+	if Dungeon.segment_blocked(centre, centre, 15.0, game.current_layout): return false
+	for player: Dictionary in game.players.values():
+		if int(player.hp) > 0 and Vector2(player.pos).distance_to(centre) < 16.0 + float(game.balance.player.radius): return false
+	for enemy: Dictionary in game.enemies:
+		if float(enemy.hp) > 0 and Vector2(enemy.pos).distance_to(centre) < 16.0 + float(enemy.radius): return false
+	var list: Array = _here()
+	list.append({"id": _next_id, "kind": kind, "pos": centre, "hits": 0, "max": hits, "open": false, "expires": time})
+	chests[_room_id()] = list
+	_next_id += 1
+	game.current_layout.obstacles.append(rect)
+	if not game.current_layout.has("breakable_obstacles"): game.current_layout.breakable_obstacles = []
+	game.current_layout.breakable_obstacles.append(rect)
+	game.layout_changed()
+	return true
 
 
 ## Takes a chest or crate cell out of the room's collision.
@@ -314,6 +373,7 @@ func _open(chest: Dictionary, owner: int) -> void:
 	chest.open = true
 	chest.opened_by = owner
 	_drop(_roll_drops(owner, 1), Vector2(chest.pos) + Vector2(0, 34))
+	_drop_items("chest", owner, Vector2(chest.pos) + Vector2(30, 30))
 	game.add_fx("chest_open", chest.pos, 24.0)
 	print("CHEST_OPENED room=%s peer=%d" % [_room_id(), owner])
 
@@ -340,6 +400,7 @@ func mimic_defeated(enemy: Dictionary, owner: int) -> void:
 	for index in range(drops.size()):
 		var side := (float(index) - float(drops.size() - 1) * 0.5) * 36.0
 		_drop([drops[index]], Vector2(enemy.pos) + Vector2(side, 10))
+	_drop_items("mimic", owner, Vector2(enemy.pos) + Vector2(0, 36))
 	print("MIMIC_DEFEATED room=%s drops=%d" % [_room_id(), drops.size()])
 
 
@@ -372,6 +433,16 @@ func _roll_drops(owner: int, count: int) -> Array:
 
 ## Pickups and keeping heroes out of chests; call once per host step.
 func step(delta: float) -> void:
+	# Boss blocks melt and crumble away when their time is up.
+	for chest: Dictionary in _here().duplicate():
+		if not chest.has("expires") or bool(chest.open): continue
+		chest.expires = float(chest.expires) - delta
+		if float(chest.expires) <= 0.0:
+			chest.open = true
+			_free_cell(chest)
+			_here().erase(chest)
+			game.add_fx(str(chest.kind) + "_break", chest.pos, 16.0)
+			game.layout_changed()
 	var list: Array = loot.get(_room_id(), [])
 	for index in range(list.size() - 1, -1, -1):
 		var item: Dictionary = list[index]
@@ -393,6 +464,11 @@ func step(delta: float) -> void:
 
 
 func _take(id: int, player: Dictionary, item: Dictionary) -> bool:
+	if str(item.kind) == "item":
+		if not "inventory" in game: return false
+		var taken: bool = game.inventory.add(player, item.item)
+		if taken: game.add_fx("loot_taken", item.pos, 20.0)
+		return taken
 	if str(item.kind) != "perk": return false
 	var definition := PerkRules.find(game.balance, str(item.perk))
 	if definition.is_empty(): return false
@@ -411,8 +487,10 @@ func snapshot() -> Dictionary:
 	var visible_chests: Array = []
 	for chest: Dictionary in _here():
 		var direction: Vector2 = chest.get("hit_dir", Vector2.ZERO)
-		visible_chests.append({"kind": "crate" if str(chest.get("kind", "chest")) == "crate" else "chest", "id": int(chest.id), "x": Vector2(chest.pos).x, "y": Vector2(chest.pos).y, "hits": int(chest.hits), "max": int(chest.max), "open": bool(chest.open), "dx": direction.x})
+		visible_chests.append({"kind": str(chest.kind) if str(chest.get("kind", "chest")) in BREAKABLE else "chest", "id": int(chest.id), "x": Vector2(chest.pos).x, "y": Vector2(chest.pos).y, "hits": int(chest.hits), "max": int(chest.max), "open": bool(chest.open), "dx": direction.x})
 	var visible_loot: Array = []
 	for item: Dictionary in loot.get(_room_id(), []):
-		visible_loot.append({"id": int(item.id), "x": Vector2(item.pos).x, "y": Vector2(item.pos).y, "kind": str(item.kind), "perk": str(item.get("perk", "")), "name": str(item.get("name", "")), "age": float(item.age)})
+		var shown := {"id": int(item.id), "x": Vector2(item.pos).x, "y": Vector2(item.pos).y, "kind": str(item.kind), "perk": str(item.get("perk", "")), "name": str(item.get("name", "")), "age": float(item.age)}
+		if str(item.kind) == "item" and "inventory" in game: shown.view = game.inventory.view(item.item)
+		visible_loot.append(shown)
 	return {"chests": visible_chests, "loot": visible_loot}

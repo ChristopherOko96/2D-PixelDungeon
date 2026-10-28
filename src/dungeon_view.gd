@@ -39,6 +39,8 @@ const RigRenderer = preload("res://src/rig/rig_renderer.gd")
 const Darkness = preload("res://src/vfx/darkness.gd")
 const Crypt72 = preload("res://src/crypt_0x72_art.gd")
 const SkillFx = preload("res://src/vfx/skill_fx.gd")
+const BossFx = preload("res://src/vfx/boss_fx.gd")
+const AttackFx = preload("res://src/vfx/attack_fx.gd")
 const FxSprites = preload("res://src/vfx/fx_sprites.gd")
 const Glow = preload("res://src/vfx/glow.gd")
 ## Hero class -> part rig of its 0x72 figure (assets/data/rigs.json).
@@ -92,6 +94,9 @@ var _swing_started: Dictionary = {}
 var _rigs: RefCounted
 ## Hero skills, EXP orbs and ultimates (src/vfx/skill_fx.gd).
 var _skill_fx := SkillFx.new()
+var _boss_fx := BossFx.new()
+## Archer arrows and mage spells: streaks, orbs, release flashes, bursts.
+var _attack_fx := AttackFx.new()
 ## Pixel-art effect animations (assets/sprites/fx), shared by feedback and skills.
 var _fx := FxSprites.new()
 var _fx_layout_key := ""
@@ -285,11 +290,16 @@ func _draw() -> void:
 		if _fx_layout_key != _layout_key:
 			_fx_layout_key = _layout_key
 			_fx.set_layout(layout)
+			_attack_fx.reset()
 		# Particles bounce off this room's walls and settle on its floor.
 		if _feedback.particles.layout_key != _layout_key: _feedback.particles.set_layout(layout, _layout_key)
 		_skill_fx.particles = _feedback.particles
+		_attack_fx.particles = _feedback.particles
+		_attack_fx.fx = _fx
+		_attack_fx.observe(_snapshot,_clock)
 		_feedback.particles.draw_stains(self)
 		_skill_fx.draw_ground(self,_snapshot,_clock)
+		_boss_fx.draw_ground(self,_snapshot,_clock)
 	var rigs_on: bool = _rigs != null and _rigs.is_ready()
 	if rigs_on and actors_visible: _rigs.draw_under(self)
 	var enemies: Array = _snapshot.get("enemies", [])
@@ -316,6 +326,14 @@ func _draw() -> void:
 	var local_hero: Dictionary = players.get(_local_peer, {})
 	_skill_fx.local_class = str(local_hero.get("class_id",""))
 	_skill_fx.local_point = Vector2(float(local_hero.get("x",0)),float(local_hero.get("y",0))) if not local_hero.is_empty() else Vector2.INF
+	# Only the find closest to the local hero shows its name, so labels never pile up.
+	_skill_fx.nearest_loot = -1
+	var nearest_distance := 90.0
+	for item: Dictionary in loot_state.get("loot", []):
+		var distance := _skill_fx.local_point.distance_to(Vector2(float(item.x),float(item.y))) if _skill_fx.local_point.is_finite() else INF
+		if distance < nearest_distance:
+			nearest_distance = distance
+			_skill_fx.nearest_loot = int(item.id)
 	for bullet_value: Variant in _snapshot.get("bullets", []):
 		if not _effects_visible: continue
 		depth_entries.append({"kind":"bullet","y":_position(bullet_value).y,"data":bullet_value})
@@ -352,6 +370,8 @@ func _draw() -> void:
 	if _effects_visible:
 		_draw_perk_events()
 		_skill_fx.draw_over(self,_snapshot,_clock)
+		_boss_fx.draw_over(self,_snapshot,_clock,_position)
+		_attack_fx.draw_flashes(self,_clock)
 		_feedback.particles.draw_particles(self)
 		_fx.draw(self)
 		if not freeform and not _classic_enabled: _draw_motes()
@@ -369,10 +389,15 @@ func _update_darkness() -> void:
 	_darkness.set_world_size(Vector2(float(size[0]), float(size[1])))
 	var lights: Array = []
 	var flicker: float = 4.0 * sin(_clock * 9.0)
-	for value: Variant in _snapshot.get("players", {}).values():
-		var player: Dictionary = value
+	for key: Variant in _snapshot.get("players", {}):
+		var player: Dictionary = _snapshot.players[key]
 		var point := _position(player)
-		lights.append(Vector3(point.x, point.y - 8.0, float(lighting.get("player_radius", 150)) * (1.0 if float(player.get("hp", 1)) > 0 else 0.45)))
+		var reach := float(lighting.get("player_radius", 150)) * (1.0 if float(player.get("hp", 1)) > 0 else 0.45)
+		# Blindness (potion) and the night curse shrink the hero's own light.
+		if int(key) == _local_peer:
+			if "blind" in Array(player.get("effects", [])): reach *= 0.3
+			elif bool(player.get("inventory", {}).get("dim", false)): reach *= 0.6
+		lights.append(Vector3(point.x, point.y - 8.0, reach))
 	for entry: Dictionary in _fire_entries:
 		var point: Vector2 = entry.point
 		lights.append(Vector3(point.x, point.y - 12.0, float(lighting.get("torch_radius", 120)) + flicker))
@@ -383,10 +408,14 @@ func _update_darkness() -> void:
 		for shaft: Vector2 in _crypt72.shafts: lights.append(Vector4(shaft.x, shaft.y - 20.0, float(lighting.get("shaft_radius", 150)), 1.0))
 	# Spells light the dark around them: the Photoneneis, lava, magic bursts.
 	lights.append_array(_skill_fx.lights(_snapshot))
+	lights.append_array(_boss_fx.lights(_snapshot))
 	lights.append_array(_fx.lights())
 	if _rigs != null and _rigs.is_ready(): lights.append_array(_rigs.lights(_snapshot))
+	# Heroes' arrows and spells light their path (src/vfx/attack_fx.gd).
+	lights.append_array(_attack_fx.lights(_snapshot,_position))
 	for bullet: Dictionary in _snapshot.get("bullets", []):
 		var style := str(bullet.get("style", ""))
+		if AttackFx.handles(bullet): continue
 		if style in ["magic", "void_skull", "soul", "fireball", "fist"]:
 			var point := _position(bullet)
 			lights.append(Vector4(point.x, point.y, 84.0 if style == "fireball" else 46.0, 0.9 if style == "fireball" else 0.8))
@@ -416,7 +445,8 @@ func _draw_glow(canvas: CanvasItem) -> void:
 			Glow.dot(canvas, foot, 64.0, Color(1.0, 0.88, 0.6, 0.22 * torches))
 	var bullets := _glow.level("bullets")
 	for bullet: Dictionary in _snapshot.get("bullets", []):
-		_skill_fx.bullet_glow(canvas, bullet, _position(bullet), _clock, bullets)
+		if not AttackFx.handles(bullet): _skill_fx.bullet_glow(canvas, bullet, _position(bullet), _clock, bullets)
+	_attack_fx.draw_glow(canvas, _snapshot, _position, _clock, bullets)
 	_skill_fx.draw_glow(canvas, _snapshot, _clock, _glow)
 	_fx.draw_glow(canvas, _glow.level("spells"))
 	_feedback.particles.draw_glow(canvas, _glow.level("particles"))
@@ -639,6 +669,8 @@ func _draw_class_hero(player: Dictionary, peer_id: int) -> void:
 func _draw_class_weapon(player: Dictionary, peer_id: int, point: Vector2, aim: Vector2) -> void:
 	var weapons: Array = player.get("weapons", [])
 	var weapon_id: String = str(weapons[0]) if not weapons.is_empty() else ""
+	# Items carry their own sprite path (src/items/item_rules.gd).
+	if not _weapon_textures.has(weapon_id) and weapon_id.begins_with("res://") and ResourceLoader.exists(weapon_id): _weapon_textures[weapon_id] = load(weapon_id)
 	if not _weapon_textures.has(weapon_id): return
 	var texture: Texture2D = _weapon_textures[weapon_id]
 	var melee: bool = bool(player.get("melee", false))
@@ -799,6 +831,11 @@ func _draw_bullet(bullet: Dictionary) -> void:
 	var owner: int = int(bullet.get("owner", 1))
 	var style: String = str(bullet.get("style",""))
 	if owner > 0 and _skill_fx.draw_bullet(self,bullet,_clock): return
+	if AttackFx.handles(bullet):
+		if style == "arrow": _attack_fx.draw_arrow(self,bullet,_position(bullet),_clock)
+		else: _attack_fx.draw_orb(self,bullet,_position(bullet),_clock)
+		return
+	if owner == 0 and _boss_fx.draw_bullet(self,bullet,point,_clock): return
 	if owner == 0 and style == "arrow":
 		var aim: Vector2 = Vector2(float(bullet.get("vx",1)),float(bullet.get("vy",0))).normalized()
 		draw_line((point-aim*8).round(),(point+aim*7).round(),INK,4,false)
@@ -826,31 +863,6 @@ func _draw_bullet(bullet: Dictionary) -> void:
 		_box(point.x-6,point.y-6,12,12,INK)
 		_box(point.x-4,point.y-4,8,8,Color("a99d93"))
 		_box(point.x-2,point.y-2,4,4,Color("efe6d6"))
-		return
-	if owner > 0 and style == "arrow":
-		# Archer arrow: the 0x72 arrow sprite along its flight (art points up).
-		var flight: Vector2 = Vector2(float(bullet.get("vx",1)),float(bullet.get("vy",0)))
-		var arrow_size := Vector2(ARROW_TEXTURE.get_width(),ARROW_TEXTURE.get_height())*2.0
-		draw_set_transform(point,flight.angle()+PI*0.5,Vector2.ONE)
-		draw_texture_rect(ARROW_TEXTURE,Rect2(-arrow_size*0.5,arrow_size),false)
-		draw_set_transform(Vector2.ZERO,0.0,Vector2.ONE)
-		return
-	if owner > 0 and style == "magic":
-		# Mage orb: a glowing emerald core matching the staff (element tint if any).
-		var tints: Dictionary = {"cinder":Color("f7b46b"),"venom":Color("b8d878"),"frost":Color("9bdde6"),"storm":Color("baabe9")}
-		var tint: Color = tints.get(str(bullet.get("element","")),Color("6fe3a0"))
-		var pulse: float = 0.5+0.5*sin(_clock*18.0)
-		draw_circle(point,10.0+pulse*2.0,Color(tint,0.18))
-		if _fx.has("magic_orb"):
-			# A fading trail of smaller orbs behind the flying one.
-			var flight: Vector2 = Vector2(float(bullet.get("vx",1)),float(bullet.get("vy",0))).normalized()
-			var orb_tint: Color = Color.WHITE if str(bullet.get("element","")).is_empty() else tint.lightened(0.3)
-			for ghost in range(1,4):
-				_fx.draw_loop(self,"magic_orb",point-flight*ghost*7.0,0.0,1.3-ghost*0.25,_clock-ghost*0.06,Color(orb_tint,0.5-ghost*0.13),true)
-			_fx.draw_loop(self,"magic_orb",point,0.0,1.3,_clock+float(bullet.get("id",0))*0.1,orb_tint,true)
-			return
-		draw_circle(point,6.0,Color(tint,0.85))
-		draw_circle(point,3.0,Color("f2fff6"))
 		return
 	var colors: Dictionary = {"cinder":Color("f7b46b"),"venom":Color("b8d878"),"frost":Color("9bdde6"),"storm":Color("baabe9")}
 	var color: Color = colors.get(str(bullet.get("element","")),Color("#f3ce7d")) if owner > 0 else Color("#f19791")

@@ -1,0 +1,115 @@
+{
+	"_doc": "Extra moves of bosses and crypt enemies (src/combat/boss_moves.gd, design docs/BOSS-FAEHIGKEITEN.de.md). Every move warns first (telegraph) and can be dodged. Times in seconds, distances in px, damage in half hearts (2 = one heart). sets: per enemy (key: 'void' for the Leerenrufer, else the enemy kind): every [min, max] seconds between moves (the enemy's own attacks run in between), rage_below: below this share of its HP the enemy rages once (roar, moves come faster by rage.cooldown_scale, 'rage' moves unlock), rebuild: the Knochenkoloss rises once (skull_share of max HP must be dealt to its skull within time, else it stands up with revive_share HP). A move entry: move id, weight, cooldown, near (only within px of the target), far (only beyond px), hp_below (share), once, rage (only while raging). moves: type is strikes (warning circles, pattern under_players / near_players / line / self / under_target), bullets (pattern single / fan / ring (with a gap) / spiral), lob (globs land after flight and leave a pool), dash (charge along a line; away: jump back), blink (teleport, pool left behind), vortex (pulls everyone in, then bursts), cone (breath in front), grab (seize and throw), spin (whirl around itself), summon (minions), armor (damage taken x scale for time, then shards), barrier (ice blocks to break), cage (blocks around a hero), shield (armor for the nearest ally), twin_beam (the Leerenrufer's beam as two beams with a safe gap). anim: attack, roar, summon or cast (the figure's clip). effect on hit: slow [speed share, seconds], poison [damage per second, seconds], freeze seconds, pull px. pool: style, radius, time, dps, slow, slip (ice: no grip).",
+	"schema_version": 1,
+	"rage": {"cooldown_scale": 0.6, "roar": 1.2},
+	"sets": {
+		"void": {"every": [2.4, 3.8], "rage_below": 0.5, "moves": [
+			{"move": "void_rift", "weight": 3},
+			{"move": "soul_chain", "weight": 2, "far": 90},
+			{"move": "shadow_step", "weight": 2, "cooldown": 7},
+			{"move": "void_spiral", "weight": 2, "cooldown": 10},
+			{"move": "bone_ring", "weight": 2, "cooldown": 7},
+			{"move": "devour", "weight": 1, "cooldown": 14},
+			{"move": "twin_beam", "weight": 3, "cooldown": 6, "rage": true}
+		]},
+		"moderkoloss": {"every": [2.2, 3.4], "rage_below": 0.4, "moves": [
+			{"move": "rot_breath", "weight": 3, "near": 190},
+			{"move": "rot_globs", "weight": 2, "cooldown": 6},
+			{"move": "charge", "weight": 2, "cooldown": 7, "far": 120},
+			{"move": "quake_line", "weight": 2, "cooldown": 5},
+			{"move": "maggot_brood", "weight": 1, "cooldown": 14},
+			{"move": "grab", "weight": 2, "cooldown": 6, "near": 110},
+			{"move": "flesh_rain", "weight": 4, "hp_below": 0.3, "once": true}
+		]},
+		"frostleiche": {"every": [2.2, 3.4], "rage_below": 0.4, "moves": [
+			{"move": "ice_fan", "weight": 3},
+			{"move": "frost_nova", "weight": 2, "cooldown": 6, "near": 150},
+			{"move": "ice_wall", "weight": 1, "cooldown": 12},
+			{"move": "hail", "weight": 2, "cooldown": 7},
+			{"move": "ice_slide", "weight": 2, "cooldown": 7, "far": 110},
+			{"move": "ice_armor", "weight": 1, "cooldown": 15},
+			{"move": "frost_raise", "weight": 1, "cooldown": 16}
+		]},
+		"knochenkoloss": {"every": [2.2, 3.4], "rage_below": 0.4, "rebuild": {"skull_share": 0.2, "time": 3.0, "revive_share": 0.3}, "moves": [
+			{"move": "bone_spears", "weight": 3},
+			{"move": "spike_line", "weight": 2, "cooldown": 5},
+			{"move": "bone_whirl", "weight": 2, "cooldown": 7, "near": 220},
+			{"move": "skull_hail", "weight": 2, "cooldown": 8},
+			{"move": "bone_cage", "weight": 1, "cooldown": 12},
+			{"move": "bone_legion", "weight": 1, "cooldown": 18}
+		]},
+		"skeleton": {"every": [3.5, 5.5], "moves": [
+			{"move": "dodge_leap", "weight": 2, "near": 70},
+			{"move": "whirl_slash", "weight": 2, "near": 80, "cooldown": 5}
+		]},
+		"skeleton_archer": {"every": [3.5, 5.5], "moves": [
+			{"move": "arrow_volley", "weight": 2, "far": 80},
+			{"move": "fire_arrow", "weight": 2, "far": 80, "cooldown": 6}
+		]},
+		"skeleton_guard": {"every": [4.0, 6.0], "moves": [
+			{"move": "shield_bash", "weight": 2, "near": 150},
+			{"move": "bone_toss", "weight": 1, "far": 100}
+		]},
+		"necromancer": {"every": [4.0, 6.0], "moves": [
+			{"move": "soul_curse", "weight": 2},
+			{"move": "bone_shield", "weight": 1, "cooldown": 8}
+		]},
+		"tiny_zombie": {"every": [3.0, 5.0], "moves": [
+			{"move": "pounce", "weight": 2, "far": 60, "near": 210},
+			{"move": "spit", "weight": 2, "far": 70}
+		]},
+		"ice_zombie": {"every": [3.5, 5.5], "moves": [
+			{"move": "frost_breath", "weight": 2, "near": 120},
+			{"move": "frost_patch", "weight": 1, "cooldown": 8}
+		]},
+		"void_bomber": {"every": [3.0, 4.5], "moves": [
+			{"move": "void_blink", "weight": 1, "far": 150}
+		]}
+	},
+	"moves": {
+		"void_rift": {"type": "strikes", "pattern": "under_players", "anim": "cast", "windup": 0.5, "recovery": 0.5, "warn": 0.9, "radius": 34, "damage": 2, "style": "void"},
+		"soul_chain": {"type": "bullets", "pattern": "single", "anim": "attack", "windup": 0.55, "recovery": 0.4, "speed": 270, "radius": 7, "damage": 1, "life": 3.0, "style": "soul_chain", "effect": {"slow": [0.45, 1.5], "pull": 150}},
+		"shadow_step": {"type": "blink", "anim": "cast", "windup": 0.6, "recovery": 0.3, "min": 160, "max": 330, "pool": {"style": "void", "radius": 44, "time": 4.0, "dps": 1}},
+		"void_spiral": {"type": "bullets", "pattern": "spiral", "anim": "cast", "windup": 0.6, "active": 4.0, "recovery": 0.6, "arms": 3, "rate": 0.2, "turn": 1.5, "speed": 150, "radius": 7, "damage": 1, "life": 4.0, "style": "void_skull"},
+		"bone_ring": {"type": "bullets", "pattern": "ring", "anim": "roar", "windup": 0.7, "recovery": 0.5, "count": 28, "gap": 0.8, "speed": 140, "radius": 6, "damage": 2, "life": 5.0, "style": "bone"},
+		"devour": {"type": "vortex", "anim": "cast", "windup": 0.6, "active": 2.0, "recovery": 0.8, "reach": 340, "pull": 115, "burst": 92, "damage": 4, "style": "void"},
+		"twin_beam": {"type": "twin_beam", "anim": "cast", "windup": 0.1, "recovery": 0.1, "spread": 0.35},
+
+		"rot_breath": {"type": "cone", "anim": "roar", "windup": 0.7, "recovery": 0.6, "reach": 170, "angle": 1.05, "damage": 1, "style": "poison", "effect": {"poison": [1, 3.0]}},
+		"rot_globs": {"type": "lob", "anim": "attack", "windup": 0.6, "recovery": 0.5, "count": 3, "spread": 90, "flight": 1.0, "radius": 30, "damage": 1, "style": "poison", "pool": {"style": "poison", "radius": 40, "time": 5.0, "dps": 1}},
+		"charge": {"type": "dash", "anim": "attack", "windup": 0.9, "recovery": 0.4, "speed": 540, "distance": 560, "width": 46, "damage": 3, "stun_on_wall": 1.5, "style": "charge"},
+		"quake_line": {"type": "strikes", "pattern": "line", "anim": "attack", "windup": 0.5, "recovery": 0.5, "count": 8, "spacing": 44, "step_delay": 0.08, "warn": 0.7, "radius": 26, "damage": 2, "style": "quake"},
+		"maggot_brood": {"type": "summon", "anim": "roar", "windup": 0.8, "recovery": 0.6, "kinds": ["tiny_zombie", "tiny_zombie", "tiny_zombie"], "offset": 70},
+		"grab": {"type": "grab", "anim": "attack", "windup": 0.8, "recovery": 0.6, "reach": 96, "damage": 3, "throw": 560, "style": "grab"},
+		"flesh_rain": {"type": "bullets", "pattern": "ring", "anim": "roar", "windup": 0.8, "recovery": 0.6, "count": 20, "gap": 0.7, "speed": 165, "radius": 7, "damage": 2, "life": 4.0, "style": "flesh"},
+
+		"ice_fan": {"type": "bullets", "pattern": "fan", "anim": "attack", "windup": 0.6, "recovery": 0.5, "count": 5, "spread": 0.22, "speed": 240, "radius": 6, "damage": 2, "life": 3.0, "style": "ice", "effect": {"slow": [0.5, 2.0]}},
+		"frost_nova": {"type": "strikes", "pattern": "self", "anim": "roar", "windup": 0.4, "recovery": 0.6, "warn": 0.9, "radius": 120, "damage": 1, "style": "frost", "effect": {"freeze": 1.0}},
+		"ice_wall": {"type": "barrier", "anim": "cast", "windup": 0.6, "recovery": 0.4, "count": 3, "distance": 96, "block": "ice_block", "hits": 3, "time": 8.0},
+		"hail": {"type": "strikes", "pattern": "near_players", "anim": "cast", "windup": 0.5, "recovery": 0.5, "count": 5, "spread": 120, "warn": 1.0, "radius": 30, "damage": 2, "style": "ice"},
+		"ice_slide": {"type": "dash", "anim": "attack", "windup": 0.8, "recovery": 0.4, "speed": 460, "distance": 440, "width": 44, "damage": 2, "style": "ice", "lane_pool": {"style": "ice", "radius": 26, "time": 4.0, "slip": true}},
+		"ice_armor": {"type": "armor", "anim": "roar", "windup": 0.5, "recovery": 0.3, "scale": 0.5, "time": 4.0, "shards": 12, "speed": 200, "damage": 1, "style": "ice"},
+		"frost_raise": {"type": "summon", "anim": "roar", "windup": 0.9, "recovery": 0.6, "kinds": ["ice_zombie", "ice_zombie"], "offset": 80},
+
+		"bone_spears": {"type": "bullets", "pattern": "fan", "anim": "attack", "windup": 0.65, "recovery": 0.5, "count": 3, "spread": 0.28, "speed": 300, "radius": 6, "damage": 2, "life": 3.0, "style": "bone_spear", "pierce_players": true},
+		"spike_line": {"type": "strikes", "pattern": "line", "anim": "attack", "windup": 0.5, "recovery": 0.5, "count": 9, "spacing": 40, "step_delay": 0.06, "warn": 0.6, "radius": 24, "damage": 2, "style": "spikes"},
+		"bone_whirl": {"type": "spin", "anim": "attack", "windup": 0.6, "active": 2.0, "recovery": 0.7, "radius": 100, "tick": 0.5, "damage": 2, "chase": 70, "style": "bone"},
+		"skull_hail": {"type": "bullets", "pattern": "fan", "anim": "attack", "windup": 0.6, "recovery": 0.5, "count": 4, "spread": 0.5, "speed": 210, "radius": 7, "damage": 1, "life": 5.0, "bounces": 3, "style": "skull"},
+		"bone_cage": {"type": "cage", "anim": "cast", "windup": 0.8, "recovery": 0.4, "block": "bone_cage", "hits": 2, "time": 2.5},
+		"bone_legion": {"type": "summon", "anim": "roar", "windup": 1.0, "recovery": 0.6, "kinds": ["skeleton_guard", "skeleton_guard", "skeleton_guard", "skeleton_guard"], "offset": 80},
+
+		"dodge_leap": {"type": "dash", "anim": "attack", "windup": 0.15, "recovery": 0.3, "away": true, "speed": 420, "distance": 96, "width": 0, "damage": 0, "style": "dust"},
+		"whirl_slash": {"type": "spin", "anim": "attack", "windup": 0.45, "active": 0.6, "recovery": 0.5, "radius": 58, "tick": 0.3, "damage": 2, "chase": 0, "style": "bone"},
+		"arrow_volley": {"type": "bullets", "pattern": "fan", "anim": "attack", "windup": 0.7, "recovery": 0.5, "count": 3, "spread": 0.18, "speed": 240, "radius": 3, "damage": 2, "life": 3.4, "style": "arrow"},
+		"fire_arrow": {"type": "bullets", "pattern": "single", "anim": "attack", "windup": 0.8, "recovery": 0.5, "speed": 220, "radius": 4, "damage": 1, "life": 3.4, "style": "fire_arrow", "end_pool": {"style": "fire", "radius": 32, "time": 3.0, "dps": 1}},
+		"shield_bash": {"type": "dash", "anim": "attack", "windup": 0.55, "recovery": 0.5, "speed": 380, "distance": 130, "width": 34, "damage": 2, "knock": 380, "style": "charge"},
+		"bone_toss": {"type": "bullets", "pattern": "single", "anim": "attack", "windup": 0.6, "recovery": 0.5, "speed": 200, "radius": 6, "damage": 1, "life": 4.0, "bounces": 1, "style": "skull"},
+		"soul_curse": {"type": "strikes", "pattern": "under_target", "anim": "cast", "windup": 0.6, "recovery": 0.5, "warn": 1.0, "radius": 42, "damage": 1, "style": "curse", "effect": {"slow": [0.5, 2.5]}},
+		"bone_shield": {"type": "shield", "anim": "cast", "windup": 0.6, "recovery": 0.4, "scale": 0.5, "time": 4.0, "reach": 260},
+		"pounce": {"type": "dash", "anim": "attack", "windup": 0.45, "recovery": 0.4, "speed": 480, "distance": 170, "width": 30, "damage": 2, "style": "dust"},
+		"spit": {"type": "bullets", "pattern": "single", "anim": "attack", "windup": 0.5, "recovery": 0.4, "speed": 210, "radius": 5, "damage": 1, "life": 3.0, "style": "spit", "effect": {"poison": [1, 2.0]}},
+		"frost_breath": {"type": "cone", "anim": "attack", "windup": 0.6, "recovery": 0.5, "reach": 120, "angle": 0.85, "damage": 1, "style": "frost", "effect": {"slow": [0.5, 2.0]}},
+		"frost_patch": {"type": "strikes", "pattern": "self", "anim": "cast", "windup": 0.4, "recovery": 0.3, "warn": 0.3, "radius": 0, "damage": 0, "style": "ice", "pool": {"style": "ice", "radius": 46, "time": 5.0, "slip": true}},
+		"void_blink": {"type": "blink", "anim": "cast", "windup": 0.4, "recovery": 0.2, "toward": true, "min": 50, "max": 90}
+	}
+}

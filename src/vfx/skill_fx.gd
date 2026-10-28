@@ -44,13 +44,17 @@ const PHOTON_CORE := Color("fffbe6")
 const PHOTON_LAYERS := [[19.0, PHOTON_NAVY, 0], [16.0, Color("23508c"), 0], [12.5, PHOTON_ICE, 0], [9.0, PHOTON_FROST, 1], [6.5, PHOTON_FIRE, 2], [4.0, PHOTON_EMBER, 2], [1.8, PHOTON_CORE, 3]]
 const ELEMENT_TINTS := {"cinder": Color("f7b46b"), "venom": Color("b8d878"), "frost": Color("9bdde6"), "storm": Color("baabe9")}
 var _chest_hits: Dictionary = {}
+const GOLD_CRATE := preload("res://assets/sprites/items/crate_gold.png")
 ## Chest id -> clock when it was first seen open / chests seen at all.
 var _chest_opened: Dictionary = {}
+var _item_textures: Dictionary = {}
 var _chest_seen: Dictionary = {}
 var _open_reach := -1.0
 var balance: Dictionary = {}
 var local_class := ""
 var local_point := Vector2.INF
+## Id of the floor find nearest to the local hero (-1: none close); only it shows its name.
+var nearest_loot := -1
 
 const COLORS := {"fire": Color("f39a3c"), "frost": Color("8fd8e6"), "arcane": Color("b38cf0"), "stone": Color("c9b49a"), "void": Color("b06ad8")}
 
@@ -489,6 +493,16 @@ func draw_chest(canvas: CanvasItem, chest: Dictionary, clock: float) -> void:
 	var frame := 0
 	if bool(chest.get("open", false)): frame = 2 if since > 0.12 else 1
 	var size := Vector2(32, 32)
+	if str(chest.get("kind", "chest")) == "gold_crate":
+		if bool(chest.get("open", false)): return
+		var shimmer := 0.5 + 0.5 * sin(clock * 3.0 + float(id))
+		canvas.draw_circle(point + Vector2(0, -4), 26.0, Color(1.0, 0.8, 0.3, 0.08 + 0.08 * shimmer))
+		canvas.draw_rect(Rect2(point + Vector2(-14, 11), Vector2(28, 5)), Color(0, 0, 0, 0.3))
+		canvas.draw_texture_rect(GOLD_CRATE, Rect2(point - Vector2(16, 30) + shake.round(), Vector2(32, 48)), false)
+		return
+	if str(chest.get("kind", "chest")) in ["ice_block", "bone_cage"]:
+		_draw_block(canvas, chest, point, shake, clock)
+		return
 	if str(chest.get("kind", "chest")) == "crate":
 		if bool(chest.get("open", false)):
 			# What is left of a smashed crate: a few planks on the floor.
@@ -532,6 +546,26 @@ func _chest_reach() -> float:
 	return _open_reach
 
 
+## A boss's temporary block: an ice block (cyan, cracks with hits) or a bone
+## cage post (white bones).
+func _draw_block(canvas: CanvasItem, chest: Dictionary, point: Vector2, shake: Vector2, clock: float) -> void:
+	var at := point + shake.round()
+	var damage := float(chest.get("hits", 0)) / maxf(1.0, float(chest.get("max", 3)))
+	if str(chest.kind) == "ice_block":
+		canvas.draw_rect(Rect2(at + Vector2(-16, -22), Vector2(32, 36)), Color("3d7c8c"))
+		canvas.draw_rect(Rect2(at + Vector2(-14, -20), Vector2(28, 32)), Color("9fe3ee", 0.9))
+		canvas.draw_rect(Rect2(at + Vector2(-10, -16), Vector2(6, 14)), Color(1, 1, 1, 0.55 + 0.2 * sin(clock * 3.0)))
+		if damage > 0.0: canvas.draw_line(at + Vector2(-8, -18), at + Vector2(4, 6), Color("3d7c8c"), 2.0)
+		if damage > 0.5: canvas.draw_line(at + Vector2(10, -14), at + Vector2(0, 2), Color("3d7c8c"), 2.0)
+		return
+	for index in range(3):
+		var x := -10.0 + index * 10.0
+		canvas.draw_rect(Rect2(at + Vector2(x - 2, -26), Vector2(5, 38)), INK)
+		canvas.draw_rect(Rect2(at + Vector2(x - 1, -25), Vector2(3, 36)), Color("e6dcc6"))
+	canvas.draw_rect(Rect2(at + Vector2(-14, -20), Vector2(28, 4)), Color("e6dcc6"))
+	canvas.draw_rect(Rect2(at + Vector2(-14, 6), Vector2(28, 4)), Color("e6dcc6"))
+
+
 ## "E ÖFFNEN" above a chest: a key cap and the word, in the pixel font.
 func _draw_open_hint(canvas: CanvasItem, at: Vector2) -> void:
 	var font := PixelStyle.create_font()
@@ -549,6 +583,42 @@ func _draw_open_hint(canvas: CanvasItem, at: Vector2) -> void:
 ## A dropped perk: its class-matching icon bobbing in a golden glow, with its
 ## name when the local hero is close.
 func draw_loot(canvas: CanvasItem, item: Dictionary, clock: float) -> void:
+	if str(item.get("kind", "")) == "item":
+		_draw_item_loot(canvas, item, clock)
+		return
+	_draw_perk_loot(canvas, item, clock)
+
+
+## A found item on the floor: its sprite bobbing in its rarity's glow, the
+## name in that colour when the local hero is close.
+func _draw_item_loot(canvas: CanvasItem, item: Dictionary, clock: float) -> void:
+	var view: Dictionary = item.get("view", {})
+	var point := Vector2(float(item.x), float(item.y))
+	var rise := clampf(float(item.get("age", 1.0)) / 0.4, 0.0, 1.0)
+	var bob := -10.0 - 3.0 * sin(clock * 3.0 + float(item.id)) - (1.0 - rise) * 20.0
+	var tint := Color(str(view.get("color", "d3bfa9")))
+	var glow := 0.5 + 0.5 * sin(clock * 4.0 + float(item.id))
+	canvas.draw_rect(Rect2(point + Vector2(-9, 4), Vector2(18, 4)), Color(0, 0, 0, 0.3))
+	canvas.draw_circle(point + Vector2(0, bob), 18.0 + glow * 3.0, Color(tint, 0.16))
+	if str(view.get("rarity", "")) in ["epic", "legendary"]:
+		for ray in range(6):
+			var angle := clock * 0.8 + float(ray) * TAU / 6.0
+			canvas.draw_line(point + Vector2(0, bob), point + Vector2(0, bob) + Vector2.from_angle(angle) * (24.0 + glow * 6.0), Color(tint, 0.25), 2.0)
+	var path := str(view.get("sprite", ""))
+	if not _item_textures.has(path) and ResourceLoader.exists(path): _item_textures[path] = load(path)
+	var texture: Texture2D = _item_textures.get(path)
+	if texture != null:
+		var size := Vector2(texture.get_width(), texture.get_height()) * 2.0
+		canvas.draw_texture_rect(texture, Rect2(point + Vector2(-size.x * 0.5, bob - size.y * 0.5), size), false)
+	if int(item.id) == nearest_loot:
+		var font := PixelStyle.create_font()
+		var text := str(view.get("name", "")).to_upper()
+		var width := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14).x
+		canvas.draw_string_outline(font, point + Vector2(-width * 0.5, bob - 26), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, 4, INK)
+		canvas.draw_string(font, point + Vector2(-width * 0.5, bob - 26), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, tint)
+
+
+func _draw_perk_loot(canvas: CanvasItem, item: Dictionary, clock: float) -> void:
 	var point := Vector2(float(item.x), float(item.y))
 	var rise := clampf(float(item.get("age", 1.0)) / 0.4, 0.0, 1.0)
 	var bob := -10.0 - 4.0 * sin(clock * 3.0 + float(item.id)) - (1.0 - rise) * 20.0
@@ -560,7 +630,7 @@ func draw_loot(canvas: CanvasItem, item: Dictionary, clock: float) -> void:
 	var icon: Texture2D = SkillIcons.card(definition, local_class) if not definition.is_empty() else null
 	if icon != null: canvas.draw_texture_rect(icon, Rect2(point + Vector2(-16, bob - 16), Vector2(32, 32)), false)
 	if fx != null and int(clock * 2.0 + float(item.id)) % 3 == 0: fx.draw_loop(canvas, "pickup", point + Vector2(12, bob - 12), 0.0, 0.6, clock)
-	if local_point.is_finite() and local_point.distance_to(point) < 90.0:
+	if int(item.id) == nearest_loot:
 		var font := PixelStyle.create_font()
 		var text := str(item.get("name", "")).to_upper()
 		var width := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x

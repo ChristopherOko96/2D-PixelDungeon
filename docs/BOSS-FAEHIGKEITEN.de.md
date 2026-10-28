@@ -1,4 +1,4 @@
-# Boss-Fähigkeiten (Entwurf zur Abnahme, 28.10.2026)
+# Boss-Fähigkeiten (umgesetzt, 28.10.2026)
 
 Wunsch des Nutzers: Jeder Boss bekommt mindestens 7 neue Fähigkeiten. Bestehend:
 Leerenrufer (Strahl, Seelensalve, Beschwörung), Nebenbosse (Stampfer, Brüll-Ring).
@@ -55,6 +55,14 @@ Schaden in Halbherzen (2 = ein Herz). Kennungen für dein Feedback, z. B. „L3:
 
 ## Gemeinsame Regeln
 
-- Bosse wechseln ihre Angriffe, damit sich keiner direkt wiederholt.
-- Teile sperren passende Fähigkeiten (z. B. Arm ab: kein Packen, kein Sturmlauf).
-- Alle Werte stehen in `balance.json`, damit wir sie nach dem Spielen nachstellen können.
+- Bosse wechseln ihre Angriffe: jede Fähigkeit hat nach dem Einsatz eine eigene Abklingzeit, die Wahl ist gewichtet zufällig.
+- Teile sperren passende Fähigkeiten (Arm ab: kein Packen, kein Sturmlauf, kein Wirbel; kein Auge: kein Doppelstrahl).
+- Alle Werte stehen in `assets/data/combat_boss_moves.json`, damit wir sie nach dem Spielen nachstellen können.
+- Wut: Unter der Wut-Schwelle brüllt der Boss einmal, danach laden seine Fähigkeiten 40 % schneller (`rage.cooldown_scale` 0,6).
+
+## Umsetzungsstand
+
+- Alle 28 Boss-Fähigkeiten oben sind eingebaut, dazu neue Angriffe für normale Gegner: Skelett (Ausweichsprung, Wirbelhieb), Skelettschütze (Pfeilsalve, Brandpfeil), Skelettwache (Schildstoß, Knochenwurf), Nekromant (Seelenfluch, Knochenschild), kleiner Zombie (Anspringen, Spucken), Eiszombie (Frostatem, Eisfläche), Leerenbomber (Leerensprung).
+- Der Strahl des Leerenrufers geht jetzt quer über die Karte, bis er eine Wand trifft (`balance.json` beam `range` 0 = bis zur Wand).
+- Spielerzustände (Gift, Brand, Frost, Verlangsamung, Ausrutschen, Stille) stehen in `src/combat/player_effects.gd`; Eiswände und Knochenkäfige sind zerschlagbare Blöcke (`src/dungeon/chests.gd` `add_block`).
+- Technik: `src/combat/boss_moves.gd` (Host: Auswahl, Warnung, Auslösen, Zonen), `src/vfx/boss_fx.gd` (Zeichnen). Test: `tests/boss_moves_test.gd`. Belege: `production/qa/evidence/boss-moves/` (`scripts/capture_boss_moves.gd`).

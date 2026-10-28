@@ -1110,6 +1110,60 @@ approval gate above still applies to every new actor/boss art.
   `production/qa/evidence/dungeon-werkstatt/13-18` via
   `scripts/capture_suggestions.gd`.
 
+## Boss moves, items, curses, potions, hero attack visuals (2026-10-28)
+
+- User request: much harder bosses with many more abilities, more enemy
+  abilities, the Leerenrufer beam across the whole map until it hits a wall,
+  more spectacular archer and mage attacks, and items: Common to Legendary
+  weapons in crates and chests, unknown finds that are often (60 %) cursed,
+  identification crystals, curse-breaker stones that turn a curse into a
+  blessing, potions named only by colour (shuffled every run), drink or throw.
+  Decisions: weapons per class; a cursed weapon sticks until broken; crystal or
+  trying (drink, throw) identifies potions for the whole team; the inventory
+  does not pause. Design docs: `docs/BOSS-FAEHIGKEITEN.de.md` (implemented),
+  `docs/GEGENSTAENDE.de.md` (new).
+- Boss moves (host): `src/combat/boss_moves.gd` + `assets/data/combat_boss_moves.json`
+  (`sets` per enemy kind, "void" for the Leerenrufer; `moves` typed strikes,
+  bullets, lob, dash, blink, vortex, cone, grab, spin, summon, armor, barrier,
+  cage, shield, twin_beam; windup/active/recovery; rage; Knochenkoloss
+  rebuild). `crypt_enemy_ai.step` and `void_boss_ai.step` call
+  `boss_moves.step` first (guarded with `"boss_moves" in _game` for fixtures).
+  Hooks in `game.gd`: `damage_scale`, `hold_death`, `hit_skull`, `bullet_hit`,
+  `bullet_end`; snapshot `boss_zones`. Hero side: `boss_moves.hero_strike` and
+  `hero_pool` (hostile zones that hurt enemies, used by items). Player states:
+  `src/combat/player_effects.gd` (poison, burn, freeze, slow, slip, silence,
+  haste, strength, regen, blind, weak). Client: `src/vfx/boss_fx.gd`. Beam:
+  balance beam `range` 0 = to the wall (`void_boss_ai._beam_end`).
+- Items (host): `src/items/item_rules.gd` (static: weapon specs, `set_base`
+  from the weapon, `apply` after `ClassPerks.apply` in `PerkRules.rebuild`:
+  weapon effects into `build`, augments from run potions, curse or blessing),
+  `src/items/inventory.gd` (`start_kit`, `new_run` shuffles colours and forgets
+  known potions, `roll` drops, `add` stacks, `act` for inv_equip /
+  inv_identify / inv_cleanse / inv_drink / inv_throw / inv_drop with slot 99 =
+  the hand, `step` curses over time, `on_attack` burning blade, `snapshot`).
+  Game actions `inv_*` go through `_server_action` with the command target as
+  the throw point. Drops: `chests._drop_items` (crate, chest, mimic,
+  gold_crate), loot kind "item" with a `view`. `player.item_notes` is a running
+  counter (the panel toasts when it changes; never reset it).
+- UI: `src/ui/inventory_panel.gd` (I / Tab / button; two button rows; a throw
+  arms the next world click; ESC cancels a throw or closes the panel before the
+  pause menu). Floor items: `skill_fx._draw_item_loot`; only the find nearest
+  the local hero shows its name (`skill_fx.nearest_loot`, set by the view).
+- Attack visuals (client only): `src/vfx/attack_fx.gd` draws hero "arrow" and
+  "magic" shots (streak / orb with rune ring and motes, release flash, impact
+  burst, glow, light). Colour: weapon `glow` (items.json, sent as
+  `players[id].glow`) > element > default. Neutral sheets `spell_orb` and
+  `spell_burst` (`scripts/make_fx_sprites.gd`) take the tint. Splash and area
+  blasts carry the owner (`perk_combat._event(..., owner)` → event "o") and
+  wall hits too (`game.wall_hit(..., owner)`), so feedback tints those bursts.
+- Tests: boss_moves_test 86, items_test 63, attack_fx_test 20 (new);
+  chests_test 479 (counts perk and item drops separately now). Evidence:
+  `production/qa/evidence/boss-moves/`, `items/`, `attacks/` via
+  `scripts/capture_boss_moves.gd`, `capture_items.gd`, `capture_attacks.gd`.
+- Known: `dungeon_ports_test` (1) and `freeform_geometry_test` (2 extra) fail
+  only with the user's editor-saved `assets/data/dungeon_rooms.json`; with the
+  committed rooms they show only the old 2 freeform failures.
+
 ## Codex studio integration
 
 - This game already exists. Read `docs/codex/runtime.md` before applying studio
