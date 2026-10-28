@@ -271,6 +271,10 @@ func _start_death(a: Dictionary, rig: Dictionary, enemy: Dictionary) -> void:
 			if bool(enemy.get("summoned", false)): _burst_at(feet - Vector2(0, 14), VIOLET_DARK, 14, 50.0)
 		"bomber":
 			if not bool(enemy.get("exploded", false)): _burst_at(feet - Vector2(0, 16), VIOLET, 18, 90.0)
+		"mimic":
+			# Splinters and a glint of gold when the chest beast falls.
+			_burst_at(feet - Vector2(0, 12), Color("b8743a"), 14, 80.0)
+			_burst_at(feet - Vector2(0, 14), Color("f4c64e"), 6, 60.0)
 		"biped", "hero", "necro":
 			for item: Dictionary in rig.items: _detach(a, rig, item.id, 0.8)
 		"brute":
@@ -442,6 +446,8 @@ func draw_over(canvas: CanvasItem, snapshot: Dictionary) -> void:
 		if beams_by_key.has(key) and enemy.get("beam") is Array:
 			_draw_beam(canvas, beams_by_key[key], enemy.beam)
 			beams_drawn += 1
+			# Rage: a second beam beside the first (the gap between them is safe).
+			if enemy.get("beam_b") is Array: _draw_beam(canvas, beams_by_key[key], enemy.beam_b)
 	_beams.clear()
 	for p: Dictionary in _particles:
 		var k := 1.0 - float(p.life) / float(p.max)
@@ -543,6 +549,9 @@ func lights(snapshot: Dictionary) -> Array[Vector3]:
 			var to := Vector2(float(ends[2]), float(ends[3]))
 			var steps := maxi(1, int(from.distance_to(to) / 40.0))
 			for i in range(steps + 1): result.append(Vector3(lerpf(from.x, to.x, float(i) / steps), lerpf(from.y, to.y, float(i) / steps) - 16.0, 68.0))
+			if enemy.get("beam_b") is Array:
+				var other := Vector2(float(enemy.beam_b[2]), float(enemy.beam_b[3]))
+				for i in range(steps + 1): result.append(Vector3(lerpf(from.x, other.x, float(i) / steps), lerpf(from.y, other.y, float(i) / steps) - 16.0, 68.0))
 		elif str(enemy.get("rig", "")) in ["void", "bomber"] and float(enemy.get("dying_p", -1.0)) < 0.0:
 			result.append(Vector3(float(enemy.get("x", 0)), float(enemy.get("y", 0)) - 8.0, 72.0 if str(enemy.rig) == "void" else 40.0))
 	for pool: Dictionary in _pools: result.append(Vector3(float(pool.x), float(pool.y), 44.0))

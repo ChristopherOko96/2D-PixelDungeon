@@ -971,6 +971,221 @@ approval gate above still applies to every new actor/boss art.
   `scripts/capture_audio_ui.gd`. Not checked by ear: the defaults were chosen
   from names, lengths and levels; the user picks by listening.
 
+## Dungeon-Werkstatt, the new room editor (2026-10-28)
+
+- User request (/gamedev:level-design): an extremely easy editor to make the
+  story mode's dungeons. Decisions: rooms for a pool (the game mixes 6 per
+  floor as before), the real game look while building, a main menu button
+  EDITOR, the old F6 editor replaced. User manual: `docs/DUNGEON-EDITOR.de.md`.
+- Code: `src/editor/room_doc.gd` (model: floor cells + markers; walls, gates,
+  4 player and 5+ enemy spawn points, one authored door per side and the
+  generator's template fields follow by themselves; undo/redo; checklist incl.
+  the generator's own validation of the room), `room_canvas.gd` (draws the room
+  with `crypt_0x72_art.gd` like the game, gates the generator would set,
+  sprites for markers; wheel zoom, middle/space pan; bakes on stroke end),
+  `room_editor.gd` (UI: tools 1-8 BODEN, RADIERER, RECHTECK, START, GEGNER,
+  TRUHE, KERZE, TREPPE; brush 1/3/5; role, floor range, size; TESTSPIELEN;
+  SPEICHERN; STRG+Z/Y/S), `room_pool.gd` (role from the boss/crypt_entrance
+  flags, `floors` [first, last], `for_floor` with fallback to the whole pool).
+- Storage stays `assets/data/dungeon_rooms.json` (backups via
+  `dungeon_editor_store.gd`); rooms the generator rejects go to `draft_rooms`
+  so the story mode always starts. Recipe rooms (the 10 crypt rooms with
+  `crypt_recipe`) keep varying per run until their floor is changed.
+  Rooms handed to the game are plain JSON (`RoomDoc._plain`): keys set with
+  `dict.key = value` are StringNames and fail the session manifest.
+- Game: `_floor_pool(floor)` filters the pool per floor; test play
+  (`_start_room_test`) starts a solo run on the room's first floor with the
+  room forced in (`Dungeon.generate(..., selected_id)`, first or last for a
+  boss room) and reopens the editor when the run is left. Saved rooms reach the
+  running game at once (`main_menu.rooms_saved`). `_make_layout` now copies
+  `chest_spawns`. `Dungeon-Editor.cmd` / `Dev.ps1 DungeonEditor` start the
+  game with `--werkstatt`.
+- Removed: the old editor UI (`src/dungeon_editor.gd`/`.tscn`,
+  `editor_collision_grid.gd`, `editor_play_preview.gd`) and its UI tests
+  (dungeon_editor_integration, editor_area_ui, editor_grid_render,
+  editor_tile_replacement, editor_walkability_ui, freeform_editor_ui,
+  free_room_ui, editor_collision_grid). Still there: `dungeon_editor_model.gd`,
+  which other tests use to build rooms, and the game's old
+  `configure_editor_preview` path; both can go in a cleanup.
+- Tests: `tests/room_editor_test.gd` (34, incl. painting through the mouse path). Evidence
+  `production/qa/evidence/dungeon-werkstatt/` via
+  `scripts/capture_room_editor.gd` (menu button, boss room, a new room built,
+  test play in the real game, back in the editor).
+
+## Decor library in the Dungeon-Werkstatt (2026-10-28)
+
+- User request: furniture and decor for walls and floor (carpets and more)
+  from the 0x72 folder, sorted by kind, easy to reach; a UX expert was asked
+  (ux-designer spec: RAUM | DEKO tabs, six categories, ghost with valid/invalid
+  outline, drag to move, pipette, recent row, random variants). Manual:
+  `docs/DUNGEON-EDITOR.de.md` § Deko.
+- Assets: `assets/sprites/decor/` cut unchanged from DungeonTileset II
+  Extended v1.1 (Nijikokun, CC0 per its itch.io listing, no license file in
+  the zip) plus `wall_goo*` from 0x72's base pack; `LICENSE-NOTE.md` there.
+  Carpets are 3x3 sheets (corner/edge/middle). The itch page sits behind a bot
+  check, so the CC0 claim comes from the listing text only.
+- Catalog `assets/data/dungeon_decor.json` + `src/dungeon/decor_catalog.gd`:
+  categories boden, teppich, wand, moebel, licht, kram; kinds floor (per-cell
+  floor style), carpet (auto-framed area: each 8x8 quarter takes the edge only
+  where the carpet ends), wall (on a wall cell with floor below), object (on
+  floor); flags solid, light, draw (stamp/torch/fountain/fire), offset, below,
+  random. `preview()` builds thumbnails and the placement ghost.
+- Room data (only written when not default): `decor` and `decor_areas` as
+  `[x, y, id, variant]`, `auto_decor: false`; solid pieces are written as 1x1
+  `obstacles_tiles`, so the generator's own checks (clearance, connectivity
+  for boss radius, gates via find_path) cover furniture. `validate_config`
+  checks the decor lists' shape; `_make_layout` copies them.
+- Renderer `crypt_0x72_art.gd`: floor styles and carpets baked into the floor,
+  pieces stamped top row first; torches, lava/water fountains
+  (`fountain_colors`) and fires (`flames`) animated; lava and fire give light.
+  The auto decor (torches every 6 cells, banners, fountains, holes, skulls)
+  now skips authored cells, stops with `auto_decor: false` and reports itself
+  in `auto_items`. Rooms without decor bake exactly as before.
+- Model rules (`room_doc.gd` `decor_problem`, German reasons): wall pieces not
+  where a gate goes (gate x-1..x+2); solid pieces not on markers, within 1 of
+  the start or an enemy marker (big actors need the ring; the game rejects a
+  spawn without clearance), in front of a gate, or splitting the floor. The
+  first piece adopts the auto decor (`adopt`), so nothing jumps; erasing floor
+  takes the decor on it (and the wall piece above); decor fixes recipe rooms;
+  enemy/start markers refuse cells next to solid pieces. The generator's
+  common English errors are shown in German (`RoomDoc.GERMAN`).
+- Editor: tool 9 DEKO, right panel tabs RAUM (shows `RAUM !!` when a check is
+  red) and DEKO (categories, 3-column grid with IM WEG/LICHT tags, selection
+  line, PINSEL/RECHTECK or MUSTER, ZUFALL, PIPETTE, ZULETZT, AUTO-DEKO, DEKO
+  LEEREN); keys 9, TAB, R, ALT+click; footer TESTSPIELEN/SPEICHERN/ZURÜCK on
+  both tabs. Canvas: ghost, hatched solid cells, unbaked area preview.
+- Tests: `tests/room_decor_test.gd` (54; the enemy-ring rule was seen failing
+  without the rule). Evidence `production/qa/evidence/dungeon-werkstatt/06-12`
+  via `scripts/capture_room_decor.gd` (each category, a refused ghost, the
+  checklist, and the decorated room test-played in the real game).
+
+## Chests with E, Mimik, layout and decor suggestions, light shaft (2026-10-28)
+
+- User request (/gamedev:level-design): decor arranged by reference-derived
+  rules (carpet from the entrance along the middle, symmetric pieces), maze-like
+  rooms (narrow corridor, big room, narrow corridor, small room), an epic throne
+  hall for bosses with a light shaft, chests opened with E (not smashed)
+  because a Mimik is planned. Decisions: Mimik bites, fights, drops better
+  loot; random (about 1 in 6 from floor 2) plus placeable in the editor; no
+  tell; algorithms as editor suggestions; references found online (level-design
+  principles, sources listed in the reply); only existing pieces (no new
+  vases/throne sprites; the light shaft is drawn).
+- Chests (`src/dungeon/chests.gd`, `assets/data/loot_chests.json` schema 2):
+  `interact(id)` opens the nearest closed chest within open_radius + hero
+  radius (game `_server_action` "interact" in explore and combat; exits only in
+  explore); chests take no hits, crates still break (`_breakable`). An opened
+  chest stays solid. Mimik chests (kind "mimic", own RNG stream so spots stay
+  as before; template `mimic_spawns` always placed) show as "chest" in the
+  snapshot; E springs them (`_spring`: enemy "mimic", bite mimic_bite to the
+  opener, explore -> combat); `mimic_defeated` (hooked in `_damage_enemy`) drops
+  mimic_drops different perks. Client: lid animation, "E ÖFFNEN" hint
+  (skill_fx `_draw_open_hint`, reach from loot_chests.json), fx "mimic_spring".
+- Mimik enemy: balance `enemy_roster.definitions.mimic` (melee "bite"), rig
+  `mimic` in rigs.json (flipbook of 0x72 `chest_mimic_open_anim_f0-2`, copied
+  into assets/sprites/0x72), `rig_library._build_flipbook` (shared with the
+  bomber), pose `rig_poses.mimic` (hop with squash, chomp, lunge), death burst;
+  EXP, gore and sound material entries.
+- Editor: TRUHE second click toggles a Mimik (`RoomDoc.mimics`,
+  `mimic_spawns`, copied by `_make_layout`), drawn with teeth and a red outline.
+- Suggestions: `src/editor/room_shaper.gd` + `assets/data/dungeon_shapes.json`
+  (labyrinth: chain of chambers, every second large, straight 2-wide
+  corridors, dead-end side chambers with chests, sometimes a loop; throne:
+  antechamber, 3-wide corridor, odd-width hall with alcoves, throne and stairs
+  on the axis). `src/editor/room_stylist.gd` + `assets/data/dungeon_styling.json`
+  (`analyse`: wall-distance map, chambers = open cores (one-cell-wide open
+  lines pruned so 3-wide corridors do not merge chambers) plus rim; carpets
+  centred by parity, mirrored column pairs, corner fires, north-wall rhythm,
+  clutter, dead ends, corridor torches; throne hall framed from its entrance).
+  Editor buttons GRUNDRISS / DEKORIEREN (left panel); every suggestion is
+  checked with the game's rules (layout: up to `attempts` seeds; decor: up to
+  5 variants), one undo step each. `RoomDoc.apply_shape`, `begin_batch` /
+  `end_batch` (gates computed once while styling).
+- Light shaft: decor `light_shaft` (draw "shaft", no tile, `Decor.shaft_preview`),
+  `crypt_0x72_art.gd` `shafts` + `draw_shaft` (swaying cone, floor pool,
+  drifting dust), `dungeon_view.gd` adds a strong darkness light and glow.
+- Removed again: `src/dungeon_editor.tscn`, re-saved at 18:26 by an open Godot
+  editor (it pointed at the deleted old editor script).
+- Tests: chests_test 493 (rewritten for E/Mimik), room_editor_test 37,
+  room_decor_test 54, room_suggest_test 41 (new). Evidence
+  `production/qa/evidence/dungeon-werkstatt/13-18` via
+  `scripts/capture_suggestions.gd`.
+
+## Boss moves, items, curses, potions, hero attack visuals (2026-10-28)
+
+- User request: much harder bosses with many more abilities, more enemy
+  abilities, the Leerenrufer beam across the whole map until it hits a wall,
+  more spectacular archer and mage attacks, and items: Common to Legendary
+  weapons in crates and chests, unknown finds that are often (60 %) cursed,
+  identification crystals, curse-breaker stones that turn a curse into a
+  blessing, potions named only by colour (shuffled every run), drink or throw.
+  Decisions: weapons per class; a cursed weapon sticks until broken; crystal or
+  trying (drink, throw) identifies potions for the whole team; the inventory
+  does not pause. Design docs: `docs/BOSS-FAEHIGKEITEN.de.md` (implemented),
+  `docs/GEGENSTAENDE.de.md` (new).
+- Boss moves (host): `src/combat/boss_moves.gd` + `assets/data/combat_boss_moves.json`
+  (`sets` per enemy kind, "void" for the Leerenrufer; `moves` typed strikes,
+  bullets, lob, dash, blink, vortex, cone, grab, spin, summon, armor, barrier,
+  cage, shield, twin_beam; windup/active/recovery; rage; Knochenkoloss
+  rebuild). `crypt_enemy_ai.step` and `void_boss_ai.step` call
+  `boss_moves.step` first (guarded with `"boss_moves" in _game` for fixtures).
+  Hooks in `game.gd`: `damage_scale`, `hold_death`, `hit_skull`, `bullet_hit`,
+  `bullet_end`; snapshot `boss_zones`. Hero side: `boss_moves.hero_strike` and
+  `hero_pool` (hostile zones that hurt enemies, used by items). Player states:
+  `src/combat/player_effects.gd` (poison, burn, freeze, slow, slip, silence,
+  haste, strength, regen, blind, weak). Client: `src/vfx/boss_fx.gd`. Beam:
+  balance beam `range` 0 = to the wall (`void_boss_ai._beam_end`).
+- Items (host): `src/items/item_rules.gd` (static: weapon specs, `set_base`
+  from the weapon, `apply` after `ClassPerks.apply` in `PerkRules.rebuild`:
+  weapon effects into `build`, augments from run potions, curse or blessing),
+  `src/items/inventory.gd` (`start_kit`, `new_run` shuffles colours and forgets
+  known potions, `roll` drops, `add` stacks, `act` for inv_equip /
+  inv_identify / inv_cleanse / inv_drink / inv_throw / inv_drop with slot 99 =
+  the hand, `step` curses over time, `on_attack` burning blade, `snapshot`).
+  Game actions `inv_*` go through `_server_action` with the command target as
+  the throw point. Drops: `chests._drop_items` (crate, chest, mimic,
+  gold_crate), loot kind "item" with a `view`. `player.item_notes` is a running
+  counter (the panel toasts when it changes; never reset it).
+- UI: `src/ui/inventory_panel.gd` (I / Tab / button; two button rows; a throw
+  arms the next world click; ESC cancels a throw or closes the panel before the
+  pause menu). Floor items: `skill_fx._draw_item_loot`; only the find nearest
+  the local hero shows its name (`skill_fx.nearest_loot`, set by the view).
+- Attack visuals (client only): `src/vfx/attack_fx.gd` draws hero "arrow" and
+  "magic" shots (streak / orb with rune ring and motes, release flash, impact
+  burst, glow, light). Colour: weapon `glow` (items.json, sent as
+  `players[id].glow`) > element > default. Neutral sheets `spell_orb` and
+  `spell_burst` (`scripts/make_fx_sprites.gd`) take the tint. Splash and area
+  blasts carry the owner (`perk_combat._event(..., owner)` → event "o") and
+  wall hits too (`game.wall_hit(..., owner)`), so feedback tints those bursts.
+- Tests: boss_moves_test 86, items_test 63, attack_fx_test 20 (new);
+  chests_test 479 (counts perk and item drops separately now). Evidence:
+  `production/qa/evidence/boss-moves/`, `items/`, `attacks/` via
+  `scripts/capture_boss_moves.gd`, `capture_items.gd`, `capture_attacks.gd`.
+- Known: `dungeon_ports_test` (1) and `freeform_geometry_test` (2 extra) fail
+  only with the user's editor-saved `assets/data/dungeon_rooms.json`; with the
+  committed rooms they show only the old 2 freeform failures.
+
+## Debug cheats in the ESC menu (2026-10-28)
+
+- User request: cheats for the crypt to test skills (level 10 at once, all
+  skills and spells of each class), reachable with ESC; NOT in multiplayer,
+  only for debugging.
+- `src/debug/cheats.gd` + `assets/data/debug_cheats.json` (order, labels,
+  toggles, target level, kit). `Cheats.enabled(game)`: `OS.is_debug_build()`,
+  hosting, exactly one player; `allowed(id)` also needs peer 1. Game action
+  "cheat" (value = index in `order`) in combat/explore/reward.
+- Cheats: ALLE FÄHIGKEITEN (team level up to the last skill unlock, every
+  upgrade of every class skill at max rank, stale cards dropped), AUF LEVEL 10,
+  +1 LEVEL, KARTEN AUTO-WÄHLEN, UNVERWUNDBAR (`cheat_god`, checked in
+  `_damage_player` and `dot_player`), KEINE ABKLINGZEIT (`cheat_no_cooldown`
+  in `hero_skills._cooldown`), VOLLES LEBEN, RAUM LEEREN, ITEM-PAKET,
+  LEGENDÄRE WAFFE (cycles the class's legendaries, replaces even a cursed one).
+  Notes go through the inventory toast.
+- Pause menu: section "cheats" (hidden unless `set_cheats_enabled(true)`),
+  buttons built by `configure_cheats`, toggles show AN/AUS from snapshot
+  `players[id].cheats`. Navigation spacing 44 px for 8 sections.
+- Test `tests/debug_cheats_test.gd` (24). Evidence
+  `production/qa/evidence/cheats/` (`scripts/capture_cheats.gd`).
+
 ## Codex studio integration
 
 - This game already exists. Read `docs/codex/runtime.md` before applying studio

@@ -36,6 +36,8 @@ func step(enemy: Dictionary, target_id: int, delta: float) -> bool:
 	if float(enemy.get("hp", 0)) <= 0: return true
 	var target: Dictionary = _game.players.get(target_id, {})
 	enemy.beam_cooldown = maxf(0.0, float(enemy.get("beam_cooldown", 0.0)) - delta)
+	# Extra moves (boss_moves.gd): rifts, chains, spirals, the vortex, rage.
+	if (enemy.has("move") or str(enemy.get("attack", "")).is_empty()) and "boss_moves" in _game and _game.boss_moves.step(enemy, target_id, delta): return true
 	if not str(enemy.get("attack", "")).is_empty():
 		_step_attack(enemy, target, delta)
 		return true
@@ -57,6 +59,10 @@ func step(enemy: Dictionary, target_id: int, delta: float) -> bool:
 ## its own cooldown; lost parts remove their move. Seeded by the attack count.
 func choose_move(enemy: Dictionary) -> String:
 	var parts: RefCounted = _game.body_parts
+	# A twin beam asked for by its move comes at once.
+	if bool(enemy.get("force_beam", false)) and parts.can(enemy, "beam"):
+		enemy.erase("force_beam")
+		return "beam"
 	var options: Array[String] = []
 	if parts.can(enemy, "cast"): options.append_array(["salve", "salve"])
 	if parts.can(enemy, "beam") and float(enemy.get("beam_cooldown", 0.0)) <= 0.0: options.append_array(["beam", "beam"])
@@ -106,6 +112,8 @@ func _step_attack(enemy: Dictionary, target: Dictionary, delta: float) -> void:
 		"active":
 			enemy.erase("exposed_action")
 			enemy.erase("beam_to")
+			enemy.erase("beam_to_b")
+			enemy.erase("twin_beam")
 			_set_phase(enemy, "recovery")
 		_:
 			enemy.attack = ""
@@ -163,25 +171,45 @@ func _channel(enemy: Dictionary, target: Dictionary, delta: float) -> void:
 	for id in _game.players:
 		var player: Dictionary = _game.players[id]
 		if int(player.hp) <= 0: continue
-		if _distance_to_segment(Vector2(player.pos), from, to) <= width:
+		var near_b: bool = enemy.has("beam_to_b") and _distance_to_segment(Vector2(player.pos), from, enemy.beam_to_b) <= width
+		if near_b or _distance_to_segment(Vector2(player.pos), from, to) <= width:
 			_game._damage_player(id, int(data.get("damage", 1)), Vector2.from_angle(float(enemy.beam_angle)))
 
 
-## The beam's end: the first wall along its direction, or its range.
+## The beam runs until it meets a wall (range 0: no limit, as far as the room
+## goes). A twin beam (move twin_beam) is two beams spread around the aim with
+## a safe gap between them.
 func _update_beam(enemy: Dictionary) -> void:
+	var spread := float(enemy.get("twin_beam", 0.0))
+	if spread > 0.0:
+		enemy.beam_to = _beam_end(enemy, float(enemy.beam_angle) - spread)
+		enemy.beam_to_b = _beam_end(enemy, float(enemy.beam_angle) + spread)
+	else:
+		enemy.beam_to = _beam_end(enemy, float(enemy.beam_angle))
+		enemy.erase("beam_to_b")
+
+
+func _beam_end(enemy: Dictionary, angle: float) -> Vector2:
 	var data: Dictionary = _attack("beam")
-	var direction := Vector2.from_angle(float(enemy.beam_angle))
+	var direction := Vector2.from_angle(angle)
 	var from: Vector2 = enemy.pos
+	var size: Array = _game.current_layout.get("world_size", [2048, 1536])
+	var length := float(data.get("range", 0))
+	if length <= 0.0: length = Vector2(float(size[0]), float(size[1])).length()
+	# Coarse steps to the first wall, then fine steps up to its face.
 	var end := from
-	var length := float(data.get("range", 560))
-	var step := 8.0
 	var travelled := 0.0
 	while travelled < length:
-		var next := end + direction * step
-		if Dungeon.segment_blocked(end, next, 2.0, _game.current_layout): break
+		var next := end + direction * 24.0
+		if Dungeon.segment_blocked(end, next, 2.0, _game.current_layout):
+			for fine in range(6):
+				var small := end + direction * 4.0
+				if Dungeon.segment_blocked(end, small, 2.0, _game.current_layout): break
+				end = small
+			break
 		end = next
-		travelled += step
-	enemy.beam_to = end
+		travelled += 24.0
+	return end
 
 
 func _active_summons(enemy: Dictionary) -> int:

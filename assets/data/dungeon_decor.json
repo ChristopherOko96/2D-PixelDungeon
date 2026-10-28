@@ -1,0 +1,49 @@
+{
+	"version": 1,
+	"_doc": "Decor of the Dungeon-Werkstatt. kind: floor (paints a floor style per cell), carpet (paints an area that frames itself from a 3x3 sheet), wall (hangs on a wall with floor right below), object (stands on floor). tiles are paths below res://assets/sprites/ without .png; each entry is one variant. offset moves tall art up (art px, 16 px per cell). solid objects block movement in the game. draw: stamp (baked once), torch, fountain, fire (animated, 8 or 3 frames), shaft (a beam of light from the ceiling with drifting dust, drawn, no tile). below: a tile drawn on the floor cell under a wall piece. random: new pieces pick a random variant by default.",
+	"categories": [
+		{"id": "boden", "label": "BODEN", "hint": "Bodenarten: Felder bemalen"},
+		{"id": "teppich", "label": "TEPPICH", "hint": "Teppiche: Fläche ziehen, der Rand entsteht von selbst"},
+		{"id": "wand", "label": "WAND", "hint": "Hängt an einer Wand mit Boden direkt darunter"},
+		{"id": "moebel", "label": "MÖBEL", "hint": "Steht auf dem Boden, manches steht im Weg"},
+		{"id": "licht", "label": "LICHT", "hint": "Leuchtet in der dunklen Krypta"},
+		{"id": "kram", "label": "KRAM", "hint": "Kleinkram auf dem Boden, steht nicht im Weg"}
+	],
+	"items": [
+		{"id": "floor_smooth", "category": "boden", "label": "GLATT", "kind": "floor", "tiles": ["0x72/floor_1"]},
+		{"id": "floor_stones", "category": "boden", "label": "STEINE", "kind": "floor", "random": true,
+			"tiles": ["0x72/floor_2", "0x72/floor_3", "0x72/floor_4", "0x72/floor_5", "0x72/floor_6", "0x72/floor_7", "0x72/floor_8"]},
+		{"id": "floor_cracks", "category": "boden", "label": "RISSE", "kind": "floor", "random": true,
+			"tiles": ["decor/floor_crack_1", "decor/floor_crack_2", "decor/floor_crack_3", "decor/floor_crack_4", "decor/floor_crack_5"]},
+		{"id": "floor_dark", "category": "boden", "label": "DUNKEL", "kind": "floor", "random": true, "tiles": ["decor/floor_dark_1", "decor/floor_dark_2"]},
+		{"id": "floor_moss", "category": "boden", "label": "MOOS", "kind": "floor", "tiles": ["decor/floor_moss"]},
+
+		{"id": "carpet_red", "category": "teppich", "label": "ROTER TEPPICH", "kind": "carpet", "sheet": "decor/carpet_red"},
+		{"id": "carpet_beige", "category": "teppich", "label": "HELLER TEPPICH", "kind": "carpet", "sheet": "decor/carpet_beige"},
+		{"id": "rug", "category": "teppich", "label": "LÄUFER", "kind": "object", "tiles": ["decor/rug_red", "decor/rug_beige"], "offset": [-4, -12]},
+
+		{"id": "banner", "category": "wand", "label": "BANNER", "kind": "wall",
+			"tiles": ["0x72/wall_banner_red", "0x72/wall_banner_blue", "0x72/wall_banner_green", "0x72/wall_banner_yellow"]},
+		{"id": "wall_hole", "category": "wand", "label": "MAUERLOCH", "kind": "wall", "random": true,
+			"tiles": ["0x72/wall_hole_1", "0x72/wall_hole_2", "decor/wall_crack_1", "decor/wall_crack_2"]},
+		{"id": "wall_ring", "category": "wand", "label": "EISENRING", "kind": "wall", "tiles": ["decor/wall_ring"]},
+		{"id": "wall_grate", "category": "wand", "label": "GITTER", "kind": "wall", "tiles": ["decor/wall_grate"]},
+		{"id": "wall_slime", "category": "wand", "label": "SCHLEIM", "kind": "wall", "tiles": ["decor/wall_goo"], "below": "decor/wall_goo_base"},
+		{"id": "wall_sign", "category": "wand", "label": "SCHILD", "kind": "wall", "tiles": ["decor/sign_1", "decor/sign_2", "decor/sign_3", "decor/sign_4"]},
+		{"id": "fountain_lava", "category": "wand", "label": "BRUNNEN LAVA", "kind": "wall", "draw": "fountain", "color": "red", "light": true,
+			"tiles": ["0x72/wall_fountain_mid_red_anim_f0"]},
+		{"id": "fountain_water", "category": "wand", "label": "BRUNNEN WASSER", "kind": "wall", "draw": "fountain", "color": "blue",
+			"tiles": ["0x72/wall_fountain_mid_blue_anim_f0"]},
+
+		{"id": "column", "category": "moebel", "label": "SÄULE", "kind": "object", "solid": true, "tiles": ["0x72/column"], "offset": [0, -32]},
+		{"id": "crate", "category": "moebel", "label": "KISTE", "kind": "object", "solid": true, "tiles": ["0x72/crate"], "offset": [0, -8]},
+		{"id": "cabinet", "category": "moebel", "label": "SCHRANK", "kind": "object", "solid": true, "tiles": ["decor/cabinet"], "offset": [0, -8]},
+
+		{"id": "wall_torch", "category": "licht", "label": "FACKEL", "kind": "wall", "draw": "torch", "light": true, "tiles": ["crypt_props/wall_torch_f0"]},
+		{"id": "fire", "category": "licht", "label": "FEUER", "kind": "object", "draw": "fire", "light": true, "tiles": ["decor/fire_f0"]},
+		{"id": "light_shaft", "category": "licht", "label": "LICHT STRAHL", "kind": "object", "draw": "shaft", "light": true, "tiles": []},
+
+		{"id": "skull", "category": "kram", "label": "SCHÄDEL", "kind": "object", "random": true, "tiles": ["0x72/skull", "decor/skull_small"]},
+		{"id": "signpost", "category": "kram", "label": "WEGWEISER", "kind": "object", "tiles": ["decor/signpost_1", "decor/signpost_2"]}
+	]
+}

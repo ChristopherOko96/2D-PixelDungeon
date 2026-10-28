@@ -19,6 +19,8 @@ const GOLD := ["fffbe0", "ffe08a", "f0b440", "a86a20"]
 const DUST := ["ece2d2", "c8b49e", "927f6e", "5e5049"]
 const POISON := ["eaffc0", "a8e05a", "5fa83a", "2f6a2a"]
 const VOID := ["f4e6ff", "c890f0", "8a4ac8", "4a2470"]
+## Neutral ramp: the game tints these sheets per weapon (archer and mage shots).
+const SPELL := ["ffffff", "ececec", "bdbdbd", "8a8a8a"]
 
 var _meta: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
@@ -40,6 +42,8 @@ func _initialize() -> void:
 	_burst("poison_burst", POISON, 40, "smoke")
 	_burst("blood_burst", ["ffd0c8", "e05050", "a8242c", "5a1418"], 40, "smoke")
 	_orb("magic_orb", MAGIC, 14)
+	_orb("spell_orb", SPELL, 14)
+	_burst("spell_burst", SPELL, 40, "stars")
 	_fireball("fireball", FIRE, 20)
 	_wave("blade_wave", STEEL, 28, 44)
 	_puff("dust", DUST, 20, 5)

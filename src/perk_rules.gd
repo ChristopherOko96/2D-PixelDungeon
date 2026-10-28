@@ -3,6 +3,7 @@ extends RefCounted
 ## Combat consumes build coefficients; this module never simulates world effects.
 
 const ClassPerks = preload("res://src/player/class_perks.gd")
+const ItemRules = preload("res://src/items/item_rules.gd")
 
 ## Captures immutable baseline stats once, then restores derived build fields.
 ## Calling this for an existing run neither heals nor compounds previous perks.
@@ -55,6 +56,8 @@ static func rebuild(player: Dictionary, balance: Dictionary) -> void:
 	player["build"] = build
 	# Class passives from level-up cards (hero_skills.json) stack on top.
 	ClassPerks.apply(player)
+	# The weapon in hand, drunk augments, curse or blessing (item_rules.gd).
+	ItemRules.apply(player)
 	player["damage"] = clampf(float(player.damage),0.1,float(settings.get("max_damage",16.0)))
 	player["speed"] = clampf(float(player.speed),1.0,float(settings.get("max_speed",340.0)))
 	player["shot_interval"] = maxf(float(settings.get("min_shot_interval",0.06)),float(player.shot_interval))

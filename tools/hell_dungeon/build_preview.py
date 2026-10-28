@@ -1,10 +1,12 @@
 """Inline the world-scale hell assets, their sizes, the floor core and the placeholder hero into the preview page.
 
-Usage: py -3 -I build_preview.py <template.html> <world_dir> <hero_dir> <hell_core.js> <out.html>
+Usage: py -3 -I build_preview.py <template.html> <world_dir> <hero_dir> <hell_core.js> <out.html> [hell_monsters.js]
+The monster code defaults to hell_monsters.js next to the core.
 """
 import base64, json, os, sys
 
 tpl, world, hero, core, out = sys.argv[1:6]
+monsters = sys.argv[6] if len(sys.argv) > 6 else os.path.join(os.path.dirname(core), 'hell_monsters.js')
 assets, sizes = {}, {}
 manifest = json.load(open(os.path.join(world, 'manifest.json'), encoding='utf-8'))
 for f in sorted(os.listdir(world)):
@@ -19,5 +21,6 @@ for kind in ('idle', 'run'):
 html = open(tpl, encoding='utf-8').read()
 html = html.replace('__ASSETS__', json.dumps(assets)).replace('__SIZES__', json.dumps(sizes))
 html = html.replace('__CORE__', open(core, encoding='utf-8').read())
+html = html.replace('__MONSTERS__', open(monsters, encoding='utf-8').read())
 open(out, 'w', encoding='utf-8').write(html)
 print(len(assets), 'assets,', round(len(html) / 1e6, 2), 'MB ->', out)

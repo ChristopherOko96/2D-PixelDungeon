@@ -15,3 +15,7 @@ Only the frames this game draws are copied here, unchanged: the idle, run and
 hit frames of `knight_m`, `elf_f`, `wizzard_m` and `lizard_m`, and the idle and
 run frames of `goblin`, `orc_shaman` and `big_demon`. They are drawn at an
 integer 2x scale, so each source pixel covers 2x2 on the game's 32 px grid.
+
+Added later from the same pack, unchanged: crypt tiles and props (floors,
+walls, banners, fountains, doors, column, crate, skull, chests) and on
+2026-10-28 the Mimik frames `chest_mimic_open_anim_f0-2` (Werkstatt Mimik).

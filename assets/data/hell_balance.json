@@ -8,6 +8,8 @@
     "spucker": { "hp": 4, "speed": 95, "scale": 0.95, "radius": 28, "fire_every": 2.4, "keep_away": 320 },
     "boss": { "speed": 85, "scale": 2.7, "radius": 70, "max_adds": 5 }
   },
+  "monsters": { "hit_mob": 1, "hit_boss": 2, "contact_reach": 22, "lord_face_deadzone": 40, "echo_hp_share": 0.1, "echo_kinds": ["bolt", "dash", "slam", "swing", "sweep", "ring"], "burrow_speed": 560, "flight_altitude": 320, "immune_altitude": 30, "spawn_grow": 0.5, "seal_demon": "glutimp",
+    "exp": { "glutschaedel": 4, "hoellenhund": 7, "glutimp": 5, "brandskelett": 7, "magmaschleim": 8, "aschenpriester": 9, "kettenschinder": 16, "peingeist": 8 } },
   "hazards": { "spike_period": 1.2, "vent_period": 3, "vent_burst": 0.9, "vent_radius": 70 },
   "drops": { "heart": 0.35, "gem": 0.6 },
   "vault": { "gems_base": 15, "gems_per_floor": 2, "heart_containers": 1 },

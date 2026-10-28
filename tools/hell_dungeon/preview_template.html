@@ -94,13 +94,31 @@ ol.guide { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .facts div { background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; }
 .facts b { display: block; font-size: 22px; font-variant-numeric: tabular-nums; color: #ffe2c8; }
 .facts span { font-size: 13px; color: var(--muted); }
+.bestiary { display: grid; gap: 12px; }
+.best-sub { font: 500 15px var(--body); letter-spacing: .12em; text-transform: uppercase; color: var(--ember-soft); margin-top: 8px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 10px; }
+.cards.lord { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 12px; display: grid; gap: 8px; align-content: start; }
+.card.lordcard { border-color: #6b2a18; background: linear-gradient(180deg, #24120f, var(--panel)); }
+.card canvas { width: 100%; height: auto; aspect-ratio: 4 / 3; background: #0b0607; border: 1px solid var(--line); border-radius: 4px; image-rendering: pixelated; }
+.card h3 { font: 700 22px var(--display); font-weight: 700; }
+.card .role { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: #e2b04a; }
+.card p { margin: 0; color: var(--muted); font-size: 15px; line-height: 1.45; }
+.card ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; display: grid; gap: 3px; }
+.card ul b { color: var(--ink); font-weight: 500; }
+.anim-tabs { display: flex; flex-wrap: wrap; gap: 4px; }
+.anim-tabs button, .card .try { font: 500 13px var(--body); color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 3px 8px; cursor: pointer; }
+.anim-tabs button[aria-pressed="true"] { background: #3a1a12; border-color: var(--ember); }
+.anim-tabs button:hover, .card .try:hover { border-color: var(--ember); }
+.anim-tabs button:focus-visible, .card .try:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+.card .try { justify-self: start; padding: 6px 12px; font-size: 14px; }
 </style>
 
 <div class="page">
   <header>
     <span class="eyebrow" id="eyebrow">Hell-Dungeon</span>
     <h1 id="floor-title">Aschenvorhof, Etage 1</h1>
-    <p class="lede">Zehn Etagen, je tiefer desto heißer und härter. Der kürzeste Weg zum Boss braucht nie alle Räume. Wer erkundet, findet Tresore, Herzcontainer, Runensteine und Abkürzungen. Gegner und Spielfigur sind Platzhalter.</p>
+    <p class="lede">Zehn Etagen, je tiefer desto heißer und härter. Der kürzeste Weg zum Boss braucht nie alle Räume. Wer erkundet, findet Tresore, Herzcontainer, Runensteine und Abkürzungen. Neu: acht Monsterarten und zehn Bosse im 0x72-Stil, siehe Bestiarium unten. Die Spielfigur ist noch ein Platzhalter.</p>
   </header>
 
   <nav class="floors" aria-label="Etage wählen" id="floor-nav"><span class="lbl">Etage wählen</span></nav>
@@ -132,6 +150,19 @@ ol.guide { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
     <div class="legend" id="plan-legend"></div>
   </section>
 
+  <section class="bestiary" aria-labelledby="best-title">
+    <div class="plan-head">
+      <h2 id="best-title">Bestiarium</h2>
+      <p>Alle Monster der Hölle im Stil des 0x72-Sets: dieselbe Palette, 1 px dunkler Umriss, Licht von oben links. Ignaroth wächst über vier Etagen vom Salamander zum Obsidiandrachen. Jede Karte spielt ihre Animationen ab; „Im Raum testen“ ruft das Monster neben dir ins Spielfeld. Im Spiel kämpfst du auf jeder Etage gegen ihren eigenen Mix und Boss.</p>
+    </div>
+    <h3 class="best-sub">Ignaroth · ein Drache, vier Phasen</h3>
+    <div class="cards lord" id="best-lord"></div>
+    <h3 class="best-sub">Etagenbosse</h3>
+    <div class="cards" id="best-boss"></div>
+    <h3 class="best-sub">Raummonster</h3>
+    <div class="cards" id="best-mob"></div>
+  </section>
+
   <div class="cols">
     <section>
       <h2>Räume und Aufgaben</h2>
@@ -160,7 +191,10 @@ ol.guide { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
           <dt>Dämonensiegel</dt><dd>ab Etage 4, 3–4 je Etage. Acht Treffer: Zufall zwischen dauerhaftem Segen (Schaden, Feuerrate, Tempo, Reichweite, Herzcontainer) und drei Dämonen.</dd>
           <dt>Gruben</dt><dd>nur für dich gefährlich: ein Herz weniger und zurück in den Startraum der Etage.</dd>
           <dt>Klon</dt><dd>Belohnung für den Boss auf Etage 9. <kbd>Q</kbd> ruft ihn für insgesamt 2 Minuten, nicht abbrechbar. Er weicht allem aus, nimmt keinen Schaden und schießt selbst. Beim Portal pausiert er, auf der nächsten Etage läuft die Restzeit mit Q weiter.</dd>
-          <dt>Tiefer</dt><dd>mehr Lava, Stacheln und Schlote, zähere Gegner, ab Etage 4 Feuerspucker, Bosse mit Feuerringen. Etage 3, 6 und 9 haben Zwischenbosse.</dd>
+          <dt>Monster</dt><dd>jede Etage hat ihren eigenen Mix aus acht Arten. Rote Linien und glühende Kreise warnen vor Angriffen: aus ihnen herauslaufen.</dd>
+          <dt>Bosse</dt><dd>sechs eigene Etagenbosse. Auf Etage 3, 6, 9 und 10 kehrt Ignaroth zurück: vom flinken Salamander bis zum Obsidiandrachen. Bei 0 LP verwandelt er sich und flieht, erst auf Etage 10 stirbt er.</dd>
+          <dt>In der Luft</dt><dd>ab Phase 3 fliegt Ignaroth auf. Solange er in der Luft ist, treffen ihn keine Schüsse: den Bombenkreisen ausweichen und auf die Landung warten.</dd>
+          <dt>Tiefer</dt><dd>mehr Lava, Stacheln und Schlote, zähere Gegner und mehr Arten pro Raum.</dd>
         </dl>
       </section>
     </div>
@@ -169,6 +203,7 @@ ol.guide { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 
 <script>const ASSETS = __ASSETS__; const SIZES = __SIZES__;</script>
 <script>__CORE__</script>
+<script>__MONSTERS__</script>
 <script>
 (() => {
 'use strict';
@@ -196,7 +231,7 @@ const hash = HC.hash;
 function loadFloor(n, carry) {
   W = HC.buildFloor(n, SIZES);
   ({ COLS, ROWS, grid, roomAt, holeAt, tileAt, props, decals, wallDecor, ents, lights, doors, lavaCells, occupied } = W);
-  ROOMS = W.rooms; mobs = []; shots = []; eshots = [];
+  ROOMS = W.rooms; mobs = []; shots = []; eshots = []; zones = []; lobs = []; corpses = [];
   for (const g of Object.values(W.groups)) { g.solved = false; g.next = 1; }
   for (const r of ROOMS) { r.fight = false; r.minimap = minimapPath(r); }
   W.quick = HC.criticalRooms(W);
@@ -469,7 +504,8 @@ function breakSeal(e) {
     toast('Das Siegel bricht: ' + b.text + '!');
   } else {
     r.fight = true; r.cleared = false;
-    for (let k = 0; k < 3; k++) spawnMob(r, e.x + (k - 1) * 90, e.y + 60 + (k === 1 ? 50 : 0), 'gross');
+    const kind = state.floor >= 6 ? 'kettenschinder' : 'brandskelett';
+    for (let k = 0; k < 3; k++) spawnMob(r, e.x + (k - 1) * 110, e.y + 70 + (k === 1 ? 50 : 0), kind);
     toast('Das Siegel bricht: drei Dämonen springen heraus! Die Gitter fallen.');
   }
   updatePage();
@@ -487,7 +523,7 @@ function fallIntoPit(e) {
 let clone = null;
 function useSkill() {
   const sk = state.skill;
-  if (!sk.owned) { toast('Noch kein Skill. Besiege den Kettenmeister auf Etage 9.'); return; }
+  if (!sk.owned) { toast('Noch kein Skill. Besiege den Boss auf Etage 9.'); return; }
   if (sk.active) { toast('Der Klon kämpft bereits und lässt sich nicht abbrechen.'); return; }
   if (sk.left <= 0) { toast('Der Klon ist aufgebraucht.'); return; }
   sk.active = true; clone = { x: player.x - 60, y: player.y + 20, cool: 0, seed: Math.random() * 9 };
@@ -505,27 +541,439 @@ function updateClone(dt) {
   let target = null, bd = 760;
   for (const m of mobs) if (m.spawn <= 0) { const d = Math.hypot(m.x - clone.x, m.y - clone.y); if (d < bd) { bd = d; target = m; } }
   if (target && clone.cool <= 0) {
-    clone.cool = .34; const dx = target.x - clone.x, dy = target.y - 30 * (target.s || 1) - (clone.y - 40), l = Math.hypot(dx, dy) || 1;
+    clone.cool = .34; const dx = target.x - clone.x, dy = target.y - target.cy - (clone.y - 40), l = Math.hypot(dx, dy) || 1;
     shots.push({ x: clone.x, y: clone.y - 40, vx: dx / l * 980, vy: dy / l * 980, t: state.range, clone: true });
   }
 }
-const MOB = { glut: { hp: 3, sp: 175, s: .78, r: 24 }, gross: { hp: 6, sp: 120, s: 1.15, r: 32 }, spucker: { hp: 4, sp: 95, s: .95, r: 28 }, boss: { hp: 46, sp: 85, s: 2.7, r: 70 } };
-function spawnMob(r, x, y, kind) {
-  const def = MOB[kind], D = W.diff;
-  const hp = kind === 'boss' ? W.boss.hp : Math.round(def.hp * D.hp);
-  mobs.push({ room: r, kind, x, y, hp, max: hp, sp: def.sp * D.speed * (kind === 'boss' && W.final ? 1.15 : 1), s: kind === 'boss' && (W.boss.mini || W.final) ? def.s * (W.final ? 1.25 : 1.05) : def.s, r: def.r, seed: Math.random() * 9, kx: 0, ky: 0, hit: 0, spawn: .5, summon: 2.5, shoot: 1 + Math.random() * 2, ring: W.boss.ring || 0, spin: 0 });
+// ---------- hell monsters (sprites and stats from hell_monsters.js) ----------
+const HM = window.HellMonsters, SPR = {};
+let zones = [], lobs = [], beams = [], corpses = [];
+function buildSprites() {
+  for (const id in HM.DEFS) {
+    const def = HM.DEFS[id]; SPR[id] = {};
+    for (const a of HM.ANIMS) {
+      if (a !== 'death' && !def.anims[a]) continue;
+      SPR[id][a] = [];
+      for (let f = 0; f < HM.frameCount(def, a); f++) {
+        const r = HM.render(id, a, f), c = document.createElement('canvas'); c.width = r.w; c.height = r.h;
+        c.getContext('2d').putImageData(new ImageData(r.data, r.w, r.h), 0, 0); SPR[id][a].push(c);
+      }
+    }
+  }
+}
+const floorBoss = () => HM.FLOORS[state.floor].boss;
+function spawnMob(r, x, y, id, boss) {
+  const def = HM.DEFS[id], st = def.stats, D = W.diff;
+  const hp = boss ? Math.round(W.boss.hp * (st.hpMul || 1)) : Math.round(st.hp * D.hp);
+  const m = { room: r, id, def, st, boss: !!boss, kind: boss ? 'boss' : 'mob', x, y, hp, max: hp, sp: st.speed * (boss ? 1 : D.speed), s: def.scale, r: st.r,
+    cy: def.h * def.scale * .45, seed: Math.random() * 9, kx: 0, ky: 0, hit: 0, spawn: .5, act: null, anim: 'idle', at: 0, face: 1, alpha: 1, hopT: Math.random(),
+    cds: st.attacks.map(a => a.first ?? a.every * (.35 + Math.random() * .5)) };
+  mobs.push(m); return m;
+}
+function freeSpot(r, near, minD, maxD) {
+  for (let k = 0; k < 40; k++) {
+    const a = Math.random() * Math.PI * 2, d = minD + Math.random() * (maxD - minD), x = near.x + Math.cos(a) * d, y = near.y + Math.sin(a) * d;
+    const cx = Math.floor(x / C), cy = Math.floor(y / C);
+    if (roomAt[idx(cx, cy)] === r.index && grid[idx(cx, cy)] === 1 && !boxBlocked(x - 30, y - 30, x + 30, y, true)) return { x, y };
+  }
+  return { x: near.x, y: near.y };
 }
 function startFight(r) {
   r.fight = true;
   const cells = r.cells.filter(([x, y]) => grid[idx(x, y)] === 1 && !occupied.has(idx(x, y)) && Math.hypot((x + .5) * C - player.x, (y + .5) * C - player.y) > 4.5 * C && !nearDoor(r, x + .5, y + .5, 2));
-  const n = (r.mobs || 3) + W.diff.extra;
+  const n = (r.mobs || 3) + W.diff.extra, roster = HM.FLOORS[state.floor].mobs, start = Math.floor(Math.random() * roster.length);
   for (let k = 0; k < n && cells.length; k++) {
     const [x, y] = cells.splice(Math.floor(Math.random() * cells.length), 1)[0];
-    const kind = W.diff.shooters && k % 4 === 1 ? 'spucker' : k % 3 === 2 ? 'gross' : 'glut';
-    spawnMob(r, (x + .5) * C, (y + .7) * C, kind);
+    spawnMob(r, (x + .5) * C, (y + .7) * C, roster[(start + k) % roster.length]);
   }
-  if (r.type === 'boss') { spawnMob(r, (r.bx + r.bw / 2) * C, (r.by + r.bh / 2 + 1) * C, 'boss'); }
-  toast(r.type === 'boss' ? W.boss.name + ' erwacht. Die Tore sind verriegelt.' : 'Die Gitter fallen. Besiege alle Gegner.');
+  if (r.type === 'boss') {
+    const b = spawnMob(r, (r.bx + r.bw / 2) * C, (r.by + r.bh / 2 + 1) * C, floorBoss(), true);
+    if (isLord(b)) { b.spawn = 0; startIntro(b); toast(b.st.intro === 'flyin' ? 'Ein Schatten über der Arena …' : 'Der Boden glüht …'); }
+    else toast(b.def.name + ' erwacht. Die Tore sind verriegelt.');
+  } else toast('Die Gitter fallen. Besiege alle Gegner.');
+}
+// ---------- monster attacks ----------
+const HIT = { mob: 1, boss: 2 };
+function enemyShotC(x, y, dx, dy, sp, o) { const l = Math.hypot(dx, dy) || 1; eshots.push(Object.assign({ x, y, vx: dx / l * sp, vy: dy / l * sp, t: 2.6, c: 'fire' }, o || {})); }
+function shotColor(m) { return m.id === 'peingeist' || m.id === 'klagender_hueter' || m.id === 'drache4' || m.echo !== undefined ? 'void' : m.id === 'aschenpriester' || m.id === 'seelenhirte' ? 'soul' : 'fire'; }
+function startAct(m, i, dx, dy, d) {
+  const a = m.st.attacks[i], dir = [dx / d, dy / d];
+  m.cds[i] = a.every * (m.boss ? 1 : .9 + Math.random() * .3);
+  const anim = ['summon', 'ring', 'spiral', 'meteors', 'hands', 'beam', 'scream', 'teleport'].includes(a.kind) ? (m.def.anims.cast ? 'cast' : 'attack') : 'attack';
+  m.act = { a, kind: a.kind, t: 0, dir, tx: player.x, ty: player.y, n: 0, anim };
+  if (a.kind === 'slam' && a.leap) m.act.leap = { x0: m.x, y0: m.y, x1: player.x, y1: player.y };
+  if (a.kind === 'beam') { const b0 = Math.atan2(dy, dx); m.act.beams = Array.from({ length: a.beams }, (_, k) => b0 + k / a.beams * Math.PI * 2); }
+}
+function wallLen(x, y, ang, max) { for (let l = 0; l < max; l += 24) { const px = x + Math.cos(ang) * l, py = y + Math.sin(ang) * l; if (!walkableType(cell(Math.floor(px / C), Math.floor(py / C)))) return l; } return max; }
+function hurtBy(m, n, how) { hurt(n, 'von ' + m.def.name + ' ' + how); }
+function runAct(m, dt) {
+  const A = m.act, a = A.a, t = (A.t += dt), hx = m.x, hy = m.y - m.cy, dmg = m.boss ? HIT.boss : HIT.mob;
+  const end = () => { m.act = null; };
+  if (['burrow', 'flight', 'sweep', 'echoes'].includes(A.kind)) { runDragonAct(m, dt); return; }
+  switch (A.kind) {
+    case 'dash': {
+      if (t < .5) { A.dir = [player.x - m.x, player.y - m.y]; const l = Math.hypot(...A.dir) || 1; A.dir = [A.dir[0] / l, A.dir[1] / l]; A.vx = A.vy = 0; A.warn = true; return; }
+      A.warn = false; A.vx = A.dir[0] * a.speed; A.vy = A.dir[1] * a.speed;
+      if (t > .5 + Math.min(.55, (a.range || 500) / a.speed)) { if ((A.rep = (A.rep || 1)) < (a.repeat || 1)) { A.rep++; A.t = .3; } else end(); }
+      return;
+    }
+    case 'lob': {
+      if (t >= .45 && !A.n) {
+        A.n = 1;
+        for (let k = 0; k < (a.count || 1); k++) {
+          const tx = player.x + (k ? (Math.random() - .5) * 260 : 0), ty = player.y + (k ? (Math.random() - .5) * 200 : 0);
+          lobs.push({ x0: hx, y0: hy, x1: tx, y1: ty, t: 0, T: .8 + k * .12, r: a.radius || 70, dmg, m, c: m.id === 'kesselbrut' || m.id === 'glutwaechter' ? 'lava' : 'fire' });
+        }
+      }
+      if (t > .7) end(); return;
+    }
+    case 'bolt': case 'breath': case 'homing': {
+      const wind = A.kind === 'breath' ? .3 : .35;
+      if (t >= wind && !A.n) {
+        A.n = 1; const base = Math.atan2(player.y - 30 - hy, player.x - hx);
+        const heads = a.heads || 1, count = a.count || 1, spread = A.kind === 'breath' ? .7 : (a.spread || .3);
+        for (let h = 0; h < heads; h++) for (let k = 0; k < count; k++) {
+          const ang = base + (heads > 1 ? (h - 1) * .45 : 0) + (count > 1 ? (k / (count - 1) - .5) * spread : 0) + (A.kind === 'breath' ? (Math.random() - .5) * .15 : 0);
+          if (A.kind === 'breath') enemyShotC(hx + m.face * m.r * .6, hy, Math.cos(ang), Math.sin(ang), 380 + Math.random() * 140, { t: (a.range || 260) / 450, c: 'fire', small: true });
+          else if (A.kind === 'homing') enemyShotC(hx, hy - 20, Math.cos(ang + (k - (count - 1) / 2) * .6), Math.sin(ang + (k - (count - 1) / 2) * .6), a.speed || 250, { t: 4.5, homing: 2.2, c: shotColor(m) });
+          else enemyShotC(hx, hy, Math.cos(ang), Math.sin(ang), a.speed || 500, { c: shotColor(m) });
+        }
+      }
+      if (t > wind + .3) end(); return;
+    }
+    case 'ring': {
+      const waves = a.waves || 1;
+      if (t >= .45 + A.n * .35 && A.n < waves) {
+        const off = A.n * Math.PI / a.count + state.t * .2;
+        for (let k = 0; k < a.count; k++) { const ang = off + k / a.count * Math.PI * 2; enemyShotC(hx, hy, Math.cos(ang), Math.sin(ang), a.speed || 280, { c: a.void ? 'void' : shotColor(m) }); }
+        A.n++;
+      }
+      if (t > .55 + waves * .35) end(); return;
+    }
+    case 'spiral': {
+      A.spin = (A.spin || Math.random() * 6) + dt * 2.4;
+      A.acc = (A.acc || 0) + dt;
+      while (A.acc > a.rate && t > .4) { A.acc -= a.rate; for (let k = 0; k < a.arms; k++) { const ang = (k % 2 ? -1 : 1) * A.spin * (a.arms > 2 && k >= 2 ? -1 : 1) + k / a.arms * Math.PI * 2; enemyShotC(hx, hy, Math.cos(ang), Math.sin(ang), a.speed || 280, { c: shotColor(m) }); } }
+      if (t > .4 + a.duration) end(); return;
+    }
+    case 'slam': {
+      if (A.leap) {
+        const L = A.leap, k = Math.min(1, t / .7);
+        if (k < 1) { A.air = Math.sin(k * Math.PI) * 120; const nx = L.x0 + (L.x1 - L.x0) * k, ny = L.y0 + (L.y1 - L.y0) * k; if (!boxBlocked(nx - m.r * .5, ny - m.r * .5, nx + m.r * .5, ny, false)) { m.x = nx; m.y = ny; } A.warnAt = [L.x1, L.y1]; return; }
+        A.air = 0;
+      }
+      if (!A.n && t >= (A.leap ? .7 : .75)) {
+        A.n = 1;
+        if (a.line) zones.push({ kind: 'line', x: m.x, y: m.y, ang: Math.atan2(player.y - m.y, player.x - m.x), len: a.radius * 2.6, w: 70, t: 0, tele: .45, T: .8, dmg, m });
+        else zones.push({ kind: 'wave', x: m.x, y: m.y, r: a.radius, t: 0, tele: 0, T: .5, dmg, m, c: m.id === 'magmaschleim' ? 'lava' : 'fire' });
+        burst(m.x, m.y - 10, m.boss ? 50 : 16);
+        if (m.id === 'magmaschleim' || m.id === 'glutwaechter') zones.push({ kind: 'puddle', x: m.x, y: m.y, r: m.boss ? 120 : 52, t: 0, tele: 0, T: 2.6, dmg: 1, m });
+      }
+      if (!A.n) A.warnAt = A.leap ? A.warnAt : [m.x, m.y];
+      if (t > (A.leap ? 1.1 : 1.05)) { if (A.leap && (A.rep = (A.rep || 1)) < (a.repeat || 1)) { A.rep++; A.t = 0; A.n = 0; A.leap = { x0: m.x, y0: m.y, x1: player.x, y1: player.y }; } else end(); } return;
+    }
+    case 'swing': {
+      if (t >= .35 && !A.n) {
+        A.n = 1; const ang = Math.atan2(player.y - m.y, player.x - m.x);
+        zones.push({ kind: 'arc', x: m.x, y: m.y - m.cy * .5, r: a.radius, ang, arc: a.arc, t: 0, tele: 0, T: .25, dmg, m });
+      }
+      if (t > .6) end(); return;
+    }
+    case 'summon': {
+      if (t >= .6 && !A.n) {
+        A.n = 1; const here = mobs.filter(o => o.room === m.room && !o.boss).length;
+        for (const id of a.mobs) if (here < (a.max || 4) + 1) { const p = freeSpot(m.room, m, 90, 200); const s = spawnMob(m.room, p.x, p.y, id); s.spawn = .8; burst(p.x, p.y - 20, 14); }
+      }
+      if (t > .9) end(); return;
+    }
+    case 'teleport': {
+      if (t < .35) { m.alpha = 1 - t / .35; return; }
+      if (!A.n) { A.n = 1; burst(m.x, m.y - m.cy, 18); const p = freeSpot(m.room, player, 170, 260); m.x = p.x; m.y = p.y; }
+      m.alpha = Math.min(1, (t - .35) / .3);
+      if (t > .7) { m.alpha = 1; end(); }
+      return;
+    }
+    case 'meteors': case 'hands': {
+      if (t >= .5 && !A.n) {
+        A.n = 1;
+        for (let k = 0; k < a.count; k++) {
+          const p = k === 0 ? { x: player.x, y: player.y } : { x: player.x + (Math.random() - .5) * 520, y: player.y + (Math.random() - .5) * 380 };
+          zones.push({ kind: A.kind === 'meteors' ? 'meteor' : 'hand', x: p.x, y: p.y, r: a.radius, t: -k * .12, tele: A.kind === 'meteors' ? 1.0 : .85, T: (A.kind === 'meteors' ? 1.35 : 1.25), dmg, m });
+        }
+      }
+      if (t > .8) end(); return;
+    }
+    case 'chain': {
+      if (t >= .35 && !A.n) { A.n = 1; enemyShotC(hx, hy, player.x - hx, player.y - 30 - hy, a.speed || 700, { chain: m, c: 'chain', t: (a.range || 600) / (a.speed || 700) }); }
+      if (t > .7) end(); return;
+    }
+    case 'scream': {
+      if (!A.n && t > .1) { A.n = 1; zones.push({ kind: 'cone', x: hx, y: hy + 20, ang: Math.atan2(player.y - hy, player.x - hx), r: a.range, arc: a.arc, t: 0, tele: .55, T: .9, dmg: 1, slow: 2, m }); }
+      if (t > 1) end(); return;
+    }
+    case 'beam': {
+      if (t < .8) { A.warn = true; return; }
+      A.warn = false;
+      for (let k = 0; k < A.beams.length; k++) A.beams[k] += a.turn * dt;
+      for (const b of A.beams) {
+        const len = wallLen(hx, hy, b, 1100), px = player.x - hx, py = player.y - 30 - hy, along = px * Math.cos(b) + py * Math.sin(b), off = Math.abs(-px * Math.sin(b) + py * Math.cos(b));
+        if (along > 0 && along < len && off < 36) hurtBy(m, 1, 'verbrannt');
+      }
+      if (t > .8 + a.duration) end(); return;
+    }
+    case 'trail': end(); return;
+  }
+  end();
+}
+function updateZones(dt) {
+  for (const z of zones) {
+    z.t += dt;
+    if (z.t < z.tele || z.done && z.kind !== 'puddle') continue;
+    const px = player.x, py = player.y - 20, d = Math.hypot(px - z.x, py - z.y);
+    let hit = false;
+    if (z.kind === 'wave') { const rr = z.r * Math.min(1, z.t / z.T); if (z.dmg && Math.abs(d - rr) < 40) hit = true; }
+    else if (z.kind === 'puddle') { if (d < z.r && !state.inv) hit = true; }
+    else if (z.kind === 'erupt' || z.kind === 'land') { if (!z.done) { if (z.dmg && d < z.r) hit = true; z.done = true; } }
+    else if (z.kind === 'arc') { const ang = Math.atan2(py - z.y, px - z.x), da = Math.abs(((ang - z.ang + Math.PI * 3) % (Math.PI * 2)) - Math.PI); if (d < z.r && da < z.arc / 2) hit = true; z.done = true; }
+    else if (z.kind === 'cone') { const ang = Math.atan2(py - z.y, px - z.x), da = Math.abs(((ang - z.ang + Math.PI * 3) % (Math.PI * 2)) - Math.PI); if (d < z.r && da < z.arc / 2) { hit = true; state.slow = z.slow; } z.done = true; }
+    else if (z.kind === 'line') { const along = (px - z.x) * Math.cos(z.ang) + (py - z.y) * Math.sin(z.ang), off = Math.abs(-(px - z.x) * Math.sin(z.ang) + (py - z.y) * Math.cos(z.ang)); if (along > 0 && along < z.len && off < z.w / 2) hit = true; if (!z.burst) { z.burst = 1; for (let k = 0; k < z.len; k += 60) burst(z.x + Math.cos(z.ang) * k, z.y + Math.sin(z.ang) * k, 4); } z.done = true; }
+    else { if (!z.done) { if (d < z.r) hit = true; burst(z.x, z.y - 20, z.kind === 'meteor' ? 26 : 10, false); z.done = true; } }
+    if (hit && !state.dead) hurtBy(z.m, z.dmg, z.kind === 'cone' ? 'niedergeschrien' : 'getroffen');
+  }
+  zones = zones.filter(z => z.t < z.T);
+  for (const L of lobs) {
+    L.t += dt;
+    if (L.t >= L.T && !L.done) { L.done = true; burst(L.x1, L.y1 - 10, 22); zones.push({ kind: 'wave', x: L.x1, y: L.y1, r: L.r, t: 0, tele: 0, T: .3, dmg: L.dmg, m: L.m, c: L.c }); if (L.c === 'lava') zones.push({ kind: 'puddle', x: L.x1, y: L.y1, r: L.r * .6, t: 0, tele: 0, T: 2.2, dmg: 1, m: L.m }); }
+  }
+  lobs = lobs.filter(L => !L.done);
+  for (const c of corpses) c.t += dt;
+  corpses = corpses.filter(c => c.t < .75);
+}
+function moveMob(m, dt, dx, dy, d) {
+  const st = m.st, wob = Math.sin(state.t * 3 + m.seed) * .7;
+  let vx = 0, vy = 0;
+  if (st.ai === 'hover') { const a = state.t * 1.6 + m.seed, tx = player.x + Math.cos(a) * 190 - m.x, ty = player.y - 40 + Math.sin(a) * 140 - m.y, l = Math.hypot(tx, ty) || 1; vx = tx / l * m.sp; vy = ty / l * m.sp; }
+  else if (st.ai === 'keep') { const k = st.keep || 380, dir = d < k * .8 ? -1 : d > k * 1.2 ? 1 : 0; vx = (dx / d * dir - dy / d * (dir ? wob * .4 : 1)) * m.sp; vy = (dy / d * dir + dx / d * (dir ? wob * .4 : 1)) * m.sp; }
+  else if (st.ai === 'hop') { m.hopT += dt; const ph = m.hopT % 1.1; if (ph < .45) { vx = dx / d * m.sp * 2.3; vy = dy / d * m.sp * 2.3; } else if (ph < .45 + dt && !m.landed) { m.landed = true; zones.push({ kind: 'puddle', x: m.x, y: m.y, r: 40, t: 0, tele: 0, T: 1.6, dmg: 1, m }); } if (ph > .5) m.landed = false; }
+  else if (st.ai === 'skirmish') { m.circ = m.circ || 1; if (Math.random() < dt * .5) m.circ = -m.circ; const want = 230, k = d > want ? 1 : d < want * .7 ? -1 : 0; vx = (dx / d * k - dy / d * m.circ * (k ? .5 : 1)) * m.sp; vy = (dy / d * k + dx / d * m.circ * (k ? .5 : 1)) * m.sp; }
+  else if (st.ai === 'drift') { vx = (dx / d * .7 - dy / d * Math.sin(state.t + m.seed)) * m.sp; vy = (dy / d * .7 + dx / d * Math.sin(state.t + m.seed)) * m.sp; }
+  else { vx = (dx / d - dy / d * wob) * m.sp; vy = (dy / d + dx / d * wob) * m.sp; }
+  if (m.boss && d < m.r * .9) { vx *= .2; vy *= .2; }
+  return [vx, vy];
+}
+function updateMobs(dt) {
+  for (const m of mobs) {
+    if (m.spawn > 0) { m.spawn -= dt; continue; }
+    if (m.hit > 0) m.hit -= dt;
+    m.at += dt;
+    if (m.echo !== undefined) { m.echo -= dt; if (m.echo <= 0) { m.hp = 0; m.quiet = true; burst(m.x, m.y - m.cy, 24); } }
+    if (isLord(m) && m.boss && m.hp <= 0 && !m.trans && !m.dying) startLordEnd(m);
+    if (m.intro) { updateIntro(m, dt); continue; }
+    if (m.trans || m.dying) { updateLordEnd(m, dt); if (m.anim !== m.lastAnim) { m.lastAnim = m.anim; m.at = 0; } continue; }
+    for (let i = 0; i < m.cds.length; i++) m.cds[i] -= dt;
+    const dx = player.x - m.x, dy = player.y - m.y, d = Math.hypot(dx, dy) || 1;
+    let vx = 0, vy = 0;
+    if (m.act) { runAct(m, dt); if (m.act) { vx = m.act.vx || 0; vy = m.act.vy || 0; } }
+    else {
+      // of all ready attacks, the one that has waited longest goes first, so none is starved
+      let i = -1;
+      if (!state.dead) m.st.attacks.forEach((a, k) => { if (m.cds[k] <= 0 && a.kind !== 'trail' && d <= (a.range || 99999) && (i < 0 || m.cds[k] < m.cds[i])) i = k; });
+      if (i >= 0) startAct(m, i, dx, dy, d);
+      else [vx, vy] = moveMob(m, dt, dx, dy, d);
+    }
+    if (!(m.act && (m.act.kind === 'dash' && !m.act.warn || m.act.kind === 'sweep')) && Math.abs(dx) > (isLord(m) ? 40 : 10)) m.face = dx > 0 ? 1 : -1;
+    for (const o of mobs) if (o !== m) { const ox = m.x - o.x, oy = m.y - o.y, od = Math.hypot(ox, oy); if (od < (m.r + o.r) * .8 && od > 0) { vx += ox / od * 120; vy += oy / od * 120; } }
+    vx += m.kx; vy += m.ky; m.kx *= .86; m.ky *= .86;
+    const rr = Math.min(m.r * .7, 40), avoid = !m.boss && m.st.ai !== 'hover' && m.st.ai !== 'drift';
+    if (!boxBlocked(m.x + vx * dt - rr, m.y - rr, m.x + vx * dt + rr, m.y, avoid)) m.x += vx * dt;
+    if (!boxBlocked(m.x - rr, m.y + vy * dt - rr, m.x + rr, m.y + vy * dt, avoid)) m.y += vy * dt;
+    if (d < m.r + 22 && m.alpha > .6 && !immune(m) && !(m.act && m.act.air > 20)) hurtBy(m, 1, m.boss ? 'erschlagen' : 'erwischt');
+    const want = m.act ? m.act.anim : Math.hypot(vx, vy) > 20 ? 'run' : 'idle';
+    if (want !== m.anim) { m.anim = want; m.at = 0; }
+  }
+  for (const m of mobs.filter(m => (m.hp <= 0 && !(isLord(m) && m.boss)) || m.remove)) {
+    if (m.dying) corpses.push({ id: m.id, x: m.x, y: m.y, s: m.s, face: m.face, t: 0 });
+    else if (!m.trans && m.echo === undefined) corpses.push({ id: m.id, x: m.x, y: m.y, s: m.s, face: m.face, t: 0 });
+    if (!m.trans && !m.quiet) burst(m.x, m.y - m.cy, m.boss ? 80 : 18);
+    m.gone = true;
+    if (!mobs.some(o => !o.gone && o.room === m.room && o.hp > 0 && !o.remove)) { if (m.boss) { eshots = []; zones = []; lobs = []; } clearRoom(m.room, m.x, m.y); }
+  }
+  mobs = mobs.filter(m => !m.gone);
+}
+// Debug and bestiary: drop a monster next to the hero; bosses come with the floor's boss HP.
+function spawnTest(id) {
+  const r = ROOMS[state.room], def = HM.DEFS[id], boss = def.kind !== 'mob';
+  if (r.cleared) r.rewarded = true;
+  r.fight = true;
+  const p = freeSpot(r, player, boss ? 330 : 230, boss ? 420 : 330);
+  const m = spawnMob(r, p.x, p.y, id, boss); m.spawn = .6;
+  if (isLord(m)) { m.spawn = 0; startIntro(m); }
+  toast(def.name + ' erscheint' + (boss ? '. Die Tore sind verriegelt.' : '.'));
+  cv.focus(); cv.scrollIntoView({ block: 'center', behavior: 'smooth' });
+}
+// ---------- Ignaroth: intro, flight, burrowing, echoes, transformation, death ----------
+const ease = k => k < 0 ? 0 : k > 1 ? 1 : k * k * (3 - 2 * k);
+const isLord = m => m.def.kind === 'lord';
+const NEXT_FORM = { drache1: 'drache2', drache2: 'drache3', drache3: 'drache4' };
+// A monster cannot be hit while it arrives, flies, burrows, transforms or dies.
+const immune = m => !!(m.intro || m.trans || m.dying || m.burrowed || (m.alt || 0) > 30);
+function shake(n) { state.shake = Math.max(state.shake || 0, n); }
+function setForm(m, id) {
+  const def = HM.DEFS[id];
+  m.id = id; m.def = def; m.st = def.stats; m.s = def.scale; m.r = def.stats.r; m.cy = def.h * def.scale * .45;
+}
+function startIntro(m) {
+  m.intro = { kind: m.st.intro || 'burrow', t: 0 };
+  if (m.intro.kind === 'flyin') { m.intro.x1 = m.x; m.intro.y1 = m.y; m.alt = 900; m.x -= 700; m.anim = 'fly'; }
+  else { m.burrowed = true; m.sink = 1; }
+}
+function updateIntro(m, dt) {
+  const I = m.intro, t = (I.t += dt);
+  if (I.kind === 'flyin') {
+    // a long swoop in from above; the shadow grows on the floor, then a heavy landing
+    const k = ease(Math.min(1, t / 2.4));
+    m.x = I.x1 - 700 * (1 - k); m.y = I.y1 - 140 * Math.sin(k * Math.PI) * (1 - k);
+    m.alt = 900 * Math.pow(1 - k, 1.6); m.anim = 'fly';
+    if (t > .2 && Math.random() < .3) state.embers.push({ x: m.x + (Math.random() - .5) * 120, y: m.y - m.alt - m.cy, vx: -80, vy: 40, t: .8, big: true });
+    if (t >= 2.4 && !I.landed) { I.landed = true; m.alt = 0; shake(14); burst(m.x, m.y, 60); zones.push({ kind: 'wave', x: m.x, y: m.y, r: 380, t: 0, tele: 0, T: .6, dmg: 0, m, c: m.id === 'drache4' ? 'void' : 'fire', show: true }); }
+    if (t >= 2.4) m.anim = 'cast';
+    if (t >= 3.4) { m.intro = null; m.anim = 'idle'; m.at = 0; toast(m.def.name + ' greift an!'); }
+    return;
+  }
+  // phase 1 and 2: a glowing crack, then he bursts out of the floor
+  if (t < 1.1) { m.burrowed = true; if (Math.random() < .5) burst(m.x + (Math.random() - .5) * 60, m.y, 2); return; }
+  if (!I.out) { I.out = true; m.burrowed = false; shake(10); burst(m.x, m.y - 10, 50); zones.push({ kind: 'wave', x: m.x, y: m.y, r: 260, t: 0, tele: 0, T: .45, dmg: 0, m, c: 'lava', show: true }); }
+  m.sink = Math.max(0, 1 - (t - 1.1) / .35); m.anim = 'cast';
+  if (t >= 2.2) { m.intro = null; m.sink = 0; m.anim = 'idle'; m.at = 0; toast(m.def.name + ' greift an!'); }
+}
+function runDragonAct(m, dt) {
+  const A = m.act, a = A.a, t = (A.t += dt), end = () => { m.act = null; }, dmg = HIT.boss;
+  if (A.kind === 'burrow') {
+    if (t < .55) { A.anim = 'cast'; m.sink = ease(t / .55); if (Math.random() < .6) burst(m.x + (Math.random() - .5) * 50, m.y, 2); return; }
+    if (!A.under) { A.under = 1; m.burrowed = true; A.anim = 'idle'; }
+    if (!A.warnT) {
+      const dx = player.x - m.x, dy = player.y - m.y, d = Math.hypot(dx, dy) || 1, sp = 560;
+      A.vx = dx / d * sp; A.vy = dy / d * sp; m.trail = (m.trail || 0) + dt;
+      if (m.trail > .05) { m.trail = 0; burst(m.x, m.y, 1); }
+      if (d < 40 || t > 2.6) { A.warnT = t; A.vx = A.vy = 0; zones.push({ kind: 'erupt', x: m.x, y: m.y, r: a.radius, t: 0, tele: .5, T: .75, dmg, m }); }
+      return;
+    }
+    A.vx = A.vy = 0;
+    if (t - A.warnT >= .5 && !A.out) {
+      A.out = 1; m.burrowed = false; shake(12); burst(m.x, m.y - 20, 40);
+      for (let k = 0; k < a.ring; k++) { const ang = k / a.ring * Math.PI * 2; enemyShotC(m.x, m.y - m.cy, Math.cos(ang), Math.sin(ang), 330, { c: 'fire' }); }
+      if (a.lava) for (let k = 0; k < 4; k++) { const ang = k / 4 * Math.PI * 2 + .4; zones.push({ kind: 'puddle', x: m.x + Math.cos(ang) * 120, y: m.y + Math.sin(ang) * 80, r: 60, t: 0, tele: 0, T: 3, dmg: 1, m }); }
+    }
+    if (A.out) { A.anim = 'cast'; m.sink = Math.max(0, 1 - (t - A.warnT - .5) / .3); }
+    if (t - A.warnT > 1.2) { m.sink = 0; end(); }
+    return;
+  }
+  if (A.kind === 'flight') {
+    const T = a.duration;
+    A.anim = 'fly';
+    if (t < .7) { m.alt = 320 * ease(t / .7); A.vx = A.vy = 0; if (t < .1) shake(5); return; }
+    if (t < .7 + T) {
+      // circle above the hero and drop bombs on where he stands
+      const ang = state.t * 1.3, tx = player.x + Math.cos(ang) * 260 - m.x, ty = player.y + Math.sin(ang) * 160 - m.y, l = Math.hypot(tx, ty) || 1;
+      A.vx = tx / l * Math.min(520, l * 3); A.vy = ty / l * Math.min(520, l * 3); m.alt = 320 + Math.sin(t * 3) * 20;
+      A.drop = (A.drop || 0) + dt;
+      if (A.drop > a.drop) { A.drop = 0; zones.push({ kind: 'meteor', x: player.x + (Math.random() - .5) * 120, y: player.y + (Math.random() - .5) * 90, r: a.radius, t: 0, tele: .85, T: 1.15, dmg, m, void: !!a.void }); }
+      return;
+    }
+    if (!A.land) { A.land = { x0: m.x, y0: m.y, x1: player.x, y1: player.y + 10, t0: t }; zones.push({ kind: 'land', x: player.x, y: player.y + 10, r: 260, t: 0, tele: .7, T: .7, dmg: 0, m }); }
+    const k = ease((t - A.land.t0) / .7), L = A.land;
+    A.vx = A.vy = 0; m.x = L.x0 + (L.x1 - L.x0) * k; m.y = L.y0 + (L.y1 - L.y0) * k; m.alt = 320 * (1 - k);
+    if (k >= 1) { m.alt = 0; shake(14); burst(m.x, m.y, 50); zones.push({ kind: 'wave', x: m.x, y: m.y, r: 300, t: 0, tele: 0, T: .55, dmg, m, c: a.void ? 'void' : 'fire' }); end(); }
+    return;
+  }
+  if (A.kind === 'sweep') {
+    A.anim = 'attack'; A.vx = A.vy = 0;
+    if (!A.base) A.base = Math.atan2(player.y - (m.y - m.cy), player.x - m.x);
+    if (t < .45) return;
+    const k = Math.min(1, (t - .45) / a.duration), ang = A.base + (k - .5) * a.arc * (A.dirSign || (A.dirSign = Math.random() < .5 ? 1 : -1));
+    m.face = Math.cos(ang) >= 0 ? 1 : -1;
+    A.acc = (A.acc || 0) + dt;
+    const mx = m.x + m.face * m.r * .95, my = m.y - m.cy * 1.35;
+    while (A.acc > a.rate) { A.acc -= a.rate; enemyShotC(mx, my, Math.cos(ang + (Math.random() - .5) * .08), Math.sin(ang + (Math.random() - .5) * .08), a.speed * (.85 + Math.random() * .3), { c: a.void ? 'void' : 'fire', small: true, t: 1.6 }); }
+    if (k >= 1) end();
+    return;
+  }
+  if (A.kind === 'echoes') {
+    A.anim = 'cast'; A.vx = A.vy = 0;
+    if (t >= .8 && !A.n) {
+      A.n = 1; shake(8);
+      ['drache1', 'drache2', 'drache3'].forEach((id, k) => {
+        const p = freeSpot(m.room, m, 200, 340), e = spawnMob(m.room, p.x, p.y, id, false);
+        e.echo = a.life; e.hp = e.max = Math.round(W.boss.hp * .1); e.spawn = .7 + k * .2;
+        e.st = Object.assign({}, e.st, { ai: 'chase', attacks: e.st.attacks.filter(x => ['bolt', 'dash', 'slam', 'swing', 'sweep', 'ring'].includes(x.kind)) });
+        e.cds = e.st.attacks.map(x => x.every * (.4 + Math.random() * .6)); burst(p.x, p.y - 40, 30, false);
+      });
+      toast('Ignaroth ruft die Echos seiner früheren Formen!');
+    }
+    if (t > 1.4) end();
+    return;
+  }
+  end();
+}
+// At 0 HP on floors 3, 6 and 9 he changes into his next form and escapes; on 10 he dies.
+function startLordEnd(m) {
+  eshots = []; zones = zones.filter(z => z.kind === 'puddle'); lobs = []; m.act = null; m.alt = 0; m.sink = 0; m.burrowed = false; m.hp = 1;
+  for (const o of mobs) if (o !== m && o.room === m.room) { o.hp = 0; o.quiet = true; }
+  if (m.def.phase < 4 && NEXT_FORM[m.id]) { m.trans = { t: 0, next: NEXT_FORM[m.id] }; toast(m.def.name + ' verwandelt sich!'); }
+  else { m.dying = { t: 0 }; toast(m.def.name + ' wankt!'); }
+}
+function updateLordEnd(m, dt) {
+  if (m.trans) {
+    const T = m.trans, t = (T.t += dt);
+    m.anim = t < 3 ? 'cast' : HM.DEFS[m.id].anims.fly ? 'fly' : 'cast';
+    if (t < 1.5) { T.glow = .4 + .6 * Math.abs(Math.sin(t * (4 + t * 6))); if (Math.random() < .8) { const a = Math.random() * 6.3, r = 260; state.embers.push({ x: m.x + Math.cos(a) * r, y: m.y - m.cy + Math.sin(a) * r * .6, vx: -Math.cos(a) * r * 1.6, vy: -Math.sin(a) * r, t: .6, gold: true }); } shake(3); return; }
+    if (!T.swapped) { T.swapped = true; setForm(m, T.next); T.grow = 0; state.whiteFlash = .9; shake(18); burst(m.x, m.y - m.cy, 90, true); zones.push({ kind: 'wave', x: m.x, y: m.y, r: 420, t: 0, tele: 0, T: .7, dmg: 0, m, c: m.id === 'drache4' ? 'void' : 'fire', show: true }); toast('… zu ' + m.def.name + '!'); }
+    T.glow = Math.max(0, 1 - (t - 1.5) * 1.5); T.grow = ease((t - 1.5) / .6);
+    if (t < 3) { if (Math.random() < .3) burst(m.x + (Math.random() - .5) * m.r * 2, m.y - Math.random() * m.cy * 2, 3); return; }
+    // escape: wingless forms sink into the floor, winged forms fly off upwards
+    if (!T.left) { T.left = true; toast(m.def.name + ' flieht in die Tiefe. Er kehrt zurück.'); }
+    if (HM.DEFS[m.id].anims.fly) { m.alt = 1300 * Math.pow(ease((t - 3) / 1.6), 1.3); m.x += 160 * dt; }
+    else { m.sink = ease((t - 3) / .9); if (Math.random() < .6) burst(m.x + (Math.random() - .5) * 80, m.y, 2); }
+    if (t > 4.7) m.remove = true;
+    return;
+  }
+  if (m.dying) {
+    const D = m.dying, t = (D.t += dt);
+    m.anim = 'cast'; shake(t < 2.6 ? 6 : 0);
+    if (Math.random() < .5) { const x = m.x + (Math.random() - .5) * m.r * 2.2, y = m.y - Math.random() * m.cy * 2.2; burst(x, y, 14, Math.random() < .4); }
+    D.glow = .3 + .5 * Math.abs(Math.sin(t * 9));
+    if (t > 2.6 && !D.boom) { D.boom = true; state.whiteFlash = 1; shake(24); burst(m.x, m.y - m.cy, 160, true); zones.push({ kind: 'wave', x: m.x, y: m.y, r: 600, t: 0, tele: 0, T: 1, dmg: 0, m, c: 'void', show: true }); }
+    if (t > 2.8) m.remove = true;
+  }
+}
+// Dust mound of a burrowed dragon, drawn on the floor.
+function drawMound(m) {
+  const r = m.r * .9, bob = Math.sin(state.t * 18) * 3;
+  ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.beginPath(); ctx.ellipse(m.x, m.y + 4, r * 1.1, r * .4, 0, 0, 7); ctx.fill();
+  ctx.fillStyle = '#3b3332'; ctx.beginPath(); ctx.ellipse(m.x, m.y - 6 + bob, r, r * .38, 0, Math.PI, 0); ctx.fill();
+  ctx.fillStyle = '#483b3a'; ctx.beginPath(); ctx.ellipse(m.x - r * .2, m.y - 10 + bob, r * .55, r * .2, 0, Math.PI, 0); ctx.fill();
+  ctx.globalCompositeOperation = 'lighter'; ctx.fillStyle = 'rgba(255,120,40,.5)';
+  for (let k = 0; k < 4; k++) { const x = m.x + Math.sin(state.t * 5 + k * 1.7) * r * .7; ctx.fillRect(x - 3, m.y - 8 - (k % 2) * 6 + bob, 6, 4); }
+  ctx.globalCompositeOperation = 'source-over';
+}
+// Ignaroth with altitude, sinking, transformation glow and growth.
+function drawLord(m) {
+  if (m.burrowed && !(m.sink < 1)) { drawMound(m); return; }
+  const T = m.trans, D = m.dying, alt = m.alt || 0, im = spriteFrame(m.id, m.anim, m.at);
+  const grow = T && T.swapped ? .75 + .25 * T.grow : 1, sc = m.s * grow * (m.spawn > 0 ? Math.max(0, 1 - m.spawn * 1.6) : 1);
+  const w = im.width * sc, h = im.height * sc, sh = Math.max(.25, 1 - alt / 900);
+  ctx.fillStyle = `rgba(0,0,0,${.45 * sh})`; ctx.beginPath(); ctx.ellipse(m.x, m.y, w * .34 * sh, (w * .1 + 4) * sh, 0, 0, 7); ctx.fill();
+  const sink = (m.sink || 0) * h, glow = (T && T.glow) || (D && D.glow) || 0;
+  let filter = m.hit > 0 ? 'brightness(2.4)' : '';
+  if (glow) filter = `brightness(${1 + glow * 1.8}) saturate(${1 + glow})`;
+  if (m.echo !== undefined) filter = 'hue-rotate(255deg) saturate(1.7) brightness(1.25)';
+  ctx.save();
+  if (sink > 0) { ctx.beginPath(); ctx.rect(m.x - w, m.y - h * 2 - alt, w * 2, h * 2 + 6); ctx.clip(); }
+  const alpha = m.echo !== undefined ? .55 + .15 * Math.sin(state.t * 9 + m.seed) : m.alpha;
+  drawSprite(im, m.x, m.y + 4 - alt + sink, sc, m.face, alpha, filter);
+  ctx.restore();
+  if (glow) { ctx.globalCompositeOperation = 'lighter'; const g = ctx.createRadialGradient(m.x, m.y - h * .45 - alt, 0, m.x, m.y - h * .45 - alt, w * .9); g.addColorStop(0, `rgba(255,230,160,${.5 * glow})`); g.addColorStop(1, 'rgba(255,120,40,0)'); ctx.fillStyle = g; ctx.fillRect(m.x - w, m.y - h - alt - w * .4, w * 2, h + w); ctx.globalCompositeOperation = 'source-over'; }
+  if (m.sink > 0 && m.sink < 1) drawMound(m);
 }
 function clearRoom(r, x, y) {
   r.fight = false; r.cleared = true;
@@ -548,7 +996,9 @@ function enemyShot(x, y, dx, dy, sp) { const l = Math.hypot(dx, dy) || 1; eshots
 
 function update(dt) {
   state.t += dt;
-  for (const k of ['inv', 'flash', 'cool']) if (state[k] > 0) state[k] -= dt;
+  for (const k of ['inv', 'flash', 'cool', 'slow']) if (state[k] > 0) state[k] -= dt;
+  if (state.shake > 0) state.shake = Math.max(0, state.shake - dt * 30);
+  if (state.whiteFlash > 0) state.whiteFlash = Math.max(0, state.whiteFlash - dt * 1.6);
   state.toasts.forEach(t => t.t -= dt); state.toasts = state.toasts.filter(t => t.t > 0);
   state.banner.t += dt;
   if (state.won) { state.wonAt += dt; return; }
@@ -556,7 +1006,7 @@ function update(dt) {
     state.dead -= dt;
     if (state.dead <= 0) {
       for (const r of ROOMS) if (r.fight) { r.fight = false; mobs = mobs.filter(m => m.room !== r); }
-      eshots = []; respawn(); state.hp = state.maxHp; state.dead = 0; state.inv = 1.2; state.room = ROOMS.find(r => r.type === 'start').index;
+      eshots = []; zones = []; lobs = []; respawn(); state.hp = state.maxHp; state.dead = 0; state.inv = 1.2; state.room = ROOMS.find(r => r.type === 'start').index;
     }
     return;
   }
@@ -564,7 +1014,8 @@ function update(dt) {
   if (touch && Math.hypot(touch.dx, touch.dy) > 12) { const l = Math.hypot(touch.dx, touch.dy); mx = touch.dx / l; my = touch.dy / l; }
   const len = Math.hypot(mx, my);
   const here = cell(Math.floor(player.x / C), Math.floor((player.y - 6) / C));
-  const speed = 360 * state.speedMul * (here === 2 ? 0.5 : 1);
+  const speed = 360 * state.speedMul * (here === 2 ? 0.5 : 1) * (state.slow > 0 ? .5 : 1);
+  if (state.pull) { const P = state.pull, ddx = P.m.x - player.x, ddy = P.m.y - player.y, dl = Math.hypot(ddx, ddy) || 1, st = Math.min(dl - P.m.r - 30, 1100 * dt); if (st > 0) { if (!blocked(player.x + ddx / dl * st, player.y)) player.x += ddx / dl * st; if (!blocked(player.x, player.y + ddy / dl * st)) player.y += ddy / dl * st; } P.t -= dt; if (P.t <= 0 || st <= 0) state.pull = null; }
   player.moving = len > 0;
   if (len) {
     const vx = mx / len * speed * dt, vy = my / len * speed * dt;
@@ -582,36 +1033,18 @@ function update(dt) {
     const brk = ents.find(e => (e.type === 'seal' || e.type === 'skullheap') && !e.broken && Math.abs(s.x - e.x) < 50 && s.y > e.y - 90 && s.y < e.y + 10);
     if (brk) { s.t = 0; hitBreakable(brk, s); continue; }
     if (wallHit(s.x, s.y) || props.some(p => p.solid && s.x > p.solid[0] && s.x < p.solid[2] && s.y > p.solid[1] - 50 && s.y < p.solid[3])) { s.t = 0; burst(s.x, s.y, 5); continue; }
-    for (const m of mobs) if (m.spawn <= 0 && Math.hypot(m.x - s.x, m.y - 30 * m.s - s.y) < m.r + 12) { m.hp -= state.dmg; m.hit = .12; m.kx = s.vx * (m.kind === 'boss' ? .05 : .25); m.ky = s.vy * (m.kind === 'boss' ? .05 : .25); s.t = 0; burst(s.x, s.y, 6); break; }
+    for (const m of mobs) if (m.spawn <= 0 && m.alpha > .5 && !immune(m) && Math.hypot(m.x - s.x, m.y - m.cy - s.y) < m.r + 12) { m.hp -= state.dmg; m.hit = .12; m.kx = s.vx * (m.kind === 'boss' ? .05 : .25); m.ky = s.vy * (m.kind === 'boss' ? .05 : .25); s.t = 0; burst(s.x, s.y, 6); break; }
   }
   shots = shots.filter(s => s.t > 0);
   for (const s of eshots) {
+    if (s.homing) { const a0 = Math.atan2(s.vy, s.vx), a1 = Math.atan2(player.y - 34 - s.y, player.x - s.x), sp = Math.hypot(s.vx, s.vy); let da = ((a1 - a0 + Math.PI * 3) % (Math.PI * 2)) - Math.PI; da = Math.max(-s.homing * dt, Math.min(s.homing * dt, da)); s.vx = Math.cos(a0 + da) * sp; s.vy = Math.sin(a0 + da) * sp; }
     s.x += s.vx * dt; s.y += s.vy * dt; s.t -= dt;
     if (wallHit(s.x, s.y)) { s.t = 0; burst(s.x, s.y, 4); continue; }
-    if (Math.hypot(player.x - s.x, player.y - 34 - s.y) < 30) { s.t = 0; hurt(1, 'von Feuer getroffen'); }
+    if (Math.hypot(player.x - s.x, player.y - 34 - s.y) < (s.small ? 26 : 30)) { s.t = 0; if (s.chain) { state.pull = { m: s.chain, t: .6 }; hurt(1, 'von der Kette gepackt'); } else hurt(1, s.c === 'void' ? 'von Leerenfeuer getroffen' : s.c === 'soul' ? 'von Seelenfeuer getroffen' : 'von Feuer getroffen'); }
   }
   eshots = eshots.filter(s => s.t > 0);
-  for (const m of mobs) {
-    if (m.spawn > 0) { m.spawn -= dt; continue; }
-    if (m.hit > 0) m.hit -= dt;
-    const dx = player.x - m.x, dy = player.y - m.y, d = Math.hypot(dx, dy) || 1;
-    const wob = Math.sin(state.t * 3 + m.seed) * .7, keepAway = m.kind === 'spucker' && d < 320 ? -1 : 1;
-    let vx = (dx / d * keepAway - dy / d * wob) * m.sp, vy = (dy / d * keepAway + dx / d * wob) * m.sp;
-    for (const o of mobs) if (o !== m) { const ox = m.x - o.x, oy = m.y - o.y, od = Math.hypot(ox, oy); if (od < m.r + o.r && od > 0) { vx += ox / od * 120; vy += oy / od * 120; } }
-    vx += m.kx; vy += m.ky; m.kx *= .86; m.ky *= .86;
-    const rr = m.r * .7, avoid = m.kind !== 'boss';
-    if (!boxBlocked(m.x + vx * dt - rr, m.y - rr, m.x + vx * dt + rr, m.y, avoid)) m.x += vx * dt;
-    if (!boxBlocked(m.x - rr, m.y + vy * dt - rr, m.x + rr, m.y + vy * dt, avoid)) m.y += vy * dt;
-    if (d < m.r + 22) hurt(1, m.kind === 'boss' ? 'von ' + W.boss.name + ' erschlagen' : 'von Glutlingen verbrannt');
-    if (m.kind === 'spucker') { m.shoot -= dt; if (m.shoot <= 0) { m.shoot = 2.4; enemyShot(m.x, m.y - 40, dx, dy - 30, 380); } }
-    if (m.kind === 'boss') {
-      m.summon -= dt;
-      if (m.summon <= 0 && mobs.filter(o => o.room === m.room && o.kind !== 'boss').length < 5) { m.summon = W.boss.summon; for (let k = 0; k < 2; k++) spawnMob(m.room, m.x + (k ? 100 : -100), m.y + 30, W.final && k ? 'spucker' : 'glut'); }
-      if (m.ring) { m.ringT = (m.ringT ?? m.ring) - dt; if (m.ringT <= 0) { m.ringT = m.ring; m.spin += .3; const n = W.final ? 16 : 10; for (let k = 0; k < n; k++) { const a = m.spin + k / n * Math.PI * 2; enemyShot(m.x, m.y - 70, Math.cos(a), Math.sin(a), 300); } } }
-    }
-  }
-  for (const m of mobs.filter(m => m.hp <= 0)) { burst(m.x, m.y - 30, m.kind === 'boss' ? 70 : 16); if (!mobs.some(o => o !== m && o.room === m.room && o.hp > 0)) { if (m.kind === 'boss') eshots = []; clearRoom(m.room, m.x, m.y); } }
-  mobs = mobs.filter(m => m.hp > 0);
+  updateMobs(dt);
+  updateZones(dt);
   if (here === 2) hurt(1, 'in der Lava verbrannt');
   updateClone(dt);
   const pit = ents.find(e => e.type === 'pit' && Math.abs(player.x - e.x) < 34 && Math.abs(player.y - 8 - e.y) < 30);
@@ -682,7 +1115,8 @@ function draw() {
   const z = Z(), Wd = cv.width, H = cv.height, cam = state.cam;
   const ox = cam.x - VIEW_W / 2, oy = cam.y - VIEW_H / 2;
   ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#070405'; ctx.fillRect(0, 0, Wd, H);
-  ctx.setTransform(z, 0, 0, z, -ox * z, -oy * z);
+  const shk = state.shake || 0, sx = (Math.random() - .5) * shk * 2, sy = (Math.random() - .5) * shk * 2;
+  ctx.setTransform(z, 0, 0, z, (-ox + sx) * z, (-oy + sy) * z);
   ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
   const cx0 = Math.max(0, Math.floor(ox / C) - 1), cx1 = Math.min(COLS - 1, Math.ceil((ox + VIEW_W) / C) + 1);
   const cy0 = Math.max(0, Math.floor(oy / C) - 1), cy1 = Math.min(ROWS - 1, Math.ceil((oy + VIEW_H) / C) + 1);
@@ -756,15 +1190,19 @@ function draw() {
       ctx.drawImage(im, e.x - im.width * s / 2, e.y - im.height * s - 10 + bob, im.width * s, im.height * s); ctx.filter = 'none';
     } });
   }
+  drawWarnings();
   for (const d of doors) if (d.kind !== 'secret' && doorClosed(d) && vis(d.cx - 150, d.cy - 150, d.cx + 150, d.cy + 150)) list.push({ y: d.cy + 60, f: () => drawGate(d) });
-  for (const m of mobs) if (vis(m.x - 260, m.y - 300, m.x + 260, m.y + 40)) list.push({ y: m.y, f: () => drawMob(m) });
+  for (const c of corpses) list.push({ y: c.y, f: () => drawCorpse(c) });
+  for (const m of mobs) if (vis(m.x - 400, m.y - 420, m.x + 400, m.y + 40)) list.push({ y: m.y, f: () => drawMob(m) });
   list.push({ y: player.y, f: drawPlayer });
   if (clone) list.push({ y: clone.y, f: drawClone });
   list.sort((a, b) => a.y - b.y).forEach(o => o.f());
   for (const w of walls.south) if (vis(w.x0, w.y, w.x1, w.y + 80)) strip(w);
   ctx.globalCompositeOperation = 'lighter';
   for (const s of shots) { const g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, 26); g.addColorStop(0, 'rgba(255,240,190,1)'); g.addColorStop(.35, 'rgba(255,170,70,.9)'); g.addColorStop(1, 'rgba(255,90,20,0)'); ctx.fillStyle = g; ctx.fillRect(s.x - 26, s.y - 26, 52, 52); }
-  for (const s of eshots) { const g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, 24); g.addColorStop(0, 'rgba(255,200,200,1)'); g.addColorStop(.35, 'rgba(230,40,30,.95)'); g.addColorStop(1, 'rgba(120,0,0,0)'); ctx.fillStyle = g; ctx.fillRect(s.x - 24, s.y - 24, 48, 48); }
+  drawAttacks();
+  for (const s of eshots) { const r = s.small ? 18 : 24, col = SHOT_COL[s.c] || SHOT_COL.fire, g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, r); g.addColorStop(0, `rgba(${col[0]},1)`); g.addColorStop(.35, `rgba(${col[1]},.95)`); g.addColorStop(1, `rgba(${col[2]},0)`); ctx.fillStyle = g; ctx.fillRect(s.x - r, s.y - r, r * 2, r * 2);
+    if (s.chain) { ctx.strokeStyle = 'rgba(150,170,200,.8)'; ctx.lineWidth = 4; ctx.setLineDash([8, 6]); ctx.beginPath(); ctx.moveTo(s.chain.x, s.chain.y - s.chain.cy); ctx.lineTo(s.x, s.y); ctx.stroke(); ctx.setLineDash([]); } }
   for (const p of state.embers) { ctx.globalAlpha = Math.min(1, p.t * (p.ash ? .4 : 2)); ctx.fillStyle = p.gold ? '#ffe28a' : p.ash ? '#ff5a2a' : p.big ? '#ff7a2a' : '#ffb347'; const s = p.big ? 9 : p.ash ? 4 : 5; ctx.fillRect(p.x - s / 2, p.y - s / 2, s, s); }
   ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
   if (state.coll) drawCollision();
@@ -775,6 +1213,7 @@ function draw() {
   if (th.grade > 0) { ctx.fillStyle = `rgba(140,10,0,${th.grade})`; ctx.globalCompositeOperation = 'multiply'; ctx.fillRect(0, 0, Wd, H); ctx.globalCompositeOperation = 'source-over'; }
   const vg = ctx.createRadialGradient(Wd / 2, H / 2, H * .35, Wd / 2, H / 2, Wd * .75); vg.addColorStop(0, 'rgba(60,0,0,0)'); vg.addColorStop(1, `rgba(${60 + th.wallGlow * 60},0,0,${th.vignette})`); ctx.fillStyle = vg; ctx.fillRect(0, 0, Wd, H);
   if (state.flash > 0) { ctx.fillStyle = `rgba(200,20,20,${state.flash})`; ctx.fillRect(0, 0, Wd, H); }
+  if (state.whiteFlash > 0) { ctx.fillStyle = `rgba(255,236,210,${Math.min(1, state.whiteFlash)})`; ctx.fillRect(0, 0, Wd, H); }
   drawHud();
   drawMap(state.map);
 }
@@ -834,17 +1273,71 @@ function drawGate(d) {
   if (!fight && d.kind === 'lock') { const k = IMG.key; ctx.filter = KEYS[d.key].filter; ctx.drawImage(k, d.cx - 15, d.cy - 30, 30, 56); ctx.filter = 'none'; }
   if (!fight && d.kind === 'puzzle') { const g = W.groups[d.group].kind === 'braziers' ? IMG.brazier_bowl : IMG.icon_scroll; ctx.drawImage(g, d.cx - 22, d.cy - 30, 44, 44 * g.height / g.width); }
 }
-function drawMob(m) {
-  const im = IMG.fire_orb, s = m.s * (m.spawn > 0 ? 1 - m.spawn * 1.6 : 1), bob = Math.sin(state.t * 6 + m.seed) * 6;
-  if (s <= 0) return;
-  ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.beginPath(); ctx.ellipse(m.x, m.y, m.r * .9, m.r * .32, 0, 0, 7); ctx.fill();
-  if (m.kind === 'gross') ctx.filter = 'saturate(1.3) hue-rotate(-15deg) brightness(.85)';
-  if (m.kind === 'spucker') ctx.filter = 'hue-rotate(250deg) saturate(1.4)';
-  if (m.kind === 'boss') ctx.filter = W.final ? 'hue-rotate(230deg) saturate(1.8) brightness(.8)' : 'hue-rotate(-20deg) saturate(1.5) brightness(.9)';
-  if (m.hit > 0) ctx.filter = 'brightness(3)';
+function spriteFrame(id, anim, time) {
+  const set = SPR[id], list = set[anim] || set.idle, fps = list.length >= 8 ? (anim === 'idle' ? 9 : anim === 'fly' ? 11 : 13) : anim === 'idle' ? 6 : anim === 'death' ? 8 : 10;
+  return list[Math.floor(time * fps) % list.length];
+}
+function drawSprite(im, x, y, s, face, alpha, filter) {
   const w = im.width * s, h = im.height * s;
-  ctx.drawImage(im, m.x - w / 2, m.y - h - 14 + bob, w, h); ctx.filter = 'none';
-  if (m.kind === 'boss') { const ic = IMG[W.final ? 'icon_demon_big' : 'icon_demon']; ctx.drawImage(ic, m.x - 46 * s / 2.7, m.y - h - 4 + bob, 92 * s / 2.7, 96 * s / 2.7); }
+  ctx.save(); ctx.imageSmoothingEnabled = false; ctx.globalAlpha = alpha; if (filter) ctx.filter = filter;
+  ctx.translate(Math.round(x), Math.round(y - h)); if (face < 0) ctx.scale(-1, 1);
+  ctx.drawImage(im, -w / 2, 0, w, h); ctx.restore();
+}
+function drawMob(m) {
+  if (isLord(m)) { drawLord(m); return; }
+  const sc = m.s * (m.spawn > 0 ? Math.max(0, 1 - m.spawn * 1.6) : 1);
+  if (sc <= 0) return;
+  const air = m.act && m.act.air ? m.act.air : 0, im = spriteFrame(m.id, m.anim, m.at);
+  ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.beginPath(); ctx.ellipse(m.x, m.y, im.width * sc * .34, im.width * sc * .1 + 4, 0, 0, 7); ctx.fill();
+  const hov = m.st.ai === 'hover' || m.st.ai === 'drift' ? -10 + Math.sin(state.t * 4 + m.seed) * 5 : 0;
+  drawSprite(im, m.x, m.y + 4 + hov - air, sc, m.face, m.alpha, m.hit > 0 ? 'brightness(2.6)' : '');
+}
+function drawCorpse(c) { const list = SPR[c.id].death, im = list[Math.min(list.length - 1, Math.floor(c.t / .75 * list.length))]; drawSprite(im, c.x, c.y + 4, c.s, c.face, 1); }
+const SHOT_COL = { fire: ['255,200,200', '230,40,30', '120,0,0'], void: ['240,200,255', '170,70,230', '60,10,120'], soul: ['220,255,200', '90,200,70', '10,70,20'], lava: ['255,240,180', '255,140,30', '140,40,0'], chain: ['230,240,255', '120,150,190', '40,50,70'] };
+// Warnings on the floor: where an attack will land, drawn under the actors.
+function drawWarnings() {
+  ctx.save(); ctx.lineWidth = 4;
+  const ring = (x, y, r, k, col) => { ctx.fillStyle = `rgba(${col},${.12 + .18 * k})`; ctx.beginPath(); ctx.ellipse(x, y, r, r * .62, 0, 0, 7); ctx.fill(); ctx.strokeStyle = `rgba(${col},.8)`; ctx.beginPath(); ctx.ellipse(x, y, r, r * .62, 0, 0, 7); ctx.stroke(); ctx.fillStyle = `rgba(${col},.35)`; ctx.beginPath(); ctx.ellipse(x, y, r * k, r * k * .62, 0, 0, 7); ctx.fill(); };
+  for (const z of zones) {
+    const k = z.tele ? Math.max(0, Math.min(1, z.t / z.tele)) : 1;
+    if (z.kind === 'meteor' && z.t >= 0 && z.t < z.tele) ring(z.x, z.y, z.r, k, z.void ? '170,80,255' : '255,90,30');
+    if (z.kind === 'hand' && z.t >= 0 && z.t < z.tele) ring(z.x, z.y, z.r, k, '170,90,255');
+    if ((z.kind === 'erupt' || z.kind === 'land') && z.t < z.tele) ring(z.x, z.y, z.r, k, z.kind === 'land' ? '255,60,30' : '255,140,40');
+    if (z.kind === 'puddle') { const a = Math.min(1, (z.T - z.t) * 1.5); ctx.fillStyle = `rgba(255,120,30,${.42 * a})`; ctx.beginPath(); ctx.ellipse(z.x, z.y, z.r, z.r * .55, 0, 0, 7); ctx.fill(); ctx.fillStyle = `rgba(255,220,120,${.35 * a})`; ctx.beginPath(); ctx.ellipse(z.x, z.y, z.r * .55, z.r * .3, 0, 0, 7); ctx.fill(); }
+    if (z.kind === 'line' && z.t < z.tele) { ctx.save(); ctx.translate(z.x, z.y); ctx.rotate(z.ang); ctx.fillStyle = `rgba(255,60,30,${.15 + .3 * k})`; ctx.fillRect(0, -z.w / 2, z.len, z.w); ctx.strokeStyle = 'rgba(255,90,40,.8)'; ctx.strokeRect(0, -z.w / 2, z.len, z.w); ctx.restore(); }
+    if (z.kind === 'cone' && z.t < z.tele) { ctx.fillStyle = `rgba(120,220,255,${.12 + .25 * k})`; ctx.beginPath(); ctx.moveTo(z.x, z.y); ctx.arc(z.x, z.y, z.r, z.ang - z.arc / 2, z.ang + z.arc / 2); ctx.closePath(); ctx.fill(); }
+  }
+  for (const L of lobs) ring(L.x1, L.y1, L.r, L.t / L.T, '255,140,40');
+  for (const m of mobs) {
+    const A = m.act; if (!A) continue;
+    if (A.kind === 'dash' && A.warn) { ctx.strokeStyle = 'rgba(255,60,40,.75)'; ctx.setLineDash([16, 12]); ctx.beginPath(); ctx.moveTo(m.x, m.y - 10); ctx.lineTo(m.x + A.dir[0] * (A.a.range || 500), m.y - 10 + A.dir[1] * (A.a.range || 500)); ctx.stroke(); ctx.setLineDash([]); }
+    if (A.kind === 'slam' && !A.n && A.warnAt) ring(A.warnAt[0], A.warnAt[1], A.a.radius, Math.min(1, A.t / .75), '255,70,30');
+    if (A.kind === 'beam' && A.warn) { const hy = m.y - m.cy; ctx.strokeStyle = 'rgba(200,120,255,.55)'; ctx.setLineDash([10, 10]); for (const b of A.beams) { ctx.beginPath(); ctx.moveTo(m.x, hy); ctx.lineTo(m.x + Math.cos(b) * 1000, hy + Math.sin(b) * 1000); ctx.stroke(); } ctx.setLineDash([]); }
+  }
+  ctx.restore();
+}
+// Bright parts of attacks, drawn additively over the actors.
+function drawAttacks() {
+  for (const z of zones) {
+    if (z.kind === 'wave') { const k = Math.min(1, z.t / z.T), rr = z.r * k, col = z.c === 'lava' ? '255,150,40' : z.c === 'void' ? '180,90,255' : '255,90,30'; ctx.strokeStyle = `rgba(${col},${1 - k})`; ctx.lineWidth = 26 * (1 - k) + 6; ctx.beginPath(); ctx.ellipse(z.x, z.y, rr, rr * .62, 0, 0, 7); ctx.stroke(); }
+    if (z.kind === 'arc') { const k = z.t / z.T; ctx.fillStyle = `rgba(255,170,80,${.45 * (1 - k)})`; ctx.beginPath(); ctx.moveTo(z.x, z.y); ctx.arc(z.x, z.y, z.r, z.ang - z.arc / 2, z.ang + z.arc / 2); ctx.closePath(); ctx.fill(); }
+    if (z.kind === 'line' && z.t >= z.tele) { const k = (z.t - z.tele) / (z.T - z.tele); ctx.save(); ctx.translate(z.x, z.y); ctx.rotate(z.ang); ctx.fillStyle = `rgba(255,170,60,${.8 * (1 - k)})`; ctx.fillRect(0, -z.w / 2 * (1 - k * .5), z.len, z.w * (1 - k * .5)); ctx.restore(); }
+    if (z.kind === 'cone' && z.t >= z.tele) { const k = (z.t - z.tele) / (z.T - z.tele); ctx.fillStyle = `rgba(150,230,255,${.5 * (1 - k)})`; ctx.beginPath(); ctx.moveTo(z.x, z.y); ctx.arc(z.x, z.y, z.r * (.4 + .6 * k), z.ang - z.arc / 2, z.ang + z.arc / 2); ctx.closePath(); ctx.fill(); }
+    if (z.kind === 'meteor' && z.t >= 0 && z.t < z.tele) { const k = z.t / z.tele, my = z.y - 900 * (1 - k); const g = ctx.createRadialGradient(z.x, my, 0, z.x, my, 46); g.addColorStop(0, 'rgba(255,250,210,1)'); g.addColorStop(.4, z.void ? 'rgba(180,90,255,.9)' : 'rgba(255,140,40,.9)'); g.addColorStop(1, z.void ? 'rgba(80,0,160,0)' : 'rgba(200,30,0,0)'); ctx.fillStyle = g; ctx.fillRect(z.x - 46, my - 46, 92, 92); ctx.fillStyle = 'rgba(255,120,40,.35)'; ctx.fillRect(z.x - 8, my - 120, 16, 120); }
+    if ((z.kind === 'meteor' || z.kind === 'hand') && z.t >= z.tele) { const k = (z.t - z.tele) / (z.T - z.tele), col = z.kind === 'hand' ? '190,110,255' : '255,160,60'; const g = ctx.createRadialGradient(z.x, z.y - 20, 0, z.x, z.y - 20, z.r * 1.3); g.addColorStop(0, `rgba(${col},${1 - k})`); g.addColorStop(1, `rgba(${col},0)`); ctx.fillStyle = g; ctx.fillRect(z.x - z.r * 1.3, z.y - 20 - z.r * 1.3, z.r * 2.6, z.r * 2.6);
+      if (z.kind === 'hand') { ctx.fillStyle = `rgba(230,200,255,${1 - k})`; for (let f = -2; f <= 2; f++) ctx.fillRect(z.x + f * 12 - 4, z.y - 30 - (1 - Math.abs(f) * .2) * 70 * Math.sin(Math.min(1, k * 2) * Math.PI / 2), 8, 70 * (1 - Math.abs(f) * .2)); } }
+  }
+  for (const L of lobs) { const k = L.t / L.T, x = L.x0 + (L.x1 - L.x0) * k, y = L.y0 + (L.y1 - L.y0) * k - Math.sin(k * Math.PI) * 220, col = SHOT_COL[L.c]; const g = ctx.createRadialGradient(x, y, 0, x, y, 30); g.addColorStop(0, `rgba(${col[0]},1)`); g.addColorStop(.45, `rgba(${col[1]},.95)`); g.addColorStop(1, `rgba(${col[2]},0)`); ctx.fillStyle = g; ctx.fillRect(x - 30, y - 30, 60, 60); }
+  for (const m of mobs) {
+    const A = m.act; if (!A || A.kind !== 'beam' || A.warn) continue;
+    const hy = m.y - m.cy;
+    for (const b of A.beams) {
+      const len = wallLen(m.x, hy, b, 1100);
+      ctx.save(); ctx.translate(m.x, hy); ctx.rotate(b);
+      for (const [w, c] of [[60, 'rgba(90,30,160,.35)'], [36, 'rgba(170,80,255,.6)'], [16, 'rgba(240,210,255,.95)']]) { ctx.fillStyle = c; ctx.fillRect(0, -w / 2 + Math.sin(state.t * 30) * 2, len, w); }
+      ctx.restore();
+    }
+  }
 }
 function drawPlayer() {
   const f = (player.anim | 0) % 4;
@@ -874,9 +1367,10 @@ function drawLight(z, ox, oy) {
     if (e.type === 'key' && !e.taken) all.push({ x: e.x, y: e.y - 30, r: 130, c: '255,170,60', f: 1 });
     if (e.type === 'vault' && !e.opened) all.push({ x: e.x, y: e.y - 80, r: 420, c: '255,210,110', f: 3 });
   }
-  for (const m of mobs) all.push({ x: m.x, y: m.y - 40 * m.s, r: 120 * m.s, c: '255,110,40', f: m.seed });
+  for (const m of mobs) all.push({ x: m.x, y: m.y - m.cy - (m.alt || 0), r: 90 + m.r * 2.2 * (isLord(m) ? 1.3 : 1), c: shotColor(m) === 'void' ? '170,80,255' : shotColor(m) === 'soul' ? '120,230,90' : '255,110,40', f: m.seed });
+  for (const z of zones) if (z.kind === 'puddle' || (z.kind === 'meteor' && z.t >= z.tele)) all.push({ x: z.x, y: z.y, r: z.r * 2, c: '255,120,40', f: 1 });
   for (const s of shots) all.push({ x: s.x, y: s.y, r: 110, c: '255,180,80', f: 0 });
-  for (const s of eshots) all.push({ x: s.x, y: s.y, r: 90, c: '255,40,30', f: 0 });
+  for (const s of eshots) all.push({ x: s.x, y: s.y, r: 90, c: (SHOT_COL[s.c] || SHOT_COL.fire)[1], f: 0 });
   const glows = [];
   for (const L of all) {
     const sx = (L.x - ox) * z, sy = (L.y - oy) * z, r = L.r * z * (1 + .05 * Math.sin(state.t * 9 + L.f));
@@ -936,7 +1430,7 @@ function drawHud() {
     const bw = 560, bx = Wd / 2 - bw / 2, by = cv.height - 120;
     ctx.fillStyle = 'rgba(10,4,6,.85)'; roundRect(bx - 4, by - 30, bw + 8, 48, 6); ctx.fill();
     ctx.fillStyle = '#3a1210'; ctx.fillRect(bx, by, bw, 12); ctx.fillStyle = '#e8432a'; ctx.fillRect(bx, by, bw * boss.hp / boss.max, 12);
-    ctx.font = '600 17px "Alegreya Sans", sans-serif'; ctx.fillStyle = '#ffd2a8'; ctx.textAlign = 'center'; ctx.fillText(W.boss.name + ' (Platzhalter)', Wd / 2, by - 14); ctx.textAlign = 'left';
+    ctx.font = '600 17px "Alegreya Sans", sans-serif'; ctx.fillStyle = '#ffd2a8'; ctx.textAlign = 'center'; ctx.fillText(boss.def.name + (boss.trans ? ' · verwandelt sich' : boss.dying ? ' · fällt' : boss.intro ? ' · erscheint' : (boss.alt || 0) > 30 ? ' · in der Luft' : boss.burrowed ? ' · im Boden' : ''), Wd / 2, by - 14); ctx.textAlign = 'left';
   }
   const cr = ROOMS[state.room];
   if (cr.fight) { const left = mobs.filter(m => m.room === cr).length; ctx.font = '600 19px "Alegreya Sans", sans-serif'; ctx.fillStyle = '#ff6b4a'; ctx.textAlign = 'center'; ctx.fillText('Verriegelt · noch ' + left + ' Gegner', Wd / 2, 124); ctx.textAlign = 'left'; }
@@ -955,7 +1449,7 @@ function drawHud() {
     ctx.fillStyle = '#f1e4d8'; ctx.fillText(t.text, Wd / 2, ty + 1);
   });
   ctx.globalAlpha = 1; ctx.textAlign = 'left';
-  ctx.font = '500 14px "Alegreya Sans", sans-serif'; ctx.fillStyle = 'rgba(241,228,216,.45)'; ctx.fillText('Figur und Gegner: Platzhalter', 20, cv.height - 16);
+  ctx.font = '500 14px "Alegreya Sans", sans-serif'; ctx.fillStyle = 'rgba(241,228,216,.45)'; ctx.fillText('Spielfigur: Platzhalter', 20, cv.height - 16);
   if (state.dead) { ctx.fillStyle = 'rgba(30,0,0,.55)'; ctx.fillRect(0, 0, Wd, cv.height); }
   if (state.won) {
     ctx.fillStyle = 'rgba(10,3,4,.78)'; ctx.fillRect(0, 0, Wd, cv.height); ctx.textAlign = 'center';
@@ -1087,7 +1581,7 @@ function roomTasks(r) {
   const t = [], here = ents.filter(e => e.room === r.index);
   if (r.type === 'start') t.push('Startpunkt der Etage.');
   if (r.type === 'combat') t.push('Kampf: Gitter fallen beim Betreten, alle ' + ((r.mobs || 3) + W.diff.extra) + ' Gegner besiegen.');
-  if (r.type === 'boss') t.push('Endkampf gegen ' + W.boss.name + (W.boss.ring ? ', weicht seinen Feuerringen aus' : '') + '. Er ruft Verstärkung.');
+  if (r.type === 'boss') { const B = HM.DEFS[HM.FLOORS[state.floor].boss]; t.push('Endkampf gegen ' + B.name + ': ' + B.stats.attacks.map(a => a.name).join(', ') + '.'); }
   if (r.type === 'portal') t.push('Nach dem Boss: Truhe öffnen und durchs Portal' + (W.final ? ' – das Ende der Hölle.' : ' zur nächsten Etage.'));
   if (r.drop) t.push('Belohnung: ' + KEYS[r.drop].name + ' fällt nach dem Sieg.');
   for (const e of here) {
@@ -1216,28 +1710,63 @@ function updatePage() {
   drawPlan();
   const facts = document.getElementById('facts');
   const fs = groupStatus('feuer');
-  const items = [[ROOMS.length, 'Räume'], [W.quick.need ? W.quick.need.length : '?', 'auf dem kürzesten Weg'], [state.visited.size, 'besucht'], [W.boss.name, W.boss.final ? 'Höllenfürst' : W.boss.mini ? 'Zwischenboss' : 'Boss']];
+  const items = [[ROOMS.length, 'Räume'], [W.quick.need ? W.quick.need.length : '?', 'auf dem kürzesten Weg'], [state.visited.size, 'besucht'], [W.boss.name, HM.DEFS[HM.FLOORS[state.floor].boss].kind === 'lord' ? 'Ignaroth, Phase ' + HM.DEFS[HM.FLOORS[state.floor].boss].phase : 'Boss']];
   if (fs.all) items.push([fs.done + '/' + fs.all, 'Feuerschalen']);
   facts.innerHTML = items.map(([v, l]) => `<div><b>${v}</b><span>${l}</span></div>`).join('');
   document.getElementById('facts-title').textContent = 'Etage ' + state.floor + ': ' + W.title;
   const notes = [];
   if (fs.all) notes.push('Feuerschalen sind über die Etage verteilt und öffnen den Riesentresor.');
-  if (W.groups.seq) notes.push('Ein Raum zeigt eine Plattenfolge, sie öffnet den Geheimraum.');
-  if (W.diff.shooters) notes.push('Violette Feuerspucker halten Abstand und schießen.');
-  if (W.boss.ring) notes.push(W.boss.name + ' schleudert Feuerringe.');
+  if (W.groups.seq) notes.push('Ein Raum zeigt eine Plattenfolge, sie lässt eine Belohnungstruhe erscheinen.');
+  const F = HM.FLOORS[state.floor];
+  notes.push('Monster: ' + F.mobs.map(id => HM.DEFS[id].name).join(', ') + '. Boss: ' + HM.DEFS[F.boss].name + '.');
   document.getElementById('facts-note').textContent = notes.join(' ');
+}
+
+// ---------- bestiary ----------
+const ANIM_LABEL = { idle: 'Ruhe', run: 'Lauf', attack: 'Angriff', cast: 'Zauber', fly: 'Flug', death: 'Tod' };
+const bestCards = [];
+function floorsOf(id) { const def = HM.DEFS[id]; if (def.kind !== 'mob') return [def.floor]; return Object.keys(HM.FLOORS).filter(n => HM.FLOORS[n].mobs.includes(id)).map(Number); }
+function buildBestiary() {
+  const groups = { lord: document.getElementById('best-lord'), boss: document.getElementById('best-boss'), mob: document.getElementById('best-mob') };
+  const ids = Object.keys(HM.DEFS).sort((a, b) => (HM.DEFS[a].floor || 0) - (HM.DEFS[b].floor || 0));
+  for (const id of ids) {
+    const def = HM.DEFS[id], el = document.createElement('article'), fl = floorsOf(id);
+    el.className = 'card' + (def.kind === 'lord' ? ' lordcard' : '');
+    const anims = HM.ANIMS.filter(a => a === 'death' || def.anims[a]);
+    el.innerHTML = `<canvas width="320" height="240" aria-label="${esc(def.name)}, animiert"></canvas>
+      <div><span class="role">${esc(def.role)} · ${def.kind === 'mob' ? 'Etage ' + fl.join(', ') : ''}${def.kind !== 'mob' ? esc(def.w + '×' + def.h + ' px') : ''}</span><h3>${esc(def.name)}</h3></div>
+      <div class="anim-tabs">${anims.map(a => `<button type="button" data-a="${a}" aria-pressed="${a === 'idle'}">${ANIM_LABEL[a]}</button>`).join('')}</div>
+      <p>${esc(def.desc)}</p>
+      <ul>${def.stats.attacks.map(a => `<li><b>${esc(a.name)}</b>: ${esc(a.desc)}</li>`).join('')}</ul>
+      <button type="button" class="try">Im Raum testen</button>`;
+    const card = { id, anim: 'idle', t: Math.random(), cv: el.querySelector('canvas') };
+    el.querySelectorAll('.anim-tabs button').forEach(b => b.onclick = () => { card.anim = b.dataset.a; card.t = 0; el.querySelectorAll('.anim-tabs button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); });
+    el.querySelector('.try').onclick = () => spawnTest(id);
+    groups[def.kind].appendChild(el); bestCards.push(card);
+  }
+}
+function drawBestiary(dt) {
+  for (const c of bestCards) {
+    c.t += dt;
+    const set = SPR[c.id], list = set[c.anim], fps = c.anim === 'idle' ? 6 : 9;
+    let k = Math.floor(c.t * fps); if (c.anim === 'death') { k = Math.min(list.length - 1, k % (list.length + 6)); } else k %= list.length;
+    const im = list[k], g = c.cv.getContext('2d'), s = Math.max(1, Math.floor(Math.min(300 / im.width, 210 / im.height)));
+    g.imageSmoothingEnabled = false; g.fillStyle = '#0b0607'; g.fillRect(0, 0, 320, 240);
+    g.fillStyle = 'rgba(255,90,30,.08)'; g.beginPath(); g.ellipse(160, 228, im.width * s * .45, 10, 0, 0, 7); g.fill();
+    g.drawImage(im, Math.round(160 - im.width * s / 2), Math.round(230 - im.height * s), im.width * s, im.height * s);
+  }
 }
 
 // ---------- boot ----------
 let last = 0;
 let planClock = 0;
-function frame(t) { const dt = Math.min(.05, (t - last) / 1000 || 0); last = t; update(dt); draw(); planClock += dt; if (planClock > .5) { planClock = 0; drawPlan(); } requestAnimationFrame(frame); }
-function start() { loadFloor(1, false); requestAnimationFrame(frame); }
+function frame(t) { const dt = Math.min(.05, (t - last) / 1000 || 0); last = t; update(dt); draw(); drawBestiary(dt); planClock += dt; if (planClock > .5) { planClock = 0; drawPlan(); } requestAnimationFrame(frame); }
+function start() { buildSprites(); buildBestiary(); loadFloor(1, false); requestAnimationFrame(frame); }
 window.hellPreview = { teleport, toBoss, useSkill, get clone() { return clone; }, get ents() { return ents; }, get doors() { return doors; },
   fireAt(x, y) { state.cool = 0; fire(x - player.x, y - (player.y - 40)); }, get state() { return state; }, get player() { return player; }, get mobs() { return mobs; }, get W() { return W; }, get rooms() { return ROOMS; }, act, toggle, loadFloor,
   step(n = 1, dt = 1 / 60) { for (let i = 0; i < n; i++) update(dt); draw(); },
   hold(dir, on) { on ? keys.add(dir) : keys.delete(dir); },
-  killAll() { for (const m of mobs) m.hp = 0; },
+  killAll() { for (const m of mobs) m.hp = 0; }, spawnTest, get zones() { return zones; }, get lobs() { return lobs; }, get eshots() { return eshots; }, drawBestiary,
   goRoom(i, lx, ly) { const r = ROOMS[i]; player.x = (r.bx + lx) * C; player.y = (r.by + ly) * C; state.cam.x = player.x; state.cam.y = player.y; },
   goWorld(x, y) { player.x = x; player.y = y; state.cam.x = x; state.cam.y = y; } };
 const names = Object.keys(ASSETS); let loaded = 0;

@@ -123,7 +123,7 @@ func observe(snapshot: Dictionary, local_peer: int) -> void:
 			particles.kick(fx_point, 56.0, 1.3)
 			_play("void_burst")
 			_fx_spawn("void_burst", fx_point, 0.0, 1.3)
-		elif fx_kind == "wall_hit": _wall_hit(fx_point, Vector2(float(event.get("nx", 0.0)), float(event.get("ny", 0.0))), str(event.get("style", "arrow")))
+		elif fx_kind == "wall_hit": _wall_hit(fx_point, Vector2(float(event.get("nx", 0.0)), float(event.get("ny", 0.0))), str(event.get("style", "arrow")), str(snapshot.get("players", {}).get(int(event.get("o", 0)), {}).get("glow", "")))
 		elif fx_kind == "crate_break":
 			particles.kick(fx_point, 20.0, 0.6)
 			particles.burst(fx_point, Color("a8743e"), 18, 210.0, 0.7, Vector2.ZERO, PI, 4.0, 4.0)
@@ -141,6 +141,66 @@ func observe(snapshot: Dictionary, local_peer: int) -> void:
 			_fx_spawn("wood_burst", fx_point, 0.0, 1.4)
 			_fx_spawn("pickup", fx_point + Vector2(0, -8), 0.0, 1.5)
 			_play_any(["chest_open", "break_bone"], 0.05)
+		elif fx_kind in ["potion_throw", "potion_blast", "drink", "curse", "cleanse", "identify"]:
+			# Items: a potion bursts in its colour, a curse flares dark, a cleanse shines.
+			var potion_colours := {"red": Color("d23c3c"), "orange": Color("e8812e"), "yellow": Color("f2d24a"), "lime": Color("9be04a"), "green": Color("3fbf5a"), "teal": Color("38c9b0"), "sky": Color("6cc6f0"), "blue": Color("3b5fe0"), "violet": Color("9a4fe0"), "pink": Color("ef7ab8"), "white": Color("f2efe8"), "black": Color("3a3436")}
+			var tint: Color = potion_colours.get(str(event.get("color", "")), Color("c8323a"))
+			match fx_kind:
+				"potion_throw":
+					particles.burst(fx_point, tint, 22, 200.0, 0.6, Vector2.ZERO, PI, 3.0, 3.0)
+					particles.splat(fx_point + Vector2(0, 4), tint.darkened(0.3), 0.6, float(event.get("r", 50.0)) * 0.5)
+					_play_any(["potion_break", "crate_break", "break_bone"], 0.08)
+				"potion_blast":
+					particles.kick(fx_point, 30.0, 0.8)
+					particles.burst(fx_point, Color("f7a23a"), 26, 260.0, 0.6, Vector2.ZERO, PI, 4.0, 4.0)
+					_fx_spawn("explosion", fx_point, 0.0, 1.0)
+					_add_shake(0.3)
+					_play_any(["blast"], 0.05)
+				"drink":
+					particles.burst(fx_point + Vector2(0, -16), tint, 10, 70.0, 0.6, Vector2.UP, 1.0, 3.0, 3.0)
+					_play_any(["drink", "perk"], 0.05)
+				"curse":
+					particles.burst(fx_point, Color("5a2a7a"), 20, 120.0, 0.8, Vector2.UP, 1.4, 4.0, 4.0)
+					_play_any(["attack_roar", "blast"], 0.05)
+				"cleanse":
+					particles.burst(fx_point, Color("f4d27a"), 24, 160.0, 0.8, Vector2.UP, 1.6, 3.0, 3.0)
+					_fx_spawn("level_up", fx_point + Vector2(0, 12), 0.0, 1.0)
+					_play_any(["room_clear", "perk"], 0.0)
+				"identify":
+					particles.burst(fx_point, Color("8fd8e6"), 16, 120.0, 0.6, Vector2.UP, 1.4, 3.0, 3.0)
+					_play_any(["perk"], 0.05)
+		elif fx_kind == "zone_burst":
+			# A boss move lands: dust, ice, poison, void or bone, by its style.
+			var colours := {"void": Color("c06bd8"), "poison": Color("8fc84a"), "ice": Color("9fe3ee"), "frost": Color("bff0f7"), "quake": Color("b08a5a"), "spikes": Color("e6dcc6"), "bone": Color("e6dcc6"), "flesh": Color("c8323a"), "fire": Color("f7883a"), "curse": Color("8a6be0")}
+			var style := str(event.get("style", "quake"))
+			var tint: Color = colours.get(style, Color("b08a5a"))
+			var size := float(event.get("r", 30.0))
+			particles.burst(fx_point, tint, clampi(int(size * 0.4), 6, 28), 120.0 + size, 0.5, Vector2.ZERO, PI, 3.0, 3.0)
+			if style in ["quake", "spikes", "bone"]: particles.kick(fx_point, size * 0.6, 0.5)
+			if size >= 80.0: _add_shake(0.25)
+			_play_any(["blast", "break_bone"] if style in ["quake", "spikes", "bone"] else ["frost", "blast"] if style in ["ice", "frost"] else ["blast"], 0.08)
+		elif fx_kind in ["rage", "collapse"]:
+			particles.burst(fx_point, Color("ff4a3a") if fx_kind == "rage" else Color("e6dcc6"), 24, 220.0, 0.7, Vector2.ZERO, PI, 4.0, 4.0)
+			_add_shake(0.5)
+			_play_any(["attack_roar", "blast"], 0.0)
+		elif fx_kind == "armor":
+			particles.burst(fx_point, Color("bff0f7"), 14, 90.0, 0.6, Vector2.UP, 1.4, 3.0, 3.0)
+			_play_any(["frost", "perk"], 0.05)
+		elif fx_kind == "blink":
+			particles.burst(fx_point, Color("c06bd8"), 16, 160.0, 0.5, Vector2.ZERO, PI, 3.0, 3.0)
+			_fx_spawn("void_burst", fx_point, 0.0, 0.8)
+		elif fx_kind in ["ice_block_break", "bone_cage_break"]:
+			particles.burst(fx_point, Color("9fe3ee") if fx_kind == "ice_block_break" else Color("e6dcc6"), 14, 180.0, 0.6, Vector2.ZERO, PI, 3.0, 3.0)
+			_play_any(["frost", "break_bone"] if fx_kind == "ice_block_break" else ["break_bone"], 0.08)
+		elif fx_kind == "mimic_spring":
+			# The chest was a Mimik: splinters, a snap and a hard shake.
+			particles.kick(fx_point, 24.0, 0.8)
+			particles.burst(fx_point, Color("b8864a"), 14, 220.0, 0.6, Vector2.ZERO, PI, 3.0, 4.0)
+			particles.burst(fx_point, Color("c8323a"), 6, 160.0, 0.5, Vector2.UP, 1.0, 3.0, 3.0)
+			_fx_spawn("wood_burst", fx_point, 0.0, 1.6)
+			_add_shake(0.4)
+			_play_any(["attack_bite", "chest_open"], 0.0)
+			_play_any(["attack_roar", "hurt"], 0.05)
 		elif fx_kind == "loot_taken":
 			_fx_spawn("pickup", fx_point, 0.0, 1.6)
 			_play("perk")
@@ -162,7 +222,10 @@ func observe(snapshot: Dictionary, local_peer: int) -> void:
 		var key := "%d:%d" % [int(event.get("x", 0)), int(event.get("y", 0))]
 		if _blasts.has(key): continue
 		_blasts[key] = _clock
-		_fx_spawn("magic_burst", Vector2(float(event.get("x", 0)), float(event.get("y", 0))), 0.0, 1.2)
+		# A found staff's splash bursts in its own glow colour; otherwise the emerald burst.
+		var glow := str(snapshot.get("players", {}).get(int(event.get("o", 0)), {}).get("glow", ""))
+		if not glow.is_empty(): _fx_spawn("spell_burst", Vector2(float(event.get("x", 0)), float(event.get("y", 0))), 0.0, 1.1, Color(glow).lightened(0.15))
+		else: _fx_spawn("magic_burst", Vector2(float(event.get("x", 0)), float(event.get("y", 0))), 0.0, 1.2)
 		_play("blast")
 	var seen: Dictionary = {}
 	for value: Variant in snapshot.get("enemies", []):
@@ -259,14 +322,20 @@ const WALL_STYLES := {"fire": ["fire_burst", Color("ff9a3a"), Color("3a2418")], 
 
 ## Something struck a wall at `point` (normal back to the floor): stone chips
 ## drop, a crack remains; metal and arrows spark, magic splashes along the wall.
-func _wall_hit(point: Vector2, normal: Vector2, style: String) -> void:
+## glow: a found bow's or staff's colour; its shots splash in that colour.
+func _wall_hit(point: Vector2, normal: Vector2, style: String, glow: String = "") -> void:
 	if normal == Vector2.ZERO: normal = Vector2.DOWN
 	var out := point + normal * 4.0
 	var along := normal.orthogonal()
 	particles.burst(out, Color("8f7f70"), 5, 120.0, 0.55, normal + Vector2(0, 0.6), 0.9, 2.0, 2.5)
 	particles.burst(out, Color("c9b49a"), 3, 70.0, 0.7, Vector2(0, 1), 0.5, 2.0, 1.5)
 	particles.crack(point, normal)
-	if WALL_STYLES.has(style):
+	if not glow.is_empty() and style == "magic":
+		var tint := Color(glow)
+		_fx_spawn("spell_burst", out, 0.0, 0.6, tint.lightened(0.15))
+		for side in [-1.0, 1.0]: particles.burst(out, tint.lightened(0.2), 6, 150.0, 0.45, along * side + normal * 0.25, 0.35, 2.0, 4.0, "spark")
+		particles.splat(point, tint.darkened(0.6), 0.35, 4.0, along)
+	elif WALL_STYLES.has(style):
 		var data: Array = WALL_STYLES[style]
 		_fx_spawn(str(data[0]), out, 0.0, 0.55)
 		if style == "fire":

@@ -73,6 +73,7 @@ func shoot(id: int, aim: Vector2) -> void:
 	var direction: Vector2 = aim.normalized()
 	if direction.is_zero_approx(): direction = Vector2.RIGHT
 	var damage: float = float(player.damage)
+	if "player_effects" in _game: damage *= _game.player_effects.damage_scale(player)
 	if _b(player,"heavy") > 0: damage *= 1.0+_b(player,"heavy")
 	if not bool(player.get("moving",false)): damage *= 1.0+_b(player,"focus")
 	if _low_health(player): damage *= 1.0+_b(player,"berserk")
@@ -119,6 +120,7 @@ func melee(id: int, aim: Vector2) -> void:
 	var direction: Vector2 = aim.normalized()
 	if direction.is_zero_approx(): direction = Vector2.RIGHT
 	var damage: float = float(player.damage)
+	if "player_effects" in _game: damage *= _game.player_effects.damage_scale(player)
 	if _b(player,"heavy") > 0: damage *= 1.0+_b(player,"heavy")
 	if not bool(player.get("moving",false)): damage *= 1.0+_b(player,"focus")
 	if _low_health(player): damage *= 1.0+_b(player,"berserk")
@@ -176,7 +178,7 @@ func splash(bullet: Dictionary) -> void:
 		var push: Vector2 = (Vector2(enemy.pos)-point).normalized() if point.distance_to(enemy.pos) > 0.1 else Vector2.RIGHT
 		_pending_part(enemy,point)
 		_game._damage_enemy(enemy,float(bullet.damage)*_m("splash_damage_scale",0.5),push,owner,true)
-	_event("blast",point,point)
+	_event("blast",point,point,owner)
 
 func _spawn_projectile(player: Dictionary, id: int, aim: Vector2, offset: Vector2, damage: float, speed: float, critical: bool, primary: bool, short_range: bool = false) -> void:
 	var muzzle: Vector2 = player.pos + offset + aim*(float(_game.balance.player.radius)+1.5)
@@ -424,12 +426,15 @@ func _area(point: Vector2, radius: float, damage: float, owner: int, excluded: A
 		_secondary_left -= 1
 		_pending_part(target,point)
 		_game._damage_enemy(target,damage,(Vector2(target.pos)-point).normalized(),owner,false)
-	_event("blast",point,point)
+	_event("blast",point,point,owner)
 
-func _event(kind: String, from: Vector2, to: Vector2) -> void:
+## owner > 0 names the hero whose shot caused it (clients tint the burst in that weapon's glow).
+func _event(kind: String, from: Vector2, to: Vector2, owner: int = 0) -> void:
 	var maximum: int = int(_m("max_effect_events",32))
 	if _events.size() >= maximum: _events.pop_front()
-	_events.append({"kind":kind,"x":from.x,"y":from.y,"tx":to.x,"ty":to.y,"time":_m("event_duration",0.22)})
+	var event: Dictionary = {"kind":kind,"x":from.x,"y":from.y,"tx":to.x,"ty":to.y,"time":_m("event_duration",0.22)}
+	if owner > 0: event.o = owner
+	_events.append(event)
 
 ## Small primitive-only events travel with the authoritative snapshot.
 func visual_events() -> Array[Dictionary]:

@@ -105,7 +105,9 @@ func _run() -> void:
 	for i in range(30): game._simulate_enemies(1.0 / 30.0)
 	check(int(player.hp) < 8, "a player in the beam is hurt")
 	var beam_end: Vector2 = boss.beam_to
-	check(Vector2(boss.pos).distance_to(beam_end) <= float(game.balance.void_boss.attacks.beam.range) + 8.0, "the beam ends at a wall or its range")
+	# The beam runs on until it meets a wall (user request 2026-10-28).
+	var beyond: Vector2 = beam_end + (beam_end - Vector2(boss.pos)).normalized() * 12.0
+	check(Dungeon.segment_blocked(beam_end, beyond, 2.0, game.current_layout), "the beam ends at a wall")
 	for i in range(80): game._simulate_enemies(1.0 / 30.0)
 	check(not boss.has("exposed_action") and not boss.has("beam_to"), "after the beam the eye closes again")
 

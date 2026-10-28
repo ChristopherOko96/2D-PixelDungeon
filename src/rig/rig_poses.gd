@@ -81,6 +81,7 @@ static func pose(rig: Dictionary, a: Dictionary) -> Dictionary:
 		"brute": return brute(rig, a)
 		"void": return void_lord(rig, a)
 		"bomber": return bomber(rig, a)
+		"mimic": return mimic(rig, a)
 	return blank()
 
 
@@ -469,4 +470,51 @@ static func bomber(rig: Dictionary, a: Dictionary) -> Dictionary:
 			pose.whole.dx = -2.0 * k
 			pose.whole.sx = 1.0 + 0.2 * k
 			pose.whole.sy = 1.0 - 0.15 * k
+	return pose
+
+
+## Mimik: a chest that hops after the heroes and chomps (frame 0 shut, 1 teeth,
+## 2 wide open). Each hop squashes on landing; the bite opens the lid wide,
+## lunges and snaps shut on the strike.
+static func mimic(_rig: Dictionary, a: Dictionary) -> Dictionary:
+	var pose := blank()
+	var t: float = a.t
+	pose.whole.pivot = Vector2(8, 15)
+	pose.frames = {"body": 0}
+	if a.moving:
+		var hop := fmod(t, 0.42) / 0.42
+		var air := sin(hop * PI)
+		pose.whole.dy = -7.0 * air
+		pose.whole.sy = 1.0 + 0.12 * air - (0.18 * (1.0 - air) if hop > 0.85 or hop < 0.12 else 0.0)
+		pose.whole.sx = 2.0 - pose.whole.sy
+		pose.whole.rot = 0.08 * sin(hop * TAU)
+		pose.frames = {"body": 1 if air > 0.35 else 0}
+	else:
+		# Waiting: a slow, hungry breath with the teeth showing now and then.
+		pose.whole.sy = 1.0 + 0.04 * sin(t * TAU / 1.1)
+		pose.whole.sx = 2.0 - pose.whole.sy
+		pose.frames = {"body": 1 if fmod(t, 2.4) < 0.5 else 0}
+	var u: float = a.u
+	match str(a.clip):
+		"attack":
+			var coil := ease_in_out(seg(u, 0.0, 0.45))
+			var snap := ease_out(seg(u, 0.45, 0.6))
+			var back := ease_in_out(seg(u, 0.65, 1.0))
+			pose.whole.dx = (-2.0 * coil + 7.0 * snap) * (1.0 - back)
+			pose.whole.dy = -4.0 * coil * (1.0 - snap)
+			pose.whole.sy = 1.0 + 0.2 * coil - 0.25 * snap * (1.0 - back)
+			pose.whole.sx = 2.0 - pose.whole.sy
+			pose.frames = {"body": 2 if coil > 0.2 and snap < 0.6 else 0 if snap >= 0.6 and back < 0.5 else 1}
+		"hit":
+			var k := 1.0 - ease_out(u)
+			pose.whole.dx = -3.0 * k
+			pose.whole.sy = 1.0 - 0.2 * k
+			pose.whole.sx = 1.0 + 0.15 * k
+			pose.frames = {"body": 2}
+		"death":
+			var k := ease_in(seg(u, 0.0, 0.5))
+			pose.whole.rot = -(PI / 2.0) * k
+			pose.whole.dy = 2.0 * k
+			pose.frames = {"body": 2}
+			P(pose, "body").alpha = 1.0 - ease_in(seg(u, 0.55, 1.0))
 	return pose

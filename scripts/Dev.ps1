@@ -159,8 +159,8 @@ switch ($Action) {
         Write-Host "Started host process $($process.Id), UDP port $Port."
     }
     'DungeonEditor' {
-        $arguments = @('--path', $repositoryRoot, '--windowed', 'res://src/dungeon_editor.tscn', '--', '--blank')
-        if ($DungeonFile) { $arguments = @('--path', $repositoryRoot, '--windowed', 'res://src/dungeon_editor.tscn', '--', '--draft', $DungeonFile) }
+        # The game opens straight into the Dungeon-Werkstatt (main menu EDITOR).
+        $arguments = @('--path', $repositoryRoot, '--windowed', '--', '--werkstatt')
         # Explicit interactive authoring window, also used by Dungeon-Editor.cmd.
         Start-Process -FilePath $editorPath -ArgumentList (ConvertTo-ProcessArguments $arguments) `
             -WorkingDirectory $repositoryRoot -WindowStyle Normal | Out-Null

@@ -1617,5 +1617,13 @@
     "vital": true
    }
   }
+ },
+ "mimic": {
+  "_note": "Mimik: a 0x72 chest that bites (chest_mimic_open_anim). frames: 0 closed (same as a normal chest), 1 teeth, 2 open mouth. The pose (rig_poses.gd mimic) hops and chomps.",
+  "frames": ["res://assets/sprites/0x72/chest_mimic_open_anim_f0.png", "res://assets/sprites/0x72/chest_mimic_open_anim_f1.png", "res://assets/sprites/0x72/chest_mimic_open_anim_f2.png"],
+  "fps": 8,
+  "ground": [8, 15],
+  "width": 8,
+  "parts": {"body": {"hp": 1, "label": "Truhe", "vital": true}}
  }
 }

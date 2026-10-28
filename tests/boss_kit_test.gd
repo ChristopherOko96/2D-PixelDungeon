@@ -5,7 +5,7 @@ extends SceneTree
 ## kit bosses take no knockback, crystals guard the core, the last stand hurts
 ## outside the safe circles only, every attack does its part, the three mini
 ## bosses have two phases (the commander's shield blocks from the front), the
-## last bar ends the fight, and hell guardians keep their old fight.
+## last bar ends the fight, and hell guardians (hell_monsters.gd) have no kit.
 
 const FrostScene = preload("res://src/hell/frost_dungeon.tscn")
 const HellScene = preload("res://src/hell/hell_dungeon.tscn")
@@ -53,7 +53,12 @@ func _boss_game(scene: PackedScene, n: int) -> Array:
 	game.player.y = (hall.by + hall.bh / 2.0 + 3.0) * 96.0
 	game.state.room = hall.index
 	hall.fight = true
-	game._spawn_mob(hall.index, Vector2((hall.bx + hall.bw / 2.0) * 96.0, (hall.by + hall.bh / 2.0) * 96.0), "boss")
+	var at := Vector2((hall.bx + hall.bw / 2.0) * 96.0, (hall.by + hall.bh / 2.0) * 96.0)
+	if game.monsters != null:
+		# the hell world spawns its own floor boss through the hell monsters
+		game.monsters.spawn(hall.index, at, game.monsters.boss_id(n), true)
+	else:
+		game._spawn_mob(hall.index, at, "boss")
 	var boss: Dictionary = game.mobs[game.mobs.size() - 1]
 	boss.spawn = 0.0
 	return [game, boss]

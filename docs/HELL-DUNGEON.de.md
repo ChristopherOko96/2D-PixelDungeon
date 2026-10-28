@@ -1,9 +1,11 @@
 # Hell-Dungeon
 
 Stand 28.10.2026. Neuer Einzelspieler-Modus mit zehn Etagen im Höllenstil aus `rooms.zip`.
-Start: Hauptmenü → **LEVEL-AUSWAHL (DEBUG)** → Welt **HELL-DUNGEON** → je Etage **START** (Eingang) oder
-**BOSS** (direkt im Bossraum, der Kampf beginnt sofort); außerdem `Hell-Dungeon.cmd` oder `scripts/Dev.ps1 HellDungeon`.
-Spielfigur und Gegner sind Platzhalter; Monster werden später gesondert entworfen.
+Start als **Story 3**: Hauptmenü → **STORY-MODUS** → **Story 3 · Der Hell-Dungeon** → Heldenwahl. Debug: Hauptmenü →
+**LEVEL-AUSWAHL (DEBUG)** → Welt **HELL-DUNGEON** → je Etage **START** (Eingang) oder **BOSS** (direkt im Bossraum, der
+Kampf beginnt sofort; Held ist dann die Standardklasse Bogenschütze); außerdem `Hell-Dungeon.cmd` oder
+`scripts/Dev.ps1 HellDungeon`. Story 4 steht als **BALD VERFÜGBAR** gesperrt in der Liste. Monster und Bosse stammen aus der Vorschau (`tools/hell_dungeon/hell_monsters.js`);
+Themen-Welten mit eigenen Gegnern (`mobs` im Thema, z. B. die Frostgruft) behalten ihre eigenen.
 
 ## Regeln
 
@@ -28,11 +30,28 @@ Spielfigur und Gegner sind Platzhalter; Monster werden später gesondert entworf
 - **Übertrag:** Herzen, Runensteine, Segen und der Klon-Skill wandern durch das Portal mit.
 - **Kürzester Weg:** Der Boss ist nie erst nach allen Räumen erreichbar (11–17 von 22–31 Räumen,
   geprüft in `tests/hell_floor_data_test.gd`). Erkunden bringt Tresore, Herzen und Runensteine.
-- **Tiefe:** mehr Lava, Stacheln und Schlote, zähere und schnellere Gegner, ab Etage 4 Feuerspucker,
-  Bosse mit Feuerringen; Zwischenbosse auf 3, 6 und 9, der Höllenfürst auf 10. Optik: dunkler, roter Schleier.
+- **Tiefe:** mehr Lava, Stacheln und Schlote, zähere und schnellere Gegner. Optik: dunkler, roter Schleier.
+- **Monster:** acht Arten (Glutschädel, Höllenhund, Glutimp, Brandskelett, Magmaschleim, Aschenpriester,
+  Kettenschinder, Peingeist); jede Etage hat ihre eigene Auswahl. Angriffe zeigen vorher eine Warnung am Boden.
+  Von allen bereiten Angriffen kommt der zuerst, der am längsten wartet.
+- **Bosse:** Glutwächter (1), Dreischlund (2), Kesselbrut (4), Seelenhirte (5), Kerkermeister (7),
+  Klagender Hüter (8). Der Raum öffnet sich, wenn der Boss und alle Helfer gefallen sind.
+- **Ignaroth** ist ein Drache in vier Phasen auf Etage 3, 6, 9 und 10. Phase 1 und 2 (Salamander, Jungdrache)
+  brechen aus dem Boden, springen, dashen, spucken Feuer und graben sich unter die Figur. Phase 3 und 4
+  (Glutdrache, Obsidianform) fliegen ein, greifen mit Fächern, Feueratem, Ringen und Bombenflügen an und sind
+  in der Luft unverwundbar. Phase 4 ruft violette Echos der drei früheren Formen. Auf 3, 6 und 9 verwandelt
+  er sich bei 0 LP in die nächste Form und flieht; erst auf Etage 10 stirbt er.
 
-Steuerung: WASD laufen, Pfeiltasten oder linke Maustaste schießen, E/Leertaste Aktion, Q Klon, M Karte,
-L Licht, R Etage neu, 1–0 Etage wählen, Esc Hauptmenü.
+- **Helden** wie in den anderen Welten (`assets/data/hell_theme.json`): Schwertkämpfer, Bogenschütze und Magier mit
+  eigener Figur, Waffe und Herzen, Erfahrung je besiegtem Monster (`monsters.exp`), Level-ups mit Heilung und Karten,
+  vier Klassen-Fähigkeiten auf 1–4, das Klassen-Relikt im Geheimraum einer Etage (3–6), Sounds, Musik und das
+  gestaltete HUD mit Auftragsliste. Die Werte teilt sich die Hölle mit der Frostgruft (`hero_from`/`hero_keys`).
+  Betäuben, Verlangsamen und Brennen wirken auf die Höllen-Monster; Gravitationswände halten sie und ihre Schüsse
+  auf. Kein Hieb, Schuss oder Skill trifft Ignaroth, solange er fliegt, eingegraben ist oder sich verwandelt.
+
+Steuerung: WASD laufen, Pfeiltasten oder linke Maustaste angreifen, 1–4 Fähigkeiten, 7/8/9 Karte wählen,
+T Relikt/Waffe wechseln, C/Tab Status, E/Leertaste Aktion, Q Klon, M Karte, L Licht, R Etage neu,
+F1–F10 Etage wählen, Esc Hauptmenü.
 
 ## Aufbau
 
@@ -41,10 +60,14 @@ L Licht, R Etage neu, 1–0 Etage wählen, Esc Hauptmenü.
 | Etagen-Kern, Generator, Bild-Werkzeuge, Browser-Vorschau | `tools/hell_dungeon/` (siehe README dort) |
 | Gebackene Etagen | `assets/data/hell_floors.json` (aus `bake_floors.js`) |
 | Spielwerte | `assets/data/hell_balance.json` |
+| Thema mit Heldensystemen (Story 3) | `assets/data/hell_theme.json` (übernimmt Klassen, Level, Fähigkeiten, Relikte, Karten, Sounds aus `frost_theme.json`; `extra_sprites` lädt Relikt- und Golembilder aus `assets/sprites/frost/`) |
+| Story-Eintrag | `assets/data/story_campaigns.json` (`hell_dungeon` = Story 3, `story_4` gesperrt) |
 | Grafiken (134, Weltmaßstab) | `assets/sprites/hell/` mit `manifest.json` und `LICENSE-NOTE.md` |
-| Laufzeit | `src/hell/hell_game.gd` (Szene `hell_dungeon.tscn`), `hell_floor_data.gd`, `hell_walls.gd`, `hell_rules.gd` |
-| Tests | `tests/hell_floor_data_test.gd`, `tests/hell_walls_test.gd`, `tests/hell_rules_test.gd`, `tests/hell_boss_start_test.gd` |
-| Nachweise | `production/qa/evidence/hell-dungeon/` (`scripts/capture_hell_dungeon.gd`) |
+| Monster-Atlanten (18, je Zeile eine Animation) | `assets/sprites/hell/monsters/` aus `tools/hell_dungeon/export_monsters.js` |
+| Monsterdaten | `assets/data/hell_monsters.json` (generiert, nicht von Hand ändern) |
+| Laufzeit | `src/hell/hell_game.gd` (Szene `hell_dungeon.tscn`), `hell_floor_data.gd`, `hell_walls.gd`, `hell_rules.gd`, `hell_monsters.gd` (Monster-Laufzeit), `hell_monster_rules.gd` (reine Regeln) |
+| Tests | `tests/hell_floor_data_test.gd`, `tests/hell_walls_test.gd`, `tests/hell_rules_test.gd`, `tests/hell_boss_start_test.gd`, `tests/hell_monster_rules_test.gd`, `tests/hell_monsters_integration_test.gd`, `tests/hell_hero_systems_test.gd`; Story-Menü in `tests/main_menu_flow_test.gd` |
+| Nachweise | `production/qa/evidence/hell-dungeon/` (`scripts/capture_hell_dungeon.gd`), `production/qa/evidence/hell-monsters/` (`scripts/capture_hell_monsters.gd`), `production/qa/evidence/hell-story/` (`scripts/capture_hell_story.gd`) |
 
 Der Modus ist bewusst vom vernetzten Krypta-Spiel (`src/game.gd`) getrennt: kein Host, keine Snapshots.
 
@@ -77,16 +100,23 @@ Der Modus ist bewusst vom vernetzten Krypta-Spiel (`src/game.gd`) getrennt: kein
 | `player` | `hp` (halbe Herzen zu Beginn), `max_hp_cap`, `speed` (px/s), `lava_slow` (Faktor), `invulnerable` (s nach Treffer), `half_width`/`height` (Kollisionsbox) |
 | `shot` | `speed` (px/s), `life` (s), `cooldown` (s) |
 | `enemy_shot` | `speed`, `ring_speed` (px/s), `life` (s), `hit_radius` (px) |
-| `mobs` | je Platzhalter `hp`, `speed`, `scale`, `radius`; `spucker.fire_every` (s), `keep_away` (px); `boss.max_adds` |
+| `mobs` | Platzhalter-Gegner der Themen-Welten ohne eigene Werte: je Art `hp`, `speed`, `scale`, `radius`; `spucker.fire_every` (s), `keep_away` (px); `boss.max_adds` |
+| `monsters` | Höllen-Monster: `hit_mob`/`hit_boss` (halbe Herzen je Treffer), `contact_reach` (px), `lord_face_deadzone` (px), `echo_hp_share` (Anteil der Boss-LP je Echo), `echo_kinds` (Angriffe der Echos), `burrow_speed` (px/s), `flight_altitude` und `immune_altitude` (px) `spawn_grow` (s), `seal_demon` (Monster-ID der Siegel-Dämonen) und `exp` (Erfahrung je Monster-ID) |
 | `hazards` | `spike_period` (s je Phase), `vent_period`, `vent_burst` (s), `vent_radius` (px) |
 | `drops` | Wahrscheinlichkeit für Herz und Runenstein nach einem Kampf |
 | `vault` | Runensteine `gems_base` + `gems_per_floor` × Etage, `heart_containers` |
 | `view` | sichtbare Weltbreite, Basisbreite, Licht der Figur, max. Lichter im Shader, Helligkeitsstufen |
-| `seal` | `bless_chance` (Anteil Segen), `demons` (Anzahl), `demon_kind` (Gegnerart) |
+| `seal` | `bless_chance` (Anteil Segen), `demons` (Anzahl), `demon_kind` (Gegnerart in Themen-Welten) |
 | `blessings` | `dmg` (+Schaden), `rate_mul`/`rate_min` (Schussabstand), `speed_mul`, `range_mul`, `heart` (halbe Herzen) |
 | `pit` | `damage` (halbe Herzen), `reach_x`/`reach_y` (px um die Grubenmitte) |
 | `clone` | `floor` (Etage des Bosses mit Skill), `duration` (s), `fire_every` (s), `range` (px), `follow`/`weave` (px) |
 | `sequence_chest` | `gems_base` (+ Etage) und `heart` der Belohnungstruhe |
+
+## Monster neu exportieren
+
+Nach Änderungen an `tools/hell_dungeon/hell_monsters.js`: `node tools/hell_dungeon/export_monsters.js`
+schreibt Atlanten und `hell_monsters.json`, danach Godot einmal importieren lassen.
+Kampfwerte stehen in `STATS` der JS-Datei, die Etagen-Zuordnung in `FLOORS`.
 
 ## Themen: Frostgruft (Story 2)
 
@@ -129,5 +159,5 @@ Die sechs weiteren Subklassen (je 40 Kristalle, `src/hell/sub_kit.gd`) bringen e
 
 ## Grenzen
 
-Einzelspieler, keine Netzwerk-Replikation. Gegner, Boss und Figur sind Platzhalter. Lizenz der
+Einzelspieler, keine Netzwerk-Replikation. Lizenz der
 Höllen-Grafiken ungeklärt (`assets/sprites/hell/LICENSE-NOTE.md`).

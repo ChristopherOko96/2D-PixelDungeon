@@ -11,7 +11,7 @@
     "skeleton": "bone", "skeleton_archer": "bone", "skeleton_guard": "bone", "knochenkoloss": "bone",
     "tiny_zombie": "slime", "moderkoloss": "slime",
     "ice_zombie": "frost", "frostleiche": "frost",
-    "necromancer": "blood", "player": "blood",
+    "necromancer": "blood", "player": "blood", "mimic": "blood",
     "void_bomber": "void", "boss": "void"
   },
   "default": "blood"
