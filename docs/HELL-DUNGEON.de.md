@@ -1,7 +1,8 @@
 # Hell-Dungeon
 
 Stand 28.10.2026. Neuer Einzelspieler-Modus mit zehn Etagen im Höllenstil aus `rooms.zip`.
-Start: Hauptmenü → **HELL-DUNGEON (NEU)**, `Hell-Dungeon.cmd` oder `scripts/Dev.ps1 HellDungeon`.
+Start: Hauptmenü → **LEVEL-AUSWAHL (DEBUG)** → Welt **HELL-DUNGEON** → je Etage **START** (Eingang) oder
+**BOSS** (direkt im Bossraum, der Kampf beginnt sofort); außerdem `Hell-Dungeon.cmd` oder `scripts/Dev.ps1 HellDungeon`.
 Spielfigur und Gegner sind Platzhalter; Monster werden später gesondert entworfen.
 
 ## Regeln
@@ -42,7 +43,7 @@ L Licht, R Etage neu, 1–0 Etage wählen, Esc Hauptmenü.
 | Spielwerte | `assets/data/hell_balance.json` |
 | Grafiken (134, Weltmaßstab) | `assets/sprites/hell/` mit `manifest.json` und `LICENSE-NOTE.md` |
 | Laufzeit | `src/hell/hell_game.gd` (Szene `hell_dungeon.tscn`), `hell_floor_data.gd`, `hell_walls.gd`, `hell_rules.gd` |
-| Tests | `tests/hell_floor_data_test.gd`, `tests/hell_walls_test.gd`, `tests/hell_rules_test.gd` |
+| Tests | `tests/hell_floor_data_test.gd`, `tests/hell_walls_test.gd`, `tests/hell_rules_test.gd`, `tests/hell_boss_start_test.gd` |
 | Nachweise | `production/qa/evidence/hell-dungeon/` (`scripts/capture_hell_dungeon.gd`) |
 
 Der Modus ist bewusst vom vernetzten Krypta-Spiel (`src/game.gd`) getrennt: kein Host, keine Snapshots.

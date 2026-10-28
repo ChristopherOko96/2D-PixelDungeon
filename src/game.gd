@@ -24,6 +24,8 @@ const PerkRules = preload("res://src/perk_rules.gd")
 const PerkCombat = preload("res://src/perk_combat.gd")
 const CryptEnemyAI = preload("res://src/crypt_enemy_ai.gd")
 const MainMenu = preload("res://src/main_menu.gd")
+const HellFloorData = preload("res://src/hell/hell_floor_data.gd")
+const HellScene = preload("res://src/hell/hell_dungeon.tscn")
 const HeroClass = preload("res://src/player/hero_class.gd")
 const TeamProgress = preload("res://src/player/team_progress.gd")
 const HeroSkills = preload("res://src/combat/hero_skills.gd")
@@ -2023,6 +2025,7 @@ func _build_main_menu() -> void:
 	main_menu.weapons = balance.get("weapons",{})
 	main_menu.endless_available = false
 	main_menu.debug_entries = _debug_entries()
+	main_menu.hell_entries = _hell_entries()
 	ui.add_child(main_menu)
 	main_menu.start_requested.connect(_start_solo)
 	main_menu.settings_changed.connect(_apply_menu_settings)
@@ -2030,9 +2033,29 @@ func _build_main_menu() -> void:
 		menu_open = false
 		_refresh_ui())
 	main_menu.quit_requested.connect(func(): get_tree().quit())
-	main_menu.hell_requested.connect(func(): get_tree().change_scene_to_file("res://src/hell/hell_dungeon.tscn"))
+	main_menu.hell_requested.connect(_start_hell)
 	# Saved fullscreen is applied in _ready, only when the game opens on the menu.
 	view.shake_scale = 1.0 if bool(main_menu.settings.get("shake", true)) else 0.0
+
+
+## Hell-Dungeon world for the debug level choice: one entry per baked floor.
+func _hell_entries() -> Array:
+	var entries: Array = []
+	for f: Dictionary in HellFloorData.load_all():
+		entries.append({"floor": int(f.n), "title": str(f.title), "boss": str(f.boss.name)})
+	return entries
+
+
+## Leaves the crypt for the Hell-Dungeon scene on that floor, at its entrance
+## or right in its boss room.
+func _start_hell(floor_number: int, boss: bool) -> void:
+	var hell: Node = HellScene.instantiate()
+	hell.start_floor = floor_number
+	hell.start_at_boss = boss
+	var tree := get_tree()
+	tree.root.add_child(hell)
+	tree.current_scene = hell
+	queue_free()
 
 
 ## Debug level list for the current crypt floor: every room of floor 1 (the
