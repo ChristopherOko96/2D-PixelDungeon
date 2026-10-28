@@ -49,6 +49,8 @@ const THEME_DEFAULT := {
 
 ## Floor to open first; set before the node enters the tree (debug starts).
 @export var start_floor := 1
+## Debug start right inside the boss room of start_floor; the fight begins at once.
+@export var start_at_boss := false
 ## Theme JSON over THEME_DEFAULT; empty keeps the hell look.
 @export var theme_path := ""
 ## Hero class from theme.classes (menu choice); empty takes theme.default_class.
@@ -197,6 +199,8 @@ func _ready() -> void:
 	hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui.add_child(hud)
 	load_floor(clampi(start_floor, 1, floors_raw.size()), false)
+	if start_at_boss:
+		enter_boss_room()
 
 
 ## THEME_DEFAULT with the theme file's keys on top, then the key and colour lookups.
@@ -359,6 +363,38 @@ func load_floor(n: int, carry: bool) -> void:
 	for e: Dictionary in breakables:
 		e.max_hp = int(e.hp)
 	_respawn()
+	camera.position = Vector2(player.x, player.y)
+
+
+## Debug jump: puts the hero inside the boss room, two cells past the gate it
+## is reached through, with that gate open. The fight starts on the next frame.
+func enter_boss_room() -> void:
+	var boss := _room_of_type("boss")
+	var gate: Dictionary = {}
+	for i: int in boss.doors:
+		var d: Dictionary = W.doors[i]
+		if d.kind != "boss" and d.kind != "secret":
+			gate = d
+			if d.kind == "lock":
+				break
+	if gate.get("kind", "") == "lock":
+		gate.unlocked = true
+		state.used[gate.key] = true
+	var at := Vector2((boss.bx + boss.bw / 2.0) * C, (boss.by + boss.bh / 2.0) * C)
+	if not gate.is_empty():
+		var door := Vector2(gate.cx, gate.cy)
+		var best := INF
+		for c: Vector2i in boss.cells:
+			var p := Vector2((c.x + 0.5) * C, (c.y + 0.8) * C)
+			var score := absf(p.distance_to(door) - 2.5 * C)
+			if W.grid[c.y * W.cols + c.x] == 1 and score < best and _fully_inside(boss, p.x, p.y) and not box_blocked(_player_box(p.x, p.y).grow(48)):
+				best = score
+				at = p
+	player.x = at.x
+	player.y = at.y
+	state.room = boss.index
+	state.visited[boss.index] = true
+	state.banner = {"text": boss.name, "sub": "Debug-Start beim Boss", "t": 0.0}
 	camera.position = Vector2(player.x, player.y)
 
 
@@ -1443,11 +1479,18 @@ func _update_rooms() -> void:
 	var r: Dictionary = W.rooms[state.room]
 	if r.cleared or r.fight:
 		return
+	if _fully_inside(r, player.x, player.y):
+		_start_fight(r)
+
+
+## True when the hero at x, y stands inside room r with a margin on every side
+## (the point where a fight starts and the gates may close behind them).
+func _fully_inside(r: Dictionary, x: float, y: float) -> bool:
 	var hw := float(balance.player.half_width) + 40.0
 	for o: Vector2 in [Vector2(-hw, -60), Vector2(hw, -60), Vector2(-hw, 30), Vector2(hw, 30)]:
-		if _room_at_world(player.x + o.x, player.y + o.y) != r.index:
-			return
-	_start_fight(r)
+		if _room_at_world(x + o.x, y + o.y) != r.index:
+			return false
+	return true
 
 
 func _update_embers(dt: float) -> void:

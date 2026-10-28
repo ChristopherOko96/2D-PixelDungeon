@@ -1,7 +1,8 @@
 extends SceneTree
 ## Main menu wiring (step 1 of the main port): the game opens on the title
 ## screen, the story choice starts a solo crypt run, multiplayer opens the lobby, leaving
-## returns to the menu, and the debug level list jumps to rooms and floor 2.
+## returns to the menu, the debug level list jumps to rooms and floor 2, and the
+## level choice lists the worlds (crypt, Hell-Dungeon with start and boss per floor).
 ## Uses a disposable loopback host like pause_menu_test.
 const Game = preload("res://src/game.gd")
 var checked := 0
@@ -39,6 +40,7 @@ func _run() -> void:
 	await _test_story_one_starts_solo_run_and_leaving_returns_to_menu()
 	await _test_debug_room_jump_starts_in_that_room_with_earlier_rooms_cleared()
 	await _test_debug_floor_two_starts_on_the_next_floor()
+	await _test_level_choice_lists_worlds_and_hell_floors()
 	await _test_shake_option_scales_view_shake()
 	finish()
 
@@ -180,6 +182,40 @@ func _test_debug_floor_two_starts_on_the_next_floor() -> void:
 	game.main_menu._choose_class("archer")
 	# Assert
 	check(game.floor_index == 2 and game.room == 1 and game.phase == "combat", "the floor 2 entry starts in room 1 of floor 2")
+	game.queue_free()
+	await process_frame
+
+func _test_level_choice_lists_worlds_and_hell_floors() -> void:
+	# Arrange
+	var game = await _new_game()
+	var menu = game.main_menu
+	var picks: Array = []
+	menu.hell_requested.connect(func(floor_number: int, boss: bool): picks.append([floor_number, boss]))
+	# Act: the debug button opens the world choice first.
+	menu._open_debug()
+	# Assert
+	check(menu._debug_panel.visible and not menu._crypt_panel.visible and not menu._hell_panel.visible, "the level choice opens on the world list")
+	var labels: Array = []
+	for node: Node in menu.get_children():
+		if node is Button: labels.append((node as Button).text)
+	check(not labels.has("HELL-DUNGEON (NEU)"), "the title screen keeps only the level-choice button bottom left")
+	# Act: open each world.
+	menu._open_world("crypt")
+	check(menu._crypt_panel.visible and not menu._debug_panel.visible, "the crypt world shows its rooms and floors")
+	menu._open_world("hell")
+	check(menu._hell_panel.visible and not menu._crypt_panel.visible, "the Hell-Dungeon world shows its floors")
+	check(menu.hell_entries.size() == 10 and int(menu.hell_entries[0].floor) == 1 and int(menu.hell_entries[9].floor) == 10, "the Hell-Dungeon lists its ten floors in order")
+	var hell_buttons: Array = []
+	for node: Node in menu._hell_panel.get_children():
+		if node is Button: hell_buttons.append(node)
+	check(hell_buttons.size() == 21, "each hell floor has a start and a boss button, plus back")
+	check((hell_buttons[1] as Button).text.begins_with("BOSS · "), "the boss button names the floor's boss")
+	# Act: press floor 3's start and floor 3's boss without leaving the crypt scene.
+	menu.hell_requested.disconnect(game._start_hell)
+	(hell_buttons[4] as Button).pressed.emit()
+	(hell_buttons[5] as Button).pressed.emit()
+	# Assert
+	check(picks == [[3, false], [3, true]], "start and boss buttons request that floor at the entrance or the boss")
 	game.queue_free()
 	await process_frame
 
