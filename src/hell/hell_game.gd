@@ -2,7 +2,10 @@ extends Node2D
 ## Hell-Dungeon mode (single player): plays the ten baked hell floors from
 ## assets/data/hell_floors.json. Combat rooms lock until every enemy is down,
 ## colour keys open their own gates, spread fire braziers open the vault,
-## sequence plates reveal a secret room, and the portal leads one floor deeper.
+## sequence plates conjure a reward chest, a skull heap shot three times opens
+## a secret corridor, demon seals bless the hero or release demons, pits throw
+## the hero back to the start, the floor-9 boss grants the clone skill (Q), and
+## the portal leads one floor deeper.
 ## Enemies and hero are placeholders; values come from hell_balance.json.
 
 const FloorData = preload("res://src/hell/hell_floor_data.gd")
@@ -39,6 +42,9 @@ var mobs: Array = []
 var shots: Array = []
 var eshots: Array = []
 var embers: Array = []
+var breakables: Array = []
+var pits: Array = []
+var clone: Dictionary = {}
 var solid_grid: Dictionary = {}
 var door_at: Dictionary = {}
 var minimap: Array = []
@@ -122,7 +128,8 @@ func _layer(kind: String, z: int, area := Rect2()) -> Layer:
 
 # ---------- floors ----------
 
-## Builds floor n (1-10). With carry the hero keeps hearts and rune stones.
+## Builds floor n (1-10). With carry the hero keeps hearts, rune stones, seal
+## blessings and the paused clone skill.
 func load_floor(n: int, carry: bool) -> void:
 	W = FloorData.prepare(floors_raw[n - 1])
 	walls = Walls.build(W.grid, W.cols, W.rows, C)
@@ -139,17 +146,27 @@ func load_floor(n: int, carry: bool) -> void:
 			_chunk_nodes.append(_layer("back", 0, area))
 			_chunk_nodes.append(_layer("front", 20, area))
 	var start := _room_of_type("start")
-	var keep := {"hp": int(balance.player.hp), "max_hp": int(balance.player.hp), "gems": 0}
+	var keep := {"hp": int(balance.player.hp), "max_hp": int(balance.player.hp), "gems": 0, "dmg": 1.0,
+		"rate": float(balance.shot.cooldown), "speed_mul": 1.0, "range": float(balance.shot.life), "buffs": [],
+		"skill": {"owned": false, "active": false, "left": float(balance.clone.duration)}}
 	if carry and not state.is_empty():
-		keep = {"hp": state.hp, "max_hp": state.max_hp, "gems": state.gems}
+		keep = {"hp": state.hp, "max_hp": state.max_hp, "gems": state.gems, "dmg": state.dmg, "rate": state.rate,
+			"speed_mul": state.speed_mul, "range": state.range, "buffs": state.buffs, "skill": state.skill}
+		keep.skill.active = false
 	state = {"floor": n, "keys": {"A": false, "B": false, "C": false}, "used": {"A": false, "B": false, "C": false},
 		"visited": {start.index: true}, "room": start.index, "banner": {"text": W.title, "sub": "Etage %d · %s" % [n, W.circle], "t": 0.0},
 		"toasts": [], "inv": 0.0, "dead": 0.0, "map": false, "light": state.get("light", true), "t": 0.0, "won": false, "won_t": 0.0,
-		"cool": 0.0, "flash": 0.0, "boss_dead": false, "hp": keep.hp, "max_hp": keep.max_hp, "gems": keep.gems}
+		"cool": 0.0, "flash": 0.0, "boss_dead": false}
+	state.merge(keep)
 	mobs = []
 	shots = []
 	eshots = []
 	embers = []
+	clone = {}
+	breakables = W.ents.filter(func(e: Dictionary) -> bool: return e.type == "seal" or e.type == "skullheap")
+	pits = W.ents.filter(func(e: Dictionary) -> bool: return e.type == "pit")
+	for e: Dictionary in breakables:
+		e.max_hp = int(e.hp)
 	_respawn()
 	camera.position = Vector2(player.x, player.y)
 
@@ -254,7 +271,15 @@ func box_blocked(box: Rect2, avoid_lava := false) -> bool:
 			for s: Rect2 in solid_grid.get(cy * int(W.cols) + cx, []):
 				if s.intersects(box):
 					return true
+	for e: Dictionary in breakables:
+		if not e.get("broken", false) and _breakable_box(e).intersects(box):
+			return true
 	return false
+
+
+func _breakable_box(e: Dictionary) -> Rect2:
+	var hw := 42.0 if e.type == "seal" else 48.0
+	return Rect2(e.x - hw, e.y - 40.0, hw * 2.0, 40.0)
 
 
 func _player_box(x: float, y: float) -> Rect2:
@@ -287,6 +312,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	match event.keycode:
 		KEY_E, KEY_SPACE, KEY_ENTER:
 			act()
+		KEY_Q:
+			use_skill()
 		KEY_M:
 			state.map = not state.map
 		KEY_L:
@@ -344,9 +371,7 @@ func _interactables() -> Array:
 					out.append({"e": e, "label": "Erst die Gegner besiegen" if W.rooms[e.room].fight else "Feuerschale entzünden", "p": Vector2(e.x, e.y - 30), "r": 115.0})
 	for d: Dictionary in W.doors:
 		var p := Vector2(d.cx, d.cy)
-		if d.kind == "secret" and not d.broken and not d.hidden:
-			out.append({"e": d, "label": "Rissige Wand aufbrechen", "p": Vector2(d.crack_x, d.crack_y), "r": 150.0})
-		elif d.kind == "lock" and not d.unlocked:
+		if d.kind == "lock" and not d.unlocked:
 			out.append({"e": d, "label": ("%s benutzen" if state.keys[d.key] else "Verschlossen: %s fehlt") % KEY_NAME[d.key], "p": p, "r": 190.0})
 		elif d.kind == "puzzle" and _door_closed(d) and not W.rooms[d.a].fight and not W.rooms[d.b].fight:
 			var g: Dictionary = W.groups[d.group]
@@ -402,6 +427,9 @@ func act() -> void:
 				if e.get("active", false):
 					state.won = true
 					state.won_t = 0.0
+					# the clone waits with its time left until Q on the next floor
+					state.skill.active = false
+					clone = {}
 				else:
 					_toast("Das Portal erwacht erst, wenn %s fällt." % W.boss.name)
 			"brazier":
@@ -416,10 +444,7 @@ func act() -> void:
 				else:
 					_toast("Feuerschale %d von %d entzündet." % [prog.x, prog.y])
 		return
-	if e.kind == "secret":
-		_open_secret(e)
-		_toast("Die Wand bricht. Ein Geheimraum liegt dahinter.")
-	elif e.kind == "lock":
+	if e.kind == "lock":
 		if state.keys[e.key]:
 			state.keys[e.key] = false
 			state.used[e.key] = true
@@ -448,6 +473,17 @@ func _solve_group(group: String) -> void:
 			opened = true
 	if opened:
 		_toast("Ein verborgener Gang öffnet sich. Ein Geheimraum ist erreichbar.")
+	elif g.get("reward", "") == "chest":
+		var at: Dictionary = {}
+		for e: Dictionary in W.ents:
+			if e.get("group", "") == group and (at.is_empty() or int(e.get("order", 0)) == 5):
+				at = e
+		var loot := {"gems": int(balance.sequence_chest.gems_base) + state.floor, "heart": bool(balance.sequence_chest.heart)}
+		var chest := {"type": "chest", "x": at.x, "y": at.y + 10.0, "room": at.room, "loot": loot, "magic": true}
+		W.ents.append(chest)
+		_add_solid(Rect2(chest.x - 40, chest.y - 32, 80, 32))
+		_burst(Vector2(at.x, at.y - 40), 40, true)
+		_toast("Die Platten glühen auf. Eine Belohnungstruhe erscheint!")
 	elif g.kind == "braziers":
 		_toast("Alle Feuerschalen brennen. Das Gitter zum Riesentresor hebt sich!" if g.get("spread", false) else "Alle Schalen brennen. Das Tor hebt sich.")
 	else:
@@ -458,8 +494,8 @@ func _fire(dir: Vector2) -> void:
 	if state.cool > 0.0 or dir == Vector2.ZERO:
 		return
 	var v := dir.normalized() * float(balance.shot.speed)
-	shots.append({"p": Vector2(player.x, player.y - 40), "v": v, "t": float(balance.shot.life)})
-	state.cool = float(balance.shot.cooldown)
+	shots.append({"p": Vector2(player.x, player.y - 40), "v": v, "t": float(state.range)})
+	state.cool = float(state.rate)
 	if absf(dir.x) > 0.01:
 		player.face = signf(dir.x)
 
@@ -503,7 +539,10 @@ func _start_fight(r: Dictionary) -> void:
 func _clear_room(r: Dictionary, at: Vector2) -> void:
 	r.fight = false
 	r.cleared = true
-	if r.drop != "":
+	# a room cleared a second time (seal demons) gives no second key or reward
+	var again: bool = r.get("rewarded", false)
+	r.rewarded = true
+	if r.drop != "" and not again:
 		_drop("key", r.index, at, {"key": r.drop})
 		_toast("Raum gesäubert. %s gefallen!" % KEY_NAME[r.drop])
 	elif r.type == "boss":
@@ -512,9 +551,15 @@ func _clear_room(r: Dictionary, at: Vector2) -> void:
 		for e: Dictionary in W.ents:
 			if e.type == "portal":
 				e.active = true
-		_toast("%s fällt. Die Portalkammer ist offen." % W.boss.name)
+		if state.floor == int(balance.clone.floor) and not state.skill.owned:
+			state.skill = {"owned": true, "active": false, "left": float(balance.clone.duration)}
+			_toast("Neuer Skill: Klon rufen (Q) – 2 Minuten Kampfgefährte.")
+		else:
+			_toast("%s fällt. Die Portalkammer ist offen." % W.boss.name)
 	else:
 		_toast("Raum gesäubert. Die Gitter heben sich.")
+	if again:
+		return
 	if r.reward != null:
 		if r.reward.get("heart", false):
 			_drop("heart", r.index, at)
@@ -539,6 +584,103 @@ func _enemy_shot(from: Vector2, dir: Vector2, speed: float) -> void:
 func _burst(at: Vector2, n: int, gold := false) -> void:
 	for k in range(n):
 		embers.append({"p": at, "v": Vector2(randf_range(-150, 150), randf_range(-210, 90)), "t": randf_range(0.35, 0.85), "big": n > 20, "gold": gold})
+
+
+# ---------- seals, skull heaps, pits and the clone ----------
+
+func _hit_breakable(e: Dictionary, at: Vector2) -> void:
+	e.hit = 0.15
+	_burst(at, 8)
+	if not Rules.hit_breakable(e):
+		return
+	_burst(Vector2(e.x, e.y - 40), 40)
+	if e.type == "skullheap":
+		_open_secret(W.doors[int(e.door)])
+		_toast("Der Schädelhaufen zerfällt. Ein versteckter Gang öffnet sich!")
+	else:
+		_break_seal(e)
+
+
+## A broken seal blesses the hero (bless_chance) or releases demons that lock the room again.
+func _break_seal(e: Dictionary) -> void:
+	var cfg: Dictionary = balance.seal
+	if randf() < float(cfg.bless_chance):
+		var id: String = Rules.BLESSINGS[randi() % Rules.BLESSINGS.size()]
+		var text := Rules.apply_blessing(state, id, balance.blessings, int(balance.player.max_hp_cap))
+		_burst(Vector2(e.x, e.y - 60), 50, true)
+		_toast("Das Siegel bricht: %s!" % text)
+		return
+	var r: Dictionary = W.rooms[e.room]
+	r.fight = true
+	r.cleared = false
+	var n := int(cfg.demons)
+	for k in range(n):
+		_spawn_mob(r.index, Vector2(e.x + (k - (n - 1) / 2.0) * 90.0, e.y + 60.0 + (50.0 if k == 1 else 0.0)), String(cfg.demon_kind))
+	_toast("Das Siegel bricht: drei Dämonen springen heraus! Die Gitter fallen.")
+
+
+func _fall_into_pit() -> void:
+	state.hp = maxi(0, state.hp - int(balance.pit.damage))
+	state.flash = 0.4
+	_burst(Vector2(player.x, player.y - 30), 24)
+	if state.hp == 0:
+		state.dead = 1.8
+		_toast("In die Grube gestürzt. Zurück zum Abstieg.")
+		return
+	for r: Dictionary in W.rooms:
+		if r.fight:
+			r.fight = false
+			mobs = mobs.filter(func(m: Dictionary) -> bool: return m.room != r.index)
+	eshots = []
+	_respawn()
+	state.inv = 1.2
+	var s := _room_of_type("start")
+	state.room = s.index
+	camera.position = Vector2(player.x, player.y)
+	state.banner = {"text": s.name, "sub": "Aus der Grube zurück zum Start", "t": 0.0}
+	_toast("In die Grube gestürzt: −1 Herz, zurück im Startraum.")
+
+
+## Calls the clone (Q). Once started it runs until its time is spent.
+func use_skill() -> void:
+	match Rules.start_skill(state.skill):
+		"none":
+			_toast("Noch kein Skill. Besiege den Boss auf Etage %d." % int(balance.clone.floor))
+		"running":
+			_toast("Der Klon kämpft bereits und lässt sich nicht abbrechen.")
+		"spent":
+			_toast("Der Klon ist aufgebraucht.")
+		"started":
+			clone = {"p": Vector2(player.x - 60, player.y + 20), "cool": 0.0, "seed": randf() * 9.0}
+			_burst(Vector2(player.x, player.y - 40), 30, true)
+			_toast("Klon gerufen: %d Sekunden." % ceili(state.skill.left))
+
+
+func _update_clone(dt: float) -> void:
+	if not state.skill.active or clone.is_empty():
+		return
+	if Rules.tick_skill(state.skill, dt):
+		_burst(clone.p - Vector2(0, 40), 30)
+		clone = {}
+		_toast("Der Klon zerfällt. Zeit abgelaufen.")
+		return
+	# follows behind the hero, weaving to dodge; enemies never target it
+	var cfg: Dictionary = balance.clone
+	var weave := sin(state.t * 5.0 + clone.seed) * float(cfg.weave)
+	var target_p := Vector2(player.x - player.face * float(cfg.follow), player.y + 26.0 + weave)
+	clone.p = clone.p.lerp(target_p, 1.0 - pow(0.004, dt))
+	clone.cool -= dt
+	var best: Dictionary = {}
+	var bd := float(cfg.range)
+	for m: Dictionary in mobs:
+		if m.spawn <= 0.0 and m.p.distance_to(clone.p) < bd:
+			bd = m.p.distance_to(clone.p)
+			best = m
+	if not best.is_empty() and clone.cool <= 0.0:
+		clone.cool = float(cfg.fire_every)
+		var from: Vector2 = clone.p - Vector2(0, 40)
+		var aim: Vector2 = best.p - Vector2(0, 30.0 * best.s) - from
+		shots.append({"p": from, "v": aim.normalized() * float(balance.shot.speed), "t": float(state.range)})
 
 
 func _process(delta: float) -> void:
@@ -574,6 +716,9 @@ func _update(dt: float) -> void:
 			state.room = _room_of_type("start").index
 		return
 	_update_player(dt)
+	if state.dead > 0.0:
+		return
+	_update_clone(dt)
 	_update_shots(dt)
 	_update_mobs(dt)
 	_update_hazards(dt)
@@ -585,7 +730,7 @@ func _update(dt: float) -> void:
 func _update_player(dt: float) -> void:
 	var move := Vector2(_axis(KEY_A, KEY_D), _axis(KEY_W, KEY_S))
 	var here := _cell(int(floor(player.x / C)), int(floor((player.y - 6.0) / C)))
-	var speed := float(balance.player.speed) * (float(balance.player.lava_slow) if here == 2 else 1.0)
+	var speed := float(balance.player.speed) * float(state.speed_mul) * (float(balance.player.lava_slow) if here == 2 else 1.0)
 	player.moving = move != Vector2.ZERO
 	if player.moving:
 		var v := move.normalized() * speed * dt
@@ -603,12 +748,24 @@ func _update_player(dt: float) -> void:
 		_fire(get_global_mouse_position() - Vector2(player.x, player.y - 40))
 	if here == 2:
 		_hurt("in der Lava verbrannt")
+	for e: Dictionary in pits:
+		if absf(player.x - e.x) < float(balance.pit.reach_x) and absf(player.y - 8.0 - e.y) < float(balance.pit.reach_y):
+			_fall_into_pit()
+			return
 
 
 func _update_shots(dt: float) -> void:
 	for s: Dictionary in shots:
 		s.p += s.v * dt
 		s.t -= dt
+		var struck: Dictionary = {}
+		for e: Dictionary in breakables:
+			if not e.get("broken", false) and absf(s.p.x - e.x) < 50.0 and s.p.y > e.y - 90.0 and s.p.y < e.y + 10.0:
+				struck = e
+		if not struck.is_empty():
+			s.t = 0.0
+			_hit_breakable(struck, s.p)
+			continue
 		var c := Vector2i(int(floor(s.p.x / C)), int(floor(s.p.y / C)))
 		var hit_solid := false
 		for r: Rect2 in solid_grid.get(c.y * int(W.cols) + c.x, []):
@@ -620,7 +777,7 @@ func _update_shots(dt: float) -> void:
 			continue
 		for m: Dictionary in mobs:
 			if m.spawn <= 0.0 and s.p.distance_to(m.p - Vector2(0, 30.0 * m.s)) < m.r + 12.0:
-				m.hp -= 1.0
+				m.hp -= float(state.dmg)
 				m.hit = 0.12
 				m.k = s.v * (0.05 if m.kind == "boss" else 0.25)
 				s.t = 0.0
@@ -762,6 +919,8 @@ func _update_hazards(dt: float) -> void:
 					state.gems += 1
 		if e.get("wrong", 0.0) > 0.0:
 			e.wrong = maxf(0.0, e.wrong - dt)
+		if e.get("hit", 0.0) > 0.0:
+			e.hit = maxf(0.0, e.hit - dt)
 
 
 func _update_rooms() -> void:
@@ -921,21 +1080,6 @@ func _draw_back(l: Layer) -> void:
 		if a.has_point(Vector2(w.x, w.y + 74)):
 			var t: Texture2D = tex[w.name]
 			_tex(l, w.name, Vector2(w.x - t.get_width() / 2.0, w.y), w.flip)
-	for d: Dictionary in W.doors:
-		if d.kind == "secret" and not d.broken and not d.hidden and a.has_point(Vector2(d.crack_x, d.crack_y)):
-			_draw_crack(l, d)
-
-
-func _draw_crack(ci: CanvasItem, d: Dictionary) -> void:
-	ci.draw_set_transform(Vector2(d.crack_x, d.crack_y), PI / 2 if d.dir == "h" else 0.0)
-	var pts := PackedVector2Array([Vector2(-50, -6), Vector2(-18, 10), Vector2(4, -4), Vector2(30, 14), Vector2(58, 2)])
-	ci.draw_polyline(pts, Color(0.04, 0.02, 0.02, 0.9), 5.0)
-	ci.draw_line(Vector2(-18, 10), Vector2(-26, 34), Color(0.04, 0.02, 0.02, 0.9), 5.0)
-	ci.draw_polyline(pts, Color(1, 0.43, 0.2, 0.6), 1.5)
-	ci.draw_set_transform(Vector2.ZERO)
-	var rb: Texture2D = tex.rubble
-	var off := Vector2(-80, 70) if d.dir == "h" else Vector2(30, -70)
-	ci.draw_texture(rb, Vector2(d.crack_x, d.crack_y) + off - rb.get_size() / 2.0)
 
 
 func _draw_front(l: Layer) -> void:
@@ -972,6 +1116,11 @@ func _draw_actors(l: Layer) -> void:
 	for e: Dictionary in W.ents:
 		if view.has_point(Vector2(e.x, e.y)) and e.type in ["chest", "vault", "portal", "brazier", "key", "heart", "gem"] and not e.get("taken", false):
 			list.append([e.y, "ent", e])
+	for e: Dictionary in breakables:
+		if view.has_point(Vector2(e.x, e.y)):
+			list.append([e.y - (200.0 if e.get("broken", false) else 0.0), "breakable", e])
+	if not clone.is_empty():
+		list.append([clone.p.y, "clone", clone])
 	for d: Dictionary in W.doors:
 		if d.kind != "secret" and view.has_point(Vector2(d.cx, d.cy)) and _door_closed(d):
 			list.append([d.cy + 60.0, "gate", d])
@@ -989,6 +1138,8 @@ func _draw_actors(l: Layer) -> void:
 			"ent": _draw_ent(l, item[2], t)
 			"gate": _draw_gate(l, item[2], t)
 			"mob": _draw_mob(l, item[2], t)
+			"breakable": _draw_breakable(l, item[2], t)
+			"clone": _draw_clone(l, t)
 			"hero": _draw_hero(l, t)
 	for s: Dictionary in shots:
 		l.draw_circle(s.p, 16.0, Color(1, 0.55, 0.2, 0.45))
@@ -1103,6 +1254,40 @@ func _draw_mob(l: Layer, m: Dictionary, t: float) -> void:
 		l.draw_texture_rect(icon, Rect2(m.p.x - 46 * k, m.p.y - size.y - 4 + bob, 92 * k, 96 * k), false)
 
 
+func _draw_breakable(l: Layer, e: Dictionary, t: float) -> void:
+	if e.get("broken", false):
+		var rb: Texture2D = tex.rubble
+		l.draw_texture(rb, Vector2(e.x - rb.get_width() / 2.0, e.y - rb.get_height()))
+		return
+	var seal: bool = e.type == "seal"
+	var im: Texture2D = tex.demon_plate if seal else tex.skull_heap
+	var size := im.get_size() * (1.15 if seal else 1.0)
+	var shake := randf_range(-4, 4) if e.get("hit", 0.0) > 0.0 else 0.0
+	var r := Rect2(Vector2(e.x - size.x / 2.0 + shake, e.y - size.y), size)
+	l.draw_texture_rect(im, r, false, Color(2.4, 2.4, 2.4) if e.get("hit", 0.0) > 0.0 else Color.WHITE)
+	if not seal:
+		return
+	l.draw_texture_rect(im, r, false, Color(1.6, 0.5, 0.3, 0.25 + 0.2 * sin(t * 4.0 + e.x)))
+	var dmg: float = 1.0 - float(e.hp) / float(e.max_hp)
+	if dmg > 0.0:
+		var ink := Color(0.06, 0.02, 0.02, 0.9)
+		l.draw_line(Vector2(e.x - 30, e.y - size.y * 0.3), Vector2(e.x - 30 + 60 * dmg, e.y - size.y * 0.3 - 20 * dmg), ink, 3.0)
+		l.draw_line(Vector2(e.x + 10, e.y - size.y * 0.8), Vector2(e.x + 10 - 30 * dmg, e.y - size.y * 0.8 + 40 * dmg), ink, 3.0)
+
+
+func _draw_clone(l: Layer, t: float) -> void:
+	var im: Texture2D = hero_frames.run[int(t * 10.0) % 4]
+	var size := im.get_size() * 3.6
+	var pos: Vector2 = clone.p - Vector2(0, size.y - 6)
+	var tint := Color(0.45, 1.25, 1.7, 0.55 + 0.2 * sin(t * 8.0))
+	if player.face < 0:
+		l.draw_set_transform(pos + Vector2(size.x / 2.0, 0), 0.0, Vector2(-1, 1))
+		l.draw_texture_rect(im, Rect2(Vector2.ZERO, size), false, tint)
+		l.draw_set_transform(Vector2.ZERO)
+	else:
+		l.draw_texture_rect(im, Rect2(pos - Vector2(size.x / 2.0, 0), size), false, tint)
+
+
 func _draw_hero(l: Layer, t: float) -> void:
 	if state.inv > 0.0 and int(t * 20.0) % 2 == 1:
 		return
@@ -1139,6 +1324,10 @@ func _draw_dark(l: Layer) -> void:
 			cands.append([p.distance_squared_to(center), Vector4(p.x, p.y - 80, 420, 1.0)])
 		elif e.type == "vent" and e.get("burst", false):
 			cands.append([p.distance_squared_to(center), Vector4(p.x, p.y - 30, 220, 0.9)])
+		elif e.type == "seal" and not e.get("broken", false):
+			cands.append([p.distance_squared_to(center), Vector4(p.x, p.y - 50, 200, 0.85)])
+	if not clone.is_empty():
+		cands.append([0.0, Vector4(clone.p.x, clone.p.y - 40, 240, 0.9)])
 	for m: Dictionary in mobs:
 		cands.append([m.p.distance_squared_to(center), Vector4(m.p.x, m.p.y - 40.0 * m.s, 120.0 * m.s, 0.8)])
 	var lava_lights := 0
@@ -1200,7 +1389,17 @@ func draw_hud(h: Control) -> void:
 	if fire.y > 0:
 		h.draw_texture_rect(tex.brazier_bowl, Rect2(x + 110, row - 4, 26, 37), false)
 		_text(h, "%d/%d" % [fire.x, fire.y], Vector2(x + 144, row + 26), 24, INK)
-	_text(h, "Etage %d · %s · 1-0 Etage · M Karte · Esc Menü" % [state.floor, W.title], Vector2(20, size.y - 38), 16, Color(1, 0.82, 0.66, 0.6))
+	var line := row + 60.0
+	var sk: Dictionary = state.skill
+	if sk.owned:
+		var clock := "%d:%02d" % [int(sk.left) / 60, int(sk.left) % 60]
+		var label := ("Klon aktiv · " + clock) if sk.active else (("Q: Klon rufen · " + clock) if sk.left > 0.0 else "Klon aufgebraucht")
+		_text(h, label, Vector2(22, line), 16, Color("#7fe8ff") if sk.active else (GOLD if sk.left > 0.0 else Color(INK, 0.4)))
+		line += 24.0
+	if not (state.buffs as Array).is_empty():
+		var names: Array = (state.buffs as Array).map(func(b: String) -> String: return b.get_slice(":", 0))
+		_text(h, "Segen: " + ", ".join(PackedStringArray(names)), Vector2(22, line), 16, Color(1, 0.89, 0.55, 0.85))
+	_text(h, "Etage %d · %s · 1-0 Etage · Q Klon · M Karte · Esc Menü" % [state.floor, W.title], Vector2(20, size.y - 38), 16, Color(1, 0.82, 0.66, 0.6))
 	var b: Dictionary = state.banner
 	var ba := clampf(b.t / 0.4, 0.0, 1.0) if b.t < 2.6 else maxf(0.0, 1.0 - (b.t - 2.6) / 0.8)
 	if ba > 0.0:
@@ -1312,6 +1511,9 @@ func _draw_map(h: Control, screen: Vector2, big: bool) -> void:
 			for e: Dictionary in W.ents:
 				if e.type == "brazier" and e.room == r.index and not e.get("lit", false):
 					icon = "brazier_bowl"
+			for e: Dictionary in breakables:
+				if icon == "" and e.room == r.index and not e.get("broken", false):
+					icon = "demon_plate" if e.type == "seal" else "skull_heap"
 		if icon == "" or (not seen and r.type != "boss"):
 			continue
 		var im: Texture2D = tex[icon]

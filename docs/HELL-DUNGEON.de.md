@@ -12,15 +12,25 @@ Spielfigur und Gegner sind Platzhalter; Monster werden später gesondert entworf
   (Bosstor). Jeder passt nur in sein Tor, man kann sich nicht aussperren.
 - **Feuerschalen** sind über mehrere Räume der Etage verteilt. Brennen alle, öffnet sich das Gitter zum
   **Riesentresor** (Lichtstrahlen, +1 Herzcontainer, volle Gesundheit, Runensteine).
-- **Druckplatten:** leuchten nacheinander auf; in dieser Reihenfolge betreten öffnet einen Geheimraum.
-  Ein falscher Schritt löscht alle Platten.
-- **Geheimwand:** Risse und Geröll, mit E aufbrechen.
+- **Druckplatten:** leuchten nacheinander auf; in dieser Reihenfolge betreten lässt eine Belohnungstruhe
+  erscheinen (Runensteine und ein Herz). Ein falscher Schritt löscht alle Platten.
+- **Geheimräume:** Vor jeder geheimen Wand steht ein großer Schädelhaufen. Nach genau 3 Treffern zerfällt
+  er und der versteckte Gang öffnet sich. Große Schädelhaufen gibt es nur dort; Deko sind kleine Schädelstapel.
+- **Dämonensiegel** (ab Etage 4: 3 je Etage, ab Etage 7: 4; höchstens eines je Kampfraum, meist abseits des
+  Hauptwegs): nach 8 Treffern bricht es. Zu 50 % gibt es einen dauerhaften Segen (+1 Schaden, 15 % schneller
+  schießen, 10 % schneller laufen, 25 % mehr Reichweite oder ein Herzcontainer), sonst springen drei
+  mittelschwere Dämonen heraus und der Raum verriegelt erneut, ohne zweiten Schlüssel oder zweite Belohnung.
+- **Gruben:** Fallen nur für die Figur. Hineinlaufen kostet ein Herz und wirft zurück in den Startraum.
+- **Klon-Skill:** Belohnung für den Boss auf Etage 9. Q ruft einen Klon für insgesamt 2 Minuten. Er folgt,
+  weicht aus, wird von Gegnern ignoriert, nimmt keinen Schaden und schießt selbst. Einmal gestartet läuft er
+  bis zum Ende; beim Portal pausiert er mit seiner Restzeit, auf der nächsten Etage geht es mit Q weiter.
+- **Übertrag:** Herzen, Runensteine, Segen und der Klon-Skill wandern durch das Portal mit.
 - **Kürzester Weg:** Der Boss ist nie erst nach allen Räumen erreichbar (11–17 von 22–31 Räumen,
   geprüft in `tests/hell_floor_data_test.gd`). Erkunden bringt Tresore, Herzen und Runensteine.
 - **Tiefe:** mehr Lava, Stacheln und Schlote, zähere und schnellere Gegner, ab Etage 4 Feuerspucker,
   Bosse mit Feuerringen; Zwischenbosse auf 3, 6 und 9, der Höllenfürst auf 10. Optik: dunkler, roter Schleier.
 
-Steuerung: WASD laufen, Pfeiltasten oder linke Maustaste schießen, E/Leertaste Aktion, M Karte,
+Steuerung: WASD laufen, Pfeiltasten oder linke Maustaste schießen, E/Leertaste Aktion, Q Klon, M Karte,
 L Licht, R Etage neu, 1–0 Etage wählen, Esc Hauptmenü.
 
 ## Aufbau
@@ -54,10 +64,10 @@ Der Modus ist bewusst vom vernetzten Krypta-Spiel (`src/game.gd`) getrennt: kein
 | `room_at` | Raumindex je Zelle, −1 für Gänge und Leere |
 | `quick` | Räume auf dem kürzesten Weg zum Boss inklusive nötiger Schlüssel |
 | `rooms[]` | `index`, `id`, `name`, `kind`, `type` (start, combat, key, treasure, secret, boss, portal), `icon`, `icon_key`, `bx`/`by`/`bw`/`bh` (Begrenzung in Zellen), `mobs`, `drop` (Schlüssel A/B/C), `reward`, `spawn`, `cleared`, `info`, `on_path` |
-| `doors[]` | `a`, `b` (Räume), `kind` (open, lock, puzzle, secret, boss), `key`, `group`, `hidden`, `dir` (h/v), `cells` (2×2 Durchgang), Mittelpunkt `cx`/`cy`, Rissposition `crack_x`/`crack_y` |
-| `groups` | Rätselgruppen: `kind` (braziers, plates, sequence), `label`, `spread` |
+| `doors[]` | `a`, `b` (Räume), `kind` (open, lock, puzzle, secret, boss), `key`, `group`, `hidden`, `dir` (h/v), `cells` (2×2 Durchgang), Mittelpunkt `cx`/`cy`, `crack_x`/`crack_y` (ungenutzt seit den Schädelhaufen) |
+| `groups` | Rätselgruppen: `kind` (braziers, plates, sequence), `label`, `spread`, `reward` (`chest` = Belohnungstruhe) |
 | `props[]`, `decals[]`, `wall_decor[]`, `lights[]` | Deko in Weltpixeln; `solid` = Kollisionsrechteck, `low` = flach am Boden; Licht `r` = Radius |
-| `ents[]` | `type` (chest, vault, key, heart, gem, brazier, plate, spikes, vent, portal), Position, `room` und je nach Typ `key`, `group`, `order`, `offset`, `phase`, `magic`, `loot` |
+| `ents[]` | `type` (chest, vault, key, heart, gem, brazier, plate, spikes, vent, portal, seal, skullheap, pit), Position, `room` und je nach Typ `key`, `group`, `order`, `offset`, `phase`, `magic`, `loot`, `hp` (Treffer bis zum Bruch), `door` (Index der Geheimtür hinter dem Schädelhaufen) |
 
 ## Schema `assets/data/hell_balance.json`
 
@@ -71,6 +81,11 @@ Der Modus ist bewusst vom vernetzten Krypta-Spiel (`src/game.gd`) getrennt: kein
 | `drops` | Wahrscheinlichkeit für Herz und Runenstein nach einem Kampf |
 | `vault` | Runensteine `gems_base` + `gems_per_floor` × Etage, `heart_containers` |
 | `view` | sichtbare Weltbreite, Basisbreite, Licht der Figur, max. Lichter im Shader, Helligkeitsstufen |
+| `seal` | `bless_chance` (Anteil Segen), `demons` (Anzahl), `demon_kind` (Gegnerart) |
+| `blessings` | `dmg` (+Schaden), `rate_mul`/`rate_min` (Schussabstand), `speed_mul`, `range_mul`, `heart` (halbe Herzen) |
+| `pit` | `damage` (halbe Herzen), `reach_x`/`reach_y` (px um die Grubenmitte) |
+| `clone` | `floor` (Etage des Bosses mit Skill), `duration` (s), `fire_every` (s), `range` (px), `follow`/`weave` (px) |
+| `sequence_chest` | `gems_base` (+ Etage) und `heart` der Belohnungstruhe |
 
 ## Grenzen
 

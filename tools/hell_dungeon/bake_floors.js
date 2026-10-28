@@ -46,7 +46,7 @@ function bake(n) {
     wall_decor: W.wallDecor.map(w => ({ name: w.name, x: r1(w.x), y: r1(w.y), flip: !!w.flip })),
     ents: W.ents.map(e => {
       const o = { type: e.type, x: r1(e.x), y: r1(e.y), room: e.room };
-      for (const k of ['key', 'group', 'order', 'offset', 'phase', 'magic', 'loot']) if (e[k] !== undefined) o[k] = e[k];
+      for (const k of ['key', 'group', 'order', 'offset', 'phase', 'magic', 'loot', 'hp', 'door']) if (e[k] !== undefined) o[k] = e[k];
       return o;
     }),
     lights: W.lights.map(l => ({ x: r1(l.x), y: r1(l.y), r: l.r, c: l.c })),

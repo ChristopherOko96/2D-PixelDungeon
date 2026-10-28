@@ -34,11 +34,11 @@ const F1 = {
   rooms: [
     { id: 'start', name: 'Aschentreppe', kind: 'Eingang', type: 'start', slots: [[0, 5]], shape: 'oct', cut: 3, icon: 'icon_door', info: 'Ankunft. Die Treppe nach oben ist versiegelt.', f: [['wall', 'door_stairs', 6, 0, -26], ['decal', 'rune_big', 6, 4.6], ['keep', 4, 3, 4, 4], ['spawn', 6, 5.6]] },
     { id: 'c1', name: 'Aschengang', kind: 'Kampfraum', type: 'combat', slots: [[1, 5], [2, 5]], holes: [[6, 3, 3, 3], [17, 3, 3, 3]], mobs: 5, info: 'Lange Halle mit zwei Mauerblöcken und Lavabecken.', f: [['lava', 11, 6, 4, 2], ['prop', 'spires_lava', 10.6, 7.9], ['prop', 'spire_small', 15.4, 6.2], ['wall', 'cage_hang', 7.5, 6, 0], ['wall', 'cage_hang', 18.5, 6, 0]] },
-    { id: 'c2', name: 'Schlackenkreuz', kind: 'Kampfraum', type: 'combat', slots: [[1, 4]], shape: 'cross', mobs: 4, info: 'Kreuzförmig, zwei Glutschlote in den Seitenarmen.', f: [['vent', 1.5, 4.5, 0], ['vent', 10.5, 4.5, 1.5], ['decal', 'demon_plate', 6, 4.5]] },
+    { id: 'c2', name: 'Schlackenkreuz', kind: 'Kampfraum', type: 'combat', slots: [[1, 4]], shape: 'cross', mobs: 4, info: 'Kreuzförmig, zwei Glutschlote in den Seitenarmen.', f: [['vent', 1.5, 4.5, 0], ['vent', 10.5, 4.5, 1.5], ['decal', 'rune_small', 6, 4.5]] },
     { id: 'c3', name: 'Säulenhalle', kind: 'Kampfraum', type: 'combat', slots: [[1, 3], [2, 3]], mobs: 6, info: 'Sieben Runensäulen als Deckung.', f: [['prop', 'rune_pillar_a', 4.5, 2.7], ['prop', 'rune_pillar_a', 9.5, 2.7], ['prop', 'rune_pillar_a', 16.5, 2.7], ['prop', 'rune_pillar_a', 21.5, 2.7], ['prop', 'rune_pillar_a', 9.5, 7.7], ['prop', 'rune_pillar_a', 16.5, 7.7], ['prop', 'rune_pillar_a', 21.5, 7.7], ['tile', 'floor_06', 7, 4], ['tile', 'floor_06', 12, 4], ['tile', 'floor_06', 13, 4], ['tile', 'floor_06', 19, 4], ['lava', 1, 1, 2, 2], ['lava', 23, 6, 2, 2], ['decal', 'rune_big', 13, 4.5]] },
-    { id: 'cs1', name: 'Knochengrube', kind: 'Kampfraum · Schlüssel', type: 'combat', slots: [[0, 3], [0, 4]], shape: 'oct', cut: 3, mobs: 6, drop: 'A', info: 'Der Sieg lässt den Glutschlüssel fallen.', f: [['pit', 3, 7], ['pit', 8, 10], ['pit', 3, 13], ['pit', 8, 16], ['prop', 'skull_heap', 6, 17.6], ['prop', 'coal_skulls', 2.5, 10.6]] },
+    { id: 'cs1', name: 'Knochengrube', kind: 'Kampfraum · Schlüssel', type: 'combat', slots: [[0, 3], [0, 4]], shape: 'oct', cut: 3, mobs: 6, drop: 'A', info: 'Der Sieg lässt den Glutschlüssel fallen.', f: [['pit', 3, 7], ['pit', 8, 10], ['pit', 3, 13], ['pit', 8, 16], ['prop', 'skull_pile', 6, 17.6], ['prop', 'coal_skulls', 2.5, 10.6]] },
     { id: 'p1', name: 'Feuerschalen-Kammer', kind: 'Kampf · Rätsel', type: 'combat', slots: [[3, 3]], shape: 'oct', cut: 3, mobs: 4, icon: 'icon_scroll', info: 'Vier erloschene Schalen. Alle entzünden öffnet das Südtor.', f: [['brazier', 2.5, 2.7, 'p1'], ['brazier', 9.5, 2.7, 'p1'], ['brazier', 2.5, 7.4, 'p1'], ['brazier', 9.5, 7.4, 'p1'], ['decal', 'rune_big', 6, 4.5], ['keep', 4, 3, 4, 3]] },
-    { id: 'c4', name: 'Glutkanal', kind: 'Kampfraum', type: 'combat', slots: [[3, 4], [4, 4], [3, 5]], mobs: 7, info: 'L-förmig, hinter dem Lavaband im Südarm liegt eine Bonusecke.', f: [['lava', 0, 13, 5, 2], ['lava', 7, 13, 5, 2], ['bridge', 5, 13, 2, 2, 'v'], ['heart', 2.5, 17.6], ['gem', 8.5, 17.2], ['gem', 9.5, 18.0], ['gem', 7.6, 18.2], ['prop', 'spires_lava', .7, 12.7], ['prop', 'spire_big', 11.4, 12.8], ['prop', 'brazier_floor', 6, 19.6], ['lava', 22, 6, 3, 2], ['decal', 'demon_plate', 19.5, 4.5]] },
+    { id: 'c4', name: 'Glutkanal', kind: 'Kampfraum', type: 'combat', slots: [[3, 4], [4, 4], [3, 5]], mobs: 7, info: 'L-förmig, hinter dem Lavaband im Südarm liegt eine Bonusecke.', f: [['lava', 0, 13, 5, 2], ['lava', 7, 13, 5, 2], ['bridge', 5, 13, 2, 2, 'v'], ['heart', 2.5, 17.6], ['gem', 8.5, 17.2], ['gem', 9.5, 18.0], ['gem', 7.6, 18.2], ['prop', 'spires_lava', .7, 12.7], ['prop', 'spire_big', 11.4, 12.8], ['prop', 'brazier_floor', 6, 19.6], ['lava', 22, 6, 3, 2], ['decal', 'rune_small', 19.5, 4.5]] },
     { id: 'c5', name: 'Stachelkreuz', kind: 'Kampfraum', type: 'combat', slots: [[5, 3], [5, 4]], mobs: 6, info: 'Stachelfeld im Wechseltakt, Runensteine dahinter. Die Ostwand ist rissig.', f: [['spikes', 2, 3, 9, 7], ['gem', 3.5, 1.6], ['gem', 6, 1.6], ['gem', 8.5, 1.6], ['vent', 1.5, 12.5, .4], ['vent', 10.5, 18.5, 1.9], ['keep', 0, 0, 12, 9]] },
     { id: 'sec', name: 'Vergessene Gruft', kind: 'Geheimraum', type: 'secret', slots: [[6, 4]], shape: 'oct', cut: 4, icon: 'rune_gem', info: 'Truhe, Runensteine und ein Herz.', f: [['chest', 8, 3.1, 8, false, true], ['gem', 2.6, 6.4], ['gem', 3.6, 7.2], ['heart', 8.8, 6.4], ['decal', 'demon_head', 6, 4.6]] },
     { id: 't1', name: 'Lavatresor', kind: 'Schatzraum', type: 'treasure', slots: [[5, 5]], icon: 'icon_chest', info: 'Truhe auf einer Insel im Lavagraben.', f: [['lava', 3, 2, 2, 1], ['lava', 7, 2, 2, 1], ['bridge', 5, 2, 2, 1, 'v'], ['lava', 3, 3, 1, 4], ['lava', 8, 3, 1, 4], ['lava', 4, 6, 4, 1], ['chest', 6, 5, 10, true]] },
@@ -50,7 +50,7 @@ const F1 = {
     { id: 'p2', name: 'Runenkammer', kind: 'Kampf · Rätsel', type: 'combat', slots: [[0, 1]], shape: 'oct', cut: 3, mobs: 3, icon: 'icon_scroll', info: 'Vier Runenplatten betreten öffnet den Opferschatz.', f: [['plate', 3.5, 2.5, 'p2'], ['plate', 8.5, 2.5, 'p2'], ['plate', 3.5, 6.5, 'p2'], ['plate', 8.5, 6.5, 'p2']] },
     { id: 't2', name: 'Opferschatz', kind: 'Schatzraum', type: 'treasure', slots: [[0, 0]], shape: 'oct', cut: 3, icon: 'icon_chest', info: 'Belohnung für das Runenrätsel.', f: [['chest', 6, 4, 6], ['prop', 'brazier_pillar', 4, 3.6], ['prop', 'brazier_pillar', 8, 3.6]] },
     { id: 'c9', name: 'Brandgalerie', kind: 'Kampfraum', type: 'combat', slots: [[2, 0], [3, 0]], holes: [[8, 3, 2, 3], [16, 3, 2, 3]], mobs: 6, info: 'Galerie mit zwei Mauerpfeilern vor dem Thron.', f: [['decal', 'rune_plate', 4.5, 4.5], ['decal', 'rune_plate', 21.5, 4.5], ['decal', 'rune_big', 13, 4.5]] },
-    { id: 'k2', name: 'Knochenaltar', kind: 'Schlüsselraum', type: 'key', slots: [[1, 0]], icon: 'key', iconKey: 'C', info: 'Der Dämonenschlüssel liegt vor dem Altar.', f: [['prop', 'altar', 6, 2.4], ['prop', 'brazier_low', 2.9, 2.4], ['prop', 'brazier_low', 9.1, 2.4], ['key', 'C', 6, 3.95], ['decal', 'demon_plate', 6, 6]] },
+    { id: 'k2', name: 'Knochenaltar', kind: 'Schlüsselraum', type: 'key', slots: [[1, 0]], icon: 'key', iconKey: 'C', info: 'Der Dämonenschlüssel liegt vor dem Altar.', f: [['prop', 'altar', 6, 2.4], ['prop', 'brazier_low', 2.9, 2.4], ['prop', 'brazier_low', 9.1, 2.4], ['key', 'C', 6, 3.95], ['decal', 'rune_small', 6, 6]] },
     { id: 'sh', name: 'Runenschrein', kind: 'Kampf · Schrein', type: 'combat', slots: [[3, 1]], shape: 'oct', cut: 3, mobs: 2, icon: 'heart', info: 'Ein Herz auf der Feuerplatte heilt.', f: [['decal', 'fire_plate', 6, 4.9], ['heart', 6, 5], ['prop', 'rune_pillar_c', 3.5, 3.4], ['prop', 'rune_pillar_c', 8.5, 3.4], ['prop', 'rune_pillar_b', 3.5, 7.4], ['prop', 'rune_pillar_b', 8.5, 7.4]] },
     { id: 'boss', name: 'Thron des Glutwächters', kind: 'Endkampf', type: 'boss', slots: [[4, 0], [5, 0], [4, 1], [5, 1]], shape: 'oct', cut: 6, mobs: 4, icon: 'icon_demon_big', info: 'Arena mit Lavarändern.', f: [['lava', 1, 7, 3, 6], ['lava', 22, 7, 3, 6], ['prop', 'brazier_demon', 7, 5], ['prop', 'brazier_demon', 19, 5], ['prop', 'brazier_demon', 7, 15.6], ['prop', 'brazier_demon', 19, 15.6], ['decal', 'rune_big', 13, 10.2], ['decal', 'rune_plate', 9.6, 10.2], ['decal', 'rune_plate', 16.4, 10.2], ['decal', 'rune_small', 13, 7.2], ['decal', 'rune_small', 13, 13.2], ['wall', 'demon_lintel', 13, 0, -36], ['prop', 'skull_obelisk', 10.2, 1.8], ['prop', 'skull_obelisk', 15.8, 1.8, true], ['keep', 9, 6, 8, 8]] },
     { id: 'pk', name: 'Portalkammer', kind: 'Schatzkammer', type: 'portal', slots: [[6, 0]], icon: 'portal', info: 'Belohnung und Portal zur nächsten Etage.', f: [['portal', 6, 2.75], ['prop', 'brazier_pillar', 3.7, 2.6], ['prop', 'brazier_pillar', 8.3, 2.6], ['chest', 9.2, 7, 12, true], ['decal', 'rune_big', 6, 5.6]] },
@@ -178,7 +178,7 @@ function tryGenerate(P, rnd) {
   if (P.seq) {
     seqRoom = rooms.filter(r => r.onPath && r.type === 'combat' && r.slots.length === 1 && !r.drop)[0];
     if (!seqRoom) seqRoom = rooms.filter(r => r.type === 'combat' && r.slots.length === 1 && !r.drop)[0];
-    if (seqRoom) { seqRoom.seq = true; groups.seq = { kind: 'sequence', label: 'Druckplatten' }; }
+    if (seqRoom) { seqRoom.seq = true; groups.seq = { kind: 'sequence', label: 'Druckplatten', reward: 'chest' }; }
   }
   // spread fire braziers: plain combat rooms only, chosen after all special rooms are fixed
   if (P.fire) {
@@ -194,7 +194,6 @@ function tryGenerate(P, rnd) {
     const [from, sa, sb] = secretCands[Math.floor(rnd() * secretCands.length)];
     const sec = mk([sb], 'secret', { parent: from, depth: from.depth + 1 });
     const dd = { a: from, b: sec, sa, sb, kind: 'secret' };
-    if (seqRoom) { dd.group = 'seq'; dd.hidden = true; }
     doors.push(dd); from.children.push(sec);
   }
   // 5. loops between neighbouring rooms with the same gate signature
@@ -256,11 +255,11 @@ function infoFor(r, g) {
   if (g.type === 'treasure') return 'Mit dem Knochenschlüssel zu öffnen.';
   if (g.type === 'key') return 'Der Knochenschlüssel liegt vor dem Altar.';
   if (g.type === 'shrine') return 'Ein Herz auf der Feuerplatte heilt.';
-  if (g.type === 'secret') return g.seq ? '' : 'Hinter einer Wand verborgen.';
+  if (g.type === 'secret') return 'Hinter einem Schädelhaufen verborgen.';
   const bits = [];
   if (g.drop === 'A') bits.push('Lässt den Glutschlüssel fallen.');
   if (g.drop === 'C') bits.push('Lässt den Dämonenschlüssel fallen.');
-  if (g.seq) bits.push('Druckplatten in der gezeigten Reihenfolge betreten öffnet einen Geheimraum.');
+  if (g.seq) bits.push('Druckplatten in der gezeigten Reihenfolge betreten lässt eine Belohnungstruhe erscheinen.');
   if (g.fireBrazier) bits.push('Eine erloschene Feuerschale steht hier.');
   if (g.reward) bits.push('Belohnung nach dem Sieg.');
   return bits.join(' ') || 'Kampfraum.';
@@ -281,10 +280,10 @@ const LIGHT = {
   altar: [220, '255,90,60'], skull_obelisk: [170, '255,80,60'], fire_plate: [170, '255,120,50'], rune_pillar_a: [130, '255,70,50'], rune_pillar_c: [120, '255,70,50'], obelisk: [110, '255,70,50'],
 };
 const BONES = ['bone_a', 'bone_b', 'bone_c', 'bone_d', 'bone_e', 'bone_f', 'bone_g', 'bones_scatter', 'rubble', 'coal', 'rocks_b', 'skull_pile_t', 'bones_t'];
-const CLUTTER = [['skull_heap', 'spires_t', 'spire_mid', 'rocks_a', 'coal_skulls', 'boulders', 'cage_small', 'spire_big_b', 'skull_pile'],
-  ['spires_lava', 'spire_big', 'spire_big_t', 'rocks_lava', 'coal_skulls', 'spire_mid', 'boulders', 'spires_t', 'skull_heap'],
-  ['cage_small', 'skull_heap', 'skull_obelisk', 'skull_pile', 'rune_pillar_d', 'spire_mid', 'coal_skulls', 'boulders', 'cage_small'],
-  ['skull_obelisk', 'spire_big', 'skull_heap', 'spires_lava', 'brazier_demon', 'rocks_lava', 'skull_pile', 'spire_big_t', 'cage_small']];
+const CLUTTER = [['skull_pile', 'spires_t', 'spire_mid', 'rocks_a', 'coal_skulls', 'boulders', 'cage_small', 'spire_big_b', 'skull_pile'],
+  ['spires_lava', 'spire_big', 'spire_big_t', 'rocks_lava', 'coal_skulls', 'spire_mid', 'boulders', 'spires_t', 'skull_pile'],
+  ['cage_small', 'skull_pile', 'skull_obelisk', 'skull_pile', 'rune_pillar_d', 'spire_mid', 'coal_skulls', 'boulders', 'cage_small'],
+  ['skull_obelisk', 'spire_big', 'skull_pile', 'spires_lava', 'brazier_demon', 'rocks_lava', 'skull_pile', 'spire_big_t', 'cage_small']];
 const BRAZIERS = ['brazier_bowl', 'brazier_pillar', 'brazier_rune', 'brazier_low', 'brazier_low_b', 'brazier_floor', 'brazier_demon'];
 const BANNERS = ['banner_1', 'banner_2', 'banner_3', 'banner_4', 'banner_5'];
 const KEY_NAMES = { A: 'Glutschlüssel', B: 'Knochenschlüssel', C: 'Dämonenschlüssel' };
@@ -365,11 +364,41 @@ function buildFloor(n, SIZES) {
     if (P.handmade) runFeatures(W, r, r.f || [], SIZES);
     else { planLanes(W, r); generateFeatures(W, P, r, rnd, SIZES); }
   }
+  placeSkullHeaps(W, SIZES);
+  if (n >= 4) placeSeals(W, P, mulberry32((P.seed || 1) + 777), SIZES);
   for (const r of W.rooms) autoDress(W, r, SIZES);
   for (const r of W.rooms) r.cells = cellsOf(W, r);
   W.lavaCells = []; for (let i = 0; i < W.grid.length; i++) if (W.grid[i] === 2) W.lavaCells.push([i % COLS, (i / COLS) | 0]);
   W.byId = byId;
   return W;
+}
+// Every secret wall gets a breakable skull heap in front of it, inside the room it is found from.
+function placeSkullHeaps(W, SIZES) {
+  for (const d of W.doors) {
+    if (d.kind !== 'secret') continue;
+    const r = d.a, H = helpers(W, r, SIZES);
+    let cx, cy;
+    if (d.dir === 'h') { const x = r.bx < d.x0 ? d.x0 - 1 : d.x1 + 1; cx = x + .5 - r.bx; cy = d.y0 + 1.35 - r.by; }
+    else { const y = r.by < d.y0 ? d.y0 - 1 : d.y1 + 1; cx = d.x0 + 1 - r.bx; cy = y + .8 - r.by; }
+    H.ent({ type: 'skullheap', cx, cy, hp: 3, door: W.doors.indexOf(d) });
+  }
+}
+// Demon seals from floor 4 on: 3 per floor (4 from floor 7), one per room, mostly in side rooms.
+function placeSeals(W, P, rnd, SIZES) {
+  const want = W.n >= 7 ? 4 : 3, idx = (x, y) => y * W.COLS + x;
+  const rooms = W.rooms.filter(r => r.type === 'combat' && !r.seq && r.cells.length > 40);
+  const side = rooms.filter(r => !r.onPath).sort(() => rnd() - .5), path = rooms.filter(r => r.onPath).sort(() => rnd() - .5);
+  const pick = side.slice(0, want - 1).concat(path.slice(0, 1));
+  while (pick.length < want && side.length + path.length > pick.length) { const more = side.concat(path).find(r => !pick.includes(r)); if (!more) break; pick.push(more); }
+  for (const r of pick) {
+    const H = helpers(W, r, SIZES);
+    const free = r.cells.filter(([x, y]) => W.grid[idx(x, y)] === 1 && !W.occupied.has(idx(x, y)) && !nearDoor(W, r, x + .5, y + .5, 3)
+      && [[1, 0], [-1, 0], [0, 1], [0, -1]].every(([dx, dy]) => W.roomAt[idx(x + dx, y + dy)] === r.index && W.grid[idx(x + dx, y + dy)] === 1));
+    if (!free.length) continue;
+    const [x, y] = free[Math.floor(rnd() * free.length)];
+    H.ent({ type: 'seal', cx: x + .5 - r.bx, cy: y + .8 - r.by, hp: 8 });
+    r.seal = true;
+  }
 }
 function cellsOf(W, r) { const out = []; for (let y = r.by; y < r.by + r.bh; y++) for (let x = r.bx; x < r.bx + r.bw; x++) if (W.roomAt[y * W.COLS + x] === r.index) out.push([x, y]); return out; }
 function nearDoor(W, r, x, y, dist) { return r.doors.some(d => Math.hypot(x * C - d.cx, y * C - d.cy) < dist * C); }
@@ -393,7 +422,8 @@ function helpers(W, r, SIZES) {
     tile(name, x, y) { W.tileAt[idx(r.bx + x, r.by + y)] = name; },
     lava(x, y, w, h) { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) { W.grid[idx(r.bx + i, r.by + j)] = 2; W.occupied.add(idx(r.bx + i, r.by + j)); } },
     bridge(x, y, w, h, dir) { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) { W.grid[idx(r.bx + i, r.by + j)] = 3; W.occupied.add(idx(r.bx + i, r.by + j)); } W.decals.push({ name: dir === 'h' ? 'bridge_h' : 'bridge_v', x: X(x + w / 2), y: Y(y + h / 2), w: w * C + 20, h: h * C + 18 }); },
-    pit(x, y) { W.decals.push({ name: 'pit', x: X(x + .5), y: Y(y + .5) }); W.props.push({ name: null, solid: [X(x) + 10, Y(y) + 14, X(x + 1) - 10, Y(y + 1) - 8] }); W.occupied.add(idx(r.bx + x, r.by + y)); },
+    // a pit is walkable: the hero falls in (loses a heart, back to the start room), enemies walk over it
+    pit(x, y) { W.decals.push({ name: 'pit', x: X(x + .5), y: Y(y + .5) }); H.ent({ type: 'pit', cx: x + .5, cy: y + .5 }); },
     ent(o) { o.x = X(o.cx); o.y = Y(o.cy); o.room = r.index; W.ents.push(o); W.occupied.add(idx(Math.floor(r.bx + o.cx), Math.floor(r.by + o.cy - .2))); return o; },
     keep(x, y, w, h) { for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) W.occupied.add(idx(r.bx + i, r.by + j)); },
   };
@@ -469,7 +499,7 @@ function generateFeatures(W, P, r, rnd, SIZES) {
     H.decal('rune_big', cx + .5, cy + .4); return;
   }
   if (g === 'treasure') { H.ent({ type: 'chest', cx: cx + .5, cy: cy + .9, loot: { gems: 6 + P.n, heart: true } }); H.prop('brazier_bowl', cx - 1.5, cy + .7); H.prop('brazier_bowl', cx + 2.5, cy + .7); return; }
-  if (g === 'key') { H.prop('altar', cx + .5, 2.4); H.ent({ type: 'key', key: 'B', cx: cx + .5, cy: 3.95 }); H.decal('demon_plate', cx + .5, cy + 1.5); return; }
+  if (g === 'key') { H.prop('altar', cx + .5, 2.4); H.ent({ type: 'key', key: 'B', cx: cx + .5, cy: 3.95 }); H.decal('rune_small', cx + .5, cy + 1.5); return; }
   if (g === 'secret') { H.ent({ type: 'chest', cx: cx + .5, cy: cy + .9, loot: { gems: 6 + P.n }, magic: true }); H.ent({ type: 'gem', cx: cx - 2, cy: cy + 2 }); H.ent({ type: 'gem', cx: cx + 3, cy: cy + 2.2 }); H.ent({ type: 'heart', cx: cx + .5, cy: cy + 3 }); return; }
   if (g === 'shrine') { H.decal('fire_plate', cx + .5, cy + .9); H.ent({ type: 'heart', cx: cx + .5, cy: cy + 1.0 }); }
   if (g === 'boss') {
@@ -477,7 +507,7 @@ function generateFeatures(W, P, r, rnd, SIZES) {
     if (w >= 20) { H.lava(1, Math.floor(h / 2) - 3, 3, 6); H.lava(w - 4, Math.floor(h / 2) - 3, 3, 6); }
     for (const [ox, oy] of [[-6, -4], [6, -4], [-6, 5], [6, 5]]) if (freeL(Math.floor(cx + ox), Math.floor(cy + oy))) H.prop('brazier_demon', cx + .5 + ox, cy + oy + .8);
     H.decal('rune_big', cx + .5, cy + .5); H.decal('rune_plate', cx - 3, cy + .5); H.decal('rune_plate', cx + 4, cy + .5);
-    if (P.final) { H.prop('altar', cx + .5, 2.5); H.decal('demon_plate', cx + .5, cy + 3.5); }
+    if (P.final) { H.prop('altar', cx + .5, 2.5); H.decal('rune_small', cx + .5, cy + 3.5); }
     return;
   }
   // puzzles
@@ -519,7 +549,7 @@ function generateFeatures(W, P, r, rnd, SIZES) {
   for (let k = 0; k < vents; k++) { const spot = tryRect(1, 1, 0); if (spot) H.ent({ type: 'vent', cx: spot[0] + .5, cy: spot[1] + .5, offset: rnd() * 3 }); }
   if (rnd() < P.pits) for (let k = 0; k < 1 + Math.floor(rnd() * 3); k++) { const spot = tryRect(1, 1, 1); if (spot) H.pit(spot[0], spot[1]); }
   if (rnd() < .45) { const pl = ['rune_pillar_a', 'rune_pillar_c', 'rune_pillar_b', 'obelisk'][P.circle % 4]; for (const [ox, oy] of [[-3, -2], [4, -2], [-3, 3], [4, 3]]) { const x = Math.floor(cx + ox), y = Math.floor(cy + oy); if (freeL(x, y) && freeL(x, y - 1)) H.prop(pl, x + .5, y + .75); } }
-  if (rnd() < .5) H.decal(['rune_big', 'demon_plate', 'rune_plate', 'grate'][Math.floor(rnd() * 4)], cx + .5, cy + .5);
+  if (rnd() < .5) H.decal(['rune_big', 'rune_small', 'rune_plate', 'grate'][Math.floor(rnd() * 4)], cx + .5, cy + .5);
 }
 function riverAcross(W, r, H, rnd) {
   const idx = (x, y) => y * W.COLS + x, vertical = r.bw > r.bh;

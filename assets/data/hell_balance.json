@@ -8,8 +8,13 @@
     "spucker": { "hp": 4, "speed": 95, "scale": 0.95, "radius": 28, "fire_every": 2.4, "keep_away": 320 },
     "boss": { "speed": 85, "scale": 2.7, "radius": 70, "max_adds": 5 }
   },
-  "hazards": { "spike_period": 1.2, "vent_period": 3.0, "vent_burst": 0.9, "vent_radius": 70 },
+  "hazards": { "spike_period": 1.2, "vent_period": 3, "vent_burst": 0.9, "vent_radius": 70 },
   "drops": { "heart": 0.35, "gem": 0.6 },
   "vault": { "gems_base": 15, "gems_per_floor": 2, "heart_containers": 1 },
-  "view": { "width": 1800, "base_width": 1280, "player_light": 460, "max_lights": 48, "light_bands": 6 }
+  "view": { "width": 1800, "base_width": 1280, "player_light": 460, "max_lights": 48, "light_bands": 6 },
+  "seal": { "bless_chance": 0.5, "demons": 3, "demon_kind": "gross" },
+  "blessings": { "dmg": 1, "rate_mul": 0.85, "rate_min": 0.12, "speed_mul": 1.1, "range_mul": 1.25, "heart": 2 },
+  "pit": { "damage": 2, "reach_x": 34, "reach_y": 30 },
+  "clone": { "floor": 9, "duration": 120, "fire_every": 0.34, "range": 760, "follow": 80, "weave": 46 },
+  "sequence_chest": { "gems_base": 6, "heart": true }
 }

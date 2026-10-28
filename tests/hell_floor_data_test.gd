@@ -2,7 +2,10 @@ extends SceneTree
 ## Baked hell floors (assets/data/hell_floors.json): ten floors load, every floor
 ## has one start, boss and portal room, doors join valid rooms, the quickest way
 ## to the boss never needs every room, every lock's key exists on its floor, a
-## vault always has at least two fire braziers, and deeper floors get harder.
+## vault always has at least two fire braziers, deeper floors get harder, demon
+## seals appear from floor 4 (four from floor 7) in combat rooms, every secret
+## wall has its skull heap and no secret is hidden or grouped, and pits are
+## walkable traps rather than solid props.
 
 const FloorData = preload("res://src/hell/hell_floor_data.gd")
 var checked := 0
@@ -64,6 +67,30 @@ func _initialize() -> void:
 			if r.cells.is_empty():
 				cell_ok = false
 		check(cell_ok, "floor %d: every room owns floor cells" % n)
+		var seals := 0
+		var seal_rooms := {}
+		var heaps := {}
+		var pits_ok := true
+		for e: Dictionary in W.ents:
+			if e.type == "seal":
+				seals += 1
+				seal_rooms[e.room] = W.rooms[e.room].type
+				check(int(e.get("hp", 0)) > 0, "floor %d: a seal has hit points" % n)
+			elif e.type == "skullheap":
+				heaps[int(e.door)] = int(e.hp)
+			elif e.type == "pit":
+				for p: Dictionary in W.props:
+					if p.name == "pit" and p.solid != null:
+						pits_ok = false
+		var want := 0 if n < 4 else (3 if n < 7 else 4)
+		check(seals == want and seal_rooms.size() == want, "floor %d: %d demon seals, one per room (got %d)" % [n, want, seals])
+		check(seal_rooms.values().all(func(t: String) -> bool: return t == "combat"), "floor %d: seals sit in combat rooms" % n)
+		var secrets_ok := true
+		for d: Dictionary in W.doors:
+			if d.kind == "secret" and (heaps.get(d.index, 0) != 3 or d.hidden or d.group != ""):
+				secrets_ok = false
+		check(secrets_ok, "floor %d: every secret wall hides behind a three-hit skull heap" % n)
+		check(pits_ok, "floor %d: pits are not solid" % n)
 		check(float(W.diff.hp) >= last_hp, "floor %d: enemies are at least as tough as one floor above" % n)
 		last_hp = float(W.diff.hp)
 	print("HELL_FLOOR_DATA checked=%d failures=%d" % [checked, failures.size()])
