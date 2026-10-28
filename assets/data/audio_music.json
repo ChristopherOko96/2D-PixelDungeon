@@ -1,0 +1,13 @@
+{
+  "_note": "Background music (src/audio/music.gd). states: which track plays when (menu = title, lobby and after a defeat; explore = a quiet room; combat = a fight with enemies alive or a horde still coming; boss = a boss or mini-boss alive). track names a music entry of audio_library.json; volume_db trims it on top of its gain_db; ambience true lays the ambience track under it on the Ambience bus. crossfade: seconds between two tracks; calm_hold: seconds a fight must be over before the music calms down again (no flip-flopping between waves). Change the choices in the Klangwerkstatt (debug menu) or here.",
+  "schema_version": 1,
+  "crossfade": 1.8,
+  "calm_hold": 6.0,
+  "states": {
+    "menu": {"track": "dungeon_ambience", "volume_db": 0, "ambience": false},
+    "explore": {"track": "dungeon_ambience", "volume_db": 0, "ambience": true},
+    "combat": {"track": "heavy_dungeon", "volume_db": -4, "ambience": true},
+    "boss": {"track": "heavy_boss_battle_1", "volume_db": -3, "ambience": false}
+  },
+  "ambience": {"track": "dungeon_wind_drips", "volume_db": 0}
+}

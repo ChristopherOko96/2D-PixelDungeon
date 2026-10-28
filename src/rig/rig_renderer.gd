@@ -29,6 +29,10 @@ var _fx_seen: Dictionary = {}
 var _clock := 0.0
 ## Beams drawn in the last draw_over (for tests and capture checks).
 var beams_drawn := 0
+## Hero walk cycle in seconds when a snapshot has no step_time (two footfalls).
+const WALK_CYCLE := 0.42
+## Actor keys of heroes whose foot touched down since the view last took them.
+var footfalls: Array[String] = []
 var _rng := RandomNumberGenerator.new()
 
 
@@ -166,12 +170,25 @@ func draw_enemy(canvas: CanvasItem, enemy: Dictionary, point: Vector2) -> float:
 	return _draw_rig(canvas, a, rig, point, face, flash, true)
 
 
+## The hero's walk cycle follows its speed: one foot touches down every
+## step_time (snapshot), the legs swing over two of them, and every
+## touch-down is reported once in `footfalls` for the step sound.
+func track_steps(key: String, player: Dictionary) -> Dictionary:
+	var a := _actor(key, player)
+	a.moving = bool(player.get("moving", false))
+	var step_time := clampf(float(player.get("step_time", WALK_CYCLE * 0.5)), 0.08, 0.6)
+	a.cycle = step_time * 2.0
+	var touch := floori(float(a.t) / step_time)
+	if a.moving and touch != int(a.get("touch", touch)): footfalls.append(key)
+	a.touch = touch
+	return a
+
+
 ## Draws a hero-class player's body (the view draws the held weapon on top).
 func draw_hero(canvas: CanvasItem, key: String, player: Dictionary, point: Vector2, rig_name: String, face: float, alpha: float = 1.0) -> void:
 	var rig: Dictionary = library.rig(rig_name)
 	if rig.is_empty(): return
-	var a := _actor(key, player)
-	a.moving = bool(player.get("moving", false))
+	var a := track_steps(key, player)
 	a.alpha_mul = alpha
 	if int(player.get("hurts", 0)) > int(a.hurts): _play(a, "hit", HIT_TIME)
 	a.hurts = int(player.get("hurts", 0))

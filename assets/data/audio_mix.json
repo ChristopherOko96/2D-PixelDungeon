@@ -1,0 +1,28 @@
+{
+  "_note": "The mix (src/audio/audio_mix.gd). buses: created at start under Master with a base level in dB; the player's sliders scale them (Gesamt = Master, Musik = Music and Ambience, Effekte = SFX and UI). Focus is a part of SFX for the sounds you must never miss (your hero is hit, perks, stingers); the Music and Ambience buses duck under it (sidechain compressor: threshold in dB, ratio, attack in microseconds, release in ms). limiter keeps the Master below ceiling_db. categories: every sound event names one; it decides the bus and a level in dB, so sounds sit at different heights (your hero first, enemies and steps lower). Final level of a sound = base_db + category volume_db + event volume_db + the file's gain_db from audio_library.json.",
+  "schema_version": 1,
+  "base_db": -6,
+  "buses": [
+    {"name": "Music", "send": "Master", "volume_db": -7},
+    {"name": "Ambience", "send": "Master", "volume_db": -12},
+    {"name": "SFX", "send": "Master", "volume_db": 0},
+    {"name": "Focus", "send": "SFX", "volume_db": 0},
+    {"name": "UI", "send": "Master", "volume_db": -3}
+  ],
+  "duck": {"buses": ["Music", "Ambience"], "key": "Focus", "threshold_db": -30, "ratio": 6, "attack_us": 2000, "release_ms": 450},
+  "limiter": {"ceiling_db": -1.0},
+  "sliders": {"volume": ["Master"], "music": ["Music", "Ambience"], "effects": ["SFX", "UI"]},
+  "categories": {
+    "focus": {"bus": "Focus", "volume_db": 0, "label": "Wichtig (eigener Held getroffen, Perks)"},
+    "stinger": {"bus": "Focus", "volume_db": -3, "label": "Musik-Signale (Boss, Raum frei, Niederlage)"},
+    "hero": {"bus": "SFX", "volume_db": -3, "label": "Eigene Angriffe und Fähigkeiten"},
+    "impact": {"bus": "SFX", "volume_db": -4, "label": "Treffer an Gegnern"},
+    "enemy": {"bus": "SFX", "volume_db": -7, "label": "Gegner greifen an, sterben"},
+    "boss": {"bus": "SFX", "volume_db": -2, "label": "Boss-Angriffe"},
+    "world": {"bus": "SFX", "volume_db": -7, "label": "Türen, Kisten, Truhen, Mauern"},
+    "ally": {"bus": "SFX", "volume_db": -10, "label": "Mitspieler"},
+    "step": {"bus": "SFX", "volume_db": -13, "label": "Schritte"},
+    "idle": {"bus": "SFX", "volume_db": -15, "label": "Gegner nebenbei (Klappern, Stöhnen)"},
+    "ui": {"bus": "UI", "volume_db": 0, "label": "Menüs"}
+  }
+}

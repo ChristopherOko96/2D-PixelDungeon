@@ -1759,7 +1759,7 @@ func _make_snapshot(advance_sequence: bool = true) -> Dictionary:
 	for id in players:
 		var player: Dictionary = players[id]
 		var aim: Vector2 = player.get("aim",Vector2.RIGHT)
-		visible_players[id] = {"x": player.pos.x, "y": player.pos.y, "hp": player.hp, "max_hp": player.max_hp, "color": player.color, "ready": player.ready, "picked": player.picked, "perks": player.perks.duplicate(), "hitstun": player.get("hitstun", 0.0), "hit_flash": player.get("hit_flash", 0.0), "invulnerable": player.invulnerable,"shots":player.get("shots",0),"hurts":player.get("hurts",0),"moving":player.get("moving",false),"face":player.get("face",1.0),"ax":aim.x,"ay":aim.y}
+		visible_players[id] = {"x": player.pos.x, "y": player.pos.y, "hp": player.hp, "max_hp": player.max_hp, "color": player.color, "ready": player.ready, "picked": player.picked, "perks": player.perks.duplicate(), "hitstun": player.get("hitstun", 0.0), "hit_flash": player.get("hit_flash", 0.0), "invulnerable": player.invulnerable,"shots":player.get("shots",0),"hurts":player.get("hurts",0),"step_time":float(balance.player.get("stride", 32)) / maxf(1.0, float(player.get("speed", 152.0))),"moving":player.get("moving",false),"face":player.get("face",1.0),"ax":aim.x,"ay":aim.y}
 		visible_players[id].build = player.get("build",{}).duplicate()
 		# Hero skills, class cards and the open card choice (level-up / boss).
 		visible_players[id].skills = hero_skills.player_state(player)
@@ -2184,6 +2184,8 @@ func _refresh_ui() -> void:
 		_send_local_input()
 	var menu_visible := is_instance_valid(main_menu) and menu_open and not active and not editor_preview_mode
 	if is_instance_valid(main_menu): main_menu.visible = menu_visible
+	# Menu and lobby get the calm music; a run gets explore/combat/boss.
+	view.music_in_run = in_run
 	lobby_ui.visible = not in_run and not menu_visible
 	_apply_display_layout()
 	if pause_open and (not in_run or (_ui_phase == "reward" and phase == "explore" and reward_open)):

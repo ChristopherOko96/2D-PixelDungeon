@@ -28,6 +28,7 @@ const SWING_TIME := 0.18
 const FRAMES_PER_SECOND := 8.0
 const Feedback = preload("res://src/vfx/feedback.gd")
 const Sfx = preload("res://src/vfx/sfx.gd")
+const Music = preload("res://src/audio/music.gd")
 const Palette = preload("res://src/tile_palette.gd")
 const CryptArt = preload("res://src/crypt_art.gd")
 const Living = preload("res://src/living_sprite_library.gd")
@@ -59,6 +60,10 @@ var _sprites: Dictionary = {}
 var _flash_textures: Dictionary = {}
 var _feedback := Feedback.new()
 var _sfx: Node
+## Background music and ambience (src/audio/music.gd), made with the sound.
+var _music: Node
+## False while the view shows a menu backdrop rather than a run (the game sets it).
+var music_in_run := true
 var _base_position := Vector2.ZERO
 var _shake_rng := RandomNumberGenerator.new()
 ## Camera shake strength from the options (1 = full, 0 = off); presentation only.
@@ -228,6 +233,8 @@ func _prepare_presentation(snapshot: Dictionary) -> void:
 		_fire_entries.clear()
 
 func _process(delta: float) -> void:
+	# The music follows the moment even while menus hide the view.
+	if _music != null: _music.request(Music.decide(_snapshot, is_visible_in_tree() and music_in_run))
 	if not is_visible_in_tree(): return
 	if _environment_animation_enabled: _environment_clock += delta
 	if not _animation_enabled:
@@ -336,6 +343,12 @@ func _draw() -> void:
 			"reward": _draw_pedestal()
 	if room_visible and not _classic_enabled: Tiles.draw_foreground(self,render_snapshot)
 	if rigs_on and actors_visible and _effects_visible: _rigs.draw_over(self,_snapshot)
+	# Footsteps land exactly when a hero rig's foot touches down.
+	_feedback.rig_footsteps = rigs_on
+	if rigs_on:
+		for key: String in _rigs.footfalls:
+			if audio_enabled and _sfx != null: _sfx.play("step" if key == "p%d" % _local_peer else "step_ally", 0.05)
+		_rigs.footfalls.clear()
 	if _effects_visible:
 		_draw_perk_events()
 		_skill_fx.draw_over(self,_snapshot,_clock)
@@ -430,8 +443,12 @@ func set_audio_enabled(enabled: bool) -> void:
 	if audio_enabled and _sfx == null and is_inside_tree():
 		_sfx = Sfx.new()
 		add_child(_sfx)
+	if audio_enabled and _music == null and is_inside_tree():
+		_music = Music.new()
+		add_child(_music)
 	_feedback.sfx = _sfx if audio_enabled else null
 	if not audio_enabled and _sfx != null: _sfx.stop_all()
+	if not audio_enabled and _music != null: _music.stop_all()
 
 
 ## Transition audio is explicit, so a staircase never plays the doorway effect.

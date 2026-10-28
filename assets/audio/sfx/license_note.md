@@ -12,3 +12,13 @@
   public repository does. On 2026-10-27 the user decided to push them to the
   public repository anyway. Clarify with the pack's terms (or replace the
   files) before the game is released.
+
+## Update 2026-10-28
+
+Since the CC0 sound library (`assets/audio/library/`, see its `CREDITS.md`),
+these recordings are only one of several packs to choose from in the
+Klangwerkstatt. Events now using CC0 files by default: hurt, hurt_voice,
+hurt_ally, step, step_ally, hit_bone, rattle_bone, hit_flesh, break_bone,
+kill_bone, collapse_bone, kill_flesh, idle_bone, idle_flesh, attack_roar,
+door, crate_break, chest_open. The rest still play these recordings; replace
+them in the Klangwerkstatt before a release if the licence stays unclear.

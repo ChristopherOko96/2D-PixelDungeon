@@ -47,12 +47,12 @@ func _run() -> void:
 	check(layout == source,"wall presentation never mutates authoritative geometry")
 	view.set_audio_enabled(true)
 	check(view._sfx != null and view._sfx._streams.size() >= 10,"the brother's synthesized sound pool plus stairs is available")
-	var door: AudioStreamWAV = view._sfx.effect_stream("door")
+	# Since the sound pass (assets/data/audio_sfx.json) both are recorded effects:
+	# the door a CC0 library recording (OGG), the stairs a first-pass WAV (QOA).
+	var door: AudioStream = view._sfx.effect_stream("door")
 	var stairs: AudioStreamWAV = view._sfx.effect_stream("stairs")
-	# Since the sound pass (assets/data/audio_sfx.json) both are recorded effects.
-	# Godot imports them as QOA (its default compressed WAV format).
-	check(door != null and stairs != null and door.mix_rate >= 44100 and stairs.mix_rate >= 44100 and door.format in [AudioStreamWAV.FORMAT_QOA, AudioStreamWAV.FORMAT_16_BITS],"door and stair audio are recorded streams")
-	check(door.data.size() > 1000 and stairs.data.size() > door.data.size() and stairs.data != door.data,"stairs have a distinct longer descending-step waveform")
+	check(door != null and stairs != null and stairs.mix_rate >= 44100 and (door is AudioStreamOggVorbis or door is AudioStreamWAV),"door and stair audio are recorded streams")
+	check(door.get_length() > 0.2 and stairs.data.size() > 1000 and stairs.get_length() > door.get_length() * 0.5,"stairs and door are distinct recordings of their own length")
 	# Raw samples can only be read from uncompressed PCM; QOA data is checked for content.
 	var audible := false
 	if stairs.format == AudioStreamWAV.FORMAT_16_BITS:

@@ -1,57 +1,625 @@
 {
-  "_note": "Sound events of the game. Each event names a source WAV from the user's sound folder (C:/Users/Cylor/Desktop/Sound Pixel Combat, read-only); scripts/prepare_sfx.js cuts it into short mono variants res://assets/audio/sfx/<event>_<n>.wav. Pixel Combat files (*_HY_PC.wav) hold 6 takes every 4 s; 'variants' takes the first n. volume_db is added to the voice level, spread is the random pitch range, pitch a fixed pitch factor, min_interval the shortest gap between two plays, max_seconds cuts long tails. Events without files fall back to the synthesized sounds in src/vfx/sfx.gd.",
-  "output": "res://assets/audio/sfx/",
-  "rig_materials": {
-    "skeleton": "bone", "skel_archer": "bone", "skel_guard": "bone", "ice_zombie": "bone", "bone_colossus": "bone",
-    "tiny_zombie": "flesh", "big_zombie": "flesh", "frost_corpse": "flesh", "necro": "flesh",
-    "void": "void", "bomber": "void"
+ "_note": "Sound events (src/vfx/sfx.gd). label: when it plays (shown in the Klangwerkstatt); files: the variants of an event (one is picked at random, never the same twice in a row); category: bus and level group from audio_mix.json; volume_db: trim on top of the category (0 = the category level; every file is already levelled by its gain_db in audio_library.json); spread: random pitch range; pitch: fixed pitch factor; min_interval: shortest gap between two plays in seconds; with: another event that plays together with this one (a layer, e.g. a punch plus a grunt). src/variants/max_seconds are the first sound pass's cutting spec for scripts/prepare_sfx.js. Change the choices in the game's Klangwerkstatt (debug menu) or here.",
+ "schema_version": 2,
+ "output": "res://assets/audio/sfx/",
+ "rig_materials": {
+  "skeleton": "bone",
+  "skel_archer": "bone",
+  "skel_guard": "bone",
+  "ice_zombie": "bone",
+  "bone_colossus": "bone",
+  "tiny_zombie": "flesh",
+  "big_zombie": "flesh",
+  "frost_corpse": "flesh",
+  "necro": "flesh",
+  "void": "void",
+  "bomber": "void"
+ },
+ "events": {
+  "swing": {
+   "label": "Schwerthieb des Helden",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/sfx/swing_0.wav",
+    "res://assets/audio/sfx/swing_1.wav",
+    "res://assets/audio/sfx/swing_2.wav",
+    "res://assets/audio/sfx/swing_3.wav"
+   ],
+   "spread": 0.05,
+   "src": "DSGNMisc_MELEE-Sword Slash_HY_PC.wav",
+   "variants": 4
   },
-  "events": {
-    "swing": {"src": "DSGNMisc_MELEE-Sword Slash_HY_PC.wav", "variants": 4, "volume_db": -4, "spread": 0.05},
-    "shoot_arrow": {"src": "SWSH_MOVEMENT-Bamboo Whip_HY_PC.wav", "variants": 4, "volume_db": -9, "spread": 0.06},
-    "shoot_magic": {"src": "MAGSpel_CAST-Sphere Quick_HY_PC.wav", "variants": 4, "volume_db": -8, "spread": 0.05},
-    "hurt": {"src": "FGHTImpt_HIT-Strong Smack_HY_PC.wav", "variants": 3, "volume_db": -3, "spread": 0.04},
-    "step": {"src": "FEETMisc_STEP-Boots on Concrete Dungeon_HY_PC.wav", "variants": 6, "volume_db": -17, "spread": 0.06, "max_seconds": 0.32},
-    "perk": {"src": "MAGAngl_BUFF-Buff Pickup_HY_PC.wav", "variants": 1, "volume_db": -6, "max_seconds": 1.4},
-
-    "hit_bone": {"src": "DSGNMisc_HIT-Hit Rattle_HY_PC.wav", "variants": 6, "volume_db": -6, "spread": 0.07, "min_interval": 0.04},
-    "hit_flesh": {"src": "FGHTImpt_MELEE-Gut Punch_HY_PC.wav", "variants": 4, "volume_db": -7, "spread": 0.07, "min_interval": 0.04},
-    "hit_void": {"src": "DSGNMisc_HIT-Spell Hit_HY_PC.wav", "variants": 4, "volume_db": -7, "spread": 0.07, "min_interval": 0.04},
-    "break_bone": {"src": "Combat and Gore/bone_snap.wav", "volume_db": -4, "spread": 0.08},
-    "break_flesh": {"src": "Combat and Gore/crunch_splat.wav", "volume_db": -5, "spread": 0.06},
-    "break_void": {"src": "DSGNMisc_SKILL IMPACT-Crunchy Energy_HY_PC.wav", "variants": 2, "volume_db": -7, "max_seconds": 1.0},
-    "regrow": {"src": "MAGAngl_BUFF-Simple Heal_HY_PC.wav", "variants": 2, "volume_db": -13, "max_seconds": 1.2},
-    "block": {"src": "DSGNMisc_MELEE-Sword Parry_HY_PC.wav", "variants": 3, "volume_db": -6, "spread": 0.05},
-    "kill_bone": {"src": "Combat and Gore/crunch.wav", "volume_db": -4, "spread": 0.06},
-    "kill_flesh": {"src": "Combat and Gore/crunch_splat_2.wav", "volume_db": -4, "spread": 0.06},
-    "kill_necro": {"src": "DSGNMisc_SKILL IMPACT-Energy Dissipate_HY_PC.wav", "variants": 2, "volume_db": -5},
-    "bomber_pop": {"src": "DSGNImpt_EXPLOSION-Smaller Flare_HY_PC.wav", "variants": 3, "volume_db": -7},
-
-    "attack_slash": {"src": "WHSH_MOVEMENT-Simple Whoosh_HY_PC.wav", "variants": 4, "volume_db": -10, "spread": 0.08},
-    "attack_bite": {"src": "Combat and Gore/crunch_quick.wav", "volume_db": -9, "spread": 0.1},
-    "attack_arrow": {"src": "SWSH_MOVEMENT-Bamboo Whip_HY_PC.wav", "variants": 4, "volume_db": -12, "pitch": 0.8, "spread": 0.05},
-    "attack_soul": {"src": "DSGNTonl_SKILL RELEASE-Dark Energy Sphere_HY_PC.wav", "variants": 3, "volume_db": -8},
-    "attack_summon": {"src": "MAGSpel_CAST-Sharp Summon_HY_PC.wav", "variants": 2, "volume_db": -7, "max_seconds": 1.4},
-    "attack_slam": {"src": "DSGNImpt_EXPLOSION-Thud_HY_PC.wav", "variants": 3, "volume_db": -2},
-    "attack_roar": {"src": "DSGNImpt_EXPLOSION-Eruption_HY_PC.wav", "variants": 2, "volume_db": -5, "max_seconds": 1.6},
-    "attack_salve": {"src": "DSGNTonl_SKILL RELEASE-Mind Eraser_HY_PC.wav", "variants": 3, "volume_db": -6},
-    "attack_beam": {"src": "DSGNMisc_SKILL IMPACT-Mecha Purple Laser_HY_PC.wav", "variants": 3, "volume_db": -3},
-    "windup_beam": {"src": "DSGNSynth_CAST-Mecha Laser Prepare_HY_PC.wav", "variants": 2, "volume_db": -4},
-    "windup_fuse": {"src": "MAGSpel_CAST-Zap Up_HY_PC.wav", "variants": 3, "volume_db": -7, "max_seconds": 0.8},
-    "windup_summon": {"src": "MAGSpel_CAST-Sharpest Summon_HY_PC.wav", "variants": 2, "volume_db": -7, "max_seconds": 1.4},
-    "void_burst": {"src": "DSGNImpt_EXPLOSION-Mana Bomb_HY_PC.wav", "variants": 3, "volume_db": -2},
-    "blast": {"src": "DSGNImpt_EXPLOSION-Small Flare_HY_PC.wav", "variants": 3, "volume_db": -10, "min_interval": 0.06},
-    "boss_kill": {"src": "DSGNImpt_EXPLOSION-Magisplosion_HY_PC.wav", "variants": 1, "volume_db": 0},
-    "boss_intro": {"src": "Musical Effects/horror_sting.wav", "volume_db": -4},
-
-    "door": {"src": "Weapons/harsh_thud.wav", "volume_db": -7},
-    "stairs": {"src": "Musical Effects/harpsichord_mystery.wav", "volume_db": -6},
-    "doors_lock": {"src": "UIMisc_INTERFACE-Lock_HY_PC.wav", "variants": 2, "volume_db": -7},
-    "room_clear": {"src": "Musical Effects/harpsichord_chime_positive.wav", "volume_db": -6},
-    "boss_defeated": {"src": "Musical Effects/harpsichord_level_complete.wav", "volume_db": -6},
-    "team_wipe": {"src": "Musical Effects/harpsichord_defeated.wav", "volume_db": -6},
-
-    "ui_click": {"src": "UIClick_INTERFACE-Positive Click_HY_PC.wav", "variants": 2, "volume_db": -8, "spread": 0.03},
-    "ui_back": {"src": "UI/cancel.wav", "volume_db": -9}
+  "shoot_arrow": {
+   "label": "Bogenschuss des Helden",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/sfx/shoot_arrow_0.wav",
+    "res://assets/audio/sfx/shoot_arrow_1.wav",
+    "res://assets/audio/sfx/shoot_arrow_2.wav",
+    "res://assets/audio/sfx/shoot_arrow_3.wav"
+   ],
+   "spread": 0.06,
+   "src": "SWSH_MOVEMENT-Bamboo Whip_HY_PC.wav",
+   "variants": 4
+  },
+  "shoot_magic": {
+   "label": "Zauberkugel des Magiers",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/sfx/shoot_magic_0.wav",
+    "res://assets/audio/sfx/shoot_magic_1.wav",
+    "res://assets/audio/sfx/shoot_magic_2.wav",
+    "res://assets/audio/sfx/shoot_magic_3.wav"
+   ],
+   "spread": 0.05,
+   "src": "MAGSpel_CAST-Sphere Quick_HY_PC.wav",
+   "variants": 4
+  },
+  "hurt": {
+   "label": "Dein Held wird getroffen",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/kenney_impact/impact_punch_heavy_000.ogg",
+    "res://assets/audio/library/kenney_impact/impact_punch_heavy_001.ogg",
+    "res://assets/audio/library/kenney_impact/impact_punch_heavy_002.ogg",
+    "res://assets/audio/library/kenney_impact/impact_punch_heavy_003.ogg",
+    "res://assets/audio/library/kenney_impact/impact_punch_heavy_004.ogg"
+   ],
+   "with": "hurt_voice",
+   "spread": 0.04,
+   "src": "FGHTImpt_HIT-Strong Smack_HY_PC.wav",
+   "variants": 3
+  },
+  "step": {
+   "label": "Deine Schritte",
+   "category": "step",
+   "files": [
+    "res://assets/audio/library/kenney_impact/footstep_concrete_000.ogg",
+    "res://assets/audio/library/kenney_impact/footstep_concrete_001.ogg",
+    "res://assets/audio/library/kenney_impact/footstep_concrete_002.ogg",
+    "res://assets/audio/library/kenney_impact/footstep_concrete_003.ogg",
+    "res://assets/audio/library/kenney_impact/footstep_concrete_004.ogg"
+   ],
+   "spread": 0.08,
+   "src": "FEETMisc_STEP-Boots on Concrete Dungeon_HY_PC.wav",
+   "variants": 6,
+   "max_seconds": 0.32
+  },
+  "perk": {
+   "label": "Perk oder Karte gewählt",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/sfx/perk_0.wav"
+   ],
+   "src": "MAGAngl_BUFF-Buff Pickup_HY_PC.wav",
+   "variants": 1,
+   "max_seconds": 1.4
+  },
+  "hit_bone": {
+   "label": "Treffer an Skelett",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/kenney_impact/impact_wood_light_000.ogg",
+    "res://assets/audio/library/kenney_impact/impact_wood_light_001.ogg",
+    "res://assets/audio/library/kenney_impact/impact_wood_light_002.ogg",
+    "res://assets/audio/library/kenney_impact/impact_wood_light_003.ogg",
+    "res://assets/audio/library/kenney_impact/impact_wood_light_004.ogg"
+   ],
+   "pitch": 1.12,
+   "spread": 0.08,
+   "with": "rattle_bone",
+   "min_interval": 0.04,
+   "src": "DSGNMisc_HIT-Hit Rattle_HY_PC.wav",
+   "variants": 6
+  },
+  "hit_flesh": {
+   "label": "Treffer an Zombie",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/kenney_impact/impact_soft_heavy_000.ogg",
+    "res://assets/audio/library/kenney_impact/impact_soft_heavy_001.ogg",
+    "res://assets/audio/library/kenney_impact/impact_soft_heavy_002.ogg",
+    "res://assets/audio/library/kenney_impact/impact_soft_heavy_003.ogg",
+    "res://assets/audio/library/kenney_impact/impact_soft_heavy_004.ogg"
+   ],
+   "spread": 0.07,
+   "min_interval": 0.04,
+   "src": "FGHTImpt_MELEE-Gut Punch_HY_PC.wav",
+   "variants": 4
+  },
+  "hit_void": {
+   "label": "Treffer an Leerenwesen",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/sfx/hit_void_0.wav",
+    "res://assets/audio/sfx/hit_void_1.wav",
+    "res://assets/audio/sfx/hit_void_2.wav",
+    "res://assets/audio/sfx/hit_void_3.wav"
+   ],
+   "spread": 0.07,
+   "min_interval": 0.04,
+   "src": "DSGNMisc_HIT-Spell Hit_HY_PC.wav",
+   "variants": 4
+  },
+  "break_bone": {
+   "label": "Skelett verliert ein Teil",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/kenney_impact/impact_wood_medium_000.ogg",
+    "res://assets/audio/library/kenney_impact/impact_wood_medium_001.ogg",
+    "res://assets/audio/library/kenney_impact/impact_wood_medium_002.ogg",
+    "res://assets/audio/library/kenney_impact/impact_wood_medium_003.ogg",
+    "res://assets/audio/library/kenney_impact/impact_wood_medium_004.ogg"
+   ],
+   "pitch": 1.05,
+   "spread": 0.06,
+   "with": "rattle_bone",
+   "src": "Combat and Gore/bone_snap.wav"
+  },
+  "break_flesh": {
+   "label": "Zombie verliert ein Teil",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/sfx/break_flesh_0.wav"
+   ],
+   "spread": 0.06,
+   "src": "Combat and Gore/crunch_splat.wav"
+  },
+  "break_void": {
+   "label": "Leerenwesen verliert ein Teil",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/sfx/break_void_0.wav",
+    "res://assets/audio/sfx/break_void_1.wav"
+   ],
+   "src": "DSGNMisc_SKILL IMPACT-Crunchy Energy_HY_PC.wav",
+   "variants": 2,
+   "max_seconds": 1
+  },
+  "regrow": {
+   "label": "Körperteil wächst nach",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/sfx/regrow_0.wav",
+    "res://assets/audio/sfx/regrow_1.wav"
+   ],
+   "src": "MAGAngl_BUFF-Simple Heal_HY_PC.wav",
+   "variants": 2,
+   "max_seconds": 1.2
+  },
+  "block": {
+   "label": "Schildskelett blockt",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/sfx/block_0.wav",
+    "res://assets/audio/sfx/block_1.wav",
+    "res://assets/audio/sfx/block_2.wav"
+   ],
+   "spread": 0.05,
+   "src": "DSGNMisc_MELEE-Sword Parry_HY_PC.wav",
+   "variants": 3
+  },
+  "kill_bone": {
+   "label": "Skelett zerfällt",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/kenney_impact/impact_wood_heavy_000.ogg",
+    "res://assets/audio/library/kenney_impact/impact_wood_heavy_001.ogg",
+    "res://assets/audio/library/kenney_impact/impact_wood_heavy_002.ogg",
+    "res://assets/audio/library/kenney_impact/impact_wood_heavy_003.ogg",
+    "res://assets/audio/library/kenney_impact/impact_wood_heavy_004.ogg"
+   ],
+   "pitch": 1.08,
+   "spread": 0.06,
+   "with": "collapse_bone",
+   "src": "Combat and Gore/crunch.wav"
+  },
+  "kill_flesh": {
+   "label": "Zombie stirbt",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/creatures_2/die_01.ogg",
+    "res://assets/audio/library/creatures_2/die_02.ogg",
+    "res://assets/audio/library/creatures_2/die_03.ogg",
+    "res://assets/audio/library/creatures_2/die_04.ogg"
+   ],
+   "spread": 0.06,
+   "src": "Combat and Gore/crunch_splat_2.wav"
+  },
+  "kill_necro": {
+   "label": "Nekromant stirbt",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/sfx/kill_necro_0.wav",
+    "res://assets/audio/sfx/kill_necro_1.wav"
+   ],
+   "src": "DSGNMisc_SKILL IMPACT-Energy Dissipate_HY_PC.wav",
+   "variants": 2
+  },
+  "bomber_pop": {
+   "label": "Bomber abgeschossen",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/sfx/bomber_pop_0.wav",
+    "res://assets/audio/sfx/bomber_pop_1.wav",
+    "res://assets/audio/sfx/bomber_pop_2.wav"
+   ],
+   "src": "DSGNImpt_EXPLOSION-Smaller Flare_HY_PC.wav",
+   "variants": 3
+  },
+  "attack_slash": {
+   "label": "Gegner-Hieb (auch Klingenwelle)",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/sfx/attack_slash_0.wav",
+    "res://assets/audio/sfx/attack_slash_1.wav",
+    "res://assets/audio/sfx/attack_slash_2.wav",
+    "res://assets/audio/sfx/attack_slash_3.wav"
+   ],
+   "spread": 0.08,
+   "src": "WHSH_MOVEMENT-Simple Whoosh_HY_PC.wav",
+   "variants": 4
+  },
+  "attack_bite": {
+   "label": "Mini-Zombie beißt",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/sfx/attack_bite_0.wav"
+   ],
+   "spread": 0.1,
+   "src": "Combat and Gore/crunch_quick.wav"
+  },
+  "attack_arrow": {
+   "label": "Skelettschütze schießt",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/sfx/attack_arrow_0.wav",
+    "res://assets/audio/sfx/attack_arrow_1.wav",
+    "res://assets/audio/sfx/attack_arrow_2.wav",
+    "res://assets/audio/sfx/attack_arrow_3.wav"
+   ],
+   "spread": 0.05,
+   "pitch": 0.8,
+   "src": "SWSH_MOVEMENT-Bamboo Whip_HY_PC.wav",
+   "variants": 4
+  },
+  "attack_soul": {
+   "label": "Seelenschädel fliegt",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/sfx/attack_soul_0.wav",
+    "res://assets/audio/sfx/attack_soul_1.wav",
+    "res://assets/audio/sfx/attack_soul_2.wav"
+   ],
+   "src": "DSGNTonl_SKILL RELEASE-Dark Energy Sphere_HY_PC.wav",
+   "variants": 3
+  },
+  "attack_summon": {
+   "label": "Beschwörung",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/sfx/attack_summon_0.wav",
+    "res://assets/audio/sfx/attack_summon_1.wav"
+   ],
+   "src": "MAGSpel_CAST-Sharp Summon_HY_PC.wav",
+   "variants": 2,
+   "max_seconds": 1.4
+  },
+  "attack_slam": {
+   "label": "Nebenboss stampft",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/sfx/attack_slam_0.wav",
+    "res://assets/audio/sfx/attack_slam_1.wav",
+    "res://assets/audio/sfx/attack_slam_2.wav"
+   ],
+   "src": "DSGNImpt_EXPLOSION-Thud_HY_PC.wav",
+   "variants": 3
+  },
+  "attack_roar": {
+   "label": "Nebenboss brüllt",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/creatures_2/roar_04.ogg",
+    "res://assets/audio/library/creatures_2/roar_05.ogg",
+    "res://assets/audio/library/creatures_2/roar_06.ogg"
+   ],
+   "spread": 0.04,
+   "src": "DSGNImpt_EXPLOSION-Eruption_HY_PC.wav",
+   "variants": 2,
+   "max_seconds": 1.6
+  },
+  "attack_salve": {
+   "label": "Leerenrufer: Seelensalve",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/sfx/attack_salve_0.wav",
+    "res://assets/audio/sfx/attack_salve_1.wav",
+    "res://assets/audio/sfx/attack_salve_2.wav"
+   ],
+   "src": "DSGNTonl_SKILL RELEASE-Mind Eraser_HY_PC.wav",
+   "variants": 3
+  },
+  "attack_beam": {
+   "label": "Leerenrufer: Strahl",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/sfx/attack_beam_0.wav",
+    "res://assets/audio/sfx/attack_beam_1.wav",
+    "res://assets/audio/sfx/attack_beam_2.wav"
+   ],
+   "src": "DSGNMisc_SKILL IMPACT-Mecha Purple Laser_HY_PC.wav",
+   "variants": 3
+  },
+  "windup_beam": {
+   "label": "Strahl lädt (auch Photoneneis)",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/sfx/windup_beam_0.wav",
+    "res://assets/audio/sfx/windup_beam_1.wav"
+   ],
+   "src": "DSGNSynth_CAST-Mecha Laser Prepare_HY_PC.wav",
+   "variants": 2
+  },
+  "windup_fuse": {
+   "label": "Bomber-Lunte",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/sfx/windup_fuse_0.wav",
+    "res://assets/audio/sfx/windup_fuse_1.wav",
+    "res://assets/audio/sfx/windup_fuse_2.wav"
+   ],
+   "src": "MAGSpel_CAST-Zap Up_HY_PC.wav",
+   "variants": 3,
+   "max_seconds": 0.8
+  },
+  "windup_summon": {
+   "label": "Beschwörung lädt",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/sfx/windup_summon_0.wav",
+    "res://assets/audio/sfx/windup_summon_1.wav"
+   ],
+   "src": "MAGSpel_CAST-Sharpest Summon_HY_PC.wav",
+   "variants": 2,
+   "max_seconds": 1.4
+  },
+  "void_burst": {
+   "label": "Bomber explodiert",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/sfx/void_burst_0.wav",
+    "res://assets/audio/sfx/void_burst_1.wav",
+    "res://assets/audio/sfx/void_burst_2.wav"
+   ],
+   "src": "DSGNImpt_EXPLOSION-Mana Bomb_HY_PC.wav",
+   "variants": 3
+  },
+  "blast": {
+   "label": "Perk-Explosion",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/sfx/blast_0.wav",
+    "res://assets/audio/sfx/blast_1.wav",
+    "res://assets/audio/sfx/blast_2.wav"
+   ],
+   "min_interval": 0.06,
+   "src": "DSGNImpt_EXPLOSION-Small Flare_HY_PC.wav",
+   "variants": 3
+  },
+  "boss_kill": {
+   "label": "Boss besiegt (Knall)",
+   "category": "stinger",
+   "files": [
+    "res://assets/audio/sfx/boss_kill_0.wav"
+   ],
+   "src": "DSGNImpt_EXPLOSION-Magisplosion_HY_PC.wav",
+   "variants": 1
+  },
+  "boss_intro": {
+   "label": "Boss erscheint",
+   "category": "stinger",
+   "files": [
+    "res://assets/audio/sfx/boss_intro_0.wav"
+   ],
+   "src": "Musical Effects/horror_sting.wav"
+  },
+  "door": {
+   "label": "Tür",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/kenney_rpg/dooropen_1.ogg",
+    "res://assets/audio/library/kenney_rpg/dooropen_2.ogg"
+   ],
+   "spread": 0.04,
+   "src": "Weapons/harsh_thud.wav"
+  },
+  "stairs": {
+   "label": "Treppe",
+   "category": "world",
+   "files": [
+    "res://assets/audio/sfx/stairs_0.wav"
+   ],
+   "src": "Musical Effects/harpsichord_mystery.wav"
+  },
+  "doors_lock": {
+   "label": "Türen schließen sich",
+   "category": "world",
+   "files": [
+    "res://assets/audio/sfx/doors_lock_0.wav",
+    "res://assets/audio/sfx/doors_lock_1.wav"
+   ],
+   "src": "UIMisc_INTERFACE-Lock_HY_PC.wav",
+   "variants": 2
+  },
+  "room_clear": {
+   "label": "Raum frei",
+   "category": "stinger",
+   "files": [
+    "res://assets/audio/sfx/room_clear_0.wav"
+   ],
+   "src": "Musical Effects/harpsichord_chime_positive.wav"
+  },
+  "boss_defeated": {
+   "label": "Sieg-Melodie",
+   "category": "stinger",
+   "files": [
+    "res://assets/audio/sfx/boss_defeated_0.wav"
+   ],
+   "src": "Musical Effects/harpsichord_level_complete.wav"
+  },
+  "team_wipe": {
+   "label": "Niederlage",
+   "category": "stinger",
+   "files": [
+    "res://assets/audio/sfx/team_wipe_0.wav"
+   ],
+   "src": "Musical Effects/harpsichord_defeated.wav"
+  },
+  "ui_click": {
+   "label": "Menü-Klick",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/sfx/ui_click_0.wav",
+    "res://assets/audio/sfx/ui_click_1.wav"
+   ],
+   "spread": 0.03,
+   "src": "UIClick_INTERFACE-Positive Click_HY_PC.wav",
+   "variants": 2
+  },
+  "ui_back": {
+   "label": "Menü zurück",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/sfx/ui_back_0.wav"
+   ],
+   "src": "UI/cancel.wav"
+  },
+  "hurt_voice": {
+   "label": "Stöhnen beim Treffer (Schicht)",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/creatures_2/human_01.ogg",
+    "res://assets/audio/library/creatures_2/human_02.ogg",
+    "res://assets/audio/library/creatures_2/human_03.ogg",
+    "res://assets/audio/library/creatures_2/human_04.ogg",
+    "res://assets/audio/library/creatures_2/human_05.ogg",
+    "res://assets/audio/library/creatures_2/human_06.ogg",
+    "res://assets/audio/library/creatures_2/human_07.ogg",
+    "res://assets/audio/library/creatures_2/human_08.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.03
+  },
+  "hurt_ally": {
+   "label": "Mitspieler wird getroffen",
+   "category": "ally",
+   "files": [
+    "res://assets/audio/library/kenney_impact/impact_punch_medium_000.ogg",
+    "res://assets/audio/library/kenney_impact/impact_punch_medium_001.ogg",
+    "res://assets/audio/library/kenney_impact/impact_punch_medium_002.ogg",
+    "res://assets/audio/library/kenney_impact/impact_punch_medium_003.ogg",
+    "res://assets/audio/library/kenney_impact/impact_punch_medium_004.ogg"
+   ],
+   "spread": 0.05
+  },
+  "step_ally": {
+   "label": "Schritte der Mitspieler",
+   "category": "step",
+   "files": [
+    "res://assets/audio/library/kenney_impact/footstep_concrete_000.ogg",
+    "res://assets/audio/library/kenney_impact/footstep_concrete_001.ogg",
+    "res://assets/audio/library/kenney_impact/footstep_concrete_002.ogg",
+    "res://assets/audio/library/kenney_impact/footstep_concrete_003.ogg",
+    "res://assets/audio/library/kenney_impact/footstep_concrete_004.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.08
+  },
+  "rattle_bone": {
+   "label": "Knochenklappern (Schicht)",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/bones/bones_rattle_0.ogg",
+    "res://assets/audio/library/bones/bones_rattle_1.ogg",
+    "res://assets/audio/library/bones/bones_rattle_2.ogg",
+    "res://assets/audio/library/bones/bones_rattle_3.ogg",
+    "res://assets/audio/library/bones/bones_rattle_4.ogg",
+    "res://assets/audio/library/bones/bones_rattle_5.ogg",
+    "res://assets/audio/library/bones/bones_rattle_6.ogg",
+    "res://assets/audio/library/bones/bones_rattle_7.ogg",
+    "res://assets/audio/library/bones/bones_rattle_8.ogg",
+    "res://assets/audio/library/bones/bones_rattle_9.ogg"
+   ],
+   "volume_db": -5,
+   "spread": 0.1
+  },
+  "collapse_bone": {
+   "label": "Knochen fallen (Schicht)",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/bones/bones-2.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.08
+  },
+  "idle_bone": {
+   "label": "Skelett klappert beim Gehen",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/bones/bones_rattle_0.ogg",
+    "res://assets/audio/library/bones/bones_rattle_1.ogg",
+    "res://assets/audio/library/bones/bones_rattle_2.ogg",
+    "res://assets/audio/library/bones/bones_rattle_3.ogg",
+    "res://assets/audio/library/bones/bones_rattle_4.ogg",
+    "res://assets/audio/library/bones/bones_rattle_5.ogg",
+    "res://assets/audio/library/bones/bones_rattle_6.ogg",
+    "res://assets/audio/library/bones/bones_rattle_7.ogg",
+    "res://assets/audio/library/bones/bones_rattle_8.ogg",
+    "res://assets/audio/library/bones/bones_rattle_9.ogg"
+   ],
+   "spread": 0.12,
+   "min_interval": 0.5
+  },
+  "idle_flesh": {
+   "label": "Zombie stöhnt beim Gehen",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/creatures_2/monster_08.ogg",
+    "res://assets/audio/library/creatures_2/monster_10.ogg",
+    "res://assets/audio/library/creatures_2/monster_11.ogg",
+    "res://assets/audio/library/creatures_2/monster_16.ogg",
+    "res://assets/audio/library/creatures_2/monster_17.ogg",
+    "res://assets/audio/library/creatures_1/monster_02.ogg",
+    "res://assets/audio/library/creatures_1/monster_05.ogg"
+   ],
+   "spread": 0.08,
+   "min_interval": 1
+  },
+  "crate_break": {
+   "label": "Kiste zerbricht",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/kenney_impact/impact_plank_medium_000.ogg",
+    "res://assets/audio/library/kenney_impact/impact_plank_medium_001.ogg",
+    "res://assets/audio/library/kenney_impact/impact_plank_medium_002.ogg",
+    "res://assets/audio/library/kenney_impact/impact_plank_medium_003.ogg",
+    "res://assets/audio/library/kenney_impact/impact_plank_medium_004.ogg"
+   ],
+   "spread": 0.06
+  },
+  "chest_open": {
+   "label": "Truhe geht auf",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/kenney_impact/impact_wood_heavy_000.ogg",
+    "res://assets/audio/library/kenney_impact/impact_wood_heavy_001.ogg",
+    "res://assets/audio/library/kenney_impact/impact_wood_heavy_002.ogg",
+    "res://assets/audio/library/kenney_impact/impact_wood_heavy_003.ogg",
+    "res://assets/audio/library/kenney_impact/impact_wood_heavy_004.ogg"
+   ],
+   "pitch": 0.9,
+   "spread": 0.05
   }
+ }
 }

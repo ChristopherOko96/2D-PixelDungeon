@@ -37,13 +37,23 @@ var _actors: Dictionary = {}
 var _room_id := ""
 ## Sound flow (assets/data/audio_sfx.json): room phase, one boss sting per room,
 ## fx/perk events played once, the local hero's footsteps.
-const STEP_INTERVAL := 0.3
+## Footstep gap when no rig reports touch-downs (the snapshot step_time wins).
+const STEP_INTERVAL := 0.21
 var _phase := ""
 var _boss_announced := false
 var _fx_seen: Dictionary = {}
 var _blasts: Dictionary = {}
 var _local_moving := false
 var _step_timer := 0.0
+var _step_time := STEP_INTERVAL
+## True while the view's hero rigs report the touch-downs (they play the steps).
+var rig_footsteps := false
+## Where the local hero stands (idle enemy sounds only near it).
+var _local_point := Vector2.INF
+## Next moment an idle rattle or groan may sound (one at a time, room-wide).
+var _idle_ready := 0.0
+const IDLE_RANGE := 320.0
+const IDLE_GAP := 1.4
 var _clock := 0.0
 var _team_level := 0
 
@@ -121,7 +131,7 @@ func observe(snapshot: Dictionary, local_peer: int) -> void:
 			particles.splat(fx_point + Vector2(0, 6), Color("4a3020"), 0.5, 9.0)
 			_fx_spawn("wood_burst", fx_point, 0.0, 1.5)
 			_fx_spawn("dust", fx_point + Vector2(0, 4), 0.0, 1.6)
-			_play_any(["break_bone", "block"], 0.05)
+			_play_any(["crate_break", "break_bone"], 0.05)
 		elif fx_kind == "enemy_spawn":
 			_fx_spawn("dust", fx_point + Vector2(0, 6), 0.0, 2.2)
 			particles.burst(fx_point, Color("5a4e48"), 8, 90.0, 0.5, Vector2.UP, 1.2, 3.0, 3.0, "dust")
@@ -130,7 +140,7 @@ func observe(snapshot: Dictionary, local_peer: int) -> void:
 			particles.burst(fx_point, Color("b8864a"), 16, 200.0, 0.6, Vector2.ZERO, PI, 3.0, 4.0)
 			_fx_spawn("wood_burst", fx_point, 0.0, 1.4)
 			_fx_spawn("pickup", fx_point + Vector2(0, -8), 0.0, 1.5)
-			_play_any(["break_bone", "block"], 0.05)
+			_play_any(["chest_open", "break_bone"], 0.05)
 		elif fx_kind == "loot_taken":
 			_fx_spawn("pickup", fx_point, 0.0, 1.6)
 			_play("perk")
@@ -179,10 +189,10 @@ func update(delta: float) -> void:
 		hitstop = maxf(0.0, hitstop - delta)
 		return
 	# The local hero's footsteps while walking.
-	if _local_moving:
+	if _local_moving and not rig_footsteps:
 		_step_timer -= delta
 		if _step_timer <= 0.0:
-			_step_timer = STEP_INTERVAL
+			_step_timer = _step_time
 			_play("step")
 	else:
 		_step_timer = 0.05
@@ -336,6 +346,12 @@ func _observe_enemy(state: Dictionary, enemy: Dictionary) -> void:
 		# No hitstop on ordinary boss hits: under sustained fire it would freeze
 		# the picture several times a second. Hitstop is kept for kills and hurts.
 		_add_shake(0.14 if boss else 0.08)
+	# Walking skeletons rattle, zombies groan, now and then near the hero.
+	if not dying and bool(enemy.get("moving", false)) and _clock >= _idle_ready and _local_point.is_finite() and origin.distance_to(_local_point) < IDLE_RANGE:
+		var idle := "idle_" + _material(enemy)
+		if _has(idle) and randf() < 0.35:
+			_idle_ready = _clock + IDLE_GAP * randf_range(0.8, 1.6)
+			_play(idle, 0.1)
 	# Wounded enemies leave a drip trail where they walk.
 	var health_share := float(enemy.get("hp", 1.0)) / maxf(float(enemy.get("max_hp", 1.0)), 1.0)
 	if not dying and float(material.get("drip_every", 0)) > 0.0 and health_share < float(material.get("drip_below", 0.0)):
@@ -439,7 +455,7 @@ func _observe_player(state: Dictionary, player: Dictionary, local: bool) -> void
 		particles.burst(origin, BLOOD.player, 10, 160.0, 0.5, Vector2.ZERO, PI, 3.0)
 		var hero_blood := gore("player")
 		particles.splat(origin + Vector2(0, 8), Color(str(hero_blood.get("stain", "7a1a22"))), float(hero_blood.get("stain_alpha", 0.6)), 5.0, Vector2(float(player.get("hit_dx", 0.0)), float(player.get("hit_dy", 0.0))))
-		_play("hurt", 0.05)
+		_play("hurt" if local else "hurt_ally", 0.05)
 		_add_shake(0.5 if local else 0.15)
 		hitstop = maxf(hitstop, 0.05 if local else 0.0)
 	# Hero skills: each cast sounds like itself (hero_skills.json "sound").
@@ -448,7 +464,7 @@ func _observe_player(state: Dictionary, player: Dictionary, local: bool) -> void
 	if casts > int(state.get("skill_casts", 0)):
 		state.skill_casts = casts
 		var cast_sound := skill_sound(str(player.get("last_skill", "")))
-		if not cast_sound.is_empty(): _play(cast_sound, 0.05)
+		if not cast_sound.is_empty(): _play(cast_sound, 0.05, "hero")
 		_kick(state, Vector2(0.2, -0.18), 0.0)
 	# Photoneneis: a jolt when it ignites, then a steady rumble while it burns.
 	var beaming: bool = player.get("skills", {}).has("beam") and float(player.get("hp", 0)) > 0
@@ -460,6 +476,8 @@ func _observe_player(state: Dictionary, player: Dictionary, local: bool) -> void
 		if card != str(state.get("last_card", card)) and not card.is_empty(): _play("perk")
 		state.last_card = card
 		_local_moving = bool(player.get("moving", false)) and float(player.get("hp", 1)) > 0
+		_step_time = float(player.get("step_time", STEP_INTERVAL))
+		_local_point = origin
 		# A newly picked perk chimes for the player who took it.
 		var perk := str(player.get("last_perk", ""))
 		if perk != str(state.get("last_perk", "")):
@@ -487,9 +505,11 @@ func _add_shake(amount: float) -> void:
 	shake = minf(1.0, shake + amount)
 
 
-func _play(name: String, spread: float = 0.08) -> void:
+## Plays an event; `category` overrides its mix group (a hero skill that
+## borrows an enemy sound stays at the hero's level).
+func _play(name: String, spread: float = 0.08, category: String = "") -> void:
 	if sfx != null:
-		sfx.play(name, spread)
+		sfx.play(name, spread, category)
 
 
 func _has(name: String) -> bool:
