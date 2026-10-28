@@ -1,0 +1,1304 @@
+{
+ "floor_00": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor_1..8 (+extended Risse), umgefärbt"
+ },
+ "floor_01": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor_1..8 (+extended Risse), umgefärbt"
+ },
+ "floor_02": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor_1..8 (+extended Risse), umgefärbt"
+ },
+ "floor_03": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor_1..8 (+extended Risse), umgefärbt"
+ },
+ "floor_04": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor_1..8 (+extended Risse), umgefärbt"
+ },
+ "floor_05": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor_1..8 (+extended Risse), umgefärbt"
+ },
+ "floor_06": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor_1..8 (+extended Risse), umgefärbt"
+ },
+ "floor_07": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor_1..8 (+extended Risse), umgefärbt"
+ },
+ "floor_08": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor_1..8 (+extended Risse), umgefärbt"
+ },
+ "floor_09": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor_1..8 (+extended Risse), umgefärbt"
+ },
+ "floor_10": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor_1..8 (+extended Risse), umgefärbt"
+ },
+ "floor_11": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor_1..8 (+extended Risse), umgefärbt"
+ },
+ "lava_00": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor, umgefärbt zu Eiswasser"
+ },
+ "lava_01": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor, umgefärbt zu Eiswasser"
+ },
+ "lava_edge_top": {
+  "w": 96,
+  "h": 96,
+  "kind": "sprite",
+  "src": "0x72 edge_down, umgefärbt (Eiskante)"
+ },
+ "wall_h": {
+  "w": 192,
+  "h": 74,
+  "kind": "sprite",
+  "src": "0x72 wall_top_mid + wall_mid, umgefärbt"
+ },
+ "wall_v": {
+  "w": 62,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 wall_edge_mid_left + wall_mid, umgefärbt"
+ },
+ "corner_cap": {
+  "w": 76,
+  "h": 76,
+  "kind": "sprite",
+  "src": "0x72 wall_top_left, umgefärbt"
+ },
+ "wall_h_glowpost": {
+  "w": 48,
+  "h": 96,
+  "kind": "sprite",
+  "src": "0x72 column_wall, umgefärbt"
+ },
+ "wall_post_slit": {
+  "w": 48,
+  "h": 96,
+  "kind": "sprite",
+  "src": "0x72 column_wall, umgefärbt"
+ },
+ "wall_v_glow": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 wall_fountain_mid_blue"
+ },
+ "wall_v_glow_b": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 wall_fountain_mid_blue"
+ },
+ "wall_torch_block": {
+  "w": 48,
+  "h": 72,
+  "kind": "sprite",
+  "src": "extended Fackel, umgefärbt"
+ },
+ "wall_skull_a": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 wall_hole_1, umgefärbt"
+ },
+ "wall_skull_b": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 wall_hole_2, umgefärbt"
+ },
+ "portcullis": {
+  "w": 192,
+  "h": 96,
+  "kind": "sprite",
+  "src": "0x72 doors_leaf_closed x2, umgefärbt"
+ },
+ "gate_side": {
+  "w": 96,
+  "h": 96,
+  "kind": "sprite",
+  "src": "0x72 doors_leaf_open, umgefärbt"
+ },
+ "jamb_a": {
+  "w": 48,
+  "h": 96,
+  "kind": "sprite",
+  "src": "0x72 doors_frame_left, umgefärbt"
+ },
+ "jamb_b": {
+  "w": 48,
+  "h": 96,
+  "kind": "sprite",
+  "src": "0x72 doors_frame_right, umgefärbt"
+ },
+ "demon_lintel": {
+  "w": 128,
+  "h": 64,
+  "kind": "sprite",
+  "src": "0x72 doors_frame_top, umgefärbt"
+ },
+ "door_stairs": {
+  "w": 96,
+  "h": 96,
+  "kind": "sprite",
+  "src": "0x72 floor_stairs"
+ },
+ "door_stairs_small": {
+  "w": 64,
+  "h": 64,
+  "kind": "sprite",
+  "src": "0x72 floor_stairs"
+ },
+ "portal": {
+  "w": 96,
+  "h": 96,
+  "kind": "sprite",
+  "src": "0x72 floor_stairs, umgefärbt (offen)"
+ },
+ "portal_dark": {
+  "w": 96,
+  "h": 96,
+  "kind": "sprite",
+  "src": "0x72 floor_stairs, umgefärbt (verschlossen)"
+ },
+ "bridge_v": {
+  "w": 96,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 floor_ladder, umgefärbt (Eisbrücke)"
+ },
+ "bridge_h": {
+  "w": 48,
+  "h": 96,
+  "kind": "sprite",
+  "src": "0x72 floor_ladder, umgefärbt (Eisbrücke)"
+ },
+ "rune_pillar_a": {
+  "w": 48,
+  "h": 105,
+  "kind": "sprite",
+  "src": "0x72 column, umgefärbt"
+ },
+ "rune_pillar_b": {
+  "w": 48,
+  "h": 105,
+  "kind": "sprite",
+  "src": "0x72 column, umgefärbt"
+ },
+ "rune_pillar_c": {
+  "w": 48,
+  "h": 105,
+  "kind": "sprite",
+  "src": "0x72 column, umgefärbt"
+ },
+ "rune_pillar_d": {
+  "w": 48,
+  "h": 105,
+  "kind": "sprite",
+  "src": "0x72 column, umgefärbt"
+ },
+ "obelisk": {
+  "w": 48,
+  "h": 105,
+  "kind": "sprite",
+  "src": "0x72 column, umgefärbt"
+ },
+ "skull_obelisk": {
+  "w": 48,
+  "h": 105,
+  "kind": "sprite",
+  "src": "0x72 column, umgefärbt"
+ },
+ "brazier_bowl": {
+  "w": 24,
+  "h": 48,
+  "kind": "sprite",
+  "src": "extended Fackel, umgefärbt (Frostflamme)"
+ },
+ "brazier_pillar": {
+  "w": 24,
+  "h": 48,
+  "kind": "sprite",
+  "src": "extended Fackel, umgefärbt (Frostflamme)"
+ },
+ "brazier_rune": {
+  "w": 24,
+  "h": 48,
+  "kind": "sprite",
+  "src": "extended Fackel, umgefärbt (Frostflamme)"
+ },
+ "brazier_low": {
+  "w": 24,
+  "h": 48,
+  "kind": "sprite",
+  "src": "extended Fackel, umgefärbt (Frostflamme)"
+ },
+ "brazier_low_b": {
+  "w": 24,
+  "h": 48,
+  "kind": "sprite",
+  "src": "extended Fackel, umgefärbt (Frostflamme)"
+ },
+ "brazier_floor": {
+  "w": 24,
+  "h": 48,
+  "kind": "sprite",
+  "src": "extended Fackel, umgefärbt (Frostflamme)"
+ },
+ "brazier_demon": {
+  "w": 24,
+  "h": 48,
+  "kind": "sprite",
+  "src": "extended Fackel, umgefärbt (Frostflamme)"
+ },
+ "hanging_brazier": {
+  "w": 24,
+  "h": 48,
+  "kind": "sprite",
+  "src": "extended Fackel, umgefärbt (Frostflamme)"
+ },
+ "wall_brazier": {
+  "w": 24,
+  "h": 48,
+  "kind": "sprite",
+  "src": "extended Fackel, umgefärbt (Frostflamme)"
+ },
+ "wall_torch_hook": {
+  "w": 24,
+  "h": 48,
+  "kind": "sprite",
+  "src": "extended Fackel, umgefärbt (Frostflamme)"
+ },
+ "torch_a": {
+  "w": 24,
+  "h": 48,
+  "kind": "sprite",
+  "src": "extended Fackel, umgefärbt (Frostflamme)"
+ },
+ "torch_b": {
+  "w": 24,
+  "h": 48,
+  "kind": "sprite",
+  "src": "extended Fackel, umgefärbt (Frostflamme)"
+ },
+ "torch_c": {
+  "w": 24,
+  "h": 48,
+  "kind": "sprite",
+  "src": "extended Fackel, umgefärbt (Frostflamme)"
+ },
+ "altar": {
+  "w": 144,
+  "h": 96,
+  "kind": "sprite",
+  "src": "extended Brunnen, umgefärbt"
+ },
+ "spire_big": {
+  "w": 48,
+  "h": 120,
+  "kind": "sprite",
+  "src": "6DNLbZ Kristall (Superdark-Stil), umgefärbt"
+ },
+ "spire_big_b": {
+  "w": 48,
+  "h": 120,
+  "kind": "sprite",
+  "src": "6DNLbZ Kristall (Superdark-Stil), umgefärbt"
+ },
+ "spire_big_t": {
+  "w": 48,
+  "h": 120,
+  "kind": "sprite",
+  "src": "6DNLbZ Kristall (Superdark-Stil), umgefärbt"
+ },
+ "spire_t": {
+  "w": 30,
+  "h": 48,
+  "kind": "sprite",
+  "src": "6DNLbZ Kristall (Superdark-Stil), umgefärbt"
+ },
+ "spires_t": {
+  "w": 30,
+  "h": 48,
+  "kind": "sprite",
+  "src": "6DNLbZ Kristall (Superdark-Stil), umgefärbt"
+ },
+ "spire_mid": {
+  "w": 30,
+  "h": 48,
+  "kind": "sprite",
+  "src": "6DNLbZ Kristall (Superdark-Stil), umgefärbt"
+ },
+ "spires_lava": {
+  "w": 30,
+  "h": 48,
+  "kind": "sprite",
+  "src": "6DNLbZ Kristall (Superdark-Stil), umgefärbt"
+ },
+ "spire_small": {
+  "w": 30,
+  "h": 30,
+  "kind": "sprite",
+  "src": "6DNLbZ Kristall (Superdark-Stil), umgefärbt"
+ },
+ "spire_tiny": {
+  "w": 30,
+  "h": 30,
+  "kind": "sprite",
+  "src": "6DNLbZ Kristall (Superdark-Stil), umgefärbt"
+ },
+ "boulders": {
+  "w": 27,
+  "h": 30,
+  "kind": "sprite",
+  "src": "6DNLbZ Steinbrocken, umgefärbt"
+ },
+ "rocks_a": {
+  "w": 27,
+  "h": 30,
+  "kind": "sprite",
+  "src": "6DNLbZ Steinbrocken, umgefärbt"
+ },
+ "rocks_b": {
+  "w": 27,
+  "h": 30,
+  "kind": "sprite",
+  "src": "6DNLbZ Steinbrocken, umgefärbt"
+ },
+ "rocks_dark": {
+  "w": 27,
+  "h": 30,
+  "kind": "sprite",
+  "src": "6DNLbZ Steinbrocken, umgefärbt"
+ },
+ "rocks_lava": {
+  "w": 27,
+  "h": 30,
+  "kind": "sprite",
+  "src": "6DNLbZ Steinbrocken, umgefärbt"
+ },
+ "rubble": {
+  "w": 27,
+  "h": 30,
+  "kind": "sprite",
+  "src": "6DNLbZ Steinbrocken, umgefärbt"
+ },
+ "coal": {
+  "w": 27,
+  "h": 30,
+  "kind": "sprite",
+  "src": "6DNLbZ Steinbrocken, umgefärbt"
+ },
+ "skull_pile": {
+  "w": 18,
+  "h": 18,
+  "kind": "sprite",
+  "src": "0x72 skull, umgefärbt"
+ },
+ "skull_pile_t": {
+  "w": 18,
+  "h": 18,
+  "kind": "sprite",
+  "src": "0x72 skull, umgefärbt"
+ },
+ "coal_skulls": {
+  "w": 18,
+  "h": 18,
+  "kind": "sprite",
+  "src": "0x72 skull, umgefärbt"
+ },
+ "bones_t": {
+  "w": 18,
+  "h": 18,
+  "kind": "sprite",
+  "src": "0x72 skull, umgefärbt"
+ },
+ "bones_scatter": {
+  "w": 18,
+  "h": 18,
+  "kind": "sprite",
+  "src": "0x72 skull, umgefärbt"
+ },
+ "bone_a": {
+  "w": 18,
+  "h": 18,
+  "kind": "sprite",
+  "src": "0x72 skull, umgefärbt"
+ },
+ "bone_b": {
+  "w": 18,
+  "h": 18,
+  "kind": "sprite",
+  "src": "0x72 skull, umgefärbt"
+ },
+ "bone_c": {
+  "w": 18,
+  "h": 18,
+  "kind": "sprite",
+  "src": "0x72 skull, umgefärbt"
+ },
+ "bone_d": {
+  "w": 18,
+  "h": 18,
+  "kind": "sprite",
+  "src": "0x72 skull, umgefärbt"
+ },
+ "bone_e": {
+  "w": 18,
+  "h": 18,
+  "kind": "sprite",
+  "src": "0x72 skull, umgefärbt"
+ },
+ "bone_f": {
+  "w": 18,
+  "h": 18,
+  "kind": "sprite",
+  "src": "0x72 skull, umgefärbt"
+ },
+ "bone_g": {
+  "w": 18,
+  "h": 18,
+  "kind": "sprite",
+  "src": "0x72 skull, umgefärbt"
+ },
+ "demon_head": {
+  "w": 18,
+  "h": 18,
+  "kind": "sprite",
+  "src": "0x72 skull, umgefärbt"
+ },
+ "skull_heap": {
+  "w": 30,
+  "h": 48,
+  "kind": "sprite",
+  "src": "6DNLbZ Kristall vor geheimer Wand"
+ },
+ "cage_small": {
+  "w": 42,
+  "h": 60,
+  "kind": "sprite",
+  "src": "0x72 crate, umgefärbt"
+ },
+ "cage_hang": {
+  "w": 42,
+  "h": 60,
+  "kind": "sprite",
+  "src": "0x72 crate, umgefärbt"
+ },
+ "banner_1": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 wall_banner_*, umgefärbt"
+ },
+ "banner_2": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 wall_banner_*, umgefärbt"
+ },
+ "banner_3": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 wall_banner_*, umgefärbt"
+ },
+ "banner_4": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 wall_banner_*, umgefärbt"
+ },
+ "banner_5": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 wall_banner_*, umgefärbt"
+ },
+ "banner_a": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 wall_banner_*, umgefärbt"
+ },
+ "banner_b": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 wall_banner_*, umgefärbt"
+ },
+ "banner_chain": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 wall_banner_*, umgefärbt"
+ },
+ "chain_a": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 wall_goo, umgefärbt (Eiszapfen an der Wand)"
+ },
+ "chain_b": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 wall_goo, umgefärbt (Eiszapfen an der Wand)"
+ },
+ "chain_long": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 wall_goo, umgefärbt (Eiszapfen an der Wand)"
+ },
+ "chain_long_b": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 wall_goo, umgefärbt (Eiszapfen an der Wand)"
+ },
+ "chain_swag": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 wall_goo, umgefärbt (Eiszapfen an der Wand)"
+ },
+ "chain_swag_b": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 wall_goo, umgefärbt (Eiszapfen an der Wand)"
+ },
+ "chain_hang": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 wall_goo, umgefärbt (Eiszapfen an der Wand)"
+ },
+ "chain_hook": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 wall_goo, umgefärbt (Eiszapfen an der Wand)"
+ },
+ "shackle_a": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 wall_goo, umgefärbt (Eiszapfen an der Wand)"
+ },
+ "shackle_skull": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 wall_goo, umgefärbt (Eiszapfen an der Wand)"
+ },
+ "shackle_b": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 wall_goo, umgefärbt (Eiszapfen an der Wand)"
+ },
+ "rune_big": {
+  "w": 144,
+  "h": 144,
+  "kind": "sprite",
+  "src": "extended Teppich, umgefärbt"
+ },
+ "rune_small": {
+  "w": 96,
+  "h": 96,
+  "kind": "sprite",
+  "src": "extended Teppich, umgefärbt"
+ },
+ "rune_plate": {
+  "w": 96,
+  "h": 96,
+  "kind": "sprite",
+  "src": "0x72 button_blue_up"
+ },
+ "fire_plate": {
+  "w": 96,
+  "h": 96,
+  "kind": "sprite",
+  "src": "0x72 wall_fountain_basin_blue"
+ },
+ "demon_plate": {
+  "w": 80,
+  "h": 70,
+  "kind": "sprite",
+  "src": "0x72 chest_mimic, umgefärbt (Mimic statt Siegel)"
+ },
+ "pit": {
+  "w": 96,
+  "h": 96,
+  "kind": "sprite",
+  "src": "0x72 hole"
+ },
+ "spike_trap": {
+  "w": 96,
+  "h": 96,
+  "kind": "sprite",
+  "src": "0x72 floor_spikes_anim, umgefärbt (Eisdornen)"
+ },
+ "spike_trap_b": {
+  "w": 96,
+  "h": 96,
+  "kind": "sprite",
+  "src": "0x72 floor_spikes_anim, umgefärbt (Eisdornen)"
+ },
+ "spike_block": {
+  "w": 96,
+  "h": 96,
+  "kind": "sprite",
+  "src": "0x72 floor_spikes_anim, umgefärbt (Eisdornen)"
+ },
+ "grate": {
+  "w": 64,
+  "h": 64,
+  "kind": "sprite",
+  "src": "0x72 floor_ladder, umgefärbt (Frostschlot)"
+ },
+ "grate_a": {
+  "w": 64,
+  "h": 64,
+  "kind": "sprite",
+  "src": "0x72 floor_ladder, umgefärbt (Frostschlot)"
+ },
+ "grate_b": {
+  "w": 64,
+  "h": 64,
+  "kind": "sprite",
+  "src": "0x72 floor_ladder, umgefärbt (Frostschlot)"
+ },
+ "vent": {
+  "w": 64,
+  "h": 64,
+  "kind": "sprite",
+  "src": "0x72 floor_ladder, umgefärbt (Frostschlot)"
+ },
+ "chest_closed": {
+  "w": 64,
+  "h": 56,
+  "kind": "sprite",
+  "src": "extended Truhe"
+ },
+ "chest_open": {
+  "w": 64,
+  "h": 64,
+  "kind": "sprite",
+  "src": "0x72 chest_full_open_anim"
+ },
+ "chest_gold": {
+  "w": 64,
+  "h": 64,
+  "kind": "sprite",
+  "src": "0x72 chest_full_open_anim"
+ },
+ "chest_empty": {
+  "w": 64,
+  "h": 64,
+  "kind": "sprite",
+  "src": "0x72 chest_empty_open_anim"
+ },
+ "heart": {
+  "w": 40,
+  "h": 44,
+  "kind": "sprite",
+  "src": "0x72 flask_big_red (Heiltrank)"
+ },
+ "key": {
+  "w": 30,
+  "h": 66,
+  "kind": "sprite",
+  "src": "extended Schlüssel"
+ },
+ "rune_gem": {
+  "w": 30,
+  "h": 36,
+  "kind": "sprite",
+  "src": "extended Edelstein, umgefärbt (Eissplitter)"
+ },
+ "fire_orb": {
+  "w": 24,
+  "h": 40,
+  "kind": "sprite",
+  "src": "extended Flamme, umgefärbt (Frostkugel)"
+ },
+ "icon_scroll": {
+  "w": 64,
+  "h": 64,
+  "kind": "sprite",
+  "src": "0x72 button_blue_up"
+ },
+ "icon_swords": {
+  "w": 30,
+  "h": 63,
+  "kind": "sprite",
+  "src": "0x72 weapon_regular_sword"
+ },
+ "icon_chest": {
+  "w": 64,
+  "h": 56,
+  "kind": "sprite",
+  "src": "extended Truhe"
+ },
+ "icon_door": {
+  "w": 64,
+  "h": 64,
+  "kind": "sprite",
+  "src": "0x72 floor_stairs"
+ },
+ "icon_demon": {
+  "w": 72,
+  "h": 72,
+  "kind": "sprite",
+  "src": "Superdark Golem-Kopf, umgefärbt"
+ },
+ "icon_demon_big": {
+  "w": 96,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark Golem-Kopf, umgefärbt"
+ },
+ "key_gold": {
+  "w": 30,
+  "h": 66,
+  "kind": "sprite",
+  "src": "extended Schlüssel (Gold)"
+ },
+ "key_ice": {
+  "w": 30,
+  "h": 66,
+  "kind": "sprite",
+  "src": "extended Schlüssel, umgefärbt"
+ },
+ "key_crystal": {
+  "w": 30,
+  "h": 66,
+  "kind": "sprite",
+  "src": "extended Schlüssel, umgefärbt"
+ },
+ "mob_ice_zombie_f0": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 ice_zombie_anim"
+ },
+ "mob_ice_zombie_f1": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 ice_zombie_anim"
+ },
+ "mob_ice_zombie_f2": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 ice_zombie_anim"
+ },
+ "mob_ice_zombie_f3": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 ice_zombie_anim"
+ },
+ "mob_frost_skeleton_f0": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 skelet_run_anim, umgefärbt"
+ },
+ "mob_frost_skeleton_f1": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 skelet_run_anim, umgefärbt"
+ },
+ "mob_frost_skeleton_f2": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 skelet_run_anim, umgefärbt"
+ },
+ "mob_frost_skeleton_f3": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 skelet_run_anim, umgefärbt"
+ },
+ "mob_frost_necromancer_f0": {
+  "w": 48,
+  "h": 69,
+  "kind": "sprite",
+  "src": "0x72 necromancer_anim, umgefärbt"
+ },
+ "mob_frost_necromancer_f1": {
+  "w": 48,
+  "h": 69,
+  "kind": "sprite",
+  "src": "0x72 necromancer_anim, umgefärbt"
+ },
+ "mob_frost_necromancer_f2": {
+  "w": 48,
+  "h": 69,
+  "kind": "sprite",
+  "src": "0x72 necromancer_anim, umgefärbt"
+ },
+ "mob_frost_necromancer_f3": {
+  "w": 48,
+  "h": 69,
+  "kind": "sprite",
+  "src": "0x72 necromancer_anim, umgefärbt"
+ },
+ "mob_frost_corpse_f0": {
+  "w": 96,
+  "h": 108,
+  "kind": "sprite",
+  "src": "0x72 big_zombie_idle_anim, umgefärbt"
+ },
+ "mob_frost_corpse_f1": {
+  "w": 96,
+  "h": 108,
+  "kind": "sprite",
+  "src": "0x72 big_zombie_idle_anim, umgefärbt"
+ },
+ "mob_frost_corpse_f2": {
+  "w": 96,
+  "h": 108,
+  "kind": "sprite",
+  "src": "0x72 big_zombie_idle_anim, umgefärbt"
+ },
+ "mob_frost_corpse_f3": {
+  "w": 96,
+  "h": 108,
+  "kind": "sprite",
+  "src": "0x72 big_zombie_idle_anim, umgefärbt"
+ },
+ "mob_ice_slime_0": {
+  "w": 93,
+  "h": 57,
+  "kind": "sprite",
+  "src": "6DNLbZ Wasser-Elementar, umgefärbt"
+ },
+ "mob_ice_slime_1": {
+  "w": 57,
+  "h": 39,
+  "kind": "sprite",
+  "src": "6DNLbZ Wasser-Elementar, umgefärbt"
+ },
+ "mob_ice_slime_2": {
+  "w": 42,
+  "h": 30,
+  "kind": "sprite",
+  "src": "6DNLbZ Wasser-Elementar, umgefärbt"
+ },
+ "mob_frost_whirl_0": {
+  "w": 78,
+  "h": 99,
+  "kind": "sprite",
+  "src": "6DNLbZ Luft-Elementar, umgefärbt"
+ },
+ "mob_frost_whirl_1": {
+  "w": 30,
+  "h": 48,
+  "kind": "sprite",
+  "src": "6DNLbZ Luft-Elementar, umgefärbt"
+ },
+ "mob_ice_crystal_0": {
+  "w": 48,
+  "h": 120,
+  "kind": "sprite",
+  "src": "6DNLbZ Kristall-Elementar, umgefärbt"
+ },
+ "mob_ice_crystal_1": {
+  "w": 30,
+  "h": 48,
+  "kind": "sprite",
+  "src": "6DNLbZ Kristall-Elementar, umgefärbt"
+ },
+ "mob_ice_knight_f0": {
+  "w": 48,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Ritter"
+ },
+ "mob_ice_knight_f1": {
+  "w": 48,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Ritter"
+ },
+ "mob_ice_knight_f2": {
+  "w": 48,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Ritter"
+ },
+ "mob_ice_knight_f3": {
+  "w": 48,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Ritter"
+ },
+ "mob_ice_knight_f4": {
+  "w": 48,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Ritter"
+ },
+ "mob_ice_knight_f5": {
+  "w": 48,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Ritter"
+ },
+ "mob_ice_knight_f6": {
+  "w": 48,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Ritter"
+ },
+ "mob_ice_knight_f7": {
+  "w": 48,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Ritter"
+ },
+ "mob_frost_imp_f0": {
+  "w": 48,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Hornkobold"
+ },
+ "mob_frost_imp_f1": {
+  "w": 48,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Hornkobold"
+ },
+ "mob_frost_imp_f2": {
+  "w": 48,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Hornkobold"
+ },
+ "mob_frost_imp_f3": {
+  "w": 48,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Hornkobold"
+ },
+ "mob_frost_imp_f4": {
+  "w": 48,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Hornkobold"
+ },
+ "mob_frost_imp_f5": {
+  "w": 48,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Hornkobold"
+ },
+ "mob_frost_imp_f6": {
+  "w": 48,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Hornkobold"
+ },
+ "mob_frost_imp_f7": {
+  "w": 48,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Hornkobold"
+ },
+ "mob_frost_commander": {
+  "w": 96,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark knights großer Ritter, umgefärbt"
+ },
+ "boss_golem_p1_f0": {
+  "w": 192,
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt"
+ },
+ "boss_golem_p1_f1": {
+  "w": 192,
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt"
+ },
+ "boss_golem_p1_f2": {
+  "w": 192,
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt"
+ },
+ "boss_golem_p1_f3": {
+  "w": 192,
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt"
+ },
+ "boss_golem_p1_f4": {
+  "w": 192,
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt"
+ },
+ "boss_golem_p1_f5": {
+  "w": 192,
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt"
+ },
+ "boss_golem_p2_f0": {
+  "w": 192,
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt"
+ },
+ "boss_golem_p2_f1": {
+  "w": 192,
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt"
+ },
+ "boss_golem_p2_f2": {
+  "w": 192,
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt"
+ },
+ "boss_golem_p2_f3": {
+  "w": 192,
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt"
+ },
+ "boss_golem_p2_f4": {
+  "w": 192,
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt"
+ },
+ "boss_golem_p2_f5": {
+  "w": 192,
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt"
+ },
+ "boss_golem_p3_f0": {
+  "w": 192,
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt"
+ },
+ "boss_golem_p3_f1": {
+  "w": 192,
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt"
+ },
+ "boss_golem_p3_f2": {
+  "w": 192,
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt"
+ },
+ "boss_golem_p3_f3": {
+  "w": 192,
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt"
+ },
+ "boss_golem_p3_f4": {
+  "w": 192,
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt"
+ },
+ "boss_golem_p3_f5": {
+  "w": 192,
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt"
+ },
+ "boss_golem_walk_f0": {
+  "w": 192,
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt"
+ },
+ "boss_golem_walk_f1": {
+  "w": 192,
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt"
+ },
+ "boss_golem_walk_f2": {
+  "w": 192,
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt"
+ },
+ "boss_golem_walk_f3": {
+  "w": 192,
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt"
+ },
+ "boss_golem_walk_f4": {
+  "w": 192,
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt"
+ },
+ "boss_golem_walk_f5": {
+  "w": 192,
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt"
+ },
+ "weapon_gravity_hammer": {
+  "w": 10,
+  "h": 37,
+  "kind": "sprite",
+  "src": "0x72 weapon_big_hammer"
+ },
+ "weapon_gravity_staff": {
+  "w": 8,
+  "h": 30,
+  "kind": "sprite",
+  "src": "0x72 weapon_red_magic_staff"
+ },
+ "ally_golem_f0": {
+  "w": 96,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt (Gravitationssteingolem)"
+ },
+ "ally_golem_f1": {
+  "w": 96,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt (Gravitationssteingolem)"
+ },
+ "ally_golem_f2": {
+  "w": 96,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt (Gravitationssteingolem)"
+ },
+ "ally_golem_f3": {
+  "w": 96,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt (Gravitationssteingolem)"
+ },
+ "ally_golem_f4": {
+  "w": 96,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt (Gravitationssteingolem)"
+ },
+ "ally_golem_f5": {
+  "w": 96,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt (Gravitationssteingolem)"
+ },
+ "ally_golem_walk_f0": {
+  "w": 96,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt (Gravitationssteingolem)"
+ },
+ "ally_golem_walk_f1": {
+  "w": 96,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt (Gravitationssteingolem)"
+ },
+ "ally_golem_walk_f2": {
+  "w": 96,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt (Gravitationssteingolem)"
+ },
+ "ally_golem_walk_f3": {
+  "w": 96,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt (Gravitationssteingolem)"
+ },
+ "ally_golem_walk_f4": {
+  "w": 96,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt (Gravitationssteingolem)"
+ },
+ "ally_golem_walk_f5": {
+  "w": 96,
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt (Gravitationssteingolem)"
+ },
+ "rock_throw": {
+  "w": 45,
+  "h": 50,
+  "kind": "sprite",
+  "src": "6DNLbZ Steinbrocken, umgefärbt (geworfener Fels)"
+ },
+ "rock_spike": {
+  "w": 30,
+  "h": 48,
+  "kind": "sprite",
+  "src": "6DNLbZ Kristall, umgefärbt (Felsdorn)"
+ }
+}

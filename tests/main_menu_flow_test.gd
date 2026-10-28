@@ -34,6 +34,7 @@ func _run() -> void:
 	await _test_default_port_field_is_a_valid_port()
 	await _test_opens_on_menu_with_story_first_endless_soon_and_no_account()
 	await _test_story_choice_lists_numbered_stories_and_locks_unfinished_ones()
+	await _test_story_two_frostgruft_requests_its_own_scene_with_the_hero()
 	await _test_multiplayer_opens_lobby_and_lobby_returns_to_menu()
 	await _test_story_one_starts_solo_run_and_leaving_returns_to_menu()
 	await _test_debug_room_jump_starts_in_that_room_with_earlier_rooms_cleared()
@@ -99,6 +100,27 @@ func _test_story_choice_lists_numbered_stories_and_locks_unfinished_ones() -> vo
 	for i in range(menu.stories.size()):
 		if menu._story_cards[i].disabled == bool(menu.stories[i].get("playable", false)): locked_ok = false
 	check(locked_ok, "unfinished stories are locked")
+	game.queue_free()
+	await process_frame
+
+func _test_story_two_frostgruft_requests_its_own_scene_with_the_hero() -> void:
+	# Arrange: the game's own handler would swap the scene, so only this test listens.
+	var game = await _new_game()
+	var menu = game.main_menu
+	for c: Dictionary in menu.story_scene_requested.get_connections():
+		menu.story_scene_requested.disconnect(c.callable)
+	var requested: Array = []
+	menu.story_scene_requested.connect(func(path: String, class_id: String): requested.append([path, class_id]))
+	menu._open_stories()
+	# Act: the story first shows the hero cards, the hero choice opens the scene
+	menu._choose_story("frostgruft")
+	var heroes_first: bool = menu._class_panel.visible and requested.is_empty()
+	menu._choose_class("mage")
+	# Assert
+	check(not menu._story_cards[1].disabled, "story 2, the Frostgruft, is playable")
+	check(heroes_first, "story 2 first shows the hero cards")
+	check(requested == [["res://src/hell/frost_dungeon.tscn", "mage"]] and not menu._class_panel.visible and not game.active, "the hero choice asks for the frost scene with that class instead of the crypt run")
+	check(ResourceLoader.exists("res://src/hell/frost_dungeon.tscn"), "the frost scene exists")
 	game.queue_free()
 	await process_frame
 

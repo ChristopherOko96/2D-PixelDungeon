@@ -17,6 +17,8 @@ signal start_requested(endless: bool, class_id: String)
 signal multiplayer_requested
 ## The player picked the Hell-Dungeon mode (src/hell/hell_dungeon.tscn).
 signal hell_requested
+## The player picked a hero for a story that runs in its own scene (story "scene" in story_campaigns.json).
+signal story_scene_requested(scene_path: String, class_id: String)
 signal quit_requested
 signal settings_changed(settings: Dictionary)
 
@@ -476,7 +478,19 @@ func _open_classes(endless: bool) -> void:
 
 func _choose_class(id: String) -> void:
 	_close_panels()
+	var scene := _story_scene() if not _class_endless else ""
+	if scene != "":
+		story_scene_requested.emit(scene, id)
+		return
 	start_requested.emit(_class_endless, id)
+
+
+## The scene of the chosen story, or "" when it plays as a crypt run.
+func _story_scene() -> String:
+	for story: Dictionary in stories:
+		if str(story.id) == selected_story:
+			return str(story.get("scene", ""))
+	return ""
 
 
 # --- Options ----------------------------------------------------------------

@@ -87,6 +87,38 @@ Der Modus ist bewusst vom vernetzten Krypta-Spiel (`src/game.gd`) getrennt: kein
 | `clone` | `floor` (Etage des Bosses mit Skill), `duration` (s), `fire_every` (s), `range` (px), `follow`/`weave` (px) |
 | `sequence_chest` | `gems_base` (+ Etage) und `heart` der Belohnungstruhe |
 
+## Themen: Frostgruft (Story 2)
+
+`hell_game.gd` liest optional eine Thema-Datei (`theme_path`). Ohne sie gilt `THEME_DEFAULT`, also der Hölle-Look.
+`src/hell/frost_dungeon.tscn` setzt `assets/data/frost_theme.json`: Etagen aus `assets/data/frost_floors.json`,
+Skin aus `assets/sprites/frost/` (0x72, Superdark, Nijikokun; `tools/frost_dungeon/`), scharfe Pixel, Held ×3,
+Schlüssel aus Schlüsselräumen in Truhen (`key_in_chest`), Zelle 2 als Glatteis statt Lava (`liquid`: rutschen, kein
+Schaden), eigene Schlüsselnamen, Farben und Wortersetzungen (`words`). Heldenklassen (`classes`, `class_id`):
+Schwertkämpfer (Schwerthieb im Bogen, 7 Herzen), Bogenschütze (Pfeile, 6 Herzen), Magier (Magiekugel mit Flächenschaden,
+5 Herzen); Waffen ×2 in der Hand (`weapon_scale`). Gegner (`mobs`, `roster`, Regeln in `src/hell/mob_rules.gd`):
+Eis-Zombie (verlangsamt bei Berührung), Frost-Skelett (hält Abstand, wirft Splitter), Eisschleim (teilt sich groß → mittel
+→ klein), Frostkobold (Sprint auf den Helden), Frostwirbel (zieht den Helden an), Eisritter (Schild blockt von vorn),
+Eiskristall (steht, schießt Fächer); sie kommen je nach Etage dazu. Wächter tragen das Aussehen ihrer Etage (`bosses`).
+Eigene Kämpfe (`boss_kits`, `src/hell/boss_kit.gd`): Frostnekromant (Etage 3), Frostleiche (6) und Frostkommandant (9, Schild
+vorn) mit je zwei Phasen; Hrimgar (10) mit drei Lebensbalken: Eispanzer (Faust-Bumerang, Stampfringe mit Lücke, Eiszapfen),
+Gletscherkern (Sprung in die Mitte, schützende Kristalle mit halbem Schaden, kreisender Frostatem, Kältefelder),
+Schneesturm (dunkler Raum, Splitterspirale, jagende Fäuste, Ansturm; unter 15 % Ewiger Frost mit sicheren Kreisen, danach
+Erschöpfung). Kit-Bosse haben keinen Rückstoß; zwischen den Phasen 2 s unverwundbar, Splitterring, Stoß (`phase_break`).
+Heldenentwicklung (`src/hell/hero_kit.gd`, `leveling`): Erfahrung je Kill, Level-up mit Ring, Banner, Heilung und
+Sound; Fähigkeiten aus `assets/data/hero_skills.json` auf 1–4, frei ab Level 1/3/6/10, Entfernungen ×2,4; Leiste unten.
+Gravitationsstab (`gravity_staff`): Geheimraum Etage 4 hinter der rissigen Eiswand, vier Platten in Reihenfolge brechen das
+Siegel; nur der Magier nimmt ihn. Angriff wird zum Gravitationsball (zieht Gegner), Taste 1 Gravitationswand (hält Gegner
+und Geschosse auf), rechte Maus ziehen = Schwerkraftleiste (hält Geschosse kurz an); Leiste wird dunkelviolett, T wechselt.
+Sounds (`sounds`) und Musik (`music`) über `src/vfx/sfx.gd` und `src/audio/music.gd`. Bossbalken oben, Lebensbalken über
+verletzten Gegnern. In der Frostgruft: F1–F10 Etage (mit Fortschritt), Bild↑ ein Level (Debug).
+Relikte (`relics`, `src/hell/relic_kit.gd`): je Lauf ein Schrein im Geheimraum einer zufälligen Etage (3–6) mit dem
+Relikt der Klasse: Magier Gravitationsstab (Ball stärker als der Stab; Wand, Leiste, Steinwurf, Steingolem), Schwertkämpfer
+Gravitationshammer (Hammerschlag; Sprungschlag, Gravitationsfeld, Felsenwelle, Meteor); Fähigkeiten 1–4 frei ab Level
+1/3/6/10. Bogenschütze folgt. Level-up-Karten (`cards`, `src/hell/card_kit.gd`): 3 Karten, Taste 7/8/9 oder Klick, kleine
+Schritte mit Höchststufe. HUD (`styled_hud`, `src/hell/frost_hud.gd`): 0x72-Herzen, gerahmtes Banner, Auftrag mit
+Haupt- und Nebenzielen unter der Minikarte, Statusfenster (C / Tab). Gestartet über Hauptmenü → STORY-MODUS → Story 2 → Heldenwahl. Tests: `tests/frost_floor_data_test.gd`, `tests/frost_runtime_test.gd`; Nachweise:
+`production/qa/evidence/frost-floors/` (`scripts/capture_frost_dungeon.gd`, `scripts/capture_frost_classes.gd`, `scripts/capture_frost_monsters.gd`, `scripts/capture_frost_bosses.gd`); Regeltests `tests/mob_rules_test.gd`, `tests/boss_kit_test.gd`, `tests/hero_kit_test.gd`, `tests/relic_card_test.gd`; Aufnahmen auch `scripts/capture_frost_skills.gd`, `scripts/capture_frost_hud.gd`.
+
 ## Grenzen
 
 Einzelspieler, keine Netzwerk-Replikation. Gegner, Boss und Figur sind Platzhalter. Lizenz der

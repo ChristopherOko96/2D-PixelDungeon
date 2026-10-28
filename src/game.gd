@@ -2087,8 +2087,22 @@ func _build_main_menu() -> void:
 		_refresh_ui())
 	main_menu.quit_requested.connect(func(): get_tree().quit())
 	main_menu.hell_requested.connect(func(): get_tree().change_scene_to_file("res://src/hell/hell_dungeon.tscn"))
+	main_menu.story_scene_requested.connect(_open_story_scene)
 	# Saved fullscreen is applied in _ready, only when the game opens on the menu.
 	view.shake_scale = 1.0 if bool(main_menu.settings.get("shake", true)) else 0.0
+
+
+## Swaps the menu for a story's own scene (e.g. the Frostgruft) with the chosen hero class.
+func _open_story_scene(path: String, class_id: String) -> void:
+	var scene: Node = (load(path) as PackedScene).instantiate()
+	if "class_id" in scene:
+		scene.class_id = class_id
+	var tree := get_tree()
+	var old := tree.current_scene
+	tree.root.add_child(scene)
+	tree.current_scene = scene
+	if old != null:
+		old.queue_free()
 
 
 ## The story campaigns of the main menu; [] when the file is missing.
