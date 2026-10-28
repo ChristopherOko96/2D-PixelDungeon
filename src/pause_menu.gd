@@ -5,12 +5,14 @@ signal leave_pressed
 signal main_action_pressed
 signal reward_requested
 signal display_mode_requested
+## A debug cheat button (index into debug_cheats.json "order").
+signal cheat_requested(index: int)
 
 const CryptUI = preload("res://src/ui/crypt_ui.gd")
 const PerkIcons = preload("res://src/perk_icons.gd")
 const ClassPerks = preload("res://src/player/class_perks.gd")
-const SECTIONS := ["overview","map","party","reward","controls","display","session"]
-const TITLES := ["Übersicht","Karte","Gruppe & Perks","Belohnung","Steuerung","Anzeige","Sitzung"]
+const SECTIONS := ["overview","map","party","reward","controls","display","session","cheats"]
+const TITLES := ["Übersicht","Karte","Gruppe & Perks","Belohnung","Steuerung","Anzeige","Sitzung","Cheats"]
 var section := "overview"
 var pages: Dictionary = {}
 var navigation: Dictionary = {}
@@ -26,6 +28,9 @@ var shade: ColorRect
 var display_mode_button: Button
 var display_status: Label
 var _definitions: Array = []
+var cheat_buttons: Array[Button] = []
+var _cheat_data: Dictionary = {}
+var _cheats_enabled := false
 var _definition_by_id: Dictionary = {}
 
 func _ready() -> void:
@@ -53,7 +58,7 @@ func _ready() -> void:
 	pause_note.add_theme_color_override("font_color",CryptUI.SAND)
 	for index in range(SECTIONS.size()):
 		var key: String = SECTIONS[index]
-		navigation[key] = _button(self,TITLES[index],Vector2(192,160+index*50),Vector2(208,38),select_section.bind(key))
+		navigation[key] = _button(self,TITLES[index],Vector2(192,160+index*44),Vector2(208,38),select_section.bind(key))
 		var page := Control.new()
 		page.position = Vector2(432,176)
 		page.size = Vector2(656,378)
@@ -101,6 +106,25 @@ func set_display_state(fullscreen: bool, _logical_size: Vector2) -> void:
 	display_status.text = "Ansicht: Vollbild" if fullscreen else "Ansicht: Fenster"
 	display_mode_button.text = "Zum Fenster wechseln" if fullscreen else "Vollbild einschalten"
 
+## Builds the debug cheat buttons from debug_cheats.json (labels, order).
+func configure_cheats(data: Dictionary) -> void:
+	_cheat_data = data
+	for button: Button in cheat_buttons: button.queue_free()
+	cheat_buttons.clear()
+	var order: Array = data.get("order", [])
+	for index in range(order.size()):
+		var label := str(data.get("labels", {}).get(str(order[index]), str(order[index]).to_upper()))
+		var button := _button(pages.cheats, label, Vector2((index % 2) * 328, 34 + (index / 2) * 52), Vector2(316, 44), func(): cheat_requested.emit(index))
+		cheat_buttons.append(button)
+	_text(pages.cheats, "NUR ZUM TESTEN · Debug-Build, Solo-Lauf", Vector2.ZERO, Vector2(640, 24), 14).add_theme_color_override("font_color", CryptUI.SAND)
+
+
+## The Cheats page exists only in a debug build during a solo run.
+func set_cheats_enabled(enabled: bool) -> void:
+	_cheats_enabled = enabled
+	navigation.cheats.visible = enabled
+	if not enabled and section == "cheats": select_section("overview")
+
 ## Uses the existing data-driven perk definitions for names and atlas icons.
 func configure(definitions: Array) -> void:
 	_definitions = definitions
@@ -111,6 +135,7 @@ func configure(definitions: Array) -> void:
 ## Selects one information page, keeping every other page out of the playfield.
 func select_section(key: String) -> void:
 	if key not in SECTIONS: return
+	if key == "cheats" and not _cheats_enabled: return
 	if key == "reward":
 		reward_requested.emit()
 		return
@@ -169,6 +194,14 @@ func set_state(snapshot: Dictionary, local_id: int, host: bool, port: int, solo_
 	main_action_button.visible = phase in ["dead","victory"]
 	main_action_button.text = "Neuer Lauf" if host else "Der Host startet den nächsten Lauf"
 	main_action_button.disabled = not host
+	# Toggle cheats show their state on the button.
+	var flags: Dictionary = player.get("cheats", {})
+	var order: Array = _cheat_data.get("order", [])
+	for slot in range(mini(order.size(), cheat_buttons.size())):
+		var id := str(order[slot])
+		var label := str(_cheat_data.get("labels", {}).get(id, id.to_upper()))
+		if id in Array(_cheat_data.get("toggles", [])): label += " · AN" if bool(flags.get(id, false)) else " · AUS"
+		cheat_buttons[slot].text = label
 	session_details.text = "%s · Port %d\n%d / %d Wanderer\n\nLauf-Seed: %s\nEbenen-Seed: %s\nGenerator: %s\n\nWenn der Host geht, endet der Lauf für alle.\n\nZum Hauptmenü beendet deine Verbindung." % ["Host" if host else "Client",port,players.size(),maximum_players,snapshot.get("run_seed","—"),snapshot.get("seed","—"),snapshot.get("generator_version","—")]
 
 ## Class cards from level-ups, e.g. "Klasse: Schwerer Hieb x2, Doppelwirbel".

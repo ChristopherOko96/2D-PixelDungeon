@@ -119,6 +119,8 @@ func _spent(player: Dictionary, index: int, skill: Dictionary) -> void:
 
 func _cooldown(player: Dictionary, index: int, skill: Dictionary) -> void:
 	var scale := float(player.get("cooldown_scale", 1.0))
+	# Debug cheat (src/debug/cheats.gd): skills are ready again at once.
+	if bool(player.get("cheat_no_cooldown", false)): scale = 0.0
 	player.skill_cd[index] = float(skill.get("cooldown", 5.0)) * scale
 	player.skill_cd_max[index] = float(skill.get("cooldown", 5.0)) * scale
 

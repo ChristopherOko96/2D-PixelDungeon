@@ -40,6 +40,7 @@ const VoidBossAI = preload("res://src/combat/void_boss_ai.gd")
 const BossMoves = preload("res://src/combat/boss_moves.gd")
 const PlayerEffects = preload("res://src/combat/player_effects.gd")
 const Inventory = preload("res://src/items/inventory.gd")
+const Cheats = preload("res://src/debug/cheats.gd")
 
 var balance: Dictionary = {}
 var dungeon_config: Dictionary = {}
@@ -91,6 +92,8 @@ var boss_moves := BossMoves.new()
 var player_effects := PlayerEffects.new()
 ## Weapons, potions, crystals and stones of each hero; potion colours of the run (host).
 var inventory := Inventory.new()
+## Test cheats (ESC menu, debug builds and solo runs only).
+var cheats := Cheats.new()
 ## Capture tools only: held skill keys and mouse point instead of the real
 ## keyboard and mouse (-1 / INF = off). Never set in play.
 var scripted_skills := -1
@@ -286,6 +289,7 @@ func _ready() -> void:
 	boss_moves.bind(self)
 	player_effects.bind(self)
 	inventory.bind(self)
+	cheats.bind(self)
 	if not snapshot_interpolator.configure(balance.get("network",{})):
 		push_error("Invalid network presentation settings in src/data/balance.json")
 		get_tree().quit(1)
@@ -1092,6 +1096,8 @@ func _server_action(id: int, action: String, value: int) -> void:
 		if phase == "explore": _use_exit(id)
 	elif action.begins_with("inv_") and phase in ["combat", "explore", "reward"]:
 		inventory.act(id, action, value, Vector2(commands.get(id, {}).get("target", Vector2.INF)))
+	elif action == "cheat" and phase in ["combat", "explore", "reward"]:
+		if not cheats.act(id, value): return
 	elif action == "card" and phase in ["combat", "explore", "reward"]:
 		# Level-up or boss card, picked by mouse while the game runs.
 		if not team_progress.pick(players[id], value): return
@@ -1692,6 +1698,7 @@ func _simulate_bullets(delta: float) -> void:
 
 func _damage_player(id: int, damage: int, direction: Vector2 = Vector2.ZERO) -> void:
 	if not players.has(id) or damage <= 0 or players[id].invulnerable > 0.0 or players[id].hp <= 0: return
+	if bool(players[id].get("cheat_god",false)): return
 	damage += int(players[id].get("item_extra_damage",0))
 	damage = perk_combat.incoming(id,damage,direction)
 	if damage <= 0: return
@@ -1764,6 +1771,7 @@ func _enemy_fell(enemy: Dictionary, direction: Vector2, owner: int, kill_effects
 ## tick at a time, without stun or knockback.
 func dot_player(id: int, amount: int, _kind: String = "") -> void:
 	if not players.has(id) or amount <= 0 or int(players[id].hp) <= 0: return
+	if bool(players[id].get("cheat_god",false)): return
 	players[id].hp = maxi(0, int(players[id].hp) - amount)
 	players[id].hurts = int(players[id].get("hurts",0))+1
 	players[id].last_hit_damage = amount
@@ -1933,6 +1941,7 @@ func _make_snapshot(advance_sequence: bool = true) -> Dictionary:
 		visible_players[id].radius = float(balance.player.radius)
 		visible_players[id].effects = player_effects.kinds(player)
 		visible_players[id].glow = str(player.get("attack_glow",""))
+		if player.has("cheat_god") or player.has("cheat_no_cooldown"): visible_players[id].cheats = {"god":bool(player.get("cheat_god",false)),"no_cooldown":bool(player.get("cheat_no_cooldown",false))}
 		visible_players[id].inventory = inventory.snapshot(player)
 		var motion: Vector2 = player.get("motion",Vector2.ZERO)
 		var hit_direction: Vector2 = player.get("hit_direction",Vector2.ZERO)
@@ -2170,6 +2179,8 @@ func _build_ui() -> void:
 	pause_menu.reward_requested.connect(show_rewards)
 	pause_menu.main_action_pressed.connect(_menu_action)
 	pause_menu.display_mode_requested.connect(toggle_fullscreen)
+	pause_menu.configure_cheats(cheats.data)
+	pause_menu.cheat_requested.connect(func(index: int): _send_action("cheat", index))
 	reward_overlay = RewardOverlay.new()
 	modal_guard.add_child(reward_overlay)
 	reward_overlay.configure(balance.get("reward_presentation",{}))
@@ -2446,6 +2457,7 @@ func _refresh_ui() -> void:
 	pause_menu.visible = in_run and pause_open and not reward_open
 	if pause_menu.visible:
 		pause_menu.set_state(state,local_id,hosting,_port(),is_solo_paused())
+		pause_menu.set_cheats_enabled(Cheats.enabled(self))
 		pause_menu.set_display_state(is_fullscreen(),get_viewport_rect().size)
 	reward_overlay.visible = in_run and pause_open and reward_open
 	modal_guard.visible = in_run and pause_open

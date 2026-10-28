@@ -1164,6 +1164,28 @@ approval gate above still applies to every new actor/boss art.
   only with the user's editor-saved `assets/data/dungeon_rooms.json`; with the
   committed rooms they show only the old 2 freeform failures.
 
+## Debug cheats in the ESC menu (2026-10-28)
+
+- User request: cheats for the crypt to test skills (level 10 at once, all
+  skills and spells of each class), reachable with ESC; NOT in multiplayer,
+  only for debugging.
+- `src/debug/cheats.gd` + `assets/data/debug_cheats.json` (order, labels,
+  toggles, target level, kit). `Cheats.enabled(game)`: `OS.is_debug_build()`,
+  hosting, exactly one player; `allowed(id)` also needs peer 1. Game action
+  "cheat" (value = index in `order`) in combat/explore/reward.
+- Cheats: ALLE FÄHIGKEITEN (team level up to the last skill unlock, every
+  upgrade of every class skill at max rank, stale cards dropped), AUF LEVEL 10,
+  +1 LEVEL, KARTEN AUTO-WÄHLEN, UNVERWUNDBAR (`cheat_god`, checked in
+  `_damage_player` and `dot_player`), KEINE ABKLINGZEIT (`cheat_no_cooldown`
+  in `hero_skills._cooldown`), VOLLES LEBEN, RAUM LEEREN, ITEM-PAKET,
+  LEGENDÄRE WAFFE (cycles the class's legendaries, replaces even a cursed one).
+  Notes go through the inventory toast.
+- Pause menu: section "cheats" (hidden unless `set_cheats_enabled(true)`),
+  buttons built by `configure_cheats`, toggles show AN/AUS from snapshot
+  `players[id].cheats`. Navigation spacing 44 px for 8 sections.
+- Test `tests/debug_cheats_test.gd` (24). Evidence
+  `production/qa/evidence/cheats/` (`scripts/capture_cheats.gd`).
+
 ## Codex studio integration
 
 - This game already exists. Read `docs/codex/runtime.md` before applying studio
