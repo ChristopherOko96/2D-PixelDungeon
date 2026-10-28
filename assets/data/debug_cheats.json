@@ -1,0 +1,19 @@
+{
+	"_doc": "Test cheats for the crypt (ESC menu, page Cheats; src/debug/cheats.gd). Debug builds only, solo runs only (never multiplayer, never an exported game). order: the buttons in the menu, top left to bottom right. target_level: where LEVEL ZIEL jumps. kit: what ITEM-PAKET puts into the bag (all potions once, unknown).",
+	"order": ["all_skills", "level_target", "level_up", "auto_cards", "god", "no_cooldown", "heal", "clear_room", "item_kit", "legendary"],
+	"labels": {
+		"all_skills": "ALLE FÄHIGKEITEN",
+		"level_target": "AUF LEVEL 10",
+		"level_up": "+1 LEVEL",
+		"auto_cards": "KARTEN AUTO-WÄHLEN",
+		"god": "UNVERWUNDBAR",
+		"no_cooldown": "KEINE ABKLINGZEIT",
+		"heal": "VOLLES LEBEN",
+		"clear_room": "RAUM LEEREN",
+		"item_kit": "ITEM-PAKET",
+		"legendary": "LEGENDÄRE WAFFE"
+	},
+	"toggles": ["god", "no_cooldown"],
+	"target_level": 10,
+	"kit": {"crystal": 5, "stone": 3, "potions": 1}
+}
