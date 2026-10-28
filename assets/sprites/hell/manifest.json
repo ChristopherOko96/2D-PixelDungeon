@@ -1,0 +1,806 @@
+{
+ "floor_00": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "SOURCE_hell_tilesheet.png @ 51,63 97x97"
+ },
+ "floor_01": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "SOURCE_hell_tilesheet.png @ 165,63 97x97"
+ },
+ "floor_02": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "SOURCE_hell_tilesheet.png @ 280,63 97x97"
+ },
+ "floor_03": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "SOURCE_hell_tilesheet.png @ 392,63 97x97"
+ },
+ "floor_04": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "SOURCE_hell_tilesheet.png @ 505,63 97x97"
+ },
+ "floor_05": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "SOURCE_hell_tilesheet.png @ 620,63 97x97"
+ },
+ "floor_06": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "SOURCE_hell_tilesheet.png @ 732,63 97x97"
+ },
+ "floor_07": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "SOURCE_hell_tilesheet.png @ 845,63 97x97"
+ },
+ "floor_08": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "SOURCE_hell_tilesheet.png @ 957,63 97x97"
+ },
+ "floor_09": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "SOURCE_hell_tilesheet.png @ 1073,63 97x97"
+ },
+ "floor_10": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "SOURCE_hell_tilesheet.png @ 1187,63 97x97"
+ },
+ "floor_11": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "SOURCE_hell_tilesheet.png @ 1299,63 97x97"
+ },
+ "lava_00": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "SOURCE_hell_tilesheet.png @ 52,182 95x92"
+ },
+ "lava_01": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "SOURCE_hell_tilesheet.png @ 166,182 95x92"
+ },
+ "lava_edge_top": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "SOURCE_hell_tilesheet.png @ 504,180 99x96"
+ },
+ "wall_h": {
+  "w": 188,
+  "h": 74,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 49,308 188x74"
+ },
+ "wall_h_glowpost": {
+  "w": 58,
+  "h": 96,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 428,292 50x100"
+ },
+ "wall_post_slit": {
+  "w": 63,
+  "h": 99,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 1089,298 63x98"
+ },
+ "wall_torch_block": {
+  "w": 86,
+  "h": 113,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 49,405 82x118"
+ },
+ "wall_skull_a": {
+  "w": 62,
+  "h": 115,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 432,413 62x115"
+ },
+ "wall_skull_b": {
+  "w": 65,
+  "h": 114,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 508,413 65x114"
+ },
+ "wall_v_glow": {
+  "w": 61,
+  "h": 153,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 345,402 61x153"
+ },
+ "wall_v_glow_b": {
+  "w": 77,
+  "h": 149,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 601,405 77x149"
+ },
+ "door_stairs": {
+  "w": 162,
+  "h": 110,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 49,729 162x110"
+ },
+ "door_stairs_small": {
+  "w": 109,
+  "h": 108,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 225,729 109x108"
+ },
+ "gate_side": {
+  "w": 177,
+  "h": 133,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 49,565 175x133"
+ },
+ "jamb_a": {
+  "w": 47,
+  "h": 137,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 248,565 47x136"
+ },
+ "jamb_b": {
+  "w": 47,
+  "h": 136,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 318,565 47x136"
+ },
+ "portcullis": {
+  "w": 216,
+  "h": 105,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 399,575 216x105"
+ },
+ "demon_lintel": {
+  "w": 264,
+  "h": 110,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 632,575 264x110"
+ },
+ "obelisk": {
+  "w": 83,
+  "h": 139,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 919,574 83x139"
+ },
+ "banner_a": {
+  "w": 84,
+  "h": 117,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 1012,558 84x117"
+ },
+ "banner_b": {
+  "w": 90,
+  "h": 138,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 1105,558 89x138"
+ },
+ "banner_chain": {
+  "w": 142,
+  "h": 110,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 1215,558 141x110"
+ },
+ "cage_small": {
+  "w": 50,
+  "h": 130,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 1348,577 50x130"
+ },
+ "bridge_v": {
+  "w": 167,
+  "h": 136,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 350,703 167x136"
+ },
+ "bridge_h": {
+  "w": 157,
+  "h": 107,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 537,712 157x107"
+ },
+ "rune_pillar_a": {
+  "w": 97,
+  "h": 141,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 1003,701 97x141"
+ },
+ "rune_pillar_b": {
+  "w": 77,
+  "h": 128,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 1119,715 77x128"
+ },
+ "rune_pillar_c": {
+  "w": 85,
+  "h": 148,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 1221,694 84x148"
+ },
+ "rune_pillar_d": {
+  "w": 67,
+  "h": 125,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 1332,717 67x125"
+ },
+ "grate": {
+  "w": 101,
+  "h": 104,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 764,729 101x104"
+ },
+ "spike_block": {
+  "w": 102,
+  "h": 103,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 880,730 102x103"
+ },
+ "brazier_floor": {
+  "w": 85,
+  "h": 98,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 58,857 85x98"
+ },
+ "demon_plate": {
+  "w": 96,
+  "h": 86,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 171,859 96x86"
+ },
+ "rune_small": {
+  "w": 87,
+  "h": 76,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 294,869 86x76"
+ },
+ "rune_plate": {
+  "w": 104,
+  "h": 99,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 406,854 104x99"
+ },
+ "rune_big": {
+  "w": 100,
+  "h": 100,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 540,854 100x99"
+ },
+ "fire_plate": {
+  "w": 104,
+  "h": 99,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 665,854 104x98"
+ },
+ "pit": {
+  "w": 106,
+  "h": 99,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 789,854 105x98"
+ },
+ "chain_a": {
+  "w": 13,
+  "h": 96,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 915,854 13x95"
+ },
+ "chain_b": {
+  "w": 17,
+  "h": 96,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 947,855 16x96"
+ },
+ "chain_swag": {
+  "w": 77,
+  "h": 91,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 983,857 77x91"
+ },
+ "skull_pile_t": {
+  "w": 68,
+  "h": 50,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 1086,860 68x50"
+ },
+ "bones_t": {
+  "w": 55,
+  "h": 45,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 1180,875 55x45"
+ },
+ "spire_t": {
+  "w": 70,
+  "h": 111,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 1238,858 69x111"
+ },
+ "spires_t": {
+  "w": 81,
+  "h": 70,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 1320,857 81x70"
+ },
+ "brazier_low": {
+  "w": 80,
+  "h": 84,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 170,958 80x84"
+ },
+ "brazier_low_b": {
+  "w": 84,
+  "h": 74,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 56,965 84x74"
+ },
+ "demon_head": {
+  "w": 75,
+  "h": 57,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 274,981 75x57"
+ },
+ "skull_pile": {
+  "w": 85,
+  "h": 68,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 368,974 85x67"
+ },
+ "bone_a": {
+  "w": 46,
+  "h": 42,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 474,989 46x42"
+ },
+ "bone_b": {
+  "w": 41,
+  "h": 43,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 539,985 40x43"
+ },
+ "coal": {
+  "w": 75,
+  "h": 58,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 606,980 75x58"
+ },
+ "bone_c": {
+  "w": 37,
+  "h": 45,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 702,982 37x45"
+ },
+ "rubble": {
+  "w": 87,
+  "h": 65,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 759,972 87x65"
+ },
+ "spire_small": {
+  "w": 52,
+  "h": 61,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 867,971 52x61"
+ },
+ "spire_tiny": {
+  "w": 41,
+  "h": 53,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 922,978 41x53"
+ },
+ "spire_big_t": {
+  "w": 94,
+  "h": 105,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 984,940 94x104"
+ },
+ "spire_mid": {
+  "w": 64,
+  "h": 101,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 1086,929 64x101"
+ },
+ "rocks_a": {
+  "w": 69,
+  "h": 66,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 1164,975 69x62"
+ },
+ "rocks_b": {
+  "w": 51,
+  "h": 55,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 1249,982 51x55"
+ },
+ "spires_lava": {
+  "w": 74,
+  "h": 101,
+  "kind": "sprite",
+  "src": "SOURCE_hell_tilesheet.png @ 1322,939 74x101"
+ },
+ "brazier_pillar": {
+  "w": 74,
+  "h": 133,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 25,48 123x221"
+ },
+ "brazier_rune": {
+  "w": 64,
+  "h": 113,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 173,79 107x189"
+ },
+ "brazier_demon": {
+  "w": 80,
+  "h": 100,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 297,82 132x186"
+ },
+ "brazier_bowl": {
+  "w": 70,
+  "h": 99,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 447,103 116x165"
+ },
+ "wall_torch_hook": {
+  "w": 49,
+  "h": 106,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 596,94 81x176"
+ },
+ "hanging_brazier": {
+  "w": 64,
+  "h": 139,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 695,36 106x232"
+ },
+ "wall_brazier": {
+  "w": 56,
+  "h": 128,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 821,57 94x213"
+ },
+ "torch_a": {
+  "w": 35,
+  "h": 87,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 947,109 58x145"
+ },
+ "torch_b": {
+  "w": 44,
+  "h": 85,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 1046,116 74x141"
+ },
+ "torch_c": {
+  "w": 40,
+  "h": 86,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 1158,117 65x144"
+ },
+ "chain_long": {
+  "w": 16,
+  "h": 95,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 33,306 26x158"
+ },
+ "chain_long_b": {
+  "w": 16,
+  "h": 95,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 95,306 27x158"
+ },
+ "chain_swag_b": {
+  "w": 57,
+  "h": 99,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 148,305 95x165"
+ },
+ "chain_hang": {
+  "w": 22,
+  "h": 100,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 266,305 37x167"
+ },
+ "cage_hang": {
+  "w": 44,
+  "h": 107,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 321,305 73x178"
+ },
+ "chain_hook": {
+  "w": 26,
+  "h": 97,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 424,306 44x162"
+ },
+ "shackle_a": {
+  "w": 28,
+  "h": 64,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 495,325 46x107"
+ },
+ "shackle_skull": {
+  "w": 34,
+  "h": 74,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 560,325 57x124"
+ },
+ "shackle_b": {
+  "w": 26,
+  "h": 73,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 648,325 43x122"
+ },
+ "skull_heap": {
+  "w": 107,
+  "h": 83,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 714,322 178x138"
+ },
+ "coal_skulls": {
+  "w": 86,
+  "h": 55,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 898,332 144x92"
+ },
+ "bones_scatter": {
+  "w": 71,
+  "h": 36,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 919,435 118x60"
+ },
+ "bone_d": {
+  "w": 40,
+  "h": 36,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 1073,348 63x56"
+ },
+ "bone_e": {
+  "w": 46,
+  "h": 38,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 1151,353 76x63"
+ },
+ "bone_f": {
+  "w": 32,
+  "h": 45,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 1053,393 52x75"
+ },
+ "bone_g": {
+  "w": 39,
+  "h": 32,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 1167,423 65x54"
+ },
+ "banner_1": {
+  "w": 76,
+  "h": 104,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 19,508 127x172"
+ },
+ "banner_2": {
+  "w": 69,
+  "h": 102,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 159,507 115x170"
+ },
+ "banner_3": {
+  "w": 67,
+  "h": 100,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 288,512 111x165"
+ },
+ "banner_4": {
+  "w": 59,
+  "h": 95,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 411,509 99x159"
+ },
+ "banner_5": {
+  "w": 66,
+  "h": 106,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 523,507 109x175"
+ },
+ "spire_big": {
+  "w": 95,
+  "h": 105,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 646,492 158x175"
+ },
+ "spire_big_b": {
+  "w": 82,
+  "h": 94,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 812,515 136x157"
+ },
+ "rocks_lava": {
+  "w": 59,
+  "h": 78,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 947,541 99x130"
+ },
+ "rocks_dark": {
+  "w": 44,
+  "h": 67,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 1045,557 74x112"
+ },
+ "boulders": {
+  "w": 63,
+  "h": 47,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 1127,588 105x78"
+ },
+ "spike_trap": {
+  "w": 96,
+  "h": 61,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 21,718 160x102"
+ },
+ "spike_trap_b": {
+  "w": 76,
+  "h": 60,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 186,718 126x100"
+ },
+ "grate_a": {
+  "w": 67,
+  "h": 64,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 322,713 112x106"
+ },
+ "vent": {
+  "w": 71,
+  "h": 64,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 453,713 118x106"
+ },
+ "grate_b": {
+  "w": 74,
+  "h": 65,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 587,712 123x109"
+ },
+ "altar": {
+  "w": 190,
+  "h": 114,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 753,677 316x190"
+ },
+ "skull_obelisk": {
+  "w": 85,
+  "h": 118,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 1088,674 140x196"
+ },
+ "portal": {
+  "w": 169,
+  "h": 127,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 26,845 282x211"
+ },
+ "portal_dark": {
+  "w": 150,
+  "h": 134,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 331,837 250x224"
+ },
+ "chest_closed": {
+  "w": 97,
+  "h": 76,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 602,925 162x125"
+ },
+ "chest_open": {
+  "w": 85,
+  "h": 86,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 789,902 140x144"
+ },
+ "chest_gold": {
+  "w": 76,
+  "h": 83,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 940,913 126x138"
+ },
+ "chest_empty": {
+  "w": 82,
+  "h": 89,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 1091,904 137x149"
+ },
+ "heart": {
+  "w": 57,
+  "h": 55,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 26,1108 95x91"
+ },
+ "fire_orb": {
+  "w": 52,
+  "h": 58,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 147,1104 87x96"
+ },
+ "key": {
+  "w": 38,
+  "h": 71,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 268,1087 63x118"
+ },
+ "rune_gem": {
+  "w": 44,
+  "h": 65,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 367,1096 74x108"
+ },
+ "icon_scroll": {
+  "w": 56,
+  "h": 54,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 480,1107 93x90"
+ },
+ "icon_swords": {
+  "w": 54,
+  "h": 54,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 601,1107 90x90"
+ },
+ "icon_chest": {
+  "w": 57,
+  "h": 54,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 716,1107 95x90"
+ },
+ "icon_demon": {
+  "w": 63,
+  "h": 66,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 837,1093 105x110"
+ },
+ "icon_demon_big": {
+  "w": 77,
+  "h": 74,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 969,1084 128x123"
+ },
+ "icon_door": {
+  "w": 62,
+  "h": 61,
+  "kind": "sprite",
+  "src": "SOURCE_hell_propsheet.png @ 1120,1097 104x102"
+ },
+ "corner_cap": {
+  "w": 76,
+  "h": 76,
+  "kind": "design",
+  "src": "combat_A_obsidian_pillars.png @ 38,8 76x76"
+ },
+ "wall_v": {
+  "w": 62,
+  "h": 70,
+  "kind": "design",
+  "src": "combat_A_obsidian_pillars.png @ 38,628 62x70"
+ }
+}

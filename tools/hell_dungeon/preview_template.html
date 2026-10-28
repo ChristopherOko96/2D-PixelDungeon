@@ -1,0 +1,904 @@
+<meta charset="utf-8">
+<title>Hell-Dungeon Etagen</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Grenze+Gotisch:wght@500;700&family=Alegreya+Sans:ital,wght@0,400;0,500;0,700;1,400&display=swap">
+<style>
+/* Layout: one dark forge-room page; the playable floor is the hero, the floor's ledger sits below it. */
+:root {
+  --bg: #0d0809;
+  --panel: #180f11;
+  --panel-2: #22151a;
+  --line: #3b2328;
+  --ink: #f1e4d8;
+  --muted: #b89c8e;
+  --ember: #ff6b2c;
+  --ember-soft: #ffb36b;
+  --ok: #8fd18a;
+  --display: "Grenze Gotisch", "Palatino Linotype", Georgia, serif;
+  --body: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { background: var(--bg); color: var(--ink); }
+body { font-family: var(--body); font-size: 17px; line-height: 1.55; }
+.page { max-width: 1320px; margin: 0 auto; padding-block: 28px 56px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 24px; }
+header { display: grid; gap: 6px; }
+.eyebrow { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--ember-soft); }
+h1 { font-family: var(--display); font-weight: 700; font-size: clamp(34px, 5vw, 56px); line-height: 1; margin: 0; text-wrap: balance; }
+h2 { font-family: var(--display); font-weight: 500; font-size: 28px; margin: 0 0 10px; text-wrap: balance; }
+h3 { font-size: 16px; margin: 0; font-weight: 700; }
+.lede { max-width: 74ch; color: var(--muted); margin: 0; }
+.floors { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.floors button { font: 500 15px var(--body); color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 6px 0; width: 46px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.floors button[aria-current="true"] { background: #4a1b12; border-color: var(--ember); color: #ffe2c8; }
+.floors button:hover { border-color: var(--ember); }
+.floors button:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+.floors .lbl { color: var(--muted); font-size: 15px; margin-right: 6px; }
+.floors .sep { width: 1px; height: 22px; background: var(--line); margin: 0 4px; }
+.stage { display: grid; gap: 12px; }
+.canvas-wrap { position: relative; width: 100%; aspect-ratio: 16 / 9; max-width: 100%; background: #050304; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+canvas#game { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; touch-action: none; cursor: crosshair; }
+canvas#game:focus-visible { box-shadow: inset 0 0 0 2px var(--ember); }
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.toolbar button { font: 500 15px var(--body); color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 7px 12px; cursor: pointer; display: inline-flex; gap: 8px; align-items: center; }
+.toolbar button:hover { border-color: var(--ember); }
+.toolbar button:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+.toolbar button[aria-pressed="true"] { background: #3a1a12; border-color: var(--ember); }
+kbd { font: 500 12px ui-monospace, Consolas, monospace; background: #0b0607; border: 1px solid var(--line); border-radius: 3px; padding: 1px 5px; color: var(--ember-soft); }
+.hint { color: var(--muted); font-size: 15px; margin-left: auto; }
+.cols { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 900px) { .cols { grid-template-columns: minmax(0, 1fr); } .hint { margin-left: 0; } }
+.rooms { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 8px; }
+.rooms li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 10px; align-items: start; padding: 8px 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; }
+.rooms li.here { border-color: var(--ember); }
+.rooms li.unknown { opacity: .5; }
+.rooms img { width: 26px; height: 26px; object-fit: contain; }
+.rooms p { margin: 2px 0 0; color: var(--muted); font-size: 14px; line-height: 1.4; }
+.rooms .state { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.rooms .state.seen { color: var(--ok); }
+.rooms .state.here { color: var(--ember-soft); }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 16px 18px; display: grid; gap: 10px; }
+.box p { margin: 0; color: var(--muted); }
+.side { display: grid; gap: 16px; }
+dl.keys { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 12px; margin: 0; }
+dl.keys dt { white-space: nowrap; font-weight: 500; }
+dl.keys dd { margin: 0; color: var(--muted); }
+.facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; }
+.facts div { background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; }
+.facts b { display: block; font-size: 22px; font-variant-numeric: tabular-nums; color: #ffe2c8; }
+.facts span { font-size: 13px; color: var(--muted); }
+</style>
+
+<div class="page">
+  <header>
+    <span class="eyebrow" id="eyebrow">Hell-Dungeon</span>
+    <h1 id="floor-title">Aschenvorhof, Etage 1</h1>
+    <p class="lede">Zehn Etagen, je tiefer desto heißer und härter. Der kürzeste Weg zum Boss braucht nie alle Räume. Wer erkundet, findet Tresore, Herzcontainer, Runensteine und Abkürzungen. Gegner und Spielfigur sind Platzhalter.</p>
+  </header>
+
+  <nav class="floors" aria-label="Etage wählen" id="floor-nav"><span class="lbl">Etage wählen</span></nav>
+
+  <section class="stage" aria-label="Spielvorschau">
+    <div class="canvas-wrap">
+      <canvas id="game" width="1280" height="720" tabindex="0" aria-label="Spielfeld. WASD laufen, Pfeiltasten oder Maus schießen, E für Aktionen, M für die Karte."></canvas>
+    </div>
+    <div class="toolbar">
+      <button id="b-act" type="button"><kbd>E</kbd> Aktion</button>
+      <button id="b-map" type="button" aria-pressed="false"><kbd>M</kbd> Karte</button>
+      <button id="b-light" type="button" aria-pressed="true"><kbd>L</kbd> Licht</button>
+      <button id="b-coll" type="button" aria-pressed="false"><kbd>C</kbd> Kollision</button>
+      <button id="b-reset" type="button"><kbd>R</kbd> Etage neu</button>
+      <span class="hint">Ins Spielfeld klicken. <kbd>WASD</kbd> laufen, <kbd>Pfeile</kbd> oder Maus schießen. Handy: ziehen laufen, tippen schießen.</span>
+    </div>
+  </section>
+
+  <div class="cols">
+    <section>
+      <h2>Räume dieser Etage</h2>
+      <ul class="rooms" id="room-list"></ul>
+    </section>
+    <div class="side">
+      <section class="box">
+        <h2 id="facts-title">Diese Etage</h2>
+        <div class="facts" id="facts"></div>
+        <p id="facts-note"></p>
+      </section>
+      <section class="box">
+        <h2>Regeln</h2>
+        <dl class="keys">
+          <dt>Kampfräume</dt><dd>Betreten verriegelt alle Türen, der Sieg öffnet sie. Oft fällt ein Herz oder Runenstein.</dd>
+          <dt>Farbschlüssel</dt><dd>Glut (Hauptweg), Knochen (Beutekammer), Dämon (Boss). Jeder passt nur in sein Tor.</dd>
+          <dt>Feuerschalen</dt><dd>über mehrere Räume verteilt. Brennen alle, öffnet sich das Gitter zum Riesentresor mit Herzcontainer.</dd>
+          <dt>Druckplatten</dt><dd>leuchten nacheinander auf. In dieser Reihenfolge betreten, dann öffnet sich ein Geheimraum.</dd>
+          <dt>Geheimwand</dt><dd>Risse und Geröll, mit <kbd>E</kbd> aufbrechen.</dd>
+          <dt>Tiefer</dt><dd>mehr Lava, Stacheln und Schlote, zähere Gegner, ab Etage 4 Feuerspucker, Bosse mit Feuerringen. Etage 3, 6 und 9 haben Zwischenbosse.</dd>
+        </dl>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>const ASSETS = __ASSETS__; const SIZES = __SIZES__;</script>
+<script>__CORE__</script>
+<script>
+(() => {
+'use strict';
+const HC = window.HellCore, C = HC.C;
+const VIEW_W = 1800, VIEW_H = 1012.5;
+const cv = document.getElementById('game');
+const ctx = cv.getContext('2d');
+const light = document.createElement('canvas'); light.width = cv.width; light.height = cv.height;
+const lctx = light.getContext('2d');
+const IMG = {};
+const KEYS = {
+  A: { name: 'Glutschlüssel', filter: 'none', color: '#ff8a3c', hint: 'fällt in einem Seitenraum vor dem verschlossenen Tor.' },
+  B: { name: 'Knochenschlüssel', filter: 'grayscale(1) brightness(1.7)', color: '#e8dccb', hint: 'liegt auf einem Altar oder fällt in einem Seitenraum.' },
+  C: { name: 'Dämonenschlüssel', filter: 'hue-rotate(235deg) saturate(1.7)', color: '#b07cff', hint: 'fällt in einem Kampfraum nahe dem Bosstor.' },
+};
+
+let W, COLS, ROWS, grid, roomAt, holeAt, tileAt, props, decals, walls, wallDecor, ents, lights, doors, lavaCells, ROOMS, occupied, mobs, shots, eshots, state, player;
+const idx = (x, y) => y * COLS + x;
+const inGrid = (x, y) => x >= 0 && y >= 0 && x < COLS && y < ROWS;
+const cell = (x, y) => inGrid(x, y) ? grid[idx(x, y)] : 0;
+const walkableType = t => t === 1 || t === 2 || t === 3;
+const hash = HC.hash;
+
+// ---------- floors ----------
+function loadFloor(n, carry) {
+  W = HC.buildFloor(n, SIZES);
+  ({ COLS, ROWS, grid, roomAt, holeAt, tileAt, props, decals, wallDecor, ents, lights, doors, lavaCells, occupied } = W);
+  ROOMS = W.rooms; mobs = []; shots = []; eshots = [];
+  for (const g of Object.values(W.groups)) { g.solved = false; g.next = 1; }
+  for (const r of ROOMS) { r.fight = false; r.minimap = minimapPath(r); }
+  W.quick = HC.criticalRooms(W);
+  buildWalls();
+  const s = ROOMS.find(r => r.type === 'start');
+  const keep = carry && state ? { hp: state.hp, maxHp: state.maxHp, gems: state.gems } : { hp: 12, maxHp: 12, gems: 0 };
+  state = Object.assign({ floor: n, keys: { A: false, B: false, C: false }, used: { A: false, B: false, C: false },
+    visited: new Set([s.index]), room: s.index, banner: { text: W.title, sub: 'Etage ' + n + ' · ' + W.circle, t: 0 },
+    toasts: [], inv: 0, dead: 0, map: state ? state.map : false, light: state ? state.light : true, coll: false, t: 0, embers: [], won: false, cool: 0, aim: null, flash: 0, bossDead: false }, keep);
+  state.map = false;
+  player = { x: (s.bx + s.spawn[0]) * C, y: (s.by + s.spawn[1]) * C, face: 1, anim: 0, moving: false };
+  state.cam = { x: player.x, y: player.y };
+  holePattern = null;
+  updatePage();
+}
+function respawn() { const s = ROOMS.find(r => r.type === 'start'); player.x = (s.bx + s.spawn[0]) * C; player.y = (s.by + s.spawn[1]) * C; }
+
+function doorClosed(d) {
+  if (d.kind === 'secret') return !d.broken;
+  if (d.a.fight || d.b.fight) return true;
+  if (d.kind === 'lock') return !d.unlocked;
+  if (d.kind === 'puzzle') return !W.groups[d.group].solved;
+  if (d.kind === 'boss') return !state.bossDead;
+  return false;
+}
+function nearDoor(r, x, y, dist) { return r.doors.some(d => Math.hypot(x * C - d.cx, y * C - d.cy) < dist * C); }
+
+// ---------- walls (rebuilt when a secret wall opens) ----------
+const solidAt = (x, y) => !walkableType(cell(x, y));
+function buildWalls() {
+  walls = { north: [], south: [], side: [], caps: [], posts: [] };
+  for (let y = 0; y < ROWS; y++) {
+    for (const side of ['north', 'south']) {
+      const dy = side === 'north' ? -1 : 1;
+      let x = 0;
+      while (x < COLS) {
+        if (walkableType(cell(x, y)) && solidAt(x, y + dy)) {
+          let e = x; while (e + 1 < COLS && walkableType(cell(e + 1, y)) && solidAt(e + 1, y + dy)) e++;
+          walls[side].push({ x0: x * C, x1: (e + 1) * C, y: side === 'north' ? y * C - 74 : (y + 1) * C });
+          if (side === 'north') {
+            for (let k = x + 3; k < e; k += 4) walls.posts.push({ x: k * C, y: y * C });
+            if (walkableType(cell(e + 1, y)) && walkableType(cell(e + 1, y - 1))) walls.posts.push({ x: (e + 1) * C, y: y * C });
+            if (walkableType(cell(x - 1, y)) && walkableType(cell(x - 1, y - 1))) walls.posts.push({ x: x * C, y: y * C });
+          }
+          x = e + 1;
+        } else x++;
+      }
+    }
+  }
+  for (let x = 0; x < COLS; x++) {
+    for (const side of ['west', 'east']) {
+      const dx = side === 'west' ? -1 : 1;
+      let y = 0;
+      while (y < ROWS) {
+        if (walkableType(cell(x, y)) && solidAt(x + dx, y)) {
+          let e = y; while (e + 1 < ROWS && walkableType(cell(x, e + 1)) && solidAt(x + dx, e + 1)) e++;
+          const extTop = solidAt(x, y - 1) && solidAt(x + dx, y - 1), extBot = solidAt(x, e + 1) && solidAt(x + dx, e + 1);
+          const bx = side === 'west' ? x * C - 62 : (x + 1) * C;
+          walls.side.push({ x: bx, y0: y * C - (extTop ? 74 : 0), y1: (e + 1) * C + (extBot ? 74 : 0), flip: side === 'east' });
+          walls.caps.push({ x: bx + 31, y: extTop ? y * C - 37 : y * C + 34 });
+          walls.caps.push({ x: bx + 31, y: extBot ? (e + 1) * C + 37 : (e + 1) * C - 34 });
+          for (let k = y + 3; k < e - 1; k += 4) walls.side.push({ glow: true, x: bx, y: k * C, flip: side === 'east' });
+          y = e + 1;
+        } else y++;
+      }
+    }
+  }
+}
+function minimapPath(r) {
+  const fill = new Path2D(), edge = new Path2D();
+  for (const [x, y] of HC.cellsOf(W, r)) {
+    fill.rect(x, y, 1, 1);
+    const out = (nx, ny) => !inGrid(nx, ny) || roomAt[idx(nx, ny)] !== r.index;
+    if (out(x, y - 1)) { edge.moveTo(x, y); edge.lineTo(x + 1, y); }
+    if (out(x, y + 1)) { edge.moveTo(x, y + 1); edge.lineTo(x + 1, y + 1); }
+    if (out(x - 1, y)) { edge.moveTo(x, y); edge.lineTo(x, y + 1); }
+    if (out(x + 1, y)) { edge.moveTo(x + 1, y); edge.lineTo(x + 1, y + 1); }
+  }
+  return { fill, edge };
+}
+
+// ---------- input ----------
+const keys = new Set();
+const MOVE = { a: 'l', d: 'r', w: 'u', s: 'd' };
+const SHOOT = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] };
+let shootDir = null; const held = [];
+function onKey(e, down) {
+  const l = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+  if (MOVE[l]) { down ? keys.add(MOVE[l]) : keys.delete(MOVE[l]); e.preventDefault(); return; }
+  if (SHOOT[e.key]) { const i = held.indexOf(e.key); if (i >= 0) held.splice(i, 1); if (down) held.push(e.key); shootDir = held.length ? SHOOT[held[held.length - 1]] : null; e.preventDefault(); return; }
+  if (!down || e.repeat) return;
+  if (l === 'e' || e.key === ' ') { act(); e.preventDefault(); }
+  else if (l === 'm') toggle('map');
+  else if (l === 'l') toggle('light');
+  else if (l === 'c') toggle('coll');
+  else if (l === 'r') loadFloor(state.floor, false);
+}
+cv.addEventListener('keydown', e => onKey(e, true));
+cv.addEventListener('keyup', e => onKey(e, false));
+cv.addEventListener('blur', () => { keys.clear(); held.length = 0; shootDir = null; mouseDown = false; });
+const toWorld = e => { const b = cv.getBoundingClientRect(), z = Z(); return [(e.clientX - b.left) / b.width * cv.width / z + state.cam.x - VIEW_W / 2, (e.clientY - b.top) / b.height * cv.height / z + state.cam.y - VIEW_H / 2]; };
+let mouseDown = false, touch = null;
+cv.addEventListener('pointerdown', e => {
+  cv.focus();
+  if (state.won) { if (state.wonAt > .8) nextFloor(); return; }
+  if (e.pointerType === 'mouse') { if (e.button === 0) { mouseDown = true; state.aim = toWorld(e); } return; }
+  touch = { id: e.pointerId, x: e.clientX, y: e.clientY, dx: 0, dy: 0 }; cv.setPointerCapture(e.pointerId);
+});
+cv.addEventListener('pointermove', e => {
+  if (e.pointerType === 'mouse') { if (mouseDown) state.aim = toWorld(e); return; }
+  if (touch && e.pointerId === touch.id) { touch.dx = e.clientX - touch.x; touch.dy = e.clientY - touch.y; }
+});
+const endPointer = e => {
+  if (e.pointerType === 'mouse') { mouseDown = false; return; }
+  if (touch && e.pointerId === touch.id) { if (Math.hypot(touch.dx, touch.dy) < 10) { const [wx, wy] = toWorld(e); fire(wx - player.x, wy - (player.y - 40)); } touch = null; }
+};
+cv.addEventListener('pointerup', endPointer); cv.addEventListener('pointercancel', endPointer);
+const btn = id => document.getElementById(id);
+btn('b-act').onclick = () => { act(); cv.focus(); };
+btn('b-map').onclick = () => toggle('map');
+btn('b-light').onclick = () => toggle('light');
+btn('b-coll').onclick = () => toggle('coll');
+btn('b-reset').onclick = () => { loadFloor(state.floor, false); cv.focus(); };
+function toggle(k) { state[k] = !state[k]; const b = { map: 'b-map', light: 'b-light', coll: 'b-coll' }[k]; btn(b).setAttribute('aria-pressed', String(state[k])); }
+const nav = document.getElementById('floor-nav');
+for (let n = 1; n <= 10; n++) {
+  if (n === 4 || n === 7 || n === 10) { const s = document.createElement('span'); s.className = 'sep'; nav.appendChild(s); }
+  const b = document.createElement('button'); b.type = 'button'; b.textContent = n; b.id = 'floor-' + n;
+  b.title = HC.FLOORS[n].title + ' · ' + HC.CIRCLES[HC.FLOORS[n].circle];
+  b.onclick = () => { loadFloor(n, false); cv.focus(); }; nav.appendChild(b);
+}
+function nextFloor() { if (state.floor < 10) loadFloor(state.floor + 1, true); else loadFloor(1, false); }
+
+// ---------- collision ----------
+const PW = 22, PH = 24;
+function closedCells() { const out = []; for (const d of doors) if (d.kind !== 'secret' && doorClosed(d)) out.push(...d.cells); return out; }
+function boxBlocked(x0, y0, x1, y1, avoidLava) {
+  for (let cy = Math.floor(y0 / C); cy <= Math.floor((y1 - 1) / C); cy++)
+    for (let cx = Math.floor(x0 / C); cx <= Math.floor((x1 - 1) / C); cx++) { const t = cell(cx, cy); if (!walkableType(t) || (avoidLava && t === 2)) return true; }
+  for (const [gx, gy] of closedCells()) if (x1 > gx * C && x0 < (gx + 1) * C && y1 > gy * C && y0 < (gy + 1) * C) return true;
+  for (const p of props) if (p.solid && x1 > p.solid[0] && x0 < p.solid[2] && y1 > p.solid[1] && y0 < p.solid[3]) return true;
+  for (const e of ents) {
+    if ((e.type === 'chest') && x1 > e.x - 40 && x0 < e.x + 40 && y1 > e.y - 32 && y0 < e.y) return true;
+    if (e.type === 'vault' && x1 > e.x - 70 && x0 < e.x + 70 && y1 > e.y - 50 && y0 < e.y) return true;
+    if (e.type === 'portal' && x1 > e.x - 72 && x0 < e.x + 72 && y1 > e.y - 40 && y0 < e.y) return true;
+    if (e.type === 'brazier' && x1 > e.x - 28 && x0 < e.x + 28 && y1 > e.y - 30 && y0 < e.y) return true;
+  }
+  return false;
+}
+const blocked = (x, y) => boxBlocked(x - PW, y - PH, x + PW, y, false);
+
+// ---------- gameplay ----------
+function hurt(n, why) {
+  if (state.inv > 0 || state.dead) return;
+  state.hp = Math.max(0, state.hp - n); state.inv = 0.9; state.flash = 0.25;
+  if (state.hp === 0) { state.dead = 1.8; toast('Gestorben: ' + why + '. Zurück zum Abstieg.'); }
+}
+function toast(text) { state.toasts.push({ text, t: 3.6 }); if (state.toasts.length > 3) state.toasts.shift(); }
+const roomOf = e => ROOMS[e.room];
+function interactables() {
+  const out = [];
+  for (const e of ents) {
+    if (e.type === 'chest' && e.state !== 'empty') out.push({ e, label: e.state === 'open' ? 'Beute nehmen' : 'Truhe öffnen', x: e.x, y: e.y - 20, r: 120 });
+    else if (e.type === 'vault' && !e.opened) out.push({ e, label: 'Riesentresor öffnen', x: e.x, y: e.y - 30, r: 170 });
+    else if (e.type === 'portal') out.push({ e, label: e.active ? (W.final ? 'Die Hölle verlassen' : 'Portal zu Etage ' + (state.floor + 1)) : 'Portal erloschen', x: e.x, y: e.y - 20, r: 230 });
+    else if (e.type === 'brazier' && !e.lit) out.push({ e, label: roomOf(e).fight ? 'Erst die Gegner besiegen' : 'Feuerschale entzünden', x: e.x, y: e.y - 30, r: 115 });
+  }
+  for (const d of doors) {
+    if (d.kind === 'secret' && !d.broken && !d.hidden) out.push({ e: d, label: 'Rissige Wand aufbrechen', x: d.crackX, y: d.crackY, r: 150 });
+    else if (d.kind === 'lock' && !d.unlocked) out.push({ e: d, label: state.keys[d.key] ? KEYS[d.key].name + ' benutzen' : 'Verschlossen: ' + KEYS[d.key].name + ' fehlt', x: d.cx, y: d.cy, r: 190 });
+    else if (d.kind === 'puzzle' && doorClosed(d) && !d.a.fight && !d.b.fight) { const g = W.groups[d.group]; out.push({ e: d, label: g.kind === 'braziers' ? (g.spread ? 'Gittertor: alle Feuerschalen der Etage entzünden' : 'Rätseltor: alle Feuerschalen entzünden') : 'Rätseltor: alle Runenplatten betreten', x: d.cx, y: d.cy, r: 190 }); }
+    else if (d.kind === 'boss' && doorClosed(d)) out.push({ e: d, label: 'Versiegelt bis ' + W.boss.name + ' fällt', x: d.cx, y: d.cy, r: 190 });
+  }
+  return out;
+}
+function nearest() {
+  let best = null, bd = 1e9;
+  for (const it of interactables()) { const dd = Math.hypot(player.x - it.x, player.y - 20 - it.y); if (dd < it.r && dd < bd) { bd = dd; best = it; } }
+  return best;
+}
+function groupStatus(g) {
+  const parts = ents.filter(e => e.group === g);
+  return { all: parts.length, done: parts.filter(e => e.lit || e.on).length };
+}
+function solveGroup(g) {
+  const G = W.groups[g]; if (G.solved) return; G.solved = true;
+  let opened = false;
+  for (const d of doors) if (d.kind === 'secret' && d.group === g) { d.broken = true; for (const [x, y] of d.cells) grid[idx(x, y)] = 1; opened = true; }
+  if (opened) { buildWalls(); toast('Ein verborgener Gang öffnet sich. Ein Geheimraum ist erreichbar.'); }
+  else if (G.kind === 'braziers') toast(G.spread ? 'Alle Feuerschalen brennen. Das Gitter zum Riesentresor hebt sich!' : 'Alle Schalen brennen. Das Tor hebt sich.');
+  else toast('Alle Runen leuchten. Das Tor öffnet sich.');
+  updatePage();
+}
+function act() {
+  if (state.dead) return;
+  if (state.won) { nextFloor(); return; }
+  const n = nearest(); if (!n) return;
+  const e = n.e;
+  if (e.type === 'chest') {
+    if (!e.state) { e.state = 'open'; toast('Truhe geöffnet: ' + e.loot.gems + ' Runensteine' + (e.loot.heart ? ' und ein Herz' : '')); }
+    else if (e.state === 'open') { e.state = 'empty'; state.gems += e.loot.gems; if (e.loot.heart) state.hp = Math.min(state.maxHp, state.hp + 2); toast('+' + e.loot.gems + ' Runensteine' + (e.loot.heart ? ', +1 Herz' : '')); }
+  } else if (e.type === 'vault') {
+    e.opened = true; const g = 15 + state.floor * 2; state.gems += g; state.maxHp = Math.min(24, state.maxHp + 2); state.hp = state.maxHp;
+    burst(e.x, e.y - 60, 60, true); toast('Riesentresor! +1 Herzcontainer, volle Gesundheit, +' + g + ' Runensteine');
+  } else if (e.type === 'portal') {
+    if (e.active) { state.won = true; state.wonAt = 0; } else toast('Das Portal erwacht erst, wenn ' + W.boss.name + ' fällt.');
+  } else if (e.type === 'brazier') {
+    if (roomOf(e).fight) { toast('Erst alle Gegner im Raum besiegen.'); return; }
+    e.lit = true; lights.push({ x: e.x, y: e.y - 70, r: 280, c: '255,140,60', f: e.x % 7 });
+    const s = groupStatus(e.group);
+    if (s.done === s.all) solveGroup(e.group);
+    else toast((W.groups[e.group].spread ? 'Feuerschale ' + s.done + ' von ' + s.all + ' auf dieser Etage' : 'Feuerschale ' + s.done + ' von ' + s.all) + ' entzündet.');
+    updatePage();
+  } else if (e.kind === 'secret') {
+    e.broken = true; for (const [x, y] of e.cells) grid[idx(x, y)] = 1; buildWalls();
+    toast('Die Wand bricht. Ein Geheimraum liegt dahinter.'); updatePage();
+  } else if (e.kind === 'lock') {
+    if (state.keys[e.key]) { state.keys[e.key] = false; state.used[e.key] = true; e.unlocked = true; toast('Das Tor öffnet sich.'); updatePage(); }
+    else toast(KEYS[e.key].name + ' ' + KEYS[e.key].hint);
+  }
+}
+function fire(dx, dy) {
+  if (state.cool > 0 || state.dead || state.won) return;
+  const l = Math.hypot(dx, dy); if (!l) return;
+  shots.push({ x: player.x, y: player.y - 40, vx: dx / l * 980, vy: dy / l * 980, t: .8 });
+  state.cool = .26; if (dx) player.face = dx > 0 ? 1 : -1;
+}
+const MOB = { glut: { hp: 3, sp: 175, s: .78, r: 24 }, gross: { hp: 6, sp: 120, s: 1.15, r: 32 }, spucker: { hp: 4, sp: 95, s: .95, r: 28 }, boss: { hp: 46, sp: 85, s: 2.7, r: 70 } };
+function spawnMob(r, x, y, kind) {
+  const def = MOB[kind], D = W.diff;
+  const hp = kind === 'boss' ? W.boss.hp : Math.round(def.hp * D.hp);
+  mobs.push({ room: r, kind, x, y, hp, max: hp, sp: def.sp * D.speed * (kind === 'boss' && W.final ? 1.15 : 1), s: kind === 'boss' && (W.boss.mini || W.final) ? def.s * (W.final ? 1.25 : 1.05) : def.s, r: def.r, seed: Math.random() * 9, kx: 0, ky: 0, hit: 0, spawn: .5, summon: 2.5, shoot: 1 + Math.random() * 2, ring: W.boss.ring || 0, spin: 0 });
+}
+function startFight(r) {
+  r.fight = true;
+  const cells = r.cells.filter(([x, y]) => grid[idx(x, y)] === 1 && !occupied.has(idx(x, y)) && Math.hypot((x + .5) * C - player.x, (y + .5) * C - player.y) > 4.5 * C && !nearDoor(r, x + .5, y + .5, 2));
+  const n = (r.mobs || 3) + W.diff.extra;
+  for (let k = 0; k < n && cells.length; k++) {
+    const [x, y] = cells.splice(Math.floor(Math.random() * cells.length), 1)[0];
+    const kind = W.diff.shooters && k % 4 === 1 ? 'spucker' : k % 3 === 2 ? 'gross' : 'glut';
+    spawnMob(r, (x + .5) * C, (y + .7) * C, kind);
+  }
+  if (r.type === 'boss') { spawnMob(r, (r.bx + r.bw / 2) * C, (r.by + r.bh / 2 + 1) * C, 'boss'); }
+  toast(r.type === 'boss' ? W.boss.name + ' erwacht. Die Tore sind verriegelt.' : 'Die Gitter fallen. Besiege alle Gegner.');
+}
+function clearRoom(r, x, y) {
+  r.fight = false; r.cleared = true;
+  const drop = (type, extra = {}) => { ents.push(Object.assign({ type, x: x + (Math.random() - .5) * 60, y: y + (Math.random() - .5) * 40, room: r.index }, extra)); };
+  if (r.drop) { drop('key', { key: r.drop }); toast('Raum gesäubert. ' + KEYS[r.drop].name + ' gefallen!'); }
+  else if (r.type === 'boss') { state.bossDead = true; for (const e of ents) if (e.type === 'portal') e.active = true; toast(W.boss.name + ' fällt. Die Portalkammer ist offen.'); }
+  else toast('Raum gesäubert. Die Gitter heben sich.');
+  if (r.reward) { if (r.reward.heart) drop('heart'); for (let k = 0; k < r.reward.gems; k++) drop('gem'); }
+  else if (Math.random() < .35) drop('heart'); else if (Math.random() < .6) drop('gem');
+  updatePage();
+}
+function enemyShot(x, y, dx, dy, sp) { const l = Math.hypot(dx, dy) || 1; eshots.push({ x, y, vx: dx / l * sp, vy: dy / l * sp, t: 2.2 }); }
+
+function update(dt) {
+  state.t += dt;
+  for (const k of ['inv', 'flash', 'cool']) if (state[k] > 0) state[k] -= dt;
+  state.toasts.forEach(t => t.t -= dt); state.toasts = state.toasts.filter(t => t.t > 0);
+  state.banner.t += dt;
+  if (state.won) { state.wonAt += dt; return; }
+  if (state.dead) {
+    state.dead -= dt;
+    if (state.dead <= 0) {
+      for (const r of ROOMS) if (r.fight) { r.fight = false; mobs = mobs.filter(m => m.room !== r); }
+      eshots = []; respawn(); state.hp = state.maxHp; state.dead = 0; state.inv = 1.2; state.room = ROOMS.find(r => r.type === 'start').index;
+    }
+    return;
+  }
+  let mx = (keys.has('r') ? 1 : 0) - (keys.has('l') ? 1 : 0), my = (keys.has('d') ? 1 : 0) - (keys.has('u') ? 1 : 0);
+  if (touch && Math.hypot(touch.dx, touch.dy) > 12) { const l = Math.hypot(touch.dx, touch.dy); mx = touch.dx / l; my = touch.dy / l; }
+  const len = Math.hypot(mx, my);
+  const here = cell(Math.floor(player.x / C), Math.floor((player.y - 6) / C));
+  const speed = 360 * (here === 2 ? 0.5 : 1);
+  player.moving = len > 0;
+  if (len) {
+    const vx = mx / len * speed * dt, vy = my / len * speed * dt;
+    if (!blocked(player.x + vx, player.y)) player.x += vx;
+    if (!blocked(player.x, player.y + vy)) player.y += vy;
+    if (mx && !shootDir && !mouseDown) player.face = mx > 0 ? 1 : -1;
+  }
+  player.anim += dt * (player.moving ? 10 : 5);
+  if (shootDir) fire(shootDir[0], shootDir[1]);
+  else if (mouseDown && state.aim) fire(state.aim[0] - player.x, state.aim[1] - (player.y - 40));
+  const closed = closedCells();
+  const wallHit = (x, y) => { const cx = Math.floor(x / C), cy = Math.floor(y / C); return !walkableType(cell(cx, cy)) || closed.some(([gx, gy]) => gx === cx && gy === cy); };
+  for (const s of shots) {
+    s.x += s.vx * dt; s.y += s.vy * dt; s.t -= dt;
+    if (wallHit(s.x, s.y) || props.some(p => p.solid && s.x > p.solid[0] && s.x < p.solid[2] && s.y > p.solid[1] - 50 && s.y < p.solid[3])) { s.t = 0; burst(s.x, s.y, 5); continue; }
+    for (const m of mobs) if (m.spawn <= 0 && Math.hypot(m.x - s.x, m.y - 30 * m.s - s.y) < m.r + 12) { m.hp--; m.hit = .12; m.kx = s.vx * (m.kind === 'boss' ? .05 : .25); m.ky = s.vy * (m.kind === 'boss' ? .05 : .25); s.t = 0; burst(s.x, s.y, 6); break; }
+  }
+  shots = shots.filter(s => s.t > 0);
+  for (const s of eshots) {
+    s.x += s.vx * dt; s.y += s.vy * dt; s.t -= dt;
+    if (wallHit(s.x, s.y)) { s.t = 0; burst(s.x, s.y, 4); continue; }
+    if (Math.hypot(player.x - s.x, player.y - 34 - s.y) < 30) { s.t = 0; hurt(1, 'von Feuer getroffen'); }
+  }
+  eshots = eshots.filter(s => s.t > 0);
+  for (const m of mobs) {
+    if (m.spawn > 0) { m.spawn -= dt; continue; }
+    if (m.hit > 0) m.hit -= dt;
+    const dx = player.x - m.x, dy = player.y - m.y, d = Math.hypot(dx, dy) || 1;
+    const wob = Math.sin(state.t * 3 + m.seed) * .7, keepAway = m.kind === 'spucker' && d < 320 ? -1 : 1;
+    let vx = (dx / d * keepAway - dy / d * wob) * m.sp, vy = (dy / d * keepAway + dx / d * wob) * m.sp;
+    for (const o of mobs) if (o !== m) { const ox = m.x - o.x, oy = m.y - o.y, od = Math.hypot(ox, oy); if (od < m.r + o.r && od > 0) { vx += ox / od * 120; vy += oy / od * 120; } }
+    vx += m.kx; vy += m.ky; m.kx *= .86; m.ky *= .86;
+    const rr = m.r * .7, avoid = m.kind !== 'boss';
+    if (!boxBlocked(m.x + vx * dt - rr, m.y - rr, m.x + vx * dt + rr, m.y, avoid)) m.x += vx * dt;
+    if (!boxBlocked(m.x - rr, m.y + vy * dt - rr, m.x + rr, m.y + vy * dt, avoid)) m.y += vy * dt;
+    if (d < m.r + 22) hurt(1, m.kind === 'boss' ? 'von ' + W.boss.name + ' erschlagen' : 'von Glutlingen verbrannt');
+    if (m.kind === 'spucker') { m.shoot -= dt; if (m.shoot <= 0) { m.shoot = 2.4; enemyShot(m.x, m.y - 40, dx, dy - 30, 380); } }
+    if (m.kind === 'boss') {
+      m.summon -= dt;
+      if (m.summon <= 0 && mobs.filter(o => o.room === m.room && o.kind !== 'boss').length < 5) { m.summon = W.boss.summon; for (let k = 0; k < 2; k++) spawnMob(m.room, m.x + (k ? 100 : -100), m.y + 30, W.final && k ? 'spucker' : 'glut'); }
+      if (m.ring) { m.ringT = (m.ringT ?? m.ring) - dt; if (m.ringT <= 0) { m.ringT = m.ring; m.spin += .3; const n = W.final ? 16 : 10; for (let k = 0; k < n; k++) { const a = m.spin + k / n * Math.PI * 2; enemyShot(m.x, m.y - 70, Math.cos(a), Math.sin(a), 300); } } }
+    }
+  }
+  for (const m of mobs.filter(m => m.hp <= 0)) { burst(m.x, m.y - 30, m.kind === 'boss' ? 70 : 16); if (!mobs.some(o => o !== m && o.room === m.room && o.hp > 0)) { if (m.kind === 'boss') eshots = []; clearRoom(m.room, m.x, m.y); } }
+  mobs = mobs.filter(m => m.hp > 0);
+  if (here === 2) hurt(1, 'in der Lava verbrannt');
+  const cr = ROOMS[state.room];
+  for (const e of ents) {
+    if (e.type === 'spikes') {
+      e.up = ((state.t / 1.2) | 0) % 2 === e.phase;
+      if (e.up && Math.abs(player.x - e.x) < 42 && Math.abs(player.y - 12 - e.y) < 40) hurt(1, 'von Stacheln getroffen');
+    } else if (e.type === 'vent') {
+      const ph = (state.t + e.offset) % 3; e.burst = ph < 0.9;
+      if (e.burst && Math.hypot(player.x - e.x, player.y - e.y) < 70) hurt(1, 'vom Glutschlot verbrannt');
+      if (e.burst && Math.random() < 0.6) state.embers.push({ x: e.x + (Math.random() - .5) * 40, y: e.y - 10, vx: (Math.random() - .5) * 40, vy: -160 - Math.random() * 120, t: 0.8, big: true });
+    } else if (e.type === 'plate' && !e.on && !W.groups[e.group].solved && Math.abs(player.x - e.x) < 44 && Math.abs(player.y - 10 - e.y) < 44) {
+      const G = W.groups[e.group];
+      if (G.kind === 'sequence') {
+        if (cr.fight) continue;
+        if (e.order === G.next) { e.on = true; G.next++; lights.push({ x: e.x, y: e.y, r: 160, c: '255,90,40', f: 2, plate: e }); const s = groupStatus(e.group); if (s.done === s.all) solveGroup(e.group); else toast('Platte ' + s.done + ' von ' + s.all + ' richtig.'); }
+        else if (!e.wrong) { for (const p of ents) if (p.group === e.group) { p.on = false; } G.next = 1; lights = lights.filter(l => !l.plate || l.plate.group !== e.group); W.lights = lights; e.wrong = .8; toast('Falsche Reihenfolge. Die Platten erlöschen.'); }
+      } else {
+        e.on = true; lights.push({ x: e.x, y: e.y, r: 160, c: '255,90,40', f: 2 });
+        const s = groupStatus(e.group); if (s.done === s.all) solveGroup(e.group); else toast('Runenplatte ' + s.done + ' von ' + s.all + ' aktiviert.');
+      }
+    } else if (!e.taken && (e.type === 'key' || e.type === 'heart' || e.type === 'gem') && Math.hypot(player.x - e.x, player.y - e.y) < 52) {
+      if (e.type === 'heart' && state.hp >= state.maxHp) continue;
+      e.taken = true;
+      if (e.type === 'key') { state.keys[e.key] = true; toast(KEYS[e.key].name + ' aufgehoben.'); }
+      if (e.type === 'heart') { state.hp = Math.min(state.maxHp, state.hp + 2); toast('+1 Herz'); }
+      if (e.type === 'gem') state.gems++;
+    }
+    if (e.wrong) { e.wrong -= dt; if (e.wrong <= 0 || Math.abs(player.x - e.x) > 60 || Math.abs(player.y - 10 - e.y) > 60) e.wrong = 0; }
+  }
+  const ri = roomAt[idx(Math.floor(player.x / C), Math.floor((player.y - 12) / C))];
+  if (ri >= 0 && ri !== state.room) {
+    state.room = ri; const r = ROOMS[ri];
+    state.visited.add(ri); state.banner = { text: r.name, sub: r.kind, t: 0 };
+    updatePage();
+  }
+  const rr = ROOMS[state.room];
+  if (!rr.cleared && !rr.fight) {
+    const inside = [[-PW - 40, -60], [PW + 40, -60], [-PW - 40, 30], [PW + 40, 30]].every(([ox, oy]) => roomAt[idx(Math.floor((player.x + ox) / C), Math.floor((player.y + oy) / C))] === rr.index);
+    if (inside) startFight(rr);
+  }
+  if (state.light) for (let k = 0; k < W.theme.embers; k++) {
+    const c = lavaCells[(Math.random() * lavaCells.length) | 0];
+    if (c && Math.abs(c[0] * C - state.cam.x) < VIEW_W && Math.abs(c[1] * C - state.cam.y) < VIEW_H) state.embers.push({ x: (c[0] + Math.random()) * C, y: (c[1] + Math.random()) * C, vx: (Math.random() - .5) * 20, vy: -40 - Math.random() * 50, t: 1.2 + Math.random() });
+  }
+  if (W.theme.grade > .05 && Math.random() < W.theme.grade * 4) state.embers.push({ x: state.cam.x + (Math.random() - .5) * VIEW_W, y: state.cam.y + VIEW_H / 2, vx: (Math.random() - .5) * 30, vy: -60 - Math.random() * 80, t: 4 + Math.random() * 3, ash: true });
+  state.embers.forEach(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.t -= dt; });
+  state.embers = state.embers.filter(p => p.t > 0).slice(-360);
+  const inRoom = roomAt[idx(Math.floor(player.x / C), Math.floor((player.y - 12) / C))] >= 0;
+  let tx = player.x, ty = player.y - 40;
+  if (inRoom) {
+    const rx0 = rr.bx * C - 70, rx1 = (rr.bx + rr.bw) * C + 70, ry0 = rr.by * C - 110, ry1 = (rr.by + rr.bh) * C + 80;
+    tx = rx1 - rx0 <= VIEW_W ? (rx0 + rx1) / 2 : Math.min(Math.max(tx, rx0 + VIEW_W / 2), rx1 - VIEW_W / 2);
+    ty = ry1 - ry0 <= VIEW_H ? (ry0 + ry1) / 2 : Math.min(Math.max(ty, ry0 + VIEW_H / 2), ry1 - VIEW_H / 2);
+  }
+  const k = 1 - Math.pow(0.0015, dt);
+  state.cam.x += (tx - state.cam.x) * k; state.cam.y += (ty - state.cam.y) * k;
+}
+function burst(x, y, n, gold) { for (let k = 0; k < n; k++) state.embers.push({ x, y, vx: (Math.random() - .5) * 300, vy: (Math.random() - .5) * 300 - 60, t: .35 + Math.random() * .5, big: n > 20, gold }); }
+
+// ---------- drawing ----------
+const Z = () => cv.width / VIEW_W;
+let holePattern = null;
+function draw() {
+  const z = Z(), Wd = cv.width, H = cv.height, cam = state.cam;
+  const ox = cam.x - VIEW_W / 2, oy = cam.y - VIEW_H / 2;
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = '#070405'; ctx.fillRect(0, 0, Wd, H);
+  ctx.setTransform(z, 0, 0, z, -ox * z, -oy * z);
+  ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+  const cx0 = Math.max(0, Math.floor(ox / C) - 1), cx1 = Math.min(COLS - 1, Math.ceil((ox + VIEW_W) / C) + 1);
+  const cy0 = Math.max(0, Math.floor(oy / C) - 1), cy1 = Math.min(ROWS - 1, Math.ceil((oy + VIEW_H) / C) + 1);
+  const vis = (x0, y0, x1, y1) => x1 > ox - 200 && x0 < ox + VIEW_W + 200 && y1 > oy - 200 && y0 < oy + VIEW_H + 200;
+  if (!holePattern) holePattern = ctx.createPattern(IMG.wall_v, 'repeat');
+  const lavaFrame = (Math.sin(state.t * 2) + 1) / 2;
+  for (let y = cy0; y <= cy1; y++) for (let x = cx0; x <= cx1; x++) {
+    const t = cell(x, y);
+    if (!t) { if (holeAt[idx(x, y)]) { ctx.fillStyle = holePattern; ctx.fillRect(x * C, y * C, C + .5, C + .5); ctx.fillStyle = 'rgba(10,4,6,.35)'; ctx.fillRect(x * C, y * C, C + .5, C + .5); } continue; }
+    if (t === 2 || t === 3) {
+      ctx.drawImage(IMG[hash(x, y, 9) < .7 ? 'lava_00' : 'lava_01'], 14, 14, 68, 68, x * C, y * C, C + .5, C + .5);
+      ctx.globalAlpha = .18 * lavaFrame * (hash(x, y, 2) + .3); ctx.fillStyle = '#ffd27a'; ctx.fillRect(x * C, y * C, C, C); ctx.globalAlpha = 1;
+    } else ctx.drawImage(IMG[tileAt[idx(x, y)]], x * C, y * C, C + .5, C + .5);
+  }
+  const rim = IMG.lava_edge_top;
+  const rimEdge = (tx, ty, rot) => { ctx.save(); ctx.translate(tx, ty); ctx.rotate(rot); ctx.drawImage(rim, 0, 0, 48, 36, -2, -18, 50, 36); ctx.drawImage(rim, 6, 0, 48, 36, 46, -18, 52, 36); ctx.restore(); };
+  for (let y = cy0; y <= cy1; y++) for (let x = cx0; x <= cx1; x++) {
+    if (cell(x, y) !== 2 && cell(x, y) !== 3) continue;
+    const edge = (nx, ny) => cell(nx, ny) === 1 || cell(nx, ny) === 0;
+    if (edge(x, y - 1)) rimEdge(x * C, y * C, 0);
+    if (edge(x, y + 1)) rimEdge(x * C + C, y * C + C, Math.PI);
+    if (edge(x - 1, y)) rimEdge(x * C, y * C + C, -Math.PI / 2);
+    if (edge(x + 1, y)) rimEdge(x * C + C, y * C, Math.PI / 2);
+  }
+  for (const d of decals) {
+    const im = IMG[d.name]; const w = d.w || im.width, h = d.h || im.height;
+    if (!vis(d.x - w, d.y - h, d.x + w, d.y + h)) continue;
+    ctx.globalAlpha = d.a ?? 1; ctx.drawImage(im, d.x - w / 2, d.y - h / 2, w, h); ctx.globalAlpha = 1;
+  }
+  const cr = ROOMS[state.room];
+  for (const e of ents) {
+    if (!vis(e.x - 100, e.y - 100, e.x + 100, e.y + 100)) continue;
+    if (e.type === 'spikes') { const im = IMG.spike_trap; ctx.globalAlpha = e.up ? 1 : .3; ctx.drawImage(im, e.x - im.width / 2, e.y - im.height / 2 + (e.up ? 0 : 8), im.width, e.up ? im.height : im.height - 16); ctx.globalAlpha = 1; }
+    if (e.type === 'vent') { const im = IMG.vent; ctx.drawImage(im, e.x - im.width / 2, e.y - im.height / 2); }
+    if (e.type === 'plate') {
+      const im = IMG.rune_plate, G = W.groups[e.group];
+      ctx.drawImage(im, e.x - im.width / 2, e.y - im.height / 2);
+      let glow = e.on ? .55 + .2 * Math.sin(state.t * 5) : 0;
+      if (G.kind === 'sequence' && !G.solved && !e.on && e.room === state.room && !cr.fight) { const parts = ents.filter(p => p.group === e.group).length, cyc = (state.t % (parts * .75 + 1.4)) / .75; if (Math.floor(cyc) + 1 === e.order) glow = .9; }
+      if (e.wrong) { ctx.fillStyle = 'rgba(255,30,20,.4)'; ctx.fillRect(e.x - im.width / 2, e.y - im.height / 2, im.width, im.height); }
+      if (glow) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = glow; ctx.drawImage(im, e.x - im.width / 2, e.y - im.height / 2); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; }
+      else { ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.fillRect(e.x - im.width / 2 + 6, e.y - im.height / 2 + 6, im.width - 12, im.height - 12); }
+    }
+  }
+  for (const w of walls.north) { if (!vis(w.x0, w.y, w.x1, w.y + 140)) continue; const g = ctx.createLinearGradient(0, w.y + 74, 0, w.y + 130); g.addColorStop(0, 'rgba(0,0,0,.45)'); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fillRect(w.x0, w.y + 74, w.x1 - w.x0, 56); }
+  const wh = IMG.wall_h, wv = IMG.wall_v;
+  const strip = w => { for (let x = w.x0; x < w.x1; x += wh.width) { const sw = Math.min(wh.width, w.x1 - x); ctx.drawImage(wh, 0, 0, sw, wh.height, x, w.y, sw, wh.height); } };
+  for (const w of walls.north) if (vis(w.x0, w.y, w.x1, w.y + 80)) strip(w);
+  for (const s of walls.side) {
+    if (s.glow) { if (!vis(s.x, s.y - 80, s.x + 62, s.y + 80)) continue; const g = IMG.wall_v_glow; drawFlip(g, s.x + 31 - g.width / 2, s.y - g.height / 2, s.flip); continue; }
+    if (!vis(s.x, s.y0, s.x + 62, s.y1)) continue;
+    for (let y = s.y0; y < s.y1; y += wv.height) drawFlip(wv, s.x, y, s.flip, Math.min(wv.height, s.y1 - y));
+  }
+  for (const p of walls.posts) if (vis(p.x - 40, p.y - 100, p.x + 40, p.y)) { const g = IMG.wall_h_glowpost; ctx.drawImage(g, p.x - g.width / 2, p.y - g.height); }
+  for (const c of walls.caps) if (vis(c.x - 40, c.y - 40, c.x + 40, c.y + 40)) ctx.drawImage(IMG.corner_cap, c.x - 38, c.y - 38);
+  for (const d of doors) if (d.kind === 'secret' && !d.broken && !d.hidden && vis(d.cx - 150, d.cy - 150, d.cx + 150, d.cy + 150)) drawCrack(d);
+  for (const w of wallDecor) { const im = IMG[w.name]; if (!vis(w.x - im.width, w.y, w.x + im.width, w.y + im.height)) continue; drawFlip(im, w.x - im.width / 2, w.y, w.flip); }
+  const list = [];
+  for (const p of props) if (p.name && vis(p.x - 120, p.y - 220, p.x + 120, p.y)) list.push({ y: p.layer === 'low' ? p.y - 200 : p.y, f: () => { const im = IMG[p.name]; drawFlip(im, p.x - im.width / 2, p.y - im.height, p.flip); } });
+  for (const e of ents) {
+    if (!vis(e.x - 200, e.y - 260, e.x + 200, e.y + 60)) continue;
+    if (e.type === 'chest') list.push({ y: e.y, f: () => { const n = e.state === 'empty' ? 'chest_empty' : e.state === 'open' ? (e.magic ? 'chest_open' : 'chest_gold') : 'chest_closed'; const im = IMG[n]; ctx.drawImage(im, e.x - im.width / 2, e.y - im.height); } });
+    if (e.type === 'vault') list.push({ y: e.y, f: () => drawVault(e) });
+    if (e.type === 'portal') list.push({ y: e.y, f: () => { const im = IMG[e.active ? 'portal' : 'portal_dark']; ctx.drawImage(im, e.x - im.width / 2, e.y - im.height); } });
+    if (e.type === 'brazier') list.push({ y: e.y, f: () => { const im = IMG.brazier_bowl; if (e.lit) ctx.drawImage(im, e.x - im.width / 2, e.y - im.height); else { const cut = 46; ctx.drawImage(im, 0, cut, im.width, im.height - cut, e.x - im.width / 2, e.y - im.height + cut, im.width, im.height - cut); } } });
+    if ((e.type === 'key' || e.type === 'heart' || e.type === 'gem') && !e.taken) list.push({ y: e.y, f: () => {
+      const im = IMG[e.type === 'gem' ? 'rune_gem' : e.type], s = e.type === 'key' ? .9 : e.type === 'gem' ? .55 : .7, bob = Math.sin(state.t * 3 + e.x) * 6;
+      ctx.fillStyle = 'rgba(0,0,0,.4)'; ctx.beginPath(); ctx.ellipse(e.x, e.y, 18, 6, 0, 0, 7); ctx.fill();
+      if (e.key) ctx.filter = KEYS[e.key].filter;
+      ctx.drawImage(im, e.x - im.width * s / 2, e.y - im.height * s - 10 + bob, im.width * s, im.height * s); ctx.filter = 'none';
+    } });
+  }
+  for (const d of doors) if (d.kind !== 'secret' && doorClosed(d) && vis(d.cx - 150, d.cy - 150, d.cx + 150, d.cy + 150)) list.push({ y: d.cy + 60, f: () => drawGate(d) });
+  for (const m of mobs) if (vis(m.x - 260, m.y - 300, m.x + 260, m.y + 40)) list.push({ y: m.y, f: () => drawMob(m) });
+  list.push({ y: player.y, f: drawPlayer });
+  list.sort((a, b) => a.y - b.y).forEach(o => o.f());
+  for (const w of walls.south) if (vis(w.x0, w.y, w.x1, w.y + 80)) strip(w);
+  ctx.globalCompositeOperation = 'lighter';
+  for (const s of shots) { const g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, 26); g.addColorStop(0, 'rgba(255,240,190,1)'); g.addColorStop(.35, 'rgba(255,170,70,.9)'); g.addColorStop(1, 'rgba(255,90,20,0)'); ctx.fillStyle = g; ctx.fillRect(s.x - 26, s.y - 26, 52, 52); }
+  for (const s of eshots) { const g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, 24); g.addColorStop(0, 'rgba(255,200,200,1)'); g.addColorStop(.35, 'rgba(230,40,30,.95)'); g.addColorStop(1, 'rgba(120,0,0,0)'); ctx.fillStyle = g; ctx.fillRect(s.x - 24, s.y - 24, 48, 48); }
+  for (const p of state.embers) { ctx.globalAlpha = Math.min(1, p.t * (p.ash ? .4 : 2)); ctx.fillStyle = p.gold ? '#ffe28a' : p.ash ? '#ff5a2a' : p.big ? '#ff7a2a' : '#ffb347'; const s = p.big ? 9 : p.ash ? 4 : 5; ctx.fillRect(p.x - s / 2, p.y - s / 2, s, s); }
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  if (state.coll) drawCollision();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  if (state.light) drawLight(z, ox, oy);
+  // deeper floors: red grade and a burning vignette
+  const th = W.theme;
+  if (th.grade > 0) { ctx.fillStyle = `rgba(140,10,0,${th.grade})`; ctx.globalCompositeOperation = 'multiply'; ctx.fillRect(0, 0, Wd, H); ctx.globalCompositeOperation = 'source-over'; }
+  const vg = ctx.createRadialGradient(Wd / 2, H / 2, H * .35, Wd / 2, H / 2, Wd * .75); vg.addColorStop(0, 'rgba(60,0,0,0)'); vg.addColorStop(1, `rgba(${60 + th.wallGlow * 60},0,0,${th.vignette})`); ctx.fillStyle = vg; ctx.fillRect(0, 0, Wd, H);
+  if (state.flash > 0) { ctx.fillStyle = `rgba(200,20,20,${state.flash})`; ctx.fillRect(0, 0, Wd, H); }
+  drawHud();
+  drawMap(state.map);
+}
+function drawFlip(im, x, y, flip, sh) {
+  const h = sh ?? im.height;
+  if (!flip) { ctx.drawImage(im, 0, 0, im.width, h, x, y, im.width, h); return; }
+  ctx.save(); ctx.translate(x + im.width, y); ctx.scale(-1, 1); ctx.drawImage(im, 0, 0, im.width, h, 0, 0, im.width, h); ctx.restore();
+}
+function drawVault(e) {
+  const im = IMG.chest_gold, s = 1.9, w = im.width * s, h = im.height * s;
+  if (!e.opened) {
+    ctx.save(); ctx.translate(e.x, e.y - h * .55); ctx.globalCompositeOperation = 'lighter';
+    for (let k = 0; k < 10; k++) { const a = state.t * .5 + k / 10 * Math.PI * 2; ctx.rotate(Math.PI * 2 / 10); const g = ctx.createLinearGradient(0, 0, 0, -260); g.addColorStop(0, 'rgba(255,220,120,.35)'); g.addColorStop(1, 'rgba(255,200,80,0)'); ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(-10 - 6 * Math.sin(a), 0); ctx.lineTo(-34, -260); ctx.lineTo(34, -260); ctx.lineTo(10, 0); ctx.fill(); }
+    ctx.restore();
+    if (Math.random() < .3) state.embers.push({ x: e.x + (Math.random() - .5) * 140, y: e.y - Math.random() * 120, vx: 0, vy: -30, t: .9, gold: true });
+  }
+  ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.beginPath(); ctx.ellipse(e.x, e.y, 80, 18, 0, 0, 7); ctx.fill();
+  ctx.drawImage(e.opened ? IMG.chest_empty : im, e.x - w / 2, e.y - h, w, h);
+}
+function drawCrack(d) {
+  ctx.save(); ctx.translate(d.crackX, d.crackY);
+  if (d.dir === 'h') ctx.rotate(Math.PI / 2);
+  ctx.strokeStyle = 'rgba(10,4,6,.9)'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-50, -6); ctx.lineTo(-18, 10); ctx.lineTo(4, -4); ctx.lineTo(30, 14); ctx.lineTo(58, 2);
+  ctx.moveTo(-18, 10); ctx.lineTo(-26, 34); ctx.moveTo(4, -4); ctx.lineTo(10, -24); ctx.stroke();
+  ctx.strokeStyle = 'rgba(255,110,50,.6)'; ctx.lineWidth = 1.5; ctx.stroke(); ctx.restore();
+  const rb = IMG.rubble; ctx.drawImage(rb, d.crackX - rb.width / 2 + (d.dir === 'h' ? -80 : 30), d.crackY - rb.height / 2 + (d.dir === 'h' ? 70 : -70));
+}
+function drawGate(d) {
+  const im = IMG.portcullis;
+  ctx.save(); ctx.translate(d.cx, d.cy);
+  if (d.dir === 'h') ctx.rotate(Math.PI / 2);
+  ctx.drawImage(im, -im.width / 2, -im.height / 2);
+  const fight = d.a.fight || d.b.fight;
+  if (fight || d.kind === 'boss') { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = .22 + .14 * Math.sin(state.t * 5); ctx.fillStyle = '#ff3a1a'; ctx.fillRect(-im.width / 2, -im.height / 2, im.width, im.height); }
+  if (!fight && d.kind === 'puzzle' && W.groups[d.group].spread) { ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = .2 + .1 * Math.sin(state.t * 3); ctx.fillStyle = '#ffc040'; ctx.fillRect(-im.width / 2, -im.height / 2, im.width, im.height); }
+  ctx.restore();
+  if (!fight && d.kind === 'lock') { const k = IMG.key; ctx.filter = KEYS[d.key].filter; ctx.drawImage(k, d.cx - 15, d.cy - 30, 30, 56); ctx.filter = 'none'; }
+  if (!fight && d.kind === 'puzzle') { const g = W.groups[d.group].kind === 'braziers' ? IMG.brazier_bowl : IMG.icon_scroll; ctx.drawImage(g, d.cx - 22, d.cy - 30, 44, 44 * g.height / g.width); }
+}
+function drawMob(m) {
+  const im = IMG.fire_orb, s = m.s * (m.spawn > 0 ? 1 - m.spawn * 1.6 : 1), bob = Math.sin(state.t * 6 + m.seed) * 6;
+  if (s <= 0) return;
+  ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.beginPath(); ctx.ellipse(m.x, m.y, m.r * .9, m.r * .32, 0, 0, 7); ctx.fill();
+  if (m.kind === 'gross') ctx.filter = 'saturate(1.3) hue-rotate(-15deg) brightness(.85)';
+  if (m.kind === 'spucker') ctx.filter = 'hue-rotate(250deg) saturate(1.4)';
+  if (m.kind === 'boss') ctx.filter = W.final ? 'hue-rotate(230deg) saturate(1.8) brightness(.8)' : 'hue-rotate(-20deg) saturate(1.5) brightness(.9)';
+  if (m.hit > 0) ctx.filter = 'brightness(3)';
+  const w = im.width * s, h = im.height * s;
+  ctx.drawImage(im, m.x - w / 2, m.y - h - 14 + bob, w, h); ctx.filter = 'none';
+  if (m.kind === 'boss') { const ic = IMG[W.final ? 'icon_demon_big' : 'icon_demon']; ctx.drawImage(ic, m.x - 46 * s / 2.7, m.y - h - 4 + bob, 92 * s / 2.7, 96 * s / 2.7); }
+}
+function drawPlayer() {
+  const f = (player.anim | 0) % 4;
+  const im = IMG[`knight_m_${player.moving ? 'run' : 'idle'}_anim_f${f}`], s = 3.6;
+  ctx.fillStyle = 'rgba(0,0,0,.45)'; ctx.beginPath(); ctx.ellipse(player.x, player.y, 26, 9, 0, 0, 7); ctx.fill();
+  if (state.inv > 0 && ((state.t * 20) | 0) % 2) return;
+  ctx.save(); ctx.imageSmoothingEnabled = false; ctx.translate(player.x, player.y - im.height * s + 6);
+  if (player.face < 0) ctx.scale(-1, 1);
+  ctx.drawImage(im, -im.width * s / 2, 0, im.width * s, im.height * s); ctx.restore();
+}
+function drawCollision() {
+  ctx.lineWidth = 2;
+  for (const p of props) if (p.solid) { ctx.strokeStyle = 'rgba(80,200,255,.9)'; ctx.strokeRect(p.solid[0], p.solid[1], p.solid[2] - p.solid[0], p.solid[3] - p.solid[1]); }
+  for (const [x, y] of closedCells()) { ctx.fillStyle = 'rgba(255,60,60,.3)'; ctx.fillRect(x * C, y * C, C, C); }
+  for (const [x, y] of lavaCells) { ctx.strokeStyle = 'rgba(255,200,0,.6)'; ctx.strokeRect(x * C + 4, y * C + 4, C - 8, C - 8); }
+  ctx.strokeStyle = '#7dff7d'; ctx.strokeRect(player.x - PW, player.y - PH, PW * 2, PH);
+}
+function drawLight(z, ox, oy) {
+  const Wd = cv.width, H = cv.height;
+  lctx.globalCompositeOperation = 'source-over'; lctx.clearRect(0, 0, Wd, H);
+  lctx.fillStyle = `rgba(6,2,4,${W.theme.dark})`; lctx.fillRect(0, 0, Wd, H);
+  lctx.globalCompositeOperation = 'destination-out';
+  const all = [...lights, { x: player.x, y: player.y - 40, r: 460, f: 0, p: true }];
+  for (const e of ents) {
+    if (e.type === 'portal' && e.active) all.push({ x: e.x, y: e.y - 60, r: 330, c: '255,60,40', f: 2 });
+    if (e.type === 'vent' && e.burst) all.push({ x: e.x, y: e.y - 30, r: 220, c: '255,120,40', f: 1 });
+    if (e.type === 'key' && !e.taken) all.push({ x: e.x, y: e.y - 30, r: 130, c: '255,170,60', f: 1 });
+    if (e.type === 'vault' && !e.opened) all.push({ x: e.x, y: e.y - 80, r: 420, c: '255,210,110', f: 3 });
+  }
+  for (const m of mobs) all.push({ x: m.x, y: m.y - 40 * m.s, r: 120 * m.s, c: '255,110,40', f: m.seed });
+  for (const s of shots) all.push({ x: s.x, y: s.y, r: 110, c: '255,180,80', f: 0 });
+  for (const s of eshots) all.push({ x: s.x, y: s.y, r: 90, c: '255,40,30', f: 0 });
+  const glows = [];
+  for (const L of all) {
+    const sx = (L.x - ox) * z, sy = (L.y - oy) * z, r = L.r * z * (1 + .05 * Math.sin(state.t * 9 + L.f));
+    if (sx < -r || sy < -r || sx > Wd + r || sy > H + r) continue;
+    const g = lctx.createRadialGradient(sx, sy, 0, sx, sy, r); g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(.5, 'rgba(0,0,0,.7)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+    lctx.fillStyle = g; lctx.fillRect(sx - r, sy - r, r * 2, r * 2);
+    if (!L.p) glows.push([sx, sy, r, L.c]);
+  }
+  for (const [x, y] of lavaCells) {
+    const sx = ((x + .5) * C - ox) * z, sy = ((y + .5) * C - oy) * z, r = 150 * z;
+    if (sx < -r || sy < -r || sx > Wd + r || sy > H + r) continue;
+    const g = lctx.createRadialGradient(sx, sy, 0, sx, sy, r); g.addColorStop(0, 'rgba(0,0,0,.9)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+    lctx.fillStyle = g; lctx.fillRect(sx - r, sy - r, r * 2, r * 2); glows.push([sx, sy, r * .8, '255,90,30']);
+  }
+  ctx.drawImage(light, 0, 0);
+  ctx.globalCompositeOperation = 'lighter';
+  for (const [x, y, r, c] of glows) { const g = ctx.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, `rgba(${c},.16)`); g.addColorStop(1, `rgba(${c},0)`); ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2); }
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+// ---------- HUD and maps ----------
+function drawHud() {
+  const Wd = cv.width;
+  ctx.imageSmoothingEnabled = true;
+  const hs = 30, im = IMG.heart, hh = hs * im.height / im.width;
+  for (let i = 0; i < state.maxHp / 2; i++) {
+    const v = state.hp - i * 2, x = 20 + (i % 8) * (hs + 4), y = 18 + Math.floor(i / 8) * (hh + 4);
+    ctx.globalAlpha = .22; ctx.drawImage(im, x, y, hs, hh); ctx.globalAlpha = 1;
+    if (v >= 2) ctx.drawImage(im, x, y, hs, hh); else if (v === 1) ctx.drawImage(im, 0, 0, im.width / 2, im.height, x, y, hs / 2, hh);
+  }
+  let x = 22; const y = state.maxHp > 16 ? 92 : 60;
+  for (const k of ['A', 'B', 'C']) {
+    ctx.globalAlpha = state.keys[k] ? 1 : state.used[k] ? .14 : .22; ctx.filter = KEYS[k].filter;
+    ctx.drawImage(IMG.key, x, y, 18, 34); ctx.filter = 'none'; ctx.globalAlpha = 1; x += 28;
+  }
+  ctx.font = '600 22px "Alegreya Sans", sans-serif'; ctx.textBaseline = 'middle'; ctx.fillStyle = '#f1e4d8';
+  ctx.drawImage(IMG.rune_gem, x + 8, y + 2, 22, 32); ctx.fillText('× ' + state.gems, x + 38, y + 18);
+  const fs = groupStatus('feuer');
+  if (fs.all) { const bx = x + 110; ctx.drawImage(IMG.brazier_bowl, bx, y - 4, 26, 37); ctx.fillText(fs.done + '/' + fs.all, bx + 34, y + 18); }
+  ctx.font = '600 16px "Alegreya Sans", sans-serif'; ctx.fillStyle = 'rgba(255,210,168,.75)'; ctx.fillText('Etage ' + state.floor + ' · ' + W.title, 22, y + 50);
+  const b = state.banner, a = b.t < .4 ? b.t / .4 : b.t < 2.6 ? 1 : Math.max(0, 1 - (b.t - 2.6) / .8);
+  if (a > 0) {
+    ctx.globalAlpha = a; ctx.textAlign = 'center';
+    ctx.font = '700 46px "Grenze Gotisch", Georgia, serif'; ctx.fillStyle = '#ffd2a8'; ctx.shadowColor = '#000'; ctx.shadowBlur = 12;
+    ctx.fillText(b.text, Wd / 2, 60); ctx.font = '500 20px "Alegreya Sans", sans-serif'; ctx.fillStyle = '#ff9a5a'; ctx.fillText(b.sub.toUpperCase(), Wd / 2, 94);
+    ctx.shadowBlur = 0; ctx.globalAlpha = 1; ctx.textAlign = 'left';
+  }
+  const boss = mobs.find(m => m.kind === 'boss');
+  if (boss) {
+    const bw = 560, bx = Wd / 2 - bw / 2, by = cv.height - 120;
+    ctx.fillStyle = 'rgba(10,4,6,.85)'; roundRect(bx - 4, by - 30, bw + 8, 48, 6); ctx.fill();
+    ctx.fillStyle = '#3a1210'; ctx.fillRect(bx, by, bw, 12); ctx.fillStyle = '#e8432a'; ctx.fillRect(bx, by, bw * boss.hp / boss.max, 12);
+    ctx.font = '600 17px "Alegreya Sans", sans-serif'; ctx.fillStyle = '#ffd2a8'; ctx.textAlign = 'center'; ctx.fillText(W.boss.name + ' (Platzhalter)', Wd / 2, by - 14); ctx.textAlign = 'left';
+  }
+  const cr = ROOMS[state.room];
+  if (cr.fight) { const left = mobs.filter(m => m.room === cr).length; ctx.font = '600 19px "Alegreya Sans", sans-serif'; ctx.fillStyle = '#ff6b4a'; ctx.textAlign = 'center'; ctx.fillText('Verriegelt · noch ' + left + ' Gegner', Wd / 2, 124); ctx.textAlign = 'left'; }
+  const n = nearest();
+  if (n && !state.dead && !state.won) {
+    const z = Z(), sx = (n.x - state.cam.x + VIEW_W / 2) * z, sy = (n.y - state.cam.y + VIEW_H / 2) * z - 70;
+    ctx.font = '600 19px "Alegreya Sans", sans-serif'; const tw = ctx.measureText(n.label).width + 52;
+    ctx.fillStyle = 'rgba(14,6,8,.86)'; ctx.strokeStyle = '#ff6b2c'; ctx.lineWidth = 1.5; roundRect(sx - tw / 2, sy - 18, tw, 36, 6); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#ffb36b'; ctx.fillText('E', sx - tw / 2 + 14, sy + 1); ctx.fillStyle = '#f1e4d8'; ctx.fillText(n.label, sx - tw / 2 + 38, sy + 1);
+  }
+  ctx.textAlign = 'center';
+  state.toasts.forEach((t, i) => {
+    ctx.globalAlpha = Math.min(1, t.t * 2); ctx.font = '500 20px "Alegreya Sans", sans-serif';
+    const tw = ctx.measureText(t.text).width + 36, ty = cv.height - 40 - (state.toasts.length - 1 - i) * 44 - (boss ? 90 : 0);
+    ctx.fillStyle = 'rgba(14,6,8,.88)'; roundRect(Wd / 2 - tw / 2, ty - 18, tw, 36, 6); ctx.fill();
+    ctx.fillStyle = '#f1e4d8'; ctx.fillText(t.text, Wd / 2, ty + 1);
+  });
+  ctx.globalAlpha = 1; ctx.textAlign = 'left';
+  ctx.font = '500 14px "Alegreya Sans", sans-serif'; ctx.fillStyle = 'rgba(241,228,216,.45)'; ctx.fillText('Figur und Gegner: Platzhalter', 20, cv.height - 16);
+  if (state.dead) { ctx.fillStyle = 'rgba(30,0,0,.55)'; ctx.fillRect(0, 0, Wd, cv.height); }
+  if (state.won) {
+    ctx.fillStyle = 'rgba(10,3,4,.78)'; ctx.fillRect(0, 0, Wd, cv.height); ctx.textAlign = 'center';
+    ctx.font = '700 64px "Grenze Gotisch", serif'; ctx.fillStyle = '#ffd2a8';
+    ctx.fillText(W.final ? 'Die Hölle ist bezwungen' : 'Etage ' + state.floor + ' geschafft', Wd / 2, cv.height / 2 - 30);
+    ctx.font = '500 22px "Alegreya Sans", sans-serif'; ctx.fillStyle = '#f1e4d8';
+    ctx.fillText(state.visited.size + ' von ' + ROOMS.length + ' Räumen erkundet · ' + state.gems + ' Runensteine · ' + state.maxHp / 2 + ' Herzen', Wd / 2, cv.height / 2 + 20);
+    ctx.fillStyle = '#ffb36b'; ctx.fillText(W.final ? 'E oder Klick: von vorn beginnen' : 'E oder Klick: weiter zu Etage ' + (state.floor + 1), Wd / 2, cv.height / 2 + 60); ctx.textAlign = 'left';
+  }
+}
+function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function known() {
+  const k = new Set(state.visited);
+  for (const d of doors) {
+    if (d.kind === 'secret' && !d.broken) continue;
+    if (state.visited.has(d.a.index)) k.add(d.b.index);
+    if (state.visited.has(d.b.index)) k.add(d.a.index);
+  }
+  return k;
+}
+function doorColor(d) {
+  if (d.a.fight || d.b.fight) return '#d8382a';
+  if (d.kind === 'lock' && !d.unlocked) return KEYS[d.key].color;
+  if (d.kind === 'puzzle' && doorClosed(d)) return '#f2c14e';
+  if (d.kind === 'boss' && doorClosed(d)) return '#d8382a';
+  return '#7a5552';
+}
+function drawMap(big) {
+  const Wd = cv.width, H = cv.height, K = known();
+  const s = big ? Math.min((Wd - 60) / COLS, (H - 110) / ROWS) : Math.min(250 / COLS, 170 / ROWS), mw = COLS * s, mh = ROWS * s;
+  const x0 = big ? (Wd - mw) / 2 : Wd - mw - 16, y0 = big ? (H - mh) / 2 + 10 : 16;
+  ctx.save();
+  if (big) { ctx.fillStyle = 'rgba(8,3,4,.93)'; ctx.fillRect(0, 0, Wd, H); ctx.font = '700 32px "Grenze Gotisch", serif'; ctx.fillStyle = '#ffd2a8'; ctx.textAlign = 'center'; ctx.fillText(W.title + ' · Etage ' + state.floor, Wd / 2, 36); ctx.textAlign = 'left'; }
+  else { ctx.fillStyle = 'rgba(10,4,6,.8)'; ctx.strokeStyle = '#3b2328'; roundRect(x0 - 8, y0 - 8, mw + 16, mh + 16, 6); ctx.fill(); ctx.stroke(); }
+  ctx.translate(x0, y0); ctx.scale(s, s);
+  for (const d of doors) {
+    if (!(K.has(d.a.index) && K.has(d.b.index))) continue;
+    if (d.kind === 'secret' && !d.broken) continue;
+    ctx.fillStyle = doorColor(d); ctx.fillRect(d.x0 - (d.dir === 'h' ? .5 : 0), d.y0 - (d.dir === 'v' ? .5 : 0), d.x1 - d.x0 + 1 + (d.dir === 'h' ? 1 : 0), d.y1 - d.y0 + 1 + (d.dir === 'v' ? 1 : 0));
+  }
+  for (const r of ROOMS) {
+    if (!K.has(r.index)) continue;
+    const seen = state.visited.has(r.index), here = r.index === state.room;
+    ctx.fillStyle = here ? '#7a2e1c' : seen ? (r.cleared ? '#3d262a' : '#5a1f1a') : 'rgba(46,28,32,.45)';
+    ctx.fill(r.minimap.fill);
+    ctx.lineWidth = (here ? 2.4 : 1.2) / s; ctx.strokeStyle = here ? '#ff6b2c' : seen ? '#9a6a5c' : '#6d4c52';
+    if (!seen) ctx.setLineDash([3 / s, 2 / s]); ctx.stroke(r.minimap.edge); ctx.setLineDash([]);
+  }
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  const isz = big ? Math.max(24, s * 4.5) : 13;
+  for (const r of ROOMS) {
+    if (!K.has(r.index)) continue;
+    const seen = state.visited.has(r.index);
+    const cx = x0 + (r.bx + r.bw / 2) * s, cy = y0 + (r.by + r.bh / 2) * s;
+    let icon = r.icon;
+    if (!icon && seen && ents.some(e => e.type === 'brazier' && e.room === r.index && !e.lit)) icon = 'brazier_bowl';
+    if (!icon || (!seen && r.type !== 'boss')) continue;
+    const im = IMG[icon], ratio = im.height / im.width;
+    if (r.iconKey) ctx.filter = KEYS[r.iconKey].filter;
+    ctx.drawImage(im, cx - isz / 2, cy - isz * ratio / 2, isz, isz * ratio); ctx.filter = 'none';
+  }
+  if (big) {
+    ctx.font = '600 14px "Alegreya Sans", sans-serif'; ctx.textAlign = 'center';
+    for (const r of ROOMS) { if (!state.visited.has(r.index)) continue; ctx.fillStyle = '#f1e4d8'; ctx.fillText(r.name, x0 + (r.bx + r.bw / 2) * s, y0 + (r.by + r.bh / 2) * s + isz * .9); }
+    ctx.font = '500 15px "Alegreya Sans", sans-serif'; ctx.fillStyle = '#b89c8e';
+    ctx.fillText('Gefüllt: besucht · gestrichelt: bekannt · Türen: rot verriegelt, Schlüsselfarbe verschlossen, gelb Rätsel · M schließt', Wd / 2, H - 12);
+    ctx.textAlign = 'left';
+  }
+  const px = x0 + player.x / C * s, py = y0 + (player.y - 20) / C * s;
+  ctx.fillStyle = '#fff1c2'; ctx.beginPath(); ctx.arc(px, py, big ? 6 : 3, 0, 7); ctx.fill();
+  ctx.restore();
+}
+
+// ---------- page ledger ----------
+const list = document.getElementById('room-list');
+function updatePage() {
+  if (!state) return;
+  document.getElementById('floor-title').textContent = W.title + ', Etage ' + state.floor;
+  document.getElementById('eyebrow').textContent = 'Hell-Dungeon · ' + W.circle;
+  for (let n = 1; n <= 10; n++) document.getElementById('floor-' + n).setAttribute('aria-current', String(n === state.floor));
+  const K = known();
+  list.innerHTML = '';
+  for (const r of ROOMS) {
+    const li = document.createElement('li');
+    const here = r.index === state.room, seen = state.visited.has(r.index), hidden = r.type === 'secret' && !K.has(r.index);
+    li.className = here ? 'here' : K.has(r.index) ? '' : 'unknown';
+    const icon = r.icon || (r.type === 'boss' ? 'icon_demon_big' : 'icon_swords');
+    const st = here ? 'hier' : seen ? (r.cleared ? 'gesäubert' : 'besucht') : K.has(r.index) ? 'bekannt' : 'unentdeckt';
+    li.innerHTML = `<img alt="" src="${ASSETS[hidden ? 'rune_gem' : icon]}" style="filter:${r.iconKey ? KEYS[r.iconKey].filter : 'none'}"><div><h3>${hidden ? 'Unbekannter Raum' : r.name}</h3><span class="state ${here ? 'here' : seen ? 'seen' : ''}">${hidden ? '?' : r.kind} · ${st}</span><p>${hidden ? 'Noch nicht entdeckt.' : r.info}</p></div>`;
+    list.appendChild(li);
+  }
+  const facts = document.getElementById('facts');
+  const fs = groupStatus('feuer');
+  const items = [[ROOMS.length, 'Räume'], [W.quick.need ? W.quick.need.length : '?', 'auf dem kürzesten Weg'], [state.visited.size, 'besucht'], [W.boss.name, W.boss.final ? 'Höllenfürst' : W.boss.mini ? 'Zwischenboss' : 'Boss']];
+  if (fs.all) items.push([fs.done + '/' + fs.all, 'Feuerschalen']);
+  facts.innerHTML = items.map(([v, l]) => `<div><b>${v}</b><span>${l}</span></div>`).join('');
+  document.getElementById('facts-title').textContent = 'Etage ' + state.floor + ': ' + W.title;
+  const notes = [];
+  if (fs.all) notes.push('Feuerschalen sind über die Etage verteilt und öffnen den Riesentresor.');
+  if (W.groups.seq) notes.push('Ein Raum zeigt eine Plattenfolge, sie öffnet den Geheimraum.');
+  if (W.diff.shooters) notes.push('Violette Feuerspucker halten Abstand und schießen.');
+  if (W.boss.ring) notes.push(W.boss.name + ' schleudert Feuerringe.');
+  document.getElementById('facts-note').textContent = notes.join(' ');
+}
+
+// ---------- boot ----------
+let last = 0;
+function frame(t) { const dt = Math.min(.05, (t - last) / 1000 || 0); last = t; update(dt); draw(); requestAnimationFrame(frame); }
+function start() { loadFloor(1, false); requestAnimationFrame(frame); }
+window.hellPreview = { get state() { return state; }, get player() { return player; }, get mobs() { return mobs; }, get W() { return W; }, get rooms() { return ROOMS; }, act, toggle, loadFloor,
+  step(n = 1, dt = 1 / 60) { for (let i = 0; i < n; i++) update(dt); draw(); },
+  hold(dir, on) { on ? keys.add(dir) : keys.delete(dir); },
+  killAll() { for (const m of mobs) m.hp = 0; },
+  goRoom(i, lx, ly) { const r = ROOMS[i]; player.x = (r.bx + lx) * C; player.y = (r.by + ly) * C; state.cam.x = player.x; state.cam.y = player.y; },
+  goWorld(x, y) { player.x = x; player.y = y; state.cam.x = x; state.cam.y = y; } };
+const names = Object.keys(ASSETS); let loaded = 0;
+names.forEach(n => { const im = new Image(); im.onload = im.onerror = () => { if (++loaded === names.length) (document.fonts ? document.fonts.ready : Promise.resolve()).then(start); }; im.src = ASSETS[n]; IMG[n] = im; });
+})();
+</script>
