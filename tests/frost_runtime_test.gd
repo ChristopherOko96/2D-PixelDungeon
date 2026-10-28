@@ -42,7 +42,7 @@ func _run() -> void:
 	await _test_crystal_stands_and_fires_a_fan()
 	await _test_whirl_pulls_and_imp_dashes()
 	await _test_guardians_wear_their_floors_look()
-	await _test_hell_scene_keeps_its_look_without_theme()
+	await _test_hell_scene_keeps_its_look_with_hero_systems()
 	print("FROST_RUNTIME checked=%d failures=%d" % [checked, failures.size()])
 	quit(1 if failures.size() > 0 else 0)
 
@@ -321,14 +321,16 @@ func _test_guardians_wear_their_floors_look() -> void:
 		await _free(game)
 
 
-func _test_hell_scene_keeps_its_look_without_theme() -> void:
+func _test_hell_scene_keeps_its_look_with_hero_systems() -> void:
 	# Arrange / Act
 	var game := await _new(HellScene)
 	# Assert
 	check(str(game.W.title) == "Aschenvorhof" and game.texture_filter == CanvasItem.TEXTURE_FILTER_LINEAR, "the hell scene still plays the hell floors, smooth filtered")
 	check(str(game.key_name.A) == "Glutschlüssel" and bool(game.theme.liquid.hurt) and not bool(game.theme.key_in_chest), "hell keeps its keys, burning lava and loose keys")
 	check(game.say("Feuerschale entzünden") == "Feuerschale entzünden", "hell wording is unchanged")
-	check(game.hero.is_empty() and game.weapon_tex == null and (game.hero_frames.idle[0] as Texture2D).resource_path.contains("knight_m"), "hell keeps its knight without class weapon")
+	# Story 3: the hell shares the hero systems (hell_theme.json takes them from the frost theme)
+	check(game.class_id == str(game.theme.default_class) and not game.hero.is_empty() and game.weapon_tex != null and not game.skills.is_empty(),
+		"hell plays the default hero class with its weapon and skills")
 	var r := _combat_room(game)
 	game._start_fight(r)
 	# hell fights draw from the hell monsters' floor roster (hell_monsters.json), never from the frost kinds

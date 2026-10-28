@@ -1,9 +1,10 @@
 # Hell-Dungeon
 
 Stand 28.10.2026. Neuer Einzelspieler-Modus mit zehn Etagen im Höllenstil aus `rooms.zip`.
-Start: Hauptmenü → **LEVEL-AUSWAHL (DEBUG)** → Welt **HELL-DUNGEON** → je Etage **START** (Eingang) oder
-**BOSS** (direkt im Bossraum, der Kampf beginnt sofort); außerdem `Hell-Dungeon.cmd` oder `scripts/Dev.ps1 HellDungeon`.
-Die Spielfigur ist ein Platzhalter. Monster und Bosse stammen aus der Vorschau (`tools/hell_dungeon/hell_monsters.js`);
+Start als **Story 3**: Hauptmenü → **STORY-MODUS** → **Story 3 · Der Hell-Dungeon** → Heldenwahl. Debug: Hauptmenü →
+**LEVEL-AUSWAHL (DEBUG)** → Welt **HELL-DUNGEON** → je Etage **START** (Eingang) oder **BOSS** (direkt im Bossraum, der
+Kampf beginnt sofort; Held ist dann die Standardklasse Bogenschütze); außerdem `Hell-Dungeon.cmd` oder
+`scripts/Dev.ps1 HellDungeon`. Story 4 steht als **BALD VERFÜGBAR** gesperrt in der Liste. Monster und Bosse stammen aus der Vorschau (`tools/hell_dungeon/hell_monsters.js`);
 Themen-Welten mit eigenen Gegnern (`mobs` im Thema, z. B. die Frostgruft) behalten ihre eigenen.
 
 ## Regeln
@@ -41,8 +42,16 @@ Themen-Welten mit eigenen Gegnern (`mobs` im Thema, z. B. die Frostgruft) behalt
   in der Luft unverwundbar. Phase 4 ruft violette Echos der drei früheren Formen. Auf 3, 6 und 9 verwandelt
   er sich bei 0 LP in die nächste Form und flieht; erst auf Etage 10 stirbt er.
 
-Steuerung: WASD laufen, Pfeiltasten oder linke Maustaste schießen, E/Leertaste Aktion, Q Klon, M Karte,
-L Licht, R Etage neu, 1–0 Etage wählen, Esc Hauptmenü.
+- **Helden** wie in den anderen Welten (`assets/data/hell_theme.json`): Schwertkämpfer, Bogenschütze und Magier mit
+  eigener Figur, Waffe und Herzen, Erfahrung je besiegtem Monster (`monsters.exp`), Level-ups mit Heilung und Karten,
+  vier Klassen-Fähigkeiten auf 1–4, das Klassen-Relikt im Geheimraum einer Etage (3–6), Sounds, Musik und das
+  gestaltete HUD mit Auftragsliste. Die Werte teilt sich die Hölle mit der Frostgruft (`hero_from`/`hero_keys`).
+  Betäuben, Verlangsamen und Brennen wirken auf die Höllen-Monster; Gravitationswände halten sie und ihre Schüsse
+  auf. Kein Hieb, Schuss oder Skill trifft Ignaroth, solange er fliegt, eingegraben ist oder sich verwandelt.
+
+Steuerung: WASD laufen, Pfeiltasten oder linke Maustaste angreifen, 1–4 Fähigkeiten, 7/8/9 Karte wählen,
+T Relikt/Waffe wechseln, C/Tab Status, E/Leertaste Aktion, Q Klon, M Karte, L Licht, R Etage neu,
+F1–F10 Etage wählen, Esc Hauptmenü.
 
 ## Aufbau
 
@@ -51,12 +60,14 @@ L Licht, R Etage neu, 1–0 Etage wählen, Esc Hauptmenü.
 | Etagen-Kern, Generator, Bild-Werkzeuge, Browser-Vorschau | `tools/hell_dungeon/` (siehe README dort) |
 | Gebackene Etagen | `assets/data/hell_floors.json` (aus `bake_floors.js`) |
 | Spielwerte | `assets/data/hell_balance.json` |
+| Thema mit Heldensystemen (Story 3) | `assets/data/hell_theme.json` (übernimmt Klassen, Level, Fähigkeiten, Relikte, Karten, Sounds aus `frost_theme.json`; `extra_sprites` lädt Relikt- und Golembilder aus `assets/sprites/frost/`) |
+| Story-Eintrag | `assets/data/story_campaigns.json` (`hell_dungeon` = Story 3, `story_4` gesperrt) |
 | Grafiken (134, Weltmaßstab) | `assets/sprites/hell/` mit `manifest.json` und `LICENSE-NOTE.md` |
 | Monster-Atlanten (18, je Zeile eine Animation) | `assets/sprites/hell/monsters/` aus `tools/hell_dungeon/export_monsters.js` |
 | Monsterdaten | `assets/data/hell_monsters.json` (generiert, nicht von Hand ändern) |
 | Laufzeit | `src/hell/hell_game.gd` (Szene `hell_dungeon.tscn`), `hell_floor_data.gd`, `hell_walls.gd`, `hell_rules.gd`, `hell_monsters.gd` (Monster-Laufzeit), `hell_monster_rules.gd` (reine Regeln) |
-| Tests | `tests/hell_floor_data_test.gd`, `tests/hell_walls_test.gd`, `tests/hell_rules_test.gd`, `tests/hell_boss_start_test.gd`, `tests/hell_monster_rules_test.gd`, `tests/hell_monsters_integration_test.gd` |
-| Nachweise | `production/qa/evidence/hell-dungeon/` (`scripts/capture_hell_dungeon.gd`), `production/qa/evidence/hell-monsters/` (`scripts/capture_hell_monsters.gd`) |
+| Tests | `tests/hell_floor_data_test.gd`, `tests/hell_walls_test.gd`, `tests/hell_rules_test.gd`, `tests/hell_boss_start_test.gd`, `tests/hell_monster_rules_test.gd`, `tests/hell_monsters_integration_test.gd`, `tests/hell_hero_systems_test.gd`; Story-Menü in `tests/main_menu_flow_test.gd` |
+| Nachweise | `production/qa/evidence/hell-dungeon/` (`scripts/capture_hell_dungeon.gd`), `production/qa/evidence/hell-monsters/` (`scripts/capture_hell_monsters.gd`), `production/qa/evidence/hell-story/` (`scripts/capture_hell_story.gd`) |
 
 Der Modus ist bewusst vom vernetzten Krypta-Spiel (`src/game.gd`) getrennt: kein Host, keine Snapshots.
 
@@ -90,7 +101,7 @@ Der Modus ist bewusst vom vernetzten Krypta-Spiel (`src/game.gd`) getrennt: kein
 | `shot` | `speed` (px/s), `life` (s), `cooldown` (s) |
 | `enemy_shot` | `speed`, `ring_speed` (px/s), `life` (s), `hit_radius` (px) |
 | `mobs` | Platzhalter-Gegner der Themen-Welten ohne eigene Werte: je Art `hp`, `speed`, `scale`, `radius`; `spucker.fire_every` (s), `keep_away` (px); `boss.max_adds` |
-| `monsters` | Höllen-Monster: `hit_mob`/`hit_boss` (halbe Herzen je Treffer), `contact_reach` (px), `lord_face_deadzone` (px), `echo_hp_share` (Anteil der Boss-LP je Echo), `echo_kinds` (Angriffe der Echos), `burrow_speed` (px/s), `flight_altitude` und `immune_altitude` (px) `spawn_grow` (s) und `seal_demon` (Monster-ID der Siegel-Dämonen) |
+| `monsters` | Höllen-Monster: `hit_mob`/`hit_boss` (halbe Herzen je Treffer), `contact_reach` (px), `lord_face_deadzone` (px), `echo_hp_share` (Anteil der Boss-LP je Echo), `echo_kinds` (Angriffe der Echos), `burrow_speed` (px/s), `flight_altitude` und `immune_altitude` (px) `spawn_grow` (s), `seal_demon` (Monster-ID der Siegel-Dämonen) und `exp` (Erfahrung je Monster-ID) |
 | `hazards` | `spike_period` (s je Phase), `vent_period`, `vent_burst` (s), `vent_radius` (px) |
 | `drops` | Wahrscheinlichkeit für Herz und Runenstein nach einem Kampf |
 | `vault` | Runensteine `gems_base` + `gems_per_floor` × Etage, `heart_containers` |
@@ -141,5 +152,5 @@ Haupt- und Nebenzielen unter der Minikarte, Statusfenster (C / Tab). Gestartet �
 
 ## Grenzen
 
-Einzelspieler, keine Netzwerk-Replikation. Die Figur ist ein Platzhalter. Lizenz der
+Einzelspieler, keine Netzwerk-Replikation. Lizenz der
 Höllen-Grafiken ungeklärt (`assets/sprites/hell/LICENSE-NOTE.md`).

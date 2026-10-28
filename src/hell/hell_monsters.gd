@@ -7,6 +7,7 @@ extends RefCounted
 ## Monster data and sprite atlases come from tools/hell_dungeon/export_monsters.js.
 
 const Rules = preload("res://src/hell/hell_monster_rules.gd")
+const HeroKit = preload("res://src/hell/hero_kit.gd")
 const DATA_PATH := "res://assets/data/hell_monsters.json"
 const SPRITE_DIR := "res://assets/sprites/hell/monsters/"
 ## Shot colours: core, middle, rim.
@@ -37,6 +38,10 @@ func _init(game: Node, monster_cfg: Dictionary) -> void:
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(DATA_PATH))
 	defs = data.defs
 	floors = data.floors
+	# experience per kill for the hero's levels (hero_kit.gd reads def.exp)
+	var exp: Dictionary = cfg.get("exp", {})
+	for id: String in defs:
+		defs[id].exp = int(exp.get(id, 0))
 	for id: String in defs:
 		atlas[id] = load(SPRITE_DIR + id + ".png")
 
@@ -169,6 +174,9 @@ func update(dt: float) -> void:
 			continue
 		for i in range(m.cds.size()):
 			m.cds[i] -= dt
+		# hero skills: slows, burns and stuns tick here; a stunned or held monster waits
+		var pace := HeroKit.tick_mob(g, m, dt)
+		var held: bool = pace <= 0.0 or m.get("hold", false)
 		var to: Vector2 = me - m.p
 		var d := maxf(to.length(), 1.0)
 		var v := Vector2.ZERO
@@ -177,7 +185,7 @@ func update(dt: float) -> void:
 			if m.act != null:
 				v = m.act.get("v", Vector2.ZERO)
 		else:
-			var i := -1 if g.state.dead > 0.0 else Rules.pick_attack(m.st.attacks, m.cds, d)
+			var i := -1 if g.state.dead > 0.0 or held else Rules.pick_attack(m.st.attacks, m.cds, d)
 			if i >= 0:
 				_start_act(m, i, to, d)
 			else:
@@ -192,15 +200,16 @@ func update(dt: float) -> void:
 				var od := off.length()
 				if od > 0.0 and od < (m.r + o.r) * 0.8:
 					v += off / od * 120.0
+		v *= 0.0 if held else pace
 		v += m.k
 		m.k *= 0.86
 		var rr := minf(m.r * 0.7, 40.0)
 		var avoid: bool = not m.boss and m.st.ai != "hover" and m.st.ai != "drift"
 		var nx: float = m.p.x + v.x * dt
-		if not g.box_blocked(Rect2(nx - rr, m.p.y - rr, rr * 2.0, rr), avoid):
+		if not g.box_blocked(Rect2(nx - rr, m.p.y - rr, rr * 2.0, rr), avoid) and not HeroKit.wall_blocks(g, Vector2(nx, m.p.y), rr):
 			m.p = Vector2(nx, m.p.y)
 		var ny: float = m.p.y + v.y * dt
-		if not g.box_blocked(Rect2(m.p.x - rr, ny - rr, rr * 2.0, rr), avoid):
+		if not g.box_blocked(Rect2(m.p.x - rr, ny - rr, rr * 2.0, rr), avoid) and not HeroKit.wall_blocks(g, Vector2(m.p.x, ny), rr):
 			m.p = Vector2(m.p.x, ny)
 		act = m.act
 		var airborne: bool = act != null and float(act.get("air", 0.0)) > 20.0
@@ -218,6 +227,10 @@ func update(dt: float) -> void:
 			corpses.append({"id": m.id, "p": m.p, "s": m.s, "face": m.face, "t": 0.0})
 		if m.trans == null and not m.get("quiet", false):
 			g._burst(m.p - Vector2(0, m.cy), 80 if m.boss else 18)
+		# experience: felled monsters and a defeated boss form; echoes and swept-away adds give none
+		if not m.get("quiet", false) and not m.has("echo"):
+			HeroKit.gain(g, HeroKit.exp_for(g, m))
+			g._sound("kill_" + str(m.def.get("material", "void")))
 		g.mobs.erase(m)
 		var rest: Array = g.mobs.filter(func(o: Dictionary) -> bool: return o.room == m.room and o.hp > 0.0 and not o.get("remove", false))
 		if rest.is_empty():
@@ -860,6 +873,9 @@ func _update_zones(dt: float) -> void:
 func update_shots(dt: float) -> void:
 	var me := Vector2(g.player.x, g.player.y - 34)
 	for s: Dictionary in g.eshots:
+		# gravity walls swallow shots, gravity bars hold them (hero_kit.gd)
+		if HeroKit.catch_shot(g, s, dt) and float(s.get("held", 0.0)) > 0.0:
+			continue
 		if s.has("homing"):
 			var a0: float = s.v.angle()
 			var turn := clampf(wrapf((me - s.p).angle() - a0, -PI, PI), -s.homing * dt, s.homing * dt)

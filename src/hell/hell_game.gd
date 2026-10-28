@@ -154,6 +154,11 @@ func _ready() -> void:
 	var names: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(sprites + "manifest.json"))
 	for n: String in names:
 		tex[n] = load(sprites + n + ".png")
+	# textures the hero systems draw that this world's sprite set lacks (theme.extra_sprites)
+	var extra: Dictionary = theme.get("extra_sprites", {})
+	for n: String in extra.get("names", []):
+		if not tex.has(n):
+			tex[n] = load(str(extra.dir) + n + ".png")
 	var classes: Dictionary = theme.get("classes", {})
 	if not classes.has(class_id):
 		class_id = str(theme.get("default_class", ""))
@@ -221,6 +226,12 @@ func _load_theme() -> void:
 	theme = THEME_DEFAULT.duplicate(true)
 	if theme_path != "" and FileAccess.file_exists(theme_path):
 		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(theme_path))
+		if parsed is Dictionary and parsed.has("hero_from"):
+			# shared hero systems (classes, leveling, skills, relics, cards) from another theme
+			var shared: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(str(parsed.hero_from)))
+			for k: String in parsed.get("hero_keys", []):
+				if shared.has(k):
+					theme[k] = (shared[k] as Variant)
 		if parsed is Dictionary:
 			for k: String in parsed:
 				if parsed[k] is Dictionary and theme.get(k) is Dictionary:
@@ -851,6 +862,9 @@ func _swing(dir: Vector2) -> void:
 ## Deals the hero's damage (times mult, e.g. a skill's multiple); a shield bearer
 ## facing the hit blocks it (returns false).
 func _damage_mob(m: Dictionary, push: Vector2, mult := 1.0) -> bool:
+	# no skill, swing or blast reaches a hell monster that cannot be hit (flying, burrowed, transforming)
+	if monsters != null and monsters.immune(m):
+		return false
 	var def: Dictionary = m.def
 	var arc := float(def.shield_arc) if def.get("behavior", "") == "shield" else float(m.get("kit", {}).get("shield_arc", 0.0))
 	if arc > 0.0 and push != Vector2.ZERO and MobRules.shield_blocks(m.face, push, arc):

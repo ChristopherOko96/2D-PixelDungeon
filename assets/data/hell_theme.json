@@ -1,0 +1,12 @@
+{
+  "_note": "Story 3 Hell-Dungeon on the hell runtime (src/hell/hell_game.gd, theme_path in src/hell/hell_dungeon.tscn). The hell look stays THEME_DEFAULT; this file only adds the hero systems the other worlds have. hero_from / hero_keys: these keys are taken from that theme file first, so classes, leveling, skills, relics, cards, sounds and music are shared with the Frostgruft and tuned in one place; keys written here override them. extra_sprites: textures the hero systems draw (relics, rock throws, the golem) loaded from dir when the world's own sprites lack them. No mobs key: the hell keeps its own monsters (src/hell/hell_monsters.gd).",
+  "hero_from": "res://assets/data/frost_theme.json",
+  "hero_keys": ["default_class", "classes", "weapon_scale", "leveling", "gravity_staff", "gravity_hammer", "relics", "cards", "sounds", "music", "styled_hud"],
+  "placeholder_note": false,
+  "extra_sprites": {
+    "dir": "res://assets/sprites/frost/",
+    "names": ["weapon_gravity_staff", "weapon_gravity_hammer", "rock_throw", "rock_spike",
+      "ally_golem_f0", "ally_golem_f1", "ally_golem_f2", "ally_golem_f3", "ally_golem_f4", "ally_golem_f5",
+      "ally_golem_walk_f0", "ally_golem_walk_f1", "ally_golem_walk_f2", "ally_golem_walk_f3", "ally_golem_walk_f4", "ally_golem_walk_f5"]
+  }
+}

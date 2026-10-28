@@ -329,21 +329,23 @@ func _submit_login(create: bool) -> void:
 
 ## Before a solo run: three hero cards (animated sprite, name, description,
 ## hearts and starting weapon). Choosing one starts the run.
-## Story choice: one card per campaign, numbered; locked stories show BALD.
+## Story choice: one card per campaign, numbered; locked stories show BALD VERFÜGBAR.
 func _build_story_panel() -> void:
 	_story_panel = _panel("WÄHLE DEINE STORY")
-	_story_panel.size = Vector2(800, 470)
+	# the panel grows with the stories; past four the cards get flatter so all still fit
+	var step := 112.0 if stories.size() <= 4 else 448.0 / stories.size()
+	_story_panel.size = Vector2(800, 62.0 + stories.size() * step + 52.0)
 	_story_panel.position = (SCREEN - _story_panel.size) * 0.5 + Vector2(0, 20)
 	_story_cards.clear()
 	for i in range(stories.size()):
 		var story: Dictionary = stories[i]
 		var playable := bool(story.get("playable", false))
-		var card := _panel_button(_story_panel, "", Vector2(30, 62 + i * 112), Vector2(740, 102), func(): _choose_story(str(story.id)))
+		var card := _panel_button(_story_panel, "", Vector2(30, 62 + i * step), Vector2(740, step - 10.0), func(): _choose_story(str(story.id)))
 		card.disabled = not playable
 		_story_cards.append(card)
 		var lines := [["STORY %d" % int(story.get("number", i + 1)), 16, MUTED, Vector2(20, 12)],
 			[str(story.get("title", "")), 24, GOLD if playable else MUTED, Vector2(20, 34)],
-			[str(story.get("subtitle", "")) if playable else "BALD · " + str(story.get("subtitle", "")), 16, TEXT if playable else MUTED, Vector2(20, 70)]]
+			[str(story.get("subtitle", "")) if playable else "BALD VERFÜGBAR · " + str(story.get("subtitle", "")), 16, TEXT if playable else MUTED, Vector2(20, 70)]]
 		for line: Array in lines:
 			var label := Label.new()
 			label.text = line[0]
@@ -353,7 +355,7 @@ func _build_story_panel() -> void:
 			label.add_theme_color_override("font_color", line[2])
 			label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			card.add_child(label)
-	_panel_button(_story_panel, "ZURÜCK", Vector2(30, 420), Vector2(740, 36), _close_panels)
+	_panel_button(_story_panel, "ZURÜCK", Vector2(30, 62.0 + stories.size() * step + 6.0), Vector2(740, 36), _close_panels)
 
 
 func _open_stories() -> void:

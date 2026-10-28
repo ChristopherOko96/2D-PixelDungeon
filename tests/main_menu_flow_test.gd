@@ -36,6 +36,7 @@ func _run() -> void:
 	await _test_opens_on_menu_with_story_first_endless_soon_and_no_account()
 	await _test_story_choice_lists_numbered_stories_and_locks_unfinished_ones()
 	await _test_story_two_frostgruft_requests_its_own_scene_with_the_hero()
+	await _test_story_three_hell_dungeon_starts_with_the_hero_and_story_four_is_coming()
 	await _test_multiplayer_opens_lobby_and_lobby_returns_to_menu()
 	await _test_story_one_starts_solo_run_and_leaving_returns_to_menu()
 	await _test_debug_room_jump_starts_in_that_room_with_earlier_rooms_cleared()
@@ -123,6 +124,34 @@ func _test_story_two_frostgruft_requests_its_own_scene_with_the_hero() -> void:
 	check(heroes_first, "story 2 first shows the hero cards")
 	check(requested == [["res://src/hell/frost_dungeon.tscn", "mage"]] and not menu._class_panel.visible and not game.active, "the hero choice asks for the frost scene with that class instead of the crypt run")
 	check(ResourceLoader.exists("res://src/hell/frost_dungeon.tscn"), "the frost scene exists")
+	game.queue_free()
+	await process_frame
+
+func _test_story_three_hell_dungeon_starts_with_the_hero_and_story_four_is_coming() -> void:
+	# Arrange: only this test listens for the scene request
+	var game = await _new_game()
+	var menu = game.main_menu
+	for c: Dictionary in menu.story_scene_requested.get_connections():
+		menu.story_scene_requested.disconnect(c.callable)
+	var requested: Array = []
+	menu.story_scene_requested.connect(func(path: String, class_id: String): requested.append([path, class_id]))
+	menu._open_stories()
+	var ids: Array = menu.stories.map(func(story: Dictionary) -> String: return str(story.id))
+	var three: int = ids.find("hell_dungeon")
+	var four: int = ids.find("story_4")
+	# Act
+	menu._choose_story("hell_dungeon")
+	var heroes_first: bool = menu._class_panel.visible and requested.is_empty()
+	menu._choose_class("swordsman")
+	# Assert
+	check(three == 2 and int(menu.stories[three].number) == 3 and not menu._story_cards[three].disabled, "story 3 is the playable Hell-Dungeon")
+	check(heroes_first, "story 3 first shows the hero cards")
+	check(requested == [["res://src/hell/hell_dungeon.tscn", "swordsman"]], "the hero choice opens the hell scene with that class")
+	check(four == 3 and int(menu.stories[four].number) == 4 and menu._story_cards[four].disabled, "story 4 is listed and locked")
+	var texts: Array = menu._story_cards[four].get_children().map(func(n: Node) -> String: return (n as Label).text if n is Label else "")
+	check(texts.any(func(t: String) -> bool: return t.begins_with("BALD VERFÜGBAR")), "story 4 says it is coming soon")
+	var last: Button = menu._story_cards[menu._story_cards.size() - 1]
+	check(last.position.y + last.size.y <= menu._story_panel.size.y - 40.0, "all four story cards fit in the panel above the back button")
 	game.queue_free()
 	await process_frame
 
