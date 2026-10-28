@@ -1,0 +1,9 @@
+{
+  "_note": "Story mode campaigns (main menu STORY-MODUS, src/main_menu.gd). One entry per story in menu order. number: the story's number on its card. title / subtitle: card text. playable: false shows the card locked with BALD. dungeon: room library the story runs on (res:// path, only for playable stories). A new story is added by appending an entry here.",
+  "schema_version": 1,
+  "stories": [
+    {"id": "krypta", "number": 1, "title": "KRYPTA DER VERDAMMTEN", "subtitle": "Zehn Ebenen Gruft bis zum Leerenrufer.", "playable": true, "dungeon": "res://assets/data/dungeon_rooms.json"},
+    {"id": "frostgruft", "number": 2, "title": "DIE FROSTGRUFT", "subtitle": "Eis, Frostwesen und die Frostleiche.", "playable": false},
+    {"id": "story_3", "number": 3, "title": "STORY 3", "subtitle": "Noch nicht verraten.", "playable": false}
+  ]
+}

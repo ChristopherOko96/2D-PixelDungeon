@@ -147,6 +147,8 @@ func _test_enemy_facing_and_motion() -> void:
 	_reset()
 	var enemy: Dictionary = game._create_enemy("skeleton_guard", Vector2(512,384))
 	enemy.shot_timer = 10.0
+	# Locomotion is under test, not noticing: the enemy already hunts the hero.
+	enemy.aggro = true
 	game.enemies = [enemy]
 	var start: Vector2 = enemy.pos
 	game._simulate_enemies(0.1)

@@ -1,0 +1,15 @@
+{
+  "_note": "Open endless floors (src/dungeon/open_floor.gd). One map per floor: rooms on a grid of cells, joined by 5-tile corridors (CryptGenerator), drawn by the 0x72 crypt renderer. map_tiles: map size in 32 px tiles. grid: cells across and down, one room per used cell. room_count: rooms per floor [min, max], at most grid cells. room_tiles_min / room_margin: smallest room and the gap kept free inside its cell. extra_links: chance per extra neighbour pair to get a second corridor, so the map has loops. enemy_group: sleeping enemies per room [min, max] (none in the start room). chests_per_floor: loot chests [min, max] in rooms that are neither start nor boss room; crates_per_room: crates along walls per room [min, max]. themes: terrain tint per floor, cycled.",
+  "schema_version": 1,
+  "map_tiles": [76, 56],
+  "grid": [4, 3],
+  "room_count": [8, 11],
+  "room_tiles_min": [9, 8],
+  "room_margin": 3,
+  "extra_links": 0.35,
+  "enemy_group": [3, 5],
+  "enemy_spacing": 56,
+  "chests_per_floor": [4, 6],
+  "crates_per_room": [1, 3],
+  "themes": ["amber", "violet", "moss", "rose"]
+}

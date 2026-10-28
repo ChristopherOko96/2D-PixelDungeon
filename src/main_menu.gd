@@ -44,6 +44,12 @@ var debug_entries: Array = []
 ## False until the endless mode exists: the button is shown disabled.
 var endless_available := true
 var _endless_button: Button
+## Story campaigns in menu order (assets/data/story_campaigns.json), set by the game.
+var stories: Array = []
+## The story picked for the next solo start; empty until a story card is chosen.
+var selected_story := ""
+var _story_panel: Panel
+var _story_cards: Array[Button] = []
 # The visible canvas around the centered composition (see set_canvas_size).
 var _canvas_origin := Vector2.ZERO
 var _canvas_size := SCREEN
@@ -106,7 +112,7 @@ func _ready() -> void:
 	title.add_theme_constant_override("shadow_offset_y", 6)
 	title.add_theme_constant_override("shadow_offset_x", 0)
 	_label("STEIG HINAB. ÜBERLEBE DIE KRYPTA.", Vector2(0, 146), Vector2(SCREEN.x, 28), 16, CryptUI.SAND, HORIZONTAL_ALIGNMENT_CENTER)
-	_buttons.append(_button("STORY-MODUS", Vector2(470, 204), Vector2(340, 62), 32, _open_classes.bind(false)))
+	_buttons.append(_button("STORY-MODUS", Vector2(470, 204), Vector2(340, 62), 32, _open_stories))
 	_endless_button = _button("ENDLOS-MODUS" if endless_available else "ENDLOS · BALD", Vector2(470, 278), Vector2(340, 48), 24, _open_classes.bind(true))
 	_endless_button.disabled = not endless_available
 	_endless_button.tooltip_text = "" if endless_available else "Der Endlos-Modus folgt in einem späteren Schritt."
@@ -128,6 +134,7 @@ func _ready() -> void:
 	_toast = _label("", Vector2(0, 520), Vector2(SCREEN.x, 24), 16, GOLD, HORIZONTAL_ALIGNMENT_CENTER)
 	_build_login_panel()
 	_build_options_panel()
+	_build_story_panel()
 	_build_class_panel()
 	_build_debug_panel()
 	_load_settings()
@@ -299,6 +306,49 @@ func _submit_login(create: bool) -> void:
 
 ## Before a solo run: three hero cards (animated sprite, name, description,
 ## hearts and starting weapon). Choosing one starts the run.
+## Story choice: one card per campaign, numbered; locked stories show BALD.
+func _build_story_panel() -> void:
+	_story_panel = _panel("WÄHLE DEINE STORY")
+	_story_panel.size = Vector2(800, 470)
+	_story_panel.position = (SCREEN - _story_panel.size) * 0.5 + Vector2(0, 20)
+	_story_cards.clear()
+	for i in range(stories.size()):
+		var story: Dictionary = stories[i]
+		var playable := bool(story.get("playable", false))
+		var card := _panel_button(_story_panel, "", Vector2(30, 62 + i * 112), Vector2(740, 102), func(): _choose_story(str(story.id)))
+		card.disabled = not playable
+		_story_cards.append(card)
+		var lines := [["STORY %d" % int(story.get("number", i + 1)), 16, MUTED, Vector2(20, 12)],
+			[str(story.get("title", "")), 24, GOLD if playable else MUTED, Vector2(20, 34)],
+			[str(story.get("subtitle", "")) if playable else "BALD · " + str(story.get("subtitle", "")), 16, TEXT if playable else MUTED, Vector2(20, 70)]]
+		for line: Array in lines:
+			var label := Label.new()
+			label.text = line[0]
+			label.position = line[3]
+			label.size = Vector2(700, 26)
+			label.add_theme_font_size_override("font_size", line[1])
+			label.add_theme_color_override("font_color", line[2])
+			label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			card.add_child(label)
+	_panel_button(_story_panel, "ZURÜCK", Vector2(30, 420), Vector2(740, 36), _close_panels)
+
+
+func _open_stories() -> void:
+	_close_panels()
+	_story_panel.visible = true
+	for card: Button in _story_cards:
+		if not card.disabled:
+			card.grab_focus()
+			break
+
+
+func _choose_story(id: String) -> void:
+	selected_story = id
+	_open_classes(false)
+	for story: Dictionary in stories:
+		if str(story.id) == id: _class_title.text = "WÄHLE DEINEN HELDEN · STORY %d" % int(story.get("number", 1))
+
+
 func _build_class_panel() -> void:
 	_class_panel = Panel.new()
 	# Taller than on main: Pixel Operator 8 at 16 px needs more room per line.
@@ -468,6 +518,7 @@ func _close_panels() -> void:
 	_options_panel.visible = false
 	if _debug_panel != null: _debug_panel.visible = false
 	if _class_panel != null: _class_panel.visible = false
+	if _story_panel != null: _story_panel.visible = false
 	_password_input.text = ""
 	_refresh_account()
 	_buttons[0].grab_focus()

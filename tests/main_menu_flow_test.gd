@@ -1,6 +1,6 @@
 extends SceneTree
 ## Main menu wiring (step 1 of the main port): the game opens on the title
-## screen, story starts a solo crypt run, multiplayer opens the lobby, leaving
+## screen, the story choice starts a solo crypt run, multiplayer opens the lobby, leaving
 ## returns to the menu, and the debug level list jumps to rooms and floor 2.
 ## Uses a disposable loopback host like pause_menu_test.
 const Game = preload("res://src/game.gd")
@@ -32,9 +32,10 @@ func _new_game() -> Node:
 
 func _run() -> void:
 	await _test_default_port_field_is_a_valid_port()
-	await _test_opens_on_menu_with_endless_disabled_and_no_account()
+	await _test_opens_on_menu_with_story_first_endless_soon_and_no_account()
+	await _test_story_choice_lists_numbered_stories_and_locks_unfinished_ones()
 	await _test_multiplayer_opens_lobby_and_lobby_returns_to_menu()
-	await _test_story_starts_solo_run_and_leaving_returns_to_menu()
+	await _test_story_one_starts_solo_run_and_leaving_returns_to_menu()
 	await _test_debug_room_jump_starts_in_that_room_with_earlier_rooms_cleared()
 	await _test_debug_floor_two_starts_on_the_next_floor()
 	await _test_shake_option_scales_view_shake()
@@ -58,11 +59,12 @@ func _test_default_port_field_is_a_valid_port() -> void:
 	game.queue_free()
 	await process_frame
 
-func _test_opens_on_menu_with_endless_disabled_and_no_account() -> void:
+func _test_opens_on_menu_with_story_first_endless_soon_and_no_account() -> void:
 	# Arrange / Act
 	var game = await _new_game()
 	# Assert
 	check(game.main_menu.visible and not game.lobby_ui.visible and not game.active, "the game opens on the main menu, not the lobby")
+	check(game.main_menu._buttons[0].text == "STORY-MODUS", "story is the first menu entry")
 	check(game.main_menu._endless_button.disabled and game.main_menu._endless_button.text.ends_with("BALD"), "endless is shown as coming soon")
 	check(not game.main_menu._account_button.visible and not game.main_menu._account_label.visible, "without online accounts the account row is hidden")
 	check(not game.solo_button.visible, "solo starts from the menu, not from the lobby")
@@ -83,16 +85,35 @@ func _test_multiplayer_opens_lobby_and_lobby_returns_to_menu() -> void:
 	game.queue_free()
 	await process_frame
 
-func _test_story_starts_solo_run_and_leaving_returns_to_menu() -> void:
+func _test_story_choice_lists_numbered_stories_and_locks_unfinished_ones() -> void:
 	# Arrange
 	var game = await _new_game()
-	# Act: story opens the hero choice (step 2); picking a hero starts the run.
-	game.main_menu._open_classes(false)
-	check(game.main_menu._class_panel.visible and not game.active, "story first shows the hero cards")
+	var menu = game.main_menu
+	# Act
+	menu._open_stories()
+	# Assert
+	check(menu._story_panel.visible and menu._story_cards.size() == menu.stories.size() and menu.stories.size() >= 3, "the story button lists every story (%d)" % menu.stories.size())
+	var playable: Array = menu.stories.filter(func(story: Dictionary) -> bool: return bool(story.get("playable", false)))
+	check(not playable.is_empty() and str(menu.stories[0].id) == "krypta" and not menu._story_cards[0].disabled, "story 1, the crypt, is playable")
+	var locked_ok := true
+	for i in range(menu.stories.size()):
+		if menu._story_cards[i].disabled == bool(menu.stories[i].get("playable", false)): locked_ok = false
+	check(locked_ok, "unfinished stories are locked")
+	game.queue_free()
+	await process_frame
+
+func _test_story_one_starts_solo_run_and_leaving_returns_to_menu() -> void:
+	# Arrange
+	var game = await _new_game()
+	# Act: story 1 opens the hero choice; picking a hero starts the run.
+	game.main_menu._open_stories()
+	game.main_menu._choose_story("krypta")
+	check(game.main_menu._class_panel.visible and not game.main_menu._story_panel.visible and not game.active, "a story first shows the hero cards")
 	game.main_menu._choose_class("swordsman")
 	game._refresh_ui()
 	# Assert
-	check(game.active and game.hosting and game.phase == "combat" and game.room == 1 and game.floor_index == 1, "story starts a solo run in room 1 of floor 1")
+	check(game.active and game.hosting and game.phase == "combat" and game.room == 1 and game.floor_index == 1, "story 1 starts a solo run in room 1 of floor 1")
+	check(game.story_id == "krypta" and not game.open_floors and game.floor_layouts.size() == game._run_room_count(), "story 1 plays the crypt's chain of rooms")
 	check(game.players[1].class_id == "swordsman" and game.players[1].melee and game.players[1].max_hp == 10, "the chosen hero class is applied to the solo player")
 	check(not game.main_menu.visible and not game.lobby_ui.visible and game.run_hud.visible, "during the run neither menu nor lobby is visible")
 	# Act
