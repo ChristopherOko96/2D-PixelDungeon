@@ -2030,6 +2030,7 @@ func _build_main_menu() -> void:
 		menu_open = false
 		_refresh_ui())
 	main_menu.quit_requested.connect(func(): get_tree().quit())
+	main_menu.hell_requested.connect(func(): get_tree().change_scene_to_file("res://src/hell/hell_dungeon.tscn"))
 	# Saved fullscreen is applied in _ready, only when the game opens on the menu.
 	view.shake_scale = 1.0 if bool(main_menu.settings.get("shake", true)) else 0.0
 

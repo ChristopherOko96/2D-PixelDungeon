@@ -15,6 +15,8 @@ extends Control
 ## A solo run with the chosen mode and hero class.
 signal start_requested(endless: bool, class_id: String)
 signal multiplayer_requested
+## The player picked the Hell-Dungeon mode (src/hell/hell_dungeon.tscn).
+signal hell_requested
 signal quit_requested
 signal settings_changed(settings: Dictionary)
 
@@ -122,6 +124,7 @@ func _ready() -> void:
 	_buttons.append(_button("BEENDEN", Vector2(470, 442), Vector2(340, 36), 16, quit_requested.emit))
 	_button("LEVEL-AUSWAHL (DEBUG)", Vector2(16, 676), Vector2(264, 32), 16, _open_debug)
 	_buttons[0].add_theme_color_override("font_color", GOLD)
+	_button("HELL-DUNGEON (NEU)", Vector2(16, 636), Vector2(264, 32), 16, hell_requested.emit)
 	_buttons[0].grab_focus()
 	_account_label = _label("", Vector2(820, 20), Vector2(300, 22), 16, TEXT, HORIZONTAL_ALIGNMENT_RIGHT)
 	_progress_label = _label("", Vector2(620, 44), Vector2(500, 20), 16, MUTED, HORIZONTAL_ALIGNMENT_RIGHT)
