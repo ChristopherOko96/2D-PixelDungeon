@@ -117,8 +117,15 @@ Relikt der Klasse: Magier Gravitationsstab (Ball stärker als der Stab; Wand, Le
 Gravitationshammer (Hammerschlag; Sprungschlag, Gravitationsfeld, Felsenwelle, Meteor); Fähigkeiten 1–4 frei ab Level
 1/3/6/10. Bogenschütze folgt. Level-up-Karten (`cards`, `src/hell/card_kit.gd`): 3 Karten, Taste 7/8/9 oder Klick, kleine
 Schritte mit Höchststufe. HUD (`styled_hud`, `src/hell/frost_hud.gd`): 0x72-Herzen, gerahmtes Banner, Auftrag mit
-Haupt- und Nebenzielen unter der Minikarte, Statusfenster (C / Tab). Gestartet über Hauptmenü → STORY-MODUS → Story 2 → Heldenwahl. Tests: `tests/frost_floor_data_test.gd`, `tests/frost_runtime_test.gd`; Nachweise:
-`production/qa/evidence/frost-floors/` (`scripts/capture_frost_dungeon.gd`, `scripts/capture_frost_classes.gd`, `scripts/capture_frost_monsters.gd`, `scripts/capture_frost_bosses.gd`); Regeltests `tests/mob_rules_test.gd`, `tests/boss_kit_test.gd`, `tests/hero_kit_test.gd`, `tests/relic_card_test.gd`; Aufnahmen auch `scripts/capture_frost_skills.gd`, `scripts/capture_frost_hud.gd`.
+Haupt- und Nebenzielen unter der Minikarte, Statusfenster (C / Tab).
+Relikte droppen inzwischen als Reliktruhe vom Wächter der zufälligen Relikt-Etage (`relics.drop: boss`); Bogenschütze:
+Schattendolch (Dolchstich mit Rückenstich ×2; Schattenschritt, Klingenwirbel, Rauchbombe = Gegner verlieren dich,
+Tausend Klingen). Talente (`assets/data/frost_talents.json`, `src/hell/meta_store.gd`, Hauptmenü TALENTE):
+Seelenkristalle an jeder Treppe (1 + Etage/2, Wächter +1, Zwischenboss +3, Hrimgar +6, Nebenziel +1), gespeichert in
+`user://frost_meta.cfg`. Je Klasse eine aktive Subklasse (Standard: Feuermagier, Schwertkämpfer, Langbogenschütze);
+Bäume mit 5 Stufen (ab 3/6/9/13 Punkten, Kosten 2/3/4/6 je Punkt, Meister 15) und Meisterfähigkeit auf Taste 5.
+Die sechs weiteren Subklassen (je 40 Kristalle, `src/hell/sub_kit.gd`) bringen eigenes Aussehen, eigenen Angriff, 4 Fähigkeiten (Level 1/3/6/10) und 2 Meisterfähigkeiten, gebaut aus Daten-Bausteinen (shot, wall, zone, nova, summon, buff, corpse, harvest, taunt, leap, stealth, step, trap, rally); Baumknoten mit `mod` ändern Werte. Frostmagier: Eissplitter, Eiswand, Blizzard, Frostnova, Eiselementar · Frostriese / Ewiger Winter. Nekromant: Seelenblitz, Skelette, Knochenschild, Leichenexplosion, Seelenernte · Knochenkoloss / Dämonenfürst. Tankkrieger: Schildstoß, Spott, Schildwall, Bollwerk-Sprung, Unerschütterlich · Festung / Vergeltung. Axtkrieger: Axthieb mit Blutung, Wurfaxt, Blutrausch, Erdstampfer, Raserei · Bestienform (Oger) / Blutgott. Schattenläufer: Dolchstich, Tarnung, Messerfächer, Schattenschritt, Giftklinge · Todestanz / Schattenklon. Tierbändiger: Pfeil, Wolf, Falkenstoß, Falle, Rudelruf · Urbär / Waldhüter. Beschwörungen aus dem 0x72-Paket (Skelett, Zombie, Dämon, Oger) und Superdark (Wolf, Bär, Ent); Test `tests/subclass_test.gd`. Gestartet über Hauptmenü → STORY-MODUS → Story 2 → Heldenwahl. Tests: `tests/frost_floor_data_test.gd`, `tests/frost_runtime_test.gd`; Nachweise:
+`production/qa/evidence/frost-floors/` (`scripts/capture_frost_dungeon.gd`, `scripts/capture_frost_classes.gd`, `scripts/capture_frost_monsters.gd`, `scripts/capture_frost_bosses.gd`); Regeltests `tests/mob_rules_test.gd`, `tests/boss_kit_test.gd`, `tests/hero_kit_test.gd`, `tests/relic_card_test.gd`, `tests/talent_test.gd`; Aufnahmen auch `scripts/capture_frost_talents.gd`, `scripts/capture_frost_skills.gd`, `scripts/capture_frost_hud.gd`.
 
 ## Grenzen
 

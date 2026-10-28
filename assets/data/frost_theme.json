@@ -1,5 +1,5 @@
 {
-  "_note": "Story 2 Die Frostgruft on the Hell-Dungeon runtime (src/hell/hell_game.gd, theme_path). Keys override THEME_DEFAULT there. weapon_scale: held weapons and arrows (smaller than the hero, sits in the hand). classes: hero per class (menu choice, class_id): sprite (0x72 name), hp (half hearts), speed (px/s) and weapon (melee: damage per hit, cooldown s, reach px, arc rad; projectile: damage, cooldown s, speed px/s, life s, shot arrow/magic, splash px radius). Values are the main game's (src/data/balance.json) scaled to this world (about x2.4). liquid: what grid cell 2 is (frost: glaze ice, hurt false, slow 1 = full speed, slide true, grip = share of the old speed left after one second). keys: name, hint, minimap colour, tint and skin sprite per key. words: hell phrase -> frost phrase, applied to toasts, prompts and end texts (longest first). colors: see THEME_DEFAULT. mobs: enemy kinds by id (name, sprite = skin name, with frames > 1 the prefix of _f0.._fN, fps, hp, speed px/s, radius px, behavior chase / shooter (keep_away px, fire_every s, shot_speed px/s) / dasher (dash_every s, dash_speed px/s, dash_time s) / puller (pull_radius px, pull px/s) / shield (shield_arc rad, blocks hits from the front) / turret (fire_every s, fan shots, spread rad, shot_speed), chill = s the hero is slowed after a touch, split = {into, count} on death). roster: kinds per room by floor (from = first floor, weight). bosses: guardian look per floor (sprite, frames, fps, scale); boss_adds: kinds the guardian summons. chill_speed: speed factor while chilled (ice zombie touch). boss_kits: guardians with their own fight per floor: phases (share of the floor boss hp, or hp list), every = s between attacks, title = toast on entering, look/tint = new look, guard = damage factor while its summoned crystals stand, storm = darker room, last_stand = below share: safe circles, then rest s with rest_damage factor; attacks do = summon(kind,count,around,guard) / ring(count,speed,chill) / fan(count,spread rad,speed,chill) / stomp(rings,count,gap rad,speed,pause s) / breath(duration,turn rad,rate s,speed,chill) / spiral(arms,duration,rate,speed) / charge(speed,time,windup) / icicles(count,radius,delay,spread px) / teleport_center(windup,push px) / fist(speed,back s) / fist_hunt(count,time,speed) / chill_zones(count,radius,time). Guardians with a kit take no knockback. phase_break: s invulnerable, push px and a shard ring between phases. mobs exp: experience per kill; material: bone/flesh/void for hit and kill sounds. leveling: need(level) = base * level^exponent experience, heal half hearts on level-up, boss_exp for guardians (mini = floors 3/6/9), skills = the class skills (hero_skills.json; distances x scale), slow_boss_scale. gravity_staff: mage relic of floor 4 (ball replaces the attack: damage x weapon, pull radius/strength px; wall: key, length, thickness px, time s; bar: drawn with the right mouse, max_length px, lasts time s, holds shots for hold s). sounds: game event -> audio_sfx.json event (\"\" = the skill's own sound). music: play the music states. gravity_staff short: slot label under the skill bar. relics: random relic shrine per run on one of floors (in their secret room), the relic from the hero class's pool (none = no shrine), sealed by four plates stepped in order. gravity_staff / gravity_hammer: class relics; attack (ball / hammer swing) replaces the weapon and is stronger; skills on keys 1-4 open at their level (unlock) with cooldowns and values. cards: level-up upgrade cards per class, relic and 'all' (max = how often; values are shares, e.g. damage 0.15 = +15 %); three are offered per level-up. styled_hud: framed banner, mission list, status sheet (C / Tab) and level-up cards (src/hell/frost_hud.gd).",
+  "_note": "Story 2 Die Frostgruft on the Hell-Dungeon runtime (src/hell/hell_game.gd, theme_path). Keys override THEME_DEFAULT there. weapon_scale: held weapons and arrows (smaller than the hero, sits in the hand). classes: hero per class (menu choice, class_id): sprite (0x72 name), hp (half hearts), speed (px/s) and weapon (melee: damage per hit, cooldown s, reach px, arc rad; projectile: damage, cooldown s, speed px/s, life s, shot arrow/magic, splash px radius). Values are the main game's (src/data/balance.json) scaled to this world (about x2.4). liquid: what grid cell 2 is (frost: glaze ice, hurt false, slow 1 = full speed, slide true, grip = share of the old speed left after one second). keys: name, hint, minimap colour, tint and skin sprite per key. words: hell phrase -> frost phrase, applied to toasts, prompts and end texts (longest first). colors: see THEME_DEFAULT. mobs: enemy kinds by id (name, sprite = skin name, with frames > 1 the prefix of _f0.._fN, fps, hp, speed px/s, radius px, behavior chase / shooter (keep_away px, fire_every s, shot_speed px/s) / dasher (dash_every s, dash_speed px/s, dash_time s) / puller (pull_radius px, pull px/s) / shield (shield_arc rad, blocks hits from the front) / turret (fire_every s, fan shots, spread rad, shot_speed), chill = s the hero is slowed after a touch, split = {into, count} on death). roster: kinds per room by floor (from = first floor, weight). bosses: guardian look per floor (sprite, frames, fps, scale); boss_adds: kinds the guardian summons. chill_speed: speed factor while chilled (ice zombie touch). boss_kits: guardians with their own fight per floor: phases (share of the floor boss hp, or hp list), every = s between attacks, title = toast on entering, look/tint = new look, guard = damage factor while its summoned crystals stand, storm = darker room, last_stand = below share: safe circles, then rest s with rest_damage factor; attacks do = summon(kind,count,around,guard) / ring(count,speed,chill) / fan(count,spread rad,speed,chill) / stomp(rings,count,gap rad,speed,pause s) / breath(duration,turn rad,rate s,speed,chill) / spiral(arms,duration,rate,speed) / charge(speed,time,windup) / icicles(count,radius,delay,spread px) / teleport_center(windup,push px) / fist(speed,back s) / fist_hunt(count,time,speed) / chill_zones(count,radius,time). Guardians with a kit take no knockback. phase_break: s invulnerable, push px and a shard ring between phases. mobs exp: experience per kill; material: bone/flesh/void for hit and kill sounds. leveling: need(level) = base * level^exponent experience, heal half hearts on level-up, boss_exp for guardians (mini = floors 3/6/9), skills = the class skills (hero_skills.json; distances x scale), slow_boss_scale. gravity_staff: mage relic of floor 4 (ball replaces the attack: damage x weapon, pull radius/strength px; wall: key, length, thickness px, time s; bar: drawn with the right mouse, max_length px, lasts time s, holds shots for hold s). sounds: game event -> audio_sfx.json event (\"\" = the skill's own sound). music: play the music states. gravity_staff short: slot label under the skill bar. relics: random relic shrine per run on one of floors (in their secret room), the relic from the hero class's pool (none = no shrine), sealed by four plates stepped in order. gravity_staff / gravity_hammer: class relics; attack (ball / hammer swing) replaces the weapon and is stronger; skills on keys 1-4 open at their level (unlock) with cooldowns and values. cards: level-up upgrade cards per class, relic and 'all' (max = how often; values are shares, e.g. damage 0.15 = +15 %); three are offered per level-up. styled_hud: framed banner, mission list, status sheet (C / Tab) and level-up cards (src/hell/frost_hud.gd). relics.drop boss: the relic lies in a chest the guardian of the relic floor drops. shadow_dagger: archer relic (melee stab with backstab x2 on enemies not facing you; shadow step through up to hits enemies, blade cyclone around you, smoke bomb = enemies lose you and slow, thousand blades = blade rain on an area). sounds: master skills use their own. talents: the talent trees and soul crystals file (assets/data/frost_talents.json); master_cooldown: s for the key 5 master skill.",
   "floors": "res://assets/data/frost_floors.json",
   "sprites": "res://assets/sprites/frost/",
   "balance": "res://assets/data/hell_balance.json",
@@ -967,7 +967,9 @@
       "swordsman": [
         "gravity_hammer"
       ],
-      "archer": []
+      "archer": [
+        "shadow_dagger"
+      ]
     },
     "order": [
       3,
@@ -975,7 +977,8 @@
       4,
       2
     ],
-    "label": "Reliktsiegel"
+    "label": "Reliktsiegel",
+    "drop": "boss"
   },
   "gravity_hammer": {
     "name": "GRAVITATIONSHAMMER",
@@ -1309,7 +1312,113 @@
         "count": 2,
         "damage": 0.4
       }
+    ],
+    "shadow_dagger": [
+      {
+        "id": "long_shadow",
+        "name": "LANGER SCHATTEN",
+        "desc": "Schattenschritt trifft +1 Gegner.",
+        "max": 2,
+        "skill": "1",
+        "hits": 1
+      },
+      {
+        "id": "sharp_edge",
+        "name": "SCHARFE SCHNEIDE",
+        "desc": "Dolchstich +20 % Schaden.",
+        "max": 2,
+        "damage": 0.2
+      },
+      {
+        "id": "thick_smoke",
+        "name": "DICHTER RAUCH",
+        "desc": "Rauchbombe hält 1 s länger.",
+        "max": 2,
+        "skill": "3",
+        "time": 1.0
+      },
+      {
+        "id": "blade_cyclone",
+        "name": "KLINGENZYKLON",
+        "desc": "Klingenwirbel +30 % Radius.",
+        "max": 1,
+        "skill": "2",
+        "radius": 0.3
+      }
     ]
   },
-  "styled_hud": true
+  "styled_hud": true,
+  "shadow_dagger": {
+    "name": "SCHATTENDOLCH",
+    "classes": [
+      "archer"
+    ],
+    "sprite": "weapon_shadow_dagger",
+    "tint": [
+      0.7,
+      0.6,
+      1.4
+    ],
+    "attack": {
+      "name": "DOLCHSTICH",
+      "short": "STICH",
+      "damage": 1.8,
+      "cooldown": 0.2,
+      "reach": 130,
+      "arc": 1.3,
+      "pull": 0,
+      "backstab": 2.0
+    },
+    "skills": [
+      {
+        "id": "d_step",
+        "key": "1",
+        "unlock": 1,
+        "name": "SCHATTENSCHRITT",
+        "short": "SCHRITT",
+        "cooldown": 6,
+        "range": 650,
+        "hits": 3,
+        "every": 0.14,
+        "damage": 1.6
+      },
+      {
+        "id": "d_blades",
+        "key": "2",
+        "unlock": 3,
+        "name": "KLINGENWIRBEL",
+        "short": "WIRBEL",
+        "cooldown": 9,
+        "time": 3.0,
+        "radius": 130,
+        "every": 0.25,
+        "damage": 0.9
+      },
+      {
+        "id": "d_smoke",
+        "key": "3",
+        "unlock": 6,
+        "name": "RAUCHBOMBE",
+        "short": "RAUCH",
+        "cooldown": 14,
+        "time": 3.5,
+        "radius": 210,
+        "slow": 0.5
+      },
+      {
+        "id": "d_thousand",
+        "key": "4",
+        "unlock": 10,
+        "name": "TAUSEND KLINGEN",
+        "short": "KLINGEN",
+        "cooldown": 26,
+        "time": 2.5,
+        "radius": 230,
+        "every": 0.1,
+        "damage": 0.7
+      }
+    ]
+  },
+  "talents": "res://assets/data/frost_talents.json",
+  "master_cooldown": 45
 }

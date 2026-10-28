@@ -16,6 +16,8 @@ const BossKit = preload("res://src/hell/boss_kit.gd")
 const HeroKit = preload("res://src/hell/hero_kit.gd")
 const RelicKit = preload("res://src/hell/relic_kit.gd")
 const CardKit = preload("res://src/hell/card_kit.gd")
+const SubKit = preload("res://src/hell/sub_kit.gd")
+const MetaStore = preload("res://src/hell/meta_store.gd")
 const FrostHud = preload("res://src/hell/frost_hud.gd")
 const HEART := "res://assets/sprites/0x72/ui_heart_%s.png"
 const Sfx = preload("res://src/vfx/sfx.gd")
@@ -102,6 +104,13 @@ var aim_at: Variant = null
 var relic_tex: Texture2D
 ## Relic summons and timed relic blows (rock lifts, rock spikes, meteors, quakes).
 var allies: Array = []
+## Talent trees and soul crystals (theme.talents, src/hell/meta_store.gd); empty without talents.
+var meta_data: Dictionary = {}
+var meta: Dictionary = {}
+## Where the soul crystals are saved (tests use their own file).
+var meta_path := MetaStore.SAVE_PATH
+## The run's subclass kit (src/hell/sub_kit.gd); empty for the standard subclass.
+var sub_kit: Dictionary = {}
 var pending: Array = []
 ## Hearts of the HUD (0x72 full, half, empty).
 var hearts: Dictionary = {}
@@ -163,6 +172,9 @@ func _ready() -> void:
 	skills = HeroKit.load_skills(self, class_id)
 	for k in ["full", "half", "empty"]:
 		hearts[k] = load(HEART % k)
+	if theme.has("talents") and FileAccess.file_exists(str(theme.talents)):
+		meta_data = JSON.parse_string(FileAccess.get_file_as_string(str(theme.talents)))
+		meta = MetaStore.load_store(meta_data, meta_path)
 	if not (theme.get("sounds", {}) as Dictionary).is_empty():
 		sfx = Sfx.new()
 		add_child(sfx)
@@ -246,6 +258,22 @@ func _sound_raw(name: String) -> void:
 		sfx.play(name)
 
 
+## Soul crystals for this floor (its number, its guardian, finished side goals), saved at once.
+func _bank_crystals() -> void:
+	if meta.is_empty():
+		return
+	var kind := "final" if W.final else ("mini" if W.boss.get("mini", false) else "guardian")
+	var sides := 0
+	for it: Dictionary in FrostHud.goals(self):
+		if not it.main and it.done:
+			sides += 1
+	var n := MetaStore.floor_award(meta_data, int(state.floor), kind, sides)
+	meta.crystals = int(meta.crystals) + n
+	state.crystals_floor = n
+	state.crystals_run = int(state.get("crystals_run", 0)) + n
+	MetaStore.save_store(meta, meta_path)
+
+
 ## The weapon damage the hero's multiples are measured against.
 func base_damage() -> float:
 	return maxf(0.01, float(weapon.get("damage", 1.0)))
@@ -262,6 +290,7 @@ func on_dash_land(what: String) -> void:
 		fx.append({"kind": "quake", "p": Vector2(player.x, player.y), "r": float(s.radius), "t": 0.35, "max": 0.35})
 		return
 	RelicKit.land(self, what)
+	SubKit.land(self, what)
 
 
 ## The relic's look: the wielded one, else the run's (for its shrine).
@@ -324,23 +353,29 @@ func load_floor(n: int, carry: bool) -> void:
 			_chunk_nodes.append(_layer("back", 0, area))
 			_chunk_nodes.append(_layer("front", 20, area))
 	var start := _room_of_type("start")
-	var start_hp := int(hero.get("hp", balance.player.hp))
+	var talent: Dictionary = MetaStore.run_bonus(meta_data, meta, class_id) if not meta.is_empty() else {}
+	if not carry or state.is_empty():
+		SubKit.apply(self, talent)
+	var start_hp := int(hero.get("hp", balance.player.hp)) + int(talent.get("hearts", 0))
 	var keep := {"hp": start_hp, "max_hp": start_hp, "gems": 0, "dmg": float(weapon.get("damage", 1.0)),
 		"rate": float(weapon.get("cooldown", balance.shot.cooldown)), "speed_mul": 1.0, "range": float(weapon.get("life", balance.shot.life)), "buffs": [],
 		"skill": {"owned": false, "active": false, "left": float(balance.clone.duration)},
 		"level": 1, "exp": 0, "skill_cd": {}, "relic": "", "relic_on": false, "upgrades": {}, "offer": [], "cards_due": 0,
-		"relic_floor": 0, "relic_item": ""}
+		"relic_floor": 0, "relic_item": "", "talent": talent, "crystals_run": 0}
 	if carry and not state.is_empty():
 		keep = {"hp": state.hp, "max_hp": state.max_hp, "gems": state.gems, "dmg": state.dmg, "rate": state.rate,
 			"speed_mul": state.speed_mul, "range": state.range, "buffs": state.buffs, "skill": state.skill,
 			"level": state.level, "exp": state.exp, "skill_cd": {}, "relic": state.relic, "relic_on": state.relic_on, "upgrades": state.upgrades,
-			"offer": state.offer, "cards_due": state.cards_due, "relic_floor": state.relic_floor, "relic_item": state.relic_item}
+			"offer": state.offer, "cards_due": state.cards_due, "relic_floor": state.relic_floor, "relic_item": state.relic_item,
+			"talent": state.talent, "crystals_run": state.crystals_run}
 		keep.skill.active = false
 	state = {"floor": n, "keys": {"A": false, "B": false, "C": false}, "used": {"A": false, "B": false, "C": false},
 		"visited": {start.index: true}, "room": start.index, "banner": {"text": W.title, "sub": "Etage %d · %s" % [n, W.circle], "t": 0.0},
 		"toasts": [], "inv": 0.0, "dead": 0.0, "map": false, "light": state.get("light", true), "t": 0.0, "won": false, "won_t": 0.0,
-		"cool": 0.0, "flash": 0.0, "chill": 0.0, "storm": false, "rage": 0.0, "boss_dead": false}
+		"cool": 0.0, "flash": 0.0, "chill": 0.0, "storm": false, "rage": 0.0, "boss_dead": false, "stealth": 0.0, "blades": {}}
 	state.merge(keep)
+	# the phoenix master skill lifts the hero once per floor
+	state.phoenix_life = str(state.talent.get("master", "")) == "phoenix"
 	if not carry:
 		RelicKit.choose_run(self)
 	RelicKit.place(self)
@@ -554,7 +589,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not skills.is_empty() and skill_keys.has(event.keycode):
 		var key: String = skill_keys[event.keycode]
 		if event.pressed:
-			if not RelicKit.press(self, key):
+			if not RelicKit.press(self, key) and not SubKit.press(self, key):
 				HeroKit.press(self, key)
 		elif not RelicKit.release(self, key):
 			HeroKit.release(self, key)
@@ -583,6 +618,9 @@ func _unhandled_input(event: InputEvent) -> void:
 				state.relic_on = not state.relic_on
 				_relic_texture()
 				_toast(("%s in der Hand." % theme[state.relic].name) if state.relic_on else ("%s in der Hand." % weapon.get("name", "Waffe")))
+		KEY_5:
+			if not skills.is_empty() and not SubKit.master(self):
+				HeroKit.master_press(self)
 		KEY_C, KEY_TAB:
 			state.status = not state.get("status", false)
 		KEY_PAGEUP:
@@ -613,11 +651,21 @@ func _toast(text: String) -> void:
 func _hurt(why: String) -> void:
 	if state.inv > 0.0 or state.dead > 0.0:
 		return
+	if SubKit.guard(self):
+		return
 	state.hp = maxi(0, state.hp - 1)
 	state.inv = float(balance.player.invulnerable)
 	state.flash = 0.25
 	_sound("hurt")
 	_sound("hurt_voice")
+	if state.hp == 0 and state.get("phoenix_life", false):
+		state.phoenix_life = false
+		state.hp = maxi(2, state.max_hp / 2)
+		state.inv = 2.0
+		_burst(Vector2(player.x, player.y - 40), 70, true)
+		_sound("level_up")
+		_toast("Der Phönix trägt dich zurück ins Leben!")
+		return
 	if state.hp == 0:
 		state.dead = 1.8
 		_toast("Gestorben: %s. Zurück zum Abstieg." % why)
@@ -644,8 +692,8 @@ func _interactables() -> Array:
 			"relic":
 				if not e.get("taken", false):
 					var label := "Versiegelt: die vier Platten in ihrer Reihenfolge betreten"
-					if W.groups[e.seal].get("solved", false):
-						label = ("%s nehmen" % theme[e.item].name) if HeroKit.can_wield(self, e.item) else "Nur ein Magier kann diesen Stab führen"
+					if RelicKit.relic_free(self, e):
+						label = (("Reliktruhe öffnen: %s" if e.get("chest", false) else "%s nehmen") % theme[e.item].name) if HeroKit.can_wield(self, e.item) else "Dieses Relikt gehört einer anderen Klasse"
 					out.append({"e": e, "label": label, "p": Vector2(e.x, e.y - 30), "r": 150.0})
 	for d: Dictionary in W.doors:
 		var p := Vector2(d.cx, d.cy)
@@ -685,7 +733,7 @@ func act() -> void:
 	if e.has("type"):
 		match e.type:
 			"relic":
-				if not W.groups[e.seal].get("solved", false) or not HeroKit.can_wield(self, e.item):
+				if not RelicKit.relic_free(self, e) or not HeroKit.can_wield(self, e.item):
 					_sound("no_cooldown")
 					return
 				e.taken = true
@@ -722,6 +770,7 @@ func act() -> void:
 			"portal":
 				if e.get("active", false):
 					_sound("stairs")
+					_bank_crystals()
 					state.won = true
 					state.won_t = 0.0
 					# the clone waits with its time left until Q on the next floor
@@ -804,7 +853,7 @@ func _fire(dir: Vector2) -> void:
 	player.aim = dir.normalized()
 	if absf(dir.x) > 0.01:
 		player.face = signf(dir.x)
-	if RelicKit.attack(self, dir.normalized()):
+	if RelicKit.attack(self, dir.normalized()) or SubKit.attack(self, dir.normalized()):
 		return
 	if weapon.get("type", "") == "melee":
 		_swing(dir.normalized())
@@ -843,7 +892,7 @@ func _damage_mob(m: Dictionary, push: Vector2, mult := 1.0) -> bool:
 	var factor := BossKit.damage_factor(self, m) if m.has("kit") else 1.0
 	if factor <= 0.0:
 		return false
-	m.hp -= float(state.dmg) * factor * mult * HeroKit.crit(self) * CardKit.damage_mult(self)
+	m.hp -= float(state.dmg) * factor * mult * HeroKit.crit(self) * CardKit.damage_mult(self) * SubKit.factor(self, m)
 	_sound("hit_" + str(def.get("material", "void")))
 	m.hit = 0.12
 	# kit bosses stand firm: no knockback
@@ -929,6 +978,7 @@ func _clear_room(r: Dictionary, at: Vector2) -> void:
 		_toast("Raum gesäubert. %s gefallen!" % key_name[r.drop])
 	elif r.type == "boss":
 		state.boss_dead = true
+		RelicKit.drop(self, at)
 		eshots = []
 		zones = []
 		state.storm = false
@@ -1106,6 +1156,7 @@ func _update(dt: float) -> void:
 	swing.t = maxf(0.0, swing.t - dt)
 	HeroKit.update(self, dt)
 	RelicKit.update(self, dt)
+	SubKit.update(self, dt)
 	if not (state.get("offer", []) as Array).is_empty():
 		state.offer_t = float(state.get("offer_t", 0.0)) + dt
 	_update_music()
@@ -1215,7 +1266,8 @@ func _update_shots(dt: float) -> void:
 				if s.get("pierce", false):
 					# piercing shots (blade wave, ballista, arrow fist) go on through everyone
 					s.hits.append(m)
-					_damage_mob(m, s.v, mult)
+					if _damage_mob(m, s.v, mult) and s.has("fx"):
+						SubKit.hit(self, m, s.fx)
 					if s.get("push", false) and not m.has("kit"):
 						m.k = (s.v as Vector2) * 0.6
 					if s.has("slow"):
@@ -1224,7 +1276,8 @@ func _update_shots(dt: float) -> void:
 				s.t = 0.0
 				var splash: float = s.get("splash", 0.0)
 				if splash <= 0.0 and not s.has("burst"):
-					_damage_mob(m, s.v, mult)
+					if _damage_mob(m, s.v, mult) and s.has("fx"):
+						SubKit.hit(self, m, s.fx)
 					break
 				_explode(s, m)
 				break
@@ -1254,12 +1307,19 @@ func _update_shots(dt: float) -> void:
 
 func _update_mobs(dt: float) -> void:
 	var me := Vector2(player.x, player.y)
+	var hidden := float(state.get("stealth", 0.0)) > 0.0
 	for m: Dictionary in mobs:
 		if m.spawn > 0.0:
 			m.spawn -= dt
 			continue
 		m.hit = maxf(0.0, m.hit - dt)
-		var to: Vector2 = me - m.p
+		if hidden and m.kind != "boss":
+			# hidden hero: they stop, look about and turn their backs now and then
+			m.face = Vector2(cos(state.t * 1.5 + m.seed), sin(state.t * 1.5 + m.seed))
+			continue
+		# taunting allies (bone colossus, great bear) draw enemies away from the hero
+		var goal := SubKit.chase(self, m, me)
+		var to: Vector2 = goal - m.p
 		var d := maxf(to.length(), 1.0)
 		var dir := to / d
 		var def: Dictionary = m.def
@@ -1308,7 +1368,7 @@ func _update_mobs(dt: float) -> void:
 		var ny: Vector2 = m.p + Vector2(0, v.y * dt)
 		if not box_blocked(Rect2(ny.x - rr, ny.y - rr, rr * 2, rr), avoid) and not HeroKit.wall_blocks(self, ny, rr):
 			m.p = ny
-		if d < m.r + 22.0:
+		if d < m.r + 22.0 and goal == me:
 			var who: String = ("von %s erwischt" % def.name) if def.has("name") else "von Glutlingen verbrannt"
 			_hurt("von %s erschlagen" % W.boss.name if m.kind == "boss" else who)
 			if def.has("chill"):
@@ -1356,6 +1416,7 @@ func _update_mobs(dt: float) -> void:
 		mobs.erase(m)
 		_sound("kill_" + str((m.def as Dictionary).get("material", "void")))
 		HeroKit.gain(self, HeroKit.exp_for(self, m))
+		SubKit.on_kill(self, m)
 		# a splitting enemy (e.g. ice slime) leaves smaller ones behind
 		var kids := MobRules.split_children(m.def)
 		for i in range(kids.size()):
@@ -1698,7 +1759,10 @@ func _draw_actors(l: Layer) -> void:
 			"hero": _draw_hero(l, t)
 	_draw_skill_fx(l, t)
 	RelicKit.draw(self, l, t)
+	SubKit.draw(self, l, t)
 	for s: Dictionary in shots:
+		if SubKit.draw_shot(self, l, s, t):
+			continue
 		if s.get("kind", "") == "gravity":
 			var sp := sin(t * 14.0)
 			l.draw_circle(s.p, 26.0, Color(0.35, 0.2, 0.8, 0.35))
@@ -1803,11 +1867,13 @@ func _draw_skill_fx(l: Layer, t: float) -> void:
 		l.draw_arc(Vector2(player.x, player.y - 40), 60.0, -PI / 2.0, -PI / 2.0 + TAU * share, 32, Color(col("shot_core"), 0.9), 6.0)
 	for w: Dictionary in gwalls:
 		var wa := clampf(float(w.t) / 0.4, 0.0, 1.0)
-		l.draw_line(w.a, w.b, Color(0.3, 0.15, 0.7, 0.55 * wa), float(w.w))
-		l.draw_line(w.a, w.b, Color(0.75, 0.6, 1.0, 0.9 * wa), 4.0)
+		# gravity walls glow violet, the frost mage's ice walls pale blue
+		var ice: bool = w.get("ice", false)
+		l.draw_line(w.a, w.b, Color(0.55, 0.8, 1.0, 0.6 * wa) if ice else Color(0.3, 0.15, 0.7, 0.55 * wa), float(w.w))
+		l.draw_line(w.a, w.b, Color(0.9, 0.97, 1.0, 0.9 * wa) if ice else Color(0.75, 0.6, 1.0, 0.9 * wa), 4.0)
 		for i in range(6):
 			var q: Vector2 = (w.a as Vector2).lerp(w.b, fmod(t * 0.4 + i / 6.0, 1.0))
-			l.draw_circle(q, 5.0, Color(0.85, 0.75, 1.0, 0.8 * wa))
+			l.draw_circle(q, 5.0, Color(0.95, 1.0, 1.0, 0.8 * wa) if ice else Color(0.85, 0.75, 1.0, 0.8 * wa))
 	for b: Dictionary in gbars:
 		var ba := clampf(float(b.t) / 0.4, 0.0, 1.0)
 		l.draw_line(b.a, b.b, Color(0.5, 0.85, 1.0, 0.35 * ba), float(b.w))
@@ -1857,7 +1923,11 @@ func _draw_ent(l: Layer, e: Dictionary, t: float) -> void:
 	match e.type:
 		"relic":
 			# the staff floats over its seal; sealed it lies dark, freed it glows and turns
-			var free: bool = W.groups[e.seal].get("solved", false)
+			var free := RelicKit.relic_free(self, e)
+			if e.get("chest", false):
+				# the boss's relic chest: a golden chest, the relic floating over it
+				var ch: Texture2D = tex.chest_gold
+				l.draw_texture(ch, Vector2(e.x - ch.get_width() / 2.0, e.y - ch.get_height()))
 			if relic_tex == null:
 				return
 			var k := float(theme.get("weapon_scale", 2.0)) * 1.6
@@ -2007,16 +2077,18 @@ func _draw_clone(l: Layer, t: float) -> void:
 func _draw_hero(l: Layer, t: float) -> void:
 	if state.inv > 0.0 and int(t * 20.0) % 2 == 1:
 		return
-	var frames: Array = hero_frames["run" if player.moving else "idle"]
+	# subclass look: its hero and colour, the ogre of the beast form, faint while hidden
+	var look := SubKit.look(self)
+	var frames: Array = look.frames["run" if player.moving else "idle"]
 	var im: Texture2D = frames[int(player.anim) % 4]
-	var size := im.get_size() * float(theme.hero_scale)
+	var size := im.get_size() * float(theme.hero_scale) * float(look.scale)
 	var pos := Vector2(player.x, player.y - size.y + 6)
 	if player.face < 0:
 		l.draw_set_transform(pos + Vector2(size.x / 2.0, 0), 0.0, Vector2(-1, 1))
-		l.draw_texture_rect(im, Rect2(Vector2.ZERO, size), false)
+		l.draw_texture_rect(im, Rect2(Vector2.ZERO, size), false, look.tint)
 		l.draw_set_transform(Vector2.ZERO)
 	else:
-		l.draw_texture_rect(im, Rect2(pos - Vector2(size.x / 2.0, 0), size), false)
+		l.draw_texture_rect(im, Rect2(pos - Vector2(size.x / 2.0, 0), size), false, look.tint)
 	_draw_weapon(l, size)
 
 
@@ -2168,7 +2240,7 @@ func draw_hud(h: Control) -> void:
 	if not (state.buffs as Array).is_empty():
 		var names: Array = (state.buffs as Array).map(func(b: String) -> String: return b.get_slice(":", 0))
 		_text(h, "Segen: " + ", ".join(PackedStringArray(names)), Vector2(22, line), 16, Color(1, 0.89, 0.55, 0.85))
-	var who := "%s · %s · " % [hero.name, RelicKit.wielded(self).name if relic_on() else weapon.name] if not hero.is_empty() else ""
+	var who := "%s · %s · " % [str(sub_kit.name).to_upper() if not sub_kit.is_empty() else hero.name, RelicKit.wielded(self).name if relic_on() else weapon.name] if not hero.is_empty() else ""
 	var keys_hint := "F1-F10 Etage · T Waffe wechseln" if not skills.is_empty() else "1-0 Etage"
 	_text(h, who + "Etage %d · %s · %s · Q Klon · M Karte · Esc Menü" % [state.floor, W.title, keys_hint], Vector2(20, size.y - 38), 16, Color(col("sub"), 0.7))
 	if not skills.is_empty():
@@ -2259,6 +2331,9 @@ func draw_hud(h: Control) -> void:
 		_text(h, say("Die Hölle ist bezwungen") if W.final else "Etage %d geschafft" % state.floor, Vector2(0, size.y / 2.0 - 30), 32, gold, size.x)
 		_text(h, say("%d von %d Räumen erkundet · %d Runensteine · %d Herzen" % [state.visited.size(), W.rooms.size(), state.gems, state.max_hp / 2]), Vector2(0, size.y / 2.0 + 16), 16, ink, size.x)
 		_text(h, "E: von vorn beginnen" if W.final else "E: weiter zu Etage %d" % (state.floor + 1), Vector2(0, size.y / 2.0 + 52), 16, col("prompt_key"), size.x)
+		if not meta.is_empty():
+			var cur: Dictionary = meta_data.currency
+			_text(h, "+%d %s  ·  zusammen %d  ·  im Hauptmenü unter TALENTE ausgeben" % [int(state.get("crystals_floor", 0)), cur.name, int(meta.crystals)], Vector2(0, size.y / 2.0 + 92), 20, gold, size.x)
 
 
 ## The skill bar at the bottom: one slot per key with icon, key, cooldown shade
@@ -2277,8 +2352,16 @@ func _draw_skill_bar(h: Control, size: Vector2) -> void:
 				"open": int(state.level) >= int(s.unlock), "unlock": int(s.unlock)})
 	else:
 		for s: Dictionary in skills:
-			slots.append({"key": str(s.key), "name": str(s.name), "cd": float(state.skill_cd.get(str(s.key), 0.0)), "max": float(s.cooldown),
+			slots.append({"key": str(s.key), "name": str(s.get("short", s.name)), "cd": float(state.skill_cd.get(str(s.key), 0.0)), "max": float(s.cooldown),
 				"open": HeroKit.unlocked(self, s), "unlock": int(s.unlock)})
+	var master := str(state.get("talent", {}).get("master", ""))
+	if master != "":
+		var mname := master
+		for t: Array in meta_data.classes[class_id].subs[state.talent.sub].tiers:
+			for n: Dictionary in t:
+				if str(n.get("master", "")) == master:
+					mname = str(n.name)
+		slots.append({"key": "5", "name": mname, "cd": float(state.skill_cd.get("5", 0.0)), "max": float(theme.get("master_cooldown", 45.0)), "open": true})
 	var sw := 64.0
 	var cellw := 116.0
 	var x0 := size.x / 2.0 - slots.size() * cellw / 2.0

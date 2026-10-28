@@ -1217,6 +1217,12 @@
   "kind": "sprite",
   "src": "0x72 weapon_red_magic_staff"
  },
+ "weapon_shadow_dagger": {
+  "w": 6,
+  "h": 13,
+  "kind": "sprite",
+  "src": "0x72 weapon_knife"
+ },
  "ally_golem_f0": {
   "w": 96,
   "h": 96,
@@ -1300,5 +1306,179 @@
   "h": 48,
   "kind": "sprite",
   "src": "6DNLbZ Kristall, umgefärbt (Felsdorn)"
+ },
+ "ally_skeleton_f0": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 skelet_run_anim"
+ },
+ "ally_skeleton_f1": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 skelet_run_anim"
+ },
+ "ally_skeleton_f2": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 skelet_run_anim"
+ },
+ "ally_skeleton_f3": {
+  "w": 48,
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 skelet_run_anim"
+ },
+ "ally_big_zombie_f0": {
+  "w": 64,
+  "h": 72,
+  "kind": "sprite",
+  "src": "0x72 big_zombie_run_anim"
+ },
+ "ally_big_zombie_f1": {
+  "w": 64,
+  "h": 72,
+  "kind": "sprite",
+  "src": "0x72 big_zombie_run_anim"
+ },
+ "ally_big_zombie_f2": {
+  "w": 64,
+  "h": 72,
+  "kind": "sprite",
+  "src": "0x72 big_zombie_run_anim"
+ },
+ "ally_big_zombie_f3": {
+  "w": 64,
+  "h": 72,
+  "kind": "sprite",
+  "src": "0x72 big_zombie_run_anim"
+ },
+ "ally_big_demon_f0": {
+  "w": 64,
+  "h": 72,
+  "kind": "sprite",
+  "src": "0x72 big_demon_run_anim"
+ },
+ "ally_big_demon_f1": {
+  "w": 64,
+  "h": 72,
+  "kind": "sprite",
+  "src": "0x72 big_demon_run_anim"
+ },
+ "ally_big_demon_f2": {
+  "w": 64,
+  "h": 72,
+  "kind": "sprite",
+  "src": "0x72 big_demon_run_anim"
+ },
+ "ally_big_demon_f3": {
+  "w": 64,
+  "h": 72,
+  "kind": "sprite",
+  "src": "0x72 big_demon_run_anim"
+ },
+ "ally_frost_giant_f0": {
+  "w": 128,
+  "h": 144,
+  "kind": "sprite",
+  "src": "0x72 ogre_run_anim, umgefärbt (Frostriese)"
+ },
+ "ally_frost_giant_f1": {
+  "w": 128,
+  "h": 144,
+  "kind": "sprite",
+  "src": "0x72 ogre_run_anim, umgefärbt (Frostriese)"
+ },
+ "ally_frost_giant_f2": {
+  "w": 128,
+  "h": 144,
+  "kind": "sprite",
+  "src": "0x72 ogre_run_anim, umgefärbt (Frostriese)"
+ },
+ "ally_frost_giant_f3": {
+  "w": 128,
+  "h": 144,
+  "kind": "sprite",
+  "src": "0x72 ogre_run_anim, umgefärbt (Frostriese)"
+ },
+ "ally_ice_elemental": {
+  "w": 93,
+  "h": 57,
+  "kind": "sprite",
+  "src": "6DNLbZ Wasser-Elementar, umgefärbt (Eiselementar)"
+ },
+ "ally_wolf_f0": {
+  "w": 60,
+  "h": 32,
+  "kind": "sprite",
+  "src": "Superdark Wolf"
+ },
+ "ally_wolf_f1": {
+  "w": 60,
+  "h": 34,
+  "kind": "sprite",
+  "src": "Superdark Wolf"
+ },
+ "ally_wolf_f2": {
+  "w": 60,
+  "h": 32,
+  "kind": "sprite",
+  "src": "Superdark Wolf"
+ },
+ "ally_wolf_f3": {
+  "w": 60,
+  "h": 30,
+  "kind": "sprite",
+  "src": "Superdark Wolf"
+ },
+ "ally_bear_f0": {
+  "w": 58,
+  "h": 42,
+  "kind": "sprite",
+  "src": "Superdark Bear"
+ },
+ "ally_bear_f1": {
+  "w": 58,
+  "h": 42,
+  "kind": "sprite",
+  "src": "Superdark Bear"
+ },
+ "ally_bear_f2": {
+  "w": 58,
+  "h": 42,
+  "kind": "sprite",
+  "src": "Superdark Bear"
+ },
+ "ally_bear_f3": {
+  "w": 62,
+  "h": 42,
+  "kind": "sprite",
+  "src": "Superdark Bear"
+ },
+ "ally_ent_f0": {
+  "w": 46,
+  "h": 60,
+  "kind": "sprite",
+  "src": "Superdark Ent"
+ },
+ "ally_ent_f1": {
+  "w": 46,
+  "h": 58,
+  "kind": "sprite",
+  "src": "Superdark Ent"
+ },
+ "ally_ent_f2": {
+  "w": 46,
+  "h": 60,
+  "kind": "sprite",
+  "src": "Superdark Ent"
+ },
+ "ally_ent_f3": {
+  "w": 46,
+  "h": 58,
+  "kind": "sprite",
+  "src": "Superdark Ent"
  }
 }

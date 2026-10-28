@@ -296,9 +296,23 @@ anim('boss_golem_walk', [loose('4GxFHH.png', (a, 64, b, 112)) for a, b in golem_
 # ---------- relic weapons and their summons ----------
 put('weapon_gravity_hammer', frame('weapon_big_hammer'), '0x72 weapon_big_hammer')
 put('weapon_gravity_staff', frame('weapon_red_magic_staff'), '0x72 weapon_red_magic_staff')
+put('weapon_shadow_dagger', frame('weapon_knife'), '0x72 weapon_knife')
 anim('ally_golem', [loose('4GxFHH.png', (a, 8, b, 56)) for a, b in golem_cols], 'Superdark Golem (4GxFHH), umgefärbt (Gravitationssteingolem)', 'grav', 2)
 anim('ally_golem_walk', [loose('4GxFHH.png', (a, 64, b, 112)) for a, b in golem_cols], 'Superdark Golem (4GxFHH), umgefärbt (Gravitationssteingolem)', 'grav', 2)
 put('rock_throw', up(recolor(rock, 'grav', glow=False), 5), '6DNLbZ Steinbrocken, umgefärbt (geworfener Fels)')
 put('rock_spike', recolor(cry[1], 'grav', glow=False), '6DNLbZ Kristall, umgefärbt (Felsdorn)')
+# ---------- subclass summons (necromancer, frost mage, beast tamer) ----------
+def fr(name, n):
+    return [frame('%s_f%d' % (name, i)) for i in range(n)]
+
+
+anim('ally_skeleton', fr('skelet_run_anim', 4), '0x72 skelet_run_anim')
+anim('ally_big_zombie', fr('big_zombie_run_anim', 4), '0x72 big_zombie_run_anim', None, 2)
+anim('ally_big_demon', fr('big_demon_run_anim', 4), '0x72 big_demon_run_anim', None, 2)
+anim('ally_frost_giant', fr('ogre_run_anim', 4), '0x72 ogre_run_anim, umgefärbt (Frostriese)', 'ice', 4)
+put('ally_ice_elemental', up(recolor(trim(loose('6DNLbZ.png', (289, 198, 320, 217), BG)), 'ice', glow=False)), '6DNLbZ Wasser-Elementar, umgefärbt (Eiselementar)')
+EF = 'Enchanted Forest - Individual Frames/'
+for beast in ('Wolf', 'Bear', 'Ent'):
+    anim('ally_' + beast.lower(), [trim(loose(EF + beast + '/' + beast + '_Walk_%d.png' % i, (0, 0, 64, 64))) for i in range(1, 5)], 'Superdark ' + beast, None, 2)
 json.dump(out, open(os.path.join(OUT, 'manifest.json'), 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 print(len(out), 'sprites ->', OUT)

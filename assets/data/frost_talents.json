@@ -1,0 +1,1451 @@
+{
+ "_note": "Talents of the Frostgruft (src/hell/meta_store.gd, main menu TALENTE). currency: name and how many crystals a floor gives at the stairs: floor_base + floor * per_floor (rounded down), plus guardian / mini / final for its guardian and side_goal per finished side goal; banked at once, kept after death. need: ranks spent in the tree before tier 1-5 opens; cost: crystals per rank in tier 1-5. Per class one active subclass (standard is free, the others cost price once); switching gives the old tree's crystals back. Nodes: max ranks; stat (damage / rate / speed shares, hearts in half hearts) or card (adds levels of a level-up card, theme.cards) , mod (\"skill_id.param\" or \"attack.param\": add per rank and / or mul = share per rank) or master (the key 5 skill, one of the two in tier 5; with do it is a building block of src/hell/sub_kit.gd). The further subclasses carry their kit: sprite (0x72 hero), tint, weapon, attack (do shot / melee) and skills on keys 1-4 (do: shot, wall, zone, nova, summon, buff, corpse, harvest, taunt, leap, stealth, step, trap, rally) with their values (seconds, world pixels; the attack damage is the weapon damage itself, skill damage a multiple of it).",
+ "schema_version": 1,
+ "currency": {
+  "name": "Seelenkristalle",
+  "short": "SK",
+  "floor_base": 1,
+  "per_floor": 0.5,
+  "guardian": 1,
+  "mini": 3,
+  "final": 6,
+  "side_goal": 1
+ },
+ "need": [
+  0,
+  3,
+  6,
+  9,
+  13
+ ],
+ "cost": [
+  2,
+  3,
+  4,
+  6,
+  15
+ ],
+ "master_cooldown": 45,
+ "classes": {
+  "mage": {
+   "standard": "fire",
+   "order": [
+    "fire",
+    "frost",
+    "necro"
+   ],
+   "subs": {
+    "fire": {
+     "name": "Feuermagier",
+     "ready": true,
+     "price": 0,
+     "weapon": "Smaragdstab",
+     "role": "Flächenschaden und Brand.",
+     "tiers": [
+      [
+       {
+        "id": "f_core",
+        "name": "GLUTKERN",
+        "desc": "+5 % Schaden je Punkt.",
+        "max": 4,
+        "stat": "damage",
+        "value": 0.05
+       },
+       {
+        "id": "f_spark",
+        "name": "FUNKENFLUG",
+        "desc": "4 % schnellere Zauber je Punkt.",
+        "max": 4,
+        "stat": "rate",
+        "value": 0.04
+       }
+      ],
+      [
+       {
+        "id": "f_twin",
+        "name": "ZWILLINGSFEUER",
+        "desc": "Feuerball teilt sich (je Punkt ein Ball mehr).",
+        "max": 2,
+        "card": "twin_fire"
+       },
+       {
+        "id": "f_wild",
+        "name": "GROSSBRAND",
+        "desc": "Feuerball +25 % Explosion je Punkt.",
+        "max": 2,
+        "card": "wildfire"
+       }
+      ],
+      [
+       {
+        "id": "f_chain",
+        "name": "KETTENFEUER",
+        "desc": "Kettenblitz +2 Sprünge je Punkt.",
+        "max": 2,
+        "card": "more_jumps"
+       },
+       {
+        "id": "f_rift",
+        "name": "ARKANRISS",
+        "desc": "Blinzeln explodiert am Startpunkt.",
+        "max": 1,
+        "card": "arcane_rift"
+       }
+      ],
+      [
+       {
+        "id": "f_breath",
+        "name": "LANGER ATEM",
+        "desc": "Photoneneis +1 s je Punkt.",
+        "max": 2,
+        "card": "long_breath"
+       },
+       {
+        "id": "f_heart",
+        "name": "GLUTHERZ",
+        "desc": "+1 Herz je Punkt.",
+        "max": 2,
+        "stat": "hearts",
+        "value": 2
+       }
+      ],
+      [
+       {
+        "id": "f_meteor",
+        "name": "METEORSCHAUER",
+        "desc": "Taste 5: 6 Meteore fallen 3 s lang auf das Zielgebiet.",
+        "max": 1,
+        "master": "meteor_rain"
+       },
+       {
+        "id": "f_phoenix",
+        "name": "PHÖNIX",
+        "desc": "Taste 5: Ein Flammenring kreist 8 s um dich. Einmal je Etage stehst du nach dem Tod mit halben Herzen wieder auf.",
+        "max": 1,
+        "master": "phoenix"
+       }
+      ]
+     ]
+    },
+    "frost": {
+     "name": "Frostmagier",
+     "sprite": "wizzard_f",
+     "tint": [
+      0.7,
+      0.9,
+      1.4
+     ],
+     "role": "Kontrolle: verlangsamen, einfrieren, Wege versperren.",
+     "attack": {
+      "do": "shot",
+      "name": "EISSPLITTER",
+      "kind": "ice",
+      "damage": 1.4,
+      "cooldown": 0.32,
+      "speed": 820,
+      "life": 0.9,
+      "slow": 0.3,
+      "slow_time": 1.2
+     },
+     "skills": [
+      {
+       "id": "fr_wall",
+       "key": "1",
+       "unlock": 1,
+       "name": "EISWAND",
+       "short": "WAND",
+       "cooldown": 9,
+       "do": "wall",
+       "length": 320,
+       "time": 6.0
+      },
+      {
+       "id": "fr_blizzard",
+       "key": "2",
+       "unlock": 3,
+       "name": "BLIZZARD",
+       "short": "BLIZZARD",
+       "cooldown": 11,
+       "do": "zone",
+       "radius": 220,
+       "time": 5.0,
+       "every": 0.3,
+       "damage": 0.45,
+       "slow": 0.5,
+       "freeze_after": 0
+      },
+      {
+       "id": "fr_nova",
+       "key": "3",
+       "unlock": 6,
+       "name": "FROSTNOVA",
+       "short": "NOVA",
+       "cooldown": 8,
+       "do": "nova",
+       "radius": 230,
+       "damage": 1.6,
+       "freeze": 1.2,
+       "shards": 0
+      },
+      {
+       "id": "fr_elemental",
+       "key": "4",
+       "unlock": 10,
+       "name": "EISELEMENTAR",
+       "short": "ELEMENTAR",
+       "cooldown": 22,
+       "do": "summon",
+       "sprite": "ally_ice_elemental",
+       "frames": 1,
+       "count": 1,
+       "cap": 2,
+       "time": 15,
+       "damage": 1.2,
+       "every": 0.8,
+       "reach": 420,
+       "speed": 150,
+       "scale": 1.3,
+       "ranged": true
+      }
+     ],
+     "tiers": [
+      [
+       {
+        "id": "fr_cold",
+        "name": "KÄLTE",
+        "desc": "Eissplitter verlangsamen 6 % stärker je Punkt.",
+        "max": 4,
+        "mod": "attack.slow",
+        "add": 0.06
+       },
+       {
+        "id": "fr_focus",
+        "name": "EISFOKUS",
+        "desc": "+5 % Schaden je Punkt.",
+        "max": 4,
+        "stat": "damage",
+        "value": 0.05
+       }
+      ],
+      [
+       {
+        "id": "fr_thick",
+        "name": "DICKE WAND",
+        "desc": "Eiswand hält 40 % länger je Punkt.",
+        "max": 2,
+        "mod": "fr_wall.time",
+        "mul": 0.4
+       },
+       {
+        "id": "fr_storm",
+        "name": "SCHNEEGESTÖBER",
+        "desc": "Blizzard +20 % Fläche je Punkt.",
+        "max": 2,
+        "mod": "fr_blizzard.radius",
+        "mul": 0.2
+       }
+      ],
+      [
+       {
+        "id": "fr_deep",
+        "name": "TIEFKÜHLUNG",
+        "desc": "Wer 2,5 s im Blizzard steht, friert 1 s ein.",
+        "max": 1,
+        "mod": "fr_blizzard.freeze_after",
+        "add": 2.5
+       },
+       {
+        "id": "fr_bond",
+        "name": "ELEMENTARBUND",
+        "desc": "Eiselementar hält 5 s länger je Punkt.",
+        "max": 2,
+        "mod": "fr_elemental.time",
+        "add": 5
+       }
+      ],
+      [
+       {
+        "id": "fr_shards",
+        "name": "SPLITTERNOVA",
+        "desc": "Frostnova schleudert 8 Eissplitter.",
+        "max": 1,
+        "mod": "fr_nova.shards",
+        "add": 8
+       },
+       {
+        "id": "fr_twins",
+        "name": "ZWEI ELEMENTARE",
+        "desc": "Du rufst zwei Eiselementare.",
+        "max": 1,
+        "mod": "fr_elemental.count",
+        "add": 1
+       }
+      ],
+      [
+       {
+        "id": "fr_giant",
+        "name": "FROSTRIESE",
+        "desc": "Taste 5: Ein Frostriese kämpft 15 s für dich und stampft Eisringe.",
+        "max": 1,
+        "master": "fr_giant",
+        "do": "summon",
+        "sprite": "ally_frost_giant",
+        "frames": 4,
+        "count": 1,
+        "time": 15,
+        "damage": 3.0,
+        "every": 1.1,
+        "reach": 140,
+        "speed": 170,
+        "scale": 1.0,
+        "radius": 150,
+        "freeze": 0.6
+       },
+       {
+        "id": "fr_winter",
+        "name": "EWIGER WINTER",
+        "desc": "Taste 5: 6 s lang friert jeder Gegner im Raum nach 2 s Kälte ein.",
+        "max": 1,
+        "master": "fr_winter",
+        "do": "zone",
+        "radius": 1400,
+        "time": 6.0,
+        "every": 0.4,
+        "damage": 0.3,
+        "slow": 0.6,
+        "freeze_after": 2.0,
+        "on_hero": true
+       }
+      ]
+     ],
+     "ready": true,
+     "price": 40
+    },
+    "necro": {
+     "name": "Nekromant",
+     "sprite": "wizzard_m",
+     "tint": [
+      0.75,
+      0.6,
+      1.1
+     ],
+     "role": "Beschwörer: Untote kämpfen für dich, du hältst Abstand.",
+     "attack": {
+      "do": "shot",
+      "name": "SEELENBLITZ",
+      "kind": "soul",
+      "damage": 1.5,
+      "cooldown": 0.34,
+      "speed": 700,
+      "life": 1.0,
+      "heal_every": 10
+     },
+     "skills": [
+      {
+       "id": "ne_raise",
+       "key": "1",
+       "unlock": 1,
+       "name": "SKELETTE ERWECKEN",
+       "short": "SKELETTE",
+       "cooldown": 10,
+       "do": "summon",
+       "sprite": "ally_skeleton",
+       "frames": 4,
+       "count": 2,
+       "cap": 4,
+       "time": 20,
+       "damage": 0.9,
+       "every": 0.7,
+       "reach": 80,
+       "speed": 210,
+       "scale": 1.3
+      },
+      {
+       "id": "ne_shield",
+       "key": "2",
+       "unlock": 3,
+       "name": "KNOCHENSCHILD",
+       "short": "SCHILD",
+       "cooldown": 14,
+       "do": "buff",
+       "buff": "absorb",
+       "hits": 2,
+       "time": 10.0
+      },
+      {
+       "id": "ne_corpse",
+       "key": "3",
+       "unlock": 6,
+       "name": "LEICHENEXPLOSION",
+       "short": "LEICHE",
+       "cooldown": 7,
+       "do": "corpse",
+       "radius": 160,
+       "damage": 3.0,
+       "chain": 0
+      },
+      {
+       "id": "ne_harvest",
+       "key": "4",
+       "unlock": 10,
+       "name": "SEELENERNTE",
+       "short": "ERNTE",
+       "cooldown": 18,
+       "do": "harvest",
+       "radius": 320,
+       "damage": 2.0,
+       "heal_per": 4
+      }
+     ],
+     "tiers": [
+      [
+       {
+        "id": "ne_marrow",
+        "name": "KNOCHENMARK",
+        "desc": "Skelette +15 % Schaden je Punkt.",
+        "max": 4,
+        "mod": "ne_raise.damage",
+        "mul": 0.15
+       },
+       {
+        "id": "ne_thirst",
+        "name": "SEELENDURST",
+        "desc": "+5 % Schaden je Punkt.",
+        "max": 4,
+        "stat": "damage",
+        "value": 0.05
+       }
+      ],
+      [
+       {
+        "id": "ne_horde",
+        "name": "GRÖSSERE HORDE",
+        "desc": "+1 Skelett je Ruf und +1 Höchstzahl je Punkt.",
+        "max": 2,
+        "mod": "ne_raise.count",
+        "add": 1
+       },
+       {
+        "id": "ne_hard",
+        "name": "HARTE KNOCHEN",
+        "desc": "Knochenschild fängt +1 Treffer je Punkt.",
+        "max": 2,
+        "mod": "ne_shield.hits",
+        "add": 1
+       }
+      ],
+      [
+       {
+        "id": "ne_chain",
+        "name": "KETTENEXPLOSION",
+        "desc": "Leichenexplosion springt auf zwei weitere Leichen.",
+        "max": 1,
+        "mod": "ne_corpse.chain",
+        "add": 2
+       },
+       {
+        "id": "ne_long",
+        "name": "TREUE KNOCHEN",
+        "desc": "Skelette bleiben 6 s länger je Punkt.",
+        "max": 2,
+        "mod": "ne_raise.time",
+        "add": 6
+       }
+      ],
+      [
+       {
+        "id": "ne_burst",
+        "name": "UNTOTER WILLE",
+        "desc": "Leichenexplosion +40 % Schaden.",
+        "max": 1,
+        "mod": "ne_corpse.damage",
+        "mul": 0.4
+       },
+       {
+        "id": "ne_reap",
+        "name": "SEELENBAND",
+        "desc": "Seelenernte heilt schon ab 3 Seelen.",
+        "max": 1,
+        "mod": "ne_harvest.heal_per",
+        "add": -1
+       }
+      ],
+      [
+       {
+        "id": "ne_colossus",
+        "name": "KNOCHENKOLOSS",
+        "desc": "Taste 5: Ein riesiger Zombie kämpft 20 s, zieht Gegner auf sich und schlägt Flächen.",
+        "max": 1,
+        "master": "ne_colossus",
+        "do": "summon",
+        "sprite": "ally_big_zombie",
+        "frames": 4,
+        "count": 1,
+        "time": 20,
+        "damage": 3.0,
+        "every": 1.0,
+        "reach": 120,
+        "speed": 160,
+        "scale": 1.8,
+        "radius": 140,
+        "taunt": true
+       },
+       {
+        "id": "ne_demon",
+        "name": "DÄMONENFÜRST",
+        "desc": "Taste 5: Ein großer Dämon speit 12 s lang Feuer.",
+        "max": 1,
+        "master": "ne_demon",
+        "do": "summon",
+        "sprite": "ally_big_demon",
+        "frames": 4,
+        "count": 1,
+        "time": 12,
+        "damage": 2.2,
+        "every": 0.5,
+        "reach": 380,
+        "speed": 170,
+        "scale": 1.8,
+        "ranged": true
+       }
+      ]
+     ],
+     "ready": true,
+     "price": 40
+    }
+   }
+  },
+  "swordsman": {
+   "standard": "twohand",
+   "order": [
+    "twohand",
+    "tank",
+    "axe"
+   ],
+   "subs": {
+    "twohand": {
+     "name": "Schwertkämpfer",
+     "ready": true,
+     "price": 0,
+     "weapon": "Schwert",
+     "role": "Weite Hiebe mitten im Getümmel.",
+     "tiers": [
+      [
+       {
+        "id": "t_heavy",
+        "name": "SCHWERE KLINGE",
+        "desc": "+5 % Schaden je Punkt.",
+        "max": 4,
+        "stat": "damage",
+        "value": 0.05
+       },
+       {
+        "id": "t_swift",
+        "name": "FLINKE KLINGE",
+        "desc": "4 % schnellere Hiebe je Punkt.",
+        "max": 4,
+        "stat": "rate",
+        "value": 0.04
+       }
+      ],
+      [
+       {
+        "id": "t_double",
+        "name": "DOPPELWIRBEL",
+        "desc": "Wirbelklinge dreht sich zweimal.",
+        "max": 1,
+        "card": "double_whirl"
+       },
+       {
+        "id": "t_wide",
+        "name": "WEITER SCHWUNG",
+        "desc": "Wirbelklinge +20 % Radius je Punkt.",
+        "max": 2,
+        "card": "wide_swing"
+       }
+      ],
+      [
+       {
+        "id": "t_fan",
+        "name": "WELLENFÄCHER",
+        "desc": "Klingenwelle als Fächer aus 3 Wellen.",
+        "max": 1,
+        "card": "wave_fan"
+       },
+       {
+        "id": "t_shock",
+        "name": "SCHOCKWELLE",
+        "desc": "Ansturm endet mit einem Stoß.",
+        "max": 1,
+        "card": "shockwave"
+       }
+      ],
+      [
+       {
+        "id": "t_sharp",
+        "name": "SCHARFE KLINGEN",
+        "desc": "Rage +10 % Krit je Punkt.",
+        "max": 2,
+        "card": "sharp_blades"
+       },
+       {
+        "id": "t_iron",
+        "name": "EISERNE HAUT",
+        "desc": "+1 Herz je Punkt.",
+        "max": 2,
+        "stat": "hearts",
+        "value": 2
+       }
+      ],
+      [
+       {
+        "id": "t_storm",
+        "name": "KLINGENSTURM",
+        "desc": "Taste 5: 4 s lang drehst du dich als Klingensturm, jede Drehung trifft alles um dich.",
+        "max": 1,
+        "master": "blade_storm"
+       },
+       {
+        "id": "t_exec",
+        "name": "HINRICHTUNG",
+        "desc": "Taste 5: Ein Hieb fällt Gegner unter 30 % sofort, Bosse nehmen 3x Schaden.",
+        "max": 1,
+        "master": "execute"
+       }
+      ]
+     ]
+    },
+    "tank": {
+     "name": "Tankkrieger",
+     "sprite": "knight_f",
+     "tint": null,
+     "role": "Schild und Schwert: Treffer abfangen, Gegner binden.",
+     "attack": {
+      "do": "melee",
+      "name": "SCHILDSTOSS",
+      "damage": 1.8,
+      "cooldown": 0.42,
+      "reach": 140,
+      "arc": 1.7,
+      "push": 900,
+      "stun": 0.3
+     },
+     "skills": [
+      {
+       "id": "ta_taunt",
+       "key": "1",
+       "unlock": 1,
+       "name": "SPOTT",
+       "short": "SPOTT",
+       "cooldown": 10,
+       "do": "taunt",
+       "radius": 320,
+       "pull": 120,
+       "vuln": 0.25,
+       "time": 5.0
+      },
+      {
+       "id": "ta_wall",
+       "key": "2",
+       "unlock": 3,
+       "name": "SCHILDWALL",
+       "short": "WALL",
+       "cooldown": 9,
+       "do": "buff",
+       "buff": "block_front",
+       "time": 4.0,
+       "reflect": 0
+      },
+      {
+       "id": "ta_leap",
+       "key": "3",
+       "unlock": 6,
+       "name": "BOLLWERK-SPRUNG",
+       "short": "SPRUNG",
+       "cooldown": 8,
+       "do": "leap",
+       "distance": 380,
+       "radius": 180,
+       "damage": 1.6,
+       "stun": 0.6
+      },
+      {
+       "id": "ta_iron",
+       "key": "4",
+       "unlock": 10,
+       "name": "UNERSCHÜTTERLICH",
+       "short": "EISERN",
+       "cooldown": 18,
+       "do": "buff",
+       "buff": "reduce",
+       "value": 0.5,
+       "time": 6.0
+      }
+     ],
+     "tiers": [
+      [
+       {
+        "id": "ta_skin",
+        "name": "EISENHAUT",
+        "desc": "+1 halbes Herz je Punkt.",
+        "max": 4,
+        "stat": "hearts",
+        "value": 1
+       },
+       {
+        "id": "ta_bash",
+        "name": "SCHWERER SCHILD",
+        "desc": "Schildstoß +15 % Schaden je Punkt.",
+        "max": 4,
+        "mod": "attack.damage",
+        "mul": 0.15
+       }
+      ],
+      [
+       {
+        "id": "ta_wide",
+        "name": "LAUTER RUF",
+        "desc": "Spott +20 % Reichweite je Punkt.",
+        "max": 2,
+        "mod": "ta_taunt.radius",
+        "mul": 0.2
+       },
+       {
+        "id": "ta_long",
+        "name": "STANDHAFT",
+        "desc": "Schildwall +1 s je Punkt.",
+        "max": 2,
+        "mod": "ta_wall.time",
+        "add": 1
+       }
+      ],
+      [
+       {
+        "id": "ta_reflect",
+        "name": "RÜCKSTOSS",
+        "desc": "Der Schildwall wirft Geschosse zurück.",
+        "max": 1,
+        "mod": "ta_wall.reflect",
+        "add": 1
+       },
+       {
+        "id": "ta_quake",
+        "name": "ERDBEBEN",
+        "desc": "Bollwerk-Sprung betäubt 0,4 s länger.",
+        "max": 1,
+        "mod": "ta_leap.stun",
+        "add": 0.4
+       }
+      ],
+      [
+       {
+        "id": "ta_bastion",
+        "name": "LETZTE BASTION",
+        "desc": "Unerschütterlich hält 2 s länger je Punkt.",
+        "max": 2,
+        "mod": "ta_iron.time",
+        "add": 2
+       },
+       {
+        "id": "ta_bulk",
+        "name": "SCHWERES EISEN",
+        "desc": "+5 % Schaden je Punkt.",
+        "max": 2,
+        "stat": "damage",
+        "value": 0.05
+       }
+      ],
+      [
+       {
+        "id": "ta_fortress",
+        "name": "FESTUNG",
+        "desc": "Taste 5: 5 s unverwundbar; Gegner prallen von dir ab.",
+        "max": 1,
+        "master": "ta_fortress",
+        "do": "buff",
+        "buff": "fortress",
+        "time": 5.0
+       },
+       {
+        "id": "ta_vengeance",
+        "name": "VERGELTUNG",
+        "desc": "Taste 5: 4 s lang werden Treffer gespeichert und dann verdreifacht als Druckwelle zurückgegeben.",
+        "max": 1,
+        "master": "ta_vengeance",
+        "do": "buff",
+        "buff": "vengeance",
+        "time": 4.0,
+        "radius": 260,
+        "damage": 3.0
+       }
+      ]
+     ],
+     "ready": true,
+     "price": 40
+    },
+    "axe": {
+     "name": "Axtkrieger",
+     "sprite": "dwarf_m",
+     "tint": null,
+     "weapon": "weapon_axe",
+     "role": "Berserker: Blutung, Raserei und am Ende die Verwandlung.",
+     "attack": {
+      "do": "melee",
+      "name": "AXTHIEB",
+      "damage": 3.0,
+      "cooldown": 0.5,
+      "reach": 165,
+      "arc": 1.9,
+      "push": 500,
+      "bleed": 0.6,
+      "bleed_time": 2.0
+     },
+     "skills": [
+      {
+       "id": "ax_throw",
+       "key": "1",
+       "unlock": 1,
+       "name": "WURFAXT",
+       "short": "WURFAXT",
+       "cooldown": 5,
+       "do": "shot",
+       "kind": "axe",
+       "damage": 2.2,
+       "speed": 900,
+       "life": 0.8,
+       "pierce": true,
+       "back": 0,
+       "count": 1,
+       "spread": 0.25
+      },
+      {
+       "id": "ax_rush",
+       "key": "2",
+       "unlock": 3,
+       "name": "BLUTRAUSCH",
+       "short": "RAUSCH",
+       "cooldown": 14,
+       "do": "buff",
+       "buff": "bloodrush",
+       "time": 6.0,
+       "rate": 0.25,
+       "heal_chance": 0.35
+      },
+      {
+       "id": "ax_stomp",
+       "key": "3",
+       "unlock": 6,
+       "name": "ERDSTAMPFER",
+       "short": "STAMPF",
+       "cooldown": 8,
+       "do": "nova",
+       "radius": 200,
+       "damage": 2.2,
+       "stun": 0.5
+      },
+      {
+       "id": "ax_frenzy",
+       "key": "4",
+       "unlock": 10,
+       "name": "RASEREI",
+       "short": "RASEREI",
+       "cooldown": 20,
+       "do": "buff",
+       "buff": "frenzy",
+       "time": 6.0,
+       "rate": 0.4,
+       "damage": 0.3
+      }
+     ],
+     "tiers": [
+      [
+       {
+        "id": "ax_deep",
+        "name": "TIEFE WUNDEN",
+        "desc": "Blutung +20 % je Punkt.",
+        "max": 4,
+        "mod": "attack.bleed",
+        "mul": 0.2
+       },
+       {
+        "id": "ax_hide",
+        "name": "DICKE HAUT",
+        "desc": "+1 halbes Herz je Punkt.",
+        "max": 4,
+        "stat": "hearts",
+        "value": 1
+       }
+      ],
+      [
+       {
+        "id": "ax_boomerang",
+        "name": "BUMERANG-AXT",
+        "desc": "Die Wurfaxt kehrt zurück und trifft erneut.",
+        "max": 1,
+        "mod": "ax_throw.back",
+        "add": 1
+       },
+       {
+        "id": "ax_harvest",
+        "name": "BLUTIGE ERNTE",
+        "desc": "Blutrausch heilt öfter.",
+        "max": 2,
+        "mod": "ax_rush.heal_chance",
+        "add": 0.15
+       }
+      ],
+      [
+       {
+        "id": "ax_quake",
+        "name": "BEBENDE ERDE",
+        "desc": "Erdstampfer +20 % Fläche je Punkt.",
+        "max": 2,
+        "mod": "ax_stomp.radius",
+        "mul": 0.2
+       },
+       {
+        "id": "ax_wrath",
+        "name": "ZORN",
+        "desc": "+5 % Schaden je Punkt.",
+        "max": 2,
+        "stat": "damage",
+        "value": 0.05
+       }
+      ],
+      [
+       {
+        "id": "ax_endless",
+        "name": "ENDLOSER RAUSCH",
+        "desc": "Raserei hält 2 s länger.",
+        "max": 1,
+        "mod": "ax_frenzy.time",
+        "add": 2
+       },
+       {
+        "id": "ax_twin",
+        "name": "ZWEI ÄXTE",
+        "desc": "Wurfaxt wirft zwei Äxte.",
+        "max": 1,
+        "mod": "ax_throw.count",
+        "add": 1
+       }
+      ],
+      [
+       {
+        "id": "ax_beast",
+        "name": "BESTIENFORM",
+        "desc": "Taste 5: 10 s in Ogergestalt: doppelte Größe, +50 % Schaden, weitere Hiebe.",
+        "max": 1,
+        "master": "ax_beast",
+        "do": "buff",
+        "buff": "transform",
+        "time": 10.0,
+        "sprite": "ogre",
+        "damage": 0.5,
+        "reach": 0.4
+       },
+       {
+        "id": "ax_bloodgod",
+        "name": "BLUTGOTT",
+        "desc": "Taste 5: 6 s lang heilt jeder Treffer manchmal, und Blutung springt auf Nachbarn über.",
+        "max": 1,
+        "master": "ax_bloodgod",
+        "do": "buff",
+        "buff": "bloodgod",
+        "time": 6.0,
+        "heal_chance": 0.15,
+        "spread": 160
+       }
+      ]
+     ],
+     "ready": true,
+     "price": 40
+    }
+   }
+  },
+  "archer": {
+   "standard": "sniper",
+   "order": [
+    "sniper",
+    "shadow",
+    "beast"
+   ],
+   "subs": {
+    "sniper": {
+     "name": "Langbogenschütze",
+     "ready": true,
+     "price": 0,
+     "weapon": "Langbogen",
+     "role": "Starke Schüsse aus der Distanz.",
+     "tiers": [
+      [
+       {
+        "id": "s_steady",
+        "name": "RUHIGE HAND",
+        "desc": "+5 % Schaden je Punkt.",
+        "max": 4,
+        "stat": "damage",
+        "value": 0.05
+       },
+       {
+        "id": "s_fleet",
+        "name": "LEICHTFUSS",
+        "desc": "+3 % Lauftempo je Punkt.",
+        "max": 4,
+        "stat": "speed",
+        "value": 0.03
+       }
+      ],
+      [
+       {
+        "id": "s_wide",
+        "name": "BREITE SALVE",
+        "desc": "Salve +2 Pfeile je Punkt.",
+        "max": 2,
+        "card": "wide_volley"
+       },
+       {
+        "id": "s_quick",
+        "name": "SCHNELLSPANNER",
+        "desc": "Ballistapfeil lädt 40 % schneller.",
+        "max": 1,
+        "card": "quick_draw"
+       }
+      ],
+      [
+       {
+        "id": "s_poison",
+        "name": "GIFTSPITZEN",
+        "desc": "Die Salve vergiftet.",
+        "max": 1,
+        "card": "poison_tips"
+       },
+       {
+        "id": "s_heavy",
+        "name": "WUCHTSPITZE",
+        "desc": "Ballistapfeil +25 % Schaden je Punkt.",
+        "max": 2,
+        "card": "heavy_tip"
+       }
+      ],
+      [
+       {
+        "id": "s_thorns",
+        "name": "EISDORNEN",
+        "desc": "Krähenfüße verlangsamen stärker.",
+        "max": 1,
+        "card": "ice_thorns"
+       },
+       {
+        "id": "s_breaker",
+        "name": "MAUERBRECHER",
+        "desc": "Pfeilfaust +40 % Explosion je Punkt.",
+        "max": 2,
+        "card": "wall_breaker"
+       }
+      ],
+      [
+       {
+        "id": "s_death",
+        "name": "TODESSCHUSS",
+        "desc": "Taste 5: 1,2 s zielen, dann ein riesiger Kraftschuss durch alles hindurch (12x Schaden).",
+        "max": 1,
+        "master": "death_shot"
+       },
+       {
+        "id": "s_rain",
+        "name": "PFEILREGEN",
+        "desc": "Taste 5: 4 s lang regnen Pfeile auf ein großes Gebiet.",
+        "max": 1,
+        "master": "arrow_rain"
+       }
+      ]
+     ]
+    },
+    "shadow": {
+     "name": "Schattenläufer",
+     "sprite": "elf_m",
+     "tint": [
+      0.7,
+      0.7,
+      0.95
+     ],
+     "weapon": "weapon_knife",
+     "role": "Tarnung und Messer: unsichtbar heranschleichen, von hinten zustechen.",
+     "attack": {
+      "do": "melee",
+      "name": "DOLCHSTICH",
+      "damage": 1.5,
+      "cooldown": 0.18,
+      "reach": 120,
+      "arc": 1.3,
+      "push": 200,
+      "backstab": 2.0
+     },
+     "skills": [
+      {
+       "id": "sh_cloak",
+       "key": "1",
+       "unlock": 1,
+       "name": "TARNUNG",
+       "short": "TARNUNG",
+       "cooldown": 12,
+       "do": "stealth",
+       "time": 3.0,
+       "ambush": 3.0
+      },
+      {
+       "id": "sh_fan",
+       "key": "2",
+       "unlock": 3,
+       "name": "MESSERFÄCHER",
+       "short": "FÄCHER",
+       "cooldown": 6,
+       "do": "shot",
+       "kind": "knife",
+       "damage": 1.1,
+       "speed": 950,
+       "life": 0.6,
+       "count": 5,
+       "spread": 0.8
+      },
+      {
+       "id": "sh_step",
+       "key": "3",
+       "unlock": 6,
+       "name": "SCHATTENSCHRITT",
+       "short": "SCHRITT",
+       "cooldown": 7,
+       "do": "step",
+       "range": 600,
+       "hits": 2,
+       "every": 0.14,
+       "damage": 1.6
+      },
+      {
+       "id": "sh_poison",
+       "key": "4",
+       "unlock": 10,
+       "name": "GIFTKLINGE",
+       "short": "GIFT",
+       "cooldown": 16,
+       "do": "buff",
+       "buff": "poison",
+       "time": 6.0,
+       "dps": 0.9,
+       "poison_time": 3.0
+      }
+     ],
+     "tiers": [
+      [
+       {
+        "id": "sh_sharp",
+        "name": "SCHARFE DOLCHE",
+        "desc": "Dolchstich +15 % Schaden je Punkt.",
+        "max": 4,
+        "mod": "attack.damage",
+        "mul": 0.15
+       },
+       {
+        "id": "sh_soft",
+        "name": "LEISE SOHLEN",
+        "desc": "+3 % Lauftempo je Punkt.",
+        "max": 4,
+        "stat": "speed",
+        "value": 0.03
+       }
+      ],
+      [
+       {
+        "id": "sh_long",
+        "name": "LANGE TARNUNG",
+        "desc": "Tarnung hält 1 s länger je Punkt.",
+        "max": 2,
+        "mod": "sh_cloak.time",
+        "add": 1
+       },
+       {
+        "id": "sh_more",
+        "name": "MEHR MESSER",
+        "desc": "+2 Messer im Fächer je Punkt.",
+        "max": 2,
+        "mod": "sh_fan.count",
+        "add": 2
+       }
+      ],
+      [
+       {
+        "id": "sh_ambush",
+        "name": "HINTERHALT",
+        "desc": "Erster Stich aus der Tarnung +1x Schaden.",
+        "max": 1,
+        "mod": "sh_cloak.ambush",
+        "add": 1
+       },
+       {
+        "id": "sh_venom",
+        "name": "STARKES GIFT",
+        "desc": "Gift +30 % je Punkt.",
+        "max": 2,
+        "mod": "sh_poison.dps",
+        "mul": 0.3
+       }
+      ],
+      [
+       {
+        "id": "sh_echo",
+        "name": "SCHATTENECHO",
+        "desc": "Schattenschritt trifft +1 Gegner.",
+        "max": 1,
+        "mod": "sh_step.hits",
+        "add": 1
+       },
+       {
+        "id": "sh_keen",
+        "name": "TÖDLICHE PRÄZISION",
+        "desc": "+5 % Schaden je Punkt.",
+        "max": 2,
+        "stat": "damage",
+        "value": 0.05
+       }
+      ],
+      [
+       {
+        "id": "sh_dance",
+        "name": "TODESTANZ",
+        "desc": "Taste 5: Du springst 3 s lang unsichtbar von Gegner zu Gegner und stichst jeden.",
+        "max": 1,
+        "master": "sh_dance",
+        "do": "step",
+        "range": 700,
+        "hits": 8,
+        "every": 0.25,
+        "damage": 2.0,
+        "stealth": 3.0
+       },
+       {
+        "id": "sh_clones",
+        "name": "SCHATTENKLON",
+        "desc": "Taste 5: Zwei Schattenklone kämpfen 10 s mit deinen Dolchen.",
+        "max": 1,
+        "master": "sh_clones",
+        "do": "summon",
+        "sprite": "hero",
+        "frames": 4,
+        "count": 2,
+        "time": 10,
+        "damage": 1.4,
+        "every": 0.35,
+        "reach": 80,
+        "speed": 330,
+        "scale": 1.0,
+        "tint": [
+         0.25,
+         0.2,
+         0.45
+        ]
+       }
+      ]
+     ],
+     "ready": true,
+     "price": 40
+    },
+    "beast": {
+     "name": "Tierbändiger",
+     "sprite": "lizard_f",
+     "tint": null,
+     "role": "Begleiter: Wolf, Falke und Bär kämpfen mit dir.",
+     "attack": {
+      "do": "shot",
+      "name": "PFEIL",
+      "kind": "arrow",
+      "damage": 1.0,
+      "cooldown": 0.26,
+      "speed": 1000,
+      "life": 0.8
+     },
+     "skills": [
+      {
+       "id": "be_wolf",
+       "key": "1",
+       "unlock": 1,
+       "name": "WOLF RUFEN",
+       "short": "WOLF",
+       "cooldown": 10,
+       "do": "summon",
+       "sprite": "ally_wolf",
+       "frames": 4,
+       "count": 1,
+       "cap": 3,
+       "time": 20,
+       "damage": 1.1,
+       "every": 0.5,
+       "reach": 70,
+       "speed": 330,
+       "scale": 1.5
+      },
+      {
+       "id": "be_hawk",
+       "key": "2",
+       "unlock": 3,
+       "name": "FALKENSTOSS",
+       "short": "FALKE",
+       "cooldown": 6,
+       "do": "shot",
+       "kind": "hawk",
+       "damage": 2.4,
+       "speed": 760,
+       "life": 1.4,
+       "pierce": true,
+       "home": true,
+       "count": 1,
+       "spread": 0.3
+      },
+      {
+       "id": "be_trap",
+       "key": "3",
+       "unlock": 6,
+       "name": "FALLE STELLEN",
+       "short": "FALLE",
+       "cooldown": 9,
+       "do": "trap",
+       "radius": 90,
+       "damage": 2.5,
+       "root": 1.5,
+       "time": 20.0
+      },
+      {
+       "id": "be_pack",
+       "key": "4",
+       "unlock": 10,
+       "name": "RUDELRUF",
+       "short": "RUDEL",
+       "cooldown": 16,
+       "do": "rally",
+       "time": 6.0,
+       "damage": 0.5,
+       "speed": 0.4
+      }
+     ],
+     "tiers": [
+      [
+       {
+        "id": "be_bite",
+        "name": "STARKE BISSE",
+        "desc": "Wölfe +15 % Schaden je Punkt.",
+        "max": 4,
+        "mod": "be_wolf.damage",
+        "mul": 0.15
+       },
+       {
+        "id": "be_eye",
+        "name": "SCHARFES AUGE",
+        "desc": "+5 % Schaden je Punkt.",
+        "max": 4,
+        "stat": "damage",
+        "value": 0.05
+       }
+      ],
+      [
+       {
+        "id": "be_two",
+        "name": "ZWEITER WOLF",
+        "desc": "Wolf rufen bringt einen Wolf mehr.",
+        "max": 1,
+        "mod": "be_wolf.count",
+        "add": 1
+       },
+       {
+        "id": "be_claws",
+        "name": "SCHARFE KRALLEN",
+        "desc": "Falkenstoß +20 % Schaden je Punkt.",
+        "max": 2,
+        "mod": "be_hawk.damage",
+        "mul": 0.2
+       }
+      ],
+      [
+       {
+        "id": "be_iron",
+        "name": "FANGEISEN",
+        "desc": "Fallen halten 1 s länger.",
+        "max": 1,
+        "mod": "be_trap.root",
+        "add": 1
+       },
+       {
+        "id": "be_loyal",
+        "name": "TREUE",
+        "desc": "Wölfe bleiben 6 s länger je Punkt.",
+        "max": 2,
+        "mod": "be_wolf.time",
+        "add": 6
+       }
+      ],
+      [
+       {
+        "id": "be_howl",
+        "name": "WILDES HEULEN",
+        "desc": "Rudelruf hält 2 s länger.",
+        "max": 1,
+        "mod": "be_pack.time",
+        "add": 2
+       },
+       {
+        "id": "be_flock",
+        "name": "SCHWARM",
+        "desc": "Falkenstoß schickt zwei Falken.",
+        "max": 1,
+        "mod": "be_hawk.count",
+        "add": 1
+       }
+      ],
+      [
+       {
+        "id": "be_bear",
+        "name": "URBÄR",
+        "desc": "Taste 5: Ein großer Bär kämpft 20 s, schlägt Flächen und zieht Gegner auf sich.",
+        "max": 1,
+        "master": "be_bear",
+        "do": "summon",
+        "sprite": "ally_bear",
+        "frames": 4,
+        "count": 1,
+        "time": 20,
+        "damage": 2.8,
+        "every": 0.9,
+        "reach": 110,
+        "speed": 240,
+        "scale": 2.6,
+        "radius": 130,
+        "taunt": true
+       },
+       {
+        "id": "be_ent",
+        "name": "WALDHÜTER",
+        "desc": "Taste 5: Ein lebender Baum wurzelt 15 s, fesselt Gegner in der Nähe und heilt dich.",
+        "max": 1,
+        "master": "be_ent",
+        "do": "summon",
+        "sprite": "ally_ent",
+        "frames": 4,
+        "count": 1,
+        "time": 15,
+        "damage": 1.0,
+        "every": 1.0,
+        "reach": 260,
+        "speed": 0,
+        "scale": 2.4,
+        "radius": 260,
+        "root": 1.0,
+        "heal": 1
+       }
+      ]
+     ],
+     "ready": true,
+     "price": 40
+    }
+   }
+  }
+ }
+}

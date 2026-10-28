@@ -26,9 +26,12 @@ static func choose_run(g: Node) -> void:
 	g.state.relic_item = str(pool[randi() % pool.size()])
 
 
-## On the relic's floor: puts the shrine (relic and four sealing plates) into the secret room.
+## On the relic's floor: with drop "boss" nothing waits in a room, the guardian
+## drops it (drop); otherwise the shrine (relic and four sealing plates) goes into the secret room.
 static func place(g: Node) -> void:
 	if int(g.state.get("relic_floor", 0)) != int(g.state.floor) or str(g.state.get("relic_item", "")) == "" or str(g.state.relic) != "":
+		return
+	if str(g.theme.get("relics", {}).get("drop", "")) == "boss":
 		return
 	var room: Dictionary = {}
 	for r: Dictionary in g.W.rooms:
@@ -46,6 +49,22 @@ static func place(g: Node) -> void:
 	g.W.groups["relic"] = {"kind": "sequence", "label": str(cfg.label), "reward": "relic", "solved": false, "next": 1}
 	room.info = "Ein Siegel aus vier Platten bewacht ein Relikt."
 	g.state.relic_room = room.index
+
+
+## The guardian of the relic floor falls: its relic chest lies where it fell.
+static func drop(g: Node, at: Vector2) -> void:
+	if int(g.state.get("relic_floor", 0)) != int(g.state.floor) or str(g.state.get("relic_item", "")) == "" or str(g.state.relic) != "":
+		return
+	if str(g.theme.get("relics", {}).get("drop", "")) != "boss":
+		return
+	g.W.ents.append({"type": "relic", "x": at.x, "y": at.y + 40.0, "room": g.state.room, "item": g.state.relic_item, "chest": true})
+	g._burst(at - Vector2(0, 40), 60, true)
+	g._toast("Der Wächter lässt eine Reliktruhe fallen!")
+
+
+## True when a relic can be taken: boss chests at once, shrines once their seal broke.
+static func relic_free(g: Node, e: Dictionary) -> bool:
+	return not e.has("seal") or bool(g.W.groups.get(e.seal, {}).get("solved", false))
 
 
 ## The wielded relic's data, or {} with the class weapon in hand.
@@ -79,13 +98,16 @@ static func attack(g: Node, dir: Vector2) -> bool:
 		return true
 	var atk: Dictionary = rel.attack
 	g.state.cool = float(atk.cooldown) * CardKit.rate_mult(g)
+	var back := float(atk.get("backstab", 1.0))
 	var reach := float(atk.reach) * (1.0 + float(CardKit.value(g, "wide_smash", "reach", 0.0)) * CardKit.level(g, "wide_smash"))
 	var from := Vector2(g.player.x, g.player.y - 40)
 	g.swing = {"a": dir.angle(), "t": 0.22}
 	for m: Dictionary in g.mobs:
 		var to: Vector2 = m.p - Vector2(0, m.cy) - from
 		if m.spawn <= 0.0 and to.length() < reach + m.r and absf(angle_difference(dir.angle(), to.angle())) <= float(atk.arc) / 2.0:
-			g._damage_mob(m, dir * 400.0, float(atk.damage) / g.base_damage())
+			# a stab into a back (an enemy not facing the hero, or a stunned one) hits harder
+			var behind: bool = (m.face as Vector2).dot(to.normalized()) > 0.2 or float(m.get("stun", 0.0)) > 0.0
+			g._damage_mob(m, dir * 400.0, float(atk.damage) / g.base_damage() * (back if behind else 1.0))
 			if not m.has("kit") and m.kind != "boss":
 				m.p -= to.normalized() * float(atk.pull) * 0.3
 	for e: Dictionary in g.breakables:
@@ -145,6 +167,27 @@ static func press(g: Node, key: String) -> bool:
 				var p := Vector2(g.player.x, g.player.y) + aim * float(s.step) * (k + 1)
 				g.pending.append({"do": "spike", "t": float(s.every) * (k + 1), "at": p, "s": s})
 			g._sound_raw("attack_slam")
+		"d_step":
+			# through up to `hits` enemies near the aim, a stab in each back
+			var hits := int(s.hits) + int(CardKit.value(g, "long_shadow", "hits", 0)) * CardKit.level(g, "long_shadow")
+			var near: Array = g.mobs.filter(func(m: Dictionary) -> bool: return m.spawn <= 0.0 and (m.p as Vector2).distance_to(Vector2(g.player.x, g.player.y)) < float(s.range))
+			near.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return (a.p as Vector2).distance_to(at) < (b.p as Vector2).distance_to(at))
+			for k in range(mini(hits, near.size())):
+				g.pending.append({"do": "step", "t": float(s.every) * k, "m": near[k], "s": s})
+			g.state.inv = maxf(float(g.state.inv), float(s.every) * hits + 0.2)
+			g._sound_raw("void_burst")
+		"d_blades":
+			var cyc := 1.0 + float(CardKit.value(g, "blade_cyclone", "radius", 0.0)) * CardKit.level(g, "blade_cyclone")
+			g.state.blades = {"t": float(s.time), "r": float(s.radius) * cyc, "every": float(s.every), "tick": 0.0, "dmg": float(s.damage)}
+			g._sound_raw("swing")
+		"d_smoke":
+			var tm := float(s.time) + float(CardKit.value(g, "thick_smoke", "time", 0.0)) * CardKit.level(g, "thick_smoke")
+			g.state.stealth = tm
+			g.zones.append({"kind": "smoke", "p": Vector2(g.player.x, g.player.y), "r": float(s.radius), "t": tm, "max": tm, "slow": float(s.slow)})
+			g._sound_raw("blast")
+		"d_thousand":
+			g.zones.append({"kind": "blades", "p": at, "r": float(s.radius), "t": float(s.time), "max": float(s.time), "tick": 0.0, "every": float(s.every), "dmg": float(s.damage)})
+			g._sound_raw("attack_salve")
 		"h_meteor":
 			var n := 1 + int(CardKit.value(g, "meteor_shower", "count", 0)) * CardKit.level(g, "meteor_shower")
 			for k in range(n):
@@ -223,8 +266,43 @@ static func update(g: Node, dt: float) -> void:
 			"quake":
 				_area(g, p.at, float(p.r), float(p.mult), 0.0)
 				g.fx.append({"kind": "quake", "p": p.at, "r": float(p.r), "t": 0.35, "max": 0.35})
+			"step":
+				var m: Dictionary = p.m
+				if g.mobs.has(m):
+					var from := Vector2(g.player.x, g.player.y - 40)
+					var behind: Vector2 = m.p - (m.face as Vector2) * 60.0
+					if not g.box_blocked(g._player_box(behind.x, behind.y)):
+						g.player.x = behind.x
+						g.player.y = behind.y
+					g.fx.append({"kind": "blink", "p": from, "q": Vector2(g.player.x, g.player.y - 40), "t": 0.25, "max": 0.25})
+					g._damage_mob(m, (m.p - from).normalized() * 300.0, float(s.damage) * float(g.theme.shadow_dagger.attack.backstab))
+			"death_shot":
+				var aim := HeroKit._aim(g)
+				g.shots.append({"p": Vector2(g.player.x, g.player.y - 40), "v": aim * 1600.0, "t": 1.2, "kind": "arrow", "mult": 12.0, "pierce": true, "hits": [], "big": 4.0})
+				g._burst(Vector2(g.player.x, g.player.y - 40), 30, true)
+				g._sound_raw("attack_arrow")
 	g.pending = g.pending.filter(func(p: Dictionary) -> bool: return float(p.t) > 0.0)
+	var bl: Dictionary = g.state.get("blades", {})
+	if not bl.is_empty():
+		bl.t = float(bl.t) - dt
+		bl.tick = float(bl.tick) - dt
+		if float(bl.tick) <= 0.0:
+			bl.tick = float(bl.every)
+			_area(g, Vector2(g.player.x, g.player.y - 30), float(bl.r), float(bl.dmg), 0.0)
+		if float(bl.t) <= 0.0:
+			g.state.blades = {}
+	g.state.stealth = maxf(0.0, float(g.state.get("stealth", 0.0)) - dt)
 	for z: Dictionary in g.zones:
+		match z.kind:
+			"blades", "rain":
+				z.tick = float(z.tick) - dt
+				if float(z.tick) <= 0.0:
+					z.tick = float(z.get("every", 0.2))
+					_area(g, z.p, float(z.r), float(z.get("dmg", 0.6)), 0.0)
+			"smoke":
+				for m: Dictionary in g.mobs:
+					if (m.p as Vector2).distance_to(z.p) < float(z.r):
+						HeroKit.slow_mob(g, m, float(z.slow), 0.2)
 		if z.kind != "gfield":
 			continue
 		# gravity field: enemies are dragged to the middle, slowed and ground down
@@ -241,6 +319,8 @@ static func update(g: Node, dt: float) -> void:
 ## The stone golem: rises, walks to the nearest enemy, slams it; crumbles when its time is up.
 static func _update_allies(g: Node, dt: float) -> void:
 	for a: Dictionary in g.allies:
+		if a.has("sub"):
+			continue
 		a.t = float(a.t) - dt
 		a.rise = maxf(0.0, float(a.rise) - dt)
 		a.slam = maxf(0.0, float(a.slam) - dt)
@@ -283,8 +363,43 @@ static func split_rock(g: Node, s: Dictionary) -> void:
 
 # ---------- drawing ----------
 
-## Relic effects in the world: lifted rocks, smash arcs, quakes, spikes, the field, the golem.
+## Relic effects in the world: lifted rocks, smash arcs, quakes, spikes, the field, the golem,
+## the dagger's smoke, blade cyclone and blade rain, the arrow rain and charging shots.
 static func draw(g: Node, l: Node2D, t: float) -> void:
+	var dagger: Texture2D = g.tex.get("weapon_shadow_dagger")
+	for z: Dictionary in g.zones:
+		match z.kind:
+			"smoke":
+				var a: float = clampf(float(z.t), 0.0, 1.0)
+				for i in range(9):
+					var q: Vector2 = z.p + Vector2(cos(i * 0.7 + t * 0.5), sin(i * 1.3 + t * 0.4)) * float(z.r) * 0.55
+					l.draw_circle(q, float(z.r) * 0.4, Color(0.35, 0.33, 0.45, 0.28 * a))
+			"blades", "rain":
+				l.draw_circle(z.p, float(z.r), Color(0.6, 0.5, 0.9, 0.12))
+				for i in range(10):
+					var fall := fmod(t * 3.0 + i * 0.37, 1.0)
+					var q: Vector2 = z.p + Vector2(fmod(i * 97.0, 2.0 * float(z.r)) - float(z.r), fmod(i * 53.0, float(z.r)) - float(z.r) * 0.5)
+					if z.kind == "blades" and dagger != null:
+						l.draw_texture_rect(dagger, Rect2(q - Vector2(6, 200.0 * (1.0 - fall)), dagger.get_size() * 2.0), false, Color(0.85, 0.75, 1.0, 1.0 - fall * 0.4))
+					else:
+						l.draw_line(q - Vector2(0, 220.0 * (1.0 - fall)), q - Vector2(0, 220.0 * (1.0 - fall) - 30.0), Color(0.9, 0.95, 1.0, 0.9), 3.0)
+	var bl: Dictionary = g.state.get("blades", {})
+	if not bl.is_empty() and dagger != null:
+		for i in range(4):
+			var a := t * 9.0 + i * TAU / 4.0
+			var q := Vector2(g.player.x, g.player.y - 30) + Vector2(cos(a), sin(a)) * float(bl.r) * 0.8
+			l.draw_set_transform(q, a + PI / 2.0)
+			l.draw_texture_rect(dagger, Rect2(-dagger.get_size(), dagger.get_size() * 2.0), false, Color(0.85, 0.75, 1.0))
+			l.draw_set_transform(Vector2.ZERO)
+	if float(g.state.get("phoenix_t", 0.0)) > 0.0:
+		var c := Vector2(g.player.x, g.player.y - 30)
+		for i in range(6):
+			var a := t * 4.0 + i * TAU / 6.0
+			l.draw_circle(c + Vector2(cos(a), sin(a)) * 150.0, 16.0, Color(1.0, 0.55, 0.2, 0.8))
+	for f: Dictionary in g.fx:
+		if f.kind == "charge":
+			var k: float = 1.0 - float(f.t) / maxf(0.01, float(f.max))
+			l.draw_arc(Vector2(g.player.x, g.player.y - 40), 70.0, -PI / 2.0, -PI / 2.0 + TAU * k, 32, Color(1.0, 0.9, 0.5), 7.0)
 	for f: Dictionary in g.fx:
 		var k: float = float(f.t) / maxf(0.01, float(f.max))
 		match f.kind:
@@ -318,6 +433,8 @@ static func draw(g: Node, l: Node2D, t: float) -> void:
 				var c: Vector2 = z.p - Vector2(0, 600.0 * (1.0 - k))
 				l.draw_texture_rect(rock, Rect2(c - rock.get_size() * 1.5, rock.get_size() * 3.0), false)
 	for a: Dictionary in g.allies:
+		if a.has("sub"):
+			continue
 		var frames := 6
 		var walk: bool = float(a.slam) <= 0.0
 		var name := "%s%d" % ["ally_golem_walk_f" if walk else "ally_golem_f", int(t * 8.0) % frames]

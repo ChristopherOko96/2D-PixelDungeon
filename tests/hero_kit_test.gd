@@ -1,10 +1,10 @@
 extends SceneTree
 ## The hero's growth in the Frostgruft (src/hell/hero_kit.gd): experience from
 ## kills and level-ups with heal, banner and flash; the four class skills per
-## class open at their level and each does its part; the run's relic shrine
-## (here forced onto floor 4) lies sealed behind plates, only its class takes
-## the relic, and the staff's ball pulls, its wall stops enemies and shots,
-## and its bar holds shots for a while.
+## class open at their level and each does its part; the guardian of the
+## run's relic floor (here forced onto floor 4) drops a relic chest only its
+## class can open, and the staff's ball pulls, its wall stops enemies and
+## shots, and its bar holds shots for a while.
 ## Every theme sound names a real sound event and the frost run plays sounds.
 
 const FrostScene = preload("res://src/hell/frost_dungeon.tscn")
@@ -200,46 +200,37 @@ func _relic(game: Node) -> Dictionary:
 	return {}
 
 
-## Puts this run's relic shrine on floor 4 with the given relic and reloads the floor.
-func _shrine(game: Node, item: String) -> void:
+## Makes floor 4 this run's relic floor with the given relic and fells its guardian.
+func _boss_drop(game: Node, item: String) -> void:
 	game.state.relic_floor = 4
 	game.state.relic_item = item
 	game.load_floor(4, true)
 	game.mobs.clear()
+	for r: Dictionary in game.W.rooms:
+		if r.type == "boss":
+			game.state.room = r.index
+			game._clear_room(r, Vector2((r.bx + r.bw / 2.0) * 96.0, (r.by + r.bh / 2.0) * 96.0))
 
 
 func test_gravity_staff_is_sealed_and_mage_only() -> void:
-	# the shrine (forced onto floor 4) holds the staff in the secret room
+	# the guardian of the relic floor drops a relic chest
 	var game := await _new("archer", 4)
-	_shrine(game, "gravity_staff")
+	_boss_drop(game, "gravity_staff")
 	var relic := _relic(game)
-	check(not relic.is_empty() and game.W.rooms[relic.room].type == "secret", "floor 4 hides the gravity staff in its secret room")
-	var plates: Array = game.W.ents.filter(func(e: Dictionary) -> bool: return e.type == "plate" and e.group == "relic")
-	check(plates.size() == 4, "four plates seal it")
+	check(not relic.is_empty() and relic.get("chest", false) and game.W.rooms[relic.room].type == "boss", "the guardian of the relic floor drops a relic chest")
 	game.player.x = relic.x
 	game.player.y = relic.y + 60.0
-	game.act()
-	check(str(game.state.relic) == "", "sealed, the staff cannot be taken")
-	game.W.groups.relic.solved = true
 	game.act()
 	check(str(game.state.relic) == "", "an archer cannot take the mage's staff")
 	await _free(game)
-	# a mage steps the plates in order and takes it
+	# a mage opens the chest and takes the staff
 	game = await _new("mage", 4)
-	_shrine(game, "gravity_staff")
+	_boss_drop(game, "gravity_staff")
 	relic = _relic(game)
-	plates = game.W.ents.filter(func(e: Dictionary) -> bool: return e.type == "plate" and e.group == "relic")
-	plates.sort_custom(func(x: Dictionary, y: Dictionary) -> bool: return int(x.order) < int(y.order))
-	game.state.room = relic.room
-	for pl: Dictionary in plates:
-		game.player.x = pl.x
-		game.player.y = pl.y + 10.0
-		game._update_hazards(0.01)
-	check(game.W.groups.relic.get("solved", false), "the plates in their order break the seal")
 	game.player.x = relic.x
 	game.player.y = relic.y + 60.0
 	game.act()
-	check(str(game.state.relic) == "gravity_staff" and game.relic_on(), "the mage takes the gravity staff and holds it")
+	check(str(game.state.relic) == "gravity_staff" and game.relic_on(), "the mage opens the chest and holds the gravity staff")
 	await _free(game)
 
 

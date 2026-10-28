@@ -7,9 +7,9 @@ extends RefCounted
 ## so stacking cards never turns the hero into a one-shot machine.
 
 
-## How often a card was taken.
+## How often a card was taken, plus the levels the talent tree gives (state.talent.cards).
 static func level(g: Node, id: String) -> int:
-	return int(g.state.get("upgrades", {}).get(id, 0))
+	return int(g.state.get("upgrades", {}).get(id, 0)) + int(g.state.get("talent", {}).get("cards", {}).get(id, 0))
 
 
 ## A value of a card's data (theme.cards), e.g. "damage" of "mg_focus".
@@ -37,6 +37,9 @@ static func pool(g: Node) -> Array:
 	for c: Dictionary in _all(g):
 		var set := str(c.set)
 		if set != "all" and set != g.class_id and set != str(g.state.get("relic", "")):
+			continue
+		# a subclass (sub_kit.gd) has its own skills: the class cards widen the standard ones
+		if set == g.class_id and not g.sub_kit.is_empty():
 			continue
 		if level(g, str(c.id)) >= int(c.max):
 			continue
@@ -97,15 +100,17 @@ static func choose(g: Node, i: int) -> void:
 
 ## Damage factor of the damage cards (+15 % each).
 static func damage_mult(g: Node) -> float:
-	var f := 1.0
+	var f := 1.0 + float(g.state.get("talent", {}).get("damage", 0.0))
 	for id: String in ["sw_heavy", "mg_focus"]:
 		f += float(value(g, id, "damage", 0.0)) * level(g, id)
+	if str(g.state.get("relic", "")) == "shadow_dagger" and g.relic_on():
+		f += float(value(g, "sharp_edge", "damage", 0.0)) * level(g, "sharp_edge")
 	return f
 
 
 ## Attack pause factor of the rate cards (10 % faster each).
 static func rate_mult(g: Node) -> float:
-	var f := 1.0
+	var f := 1.0 - float(g.state.get("talent", {}).get("rate", 0.0))
 	for id: String in ["sw_swift", "ar_rapid", "mg_haste"]:
 		f *= pow(1.0 - float(value(g, id, "rate", 0.0)), level(g, id))
 	return f
@@ -113,4 +118,4 @@ static func rate_mult(g: Node) -> float:
 
 ## Running speed factor (archer's light foot).
 static func speed_mult(g: Node) -> float:
-	return 1.0 + float(value(g, "ar_fleet", "speed", 0.0)) * level(g, "ar_fleet")
+	return 1.0 + float(g.state.get("talent", {}).get("speed", 0.0)) + float(value(g, "ar_fleet", "speed", 0.0)) * level(g, "ar_fleet")

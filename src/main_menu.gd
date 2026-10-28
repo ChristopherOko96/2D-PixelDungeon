@@ -26,6 +26,7 @@ signal settings_changed(settings: Dictionary)
 const Progress = preload("res://src/online/progress.gd")
 const PixelStyle = preload("res://src/pixel_style.gd")
 const CryptUI = preload("res://src/ui/crypt_ui.gd")
+const MetaStore = preload("res://src/hell/meta_store.gd")
 const AudioMix = preload("res://src/audio/audio_mix.gd")
 const SoundWorkshop = preload("res://src/ui/sound_workshop.gd")
 const SCREEN := Vector2(1280, 720)
@@ -58,6 +59,13 @@ var stories: Array = []
 ## The story picked for the next solo start; empty until a story card is chosen.
 var selected_story := ""
 var _story_panel: Panel
+## TALENTE: soul crystals and the talent trees (src/hell/meta_store.gd).
+var _talent_panel: Panel
+var _talent_class := "mage"
+var talent_data: Dictionary = {}
+var talent_store: Dictionary = {}
+## Where the talents are saved (tests use their own file).
+var talent_path := MetaStore.SAVE_PATH
 var _story_cards: Array[Button] = []
 # The visible canvas around the centered composition (see set_canvas_size).
 var _canvas_origin := Vector2.ZERO
@@ -132,9 +140,10 @@ func _ready() -> void:
 	_endless_button.disabled = not endless_available
 	_endless_button.tooltip_text = "" if endless_available else "Der Endlos-Modus folgt in einem späteren Schritt."
 	_buttons.append(_endless_button)
-	_buttons.append(_button("MEHRSPIELER", Vector2(470, 338), Vector2(340, 44), 16, multiplayer_requested.emit))
-	_buttons.append(_button("OPTIONEN", Vector2(470, 390), Vector2(340, 44), 16, _open_options))
-	_buttons.append(_button("BEENDEN", Vector2(470, 442), Vector2(340, 36), 16, quit_requested.emit))
+	_buttons.append(_button("TALENTE", Vector2(470, 338), Vector2(340, 44), 16, _open_talents))
+	_buttons.append(_button("MEHRSPIELER", Vector2(470, 390), Vector2(340, 44), 16, multiplayer_requested.emit))
+	_buttons.append(_button("OPTIONEN", Vector2(470, 442), Vector2(340, 44), 16, _open_options))
+	_buttons.append(_button("BEENDEN", Vector2(470, 494), Vector2(340, 36), 16, quit_requested.emit))
 	_button("LEVEL-AUSWAHL (DEBUG)", Vector2(16, 676), Vector2(264, 32), 16, _open_debug)
 	_buttons[0].add_theme_color_override("font_color", GOLD)
 	_buttons[0].grab_focus()
@@ -596,9 +605,141 @@ func _close_panels() -> void:
 	if _hell_panel != null: _hell_panel.visible = false
 	if _class_panel != null: _class_panel.visible = false
 	if _story_panel != null: _story_panel.visible = false
+	if _talent_panel != null: _talent_panel.visible = false
 	_password_input.text = ""
 	_refresh_account()
 	_buttons[0].grab_focus()
+
+
+# --- Talents -------------------------------------------------------------------
+
+## Opens the talent screen: crystals, one tab per class, its three subclasses.
+func _open_talents() -> void:
+	_close_panels()
+	if talent_data.is_empty():
+		talent_data = MetaStore.data()
+		talent_store = MetaStore.load_store(talent_data, talent_path)
+	if _talent_panel == null:
+		_talent_panel = Panel.new()
+		_talent_panel.add_theme_stylebox_override("panel", CryptUI.box("panel"))
+		# full screen and opaque: the title buttons must not shine through
+		_talent_panel.position = Vector2.ZERO
+		_talent_panel.size = SCREEN
+		add_child(_talent_panel)
+	_talent_panel.visible = true
+	_build_talents()
+
+
+## Rebuilds the talent screen after every change (buttons carry their state).
+func _build_talents() -> void:
+	for child: Node in _talent_panel.get_children():
+		child.queue_free()
+	var shade := ColorRect.new()
+	shade.color = Color(0.06, 0.05, 0.07, 1.0)
+	shade.size = SCREEN
+	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_talent_panel.add_child(shade)
+	var d := talent_data
+	var store := talent_store
+	var head := _panel_label(_talent_panel, "TALENTE", Vector2(28, 18))
+	head.add_theme_font_size_override("font_size", 24)
+	head.add_theme_color_override("font_color", GOLD)
+	var purse := _panel_label(_talent_panel, "%s: %d" % [d.currency.name, int(store.crystals)], Vector2(760, 22))
+	purse.size.x = 440
+	purse.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	purse.add_theme_color_override("font_color", GOLD)
+	var names := {"mage": "MAGIER", "swordsman": "KRIEGER", "archer": "BOGENSCHÜTZE"}
+	var x := 200.0
+	for id: String in ["mage", "swordsman", "archer"]:
+		var tab := _panel_button(_talent_panel, names[id], Vector2(x, 16), Vector2(180, 34), func(): _talent_class = id; _build_talents())
+		tab.disabled = id == _talent_class
+		x += 190.0
+	var cls: Dictionary = d.classes[_talent_class]
+	var c: Dictionary = store.classes[_talent_class]
+	for i in range(cls.order.size()):
+		var sid: String = cls.order[i]
+		var sub: Dictionary = cls.subs[sid]
+		var cx := 24.0 + i * 400.0
+		var active: bool = str(c.sub) == sid
+		var title := _panel_label(_talent_panel, sub.name.to_upper(), Vector2(cx, 64))
+		title.size.x = 240
+		title.add_theme_color_override("font_color", GOLD if active else TEXT)
+		var state_text := "AKTIV" if active else ("BALD" if not sub.get("ready", false) else ("WÄHLEN" if (c.owned as Array).has(sid) else "KAUFEN · %d" % int(sub.price)))
+		var pick := _panel_button(_talent_panel, state_text, Vector2(cx + 250, 60), Vector2(130, 30), func(): _talent_choose(sid))
+		pick.disabled = active or not sub.get("ready", false)
+		if sub.has("skills"):
+			# the kit at a glance: attack and the skills on keys 1-4
+			pick.tooltip_text = "Angriff: %s\nTasten 1-4: %s" % [sub.attack.name, ", ".join((sub.skills as Array).map(func(s: Dictionary) -> String: return str(s.name)))]
+		var role := _panel_label(_talent_panel, _wrap(("Standard. " if sid == cls.standard else "") + str(sub.role), 38), Vector2(cx, 96))
+		role.size = Vector2(370, 40)
+		role.add_theme_font_size_override("font_size", 12)
+		role.add_theme_color_override("font_color", MUTED)
+		if not sub.get("ready", false):
+			var soon := _panel_label(_talent_panel, _wrap("Meisterfähigkeit: %s. Die Fähigkeiten dieser Subklasse kommen im nächsten Schritt." % sub.get("master", ""), 42), Vector2(cx, 150))
+			soon.size = Vector2(370, 80)
+			soon.add_theme_font_size_override("font_size", 12)
+			continue
+		var pts := MetaStore.spent(d, store, _talent_class) if active else 0
+		_panel_label(_talent_panel, "%d Punkte im Baum" % pts, Vector2(cx, 138)).add_theme_font_size_override("font_size", 12)
+		for t in range(sub.tiers.size()):
+			var y := 162.0 + t * 88.0
+			var need := int(d.need[t])
+			var tier_label := _panel_label(_talent_panel, ("MEISTER" if t == 4 else "STUFE %d" % (t + 1)) + ("" if pts >= need else "  · ab %d" % need), Vector2(cx, y))
+			tier_label.add_theme_font_size_override("font_size", 12)
+			tier_label.add_theme_color_override("font_color", GOLD if t == 4 else MUTED)
+			for j in range(sub.tiers[t].size()):
+				var n: Dictionary = sub.tiers[t][j]
+				var r := int(c.ranks.get(str(n.id), 0)) if active else 0
+				var nid := str(n.id)
+				var b := _panel_button(_talent_panel, "%s\n%d/%d · %d SK" % [n.name, r, int(n.max), int(d.cost[t])], Vector2(cx + j * 192, y + 20), Vector2(186, 60), func(): _talent_buy(nid))
+				b.add_theme_font_size_override("font_size", 12)
+				b.tooltip_text = str(n.desc)
+				var why := MetaStore.why_not(d, store, _talent_class, nid) if active else "Subklasse nicht aktiv"
+				b.disabled = why != ""
+				if r > 0:
+					b.add_theme_color_override("font_disabled_color", GOLD)
+					b.add_theme_color_override("font_color", GOLD)
+	_panel_button(_talent_panel, "BAUM ZURÜCKSETZEN", Vector2(24, 612), Vector2(240, 36), _talent_reset)
+	_panel_button(_talent_panel, "ZURÜCK", Vector2(968, 612), Vector2(240, 36), _close_panels)
+	var hint := _panel_label(_talent_panel, _wrap("Seelenkristalle gibt es an der Treppe jeder Etage. Pro Klasse ist eine Subklasse aktiv; ein Wechsel gibt die Kristalle des alten Baums zurück.", 72), Vector2(300, 610))
+	hint.size = Vector2(650, 44)
+	hint.add_theme_font_size_override("font_size", 12)
+	hint.add_theme_color_override("font_color", MUTED)
+
+
+## Breaks text into lines of at most `width` characters (labels here sit outside containers).
+static func _wrap(text: String, width: int) -> String:
+	var lines: Array[String] = []
+	var line := ""
+	for word: String in text.split(" "):
+		if line != "" and line.length() + 1 + word.length() > width:
+			lines.append(line)
+			line = word
+		else:
+			line = word if line == "" else line + " " + word
+	lines.append(line)
+	return "\n".join(lines)
+
+
+func _talent_buy(node_id: String) -> void:
+	if MetaStore.buy(talent_data, talent_store, _talent_class, node_id):
+		MetaStore.save_store(talent_store, talent_path)
+	_build_talents()
+
+
+func _talent_choose(sub: String) -> void:
+	var why := MetaStore.choose_sub(talent_data, talent_store, _talent_class, sub)
+	if why == "":
+		MetaStore.save_store(talent_store, talent_path)
+	else:
+		_toast.text = why
+	_build_talents()
+
+
+func _talent_reset() -> void:
+	MetaStore.refund(talent_data, talent_store, _talent_class)
+	MetaStore.save_store(talent_store, talent_path)
+	_build_talents()
 
 
 func _panel(title: String) -> Panel:

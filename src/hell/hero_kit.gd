@@ -246,6 +246,54 @@ static func _chain(g: Node, s: Dictionary) -> void:
 		cur = nxt
 
 
+# ---------- master skills (talent tier 5, key 5) ----------
+
+## Key 5: the talent tree's master skill (state.talent.master), with its long cooldown.
+static func master_press(g: Node) -> void:
+	var id := str(g.state.get("talent", {}).get("master", ""))
+	if id == "":
+		g._toast("Keine Meisterfähigkeit. Skille sie im Hauptmenü unter TALENTE.")
+		return
+	if float(g.state.skill_cd.get("5", 0.0)) > 0.0:
+		g._sound("no_cooldown")
+		return
+	var at := target(g)
+	var me := Vector2(g.player.x, g.player.y - 40)
+	match id:
+		"meteor_rain":
+			for k in range(6):
+				var p := at + Vector2(randf_range(-160, 160), randf_range(-120, 120))
+				g.pending.append({"do": "meteor", "t": 0.6 + k * 0.45, "at": p, "s": {"radius": 150, "damage": 5.0}, "mult": 1.0})
+				g.zones.append({"kind": "meteor", "p": p, "r": 150.0, "t": 0.6 + k * 0.45, "max": 0.6 + k * 0.45})
+			g._sound_raw("windup_beam")
+		"phoenix":
+			g.state.phoenix_t = 8.0
+			g._sound_raw("attack_roar")
+		"blade_storm":
+			g.state.storm_blades = 4.0
+			g._sound_raw("swing")
+		"execute":
+			var aim := _aim(g)
+			for m: Dictionary in g.mobs:
+				var to: Vector2 = m.p - Vector2(0, m.cy) - me
+				if m.spawn <= 0.0 and to.length() < 210.0 + m.r and absf(angle_difference(aim.angle(), to.angle())) < 1.0:
+					if m.kind != "boss" and not m.has("kit") and m.hp < m.max * 0.3:
+						m.hp = 0.0
+						g._burst(m.p - Vector2(0, m.cy), 30, true)
+					else:
+						g._damage_mob(m, aim * 600.0, 3.0 if (m.kind == "boss" or m.has("kit")) else 2.0)
+			g.fx.append({"kind": "whirl", "p": me, "r": 210.0, "t": 0.3, "max": 0.3})
+			g._sound_raw("attack_slash")
+		"death_shot":
+			g.pending.append({"do": "death_shot", "t": 1.2})
+			g.fx.append({"kind": "charge", "p": me, "t": 1.2, "max": 1.2})
+			g._sound_raw("windup_beam")
+		"arrow_rain":
+			g.zones.append({"kind": "rain", "p": at, "r": 230.0, "t": 4.0, "max": 4.0, "tick": 0.0})
+			g._sound_raw("attack_salve")
+	g.state.skill_cd["5"] = float(g.theme.get("master_cooldown", 45.0))
+
+
 ## Per frame: cooldowns, rage, dashes, charging, the photon beam, effects and statuses.
 static func update(g: Node, dt: float) -> void:
 	var cds: Dictionary = g.state.skill_cd
@@ -261,12 +309,33 @@ static func update(g: Node, dt: float) -> void:
 			g.levelfx = {}
 	_update_dash(g, dt)
 	_update_hold(g, dt)
+	_update_master(g, dt)
 	for w: Dictionary in g.gwalls:
 		w.t = float(w.t) - dt
 	g.gwalls = g.gwalls.filter(func(w: Dictionary) -> bool: return float(w.t) > 0.0)
 	for b: Dictionary in g.gbars:
 		b.t = float(b.t) - dt
 	g.gbars = g.gbars.filter(func(b: Dictionary) -> bool: return float(b.t) > 0.0)
+
+
+## Running master skills: the phoenix's flame ring and the blade storm.
+static func _update_master(g: Node, dt: float) -> void:
+	var me := Vector2(g.player.x, g.player.y - 40)
+	for k: String in ["phoenix_t", "storm_blades"]:
+		if float(g.state.get(k, 0.0)) <= 0.0:
+			continue
+		g.state[k] = float(g.state[k]) - dt
+		g.state[k + "_tick"] = float(g.state.get(k + "_tick", 0.0)) - dt
+		if float(g.state[k + "_tick"]) > 0.0:
+			continue
+		g.state[k + "_tick"] = 0.5 if k == "phoenix_t" else 0.25
+		var radius := 170.0 if k == "phoenix_t" else 200.0
+		for m: Dictionary in g.mobs:
+			if m.spawn <= 0.0 and me.distance_to(m.p - Vector2(0, m.cy)) < radius + m.r:
+				g._damage_mob(m, (m.p - me).normalized() * 200.0, 1.5 if k == "phoenix_t" else 1.0)
+				if k == "phoenix_t":
+					burn_mob(m, 1.0, 2.0)
+		g.fx.append({"kind": "whirl", "p": me, "r": radius, "t": 0.25, "max": 0.25})
 
 
 static func _update_dash(g: Node, dt: float) -> void:
