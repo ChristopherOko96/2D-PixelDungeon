@@ -3,7 +3,7 @@
 Stand 28.10.2026. Neuer Einzelspieler-Modus mit zehn Etagen im Höllenstil aus `rooms.zip`.
 Start: Hauptmenü → **LEVEL-AUSWAHL (DEBUG)** → Welt **HELL-DUNGEON** → je Etage **START** (Eingang) oder
 **BOSS** (direkt im Bossraum, der Kampf beginnt sofort); außerdem `Hell-Dungeon.cmd` oder `scripts/Dev.ps1 HellDungeon`.
-Spielfigur und Gegner sind Platzhalter; Monster werden später gesondert entworfen.
+Die Spielfigur ist ein Platzhalter. Monster und Bosse stammen aus der Vorschau (`tools/hell_dungeon/hell_monsters.js`).
 
 ## Regeln
 
@@ -28,8 +28,17 @@ Spielfigur und Gegner sind Platzhalter; Monster werden später gesondert entworf
 - **Übertrag:** Herzen, Runensteine, Segen und der Klon-Skill wandern durch das Portal mit.
 - **Kürzester Weg:** Der Boss ist nie erst nach allen Räumen erreichbar (11–17 von 22–31 Räumen,
   geprüft in `tests/hell_floor_data_test.gd`). Erkunden bringt Tresore, Herzen und Runensteine.
-- **Tiefe:** mehr Lava, Stacheln und Schlote, zähere und schnellere Gegner, ab Etage 4 Feuerspucker,
-  Bosse mit Feuerringen; Zwischenbosse auf 3, 6 und 9, der Höllenfürst auf 10. Optik: dunkler, roter Schleier.
+- **Tiefe:** mehr Lava, Stacheln und Schlote, zähere und schnellere Gegner. Optik: dunkler, roter Schleier.
+- **Monster:** acht Arten (Glutschädel, Höllenhund, Glutimp, Brandskelett, Magmaschleim, Aschenpriester,
+  Kettenschinder, Peingeist); jede Etage hat ihre eigene Auswahl. Angriffe zeigen vorher eine Warnung am Boden.
+  Von allen bereiten Angriffen kommt der zuerst, der am längsten wartet.
+- **Bosse:** Glutwächter (1), Dreischlund (2), Kesselbrut (4), Seelenhirte (5), Kerkermeister (7),
+  Klagender Hüter (8). Der Raum öffnet sich, wenn der Boss und alle Helfer gefallen sind.
+- **Ignaroth** ist ein Drache in vier Phasen auf Etage 3, 6, 9 und 10. Phase 1 und 2 (Salamander, Jungdrache)
+  brechen aus dem Boden, springen, dashen, spucken Feuer und graben sich unter die Figur. Phase 3 und 4
+  (Glutdrache, Obsidianform) fliegen ein, greifen mit Fächern, Feueratem, Ringen und Bombenflügen an und sind
+  in der Luft unverwundbar. Phase 4 ruft violette Echos der drei früheren Formen. Auf 3, 6 und 9 verwandelt
+  er sich bei 0 LP in die nächste Form und flieht; erst auf Etage 10 stirbt er.
 
 Steuerung: WASD laufen, Pfeiltasten oder linke Maustaste schießen, E/Leertaste Aktion, Q Klon, M Karte,
 L Licht, R Etage neu, 1–0 Etage wählen, Esc Hauptmenü.
@@ -42,9 +51,11 @@ L Licht, R Etage neu, 1–0 Etage wählen, Esc Hauptmenü.
 | Gebackene Etagen | `assets/data/hell_floors.json` (aus `bake_floors.js`) |
 | Spielwerte | `assets/data/hell_balance.json` |
 | Grafiken (134, Weltmaßstab) | `assets/sprites/hell/` mit `manifest.json` und `LICENSE-NOTE.md` |
-| Laufzeit | `src/hell/hell_game.gd` (Szene `hell_dungeon.tscn`), `hell_floor_data.gd`, `hell_walls.gd`, `hell_rules.gd` |
-| Tests | `tests/hell_floor_data_test.gd`, `tests/hell_walls_test.gd`, `tests/hell_rules_test.gd`, `tests/hell_boss_start_test.gd` |
-| Nachweise | `production/qa/evidence/hell-dungeon/` (`scripts/capture_hell_dungeon.gd`) |
+| Monster-Atlanten (18, je Zeile eine Animation) | `assets/sprites/hell/monsters/` aus `tools/hell_dungeon/export_monsters.js` |
+| Monsterdaten | `assets/data/hell_monsters.json` (generiert, nicht von Hand ändern) |
+| Laufzeit | `src/hell/hell_game.gd` (Szene `hell_dungeon.tscn`), `hell_floor_data.gd`, `hell_walls.gd`, `hell_rules.gd`, `hell_monsters.gd` (Monster-Laufzeit), `hell_monster_rules.gd` (reine Regeln) |
+| Tests | `tests/hell_floor_data_test.gd`, `tests/hell_walls_test.gd`, `tests/hell_rules_test.gd`, `tests/hell_boss_start_test.gd`, `tests/hell_monster_rules_test.gd`, `tests/hell_monsters_integration_test.gd` |
+| Nachweise | `production/qa/evidence/hell-dungeon/` (`scripts/capture_hell_dungeon.gd`), `production/qa/evidence/hell-monsters/` (`scripts/capture_hell_monsters.gd`) |
 
 Der Modus ist bewusst vom vernetzten Krypta-Spiel (`src/game.gd`) getrennt: kein Host, keine Snapshots.
 
@@ -77,18 +88,24 @@ Der Modus ist bewusst vom vernetzten Krypta-Spiel (`src/game.gd`) getrennt: kein
 | `player` | `hp` (halbe Herzen zu Beginn), `max_hp_cap`, `speed` (px/s), `lava_slow` (Faktor), `invulnerable` (s nach Treffer), `half_width`/`height` (Kollisionsbox) |
 | `shot` | `speed` (px/s), `life` (s), `cooldown` (s) |
 | `enemy_shot` | `speed`, `ring_speed` (px/s), `life` (s), `hit_radius` (px) |
-| `mobs` | je Platzhalter `hp`, `speed`, `scale`, `radius`; `spucker.fire_every` (s), `keep_away` (px); `boss.max_adds` |
+| `monsters` | `hit_mob`/`hit_boss` (halbe Herzen je Treffer), `contact_reach` (px), `lord_face_deadzone` (px), `echo_hp_share` (Anteil der Boss-LP je Echo), `echo_kinds` (Angriffe der Echos), `burrow_speed` (px/s), `flight_altitude` und `immune_altitude` (px) und `spawn_grow` (s) |
 | `hazards` | `spike_period` (s je Phase), `vent_period`, `vent_burst` (s), `vent_radius` (px) |
 | `drops` | Wahrscheinlichkeit für Herz und Runenstein nach einem Kampf |
 | `vault` | Runensteine `gems_base` + `gems_per_floor` × Etage, `heart_containers` |
 | `view` | sichtbare Weltbreite, Basisbreite, Licht der Figur, max. Lichter im Shader, Helligkeitsstufen |
-| `seal` | `bless_chance` (Anteil Segen), `demons` (Anzahl), `demon_kind` (Gegnerart) |
+| `seal` | `bless_chance` (Anteil Segen), `demons` (Anzahl), `demon_kind` (Monster-ID aus `hell_monsters.json`) |
 | `blessings` | `dmg` (+Schaden), `rate_mul`/`rate_min` (Schussabstand), `speed_mul`, `range_mul`, `heart` (halbe Herzen) |
 | `pit` | `damage` (halbe Herzen), `reach_x`/`reach_y` (px um die Grubenmitte) |
 | `clone` | `floor` (Etage des Bosses mit Skill), `duration` (s), `fire_every` (s), `range` (px), `follow`/`weave` (px) |
 | `sequence_chest` | `gems_base` (+ Etage) und `heart` der Belohnungstruhe |
 
+## Monster neu exportieren
+
+Nach Änderungen an `tools/hell_dungeon/hell_monsters.js`: `node tools/hell_dungeon/export_monsters.js`
+schreibt Atlanten und `hell_monsters.json`, danach Godot einmal importieren lassen.
+Kampfwerte stehen in `STATS` der JS-Datei, die Etagen-Zuordnung in `FLOORS`.
+
 ## Grenzen
 
-Einzelspieler, keine Netzwerk-Replikation. Gegner, Boss und Figur sind Platzhalter. Lizenz der
+Einzelspieler, keine Netzwerk-Replikation. Die Figur ist ein Platzhalter. Lizenz der
 Höllen-Grafiken ungeklärt (`assets/sprites/hell/LICENSE-NOTE.md`).

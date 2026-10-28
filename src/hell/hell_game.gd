@@ -6,11 +6,13 @@ extends Node2D
 ## a secret corridor, demon seals bless the hero or release demons, pits throw
 ## the hero back to the start, the floor-9 boss grants the clone skill (Q), and
 ## the portal leads one floor deeper.
-## Enemies and hero are placeholders; values come from hell_balance.json.
+## The hero is a placeholder. Monsters, bosses and Ignaroth run in hell_monsters.gd;
+## values come from hell_balance.json and hell_monsters.json.
 
 const FloorData = preload("res://src/hell/hell_floor_data.gd")
 const Walls = preload("res://src/hell/hell_walls.gd")
 const Rules = preload("res://src/hell/hell_rules.gd")
+const Monsters = preload("res://src/hell/hell_monsters.gd")
 const DARKNESS_SHADER := preload("res://assets/shaders/canvas_vfx_darkness.gdshader")
 const FONT := preload("res://assets/fonts/pixel_operator8.ttf")
 const BALANCE_PATH := "res://assets/data/hell_balance.json"
@@ -52,7 +54,9 @@ var door_at: Dictionary = {}
 var minimap: Array = []
 var camera: Camera2D
 var actors: Layer
+var fx: Layer
 var dark: Layer
+var monsters: Monsters
 var hud: Hud
 var _chunk_nodes: Array = []
 var _dark_material: ShaderMaterial
@@ -91,7 +95,13 @@ func _ready() -> void:
 	camera.zoom = Vector2.ONE * float(balance.view.base_width) / float(balance.view.width)
 	add_child(camera)
 	camera.make_current()
+	monsters = Monsters.new(self, balance.monsters)
 	actors = _layer("actors", 10)
+	# glows of attacks and enemy shots add light over the actors
+	fx = _layer("fx", 11)
+	var add := CanvasItemMaterial.new()
+	add.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	fx.material = add
 	dark = _layer("dark", 30)
 	_dark_material = ShaderMaterial.new()
 	_dark_material.shader = DARKNESS_SHADER
@@ -160,13 +170,14 @@ func load_floor(n: int, carry: bool) -> void:
 	state = {"floor": n, "keys": {"A": false, "B": false, "C": false}, "used": {"A": false, "B": false, "C": false},
 		"visited": {start.index: true}, "room": start.index, "banner": {"text": W.title, "sub": "Etage %d · %s" % [n, W.circle], "t": 0.0},
 		"toasts": [], "inv": 0.0, "dead": 0.0, "map": false, "light": state.get("light", true), "t": 0.0, "won": false, "won_t": 0.0,
-		"cool": 0.0, "flash": 0.0, "boss_dead": false}
+		"cool": 0.0, "flash": 0.0, "boss_dead": false, "shake": 0.0, "white": 0.0, "slow": 0.0, "pull": null}
 	state.merge(keep)
 	mobs = []
 	shots = []
 	eshots = []
 	embers = []
 	clone = {}
+	monsters.reset()
 	breakables = W.ents.filter(func(e: Dictionary) -> bool: return e.type == "seal" or e.type == "skullheap")
 	pits = W.ents.filter(func(e: Dictionary) -> bool: return e.type == "pit")
 	for e: Dictionary in breakables:
@@ -376,10 +387,11 @@ func _toast(text: String) -> void:
 		state.toasts.pop_front()
 
 
-func _hurt(why: String) -> void:
+## Costs the hero n half hearts unless he is still invulnerable from the last hit.
+func _hurt(why: String, n := 1) -> void:
 	if state.inv > 0.0 or state.dead > 0.0:
 		return
-	state.hp = maxi(0, state.hp - 1)
+	state.hp = maxi(0, state.hp - n)
 	state.inv = float(balance.player.invulnerable)
 	state.flash = 0.25
 	if state.hp == 0:
@@ -536,18 +548,6 @@ func _fire(dir: Vector2) -> void:
 		player.face = signf(dir.x)
 
 
-func _spawn_mob(room: int, pos: Vector2, kind: String) -> void:
-	var def: Dictionary = balance.mobs[kind]
-	var diff: Dictionary = W.diff
-	var hp: float = float(W.boss.hp) if kind == "boss" else round(float(def.hp) * float(diff.hp))
-	var scale := float(def.scale)
-	if kind == "boss" and (W.boss.get("mini", false) or W.final):
-		scale *= 1.25 if W.final else 1.05
-	mobs.append({"room": room, "kind": kind, "p": pos, "hp": hp, "max": hp, "sp": float(def.speed) * float(diff.speed),
-		"s": scale, "r": float(def.radius), "seed": randf() * 9.0, "k": Vector2.ZERO, "hit": 0.0, "spawn": 0.5,
-		"summon": 2.5, "shoot": 1.0 + randf() * 2.0, "ring_t": float(W.boss.get("ring", 0.0)), "spin": 0.0})
-
-
 func _start_fight(r: Dictionary) -> void:
 	r.fight = true
 	var me := Vector2(player.x, player.y)
@@ -557,19 +557,7 @@ func _start_fight(r: Dictionary) -> void:
 		if W.grid[c.y * W.cols + c.x] == 1 and p.distance_to(me) > 4.5 * C and not _near_door(r, p, 2.0) and solid_grid.get(c.y * W.cols + c.x, []).is_empty():
 			cells.append(p)
 	cells.shuffle()
-	var count: int = int(r.mobs if r.mobs > 0 else 3) + int(W.diff.extra)
-	for k in range(mini(count, cells.size())):
-		var kind := "glut"
-		if W.diff.get("shooters", false) and k % 4 == 1:
-			kind = "spucker"
-		elif k % 3 == 2:
-			kind = "gross"
-		_spawn_mob(r.index, cells[k], kind)
-	if r.type == "boss":
-		_spawn_mob(r.index, Vector2((r.bx + r.bw / 2.0) * C, (r.by + r.bh / 2.0 + 1.0) * C), "boss")
-		_toast("%s erwacht. Die Tore sind verriegelt." % W.boss.name)
-	else:
-		_toast("Die Gitter fallen. Besiege alle Gegner.")
+	monsters.populate(r, cells)
 
 
 func _clear_room(r: Dictionary, at: Vector2) -> void:
@@ -613,10 +601,6 @@ func _drop(kind: String, room: int, at: Vector2, extra := {}) -> void:
 	W.ents.append(e)
 
 
-func _enemy_shot(from: Vector2, dir: Vector2, speed: float) -> void:
-	eshots.append({"p": from, "v": dir.normalized() * speed, "t": float(balance.enemy_shot.life)})
-
-
 func _burst(at: Vector2, n: int, gold := false) -> void:
 	for k in range(n):
 		embers.append({"p": at, "v": Vector2(randf_range(-150, 150), randf_range(-210, 90)), "t": randf_range(0.35, 0.85), "big": n > 20, "gold": gold})
@@ -651,7 +635,7 @@ func _break_seal(e: Dictionary) -> void:
 	r.cleared = false
 	var n := int(cfg.demons)
 	for k in range(n):
-		_spawn_mob(r.index, Vector2(e.x + (k - (n - 1) / 2.0) * 90.0, e.y + 60.0 + (50.0 if k == 1 else 0.0)), String(cfg.demon_kind))
+		monsters.spawn(r.index, Vector2(e.x + (k - (n - 1) / 2.0) * 90.0, e.y + 60.0 + (50.0 if k == 1 else 0.0)), String(cfg.demon_kind))
 	_toast("Das Siegel bricht: drei Dämonen springen heraus! Die Gitter fallen.")
 
 
@@ -668,6 +652,8 @@ func _fall_into_pit() -> void:
 			r.fight = false
 			mobs = mobs.filter(func(m: Dictionary) -> bool: return m.room != r.index)
 	eshots = []
+	monsters.reset()
+	state.pull = null
 	_respawn()
 	state.inv = 1.2
 	var s := _room_of_type("start")
@@ -709,13 +695,13 @@ func _update_clone(dt: float) -> void:
 	var best: Dictionary = {}
 	var bd := float(cfg.range)
 	for m: Dictionary in mobs:
-		if m.spawn <= 0.0 and m.p.distance_to(clone.p) < bd:
+		if m.spawn <= 0.0 and not monsters.immune(m) and m.p.distance_to(clone.p) < bd:
 			bd = m.p.distance_to(clone.p)
 			best = m
 	if not best.is_empty() and clone.cool <= 0.0:
 		clone.cool = float(cfg.fire_every)
 		var from: Vector2 = clone.p - Vector2(0, 40)
-		var aim: Vector2 = best.p - Vector2(0, 30.0 * best.s) - from
+		var aim: Vector2 = best.p - Vector2(0, best.cy) - from
 		shots.append({"p": from, "v": aim.normalized() * float(balance.shot.speed), "t": float(state.range)})
 
 
@@ -723,14 +709,17 @@ func _process(delta: float) -> void:
 	var dt := minf(delta, 0.05)
 	_update(dt)
 	actors.queue_redraw()
+	fx.queue_redraw()
 	dark.queue_redraw()
 	hud.queue_redraw()
 
 
 func _update(dt: float) -> void:
 	state.t += dt
-	for k in ["inv", "flash", "cool"]:
+	for k in ["inv", "flash", "cool", "slow"]:
 		state[k] = maxf(0.0, state[k] - dt)
+	state.shake = maxf(0.0, state.shake - dt * 30.0)
+	state.white = maxf(0.0, state.white - dt * 1.6)
 	for t: Dictionary in state.toasts:
 		t.t -= dt
 	state.toasts = state.toasts.filter(func(t: Dictionary) -> bool: return t.t > 0.0)
@@ -746,6 +735,8 @@ func _update(dt: float) -> void:
 					r.fight = false
 			mobs = []
 			eshots = []
+			monsters.reset()
+			state.pull = null
 			_respawn()
 			state.hp = state.max_hp
 			state.inv = 1.2
@@ -766,7 +757,7 @@ func _update(dt: float) -> void:
 func _update_player(dt: float) -> void:
 	var move := Vector2(_axis(KEY_A, KEY_D), _axis(KEY_W, KEY_S))
 	var here := _cell(int(floor(player.x / C)), int(floor((player.y - 6.0) / C)))
-	var speed := float(balance.player.speed) * float(state.speed_mul) * (float(balance.player.lava_slow) if here == 2 else 1.0)
+	var speed := float(balance.player.speed) * float(state.speed_mul) * (float(balance.player.lava_slow) if here == 2 else 1.0) * (0.5 if state.slow > 0.0 else 1.0)
 	player.moving = move != Vector2.ZERO
 	if player.moving:
 		var v := move.normalized() * speed * dt
@@ -812,7 +803,7 @@ func _update_shots(dt: float) -> void:
 			_burst(s.p, 5)
 			continue
 		for m: Dictionary in mobs:
-			if m.spawn <= 0.0 and s.p.distance_to(m.p - Vector2(0, 30.0 * m.s)) < m.r + 12.0:
+			if m.spawn <= 0.0 and m.alpha > 0.5 and not monsters.immune(m) and s.p.distance_to(m.p - Vector2(0, m.cy)) < m.r + 12.0:
 				m.hp -= float(state.dmg)
 				m.hit = 0.12
 				m.k = s.v * (0.05 if m.kind == "boss" else 0.25)
@@ -820,82 +811,11 @@ func _update_shots(dt: float) -> void:
 				_burst(s.p, 6)
 				break
 	shots = shots.filter(func(s: Dictionary) -> bool: return s.t > 0.0)
-	var me := Vector2(player.x, player.y - 34)
-	for s: Dictionary in eshots:
-		s.p += s.v * dt
-		s.t -= dt
-		if _cell_blocked(int(floor(s.p.x / C)), int(floor(s.p.y / C)), false):
-			s.t = 0.0
-			_burst(s.p, 4)
-		elif s.p.distance_to(me) < float(balance.enemy_shot.hit_radius):
-			s.t = 0.0
-			_hurt("von Feuer getroffen")
-	eshots = eshots.filter(func(s: Dictionary) -> bool: return s.t > 0.0)
+	monsters.update_shots(dt)
 
 
 func _update_mobs(dt: float) -> void:
-	var me := Vector2(player.x, player.y)
-	for m: Dictionary in mobs:
-		if m.spawn > 0.0:
-			m.spawn -= dt
-			continue
-		m.hit = maxf(0.0, m.hit - dt)
-		var to: Vector2 = me - m.p
-		var d := maxf(to.length(), 1.0)
-		var dir := to / d
-		var wob := sin(state.t * 3.0 + m.seed) * 0.7
-		var away := -1.0 if m.kind == "spucker" and d < float(balance.mobs.spucker.keep_away) else 1.0
-		var v: Vector2 = (dir * away + Vector2(-dir.y, dir.x) * wob) * m.sp
-		for o: Dictionary in mobs:
-			if o != m:
-				var off: Vector2 = m.p - o.p
-				var od := off.length()
-				if od > 0.0 and od < m.r + o.r:
-					v += off / od * 120.0
-		v += m.k
-		m.k *= 0.86
-		var rr: float = m.r * 0.7
-		var avoid: bool = m.kind != "boss"
-		var nx: Vector2 = m.p + Vector2(v.x * dt, 0)
-		if not box_blocked(Rect2(nx.x - rr, nx.y - rr, rr * 2, rr), avoid):
-			m.p = nx
-		var ny: Vector2 = m.p + Vector2(0, v.y * dt)
-		if not box_blocked(Rect2(ny.x - rr, ny.y - rr, rr * 2, rr), avoid):
-			m.p = ny
-		if d < m.r + 22.0:
-			_hurt("von %s erschlagen" % W.boss.name if m.kind == "boss" else "von Glutlingen verbrannt")
-		if m.kind == "spucker":
-			m.shoot -= dt
-			if m.shoot <= 0.0:
-				m.shoot = float(balance.mobs.spucker.fire_every)
-				_enemy_shot(m.p - Vector2(0, 40), to - Vector2(0, 30), float(balance.enemy_shot.speed))
-		elif m.kind == "boss":
-			m.summon -= dt
-			var adds := 0
-			for o: Dictionary in mobs:
-				if o.room == m.room and o.kind != "boss":
-					adds += 1
-			if m.summon <= 0.0 and adds < int(balance.mobs.boss.max_adds):
-				m.summon = float(W.boss.summon)
-				_spawn_mob(m.room, m.p + Vector2(-100, 30), "glut")
-				_spawn_mob(m.room, m.p + Vector2(100, 30), "spucker" if W.final else "glut")
-			if float(W.boss.get("ring", 0.0)) > 0.0:
-				m.ring_t -= dt
-				if m.ring_t <= 0.0:
-					m.ring_t = float(W.boss.ring)
-					m.spin += 0.3
-					var n := 16 if W.final else 10
-					for k in range(n):
-						var a: float = m.spin + float(k) / n * TAU
-						_enemy_shot(m.p - Vector2(0, 70), Vector2(cos(a), sin(a)), float(balance.enemy_shot.ring_speed))
-	for m: Dictionary in mobs.duplicate():
-		if m.hp > 0.0:
-			continue
-		_burst(m.p - Vector2(0, 30), 70 if m.kind == "boss" else 16)
-		mobs.erase(m)
-		var rest := mobs.filter(func(o: Dictionary) -> bool: return o.room == m.room)
-		if rest.is_empty():
-			_clear_room(W.rooms[m.room], m.p)
+	monsters.update(dt)
 
 
 func _update_hazards(dt: float) -> void:
@@ -1010,6 +930,7 @@ func _update_camera(dt: float) -> void:
 			else:
 				target[axis] = clampf(target[axis], lo[axis] + view[axis] / 2.0, hi[axis] - view[axis] / 2.0)
 	camera.position = camera.position.lerp(target, 1.0 - pow(0.0015, dt))
+	camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * state.shake
 
 
 # ---------- world drawing ----------
@@ -1020,6 +941,7 @@ func draw_layer(l: Layer) -> void:
 		"back": _draw_back(l)
 		"front": _draw_front(l)
 		"actors": _draw_actors(l)
+		"fx": monsters.draw_fx(l)
 		"dark": _draw_dark(l)
 
 
@@ -1152,6 +1074,7 @@ func _draw_actors(l: Layer) -> void:
 				l.draw_texture(tex.vent, Vector2(e.x, e.y) - tex.vent.get_size() / 2.0)
 			"plate":
 				_draw_plate(l, e, t)
+	monsters.draw_warnings(l)
 	var list: Array = []
 	for p: Dictionary in W.props:
 		if p.name != "" and view.has_point(Vector2(p.x, p.y)):
@@ -1168,8 +1091,11 @@ func _draw_actors(l: Layer) -> void:
 		if d.kind != "secret" and view.has_point(Vector2(d.cx, d.cy)) and _door_closed(d):
 			list.append([d.cy + 60.0, "gate", d])
 	for m: Dictionary in mobs:
-		if view.has_point(m.p):
+		if view.grow(300).has_point(m.p):
 			list.append([m.p.y, "mob", m])
+	for c: Dictionary in monsters.corpses:
+		if view.has_point(c.p):
+			list.append([c.p.y, "corpse", c])
 	list.append([player.y, "hero", player])
 	list.sort_custom(func(x: Array, y: Array) -> bool: return x[0] < y[0])
 	for item: Array in list:
@@ -1180,16 +1106,14 @@ func _draw_actors(l: Layer) -> void:
 				_tex(l, p.name, Vector2(p.x - im.get_width() / 2.0, p.y - im.get_height()), p.flip)
 			"ent": _draw_ent(l, item[2], t)
 			"gate": _draw_gate(l, item[2], t)
-			"mob": _draw_mob(l, item[2], t)
+			"mob": monsters.draw_mob(l, item[2])
+			"corpse": monsters.draw_corpse(l, item[2])
 			"breakable": _draw_breakable(l, item[2], t)
 			"clone": _draw_clone(l, t)
 			"hero": _draw_hero(l, t)
 	for s: Dictionary in shots:
 		l.draw_circle(s.p, 16.0, Color(1, 0.55, 0.2, 0.45))
 		l.draw_circle(s.p, 8.0, Color(1, 0.95, 0.75))
-	for s: Dictionary in eshots:
-		l.draw_circle(s.p, 15.0, Color(0.8, 0.1, 0.08, 0.5))
-		l.draw_circle(s.p, 7.0, Color(1, 0.75, 0.7))
 	for p: Dictionary in embers:
 		var col := Color("#ffe28a") if p.gold else (Color("#ff7a2a") if p.big else Color("#ffb347"))
 		col.a = minf(1.0, p.t * 2.0)
@@ -1276,27 +1200,6 @@ func _draw_gate(l: Layer, d: Dictionary, t: float) -> void:
 		l.draw_texture_rect(icon, Rect2(d.cx - 22, d.cy - 30, 44, 44 * icon.get_height() / icon.get_width()), false)
 
 
-func _draw_mob(l: Layer, m: Dictionary, t: float) -> void:
-	var im: Texture2D = tex.fire_orb
-	var s: float = m.s * (1.0 - m.spawn * 1.6 if m.spawn > 0.0 else 1.0)
-	if s <= 0.0:
-		return
-	var tint := Color.WHITE
-	match m.kind:
-		"gross": tint = Color(0.9, 0.6, 0.5)
-		"spucker": tint = Color(0.75, 0.55, 1.6)
-		"boss": tint = Color(0.6, 0.45, 1.6) if W.final else Color(1.2, 0.55, 0.45)
-	if m.hit > 0.0:
-		tint = Color(3, 3, 3)
-	var bob := sin(t * 6.0 + m.seed) * 6.0
-	var size := im.get_size() * s
-	l.draw_texture_rect(im, Rect2(m.p - Vector2(size.x / 2.0, size.y + 14 - bob), size), false, tint)
-	if m.kind == "boss":
-		var icon: Texture2D = tex.icon_demon_big if W.final else tex.icon_demon
-		var k := s / 2.7
-		l.draw_texture_rect(icon, Rect2(m.p.x - 46 * k, m.p.y - size.y - 4 + bob, 92 * k, 96 * k), false)
-
-
 func _draw_breakable(l: Layer, e: Dictionary, t: float) -> void:
 	if e.get("broken", false):
 		var rb: Texture2D = tex.rubble
@@ -1372,7 +1275,7 @@ func _draw_dark(l: Layer) -> void:
 	if not clone.is_empty():
 		cands.append([0.0, Vector4(clone.p.x, clone.p.y - 40, 240, 0.9)])
 	for m: Dictionary in mobs:
-		cands.append([m.p.distance_squared_to(center), Vector4(m.p.x, m.p.y - 40.0 * m.s, 120.0 * m.s, 0.8)])
+		cands.append([m.p.distance_squared_to(center), Vector4(m.p.x, m.p.y - m.cy - m.alt, 90.0 + m.r * 2.2 * (1.3 if m.def.kind == "lord" else 1.0), 1.0)])
 	var lava_lights := 0
 	for y in range(int(view.position.y / C), int(view.end.y / C) + 1, 2):
 		for x in range(int(view.position.x / C), int(view.end.x / C) + 1, 2):
@@ -1407,6 +1310,8 @@ func draw_hud(h: Control) -> void:
 	h.draw_texture_rect(_vignette, Rect2(Vector2.ZERO, size), false, Color(0.35 + float(th.wall_glow) * 0.4, 0.0, 0.0, float(th.vignette)))
 	if state.flash > 0.0:
 		h.draw_rect(Rect2(Vector2.ZERO, size), Color(0.8, 0.08, 0.08, state.flash))
+	if state.white > 0.0:
+		h.draw_rect(Rect2(Vector2.ZERO, size), Color(1, 0.925, 0.82, minf(1.0, state.white)))
 	var heart: Texture2D = tex.heart
 	var hs := 30.0
 	var hh := hs * heart.get_height() / heart.get_width()
@@ -1459,7 +1364,7 @@ func draw_hud(h: Control) -> void:
 		h.draw_rect(Rect2(bx - 4, by - 30, bw + 8, 48), Color(0.04, 0.02, 0.02, 0.85))
 		h.draw_rect(Rect2(bx, by, bw, 12), Color("#3a1210"))
 		h.draw_rect(Rect2(bx, by, bw * boss_mob.hp / boss_mob.max, 12), Color("#e8432a"))
-		_text(h, "%s (Platzhalter)" % W.boss.name, Vector2(0, by - 10), 16, GOLD, size.x)
+		_text(h, monsters.boss_label(boss_mob), Vector2(0, by - 10), 16, GOLD, size.x)
 	var cr: Dictionary = W.rooms[state.room]
 	if cr.fight:
 		var left := 0
@@ -1478,11 +1383,11 @@ func draw_hud(h: Control) -> void:
 	var toasts: Array = state.toasts
 	for i in range(toasts.size()):
 		var tt: Dictionary = toasts[i]
-		var ty := size.y - 40.0 - (toasts.size() - 1 - i) * 44.0 - (90.0 if not boss_mob.is_empty() else 0.0)
+		var ty := size.y - 40.0 - (toasts.size() - 1 - i) * 44.0 - (130.0 if not boss_mob.is_empty() else 0.0)
 		var w := FONT.get_string_size(tt.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x + 36.0
 		h.draw_rect(Rect2(size.x / 2.0 - w / 2.0, ty - 18, w, 36), Color(0.05, 0.02, 0.03, 0.88 * minf(1.0, tt.t * 2.0)))
 		_text(h, tt.text, Vector2(0, ty + 6), 16, Color(INK, minf(1.0, tt.t * 2.0)), size.x)
-	_text(h, "Figur und Gegner: Platzhalter", Vector2(20, size.y - 14), 16, Color(INK, 0.45))
+	_text(h, "Figur: Platzhalter", Vector2(20, size.y - 14), 16, Color(INK, 0.45))
 	if state.dead > 0.0:
 		h.draw_rect(Rect2(Vector2.ZERO, size), Color(0.12, 0, 0, 0.55))
 	_draw_map(h, size, state.map)
