@@ -6,11 +6,14 @@ extends Node2D
 ## a secret corridor, demon seals bless the hero or release demons, pits throw
 ## the hero back to the start, the floor-9 boss grants the clone skill (Q), and
 ## the portal leads one floor deeper.
-## Enemies and hero are placeholders; values come from hell_balance.json.
+## The hero is a placeholder. Without a theme of their own enemies, monsters, bosses
+## and Ignaroth run in hell_monsters.gd; values come from hell_balance.json and
+## hell_monsters.json.
 
 const FloorData = preload("res://src/hell/hell_floor_data.gd")
 const Walls = preload("res://src/hell/hell_walls.gd")
 const Rules = preload("res://src/hell/hell_rules.gd")
+const Monsters = preload("res://src/hell/hell_monsters.gd")
 const MobRules = preload("res://src/hell/mob_rules.gd")
 const BossKit = preload("res://src/hell/boss_kit.gd")
 const HeroKit = preload("res://src/hell/hero_kit.gd")
@@ -117,6 +120,10 @@ var minimap: Array = []
 var camera: Camera2D
 var actors: Layer
 var dark: Layer
+## Additive layer for attack glows and enemy shots of the hell monsters.
+var glow: Layer
+## The hell monsters (hell_monsters.gd); null in a themed world with its own enemies.
+var monsters: Monsters
 var hud: Hud
 var _chunk_nodes: Array = []
 var _dark_material: ShaderMaterial
@@ -174,7 +181,13 @@ func _ready() -> void:
 	camera.zoom = Vector2.ONE * float(balance.view.base_width) / float(balance.view.width)
 	add_child(camera)
 	camera.make_current()
+	if not theme.has("mobs"):
+		monsters = Monsters.new(self, balance.monsters)
 	actors = _layer("actors", 10)
+	glow = _layer("glow", 11)
+	var add := CanvasItemMaterial.new()
+	add.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	glow.material = add
 	dark = _layer("dark", 30)
 	_dark_material = ShaderMaterial.new()
 	_dark_material.shader = DARKNESS_SHADER
@@ -339,7 +352,8 @@ func load_floor(n: int, carry: bool) -> void:
 	state = {"floor": n, "keys": {"A": false, "B": false, "C": false}, "used": {"A": false, "B": false, "C": false},
 		"visited": {start.index: true}, "room": start.index, "banner": {"text": W.title, "sub": "Etage %d · %s" % [n, W.circle], "t": 0.0},
 		"toasts": [], "inv": 0.0, "dead": 0.0, "map": false, "light": state.get("light", true), "t": 0.0, "won": false, "won_t": 0.0,
-		"cool": 0.0, "flash": 0.0, "chill": 0.0, "storm": false, "rage": 0.0, "boss_dead": false}
+		"cool": 0.0, "flash": 0.0, "chill": 0.0, "storm": false, "rage": 0.0, "boss_dead": false,
+		"shake": 0.0, "white": 0.0, "slow": 0.0, "pull": null}
 	state.merge(keep)
 	if not carry:
 		RelicKit.choose_run(self)
@@ -349,6 +363,8 @@ func load_floor(n: int, carry: bool) -> void:
 	shots = []
 	eshots = []
 	zones = []
+	if monsters != null:
+		monsters.reset()
 	allies = []
 	pending = []
 	hold = {}
@@ -610,10 +626,11 @@ func _toast(text: String) -> void:
 		state.toasts.pop_front()
 
 
-func _hurt(why: String) -> void:
+## Costs the hero n half hearts unless he is still invulnerable from the last hit.
+func _hurt(why: String, n := 1) -> void:
 	if state.inv > 0.0 or state.dead > 0.0:
 		return
-	state.hp = maxi(0, state.hp - 1)
+	state.hp = maxi(0, state.hp - n)
 	state.inv = float(balance.player.invulnerable)
 	state.flash = 0.25
 	_sound("hurt")
@@ -823,7 +840,7 @@ func _swing(dir: Vector2) -> void:
 	swing = {"a": dir.angle(), "t": 0.16}
 	for m: Dictionary in mobs:
 		var to: Vector2 = m.p - Vector2(0, m.cy) - from
-		if m.spawn <= 0.0 and to.length() < reach + m.r and absf(angle_difference(dir.angle(), to.angle())) <= half:
+		if _hittable(m) and to.length() < reach + m.r and absf(angle_difference(dir.angle(), to.angle())) <= half:
 			_damage_mob(m, dir * 600.0)
 	for e: Dictionary in breakables:
 		var to := Vector2(e.x, e.y - 40) - from
@@ -849,6 +866,12 @@ func _damage_mob(m: Dictionary, push: Vector2, mult := 1.0) -> bool:
 	# kit bosses stand firm: no knockback
 	m.k = Vector2.ZERO if m.has("kit") else push * (0.05 if m.kind == "boss" else 0.25)
 	return true
+
+
+## True when an enemy can take a hit now: grown in, not faded out, and (hell monsters)
+## not arriving, flying, burrowed, transforming or dying.
+func _hittable(m: Dictionary) -> bool:
+	return m.spawn <= 0.0 and float(m.get("alpha", 1.0)) > 0.5 and (monsters == null or not monsters.immune(m))
 
 
 ## An enemy kind's values: the theme's own kinds first (theme.mobs), else hell_balance.json.
@@ -894,6 +917,10 @@ func _start_fight(r: Dictionary) -> void:
 		if W.grid[c.y * W.cols + c.x] == 1 and p.distance_to(me) > 4.5 * C and not _near_door(r, p, 2.0) and solid_grid.get(c.y * W.cols + c.x, []).is_empty():
 			cells.append(p)
 	cells.shuffle()
+	if monsters != null:
+		monsters.populate(r, cells)
+		_sound("boss_intro" if r.type == "boss" else "fight_start")
+		return
 	var count: int = int(r.mobs if r.mobs > 0 else 3) + int(W.diff.extra)
 	var rolls: Array = []
 	for k in range(count):
@@ -999,7 +1026,11 @@ func _break_seal(e: Dictionary) -> void:
 	r.cleared = false
 	var n := int(cfg.demons)
 	for k in range(n):
-		_spawn_mob(r.index, Vector2(e.x + (k - (n - 1) / 2.0) * 90.0, e.y + 60.0 + (50.0 if k == 1 else 0.0)), String(cfg.demon_kind))
+		var at := Vector2(e.x + (k - (n - 1) / 2.0) * 90.0, e.y + 60.0 + (50.0 if k == 1 else 0.0))
+		if monsters != null:
+			monsters.spawn(r.index, at, String(balance.monsters.seal_demon))
+		else:
+			_spawn_mob(r.index, at, String(cfg.demon_kind))
 	_toast("Das Siegel bricht: drei Dämonen springen heraus! Die Gitter fallen.")
 
 
@@ -1018,6 +1049,9 @@ func _fall_into_pit() -> void:
 	eshots = []
 	zones = []
 	state.storm = false
+	if monsters != null:
+		monsters.reset()
+	state.pull = null
 	_respawn()
 	state.inv = 1.2
 	var s := _room_of_type("start")
@@ -1059,7 +1093,7 @@ func _update_clone(dt: float) -> void:
 	var best: Dictionary = {}
 	var bd := float(cfg.range)
 	for m: Dictionary in mobs:
-		if m.spawn <= 0.0 and m.p.distance_to(clone.p) < bd:
+		if _hittable(m) and m.p.distance_to(clone.p) < bd:
 			bd = m.p.distance_to(clone.p)
 			best = m
 	if not best.is_empty() and clone.cool <= 0.0:
@@ -1073,14 +1107,17 @@ func _process(delta: float) -> void:
 	var dt := minf(delta, 0.05)
 	_update(dt)
 	actors.queue_redraw()
+	glow.queue_redraw()
 	dark.queue_redraw()
 	hud.queue_redraw()
 
 
 func _update(dt: float) -> void:
 	state.t += dt
-	for k in ["inv", "flash", "cool", "chill"]:
+	for k in ["inv", "flash", "cool", "chill", "slow"]:
 		state[k] = maxf(0.0, state[k] - dt)
+	state.shake = maxf(0.0, state.shake - dt * 30.0)
+	state.white = maxf(0.0, state.white - dt * 1.6)
 	for t: Dictionary in state.toasts:
 		t.t -= dt
 	state.toasts = state.toasts.filter(func(t: Dictionary) -> bool: return t.t > 0.0)
@@ -1098,6 +1135,9 @@ func _update(dt: float) -> void:
 			eshots = []
 			zones = []
 			state.storm = false
+			if monsters != null:
+				monsters.reset()
+			state.pull = null
 			_respawn()
 			state.hp = state.max_hp
 			state.inv = 1.2
@@ -1143,7 +1183,7 @@ func _update_player(dt: float) -> void:
 	var liquid: Dictionary = theme.liquid
 	var slow: float = float(balance.player.lava_slow) if float(liquid.slow) < 0.0 else float(liquid.slow)
 	var chill := float(theme.get("chill_speed", 1.0)) if state.chill > 0.0 else 1.0
-	var speed := float(hero.get("speed", balance.player.speed)) * float(state.speed_mul) * chill * HeroKit.move_scale(self) * CardKit.speed_mult(self) * (slow if here == 2 else 1.0)
+	var speed := float(hero.get("speed", balance.player.speed)) * float(state.speed_mul) * chill * HeroKit.move_scale(self) * CardKit.speed_mult(self) * (slow if here == 2 else 1.0) * (0.5 if state.slow > 0.0 else 1.0)
 	player.moving = move != Vector2.ZERO
 	var want := move.normalized() * speed if player.moving else Vector2.ZERO
 	if here == 2 and liquid.slide:
@@ -1209,7 +1249,7 @@ func _update_shots(dt: float) -> void:
 						m.p += step
 		var big := float(s.get("big", 1.0))
 		for m: Dictionary in mobs:
-			if m.spawn <= 0.0 and not (s.get("hits", []) as Array).has(m) and s.p.distance_to(m.p - Vector2(0, m.cy)) < m.r + 12.0 * big:
+			if _hittable(m) and not (s.get("hits", []) as Array).has(m) and s.p.distance_to(m.p - Vector2(0, m.cy)) < m.r + 12.0 * big:
 				_burst(s.p, 6)
 				var mult := float(s.get("mult", 1.0))
 				if s.get("pierce", false):
@@ -1231,6 +1271,9 @@ func _update_shots(dt: float) -> void:
 		if s.t <= 0.0 and s.has("burst") and not s.get("done", false):
 			_explode(s, {})
 	shots = shots.filter(func(s: Dictionary) -> bool: return s.t > 0.0)
+	if monsters != null:
+		monsters.update_shots(dt)
+		return
 	var me := Vector2(player.x, player.y - 34)
 	for s: Dictionary in eshots:
 		HeroKit.catch_shot(self, s, dt)
@@ -1253,6 +1296,9 @@ func _update_shots(dt: float) -> void:
 
 
 func _update_mobs(dt: float) -> void:
+	if monsters != null:
+		monsters.update(dt)
+		return
 	var me := Vector2(player.x, player.y)
 	for m: Dictionary in mobs:
 		if m.spawn > 0.0:
@@ -1394,7 +1440,7 @@ func _explode(s: Dictionary, first: Dictionary) -> void:
 	var radius := float(s.get("burst", s.get("splash", 0.0)))
 	var mult := float(s.get("burst_mult", s.get("mult", 1.0)))
 	for o: Dictionary in mobs:
-		if o.spawn <= 0.0 and s.p.distance_to(o.p - Vector2(0, o.cy)) < radius + o.r:
+		if _hittable(o) and s.p.distance_to(o.p - Vector2(0, o.cy)) < radius + o.r:
 			_damage_mob(o, (o.p - s.p).normalized() * 500.0, mult)
 			if s.has("burn"):
 				HeroKit.burn_mob(o, float(s.burn), float(s.burn_time))
@@ -1521,6 +1567,7 @@ func _update_camera(dt: float) -> void:
 			else:
 				target[axis] = clampf(target[axis], lo[axis] + view[axis] / 2.0, hi[axis] - view[axis] / 2.0)
 	camera.position = camera.position.lerp(target, 1.0 - pow(0.0015, dt))
+	camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * state.shake
 
 
 # ---------- world drawing ----------
@@ -1531,6 +1578,9 @@ func draw_layer(l: Layer) -> void:
 		"back": _draw_back(l)
 		"front": _draw_front(l)
 		"actors": _draw_actors(l)
+		"glow":
+			if monsters != null:
+				monsters.draw_fx(l)
 		"dark": _draw_dark(l)
 
 
@@ -1664,6 +1714,8 @@ func _draw_actors(l: Layer) -> void:
 				l.draw_texture(tex.vent, Vector2(e.x, e.y) - tex.vent.get_size() / 2.0)
 			"plate":
 				_draw_plate(l, e, t)
+	if monsters != null:
+		monsters.draw_warnings(l)
 	var list: Array = []
 	for p: Dictionary in W.props:
 		if p.name != "" and view.has_point(Vector2(p.x, p.y)):
@@ -1680,8 +1732,12 @@ func _draw_actors(l: Layer) -> void:
 		if d.kind != "secret" and view.has_point(Vector2(d.cx, d.cy)) and _door_closed(d):
 			list.append([d.cy + 60.0, "gate", d])
 	for m: Dictionary in mobs:
-		if view.has_point(m.p):
+		if view.grow(300 if monsters != null else 0).has_point(m.p):
 			list.append([m.p.y, "mob", m])
+	if monsters != null:
+		for c: Dictionary in monsters.corpses:
+			if view.has_point(c.p):
+				list.append([c.p.y, "corpse", c])
 	list.append([player.y, "hero", player])
 	list.sort_custom(func(x: Array, y: Array) -> bool: return x[0] < y[0])
 	for item: Array in list:
@@ -1692,7 +1748,12 @@ func _draw_actors(l: Layer) -> void:
 				_tex(l, p.name, Vector2(p.x - im.get_width() / 2.0, p.y - im.get_height()), p.flip)
 			"ent": _draw_ent(l, item[2], t)
 			"gate": _draw_gate(l, item[2], t)
-			"mob": _draw_mob(l, item[2], t)
+			"mob":
+				if monsters != null:
+					monsters.draw_mob(l, item[2])
+				else:
+					_draw_mob(l, item[2], t)
+			"corpse": monsters.draw_corpse(l, item[2])
 			"breakable": _draw_breakable(l, item[2], t)
 			"clone": _draw_clone(l, t)
 			"hero": _draw_hero(l, t)
@@ -1732,7 +1793,8 @@ func _draw_actors(l: Layer) -> void:
 		var big := (1.5 if s.get("kind", "") == "magic" else 1.0) * float(s.get("big", 1.0))
 		l.draw_circle(s.p, 16.0 * big, col("shot_glow"))
 		l.draw_circle(s.p, 8.0 * big, col("shot_core"))
-	for s: Dictionary in eshots:
+	# hell monster shots glow on the additive layer instead
+	for s: Dictionary in (eshots if monsters == null else []):
 		var r := 30.0 if s.get("fist", false) else 15.0
 		l.draw_circle(s.p, r, col("eshot_glow"))
 		l.draw_circle(s.p, r * 0.47, col("eshot_core"))
@@ -2085,7 +2147,11 @@ func _draw_dark(l: Layer) -> void:
 	if not clone.is_empty():
 		cands.append([0.0, Vector4(clone.p.x, clone.p.y - 40, 240, 0.9)])
 	for m: Dictionary in mobs:
-		cands.append([m.p.distance_squared_to(center), Vector4(m.p.x, m.p.y - 40.0 * m.s, 120.0 * m.s, 0.8)])
+		if monsters != null:
+			var reach_light: float = 90.0 + m.r * 2.2 * (1.3 if m.def.kind == "lord" else 1.0)
+			cands.append([m.p.distance_squared_to(center), Vector4(m.p.x, m.p.y - m.cy - m.alt, reach_light, 1.0)])
+		else:
+			cands.append([m.p.distance_squared_to(center), Vector4(m.p.x, m.p.y - 40.0 * m.s, 120.0 * m.s, 0.8)])
 	var lava_lights := 0
 	for y in range(int(view.position.y / C), int(view.end.y / C) + 1, 2):
 		for x in range(int(view.position.x / C), int(view.end.x / C) + 1, 2):
@@ -2126,6 +2192,8 @@ func draw_hud(h: Control) -> void:
 	h.draw_texture_rect(_vignette, Rect2(Vector2.ZERO, size), false, vig)
 	if state.flash > 0.0:
 		h.draw_rect(Rect2(Vector2.ZERO, size), Color(0.8, 0.08, 0.08, state.flash))
+	if state.white > 0.0:
+		h.draw_rect(Rect2(Vector2.ZERO, size), Color(1, 0.925, 0.82, minf(1.0, state.white)))
 	# hearts: two half hearts each, drawn with the 0x72 full / half / empty heart
 	var hs := 32.0
 	var hh := 32.0
@@ -2206,6 +2274,8 @@ func draw_hud(h: Control) -> void:
 			h.draw_rect(Rect2(sx, by, sw, 18), Color(ink, 0.7), false, 1.5)
 		var pname := str(BossKit.phase(boss_mob).get("name", "")) if boss_mob.has("kit") else ""
 		var title: String = str(W.boss.name) + (" · " + pname if pname != "" else "") + ("" if boss_mob.has("kit") else " (Platzhalter)")
+		if monsters != null:
+			title = monsters.boss_label(boss_mob)
 		_text(h, title, Vector2(bx, by - 12), 16, gold)
 		var total := 0.0
 		var left := maxf(0.0, boss_mob.hp)
@@ -2246,7 +2316,7 @@ func draw_hud(h: Control) -> void:
 		h.draw_rect(Rect2(size.x / 2.0 - w / 2.0, ty - 21, 5, 42), Color(accent, fade))
 		_text(h, tt.text, Vector2(0, ty + 7), 20, Color(ink, fade), size.x)
 	if theme.placeholder_note:
-		_text(h, "Figur und Gegner: Platzhalter", Vector2(20, size.y - 14), 16, Color(ink, 0.45))
+		_text(h, "Figur: Platzhalter" if monsters != null else "Figur und Gegner: Platzhalter", Vector2(20, size.y - 14), 16, Color(ink, 0.45))
 	if state.dead > 0.0:
 		h.draw_rect(Rect2(Vector2.ZERO, size), Color(0.12, 0, 0, 0.55))
 	_draw_map(h, size, state.map)

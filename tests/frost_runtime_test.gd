@@ -331,9 +331,11 @@ func _test_hell_scene_keeps_its_look_without_theme() -> void:
 	check(game.hero.is_empty() and game.weapon_tex == null and (game.hero_frames.idle[0] as Texture2D).resource_path.contains("knight_m"), "hell keeps its knight without class weapon")
 	var r := _combat_room(game)
 	game._start_fight(r)
+	# hell fights draw from the hell monsters' floor roster (hell_monsters.json), never from the frost kinds
+	var roster: Array = game.monsters.floors["1"].mobs
 	var hell_kinds := true
 	for m: Dictionary in game.mobs:
-		if not (m.kind in ["glut", "gross", "spucker"]) or (m.look as Dictionary).has("sprite"):
+		if not roster.has(m.get("id", "")) or m.has("look"):
 			hell_kinds = false
-	check(hell_kinds and not game.mobs.is_empty(), "hell fights keep their own placeholder enemies")
+	check(hell_kinds and not game.mobs.is_empty(), "hell fights keep their own hell monsters")
 	await _free(game)
