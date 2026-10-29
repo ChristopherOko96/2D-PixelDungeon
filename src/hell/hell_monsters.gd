@@ -31,11 +31,14 @@ var lobs: Array = []
 var corpses: Array = []
 
 
-## game: the hell game node; cfg: the "monsters" block of hell_balance.json.
+## game: the hell game node; cfg: the "monsters" block of the world's balance file. A world with
+## its own monster set names its data file and atlas folder there ("data", "sprites"; e.g. the
+## crypt in assets/data/krypta_balance.json); without them the hell monsters load.
 func _init(game: Node, monster_cfg: Dictionary) -> void:
 	g = game
 	cfg = monster_cfg
-	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(DATA_PATH))
+	var sprite_dir := str(cfg.get("sprites", SPRITE_DIR))
+	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(str(cfg.get("data", DATA_PATH))))
 	defs = data.defs
 	floors = data.floors
 	# experience per kill for the hero's levels (hero_kit.gd reads def.exp)
@@ -43,7 +46,7 @@ func _init(game: Node, monster_cfg: Dictionary) -> void:
 	for id: String in defs:
 		defs[id].exp = int(exp.get(id, 0))
 	for id: String in defs:
-		atlas[id] = load(SPRITE_DIR + id + ".png")
+		atlas[id] = load(sprite_dir + id + ".png")
 
 
 ## Drops every attack effect (death, pit, new floor).

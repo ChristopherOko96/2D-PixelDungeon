@@ -1,0 +1,1202 @@
+{
+ "floor_00": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "B001"
+ },
+ "floor_04": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "B001r"
+ },
+ "floor_01": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "B003"
+ },
+ "floor_10": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "B001f"
+ },
+ "floor_11": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "B003r"
+ },
+ "floor_02": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "B003f"
+ },
+ "floor_03": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "B004"
+ },
+ "floor_07": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "B005"
+ },
+ "floor_08": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "B004r"
+ },
+ "floor_09": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "B005f"
+ },
+ "floor_05": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "B011"
+ },
+ "floor_06": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "B015"
+ },
+ "lava_00": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "hell/lava_00 as poison mire"
+ },
+ "lava_01": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "hell/lava_01 as poison mire"
+ },
+ "lava_edge_top": {
+  "w": 96,
+  "h": 96,
+  "kind": "opaque",
+  "src": "hell/lava_edge_top as poison mire"
+ },
+ "wall_v": {
+  "w": 62,
+  "h": 70,
+  "kind": "design",
+  "src": "B030 brick face"
+ },
+ "corner_cap": {
+  "w": 76,
+  "h": 76,
+  "kind": "design",
+  "src": "B030 brick face"
+ },
+ "bridge_v": {
+  "w": 212,
+  "h": 212,
+  "kind": "sprite",
+  "src": "B030 planks, rails left/right"
+ },
+ "bridge_h": {
+  "w": 212,
+  "h": 212,
+  "kind": "sprite",
+  "src": "B030 planks, rails top/bottom"
+ },
+ "portal": {
+  "w": 112,
+  "h": 120,
+  "kind": "sprite",
+  "src": "I012 with soul glow"
+ },
+ "portal_dark": {
+  "w": 112,
+  "h": 120,
+  "kind": "sprite",
+  "src": "I012 spent"
+ },
+ "heart": {
+  "w": 57,
+  "h": 55,
+  "kind": "sprite",
+  "src": "hell/heart"
+ },
+ "fire_orb": {
+  "w": 52,
+  "h": 58,
+  "kind": "sprite",
+  "src": "hell/fire_orb as soul orb"
+ },
+ "wall_h": {
+  "w": 186,
+  "h": 85,
+  "kind": "sprite",
+  "src": "B030"
+ },
+ "wall_h_glowpost": {
+  "w": 46,
+  "h": 106,
+  "kind": "sprite",
+  "src": "B033"
+ },
+ "wall_post_slit": {
+  "w": 60,
+  "h": 116,
+  "kind": "sprite",
+  "src": "B036"
+ },
+ "wall_torch_block": {
+  "w": 68,
+  "h": 160,
+  "kind": "sprite",
+  "src": "B041"
+ },
+ "wall_skull_a": {
+  "w": 82,
+  "h": 115,
+  "kind": "sprite",
+  "src": "D107"
+ },
+ "wall_skull_b": {
+  "w": 74,
+  "h": 99,
+  "kind": "sprite",
+  "src": "I024"
+ },
+ "wall_v_glow": {
+  "w": 69,
+  "h": 159,
+  "kind": "sprite",
+  "src": "B043"
+ },
+ "wall_v_glow_b": {
+  "w": 63,
+  "h": 150,
+  "kind": "sprite",
+  "src": "B047"
+ },
+ "door_stairs": {
+  "w": 168,
+  "h": 125,
+  "kind": "sprite",
+  "src": "B066"
+ },
+ "door_stairs_small": {
+  "w": 117,
+  "h": 115,
+  "kind": "sprite",
+  "src": "B067"
+ },
+ "gate_side": {
+  "w": 177,
+  "h": 130,
+  "kind": "sprite",
+  "src": "B048"
+ },
+ "jamb_a": {
+  "w": 61,
+  "h": 136,
+  "kind": "sprite",
+  "src": "B049"
+ },
+ "jamb_b": {
+  "w": 62,
+  "h": 136,
+  "kind": "sprite",
+  "src": "B050"
+ },
+ "portcullis": {
+  "w": 206,
+  "h": 128,
+  "kind": "sprite",
+  "src": "B051"
+ },
+ "demon_lintel": {
+  "w": 268,
+  "h": 132,
+  "kind": "sprite",
+  "src": "B052"
+ },
+ "obelisk": {
+  "w": 68,
+  "h": 162,
+  "kind": "sprite",
+  "src": "B054"
+ },
+ "banner_a": {
+  "w": 77,
+  "h": 142,
+  "kind": "sprite",
+  "src": "B055"
+ },
+ "banner_b": {
+  "w": 85,
+  "h": 156,
+  "kind": "sprite",
+  "src": "B056"
+ },
+ "banner_chain": {
+  "w": 71,
+  "h": 202,
+  "kind": "sprite",
+  "src": "B058"
+ },
+ "cage_small": {
+  "w": 55,
+  "h": 119,
+  "kind": "sprite",
+  "src": "B059"
+ },
+ "rune_pillar_a": {
+  "w": 74,
+  "h": 184,
+  "kind": "sprite",
+  "src": "I029"
+ },
+ "rune_pillar_b": {
+  "w": 63,
+  "h": 133,
+  "kind": "sprite",
+  "src": "I031"
+ },
+ "rune_pillar_c": {
+  "w": 73,
+  "h": 173,
+  "kind": "sprite",
+  "src": "I033"
+ },
+ "rune_pillar_d": {
+  "w": 50,
+  "h": 127,
+  "kind": "sprite",
+  "src": "I034"
+ },
+ "grate": {
+  "w": 111,
+  "h": 88,
+  "kind": "sprite",
+  "src": "I114"
+ },
+ "spike_block": {
+  "w": 94,
+  "h": 108,
+  "kind": "sprite",
+  "src": "D150"
+ },
+ "brazier_floor": {
+  "w": 82,
+  "h": 98,
+  "kind": "sprite",
+  "src": "B069"
+ },
+ "demon_plate": {
+  "w": 85,
+  "h": 93,
+  "kind": "sprite",
+  "src": "B073"
+ },
+ "rune_small": {
+  "w": 92,
+  "h": 88,
+  "kind": "sprite",
+  "src": "B071"
+ },
+ "rune_plate": {
+  "w": 85,
+  "h": 91,
+  "kind": "sprite",
+  "src": "B072"
+ },
+ "rune_big": {
+  "w": 78,
+  "h": 87,
+  "kind": "sprite",
+  "src": "B022"
+ },
+ "fire_plate": {
+  "w": 86,
+  "h": 104,
+  "kind": "sprite",
+  "src": "B007"
+ },
+ "pit": {
+  "w": 110,
+  "h": 104,
+  "kind": "sprite",
+  "src": "B013"
+ },
+ "chain_a": {
+  "w": 15,
+  "h": 92,
+  "kind": "sprite",
+  "src": "D116"
+ },
+ "chain_b": {
+  "w": 22,
+  "h": 81,
+  "kind": "sprite",
+  "src": "D117"
+ },
+ "chain_swag": {
+  "w": 52,
+  "h": 131,
+  "kind": "sprite",
+  "src": "D118"
+ },
+ "skull_pile_t": {
+  "w": 75,
+  "h": 59,
+  "kind": "sprite",
+  "src": "D084"
+ },
+ "bones_t": {
+  "w": 69,
+  "h": 47,
+  "kind": "sprite",
+  "src": "D086"
+ },
+ "spire_t": {
+  "w": 55,
+  "h": 141,
+  "kind": "sprite",
+  "src": "B097"
+ },
+ "spires_t": {
+  "w": 90,
+  "h": 63,
+  "kind": "sprite",
+  "src": "D093"
+ },
+ "brazier_low": {
+  "w": 82,
+  "h": 104,
+  "kind": "sprite",
+  "src": "B085"
+ },
+ "brazier_low_b": {
+  "w": 92,
+  "h": 97,
+  "kind": "sprite",
+  "src": "B087"
+ },
+ "demon_head": {
+  "w": 58,
+  "h": 73,
+  "kind": "sprite",
+  "src": "D083"
+ },
+ "skull_pile": {
+  "w": 90,
+  "h": 56,
+  "kind": "sprite",
+  "src": "B090"
+ },
+ "bone_a": {
+  "w": 31,
+  "h": 65,
+  "kind": "sprite",
+  "src": "D087"
+ },
+ "bone_b": {
+  "w": 41,
+  "h": 43,
+  "kind": "sprite",
+  "src": "D088"
+ },
+ "coal": {
+  "w": 86,
+  "h": 65,
+  "kind": "sprite",
+  "src": "D091"
+ },
+ "bone_c": {
+  "w": 42,
+  "h": 53,
+  "kind": "sprite",
+  "src": "D089"
+ },
+ "rubble": {
+  "w": 91,
+  "h": 78,
+  "kind": "sprite",
+  "src": "B112"
+ },
+ "spire_small": {
+  "w": 50,
+  "h": 63,
+  "kind": "sprite",
+  "src": "B109"
+ },
+ "spire_tiny": {
+  "w": 42,
+  "h": 45,
+  "kind": "sprite",
+  "src": "B105"
+ },
+ "spire_big_t": {
+  "w": 83,
+  "h": 109,
+  "kind": "sprite",
+  "src": "I101"
+ },
+ "spire_mid": {
+  "w": 46,
+  "h": 122,
+  "kind": "sprite",
+  "src": "B093"
+ },
+ "rocks_a": {
+  "w": 75,
+  "h": 76,
+  "kind": "sprite",
+  "src": "D095"
+ },
+ "rocks_b": {
+  "w": 61,
+  "h": 46,
+  "kind": "sprite",
+  "src": "D094"
+ },
+ "spires_lava": {
+  "w": 83,
+  "h": 93,
+  "kind": "sprite",
+  "src": "I084"
+ },
+ "brazier_pillar": {
+  "w": 88,
+  "h": 158,
+  "kind": "sprite",
+  "src": "B064"
+ },
+ "brazier_rune": {
+  "w": 64,
+  "h": 114,
+  "kind": "sprite",
+  "src": "B063"
+ },
+ "brazier_demon": {
+  "w": 65,
+  "h": 122,
+  "kind": "sprite",
+  "src": "B065"
+ },
+ "brazier_bowl": {
+  "w": 89,
+  "h": 93,
+  "kind": "sprite",
+  "src": "B070"
+ },
+ "wall_torch_hook": {
+  "w": 70,
+  "h": 102,
+  "kind": "sprite",
+  "src": "D024"
+ },
+ "hanging_brazier": {
+  "w": 109,
+  "h": 82,
+  "kind": "sprite",
+  "src": "D037"
+ },
+ "wall_brazier": {
+  "w": 65,
+  "h": 101,
+  "kind": "sprite",
+  "src": "D026"
+ },
+ "torch_a": {
+  "w": 37,
+  "h": 93,
+  "kind": "sprite",
+  "src": "D027"
+ },
+ "torch_b": {
+  "w": 50,
+  "h": 108,
+  "kind": "sprite",
+  "src": "D017"
+ },
+ "torch_c": {
+  "w": 45,
+  "h": 107,
+  "kind": "sprite",
+  "src": "D019"
+ },
+ "chain_long": {
+  "w": 19,
+  "h": 116,
+  "kind": "sprite",
+  "src": "B077"
+ },
+ "chain_long_b": {
+  "w": 18,
+  "h": 116,
+  "kind": "sprite",
+  "src": "B078"
+ },
+ "chain_swag_b": {
+  "w": 52,
+  "h": 131,
+  "kind": "sprite",
+  "src": "D118"
+ },
+ "chain_hang": {
+  "w": 21,
+  "h": 132,
+  "kind": "sprite",
+  "src": "D116"
+ },
+ "cage_hang": {
+  "w": 54,
+  "h": 132,
+  "kind": "sprite",
+  "src": "D119"
+ },
+ "chain_hook": {
+  "w": 32,
+  "h": 116,
+  "kind": "sprite",
+  "src": "D117"
+ },
+ "shackle_a": {
+  "w": 34,
+  "h": 77,
+  "kind": "sprite",
+  "src": "D122"
+ },
+ "shackle_skull": {
+  "w": 42,
+  "h": 68,
+  "kind": "sprite",
+  "src": "D121"
+ },
+ "shackle_b": {
+  "w": 32,
+  "h": 73,
+  "kind": "sprite",
+  "src": "D123"
+ },
+ "skull_heap": {
+  "w": 105,
+  "h": 83,
+  "kind": "sprite",
+  "src": "D084"
+ },
+ "coal_skulls": {
+  "w": 98,
+  "h": 67,
+  "kind": "sprite",
+  "src": "D086"
+ },
+ "bones_scatter": {
+  "w": 68,
+  "h": 53,
+  "kind": "sprite",
+  "src": "B107"
+ },
+ "bone_d": {
+  "w": 37,
+  "h": 39,
+  "kind": "sprite",
+  "src": "B091"
+ },
+ "bone_e": {
+  "w": 49,
+  "h": 43,
+  "kind": "sprite",
+  "src": "B108"
+ },
+ "bone_f": {
+  "w": 48,
+  "h": 38,
+  "kind": "sprite",
+  "src": "D090"
+ },
+ "bone_g": {
+  "w": 50,
+  "h": 39,
+  "kind": "sprite",
+  "src": "B106"
+ },
+ "banner_1": {
+  "w": 66,
+  "h": 120,
+  "kind": "sprite",
+  "src": "D001"
+ },
+ "banner_2": {
+  "w": 65,
+  "h": 109,
+  "kind": "sprite",
+  "src": "D002"
+ },
+ "banner_3": {
+  "w": 62,
+  "h": 108,
+  "kind": "sprite",
+  "src": "D003"
+ },
+ "banner_4": {
+  "w": 60,
+  "h": 98,
+  "kind": "sprite",
+  "src": "D004"
+ },
+ "banner_5": {
+  "w": 63,
+  "h": 110,
+  "kind": "sprite",
+  "src": "D005"
+ },
+ "spire_big": {
+  "w": 81,
+  "h": 124,
+  "kind": "sprite",
+  "src": "I083"
+ },
+ "spire_big_b": {
+  "w": 68,
+  "h": 102,
+  "kind": "sprite",
+  "src": "I086"
+ },
+ "rocks_lava": {
+  "w": 52,
+  "h": 90,
+  "kind": "sprite",
+  "src": "I062"
+ },
+ "rocks_dark": {
+  "w": 41,
+  "h": 77,
+  "kind": "sprite",
+  "src": "I063"
+ },
+ "boulders": {
+  "w": 69,
+  "h": 62,
+  "kind": "sprite",
+  "src": "D096"
+ },
+ "spike_trap": {
+  "w": 90,
+  "h": 96,
+  "kind": "sprite",
+  "src": "D158"
+ },
+ "spike_trap_b": {
+  "w": 66,
+  "h": 76,
+  "kind": "sprite",
+  "src": "D150"
+ },
+ "grate_a": {
+  "w": 64,
+  "h": 67,
+  "kind": "sprite",
+  "src": "B020"
+ },
+ "vent": {
+  "w": 94,
+  "h": 83,
+  "kind": "sprite",
+  "src": "B014"
+ },
+ "grate_b": {
+  "w": 61,
+  "h": 53,
+  "kind": "sprite",
+  "src": "B104"
+ },
+ "altar": {
+  "w": 130,
+  "h": 204,
+  "kind": "sprite",
+  "src": "I064"
+ },
+ "skull_obelisk": {
+  "w": 69,
+  "h": 144,
+  "kind": "sprite",
+  "src": "I028"
+ },
+ "fountain": {
+  "w": 120,
+  "h": 148,
+  "kind": "sprite",
+  "src": "D161"
+ },
+ "boss_gate": {
+  "w": 288,
+  "h": 179,
+  "kind": "sprite",
+  "src": "B051"
+ },
+ "boss_arch": {
+  "w": 257,
+  "h": 188,
+  "kind": "sprite",
+  "src": "B048"
+ },
+ "boss_banner": {
+  "w": 84,
+  "h": 147,
+  "kind": "sprite",
+  "src": "D131"
+ },
+ "carpet": {
+  "w": 58,
+  "h": 146,
+  "kind": "sprite",
+  "src": "D006"
+ },
+ "shop_table": {
+  "w": 169,
+  "h": 107,
+  "kind": "sprite",
+  "src": "I077"
+ },
+ "chest_vault": {
+  "w": 68,
+  "h": 77,
+  "kind": "sprite",
+  "src": "D045"
+ },
+ "stairs_down": {
+  "w": 152,
+  "h": 150,
+  "kind": "sprite",
+  "src": "B067"
+ },
+ "torch_pillar": {
+  "w": 61,
+  "h": 136,
+  "kind": "sprite",
+  "src": "B049"
+ },
+ "brazier_blue": {
+  "w": 80,
+  "h": 94,
+  "kind": "sprite",
+  "src": "B086"
+ },
+ "bowl_blue": {
+  "w": 80,
+  "h": 84,
+  "kind": "sprite",
+  "src": "B070"
+ },
+ "blood_a": {
+  "w": 95,
+  "h": 95,
+  "kind": "sprite",
+  "src": "I151"
+ },
+ "blood_b": {
+  "w": 88,
+  "h": 101,
+  "kind": "sprite",
+  "src": "I152"
+ },
+ "blood_c": {
+  "w": 84,
+  "h": 103,
+  "kind": "sprite",
+  "src": "I153"
+ },
+ "blood_d": {
+  "w": 109,
+  "h": 79,
+  "kind": "sprite",
+  "src": "I154"
+ },
+ "blood_e": {
+  "w": 96,
+  "h": 87,
+  "kind": "sprite",
+  "src": "I170"
+ },
+ "blood_f": {
+  "w": 95,
+  "h": 81,
+  "kind": "sprite",
+  "src": "I174"
+ },
+ "moss_a": {
+  "w": 94,
+  "h": 90,
+  "kind": "sprite",
+  "src": "I168"
+ },
+ "moss_b": {
+  "w": 98,
+  "h": 92,
+  "kind": "sprite",
+  "src": "I169"
+ },
+ "moss_c": {
+  "w": 91,
+  "h": 97,
+  "kind": "sprite",
+  "src": "I145"
+ },
+ "moss_rubble_a": {
+  "w": 85,
+  "h": 74,
+  "kind": "sprite",
+  "src": "I143"
+ },
+ "moss_rubble_b": {
+  "w": 96,
+  "h": 56,
+  "kind": "sprite",
+  "src": "I122"
+ },
+ "moss_ruin": {
+  "w": 83,
+  "h": 109,
+  "kind": "sprite",
+  "src": "I101"
+ },
+ "barrel_a": {
+  "w": 43,
+  "h": 66,
+  "kind": "sprite",
+  "src": "D052"
+ },
+ "barrel_b": {
+  "w": 52,
+  "h": 70,
+  "kind": "sprite",
+  "src": "D053"
+ },
+ "barrel_c": {
+  "w": 51,
+  "h": 68,
+  "kind": "sprite",
+  "src": "D054"
+ },
+ "urn_a": {
+  "w": 63,
+  "h": 90,
+  "kind": "sprite",
+  "src": "D055"
+ },
+ "urn_b": {
+  "w": 41,
+  "h": 58,
+  "kind": "sprite",
+  "src": "D057"
+ },
+ "urn_c": {
+  "w": 58,
+  "h": 89,
+  "kind": "sprite",
+  "src": "D058"
+ },
+ "urn_d": {
+  "w": 61,
+  "h": 94,
+  "kind": "sprite",
+  "src": "D059"
+ },
+ "urn_e": {
+  "w": 64,
+  "h": 91,
+  "kind": "sprite",
+  "src": "D060"
+ },
+ "sacks_a": {
+  "w": 74,
+  "h": 66,
+  "kind": "sprite",
+  "src": "I119"
+ },
+ "sacks_b": {
+  "w": 110,
+  "h": 57,
+  "kind": "sprite",
+  "src": "I120"
+ },
+ "sacks_c": {
+  "w": 102,
+  "h": 63,
+  "kind": "sprite",
+  "src": "I121"
+ },
+ "crate_pile": {
+  "w": 90,
+  "h": 98,
+  "kind": "sprite",
+  "src": "I098"
+ },
+ "table_a": {
+  "w": 120,
+  "h": 69,
+  "kind": "sprite",
+  "src": "I071"
+ },
+ "table_b": {
+  "w": 128,
+  "h": 78,
+  "kind": "sprite",
+  "src": "I072"
+ },
+ "table_c": {
+  "w": 154,
+  "h": 71,
+  "kind": "sprite",
+  "src": "I080"
+ },
+ "candelabra": {
+  "w": 50,
+  "h": 114,
+  "kind": "sprite",
+  "src": "I075"
+ },
+ "shelf": {
+  "w": 72,
+  "h": 129,
+  "kind": "sprite",
+  "src": "I076"
+ },
+ "crate_a": {
+  "w": 68,
+  "h": 88,
+  "kind": "sprite",
+  "src": "D047"
+ },
+ "crate_b": {
+  "w": 62,
+  "h": 76,
+  "kind": "sprite",
+  "src": "D048"
+ },
+ "crate_c": {
+  "w": 63,
+  "h": 88,
+  "kind": "sprite",
+  "src": "D050"
+ },
+ "statue_angel": {
+  "w": 69,
+  "h": 144,
+  "kind": "sprite",
+  "src": "I028"
+ },
+ "statue_monk": {
+  "w": 50,
+  "h": 128,
+  "kind": "sprite",
+  "src": "I040"
+ },
+ "gargoyle": {
+  "w": 104,
+  "h": 135,
+  "kind": "sprite",
+  "src": "I030"
+ },
+ "rug_red": {
+  "w": 91,
+  "h": 168,
+  "kind": "sprite",
+  "src": "D009"
+ },
+ "rug_blue": {
+  "w": 87,
+  "h": 166,
+  "kind": "sprite",
+  "src": "D010"
+ },
+ "mat": {
+  "w": 81,
+  "h": 55,
+  "kind": "sprite",
+  "src": "D015"
+ },
+ "rug_square": {
+  "w": 50,
+  "h": 59,
+  "kind": "sprite",
+  "src": "D023"
+ },
+ "bench": {
+  "w": 131,
+  "h": 52,
+  "kind": "sprite",
+  "src": "I078"
+ },
+ "chest_closed": {
+  "w": 76,
+  "h": 79,
+  "kind": "sprite",
+  "src": "D041"
+ },
+ "chest_open": {
+  "w": 67,
+  "h": 88,
+  "kind": "sprite",
+  "src": "D043"
+ },
+ "chest_gold": {
+  "w": 67,
+  "h": 81,
+  "kind": "sprite",
+  "src": "D044"
+ },
+ "chest_empty": {
+  "w": 67,
+  "h": 84,
+  "kind": "sprite",
+  "src": "D042"
+ },
+ "key": {
+  "w": 30,
+  "h": 70,
+  "kind": "sprite",
+  "src": "D074"
+ },
+ "rune_gem": {
+  "w": 59,
+  "h": 76,
+  "kind": "sprite",
+  "src": "I181"
+ },
+ "icon_scroll": {
+  "w": 64,
+  "h": 62,
+  "kind": "sprite",
+  "src": "B071"
+ },
+ "icon_swords": {
+  "w": 56,
+  "h": 74,
+  "kind": "sprite",
+  "src": "D108"
+ },
+ "icon_chest": {
+  "w": 54,
+  "h": 57,
+  "kind": "sprite",
+  "src": "D041"
+ },
+ "icon_demon": {
+  "w": 57,
+  "h": 80,
+  "kind": "sprite",
+  "src": "D107"
+ },
+ "icon_demon_big": {
+  "w": 80,
+  "h": 105,
+  "kind": "sprite",
+  "src": "D109"
+ },
+ "icon_door": {
+  "w": 81,
+  "h": 84,
+  "kind": "sprite",
+  "src": "I002"
+ },
+ "boss_banner_blue": {
+  "w": 84,
+  "h": 147,
+  "kind": "sprite",
+  "src": "D131 recoloured blue"
+ },
+ "boss_banner_green": {
+  "w": 84,
+  "h": 147,
+  "kind": "sprite",
+  "src": "D131 recoloured green"
+ },
+ "boss_banner_purple": {
+  "w": 84,
+  "h": 147,
+  "kind": "sprite",
+  "src": "D131 recoloured purple"
+ },
+ "boss_banner_gold": {
+  "w": 84,
+  "h": 147,
+  "kind": "sprite",
+  "src": "D131 recoloured gold"
+ },
+ "boss_banner_teal": {
+  "w": 84,
+  "h": 147,
+  "kind": "sprite",
+  "src": "D131 recoloured teal"
+ },
+ "boss_banner_pink": {
+  "w": 84,
+  "h": 147,
+  "kind": "sprite",
+  "src": "D131 recoloured pink"
+ },
+ "torch_pillar_blue": {
+  "w": 61,
+  "h": 136,
+  "kind": "sprite",
+  "src": "B049 blue flame"
+ },
+ "wall_torch_blue": {
+  "w": 70,
+  "h": 102,
+  "kind": "sprite",
+  "src": "D024 blue flame"
+ },
+ "wall_v_glow_blue": {
+  "w": 69,
+  "h": 159,
+  "kind": "sprite",
+  "src": "B043 blue flame"
+ },
+ "npc_idle_f0": {
+  "w": 16,
+  "h": 28,
+  "kind": "sprite",
+  "src": "0x72 dwarf_m idle"
+ },
+ "npc_idle_f1": {
+  "w": 16,
+  "h": 28,
+  "kind": "sprite",
+  "src": "0x72 dwarf_m idle"
+ },
+ "npc_idle_f2": {
+  "w": 16,
+  "h": 28,
+  "kind": "sprite",
+  "src": "0x72 dwarf_m idle"
+ },
+ "npc_idle_f3": {
+  "w": 16,
+  "h": 28,
+  "kind": "sprite",
+  "src": "0x72 dwarf_m idle"
+ },
+ "torch_dead": {
+  "w": 70,
+  "h": 102,
+  "kind": "sprite",
+  "src": "D024 without flame"
+ },
+ "boss_gate_blue": {
+  "w": 288,
+  "h": 179,
+  "kind": "sprite",
+  "src": "B051 blue flames"
+ }
+}

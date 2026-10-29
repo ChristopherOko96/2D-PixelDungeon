@@ -45,6 +45,9 @@ const StoryItems = preload("res://src/hero/story_items.gd")
 const InventoryPanel = preload("res://src/ui/inventory_panel.gd")
 const HudKit = preload("res://src/ui/hud_kit.gd")
 const HudStyle = preload("res://src/ui/hud_style.gd")
+## The world kit (src/world_kit): a world with theme.world_pack builds every floor live from the
+## run number instead of reading baked floors (Story 1, the crypt).
+const WorldPack = preload("res://src/world_kit/krypta_pack.gd")
 const BALANCE_PATH := "res://assets/data/hell_balance.json"
 const HERO := "res://assets/sprites/0x72/%s_%s_anim_f%d.png"
 const WEAPON := "res://assets/sprites/0x72/%s.png"
@@ -120,6 +123,10 @@ var swing := {"a": 0.0, "t": 0.0}
 
 var balance: Dictionary = {}
 var floors_raw: Array = []
+## The world pack of a generated world (theme.world_pack); null for baked floors.
+var world: RefCounted
+## Floor choice of the hidden stairs (key 1-9), open while not empty.
+var stairs_pick: Dictionary = {}
 var tex: Dictionary = {}
 var hero_frames: Dictionary = {}
 var W: Dictionary = {}
@@ -204,7 +211,13 @@ class Hud extends Control:
 func _ready() -> void:
 	_load_theme()
 	balance = JSON.parse_string(FileAccess.get_file_as_string(theme.balance))
-	floors_raw = FloorData.load_all(theme.floors)
+	if theme.has("world_pack"):
+		# a generated world: floors are built when entered (load_floor); only their number is known
+		world = WorldPack.new(str(theme.world_pack), str(theme.sprites) + "manifest.json")
+		floors_raw = []
+		floors_raw.resize(world.floor_count())
+	else:
+		floors_raw = FloorData.load_all(theme.floors)
 	_load_textures()
 	var classes: Dictionary = theme.get("classes", {})
 	if not classes.has(class_id):
@@ -480,7 +493,16 @@ func _layer(kind: String, z: int, area := Rect2()) -> Layer:
 ## Builds floor n (1-10). With carry the hero keeps hearts, rune stones, seal
 ## blessings and the paused clone skill.
 func load_floor(n: int, carry: bool) -> void:
-	W = FloorData.prepare(floors_raw[n - 1])
+	# a generated world keeps its run number from floor to floor (and in saves); a fresh run rolls one
+	var world_run := 0
+	if world != null:
+		world_run = int(state.get("world_run", 0)) if carry and not state.is_empty() else 0
+		if world_run == 0:
+			world_run = WorldPack.new_run()
+		W = FloorData.prepare(world.build_raw(n, world_run))
+	else:
+		W = FloorData.prepare(floors_raw[n - 1])
+	stairs_pick = {}
 	if theme.key_in_chest:
 		# keys on the floor (key rooms) wait in a chest instead; dropped keys stay drops
 		for e: Dictionary in W.ents:
@@ -510,13 +532,14 @@ func load_floor(n: int, carry: bool) -> void:
 		"rate": float(weapon.get("cooldown", balance.shot.cooldown)), "speed_mul": 1.0, "range": float(weapon.get("life", balance.shot.life)), "buffs": [],
 		"skill": {"owned": false, "active": false, "left": float(balance.clone.duration)},
 		"level": 1, "exp": 0, "skill_cd": {}, "relic": "", "relic_on": false, "upgrades": {}, "offer": [], "cards_due": 0,
-		"relic_floor": 0, "relic_item": "", "talent": talent, "crystals_run": 0, "run_id": _new_run_id()}
+		"relic_floor": 0, "relic_item": "", "talent": talent, "crystals_run": 0, "run_id": _new_run_id(), "world_run": world_run}
 	if carry and not state.is_empty():
 		keep = {"hp": state.hp, "max_hp": state.max_hp, "gems": state.gems, "dmg": state.dmg, "rate": state.rate,
 			"speed_mul": state.speed_mul, "range": state.range, "buffs": state.buffs, "skill": state.skill,
 			"level": state.level, "exp": state.exp, "skill_cd": {}, "relic": state.relic, "relic_on": state.relic_on, "upgrades": state.upgrades,
 			"offer": state.offer, "cards_due": state.cards_due, "relic_floor": state.relic_floor, "relic_item": state.relic_item,
-			"talent": state.talent, "crystals_run": state.crystals_run, "run_id": str(state.get("run_id", _new_run_id())), "items": state.get("items", {})}
+			"talent": state.talent, "crystals_run": state.crystals_run, "run_id": str(state.get("run_id", _new_run_id())), "items": state.get("items", {}),
+			"world_run": world_run}
 		keep.skill.active = false
 	state = {"floor": n, "keys": {"A": false, "B": false, "C": false}, "used": {"A": false, "B": false, "C": false},
 		"visited": {start.index: true}, "room": start.index, "banner": {"text": W.title, "sub": "Etage %d · %s" % [n, W.circle], "t": 0.0},
@@ -551,7 +574,7 @@ func load_floor(n: int, carry: bool) -> void:
 	gbars = []
 	embers = []
 	clone = {}
-	breakables = W.ents.filter(func(e: Dictionary) -> bool: return e.type == "seal" or e.type == "skullheap")
+	breakables = W.ents.filter(func(e: Dictionary) -> bool: return e.type == "seal" or e.type == "skullheap" or e.type == "crate")
 	pits = W.ents.filter(func(e: Dictionary) -> bool: return e.type == "pit")
 	for e: Dictionary in breakables:
 		e.max_hp = int(e.hp)
@@ -615,6 +638,8 @@ func _index_solids() -> void:
 			"vault": _add_solid(Rect2(e.x - 70, e.y - 50, 140, 50))
 			"portal": _add_solid(Rect2(e.x - 72, e.y - 40, 144, 40))
 			"brazier": _add_solid(Rect2(e.x - 28, e.y - 30, 56, 30))
+			"well": _add_solid(Rect2(e.x - 56, e.y - 44, 112, 44))
+			"stairs": _add_solid(Rect2(e.x - 70, e.y - 60, 140, 50))
 	door_at = {}
 	for d: Dictionary in W.doors:
 		for c: Vector2i in d.cells:
@@ -698,6 +723,8 @@ func box_blocked(box: Rect2, avoid_lava := false) -> bool:
 
 
 func _breakable_box(e: Dictionary) -> Rect2:
+	if e.type == "crate":
+		return Rect2(e.x - 30.0, e.y - 30.0, 60.0, 30.0)
 	var hw := 42.0 if e.type == "seal" else 48.0
 	return Rect2(e.x - hw, e.y - 40.0, hw * 2.0, 40.0)
 
@@ -763,6 +790,14 @@ func _unhandled_input(event: InputEvent) -> void:
 			bar_drag = {}
 		return
 	if not (event is InputEventKey) or event.echo:
+		return
+	if not stairs_pick.is_empty() and event.pressed:
+		# the floor choice of the hidden stairs takes the number keys; Esc or E closes it
+		if event.keycode >= KEY_1 and event.keycode <= KEY_9:
+			choose_stairs(int(event.keycode - KEY_0))
+		elif event.keycode in [KEY_ESCAPE, KEY_E, KEY_SPACE]:
+			stairs_pick = {}
+		get_viewport().set_input_as_handled()
 		return
 	var skill_keys := {KEY_1: "1", KEY_2: "2", KEY_3: "3", KEY_4: "4"}
 	if not skills.is_empty() and skill_keys.has(event.keycode):
@@ -901,6 +936,16 @@ func _interactables() -> Array:
 			"brazier":
 				if not e.get("lit", false):
 					out.append({"e": e, "label": "Erst die Gegner besiegen" if W.rooms[e.room].fight else "Feuerschale entzünden", "p": Vector2(e.x, e.y - 30), "r": 115.0})
+			# the world kit's key room, hidden stairs and their trigger
+			"well":
+				out.append({"e": e, "label": "Manabrunnen: versiegt" if e.get("used", false) else "Manabrunnen: Kräfte ganz auffüllen (einmal)", "p": Vector2(e.x, e.y - 30), "r": 150.0})
+			"shop":
+				out.append({"e": e, "label": "Händler: der Laden öffnet später", "p": Vector2(e.x, e.y - 30), "r": 150.0})
+			"stairs":
+				out.append({"e": e, "label": "Treppe: in eine frühere Etage hinab", "p": Vector2(e.x, e.y - 30), "r": 170.0})
+			"lever":
+				if not e.get("lit", false):
+					out.append({"e": e, "label": "Erloschene Fackel anzünden", "p": Vector2(e.x, e.y - 20), "r": 115.0})
 			"relic":
 				if not e.get("taken", false):
 					var label := "Versiegelt: die vier Platten in ihrer Reihenfolge betreten"
@@ -913,7 +958,10 @@ func _interactables() -> Array:
 			out.append({"e": d, "label": ("%s benutzen" if state.keys[d.key] else "Verschlossen: %s fehlt") % key_name[d.key], "p": p, "r": 190.0})
 		elif d.kind == "puzzle" and _door_closed(d) and not W.rooms[d.a].fight and not W.rooms[d.b].fight:
 			var g: Dictionary = W.groups[d.group]
-			out.append({"e": d, "label": "Gittertor: alle Feuerschalen der Etage entzünden" if g.get("spread", false) else ("Rätseltor: alle Feuerschalen entzünden" if g.kind == "braziers" else "Rätseltor: alle Runenplatten betreten"), "p": p, "r": 190.0})
+			var label := "Gittertor: alle Feuerschalen der Etage entzünden" if g.get("spread", false) else ("Rätseltor: alle Feuerschalen entzünden" if g.kind == "braziers" else "Rätseltor: alle Runenplatten betreten")
+			if g.kind == "sequence" and g.has("count"):
+				label = "Gittertor: die %d Druckplatten in der richtigen Reihenfolge betreten" % int(g.count)
+			out.append({"e": d, "label": label, "p": p, "r": 190.0})
 		elif d.kind == "boss" and _door_closed(d):
 			out.append({"e": d, "label": "Versiegelt bis %s fällt" % W.boss.name, "p": p, "r": 190.0})
 	return out
@@ -957,7 +1005,7 @@ func end_run(won: bool) -> void:
 ## The result panel's rows for an ended run.
 func run_result(over: Dictionary) -> Dictionary:
 	var won := bool(over.get("won", false))
-	var zone := "FROSTGRUFT" if StorySave.mode(self) == "frost" else "HÖLLE"
+	var zone := str(theme.get("zone_name", "FROSTGRUFT" if StorySave.mode(self) == "frost" else "HÖLLE"))
 	var lines: Array = [["ZONE", zone], ["ERREICHT", "ETAGE %d · %s" % [int(over.floor), str(over.title).to_upper()]], ["LEVEL", str(int(over.level))]]
 	if not won and str(over.why) != "":
 		lines.append(["URSACHE", str(over.why).to_upper()])
@@ -1010,6 +1058,9 @@ func act() -> void:
 				var names: Array = (theme[e.item].skills as Array).map(func(s: Dictionary) -> String: return "%s (%s, ab LV %d)" % [s.short, s.key, int(s.unlock)])
 				state.banner = {"text": str(theme[e.item].name), "sub": " · ".join(PackedStringArray(names)) + " · T wechselt", "t": 0.0}
 			"chest":
+				if e.get("mimic", false):
+					_wake_mimic(e)
+					return
 				_sound("chest")
 				if e.loot.has("key"):
 					e.state = "empty"
@@ -1028,12 +1079,15 @@ func act() -> void:
 						state.hp = mini(state.max_hp, state.hp + 2)
 			"vault":
 				e.opened = true
-				var gems: int = int(balance.vault.gems_base) + state.floor * int(balance.vault.gems_per_floor)
+				# a plate vault pays more the more plates guarded it (tier = plate count, 4 = base)
+				var tier := int(e.get("tier", 4))
+				var hearts := int(balance.vault.heart_containers) + (1 if tier >= 6 else 0)
+				var gems: int = roundi((int(balance.vault.gems_base) + state.floor * int(balance.vault.gems_per_floor)) * (1.0 + (tier - 4) * 0.5))
 				state.gems += gems
-				state.max_hp = mini(int(balance.player.max_hp_cap), state.max_hp + 2 * int(balance.vault.heart_containers))
+				state.max_hp = mini(int(balance.player.max_hp_cap), state.max_hp + 2 * hearts)
 				state.hp = state.max_hp
-				_burst(Vector2(e.x, e.y - 60), 60, true)
-				_toast("Riesentresor! +1 Herzcontainer, volle Gesundheit, +%d Runensteine" % gems)
+				_burst(Vector2(e.x, e.y - 60), 60 + maxi(0, tier - 4) * 10, true)
+				_toast("Riesentresor! +%d Herzcontainer, volle Gesundheit, +%d Runensteine" % [hearts, gems])
 				if story_items != null:
 					story_items.loot("gold_crate", Vector2(e.x, e.y + 60))
 			"portal":
@@ -1061,6 +1115,26 @@ func act() -> void:
 					_solve_group(e.group)
 				else:
 					_toast("Feuerschale %d von %d entzündet." % [prog.x, prog.y])
+			"well":
+				# the mana fountain, once: until mana comes to the story worlds it refills the skills
+				if e.get("used", false):
+					_toast("Der Brunnen ist versiegt.")
+					return
+				e.used = true
+				state.skill_cd = {}
+				_burst(Vector2(e.x, e.y - 70), 36)
+				_sound("relic")
+				_toast("Kräfte vollständig aufgefüllt. Der Brunnen versiegt.")
+			"shop":
+				_toast("Der Händler nickt. Sein Laden öffnet bald.")
+			"stairs":
+				_open_stairs()
+			"lever":
+				# the extinguished torch: lit, it opens the hidden wall of the stairs somewhere in the room
+				e.lit = true
+				W.lights.append({"x": e.x, "y": e.wy + 40, "r": 230, "c": "255,150,70"})
+				_burst(Vector2(e.x, e.wy + 30), 14)
+				_solve_group(e.group)
 		return
 	if e.kind == "lock":
 		if state.keys[e.key]:
@@ -1100,7 +1174,7 @@ func _solve_group(group: String) -> void:
 			_open_secret(d)
 			opened = true
 	if opened:
-		_toast("Ein verborgener Gang öffnet sich. Ein Geheimraum ist erreichbar.")
+		_toast("Die Fackel flammt auf. Irgendwo im Raum knirscht Stein: ein verborgener Gang ist offen." if g.kind == "lever" else "Ein verborgener Gang öffnet sich. Ein Geheimraum ist erreichbar.")
 	elif g.get("reward", "") == "chest":
 		var at: Dictionary = {}
 		for e: Dictionary in W.ents:
@@ -1336,7 +1410,9 @@ func _hit_breakable(e: Dictionary, at: Vector2) -> void:
 	if not Rules.hit_breakable(e):
 		return
 	_burst(Vector2(e.x, e.y - 40), 40)
-	if e.type == "skullheap":
+	if e.type == "crate":
+		_break_crate(e)
+	elif e.type == "skullheap":
 		_open_secret(W.doors[int(e.door)])
 		_toast("Der Schädelhaufen zerfällt. Ein versteckter Gang öffnet sich!")
 	else:
@@ -1365,6 +1441,70 @@ func _break_seal(e: Dictionary) -> void:
 		else:
 			_spawn_mob(r.index, at, String(cfg.demon_kind))
 	_toast("Das Siegel bricht: drei Dämonen springen heraus! Die Gitter fallen.")
+
+
+## A broken urn, barrel or crate (world kit): nothing, rune stones, a heart, or (crates only)
+## undead that lock the room.
+func _break_crate(e: Dictionary) -> void:
+	_sound("hit_bone")
+	match str(e.get("drop", "none")):
+		"gem":
+			_drop("gem", e.room, Vector2(e.x - 14, e.y))
+			_drop("gem", e.room, Vector2(e.x + 16, e.y + 8))
+			_toast("Zerbrochen: Runensteine.")
+		"heart":
+			_drop("heart", e.room, Vector2(e.x, e.y + 4))
+			_toast("Zerbrochen: ein Herz.")
+		"undead":
+			var r: Dictionary = W.rooms[e.room]
+			r.fight = true
+			r.cleared = false
+			for k in range(2):
+				var at := Vector2(e.x + (70.0 if k == 1 else -70.0), e.y + 60.0)
+				if monsters != null:
+					monsters.spawn(r.index, at, String(balance.monsters.seal_demon))
+				else:
+					_spawn_mob(r.index, at, String(balance.seal.demon_kind))
+			_toast("Aus der Kiste kriechen Untote! Die Gitter fallen.")
+		_:
+			_toast("Zerbrochen. Nichts darin.")
+
+
+## A chest that was a mimic: it wakes on opening, the room locks and the fight is on.
+func _wake_mimic(e: Dictionary) -> void:
+	e.state = "empty"
+	e.taken = true
+	var r: Dictionary = W.rooms[e.room]
+	r.fight = true
+	r.cleared = false
+	var kind := str(theme.get("mimic_kind", "mimik"))
+	if monsters != null and monsters.defs.has(kind):
+		var m: Dictionary = monsters.spawn(r.index, Vector2(e.x, e.y), kind)
+		m.spawn = 0.0
+	_burst(Vector2(e.x, e.y - 40), 30, true)
+	state.shake = 0.4
+	_sound("boss_intro")
+	_toast("Die Truhe hat Zähne! Ein Mimik greift an. Die Gitter fallen.")
+
+
+## The hidden stairs: a choice of every earlier floor (keys 1-9, Esc closes). The world is rolled
+## anew from there; hearts, stones, levels and items stay (they carry like a portal).
+func _open_stairs() -> void:
+	if int(state.floor) <= 1:
+		_toast("Die Treppe führt nirgendwohin.")
+		return
+	stairs_pick = {"floors": range(1, int(state.floor))}
+	_sound("stairs")
+
+
+## Takes the hidden stairs down to floor n of a new world.
+func choose_stairs(n: int) -> void:
+	if stairs_pick.is_empty() or n < 1 or n >= int(state.floor):
+		return
+	stairs_pick = {}
+	state.world_run = WorldPack.new_run()
+	load_floor(n, true)
+	_toast("Eine neue Welt: zurück auf Etage %d." % n)
 
 
 func _fall_into_pit() -> void:
@@ -2178,8 +2318,14 @@ func _draw_actors(l: Layer) -> void:
 		if p.name != "" and view.has_point(Vector2(p.x, p.y)):
 			list.append([p.y - (200.0 if p.low else 0.0), "prop", p])
 	for e: Dictionary in W.ents:
-		if view.has_point(Vector2(e.x, e.y)) and e.type in ["chest", "vault", "portal", "brazier", "key", "heart", "gem", "relic"] and not e.get("taken", false):
-			list.append([e.y, "ent", e])
+		if view.has_point(Vector2(e.x, e.y)) and e.type in ["chest", "vault", "portal", "brazier", "key", "heart", "gem", "relic", "well", "npc", "stairs"] and not e.get("taken", false):
+			list.append([e.y - (60.0 if e.type == "stairs" else 0.0), "ent", e])
+		elif e.type == "lever" and view.has_point(Vector2(e.x, e.y)):
+			list.append([float(e.wy), "ent", e])
+	# an opened boss gate stays as a wide arch over the doorway
+	for d: Dictionary in W.doors:
+		if d.get("boss_gate", false) and tex.has("boss_arch") and view.has_point(Vector2(d.cx, d.cy)) and not _door_closed(d):
+			list.append([float(d.y0) * C, "arch", d])
 	for e: Dictionary in breakables:
 		if view.has_point(Vector2(e.x, e.y)):
 			list.append([e.y - (200.0 if e.get("broken", false) else 0.0), "breakable", e])
@@ -2205,6 +2351,9 @@ func _draw_actors(l: Layer) -> void:
 				_tex(l, p.name, Vector2(p.x - im.get_width() / 2.0, p.y - im.get_height()), p.flip)
 			"ent": _draw_ent(l, item[2], t)
 			"gate": _draw_gate(l, item[2], t)
+			"arch":
+				var arch: Texture2D = tex.boss_arch
+				l.draw_texture(arch, Vector2(item[2].cx - arch.get_width() / 2.0, (item[2].y1 + 1) * C + 6 - arch.get_height()))
 			"mob":
 				if monsters != null:
 					monsters.draw_mob(l, item[2])
@@ -2378,7 +2527,7 @@ func _draw_plate(l: Layer, e: Dictionary, t: float) -> void:
 	var glow := 0.0
 	if e.get("on", false):
 		glow = 0.55 + 0.2 * sin(t * 5.0)
-	elif g.kind == "sequence" and not g.solved and e.room == state.room and not W.rooms[state.room].fight:
+	elif g.kind == "sequence" and theme.get("plate_hint", true) and not g.solved and e.room == state.room and not W.rooms[state.room].fight:
 		var parts := Rules.group_progress(W.ents, e.group).y
 		var cyc := fmod(t, parts * 0.75 + 1.4) / 0.75
 		if int(cyc) + 1 == int(e.order):
@@ -2419,7 +2568,8 @@ func _draw_ent(l: Layer, e: Dictionary, t: float) -> void:
 			var im: Texture2D = tex[n]
 			l.draw_texture(im, Vector2(e.x - im.get_width() / 2.0, e.y - im.get_height()))
 		"vault":
-			var im: Texture2D = tex.chest_empty if e.get("opened", false) else tex.chest_gold
+			# a theme may name its own closed and opened vault chest (the crypt: golden, shining until opened)
+			var im: Texture2D = tex.get(str(theme.get("vault_open", "chest_empty")), tex.chest_empty) if e.get("opened", false) else tex.get(str(theme.get("vault_closed", "chest_gold")), tex.chest_gold)
 			var size := im.get_size() * 1.9
 			if not e.get("opened", false):
 				var c := Vector2(e.x, e.y - size.y * 0.55)
@@ -2431,6 +2581,25 @@ func _draw_ent(l: Layer, e: Dictionary, t: float) -> void:
 				if randf() < 0.3:
 					embers.append({"p": Vector2(e.x + randf_range(-70, 70), e.y - randf() * 120), "v": Vector2(0, -30), "t": 0.9, "big": false, "gold": true})
 			l.draw_texture_rect(im, Rect2(Vector2(e.x - size.x / 2.0, e.y - size.y), size), false)
+			if theme.has("vault_closed") and not e.get("opened", false):
+				l.draw_texture_rect(im, Rect2(Vector2(e.x - size.x / 2.0, e.y - size.y), size), false, Color(1.6, 1.4, 0.8, 0.22 + 0.16 * sin(t * 4.0)))
+		"well":
+			var im: Texture2D = tex.fountain
+			l.draw_texture(im, Vector2(e.x - im.get_width() / 2.0, e.y - im.get_height()), Color(0.45, 0.45, 0.5) if e.get("used", false) else Color.WHITE)
+			if not e.get("used", false):
+				l.draw_texture(im, Vector2(e.x - im.get_width() / 2.0, e.y - im.get_height()), Color(1.2, 1.4, 1.8, 0.12 + 0.1 * sin(t * 3.0)))
+		"npc":
+			# the merchant behind the shop table: always the same figure, idle only
+			var frame: Texture2D = tex.get("npc_idle_f%d" % (int(t * 6.0) % 4))
+			if frame != null:
+				var size := frame.get_size() * float(theme.get("hero_scale", 3.0))
+				l.draw_texture_rect(frame, Rect2(Vector2(e.x - size.x / 2.0, e.y - size.y + 6), size), false)
+		"stairs":
+			var im: Texture2D = tex.stairs_down
+			l.draw_texture(im, Vector2(e.x - im.get_width() / 2.0, e.y - im.get_height() + 10))
+		"lever":
+			var im: Texture2D = tex.wall_torch_hook if e.get("lit", false) else tex.torch_dead
+			l.draw_texture(im, Vector2(e.x - im.get_width() / 2.0, e.wy))
 		"portal":
 			var im: Texture2D = tex.portal if e.get("active", false) else tex.portal_dark
 			l.draw_texture(im, Vector2(e.x - im.get_width() / 2.0, e.y - im.get_height()))
@@ -2451,6 +2620,17 @@ func _draw_ent(l: Layer, e: Dictionary, t: float) -> void:
 
 
 func _draw_gate(l: Layer, d: Dictionary, t: float) -> void:
+	if d.get("boss_gate", false) and tex.has("boss_gate"):
+		# the dressed boss gate stands in the wall below the boss room, facing the hero
+		var gate: Texture2D = tex.boss_gate_blue if W.n == 10 and tex.has("boss_gate_blue") else tex.boss_gate
+		var bottom: float = (d.y1 + 1) * C + 8
+		var fight: bool = W.rooms[d.a].fight or W.rooms[d.b].fight
+		l.draw_texture(gate, Vector2(d.cx - gate.get_width() / 2.0, bottom - gate.get_height()))
+		if fight:
+			l.draw_texture(gate, Vector2(d.cx - gate.get_width() / 2.0, bottom - gate.get_height()), Color(1.6, 0.6, 0.5, 0.25 + 0.15 * sin(t * 5.0)))
+		else:
+			l.draw_texture_rect(tex[key_sprite[d.key]], Rect2(d.cx - 15, bottom - gate.get_height() * 0.52, 30, 56), false, key_tint[d.key])
+		return
 	var im: Texture2D = tex.portcullis
 	l.draw_set_transform(Vector2(d.cx, d.cy), PI / 2 if d.dir == "h" else 0.0)
 	var fight: bool = W.rooms[d.a].fight or W.rooms[d.b].fight
@@ -2513,6 +2693,14 @@ func _draw_mob_sprite(l: Layer, m: Dictionary, t: float) -> void:
 
 
 func _draw_breakable(l: Layer, e: Dictionary, t: float) -> void:
+	if e.type == "crate":
+		# urns, barrels and crates: their own sprite, gone once broken
+		if e.get("broken", false):
+			return
+		var ci: Texture2D = tex[e.look]
+		var shake_c := randf_range(-4, 4) if e.get("hit", 0.0) > 0.0 else 0.0
+		l.draw_texture(ci, Vector2(e.x - ci.get_width() / 2.0 + shake_c, e.y - ci.get_height()), Color(2.2, 2.2, 2.2) if e.get("hit", 0.0) > 0.0 else Color.WHITE)
+		return
 	if e.get("broken", false):
 		var rb: Texture2D = tex.rubble
 		l.draw_texture(rb, Vector2(e.x - rb.get_width() / 2.0, e.y - rb.get_height()))
@@ -2798,6 +2986,13 @@ func draw_hud(h: Control) -> void:
 			"lines": [["RÄUME ERKUNDET", "%d / %d" % [state.visited.size(), W.rooms.size()]], [say("RUNENSTEINE"), str(int(state.gems))],
 				["HERZEN", "%d" % (int(state.max_hp) / 2)], ["LEVEL", str(int(state.level))]],
 			"note": note, "hints": "E · WEITER ZU ETAGE %d" % (int(state.floor) + 1)})
+	elif not stairs_pick.is_empty():
+		# the hidden stairs: every earlier floor, in a new world
+		var lines: Array = []
+		for fn: int in stairs_pick.floors:
+			lines.append(["TASTE %d" % fn, "ETAGE %d · %s" % [fn, str(world.pack.floors[fn].title).to_upper() if world != null else ""]])
+		HudKit.result_panel(h, FONT, size, {"title": "VERGESSENE STIEGE", "tone": "floor", "lines": lines,
+			"note": "Die Welt wird neu gewürfelt. Herzen, Steine, Level und Gegenstände bleiben.", "hints": "1-%d · ETAGE WÄHLEN   E · BLEIBEN" % (stairs_pick.floors as Array).size()})
 
 
 ## The skill bar at the bottom: one slot per key with icon, key, cooldown shade

@@ -1,0 +1,491 @@
+{
+ "_note": "Story 1 Krypta der Verdammten: the world pack for the world kit generator (src/world_kit/world_core.gd, src/world_kit/krypta_pack.gd). Written by tools/krypta_dungeon/export_world.js from krypta_floors.js; the browser preview reads the same values. floors: per floor title, ring (circle), boss, size of the slot grid (gc x gr), critical path length, hazard shares (lava = mire, river, spikes, vents, holes, pits), loop share, soul bowls (fire), shooters, final. names/suffixes: room name parts per ring. words: hell wording -> crypt wording. gate_banner: banner colour per floor (red when missing). foot: furniture footprints [solid width, depth, cells]. mimic_fight / mimic_treasure: share of chests that are mimics.",
+ "schema": 1,
+ "floors": [
+  null,
+  {
+   "n": 1,
+   "title": "Vorhalle der Verdammten",
+   "circle": 0,
+   "seed": 31101,
+   "gc": 7,
+   "gr": 6,
+   "path": 13,
+   "rooms": 22,
+   "lava": 0.12,
+   "spikes": 0.2,
+   "vents": 0.15,
+   "holes": 0.45,
+   "pits": 0.3,
+   "loops": 0.35,
+   "mainLock": true,
+   "fire": 3,
+   "seq": false,
+   "boss": {
+    "name": "Knochenwächter",
+    "hp": 46,
+    "summon": 4,
+    "ring": 0
+   }
+  },
+  {
+   "n": 2,
+   "title": "Knochengalerien",
+   "circle": 0,
+   "seed": 31202,
+   "gc": 7,
+   "gr": 6,
+   "path": 13,
+   "rooms": 22,
+   "lava": 0.15,
+   "spikes": 0.25,
+   "vents": 0.2,
+   "holes": 0.45,
+   "pits": 0.35,
+   "loops": 0.35,
+   "mainLock": true,
+   "fire": 3,
+   "seq": true,
+   "boss": {
+    "name": "Grabmutter",
+    "hp": 60,
+    "summon": 4,
+    "ring": 0
+   }
+  },
+  {
+   "n": 3,
+   "title": "Sarkophaghof",
+   "circle": 0,
+   "seed": 31303,
+   "gc": 7,
+   "gr": 6,
+   "path": 14,
+   "rooms": 23,
+   "lava": 0.25,
+   "spikes": 0.25,
+   "vents": 0.25,
+   "holes": 0.45,
+   "pits": 0.35,
+   "loops": 0.35,
+   "mainLock": true,
+   "fire": 0,
+   "seq": true,
+   "boss": {
+    "name": "Moderkoloss",
+    "hp": 90,
+    "summon": 3.6,
+    "ring": 3.4,
+    "mini": true
+   }
+  },
+  {
+   "n": 4,
+   "title": "Kapelle der verlorenen Seelen",
+   "circle": 1,
+   "seed": 31404,
+   "gc": 8,
+   "gr": 6,
+   "path": 15,
+   "rooms": 25,
+   "lava": 0.25,
+   "river": 0.2,
+   "spikes": 0.25,
+   "vents": 0.35,
+   "holes": 0.35,
+   "pits": 0.25,
+   "loops": 0.3,
+   "mainLock": true,
+   "fire": 4,
+   "seq": false,
+   "shooters": true,
+   "boss": {
+    "name": "Nekromantenfürst",
+    "hp": 105,
+    "summon": 3.6,
+    "ring": 3.2
+   }
+  },
+  {
+   "n": 5,
+   "title": "Verschlungene Katakomben",
+   "circle": 1,
+   "seed": 31505,
+   "gc": 8,
+   "gr": 6,
+   "path": 16,
+   "rooms": 26,
+   "lava": 0.35,
+   "river": 0.3,
+   "spikes": 0.3,
+   "vents": 0.4,
+   "holes": 0.4,
+   "pits": 0.3,
+   "loops": 0.3,
+   "mainLock": true,
+   "fire": 3,
+   "seq": true,
+   "shooters": true,
+   "boss": {
+    "name": "Truhenfresser",
+    "hp": 120,
+    "summon": 3.4,
+    "ring": 3
+   }
+  },
+  {
+   "n": 6,
+   "title": "Garten der Graburnen",
+   "circle": 1,
+   "seed": 31606,
+   "gc": 8,
+   "gr": 6,
+   "path": 16,
+   "rooms": 26,
+   "lava": 0.5,
+   "river": 0.45,
+   "spikes": 0.3,
+   "vents": 0.45,
+   "holes": 0.3,
+   "pits": 0.25,
+   "loops": 0.3,
+   "mainLock": true,
+   "fire": 4,
+   "seq": true,
+   "shooters": true,
+   "boss": {
+    "name": "Frostleiche",
+    "hp": 160,
+    "summon": 3.2,
+    "ring": 2.6,
+    "mini": true
+   }
+  },
+  {
+   "n": 7,
+   "title": "Reliquienarchiv",
+   "circle": 2,
+   "seed": 31707,
+   "gc": 8,
+   "gr": 7,
+   "path": 17,
+   "rooms": 28,
+   "lava": 0.3,
+   "river": 0.25,
+   "spikes": 0.45,
+   "vents": 0.4,
+   "holes": 0.5,
+   "pits": 0.4,
+   "loops": 0.3,
+   "mainLock": true,
+   "fire": 4,
+   "seq": true,
+   "shooters": true,
+   "boss": {
+    "name": "Der Archivar",
+    "hp": 175,
+    "summon": 3,
+    "ring": 2.6
+   }
+  },
+  {
+   "n": 8,
+   "title": "Grab der Namenlosen",
+   "circle": 2,
+   "seed": 31808,
+   "gc": 8,
+   "gr": 7,
+   "path": 18,
+   "rooms": 29,
+   "lava": 0.4,
+   "river": 0.3,
+   "spikes": 0.5,
+   "vents": 0.45,
+   "holes": 0.5,
+   "pits": 0.5,
+   "loops": 0.3,
+   "mainLock": true,
+   "fire": 3,
+   "seq": true,
+   "shooters": true,
+   "boss": {
+    "name": "Leerenbrut",
+    "hp": 190,
+    "summon": 2.8,
+    "ring": 2.4
+   }
+  },
+  {
+   "n": 9,
+   "title": "Trauerhallen",
+   "circle": 2,
+   "seed": 31909,
+   "gc": 8,
+   "gr": 7,
+   "path": 18,
+   "rooms": 30,
+   "lava": 0.45,
+   "river": 0.35,
+   "spikes": 0.55,
+   "vents": 0.5,
+   "holes": 0.5,
+   "pits": 0.5,
+   "loops": 0.3,
+   "mainLock": true,
+   "fire": 4,
+   "seq": true,
+   "shooters": true,
+   "boss": {
+    "name": "Knochenkoloss",
+    "hp": 240,
+    "summon": 2.6,
+    "ring": 2,
+    "mini": true
+   }
+  },
+  {
+   "n": 10,
+   "title": "Thron der Verdammten",
+   "circle": 3,
+   "seed": 32010,
+   "gc": 8,
+   "gr": 7,
+   "path": 18,
+   "rooms": 30,
+   "lava": 0.6,
+   "river": 0.5,
+   "spikes": 0.55,
+   "vents": 0.6,
+   "holes": 0.45,
+   "pits": 0.45,
+   "loops": 0.3,
+   "mainLock": true,
+   "fire": 4,
+   "seq": true,
+   "shooters": true,
+   "final": true,
+   "boss": {
+    "name": "Leerenrufer",
+    "hp": 340,
+    "summon": 2.4,
+    "ring": 1.6,
+    "final": true
+   }
+  }
+ ],
+ "circles": [
+  "Ring I · Obere Gruft",
+  "Ring II · Katakomben",
+  "Ring III · Tiefe Grablege",
+  "Ring IV · Thron der Leere"
+ ],
+ "names": [
+  [
+   "Gebein",
+   "Staub",
+   "Grab",
+   "Gruft",
+   "Moder",
+   "Knochen",
+   "Schädel",
+   "Kerzen"
+  ],
+  [
+   "Urnen",
+   "Sarg",
+   "Kapellen",
+   "Moder",
+   "Seelen",
+   "Gebet",
+   "Asche",
+   "Weihe"
+  ],
+  [
+   "Reliquien",
+   "Trauer",
+   "Ketten",
+   "Runen",
+   "Totenwacht",
+   "Gebein",
+   "Grabes",
+   "Klage"
+  ],
+  [
+   "Leeren",
+   "Thron",
+   "Schatten",
+   "Seelen",
+   "Verdammnis",
+   "Abgrund",
+   "Nacht",
+   "Fluch"
+  ]
+ ],
+ "suffixes": [
+  "halle",
+  "kammer",
+  "gang",
+  "grube",
+  "kreuz",
+  "gruft",
+  "galerie",
+  "nische",
+  "pforte",
+  "kapelle",
+  "krypta",
+  "stiege",
+  "saal",
+  "hof",
+  "gewölbe",
+  "zelle"
+ ],
+ "words": [
+  [
+   "Glutschlüssel",
+   "Bronzeschlüssel"
+  ],
+  [
+   "Knochenschlüssel",
+   "Silberschlüssel"
+  ],
+  [
+   "Dämonenschlüssel",
+   "Goldschlüssel"
+  ],
+  [
+   "Feuerschalen",
+   "Seelenschalen"
+  ],
+  [
+   "Feuerschale",
+   "Seelenschale"
+  ],
+  [
+   "Runenplatten",
+   "Grabplatten"
+  ],
+  [
+   "Feuerplatte",
+   "Weiheplatte"
+  ],
+  [
+   "Portalkammer",
+   "Abstiegskammer"
+  ],
+  [
+   "Portal zur nächsten Etage",
+   "Treppe hinab zur nächsten Etage"
+  ],
+  [
+   "Herzschrein",
+   "Weiheschrein"
+  ],
+  [
+   "Lavagraben",
+   "Modergraben"
+  ],
+  [
+   "Lava",
+   "Moder"
+  ],
+  [
+   "Glutschlote",
+   "Grabgasschlote"
+  ],
+  [
+   "Glutschlot",
+   "Grabgasschlot"
+  ],
+  [
+   "Hort: ",
+   "Gruft: "
+  ],
+  [
+   "Der Hüter der Etage wartet.",
+   "Der Herr dieser Etage wartet."
+  ]
+ ],
+ "gate_banner": {
+  "1": "blue",
+  "2": "green",
+  "4": "purple",
+  "5": "gold",
+  "7": "teal",
+  "8": "pink"
+ },
+ "blue": "190,205,245",
+ "foot": {
+  "table_a": [
+   104,
+   30,
+   2
+  ],
+  "table_b": [
+   110,
+   30,
+   2
+  ],
+  "table_c": [
+   140,
+   30,
+   2
+  ],
+  "candelabra": [
+   30,
+   20,
+   1
+  ],
+  "crate_pile": [
+   80,
+   34,
+   1
+  ],
+  "sacks_b": [
+   90,
+   26,
+   1
+  ],
+  "moss_rubble_a": [
+   70,
+   30,
+   1
+  ],
+  "moss_rubble_b": [
+   80,
+   28,
+   1
+  ],
+  "moss_ruin": [
+   70,
+   34,
+   1
+  ]
+ },
+ "wall_set": [
+  "table_a",
+  "table_b",
+  "table_c",
+  "candelabra",
+  "crate_pile",
+  "moss_ruin",
+  "sacks_b",
+  "candelabra",
+  "moss_rubble_a",
+  "moss_rubble_b"
+ ],
+ "break_set": [
+  "barrel_a",
+  "barrel_b",
+  "barrel_c",
+  "urn_a",
+  "urn_b",
+  "urn_c",
+  "urn_d",
+  "urn_e",
+  "crate_a",
+  "crate_b",
+  "crate_c"
+ ],
+ "mimic_fight": 0.6,
+ "mimic_treasure": 0.15
+}

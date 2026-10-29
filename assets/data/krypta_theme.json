@@ -1,0 +1,277 @@
+{
+ "_note": "Story 1 Krypta der Verdammten on the story runtime (src/hell/hell_game.gd, scene src/hell/krypta_dungeon.tscn). world_pack: the world kit builds every floor live from the run number (src/world_kit/world_core.gd + krypta_pack.gd, pack assets/data/krypta_world.json); a new run rolls a new world, saves keep its number. The hero systems (classes, leveling, skills, relics, cards, talents, sounds, music, HUD) are the shared ones of the story worlds (hero_from), plus Story 1's combat feel (feel). Monsters: hell monster runtime with the crypt set (balance -> monsters.data / monsters.sprites). sprites: the crypt skin (tools/krypta_dungeon/build_krypta_skin.py). vault_closed / vault_open: sprite of the giant vault chest before and after opening. plate_hint false: the plates do not show their order. mimic_kind: the monster a mimic chest wakes as. zone_name: name on the result panel. Colours and keys as in THEME_DEFAULT; words turn the hell wording into the crypt's.",
+ "hero_from": "res://assets/data/frost_theme.json",
+ "hero_keys": [
+  "default_class",
+  "classes",
+  "weapon_scale",
+  "leveling",
+  "gravity_staff",
+  "gravity_hammer",
+  "relics",
+  "cards",
+  "talents",
+  "master_cooldown",
+  "sounds",
+  "music",
+  "styled_hud",
+  "feel"
+ ],
+ "world_pack": "res://assets/data/krypta_world.json",
+ "sprites": "res://assets/sprites/krypta/",
+ "balance": "res://assets/data/krypta_balance.json",
+ "pixel": true,
+ "pixel_tiles": false,
+ "hero_scale": 3,
+ "key_in_chest": false,
+ "placeholder_note": false,
+ "zone_name": "KRYPTA",
+ "vault_closed": "chest_vault",
+ "vault_open": "chest_gold",
+ "plate_hint": false,
+ "mimic_kind": "mimik",
+ "extra_sprites": {
+  "dir": "res://assets/sprites/frost/",
+  "names": [
+   "weapon_gravity_hammer",
+   "weapon_gravity_staff",
+   "weapon_shadow_dagger",
+   "ally_golem_f0",
+   "ally_golem_f1",
+   "ally_golem_f2",
+   "ally_golem_f3",
+   "ally_golem_f4",
+   "ally_golem_f5",
+   "ally_golem_walk_f0",
+   "ally_golem_walk_f1",
+   "ally_golem_walk_f2",
+   "ally_golem_walk_f3",
+   "ally_golem_walk_f4",
+   "ally_golem_walk_f5",
+   "rock_throw",
+   "rock_spike",
+   "ally_skeleton_f0",
+   "ally_skeleton_f1",
+   "ally_skeleton_f2",
+   "ally_skeleton_f3",
+   "ally_big_zombie_f0",
+   "ally_big_zombie_f1",
+   "ally_big_zombie_f2",
+   "ally_big_zombie_f3",
+   "ally_big_demon_f0",
+   "ally_big_demon_f1",
+   "ally_big_demon_f2",
+   "ally_big_demon_f3",
+   "ally_frost_giant_f0",
+   "ally_frost_giant_f1",
+   "ally_frost_giant_f2",
+   "ally_frost_giant_f3",
+   "ally_ice_elemental",
+   "ally_wolf_f0",
+   "ally_wolf_f1",
+   "ally_wolf_f2",
+   "ally_wolf_f3",
+   "ally_bear_f0",
+   "ally_bear_f1",
+   "ally_bear_f2",
+   "ally_bear_f3",
+   "ally_ent_f0",
+   "ally_ent_f1",
+   "ally_ent_f2",
+   "ally_ent_f3"
+  ]
+ },
+ "liquid": {
+  "hurt": true,
+  "slow": -1,
+  "slide": false,
+  "grip": 1
+ },
+ "keys": {
+  "A": {
+   "name": "Bronzeschlüssel",
+   "hint": "fällt in einem Seitenraum vor dem verschlossenen Tor.",
+   "color": "#cd8a4a",
+   "tint": [
+    1.05,
+    0.72,
+    0.45
+   ],
+   "sprite": "key"
+  },
+  "B": {
+   "name": "Silberschlüssel",
+   "hint": "fällt in einem Kampfraum.",
+   "color": "#d8dde6",
+   "tint": [
+    1.35,
+    1.4,
+    1.5
+   ],
+   "sprite": "key"
+  },
+  "C": {
+   "name": "Goldschlüssel",
+   "hint": "liegt in der Schlüsselkammer, in der Mitte des großen Teppichs.",
+   "color": "#f2c94c",
+   "tint": [
+    1,
+    1,
+    1
+   ],
+   "sprite": "key"
+  }
+ },
+ "words": [
+  [
+   "Die Hölle ist bezwungen",
+   "Die Krypta ist bezwungen"
+  ],
+  [
+   "Die Hölle verlassen",
+   "Die Krypta verlassen"
+  ],
+  [
+   "Portal zu Etage",
+   "Treppe hinab zu Etage"
+  ],
+  [
+   "Portal erloschen",
+   "Treppe versperrt"
+  ],
+  [
+   "Das Portal erwacht erst",
+   "Die Treppe öffnet sich erst"
+  ],
+  [
+   "Die Portalkammer ist offen",
+   "Die Abstiegskammer ist offen"
+  ],
+  [
+   "Feuerschalen",
+   "Seelenschalen"
+  ],
+  [
+   "Feuerschale",
+   "Seelenschale"
+  ],
+  [
+   "Glutschlot",
+   "Grabgasschlot"
+  ],
+  [
+   "drei Dämonen springen heraus",
+   "drei Untote steigen heraus"
+  ],
+  [
+   "Dämonen",
+   "Untote"
+  ],
+  [
+   "Runenplatten",
+   "Grabplatten"
+  ],
+  [
+   "Runenplatte",
+   "Grabplatte"
+  ],
+  [
+   "Das Gravitationssiegel",
+   "Das Grabsiegel"
+  ],
+  [
+   "Lava",
+   "Moder"
+  ]
+ ],
+ "colors": {
+  "ink": "#ece6dc",
+  "accent": "#c9a24a",
+  "gold": "#e6cf96",
+  "sub": [
+   0.75,
+   0.68,
+   0.85
+  ],
+  "warn": "#ff7a6b",
+  "prompt_key": "#e6cf96",
+  "shot_glow": [
+   0.75,
+   0.9,
+   1,
+   0.45
+  ],
+  "shot_core": [
+   0.95,
+   0.98,
+   1
+  ],
+  "eshot_glow": [
+   0.55,
+   0.9,
+   0.35,
+   0.5
+  ],
+  "eshot_core": [
+   0.85,
+   1,
+   0.8
+  ],
+  "ember": "#cfe3b0",
+  "ember_big": "#8fc46a",
+  "ember_gold": "#ffe28a",
+  "shade": [
+   0.03,
+   0.02,
+   0.05
+  ],
+  "shade_grade": [
+   0.1,
+   0,
+   0.18
+  ],
+  "grade": [
+   0.25,
+   0.15,
+   0.45
+  ],
+  "vignette": [
+   0.1,
+   0.05,
+   0.2
+  ],
+  "vignette_glow": [
+   0.2,
+   0.1,
+   0.3
+  ],
+  "boss_back": "#1c1426",
+  "boss_bar": "#c9a24a",
+  "map_here": "#5a3f7a",
+  "map_cleared": "#2a2234",
+  "map_seen": "#3d2f52",
+  "map_edge_seen": "#8a7aa0",
+  "map_edge": "#4a3f5a",
+  "door": "#6a5a7a",
+  "mob_gross": [
+   0.8,
+   0.9,
+   0.7
+  ],
+  "mob_spucker": [
+   0.75,
+   0.6,
+   1.4
+  ],
+  "mob_boss": [
+   1.1,
+   0.95,
+   0.8
+  ],
+  "mob_boss_final": [
+   0.75,
+   0.55,
+   1.5
+  ]
+ }
+}
