@@ -41,7 +41,6 @@ func _run() -> void:
 	await test_items_and_weapons()
 	await test_curses()
 	await test_potions_and_loot()
-	await test_subclass_with_weapon()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE))
 	print("FROST_COMBAT checked=%d failures=%d" % [checked, failures.size()])
 	quit(1 if failures.size() > 0 else 0)
@@ -252,20 +251,3 @@ func test_potions_and_loot() -> void:
 	await _free(game)
 
 
-func test_subclass_with_weapon() -> void:
-	var d := MetaStore.data()
-	var store := MetaStore.fresh(d)
-	store.crystals = 99
-	MetaStore.choose_sub(d, store, "swordsman", "axe")
-	MetaStore.save_store(store, SAVE)
-	var game := await _new()
-	check(not game.sub_kit.is_empty(), "the axe warrior runs with items")
-	var m := _mob(game, Vector2(100, 0))
-	game._fire(Vector2.RIGHT)
-	var base: float = 400.0 - m.hp
-	game.state.bag.weapon = FrostItems.make_weapon("waraxe", true, "")
-	m.hp = 400.0
-	game.state.cool = 0.0
-	game._fire(Vector2.RIGHT)
-	check(400.0 - m.hp > base * 1.5, "a stronger weapon lifts the subclass attack too")
-	await _free(game)

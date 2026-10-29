@@ -74,7 +74,7 @@ func boss_label(m: Dictionary) -> String:
 func spawn(room: int, pos: Vector2, id: String, boss := false) -> Dictionary:
 	var def: Dictionary = defs[id]
 	var st: Dictionary = def.stats
-	var hp := Rules.spawn_hp(st, boss, float(g.W.boss.hp), float(g.W.diff.hp))
+	var hp: float = Rules.spawn_hp(st, boss, float(g.W.boss.hp), float(g.W.diff.hp)) * (g.talents.hp_scale() if g.talents != null else 1.0)
 	var cds: Array = []
 	for a: Dictionary in st.attacks:
 		cds.append(Rules.first_cooldown(a, randf()))
@@ -230,6 +230,7 @@ func update(dt: float) -> void:
 		# experience: felled monsters and a defeated boss form; echoes and swept-away adds give none
 		if not m.get("quiet", false) and not m.has("echo"):
 			HeroKit.gain(g, HeroKit.exp_for(g, m))
+			if g.talents != null: g.talents.killed(m)
 			g._sound("kill_" + str(m.def.get("material", "void")))
 		g.mobs.erase(m)
 		var rest: Array = g.mobs.filter(func(o: Dictionary) -> bool: return o.room == m.room and o.hp > 0.0 and not o.get("remove", false))

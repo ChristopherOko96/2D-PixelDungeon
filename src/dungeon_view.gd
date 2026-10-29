@@ -43,6 +43,9 @@ const BossFx = preload("res://src/vfx/boss_fx.gd")
 const AttackFx = preload("res://src/vfx/attack_fx.gd")
 const FxSprites = preload("res://src/vfx/fx_sprites.gd")
 const Glow = preload("res://src/vfx/glow.gd")
+const SheetArt = preload("res://src/vfx/sheet_art.gd")
+const FogMemory = preload("res://src/vfx/fog_memory.gd")
+const TalentFx = preload("res://src/vfx/talent_fx.gd")
 ## Hero class -> part rig of its 0x72 figure (assets/data/rigs.json).
 const CLASS_RIGS := {"swordsman":"knight","archer":"elf","mage":"wizard"}
 
@@ -99,6 +102,12 @@ var _boss_fx := BossFx.new()
 var _attack_fx := AttackFx.new()
 ## Pixel-art effect animations (assets/sprites/fx), shared by feedback and skills.
 var _fx := FxSprites.new()
+## Sheet monsters of the themed endless floors, their hazards and shots.
+var _sheet_art := SheetArt.new()
+## Wolves, traps, poison zones and talent effects.
+var _talent_fx := TalentFx.new()
+## Fog of war on themed open floors (explored areas stay dimmed).
+var _fog: Node2D
 var _fx_layout_key := ""
 ## Dark crypt (live runs only, set by the game): balance.json "lighting".
 var darkness_enabled := false
@@ -130,6 +139,9 @@ func _ready() -> void:
 		_glow.source = _draw_glow
 		add_child(_glow)
 		_glow.visible = false
+		_fog = FogMemory.new()
+		_fog.visible = false
+		add_child(_fog)
 	for texture: Texture2D in _crypt_sprites.prepare():
 		_flash_textures[texture] = _silhouette(texture)
 		_crypt_bounds[texture] = texture.get_image().get_used_rect()
@@ -145,6 +157,7 @@ func _ready() -> void:
 			entry.hit = load(hit_path)
 			_flash_textures[entry.hit] = _silhouette(entry.hit)
 		_sprites[name] = entry
+	_sheet_art.prepare(_flash_textures,_silhouette)
 	for weapon_id: String in WEAPON_SPRITES:
 		_weapon_textures[weapon_id] = load("%s%s.png" % [SPRITE_ROOT,WEAPON_SPRITES[weapon_id]])
 	if audio_enabled: set_audio_enabled(true)
@@ -253,6 +266,7 @@ func _process(delta: float) -> void:
 	_fx.update(delta)
 	if _feedback.hitstop <= 0 and not _pending_snapshot.is_empty(): _accept_state(_pending_snapshot)
 	_update_darkness()
+	_update_fog()
 	if _glow != null:
 		_glow.visible = _glow.enabled and _darkness != null and _darkness.visible
 		if _glow.visible: _glow.queue_redraw()
@@ -300,6 +314,9 @@ func _draw() -> void:
 		_feedback.particles.draw_stains(self)
 		_skill_fx.draw_ground(self,_snapshot,_clock)
 		_boss_fx.draw_ground(self,_snapshot,_clock)
+		_sheet_art.draw_hazards(self,_snapshot.get("hazards",[]),false,_clock)
+		_talent_fx.draw_ground(self,_snapshot.get("talents",{}),_clock)
+	if actors_visible: _talent_fx.draw_pets(self,_snapshot.get("talents",{}),_clock)
 	var rigs_on: bool = _rigs != null and _rigs.is_ready()
 	if rigs_on and actors_visible: _rigs.draw_under(self)
 	var enemies: Array = _snapshot.get("enemies", [])
@@ -371,6 +388,8 @@ func _draw() -> void:
 		_draw_perk_events()
 		_skill_fx.draw_over(self,_snapshot,_clock)
 		_boss_fx.draw_over(self,_snapshot,_clock,_position)
+		_sheet_art.draw_hazards(self,_snapshot.get("hazards",[]),true,_clock)
+		_talent_fx.draw_events(self,_snapshot.get("talents",{}))
 		_attack_fx.draw_flashes(self,_clock)
 		_feedback.particles.draw_particles(self)
 		_fx.draw(self)
@@ -423,6 +442,23 @@ func _update_darkness() -> void:
 		var rect: Array = exit.get("rect", [])
 		if rect.size() == 4: lights.append(Vector4(float(rect[0]) + float(rect[2]) * 0.5, float(rect[1]) + float(rect[3]) * 0.5, 56.0, 0.5))
 	_darkness.set_lights(lights)
+
+
+## Fog of war on themed open floors: unseen areas black, explored ones dimmed,
+## clear around every living hero (layout.floor_fog, src/vfx/fog_memory.gd).
+func _update_fog() -> void:
+	if _fog == null: return
+	var config: Dictionary = _presentation_layout.get("floor_fog",{})
+	var on: bool = darkness_enabled and not config.is_empty() and not _snapshot.is_empty()
+	_fog.visible = on
+	if not on: return
+	var size: Array = _presentation_layout.get("world_size",[1280,720])
+	_fog.configure(_layout_key,Vector2(float(size[0]),float(size[1])),config)
+	var lights: Array[Vector2] = []
+	for key: Variant in _snapshot.get("players",{}):
+		var player: Dictionary = _snapshot.players[key]
+		if float(player.get("hp",1)) > 0: lights.append(_position(player))
+	_fog.reveal(lights)
 
 
 ## Bloom: everything bright adds soft light over the dark crypt (the glow
@@ -729,6 +765,9 @@ func _draw_enemy(enemy: Dictionary) -> void:
 	if enemy.has("rig") and _rigs != null and _rigs.is_ready():
 		_draw_rig_enemy(enemy, point, is_boss)
 		return
+	if bool(enemy.get("sheet",false)) and _sheet_art.has_kind(str(enemy.get("kind",""))):
+		_sheet_art.draw_enemy(self,enemy,_clock)
+		return
 	var kind: String = "boss" if is_boss else str(enemy.get("kind", "chaser"))
 	var sprite: Dictionary = _sprites[ENEMY_SPRITES.get(kind, "goblin")]
 	var id: int = int(enemy.get("id", 0))
@@ -835,6 +874,7 @@ func _draw_bullet(bullet: Dictionary) -> void:
 		if style == "arrow": _attack_fx.draw_arrow(self,bullet,_position(bullet),_clock)
 		else: _attack_fx.draw_orb(self,bullet,_position(bullet),_clock)
 		return
+	if _sheet_art.draw_bullet(self,bullet,point,_clock): return
 	if owner == 0 and _boss_fx.draw_bullet(self,bullet,point,_clock): return
 	if owner == 0 and style == "arrow":
 		var aim: Vector2 = Vector2(float(bullet.get("vx",1)),float(bullet.get("vy",0))).normalized()

@@ -9,6 +9,7 @@ const PixelStyle = preload("res://src/pixel_style.gd")
 const FloorMap = preload("res://src/dungeon/dungeon_map.gd")
 const ClassPerks = preload("res://src/player/class_perks.gd")
 const SkillIcons = preload("res://src/ui/skill_icons.gd")
+const TalentBar = preload("res://src/ui/talent_bar.gd")
 const DATA_PATH := "res://assets/data/ui_run_hud.json"
 const HEART_FULL := preload("res://assets/sprites/0x72/ui_heart_full.png")
 const HEART_HALF := preload("res://assets/sprites/0x72/ui_heart_half.png")
@@ -38,6 +39,8 @@ var _chip := 1.0
 var _flash := 0.0
 var _last_ratio := 1.0
 var _pulse := 0.0
+## Talent bar and reward banner (shared with the Frostgruft / Hölle HUD).
+var _talent_bar := TalentBar.new()
 
 
 func _ready() -> void:
@@ -172,6 +175,7 @@ func _process(delta: float) -> void:
 	_left.modulate.a = move_toward(_left.modulate.a, 0.25 if near_left else 1.0, delta * 4.0)
 	_right.modulate.a = move_toward(_right.modulate.a, 0.25 if near_right else 1.0, delta * 4.0)
 	queue_redraw()
+	_talent_bar.step(delta)
 	var boss := boss_target(_snapshot)
 	if boss.is_empty():
 		_boss_id = -1
@@ -195,6 +199,8 @@ func _draw() -> void:
 	_right.queue_redraw()
 	_draw_boss_bar()
 	_draw_skills(players.get(_local_peer, {}))
+	_draw_talents(players.get(_local_peer, {}))
+	_draw_reward()
 
 
 # --- Top left: hearts, hero, team -------------------------------------------
@@ -347,6 +353,21 @@ func _draw_skills(local: Dictionary) -> void:
 	_canvas.draw_rect(bar, CryptUI.INK)
 	var next := maxf(1.0, float(team.get("next", 1)))
 	_canvas.draw_rect(Rect2(bar.position + Vector2(1, 1), Vector2((bar.size.x - 2) * clampf(float(team.get("exp", 0)) / next, 0.0, 1.0), bar.size.y - 2)), Color("5fe0a0"))
+
+
+# --- Talent bar and rewards (src/ui/talent_bar.gd, the same in every map) -----
+
+func _draw_talents(local: Dictionary) -> void:
+	_talent_bar.draw_bar(_canvas, local.get("talents", {}), size.x * 0.5, skill_bar_top() - 74.0)
+
+
+## Shows a reward on this machine (soul shard, level up); queued, one at a time.
+func show_reward(event: Dictionary) -> void:
+	_talent_bar.show_reward(event)
+
+
+func _draw_reward() -> void:
+	_talent_bar.draw_reward(_canvas, Vector2(size.x * 0.5, size.y * 0.24))
 
 
 # --- Text -------------------------------------------------------------------

@@ -11,13 +11,18 @@ signal cheat_requested(index: int)
 const CryptUI = preload("res://src/ui/crypt_ui.gd")
 const PerkIcons = preload("res://src/perk_icons.gd")
 const ClassPerks = preload("res://src/player/class_perks.gd")
-const SECTIONS := ["overview","map","party","reward","controls","display","session","cheats"]
-const TITLES := ["Übersicht","Karte","Gruppe & Perks","Belohnung","Steuerung","Anzeige","Sitzung","Cheats"]
+const QuestView = preload("res://src/ui/quest_view.gd")
+const SECTIONS := ["overview","quests","map","party","reward","controls","display","session","cheats"]
+const TITLES := ["Übersicht","Auftrag","Karte","Gruppe & Perks","Belohnung","Steuerung","Anzeige","Sitzung","Cheats"]
 var section := "overview"
 var pages: Dictionary = {}
 var navigation: Dictionary = {}
 var pause_note: Label
 var overview_label: Label
+## The Auftragsliste page, the same in every story.
+var quest_view: QuestView
+var controls_label: Label
+var leave_button: Button
 var party_details: Label
 var session_details: Label
 var map_view: Control
@@ -58,7 +63,7 @@ func _ready() -> void:
 	pause_note.add_theme_color_override("font_color",CryptUI.SAND)
 	for index in range(SECTIONS.size()):
 		var key: String = SECTIONS[index]
-		navigation[key] = _button(self,TITLES[index],Vector2(192,160+index*44),Vector2(208,38),select_section.bind(key))
+		navigation[key] = _button(self,TITLES[index],Vector2(192,160+index*40),Vector2(208,36),select_section.bind(key))
 		var page := Control.new()
 		page.position = Vector2(432,176)
 		page.size = Vector2(656,378)
@@ -66,6 +71,10 @@ func _ready() -> void:
 		add_child(page)
 		pages[key] = page
 	overview_label = _text(pages.overview,"",Vector2.ZERO,Vector2(640,378),16)
+	quest_view = QuestView.new()
+	quest_view.size = Vector2(656,378)
+	quest_view.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pages.quests.add_child(quest_view)
 	map_view = load("res://src/dungeon/dungeon_map.gd").new()
 	map_view.position = Vector2(16,28)
 	map_view.size = Vector2(148,52)
@@ -79,13 +88,13 @@ func _ready() -> void:
 	party_details = _text(party_scroll,"",Vector2.ZERO,Vector2(620,378),15)
 	party_details.custom_minimum_size = Vector2(620,378)
 	party_details.add_theme_constant_override("line_spacing",4)
-	_text(pages.controls,"Bewegen: WASD\nZielen: Maus\nAngreifen: Linksklick\nFähigkeiten: 1 2 3 4 (2 ab Level 3, 3 ab 6, 4 ab 10)\nBallistapfeil, Photoneneis: Taste halten\nTür / Treppe nutzen: E\nMenü öffnen / schließen: Esc\nVollbild / Fenster: F11 oder Alt + Enter\n\nGegner lassen grüne EXP fallen; das Team\nlevelt gemeinsam. Karten rechts per Klick.\n\nFür den Raumwechsel das lebende Team\nam Ausgang sammeln.",Vector2.ZERO,Vector2(640,378),16)
+	controls_label = _text(pages.controls,"Bewegen: WASD\nZielen: Maus\nAngreifen: Linksklick\nFähigkeiten: 1 2 3 4 (2 ab Level 3, 3 ab 6, 4 ab 10)\nBallistapfeil, Photoneneis: Taste halten\nTür / Treppe nutzen: E\nMenü öffnen / schließen: Esc\nVollbild / Fenster: F11 oder Alt + Enter\n\nGegner lassen grüne EXP fallen; das Team\nlevelt gemeinsam. Karten rechts per Klick.\n\nFür den Raumwechsel das lebende Team\nam Ausgang sammeln.",Vector2.ZERO,Vector2(640,378),16)
 	display_status = _text(pages.display,"",Vector2.ZERO,Vector2(640,64),24)
 	display_mode_button = _button(pages.display,"Vollbild einschalten",Vector2(0,96),Vector2(416,44),func(): display_mode_requested.emit())
 	_text(pages.display,"F11 oder Alt + Enter wechseln die Ansicht.\nEsc öffnet weiterhin das Pausenmenü.\n\nDie Spielansicht nutzt die gesamte Fläche.\nHerzen und Menü bleiben am Bildschirmrand.",Vector2(0,172),Vector2(640,198),16)
 	session_details = _text(pages.session,"",Vector2.ZERO,Vector2(640,378),16)
 	resume_button = _button(self,"Weiterspielen",Vector2(192,528),Vector2(208,42),func(): resume_pressed.emit())
-	_button(self,"Zum Hauptmenü",Vector2(192,582),Vector2(208,34),func(): leave_pressed.emit())
+	leave_button = _button(self,"Zum Hauptmenü",Vector2(192,582),Vector2(208,34),func(): leave_pressed.emit())
 	main_action_button = _button(self,"",Vector2(432,574),Vector2(656,42),func(): main_action_pressed.emit())
 	_text(self,"ESC · Zurück zum Spiel",Vector2(432,626),Vector2(656,22),12)
 	select_section("overview")
@@ -105,6 +114,28 @@ func set_display_state(fullscreen: bool, _logical_size: Vector2) -> void:
 	if display_status == null or display_mode_button == null: return
 	display_status.text = "Ansicht: Vollbild" if fullscreen else "Ansicht: Fenster"
 	display_mode_button.text = "Zum Fenster wechseln" if fullscreen else "Vollbild einschalten"
+
+## Shows only `keys` (in SECTIONS order) in the section list; the Frostgruft
+## and the Hölle use this menu with Auftrag, Steuerung and Anzeige.
+func set_sections(keys: Array) -> void:
+	var row := 0
+	for key: String in SECTIONS:
+		navigation[key].visible = key in keys
+		if key in keys:
+			navigation[key].position = Vector2(192,160+row*40)
+			row += 1
+	if section not in keys and not keys.is_empty(): select_section(str(keys[0]))
+
+
+## Replaces the Steuerung page's text (each story has its own keys).
+func set_controls(text: String) -> void:
+	controls_label.text = text
+
+
+## Shows the floor's goals ({text, done, main}) on the Auftrag page.
+func set_quests(goals: Array, heading: String) -> void:
+	quest_view.set_goals(goals, heading)
+
 
 ## Builds the debug cheat buttons from debug_cheats.json (labels, order).
 func configure_cheats(data: Dictionary) -> void:
@@ -170,6 +201,7 @@ func set_state(snapshot: Dictionary, local_id: int, host: bool, port: int, solo_
 			if room.get("cleared",false): boss_status = "Besiegt"
 	for enemy: Dictionary in snapshot.get("enemies",[]):
 		if enemy.get("boss",false): boss_status = "Im Kampf · %d / %d LP" % [enemy.hp,enemy.max_hp]
+	set_quests(QuestView.crypt_goals(snapshot),"EBENE %d" % int(snapshot.get("floor_index",1)))
 	overview_label.text = "Ebene %d · Raum %d von %d\n%s\n\n%s · %d Gegner\nRäume frei: %d von %d\nLeben: %d / %d LP\n\nBoss: %s\nBossraum: %s\n%s" % [snapshot.get("floor_index",1),snapshot.get("room",1),rooms.size(),str(layout.get("title","")).capitalize(),phase_name,snapshot.get("enemies",[]).size(),cleared,rooms.size(),player.get("hp",0),player.get("max_hp",0),str(snapshot.get("boss_name","Boss")).capitalize(),boss_room.capitalize(),boss_status]
 	map_view.set_floor(rooms,str(layout.get("id","")))
 	map_note.text = "TÜRKIS  Dein Raum     GOLD  Gesäubert\nGRAU    Weiterer Raum    KRONE  Boss\n\n%s" % layout.get("title","")

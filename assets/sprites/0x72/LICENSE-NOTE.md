@@ -19,3 +19,11 @@ integer 2x scale, so each source pixel covers 2x2 on the game's 32 px grid.
 Added later from the same pack, unchanged: crypt tiles and props (floors,
 walls, banners, fountains, doors, column, crate, skull, chests) and on
 2026-10-28 the Mimik frames `chest_mimic_open_anim_f0-2` (Werkstatt Mimik).
+
+Added 2026-10-29 for the themed endless floors (ported from the
+`codex/0x72-dungeon` branch), unchanged: idle and run frames of `chort`,
+`wogol`, `doc`, `pumpkin_dude`, `big_zombie`, `angel`, `orc_warrior`,
+`masked_orc`, plus `wall_edge_mid_left`, `wall_edge_mid_right`, `wall_goo` and
+`wall_goo_base`. The five-row sheets in `assets/sprites/orcs_0x72/` and
+`assets/sprites/bosses_0x72/` start from these 0x72 frames; their attack, hit
+and death rows are derived from them, and the bosses add drawn pixel parts.

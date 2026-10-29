@@ -38,6 +38,9 @@ const Aggro = preload("res://src/combat/aggro.gd")
 const BodyParts = preload("res://src/combat/body_parts.gd")
 const VoidBossAI = preload("res://src/combat/void_boss_ai.gd")
 const BossMoves = preload("res://src/combat/boss_moves.gd")
+const SheetMonsters = preload("res://src/combat/sheet_monsters.gd")
+const TalentCombat = preload("res://src/combat/talent_combat.gd")
+const RunProgress = preload("res://src/progress/run_progress.gd")
 const PlayerEffects = preload("res://src/combat/player_effects.gd")
 const Inventory = preload("res://src/items/inventory.gd")
 const Cheats = preload("res://src/debug/cheats.gd")
@@ -88,6 +91,12 @@ var body_parts := BodyParts.new()
 var void_ai := VoidBossAI.new()
 ## Extra moves of bosses and crypt enemies, and their floor zones (host).
 var boss_moves := BossMoves.new()
+## 0x72 sheet monsters and floor bosses of the themed endless floors (host).
+var sheet_monsters := SheetMonsters.new()
+## Talent trees in the run: resources, talent bar, ultimate, wolves, traps (host).
+var talent_combat := TalentCombat.new()
+## The lasting profile in a run: character EXP, gold, difficulty, boss soul shards.
+var progress := RunProgress.new()
 ## Timed conditions on heroes: slow, poison, burn, freeze, slip, blind... (host).
 var player_effects := PlayerEffects.new()
 ## Weapons, potions, crystals and stones of each hero; potion colours of the run (host).
@@ -287,6 +296,9 @@ func _ready() -> void:
 	crypt_ai.bind(self)
 	void_ai.bind(self)
 	boss_moves.bind(self)
+	sheet_monsters.bind(self)
+	progress.bind(self)
+	talent_combat.bind(self)
 	player_effects.bind(self)
 	inventory.bind(self)
 	cheats.bind(self)
@@ -646,18 +658,21 @@ func _physics_process(delta: float) -> void:
 
 func _step_world(delta: float) -> void:
 	perk_combat.step_events(delta)
+	progress.step(delta)
 	# Short effect events age in every phase (wall hits happen outside fights too).
 	for event: Dictionary in fx_events: event.life = float(event.life)-delta
 	fx_events = fx_events.filter(func(event: Dictionary) -> bool: return float(event.life) > 0.0)
 	if phase in ["combat", "reward", "explore"]:
 		_simulate_players(delta)
 		hero_skills.step(delta)
+		talent_combat.step(delta)
 		team_progress.step(delta)
 		chests.step(delta)
 		player_effects.step(delta)
 		inventory.step(delta)
 	if phase in ["combat", "explore"]:
 		boss_moves.update(delta)
+		sheet_monsters.update(delta)
 	if phase == "combat":
 		hordes.step(delta)
 		_simulate_enemies(delta)
@@ -932,6 +947,7 @@ func _session_result(payload: PackedByteArray) -> void:
 		return
 	_client_admitted = true
 	status_message = "Spielversion geprüft. Warte auf den Start durch den Host."
+	send_talent_builds()
 	print("SESSION_COMPATIBLE protocol=%d rules=%d" % [SessionProtocol.PROTOCOL_VERSION,SessionProtocol.RULESET_VERSION])
 
 
@@ -1014,8 +1030,12 @@ func _send_local_input() -> void:
 				if not path.is_empty(): movement = (path[0] - position).normalized()
 	# Keys 1-4 as a bitmask, and the mouse point in world pixels (skill targets).
 	var skill_keys := 0
+	# Keys 1-4 are the class skills; with Shift they cast the talent bar
+	# (bits 4-7), and R casts the ultimate (bit 8).
+	var shift: bool = Input.is_physical_key_pressed(KEY_SHIFT)
 	for index in range(4):
-		if Input.is_physical_key_pressed(KEY_1 + index): skill_keys |= 1 << index
+		if Input.is_physical_key_pressed(KEY_1 + index): skill_keys |= 1 << (index + (TalentCombat.BAR_BIT if shift else 0))
+	if Input.is_physical_key_pressed(KEY_R): skill_keys |= 1 << TalentCombat.ULT_BIT
 	if not smoke_role.is_empty(): skill_keys = 0
 	if scripted_skills >= 0: skill_keys = scripted_skills
 	if scripted_fire:
@@ -1059,8 +1079,40 @@ func _accept_input(id: int, movement: Vector2, aim: Vector2, fire: bool, sequenc
 	var now := Time.get_ticks_msec() / 1000.0
 	var previous: Dictionary = commands.get(id, {})
 	if sequence <= int(previous.get("sequence", -1)) or now - float(previous.get("time", -1.0)) < 0.025: return
-	commands[id] = {"move": movement.limit_length(), "aim": aim.normalized() if aim.length_squared() > 0.0001 else Vector2.RIGHT, "fire": fire, "sequence": sequence, "time": now, "skills": clampi(skill_keys, 0, 15)}
+	commands[id] = {"move": movement.limit_length(), "aim": aim.normalized() if aim.length_squared() > 0.0001 else Vector2.RIGHT, "fire": fire, "sequence": sequence, "time": now, "skills": clampi(skill_keys, 0, 511)}
 	if target.is_finite(): commands[id].target = target
+
+
+## Host: the talent build `id` plays with this run (checked against the rules).
+func _apply_talent_build(id: int) -> void:
+	if not players.has(id): return
+	talent_combat.set_build(id, progress.build_for(id, str(players[id].get("class_id", player_classes.get(id, "")))))
+
+
+## Host -> one client: a reward for that client's own profile (EXP, gold, boss roll).
+func send_progress_event(id: int, event: Dictionary) -> void:
+	if hosting and _admitted_peers.has(id): _progress_event.rpc_id(id, JSON.stringify(event))
+
+
+@rpc("authority", "call_remote", "reliable", 1)
+func _progress_event(payload: String) -> void:
+	if hosting or multiplayer.get_remote_sender_id() != 1 or payload.length() > 2048: return
+	var event: Variant = JSON.parse_string(payload)
+	if event is Dictionary and event.has("kind"): progress.apply_local(event, str(event.get("class", "")))
+
+
+## Client -> host: this player's talent builds (sent once admitted and after changes).
+func send_talent_builds() -> void:
+	if active and not hosting and _client_admitted: _submit_builds.rpc_id(1, JSON.stringify(progress.all_builds()))
+
+
+@rpc("any_peer", "call_remote", "reliable", 1)
+func _submit_builds(payload: String) -> void:
+	var id := multiplayer.get_remote_sender_id()
+	if not hosting or not _admitted_peers.has(id) or payload.length() > 16384: return
+	progress.receive_builds(id, JSON.parse_string(payload))
+	if phase in ["combat", "explore"]: return
+	_apply_talent_build(id)
 
 
 func _send_action(action: String, value: int = 0) -> void:
@@ -1159,7 +1211,17 @@ func _generate_floor(seed_value: int, number: int) -> Array[Dictionary]:
 	# A Dungeon-Werkstatt room test always plays the authored rooms.
 	if open_floors and test_room_id.is_empty():
 		if open_floor_data.is_empty(): open_floor_data = OpenFloor.load_data()
-		return Dungeon.generate_open_floor(seed_value, number, dungeon_config, open_floor_data)
+		var open: Array[Dictionary] = Dungeon.generate_open_floor(seed_value, number, dungeon_config, open_floor_data)
+		# Each endless floor draws a theme (look, monsters, bosses) that never
+		# repeats the previous floor's; the run seed keeps the order stable.
+		var run_base: int = posmod(seed_value - (number - 1) * int(balance.exploration.seed_stride), 2147483647)
+		var theme: Dictionary = sheet_monsters.floor_theme(run_base, number)
+		if not theme.is_empty():
+			for layout: Dictionary in open:
+				layout.floor_theme = theme.look
+				layout.floor_roster = theme.roster
+				layout.floor_fog = sheet_monsters.data.get("fog",{})
+		return open
 	# Rooms come from the Werkstatt pool for this floor; a room test puts its room in.
 	return Dungeon.generate(seed_value, _run_room_count(), _floor_pool(number), test_room_id if test_room_floor == number else "")
 
@@ -1208,6 +1270,9 @@ func _begin_run() -> void:
 	commands.clear()
 	team_progress.reset(seed_value)
 	hero_skills.reset(seed_value)
+	progress.begin_run(seed_value)
+	talent_combat.reset(seed_value)
+	for id: int in players: _apply_talent_build(id)
 	chests.place_floor(floor_layouts, seed_value)
 	hordes.reset(seed_value)
 	floor_boss_down = false
@@ -1220,6 +1285,7 @@ func _spawn_room(from_room: int = 0) -> void:
 	crypt_ai.bind(self)
 	void_ai.bind(self)
 	boss_moves.reset()
+	sheet_monsters.reset()
 	fx_events.clear()
 	if room < 1 or room > floor_layouts.size(): return
 	if phase == "combat": hordes.leave()
@@ -1229,6 +1295,7 @@ func _spawn_room(from_room: int = 0) -> void:
 	# EXP left on the floor is collected; ground effects and channels end.
 	team_progress.collect_all()
 	hero_skills.room_changed()
+	talent_combat.room_changed()
 	_local_visual_state = {}
 	var revisiting := cleared_room_ids.has(str(current_layout.id))
 	phase = "explore" if revisiting else "combat"
@@ -1319,18 +1386,31 @@ func _spawn_open_floor() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = floor_seed + 4099
 	var radii: Array = [float(balance.enemy.radius), float(balance.boss.radius)]
-	for definition: Dictionary in balance.get("enemy_roster",{}).get("definitions",{}).values():
+	var roster: Dictionary = current_layout.get("floor_roster",{})
+	var sizes: Array = balance.get("enemy_roster",{}).get("definitions",{}).values()
+	if not roster.is_empty():
+		for kind: Variant in Array(roster.get("melee",[]))+Array(roster.get("ranged",[]))+[roster.get("boss",""),roster.get("miniboss",""),"skelet","tiny_zombie"]:
+			if sheet_monsters.has_kind(str(kind)): sizes.append(sheet_monsters.definition(str(kind)))
+	for definition: Dictionary in sizes:
 		var radius: float = float(definition.get("radius",balance.enemy.radius))
 		if radius not in radii: radii.append(radius)
 	Dungeon.prepare_navigation(current_layout,radii)
 	var points: Array = current_layout.enemy_spawns
 	for i in range(points.size()):
-		enemies.append(_create_enemy(crypt_ai.choose_kind(floor_index+1,i,points.size(),false,rng),points[i]))
+		var kind: String = SheetMonsters.group_kind(roster,i,rng) if not roster.is_empty() else crypt_ai.choose_kind(floor_index+1,i,points.size(),false,rng)
+		enemies.append(_create_enemy(kind,points[i]))
 	var guards: Array = current_layout.boss_spawns
 	var plan: Dictionary = balance.get("enemy_roster",{}).get("floor_plan",{})
-	var final_count: int = int(plan.get("strong_group_count",6)) if crypt_ai.final_room_role(floor_index) == "strong_group" else int(current_layout.get("encounter",{}).get("boss_enemies",3))
+	var role: String = crypt_ai.final_room_role(floor_index)
+	var final_count: int = int(plan.get("strong_group_count",6)) if role == "strong_group" else int(current_layout.get("encounter",{}).get("boss_enemies",3))
 	for i in range(mini(final_count,guards.size())):
-		var guard: Dictionary = _create_enemy(crypt_ai.choose_kind(floor_index+1,i,final_count,true,rng),guards[i])
+		var kind: String = crypt_ai.choose_kind(floor_index+1,i,final_count,true,rng)
+		if not roster.is_empty():
+			# Themed floors: the theme's own boss or mini-boss leads the final group.
+			kind = SheetMonsters.group_kind(roster,i,rng)
+			if i == 0 and role == "boss": kind = str(roster.get("boss",kind))
+			elif i == 0 and role != "strong_group": kind = str(roster.get("miniboss",kind))
+		var guard: Dictionary = _create_enemy(kind,guards[i])
 		guard.aggro = false
 		guard.asleep = true
 		enemies.append(guard)
@@ -1341,8 +1421,11 @@ func _spawn_open_floor() -> void:
 ## One host-side factory supplies both initial enemies and validated summons.
 func _create_enemy(kind: String, point: Vector2) -> Dictionary:
 	var definition: Dictionary = balance.boss.duplicate() if kind == "boss" else balance.enemy.duplicate()
-	if kind != "boss": definition.merge(crypt_ai.definition(kind),true)
-	var multiplier: float = minf(float(balance.exploration.max_hp_multiplier),1.0+(floor_index-1)*float(balance.exploration.floor_hp_step))
+	# Crypt rigs first; kinds only the themed floors know are sheet monsters.
+	var sheet: bool = kind != "boss" and crypt_ai.definition(kind).is_empty() and sheet_monsters.has_kind(kind)
+	if sheet: definition.merge(sheet_monsters.definition(kind),true)
+	elif kind != "boss": definition.merge(crypt_ai.definition(kind),true)
+	var multiplier: float = minf(float(balance.exploration.max_hp_multiplier),1.0+(floor_index-1)*float(balance.exploration.floor_hp_step))*progress.hp_scale()
 	var hp: int = int(ceil((float(definition.hp)+maxi(0,players.size()-1)*float(definition.hp_per_extra_player))*multiplier))
 	var result: Dictionary = {"pos":point,"hp":hp,"max_hp":hp,"boss":kind == "boss","radius":float(definition.radius),"speed":float(definition.speed),"shot_timer":1.0,"nav_timer":0.0,"nav_path":PackedVector2Array(),"hitstun":0.0,"hit_flash":0.0,"knockback":Vector2.ZERO,"stun_cooldown":0.0,"id":_next_enemy_id,"kind":kind,"hits":0,"attacks":0,"blocks":0,"moving":false,"face":-1.0,"direction":Vector2.ZERO,"attack":"","attack_time":0.0,"attack_kind":"","attack_length":1.0,"attack_aim":Vector2.LEFT,"facing_dir":Vector2.LEFT,"summons_cast":0,"caster_id":0,"summoned":false,"enemy_name":str(definition.get("name",definition.get("display_name","Kryptawesen"))),"dying":0.0}
 	_next_enemy_id += 1
@@ -1350,6 +1433,7 @@ func _create_enemy(kind: String, point: Vector2) -> Dictionary:
 	result.aggro = result.boss
 	result.shot_timer = float(definition.get("initial_cooldown",1.0))
 	if bool(definition.get("miniboss",false)): result.miniboss = true
+	if sheet: sheet_monsters.setup(result)
 	# Rigged figures split their HP over body parts (src/combat/body_parts.gd).
 	if not str(definition.get("rig","")).is_empty(): body_parts.attach(result,str(definition.rig))
 	return result
@@ -1492,7 +1576,9 @@ func _simulate_players(delta: float) -> void:
 		player.aim = command.aim
 		if absf(command.aim.x) > 0.01: player.face = signf(command.aim.x)
 		var acting: bool = player_effects.can_act(player)
-		if acting and not player_effects.skills_sealed(player): hero_skills.handle_input(id, player, command)
+		if acting and not player_effects.skills_sealed(player):
+			hero_skills.handle_input(id, player, command)
+			talent_combat.handle_input(id, player, command)
 		var move_scale: float = hero_skills.move_scale(player) * player_effects.move_scale(player)
 		var wanted: Vector2 = command.move * player.speed * move_scale
 		# On ice the hero keeps sliding: the new direction only takes over slowly.
@@ -1505,7 +1591,7 @@ func _simulate_players(delta: float) -> void:
 			player.moving = player.pos.distance_squared_to(before) > 0.001
 			player.motion = (player.pos-before)/maxf(delta,0.000001)
 		if acting and command.fire and phase != "reward" and player.shot_timer <= 0.0 and hero_skills.can_attack(player):
-			player.shot_timer = perk_combat.shot_interval(player) * player_effects.attack_scale(player)
+			player.shot_timer = perk_combat.shot_interval(player) * player_effects.attack_scale(player) * talent_combat.interval_scale(player, id)
 			inventory.on_attack(player)
 			if bool(player.get("melee",false)): perk_combat.melee(id,command.aim)
 			else: perk_combat.shoot(id,command.aim)
@@ -1557,7 +1643,12 @@ func _simulate_enemies(delta: float) -> void:
 		if target < 0: continue
 		Aggro.alert_pack(enemy, enemies, balance.aggro)
 		# Spiegelbild: normal enemies near a decoy chase the decoy instead.
-		if not enemy.boss and not bool(enemy.get("miniboss",false)):
+		# Taunts: Schildstoß and Kampfgeschrei pull to the warrior, Fass! to the wolf.
+		var forced: Dictionary = talent_combat.forced_target(enemy)
+		if not forced.is_empty() and not bool(enemy.get("sheet",false)):
+			target = int(forced.id)
+			if target < 0: decoys[target] = {"pos": Vector2(forced.pos), "hp": 1}
+		if not enemy.boss and not bool(enemy.get("miniboss",false)) and not bool(enemy.get("sheet",false)):
 			for zone: Dictionary in hero_skills.zones:
 				if str(zone.kind) == "decoy" and enemy.pos.distance_to(zone.pos) <= float(zone.radius):
 					target = -int(zone.id)
@@ -1565,7 +1656,7 @@ func _simulate_enemies(delta: float) -> void:
 		if target < 0:
 			if crypt_ai.step(enemy,target,delta): enemy.motion = (enemy.pos-simulation_start)/maxf(delta,0.000001)
 			continue
-		if void_ai.step(enemy,target,delta) or crypt_ai.step(enemy,target,delta):
+		if sheet_monsters.step(enemy,target,delta) or void_ai.step(enemy,target,delta) or crypt_ai.step(enemy,target,delta):
 			enemy.motion = (enemy.pos-simulation_start)/maxf(delta,0.000001)
 			continue
 		enemy.nav_timer = float(enemy.get("nav_timer", 0.0)) - delta
@@ -1677,7 +1768,8 @@ func _simulate_bullets(delta: float) -> void:
 				if enemy.hp <= 0: continue
 				bullet.hit_ids.append(int(enemy.id))
 				body_parts.set_pending(enemy,str(impact_parts.get(int(enemy.id),"")))
-				perk_combat.hit(bullet,enemy)
+				if bullet.has("talent"): talent_combat.bullet_hit(bullet,enemy)
+				else: perk_combat.hit(bullet,enemy)
 				if bullet.has("skill") or bool(bullet.get("splinter",false)): hero_skills.bullet_hit(bullet,enemy)
 				if int(bullet.get("pierce",0)) <= 0:
 					removed = true
@@ -1699,8 +1791,10 @@ func _simulate_bullets(delta: float) -> void:
 func _damage_player(id: int, damage: int, direction: Vector2 = Vector2.ZERO) -> void:
 	if not players.has(id) or damage <= 0 or players[id].invulnerable > 0.0 or players[id].hp <= 0: return
 	if bool(players[id].get("cheat_god",false)): return
+	damage = progress.scale_incoming(id,damage)
 	damage += int(players[id].get("item_extra_damage",0))
 	damage = perk_combat.incoming(id,damage,direction)
+	damage = talent_combat.incoming(id,damage,direction)
 	if damage <= 0: return
 	players[id].hp = maxi(0, players[id].hp - damage)
 	perk_combat.hurt(id)
@@ -1712,6 +1806,10 @@ func _damage_player(id: int, damage: int, direction: Vector2 = Vector2.ZERO) -> 
 	players[id].hitstun = float(balance.feedback.player_hitstun)
 	players[id].hit_flash = float(balance.feedback.hit_flash)
 	players[id].knockback = direction.normalized() * float(balance.feedback.player_knockback)
+	# Unbezwingbar: no stun and no knockback.
+	if talent_combat.cc_immune(id):
+		players[id].hitstun = 0.0
+		players[id].knockback = Vector2.ZERO
 
 
 func _damage_enemy(enemy: Dictionary, damage: float, direction: Vector2 = Vector2.ZERO, owner: int = 0, kill_effects: bool = true, feedback: bool = true) -> float:
@@ -1730,7 +1828,9 @@ func _damage_enemy(enemy: Dictionary, damage: float, direction: Vector2 = Vector
 			_enemy_fell(enemy,direction,owner,kill_effects)
 		return damage
 	var boss: bool = enemy.boss
+	if boss and players.has(owner): progress.mark_fight(enemy)
 	damage *= hero_skills.damage_scale(enemy) * boss_moves.damage_scale(enemy)
+	if players.has(owner): damage = talent_combat.outgoing(owner,enemy,damage,feedback)
 	if body_parts.has_parts(enemy):
 		# The part at the impact point takes the damage; all of it counts against the total HP.
 		var impact: String = body_parts.take_pending(enemy)
@@ -1749,6 +1849,7 @@ func _damage_enemy(enemy: Dictionary, damage: float, direction: Vector2 = Vector
 		var heavy: float = float(players.get(owner,{}).get("build",{}).get("heavy",0.0))
 		var knockback_scale: float = float(balance.get("perk_rules",{}).get("mechanics",{}).get("heavy_knockback_scale",1.7)) if heavy > 0 else 1.0
 		enemy.knockback = direction.normalized() * float(balance.feedback.boss_knockback if boss else balance.feedback.enemy_knockback)*knockback_scale
+	if players.has(owner): talent_combat.dealt(owner,enemy,damage,feedback)
 	if enemy.hp <= 0 and boss_moves.hold_death(enemy): return damage
 	if enemy.hp <= 0: _enemy_fell(enemy,direction,owner,kill_effects)
 	# Return resolved damage before HP clamping, so lethal surplus remains measurable.
@@ -1764,6 +1865,8 @@ func _enemy_fell(enemy: Dictionary, direction: Vector2, owner: int, kill_effects
 	team_progress.enemy_killed(enemy)
 	if bool(enemy.get("boss",false)) or bool(enemy.get("miniboss",false)): floor_boss_down = true
 	hero_skills.enemy_killed(enemy,owner)
+	talent_combat.enemy_killed(enemy,owner)
+	progress.enemy_fell(enemy,owner)
 	if str(enemy.get("kind","")) == "mimic": chests.mimic_defeated(enemy,owner)
 
 
@@ -1903,6 +2006,7 @@ func _step_transition(delta: float) -> void:
 
 func _enter_next_floor() -> void:
 	if editor_preview_mode: return
+	progress.floor_entered()
 	var next_floor := floor_index + 1
 	var next_seed := int((run_seed + (next_floor - 1) * int(balance.exploration.seed_stride)) % 2147483647)
 	var generated := _generate_floor(next_seed, next_floor)
@@ -1943,6 +2047,7 @@ func _make_snapshot(advance_sequence: bool = true) -> Dictionary:
 		visible_players[id].glow = str(player.get("attack_glow",""))
 		if player.has("cheat_god") or player.has("cheat_no_cooldown"): visible_players[id].cheats = {"god":bool(player.get("cheat_god",false)),"no_cooldown":bool(player.get("cheat_no_cooldown",false))}
 		visible_players[id].inventory = inventory.snapshot(player)
+		visible_players[id].talents = talent_combat.player_state(id)
 		var motion: Vector2 = player.get("motion",Vector2.ZERO)
 		var hit_direction: Vector2 = player.get("hit_direction",Vector2.ZERO)
 		visible_players[id].merge({"skin":str(player.get("skin",PLAYER_SKINS[0])),"mx":motion.x,"my":motion.y,"blocks":int(player.get("blocks",0)),"interacts":int(player.get("interacts",0)),"last_hit_damage":float(player.get("last_hit_damage",0)),"hit_dx":hit_direction.x,"hit_dy":hit_direction.y,"shot_interval":perk_combat.shot_interval(player)})
@@ -1952,7 +2057,7 @@ func _make_snapshot(advance_sequence: bool = true) -> Dictionary:
 	for enemy in enemies:
 		var direction: Vector2 = enemy.get("direction",Vector2.ZERO)
 		var attack: String = enemy.get("attack","")
-		var attack_length: float = float(balance.attacks.boss.get(attack,1.0)) if enemy.boss and not void_ai.handles(enemy) else float(enemy.get("attack_length",1.0))
+		var attack_length: float = float(balance.attacks.boss.get(attack,1.0)) if enemy.boss and not void_ai.handles(enemy) and not bool(enemy.get("sheet",false)) else float(enemy.get("attack_length",1.0))
 		var death_length := float(balance.death.boss_duration if enemy.boss else balance.death.duration)
 		visible_enemies.append({"x": enemy.pos.x, "y": enemy.pos.y, "hp": enemy.hp, "max_hp": enemy.max_hp, "boss": enemy.boss, "hitstun": enemy.get("hitstun", 0.0), "hit_flash": enemy.get("hit_flash", 0.0),"id":enemy.get("id",-1),"kind":enemy.get("kind","chaser"),"hits":enemy.get("hits",0),"attacks":enemy.get("attacks",0),"moving":enemy.get("moving",false),"face":enemy.get("face",-1.0),"dx":direction.x,"dy":direction.y,"attack":attack,"attack_p":clampf(1.0-float(enemy.get("attack_time",0.0))/maxf(0.001,attack_length),0.0,1.0),"dying_p":clampf(1.0-float(enemy.get("dying",0.0))/death_length,0.0,1.0) if enemy.hp <= 0 else -1.0})
 		visible_enemies[-1].radius = float(enemy.radius)
@@ -1975,6 +2080,7 @@ func _make_snapshot(advance_sequence: bool = true) -> Dictionary:
 			visible_enemies[-1].beam = [enemy.pos.x,enemy.pos.y,Vector2(enemy.beam_to).x,Vector2(enemy.beam_to).y]
 			if enemy.has("beam_to_b"): visible_enemies[-1].beam_b = [enemy.pos.x,enemy.pos.y,Vector2(enemy.beam_to_b).x,Vector2(enemy.beam_to_b).y]
 		visible_enemies[-1].merge({"enemy_name":str(enemy.get("enemy_name","Kryptawesen")),"attack_kind":str(enemy.get("attack_kind","")),"attack_length":attack_length,"aim_x":attack_aim.x,"aim_y":attack_aim.y,"tx":point.x,"ty":point.y,"blocks":int(enemy.get("blocks",0)),"cast_count":int(enemy.get("summons_cast",0)),"caster_id":int(enemy.get("caster_id",0))})
+		if bool(enemy.get("sheet",false)): sheet_monsters.snapshot_entry(enemy,visible_enemies[-1])
 	var visible_bullets: Array = []
 	for bullet in bullets: visible_bullets.append({"id":bullet.get("id",-1),"radius":float(bullet.get("radius",balance.bullet.radius)),"x": bullet.pos.x, "y": bullet.pos.y, "owner": bullet.owner,"element":str(bullet.get("element","")),"critical":bool(bullet.get("critical",false)),"style":str(bullet.get("style","")),"vx":float(bullet.velocity.x),"vy":float(bullet.velocity.y)})
 	if advance_sequence: packet_sequence += 1
@@ -1982,7 +2088,7 @@ func _make_snapshot(advance_sequence: bool = true) -> Dictionary:
 	for i in range(floor_layouts.size()):
 		var layout: Dictionary = floor_layouts[i]
 		map_rooms.append({"id": layout.id, "title": layout.title, "boss": layout.boss, "grid_x": layout.grid_x, "grid_y": layout.grid_y, "cleared": str(layout.id) in cleared_room_ids})
-	return {"server_time":Time.get_ticks_usec()/1000000.0,"players": visible_players, "enemies": visible_enemies, "bullets": visible_bullets, "room": room, "phase": phase, "seed": floor_seed, "run_seed": run_seed, "run_serial": run_serial, "floor_index": floor_index, "cleared_room_ids": cleared_room_ids.duplicate(), "seq": packet_sequence, "peer_count": players.size(), "max_players":int(balance.network.max_players), "perk_options": perk_options, "perk_offers":perk_offers.duplicate(), "perk_events":perk_combat.visual_events(), "room_layout": current_layout, "room_layout_revision": _room_layout_revision, "room_serial": _room_serial, "floor_map": map_rooms, "generator_version": Dungeon.GENERATOR_VERSION, "boss_name":balance.boss.get("display_name","BOSS"),"fx_events":fx_events.duplicate(true),"team":team_progress.snapshot(),"loot_chests":chests.snapshot(),"boss_zones":boss_moves.snapshot(),"horde":hordes.snapshot(),"stairs_open":stairs_open(),"skill_fx":hero_skills.snapshot(),"transition":(_transition_state if not _transition_state.is_empty() else _last_transition_state).duplicate()}
+	return {"server_time":Time.get_ticks_usec()/1000000.0,"players": visible_players, "enemies": visible_enemies, "bullets": visible_bullets, "room": room, "phase": phase, "seed": floor_seed, "run_seed": run_seed, "run_serial": run_serial, "floor_index": floor_index, "cleared_room_ids": cleared_room_ids.duplicate(), "seq": packet_sequence, "peer_count": players.size(), "max_players":int(balance.network.max_players), "perk_options": perk_options, "perk_offers":perk_offers.duplicate(), "perk_events":perk_combat.visual_events(), "room_layout": current_layout, "room_layout_revision": _room_layout_revision, "room_serial": _room_serial, "floor_map": map_rooms, "generator_version": Dungeon.GENERATOR_VERSION, "boss_name":balance.boss.get("display_name","BOSS"),"fx_events":fx_events.duplicate(true),"team":team_progress.snapshot(),"loot_chests":chests.snapshot(),"boss_zones":boss_moves.snapshot(),"horde":hordes.snapshot(),"stairs_open":stairs_open(),"skill_fx":hero_skills.snapshot(),"hazards":sheet_monsters.snapshot(),"talents":talent_combat.snapshot(),"progress":progress.snapshot(),"transition":(_transition_state if not _transition_state.is_empty() else _last_transition_state).duplicate()}
 
 
 func _broadcast_state(reliable: bool) -> void:
@@ -2148,6 +2254,8 @@ func _build_ui() -> void:
 	ui.add_child(lobby_ui)
 	for child: Node in lobby_children: child.reparent(lobby_ui)
 	run_hud = RunHud.new()
+	progress.local_event.connect(run_hud.show_reward)
+	progress.local_event.connect(func(event: Dictionary) -> void: if str(event.get("kind", "")) in ["shard", "level"]: view.play_ui_sound("perk"))
 	run_hud.classes = balance.get("classes",{})
 	run_hud.room_count = _run_room_count()
 	run_hud.visible = false
@@ -2198,6 +2306,8 @@ func _build_ui() -> void:
 func _build_main_menu() -> void:
 	main_menu = MainMenu.new()
 	main_menu.account = null
+	main_menu.progress = progress
+	main_menu.talents_changed.connect(send_talent_builds)
 	main_menu.classes = balance.get("classes",{})
 	main_menu.class_order = balance.get("class_order",[])
 	main_menu.weapons = balance.get("weapons",{})

@@ -21,11 +21,26 @@ nur Endlos, Story gestrichen.)
 | Offene Etagen mit Räumen, Gängen, Truhen und Kisten | umgesetzt | `src/dungeon/open_floor.gd`, `assets/data/dungeon_open_floor.json`, `tests/open_floor_test.gd`, `tests/open_floor_game_test.gd` |
 | Story-Auswahl (Story 1 spielbar, 2 und 3 BALD), Endlos auf BALD | umgesetzt | `src/main_menu.gd`, `assets/data/story_campaigns.json`, `tests/main_menu_flow_test.gd` |
 | Story 2 „Die Frostgruft“ | Entwurf zur Abnahme | Artefakt „Die Frostgruft“ |
-| Nebel und Minikarte | offen | – |
-| Themen und 0x72-Monster | offen | – |
+| Nebel (Minikarte offen) | umgesetzt für Endlos-Etagen | `src/vfx/fog_memory.gd`, `themed_monsters.json` `fog` |
+| Themen, 0x72-Monster, Bosse und Nebenbosse aus `codex/0x72-dungeon` | umgesetzt für Endlos-Etagen | `src/combat/sheet_monsters.gd`, `src/vfx/sheet_art.gd`, `assets/data/themed_monsters.json`, `tests/sheet_monsters_test.gd`, Bilder `production/qa/evidence/themed-floors/` |
 | Endbosse mit zwei Phasen | offen | – |
 | Kleinere Waffen und Waffenstufen | offen | – |
-| Skilltree im Menü | offen | – |
+| Skilltree im Menü | ersetzt durch Talentbäume und Seelensplitter (29.10.2026) | `docs/TALENTE-SEELENSPLITTER.de.md` |
+
+**Themen-Etagen (29.10.2026):** Jede Endlos-Etage zieht eines der Themen Gruft,
+Orklager, Hölle oder Himmel, nie zweimal hintereinander. Das Thema färbt Boden
+und Wände, wählt die Bannerfarbe und malt Details (Spinnweben, Moos, Lavarisse,
+Goldeinlagen) in den gebackenen Raum. Die Gruppen kommen aus der Monsterliste
+des Themas; auf Boss- und Nebenboss-Etagen führt der Boss oder Nebenboss des
+Themas die Endgruppe an (Faulkönig/Seelenrufer, Ogerkriegsherr/Kristall-Wogol,
+Höllenprinz/Geflügelter Chort, Seraphiel/Goldener Engel). Diese Gegner und die
+Orks sind **Sheet-Monster**: Sie werden aus fünfzeiligen Sheets gezeichnet und
+haben keinen Teile-Kampf; Angriff, Treffer und Tod der Sheets sind aus den
+0x72-Frames abgeleitet, die Bosse tragen dazugemalte Pixelteile (Nutzerentscheid
+29.10.2026: „Sheets übernehmen“). Gegner, die es als Gruft-Rig gibt
+(Mini-Zombie, Nekromant), bleiben Rigs. Über allem liegt der Nebel: Ungesehenes
+ist schwarz, Gesehenes gedimmt. Die Story-Gruft ist unverändert.
+Bilder: `scripts/capture_themed_floors.gd`.
 
 **Offene Etagen, wie sie gebaut werden:** Eine Etage ist eine Karte von
 76 × 56 Tiles. Die Räume liegen auf einem Raster aus 4 × 3 Zellen, je Zelle ein

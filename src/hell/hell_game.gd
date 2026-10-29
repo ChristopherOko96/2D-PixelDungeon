@@ -26,7 +26,23 @@ const FrostItems = preload("res://src/hell/frost_items.gd")
 const FrostBag = preload("res://src/hell/frost_bag.gd")
 const FrostRunHud = preload("res://src/hell/frost_run_hud.gd")
 const MetaStore = preload("res://src/hell/meta_store.gd")
+const Profile = preload("res://src/progress/profile.gd")
+const TalentRules = preload("res://src/progress/talent_rules.gd")
+const SoulDrops = preload("res://src/progress/soul_drops.gd")
+const HellTalents = preload("res://src/hell/hell_talents.gd")
 const FrostHud = preload("res://src/hell/frost_hud.gd")
+const PauseMenu = preload("res://src/pause_menu.gd")
+const CryptUI = preload("res://src/ui/crypt_ui.gd")
+## The Steuerung page of the pause menu in the Frostgruft and the Hölle.
+const CONTROLS := "Bewegen: WASD
+Zielen: Maus · Angreifen: Linksklick
+Fähigkeiten: 1 2 3 4 · Meisterschaft: 5
+Talente: Shift + 1 2 3 4 · Ultimate: R
+Benutzen: E · Fähigkeit des Helden: Q
+Tasche: I · Relikt wechseln: T
+Karte: M · Licht: L · Status: C oder Tab
+Etage neu starten: F5
+Menü öffnen / schließen: Esc"
 const HEART := "res://assets/sprites/0x72/ui_heart_%s.png"
 const Sfx = preload("res://src/vfx/sfx.gd")
 const Music = preload("res://src/audio/music.gd")
@@ -117,6 +133,16 @@ var meta_data: Dictionary = {}
 var meta: Dictionary = {}
 ## Where the soul crystals are saved (tests use their own file).
 var meta_path := MetaStore.SAVE_PATH
+## The shared lasting profile (src/progress/profile.gd): EXP, gold, soul shards.
+var profile_data: Dictionary = {}
+var profile: Dictionary = {}
+var profile_path := Profile.default_path()
+## Identifies this run in boss completion ids, so a restart never repeats one.
+var _run_uid := ""
+## What the last floor brought, for the floor banner.
+var _floor_reward := ""
+## The shared talent trees in this map (src/hell/hell_talents.gd); null without a profile.
+var talents: HellTalents
 ## The run's subclass kit (src/hell/sub_kit.gd); empty for the standard subclass.
 var sub_kit: Dictionary = {}
 ## Story 1's combat feel (theme.feel, src/hell/frost_feel.gd); null in worlds without it.
@@ -143,6 +169,8 @@ var glow: Layer
 ## The hell monsters (hell_monsters.gd); null in a themed world with its own enemies.
 var monsters: Monsters
 var hud: Hud
+## The pause menu of the crypt (src/pause_menu.gd) with Auftrag, Steuerung and Anzeige.
+var pause_menu: PauseMenu
 var _chunk_nodes: Array = []
 var _dark_material: ShaderMaterial
 var _vignette: GradientTexture2D
@@ -197,7 +225,13 @@ func _ready() -> void:
 		hearts[k] = load(HEART % k)
 	if theme.has("talents") and FileAccess.file_exists(str(theme.talents)):
 		meta_data = JSON.parse_string(FileAccess.get_file_as_string(str(theme.talents)))
-		meta = MetaStore.load_store(meta_data, meta_path)
+		# The old soul crystals and subclass trees are replaced by the shared
+		# talent trees (docs/TALENTE-SEELENSPLITTER.de.md): every class plays
+		# its standard subclass here, and bought crystals lapse.
+		meta = MetaStore.fresh(meta_data)
+	profile_data = Profile.data()
+	if not profile_data.is_empty(): profile = Profile.load_profile(profile_data, profile_path)
+	_run_uid = "%d-%d" % [Time.get_unix_time_from_system(), randi()]
 	if not (theme.get("sounds", {}) as Dictionary).is_empty():
 		sfx = Sfx.new()
 		add_child(sfx)
@@ -239,6 +273,16 @@ func _ready() -> void:
 	hud.set_anchors_preset(Control.PRESET_FULL_RECT)
 	hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui.add_child(hud)
+	pause_menu = PauseMenu.new()
+	pause_menu.theme = CryptUI.create_theme()
+	ui.add_child(pause_menu)
+	pause_menu.set_sections(["quests", "controls", "display"])
+	pause_menu.set_controls(CONTROLS)
+	pause_menu.pause_note.text = "SOLO · SPIEL ANGEHALTEN"
+	pause_menu.main_action_button.visible = false
+	pause_menu.resume_pressed.connect(set_pause_open.bind(false))
+	pause_menu.leave_pressed.connect(func(): get_tree().change_scene_to_file(MENU_SCENE))
+	pause_menu.display_mode_requested.connect(_toggle_fullscreen)
 	load_floor(clampi(start_floor, 1, floors_raw.size()), false)
 	if start_at_boss:
 		enter_boss_room()
@@ -293,20 +337,24 @@ func _sound_raw(name: String) -> void:
 		sfx.play(name)
 
 
-## Soul crystals for this floor (its number, its guardian, finished side goals), saved at once.
+## End of a floor: character EXP and gold into the shared profile, and a soul
+## shard roll when a real floor boss fell (mini-bosses never drop shards).
+## Solo game, so this machine rolls; the rules are the same as in the crypt.
 func _bank_crystals() -> void:
-	if meta.is_empty():
-		return
-	var kind := "final" if W.final else ("mini" if W.boss.get("mini", false) else "guardian")
-	var sides := 0
-	for it: Dictionary in FrostHud.goals(self):
-		if not it.main and it.done:
-			sides += 1
-	var n := MetaStore.floor_award(meta_data, int(state.floor), kind, sides)
-	meta.crystals = int(meta.crystals) + n
-	state.crystals_floor = n
-	state.crystals_run = int(state.get("crystals_run", 0)) + n
-	MetaStore.save_store(meta, meta_path)
+	if profile.is_empty(): return
+	var state_class := Profile.class_state(profile, class_id)
+	var gained := TalentRules.add_exp(profile_data, state_class, int(profile_data.exp.floor) + (int(profile_data.exp.boss) if W.final else int(profile_data.exp.miniboss)))
+	profile.gold = int(profile.gold) + int(profile_data.gold.per_floor) + (int(profile_data.gold.per_boss) if W.final else 0)
+	_floor_reward = "+%d Gold" % (int(profile_data.gold.per_floor) + (int(profile_data.gold.per_boss) if W.final else 0))
+	if gained > 0: _floor_reward += "  ·  Level %d, neuer Talentpunkt" % int(state_class.level)
+	if W.final:
+		var difficulty := str(profile.get("difficulty", "normal"))
+		var fight := {"present": true, "seconds": float(state.get("floor_time", 60.0)), "damage_share": 1.0}
+		var result := SoulDrops.resolve(profile_data, profile, "hell_final_%d" % int(state.floor), difficulty, "%s:%d" % [_run_uid, int(state.floor)],
+			int(state_class.level), SoulDrops.boss_level(profile_data, int(state.floor), difficulty), fight, randf())
+		_floor_reward += "  ·  SEELENSPLITTER ERHALTEN!" if bool(result.shard) else ""
+	Profile.save_profile(profile, profile_path)
+	if talents != null: talents.save()
 
 
 ## The weapon damage the hero's multiples are measured against.
@@ -441,6 +489,9 @@ func load_floor(n: int, carry: bool) -> void:
 		e.max_hp = int(e.hp)
 	_respawn()
 	camera.position = Vector2(player.x, player.y)
+	if not profile.is_empty() and (talents == null or not carry):
+		talents = HellTalents.new()
+		talents.bind(self, profile, profile_path, class_id)
 
 
 ## Debug jump: puts the hero inside the boss room, two cells past the gate it
@@ -610,7 +661,39 @@ func _near_door(r: Dictionary, p: Vector2, dist: float) -> bool:
 
 # ---------- input ----------
 
+## Opens or closes the pause menu; the world stands still while it is open.
+func set_pause_open(open: bool) -> void:
+	pause_menu.visible = open
+	if not open:
+		var focus := get_viewport().gui_get_focus_owner()
+		if focus != null: focus.release_focus()
+		return
+	pause_menu.select_section("quests")
+	_refresh_pause()
+	pause_menu.resume_button.grab_focus()
+
+
+func _refresh_pause() -> void:
+	var view := get_viewport_rect().size
+	var origin := ((view - Vector2(1280, 720)) * 0.5).floor()
+	pause_menu.position = origin
+	pause_menu.set_canvas_size(view, origin)
+	pause_menu.set_display_state(get_window().mode == Window.MODE_FULLSCREEN, view)
+	pause_menu.set_quests(FrostHud.goals(self), "ETAGE %d" % int(state.floor))
+
+
+func _toggle_fullscreen() -> void:
+	get_window().mode = Window.MODE_WINDOWED if get_window().mode == Window.MODE_FULLSCREEN else Window.MODE_FULLSCREEN
+	_refresh_pause()
+
+
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
+		set_pause_open(not pause_menu.visible)
+		get_viewport().set_input_as_handled()
+		return
+	if pause_menu.visible:
+		return
 	if feel != null and event is InputEventMouseButton and event.pressed:
 		if FrostBag.click(self, get_viewport().get_mouse_position(), get_viewport_rect().size):
 			get_viewport().set_input_as_handled()
@@ -643,6 +726,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not (event is InputEventKey) or event.echo:
 		return
 	var skill_keys := {KEY_1: "1", KEY_2: "2", KEY_3: "3", KEY_4: "4"}
+	# Shift + 1-4: the talent bar, R: the ultimate (the same keys in every map).
+	if talents != null and event.pressed and skill_keys.has(event.keycode) and event.shift_pressed:
+		talents.press(int(skill_keys[event.keycode]) - 1)
+		return
+	if talents != null and event.pressed and event.keycode == KEY_R:
+		talents.press(-1)
+		return
 	if not skills.is_empty() and skill_keys.has(event.keycode):
 		var key: String = skill_keys[event.keycode]
 		if event.pressed:
@@ -668,10 +758,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			state.map = not state.map
 		KEY_L:
 			state.light = not state.light
-		KEY_R:
+		KEY_F5:
 			load_floor(state.floor, false)
-		KEY_ESCAPE:
-			get_tree().change_scene_to_file(MENU_SCENE)
 		KEY_T:
 			if str(state.relic) != "":
 				state.relic_on = not state.relic_on
@@ -715,6 +803,10 @@ func _hurt(why: String, n := 1) -> void:
 		state.inv = float(balance.player.invulnerable)
 		return
 	state.inv = float(balance.player.invulnerable)
+	# Talents: difficulty, reductions, shields, the counter (the same in every map).
+	if talents != null:
+		n = talents.incoming(n)
+		if n <= 0: return
 	_lose_hp(n + FrostCombat.extra_hurt(self), why)
 
 
@@ -928,7 +1020,7 @@ func _fire(dir: Vector2) -> void:
 	var first := shots.size()
 	_attack(dir)
 	if state.cool > 0.0:
-		state.cool *= FrostCombat.rate(self)
+		state.cool *= FrostCombat.rate(self) * (talents.interval_scale() if talents != null else 1.0)
 		FrostCombat.after_attack(self, first)
 
 
@@ -980,6 +1072,7 @@ func _damage_mob(m: Dictionary, push: Vector2, mult := 1.0) -> bool:
 	if factor <= 0.0:
 		return false
 	var dealt: float = float(state.dmg) * factor * mult * HeroKit.crit(self) * CardKit.damage_mult(self) * SubKit.factor(self, m) * FrostCombat.hit_factor(self, m)
+	if talents != null: dealt = talents.basic_hit(m, dealt)
 	m.hp -= dealt
 	_sound("hit_" + str(def.get("material", "void")))
 	m.hit = 0.12
@@ -1004,7 +1097,7 @@ func _mob_def(kind: String) -> Dictionary:
 func _spawn_mob(room: int, pos: Vector2, kind: String) -> void:
 	var def := _mob_def(kind)
 	var diff: Dictionary = W.diff
-	var hp: float = float(W.boss.hp) if kind == "boss" else round(float(def.hp) * float(diff.hp))
+	var hp: float = (float(W.boss.hp) if kind == "boss" else round(float(def.hp) * float(diff.hp))) * (talents.hp_scale() if talents != null else 1.0)
 	var scale := float(def.get("scale", 1.0))
 	if kind == "boss" and (W.boss.get("mini", false) or W.final):
 		scale *= 1.25 if W.final else 1.05
@@ -1229,6 +1322,9 @@ func _update_clone(dt: float) -> void:
 
 
 func _process(delta: float) -> void:
+	if pause_menu.visible:
+		_refresh_pause()
+		return
 	var dt := minf(delta, 0.05)
 	if feel != null and (feel.hitstop > 0.0 or FrostBag.is_open(self)):
 		feel.hitstop = maxf(0.0, feel.hitstop - dt)
@@ -1243,6 +1339,7 @@ func _process(delta: float) -> void:
 
 func _update(dt: float) -> void:
 	state.t += dt
+	FrostHud.track(self)
 	for k in ["inv", "flash", "cool", "chill", "slow"]:
 		state[k] = maxf(0.0, state[k] - dt)
 	state.shake = maxf(0.0, state.shake - dt * 30.0)
@@ -1273,6 +1370,7 @@ func _update(dt: float) -> void:
 			state.room = _room_of_type("start").index
 		return
 	swing.t = maxf(0.0, swing.t - dt)
+	if talents != null: talents.update(dt)
 	HeroKit.update(self, dt)
 	RelicKit.update(self, dt)
 	SubKit.update(self, dt)
@@ -1456,6 +1554,7 @@ func _update_mobs(dt: float) -> void:
 			continue
 		# taunting allies (bone colossus, great bear) draw enemies away from the hero
 		var goal := SubKit.chase(self, m, me)
+		if talents != null: goal = talents.chase_goal(m, goal)
 		var to: Vector2 = goal - m.p
 		var d := maxf(to.length(), 1.0)
 		var dir := to / d
@@ -1554,6 +1653,7 @@ func _update_mobs(dt: float) -> void:
 		_sound("kill_" + str((m.def as Dictionary).get("material", "void")))
 		HeroKit.gain(self, HeroKit.exp_for(self, m))
 		SubKit.on_kill(self, m)
+		if talents != null: talents.killed(m)
 		FrostCombat.after_kill(self, m)
 		# a splitting enemy (e.g. ice slime) leaves smaller ones behind
 		var kids := MobRules.split_children(m.def)
@@ -1854,6 +1954,7 @@ func _draw_actors(l: Layer) -> void:
 	var view := _view_rect().grow(220)
 	var t: float = state.t
 	FrostCombat.draw_under(self, l, t)
+	if talents != null: talents.draw_world(l, t)
 	_draw_zones(l, t)
 	for e: Dictionary in W.ents:
 		if not view.has_point(Vector2(e.x, e.y)):
@@ -2354,6 +2455,7 @@ func draw_hud(h: Control) -> void:
 	var size := h.size
 	_draw_hud_main(h, size)
 	FrostCombat.draw_hud(self, h, size)
+	if talents != null: talents.draw_hud(h, size, size.y - 178.0)
 
 
 func _draw_hud_main(h: Control, size: Vector2) -> void:
@@ -2473,23 +2575,20 @@ func _draw_hud_main(h: Control, size: Vector2) -> void:
 		_text(h, "Figur: Platzhalter" if monsters != null else "Figur und Gegner: Platzhalter", Vector2(20, size.y - 14), 16, Color(ink, 0.45))
 	if state.dead > 0.0:
 		h.draw_rect(Rect2(Vector2.ZERO, size), Color(0.12, 0, 0, 0.55))
-	var mission_top := 200.0
+	# The Auftragsliste is a page of the pause menu (Esc), as in every story.
 	if crypt_hud and not state.map:
-		mission_top = FrostRunHud.floor_panel(self, h, size)
+		FrostRunHud.floor_panel(self, h, size)
 	else:
 		_draw_map(h, size, state.map)
-	if theme.get("styled_hud", false) and not state.map and not state.won:
-		FrostHud.mission(self, h, size, mission_top)
-		if state.get("status", false):
-			FrostHud.status(self, h, size)
+	if theme.get("styled_hud", false) and not state.map and not state.won and state.get("status", false):
+		FrostHud.status(self, h, size)
 	if state.won:
 		h.draw_rect(Rect2(Vector2.ZERO, size), Color(0.04, 0.01, 0.02, 0.8))
 		_text(h, say("Die Hölle ist bezwungen") if W.final else "Etage %d geschafft" % state.floor, Vector2(0, size.y / 2.0 - 30), 32, gold, size.x)
 		_text(h, say("%d von %d Räumen erkundet · %d Runensteine · %d Herzen" % [state.visited.size(), W.rooms.size(), state.gems, state.max_hp / 2]), Vector2(0, size.y / 2.0 + 16), 16, ink, size.x)
 		_text(h, "E: von vorn beginnen" if W.final else "E: weiter zu Etage %d" % (state.floor + 1), Vector2(0, size.y / 2.0 + 52), 16, col("prompt_key"), size.x)
-		if not meta.is_empty():
-			var cur: Dictionary = meta_data.currency
-			_text(h, "+%d %s  ·  zusammen %d  ·  im Hauptmenü unter TALENTE ausgeben" % [int(state.get("crystals_floor", 0)), cur.name, int(meta.crystals)], Vector2(0, size.y / 2.0 + 92), 20, gold, size.x)
+		if not _floor_reward.is_empty():
+			_text(h, _floor_reward, Vector2(0, size.y / 2.0 + 92), 20, gold, size.x)
 
 
 ## Hearts, keys, runes, flames, level and EXP, the clone and blessings (the

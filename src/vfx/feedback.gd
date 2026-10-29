@@ -13,7 +13,11 @@ const SKILLS_PATH := "res://assets/data/hero_skills.json"
 static var _gore: Dictionary = {}
 static var _skill_sounds: Dictionary = {}
 
-const BLOOD := {"chaser": Color("6fbf4f"), "shooter": Color("b4543f"), "boss": Color("9b4fd4"), "player": Color("d8484f"),"skeleton_archer":Color("c5b68c"),"skeleton_guard":Color("c5b68c"),"necromancer":Color("786c8a")}
+const BLOOD := {"chaser": Color("6fbf4f"), "shooter": Color("b4543f"), "boss": Color("9b4fd4"), "player": Color("d8484f"),"skeleton_archer":Color("c5b68c"),"skeleton_guard":Color("c5b68c"),"necromancer":Color("786c8a"),
+	"imp":Color("d6503f"),"skelet":Color("e8e2d0"),"o_brute":Color("b4543f"),"o_berserker":Color("b4543f"),"o_chieftain":Color("b4543f"),
+	"chort":Color("c8302f"),"wogol":Color("7fae4f"),"doc":Color("b4543f"),"pumpkin_dude":Color("e88a2f"),"big_zombie":Color("7fae4f"),"angel":Color("f4e8b0"),
+	"seraph":Color("ffd76a"),"rot_king":Color("7fae4f"),"hell_prince":Color("ff6a2a"),"ogre_warchief":Color("b4543f"),
+	"winged_chort":Color("c8302f"),"soul_caller":Color("8b5fd0"),"crystal_wogol":Color("78e6f0"),"golden_angel":Color("ffd76a")}
 const SPARK := Color("fff1c2")
 const HIT_FLASH := Color("ff6a5c")
 const DUST := Color("8e8496")

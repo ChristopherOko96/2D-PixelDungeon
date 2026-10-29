@@ -1,7 +1,7 @@
 extends RefCounted
 ## The styled HUD parts of themed runs (theme.styled_hud, the Frostgruft):
-## ice-framed panels, the floor's mission list under the minimap (main goals
-## in order, side goals below, a finished goal flashes and ticks off), the
+## ice-framed panels, the floor's goals (main goals in order, side goals below;
+## shown on the pause menu's Auftrag page, a finished goal plays a sound), the
 ## room banner as a sliding plate, the status sheet (C / Tab) and the three
 ## level-up cards. Draws into the game's HUD control through the game's font.
 
@@ -56,7 +56,7 @@ static func goals(g: Node) -> Array:
 		out.append({"text": "Finde den %s" % g.key_name[k], "done": g.state.keys[k] or g.state.used[k] or gate.unlocked, "main": true})
 		out.append({"text": "Entriegle das Tor der Wächterhalle", "done": gate.unlocked, "main": true})
 	out.append({"text": "Besiege %s" % g.W.boss.name, "done": g.state.boss_dead, "main": true})
-	out.append({"text": "Verlasse die Frostgruft" if g.W.final else "Steig die Treppe hinab", "done": g.state.won, "main": true})
+	out.append({"text": ("Verlasse die Frostgruft" if g.theme.get("styled_hud", false) else "Verlasse die Hölle") if g.W.final else "Steig die Treppe hinab", "done": g.state.won, "main": true})
 	for key: String in g.W.groups:
 		var grp: Dictionary = g.W.groups[key]
 		if key == "relic":
@@ -72,45 +72,19 @@ static func goals(g: Node) -> Array:
 	return out
 
 
-## The mission list under the minimap; the current main goal pulses, a goal that
-## just finished flashes and plays a sound once.
-static func mission(g: Node, h: Control, size: Vector2, top := 200.0) -> void:
-	var list := goals(g)
+## Watches the goals (the list itself is the Auftrag page of the pause menu):
+## a main goal that just finished plays a sound and shows a hint once.
+static func track(g: Node) -> void:
+	if g.W.is_empty():
+		return
 	var seen: Dictionary = g.state.get("goal_done", {})
-	for it: Dictionary in list:
+	for it: Dictionary in goals(g):
 		if it.done and not seen.has(it.text):
 			seen[it.text] = g.state.t
 			if it.main and float(g.state.t) > 0.5:
 				g._sound("puzzle_solved")
+				g._toast("Auftrag erfüllt: %s" % it.text)
 	g.state.goal_done = seen
-	# as wide as the longest goal, so nothing runs past the frame
-	var w := 220.0
-	for it: Dictionary in list:
-		w = maxf(w, FONT.get_string_size(str(it.text), HORIZONTAL_ALIGNMENT_LEFT, -1, 14 if it.main else 12).x + 52.0)
-	w = minf(w, 420.0)
-	var x := size.x - w - (20.0 if crypt else 10.0)
-	var y := top
-	var lines := list.size()
-	frame(h, Rect2(x, y, w, 40 + lines * 26), EDGE)
-	g._text(h, "AUFTRAG · ETAGE %d" % int(g.state.floor), Vector2(x + 14, y + 24), 16, CryptUI.GOLD if crypt else GLOW)
-	var current_set := false
-	var ly := y + 52.0
-	for it: Dictionary in list:
-		var flash: float = clampf(1.0 - (float(g.state.t) - float(seen.get(it.text, -9.0))) / 0.8, 0.0, 1.0)
-		var current: bool = it.main and not it.done and not current_set
-		if current:
-			current_set = true
-		var col: Color = Color(g.ink, 0.45) if it.done else (g.gold if current else (Color(g.ink, 0.9) if it.main else Color(g.col("sub"), 0.85)))
-		if flash > 0.0:
-			h.draw_rect(Rect2(x + 6, ly - 18, w - 12, 24), Color(GLOW, 0.35 * flash))
-		var mark := "✓" if it.done else ("▶" if current else ("•" if it.main else "◇"))
-		var off: float = sin(float(g.state.t) * 6.0) * 3.0 if current else 0.0
-		g._text(h, mark, Vector2(x + 12 + off, ly), 16, GLOW if (current or it.done) else col)
-		g._text(h, str(it.text), Vector2(x + 34, ly), 12 if not it.main else 14, col)
-		if it.done:
-			var tw: float = FONT.get_string_size(str(it.text), HORIZONTAL_ALIGNMENT_LEFT, -1, 12 if not it.main else 14).x
-			h.draw_line(Vector2(x + 34, ly - 5), Vector2(x + 34 + tw, ly - 5), Color(g.ink, 0.45), 1.0)
-		ly += 26.0
 
 
 # ---------- banner ----------
