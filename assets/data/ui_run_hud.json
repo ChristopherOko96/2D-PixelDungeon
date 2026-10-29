@@ -7,5 +7,17 @@
   "boss_bar_width": 560,
   "boss_chip_speed": 0.35,
   "slot_height": 72,
-  "slot_gap": 8
+  "slot_gap": 8,
+  "skill_bar": {
+    "_note": "Slim skill bar (src/ui/skill_bar.gd), crypt and story worlds: slot size, gap, distance to the bottom edge, padding, icon size, key/number/label font sizes, EXP line height (px).",
+    "slot": 44,
+    "gap": 4,
+    "bottom": 10,
+    "pad": 3,
+    "icon": 32,
+    "key_size": 10,
+    "number_size": 16,
+    "label_size": 14,
+    "exp_height": 3
+  }
 }

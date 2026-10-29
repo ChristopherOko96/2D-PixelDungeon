@@ -263,6 +263,8 @@ func _start_rise(a: Dictionary, rig: Dictionary, enemy: Dictionary) -> void:
 
 func _start_death(a: Dictionary, rig: Dictionary, enemy: Dictionary) -> void:
 	a.dying = true
+	# cut in two by Rage: the slice effect (src/vfx/slice_fx.gd) shows the halves
+	if enemy.has("slice"): return
 	var family: String = str(rig.family)
 	var feet: Vector2 = a.get("feet", Vector2(float(enemy.get("x", 0)), float(enemy.get("y", 0))))
 	match family:

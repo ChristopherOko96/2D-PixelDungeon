@@ -4,6 +4,7 @@
   "sprites": "res://assets/sprites/frost/",
   "balance": "res://assets/data/hell_balance.json",
   "pixel": true,
+  "pixel_tiles": false,
   "hero_scale": 3.0,
   "weapon_scale": 2.0,
   "chill_speed": 0.6,

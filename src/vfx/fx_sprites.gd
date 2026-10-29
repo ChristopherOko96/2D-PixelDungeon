@@ -46,6 +46,12 @@ func set_layout(layout: Dictionary) -> void:
 	_walkable = walkable_cells(layout)
 
 
+## Sets the floor cells directly (Vector2i, 32 px -> true), for worlds without a
+## crypt room layout (the story worlds, src/hero/story_skill_fx.gd).
+func set_walkable(cells: Dictionary) -> void:
+	_walkable = cells
+
+
 ## Walkable floor cells (Vector2i, 32 px) of a room: floor tiles that are not
 ## solid and hold no breakable crate or chest. Empty for rooms without painted
 ## floors (nothing is clipped there).

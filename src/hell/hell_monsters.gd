@@ -203,6 +203,7 @@ func update(dt: float) -> void:
 		v *= 0.0 if held else pace
 		v += m.k
 		m.k *= 0.86
+		var moved_from: Vector2 = m.p
 		var rr := minf(m.r * 0.7, 40.0)
 		var avoid: bool = not m.boss and m.st.ai != "hover" and m.st.ai != "drift"
 		var nx: float = m.p.x + v.x * dt
@@ -211,6 +212,9 @@ func update(dt: float) -> void:
 		var ny: float = m.p.y + v.y * dt
 		if not g.box_blocked(Rect2(m.p.x - rr, ny - rr, rr * 2.0, rr), avoid) and not HeroKit.wall_blocks(g, Vector2(m.p.x, ny), rr):
 			m.p = Vector2(m.p.x, ny)
+		# a body thrown by Rage slams into the wall it meets (src/hero/story_hero.gd)
+		if g.story_hero != null:
+			g.story_hero.check_slam(m, moved_from, dt)
 		act = m.act
 		var airborne: bool = act != null and float(act.get("air", 0.0)) > 20.0
 		if d < m.r + float(cfg.contact_reach) and m.alpha > 0.6 and not immune(m) and not airborne:

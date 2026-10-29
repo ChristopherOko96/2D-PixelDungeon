@@ -25,8 +25,24 @@ const FrostHud = preload("res://src/hell/frost_hud.gd")
 const HEART := "res://assets/sprites/0x72/ui_heart_%s.png"
 const Sfx = preload("res://src/vfx/sfx.gd")
 const Music = preload("res://src/audio/music.gd")
+const SaveStore = preload("res://src/save/save_store.gd")
+const CryptUI = preload("res://src/ui/crypt_ui.gd")
+const StoryHero = preload("res://src/hero/story_hero.gd")
+const StorySave = preload("res://src/save/story_save.gd")
+## The crypt's pause menu, in its story mode (overview, quest, map, controls, display, save).
+const PauseMenu = preload("res://src/pause_menu.gd")
+const STORY_CONTROLS := "Bewegen: WASD\nAngreifen: Linksklick oder Pfeiltasten\nFähigkeiten: 1 2 3 4 · Meisterfähigkeit: 5\nKarte wählen: 7 8 9 oder Klick\nAktion (Tür, Truhe, Schale): E oder Leertaste\nRelikt / Waffe wechseln: T · Klon: Q\nKarte: M · Licht: L · Status: C oder Tab\nLauf-Talente: B\nNach dem Tod: E neuer Lauf\nMenü öffnen / schließen: Esc"
 const DARKNESS_SHADER := preload("res://assets/shaders/canvas_vfx_darkness.gdshader")
 const FONT := preload("res://assets/fonts/pixel_operator8.ttf")
+const SkillBar = preload("res://src/ui/skill_bar.gd")
+const SkillIcons = preload("res://src/ui/skill_icons.gd")
+const GraphicsSettings = preload("res://src/core/graphics_settings.gd")
+const RunTree = preload("res://src/progress/run_tree.gd")
+const RunTreeView = preload("res://src/ui/run_tree_view.gd")
+const StoryItems = preload("res://src/hero/story_items.gd")
+const InventoryPanel = preload("res://src/ui/inventory_panel.gd")
+const HudKit = preload("res://src/ui/hud_kit.gd")
+const HudStyle = preload("res://src/ui/hud_style.gd")
 const BALANCE_PATH := "res://assets/data/hell_balance.json"
 const HERO := "res://assets/sprites/0x72/%s_%s_anim_f%d.png"
 const WEAPON := "res://assets/sprites/0x72/%s.png"
@@ -36,8 +52,14 @@ const CHUNK := Vector2i(14, 11)
 ## The hell look and wording. A theme file (theme_path, e.g. assets/data/frost_theme.json)
 ## overrides any top-level key; colours are "#rrggbb" or [r, g, b(, a)] (above 1 brightens).
 const THEME_DEFAULT := {
-	"floors": "res://assets/data/hell_floors.json", "sprites": "res://assets/sprites/hell/", "balance": BALANCE_PATH,
-	"pixel": false, "hero_scale": 3.6, "key_in_chest": false, "placeholder_note": true,
+	# hell look in the 0x72 pixel style (scripts/make_hell_skin.gd); the first painted set is assets/sprites/hell/
+	"floors": "res://assets/data/hell_floors.json", "sprites": "res://assets/sprites/hell_0x72/", "balance": BALANCE_PATH,
+	"pixel": true, "pixel_tiles": true, "hero_scale": 3.0, "key_in_chest": false, "placeholder_note": true,
+	# graphics sets for the Pixel / HD switch (src/core/graphics_settings.gd): keys that replace the ones above;
+	# a theme file names its own sets (or none: then its one look stays)
+	"skins": {
+		"pixel": {"sprites": "res://assets/sprites/hell_0x72/", "pixel": true, "pixel_tiles": true, "hero_scale": 3.0},
+		"hd": {"sprites": "res://assets/sprites/hell/", "pixel": false, "pixel_tiles": false, "hero_scale": 3.6}},
 	"liquid": {"hurt": true, "slow": -1.0, "slide": false, "grip": 1.0},
 	"keys": {
 		"A": {"name": "Glutschlüssel", "hint": "fällt in einem Seitenraum vor dem Tor.", "color": "#ff8a3c", "tint": [1, 1, 1], "sprite": "key"},
@@ -60,6 +82,22 @@ const THEME_DEFAULT := {
 @export var theme_path := ""
 ## Hero class from theme.classes (menu choice); empty takes theme.default_class.
 @export var class_id := ""
+## A loaded save (src/save/story_save.gd): set before the node enters the tree to continue on its floor.
+var resume: Dictionary = {}
+## The save record of the floor start (written into a slot from the pause menu).
+var floor_save: Dictionary = {}
+var saves := SaveStore.new()
+var pause_menu: Control
+## The crypt's hero look, shots and sword feel (src/hero/story_hero.gd).
+var story_hero: RefCounted
+var _resuming := false
+## The save slot this run writes its floor starts to (0: none yet; set by saving or loading).
+var run_slot := 0
+## Item system 2 in this world: the bag, four equipment slots, finds (src/hero/story_items.gd).
+var story_items: Node
+## The shared inventory window (key I) and a potion armed for throwing (-1: none).
+var inventory_panel: Control
+var throw_slot := -1
 
 var theme: Dictionary = {}
 var key_name: Dictionary = {}
@@ -83,6 +121,10 @@ var floors_raw: Array = []
 var tex: Dictionary = {}
 var hero_frames: Dictionary = {}
 var W: Dictionary = {}
+## The graphics set in use ("pixel" / "hd", src/core/graphics_settings.gd).
+var graphics := "pixel"
+## Where the graphics choice is stored (tests use their own file).
+var graphics_path := GraphicsSettings.SETTINGS_PATH
 var walls: Dictionary = {}
 var state: Dictionary = {}
 var player: Dictionary = {}
@@ -159,15 +201,7 @@ func _ready() -> void:
 	_load_theme()
 	balance = JSON.parse_string(FileAccess.get_file_as_string(theme.balance))
 	floors_raw = FloorData.load_all(theme.floors)
-	var sprites: String = theme.sprites
-	var names: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(sprites + "manifest.json"))
-	for n: String in names:
-		tex[n] = load(sprites + n + ".png")
-	# textures the hero systems draw that this world's sprite set lacks (theme.extra_sprites)
-	var extra: Dictionary = theme.get("extra_sprites", {})
-	for n: String in extra.get("names", []):
-		if not tex.has(n):
-			tex[n] = load(str(extra.dir) + n + ".png")
+	_load_textures()
 	var classes: Dictionary = theme.get("classes", {})
 	if not classes.has(class_id):
 		class_id = str(theme.get("default_class", ""))
@@ -184,7 +218,10 @@ func _ready() -> void:
 	skills = HeroKit.load_skills(self, class_id)
 	for k in ["full", "half", "empty"]:
 		hearts[k] = load(HEART % k)
-	if theme.has("talents") and FileAccess.file_exists(str(theme.talents)):
+	# only the real game uses the player's lasting progress file; test and capture scripts
+	# (their own SceneTree script) use their own meta_path or none
+	var meta_allowed: bool = meta_path != MetaStore.SAVE_PATH or get_tree().get_script() == null
+	if theme.has("talents") and FileAccess.file_exists(str(theme.talents)) and meta_allowed:
 		meta_data = JSON.parse_string(FileAccess.get_file_as_string(str(theme.talents)))
 		meta = MetaStore.load_store(meta_data, meta_path)
 	if not (theme.get("sounds", {}) as Dictionary).is_empty():
@@ -205,6 +242,7 @@ func _ready() -> void:
 	var add := CanvasItemMaterial.new()
 	add.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	glow.material = add
+	story_hero = StoryHero.new(self)
 	dark = _layer("dark", 30)
 	_dark_material = ShaderMaterial.new()
 	_dark_material.shader = DARKNESS_SHADER
@@ -228,9 +266,47 @@ func _ready() -> void:
 	hud.set_anchors_preset(Control.PRESET_FULL_RECT)
 	hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui.add_child(hud)
+	pause_menu = PauseMenu.new()
+	pause_menu.theme = CryptUI.create_theme()
+	ui.add_child(pause_menu)
+	pause_menu.use_story_mode(STORY_CONTROLS)
+	pause_menu.save_rows = func() -> Array: return saves.summaries(StorySave.mode(self))
+	pause_menu.set_save_enabled(true)
+	pause_menu.story_map_draw = func(canvas: Control) -> void: _draw_map(canvas, canvas.size, true, true)
+	pause_menu.resume_pressed.connect(func() -> void: pause_menu.visible = false)
+	pause_menu.save_requested.connect(save_slot)
+	pause_menu.leave_pressed.connect(func() -> void: get_tree().change_scene_to_file(MENU_SCENE))
+	pause_menu.display_mode_requested.connect(_toggle_fullscreen)
+	pause_menu.graphics_mode_requested.connect(func() -> void:
+		apply_graphics(GraphicsSettings.other(graphics))
+		pause_menu.set_graphics_state(GraphicsSettings.note(theme, graphics), graphics))
+	if not resume.is_empty():
+		# a loaded save: the floor starts with the carried values of that save
+		state = (resume.get("keep", {}) as Dictionary).duplicate(true)
+		run_slot = int(resume.get("slot", 0))
+		_resuming = true
+		load_floor(clampi(int(resume.get("floor", 1)), 1, floors_raw.size()), true)
+		_resuming = false
+		_start_items(ui)
+		return
 	load_floor(clampi(start_floor, 1, floors_raw.size()), false)
+	_start_items(ui)
 	if start_at_boss:
 		enter_boss_room()
+
+
+## Item system 2 for a class hero (src/hero/story_items.gd): the bag and its window (I).
+func _start_items(ui: CanvasLayer) -> void:
+	if skills.is_empty():
+		return
+	story_items = StoryItems.new(self)
+	add_child(story_items)
+	story_items.start(absi(hash(str(state.get("run_id", "")))) % 1000000)
+	inventory_panel = InventoryPanel.new()
+	ui.add_child(inventory_panel)
+	inventory_panel.acted.connect(func(action: String, value: int) -> void: story_items.act(action, value))
+	inventory_panel.throw_armed.connect(func(slot: int) -> void: throw_slot = slot)
+	inventory_panel.set_view(story_items.view())
 
 
 ## THEME_DEFAULT with the theme file's keys on top, then the key and colour lookups.
@@ -245,11 +321,20 @@ func _load_theme() -> void:
 				if shared.has(k):
 					theme[k] = (shared[k] as Variant)
 		if parsed is Dictionary:
+			# a world with its own sprites names its own graphics sets (none: its one look stays,
+			# no hell sets); a theme without own sprites (the hell's) keeps the hell sets
+			if parsed.has("skins") or parsed.has("sprites"):
+				theme.skins = parsed.get("skins", {})
 			for k: String in parsed:
+				if k == "skins":
+					continue
 				if parsed[k] is Dictionary and theme.get(k) is Dictionary:
 					(theme[k] as Dictionary).merge(parsed[k], true)
 				else:
 					theme[k] = parsed[k]
+	# the chosen Pixel / HD set (src/core/graphics_settings.gd)
+	graphics = GraphicsSettings.mode(graphics_path)
+	theme.merge(GraphicsSettings.skin(theme, graphics), true)
 	for k: String in theme.keys:
 		var spec: Dictionary = theme.keys[k]
 		key_name[k] = spec.name
@@ -340,6 +425,40 @@ func say(text: String) -> String:
 	return text
 
 
+## Loads the world's sprite set (theme.sprites and its manifest) into tex.
+func _load_textures() -> void:
+	tex.clear()
+	var sprites: String = theme.sprites
+	var names: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(sprites + "manifest.json"))
+	for n: String in names:
+		tex[n] = load(sprites + n + ".png")
+	# textures the hero systems draw that this world's sprite set lacks (theme.extra_sprites)
+	var extra: Dictionary = theme.get("extra_sprites", {})
+	for n: String in extra.get("names", []):
+		if not tex.has(n):
+			tex[n] = load(str(extra.dir) + n + ".png")
+
+
+## Switches to the Pixel or HD set at once (pause menu, main menu option) and
+## stores the choice. False when this world has no set for `mode`: the choice is
+## stored all the same and shows in the worlds that have it.
+func apply_graphics(mode: String) -> bool:
+	GraphicsSettings.store(mode, graphics_path)
+	graphics = mode
+	if not GraphicsSettings.has(theme, mode):
+		return false
+	theme.merge(GraphicsSettings.skin(theme, mode), true)
+	_load_textures()
+	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST if theme.pixel else CanvasItem.TEXTURE_FILTER_LINEAR
+	# the hero's look and effects follow the new hero size
+	story_hero.dispose()
+	story_hero = StoryHero.new(self)
+	for child: Node in get_children():
+		if child is CanvasItem:
+			(child as CanvasItem).queue_redraw()
+	return true
+
+
 func _layer(kind: String, z: int, area := Rect2()) -> Layer:
 	var l := Layer.new()
 	l.game = self
@@ -378,20 +497,20 @@ func load_floor(n: int, carry: bool) -> void:
 			_chunk_nodes.append(_layer("front", 20, area))
 	var start := _room_of_type("start")
 	var talent: Dictionary = MetaStore.run_bonus(meta_data, meta, class_id) if not meta.is_empty() else {}
-	if not carry or state.is_empty():
+	if not carry or state.is_empty() or _resuming:
 		SubKit.apply(self, talent)
 	var start_hp := int(hero.get("hp", balance.player.hp)) + int(talent.get("hearts", 0))
 	var keep := {"hp": start_hp, "max_hp": start_hp, "gems": 0, "dmg": float(weapon.get("damage", 1.0)),
 		"rate": float(weapon.get("cooldown", balance.shot.cooldown)), "speed_mul": 1.0, "range": float(weapon.get("life", balance.shot.life)), "buffs": [],
 		"skill": {"owned": false, "active": false, "left": float(balance.clone.duration)},
 		"level": 1, "exp": 0, "skill_cd": {}, "relic": "", "relic_on": false, "upgrades": {}, "offer": [], "cards_due": 0,
-		"relic_floor": 0, "relic_item": "", "talent": talent, "crystals_run": 0}
+		"relic_floor": 0, "relic_item": "", "talent": talent, "crystals_run": 0, "run_id": _new_run_id()}
 	if carry and not state.is_empty():
 		keep = {"hp": state.hp, "max_hp": state.max_hp, "gems": state.gems, "dmg": state.dmg, "rate": state.rate,
 			"speed_mul": state.speed_mul, "range": state.range, "buffs": state.buffs, "skill": state.skill,
 			"level": state.level, "exp": state.exp, "skill_cd": {}, "relic": state.relic, "relic_on": state.relic_on, "upgrades": state.upgrades,
 			"offer": state.offer, "cards_due": state.cards_due, "relic_floor": state.relic_floor, "relic_item": state.relic_item,
-			"talent": state.talent, "crystals_run": state.crystals_run}
+			"talent": state.talent, "crystals_run": state.crystals_run, "run_id": str(state.get("run_id", _new_run_id())), "items": state.get("items", {})}
 		keep.skill.active = false
 	state = {"floor": n, "keys": {"A": false, "B": false, "C": false}, "used": {"A": false, "B": false, "C": false},
 		"visited": {start.index: true}, "room": start.index, "banner": {"text": W.title, "sub": "Etage %d · %s" % [n, W.circle], "t": 0.0},
@@ -404,6 +523,10 @@ func load_floor(n: int, carry: bool) -> void:
 	if not carry:
 		RelicKit.choose_run(self)
 	RelicKit.place(self)
+	floor_save = StorySave.capture(self)
+	# a run that sits in a save slot keeps that slot at its newest floor start
+	if run_slot > 0:
+		saves.write(StorySave.mode(self), run_slot, floor_save)
 	_relic_texture()
 	mobs = []
 	shots = []
@@ -596,6 +719,27 @@ func _near_door(r: Dictionary, p: Vector2, dist: float) -> bool:
 # ---------- input ----------
 
 func _unhandled_input(event: InputEvent) -> void:
+	# while paused only Esc counts (it closes the menu again)
+	if pause_menu != null and pause_menu.visible and not (event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE):
+		return
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and pause_menu != null and not state.map \
+			and HudKit.menu_rect(get_viewport_rect().size).has_point(event.position):
+		open_pause()
+		get_viewport().set_input_as_handled()
+		return
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and throw_slot >= 0 and story_items != null:
+		# an armed potion goes where the click lands
+		story_items.act("inv_throw", throw_slot, get_global_mouse_position())
+		throw_slot = -1
+		get_viewport().set_input_as_handled()
+		return
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and state.get("tree_open", false):
+		# a click in the open talent tree spends a point there, never fires
+		var picked_node := RunTreeView.hit(get_viewport_rect().size, CardKit.tree(self), event.position)
+		if picked_node != "":
+			CardKit.take_node(self, picked_node)
+		get_viewport().set_input_as_handled()
+		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and not (state.get("offer", []) as Array).is_empty():
 		var picked := FrostHud.card_at(self, get_viewport().get_mouse_position(), get_viewport_rect().size)
 		if picked >= 0:
@@ -636,10 +780,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			state.map = not state.map
 		KEY_L:
 			state.light = not state.light
-		KEY_R:
-			load_floor(state.floor, false)
 		KEY_ESCAPE:
-			get_tree().change_scene_to_file(MENU_SCENE)
+			if pause_menu.visible:
+				pause_menu.visible = false
+			else:
+				open_pause()
 		KEY_T:
 			if str(state.relic) != "":
 				state.relic_on = not state.relic_on
@@ -650,6 +795,13 @@ func _unhandled_input(event: InputEvent) -> void:
 				HeroKit.master_press(self)
 		KEY_C, KEY_TAB:
 			state.status = not state.get("status", false)
+		KEY_I:
+			if inventory_panel != null and not skills.is_empty():
+				inventory_panel.set_open(not inventory_panel.open)
+		KEY_B:
+			# the run talent tree (docs/LAUF-DESIGN.de.md); the world keeps running
+			if not skills.is_empty():
+				state.tree_open = not state.get("tree_open", false)
 		KEY_PAGEUP:
 			# debug: one level up
 			if not skills.is_empty():
@@ -681,6 +833,11 @@ func _hurt(why: String, n := 1) -> void:
 		return
 	if SubKit.guard(self):
 		return
+	if story_items != null and story_items.consume_shield():
+		state.inv = float(balance.player.invulnerable)
+		return
+	if story_items != null:
+		n += story_items.extra_damage()
 	state.hp = maxi(0, state.hp - n)
 	state.inv = float(balance.player.invulnerable)
 	state.flash = 0.25
@@ -696,7 +853,8 @@ func _hurt(why: String, n := 1) -> void:
 		return
 	if state.hp == 0:
 		state.dead = 1.8
-		_toast("Gestorben: %s. Zurück zum Abstieg." % why)
+		state.death_why = why
+		_toast("Gestorben: %s." % why)
 
 
 func _interactables() -> Array:
@@ -747,12 +905,65 @@ func _nearest() -> Dictionary:
 	return best
 
 
+## A new run id (saves of this run carry it; the run's end deletes them).
+func _new_run_id() -> String:
+	return "%s-%d-%d" % [StorySave.mode(self), int(Time.get_unix_time_from_system()), randi() % 100000]
+
+
+## Ends the run (docs/LAUF-DESIGN.de.md): `won` after the zone's final guardian,
+## otherwise by death. The run's saves are deleted (saving only pauses a run);
+## soul crystals already banked stay. The result panel waits for E (new run).
+func end_run(won: bool) -> void:
+	if not (state.get("over", {}) as Dictionary).is_empty():
+		return
+	saves.erase_run(StorySave.mode(self), str(state.get("run_id", "")))
+	run_slot = 0
+	state.over = {"won": won, "why": str(state.get("death_why", "")), "floor": int(state.floor), "title": str(W.get("title", "")),
+		"level": int(state.get("level", 1)), "crystals": int(state.get("crystals_run", 0))}
+	mobs = []
+	eshots = []
+	zones = []
+	hold = {}
+	dash = {}
+	_sound("level_up" if won else "hurt_voice")
+
+
+## The result panel's rows for an ended run.
+func run_result(over: Dictionary) -> Dictionary:
+	var won := bool(over.get("won", false))
+	var zone := "FROSTGRUFT" if StorySave.mode(self) == "frost" else "HÖLLE"
+	var lines: Array = [["ZONE", zone], ["ERREICHT", "ETAGE %d · %s" % [int(over.floor), str(over.title).to_upper()]], ["LEVEL", str(int(over.level))]]
+	if not won and str(over.why) != "":
+		lines.append(["URSACHE", str(over.why).to_upper()])
+	var note := ""
+	if not meta.is_empty():
+		note = "+%d %s IN DIESEM LAUF · ZUSAMMEN %d" % [int(over.crystals), str(meta_data.currency.name).to_upper(), int(meta.crystals)]
+	return {"title": say("Die Hölle ist bezwungen").to_upper() if won else "LAUF BEENDET", "tone": "win" if won else "loss",
+		"lines": lines, "note": note, "hints": "E · NEUER LAUF   ESC · MENÜ"}
+
+
+## A new run of this zone from its first floor: the same scene and class, fresh.
+func new_run() -> void:
+	var scene: Node = (load(scene_file_path) as PackedScene).instantiate()
+	scene.class_id = class_id
+	scene.graphics_path = graphics_path
+	scene.meta_path = meta_path
+	var tree := get_tree()
+	tree.root.add_child(scene)
+	if tree.current_scene == self:
+		tree.current_scene = scene
+	queue_free()
+
+
 ## Uses whatever stands next to the hero (E / Space / Enter).
 func act() -> void:
+	if not (state.get("over", {}) as Dictionary).is_empty():
+		new_run()
+		return
 	if state.dead > 0.0:
 		return
 	if state.won:
-		load_floor(state.floor + 1 if state.floor < floors_raw.size() else 1, state.floor < floors_raw.size())
+		load_floor(state.floor + 1, true)
 		return
 	var n := _nearest()
 	if n.is_empty():
@@ -782,6 +993,8 @@ func act() -> void:
 				elif e.get("state", "") == "":
 					e.state = "open"
 					_toast("Truhe geöffnet: %d Runensteine%s" % [e.loot.gems, " und ein Herz" if e.loot.get("heart", false) else ""])
+					if story_items != null:
+						story_items.loot("chest", Vector2(e.x, e.y + 40))
 				else:
 					e.state = "empty"
 					state.gems += int(e.loot.gems)
@@ -795,10 +1008,15 @@ func act() -> void:
 				state.hp = state.max_hp
 				_burst(Vector2(e.x, e.y - 60), 60, true)
 				_toast("Riesentresor! +1 Herzcontainer, volle Gesundheit, +%d Runensteine" % gems)
+				if story_items != null:
+					story_items.loot("gold_crate", Vector2(e.x, e.y + 60))
 			"portal":
 				if e.get("active", false):
 					_sound("stairs")
 					_bank_crystals()
+					if W.final:
+						end_run(true)
+						return
 					state.won = true
 					state.won_t = 0.0
 					# the clone waits with its time left until Q on the next floor
@@ -889,11 +1107,14 @@ func _fire(dir: Vector2) -> void:
 		return
 	var v := dir.normalized() * float(weapon.get("speed", balance.shot.speed))
 	shots.append({"p": Vector2(player.x, player.y - 40), "v": v, "t": float(state.range), "kind": str(weapon.get("shot", "")), "splash": float(weapon.get("splash", 0.0)), "hits": []})
+	story_hero.on_shot()
 	_sound("shot_arrow" if weapon.get("shot", "") == "arrow" else "shot_magic")
 
 
 ## Sword: hits every enemy and breakable within reach whose direction lies inside the arc.
-func _swing(dir: Vector2) -> void:
+## The hero steps into it; Rage throws bodies and swings again the other way (mirrored).
+func _swing(dir: Vector2, mirrored := false) -> void:
+	story_hero.on_swing(dir, mirrored)
 	var from := Vector2(player.x, player.y - 40)
 	var reach := float(weapon.reach)
 	var half := float(weapon.arc) / 2.0
@@ -901,7 +1122,8 @@ func _swing(dir: Vector2) -> void:
 	for m: Dictionary in mobs:
 		var to: Vector2 = m.p - Vector2(0, m.cy) - from
 		if _hittable(m) and to.length() < reach + m.r and absf(angle_difference(dir.angle(), to.angle())) <= half:
-			_damage_mob(m, dir * 600.0)
+			if _damage_mob(m, dir * 600.0):
+				story_hero.rage_throw(m, dir)
 	for e: Dictionary in breakables:
 		var to := Vector2(e.x, e.y - 40) - from
 		if not e.get("broken", false) and to.length() < reach + 40.0 and absf(angle_difference(dir.angle(), to.angle())) <= half:
@@ -923,7 +1145,10 @@ func _damage_mob(m: Dictionary, push: Vector2, mult := 1.0) -> bool:
 	var factor := BossKit.damage_factor(self, m) if m.has("kit") else 1.0
 	if factor <= 0.0:
 		return false
-	m.hp -= float(state.dmg) * factor * mult * HeroKit.crit(self) * CardKit.damage_mult(self) * SubKit.factor(self, m)
+	var item_crit: float = story_items.crit_mult() if story_items != null else 1.0
+	m.hp -= float(state.dmg) * factor * mult * HeroKit.crit(self) * item_crit * CardKit.damage_mult(self) * SubKit.factor(self, m)
+	if story_items != null and mult > 0.0:
+		story_items.on_hit(m)
 	_sound("hit_" + str(def.get("material", "void")))
 	m.hit = 0.12
 	# kit bosses stand firm: no knockback
@@ -1020,6 +1245,12 @@ func _clear_room(r: Dictionary, at: Vector2) -> void:
 	elif r.type == "boss":
 		state.boss_dead = true
 		RelicKit.drop(self, at)
+		# a mini guardian leaves a rare piece, a floor guardian its loot (the last one nothing)
+		if story_items != null and not W.final:
+			if W.boss.get("mini", false):
+				story_items.guardian_drop(at)
+			else:
+				story_items.loot("mimic", at)
 		eshots = []
 		zones = []
 		state.storm = false
@@ -1074,6 +1305,8 @@ func _hit_breakable(e: Dictionary, at: Vector2) -> void:
 		_toast("Der Schädelhaufen zerfällt. Ein versteckter Gang öffnet sich!")
 	else:
 		_break_seal(e)
+		if story_items != null:
+			story_items.loot("crate", Vector2(e.x, e.y + 30))
 
 
 ## A broken seal blesses the hero (bless_chance) or releases demons that lock the room again.
@@ -1104,7 +1337,8 @@ func _fall_into_pit() -> void:
 	_burst(Vector2(player.x, player.y - 30), 24)
 	if state.hp == 0:
 		state.dead = 1.8
-		_toast("In die Grube gestürzt. Zurück zum Abstieg.")
+		state.death_why = "in eine Grube gestürzt"
+		_toast("In die Grube gestürzt.")
 		return
 	for r: Dictionary in W.rooms:
 		if r.fight:
@@ -1167,8 +1401,64 @@ func _update_clone(dt: float) -> void:
 		shots.append({"p": from, "v": aim.normalized() * float(balance.shot.speed), "t": float(state.range)})
 
 
+## Writes the floor-start state into save slot 1..3 of this world; true on success.
+func save_slot(slot: int) -> bool:
+	var ok := not floor_save.is_empty() and saves.write(StorySave.mode(self), slot, floor_save)
+	if ok:
+		run_slot = slot
+	if pause_menu != null:
+		pause_menu.refresh_save(("Gespeichert in Platz %d: Beginn von Etage %d." % [slot, int(floor_save.floor)]) if ok else "Speichern fehlgeschlagen.")
+	return ok
+
+
+## Esc: the shared pause menu (the world stands still), centred on the screen, on its overview.
+func open_pause() -> void:
+	var screen := get_viewport().get_visible_rect().size
+	var origin := ((screen - Vector2(1280, 720)) / 2.0).floor()
+	pause_menu.position = origin
+	pause_menu.set_canvas_size(screen, origin)
+	pause_menu.set_display_state(get_window().mode == Window.MODE_FULLSCREEN, screen)
+	pause_menu.set_graphics_state(GraphicsSettings.note(theme, graphics), graphics)
+	pause_menu.set_story_state(pause_info())
+	pause_menu.select_section("overview")
+	pause_menu.visible = true
+	pause_menu.resume_button.grab_focus()
+
+
+## The pause pages' text: where the hero is, how the run stands, the floor's goals.
+func pause_info() -> Dictionary:
+	var hero_name: String = str(sub_kit.name).to_upper() if not sub_kit.is_empty() else str(hero.get("name", "Held"))
+	var held: String = str(RelicKit.wielded(self).name) if relic_on() else str(weapon.get("name", ""))
+	var keys: Array = []
+	for k: String in ["A", "B", "C"]:
+		if state.keys[k]: keys.append(str(key_name[k]))
+	var blessings: Array = (state.buffs as Array).map(func(b: String) -> String: return b.get_slice(":", 0))
+	var lines: Array = [
+		"Etage %d · %s" % [state.floor, W.title], str(W.circle), "",
+		"%s · LV %d · %s" % [hero_name, int(state.get("level", 1)), held],
+		"Leben: %s von %d Herzen" % [str(int(state.hp) / 2) + (",5" if int(state.hp) % 2 == 1 else ""), int(state.max_hp) / 2],
+		"Runensteine: %d" % int(state.gems),
+		"Schlüssel: %s" % (", ".join(PackedStringArray(keys)) if not keys.is_empty() else "keiner"),
+		"Segen: %s" % (", ".join(PackedStringArray(blessings)) if not blessings.is_empty() else "keiner"),
+		"", "Räume besucht: %d von %d" % [state.visited.size(), W.rooms.size()],
+	]
+	if str(state.relic) != "":
+		lines.insert(5, "Relikt: %s" % theme[state.relic].name)
+	return {"overview": say("\n".join(PackedStringArray(lines))), "quests": FrostHud.goals(self)}
+
+
+func _toggle_fullscreen() -> void:
+	var full := get_window().mode == Window.MODE_FULLSCREEN
+	get_window().mode = Window.MODE_WINDOWED if full else Window.MODE_FULLSCREEN
+	pause_menu.set_display_state(not full, get_viewport().get_visible_rect().size)
+
+
 func _process(delta: float) -> void:
 	var dt := minf(delta, 0.05)
+	# the world stands still while the pause menu is open
+	if pause_menu != null and pause_menu.visible:
+		hud.queue_redraw()
+		return
 	_update(dt)
 	actors.queue_redraw()
 	glow.queue_redraw()
@@ -1178,6 +1468,11 @@ func _process(delta: float) -> void:
 
 func _update(dt: float) -> void:
 	state.t += dt
+	story_hero.update(dt)
+	if story_items != null:
+		story_items.update(dt)
+		if inventory_panel != null:
+			inventory_panel.set_view(story_items.view())
 	for k in ["inv", "flash", "cool", "chill", "slow"]:
 		state[k] = maxf(0.0, state[k] - dt)
 	state.shake = maxf(0.0, state.shake - dt * 30.0)
@@ -1189,21 +1484,13 @@ func _update(dt: float) -> void:
 	if state.won:
 		state.won_t += dt
 		return
+	if not (state.get("over", {}) as Dictionary).is_empty():
+		return
 	if state.dead > 0.0:
 		state.dead -= dt
 		if state.dead <= 0.0:
-			for r: Dictionary in W.rooms:
-				if r.fight:
-					r.fight = false
-			mobs = []
-			eshots = []
-			zones = []
-			state.storm = false
-			if monsters != null:
-				monsters.reset()
-			state.pull = null
-			_respawn()
-			state.hp = state.max_hp
+			# a dungeon crawler: death ends the run (docs/LAUF-DESIGN.de.md)
+			end_run(false)
 			state.inv = 1.2
 			state.room = _room_of_type("start").index
 		return
@@ -1272,7 +1559,7 @@ func _update_player(dt: float) -> void:
 	var aim := Vector2(_axis(KEY_LEFT, KEY_RIGHT), _axis(KEY_UP, KEY_DOWN))
 	if aim != Vector2.ZERO:
 		_fire(aim)
-	elif Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+	elif Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and not state.get("tree_open", false) and throw_slot < 0 and (inventory_panel == null or not inventory_panel.open):
 		_fire(get_global_mouse_position() - Vector2(player.x, player.y - 40))
 	if here == 2 and liquid.hurt:
 		_hurt("in der Lava verbrannt")
@@ -1420,6 +1707,7 @@ func _update_mobs(dt: float) -> void:
 		v *= HeroKit.tick_mob(self, m, dt)
 		v += m.k
 		m.k *= 0.86
+		var moved_from: Vector2 = m.p
 		var rr: float = m.r * 0.7
 		var avoid: bool = m.kind != "boss"
 		var nx: Vector2 = m.p + Vector2(v.x * dt, 0)
@@ -1428,6 +1716,7 @@ func _update_mobs(dt: float) -> void:
 		var ny: Vector2 = m.p + Vector2(0, v.y * dt)
 		if not box_blocked(Rect2(ny.x - rr, ny.y - rr, rr * 2, rr), avoid) and not HeroKit.wall_blocks(self, ny, rr):
 			m.p = ny
+		story_hero.check_slam(m, moved_from, dt)
 		if d < m.r + 22.0 and goal == me:
 			var who: String = ("von %s erwischt" % def.name) if def.has("name") else "von Glutlingen verbrannt"
 			_hurt("von %s erschlagen" % W.boss.name if m.kind == "boss" else who)
@@ -1521,7 +1810,7 @@ func _explode(s: Dictionary, first: Dictionary) -> void:
 				HeroKit.burn_mob(o, float(s.burn), float(s.burn_time))
 			if s.has("slow"):
 				HeroKit.slow_mob(self, o, float(s.slow), float(s.slow_time))
-	fx.append({"kind": "blast", "p": s.p, "r": radius, "t": 0.3, "max": 0.3, "gravity": s.get("kind", "") in ["gravity", "rock"]})
+	fx.append({"kind": "blast", "p": s.p, "r": radius, "t": 0.3, "max": 0.3, "gravity": s.get("kind", "") in ["gravity", "rock"], "shot": s.get("kind", "")})
 	if int(s.get("split", 0)) > 0:
 		RelicKit.split_rock(self, s)
 	_burst(s.p, 18)
@@ -1684,6 +1973,30 @@ func _strip(ci: CanvasItem, w: Dictionary, area: Rect2) -> void:
 		x += sw
 
 
+## Draws a bridge 1:1 for pixel skins: the planks repeat along its run, its far rail
+## sits on the rect's far edge. Returns false when the texture is too narrow (then it stretches).
+func _tile_bridge(ci: CanvasItem, t: Texture2D, r: Rect2, rails_on_x: bool, tint: Color) -> bool:
+	var ts := t.get_size()
+	var rail := 12.0
+	var run := r.size.y if rails_on_x else r.size.x
+	var across := r.size.x if rails_on_x else r.size.y
+	var step_len := ts.y if rails_on_x else ts.x
+	var tex_across := ts.x if rails_on_x else ts.y
+	if tex_across < across or across <= rail * 2.0:
+		return false
+	var body := across - rail
+	var a := 0.0
+	while a < run:
+		var step := minf(step_len, run - a)
+		for part: Array in [[0.0, 0.0, body], [body, tex_across - rail, rail]]:
+			if rails_on_x:
+				ci.draw_texture_rect_region(t, Rect2(r.position + Vector2(part[0], a), Vector2(part[2], step)), Rect2(part[1], 0, part[2], step), tint)
+			else:
+				ci.draw_texture_rect_region(t, Rect2(r.position + Vector2(a, part[0]), Vector2(step, part[2])), Rect2(0, part[1], step, part[2]), tint)
+		a += step
+	return true
+
+
 func _draw_back(l: Layer) -> void:
 	var a := l.area
 	var cols: int = W.cols
@@ -1691,6 +2004,8 @@ func _draw_back(l: Layer) -> void:
 	var y0 := int(a.position.y / C)
 	var lava: Texture2D = tex.lava_00
 	var hole_tint := Color(0.75, 0.68, 0.7)
+	# pixel skins (theme.pixel_tiles) draw liquid and rims 1:1, so every pixel keeps its size
+	var tiles_1to1: bool = theme.get("pixel_tiles", false)
 	for y in range(y0, mini(y0 + CHUNK.y, W.rows)):
 		for x in range(x0, mini(x0 + CHUNK.x, cols)):
 			var i := y * cols + x
@@ -1698,10 +2013,18 @@ func _draw_back(l: Layer) -> void:
 			var r := Rect2(x * C, y * C, C + 0.5, C + 0.5)
 			if t == 0:
 				if W.holes[i] == 1:
-					l.draw_texture_rect(tex.wall_v, r, true, hole_tint)
+					# a skin with its own wall-top tile fills wall islands with it
+					if tex.has("wall_top"):
+						l.draw_texture(tex.wall_top, r.position)
+					else:
+						l.draw_texture_rect(tex.wall_v, r, true, hole_tint)
 				continue
 			if t == 2 or t == 3:
-				l.draw_texture_rect_region(tex.lava_01 if (x * 7 + y * 13) % 10 > 6 else lava, r, Rect2(14, 14, 68, 68))
+				var lt: Texture2D = tex.lava_01 if (x * 7 + y * 13) % 10 > 6 else lava
+				if tiles_1to1:
+					l.draw_texture(lt, r.position)
+				else:
+					l.draw_texture_rect_region(lt, r, Rect2(14, 14, 68, 68))
 			else:
 				l.draw_texture(tex[W.tile_names[W.tiles[i]]], Vector2(x * C, y * C))
 	var rim: Texture2D = tex.lava_edge_top
@@ -1714,15 +2037,21 @@ func _draw_back(l: Layer) -> void:
 				var n := _cell(x + side[0].x, y + side[0].y)
 				if n == 1 or n == 0:
 					l.draw_set_transform(side[1], side[2])
-					l.draw_texture_rect_region(rim, Rect2(-2, -18, 50, 36), Rect2(0, 0, 48, 36))
-					l.draw_texture_rect_region(rim, Rect2(46, -18, 52, 36), Rect2(6, 0, 48, 36))
+					if tiles_1to1:
+						l.draw_texture_rect_region(rim, Rect2(0, -18, C, 36), Rect2(0, 0, C, 36))
+					else:
+						l.draw_texture_rect_region(rim, Rect2(-2, -18, 50, 36), Rect2(0, 0, 48, 36))
+						l.draw_texture_rect_region(rim, Rect2(46, -18, 52, 36), Rect2(6, 0, 48, 36))
 					l.draw_set_transform(Vector2.ZERO)
 	for d: Dictionary in W.decals:
 		if not a.has_point(Vector2(d.x, d.y)):
 			continue
 		var t: Texture2D = tex[d.name]
 		var size := Vector2(d.w, d.h) if float(d.w) > 0.0 else t.get_size()
-		l.draw_texture_rect(t, Rect2(Vector2(d.x, d.y) - size / 2.0, size), false, Color(1, 1, 1, float(d.a)))
+		var rect := Rect2(Vector2(d.x, d.y) - size / 2.0, size)
+		if tiles_1to1 and str(d.name).begins_with("bridge") and _tile_bridge(l, t, rect, d.name == "bridge_h", Color(1, 1, 1, float(d.a))):
+			continue
+		l.draw_texture_rect(t, rect, false, Color(1, 1, 1, float(d.a)))
 	for w: Dictionary in walls.north:
 		if w.y + 74.0 >= a.position.y and w.y + 74.0 < a.end.y and w.x1 > a.position.x and w.x0 < a.end.x:
 			l.draw_rect(Rect2(maxf(w.x0, a.position.x), w.y + 74.0, minf(w.x1, a.end.x) - maxf(w.x0, a.position.x), 40.0), Color(0, 0, 0, 0.35))
@@ -1838,6 +2167,9 @@ func _draw_actors(l: Layer) -> void:
 	for s: Dictionary in shots:
 		if SubKit.draw_shot(self, l, s, t):
 			continue
+		# the hero's arrows and spells: the crypt's look (src/hero/story_hero.gd)
+		if story_hero.handles_shot(s):
+			continue
 		if s.get("kind", "") == "gravity":
 			var sp := sin(t * 14.0)
 			l.draw_circle(s.p, 26.0, Color(0.35, 0.2, 0.8, 0.35))
@@ -1886,6 +2218,9 @@ func _draw_actors(l: Layer) -> void:
 ## Boss areas on the floor and the warning line of a coming charge.
 func _draw_zones(l: Layer, t: float) -> void:
 	for z: Dictionary in zones:
+		# the hero's caltrops: the crypt's look (src/hero/story_skill_fx.gd)
+		if story_hero.handles_zone(z):
+			continue
 		var k: float = 1.0 - float(z.t) / maxf(0.01, float(z.max))
 		match z.kind:
 			"icicle":
@@ -1915,6 +2250,9 @@ func _draw_zones(l: Layer, t: float) -> void:
 ## photon beam, the ballista charge, gravity walls and bars, enemy health and level-up.
 func _draw_skill_fx(l: Layer, t: float) -> void:
 	for f: Dictionary in fx:
+		# whirl, chain lightning, blink and fire/frost bursts: the crypt's look (src/hero/story_skill_fx.gd)
+		if story_hero.handles_fx(f):
+			continue
 		var k: float = float(f.t) / maxf(0.01, float(f.max))
 		match f.kind:
 			"whirl":
@@ -1932,7 +2270,9 @@ func _draw_skill_fx(l: Layer, t: float) -> void:
 				l.draw_polyline(pts, Color(0.7, 0.85, 1.0, k), 4.0)
 			"blink":
 				l.draw_line(f.p, f.q, Color(0.6, 0.4, 1.0, 0.6 * k), 18.0)
-	if str(hold.get("id", "")) == "photon":
+	if story_hero.handles_hold(str(hold.get("id", ""))):
+		pass # the Photoneneis and the drawn ballista: the crypt's look (src/hero/story_skill_fx.gd)
+	elif str(hold.get("id", "")) == "photon":
 		var s := HeroKit._skill(self, "photon")
 		var me := Vector2(player.x, player.y - 40)
 		var dir := Vector2(cos(float(hold.angle)), sin(float(hold.angle)))
@@ -2158,13 +2498,23 @@ func _draw_hero(l: Layer, t: float) -> void:
 	var frames: Array = look.frames["run" if player.moving else "idle"]
 	var im: Texture2D = frames[int(player.anim) % 4]
 	var size := im.get_size() * float(theme.hero_scale) * float(look.scale)
-	var pos := Vector2(player.x, player.y - size.y + 6)
-	if player.face < 0:
-		l.draw_set_transform(pos + Vector2(size.x / 2.0, 0), 0.0, Vector2(-1, 1))
-		l.draw_texture_rect(im, Rect2(Vector2.ZERO, size), false, look.tint)
-		l.draw_set_transform(Vector2.ZERO)
-	else:
-		l.draw_texture_rect(im, Rect2(pos - Vector2(size.x / 2.0, 0), size), false, look.tint)
+	# the crypt's hero look (src/hero/story_hero.gd) faces the aim; relics keep their own pose
+	var shared: bool = story_hero != null and not relic_on()
+	var face: float = story_hero.face(t) if shared else float(player.face)
+	var body := func(feet: Vector2, alpha: float) -> void:
+		var pos := Vector2(feet.x, feet.y - size.y + 6)
+		var tint: Color = look.tint
+		tint.a *= alpha
+		if face < 0:
+			l.draw_set_transform(pos + Vector2(size.x / 2.0, 0), 0.0, Vector2(-1, 1))
+			l.draw_texture_rect(im, Rect2(Vector2.ZERO, size), false, tint)
+			l.draw_set_transform(Vector2.ZERO)
+		else:
+			l.draw_texture_rect(im, Rect2(pos - Vector2(size.x / 2.0, 0), size), false, tint)
+	if shared:
+		story_hero.draw_hero(l, t, size.y * 0.45, body)
+		return
+	body.call(Vector2(player.x, player.y), 1.0)
 	_draw_weapon(l, size)
 
 
@@ -2212,7 +2562,8 @@ func _draw_dark(l: Layer) -> void:
 		return
 	var view := _view_rect()
 	var center := view.get_center()
-	var cands: Array = [[0.0, Vector4(player.x, player.y - 40, float(balance.view.player_light), 1.0)]]
+	var own_light := float(balance.view.player_light) * (0.55 if story_items != null and story_items.dim() else 1.0)
+	var cands: Array = [[0.0, Vector4(player.x, player.y - 40, own_light, 1.0)]]
 	var reach := view.grow(300)
 	for li: Dictionary in W.lights:
 		var p := Vector2(li.x, li.y)
@@ -2280,51 +2631,32 @@ func draw_hud(h: Control) -> void:
 		h.draw_rect(Rect2(Vector2.ZERO, size), Color(0.8, 0.08, 0.08, state.flash))
 	if state.white > 0.0:
 		h.draw_rect(Rect2(Vector2.ZERO, size), Color(1, 0.925, 0.82, minf(1.0, state.white)))
-	# hearts: two half hearts each, drawn with the 0x72 full / half / empty heart
-	var hs := 32.0
-	var hh := 32.0
-	for i in range(state.max_hp / 2):
-		var v: int = state.hp - i * 2
-		var p := Vector2(20 + (i % 8) * (hs + 4), 18 + (i / 8) * (hh + 4))
-		var pulse := 1.0 + (0.12 * sin(state.t * 8.0) if state.hp <= 2 and v > 0 else 0.0)
-		var hr := Rect2(p + Vector2(hs, hh) * (1.0 - pulse) / 2.0, Vector2(hs, hh) * pulse)
-		h.draw_texture_rect(hearts.full if v >= 2 else (hearts.half if v == 1 else hearts.empty), hr, false)
-	var row := 92.0 if state.max_hp > 16 else 60.0
-	var x := 22.0
+	# the hero strip top left, the same in every world (src/ui/hud_kit.gd): hearts
+	# with the level beside them, the EXP line, keys, rune stones, braziers, clone, blessings
+	var resources: Array = []
 	for k in ["A", "B", "C"]:
-		var alpha := 1.0 if state.keys[k] else (0.14 if state.used[k] else 0.22)
-		var tint: Color = key_tint[k]
-		tint.a = alpha
-		h.draw_texture_rect(tex[key_sprite[k]], Rect2(x, row, 18, 34), false, tint)
-		x += 28.0
-	h.draw_texture_rect(tex.rune_gem, Rect2(x + 8, row + 2, 22, 32), false)
-	_text(h, "× %d" % state.gems, Vector2(x + 38, row + 26), 24, ink)
+		resources.append({"icon": tex[key_sprite[k]], "tint": key_tint[k], "dim": not state.keys[k]})
+	resources.append({"icon": tex.rune_gem, "text": str(int(state.gems))})
 	var fire := Rules.group_progress(W.ents, "feuer")
 	if fire.y > 0:
-		h.draw_texture_rect(tex.brazier_bowl, Rect2(x + 110, row - 4, 26, 37), false)
-		_text(h, "%d/%d" % [fire.x, fire.y], Vector2(x + 144, row + 26), 24, ink)
-	var line := row + 60.0
-	if not skills.is_empty():
-		# level and experience under the keys
-		var cfg: Dictionary = theme.leveling
-		var need := HeroKit.need(cfg, int(state.level))
-		_text(h, "LV %d" % int(state.level), Vector2(22, line - 4), 20, gold)
-		h.draw_rect(Rect2(86, line - 18, 180, 12), Color(0.02, 0.04, 0.1, 0.85))
-		h.draw_rect(Rect2(86, line - 18, 180 * clampf(float(state.exp) / need, 0.0, 1.0), 12), col("accent"))
-		h.draw_rect(Rect2(86, line - 18, 180, 12), Color(ink, 0.5), false, 1.0)
-		line += 26.0
+		resources.append({"icon": tex.brazier_bowl, "text": "%d/%d" % [fire.x, fire.y], "dim": fire.x >= fire.y})
+	var status: Array = []
 	var sk: Dictionary = state.skill
 	if sk.owned:
 		var clock := "%d:%02d" % [int(sk.left) / 60, int(sk.left) % 60]
-		var label := ("Klon aktiv · " + clock) if sk.active else (("Q: Klon rufen · " + clock) if sk.left > 0.0 else "Klon aufgebraucht")
-		_text(h, label, Vector2(22, line), 16, Color("#7fe8ff") if sk.active else (gold if sk.left > 0.0 else Color(ink, 0.4)))
-		line += 24.0
+		var label := ("KLON AKTIV · " + clock) if sk.active else (("Q · KLON RUFEN · " + clock) if sk.left > 0.0 else "KLON AUFGEBRAUCHT")
+		status.append({"text": label, "color": HudStyle.color("accent") if sk.active else (HudStyle.color("text_dim") if sk.left > 0.0 else HudStyle.color("text_muted"))})
 	if not (state.buffs as Array).is_empty():
 		var names: Array = (state.buffs as Array).map(func(b: String) -> String: return b.get_slice(":", 0))
-		_text(h, "Segen: " + ", ".join(PackedStringArray(names)), Vector2(22, line), 16, Color(1, 0.89, 0.55, 0.85))
-	var who := "%s · %s · " % [str(sub_kit.name).to_upper() if not sub_kit.is_empty() else hero.name, RelicKit.wielded(self).name if relic_on() else weapon.name] if not hero.is_empty() else ""
-	var keys_hint := "F1-F10 Etage · T Waffe wechseln" if not skills.is_empty() else "1-0 Etage"
-	_text(h, who + "Etage %d · %s · %s · Q Klon · M Karte · Esc Menü" % [state.floor, W.title, keys_hint], Vector2(20, size.y - 38), 16, Color(col("sub"), 0.7))
+		status.append({"text": "SEGEN · " + ", ".join(PackedStringArray(names)).to_upper(), "color": HudStyle.color("text_dim")})
+	var leveled := not skills.is_empty()
+	var need := maxf(1.0, float(HeroKit.need(theme.leveling, int(state.level)))) if leveled else 1.0
+	HudKit.hero_panel(h, FONT, Vector2(HudStyle.size("margin"), HudStyle.size("margin")), {"title": "P1 · " + str(hero.get("name", class_id)).to_upper(),
+		"points": RunTree.points_left(CardKit.tree(self), CardKit.ranks(self), int(state.level)) if leveled else 0,
+		"hp": int(state.hp), "max_hp": int(state.max_hp), "hearts": hearts, "level": int(state.level) if leveled else -1,
+		"exp": float(state.exp) / need if leveled else -1.0, "resources": resources, "status": status,
+		"low": int(state.hp) <= 2 and int(state.hp) > 0, "clock": float(state.t)})
+	# no help line at the bottom: controls and goals live in the pause menu (Esc)
 	if not skills.is_empty():
 		_draw_skill_bar(h, size)
 	var boss_mob: Dictionary = {}
@@ -2334,110 +2666,104 @@ func draw_hud(h: Control) -> void:
 	# the banner moves below the guardian's bar while it stands
 	var b: Dictionary = state.banner
 	var ba := clampf(b.t / 0.4, 0.0, 1.0) if b.t < 2.6 else maxf(0.0, 1.0 - (b.t - 2.6) / 0.8)
-	var banner_y := 66.0 if boss_mob.is_empty() else 172.0
-	if theme.get("styled_hud", false):
-		FrostHud.banner(self, h, size, banner_y + 20.0)
-	elif ba > 0.0:
-		_text(h, b.text, Vector2(0, banner_y), 32, Color(gold, ba), size.x)
-		_text(h, String(b.sub).to_upper(), Vector2(0, banner_y + 30), 16, Color(col("sub"), ba), size.x)
+	var banner_y := 96.0 if boss_mob.is_empty() else 112.0
+	FrostHud.banner(self, h, size, banner_y)
 	if not boss_mob.is_empty():
-		# the guardian's bar sits at the top, between hearts and minimap
-		var bw := 600.0
-		var bx := size.x / 2.0 - bw / 2.0
-		var by := 46.0
-		h.draw_rect(Rect2(bx - 10, by - 38, bw + 20, 68), Color(0.02, 0.03, 0.08, 0.92))
-		h.draw_rect(Rect2(bx - 10, by - 38, bw + 20, 68), Color(col("boss_bar"), 0.6), false, 2.0)
+		# the guardian's bar at the top centre, the same in every world (src/ui/hud_kit.gd)
 		var bars: int = boss_mob.phase_hp.size() if boss_mob.has("kit") else 1
 		var phase_i: int = int(boss_mob.phase) if boss_mob.has("kit") else 0
-		var gap := 8.0
-		var sw := (bw - gap * (bars - 1)) / bars
+		var segments: Array = []
 		for i in range(bars):
 			# spent bars empty, the current one draining, later ones full
-			var sx := bx + i * (sw + gap)
-			var fill: float = 0.0 if i < phase_i else (1.0 if i > phase_i else clampf(boss_mob.hp / boss_mob.max, 0.0, 1.0))
-			h.draw_rect(Rect2(sx, by, sw, 18), col("boss_back"))
-			h.draw_rect(Rect2(sx, by, sw * fill, 18), col("boss_bar") if float(boss_mob.get("inv", 0.0)) <= 0.0 else Color(1, 1, 1, 0.85))
-			h.draw_rect(Rect2(sx, by, sw, 18), Color(ink, 0.7), false, 1.5)
+			segments.append(0.0 if i < phase_i else (1.0 if i > phase_i else clampf(boss_mob.hp / boss_mob.max, 0.0, 1.0)))
 		var pname := str(BossKit.phase(boss_mob).get("name", "")) if boss_mob.has("kit") else ""
-		var title: String = str(W.boss.name) + (" · " + pname if pname != "" else "") + ("" if boss_mob.has("kit") else " (Platzhalter)")
+		var title: String = str(W.boss.name) + (" · " + pname if pname != "" else "")
 		if monsters != null:
 			title = monsters.boss_label(boss_mob)
-		_text(h, title, Vector2(bx, by - 12), 16, gold)
 		var total := 0.0
-		var left := maxf(0.0, boss_mob.hp)
+		var left_hp := maxf(0.0, boss_mob.hp)
 		if boss_mob.has("kit"):
 			for i in range(bars):
 				total += float(boss_mob.phase_hp[i])
 				if i > phase_i:
-					left += float(boss_mob.phase_hp[i])
+					left_hp += float(boss_mob.phase_hp[i])
 		else:
 			total = boss_mob.max
-		var pct := "%d %%" % int(ceil(left / maxf(1.0, total) * 100.0))
-		_text(h, pct, Vector2(bx + bw - FONT.get_string_size(pct, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x, by - 12), 20, ink)
+		HudKit.boss_bar(h, FONT, size, {"name": title.to_upper(), "tag": "WÄCHTER DER ETAGE", "segments": segments,
+			"ratio": clampf(left_hp / maxf(1.0, total), 0.0, 1.0), "flash": 1.0 if float(boss_mob.get("inv", 0.0)) > 0.0 else 0.0,
+			"value": "%d %%" % int(ceil(left_hp / maxf(1.0, total) * 100.0))})
+	# the floor panel top right: floor, its name, the fight state; the mini-map inside it
 	var cr: Dictionary = W.rooms[state.room]
+	var locked := 0
 	if cr.fight:
-		var left := 0
 		for m: Dictionary in mobs:
 			if m.room == cr.index:
-				left += 1
-		_text(h, "Verriegelt · noch %d Gegner" % left, Vector2(0, 128 if boss_mob.is_empty() else 112), 20, col("warn"), size.x)
+				locked += 1
+	var map_area := HudKit.floor_panel(h, FONT, size, {"title": "ETAGE %d" % int(state.floor), "subtitle": str(W.title).to_upper(),
+		"tag": ("VERRIEGELT · %d" % locked) if cr.fight else "ERKUNDEN", "tag_color": HudStyle.color("danger") if cr.fight else HudStyle.color("text_dim")})
+	HudKit.menu_chip(h, FONT, size, "ESC · MENÜ", 1.0, HudKit.menu_rect(size).has_point(h.get_local_mouse_position()))
 	var n := _nearest()
 	if not n.is_empty() and state.dead <= 0.0 and not state.won:
-		var sp := _to_screen(n.p, size) - Vector2(0, 70)
-		var label := say(n.label)
-		var w := FONT.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x + 60.0
-		h.draw_rect(Rect2(sp.x - w / 2.0, sp.y - 21, w, 42), Color(0.02, 0.03, 0.08, 0.92))
-		h.draw_rect(Rect2(sp.x - w / 2.0, sp.y - 21, w, 42), accent, false, 2.0)
-		h.draw_rect(Rect2(sp.x - w / 2.0 + 8, sp.y - 13, 26, 26), Color(accent, 0.25))
-		_text(h, "E", Vector2(sp.x - w / 2.0 + 14, sp.y + 7), 18, col("prompt_key"))
-		_text(h, label, Vector2(sp.x - w / 2.0 + 44, sp.y + 7), 18, ink)
+		HudKit.prompt(h, FONT, _to_screen(n.p, size) - Vector2(0, 70), "E", say(n.label))
 	var toasts: Array = state.toasts
 	for i in range(toasts.size()):
 		var tt: Dictionary = toasts[i]
-		# hints stack above the skill bar: bigger text, dark box, accent edge on the left
-		var ty := size.y - 52.0 - (toasts.size() - 1 - i) * 48.0 - (124.0 if not skills.is_empty() else 0.0)
-		var fade := minf(1.0, tt.t * 2.0)
-		var w := FONT.get_string_size(tt.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 20).x + 48.0
-		h.draw_rect(Rect2(size.x / 2.0 - w / 2.0, ty - 21, w, 42), Color(0.02, 0.03, 0.08, 0.92 * fade))
-		h.draw_rect(Rect2(size.x / 2.0 - w / 2.0, ty - 21, 5, 42), Color(accent, fade))
-		_text(h, tt.text, Vector2(0, ty + 7), 20, Color(ink, fade), size.x)
+		# hints stack above the skill bar, the same in every world (src/ui/hud_kit.gd)
+		var bottom := SkillBar.top(size, false) - 28.0 if not skills.is_empty() else size.y - 40.0
+		HudKit.toast(h, FONT, size, bottom - (toasts.size() - 1 - i) * 40.0, str(tt.text), minf(1.0, tt.t * 2.0))
 	if theme.placeholder_note:
 		_text(h, "Figur: Platzhalter" if monsters != null else "Figur und Gegner: Platzhalter", Vector2(20, size.y - 14), 16, Color(ink, 0.45))
 	if state.dead > 0.0:
 		h.draw_rect(Rect2(Vector2.ZERO, size), Color(0.12, 0, 0, 0.55))
-	_draw_map(h, size, state.map)
+	_draw_map(h, size, state.map, false, map_area)
+	# the goal list sits in the pause menu now; finished goals still ring and show a note
+	FrostHud.track(self)
 	if theme.get("styled_hud", false) and not state.map and not state.won:
-		FrostHud.mission(self, h, size)
 		if state.get("status", false):
 			FrostHud.status(self, h, size)
-	if state.won:
-		h.draw_rect(Rect2(Vector2.ZERO, size), Color(0.04, 0.01, 0.02, 0.8))
-		_text(h, say("Die Hölle ist bezwungen") if W.final else "Etage %d geschafft" % state.floor, Vector2(0, size.y / 2.0 - 30), 32, gold, size.x)
-		_text(h, say("%d von %d Räumen erkundet · %d Runensteine · %d Herzen" % [state.visited.size(), W.rooms.size(), state.gems, state.max_hp / 2]), Vector2(0, size.y / 2.0 + 16), 16, ink, size.x)
-		_text(h, "E: von vorn beginnen" if W.final else "E: weiter zu Etage %d" % (state.floor + 1), Vector2(0, size.y / 2.0 + 52), 16, col("prompt_key"), size.x)
+	# the run talent tree window (B), the same in every world
+	if state.get("tree_open", false) and not skills.is_empty():
+		RunTreeView.draw(h, FONT, size, CardKit.tree(self), CardKit.ranks(self), int(state.level), {"title": str(hero.get("name", class_id)), "mouse": h.get_local_mouse_position()})
+	# floor won, run over: the result panel every world shares (src/ui/hud_kit.gd)
+	var over: Dictionary = state.get("over", {})
+	if not over.is_empty():
+		HudKit.result_panel(h, FONT, size, run_result(over))
+	elif state.won:
+		var note := ""
 		if not meta.is_empty():
-			var cur: Dictionary = meta_data.currency
-			_text(h, "+%d %s  ·  zusammen %d  ·  im Hauptmenü unter TALENTE ausgeben" % [int(state.get("crystals_floor", 0)), cur.name, int(meta.crystals)], Vector2(0, size.y / 2.0 + 92), 20, gold, size.x)
+			note = "+%d %s · zusammen %d" % [int(state.get("crystals_floor", 0)), str(meta_data.currency.name).to_upper(), int(meta.crystals)]
+		HudKit.result_panel(h, FONT, size, {"title": "ETAGE %d GESCHAFFT" % int(state.floor), "tone": "floor",
+			"lines": [["RÄUME ERKUNDET", "%d / %d" % [state.visited.size(), W.rooms.size()]], [say("RUNENSTEINE"), str(int(state.gems))],
+				["HERZEN", "%d" % (int(state.max_hp) / 2)], ["LEVEL", str(int(state.level))]],
+			"note": note, "hints": "E · WEITER ZU ETAGE %d" % (int(state.floor) + 1)})
 
 
 ## The skill bar at the bottom: one slot per key with icon, key, cooldown shade
-## and the level it opens at; with the gravity staff the slots turn dark violet
-## and show the staff's three abilities instead.
+## and the level it opens at, in the slim bar every world shares (src/ui/skill_bar.gd);
+## with the gravity staff the slots show the staff's three abilities instead.
 func _draw_skill_bar(h: Control, size: Vector2) -> void:
 	if not (state.get("offer", []) as Array).is_empty():
 		FrostHud.cards(self, h, size)
+	# the slim bar shared with the crypt (src/ui/skill_bar.gd), with the crypt's skill icons
 	var slots: Array = []
+	var none := Color(0, 0, 0, 0)
 	if relic_on():
 		var rel := RelicKit.wielded(self)
 		var atk: Dictionary = rel.get("ball", rel.get("attack", {}))
-		slots = [{"key": "LMB", "name": atk.get("short", atk.get("name", "")), "cd": float(state.cool), "max": float(atk.get("cooldown", 1.0)), "open": true}]
+		slots = [{"key": "LMB", "name": atk.get("short", atk.get("name", "")), "cd": float(state.cool), "max": float(atk.get("cooldown", 1.0)), "icon": relic_tex}]
 		for s: Dictionary in rel.skills:
 			slots.append({"key": str(s.key), "name": str(s.short), "cd": float(state.skill_cd.get(str(s.id), 0.0)), "max": float(s.cooldown),
-				"open": int(state.level) >= int(s.unlock), "unlock": int(s.unlock)})
+				"locked": int(state.level) < int(s.unlock), "unlock": int(s.unlock), "icon": relic_tex})
 	else:
+		var held := str(hold.get("id", ""))
 		for s: Dictionary in skills:
+			var id := str(s.id)
+			var running := (id == "rage" and float(state.get("rage", 0.0)) > 0.0) or (id == held)
 			slots.append({"key": str(s.key), "name": str(s.get("short", s.name)), "cd": float(state.skill_cd.get(str(s.key), 0.0)), "max": float(s.cooldown),
-				"open": HeroKit.unlocked(self, s), "unlock": int(s.unlock)})
+				"locked": not HeroKit.unlocked(self, s), "unlock": int(s.unlock), "icon": SkillIcons.for_id(class_id, id),
+				"active": (HudStyle.color("danger") if id in ["rage", "photon"] else HudStyle.color("accent")) if running else none,
+				"charge": clampf(float(hold.get("t", 0.0)) / maxf(0.1, float(s.get("charge", 1.0))), 0.0, 1.0) if id == "ballista" and held == id else -1.0,
+				"ultimate": int(s.unlock) >= 10})
 	var master := str(state.get("talent", {}).get("master", ""))
 	if master != "":
 		var mname := master
@@ -2445,32 +2771,11 @@ func _draw_skill_bar(h: Control, size: Vector2) -> void:
 			for n: Dictionary in t:
 				if str(n.get("master", "")) == master:
 					mname = str(n.name)
-		slots.append({"key": "5", "name": mname, "cd": float(state.skill_cd.get("5", 0.0)), "max": float(theme.get("master_cooldown", 45.0)), "open": true})
-	var sw := 64.0
-	var cellw := 116.0
-	var x0 := size.x / 2.0 - slots.size() * cellw / 2.0
-	var y0 := size.y - 150.0
-	var dark := relic_on()
-	for i in range(slots.size()):
-		var sl: Dictionary = slots[i]
-		var r := Rect2(x0 + i * cellw + (cellw - sw) / 2.0, y0, sw, sw)
-		h.draw_rect(r, Color(0.08, 0.02, 0.14, 0.95) if dark else Color(0.02, 0.04, 0.1, 0.9))
-		var icon: Texture2D = relic_tex if dark else weapon_tex
-		if icon != null:
-			var isz := icon.get_size() * 2.0
-			var tint := _color(RelicKit.wielded(self).tint) if dark else Color.WHITE
-			if not sl.open:
-				tint = Color(tint, 0.25)
-			h.draw_texture_rect(icon, Rect2(r.get_center() - isz / 2.0, isz), false, tint)
-		if sl.cd > 0.0:
-			h.draw_rect(Rect2(r.position, Vector2(sw, sw * clampf(sl.cd / maxf(0.01, sl.max), 0.0, 1.0))), Color(0, 0, 0, 0.6))
-			_text(h, "%.0f" % ceil(sl.cd), Vector2(r.position.x, r.position.y + 44), 20, ink, sw)
-		if not sl.open:
-			_text(h, "LV %d" % sl.unlock, Vector2(r.position.x, r.position.y + 44), 16, Color(ink, 0.7), sw)
-		h.draw_rect(r, Color(0.75, 0.55, 1.0) if dark else (accent if sl.open else Color(ink, 0.3)), false, 2.0)
-		_text(h, sl.key, Vector2(r.position.x + 4, r.position.y + 16), 16, col("prompt_key"))
-		var fs := 12 if FONT.get_string_size(str(sl.name), HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x <= cellw - 6 else 10
-		_text(h, sl.name, Vector2(x0 + i * cellw, r.position.y + sw + 18), fs, Color(ink, 0.9 if sl.open else 0.45), cellw)
+		slots.append({"key": "5", "name": mname, "cd": float(state.skill_cd.get("5", 0.0)), "max": float(theme.get("master_cooldown", 45.0)),
+			"icon": SkillIcons.for_id(class_id, master), "ultimate": true})
+	# level and EXP sit with the hearts at the top (draw_hud), as in every world
+	SkillBar.draw(h, FONT, size, slots, float(state.t), {"mouse": h.get_local_mouse_position()})
+
 
 
 func _text(h: CanvasItem, text: String, pos: Vector2, font_size: int, color: Color, center_width := -1.0) -> void:
@@ -2496,16 +2801,26 @@ func _door_color(d: Dictionary) -> Color:
 	return col("door")
 
 
-func _draw_map(h: Control, screen: Vector2, big: bool) -> void:
+## The minimap, or the big map over the screen (M). `framed`: the big map inside
+## another frame (the pause menu's map page), without backdrop, title and legend.
+func _draw_map(h: Control, screen: Vector2, big: bool, framed := false, area := Rect2()) -> void:
 	var known := Rules.known_rooms(W.doors, state.visited)
-	var s: float = minf((screen.x - 60.0) / W.cols, (screen.y - 110.0) / W.rows) if big else minf(250.0 / W.cols, 170.0 / W.rows)
+	var pad := Vector2(16, 16) if framed else Vector2(60, 110)
+	var s: float = minf((screen.x - pad.x) / W.cols, (screen.y - pad.y) / W.rows) if big else minf(250.0 / W.cols, 170.0 / W.rows)
 	var mw: float = W.cols * s
 	var mh: float = W.rows * s
-	var origin := Vector2((screen.x - mw) / 2.0, (screen.y - mh) / 2.0 + 10.0) if big else Vector2(screen.x - mw - 16.0, 16.0)
-	if big:
+	var origin := Vector2((screen.x - mw) / 2.0, (screen.y - mh) / 2.0 + (0.0 if framed else 10.0)) if big else Vector2(screen.x - mw - 16.0, 16.0)
+	var in_panel := not big and area.size.x > 0.0
+	if in_panel:
+		# the small map fills the floor panel's map area (src/ui/hud_kit.gd)
+		s = minf(area.size.x / W.cols, area.size.y / W.rows)
+		mw = W.cols * s
+		mh = W.rows * s
+		origin = area.position + (area.size - Vector2(mw, mh)) / 2.0
+	if big and not framed:
 		h.draw_rect(Rect2(Vector2.ZERO, screen), Color(0.03, 0.01, 0.02, 0.93))
 		_text(h, "%s · Etage %d" % [W.title, state.floor], Vector2(0, 40), 32, gold, screen.x)
-	else:
+	elif not big and not in_panel:
 		h.draw_rect(Rect2(origin - Vector2(8, 8), Vector2(mw, mh) + Vector2(16, 16)), Color(0.04, 0.02, 0.02, 0.8))
 	h.draw_set_transform(origin, 0.0, Vector2(s, s))
 	for d: Dictionary in W.doors:
@@ -2546,6 +2861,6 @@ func _draw_map(h: Control, screen: Vector2, big: bool) -> void:
 		var room_w: float = r.bw * s
 		if big and FONT.get_string_size(r.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x < room_w:
 			_text(h, r.name, Vector2(c.x - room_w / 2.0, c.y + isz * 0.9), 16, ink, room_w)
-	if big:
+	if big and not framed:
 		_text(h, "Hell: besucht · Türen rot: verriegelt · farbig: Schlüssel · gelb: Rätsel · M schließt", Vector2(0, screen.y - 12), 16, Color("#b89c8e"), screen.x)
 	h.draw_circle(origin + Vector2(player.x, player.y - 20) / C * s, 6.0 if big else 3.0, Color("#fff1c2"))

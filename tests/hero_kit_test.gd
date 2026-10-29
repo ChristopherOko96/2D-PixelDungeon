@@ -181,7 +181,9 @@ func test_mage_skills() -> void:
 	HeroKit.press(game, "3")
 	var moved := Vector2(game.player.x, game.player.y).distance_to(p0)
 	check(moved > 0.0 and moved <= float(HeroKit._skill(game, "blink").distance) + 1.0 and not game.box_blocked(game._player_box(game.player.x, game.player.y)), "blink teleports up to its distance and lands free")
-	# photon beam: hold to burn a line
+	# photon beam: hold to burn a line (back from the wall blink ran into: the beam stops at walls)
+	game.player.x = p0.x
+	game.player.y = p0.y
 	game.aim_at = Vector2(game.player.x + 400, game.player.y - 40)
 	var d := _mob(game, Vector2(250, 0))
 	var dh: float = d.hp

@@ -75,6 +75,13 @@ func set_layout(layout: Dictionary, key: String) -> void:
 	layout_key = key
 
 
+## Sets the floor cells directly (Vector2i, 32 px -> true), for worlds without a
+## crypt room layout (the story worlds, src/hero/story_skill_fx.gd).
+func set_walkable(cells: Dictionary, key: String) -> void:
+	_walkable = cells
+	layout_key = key
+
+
 ## True when `point` (world px) is inside a wall. Without a room every point is open.
 func solid(point: Vector2) -> bool:
 	if _walkable.is_empty(): return false

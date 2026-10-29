@@ -1,0 +1,8 @@
+{
+  "_note": "Run talent tree (src/progress/run_tree.gd, docs/LAUF-DESIGN.de.md 3.4), every world: points_per_level = talent points per level-up; tier_one_nodes = the first nodes of a branch free to take; tier_points = points in a branch before its later nodes open; key = the key that opens the tree window. The nodes come from each world (crypt: hero_skills.json upgrades and passives; Hell-Dungeon and Frostgruft: their theme cards).",
+  "schema_version": 1,
+  "points_per_level": 1,
+  "tier_one_nodes": 2,
+  "tier_points": 2,
+  "key": "B"
+}

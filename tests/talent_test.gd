@@ -14,6 +14,7 @@ const MetaStore = preload("res://src/hell/meta_store.gd")
 const HeroKit = preload("res://src/hell/hero_kit.gd")
 const RelicKit = preload("res://src/hell/relic_kit.gd")
 const CardKit = preload("res://src/hell/card_kit.gd")
+const RunTree = preload("res://src/progress/run_tree.gd")
 const MainMenu = preload("res://src/main_menu.gd")
 const SAVE := "user://talent_test.cfg"
 var checked := 0
@@ -110,11 +111,15 @@ func test_talents_in_the_run() -> void:
 	MetaStore.save_store(store, SAVE)
 	var game := await _new("mage")
 	check(is_equal_approx(CardKit.damage_mult(game), 1.2), "4 x GLUTKERN give +20 % damage")
-	check(CardKit.level(game, "twin_fire") == 1, "ZWILLINGSFEUER counts as a card level from the start")
-	game.state.level = 1
+	# a talent card opens its run tree node (docs/LAUF-DESIGN.de.md 3.3), it gives no free level
+	check(CardKit.level(game, "twin_fire") == 0 and RunTree.state_of(CardKit.tree(game), CardKit.ranks(game), 2, "twin_fire") == "open", "ZWILLINGSFEUER opens its node in the run tree")
+	check(int(RunTree.node(CardKit.tree(game), "twin_fire").max) == 1, "the talent rank caps the node (rank 1: one point)")
+	check(RunTree.state_of(CardKit.tree(game), CardKit.ranks(game), 9, "wildfire") == "meta_locked", "GROSSBRAND waits for its talent")
+	game.state.level = 2
+	check(CardKit.take_node(game, "twin_fire"), "a point goes into the opened node")
 	game.aim_at = Vector2(game.player.x + 300, game.player.y - 40)
 	HeroKit.press(game, "1")
-	check(game.shots.size() == 2, "the talent doubles the fireball from the first floor")
+	check(game.shots.size() == 2, "then the fireball doubles")
 	await _free(game)
 
 

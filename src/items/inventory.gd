@@ -1,6 +1,14 @@
 extends RefCounted
 ## Items of a run on the host (data assets/data/items.json, rules item_rules.gd).
-## Every hero carries one weapon and a bag (player.inventory = {weapon, bag}).
+## Every hero carries a weapon, an armour, a ring and an amulet slot and a bag
+## (player.inventory = {weapon, armor, ring, amulet, bag}; item system 2,
+## docs/ITEM-SYSTEM-V2.de.md). Weapons and gear have a stage (-3..+3) rolled
+## when found; gear is found unknown and can be cursed like weapons. New
+## consumables: Klonsiegel (a clone fights beside the hero for a while),
+## Aufwertungsstein (+1 stage; may fail on cursed pieces), Würfelstein
+## (rerolls a stage), Spiegelkristall (reveals the bag's potions). Every floor
+## also has fixed finds (a crystal, every second floor a stone) and mini
+## guardians drop a rare piece.
 ## Items: weapons (class-bound, five rarities, found unidentified and often
 ## cursed), potions (known only by colour until identified; colours shuffled
 ## per run, knowledge shared by the team), identification crystals and
@@ -17,6 +25,10 @@ const Dungeon = preload("res://src/dungeon/dungeon_generator.gd")
 const RARITIES := ["common", "uncommon", "rare", "epic", "legendary"]
 ## Slot value meaning "the weapon in hand" for identify / cleanse.
 const EQUIPPED := 99
+## Slot values of all equipment slots (the bag uses 0..size-1).
+const SLOT_CODES := {"weapon": 99, "armor": 98, "ring": 97, "amulet": 96}
+## Stacking consumables of item system 2.
+const CONSUMABLES := ["clone_seal", "upgrade_stone", "dice_stone", "mirror_crystal"]
 
 var game: Node
 var data: Dictionary = {}
@@ -50,7 +62,7 @@ func new_run(seed_value: int) -> void:
 ## A fresh hero: the class's common weapon in hand, an empty bag.
 func start_kit(player: Dictionary) -> void:
 	var spec := ItemRules.start_weapon(str(player.get("class_id", "")))
-	player.inventory = {"weapon": make_weapon(str(spec.get("id", "")), true, "") if not spec.is_empty() else {}, "bag": []}
+	player.inventory = {"weapon": make_weapon(str(spec.get("id", "")), true, "", 0) if not spec.is_empty() else {}, "armor": {}, "ring": {}, "amulet": {}, "bag": []}
 	player.augments = {}
 	player.item_note = ""
 	# The note counter keeps running so a new note after a class change still shows.
@@ -60,8 +72,19 @@ func start_kit(player: Dictionary) -> void:
 
 # --- Making items --------------------------------------------------------------------
 
-func make_weapon(id: String, identified: bool, curse: String) -> Dictionary:
-	var item := {"uid": _next_uid, "type": "weapon", "id": id, "identified": identified, "curse": curse, "blessed": false}
+## A weapon; `stage` -99 rolls one (cursed ones lower).
+func make_weapon(id: String, identified: bool, curse: String, stage: int = -99) -> Dictionary:
+	var item := {"uid": _next_uid, "type": "weapon", "id": id, "identified": identified, "curse": curse, "blessed": false,
+		"stage": stage if stage != -99 else ItemRules.roll_stage(_rng, not curse.is_empty())}
+	if curse == "sealed": item.seal = _rng.randi_range(0, 3)
+	_next_uid += 1
+	return item
+
+
+## An armour, ring or amulet; `stage` -99 rolls one.
+func make_gear(id: String, identified: bool, curse: String, stage: int = -99) -> Dictionary:
+	var item := {"uid": _next_uid, "type": "gear", "id": id, "identified": identified, "curse": curse, "blessed": false,
+		"stage": stage if stage != -99 else ItemRules.roll_stage(_rng, not curse.is_empty())}
 	if curse == "sealed": item.seal = _rng.randi_range(0, 3)
 	_next_uid += 1
 	return item
@@ -70,6 +93,8 @@ func make_weapon(id: String, identified: bool, curse: String) -> Dictionary:
 func make_stack(type: String, potion: String = "", count: int = 1) -> Dictionary:
 	var item := {"uid": _next_uid, "type": type, "count": count}
 	if type == "potion": item.potion = potion
+	# some clone seals hold longer
+	if type == "clone_seal" and _rng.randf() < float(data.get("clone_seal", {}).get("rare_chance", 0.2)): item.rare = true
 	_next_uid += 1
 	return item
 
@@ -99,6 +124,7 @@ func _roll_kind(spec: Dictionary, depth: float, class_id: String) -> Dictionary:
 			break
 	match chosen:
 		"weapon": return _roll_weapon(depth, class_id, str(spec.get("min_rarity", "common")))
+		"gear": return _roll_gear(depth, str(spec.get("min_rarity", "common")))
 		"potion":
 			var potions: Array = data.get("potions", {}).keys()
 			return make_stack("potion", str(potions[_rng.randi_range(0, potions.size() - 1)]))
@@ -123,11 +149,59 @@ func _roll_weapon(depth: float, class_id: String, minimum: String) -> Dictionary
 	var pool: Array = data.get("weapons", []).filter(func(entry: Dictionary) -> bool: return str(entry.rarity) == rarity and str(entry["class"]) == class_id and not bool(entry.get("start", false)))
 	if pool.is_empty(): pool = data.get("weapons", []).filter(func(entry: Dictionary) -> bool: return str(entry.rarity) == rarity)
 	var spec: Dictionary = pool[_rng.randi_range(0, pool.size() - 1)]
-	var curse := ""
-	if _rng.randf() < float(data.get("curse_chance", 0.6)):
-		var curses: Array = data.get("curses", {}).keys()
-		curse = str(curses[_rng.randi_range(0, curses.size() - 1)])
-	return make_weapon(str(spec.id), false, curse)
+	return make_weapon(str(spec.id), false, _roll_curse("weapon"))
+
+
+## A rarity from the floor's weights, at least `minimum`.
+func _roll_rarity(depth: float, minimum: String) -> String:
+	var weights: Dictionary = data.get("rarity_weights", {})
+	var lowest := RARITIES.find(minimum)
+	var total := 0.0
+	for index in range(lowest, RARITIES.size()):
+		var pair: Array = weights.get(RARITIES[index], [1, 1])
+		total += lerpf(float(pair[0]), float(pair[1]), depth)
+	var roll := _rng.randf() * total
+	for index in range(lowest, RARITIES.size()):
+		var pair: Array = weights.get(RARITIES[index], [1, 1])
+		roll -= lerpf(float(pair[0]), float(pair[1]), depth)
+		if roll <= 0.0: return RARITIES[index]
+	return RARITIES[lowest]
+
+
+## An armour, ring or amulet of a rolled rarity (the nearest one that exists).
+func _roll_gear(depth: float, minimum: String) -> Dictionary:
+	var rarity := _roll_rarity(depth, minimum)
+	var all: Array = data.get("gear", [])
+	var pool: Array = all.filter(func(entry: Dictionary) -> bool: return str(entry.rarity) == rarity)
+	if pool.is_empty(): pool = all
+	var spec: Dictionary = pool[_rng.randi_range(0, pool.size() - 1)]
+	return make_gear(str(spec.id), false, _roll_curse(str(spec.slot)))
+
+
+## A curse for a found piece in `slot` ("" for none); gear never gets the burning blade.
+func _roll_curse(slot: String) -> String:
+	var chance := float(data.get("curse_by_slot", {}).get(slot, data.get("curse_chance", 0.6)))
+	if _rng.randf() >= chance: return ""
+	var curses: Array = data.get("curses", {}).keys()
+	if slot != "weapon": curses.erase("burning_blade")
+	return str(curses[_rng.randi_range(0, curses.size() - 1)])
+
+
+## The fixed finds of a floor: an identification crystal, every
+## `stone_every` floors a curse-breaker stone (docs/LAUF-DESIGN.de.md 3.5).
+func floor_finds(floor_number: int) -> Array:
+	var rules: Dictionary = data.get("per_floor", {})
+	var out: Array = []
+	if int(rules.get("crystal", 1)) > 0: out.append(make_stack("crystal", "", int(rules.get("crystal", 1))))
+	var every := int(rules.get("stone_every", 2))
+	if every > 0 and floor_number % every == 0: out.append(make_stack("stone"))
+	return out
+
+
+## What a mini guardian drops: a piece of gear or a weapon, at least rare.
+func guardian_drop(floor_number: int, class_id: String) -> Dictionary:
+	var spec: Dictionary = data.get("per_floor", {}).get("mini_drop", {"kinds": {"gear": 2, "weapon": 1}, "min_rarity": "rare"})
+	return _roll_kind(spec, clampf((float(floor_number) - 1.0) / 9.0, 0.0, 1.0), class_id)
 
 
 # --- The bag -------------------------------------------------------------------------
@@ -135,9 +209,9 @@ func _roll_weapon(depth: float, class_id: String, minimum: String) -> Dictionary
 ## Puts an item in the hero's bag (consumables stack). False when it is full.
 func add(player: Dictionary, item: Dictionary) -> bool:
 	var bag: Array = player.inventory.bag
-	if str(item.type) != "weapon":
+	if str(item.type) not in ["weapon", "gear"]:
 		for held: Dictionary in bag:
-			if str(held.type) == str(item.type) and str(held.get("potion", "")) == str(item.get("potion", "")):
+			if str(held.type) == str(item.type) and str(held.get("potion", "")) == str(item.get("potion", "")) and bool(held.get("rare", false)) == bool(item.get("rare", false)):
 				held.count = int(held.count) + int(item.get("count", 1))
 				note(player, "Gefunden: " + name_of(item))
 				return true
@@ -154,13 +228,14 @@ func note(player: Dictionary, text: String) -> void:
 	player.item_notes = int(player.get("item_notes", 0)) + 1
 
 
-## The name a hero sees: unknown weapons and potions show only what they look like.
+## The name a hero sees: unknown weapons, gear and potions show only what they look like.
 func name_of(item: Dictionary) -> String:
 	match str(item.get("type", "")):
-		"weapon":
-			var spec := ItemRules.weapon(str(item.id))
-			if not bool(item.get("identified", false)): return str(spec.get("unknown_name", "UNBEKANNTE WAFFE"))
+		"weapon", "gear":
+			var spec := ItemRules.spec_of(item)
+			if not bool(item.get("identified", false)): return str(spec.get("unknown_name", "UNBEKANNTES STÜCK"))
 			var title := str(spec.get("name", "WAFFE"))
+			if not ItemRules.stage_text(item).is_empty(): title += " " + ItemRules.stage_text(item)
 			if bool(item.get("blessed", false)): return title + " · " + str(ItemRules.curse(str(item.curse)).get("blessing", {}).get("name", ""))
 			if not str(item.get("curse", "")).is_empty(): return title + " · " + str(ItemRules.curse(str(item.curse)).get("name", "VERFLUCHT"))
 			return title
@@ -170,6 +245,8 @@ func name_of(item: Dictionary) -> String:
 			return str(data.get("potion_colors", {}).get(str(colors.get(kind, "red")), "TRANK"))
 		"crystal": return str(data.get("crystal", {}).get("name", "KRISTALL"))
 		"stone": return str(data.get("stone", {}).get("name", "STEIN"))
+		"clone_seal": return str(data.get("clone_seal", {}).get("name", "KLONSIEGEL")) + (" (SELTEN)" if bool(item.get("rare", false)) else "")
+		"upgrade_stone", "dice_stone", "mirror_crystal": return str(data.get(str(item.type), {}).get("name", "?"))
 	return "?"
 
 
@@ -187,12 +264,22 @@ func act(id: int, action: String, value: int, target: Vector2 = Vector2.INF) -> 
 		"inv_drink": _drink(id, player, value)
 		"inv_throw": _throw(id, player, value, target)
 		"inv_drop": _drop(player, value)
+		"inv_unequip": _unequip(player, value)
+		"inv_use": _use(id, player, value)
+		"inv_upgrade": _upgrade(player, value)
+		"inv_reroll": _reroll(player, value)
 
 
 func _slot(player: Dictionary, value: int) -> Dictionary:
-	if value == EQUIPPED: return player.inventory.weapon
+	for slot: String in SLOT_CODES:
+		if value == int(SLOT_CODES[slot]): return player.inventory.get(slot, {})
 	var bag: Array = player.inventory.bag
 	return bag[value] if value >= 0 and value < bag.size() else {}
+
+
+## True when `value` names an equipment slot, not a bag place.
+func _is_equipped_code(value: int) -> bool:
+	return SLOT_CODES.values().has(value)
 
 
 func _spend(player: Dictionary, type: String) -> bool:
@@ -207,17 +294,21 @@ func _spend(player: Dictionary, type: String) -> bool:
 
 func _equip(player: Dictionary, value: int) -> void:
 	var item := _slot(player, value)
-	if value == EQUIPPED or item.is_empty() or str(item.type) != "weapon": return
-	var spec := ItemRules.weapon(str(item.id))
-	if str(spec.get("class", "")) != str(player.get("class_id", "")):
-		note(player, "Nur für %s." % str(game.balance.get("classes", {}).get(str(spec.get("class", "")), {}).get("name", "eine andere Klasse")))
-		return
-	var held: Dictionary = player.inventory.weapon
+	if _is_equipped_code(value) or item.is_empty() or str(item.type) not in ["weapon", "gear"]: return
+	var slot := ItemRules.slot_of(item)
+	if slot.is_empty(): return
+	if slot == "weapon":
+		var spec := ItemRules.weapon(str(item.id))
+		if str(spec.get("class", "")) != str(player.get("class_id", "")):
+			note(player, "Nur für %s." % str(game.balance.get("classes", {}).get(str(spec.get("class", "")), {}).get("name", "eine andere Klasse")))
+			return
+	var held: Dictionary = player.inventory.get(slot, {})
 	if ItemRules.stuck(held):
-		note(player, "Verflucht! Die Waffe lässt sich nicht ablegen. Ein Fluchbrecherstein hilft.")
+		note(player, "Verflucht! %s lässt sich nicht ablegen. Ein Fluchbrecherstein hilft." % ("Die Waffe" if slot == "weapon" else "Das Stück"))
 		return
-	player.inventory.bag[value] = held
-	player.inventory.weapon = item
+	if held.is_empty(): player.inventory.bag.remove_at(value)
+	else: player.inventory.bag[value] = held
+	player.inventory[slot] = item
 	var first_look: bool = not bool(item.get("identified", false))
 	item.identified = true
 	equip_apply(player)
@@ -228,10 +319,27 @@ func _equip(player: Dictionary, value: int) -> void:
 	else: note(player, "Angelegt: " + name_of(item))
 
 
+## Takes a piece of armour, a ring or an amulet off (into the bag), unless a curse holds it.
+func _unequip(player: Dictionary, value: int) -> void:
+	if value == EQUIPPED or not _is_equipped_code(value): return
+	var item := _slot(player, value)
+	if item.is_empty(): return
+	if ItemRules.stuck(item):
+		note(player, "Verflucht! Das Stück lässt sich nicht ablegen. Ein Fluchbrecherstein hilft.")
+		return
+	if player.inventory.bag.size() >= int(data.get("bag", 12)):
+		note(player, "Rucksack voll.")
+		return
+	player.inventory.bag.append(item)
+	player.inventory[ItemRules.slot_of(item)] = {}
+	equip_apply(player)
+	note(player, "Abgenommen: " + name_of(item))
+
+
 func _identify(player: Dictionary, value: int) -> void:
 	var item := _slot(player, value)
-	if item.is_empty() or str(item.type) not in ["weapon", "potion"]: return
-	if str(item.type) == "weapon" and bool(item.get("identified", false)): return
+	if item.is_empty() or str(item.type) not in ["weapon", "gear", "potion"]: return
+	if str(item.type) in ["weapon", "gear"] and bool(item.get("identified", false)): return
 	if str(item.type) == "potion" and known.has(str(item.potion)): return
 	if not _spend(player, "crystal"):
 		note(player, "Dafür brauchst du einen Identifizierungskristall.")
@@ -247,18 +355,103 @@ func _identify(player: Dictionary, value: int) -> void:
 
 func _cleanse(player: Dictionary, value: int) -> void:
 	var item := _slot(player, value)
-	if item.is_empty() or str(item.type) != "weapon": return
+	if item.is_empty() or str(item.type) not in ["weapon", "gear"]: return
 	if str(item.get("curse", "")).is_empty() or bool(item.get("blessed", false)) or not bool(item.get("identified", false)):
-		note(player, "Auf dieser Waffe liegt kein bekannter Fluch.")
+		note(player, "Auf diesem Stück liegt kein bekannter Fluch.")
 		return
 	if not _spend(player, "stone"):
 		note(player, "Dafür brauchst du einen Fluchbrecherstein.")
 		return
 	item.blessed = true
-	if item == player.inventory.weapon: equip_apply(player)
+	if _is_equipped_code(value): equip_apply(player)
 	var blessing: Dictionary = ItemRules.curse(str(item.curse)).get("blessing", {})
 	note(player, "Fluch gebrochen! Segen: %s. %s" % [str(blessing.get("name", "")), str(blessing.get("text", ""))])
 	game.add_fx("cleanse", Vector2(player.pos), 34.0)
+
+
+## Aufwertungsstein on a weapon or piece of gear: +1 stage; on a known, unbroken
+## curse it fails with fail_chance and the stage drops instead. Shows the piece.
+func _upgrade(player: Dictionary, value: int) -> void:
+	var item := _slot(player, value)
+	if item.is_empty() or str(item.type) not in ["weapon", "gear"]: return
+	var rules: Dictionary = data.get("stage", {})
+	if ItemRules.stage(item) >= int(rules.get("max", 3)):
+		note(player, "Höher geht es nicht.")
+		return
+	if not _spend(player, "upgrade_stone"):
+		note(player, "Dafür brauchst du einen Aufwertungsstein.")
+		return
+	item.identified = true
+	var cursed := not str(item.get("curse", "")).is_empty() and not bool(item.get("blessed", false))
+	if cursed and _rng.randf() < float(data.get("upgrade_stone", {}).get("fail_chance", 0.5)):
+		item.stage = maxi(int(rules.get("min", -3)), ItemRules.stage(item) - 1)
+		note(player, "Der Fluch frisst den Stein: %s" % name_of(item))
+	else:
+		item.stage = ItemRules.stage(item) + 1
+		note(player, "Aufgewertet: %s" % name_of(item))
+	if _is_equipped_code(value): equip_apply(player)
+	game.add_fx("identify", Vector2(player.pos), 24.0)
+
+
+## Würfelstein: the piece's stage is rolled anew (-3..+3, every value alike). Shows the piece.
+func _reroll(player: Dictionary, value: int) -> void:
+	var item := _slot(player, value)
+	if item.is_empty() or str(item.type) not in ["weapon", "gear"]: return
+	if not _spend(player, "dice_stone"):
+		note(player, "Dafür brauchst du einen Würfelstein.")
+		return
+	var rules: Dictionary = data.get("stage", {})
+	item.identified = true
+	item.stage = _rng.randi_range(int(rules.get("min", -3)), int(rules.get("max", 3)))
+	note(player, "Neu gewürfelt: %s" % name_of(item))
+	if _is_equipped_code(value): equip_apply(player)
+	game.add_fx("identify", Vector2(player.pos), 24.0)
+
+
+## Uses a consumable from the bag: drinks a potion, breaks a clone seal, looks into a mirror crystal.
+func _use(id: int, player: Dictionary, value: int) -> void:
+	var item := _slot(player, value)
+	if item.is_empty() or _is_equipped_code(value): return
+	match str(item.type):
+		"potion": _drink(id, player, value)
+		"clone_seal":
+			var rare := bool(item.get("rare", false))
+			_take_one(player, value)
+			var spec: Dictionary = data.get("clone_seal", {})
+			summon_clone(id, player, float(spec.get("clone_time_rare", 35)) if rare else float(spec.get("clone_time", 20)))
+		"mirror_crystal":
+			var unknown: Array = []
+			for held: Dictionary in player.inventory.bag:
+				if str(held.type) == "potion" and not known.has(str(held.potion)) and not unknown.has(str(held.potion)): unknown.append(str(held.potion))
+			if unknown.is_empty():
+				note(player, "Kein unbekannter Trank im Rucksack.")
+				return
+			_take_one(player, value)
+			for kind: String in unknown: known[kind] = true
+			note(player, "Der Spiegel zeigt %d Tränke." % unknown.size())
+			game.add_fx("identify", Vector2(player.pos), 30.0)
+
+
+## Takes one of a stack (or the item) out of bag place `value`.
+func _take_one(player: Dictionary, value: int) -> void:
+	var item := _slot(player, value)
+	item.count = int(item.get("count", 1)) - 1
+	if int(item.count) <= 0: player.inventory.bag.remove_at(value)
+
+
+## A clone of the hero fights for `time` s: enemies near it chase it (the
+## mirror-image decoy of hero_skills.gd) and it shoots at the nearest enemy.
+func summon_clone(id: int, player: Dictionary, time: float) -> void:
+	# a world with its own clone (story worlds) calls that one
+	if game.has_method("summon_clone"):
+		game.summon_clone(id, player, time)
+		return
+	var side := -1.0 if Vector2(player.get("aim", Vector2.RIGHT)).x >= 0.0 else 1.0
+	var at := Vector2(player.pos) + Vector2(side * 44.0, 6.0)
+	game.hero_skills._zone({"kind": "decoy", "pos": at, "radius": 260.0, "time": time, "owner": id, "look": str(player.get("class_id", ""))})
+	player.clone = {"pos": at, "time": time, "cool": 0.3}
+	note(player, "Ein Klon kämpft %d s mit dir." % int(time))
+	game.add_fx("cleanse", at, 30.0)
 
 
 ## Learning a potion colour for the whole team (crystal, drinking or throwing).
@@ -324,7 +517,9 @@ func _throw(id: int, player: Dictionary, value: int, target: Vector2) -> void:
 	var steps := maxi(1, int(from.distance_to(target) / 8.0))
 	for step in range(1, steps + 1):
 		var next := from.lerp(target, float(step) / float(steps))
-		if Dungeon.segment_blocked(point, next, 4.0, game.current_layout): break
+		# a world without crypt rooms (story worlds) checks its own walls
+		var blocked: bool = game.segment_blocked(point, next) if game.has_method("segment_blocked") else Dungeon.segment_blocked(point, next, 4.0, game.current_layout)
+		if blocked: break
 		point = next
 	game.add_fx("potion_throw", point, float(spec.get("radius", 60)), {"fx": from.x, "fy": from.y, "color": str(colors.get(kind, "red")), "potion": kind})
 	var radius := float(spec.get("radius", 60))
@@ -340,7 +535,9 @@ func _throw(id: int, player: Dictionary, value: int, target: Vector2) -> void:
 			for enemy: Dictionary in _enemies_near(point, radius): game.perk_combat._status(enemy, "freeze", 1, float(spec.get("freeze", 2.5)), id)
 		"blind":
 			for enemy: Dictionary in _enemies_near(point, radius):
-				enemy.hitstun = maxf(float(enemy.get("hitstun", 0.0)), float(spec.get("daze", 4)) * (0.35 if bool(enemy.get("boss", false)) or bool(enemy.get("miniboss", false)) else 1.0))
+				var daze := float(spec.get("daze", 4)) * (0.35 if bool(enemy.get("boss", false)) or bool(enemy.get("miniboss", false)) else 1.0)
+				if game.has_method("daze"): game.daze(enemy, daze)
+				else: enemy.hitstun = maxf(float(enemy.get("hitstun", 0.0)), daze)
 		"explosion":
 			for enemy: Dictionary in _enemies_near(point, radius): game._damage_enemy(enemy, float(spec.get("damage", 12)), (Vector2(enemy.pos) - point).normalized(), id)
 		"aftershock":
@@ -378,35 +575,67 @@ func equip_apply(player: Dictionary) -> void:
 
 # --- Curses over time ----------------------------------------------------------------
 
-## Thorns under the cursed hero, the blood toll, the thorn ward of the blessing.
+## Thorns under the cursed hero, the blood toll, the thorn ward of the blessing
+## (each equipped piece keeps its own timer); the clones of clone seals shoot.
 func step(delta: float) -> void:
 	for id: int in game.players:
 		var player: Dictionary = game.players[id]
 		if int(player.get("hp", 0)) <= 0 or not player.has("inventory"): continue
-		var item: Dictionary = player.inventory.weapon
-		var curse_id := str(item.get("curse", ""))
-		if curse_id.is_empty() or not bool(item.get("identified", false)): continue
-		var rules := ItemRules.curse(curse_id)
-		var blessed: bool = bool(item.get("blessed", false))
-		var every := float(rules.get("blessing", {}).get("every", 0.0)) if blessed else float(rules.get("every", 0.0))
-		if every <= 0.0: continue
-		player.curse_timer = float(player.get("curse_timer", every)) - delta
-		if float(player.curse_timer) > 0.0: continue
-		player.curse_timer = every
-		match curse_id:
-			"thorns":
-				if blessed:
-					var target: Dictionary = {}
-					var distance := 260.0
-					for enemy: Dictionary in game.enemies:
-						var gap: float = Vector2(enemy.pos).distance_to(player.pos)
-						if float(enemy.hp) > 0 and gap < distance:
-							target = enemy
-							distance = gap
-					if not target.is_empty(): game.boss_moves.hero_strike(Vector2(target.pos), 30.0, 0.35, float(rules.blessing.get("damage", 5)), "spikes", id)
-				else: game.boss_moves.strike_at(Vector2(player.pos), 26.0, float(rules.get("warn", 0.7)), int(rules.get("damage", 1)), "spikes")
-			"bloodthirst":
-				if not blessed: game.dot_player(id, int(rules.get("damage", 1)), "blood")
+		_step_clone(id, player, delta)
+		for item: Dictionary in ItemRules.equipped(player): _step_curse(id, player, item, delta)
+
+
+func _step_clone(id: int, player: Dictionary, delta: float) -> void:
+	var clone: Dictionary = player.get("clone", {})
+	if clone.is_empty(): return
+	clone.time = float(clone.time) - delta
+	if float(clone.time) <= 0.0:
+		player.erase("clone")
+		return
+	clone.cool = float(clone.cool) - delta
+	if float(clone.cool) > 0.0: return
+	clone.cool = float(data.get("clone_seal", {}).get("fire_every", 0.6))
+	var target: Dictionary = {}
+	var distance := 320.0
+	for enemy: Dictionary in game.enemies:
+		var gap: float = Vector2(enemy.pos).distance_to(clone.pos)
+		if float(enemy.hp) > 0 and gap < distance:
+			target = enemy
+			distance = gap
+	if target.is_empty(): return
+	var aim := (Vector2(target.pos) - Vector2(clone.pos)).normalized()
+	var style := "magic" if str(player.get("class_id", "")) == "mage" else "arrow"
+	game._add_bullet(Vector2(clone.pos) + aim * 12.0, aim * 520.0, id, float(player.get("damage", 1.0)) * 0.6,
+		{"style": style, "pierce": 0, "bounces": 0, "hit_ids": [], "primary": false, "no_steer": true, "life": 0.7, "distance": 0.0})
+
+
+func _step_curse(id: int, player: Dictionary, item: Dictionary, delta: float) -> void:
+	var curse_id := str(item.get("curse", ""))
+	if curse_id.is_empty() or not bool(item.get("identified", false)): return
+	var rules := ItemRules.curse(curse_id)
+	var blessed: bool = bool(item.get("blessed", false))
+	var every := float(rules.get("blessing", {}).get("every", 0.0)) if blessed else float(rules.get("every", 0.0))
+	if every <= 0.0: return
+	var timers: Dictionary = player.get("curse_timers", {})
+	var key := str(item.get("uid", 0))
+	timers[key] = float(timers.get(key, every)) - delta
+	player.curse_timers = timers
+	if float(timers[key]) > 0.0: return
+	timers[key] = every
+	match curse_id:
+		"thorns":
+			if blessed:
+				var target: Dictionary = {}
+				var distance := 260.0
+				for enemy: Dictionary in game.enemies:
+					var gap: float = Vector2(enemy.pos).distance_to(player.pos)
+					if float(enemy.hp) > 0 and gap < distance:
+						target = enemy
+						distance = gap
+				if not target.is_empty(): game.boss_moves.hero_strike(Vector2(target.pos), 30.0, 0.35, float(rules.blessing.get("damage", 5)), "spikes", id)
+			else: game.boss_moves.strike_at(Vector2(player.pos), 26.0, float(rules.get("warn", 0.7)), int(rules.get("damage", 1)), "spikes")
+		"bloodthirst":
+			if not blessed: game.dot_player(id, int(rules.get("damage", 1)), "blood")
 
 
 ## A hero attacked: the burning blade sometimes burns its bearer.
@@ -427,10 +656,12 @@ func view(item: Dictionary) -> Dictionary:
 		"weapon":
 			var spec := ItemRules.weapon(str(item.id))
 			var rarity: Dictionary = data.rarities.get(str(spec.get("rarity", "common")), {})
-			result.merge({"sprite": "res://assets/sprites/" + str(spec.sprite) + ".png", "rarity": str(spec.get("rarity", "common")), "rarity_label": str(rarity.get("label", "")), "color": str(rarity.get("color", "c9c0b6")),
+			result.merge({"sprite": "res://assets/sprites/" + str(spec.sprite) + ".png", "rarity": str(spec.get("rarity", "common")), "rarity_label": str(rarity.get("label", "")), "color": str(rarity.get("color", "c9c0b6")), "slot": "weapon",
 				"class": str(spec.get("class", "")), "identified": bool(item.get("identified", false)), "cursed": ItemRules.stuck(item), "blessed": bool(item.get("blessed", false))})
 			var lines: Array[String] = []
-			lines.append("SCHADEN %s · %.2f s" % [str(snappedf(float(spec.get("damage", 0)), 0.1)), float(spec.get("interval", 0.4))])
+			var known_weapon := bool(item.get("identified", false))
+			lines.append("SCHADEN %s · %.2f s" % [str(snappedf(float(spec.get("damage", 0)) * (ItemRules.stage_factor(item) if known_weapon else 1.0), 0.1)), float(spec.get("interval", 0.4)) * (ItemRules.stage_factor(item, true) if known_weapon else 1.0)])
+			if known_weapon and ItemRules.stage(item) != 0: lines.append("STUFE " + ItemRules.stage_text(item))
 			if bool(item.get("identified", false)):
 				var effects: Array[String] = []
 				for key: String in spec.get("effects", {}): effects.append(_effect_name(key))
@@ -447,11 +678,51 @@ func view(item: Dictionary) -> Dictionary:
 			var kind := str(item.potion)
 			result.merge({"sprite": "res://assets/sprites/items/potion_%s.png" % str(colors.get(kind, "red")), "rarity": "common", "color": "d3bfa9", "identified": known.has(kind)})
 			result.lines = ["TRINKEN: " + str(data.potions[kind].get("drink", "")), "WERFEN: " + str(data.potions[kind].get("throw", ""))] if known.has(kind) else ["Unbekannter Trank. Ein Kristall verrät ihn, oder du probierst ihn."]
-		"crystal", "stone":
+		"gear":
+			var spec := ItemRules.gear(str(item.id))
+			var rarity: Dictionary = data.rarities.get(str(spec.get("rarity", "common")), {})
+			var known_piece := bool(item.get("identified", false))
+			result.merge({"sprite": "res://assets/sprites/" + str(spec.sprite) + ".png", "rarity": str(spec.get("rarity", "common")), "rarity_label": str(rarity.get("label", "")) + " · " + str(data.get("slots", {}).get(str(spec.slot), "")),
+				"color": str(rarity.get("color", "c9c0b6")), "slot": str(spec.slot), "identified": known_piece, "cursed": ItemRules.stuck(item), "blessed": bool(item.get("blessed", false))})
+			var lines: Array[String] = []
+			lines.append(_stats_text(spec.get("stats", {}), ItemRules.stage_factor(item) if known_piece else 1.0))
+			if known_piece:
+				var effects: Array[String] = []
+				for key: String in spec.get("effects", {}): effects.append(_effect_name(key))
+				if not effects.is_empty(): lines.append("EFFEKT: " + ", ".join(effects))
+				lines.append("STUFE %s" % (ItemRules.stage_text(item) if ItemRules.stage(item) != 0 else "0"))
+				var curse_id := str(item.get("curse", ""))
+				if not curse_id.is_empty():
+					var rules := ItemRules.curse(curse_id)
+					if bool(item.get("blessed", false)): lines.append("SEGEN: " + str(rules.blessing.get("text", "")))
+					else: lines.append("FLUCH: " + str(rules.get("text", "")))
+				else: lines.append("Kein Fluch.")
+			else: lines.append("Unbekannt: Stufe und Fluch zeigt ein Kristall oder das Anlegen.")
+			result.lines = lines
+		"crystal", "stone", "clone_seal", "upgrade_stone", "dice_stone", "mirror_crystal":
 			var spec: Dictionary = data.get(str(item.type), {})
-			result.merge({"sprite": "res://assets/sprites/" + str(spec.get("sprite", "")) + ".png", "rarity": "rare", "color": "8fd8e6" if str(item.type) == "crystal" else "edbf75", "identified": true})
+			var colours := {"crystal": "8fd8e6", "stone": "edbf75", "clone_seal": "e57a6a", "upgrade_stone": "7ed66f", "dice_stone": "e9e2d4", "mirror_crystal": "b38cf0"}
+			result.merge({"sprite": "res://assets/sprites/" + str(spec.get("sprite", "")) + ".png", "rarity": "rare", "color": str(colours.get(str(item.type), "d3bfa9")), "identified": true,
+				"usable": str(item.type) in ["clone_seal", "mirror_crystal"]})
 			result.lines = [str(spec.get("text", ""))]
 	return result
+
+
+## A share as signed percent: "+10 %", "−5 %".
+func _percent(share: float) -> String:
+	var value := roundi(share * 100.0)
+	return ("+%d %%" % value) if value >= 0 else ("-%d %%" % absi(value))
+
+
+## The stats of a piece in words ("SCHADEN +10 % · +1 HERZ"), scaled by its stage.
+func _stats_text(stats: Dictionary, factor: float) -> String:
+	var parts: Array[String] = []
+	if stats.has("max_hp"): parts.append("+%s HERZ" % str(snappedf(float(stats.max_hp) * factor / 2.0, 0.5)))
+	if stats.has("damage"): parts.append("SCHADEN " + _percent(float(stats.damage) * factor))
+	if stats.has("rate"): parts.append("ANGRIFFE " + _percent(float(stats.rate) * factor))
+	if stats.has("speed"): parts.append("TEMPO " + _percent(float(stats.speed) * factor))
+	if stats.has("cooldown"): parts.append("ABKLINGEN " + _percent(float(stats.cooldown) * factor))
+	return " · ".join(parts) if not parts.is_empty() else "Keine Werte, nur Wirkung."
 
 
 func _effect_name(key: String) -> String:
@@ -465,5 +736,6 @@ func snapshot(player: Dictionary) -> Dictionary:
 	if not player.has("inventory"): return {}
 	var bag: Array = []
 	for item: Dictionary in player.inventory.bag: bag.append(view(item))
-	return {"weapon": view(player.inventory.weapon), "bag": bag, "size": int(data.get("bag", 12)), "note": str(player.get("item_note", "")), "notes": int(player.get("item_notes", 0)),
+	return {"weapon": view(player.inventory.weapon), "armor": view(player.inventory.get("armor", {})), "ring": view(player.inventory.get("ring", {})), "amulet": view(player.inventory.get("amulet", {})),
+		"bag": bag, "size": int(data.get("bag", 12)), "note": str(player.get("item_note", "")), "notes": int(player.get("item_notes", 0)), "clone": float(player.get("clone", {}).get("time", 0.0)),
 		"sealed": int(player.get("sealed_skill", -1)), "dim": bool(player.get("dim", false))}

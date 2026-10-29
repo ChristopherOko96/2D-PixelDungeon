@@ -1,0 +1,31 @@
+{
+  "_note": "Neutral HUD look shared by every world (src/ui/hud_style.gd, src/ui/hud_kit.gd): crypt, Hell-Dungeon and Frostgruft draw the same panels, text and bars, never in a world's own colours. Colours are hex (RRGGBB or RRGGBBAA); sizes in screen px at 1280x720.",
+  "colors": {
+    "panel": "0f0f12c8",
+    "panel_edge": "ffffff2e",
+    "panel_shine": "ffffff10",
+    "slot": "0b0b0ee6",
+    "text": "f2efe8",
+    "text_dim": "aaa59d",
+    "text_muted": "6f6b65",
+    "outline": "08080a",
+    "accent": "f2c66d",
+    "danger": "e2584a",
+    "danger_dark": "5a2320",
+    "exp": "7dd3a2",
+    "track": "26262b",
+    "ok": "8fd6a5"
+  },
+  "margin": 16,
+  "pad": 10,
+  "heart_size": 26,
+  "heart_gap": 3,
+  "hearts_per_row": 10,
+  "map_panel_width": 236,
+  "map_panel_height": 160,
+  "boss_bar_width": 560,
+  "font_title": 16,
+  "font_small": 12,
+  "font_body": 16,
+  "font_banner": 28
+}

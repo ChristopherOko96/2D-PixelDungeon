@@ -2,15 +2,16 @@ extends RefCounted
 ## Shared team experience on the host. Killed enemies drop EXP orbs; they burst
 ## out, settle, then fly to the nearest living hero (or to anyone once the room
 ## is clear). Every collected orb fills one team bar, so all heroes level up at
-## the same moment. Each level gives every hero a small heal and a card choice
-## (class upgrades and passives, ClassPerks.offer); bosses and mini-bosses add a
-## choice of general perks. Choices queue per hero and are picked by mouse while
+## the same moment. Each level gives every hero a small heal and one point for
+## the run talent tree (ClassPerks.run_tree, docs/LAUF-DESIGN.de.md), spent with
+## take_talent; bosses and mini-bosses add a choice of general perks. Choices queue per hero and are picked by mouse while
 ## the fight goes on. Values: assets/data/hero_skills.json (leveling, exp, orbs).
 
 const Progression = preload("res://src/player/progression.gd")
 const ClassPerks = preload("res://src/player/class_perks.gd")
 const PerkRules = preload("res://src/perk_rules.gd")
 const Dungeon = preload("res://src/dungeon/dungeon_generator.gd")
+const RunTree = preload("res://src/progress/run_tree.gd")
 
 var game: Node
 ## Team level and the EXP collected towards the next one.
@@ -117,12 +118,23 @@ func add_exp(amount: int) -> int:
 	gained = int(team.level) - before
 	for step_index in range(gained):
 		for player: Dictionary in game.players.values():
+			# the level is the point: spent in the run talent tree (take_talent)
 			if int(player.hp) > 0: player.hp = mini(int(player.max_hp), int(player.hp) + int(leveling.get("heal", 2)))
-			_queue(player, "level")
 	if gained > 0:
 		for player: Dictionary in game.players.values(): game.add_fx("level_up", player.pos, 48.0)
 		print("TEAM_LEVEL level=%d" % int(team.level))
 	return gained
+
+
+## Spends one run talent point of the hero on class card `id` when the tree
+## allows it (its skill open, its tier reached, a point left). True on success.
+func take_talent(player: Dictionary, id: String) -> bool:
+	var tree := ClassPerks.run_tree(str(player.get("class_id", "")), player.get("meta", {}))
+	if not RunTree.can_take(tree, ClassPerks.ranks(player), int(team.level), id): return false
+	if not ClassPerks.grant(player, id): return false
+	PerkRules.rebuild(player, game.balance)
+	player.last_card = id
+	return true
 
 
 ## Picks card `index` of the hero's open choice. Returns false when invalid.

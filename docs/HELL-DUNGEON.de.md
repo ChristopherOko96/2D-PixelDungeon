@@ -51,7 +51,9 @@ Themen-Welten mit eigenen Gegnern (`mobs` im Thema, z. B. die Frostgruft) behalt
 
 Steuerung: WASD laufen, Pfeiltasten oder linke Maustaste angreifen, 1–4 Fähigkeiten, 7/8/9 Karte wählen,
 T Relikt/Waffe wechseln, C/Tab Status, E/Leertaste Aktion, Q Klon, M Karte, L Licht, R Etage neu,
-F1–F10 Etage wählen, Esc Hauptmenü.
+F1–F10 Etage wählen, Esc Pausenmenü.
+
+**Oberfläche (29.10.2026):** Esc öffnet dasselbe Pausenmenü wie in der Krypta (`src/pause_menu.gd`, Story-Modus) mit den Seiten Übersicht, Auftrag, Karte, Steuerung, Anzeige und Speichern; die Welt steht still. Die Auftragsliste steht nur noch dort, der Bildschirm bleibt frei; ein erfülltes Ziel klingt und zeigt kurz „Auftrag erfüllt: …“ (`FrostHud.track`). Die Hilfszeile am unteren Rand entfällt. Test: `tests/story_pause_test.gd`, Belege: `production/qa/evidence/story-ui/` (`scripts/capture_story_ui.gd`).
 
 ## Aufbau
 
@@ -62,12 +64,13 @@ F1–F10 Etage wählen, Esc Hauptmenü.
 | Spielwerte | `assets/data/hell_balance.json` |
 | Thema mit Heldensystemen (Story 3) | `assets/data/hell_theme.json` (übernimmt Klassen, Level, Fähigkeiten, Relikte, Karten, Sounds aus `frost_theme.json`; `extra_sprites` lädt Relikt- und Golembilder aus `assets/sprites/frost/`) |
 | Story-Eintrag | `assets/data/story_campaigns.json` (`hell_dungeon` = Story 3, `story_4` gesperrt) |
-| Grafiken (134, Weltmaßstab) | `assets/sprites/hell/` mit `manifest.json` und `LICENSE-NOTE.md` |
+| Grafiken im 0x72-Stil (135, aktiv seit 29.10.2026) | `assets/sprites/hell_0x72/` aus `scripts/make_hell_skin.gd` (aus dem 0x72-Ordner; Höllenfarben, 16-px-Raster ×3, scharfe Pixel; Lava, Kanten und Brücken 1:1 gekachelt über `pixel_tiles`; Held ×3), `manifest.json`, `LICENSE-NOTE.md` |
+| Erstes Höllen-Set (134, Weltmaßstab) | `assets/sprites/hell/` mit `manifest.json` und `LICENSE-NOTE.md`; liefert weiter die Namensliste und die Größen für `bake_floors.js` |
 | Monster-Atlanten (18, je Zeile eine Animation) | `assets/sprites/hell/monsters/` aus `tools/hell_dungeon/export_monsters.js` |
 | Monsterdaten | `assets/data/hell_monsters.json` (generiert, nicht von Hand ändern) |
 | Laufzeit | `src/hell/hell_game.gd` (Szene `hell_dungeon.tscn`), `hell_floor_data.gd`, `hell_walls.gd`, `hell_rules.gd`, `hell_monsters.gd` (Monster-Laufzeit), `hell_monster_rules.gd` (reine Regeln) |
-| Tests | `tests/hell_floor_data_test.gd`, `tests/hell_walls_test.gd`, `tests/hell_rules_test.gd`, `tests/hell_boss_start_test.gd`, `tests/hell_monster_rules_test.gd`, `tests/hell_monsters_integration_test.gd`, `tests/hell_hero_systems_test.gd`; Story-Menü in `tests/main_menu_flow_test.gd` |
-| Nachweise | `production/qa/evidence/hell-dungeon/` (`scripts/capture_hell_dungeon.gd`), `production/qa/evidence/hell-monsters/` (`scripts/capture_hell_monsters.gd`), `production/qa/evidence/hell-story/` (`scripts/capture_hell_story.gd`) |
+| Tests | `tests/hell_floor_data_test.gd`, `tests/hell_walls_test.gd`, `tests/hell_rules_test.gd`, `tests/hell_boss_start_test.gd`, `tests/hell_monster_rules_test.gd`, `tests/hell_monsters_integration_test.gd`, `tests/hell_hero_systems_test.gd`, `tests/hell_skin_test.gd` (0x72-Skin: Namen, Maße, nur Höllenfarben, ganze Pixel); Story-Menü in `tests/main_menu_flow_test.gd` |
+| Nachweise | `production/qa/evidence/hell-dungeon/` (`scripts/capture_hell_dungeon.gd`), `production/qa/evidence/hell-monsters/` (`scripts/capture_hell_monsters.gd`), `production/qa/evidence/hell-story/` (`scripts/capture_hell_story.gd`), `production/qa/evidence/hell-skin/before|after` (`scripts/capture_hell_skin.gd`, mit `old` das erste Set) |
 
 Der Modus ist bewusst vom vernetzten Krypta-Spiel (`src/game.gd`) getrennt: kein Host, keine Snapshots.
 

@@ -14,6 +14,14 @@ const RoomPool = preload("res://src/editor/room_pool.gd")
 const OpenFloor = preload("res://src/dungeon/open_floor.gd")
 const RunHud = preload("res://src/ui/run_hud.gd")
 const CryptUI = preload("res://src/ui/crypt_ui.gd")
+const HudKit = preload("res://src/ui/hud_kit.gd")
+const HudStyle = preload("res://src/ui/hud_style.gd")
+const GraphicsSettings = preload("res://src/core/graphics_settings.gd")
+const RunTreeView = preload("res://src/ui/run_tree_view.gd")
+const MetaStore = preload("res://src/hell/meta_store.gd")
+const ClassPerks = preload("res://src/player/class_perks.gd")
+## The crypt's graphics sets for the Pixel / HD switch: only its 0x72 pixel look so far.
+const CRYPT_SKINS := {"skins": {"pixel": {}}}
 const LevelCards = preload("res://src/ui/level_cards.gd")
 const InventoryPanel = preload("res://src/ui/inventory_panel.gd")
 const PauseMenu = preload("res://src/pause_menu.gd")
@@ -41,6 +49,8 @@ const BossMoves = preload("res://src/combat/boss_moves.gd")
 const PlayerEffects = preload("res://src/combat/player_effects.gd")
 const Inventory = preload("res://src/items/inventory.gd")
 const Cheats = preload("res://src/debug/cheats.gd")
+const SaveStore = preload("res://src/save/save_store.gd")
+const CryptSave = preload("res://src/save/crypt_save.gd")
 
 var balance: Dictionary = {}
 var dungeon_config: Dictionary = {}
@@ -94,6 +104,20 @@ var player_effects := PlayerEffects.new()
 var inventory := Inventory.new()
 ## Test cheats (ESC menu, debug builds and solo runs only).
 var cheats := Cheats.new()
+## Local save slots (src/save/save_store.gd) and the record of the current floor's start.
+var saves := SaveStore.new()
+var floor_save: Dictionary = {}
+## The save slot this run writes its floor starts to (0: none yet; set by saving or loading).
+var run_slot := 0
+## The run talent tree window is open (B); clicks there spend points instead of firing.
+var tree_open := false
+## The lasting talents and soul crystals (main menu TALENTE, src/hell/meta_store.gd),
+## the same file as in the story worlds; tests use their own.
+var meta_path := MetaStore.SAVE_PATH
+var meta_data: Dictionary = {}
+var meta: Dictionary = {}
+## Soul crystals banked in this run.
+var run_crystals := 0
 ## Capture tools only: held skill keys and mouse point instead of the real
 ## keyboard and mouse (-1 / INF = off). Never set in play.
 var scripted_skills := -1
@@ -383,6 +407,22 @@ func _input(event: InputEvent) -> void:
 			toggle_fullscreen()
 			get_viewport().set_input_as_handled()
 			return
+	# B opens the run talent tree; the fight goes on, a click spends a point
+	if _in_run() and not pause_open and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_B:
+		tree_open = not tree_open
+		run_hud.tree_open = tree_open
+		menu_button.visible = _in_run() and not pause_open and not tree_open
+		get_viewport().set_input_as_handled()
+		return
+	if _in_run() and tree_open and event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		var local: Dictionary = state.get("players", {}).get(multiplayer.get_unique_id(), {})
+		var class_id := str(local.get("class_id", ""))
+		var node_id := RunTreeView.hit(run_hud.size, ClassPerks.run_tree(class_id, local.get("meta", {})), run_hud.get_local_mouse_position())
+		var index := ClassPerks.run_tree_ids(class_id).find(node_id)
+		if index >= 0: _send_action("talent", index)
+		_fire_needs_release = true
+		get_viewport().set_input_as_handled()
+		return
 	# I or Tab opens the inventory; ESC first cancels a throw or closes it.
 	if _in_run() and not pause_open and event is InputEventKey and event.pressed and not event.echo and event.keycode in [KEY_I, KEY_TAB] and inventory_panel != null:
 		inventory_panel.set_open(not inventory_panel.open)
@@ -440,8 +480,9 @@ func _apply_display_layout(force: bool = false) -> void:
 	run_hud.position = Vector2.ZERO
 	run_hud.size = dimensions
 	var map_panel: Rect2 = run_hud.map_panel_rect()
-	menu_button.size = Vector2(map_panel.size.x,36)
-	menu_button.position = Vector2(map_panel.position.x,map_panel.end.y+8)
+	var menu_rect: Rect2 = HudKit.menu_rect(dimensions)
+	menu_button.size = menu_rect.size
+	menu_button.position = menu_rect.position
 	level_cards.position = Vector2(dimensions.x-level_cards.size.x-20,menu_button.position.y+menu_button.size.y+12)
 	var hint_height := 72.0 if editor_preview_mode else 30.0
 	context_hint.position = Vector2(24,run_hud.skill_bar_top()-hint_height-10)
@@ -975,7 +1016,7 @@ func _send_local_input() -> void:
 	if mouse_pressed and get_viewport().gui_get_hovered_control() != null:
 		_fire_needs_release = true
 	var dimensions: Array = state.get("room_layout",{}).get("world_size",[896,480])
-	var fire := mouse_pressed and not _fire_needs_release and Rect2(Vector2.ZERO,Vector2(dimensions[0],dimensions[1])).has_point(mouse) and world_clip.get_global_rect().has_point(get_global_mouse_position())
+	var fire := mouse_pressed and not tree_open and not _fire_needs_release and Rect2(Vector2.ZERO,Vector2(dimensions[0],dimensions[1])).has_point(mouse) and world_clip.get_global_rect().has_point(get_global_mouse_position())
 	# An armed potion goes where the next click lands, instead of an attack.
 	if throw_slot >= 0 and fire:
 		_send_action("inv_throw", throw_slot)
@@ -1083,6 +1124,9 @@ func _server_action(id: int, action: String, value: int) -> void:
 	action_times[id] = now
 	if action == "start" and id == 1 and phase in ["lobby", "dead", "victory"]:
 		_begin_run()
+	elif action == "interact" and id == 1 and phase in ["dead", "victory"]:
+		# E on the result panel: a new run
+		_begin_run()
 	elif action == "perk" and phase == "reward" and players[id].hp > 0 and not players[id].picked:
 		var offered: Array = perk_offers.get(id,perk_options)
 		if value < 0 or value >= offered.size(): return
@@ -1098,6 +1142,12 @@ func _server_action(id: int, action: String, value: int) -> void:
 		inventory.act(id, action, value, Vector2(commands.get(id, {}).get("target", Vector2.INF)))
 	elif action == "cheat" and phase in ["combat", "explore", "reward"]:
 		if not cheats.act(id, value): return
+	elif action == "talent" and phase in ["combat", "explore", "reward"]:
+		# a run talent point, by index into the class tree's node order
+		var ids: Array = ClassPerks.run_tree_ids(str(players[id].get("class_id", "")))
+		if value < 0 or value >= ids.size(): return
+		if not team_progress.take_talent(players[id], str(ids[value])): return
+		print("TALENT_TAKEN peer=%d node=%s level=%d" % [id, str(ids[value]), int(team_progress.team.level)])
 	elif action == "card" and phase in ["combat", "explore", "reward"]:
 		# Level-up or boss card, picked by mouse while the game runs.
 		if not team_progress.pick(players[id], value): return
@@ -1168,6 +1218,7 @@ func _begin_run() -> void:
 	if editor_preview_mode:
 		start_editor_preview()
 		return
+	run_slot = 0
 	var seed_value := requested_seed if requested_seed >= 0 else randi_range(10000, 99999)
 	var generated := _generate_floor(seed_value, 1)
 	if generated.is_empty():
@@ -1207,6 +1258,7 @@ func _begin_run() -> void:
 		players[id].skin = str(previous_players[id].get("skin",PLAYER_SKINS[PLAYER_COLORS.find(players[id].color)]))
 	commands.clear()
 	team_progress.reset(seed_value)
+	_apply_meta()
 	hero_skills.reset(seed_value)
 	chests.place_floor(floor_layouts, seed_value)
 	hordes.reset(seed_value)
@@ -1214,6 +1266,8 @@ func _begin_run() -> void:
 	_spawn_room()
 	print("RUN_STARTED seed=%d players=%d" % [run_seed, players.size()])
 	print("FLOOR_ENTERED floor=%d seed=%d" % [floor_index, floor_seed])
+	floor_save = CryptSave.capture(self)
+	_keep_run_save()
 
 
 func _spawn_room(from_room: int = 0) -> void:
@@ -1548,8 +1602,11 @@ func _simulate_enemies(delta: float) -> void:
 		enemy.stun_cooldown = maxf(0.0, float(enemy.get("stun_cooldown", 0.0)) - delta)
 		body_parts.step(enemy, delta)
 		var push: Vector2 = enemy.get("knockback", Vector2.ZERO)
+		var knock_from: Vector2 = enemy.pos
 		enemy.pos = Dungeon.move_actor(enemy.pos, push * delta, enemy.radius, current_layout)
 		enemy.knockback = push.move_toward(Vector2.ZERO, float(balance.feedback.enemy_knockback) * float(balance.feedback.knockback_decay) * delta)
+		# a body flung by Rage or the charge slams into the wall it meets
+		hero_skills.check_slam(enemy, knock_from, push, delta)
 		if enemy.hitstun > 0.0: continue
 		if perk_combat.frozen(enemy): continue
 		# Aggro: unaware enemies stand still; a locked one hunts its hero to the end.
@@ -1763,6 +1820,9 @@ func _enemy_fell(enemy: Dictionary, direction: Vector2, owner: int, kill_effects
 	perk_combat.killed(enemy,owner,kill_effects)
 	team_progress.enemy_killed(enemy)
 	if bool(enemy.get("boss",false)) or bool(enemy.get("miniboss",false)): floor_boss_down = true
+	# a mini guardian leaves a rare piece behind (docs/LAUF-DESIGN.de.md 3.5)
+	if bool(enemy.get("miniboss",false)) and players.has(owner if owner > 0 else 1):
+		chests.drop_item(inventory.guardian_drop(floor_index, str(players[owner if owner > 0 else 1].get("class_id",""))), Vector2(enemy.pos))
 	hero_skills.enemy_killed(enemy,owner)
 	if str(enemy.get("kind","")) == "mimic": chests.mimic_defeated(enemy,owner)
 
@@ -1787,6 +1847,9 @@ func _check_room_end() -> void:
 	if living == 0:
 		phase = "dead"
 		bullets.clear()
+		# a dungeon crawler: the run is over, its saves go (docs/LAUF-DESIGN.de.md)
+		if hosting: saves.erase_run("crypt", CryptSave.run_id(self))
+		run_slot = 0
 		print("TEAM_WIPE room=%d" % room)
 		_broadcast_state(true)
 	elif enemies.is_empty() and not hordes.pending():
@@ -1901,8 +1964,44 @@ func _step_transition(delta: float) -> void:
 		_broadcast_state(true)
 
 
+## The host hero's lasting talents (docs/LAUF-DESIGN.de.md 3.3): stat talents
+## on its numbers, talent cards open run tree nodes. Loaded at every run start.
+func _apply_meta() -> void:
+	run_crystals = 0
+	meta_data = {}
+	meta = {}
+	if not _meta_allowed(): return
+	meta_data = MetaStore.data()
+	if meta_data.is_empty() or not players.has(1): return
+	meta = MetaStore.load_store(meta_data, meta_path)
+	var hero: Dictionary = players[1]
+	var class_id := str(hero.get("class_id", ""))
+	var bonus := MetaStore.run_bonus(meta_data, meta, class_id)
+	hero.meta = {"gated": MetaStore.gated_cards(meta_data, class_id), "unlocked": bonus.cards,
+		"bonus": {"damage": float(bonus.damage), "rate": float(bonus.rate), "speed": float(bonus.speed), "hearts": int(bonus.hearts)}}
+	PerkRules.rebuild(hero, balance)
+	hero.hp = int(hero.max_hp)
+
+
+## Only the real game uses the player's lasting progress file; test and capture
+## scripts (they run their own SceneTree script) never read or change it unless
+## they point meta_path at their own file.
+func _meta_allowed() -> bool:
+	return meta_path != MetaStore.SAVE_PATH or get_tree().get_script() == null
+
+
+## Soul crystals for a finished floor (its number, a felled guardian), banked at once.
+func _bank_crystals(finished_floor: int) -> void:
+	if not hosting or meta_data.is_empty() or meta.is_empty(): return
+	var n := MetaStore.floor_award(meta_data, finished_floor, "guardian" if floor_boss_down else "", 0)
+	meta.crystals = int(meta.crystals) + n
+	run_crystals += n
+	MetaStore.save_store(meta, meta_path)
+
+
 func _enter_next_floor() -> void:
 	if editor_preview_mode: return
+	_bank_crystals(floor_index)
 	var next_floor := floor_index + 1
 	var next_seed := int((run_seed + (next_floor - 1) * int(balance.exploration.seed_stride)) % 2147483647)
 	var generated := _generate_floor(next_seed, next_floor)
@@ -1917,6 +2016,53 @@ func _enter_next_floor() -> void:
 	floor_boss_down = false
 	_spawn_room()
 	print("FLOOR_ENTERED floor=%d seed=%d" % [floor_index, floor_seed])
+	floor_save = CryptSave.capture(self)
+	_keep_run_save()
+
+
+## A run that sits in a save slot keeps that slot at its newest floor start.
+func _keep_run_save() -> void:
+	if run_slot > 0 and hosting and not floor_save.is_empty():
+		saves.write("crypt", run_slot, floor_save)
+
+
+## Writes the state of this floor's start into crypt save slot 1..3 (host only); true on success.
+func save_slot(slot: int) -> bool:
+	var ok := hosting and _in_run() and not floor_save.is_empty() and saves.write("crypt", slot, floor_save)
+	if ok: run_slot = slot
+	return ok
+
+
+func _on_save_requested(slot: int) -> void:
+	var ok := save_slot(slot)
+	pause_menu.refresh_save(("Gespeichert in Platz %d: Beginn von Ebene %d." % [slot, int(floor_save.get("floor", 1))]) if ok else "Speichern geht nur als Host in einem laufenden Lauf.")
+
+
+## Main menu: loads a save. Crypt saves start a solo run on the saved floor;
+## story saves open their world's scene on the saved floor.
+func _load_save(mode: String, slot: int) -> void:
+	var data := saves.read(mode, slot)
+	if data.is_empty():
+		main_menu.show_toast("Dieser Spielstand ist leer oder nicht lesbar.")
+		return
+	if mode != "crypt":
+		# the run keeps writing its floor starts to this slot
+		data.slot = slot
+		_open_story_scene(str(data.get("scene", "")), str(data.get("class_id", "")), data)
+		return
+	main_menu.selected_story = str(data.get("story_id", "krypta"))
+	requested_seed = int(data.run_seed)
+	_start_solo(bool(data.get("endless", false)), str(data.get("class_id", "")))
+	requested_seed = -1
+	if not (active and hosting and _in_run()):
+		return
+	if int(data.floor) > floor_index:
+		floor_index = int(data.floor) - 1
+		_enter_next_floor()
+	CryptSave.apply(self, data)
+	floor_save = CryptSave.capture(self)
+	run_slot = slot
+	print("SAVE_LOADED crypt slot=%d floor=%d level=%d" % [slot, floor_index, int(team_progress.team.level)])
 
 
 func _make_snapshot(advance_sequence: bool = true) -> Dictionary:
@@ -1929,6 +2075,7 @@ func _make_snapshot(advance_sequence: bool = true) -> Dictionary:
 		# Hero skills, class cards and the open card choice (level-up / boss).
 		visible_players[id].skills = hero_skills.player_state(player)
 		visible_players[id].class_perks = Array(player.get("class_perks",[])).duplicate()
+		visible_players[id].meta = Dictionary(player.get("meta",{})).duplicate(true)
 		visible_players[id].offer = Array(player.get("offer",[])).duplicate(true)
 		visible_players[id].offer_kind = str(player.get("offer_kind",""))
 		visible_players[id].offer_pending = Array(player.get("offer_queue",[])).size()
@@ -1947,7 +2094,7 @@ func _make_snapshot(advance_sequence: bool = true) -> Dictionary:
 		var hit_direction: Vector2 = player.get("hit_direction",Vector2.ZERO)
 		visible_players[id].merge({"skin":str(player.get("skin",PLAYER_SKINS[0])),"mx":motion.x,"my":motion.y,"blocks":int(player.get("blocks",0)),"interacts":int(player.get("interacts",0)),"last_hit_damage":float(player.get("last_hit_damage",0)),"hit_dx":hit_direction.x,"hit_dy":hit_direction.y,"shot_interval":perk_combat.shot_interval(player)})
 		# Hero class presentation (step 2): class, held weapon and melee swing cue.
-		visible_players[id].merge({"class_id":str(player.get("class_id","")),"weapons":Array(player.get("weapons",[])).duplicate(),"weapon_index":int(player.get("weapon_index",0)),"melee":bool(player.get("melee",false)),"reach":float(player.get("reach",0.0)),"swings":int(player.get("swings",0)),"swing_angle":float(player.get("swing_angle",0.0)),"swing_arc":float(player.get("swing_arc",0.0))})
+		visible_players[id].merge({"class_id":str(player.get("class_id","")),"weapons":Array(player.get("weapons",[])).duplicate(),"weapon_index":int(player.get("weapon_index",0)),"melee":bool(player.get("melee",false)),"reach":float(player.get("reach",0.0)),"swings":int(player.get("swings",0)),"swing_angle":float(player.get("swing_angle",0.0)),"swing_arc":float(player.get("swing_arc",0.0)),"swing_dir":int(player.get("swing_dir",1))})
 	var visible_enemies: Array = []
 	for enemy in enemies:
 		var direction: Vector2 = enemy.get("direction",Vector2.ZERO)
@@ -1956,6 +2103,8 @@ func _make_snapshot(advance_sequence: bool = true) -> Dictionary:
 		var death_length := float(balance.death.boss_duration if enemy.boss else balance.death.duration)
 		visible_enemies.append({"x": enemy.pos.x, "y": enemy.pos.y, "hp": enemy.hp, "max_hp": enemy.max_hp, "boss": enemy.boss, "hitstun": enemy.get("hitstun", 0.0), "hit_flash": enemy.get("hit_flash", 0.0),"id":enemy.get("id",-1),"kind":enemy.get("kind","chaser"),"hits":enemy.get("hits",0),"attacks":enemy.get("attacks",0),"moving":enemy.get("moving",false),"face":enemy.get("face",-1.0),"dx":direction.x,"dy":direction.y,"attack":attack,"attack_p":clampf(1.0-float(enemy.get("attack_time",0.0))/maxf(0.001,attack_length),0.0,1.0),"dying_p":clampf(1.0-float(enemy.get("dying",0.0))/death_length,0.0,1.0) if enemy.hp <= 0 else -1.0})
 		visible_enemies[-1].radius = float(enemy.radius)
+		# cut in two by Rage: the angle of the cut for the slice effect
+		if enemy.has("slice"): visible_enemies[-1].slice = float(enemy.slice)
 		var motion: Vector2 = enemy.get("motion",Vector2.ZERO)
 		var facing: Vector2 = enemy.get("facing_dir",Vector2.LEFT)
 		visible_enemies[-1].merge({"mx":motion.x,"my":motion.y,"facing_x":facing.x,"facing_y":facing.y,"last_hit_damage":float(enemy.get("last_hit_damage",0))})
@@ -1982,7 +2131,7 @@ func _make_snapshot(advance_sequence: bool = true) -> Dictionary:
 	for i in range(floor_layouts.size()):
 		var layout: Dictionary = floor_layouts[i]
 		map_rooms.append({"id": layout.id, "title": layout.title, "boss": layout.boss, "grid_x": layout.grid_x, "grid_y": layout.grid_y, "cleared": str(layout.id) in cleared_room_ids})
-	return {"server_time":Time.get_ticks_usec()/1000000.0,"players": visible_players, "enemies": visible_enemies, "bullets": visible_bullets, "room": room, "phase": phase, "seed": floor_seed, "run_seed": run_seed, "run_serial": run_serial, "floor_index": floor_index, "cleared_room_ids": cleared_room_ids.duplicate(), "seq": packet_sequence, "peer_count": players.size(), "max_players":int(balance.network.max_players), "perk_options": perk_options, "perk_offers":perk_offers.duplicate(), "perk_events":perk_combat.visual_events(), "room_layout": current_layout, "room_layout_revision": _room_layout_revision, "room_serial": _room_serial, "floor_map": map_rooms, "generator_version": Dungeon.GENERATOR_VERSION, "boss_name":balance.boss.get("display_name","BOSS"),"fx_events":fx_events.duplicate(true),"team":team_progress.snapshot(),"loot_chests":chests.snapshot(),"boss_zones":boss_moves.snapshot(),"horde":hordes.snapshot(),"stairs_open":stairs_open(),"skill_fx":hero_skills.snapshot(),"transition":(_transition_state if not _transition_state.is_empty() else _last_transition_state).duplicate()}
+	return {"server_time":Time.get_ticks_usec()/1000000.0,"players": visible_players, "enemies": visible_enemies, "bullets": visible_bullets, "room": room, "phase": phase, "seed": floor_seed, "run_seed": run_seed, "run_serial": run_serial, "floor_index": floor_index, "cleared_room_ids": cleared_room_ids.duplicate(), "seq": packet_sequence, "peer_count": players.size(), "max_players":int(balance.network.max_players), "perk_options": perk_options, "perk_offers":perk_offers.duplicate(), "perk_events":perk_combat.visual_events(), "room_layout": current_layout, "room_layout_revision": _room_layout_revision, "room_serial": _room_serial, "floor_map": map_rooms, "generator_version": Dungeon.GENERATOR_VERSION, "boss_name":balance.boss.get("display_name","BOSS"),"fx_events":fx_events.duplicate(true),"team":team_progress.snapshot(),"loot_chests":chests.snapshot(),"boss_zones":boss_moves.snapshot(),"horde":hordes.snapshot(),"stairs_open":stairs_open(),"skill_fx":hero_skills.snapshot(),"meta_crystals":[run_crystals, int(meta.get("crystals",0))] if not meta.is_empty() else [],"transition":(_transition_state if not _transition_state.is_empty() else _last_transition_state).duplicate()}
 
 
 func _broadcast_state(reliable: bool) -> void:
@@ -2159,9 +2308,12 @@ func _build_ui() -> void:
 	ui.add_child(inventory_panel)
 	inventory_panel.acted.connect(func(action: String, value: int): _send_action(action, value))
 	inventory_panel.throw_armed.connect(func(slot: int): throw_slot = slot)
-	menu_button = _button("MENÜ · ESC",Vector2(960,76),Vector2(244,36),func(): set_pause_open(true,"reward" if phase == "reward" else "overview"))
-	context_hint = _label("",Vector2(192,620),Vector2(896,30),16,CryptUI.GOLD)
-	context_hint.add_theme_color_override("font_outline_color", CryptUI.INK)
+	menu_button = _button("ESC · MENÜ",Vector2(960,76),Vector2(244,28),func(): set_pause_open(true,"reward" if phase == "reward" else "overview"))
+	# the HUD's neutral look (src/ui/hud_style.gd), the same in every world
+	HudStyle.style_button(menu_button)
+	menu_button.add_theme_font_size_override("font_size", 12)
+	context_hint = _label("",Vector2(192,620),Vector2(896,30),16,HudStyle.color("text"))
+	context_hint.add_theme_color_override("font_outline_color", HudStyle.color("outline"))
 	context_hint.add_theme_constant_override("outline_size", 4)
 	context_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	if editor_preview_mode:
@@ -2179,8 +2331,16 @@ func _build_ui() -> void:
 	pause_menu.reward_requested.connect(show_rewards)
 	pause_menu.main_action_pressed.connect(_menu_action)
 	pause_menu.display_mode_requested.connect(toggle_fullscreen)
+	# Pixel / HD: stored for every world; the crypt itself has only pixel art so far
+	pause_menu.graphics_mode_requested.connect(func() -> void:
+		var next := GraphicsSettings.other(GraphicsSettings.mode())
+		GraphicsSettings.store(next)
+		pause_menu.set_graphics_state(GraphicsSettings.note(CRYPT_SKINS, next), next)
+		main_menu.refresh_graphics())
 	pause_menu.configure_cheats(cheats.data)
 	pause_menu.cheat_requested.connect(func(index: int): _send_action("cheat", index))
+	pause_menu.save_rows = func() -> Array: return saves.summaries("crypt")
+	pause_menu.save_requested.connect(_on_save_requested)
 	reward_overlay = RewardOverlay.new()
 	modal_guard.add_child(reward_overlay)
 	reward_overlay.configure(balance.get("reward_presentation",{}))
@@ -2216,6 +2376,7 @@ func _build_main_menu() -> void:
 	main_menu.room_test_requested.connect(_start_room_test)
 	main_menu.hell_requested.connect(_start_hell)
 	main_menu.story_scene_requested.connect(_open_story_scene)
+	main_menu.save_load_requested.connect(_load_save)
 	# Saved fullscreen is applied in _ready, only when the game opens on the menu.
 	view.shake_scale = 1.0 if bool(main_menu.settings.get("shake", true)) else 0.0
 
@@ -2239,11 +2400,17 @@ func _start_hell(floor_number: int, boss: bool) -> void:
 	tree.current_scene = hell
 	queue_free()
 
-## Swaps the menu for a story's own scene (e.g. the Frostgruft) with the chosen hero class.
-func _open_story_scene(path: String, class_id: String) -> void:
+## Swaps the menu for a story's own scene (e.g. the Frostgruft) with the chosen hero class;
+## `resume` is a loaded story save to continue from.
+func _open_story_scene(path: String, class_id: String, resume: Dictionary = {}) -> void:
+	if not ResourceLoader.exists(path):
+		main_menu.show_toast("Die Welt dieses Spielstands fehlt.")
+		return
 	var scene: Node = (load(path) as PackedScene).instantiate()
 	if "class_id" in scene:
 		scene.class_id = class_id
+	if not resume.is_empty() and "resume" in scene:
+		scene.resume = resume
 	var tree := get_tree()
 	var old := tree.current_scene
 	tree.root.add_child(scene)
@@ -2453,12 +2620,14 @@ func _refresh_ui() -> void:
 	inventory_panel.visible = run_hud.visible
 	if inventory_panel.visible: inventory_panel.set_state(state,local_id)
 	elif inventory_panel.open: inventory_panel.set_open(false)
-	menu_button.visible = in_run and not pause_open
+	menu_button.visible = in_run and not pause_open and not tree_open
 	pause_menu.visible = in_run and pause_open and not reward_open
 	if pause_menu.visible:
 		pause_menu.set_state(state,local_id,hosting,_port(),is_solo_paused())
 		pause_menu.set_cheats_enabled(Cheats.enabled(self))
+		pause_menu.set_save_enabled(hosting and not floor_save.is_empty())
 		pause_menu.set_display_state(is_fullscreen(),get_viewport_rect().size)
+		pause_menu.set_graphics_state(GraphicsSettings.note(CRYPT_SKINS, GraphicsSettings.mode()), GraphicsSettings.mode())
 	reward_overlay.visible = in_run and pause_open and reward_open
 	modal_guard.visible = in_run and pause_open
 	if reward_overlay.visible: reward_overlay.set_state(state,local_id,is_solo_paused())
@@ -2466,7 +2635,8 @@ func _refresh_ui() -> void:
 		reward_overlay.play_entrance()
 		reward_overlay.focus_initial()
 	view.set_animation_enabled(not is_solo_paused())
-	context_hint.text = "BELOHNUNG · KARTE WÄHLEN" if phase == "reward" else "GEFALLEN · ESC FÜR DEN NÄCHSTEN SCHRITT" if phase == "dead" else ""
+	# the run's end shows the shared result panel (run_hud.gd) with its own hints
+	context_hint.text = "BELOHNUNG · KARTE WÄHLEN" if phase == "reward" else ""
 	if phase == "explore" and not local_player.is_empty() and local_player.get("hp",0) > 0:
 		var position := Vector2(local_player.x,local_player.y)
 		for exit: Dictionary in state.get("room_layout",{}).get("exits",[]):

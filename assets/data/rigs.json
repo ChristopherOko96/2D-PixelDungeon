@@ -1054,7 +1054,8 @@
      "parent": null,
      "z": 1,
      "hp": 15,
-     "label": "Linkes Bein"
+     "label": "Linkes Bein",
+     "unbreakable": true
     },
     {
      "id": "leg_r",
@@ -1073,7 +1074,8 @@
      "parent": null,
      "z": 1,
      "hp": 15,
-     "label": "Rechtes Bein"
+     "label": "Rechtes Bein",
+     "unbreakable": true
     },
     {
      "id": "head",
@@ -1093,7 +1095,7 @@
      "z": 3,
      "hp": 30,
      "label": "Kopf",
-     "vital": true
+     "unbreakable": true
     },
     {
      "id": "torso",
@@ -1113,7 +1115,7 @@
      "z": 2,
      "hp": 40,
      "label": "Rumpf",
-     "vital": true
+     "unbreakable": true
     }
    ],
    "items": []
@@ -1232,7 +1234,8 @@
      "parent": null,
      "z": 1,
      "hp": 15,
-     "label": "Linkes Bein"
+     "label": "Linkes Bein",
+     "unbreakable": true
     },
     {
      "id": "leg_r",
@@ -1251,7 +1254,8 @@
      "parent": null,
      "z": 1,
      "hp": 15,
-     "label": "Rechtes Bein"
+     "label": "Rechtes Bein",
+     "unbreakable": true
     },
     {
      "id": "head",
@@ -1271,7 +1275,7 @@
      "z": 3,
      "hp": 30,
      "label": "Kopf",
-     "vital": true
+     "unbreakable": true
     },
     {
      "id": "torso",
@@ -1291,7 +1295,7 @@
      "z": 2,
      "hp": 40,
      "label": "Rumpf",
-     "vital": true
+     "unbreakable": true
     }
    ],
    "items": []
@@ -1411,7 +1415,8 @@
      "parent": null,
      "z": 1,
      "hp": 15,
-     "label": "Linkes Bein"
+     "label": "Linkes Bein",
+     "unbreakable": true
     },
     {
      "id": "leg_r",
@@ -1430,7 +1435,8 @@
      "parent": null,
      "z": 1,
      "hp": 15,
-     "label": "Rechtes Bein"
+     "label": "Rechtes Bein",
+     "unbreakable": true
     },
     {
      "id": "head",
@@ -1450,7 +1456,7 @@
      "z": 3,
      "hp": 30,
      "label": "Kopf",
-     "vital": true
+     "unbreakable": true
     },
     {
      "id": "torso",
@@ -1470,7 +1476,7 @@
      "z": 2,
      "hp": 40,
      "label": "Rumpf",
-     "vital": true
+     "unbreakable": true
     }
    ],
    "items": []
@@ -1570,7 +1576,7 @@
    "core": {
     "hp": 90,
     "label": "Leerenkern",
-    "vital": true
+    "unbreakable": true
    },
    "eye": {
     "hp": 20,

@@ -7,8 +7,9 @@ extends RefCounted
 ## second blade, ballista charge line, shields, level-ups, wall rubble).
 
 const ARROW := preload("res://assets/sprites/0x72/weapon_arrow.png")
-const SWORD := preload("res://assets/sprites/0x72/weapon_knight_sword.png")
 const DECOY := preload("res://assets/sprites/0x72/wizzard_m_idle_anim_f0.png")
+## A clone seal's clone looks like its hero's class.
+const CLONE_LOOKS := {"swordsman": preload("res://assets/sprites/0x72/knight_m_idle_anim_f0.png"), "archer": preload("res://assets/sprites/0x72/elf_f_idle_anim_f0.png"), "mage": preload("res://assets/sprites/0x72/wizzard_m_idle_anim_f0.png")}
 const PerkRules = preload("res://src/perk_rules.gd")
 const SkillIcons = preload("res://src/ui/skill_icons.gd")
 const PixelStyle = preload("res://src/pixel_style.gd")
@@ -76,7 +77,7 @@ func draw_ground(canvas: CanvasItem, snapshot: Dictionary, clock: float) -> void
 	if fx != null:
 		for player: Dictionary in snapshot.get("players", {}).values():
 			if player.get("skills", {}).has("rage") and float(player.get("hp", 0)) > 0:
-				fx.draw_loop(canvas, "rage_aura", Vector2(float(player.x), float(player.y) + 6.0), 0.0, 1.0, clock, Color(1, 1, 1, 0.85))
+				fx.draw_loop(canvas, "rage_aura", Vector2(float(player.x), float(player.y) + 6.0), 0.0, 0.8, clock, Color(1, 1, 1, 0.45))
 	for zone: Dictionary in snapshot.get("skill_fx", {}).get("zones", []):
 		var point := Vector2(float(zone.x), float(zone.y))
 		var radius := float(zone.r)
@@ -98,8 +99,13 @@ func draw_ground(canvas: CanvasItem, snapshot: Dictionary, clock: float) -> void
 				canvas.draw_arc(point, radius, 0.0, TAU, 24, Color(0.75, 0.8, 1.0, 0.55), 2.0)
 				if fmod(clock * 7.0 + float(zone.id), 1.0) < 0.35: _bolt(canvas, point + Vector2(-radius * 0.6, -radius * 0.6), point + Vector2(radius * 0.4, radius * 0.5), Color("dfe6ff"), 2.0, int(clock * 20.0))
 			"decoy":
-				var size := Vector2(DECOY.get_width(), DECOY.get_height()) * 2.0
-				canvas.draw_texture_rect(DECOY, Rect2(point - Vector2(size.x * 0.5, size.y - 6.0), size), false, Color(0.6, 0.7, 1.0, 0.45 + 0.15 * sin(clock * 10.0)))
+				# the mirror image, or a clone seal's clone in its hero's own look
+				var figure: Texture2D = CLONE_LOOKS.get(str(zone.get("look", "")), DECOY)
+				var size := Vector2(figure.get_width(), figure.get_height()) * 2.0
+				var clone := CLONE_LOOKS.has(str(zone.get("look", "")))
+				var glow := Color(0.75, 0.85, 1.0, 0.8 + 0.1 * sin(clock * 6.0)) if clone else Color(0.6, 0.7, 1.0, 0.45 + 0.15 * sin(clock * 10.0))
+				if clone: canvas.draw_circle(point + Vector2(0, 2), 9.0, Color(0.45, 0.6, 1.0, 0.25))
+				canvas.draw_texture_rect(figure, Rect2(point - Vector2(size.x * 0.5, size.y - 6.0), size), false, glow)
 	for orb: Dictionary in snapshot.get("team", {}).get("orbs", []):
 		var point := Vector2(float(orb.x), float(orb.y) - 4.0 - 2.0 * sin(clock * 6.0 + float(orb.id))).round()
 		var size := 3.0 + minf(3.0, float(orb.v) * 0.25)
@@ -181,15 +187,9 @@ func _draw_player_state(canvas: CanvasItem, player: Dictionary, clock: float) ->
 	var point := Vector2(float(player.get("x", 0)), float(player.get("y", 0)))
 	var aim := Vector2(float(player.get("ax", 1.0)), float(player.get("ay", 0.0))).normalized()
 	if skills.has("rage"):
-		# Rage: red aura and the second blade in the other hand.
-		if fx == null:
-			var pulse := 0.5 + 0.5 * sin(clock * 14.0)
-			canvas.draw_circle(point + Vector2(0, -10), 26.0 + pulse * 3.0, Color(1.0, 0.2, 0.15, 0.16))
-		var side := -1.0 if aim.x >= 0.0 else 1.0
-		var size := Vector2(SWORD.get_width(), SWORD.get_height()) * 1.6
-		canvas.draw_set_transform(point + Vector2(side * 14.0, -14.0), side * 0.6 + sin(clock * 18.0) * 0.25, Vector2.ONE)
-		canvas.draw_texture_rect(SWORD, Rect2(Vector2(-size.x * 0.5, -size.y * 0.8), size), false, Color(1.0, 0.75, 0.7))
-		canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		# Rage: a red aura that pulses; the two blades are drawn by the hero look (src/hero/hero_look.gd).
+		var pulse := 0.5 + 0.5 * sin(clock * 14.0)
+		canvas.draw_circle(point + Vector2(0, -10), 26.0 + pulse * 3.0, Color(1.0, 0.2, 0.15, 0.12 if fx != null else 0.16))
 	if skills.has("whirl_time") and fx == null:
 		var spin := clock * 30.0
 		canvas.draw_arc(point + Vector2(0, -8), 46.0, spin, spin + 2.2, 16, Color(1, 1, 1, 0.7), 4.0)
@@ -439,16 +439,31 @@ func _draw_event(canvas: CanvasItem, event: Dictionary, clock: float) -> void:
 			pass
 		"charge", "backflip":
 			canvas.draw_circle(first, 14.0 + (1.0 - left) * 10.0, Color(0.75, 0.7, 0.62, 0.35 * left))
+		"wall_slam":
+			# a body thrown into the wall: a dust ring and cracks spreading from the hit
+			var reach := 10.0 + (1.0 - left) * 22.0
+			canvas.draw_arc(first, reach, 0.0, TAU, 20, Color(0.85, 0.78, 0.7, 0.6 * left), 3.0)
+			var angle := float(event.get("angle", 0.0))
+			for index in range(5):
+				var ray := Vector2.RIGHT.rotated(angle + PI + (float(index) - 2.0) * 0.45)
+				canvas.draw_line(first, first + ray * reach * (0.6 + 0.1 * float(index % 3)), Color(0.12, 0.09, 0.1, left), 2.0)
+		"charge_hit":
+			canvas.draw_circle(first + Vector2(0, -10), 6.0 + (1.0 - left) * 14.0, Color(1.0, 0.95, 0.8, 0.5 * left))
 
 
 ## The animation that belongs to a skill event (once per event).
 func _spawn_event(event: Dictionary, points: Array, first: Vector2) -> void:
 	match str(event.kind):
-		"whirl": fx.spawn("whirl", first + Vector2(0, -8), 0.0, float(event.get("radius", 80.0)) / 64.0, Color.WHITE, 1.2, true)
+		# the blade circling the hero carries the whirl (src/hero/hero_look.gd); the floor answers with dust
+		"whirl": fx.spawn("dust", first + Vector2(0, 4), 0.0, float(event.get("radius", 80.0)) / 40.0)
 		"burst": fx.spawn(str(BURSTS.get(str(event.get("color", "fire")), "fire_burst")), first, 0.0, float(event.get("radius", 64.0)) / 56.0, Color.WHITE, 1.0, true)
 		"blink":
 			for point: Array in points: fx.spawn("blink", Vector2(float(point[0]), float(point[1])) + Vector2(0, -12), 0.0, 1.4)
-		"charge", "backflip": fx.spawn("dust", first + Vector2(0, 6), 0.0, 1.8)
+		"charge", "backflip": fx.spawn("dust", first + Vector2(0, 6), 0.0, 1.0)
+		"wall_slam":
+			fx.spawn("dust", first, 0.0, 2.2)
+			fx.spawn("hit_spark", first + Vector2(0, -6), 0.0, 2.0, Color(1.0, 0.9, 0.75))
+		"charge_hit": fx.spawn("hit_spark", first + Vector2(0, -10), 0.0, 1.8, Color(1.0, 0.95, 0.8))
 		"parry": fx.spawn("hit_spark", first, 0.0, 1.6)
 		"rage":
 			fx.spawn("crit_spark", first + Vector2(0, -12), 0.0, 2.4)
@@ -474,6 +489,7 @@ func _floor_reaction(event: Dictionary, first: Vector2) -> void:
 				"frost": particles.frost(first, radius * 0.7, int(radius * 0.8), PHOTON_FROST)
 		"whirl": particles.kick(first, float(event.get("radius", 80.0)), 0.6)
 		"charge", "backflip": particles.kick(first, 28.0, 0.5)
+		"wall_slam": particles.kick(first, 22.0, 0.7)
 
 
 # --- Chests and loot ------------------------------------------------------------------

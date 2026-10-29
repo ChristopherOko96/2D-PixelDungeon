@@ -325,7 +325,8 @@ func _test_hell_scene_keeps_its_look_with_hero_systems() -> void:
 	# Arrange / Act
 	var game := await _new(HellScene)
 	# Assert
-	check(str(game.W.title) == "Aschenvorhof" and game.texture_filter == CanvasItem.TEXTURE_FILTER_LINEAR, "the hell scene still plays the hell floors, smooth filtered")
+	check(str(game.W.title) == "Aschenvorhof" and game.texture_filter == CanvasItem.TEXTURE_FILTER_NEAREST and str(game.theme.sprites) == "res://assets/sprites/hell_0x72/",
+		"the hell scene still plays the hell floors, in its 0x72 pixel skin with sharp pixels")
 	check(str(game.key_name.A) == "Glutschlüssel" and bool(game.theme.liquid.hurt) and not bool(game.theme.key_in_chest), "hell keeps its keys, burning lava and loose keys")
 	check(game.say("Feuerschale entzünden") == "Feuerschale entzünden", "hell wording is unchanged")
 	# Story 3: the hell shares the hero systems (hell_theme.json takes them from the frost theme)

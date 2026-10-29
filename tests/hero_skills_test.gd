@@ -8,6 +8,7 @@ extends SceneTree
 const Game = preload("res://src/game.gd")
 const Dungeon = preload("res://src/dungeon/dungeon_generator.gd")
 const ClassPerks = preload("res://src/player/class_perks.gd")
+const RunTree_ = preload("res://src/progress/run_tree.gd")
 const WallBreaker = preload("res://src/dungeon/wall_breaker.gd")
 var checked := 0
 var failures: Array[String] = []
@@ -91,11 +92,13 @@ func _run() -> void:
 	_step(2.0)
 	check(game.team_progress.orbs.is_empty() and int(game.team_progress.team.exp) == 10, "the orbs fly to the hero and fill the team bar (10 EXP for a skeleton)")
 	game.team_progress.add_exp(25)
-	check(int(game.team_progress.team.level) == 2 and Array(hero.offer).size() == 3 and str(hero.offer_kind) == "level", "a team level-up opens three cards for the hero")
-	var kinds: Array = Array(hero.offer).map(func(card: Dictionary) -> String: return str(card.kind))
-	var skills_offered: Array = Array(hero.offer).filter(func(card: Dictionary) -> bool: return str(card.kind) == "upgrade").map(func(card: Dictionary) -> String: return str(card.skill))
-	check(kinds.all(func(kind: String) -> bool: return kind in ["upgrade", "passive"]) and skills_offered.all(func(skill: String) -> bool: return skill == "whirl"), "level 2 offers only class cards: passives and upgrades of the unlocked first skill (%s)" % str(skills_offered))
-	check(Array(hero.offer).all(func(card: Dictionary) -> bool: return not card.has("projectile_only") and str(card.get("icon", {}).get("base", "")) != "weapon_bow"), "no swordsman card shows a bow")
+	# a level-up gives a run talent point, no cards (docs/LAUF-DESIGN.de.md)
+	var tree := RunTree_.build(ClassPerks.run_tree("swordsman").branches)
+	check(int(game.team_progress.team.level) == 2 and Array(hero.offer).is_empty() and RunTree_.points_left(tree, ClassPerks.ranks(hero), 2) == 1, "a team level-up gives the hero a run talent point")
+	var open_ids: Array = ClassPerks.run_tree_ids("swordsman").filter(func(id: String) -> bool: return RunTree_.can_take(tree, ClassPerks.ranks(hero), 2, id))
+	var open_skills: Array = open_ids.map(func(id: String) -> String: return str(ClassPerks.find("swordsman", id).get("skill", "passive")))
+	check(not open_ids.is_empty() and open_skills.all(func(skill: String) -> bool: return skill in ["whirl", "passive"]), "level 2 opens only passives and the first skill's upgrades (%s)" % str(open_skills))
+	check(ClassPerks.run_tree_ids("swordsman").all(func(id: String) -> bool: return str(ClassPerks.find("swordsman", id).get("icon", {}).get("base", "")) != "weapon_bow"), "no swordsman node shows a bow")
 	# Card effects: Schwerer Hieb raises damage on every rebuild without healing.
 	var before_damage := float(hero.damage)
 	hero.offer = [ClassPerks.find("swordsman", "sw_heavy")]
@@ -117,7 +120,8 @@ func _run() -> void:
 	game.players[2].offer = []
 	var level_before := int(game.team_progress.team.level)
 	game.team_progress.add_exp(game.team_progress.next_level_exp())
-	check(int(game.team_progress.team.level) == level_before + 1 and not Array(game.players[2].offer).is_empty() and Array(hero.offer_queue).size() >= 1, "one shared bar: both heroes level up at once")
+	var level_now := int(game.team_progress.team.level)
+	check(level_now == level_before + 1 and RunTree_.points_left(tree, ClassPerks.ranks(game.players[2]), level_now) == level_now - 1, "one shared bar: both heroes level up at once and gain the point")
 	game.players.erase(2)
 
 	# --- Swordsman skills ---
