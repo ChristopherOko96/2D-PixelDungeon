@@ -28,7 +28,8 @@ func _initialize() -> void:
 	_test_exp_levels()
 	_test_profile_save_and_sanitize()
 	_test_drop_chances()
-	_test_pity_and_nightmare_first()
+	_test_shards_per_boss_and_nightmare_first()
+	_test_ultimate_pace()
 	_test_no_farming_or_duplicates()
 	print("TALENT_PROGRESS checked=%d failures=%d" % [checked, failures.size()])
 	quit(0 if failures.is_empty() else 1)
@@ -135,25 +136,25 @@ func _test_exp_levels() -> void:
 	var state := Profile.fresh_class()
 	Rules.add_exp(d, state, 100000000)
 	check(state.level == 30 and state.exp == 0, "the level stops at 30")
-	# Max level after about one and a half full floors (user decision 29.10.2026):
-	# one floor brings roughly 60 kills and the floor bonus.
+	# Max level only after several full runs (user decision 29.10.2026, was 1.5
+	# floors): one floor brings roughly 60 kills and the floor bonus, a run 10 floors.
 	var total := 0
 	for level in range(1, 30): total += Rules.exp_to_next(d, level)
-	var per_floor: int = 60 * int(d.exp.kill) + int(d.exp.floor)
-	check(float(total) / per_floor >= 1.2 and float(total) / per_floor <= 2.0, "level 30 takes about 1.5 floors (%.2f)" % (float(total) / per_floor))
+	var per_run: int = (60 * int(d.exp.kill) + int(d.exp.floor)) * 10
+	check(float(total) / per_run >= 2.5 and float(total) / per_run <= 4.0, "level 30 takes several full runs (%.2f)" % (float(total) / per_run))
+	check(Rules.exp_to_next(d, 2) == 2 * Rules.exp_to_next(d, 1) and Rules.exp_to_next(d, 29) == 29 * Rules.exp_to_next(d, 1), "every level follows the same rule (base x level)")
 
 
 func _test_profile_save_and_sanitize() -> void:
 	var profile := _profile(25, "archer")
 	profile.shards = {"have": 4, "earned": 7, "spent": 3}
-	profile.pity = 6
 	profile.nightmare_firsts = ["rot_king"]
 	Profile.class_state(profile, "archer").ranks = {"sniper_1": 3}
 	var path := "user://talent_progress_test.json"
 	check(Profile.save_profile(profile, path) == OK, "the profile saves")
 	var loaded := Profile.load_profile(d, path)
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
-	check(loaded.shards.have == 4 and loaded.pity == 6 and loaded.nightmare_firsts == ["rot_king"], "currencies, pity and first kills survive a restart")
+	check(loaded.shards.have == 4 and loaded.nightmare_firsts == ["rot_king"], "currencies and first kills survive a restart")
 	check(Profile.class_state(loaded, "archer").level == 25 and Profile.class_state(loaded, "archer").ranks.get("sniper_1", 0) == 3, "level and talents survive a restart")
 	var forged := Profile.sanitize({"gold": -50, "shards": {"have": 99, "earned": 2, "spent": 5}, "classes": {"mage": {"level": 99, "ranks": {"fire_1": 9, "nope": 1}}}}, d)
 	check(forged.gold == 0 and forged.shards.have == 0 and forged.shards.spent == 2, "negative or inconsistent currencies are repaired")
@@ -163,38 +164,49 @@ func _test_profile_save_and_sanitize() -> void:
 func _test_drop_chances() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 99
+	var per_boss := int(d.soul_shards.per_boss)
 	for difficulty: String in ["normal", "hard", "nightmare"]:
-		var drops := 0
+		var shards := 0
 		var kills := 4000
 		var profile := Profile.fresh(d)
 		profile.nightmare_firsts = ["boss"]
 		for i in range(kills):
-			profile.pity = 0  # measure the plain chance without pity
-			if Drops.resolve(d, profile, "boss", difficulty, "k%d" % i, 10, 10, FIGHT, rng.randf()).shard: drops += 1
-		var expected: float = float(d.difficulties[difficulty].drop_pct) / 100.0
-		check(absf(float(drops) / kills - expected) < 0.02, "%s drops near %d %% (%.3f)" % [difficulty, int(expected * 100), float(drops) / kills])
+			shards += int(Drops.resolve(d, profile, "boss", difficulty, "k%d" % i, 10, 10, FIGHT, rng.randf()).count)
+		var expected: float = per_boss + float(d.difficulties[difficulty].extra_pct) / 100.0
+		check(absf(float(shards) / kills - expected) < 0.03, "%s gives about %.2f shards per boss (%.3f)" % [difficulty, expected, float(shards) / kills])
 	check(not Drops.can_drop({"boss": false}) and not Drops.can_drop({"boss": true, "miniboss": true}) and not Drops.can_drop({"boss": true, "elite": true}), "normal enemies, mini-bosses and elites never drop shards")
 	check(Drops.can_drop({"boss": true}), "a real floor boss can drop shards")
 
 
-func _test_pity_and_nightmare_first() -> void:
+func _test_shards_per_boss_and_nightmare_first() -> void:
 	var profile := Profile.fresh(d)
-	for i in range(9):
-		check(not Drops.resolve(d, profile, "boss", "normal", "p%d" % i, 10, 10, FIGHT, 0.99).shard, "unlucky kill %d gives nothing" % (i + 1))
-	check(profile.pity == 9, "pity counted nine eligible kills")
-	check(Drops.resolve(d, profile, "boss", "normal", "p9", 10, 10, FIGHT, 0.99).shard and profile.pity == 0, "the tenth eligible kill is guaranteed and resets pity")
-	profile.pity = 4
-	check(Drops.resolve(d, profile, "rot_king", "nightmare", "n1", 10, 30, FIGHT, 0.99).shard and profile.pity == 0, "the first Albtraum kill of a boss is guaranteed and resets pity")
-	check(not Drops.resolve(d, profile, "rot_king", "nightmare", "n2", 10, 30, FIGHT, 0.99).shard, "the first-kill bonus comes only once per boss")
-	check(profile.shards.earned == 2, "each completion gives at most one shard")
+	var result: Dictionary = Drops.resolve(d, profile, "boss", "normal", "p0", 10, 10, FIGHT, 0.99)
+	check(result.shard and int(result.count) == int(d.soul_shards.per_boss), "every fair boss kill gives %d shards, no luck needed" % int(d.soul_shards.per_boss))
+	check(int(Drops.resolve(d, profile, "rot_king", "nightmare", "n1", 10, 30, FIGHT, 0.99).count) == int(d.soul_shards.per_boss) + 1, "the first Albtraum kill of a boss gives one more")
+	check(int(Drops.resolve(d, profile, "rot_king", "nightmare", "n2", 10, 30, FIGHT, 0.99).count) == int(d.soul_shards.per_boss), "the first-kill bonus comes only once per boss")
+	check(int(Drops.resolve(d, profile, "rot_king", "nightmare", "n3", 10, 30, FIGHT, 0.0).count) == int(d.soul_shards.per_boss) + 1, "luck adds one shard on Albtraum")
+	check(int(Drops.resolve(d, profile, "boss", "normal", "n4", 10, 10, FIGHT, 0.0).count) == int(d.soul_shards.per_boss), "Normal has no extra chance, so the pace is exact")
+
+
+## User decision 29.10.2026: shards only from the run's boss; the ultimate
+## after about 1.5 to 2 full runs. One full run has one real boss (floor 10).
+func _test_ultimate_pace() -> void:
+	var profile := Profile.fresh(d)
+	var cost := int(d.soul_shards.ultimate_cost)
+	var runs := 0
+	while int(profile.shards.have) < cost and runs < 10:
+		runs += 1
+		Drops.resolve(d, profile, "final", "normal", "run%d" % runs, 20, Drops.boss_level(d, 10, "normal"), FIGHT, 0.99)
+	check(runs == 2, "on Normal the ultimate opens with the second full run (%d)" % runs)
+	check(float(cost) / float(d.soul_shards.per_boss) >= 1.5 and float(cost) / float(d.soul_shards.per_boss) <= 2.0, "ultimate cost / shards per run lies between 1.5 and 2")
 
 
 func _test_no_farming_or_duplicates() -> void:
 	var profile := Profile.fresh(d)
 	var result: Dictionary = Drops.resolve(d, profile, "boss", "normal", "f1", 20, 14, FIGHT, 0.0)
-	check(not result.shard and not result.counted and profile.pity == 0, "a boss more than 5 levels below neither drops nor counts")
+	check(not result.shard and not result.counted and profile.shards.earned == 0, "a boss more than 5 levels below gives nothing")
 	check(not Drops.resolve(d, profile, "boss", "normal", "f2", 10, 10, {"present": false, "seconds": 60.0, "damage_share": 0.5}, 0.0).shard, "leaving the fight gives nothing")
 	check(not Drops.resolve(d, profile, "boss", "normal", "f3", 10, 10, {"present": true, "seconds": 60.0, "damage_share": 0.0}, 0.0).shard, "idling through the fight gives nothing")
 	check(Drops.resolve(d, profile, "boss", "normal", "f4", 10, 10, FIGHT, 0.0).shard, "a fair kill can drop")
-	check(not Drops.resolve(d, profile, "boss", "normal", "f4", 10, 10, FIGHT, 0.0).shard and profile.shards.earned == 1, "the same completion cannot reward twice")
+	check(not Drops.resolve(d, profile, "boss", "normal", "f4", 10, 10, FIGHT, 0.0).shard and profile.shards.earned == int(d.soul_shards.per_boss), "the same completion cannot reward twice")
 	check(Drops.boss_level(d, 5, "nightmare") == 18 and Drops.boss_level(d, 5, "normal") == 10, "boss level = floor x 2 + difficulty bonus")

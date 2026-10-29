@@ -6,7 +6,7 @@ extends RefCounted
 ## a hero took part in the fight, how long it lasted, each hero's damage
 ## share, the boss level and the random roll. It then sends each hero a
 ## reward event; the hero's own game applies it to its own profile with the
-## same pure rules (pity, first Albtraum kills and already rewarded
+## same pure rules (shards per boss, first Albtraum kills and already rewarded
 ## completions live in that profile) and saves. The host applies the events
 ## of its own hero directly. Clients send their talent builds once admitted;
 ## the host checks them against the rules before they count (talent_combat).
@@ -143,7 +143,7 @@ func apply_local(event: Dictionary, class_id: String) -> void:
 		"boss":
 			var result := Drops.resolve(data, profile, str(event.boss_id), str(event.difficulty), str(event.completion),
 				int(state.level), int(event.boss_level), Dictionary(event.fight), clampf(float(event.roll), 0.0, 0.999999))
-			if bool(result.shard): local_event.emit({"kind": "shard", "have": int(profile.shards.have)})
+			if bool(result.shard): local_event.emit({"kind": "shard", "have": int(profile.shards.have), "count": int(result.count)})
 			else: local_event.emit({"kind": "boss", "reason": str(result.reason)})
 	_dirty = true
 

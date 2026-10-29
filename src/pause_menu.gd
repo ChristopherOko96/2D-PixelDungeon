@@ -14,6 +14,7 @@ const CryptUI = preload("res://src/ui/crypt_ui.gd")
 const PerkIcons = preload("res://src/perk_icons.gd")
 const ClassPerks = preload("res://src/player/class_perks.gd")
 const QuestView = preload("res://src/ui/quest_view.gd")
+const TalentScreen = preload("res://src/ui/talent_screen.gd")
 ## A save slot button (1..3): the host saves the start of the current floor.
 signal save_requested(slot: int)
 
@@ -35,6 +36,10 @@ var mode := "crypt"
 var controls_label: Label
 ## The Auftragsliste page (src/ui/quest_view.gd), the same in every story.
 var quest_view: QuestView
+## The soul shards of the profile, top right in every story (set_shards).
+var shard_label: Label
+var _shard_icon: Control
+var _shard_clock := 0.0
 ## Story map: a page-sized canvas the world draws its big map on (story_map_draw(canvas)).
 var story_map: Control
 var story_map_draw := Callable()
@@ -82,6 +87,15 @@ func _ready() -> void:
 	heading.position = Vector2(192,84)
 	add_child(heading)
 	pause_note = _text(self,"",Vector2(432,128),Vector2(656,26),13)
+	_shard_icon = Control.new()
+	_shard_icon.position = Vector2(836,88)
+	_shard_icon.size = Vector2(36,36)
+	_shard_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_shard_icon.draw.connect(func() -> void: TalentScreen.draw_crystal(_shard_icon, Vector2(18,18), 0.75, _shard_clock))
+	add_child(_shard_icon)
+	shard_label = _text(self,"",Vector2(874,96),Vector2(220,24),16)
+	shard_label.autowrap_mode = TextServer.AUTOWRAP_OFF
+	shard_label.add_theme_color_override("font_color",Color("e2d4ff"))
 	pause_note.add_theme_color_override("font_color",CryptUI.SAND)
 	for index in range(SECTIONS.size()):
 		var key: String = SECTIONS[index]
@@ -173,6 +187,17 @@ func _layout_navigation() -> void:
 		if visible_here:
 			navigation[key].position = Vector2(192,160+row*36)
 			row += 1
+
+
+## Shows the profile's soul shards (the same in the crypt, the Frostgruft and the Hölle).
+func set_shards(have: int) -> void:
+	shard_label.text = "SEELENSPLITTER %d" % have
+
+
+func _process(delta: float) -> void:
+	if not visible or _shard_icon == null: return
+	_shard_clock += delta
+	_shard_icon.queue_redraw()
 
 
 ## Covers expanded aspect ratios while the menu keeps its centered design size.

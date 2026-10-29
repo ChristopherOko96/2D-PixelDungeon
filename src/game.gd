@@ -2710,6 +2710,7 @@ func _refresh_ui() -> void:
 	pause_menu.visible = in_run and pause_open and not reward_open
 	if pause_menu.visible:
 		pause_menu.set_state(state,local_id,hosting,_port(),is_solo_paused())
+		pause_menu.set_shards(int(progress.profile.get("shards", {}).get("have", 0)) if not progress.profile.is_empty() else 0)
 		pause_menu.set_cheats_enabled(Cheats.enabled(self))
 		pause_menu.set_save_enabled(hosting and not floor_save.is_empty())
 		pause_menu.set_display_state(is_fullscreen(),get_viewport_rect().size)

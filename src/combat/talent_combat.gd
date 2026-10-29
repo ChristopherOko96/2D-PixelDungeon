@@ -89,7 +89,8 @@ func set_build(id: int, build: Dictionary) -> void:
 	var rt := {"class": class_id, "ranks": state.ranks, "ultimate": ultimate, "soul_tier": clampi(int(build.get("soul_tier", 0)), 0, 3) if not ultimate.is_empty() else 0,
 		"bar": bar, "level": state.level, "res_kind": str(res.kind), "res_max": float(res.max), "regen": float(res.regen), "cds": {}, "gcd": 0.0,
 		"buffs": {}, "shield": 0.0, "shield_time": 0.0, "counter": {}, "channel": {}, "echo": 0.0, "casts": 0, "prev_bits": 0,
-		"debt_in": 0.0, "debt_heal": 0.0, "debt_ally": 0.0, "guard_cd": 0.0, "pet_target": -1}
+		"debt_in": 0.0, "debt_heal": 0.0, "debt_ally": 0.0, "guard_cd": 0.0, "pet_target": -1, "companion": _companion(str(build.get("companion", ""))),
+		"free": bool(build.get("free", false)) and OS.is_debug_build()}
 	var bonus := _passive(rt, "resource_bonus")
 	if not bonus.is_empty():
 		rt.res_max += _value(bonus, "max", rt)
@@ -122,8 +123,8 @@ func cast_blocker(id: int, talent: String) -> String:
 	if str(info.kind) == "passive": return "passiv"
 	if float(rt.cds.get(talent, 0.0)) > 0.0: return "Abklingzeit"
 	if float(rt.gcd) > 0.0: return "Abklingzeit"
-	if float(rt.res) < float(info.cost): return "zu wenig " + str(data.resources[rt["class"]].name)
-	if str(info.type) == "pet_leap" and _own_pets(id).is_empty(): return "kein Wolf aktiv"
+	if float(rt.res) < float(info.cost) and not bool(rt.get("free", false)): return "zu wenig " + str(data.resources[rt["class"]].name)
+	if str(info.type) == "pet_leap" and _own_pets(id).is_empty(): return "kein Begleiter aktiv"
 	return ""
 
 
@@ -134,12 +135,14 @@ func cast(id: int, talent: String, command: Dictionary = {}) -> bool:
 	var player: Dictionary = game.players[id]
 	var rt := runtime(id)
 	var info: Dictionary = data.talents[talent]
-	rt.res = float(rt.res) - float(info.cost)
-	var cooldown := float(info.cd)
+	# the talent test profile (debug builds): no cost, half a second to reload
+	var free := bool(rt.get("free", false))
+	if not free: rt.res = float(rt.res) - float(info.cost)
+	var cooldown := 0.5 if free else float(info.cd)
 	if talent == str(rt.ultimate) and int(rt.soul_tier) >= 3: cooldown *= 1.0 - float(data.soul_shards.tier3_cdr_pct) / 100.0
 	if rt.buffs.has("timebreak"): cooldown *= 1.0 - float(rt.buffs.timebreak.cdr_pct) / 100.0
 	rt.cds[talent] = cooldown
-	rt.gcd = float(data.global_cooldown)
+	rt.gcd = 0.25 if free else float(data.global_cooldown)
 	rt.cast_count = int(rt.get("cast_count", 0)) + 1
 	var aim: Vector2 = Vector2(command.get("aim", player.get("aim", Vector2.RIGHT)))
 	if aim.length_squared() < 0.01: aim = Vector2.RIGHT
@@ -444,7 +447,7 @@ func forced_target(enemy: Dictionary) -> Dictionary:
 ## What clients draw: wolves, traps, poison zones and short events.
 func snapshot() -> Dictionary:
 	var out := {"pets": [], "traps": [], "zones": [], "events": events.duplicate(true)}
-	for pet: Dictionary in pets: out.pets.append({"id": pet.id, "x": pet.pos.x, "y": pet.pos.y, "face": pet.face, "owner": pet.owner, "bite": float(pet.bite), "pack": bool(pet.pack), "moving": bool(pet.moving)})
+	for pet: Dictionary in pets: out.pets.append({"id": pet.id, "x": pet.pos.x, "y": pet.pos.y, "face": pet.face, "owner": pet.owner, "bite": float(pet.bite), "pack": bool(pet.pack), "moving": bool(pet.moving), "kind": str(pet.get("kind", "wolf"))})
 	for trap: Dictionary in traps: out.traps.append({"id": trap.id, "x": trap.pos.x, "y": trap.pos.y, "r": trap.r, "owner": trap.owner, "boom": float(trap.root) <= 0.0})
 	for zone: Dictionary in zones: out.zones.append({"id": zone.id, "x": zone.pos.x, "y": zone.pos.y, "r": zone.r, "time": zone.time})
 	return out
@@ -536,14 +539,22 @@ func bullet_hit(bullet: Dictionary, enemy: Dictionary) -> void:
 	_spell_hit = false
 
 
+## The companion kind of a build ("wolf", "bear"; talents.json "pet.kinds"), the default when unknown.
+func _companion(kind: String) -> String:
+	var kinds: Dictionary = data.get("pet", {}).get("kinds", {})
+	return kind if kinds.has(kind) else str(data.get("pet", {}).get("default_kind", "wolf"))
+
+
 func _spawn_pet(id: int, rt: Dictionary, talent: String, info: Dictionary, at: Vector2, pack: bool, life: float) -> void:
 	var bond := _passive(rt, "pet_bonus")
-	var hp := float(info.get("hp", 6)) * (1.0 + (_value(bond, "hp_pct", rt) / 100.0 if not bond.is_empty() else 0.0))
-	var dmg_scale := 1.0 + (_value(bond, "dmg_pct", rt) / 100.0 if not bond.is_empty() else 0.0)
+	var kind := str(rt.get("companion", "wolf"))
+	var traits: Dictionary = data.get("pet", {}).get("kinds", {}).get(kind, {})
+	var hp := float(info.get("hp", 6)) * float(traits.get("hp", 1.0)) * (1.0 + (_value(bond, "hp_pct", rt) / 100.0 if not bond.is_empty() else 0.0))
+	var dmg_scale := float(traits.get("dmg", 1.0)) * (1.0 + (_value(bond, "dmg_pct", rt) / 100.0 if not bond.is_empty() else 0.0))
 	var base := float(game.players[id].get("damage", 1.0))
 	pets.append({"id": _take_id(), "owner": id, "talent": talent, "pos": at, "hp": hp, "life": life + _soul_duration(rt, talent),
-		"every": float(info.every), "timer": 0.6, "dmg": _value(info, "dmg", rt, talent) * base * dmg_scale * _soul(rt, talent, "damage"),
-		"pack": pack, "target": -1, "face": 1.0, "bite": 0.0, "moving": false})
+		"every": float(info.every) * float(traits.get("every", 1.0)), "timer": 0.6, "dmg": _value(info, "dmg", rt, talent) * base * dmg_scale * _soul(rt, talent, "damage"),
+		"pack": pack, "target": -1, "face": 1.0, "bite": 0.0, "moving": false, "kind": kind, "speed": float(traits.get("speed", 1.0))})
 
 
 func _step_pets(delta: float) -> void:
@@ -567,7 +578,7 @@ func _step_pets(delta: float) -> void:
 		if not prey.is_empty(): goal = prey.pos
 		var before: Vector2 = pet.pos
 		if Vector2(pet.pos).distance_to(goal) > (float(config.attack_range_m) * meter if not prey.is_empty() else 14.0):
-			pet.pos = _move(pet.pos, (goal - pet.pos).limit_length(float(config.speed) * delta), float(config.radius), game.current_layout)
+			pet.pos = _move(pet.pos, (goal - pet.pos).limit_length(float(config.speed) * float(pet.get("speed", 1.0)) * delta), float(config.radius), game.current_layout)
 		pet.moving = Vector2(pet.pos).distance_squared_to(before) > 0.01
 		if absf(goal.x - pet.pos.x) > 2.0: pet.face = signf(goal.x - pet.pos.x)
 		pet.timer = float(pet.timer) - delta

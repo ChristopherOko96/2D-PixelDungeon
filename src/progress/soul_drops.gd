@@ -1,14 +1,16 @@
 extends RefCounted
-## Soul shard drops from dungeon bosses (assets/data/talents.json
-## "soul_shards" and "difficulties"). Only a real floor boss can drop one:
-## never ordinary enemies, elites, mini-bosses or chests. One roll per boss
-## completion and player, on the host; at most one shard per completion.
-##   - chance by difficulty (Normal 8 %, Schwer 15 %, Albtraum 25 %)
-##   - pity: after `pity_after - 1` eligible kills without a shard the next is guaranteed
-##   - first Albtraum kill of a boss: guaranteed, once per boss and profile, resets pity
-##   - no reward when the boss is more than `farm_level_gap` levels below the
-##     character (pity does not count either), when the player left the fight,
-##     was idle (too little damage share) or the fight was too short
+## Soul shards from dungeon bosses (assets/data/talents.json "soul_shards"
+## and "difficulties"). Only a real boss gives them (the final boss of a run,
+## floor 10): never ordinary enemies, elites, mini-bosses or chests. One
+## result per boss completion and player, on the host:
+##   - `per_boss` shards for every fair kill (2: the 3-shard ultimate opens
+##     with the second full run)
+##   - one more with the difficulty's `extra_pct` chance (Normal 0 %,
+##     Schwer 25 %, Albtraum 50 %)
+##   - one more for the first Albtraum kill of a boss, once per boss and profile
+##   - nothing when the boss is more than `farm_level_gap` levels below the
+##     character, when the player left the fight, was idle (too little damage
+##     share) or the fight was too short
 ##   - a completion id is rewarded once; repeats are ignored
 ## Pure static functions on the profile; the random source is passed in.
 
@@ -21,8 +23,7 @@ static func boss_level(d: Dictionary, floor_number: int, difficulty: String) -> 
 	return maxi(1, floor_number * int(d.get("boss_level_per_floor", 2)) + bonus)
 
 
-## Why this boss completion cannot reward a shard (and does not count for
-## pity), or "". `fight`: {present, seconds, damage_share}.
+## Why this boss completion cannot reward shards, or "". `fight`: {present, seconds, damage_share}.
 static func ineligible(d: Dictionary, profile: Dictionary, completion_id: String, char_level: int, boss_lv: int, fight: Dictionary) -> String:
 	var rules: Dictionary = d.soul_shards
 	if completion_id.is_empty() or profile.rewarded.has(completion_id): return "Dieser Bosssieg wurde schon gewertet."
@@ -33,39 +34,29 @@ static func ineligible(d: Dictionary, profile: Dictionary, completion_id: String
 	return ""
 
 
-## Rolls one boss completion for a profile and applies the result (shard,
-## pity, first-kill memory, completion id). `roll` is a float in [0, 1) from
-## the host's random source. Returns {shard: bool, reason: String, counted: bool}.
+## Rewards one boss completion on a profile (shards, first-kill memory,
+## completion id). `roll` is a float in [0, 1) from the host's random source
+## for the extra shard. Returns {shard: bool, count: int, reason: String, counted: bool}.
 static func resolve(d: Dictionary, profile: Dictionary, boss_id: String, difficulty: String, completion_id: String,
 		char_level: int, boss_lv: int, fight: Dictionary, roll: float) -> Dictionary:
 	var why := ineligible(d, profile, completion_id, char_level, boss_lv, fight)
 	if not why.is_empty():
 		if not completion_id.is_empty() and not profile.rewarded.has(completion_id) and why != "Dieser Bosssieg wurde schon gewertet.":
 			_remember(d, profile, completion_id)
-		return {"shard": false, "reason": why, "counted": false}
+		return {"shard": false, "count": 0, "reason": why, "counted": false}
 	_remember(d, profile, completion_id)
-	var rules: Dictionary = d.soul_shards
-	var shard := false
-	var reason := ""
-	var first: bool = difficulty == "nightmare" and not profile.nightmare_firsts.has(boss_id)
-	if first:
+	var count := int(d.soul_shards.get("per_boss", 2))
+	var reasons: Array[String] = ["Bosssieg."]
+	if roll * 100.0 < float(d.difficulties.get(difficulty, d.difficulties.normal).get("extra_pct", 0)):
+		count += 1
+		reasons.append("Glück: ein Splitter mehr.")
+	if difficulty == "nightmare" and not profile.nightmare_firsts.has(boss_id):
 		profile.nightmare_firsts.append(boss_id)
-		shard = true
-		reason = "Erster Sieg auf Albtraum gegen diesen Boss."
-	elif int(profile.pity) >= int(rules.pity_after) - 1:
-		shard = true
-		reason = "Pechschutz."
-	elif roll * 100.0 < float(d.difficulties.get(difficulty, d.difficulties.normal).drop_pct):
-		shard = true
-		reason = "Glück."
-	if shard:
-		profile.pity = 0
-		profile.shards.have = int(profile.shards.have) + 1
-		profile.shards.earned = int(profile.shards.earned) + 1
-	else:
-		profile.pity = int(profile.pity) + 1
-		reason = "Kein Splitter."
-	return {"shard": shard, "reason": reason, "counted": true}
+		count += 1
+		reasons.append("Erster Sieg auf Albtraum gegen diesen Boss.")
+	profile.shards.have = int(profile.shards.have) + count
+	profile.shards.earned = int(profile.shards.earned) + count
+	return {"shard": count > 0, "count": count, "reason": " ".join(reasons), "counted": true}
 
 
 ## Whether an enemy can drop soul shards at all: real floor bosses only.

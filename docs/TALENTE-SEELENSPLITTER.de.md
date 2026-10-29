@@ -19,7 +19,8 @@ Seelenkristalle, Talentbäume und Unterklassen der Frostgruft
    Profil gespeichert.
 5. **Tasten:** Die Klassen-Skills bleiben auf 1–4. Aktive Talente liegen auf
    Shift + 1–4 (Belegung im Talentmenü umstellbar), die Ultimate auf R.
-7. **Tempo:** Max-Level nach etwa eineinhalb kompletten Etagen.
+7. **Tempo:** Max-Level erst nach mehreren kompletten Läufen (etwa drei Läufe
+   zu je 10 Etagen; geändert am 29.10.2026, vorher eineinhalb Etagen).
 6. **Maßstab:** 1 Meter entspricht einer Kachel (32 Pixel).
 
 ## Regeln
@@ -40,13 +41,17 @@ Seelenkristalle, Talentbäume und Unterklassen der Frostgruft
 | Fallen | höchstens 2 pro Spieler | `max_traps` |
 | Bosse | immun gegen Einfrieren, Festhalten und Provokation | Code |
 
-**Seelensplitter:** Nur echte Etagenbosse droppen sie. Normale Gegner,
-Elitegegner, Nebenbosse, beschworene Gegner und Truhen geben nie welche. Die
-Chance liegt bei 8 / 15 / 25 % (Normal / Schwer / Albtraum), höchstens ein
-Splitter pro Bosssieg. Nach 9 berechtigten Siegen ohne Splitter ist der 10.
-garantiert (Pechschutz). Der erste Albtraum-Sieg pro Boss und Profil ist
-garantiert und setzt den Pechschutz zurück. Kein Splitter und keine
-Pechschutz-Zählung gibt es in diesen Fällen:
+**Seelensplitter:** Nur der echte Boss eines Laufs gibt sie, also der Boss
+auf Etage 10. Das gilt in jeder Welt. Normale Gegner, Elitegegner,
+Nebenbosse (Etage 3, 6 und 9), beschworene Gegner und Truhen geben nie
+welche. Jeder faire Bosssieg bringt fest 2 Splitter (`soul_shards.per_boss`).
+Dazu kommt ein weiterer Splitter mit der Chance der Schwierigkeit
+(`extra_pct`: Normal 0 %, Schwer 25 %, Albtraum 50 %). Der erste Albtraum-Sieg
+pro Boss und Profil bringt ebenfalls einen weiteren.
+Das Ultimate kostet 3 Splitter. Auf Normal wird es also genau mit dem zweiten
+vollen Lauf frei (Entscheidung 29.10.2026: nur vom Boss, nach etwa 1,5 bis 2
+Läufen). Auf Albtraum klappt das oft schon nach dem ersten.
+Keine Splitter gibt es in diesen Fällen:
 - der Boss liegt mehr als 5 Level unter dem Charakter,
 - der Kampf dauerte unter 20 s,
 - der Held hatte unter 5 % Schadensanteil,
@@ -55,9 +60,10 @@ Pechschutz-Zählung gibt es in diesen Fällen:
 
 **EXP und Gold:** Gegner 10 EXP und 1 Gold, Nebenbosse 150 EXP, Bosse 400 EXP
 und 40 Gold, jede neue Etage 100 EXP und 15 Gold. Für das nächste Level
-braucht man 2,5 × Level EXP. Level 30 braucht damit etwa 1 090 EXP, das sind
-grob eineinhalb komplette Etagen (Nutzerentscheid 29.10.2026: Max-Level nach
-etwa eineinhalb Etagen, nicht nach vielen Runs).
+braucht man 50 × Level EXP, für jedes Level dieselbe Regel. Level 30 braucht
+damit 21 750 EXP, das sind etwa drei komplette Läufe zu je 10 Etagen
+(Nutzerentscheid 29.10.2026: Talente deutlich schwerer zu bekommen, Max-Level
+erst nach mehreren Läufen; vorher 2,5 × Level, etwa eineinhalb Etagen).
 
 **Schwierigkeit:** Leben der Gegner ×1 / 1,5 / 2,2, Schaden ×1 / 1,3 / 1,6.
 Gewählt wird sie im Talentmenü, und sie gilt für die Runs des Hosts.
@@ -68,7 +74,7 @@ Gewählt wird sie im Talentmenü, und sie gilt für die Runs des Hosts.
 |---|---|
 | `src/progress/profile.gd` | Profil als Dictionary, prüfen, laden und speichern (`user://profile.json`, erst in eine Zwischendatei, dann ersetzen). Testläufe nutzen `user://profile_test.json`. |
 | `src/progress/talent_rules.gd` | Punkte, Stufen, Ränge, Ultimate, Seelenstufen, Reset, Leiste, EXP |
-| `src/progress/soul_drops.gd` | Boss-Level, Berechtigung, Wurf, Pechschutz, Albtraum-Erstsieg, Kennungen |
+| `src/progress/soul_drops.gd` | Boss-Level, Berechtigung, Splitter pro Bosssieg, Zusatzchance, Albtraum-Erstsieg, Kennungen |
 | `src/progress/run_progress.gd` | Verbindet Run und Profil: EXP, Gold, Schwierigkeit, Bosssiege; schickt Belohnungen an die Mitspieler |
 | `src/combat/talent_combat.gd` | Alle 54 Talente im Kampf: Ressourcen, Leiste, Ultimate, Buffs, Schild, Konter, Wölfe, Fallen, Giftzone, Passivboni |
 | `src/ui/talent_screen.gd` | Talentmenü im Hauptmenü |
@@ -81,7 +87,7 @@ Gewählt wird sie im Talentmenü, und sie gilt für die Runs des Hosts.
 Gegner fiel, ob ein Held beteiligt war, Kampfdauer, Schadensanteile,
 Boss-Level und den Zufallswurf. Jeder Held bekommt daraus ein
 Belohnungsereignis. Sein eigenes Spiel wendet es mit denselben reinen Regeln
-auf sein Profil an und speichert es; Pechschutz, Erstsiege und gewertete
+auf sein Profil an und speichert es; Erstsiege und gewertete
 Kennungen liegen dort. Die Builds der Clients prüft der Host gegen die Regeln
 (`TalentRules.repair`), bevor sie zählen.
 
@@ -109,6 +115,18 @@ laufenden Spiel schützt das trotzdem.
   entfällt wie bei main; R löst die Ultimate aus. Provokation durch den Wolf
   wirkt auf die Frostgruft-Gegner, aber noch nicht auf die eigenen Monster
   der Hölle (`hell_monsters.gd`).
+- **Begleiter (29.10.2026):** Der Bestienmeister wählt im Talentmenü Wolf oder
+  Bär (`talents.json` → `pet.kinds`, Profil `companion`). Der Bär hat 1,7× Leben
+  und 1,3× Schaden, beißt 1,35× seltener und läuft 0,75× so schnell. Sprites:
+  „Enchanted Forest Characters“ von Superdark, das Begleitpaket zu 0x72
+  (`assets/sprites/forest_0x72/`, Lizenz: frei, auch kommerziell).
+- **Talent-Test (29.10.2026, nur Debug):** Hauptmenü „TALENT-TEST (DEBUG)“
+  schaltet auf ein eigenes Testprofil (`user://profile_debug.json`): jede
+  Klasse Level 30, 99 Seelensplitter, 99 999 Gold, Talente ohne Kosten und
+  mit 0,5 s Abklingzeit. Das echte Profil bleibt unberührt.
+- **Pausenmenü:** zeigt oben rechts die Seelensplitter, in jeder Story.
+- **Talentmenü (29.10.2026):** neu gestaltet mit Karten, Kopfleisten in der
+  Zweigfarbe, Icons in 3×/4× Größe, Rangpunkten und Pixelify Sans für Text.
 - **Icons und Effekte (29.10.2026):** Jedes Talent hat ein eigenes
   14×14-Pixelmotiv (`src/ui/talent_icons.gd`, `icon` in `talents.json`).
   Die Effekte spielen Pixel-Sheets aus `scripts/make_fx_sprites.gd`:

@@ -4,8 +4,8 @@ extends RefCounted
 ## short effects. Effects play the pixel-art sheets of scripts/make_fx_sprites.gd
 ## (fire, frost and arcane rings, the inferno column, absolute zero, shield
 ## bubble, target mark, spike trap, claws, slashes) over each event's life.
-## The 0x72 pack has no wolf, so the wolf is a small pixel figure drawn here
-## in the pack's palette. Presentation only.
+## The companions (wolf, bear) come from the 0x72 companion pack "Enchanted
+## Forest Characters". Presentation only.
 
 const FxSprites = preload("res://src/vfx/fx_sprites.gd")
 const FX_COLORS := {"fire": Color("ff7a2a"), "ice": Color("8fd8e6"), "arcane": Color("b07bff"), "steel": Color("d8dce6"), "poison": Color("8fd65a")}
@@ -46,28 +46,34 @@ func draw_ground(canvas: CanvasItem, state: Dictionary, clock: float) -> void:
 		if boom: canvas.draw_rect(Rect2(at - Vector2(3, 4), Vector2(6, 6)), Color(1.0, 0.6, 0.2, 0.6 + 0.4 * sin(clock * 10.0)))
 
 
-## Actor layer: the wolves.
+## Actor layer: the companions (wolf or bear) with the "Enchanted Forest
+## Characters" frames (assets/sprites/forest_0x72, the 0x72 companion pack),
+## at 2x like every 0x72 actor; walk frames while moving, idle otherwise. The
+## pack summoned by the ultimate shows as pale spirits.
 func draw_pets(canvas: CanvasItem, state: Dictionary, clock: float) -> void:
 	for pet: Dictionary in state.get("pets", []):
 		var at := Vector2(float(pet.x), float(pet.y)).round()
 		var face := -1.0 if float(pet.get("face", 1.0)) < 0.0 else 1.0
-		var step := int(clock * 10.0) % 2 if bool(pet.get("moving", false)) else 0
-		var lunge := 4.0 if float(pet.get("bite", 0.0)) > 0.0 else 0.0
-		var body := Color("8f9cab") if bool(pet.get("pack", false)) else Color("9a9488")
-		var dark := body.darkened(0.35)
-		canvas.draw_set_transform(at + Vector2(lunge * face, 0), 0.0, Vector2(2.0 * face, 2.0))
-		canvas.draw_rect(Rect2(-7, -9, 12, 5), body)
-		canvas.draw_rect(Rect2(4, -12, 5, 5), body)
-		canvas.draw_rect(Rect2(5, -14, 2, 2), dark)
-		canvas.draw_rect(Rect2(8, -14, 1, 2), dark)
-		canvas.draw_rect(Rect2(7, -11, 1, 1), Color("ffd34d"))
-		canvas.draw_rect(Rect2(9, -9, 1, 1), INK)
-		canvas.draw_rect(Rect2(-6, -4, 2, 4 - step), dark)
-		canvas.draw_rect(Rect2(2, -4, 2, 3 + step), dark)
-		canvas.draw_rect(Rect2(-10, -10, 3, 2), body)
-		canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		var kind := str(pet.get("kind", "wolf"))
+		var moving := bool(pet.get("moving", false))
+		var frame := _companion_frame(kind, "walk" if moving else "idle", int(clock * (10.0 if moving else 6.0)) % 4)
+		var lunge := 6.0 if float(pet.get("bite", 0.0)) > 0.0 else 0.0
+		var tint := Color(0.75, 0.9, 1.0, 0.85) if bool(pet.get("pack", false)) else Color.WHITE
+		if frame != null:
+			canvas.draw_set_transform(at + Vector2(lunge * face, 0), 0.0, Vector2(2.0 * face, 2.0))
+			canvas.draw_texture(frame, Vector2(-16, -31), tint)
+			canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		if lunge > 0.0 and sprites.has("claw"):
-			sprites.draw_loop(canvas, "claw", at + Vector2(18.0 * face, -16.0), 0.0, 0.7, clock)
+			sprites.draw_loop(canvas, "claw", at + Vector2(22.0 * face, -20.0), 0.0, 0.7, clock)
+
+
+var _frames: Dictionary = {}
+
+
+func _companion_frame(kind: String, motion: String, index: int) -> Texture2D:
+	var path := "res://assets/sprites/forest_0x72/%s_%s_f%d.png" % [kind, motion, index]
+	if not _frames.has(path): _frames[path] = load(path) if ResourceLoader.exists(path) else null
+	return _frames[path]
 
 
 ## A talent shot ({x, y, vx, vy, style}) as its sheet; false when the style

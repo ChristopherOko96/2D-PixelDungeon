@@ -3,7 +3,8 @@ extends SceneTree
 ## game: the talent screen (a fire mage on level 20 with Inferno, and an archer
 ## on level 8 showing locked and available talents), the run HUD with the
 ## talent bar after casting, the Inferno ultimate, the soul shard banner and
-## the beast master's wolves. Uses the test profile file, never the player's.
+## the beast master's wolf and bear, the pause menu with the soul shards and
+## the companion choice in the talent screen. Uses the test profile file, never the player's.
 ##   godot --path . --resolution 1280x720 -s res://scripts/capture_talents.gd -- <output_dir>
 const Game = preload("res://src/game.gd")
 const Profile = preload("res://src/progress/profile.gd")
@@ -98,6 +99,28 @@ func _run() -> void:
 	await _shot("06-lauf-wolfsgefaehrte.png")
 	_game._leave_session()
 	await _wait(10)
+	# 6b) The same talent with the bear as companion, then the pause menu with the shards.
+	archer.companion = "bear"
+	_game.requested_seed = 4242
+	_game._start_solo(false, "archer")
+	await _wait(60)
+	await _cast(1 << TalentCombat.BAR_BIT, 90)
+	await _shot("08-lauf-baer.png")
+	_game.set_pause_open(true, "overview")
+	await _wait(10)
+	await _shot("09-pausenmenue-seelensplitter.png")
+	_game.set_pause_open(false)
+	_game._leave_session()
+	await _wait(10)
+	# 6c) The talent screen on the beast master with the companion choice.
+	_game.main_menu._open_talents()
+	var beast_screen: Control = _game.main_menu._talent_screen
+	beast_screen._pick_class("archer")
+	beast_screen.selected = "beast_1"
+	beast_screen._refresh()
+	await _wait(10)
+	await _shot("10-talentmenue-begleiter-baer.png")
+	beast_screen.visible = false
 	# 7) The same talents in the Frostgruft: the fire mage casts Feuerring there.
 	_game.queue_free()
 	_game = null

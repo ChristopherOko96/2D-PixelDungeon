@@ -1,9 +1,8 @@
 extends RefCounted
 ## The lasting player profile: per class the character level, EXP and talent
-## build, plus gold, soul shards, the pity counter for boss drops, the bosses
-## already beaten on Albtraum and the boss completions already rewarded
+## build, plus gold, soul shards, the bosses already beaten on Albtraum and the boss completions already rewarded
 ## (docs/TALENTE-SEELENSPLITTER.de.md). Pure functions on a plain Dictionary,
-##   {version, gold, shards: {have, earned, spent}, pity, nightmare_firsts: [],
+##   {version, gold, shards: {have, earned, spent}, nightmare_firsts: [],
 ##    rewarded: [], difficulty, classes: {class_id: {level, exp, ranks: {talent: rank},
 ##    ultimate, soul_tier, soul_paid, bar: [talent ids]}}}
 ## so the rules test without files; load / save keep it in user://profile.json.
@@ -12,6 +11,11 @@ extends RefCounted
 
 const DATA_PATH := "res://assets/data/talents.json"
 const SAVE_PATH := "user://profile.json"
+## The talent test profile of debug builds (main menu TALENT-TEST): level 30
+## in every class, many shards and gold, talents without cost; the player's
+## own profile stays untouched while it is on.
+const DEBUG_PATH := "user://profile_debug.json"
+const DEBUG_FLAG := "user://talent_debug.flag"
 const VERSION := 1
 
 
@@ -19,7 +23,30 @@ const VERSION := 1
 ## with -s) use their own file, so they never touch the player's progress.
 static func default_path() -> String:
 	var loop := Engine.get_main_loop()
-	return "user://profile_test.json" if loop != null and loop.get_script() != null else SAVE_PATH
+	if loop != null and loop.get_script() != null: return "user://profile_test.json"
+	return DEBUG_PATH if debug_enabled() else SAVE_PATH
+
+
+## True while the talent test profile is on (debug builds only).
+static func debug_enabled() -> bool:
+	return OS.is_debug_build() and FileAccess.file_exists(DEBUG_FLAG)
+
+
+## Turns the talent test profile on (written fresh: level 30 everywhere, 99
+## shards, 99999 gold, free casts) or off. Debug builds only.
+static func set_debug(on: bool, d: Dictionary) -> void:
+	if not OS.is_debug_build(): return
+	if not on:
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(DEBUG_FLAG))
+		return
+	var profile := fresh(d)
+	profile.gold = 99999
+	profile.shards = {"have": 99, "earned": 99, "spent": 0}
+	profile.debug_free = true
+	for id: String in profile.classes: profile.classes[id].level = int(d.get("max_level", 30))
+	save_profile(profile, DEBUG_PATH)
+	var flag := FileAccess.open(DEBUG_FLAG, FileAccess.WRITE)
+	if flag != null: flag.store_string("talent test profile on")
 
 
 ## The talent data (assets/data/talents.json); empty when missing or broken.
@@ -34,12 +61,12 @@ static func fresh(d: Dictionary) -> Dictionary:
 	var classes := {}
 	for id: String in d.get("classes", {}):
 		classes[id] = fresh_class()
-	return {"version": VERSION, "gold": 0, "shards": {"have": 0, "earned": 0, "spent": 0}, "pity": 0,
-		"nightmare_firsts": [], "rewarded": [], "difficulty": "normal", "classes": classes}
+	return {"version": VERSION, "gold": 0, "shards": {"have": 0, "earned": 0, "spent": 0},
+		"nightmare_firsts": [], "rewarded": [], "difficulty": "normal", "classes": classes, "debug_free": false}
 
 
 static func fresh_class() -> Dictionary:
-	return {"level": 1, "exp": 0, "ranks": {}, "ultimate": "", "soul_tier": 0, "soul_paid": 0, "bar": []}
+	return {"level": 1, "exp": 0, "ranks": {}, "ultimate": "", "soul_tier": 0, "soul_paid": 0, "bar": [], "companion": "wolf"}
 
 
 ## Class entry of `class_id`, created on first use.
@@ -54,11 +81,11 @@ static func sanitize(raw: Variant, d: Dictionary) -> Dictionary:
 	var profile := fresh(d)
 	if not raw is Dictionary: return profile
 	profile.gold = maxi(0, int(raw.get("gold", 0)))
+	profile.debug_free = bool(raw.get("debug_free", false)) and OS.is_debug_build()
 	var shards: Dictionary = raw.get("shards", {}) if raw.get("shards", {}) is Dictionary else {}
 	var earned := maxi(0, int(shards.get("earned", 0)))
 	var spent := clampi(int(shards.get("spent", 0)), 0, earned)
 	profile.shards = {"have": earned - spent, "earned": earned, "spent": spent}
-	profile.pity = clampi(int(raw.get("pity", 0)), 0, int(d.get("soul_shards", {}).get("pity_after", 10)) - 1)
 	for key: String in ["nightmare_firsts", "rewarded"]:
 		var list: Variant = raw.get(key, [])
 		if list is Array: profile[key] = list.filter(func(v: Variant) -> bool: return v is String).slice(-int(d.get("soul_shards", {}).get("reward_memory", 200)) if key == "rewarded" else 0)
@@ -83,6 +110,8 @@ static func sanitize(raw: Variant, d: Dictionary) -> Dictionary:
 			state.soul_tier = clampi(int(entry.get("soul_tier", 0)), 0, 3)
 			state.soul_paid = maxi(0, int(entry.get("soul_paid", 0)))
 			var bar: Variant = entry.get("bar", [])
+			var kind := str(entry.get("companion", "wolf"))
+			state.companion = kind if d.get("pet", {}).get("kinds", {}).has(kind) else str(d.get("pet", {}).get("default_kind", "wolf"))
 			if bar is Array: state.bar = bar.filter(func(v: Variant) -> bool: return state.ranks.has(str(v))).map(func(v: Variant) -> String: return str(v)).slice(0, int(d.get("bar_slots", 4)))
 	return profile
 
@@ -110,5 +139,5 @@ static func save_profile(profile: Dictionary, path: String = SAVE_PATH) -> Error
 static func build_of(profile: Dictionary, class_id: String) -> Dictionary:
 	var state := class_state(profile, class_id)
 	return {"class": class_id, "level": state.level, "ranks": state.ranks.duplicate(), "ultimate": state.ultimate,
-		"soul_tier": state.soul_tier, "bar": state.bar.duplicate(), "pity": profile.pity, "difficulty": profile.difficulty,
+		"soul_tier": state.soul_tier, "bar": state.bar.duplicate(), "companion": str(state.get("companion", "wolf")), "free": bool(profile.get("debug_free", false)), "difficulty": profile.difficulty,
 		"nightmare_firsts": profile.nightmare_firsts.duplicate()}

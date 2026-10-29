@@ -21,7 +21,7 @@ var _clock := 0.0
 ## Queues a reward from a profile event ({kind: "shard" | "level", ...}).
 func show_reward(event: Dictionary) -> void:
 	match str(event.get("kind", "")):
-		"shard": _queue.append({"kind": "shard", "text": "SEELENSPLITTER ERHALTEN!", "sub": "Eine verlorene Seele gehört nun dir.", "time": 3.2})
+		"shard": _queue.append({"kind": "shard", "text": "+%d SEELENSPLITTER" % maxi(1, int(event.get("count", 1))), "sub": "Du hast jetzt %d. Verlorene Seelen gehören nun dir." % int(event.get("have", 0)), "time": 3.2})
 		"level": _queue.append({"kind": "level", "text": "LEVEL %d" % int(event.get("level", 1)), "sub": "Ein neuer Talentpunkt (%d frei)." % int(event.get("points", 0)), "time": 2.2})
 
 

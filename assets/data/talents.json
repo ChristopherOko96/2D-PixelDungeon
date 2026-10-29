@@ -4,9 +4,9 @@
  "max_level": 30,
  "first_point_level": 2,
  "levels": {
-  "base": 2.5,
+  "base": 50,
   "exponent": 1.0,
-  "_note": "EXP to the next level = base x level. Level 30 needs about 1090 EXP: roughly one and a half full crypt floors (about 60 kills x 10 EXP + 100 per floor). User decision 29.10.2026."
+  "_note": "EXP to the next level = base x level, the same rule for every level. Level 30 needs 21750 EXP: about three full runs of 10 floors (one floor about 60 kills x 10 EXP + 100 = 700 EXP). User decision 29.10.2026: talents much harder to earn, max level only after several runs (was 2.5, about 1.5 floors)."
  },
  "tiers": {
   "1": {
@@ -76,7 +76,13 @@
   "speed": 170,
   "leash_m": 3,
   "attack_range_m": 1.5,
-  "radius": 10
+  "radius": 10,
+  "_kinds_note": "Companion of the beast master, chosen in the talent menu (profile class entry 'companion'). hp, dmg, every and speed multiply the talent's values; sprites: assets/sprites/forest_0x72/<kind>_idle|walk_f0..3.png.",
+  "default_kind": "wolf",
+  "kinds": {
+   "wolf": {"name": "Wolf", "hp": 1.0, "dmg": 1.0, "every": 1.0, "speed": 1.0},
+   "bear": {"name": "Bär", "hp": 1.7, "dmg": 1.3, "every": 1.35, "speed": 0.75}
+  }
  },
  "bar_slots": 4,
  "soul_shards": {
@@ -97,7 +103,8 @@
    1.0,
    1.5
   ],
-  "pity_after": 10,
+  "per_boss": 2,
+  "_per_boss_note": "Only the real final boss of a run (floor 10, every world) gives shards: per_boss for each fair kill, plus one more with the difficulty's extra_pct chance and one for the first Albtraum kill of a boss. Normal: 2 per full run, so the 3-shard ultimate opens with the second full run. User decision 29.10.2026: shards only from bosses, the ultimate after about 1.5 to 2 full runs.",
   "farm_level_gap": 5,
   "min_fight_seconds": 20,
   "min_damage_share": 0.05,
@@ -111,21 +118,21 @@
   ],
   "normal": {
    "name": "Normal",
-   "drop_pct": 8,
+   "extra_pct": 0,
    "hp": 1.0,
    "damage": 1.0,
    "boss_level_bonus": 0
   },
   "hard": {
    "name": "Schwer",
-   "drop_pct": 15,
+   "extra_pct": 25,
    "hp": 1.5,
    "damage": 1.3,
    "boss_level_bonus": 4
   },
   "nightmare": {
    "name": "Albtraum",
-   "drop_pct": 25,
+   "extra_pct": 50,
    "hp": 2.2,
    "damage": 1.6,
    "boss_level_bonus": 8
@@ -940,10 +947,10 @@
    "spec": "beast",
    "index": 0,
    "tier": 1,
-   "name": "Wolfsgefährte",
+   "name": "Tiergefährte",
    "kind": "active",
    "icon": "wolf",
-   "text": "Ein Wolf kämpft 20 s mit und greift alle 2 s an: 25/35/45 % Schaden pro Angriff.",
+   "text": "Ein Wolf oder ein Bär (im Talentmenü wählbar) kämpft 20 s mit und greift alle 2 s an: 25/35/45 % Schaden pro Angriff. Der Bär hat mehr Leben und beißt härter, aber seltener.",
    "ranks": 3,
    "type": "summon",
    "count": 1,
@@ -967,7 +974,7 @@
    "name": "Tierbindung",
    "kind": "passive",
    "icon": "heart",
-   "text": "+15/30/45 % Leben und +5/10/15 % Schaden für den Wolf.",
+   "text": "+15/30/45 % Leben und +5/10/15 % Schaden für deinen Begleiter.",
    "ranks": 3,
    "type": "pet_bonus",
    "hp_pct": [
@@ -990,7 +997,7 @@
    "name": "Fass!",
    "kind": "active",
    "icon": "paw",
-   "text": "Der Wolf springt einen Gegner an: 110/140/170 % Schaden, normale Gegner greifen 2 s den Wolf an. Braucht einen aktiven Wolf.",
+   "text": "Dein Begleiter springt einen Gegner an: 110/140/170 % Schaden, normale Gegner greifen 2 s den Begleiter an. Braucht einen aktiven Begleiter.",
    "ranks": 3,
    "type": "pet_leap",
    "dmg": [
@@ -1011,7 +1018,7 @@
    "name": "Rudeljäger",
    "kind": "passive",
    "icon": "mark",
-   "text": "+3/6/9 % Schaden gegen Gegner, die dein Wolf angreift.",
+   "text": "+3/6/9 % Schaden gegen Gegner, die dein Begleiter angreift.",
    "ranks": 3,
    "type": "bonus_vs_pet_target",
    "pct": [
@@ -1029,7 +1036,7 @@
    "name": "Schutzinstinkt",
    "kind": "passive",
    "icon": "shield",
-   "text": "Der Wolf halbiert den nächsten Treffer gegen dich, höchstens alle 30/25/20 s. Nur mit aktivem Wolf.",
+   "text": "Dein Begleiter halbiert den nächsten Treffer gegen dich, höchstens alle 30/25/20 s. Nur mit aktivem Begleiter.",
    "ranks": 3,
    "type": "pet_guard",
    "reduce_pct": 50,
@@ -1048,7 +1055,7 @@
    "name": "Alpharuf",
    "kind": "ultimate",
    "icon": "horn",
-   "text": "Zwei weitere Wölfe für 15 s, je 35 % Schaden alle 2 s. Ruft auch den normalen Wolf, falls er fehlt.",
+   "text": "Zwei weitere Begleiter für 15 s, je 35 % Schaden alle 2 s. Ruft auch den normalen Begleiter, falls er fehlt.",
    "ranks": 1,
    "type": "summon",
    "count": 2,

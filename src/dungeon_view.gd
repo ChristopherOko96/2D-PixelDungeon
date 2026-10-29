@@ -135,6 +135,10 @@ var _grade_material: ShaderMaterial
 func _ready() -> void:
 	_feedback.fx = _fx
 	_skill_fx.fx = _fx
+	# The crypt's rigged hero figure is about 37 px tall with its anchor 16 px above
+	# the feet: the staff is sized and gripped by that body (src/hero/hero_look.gd).
+	_hero_look.hero_px = 1.75
+	_hero_look.staff_hand = Vector2(3.5, -2.5)
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_base_position = position
 	_actors_ready = _actor_bank.prepare()

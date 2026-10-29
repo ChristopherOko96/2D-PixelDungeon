@@ -408,7 +408,7 @@ func _bank_crystals() -> void:
 		var fight := {"present": true, "seconds": float(state.get("floor_time", 60.0)), "damage_share": 1.0}
 		var result := SoulDrops.resolve(profile_data, profile, "hell_final_%d" % int(state.floor), difficulty, "%s:%d" % [_run_uid, int(state.floor)],
 			int(state_class.level), SoulDrops.boss_level(profile_data, int(state.floor), difficulty), fight, randf())
-		_floor_reward += "  ·  SEELENSPLITTER ERHALTEN!" if bool(result.shard) else ""
+		_floor_reward += "  ·  +%d SEELENSPLITTER" % int(result.count) if bool(result.shard) else ""
 	Profile.save_profile(profile, profile_path)
 	if talents != null: talents.save()
 
@@ -1497,6 +1497,7 @@ func open_pause() -> void:
 	pause_menu.set_display_state(get_window().mode == Window.MODE_FULLSCREEN, screen)
 	pause_menu.set_graphics_state(GraphicsSettings.note(theme, graphics), graphics)
 	pause_menu.set_story_state(pause_info())
+	pause_menu.set_shards(int(profile.get("shards", {}).get("have", 0)) if not profile.is_empty() else 0)
 	pause_menu.select_section("overview")
 	pause_menu.visible = true
 	pause_menu.resume_button.grab_focus()

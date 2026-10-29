@@ -38,6 +38,7 @@ const PixelStyle = preload("res://src/pixel_style.gd")
 const CryptUI = preload("res://src/ui/crypt_ui.gd")
 const MetaStore = preload("res://src/hell/meta_store.gd")
 const TalentScreen = preload("res://src/ui/talent_screen.gd")
+const Profile = preload("res://src/progress/profile.gd")
 const AudioMix = preload("res://src/audio/audio_mix.gd")
 const SoundWorkshop = preload("res://src/ui/sound_workshop.gd")
 const RoomEditor = preload("res://src/editor/room_editor.gd")
@@ -167,6 +168,10 @@ func _ready() -> void:
 	_buttons.append(_button("OPTIONEN", Vector2(470, 498), Vector2(340, 36), 16, _open_options))
 	_buttons.append(_button("BEENDEN", Vector2(470, 540), Vector2(340, 36), 16, quit_requested.emit))
 	_button("LEVEL-AUSWAHL (DEBUG)", Vector2(16, 676), Vector2(264, 32), 16, _open_debug)
+	# the talent test profile: every class level 30, 99 shards, free casts (debug builds)
+	_talent_test_button = _button("", Vector2(16, 636), Vector2(330, 32), 16, _toggle_talent_test)
+	_talent_test_button.visible = OS.is_debug_build()
+	_refresh_talent_test()
 	_buttons[0].add_theme_color_override("font_color", GOLD)
 	_buttons[0].grab_focus()
 	_account_label = _label("", Vector2(820, 20), Vector2(300, 22), 16, TEXT, HORIZONTAL_ALIGNMENT_RIGHT)
@@ -752,6 +757,27 @@ func _erase_slot(slot: int) -> void:
 # --- Talents -------------------------------------------------------------------
 
 ## Opens the talent screen (src/ui/talent_screen.gd) on the run's profile.
+var _talent_test_button: Button
+
+
+## Switches the talent test profile on or off and loads the matching profile,
+## so the talent screen and the next run use it at once.
+func _toggle_talent_test() -> void:
+	if progress == null: return
+	Profile.set_debug(not Profile.debug_enabled(), progress.data)
+	progress.save_path = Profile.default_path()
+	progress.profile = Profile.load_profile(progress.data, progress.save_path)
+	_refresh_talent_test()
+	talents_changed.emit()
+
+
+func _refresh_talent_test() -> void:
+	if _talent_test_button == null: return
+	var on := Profile.debug_enabled()
+	_talent_test_button.text = "TALENT-TEST (DEBUG): " + ("AN" if on else "AUS")
+	_talent_test_button.add_theme_color_override("font_color", GOLD if on else TEXT)
+
+
 func _open_talents() -> void:
 	_close_panels()
 	if progress == null: return
