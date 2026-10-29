@@ -57,6 +57,9 @@ func _init(game: Node) -> void:
 	scale = float(g.theme.get("hero_scale", 3.0)) / 2.0
 	# weapons at the world's weapon size (the Frostgruft draws them smaller than the hero)
 	look = HeroLook.new(float(g.theme.get("weapon_scale", g.theme.get("hero_scale", 3.0))), g.weapon_tex, g.arrow_tex)
+	# the staff is sized by the body; the story hero's anchor is its chest
+	look.hero_px = float(g.theme.get("hero_scale", 3.0))
+	look.staff_hand = Vector2(5, 0)
 	feel = ClassPerks.data().get("sword_feel", {})
 	skill_fx = StorySkillFx.new(g, scale)
 	attack.fx = skill_fx.fx

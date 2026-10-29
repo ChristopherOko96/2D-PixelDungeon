@@ -1,0 +1,871 @@
+{
+ "_note": "Sheet monsters of the themed endless floors (ported from codex/0x72-dungeon e55b6a3). Kinds that also exist in balance.enemy_roster are drawn and run as crypt rigs instead.",
+ "base": {
+  "chaser": {
+   "hp": 8,
+   "hp_per_extra_player": 3,
+   "speed": 55,
+   "radius": 13,
+   "damage": 1
+  },
+  "shooter": {
+   "hp": 6,
+   "hp_per_extra_player": 2,
+   "speed": 45,
+   "radius": 13,
+   "keep_min": 150,
+   "keep_max": 260
+  }
+ },
+ "mobs": {
+  "angel": {
+   "hp": 9,
+   "hp_per_extra_player": 3,
+   "speed": 50,
+   "radius": 11,
+   "keep_min": 140,
+   "keep_max": 240
+  },
+  "big_zombie": {
+   "hp": 40,
+   "hp_per_extra_player": 12,
+   "speed": 28,
+   "radius": 20
+  },
+  "chort": {
+   "hp": 14,
+   "hp_per_extra_player": 4,
+   "speed": 52,
+   "radius": 12
+  },
+  "doc": {
+   "hp": 10,
+   "hp_per_extra_player": 3,
+   "speed": 36,
+   "radius": 12,
+   "keep_min": 190,
+   "keep_max": 290
+  },
+  "imp": {
+   "hp": 5,
+   "hp_per_extra_player": 2,
+   "speed": 70,
+   "radius": 11
+  },
+  "o_berserker": {
+   "hp": 34,
+   "hp_per_extra_player": 10,
+   "speed": 52,
+   "radius": 18,
+   "rage": true
+  },
+  "o_brute": {
+   "hp": 30,
+   "hp_per_extra_player": 9,
+   "speed": 34,
+   "radius": 17
+  },
+  "o_chieftain": {
+   "hp": 45,
+   "hp_per_extra_player": 12,
+   "speed": 26,
+   "radius": 20,
+   "keep_min": 220,
+   "keep_max": 320
+  },
+  "pumpkin_dude": {
+   "hp": 10,
+   "hp_per_extra_player": 3,
+   "speed": 44,
+   "radius": 12,
+   "keep_min": 160,
+   "keep_max": 260
+  },
+  "skelet": {
+   "hp": 7,
+   "hp_per_extra_player": 2,
+   "speed": 40,
+   "radius": 12,
+   "keep_min": 140,
+   "keep_max": 250
+  },
+  "wogol": {
+   "hp": 22,
+   "hp_per_extra_player": 6,
+   "speed": 38,
+   "radius": 13
+  }
+ },
+ "attacks": {
+  "angel": {
+   "pattern": "orb",
+   "windup": 0.6,
+   "active": 0.1,
+   "recovery": 0.4,
+   "interval": 2.6,
+   "bullet_speed": 120,
+   "homing": 1.8,
+   "life": 4.5,
+   "damage": 1
+  },
+  "big_zombie": {
+   "pattern": "cleave",
+   "windup": 0.65,
+   "lock": 0.2,
+   "active": 0.2,
+   "recovery": 0.6,
+   "interval": 2.4,
+   "range": 130,
+   "reach": 72,
+   "arc": 1.9,
+   "lunge": 120,
+   "count": 3,
+   "spread": 0.8,
+   "bullet_speed": 200,
+   "damage": 1,
+   "projectile": "slash"
+  },
+  "chort": {
+   "pattern": "dash",
+   "windup": 0.55,
+   "lock": 0.15,
+   "active": 0.35,
+   "recovery": 0.6,
+   "interval": 2.0,
+   "speed": 400,
+   "range": 240,
+   "damage": 1,
+   "spikes": 3,
+   "spacing": 40,
+   "warn": 0.3,
+   "radius": 22
+  },
+  "doc": {
+   "pattern": "heal",
+   "windup": 0.7,
+   "active": 0.1,
+   "recovery": 0.5,
+   "interval": 2.6,
+   "reach": 180,
+   "amount": 5,
+   "bullet_speed": 140
+  },
+  "imp": {
+   "pattern": "dash",
+   "windup": 0.5,
+   "lock": 0.15,
+   "active": 0.32,
+   "recovery": 0.6,
+   "interval": 1.6,
+   "speed": 430,
+   "range": 240,
+   "damage": 1
+  },
+  "o_berserker": {
+   "pattern": "dash",
+   "windup": 0.6,
+   "lock": 0.2,
+   "active": 0.4,
+   "recovery": 0.7,
+   "interval": 2.2,
+   "speed": 440,
+   "range": 300,
+   "damage": 2
+  },
+  "o_brute": {
+   "pattern": "pound",
+   "windup": 0.7,
+   "active": 0.15,
+   "recovery": 0.7,
+   "interval": 2.6,
+   "range": 150,
+   "radius": 60,
+   "count": 10,
+   "bullet_speed": 150,
+   "damage": 1
+  },
+  "o_chieftain": {
+   "pattern": "rally",
+   "windup": 0.9,
+   "active": 0.1,
+   "recovery": 0.6,
+   "interval": 4.0,
+   "reach": 320,
+   "haste": 5.0,
+   "summon": "chaser",
+   "count": 2,
+   "max_summons": 3
+  },
+  "pumpkin_dude": {
+   "pattern": "boulder",
+   "hazard": "bomb",
+   "blast": "fire",
+   "shard": "flame",
+   "windup": 0.6,
+   "active": 0.2,
+   "recovery": 0.5,
+   "interval": 2.6,
+   "flight": 0.9,
+   "lead": 0.4,
+   "radius": 48,
+   "count": 6,
+   "bullet_speed": 140,
+   "damage": 1,
+   "lift": 16
+  },
+  "shooter": {
+   "pattern": "aimed",
+   "windup": 0.4,
+   "active": 0.08,
+   "recovery": 0.3,
+   "interval": 1.4,
+   "bullet_speed": 170,
+   "lead": 0.35,
+   "damage": 1
+  },
+  "skelet": {
+   "pattern": "fan",
+   "windup": 0.5,
+   "active": 0.1,
+   "recovery": 0.35,
+   "interval": 1.9,
+   "count": 3,
+   "spread": 0.55,
+   "bullet_speed": 185,
+   "lead": 0.25,
+   "damage": 1,
+   "projectile": "bone"
+  },
+  "wogol": {
+   "pattern": "pound",
+   "windup": 0.65,
+   "active": 0.15,
+   "recovery": 0.6,
+   "interval": 2.6,
+   "range": 140,
+   "radius": 58,
+   "count": 8,
+   "bullet_speed": 150,
+   "damage": 1
+  }
+ },
+ "bosses": {
+  "seraph": {
+   "name": "SERAPHIEL, DAS LICHTAUGE",
+   "hp": 220,
+   "hp_per_extra_player": 80,
+   "speed": 40,
+   "radius": 22,
+   "move_pause": 0.75,
+   "sequence": [
+    "lightfan",
+    "ring_slow",
+    "ring_fast",
+    "dive",
+    "lightfan",
+    "dive"
+   ],
+   "ultimate": {
+    "move": "judgement",
+    "hp_ratio": 0.55,
+    "every": 5
+   },
+   "moves": {
+    "lightfan": {
+     "pattern": "fan",
+     "windup": 0.55,
+     "active": 0.1,
+     "recovery": 0.45,
+     "count": 7,
+     "spread": 0.9,
+     "bullet_speed": 230,
+     "lead": 0.5,
+     "damage": 1,
+     "projectile": "spear"
+    },
+    "ring_slow": {
+     "pattern": "ring",
+     "windup": 0.7,
+     "active": 0.1,
+     "recovery": 0.15,
+     "count": 16,
+     "bullet_speed": 130,
+     "damage": 1
+    },
+    "ring_fast": {
+     "pattern": "ring",
+     "windup": 0.2,
+     "active": 0.1,
+     "recovery": 0.5,
+     "count": 16,
+     "bullet_speed": 210,
+     "damage": 1
+    },
+    "dive": {
+     "pattern": "dash",
+     "windup": 0.7,
+     "active": 0.5,
+     "recovery": 0.7,
+     "lock": 0.2,
+     "speed": 460,
+     "damage": 2,
+     "spikes": 4,
+     "spacing": 40,
+     "warn": 0.3,
+     "radius": 22
+    },
+    "judgement": {
+     "pattern": "thorns",
+     "windup": 1.2,
+     "active": 2.6,
+     "recovery": 1.2,
+     "hazard": "quake",
+     "waves": 4,
+     "wave_every": 0.6,
+     "warn": 0.75,
+     "random": 6,
+     "radius": 34,
+     "damage": 2
+    }
+   }
+  },
+  "rot_king": {
+   "name": "MORGRUL, DER FAULKÖNIG",
+   "hp": 240,
+   "hp_per_extra_player": 85,
+   "speed": 30,
+   "radius": 26,
+   "move_pause": 0.8,
+   "sequence": [
+    "plague",
+    "gravestomp",
+    "raise",
+    "gravestomp",
+    "plague"
+   ],
+   "ultimate": {
+    "move": "plaguewave",
+    "hp_ratio": 0.55,
+    "every": 5
+   },
+   "moves": {
+    "plague": {
+     "pattern": "void",
+     "windup": 0.8,
+     "active": 0.3,
+     "recovery": 0.6,
+     "summon": "tiny_zombie",
+     "count": 1,
+     "max_summons": 4,
+     "warn": 0.8,
+     "radius": 34,
+     "damage": 2
+    },
+    "raise": {
+     "pattern": "summon",
+     "windup": 0.9,
+     "active": 0.1,
+     "recovery": 0.6,
+     "summon": "tiny_zombie",
+     "count": 3,
+     "max_summons": 5
+    },
+    "gravestomp": {
+     "pattern": "quake",
+     "windup": 0.8,
+     "active": 0.5,
+     "recovery": 0.6,
+     "lines": 3,
+     "angle": 0.55,
+     "steps": 6,
+     "spacing": 56,
+     "step_delay": 0.09,
+     "warn": 0.35,
+     "radius": 28,
+     "damage": 2
+    },
+    "plaguewave": {
+     "pattern": "thorns",
+     "windup": 1.2,
+     "active": 3.0,
+     "recovery": 1.3,
+     "hazard": "blood",
+     "waves": 5,
+     "wave_every": 0.55,
+     "warn": 0.75,
+     "random": 7,
+     "radius": 34,
+     "damage": 2
+    }
+   }
+  },
+  "hell_prince": {
+   "name": "AZRAKOR, DER HÖLLENPRINZ",
+   "hp": 260,
+   "hp_per_extra_player": 90,
+   "speed": 34,
+   "radius": 28,
+   "move_pause": 0.75,
+   "sequence": [
+    "firebreath",
+    "wingbeat",
+    "hellgates",
+    "firebreath",
+    "wingbeat"
+   ],
+   "ultimate": {
+    "move": "inferno",
+    "hp_ratio": 0.55,
+    "every": 5
+   },
+   "moves": {
+    "firebreath": {
+     "pattern": "stream",
+     "windup": 0.55,
+     "active": 0.7,
+     "recovery": 0.5,
+     "count": 6,
+     "bullet_speed": 250,
+     "lead": 0.4,
+     "jitter": 0.08,
+     "damage": 1,
+     "projectile": "fireball",
+     "lift": 10
+    },
+    "hellgates": {
+     "pattern": "eruption",
+     "windup": 0.9,
+     "active": 0.8,
+     "recovery": 0.8,
+     "hazard": "lava",
+     "rings": 3,
+     "ring_gap": 80,
+     "per_ring": 8,
+     "ring_delay": 0.25,
+     "warn": 0.5,
+     "radius": 30,
+     "damage": 2
+    },
+    "wingbeat": {
+     "pattern": "pound",
+     "windup": 0.7,
+     "active": 0.15,
+     "recovery": 0.6,
+     "radius": 80,
+     "count": 14,
+     "bullet_speed": 180,
+     "damage": 2,
+     "projectile": "flame"
+    },
+    "inferno": {
+     "pattern": "spiral",
+     "windup": 1.0,
+     "active": 2.6,
+     "recovery": 1.2,
+     "arms": 4,
+     "turn": 2.2,
+     "rate": 0.12,
+     "bullet_speed": 170,
+     "damage": 1,
+     "projectile": "flame"
+    }
+   }
+  },
+  "ogre_warchief": {
+   "name": "BRUGG, DER OGERKRIEGSHERR",
+   "hp": 280,
+   "hp_per_extra_player": 95,
+   "speed": 32,
+   "radius": 26,
+   "move_pause": 0.75,
+   "sequence": [
+    "club",
+    "rockthrow",
+    "warcry",
+    "club",
+    "rockthrow"
+   ],
+   "ultimate": {
+    "move": "earthsplit",
+    "hp_ratio": 0.55,
+    "every": 5
+   },
+   "moves": {
+    "club": {
+     "pattern": "cleave",
+     "windup": 0.7,
+     "active": 0.25,
+     "recovery": 0.55,
+     "lock": 0.25,
+     "reach": 100,
+     "arc": 2.3,
+     "lunge": 150,
+     "count": 7,
+     "spread": 1.4,
+     "bullet_speed": 220,
+     "damage": 2,
+     "projectile": "rock"
+    },
+    "warcry": {
+     "pattern": "rally",
+     "windup": 0.9,
+     "active": 0.2,
+     "recovery": 0.6,
+     "reach": 400,
+     "haste": 6.0,
+     "summon": "chaser",
+     "count": 3,
+     "max_summons": 4
+    },
+    "rockthrow": {
+     "pattern": "boulder",
+     "windup": 0.55,
+     "active": 0.3,
+     "recovery": 0.6,
+     "flight": 0.9,
+     "lead": 0.5,
+     "radius": 60,
+     "count": 10,
+     "bullet_speed": 160,
+     "damage": 2
+    },
+    "earthsplit": {
+     "pattern": "quake",
+     "windup": 1.0,
+     "active": 0.8,
+     "recovery": 1.0,
+     "lines": 5,
+     "angle": 0.45,
+     "steps": 6,
+     "spacing": 56,
+     "step_delay": 0.08,
+     "warn": 0.35,
+     "radius": 28,
+     "damage": 2
+    }
+   }
+  }
+ },
+ "minibosses": {
+  "winged_chort": {
+   "name": "FLATTERHORN",
+   "hp": 100,
+   "hp_per_extra_player": 36,
+   "speed": 52,
+   "radius": 18,
+   "move_pause": 0.8,
+   "sequence": [
+    "dive",
+    "spit",
+    "spit",
+    "dive"
+   ],
+   "ultimate": {
+    "move": "hellwhirl",
+    "hp_ratio": 0.5,
+    "every": 5
+   },
+   "moves": {
+    "dive": {
+     "pattern": "dash",
+     "windup": 0.6,
+     "active": 0.45,
+     "recovery": 0.6,
+     "lock": 0.18,
+     "speed": 480,
+     "damage": 2,
+     "spikes": 3,
+     "spacing": 38,
+     "warn": 0.3,
+     "radius": 20
+    },
+    "spit": {
+     "pattern": "fan",
+     "windup": 0.45,
+     "active": 0.1,
+     "recovery": 0.4,
+     "count": 3,
+     "spread": 0.35,
+     "bullet_speed": 220,
+     "lead": 0.4,
+     "damage": 1,
+     "projectile": "fireball"
+    },
+    "hellwhirl": {
+     "pattern": "spiral",
+     "windup": 0.9,
+     "active": 2.0,
+     "recovery": 1.0,
+     "arms": 3,
+     "turn": 3.0,
+     "rate": 0.12,
+     "bullet_speed": 170,
+     "damage": 1,
+     "projectile": "flame"
+    }
+   }
+  },
+  "soul_caller": {
+   "name": "DER SEELENRUFER",
+   "hp": 95,
+   "hp_per_extra_player": 34,
+   "speed": 36,
+   "radius": 16,
+   "move_pause": 0.8,
+   "keep_min": 180,
+   "keep_max": 290,
+   "sequence": [
+    "souls",
+    "souls",
+    "bones",
+    "souls"
+   ],
+   "ultimate": {
+    "move": "soulspiral",
+    "hp_ratio": 0.5,
+    "every": 5
+   },
+   "moves": {
+    "souls": {
+     "pattern": "orb",
+     "windup": 0.55,
+     "active": 0.1,
+     "recovery": 0.4,
+     "bullet_speed": 125,
+     "homing": 1.9,
+     "life": 4.5,
+     "damage": 1
+    },
+    "bones": {
+     "pattern": "summon",
+     "windup": 0.9,
+     "active": 0.1,
+     "recovery": 0.6,
+     "summon": "skelet",
+     "count": 2,
+     "max_summons": 3
+    },
+    "soulspiral": {
+     "pattern": "spiral",
+     "windup": 0.8,
+     "active": 2.2,
+     "recovery": 0.8,
+     "arms": 4,
+     "turn": 1.8,
+     "rate": 0.18,
+     "bullet_speed": 140,
+     "damage": 1,
+     "projectile": "bone"
+    }
+   }
+  },
+  "crystal_wogol": {
+   "name": "KRISTALLWOGOL",
+   "hp": 120,
+   "hp_per_extra_player": 40,
+   "speed": 40,
+   "radius": 18,
+   "move_pause": 0.85,
+   "sequence": [
+    "shards",
+    "traps",
+    "shards"
+   ],
+   "ultimate": {
+    "move": "crystalrain",
+    "hp_ratio": 0.5,
+    "every": 5
+   },
+   "moves": {
+    "shards": {
+     "pattern": "pound",
+     "windup": 0.65,
+     "active": 0.15,
+     "recovery": 0.6,
+     "radius": 60,
+     "count": 12,
+     "bullet_speed": 200,
+     "damage": 1,
+     "projectile": "bolt"
+    },
+    "traps": {
+     "pattern": "trap",
+     "windup": 0.6,
+     "active": 0.2,
+     "recovery": 0.5,
+     "life": 9.0,
+     "radius": 18,
+     "damage": 1,
+     "root": 0.9,
+     "max_traps": 3
+    },
+    "crystalrain": {
+     "pattern": "thorns",
+     "windup": 1.1,
+     "active": 2.4,
+     "recovery": 1.1,
+     "hazard": "spike",
+     "waves": 4,
+     "wave_every": 0.6,
+     "warn": 0.75,
+     "random": 5,
+     "radius": 30,
+     "damage": 1
+    }
+   }
+  },
+  "golden_angel": {
+   "name": "GOLDENER WÄCHTER",
+   "hp": 90,
+   "hp_per_extra_player": 32,
+   "speed": 44,
+   "radius": 16,
+   "move_pause": 0.8,
+   "keep_min": 170,
+   "keep_max": 280,
+   "sequence": [
+    "arrows",
+    "blessing",
+    "arrows"
+   ],
+   "ultimate": {
+    "move": "pillars",
+    "hp_ratio": 0.5,
+    "every": 5
+   },
+   "moves": {
+    "arrows": {
+     "pattern": "fan",
+     "windup": 0.45,
+     "active": 0.1,
+     "recovery": 0.4,
+     "count": 3,
+     "spread": 0.3,
+     "bullet_speed": 280,
+     "lead": 0.4,
+     "damage": 1,
+     "projectile": "spear"
+    },
+    "blessing": {
+     "pattern": "heal",
+     "windup": 0.7,
+     "active": 0.1,
+     "recovery": 0.5,
+     "reach": 220,
+     "amount": 8,
+     "bullet_speed": 140
+    },
+    "pillars": {
+     "pattern": "thorns",
+     "windup": 1.1,
+     "active": 2.0,
+     "recovery": 1.0,
+     "hazard": "quake",
+     "waves": 3,
+     "wave_every": 0.6,
+     "warn": 0.75,
+     "random": 4,
+     "radius": 30,
+     "damage": 1
+    }
+   }
+  }
+ },
+ "floors": [
+  {
+   "theme": "gruft",
+   "boss": "rot_king",
+   "miniboss": "soul_caller",
+   "decor": "crypt",
+   "melee": [
+    "tiny_zombie",
+    "big_zombie"
+   ],
+   "ranged": [
+    "skelet",
+    "necromancer",
+    "doc"
+   ]
+  },
+  {
+   "theme": "orklager",
+   "boss": "ogre_warchief",
+   "miniboss": "crystal_wogol",
+   "decor": "orc",
+   "melee": [
+    "chaser",
+    "o_brute",
+    "o_berserker"
+   ],
+   "ranged": [
+    "shooter",
+    "o_chieftain"
+   ]
+  },
+  {
+   "theme": "hoelle",
+   "boss": "hell_prince",
+   "miniboss": "winged_chort",
+   "decor": "infernal",
+   "melee": [
+    "imp",
+    "chort",
+    "wogol"
+   ],
+   "ranged": [
+    "pumpkin_dude"
+   ]
+  },
+  {
+   "theme": "himmel",
+   "boss": "seraph",
+   "miniboss": "golden_angel",
+   "decor": "stone",
+   "melee": [
+    "angel"
+   ],
+   "ranged": [
+    "angel"
+   ]
+  }
+ ],
+ "themes": {
+  "kerker": {
+   "floor": "ffffff",
+   "wall": "ffffff",
+   "banner": "red",
+   "detail": ""
+  },
+  "gruft": {
+   "floor": "a9b8cc",
+   "wall": "9fb0c8",
+   "banner": "blue",
+   "detail": "cobweb"
+  },
+  "orklager": {
+   "floor": "c8b48a",
+   "wall": "b8a888",
+   "banner": "green",
+   "detail": "moss"
+  },
+  "hoelle": {
+   "floor": "7a6266",
+   "wall": "a07070",
+   "banner": "red",
+   "detail": "cracks"
+  },
+  "himmel": {
+   "floor": "f4e6c0",
+   "wall": "f0e2c4",
+   "banner": "yellow",
+   "detail": "gold"
+  }
+ },
+ "fog": {
+  "light_radius": 170,
+  "fade": 110,
+  "dark_alpha": 0.93,
+  "memory_alpha": 0.62,
+  "cell": 16
+ }
+}

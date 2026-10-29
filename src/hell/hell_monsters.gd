@@ -8,6 +8,8 @@ extends RefCounted
 
 const Rules = preload("res://src/hell/hell_monster_rules.gd")
 const HeroKit = preload("res://src/hell/hero_kit.gd")
+const FrostCombat = preload("res://src/hell/frost_combat.gd")
+const StoryFeel = preload("res://src/hero/story_feel.gd")
 const DATA_PATH := "res://assets/data/hell_monsters.json"
 const SPRITE_DIR := "res://assets/sprites/hell/monsters/"
 ## Shot colours: core, middle, rim.
@@ -29,6 +31,8 @@ var atlas: Dictionary = {}
 var zones: Array = []
 var lobs: Array = []
 var corpses: Array = []
+## Ignaroth's part rig (src/hell/drake_rig_host.gd), set by hell_game.gd; null keeps the atlas sprites.
+var rig_host: RefCounted = null
 
 
 ## game: the hell game node; cfg: the "monsters" block of the world's balance file. A world with
@@ -77,7 +81,7 @@ func boss_label(m: Dictionary) -> String:
 func spawn(room: int, pos: Vector2, id: String, boss := false) -> Dictionary:
 	var def: Dictionary = defs[id]
 	var st: Dictionary = def.stats
-	var hp := Rules.spawn_hp(st, boss, float(g.W.boss.hp), float(g.W.diff.hp))
+	var hp: float = Rules.spawn_hp(st, boss, float(g.W.boss.hp), float(g.W.diff.hp)) * (g.talents.hp_scale() if g.talents != null else 1.0)
 	var cds: Array = []
 	for a: Dictionary in st.attacks:
 		cds.append(Rules.first_cooldown(a, randf()))
@@ -87,6 +91,9 @@ func spawn(room: int, pos: Vector2, id: String, boss := false) -> Dictionary:
 		"hit": 0.0, "spawn": float(cfg.spawn_grow), "act": null, "anim": "idle", "at": 0.0, "face": 1.0, "alpha": 1.0,
 		"hop_t": randf(), "cds": cds, "alt": 0.0, "sink": 0.0, "burrowed": false, "intro": null, "trans": null,
 		"dying": null, "circ": 1.0, "landed": false, "trail": 0.0}
+	# Ignaroth's part rig: the HP split over his form's parts, an int uid (src/hell/drake_rig_host.gd)
+	if rig_host != null:
+		rig_host.attach(m)
 	g.mobs.append(m)
 	return m
 
@@ -147,6 +154,16 @@ func _zone(z: Dictionary) -> void:
 	zones.append(base)
 
 
+## Sound hook: the running act of `m` releases its strike, shot, wave or summon
+## now (src/hero/story_sound.gd fires its crypt attack sound).
+func _released(m: Dictionary) -> void:
+	if g.get("sound") != null:
+		g.sound.released(m)
+	# rig hook: the act is out now (the throat opens for the breath; a part lost later only stops the breath and beams)
+	if rig_host != null:
+		rig_host.on_release(m)
+
+
 ## Moves, aims and attacks every monster, ends Ignaroth's phases, removes the dead
 ## and clears a room when its last monster falls.
 func update(dt: float) -> void:
@@ -179,7 +196,8 @@ func update(dt: float) -> void:
 			m.cds[i] -= dt
 		# hero skills: slows, burns and stuns tick here; a stunned or held monster waits
 		var pace := HeroKit.tick_mob(g, m, dt)
-		var held: bool = pace <= 0.0 or m.get("hold", false)
+		# a dragon reeling from a severed part (src/hell/drake_rig_host.gd) stands and starts no attack
+		var held: bool = pace <= 0.0 or m.get("hold", false) or (rig_host != null and rig_host.staggered(m))
 		var to: Vector2 = me - m.p
 		var d := maxf(to.length(), 1.0)
 		var v := Vector2.ZERO
@@ -216,8 +234,9 @@ func update(dt: float) -> void:
 		if not g.box_blocked(Rect2(m.p.x - rr, ny - rr, rr * 2.0, rr), avoid) and not HeroKit.wall_blocks(g, Vector2(m.p.x, ny), rr):
 			m.p = Vector2(m.p.x, ny)
 		# a body thrown by Rage slams into the wall it meets (src/hero/story_hero.gd)
-		if g.story_hero != null:
-			g.story_hero.check_slam(m, moved_from, dt)
+		if g.story_hero != null and m.has("slam"):
+			# sound hook: the slam is the hero's (src/hero/story_sound.gd source "hero")
+			g.as_source("hero", func() -> void: g.story_hero.check_slam(m, moved_from, dt))
 		act = m.act
 		var airborne: bool = act != null and float(act.get("air", 0.0)) > 20.0
 		if d < m.r + float(cfg.contact_reach) and m.alpha > 0.6 and not immune(m) and not airborne:
@@ -231,13 +250,19 @@ func update(dt: float) -> void:
 		if not ((m.hp <= 0.0 and not lord_boss) or m.get("remove", false)):
 			continue
 		if m.dying != null or (m.trans == null and not m.has("echo")):
-			corpses.append({"id": m.id, "p": m.p, "s": m.s, "face": m.face, "t": 0.0})
+			# uid: Ignaroth's rig keeps falling apart in the corpse (src/hell/drake_rig_host.gd)
+			corpses.append({"id": m.id, "p": m.p, "s": m.s, "face": m.face, "t": 0.0, "uid": m.get("uid", -1)})
 		if m.trans == null and not m.get("quiet", false):
 			g._burst(m.p - Vector2(0, m.cy), 80 if m.boss else 18)
+			# the shared combat feel: burst in the monster's material, chips, a stain
+			FrostCombat.after_kill(g, m)
 		# experience: felled monsters and a defeated boss form; echoes and swept-away adds give none
 		if not m.get("quiet", false) and not m.has("echo"):
 			HeroKit.gain(g, HeroKit.exp_for(g, m))
-			g._sound("kill_" + str(m.def.get("material", "void")))
+			if g.talents != null: g.talents.killed(m)
+			# sound hook: with the feel the kill sounds in the crypt material (feedback.gd via after_kill)
+			if g.feel == null:
+				g._sound("kill_" + str(m.def.get("material", "void")))
 		g.mobs.erase(m)
 		var rest: Array = g.mobs.filter(func(o: Dictionary) -> bool: return o.room == m.room and o.hp > 0.0 and not o.get("remove", false))
 		if rest.is_empty():
@@ -291,6 +316,12 @@ func _move(m: Dictionary, dt: float, to: Vector2, d: float) -> Vector2:
 func _start_act(m: Dictionary, i: int, to: Vector2, d: float) -> void:
 	var a: Dictionary = m.st.attacks[i]
 	m.cds[i] = Rules.next_cooldown(a, m.boss, randf())
+	# rig hook: a lost part cancels this attack or weakens a COPY of it (m.st is shared, never changed);
+	# {} while he staggers, the attack is gone or a flight would follow a landing too soon. The cooldown stays used.
+	if rig_host != null:
+		a = rig_host.prepare(m, a)
+		if a.is_empty():
+			return
 	var act := {"a": a, "kind": a.kind, "t": 0.0, "dir": to / d, "n": 0, "anim": Rules.act_anim(a.kind, m.def), "v": Vector2.ZERO}
 	if a.kind == "slam" and a.get("leap", false):
 		act.leap = {"from": m.p, "to": _me()}
@@ -318,8 +349,15 @@ func _run_act(m: Dictionary, dt: float) -> void:
 	var A: Dictionary = m.act
 	var a: Dictionary = A.a
 	A.t += dt
+	# rig hook: a part fell in this act's windup (he reels), or the part of the running breath/beams fell: it stops here
+	if rig_host != null and rig_host.cancels(m):
+		m.act = null
+		return
 	var t: float = A.t
 	var head: Vector2 = m.p - Vector2(0, m.cy)
+	# rig hook: bolts, breath and lobs leave the drawn mouth, rings and beams the drawn core (src/hell/drake_rig_host.gd)
+	if rig_host != null:
+		head = rig_host.muzzle(m, String(A.kind), head)
 	var me := _me()
 	var dmg := int(cfg.hit_boss) if m.boss else int(cfg.hit_mob)
 	var color := Rules.shot_color(m.id, m.has("echo"))
@@ -335,6 +373,8 @@ func _run_act(m: Dictionary, dt: float) -> void:
 				A.v = Vector2.ZERO
 				A.warn = true
 				return
+			if A.get("warn", true):
+				_released(m)
 			A.warn = false
 			A.v = A.dir * float(a.speed)
 			if t > 0.5 + minf(0.55, float(a.get("range", 500.0)) / float(a.speed)):
@@ -347,6 +387,7 @@ func _run_act(m: Dictionary, dt: float) -> void:
 		"lob":
 			if t >= 0.45 and A.n == 0:
 				A.n = 1
+				_released(m)
 				for k in range(int(a.get("count", 1))):
 					var aim := me + (Vector2(randf_range(-130, 130), randf_range(-100, 100)) if k > 0 else Vector2.ZERO)
 					lobs.append({"from": head, "to": aim, "t": 0.0, "T": 0.8 + k * 0.12, "r": float(a.get("radius", 70.0)),
@@ -358,6 +399,7 @@ func _run_act(m: Dictionary, dt: float) -> void:
 			var wind := 0.3 if A.kind == "breath" else 0.35
 			if t >= wind and A.n == 0:
 				A.n = 1
+				_released(m)
 				var base := (me - Vector2(0, 30) - head).angle()
 				var heads := int(a.get("heads", 1))
 				var count := int(a.get("count", 1))
@@ -380,6 +422,8 @@ func _run_act(m: Dictionary, dt: float) -> void:
 		"ring":
 			var waves := int(a.get("waves", 1))
 			if t >= 0.45 + A.n * 0.35 and A.n < waves:
+				if A.n == 0:
+					_released(m)
 				var off: float = A.n * PI / float(a.count) + g.state.t * 0.2
 				for k in range(int(a.count)):
 					_shot(head, Vector2.from_angle(off + float(k) / float(a.count) * TAU), float(a.get("speed", 280.0)),
@@ -392,6 +436,8 @@ func _run_act(m: Dictionary, dt: float) -> void:
 			A.spin = float(A.get("spin", randf() * 6.0)) + dt * 2.4
 			A.acc = float(A.get("acc", 0.0)) + dt
 			var arms := int(a.arms)
+			if t > 0.4 and t - dt <= 0.4:
+				_released(m)
 			while A.acc > float(a.rate) and t > 0.4:
 				A.acc -= float(a.rate)
 				for k in range(arms):
@@ -415,6 +461,7 @@ func _run_act(m: Dictionary, dt: float) -> void:
 				A.air = 0.0
 			if A.n == 0 and t >= (0.7 if leap else 0.75):
 				A.n = 1
+				_released(m)
 				if a.get("line", false):
 					_zone({"kind": "line", "p": m.p, "ang": (me - m.p).angle(), "len": float(a.radius) * 2.6, "w": 70.0, "tele": 0.45, "T": 0.8, "dmg": dmg, "m": m})
 				else:
@@ -436,6 +483,7 @@ func _run_act(m: Dictionary, dt: float) -> void:
 		"swing":
 			if t >= 0.35 and A.n == 0:
 				A.n = 1
+				_released(m)
 				_zone({"kind": "arc", "p": m.p - Vector2(0, m.cy * 0.5), "r": float(a.radius), "ang": (me - m.p).angle(), "arc": float(a.arc), "T": 0.25, "dmg": dmg, "m": m})
 			if t > 0.6:
 				m.act = null
@@ -443,6 +491,7 @@ func _run_act(m: Dictionary, dt: float) -> void:
 		"summon":
 			if t >= 0.6 and A.n == 0:
 				A.n = 1
+				_released(m)
 				var here: int = g.mobs.filter(func(o: Dictionary) -> bool: return o.room == m.room and not o.boss).size()
 				for id: String in a.mobs:
 					if here < int(a.get("max", 4)) + 1:
@@ -459,6 +508,7 @@ func _run_act(m: Dictionary, dt: float) -> void:
 				return
 			if A.n == 0:
 				A.n = 1
+				_released(m)
 				g._burst(head, 18)
 				m.p = free_spot(m.room, me, 170, 260)
 			m.alpha = minf(1.0, (t - 0.35) / 0.3)
@@ -469,6 +519,7 @@ func _run_act(m: Dictionary, dt: float) -> void:
 		"meteors", "hands":
 			if t >= 0.5 and A.n == 0:
 				A.n = 1
+				_released(m)
 				var meteor: bool = A.kind == "meteors"
 				for k in range(int(a.count)):
 					var p := me if k == 0 else me + Vector2(randf_range(-260, 260), randf_range(-190, 190))
@@ -480,6 +531,7 @@ func _run_act(m: Dictionary, dt: float) -> void:
 		"chain":
 			if t >= 0.35 and A.n == 0:
 				A.n = 1
+				_released(m)
 				var sp := float(a.get("speed", 700.0))
 				_shot(head, me - Vector2(0, 30) - head, sp, {"chain": m, "c": "chain", "t": float(a.get("range", 600.0)) / sp})
 			if t > 0.7:
@@ -488,6 +540,7 @@ func _run_act(m: Dictionary, dt: float) -> void:
 		"scream":
 			if A.n == 0 and t > 0.1:
 				A.n = 1
+				_released(m)
 				_zone({"kind": "cone", "p": head + Vector2(0, 20), "ang": (me - head).angle(), "r": float(a.range), "arc": float(a.arc),
 					"tele": 0.55, "T": 0.9, "dmg": 1, "slow": 2.0, "m": m})
 			if t > 1.0:
@@ -497,6 +550,8 @@ func _run_act(m: Dictionary, dt: float) -> void:
 			if t < 0.8:
 				A.warn = true
 				return
+			if A.get("warn", true):
+				_released(m)
 			A.warn = false
 			for k in range(A.beams.size()):
 				A.beams[k] += float(a.turn) * dt
@@ -610,11 +665,13 @@ func _run_dragon_act(m: Dictionary, dt: float) -> void:
 			A.v = Vector2.ZERO
 			if t - A.warn_t >= 0.5 and not A.get("out", false):
 				A.out = true
+				_released(m)
 				m.burrowed = false
 				_shake(12)
 				g._burst(m.p - Vector2(0, 20), 40)
 				for k in range(int(a.ring)):
-					_shot(m.p - Vector2(0, m.cy), Vector2.from_angle(float(k) / float(a.ring) * TAU), 330.0)
+					# the ring bursts from the drawn core (src/hell/drake_rig_host.gd)
+					_shot(rig_host.muzzle(m, "burrow", m.p - Vector2(0, m.cy)) if rig_host != null else m.p - Vector2(0, m.cy), Vector2.from_angle(float(k) / float(a.ring) * TAU), 330.0)
 				if a.get("lava", false):
 					for k in range(4):
 						var ang := k / 4.0 * TAU + 0.4
@@ -636,6 +693,8 @@ func _run_dragon_act(m: Dictionary, dt: float) -> void:
 					_shake(5)
 				return
 			if t < 0.7 + T:
+				if t - dt < 0.7:
+					_released(m)
 				# circle above the hero and drop bombs on where he stands
 				var ang: float = g.state.t * 1.3
 				var aim: Vector2 = me + Vector2(cos(ang) * 260.0, sin(ang) * 160.0) - m.p
@@ -666,15 +725,21 @@ func _run_dragon_act(m: Dictionary, dt: float) -> void:
 			A.anim = "attack"
 			A.v = Vector2.ZERO
 			if not A.has("base"):
-				A.base = (me - (m.p - Vector2(0, m.cy))).angle()
+				# aimed from the drawn mouth (src/hell/drake_rig_host.gd)
+				A.base = (me - (rig_host.muzzle(m, "sweep", m.p - Vector2(0, m.cy)) if rig_host != null else m.p - Vector2(0, m.cy))).angle()
 				A.sign = 1.0 if randf() < 0.5 else -1.0
 			if t < 0.45:
 				return
+			if t - dt < 0.45:
+				_released(m)
 			var k := minf(1.0, (t - 0.45) / float(a.duration))
 			var ang: float = A.base + (k - 0.5) * float(a.arc) * A.sign
 			m.face = 1.0 if cos(ang) >= 0.0 else -1.0
 			A.acc = float(A.get("acc", 0.0)) + dt
 			var mouth: Vector2 = m.p + Vector2(m.face * m.r * 0.95, -m.cy * 1.35)
+			# the breath leaves the rig's mouth where the pose put it (src/hell/drake_rig_host.gd)
+			if rig_host != null:
+				mouth = rig_host.muzzle(m, "sweep", mouth)
 			while A.acc > float(a.rate):
 				A.acc -= float(a.rate)
 				_shot(mouth, Vector2.from_angle(ang + randf_range(-0.04, 0.04)), float(a.speed) * randf_range(0.85, 1.15),
@@ -686,9 +751,11 @@ func _run_dragon_act(m: Dictionary, dt: float) -> void:
 			A.v = Vector2.ZERO
 			if t >= 0.8 and A.n == 0:
 				A.n = 1
+				_released(m)
 				_shake(8)
 				var k := 0
-				for id: String in _earlier_forms(m.id):
+				# rig hook: lost horns call fewer echoes (round(3 x 0.34) = 1)
+				for id: String in (rig_host.echo_forms(m, a, _earlier_forms(m.id)) if rig_host != null else _earlier_forms(m.id)):
 					var p := free_spot(m.room, m.p, 200, 340)
 					var e := spawn(m.room, p, id, false)
 					e.echo = float(a.life)
@@ -731,6 +798,9 @@ func _set_form(m: Dictionary, id: String) -> void:
 	m.s = float(def.scale)
 	m.r = float(def.stats.r)
 	m.cy = float(def.h) * float(def.scale) * 0.45
+	# rig hook: the next form's rig comes complete, same uid and HP (no regrow inside his forms)
+	if rig_host != null:
+		rig_host.on_form_changed(m)
 
 
 # At 0 HP on floors 3, 6 and 9 he changes into his next form and escapes; on 10 he dies.
@@ -961,20 +1031,35 @@ func _ring(l: CanvasItem, c: Vector2, r: float, k: float, col: Color) -> void:
 
 ## Draws one atlas frame with its feet at foot; cut hides that many world pixels
 ## from the bottom (sinking into the floor). face -1 mirrors it.
-func _sprite(l: CanvasItem, id: String, fr: Vector2i, foot: Vector2, sc: float, face: float, tint: Color, cut := 0.0) -> void:
+func _sprite(l: CanvasItem, id: String, fr: Vector2i, foot: Vector2, sc: float, face: float, tint: Color, cut := 0.0, pose: Dictionary = {}) -> void:
 	var def: Dictionary = defs[id]
 	var px := float(def.px)
 	var fw := float(def.w) * px
 	var fh := float(def.h) * px
-	var w := float(def.w) * sc
-	var h := float(def.h) * sc
+	# the crypt's pose of a hit (src/hero/story_feel.gd): squash and lean, pivoting at the feet
+	var squash: Vector2 = pose.get("scale", Vector2.ONE)
+	var w := float(def.w) * sc * squash.x
+	var h := float(def.h) * sc * squash.y
 	var keep := h - cut
 	if keep <= 0.0:
 		return
 	var src := Rect2(fr.x * fw, fr.y * fh, fw, fh * keep / h)
-	l.draw_set_transform(Vector2(round(foot.x), round(foot.y - h + cut)), 0.0, Vector2(face, 1.0))
-	l.draw_texture_rect_region(atlas[id], Rect2(-w / 2.0, 0, w, keep), src, tint)
+	var dest := Rect2(-w / 2.0, -h + cut, w, keep)
+	l.draw_set_transform(Vector2(round(foot.x), round(foot.y)), float(pose.get("lean", 0.0)), Vector2(face, 1.0))
+	l.draw_texture_rect_region(atlas[id], dest, src, tint)
+	# the crypt's hit flash: the monster's silhouette in the flash colour (red hit, white kill)
+	if float(pose.get("flash", 0.0)) > 0.0 and g.feel != null:
+		var step := int(px)
+		l.draw_texture_rect_region(g.feel.mask(atlas[id], step), dest, Rect2(src.position / step, src.size / step), StoryFeel.flash_color(pose, tint.a))
 	l.draw_set_transform(Vector2.ZERO)
+
+
+## The crypt's pose of monster `m` and its tint (a white tint on a hit without the feel).
+func _pose(m: Dictionary, tint: Color) -> Array:
+	if g.feel == null:
+		return [{}, Color(2.6, 2.6, 2.6, tint.a) if m.hit > 0.0 else tint]
+	var pose: Dictionary = g.feel.pose(m)
+	return [pose, Color(tint, tint.a * float(pose.get("alpha", 1.0)))]
 
 
 ## Draws a monster (sorted with the other actors by its feet).
@@ -989,8 +1074,9 @@ func draw_mob(l: CanvasItem, m: Dictionary) -> void:
 	var w := float(m.def.w) * sc
 	_ellipse(l, m.p, w * 0.34, w * 0.1 + 4.0, Color(0, 0, 0, 0.45))
 	var hov := -10.0 + sin(g.state.t * 4.0 + m.seed) * 5.0 if m.st.ai in ["hover", "drift"] else 0.0
-	var tint := Color(2.6, 2.6, 2.6, m.alpha) if m.hit > 0.0 else Color(1, 1, 1, m.alpha)
-	_sprite(l, m.id, Rules.frame_of(m.def, m.anim, m.at), m.p + Vector2(0, 4.0 + hov - air), sc, m.face, tint)
+	var look := _pose(m, Color(1, 1, 1, m.alpha))
+	_mark(m, m.p + Vector2(0, 4.0 + hov - air), sc, 0.0, look[1], look[0])
+	_sprite(l, m.id, Rules.frame_of(m.def, m.anim, m.at), m.p + Vector2(0, 4.0 + hov - air), sc, m.face, look[1], 0.0, look[0])
 
 
 func _draw_lord(l: CanvasItem, m: Dictionary) -> void:
@@ -1009,16 +1095,35 @@ func _draw_lord(l: CanvasItem, m: Dictionary) -> void:
 	var shade := maxf(0.25, 1.0 - alt / 900.0)
 	_ellipse(l, m.p, w * 0.34 * shade, (w * 0.1 + 4.0) * shade, Color(0, 0, 0, 0.45 * shade))
 	var glow := _glow(m)
-	var tint := Color(1, 1, 1, m.alpha)
-	if m.hit > 0.0:
-		tint = Color(2.4, 2.4, 2.4, m.alpha)
+	var look := _pose(m, Color(1, 1, 1, m.alpha))
+	var tint: Color = look[1]
 	if glow > 0.0:
 		tint = Color(1.0 + glow * 1.8, 1.0 + glow * 1.3, 1.0 + glow * 0.8, 1.0)
 	if m.has("echo"):
 		tint = Color(0.95, 0.6, 1.9, 0.55 + 0.15 * sin(g.state.t * 9.0 + m.seed))
-	_sprite(l, m.id, Rules.frame_of(m.def, m.anim, m.at), m.p + Vector2(0, 4.0 - alt), sc, m.face, tint, m.sink * h)
+	# Ignaroth's part rig (src/hell/drake_rig_host.gd): size from spawn/new-form growth, tint (glow, echo violet),
+	# altitude in the feet, sink 0..1 cuts him at the floor; it hands the glow record to story_glow itself.
+	# The atlas otherwise.
+	if rig_host != null and rig_host.draws(m):
+		rig_host.draw(l, m, m.p + Vector2(0, 4.0 - alt), sc / m.s, tint, m.sink, look[0])
+	else:
+		_mark(m, m.p + Vector2(0, 4.0 - alt), sc, m.sink * h, tint, look[0])
+		_sprite(l, m.id, Rules.frame_of(m.def, m.anim, m.at), m.p + Vector2(0, 4.0 - alt), sc, m.face, tint, m.sink * h, look[0])
 	if m.sink > 0.0 and m.sink < 1.0:
 		_draw_mound(l, m)
+
+
+## Glow hook (src/hero/story_glow.gd): where this frame draws the body of `who`
+## (a monster or a corpse): feet, size, source grid, facing, lean, sink cut, alpha,
+## so its glowing parts (assets/data/vfx_glow.json "story") follow it. The record
+## stays with story_glow (keyed by the body), not in the world's dictionary.
+func _mark(who: Dictionary, foot: Vector2, sc: float, cut: float, tint: Color, pose: Dictionary) -> void:
+	if g.get("story_glow") == null:
+		return
+	var def: Dictionary = defs[who.id]
+	var squash: Vector2 = pose.get("scale", Vector2.ONE)
+	g.story_glow.mark(who, {"foot": foot.round(), "size": Vector2(float(def.w) * sc * squash.x, float(def.h) * sc * squash.y), "src": Vector2(float(def.w), float(def.h)),
+		"face": float(who.face), "lean": float(pose.get("lean", 0.0)), "cut": cut, "alpha": tint.a})
 
 
 func _glow(m: Dictionary) -> float:
@@ -1048,9 +1153,13 @@ func _draw_mound(l: CanvasItem, m: Dictionary) -> void:
 
 ## Draws a crumbling dead monster.
 func draw_corpse(l: CanvasItem, c: Dictionary) -> void:
+	# a dead form of Ignaroth keeps falling apart in his rig, fading; its glow goes to story_glow (src/hell/drake_rig_host.gd)
+	if rig_host != null and rig_host.draw_corpse(l, c):
+		return
 	var def: Dictionary = defs[c.id]
 	var n := int(def.anims.death.frames)
 	var fr := Vector2i(mini(n - 1, int(c.t / 0.75 * n)), int(def.anims.death.row))
+	_mark(c, c.p + Vector2(0, 4), c.s, 0.0, Color.WHITE, {})
 	_sprite(l, c.id, fr, c.p + Vector2(0, 4), c.s, c.face, Color.WHITE)
 
 
@@ -1090,14 +1199,19 @@ func draw_warnings(l: CanvasItem) -> void:
 		if A.kind == "slam" and A.n == 0 and A.has("warn_at"):
 			_ring(l, A.warn_at, float(A.a.radius), minf(1.0, A.t / 0.75), Color8(255, 70, 30))
 		if A.kind == "beam" and A.get("warn", false):
-			var head: Vector2 = m.p - Vector2(0, m.cy)
+			# from the drawn core, like their damage (src/hell/drake_rig_host.gd)
+			var head: Vector2 = rig_host.muzzle(m, "beam", m.p - Vector2(0, m.cy)) if rig_host != null else m.p - Vector2(0, m.cy)
 			for b: float in A.beams:
 				l.draw_dashed_line(head, head + Vector2.from_angle(b) * 1000.0, Color(0.78, 0.47, 1, 0.55), 4.0, 10.0)
 
 
-## Bright parts of attacks, enemy shots and the transformation glow; drawn on an additive layer.
+## Bright parts of attacks and the enemy shots, drawn on an additive layer under
+## the darkness. Their soft light (the impacts' halo, the transformation and dying
+## glow) is the crypt's bloom over the darkness (src/hero/story_glow.gd); with the
+## light switched off (L: no darkness and no bloom) this layer draws it flat itself.
 func draw_fx(l: CanvasItem) -> void:
 	var t: float = g.state.t
+	var flat := not bool(g.state.get("light", true))
 	for z: Dictionary in zones:
 		match String(z.kind):
 			"wave":
@@ -1125,7 +1239,9 @@ func draw_fx(l: CanvasItem) -> void:
 				if z.t >= z.tele:
 					var k: float = (z.t - z.tele) / (z.T - z.tele)
 					var col: Color = Color8(190, 110, 255) if z.kind == "hand" else Color8(255, 160, 60)
-					l.draw_circle(z.p - Vector2(0, 20), z.r * 1.3, Color(col, 0.3 * (1.0 - k)))
+					# the hit's core; its soft halo is the crypt's bloom (src/hero/story_glow.gd), flat without the light
+					if flat:
+						l.draw_circle(z.p - Vector2(0, 20), z.r * 1.3, Color(col, 0.3 * (1.0 - k)))
 					l.draw_circle(z.p - Vector2(0, 20), z.r * 0.7, Color(col, 0.6 * (1.0 - k)))
 					if z.kind == "hand":
 						for f in range(-2, 3):
@@ -1137,19 +1253,21 @@ func draw_fx(l: CanvasItem) -> void:
 	for m: Dictionary in g.mobs:
 		var A = m.act
 		if A != null and A.kind == "beam" and not A.get("warn", false):
-			var head: Vector2 = m.p - Vector2(0, m.cy)
+			# from the drawn core, like their damage (src/hell/drake_rig_host.gd)
+			var head: Vector2 = rig_host.muzzle(m, "beam", m.p - Vector2(0, m.cy)) if rig_host != null else m.p - Vector2(0, m.cy)
 			for b: float in A.beams:
 				var len := _wall_len(head, b, 1100.0)
 				l.draw_set_transform(head, b)
 				for part: Array in [[60.0, Color(0.35, 0.12, 0.63, 0.35)], [36.0, Color(0.67, 0.31, 1, 0.6)], [16.0, Color(0.94, 0.82, 1, 0.95)]]:
 					l.draw_rect(Rect2(0, -part[0] / 2.0 + sin(t * 30.0) * 2.0, len, part[0]), part[1])
 				l.draw_set_transform(Vector2.ZERO)
-		var glow := _glow(m)
-		if glow > 0.0:
+		# the transformation and dying glow is the crypt's bloom (src/hero/story_glow.gd), flat without the light
+		var heat := _glow(m)
+		if flat and heat > 0.0:
 			var c: Vector2 = m.p - Vector2(0, m.cy + m.alt)
 			var r: float = float(m.def.w) * m.s * 0.9
-			l.draw_circle(c, r, Color(1, 0.47, 0.16, 0.18 * glow))
-			l.draw_circle(c, r * 0.55, Color(1, 0.9, 0.63, 0.35 * glow))
+			l.draw_circle(c, r, Color(1, 0.47, 0.16, 0.18 * heat))
+			l.draw_circle(c, r * 0.55, Color(1, 0.9, 0.63, 0.35 * heat))
 	for s: Dictionary in g.eshots:
 		_orb(l, s.p, 18.0 if s.get("small", false) else 24.0, SHOT_COL.get(s.get("c", "fire"), SHOT_COL.fire))
 		if s.has("chain"):

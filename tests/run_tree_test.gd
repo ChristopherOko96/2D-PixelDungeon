@@ -88,7 +88,9 @@ func _test_crypt() -> void:
 			break
 		game.team_progress.take_talent(hero, str(open[0]))
 	check(not game.team_progress.take_talent(hero, "twin_fire"), "crypt: no points left, nothing more to take")
-	# the lasting talents in the crypt (own file): a talent card opens its node, a floor pays crystals
+	# The shared talent profile replaces the lasting talents and soul crystals
+	# (docs/TALENTE-SEELENSPLITTER.de.md, decision 29.10.2026): no node waits
+	# for a lasting talent, a run adds no bonus and a floor banks no crystals.
 	var d := MetaStore.data()
 	var store := MetaStore.fresh(d)
 	store.classes.mage.ranks = {"f_twin": 1, "f_core": 2}
@@ -97,13 +99,13 @@ func _test_crypt() -> void:
 	game.player_classes[1] = "mage"
 	game._begin_run()
 	hero = game.players[1]
-	check(str(hero.class_id) == "mage" and int(hero.get("meta", {}).get("unlocked", {}).get("twin_fire", 0)) == 1, "crypt: the hero carries its lasting talents")
-	var gated := ClassPerks.run_tree("mage", hero.meta)
-	check(RunTree.state_of(gated, {}, 20, "wildfire") == "meta_locked" and int(RunTree.node(gated, "twin_fire").max) == 1, "crypt: talent cards open nodes up to their rank, others wait")
-	check(is_equal_approx(float(hero.meta.bonus.damage), 0.1), "crypt: stat talents come along (+10 % damage)")
+	var open_tree := ClassPerks.run_tree("mage", hero.meta)
+	check(str(hero.class_id) == "mage" and (hero.get("meta", {}).get("gated", {}) as Dictionary).is_empty(), "crypt: no node waits for a lasting talent")
+	check(RunTree.state_of(open_tree, {}, 20, "wildfire") != "meta_locked", "crypt: every node of the tree is open to points")
+	check(is_equal_approx(float(hero.meta.bonus.damage), 0.0), "crypt: old stat talents add nothing any more")
 	var crystals_before := int(MetaStore.load_store(d, META).crystals)
 	game._enter_next_floor()
-	check(int(game.run_crystals) > 0 and int(MetaStore.load_store(d, META).crystals) == crystals_before + int(game.run_crystals), "crypt: a finished floor banks soul crystals")
+	check(int(game.run_crystals) == 0 and int(MetaStore.load_store(d, META).crystals) == crystals_before, "crypt: a finished floor banks no soul crystals")
 	game.queue_free()
 	await process_frame
 
@@ -137,7 +139,7 @@ func _test_story(scene: PackedScene, world: String) -> void:
 	check(RunTree.points_left(tree, CardKit.ranks(game), int(game.state.level)) == int(game.state.level) - 1, "%s: each level-up left a point" % world)
 	check(CardKit.take_node(game, "twin_fire") and CardKit.level(game, "twin_fire") >= 1, "%s: a point goes into a node" % world)
 	check(not CardKit.take_node(game, "long_breath"), "%s: a locked skill branch takes no point" % world)
-	check(RunTree.state_of(CardKit.tree(game), CardKit.ranks(game), 20, "wildfire") == "meta_locked", "%s: a node the lasting talents name waits for its talent" % world)
+	check(RunTree.state_of(CardKit.tree(game), CardKit.ranks(game), 20, "wildfire") != "meta_locked", "%s: no node waits for a lasting talent (the talent profile replaces them)" % world)
 	check(int(RunTree.node(CardKit.tree(game), "twin_fire").max) == 2, "%s: the talent rank caps the node" % world)
 	# B opens the tree; a click inside spends a point and never fires
 	var key := InputEventKey.new()

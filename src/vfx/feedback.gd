@@ -13,7 +13,11 @@ const SKILLS_PATH := "res://assets/data/hero_skills.json"
 static var _gore: Dictionary = {}
 static var _skill_sounds: Dictionary = {}
 
-const BLOOD := {"chaser": Color("6fbf4f"), "shooter": Color("b4543f"), "boss": Color("9b4fd4"), "player": Color("d8484f"),"skeleton_archer":Color("c5b68c"),"skeleton_guard":Color("c5b68c"),"necromancer":Color("786c8a")}
+const BLOOD := {"chaser": Color("6fbf4f"), "shooter": Color("b4543f"), "boss": Color("9b4fd4"), "player": Color("d8484f"),"skeleton_archer":Color("c5b68c"),"skeleton_guard":Color("c5b68c"),"necromancer":Color("786c8a"),
+	"imp":Color("d6503f"),"skelet":Color("e8e2d0"),"o_brute":Color("b4543f"),"o_berserker":Color("b4543f"),"o_chieftain":Color("b4543f"),
+	"chort":Color("c8302f"),"wogol":Color("7fae4f"),"doc":Color("b4543f"),"pumpkin_dude":Color("e88a2f"),"big_zombie":Color("7fae4f"),"angel":Color("f4e8b0"),
+	"seraph":Color("ffd76a"),"rot_king":Color("7fae4f"),"hell_prince":Color("ff6a2a"),"ogre_warchief":Color("b4543f"),
+	"winged_chort":Color("c8302f"),"soul_caller":Color("8b5fd0"),"crystal_wogol":Color("78e6f0"),"golden_angel":Color("ffd76a")}
 const SPARK := Color("fff1c2")
 const HIT_FLASH := Color("ff6a5c")
 const DUST := Color("8e8496")
@@ -67,9 +71,11 @@ static func _gore_data() -> Dictionary:
 
 
 ## What an enemy (or "player") is made of: {material, color, stain, ...}.
+## `kind` is an enemy kind of the table, or a material name itself.
 static func gore(kind: String) -> Dictionary:
 	var data := _gore_data()
-	var name := str(data.get("kinds", {}).get(kind, data.get("default", "blood")))
+	var fallback: String = kind if (data.get("materials", {}) as Dictionary).has(kind) else str(data.get("default", "blood"))
+	var name := str(data.get("kinds", {}).get(kind, fallback))
 	var material: Dictionary = data.get("materials", {}).get(name, {}).duplicate()
 	material.material = name
 	return material
@@ -374,7 +380,8 @@ func _observe_enemy(state: Dictionary, enemy: Dictionary) -> void:
 	var boss: bool = kind == "boss"
 	var origin := Vector2(float(enemy.get("x", 0.0)), float(enemy.get("y", 0.0)))
 	var direction := Vector2(float(enemy.get("dx", 0.0)), float(enemy.get("dy", 0.0)))
-	var material := gore(kind)
+	# the story worlds name their monsters' material directly (src/hero/story_feel.gd)
+	var material := gore(str(enemy.get("gore", kind)))
 	var blood: Color = Color(str(material.get("color", "c8323a")))
 	var stain_color: Color = Color(str(material.get("stain", "7a1a22")))
 	var stain_alpha: float = float(material.get("stain_alpha", 0.6))
@@ -391,7 +398,7 @@ func _observe_enemy(state: Dictionary, enemy: Dictionary) -> void:
 		particles.burst(origin, DUST, 30 if boss else 10, 120.0, 0.7, Vector2.ZERO, PI, 4.0, 3.0, "dust")
 		particles.splat(origin + Vector2(0, 10), stain_color, stain_alpha, float(material.get("death_splat", 18)) * (2.0 if boss else 1.0), direction)
 		if bool(material.get("chips", false)): particles.burst(origin, blood, 16 if boss else 10, 210.0, 0.8, direction, 1.2, 4.0, 4.0)
-		var death_fx: String = {"bone": "stone_burst", "slime": "poison_burst", "frost": "frost_burst", "void": "void_burst", "blood": "blood_burst"}.get(str(material.get("material", "blood")), "blood_burst")
+		var death_fx: String = str(material.get("death_fx", {"bone": "stone_burst", "slime": "poison_burst", "frost": "frost_burst", "void": "void_burst", "blood": "blood_burst"}.get(str(material.get("material", "blood")), "blood_burst")))
 		_fx_spawn(death_fx, origin + Vector2(0, -8), 0.0, 2.2 if boss else 1.0)
 		_play_death(enemy, boss)
 		_add_shake(0.95 if boss else 0.32)

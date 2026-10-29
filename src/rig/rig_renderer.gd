@@ -3,7 +3,13 @@ extends RefCounted
 ## fields (attack phase and progress, hit/block counters, dying progress, lost
 ## parts, beam, fx events) and owns no game decisions. Keeps per-actor clip
 ## state, falling debris of detached parts, particles, summoning pools and
-## void effects, and reports the lights they cast for the dark crypt.
+## void effects, and reports the lights they cast for the dark crypt. Hell
+## rigs (rig.material) add glowing parts, a glowing wound at every severed
+## joint, debris and chips in their material (vfx_gore.json, see palette),
+## a stagger when a part is cut off and the tail whirl's spin (whole.turn).
+## Ignaroth (src/hell/drake_rig_host.gd) also draws grown or shrunk (size),
+## sunk into the floor (cut) and without the rig's shadow, and tests his hits
+## against the pose last drawn (part_transforms).
 
 const RigLibrary = preload("res://src/rig/rig_library.gd")
 const RigPoses = preload("res://src/rig/rig_poses.gd")
@@ -13,7 +19,27 @@ const VIOLET := Color("a46fe0")
 const VIOLET_DARK := Color("5f2d56")
 const VIOLET_HOT := Color("f2b8ff")
 const INK := Color("222222")
+## The gore table (src/vfx/feedback.gd): a hell rig's material (rig.material)
+## names one of its materials, whose color and stain are the cut chips, so a
+## part cut off sprays what a hit on the same monster sprays.
+const GORE_PATH := "res://assets/data/vfx_gore.json"
+## What a hell material's palette takes from here when vfx_gore.json does not
+## give it (optional keys there: glow, wound [3 hex], burst): the glow of
+## glowing parts, cut embers and hot debris, the wound left at a severed joint
+## (dark rim, hot rim, core) and the death burst; color and stain stand in when
+## the table is missing. Obsidian glows hot violet-pink so the void crystals'
+## flare reads over their dark violet.
+const MATERIALS := {
+	"ember": {"color": Color("ff8a3d"), "stain": Color("3a2418"), "glow": Color("ffb347"),
+		"wound": [Color("3a1408"), Color("ff7a1c"), Color("ffe08a")], "burst": Color("ff8a3c")},
+	"obsidian": {"color": Color("2a1240"), "stain": Color("5f2d56"), "glow": Color("f2b8ff"),
+		"wound": [Color("1a0b2a"), Color("a46fe0"), Color("f4c64e")], "burst": Color("a46fe0")},
+}
+## Ignaroth's parts that fall off as debris when the dragon dies.
+const DRAKE_SHED: Array[String] = ["wing_far", "wing_near", "horns", "jaw", "crystal_1", "crystal_2", "crystal_3", "tail_2", "tail_3", "tail_4", "tail_5", "tail_flame"]
 const HIT_TIME := 0.3
+## A hell rig staggers this long when one of its parts is cut off.
+const STAGGER_TIME := 1.0
 const BLOCK_TIME := 0.9
 const RISE_TIME := 1.1
 const REGROW_TIME := 1.2
@@ -33,7 +59,16 @@ var beams_drawn := 0
 const WALK_CYCLE := 0.42
 ## Actor keys of heroes whose foot touched down since the view last took them.
 var footfalls: Array[String] = []
+## Test and capture spy: while true, every texture and box an actor is drawn
+## with is appended to draw_log as {what, id, color} with the very colour
+## handed to the canvas (what: shadow, part, glow, flash, aura, stump).
+var record_draws := false
+## See record_draws; the caller clears it.
+var draw_log: Array[Dictionary] = []
 var _rng := RandomNumberGenerator.new()
+static var _gore_materials: Dictionary = {}
+static var _gore_loaded := false
+static var _palettes: Dictionary = {}
 
 
 func _init(rig_library: RefCounted = null) -> void:
@@ -44,6 +79,48 @@ func _init(rig_library: RefCounted = null) -> void:
 ## True when the rig data loaded; otherwise the view keeps its old sprites.
 func is_ready() -> bool:
 	return library != null and library.ready
+
+
+## Loads the gore table's materials (vfx_gore.json) and forgets the palettes
+## built so far; a missing or broken file leaves the MATERIALS fallbacks.
+## Runs on first use; tests call it with another path.
+static func load_gore(path: String = GORE_PATH) -> void:
+	_palettes.clear()
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path)) if FileAccess.file_exists(path) else null
+	var materials: Variant = parsed.get("materials", {}) if parsed is Dictionary else {}
+	_gore_materials = materials if materials is Dictionary else {}
+	_gore_loaded = true
+
+
+## The colours of a hell rig material: chips [color, stain, glow] sprayed by
+## a cut, glow (glowing parts, cut embers, hot debris), wound [dark rim, hot
+## rim, core] at a severed joint and the death burst. vfx_gore.json
+## materials[material] gives color and stain and may give glow, wound and
+## burst; MATERIALS fills the rest, else they derive from the table colours.
+## Empty for a material that neither knows (crypt rigs have none).
+static func palette(material: String) -> Dictionary:
+	if material.is_empty(): return {}
+	if not _gore_loaded: load_gore()
+	if _palettes.has(material): return _palettes[material]
+	var table: Dictionary = _gore_materials.get(material, {}) if _gore_materials.get(material) is Dictionary else {}
+	var fallback: Dictionary = MATERIALS.get(material, {})
+	if table.is_empty() and fallback.is_empty(): return {}
+	var color := _hex(table.get("color"), fallback.get("color", Color.WHITE))
+	var stain := _hex(table.get("stain"), fallback.get("stain", color.darkened(0.6)))
+	var glow := _hex(table.get("glow"), fallback.get("glow", color.lightened(0.35)))
+	var wound: Array = fallback.get("wound", [stain.darkened(0.4), color, glow])
+	var listed: Variant = table.get("wound")
+	if listed is Array and listed.size() >= 3: wound = [_hex(listed[0], wound[0]), _hex(listed[1], wound[1]), _hex(listed[2], wound[2])]
+	var result := {"chips": [color, stain, glow], "glow": glow, "wound": wound, "burst": _hex(table.get("burst"), fallback.get("burst", color))}
+	_palettes[material] = result
+	return result
+
+
+## A colour from the gore table: a Color, or a hex string ("e0603a"); else `fallback`.
+static func _hex(value: Variant, fallback: Color) -> Color:
+	if value is Color: return value
+	if value is String and Color.html_is_valid(value): return Color.html(value)
+	return fallback
 
 
 ## Clears every actor, debris piece and effect (new run or room).
@@ -57,35 +134,50 @@ func reset() -> void:
 	_fx_seen.clear()
 
 
-## Reads one snapshot: lost parts become debris, regrown parts scale back in,
-## counters start hit/block clips, new summons rise, fx events play once.
+## Reads one snapshot: lost parts become debris (a hell rig staggers),
+## regrown parts scale back in, counters start hit/block clips, new summons
+## rise, fx events play once. The same uid in another rig (Ignaroth's next
+## form) or back from dying starts complete: nothing lost, shed or regrowing.
 func observe(snapshot: Dictionary) -> void:
 	if not is_ready(): return
 	var seen: Dictionary = {}
 	for enemy: Dictionary in snapshot.get("enemies", []):
 		var rig_name := str(enemy.get("rig", ""))
 		if rig_name.is_empty(): continue
-		var key := "e%d" % int(enemy.get("id", 0))
+		var key := _key(enemy)
 		seen[key] = true
 		var fresh := not _actors.has(key)
 		var a := _actor(key, enemy)
 		var rig: Dictionary = library.rig(rig_name)
-		if fresh and bool(enemy.get("summoned", false)) and float(enemy.get("dying_p", -1.0)) < 0.0: _start_rise(a, rig, enemy)
-		if int(enemy.get("hits", 0)) > int(a.hits) and str(enemy.get("attack", "")).is_empty() and float(enemy.get("dying_p", -1.0)) < 0.0: _play(a, "hit", HIT_TIME)
+		var dying_now := float(enemy.get("dying_p", -1.0)) >= 0.0
+		var seen_rig := str(a.get("rig_seen", ""))
+		var renewed := (not seen_rig.is_empty() and seen_rig != rig_name) or (bool(a.dying) and not dying_now)
+		if renewed: _renew(a)
+		a.rig_seen = rig_name
+		if fresh and bool(enemy.get("summoned", false)) and not dying_now: _start_rise(a, rig, enemy)
+		var staggering: bool = str(a.clip) == "hit" and float(a.clip_len) - float(a.ct) > HIT_TIME
+		if int(enemy.get("hits", 0)) > int(a.hits) and str(enemy.get("attack", "")).is_empty() and not dying_now and not staggering: _play(a, "hit", HIT_TIME)
 		if int(enemy.get("blocks", 0)) > int(a.blocks): _play(a, "block", BLOCK_TIME)
 		a.hits = int(enemy.get("hits", 0))
 		a.blocks = int(enemy.get("blocks", 0))
 		var lost: Dictionary = {}
 		for id: Variant in enemy.get("lost", []): lost[str(id)] = true
+		var severed := false
 		for id: String in lost:
-			if not a.lost.has(id) and not fresh: _detach(a, rig, id, 1.0)
+			if not a.lost.has(id) and not fresh and not renewed:
+				_detach(a, rig, id, 1.0)
+				severed = true
+		var colors := palette(str(rig.get("material", "")))
 		for id: String in a.lost:
 			if not lost.has(id):
 				a.regrowing[id] = REGROW_TIME
 				_debris = _debris.filter(func(d: Dictionary) -> bool: return not (d.key == a.key and d.id == id))
-				_burst_at(Vector2(a.get("feet", Vector2(float(enemy.get("x", 0)), float(enemy.get("y", 0))))) - Vector2(0, 24), VIOLET if rig_name in ["void", "bomber"] else Color("97da3f"), 12, 60.0)
+				var regrow_color: Color = colors.glow if not colors.is_empty() else VIOLET if rig_name in ["void", "bomber"] else Color("97da3f")
+				_burst_at(Vector2(a.get("feet", Vector2(float(enemy.get("x", 0)), float(enemy.get("y", 0))))) - Vector2(0, 24), regrow_color, 12, 60.0)
 		a.lost = lost
-		if float(enemy.get("dying_p", -1.0)) >= 0.0 and not bool(a.dying): _start_death(a, rig, enemy)
+		# A hell rig reels for a moment when a part is cut off (PART-03).
+		if severed and not dying_now and not colors.is_empty(): _play(a, "hit", STAGGER_TIME)
+		if dying_now and not bool(a.dying): _start_death(a, rig, enemy)
 	for key: String in _actors.keys():
 		if str(key).begins_with("e") and not seen.has(key): _actors.erase(key)
 	for event: Dictionary in snapshot.get("fx_events", []):
@@ -99,14 +191,59 @@ func observe(snapshot: Dictionary) -> void:
 func _actor(key: String, entity: Dictionary) -> Dictionary:
 	if not _actors.has(key):
 		_actors[key] = {"key": key, "t": _rng.randf_range(0.0, 3.0), "clip": "", "ct": 0.0, "clip_len": 0.0, "hits": int(entity.get("hits", 0)), "blocks": int(entity.get("blocks", 0)),
-			"hurts": int(entity.get("hurts", 0)), "lost": {}, "regrowing": {}, "dying": false, "rise": 0.0, "rise_from": {}, "world": {}, "trail": [], "dead_at": -1.0}
+			"hurts": int(entity.get("hurts", 0)), "lost": {}, "regrowing": {}, "dying": false, "rise": 0.0, "rise_from": {}, "world": {}, "trail": [], "dead_at": -1.0,
+			"shed": {}, "drawn": {}}
 	return _actors[key]
+
+
+## Actor key of an enemy: "e" + its uid (hell monsters carry a string id and an
+## int uid), else its int id (crypt enemies).
+static func _key(enemy: Dictionary) -> String:
+	return "e%d" % int(enemy.get("uid", enemy.get("id", 0)))
+
+
+## The view's actor key of `enemy` (part_transforms, world_point, last_drawn,
+## debris_of take it): "e" + its uid, else its int id.
+static func key_of(enemy: Dictionary) -> String:
+	return _key(enemy)
+
+
+## The debris pieces actor `key` left on the floor ({id, key, material, ...},
+## copies): what tests and capture checks read of the cut parts.
+func debris_of(key: String) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for d: Dictionary in _debris:
+		if str(d.get("key", "")) == key: out.append(d.duplicate())
+	return out
+
+
+## A Color from a snapshot field: a Color, or an [r, g, b(, a)] array.
+static func _color_of(value: Variant, fallback: Color = Color.WHITE) -> Color:
+	if value is Color: return value
+	if value is Array and value.size() >= 3: return Color(float(value[0]), float(value[1]), float(value[2]), float(value[3]) if value.size() > 3 else 1.0)
+	return fallback
 
 
 func _play(a: Dictionary, clip: String, length: float) -> void:
 	a.clip = clip
 	a.ct = 0.0
 	a.clip_len = length
+
+
+## A figure that comes back whole (new form, back from dying): forget lost,
+## regrowing and shed parts, the death and any clip, and the old placement.
+func _renew(a: Dictionary) -> void:
+	a.lost = {}
+	a.regrowing = {}
+	a.shed = {}
+	a.dying = false
+	a.clip = ""
+	a.ct = 0.0
+	a.clip_len = 0.0
+	a.u = 0.0
+	a.world = {}
+	a.drawn = {}
+	a.trail = []
 
 
 ## Advances clocks, clips, regrowth, debris physics and effects.
@@ -155,11 +292,27 @@ func step(delta: float) -> void:
 
 ## Draws one rigged enemy whose body centre is at `point`. Returns the screen
 ## y of the figure's top (for the health bar) or NAN when nothing was drawn.
+## Optional enemy fields: "flying" (bool, the pose's flight), "tint" (Color or
+## [r, g, b] multiplier on every part), "alpha" (multiplier on every part and
+## the shadow), "hit_part" (the hit flash lights only that part while it
+## is drawn), "size" (multiplier on the rig's scale: growing in, a new form
+## swelling; `point` stays the body centre at that size), "cut" (world px:
+## the figure sinks that far into the floor, shifted down and clipped at the
+## feet, like a burrowing sprite) and "shadow" (false: the caller draws its own).
 func draw_enemy(canvas: CanvasItem, enemy: Dictionary, point: Vector2) -> float:
-	var rig: Dictionary = library.rig(str(enemy.get("rig", "")))
+	var rig_name := str(enemy.get("rig", ""))
+	var rig: Dictionary = library.rig(rig_name)
 	if rig.is_empty(): return NAN
-	var a := _actor("e%d" % int(enemy.get("id", 0)), enemy)
+	var a := _actor(_key(enemy), enemy)
+	a.rig = rig_name
 	a.moving = bool(enemy.get("moving", false))
+	a.flying = bool(enemy.get("flying", false))
+	a.tint = _color_of(enemy.get("tint", Color.WHITE))
+	a.alpha_mul = float(enemy.get("alpha", 1.0))
+	a.hit_part = str(enemy.get("hit_part", ""))
+	a.size_mul = maxf(0.0, float(enemy.get("size", 1.0)))
+	a.cut = maxf(0.0, float(enemy.get("cut", 0.0)))
+	a.no_shadow = not bool(enemy.get("shadow", true))
 	var face := -1.0 if float(enemy.get("face", -1.0)) < 0.0 else 1.0
 	var dying_p := float(enemy.get("dying_p", -1.0))
 	var family: String = str(rig.family)
@@ -167,7 +320,8 @@ func draw_enemy(canvas: CanvasItem, enemy: Dictionary, point: Vector2) -> float:
 	if dying_p >= 0.0 and (family in ["skeleton", "bomber"]): return NAN
 	_clip_from_snapshot(a, rig, enemy, dying_p)
 	var flash := clampf(float(enemy.get("hit_flash", 0.0)) / 0.16, 0.0, 1.0)
-	return _draw_rig(canvas, a, rig, point, face, flash, true)
+	# An escaping or fading figure takes its shadow along.
+	return _draw_rig(canvas, a, rig, point, face, flash, true, float(a.alpha_mul))
 
 
 ## The hero's walk cycle follows its speed: one foot touches down every
@@ -189,6 +343,7 @@ func draw_hero(canvas: CanvasItem, key: String, player: Dictionary, point: Vecto
 	var rig: Dictionary = library.rig(rig_name)
 	if rig.is_empty(): return
 	var a := track_steps(key, player)
+	a.rig = rig_name
 	a.alpha_mul = alpha
 	if int(player.get("hurts", 0)) > int(a.hurts): _play(a, "hit", HIT_TIME)
 	a.hurts = int(player.get("hurts", 0))
@@ -200,7 +355,7 @@ func draw_hero(canvas: CanvasItem, key: String, player: Dictionary, point: Vecto
 		a.dead_at = -1.0
 		if str(a.clip) == "death": a.clip = ""
 		a.u = clampf(float(a.ct) / maxf(0.001, float(a.clip_len)), 0.0, 1.0) if not str(a.clip).is_empty() else 0.0
-	_draw_rig(canvas, a, rig, point, face, 0.0, false)
+	_draw_rig(canvas, a, rig, point, face, 0.0, false, 1.0)
 
 
 ## Attack clips follow the host's attack phase so the strike lands on the
@@ -225,6 +380,7 @@ func _clip_from_snapshot(a: Dictionary, rig: Dictionary, enemy: Dictionary, dyin
 		if str(a.clip) != str(mapping[0]): a.ct = 0.0
 		a.clip = mapping[0]
 		a.clip_len = 0.0
+		a.windows = [w_end, a_end]
 		return
 	if str(a.clip) in ["hit", "block"]:
 		a.u = clampf(float(a.ct) / maxf(0.001, float(a.clip_len)), 0.0, 1.0)
@@ -249,6 +405,12 @@ func _attack_mapping(rig: Dictionary, kind: String) -> Array:
 				"summon": return ["summon", 0.38, 0.5]
 			return ["attack", 0.55, 0.62]
 		"bomber": return ["attack", 1.0, 1.0]
+		"drake":
+			# bolt->bite, slam, dash, burrow, swing, sweep, ring/echoes->roar, beam, flight
+			var clip := str(RigPoses.DRAKE_KINDS.get(kind, ""))
+			if clip.is_empty(): return ["bite", 0.5, 0.65]
+			var windows: Array = RigPoses.DRAKE_WINDOWS[clip]
+			return [clip, float(windows[0]), float(windows[1])]
 	return ["attack", 0.45, 0.6]
 
 
@@ -284,6 +446,17 @@ func _start_death(a: Dictionary, rig: Dictionary, enemy: Dictionary) -> void:
 		"void":
 			for id: String in ["claw_l", "claw_r"]: _detach(a, rig, id, 0.7)
 			_flashes.append({"x": feet.x, "y": feet.y - 40.0, "r": 150.0, "life": 0.0, "max": 1.8, "color": VIOLET})
+		"drake":
+			# Wings, horns, jaw, crystals and the tail beyond its root fall off;
+			# body, neck and head stay and the death pose collapses them.
+			for id: String in DRAKE_SHED:
+				if not rig.by_id.has(id) or a.lost.has(id): continue
+				_detach(a, rig, id, 0.6)
+				a.shed[id] = true
+			var colors := palette(str(rig.get("material", "")))
+			if colors.is_empty(): colors = palette("ember")
+			_burst_at(feet - Vector2(0, 24), colors.burst, 20, 90.0)
+			if str(rig.get("material", "")) == "obsidian": _flashes.append({"x": feet.x, "y": feet.y - 40.0, "r": 150.0, "life": 0.0, "max": 1.8, "color": VIOLET})
 
 
 ## Turns a part into falling debris from where it was last drawn.
@@ -296,27 +469,58 @@ func _detach(a: Dictionary, rig: Dictionary, id: String, impulse: float) -> void
 	var center: Vector2 = xform * Vector2(part.center)
 	var ground: float = Vector2(a.get("feet", center)).y
 	var texture: Texture2D = part.texture
-	if part.get("frames") is Array and not part.frames.is_empty(): texture = part.frames[int(a.get("frame_" + id, 0)) % part.frames.size()].texture
+	var white: Texture2D = part.get("white")
+	if part.get("frames") is Array and not part.frames.is_empty():
+		var layer: Dictionary = part.frames[int(a.get("frame_" + id, 0)) % part.frames.size()]
+		texture = layer.texture
+		white = layer.get("white")
+	var material := str(rig.get("material", ""))
 	_debris.append({"key": a.key, "id": id, "texture": texture, "center": part.center, "x": center.x, "y": ground + _rng.randf_range(-4, 6), "z": ground - center.y,
 		"vx": _rng.randf_range(-56, 56) * impulse, "vz": _rng.randf_range(70, 140) * impulse, "ang": xform.get_rotation(), "spin": _rng.randf_range(-10, 10) * impulse,
-		"face": signf(xform.x.x) if absf(xform.x.x) > 0.01 else 1.0, "scale": _scale(rig), "life": 0.0, "max": 3.0 if str(a.key).begins_with("e") and str(rig.family) == "skeleton" else 5.0, "rest": false})
+		"face": signf(xform.x.x) if absf(xform.x.x) > 0.01 else 1.0, "scale": _scale(rig), "life": 0.0, "max": 3.0 if str(a.key).begins_with("e") and str(rig.family) == "skeleton" else 5.0, "rest": false,
+		"material": material, "white": white})
+	var chips: Array = cut_colors(rig)
 	for i in range(6): _particles.append({"x": center.x, "y": center.y, "vx": _rng.randf_range(-60, 60), "vy": _rng.randf_range(-60, 20), "life": 0.0, "max": _rng.randf_range(0.25, 0.5),
-		"color": VIOLET_DARK if str(rig.family) in ["void", "bomber"] else Color("fdf7ed"), "grav": 240.0})
+		"color": chips[i % chips.size()], "grav": 240.0})
+	# Glowing rigs spit embers (or void sparks) from the cut.
+	var colors := palette(material)
+	if not colors.is_empty(): _burst_at(center, colors.glow, 8, 70.0)
 
 
-func _draw_rig(canvas: CanvasItem, a: Dictionary, rig: Dictionary, point: Vector2, face: float, flash: float, with_items: bool) -> float:
+## Colours of the chips cut from a rig: its material's (hell rigs), violet for
+## void figures, bone white for the rest.
+static func cut_colors(rig: Dictionary) -> Array:
+	var material := str(rig.get("material", ""))
+	var colors := palette(material)
+	if not colors.is_empty(): return colors.chips
+	return [VIOLET_DARK] if str(rig.get("family", "")) in ["void", "bomber"] else [Color("fdf7ed")]
+
+
+func _draw_rig(canvas: CanvasItem, a: Dictionary, rig: Dictionary, point: Vector2, face: float, flash: float, with_items: bool, shadow_alpha: float) -> float:
 	var pose: Dictionary = RigPoses.pose(rig, a)
-	var S: float = _scale(rig)
+	var S: float = _actor_scale(rig, a)
 	var feet := point + Vector2(0, (float(rig.ground.y) - float(rig.center.y)) * S)
 	a.feet = feet
-	var world := _solve(rig, a, pose, feet, face, with_items)
+	# Sinking (a.cut world px): the figure is drawn that far lower and clipped at the feet.
+	var cut := float(a.get("cut", 0.0))
+	var clip_y := feet.y if cut > 0.0 else INF
+	var world := _solve(rig, a, pose, feet + Vector2(0, cut), face, with_items)
 	a.world = world
 	var dying: bool = str(a.clip) == "death"
-	if not dying or not (str(rig.family) in ["void", "necro"]):
-		canvas.draw_rect(Rect2(feet.x - float(rig.width) * S * 0.5, feet.y - S, float(rig.width) * S, 3.0 * S), SHADOW)
+	var material := str(rig.get("material", ""))
+	var colors := palette(material)
+	var layered := not colors.is_empty()
+	if (not dying or not (str(rig.family) in ["void", "necro"])) and not bool(a.get("no_shadow", false)):
+		var shadow := float(rig.width) * S
+		# A flying dragon's shadow shrinks below it.
+		if str(rig.family) == "drake": shadow *= 1.0 - clampf(-float(pose.whole.dy) / 40.0, 0.0, 0.45)
+		_rect(canvas, Rect2(feet.x - shadow * 0.5, feet.y - S, shadow, 3.0 * S), Color(SHADOW, SHADOW.a * shadow_alpha), "shadow", "")
 	var layers: Array = []
 	for part: Dictionary in rig.parts:
-		if not a.lost.has(part.id) and world.has(part.id): layers.append(part)
+		if not world.has(part.id): continue
+		# Hell rigs: a part hangs on its parent, so it goes with a lost one.
+		if (_hidden(rig, a, part.id) if layered else a.lost.has(part.id)): continue
+		layers.append(part)
 	if with_items:
 		for item: Dictionary in rig.items:
 			if not a.lost.has(item.id) and world.has(item.id): layers.append(item)
@@ -343,18 +547,49 @@ func _draw_rig(canvas: CanvasItem, a: Dictionary, rig: Dictionary, point: Vector
 			if alpha <= 0.01: continue
 			var layer: Dictionary = layer_of.call(part)
 			canvas.draw_set_transform_matrix(world[part.id])
-			for offset: Vector2 in offsets: canvas.draw_texture(layer.white, offset, Color(VIOLET_DARK, clampf(aura, 0.0, 1.0) * alpha))
+			for offset: Vector2 in offsets: _tex(canvas, layer.white, Color(VIOLET_DARK, clampf(aura, 0.0, 1.0) * alpha), "aura", part.id, offset)
 	var fuse := float(pose.get("fuse", 0.0))
 	if fuse > 0.0: flash = maxf(flash, 0.8 * fuse if sin(float(a.ct) * (20.0 + 50.0 * fuse)) > 0.0 else 0.0)
+	var shown: Dictionary = {}
+	for part: Dictionary in layers: shown[part.id] = true
+	# The hit flash lights only the struck part while it is drawn.
+	var flash_part := str(a.get("hit_part", ""))
+	if not shown.has(flash_part): flash_part = ""
+	var tint: Color = a.get("tint", Color.WHITE)
+	var glow: Dictionary = pose.get("glow", {})
+	var glow_color: Color = colors.glow if layered else Color("ffb347")
+	var flashed: Array[String] = []
+	# Parts actually put on the canvas (visible, not wholly below the floor): what a hit can land on.
+	var hittable: Dictionary = {}
 	for part: Dictionary in layers:
 		var alpha: float = alpha_of.call(part)
 		if alpha <= 0.01: continue
 		var layer: Dictionary = layer_of.call(part)
 		canvas.draw_set_transform_matrix(world[part.id])
-		canvas.draw_texture(layer.texture, Vector2.ZERO, Color(1, 1, 1, alpha))
-		if flash > 0.0: canvas.draw_texture(layer.white, Vector2.ZERO, Color(1, 1, 1, flash * alpha))
+		# Below the floor line (a sinking figure) nothing of the part is drawn.
+		var rows := _rows_above(part, Transform2D(world[part.id]), clip_y)
+		if rows <= float(Rect2(part.bounds).position.y): continue
+		hittable[part.id] = true
+		_tex(canvas, layer.texture, Color(tint.r, tint.g, tint.b, tint.a * alpha), "part", part.id, Vector2.ZERO, rows)
+		var heat := clampf(float(glow.get(part.id, 0.0)), 0.0, 1.0)
+		if heat > 0.0 and layer.get("white") != null: _tex(canvas, layer.white, Color(glow_color, 0.55 * heat * alpha), "glow", part.id, Vector2.ZERO, rows)
+		if flash > 0.0 and (flash_part.is_empty() or flash_part == part.id):
+			_tex(canvas, layer.white, Color(1, 1, 1, flash * alpha), "flash", part.id, Vector2.ZERO, rows)
+			flashed.append(part.id)
 		if bool(part.get("bow", false)): _draw_bow_string(canvas, pose)
 	canvas.draw_set_transform_matrix(Transform2D.IDENTITY)
+	# Hell rigs: a glowing wound at every severed joint, fading with its parent.
+	var stumps: Array[Dictionary] = []
+	if layered:
+		for id: String in a.lost:
+			var cut_part: Dictionary = rig.by_id.get(id, {})
+			if cut_part.is_empty() or not shown.has(str(cut_part.parent)): continue
+			var parent: Dictionary = rig.by_id[str(cut_part.parent)]
+			var at: Vector2 = Transform2D(world[parent.id]) * Vector2(cut_part.pivot)
+			if at.y > clip_y: continue
+			_draw_stump(canvas, at, material, S, id, alpha_of.call(parent))
+			stumps.append({"id": id, "at": at})
+	a.drawn = {"shown": shown, "hittable": hittable, "flashed": flashed, "stumps": stumps, "glow": glow.duplicate(), "tint": tint, "alpha": float(a.get("alpha_mul", 1.0))}
 	# Weapon swing trail from the blade tip.
 	var weapon: Dictionary = rig.by_id.get("weapon", {})
 	if bool(pose.trail) and not weapon.is_empty() and world.has("weapon") and not a.lost.has("weapon"):
@@ -362,7 +597,107 @@ func _draw_rig(canvas: CanvasItem, a: Dictionary, rig: Dictionary, point: Vector
 	for i in range(1, a.trail.size()):
 		canvas.draw_line(a.trail[i - 1].p, a.trail[i].p, Color(0.92, 0.97, 1.0, 0.65 * (1.0 - float(a.trail[i].age) / 0.12)), 2.0)
 	if pose.has("beam"): _beams.append({"key": a.key, "eye": world.get("eye", world.base) * Vector2(rig.get("eye_center", Vector2(22, 23))), "beam": pose.beam, "t": a.t, "ct": a.ct})
-	return feet.y - (float(rig.ground.y) - float(rig.top) + 1.0) * S + float(pose.whole.dy) * S
+	return feet.y + cut - (float(rig.ground.y) - float(rig.top) + 1.0) * S + float(pose.whole.dy) * S
+
+
+## Rows of a part's full-frame texture (from its top) that lie above the floor
+## line `clip_y` (world y) under `xform`, measured at the part's centre column:
+## INF without a clip, 0 when the part is entirely below it. Parts only lean
+## a little, so one column stands for the whole width.
+static func _rows_above(part: Dictionary, xform: Transform2D, clip_y: float) -> float:
+	if not is_finite(clip_y) or xform.y.y <= 0.001: return INF
+	var center_x := float(Vector2(part.get("center", Vector2.ZERO)).x)
+	return (clip_y - xform.origin.y - xform.x.y * center_x) / xform.y.y
+
+
+## World pixels per source pixel of an actor: its rig's scale times the
+## actor's size (a figure growing in or swelling into a new form).
+static func _actor_scale(rig: Dictionary, a: Dictionary) -> float:
+	return _scale(rig) * float(a.get("size_mul", 1.0))
+
+
+## World transforms of the parts actor `key` put on the canvas in its last
+## draw ({part id: Transform2D}, source px of the full frame -> world px): the
+## pose a hit is tested against. Lost, shed and hidden parts, invisible ones
+## and parts of a sinking figure that lie wholly below the floor are left
+## out; empty before the first draw or for an unknown actor.
+func part_transforms(key: String) -> Dictionary:
+	var a: Dictionary = _actors.get(key, {})
+	var result: Dictionary = {}
+	if a.is_empty(): return result
+	var world: Dictionary = a.get("world", {})
+	var drawn: Dictionary = a.get("drawn", {})
+	for id: Variant in drawn.get("hittable", drawn.get("shown", {})):
+		if world.has(id): result[str(id)] = Transform2D(world[id])
+	return result
+
+
+## True when a part or one of the parts it hangs on is lost or shed.
+func _hidden(rig: Dictionary, a: Dictionary, id: String) -> bool:
+	var at := id
+	for _depth in range(32):
+		if at.is_empty(): return false
+		if a.lost.has(at) or a.shed.has(at): return true
+		at = str(rig.by_id.get(at, {}).get("parent", ""))
+	return false
+
+
+## One texture of an actor, logged in draw_log while record_draws is on;
+## `rows` (from _rows_above) keeps only that many rows from its top.
+func _tex(canvas: CanvasItem, texture: Texture2D, color: Color, what: String, id: String, offset := Vector2.ZERO, rows := INF) -> void:
+	var size := texture.get_size()
+	if rows < size.y:
+		var keep := Rect2(Vector2.ZERO, Vector2(size.x, maxf(0.0, rows)))
+		canvas.draw_texture_rect_region(texture, Rect2(offset, keep.size), keep, color)
+	else:
+		canvas.draw_texture(texture, offset, color)
+	if record_draws: draw_log.append({"what": what, "id": id, "color": color})
+
+
+## One box of an actor (shadow, wound), logged in draw_log while record_draws is on.
+func _rect(canvas: CanvasItem, rect: Rect2, color: Color, what: String, id: String) -> void:
+	canvas.draw_rect(rect, color)
+	if record_draws: draw_log.append({"what": what, "id": id, "color": color})
+
+
+## A severed joint: a dark rim, a hot rim and a pulsing core, one source pixel
+## each, in the rig material's colours; now and then an ember rises from it.
+func _draw_stump(canvas: CanvasItem, at: Vector2, material: String, pixel: float, id: String, alpha: float) -> void:
+	if alpha <= 0.01: return
+	var colors: Array = palette(material).wound
+	var pulse := 0.65 + 0.35 * sin(_clock * 7.0 + float(absi(id.hash()) % 7))
+	var px := maxf(1.0, roundf(pixel))
+	var c := at.round()
+	_rect(canvas, Rect2(c - Vector2(1.5, 1.5) * px, Vector2(3, 3) * px), Color(colors[0], 0.9 * alpha), "stump", id)
+	_rect(canvas, Rect2(c - Vector2(1, 1) * px, Vector2(2, 2) * px), Color(colors[1], (0.55 + 0.45 * pulse) * alpha), "stump", id)
+	_rect(canvas, Rect2(c - Vector2(0.5, 0.5) * px, Vector2(1, 1) * px), Color(colors[2], pulse * alpha), "stump", id)
+	if _rng.randf() < 0.06:
+		_particles.append({"x": c.x, "y": c.y, "vx": _rng.randf_range(-8, 8), "vy": _rng.randf_range(-50, -25), "life": 0.0, "max": _rng.randf_range(0.3, 0.6), "color": colors[2]})
+
+
+## World position of `source_point` (source px of the rig's full frame, rest
+## pose) on part `part_id` of actor `key` ("e%d" % uid) as last drawn. A part
+## that was not drawn (lost, shed) hands the point to its nearest drawn
+## ancestor; otherwise the actor's feet, Vector2.ZERO for an unknown actor.
+func world_point(key: String, part_id: String, source_point: Vector2) -> Vector2:
+	var a: Dictionary = _actors.get(key, {})
+	if a.is_empty(): return Vector2.ZERO
+	var world: Dictionary = a.get("world", {})
+	var shown: Dictionary = a.get("drawn", {}).get("shown", {})
+	var by_id: Dictionary = library.rig(str(a.get("rig", ""))).get("by_id", {}) if library != null else {}
+	var at := part_id
+	for _depth in range(32):
+		if not by_id.has(at): break
+		if world.has(at) and shown.has(at): return Transform2D(world[at]) * source_point
+		at = str(by_id[at].get("parent", ""))
+	return a.get("feet", Vector2.ZERO)
+
+
+## What the last draw of actor `key` showed (tests and capture checks):
+## shown {part: true}, flashed [part], stumps [{id, at}], glow {part: 0..1},
+## tint and alpha. Empty before the first draw.
+func last_drawn(key: String) -> Dictionary:
+	return _actors.get(key, {}).get("drawn", {})
 
 
 func _draw_bow_string(canvas: CanvasItem, pose: Dictionary) -> void:
@@ -380,11 +715,14 @@ func _draw_bow_string(canvas: CanvasItem, pose: Dictionary) -> void:
 
 
 func _solve(rig: Dictionary, a: Dictionary, pose: Dictionary, feet: Vector2, face: float, with_items: bool) -> Dictionary:
-	var S: float = _scale(rig)
+	var S: float = _actor_scale(rig, a)
 	var whole: Dictionary = pose.whole
 	var ground: Vector2 = rig.ground
 	var pivot: Vector2 = whole.pivot if whole.pivot is Vector2 else ground
-	var base := _t(feet + Vector2(float(whole.dx) * face * S, float(whole.dy) * S)) * _s(Vector2(face * S, S)) * _t(-ground) * _t(pivot) * Transform2D(float(whole.rot), Vector2.ZERO) * _s(Vector2(float(whole.sx), float(whole.sy))) * _t(-pivot)
+	# whole.turn (the drake's tail whirl): the figure spins about its vertical
+	# axis, 1 -> -1 -> 1, mirrored about the feet.
+	var turn := float(whole.get("turn", 1.0))
+	var base := _t(feet + Vector2(float(whole.dx) * face * S, float(whole.dy) * S)) * _s(Vector2(face * turn * S, S)) * _t(-ground) * _t(pivot) * Transform2D(float(whole.rot), Vector2.ZERO) * _s(Vector2(float(whole.sx), float(whole.sy))) * _t(-pivot)
 	base.origin = base.origin.round()
 	var world: Dictionary = {"base": base}
 	for part: Dictionary in rig.parts: _part_world(rig, a, pose, world, part.id)
@@ -434,6 +772,11 @@ func draw_under(canvas: CanvasItem) -> void:
 		var xform := _t(Vector2(float(d.x), float(d.y) - float(d.z)).round()) * Transform2D(float(d.ang), Vector2.ZERO) * _s(Vector2(float(d.face) * float(d.get("scale", S)), float(d.get("scale", S)))) * _t(-Vector2(d.center))
 		canvas.draw_set_transform_matrix(xform)
 		canvas.draw_texture(d.texture, Vector2.ZERO, Color(1, 1, 1, fade))
+		# Hell debris glows in its material's colour and cools down.
+		var heat := 1.0 - clampf(float(d.life) / 1.5, 0.0, 1.0)
+		var hot := palette(str(d.get("material", "")))
+		if heat > 0.0 and not hot.is_empty() and d.get("white") != null:
+			canvas.draw_texture(d.white, Vector2.ZERO, Color(hot.glow, 0.6 * heat * fade))
 	canvas.draw_set_transform_matrix(Transform2D.IDENTITY)
 
 
@@ -444,7 +787,7 @@ func draw_over(canvas: CanvasItem, snapshot: Dictionary) -> void:
 	for beam: Dictionary in _beams: beams_by_key[beam.key] = beam
 	beams_drawn = 0
 	for enemy: Dictionary in snapshot.get("enemies", []):
-		var key := "e%d" % int(enemy.get("id", 0))
+		var key := _key(enemy)
 		if beams_by_key.has(key) and enemy.get("beam") is Array:
 			_draw_beam(canvas, beams_by_key[key], enemy.beam)
 			beams_drawn += 1

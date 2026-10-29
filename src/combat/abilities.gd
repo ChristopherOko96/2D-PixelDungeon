@@ -9,7 +9,8 @@ extends RefCounted
 
 const Dungeon = preload("res://src/dungeon/dungeon_generator.gd")
 
-var game: Node
+## The host: the game, or an object with the same members (src/combat/sheet_monsters.gd).
+var game: Object
 ## Active hazards: {id, kind, pos, state ("warn"/"fly"/"burst"/"out"/"back"),
 ## timer, length, radius, damage, hit (peer ids already hurt), ...}.
 var hazards: Array = []
@@ -17,7 +18,7 @@ var _next_id := 0
 var _rng := RandomNumberGenerator.new()
 
 
-func _init(owner: Node) -> void:
+func _init(owner: Object) -> void:
 	game = owner
 	_rng.seed = 11
 
@@ -182,6 +183,9 @@ func _summon(enemy: Dictionary, attack: Dictionary) -> void:
 		var minion: Dictionary = game._spawn_enemy(str(attack.summon), spot, 0)
 		minion.summoner = enemy.id
 		minion.shot_timer = 0.8
+		# Summoned creatures arrive angry, hunting their summoner's target.
+		minion.aggro = true
+		minion.aggro_target = int(enemy.get("aggro_target", -1))
 
 
 func active(enemy: Dictionary, attack: Dictionary, target: int, delta: float) -> void:
@@ -217,7 +221,7 @@ func active(enemy: Dictionary, attack: Dictionary, target: int, delta: float) ->
 				enemy.attacks = int(enemy.get("attacks", 0)) + 1
 				# Thorns rise under every living player and at random spots; the
 				# warning is long enough to step out at walking speed.
-				var bounds := Rect2(game.current_layout.play_bounds[0], game.current_layout.play_bounds[1], game.current_layout.play_bounds[2], game.current_layout.play_bounds[3]).grow(-30.0)
+				var bounds: Rect2 = (game.arena_rect(enemy) if game.has_method("arena_rect") else Rect2(game.current_layout.play_bounds[0], game.current_layout.play_bounds[1], game.current_layout.play_bounds[2], game.current_layout.play_bounds[3])).grow(-30.0)
 				for id in players:
 					if players[id].hp > 0: _add_hazard(str(attack.get("hazard", "thorns")), players[id].pos, float(attack.warn), float(attack.radius), int(attack.damage))
 				for i in range(int(attack.random)):

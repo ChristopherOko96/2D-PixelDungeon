@@ -60,6 +60,13 @@ var _fire_frames: Array[Texture2D] = []
 var _fountain_mid: Dictionary = {"red": [], "blue": []}
 var _fountain_basin: Dictionary = {"red": [], "blue": []}
 var _pieces: Dictionary = {}
+## Theme of a themed endless floor (layout.floor_theme): floor and wall tints,
+## banner colour and floor detail; white and empty elsewhere.
+var _floor_tint := Color.WHITE
+var _wall_tint := Color.WHITE
+const DETAIL_COLORS := {"crack": Color("#ff5a20"), "moss_dark": Color("#4f7a2e"), "moss_light": Color("#7fa848"),
+	"gold": Color("#e8c152"), "gold_light": Color("#fff4c8"), "cobweb": Color("#c8d4e4")}
+const BANNER_NAMES := ["red", "blue", "green", "yellow"]
 
 
 func _init() -> void:
@@ -96,9 +103,26 @@ func _tile(name: String) -> Image:
 	return _tiles[name]
 
 
-func _stamp(target: Image, name: String, cell: Vector2i, offset: Vector2i = Vector2i.ZERO) -> void:
-	var source := _tile(name)
+func _stamp(target: Image, name: String, cell: Vector2i, offset: Vector2i = Vector2i.ZERO, tint: Color = Color.WHITE) -> void:
+	var source := _tile(name) if tint == Color.WHITE else _tinted(name, tint)
 	target.blend_rect(source, Rect2i(Vector2i.ZERO, source.get_size()), cell * T + offset)
+
+
+## A tile multiplied by `tint` (cached per tile and colour; tiles are tiny).
+func _tinted(name: String, tint: Color) -> Image:
+	var key := "%s@%s" % [name, tint.to_html()]
+	if not _tiles.has(key):
+		var image: Image = _tile(name).duplicate()
+		for y in range(image.get_height()):
+			for x in range(image.get_width()):
+				image.set_pixel(x, y, image.get_pixel(x, y) * Color(tint.r, tint.g, tint.b, 1.0))
+		_tiles[key] = image
+	return _tiles[key]
+
+
+static func _theme_color(theme: Dictionary, key: String) -> Color:
+	var value := str(theme.get(key, ""))
+	return Color(value) if value.is_valid_html_color() else Color.WHITE
 
 
 ## Bakes `room` (a generator layout with painted_tiles and exits).
@@ -111,6 +135,9 @@ func bake(room: Dictionary, seed_value: int) -> void:
 	shafts.clear()
 	doors.clear()
 	auto_items.clear()
+	var theme: Dictionary = room.get("floor_theme", {})
+	_floor_tint = _theme_color(theme, "floor")
+	_wall_tint = _theme_color(theme, "wall")
 	var dimensions: Array = room.get("world_size", [1280, 720])
 	world_size = Vector2(float(dimensions[0]), float(dimensions[1]))
 	var size := Vector2i(int(world_size.x) / 32, int(world_size.y) / 32)
@@ -129,7 +156,7 @@ func bake(room: Dictionary, seed_value: int) -> void:
 	rng.seed = seed_value
 	for p: Vector2i in floor_cells:
 		var roll := rng.randf()
-		_stamp(image, "floor_1" if roll < 0.94 else "floor_%d" % rng.randi_range(2, 8), p)
+		_stamp(image, "floor_1" if roll < 0.94 else "floor_%d" % rng.randi_range(2, 8), p, Vector2i.ZERO, _floor_tint)
 	_paint_areas(image, room, floor_cells)
 	# Single obstacle cells become round columns (3 tiles tall, base on the cell).
 	var columns: Array[Vector2i] = []
@@ -140,7 +167,7 @@ func bake(room: Dictionary, seed_value: int) -> void:
 		if alone:
 			columns.append(p)
 			walls.erase(p)
-			_stamp(image, "floor_1", p)
+			_stamp(image, "floor_1", p, Vector2i.ZERO, _floor_tint)
 	# Wall pieces: face (brick front + cap above), left/right strips; corner
 	# cells inherit pieces from their neighbours so rows and strips meet.
 	var parts: Dictionary = {}
@@ -159,15 +186,47 @@ func bake(room: Dictionary, seed_value: int) -> void:
 	for p: Vector2i in walls:
 		var own: Dictionary = parts[p]
 		if own.face:
-			_stamp(image, "wall_mid", p)
+			_stamp(image, "wall_mid", p, Vector2i.ZERO, _wall_tint)
 			caps.append(p + Vector2i.UP)
-		if own.left: _stamp(image, "wall_outer_mid_right", p)
-		if own.right: _stamp(image, "wall_outer_mid_left", p)
-	for cap: Vector2i in caps: _stamp(image, "wall_top_mid", cap)
+		if own.left: _stamp(image, "wall_outer_mid_right", p, Vector2i.ZERO, _wall_tint)
+		if own.right: _stamp(image, "wall_outer_mid_left", p, Vector2i.ZERO, _wall_tint)
+	for cap: Vector2i in caps: _stamp(image, "wall_top_mid", cap, Vector2i.ZERO, _wall_tint)
 	for p: Vector2i in columns: _stamp(image, "column", p, Vector2i(0, -2 * T))
+	_paint_detail(image, str(theme.get("detail", "")), floor_cells)
 	_decorate(image, room, floor_cells, walls, rng)
 	_place_decor(image, room, floor_cells)
 	texture = ImageTexture.create_from_image(image)
+
+
+## The theme's floor detail painted onto the floor at 1x (16 px tiles): lava
+## cracks (hell), moss (orc camp), cobwebs (crypt) or gold inlays (heaven).
+func _paint_detail(image: Image, detail: String, floor_cells: Dictionary) -> void:
+	if detail.is_empty(): return
+	for p: Vector2i in floor_cells:
+		var cell_hash: int = absi(hash(p * 7 + Vector2i(13, 101)))
+		var origin := p * T
+		match detail:
+			"cracks":
+				if cell_hash % 4 != 0: continue
+				var y: int = 3 + cell_hash % 10
+				for step in range(8):
+					y = clampi(y + (cell_hash >> step) % 3 - 1, 1, 14)
+					image.fill_rect(Rect2i(origin.x + step * 2, origin.y + y, 2, 1), DETAIL_COLORS.crack)
+			"moss":
+				if cell_hash % 5 != 0: continue
+				for k in range(6):
+					var spot := Vector2i((cell_hash >> (k * 3)) % 13, (cell_hash >> (k * 3 + 2)) % 13)
+					image.fill_rect(Rect2i(origin + spot, Vector2i(2, 1)), DETAIL_COLORS.moss_dark if k % 2 == 0 else DETAIL_COLORS.moss_light)
+			"cobweb":
+				if cell_hash % 11 != 0: continue
+				for k in range(5):
+					image.set_pixelv(origin + Vector2i(k * 2, k * 2), image.get_pixelv(origin + Vector2i(k * 2, k * 2)).lerp(DETAIL_COLORS.cobweb, 0.5))
+					image.set_pixelv(origin + Vector2i(8 - k * 2, k * 2), image.get_pixelv(origin + Vector2i(8 - k * 2, k * 2)).lerp(DETAIL_COLORS.cobweb, 0.35))
+			"gold":
+				if (p.x + p.y) % 4 != 0: continue
+				image.fill_rect(Rect2i(origin + Vector2i(7, 6), Vector2i(2, 4)), DETAIL_COLORS.gold)
+				image.fill_rect(Rect2i(origin + Vector2i(6, 7), Vector2i(4, 2)), DETAIL_COLORS.gold)
+				image.set_pixelv(origin + Vector2i(7, 7), DETAIL_COLORS.gold_light)
 
 
 ## Floor styles replace the floor tile; carpets lie on top and frame
@@ -242,6 +301,9 @@ func _decorate(image: Image, room: Dictionary, floor_cells: Dictionary, walls: D
 	faces.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return a.y < b.y or (a.y == b.y and a.x < b.x))
 	var banners := ["wall_banner_red", "wall_banner_blue", "wall_banner_green", "wall_banner_yellow"]
 	var choice := rng.randi_range(0, banners.size() - 1)
+	# A themed floor flies its own colour (balance of themed_monsters.json).
+	var themed: int = BANNER_NAMES.find(str(room.get("floor_theme", {}).get("banner", "")))
+	if themed >= 0: choice = themed
 	var banner: String = banners[choice]
 	# North walls, as on the reference map: a torch every 6 cells, banners in
 	# pairs between them, now and then a lava fountain or a broken brick.

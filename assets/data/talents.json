@@ -1,0 +1,1687 @@
+{
+ "_note": "Talent trees and soul shards (master prompt 29.10.2026; planner artifact Klassen und Talentbaeume). Rank arrays: index = rank - 1. 1 m = meter_px world pixels. Percent values are whole numbers.",
+ "meter_px": 32,
+ "max_level": 30,
+ "first_point_level": 2,
+ "levels": {
+  "base": 50,
+  "exponent": 1.0,
+  "_note": "EXP to the next level = base x level, the same rule for every level. Level 30 needs 21750 EXP: about three full runs of 10 floors (one floor about 60 kills x 10 EXP + 100 = 700 EXP). User decision 29.10.2026: talents much harder to earn, max level only after several runs (was 2.5, about 1.5 floors)."
+ },
+ "tiers": {
+  "1": {
+   "level": 2,
+   "points": 0
+  },
+  "2": {
+   "level": 6,
+   "points": 3
+  },
+  "3": {
+   "level": 12,
+   "points": 7
+  },
+  "4": {
+   "level": 20,
+   "points": 12
+  }
+ },
+ "resources": {
+  "mage": {
+   "kind": "mana",
+   "name": "Mana",
+   "max": 100,
+   "regen": 6,
+   "start": 100
+  },
+  "archer": {
+   "kind": "stamina",
+   "name": "Ausdauer",
+   "max": 100,
+   "regen": 10,
+   "start": 100
+  },
+  "swordsman": {
+   "kind": "rage",
+   "name": "Zorn",
+   "max": 100,
+   "regen": 0,
+   "start": 0,
+   "per_hit": 10,
+   "per_hurt": 5
+  }
+ },
+ "global_cooldown": 1.0,
+ "base_crit": {
+  "chance_pct": 5,
+  "damage_pct": 150
+ },
+ "statuses": {
+  "burn": {
+   "pct": 12,
+   "time": 4
+  },
+  "poison": {
+   "pct": 10,
+   "time": 5
+  },
+  "bleed": {
+   "pct": 10,
+   "time": 4
+  }
+ },
+ "max_traps": 2,
+ "trap_life": 30,
+ "pet": {
+  "speed": 170,
+  "leash_m": 3,
+  "attack_range_m": 1.5,
+  "radius": 10,
+  "_kinds_note": "Companion of the beast master, chosen in the talent menu (profile class entry 'companion'). hp, dmg, every and speed multiply the talent's values; sprites: assets/sprites/forest_0x72/<kind>_idle|walk_f0..3.png.",
+  "default_kind": "wolf",
+  "kinds": {
+   "wolf": {
+    "name": "Wolf",
+    "hp": 1.0,
+    "dmg": 1.0,
+    "every": 1.0,
+    "speed": 1.0
+   },
+   "bear": {
+    "name": "Bär",
+    "hp": 1.7,
+    "dmg": 1.3,
+    "every": 1.35,
+    "speed": 0.75
+   }
+  }
+ },
+ "bar_slots": 4,
+ "soul_shards": {
+  "ultimate_cost": 1,
+  "tier_costs": [
+   2,
+   3
+  ],
+  "tier_bonus_pct": [
+   10,
+   20
+  ],
+  "per_boss": 2,
+  "_per_boss_note": "Only the real final boss of a run (floor 10, every world) gives shards: per_boss for each fair kill, plus one more with the difficulty's extra_pct chance and one for the first Albtraum kill of a boss. Normal: 2 per full run, so the 3-shard ultimate opens with the second full run. The boss counts at every character level (user decision 29.10.2026: the Normal final boss always gives shards); one boss per run already stops farming. User decision 29.10.2026: shards only from bosses, the ultimate after about 1.5 to 2 full runs.",
+  "min_fight_seconds": 20,
+  "min_damage_share": 0.05,
+  "reward_memory": 200,
+  "_stages_note": "User decision 29.10.2026: the ultimate is an expansion. Unlock with ultimate_cost (1) shard = Stufe 1; Stufe 2 and 3 cost tier_costs (2, 3) and each changes the ability (talents.<ultimate>.stages, cumulative): add = numbers added to the talent's values (first rank of an array; a missing key counts as 0), set = values replaced, after = delayed waves {delay s or on_end (when the buff or channel ends), dmg x hero damage, radius_m, fx, status}, ground = a zone left where it was cast {time, every, dmg, radius_m, status, slow}, fan = {count, spread rad} for projectiles, reset_cds = every other talent reloads at once. tier_bonus_pct adds damage (soul damage) or power (soul power) on top. Full ultimate: 1 + 2 + 3 = 6 shards, about three full runs on Normal."
+ },
+ "difficulties": {
+  "order": [
+   "normal",
+   "hard",
+   "nightmare"
+  ],
+  "normal": {
+   "name": "Normal",
+   "extra_pct": 0,
+   "hp": 1.0,
+   "damage": 1.0,
+   "boss_level_bonus": 0
+  },
+  "hard": {
+   "name": "Schwer",
+   "extra_pct": 25,
+   "hp": 1.5,
+   "damage": 1.3,
+   "boss_level_bonus": 4
+  },
+  "nightmare": {
+   "name": "Albtraum",
+   "extra_pct": 50,
+   "hp": 2.2,
+   "damage": 1.6,
+   "boss_level_bonus": 8
+  }
+ },
+ "boss_level_per_floor": 2,
+ "reset_gold_per_level": 25,
+ "gold": {
+  "per_kill": 1,
+  "per_boss": 40,
+  "per_floor": 15
+ },
+ "classes": {
+  "mage": {
+   "specs": [
+    {
+     "id": "fire",
+     "talents": [
+      "fire_1",
+      "fire_2",
+      "fire_3",
+      "fire_4",
+      "fire_5",
+      "fire_6"
+     ],
+     "name": "Feuermagier",
+     "color": "#e8692a",
+     "color2": "#ffc04a"
+    },
+    {
+     "id": "frost",
+     "talents": [
+      "frost_1",
+      "frost_2",
+      "frost_3",
+      "frost_4",
+      "frost_5",
+      "frost_6"
+     ],
+     "name": "Frostmagier",
+     "color": "#5bb8e8",
+     "color2": "#d8f4ff"
+    },
+    {
+     "id": "arcane",
+     "talents": [
+      "arcane_1",
+      "arcane_2",
+      "arcane_3",
+      "arcane_4",
+      "arcane_5",
+      "arcane_6"
+     ],
+     "name": "Arkanmagier",
+     "color": "#9a63e8",
+     "color2": "#e6d4ff"
+    }
+   ]
+  },
+  "archer": {
+   "specs": [
+    {
+     "id": "sniper",
+     "talents": [
+      "sniper_1",
+      "sniper_2",
+      "sniper_3",
+      "sniper_4",
+      "sniper_5",
+      "sniper_6"
+     ],
+     "name": "Scharfschütze",
+     "color": "#d6a536",
+     "color2": "#fff0b8"
+    },
+    {
+     "id": "trapper",
+     "talents": [
+      "trapper_1",
+      "trapper_2",
+      "trapper_3",
+      "trapper_4",
+      "trapper_5",
+      "trapper_6"
+     ],
+     "name": "Fallensteller",
+     "color": "#7cc23a",
+     "color2": "#e2ff9e"
+    },
+    {
+     "id": "beast",
+     "talents": [
+      "beast_1",
+      "beast_2",
+      "beast_3",
+      "beast_4",
+      "beast_5",
+      "beast_6"
+     ],
+     "name": "Bestienmeister",
+     "color": "#3f9a4f",
+     "color2": "#bfeaa0"
+    }
+   ]
+  },
+  "swordsman": {
+   "specs": [
+    {
+     "id": "berserk",
+     "talents": [
+      "berserk_1",
+      "berserk_2",
+      "berserk_3",
+      "berserk_4",
+      "berserk_5",
+      "berserk_6"
+     ],
+     "name": "Berserker",
+     "color": "#b02a2a",
+     "color2": "#ff9a8a"
+    },
+    {
+     "id": "guard",
+     "talents": [
+      "guard_1",
+      "guard_2",
+      "guard_3",
+      "guard_4",
+      "guard_5",
+      "guard_6"
+     ],
+     "name": "Schildwächter",
+     "color": "#5b7fa6",
+     "color2": "#d4e3f4"
+    },
+    {
+     "id": "blade",
+     "talents": [
+      "blade_1",
+      "blade_2",
+      "blade_3",
+      "blade_4",
+      "blade_5",
+      "blade_6"
+     ],
+     "name": "Klingenmeister",
+     "color": "#9aa3b0",
+     "color2": "#f2f5fa"
+    }
+   ]
+  }
+ },
+ "talents": {
+  "fire_1": {
+   "id": "fire_1",
+   "class": "mage",
+   "spec": "fire",
+   "index": 0,
+   "tier": 1,
+   "name": "Flammenpfeil",
+   "kind": "active",
+   "icon": "bolt",
+   "text": "125/145/165 % Schaden und Brennen.",
+   "ranks": 3,
+   "type": "projectile",
+   "dmg": [
+    1.25,
+    1.45,
+    1.65
+   ],
+   "status": "burn",
+   "style": "fireball",
+   "cost": 14,
+   "cd": 4
+  },
+  "fire_2": {
+   "id": "fire_2",
+   "class": "mage",
+   "spec": "fire",
+   "index": 1,
+   "tier": 1,
+   "name": "Glutbeherrschung",
+   "kind": "passive",
+   "icon": "flame",
+   "text": "+4/8/12 % direkter Schaden gegen brennende Gegner.",
+   "ranks": 3,
+   "type": "bonus_vs_status",
+   "statuses": [
+    "burn"
+   ],
+   "pct": [
+    4,
+    8,
+    12
+   ]
+  },
+  "fire_3": {
+   "id": "fire_3",
+   "class": "mage",
+   "spec": "fire",
+   "index": 2,
+   "tier": 2,
+   "name": "Feuerring",
+   "kind": "active",
+   "icon": "ring",
+   "text": "95/115/135 % Flächenschaden im Radius von 4 m, Gegner beginnen zu brennen.",
+   "ranks": 3,
+   "type": "nova",
+   "radius_m": 4,
+   "dmg": [
+    0.95,
+    1.15,
+    1.35
+   ],
+   "status": "burn",
+   "cost": 28,
+   "cd": 12,
+   "fx": "fire"
+  },
+  "fire_4": {
+   "id": "fire_4",
+   "class": "mage",
+   "spec": "fire",
+   "index": 3,
+   "tier": 2,
+   "name": "Schwelende Glut",
+   "kind": "passive",
+   "icon": "ember",
+   "text": "+15/30/45 % Brennschaden.",
+   "ranks": 3,
+   "type": "dot_bonus",
+   "status": "burn",
+   "pct": [
+    15,
+    30,
+    45
+   ]
+  },
+  "fire_5": {
+   "id": "fire_5",
+   "class": "mage",
+   "spec": "fire",
+   "index": 4,
+   "tier": 3,
+   "name": "Phönixschritt",
+   "kind": "active",
+   "icon": "blink",
+   "text": "Teleport über 4/5/6 m, 70/85/100 % Flächenschaden am Ausgangspunkt.",
+   "ranks": 3,
+   "type": "blink",
+   "dist_m": [
+    4,
+    5,
+    6
+   ],
+   "dmg": [
+    0.7,
+    0.85,
+    1.0
+   ],
+   "radius_m": 2,
+   "cost": 20,
+   "cd": 18,
+   "fx": "fire"
+  },
+  "fire_6": {
+   "id": "fire_6",
+   "class": "mage",
+   "spec": "fire",
+   "index": 5,
+   "tier": 4,
+   "name": "Inferno",
+   "kind": "ultimate",
+   "icon": "meteor",
+   "text": "Massive Feuerexplosion: 260 % Flächenschaden, 6 m Radius, danach 6 s Brennen.",
+   "ranks": 1,
+   "type": "nova",
+   "radius_m": 6,
+   "dmg": [
+    2.6
+   ],
+   "status": "burn",
+   "status_time": 6,
+   "cost": 60,
+   "cd": 85,
+   "fx": "fire",
+   "soul": "damage",
+   "stages": [
+    {
+     "name": "Glutkern",
+     "text": "+2 m Radius, Brennen hält 3 s länger.",
+     "add": {
+      "radius_m": 2,
+      "status_time": 3
+     }
+    },
+    {
+     "name": "Feuersturm",
+     "text": "Nach 1,5 s folgt eine zweite Explosion mit 120 %. Der Boden brennt danach 6 s: jede Sekunde 30 % Schaden und Brennen.",
+     "after": [
+      {
+       "delay": 1.5,
+       "dmg": 1.2,
+       "radius_m": 8,
+       "fx": "fire",
+       "status": "burn"
+      }
+     ],
+     "ground": {
+      "time": 6,
+      "every": 1,
+      "dmg": 0.3,
+      "radius_m": 6,
+      "status": "burn"
+     }
+    }
+   ]
+  },
+  "frost_1": {
+   "id": "frost_1",
+   "class": "mage",
+   "spec": "frost",
+   "index": 0,
+   "tier": 1,
+   "name": "Frostlanze",
+   "kind": "active",
+   "icon": "bolt",
+   "text": "110/125/140 % Schaden, 20/30/40 % langsamer für 4 s.",
+   "ranks": 3,
+   "type": "projectile",
+   "dmg": [
+    1.1,
+    1.25,
+    1.4
+   ],
+   "slow": [
+    0.2,
+    0.3,
+    0.4
+   ],
+   "slow_time": 4,
+   "style": "frost_lance",
+   "cost": 12,
+   "cd": 4
+  },
+  "frost_2": {
+   "id": "frost_2",
+   "class": "mage",
+   "spec": "frost",
+   "index": 1,
+   "tier": 1,
+   "name": "Frosthaut",
+   "kind": "passive",
+   "icon": "shield",
+   "text": "3/6/9 % weniger erlittener Schaden.",
+   "ranks": 3,
+   "type": "damage_reduction",
+   "pct": [
+    3,
+    6,
+    9
+   ]
+  },
+  "frost_3": {
+   "id": "frost_3",
+   "class": "mage",
+   "spec": "frost",
+   "index": 2,
+   "tier": 2,
+   "name": "Eisnova",
+   "kind": "active",
+   "icon": "ring",
+   "text": "70/85/100 % Flächenschaden, 4 m Radius, friert normale Gegner 1/1,5/2 s ein.",
+   "ranks": 3,
+   "type": "nova",
+   "radius_m": 4,
+   "dmg": [
+    0.7,
+    0.85,
+    1.0
+   ],
+   "freeze": [
+    1,
+    1.5,
+    2
+   ],
+   "cost": 28,
+   "cd": 15,
+   "fx": "ice"
+  },
+  "frost_4": {
+   "id": "frost_4",
+   "class": "mage",
+   "spec": "frost",
+   "index": 3,
+   "tier": 2,
+   "name": "Eisbrecher",
+   "kind": "passive",
+   "icon": "shard",
+   "text": "+4/8/12 % Schaden gegen verlangsamte oder eingefrorene Gegner.",
+   "ranks": 3,
+   "type": "bonus_vs_status",
+   "statuses": [
+    "slow",
+    "freeze"
+   ],
+   "pct": [
+    4,
+    8,
+    12
+   ]
+  },
+  "frost_5": {
+   "id": "frost_5",
+   "class": "mage",
+   "spec": "frost",
+   "index": 4,
+   "tier": 3,
+   "name": "Kristallschild",
+   "kind": "active",
+   "icon": "helmet",
+   "text": "Schild absorbiert 120/160/200 % des Grundangriffsschadens, höchstens 6 s.",
+   "ranks": 3,
+   "type": "shield",
+   "base_pct": [
+    120,
+    160,
+    200
+   ],
+   "time": 6,
+   "cost": 30,
+   "cd": 22
+  },
+  "frost_6": {
+   "id": "frost_6",
+   "class": "mage",
+   "spec": "frost",
+   "index": 5,
+   "tier": 4,
+   "name": "Absoluter Nullpunkt",
+   "kind": "ultimate",
+   "icon": "snowflake",
+   "text": "150 % Flächenschaden, 6 m Radius. Normale Gegner 3 s eingefroren, Bosse 4 s um 50 % langsamer.",
+   "ranks": 1,
+   "type": "nova",
+   "radius_m": 6,
+   "dmg": [
+    1.5
+   ],
+   "freeze": [
+    3
+   ],
+   "boss_slow": 0.5,
+   "boss_slow_time": 4,
+   "cost": 60,
+   "cd": 90,
+   "fx": "ice",
+   "soul": "damage",
+   "stages": [
+    {
+     "name": "Ewiges Eis",
+     "text": "Gegner bleiben 1,5 s länger eingefroren, Bosse sind 6 s lang 70 % langsamer.",
+     "add": {
+      "freeze": 1.5,
+      "boss_slow": 0.2,
+      "boss_slow_time": 2
+     }
+    },
+    {
+     "name": "Splitterbruch",
+     "text": "Nach 3 s zerspringt das Eis: eine zweite Welle mit 180 % Schaden in 7 m.",
+     "after": [
+      {
+       "delay": 3,
+       "dmg": 1.8,
+       "radius_m": 7,
+       "fx": "ice"
+      }
+     ]
+    }
+   ]
+  },
+  "arcane_1": {
+   "id": "arcane_1",
+   "class": "mage",
+   "spec": "arcane",
+   "index": 0,
+   "tier": 1,
+   "name": "Arkangeschoss",
+   "kind": "active",
+   "icon": "bolt",
+   "text": "130/150/170 % Schaden.",
+   "ranks": 3,
+   "type": "projectile",
+   "dmg": [
+    1.3,
+    1.5,
+    1.7
+   ],
+   "style": "arcane",
+   "cost": 14,
+   "cd": 5
+  },
+  "arcane_2": {
+   "id": "arcane_2",
+   "class": "mage",
+   "spec": "arcane",
+   "index": 1,
+   "tier": 1,
+   "name": "Manaquelle",
+   "kind": "passive",
+   "icon": "drop",
+   "text": "+10/20/30 maximales Mana, +5/10/15 % Manaregeneration.",
+   "ranks": 3,
+   "type": "resource_bonus",
+   "max": [
+    10,
+    20,
+    30
+   ],
+   "regen_pct": [
+    5,
+    10,
+    15
+   ]
+  },
+  "arcane_3": {
+   "id": "arcane_3",
+   "class": "mage",
+   "spec": "arcane",
+   "index": 2,
+   "tier": 2,
+   "name": "Magisches Echo",
+   "kind": "active",
+   "icon": "echo",
+   "text": "Der nächste Schadenszauber wird mit 25/35/45 % seiner Stärke wiederholt. Das Echo kostet nichts und löst kein weiteres Echo aus.",
+   "ranks": 3,
+   "type": "echo",
+   "pct": [
+    25,
+    35,
+    45
+   ],
+   "cost": 25,
+   "cd": 16
+  },
+  "arcane_4": {
+   "id": "arcane_4",
+   "class": "mage",
+   "spec": "arcane",
+   "index": 3,
+   "tier": 2,
+   "name": "Arkaner Kreislauf",
+   "kind": "passive",
+   "icon": "cycle",
+   "text": "Jeder dritte Zauber, der Mana kostet, gibt 4/6/8 Mana zurück.",
+   "ranks": 3,
+   "type": "refund",
+   "every": 3,
+   "amount": [
+    4,
+    6,
+    8
+   ]
+  },
+  "arcane_5": {
+   "id": "arcane_5",
+   "class": "mage",
+   "spec": "arcane",
+   "index": 4,
+   "tier": 3,
+   "name": "Raumsprung",
+   "kind": "active",
+   "icon": "blink",
+   "text": "Teleport über 5/7/9 m, entfernt Verlangsamungen.",
+   "ranks": 3,
+   "type": "blink",
+   "dist_m": [
+    5,
+    7,
+    9
+   ],
+   "cleanse": true,
+   "cost": 20,
+   "cd": 18,
+   "fx": "arcane"
+  },
+  "arcane_6": {
+   "id": "arcane_6",
+   "class": "mage",
+   "spec": "arcane",
+   "index": 5,
+   "tier": 4,
+   "name": "Zeitbruch",
+   "kind": "ultimate",
+   "icon": "clock",
+   "text": "8 s: +25 % Zauberschaden und 40 % kürzere Abklingzeiten.",
+   "ranks": 1,
+   "type": "buff",
+   "buff": "timebreak",
+   "time": 8,
+   "spell_pct": 25,
+   "cdr_pct": 40,
+   "cost": 55,
+   "cd": 100,
+   "soul": "duration",
+   "stages": [
+    {
+     "name": "Beschleunigung",
+     "text": "Hält 3 s länger und gibt +15 % mehr Zauberschaden.",
+     "add": {
+      "time": 3,
+      "spell_pct": 15
+     }
+    },
+    {
+     "name": "Zeitschleife",
+     "text": "Beim Wirken laden alle anderen Fähigkeiten sofort nach. Am Ende entlädt sich eine Arkanwelle mit 200 % in 5 m.",
+     "reset_cds": true,
+     "after": [
+      {
+       "on_end": true,
+       "dmg": 2.0,
+       "radius_m": 5,
+       "fx": "arcane"
+      }
+     ]
+    }
+   ]
+  },
+  "sniper_1": {
+   "id": "sniper_1",
+   "class": "archer",
+   "spec": "sniper",
+   "index": 0,
+   "tier": 1,
+   "name": "Gezielter Schuss",
+   "kind": "active",
+   "icon": "arrow",
+   "text": "150/175/200 % Schaden.",
+   "ranks": 3,
+   "type": "projectile",
+   "dmg": [
+    1.5,
+    1.75,
+    2.0
+   ],
+   "style": "arrow",
+   "cost": 20,
+   "cd": 6
+  },
+  "sniper_2": {
+   "id": "sniper_2",
+   "class": "archer",
+   "spec": "sniper",
+   "index": 1,
+   "tier": 1,
+   "name": "Adlerauge",
+   "kind": "passive",
+   "icon": "eye",
+   "text": "+3/6/9 Prozentpunkte kritische Trefferchance.",
+   "ranks": 3,
+   "type": "crit_chance",
+   "pct": [
+    3,
+    6,
+    9
+   ]
+  },
+  "sniper_3": {
+   "id": "sniper_3",
+   "class": "archer",
+   "spec": "sniper",
+   "index": 2,
+   "tier": 2,
+   "name": "Durchschuss",
+   "kind": "active",
+   "icon": "pierce",
+   "text": "Pfeil durchbohrt bis zu 3 Gegner, 115/135/155 % Schaden pro Gegner.",
+   "ranks": 3,
+   "type": "projectile",
+   "dmg": [
+    1.15,
+    1.35,
+    1.55
+   ],
+   "pierce": 3,
+   "style": "arrow",
+   "cost": 25,
+   "cd": 10
+  },
+  "sniper_4": {
+   "id": "sniper_4",
+   "class": "archer",
+   "spec": "sniper",
+   "index": 3,
+   "tier": 2,
+   "name": "Tödliche Präzision",
+   "kind": "passive",
+   "icon": "skull",
+   "text": "+10/20/30 Prozentpunkte kritischer Bonusschaden.",
+   "ranks": 3,
+   "type": "crit_damage",
+   "pct": [
+    10,
+    20,
+    30
+   ]
+  },
+  "sniper_5": {
+   "id": "sniper_5",
+   "class": "archer",
+   "spec": "sniper",
+   "index": 4,
+   "tier": 3,
+   "name": "Jägermarkierung",
+   "kind": "active",
+   "icon": "mark",
+   "text": "Markiert einen Gegner 8/10/12 s: +10/15/20 % eigener Schaden gegen ihn.",
+   "ranks": 3,
+   "type": "mark",
+   "time": [
+    8,
+    10,
+    12
+   ],
+   "pct": [
+    10,
+    15,
+    20
+   ],
+   "cost": 15,
+   "cd": 20
+  },
+  "sniper_6": {
+   "id": "sniper_6",
+   "class": "archer",
+   "spec": "sniper",
+   "index": 5,
+   "tier": 4,
+   "name": "Letzter Pfeil",
+   "kind": "ultimate",
+   "icon": "burst",
+   "text": "320 % Schaden, garantiert kritisch.",
+   "ranks": 1,
+   "type": "projectile",
+   "dmg": [
+    3.2
+   ],
+   "always_crit": true,
+   "style": "arrow",
+   "cost": 50,
+   "cd": 85,
+   "soul": "damage",
+   "stages": [
+    {
+     "name": "Durchschlag",
+     "text": "Der Pfeil durchbohrt jeden Gegner auf seiner Bahn und trifft mit 380 %.",
+     "add": {
+      "dmg": 0.6,
+      "pierce": 99
+     }
+    },
+    {
+     "name": "Pfeilsturm",
+     "text": "Drei Pfeile fliegen im Fächer, jeder garantiert kritisch.",
+     "fan": {
+      "count": 3,
+      "spread": 0.28
+     }
+    }
+   ]
+  },
+  "trapper_1": {
+   "id": "trapper_1",
+   "class": "archer",
+   "spec": "trapper",
+   "index": 0,
+   "tier": 1,
+   "name": "Giftpfeil",
+   "kind": "active",
+   "icon": "arrow",
+   "text": "90/105/120 % Schaden, vergiftet 5 s.",
+   "ranks": 3,
+   "type": "projectile",
+   "dmg": [
+    0.9,
+    1.05,
+    1.2
+   ],
+   "status": "poison",
+   "style": "arrow",
+   "cost": 15,
+   "cd": 5
+  },
+  "trapper_2": {
+   "id": "trapper_2",
+   "class": "archer",
+   "spec": "trapper",
+   "index": 1,
+   "tier": 1,
+   "name": "Giftmischer",
+   "kind": "passive",
+   "icon": "flask",
+   "text": "+10/20/30 % Giftschaden.",
+   "ranks": 3,
+   "type": "dot_bonus",
+   "status": "poison",
+   "pct": [
+    10,
+    20,
+    30
+   ]
+  },
+  "trapper_3": {
+   "id": "trapper_3",
+   "class": "archer",
+   "spec": "trapper",
+   "index": 2,
+   "tier": 2,
+   "name": "Dornenfalle",
+   "kind": "active",
+   "icon": "spikes",
+   "text": "90/110/130 % Schaden, hält normale Gegner 1/1,5/2 s fest. Höchstens 2 Fallen gleichzeitig.",
+   "ranks": 3,
+   "type": "trap",
+   "dmg": [
+    0.9,
+    1.1,
+    1.3
+   ],
+   "root": [
+    1,
+    1.5,
+    2
+   ],
+   "radius_m": 1,
+   "cost": 25,
+   "cd": 12
+  },
+  "trapper_4": {
+   "id": "trapper_4",
+   "class": "archer",
+   "spec": "trapper",
+   "index": 3,
+   "tier": 2,
+   "name": "Hinterhalt",
+   "kind": "passive",
+   "icon": "trap",
+   "text": "+10/20/30 % Fallenschaden.",
+   "ranks": 3,
+   "type": "trap_bonus",
+   "pct": [
+    10,
+    20,
+    30
+   ]
+  },
+  "trapper_5": {
+   "id": "trapper_5",
+   "class": "archer",
+   "spec": "trapper",
+   "index": 4,
+   "tier": 3,
+   "name": "Explosionsfalle",
+   "kind": "active",
+   "icon": "bomb",
+   "text": "140/165/190 % Flächenschaden, 3 m Radius.",
+   "ranks": 3,
+   "type": "trap",
+   "dmg": [
+    1.4,
+    1.65,
+    1.9
+   ],
+   "radius_m": 3,
+   "cost": 30,
+   "cd": 18
+  },
+  "trapper_6": {
+   "id": "trapper_6",
+   "class": "archer",
+   "spec": "trapper",
+   "index": 5,
+   "tier": 4,
+   "name": "Todeszone",
+   "kind": "ultimate",
+   "icon": "skull",
+   "text": "Giftiges Gebiet, 5 m Radius, 10 s: alle 2 s 40 % Schaden und Gift.",
+   "ranks": 1,
+   "type": "zone",
+   "radius_m": 5,
+   "time": 10,
+   "every": 2,
+   "dmg": [
+    0.4
+   ],
+   "status": "poison",
+   "cost": 55,
+   "cd": 90,
+   "soul": "damage",
+   "stages": [
+    {
+     "name": "Sumpfgift",
+     "text": "+1,5 m Radius, hält 4 s länger, Gegner darin sind 40 % langsamer.",
+     "add": {
+      "radius_m": 1.5,
+      "time": 4,
+      "slow": 0.4,
+      "slow_time": 2.5
+     }
+    },
+    {
+     "name": "Seuchenherz",
+     "text": "Die Zone schlägt jede Sekunde zu statt alle 2 s, mit 60 % Schaden.",
+     "add": {
+      "every": -1,
+      "dmg": 0.2
+     }
+    }
+   ]
+  },
+  "beast_1": {
+   "id": "beast_1",
+   "class": "archer",
+   "spec": "beast",
+   "index": 0,
+   "tier": 1,
+   "name": "Tiergefährte",
+   "kind": "active",
+   "icon": "wolf",
+   "text": "Ein Wolf oder ein Bär (im Talentmenü wählbar) kämpft 20 s mit und greift alle 2 s an: 25/35/45 % Schaden pro Angriff. Der Bär hat mehr Leben und beißt härter, aber seltener.",
+   "ranks": 3,
+   "type": "summon",
+   "count": 1,
+   "time": 20,
+   "every": 2,
+   "dmg": [
+    0.25,
+    0.35,
+    0.45
+   ],
+   "hp": 6,
+   "cost": 30,
+   "cd": 30
+  },
+  "beast_2": {
+   "id": "beast_2",
+   "class": "archer",
+   "spec": "beast",
+   "index": 1,
+   "tier": 1,
+   "name": "Tierbindung",
+   "kind": "passive",
+   "icon": "heart",
+   "text": "+15/30/45 % Leben und +5/10/15 % Schaden für deinen Begleiter.",
+   "ranks": 3,
+   "type": "pet_bonus",
+   "hp_pct": [
+    15,
+    30,
+    45
+   ],
+   "dmg_pct": [
+    5,
+    10,
+    15
+   ]
+  },
+  "beast_3": {
+   "id": "beast_3",
+   "class": "archer",
+   "spec": "beast",
+   "index": 2,
+   "tier": 2,
+   "name": "Fass!",
+   "kind": "active",
+   "icon": "paw",
+   "text": "Dein Begleiter springt einen Gegner an: 110/140/170 % Schaden, normale Gegner greifen 2 s den Begleiter an. Braucht einen aktiven Begleiter.",
+   "ranks": 3,
+   "type": "pet_leap",
+   "dmg": [
+    1.1,
+    1.4,
+    1.7
+   ],
+   "taunt": 2,
+   "cost": 20,
+   "cd": 10
+  },
+  "beast_4": {
+   "id": "beast_4",
+   "class": "archer",
+   "spec": "beast",
+   "index": 3,
+   "tier": 2,
+   "name": "Rudeljäger",
+   "kind": "passive",
+   "icon": "mark",
+   "text": "+3/6/9 % Schaden gegen Gegner, die dein Begleiter angreift.",
+   "ranks": 3,
+   "type": "bonus_vs_pet_target",
+   "pct": [
+    3,
+    6,
+    9
+   ]
+  },
+  "beast_5": {
+   "id": "beast_5",
+   "class": "archer",
+   "spec": "beast",
+   "index": 4,
+   "tier": 3,
+   "name": "Schutzinstinkt",
+   "kind": "passive",
+   "icon": "shield",
+   "text": "Dein Begleiter halbiert den nächsten Treffer gegen dich, höchstens alle 30/25/20 s. Nur mit aktivem Begleiter.",
+   "ranks": 3,
+   "type": "pet_guard",
+   "reduce_pct": 50,
+   "every": [
+    30,
+    25,
+    20
+   ]
+  },
+  "beast_6": {
+   "id": "beast_6",
+   "class": "archer",
+   "spec": "beast",
+   "index": 5,
+   "tier": 4,
+   "name": "Alpharuf",
+   "kind": "ultimate",
+   "icon": "horn",
+   "text": "Zwei weitere Begleiter für 15 s, je 35 % Schaden alle 2 s. Ruft auch den normalen Begleiter, falls er fehlt.",
+   "ranks": 1,
+   "type": "summon",
+   "count": 2,
+   "time": 15,
+   "every": 2,
+   "dmg": [
+    0.35
+   ],
+   "hp": 6,
+   "pack": true,
+   "cost": 55,
+   "cd": 90,
+   "soul": "damage",
+   "stages": [
+    {
+     "name": "Großes Rudel",
+     "text": "Drei statt zwei Begleiter, sie bleiben 5 s länger.",
+     "add": {
+      "count": 1,
+      "time": 5
+     }
+    },
+    {
+     "name": "Rudelführer",
+     "text": "Die Begleiter beißen jede Sekunde mit 55 % und haben doppelt so viel Leben.",
+     "add": {
+      "every": -1,
+      "dmg": 0.2,
+      "hp": 6
+     }
+    }
+   ]
+  },
+  "berserk_1": {
+   "id": "berserk_1",
+   "class": "swordsman",
+   "spec": "berserk",
+   "index": 0,
+   "tier": 1,
+   "name": "Wutschlag",
+   "kind": "active",
+   "icon": "axe",
+   "text": "145/170/195 % Schaden.",
+   "ranks": 3,
+   "type": "melee",
+   "dmg": [
+    1.45,
+    1.7,
+    1.95
+   ],
+   "reach_m": 2.2,
+   "arc": 2.2,
+   "cost": 20,
+   "cd": 5
+  },
+  "berserk_2": {
+   "id": "berserk_2",
+   "class": "swordsman",
+   "spec": "berserk",
+   "index": 1,
+   "tier": 1,
+   "name": "Blutdurst",
+   "kind": "passive",
+   "icon": "heart",
+   "text": "Besiegte Gegner heilen 2/3/4 % deiner maximalen Lebenspunkte.",
+   "ranks": 3,
+   "type": "heal_on_kill",
+   "pct": [
+    2,
+    3,
+    4
+   ]
+  },
+  "berserk_3": {
+   "id": "berserk_3",
+   "class": "swordsman",
+   "spec": "berserk",
+   "index": 2,
+   "tier": 2,
+   "name": "Wirbelsturm",
+   "kind": "active",
+   "icon": "whirl",
+   "text": "90/110/130 % Flächenschaden, 3 m Radius.",
+   "ranks": 3,
+   "type": "nova",
+   "radius_m": 3,
+   "dmg": [
+    0.9,
+    1.1,
+    1.3
+   ],
+   "cost": 30,
+   "cd": 10,
+   "fx": "steel"
+  },
+  "berserk_4": {
+   "id": "berserk_4",
+   "class": "swordsman",
+   "spec": "berserk",
+   "index": 3,
+   "tier": 2,
+   "name": "Zornschub",
+   "kind": "passive",
+   "icon": "fist",
+   "text": "+2/4/6 Zorn pro normalem Angriff.",
+   "ranks": 3,
+   "type": "rage_per_hit",
+   "amount": [
+    2,
+    4,
+    6
+   ]
+  },
+  "berserk_5": {
+   "id": "berserk_5",
+   "class": "swordsman",
+   "spec": "berserk",
+   "index": 4,
+   "tier": 3,
+   "name": "Raserei",
+   "kind": "active",
+   "icon": "clock",
+   "text": "8 s: +15/20/25 % Angriffstempo.",
+   "ranks": 3,
+   "type": "buff",
+   "buff": "frenzy",
+   "time": 8,
+   "attack_speed_pct": [
+    15,
+    20,
+    25
+   ],
+   "cost": 35,
+   "cd": 22
+  },
+  "berserk_6": {
+   "id": "berserk_6",
+   "class": "swordsman",
+   "spec": "berserk",
+   "index": 5,
+   "tier": 4,
+   "name": "Blutrausch",
+   "kind": "ultimate",
+   "icon": "drop",
+   "text": "10 s: +30 % Schaden, 10 % Lebensraub aus direktem Schaden, aber +15 % erlittener Schaden.",
+   "ranks": 1,
+   "type": "buff",
+   "buff": "bloodlust",
+   "time": 10,
+   "damage_pct": 30,
+   "lifesteal_pct": 10,
+   "taken_pct": 15,
+   "cost": 50,
+   "cd": 90,
+   "soul": "power",
+   "stages": [
+    {
+     "name": "Blutdurst",
+     "text": "20 % Lebensraub, du erleidest nur noch 5 % mehr Schaden.",
+     "add": {
+      "lifesteal_pct": 10,
+      "taken_pct": -10
+     }
+    },
+    {
+     "name": "Blutgericht",
+     "text": "Hält 4 s länger, +20 % mehr Schaden. Am Ende ein Blutschlag mit 250 % in 4 m.",
+     "add": {
+      "time": 4,
+      "damage_pct": 20
+     },
+     "after": [
+      {
+       "on_end": true,
+       "dmg": 2.5,
+       "radius_m": 4,
+       "fx": "fire",
+       "status": "bleed"
+      }
+     ]
+    }
+   ]
+  },
+  "guard_1": {
+   "id": "guard_1",
+   "class": "swordsman",
+   "spec": "guard",
+   "index": 0,
+   "tier": 1,
+   "name": "Schildstoß",
+   "kind": "active",
+   "icon": "shield",
+   "text": "90/110/130 % Schaden, provoziert normale Gegner 3 s.",
+   "ranks": 3,
+   "type": "melee",
+   "dmg": [
+    0.9,
+    1.1,
+    1.3
+   ],
+   "reach_m": 1.8,
+   "arc": 1.8,
+   "taunt": 3,
+   "cost": 15,
+   "cd": 7
+  },
+  "guard_2": {
+   "id": "guard_2",
+   "class": "swordsman",
+   "spec": "guard",
+   "index": 1,
+   "tier": 1,
+   "name": "Eisenhaut",
+   "kind": "passive",
+   "icon": "helmet",
+   "text": "3/6/9 % weniger erlittener Schaden.",
+   "ranks": 3,
+   "type": "damage_reduction",
+   "pct": [
+    3,
+    6,
+    9
+   ]
+  },
+  "guard_3": {
+   "id": "guard_3",
+   "class": "swordsman",
+   "spec": "guard",
+   "index": 2,
+   "tier": 2,
+   "name": "Schutzwall",
+   "kind": "active",
+   "icon": "wall",
+   "text": "6 s: 20/25/30 % weniger erlittener Schaden.",
+   "ranks": 3,
+   "type": "buff",
+   "buff": "bulwark",
+   "time": 6,
+   "reduction_pct": [
+    20,
+    25,
+    30
+   ],
+   "cost": 30,
+   "cd": 20
+  },
+  "guard_4": {
+   "id": "guard_4",
+   "class": "swordsman",
+   "spec": "guard",
+   "index": 3,
+   "tier": 2,
+   "name": "Kampfgeschrei",
+   "kind": "active",
+   "icon": "horn",
+   "text": "Provoziert Gegner im Radius von 5 m und gibt sofort 10/15/20 Zorn.",
+   "ranks": 3,
+   "type": "taunt_area",
+   "radius_m": 5,
+   "taunt": 3,
+   "rage": [
+    10,
+    15,
+    20
+   ],
+   "cost": 0,
+   "cd": 18
+  },
+  "guard_5": {
+   "id": "guard_5",
+   "class": "swordsman",
+   "spec": "guard",
+   "index": 4,
+   "tier": 3,
+   "name": "Wächtereid",
+   "kind": "active",
+   "icon": "crown",
+   "text": "6 s: übernimmt 20/30/40 % des Schadens eines Verbündeten in 5 m. Allein: 8/12/16 % weniger erlittener Schaden.",
+   "ranks": 3,
+   "type": "buff",
+   "buff": "oath",
+   "time": 6,
+   "ally_pct": [
+    20,
+    30,
+    40
+   ],
+   "solo_reduction_pct": [
+    8,
+    12,
+    16
+   ],
+   "range_m": 5,
+   "cost": 25,
+   "cd": 18
+  },
+  "guard_6": {
+   "id": "guard_6",
+   "class": "swordsman",
+   "spec": "guard",
+   "index": 5,
+   "tier": 4,
+   "name": "Unbezwingbar",
+   "kind": "ultimate",
+   "icon": "burst",
+   "text": "8 s: 60 % weniger erlittener Schaden, immun gegen Betäubung, Einfrieren und Rückstoß.",
+   "ranks": 1,
+   "type": "buff",
+   "buff": "unbreakable",
+   "time": 8,
+   "reduction_pct": 60,
+   "cc_immune": true,
+   "cost": 50,
+   "cd": 90,
+   "soul": "duration",
+   "stages": [
+    {
+     "name": "Schildstoß",
+     "text": "Beim Wirken trifft eine Schockwelle alle Gegner in 4 m mit 120 %. Hält 2 s länger.",
+     "add": {
+      "time": 2
+     },
+     "after": [
+      {
+       "delay": 0,
+       "dmg": 1.2,
+       "radius_m": 4,
+       "fx": "steel"
+      }
+     ]
+    },
+    {
+     "name": "Vergeltung",
+     "text": "75 % weniger erlittener Schaden. Am Ende entlädt sich der Schild: 300 % in 5 m.",
+     "add": {
+      "reduction_pct": 15
+     },
+     "after": [
+      {
+       "on_end": true,
+       "dmg": 3.0,
+       "radius_m": 5,
+       "fx": "steel"
+      }
+     ]
+    }
+   ]
+  },
+  "blade_1": {
+   "id": "blade_1",
+   "class": "swordsman",
+   "spec": "blade",
+   "index": 0,
+   "tier": 1,
+   "name": "Schnittwunde",
+   "kind": "active",
+   "icon": "sword",
+   "text": "115/135/155 % Schaden und Blutung für 4 s.",
+   "ranks": 3,
+   "type": "melee",
+   "dmg": [
+    1.15,
+    1.35,
+    1.55
+   ],
+   "reach_m": 1.8,
+   "arc": 1.8,
+   "status": "bleed",
+   "cost": 15,
+   "cd": 4
+  },
+  "blade_2": {
+   "id": "blade_2",
+   "class": "swordsman",
+   "spec": "blade",
+   "index": 1,
+   "tier": 1,
+   "name": "Duellinstinkt",
+   "kind": "passive",
+   "icon": "eye",
+   "text": "+3/6/9 Prozentpunkte kritische Trefferchance.",
+   "ranks": 3,
+   "type": "crit_chance",
+   "pct": [
+    3,
+    6,
+    9
+   ]
+  },
+  "blade_3": {
+   "id": "blade_3",
+   "class": "swordsman",
+   "spec": "blade",
+   "index": 2,
+   "tier": 2,
+   "name": "Konterschlag",
+   "kind": "active",
+   "icon": "crossed",
+   "text": "Blockt den nächsten Angriff innerhalb von 3 s und kontert mit 110/135/160 % Schaden.",
+   "ranks": 3,
+   "type": "counter",
+   "window": 3,
+   "dmg": [
+    1.1,
+    1.35,
+    1.6
+   ],
+   "radius_m": 2,
+   "cost": 25,
+   "cd": 12
+  },
+  "blade_4": {
+   "id": "blade_4",
+   "class": "swordsman",
+   "spec": "blade",
+   "index": 3,
+   "tier": 2,
+   "name": "Offene Wunde",
+   "kind": "passive",
+   "icon": "drop",
+   "text": "+15/30/45 % Blutungsschaden.",
+   "ranks": 3,
+   "type": "dot_bonus",
+   "status": "bleed",
+   "pct": [
+    15,
+    30,
+    45
+   ]
+  },
+  "blade_5": {
+   "id": "blade_5",
+   "class": "swordsman",
+   "spec": "blade",
+   "index": 4,
+   "tier": 3,
+   "name": "Klingensturm",
+   "kind": "active",
+   "icon": "dash",
+   "text": "Stürmt 4/5/6 m durch Gegner: 115/140/165 % Schaden.",
+   "ranks": 3,
+   "type": "dash",
+   "dist_m": [
+    4,
+    5,
+    6
+   ],
+   "dmg": [
+    1.15,
+    1.4,
+    1.65
+   ],
+   "cost": 25,
+   "cd": 14
+  },
+  "blade_6": {
+   "id": "blade_6",
+   "class": "swordsman",
+   "spec": "blade",
+   "index": 5,
+   "tier": 4,
+   "name": "Klingentanz",
+   "kind": "ultimate",
+   "icon": "whirl",
+   "text": "6 schnelle Angriffe in 3 s, je 70 % Schaden (420 % gesamt), 4 m Reichweite.",
+   "ranks": 1,
+   "type": "channel",
+   "hits": 6,
+   "time": 3,
+   "dmg": [
+    0.7
+   ],
+   "radius_m": 4,
+   "cost": 50,
+   "cd": 90,
+   "soul": "damage",
+   "stages": [
+    {
+     "name": "Wirbelklingen",
+     "text": "9 statt 6 Angriffe in 3 s, 5 m Reichweite.",
+     "add": {
+      "hits": 3,
+      "radius_m": 1
+     }
+    },
+    {
+     "name": "Finale",
+     "text": "Jeder Treffer lässt bluten. Am Ende ein Schlussstreich mit 300 % in 5 m.",
+     "set": {
+      "status": "bleed"
+     },
+     "after": [
+      {
+       "on_end": true,
+       "dmg": 3.0,
+       "radius_m": 5,
+       "fx": "steel",
+       "status": "bleed"
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "exp": {
+  "kill": 10,
+  "miniboss": 150,
+  "boss": 400,
+  "floor": 100
+ }
+}

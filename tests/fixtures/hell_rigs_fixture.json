@@ -1,0 +1,111 @@
+{
+ "_note": "Fixture for tests/hell_rig_library_test.gd and tests/body_parts_weakens_test.gd, shaped like the generated assets/data/hell_rigs.json. The tests copy it to their own user:// folder (replacing user://hell_rigs_fixture/), paint each part's full-frame PNG from its _rects / _frame_rects (inclusive [x0, y0, x1, y1] source px, colour _color) and delete everything afterwards. Images that have no rects (ghost.png, never.png) are never written on purpose: they test missing-image tolerance; frames beyond _frame_rects (flawed_flame_1/2.png) likewise. _size paints an image of another size than the rig frame (a clipped part). fixture_drake: 16x12 frame, hp weights add up to 159. fixture_flawed carries data mistakes the library must report: a numeric variant, an oversized image, a flipbook with missing frames and group members that can never be lost (hp 0, unknown id).",
+ "rigs": {
+  "fixture_drake": {
+   "family": "drake",
+   "variant": "3",
+   "size": [16, 12],
+   "scale": 2.5,
+   "ground": [7, 10],
+   "width": 10,
+   "material": "ember",
+   "fps": 12,
+   "parts": [
+    {"id": "body", "img": "user://hell_rigs_fixture/body.png", "_rects": [[4, 4, 9, 8]], "_color": "#8a2a14",
+     "pivot": [7, 8], "parent": null, "z": 10, "hp": 40, "label": "Rumpf", "unbreakable": true},
+    {"id": "neck", "img": "user://hell_rigs_fixture/neck.png", "_rects": [[10, 3, 10, 6]], "_color": "#a33a1c",
+     "pivot": [10, 6], "parent": "body", "z": 11, "hp": 6, "label": "Hals", "unbreakable": true},
+    {"id": "head", "img": "user://hell_rigs_fixture/head.png", "_rects": [[11, 1, 13, 3]], "_color": "#b8481f",
+     "pivot": [11, 3], "parent": "neck", "z": 14, "hp": 8, "label": "Kopf", "unbreakable": true},
+    {"id": "jaw", "img": "user://hell_rigs_fixture/jaw.png", "_rects": [[11, 4, 13, 4]], "_color": "#d06a2a",
+     "pivot": [11, 4], "parent": "head", "z": 16, "hp": 15, "label": "Kiefer", "disables": ["spucke"]},
+    {"id": "throat", "img": "user://hell_rigs_fixture/throat.png", "_rects": [[11, 5, 12, 6]], "_color": "#ffb347",
+     "pivot": [11, 5], "parent": "neck", "z": 12, "hp": 14, "label": "Glutkehle", "exposed": "atem", "disables": ["atem"]},
+    {"id": "horns", "img": "user://hell_rigs_fixture/horns.png", "_rects": [[13, 0, 14, 0]], "_color": "#3a2418",
+     "pivot": [13, 1], "parent": "head", "z": 15, "hp": 8, "label": "Hoerner", "weakens": {"faecher": {"count": 0.43}}},
+    {"id": "arm", "img": "user://hell_rigs_fixture/arm.png", "_rects": [[8, 9, 9, 10]], "_color": "#9c3418",
+     "pivot": [8, 8], "parent": "body", "z": 13, "hp": 15, "label": "Vorderklaue", "regrow": 12,
+     "weakens": {"graben": {"ring": 0.5}, "lavabruch": {"ring": 0.5, "lava": 0}}},
+    {"id": "leg_far", "img": "user://hell_rigs_fixture/leg_far.png", "_rects": [[4, 9, 4, 10]], "_color": "#5e1c0e",
+     "pivot": [4, 8], "parent": "body", "z": 5, "hp": 4, "label": "Hinterbein", "unbreakable": true},
+    {"id": "leg_near", "img": "user://hell_rigs_fixture/leg_near.png", "_rects": [[6, 9, 6, 10]], "_color": "#7a2612",
+     "pivot": [6, 8], "parent": "body", "z": 12, "hp": 4, "label": "Hinterbein", "unbreakable": true},
+    {"id": "tail_1", "img": "user://hell_rigs_fixture/tail_1.png", "_rects": [[3, 5, 3, 6]], "_color": "#8a2a14",
+     "pivot": [4, 6], "parent": "body", "z": 8, "hp": 3, "label": "Schwanz", "unbreakable": true},
+    {"id": "tail_2", "img": "user://hell_rigs_fixture/tail_2.png", "_rects": [[2, 5, 2, 6]], "_color": "#8a2a14",
+     "pivot": [3, 6], "parent": "tail_1", "z": 8, "hp": 15, "label": "Schwanz",
+     "weakens": {"huschen": {"speed": 0.6}, "satz": {"radius": 0.6}}, "alsoDetach": ["tail_3", "tail_flame"]},
+    {"id": "tail_3", "img": "user://hell_rigs_fixture/tail_3.png", "_rects": [[1, 4, 1, 5]], "_color": "#8a2a14",
+     "pivot": [2, 5], "parent": "tail_2", "z": 8, "hp": 2, "label": "Schwanz", "unbreakable": true},
+    {"id": "tail_flame", "frames": ["user://hell_rigs_fixture/tail_flame_0.png", "user://hell_rigs_fixture/tail_flame_1.png",
+      "user://hell_rigs_fixture/tail_flame_2.png", "user://hell_rigs_fixture/tail_flame_3.png"],
+     "_frame_rects": [[[0, 2, 0, 3]], [[0, 3, 0, 4]], [[0, 2, 1, 2]], [[0, 1, 0, 3]]], "_color": "#ffd166",
+     "pivot": [1, 4], "parent": "tail_3", "z": 9, "hp": 1, "label": "Schwanzflamme", "unbreakable": true},
+    {"id": "wing_far", "img": "user://hell_rigs_fixture/wing_far.png", "_rects": [[5, 1, 6, 3]], "_color": "#4a1a10",
+     "pivot": [6, 4], "parent": "body", "z": 4, "hp": 12, "label": "Fluegel", "group": "wings", "weakens": {"bombenflug": {"duration": 0.5}}},
+    {"id": "wing_near", "img": "user://hell_rigs_fixture/wing_near.png", "_rects": [[7, 1, 8, 3]], "_color": "#6a2414",
+     "pivot": [7, 4], "parent": "body", "z": 17, "hp": 12, "label": "Fluegel", "group": "wings", "weakens": {"bombenflug": {"duration": 0.5}}},
+    {"id": "mouth_flame", "frames": ["user://hell_rigs_fixture/mouth_flame_0.png", "user://hell_rigs_fixture/mouth_flame_1.png"],
+     "_frame_rects": [[[14, 4, 15, 4]], [[14, 3, 15, 5]]], "_color": "#ffe08a",
+     "pivot": [14, 4], "parent": "jaw", "z": 18, "hp": 0, "label": "Maulflamme"}
+   ],
+   "groups": {"wings": {"parts": ["wing_far", "wing_near"], "disables": ["bombenflug"]}},
+   "points": {
+    "mouth": {"part": "jaw", "at": [13, 4]},
+    "throat": {"part": "neck", "at": [10, 5]},
+    "hand": {"part": "arm", "at": [9, 10]},
+    "tail_tip": {"part": "tail_3", "at": [1, 4]},
+    "core": {"part": "body", "at": [7, 6]}
+   }
+  },
+  "fixture_partial": {
+   "family": "drake",
+   "variant": "4",
+   "size": [8, 8],
+   "scale": 2.5,
+   "ground": [4, 7],
+   "width": 6,
+   "material": "obsidian",
+   "parts": [
+    {"id": "body", "img": "user://hell_rigs_fixture/partial_body.png", "_rects": [[2, 2, 5, 6]], "_color": "#2a1838",
+     "pivot": [4, 6], "parent": null, "z": 10, "hp": 10, "label": "Rumpf", "unbreakable": true},
+    {"id": "ghost", "img": "user://hell_rigs_fixture/ghost.png",
+     "pivot": [4, 2], "parent": "body", "z": 12, "hp": 5, "label": "Geist", "disables": "biss"},
+    {"id": "crystal_1", "img": "user://hell_rigs_fixture/partial_crystal.png", "_rects": [[1, 1, 1, 1]], "_color": "#b07cff",
+     "pivot": [1, 2], "parent": "body", "z": 11, "hp": 3, "label": "Kristall", "group": "crystals", "weakens": {"strahlen": {"beams": 0.667}}}
+   ],
+   "groups": {"crystals": {"parts": [], "disables": ["strahlen"]}}
+  },
+  "fixture_flawed": {
+   "family": "drake",
+   "variant": 4,
+   "size": [8, 8],
+   "scale": 2.5,
+   "ground": [4, 7],
+   "width": 6,
+   "material": "obsidian",
+   "parts": [
+    {"id": "body", "img": "user://hell_rigs_fixture/flawed_body.png", "_rects": [[2, 2, 5, 6]], "_color": "#2a1838",
+     "pivot": [4, 6], "parent": null, "z": 10, "hp": 10, "label": "Rumpf", "unbreakable": true},
+    {"id": "oversized", "img": "user://hell_rigs_fixture/flawed_oversized.png", "_size": [10, 9], "_rects": [[6, 1, 9, 8]], "_color": "#4a2a5a",
+     "pivot": [6, 3], "parent": "body", "z": 11, "hp": 4, "label": "Zu gross"},
+    {"id": "flame", "frames": ["user://hell_rigs_fixture/flawed_flame_0.png", "user://hell_rigs_fixture/flawed_flame_1.png",
+      "user://hell_rigs_fixture/flawed_flame_2.png"],
+     "_frame_rects": [[[0, 0, 0, 1]]], "_color": "#ffd166",
+     "pivot": [1, 1], "parent": "body", "z": 9, "hp": 1, "label": "Flamme", "unbreakable": true},
+    {"id": "wing_a", "img": "user://hell_rigs_fixture/flawed_wing_a.png", "_rects": [[1, 1, 2, 2]], "_color": "#6a2414",
+     "pivot": [2, 3], "parent": "body", "z": 12, "hp": 5, "label": "Fluegel", "group": "pair"},
+    {"id": "wing_b", "img": "user://hell_rigs_fixture/flawed_wing_b.png", "_rects": [[1, 4, 1, 5]], "_color": "#4a1a10",
+     "pivot": [2, 4], "parent": "body", "z": 4, "hp": 0, "label": "Fluegel (deko)"}
+   ],
+   "groups": {"pair": {"parts": ["wing_a", "wing_b", "no_such_part"], "disables": ["flug"]}}
+  },
+  "fixture_empty": {
+   "family": "drake",
+   "variant": "1",
+   "size": [8, 8],
+   "parts": [{"id": "body", "img": "user://hell_rigs_fixture/never.png", "hp": 10}]
+  },
+  "fixture_junk": 5
+ }
+}

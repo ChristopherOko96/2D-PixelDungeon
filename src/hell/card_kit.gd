@@ -91,9 +91,9 @@ static func tree(g: Node) -> Dictionary:
 	if relic != "":
 		var held := cards.filter(func(c: Dictionary) -> bool: return str(c.set) == relic)
 		branches.append({"key": relic, "title": str(g.theme.get(relic, {}).get("name", "RELIKT")), "unlock": 1, "nodes": held.map(_node.bind(g))})
-	# nodes the lasting talents name wait for them (docs/LAUF-DESIGN.de.md 3.3)
-	if not (g.meta_data as Dictionary).is_empty():
-		branches = RunTree.gate(branches, MetaStore.gated_cards(g.meta_data, str(g.class_id)), g.state.get("talent", {}).get("cards", {}))
+	# No node waits for a lasting talent: the lasting talents of
+	# docs/LAUF-DESIGN.de.md 3.3 are replaced by the shared talent profile
+	# (docs/TALENTE-SEELENSPLITTER.de.md, decision 29.10.2026).
 	return RunTree.build(branches)
 
 

@@ -1,0 +1,70 @@
+extends RefCounted
+## Soul shards from dungeon bosses (assets/data/talents.json "soul_shards"
+## and "difficulties"). Only a real boss gives them (the final boss of a run,
+## floor 10): never ordinary enemies, elites, mini-bosses or chests. One
+## result per boss completion and player, on the host:
+##   - `per_boss` shards for every fair kill (2: the 3-shard ultimate opens
+##     with the second full run)
+##   - one more with the difficulty's `extra_pct` chance (Normal 0 %,
+##     Schwer 25 %, Albtraum 50 %)
+##   - one more for the first Albtraum kill of a boss, once per boss and profile
+##   - the boss counts at every character level (one boss per full run
+##     already stops farming); nothing when the player left the fight, was
+##     idle (too little damage share) or the fight was too short
+##   - a completion id is rewarded once; repeats are ignored
+## Pure static functions on the profile; the random source is passed in.
+
+const Profile = preload("res://src/progress/profile.gd")
+
+
+## Level of a boss on `floor_number` at `difficulty`.
+static func boss_level(d: Dictionary, floor_number: int, difficulty: String) -> int:
+	var bonus := int(d.difficulties.get(difficulty, d.difficulties.normal).get("boss_level_bonus", 0))
+	return maxi(1, floor_number * int(d.get("boss_level_per_floor", 2)) + bonus)
+
+
+## Why this boss completion cannot reward shards, or "". The levels stay in
+## the signature for the reward event (no level rule applies any more).
+static func ineligible(d: Dictionary, profile: Dictionary, completion_id: String, _char_level: int, _boss_lv: int, fight: Dictionary) -> String:
+	var rules: Dictionary = d.soul_shards
+	if completion_id.is_empty() or profile.rewarded.has(completion_id): return "Dieser Bosssieg wurde schon gewertet."
+	if not bool(fight.get("present", false)): return "Du warst beim Sieg nicht im Kampf."
+	if float(fight.get("seconds", 0.0)) < float(rules.min_fight_seconds): return "Der Kampf war zu kurz."
+	if float(fight.get("damage_share", 0.0)) < float(rules.min_damage_share): return "Du hast zu wenig zum Sieg beigetragen."
+	return ""
+
+
+## Rewards one boss completion on a profile (shards, first-kill memory,
+## completion id). `roll` is a float in [0, 1) from the host's random source
+## for the extra shard. Returns {shard: bool, count: int, reason: String, counted: bool}.
+static func resolve(d: Dictionary, profile: Dictionary, boss_id: String, difficulty: String, completion_id: String,
+		char_level: int, boss_lv: int, fight: Dictionary, roll: float) -> Dictionary:
+	var why := ineligible(d, profile, completion_id, char_level, boss_lv, fight)
+	if not why.is_empty():
+		if not completion_id.is_empty() and not profile.rewarded.has(completion_id) and why != "Dieser Bosssieg wurde schon gewertet.":
+			_remember(d, profile, completion_id)
+		return {"shard": false, "count": 0, "reason": why, "counted": false}
+	_remember(d, profile, completion_id)
+	var count := int(d.soul_shards.get("per_boss", 2))
+	var reasons: Array[String] = ["Bosssieg."]
+	if roll * 100.0 < float(d.difficulties.get(difficulty, d.difficulties.normal).get("extra_pct", 0)):
+		count += 1
+		reasons.append("Glück: ein Splitter mehr.")
+	if difficulty == "nightmare" and not profile.nightmare_firsts.has(boss_id):
+		profile.nightmare_firsts.append(boss_id)
+		count += 1
+		reasons.append("Erster Sieg auf Albtraum gegen diesen Boss.")
+	profile.shards.have = int(profile.shards.have) + count
+	profile.shards.earned = int(profile.shards.earned) + count
+	return {"shard": count > 0, "count": count, "reason": " ".join(reasons), "counted": true}
+
+
+## Whether an enemy can drop soul shards at all: real floor bosses only.
+static func can_drop(enemy: Dictionary) -> bool:
+	return bool(enemy.get("boss", false)) and not bool(enemy.get("miniboss", false)) and not bool(enemy.get("elite", false)) and not bool(enemy.get("summoned", false))
+
+
+static func _remember(d: Dictionary, profile: Dictionary, completion_id: String) -> void:
+	profile.rewarded.append(completion_id)
+	var keep := int(d.soul_shards.get("reward_memory", 200))
+	if profile.rewarded.size() > keep: profile.rewarded = profile.rewarded.slice(-keep)

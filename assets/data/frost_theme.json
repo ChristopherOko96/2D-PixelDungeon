@@ -1423,24 +1423,7 @@
   "talents": "res://assets/data/frost_talents.json",
   "master_cooldown": 45,
   "feel": {
-    "_note": "Story 1's combat feel (src/hell/frost_feel.gd): scale = crypt effect sprites to this world; hitstop in seconds, shake in pixels; blood = chip colour per enemy material; step_every / idle_gap in seconds, idle_range in pixels.",
-    "scale": 3,
-    "hitstop_hit": 0.03,
-    "hitstop_crit": 0.07,
-    "hitstop_kill": 0.05,
-    "hitstop_hurt": 0.09,
-    "shake_crit": 6,
-    "shake_kill": 5,
-    "shake_hurt": 14,
-    "shake_blast": 8,
-    "blood": {
-      "flesh": "7fb0d0",
-      "bone": "e6dcc6",
-      "void": "9fe3ee"
-    },
-    "colors": {
-      "hurt": "d8484f"
-    },
+    "_note": "The world's combat feel is the crypt's (src/vfx/feedback.gd through src/hero/story_feel.gd; materials in assets/data/vfx_gore.json; docs/VFX-SYSTEM.de.md). Here only the footsteps and growls: step_every = seconds between steps, idle_gap = seconds between growls, idle_range = px around the hero in which monsters growl.",
     "step_every": 0.3,
     "idle_gap": 1.6,
     "idle_range": 760
@@ -1591,5 +1574,16 @@
         ]
       }
     }
+  },
+  "atmosphere": {
+    "_note": "The Frostgruft's flames in the crypt atmosphere's schema (src/vfx/crypt_atmosphere.gd parse, assets/data/vfx_crypt_atmosphere.json); the story worlds use only its flames: light_color tints the bloom of every brazier, torch, rune pillar and vent of the floor (src/hero/story_glow.gd; its braziers burn blue), glow_strength is the bloom's intensity (the crypt's torches 0.2), light_radius_scale scales their light in the dark (1.0 = the floor's own radius).",
+    "flames": {"light_color": "#8cc8f2", "glow_strength": 0.22, "light_radius_scale": 1.0}
+  },
+  "glow": {
+    "_note": "Bloom colours of this world (src/hero/story_glow.gd): portal = an awakened portal, wall = the walls' glowing slits and door posts, gate = gates that hold a fight. liquid = the glow of the liquid banks: light_radius (world px) and light_strength (0..1) of their light in the dark, color and alpha (0..1) of their bloom. Glaze ice gives no light and no bloom (0).",
+    "portal": "#7ff6ff",
+    "wall": "#5fd0ff",
+    "gate": "#7ff6ff",
+    "liquid": {"light_radius": 0, "light_strength": 0, "color": "#9fe3ee", "alpha": 0}
   }
 }

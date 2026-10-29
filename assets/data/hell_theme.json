@@ -8,5 +8,18 @@
     "names": ["weapon_gravity_staff", "weapon_gravity_hammer", "rock_throw", "rock_spike",
       "ally_golem_f0", "ally_golem_f1", "ally_golem_f2", "ally_golem_f3", "ally_golem_f4", "ally_golem_f5",
       "ally_golem_walk_f0", "ally_golem_walk_f1", "ally_golem_walk_f2", "ally_golem_walk_f3", "ally_golem_walk_f4", "ally_golem_walk_f5"]
+  },
+  "feel": {
+    "_note": "The world's combat feel is the crypt's (src/vfx/feedback.gd through src/hero/story_feel.gd; materials in assets/data/vfx_gore.json; docs/VFX-SYSTEM.de.md). Here only the footsteps and growls: step_every = seconds between steps, idle_gap = seconds between growls, idle_range = px around the hero in which monsters growl.",
+    "step_every": 0.3,
+    "idle_gap": 1.6,
+    "idle_range": 760
+  },
+  "glow": {
+    "_note": "Bloom colours of the Hell-Dungeon (src/hero/story_glow.gd): portal = an awakened portal, wall = the walls' glowing slits and door posts, gate = gates that hold a fight. liquid = the lava banks: light_radius (world px) and light_strength (0..1) of their light in the dark, color and alpha (0..1) of their bloom (skill_fx.gd's lava glow, 0.32). The braziers keep the colour of their own light (hell_floors.json lights).",
+    "portal": "#ff6b2c",
+    "wall": "#e8432a",
+    "gate": "#ff5a3c",
+    "liquid": {"light_radius": 230, "light_strength": 0.75, "color": "#ff6b1a", "alpha": 0.32}
   }
 }

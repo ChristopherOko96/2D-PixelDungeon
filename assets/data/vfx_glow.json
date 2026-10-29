@@ -10,6 +10,212 @@
     "torches": 1.0,
     "orbs": 1.0,
     "particles": 1.0,
-    "void": 1.0
+    "void": 1.0,
+    "mobs": 1.0,
+    "lava": 1.0
+  },
+  "_note_story_scales": "mobs and lava (in scales) act only in the story worlds (Hell-Dungeon, Frostgruft; src/hero/story_glow.gd): mobs the monsters glowing parts, lava the glow of the lava banks. The crypt has neither. Everything else of story below.",
+  "story": {
+    "_note": "The story worlds' bloom (src/hero/story_glow.gd): Hell-Dungeon and Frostgruft draw into this same bloom with these same scales; mobs scales the monsters' glowing parts below, lava the glow of the lava banks (the crypt has neither, so both act only there). hell_monsters: per monster id of assets/data/hell_monsters.json; frost_mobs: per sprite of frost_theme.json (its mobs, its floor guardians and Hrimgar's boss kit phases; the tests require every one). bloom: the story worlds' own bloom kinds; world_zones and world_fx: the world's own zones and skill effects (each with its own _note). Every id lists its glowing parts (an empty list: nothing glows). A part: at = [x, y] pixel of the source frame, facing right (hell: design px of the def's w x h grid, frost: texture px); r = glow radius in the same px (it grows and shrinks with the drawn monster); color = #rrggbb; alpha = intensity 0..1. Optional: flicker = Hz of a flame's size flicker; pulse = Hz of a slow breathing intensity; anim = only in these animations; act = only while one of these attacks runs (fades in over 0.35 s); when = dash (only while the monster dashes); charge = {timer, within, alpha}: rises to alpha while the monster's timer (seconds) runs down below within; level = the scale above (mobs by default, void for void fire).",
+    "hell_monsters": {
+      "glutschaedel": [
+        {"at": [9, 7], "r": 15.5, "color": "#ee8e2e", "alpha": 0.34, "flicker": 9},
+        {"at": [6, 13.5], "r": 4, "color": "#facb3e", "alpha": 0.4},
+        {"at": [12, 13.5], "r": 4, "color": "#facb3e", "alpha": 0.4},
+        {"at": [9, 10], "r": 18, "color": "#facb3e", "alpha": 0.22, "act": ["dash"]}
+      ],
+      "hoellenhund": [
+        {"at": [9, 5], "r": 10, "color": "#ee8e2e", "alpha": 0.26, "flicker": 8},
+        {"at": [13, 5], "r": 10, "color": "#ee8e2e", "alpha": 0.26, "flicker": 8},
+        {"at": [17, 6], "r": 8.5, "color": "#ee8e2e", "alpha": 0.24, "flicker": 8},
+        {"at": [21.5, 7], "r": 4, "color": "#facb3e", "alpha": 0.38},
+        {"at": [1.5, 3.5], "r": 4.5, "color": "#ee8e2e", "alpha": 0.26, "flicker": 10},
+        {"at": [27, 10], "r": 13.5, "color": "#facb3e", "alpha": 0.45, "act": ["breath"]}
+      ],
+      "glutimp": [
+        {"at": [13, 8.5], "r": 12, "color": "#ffb347", "alpha": 0.5, "anim": ["attack"]}
+      ],
+      "brandskelett": [
+        {"at": [8.5, 3], "r": 12, "color": "#ee8e2e", "alpha": 0.32, "flicker": 9},
+        {"at": [15.5, 10.5], "r": 10, "color": "#ee8e2e", "alpha": 0.28, "flicker": 9, "anim": ["idle", "run"]}
+      ],
+      "magmaschleim": [
+        {"at": [10.5, 10], "r": 13, "color": "#ff5a1f", "alpha": 0.32, "pulse": 2}
+      ],
+      "aschenpriester": [
+        {"at": [16, 3], "r": 10, "color": "#97da3f", "alpha": 0.38, "flicker": 7},
+        {"at": [1.5, 8.5], "r": 8.5, "color": "#97da3f", "alpha": 0.42, "anim": ["cast"]}
+      ],
+      "kettenschinder": [
+        {"at": [13, 7.5], "r": 3.5, "color": "#facb3e", "alpha": 0.3},
+        {"at": [17, 7.5], "r": 3.5, "color": "#facb3e", "alpha": 0.3}
+      ],
+      "peingeist": [
+        {"at": [11, 8], "r": 8.5, "color": "#f0b3dd", "alpha": 0.26, "level": "void"},
+        {"at": [12, 24], "r": 12, "color": "#c278d0", "alpha": 0.26, "flicker": 6, "level": "void"},
+        {"at": [12, 5], "r": 10, "color": "#f0b3dd", "alpha": 0.45, "act": ["bolt"], "level": "void"}
+      ],
+      "glutwaechter": [
+        {"at": [20, 20], "r": 11.5, "color": "#ff5a1f", "alpha": 0.26, "pulse": 1.5},
+        {"at": [19.5, 8], "r": 7, "color": "#ee8e2e", "alpha": 0.3},
+        {"at": [7.5, 6.5], "r": 7, "color": "#ee8e2e", "alpha": 0.24, "flicker": 8},
+        {"at": [32.5, 7], "r": 7, "color": "#ee8e2e", "alpha": 0.24, "flicker": 8}
+      ],
+      "dreischlund": [
+        {"at": [17, 9], "r": 13, "color": "#ee8e2e", "alpha": 0.26, "flicker": 7},
+        {"at": [30.5, 5], "r": 3.5, "color": "#facb3e", "alpha": 0.36},
+        {"at": [33.5, 11], "r": 3.5, "color": "#facb3e", "alpha": 0.36},
+        {"at": [30.5, 17], "r": 3.5, "color": "#facb3e", "alpha": 0.36},
+        {"at": [36, 8], "r": 10, "color": "#facb3e", "alpha": 0.5, "act": ["breath"]},
+        {"at": [38, 14.5], "r": 10, "color": "#facb3e", "alpha": 0.5, "act": ["breath"]},
+        {"at": [35, 20], "r": 10, "color": "#facb3e", "alpha": 0.5, "act": ["breath"]}
+      ],
+      "kesselbrut": [
+        {"at": [20, 22], "r": 18, "color": "#ff7a2a", "alpha": 0.3, "pulse": 0.6},
+        {"at": [20.5, 16.5], "r": 8.5, "color": "#facb3e", "alpha": 0.4, "anim": ["attack"]}
+      ],
+      "seelenhirte": [
+        {"at": [23, 10.5], "r": 13.5, "color": "#97da3f", "alpha": 0.45, "flicker": 5},
+        {"at": [23, 10.5], "r": 15.5, "color": "#97da3f", "alpha": 0.22, "act": ["spiral"]},
+        {"at": [6.3, 15.9], "r": 8.5, "color": "#97da3f", "alpha": 0.4, "anim": ["cast"]}
+      ],
+      "kerkermeister": [
+        {"at": [17.5, 6.5], "r": 3.5, "color": "#da4e38", "alpha": 0.42},
+        {"at": [22, 6.5], "r": 3.5, "color": "#da4e38", "alpha": 0.42}
+      ],
+      "klagender_hueter": [
+        {"at": [22.5, 10.5], "r": 8.5, "color": "#f0b3dd", "alpha": 0.22, "level": "void"},
+        {"at": [23, 41], "r": 15.5, "color": "#c278d0", "alpha": 0.25, "flicker": 6, "level": "void"},
+        {"at": [22.5, 12], "r": 13.5, "color": "#72d6ce", "alpha": 0.5, "act": ["scream"]}
+      ],
+      "drache1": [
+        {"at": [69, 7], "r": 8, "color": "#facb3e", "alpha": 0.4},
+        {"at": [44.5, 26.5], "r": 9, "color": "#ffb347", "alpha": 0.28, "pulse": 1.2},
+        {"at": [5, 29.5], "r": 10, "color": "#ffb347", "alpha": 0.36, "flicker": 10},
+        {"at": [68, 18], "r": 18, "color": "#facb3e", "alpha": 0.42, "act": ["bolt"]}
+      ],
+      "drache2": [
+        {"at": [81.5, 12.5], "r": 8, "color": "#facb3e", "alpha": 0.4},
+        {"at": [49, 34.5], "r": 10, "color": "#ffb347", "alpha": 0.3, "pulse": 1.2},
+        {"at": [6.5, 42.5], "r": 11, "color": "#ffb347", "alpha": 0.36, "flicker": 10},
+        {"at": [86, 22], "r": 18.5, "color": "#facb3e", "alpha": 0.42, "act": ["bolt"]}
+      ],
+      "drache3": [
+        {"at": [107, 31], "r": 6.5, "color": "#facb3e", "alpha": 0.4},
+        {"at": [61, 63.5], "r": 14, "color": "#ffb347", "alpha": 0.32, "pulse": 1.2},
+        {"at": [11.5, 73.5], "r": 13.5, "color": "#ffb347", "alpha": 0.36, "flicker": 10},
+        {"at": [112, 43], "r": 15, "color": "#facb3e", "alpha": 0.42, "act": ["bolt", "sweep"]}
+      ],
+      "drache4": [
+        {"at": [111, 101], "r": 26, "color": "#b77cff", "alpha": 0.36, "pulse": 1.2, "level": "void"},
+        {"at": [170.5, 61], "r": 7.5, "color": "#facb3e", "alpha": 0.42},
+        {"at": [43.5, 118.5], "r": 16.5, "color": "#c278d0", "alpha": 0.36, "flicker": 9, "level": "void"},
+        {"at": [176, 79], "r": 19, "color": "#f0b3dd", "alpha": 0.42, "act": ["beam", "sweep", "ring"], "level": "void"}
+      ]
+    },
+    "frost_mobs": {
+      "mob_ice_zombie_f": [],
+      "mob_frost_skeleton_f": [],
+      "mob_ice_knight_f": [],
+      "mob_ice_crystal_0": [
+        {"at": [24, 64], "r": 36, "color": "#9fe3ee", "alpha": 0.3, "pulse": 1.5, "charge": {"timer": "shoot", "within": 0.6, "alpha": 0.55}}
+      ],
+      "mob_frost_whirl_0": [
+        {"at": [39, 50], "r": 40, "color": "#bff0f7", "alpha": 0.25, "pulse": 1}
+      ],
+      "mob_ice_slime_0": [
+        {"at": [46, 32], "r": 50, "color": "#9fe3ee", "alpha": 0.15, "pulse": 0.8}
+      ],
+      "mob_ice_slime_1": [
+        {"at": [28, 22], "r": 34, "color": "#9fe3ee", "alpha": 0.15, "pulse": 0.8}
+      ],
+      "mob_ice_slime_2": [
+        {"at": [21, 16], "r": 24, "color": "#9fe3ee", "alpha": 0.15, "pulse": 0.8}
+      ],
+      "mob_frost_imp_f": [
+        {"at": [24, 72], "r": 30, "color": "#bff0f7", "alpha": 0.35, "when": "dash"}
+      ],
+      "mob_frost_necromancer_f": [],
+      "mob_frost_corpse_f": [],
+      "mob_frost_commander": [],
+      "boss_golem_p1_f": [],
+      "boss_golem_p2_f": [
+        {"at": [112, 58], "r": 46, "color": "#c8f4ff", "alpha": 0.8, "pulse": 1.2}
+      ],
+      "boss_golem_p3_f": [
+        {"at": [112, 58], "r": 52, "color": "#c8f4ff", "alpha": 0.8, "pulse": 1.6}
+      ]
+    },
+    "bloom": {
+      "_note": "The story worlds' own bloom kinds (src/hero/story_glow.gd), drawn at the scale named in brackets. r = radius in crypt px (the bloom node's units; world px = r x the world's hero_scale / 2); size = radius as a share of the thing's own size (a zone's or a blast's radius, a body's width, a lava cell); alpha = intensity 0..1 (some pulse around it); color = #rrggbb (a theme 'glow' colour for portal, gate and wall wins; a skill ring keeps its own). light = the darkness light of a map thing [radius world px, strength] (the world's own values from its old darkness) or, for strikes and blasts, its strength (the radius is the bloom's, both fade). time = seconds a strike flares. The crypt's own rules are not here: fires and exits (dungeon_view.gd), bullets and loot and lava zones (skill_fx.gd), embers (particles.gd).",
+      "rune": {"r": 30, "alpha": 0.16},
+      "portal": {"r": 70, "alpha": 0.3, "light": [330, 1.0]},
+      "portal_core": {"r": 30, "alpha": 0.35},
+      "vault": {"light": [420, 1.0]},
+      "relic": {"r": 60, "alpha": 0.25, "color": "#734dff"},
+      "seal": {"r": 40, "alpha": 0.26, "color": "#ff4d33", "light": [200, 0.85]},
+      "plate": {"r": 30, "alpha": 0.3, "color": "#ff9e4d"},
+      "vent": {"r": 50, "alpha": 0.4, "color": "#ff8026", "light": [220, 0.9]},
+      "gate": {"r": 36, "alpha": 0.12, "color": "#ff664d"},
+      "wall_post": {"r": 16, "alpha": 0.2},
+      "wall_slit": {"r": 22, "alpha": 0.16},
+      "lava_bank": {"size": 1.2, "alpha": 0.75},
+      "impact": {"size": 1.3, "alpha": 0.5, "color": "#ff9940"},
+      "impact_void": {"size": 1.3, "alpha": 0.5, "color": "#bf73ff"},
+      "wave": {"size": 1.0, "alpha": 0.3, "color": "#ff591f"},
+      "wave_lava": {"size": 1.0, "alpha": 0.3, "color": "#ff9929"},
+      "wave_void": {"size": 1.0, "alpha": 0.3, "color": "#b359ff"},
+      "swing": {"size": 0.6, "alpha": 0.35, "color": "#ffab4f"},
+      "slam": {"size": 1.6, "alpha": 0.45, "color": "#ff9940"},
+      "scream": {"size": 0.6, "alpha": 0.3, "color": "#96e6ff"},
+      "scream_mouth": {"r": 30, "alpha": 0.4, "color": "#96e6ff"},
+      "beam_halo": {"r": 60, "alpha": 0.3, "color": "#a866ff"},
+      "beam_core": {"r": 24, "alpha": 0.35, "color": "#f2ccff"},
+      "beam_mouth": {"r": 40, "alpha": 0.4, "color": "#bf80ff"},
+      "transform": {"size": 0.9, "alpha": 0.3, "color": "#ff7829"},
+      "transform_core": {"size": 0.5, "alpha": 0.45, "color": "#ffe6a1"},
+      "echo": {"size": 0.5, "alpha": 0.2, "color": "#bf73ff"},
+      "armor": {"size": 1.3, "alpha": 0.25, "color": "#b3ebff"},
+      "pull": {"size": 0.6, "alpha": 0.08, "color": "#bff0f7"},
+      "dash": {"r": 20, "alpha": 0.3, "color": "#bff0f7", "length": 70},
+      "guard": {"r": 24, "alpha": 0.2, "color": "#59bfff"},
+      "icicle": {"size": 1.3, "alpha": 0.5, "color": "#d9f2ff", "light": 1.0, "time": 0.35},
+      "quake": {"size": 1.0, "alpha": 0.35, "color": "#b38cff", "light": 0.8},
+      "blast": {"size": 1.2, "alpha": 0.4, "color": "#ffb366", "light": 0.9},
+      "blast_gravity": {"size": 1.2, "alpha": 0.4, "color": "#9966ff", "light": 0.9},
+      "ring": {"size": 1.0, "alpha": 0.3, "color": "#ffffff", "light": 0.7},
+      "smash": {"size": 0.5, "alpha": 0.35, "color": "#bf99ff"},
+      "charge": {"r": 40, "alpha": 0.35, "color": "#ffe680"},
+      "lift": {"r": 30, "alpha": 0.3, "color": "#8c66ff"}
+    },
+    "world_zones": {
+      "_note": "The world's own zones (hell_game.gd zones: Hrimgar's boss kit, the hero's, relics' and subclasses' skills) in the crypt's src/vfx/boss_fx.gd terms: kind = its zone kind, style = its style. boss_fx.gd lights pool, strike and vortex zones of void, fire, poison, frost and ice (so a ring or a charge style stays dark); impact = the bloom kind above that flares (and lights) when the zone strikes. An empty entry: the zone neither lights nor blooms (caltrops are the crypt bridge's, src/hero/story_skill_fx.gd). Every kind the world adds must be listed (tests/story_glow_test.gd).",
+      "icicle": {"kind": "strike", "style": "ice", "impact": "icicle"},
+      "chill": {"kind": "pool", "style": "frost"},
+      "safe": {"kind": "pool", "style": "frost"},
+      "telegraph": {"kind": "ring", "style": "charge"},
+      "meteor": {"kind": "strike", "style": "fire"},
+      "rain": {"kind": "ring", "style": "charge"},
+      "blades": {"kind": "pool", "style": "void"},
+      "gfield": {"kind": "vortex", "style": "void"},
+      "sub_zone": {"kind": "pool", "style": "frost"},
+      "smoke": {},
+      "sub_trap": {},
+      "caltrop": {}
+    },
+    "world_fx": {
+      "_note": "The world's own skill effects (hell_game.gd fx) by their bloom kind above; an empty kind: dark here (whirl, bolt, blink and the fire, fist and ice blasts are drawn, bloomed and lit by the crypt bridge, src/hero/story_skill_fx.gd). Every kind the world adds must be listed (tests/story_glow_test.gd).",
+      "quake": "quake",
+      "blast": "blast",
+      "sub_ring": "ring",
+      "smash": "smash",
+      "charge": "charge",
+      "lift": "lift",
+      "spike": "",
+      "sub_heal": "",
+      "whirl": "",
+      "bolt": "",
+      "blink": ""
+    }
   }
 }

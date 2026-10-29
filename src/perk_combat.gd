@@ -324,7 +324,7 @@ func step_statuses(delta: float) -> void:
 			status.time = maxf(0.0,float(status.time)-delta)
 			# Skill slows (Pfeilfaust, Photoneneis) fade linearly to nothing.
 			if status.has("decay"): status.power = float(status.start)*clampf(float(status.time)/float(status.decay),0.0,1.0)
-			if key in ["burn","poison"]:
+			if key in ["burn","poison","bleed"]:
 				status.tick = float(status.tick)+elapsed
 				var period: float = _m("status_tick",0.5)
 				if float(status.tick) >= period or float(status.time) <= 0:

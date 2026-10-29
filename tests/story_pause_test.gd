@@ -60,7 +60,7 @@ func _test_world_opens_the_shared_menu(scene: PackedScene, world: String) -> voi
 	var t: float = game.state.t
 	game._process(0.05)
 	var menu: Control = game.pause_menu
-	var quests: int = menu.quest_list.get_child_count()
+	var quests: int = menu.quest_view.goals.size()
 	# Assert
 	check(menu is PauseMenu and menu.visible and menu.mode == "story", "%s: Esc opens the crypt's pause menu in story mode" % world)
 	check(_shown(menu) == ["overview", "quest", "map", "controls", "display", "save"], "%s: overview, quest, map, controls, display, save (%s)" % [world, str(_shown(menu))])
@@ -94,6 +94,7 @@ func _test_crypt_keeps_its_pages() -> void:
 	root.add_child(menu)
 	await process_frame
 	var shown := _shown(menu)
-	check("party" in shown and "session" in shown and "save" in shown and not "quest" in shown, "the crypt keeps party, session and save, without a quest page (%s)" % str(shown))
+	# the Auftragsliste is in every story, the crypt included (assignment, 29.10.2026)
+	check("party" in shown and "session" in shown and "save" in shown and "quest" in shown, "the crypt keeps party, session and save, and has the quest page too (%s)" % str(shown))
 	menu.queue_free()
 	await process_frame

@@ -14,7 +14,169 @@
   "frost_corpse": "flesh",
   "necro": "flesh",
   "void": "void",
-  "bomber": "void"
+  "bomber": "void",
+  "glutschaedel": "bone",
+  "brandskelett": "bone",
+  "glutwaechter": "bone",
+  "hoellenhund": "flesh",
+  "glutimp": "flesh",
+  "magmaschleim": "flesh",
+  "aschenpriester": "flesh",
+  "kettenschinder": "flesh",
+  "dreischlund": "flesh",
+  "kesselbrut": "flesh",
+  "kerkermeister": "flesh",
+  "drache1": "flesh",
+  "drache2": "flesh",
+  "drache3": "flesh",
+  "peingeist": "void",
+  "seelenhirte": "void",
+  "klagender_hueter": "void",
+  "drache4": "void",
+  "frost_skeleton": "bone",
+  "ice_knight": "bone",
+  "frost_commander": "bone",
+  "golem": "bone",
+  "ice_slime": "flesh",
+  "ice_slime_m": "flesh",
+  "ice_slime_s": "flesh",
+  "frost_necromancer": "flesh",
+  "frost_imp": "void",
+  "frost_whirl": "void",
+  "ice_crystal": "void"
+ },
+ "story_attacks": {
+  "_note": "The story worlds (src/hero/story_sound.gd, src/hell/hell_game.gd): which of the crypt attack sounds of this table each story attack uses. feedback.gd plays attack_<kind> when the attack fires and windup_<kind> (when it exists) while it winds up, like every crypt enemy. hell: the hell monsters act kinds (src/hell/hell_monsters.gd); moves: the Frostgruft enemy moves by move id, else by type (src/hell/frost_moves.gd, assets/data/combat_boss_moves.json); behaviors: the Frostgruft basic enemies; kits: the guardian kits (src/hell/boss_kit.gd). An empty kind stays silent (like the crypt blink). many: a volley of at least many_from shots sounds as this kind instead. These tables are the guardians' and bosses' kinds; regular monsters sound through mob below. mob: a regular monster (not a guardian, not a boss) never takes a crypt boss sound (an attack_<kind> of category boss: roar and slam are the crypt's minibosses', salve and beam the void boss's); summon (mob.keeps) stays, the crypt's necromancer summons too. Such a kind sounds as mob[group][name] (a volley as mob.many[group][name]), else as mob.any[kind]. telegraph_only: kit attacks that only wind up (their strikes land later). landings: hell monster zones that land like a crypt boss move (zone_burst: blast); landings_boss_only: only a guardian's or boss's landing blasts (the crypt's regular enemies never do). blast_gap: shortest gap in seconds between two landing blasts. moves_drop: direct sounds of the Frostgruft moves the crypt routing replaces besides their windup_ and attack_ sounds (the blink is silent like the crypt's, the ice armour sounds as move_fx). move_fx: a move type that raises this crypt fx event when it releases (feedback.gd shows and sounds it). rig_materials above also names the story monsters (hell ids, Frostgruft kinds, guardian looks) and is the one source of a story monster's sound material (theme mob materials are not read with the feel).",
+  "hell": {
+   "dash": "bite",
+   "breath": "roar",
+   "lob": "soul",
+   "bolt": "soul",
+   "homing": "soul",
+   "ring": "salve",
+   "spiral": "soul",
+   "slam": "slam",
+   "swing": "slash",
+   "summon": "summon",
+   "echoes": "summon",
+   "hands": "summon",
+   "meteors": "summon",
+   "chain": "arrow",
+   "scream": "roar",
+   "beam": "beam",
+   "sweep": "beam",
+   "burrow": "slam",
+   "flight": "roar",
+   "teleport": "",
+   "trail": ""
+  },
+  "moves": {
+   "frost_nova": "roar",
+   "bullets": "arrow",
+   "lob": "arrow",
+   "dash": "bite",
+   "spin": "slam",
+   "vortex": "slam",
+   "cone": "roar",
+   "summon": "summon",
+   "strikes": "",
+   "armor": "",
+   "blink": ""
+  },
+  "behaviors": {
+   "shooter": "arrow",
+   "turret": "arrow",
+   "dasher": "bite"
+  },
+  "kits": {
+   "summon": "summon",
+   "ring": "salve",
+   "fan": "arrow",
+   "fist": "bite",
+   "fist_hunt": "summon",
+   "icicles": "summon",
+   "chill_zones": "summon",
+   "stomp": "slam",
+   "breath": "beam",
+   "spiral": "beam",
+   "charge": "bite",
+   "teleport_center": "summon",
+   "last_stand": "summon"
+  },
+  "many": {
+   "hell": {
+    "bolt": "salve"
+   },
+   "moves": {
+    "bullets": "salve"
+   },
+   "behaviors": {
+    "turret": "salve"
+   },
+   "kits": {
+    "fan": "salve"
+   }
+  },
+  "many_from": 3,
+  "mob": {
+   "keeps": [
+    "summon"
+   ],
+   "hell": {
+    "breath": "soul",
+    "ring": "soul",
+    "slam": "bite",
+    "scream": "soul",
+    "beam": "soul",
+    "sweep": "soul",
+    "burrow": "bite",
+    "flight": "soul"
+   },
+   "moves": {
+    "frost_nova": "soul",
+    "cone": "soul",
+    "spin": "slash",
+    "vortex": "slash"
+   },
+   "many": {
+    "hell": {
+     "bolt": "soul"
+    },
+    "moves": {
+     "bullets": "arrow"
+    },
+    "behaviors": {
+     "turret": "soul"
+    }
+   },
+   "any": {
+    "roar": "soul",
+    "slam": "bite",
+    "salve": "soul",
+    "beam": "soul"
+   }
+  },
+  "telegraph_only": [
+   "icicles",
+   "chill_zones"
+  ],
+  "landings": [
+   "wave",
+   "erupt",
+   "land",
+   "meteor",
+   "hand",
+   "line"
+  ],
+  "landings_boss_only": true,
+  "blast_gap": 0.08,
+  "moves_drop": [
+   "void_burst",
+   "block"
+  ],
+  "move_fx": {
+   "armor": "armor"
+  }
  },
  "events": {
   "swing": {
@@ -226,6 +388,15 @@
    ],
    "spread": 0.06,
    "src": "Combat and Gore/crunch_splat_2.wav"
+  },
+  "kill_void": {
+   "label": "Leerenwesen vergeht",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/sfx/break_void_0.wav",
+    "res://assets/audio/sfx/break_void_1.wav"
+   ],
+   "spread": 0.06
   },
   "kill_necro": {
    "label": "Nekromant stirbt",

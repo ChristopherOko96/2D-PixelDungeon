@@ -12,6 +12,7 @@ const FloorMap = preload("res://src/dungeon/dungeon_map.gd")
 const ClassPerks = preload("res://src/player/class_perks.gd")
 const SkillIcons = preload("res://src/ui/skill_icons.gd")
 const SkillBar = preload("res://src/ui/skill_bar.gd")
+const TalentBar = preload("res://src/ui/talent_bar.gd")
 const HudKit = preload("res://src/ui/hud_kit.gd")
 const HudStyle = preload("res://src/ui/hud_style.gd")
 const RunTree = preload("res://src/progress/run_tree.gd")
@@ -48,6 +49,8 @@ var _chip := 1.0
 var _flash := 0.0
 var _last_ratio := 1.0
 var _pulse := 0.0
+## The talent bar (Shift + 1-4, R) and reward banner, the same in every map.
+var _talent_bar := TalentBar.new()
 
 
 func _ready() -> void:
@@ -174,6 +177,7 @@ func _layout() -> void:
 func _process(delta: float) -> void:
 	if not is_visible_in_tree(): return
 	_pulse += delta
+	_talent_bar.step(delta)
 	var margin := float(_data.get("margin", 20))
 	var left_rect := Rect2(margin, margin, 320, 110)
 	var near_left := _covers(left_rect)
@@ -204,6 +208,8 @@ func _draw() -> void:
 	_right.queue_redraw()
 	_draw_boss_bar()
 	_draw_skills(players.get(_local_peer, {}))
+	_draw_talents(players.get(_local_peer, {}))
+	_draw_reward()
 	_top.queue_redraw()
 
 
@@ -329,3 +335,18 @@ func _draw_skills(local: Dictionary) -> void:
 			"ultimate": bool(skill.get("ultimate", false))})
 	# level and EXP sit with the hearts at the top (_draw_hero)
 	SkillBar.draw(_canvas, _font, size, slots, _pulse, {"mouse": get_local_mouse_position()})
+
+
+# --- Talent bar and rewards (src/ui/talent_bar.gd, the same in every map) -----
+
+func _draw_talents(local: Dictionary) -> void:
+	_talent_bar.draw_bar(_canvas, local.get("talents", {}), size.x * 0.5, skill_bar_top() - 74.0)
+
+
+## Shows a reward on this machine (soul shard, level up); queued, one at a time.
+func show_reward(event: Dictionary) -> void:
+	_talent_bar.show_reward(event)
+
+
+func _draw_reward() -> void:
+	_talent_bar.draw_reward(_canvas, Vector2(size.x * 0.5, size.y * 0.24))

@@ -8,16 +8,34 @@ extends RefCounted
 ## - Charge (and the archer's backflip): fading afterimages along the path.
 ## - Bow: the string is pulled back with a nocked arrow before each shot and
 ##   snaps forward on release; Ballistapfeil holds a full draw.
-## - Staff: a short recoil when a spell leaves it.
-## `px` is world pixels per art pixel (crypt 2, story worlds 3).
+## - Staff: held upright at the side, orb above the hand; a spell lifts it
+##   and tips it toward the target.
+## `px` is world pixels per weapon art pixel; `hero_px` per hero art pixel
+## (crypt 2 / 2, story worlds 2 / 3).
 
 const SWING_TIME := 0.2
+## Staff length in hero art pixels (a 0x72 hero's figure is about 22 of its
+## 28 rows tall): a bit shorter than the hero, so the orb sits near the hat.
+const STAFF_LENGTH := 18.0
+## Where the hand grips the staff, as a share of its length from the orb end.
+const STAFF_GRIP := 0.35
+## How far (radians) the resting staff may lean toward the aim, and a casting one.
+const STAFF_LEAN := 0.5
+const STAFF_CAST_LEAN := 0.9
+## A cast lifts the staff this many hero art pixels and settles in this many seconds.
+const STAFF_LIFT := 3.0
+const STAFF_CAST_TIME := 0.28
 const AFTERIMAGE_TIME := 0.22
 const STRING_COLOR := Color("#d3bfa9")
 const SMEAR := Color("#eaf8ff")
 const SMEAR_RAGE := Color("#ff6a4a")
 
 var px := 2.0
+## World pixels per hero art pixel (the staff is sized and placed by the body).
+var hero_px := 2.0
+## The staff hand relative to the hero's anchor point, in hero art pixels
+## (x toward the facing side), about halfway up the figure.
+var staff_hand := Vector2(5, 0)
 ## Off-hand blade drawn in Rage (and by the second swing).
 var off_blade: Texture2D
 var nocked_arrow: Texture2D
@@ -29,6 +47,7 @@ var _bows: Dictionary = {}
 
 func _init(pixel: float = 2.0, sword: Texture2D = null, arrow: Texture2D = null) -> void:
 	px = pixel
+	hero_px = pixel
 	off_blade = sword
 	nocked_arrow = arrow
 
@@ -276,11 +295,21 @@ func _bow(texture: Texture2D) -> Dictionary:
 
 # --- staff -------------------------------------------------------------------------
 
+## The staff stands upright in the hand at the hero's side, orb up, like a
+## wanderer's staff: a little shorter than the hero, gripped below the orb,
+## leaning slightly toward the aim. A spell lifts it and tips it at the target,
+## then it settles back.
 func _draw_staff(canvas: CanvasItem, key: String, point: Vector2, aim: Vector2, clock: float, texture: Texture2D) -> void:
+	var side := -1.0 if aim.x < -0.1 else 1.0
 	var since := clock - float(_shot.get(key, {}).get("start", -INF))
-	var recoil := (1.0 - clampf(since / 0.15, 0.0, 1.0)) * 2.0 * px if since >= 0.0 else 0.0
-	var hand := point + aim * (5.0 * px - recoil) + Vector2(0, px)
-	var size := texture.get_size() * px
-	canvas.draw_set_transform(hand, aim.angle() + PI * 0.5, Vector2.ONE)
-	canvas.draw_texture_rect(texture, Rect2(Vector2(-size.x * 0.5, -size.y * 0.5), size), false)
+	var cast := (1.0 - clampf(since / STAFF_CAST_TIME, 0.0, 1.0)) if since >= 0.0 else 0.0
+	var length := STAFF_LENGTH * hero_px
+	var size := Vector2(texture.get_width() * length / texture.get_height(), length)
+	var hand := point + Vector2(staff_hand.x * side, staff_hand.y) * hero_px
+	hand.y -= (STAFF_LIFT * cast + sin(clock * 2.2) * 0.4) * hero_px
+	# upright, leaning a little toward the aim; a cast tips it further at the target
+	var toward := wrapf(aim.angle() + PI * 0.5, -PI, PI)
+	var tilt := clampf(toward, -STAFF_LEAN, STAFF_LEAN) * 0.4 + clampf(toward, -STAFF_CAST_LEAN, STAFF_CAST_LEAN) * 0.6 * cast
+	canvas.draw_set_transform(hand, tilt, Vector2.ONE)
+	canvas.draw_texture_rect(texture, Rect2(Vector2(-size.x * 0.5, -size.y * STAFF_GRIP), size), false)
 	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

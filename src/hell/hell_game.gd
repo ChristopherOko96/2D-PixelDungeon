@@ -14,15 +14,22 @@ const FloorData = preload("res://src/hell/hell_floor_data.gd")
 const Walls = preload("res://src/hell/hell_walls.gd")
 const Rules = preload("res://src/hell/hell_rules.gd")
 const Monsters = preload("res://src/hell/hell_monsters.gd")
+const DrakeRigHost = preload("res://src/hell/drake_rig_host.gd")
+const RigLibrary = preload("res://src/rig/rig_library.gd")
 const MobRules = preload("res://src/hell/mob_rules.gd")
 const BossKit = preload("res://src/hell/boss_kit.gd")
 const HeroKit = preload("res://src/hell/hero_kit.gd")
 const RelicKit = preload("res://src/hell/relic_kit.gd")
 const CardKit = preload("res://src/hell/card_kit.gd")
 const SubKit = preload("res://src/hell/sub_kit.gd")
-const FrostFeel = preload("res://src/hell/frost_feel.gd")
+const StoryFeel = preload("res://src/hero/story_feel.gd")
+const StorySound = preload("res://src/hero/story_sound.gd")
 const FrostCombat = preload("res://src/hell/frost_combat.gd")
 const MetaStore = preload("res://src/hell/meta_store.gd")
+const Profile = preload("res://src/progress/profile.gd")
+const TalentRules = preload("res://src/progress/talent_rules.gd")
+const SoulDrops = preload("res://src/progress/soul_drops.gd")
+const HellTalents = preload("res://src/hell/hell_talents.gd")
 const FrostHud = preload("res://src/hell/frost_hud.gd")
 const HEART := "res://assets/sprites/0x72/ui_heart_%s.png"
 const Sfx = preload("res://src/vfx/sfx.gd")
@@ -30,11 +37,13 @@ const Music = preload("res://src/audio/music.gd")
 const SaveStore = preload("res://src/save/save_store.gd")
 const CryptUI = preload("res://src/ui/crypt_ui.gd")
 const StoryHero = preload("res://src/hero/story_hero.gd")
+## The crypt's darkness and bloom in this world (src/hero/story_glow.gd).
+const StoryGlow = preload("res://src/hero/story_glow.gd")
+const Darkness = preload("res://src/vfx/darkness.gd")
 const StorySave = preload("res://src/save/story_save.gd")
 ## The crypt's pause menu, in its story mode (overview, quest, map, controls, display, save).
 const PauseMenu = preload("res://src/pause_menu.gd")
-const STORY_CONTROLS := "Bewegen: WASD\nAngreifen: Linksklick oder Pfeiltasten\nFähigkeiten: 1 2 3 4 · Meisterfähigkeit: 5\nKarte wählen: 7 8 9 oder Klick\nAktion (Tür, Truhe, Schale): E oder Leertaste\nRelikt / Waffe wechseln: T · Klon: Q\nKarte: M · Licht: L · Status: C oder Tab\nLauf-Talente: B\nNach dem Tod: E neuer Lauf\nMenü öffnen / schließen: Esc"
-const DARKNESS_SHADER := preload("res://assets/shaders/canvas_vfx_darkness.gdshader")
+const STORY_CONTROLS := "Bewegen: WASD\nAngreifen: Linksklick oder Pfeiltasten\nTalente: Shift + 1 2 3 4, Ultimate: R\nFähigkeiten: 1 2 3 4 · Meisterfähigkeit: 5\nKarte wählen: 7 8 9 oder Klick\nAktion (Tür, Truhe, Schale): E oder Leertaste\nRelikt / Waffe wechseln: T · Klon: Q\nKarte: M · Licht: L · Status: C oder Tab\nLauf-Talente: B\nNach dem Tod: E neuer Lauf\nMenü öffnen / schließen: Esc"
 const FONT := preload("res://assets/fonts/pixel_operator8.ttf")
 const SkillBar = preload("res://src/ui/skill_bar.gd")
 const SkillIcons = preload("res://src/ui/skill_icons.gd")
@@ -163,10 +172,22 @@ var meta_data: Dictionary = {}
 var meta: Dictionary = {}
 ## Where the soul crystals are saved (tests use their own file).
 var meta_path := MetaStore.SAVE_PATH
+## The shared lasting profile (src/progress/profile.gd): EXP, gold, soul shards.
+var profile_data: Dictionary = {}
+var profile: Dictionary = {}
+var profile_path := Profile.default_path()
+## Identifies this run in boss completion ids, so a restart never repeats one.
+var _run_uid := ""
+## What the last floor brought, for the floor banner.
+var _floor_reward := ""
+## The shared talent trees in this map (src/hell/hell_talents.gd); null without a profile.
+var talents: HellTalents
 ## The run's subclass kit (src/hell/sub_kit.gd); empty for the standard subclass.
 var sub_kit: Dictionary = {}
-## Story 1's combat feel (theme.feel, src/hell/frost_feel.gd); null in worlds without it.
-var feel: FrostFeel
+## The crypt's game feel (src/hero/story_feel.gd running src/vfx/feedback.gd); null in a world without theme.feel.
+var feel: StoryFeel
+## The crypt's sound routing next to the feel (src/hero/story_sound.gd); null without theme.feel.
+var sound: StorySound
 var pending: Array = []
 ## Hearts of the HUD (0x72 full, half, empty).
 var hearts: Dictionary = {}
@@ -181,14 +202,19 @@ var door_at: Dictionary = {}
 var minimap: Array = []
 var camera: Camera2D
 var actors: Layer
-var dark: Layer
-## Additive layer for attack glows and enemy shots of the hell monsters.
+## The crypt's darkness (src/vfx/darkness.gd); src/hero/story_glow.gd lights it.
+var dark: Node2D
+## The crypt's bloom over the darkness and the darkness's lights (src/hero/story_glow.gd).
+var story_glow: StoryGlow
+## Additive layer for attack glows and enemy shots of the hell monsters (under the
+## darkness, like the crypt's bullets; their bloom is story_glow's).
 var glow: Layer
 ## The hell monsters (hell_monsters.gd); null in a themed world with its own enemies.
 var monsters: Monsters
+## Ignaroth's part rig (src/hell/drake_rig_host.gd): body parts, part hits, rig drawing; null without monsters.
+var drake_rig: DrakeRigHost
 var hud: Hud
 var _chunk_nodes: Array = []
-var _dark_material: ShaderMaterial
 var _vignette: GradientTexture2D
 
 
@@ -234,7 +260,8 @@ func _ready() -> void:
 		hero_frames[kind] = frames
 	skills = HeroKit.load_skills(self, class_id)
 	if theme.has("feel"):
-		feel = FrostFeel.new(self, theme.feel)
+		feel = StoryFeel.new(self, theme.feel)
+		sound = StorySound.new(self)
 	for k in ["full", "half", "empty"]:
 		hearts[k] = load(HEART % k)
 	# only the real game uses the player's lasting progress file; test and capture scripts
@@ -242,7 +269,13 @@ func _ready() -> void:
 	var meta_allowed: bool = meta_path != MetaStore.SAVE_PATH or get_tree().get_script() == null
 	if theme.has("talents") and FileAccess.file_exists(str(theme.talents)) and meta_allowed:
 		meta_data = JSON.parse_string(FileAccess.get_file_as_string(str(theme.talents)))
-		meta = MetaStore.load_store(meta_data, meta_path)
+		# The old soul crystals and subclass trees are replaced by the shared
+		# talent trees (docs/TALENTE-SEELENSPLITTER.de.md): every class plays
+		# its standard subclass here, and bought crystals lapse.
+		meta = MetaStore.fresh(meta_data)
+	profile_data = Profile.data()
+	if not profile_data.is_empty(): profile = Profile.load_profile(profile_data, profile_path)
+	_run_uid = "%d-%d" % [Time.get_unix_time_from_system(), randi()]
 	if not (theme.get("sounds", {}) as Dictionary).is_empty():
 		sfx = Sfx.new()
 		add_child(sfx)
@@ -256,16 +289,23 @@ func _ready() -> void:
 	camera.make_current()
 	if not theme.has("mobs"):
 		monsters = Monsters.new(self, balance.monsters)
+		# Ignaroth's part rig: tuning from balance.monsters.rigs (DrakeRigHost.DEFAULTS fill gaps)
+		drake_rig = DrakeRigHost.new(balance.monsters, RigLibrary.shared())
+		monsters.rig_host = drake_rig
 	actors = _layer("actors", 10)
 	glow = _layer("glow", 11)
 	var add := CanvasItemMaterial.new()
 	add.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	glow.material = add
 	story_hero = StoryHero.new(self)
-	dark = _layer("dark", 30)
-	_dark_material = ShaderMaterial.new()
-	_dark_material.shader = DARKNESS_SHADER
-	dark.material = _dark_material
+	# the crypt's darkness and, over it, its bloom (src/hero/story_glow.gd)
+	dark = Darkness.new()
+	dark.z_index = 30
+	add_child(dark)
+	story_glow = StoryGlow.new(self)
+	# Ignaroth's rig hands its glow record (atlas box + rig points) to the bloom like hell_monsters.gd _mark()
+	if drake_rig != null:
+		drake_rig.glow_mark = story_glow.mark
 	# soft red rim for deeper floors: clear centre, opaque white edge, tinted when drawn
 	var ramp := Gradient.new()
 	ramp.set_color(0, Color(1, 1, 1, 0))
@@ -373,33 +413,62 @@ static func _color(v: Variant) -> Color:
 	return Color(a[0], a[1], a[2], a[3] if a.size() > 3 else 1.0)
 
 
-## Plays the sound the theme maps to a game event (theme.sounds); silent without sounds.
-func _sound(event: String) -> void:
+## Plays the sound the theme maps to a game event (theme.sounds); silent without
+## sounds. `category` overrides the event's mix group (assets/data/audio_mix.json).
+## With the feel, the crypt's feedback.gd plays the combat moments itself and
+## src/hero/story_sound.gd drops what it would play twice.
+func _sound(event: String, category := "") -> void:
 	var name := str(theme.get("sounds", {}).get(event, ""))
-	if name != "":
-		_sound_raw(name)
+	if name != "" and (sound == null or sound.keep_event(event)):
+		_play_sfx(name, category)
 
 
-## Plays an audio_sfx.json event directly (skills name their own).
-func _sound_raw(name: String) -> void:
+## Plays an audio_sfx.json event directly (skills name their own). While the
+## hero acts (as_hero) it plays at the hero's mix level, like the crypt's skill casts.
+func _sound_raw(name: String, category := "") -> void:
+	if sound != null:
+		if not sound.keep_raw(name):
+			return
+		if category == "":
+			category = sound.raw_category()
+	_play_sfx(name, category)
+
+
+func _play_sfx(name: String, category := "") -> void:
 	if sfx != null and name != "" and sfx.has_effect(name):
-		sfx.play(name)
+		sfx.play(name, 0.08, category)
 
 
-## Soul crystals for this floor (its number, its guardian, finished side goals), saved at once.
+## Runs `action` (a kit's call) with its direct sounds counted as `who`'s
+## (src/hero/story_sound.gd source: "hero", "moves", "kit"); returns its result.
+func as_source(who: String, action: Callable) -> Variant:
+	if sound == null:
+		return action.call()
+	var was := sound.source
+	sound.source = who
+	var out: Variant = action.call()
+	sound.source = was
+	return out
+
+
+## End of a floor: character EXP and gold into the shared profile, and a soul
+## shard roll when a real floor boss fell (mini-bosses never drop shards).
+## Solo game, so this machine rolls; the rules are the same as in the crypt.
 func _bank_crystals() -> void:
-	if meta.is_empty():
-		return
-	var kind := "final" if W.final else ("mini" if W.boss.get("mini", false) else "guardian")
-	var sides := 0
-	for it: Dictionary in FrostHud.goals(self):
-		if not it.main and it.done:
-			sides += 1
-	var n := MetaStore.floor_award(meta_data, int(state.floor), kind, sides)
-	meta.crystals = int(meta.crystals) + n
-	state.crystals_floor = n
-	state.crystals_run = int(state.get("crystals_run", 0)) + n
-	MetaStore.save_store(meta, meta_path)
+	if profile.is_empty(): return
+	var state_class := Profile.class_state(profile, class_id)
+	var gained := TalentRules.add_exp(profile_data, state_class, int(profile_data.exp.floor) + (int(profile_data.exp.boss) if W.final else int(profile_data.exp.miniboss)))
+	profile.gold = int(profile.gold) + int(profile_data.gold.per_floor) + (int(profile_data.gold.per_boss) if W.final else 0)
+	_floor_reward = "+%d Gold" % (int(profile_data.gold.per_floor) + (int(profile_data.gold.per_boss) if W.final else 0))
+	if gained > 0: _floor_reward += "  ·  Level %d, neuer Talentpunkt" % int(state_class.level)
+	if W.final:
+		var difficulty := str(profile.get("difficulty", "normal"))
+		var fight := {"present": true, "seconds": float(state.get("floor_time", 60.0)), "damage_share": 1.0}
+		var result := SoulDrops.resolve(profile_data, profile, "hell_final_%d" % int(state.floor), difficulty, "%s:%d" % [_run_uid, int(state.floor)],
+			int(state_class.level), SoulDrops.boss_level(profile_data, int(state.floor), difficulty), fight, randf())
+		_floor_reward += "  ·  +%d SEELENSPLITTER" % int(result.count) if bool(result.shard) else ""
+	Profile.save_profile(profile, profile_path)
+	if talents != null: talents.save()
 
 
 ## The weapon damage the hero's multiples are measured against.
@@ -415,7 +484,11 @@ func on_dash_land(what: String) -> void:
 		for m: Dictionary in mobs:
 			if Vector2(player.x, player.y).distance_to(m.p) < float(s.radius) + m.r:
 				m.stun = maxf(float(m.get("stun", 0.0)), float(s.stun))
-		fx.append({"kind": "quake", "p": Vector2(player.x, player.y), "r": float(s.radius), "t": 0.35, "max": 0.35})
+		# effect hook: with the feel the crypt's shockwave (hero_skills.gd: a stone burst of its radius)
+		if feel != null:
+			story_hero.skill_fx.event("burst", [story_hero.skill_fx.ground(Vector2(player.x, player.y))], {"radius": float(s.radius) / feel.scale, "color": "stone", "time": 0.3, "length": 0.3})
+		else:
+			fx.append({"kind": "quake", "p": Vector2(player.x, player.y), "r": float(s.radius), "t": 0.35, "max": 0.35})
 		return
 	RelicKit.land(self, what)
 	SubKit.land(self, what)
@@ -565,6 +638,7 @@ func load_floor(n: int, carry: bool) -> void:
 	zones = []
 	if monsters != null:
 		monsters.reset()
+		drake_rig.reset()
 	allies = []
 	pending = []
 	hold = {}
@@ -580,6 +654,9 @@ func load_floor(n: int, carry: bool) -> void:
 		e.max_hp = int(e.hp)
 	_respawn()
 	camera.position = Vector2(player.x, player.y)
+	if not profile.is_empty() and (talents == null or not carry):
+		talents = HellTalents.new()
+		talents.bind(self, profile, profile_path, class_id)
 
 
 ## Debug jump: puts the hero inside the boss room, two cells past the gate it
@@ -786,7 +863,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if event.pressed:
 			bar_drag = {"a": get_global_mouse_position()}
 		elif not bar_drag.is_empty():
-			HeroKit.gravity_bar(self, bar_drag.a, get_global_mouse_position())
+			as_source("hero", func() -> void: HeroKit.gravity_bar(self, bar_drag.a, get_global_mouse_position()))
 			bar_drag = {}
 		return
 	if not (event is InputEventKey) or event.echo:
@@ -800,15 +877,19 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 	var skill_keys := {KEY_1: "1", KEY_2: "2", KEY_3: "3", KEY_4: "4"}
+	# Shift + 1-4: the talent bar, R: the ultimate (the same keys in every map).
+	if talents != null and event.pressed and skill_keys.has(event.keycode) and event.shift_pressed:
+		talents.press(int(skill_keys[event.keycode]) - 1)
+		return
+	if talents != null and event.pressed and event.keycode == KEY_R:
+		talents.press(-1)
+		return
 	if not skills.is_empty() and skill_keys.has(event.keycode):
 		var key: String = skill_keys[event.keycode]
 		if event.pressed:
 			if not FrostCombat.can_cast(self, key):
 				return
-			if not RelicKit.press(self, key) and not SubKit.press(self, key):
-				HeroKit.press(self, key)
-		elif not RelicKit.release(self, key):
-			HeroKit.release(self, key)
+		skill_key(key, event.pressed)
 		return
 	var card_keys := {KEY_7: 0, KEY_8: 1, KEY_9: 2}
 	if event.pressed and card_keys.has(event.keycode) and not (state.get("offer", []) as Array).is_empty():
@@ -837,7 +918,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				_toast(("%s in der Hand." % theme[state.relic].name) if state.relic_on else ("%s in der Hand." % weapon.get("name", "Waffe")))
 		KEY_5:
 			if not skills.is_empty() and FrostCombat.can_cast(self, "5") and not SubKit.master(self):
-				HeroKit.master_press(self)
+				as_source("hero", func() -> void: HeroKit.master_press(self))
 		KEY_C, KEY_TAB:
 			state.status = not state.get("status", false)
 		KEY_I:
@@ -860,6 +941,20 @@ func _unhandled_input(event: InputEvent) -> void:
 				load_floor(10 if k == KEY_0 else k - KEY_0, false)
 
 
+## A skill key (1-4) pressed or released: the relic's, the subclass's or the
+## class skill; their sounds play at the hero's mix level (as_source "hero").
+func skill_key(key: String, pressed: bool) -> void:
+	as_source("hero", _skill_key_now.bind(key, pressed))
+
+
+func _skill_key_now(key: String, pressed: bool) -> void:
+	if pressed:
+		if not RelicKit.press(self, key) and not SubKit.press(self, key):
+			HeroKit.press(self, key)
+	elif not RelicKit.release(self, key):
+		HeroKit.release(self, key)
+
+
 func _axis(neg: Key, pos: Key) -> float:
 	return (1.0 if Input.is_physical_key_pressed(pos) else 0.0) - (1.0 if Input.is_physical_key_pressed(neg) else 0.0)
 
@@ -872,8 +967,9 @@ func _toast(text: String) -> void:
 		state.toasts.pop_front()
 
 
-## Costs the hero n half hearts unless he is still invulnerable from the last hit.
-func _hurt(why: String, n := 1) -> void:
+## Costs the hero n half hearts unless he is still invulnerable from the last hit
+## (`from`: where the blow came from, when known: the crypt's blood splats away from it).
+func _hurt(why: String, n := 1, from := Vector2.ZERO) -> void:
 	if state.inv > 0.0 or state.dead > 0.0:
 		return
 	if SubKit.guard(self):
@@ -884,7 +980,11 @@ func _hurt(why: String, n := 1) -> void:
 	if story_items != null:
 		n += story_items.extra_damage()
 	state.inv = float(balance.player.invulnerable)
-	_lose_hp(n, why)
+	# Talents: difficulty, reductions, shields, the counter (the same in every map).
+	if talents != null:
+		n = talents.incoming(n)
+		if n <= 0: return
+	_lose_hp(n, why, from)
 
 
 ## Damage over time (poison and burn of the Frostgruft's conditions,
@@ -897,18 +997,25 @@ func dot_hurt(n: int, why: String) -> void:
 
 
 ## Takes n half hearts: the flash, the hurt sounds, the feel; the phoenix or death at zero.
-func _lose_hp(n: int, why: String) -> void:
+func _lose_hp(n: int, why: String, from := Vector2.ZERO) -> void:
 	state.hp = maxi(0, state.hp - n)
-	state.flash = 0.25
-	_sound("hurt")
-	_sound("hurt_voice")
 	if feel != null:
-		feel.on_hurt()
+		# the crypt's hurt: punch with its groan layer (feedback.gd), once; like the crypt
+		# no red wash over the whole screen (the hero's flash, blood, shake and hitstop show it)
+		feel.on_hurt(from)
+	else:
+		state.flash = 0.25
+		_sound("hurt")
+		_sound("hurt_voice")
 	if state.hp == 0 and state.get("phoenix_life", false):
 		state.phoenix_life = false
 		state.hp = maxi(2, state.max_hp / 2)
 		state.inv = 2.0
-		_burst(Vector2(player.x, player.y - 40), 70, true)
+		# effect hook: with the feel the crypt's revive marker (src/hero/story_feel.gd perk)
+		if feel != null:
+			feel.hero_perk("revive")
+		else:
+			_burst(Vector2(player.x, player.y - 40), 70, true)
 		_sound("level_up")
 		_toast("Der Phönix trägt dich zurück ins Leben!")
 		return
@@ -999,7 +1106,9 @@ func end_run(won: bool) -> void:
 	zones = []
 	hold = {}
 	dash = {}
-	_sound("level_up" if won else "hurt_voice")
+	# a lost run already sounded the crypt's defeat when the hero fell (story_sound.gd phase "dead")
+	if won or feel == null:
+		_sound("level_up" if won else "hurt_voice")
 
 
 ## The result panel's rows for an ended run.
@@ -1009,9 +1118,10 @@ func run_result(over: Dictionary) -> Dictionary:
 	var lines: Array = [["ZONE", zone], ["ERREICHT", "ETAGE %d · %s" % [int(over.floor), str(over.title).to_upper()]], ["LEVEL", str(int(over.level))]]
 	if not won and str(over.why) != "":
 		lines.append(["URSACHE", str(over.why).to_upper()])
+	# the profile keeps level, gold and soul shards (docs/TALENTE-SEELENSPLITTER.de.md)
 	var note := ""
-	if not meta.is_empty():
-		note = "+%d %s IN DIESEM LAUF · ZUSAMMEN %d" % [int(over.crystals), str(meta_data.currency.name).to_upper(), int(meta.crystals)]
+	if not profile.is_empty():
+		note = "PROFIL: LEVEL %d · %d GOLD · %d SEELENSPLITTER" % [int(Profile.class_state(profile, class_id).level), int(profile.gold), int(profile.shards.have)]
 	return {"title": say("Die Hölle ist bezwungen").to_upper() if won else "LAUF BEENDET", "tone": "win" if won else "loss",
 		"lines": lines, "note": note, "hints": "E · NEUER LAUF   ESC · MENÜ"}
 
@@ -1053,30 +1163,46 @@ func act() -> void:
 				state.relic = e.item
 				state.relic_on = true
 				_relic_texture()
-				_burst(Vector2(e.x, e.y - 50), 60, true)
-				_sound("relic")
+				# effect hook: with the feel the crypt's pickup (loot_taken: its sheet and chime)
+				if feel != null:
+					feel.fx_event("loot_taken", Vector2(e.x, e.y - 40))
+				else:
+					_burst(Vector2(e.x, e.y - 50), 60, true)
+					_sound("relic")
 				var names: Array = (theme[e.item].skills as Array).map(func(s: Dictionary) -> String: return "%s (%s, ab LV %d)" % [s.short, s.key, int(s.unlock)])
 				state.banner = {"text": str(theme[e.item].name), "sub": " · ".join(PackedStringArray(names)) + " · T wechselt", "t": 0.0}
 			"chest":
 				if e.get("mimic", false):
 					_wake_mimic(e)
 					return
-				_sound("chest")
+				# effect hook: with the feel a chest opens like the crypt's (chest_open: splinters, the
+				# pickup sheet and its sound) and its loot is taken like the crypt's (loot_taken)
+				if feel == null:
+					_sound("chest")
 				if e.loot.has("key"):
 					e.state = "empty"
 					state.keys[e.loot.key] = true
-					_burst(Vector2(e.x, e.y - 40), 30, true)
+					if feel != null:
+						feel.fx_event("chest_open", Vector2(e.x, e.y - 30))
+					else:
+						_burst(Vector2(e.x, e.y - 40), 30, true)
 					_toast("Truhe geöffnet: %s genommen!" % key_name[e.loot.key])
 				elif e.get("state", "") == "":
 					e.state = "open"
+					if feel != null:
+						feel.fx_event("chest_open", Vector2(e.x, e.y - 30))
 					_toast("Truhe geöffnet: %d Runensteine%s" % [e.loot.gems, " und ein Herz" if e.loot.get("heart", false) else ""])
 					if story_items != null:
 						story_items.loot("chest", Vector2(e.x, e.y + 40))
 				else:
 					e.state = "empty"
 					state.gems += int(e.loot.gems)
+					if feel != null:
+						feel.fx_event("loot_taken", Vector2(e.x, e.y - 30))
 					if e.loot.get("heart", false):
 						state.hp = mini(state.max_hp, state.hp + 2)
+						if feel != null:
+							feel.hero_perk("heal")
 			"vault":
 				e.opened = true
 				# a plate vault pays more the more plates guarded it (tier = plate count, 4 = base)
@@ -1086,7 +1212,12 @@ func act() -> void:
 				state.gems += gems
 				state.max_hp = mini(int(balance.player.max_hp_cap), state.max_hp + 2 * hearts)
 				state.hp = state.max_hp
-				_burst(Vector2(e.x, e.y - 60), 60 + maxi(0, tier - 4) * 10, true)
+				# effect hook: with the feel the vault opens like the crypt's chests (chest_open)
+				if feel != null:
+					feel.fx_event("chest_open", Vector2(e.x, e.y - 60), {"r": 24.0})
+					feel.hero_perk("heal")
+				else:
+					_burst(Vector2(e.x, e.y - 60), 60 + maxi(0, tier - 4) * 10, true)
 				_toast("Riesentresor! +%d Herzcontainer, volle Gesundheit, +%d Runensteine" % [hearts, gems])
 				if story_items != null:
 					story_items.loot("gold_crate", Vector2(e.x, e.y + 60))
@@ -1110,6 +1241,9 @@ func act() -> void:
 					return
 				e.lit = true
 				W.lights.append({"x": e.x, "y": e.y - 70, "r": 280, "c": "255,140,60"})
+				# glow hook: the bowl catches fire in a crypt burst (its bloom and light: src/hero/story_glow.gd)
+				if feel != null:
+					feel.spawn("frost_burst" if bool(W.theme.get("frost", false)) else "fire_burst", Vector2(e.x, e.y - 70), 0.8)
 				var prog := Rules.group_progress(W.ents, e.group)
 				if prog.x == prog.y:
 					_solve_group(e.group)
@@ -1150,9 +1284,18 @@ func act() -> void:
 
 func _open_secret(d: Dictionary) -> void:
 	d.broken = true
-	_sound("secret")
+	# a wall gives way like the crypt's: a wall_break fx event per broken cell, as src/game.gd
+	# walls_broken sends them (rubble, dust, a shake and its sound through feedback.gd)
+	if feel != null:
+		for c: Vector2i in d.cells:
+			feel.fx_event("wall_break", Vector2((c.x + 0.5) * C, (c.y + 0.5) * C))
+	else:
+		_sound("secret")
 	for c: Vector2i in d.cells:
 		W.grid[c.y * W.cols + c.x] = 1
+	# the opened cells are floor for the crypt's rubble and marks now (like the crypt's new layout)
+	if feel != null:
+		feel.open_cells(d.cells)
 	walls = Walls.build(W.grid, W.cols, W.rows, C)
 	for node: Layer in _chunk_nodes:
 		node.queue_redraw()
@@ -1165,7 +1308,11 @@ func _solve_group(group: String) -> void:
 	if g.get("reward", "") == "relic":
 		for e: Dictionary in W.ents:
 			if e.type == "relic" and e.seal == group:
-				_burst(Vector2(e.x, e.y - 50), 50, true)
+				# effect hook: with the feel the crypt's golden level-up sheet (silent: puzzle_solved sounds)
+				if feel != null:
+					feel.spawn("level_up", Vector2(e.x, e.y - 20), 1.2)
+				else:
+					_burst(Vector2(e.x, e.y - 50), 50, true)
 		_toast("Das Gravitationssiegel bricht. Ein Stab liegt frei!")
 		return
 	var opened := false
@@ -1184,7 +1331,12 @@ func _solve_group(group: String) -> void:
 		var chest := {"type": "chest", "x": at.x, "y": at.y + 10.0, "room": at.room, "loot": loot, "magic": true}
 		W.ents.append(chest)
 		_add_solid(Rect2(chest.x - 40, chest.y - 32, 80, 32))
-		_burst(Vector2(at.x, at.y - 40), 40, true)
+		# effect hook: with the feel the reward chest rises from the crypt's dust (enemy_spawn) in a golden sheet
+		if feel != null:
+			feel.fx_event("enemy_spawn", Vector2(chest.x, chest.y - 10))
+			feel.spawn("level_up", Vector2(chest.x, chest.y), 1.2)
+		else:
+			_burst(Vector2(at.x, at.y - 40), 40, true)
 		_toast("Die Platten glühen auf. Eine Belohnungstruhe erscheint!")
 	elif g.kind == "braziers":
 		_toast("Alle Feuerschalen brennen. Das Gitter zum Riesentresor hebt sich!" if g.get("spread", false) else "Alle Schalen brennen. Das Tor hebt sich.")
@@ -1197,8 +1349,7 @@ func _fire(dir: Vector2) -> void:
 		return
 	_attack(dir)
 	if state.cool > 0.0:
-		state.cool *= FrostCombat.rate(self)
-		FrostCombat.after_attack(self)
+		state.cool *= FrostCombat.rate(self) * (talents.interval_scale() if talents != null else 1.0)
 
 
 ## One attack of the class weapon (or the relic) towards `dir`.
@@ -1207,16 +1358,19 @@ func _attack(dir: Vector2) -> void:
 	player.aim = dir.normalized()
 	if absf(dir.x) > 0.01:
 		player.face = signf(dir.x)
-	if RelicKit.attack(self, dir.normalized()) or SubKit.attack(self, dir.normalized()):
+	if as_source("hero", func() -> bool: return RelicKit.attack(self, dir.normalized()) or SubKit.attack(self, dir.normalized())):
 		return
+	# the class weapon: with the feel the crypt's feedback.gd sounds each swing and shot (story_hero counts them)
 	if weapon.get("type", "") == "melee":
 		_swing(dir.normalized())
-		_sound("swing")
+		if feel == null:
+			_sound("swing")
 		return
 	var v := dir.normalized() * float(weapon.get("speed", balance.shot.speed))
 	shots.append({"p": Vector2(player.x, player.y - 40), "v": v, "t": float(state.range), "kind": str(weapon.get("shot", "")), "splash": float(weapon.get("splash", 0.0)), "hits": []})
 	story_hero.on_shot()
-	_sound("shot_arrow" if weapon.get("shot", "") == "arrow" else "shot_magic")
+	if feel == null:
+		_sound("shot_arrow" if weapon.get("shot", "") == "arrow" else "shot_magic")
 
 
 ## Sword: hits every enemy and breakable within reach whose direction lies inside the arc.
@@ -1227,9 +1381,14 @@ func _swing(dir: Vector2, mirrored := false) -> void:
 	var reach := float(weapon.reach)
 	var half := float(weapon.arc) / 2.0
 	swing = {"a": dir.angle(), "t": 0.16}
+	# effect hook: the blade meeting a wall in front clangs like the crypt's (perk_combat.gd: metal wall hit)
+	if feel != null:
+		feel.swing_wall(from, dir, reach)
 	for m: Dictionary in mobs:
 		var to: Vector2 = m.p - Vector2(0, m.cy) - from
-		if _hittable(m) and to.length() < reach + m.r and absf(angle_difference(dir.angle(), to.angle())) <= half:
+		# Ignaroth's rig: the blade's arc must meet a part where it is drawn; that part takes the hit (src/hell/drake_rig_host.gd)
+		var rigged: bool = drake_rig != null and drake_rig.has_rig(m)
+		if _hittable(m) and (drake_rig.swing_hits(m, from, dir, reach, half) if rigged else to.length() < reach + m.r and absf(angle_difference(dir.angle(), to.angle())) <= half):
 			if _damage_mob(m, dir * 600.0):
 				story_hero.rage_throw(m, dir)
 	for e: Dictionary in breakables:
@@ -1241,28 +1400,49 @@ func _swing(dir: Vector2, mirrored := false) -> void:
 ## Deals the hero's damage (times mult, e.g. a skill's multiple); a shield bearer
 ## facing the hit blocks it (returns false).
 func _damage_mob(m: Dictionary, push: Vector2, mult := 1.0) -> bool:
+	# Ignaroth's rig: the part a shot, blade or blast aimed at, taken out here so a refused hit leaves none behind
+	var rig_part: String = drake_rig.take_aim(m) if drake_rig != null else ""
 	# no skill, swing or blast reaches a hell monster that cannot be hit (flying, burrowed, transforming)
 	if monsters != null and monsters.immune(m):
 		return false
 	var def: Dictionary = m.def
 	var arc := float(def.shield_arc) if def.get("behavior", "") == "shield" else float(m.get("kit", {}).get("shield_arc", 0.0))
 	if arc > 0.0 and push != Vector2.ZERO and MobRules.shield_blocks(m.face, push, arc):
-		_burst(m.p - Vector2(0, m.cy), 6, true)
-		_sound("block")
+		# with the feel the block is the crypt's alone (its sparks, flash and sound: feedback.gd)
+		if feel != null:
+			feel.on_block(m)
+		else:
+			_burst(m.p - Vector2(0, m.cy), 6, true)
+			_sound("block")
 		return false
 	var factor := BossKit.damage_factor(self, m) if m.has("kit") else 1.0
 	if factor <= 0.0:
 		return false
 	var item_crit: float = story_items.crit_mult() if story_items != null else 1.0
 	var crit: float = HeroKit.crit(self) * item_crit
-	m.hp -= float(state.dmg) * factor * mult * crit * CardKit.damage_mult(self) * SubKit.factor(self, m) * FrostCombat.hit_factor(self, m)
+	var dealt: float = float(state.dmg) * factor * mult * crit * CardKit.damage_mult(self) * SubKit.factor(self, m) * FrostCombat.hit_factor(self, m)
+	if talents != null: dealt = talents.basic_hit(m, dealt)
+	# Ignaroth's rig: the aimed part takes it (unaimed hits land on the body); all of it counts against m.hp (src/hell/drake_rig_host.gd)
+	if drake_rig != null:
+		drake_rig.damage(m, dealt, rig_part)
+	else:
+		m.hp -= dealt
 	if story_items != null and mult > 0.0:
 		story_items.on_hit(m)
-	_sound("hit_" + str(def.get("material", "void")))
+	# with the feel the hit sounds in the monster's crypt material (feedback.gd via FrostCombat.after_hit)
+	if feel == null:
+		_sound("hit_" + str(def.get("material", "void")))
 	m.hit = 0.12
 	# kit bosses stand firm: no knockback
 	m.k = Vector2.ZERO if m.has("kit") else push * (0.05 if m.kind == "boss" else 0.25)
 	FrostCombat.after_hit(self, m, push, crit > 1.0)
+	if feel != null:
+		# effect hooks: a critical hit's gold ring (the crypt's crit marker); a charge (hero_kit.gd
+		# _update_dash: its push and multiple) striking through is the crypt's charge_hit
+		if crit > 1.0:
+			feel.mob_perk("crit", m)
+		if not dash.is_empty() and float(dash.get("mult", 0.0)) > 0.0 and is_equal_approx(mult, float(dash.mult)) and push.is_equal_approx((dash.dir as Vector2) * 500.0):
+			story_hero.skill_fx.event("charge_hit", [story_hero.skill_fx.body(m.p - Vector2(0, m.cy))], {"time": 0.25, "length": 0.25})
 	return true
 
 
@@ -1281,7 +1461,7 @@ func _mob_def(kind: String) -> Dictionary:
 func _spawn_mob(room: int, pos: Vector2, kind: String) -> void:
 	var def := _mob_def(kind)
 	var diff: Dictionary = W.diff
-	var hp: float = float(W.boss.hp) if kind == "boss" else round(float(def.hp) * float(diff.hp))
+	var hp: float = (float(W.boss.hp) if kind == "boss" else round(float(def.hp) * float(diff.hp))) * (talents.hp_scale() if talents != null else 1.0)
 	var scale := float(def.get("scale", 1.0))
 	if kind == "boss" and (W.boss.get("mini", false) or W.final):
 		scale *= 1.25 if W.final else 1.05
@@ -1315,9 +1495,10 @@ func _start_fight(r: Dictionary) -> void:
 		if W.grid[c.y * W.cols + c.x] == 1 and p.distance_to(me) > 4.5 * C and not _near_door(r, p, 2.0) and solid_grid.get(c.y * W.cols + c.x, []).is_empty():
 			cells.append(p)
 	cells.shuffle()
+	# with the feel every fight locks its doors and a guardian's arrival stings once (feedback.gd boss_intro), like the crypt
 	if monsters != null:
 		monsters.populate(r, cells)
-		_sound("boss_intro" if r.type == "boss" else "fight_start")
+		_sound("boss_intro" if r.type == "boss" and feel == null else "fight_start")
 		return
 	var count: int = int(r.mobs if r.mobs > 0 else 3) + int(W.diff.extra)
 	var rolls: Array = []
@@ -1336,7 +1517,7 @@ func _start_fight(r: Dictionary) -> void:
 	if r.type == "boss":
 		_spawn_mob(r.index, Vector2((r.bx + r.bw / 2.0) * C, (r.by + r.bh / 2.0 + 1.0) * C), "boss")
 		_toast("%s erwacht. Die Tore sind verriegelt." % W.boss.name)
-		_sound("boss_intro")
+		_sound("boss_intro" if feel == null else "fight_start")
 	else:
 		_toast("Die Gitter fallen. Besiege alle Gegner.")
 		_sound("fight_start")
@@ -1348,7 +1529,14 @@ func _clear_room(r: Dictionary, at: Vector2) -> void:
 	# a room cleared a second time (seal demons) gives no second key or reward
 	var again: bool = r.get("rewarded", false)
 	r.rewarded = true
-	_sound("boss_dead" if r.type == "boss" else "room_clear")
+	# with the feel the crypt's room-clear sting comes from feedback.gd (phase combat -> reward) and a
+	# guardian's fall from its boss_kill; like the crypt only the last guardian (the crypt's void boss)
+	# and the mini guardians (its minibosses) add the victory tune
+	if r.type == "boss":
+		if feel == null or W.final or W.boss.get("mini", false):
+			_sound("boss_dead")
+	elif feel == null:
+		_sound("room_clear")
 	if r.drop != "" and not again:
 		_drop("key", r.index, at, {"key": r.drop})
 		_toast("Raum gesäubert. %s gefallen!" % key_name[r.drop])
@@ -1398,6 +1586,10 @@ func _enemy_shot(from: Vector2, dir: Vector2, speed: float) -> void:
 
 
 func _burst(at: Vector2, n: int, gold := false) -> void:
+	# effect hook: with the feel a level-up is the crypt's (its sheet, pillar, ring and bloom:
+	# src/hero/story_feel.gd), so hero_kit.gd _level_up's gold embers (raised as levelfx starts) stay out
+	if feel != null and gold and not levelfx.is_empty() and float(levelfx.t) == 0.0 and at.is_equal_approx(Vector2(player.x, player.y - 50)):
+		return
 	for k in range(n):
 		embers.append({"p": at, "v": Vector2(randf_range(-150, 150), randf_range(-210, 90)), "t": randf_range(0.35, 0.85), "big": n > 20, "gold": gold})
 
@@ -1406,10 +1598,23 @@ func _burst(at: Vector2, n: int, gold := false) -> void:
 
 func _hit_breakable(e: Dictionary, at: Vector2) -> void:
 	e.hit = 0.15
-	_burst(at, 8)
+	# effect hook: with the feel a blow chips stone like the crypt's chests take a hit (a small burst sheet;
+	# the heap or seal shakes like skill_fx.gd draw_chest: _draw_breakable)
+	if feel != null:
+		feel.spawn("stone_burst", at, 0.8)
+	else:
+		_burst(at, 8)
+	# skulls clack like the crypt's bone; the crypt has no fx event for a blow on a heap (its crates break
+	# at once), so only this clack is the world's own; the heap's fall is the crypt's wall_break (_open_secret)
+	if feel != null and e.type == "skullheap":
+		_play_sfx("hit_bone")
 	if not Rules.hit_breakable(e):
 		return
-	_burst(Vector2(e.x, e.y - 40), 40)
+	# its fall: the crypt's stone burst where it stood (silent: the wall_break, blessing or demons sound)
+	if feel != null:
+		feel.spawn("stone_burst", Vector2(e.x, e.y - 30), 1.6)
+	else:
+		_burst(Vector2(e.x, e.y - 40), 40)
 	if e.type == "crate":
 		_break_crate(e)
 	elif e.type == "skullheap":
@@ -1427,12 +1632,19 @@ func _break_seal(e: Dictionary) -> void:
 	if randf() < float(cfg.bless_chance):
 		var id: String = Rules.BLESSINGS[randi() % Rules.BLESSINGS.size()]
 		var text := Rules.apply_blessing(state, id, balance.blessings, int(balance.player.max_hp_cap))
-		_burst(Vector2(e.x, e.y - 60), 50, true)
+		# effect hook: with the feel a blessing shines like the crypt's cleanse (golden burst, sheet, chime)
+		if feel != null:
+			feel.fx_event("cleanse", Vector2(e.x, e.y - 40))
+		else:
+			_burst(Vector2(e.x, e.y - 60), 50, true)
 		_toast("Das Siegel bricht: %s!" % text)
 		return
 	var r: Dictionary = W.rooms[e.room]
 	r.fight = true
 	r.cleared = false
+	# effect hook: released demons flare dark like the crypt's curse
+	if feel != null:
+		feel.fx_event("curse", Vector2(e.x, e.y - 40))
 	var n := int(cfg.demons)
 	for k in range(n):
 		var at := Vector2(e.x + (k - (n - 1) / 2.0) * 90.0, e.y + 60.0 + (50.0 if k == 1 else 0.0))
@@ -1509,8 +1721,14 @@ func choose_stairs(n: int) -> void:
 
 func _fall_into_pit() -> void:
 	state.hp = maxi(0, state.hp - int(balance.pit.damage))
-	state.flash = 0.4
-	_burst(Vector2(player.x, player.y - 30), 24)
+	# the fall hurts like a hit: the crypt's hurt (feedback.gd: flash, blood, shake, hitstop), dust
+	# rising from the pit, no red wash over the screen (the crypt has none)
+	if feel != null:
+		feel.on_hurt()
+		feel.spawn("dust", Vector2(player.x, player.y), 1.6)
+	else:
+		state.flash = 0.4
+		_burst(Vector2(player.x, player.y - 30), 24)
 	if state.hp == 0:
 		state.dead = 1.8
 		state.death_why = "in eine Grube gestürzt"
@@ -1525,6 +1743,7 @@ func _fall_into_pit() -> void:
 	state.storm = false
 	if monsters != null:
 		monsters.reset()
+		drake_rig.reset()
 	state.pull = null
 	_respawn()
 	state.inv = 1.2
@@ -1546,7 +1765,11 @@ func use_skill() -> void:
 			_toast("Der Klon ist aufgebraucht.")
 		"started":
 			clone = {"p": Vector2(player.x - 60, player.y + 20), "cool": 0.0, "seed": randf() * 9.0}
-			_burst(Vector2(player.x, player.y - 40), 30, true)
+			# effect hook: with the feel the clone appears like the crypt's (inventory.gd clone seal: cleanse at the clone)
+			if feel != null:
+				feel.fx_event("cleanse", clone.p - Vector2(0, 30))
+			else:
+				_burst(Vector2(player.x, player.y - 40), 30, true)
 			_toast("Klon gerufen: %d Sekunden." % ceili(state.skill.left))
 
 
@@ -1554,7 +1777,11 @@ func _update_clone(dt: float) -> void:
 	if not state.skill.active or clone.is_empty():
 		return
 	if Rules.tick_skill(state.skill, dt):
-		_burst(clone.p - Vector2(0, 40), 30)
+		# effect hook: with the feel it fades like the crypt's blink (violet burst, no sound)
+		if feel != null:
+			feel.fx_event("blink", clone.p - Vector2(0, 30))
+		else:
+			_burst(clone.p - Vector2(0, 40), 30)
 		clone = {}
 		_toast("Der Klon zerfällt. Zeit abgelaufen.")
 		return
@@ -1596,6 +1823,7 @@ func open_pause() -> void:
 	pause_menu.set_display_state(get_window().mode == Window.MODE_FULLSCREEN, screen)
 	pause_menu.set_graphics_state(GraphicsSettings.note(theme, graphics), graphics)
 	pause_menu.set_story_state(pause_info())
+	pause_menu.set_shards(int(profile.get("shards", {}).get("have", 0)) if not profile.is_empty() else 0)
 	pause_menu.select_section("overview")
 	pause_menu.visible = true
 	pause_menu.resume_button.grab_focus()
@@ -1620,7 +1848,7 @@ func pause_info() -> Dictionary:
 	]
 	if str(state.relic) != "":
 		lines.insert(5, "Relikt: %s" % theme[state.relic].name)
-	return {"overview": say("\n".join(PackedStringArray(lines))), "quests": FrostHud.goals(self)}
+	return {"overview": say("\n".join(PackedStringArray(lines))), "quests": FrostHud.goals(self), "quest_title": "ETAGE %d" % int(state.floor)}
 
 
 func _toggle_fullscreen() -> void:
@@ -1635,15 +1863,18 @@ func _process(delta: float) -> void:
 	if pause_menu != null and pause_menu.visible:
 		hud.queue_redraw()
 		return
-	# a heavy blow freezes the world for a moment (hitstop, src/hell/frost_feel.gd)
-	if feel != null and feel.hitstop > 0.0:
-		feel.hitstop = maxf(0.0, feel.hitstop - dt)
-		feel.sprites.update(dt * 0.25)
+	# a kill or a hurt holds the picture for a moment, as in the crypt (hitstop, src/hero/story_feel.gd)
+	if feel != null and feel.frozen():
+		feel.freeze(dt)
+	elif drake_rig != null and drake_rig.frozen():
+		# a severed part holds the picture without the feel too (src/hell/drake_rig_host.gd hold)
+		drake_rig.freeze(dt)
 	else:
 		_update(dt)
 	actors.queue_redraw()
 	glow.queue_redraw()
-	dark.queue_redraw()
+	# the darkness's lights and the bloom, after the actors (their glowing parts follow the drawn bodies)
+	story_glow.frame()
 	hud.queue_redraw()
 
 
@@ -1666,8 +1897,13 @@ func _update(dt: float) -> void:
 		state.won_t += dt
 		return
 	if not (state.get("over", {}) as Dictionary).is_empty():
+		_update_music()
 		return
 	if state.dead > 0.0:
+		# the crypt keeps reacting while the hero falls: the killing blow, the defeat sting, the menu music
+		if feel != null:
+			feel.update(dt)
+		_update_music()
 		state.dead -= dt
 		if state.dead <= 0.0:
 			# a dungeon crawler: death ends the run (docs/LAUF-DESIGN.de.md)
@@ -1676,10 +1912,10 @@ func _update(dt: float) -> void:
 			state.room = _room_of_type("start").index
 		return
 	swing.t = maxf(0.0, swing.t - dt)
-	HeroKit.update(self, dt)
-	RelicKit.update(self, dt)
-	SubKit.update(self, dt)
-	FrostCombat.update(self, dt)
+	if talents != null: talents.update(dt)
+	# the kits' direct sounds by who acts (src/hero/story_sound.gd): the hero's skills, relics and allies, the enemy moves
+	as_source("hero", _update_hero_kits.bind(dt))
+	as_source("moves", func() -> void: FrostCombat.update(self, dt))
 	if feel != null:
 		feel.update(dt)
 	if not (state.get("offer", []) as Array).is_empty():
@@ -1690,7 +1926,15 @@ func _update(dt: float) -> void:
 		return
 	_update_clone(dt)
 	_update_shots(dt)
+	# effect hook: Rage-thrown bodies that slam into a wall (story_hero.check_slam, here and in
+	# hell_monsters.gd) leave the crypt's wall slam instead of the relics' violet quake ring
+	var slams := _slams_before()
 	_update_mobs(dt)
+	# Ignaroth's rig: stagger/landing timers, the closing throat, debris; then the cuts' hitstop and sound
+	if drake_rig != null:
+		drake_rig.frame(mobs, monsters.corpses, dt)
+		_route_rig_events()
+	_slams_after(slams)
 	_update_zones(dt)
 	_update_hazards(dt)
 	_update_rooms()
@@ -1698,14 +1942,49 @@ func _update(dt: float) -> void:
 	_update_camera(dt)
 
 
-## Explore, combat or boss music by what happens in the hero's room.
+## The hero's skills, relic and subclass per frame (their allies and timed blows).
+func _update_hero_kits(dt: float) -> void:
+	HeroKit.update(self, dt)
+	RelicKit.update(self, dt)
+	SubKit.update(self, dt)
+
+
+## Effect hook (with the feel): the Rage-thrown bodies flying before the monsters move, with their push.
+func _slams_before() -> Dictionary:
+	if feel == null:
+		return {}
+	var flying: Array = []
+	for m: Dictionary in mobs:
+		if m.has("slam"):
+			flying.append([m, m.k])
+	return {"flying": flying, "fx": fx.size()}
+
+
+## Effect hook: a thrown body that slammed into a wall this frame left story_hero.check_slam's
+## quake at it; that becomes the crypt's wall_slam (skill_fx.gd: dust, a hit spark, crack rays).
+func _slams_after(slams: Dictionary) -> void:
+	if slams.is_empty():
+		return
+	for pair: Array in slams.flying:
+		var m: Dictionary = pair[0]
+		if m.has("slam"):
+			continue
+		for i in range(fx.size() - 1, maxi(0, int(slams.fx)) - 1, -1):
+			var f: Dictionary = fx[i]
+			if str(f.get("kind", "")) == "quake" and (f.p as Vector2).is_equal_approx(m.p):
+				fx.remove_at(i)
+				var push: Vector2 = pair[1]
+				story_hero.skill_fx.event("wall_slam", [story_hero.skill_fx.ground(m.p)], {"angle": push.angle(), "time": 0.4, "length": 0.4})
+				break
+
+
+## The crypt's music states (src/audio/music.gd decide, through story_sound.gd):
+## boss while a guardian lives, combat while the hero's room fights, explore,
+## the menu theme once the hero fell or the run is lost.
 func _update_music() -> void:
 	if music == null:
 		return
-	var want := "explore"
-	var r: Dictionary = W.rooms[state.room]
-	if r.fight:
-		want = "boss" if r.type == "boss" else "combat"
+	var want := StorySound.music_state(self)
 	if want != _music_state:
 		_music_state = want
 		music.request(want)
@@ -1774,7 +2053,11 @@ func _update_shots(dt: float) -> void:
 				hit_solid = true
 		if _cell_blocked(c.x, c.y, false) or hit_solid:
 			s.t = 0.0
-			_burst(s.p, 5)
+			# effect hook: with the feel the crypt's wall hit (chips, a crack, sparks or the shot's splash)
+			if feel != null:
+				feel.wall_hit((s.p as Vector2) - (s.v as Vector2) * dt, s.p, StoryFeel.shot_wall_style(s), 1)
+			else:
+				_burst(s.p, 5)
 			continue
 		if s.get("kind", "") == "gravity":
 			# the gravity ball drags enemies towards itself while it flies
@@ -1787,8 +2070,12 @@ func _update_shots(dt: float) -> void:
 						m.p += step
 		var big := float(s.get("big", 1.0))
 		for m: Dictionary in mobs:
-			if _hittable(m) and not (s.get("hits", []) as Array).has(m) and s.p.distance_to(m.p - Vector2(0, m.cy)) < m.r + 12.0 * big:
-				_burst(s.p, 6)
+			# Ignaroth's rig: the shot must cross a part where it is drawn; the part takes the hit (src/hell/drake_rig_host.gd)
+			var rigged: bool = drake_rig != null and drake_rig.has_rig(m)
+			if _hittable(m) and not (s.get("hits", []) as Array).has(m) and (drake_rig.shot_hits(m, s.p - s.v * dt, s.p, 12.0 * big) if rigged else s.p.distance_to(m.p - Vector2(0, m.cy)) < m.r + 12.0 * big):
+				# with the feel the hit is the crypt's alone (sparks, hit spark, drops: feedback.gd)
+				if feel == null:
+					_burst(s.p, 6)
 				var mult := float(s.get("mult", 1.0))
 				if s.get("pierce", false):
 					# piercing shots (blade wave, ballista, arrow fist) go on through everyone
@@ -1826,7 +2113,11 @@ func _update_shots(dt: float) -> void:
 		s.t -= dt
 		if not s.get("fist", false) and _cell_blocked(int(floor(s.p.x / C)), int(floor(s.p.y / C)), false):
 			s.t = 0.0
-			_burst(s.p, 4)
+			# effect hook: with the feel the crypt's wall hit in the shot's style
+			if feel != null:
+				feel.wall_hit((s.p as Vector2) - (s.v as Vector2) * dt, s.p, feel.enemy_wall_style(s))
+			else:
+				_burst(s.p, 4)
 		elif s.p.distance_to(me) < float(balance.enemy_shot.hit_radius) * (1.6 if s.get("fist", false) else 1.0):
 			s.t = 0.0 if not s.get("fist", false) else s.t
 			if s.has("chill"):
@@ -1834,7 +2125,7 @@ func _update_shots(dt: float) -> void:
 			if s.has("dmg"):
 				FrostCombat.FrostMoves.shot_hit(self, s)
 			else:
-				_hurt("von Feuer getroffen")
+				_hurt("von Feuer getroffen", 1, s.p)
 		if s.t <= 0.0 and s.has("end_pool"):
 			FrostCombat.FrostMoves.shot_end(self, s)
 	eshots = eshots.filter(func(s: Dictionary) -> bool: return s.t > 0.0)
@@ -1857,6 +2148,7 @@ func _update_mobs(dt: float) -> void:
 			continue
 		# taunting allies (bone colossus, great bear) draw enemies away from the hero
 		var goal := SubKit.chase(self, m, me)
+		if talents != null: goal = talents.chase_goal(m, goal)
 		var to: Vector2 = goal - m.p
 		var d := maxf(to.length(), 1.0)
 		var dir := to / d
@@ -1880,6 +2172,8 @@ func _update_mobs(dt: float) -> void:
 					m.dash_t = float(def.dash_every)
 					m.dash = float(def.dash_time)
 					m.dash_dir = dir
+					if sound != null:
+						sound.on_attack(m, "dasher")
 			"puller":
 				if d < float(def.pull_radius):
 					var pull: Vector2 = -dir * float(def.pull) * dt
@@ -1907,10 +2201,11 @@ func _update_mobs(dt: float) -> void:
 		var ny: Vector2 = m.p + Vector2(0, v.y * dt)
 		if not box_blocked(Rect2(ny.x - rr, ny.y - rr, rr * 2, rr), avoid) and not HeroKit.wall_blocks(self, ny, rr):
 			m.p = ny
-		story_hero.check_slam(m, moved_from, dt)
+		if m.has("slam"):
+			as_source("hero", func() -> void: story_hero.check_slam(m, moved_from, dt))
 		if d < m.r + 22.0 and goal == me:
 			var who: String = ("von %s erwischt" % def.name) if def.has("name") else "von Glutlingen verbrannt"
-			_hurt("von %s erschlagen" % W.boss.name if m.kind == "boss" else who)
+			_hurt("von %s erschlagen" % W.boss.name if m.kind == "boss" else who, 1, m.p)
 			if def.has("chill"):
 				state.chill = float(def.chill)
 		if m.kind == "spucker" or beh == "shooter":
@@ -1918,7 +2213,11 @@ func _update_mobs(dt: float) -> void:
 			if m.shoot <= 0.0:
 				m.shoot = float(def.fire_every)
 				_enemy_shot(m.p - Vector2(0, 40), to - Vector2(0, 30), float(def.get("shot_speed", balance.enemy_shot.speed)))
-				_sound("enemy_shot")
+				# the crypt's attack sound of its kind (story_sound.gd), else the theme's
+				if sound != null:
+					sound.on_attack(m, "shooter")
+				else:
+					_sound("enemy_shot")
 		elif beh == "turret":
 			m.shoot -= dt
 			if m.shoot <= 0.0:
@@ -1927,8 +2226,11 @@ func _update_mobs(dt: float) -> void:
 				for k in range(fan):
 					var a: float = dir.angle() + (float(k) / maxf(1.0, fan - 1.0) - 0.5) * float(def.spread)
 					_enemy_shot(m.p - Vector2(0, m.cy), Vector2(cos(a), sin(a)), float(def.shot_speed))
+				if sound != null:
+					sound.on_attack(m, "turret", fan)
 		elif m.kind == "boss" and m.has("kit"):
-			BossKit.update(self, m, dt)
+			# the kit's attacks sound through the crypt's windup and attack routing (story_sound.gd)
+			as_source("kit", func() -> void: BossKit.update(self, m, dt))
 		elif m.kind == "boss":
 			m.summon -= dt
 			var adds := 0
@@ -1952,11 +2254,16 @@ func _update_mobs(dt: float) -> void:
 	for m: Dictionary in mobs.duplicate():
 		if m.hp > 0.0 or (m.has("kit") and BossKit.next_phase(self, m)):
 			continue
-		_burst(m.p - Vector2(0, 30), 70 if m.kind == "boss" else 16)
+		# with the feel the kill is the crypt's alone (burst in its material, pool, sheet: feedback.gd)
+		if feel == null:
+			_burst(m.p - Vector2(0, 30), 70 if m.kind == "boss" else 16)
 		mobs.erase(m)
-		_sound("kill_" + str((m.def as Dictionary).get("material", "void")))
+		# with the feel the kill sounds in the crypt material (feedback.gd via FrostCombat.after_kill)
+		if feel == null:
+			_sound("kill_" + str((m.def as Dictionary).get("material", "void")))
 		HeroKit.gain(self, HeroKit.exp_for(self, m))
 		SubKit.on_kill(self, m)
+		if talents != null: talents.killed(m)
 		FrostCombat.after_kill(self, m)
 		# a splitting enemy (e.g. ice slime) leaves smaller ones behind
 		var kids := MobRules.split_children(m.def)
@@ -1996,12 +2303,19 @@ func _explode(s: Dictionary, first: Dictionary) -> void:
 	var radius := float(s.get("burst", s.get("splash", 0.0)))
 	var mult := float(s.get("burst_mult", s.get("mult", 1.0)))
 	for o: Dictionary in mobs:
-		if _hittable(o) and s.p.distance_to(o.p - Vector2(0, o.cy)) < radius + o.r:
+		# Ignaroth's rig: the blast must reach a drawn part; the nearest one takes it (src/hell/drake_rig_host.gd)
+		var rigged: bool = drake_rig != null and drake_rig.has_rig(o)
+		if _hittable(o) and (drake_rig.blast_hits(o, s.p, radius) if rigged else s.p.distance_to(o.p - Vector2(0, o.cy)) < radius + o.r):
 			_damage_mob(o, (o.p - s.p).normalized() * 500.0, mult)
 			if s.has("burn"):
 				HeroKit.burn_mob(o, float(s.burn), float(s.burn_time))
 			if s.has("slow"):
 				HeroKit.slow_mob(self, o, float(s.slow), float(s.slow_time))
+	# effect hook: with the feel the mage's splash is the crypt's area perk (perk_events blast:
+	# feedback.gd's magic burst in the staff's glow, its sound, the gold ring), not the world's circle
+	if feel != null and str(s.get("kind", "")) == "magic":
+		feel.perk("blast", s.p)
+		return
 	fx.append({"kind": "blast", "p": s.p, "r": radius, "t": 0.3, "max": 0.3, "gravity": s.get("kind", "") in ["gravity", "rock"], "shot": s.get("kind", "")})
 	if int(s.get("split", 0)) > 0:
 		RelicKit.split_rock(self, s)
@@ -2035,7 +2349,8 @@ func _update_hazards(dt: float) -> void:
 					if cr.fight or e.get("wrong", 0.0) > 0.0:
 						continue
 					var res := Rules.step_sequence(W.ents, W.groups, e)
-					_sound("plate_wrong" if res == "wrong" else "plate")
+					# a plate is part of the world: its click stays off the menu bus
+					_sound("plate_wrong" if res == "wrong" else "plate", "world" if feel != null else "")
 					if res == "solved":
 						_solve_group(e.group)
 					elif res == "right":
@@ -2059,13 +2374,21 @@ func _update_hazards(dt: float) -> void:
 				e.taken = true
 				if e.type == "key":
 					state.keys[e.key] = true
-					_sound("key")
+					# with the feel the key is a crypt pickup like the others (loot_taken below)
+					if feel == null:
+						_sound("key")
 					_toast("%s aufgehoben." % key_name[e.key])
 				elif e.type == "heart":
 					state.hp = mini(state.max_hp, state.hp + 2)
+					# effect hook: the crypt's heal marker over the hero
+					if feel != null:
+						feel.hero_perk("heal")
 					_toast("+1 Herz")
 				else:
 					state.gems += 1
+				# the crypt's pickup: its loot_taken fx event (the pickup sheet and its chime through feedback.gd)
+				if feel != null:
+					feel.fx_event("loot_taken", Vector2(e.x, e.y))
 		if e.get("wrong", 0.0) > 0.0:
 			e.wrong = maxf(0.0, e.wrong - dt)
 		if e.get("hit", 0.0) > 0.0:
@@ -2128,7 +2451,8 @@ func _update_camera(dt: float) -> void:
 
 # ---------- world drawing ----------
 
-## Draws one layer: static chunks (back/front), live actors, or the darkness.
+## Draws one layer: static chunks (back/front), live actors, or the monsters' attack
+## shapes (the darkness and the bloom over it: src/hero/story_glow.gd).
 func draw_layer(l: Layer) -> void:
 	match l.kind:
 		"back": _draw_back(l)
@@ -2137,7 +2461,6 @@ func draw_layer(l: Layer) -> void:
 		"glow":
 			if monsters != null:
 				monsters.draw_fx(l)
-		"dark": _draw_dark(l)
 
 
 func _tex(ci: CanvasItem, name: String, pos: Vector2, flip := false, tint := Color.WHITE, scale := 1.0) -> void:
@@ -2297,6 +2620,10 @@ func _draw_actors(l: Layer) -> void:
 	var view := _view_rect().grow(220)
 	var t: float = state.t
 	FrostCombat.draw_under(self, l, t)
+	if talents != null: talents.draw_world(l, t)
+	# Ignaroth's severed parts lie on the floor under everyone (src/hell/drake_rig_host.gd)
+	if drake_rig != null:
+		drake_rig.draw_under(l)
 	_draw_zones(l, t)
 	for e: Dictionary in W.ents:
 		if not view.has_point(Vector2(e.x, e.y)):
@@ -2337,6 +2664,11 @@ func _draw_actors(l: Layer) -> void:
 	for m: Dictionary in mobs:
 		if view.grow(300 if monsters != null else 0).has_point(m.p):
 			list.append([m.p.y, "mob", m])
+	# felled monsters without a death animation fall and fade like the crypt's (src/hero/story_feel.gd)
+	if feel != null:
+		for m: Dictionary in feel.fallen():
+			if view.has_point(m.p):
+				list.append([m.p.y, "mob", m])
 	if monsters != null:
 		for c: Dictionary in monsters.corpses:
 			if view.has_point(c.p):
@@ -2363,10 +2695,15 @@ func _draw_actors(l: Layer) -> void:
 			"breakable": _draw_breakable(l, item[2], t)
 			"clone": _draw_clone(l, t)
 			"hero": _draw_hero(l, t)
+	# the cuts' chips, embers and flashes over the actors
+	if drake_rig != null:
+		drake_rig.draw_over(l)
 	_draw_skill_fx(l, t)
 	RelicKit.draw(self, l, t)
 	SubKit.draw(self, l, t)
-	FrostCombat.draw_over(self, l, t)
+	# effect hook: with the feel the hero's conditions are the crypt's (boss_fx.gd on the feel's layer)
+	if feel == null:
+		FrostCombat.draw_over(self, l, t)
 	for s: Dictionary in shots:
 		if SubKit.draw_shot(self, l, s, t):
 			continue
@@ -2512,7 +2849,8 @@ func _draw_skill_fx(l: Layer, t: float) -> void:
 			var at: Vector2 = m.p - Vector2(w / 2.0, m.cy * 2.0 + 18.0)
 			l.draw_rect(Rect2(at - Vector2(2, 2), Vector2(w + 4, 10)), Color(0.02, 0.03, 0.08, 0.85))
 			l.draw_rect(Rect2(at, Vector2(w * clampf(m.hp / m.max, 0.0, 1.0), 6)), Color("#ff5d73") if float(m.get("burn_t", 0.0)) <= 0.0 else Color("#ffaa55"))
-	if not levelfx.is_empty():
+	# with the feel the level-up is the crypt's (src/hero/story_feel.gd), not these rings
+	if not levelfx.is_empty() and feel == null:
 		var lt: float = levelfx.t
 		var c := Vector2(player.x, player.y - 40)
 		l.draw_arc(c, 40.0 + lt * 260.0, 0.0, TAU, 48, Color(1.0, 0.95, 0.6, maxf(0.0, 1.0 - lt / 1.4)), 8.0)
@@ -2679,17 +3017,26 @@ func _draw_mob_sprite(l: Layer, m: Dictionary, t: float) -> void:
 	var im: Texture2D = tex.get(MobRules.frame_name(look, int(t * float(look.get("fps", 8)) + m.seed)))
 	if im == null:
 		return
-	var size := im.get_size() * float(m.ds) * grow * FrostFeel.squash(m)
-	var tint := Color(3, 3, 3) if m.hit > 0.0 else (Color(1.6, 1.8, 2.2) if m.dash > 0.0 else _color(m.get("tint", [1, 1, 1])))
+	# the crypt's pose (src/hero/story_feel.gd): squash, lean, hop, flash, the fall of a felled monster
+	var pose: Dictionary = feel.pose(m) if feel != null else {}
+	var size := im.get_size() * float(m.ds) * grow * (pose.get("scale", Vector2.ONE) as Vector2)
+	var tint := Color(1.6, 1.8, 2.2) if m.dash > 0.0 else _color(m.get("tint", [1, 1, 1]))
+	if pose.is_empty():
+		tint = Color(3, 3, 3) if m.hit > 0.0 else tint
+	else:
+		tint.a *= float(pose.alpha)
 	if float(m.get("inv", 0.0)) > 0.0:
 		tint.a = 0.45 + 0.35 * sin(t * 30.0)
-	var pos: Vector2 = m.p - Vector2(size.x / 2.0, size.y)
-	if (m.face as Vector2).x < 0.0:
-		l.draw_set_transform(pos + Vector2(size.x, 0), 0.0, Vector2(-1, 1))
-		l.draw_texture_rect(im, Rect2(Vector2.ZERO, size), false, tint)
-		l.draw_set_transform(Vector2.ZERO)
-	else:
-		l.draw_texture_rect(im, Rect2(pos, size), false, tint)
+	var feet: Vector2 = m.p + (pose.get("offset", Vector2.ZERO) as Vector2)
+	# glow hook (src/hero/story_glow.gd): where the body is drawn this frame, so its glowing parts follow it
+	story_glow.mark(m, {"foot": feet, "size": size, "src": im.get_size(), "face": -1.0 if (m.face as Vector2).x < 0.0 else 1.0,
+		"lean": float(pose.get("lean", 0.0)), "alpha": tint.a})
+	l.draw_set_transform(feet, float(pose.get("lean", 0.0)), Vector2(-1.0 if (m.face as Vector2).x < 0.0 else 1.0, 1.0))
+	l.draw_texture_rect(im, Rect2(Vector2(-size.x / 2.0, -size.y), size), false, tint)
+	# the crypt's hit flash: the silhouette in the flash colour (red hit, white kill)
+	if float(pose.get("flash", 0.0)) > 0.0:
+		l.draw_texture_rect(feel.mask(im), Rect2(Vector2(-size.x / 2.0, -size.y), size), false, StoryFeel.flash_color(pose, tint.a))
+	l.draw_set_transform(Vector2.ZERO)
 
 
 func _draw_breakable(l: Layer, e: Dictionary, t: float) -> void:
@@ -2709,8 +3056,14 @@ func _draw_breakable(l: Layer, e: Dictionary, t: float) -> void:
 	var im: Texture2D = tex.demon_plate if seal else tex.skull_heap
 	var size := im.get_size() * (1.15 if seal else 1.0)
 	var shake := randf_range(-4, 4) if e.get("hit", 0.0) > 0.0 else 0.0
+	var flash := Color(2.4, 2.4, 2.4) if e.get("hit", 0.0) > 0.0 else Color.WHITE
+	if feel != null:
+		# effect hook: a hit shakes it like the crypt's chests (skill_fx.gd draw_chest: 3 crypt px, 60 rad/s,
+		# gone after 0.25 s), no white flash
+		shake = StoryFeel.hit_shake(0.15 - float(e.get("hit", 0.0)), float(e.get("hit", 0.0)) > 0.0) * feel.scale
+		flash = Color.WHITE
 	var r := Rect2(Vector2(e.x - size.x / 2.0 + shake, e.y - size.y), size)
-	l.draw_texture_rect(im, r, false, Color(2.4, 2.4, 2.4) if e.get("hit", 0.0) > 0.0 else Color.WHITE)
+	l.draw_texture_rect(im, r, false, flash)
 	if not seal:
 		return
 	l.draw_texture_rect(im, r, false, Color(1.6, 0.5, 0.3, 0.25 + 0.2 * sin(t * 4.0 + e.x)))
@@ -2735,15 +3088,22 @@ func _draw_clone(l: Layer, t: float) -> void:
 
 
 func _draw_hero(l: Layer, t: float) -> void:
-	if state.inv > 0.0 and int(t * 20.0) % 2 == 1:
+	# effect hook: with the feel the crypt's invulnerability look (45 % blink and the hit frame,
+	# src/hero/story_feel.gd invulnerable_look) instead of vanishing; its conditions are boss_fx.gd's (no tint)
+	var blink: Dictionary = StoryFeel.invulnerable_look(t) if feel != null and state.inv > 0.0 and state.dead <= 0.0 else {}
+	if feel == null and state.inv > 0.0 and int(t * 20.0) % 2 == 1:
 		return
 	# subclass look: its hero and colour, the ogre of the beast form, faint while hidden
 	var look := SubKit.look(self)
 	if feel != null:
-		look.tint *= FrostCombat.HeroFx.tint(self)
+		look.tint.a *= float(blink.get("alpha", 1.0))
 	var frames: Array = look.frames["run" if player.moving else "idle"]
 	var im: Texture2D = frames[int(player.anim) % 4]
-	var size := im.get_size() * float(theme.hero_scale) * float(look.scale) * FrostFeel.squash(player)
+	if bool(blink.get("hit", false)):
+		im = feel.hit_frame(im)
+	# the crypt's spring, lean and flash on the hero (src/hero/story_feel.gd)
+	var pose: Dictionary = feel.hero_pose() if feel != null else {}
+	var size := im.get_size() * float(theme.hero_scale) * float(look.scale) * (pose.get("scale", Vector2.ONE) as Vector2)
 	# the crypt's hero look (src/hero/story_hero.gd) faces the aim; relics keep their own pose
 	var shared: bool = story_hero != null and not relic_on()
 	var face: float = story_hero.face(t) if shared else float(player.face)
@@ -2751,12 +3111,11 @@ func _draw_hero(l: Layer, t: float) -> void:
 		var pos := Vector2(feet.x, feet.y - size.y + 6)
 		var tint: Color = look.tint
 		tint.a *= alpha
-		if face < 0:
-			l.draw_set_transform(pos + Vector2(size.x / 2.0, 0), 0.0, Vector2(-1, 1))
-			l.draw_texture_rect(im, Rect2(Vector2.ZERO, size), false, tint)
-			l.draw_set_transform(Vector2.ZERO)
-		else:
-			l.draw_texture_rect(im, Rect2(pos - Vector2(size.x / 2.0, 0), size), false, tint)
+		l.draw_set_transform(Vector2(pos.x, feet.y + 6.0), float(pose.get("lean", 0.0)), Vector2(-1.0 if face < 0 else 1.0, 1.0))
+		l.draw_texture_rect(im, Rect2(Vector2(-size.x / 2.0, -size.y), size), false, tint)
+		if float(pose.get("flash", 0.0)) > 0.0:
+			l.draw_texture_rect(feel.mask(im), Rect2(Vector2(-size.x / 2.0, -size.y), size), false, StoryFeel.flash_color(pose, tint.a))
+		l.draw_set_transform(Vector2.ZERO)
 	if shared:
 		story_hero.draw_hero(l, t, size.y * 0.45, body)
 		return
@@ -2801,63 +3160,6 @@ func _draw_weapon(l: Layer, hero_size: Vector2) -> void:
 	l.draw_set_transform(hand, tilt, Vector2(float(player.face), 1))
 	l.draw_texture_rect(weapon_tex, Rect2(Vector2(-wsz.x / 2.0, -wsz.y * 0.7), wsz), false)
 	l.draw_set_transform(Vector2.ZERO)
-
-
-func _draw_dark(l: Layer) -> void:
-	if not state.light:
-		return
-	var view := _view_rect()
-	var center := view.get_center()
-	var own_light := float(balance.view.player_light) * (0.55 if story_items != null and story_items.dim() else 1.0)
-	var cands: Array = [[0.0, Vector4(player.x, player.y - 40, own_light, 1.0)]]
-	var reach := view.grow(300)
-	for li: Dictionary in W.lights:
-		var p := Vector2(li.x, li.y)
-		if reach.has_point(p):
-			cands.append([p.distance_squared_to(center), Vector4(p.x, p.y, float(li.r), 0.95)])
-	for e: Dictionary in W.ents:
-		var p := Vector2(e.x, e.y)
-		if not reach.has_point(p):
-			continue
-		if e.type == "portal" and e.get("active", false):
-			cands.append([p.distance_squared_to(center), Vector4(p.x, p.y - 60, 330, 1.0)])
-		elif e.type == "vault" and not e.get("opened", false):
-			cands.append([p.distance_squared_to(center), Vector4(p.x, p.y - 80, 420, 1.0)])
-		elif e.type == "vent" and e.get("burst", false):
-			cands.append([p.distance_squared_to(center), Vector4(p.x, p.y - 30, 220, 0.9)])
-		elif e.type == "seal" and not e.get("broken", false):
-			cands.append([p.distance_squared_to(center), Vector4(p.x, p.y - 50, 200, 0.85)])
-	if not clone.is_empty():
-		cands.append([0.0, Vector4(clone.p.x, clone.p.y - 40, 240, 0.9)])
-	for m: Dictionary in mobs:
-		if monsters != null:
-			var reach_light: float = 90.0 + m.r * 2.2 * (1.3 if m.def.kind == "lord" else 1.0)
-			cands.append([m.p.distance_squared_to(center), Vector4(m.p.x, m.p.y - m.cy - m.alt, reach_light, 1.0)])
-		else:
-			cands.append([m.p.distance_squared_to(center), Vector4(m.p.x, m.p.y - 40.0 * m.s, 120.0 * m.s, 0.8)])
-	var lava_lights := 0
-	for y in range(int(view.position.y / C), int(view.end.y / C) + 1, 2):
-		for x in range(int(view.position.x / C), int(view.end.x / C) + 1, 2):
-			if _cell(x, y) == 2 and lava_lights < 14:
-				cands.append([1e12, Vector4((x + 1) * C, (y + 1) * C, 230, 0.75)])
-				lava_lights += 1
-	cands.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0])
-	var lights: Array[Vector4] = []
-	var max_lights := int(balance.view.max_lights)
-	for c: Array in cands:
-		if lights.size() >= max_lights:
-			break
-		lights.append(c[1])
-	while lights.size() < max_lights:
-		lights.append(Vector4.ZERO)
-	_dark_material.set_shader_parameter("lights", lights)
-	_dark_material.set_shader_parameter("light_count", mini(cands.size(), max_lights))
-	_dark_material.set_shader_parameter("darkness", clampf(float(W.theme.dark) + 0.16 + (0.14 if state.storm else 0.0), 0.0, 0.95))
-	var shade := col("shade") + col("shade_grade") * float(W.theme.grade)
-	shade.a = 1.0
-	_dark_material.set_shader_parameter("shade_color", shade)
-	_dark_material.set_shader_parameter("light_bands", float(balance.view.light_bands))
-	l.draw_rect(view.grow(40), Color.WHITE)
 
 
 # ---------- HUD ----------
@@ -2979,9 +3281,7 @@ func draw_hud(h: Control) -> void:
 	if not over.is_empty():
 		HudKit.result_panel(h, FONT, size, run_result(over))
 	elif state.won:
-		var note := ""
-		if not meta.is_empty():
-			note = "+%d %s · zusammen %d" % [int(state.get("crystals_floor", 0)), str(meta_data.currency.name).to_upper(), int(meta.crystals)]
+		var note := _floor_reward
 		HudKit.result_panel(h, FONT, size, {"title": "ETAGE %d GESCHAFFT" % int(state.floor), "tone": "floor",
 			"lines": [["RÄUME ERKUNDET", "%d / %d" % [state.visited.size(), W.rooms.size()]], [say("RUNENSTEINE"), str(int(state.gems))],
 				["HERZEN", "%d" % (int(state.max_hp) / 2)], ["LEVEL", str(int(state.level))]],
@@ -3032,6 +3332,8 @@ func _draw_skill_bar(h: Control, size: Vector2) -> void:
 			"icon": SkillIcons.for_id(class_id, master), "ultimate": true})
 	# level and EXP sit with the hearts at the top (draw_hud), as in every world
 	SkillBar.draw(h, FONT, size, slots, float(state.t), {"mouse": h.get_local_mouse_position()})
+	# the talent bar (Shift + 1-4, R) above the skill bar, the same in every map
+	if talents != null: talents.draw_hud(h, size, SkillBar.top(size, false) - 74.0)
 
 
 
@@ -3121,3 +3423,28 @@ func _draw_map(h: Control, screen: Vector2, big: bool, framed := false, area := 
 	if big and not framed:
 		_text(h, "Hell: besucht · Türen rot: verriegelt · farbig: Schlüssel · gelb: Rätsel · M schließt", Vector2(0, screen.y - 12), 16, Color("#b89c8e"), screen.x)
 	h.draw_circle(origin + Vector2(player.x, player.y - 20) / C * s, 6.0 if big else 3.0, Color("#fff1c2"))
+
+
+## Routes the events of Ignaroth's rig (src/hell/drake_rig_host.gd): a severed
+## part holds the picture (the feel's hitstop, else the rig's own hold), sounds
+## its own break (the first of e.sounds that sfx has), shakes the view and
+## bursts at the wound. Debris, wound glow, flash and the stagger pose are the
+## rig view's own.
+func _route_rig_events() -> void:
+	for e: Dictionary in drake_rig.take_events():
+		match str(e.name):
+			DrakeRigHost.EVENT_SEVER:
+				if feel != null:
+					feel.feedback.hitstop = maxf(feel.feedback.hitstop, float(e.hitstop))
+				else:
+					drake_rig.hold(float(e.hitstop))
+				if bool(e.get("own_sound", false)):
+					for name: Variant in e.get("sounds", []):
+						if sfx != null and sfx.has_effect(str(name)):
+							_play_sfx(str(name))
+							break
+				state.shake = maxf(float(state.shake), float(e.shake))
+				_burst(e.at, 14)
+			DrakeRigHost.EVENT_CANCEL:
+				# the attack fizzles where it was gathering
+				_burst(e.at, 8)
