@@ -1,0 +1,303 @@
+<title>Frostgruft A/B</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@400;500&family=Pixelify+Sans:wght@500;700&display=swap">
+<style>
+/* Layout: one reading column; each scene is a pair of game shots, A left and B right, stacking on phones. */
+:root {
+  --bg: #f3f1ec;
+  --panel: #ffffff;
+  --line: #d9d5cc;
+  --fg: #1b1a17;
+  --dim: #5e5a52;
+  --a: #9a6a08;          /* A = unsere Version: the HUD's gold accent */
+  --a-soft: #f5e7c4;
+  --b: #1f6f9a;          /* B = Bruder: Frostgruft ice blue */
+  --b-soft: #d6ebf6;
+  --ok: #2f7d50;
+  --display: "Pixelify Sans", "Courier New", monospace;
+  --body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f0f12; --panel: #17171c; --line: #2c2c33; --fg: #f2efe8; --dim: #aaa59d;
+    --a: #f2c66d; --a-soft: #3a3020; --b: #8ec9e8; --b-soft: #1c2f3a; --ok: #8fd6a5;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f0f12; --panel: #17171c; --line: #2c2c33; --fg: #f2efe8; --dim: #aaa59d;
+  --a: #f2c66d; --a-soft: #3a3020; --b: #8ec9e8; --b-soft: #1c2f3a; --ok: #8fd6a5;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font: 16px/1.55 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 64px;
+}
+main { max-width: 1180px; margin: 0 auto; display: grid; gap: 48px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 700; text-wrap: balance; margin: 0; line-height: 1.15; }
+h1 { font-size: clamp(2rem, 5vw, 3rem); letter-spacing: 0.01em; }
+h2 { font-size: 1.5rem; }
+h3 { font-size: 1.15rem; }
+p { margin: 0; max-width: 68ch; }
+.lead { color: var(--dim); font-size: 1.05rem; }
+header { display: grid; gap: 14px; }
+.tags { display: flex; flex-wrap: wrap; gap: 10px; }
+.tag { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 4px; font-size: 0.92rem; }
+.tag b { font-family: var(--display); font-size: 1.05rem; }
+.tag.a { background: var(--a-soft); color: var(--fg); }
+.tag.a b { color: var(--a); }
+.tag.b { background: var(--b-soft); color: var(--fg); }
+.tag.b b { color: var(--b); }
+code, .mono { font-family: var(--mono); font-size: 0.88em; }
+section { display: grid; gap: 18px; }
+
+/* start */
+.start { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+.bat { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.bat .file { font-family: var(--mono); font-size: 0.86rem; word-break: break-all; }
+.bat.a { border-top: 3px solid var(--a); }
+.bat.b { border-top: 3px solid var(--b); }
+.bat.c { border-top: 3px solid var(--dim); }
+.bat p { color: var(--dim); font-size: 0.93rem; }
+.path { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.path code { background: var(--panel); border: 1px solid var(--line); padding: 6px 10px; border-radius: 4px; overflow-x: auto; max-width: 100%; white-space: nowrap; }
+button { font: inherit; cursor: pointer; }
+.copy { background: transparent; border: 1px solid var(--line); color: var(--fg); padding: 5px 12px; border-radius: 4px; font-size: 0.9rem; }
+.copy:hover { border-color: var(--fg); }
+button:focus-visible { outline: 2px solid var(--a); outline-offset: 2px; }
+ol.steps { margin: 0; padding-left: 1.3em; display: grid; gap: 4px; max-width: 70ch; }
+
+/* scenes */
+.scene { display: grid; gap: 14px; padding-top: 24px; border-top: 1px solid var(--line); }
+.scene-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 12px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 760px) { .pair { grid-template-columns: 1fr; } }
+figure { margin: 0; display: grid; gap: 8px; min-width: 0; }
+figure img { width: 100%; height: auto; display: block; border-radius: 4px; image-rendering: pixelated; border: 1px solid var(--line); }
+figcaption { display: grid; gap: 4px; font-size: 0.94rem; }
+figcaption .who { font-family: var(--display); font-size: 1rem; }
+figure.a .who { color: var(--a); }
+figure.b .who { color: var(--b); }
+figcaption span { color: var(--dim); }
+
+/* vote */
+.vote { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--dim); }
+.vote button { border: 1px solid var(--line); background: var(--panel); color: var(--fg); padding: 4px 12px; border-radius: 4px; font-size: 0.9rem; }
+.vote button[aria-pressed="true"][data-v="A"] { background: var(--a); border-color: var(--a); color: var(--bg); }
+.vote button[aria-pressed="true"][data-v="B"] { background: var(--b); border-color: var(--b); color: var(--bg); }
+.vote button[aria-pressed="true"][data-v="="] { background: var(--dim); border-color: var(--dim); color: var(--bg); }
+.tally { font-family: var(--display); font-size: 1.05rem; }
+.tally .ta { color: var(--a); }
+.tally .tb { color: var(--b); }
+
+/* table */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
+table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 0.94rem; }
+th, td { text-align: left; vertical-align: top; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+tr:last-child td { border-bottom: 0; }
+th { font-family: var(--display); font-weight: 500; font-size: 1rem; }
+th.a { color: var(--a); }
+th.b { color: var(--b); }
+td.yes::before { content: "● "; color: var(--ok); }
+td.no { color: var(--dim); }
+td.no::before { content: "○ "; }
+td.part::before { content: "◐ "; color: var(--dim); }
+.kind { font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); white-space: nowrap; }
+
+/* merge */
+.merge { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+.box { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.box ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+.box .label { font-size: 0.8rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--dim); }
+.note { color: var(--dim); font-size: 0.93rem; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<main>
+  <header>
+    <h1>Frostgruft A/B</h1>
+    <p class="lead">Zwei Stände von Delve Disaster, gleiche Szenen, gleiche Klasse (Bogenschütze), Etage 2. Spiel beide an und markiere unten, was sich besser anfühlt. Danach entscheidest du, ob und wie wir zusammenführen.</p>
+    <div class="tags">
+      <span class="tag a"><b>A</b> unsere Version · Branch <code>codex_v2</code> · Commit <code>3a29399</code></span>
+      <span class="tag b"><b>B</b> Stand main vom Bruder · Commit <code>2386478</code></span>
+    </div>
+  </header>
+
+  <section aria-labelledby="h-start">
+    <h2 id="h-start">So startest du</h2>
+    <p>Die Startdateien liegen im Ordner <code>outputs</code>, neben dem Projektordner. Doppelklick genügt.</p>
+    <div class="path">
+      <code id="p-dir">C:\Users\Cylor\Documents\Codex\2026-10-24\https-github-com-christopheroko96-2d-pixeldungeon\outputs</code>
+      <button class="copy" id="copy-dir" type="button">Pfad kopieren</button>
+    </div>
+    <div class="start">
+      <div class="bat a"><div class="file">VERGLEICH-A-unsere-Version.bat</div><p>Unsere Version mit deinem normalen Spielstand, Talenten und Seelenkristallen.</p></div>
+      <div class="bat b"><div class="file">VERGLEICH-B-Bruder-main.bat</div><p>Stand main. Eigener Speicherordner, startet also ohne freigeschaltete Talente. Dein Spielstand bleibt unberührt.</p></div>
+      <div class="bat c"><div class="file">VERGLEICH-C-beide-nebeneinander.bat</div><p>Beide als kleine Fenster nebeneinander, A links und B rechts.</p></div>
+    </div>
+    <ol class="steps">
+      <li>Im Titelmenü <b>Story</b> wählen, dann <b>DIE FROSTGRUFT</b>, dann einen Helden.</li>
+      <li>In beiden Versionen öffnet <b>I</b> das Inventar bzw. den Rucksack, <b>ESC</b> das Menü.</li>
+      <li>Nur in A: <b>B</b> öffnet die Lauf-Talente. Nur in B: <b>R</b> startet den Lauf neu.</li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="h-scenes">
+    <div class="scene-head">
+      <h2 id="h-scenes">Gleiche Szenen, beide Versionen</h2>
+      <div class="tally" id="tally" aria-live="polite">Noch nichts markiert</div>
+    </div>
+    <p class="note">Aufgenommen im echten Spielfenster (1280 × 720) mit <code>scripts/capture_frost_combat.gd</code> (B) und dem gleich aufgebauten <code>scripts/capture_compare_frost.gd</code> (A). Die Markierungen bleiben nur in deinem Browser.</p>
+
+    <article class="scene">
+      <div class="scene-head">
+        <h3>1 · Kampf: Treffer-Gefühl</h3>
+        <div class="vote" data-key="kampf">Fühlt sich besser an: <button type="button" data-v="A" aria-pressed="false">A</button><button type="button" data-v="B" aria-pressed="false">B</button><button type="button" data-v="=" aria-pressed="false">gleich</button></div>
+      </div>
+      <div class="pair">
+        <figure class="a"><img src="bilder/a-83-kampf.png" alt="Version A: der Bogenschütze schießt im Eiskeller, Pfeil mit Schweif, schlankes HUD oben links" loading="lazy" width="1280" height="720">
+          <figcaption><span class="who">A · unsere</span><span>Treffer blitzen kurz auf und klingen nach Material. Kein Hitstop, keine Splitter, keine Flecken. HUD kompakt: Herzen und Level in einer Leiste.</span></figcaption></figure>
+        <figure class="b"><img src="bilder/b-83-kampf.png" alt="Version B: der Bogenschütze schießt, Treffer-Funken am Gegner, Auftragsliste rechts" loading="lazy" width="1280" height="720">
+          <figcaption><span class="who">B · Bruder</span><span>Funken, Splitter in Gegnerfarbe, Lichtstreifen hinter jedem Pfeil, Squash beim Treffer, kurzer Hitstop und Wackeln bei schweren Treffern, Flecken nach Kills, Krypta-Sounds.</span></figcaption></figure>
+      </div>
+    </article>
+
+    <article class="scene">
+      <div class="scene-head">
+        <h3>2 · Wächter und Boss-Angriffe</h3>
+        <div class="vote" data-key="boss">Fühlt sich besser an: <button type="button" data-v="A" aria-pressed="false">A</button><button type="button" data-v="B" aria-pressed="false">B</button><button type="button" data-v="=" aria-pressed="false">gleich</button></div>
+      </div>
+      <div class="pair">
+        <figure class="a"><img src="bilder/a-84-boss.png" alt="Version A: Bossleiste oben in der Mitte, zwei Eiszombies, keine Warnflächen" loading="lazy" width="1280" height="720">
+          <figcaption><span class="who">A · unsere</span><span>Bossleiste oben in der Mitte, gleich in allen drei Welten. Gegner greifen ohne Vorwarnung an. Keine Zustände am Helden.</span></figcaption></figure>
+        <figure class="b"><img src="bilder/b-84-boss.png" alt="Version B: Hagel-Kreise und Frostatem-Kegel als Warnung, Held mit Langsam und Gift" loading="lazy" width="1280" height="720">
+          <figcaption><span class="who">B · Bruder</span><span>Angriffe kündigen sich an (Kreise, Kegel, Bahnen) und lassen sich ausweichen: Hagel, Frostatem, Eisfächer und mehr. Der Held trägt Zustände wie LANGSAM und GIFT.</span></figcaption></figure>
+      </div>
+    </article>
+
+    <article class="scene">
+      <div class="scene-head">
+        <h3>3 · Beute am Boden</h3>
+        <div class="vote" data-key="beute">Fühlt sich besser an: <button type="button" data-v="A" aria-pressed="false">A</button><button type="button" data-v="B" aria-pressed="false">B</button><button type="button" data-v="=" aria-pressed="false">gleich</button></div>
+      </div>
+      <div class="pair">
+        <figure class="a"><img src="bilder/a-85-beute.png" alt="Version A: Bogen, Trank und Kristall liegen nebeneinander am Boden" loading="lazy" width="1280" height="720">
+          <figcaption><span class="who">A · unsere</span><span>Gleicher Bogen, Trank und Kristall. Liegen mit Schatten am Boden und werden durch Darüberlaufen aufgenommen.</span></figcaption></figure>
+        <figure class="b"><img src="bilder/b-85-beute.png" alt="Version B: Beute mit leuchtendem Kreuz-Marker am Boden" loading="lazy" width="1280" height="720">
+          <figcaption><span class="who">B · Bruder</span><span>Beute fällt mit Lichtkreuz und Glanz, auch durch Darüberlaufen aufgenommen.</span></figcaption></figure>
+      </div>
+    </article>
+
+    <article class="scene">
+      <div class="scene-head">
+        <h3>4 · Inventar (I)</h3>
+        <div class="vote" data-key="inventar">Fühlt sich besser an: <button type="button" data-v="A" aria-pressed="false">A</button><button type="button" data-v="B" aria-pressed="false">B</button><button type="button" data-v="=" aria-pressed="false">gleich</button></div>
+      </div>
+      <div class="pair">
+        <figure class="a"><img src="bilder/a-86-rucksack.png" alt="Version A: Inventar mit vier Ausrüstungsplätzen, 12 Taschenplätzen und acht Aktionen" loading="lazy" width="1280" height="720">
+          <figcaption><span class="who">A · unsere</span><span>Vier Ausrüstungsplätze (Waffe, Rüstung, Ring, Amulett), Stufen +1 bis +3, unbekannte Dinge mit „?“, acht Aktionen wie Identifizieren, Fluch brechen, Aufwerten. Gleiches Fenster in Krypta, Hölle und Frostgruft.</span></figcaption></figure>
+        <figure class="b"><img src="bilder/b-86-rucksack.png" alt="Version B: Rucksack mit Waffe in der Hand, 12 Plätzen und zwei Aktionen" loading="lazy" width="1280" height="720">
+          <figcaption><span class="who">B · Bruder</span><span>Waffe in der Hand, 12 Plätze, Anlegen und Ablegen. Waffen mit Seltenheit und Fluch, Tränke, Kristalle, Steine. Nur in der Frostgruft.</span></figcaption></figure>
+      </div>
+    </article>
+
+    <article class="scene">
+      <div class="scene-head">
+        <h3>5 · HUD insgesamt</h3>
+        <div class="vote" data-key="hud">Fühlt sich besser an: <button type="button" data-v="A" aria-pressed="false">A</button><button type="button" data-v="B" aria-pressed="false">B</button><button type="button" data-v="=" aria-pressed="false">gleich</button></div>
+      </div>
+      <p class="note">Vergleiche die oberen Leisten in den Bildern oben. A: neutral, kompakt, in allen drei Welten gleich. B: Story-1-Run-HUD mit Auftragsliste und Tastenleiste unten, nur in der Frostgruft; der Hell-Dungeon behält dort sein eigenes HUD.</p>
+    </article>
+  </section>
+
+  <section aria-labelledby="h-table">
+    <h2 id="h-table">Was jede Version kann</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th scope="col">Bereich</th><th scope="col" class="a">A · unsere</th><th scope="col" class="b">B · Bruder</th><th scope="col">Beim Zusammenführen</th></tr></thead>
+        <tbody>
+          <tr><td>Treffer-Gefühl (Hitstop, Squash, Splitter, Flecken)</td><td class="no">nur Aufblitzen und Treffer-Sound</td><td class="yes">ja, Frostgruft</td><td><span class="kind">ergänzt sich</span><br>von B übernehmen</td></tr>
+          <tr><td>Angekündigte Gegner- und Boss-Angriffe</td><td class="no">nein</td><td class="yes">ja, aus den Krypta-Angriffen</td><td><span class="kind">ergänzt sich</span><br>von B übernehmen</td></tr>
+          <tr><td>Zustände am Helden (Gift, Langsam, Gefroren …)</td><td class="part">nur Flüche und Tränke aus Items</td><td class="yes">ja, 12 Zustände</td><td><span class="kind">ergänzt sich</span><br>von B übernehmen</td></tr>
+          <tr><td>Fähigkeits-Effekte der Krypta (Wirbelring, Feuerball …)</td><td class="yes">ja, Hölle und Frostgruft</td><td class="no">nein</td><td><span class="kind">ergänzt sich</span><br>von A behalten</td></tr>
+          <tr><td>HUD</td><td class="yes">neutral, gleich in allen 3 Welten</td><td class="part">Story-1-HUD, nur Frostgruft</td><td><span class="kind">überschneidet sich</span><br>eine Version wählen</td></tr>
+          <tr><td>Inventar</td><td class="yes">4 Ausrüstungsplätze, Stufen, 8 Aktionen, alle 3 Welten</td><td class="part">Waffe + 12 Plätze, nur Frostgruft</td><td><span class="kind">überschneidet sich</span><br>eine Version wählen</td></tr>
+          <tr><td>Neue Verbrauchsitems und Klon-Siegel</td><td class="yes">ja</td><td class="no">nein</td><td>von A behalten</td></tr>
+          <tr><td>Lauf-Ende, Tod löscht den Lauf</td><td class="yes">ja, alle Welten</td><td class="no">nein, R startet neu</td><td>von A behalten</td></tr>
+          <tr><td>Lauf-Talente (Punkte pro Level, B)</td><td class="yes">ja</td><td class="no">nein</td><td>von A behalten</td></tr>
+          <tr><td>Grafik-Schalter HD ↔ Pixel</td><td class="yes">ja, Einstellungen + Pause</td><td class="no">nein</td><td>von A behalten</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-merge">
+    <h2 id="h-merge">Was danach passiert</h2>
+    <div class="merge">
+      <div class="box">
+        <span class="label">Technisch</span>
+        <p>Git meldet Konflikte in vier Dateien: <code>frost_theme.json</code>, <code>frost_hud.gd</code>, <code>hell_game.gd</code> und <code>subclass_test.gd.uid</code>. Die Kampf-Dateien des Bruders (<code>frost_feel</code>, <code>frost_moves</code>, <code>hero_fx</code>, <code>frost_combat</code>) sind neu und kollidieren nicht.</p>
+      </div>
+      <div class="box">
+        <span class="label">Vorschlag</span>
+        <ul>
+          <li>Kampf-Schicht aus B übernehmen: Treffer-Gefühl, Boss-Angriffe, Zustände.</li>
+          <li>HUD und Inventar aus A behalten, weil sie in allen drei Welten gleich sind.</li>
+          <li>Seine Waffen-Effekte im Rucksack auf unser Inventar umleiten, damit nichts doppelt existiert.</li>
+        </ul>
+      </div>
+      <div class="box">
+        <span class="label">Deine Entscheidung</span>
+        <p>Sag mir nach dem Anspielen, welche Version beim HUD und beim Inventar gewinnt. Bis dahin wird nichts zusammengeführt oder gepusht.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+(function () {
+  var KEY = "frostgruft-ab-votes";
+  var votes = {};
+  try { votes = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { votes = {}; }
+  var groups = document.querySelectorAll(".vote");
+  function render() {
+    var a = 0, b = 0, same = 0;
+    groups.forEach(function (g) {
+      var v = votes[g.dataset.key];
+      g.querySelectorAll("button").forEach(function (btn) { btn.setAttribute("aria-pressed", String(btn.dataset.v === v)); });
+      if (v === "A") a++; else if (v === "B") b++; else if (v === "=") same++;
+    });
+    var t = document.getElementById("tally");
+    if (a + b + same === 0) { t.textContent = "Noch nichts markiert"; return; }
+    t.innerHTML = '<span class="ta">A ' + a + '</span> · <span class="tb">B ' + b + '</span>' + (same ? ' · gleich ' + same : '') + ' von ' + groups.length;
+  }
+  groups.forEach(function (g) {
+    g.addEventListener("click", function (ev) {
+      var btn = ev.target.closest("button");
+      if (!btn) return;
+      var k = g.dataset.key;
+      votes[k] = votes[k] === btn.dataset.v ? undefined : btn.dataset.v;
+      try { localStorage.setItem(KEY, JSON.stringify(votes)); } catch (e) {}
+      render();
+    });
+  });
+  render();
+  var copy = document.getElementById("copy-dir");
+  copy.addEventListener("click", function () {
+    var text = document.getElementById("p-dir").textContent;
+    var done = function () { copy.textContent = "Kopiert"; setTimeout(function () { copy.textContent = "Pfad kopieren"; }, 1600); };
+    var fallback = function () {
+      var r = document.createRange(); r.selectNodeContents(document.getElementById("p-dir"));
+      var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      copy.textContent = "Markiert, mit Strg+C kopieren";
+    };
+    try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); }
+  });
+})();
+</script>

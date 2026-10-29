@@ -46,7 +46,6 @@ var pools: Array = []
 ## Timed effects on the hero: kind -> {t, value, tick}.
 var effects: Dictionary = {}
 var _clean: Dictionary = {}
-var _notes := 0
 var _kills := 0
 var _first_chest_floor := -1
 var _scale := 2.4
@@ -252,8 +251,9 @@ func give(item: Dictionary, at: Vector2) -> void:
 
 # --- per frame ----------------------------------------------------------------------
 
-## Effects run out, potions tick, pools burn, curses act, notes become toasts,
-## floor items are picked up on contact.
+## Effects run out, potions tick, pools burn, curses act, floor items are
+## picked up on contact. Item notes are shown by the inventory window alone,
+## as in the crypt.
 func update(dt: float) -> void:
 	var hero: Dictionary = players.get(1, {})
 	if hero.is_empty(): return
@@ -286,10 +286,6 @@ func update(dt: float) -> void:
 			inventory.add(hero, drop.item)
 			_store()
 	_layer.queue_redraw()
-	var notes := int(hero.get("item_notes", 0))
-	if notes != _notes:
-		_notes = notes
-		if not str(hero.get("item_note", "")).is_empty(): g._toast(str(hero.item_note))
 	_sync_out()
 
 

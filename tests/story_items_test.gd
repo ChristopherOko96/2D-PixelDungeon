@@ -131,6 +131,10 @@ func _test_world(scene: PackedScene, world: String) -> void:
 		items.give(items.inventory.make_gear("leather_vest", false, "", 0), Vector2.ZERO)
 	items.give(items.inventory.make_gear("ring_storm", true, "", 0), Vector2(game.player.x + 40, game.player.y))
 	check(items.floor_items.size() == 1, "%s: a full bag leaves the find on the floor" % world)
+	# a find is announced once, by the inventory window, as in the crypt
+	game.state.toasts = []
+	items.update(0.016)
+	check((game.state.toasts as Array).filter(func(t: Dictionary) -> bool: return str(t.text).contains("Rucksack voll")).is_empty(), "%s: an item note is not toasted a second time by the world" % world)
 	_bag(game).pop_back()
 	items.update(0.016)
 	check(items.floor_items.is_empty() and _index(game, "gear", "ring_storm") >= 0, "%s: walking over it picks it up" % world)
