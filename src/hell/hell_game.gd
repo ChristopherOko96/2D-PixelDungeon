@@ -20,6 +20,8 @@ const HeroKit = preload("res://src/hell/hero_kit.gd")
 const RelicKit = preload("res://src/hell/relic_kit.gd")
 const CardKit = preload("res://src/hell/card_kit.gd")
 const SubKit = preload("res://src/hell/sub_kit.gd")
+const FrostFeel = preload("res://src/hell/frost_feel.gd")
+const FrostCombat = preload("res://src/hell/frost_combat.gd")
 const MetaStore = preload("res://src/hell/meta_store.gd")
 const FrostHud = preload("res://src/hell/frost_hud.gd")
 const HEART := "res://assets/sprites/0x72/ui_heart_%s.png"
@@ -156,6 +158,8 @@ var meta: Dictionary = {}
 var meta_path := MetaStore.SAVE_PATH
 ## The run's subclass kit (src/hell/sub_kit.gd); empty for the standard subclass.
 var sub_kit: Dictionary = {}
+## Story 1's combat feel (theme.feel, src/hell/frost_feel.gd); null in worlds without it.
+var feel: FrostFeel
 var pending: Array = []
 ## Hearts of the HUD (0x72 full, half, empty).
 var hearts: Dictionary = {}
@@ -216,6 +220,8 @@ func _ready() -> void:
 			frames.append(load(HERO % [hero.get("sprite", "knight_m"), kind, f]))
 		hero_frames[kind] = frames
 	skills = HeroKit.load_skills(self, class_id)
+	if theme.has("feel"):
+		feel = FrostFeel.new(self, theme.feel)
 	for k in ["full", "half", "empty"]:
 		hearts[k] = load(HEART % k)
 	# only the real game uses the player's lasting progress file; test and capture scripts
@@ -522,6 +528,8 @@ func load_floor(n: int, carry: bool) -> void:
 	state.phoenix_life = str(state.talent.get("master", "")) == "phoenix"
 	if not carry:
 		RelicKit.choose_run(self)
+	if feel != null:
+		feel.reset()
 	RelicKit.place(self)
 	floor_save = StorySave.capture(self)
 	# a run that sits in a save slot keeps that slot at its newest floor start
@@ -760,6 +768,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not skills.is_empty() and skill_keys.has(event.keycode):
 		var key: String = skill_keys[event.keycode]
 		if event.pressed:
+			if not FrostCombat.can_cast(self, key):
+				return
 			if not RelicKit.press(self, key) and not SubKit.press(self, key):
 				HeroKit.press(self, key)
 		elif not RelicKit.release(self, key):
@@ -791,7 +801,7 @@ func _unhandled_input(event: InputEvent) -> void:
 				_relic_texture()
 				_toast(("%s in der Hand." % theme[state.relic].name) if state.relic_on else ("%s in der Hand." % weapon.get("name", "Waffe")))
 		KEY_5:
-			if not skills.is_empty() and not SubKit.master(self):
+			if not skills.is_empty() and FrostCombat.can_cast(self, "5") and not SubKit.master(self):
 				HeroKit.master_press(self)
 		KEY_C, KEY_TAB:
 			state.status = not state.get("status", false)
@@ -838,11 +848,27 @@ func _hurt(why: String, n := 1) -> void:
 		return
 	if story_items != null:
 		n += story_items.extra_damage()
-	state.hp = maxi(0, state.hp - n)
 	state.inv = float(balance.player.invulnerable)
+	_lose_hp(n, why)
+
+
+## Damage over time (poison and burn of the Frostgruft's conditions,
+## src/hell/hero_fx.gd): lands through the short invulnerability after a hit,
+## but not while dying.
+func dot_hurt(n: int, why: String) -> void:
+	if state.dead > 0.0 or state.won:
+		return
+	_lose_hp(n, why)
+
+
+## Takes n half hearts: the flash, the hurt sounds, the feel; the phoenix or death at zero.
+func _lose_hp(n: int, why: String) -> void:
+	state.hp = maxi(0, state.hp - n)
 	state.flash = 0.25
 	_sound("hurt")
 	_sound("hurt_voice")
+	if feel != null:
+		feel.on_hurt()
 	if state.hp == 0 and state.get("phoenix_life", false):
 		state.phoenix_life = false
 		state.hp = maxi(2, state.max_hp / 2)
@@ -1093,8 +1119,16 @@ func _solve_group(group: String) -> void:
 
 
 func _fire(dir: Vector2) -> void:
-	if state.cool > 0.0 or dir == Vector2.ZERO or not hold.is_empty():
+	if state.cool > 0.0 or dir == Vector2.ZERO or not hold.is_empty() or not FrostCombat.can_attack(self):
 		return
+	_attack(dir)
+	if state.cool > 0.0:
+		state.cool *= FrostCombat.rate(self)
+		FrostCombat.after_attack(self)
+
+
+## One attack of the class weapon (or the relic) towards `dir`.
+func _attack(dir: Vector2) -> void:
 	state.cool = float(state.rate) * HeroKit.rate_scale(self) * CardKit.rate_mult(self)
 	player.aim = dir.normalized()
 	if absf(dir.x) > 0.01:
@@ -1146,13 +1180,15 @@ func _damage_mob(m: Dictionary, push: Vector2, mult := 1.0) -> bool:
 	if factor <= 0.0:
 		return false
 	var item_crit: float = story_items.crit_mult() if story_items != null else 1.0
-	m.hp -= float(state.dmg) * factor * mult * HeroKit.crit(self) * item_crit * CardKit.damage_mult(self) * SubKit.factor(self, m)
+	var crit: float = HeroKit.crit(self) * item_crit
+	m.hp -= float(state.dmg) * factor * mult * crit * CardKit.damage_mult(self) * SubKit.factor(self, m) * FrostCombat.hit_factor(self, m)
 	if story_items != null and mult > 0.0:
 		story_items.on_hit(m)
 	_sound("hit_" + str(def.get("material", "void")))
 	m.hit = 0.12
 	# kit bosses stand firm: no knockback
 	m.k = Vector2.ZERO if m.has("kit") else push * (0.05 if m.kind == "boss" else 0.25)
+	FrostCombat.after_hit(self, m, push, crit > 1.0)
 	return true
 
 
@@ -1459,7 +1495,12 @@ func _process(delta: float) -> void:
 	if pause_menu != null and pause_menu.visible:
 		hud.queue_redraw()
 		return
-	_update(dt)
+	# a heavy blow freezes the world for a moment (hitstop, src/hell/frost_feel.gd)
+	if feel != null and feel.hitstop > 0.0:
+		feel.hitstop = maxf(0.0, feel.hitstop - dt)
+		feel.sprites.update(dt * 0.25)
+	else:
+		_update(dt)
 	actors.queue_redraw()
 	glow.queue_redraw()
 	dark.queue_redraw()
@@ -1498,6 +1539,9 @@ func _update(dt: float) -> void:
 	HeroKit.update(self, dt)
 	RelicKit.update(self, dt)
 	SubKit.update(self, dt)
+	FrostCombat.update(self, dt)
+	if feel != null:
+		feel.update(dt)
 	if not (state.get("offer", []) as Array).is_empty():
 		state.offer_t = float(state.get("offer_t", 0.0)) + dt
 	_update_music()
@@ -1535,10 +1579,12 @@ func _update_player(dt: float) -> void:
 	var liquid: Dictionary = theme.liquid
 	var slow: float = float(balance.player.lava_slow) if float(liquid.slow) < 0.0 else float(liquid.slow)
 	var chill := float(theme.get("chill_speed", 1.0)) if state.chill > 0.0 else 1.0
-	var speed := float(hero.get("speed", balance.player.speed)) * float(state.speed_mul) * chill * HeroKit.move_scale(self) * CardKit.speed_mult(self) * (slow if here == 2 else 1.0) * (0.5 if state.slow > 0.0 else 1.0)
-	player.moving = move != Vector2.ZERO
+	var speed := float(hero.get("speed", balance.player.speed)) * float(state.speed_mul) * chill * HeroKit.move_scale(self) * CardKit.speed_mult(self) * (slow if here == 2 else 1.0) * (0.5 if state.slow > 0.0 else 1.0) * FrostCombat.move_scale(self)
+	player.moving = move != Vector2.ZERO and speed > 0.0
 	var want := move.normalized() * speed if player.moving else Vector2.ZERO
-	if here == 2 and liquid.slide:
+	if feel != null and FrostCombat.HeroFx.slip(self) > 0.0:
+		player.vel = (player.vel as Vector2).lerp(want, 1.0 - pow(0.08, dt))
+	elif here == 2 and liquid.slide:
 		# glaze ice: the hero keeps sliding; grip = share of the old speed left after one second
 		player.vel = (player.vel as Vector2).lerp(want, 1.0 - pow(float(liquid.grip), dt))
 	else:
@@ -1645,7 +1691,12 @@ func _update_shots(dt: float) -> void:
 			s.t = 0.0 if not s.get("fist", false) else s.t
 			if s.has("chill"):
 				state.chill = maxf(state.chill, float(s.chill))
-			_hurt("von Feuer getroffen")
+			if s.has("dmg"):
+				FrostCombat.FrostMoves.shot_hit(self, s)
+			else:
+				_hurt("von Feuer getroffen")
+		if s.t <= 0.0 and s.has("end_pool"):
+			FrostCombat.FrostMoves.shot_end(self, s)
 	eshots = eshots.filter(func(s: Dictionary) -> bool: return s.t > 0.0)
 
 
@@ -1702,7 +1753,7 @@ func _update_mobs(dt: float) -> void:
 				var od := off.length()
 				if od > 0.0 and od < m.r + o.r:
 					v += off / od * 120.0
-		if m.get("hold", false):
+		if m.get("hold", false) or m.get("mv_hold", false):
 			v = Vector2.ZERO
 		v *= HeroKit.tick_mob(self, m, dt)
 		v += m.k
@@ -1766,6 +1817,7 @@ func _update_mobs(dt: float) -> void:
 		_sound("kill_" + str((m.def as Dictionary).get("material", "void")))
 		HeroKit.gain(self, HeroKit.exp_for(self, m))
 		SubKit.on_kill(self, m)
+		FrostCombat.after_kill(self, m)
 		# a splitting enemy (e.g. ice slime) leaves smaller ones behind
 		var kids := MobRules.split_children(m.def)
 		for i in range(kids.size()):
@@ -2104,6 +2156,7 @@ func _view_rect() -> Rect2:
 func _draw_actors(l: Layer) -> void:
 	var view := _view_rect().grow(220)
 	var t: float = state.t
+	FrostCombat.draw_under(self, l, t)
 	_draw_zones(l, t)
 	for e: Dictionary in W.ents:
 		if not view.has_point(Vector2(e.x, e.y)):
@@ -2164,6 +2217,7 @@ func _draw_actors(l: Layer) -> void:
 	_draw_skill_fx(l, t)
 	RelicKit.draw(self, l, t)
 	SubKit.draw(self, l, t)
+	FrostCombat.draw_over(self, l, t)
 	for s: Dictionary in shots:
 		if SubKit.draw_shot(self, l, s, t):
 			continue
@@ -2205,6 +2259,8 @@ func _draw_actors(l: Layer) -> void:
 		l.draw_circle(s.p, 8.0 * big, col("shot_core"))
 	# hell monster shots glow on the additive layer instead
 	for s: Dictionary in (eshots if monsters == null else []):
+		if FrostCombat.FrostMoves.draw_shot(l, s, t):
+			continue
 		var r := 30.0 if s.get("fist", false) else 15.0
 		l.draw_circle(s.p, r, col("eshot_glow"))
 		l.draw_circle(s.p, r * 0.47, col("eshot_core"))
@@ -2443,7 +2499,7 @@ func _draw_mob_sprite(l: Layer, m: Dictionary, t: float) -> void:
 	var im: Texture2D = tex.get(MobRules.frame_name(look, int(t * float(look.get("fps", 8)) + m.seed)))
 	if im == null:
 		return
-	var size := im.get_size() * float(m.ds) * grow
+	var size := im.get_size() * float(m.ds) * grow * FrostFeel.squash(m)
 	var tint := Color(3, 3, 3) if m.hit > 0.0 else (Color(1.6, 1.8, 2.2) if m.dash > 0.0 else _color(m.get("tint", [1, 1, 1])))
 	if float(m.get("inv", 0.0)) > 0.0:
 		tint.a = 0.45 + 0.35 * sin(t * 30.0)
@@ -2495,9 +2551,11 @@ func _draw_hero(l: Layer, t: float) -> void:
 		return
 	# subclass look: its hero and colour, the ogre of the beast form, faint while hidden
 	var look := SubKit.look(self)
+	if feel != null:
+		look.tint *= FrostCombat.HeroFx.tint(self)
 	var frames: Array = look.frames["run" if player.moving else "idle"]
 	var im: Texture2D = frames[int(player.anim) % 4]
-	var size := im.get_size() * float(theme.hero_scale) * float(look.scale)
+	var size := im.get_size() * float(theme.hero_scale) * float(look.scale) * FrostFeel.squash(player)
 	# the crypt's hero look (src/hero/story_hero.gd) faces the aim; relics keep their own pose
 	var shared: bool = story_hero != null and not relic_on()
 	var face: float = story_hero.face(t) if shared else float(player.face)
@@ -2631,6 +2689,8 @@ func draw_hud(h: Control) -> void:
 		h.draw_rect(Rect2(Vector2.ZERO, size), Color(0.8, 0.08, 0.08, state.flash))
 	if state.white > 0.0:
 		h.draw_rect(Rect2(Vector2.ZERO, size), Color(1, 0.925, 0.82, minf(1.0, state.white)))
+	# blindness darkens the view around the hero, under the HUD panels
+	FrostCombat.draw_hud(self, h, size)
 	# the hero strip top left, the same in every world (src/ui/hud_kit.gd): hearts
 	# with the level beside them, the EXP line, keys, rune stones, braziers, clone, blessings
 	var resources: Array = []
@@ -2649,6 +2709,8 @@ func draw_hud(h: Control) -> void:
 	if not (state.buffs as Array).is_empty():
 		var names: Array = (state.buffs as Array).map(func(b: String) -> String: return b.get_slice(":", 0))
 		status.append({"text": "SEGEN · " + ", ".join(PackedStringArray(names)).to_upper(), "color": HudStyle.color("text_dim")})
+	# the Frostgruft's conditions on the hero (poison, slow ...), each in its colour
+	status.append_array(FrostCombat.status_lines(self))
 	var leveled := not skills.is_empty()
 	var need := maxf(1.0, float(HeroKit.need(theme.leveling, int(state.level)))) if leveled else 1.0
 	HudKit.hero_panel(h, FONT, Vector2(HudStyle.size("margin"), HudStyle.size("margin")), {"title": "P1 · " + str(hero.get("name", class_id)).to_upper(),

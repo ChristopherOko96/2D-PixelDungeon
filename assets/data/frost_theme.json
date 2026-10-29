@@ -1421,5 +1421,175 @@
     ]
   },
   "talents": "res://assets/data/frost_talents.json",
-  "master_cooldown": 45
+  "master_cooldown": 45,
+  "feel": {
+    "_note": "Story 1's combat feel (src/hell/frost_feel.gd): scale = crypt effect sprites to this world; hitstop in seconds, shake in pixels; blood = chip colour per enemy material; step_every / idle_gap in seconds, idle_range in pixels.",
+    "scale": 3,
+    "hitstop_hit": 0.03,
+    "hitstop_crit": 0.07,
+    "hitstop_kill": 0.05,
+    "hitstop_hurt": 0.09,
+    "shake_crit": 6,
+    "shake_kill": 5,
+    "shake_hurt": 14,
+    "shake_blast": 8,
+    "blood": {
+      "flesh": "7fb0d0",
+      "bone": "e6dcc6",
+      "void": "9fe3ee"
+    },
+    "colors": {
+      "hurt": "d8484f"
+    },
+    "step_every": 0.3,
+    "idle_gap": 1.6,
+    "idle_range": 760
+  },
+  "moves": {
+    "_note": "Story 1's enemy moves (src/hell/frost_moves.gd, moves from assets/data/combat_boss_moves.json). scale: crypt pixels to this world; damage_scale: crypt half hearts to hits here (at least 1). sets per enemy kind; guardian = floor guardians without a boss kit. summon_map: crypt kinds to frost kinds.",
+    "scale": 2.4,
+    "damage_scale": 0.5,
+    "summon_map": {
+      "tiny_zombie": "ice_slime_s",
+      "skeleton_guard": "ice_knight",
+      "skeleton": "frost_skeleton"
+    },
+    "sets": {
+      "guardian": {
+        "every": [
+          2.4,
+          3.6
+        ],
+        "rage_below": 0.4,
+        "moves": [
+          {
+            "move": "ice_fan",
+            "weight": 3
+          },
+          {
+            "move": "frost_nova",
+            "weight": 2,
+            "near": 130,
+            "cooldown": 6
+          },
+          {
+            "move": "hail",
+            "weight": 3,
+            "cooldown": 4
+          },
+          {
+            "move": "ice_slide",
+            "weight": 2,
+            "cooldown": 7,
+            "far": 110
+          },
+          {
+            "move": "ice_armor",
+            "weight": 1,
+            "cooldown": 12
+          },
+          {
+            "move": "frost_raise",
+            "weight": 1,
+            "cooldown": 14,
+            "hp_below": 0.6
+          }
+        ]
+      },
+      "ice_zombie": {
+        "every": [
+          3.5,
+          5.5
+        ],
+        "moves": [
+          {
+            "move": "frost_breath",
+            "weight": 3,
+            "near": 140
+          },
+          {
+            "move": "frost_patch",
+            "weight": 2,
+            "cooldown": 6
+          }
+        ]
+      },
+      "frost_skeleton": {
+        "every": [
+          3.5,
+          5.5
+        ],
+        "moves": [
+          {
+            "move": "arrow_volley",
+            "weight": 3
+          },
+          {
+            "move": "dodge_leap",
+            "weight": 2,
+            "near": 90
+          }
+        ]
+      },
+      "ice_knight": {
+        "every": [
+          4,
+          6
+        ],
+        "moves": [
+          {
+            "move": "shield_bash",
+            "weight": 3,
+            "near": 160
+          },
+          {
+            "move": "whirl_slash",
+            "weight": 2,
+            "near": 90
+          }
+        ]
+      },
+      "frost_imp": {
+        "every": [
+          3,
+          5
+        ],
+        "moves": [
+          {
+            "move": "pounce",
+            "weight": 3
+          },
+          {
+            "move": "void_blink",
+            "weight": 1
+          }
+        ]
+      },
+      "frost_whirl": {
+        "every": [
+          4,
+          6
+        ],
+        "moves": [
+          {
+            "move": "frost_patch",
+            "weight": 1
+          }
+        ]
+      },
+      "ice_crystal": {
+        "every": [
+          4,
+          6
+        ],
+        "moves": [
+          {
+            "move": "hail",
+            "weight": 1,
+            "cooldown": 6
+          }
+        ]
+      }
+    }
+  }
 }
