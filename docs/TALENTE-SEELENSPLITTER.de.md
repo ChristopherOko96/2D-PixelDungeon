@@ -100,10 +100,22 @@ laufenden Spiel schützt das trotzdem.
 
 ## Offen
 
-- **Frostgruft und Hölle:** Die Taste R für „Etage neu starten“ liegt dort
-  jetzt auf F5, weil R die Ultimate auslöst. Provokation durch den Wolf
+- **Merge mit main (29.10.2026, Nutzerentscheid „beides kombinieren“):** Von
+  main bleiben Lauf-Baum (Taste B), Tod beendet den Lauf, Item-System 2,
+  Spielstände und das einheitliche HUD. Unser Talentprofil ersetzt die
+  dauerhaften Talente und Seelenkristalle von `docs/LAUF-DESIGN.de.md` 3.3:
+  Keine Lauf-Baum-Knoten warten mehr auf ein dauerhaftes Talent
+  (`src/hell/card_kit.gd`, `game.gd` `_apply_meta`). „Etage neu starten“
+  entfällt wie bei main; R löst die Ultimate aus. Provokation durch den Wolf
   wirkt auf die Frostgruft-Gegner, aber noch nicht auf die eigenen Monster
   der Hölle (`hell_monsters.gd`).
+- **Icons und Effekte (29.10.2026):** Jedes Talent hat ein eigenes
+  14×14-Pixelmotiv (`src/ui/talent_icons.gd`, `icon` in `talents.json`).
+  Die Effekte spielen Pixel-Sheets aus `scripts/make_fx_sprites.gd`:
+  Feuer-, Frost-, Arkan-, Stahl- und Schrei-Ring, Inferno-Säule, Nullpunkt,
+  Sternexplosion, Schildblase, Eislanze, Arkangeschoss, Zielmarke,
+  Giftwolke, Dornenfalle, Krallen (`src/vfx/talent_fx.gd`). Bilder:
+  `production/qa/evidence/attacks/`.
 - **Auftragsliste:** Seit 29.10.2026 eine Seite „Auftrag“ im Pausenmenü
   (`src/ui/quest_view.gd`), in Krypta, Frostgruft und Hölle gleich. Frostgruft
   und Hölle öffnen mit Esc dasselbe Pausenmenü (`src/pause_menu.gd`).

@@ -47,6 +47,20 @@ static func skill(class_id: String, index: int) -> Texture2D:
 	return icon(ClassPerks.skill_at(class_id, index).get("icon", {}))
 
 
+## Master skills of the story worlds (talent tier 5): the glyph on the class weapon.
+const MASTER_GLYPHS := {"meteor_rain": "fireball", "phoenix": "rage", "blade_storm": "swirl", "execute": "crescent", "death_shot": "pierce", "arrow_rain": "fan"}
+
+
+## Icon of a skill by its id in a class (the story worlds share the crypt's ids);
+## master skills get their glyph on the class weapon; null when unknown.
+static func for_id(class_id: String, id: String) -> Texture2D:
+	for skill_data: Dictionary in ClassPerks.skills(class_id):
+		if str(skill_data.get("id", "")) == id: return icon(skill_data.get("icon", {}))
+	if MASTER_GLYPHS.has(id):
+		return icon({"base": str(ClassPerks.class_data(class_id).get("weapon_icon", "weapon_knight_sword")), "glyph": MASTER_GLYPHS[id]})
+	return null
+
+
 ## Icon of any offered card. General perks (boss loot) show the hero's own
 ## weapon with a category badge when they are about the weapon.
 static func card(card_data: Dictionary, class_id: String) -> Texture2D:

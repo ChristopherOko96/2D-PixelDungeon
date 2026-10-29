@@ -215,6 +215,9 @@ func basic_attack(id: int, player: Dictionary, aim: Vector2) -> void:
 				if offset.length() <= reach + 12.0 and absf(aim.angle_to(offset)) <= float(player.get("arc", 2.0)) * 0.5 + 0.2:
 					game.bullets.remove_at(index)
 					_event("parry", [Vector2(bullet.pos)], 0.25)
+		# Rage swings twice: the second blade comes back the other way.
+		if rage_active(player):
+			_delayed.append({"time": float(_data("sword_feel").get("rage_second_delay", 0.12)), "kind": "rage_swing", "id": id, "aim": aim})
 	elif float(build.get("double_cast", 0.0)) > 0.0 and str(player.get("class_id", "")) == "mage":
 		_delayed.append({"time": 0.12, "kind": "echo", "id": id, "aim": aim, "scale": float(build.double_cast)})
 
@@ -344,10 +347,18 @@ func _dash_step(id: int, player: Dictionary, delta: float) -> void:
 			if int(enemy.id) in dash.hit: continue
 			dash.hit.append(int(enemy.id))
 			_hit(id, enemy, float(player.damage) * float(skill.damage), Vector2(dash.dir), Vector2(player.pos))
+			# the charge flings bodies off its path (Schulterstoß: hard forward, a little aside);
+			# one that meets a wall slams into it
+			var side := Vector2(dash.dir).orthogonal()
+			if side.dot(Vector2(enemy.pos) - Vector2(player.pos)) < 0.0: side = -side
+			var side_push := float(_data("sword_feel").get("charge_side_push", 380.0))
+			var fling := (side + Vector2(dash.dir) * 0.35).normalized() * side_push
 			if ClassPerks.has(player, "shoulder"):
 				var shoulder := ClassPerks.upgrade(skill, "shoulder")
-				_push(enemy, Vector2(dash.dir) * float(shoulder.knockback))
+				fling = Vector2(dash.dir) * float(shoulder.knockback) + side * side_push * 0.5
 				_stun(enemy, float(shoulder.stun))
+			_throw(id, player, enemy, fling)
+			_event("charge_hit", [Vector2(enemy.pos)], 0.25)
 	var blocked := Vector2(player.pos).distance_to(before) < float(dash.speed) * step * 0.3
 	if float(dash.time) > 0.0 and not blocked: return
 	state.erase("dash")
@@ -369,6 +380,55 @@ func _dash_step(id: int, player: Dictionary, delta: float) -> void:
 			var wind := ClassPerks.upgrade(skill, "tailwind")
 			state.tailwind = float(wind.time)
 			state.tailwind_rate = float(wind.rate)
+
+
+## True while the swordsman's Rage runs.
+func rage_active(player: Dictionary) -> bool:
+	return float(_state(player).get("rage", 0.0)) > 0.0
+
+
+## How far the hero steps into a sword swing (more in Rage); 0 for other classes.
+func lunge(player: Dictionary) -> float:
+	if not bool(player.get("melee", false)): return 0.0
+	var feel := _data("sword_feel")
+	return float(feel.get("rage_lunge", 12.0) if rage_active(player) else feel.get("lunge", 8.0))
+
+
+## A Rage swing hit `enemy`: it is thrown hard and may slam into a wall; a small
+## enemy it kills is cut in two along the blade's path (`slice` = cut angle).
+func rage_hit(owner: int, player: Dictionary, enemy: Dictionary, direction: Vector2) -> void:
+	if float(enemy.hp) <= 0.0:
+		if not _heavy(enemy): enemy.slice = direction.angle() + PI * 0.5
+		return
+	_throw(owner, player, enemy, direction * float(_data("sword_feel").get("rage_push", 520.0)))
+
+
+## Throws an enemy; for a moment it slams into a wall it is flung against (check_slam).
+func _throw(owner: int, player: Dictionary, enemy: Dictionary, velocity: Vector2) -> void:
+	_push(enemy, velocity)
+	if _heavy(enemy): return
+	enemy.slam = {"owner": owner, "time": float(_data("sword_feel").get("slam_window", 0.45)), "damage": float(player.damage) * float(_data("sword_feel").get("slam_damage", 0.8))}
+
+
+## Called after an enemy's knockback step: a thrown body stopped by a wall
+## takes slam damage, is stunned and leaves a dust crack (event "wall_slam").
+func check_slam(enemy: Dictionary, before: Vector2, push: Vector2, delta: float) -> void:
+	if not enemy.has("slam"): return
+	var slam: Dictionary = enemy.slam
+	slam.time = float(slam.time) - delta
+	if float(slam.time) <= 0.0 or float(enemy.hp) <= 0.0:
+		enemy.erase("slam")
+		return
+	var speed := push.length()
+	if speed < float(_data("sword_feel").get("slam_speed", 220.0)): return
+	if Vector2(enemy.pos).distance_to(before) >= speed * delta * 0.5: return
+	enemy.erase("slam")
+	var direction := push.normalized()
+	var contact := Vector2(enemy.pos) + direction * float(enemy.get("radius", 12.0))
+	_hit(int(slam.owner), enemy, float(slam.damage), -direction, contact)
+	_stun(enemy, float(_data("sword_feel").get("slam_stun", 0.6)))
+	enemy.knockback = Vector2.ZERO
+	_event("wall_slam", [contact], 0.4, {"angle": direction.angle()})
 
 
 func _rage(player: Dictionary, skill: Dictionary) -> void:
@@ -775,6 +835,8 @@ func _step_delayed(delta: float) -> void:
 			"whirl": _whirl(int(entry.id), player, ClassPerks.skill_at("swordsman", 0), float(entry.scale))
 			"volley": _volley(int(entry.id), player, ClassPerks.skill_at("archer", 0), Vector2(entry.aim), float(entry.scale))
 			"refund": player.skill_cd[int(entry.index)] = maxf(0.0, float(player.skill_cd[int(entry.index)]) - float(entry.amount))
+			"rage_swing":
+				if rage_active(player): game.perk_combat.melee(int(entry.id), Vector2(entry.aim), true)
 			"echo":
 				var saved := float(player.damage)
 				player.damage = saved * float(entry.scale)
@@ -885,6 +947,8 @@ func player_state(player: Dictionary) -> Dictionary:
 	var result := {"cd": Array(player.get("skill_cd", [0, 0, 0, 0])).duplicate(), "max": Array(player.get("skill_cd_max", [1, 1, 1, 1])).duplicate(), "second": Array(player.get("skill_second", [0, 0, 0, 0])).duplicate(), "locked": locked}
 	for key: String in ["rage", "whirl_time", "frenzy", "tailwind", "phase_shield"]:
 		if float(state.get(key, 0.0)) > 0.0: result[key] = float(state[key])
+	# a running dash (Ansturm, Rücksprung): the look draws afterimages
+	if state.has("dash"): result.dash = str(state.dash.kind)
 	if state.has("ballista"):
 		var skill := ClassPerks.skill_at("archer", 1)
 		result.charge = clampf(float(state.ballista.charge) / maxf(0.05, float(skill.charge) * (1.0 + ClassPerks.bonus(player, skill, "quick_draw", "charge"))), 0.0, 1.0)
@@ -903,5 +967,5 @@ func player_state(player: Dictionary) -> Dictionary:
 ## Ground effects and short events for every client.
 func snapshot() -> Dictionary:
 	var visible_zones: Array = []
-	for zone: Dictionary in zones: visible_zones.append({"id": int(zone.id), "kind": str(zone.kind), "x": Vector2(zone.pos).x, "y": Vector2(zone.pos).y, "r": float(zone.radius), "t": float(zone.time)})
+	for zone: Dictionary in zones: visible_zones.append({"id": int(zone.id), "kind": str(zone.kind), "x": Vector2(zone.pos).x, "y": Vector2(zone.pos).y, "r": float(zone.radius), "t": float(zone.time), "look": str(zone.get("look", ""))})
 	return {"zones": visible_zones, "events": events.duplicate(true)}

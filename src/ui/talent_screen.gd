@@ -304,7 +304,7 @@ func _draw_talent(id: String, center: Vector2, spec: Dictionary, color: Color) -
 		draw_circle(center, side * (0.6 + grow * 0.6), Color(Color(str(spec.color2)), 0.5 * (1.0 - grow)))
 	if look == "available": draw_rect(rect.grow(4 + 1.5 * sin(_clock * 5.0)), Color(color, 0.55))
 	if id == selected: draw_rect(rect.grow(7), CryptUI.CREAM, false, 2.0)
-	draw_texture_rect(_icon(spec, str(info.icon), lit), rect, false, Color(1, 1, 1, 0.4) if look == "locked" else Color.WHITE)
+	draw_texture_rect(_icon(spec, str(info.icon), lit, str(info.kind) == "ultimate"), rect, false, Color(1, 1, 1, 0.4) if look == "locked" else Color.WHITE)
 	var frame := CryptUI.GOLD if look == "max" else color if lit else CryptUI.DISABLED
 	draw_rect(rect, frame, false, 3.0)
 	if ult: draw_rect(rect.grow(5), frame, false, 2.0)
@@ -392,8 +392,8 @@ func _paragraph(text: String, x: float, y: float, color: Color) -> float:
 	return y
 
 
-func _icon(spec: Dictionary, motif: String, on: bool) -> Texture2D:
-	return TalentIcons.make(spec, motif, on)
+func _icon(spec: Dictionary, motif: String, on: bool, ultimate := false) -> Texture2D:
+	return TalentIcons.make(spec, motif, on, ultimate)
 
 
 func _text(text: String, at: Vector2, font_size: int, color: Color) -> void:

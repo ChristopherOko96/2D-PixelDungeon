@@ -5,6 +5,8 @@ signal leave_pressed
 signal main_action_pressed
 signal reward_requested
 signal display_mode_requested
+## Pixel / HD graphics switch (src/core/graphics_settings.gd); the game applies it.
+signal graphics_mode_requested
 ## A debug cheat button (index into debug_cheats.json "order").
 signal cheat_requested(index: int)
 
@@ -12,17 +14,35 @@ const CryptUI = preload("res://src/ui/crypt_ui.gd")
 const PerkIcons = preload("res://src/perk_icons.gd")
 const ClassPerks = preload("res://src/player/class_perks.gd")
 const QuestView = preload("res://src/ui/quest_view.gd")
-const SECTIONS := ["overview","quests","map","party","reward","controls","display","session","cheats"]
-const TITLES := ["Übersicht","Auftrag","Karte","Gruppe & Perks","Belohnung","Steuerung","Anzeige","Sitzung","Cheats"]
+## A save slot button (1..3): the host saves the start of the current floor.
+signal save_requested(slot: int)
+
+const SECTIONS := ["overview","quest","map","party","reward","controls","display","session","save","cheats"]
+const TITLES := ["Übersicht","Auftrag","Karte","Gruppe & Perks","Belohnung","Steuerung","Anzeige","Sitzung","Speichern","Cheats"]
+## Pages each mode shows: the crypt run, and the story worlds (Hölle, Frostgruft).
+const MODE_SECTIONS := {
+	"crypt": ["overview","quest","map","party","reward","controls","display","session","save","cheats"],
+	"story": ["overview","quest","map","controls","display","save"],
+}
+## Returns the save slot lines (SaveStore.summaries); set by the game.
+var save_rows := Callable()
+var save_buttons: Array[Button] = []
+var save_note: Label
+var save_hint: Label
+var _save_enabled := false
+## "crypt" or "story" (use_story_mode).
+var mode := "crypt"
+var controls_label: Label
+## The Auftragsliste page (src/ui/quest_view.gd), the same in every story.
+var quest_view: QuestView
+## Story map: a page-sized canvas the world draws its big map on (story_map_draw(canvas)).
+var story_map: Control
+var story_map_draw := Callable()
 var section := "overview"
 var pages: Dictionary = {}
 var navigation: Dictionary = {}
 var pause_note: Label
 var overview_label: Label
-## The Auftragsliste page, the same in every story.
-var quest_view: QuestView
-var controls_label: Label
-var leave_button: Button
 var party_details: Label
 var session_details: Label
 var map_view: Control
@@ -32,6 +52,8 @@ var main_action_button: Button
 var shade: ColorRect
 var display_mode_button: Button
 var display_status: Label
+var graphics_status: Label
+var graphics_button: Button
 var _definitions: Array = []
 var cheat_buttons: Array[Button] = []
 var _cheat_data: Dictionary = {}
@@ -63,7 +85,7 @@ func _ready() -> void:
 	pause_note.add_theme_color_override("font_color",CryptUI.SAND)
 	for index in range(SECTIONS.size()):
 		var key: String = SECTIONS[index]
-		navigation[key] = _button(self,TITLES[index],Vector2(192,160+index*40),Vector2(208,36),select_section.bind(key))
+		navigation[key] = _button(self,TITLES[index],Vector2(192,160+index*36),Vector2(208,32),select_section.bind(key))
 		var page := Control.new()
 		page.position = Vector2(432,176)
 		page.size = Vector2(656,378)
@@ -71,10 +93,6 @@ func _ready() -> void:
 		add_child(page)
 		pages[key] = page
 	overview_label = _text(pages.overview,"",Vector2.ZERO,Vector2(640,378),16)
-	quest_view = QuestView.new()
-	quest_view.size = Vector2(656,378)
-	quest_view.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	pages.quests.add_child(quest_view)
 	map_view = load("res://src/dungeon/dungeon_map.gd").new()
 	map_view.position = Vector2(16,28)
 	map_view.size = Vector2(148,52)
@@ -88,18 +106,73 @@ func _ready() -> void:
 	party_details = _text(party_scroll,"",Vector2.ZERO,Vector2(620,378),15)
 	party_details.custom_minimum_size = Vector2(620,378)
 	party_details.add_theme_constant_override("line_spacing",4)
+	quest_view = QuestView.new()
+	quest_view.size = Vector2(656,378)
+	quest_view.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pages.quest.add_child(quest_view)
+	story_map = Control.new()
+	story_map.size = Vector2(656,378)
+	story_map.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	story_map.visible = false
+	story_map.draw.connect(func() -> void: if story_map_draw.is_valid(): story_map_draw.call(story_map))
+	pages.map.add_child(story_map)
 	controls_label = _text(pages.controls,"Bewegen: WASD\nZielen: Maus\nAngreifen: Linksklick\nFähigkeiten: 1 2 3 4 (2 ab Level 3, 3 ab 6, 4 ab 10)\nBallistapfeil, Photoneneis: Taste halten\nTür / Treppe nutzen: E\nMenü öffnen / schließen: Esc\nVollbild / Fenster: F11 oder Alt + Enter\n\nGegner lassen grüne EXP fallen; das Team\nlevelt gemeinsam. Karten rechts per Klick.\n\nFür den Raumwechsel das lebende Team\nam Ausgang sammeln.",Vector2.ZERO,Vector2(640,378),16)
 	display_status = _text(pages.display,"",Vector2.ZERO,Vector2(640,64),24)
 	display_mode_button = _button(pages.display,"Vollbild einschalten",Vector2(0,96),Vector2(416,44),func(): display_mode_requested.emit())
-	_text(pages.display,"F11 oder Alt + Enter wechseln die Ansicht.\nEsc öffnet weiterhin das Pausenmenü.\n\nDie Spielansicht nutzt die gesamte Fläche.\nHerzen und Menü bleiben am Bildschirmrand.",Vector2(0,172),Vector2(640,198),16)
+	graphics_status = _text(pages.display,"Grafik: PIXEL",Vector2(0,164),Vector2(640,40),16)
+	graphics_button = _button(pages.display,"Zu HD wechseln",Vector2(0,196),Vector2(416,44),func(): graphics_mode_requested.emit())
+	_text(pages.display,"F11 oder Alt + Enter wechseln die Ansicht.\nEsc öffnet weiterhin das Pausenmenü.\n\nDie Spielansicht nutzt die gesamte Fläche.\nHerzen und Menü bleiben am Bildschirmrand.",Vector2(0,264),Vector2(640,128),16)
 	session_details = _text(pages.session,"",Vector2.ZERO,Vector2(640,378),16)
+	save_hint = _text(pages.save,"Ein Klick speichert den Beginn dieser Ebene.\nLaden und Löschen: Hauptmenü, SPIELSTÄNDE.",Vector2.ZERO,Vector2(640,52),16)
+	for slot in range(1,4):
+		var button := _button(pages.save,"PLATZ %d" % slot,Vector2(0,64+(slot-1)*54),Vector2(640,44),func(): save_requested.emit(slot))
+		button.clip_text = true
+		save_buttons.append(button)
+	save_note = _text(pages.save,"",Vector2(0,232),Vector2(640,60),16)
+	save_note.add_theme_color_override("font_color",CryptUI.GOLD)
 	resume_button = _button(self,"Weiterspielen",Vector2(192,528),Vector2(208,42),func(): resume_pressed.emit())
-	leave_button = _button(self,"Zum Hauptmenü",Vector2(192,582),Vector2(208,34),func(): leave_pressed.emit())
+	_button(self,"Zum Hauptmenü",Vector2(192,582),Vector2(208,34),func(): leave_pressed.emit())
 	main_action_button = _button(self,"",Vector2(432,574),Vector2(656,42),func(): main_action_pressed.emit())
 	_text(self,"ESC · Zurück zum Spiel",Vector2(432,626),Vector2(656,22),12)
+	_layout_navigation()
 	select_section("overview")
 	visible = false
 	set_display_state(false,Vector2(1280,720))
+
+
+## Story worlds (Hölle, Frostgruft): their own controls text, a quest page, their big
+## map on the map page; no party, reward, session or cheat pages. Call once after adding.
+func use_story_mode(controls_text: String) -> void:
+	mode = "story"
+	controls_label.text = controls_text
+	map_view.visible = false
+	map_note.visible = false
+	story_map.visible = true
+	main_action_button.visible = false
+	pause_note.text = "SPIEL ANGEHALTEN"
+	save_hint.text = "Ein Klick speichert den Beginn dieser Etage.\nLaden und Löschen: Hauptmenü, SPIELSTÄNDE."
+	_layout_navigation()
+	select_section("overview")
+
+
+## Story worlds feed their pages: {overview: text, quest_title: "ETAGE 3",
+## quests: [{text, done, main}]}.
+func set_story_state(info: Dictionary) -> void:
+	overview_label.text = str(info.get("overview", ""))
+	quest_view.set_goals(info.get("quests", []), str(info.get("quest_title", "")))
+	story_map.queue_redraw()
+
+
+## Stacks the section buttons of the current mode without gaps.
+func _layout_navigation() -> void:
+	var shown: Array = MODE_SECTIONS[mode]
+	var row := 0
+	for key: String in SECTIONS:
+		var visible_here: bool = key in shown and (key != "cheats" or _cheats_enabled)
+		navigation[key].visible = visible_here
+		if visible_here:
+			navigation[key].position = Vector2(192,160+row*36)
+			row += 1
 
 
 ## Covers expanded aspect ratios while the menu keeps its centered design size.
@@ -110,32 +183,17 @@ func set_canvas_size(dimensions: Vector2, design_origin: Vector2) -> void:
 
 
 ## Reflects the local window mode; changing it never sends a gameplay action.
+## The graphics line and button: `note` says what the mode means in this world.
+func set_graphics_state(note: String, mode: String) -> void:
+	if graphics_status == null or graphics_button == null: return
+	graphics_status.text = note
+	graphics_button.text = "Zu Pixel wechseln" if mode == "hd" else "Zu HD wechseln"
+
+
 func set_display_state(fullscreen: bool, _logical_size: Vector2) -> void:
 	if display_status == null or display_mode_button == null: return
 	display_status.text = "Ansicht: Vollbild" if fullscreen else "Ansicht: Fenster"
 	display_mode_button.text = "Zum Fenster wechseln" if fullscreen else "Vollbild einschalten"
-
-## Shows only `keys` (in SECTIONS order) in the section list; the Frostgruft
-## and the Hölle use this menu with Auftrag, Steuerung and Anzeige.
-func set_sections(keys: Array) -> void:
-	var row := 0
-	for key: String in SECTIONS:
-		navigation[key].visible = key in keys
-		if key in keys:
-			navigation[key].position = Vector2(192,160+row*40)
-			row += 1
-	if section not in keys and not keys.is_empty(): select_section(str(keys[0]))
-
-
-## Replaces the Steuerung page's text (each story has its own keys).
-func set_controls(text: String) -> void:
-	controls_label.text = text
-
-
-## Shows the floor's goals ({text, done, main}) on the Auftrag page.
-func set_quests(goals: Array, heading: String) -> void:
-	quest_view.set_goals(goals, heading)
-
 
 ## Builds the debug cheat buttons from debug_cheats.json (labels, order).
 func configure_cheats(data: Dictionary) -> void:
@@ -152,9 +210,27 @@ func configure_cheats(data: Dictionary) -> void:
 
 ## The Cheats page exists only in a debug build during a solo run.
 func set_cheats_enabled(enabled: bool) -> void:
+	if enabled == _cheats_enabled and navigation.cheats.visible == (enabled and "cheats" in MODE_SECTIONS[mode]): return
 	_cheats_enabled = enabled
-	navigation.cheats.visible = enabled
+	_layout_navigation()
 	if not enabled and section == "cheats": select_section("overview")
+
+## Saving needs the host in a run; clients see the page with the buttons off.
+func set_save_enabled(enabled: bool) -> void:
+	if enabled == _save_enabled: return
+	_save_enabled = enabled
+	if section == "save": refresh_save()
+
+
+## Rewrites the slot buttons from the save files; `message` reports the last save.
+func refresh_save(message: String = "") -> void:
+	var rows: Array = save_rows.call() if save_rows.is_valid() else []
+	for index in range(save_buttons.size()):
+		var text := "PLATZ %d" % (index + 1)
+		if index < rows.size(): text = str(rows[index].get("short", rows[index].text))
+		save_buttons[index].text = text
+		save_buttons[index].disabled = not _save_enabled
+	save_note.text = message if not message.is_empty() else ("" if _save_enabled else "Nur der Host kann speichern.")
 
 ## Uses the existing data-driven perk definitions for names and atlas icons.
 func configure(definitions: Array) -> void:
@@ -165,12 +241,13 @@ func configure(definitions: Array) -> void:
 
 ## Selects one information page, keeping every other page out of the playfield.
 func select_section(key: String) -> void:
-	if key not in SECTIONS: return
+	if key not in SECTIONS or key not in MODE_SECTIONS[mode]: return
 	if key == "cheats" and not _cheats_enabled: return
 	if key == "reward":
 		reward_requested.emit()
 		return
 	section = key
+	if key == "save": refresh_save()
 	for id: String in pages:
 		pages[id].visible = id == key
 		# The open section keeps the raised hover frame and gold text.
@@ -191,6 +268,7 @@ func set_state(snapshot: Dictionary, local_id: int, host: bool, port: int, solo_
 	var player: Dictionary = players.get(local_id,{})
 	var maximum_players := int(snapshot.get("max_players",4))
 	var cleared := rooms.filter(func(room: Dictionary): return room.get("cleared",false)).size()
+	quest_view.set_goals(QuestView.crypt_goals(snapshot),"EBENE %d" % int(snapshot.get("floor_index",1)))
 	var phase: String = snapshot.get("phase","")
 	var phase_name: String = {"combat":"Im Kampf","reward":"Belohnung wählen","explore":"Freie Erkundung","dead":"Gruppe gefallen","victory":"Geschafft"}.get(phase,phase.capitalize())
 	var boss_room := "—"
@@ -201,7 +279,6 @@ func set_state(snapshot: Dictionary, local_id: int, host: bool, port: int, solo_
 			if room.get("cleared",false): boss_status = "Besiegt"
 	for enemy: Dictionary in snapshot.get("enemies",[]):
 		if enemy.get("boss",false): boss_status = "Im Kampf · %d / %d LP" % [enemy.hp,enemy.max_hp]
-	set_quests(QuestView.crypt_goals(snapshot),"EBENE %d" % int(snapshot.get("floor_index",1)))
 	overview_label.text = "Ebene %d · Raum %d von %d\n%s\n\n%s · %d Gegner\nRäume frei: %d von %d\nLeben: %d / %d LP\n\nBoss: %s\nBossraum: %s\n%s" % [snapshot.get("floor_index",1),snapshot.get("room",1),rooms.size(),str(layout.get("title","")).capitalize(),phase_name,snapshot.get("enemies",[]).size(),cleared,rooms.size(),player.get("hp",0),player.get("max_hp",0),str(snapshot.get("boss_name","Boss")).capitalize(),boss_room.capitalize(),boss_status]
 	map_view.set_floor(rooms,str(layout.get("id","")))
 	map_note.text = "TÜRKIS  Dein Raum     GOLD  Gesäubert\nGRAU    Weiterer Raum    KRONE  Boss\n\n%s" % layout.get("title","")

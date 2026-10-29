@@ -294,6 +294,8 @@ func draw_world(canvas: CanvasItem, clock: float) -> void:
 	for b: Dictionary in bullets:
 		var at := Vector2(b.pos) - Vector2(0, 30)
 		var colour: Color = {"fireball": Color("ff7a2a"), "frost_lance": Color("8fd8e6"), "arcane": Color("b07bff")}.get(str(b.get("style", "")), Color("f3e2b0"))
+		var shot := {"x": at.x, "y": at.y, "vx": Vector2(b.velocity).x, "vy": Vector2(b.velocity).y, "style": str(b.get("style", ""))}
+		if fx.draw_bullet(canvas, shot, clock): continue
 		if str(b.get("style", "")) == "arrow":
 			var along := Vector2(b.velocity).normalized()
 			canvas.draw_line(at - along * 12.0, at + along * 8.0, Color("1a1414"), 4.0)

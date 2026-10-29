@@ -1,7 +1,7 @@
 extends SceneTree
 ## The Auftragsliste is a page of the pause menu, the same in every story:
 ## the crypt (src/game.gd), the Frostgruft and the Hölle (src/hell/hell_game.gd)
-## all open src/pause_menu.gd with Esc, and its "Auftrag" page
+## all open src/pause_menu.gd with Esc, and its "Auftrag" page (section "quest")
 ## (src/ui/quest_view.gd) lists the floor's main goals in order and the side
 ## goals below. The world stands still while the menu is open in a solo run.
 
@@ -70,12 +70,12 @@ func test_crypt_menu() -> void:
 	game._start_solo(false, "swordsman")
 	for i in range(40): await process_frame
 	# Act
-	game.set_pause_open(true, "quests")
+	game.set_pause_open(true, "quest")
 	for i in range(3): await process_frame
 	# Assert
 	check(game.pause_menu.visible and game.pause_menu.quest_view.is_visible_in_tree(), "the crypt's pause menu has the Auftrag page")
 	check(game.pause_menu.quest_view.goals.size() >= 3 and game.pause_menu.quest_view.title == "EBENE 1", "the crypt's Auftrag page lists the floor's goals")
-	check(game.pause_menu.navigation.quests.text == "Auftrag", "the section is called Auftrag")
+	check(game.pause_menu.navigation.quest.text == "Auftrag", "the section is called Auftrag")
 	game.set_pause_open(false)
 	game.queue_free()
 	await process_frame
@@ -98,13 +98,14 @@ func test_story_menu(scene: PackedScene, story: String) -> void:
 	# Act
 	_esc(game)
 	await process_frame
+	game.pause_menu.select_section("quest")
 	# Assert
-	check(game.pause_menu.visible and game.pause_menu.section == "quests" and game.pause_menu.quest_view.is_visible_in_tree(), "Esc opens the Auftrag page in the %s" % story)
+	check(game.pause_menu.visible and game.pause_menu.section == "quest" and game.pause_menu.quest_view.is_visible_in_tree(), "Esc opens the pause menu with the Auftrag page in the %s" % story)
 	var goals: Array = game.pause_menu.quest_view.goals
 	var mains := goals.filter(func(g: Dictionary): return g.main)
 	check(mains.size() >= 2 and mains.any(func(g: Dictionary): return str(g.text).begins_with("Besiege")), "the %s lists its main goals with the boss" % story)
 	check(game.pause_menu.quest_view.title == "ETAGE 1", "the %s's page names the floor" % story)
-	check(game.pause_menu.navigation.quests.visible and game.pause_menu.navigation.controls.visible and not game.pause_menu.navigation.party.visible and not game.pause_menu.navigation.overview.visible, "the %s shows only Auftrag, Steuerung and Anzeige" % story)
+	check(game.pause_menu.navigation.quest.visible and game.pause_menu.navigation.controls.visible and not game.pause_menu.navigation.party.visible, "the %s shows the story pages with Auftrag, without the crypt's party page" % story)
 	check(game.pause_menu.controls_label.text.contains("Shift + 1 2 3 4"), "the %s's Steuerung page names its keys" % story)
 	var t: float = game.state.t
 	var x: float = game.player.x

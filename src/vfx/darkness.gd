@@ -8,6 +8,8 @@ const SHADER := preload("res://assets/shaders/canvas_vfx_darkness.gdshader")
 const MAX_LIGHTS := 48
 ## The overlay reaches this far past the room so camera movement never shows an edge.
 const MARGIN := 2048.0
+## The shader's own shade colour, used when the lighting names none.
+const SHADE := Color(0.03, 0.02, 0.06, 1.0)
 
 var _material := ShaderMaterial.new()
 var _size := Vector2(1280, 720)
@@ -27,9 +29,12 @@ func set_world_size(size: Vector2) -> void:
 	queue_redraw()
 
 
-## Darkness strength and look from balance.json "lighting".
+## Darkness strength and look from balance.json "lighting"; an optional
+## "shade_color" (Color, from the crypt atmosphere) tints the dark.
 func configure(lighting: Dictionary) -> void:
 	_material.set_shader_parameter("darkness", float(lighting.get("darkness", 0.82)))
+	var shade: Variant = lighting.get("shade_color")
+	_material.set_shader_parameter("shade_color", shade if shade is Color else SHADE)
 
 
 ## Lights as Vector3(x, y, radius) or Vector4(x, y, radius, strength); the

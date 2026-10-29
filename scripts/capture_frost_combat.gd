@@ -1,13 +1,12 @@
 extends SceneTree
 ## Captures Story 1's combat system in the Frostgruft from the real windowed
 ## game: a fight with hit chips, stains and shot streaks; a guardian's hail
-## warning and frost breath; the hero's conditions; loot on the floor; the bag.
+## warning and frost breath; the hero's conditions in the hero panel; loot on
+## the floor; the inventory (item system 2, src/hero/story_items.gd).
 ## Usage:
 ##   godot --path . --resolution 1280x720 -s res://scripts/capture_frost_combat.gd -- <output_dir>
 const FrostScene = preload("res://src/hell/frost_dungeon.tscn")
 const FrostMoves = preload("res://src/hell/frost_moves.gd")
-const FrostItems = preload("res://src/hell/frost_items.gd")
-const FrostBag = preload("res://src/hell/frost_bag.gd")
 const HeroFx = preload("res://src/hell/hero_fx.gd")
 const SAVE := "user://capture_combat.cfg"
 
@@ -87,8 +86,11 @@ func _run() -> void:
 			_game._fire((((m.p as Vector2) - Vector2(0, m.cy)) - Vector2(_game.player.x, _game.player.y - 40)).normalized())
 		await _wait(2)
 	await _shot("83-spiel-kampf-trefferfeedback.png")
-	# a guardian's hail and a frost breath warning, the hero slowed and poisoned
+	# a guardian's hail and a frost breath warning, the hero slowed and poisoned;
+	# arrows still in flight are cleared so they do not fell the guardian
 	_game.mobs.clear()
+	_game.shots.clear()
+	_game.state.toasts = []
 	_game._spawn_mob(_game.state.room, Vector2(_game.player.x + 330.0, _game.player.y - 40.0), "ice_zombie")
 	var b: Dictionary = _game.mobs[_game.mobs.size() - 1]
 	b.kind = "boss"
@@ -104,19 +106,27 @@ func _run() -> void:
 	HeroFx.apply(_game, "poison", 9.0, 1.0)
 	await _wait(28)
 	await _shot("84-spiel-boss-moves-warnung.png")
-	# loot on the floor, then the bag with weapons, potions and a crystal
+	# loot on the floor, then the inventory with weapons, potions, a crystal and gear
 	_game.mobs.clear()
 	_game.state.mzones = []
+	var items: Node = _game.story_items
+	var inv: RefCounted = items.inventory
 	var at := Vector2(_game.player.x + 200.0, _game.player.y)
-	FrostItems.drop_loot(_game, [FrostItems.make_weapon("frost_bow", false, "night"), FrostItems.make_stack("potion", "healing"), FrostItems.make_stack("crystal")], at)
+	var loot := [inv.make_weapon("frost_bow", false, "night"), inv.make_stack("potion", "healing"), inv.make_stack("crystal")]
+	for i in range(loot.size()):
+		items.floor_items.append({"item": loot[i], "p": at + Vector2(i * 36.0 - 36.0, (i % 2) * 24.0)})
 	await _wait(20)
 	await _shot("85-spiel-beute-am-boden.png")
-	_game.state.bag.bag = [FrostItems.make_weapon("sun_bow", true, ""), FrostItems.make_weapon("void_bow", false, "leaden"),
-		FrostItems.make_stack("potion", "healing", 2), FrostItems.make_stack("potion", "ice"), FrostItems.make_stack("crystal"), FrostItems.make_stack("stone")]
-	_game.state.bag.known = {"healing": true}
-	_game.state.bag_sel = 0
-	FrostBag.toggle(_game)
+	items.floor_items.clear()
+	for it: Dictionary in [inv.make_weapon("sun_bow", true, ""), inv.make_weapon("void_bow", false, "leaden"),
+			inv.make_stack("potion", "healing", 2), inv.make_stack("potion", "ice"), inv.make_stack("crystal"), inv.make_stack("stone"),
+			inv.make_gear("chain_shirt", true, "", 1)]:
+		items.give(it, Vector2.ZERO)
+	_game.inventory_panel.set_view(items.view())
+	_game.inventory_panel.set_open(true)
+	_game.inventory_panel.selected = 0
+	_game.inventory_panel._refresh_buttons()
 	await _wait(6)
-	await _shot("86-spiel-rucksack.png")
+	await _shot("86-spiel-inventar.png")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE))
 	quit()

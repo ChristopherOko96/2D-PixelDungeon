@@ -145,7 +145,7 @@ func _part_fields(spec: Dictionary) -> Dictionary:
 	return {"id": str(spec.id), "pivot": _vec(spec.get("pivot", [0, 0])), "parent": str(spec.get("parent", "")) if spec.get("parent") != null else "",
 		"z": int(spec.get("z", 0)), "hp": float(spec.get("hp", 0)), "label": str(spec.get("label", spec.id)), "vital": bool(spec.get("vital", false)),
 		"disables": str(spec.get("disables", "")), "regrow": float(spec.get("regrow", 0)), "also_detach": Array(spec.get("alsoDetach", [])),
-		"exposed": str(spec.get("exposed", "")), "is_item": false}
+		"exposed": str(spec.get("exposed", "")), "unbreakable": bool(spec.get("unbreakable", false)), "is_item": false}
 
 
 ## A drawable layer: texture, white silhouette for hit flashes, opaque bounds.

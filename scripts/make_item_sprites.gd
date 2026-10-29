@@ -48,8 +48,158 @@ func _initialize() -> void:
 	_save(crate, "crate_gold")
 	_save(_crystal(), "crystal_identify")
 	_save(_stone(), "stone_curse")
+	# item system 2 (docs/ITEM-SYSTEM-V2.de.md): armour, rings, amulets, new consumables
+	for entry: Array in ARMOURS:
+		_save(_mask(ARMOUR_MASK, {"a": Color(str(entry[1])), "b": Color(str(entry[2])), "h": Color(str(entry[3]))}), "armor_" + str(entry[0]))
+	for entry: Array in GEMS:
+		_save(_mask(RING_MASK, {"a": Color("c9a24a"), "b": Color("8a6a2a"), "h": Color("f4e3a1"), "g": Color(str(entry[1])), "s": Color(str(entry[2]))}), "ring_" + str(entry[0]))
+		_save(_mask(AMULET_MASK, {"a": Color("b9b4ad"), "b": Color("6f6a64"), "h": Color("ece7df"), "g": Color(str(entry[1])), "s": Color(str(entry[2]))}), "amulet_" + str(entry[0]))
+	_save(_mask(SEAL_MASK, {"a": Color("b33a3a"), "b": Color("6e1f24"), "h": Color("e57a6a"), "g": Color("f2d8b0")}), "seal_clone")
+	_save(_mask(STONE_UP_MASK, {"a": Color("8a8f98"), "b": Color("5d626b"), "h": Color("c9ced6"), "g": Color("7ed66f")}), "stone_upgrade")
+	_save(_mask(DICE_MASK, {"a": Color("e9e2d4"), "b": Color("a79f92"), "h": Color("ffffff"), "g": Color("1a1414")}), "stone_dice")
+	_save(_mask(MIRROR_MASK, {"a": Color("b38cf0"), "b": Color("6a4aa8"), "h": Color("efe3ff"), "g": Color("8a6a2a")}), "crystal_mirror")
 	print("ITEM_SPRITES written to ", OUT)
 	quit()
+
+
+## Armour colours: [name, main, shade, highlight].
+const ARMOURS := [["leather", "8a5a3a", "5a3a26", "b98a5e"], ["chain", "9aa3ad", "5f6670", "d6dde4"], ["bone", "d9cfbf", "9b8f7c", "f4eee4"],
+	["shadow", "4a3f63", "2b2440", "7d6fa3"], ["dragon", "b8402f", "6e2018", "f08a5d"]]
+## Gem colours for rings and amulets: [name, gem, gem shine].
+const GEMS := [["haste", "6fd3e0", "d8fbff"], ["might", "e05a4a", "ffc2b0"], ["focus", "7a6ff0", "d6d0ff"], ["blood", "9e1f3a", "f07a90"],
+	["storm", "f0d050", "fff6c0"]]
+## 16x16 masks: '#' outline, letters are palette keys, '.' empty.
+const ARMOUR_MASK := [
+	"................",
+	"....###..###....",
+	"...#hha##ahh#...",
+	"..#haaaaaaaaa#..",
+	"..#haaaaaaaab#..",
+	"..##aaaaaaab##..",
+	"...#haaaaaab#...",
+	"...#haaaaaab#...",
+	"...#bbbbbbbb#...",
+	"...#haaaaaab#...",
+	"...#haaaaaab#...",
+	"...#haaaaaab#...",
+	"...#bbbbbbbb#...",
+	"....########....",
+	"................",
+	"................"]
+const RING_MASK := [
+	"................",
+	"................",
+	"......####......",
+	".....#sgsg#.....",
+	".....#gggg#.....",
+	"....##a##a##....",
+	"...#ha#..#ab#...",
+	"..#ha#....#ab#..",
+	"..#h#......#b#..",
+	"..#h#......#b#..",
+	"..#ha#....#ab#..",
+	"...#ha####ab#...",
+	"....#hhaaab#....",
+	".....######.....",
+	"................",
+	"................"]
+const AMULET_MASK := [
+	"..#..........#..",
+	"..#h........b#..",
+	"...#h......b#...",
+	"...#h......b#...",
+	"....#h....b#....",
+	"....#h....b#....",
+	".....#h..b#.....",
+	"......####......",
+	".....#aaab#.....",
+	"....#asggab#....",
+	"....#agggab#....",
+	"....#aggggb#....",
+	".....#aggb#.....",
+	"......#bb#......",
+	".......##.......",
+	"................"]
+const SEAL_MASK := [
+	"................",
+	".....######.....",
+	"...##hhaaaa##...",
+	"..#hhaaaaaaab#..",
+	"..#haaaggaaab#..",
+	".#haaagggaaaab#.",
+	".#haaaaggaaaab#.",
+	".#haaaggggaaab#.",
+	".#haagggggaaab#.",
+	".#haaagagaaabb#.",
+	"..#haagaagaabb#.",
+	"..#bbaaaaaabb#..",
+	"...##bbbbbb##...",
+	".....######.....",
+	"................",
+	"................"]
+const STONE_UP_MASK := [
+	"................",
+	"................",
+	".....######.....",
+	"...##hhhaaa##...",
+	"..#hhaagaaaab#..",
+	".#haaagggaaaab#.",
+	".#haaggggga.ab#.",
+	".#haaaagaaaabb#.",
+	".#haaaagaaaabb#.",
+	".#haaaagaaabbb#.",
+	"..#baaaaaaabb#..",
+	"...##bbbbbbb#...",
+	".....#######....",
+	"................",
+	"................",
+	"................"]
+const DICE_MASK := [
+	"................",
+	"................",
+	"...##########...",
+	"..#hhhhhhhhha#..",
+	"..#hgaaaaaaga#..",
+	"..#haaaaaaaab#..",
+	"..#haaaaaaaab#..",
+	"..#haaagaaaab#..",
+	"..#haaaaaaaab#..",
+	"..#haaaaaaaab#..",
+	"..#hgaaaaaagb#..",
+	"..#abbbbbbbbb#..",
+	"...##########...",
+	"................",
+	"................",
+	"................"]
+const MIRROR_MASK := [
+	"................",
+	".....######.....",
+	"....#hhhaab#....",
+	"...#hhhaaaab#...",
+	"...#hhaaaaab#...",
+	"...#haaaaaab#...",
+	"...#haaaaabb#...",
+	"....#aaabbb#....",
+	".....######.....",
+	"......#gg#......",
+	"......#gg#......",
+	"......#gg#......",
+	"......#gg#......",
+	".......##.......",
+	"................",
+	"................"]
+
+
+## Draws a 16x16 icon from a mask: '#' the 0x72 outline, letters from `palette`.
+func _mask(rows: Array, palette: Dictionary) -> Image:
+	var image := Image.create(16, 16, false, Image.FORMAT_RGBA8)
+	for y in range(rows.size()):
+		var row := str(rows[y])
+		for x in range(mini(16, row.length())):
+			var key := row[x]
+			if key == "#": image.set_pixel(x, y, Color("1a1414"))
+			elif palette.has(key): image.set_pixel(x, y, palette[key])
+	return image
 
 
 func _load(name: String) -> Image:

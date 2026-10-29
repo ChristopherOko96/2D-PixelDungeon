@@ -12,6 +12,7 @@
   "boss_perks": {"cards": 3},
   "walls": {"fist_radius": 52, "beam_break_time": 0.6, "beam_radius": 34, "rage_reach_bonus": 10},
   "status": {"boss_slow_scale": 0.5, "boss_push_scale": 0.25},
+  "sword_feel": {"_note": "Swordsman feel: lunge = step (px) the hero takes into every swing; rage swings twice (second after rage_second_delay, mirrored), throws enemies with rage_push (px/s) and a body that hits a wall faster than slam_speed takes slam_damage x weapon damage and slam_stun; small enemies killed in Rage are cut in two. charge_side_push throws enemies off the charge path.", "lunge": 8, "rage_lunge": 12, "rage_second_delay": 0.12, "rage_push": 520, "slam_speed": 220, "slam_window": 0.45, "slam_damage": 0.8, "slam_stun": 0.6, "charge_side_push": 380},
   "classes": {
     "swordsman": {
       "weapon_icon": "weapon_knight_sword",

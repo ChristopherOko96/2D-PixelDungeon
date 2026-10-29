@@ -106,8 +106,10 @@ func take_pending(enemy: Dictionary) -> String:
 ## Damages one part. The full damage always counts against the enemy's total
 ## HP (which starts as the sum of the parts), so big hits stay lethal; the hit
 ## part breaks off once its own HP is gone, and a broken vital part kills at
-## once. Without a part, a seeded choice prefers non-vital parts (3 in 4),
-## like the review page. Returns {"part", "destroyed", "killed"}.
+## once. An `unbreakable` part (a boss's legs, head and body) never breaks and
+## never kills on its own: only the total HP decides. Without a part, a seeded
+## choice prefers non-vital parts (3 in 4), like the review page.
+## Returns {"part", "destroyed", "killed"}.
 func damage(enemy: Dictionary, amount: float, part: String = "") -> Dictionary:
 	var living := alive(enemy)
 	if living.is_empty() or amount <= 0.0: return {"part": "", "destroyed": false, "killed": false}
@@ -116,7 +118,7 @@ func damage(enemy: Dictionary, amount: float, part: String = "") -> Dictionary:
 	state.hp = maxf(0.0, float(state.hp) - amount)
 	enemy.hp = maxf(0.0, float(enemy.hp) - amount)
 	var result := {"part": part, "destroyed": false, "killed": float(enemy.hp) <= 0.0}
-	if float(state.hp) <= 0.0:
+	if float(state.hp) <= 0.0 and not bool(_spec(enemy, part).get("unbreakable", false)):
 		result.destroyed = true
 		var spec: Dictionary = _spec(enemy, part)
 		if bool(spec.get("vital", false)):

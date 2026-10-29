@@ -1,0 +1,51 @@
+{
+	"_doc": "Void atmosphere of the Krypta der Verdammten (story 1, live crypt run only; src/vfx/crypt_atmosphere.gd, docs/KRYPTA-ATMOSPHAERE.de.md). Presentation only, drawn by each client. grade: colour filter on the room (floor, walls, props), never on heroes, enemies or shots. darkness: overrides balance.json lighting.darkness while the atmosphere is on. fog: drifting mist layers (world px, px per second). flames: wall torches, candle columns and floor fires repainted onto the 0x72 violet ramp; light_color/glow tint their light.",
+	"enabled": true,
+	"grade": {
+		"enabled": true,
+		"exposure": 0.8,
+		"highlight_from": 0.55,
+		"highlight_to": 0.9,
+		"contrast": 1.14,
+		"pivot": 0.32,
+		"saturation": 0.82,
+		"tint_color": "#473579",
+		"tint_strength": 0.55,
+		"tint_range": 0.5
+	},
+	"darkness": {
+		"strength": 0.32,
+		"shade_color": "#0d0818"
+	},
+	"fog": {
+		"enabled": true,
+		"over_actors": false,
+		"color": "#8156aa",
+		"density": 0.2,
+		"coverage": 0.5,
+		"softness": 0.16,
+		"stretch": 2.6,
+		"warp": 0.9,
+		"pixel": 2.0,
+		"bands": 4,
+		"layers": [
+			{"scale": 210.0, "wind": [9.0, 2.5], "weight": 0.6},
+			{"scale": 120.0, "wind": [-6.0, 1.5], "weight": 0.4}
+		]
+	},
+	"flames": {
+		"enabled": true,
+		"floor_fires": true,
+		"recolor": {
+			"da4e38": "8156aa",
+			"c56025": "8156aa",
+			"8f4029": "5f2d56",
+			"ee8e2e": "c278d0",
+			"facb3e": "f0b3dd",
+			"fdf7ed": "fdf7ed"
+		},
+		"light_color": "#c278d0",
+		"glow_strength": 0.26,
+		"light_radius_scale": 0.85
+	}
+}

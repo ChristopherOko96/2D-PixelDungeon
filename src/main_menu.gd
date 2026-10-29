@@ -28,7 +28,11 @@ signal settings_changed(settings: Dictionary)
 signal rooms_saved(config: Dictionary)
 ## The Dungeon-Werkstatt asks to test-play a room.
 signal room_test_requested(room_id: String, floor: int, class_id: String)
+## SPIELSTÄNDE: load slot 1..3 of a mode ("crypt", "hell", "frost").
+signal save_load_requested(mode: String, slot: int)
 
+const SaveStore = preload("res://src/save/save_store.gd")
+const SAVE_MODES := ["crypt", "hell", "frost"]
 const Progress = preload("res://src/online/progress.gd")
 const PixelStyle = preload("res://src/pixel_style.gd")
 const CryptUI = preload("res://src/ui/crypt_ui.gd")
@@ -45,6 +49,7 @@ const PROPS_ROOT := "res://assets/sprites/crypt_props/"
 ## Backdrop tiles are 16 px 0x72 tiles drawn at 3x.
 const TILE := 48.0
 const SETTINGS_PATH := "user://settings.cfg"
+const GraphicsSettings = preload("res://src/core/graphics_settings.gd")
 const GOLD := CryptUI.GOLD
 const MUTED := CryptUI.MUTED
 const TEXT := CryptUI.BONE
@@ -85,7 +90,7 @@ var _debug_start: Dictionary = {}
 var _debug_panel: Panel
 var _crypt_panel: Panel
 var _hell_panel: Panel
-var settings := {"volume": 80, "music": 70, "effects": 85, "fullscreen": false, "shake": true}
+var settings := {"volume": 80, "music": 70, "effects": 85, "fullscreen": false, "shake": true, "graphics": "pixel"}
 # Starts mid-chase so the heroes are on screen from the first frame.
 var _clock := 7.0
 var _frames: Dictionary = {}
@@ -111,6 +116,8 @@ var sound_workshop: Control
 ## Dungeon-Werkstatt (main menu EDITOR), made when first opened.
 var room_editor: Control
 var _fullscreen_check: CheckButton
+## Pixel / HD graphics for every world (src/core/graphics_settings.gd).
+var _graphics_check: CheckButton
 var _shake_check: CheckButton
 var _class_panel: Panel
 var _class_title: Label
@@ -138,7 +145,7 @@ func _ready() -> void:
 	# The menu card: one framed column for the mode buttons.
 	var card := Panel.new()
 	card.position = Vector2(446, 184)
-	card.size = Vector2(388, 336)
+	card.size = Vector2(388, 412)
 	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(card)
 	var title := _label(CryptUI.GAME_TITLE, Vector2(0, 52), Vector2(SCREEN.x, 90), 64, GOLD, HORIZONTAL_ALIGNMENT_CENTER)
@@ -153,11 +160,12 @@ func _ready() -> void:
 	_endless_button.disabled = not endless_available
 	_endless_button.tooltip_text = "" if endless_available else "Der Endlos-Modus folgt in einem späteren Schritt."
 	_buttons.append(_endless_button)
-	_buttons.append(_button("TALENTE", Vector2(470, 330), Vector2(340, 40), 16, _open_talents))
-	_buttons.append(_button("MEHRSPIELER", Vector2(470, 376), Vector2(340, 40), 16, multiplayer_requested.emit))
-	_buttons.append(_button("EDITOR", Vector2(470, 422), Vector2(340, 40), 16, open_room_editor.bind("")))
-	_buttons.append(_button("OPTIONEN", Vector2(470, 468), Vector2(340, 40), 16, _open_options))
-	_buttons.append(_button("BEENDEN", Vector2(470, 514), Vector2(340, 36), 16, quit_requested.emit))
+	_buttons.append(_button("TALENTE", Vector2(470, 330), Vector2(340, 36), 16, _open_talents))
+	_buttons.append(_button("MEHRSPIELER", Vector2(470, 372), Vector2(340, 36), 16, multiplayer_requested.emit))
+	_buttons.append(_button("SPIELSTÄNDE", Vector2(470, 414), Vector2(340, 36), 16, _open_saves))
+	_buttons.append(_button("EDITOR", Vector2(470, 456), Vector2(340, 36), 16, open_room_editor.bind("")))
+	_buttons.append(_button("OPTIONEN", Vector2(470, 498), Vector2(340, 36), 16, _open_options))
+	_buttons.append(_button("BEENDEN", Vector2(470, 540), Vector2(340, 36), 16, quit_requested.emit))
 	_button("LEVEL-AUSWAHL (DEBUG)", Vector2(16, 676), Vector2(264, 32), 16, _open_debug)
 	_buttons[0].add_theme_color_override("font_color", GOLD)
 	_buttons[0].grab_focus()
@@ -175,6 +183,7 @@ func _ready() -> void:
 	_build_story_panel()
 	_build_class_panel()
 	_build_debug_panel()
+	_build_saves_panel()
 	_load_settings()
 	if account != null:
 		account.changed.connect(_refresh_account)
@@ -591,19 +600,32 @@ func _build_options_panel() -> void:
 	_volume_slider = _sliders.volume
 	_fullscreen_check = _check(_options_panel, "Vollbild", Vector2(30, 196), func(on: bool): _set_setting("fullscreen", on))
 	_shake_check = _check(_options_panel, "Bildschirmwackeln", Vector2(30, 240), func(on: bool): _set_setting("shake", on))
+	# HD where a world has an HD set (the Hell-Dungeon), pixel art everywhere else
+	_graphics_check = _check(_options_panel, "HD-Grafik (Hölle)", Vector2(30, 284), func(on: bool): _set_setting("graphics", "hd" if on else "pixel"))
+	_options_panel.size.y = 414
+	_options_panel.position.y = (SCREEN.y - _options_panel.size.y) * 0.5 + 20.0
 	var version := str(ProjectSettings.get_setting("application/config/version", ""))
 	if not version.is_empty():
-		_panel_label(_options_panel, "Version " + version, Vector2(30, 284)).add_theme_color_override("font_color", MUTED)
-	_panel_button(_options_panel, "ZURÜCK", Vector2(30, 316), Vector2(360, 38), _close_panels)
+		_panel_label(_options_panel, "Version " + version, Vector2(30, 326)).add_theme_color_override("font_color", MUTED)
+	_panel_button(_options_panel, "ZURÜCK", Vector2(30, 358), Vector2(360, 38), _close_panels)
+
+
+## Reads the graphics choice again (the pause menu may have switched it).
+func refresh_graphics() -> void:
+	settings.graphics = GraphicsSettings.mode(SETTINGS_PATH)
+	if _graphics_check != null: _graphics_check.set_pressed_no_signal(settings.graphics == "hd")
 
 
 func _open_options() -> void:
+	refresh_graphics()
 	_close_panels()
 	_options_panel.visible = true
 	_volume_slider.grab_focus()
 
 
 func _set_setting(key: String, value: Variant) -> void:
+	# never write back a stale graphics choice the pause menu changed meanwhile
+	if key != "graphics": settings.graphics = GraphicsSettings.mode(SETTINGS_PATH)
 	settings[key] = value
 	_apply_settings()
 	var file := ConfigFile.new()
@@ -618,6 +640,7 @@ func _load_settings() -> void:
 	for key: String in _sliders: _sliders[key].set_value_no_signal(float(settings[key]))
 	_fullscreen_check.set_pressed_no_signal(bool(settings.fullscreen))
 	_shake_check.set_pressed_no_signal(bool(settings.shake))
+	if _graphics_check != null: _graphics_check.set_pressed_no_signal(str(settings.graphics) == "hd")
 	_apply_settings()
 
 
@@ -640,9 +663,90 @@ func _close_panels() -> void:
 	if _story_panel != null: _story_panel.visible = false
 	if _talent_panel != null: _talent_panel.visible = false
 	if _talent_screen != null: _talent_screen.visible = false
+	if _saves_panel != null: _saves_panel.visible = false
 	_password_input.text = ""
 	_refresh_account()
 	_buttons[0].grab_focus()
+
+
+# --- Save slots ----------------------------------------------------------------
+
+var saves := SaveStore.new()
+var save_mode := "crypt"
+var _saves_panel: Panel
+var _save_tabs: Dictionary = {}
+var _save_lines: Array[Label] = []
+var _save_load: Array[Button] = []
+var _save_erase: Array[Button] = []
+## Slot waiting for a second click on LÖSCHEN (0 = none).
+var _erase_armed := 0
+
+
+func _build_saves_panel() -> void:
+	_saves_panel = _panel("SPIELSTÄNDE")
+	_saves_panel.size = Vector2(1000, 420)
+	_saves_panel.position = (SCREEN - _saves_panel.size) * 0.5 + Vector2(0, 20)
+	for i in range(SAVE_MODES.size()):
+		var mode: String = SAVE_MODES[i]
+		_save_tabs[mode] = _panel_button(_saves_panel, str(SaveStore.MODE_NAMES[mode]), Vector2(30 + i * 318, 66), Vector2(306, 40), _show_save_mode.bind(mode))
+	var hint := _panel_label(_saves_panel, "Ein Spielstand ist der Beginn einer Etage. Laden setzt dich dorthin zurück.", Vector2(30, 118))
+	hint.size = Vector2(940, 26)
+	hint.add_theme_color_override("font_color", MUTED)
+	for slot in range(1, SaveStore.SLOTS + 1):
+		var y := 156.0 + (slot - 1) * 64.0
+		var line := _panel_label(_saves_panel, "", Vector2(30, y + 10))
+		line.size = Vector2(700, 26)
+		line.clip_text = true
+		line.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+		_save_lines.append(line)
+		_save_load.append(_panel_button(_saves_panel, "LADEN", Vector2(750, y), Vector2(110, 44), func(): _load_slot(slot)))
+		_save_erase.append(_panel_button(_saves_panel, "LÖSCHEN", Vector2(870, y), Vector2(100, 44), func(): _erase_slot(slot)))
+	_panel_button(_saves_panel, "ZURÜCK", Vector2(30, 356), Vector2(940, 40), _close_panels)
+
+
+func _open_saves() -> void:
+	_close_panels()
+	_saves_panel.visible = true
+	_show_save_mode(save_mode)
+
+
+## Shows the three slots of one mode with their summary lines.
+func _show_save_mode(mode: String) -> void:
+	save_mode = mode
+	_erase_armed = 0
+	for m: String in _save_tabs:
+		var tab: Button = _save_tabs[m]
+		if m == mode:
+			tab.add_theme_color_override("font_color", GOLD)
+			tab.add_theme_stylebox_override("normal", CryptUI.box("button_hover"))
+		else:
+			tab.remove_theme_color_override("font_color")
+			tab.remove_theme_stylebox_override("normal")
+	var rows := saves.summaries(mode)
+	for i in range(rows.size()):
+		_save_lines[i].text = str(rows[i].text)
+		_save_lines[i].add_theme_color_override("font_color", MUTED if rows[i].empty else TEXT)
+		_save_load[i].disabled = bool(rows[i].empty)
+		_save_erase[i].disabled = bool(rows[i].empty)
+		_save_erase[i].text = "LÖSCHEN"
+	_save_tabs[mode].grab_focus()
+
+
+func _load_slot(slot: int) -> void:
+	_close_panels()
+	save_load_requested.emit(save_mode, slot)
+
+
+## First click arms the button ("SICHER?"), the second deletes the slot.
+func _erase_slot(slot: int) -> void:
+	if _erase_armed != slot:
+		_show_save_mode(save_mode)
+		_erase_armed = slot
+		_save_erase[slot - 1].text = "SICHER?"
+		return
+	saves.erase(save_mode, slot)
+	show_toast("Platz %d gelöscht." % slot)
+	_show_save_mode(save_mode)
 
 
 # --- Talents -------------------------------------------------------------------

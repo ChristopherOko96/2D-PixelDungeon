@@ -78,7 +78,7 @@ func _level_to(level: int, player: Dictionary) -> void:
 	while int(progress.team.level) < level and guard < 100:
 		progress.add_exp(maxi(1, progress.next_level_exp() - int(progress.team.get("exp", 0))))
 		guard += 1
-	_note(player, "CHEAT: Team-Level %d · Karten rechts wählen" % int(progress.team.level))
+	_note(player, "CHEAT: Team-Level %d · Punkte mit B verteilen" % int(progress.team.level))
 
 
 ## Opens all four skills of the hero's class (team level up to the last
@@ -104,12 +104,25 @@ func _all_skills(player: Dictionary) -> void:
 	_note(player, "CHEAT: Alle %d Fähigkeiten offen · %d Verbesserungen" % [skills.size(), granted])
 
 
+## Picks the open cards (boss perks) and spends every run talent point on the first open node.
 func _auto_cards(player: Dictionary) -> void:
 	var picked := 0
 	while not Array(player.get("offer", [])).is_empty() and picked < 60:
 		if not game.team_progress.pick(player, 0): break
 		picked += 1
-	_note(player, "CHEAT: %d Karten gewählt" % picked)
+	var spent := 0
+	var ids: Array = ClassPerks.run_tree_ids(str(player.get("class_id", "")))
+	var guard := 0
+	while guard < 200:
+		guard += 1
+		var taken := false
+		for id: Variant in ids:
+			if game.team_progress.take_talent(player, str(id)):
+				spent += 1
+				taken = true
+				break
+		if not taken: break
+	_note(player, "CHEAT: %d Karten gewählt · %d Talentpunkte verteilt" % [picked, spent])
 
 
 func _clear_room(id: int, player: Dictionary) -> void:

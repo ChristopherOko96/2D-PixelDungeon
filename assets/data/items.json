@@ -1,6 +1,6 @@
 {
-	"_doc": "Items of a run (src/items/inventory.gd, item_rules.gd; design docs/GEGENSTAENDE.de.md). Every hero starts with the common weapon marked start for their class. Weapons are class-bound (class), have a fixed rarity, a sprite (below res://assets/sprites/), base values that replace the class weapon (damage per hit, interval = seconds between attacks, reach and arc for melee, speed/life/splash for shots) and effects: perk effects from balance.json perks (cinder = burns, venom = poison, frost = slows, storm = chain lightning, crit = crit chance, piercer, split, homing, twin, blast, overkill, vampire, leech, execution, mark, first_strike, combustion, plague, permafrost, shatter ...). Found weapons are unidentified: name unknown_name, effects and curse hidden; curse_chance of them carry a curse. Equipping identifies; a cursed weapon then sticks until a curse-breaker stone breaks it, and the curse becomes its blessing. Potions look only like their colour until identified (identification crystal, or drinking or throwing one: the whole team learns that colour for the run); colours are shuffled per run. drops: chance per source (crate, chest, mimic, gold_crate) and what kind; rarity weights interpolate from floor 1 (first) to floor 10 (second). bag: slots of the backpack.",
-	"schema_version": 1,
+	"_doc": "Items of a run (src/items/inventory.gd, item_rules.gd; design docs/GEGENSTAENDE.de.md). Every hero starts with the common weapon marked start for their class. Weapons are class-bound (class), have a fixed rarity, a sprite (below res://assets/sprites/), base values that replace the class weapon (damage per hit, interval = seconds between attacks, reach and arc for melee, speed/life/splash for shots) and effects: perk effects from balance.json perks (cinder = burns, venom = poison, frost = slows, storm = chain lightning, crit = crit chance, piercer, split, homing, twin, blast, overkill, vampire, leech, execution, mark, first_strike, combustion, plague, permafrost, shatter ...). Found weapons are unidentified: name unknown_name, effects and curse hidden; curse_chance of them carry a curse. Equipping identifies; a cursed weapon then sticks until a curse-breaker stone breaks it, and the curse becomes its blessing. Potions look only like their colour until identified (identification crystal, or drinking or throwing one: the whole team learns that colour for the run); colours are shuffled per run. drops: chance per source (crate, chest, mimic, gold_crate) and what kind; rarity weights interpolate from floor 1 (first) to floor 10 (second). bag: slots of the backpack. ITEM SYSTEM 2 (docs/ITEM-SYSTEM-V2.de.md): gear = armour, ring and amulet (slot), found like weapons (unknown, curse_by_slot chance, the same curses except burning_blade), stats in shares (damage, rate = faster attacks, speed, cooldown: negative = faster) and max_hp in HP (2 = one heart), effects like weapons; stage: every weapon and gear piece has a stage from min to max, rolled around mean (mean_cursed when cursed) with spread, shown once known; values grow by per_stage per stage (per_stage_less for attack pauses); consumables: clone_seal (a clone fights for clone_time s, clone_time_rare for the rare one), upgrade_stone (+1 stage; on a cursed piece fail_chance it loses a stage instead), dice_stone (rerolls the stage), mirror_crystal (reveals every potion in the bag). per_floor: fixed finds on every floor (crystal each floor, stone every stone_every floors); mini guardians drop gear or a weapon of min_rarity.",
+	"schema_version": 2,
 	"bag": 12,
 	"curse_chance": 0.6,
 	"rarities": {
@@ -12,10 +12,10 @@
 	},
 	"rarity_weights": {"common": [60, 14], "uncommon": [26, 24], "rare": [10, 28], "epic": [3, 22], "legendary": [1, 12]},
 	"drops": {
-		"crate": {"chance": [0.14, 0.24], "kinds": {"weapon": 3, "potion": 5, "crystal": 1.5, "stone": 1}},
-		"chest": {"chance": [0.7, 0.9], "kinds": {"weapon": 4, "potion": 3, "crystal": 2, "stone": 1}},
-		"mimic": {"chance": [1.0, 1.0], "kinds": {"weapon": 1}, "min_rarity": "rare"},
-		"gold_crate": {"chance": [1.0, 1.0], "kinds": {"weapon": 1}, "min_rarity": "rare", "extra": ["crystal", "stone"]}
+		"crate": {"chance": [0.14, 0.24], "kinds": {"weapon": 3, "potion": 5, "crystal": 1.5, "stone": 1, "gear": 1.5, "clone_seal": 0.5, "upgrade_stone": 0.6, "dice_stone": 0.4, "mirror_crystal": 0.4}},
+		"chest": {"chance": [0.7, 0.9], "kinds": {"weapon": 4, "potion": 3, "crystal": 2, "stone": 1, "gear": 3, "clone_seal": 0.8, "upgrade_stone": 1, "dice_stone": 0.6, "mirror_crystal": 0.6}},
+		"mimic": {"chance": [1, 1], "kinds": {"weapon": 1, "gear": 1}, "min_rarity": "rare"},
+		"gold_crate": {"chance": [1, 1], "kinds": {"weapon": 1, "gear": 1}, "min_rarity": "rare", "extra": ["crystal", "stone"]}
 	},
 	"gold_crate": {"per_floor": 0.6, "hits": 4},
 	"weapons": [
@@ -97,5 +97,30 @@
 	},
 	"crystal": {"name": "IDENTIFIZIERUNGSKRISTALL", "text": "Zeigt, was ein Gegenstand wirklich ist (auch Flüche).", "sprite": "items/crystal_identify"},
 	"stone": {"name": "FLUCHBRECHERSTEIN", "text": "Bricht einen Fluch; er wird zum Segen.", "sprite": "items/stone_curse"},
-	"throw_range": 320
+	"throw_range": 320,
+	"curse_by_slot": {"weapon": 0.6, "armor": 0.5, "ring": 0.45, "amulet": 0.35},
+	"stage": {"min": -3, "max": 3, "mean": 0.5, "mean_cursed": -1.5, "spread": 1, "per_stage": 0.15, "per_stage_less": 0.08},
+	"slots": {"weapon": "WAFFE", "armor": "RÜSTUNG", "ring": "RING", "amulet": "AMULETT"},
+	"per_floor": {"crystal": 1, "stone_every": 2, "mini_drop": {"kinds": {"gear": 2, "weapon": 1}, "min_rarity": "rare"}},
+	"clone_seal": {"name": "KLONSIEGEL", "text": "Ruft einen Klon, der 20 s mit dir kämpft. Seltene Siegel halten 35 s.", "sprite": "items/seal_clone", "clone_time": 20, "clone_time_rare": 35, "rare_chance": 0.2, "fire_every": 0.6},
+	"upgrade_stone": {"name": "AUFWERTUNGSSTEIN", "text": "+1 Stufe für Waffe oder Ausrüstung. Auf Verfluchtem kann er scheitern: dann sinkt die Stufe.", "sprite": "items/stone_upgrade", "fail_chance": 0.5},
+	"dice_stone": {"name": "WÜRFELSTEIN", "text": "Würfelt die Stufe eines Stücks neu (-3 bis +3).", "sprite": "items/stone_dice"},
+	"mirror_crystal": {"name": "SPIEGELKRISTALL", "text": "Zeigt, was jeder Trank im Rucksack ist.", "sprite": "items/crystal_mirror"},
+	"gear": [
+		{"id": "leather_vest", "slot": "armor", "name": "LEDERWAMS", "unknown_name": "UNBEKANNTE RÜSTUNG", "rarity": "common", "sprite": "items/armor_leather", "stats": {"max_hp": 2}},
+		{"id": "chain_shirt", "slot": "armor", "name": "KETTENHEMD", "unknown_name": "UNBEKANNTE RÜSTUNG", "rarity": "uncommon", "sprite": "items/armor_chain", "stats": {"max_hp": 4, "speed": -0.05}},
+		{"id": "bone_plate", "slot": "armor", "name": "KNOCHENPANZER", "unknown_name": "UNBEKANNTE RÜSTUNG", "rarity": "rare", "sprite": "items/armor_bone", "stats": {"max_hp": 4, "damage": 0.05}},
+		{"id": "shadow_cloak", "slot": "armor", "name": "SCHATTENMANTEL", "unknown_name": "UNBEKANNTE RÜSTUNG", "rarity": "epic", "sprite": "items/armor_shadow", "stats": {"max_hp": 2, "speed": 0.1, "cooldown": -0.1}},
+		{"id": "dragon_scale", "slot": "armor", "name": "DRACHENSCHUPPE", "unknown_name": "UNBEKANNTE RÜSTUNG", "rarity": "legendary", "sprite": "items/armor_dragon", "stats": {"max_hp": 6, "damage": 0.1}},
+		{"id": "ring_haste", "slot": "ring", "name": "RING DER EILE", "unknown_name": "UNBEKANNTER RING", "rarity": "common", "sprite": "items/ring_haste", "stats": {"rate": 0.08}},
+		{"id": "ring_might", "slot": "ring", "name": "RING DER KRAFT", "unknown_name": "UNBEKANNTER RING", "rarity": "uncommon", "sprite": "items/ring_might", "stats": {"damage": 0.1}},
+		{"id": "ring_focus", "slot": "ring", "name": "RING DES FOKUS", "unknown_name": "UNBEKANNTER RING", "rarity": "rare", "sprite": "items/ring_focus", "stats": {"cooldown": -0.12}},
+		{"id": "ring_blood", "slot": "ring", "name": "BLUTRING", "unknown_name": "UNBEKANNTER RING", "rarity": "epic", "sprite": "items/ring_blood", "stats": {"damage": 0.05}, "effects": {"vampire": 6}},
+		{"id": "ring_storm", "slot": "ring", "name": "STURMRING", "unknown_name": "UNBEKANNTER RING", "rarity": "legendary", "sprite": "items/ring_storm", "stats": {"rate": 0.08}, "effects": {"storm": 0.35}},
+		{"id": "amulet_life", "slot": "amulet", "name": "LEBENSAMULETT", "unknown_name": "UNBEKANNTES AMULETT", "rarity": "uncommon", "sprite": "items/amulet_haste", "stats": {"max_hp": 4}},
+		{"id": "amulet_ember", "slot": "amulet", "name": "GLUTAMULETT", "unknown_name": "UNBEKANNTES AMULETT", "rarity": "rare", "sprite": "items/amulet_might", "effects": {"cinder": 1.2}},
+		{"id": "amulet_frost", "slot": "amulet", "name": "FROSTAMULETT", "unknown_name": "UNBEKANNTES AMULETT", "rarity": "rare", "sprite": "items/amulet_focus", "effects": {"frost": 0.25}},
+		{"id": "amulet_wind", "slot": "amulet", "name": "WINDAMULETT", "unknown_name": "UNBEKANNTES AMULETT", "rarity": "epic", "sprite": "items/amulet_blood", "stats": {"speed": 0.12, "rate": 0.05}},
+		{"id": "amulet_star", "slot": "amulet", "name": "STERNENAMULETT", "unknown_name": "UNBEKANNTES AMULETT", "rarity": "legendary", "sprite": "items/amulet_storm", "stats": {"damage": 0.15, "cooldown": -0.1}}
+	]
 }

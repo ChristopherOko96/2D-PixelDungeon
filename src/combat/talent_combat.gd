@@ -177,7 +177,8 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 		"nova":
 			var radius := float(info.radius_m) * meter
 			_area(id, rt, talent, info, Vector2(player.pos), radius, dmg)
-			_event("nova", player.pos, radius, {"fx": str(info.get("fx", "fire"))})
+			# ultimates play longer (the inferno column, absolute zero)
+			_event("nova", player.pos, radius, {"fx": str(info.get("fx", "fire")), "talent": talent, "life": 0.9 if str(info.kind) == "ultimate" else 0.5})
 		"blink":
 			var origin: Vector2 = player.pos
 			var distance := _value(info, "dist_m", rt, talent) * meter
@@ -713,4 +714,6 @@ func _take_id() -> int:
 func _event(kind: String, at: Vector2, radius: float, extra: Dictionary) -> void:
 	var entry := {"id": _take_id(), "kind": kind, "x": at.x, "y": at.y, "r": radius, "life": 0.5}
 	entry.merge(extra, true)
+	# its whole length, so clients can play an animation over it
+	entry.span = float(entry.life)
 	events.append(entry)

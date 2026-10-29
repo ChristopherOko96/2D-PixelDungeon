@@ -5,6 +5,7 @@ extends SceneTree
 ## clearing the room; the item kit; legendary weapons; refused in multiplayer.
 
 const Game = preload("res://src/game.gd")
+const RunTree = preload("res://src/progress/run_tree.gd")
 const ClassPerks = preload("res://src/player/class_perks.gd")
 const ItemRules = preload("res://src/items/item_rules.gd")
 var checked := 0
@@ -78,13 +79,15 @@ func _test_toggles_and_helpers() -> void:
 	var hero: Dictionary = game.players[1]
 	game.HeroClass.apply(hero, "mage", game.balance)
 	game.inventory.start_kit(hero)
+	hero.class_perks = []
 	game.team_progress.team.level = 1
 	game.team_progress.team.exp = 0
 	_cheat("level_target")
 	check(int(game.team_progress.team.level) == 10, "AUF LEVEL 10 reaches level 10 (%d)" % int(game.team_progress.team.level))
-	check(not Array(hero.get("offer", [])).is_empty(), "the level cards wait to be picked")
+	# level-ups give run talent points now (docs/LAUF-DESIGN.de.md), no cards
+	check(RunTree.points_left(ClassPerks.run_tree("mage"), ClassPerks.ranks(hero), int(game.team_progress.team.level)) > 0, "the run talent points wait to be spent")
 	_cheat("auto_cards")
-	check(Array(hero.get("offer", [])).is_empty(), "the cards can be picked automatically")
+	check(Array(hero.get("offer", [])).is_empty() and RunTree.points_left(ClassPerks.run_tree("mage"), ClassPerks.ranks(hero), int(game.team_progress.team.level)) == 0, "the cards and points can be spent automatically")
 	_cheat("god")
 	hero.hp = int(hero.max_hp)
 	hero.invulnerable = 0.0

@@ -150,6 +150,20 @@ static func choose_sub(d: Dictionary, store: Dictionary, class_id: String, sub: 
 # ---------- what a run gets ----------
 
 ## The talents a run starts with: stat shares, card levels and the master skill.
+## The run tree nodes this class's talent trees name (any subclass): they stay
+## locked in the run until a lasting talent opens them (src/progress/run_tree.gd).
+static func gated_cards(d: Dictionary, class_id: String) -> Dictionary:
+	var out := {}
+	if not d.get("classes", {}).has(class_id):
+		return out
+	for sub: Dictionary in (d.classes[class_id].subs as Dictionary).values():
+		for tier: Array in sub.get("tiers", []):
+			for n: Dictionary in tier:
+				if n.has("card"):
+					out[str(n.card)] = true
+	return out
+
+
 static func run_bonus(d: Dictionary, store: Dictionary, class_id: String) -> Dictionary:
 	var out := {"damage": 0.0, "rate": 0.0, "speed": 0.0, "hearts": 0, "cards": {}, "master": "", "sub": "", "mods": []}
 	if not store.classes.has(class_id):

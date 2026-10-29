@@ -66,3 +66,14 @@ Schaden in Halbherzen (2 = ein Herz). Kennungen für dein Feedback, z. B. „L3:
 - Der Strahl des Leerenrufers geht jetzt quer über die Karte, bis er eine Wand trifft (`balance.json` beam `range` 0 = bis zur Wand).
 - Spielerzustände (Gift, Brand, Frost, Verlangsamung, Ausrutschen, Stille) stehen in `src/combat/player_effects.gd`; Eiswände und Knochenkäfige sind zerschlagbare Blöcke (`src/dungeon/chests.gd` `add_block`).
 - Technik: `src/combat/boss_moves.gd` (Host: Auswahl, Warnung, Auslösen, Zonen), `src/vfx/boss_fx.gd` (Zeichnen). Test: `tests/boss_moves_test.gd`. Belege: `production/qa/evidence/boss-moves/` (`scripts/capture_boss_moves.gd`).
+
+## Körperteile der Bosse: kein Sofort-Tod (29.10.2026)
+
+Wunsch: keine kritischen Körperteile, mit denen große Gegner zu schnell sterben.
+Knochenkoloss, Moderkoloss und Frostleiche verlieren nur noch ihren **Arm** (und damit
+ihren Angriff, er wächst nach). Beine, Kopf und Rumpf sind `unbreakable` (`rigs.json`):
+Treffer darauf zählen voll gegen den Lebensbalken, aber nichts bricht ab und nichts
+tötet vorzeitig. Beim Leerenrufer gilt das für den **Kern**; Auge und Klauen brechen
+weiter ab. Kleine Gegner (Skelette) behalten ihren vitalen Schädel.
+Technik: `src/combat/body_parts.gd` (`damage`), `src/rig/rig_library.gd` (Feld
+`unbreakable`). Test: `tests/boss_parts_test.gd`.

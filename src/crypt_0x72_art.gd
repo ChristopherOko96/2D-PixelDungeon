@@ -12,6 +12,7 @@ extends RefCounted
 ## Presentation only: collision and exits come from the layout.
 
 const Decor = preload("res://src/dungeon/decor_catalog.gd")
+const CryptAtmosphere = preload("res://src/vfx/crypt_atmosphere.gd")
 const T := 16
 const SCALE := 2.0
 const TILES := "res://assets/sprites/0x72/"
@@ -24,6 +25,11 @@ const STAIRWELL_UP := preload("res://assets/sprites/fx/stairwell_up.png")
 const VOID := Color("232223")
 const FRAMES := 8
 const FPS := 10.0
+## Size (art px) a torch or candle column covers; drawn at SCALE.
+const PROP_SIZE := Vector2(16, 24)
+## The drawn part of a candle column frame (art px); the rest is empty. It
+## must match PROP_SIZE, or the column is squashed and loses pixel rows.
+const CANDLE_REGION := Rect2(0, 0, 16, 24)
 
 var texture: Texture2D
 ## Top-left corners (world px) of the animated 16x24 props, drawn at 2x.
@@ -74,6 +80,17 @@ func _init() -> void:
 			_fountain_basin[color].append(load(TILES + "wall_fountain_basin_%s_anim_f%d.png" % [color, i]))
 	for name: String in ["wall_fountain_top_1", "doors_frame_left", "doors_frame_right", "doors_frame_top", "doors_leaf_closed", "doors_leaf_open"]:
 		_pieces[name] = load(TILES + name + ".png")
+
+
+## Repaints the flames: wall torches, candle columns and (with `floor_fires`)
+## open floor fires use their frames with `mapping` ("rrggbb" -> Color, see
+## src/vfx/crypt_atmosphere.gd) applied. Same frames, same pixels, new colours.
+func use_flame_colors(mapping: Dictionary, floor_fires: bool) -> void:
+	if mapping.is_empty(): return
+	for i in range(FRAMES):
+		_torch_frames[i] = CryptAtmosphere.flame_texture(PROPS + "wall_torch_f%d.png" % i, mapping)
+		_candle_frames[i] = CryptAtmosphere.flame_texture(PROPS + "candle_column_f%d.png" % i, mapping)
+		if floor_fires: _fire_frames[i] = CryptAtmosphere.flame_texture(DECOR + "fire_f%d.png" % i, mapping)
 
 
 func _tile(name: String) -> Image:
@@ -355,8 +372,10 @@ func draw_room(canvas: CanvasItem) -> void:
 ## Doors are closed (arch) or barred (side exits) while `locked` (combat).
 func draw_props(canvas: CanvasItem, clock: float, locked: bool = false) -> void:
 	var frame := int(floor(clock * FPS))
-	for point: Vector2 in torches: canvas.draw_texture_rect(_torch_frames[frame % FRAMES], Rect2(point, Vector2(16, 24) * SCALE), false)
-	for point: Vector2 in candles: canvas.draw_texture_rect(_candle_frames[(frame + 3) % FRAMES], Rect2(point, Vector2(16, 24) * SCALE), false)
+	for point: Vector2 in torches: canvas.draw_texture_rect(_torch_frames[frame % FRAMES], Rect2(point, PROP_SIZE * SCALE), false)
+	# The candle frames are 16x32 with 8 empty rows below the column: only the
+	# top 16x24 is drawn, so every pixel row stays whole at 2x.
+	for point: Vector2 in candles: canvas.draw_texture_rect_region(_candle_frames[(frame + 3) % FRAMES], Rect2(point, PROP_SIZE * SCALE), CANDLE_REGION)
 	for index in range(flames.size()): canvas.draw_texture_rect(_fire_frames[(frame + index * 3) % FRAMES], Rect2(flames[index], Vector2(T, T) * SCALE), false)
 	for index in range(shafts.size()): draw_shaft(canvas, shafts[index], clock + float(index) * 1.7)
 	var slow := int(floor(clock * 6.0)) % 3

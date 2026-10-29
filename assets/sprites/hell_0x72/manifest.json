@@ -1,0 +1,812 @@
+{
+ "altar": {
+  "h": 81,
+  "kind": "sprite",
+  "src": "drawn altar + extended 0x72 candles + 0x72 skull, hell palette",
+  "w": 111
+ },
+ "banner_1": {
+  "h": 66,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style banner, hell red",
+  "w": 42
+ },
+ "banner_2": {
+  "h": 66,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style banner with trident sigil",
+  "w": 42
+ },
+ "banner_3": {
+  "h": 66,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style banner with skull sigil",
+  "w": 42
+ },
+ "banner_4": {
+  "h": 66,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style black banner, red rune",
+  "w": 42
+ },
+ "banner_5": {
+  "h": 66,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style black banner, red trident",
+  "w": 42
+ },
+ "banner_a": {
+  "h": 78,
+  "kind": "sprite",
+  "src": "drawn: long 0x72-style banner",
+  "w": 42
+ },
+ "banner_b": {
+  "h": 78,
+  "kind": "sprite",
+  "src": "drawn: long black 0x72-style banner",
+  "w": 42
+ },
+ "banner_chain": {
+  "h": 111,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style banner on chain hooks",
+  "w": 90
+ },
+ "bone_a": {
+  "h": 15,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style bone",
+  "w": 33
+ },
+ "bone_b": {
+  "h": 24,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style bone",
+  "w": 24
+ },
+ "bone_c": {
+  "h": 24,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style bone",
+  "w": 24
+ },
+ "bone_d": {
+  "h": 36,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style bone",
+  "w": 12
+ },
+ "bone_e": {
+  "h": 15,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style bone",
+  "w": 33
+ },
+ "bone_f": {
+  "h": 24,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style bone",
+  "w": 24
+ },
+ "bone_g": {
+  "h": 24,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style bone",
+  "w": 24
+ },
+ "bones_scatter": {
+  "h": 42,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style bones",
+  "w": 60
+ },
+ "bones_t": {
+  "h": 39,
+  "kind": "sprite",
+  "src": "drawn bones + 0x72 skull",
+  "w": 51
+ },
+ "boulders": {
+  "h": 39,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style boulders",
+  "w": 63
+ },
+ "brazier_bowl": {
+  "h": 84,
+  "kind": "sprite",
+  "src": "drawn: fire bowl on a foot, drawn 0x72-style hell flame",
+  "w": 42
+ },
+ "brazier_demon": {
+  "h": 78,
+  "kind": "sprite",
+  "src": "drawn: horned demon fire bowl, extended 0x72 flame",
+  "w": 54
+ },
+ "brazier_floor": {
+  "h": 54,
+  "kind": "sprite",
+  "src": "drawn: floor fire bowl, drawn 0x72-style hell flame",
+  "w": 42
+ },
+ "brazier_low": {
+  "h": 42,
+  "kind": "sprite",
+  "src": "drawn: low fire bowl, extended 0x72 flame",
+  "w": 36
+ },
+ "brazier_low_b": {
+  "h": 54,
+  "kind": "sprite",
+  "src": "drawn: low fire bowl with coals, drawn 0x72-style hell flame",
+  "w": 36
+ },
+ "brazier_pillar": {
+  "h": 138,
+  "kind": "sprite",
+  "src": "drawn: fire bowl on a pillar, drawn 0x72-style hell flame",
+  "w": 42
+ },
+ "brazier_rune": {
+  "h": 120,
+  "kind": "sprite",
+  "src": "drawn: fire bowl on a rune pillar, drawn 0x72-style hell flame",
+  "w": 42
+ },
+ "bridge_h": {
+  "h": 48,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style plank bridge (vertical run)",
+  "w": 213
+ },
+ "bridge_v": {
+  "h": 213,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style plank bridge (horizontal run)",
+  "w": 48
+ },
+ "cage_hang": {
+  "h": 102,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style hanging cage with 0x72 skull",
+  "w": 42
+ },
+ "cage_small": {
+  "h": 60,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style standing cage with 0x72 skull",
+  "w": 42
+ },
+ "chain_a": {
+  "h": 90,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style iron chain",
+  "w": 15
+ },
+ "chain_b": {
+  "h": 72,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style iron chain",
+  "w": 15
+ },
+ "chain_hang": {
+  "h": 90,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style iron chain",
+  "w": 15
+ },
+ "chain_hook": {
+  "h": 99,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style chain with hook",
+  "w": 21
+ },
+ "chain_long": {
+  "h": 108,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style iron chain",
+  "w": 15
+ },
+ "chain_long_b": {
+  "h": 90,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style iron chain",
+  "w": 15
+ },
+ "chain_swag": {
+  "h": 42,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style sagging chain",
+  "w": 72
+ },
+ "chain_swag_b": {
+  "h": 36,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style sagging chain",
+  "w": 54
+ },
+ "chest_closed": {
+  "h": 42,
+  "kind": "sprite",
+  "src": "0x72 chest, hell wood",
+  "w": 48
+ },
+ "chest_empty": {
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 chest (open, empty), hell wood",
+  "w": 48
+ },
+ "chest_gold": {
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 chest (open, full), hell wood",
+  "w": 48
+ },
+ "chest_open": {
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 chest (open, full), hell wood",
+  "w": 48
+ },
+ "coal": {
+  "h": 27,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style coal with embers",
+  "w": 51
+ },
+ "coal_skulls": {
+  "h": 48,
+  "kind": "sprite",
+  "src": "drawn coal + 0x72 skull, hell palette",
+  "w": 51
+ },
+ "corner_cap": {
+  "h": 76,
+  "kind": "design",
+  "src": "drawn: 0x72-style capstone with red stud",
+  "w": 76
+ },
+ "demon_head": {
+  "h": 30,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style demon face in the floor",
+  "w": 42
+ },
+ "demon_lintel": {
+  "h": 72,
+  "kind": "sprite",
+  "src": "0x72 wall cap + drawn horned demon skull",
+  "w": 192
+ },
+ "demon_plate": {
+  "h": 87,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style demon seal stele",
+  "w": 87
+ },
+ "door_stairs": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "extended 0x72 arch + drawn 0x72-style stairs, hell palette",
+  "w": 96
+ },
+ "door_stairs_small": {
+  "h": 84,
+  "kind": "sprite",
+  "src": "extended 0x72 arch + drawn 0x72-style stairs, hell palette",
+  "w": 72
+ },
+ "fire_orb": {
+  "h": 39,
+  "kind": "sprite",
+  "src": "extended 0x72 flame, hell fire",
+  "w": 21
+ },
+ "fire_plate": {
+  "h": 66,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style fire grate plate",
+  "w": 66
+ },
+ "floor_00": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor_1..8 (+ extended cracks), hell palette",
+  "w": 96
+ },
+ "floor_01": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor_1..8 (+ extended cracks), hell palette",
+  "w": 96
+ },
+ "floor_02": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor_1..8, hell palette, drawn glowing cracks",
+  "w": 96
+ },
+ "floor_03": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor_1..8, hell palette, drawn glowing cracks",
+  "w": 96
+ },
+ "floor_04": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor_1..8 (+ extended cracks), hell palette",
+  "w": 96
+ },
+ "floor_05": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor_1..8 (+ extended cracks), hell palette",
+  "w": 96
+ },
+ "floor_06": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor_1..8 (+ extended cracks), hell palette",
+  "w": 96
+ },
+ "floor_07": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor_1..8, hell palette, drawn glowing cracks",
+  "w": 96
+ },
+ "floor_08": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor_1..8, hell palette, drawn glowing cracks",
+  "w": 96
+ },
+ "floor_09": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor_1..8, hell palette, drawn glowing cracks",
+  "w": 96
+ },
+ "floor_10": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor_1..8 (+ extended cracks), hell palette",
+  "w": 96
+ },
+ "floor_11": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor_1..8 (+ extended cracks), hell palette",
+  "w": 96
+ },
+ "gate_side": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style iron portcullis (half)",
+  "w": 96
+ },
+ "grate": {
+  "h": 63,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style floor grate",
+  "w": 63
+ },
+ "grate_a": {
+  "h": 45,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style floor grate",
+  "w": 45
+ },
+ "grate_b": {
+  "h": 45,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style glowing grate",
+  "w": 54
+ },
+ "hanging_brazier": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "drawn: hanging fire basket, extended 0x72 flame",
+  "w": 36
+ },
+ "heart": {
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 ui_heart_full, hell red",
+  "w": 52
+ },
+ "icon_chest": {
+  "h": 42,
+  "kind": "sprite",
+  "src": "0x72 chest, hell wood",
+  "w": 48
+ },
+ "icon_demon": {
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 big_demon head, hell palette",
+  "w": 66
+ },
+ "icon_demon_big": {
+  "h": 64,
+  "kind": "sprite",
+  "src": "0x72 big_demon head, hell palette",
+  "w": 88
+ },
+ "icon_door": {
+  "h": 84,
+  "kind": "sprite",
+  "src": "extended 0x72 arch + drawn 0x72-style stairs, hell palette",
+  "w": 72
+ },
+ "icon_scroll": {
+  "h": 40,
+  "kind": "sprite",
+  "src": "extended 0x72 sign, hell wood",
+  "w": 56
+ },
+ "icon_swords": {
+  "h": 63,
+  "kind": "sprite",
+  "src": "0x72 weapon_regular_sword x2, hell steel",
+  "w": 66
+ },
+ "jamb_a": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "0x72 doors_frame_left, hell palette",
+  "w": 48
+ },
+ "jamb_b": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "0x72 doors_frame_right, hell palette",
+  "w": 48
+ },
+ "key": {
+  "h": 36,
+  "kind": "sprite",
+  "src": "extended 0x72 key, hell gold",
+  "w": 18
+ },
+ "lava_00": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "drawn: tileable 32 px lava in the hell lava ramp",
+  "w": 96
+ },
+ "lava_01": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "drawn: tileable 32 px lava in the hell lava ramp",
+  "w": 96
+ },
+ "lava_edge_top": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "drawn: 0x72-style brick lip with glowing crust",
+  "w": 96
+ },
+ "obelisk": {
+  "h": 87,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style obsidian obelisk with runes",
+  "w": 42
+ },
+ "pit": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "0x72 hole, widened to a cell, hell palette",
+  "w": 96
+ },
+ "portal": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "extended 0x72 arch with a drawn fire swirl",
+  "w": 96
+ },
+ "portal_dark": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "extended 0x72 arch with a dark swirl",
+  "w": 96
+ },
+ "portcullis": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style iron portcullis",
+  "w": 192
+ },
+ "rocks_a": {
+  "h": 39,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style rocks",
+  "w": 57
+ },
+ "rocks_b": {
+  "h": 30,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style rocks",
+  "w": 45
+ },
+ "rocks_dark": {
+  "h": 33,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style dark rocks",
+  "w": 42
+ },
+ "rocks_lava": {
+  "h": 33,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style rocks with glowing cracks",
+  "w": 48
+ },
+ "rubble": {
+  "h": 39,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style rubble",
+  "w": 60
+ },
+ "rune_big": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style rune circle",
+  "w": 96
+ },
+ "rune_gem": {
+  "h": 35,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style red runestone",
+  "w": 25
+ },
+ "rune_pillar_a": {
+  "h": 105,
+  "kind": "sprite",
+  "src": "0x72 column, hell palette, glowing rune",
+  "w": 48
+ },
+ "rune_pillar_b": {
+  "h": 105,
+  "kind": "sprite",
+  "src": "0x72 column, hell palette, glowing rune",
+  "w": 48
+ },
+ "rune_pillar_c": {
+  "h": 105,
+  "kind": "sprite",
+  "src": "0x72 column, hell palette, glowing rune",
+  "w": 48
+ },
+ "rune_pillar_d": {
+  "h": 105,
+  "kind": "sprite",
+  "src": "0x72 column, hell palette, glowing rune",
+  "w": 48
+ },
+ "rune_plate": {
+  "h": 66,
+  "kind": "sprite",
+  "src": "0x72 button_red_up in a drawn stone plate, hell palette",
+  "w": 66
+ },
+ "rune_small": {
+  "h": 72,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style rune circle",
+  "w": 72
+ },
+ "shackle_a": {
+  "h": 69,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style shackle on a chain",
+  "w": 18
+ },
+ "shackle_b": {
+  "h": 87,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style shackle on a chain",
+  "w": 18
+ },
+ "shackle_skull": {
+  "h": 93,
+  "kind": "sprite",
+  "src": "drawn shackle + 0x72 skull",
+  "w": 27
+ },
+ "skull_heap": {
+  "h": 84,
+  "kind": "sprite",
+  "src": "0x72 skulls heaped high (secret wall marker), hell palette",
+  "w": 111
+ },
+ "skull_obelisk": {
+  "h": 129,
+  "kind": "sprite",
+  "src": "0x72 column + 0x72 skull, hell palette",
+  "w": 48
+ },
+ "skull_pile": {
+  "h": 42,
+  "kind": "sprite",
+  "src": "0x72 skull pile, hell palette",
+  "w": 69
+ },
+ "skull_pile_t": {
+  "h": 42,
+  "kind": "sprite",
+  "src": "0x72 skull pile, hell palette",
+  "w": 48
+ },
+ "spike_block": {
+  "h": 54,
+  "kind": "sprite",
+  "src": "0x72 floor_spikes on a drawn stone block, hell palette",
+  "w": 72
+ },
+ "spike_trap": {
+  "h": 45,
+  "kind": "sprite",
+  "src": "0x72 floor_spikes_anim_f3, hell iron",
+  "w": 96
+ },
+ "spike_trap_b": {
+  "h": 45,
+  "kind": "sprite",
+  "src": "0x72 floor_spikes_anim_f2, hell iron",
+  "w": 96
+ },
+ "spire_big": {
+  "h": 102,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style obsidian spire",
+  "w": 48
+ },
+ "spire_big_b": {
+  "h": 90,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style obsidian spire",
+  "w": 42
+ },
+ "spire_big_t": {
+  "h": 105,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style spire group",
+  "w": 72
+ },
+ "spire_mid": {
+  "h": 72,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style obsidian spire",
+  "w": 36
+ },
+ "spire_small": {
+  "h": 51,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style obsidian spire",
+  "w": 30
+ },
+ "spire_t": {
+  "h": 69,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style spire pair",
+  "w": 48
+ },
+ "spire_tiny": {
+  "h": 36,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style obsidian spire",
+  "w": 24
+ },
+ "spires_lava": {
+  "h": 69,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style spires glowing at the base",
+  "w": 51
+ },
+ "spires_t": {
+  "h": 57,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style spire cluster",
+  "w": 57
+ },
+ "torch_a": {
+  "h": 69,
+  "kind": "sprite",
+  "src": "extended 0x72 torch, hell fire",
+  "w": 24
+ },
+ "torch_b": {
+  "h": 69,
+  "kind": "sprite",
+  "src": "extended 0x72 torch, hell fire",
+  "w": 24
+ },
+ "torch_c": {
+  "h": 75,
+  "kind": "sprite",
+  "src": "extended 0x72 torch, hell fire",
+  "w": 24
+ },
+ "vent": {
+  "h": 45,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style vent with embers",
+  "w": 45
+ },
+ "wall_brazier": {
+  "h": 84,
+  "kind": "sprite",
+  "src": "drawn: wall fire bowl, extended 0x72 flame",
+  "w": 36
+ },
+ "wall_h": {
+  "h": 74,
+  "kind": "sprite",
+  "src": "0x72 wall_top_mid + wall_mid, hell palette, glowing base mortar",
+  "w": 192
+ },
+ "wall_h_glowpost": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "0x72 column_wall, hell palette, glowing slit",
+  "w": 48
+ },
+ "wall_post_slit": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "0x72 column_wall, hell palette",
+  "w": 48
+ },
+ "wall_skull_a": {
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 wall_hole + skull, hell palette",
+  "w": 48
+ },
+ "wall_skull_b": {
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 wall_hole + skull, hell palette",
+  "w": 48
+ },
+ "wall_top": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "0x72 wall top (flat), hell palette",
+  "w": 96
+ },
+ "wall_torch_block": {
+  "h": 93,
+  "kind": "sprite",
+  "src": "extended 0x72 torch on a drawn stone block",
+  "w": 36
+ },
+ "wall_torch_hook": {
+  "h": 75,
+  "kind": "sprite",
+  "src": "extended 0x72 torch, hell fire",
+  "w": 24
+ },
+ "wall_v": {
+  "h": 48,
+  "kind": "design",
+  "src": "0x72 wall_edge_mid_right strip on a dark wall top, hell palette",
+  "w": 62
+ },
+ "wall_v_glow": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "drawn: lava slit in a 0x72 side wall",
+  "w": 62
+ },
+ "wall_v_glow_b": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "drawn: rune plate in a 0x72 side wall",
+  "w": 62
+ }
+}

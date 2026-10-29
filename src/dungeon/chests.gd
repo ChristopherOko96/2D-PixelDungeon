@@ -29,6 +29,10 @@ var _mimic_rng := RandomNumberGenerator.new()
 const BREAKABLE := ["crate", "ice_block", "bone_cage", "gold_crate"]
 
 
+## The floor whose fixed finds (inventory.floor_finds) already came out of a chest.
+var _fixed_floor := -1
+
+
 func bind(owner: Node) -> void:
 	game = owner
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(DATA_PATH)) if FileAccess.file_exists(DATA_PATH) else null
@@ -46,6 +50,7 @@ func _value(key: String, fallback: float) -> float:
 func place_floor(layouts: Array, seed_value: int) -> void:
 	chests.clear()
 	loot.clear()
+	_fixed_floor = -1
 	_rng.seed = seed_value + 90001
 	_mimic_rng.seed = seed_value + 90717
 	var rooms: Array = []
@@ -379,6 +384,12 @@ func _open(chest: Dictionary, owner: int) -> void:
 	chest.opened_by = owner
 	_drop(_roll_drops(owner, 1), Vector2(chest.pos) + Vector2(0, 34))
 	_drop_items("chest", owner, Vector2(chest.pos) + Vector2(30, 30))
+	# the first chest of a floor holds the floor's fixed finds (a crystal; every second floor a stone)
+	var floor_number := int(game.get("floor_index")) if game.get("floor_index") != null else 1
+	if game.get("inventory") != null and _fixed_floor != floor_number:
+		_fixed_floor = floor_number
+		var finds: Array = game.inventory.floor_finds(floor_number)
+		for index in range(finds.size()): drop_item(finds[index], Vector2(chest.pos) + Vector2(-30.0 - 26.0 * index, 30))
 	game.add_fx("chest_open", chest.pos, 24.0)
 	print("CHEST_OPENED room=%s peer=%d" % [_room_id(), owner])
 

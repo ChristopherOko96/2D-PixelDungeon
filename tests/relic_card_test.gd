@@ -11,6 +11,7 @@ extends SceneTree
 const FrostScene = preload("res://src/hell/frost_dungeon.tscn")
 const RelicKit = preload("res://src/hell/relic_kit.gd")
 const CardKit = preload("res://src/hell/card_kit.gd")
+const RunTree = preload("res://src/progress/run_tree.gd")
 const HeroKit = preload("res://src/hell/hero_kit.gd")
 const FrostHud = preload("res://src/hell/frost_hud.gd")
 var checked := 0
@@ -180,13 +181,15 @@ func test_hammer() -> void:
 func test_cards() -> void:
 	var game := await _new("mage")
 	HeroKit.gain(game, HeroKit.need(game.theme.leveling, 1))
-	var offer: Array = game.state.offer
-	check(offer.size() == 3, "a level-up offers three cards")
+	# a level-up gives a run talent point instead of three cards (docs/LAUF-DESIGN.de.md)
+	check((game.state.offer as Array).is_empty() and RunTree.points_left(CardKit.tree(game), CardKit.ranks(game), int(game.state.level)) == 1, "a level-up gives a talent point, no cards")
 	var sets_ok := true
-	for c: Dictionary in offer:
-		if not (str(c.set) in ["all", "mage"]):
-			sets_ok = false
-	check(sets_ok, "the mage only sees shared and mage cards")
+	for b: Dictionary in CardKit.tree(game).branches:
+		for n: Dictionary in b.nodes:
+			var found: Array = CardKit._all(game).filter(func(c: Dictionary) -> bool: return str(c.id) == str(n.id))
+			if found.is_empty() or not (str(found[0].set) in ["all", "mage"]):
+				sets_ok = false
+	check(sets_ok, "the mage's tree holds only shared and mage cards")
 	var hearts: int = game.state.max_hp
 	game.state.offer = [CardKit._all(game).filter(func(c: Dictionary) -> bool: return c.id == "vigor")[0]]
 	CardKit.choose(game, 0)

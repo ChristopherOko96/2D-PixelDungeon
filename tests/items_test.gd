@@ -157,7 +157,8 @@ func _test_curse_sticks_until_broken() -> void:
 		inv.add(hero, inv.make_weapon("axe", false, str(pair[0])))
 		_act("inv_equip", 0)
 		var mark: Variant = hero.get(str(pair[1]), null)
-		var marked: bool = (mark is bool and mark) or (mark is int and int(mark) != 0)
+		# a sealed skill may be skill 0: any number marks it
+		var marked: bool = (mark is bool and mark) or (mark is int and (int(mark) != 0 or str(pair[0]) == "sealed"))
 		check(marked, "the %s curse marks the hero (%s)" % [pair[0], str(mark)])
 	hero = _fresh("swordsman")
 	var speed := float(hero.speed)
@@ -238,7 +239,8 @@ func _test_curses_over_time() -> void:
 	inv.add(hero, inv.make_weapon("axe", false, "thorns"))
 	_act("inv_equip", 0)
 	game.boss_moves.reset()
-	hero.curse_timer = 0.05
+	# every equipped piece keeps its own curse timer (item system 2)
+	hero.curse_timers = {str(hero.inventory.weapon.uid): 0.05}
 	inv.step(0.1)
 	check(game.boss_moves.zones.any(func(zone: Dictionary) -> bool: return str(zone.kind) == "strike" and Vector2(zone.pos).distance_to(hero.pos) < 4.0), "the thorn curse raises spikes under its bearer")
 	hero = _fresh("swordsman")
@@ -268,10 +270,10 @@ func _test_drops_and_pickup() -> void:
 	var rolled := {"rare_plus": 0, "count": 0}
 	for index in range(40):
 		for item: Dictionary in inv.roll("mimic", 3, "archer"):
-			if str(item.type) == "weapon":
+			if str(item.type) in ["weapon", "gear"]:
 				rolled.count += 1
-				if str(ItemRules.weapon(str(item.id)).rarity) in ["rare", "epic", "legendary"]: rolled.rare_plus += 1
-	check(rolled.count == 40 and rolled.rare_plus == 40, "a Mimik always drops a rare or better weapon")
+				if str(ItemRules.spec_of(item).rarity) in ["rare", "epic", "legendary"]: rolled.rare_plus += 1
+	check(rolled.count == 40 and rolled.rare_plus == 40, "a Mimik always drops a rare or better weapon or piece of gear")
 	var gold: Array = inv.roll("gold_crate", 5, "archer")
 	check(gold.size() == 3 and gold.any(func(item: Dictionary) -> bool: return str(item.type) == "crystal") and gold.any(func(item: Dictionary) -> bool: return str(item.type) == "stone"), "a gold crate gives a weapon, a crystal and a stone")
 	var legendary := [0, 0]

@@ -6,6 +6,7 @@ extends RefCounted
 ## upgrades. Owned class cards live in `player.class_perks` (one id per stack).
 
 const DATA_PATH := "res://assets/data/hero_skills.json"
+const RunTree = preload("res://src/progress/run_tree.gd")
 static var _data: Dictionary = {}
 
 
@@ -37,6 +38,42 @@ static func skill_at(class_id: String, index: int) -> Dictionary:
 ## How many of a card id the player owns.
 static func rank(player: Dictionary, id: String) -> int:
 	return Array(player.get("class_perks", [])).count(id)
+
+
+## The class's run talent tree (src/progress/run_tree.gd): a branch per skill
+## with its upgrades (open from the skill's level), then the passives.
+static func run_tree(class_id: String, meta: Dictionary = {}) -> Dictionary:
+	var branches: Array = []
+	for skill: Dictionary in skills(class_id):
+		var nodes: Array = []
+		for entry: Dictionary in skill.get("upgrades", []):
+			nodes.append({"id": str(entry.id), "name": str(entry.name), "text": str(entry.get("description", "")), "max": int(entry.get("max", 1))})
+		branches.append({"key": str(skill.id), "title": str(skill.name), "unlock": int(skill.get("unlock", 1)), "nodes": nodes})
+	var passives: Array = []
+	for entry: Dictionary in class_data(class_id).get("passives", []):
+		passives.append({"id": str(entry.id), "name": str(entry.name), "text": str(entry.get("description", "")), "max": int(entry.get("max", 1))})
+	branches.append({"key": "passive", "title": "PASSIV", "unlock": 1, "nodes": passives})
+	# the hero's lasting talents (player.meta: gated ids, unlocked ranks) open nodes
+	if not meta.is_empty():
+		branches = RunTree.gate(branches, meta.get("gated", {}), meta.get("unlocked", {}))
+	return RunTree.build(branches)
+
+
+## The hero's ranks in the run tree: how often each class card was taken.
+static func ranks(player: Dictionary) -> Dictionary:
+	var out := {}
+	for id: Variant in player.get("class_perks", []):
+		out[str(id)] = int(out.get(str(id), 0)) + 1
+	return out
+
+
+## The run tree's node ids in drawing order (the network sends an index).
+static func run_tree_ids(class_id: String) -> Array:
+	var ids: Array = []
+	for b: Dictionary in run_tree(class_id).branches:
+		for n: Dictionary in b.nodes:
+			ids.append(str(n.id))
+	return ids
 
 
 ## True when the team level has unlocked skill slot `index`.
@@ -127,6 +164,13 @@ static func grant(player: Dictionary, id: String) -> bool:
 ## Applies owned passives on top of the perk-derived stats. Called at the end of
 ## PerkRules.rebuild, so every rebuild yields the same numbers.
 static func apply(player: Dictionary) -> void:
+	# lasting talents of the main menu (damage, attack rate, speed, hearts) first
+	var bonus: Dictionary = player.get("meta", {}).get("bonus", {})
+	if not bonus.is_empty():
+		player.damage = float(player.damage) * (1.0 + float(bonus.get("damage", 0.0)))
+		player.shot_interval = float(player.shot_interval) * (1.0 - float(bonus.get("rate", 0.0)))
+		player.speed = float(player.speed) * (1.0 + float(bonus.get("speed", 0.0)))
+		player.max_hp = int(player.max_hp) + int(bonus.get("hearts", 0))
 	var class_id := str(player.get("class_id", ""))
 	if class_id.is_empty() or Array(player.get("class_perks", [])).is_empty(): return
 	var build: Dictionary = player.get("build", {})

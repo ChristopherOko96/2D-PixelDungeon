@@ -87,6 +87,10 @@ static func press(g: Node, key: String) -> void:
 		if not unlocked(g, s):
 			g._toast("%s ab Level %d." % [s.name, int(s.unlock)])
 			return
+		# a curse on an equipped piece can seal a skill (src/hero/story_items.gd)
+		if g.get("story_items") != null and g.story_items.sealed(key):
+			g._toast("%s ist versiegelt. Ein Fluchbrecherstein hilft." % s.name)
+			return
 		if float(g.state.skill_cd.get(key, 0.0)) > 0.0:
 			g._sound("no_cooldown")
 			return
@@ -99,7 +103,7 @@ static func press(g: Node, key: String) -> void:
 			g._sound_raw(str(s.sound))
 			return
 		_cast(g, s)
-		g.state.skill_cd[key] = float(s.cooldown)
+		g.state.skill_cd[key] = float(s.cooldown) * (g.story_items.cooldown_scale() if g.get("story_items") != null else 1.0)
 		g._sound_raw(str(s.sound))
 
 
@@ -116,7 +120,7 @@ static func release(g: Node, key: String) -> void:
 		_hero_shot(g, _aim(g) * minf(float(s.speed), 2000.0), float(s.range) / minf(float(s.speed), 2000.0), {"kind": "arrow", "pierce": true, "mult": dmg, "big": 1.4})
 		g._sound_raw("shoot_arrow")
 	g.hold = {}
-	g.state.skill_cd[key] = float(s.cooldown)
+	g.state.skill_cd[key] = float(s.cooldown) * (g.story_items.cooldown_scale() if g.get("story_items") != null else 1.0)
 
 
 static func _skill(g: Node, id: String) -> Dictionary:
@@ -375,15 +379,30 @@ static func _update_hold(g: Node, dt: float) -> void:
 		h.tick = float(s.tick)
 		var me := Vector2(g.player.x, g.player.y - 40)
 		var dir := Vector2(cos(float(h.angle)), sin(float(h.angle)))
+		# the beam stops at the first wall, as it is drawn
+		var reach := beam_end(g, me, dir, float(s.length)).distance_to(me)
 		for m: Dictionary in g.mobs:
 			var p: Vector2 = m.p - Vector2(0, m.cy) - me
 			var along := p.dot(dir)
-			if m.spawn <= 0.0 and along > 0.0 and along < float(s.length) and absf(p.cross(dir)) < float(s.width) / 2.0 + m.r:
+			if m.spawn <= 0.0 and along > 0.0 and along < reach and absf(p.cross(dir)) < float(s.width) / 2.0 + m.r:
 				g._damage_mob(m, Vector2.ZERO, float(s.dps) * float(s.tick))
 				slow_mob(g, m, float(s.slow), float(s.slow_decay))
 				burn_mob(m, float(s.ignite_dps), float(s.ignite_time))
 	if float(h.t) >= float(h.get("duration", s.duration)):
 		release(g, str(h.key))
+
+
+## Where the photon beam from `from` along `dir` ends: after `length` px or at the first wall.
+static func beam_end(g: Node, from: Vector2, dir: Vector2, length: float) -> Vector2:
+	var C: float = g.C
+	var travelled := 0.0
+	while travelled < length:
+		var next := minf(length, travelled + 12.0)
+		var at := from + dir * next
+		if g._cell_blocked(int(floor(at.x / C)), int(floor(at.y / C)), false):
+			break
+		travelled = next
+	return from + dir * travelled
 
 
 ## Speed factor while holding a skill (ballista and beam slow the hero).

@@ -46,6 +46,12 @@ func set_layout(layout: Dictionary) -> void:
 	_walkable = walkable_cells(layout)
 
 
+## Sets the floor cells directly (Vector2i, 32 px -> true), for worlds without a
+## crypt room layout (the story worlds, src/hero/story_skill_fx.gd).
+func set_walkable(cells: Dictionary) -> void:
+	_walkable = cells
+
+
 ## Walkable floor cells (Vector2i, 32 px) of a room: floor tiles that are not
 ## solid and hold no breakable crate or chest. Empty for rooms without painted
 ## floors (nothing is clipped there).
@@ -100,6 +106,20 @@ static func clipped_disc(canvas: CanvasItem, point: Vector2, radius: float, limi
 ## True when the sheet exists (missing files fall back to the old drawings).
 func has(name: String) -> bool:
 	return _sheets.has(name)
+
+
+## Frame size of a sheet in art px (Vector2.ZERO when missing).
+func frame_size(name: String) -> Vector2:
+	return _sheets[name].size if _sheets.has(name) else Vector2.ZERO
+
+
+## Draws the frame of a one-shot sheet at `progress` (0 = first, 1 = last
+## frame) without keeping state, for effects whose age comes from a snapshot.
+func draw_at(canvas: CanvasItem, name: String, point: Vector2, rotation: float, scale: float, progress: float, tint: Color = Color.WHITE) -> void:
+	if not _sheets.has(name): return
+	var sheet: Dictionary = _sheets[name]
+	var frame := clampi(int(progress * float(sheet.frames)), 0, int(sheet.frames) - 1)
+	_frame(canvas, sheet, frame, point, rotation, scale, tint, PackedVector2Array())
 
 
 ## Starts a one-shot animation. `scale` multiplies the 2x pixel size; `clip`

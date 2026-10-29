@@ -113,12 +113,17 @@ func shoot(id: int, aim: Vector2) -> void:
 ## the weapon's reach and arc in front of the player, never through walls. Uses
 ## the same damage modifiers as shots and the same hit path, so crits, elements
 ## and on-hit perks also work for melee. Projectile-only perks are not offered
-## to melee players (PerkRules.offer).
-func melee(id: int, aim: Vector2) -> void:
+## to melee players (PerkRules.offer). The hero steps into the swing
+## (HeroSkills.lunge); `mirrored` is Rage's second swing, coming back the other way.
+func melee(id: int, aim: Vector2, mirrored: bool = false) -> void:
 	if not _game.players.has(id): return
 	var player: Dictionary = _game.players[id]
 	var direction: Vector2 = aim.normalized()
 	if direction.is_zero_approx(): direction = Vector2.RIGHT
+	var skills: Variant = _game.get("hero_skills")
+	var rage: bool = skills != null and skills.rage_active(player)
+	if skills != null and skills.lunge(player) > 0.0:
+		player.pos = Dungeon.move_actor(player.pos, direction * skills.lunge(player), float(_game.balance.player.radius), _game.current_layout)
 	var damage: float = float(player.damage)
 	if "player_effects" in _game: damage *= _game.player_effects.damage_scale(player)
 	if _b(player,"heavy") > 0: damage *= 1.0+_b(player,"heavy")
@@ -138,6 +143,7 @@ func melee(id: int, aim: Vector2) -> void:
 	player.swings = int(player.get("swings",0))+1
 	player.swing_angle = direction.angle()
 	player.swing_arc = arc
+	player.swing_dir = -1 if mirrored else 1
 	var targets: Array[Dictionary] = []
 	for enemy: Dictionary in _game.enemies:
 		if float(enemy.hp) <= 0: continue
@@ -156,6 +162,7 @@ func melee(id: int, aim: Vector2) -> void:
 		# Body parts: the blade meets the part on the side facing the swordsman.
 		_pending_part(enemy,Vector2(enemy.pos)-push*float(enemy.radius)*0.8)
 		hit({"owner":id,"damage":damage,"velocity":push,"primary":true,"critical":critical,"distance":0.0,"pos":Vector2(enemy.pos),"melee":true},enemy)
+		if rage: skills.rage_hit(id, player, enemy, push)
 
 
 ## Area and melee damage choose the rigged enemy's part nearest to `point`.
