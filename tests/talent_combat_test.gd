@@ -2,7 +2,8 @@ extends SceneTree
 ## Every one of the 54 talents does something in a real game (src/combat/talent_combat.gd):
 ## each active and ultimate is cast at test dummies and its effect checked by
 ## type; each passive is checked against the same situation without it.
-## Also: resources, cooldowns, the global cooldown, bosses immune to freeze.
+## Also: resources, cooldowns, the global cooldown, bosses immune to freeze,
+## and the ultimate stages (talents.json "stages") changing the ability.
 
 const Game = preload("res://src/game.gd")
 var checked := 0
@@ -45,6 +46,7 @@ func _run() -> void:
 	for talent: Dictionary in d.talents.values(): _test_talent(talent)
 	_test_resources_and_cooldowns()
 	_test_bosses_resist_freeze()
+	_test_ultimate_stages()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.progress.save_path))
 	print("TALENT_COMBAT checked=%d failures=%d" % [checked, failures.size()])
 	game.queue_free()
@@ -343,3 +345,53 @@ func _test_bosses_resist_freeze() -> void:
 	_cast(d.talents.guard_1)
 	check(not big.has("talent_taunt"), "bosses ignore taunts")
 	check(guard.res >= 0.0, "taunt test ran")
+
+
+## The ultimate's bought stages change it in the fight (Rules.staged).
+func _test_ultimate_stages() -> void:
+	# Inferno Stufe 3: a second blast after 1.5 s and burning ground
+	var rt := _setup(d.talents.fire_6)
+	rt.soul_tier = 2
+	var near := _dummy(Vector2(340, 240))
+	_cast(d.talents.fire_6)
+	check(tc.zones.size() == 1 and str(tc.zones[0].status) == "burn", "Inferno Stufe 3 leaves burning ground")
+	check((rt.after as Array).size() == 1, "Inferno Stufe 3 queues its second blast")
+	var before := float(near.hp)
+	var novas: int = tc.events.filter(func(e: Dictionary) -> bool: return str(e.kind) == "nova").size()
+	_tick(1.6)
+	check((rt.after as Array).is_empty() and float(near.hp) < before, "the second blast goes off and hits")
+	check(tc.events.filter(func(e: Dictionary) -> bool: return str(e.kind) == "nova").size() > novas or novas > 0, "the second blast is shown")
+	# Inferno Stufe 1: no second blast, no ground
+	rt = _setup(d.talents.fire_6)
+	_dummy(Vector2(340, 240))
+	_cast(d.talents.fire_6)
+	check(tc.zones.is_empty() and (rt.after as Array).is_empty(), "Inferno Stufe 1 is the plain blast")
+	# Letzter Pfeil Stufe 3: three arrows
+	rt = _setup(d.talents.sniper_6)
+	rt.soul_tier = 2
+	_dummy(Vector2(420, 240))
+	_cast(d.talents.sniper_6)
+	check(game.bullets.filter(func(b: Dictionary) -> bool: return str(b.get("talent", "")) == "sniper_6").size() == 3, "Letzter Pfeil Stufe 3 fires three arrows")
+	# Zeitbruch Stufe 3: the other talents reload, a wave closes the buff
+	rt = _setup(d.talents.arcane_6)
+	rt.soul_tier = 2
+	rt.cds.arcane_1 = 9.0
+	var dummy := _dummy(Vector2(330, 240))
+	_cast(d.talents.arcane_6)
+	check(float(rt.cds.arcane_1) == 0.0 and float(rt.cds.arcane_6) > 0.0, "Zeitschleife reloads every other talent")
+	check(is_equal_approx(float(rt.buffs.timebreak.time), float(d.talents.arcane_6.time) + 3.0), "Beschleunigung lasts 3 s longer")
+	var hp_before := float(dummy.hp)
+	_tick(float(d.talents.arcane_6.time) + 3.2)
+	check(float(dummy.hp) < hp_before, "an arcane wave closes Zeitbruch")
+	# Todeszone Stufe 2: enemies in the zone are slowed
+	rt = _setup(d.talents.trapper_6)
+	rt.soul_tier = 1
+	var walker := _dummy(Vector2(420, 240))
+	_cast(d.talents.trapper_6)
+	_tick(0.2)
+	check(walker.statuses.has("slow"), "Sumpfgift slows enemies in the zone")
+	# Klingentanz Stufe 2: nine strikes
+	rt = _setup(d.talents.blade_6)
+	rt.soul_tier = 1
+	_cast(d.talents.blade_6)
+	check(int(rt.channel.left) == int(d.talents.blade_6.hits) + 3, "Wirbelklingen strikes nine times")

@@ -126,13 +126,14 @@ static func repair(d: Dictionary, profile: Dictionary, class_id: String) -> int:
 	return removed
 
 
-## Buys the next soul tier of the owned ultimate. "" on success.
+## Buys the next stage of the owned ultimate (Stufe 2, then 3; each changes
+## the ability, talents.json "stages"). "" on success.
 static func soul_up(d: Dictionary, profile: Dictionary, class_id: String) -> String:
 	var state := Profile.class_state(profile, class_id)
 	if str(state.ultimate).is_empty(): return "Erst eine Ultimate freischalten."
 	var tier := int(state.soul_tier)
 	var costs: Array = d.soul_shards.tier_costs
-	if tier >= costs.size(): return "Höchste Seelenstufe erreicht."
+	if tier >= costs.size(): return "Höchste Stufe erreicht."
 	if int(profile.shards.have) < int(costs[tier]): return "Benötigt %d Seelensplitter." % int(costs[tier])
 	_spend(profile, int(costs[tier]))
 	state.soul_tier = tier + 1
@@ -191,10 +192,38 @@ static func add_exp(d: Dictionary, state: Dictionary, amount: int) -> int:
 	return gained
 
 
-## The soul tier bonus of the ultimate as a factor (1.0 without tiers).
+## The stage bonus of the ultimate as a factor (1.0 at Stufe 1).
 static func soul_scale(d: Dictionary, state: Dictionary) -> float:
-	var tier := int(state.get("soul_tier", 0))
-	return 1.0 + (float(d.soul_shards.tier_bonus_pct[tier - 1]) / 100.0 if tier > 0 else 0.0)
+	var bonus: Array = d.soul_shards.tier_bonus_pct
+	var tier := mini(int(state.get("soul_tier", 0)), bonus.size())
+	return 1.0 + (float(bonus[tier - 1]) / 100.0 if tier > 0 else 0.0)
+
+
+## The talent as it plays at `tier` bought stages (0 = Stufe 1): the stages'
+## "add" numbers summed in, "set" values replaced, and their "after" waves,
+## "ground", "fan" and "reset_cds" collected (talents.json soul_shards._stages_note).
+## Returns the talent itself when nothing changes.
+static func staged(d: Dictionary, talent: String, tier: int) -> Dictionary:
+	var info: Dictionary = d.talents.get(talent, {})
+	var stages: Array = info.get("stages", [])
+	if tier <= 0 or stages.is_empty(): return info
+	var out := info.duplicate(true)
+	var after: Array = []
+	for stage: Dictionary in stages.slice(0, mini(tier, stages.size())):
+		for key: String in stage.get("add", {}):
+			var plus := float(stage.add[key])
+			var raw: Variant = out.get(key, 0.0)
+			if raw is Array:
+				var list: Array = (raw as Array).duplicate()
+				for i in range(list.size()): list[i] = float(list[i]) + plus
+				out[key] = list
+			else: out[key] = float(raw) + plus
+		for key: String in stage.get("set", {}): out[key] = stage.set[key]
+		after.append_array(stage.get("after", []))
+		for key: String in ["ground", "fan", "reset_cds"]:
+			if stage.has(key): out[key] = stage[key]
+	if not after.is_empty(): out.after = after
+	return out
 
 
 static func _spend(profile: Dictionary, amount: int) -> void:

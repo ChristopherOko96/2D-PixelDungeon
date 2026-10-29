@@ -64,6 +64,7 @@ func room_changed() -> void:
 	for rt: Dictionary in runtimes.values():
 		rt.channel = {}
 		rt.counter = {}
+		rt.after = []
 
 
 ## Sets a hero's talents from a profile build ({class, level, ranks, ultimate,
@@ -86,9 +87,9 @@ func set_build(id: int, build: Dictionary) -> void:
 	for talent: Variant in build.get("bar", []):
 		if state.ranks.has(str(talent)) and str(data.talents[str(talent)].kind) == "active" and bar.size() < int(data.bar_slots): bar.append(str(talent))
 	var res: Dictionary = data.resources[class_id]
-	var rt := {"class": class_id, "ranks": state.ranks, "ultimate": ultimate, "soul_tier": clampi(int(build.get("soul_tier", 0)), 0, 3) if not ultimate.is_empty() else 0,
+	var rt := {"class": class_id, "ranks": state.ranks, "ultimate": ultimate, "soul_tier": clampi(int(build.get("soul_tier", 0)), 0, (data.soul_shards.tier_costs as Array).size()) if not ultimate.is_empty() else 0,
 		"bar": bar, "level": state.level, "res_kind": str(res.kind), "res_max": float(res.max), "regen": float(res.regen), "cds": {}, "gcd": 0.0,
-		"buffs": {}, "shield": 0.0, "shield_time": 0.0, "counter": {}, "channel": {}, "echo": 0.0, "casts": 0, "prev_bits": 0,
+		"buffs": {}, "shield": 0.0, "shield_time": 0.0, "counter": {}, "channel": {}, "after": [], "echo": 0.0, "casts": 0, "prev_bits": 0,
 		"debt_in": 0.0, "debt_heal": 0.0, "debt_ally": 0.0, "guard_cd": 0.0, "pet_target": -1, "companion": _companion(str(build.get("companion", ""))),
 		"free": bool(build.get("free", false)) and OS.is_debug_build()}
 	var bonus := _passive(rt, "resource_bonus")
@@ -134,12 +135,11 @@ func cast(id: int, talent: String, command: Dictionary = {}) -> bool:
 	if not cast_blocker(id, talent).is_empty(): return false
 	var player: Dictionary = game.players[id]
 	var rt := runtime(id)
-	var info: Dictionary = data.talents[talent]
+	var info := _info(rt, talent)
 	# the talent test profile (debug builds): no cost, half a second to reload
 	var free := bool(rt.get("free", false))
 	if not free: rt.res = float(rt.res) - float(info.cost)
 	var cooldown := 0.5 if free else float(info.cd)
-	if talent == str(rt.ultimate) and int(rt.soul_tier) >= 3: cooldown *= 1.0 - float(data.soul_shards.tier3_cdr_pct) / 100.0
 	if rt.buffs.has("timebreak"): cooldown *= 1.0 - float(rt.buffs.timebreak.cdr_pct) / 100.0
 	rt.cds[talent] = cooldown
 	rt.gcd = 0.25 if free else float(data.global_cooldown)
@@ -152,6 +152,7 @@ func cast(id: int, talent: String, command: Dictionary = {}) -> bool:
 	var spell: bool = str(rt["class"]) == "mage"
 	_spell_hit = spell
 	_run(id, player, rt, talent, info, aim, target, 1.0)
+	_stage_effects(id, player, rt, talent, info)
 	_spell_hit = false
 	# Arkaner Kreislauf: every third spell that costs mana gives some back.
 	var refund := _passive(rt, "refund")
@@ -174,9 +175,14 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 	match str(info.type):
 		"projectile":
 			var style := str(info.get("style", "arcane"))
-			var shot: Dictionary = game._add_bullet(Vector2(player.pos) + aim * 16.0, aim * (560.0 if style == "arrow" else 440.0), id, dmg,
-				{"talent": talent, "style": style, "primary": false, "radius": 6.0, "pierce": int(info.get("pierce", 1)) - 1, "life": 1.6})
-			if not shot.is_empty(): shot.always_crit = bool(info.get("always_crit", false))
+			# an ultimate stage may fan the shot out (Pfeilsturm)
+			var fan: Dictionary = info.get("fan", {})
+			var count := maxi(1, int(fan.get("count", 1)))
+			for k in range(count):
+				var dir := aim.rotated((float(k) - float(count - 1) * 0.5) * float(fan.get("spread", 0.0)))
+				var shot: Dictionary = game._add_bullet(Vector2(player.pos) + dir * 16.0, dir * (560.0 if style == "arrow" else 440.0), id, dmg,
+					{"talent": talent, "style": style, "primary": false, "radius": 6.0, "pierce": int(info.get("pierce", 1)) - 1, "life": 1.6})
+				if not shot.is_empty(): shot.always_crit = bool(info.get("always_crit", false))
 		"nova":
 			var radius := float(info.radius_m) * meter
 			_area(id, rt, talent, info, Vector2(player.pos), radius, dmg)
@@ -209,7 +215,7 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 			rt.shield = _value(info, "base_pct", rt, talent) / 100.0 * float(player.get("damage", 1.0))
 			rt.shield_time = float(info.time)
 		"buff":
-			var buff: Dictionary = {"time": float(info.time) + _soul_duration(rt, talent)}
+			var buff: Dictionary = {"time": float(info.time)}
 			for key: String in ["spell_pct", "cdr_pct", "attack_speed_pct", "damage_pct", "lifesteal_pct", "taken_pct", "reduction_pct", "ally_pct", "solo_reduction_pct", "range_m"]:
 				if info.has(key): buff[key] = _value(info, key, rt, talent) * (_soul(rt, talent, "power") if key in ["damage_pct", "lifesteal_pct"] else 1.0)
 			buff.cc_immune = bool(info.get("cc_immune", false))
@@ -232,8 +238,8 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 				"dmg": dmg * (1.0 + _sum(rt, "trap_bonus", "pct") / 100.0), "root": _value(info, "root", rt, talent), "life": float(data.trap_life)})
 		"zone":
 			var spot: Vector2 = player.pos + (target - player.pos).limit_length(7.0 * meter)
-			zones.append({"id": _take_id(), "owner": id, "talent": talent, "pos": spot, "r": float(info.radius_m) * meter, "time": float(info.time) + _soul_duration(rt, talent),
-				"every": float(info.every), "tick": 0.0, "dmg": dmg, "status": str(info.get("status", ""))})
+			zones.append({"id": _take_id(), "owner": id, "talent": talent, "pos": spot, "r": float(info.radius_m) * meter, "time": float(info.time),
+				"every": maxf(0.25, float(info.every)), "tick": 0.0, "dmg": dmg, "status": str(info.get("status", "")), "info": info})
 		"summon":
 			var mine := _own_pets(id)
 			var wanted := int(info.count)
@@ -264,7 +270,8 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 		"counter":
 			rt.counter = {"time": float(info.window), "dmg": dmg, "radius": float(info.radius_m) * meter, "talent": talent}
 		"channel":
-			rt.channel = {"left": int(info.hits), "every": float(info.time) / float(info.hits), "timer": 0.0, "dmg": dmg, "radius": float(info.radius_m) * meter, "talent": talent}
+			rt.channel = {"left": int(info.hits), "every": float(info.time) / float(info.hits), "timer": 0.0, "dmg": dmg, "radius": float(info.radius_m) * meter, "talent": talent,
+				"info": {"status": str(info.get("status", ""))}}
 	_talent_hit = false
 
 
@@ -304,10 +311,11 @@ func step(delta: float) -> void:
 				rt.channel.left = int(rt.channel.left) - 1
 				_talent_hit = true
 				for enemy: Dictionary in _living():
-					if enemy.pos.distance_to(player.pos) <= float(rt.channel.radius): _hit(int(id), enemy, float(rt.channel.dmg), {}, rt, str(rt.channel.talent))
+					if enemy.pos.distance_to(player.pos) <= float(rt.channel.radius): _hit(int(id), enemy, float(rt.channel.dmg), rt.channel.get("info", {}), rt, str(rt.channel.talent))
 				_talent_hit = false
 				_event("swing", player.pos, float(rt.channel.radius), {"angle": _rng.randf() * TAU, "arc": 2.4})
 				if int(rt.channel.left) <= 0: rt.channel = {}
+		_step_after(int(id), player, rt, delta)
 	_step_pets(delta)
 	_step_traps(delta)
 	_step_zones(delta)
@@ -449,7 +457,7 @@ func snapshot() -> Dictionary:
 	var out := {"pets": [], "traps": [], "zones": [], "events": events.duplicate(true)}
 	for pet: Dictionary in pets: out.pets.append({"id": pet.id, "x": pet.pos.x, "y": pet.pos.y, "face": pet.face, "owner": pet.owner, "bite": float(pet.bite), "pack": bool(pet.pack), "moving": bool(pet.moving), "kind": str(pet.get("kind", "wolf"))})
 	for trap: Dictionary in traps: out.traps.append({"id": trap.id, "x": trap.pos.x, "y": trap.pos.y, "r": trap.r, "owner": trap.owner, "boom": float(trap.root) <= 0.0})
-	for zone: Dictionary in zones: out.zones.append({"id": zone.id, "x": zone.pos.x, "y": zone.pos.y, "r": zone.r, "time": zone.time})
+	for zone: Dictionary in zones: out.zones.append({"id": zone.id, "x": zone.pos.x, "y": zone.pos.y, "r": zone.r, "time": zone.time, "status": str(zone.get("status", ""))})
 	return out
 
 
@@ -552,7 +560,7 @@ func _spawn_pet(id: int, rt: Dictionary, talent: String, info: Dictionary, at: V
 	var hp := float(info.get("hp", 6)) * float(traits.get("hp", 1.0)) * (1.0 + (_value(bond, "hp_pct", rt) / 100.0 if not bond.is_empty() else 0.0))
 	var dmg_scale := float(traits.get("dmg", 1.0)) * (1.0 + (_value(bond, "dmg_pct", rt) / 100.0 if not bond.is_empty() else 0.0))
 	var base := float(game.players[id].get("damage", 1.0))
-	pets.append({"id": _take_id(), "owner": id, "talent": talent, "pos": at, "hp": hp, "life": life + _soul_duration(rt, talent),
+	pets.append({"id": _take_id(), "owner": id, "talent": talent, "pos": at, "hp": hp, "life": life,
 		"every": float(info.every) * float(traits.get("every", 1.0)), "timer": 0.6, "dmg": _value(info, "dmg", rt, talent) * base * dmg_scale * _soul(rt, talent, "damage"),
 		"pack": pack, "target": -1, "face": 1.0, "bite": 0.0, "moving": false, "kind": kind, "speed": float(traits.get("speed", 1.0))})
 
@@ -630,7 +638,7 @@ func _step_zones(delta: float) -> void:
 			_talent_hit = true
 			for enemy: Dictionary in _living():
 				if enemy.pos.distance_to(zone.pos) <= float(zone.r) + float(enemy.radius):
-					_hit(int(zone.owner), enemy, float(zone.dmg), data.talents[str(zone.talent)], rt, str(zone.talent))
+					_hit(int(zone.owner), enemy, float(zone.dmg), zone.get("info", data.talents[str(zone.talent)]), rt, str(zone.talent))
 			_talent_hit = false
 		if float(zone.time) <= 0.0: zones.remove_at(i)
 
@@ -677,9 +685,47 @@ func _soul(rt: Dictionary, talent: String, kind: String) -> float:
 	return Rules.soul_scale(data, rt)
 
 
-func _soul_duration(rt: Dictionary, talent: String) -> float:
-	if talent != str(rt.ultimate) or str(data.talents[talent].get("soul", "")) != "duration" or int(rt.soul_tier) <= 0: return 0.0
-	return float(data.soul_shards.duration_bonus_s[int(rt.soul_tier) - 1])
+## The talent as this hero plays it: the ultimate with its bought stages
+## (Rules.staged), every other talent as it is.
+func _info(rt: Dictionary, talent: String) -> Dictionary:
+	if talent == str(rt.get("ultimate", "")): return Rules.staged(data, talent, int(rt.soul_tier))
+	return data.talents[talent]
+
+
+## What an ultimate stage adds around the cast: the burning ground where it
+## was cast, the reloaded talents and the delayed or closing waves.
+func _stage_effects(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dictionary) -> void:
+	var base := float(player.get("damage", 1.0)) * _soul(rt, talent, "damage")
+	var meter := float(data.meter_px)
+	if info.has("ground"):
+		var ground: Dictionary = info.ground
+		zones.append({"id": _take_id(), "owner": id, "talent": talent, "pos": Vector2(player.pos), "r": float(ground.radius_m) * meter, "time": float(ground.time),
+			"every": float(ground.every), "tick": float(ground.every), "dmg": float(ground.dmg) * base, "status": str(ground.get("status", "")),
+			"info": {"status": str(ground.get("status", "")), "slow": ground.get("slow", null)} if ground.has("slow") else {"status": str(ground.get("status", ""))}})
+	if bool(info.get("reset_cds", false)):
+		for other: String in rt.cds.keys():
+			if other != talent: rt.cds[other] = 0.0
+	for wave: Dictionary in info.get("after", []):
+		var on_end := bool(wave.get("on_end", false))
+		rt.after.append({"time": float(info.get("time", 0.0)) if on_end else float(wave.get("delay", 0.0)), "pos": Vector2.INF if on_end else Vector2(player.pos),
+			"dmg": float(wave.dmg) * base, "r": float(wave.radius_m) * meter, "fx": str(wave.get("fx", "fire")), "status": str(wave.get("status", "")), "talent": talent})
+
+
+## Fires the ultimate's waves when their time has come (at the cast spot, or
+## around the hero for waves that close a buff or channel).
+func _step_after(id: int, player: Dictionary, rt: Dictionary, delta: float) -> void:
+	var waves: Array = rt.get("after", [])
+	for i in range(waves.size() - 1, -1, -1):
+		var wave: Dictionary = waves[i]
+		wave.time = float(wave.time) - delta
+		if float(wave.time) > 0.0: continue
+		waves.remove_at(i)
+		if int(player.hp) <= 0: continue
+		var at: Vector2 = Vector2(player.pos) if not Vector2(wave.pos).is_finite() else Vector2(wave.pos)
+		_talent_hit = true
+		_area(id, rt, str(wave.talent), {"status": str(wave.status)}, at, float(wave.r), float(wave.dmg))
+		_talent_hit = false
+		_event("nova", at, float(wave.r), {"fx": str(wave.fx), "talent": str(wave.talent), "life": 0.7})
 
 
 ## Movement and line of sight of the host's world: the crypt's tile layout, or

@@ -1,5 +1,5 @@
 extends SceneTree
-## Talent points, tier locks, ultimates, soul tiers, reset, EXP, the profile
+## Talent points, tier locks, ultimates and their stages, reset, EXP, the profile
 ## file and soul shard drops (src/progress/*.gd, assets/data/talents.json).
 
 const Profile = preload("res://src/progress/profile.gd")
@@ -24,6 +24,7 @@ func _initialize() -> void:
 	_test_tier_locks()
 	_test_ultimate_needs_shards_and_is_unique()
 	_test_soul_tiers_and_reset()
+	_test_ultimate_stages()
 	_test_rank_down_keeps_build_valid()
 	_test_exp_levels()
 	_test_profile_save_and_sanitize()
@@ -56,7 +57,7 @@ func _test_data_is_complete() -> void:
 		per_class[talent["class"]] = int(per_class.get(talent["class"], 0)) + 1
 		var ranks := int(talent.ranks)
 		for key: String in talent:
-			if talent[key] is Array and key not in ["statuses"]: check(talent[key].size() == ranks, "%s.%s has one value per rank" % [talent.id, key])
+			if talent[key] is Array and key not in ["statuses", "stages"]: check(talent[key].size() == ranks, "%s.%s has one value per rank" % [talent.id, key])
 		if str(talent.kind) != "passive": check(talent.has("cost") and talent.has("cd"), "%s has cost and cooldown" % talent.id)
 	check(per_class.size() == 3 and per_class.values().all(func(n: int) -> bool: return n == 18), "each class has 18 talents (%s)" % per_class)
 
@@ -94,8 +95,8 @@ func _test_ultimate_needs_shards_and_is_unique() -> void:
 	_fill(profile, "swordsman", ["berserk_4", "berserk_5"])
 	check(Rules.check_rank_up(d, profile, "swordsman", "berserk_6").contains("Seelensplitter"), "missing soul shards block the ultimate")
 	profile.shards = {"have": 5, "earned": 5, "spent": 0}
-	check(Rules.rank_up(d, profile, "swordsman", "berserk_6").is_empty(), "the ultimate unlocks with 3 shards")
-	check(profile.shards.have == 2 and profile.shards.spent == 3, "unlocking spends exactly 3 shards")
+	check(Rules.rank_up(d, profile, "swordsman", "berserk_6").is_empty(), "the ultimate unlocks with enough shards")
+	check(profile.shards.have == 5 - int(d.soul_shards.ultimate_cost) and profile.shards.spent == int(d.soul_shards.ultimate_cost) and int(d.soul_shards.ultimate_cost) == 1, "unlocking spends exactly one shard (Stufe 1)")
 	_fill(profile, "swordsman", ["blade_1", "blade_2", "blade_3", "blade_4"])
 	check(Rules.check_rank_up(d, profile, "swordsman", "blade_6").length() > 0, "a second ultimate is refused")
 
@@ -106,10 +107,11 @@ func _test_soul_tiers_and_reset() -> void:
 	profile.shards = {"have": 16, "earned": 16, "spent": 0}
 	profile.gold = 2000
 	Rules.rank_up(d, profile, "swordsman", "guard_6")
-	check(Rules.soul_up(d, profile, "swordsman").is_empty() and Rules.soul_up(d, profile, "swordsman").is_empty() and Rules.soul_up(d, profile, "swordsman").is_empty(), "three soul tiers can be bought")
-	check(profile.shards.have == 0 and Profile.class_state(profile, "swordsman").soul_tier == 3, "the tiers cost 2 + 4 + 7 shards")
-	check(not Rules.soul_up(d, profile, "swordsman").is_empty(), "there is no fourth tier")
-	check(is_equal_approx(Rules.soul_scale(d, Profile.class_state(profile, "swordsman")), 1.15), "tier 3 replaces the lower bonus (+15 %)")
+	check(profile.shards.have == 15, "the ultimate unlocks with one shard (Stufe 1)")
+	check(Rules.soul_up(d, profile, "swordsman").is_empty() and Rules.soul_up(d, profile, "swordsman").is_empty(), "Stufe 2 and Stufe 3 can be bought")
+	check(profile.shards.have == 10 and Profile.class_state(profile, "swordsman").soul_tier == 2, "the stages cost 2 + 3 shards (6 in all)")
+	check(not Rules.soul_up(d, profile, "swordsman").is_empty(), "there is no Stufe 4")
+	check(is_equal_approx(Rules.soul_scale(d, Profile.class_state(profile, "swordsman")), 1.2), "Stufe 3 replaces the lower bonus (+20 %)")
 	var cost := Rules.reset_cost(d, profile, "swordsman")
 	check(Rules.reset(d, profile, "swordsman").is_empty(), "the reset works with enough gold")
 	var state := Profile.class_state(profile, "swordsman")
@@ -119,6 +121,26 @@ func _test_soul_tiers_and_reset() -> void:
 	profile.gold = 0
 	_fill(profile, "swordsman", ["guard_1"])
 	check(not Rules.reset(d, profile, "swordsman").is_empty(), "a reset without enough gold is refused")
+
+
+## Every ultimate has two stages that change it (talents.json "stages");
+## Rules.staged sums them in, cumulatively.
+func _test_ultimate_stages() -> void:
+	for id: String in d.talents:
+		var info: Dictionary = d.talents[id]
+		if str(info.kind) != "ultimate": continue
+		var stages: Array = info.get("stages", [])
+		check(stages.size() == (d.soul_shards.tier_costs as Array).size(), "%s has a stage per bought tier" % id)
+		check(stages.all(func(st: Dictionary) -> bool: return not str(st.get("name", "")).is_empty() and not str(st.get("text", "")).is_empty()), "%s stages are named and described" % id)
+		check(Rules.staged(d, id, 0) == info, "%s at Stufe 1 plays as written" % id)
+		check(Rules.staged(d, id, 2) != Rules.staged(d, id, 1) and Rules.staged(d, id, 1) != info, "%s changes with every stage" % id)
+	var inferno := Rules.staged(d, "fire_6", 2)
+	check(float(inferno.radius_m) == float(d.talents.fire_6.radius_m) + 2.0 and inferno.has("ground") and (inferno.after as Array).size() == 1, "Inferno Stufe 3: wider, a second blast and burning ground")
+	check(float(Rules.staged(d, "fire_6", 1).radius_m) == float(d.talents.fire_6.radius_m) + 2.0 and not Rules.staged(d, "fire_6", 1).has("ground"), "Inferno Stufe 2 keeps Stufe 3 for later")
+	check(int((Rules.staged(d, "sniper_6", 2).fan as Dictionary).count) == 3, "Letzter Pfeil Stufe 3 fans out three arrows")
+	check(int(Rules.staged(d, "blade_6", 1).hits) == int(d.talents.blade_6.hits) + 3, "Klingentanz Stufe 2 strikes three more times")
+	check((Rules.staged(d, "guard_6", 2).after as Array).size() == 2, "Unbezwingbar Stufe 3 keeps the Stufe 2 shock wave and adds its own")
+	check(is_equal_approx(float(Rules.staged(d, "fire_6", 1).dmg[0]), float(d.talents.fire_6.dmg[0])), "a stage without a damage change keeps the damage")
 
 
 func _test_rank_down_keeps_build_valid() -> void:
@@ -188,8 +210,9 @@ func _test_shards_per_boss_and_nightmare_first() -> void:
 	check(int(Drops.resolve(d, profile, "boss", "normal", "n4", 10, 10, FIGHT, 0.0).count) == int(d.soul_shards.per_boss), "Normal has no extra chance, so the pace is exact")
 
 
-## User decision 29.10.2026: shards only from the run's boss; the ultimate
-## after about 1.5 to 2 full runs. One full run has one real boss (floor 10).
+## User decisions 29.10.2026: shards only from the run's boss (one per full
+## run, floor 10); the ultimate is an expansion: unlocked with one shard, then
+## Stufe 2 and 3, about one stage per full run on Normal.
 func _test_ultimate_pace() -> void:
 	var profile := Profile.fresh(d)
 	var cost := int(d.soul_shards.ultimate_cost)
@@ -197,8 +220,13 @@ func _test_ultimate_pace() -> void:
 	while int(profile.shards.have) < cost and runs < 10:
 		runs += 1
 		Drops.resolve(d, profile, "final", "normal", "run%d" % runs, 20, Drops.boss_level(d, 10, "normal"), FIGHT, 0.99)
-	check(runs == 2, "on Normal the ultimate opens with the second full run (%d)" % runs)
-	check(float(cost) / float(d.soul_shards.per_boss) >= 1.5 and float(cost) / float(d.soul_shards.per_boss) <= 2.0, "ultimate cost / shards per run lies between 1.5 and 2")
+	check(runs == 1, "on Normal the ultimate opens with the first full run (%d)" % runs)
+	var total := cost
+	for price: Variant in d.soul_shards.tier_costs: total += int(price)
+	while int(profile.shards.earned) < total and runs < 10:
+		runs += 1
+		Drops.resolve(d, profile, "final", "normal", "run%d" % runs, 20, Drops.boss_level(d, 10, "normal"), FIGHT, 0.99)
+	check(runs == 3, "Stufe 3 is paid for after the third full run (%d)" % runs)
 
 
 func _test_no_farming_or_duplicates() -> void:

@@ -25,6 +25,13 @@ func draw_ground(canvas: CanvasItem, state: Dictionary, clock: float) -> void:
 	for zone: Dictionary in state.get("zones", []):
 		var at := Vector2(float(zone.x), float(zone.y))
 		var r := float(zone.r)
+		if str(zone.get("status", "")) == "burn" and sprites.has("fire_burst"):
+			# burning ground (Inferno, Feuersturm): a hot glow with flames flaring up across it
+			canvas.draw_circle(at, r, Color(1.0, 0.45, 0.1, 0.12))
+			for i in range(9):
+				var spot := at + Vector2.from_angle(TAU * i / 9.0 + float(i % 3) * 0.7) * r * (0.3 + 0.55 * float((i * 5) % 9) / 8.0)
+				sprites.draw_loop(canvas, "fire_burst", spot, 0.0, 0.7, clock * 0.8 + i * 0.29)
+			continue
 		canvas.draw_circle(at, r, Color(0.45, 0.8, 0.25, 0.10))
 		if sprites.has("poison_cloud"):
 			# a ring of churning clouds and one in the middle

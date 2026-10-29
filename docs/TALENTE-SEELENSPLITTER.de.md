@@ -30,10 +30,9 @@ Seelenkristalle, Talentbäume und Unterklassen der Frostgruft
 | Talentpunkte | ab Level 2 einer pro Level | 29 bei Level 30 |
 | Ränge | normale Talente 3, Ultimate 1 | – |
 | Stufe I / II / III / IV | Level 2 / 6 + 3 Punkte / 12 + 7 / 20 + 12 im Zweig | `tiers` |
-| Ultimate | freier Punkt und 3 Seelensplitter, nur eine gleichzeitig | `soul_shards.ultimate_cost` |
-| Seelenstufen | 2 / 4 / 7 Splitter für +5 / +10 / +15 % (ersetzt), Stufe 3 auch −5 % Abklingzeit | `tier_costs`, `tier_bonus_pct` |
-| Ultimates ohne Schaden | Zeitbruch, Unbezwingbar: +0,5 / 1 / 1,5 s; Blutrausch: Schaden und Lebensraub ×1,05 / 1,10 / 1,15 | `duration_bonus_s`, `soul` je Talent |
-| Zurücksetzen | 25 Gold pro Level; alle Punkte und Splitter zurück, Seelenstufen enden | `reset_gold_per_level` |
+| Ultimate (Stufe 1) | freier Punkt und 1 Seelensplitter, nur eine gleichzeitig | `soul_shards.ultimate_cost` |
+| Ultimate-Stufen | Stufe 2 für 2, Stufe 3 für 3 Splitter; jede Stufe verändert die Fähigkeit (siehe unten), dazu +10 / +20 % Schaden bzw. Wirkung | `tier_costs`, `tier_bonus_pct`, `stages` je Ultimate |
+| Zurücksetzen | 25 Gold pro Level; alle Punkte und Splitter zurück, Ultimate-Stufen enden | `reset_gold_per_level` |
 | Ressourcen | Mana 100 (+6/s), Ausdauer 100 (+10/s), Zorn 0–100 (+10 je Treffer, +5 je erlittenem Treffer) | `resources` |
 | Gemeinsame Abklingzeit | 1 s nach jedem aktiven Talent | `global_cooldown` |
 | Status | Brennen 12 %/s 4 s, Gift 10 %/s 5 s, Blutung 10 %/s 4 s des Grundangriffs; erneuern statt stapeln | `statuses` |
@@ -48,12 +47,28 @@ welche. Jeder faire Bosssieg bringt fest 2 Splitter (`soul_shards.per_boss`).
 Dazu kommt ein weiterer Splitter mit der Chance der Schwierigkeit
 (`extra_pct`: Normal 0 %, Schwer 25 %, Albtraum 50 %). Der erste Albtraum-Sieg
 pro Boss und Profil bringt ebenfalls einen weiteren.
-Das Ultimate kostet 3 Splitter. Auf Normal wird es also genau mit dem zweiten
-vollen Lauf frei (Entscheidung 29.10.2026: nur vom Boss, nach etwa 1,5 bis 2
-Läufen). Auf Albtraum klappt das oft schon nach dem ersten. Der Boss zählt
+Das Ultimate ist eine Erweiterung in drei Stufen (Entscheidung 29.10.2026):
+Freischalten kostet 1 Splitter, Stufe 2 kostet 2 und Stufe 3 kostet 3, zusammen 6.
+Auf Normal ist das etwa eine Stufe pro vollem Lauf: frei nach dem ersten,
+Stufe 2 nach dem zweiten, Stufe 3 nach dem dritten Lauf. Der Boss zählt
 bei jedem Charakterlevel, auch der Endboss auf Normal mit Level 30
 (Entscheidung 29.10.2026). Farmen verhindert schon, dass es nur einen Boss pro
 Lauf gibt.
+
+**Ultimate-Stufen:** Jede Stufe verändert die Fähigkeit selbst und gilt
+zusätzlich zur vorigen (`stages` in `talents.json`, `TalentRules.staged`).
+
+| Ultimate | Stufe 2 | Stufe 3 |
+|---|---|---|
+| Inferno | Glutkern: +2 m Radius, Brennen +3 s | Feuersturm: zweite Explosion nach 1,5 s (120 %), danach 6 s brennender Boden |
+| Absoluter Nullpunkt | Ewiges Eis: +1,5 s Einfrieren, Bosse 70 % langsamer für 6 s | Splitterbruch: nach 3 s zweite Welle mit 180 % in 7 m |
+| Zeitbruch | Beschleunigung: +3 s, +15 % Zauberschaden | Zeitschleife: alle anderen Fähigkeiten laden sofort nach; am Ende Arkanwelle 200 % in 5 m |
+| Letzter Pfeil | Durchschlag: durchbohrt alle Gegner, 380 % | Pfeilsturm: drei Pfeile im Fächer |
+| Todeszone | Sumpfgift: +1,5 m, +4 s, Gegner 40 % langsamer | Seuchenherz: jede Sekunde 60 % statt alle 2 s 40 % |
+| Alpharuf | Großes Rudel: 3 statt 2 Begleiter, +5 s | Rudelführer: Biss jede Sekunde mit 55 %, doppelt so viel Leben |
+| Blutrausch | Blutdurst: 20 % Lebensraub, nur +5 % erlittener Schaden | Blutgericht: +4 s, +20 % Schaden, am Ende Blutschlag 250 % in 4 m |
+| Unbezwingbar | Schildstoß: beim Wirken Schockwelle 120 % in 4 m, +2 s | Vergeltung: 75 % weniger Schaden, am Ende Entladung 300 % in 5 m |
+| Klingentanz | Wirbelklingen: 9 statt 6 Angriffe, 5 m Reichweite | Finale: Treffer lassen bluten, am Ende Schlussstreich 300 % in 5 m |
 Keine Splitter gibt es in diesen Fällen:
 - der Kampf dauerte unter 20 s,
 - der Held hatte unter 5 % Schadensanteil,
@@ -75,7 +90,7 @@ Gewählt wird sie im Talentmenü, und sie gilt für die Runs des Hosts.
 | Modul | Aufgabe |
 |---|---|
 | `src/progress/profile.gd` | Profil als Dictionary, prüfen, laden und speichern (`user://profile.json`, erst in eine Zwischendatei, dann ersetzen). Testläufe nutzen `user://profile_test.json`. |
-| `src/progress/talent_rules.gd` | Punkte, Stufen, Ränge, Ultimate, Seelenstufen, Reset, Leiste, EXP |
+| `src/progress/talent_rules.gd` | Punkte, Stufen, Ränge, Ultimate und ihre Stufen (`staged`), Reset, Leiste, EXP |
 | `src/progress/soul_drops.gd` | Boss-Level, Berechtigung, Splitter pro Bosssieg, Zusatzchance, Albtraum-Erstsieg, Kennungen |
 | `src/progress/run_progress.gd` | Verbindet Run und Profil: EXP, Gold, Schwierigkeit, Bosssiege; schickt Belohnungen an die Mitspieler |
 | `src/combat/talent_combat.gd` | Alle 54 Talente im Kampf: Ressourcen, Leiste, Ultimate, Buffs, Schild, Konter, Wölfe, Fallen, Giftzone, Passivboni |

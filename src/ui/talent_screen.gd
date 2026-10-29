@@ -173,8 +173,15 @@ func _refresh() -> void:
 	soul.visible = str(info.kind) == "ultimate"
 	var tier := int(state.soul_tier)
 	var owned: bool = str(state.ultimate) == selected
-	soul.text = "Seelenstufe 3 erreicht" if tier >= 3 and owned else ("Seelenstufe %d · %d Splitter" % [tier + 1, int(data.soul_shards.tier_costs[mini(tier, 2)])] if owned else "Erst freischalten")
-	soul.disabled = not owned or tier >= 3 or int(profile.shards.have) < int(data.soul_shards.tier_costs[mini(tier, 2)])
+	var costs: Array = data.soul_shards.tier_costs
+	var top := tier >= costs.size()
+	var next_cost := int(costs[mini(tier, costs.size() - 1)])
+	soul.text = ("Stufe %d erreicht" % (costs.size() + 1) if top else "Stufe %d · %d Seelensplitter" % [tier + 2, next_cost]) if owned else "Erst freischalten"
+	soul.disabled = not owned or top or int(profile.shards.have) < next_cost
+	# an owned ultimate needs no unlock button: the stage button moves up into
+	# the talent bar's place, so the three stages have room above
+	learn.visible = not (str(info.kind) == "ultimate" and owned)
+	soul.position.y = 550.0 if str(info.kind) == "ultimate" else 588.0
 	# the beast master picks the companion (wolf or bear) on any of its talents
 	var companion: Button = _buttons.companion
 	companion.visible = str(info.spec) == "beast"
@@ -219,7 +226,11 @@ func _cycle_bar() -> void:
 
 
 func _soul_up() -> void:
-	_commit(Rules.soul_up(data, profile, class_id), "Seelenstufe %d." % int(_state().soul_tier))
+	var reason := Rules.soul_up(data, profile, class_id)
+	var stages: Array = data.talents[selected].get("stages", [])
+	var tier := int(_state().soul_tier)
+	if reason.is_empty(): _pulses[selected] = 0.45
+	_commit(reason, "Stufe %d: %s." % [tier + 1, str(stages[tier - 1].name)] if tier > 0 and tier <= stages.size() else "")
 
 
 func _reset() -> void:
@@ -370,9 +381,12 @@ func _draw_talent(id: String, center: Vector2, spec: Dictionary, color: Color) -
 	_card(rect.grow(3), Color("0a090c"), frame, 7, 4)
 	draw_texture_rect(_icon(spec, str(info.icon), lit, ult), rect, false, Color(1, 1, 1, 0.45) if look == "locked" else Color.WHITE)
 	if look == "locked": draw_rect(rect, Color(0, 0, 0, 0.35))
-	# rank pips under the icon
+	# rank pips under the icon; an ultimate shows its stages instead
 	var ranks := int(info.ranks)
 	var rank := Rules.rank(state, id)
+	if ult:
+		ranks = (info.get("stages", []) as Array).size() + 1
+		rank = (int(state.soul_tier) + 1) if str(state.ultimate) == id else 0
 	var pip := Vector2(10, 5)
 	var span := ranks * pip.x + (ranks - 1) * 4.0
 	for k in range(ranks):
@@ -416,12 +430,16 @@ func _draw_right() -> void:
 	_card(icon_rect.grow(2), Color("0a090c"), CryptUI.GOLD if ult else spec_color, 7, 0)
 	draw_texture_rect(_icon(spec, str(info.icon), true, ult), icon_rect, false)
 	var kind: String = {"active": "Aktiv", "passive": "Passiv", "ultimate": "Ultimate"}[str(info.kind)]
-	_say("Stufe %s · %s" % [TIER_NAMES[int(info.tier) - 1], kind], Vector2(head.position.x + 96, head.position.y + 26), 13, Color(str(spec.color2)))
+	_say("Reihe %s · %s" % [TIER_NAMES[int(info.tier) - 1], kind], Vector2(head.position.x + 96, head.position.y + 26), 13, Color(str(spec.color2)))
 	var name_lines := _wrap_lines(str(info.name), head.size.x - 108, 20)
 	for n in range(name_lines.size()):
 		_say(name_lines[n], Vector2(head.position.x + 96, head.position.y + 52 + n * 22), 20, CryptUI.CREAM)
 	var rank := Rules.rank(state, selected)
-	_say("Rang %d / %d" % [rank, int(info.ranks)], Vector2(head.position.x + 96, head.end.y - 12), 13, CryptUI.GOLD)
+	# an ultimate counts its stages (1 to 3) instead of its single rank
+	var stage_count: int = (info.get("stages", []) as Array).size() + 1
+	var stage_now: int = (int(state.soul_tier) + 1) if str(state.ultimate) == selected else 0
+	var rank_line := ("Stufe %d / %d" % [stage_now, stage_count]) if ult else ("Rang %d / %d" % [rank, int(info.ranks)])
+	_say(rank_line, Vector2(head.position.x + 96, head.end.y - 12), 13, CryptUI.GOLD)
 	var line := head.end.y + 30
 	line = _paragraph(_rank_text(str(info.text), maxi(rank, 1) if rank > 0 else 0), x, line, CryptUI.CREAM)
 	if rank > 0 and rank < int(info.ranks): line = _paragraph("Nächster Rang: " + _rank_text(str(info.text), rank + 1), x, line + 4, CryptUI.MUTED, 13)
@@ -435,11 +453,36 @@ func _draw_right() -> void:
 	if int(tier.points) > 0: requirement += ", %d Punkte im Zweig" % int(tier.points)
 	if ult: requirement += ", %d Seelensplitter, nur eine Ultimate" % int(data.soul_shards.ultimate_cost)
 	line = _paragraph("Voraussetzung: " + requirement, x, line + 4, CryptUI.MUTED, 13)
-	if ult and str(state.ultimate) == selected and int(state.soul_tier) > 0:
-		_say("Seelenstufe %d: +%d %%" % [int(state.soul_tier), int(data.soul_shards.tier_bonus_pct[int(state.soul_tier) - 1])], Vector2(x, line + 8), 15, Color("c9b6ff"))
+	var note_y := 404.0 if str(info.spec) == "beast" else 440.0
+	if ult: note_y = _draw_stages(info, state, x, line + 6) + 4
 	var why := Rules.check_rank_up(data, profile, class_id, selected)
+	# an owned ultimate is at its single rank; that is no news
+	if ult and str(state.ultimate) == selected: why = ""
 	var note := message if not message.is_empty() else why
-	if not note.is_empty(): _paragraph(note, x, 404 if str(info.spec) == "beast" else 440, CryptUI.BLOOD if note == why and not why.is_empty() else CryptUI.GOLD, 13)
+	if not note.is_empty(): _paragraph(note, x, note_y, CryptUI.BLOOD if note == why and not why.is_empty() else CryptUI.GOLD, 13)
+
+
+## The ultimate's stages 2 and 3: reached ones lit ("aktiv"), the next with
+## its shard cost, later ones dim. Stufe 1 is the unlock itself. Returns the
+## y below the list.
+func _draw_stages(info: Dictionary, state: Dictionary, x: float, y: float) -> float:
+	var stages: Array = info.get("stages", [])
+	if stages.is_empty(): return y
+	var owned: bool = str(state.ultimate) == selected
+	var reached := (int(state.soul_tier) + 1) if owned else 0
+	var costs: Array = data.soul_shards.tier_costs
+	var violet := Color("c9b6ff")
+	for k in range(stages.size()):
+		var stage: Dictionary = stages[k]
+		var number := k + 2
+		var lit := number <= reached
+		var next := number == reached + 1 and owned
+		var mark := "aktiv" if lit else ("%d Splitter" % int(costs[k]) if k < costs.size() else "")
+		var tint := violet if lit else (CryptUI.CREAM if next else CryptUI.MUTED)
+		_say("Stufe %d · %s" % [number, str(stage.name)], Vector2(x, y), 13, tint)
+		_say(mark, Vector2(RIGHT.end.x - 16 - _sans.get_string_size(mark, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x, y), 13, violet if lit else CryptUI.GOLD if next else CryptUI.MUTED)
+		y = _paragraph(str(stage.text), x + 8, y + 16, Color(tint, 0.85 if lit or next else 0.6), 12) + 4
+	return y
 
 
 ## A stat row of the detail card: label left, value right.

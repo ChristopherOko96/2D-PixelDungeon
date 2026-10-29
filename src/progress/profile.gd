@@ -107,7 +107,7 @@ static func sanitize(raw: Variant, d: Dictionary) -> Dictionary:
 					var rank := clampi(int(ranks[talent]), 0, int(info.ranks))
 					if rank > 0: state.ranks[str(talent)] = rank
 			state.ultimate = str(entry.get("ultimate", ""))
-			state.soul_tier = clampi(int(entry.get("soul_tier", 0)), 0, 3)
+			state.soul_tier = clampi(int(entry.get("soul_tier", 0)), 0, (d.get("soul_shards", {}).get("tier_costs", []) as Array).size())
 			state.soul_paid = maxi(0, int(entry.get("soul_paid", 0)))
 			var bar: Variant = entry.get("bar", [])
 			var kind := str(entry.get("companion", "wolf"))

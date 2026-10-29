@@ -80,34 +80,39 @@
   "_kinds_note": "Companion of the beast master, chosen in the talent menu (profile class entry 'companion'). hp, dmg, every and speed multiply the talent's values; sprites: assets/sprites/forest_0x72/<kind>_idle|walk_f0..3.png.",
   "default_kind": "wolf",
   "kinds": {
-   "wolf": {"name": "Wolf", "hp": 1.0, "dmg": 1.0, "every": 1.0, "speed": 1.0},
-   "bear": {"name": "Bär", "hp": 1.7, "dmg": 1.3, "every": 1.35, "speed": 0.75}
+   "wolf": {
+    "name": "Wolf",
+    "hp": 1.0,
+    "dmg": 1.0,
+    "every": 1.0,
+    "speed": 1.0
+   },
+   "bear": {
+    "name": "Bär",
+    "hp": 1.7,
+    "dmg": 1.3,
+    "every": 1.35,
+    "speed": 0.75
+   }
   }
  },
  "bar_slots": 4,
  "soul_shards": {
-  "ultimate_cost": 3,
+  "ultimate_cost": 1,
   "tier_costs": [
    2,
-   4,
-   7
+   3
   ],
   "tier_bonus_pct": [
-   5,
    10,
-   15
-  ],
-  "tier3_cdr_pct": 5,
-  "duration_bonus_s": [
-   0.5,
-   1.0,
-   1.5
+   20
   ],
   "per_boss": 2,
   "_per_boss_note": "Only the real final boss of a run (floor 10, every world) gives shards: per_boss for each fair kill, plus one more with the difficulty's extra_pct chance and one for the first Albtraum kill of a boss. Normal: 2 per full run, so the 3-shard ultimate opens with the second full run. The boss counts at every character level (user decision 29.10.2026: the Normal final boss always gives shards); one boss per run already stops farming. User decision 29.10.2026: shards only from bosses, the ultimate after about 1.5 to 2 full runs.",
   "min_fight_seconds": 20,
   "min_damage_share": 0.05,
-  "reward_memory": 200
+  "reward_memory": 200,
+  "_stages_note": "User decision 29.10.2026: the ultimate is an expansion. Unlock with ultimate_cost (1) shard = Stufe 1; Stufe 2 and 3 cost tier_costs (2, 3) and each changes the ability (talents.<ultimate>.stages, cumulative): add = numbers added to the talent's values (first rank of an array; a missing key counts as 0), set = values replaced, after = delayed waves {delay s or on_end (when the buff or channel ends), dmg x hero damage, radius_m, fx, status}, ground = a zone left where it was cast {time, every, dmg, radius_m, status, slow}, fan = {count, spread rad} for projectiles, reset_cds = every other talent reloads at once. tier_bonus_pct adds damage (soul damage) or power (soul power) on top. Full ultimate: 1 + 2 + 3 = 6 shards, about three full runs on Normal."
  },
  "difficulties": {
   "order": [
@@ -418,7 +423,37 @@
    "cost": 60,
    "cd": 85,
    "fx": "fire",
-   "soul": "damage"
+   "soul": "damage",
+   "stages": [
+    {
+     "name": "Glutkern",
+     "text": "+2 m Radius, Brennen hält 3 s länger.",
+     "add": {
+      "radius_m": 2,
+      "status_time": 3
+     }
+    },
+    {
+     "name": "Feuersturm",
+     "text": "Nach 1,5 s folgt eine zweite Explosion mit 120 %. Der Boden brennt danach 6 s: jede Sekunde 30 % Schaden und Brennen.",
+     "after": [
+      {
+       "delay": 1.5,
+       "dmg": 1.2,
+       "radius_m": 8,
+       "fx": "fire",
+       "status": "burn"
+      }
+     ],
+     "ground": {
+      "time": 6,
+      "every": 1,
+      "dmg": 0.3,
+      "radius_m": 6,
+      "status": "burn"
+     }
+    }
+   ]
   },
   "frost_1": {
    "id": "frost_1",
@@ -559,7 +594,30 @@
    "cost": 60,
    "cd": 90,
    "fx": "ice",
-   "soul": "damage"
+   "soul": "damage",
+   "stages": [
+    {
+     "name": "Ewiges Eis",
+     "text": "Gegner bleiben 1,5 s länger eingefroren, Bosse sind 6 s lang 70 % langsamer.",
+     "add": {
+      "freeze": 1.5,
+      "boss_slow": 0.2,
+      "boss_slow_time": 2
+     }
+    },
+    {
+     "name": "Splitterbruch",
+     "text": "Nach 3 s zerspringt das Eis: eine zweite Welle mit 180 % Schaden in 7 m.",
+     "after": [
+      {
+       "delay": 3,
+       "dmg": 1.8,
+       "radius_m": 7,
+       "fx": "ice"
+      }
+     ]
+    }
+   ]
   },
   "arcane_1": {
    "id": "arcane_1",
@@ -684,7 +742,30 @@
    "cdr_pct": 40,
    "cost": 55,
    "cd": 100,
-   "soul": "duration"
+   "soul": "duration",
+   "stages": [
+    {
+     "name": "Beschleunigung",
+     "text": "Hält 3 s länger und gibt +15 % mehr Zauberschaden.",
+     "add": {
+      "time": 3,
+      "spell_pct": 15
+     }
+    },
+    {
+     "name": "Zeitschleife",
+     "text": "Beim Wirken laden alle anderen Fähigkeiten sofort nach. Am Ende entlädt sich eine Arkanwelle mit 200 % in 5 m.",
+     "reset_cds": true,
+     "after": [
+      {
+       "on_end": true,
+       "dmg": 2.0,
+       "radius_m": 5,
+       "fx": "arcane"
+      }
+     ]
+    }
+   ]
   },
   "sniper_1": {
    "id": "sniper_1",
@@ -809,7 +890,25 @@
    "style": "arrow",
    "cost": 50,
    "cd": 85,
-   "soul": "damage"
+   "soul": "damage",
+   "stages": [
+    {
+     "name": "Durchschlag",
+     "text": "Der Pfeil durchbohrt jeden Gegner auf seiner Bahn und trifft mit 380 %.",
+     "add": {
+      "dmg": 0.6,
+      "pierce": 99
+     }
+    },
+    {
+     "name": "Pfeilsturm",
+     "text": "Drei Pfeile fliegen im Fächer, jeder garantiert kritisch.",
+     "fan": {
+      "count": 3,
+      "spread": 0.28
+     }
+    }
+   ]
   },
   "trapper_1": {
    "id": "trapper_1",
@@ -938,7 +1037,27 @@
    "status": "poison",
    "cost": 55,
    "cd": 90,
-   "soul": "damage"
+   "soul": "damage",
+   "stages": [
+    {
+     "name": "Sumpfgift",
+     "text": "+1,5 m Radius, hält 4 s länger, Gegner darin sind 40 % langsamer.",
+     "add": {
+      "radius_m": 1.5,
+      "time": 4,
+      "slow": 0.4,
+      "slow_time": 2.5
+     }
+    },
+    {
+     "name": "Seuchenherz",
+     "text": "Die Zone schlägt jede Sekunde zu statt alle 2 s, mit 60 % Schaden.",
+     "add": {
+      "every": -1,
+      "dmg": 0.2
+     }
+    }
+   ]
   },
   "beast_1": {
    "id": "beast_1",
@@ -1067,7 +1186,26 @@
    "pack": true,
    "cost": 55,
    "cd": 90,
-   "soul": "damage"
+   "soul": "damage",
+   "stages": [
+    {
+     "name": "Großes Rudel",
+     "text": "Drei statt zwei Begleiter, sie bleiben 5 s länger.",
+     "add": {
+      "count": 1,
+      "time": 5
+     }
+    },
+    {
+     "name": "Rudelführer",
+     "text": "Die Begleiter beißen jede Sekunde mit 55 % und haben doppelt so viel Leben.",
+     "add": {
+      "every": -1,
+      "dmg": 0.2,
+      "hp": 6
+     }
+    }
+   ]
   },
   "berserk_1": {
    "id": "berserk_1",
@@ -1190,7 +1328,34 @@
    "taken_pct": 15,
    "cost": 50,
    "cd": 90,
-   "soul": "power"
+   "soul": "power",
+   "stages": [
+    {
+     "name": "Blutdurst",
+     "text": "20 % Lebensraub, du erleidest nur noch 5 % mehr Schaden.",
+     "add": {
+      "lifesteal_pct": 10,
+      "taken_pct": -10
+     }
+    },
+    {
+     "name": "Blutgericht",
+     "text": "Hält 4 s länger, +20 % mehr Schaden. Am Ende ein Blutschlag mit 250 % in 4 m.",
+     "add": {
+      "time": 4,
+      "damage_pct": 20
+     },
+     "after": [
+      {
+       "on_end": true,
+       "dmg": 2.5,
+       "radius_m": 4,
+       "fx": "fire",
+       "status": "bleed"
+      }
+     ]
+    }
+   ]
   },
   "guard_1": {
    "id": "guard_1",
@@ -1323,7 +1488,39 @@
    "cc_immune": true,
    "cost": 50,
    "cd": 90,
-   "soul": "duration"
+   "soul": "duration",
+   "stages": [
+    {
+     "name": "Schildstoß",
+     "text": "Beim Wirken trifft eine Schockwelle alle Gegner in 4 m mit 120 %. Hält 2 s länger.",
+     "add": {
+      "time": 2
+     },
+     "after": [
+      {
+       "delay": 0,
+       "dmg": 1.2,
+       "radius_m": 4,
+       "fx": "steel"
+      }
+     ]
+    },
+    {
+     "name": "Vergeltung",
+     "text": "75 % weniger erlittener Schaden. Am Ende entlädt sich der Schild: 300 % in 5 m.",
+     "add": {
+      "reduction_pct": 15
+     },
+     "after": [
+      {
+       "on_end": true,
+       "dmg": 3.0,
+       "radius_m": 5,
+       "fx": "steel"
+      }
+     ]
+    }
+   ]
   },
   "blade_1": {
    "id": "blade_1",
@@ -1452,7 +1649,33 @@
    "radius_m": 4,
    "cost": 50,
    "cd": 90,
-   "soul": "damage"
+   "soul": "damage",
+   "stages": [
+    {
+     "name": "Wirbelklingen",
+     "text": "9 statt 6 Angriffe in 3 s, 5 m Reichweite.",
+     "add": {
+      "hits": 3,
+      "radius_m": 1
+     }
+    },
+    {
+     "name": "Finale",
+     "text": "Jeder Treffer lässt bluten. Am Ende ein Schlussstreich mit 300 % in 5 m.",
+     "set": {
+      "status": "bleed"
+     },
+     "after": [
+      {
+       "on_end": true,
+       "dmg": 3.0,
+       "radius_m": 5,
+       "fx": "steel",
+       "status": "bleed"
+      }
+     ]
+    }
+   ]
   }
  },
  "exp": {
