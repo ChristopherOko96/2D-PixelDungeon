@@ -50,9 +50,11 @@ Dazu kommt ein weiterer Splitter mit der Chance der Schwierigkeit
 pro Boss und Profil bringt ebenfalls einen weiteren.
 Das Ultimate kostet 3 Splitter. Auf Normal wird es also genau mit dem zweiten
 vollen Lauf frei (Entscheidung 29.10.2026: nur vom Boss, nach etwa 1,5 bis 2
-Läufen). Auf Albtraum klappt das oft schon nach dem ersten.
+Läufen). Auf Albtraum klappt das oft schon nach dem ersten. Der Boss zählt
+bei jedem Charakterlevel, auch der Endboss auf Normal mit Level 30
+(Entscheidung 29.10.2026). Farmen verhindert schon, dass es nur einen Boss pro
+Lauf gibt.
 Keine Splitter gibt es in diesen Fällen:
-- der Boss liegt mehr als 5 Level unter dem Charakter,
 - der Kampf dauerte unter 20 s,
 - der Held hatte unter 5 % Schadensanteil,
 - der Held war nicht dabei,

@@ -104,8 +104,7 @@
    1.5
   ],
   "per_boss": 2,
-  "_per_boss_note": "Only the real final boss of a run (floor 10, every world) gives shards: per_boss for each fair kill, plus one more with the difficulty's extra_pct chance and one for the first Albtraum kill of a boss. Normal: 2 per full run, so the 3-shard ultimate opens with the second full run. User decision 29.10.2026: shards only from bosses, the ultimate after about 1.5 to 2 full runs.",
-  "farm_level_gap": 5,
+  "_per_boss_note": "Only the real final boss of a run (floor 10, every world) gives shards: per_boss for each fair kill, plus one more with the difficulty's extra_pct chance and one for the first Albtraum kill of a boss. Normal: 2 per full run, so the 3-shard ultimate opens with the second full run. The boss counts at every character level (user decision 29.10.2026: the Normal final boss always gives shards); one boss per run already stops farming. User decision 29.10.2026: shards only from bosses, the ultimate after about 1.5 to 2 full runs.",
   "min_fight_seconds": 20,
   "min_damage_share": 0.05,
   "reward_memory": 200

@@ -8,9 +8,9 @@ extends RefCounted
 ##   - one more with the difficulty's `extra_pct` chance (Normal 0 %,
 ##     Schwer 25 %, Albtraum 50 %)
 ##   - one more for the first Albtraum kill of a boss, once per boss and profile
-##   - nothing when the boss is more than `farm_level_gap` levels below the
-##     character, when the player left the fight, was idle (too little damage
-##     share) or the fight was too short
+##   - the boss counts at every character level (one boss per full run
+##     already stops farming); nothing when the player left the fight, was
+##     idle (too little damage share) or the fight was too short
 ##   - a completion id is rewarded once; repeats are ignored
 ## Pure static functions on the profile; the random source is passed in.
 
@@ -23,14 +23,14 @@ static func boss_level(d: Dictionary, floor_number: int, difficulty: String) -> 
 	return maxi(1, floor_number * int(d.get("boss_level_per_floor", 2)) + bonus)
 
 
-## Why this boss completion cannot reward shards, or "". `fight`: {present, seconds, damage_share}.
-static func ineligible(d: Dictionary, profile: Dictionary, completion_id: String, char_level: int, boss_lv: int, fight: Dictionary) -> String:
+## Why this boss completion cannot reward shards, or "". The levels stay in
+## the signature for the reward event (no level rule applies any more).
+static func ineligible(d: Dictionary, profile: Dictionary, completion_id: String, _char_level: int, _boss_lv: int, fight: Dictionary) -> String:
 	var rules: Dictionary = d.soul_shards
 	if completion_id.is_empty() or profile.rewarded.has(completion_id): return "Dieser Bosssieg wurde schon gewertet."
 	if not bool(fight.get("present", false)): return "Du warst beim Sieg nicht im Kampf."
 	if float(fight.get("seconds", 0.0)) < float(rules.min_fight_seconds): return "Der Kampf war zu kurz."
 	if float(fight.get("damage_share", 0.0)) < float(rules.min_damage_share): return "Du hast zu wenig zum Sieg beigetragen."
-	if boss_lv < char_level - int(rules.farm_level_gap): return "Der Boss ist mehr als %d Level unter dir." % int(rules.farm_level_gap)
 	return ""
 
 

@@ -203,10 +203,10 @@ func _test_ultimate_pace() -> void:
 
 func _test_no_farming_or_duplicates() -> void:
 	var profile := Profile.fresh(d)
-	var result: Dictionary = Drops.resolve(d, profile, "boss", "normal", "f1", 20, 14, FIGHT, 0.0)
-	check(not result.shard and not result.counted and profile.shards.earned == 0, "a boss more than 5 levels below gives nothing")
+	var result: Dictionary = Drops.resolve(d, profile, "boss", "normal", "f1", int(d.max_level), Drops.boss_level(d, 10, "normal"), FIGHT, 0.0)
+	check(result.shard and int(result.count) == int(d.soul_shards.per_boss), "the Normal final boss gives shards even at level %d" % int(d.max_level))
 	check(not Drops.resolve(d, profile, "boss", "normal", "f2", 10, 10, {"present": false, "seconds": 60.0, "damage_share": 0.5}, 0.0).shard, "leaving the fight gives nothing")
 	check(not Drops.resolve(d, profile, "boss", "normal", "f3", 10, 10, {"present": true, "seconds": 60.0, "damage_share": 0.0}, 0.0).shard, "idling through the fight gives nothing")
 	check(Drops.resolve(d, profile, "boss", "normal", "f4", 10, 10, FIGHT, 0.0).shard, "a fair kill can drop")
-	check(not Drops.resolve(d, profile, "boss", "normal", "f4", 10, 10, FIGHT, 0.0).shard and profile.shards.earned == int(d.soul_shards.per_boss), "the same completion cannot reward twice")
+	check(not Drops.resolve(d, profile, "boss", "normal", "f4", 10, 10, FIGHT, 0.0).shard and profile.shards.earned == 2 * int(d.soul_shards.per_boss), "the same completion cannot reward twice")
 	check(Drops.boss_level(d, 5, "nightmare") == 18 and Drops.boss_level(d, 5, "normal") == 10, "boss level = floor x 2 + difficulty bonus")
