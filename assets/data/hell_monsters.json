@@ -866,8 +866,8 @@
   },
   "drache1": {
    "name": "Ignaroth · Salamander",
-   "w": 34,
-   "h": 30,
+   "w": 90,
+   "h": 49,
    "scale": 5,
    "kind": "lord",
    "floor": 3,
@@ -899,7 +899,7 @@
    "stats": {
     "hpMul": 1,
     "speed": 235,
-    "r": 44,
+    "r": 85,
     "ai": "skirmish",
     "intro": "burrow",
     "attacks": [
@@ -943,12 +943,12 @@
      }
     ]
    },
-   "px": 5
+   "px": 3
   },
   "drache2": {
    "name": "Ignaroth · Jungdrache",
-   "w": 40,
-   "h": 36,
+   "w": 99,
+   "h": 66,
    "scale": 5,
    "kind": "lord",
    "floor": 6,
@@ -980,7 +980,7 @@
    "stats": {
     "hpMul": 1,
     "speed": 215,
-    "r": 54,
+    "r": 115,
     "ai": "skirmish",
     "intro": "burrow",
     "attacks": [
@@ -1038,12 +1038,12 @@
      }
     ]
    },
-   "px": 5
+   "px": 3
   },
   "drache3": {
    "name": "Ignaroth · Glutdrache",
-   "w": 70,
-   "h": 62,
+   "w": 125,
+   "h": 103,
    "scale": 5,
    "kind": "lord",
    "floor": 9,
@@ -1079,7 +1079,7 @@
    "stats": {
     "hpMul": 1,
     "speed": 150,
-    "r": 86,
+    "r": 145,
     "ai": "chase",
     "intro": "flyin",
     "attacks": [
@@ -1127,12 +1127,12 @@
      }
     ]
    },
-   "px": 5
+   "px": 3
   },
   "drache4": {
    "name": "Ignaroth · Obsidianform",
-   "w": 100,
-   "h": 80,
+   "w": 222,
+   "h": 156,
    "scale": 5,
    "kind": "lord",
    "floor": 10,
@@ -1168,7 +1168,7 @@
    "stats": {
     "hpMul": 1,
     "speed": 140,
-    "r": 112,
+    "r": 190,
     "ai": "chase",
     "intro": "flyin",
     "attacks": [
@@ -1179,6 +1179,7 @@
       "every": 17,
       "first": 4,
       "life": 10,
+      "forms": 3,
       "desc": "Ruft die Geister seiner drei früheren Formen. Salamander, Jungdrache und Glutdrache kämpfen als violette Echos mit."
      },
      {
@@ -1227,7 +1228,7 @@
      }
     ]
    },
-   "px": 5
+   "px": 3
   }
  },
  "floors": {

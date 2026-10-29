@@ -1,9 +1,12 @@
 extends RefCounted
 ## Story 1's combat system in the Frostgruft, in one place for the game
 ## (src/hell/hell_game.gd): conditions on the hero (hero_fx.gd), the crypt's
-## enemy moves (frost_moves.gd) and the feel (frost_feel.gd, owned by the game
-## as `feel`). Every call is a no-op in worlds without theme.feel (the
-## Hell-Dungeon).
+## enemy moves (frost_moves.gd) and the feel (src/hero/story_feel.gd, the
+## crypt's feedback.gd, owned by the game as `feel`). The Frostgruft and the
+## Hell-Dungeon both have theme.feel (one system, the crypt's reactions in each
+## world's materials: docs/VFX-SYSTEM.de.md); the moves need theme.moves,
+## which only the Frostgruft has (the hell monsters keep their own attacks).
+## Every call is a no-op in a world without theme.feel.
 ##
 ## Items, potions and curses are item system 2's (src/hero/story_items.gd,
 ## docs/ITEM-SYSTEM-V2.de.md) in every world; the conditions show as lines in
@@ -35,14 +38,14 @@ static func hit_factor(g: Node, m: Dictionary) -> float:
 	return HeroFx.damage_scale(g) * FrostMoves.damage_taken(m)
 
 
-## After a hero hit: chips, squash, hitstop and shake.
+## After a hero hit: the crypt's hit reaction (flash, squash, sparks, drops).
 static func after_hit(g: Node, m: Dictionary, push: Vector2, crit: bool) -> void:
 	if not on(g):
 		return
 	g.feel.on_hit(m, push, crit)
 
 
-## After a kill: the burst and the stain.
+## After a kill: the crypt's death reaction (burst, pool, shake, hitstop).
 static func after_kill(g: Node, m: Dictionary) -> void:
 	if not on(g):
 		return
@@ -77,30 +80,22 @@ static func can_cast(g: Node, _key: String) -> bool:
 	return true
 
 
-## A fresh hero attack happened: the sword's swing gets its arc of light.
-static func after_attack(g: Node) -> void:
-	if not on(g):
-		return
-	if float(g.swing.get("t", 0.0)) > 0.12:
-		g.feel.on_swing(float(g.swing.a), float(g.weapon.get("reach", 150.0)))
-
-
 # ---------- drawing ----------
+# The feel draws on its own layers (src/hero/story_feel.gd); shots and swings
+# are the crypt's look (src/hero/story_hero.gd).
 
-## Under the actors: stains and the move warnings.
+## Under the actors: the move warnings.
 static func draw_under(g: Node, l: CanvasItem, t: float) -> void:
 	if not on(g):
 		return
-	g.feel.draw_under(l)
 	FrostMoves.draw(g, l, t)
 
 
-## Over the actors: the hero's conditions, shot looks, chips and effects.
+## Over the actors: the hero's conditions.
 static func draw_over(g: Node, l: CanvasItem, t: float) -> void:
 	if not on(g):
 		return
 	HeroFx.draw(g, l, t)
-	g.feel.draw_over(l, t)
 
 
 ## Screen space, under the HUD panels: blindness darkens the view around the hero.

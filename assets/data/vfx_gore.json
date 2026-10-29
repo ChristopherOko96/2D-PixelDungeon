@@ -1,18 +1,29 @@
 {
-  "_note": "What a hit leaves behind, per enemy kind (src/vfx/feedback.gd, particles.gd). material: bone (chips and dust, no liquid), slime, frost, blood, void. color: particles; stain: floor splat colour; stain_alpha: splat opacity. hit_splat and death_splat are splat radii in px; drip_below is the health share under which a wounded enemy leaves a drip trail, drip_every the px walked between drops. Purely visual.",
+  "_note": "What a hit leaves behind, per enemy kind (src/vfx/feedback.gd, particles.gd; in the story worlds through src/hero/story_feel.gd, docs/VFX-SYSTEM.de.md). material: bone (chips and dust, no liquid), slime, frost, blood, void; the Hell-Dungeon's ember, magma, ash, soul, obsidian. color: particles; stain: floor splat colour; stain_alpha: splat opacity. hit_splat and death_splat are splat radii in px; drip_below is the health share under which a wounded enemy leaves a drip trail, drip_every the px walked between drops; death_fx: the effect sheet a felled enemy bursts into (default by material in feedback.gd). Purely visual.",
   "materials": {
     "bone":  {"color": "e6dcc6", "stain": "8f877a", "stain_alpha": 0.35, "hit_splat": 0, "death_splat": 14, "drip_below": 0.0, "drip_every": 0, "chips": true},
     "slime": {"color": "7fbf3a", "stain": "4f8a24", "stain_alpha": 0.6, "hit_splat": 7, "death_splat": 22, "drip_below": 0.6, "drip_every": 18},
     "frost": {"color": "9fe3ee", "stain": "4f9fb0", "stain_alpha": 0.55, "hit_splat": 6, "death_splat": 20, "drip_below": 0.6, "drip_every": 20},
     "blood": {"color": "c8323a", "stain": "7a1a22", "stain_alpha": 0.65, "hit_splat": 7, "death_splat": 22, "drip_below": 0.6, "drip_every": 16},
-    "void":  {"color": "b06ad8", "stain": "5a2a7a", "stain_alpha": 0.6, "hit_splat": 7, "death_splat": 26, "drip_below": 0.6, "drip_every": 18}
+    "void":  {"color": "b06ad8", "stain": "5a2a7a", "stain_alpha": 0.6, "hit_splat": 7, "death_splat": 26, "drip_below": 0.6, "drip_every": 18},
+    "ember": {"color": "ff8a3d", "stain": "3a2418", "stain_alpha": 0.55, "hit_splat": 0, "death_splat": 18, "drip_below": 0.0, "drip_every": 0, "chips": true, "death_fx": "fire_burst"},
+    "magma": {"color": "ff5a1f", "stain": "5a1e0a", "stain_alpha": 0.65, "hit_splat": 7, "death_splat": 24, "drip_below": 0.6, "drip_every": 18, "death_fx": "fire_burst"},
+    "ash":   {"color": "a39d95", "stain": "3e3a36", "stain_alpha": 0.5, "hit_splat": 0, "death_splat": 16, "drip_below": 0.0, "drip_every": 0, "chips": true, "death_fx": "dust"},
+    "soul":  {"color": "b49cff", "stain": "4a3a7a", "stain_alpha": 0.5, "hit_splat": 5, "death_splat": 20, "drip_below": 0.5, "drip_every": 22, "death_fx": "arcane_burst"},
+    "obsidian": {"color": "e0603a", "stain": "2a1a24", "stain_alpha": 0.55, "hit_splat": 0, "death_splat": 18, "drip_below": 0.0, "drip_every": 0, "chips": true, "death_fx": "stone_burst"}
   },
   "kinds": {
     "skeleton": "bone", "skeleton_archer": "bone", "skeleton_guard": "bone", "knochenkoloss": "bone",
     "tiny_zombie": "slime", "moderkoloss": "slime",
     "ice_zombie": "frost", "frostleiche": "frost",
     "necromancer": "blood", "player": "blood", "mimic": "blood",
-    "void_bomber": "void", "boss": "void"
+    "void_bomber": "void", "boss": "void",
+    "frost_skeleton": "bone", "ice_knight": "bone",
+    "ice_slime": "frost", "ice_slime_m": "frost", "ice_slime_s": "frost", "frost_imp": "frost", "frost_whirl": "frost", "ice_crystal": "frost",
+    "glutschaedel": "ember", "glutimp": "blood", "hoellenhund": "blood", "dreischlund": "blood", "kettenschinder": "blood", "kerkermeister": "blood",
+    "brandskelett": "bone", "magmaschleim": "magma", "kesselbrut": "magma", "aschenpriester": "ash",
+    "peingeist": "soul", "seelenhirte": "soul", "klagender_hueter": "soul", "glutwaechter": "obsidian",
+    "drache1": "ember", "drache2": "ember", "drache3": "ember", "drache4": "obsidian"
   },
   "default": "blood"
 }

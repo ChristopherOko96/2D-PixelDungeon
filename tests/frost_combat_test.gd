@@ -4,14 +4,14 @@ extends SceneTree
 ## floor; conditions slow, freeze, poison and heal the hero and show in the
 ## hero panel; the crypt's moves warn before they hurt and put their condition
 ## on. Items are item system 2's (src/hero/story_items.gd): the inventory on I,
-## a stronger weapon lifts every hit, also a subclass's. The Hell-Dungeon
-## stays without the combat feel.
+## a stronger weapon lifts every hit, also a subclass's. The Hell-Dungeon has
+## the same feel in hell colours, its monsters keep their own attacks.
 
 const FrostScene = preload("res://src/hell/frost_dungeon.tscn")
 const HellScene = preload("res://src/hell/hell_dungeon.tscn")
 const HeroFx = preload("res://src/hell/hero_fx.gd")
 const FrostMoves = preload("res://src/hell/frost_moves.gd")
-const FrostFeel = preload("res://src/hell/frost_feel.gd")
+const Feedback = preload("res://src/vfx/feedback.gd")
 const FrostCombat = preload("res://src/hell/frost_combat.gd")
 const MetaStore = preload("res://src/hell/meta_store.gd")
 const SAVE := "user://frost_combat_test.cfg"
@@ -32,7 +32,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE))
-	await test_hell_has_none()
+	await test_hell_gets_the_feel()
 	await test_feel()
 	await test_conditions()
 	await test_moves()
@@ -75,30 +75,62 @@ func _equip(game: Node, weapon: Dictionary) -> void:
 	items.act("inv_equip", bag.find(weapon))
 
 
-func test_hell_has_none() -> void:
+## Floor marks of the crypt's feel (pools and stains).
+func _marks(game: Node) -> int:
+	return game.feel.feedback.particles.pool_count() + game.feel.feedback.particles.stain_count()
+
+
+func test_hell_gets_the_feel() -> void:
 	var game := await _new("swordsman", HellScene)
-	HeroFx.apply(game, "poison", 3.0, 1.0)
-	check(game.feel == null and FrostCombat.status_lines(game).is_empty(), "the Hell-Dungeon keeps its own combat")
+	check(game.feel != null, "the Hell-Dungeon has the crypt's feel")
+	var m: Dictionary = game.monsters.spawn(game.state.room, Vector2(game.player.x + 100.0, game.player.y), "brandskelett")
+	m.spawn = 0.0
+	m.hp = 400.0
+	m.max = 400.0
+	check(FrostMoves.set_for(game, m).is_empty(), "hell monsters keep their own attacks")
+	check(str(Feedback.gore(game.feel._gore(m)).material) == "bone" and str(Feedback.gore(game.feel._gore({"id": "peingeist", "kind": "mob", "def": {}})).material) == "soul", "hell monsters react in their own material")
+	game.feel.update(0.01)
+	game._damage_mob(m, Vector2.RIGHT * 600.0)
+	game.feel.update(0.01)
+	check(game.feel.pose(m).scale != Vector2.ONE and float(game.feel.pose(m).flash) > 0.0, "a hit squashes a hell monster and makes it flash")
+	m.hp = 0.0
+	game.monsters.update(0.01)
+	game.feel.update(0.01)
+	check(_marks(game) > 0 and game.feel.frozen(), "a felled hell monster leaves a mark and holds the picture")
+	check(game.feel.fallen().is_empty(), "hell monsters keep their own death animation")
 	await _free(game)
 
 
 func test_feel() -> void:
 	var game := await _new()
-	check(game.feel != null, "the Frostgruft has Story 1's feel")
+	check(game.feel != null, "the Frostgruft has the crypt's feel")
 	var m := _mob(game, Vector2(100, 0))
+	game.feel.update(0.01)
 	game._damage_mob(m, Vector2.RIGHT * 600.0)
-	check(game.feel.hitstop > 0.0, "a hit freezes the game for a moment (hitstop)")
-	check(FrostFeel.squash(m) != Vector2.ONE, "a hit squashes the enemy")
+	game.feel.update(0.01)
+	var pose: Dictionary = game.feel.pose(m)
+	check(not game.feel.frozen(), "an ordinary hit does not hold the picture (as in the crypt)")
+	check(pose.scale != Vector2.ONE and float(pose.lean) != 0.0, "a hit squashes the enemy and makes it lean")
+	check(float(pose.flash) > 0.0 and (pose.flash_color as Color).r > (pose.flash_color as Color).b, "an ordinary hit flashes red")
 	m.hp = 0.0
 	game._update_mobs(0.01)
-	check(game.feel._stains.size() > 0, "a kill leaves a stain on the floor")
+	game.feel.update(0.01)
+	check(_marks(game) > 0, "a kill leaves a pool on the floor")
+	check(game.feel.frozen(), "a kill holds the picture for a moment (hitstop)")
+	check(game.feel.fallen().has(m), "a felled enemy without a death animation falls and fades")
+	for i in range(30):
+		game.feel.freeze(0.02)
+	for i in range(30):
+		game.feel.update(0.02)
+	check(game.feel.fallen().is_empty(), "the fallen enemy is gone after its fall")
 	game.state.inv = 0.0
 	var hp: int = game.state.hp
+	game.state.shake = 0.0
 	game._hurt("Test")
-	check(int(game.state.hp) < hp and float(game.state.shake) > 0.0, "a hurt shakes the camera")
-	game.feel.hitstop = 0.2
+	game.feel.update(0.01)
+	check(int(game.state.hp) < hp and float(game.state.shake) > 0.0 and game.feel.frozen(), "a hurt shakes the camera and holds the picture")
 	var t0: float = game.state.t
-	game._process(0.05)
+	game._process(0.01)
 	check(is_equal_approx(float(game.state.t), t0), "during hitstop the game stands still")
 	await _free(game)
 

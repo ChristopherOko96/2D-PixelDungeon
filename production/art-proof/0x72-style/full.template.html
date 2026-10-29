@@ -263,6 +263,153 @@ function bruteDef(img, recolor) {
     { id: "torso", rects: [[7, 22, 25, 28]], pivot: [16, 28], parent: null, z: 2, hp: 40, label: "Rumpf", vital: true } ], items: [] };
 }
 
+// Game rule for bosses (rigs.json since commit 3a29399): legs, head and body
+// never break, only the total HP kills; the arm (disables) still breaks. This
+// page keeps its own vital/kill rule; export_rigs.js applies bossParts.
+function bossParts(def) {
+  const copy = JSON.parse(JSON.stringify(def));
+  for (const part of copy.parts) if (!part.disables) { delete part.vital; part.unbreakable = true; }
+  return copy;
+}
+const GAME_BOSSES = ["big_zombie", "frost_corpse", "bone_colossus"];
+
+// ================================================================= 0x72 variants (candidates, 29.10.2026)
+// Enemy and boss variants for the crypt, the Frostgruft and the Hell-Dungeon
+// in the crypt standard: every body part is cut by hand and moves on its own.
+// Not on this page and not in the game: `node export_rigs.js --variants`
+// writes them to production/qa/evidence/0x72-variants/rigs_variants.json for
+// the proofs (scripts/preview_0x72_variants.gd). `recolor` is an exact
+// hex->hex palette swap of the body frame (one pass, so no chaining; the
+// outline #222222 is never touched); held items are never recoloured.
+// The gem of the green staff in 0x72 ice cyan (1:1 row copy of
+// weapon_green_magic_staff.png, only #97da3f -> #72d6ce).
+const ICE_STAFF = { palette: { A: "#222222", W: "#fdf7ed", G: "#72d6ce", D: "#483b3a", w: "#8f4029", o: "#c56025" }, rows: [
+  "..AWWA..", ".AGWWWA.", "ADGGWWDA", "ADGGGWDA", "AwDGGDoA", ".AwDDoA.", ".AwwooA.",
+  ...Array(22).fill("..AwoA.."), "..AAAA.." ] };
+// Skeleton-family cut of a 16x16 figure laid out like the 0x72 zombie
+// (ice_zombie rig): head rows 0-9, torso 10-13, legs 14-15.
+function zombieCut(img, recolor, labels = {}) {
+  return { img, recolor, family: "skeleton", ground: [8, 15], width: 8, parts: [
+    { id: "leg_l", rects: [[4, 14, 7, 15]], pivot: [6, 14], parent: null, z: 1, hp: 2, label: "Linkes Bein" },
+    { id: "leg_r", rects: [[8, 14, 11, 15]], pivot: [10, 14], parent: null, z: 1, hp: 2, label: "Rechtes Bein" },
+    { id: "torso", rects: [[4, 10, 11, 13]], pivot: [8, 13], parent: null, z: 2, hp: 3, label: "Rumpf", alsoDetach: ["leg_l", "leg_r"] },
+    { id: "skull", rects: [[4, 0, 11, 9]], pivot: [8, 10], parent: "torso", z: 3, hp: 3, label: labels.head || "Kopf", vital: true } ], items: [] };
+}
+// Skeleton-family cut of a tall 0x72 figure (16x23, 16x28): the legs are the
+// two bottom rows (like the skeleton's), so a legless crawl (torso +2 px)
+// still touches the ground. The torso never breaks and takes no legs along:
+// the lone-head hop of the skeleton pose is tuned for 16x16 and would float.
+function tallCut(img, recolor, cut) {
+  const [gx, gy] = cut.ground, legs = gy - 1, unbreakableLegs = cut.unbreakableLegs ? { unbreakable: true } : {};
+  return { img, recolor, family: "skeleton", ...(cut.variant ? { variant: cut.variant } : {}), ground: [gx, gy], width: cut.width, parts: [
+    { id: "leg_l", rects: [[cut.x0, legs, cut.split, gy]], pivot: [cut.split - 2, legs], parent: null, z: 1, hp: 2, label: "Linkes Bein", ...unbreakableLegs },
+    { id: "leg_r", rects: [[cut.split + 1, legs, cut.x1, gy]], pivot: [cut.split + 2, legs], parent: null, z: 1, hp: 2, label: "Rechtes Bein", ...unbreakableLegs },
+    { id: "torso", rects: [[cut.x0, cut.torso, cut.x1, legs - 1]], pivot: [gx, legs - 1], parent: null, z: 2, hp: cut.torsoHp || 4, label: cut.torsoLabel || "Rumpf", unbreakable: true },
+    { id: "head", rects: [[cut.x0, cut.head, cut.x1, cut.torso - 1]], pivot: [gx, cut.torso], parent: "torso", z: 3, hp: cut.headHp || 3, label: cut.headLabel || "Kopf", vital: true } ],
+    items: cut.items || [] };
+}
+// Held items of the tall figures; the hand sits on the torso's front edge.
+const tallKnife = (hand, label) => ({ id: "weapon", img: "knife", grip: [3, 11], hand, parent: "torso", rest: 0.55, z: 4, tip: [2.5, 1], hp: 1, label, disables: "attack" });
+const spear = (hand, label) => ({ id: "weapon", img: "spear", grip: [2.5, 24], hand, parent: "torso", rest: 0.5, z: 4, tip: [2.5, 0.5], hp: 1, label, disables: "attack" });
+// Brute cut of the 0x72 ogre (32x36): the left arm hangs down to the fist;
+// the toga strap over the shoulder stays with the body.
+function ogreDef(recolor, armLabel = "Arm") {
+  return bossParts({ img: "ogre", recolor, family: "brute", ground: [16, 35], width: 18, parts: [
+    { id: "arm", rects: [[8, 14, 10, 14], [9, 15, 10, 15], [6, 16, 10, 16], [7, 17, 10, 17], [6, 18, 10, 18], [7, 19, 10, 19], [6, 20, 10, 20], [7, 21, 10, 21], [7, 22, 10, 22],
+      [7, 23, 11, 23], [7, 24, 11, 24], [7, 25, 12, 25], [7, 26, 13, 26], [6, 27, 12, 27]], pivot: [10, 16], parent: "torso", z: 4, hp: 20, label: armLabel, disables: "attack", regrow: 6 },
+    { id: "leg_l", rects: [[6, 30, 15, 35]], pivot: [11, 30], parent: null, z: 1, hp: 15, label: "Linkes Bein" },
+    { id: "leg_r", rects: [[16, 30, 25, 35]], pivot: [20, 30], parent: null, z: 1, hp: 15, label: "Rechtes Bein" },
+    { id: "head", rects: [[12, 10, 24, 20], [13, 21, 24, 22]], pivot: [18, 22], parent: "torso", z: 3, hp: 30, label: "Kopf" },
+    { id: "torso", rects: [[11, 11, 12, 22], [6, 23, 25, 29]], pivot: [16, 29], parent: null, z: 2, hp: 40, label: "Rumpf" } ], items: [] });
+}
+// Brute cut of the 0x72 big demon (32x36), a walking maw without real arms:
+// the clawed lobe at the upper left (red bump, black claws) is the arm, the
+// head is the upper jaw (its idle sway and the brute's attack/roar tilt open
+// the mouth), the body the dark maw and the lower jaw.
+function demonDef(recolor) {
+  return bossParts({ img: "big_demon", recolor, family: "brute", ground: [16, 35], width: 18, parts: [
+    { id: "arm", rects: [[8, 9, 10, 9], [9, 10, 13, 10], [8, 11, 13, 11], [5, 12, 13, 12], [6, 13, 13, 13], [7, 14, 13, 14], [6, 15, 12, 15], [6, 16, 11, 16], [5, 17, 9, 17]], pivot: [13, 16], parent: "torso", z: 4, hp: 20, label: "Klaue", disables: "attack", regrow: 6 },
+    { id: "leg_l", rects: [[5, 32, 15, 35]], pivot: [11, 32], parent: null, z: 1, hp: 15, label: "Linkes Bein" },
+    { id: "leg_r", rects: [[16, 32, 26, 35]], pivot: [20, 32], parent: null, z: 1, hp: 15, label: "Rechtes Bein" },
+    { id: "head", rects: [[5, 6, 27, 19]], pivot: [9, 19], parent: "torso", z: 3, hp: 30, label: "Kopf" },
+    { id: "torso", rects: [[5, 20, 27, 31]], pivot: [16, 31], parent: null, z: 2, hp: 40, label: "Rumpf" } ], items: [] });
+}
+const VARIANTS = {
+  // ---- crypt
+  crypt_zombie: zombieCut("zombie", null),
+  crypt_bone_lancer: { ...skeletonDef([spear([11, 13], "Lanze")]), recolor: { "#fdf7ed": "#d3bfa9", "#d3bfa9": "#aa8d7a" } },
+  crypt_cultist: tallCut("masked_orc", { "#3d734f": "#5f2d56", "#314152": "#2a2a3a", "#8f4029": "#483b3a", "#62232f": "#2a2a3a" },
+    { ground: [8, 22], width: 10, x0: 3, x1: 15, split: 7, head: 7, torso: 16, variant: "sword", headLabel: "Maske", items: [tallKnife([12, 18], "Opferdolch")] }),
+  crypt_plague_doctor: { img: "doc", recolor: null, family: "necro", ground: [7, 22], width: 12, parts: [
+    { id: "robe", rects: [[0, 17, 7, 17], [0, 18, 15, 22]], pivot: [7, 22], parent: null, z: 1, hp: 6, label: "Mantel", vital: true },
+    { id: "hood", rects: [[0, 6, 15, 16], [8, 17, 15, 17]], pivot: [7, 17], parent: "robe", z: 2, hp: 6, label: "Kopf mit Schnabel", vital: true } ],
+    items: [{ id: "weapon", img: "green_staff", grip: [3.5, 18], hand: [14, 18], parent: "hood", rest: 0.12, z: 3, tip: [2.5, 3], hp: 2, label: "Giftstab", disables: "cast" }] },
+  crypt_corpse_ogre: ogreDef({ "#3d734f": "#aa8d7a", "#314152": "#775c55", "#8f4029": "#483b3a", "#62232f": "#333333" }),
+  crypt_soul_eater: demonDef({ "#da4e38": "#5f2d56", "#9f294e": "#3d2140", "#fdf7ed": "#72d6ce" }),
+  // ---- Frostgruft (0x72 cold colours only)
+  frost_ice_elf: tallCut("elf_m", { "#facb3e": "#fdf7ed", "#ee8e2e": "#b6cbcf", "#4ba747": "#5698cc", "#3d734f": "#417089" },
+    { ground: [8, 27], width: 11, x0: 0, x1: 15, split: 7, head: 9, torso: 19, variant: "bow", unbreakableLegs: true,
+      items: [{ id: "weapon", img: "bow", bow: true, grip: [10.5, 13], hand: [13, 18], parent: "torso", rest: 0, z: 4, tip: [7.5, 13], hp: 1, label: "Bogen", disables: "attack" }] }),
+  frost_ice_elf_f: tallCut("elf", { "#facb3e": "#fdf7ed", "#ee8e2e": "#b6cbcf", "#4ba747": "#5698cc", "#3d734f": "#417089", "#da4e38": "#72d6ce" },
+    { ground: [7, 27], width: 11, x0: 0, x1: 15, split: 6, head: 12, torso: 21, variant: "sword", unbreakableLegs: true, items: [tallKnife([13, 23], "Eisdolch")] }),
+  frost_frostling: { ...JSON.parse(JSON.stringify(DEFS.tiny_zombie)), recolor: { "#d3bfa9": "#72d6ce", "#aa8d7a": "#417089", "#3d734f": "#fdf7ed" } },
+  frost_ice_goblin: { ...zombieCut("goblin", { "#3d734f": "#72d6ce", "#314152": "#417089" }), variant: "guard", width: 9, parts: [
+    { id: "leg_l", rects: [[4, 14, 7, 15]], pivot: [6, 14], parent: null, z: 1, hp: 2, label: "Linkes Bein" },
+    { id: "leg_r", rects: [[8, 14, 13, 15]], pivot: [10, 14], parent: null, z: 1, hp: 2, label: "Rechtes Bein" },
+    { id: "torso", rects: [[4, 11, 13, 13]], pivot: [8, 13], parent: null, z: 2, hp: 3, label: "Rumpf", alsoDetach: ["leg_l", "leg_r"] },
+    { id: "head", rects: [[4, 6, 13, 10]], pivot: [8, 11], parent: "torso", z: 3, hp: 3, label: "Kopf", vital: true } ],
+    items: JSON.parse(JSON.stringify(DEFS.skel_guard.items)) },
+  frost_shaman: { img: "orc_shaman", recolor: { "#3d734f": "#72d6ce", "#314152": "#417089", "#d44e52": "#5698cc", "#8f4029": "#5956bd", "#62232f": "#314152" }, family: "necro", ground: [8, 22], width: 10, parts: [
+    { id: "robe", rects: [[0, 17, 15, 22]], pivot: [8, 22], parent: null, z: 1, hp: 6, label: "Kutte", vital: true },
+    { id: "hood", rects: [[0, 8, 15, 16]], pivot: [8, 17], parent: "robe", z: 2, hp: 6, label: "Kopf", vital: true } ],
+    items: [{ id: "weapon", img: "ice_staff", grip: [3.5, 18], hand: [14, 17], parent: "hood", rest: 0.12, z: 3, tip: [2.5, 3], hp: 2, label: "Eisstab", disables: "cast" }] },
+  frost_necro: (() => {
+    const def = bossParts({ ...JSON.parse(JSON.stringify(DEFS.necro)), recolor: { "#5f2d56": "#417089", "#9f294e": "#5698cc", "#2a2a3a": "#314152", "#fdf7ed": "#72d6ce" } });
+    def.items[0].regrow = 8;
+    return def;
+  })(),
+  frost_giant: ogreDef({ "#3d734f": "#72d6ce", "#314152": "#417089", "#8f4029": "#7b8994", "#62232f": "#314152" }),
+  frost_demon: demonDef({ "#da4e38": "#5698cc", "#9f294e": "#417089" }),
+  // ---- Hell-Dungeon (make_hell_skin.gd values: r0 #2a0f16, r1 #4a1620, r2 #6e1a24, r3 #a8201a, l0 #c4220f, l2 #ff5a14, l3 #ffa030, l4 #ffe080)
+  hell_chort: tallCut("chort", { "#da4e38": "#a8201a", "#9f294e": "#6e1a24", "#5f2d56": "#4a1620" },
+    { ground: [8, 22], width: 10, x0: 3, x1: 13, split: 7, head: 5, torso: 16, variant: "sword", items: [spear([12, 18], "Speer")] }),
+  hell_wogol: tallCut("wogol", { "#da4e38": "#a8201a", "#9f294e": "#6e1a24", "#5f2d56": "#4a1620", "#fdf7ed": "#ffa030" },
+    { ground: [8, 22], width: 10, x0: 3, x1: 13, split: 7, head: 7, torso: 15, torsoLabel: "Glutbauch" }),
+  hell_orc: tallCut("orc_warrior", { "#3d734f": "#a8201a", "#314152": "#6e1a24", "#8f4029": "#483b3a", "#62232f": "#2a0f16", "#fdf7ed": "#ffe080" },
+    { ground: [8, 22], width: 10, x0: 4, x1: 15, split: 7, head: 7, torso: 16, variant: "sword",
+      items: [{ id: "weapon", img: "waraxe", grip: [3.5, 19], hand: [12, 18], parent: "torso", rest: 0.5, z: 4, tip: [9, 5], hp: 1, label: "Kriegsaxt", disables: "attack" }] }),
+  hell_pumpkin: tallCut("pumpkin", { "#ee8a2e": "#ff5a14", "#c56025": "#c4220f", "#8f4029": "#4a1620", "#62232f": "#2a0f16" },
+    { ground: [8, 22], width: 10, x0: 0, x1: 15, split: 7, head: 2, torso: 16, torsoHp: 3, headHp: 4, headLabel: "Kürbiskopf" }),
+  hell_glutkoloss: bossParts(bruteDef("big_zombie", { "#aa8d7a": "#a8201a", "#775c55": "#6e1a24", "#4ba747": "#ff5a14", "#97da3f": "#ffa030" })),
+  hell_ogre: ogreDef({ "#3d734f": "#a8201a", "#314152": "#6e1a24", "#8f4029": "#483b3a", "#62232f": "#2a0f16" }),
+  hell_archdemon: demonDef({ "#da4e38": "#a8201a", "#9f294e": "#6e1a24", "#fdf7ed": "#ffe080" }),
+};
+// Names (German, in-game), world, role, size factor and source frame of each
+// variant, for the proofs and the later integration.
+const VARIANT_ROSTER = {
+  crypt_zombie: { name: "Grabzombie", world: "crypt", role: "mob", source: "zombie_anim_f10" },
+  crypt_bone_lancer: { name: "Knochenlanzer", world: "crypt", role: "mob", source: "skelet_idle_anim_f0" },
+  crypt_cultist: { name: "Kultist", world: "crypt", role: "elite", source: "masked_orc_idle_anim_f0" },
+  crypt_plague_doctor: { name: "Pestdoktor", world: "crypt", role: "elite", source: "doc_idle_anim_f0" },
+  crypt_corpse_ogre: { name: "Leichenoger", world: "crypt", role: "miniboss", scale: 3, source: "ogre_idle_anim_f0" },
+  crypt_soul_eater: { name: "Seelenfresser", world: "crypt", role: "miniboss", scale: 3, source: "big_demon_idle_anim_f0" },
+  frost_ice_elf: { name: "Eiself", world: "frost", role: "mob", scale: 1.5, source: "elf_m_idle_anim_f0" },
+  frost_ice_elf_f: { name: "Eiselfe", world: "frost", role: "elite", scale: 1.5, source: "elf_f_idle_anim_f0" },
+  frost_frostling: { name: "Frostling", world: "frost", role: "mob", scale: 1.5, source: "tiny_zombie_idle_anim_f0" },
+  frost_ice_goblin: { name: "Eisgoblin", world: "frost", role: "mob", scale: 1.5, source: "goblin_idle_anim_f0" },
+  frost_shaman: { name: "Frostschamane", world: "frost", role: "elite", scale: 1.5, source: "orc_shaman_idle_anim_f0" },
+  frost_necro: { name: "Frostnekromant", world: "frost", role: "miniboss", scale: 2.4, source: "necromancer_anim_f0" },
+  frost_giant: { name: "Frostriese", world: "frost", role: "boss", scale: 2.4, source: "ogre_idle_anim_f0" },
+  frost_demon: { name: "Frostdämon", world: "frost", role: "boss", scale: 2.4, source: "big_demon_idle_anim_f0" },
+  hell_chort: { name: "Hornteufel", world: "hell", role: "mob", scale: 1.7, source: "chort_idle_anim_f0" },
+  hell_wogol: { name: "Glutwanst", world: "hell", role: "mob", scale: 1.7, source: "wogol_idle_anim_f0" },
+  hell_orc: { name: "Höllenork", world: "hell", role: "elite", scale: 1.7, source: "orc_warrior_idle_anim_f0" },
+  hell_pumpkin: { name: "Glutkürbis", world: "hell", role: "mob", scale: 1.7, source: "pumpkin_dude_idle_anim_f0" },
+  hell_glutkoloss: { name: "Glutkoloss", world: "hell", role: "miniboss", scale: 2.1, source: "big_zombie_idle_anim_f0" },
+  hell_ogre: { name: "Höllenoger", world: "hell", role: "miniboss", scale: 2.1, source: "ogre_idle_anim_f0" },
+  hell_archdemon: { name: "Erzdämon", world: "hell", role: "boss", scale: 2.1, source: "big_demon_idle_anim_f0" },
+};
+
 // Later worlds: automatically split figures (head / body / feet).
 const AUTO = {
   goblin: { img: "goblin", kind: "small", weapon: "knife" }, masked_orc: { img: "masked_orc", kind: "small", weapon: "spear" },
