@@ -1,5 +1,5 @@
 extends RefCounted
-## Local save slots: three per mode ("crypt", "hell", "frost"), each one file in
+## Local save slots: three per mode ("krypta" = Story 1, "hell", "frost", "crypt" = the endless crypt run), each one file in
 ## user://saves/. A save holds the state at the start of a floor; loading starts
 ## that floor again. Files are written with store_var without objects, so a
 ## save can only ever hold plain data.
@@ -10,7 +10,7 @@ const VERSION := 1
 ## First bytes of every save file; anything else reads as an empty slot.
 const MAGIC := "DELVESAVE1"
 ## Mode -> name shown in the menus.
-const MODE_NAMES := {"crypt": "KRYPTA", "hell": "HÖLLE", "frost": "FROSTGRUFT"}
+const MODE_NAMES := {"krypta": "KRYPTA", "hell": "HÖLLE", "frost": "FROSTGRUFT", "crypt": "ENDLOS"}
 const CLASS_NAMES := {"swordsman": "SCHWERTKÄMPFER", "archer": "BOGENSCHÜTZE", "mage": "MAGIER"}
 
 var dir := DIR

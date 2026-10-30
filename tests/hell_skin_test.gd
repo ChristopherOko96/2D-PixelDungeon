@@ -11,6 +11,9 @@ const DIR := "res://assets/sprites/hell_0x72/"
 const OLD_MANIFEST := "res://assets/sprites/hell/manifest.json"
 ## Pixel size per sprite where it is not 3 (pickups the game scales down).
 const BLOCK := {"heart": 4, "icon_scroll": 4, "icon_demon_big": 4, "rune_gem": 5}
+## Figures, not level art: the key room's merchant is the same 0x72 figure in every world, drawn at
+## the hero's scale like the hero (hell_game.gd), so its own colours and 1 px pixels stay.
+const FIGURES := ["npc_idle_f0", "npc_idle_f1", "npc_idle_f2", "npc_idle_f3"]
 ## Sizes the hell runtime and core hard-code (hell_walls.gd, hell_game.gd).
 const FIXED := {"wall_h": Vector2i(-1, 74), "wall_v": Vector2i(62, -1), "corner_cap": Vector2i(76, 76), "wall_top": Vector2i(96, 96),
 	"lava_00": Vector2i(96, 96), "lava_01": Vector2i(96, 96), "lava_edge_top": Vector2i(96, 96)}
@@ -73,6 +76,8 @@ func _test_only_hell_palette_colours(images: Dictionary) -> void:
 	# Act
 	var strays := {}
 	for n: String in images:
+		if n in FIGURES:
+			continue
 		var im: Image = images[n]
 		for y in range(im.get_height()):
 			for x in range(im.get_width()):
@@ -112,6 +117,8 @@ func _blocky(im: Image, k: int) -> bool:
 func _test_whole_pixels_only(images: Dictionary) -> void:
 	var smeared: Array = []
 	for n: String in images:
+		if n in FIGURES:
+			continue
 		if not _blocky(images[n], int(BLOCK.get(n, HellSkin.K))):
 			smeared.append(n)
 	check(smeared.is_empty(), "every sprite is made of whole 0x72 pixels (%s)" % str(smeared))

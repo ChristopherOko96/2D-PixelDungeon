@@ -15,6 +15,18 @@ the seeded generator for floors 2-10. The browser preview and the Godot game bot
 After changing `hell_core.js`: run `bake_floors.js`, then the tests `tests/hell_floor_data_test.gd`,
 and rebuild the preview if it should match.
 
+## The hell on the world kit (the game's floors now)
+
+The game no longer reads the baked floors: every hell floor is built live from the run number on the
+world kit (`docs/WELT-BAUKASTEN.de.md`). `hell_core.js` and `hell_floors.json` stay for their tests.
+
+| File | Purpose |
+| --- | --- |
+| `hell_world.js` | The hell as a world kit pack: ten floors (titles, bosses, hazards as before, floor 1 generated too), hell room sizes, names, banner colours, dressing tables. |
+| `export_world.js` | `node tools/hell_dungeon/export_world.js` writes `assets/data/hell_world.json` for Godot. |
+| `build_hell_extras.py` | `py -3 -I tools/hell_dungeon/build_hell_extras.py` paints the world kit pieces the hell sheets lack (from their crypt counterparts, in the hell palette) into `assets/sprites/hell` and the pixel set `assets/sprites/hell_0x72`, and the hell-wood mimic atlas `assets/sprites/hell/monsters/mimik.png`. |
+| `build_world_preview.py` | `py -3 -I tools/hell_dungeon/build_world_preview.py <out.html>`: the playable preview of the generated hell (the crypt's world kit page with the hell's pack, skin and monsters). |
+
 ## Monsters and Ignaroth's part rigs
 
 | File | Purpose |

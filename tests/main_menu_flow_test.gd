@@ -158,15 +158,26 @@ func _test_story_three_hell_dungeon_starts_with_the_hero_and_story_four_is_comin
 func _test_story_one_starts_solo_run_and_leaving_returns_to_menu() -> void:
 	# Arrange
 	var game = await _new_game()
-	# Act: story 1 opens the hero choice; picking a hero starts the run.
+	# Act: story 1 opens the hero choice; picking a hero opens the crypt world (docs/WELT-BAUKASTEN.de.md)
 	game.main_menu._open_stories()
 	game.main_menu._choose_story("krypta")
 	check(game.main_menu._class_panel.visible and not game.main_menu._story_panel.visible and not game.active, "a story first shows the hero cards")
 	game.main_menu._choose_class("swordsman")
+	await process_frame
+	# Assert
+	var world: Node = current_scene
+	check(world != null and str(world.scene_file_path) == "res://src/hell/krypta_dungeon.tscn", "story 1 opens the crypt world scene")
+	check(world != null and str(world.class_id) == "swordsman" and int(world.state.floor) == 1 and int(world.state.get("world_run", 0)) > 0, "the crypt starts on floor 1 of a freshly rolled world with the chosen hero")
+	if world != null:
+		world.queue_free()
+	await process_frame
+	# Act: the endless mode still runs the crypt's chain of rooms with the chosen class
+	game = await _new_game()
+	game.main_menu._open_classes(true)
+	game.main_menu._choose_class("swordsman")
 	game._refresh_ui()
 	# Assert
-	check(game.active and game.hosting and game.phase == "combat" and game.room == 1 and game.floor_index == 1, "story 1 starts a solo run in room 1 of floor 1")
-	check(game.story_id == "krypta" and not game.open_floors and game.floor_layouts.size() == game._run_room_count(), "story 1 plays the crypt's chain of rooms")
+	check(game.active and game.hosting and game.phase == "combat" and game.floor_index == 1, "the endless mode starts a solo run on floor 1")
 	check(game.players[1].class_id == "swordsman" and game.players[1].melee and game.players[1].max_hp == 10, "the chosen hero class is applied to the solo player")
 	check(not game.main_menu.visible and not game.lobby_ui.visible and game.run_hud.visible, "during the run neither menu nor lobby is visible")
 	# Act

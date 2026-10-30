@@ -112,19 +112,31 @@ var spills: Array = []
 var rig_host: RefCounted = null
 
 
-## game: the hell game node; cfg: the "monsters" block of hell_balance.json.
+## game: the hell game node; cfg: the "monsters" block of the world's balance file. A world with
+## its own monster set names its data file and atlas folder there ("data", "sprites"; e.g. the
+## crypt in assets/data/krypta_balance.json); without them the hell monsters load.
 func _init(game: Node, monster_cfg: Dictionary) -> void:
 	g = game
 	cfg = monster_cfg
-	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(DATA_PATH))
+	var sprite_dir := str(cfg.get("sprites", SPRITE_DIR))
+	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(str(cfg.get("data", DATA_PATH))))
 	defs = data.defs
 	floors = data.floors
+	# monsters a world borrows from another set without putting them in its floors' rosters
+	# (cfg.borrow: data file, atlas folder, ids; e.g. the hell's mimic chests wake as the crypt's
+	# mimic, drawn from a hell-coloured atlas)
+	var borrow: Dictionary = cfg.get("borrow", {})
+	var borrowed: Array = borrow.get("ids", [])
+	if not borrowed.is_empty():
+		var more: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(str(borrow.data)))
+		for id: String in borrowed:
+			defs[id] = more.defs[id]
 	# experience per kill for the hero's levels (hero_kit.gd reads def.exp)
 	var exp: Dictionary = cfg.get("exp", {})
 	for id: String in defs:
 		defs[id].exp = int(exp.get(id, 0))
 	for id: String in defs:
-		atlas[id] = load(SPRITE_DIR + id + ".png")
+		atlas[id] = load((str(borrow.sprites) if id in borrowed else sprite_dir) + id + ".png")
 
 
 ## Drops every attack effect (death, pit, new floor).
@@ -194,8 +206,14 @@ func populate(r: Dictionary, cells: Array) -> void:
 	var roster: Array = floors[str(g.state.floor)].mobs
 	var first := randi() % roster.size()
 	var count: int = int(r.mobs if r.mobs > 0 else 3) + int(g.W.diff.extra)
+	# a world with dormant mimics (theme.dormant_mimics) never shows one as a monster: it waits as a chest
+	var dormant: String = str(g.theme.get("mimic_kind", "")) if g.theme.get("dormant_mimics", false) else ""
 	for k in range(mini(count, cells.size())):
-		spawn(r.index, cells[k], roster[(first + k) % roster.size()])
+		var id: String = roster[(first + k) % roster.size()]
+		if id == dormant:
+			g.place_dormant_mimic(r.index, cells[k])
+		else:
+			spawn(r.index, cells[k], id)
 	if r.type != "boss":
 		g._toast("Die Gitter fallen. Besiege alle Gegner.")
 		return

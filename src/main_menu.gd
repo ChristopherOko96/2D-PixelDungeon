@@ -30,11 +30,11 @@ signal rooms_saved(config: Dictionary)
 signal room_test_requested(room_id: String, floor: int, class_id: String)
 ## Debug: the Testraum with the chosen hero class (src/game.gd start_test_arena).
 signal test_arena_requested(class_id: String)
-## SPIELSTÄNDE: load slot 1..3 of a mode ("crypt", "hell", "frost").
+## SPIELSTÄNDE: load slot 1..3 of a mode ("krypta", "hell", "frost", "crypt" = endless).
 signal save_load_requested(mode: String, slot: int)
 
 const SaveStore = preload("res://src/save/save_store.gd")
-const SAVE_MODES := ["crypt", "hell", "frost"]
+const SAVE_MODES := ["krypta", "hell", "frost", "crypt"]
 const Progress = preload("res://src/online/progress.gd")
 const PixelStyle = preload("res://src/pixel_style.gd")
 const CryptUI = preload("res://src/ui/crypt_ui.gd")
@@ -696,7 +696,7 @@ func _close_panels() -> void:
 # --- Save slots ----------------------------------------------------------------
 
 var saves := SaveStore.new()
-var save_mode := "crypt"
+var save_mode := "krypta"
 var _saves_panel: Panel
 var _save_tabs: Dictionary = {}
 var _save_lines: Array[Label] = []
@@ -712,7 +712,7 @@ func _build_saves_panel() -> void:
 	_saves_panel.position = (SCREEN - _saves_panel.size) * 0.5 + Vector2(0, 20)
 	for i in range(SAVE_MODES.size()):
 		var mode: String = SAVE_MODES[i]
-		_save_tabs[mode] = _panel_button(_saves_panel, str(SaveStore.MODE_NAMES[mode]), Vector2(30 + i * 318, 66), Vector2(306, 40), _show_save_mode.bind(mode))
+		_save_tabs[mode] = _panel_button(_saves_panel, str(SaveStore.MODE_NAMES[mode]), Vector2(30 + i * 237, 66), Vector2(229, 40), _show_save_mode.bind(mode))
 	var hint := _panel_label(_saves_panel, "Ein Spielstand ist der Beginn einer Etage. Laden setzt dich dorthin zurück.", Vector2(30, 118))
 	hint.size = Vector2(940, 26)
 	hint.add_theme_color_override("font_color", MUTED)

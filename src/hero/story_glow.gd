@@ -157,7 +157,18 @@ func frame() -> void:
 	if not on:
 		return
 	dark.configure({"darkness": darkness(), "shade_color": shade()})
-	(dark.material as ShaderMaterial).set_shader_parameter("light_bands", float(g.balance.view.get("light_bands", 5)))
+	var mat := dark.material as ShaderMaterial
+	mat.set_shader_parameter("light_bands", float(g.balance.view.get("light_bands", 5)))
+	# a world with fog (theme "fog", the Frostgruft): the dark is a pale drifting frost fog
+	var fog: Dictionary = g.theme.get("fog", {})
+	mat.set_shader_parameter("fog_noise", float(fog.get("wisps", 0.0)))
+	if not fog.is_empty():
+		# light thins fog softly: more, finer steps than the dark's hard bands
+		mat.set_shader_parameter("light_bands", float(fog.get("bands", 12)))
+		mat.set_shader_parameter("fog_scale", float(fog.get("scale", 420.0)))
+		var drift: Array = fog.get("drift", [22.0, 7.0])
+		mat.set_shader_parameter("fog_drift", Vector2(float(drift[0]), float(drift[1])))
+		mat.set_shader_parameter("time", clock())
 	dark.set_world_size(Vector2(float(g.W.cols), float(g.W.rows)) * float(g.C))
 	last_lights = lights()
 	dark.set_lights(last_lights)
@@ -165,13 +176,21 @@ func frame() -> void:
 		glow.queue_redraw()
 
 
-## Darkness of the floor (theme dark, deeper in a storm), as the world always had it.
+## Darkness of the floor (theme dark, deeper in a storm), as the world always had it. A world with
+## fog (theme "fog") has its fog's density instead, a little thicker on deeper floors.
 func darkness() -> float:
+	var fog: Dictionary = g.theme.get("fog", {})
+	if not fog.is_empty():
+		return clampf(float(fog.get("density", 0.5)) + float(fog.get("deeper", 0.0)) * (int(g.state.get("floor", 1)) - 1) / 9.0, 0.0, 0.95)
 	return clampf(float(g.W.theme.dark) + 0.16 + (0.14 if bool(g.state.get("storm", false)) else 0.0), 0.0, 0.95)
 
 
-## Shade of the dark: the theme's shade, tinted by the floor's grade.
+## Shade of the dark: the theme's shade, tinted by the floor's grade; a world with fog has its
+## fog's colour.
 func shade() -> Color:
+	var fog: Dictionary = g.theme.get("fog", {})
+	if not fog.is_empty():
+		return Color(str(fog.get("color", "#c4d6ee")))
 	var c: Color = g.col("shade") + g.col("shade_grade") * float(g.W.theme.grade)
 	c.a = 1.0
 	return c
@@ -253,7 +272,9 @@ func lights() -> Array:
 	var reach := view.grow(REACH)
 	var centre := view.get_center()
 	var most := mini(int(g.balance.view.get("max_lights", Darkness.MAX_LIGHTS)), Darkness.MAX_LIGHTS)
-	var own := float(g.balance.view.player_light) * (0.55 if g.story_items != null and g.story_items.dim() else 1.0)
+	# a world with fog may give the hero a smaller light of its own (theme fog.player_light)
+	var reach_own := float(g.theme.get("fog", {}).get("player_light", g.balance.view.player_light))
+	var own := reach_own * (0.55 if g.story_items != null and g.story_items.dim() else 1.0)
 	var out: Array = [Vector4(g.player.x, g.player.y - 40, own, 1.0)]
 	if not (g.clone as Dictionary).is_empty():
 		out.append(Vector4(g.clone.p.x, g.clone.p.y - 40, 240, 0.9))

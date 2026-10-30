@@ -1,0 +1,592 @@
+{
+ "_note": "Story 2 Die Frostgruft: the world pack for the world kit generator (src/world_kit/world_core.gd, src/world_kit/world_pack.gd). Written by tools/frost_dungeon/export_world.js from frost_world.js; the browser preview reads the same values. floors: per floor title, ring (circle), boss, size of the slot grid (gc x gr), critical path length, hazard shares (lava = glaze ice, river, spikes, vents, holes, pits), loop share, frost flames (fire), shooters, final. names/suffixes: room name parts per ring. words: generator wording -> frost wording. gate_banner: banner colour per floor (red when missing). blue / blue_props: floor 10 blue fire. foot: furniture footprints [solid width, depth, cells]. mimic_fight / mimic_treasure: 0, the Frostgruft has no mimics.",
+ "schema": 1,
+ "floors": [
+  null,
+  {
+   "n": 1,
+   "title": "Frostpforte",
+   "circle": 0,
+   "seed": 21101,
+   "gc": 7,
+   "gr": 6,
+   "path": 13,
+   "rooms": 22,
+   "lava": 0.15,
+   "spikes": 0.1,
+   "vents": 0.1,
+   "holes": 0.45,
+   "pits": 0.25,
+   "loops": 0.35,
+   "mainLock": true,
+   "fire": 3,
+   "seq": false,
+   "boss": {
+    "name": "Großer Eisschleim",
+    "hp": 46,
+    "summon": 4,
+    "ring": 0
+   },
+   "pool": 2
+  },
+  {
+   "n": 2,
+   "title": "Eiskeller",
+   "circle": 0,
+   "seed": 21202,
+   "gc": 7,
+   "gr": 6,
+   "path": 13,
+   "rooms": 22,
+   "lava": 0.2,
+   "spikes": 0.15,
+   "vents": 0.15,
+   "holes": 0.45,
+   "pits": 0.3,
+   "loops": 0.35,
+   "mainLock": true,
+   "fire": 3,
+   "seq": true,
+   "boss": {
+    "name": "Kobold-Rudelführer",
+    "hp": 60,
+    "summon": 4,
+    "ring": 0
+   },
+   "pool": 2
+  },
+  {
+   "n": 3,
+   "title": "Gruft des Nekromanten",
+   "circle": 0,
+   "seed": 21303,
+   "gc": 7,
+   "gr": 6,
+   "path": 14,
+   "rooms": 23,
+   "lava": 0.2,
+   "spikes": 0.2,
+   "vents": 0.2,
+   "holes": 0.45,
+   "pits": 0.3,
+   "loops": 0.35,
+   "mainLock": true,
+   "fire": 0,
+   "seq": true,
+   "boss": {
+    "name": "Frostnekromant",
+    "hp": 90,
+    "summon": 3.6,
+    "ring": 3.4,
+    "mini": true
+   },
+   "pool": 2
+  },
+  {
+   "n": 4,
+   "title": "Kristallgänge",
+   "circle": 1,
+   "seed": 21404,
+   "gc": 8,
+   "gr": 6,
+   "path": 15,
+   "rooms": 25,
+   "lava": 0.3,
+   "river": 0.25,
+   "spikes": 0.2,
+   "vents": 0.3,
+   "holes": 0.35,
+   "pits": 0.2,
+   "loops": 0.3,
+   "mainLock": true,
+   "fire": 4,
+   "seq": false,
+   "shooters": true,
+   "boss": {
+    "name": "Frostwirbel-Zwillinge",
+    "hp": 105,
+    "summon": 3.6,
+    "ring": 3.2
+   },
+   "pool": 2
+  },
+  {
+   "n": 5,
+   "title": "Gefrorener See",
+   "circle": 1,
+   "seed": 21505,
+   "gc": 8,
+   "gr": 6,
+   "path": 16,
+   "rooms": 26,
+   "lava": 0.55,
+   "river": 0.55,
+   "spikes": 0.2,
+   "vents": 0.3,
+   "holes": 0.35,
+   "pits": 0.2,
+   "loops": 0.3,
+   "mainLock": true,
+   "fire": 3,
+   "seq": true,
+   "shooters": true,
+   "boss": {
+    "name": "Kristallwächter",
+    "hp": 120,
+    "summon": 3.4,
+    "ring": 3
+   },
+   "pool": 2
+  },
+  {
+   "n": 6,
+   "title": "Halle der Frostleiche",
+   "circle": 1,
+   "seed": 21606,
+   "gc": 8,
+   "gr": 6,
+   "path": 16,
+   "rooms": 26,
+   "lava": 0.4,
+   "river": 0.35,
+   "spikes": 0.3,
+   "vents": 0.35,
+   "holes": 0.3,
+   "pits": 0.25,
+   "loops": 0.3,
+   "mainLock": true,
+   "fire": 4,
+   "seq": true,
+   "shooters": true,
+   "boss": {
+    "name": "Frostleiche",
+    "hp": 160,
+    "summon": 3.2,
+    "ring": 2.6,
+    "mini": true
+   },
+   "pool": 2
+  },
+  {
+   "n": 7,
+   "title": "Schneesturmgalerie",
+   "circle": 2,
+   "seed": 21707,
+   "gc": 8,
+   "gr": 7,
+   "path": 17,
+   "rooms": 28,
+   "lava": 0.3,
+   "river": 0.25,
+   "spikes": 0.4,
+   "vents": 0.45,
+   "holes": 0.5,
+   "pits": 0.4,
+   "loops": 0.3,
+   "mainLock": true,
+   "fire": 4,
+   "seq": true,
+   "shooters": true,
+   "boss": {
+    "name": "Eisritter-Garde",
+    "hp": 175,
+    "summon": 3,
+    "ring": 2.6
+   },
+   "pool": 2
+  },
+  {
+   "n": 8,
+   "title": "Gletscherspalten",
+   "circle": 2,
+   "seed": 21808,
+   "gc": 8,
+   "gr": 7,
+   "path": 18,
+   "rooms": 29,
+   "lava": 0.35,
+   "river": 0.3,
+   "spikes": 0.5,
+   "vents": 0.4,
+   "holes": 0.5,
+   "pits": 0.55,
+   "loops": 0.3,
+   "mainLock": true,
+   "fire": 3,
+   "seq": true,
+   "shooters": true,
+   "boss": {
+    "name": "Sturmkristall",
+    "hp": 190,
+    "summon": 2.8,
+    "ring": 2.4
+   },
+   "pool": 2
+  },
+  {
+   "n": 9,
+   "title": "Kaserne des Kommandanten",
+   "circle": 2,
+   "seed": 21909,
+   "gc": 8,
+   "gr": 7,
+   "path": 18,
+   "rooms": 30,
+   "lava": 0.35,
+   "river": 0.3,
+   "spikes": 0.5,
+   "vents": 0.45,
+   "holes": 0.5,
+   "pits": 0.45,
+   "loops": 0.3,
+   "mainLock": true,
+   "fire": 4,
+   "seq": true,
+   "shooters": true,
+   "boss": {
+    "name": "Frostkommandant",
+    "hp": 240,
+    "summon": 2.6,
+    "ring": 2,
+    "mini": true
+   },
+   "pool": 2
+  },
+  {
+   "n": 10,
+   "title": "Thron des Gletscherkolosses",
+   "circle": 3,
+   "seed": 22010,
+   "gc": 8,
+   "gr": 7,
+   "path": 18,
+   "rooms": 30,
+   "lava": 0.45,
+   "river": 0.4,
+   "spikes": 0.5,
+   "vents": 0.5,
+   "holes": 0.45,
+   "pits": 0.4,
+   "loops": 0.3,
+   "mainLock": true,
+   "fire": 4,
+   "seq": true,
+   "shooters": true,
+   "final": true,
+   "boss": {
+    "name": "Hrimgar, der Gletscherkoloss",
+    "hp": 340,
+    "summon": 2.4,
+    "ring": 1.6,
+    "final": true
+   },
+   "pool": 2
+  }
+ ],
+ "circles": [
+  "Abschnitt I · Frostpforte",
+  "Abschnitt II · Gefrorene Tiefe",
+  "Abschnitt III · Gletscherherz",
+  "Abschnitt IV · Thron des Winters"
+ ],
+ "names": [
+  [
+   "Reif",
+   "Frost",
+   "Schnee",
+   "Eis",
+   "Firn",
+   "Hagel",
+   "Kälte",
+   "Raureif"
+  ],
+  [
+   "Gletscher",
+   "Eis",
+   "Schollen",
+   "Kristall",
+   "Spiegel",
+   "Nebel",
+   "Frost",
+   "Tiefen"
+  ],
+  [
+   "Sturm",
+   "Splitter",
+   "Kristall",
+   "Wächter",
+   "Ritter",
+   "Winter",
+   "Hagel",
+   "Frost"
+  ],
+  [
+   "Thron",
+   "Gletscher",
+   "Winter",
+   "Kristall",
+   "Sturm",
+   "Schnee",
+   "Eis",
+   "Firn"
+  ]
+ ],
+ "suffixes": [
+  "halle",
+  "kammer",
+  "gang",
+  "grube",
+  "kreuz",
+  "gruft",
+  "galerie",
+  "spalte",
+  "pforte",
+  "kerker",
+  "nische",
+  "saal",
+  "hof",
+  "stiege",
+  "krypta",
+  "kluft"
+ ],
+ "words": [
+  [
+   "Daneben ein Altar (später ein Laden) und ein Manabrunnen",
+   "Daneben der Laden und ein Manabrunnen"
+  ],
+  [
+   "Glutschlüssel",
+   "Goldschlüssel"
+  ],
+  [
+   "Knochenschlüssel",
+   "Eisschlüssel"
+  ],
+  [
+   "Dämonenschlüssel",
+   "Kristallschlüssel"
+  ],
+  [
+   "Feuerschalen",
+   "Frostflammen"
+  ],
+  [
+   "Feuerschale",
+   "Frostflamme"
+  ],
+  [
+   "Runenplatten",
+   "Eisplatten"
+  ],
+  [
+   "Feuerplatte",
+   "Brunnenplatte"
+  ],
+  [
+   "Schädelhaufen",
+   "Eiskristall"
+  ],
+  [
+   "Riesentresor",
+   "Frosttresor"
+  ],
+  [
+   "Portalkammer",
+   "Treppenkammer"
+  ],
+  [
+   "Portal zur nächsten Etage",
+   "Treppe zur nächsten Etage"
+  ],
+  [
+   "Herzschrein",
+   "Brunnenkammer"
+  ],
+  [
+   "Knochenaltar",
+   "Schlüsselkammer"
+  ],
+  [
+   "Altar",
+   "Brunnen"
+  ],
+  [
+   "Lavagraben",
+   "Eiswasser"
+  ],
+  [
+   "Lava",
+   "Eiswasser"
+  ]
+ ],
+ "theme_flag": "frost",
+ "light": null,
+ "gate_banner": {
+  "1": "blue",
+  "2": "green",
+  "4": "purple",
+  "5": "gold",
+  "7": "teal",
+  "8": "pink"
+ },
+ "blue": "190,205,245",
+ "blue_props": [
+  "brazier_blue",
+  "bowl_blue"
+ ],
+ "foot": {
+  "table_a": [
+   104,
+   30,
+   2
+  ],
+  "table_b": [
+   110,
+   30,
+   2
+  ],
+  "table_c": [
+   140,
+   30,
+   2
+  ],
+  "candelabra": [
+   30,
+   20,
+   1
+  ],
+  "crate_pile": [
+   80,
+   34,
+   1
+  ],
+  "sacks_b": [
+   90,
+   26,
+   1
+  ],
+  "moss_rubble_a": [
+   70,
+   30,
+   1
+  ],
+  "moss_rubble_b": [
+   80,
+   28,
+   1
+  ],
+  "moss_ruin": [
+   70,
+   34,
+   1
+  ],
+  "snowman": [
+   52,
+   26,
+   1
+  ],
+  "glacier_a": [
+   86,
+   34,
+   1
+  ],
+  "glacier_b": [
+   70,
+   30,
+   1
+  ]
+ },
+ "wall_set": [
+  "table_a",
+  "table_b",
+  "table_c",
+  "candelabra",
+  "crate_pile",
+  "moss_ruin",
+  "sacks_b",
+  "candelabra",
+  "moss_rubble_a",
+  "moss_rubble_b"
+ ],
+ "break_set": [
+  "barrel_a",
+  "barrel_b",
+  "barrel_c",
+  "urn_a",
+  "urn_b",
+  "urn_c",
+  "urn_d",
+  "urn_e",
+  "crate_a",
+  "crate_b",
+  "crate_c"
+ ],
+ "mimic_fight": 0,
+ "mimic_treasure": 0,
+ "winter": {
+  "thin_decals": {
+   "keep": 0,
+   "names": [
+    "moss_a",
+    "moss_b",
+    "moss_c"
+   ]
+  },
+  "thin_props": {
+   "keep": 0.15,
+   "names": [
+    "bone_a",
+    "bone_b",
+    "bone_c",
+    "bone_d",
+    "bone_e",
+    "bone_f",
+    "bone_g",
+    "bones_scatter",
+    "bones_t",
+    "rubble",
+    "coal",
+    "rocks_b",
+    "skull_pile_t",
+    "skull_pile",
+    "spires_t",
+    "spire_mid",
+    "rocks_a",
+    "coal_skulls",
+    "boulders",
+    "cage_small",
+    "spire_big_b",
+    "rocks_lava",
+    "spires_lava",
+    "spire_big",
+    "spire_big_t",
+    "rocks_dark",
+    "spire_small"
+   ]
+  },
+  "thaw": [
+   "thaw_a",
+   "thaw_b",
+   "thaw_c"
+  ],
+  "thaw_size": 220,
+  "thaw_props": [
+   "brazier_bowl",
+   "brazier_pillar",
+   "brazier_rune",
+   "brazier_low",
+   "brazier_low_b",
+   "brazier_floor",
+   "brazier_demon",
+   "brazier_blue",
+   "torch_pillar",
+   "altar"
+  ],
+  "snowman": 0.35,
+  "glacier": 0.45,
+  "glaciers": [
+   "glacier_a",
+   "glacier_b"
+  ]
+ }
+}

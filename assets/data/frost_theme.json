@@ -1,14 +1,27 @@
 {
-  "_note": "Story 2 Die Frostgruft on the Hell-Dungeon runtime (src/hell/hell_game.gd, theme_path). Keys override THEME_DEFAULT there. weapon_scale: held weapons and arrows (smaller than the hero, sits in the hand). classes: hero per class (menu choice, class_id): sprite (0x72 name), hp (half hearts), speed (px/s) and weapon (melee: damage per hit, cooldown s, reach px, arc rad; projectile: damage, cooldown s, speed px/s, life s, shot arrow/magic, splash px radius). Values are the main game's (src/data/balance.json) scaled to this world (about x2.4). liquid: what grid cell 2 is (frost: glaze ice, hurt false, slow 1 = full speed, slide true, grip = share of the old speed left after one second). keys: name, hint, minimap colour, tint and skin sprite per key. words: hell phrase -> frost phrase, applied to toasts, prompts and end texts (longest first). colors: see THEME_DEFAULT. mobs: enemy kinds by id (name, sprite = skin name, with frames > 1 the prefix of _f0.._fN, fps, hp, speed px/s, radius px, behavior chase / shooter (keep_away px, fire_every s, shot_speed px/s) / dasher (dash_every s, dash_speed px/s, dash_time s) / puller (pull_radius px, pull px/s) / shield (shield_arc rad, blocks hits from the front) / turret (fire_every s, fan shots, spread rad, shot_speed), chill = s the hero is slowed after a touch, split = {into, count} on death). roster: kinds per room by floor (from = first floor, weight). bosses: guardian look per floor (sprite, frames, fps, scale); boss_adds: kinds the guardian summons. chill_speed: speed factor while chilled (ice zombie touch). boss_kits: guardians with their own fight per floor: phases (share of the floor boss hp, or hp list), every = s between attacks, title = toast on entering, look/tint = new look, guard = damage factor while its summoned crystals stand, storm = darker room, last_stand = below share: safe circles, then rest s with rest_damage factor; attacks do = summon(kind,count,around,guard) / ring(count,speed,chill) / fan(count,spread rad,speed,chill) / stomp(rings,count,gap rad,speed,pause s) / breath(duration,turn rad,rate s,speed,chill) / spiral(arms,duration,rate,speed) / charge(speed,time,windup) / icicles(count,radius,delay,spread px) / teleport_center(windup,push px) / fist(speed,back s) / fist_hunt(count,time,speed) / chill_zones(count,radius,time). Guardians with a kit take no knockback. phase_break: s invulnerable, push px and a shard ring between phases. mobs exp: experience per kill; material: bone/flesh/void for hit and kill sounds. leveling: need(level) = base * level^exponent experience, heal half hearts on level-up, boss_exp for guardians (mini = floors 3/6/9), skills = the class skills (hero_skills.json; distances x scale), slow_boss_scale. gravity_staff: mage relic of floor 4 (ball replaces the attack: damage x weapon, pull radius/strength px; wall: key, length, thickness px, time s; bar: drawn with the right mouse, max_length px, lasts time s, holds shots for hold s). sounds: game event -> audio_sfx.json event (\"\" = the skill's own sound). music: play the music states. gravity_staff short: slot label under the skill bar. relics: random relic shrine per run on one of floors (in their secret room), the relic from the hero class's pool (none = no shrine), sealed by four plates stepped in order. gravity_staff / gravity_hammer: class relics; attack (ball / hammer swing) replaces the weapon and is stronger; skills on keys 1-4 open at their level (unlock) with cooldowns and values. cards: level-up upgrade cards per class, relic and 'all' (max = how often; values are shares, e.g. damage 0.15 = +15 %); three are offered per level-up. styled_hud: framed banner, mission list, status sheet (C / Tab) and level-up cards (src/hell/frost_hud.gd). relics.drop boss: the relic lies in a chest the guardian of the relic floor drops. shadow_dagger: archer relic (melee stab with backstab x2 on enemies not facing you; shadow step through up to hits enemies, blade cyclone around you, smoke bomb = enemies lose you and slow, thousand blades = blade rain on an area). sounds: master skills use their own. talents: the talent trees and soul crystals file (assets/data/frost_talents.json); master_cooldown: s for the key 5 master skill.",
+  "_note": "Story 2 Die Frostgruft on the Hell-Dungeon runtime (src/hell/hell_game.gd, theme_path). Keys override THEME_DEFAULT there. weapon_scale: held weapons and arrows (smaller than the hero, sits in the hand). classes: hero per class (menu choice, class_id): sprite (0x72 name), hp (half hearts), speed (px/s) and weapon (melee: damage per hit, cooldown s, reach px, arc rad; projectile: damage, cooldown s, speed px/s, life s, shot arrow/magic, splash px radius). Values are the main game's (src/data/balance.json) scaled to this world (about x2.4). liquid: what grid cell 2 is (frost: glaze ice, hurt false, slow 1 = full speed, slide true, grip = share of the old speed left after one second). keys: name, hint, minimap colour, tint and skin sprite per key. words: hell phrase -> frost phrase, applied to toasts, prompts and end texts (longest first). colors: see THEME_DEFAULT. mobs: enemy kinds by id (name, sprite = skin name, with frames > 1 the prefix of _f0.._fN, fps, hp, speed px/s, radius px, behavior chase / shooter (keep_away px, fire_every s, shot_speed px/s) / dasher (dash_every s, dash_speed px/s, dash_time s) / puller (pull_radius px, pull px/s) / shield (shield_arc rad, blocks hits from the front) / turret (fire_every s, fan shots, spread rad, shot_speed), chill = s the hero is slowed after a touch, split = {into, count} on death). roster: kinds per room by floor (from = first floor, weight). bosses: guardian look per floor (sprite, frames, fps, scale); boss_adds: kinds the guardian summons. chill_speed: speed factor while chilled (ice zombie touch). boss_kits: guardians with their own fight per floor: phases (share of the floor boss hp, or hp list), every = s between attacks, title = toast on entering, look/tint = new look, guard = damage factor while its summoned crystals stand, storm = darker room, last_stand = below share: safe circles, then rest s with rest_damage factor; attacks do = summon(kind,count,around,guard) / ring(count,speed,chill) / fan(count,spread rad,speed,chill) / stomp(rings,count,gap rad,speed,pause s) / breath(duration,turn rad,rate s,speed,chill) / spiral(arms,duration,rate,speed) / charge(speed,time,windup) / icicles(count,radius,delay,spread px) / teleport_center(windup,push px) / fist(speed,back s) / fist_hunt(count,time,speed) / chill_zones(count,radius,time). Guardians with a kit take no knockback. phase_break: s invulnerable, push px and a shard ring between phases. mobs exp: experience per kill; material: bone/flesh/void for hit and kill sounds. leveling: need(level) = base * level^exponent experience, heal half hearts on level-up, boss_exp for guardians (mini = floors 3/6/9), skills = the class skills (hero_skills.json; distances x scale), slow_boss_scale. gravity_staff: mage relic of floor 4 (ball replaces the attack: damage x weapon, pull radius/strength px; wall: key, length, thickness px, time s; bar: drawn with the right mouse, max_length px, lasts time s, holds shots for hold s). sounds: game event -> audio_sfx.json event (\"\" = the skill's own sound). music: play the music states. gravity_staff short: slot label under the skill bar. relics: random relic shrine per run on one of floors (in their secret room), the relic from the hero class's pool (none = no shrine), sealed by four plates stepped in order. gravity_staff / gravity_hammer: class relics; attack (ball / hammer swing) replaces the weapon and is stronger; skills on keys 1-4 open at their level (unlock) with cooldowns and values. cards: level-up upgrade cards per class, relic and 'all' (max = how often; values are shares, e.g. damage 0.15 = +15 %); three are offered per level-up. styled_hud: framed banner, mission list, status sheet (C / Tab) and level-up cards (src/hell/frost_hud.gd). relics.drop boss: the relic lies in a chest the guardian of the relic floor drops. shadow_dagger: archer relic (melee stab with backstab x2 on enemies not facing you; shadow step through up to hits enemies, blade cyclone around you, smoke bomb = enemies lose you and slow, thousand blades = blade rain on an area). sounds: master skills use their own. talents: the talent trees and soul crystals file (assets/data/frost_talents.json); master_cooldown: s for the key 5 master skill. world_pack: the world kit builds every floor live from the run number (src/world_kit/world_core.gd + world_pack.gd, pack assets/data/frost_world.json from tools/frost_dungeon/frost_world.js); a new run rolls a new world, saves keep its number; the baked frost_floors.json is no longer read. world_sizes: the HD manifest, so both graphics sets build the same floor. skins: the Pixel / HD sets (src/core/graphics_settings.gd): pixel = assets/sprites/frost, hd = assets/sprites/frost_hd (tools/frost_dungeon/build_frost_extras.py). vault_closed / vault_open: the giant vault chest before and after opening. plate_hint false: the plates do not show their order. No mimic chests: the Frostgruft has no mimic.",
   "floors": "res://assets/data/frost_floors.json",
   "sprites": "res://assets/sprites/frost/",
   "balance": "res://assets/data/hell_balance.json",
   "pixel": true,
   "pixel_tiles": false,
   "hero_scale": 3.0,
+  "world_pack": "res://assets/data/frost_world.json",
+  "world_sizes": "res://assets/sprites/frost_hd/manifest.json",
+  "skins": {
+    "pixel": { "sprites": "res://assets/sprites/frost/", "pixel": true, "pixel_tiles": false, "hero_scale": 3.0, "baked_snow": false },
+    "hd": { "sprites": "res://assets/sprites/frost_hd/", "pixel": false, "pixel_tiles": false, "hero_scale": 3.6, "baked_snow": true }
+  },
+  "vault_closed": "chest_vault",
+  "vault_open": "chest_gold",
+  "plate_hint": false,
+  "fog": { "_note": "Frost fog instead of darkness (src/hero/story_glow.gd, assets/shaders/canvas_vfx_darkness.gdshader): color of the fog, density = its opacity outside every light (0..1), bands = steps of its thinning inside a light, deeper = extra density by floor 10, wisps = how much drifting wisps thin and thicken it (0..1), scale = world px per wisp, drift = world px/s, player_light = the hero's light radius (world px; the hell's 460 from hell_balance.json view.player_light when absent). A dark cold fog: the world a little darker, fires and the hero light it in small pools.", "color": "#16223e", "density": 0.42, "deeper": 0.08, "wisps": 0.45, "scale": 380, "drift": [26, 8], "bands": 14, "player_light": 330 },
+  "snow": { "_note": "Footprints and sliding marks plus professional object embedding: shallow contact depressions, silhouette-fitted snowfoot assets and inset floor-feature seams; no generic snowball rings (src/hero/frost_snow.gd and tools/frost_dungeon/build_frost_extras.py).", "stride": 28, "life": 9, "max": 520, "color": "#4a6a9c", "skid_speed": 90, "lean": 0.22, "wake": 120 },
+  "wall_snow": { "_note": "Snow at the walls: a contact seam and a snow lip along the foot of every wall that rises out of the snow (src/hero/frost_wall_snow.gd, keys there; pieces and anchors from tools/frost_dungeon/wall_snow.py). seam / lip = their strength 0..1, breaks = share of half boundaries where the lip dips and the seam shows (side_breaks at side walls), sink = px the north lips sit further up the wall, scale = whole-number piece size, seed = another arrangement, south = lips at the back of front walls.", "seam": 1.0, "lip": 1.0, "breaks": 0.38, "side_breaks": 0.6, "sink": 0, "scale": 1, "seed": 0, "south": true },
+  "snowstorm": { "_note": "Light snow over the whole screen, HUD and menus too, a steady light wind from the right with faint wind lines, and now and then at random a snowstorm (thicker snow, strong wind, racing lines, a pale haze; src/vfx/snowstorm.gd, keys there).", "flakes": 330, "lines": 12, "line_alpha": [0.1, 0.22], "line_length": [70, 190], "storm_every": [70, 150], "storm_time": [16, 28], "storm_ramp": 5, "storm_flakes": 520, "storm_wind": 330, "storm_lines": 26, "storm_haze": 0.16, "wind": [-70, 0], "fall": [55, 150], "size": [2, 4], "alpha": [0.35, 0.8], "gust_every": [5, 11], "gust": 260, "gust_time": 2.6 },
   "weapon_scale": 2.0,
   "chill_speed": 0.6,
-  "key_in_chest": true,
+  "key_in_chest": false,
   "default_class": "archer",
   "classes": {
     "swordsman": {
@@ -171,6 +184,7 @@
       "exp": 12,
       "material": "bone"
     },
+    "snowman": {"name": "Schneemann", "sprite": "mob_snowman_f", "frames": 8, "fps": 10, "scale": 0.62, "hp": 9, "speed": 125, "radius": 30, "behavior": "dasher", "dash_every": 2.8, "dash_speed": 560, "dash_time": 0.35, "exp": 10, "material": "flesh", "_note": "The Frostgruft's mimic: every snowman wakes as this when the hero comes close (src/hero/frost_snow.gd, hell_game.gd wake_snowman). Its walk is a hop (8 frames, the three balls fly apart and back); dasher = its dash, moves.sets.snowman = its pounce. In no roster."},
     "ice_crystal": {
       "name": "Eiskristall",
       "sprite": "mob_ice_crystal_0",
@@ -587,12 +601,12 @@
     "hurt": false,
     "slow": 1.0,
     "slide": true,
-    "grip": 0.08
+    "grip": 0.015
   },
   "keys": {
     "A": {
       "name": "Goldschlüssel",
-      "hint": "fällt, wenn ein Kampfraum vor dem Tor besiegt ist.",
+      "hint": "fällt in einem Seitenraum vor dem verschlossenen Tor.",
       "color": "#e8c25a",
       "tint": [
         1,
@@ -603,7 +617,7 @@
     },
     "B": {
       "name": "Eisschlüssel",
-      "hint": "liegt in einer Truhe oder fällt in einem Seitenraum.",
+      "hint": "fällt in einem Kampfraum.",
       "color": "#4fb4ff",
       "tint": [
         1,
@@ -614,7 +628,7 @@
     },
     "C": {
       "name": "Kristallschlüssel",
-      "hint": "liegt in einer Truhe oder fällt in einem Kampfraum nahe der Wächterhalle.",
+      "hint": "liegt in der Schlüsselkammer, in der Mitte des großen Teppichs.",
       "color": "#f2f8ff",
       "tint": [
         1,
@@ -712,6 +726,10 @@
     [
       "Aus der Grube zurück zum Start",
       "Aus dem Eisloch zurück zum Start"
+    ],
+    [
+      "Aus der Kiste kriechen Untote!",
+      "Aus der Kiste kriechen Frostwesen!"
     ]
   ],
   "colors": {
@@ -1560,7 +1578,7 @@
           }
         ]
       },
-      "ice_crystal": {
+      "snowman": {"every": [2.6, 4.0], "moves": [{"move": "pounce", "weight": 3}, {"move": "frost_patch", "weight": 1, "cooldown": 7}]}, "ice_crystal": {
         "every": [
           4,
           6
@@ -1610,7 +1628,7 @@
   },
   "atmosphere": {
     "_note": "The Frostgruft's flames in the crypt atmosphere's schema (src/vfx/crypt_atmosphere.gd parse, assets/data/vfx_crypt_atmosphere.json); the story worlds use only its flames: light_color tints the bloom of every brazier, torch, rune pillar and vent of the floor (src/hero/story_glow.gd; its braziers burn blue), glow_strength is the bloom's intensity (the crypt's torches 0.2), light_radius_scale scales their light in the dark (1.0 = the floor's own radius).",
-    "flames": {"light_color": "#8cc8f2", "glow_strength": 0.22, "light_radius_scale": 1.0}
+    "flames": {"light_color": "#8cc8f2", "glow_strength": 0.16, "light_radius_scale": 0.6}
   },
   "glow": {
     "_note": "Bloom colours of this world (src/hero/story_glow.gd): portal = an awakened portal, wall = the walls' glowing slits and door posts, gate = gates that hold a fight. liquid = the glow of the liquid banks: light_radius (world px) and light_strength (0..1) of their light in the dark, color and alpha (0..1) of their bloom. Glaze ice gives no light and no bloom (0).",
