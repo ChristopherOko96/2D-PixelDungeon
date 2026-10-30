@@ -11,9 +11,37 @@ extends RefCounted
 ##   mini-map area; "ESC · MENÜ" under it.
 ## - boss_bar: top centre, with phase segments.
 ## - banner, toast, prompt: floor titles, hints over the skill bar, "E" prompts.
+## - pet_panel: the permanent companion's life right under the hero strip.
 ## Static, display only.
 
 const HudStyle = preload("res://src/ui/hud_style.gd")
+
+
+## The permanent companion under the hero strip: its name, a life bar that
+## turns red when low, or "GEFALLEN" with the seconds until it can be called
+## again. `pet` is talent_combat's player_state().pet; `width` matches
+## the hero strip. Returns the row's rectangle (zero size without a companion).
+static func pet_panel(canvas: CanvasItem, font: Font, origin: Vector2, width: float, pet: Dictionary, clock: float) -> Rect2:
+	if pet.is_empty(): return Rect2(origin, Vector2.ZERO)
+	var small := int(HudStyle.size("font_small"))
+	var rect := Rect2(origin, Vector2(width, small + 22.0))
+	HudStyle.panel(canvas, rect)
+	var alive := bool(pet.get("alive", false))
+	HudStyle.text(canvas, font, rect.position + Vector2(10, small + 4), str(pet.get("name", "")).to_upper(), small, HudStyle.color("text_dim"))
+	var bar := Rect2(rect.position + Vector2(10, small + 9), Vector2(width - 20, 6))
+	canvas.draw_rect(bar, HudStyle.color("track"))
+	if alive:
+		var share := clampf(float(pet.get("hp", 0)) / maxf(0.1, float(pet.get("hp_max", 1))), 0.0, 1.0)
+		var colour := HudStyle.color("ok") if share > 0.35 else HudStyle.color("danger").lerp(Color.WHITE, 0.2 + 0.2 * sin(clock * 9.0))
+		canvas.draw_rect(Rect2(bar.position, Vector2(roundf(bar.size.x * share), bar.size.y)), colour)
+		# the numbers only where they fit beside the name (the crypt's strip is narrow)
+		var numbers := "%d / %d" % [ceili(float(pet.hp)), ceili(float(pet.hp_max))]
+		if HudStyle.width(font, str(pet.get("name", "")).to_upper(), small) + HudStyle.width(font, numbers, small) + 30.0 <= width:
+			HudStyle.text(canvas, font, Vector2(rect.end.x - 10, rect.position.y + small + 4), numbers, small, HudStyle.color("text"), 2)
+	else:
+		var wait := float(pet.get("respawn", 0.0))
+		HudStyle.text(canvas, font, Vector2(rect.end.x - 10, rect.position.y + small + 4), "GEFALLEN · %d S" % ceili(wait) if wait > 0.0 else "GEFALLEN", small, HudStyle.color("danger"), 2)
+	return rect
 
 
 ## The hero strip at `origin`. `data`: title, hp, max_hp, hearts ({full, half,

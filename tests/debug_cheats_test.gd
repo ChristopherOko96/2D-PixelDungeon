@@ -66,7 +66,8 @@ func _test_all_skills_per_class() -> void:
 		_cheat("all_skills")
 		var skills: Array = ClassPerks.skills(class_id)
 		var level := int(game.team_progress.team.level)
-		check(skills.size() == 4 and range(4).all(func(index: int) -> bool: return ClassPerks.unlocked(class_id, index, level)), "%s: all four skills unlocked (level %d)" % [class_id, level])
+		# no class has standard skills any more (user decision 29.10.2026): the cheat has nothing to open
+		check(skills.is_empty() and level >= 1, "%s: no standard class skills to unlock (level %d)" % [class_id, level])
 		var missing: Array = []
 		for skill: Dictionary in skills:
 			for upgrade: Dictionary in skill.get("upgrades", []):

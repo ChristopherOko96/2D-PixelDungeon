@@ -27,3 +27,10 @@ Added 2026-10-29 for the themed endless floors (ported from the
 `wall_goo_base`. The five-row sheets in `assets/sprites/orcs_0x72/` and
 `assets/sprites/bosses_0x72/` start from these 0x72 frames; their attack, hit
 and death rows are derived from them, and the bosses add drawn pixel parts.
+
+
+`custom_pyromancer_*` is not from the archive: it is drawn for this game in the archive's hero format (16x28, 4 idle, 4 run, 1 hit frame) by `scripts/make_pyromancer.py`, after the user's fire mage concept sheet (30.10.2026).
+
+`assets/sprites/companions/falcon_*` is not from the archive either (the archive has no bird): the beast master's falcon, drawn for this game in the Enchanted Forest pack's format (32x32, ink outline, 4 wing beats) by `scripts/make_falcon.py` (user wish 30.10.2026).
+
+`assets/sprites/companions/pyro_*` is drawn for this game too: the fire mage's Pyro-Monster, a charcoal imp in the archive's 16x22 companion format by `scripts/make_companion_sprites.py` (user wish 30.10.2026).

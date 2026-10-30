@@ -15,14 +15,14 @@ const MUTED := Color("#77728b")
 const PLAYER_COLORS := [
 	Color("#72dcc8"), Color("#edb563"), Color("#bc91de"), Color("#ed8a91")
 ]
-const HERO_SPRITES := ["knight_m","elf_f","wizzard_m","lizard_m"]
+const HERO_SPRITES := ["knight_m","elf_f","wizzard_m","lizard_m","necromancer","custom_pyromancer"]
 const PLAYER_ACTORS := ["player_warden","player_ranger","player_arcanist","player_lizard"]
 const ENEMY_SPRITES := {"chaser":"goblin","shooter":"orc_shaman","boss":"big_demon"}
 const SPRITE_ROOT := "res://assets/sprites/0x72/"
 # Hero classes (step 2, from main): class -> 0x72 figure, weapon -> 0x72 sprite
 # (drawn blade-up in the art). Players with a class use these, not the chibi bank.
-const CLASS_SPRITES := {"swordsman":"knight_m","archer":"elf_f","mage":"wizzard_m"}
-const WEAPON_SPRITES := {"sword":"weapon_regular_sword","bow":"weapon_bow","staff":"weapon_green_magic_staff"}
+const CLASS_SPRITES := {"swordsman":"knight_m","archer":"elf_f","mage":"custom_pyromancer","necromancer":"necromancer"}
+const WEAPON_SPRITES := {"sword":"weapon_regular_sword","bow":"weapon_bow","staff":"weapon_green_magic_staff","bone_staff":"weapon_red_magic_staff"}
 const ARROW_TEXTURE := preload("res://assets/sprites/0x72/weapon_arrow.png")
 const FRAMES_PER_SECOND := 8.0
 const Feedback = preload("res://src/vfx/feedback.gd")
@@ -49,7 +49,8 @@ const FogMemory = preload("res://src/vfx/fog_memory.gd")
 const TalentFx = preload("res://src/vfx/talent_fx.gd")
 const CryptAtmosphere = preload("res://src/vfx/crypt_atmosphere.gd")
 ## Hero class -> part rig of its 0x72 figure (assets/data/rigs.json).
-const CLASS_RIGS := {"swordsman":"knight","archer":"elf","mage":"wizard"}
+## The mage plays its own pyromancer frames (no rig; user decision 30.10.2026).
+const CLASS_RIGS := {"swordsman":"knight","archer":"elf"}
 
 @export var style_profile: Resource = preload("res://assets/data/art_style_reference.tres")
 
@@ -931,9 +932,15 @@ func _draw_bullet(bullet: Dictionary) -> void:
 	var point: Vector2 = _position(bullet).round()
 	var owner: int = int(bullet.get("owner", 1))
 	var style: String = str(bullet.get("style",""))
+	# a talent's own shot first (src/vfx/talent_fx.gd TALENT_SHOTS)
+	if owner > 0 and not str(bullet.get("talent","")).is_empty() and _talent_fx.draw_bullet(self,bullet,_clock): return
 	if owner > 0 and _skill_fx.draw_bullet(self,bullet,_clock): return
 	# talent shots: ice lance and arcane orb sheets (src/vfx/talent_fx.gd)
 	if owner > 0 and _talent_fx.draw_bullet(self,bullet,_clock): return
+	# the mage's left-click: a small fireball (user wish 30.10.2026)
+	if style == "magic" and str(bullet.get("talent","")).is_empty() and str(_snapshot.get("players", {}).get(owner, {}).get("class_id", "")) == "mage":
+		_talent_fx.draw_basic_fireball(self, point, Vector2(float(bullet.get("vx", 1.0)), float(bullet.get("vy", 0.0))), _clock)
+		return
 	if AttackFx.handles(bullet):
 		if style == "arrow": _attack_fx.draw_arrow(self,bullet,_position(bullet),_clock)
 		else: _attack_fx.draw_orb(self,bullet,_position(bullet),_clock)

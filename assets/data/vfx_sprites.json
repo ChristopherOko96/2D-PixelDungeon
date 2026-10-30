@@ -14,6 +14,19 @@
         56
       ]
     },
+    "arcane_lance": {
+      "anchor": [
+        24.0,
+        6.0
+      ],
+      "file": "res://assets/sprites/fx/arcane_lance.png",
+      "fps": 14.0,
+      "frames": 4,
+      "size": [
+        32,
+        12
+      ]
+    },
     "arcane_orb": {
       "anchor": [
         8.0,
@@ -51,6 +64,32 @@
       "size": [
         16,
         16
+      ]
+    },
+    "arrow_impact": {
+      "anchor": [
+        20.0,
+        26.0
+      ],
+      "file": "res://assets/sprites/fx/arrow_impact.png",
+      "fps": 16.0,
+      "frames": 8,
+      "size": [
+        40,
+        40
+      ]
+    },
+    "arrow_rain": {
+      "anchor": [
+        12.0,
+        24.0
+      ],
+      "file": "res://assets/sprites/fx/arrow_rain.png",
+      "fps": 12.0,
+      "frames": 6,
+      "size": [
+        24,
+        48
       ]
     },
     "beam_hit": {
@@ -105,6 +144,58 @@
         40
       ]
     },
+    "blood_orb": {
+      "anchor": [
+        7.0,
+        7.0
+      ],
+      "file": "res://assets/sprites/fx/blood_orb.png",
+      "fps": 12.0,
+      "frames": 6,
+      "size": [
+        14,
+        14
+      ]
+    },
+    "blood_ring": {
+      "anchor": [
+        48.0,
+        48.0
+      ],
+      "file": "res://assets/sprites/fx/blood_ring.png",
+      "fps": 18.0,
+      "frames": 8,
+      "size": [
+        96,
+        96
+      ]
+    },
+    "bone_burst": {
+      "anchor": [
+        36.0,
+        36.0
+      ],
+      "file": "res://assets/sprites/fx/bone_burst.png",
+      "fps": 22.0,
+      "frames": 9,
+      "size": [
+        72,
+        72
+      ]
+    },
+    "bone_spear": {
+      "anchor": [
+        24.0,
+        5.0
+      ],
+      "file": "res://assets/sprites/fx/bone_spear.png",
+      "fps": 14.0,
+      "frames": 4,
+      "size": [
+        32,
+        10
+      ]
+    },
     "claw": {
       "anchor": [
         20.0,
@@ -129,6 +220,32 @@
       "size": [
         24,
         24
+      ]
+    },
+    "curse_ring": {
+      "anchor": [
+        44.0,
+        44.0
+      ],
+      "file": "res://assets/sprites/fx/curse_ring.png",
+      "fps": 18.0,
+      "frames": 8,
+      "size": [
+        88,
+        88
+      ]
+    },
+    "curse_skull": {
+      "anchor": [
+        11.8800001144409,
+        9.0
+      ],
+      "file": "res://assets/sprites/fx/curse_skull.png",
+      "fps": 14.0,
+      "frames": 6,
+      "size": [
+        18,
+        18
       ]
     },
     "dust": {
@@ -157,6 +274,32 @@
         64
       ]
     },
+    "fire_charge": {
+      "anchor": [
+        12.0,
+        12.0
+      ],
+      "file": "res://assets/sprites/fx/fire_charge.png",
+      "fps": 14.0,
+      "frames": 6,
+      "size": [
+        24,
+        24
+      ]
+    },
+    "fire_explosion": {
+      "anchor": [
+        48.0,
+        48.0
+      ],
+      "file": "res://assets/sprites/fx/fire_explosion.png",
+      "fps": 20.0,
+      "frames": 10,
+      "size": [
+        96,
+        96
+      ]
+    },
     "fire_ring": {
       "anchor": [
         48.0,
@@ -170,6 +313,32 @@
         96
       ]
     },
+    "fire_sparks": {
+      "anchor": [
+        48.0,
+        48.0
+      ],
+      "file": "res://assets/sprites/fx/fire_sparks.png",
+      "fps": 16.0,
+      "frames": 8,
+      "size": [
+        96,
+        96
+      ]
+    },
+    "fire_spear": {
+      "anchor": [
+        32.0,
+        7.0
+      ],
+      "file": "res://assets/sprites/fx/fire_spear.png",
+      "fps": 14.0,
+      "frames": 4,
+      "size": [
+        40,
+        14
+      ]
+    },
     "fireball": {
       "anchor": [
         13.6000003814697,
@@ -181,6 +350,32 @@
       "size": [
         20,
         20
+      ]
+    },
+    "fireball_big": {
+      "anchor": [
+        32.6399993896484,
+        24.0
+      ],
+      "file": "res://assets/sprites/fx/fireball_big.png",
+      "fps": 18.0,
+      "frames": 8,
+      "size": [
+        48,
+        48
+      ]
+    },
+    "flame_tongue": {
+      "anchor": [
+        8.0,
+        28.0
+      ],
+      "file": "res://assets/sprites/fx/flame_tongue.png",
+      "fps": 12.0,
+      "frames": 6,
+      "size": [
+        16,
+        30
       ]
     },
     "frost_burst": {
@@ -209,6 +404,32 @@
         96
       ]
     },
+    "gold_bubble": {
+      "anchor": [
+        22.0,
+        22.0
+      ],
+      "file": "res://assets/sprites/fx/gold_bubble.png",
+      "fps": 10.0,
+      "frames": 6,
+      "size": [
+        44,
+        44
+      ]
+    },
+    "hail_arrow": {
+      "anchor": [
+        6.0,
+        39.0
+      ],
+      "file": "res://assets/sprites/fx/hail_arrow.png",
+      "fps": 16.0,
+      "frames": 4,
+      "size": [
+        12,
+        40
+      ]
+    },
     "hit_spark": {
       "anchor": [
         8.0,
@@ -220,6 +441,19 @@
       "size": [
         16,
         16
+      ]
+    },
+    "ice_block": {
+      "anchor": [
+        24.0,
+        41.0
+      ],
+      "file": "res://assets/sprites/fx/ice_block.png",
+      "fps": 8.0,
+      "frames": 8,
+      "size": [
+        48,
+        44
       ]
     },
     "ice_lance": {
@@ -235,6 +469,19 @@
         12
       ]
     },
+    "ice_shard": {
+      "anchor": [
+        12.0,
+        4.0
+      ],
+      "file": "res://assets/sprites/fx/ice_shard.png",
+      "fps": 14.0,
+      "frames": 4,
+      "size": [
+        20,
+        8
+      ]
+    },
     "inferno": {
       "anchor": [
         32.0,
@@ -246,6 +493,32 @@
       "size": [
         64,
         112
+      ]
+    },
+    "knife": {
+      "anchor": [
+        8.0,
+        8.0
+      ],
+      "file": "res://assets/sprites/fx/knife.png",
+      "fps": 16.0,
+      "frames": 4,
+      "size": [
+        16,
+        16
+      ]
+    },
+    "lava_pool": {
+      "anchor": [
+        32.0,
+        18.0
+      ],
+      "file": "res://assets/sprites/fx/lava_pool.png",
+      "fps": 8.0,
+      "frames": 8,
+      "size": [
+        64,
+        36
       ]
     },
     "level_up": {
@@ -287,6 +560,97 @@
         14
       ]
     },
+    "magma_bolt": {
+      "anchor": [
+        13.6000003814697,
+        10.0
+      ],
+      "file": "res://assets/sprites/fx/magma_bolt.png",
+      "fps": 16.0,
+      "frames": 6,
+      "size": [
+        20,
+        20
+      ]
+    },
+    "mana_bubble": {
+      "anchor": [
+        22.0,
+        22.0
+      ],
+      "file": "res://assets/sprites/fx/mana_bubble.png",
+      "fps": 10.0,
+      "frames": 6,
+      "size": [
+        44,
+        44
+      ]
+    },
+    "meteor": {
+      "anchor": [
+        13.6800003051758,
+        38.4799995422363
+      ],
+      "file": "res://assets/sprites/fx/meteor.png",
+      "fps": 14.0,
+      "frames": 6,
+      "size": [
+        36,
+        52
+      ]
+    },
+    "meteor_big": {
+      "anchor": [
+        23.0400009155273,
+        76.8000030517578
+      ],
+      "file": "res://assets/sprites/fx/meteor_big.png",
+      "fps": 14.0,
+      "frames": 8,
+      "size": [
+        64,
+        96
+      ]
+    },
+    "meteor_impact": {
+      "anchor": [
+        64.0,
+        84.4800033569336
+      ],
+      "file": "res://assets/sprites/fx/meteor_impact.png",
+      "fps": 12.0,
+      "frames": 12,
+      "size": [
+        128,
+        128
+      ]
+    },
+    "net": {
+      "anchor": [
+        36.0,
+        36.0
+      ],
+      "file": "res://assets/sprites/fx/net.png",
+      "fps": 14.0,
+      "frames": 5,
+      "size": [
+        72,
+        72
+      ]
+    },
+    "phoenix": {
+      "anchor": [
+        29.7600002288818,
+        19.7999992370605
+      ],
+      "file": "res://assets/sprites/fx/phoenix.png",
+      "fps": 12.0,
+      "frames": 6,
+      "size": [
+        48,
+        36
+      ]
+    },
     "pickup": {
       "anchor": [
         12.0,
@@ -326,6 +690,32 @@
         48
       ]
     },
+    "poison_dart": {
+      "anchor": [
+        16.0,
+        4.0
+      ],
+      "file": "res://assets/sprites/fx/poison_dart.png",
+      "fps": 14.0,
+      "frames": 4,
+      "size": [
+        24,
+        8
+      ]
+    },
+    "quake_ring": {
+      "anchor": [
+        48.0,
+        48.0
+      ],
+      "file": "res://assets/sprites/fx/quake_ring.png",
+      "fps": 18.0,
+      "frames": 8,
+      "size": [
+        96,
+        96
+      ]
+    },
     "rage_aura": {
       "anchor": [
         20.0,
@@ -350,6 +740,32 @@
       "size": [
         28,
         28
+      ]
+    },
+    "rune_circle": {
+      "anchor": [
+        32.0,
+        32.0
+      ],
+      "file": "res://assets/sprites/fx/rune_circle.png",
+      "fps": 10.0,
+      "frames": 8,
+      "size": [
+        64,
+        64
+      ]
+    },
+    "shadow_burst": {
+      "anchor": [
+        24.0,
+        24.0
+      ],
+      "file": "res://assets/sprites/fx/shadow_burst.png",
+      "fps": 22.0,
+      "frames": 9,
+      "size": [
+        48,
+        48
       ]
     },
     "shield_bubble": {
@@ -378,6 +794,19 @@
         96
       ]
     },
+    "sky_spear": {
+      "anchor": [
+        62.0,
+        9.0
+      ],
+      "file": "res://assets/sprites/fx/sky_spear.png",
+      "fps": 12.0,
+      "frames": 4,
+      "size": [
+        64,
+        18
+      ]
+    },
     "slash": {
       "anchor": [
         20.1599998474121,
@@ -402,6 +831,97 @@
       "size": [
         56,
         56
+      ]
+    },
+    "smoke_puff": {
+      "anchor": [
+        16.0,
+        16.0
+      ],
+      "file": "res://assets/sprites/fx/smoke_puff.png",
+      "fps": 16.0,
+      "frames": 6,
+      "size": [
+        32,
+        32
+      ]
+    },
+    "snowfall": {
+      "anchor": [
+        16.0,
+        16.0
+      ],
+      "file": "res://assets/sprites/fx/snowfall.png",
+      "fps": 10.0,
+      "frames": 8,
+      "size": [
+        32,
+        32
+      ]
+    },
+    "soul_bolt": {
+      "anchor": [
+        12.2399997711182,
+        9.0
+      ],
+      "file": "res://assets/sprites/fx/soul_bolt.png",
+      "fps": 16.0,
+      "frames": 6,
+      "size": [
+        18,
+        18
+      ]
+    },
+    "soul_bubble": {
+      "anchor": [
+        22.0,
+        22.0
+      ],
+      "file": "res://assets/sprites/fx/soul_bubble.png",
+      "fps": 10.0,
+      "frames": 6,
+      "size": [
+        44,
+        44
+      ]
+    },
+    "soul_lance": {
+      "anchor": [
+        24.0,
+        6.0
+      ],
+      "file": "res://assets/sprites/fx/soul_lance.png",
+      "fps": 14.0,
+      "frames": 4,
+      "size": [
+        32,
+        12
+      ]
+    },
+    "soul_ring": {
+      "anchor": [
+        44.0,
+        44.0
+      ],
+      "file": "res://assets/sprites/fx/soul_ring.png",
+      "fps": 18.0,
+      "frames": 8,
+      "size": [
+        88,
+        88
+      ]
+    },
+    "soul_wisp": {
+      "anchor": [
+        6.0,
+        6.0
+      ],
+      "file": "res://assets/sprites/fx/soul_wisp.png",
+      "fps": 12.0,
+      "frames": 6,
+      "size": [
+        12,
+        12
       ]
     },
     "spell_burst": {
@@ -493,6 +1013,19 @@
       "size": [
         56,
         56
+      ]
+    },
+    "vortex": {
+      "anchor": [
+        32.0,
+        32.0
+      ],
+      "file": "res://assets/sprites/fx/vortex.png",
+      "fps": 12.0,
+      "frames": 8,
+      "size": [
+        64,
+        64
       ]
     },
     "whirl": {

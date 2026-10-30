@@ -49,7 +49,7 @@ var _chip := 1.0
 var _flash := 0.0
 var _last_ratio := 1.0
 var _pulse := 0.0
-## The talent bar (Shift + 1-4, R) and reward banner, the same in every map.
+## The talent slots (keys 1-4, R) and reward banner, the same in every map.
 var _talent_bar := TalentBar.new()
 
 
@@ -230,8 +230,9 @@ func _draw_hero(players: Dictionary) -> void:
 		"level": int(team.get("level", 1)), "exp": float(team.get("exp", 0)) / maxf(1.0, float(team.get("next", 1))), "status": status,
 		"points": RunTree.points_left(ClassPerks.run_tree(str(local.get("class_id", "")), local.get("meta", {})), ClassPerks.ranks(local), int(team.get("level", 1))),
 		"low": int(local.get("hp", 0)) <= 2 and int(local.get("hp", 0)) > 0, "clock": _pulse})
-	# Team-mates: one compact row each under the strip.
-	var y := panel.end.y + 6.0
+	# The permanent companion right under the strip, then the team-mates.
+	var pet_row := HudKit.pet_panel(_canvas, _font, Vector2(margin, panel.end.y + 6.0), panel.size.x, local.get("talents", {}).get("pet", {}), _pulse)
+	var y := (pet_row.end.y if pet_row.size.y > 0.0 else panel.end.y) + 6.0
 	for id: Variant in order:
 		if id == _local_peer: continue
 		var mate: Dictionary = players[id]
@@ -314,6 +315,10 @@ func _draw_boss_bar() -> void:
 
 func _draw_skills(local: Dictionary) -> void:
 	if local.is_empty(): return
+	# the learned talents on keys 1-4 and R; there are no standard class skills (user decision 29.10.2026)
+	if local.has("talents"):
+		SkillBar.draw(_canvas, _font, size, _talent_bar.skill_slots(local.get("talents", {})), _pulse, {"mouse": get_local_mouse_position()})
+		return
 	var class_id := str(local.get("class_id", ""))
 	var skills := skills_for(class_id)
 	if skills.is_empty(): return
@@ -337,10 +342,19 @@ func _draw_skills(local: Dictionary) -> void:
 	SkillBar.draw(_canvas, _font, size, slots, _pulse, {"mouse": get_local_mouse_position()})
 
 
+## The companion ability (0 or 1) under `point` (HUD px) on the skill bar, or
+## -1: a right-click there toggles its auto-cast.
+func pet_slot_at(point: Vector2) -> int:
+	var local: Dictionary = _snapshot.get("players", {}).get(_local_peer, {})
+	if not local.has("talents"): return -1
+	var slots: Array = _talent_bar.skill_slots(local.talents)
+	return TalentBar.pet_slot(slots, SkillBar.slot_at(size, slots, point))
+
+
 # --- Talent bar and rewards (src/ui/talent_bar.gd, the same in every map) -----
 
 func _draw_talents(local: Dictionary) -> void:
-	_talent_bar.draw_bar(_canvas, local.get("talents", {}), size.x * 0.5, skill_bar_top() - 74.0)
+	_talent_bar.draw_resource(_canvas, local.get("talents", {}), size.x * 0.5, skill_bar_top() - 14.0)
 
 
 ## Shows a reward on this machine (soul shard, level up); queued, one at a time.

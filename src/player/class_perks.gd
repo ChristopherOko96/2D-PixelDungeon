@@ -24,9 +24,11 @@ static func class_data(class_id: String) -> Dictionary:
 	return data().get("classes", {}).get(class_id, {})
 
 
-## The class's four skills in key order.
-static func skills(class_id: String) -> Array:
-	return class_data(class_id).get("skills", [])
+## The class's skills on keys 1-4: none any more. The talent trees took those
+## keys (user decision 29.10.2026, docs/TALENTE-SEELENSPLITTER.de.md); the old
+## skill definitions stay in hero_skills.json only as reference.
+static func skills(_class_id: String) -> Array:
+	return []
 
 
 ## Skill definition by slot index 0-3 ({} when missing).
@@ -40,15 +42,11 @@ static func rank(player: Dictionary, id: String) -> int:
 	return Array(player.get("class_perks", [])).count(id)
 
 
-## The class's run talent tree (src/progress/run_tree.gd): a branch per skill
-## with its upgrades (open from the skill's level), then the passives.
+## The class's run talent tree (src/progress/run_tree.gd): the passives. The
+## class skills and their upgrade branches are gone; the talent trees took keys
+## 1-4 (user decision 29.10.2026, docs/TALENTE-SEELENSPLITTER.de.md).
 static func run_tree(class_id: String, meta: Dictionary = {}) -> Dictionary:
 	var branches: Array = []
-	for skill: Dictionary in skills(class_id):
-		var nodes: Array = []
-		for entry: Dictionary in skill.get("upgrades", []):
-			nodes.append({"id": str(entry.id), "name": str(entry.name), "text": str(entry.get("description", "")), "max": int(entry.get("max", 1))})
-		branches.append({"key": str(skill.id), "title": str(skill.name), "unlock": int(skill.get("unlock", 1)), "nodes": nodes})
 	var passives: Array = []
 	for entry: Dictionary in class_data(class_id).get("passives", []):
 		passives.append({"id": str(entry.id), "name": str(entry.name), "text": str(entry.get("description", "")), "max": int(entry.get("max", 1))})

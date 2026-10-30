@@ -9,7 +9,7 @@ extends RefCounted
 const ARROW := preload("res://assets/sprites/0x72/weapon_arrow.png")
 const DECOY := preload("res://assets/sprites/0x72/wizzard_m_idle_anim_f0.png")
 ## A clone seal's clone looks like its hero's class.
-const CLONE_LOOKS := {"swordsman": preload("res://assets/sprites/0x72/knight_m_idle_anim_f0.png"), "archer": preload("res://assets/sprites/0x72/elf_f_idle_anim_f0.png"), "mage": preload("res://assets/sprites/0x72/wizzard_m_idle_anim_f0.png")}
+const CLONE_LOOKS := {"swordsman": preload("res://assets/sprites/0x72/knight_m_idle_anim_f0.png"), "archer": preload("res://assets/sprites/0x72/elf_f_idle_anim_f0.png"), "mage": preload("res://assets/sprites/0x72/custom_pyromancer_idle_anim_f0.png"), "necromancer": preload("res://assets/sprites/0x72/necromancer_idle_anim_f0.png")}
 const PerkRules = preload("res://src/perk_rules.gd")
 const SkillIcons = preload("res://src/ui/skill_icons.gd")
 const PixelStyle = preload("res://src/pixel_style.gd")

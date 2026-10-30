@@ -134,7 +134,7 @@ func _test_glaze_ice_slides_and_plain_floor_stops() -> void:
 
 
 func _test_each_class_brings_its_hero_hearts_and_weapon() -> void:
-	var expect := {"swordsman": ["knight_m", "melee"], "archer": ["elf_f", "projectile"], "mage": ["wizzard_m", "projectile"]}
+	var expect := {"swordsman": ["knight_m", "melee"], "archer": ["elf_f", "projectile"], "mage": ["custom_pyromancer", "projectile"]}
 	var hearts := {}
 	for id: String in expect:
 		# Arrange / Act

@@ -34,10 +34,8 @@ static func gain(g: Node, amount: int) -> int:
 static func _level_up(g: Node, cfg: Dictionary) -> void:
 	g.state.hp = mini(int(g.state.max_hp), int(g.state.hp) + int(cfg.heal))
 	g.levelfx = {"t": 0.0, "level": int(g.state.level)}
+	# no class skills open any more: the talents on 1-4 come from the talent menu (29.10.2026)
 	var sub := "+1 Herz"
-	for s: Dictionary in g.skills:
-		if int(s.unlock) == int(g.state.level) and not g.relic_on():
-			sub = "Neue Fähigkeit: %s (Taste %s)" % [s.name, s.key]
 	g.state.banner = {"text": "LEVEL %d" % int(g.state.level), "sub": sub, "t": 0.0}
 	g._burst(Vector2(g.player.x, g.player.y - 50), 50, true)
 	g._sound("level_up")

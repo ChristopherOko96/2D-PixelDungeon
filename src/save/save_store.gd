@@ -11,7 +11,7 @@ const VERSION := 1
 const MAGIC := "DELVESAVE1"
 ## Mode -> name shown in the menus.
 const MODE_NAMES := {"crypt": "KRYPTA", "hell": "HÖLLE", "frost": "FROSTGRUFT"}
-const CLASS_NAMES := {"swordsman": "SCHWERTKÄMPFER", "archer": "BOGENSCHÜTZE", "mage": "MAGIER"}
+const CLASS_NAMES := {"swordsman": "SCHWERTKÄMPFER", "archer": "BOGENSCHÜTZE", "mage": "MAGIER", "necromancer": "NEKROMANT"}
 
 var dir := DIR
 

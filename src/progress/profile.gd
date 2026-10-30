@@ -12,11 +12,14 @@ extends RefCounted
 const DATA_PATH := "res://assets/data/talents.json"
 const SAVE_PATH := "user://profile.json"
 ## The talent test profile of debug builds (main menu TALENT-TEST): level 30
-## in every class, many shards and gold, talents without cost; the player's
+## in every class, many shards and gold (talents cost mana as usual); the player's
 ## own profile stays untouched while it is on.
 const DEBUG_PATH := "user://profile_debug.json"
 const DEBUG_FLAG := "user://talent_debug.flag"
-const VERSION := 1
+## 2: the 8-row trees (29.10.2026); the old ultimates <spec>_6 became <spec>_14.
+const VERSION := 2
+## Old ultimate ids of version 1 profiles.
+const OLD_ULTIMATES := ["fire", "frost", "arcane", "sniper", "trapper", "beast", "berserk", "guard", "blade"]
 
 
 ## Where this process keeps the profile: test runs (a SceneTree script started
@@ -33,7 +36,7 @@ static func debug_enabled() -> bool:
 
 
 ## Turns the talent test profile on (written fresh: level 30 everywhere, 99
-## shards, 99999 gold, free casts) or off. Debug builds only.
+## shards, 99999 gold; casts cost mana as usual) or off. Debug builds only.
 static func set_debug(on: bool, d: Dictionary) -> void:
 	if not OS.is_debug_build(): return
 	if not on:
@@ -92,6 +95,7 @@ static func sanitize(raw: Variant, d: Dictionary) -> Dictionary:
 	var difficulty := str(raw.get("difficulty", "normal"))
 	profile.difficulty = difficulty if d.get("difficulties", {}).has(difficulty) else "normal"
 	var classes: Variant = raw.get("classes", {})
+	if classes is Dictionary and int(raw.get("version", 1)) < 2: classes = _migrate_v1(classes)
 	if classes is Dictionary:
 		for id: String in profile.classes:
 			var entry: Variant = classes.get(id, {})
@@ -111,15 +115,40 @@ static func sanitize(raw: Variant, d: Dictionary) -> Dictionary:
 			state.soul_paid = maxi(0, int(entry.get("soul_paid", 0)))
 			var bar: Variant = entry.get("bar", [])
 			var kind := str(entry.get("companion", "wolf"))
-			state.companion = kind if d.get("pet", {}).get("kinds", {}).has(kind) else str(d.get("pet", {}).get("default_kind", "wolf"))
+			var known: Dictionary = d.get("pet", {}).get("kinds", {})
+			state.companion = kind if known.has(kind) and not bool(known[kind].get("summon_only", false)) else str(d.get("pet", {}).get("default_kind", "wolf"))
 			if bar is Array: state.bar = bar.filter(func(v: Variant) -> bool: return state.ranks.has(str(v))).map(func(v: Variant) -> String: return str(v)).slice(0, int(d.get("bar_slots", 4)))
 	return profile
 
 
-## Reads the profile from `path`; a fresh one when there is none or it is broken.
+## Reads the profile from `path`; a fresh one when there is none or it is
+## broken. Builds that no longer fit the trees (several branches, a talent
+## above its row) are repaired; the points come back.
 static func load_profile(d: Dictionary, path: String = SAVE_PATH) -> Dictionary:
 	if not FileAccess.file_exists(path): return fresh(d)
-	return sanitize(JSON.parse_string(FileAccess.get_file_as_string(path)), d)
+	var profile := sanitize(JSON.parse_string(FileAccess.get_file_as_string(path)), d)
+	# loaded at run time: talent_rules.gd preloads this script
+	var rules: GDScript = load("res://src/progress/talent_rules.gd")
+	for class_id: String in profile.classes: rules.repair(d, profile, class_id)
+	return profile
+
+
+## Version 1 profiles: the ultimate <spec>_6 is now <spec>_14 (ranks, ultimate, bar).
+static func _migrate_v1(classes: Dictionary) -> Dictionary:
+	var out := classes.duplicate(true)
+	for id: Variant in out:
+		var entry: Variant = out[id]
+		if not entry is Dictionary: continue
+		var rename := func(talent: String) -> String:
+			var spec := talent.get_slice("_", 0)
+			return spec + "_14" if talent == spec + "_6" and OLD_ULTIMATES.has(spec) else talent
+		if entry.has("ranks") and entry.ranks is Dictionary:
+			var ranks := {}
+			for talent: Variant in entry.ranks: ranks[rename.call(str(talent))] = entry.ranks[talent]
+			entry.ranks = ranks
+		entry.ultimate = rename.call(str(entry.get("ultimate", "")))
+		if entry.has("bar") and entry.bar is Array: entry.bar = (entry.bar as Array).map(func(v: Variant) -> String: return rename.call(str(v)))
+	return out
 
 
 ## Writes the profile (temporary file, then replace). Returns OK or an error code.

@@ -18,12 +18,14 @@ func check(condition: bool, label: String) -> void:
 
 func _initialize() -> void:
 	d = Profile.data()
-	check(d.talents.size() == 54, "54 talents are defined")
+	check(d.talents.size() == 168, "168 talents are defined (4 classes x 3 branches x 14)")
 	_test_data_is_complete()
 	_test_points_per_level()
 	_test_tier_locks()
 	_test_ultimate_needs_shards_and_is_unique()
 	_test_soul_tiers_and_reset()
+	_test_one_branch_per_character()
+	_test_old_profiles_move_over()
 	_test_ultimate_stages()
 	_test_rank_down_keeps_build_valid()
 	_test_exp_levels()
@@ -59,7 +61,20 @@ func _test_data_is_complete() -> void:
 		for key: String in talent:
 			if talent[key] is Array and key not in ["statuses", "stages"]: check(talent[key].size() == ranks, "%s.%s has one value per rank" % [talent.id, key])
 		if str(talent.kind) != "passive": check(talent.has("cost") and talent.has("cd"), "%s has cost and cooldown" % talent.id)
-	check(per_class.size() == 3 and per_class.values().all(func(n: int) -> bool: return n == 18), "each class has 18 talents (%s)" % per_class)
+	check(per_class.size() == 4 and per_class.values().all(func(n: int) -> bool: return n == 42), "each class has 42 talents (%s)" % per_class)
+	check(d.classes.has("necromancer") and d.resources.necromancer.kind == "mana", "the necromancer plays with mana")
+	check(float(d.resources.mage.max) > float(d.resources.necromancer.max), "the mage has the most mana")
+	for class_entry: Dictionary in d.classes.values():
+		for spec: Dictionary in class_entry.specs:
+			var tiers := {}
+			var points := 0
+			var ultimates := 0
+			for id: String in spec.talents:
+				tiers[int(d.talents[id].tier)] = true
+				points += int(d.talents[id].ranks)
+				if str(d.talents[id].kind) == "ultimate": ultimates += 1
+			check(spec.talents.size() == 14 and tiers.size() == 8 and ultimates == 1, "%s: 14 talents in 8 rows, one ultimate" % spec.id)
+			check(points > Rules.points_total(d, int(d.max_level)), "%s: more ranks (%d) than points at level 30, so a build must choose" % [spec.id, points])
 
 
 func _test_points_per_level() -> void:
@@ -74,39 +89,36 @@ func _test_points_per_level() -> void:
 
 
 func _test_tier_locks() -> void:
-	var profile := _profile(5)
-	check(not Rules.check_rank_up(d, profile, "swordsman", "berserk_3").is_empty(), "tier II is locked below level 6")
-	Profile.class_state(profile, "swordsman").level = 6
-	check(Rules.check_rank_up(d, profile, "swordsman", "berserk_3").contains("Punkte"), "tier II needs 3 points in its branch")
-	check(Rules.rank_up(d, profile, "swordsman", "berserk_1").is_empty(), "tier I opens at level 2")
-	Rules.rank_up(d, profile, "swordsman", "berserk_1")
-	Rules.rank_up(d, profile, "swordsman", "guard_1")
-	check(not Rules.check_rank_up(d, profile, "swordsman", "berserk_3").is_empty(), "points in another branch do not open tier II")
-	Rules.rank_up(d, profile, "swordsman", "berserk_2")
-	check(Rules.rank_up(d, profile, "swordsman", "berserk_3").is_empty(), "3 points in the branch open tier II")
+	var profile := _profile(4)
+	check(not Rules.check_rank_up(d, profile, "swordsman", "berserk_3").is_empty(), "row II is locked below level 5")
+	Profile.class_state(profile, "swordsman").level = 5
+	check(Rules.check_rank_up(d, profile, "swordsman", "berserk_3").contains("Punkte"), "row II needs 2 points in its branch")
+	check(Rules.rank_up(d, profile, "swordsman", "berserk_1").is_empty(), "row I opens at level 2")
+	check(Rules.rank_up(d, profile, "swordsman", "berserk_2").is_empty(), "a second talent of row I")
+	check(Rules.rank_up(d, profile, "swordsman", "berserk_3").is_empty(), "2 points in the branch open row II")
 	check(Rules.rank_up(d, profile, "swordsman", "mage_1").length() > 0, "talents of other classes are refused")
+	Rules.rank_up(d, profile, "swordsman", "berserk_1")
 	check(Rules.check_rank_up(d, profile, "swordsman", "berserk_1").contains("Kein freier"), "no rank without a free point")
 
 
 func _test_ultimate_needs_shards_and_is_unique() -> void:
 	var profile := _profile(30)
-	_fill(profile, "swordsman", ["berserk_1", "berserk_2", "berserk_3"])
-	check(Rules.check_rank_up(d, profile, "swordsman", "berserk_6").contains("Punkte"), "the ultimate needs 12 points in the branch")
-	_fill(profile, "swordsman", ["berserk_4", "berserk_5"])
-	check(Rules.check_rank_up(d, profile, "swordsman", "berserk_6").contains("Seelensplitter"), "missing soul shards block the ultimate")
+	_fill(profile, "swordsman", ["berserk_1", "berserk_2", "berserk_3", "berserk_4", "berserk_5"])
+	check(Rules.check_rank_up(d, profile, "swordsman", "berserk_14").contains("Punkte"), "the ultimate needs 20 points in the branch")
+	_fill(profile, "swordsman", ["berserk_6", "berserk_7"])
+	check(Rules.check_rank_up(d, profile, "swordsman", "berserk_14").contains("Seelensplitter"), "missing soul shards block the ultimate")
 	profile.shards = {"have": 5, "earned": 5, "spent": 0}
-	check(Rules.rank_up(d, profile, "swordsman", "berserk_6").is_empty(), "the ultimate unlocks with enough shards")
+	check(Rules.rank_up(d, profile, "swordsman", "berserk_14").is_empty(), "the ultimate unlocks with enough shards")
 	check(profile.shards.have == 5 - int(d.soul_shards.ultimate_cost) and profile.shards.spent == int(d.soul_shards.ultimate_cost) and int(d.soul_shards.ultimate_cost) == 1, "unlocking spends exactly one shard (Stufe 1)")
-	_fill(profile, "swordsman", ["blade_1", "blade_2", "blade_3", "blade_4"])
-	check(Rules.check_rank_up(d, profile, "swordsman", "blade_6").length() > 0, "a second ultimate is refused")
+	check(Rules.check_rank_up(d, profile, "swordsman", "blade_14").length() > 0, "a second ultimate is refused")
 
 
 func _test_soul_tiers_and_reset() -> void:
 	var profile := _profile(30)
-	_fill(profile, "swordsman", ["guard_1", "guard_2", "guard_3", "guard_4", "guard_5"])
+	_fill(profile, "swordsman", ["guard_1", "guard_2", "guard_3", "guard_4", "guard_5", "guard_6", "guard_7"])
 	profile.shards = {"have": 16, "earned": 16, "spent": 0}
 	profile.gold = 2000
-	Rules.rank_up(d, profile, "swordsman", "guard_6")
+	Rules.rank_up(d, profile, "swordsman", "guard_14")
 	check(profile.shards.have == 15, "the ultimate unlocks with one shard (Stufe 1)")
 	check(Rules.soul_up(d, profile, "swordsman").is_empty() and Rules.soul_up(d, profile, "swordsman").is_empty(), "Stufe 2 and Stufe 3 can be bought")
 	check(profile.shards.have == 10 and Profile.class_state(profile, "swordsman").soul_tier == 2, "the stages cost 2 + 3 shards (6 in all)")
@@ -134,18 +146,56 @@ func _test_ultimate_stages() -> void:
 		check(stages.all(func(st: Dictionary) -> bool: return not str(st.get("name", "")).is_empty() and not str(st.get("text", "")).is_empty()), "%s stages are named and described" % id)
 		check(Rules.staged(d, id, 0) == info, "%s at Stufe 1 plays as written" % id)
 		check(Rules.staged(d, id, 2) != Rules.staged(d, id, 1) and Rules.staged(d, id, 1) != info, "%s changes with every stage" % id)
-	var inferno := Rules.staged(d, "fire_6", 2)
-	check(float(inferno.radius_m) == float(d.talents.fire_6.radius_m) + 2.0 and inferno.has("ground") and (inferno.after as Array).size() == 1, "Inferno Stufe 3: wider, a second blast and burning ground")
-	check(float(Rules.staged(d, "fire_6", 1).radius_m) == float(d.talents.fire_6.radius_m) + 2.0 and not Rules.staged(d, "fire_6", 1).has("ground"), "Inferno Stufe 2 keeps Stufe 3 for later")
-	check(int((Rules.staged(d, "sniper_6", 2).fan as Dictionary).count) == 3, "Letzter Pfeil Stufe 3 fans out three arrows")
-	check(int(Rules.staged(d, "blade_6", 1).hits) == int(d.talents.blade_6.hits) + 3, "Klingentanz Stufe 2 strikes three more times")
-	check((Rules.staged(d, "guard_6", 2).after as Array).size() == 2, "Unbezwingbar Stufe 3 keeps the Stufe 2 shock wave and adds its own")
-	check(is_equal_approx(float(Rules.staged(d, "fire_6", 1).dmg[0]), float(d.talents.fire_6.dmg[0])), "a stage without a damage change keeps the damage")
+	var inferno := Rules.staged(d, "fire_14", 2)
+	check(float(inferno.crater.time) == 7.0 and inferno.has("shower"), "Meteor Stufe 3: the long crater and the shower")
+	check(not Rules.staged(d, "fire_14", 1).has("shower") and float(Rules.staged(d, "fire_14", 1).crater.time) == 7.0, "Meteor Stufe 2 keeps the shower for later")
+	check(Rules.staged(d, "sniper_14", 2).has("end_burst") and Rules.staged(d, "sniper_14", 2).has("mark"), "Himmelsspeer Stufe 3 brands and bursts")
+	check(str(Rules.staged(d, "blade_14", 1).status) == "bleed" and not Rules.staged(d, "blade_14", 1).has("radial"), "Klingensturm Stufe 2 bleeds, the blades wait for Stufe 3")
+	check(float(Rules.staged(d, "guard_14", 2).thorns) > 0.0 and (Rules.staged(d, "guard_14", 2).after as Array).size() == 1, "Bollwerk Stufe 3 keeps the thorns and adds its closing wave")
+	check(is_equal_approx(float(Rules.staged(d, "fire_14", 1).dmg[0]), float(d.talents.fire_14.dmg[0])), "a stage without a damage change keeps the damage")
+
+
+## User decision 29.10.2026: one branch per character. The first point picks
+## it, the others stay locked until a reset; an old build spread over several
+## branches keeps the branch with the most points.
+func _test_one_branch_per_character() -> void:
+	var profile := _profile(10, "mage")
+	check(Rules.chosen_spec(d, Profile.class_state(profile, "mage")).is_empty(), "before the first point every branch is open")
+	check(Rules.check_rank_up(d, profile, "mage", "frost_1").is_empty() and Rules.check_rank_up(d, profile, "mage", "arcane_1").is_empty(), "the first point may go anywhere")
+	Rules.rank_up(d, profile, "mage", "fire_1")
+	check(Rules.chosen_spec(d, Profile.class_state(profile, "mage")) == "fire", "the first point makes a fire mage")
+	check(Rules.check_rank_up(d, profile, "mage", "frost_1").contains("Feuermagier"), "a fire mage cannot learn frost talents")
+	check(not Rules.valid_build(d, {"level": 10, "ranks": {"fire_1": 1, "frost_1": 1}}), "a build in two branches is invalid")
+	profile.gold = 1000
+	Rules.reset(d, profile, "mage")
+	check(Rules.check_rank_up(d, profile, "mage", "frost_1").is_empty(), "after a reset another branch can be chosen")
+	var mixed := _profile(20, "mage")
+	Profile.class_state(mixed, "mage").ranks = {"fire_1": 3, "fire_2": 2, "frost_1": 1}
+	Rules.repair(d, mixed, "mage")
+	check(Profile.class_state(mixed, "mage").ranks == {"fire_1": 3, "fire_2": 2}, "repair keeps the branch with the most points")
+
+
+## Version 1 profiles (the 4-row trees): the old ultimates <spec>_6 move to
+## row VIII (<spec>_14) and the build is repaired to fit the new rows.
+func _test_old_profiles_move_over() -> void:
+	var raw := {"version": 1, "shards": {"earned": 4, "spent": 3}, "classes": {"mage": {"level": 30, "ranks": {"fire_1": 3, "fire_2": 3, "fire_3": 3, "fire_4": 3, "fire_5": 3, "fire_6": 1, "frost_1": 2}, "ultimate": "fire_6", "soul_paid": 3, "bar": ["fire_1", "fire_6"]}}}
+	var path := "user://talent_progress_migrate_test.json"
+	var file := FileAccess.open(path, FileAccess.WRITE)
+	file.store_string(JSON.stringify(raw))
+	file.close()
+	var loaded := Profile.load_profile(d, path)
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
+	var state := Profile.class_state(loaded, "mage")
+	check(not state.ranks.has("frost_1") and Rules.chosen_spec(d, state) == "fire", "the old build keeps its main branch")
+	check(not state.ranks.has("fire_6") or str(d.talents.fire_6.kind) != "ultimate", "the old ultimate id is gone")
+	check(Rules.valid_build(d, state), "the moved build fits the new rows")
+	check(int(loaded.shards.have) + int(loaded.shards.spent) == 4, "no soul shard is lost on the way")
 
 
 func _test_rank_down_keeps_build_valid() -> void:
 	var profile := _profile(12, "mage")
-	_fill(profile, "mage", ["fire_1"])
+	Rules.rank_up(d, profile, "mage", "fire_1")
+	Rules.rank_up(d, profile, "mage", "fire_1")
 	Rules.rank_up(d, profile, "mage", "fire_3")
 	check(not Rules.can_rank_down(d, profile, "mage", "fire_1"), "a point that opens a higher tier cannot be taken back")
 	check(Rules.rank_down(d, profile, "mage", "fire_3").is_empty() and Rules.rank_down(d, profile, "mage", "fire_1").is_empty(), "points without dependants can be taken back")

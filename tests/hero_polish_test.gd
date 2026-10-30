@@ -11,7 +11,6 @@ const Game = preload("res://src/game.gd")
 const HeroLook = preload("res://src/hero/hero_look.gd")
 const SliceFx = preload("res://src/vfx/slice_fx.gd")
 const ClassPerks = preload("res://src/player/class_perks.gd")
-const Dungeon = preload("res://src/dungeon/dungeon_generator.gd")
 
 var checked := 0
 var failures: Array[String] = []
@@ -49,9 +48,8 @@ func _run() -> void:
 	game._begin_run()
 	game.hordes.enabled = false
 	_test_swing_steps_forward()
-	_test_rage_swings_twice_and_cuts()
-	_test_thrown_body_slams_into_wall()
-	_test_charge_flings_bodies()
+	# Rage, the flung bodies and the charge belonged to the class skills on 1-4,
+	# which the talent trees replaced (user decision 29.10.2026).
 	game._leave_session()
 	game.queue_free()
 	await process_frame
@@ -138,64 +136,3 @@ func _test_swing_steps_forward() -> void:
 	var before := Vector2(hero.pos)
 	game.perk_combat.melee(1, Vector2.RIGHT)
 	check(Vector2(hero.pos).x > before.x + 4.0, "the swordsman steps into the swing (%.1f px)" % (Vector2(hero.pos).x - before.x))
-
-
-func _test_rage_swings_twice_and_cuts() -> void:
-	var hero := _fresh_hero()
-	game.hero_skills._press(1, hero, 3, ClassPerks.skill_at("swordsman", 3), Vector2(hero.pos) + Vector2(60, 0))
-	check(game.hero_skills.rage_active(hero), "Rage runs")
-	var small := _foe(Vector2(40, 0))
-	small.hp = 1.0
-	var boss := _foe(Vector2(42, 6), "skeleton")
-	boss.boss = true
-	boss.hp = 1.0
-	var swings := int(hero.get("swings", 0))
-	game.perk_combat.melee(1, Vector2.RIGHT)
-	game.hero_skills.basic_attack(1, hero, Vector2.RIGHT)
-	game.hero_skills.step(0.2)
-	check(int(hero.swings) == swings + 2 and int(hero.swing_dir) == -1, "Rage swings twice, the second time back the other way")
-	check(small.has("slice") and float(small.hp) <= 0.0, "a small enemy killed in Rage is cut in two")
-	check(not boss.has("slice"), "a boss is never cut in two")
-	check(game._make_snapshot().enemies.any(func(e: Dictionary) -> bool: return e.has("slice")), "clients see the cut")
-
-
-func _wall_spot() -> Vector2:
-	# the hero walks left until a wall stops him
-	return Dungeon.move_actor(_hero().pos, Vector2(-4000, 0), float(game.balance.player.radius), game.current_layout)
-
-
-func _test_thrown_body_slams_into_wall() -> void:
-	var hero := _fresh_hero()
-	var wall := _wall_spot()
-	hero.pos = wall + Vector2(90, 0)
-	var foe := _foe(Vector2(-50, 0))
-	foe.hp = 500.0
-	foe.max_hp = 500.0
-	game.hero_skills._press(1, hero, 3, ClassPerks.skill_at("swordsman", 3), Vector2(hero.pos) + Vector2(-60, 0))
-	var hp_before := float(foe.hp)
-	game.hero_skills.rage_hit(1, hero, foe, Vector2.LEFT)
-	var slammed := false
-	for i in range(40):
-		var before := Vector2(foe.pos)
-		var push: Vector2 = foe.knockback
-		foe.pos = Dungeon.move_actor(foe.pos, push / 60.0, float(foe.radius), game.current_layout)
-		game.hero_skills.check_slam(foe, before, push, 1.0 / 60.0)
-		if not foe.has("slam"):
-			slammed = float(foe.hp) < hp_before
-			break
-	check(slammed and float(foe.hitstun) > 0.0, "a body thrown into a wall takes slam damage and is stunned")
-	check(game.hero_skills.events.any(func(e: Dictionary) -> bool: return str(e.kind) == "wall_slam"), "the slam leaves a crack (event wall_slam)")
-
-
-func _test_charge_flings_bodies() -> void:
-	var hero := _fresh_hero()
-	hero.pos = _wall_spot() + Vector2(40, 0)
-	var foe := _foe(Vector2(30, 10))
-	foe.hp = 500.0
-	foe.max_hp = 500.0
-	game.hero_skills._press(1, hero, 2, ClassPerks.skill_at("swordsman", 2), Vector2(hero.pos) + Vector2(200, 0))
-	for i in range(20):
-		game.hero_skills.step(1.0 / 60.0)
-	var push: Vector2 = foe.knockback
-	check(push.length() > 200.0 and push.y > 0.0, "the charge flings a body off its path, to its own side (%s)" % str(push))
-	check(foe.has("slam"), "a flung body can slam into a wall")

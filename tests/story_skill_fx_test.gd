@@ -13,6 +13,7 @@ const HeroKit = preload("res://src/hell/hero_kit.gd")
 const SkillBar = preload("res://src/ui/skill_bar.gd")
 const SkillIcons = preload("res://src/ui/skill_icons.gd")
 const RunHud = preload("res://src/ui/run_hud.gd")
+const TalentBarScript = preload("res://src/ui/talent_bar.gd")
 
 var checked := 0
 var failures: Array[String] = []
@@ -156,12 +157,14 @@ func _test_archer() -> void:
 
 func _test_bar() -> void:
 	var screen := Vector2(1280, 720)
-	check(SkillBar.height() <= 56.0, "the skill bar is slim (at most 56 px high)")
-	check(SkillBar.top(screen) >= 720.0 - 72.0, "the skill bar sits low at the bottom edge")
+	# bigger icons since 30.10.2026 (user decision): 56 px slots, still one low strip
+	check(SkillBar.height() <= 68.0, "the skill bar stays one strip (at most 68 px high)")
+	check(SkillBar.top(screen) >= 720.0 - 84.0, "the skill bar sits low at the bottom edge")
 	var hud: Control = RunHud.new()
 	hud.size = screen
 	check(is_equal_approx(hud.skill_bar_top(), SkillBar.top(screen, false)), "the crypt's hint sits above the shared bar")
 	hud.free()
-	check(SkillIcons.for_id("mage", "chain") != null and SkillIcons.for_id("archer", "fist") != null, "story skills show the crypt's icons")
+	var talent_slots: Array = TalentBarScript.new().skill_slots({"slots": [{"name": "Feuerring", "icon": "ring", "spec": "fire", "cd": 0.0, "cd_max": 12.0, "ready": true}]})
+	check(talent_slots[0].get("icon") != null, "the talents on 1-4 show their icons in every world")
 	check(SkillIcons.for_id("swordsman", "blade_storm") != null, "master skills get an icon")
 	check(SkillIcons.for_id("mage", "nothing") == null, "unknown skills have no icon")

@@ -36,12 +36,31 @@ static func rank(state: Dictionary, talent: String) -> int:
 	return int(state.ranks.get(talent, 0))
 
 
+## The branch this character follows: the spec of its learned talents, or ""
+## before the first point. The first point picks it; the other branches stay
+## locked until a reset (user decision 29.10.2026).
+static func chosen_spec(d: Dictionary, state: Dictionary) -> String:
+	for talent: String in state.ranks:
+		var spec := str(d.talents.get(talent, {}).get("spec", ""))
+		if not spec.is_empty(): return spec
+	return ""
+
+
+static func spec_name(d: Dictionary, class_id: String, spec: String) -> String:
+	for entry: Dictionary in d.classes.get(class_id, {}).get("specs", []):
+		if str(entry.id) == spec: return str(entry.name)
+	return spec
+
+
 ## Why `talent` cannot gain one rank now, or "".
 static func check_rank_up(d: Dictionary, profile: Dictionary, class_id: String, talent: String) -> String:
 	var info: Dictionary = d.talents.get(talent, {})
 	if info.is_empty() or str(info["class"]) != class_id: return "Dieses Talent gehört nicht zu deiner Klasse."
 	var state := Profile.class_state(profile, class_id)
 	if rank(state, talent) >= int(info.ranks): return "Maximalrang erreicht."
+	var chosen := chosen_spec(d, state)
+	if not chosen.is_empty() and chosen != str(info.spec):
+		return "Du bist %s. Ein anderer Zweig geht erst nach dem Zurücksetzen." % spec_name(d, class_id, chosen)
 	var tier: Dictionary = d.tiers[str(int(info.tier))]
 	if int(state.level) < int(tier.level): return "Benötigt Charakterlevel %d." % int(tier.level)
 	if spec_points(d, state, str(info.spec), int(info.tier)) < int(tier.points):
@@ -94,9 +113,13 @@ static func rank_down(d: Dictionary, profile: Dictionary, class_id: String, tale
 	return ""
 
 
-## Every ranked talent meets its tier, the points fit the level, at most one ultimate.
+## Every ranked talent meets its tier, the points fit the level, all in one
+## branch, at most one ultimate.
 static func valid_build(d: Dictionary, state: Dictionary) -> bool:
 	if spent(state) > points_total(d, int(state.level)): return false
+	var chosen := chosen_spec(d, state)
+	for talent: String in state.ranks:
+		if str(d.talents.get(talent, {}).get("spec", "")) != chosen: return false
 	var ultimates := 0
 	for talent: String in state.ranks:
 		var info: Dictionary = d.talents.get(talent, {})
@@ -113,6 +136,20 @@ static func valid_build(d: Dictionary, state: Dictionary) -> bool:
 static func repair(d: Dictionary, profile: Dictionary, class_id: String) -> int:
 	var state := Profile.class_state(profile, class_id)
 	var removed := 0
+	# points in several branches (an old profile): the branch with the most points stays
+	var per_spec := {}
+	for talent: String in state.ranks:
+		var spec := str(d.talents.get(talent, {}).get("spec", ""))
+		per_spec[spec] = int(per_spec.get(spec, 0)) + int(state.ranks[talent])
+	if per_spec.size() > 1:
+		var keep := ""
+		for spec: String in per_spec:
+			if keep.is_empty() or int(per_spec[spec]) > int(per_spec[keep]): keep = spec
+		for talent: String in state.ranks.keys():
+			if str(d.talents.get(talent, {}).get("spec", "")) != keep:
+				removed += int(state.ranks[talent])
+				state.ranks.erase(talent)
+				state.bar.erase(talent)
 	while not valid_build(d, state) and not state.ranks.is_empty():
 		var worst := ""
 		for talent: String in state.ranks:

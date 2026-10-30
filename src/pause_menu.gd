@@ -130,7 +130,7 @@ func _ready() -> void:
 	story_map.visible = false
 	story_map.draw.connect(func() -> void: if story_map_draw.is_valid(): story_map_draw.call(story_map))
 	pages.map.add_child(story_map)
-	controls_label = _text(pages.controls,"Bewegen: WASD\nZielen: Maus\nAngreifen: Linksklick\nFähigkeiten: 1 2 3 4 (2 ab Level 3, 3 ab 6, 4 ab 10)\nBallistapfeil, Photoneneis: Taste halten\nTür / Treppe nutzen: E\nMenü öffnen / schließen: Esc\nVollbild / Fenster: F11 oder Alt + Enter\n\nGegner lassen grüne EXP fallen; das Team\nlevelt gemeinsam. Karten rechts per Klick.\n\nFür den Raumwechsel das lebende Team\nam Ausgang sammeln.",Vector2.ZERO,Vector2(640,378),16)
+	controls_label = _text(pages.controls,"Bewegen: WASD\nZielen: Maus\nAngreifen: Linksklick\nTalente: 1 2 3 4 (im Talentmenü gelernt), Ultimate: R\nBegleiter: 5 6, Rechtsklick aufs Symbol: Auto an / aus\nAusweichen / Block: Shift\nTalentmenü (auch im Lauf): K\nTür / Treppe nutzen: E\nMenü öffnen / schließen: Esc\nVollbild / Fenster: F11 oder Alt + Enter\n\nGegner lassen grüne EXP fallen; das Team\nlevelt gemeinsam. Karten rechts per Klick.\n\nFür den Raumwechsel das lebende Team\nam Ausgang sammeln.",Vector2.ZERO,Vector2(640,378),16)
 	display_status = _text(pages.display,"",Vector2.ZERO,Vector2(640,64),24)
 	display_mode_button = _button(pages.display,"Vollbild einschalten",Vector2(0,96),Vector2(416,44),func(): display_mode_requested.emit())
 	graphics_status = _text(pages.display,"Grafik: PIXEL",Vector2(0,164),Vector2(640,40),16)

@@ -31,7 +31,8 @@ func _run() -> void:
 	quit(1 if failures.size() > 0 else 0)
 
 
-## A game whose profile holds a full branch of `spec` (level 30, ultimate).
+## A game whose profile holds a level 30 build of `spec`: 20 points from row I
+## down (in branch order), then the ultimate; the first four actives on keys 1-4.
 func _new(class_id: String, spec: String, scene: PackedScene) -> Node:
 	var game: Node = scene.instantiate()
 	game.start_floor = 2
@@ -44,9 +45,18 @@ func _new(class_id: String, spec: String, scene: PackedScene) -> Node:
 	state.level = 30
 	state.ranks = {}
 	state.bar = []
+	var points := 0
 	for id: String in d.talents:
-		if str(d.talents[id].spec) == spec: state.ranks[id] = int(d.talents[id].ranks)
-		if str(d.talents[id].spec) == spec and str(d.talents[id].kind) == "active": state.bar.append(id)
+		var info: Dictionary = d.talents[id]
+		if str(info.spec) != spec: continue
+		if str(info.kind) == "ultimate":
+			state.ranks[id] = 1
+			state.ultimate = id
+			continue
+		if points >= int(d.tiers["8"].points): continue
+		state.ranks[id] = mini(int(info.ranks), int(d.tiers["8"].points) - points)
+		points += int(state.ranks[id])
+		if str(info.kind) == "active" and state.bar.size() < int(d.bar_slots): state.bar.append(id)
 	game.profile.shards = {"have": 0, "earned": 3, "spent": 3}
 	game.talents.bind(game, game.profile, game.profile_path, class_id)
 	game.mobs.clear()
@@ -84,31 +94,34 @@ func _key(game: Node, key: Key, shift: bool) -> void:
 func test_mage_in_the_frostgruft() -> void:
 	# Arrange
 	var game := await _new("mage", "fire", FrostScene)
-	check(game.talents != null and game.talents.hud_state().slots.size() == 3, "the Frostgruft plays the profile's talent build")
+	check(game.talents != null and game.talents.hud_state().slots.size() == 4, "the Frostgruft plays the profile's talent build")
 	var near := _mob(game, Vector2(60, 0))
 	var far := _mob(game, Vector2(400, 0))
-	# Act: Shift + 2 is Feuerring (the second active of the fire branch).
-	_key(game, KEY_2, true)
+	# Key 2 is the Pyro-Monster (user wish 30.10.2026): learned, it is already there.
+	check(str(game.talents.tc.permanent_pet(1).get("kind", "")) == "pyro", "the learned Pyro-Monster fights beside the hero")
+	# Act: key 4 draws the Flammenmeer; a tap without dragging lays a short line.
+	_key(game, KEY_4, false)
+	_tick(game, 0.1)
 	# Assert
-	check(near.hp < 400.0 and far.hp == 400.0, "Shift + 2 casts Feuerring around the hero")
-	check(near.statuses.has("burn") and float(near.get("burn", 0.0)) > 0.0 or near.has("burn_t") or near.statuses.has("burn"), "Feuerring sets the mob on fire")
+	check(game.talents.tc.zones.any(func(z: Dictionary) -> bool: return z.has("path")), "key 4 lays the Flammenmeer as a line")
+	check(is_equal_approx(far.hp, 400.0), "the line burns where it was aimed, not on the far mob")
 	var mana_after_ring: float = game.talents.hud_state().res
-	check(mana_after_ring < 100.0, "the cast costs mana")
+	check(mana_after_ring < float(game.talents.hud_state().res_max), "the cast costs mana")
 	_tick(game, 1.1)
 	var before_arrow: float = near.hp
-	_key(game, KEY_1, true)
+	_key(game, KEY_1, false)
 	_tick(game, 0.6)
-	check(near.hp < before_arrow, "Shift + 1 fires Flammenpfeil")
-	# Act: the ultimate on R (Inferno).
+	check(near.hp < before_arrow, "key 1 fires the Feuerball")
+	# Act: the ultimate on R (Meteor, it lands after its fall).
 	_tick(game, 1.1)
-	var hp_before: float = near.hp
+	game.talents.tc.runtime(1).res = 100.0
 	_key(game, KEY_R, false)
-	check(near.hp < hp_before, "R casts Inferno")
+	check(float(game.talents.tc.runtime(1).cds.get("fire_14", 0.0)) > 50.0, "R casts the Meteor (a minute to reload)")
 	# Blink: Phönixschritt moves the hero.
 	_tick(game, 1.1)
 	var x0: float = game.player.x
 	game.talents.tc.runtime(1).res = 100.0
-	_key(game, KEY_3, true)
+	_key(game, KEY_3, false)
 	check(absf(float(game.player.x) - x0) > 20.0, "Phönixschritt moves the hero")
 	# Kills: EXP and gold into the shared profile.
 	var gold: int = int(game.profile.gold)
@@ -121,7 +134,7 @@ func test_mage_in_the_frostgruft() -> void:
 func test_archer_wolf_and_warrior_shield_in_the_hell() -> void:
 	var game := await _new("archer", "beast", HellScene)
 	var prey := _mob(game, Vector2(70, 0))
-	_key(game, KEY_1, true)
+	_key(game, KEY_1, false)
 	check(not game.talents.tc.pets.is_empty(), "Wolfsgefährte summons a wolf in the Hölle")
 	_tick(game, 2.5)
 	check(prey.hp < 400.0, "the wolf bites hell monsters")
@@ -134,8 +147,8 @@ func test_archer_wolf_and_warrior_shield_in_the_hell() -> void:
 		warrior._hurt("Test", 2)
 	var with_skin: int = hp - int(warrior.state.hp)
 	check(with_skin < 40, "Eisenhaut lowers damage in the Hölle (%d of 40)" % with_skin)
-	_key(warrior, KEY_2, true)
-	check(warrior.talents.tc.runtime(1).buffs.has("bulwark"), "Shift + 2 raises Schutzwall")
+	_key(warrior, KEY_2, false)
+	check(warrior.talents.tc.runtime(1).buffs.has("bulwark"), "key 2 raises Schutzwall")
 	await _free(warrior)
 	# Difficulty: Albtraum gives mobs more health.
 	var hard := await _new("swordsman", "berserk", HellScene)

@@ -127,7 +127,14 @@ func observe(snapshot: Dictionary, local_peer: int) -> void:
 			particles.kick(fx_point, 56.0, 1.3)
 			_play("void_burst")
 			_fx_spawn("void_burst", fx_point, 0.0, 1.3)
-		elif fx_kind == "wall_hit": _wall_hit(fx_point, Vector2(float(event.get("nx", 0.0)), float(event.get("ny", 0.0))), str(event.get("style", "arrow")), str(snapshot.get("players", {}).get(int(event.get("o", 0)), {}).get("glow", "")))
+		elif fx_kind == "wall_hit":
+			var wall_style := str(event.get("style", "arrow"))
+			var shooter: Dictionary = snapshot.get("players", {}).get(int(event.get("o", 0)), {})
+			if wall_style == "magic" and str(shooter.get("class_id", "")) == "mage" and str(shooter.get("glow", "")).is_empty():
+				# the mage's fireball bursts on the wall too
+				wall_style = "fire"
+				_fx_spawn("fire_explosion", fx_point, 0.0, 0.45)
+			_wall_hit(fx_point, Vector2(float(event.get("nx", 0.0)), float(event.get("ny", 0.0))), wall_style, str(shooter.get("glow", "")))
 		elif fx_kind == "crate_break":
 			particles.kick(fx_point, 20.0, 0.6)
 			particles.burst(fx_point, Color("a8743e"), 18, 210.0, 0.7, Vector2.ZERO, PI, 4.0, 4.0)
@@ -228,7 +235,12 @@ func observe(snapshot: Dictionary, local_peer: int) -> void:
 		_blasts[key] = _clock
 		# A found staff's splash bursts in its own glow colour; otherwise the emerald burst.
 		var glow := str(snapshot.get("players", {}).get(int(event.get("o", 0)), {}).get("glow", ""))
-		if not glow.is_empty(): _fx_spawn("spell_burst", Vector2(float(event.get("x", 0)), float(event.get("y", 0))), 0.0, 1.1, Color(glow).lightened(0.15))
+		var mage := str(snapshot.get("players", {}).get(int(event.get("o", 0)), {}).get("class_id", "")) == "mage"
+		if mage and glow.is_empty():
+			# the mage's fireball bursts (user wish 30.10.2026)
+			_fx_spawn("fire_explosion", Vector2(float(event.get("x", 0)), float(event.get("y", 0))) - Vector2(0, 6), 0.0, 0.55)
+			_fx_spawn("fire_sparks", Vector2(float(event.get("x", 0)), float(event.get("y", 0))) - Vector2(0, 6), 0.0, 0.5)
+		elif not glow.is_empty(): _fx_spawn("spell_burst", Vector2(float(event.get("x", 0)), float(event.get("y", 0))), 0.0, 1.1, Color(glow).lightened(0.15))
 		else: _fx_spawn("magic_burst", Vector2(float(event.get("x", 0)), float(event.get("y", 0))), 0.0, 1.2)
 		_play("blast")
 	var seen: Dictionary = {}

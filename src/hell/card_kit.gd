@@ -73,18 +73,15 @@ static func on_level_up(g: Node) -> void:
 	g._toast("+1 Talentpunkt · %s öffnet die Lauf-Talente" % str(RunTree.settings().key))
 
 
-## The run talent tree of this hero: a branch per class skill (the skill's
-## cards, open from its level), the basics (class cards without a skill and the
-## shared ones) and the carried relic's cards. A subclass keeps only the basics
+## The run talent tree of this hero: the basics (class cards without a skill
+## and the shared ones) and the carried relic's cards. A subclass keeps only the basics
 ## and the relic, as before (its own skills have no cards).
 static func tree(g: Node) -> Dictionary:
 	var cards := _all(g)
 	var branches: Array = []
 	var own_class: bool = g.sub_kit.is_empty()
-	if own_class:
-		for s: Dictionary in g.skills:
-			var nodes := cards.filter(func(c: Dictionary) -> bool: return str(c.set) == str(g.class_id) and str(c.get("skill", "")) == str(s.key))
-			branches.append({"key": str(s.key), "title": str(s.get("short", s.name)), "unlock": int(s.unlock), "nodes": nodes.map(_node.bind(g))})
+	# No branch per class skill any more: the talent trees took keys 1-4
+	# (user decision 29.10.2026), so the old skill upgrade cards are not offered.
 	var basics := cards.filter(func(c: Dictionary) -> bool: return (str(c.set) == "all" or (own_class and str(c.set) == str(g.class_id))) and not c.has("skill"))
 	branches.append({"key": "basis", "title": "GRUNDWERTE", "unlock": 1, "nodes": basics.map(_node.bind(g))})
 	var relic := str(g.state.get("relic", ""))

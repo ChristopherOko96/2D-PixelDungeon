@@ -42,7 +42,7 @@ const TOOLS := [
 ]
 const BRUSHES := [[0, "1"], [1, "3"], [2, "5"]]
 const ROLE_NAMES := {"entrance": "Eingang (erster Raum)", "normal": "Normaler Raum", "boss": "Boss-Raum (letzter Raum)"}
-const CLASS_NAMES := [["swordsman", "Schwertkämpfer"], ["archer", "Bogenschütze"], ["mage", "Magier"]]
+const CLASS_NAMES := [["swordsman", "Schwertkämpfer"], ["archer", "Bogenschütze"], ["mage", "Magier"], ["necromancer", "Nekromant"]]
 const KIND_TEXT := {"floor": "BODENART · FLÄCHE", "carpet": "TEPPICH · FLÄCHE", "wall": "AN DER WAND", "object": "AUF DEM BODEN"}
 const RECENT_MAX := 6
 const ERROR_COLOR := Color("ef8a6a")

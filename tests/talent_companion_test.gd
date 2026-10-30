@@ -31,7 +31,7 @@ func _run() -> void:
 	test_profile_keeps_the_companion()
 	await _start()
 	test_bear_is_tougher_and_slower()
-	test_free_casts_in_the_test_profile()
+	test_test_profile_casts_cost_mana_and_ultimate_keeps_its_minute()
 	test_companion_sprites_exist()
 	await test_pause_menu_shows_shards()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.progress.save_path))
@@ -104,31 +104,49 @@ func test_bear_is_tougher_and_slower() -> void:
 	check(str(tc.snapshot().pets[0].get("kind", "")) == "bear", "clients see which companion it is")
 
 
-func test_free_casts_in_the_test_profile() -> void:
-	# Arrange
+func test_test_profile_casts_cost_mana_and_ultimate_keeps_its_minute() -> void:
+	# Arrange: the talent test profile spends mana like a real run (user decision 30.10.2026)
 	tc.reset(7)
 	tc.set_build(1, {"class": "mage", "level": 30, "ranks": {"fire_1": 3}, "bar": ["fire_1"], "free": true})
 	game.players[1].class_id = "mage"
 	var rt: Dictionary = tc.runtime(1)
 	rt.res = 0.0
-	# Act
-	var fired: bool = tc.cast(1, "fire_1")
-	# Assert
-	check(fired and float(rt.res) == 0.0, "the test profile casts without mana")
-	check(float(rt.cds.fire_1) <= 0.5, "the test profile reloads in half a second")
-	tc.set_build(1, {"class": "mage", "level": 30, "ranks": {"fire_1": 3}, "bar": ["fire_1"]})
-	tc.runtime(1).res = 0.0
-	check(not tc.cast(1, "fire_1"), "a normal profile still needs mana")
+	# Act / Assert
+	check(not tc.cast(1, "fire_1"), "the test profile needs mana too")
+	rt.res = float(rt.res_max)
+	check(tc.cast(1, "fire_1") and float(rt.res) < float(rt.res_max), "a cast in the test profile spends mana")
+	check(float(rt.cds.fire_1) >= 3.0, "the test profile keeps the real cooldown")
+	var ult_rt := _ultimate_build()
+	check(is_equal_approx(float(ult_rt.cds.get("fire_14", 0.0)), 60.0), "the ultimate reloads in a full minute, cooldown talents left aside")
+
+
+## A fire mage with the ultimate and a cooldown passive maxed, after casting it.
+func _ultimate_build() -> Dictionary:
+	var ranks := {}
+	for k in range(1, 7):
+		ranks["fire_%d" % k] = 3
+	ranks["fire_13"] = 2 # Feuerseele: shorter cooldowns, never for the ultimate
+	ranks["fire_14"] = 1
+	tc.set_build(1, {"class": "mage", "level": 30, "ranks": ranks, "bar": [], "ultimate": "fire_14", "soul_tier": 1})
+	var rt: Dictionary = tc.runtime(1)
+	rt.res = float(rt.res_max)
+	tc.cast(1, "fire_14")
+	return rt
 
 
 func test_companion_sprites_exist() -> void:
 	for kind: String in d.pet.kinds:
+		if bool(d.pet.kinds[kind].get("summon_only", false)): continue
 		for motion: String in ["idle", "walk"]:
 			for i in range(4):
-				var path := "res://assets/sprites/forest_0x72/%s_%s_f%d.png" % [kind, motion, i]
+				# wolf and bear from the forest pack, the falcon drawn for the game (scripts/make_falcon.py)
+				var folder := "companions" if kind == "falcon" else "forest_0x72"
+				var path := "res://assets/sprites/%s/%s_%s_f%d.png" % [folder, kind, motion, i]
 				check(ResourceLoader.exists(path), "sprite %s exists" % path)
 	var fx := TalentFx.new()
 	check(fx._companion_frame("bear", "walk", 2) != null, "the companion art loads the bear's walk frames")
+	check(fx._companion_frame("falcon", "idle", 1) != null, "the falcon's wing beats load")
+	check(fx._companion_frame("skeleton", "walk", 2) != null and fx._companion_frame("skeleton", "idle", 0) != null, "the necromancer's skeletons use the 0x72 skeleton frames")
 
 
 func test_pause_menu_shows_shards() -> void:

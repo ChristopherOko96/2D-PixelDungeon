@@ -1,9 +1,11 @@
 extends RefCounted
-## The talent bar and the reward banner, the same in every map: the run HUD of
-## the crypt and the Frostgruft / Hölle HUD draw them through this object.
-## Bar: resource (mana blue, stamina green, rage red), Shift + 1-4 slots with
-## cooldown sweep, the ultimate on R. Banner: "SEELENSPLITTER ERHALTEN!" with
-## the crystal, or a level-up note; queued, one at a time.
+## The talent slots, the resource line and the reward banner, the same in
+## every map: the run HUD of the crypt and the Frostgruft / Hölle HUD draw them
+## through this object. There are no standard class skills (user decision
+## 29.10.2026): the learned actives sit on keys 1-4 of the skill bar
+## (src/ui/skill_bar.gd), the ultimate on R; empty slots wait for talents.
+## Above the bar the resource (mana blue, stamina green, rage red). Banner:
+## "+2 SEELENSPLITTER" with the crystal, or a level-up note; queued, one at a time.
 
 const CryptUI = preload("res://src/ui/crypt_ui.gd")
 const PixelStyle = preload("res://src/pixel_style.gd")
@@ -33,12 +35,94 @@ func step(delta: float) -> void:
 	if _reward.is_empty() and not _queue.is_empty(): _reward = _queue.pop_front()
 
 
-## Draws the bar centred on `centre_x` with its slots' top at `y`.
+## The skill bar's slots (src/ui/skill_bar.gd entries) from a hero's talent
+## state: keys 1-4 with the learned actives (empty until learned), R with the
+## ultimate, then the permanent companion's two abilities on 5 and 6 ("pet",
+## "auto": its auto-cast is on; right-click on the icon toggles it).
+func skill_slots(talents: Dictionary) -> Array:
+	_load_specs()
+	var out: Array = []
+	var slots: Array = talents.get("slots", [])
+	for index in range(int(Profile.data().get("bar_slots", 4))):
+		if index < slots.size():
+			var slot: Dictionary = slots[index]
+			out.append({"key": str(index + 1), "name": str(slot.get("name", "")), "cd": float(slot.get("cd", 0.0)), "max": float(slot.get("cd_max", 1.0)),
+				"icon": TalentIcons.make(_specs.get(str(slot.get("spec", "")), {}), str(slot.get("icon", "burst")), true, false),
+				"locked": false, "short": not bool(slot.get("ready", false)) and float(slot.get("cd", 0.0)) <= 0.0,
+				"text": str(slot.get("text", "")), "meta": _meta(slot)})
+		else:
+			out.append({"key": str(index + 1), "name": "Frei: lerne ein aktives Talent", "locked": true, "empty": true})
+	var ult: Dictionary = talents.get("ult", {})
+	if ult.is_empty():
+		out.append({"key": "R", "name": "Ultimate: noch nicht freigeschaltet", "locked": true, "empty": true, "ultimate": true})
+	else:
+		out.append({"key": "R", "name": str(ult.get("name", "")), "cd": float(ult.get("cd", 0.0)), "max": float(ult.get("cd_max", 1.0)), "ultimate": true,
+			"icon": TalentIcons.make(_specs.get(str(ult.get("spec", "")), {}), str(ult.get("icon", "burst")), true, true), "locked": false,
+			"text": str(ult.get("text", "")), "meta": _meta(ult)})
+	# Shift: the class's defense, its charges or hits as pips (user decision 30.10.2026)
+	var guard: Dictionary = talents.get("defense", {})
+	if not guard.is_empty():
+		out.append({"key": "SH", "name": "%s (Shift)" % str(guard.name), "cd": float(guard.get("cd", 0.0)), "max": float(guard.get("cd_max", 1.0)), "defense": true,
+			"icon": TalentIcons.make({}, str(guard.get("icon", "shield")), true, false), "locked": false, "pips": [int(guard.left), int(guard.max)],
+			"charge": float(guard.get("refill", 0.0)) if int(guard.left) < int(guard.max) and float(guard.get("cd", 0.0)) <= 0.0 else -1.0,
+			"active": Color("8fd6ff") if bool(guard.get("up", false)) else Color(0, 0, 0, 0), "text": str(guard.get("text", "")),
+			"meta": "Hält %d Treffer" % int(guard.max) if str(guard.type) == "block" else "%d Ladungen" % int(guard.max)})
+	var pet: Dictionary = talents.get("pet", {})
+	var first_pet := true
+	for ability: Dictionary in pet.get("abilities", []):
+		var alive := bool(pet.get("alive", false))
+		out.append({"key": str(ability.key), "pet": true, "auto": bool(ability.auto) and alive, "gap_before": first_pet, "text": str(ability.get("text", "")),
+			"meta": "Abklingzeit %s s · Rechtsklick: Auto an / aus" % _number(float(ability.get("cd_max", 0.0))),
+			"name": "%s: %s · Rechtsklick: Auto %s" % [str(pet.get("name", "")), str(ability.name), "aus" if bool(ability.auto) else "an"] if alive else "%s ist gefallen" % str(pet.get("name", "")),
+			"cd": float(ability.get("cd", 0.0)), "max": float(ability.get("cd_max", 1.0)), "locked": not alive,
+			"icon": TalentIcons.make(_specs.get(str(pet.get("spec", "")), {}), str(ability.get("icon", "burst")), true, false)})
+		first_pet = false
+	return out
+
+
+## The line under a skill's description: its cost and cooldown.
+static func _meta(slot: Dictionary) -> String:
+	var parts: Array = []
+	if float(slot.get("cost", 0.0)) > 0.0: parts.append("%d %s" % [roundi(float(slot.cost)), str(slot.get("res_name", ""))])
+	if float(slot.get("cd_max", 0.0)) > 0.0: parts.append("Abklingzeit %s s" % _number(float(slot.cd_max)))
+	return " · ".join(parts)
+
+
+static func _number(value: float) -> String:
+	return str(int(value)) if is_equal_approx(value, roundf(value)) else ("%.1f" % value).replace(".", ",")
+
+
+## Which companion ability (0 or 1) the slot at `index` of skill_slots() is, or -1.
+static func pet_slot(slots: Array, index: int) -> int:
+	if index < 0 or index >= slots.size() or not bool(slots[index].get("pet", false)): return -1
+	return int(str(slots[index].key)) - 5
+
+
+## The resource line above the skill bar, `width` px wide, centred on
+## `centre_x`, its top at `y`: mana, Ausdauer or Zorn with the number.
+func draw_resource(canvas: CanvasItem, talents: Dictionary, centre_x: float, y: float, width: float = 236.0) -> void:
+	if talents.is_empty(): return
+	var kind := str(talents.get("res_kind", "mana"))
+	var colour: Color = {"mana": Color("5b8ff0"), "stamina": Color("7fcf5a"), "rage": CryptUI.BLOOD}.get(kind, CryptUI.GOLD)
+	var bar := Rect2(floorf(centre_x - width * 0.5), y, width, 8)
+	canvas.draw_rect(bar, CryptUI.INK)
+	canvas.draw_rect(Rect2(bar.position + Vector2(1, 1), Vector2((bar.size.x - 2) * clampf(float(talents.get("res", 0)) / maxf(1.0, float(talents.get("res_max", 100))), 0.0, 1.0), 6)), colour)
+	if float(talents.get("shield", 0.0)) > 0.0: canvas.draw_rect(bar.grow(2), Color(CryptUI.FROST, 0.8), false, 2.0)
+	var name: String = {"mana": "MANA", "stamina": "AUSDAUER", "rage": "ZORN"}.get(kind, "")
+	_centered(canvas, bar.get_center() + Vector2(0, -6), "%s %d / %d" % [name, int(float(talents.get("res", 0))), int(float(talents.get("res_max", 100)))], 8, Color(colour.lightened(0.35)))
+
+
+func _load_specs() -> void:
+	if not _specs.is_empty(): return
+	for class_entry: Dictionary in Profile.data().get("classes", {}).values():
+		for spec: Dictionary in class_entry.specs: _specs[str(spec.id)] = spec
+
+
+## The older stand-alone talent bar (kept for tools that draw it on its own):
+## centred on `centre_x` with its slots' top at `y`.
 func draw_bar(canvas: CanvasItem, talents: Dictionary, centre_x: float, y: float) -> void:
 	if talents.is_empty(): return
-	if _specs.is_empty():
-		for class_entry: Dictionary in Profile.data().get("classes", {}).values():
-			for spec: Dictionary in class_entry.specs: _specs[str(spec.id)] = spec
+	_load_specs()
 	var slots: Array = talents.get("slots", [])
 	var ult: Dictionary = talents.get("ult", {})
 	var size_px := 44.0
@@ -68,7 +152,7 @@ func draw_bar(canvas: CanvasItem, talents: Dictionary, centre_x: float, y: float
 		if is_ult: canvas.draw_rect(rect.grow(2), CryptUI.VOID, false, 2.0)
 		var key := Rect2(rect.position + Vector2(-4, -8), Vector2(28 if not is_ult else 18, 16))
 		CryptUI.draw_box(canvas, "button", key)
-		_centered(canvas, key.get_center() + Vector2(0, 5), "R" if is_ult else "S%d" % (index + 1), 8, CryptUI.VOID if is_ult else CryptUI.CREAM)
+		_centered(canvas, key.get_center() + Vector2(0, 5), "R" if is_ult else "%d" % (index + 1), 8, CryptUI.VOID if is_ult else CryptUI.CREAM)
 
 
 ## Draws the current reward banner centred at `centre` (top third of the screen).

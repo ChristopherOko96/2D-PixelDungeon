@@ -36,14 +36,17 @@ func _run() -> void:
 	check(int(RunHud.boss_target(snapshot).get("id", -1)) == 1, "a dying boss leaves the bar")
 	check(RunHud.boss_target({"enemies": [{"id": 3, "hp": 5.0}]}).is_empty(), "normal enemies show no top bar")
 
-	# Data: every class from balance.json has four slots with keys 1-4.
+	# Data: every hero's bar has the talent keys 1-4 and the ultimate on R;
+	# there are no standard class skills (user decision 29.10.2026).
 	var hud = RunHud.new()
 	root.add_child(hud)
 	await process_frame
 	var balance: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://src/data/balance.json"))
+	var empty_slots: Array = hud._talent_bar.skill_slots({"slots": []})
+	check(empty_slots.map(func(slot: Dictionary) -> String: return str(slot.key)) == ["1", "2", "3", "4", "R"], "the bar has talent keys 1-4 and R")
+	check(empty_slots.all(func(slot: Dictionary) -> bool: return bool(slot.get("empty", false))), "a new hero starts with an empty bar")
 	for class_id: String in balance.get("class_order", []):
-		var keys: Array = hud.skills_for(class_id).map(func(skill: Dictionary) -> String: return str(skill.key))
-		check(keys == ["1", "2", "3", "4"], "%s has skill slots 1-4 (%s)" % [class_id, str(keys)])
+		check(hud.skills_for(class_id).is_empty(), "%s has no standard class skills" % class_id)
 	hud.size = Vector2(1280, 720)
 	hud.set_state({"players": {1: {"hp": 7, "max_hp": 8, "class_id": "archer"}}, "floor_map": [], "floor_index": 3, "room": 4, "enemies": []}, 1)
 	check(hud.local_hearts() == ["full", "full", "full", "half"], "the HUD reads the local player's hearts from the snapshot")

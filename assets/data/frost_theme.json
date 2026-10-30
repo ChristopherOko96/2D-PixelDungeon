@@ -44,7 +44,7 @@
     },
     "mage": {
       "name": "MAGIER",
-      "sprite": "wizzard_m",
+      "sprite": "custom_pyromancer",
       "hp": 10,
       "speed": 350,
       "weapon": {
@@ -57,6 +57,23 @@
         "life": 1.0,
         "splash": 110,
         "sprite": "weapon_green_magic_staff"
+      }
+    },
+    "necromancer": {
+      "name": "NEKROMANT",
+      "sprite": "necromancer",
+      "hp": 11,
+      "speed": 350,
+      "weapon": {
+        "name": "KNOCHENSTAB",
+        "type": "projectile",
+        "shot": "magic",
+        "damage": 1.6,
+        "cooldown": 0.42,
+        "speed": 680,
+        "life": 1.0,
+        "splash": 100,
+        "sprite": "items/staff_necro"
       }
     }
   },
@@ -1345,6 +1362,22 @@
         "max": 1,
         "skill": "2",
         "radius": 0.3
+      }
+    ],
+    "necromancer": [
+      {
+        "id": "nc_focus",
+        "name": "DUNKLER FOKUS",
+        "desc": "+15 % Schaden.",
+        "max": 3,
+        "damage": 0.15
+      },
+      {
+        "id": "nc_haste",
+        "name": "TOTENEILE",
+        "desc": "10 % schnellere Geschosse.",
+        "max": 3,
+        "rate": 0.1
       }
     ]
   },

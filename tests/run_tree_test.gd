@@ -59,8 +59,9 @@ func _test_model() -> void:
 
 func _test_crypt() -> void:
 	var tree := ClassPerks.run_tree("mage")
-	check((tree.branches as Array).size() == 5, "crypt: four skill branches and the passives")
-	check(str(tree.branches[0].title) == "FEUERBALL" and int(tree.branches[1].unlock) > 1, "crypt: branches follow the skills and their unlock levels")
+	# no skill branches: the class skills are gone (user decision 29.10.2026)
+	check((tree.branches as Array).size() == 1 and str(tree.branches[0].title) == "PASSIV", "crypt: only the passives")
+	check((tree.branches[0].nodes as Array).size() >= 4, "crypt: the passives are nodes")
 	var game: Node = Game.new()
 	root.add_child(game)
 	await process_frame
@@ -77,10 +78,10 @@ func _test_crypt() -> void:
 	check(int(game.team_progress.team.level) >= 2, "crypt: the team levels up")
 	check(Array(hero.get("offer_queue", [])).is_empty(), "crypt: a level-up offers no cards any more")
 	var ids: Array = ClassPerks.run_tree_ids("mage")
-	var before := ClassPerks.rank(hero, "twin_fire")
+	var before := ClassPerks.rank(hero, "mg_focus")
 	game.action_times.clear()
-	game._server_action(1, "talent", ids.find("twin_fire"))
-	check(ClassPerks.rank(hero, "twin_fire") == before + 1, "crypt: the talent action spends a point")
+	game._server_action(1, "talent", ids.find("mg_focus"))
+	check(ClassPerks.rank(hero, "mg_focus") == before + 1, "crypt: the talent action spends a point")
 	var level := int(game.team_progress.team.level)
 	while RunTree.points_left(tree, ClassPerks.ranks(hero), level) > 0:
 		var open := ids.filter(func(id: String) -> bool: return RunTree.can_take(tree, ClassPerks.ranks(hero), level, id))
@@ -132,15 +133,15 @@ func _test_story(scene: PackedScene, world: String) -> void:
 	var game: Node = await _open(scene)
 	var tree := CardKit.tree(game)
 	var titles: Array = (tree.branches as Array).map(func(b: Dictionary) -> String: return str(b.title))
-	check(titles.has("GRUNDWERTE") and (tree.branches as Array).size() == 5, "%s: four skill branches and the basics" % world)
+	check(titles == ["GRUNDWERTE"], "%s: only the basics, no skill branches" % world)
 	HeroKit.gain(game, HeroKit.need(game.theme.leveling, 1) + HeroKit.need(game.theme.leveling, 2))
 	check(int(game.state.level) >= 3, "%s: the hero levels up" % world)
 	check((game.state.get("offer", []) as Array).is_empty(), "%s: a level-up shows no cards any more" % world)
 	check(RunTree.points_left(tree, CardKit.ranks(game), int(game.state.level)) == int(game.state.level) - 1, "%s: each level-up left a point" % world)
-	check(CardKit.take_node(game, "twin_fire") and CardKit.level(game, "twin_fire") >= 1, "%s: a point goes into a node" % world)
-	check(not CardKit.take_node(game, "long_breath"), "%s: a locked skill branch takes no point" % world)
-	check(RunTree.state_of(CardKit.tree(game), CardKit.ranks(game), 20, "wildfire") != "meta_locked", "%s: no node waits for a lasting talent (the talent profile replaces them)" % world)
-	check(int(RunTree.node(CardKit.tree(game), "twin_fire").max) == 2, "%s: the talent rank caps the node" % world)
+	check(CardKit.take_node(game, "mg_focus") and CardKit.level(game, "mg_focus") >= 1, "%s: a point goes into a node" % world)
+	check(not CardKit.take_node(game, "long_breath"), "%s: the old skill cards are not offered any more" % world)
+	check(RunTree.state_of(CardKit.tree(game), CardKit.ranks(game), 20, "mg_haste") != "meta_locked", "%s: no node waits for a lasting talent (the talent profile replaces them)" % world)
+	check(int(RunTree.node(CardKit.tree(game), "mg_focus").max) == 3, "%s: the card's rank caps the node" % world)
 	# B opens the tree; a click inside spends a point and never fires
 	var key := InputEventKey.new()
 	key.keycode = KEY_B

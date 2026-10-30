@@ -37,10 +37,11 @@ const StoryHero = preload("res://src/hero/story_hero.gd")
 const StorySave = preload("res://src/save/story_save.gd")
 ## The crypt's pause menu, in its story mode (overview, quest, map, controls, display, save).
 const PauseMenu = preload("res://src/pause_menu.gd")
-const STORY_CONTROLS := "Bewegen: WASD\nAngreifen: Linksklick oder Pfeiltasten\nTalente: Shift + 1 2 3 4, Ultimate: R\nFähigkeiten: 1 2 3 4 · Meisterfähigkeit: 5\nKarte wählen: 7 8 9 oder Klick\nAktion (Tür, Truhe, Schale): E oder Leertaste\nRelikt / Waffe wechseln: T · Klon: Q\nKarte: M · Licht: L · Status: C oder Tab\nLauf-Talente: B\nNach dem Tod: E neuer Lauf\nMenü öffnen / schließen: Esc"
+const STORY_CONTROLS := "Bewegen: WASD\nAngreifen: Linksklick oder Pfeiltasten\nTalente: 1 2 3 4, Ultimate: R (mit Relikt: seine Fähigkeiten auf 1 2 3 4)\nBegleiter: 5 6, Rechtsklick aufs Symbol: Auto an / aus\nAusweichen / Block: Shift\nTalentmenü (auch im Lauf): K\nKarte wählen: 7 8 9 oder Klick\nAktion (Tür, Truhe, Schale): E oder Leertaste\nRelikt / Waffe wechseln: T · Klon: Q\nKarte: M · Licht: L · Status: C oder Tab\nLauf-Talente: B\nNach dem Tod: E neuer Lauf\nMenü öffnen / schließen: Esc"
 const DARKNESS_SHADER := preload("res://assets/shaders/canvas_vfx_darkness.gdshader")
 const FONT := preload("res://assets/fonts/pixel_operator8.ttf")
 const SkillBar = preload("res://src/ui/skill_bar.gd")
+const TalentScreenScript = preload("res://src/ui/talent_screen.gd")
 const SkillIcons = preload("res://src/ui/skill_icons.gd")
 const GraphicsSettings = preload("res://src/core/graphics_settings.gd")
 const RunTree = preload("res://src/progress/run_tree.gd")
@@ -194,6 +195,8 @@ var glow: Layer
 ## The hell monsters (hell_monsters.gd); null in a themed world with its own enemies.
 var monsters: Monsters
 var hud: Hud
+## The talent menu opened mid-run with K; the world stands still while it is open.
+var run_talents: Control
 var _chunk_nodes: Array = []
 var _dark_material: ShaderMaterial
 var _vignette: GradientTexture2D
@@ -226,13 +229,17 @@ func _ready() -> void:
 	hero = classes.get(class_id, {})
 	weapon = hero.get("weapon", {})
 	if not weapon.is_empty():
-		weapon_tex = load(WEAPON % weapon.sprite)
+		# 0x72 weapons by name; drawn ones by their path under assets/sprites (the necromancer's sceptre)
+		weapon_tex = load(WEAPON % weapon.sprite) if not str(weapon.sprite).contains("/") else load("res://assets/sprites/%s.png" % weapon.sprite)
 		arrow_tex = load(WEAPON % "weapon_arrow")
 	for kind in ["idle", "run"]:
 		var frames: Array = []
 		for f in range(4):
 			frames.append(load(HERO % [hero.get("sprite", "knight_m"), kind, f]))
 		hero_frames[kind] = frames
+	# The theme's class skills stay loaded: a non-empty list marks a world with
+	# levels, run tree and HUD. They are never cast or shown any more; keys 1-4
+	# cast the learned talents (user decision 29.10.2026).
 	skills = HeroKit.load_skills(self, class_id)
 	if theme.has("feel"):
 		feel = FrostFeel.new(self, theme.feel)
@@ -323,7 +330,7 @@ func _ready() -> void:
 
 ## Item system 2 for a class hero (src/hero/story_items.gd): the bag and its window (I).
 func _start_items(ui: CanvasLayer) -> void:
-	if skills.is_empty():
+	if not heroic():
 		return
 	story_items = StoryItems.new(self)
 	add_child(story_items)
@@ -439,6 +446,13 @@ func _relic_texture() -> void:
 
 
 ## True while the hero wields a found relic instead of the class skills (gravity staff).
+## True in a world with the hero systems (levels, run tree B, bag, skill bar):
+## the theme has leveling rules. This used to read "the class has skills", but
+## no class has standard skills any more (user decision 29.10.2026).
+func heroic() -> bool:
+	return not (theme.get("leveling", {}) as Dictionary).is_empty()
+
+
 func relic_on() -> bool:
 	return bool(state.get("relic_on", false)) and str(state.get("relic", "")) != ""
 
@@ -751,11 +765,26 @@ func _near_door(r: Dictionary, p: Vector2, dist: float) -> bool:
 	return false
 
 
+## K: the talent menu over the run; a changed build counts at once.
+func open_run_talents() -> void:
+	if run_talents == null:
+		run_talents = TalentScreenScript.new()
+		pause_menu.get_parent().add_child(run_talents)
+		run_talents.profile_changed.connect(func() -> void: talents.tc.set_build(1, Profile.build_of(profile, class_id), true))
+	run_talents.open(Profile.data(), profile, profile_path, class_id)
+
+
 # ---------- input ----------
 
 func _unhandled_input(event: InputEvent) -> void:
 	# while paused only Esc counts (it closes the menu again)
 	if pause_menu != null and pause_menu.visible and not (event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE):
+		return
+	if run_talents != null and run_talents.visible: return
+	# K: the talent menu mid-run, in every world (user decision 30.10.2026)
+	if talents != null and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_K:
+		open_run_talents()
+		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and pause_menu != null and not state.map \
 			and HudKit.menu_rect(get_viewport_rect().size).has_point(event.position):
@@ -781,6 +810,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			CardKit.choose(self, picked)
 			get_viewport().set_input_as_handled()
 			return
+	# a right-click on a companion icon of the skill bar toggles its auto-cast
+	if talents != null and event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+		var pet_slot: int = talents.pet_slot_at(get_viewport_rect().size, hud.get_local_mouse_position() if hud != null else get_viewport().get_mouse_position())
+		if pet_slot >= 0:
+			talents.toggle_pet(pet_slot)
+			get_viewport().set_input_as_handled()
+			return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT and relic_on() and RelicKit.wielded(self).has("ball"):
 		# the gravity bar: drag with the right mouse, release to set it
 		if event.pressed:
@@ -792,14 +828,20 @@ func _unhandled_input(event: InputEvent) -> void:
 	if not (event is InputEventKey) or event.echo:
 		return
 	var skill_keys := {KEY_1: "1", KEY_2: "2", KEY_3: "3", KEY_4: "4"}
-	# Shift + 1-4: the talent bar, R: the ultimate (the same keys in every map).
-	if talents != null and event.pressed and skill_keys.has(event.keycode) and event.shift_pressed:
+	# 1-4: the learned talents, R: the ultimate, the same keys in every map;
+	# there are no standard class skills (user decision 29.10.2026). A wielded
+	# relic keeps its own abilities on 1-4.
+	if talents != null and event.pressed and skill_keys.has(event.keycode) and not relic_on():
 		talents.press(int(skill_keys[event.keycode]) - 1)
 		return
 	if talents != null and event.pressed and event.keycode == KEY_R:
 		talents.press(-1)
 		return
-	if not skills.is_empty() and skill_keys.has(event.keycode):
+	# 5 and 6: the permanent companion's abilities, in every world
+	if talents != null and event.pressed and event.keycode in [KEY_5, KEY_6]:
+		talents.press_pet(event.keycode - KEY_5)
+		return
+	if relic_on() and skill_keys.has(event.keycode):
 		var key: String = skill_keys[event.keycode]
 		if event.pressed:
 			if not FrostCombat.can_cast(self, key):
@@ -835,27 +877,27 @@ func _unhandled_input(event: InputEvent) -> void:
 				_relic_texture()
 				_toast(("%s in der Hand." % theme[state.relic].name) if state.relic_on else ("%s in der Hand." % weapon.get("name", "Waffe")))
 		KEY_5:
-			if not skills.is_empty() and FrostCombat.can_cast(self, "5") and not SubKit.master(self):
+			if heroic() and FrostCombat.can_cast(self, "5") and not SubKit.master(self):
 				HeroKit.master_press(self)
 		KEY_C, KEY_TAB:
 			state.status = not state.get("status", false)
 		KEY_I:
-			if inventory_panel != null and not skills.is_empty():
+			if inventory_panel != null and heroic():
 				inventory_panel.set_open(not inventory_panel.open)
 		KEY_B:
 			# the run talent tree (docs/LAUF-DESIGN.de.md); the world keeps running
-			if not skills.is_empty():
+			if heroic():
 				state.tree_open = not state.get("tree_open", false)
 		KEY_PAGEUP:
 			# debug: one level up
-			if not skills.is_empty():
+			if heroic():
 				HeroKit.gain(self, HeroKit.need(theme.leveling, int(state.level)) - int(state.exp))
 		_:
 			var k: int = event.keycode
-			if not skills.is_empty() and k >= KEY_F1 and k <= KEY_F10:
+			if heroic() and k >= KEY_F1 and k <= KEY_F10:
 				# debug floor jumps keep the hero's progress where 1-4 are skills
 				load_floor(k - KEY_F1 + 1, true)
-			elif skills.is_empty() and k >= KEY_0 and k <= KEY_9:
+			elif not heroic() and k >= KEY_0 and k <= KEY_9:
 				load_floor(10 if k == KEY_0 else k - KEY_0, false)
 
 
@@ -1179,7 +1221,9 @@ func _attack(dir: Vector2) -> void:
 		_sound("swing")
 		return
 	var v := dir.normalized() * float(weapon.get("speed", balance.shot.speed))
-	shots.append({"p": Vector2(player.x, player.y - 40), "v": v, "t": float(state.range), "kind": str(weapon.get("shot", "")), "splash": float(weapon.get("splash", 0.0)), "hits": []})
+	# the mage's left-click is a small fireball that bursts where it strikes (user wish 30.10.2026)
+	var shot_kind := "pyro" if class_id == "mage" and str(weapon.get("shot", "")) == "magic" else str(weapon.get("shot", ""))
+	shots.append({"p": Vector2(player.x, player.y - 40), "v": v, "t": float(state.range), "kind": shot_kind, "splash": float(weapon.get("splash", 0.0)), "hits": []})
 	story_hero.on_shot()
 	_sound("shot_arrow" if weapon.get("shot", "") == "arrow" else "shot_magic")
 
@@ -1533,8 +1577,8 @@ func _toggle_fullscreen() -> void:
 
 func _process(delta: float) -> void:
 	var dt := minf(delta, 0.05)
-	# the world stands still while the pause menu is open
-	if pause_menu != null and pause_menu.visible:
+	# the world stands still while the pause menu or the talent menu (K) is open
+	if (pause_menu != null and pause_menu.visible) or (run_talents != null and run_talents.visible):
 		hud.queue_redraw()
 		return
 	# a heavy blow freezes the world for a moment (hitstop, src/hell/frost_feel.gd)
@@ -1678,6 +1722,7 @@ func _update_shots(dt: float) -> void:
 		if _cell_blocked(c.x, c.y, false) or hit_solid:
 			s.t = 0.0
 			_burst(s.p, 5)
+			if s.get("kind", "") == "pyro" and talents != null: talents.tc.show_effect("explosion", s.p, 34.0, {"fx": "fire", "life": 0.5})
 			continue
 		if s.get("kind", "") == "gravity":
 			# the gravity ball drags enemies towards itself while it flies
@@ -1908,6 +1953,7 @@ func _explode(s: Dictionary, first: Dictionary) -> void:
 			if s.has("slow"):
 				HeroKit.slow_mob(self, o, float(s.slow), float(s.slow_time))
 	fx.append({"kind": "blast", "p": s.p, "r": radius, "t": 0.3, "max": 0.3, "gravity": s.get("kind", "") in ["gravity", "rock"], "shot": s.get("kind", "")})
+	if s.get("kind", "") == "pyro" and talents != null: talents.tc.show_effect("explosion", s.p, radius * 0.45, {"fx": "fire", "life": 0.55})
 	if int(s.get("split", 0)) > 0:
 		RelicKit.split_rock(self, s)
 	_burst(s.p, 18)
@@ -2299,6 +2345,9 @@ func _draw_actors(l: Layer) -> void:
 			l.draw_set_transform(s.p, (s.v as Vector2).angle() + PI / 2.0)
 			l.draw_texture_rect(arrow_tex, Rect2(-asz / 2.0, asz), false)
 			l.draw_set_transform(Vector2.ZERO)
+			continue
+		if s.get("kind", "") == "pyro":
+			l.draw_circle(s.p, 26.0, Color(1.0, 0.45, 0.12, 0.25))
 			continue
 		var big := (1.5 if s.get("kind", "") == "magic" else 1.0) * float(s.get("big", 1.0))
 		l.draw_circle(s.p, 16.0 * big, col("shot_glow"))
@@ -2757,15 +2806,17 @@ func draw_hud(h: Control) -> void:
 		status.append({"text": "SEGEN · " + ", ".join(PackedStringArray(names)).to_upper(), "color": HudStyle.color("text_dim")})
 	# the Frostgruft's conditions on the hero (poison, slow ...), each in its colour
 	status.append_array(FrostCombat.status_lines(self))
-	var leveled := not skills.is_empty()
+	var leveled := heroic()
 	var need := maxf(1.0, float(HeroKit.need(theme.leveling, int(state.level)))) if leveled else 1.0
-	HudKit.hero_panel(h, FONT, Vector2(HudStyle.size("margin"), HudStyle.size("margin")), {"title": "P1 · " + str(hero.get("name", class_id)).to_upper(),
+	var hero_rect := HudKit.hero_panel(h, FONT, Vector2(HudStyle.size("margin"), HudStyle.size("margin")), {"title": "P1 · " + str(hero.get("name", class_id)).to_upper(),
 		"points": RunTree.points_left(CardKit.tree(self), CardKit.ranks(self), int(state.level)) if leveled else 0,
 		"hp": int(state.hp), "max_hp": int(state.max_hp), "hearts": hearts, "level": int(state.level) if leveled else -1,
 		"exp": float(state.exp) / need if leveled else -1.0, "resources": resources, "status": status,
 		"low": int(state.hp) <= 2 and int(state.hp) > 0, "clock": float(state.t)})
+	if talents != null:
+		HudKit.pet_panel(h, FONT, Vector2(hero_rect.position.x, hero_rect.end.y + 6.0), hero_rect.size.x, talents.hud_state().get("pet", {}), float(state.t))
 	# no help line at the bottom: controls and goals live in the pause menu (Esc)
-	if not skills.is_empty():
+	if heroic():
 		_draw_skill_bar(h, size)
 	var boss_mob: Dictionary = {}
 	for m: Dictionary in mobs:
@@ -2817,7 +2868,7 @@ func draw_hud(h: Control) -> void:
 	for i in range(toasts.size()):
 		var tt: Dictionary = toasts[i]
 		# hints stack above the skill bar, the same in every world (src/ui/hud_kit.gd)
-		var bottom := SkillBar.top(size, false) - 28.0 if not skills.is_empty() else size.y - 40.0
+		var bottom := SkillBar.top(size, false) - 28.0 if heroic() else size.y - 40.0
 		HudKit.toast(h, FONT, size, bottom - (toasts.size() - 1 - i) * 40.0, str(tt.text), minf(1.0, tt.t * 2.0))
 	if theme.placeholder_note:
 		_text(h, "Figur: Platzhalter" if monsters != null else "Figur und Gegner: Platzhalter", Vector2(20, size.y - 14), 16, Color(ink, 0.45))
@@ -2830,7 +2881,7 @@ func draw_hud(h: Control) -> void:
 		if state.get("status", false):
 			FrostHud.status(self, h, size)
 	# the run talent tree window (B), the same in every world
-	if state.get("tree_open", false) and not skills.is_empty():
+	if state.get("tree_open", false) and heroic():
 		RunTreeView.draw(h, FONT, size, CardKit.tree(self), CardKit.ranks(self), int(state.level), {"title": str(hero.get("name", class_id)), "mouse": h.get_local_mouse_position()})
 	# floor won, run over: the result panel every world shares (src/ui/hud_kit.gd)
 	var over: Dictionary = state.get("over", {})
@@ -2860,6 +2911,8 @@ func _draw_skill_bar(h: Control, size: Vector2) -> void:
 		for s: Dictionary in rel.skills:
 			slots.append({"key": str(s.key), "name": str(s.short), "cd": float(state.skill_cd.get(str(s.id), 0.0)), "max": float(s.cooldown),
 				"locked": int(state.level) < int(s.unlock), "unlock": int(s.unlock), "icon": relic_tex})
+	elif talents != null:
+		slots = talents.skill_slots()
 	else:
 		var held := str(hold.get("id", ""))
 		for s: Dictionary in skills:
@@ -2881,8 +2934,8 @@ func _draw_skill_bar(h: Control, size: Vector2) -> void:
 			"icon": SkillIcons.for_id(class_id, master), "ultimate": true})
 	# level and EXP sit with the hearts at the top (draw_hud), as in every world
 	SkillBar.draw(h, FONT, size, slots, float(state.t), {"mouse": h.get_local_mouse_position()})
-	# the talent bar (Shift + 1-4, R) above the skill bar, the same in every map
-	if talents != null: talents.draw_hud(h, size, SkillBar.top(size, false) - 74.0)
+	# the resource line above the skill bar (talents on 1-4 and R), the same in every map
+	if talents != null: talents.draw_hud(h, size, SkillBar.top(size, false) - 14.0)
 
 
 

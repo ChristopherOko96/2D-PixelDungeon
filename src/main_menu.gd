@@ -44,7 +44,7 @@ const SoundWorkshop = preload("res://src/ui/sound_workshop.gd")
 const RoomEditor = preload("res://src/editor/room_editor.gd")
 const SCREEN := Vector2(1280, 720)
 const SPRITE_ROOT := "res://assets/sprites/0x72/"
-const HEROES := ["knight_m", "elf_f", "wizzard_m", "lizard_m"]
+const HEROES := ["knight_m", "elf_f", "custom_pyromancer", "lizard_m"]
 const CHASERS := ["skelet", "skelet", "necromancer"]
 const PROPS_ROOT := "res://assets/sprites/crypt_props/"
 ## Backdrop tiles are 16 px 0x72 tiles drawn at 3x.
@@ -168,7 +168,7 @@ func _ready() -> void:
 	_buttons.append(_button("OPTIONEN", Vector2(470, 498), Vector2(340, 36), 16, _open_options))
 	_buttons.append(_button("BEENDEN", Vector2(470, 540), Vector2(340, 36), 16, quit_requested.emit))
 	_button("LEVEL-AUSWAHL (DEBUG)", Vector2(16, 676), Vector2(264, 32), 16, _open_debug)
-	# the talent test profile: every class level 30, 99 shards, free casts (debug builds)
+	# the talent test profile: every class level 30, 99 shards (debug builds); casts cost mana as in a real run
 	_talent_test_button = _button("", Vector2(16, 636), Vector2(330, 32), 16, _toggle_talent_test)
 	_talent_test_button.visible = OS.is_debug_build()
 	_refresh_talent_test()
@@ -406,20 +406,21 @@ func _choose_story(id: String) -> void:
 func _build_class_panel() -> void:
 	_class_panel = Panel.new()
 	# Taller than on main: Pixel Operator 8 at 16 px needs more room per line.
-	_class_panel.size = Vector2(800, 496)
+	# four heroes side by side (the necromancer joined on 29.10.2026)
+	_class_panel.size = Vector2(1004, 496)
 	_class_panel.position = (SCREEN - _class_panel.size) * 0.5 + Vector2(0, 20)
 	_class_panel.add_theme_stylebox_override("panel", CryptUI.box("panel"))
 	_class_panel.visible = false
 	add_child(_class_panel)
 	_class_title = _panel_label(_class_panel, "WÄHLE DEINEN HELDEN", Vector2(30, 18))
-	_class_title.size.x = 740
+	_class_title.size.x = 944
 	_class_title.add_theme_font_size_override("font_size", 24)
 	_class_title.add_theme_color_override("font_color", GOLD)
 	for i in range(class_order.size()):
 		var id: String = str(class_order[i])
 		var hero: Dictionary = classes[id]
-		var card := _make_button("", Vector2(236, 370), 16, func(): _choose_class(id))
-		card.position = Vector2(30 + i * 252, 62)
+		var card := _make_button("", Vector2(230, 370), 16, func(): _choose_class(id))
+		card.position = Vector2(30 + i * 240, 62)
 		_class_panel.add_child(card)
 		var frames: Array = []
 		for frame in range(4):
@@ -431,7 +432,7 @@ func _build_class_panel() -> void:
 		picture.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		# 0x72 figure at 3x (48x84) leaves room for 16 px text below.
 		picture.size = Vector2(48, 84)
-		picture.position = Vector2(94, 10)
+		picture.position = Vector2(91, 10)
 		picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		card.add_child(picture)
 		_class_heroes.append(picture)
@@ -455,8 +456,8 @@ func _build_class_panel() -> void:
 			# Lies over the card on the panel (clicks pass through to the card).
 			_class_panel.add_child(label)
 			label.position = card.position + Vector2(12, line[3])
-			label.size = Vector2(212, line[4])
-	_panel_button(_class_panel, "ZURÜCK", Vector2(30, 444), Vector2(740, 38), _close_panels)
+			label.size = Vector2(206, line[4])
+	_panel_button(_class_panel, "ZURÜCK", Vector2(30, 444), Vector2(944, 38), _close_panels)
 
 
 ## Debug: the level choice first lists the built worlds, one below the other.

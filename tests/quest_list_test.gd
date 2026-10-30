@@ -106,7 +106,7 @@ func test_story_menu(scene: PackedScene, story: String) -> void:
 	check(mains.size() >= 2 and mains.any(func(g: Dictionary): return str(g.text).begins_with("Besiege")), "the %s lists its main goals with the boss" % story)
 	check(game.pause_menu.quest_view.title == "ETAGE 1", "the %s's page names the floor" % story)
 	check(game.pause_menu.navigation.quest.visible and game.pause_menu.navigation.controls.visible and not game.pause_menu.navigation.party.visible, "the %s shows the story pages with Auftrag, without the crypt's party page" % story)
-	check(game.pause_menu.controls_label.text.contains("Shift + 1 2 3 4"), "the %s's Steuerung page names its keys" % story)
+	check(game.pause_menu.controls_label.text.contains("Talente: 1 2 3 4"), "the %s's Steuerung page names its keys" % story)
 	var t: float = game.state.t
 	var x: float = game.player.x
 	for i in range(10): await process_frame

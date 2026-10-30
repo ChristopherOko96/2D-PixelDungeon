@@ -13,6 +13,7 @@ const Dungeon = preload("res://src/dungeon/dungeon_generator.gd")
 const RoomPool = preload("res://src/editor/room_pool.gd")
 const OpenFloor = preload("res://src/dungeon/open_floor.gd")
 const RunHud = preload("res://src/ui/run_hud.gd")
+const TalentScreenScript = preload("res://src/ui/talent_screen.gd")
 const CryptUI = preload("res://src/ui/crypt_ui.gd")
 const HudKit = preload("res://src/ui/hud_kit.gd")
 const HudStyle = preload("res://src/ui/hud_style.gd")
@@ -168,6 +169,11 @@ var party_label: Label
 var floor_map: Control
 ## The run HUD (hearts, boss bar, floor and map, skill slots).
 var run_hud: Control
+## Right-click on a companion icon: the auto-cast toggle bit for the next input packet.
+var _pet_auto_pulse := 0
+## The talent menu opened mid-run with K (src/ui/talent_screen.gd).
+var talents_open := false
+var _run_talents: Control
 ## Level-up / boss card choice at the right edge (mouse).
 var level_cards: Control
 ## The hero's inventory window (I / Tab) and the potion slot armed for a throw (-1: none).
@@ -419,6 +425,11 @@ func _input(event: InputEvent) -> void:
 			toggle_fullscreen()
 			get_viewport().set_input_as_handled()
 			return
+	# K opens the talent menu (talent profile) mid-run
+	if _in_run() and not pause_open and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_K:
+		toggle_run_talents()
+		get_viewport().set_input_as_handled()
+		return
 	# B opens the run talent tree; the fight goes on, a click spends a point
 	if _in_run() and not pause_open and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_B:
 		tree_open = not tree_open
@@ -426,6 +437,12 @@ func _input(event: InputEvent) -> void:
 		menu_button.visible = _in_run() and not pause_open and not tree_open
 		get_viewport().set_input_as_handled()
 		return
+	if _in_run() and not tree_open and event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+		var pet_slot: int = run_hud.pet_slot_at(run_hud.get_local_mouse_position())
+		if pet_slot >= 0:
+			_pet_auto_pulse |= 1 << (TalentCombat.PET_AUTO_BIT + pet_slot)
+			get_viewport().set_input_as_handled()
+			return
 	if _in_run() and tree_open and event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var local: Dictionary = state.get("players", {}).get(multiplayer.get_unique_id(), {})
 		var class_id := str(local.get("class_id", ""))
@@ -536,7 +553,25 @@ func show_rewards() -> void:
 
 ## A local menu may never freeze another participant's authoritative world.
 func is_solo_paused() -> bool:
-	return pause_open and hosting and players.size() == 1 and _in_run()
+	return (pause_open or talents_open) and hosting and players.size() == 1 and _in_run()
+
+
+## K mid-run: the talent menu over the run (solo the world stands still).
+## A changed build counts at once: the host applies it, a client sends it.
+func toggle_run_talents() -> void:
+	if _run_talents == null:
+		_run_talents = TalentScreenScript.new()
+		ui.add_child(_run_talents)
+		_run_talents.closed.connect(func() -> void: talents_open = false)
+		_run_talents.profile_changed.connect(func() -> void:
+			if hosting: _apply_talent_build(multiplayer.get_unique_id() if multiplayer.has_multiplayer_peer() else 1, true)
+			else: send_talent_builds())
+	talents_open = not talents_open
+	if talents_open:
+		var local: Dictionary = state.get("players", {}).get(multiplayer.get_unique_id(), {})
+		_run_talents.open(progress.data, progress.profile, progress.save_path, str(local.get("class_id", "")))
+	else:
+		_run_talents.visible = false
 
 
 ## Input stays neutral until both the host handoff and local fade are complete.
@@ -673,7 +708,7 @@ func _update_camera(delta: float) -> void:
 		_camera_room_id = str(layout.id)
 		room_camera.reset(point,world,visible)
 	var mouse_delta := (get_global_mouse_position()-view.to_global(point))/zoom
-	var frozen: bool = pause_open or is_transitioning() or player.get("hp",0) <= 0
+	var frozen: bool = pause_open or talents_open or is_transitioning() or player.get("hp",0) <= 0
 	view.set_world_origin((room_camera.update(point,mouse_delta,world,visible,delta,balance.get("camera",{}),frozen)*zoom).round())
 
 
@@ -1070,13 +1105,20 @@ func _send_local_input() -> void:
 				var path := Dungeon.find_path(position, destination, float(balance.player.radius), state.get("room_layout", {}))
 				if not path.is_empty(): movement = (path[0] - position).normalized()
 	# Keys 1-4 as a bitmask, and the mouse point in world pixels (skill targets).
+	# There are no standard class skills (user decision 29.10.2026): keys 1-4
+	# cast the learned talents (bits 4-7), R the ultimate (bit 8).
 	var skill_keys := 0
-	# Keys 1-4 are the class skills; with Shift they cast the talent bar
-	# (bits 4-7), and R casts the ultimate (bit 8).
-	var shift: bool = Input.is_physical_key_pressed(KEY_SHIFT)
 	for index in range(4):
-		if Input.is_physical_key_pressed(KEY_1 + index): skill_keys |= 1 << (index + (TalentCombat.BAR_BIT if shift else 0))
+		if Input.is_physical_key_pressed(KEY_1 + index): skill_keys |= 1 << (index + TalentCombat.BAR_BIT)
 	if Input.is_physical_key_pressed(KEY_R): skill_keys |= 1 << TalentCombat.ULT_BIT
+	# 5 and 6: the permanent companion's abilities; a right-click on their icon
+	# toggles auto-cast (one pulse, see _input)
+	for index in range(2):
+		if Input.is_physical_key_pressed(KEY_5 + index): skill_keys |= 1 << (index + TalentCombat.PET_BIT)
+	skill_keys |= _pet_auto_pulse
+	_pet_auto_pulse = 0
+	# Shift: the class's defense (dodge roll or block, talents.json "defense")
+	if Input.is_physical_key_pressed(KEY_SHIFT): skill_keys |= 1 << TalentCombat.DEFEND_BIT
 	if not smoke_role.is_empty(): skill_keys = 0
 	if scripted_skills >= 0: skill_keys = scripted_skills
 	if scripted_fire:
@@ -1120,14 +1162,14 @@ func _accept_input(id: int, movement: Vector2, aim: Vector2, fire: bool, sequenc
 	var now := Time.get_ticks_msec() / 1000.0
 	var previous: Dictionary = commands.get(id, {})
 	if sequence <= int(previous.get("sequence", -1)) or now - float(previous.get("time", -1.0)) < 0.025: return
-	commands[id] = {"move": movement.limit_length(), "aim": aim.normalized() if aim.length_squared() > 0.0001 else Vector2.RIGHT, "fire": fire, "sequence": sequence, "time": now, "skills": clampi(skill_keys, 0, 511)}
+	commands[id] = {"move": movement.limit_length(), "aim": aim.normalized() if aim.length_squared() > 0.0001 else Vector2.RIGHT, "fire": fire, "sequence": sequence, "time": now, "skills": clampi(skill_keys, 0, (1 << 16) - 1)}
 	if target.is_finite(): commands[id].target = target
 
 
 ## Host: the talent build `id` plays with this run (checked against the rules).
-func _apply_talent_build(id: int) -> void:
+func _apply_talent_build(id: int, keep: bool = false) -> void:
 	if not players.has(id): return
-	talent_combat.set_build(id, progress.build_for(id, str(players[id].get("class_id", player_classes.get(id, "")))))
+	talent_combat.set_build(id, progress.build_for(id, str(players[id].get("class_id", player_classes.get(id, "")))), keep)
 
 
 ## Host -> one client: a reward for that client's own profile (EXP, gold, boss roll).
@@ -1152,8 +1194,8 @@ func _submit_builds(payload: String) -> void:
 	var id := multiplayer.get_remote_sender_id()
 	if not hosting or not _admitted_peers.has(id) or payload.length() > 16384: return
 	progress.receive_builds(id, JSON.parse_string(payload))
-	if phase in ["combat", "explore"]: return
-	_apply_talent_build(id)
+	# mid-run changes count at once (set_build keeps mana and cooldowns)
+	_apply_talent_build(id, phase in ["combat", "explore"])
 
 
 func _send_action(action: String, value: int = 0) -> void:
@@ -2207,7 +2249,7 @@ func _make_snapshot(advance_sequence: bool = true) -> Dictionary:
 		visible_enemies[-1].merge({"enemy_name":str(enemy.get("enemy_name","Kryptawesen")),"attack_kind":str(enemy.get("attack_kind","")),"attack_length":attack_length,"aim_x":attack_aim.x,"aim_y":attack_aim.y,"tx":point.x,"ty":point.y,"blocks":int(enemy.get("blocks",0)),"cast_count":int(enemy.get("summons_cast",0)),"caster_id":int(enemy.get("caster_id",0))})
 		if bool(enemy.get("sheet",false)): sheet_monsters.snapshot_entry(enemy,visible_enemies[-1])
 	var visible_bullets: Array = []
-	for bullet in bullets: visible_bullets.append({"id":bullet.get("id",-1),"radius":float(bullet.get("radius",balance.bullet.radius)),"x": bullet.pos.x, "y": bullet.pos.y, "owner": bullet.owner,"element":str(bullet.get("element","")),"critical":bool(bullet.get("critical",false)),"style":str(bullet.get("style","")),"vx":float(bullet.velocity.x),"vy":float(bullet.velocity.y)})
+	for bullet in bullets: visible_bullets.append({"id":bullet.get("id",-1),"radius":float(bullet.get("radius",balance.bullet.radius)),"x": bullet.pos.x, "y": bullet.pos.y, "owner": bullet.owner,"element":str(bullet.get("element","")),"critical":bool(bullet.get("critical",false)),"style":str(bullet.get("style","")),"talent":str(bullet.get("talent","")),"vx":float(bullet.velocity.x),"vy":float(bullet.velocity.y)})
 	if advance_sequence: packet_sequence += 1
 	var map_rooms: Array[Dictionary] = []
 	for i in range(floor_layouts.size()):

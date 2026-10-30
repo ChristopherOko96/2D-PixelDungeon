@@ -11,6 +11,7 @@ extends RefCounted
 const TalentCombat = preload("res://src/combat/talent_combat.gd")
 const TalentFx = preload("res://src/vfx/talent_fx.gd")
 const TalentBar = preload("res://src/ui/talent_bar.gd")
+const SkillBar = preload("res://src/ui/skill_bar.gd")
 const Profile = preload("res://src/progress/profile.gd")
 const Rules = preload("res://src/progress/talent_rules.gd")
 const HeroKit = preload("res://src/hell/hero_kit.gd")
@@ -97,7 +98,12 @@ func _with_sync(action: Callable) -> void:
 	_write_hero(before, hp_before)
 
 
-## Shift + 1-4 (`slot` 0-3) or the ultimate (`slot` -1). Returns true when it fired.
+## Keys 1-4 (`slot` 0-3) or the ultimate (`slot` -1). Returns true when it fired.
+## The skill bar's slots: the learned talents on keys 1-4 and the ultimate on R.
+func skill_slots() -> Array:
+	return bar.skill_slots(hud_state())
+
+
 func press(slot: int) -> bool:
 	var rt := tc.runtime(1)
 	if rt.is_empty() or int(g.state.get("hp", 0)) <= 0: return false
@@ -108,19 +114,48 @@ func press(slot: int) -> bool:
 	_sync_mobs()
 	var before: Vector2 = players[1].pos
 	var hp_before: int = players[1].hp
-	var fired := tc.cast(1, talent, {"aim": (target - Vector2(g.player.x, g.player.y)).normalized(), "target": target})
+	var fired := tc.cast(1, talent, {"aim": (target - Vector2(g.player.x, g.player.y)).normalized(), "target": target, "slot": maxi(0, slot)})
 	_write_hero(before, hp_before)
 	return fired
 
 
+## Keys 5 and 6 (`slot` 0-1): the permanent companion's ability.
+func press_pet(slot: int) -> void:
+	_with_sync(func(): tc.pet_cast(1, slot, true))
+
+
+## Right-click on a companion icon: its auto-cast on or off.
+func toggle_pet(slot: int) -> void:
+	tc.toggle_pet_auto(1, slot)
+
+
+## The companion ability under `point` (screen px) on the skill bar, or -1.
+func pet_slot_at(screen: Vector2, point: Vector2) -> int:
+	var slots := skill_slots()
+	return TalentBar.pet_slot(slots, SkillBar.slot_at(screen, slots, point))
+
+
 func update(dt: float) -> void:
 	_with_sync(func():
+		_hold()
 		tc.step(dt)
 		_step_bullets(dt)
 		_step_statuses(dt))
 	bar.step(dt)
 	_save_timer -= dt
 	if _dirty and _save_timer <= 0.0: save()
+
+
+## Held keys each frame: the drawn talent's key (its line follows the mouse)
+## and Shift (dodge or block), like the crypt's input bits.
+func _hold() -> void:
+	var rt := tc.runtime(1)
+	if rt.is_empty(): return
+	var drawing: Dictionary = rt.get("drawing", {})
+	var draw_held := not drawing.is_empty() and Input.is_physical_key_pressed(KEY_1 + int(drawing.get("slot", 0)))
+	var move := Vector2(float(Input.is_physical_key_pressed(KEY_D)) - float(Input.is_physical_key_pressed(KEY_A)), float(Input.is_physical_key_pressed(KEY_S)) - float(Input.is_physical_key_pressed(KEY_W)))
+	var alive := int(g.state.get("hp", 0)) > 0
+	tc.hold(1, draw_held, alive and Input.is_physical_key_pressed(KEY_SHIFT), HeroKit.target(g), move)
 
 
 ## The hero's talent state for the HUD (same shape as the crypt's snapshot).
@@ -304,10 +339,13 @@ func draw_world(canvas: CanvasItem, clock: float) -> void:
 			canvas.draw_circle(at, 12.0, Color(colour, 0.25))
 			canvas.draw_circle(at, 6.0, colour)
 			canvas.draw_circle(at, 2.5, Color.WHITE)
+	# the mage's left-click fireballs (hell_game shots of kind "pyro")
+	for s: Dictionary in g.shots:
+		if str(s.get("kind", "")) == "pyro": fx.draw_basic_fireball(canvas, Vector2(s.p), Vector2(s.v), clock)
 	fx.draw_events(canvas, snap)
 
 
 ## HUD: the talent bar above the skill bar and the reward banner.
 func draw_hud(canvas: CanvasItem, screen: Vector2, bar_top: float) -> void:
-	bar.draw_bar(canvas, hud_state(), screen.x * 0.5, bar_top)
+	bar.draw_resource(canvas, hud_state(), screen.x * 0.5, bar_top)
 	bar.draw_reward(canvas, Vector2(screen.x * 0.5, screen.y * 0.24))
