@@ -139,6 +139,46 @@ func _run() -> void:
 		_game.camera.position = Vector2(found.x, found.y - 40)
 		await _wait(20)
 		await _shot("04-%s.png" % name)
+	# lighting a fire bowl thaws the snow around it, slowly
+	var bowl: Dictionary = {}
+	for e: Dictionary in _game.W.ents:
+		if e.type == "brazier" and not e.get("lit", false) and bowl.is_empty():
+			bowl = e
+	if bowl.is_empty():
+		print("CHECK skip no fire bowl on floor 1")
+	else:
+		_calm()
+		var before: int = snow.snow.size()
+		_go(Vector2(bowl.x, bowl.y + 70))
+		await _wait(4)
+		_game.act()
+		await _wait(90)
+		await _shot("06-feuerschale-taut.png")
+		var lit_at := float(bowl.get("lit_at", 0.0))
+		while float(_game.state.t) - lit_at < 3.2:
+			await _wait(10)
+		_check(bool(bowl.get("lit", false)) and snow.snow.size() < before, "a lit fire bowl thaws the snow around it (%d -> %d cells)" % [before, snow.snow.size()])
+		await _shot("07-feuerschale-getaut.png")
+	# a snowman wakes as the snow monster when the hero comes close, and hops
+	var man: Dictionary = {}
+	for p: Dictionary in _game.W.props:
+		if p.name == "snowman" and man.is_empty():
+			man = p
+	if man.is_empty():
+		print("CHECK skip no snowman on floor 1")
+	else:
+		_calm()
+		var at := Vector2(man.x, man.y)
+		_go(at + Vector2(0, 260))
+		await _wait(10)
+		_go(at + Vector2(0, 100))
+		await _wait(6)
+		var woke: bool = _game.mobs.any(func(m: Dictionary) -> bool: return m.kind == "snowman")
+		_check(woke and not _game.W.props.has(man), "the snowman wakes as the snow monster")
+		_go(at + Vector2(0, 330))
+		_game.camera.position = at + Vector2(0, 120)
+		await _wait(30)
+		await _shot("05-schneemonster.png")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(GRAPHICS_FILE))
 	print("FROST_WINTER fails=%d" % _fails)
 	quit(1 if _fails > 0 else 0)

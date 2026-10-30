@@ -662,7 +662,7 @@ static func build_floor(n: int, sizes: Dictionary, opts: Dictionary) -> Dictiona
 	var W := {"n": n, "seed": int(P.seed) if int(P.seed) != 0 else 1, "title": P.title, "circle": opts.circles[int(P.circle)], "theme": theme, "boss": P.boss,
 		"diff": difficulty_for(n, P), "final": bool(P.get("final", false)), "COLS": COLS, "ROWS": ROWS,
 		"grid": grid, "roomAt": room_at, "holeAt": hole_at, "tileAt": tile_at,
-		"rooms": plan.rooms, "doors": [], "props": [], "decals": [], "wallDecor": [], "ents": [], "lights": [], "groups": plan.groups, "occupied": {}, "reserved": {}}
+		"rooms": plan.rooms, "doors": [], "props": [], "decals": [], "wallDecor": [], "ents": [], "lights": [], "groups": plan.groups, "occupied": {}, "reserved": {}, "sizes": sizes}
 	var by_id := {}
 	for i in range(W.rooms.size()):
 		var r: Dictionary = W.rooms[i]
@@ -1174,8 +1174,9 @@ static func _generate_features(W: Dictionary, P: Dictionary, r: Dictionary, rnd:
 		r.cells = cells_of(W, r)
 	var lava_budget := jround(float(P.lava) * (2.4 if big else 1.2) + rnd.next() * 0.8)
 	for k in range(lava_budget):
-		var lw := 2 + int(floor(rnd.next() * 3))
-		var lh := 1 + int(floor(rnd.next() * 2))
+		# P.pool scales the pools (the Frostgruft's wide glaze ice)
+		var lw := (2 + int(floor(rnd.next() * 3))) * int(P.get("pool", 1))
+		var lh := (1 + int(floor(rnd.next() * 2))) * int(P.get("pool", 1))
 		var spot: Variant = try_rect.call(lw, lh, 0, 40)
 		if spot != null:
 			lava(W, r, spot[0], spot[1], lw, lh)

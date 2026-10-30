@@ -93,6 +93,7 @@ func dress(W: Dictionary) -> Dictionary:
 	_decorate(W)
 	if pack.get("winter") != null:
 		_winter(W)
+	_tidy(W)
 	_blue_light(W)
 	# last: mire, pits, furniture and fountain never block a way (world kit rule)
 	Core.clear_ways(W)
@@ -235,8 +236,88 @@ func _boss_gate(W: Dictionary) -> void:
 		W.lights.append({"x": px, "y": py - 70, "r": 330, "c": blue, "f": k})
 
 
-## A snowy world (pack.winter, the JS winter()): fewer bones and stone heaps, snow fields on the
-## floor grown from seeds and melting around fire and light, here and there a snowman or a glacier.
+## Decoration props the tidy rule may take away (the JS TIDY).
+const TIDY := ["skull_pile", "spires_t", "spire_mid", "rocks_a", "rocks_b", "coal_skulls", "boulders", "cage_small", "spire_big", "spire_big_b",
+	"spire_big_t", "spires_lava", "rocks_lava", "rocks_dark", "spire_small", "spire_t", "skull_obelisk", "rune_pillar_a", "rune_pillar_b", "rune_pillar_c",
+	"rune_pillar_d", "obelisk", "bone_a", "bone_b", "bone_c", "bone_d", "bone_e", "bone_f", "bone_g", "bones_scatter", "bones_t", "rubble", "coal",
+	"skull_pile_t", "brazier_bowl", "brazier_pillar", "brazier_rune", "brazier_low", "brazier_low_b", "brazier_floor", "brazier_demon",
+	"table_a", "table_b", "table_c", "candelabra", "crate_pile", "sacks_b", "moss_rubble_a", "moss_rubble_b", "moss_ruin", "snowman", "glacier_a", "glacier_b"]
+## Feet of the things on the floor [width, depth] (the JS ENT_FOOT).
+const ENT_FOOT := {"chest": [80, 32], "crate": [60, 30], "brazier": [56, 30], "vault": [140, 50], "well": [112, 44], "stairs": [140, 50], "plate": [84, 84],
+	"spikes": [96, 96], "vent": [96, 96], "key": [40, 30], "heart": [40, 30], "gem": [40, 30], "skullheap": [92, 40], "seal": [70, 40], "npc": [40, 30],
+	"portal": [144, 40], "shop": [150, 44]}
+
+
+## Nothing overlaps (world kit rule, the JS tidy()): a decoration prop whose lower part reaches into
+## a wall, whose foot sits on the edge of a south wall, or whose foot overlaps another prop's foot
+## or a thing on the floor is taken away, its light with it; key rooms and the boss gate's approach
+## keep their furniture.
+func _tidy(W: Dictionary) -> void:
+	var cols: int = W.COLS
+	var sizes: Dictionary = W.get("sizes", {})
+	var size_of := func(name: String) -> Array: return sizes.get(name, [64, 64])
+	var hit := func(a: Array, b: Array) -> bool: return a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]
+	var foot := func(p: Dictionary) -> Array:
+		var s: Array = size_of.call(str(p.name))
+		var w := float(s[0]) * 0.84
+		var h := minf(float(s[1]) * 0.45, 60.0)
+		return [float(p.x) - w / 2, float(p.y) - h, float(p.x) + w / 2, float(p.y)]
+	var cell_of := func(p: Dictionary) -> int: return int(floor((float(p.y) - 8) / C)) * cols + int(floor(float(p.x) / C))
+	var spared := func(p: Dictionary) -> bool:
+		var ri := Core._room_at(W, cell_of.call(p))
+		return not (str(p.name) in TIDY) or ri < 0 or W.rooms[ri].gtype == "key" or W.reserved.has(cell_of.call(p))
+	var in_wall := func(p: Dictionary) -> bool:
+		var s: Array = size_of.call(str(p.name))
+		var ri := Core._room_at(W, cell_of.call(p))
+		var x0 := float(p.x) - float(s[0]) * 0.42
+		var x1 := float(p.x) + float(s[0]) * 0.42
+		var y0 := float(p.y) - float(s[1]) * 0.6
+		var y1 := float(p.y) + 0.25 * C
+		for y in range(int(floor(y0 / C)), int(floor(y1 / C)) + 1):
+			for x in range(int(floor(x0 / C)), int(floor(x1 / C)) + 1):
+				var k := y * cols + x
+				if Core._grid(W, k) == 0 or Core._room_at(W, k) != ri:
+					return true
+		return false
+	var taken: Array = []
+	for e: Dictionary in W.ents:
+		if ENT_FOOT.has(str(e.type)):
+			var f: Array = ENT_FOOT[str(e.type)]
+			taken.append([float(e.x) - float(f[0]) / 2, float(e.y) - float(f[1]), float(e.x) + float(f[0]) / 2, float(e.y)])
+	for d: Dictionary in W.decals:
+		if d.name == "pit":
+			taken.append([float(d.x) - C / 2, float(d.y) - C / 2, float(d.x) + C / 2, float(d.y) + C / 2])
+	for p: Dictionary in W.props:
+		if spared.call(p):
+			taken.append(foot.call(p))
+	var gone: Array = []
+	for p: Dictionary in W.props:
+		if spared.call(p):
+			continue
+		var f: Array = foot.call(p)
+		var clash: bool = in_wall.call(p)
+		if not clash:
+			for t: Array in taken:
+				if hit.call(f, t):
+					clash = true
+					break
+		if clash:
+			gone.append(p)
+		else:
+			taken.append(f)
+	if gone.is_empty():
+		return
+	W.lights = W.lights.filter(func(l: Dictionary) -> bool:
+		for p: Dictionary in gone:
+			if absf(float(l.x) - float(p.x)) < 2 and float(l.y) < float(p.y):
+				return false
+		return true)
+	W.props = W.props.filter(func(p: Dictionary) -> bool: return Core.index_of(gone, p) < 0)
+
+
+## A snowy world (pack.winter, the JS winter()): the floor itself is snow; fewer bones and stone
+## heaps, the snow melted to the stone floor around every burning prop, here and there a snowman or
+## a glacier.
 func _winter(W: Dictionary) -> void:
 	var cols: int = W.COLS
 	var P: Dictionary = pack.winter
@@ -247,33 +328,16 @@ func _winter(W: Dictionary) -> void:
 	var thin_p: Dictionary = P.thin_props
 	W.decals = W.decals.filter(func(d: Dictionary) -> bool: return not (str(d.name) in thin_d.names) or rnd.next() < float(thin_d.keep))
 	W.props = W.props.filter(func(p: Dictionary) -> bool: return not (str(p.name) in thin_p.names) or rnd.next() < float(thin_p.keep))
-	# fire and light melt the snow around them
-	var melt := (float(P.melt) * C) * (float(P.melt) * C)
-	var warm := func(x: int, y: int) -> bool:
-		for l: Dictionary in W.lights:
-			var dx := float(l.x) - (x + 0.5) * C
-			var dy := float(l.y) - (y + 0.5) * C
-			if dx * dx + dy * dy < melt:
-				return true
-		return false
-	var snow := {}
+	# fire melts the snow around it down to the stone floor
+	for p: Dictionary in W.props.duplicate():
+		if str(p.name) in P.thaw_props:
+			W.decals.append({"name": pick.call(P.thaw), "x": float(p.x), "y": float(p.y) - 24, "w": P.thaw_size, "h": P.thaw_size, "a": 1})
 	for r: Dictionary in W.rooms:
 		var cells: Array = r.cells.filter(func(c: Array) -> bool:
 			var k: int = c[1] * cols + c[0]
 			return Core._grid(W, k) == 1 and not W.reserved.has(k))
 		if cells.is_empty():
 			continue
-		var n := 1 + int(floor(cells.size() / float(P.seed_cells)))
-		for k in range(n):
-			var s: Array = cells[int(floor(rnd.next() * cells.size()))]
-			var rr := 2 + int(floor(rnd.next() * 6))
-			for c: Array in cells:
-				var dx: int = c[0] - s[0]
-				var dy: int = c[1] - s[1]
-				var i: int = c[1] * cols + c[0]
-				if dx * dx + dy * dy <= rr and not snow.has(i) and not warm.call(c[0], c[1]):
-					snow[i] = true
-					W.decals.append({"name": pick.call(P.snow), "x": (c[0] + 0.5) * C, "y": (c[1] + 0.5) * C, "w": P.size, "h": P.size, "a": 1})
 		# a snowman or a glacier in some fight rooms, on free floor away from the doors
 		if r.type != "combat":
 			continue

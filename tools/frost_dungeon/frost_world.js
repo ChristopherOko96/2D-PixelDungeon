@@ -25,7 +25,7 @@
     { n: 8, title: 'Gletscherspalten', circle: 2, seed: 21808, gc: 8, gr: 7, path: 18, rooms: 29, lava: .35, river: .3, spikes: .5, vents: .4, holes: .5, pits: .55, loops: .3, mainLock: true, fire: 3, seq: true, shooters: true, boss: { name: 'Sturmkristall', hp: 190, summon: 2.8, ring: 2.4 } },
     { n: 9, title: 'Kaserne des Kommandanten', circle: 2, seed: 21909, gc: 8, gr: 7, path: 18, rooms: 30, lava: .35, river: .3, spikes: .5, vents: .45, holes: .5, pits: .45, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, boss: { name: 'Frostkommandant', hp: 240, summon: 2.6, ring: 2.0, mini: true } },
     { n: 10, title: 'Thron des Gletscherkolosses', circle: 3, seed: 22010, gc: 8, gr: 7, path: 18, rooms: 30, lava: .45, river: .4, spikes: .5, vents: .5, holes: .45, pits: .4, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, final: true, boss: { name: 'Hrimgar, der Gletscherkoloss', hp: 340, summon: 2.4, ring: 1.6, final: true } },
-  ];
+  ].map(P => P && Object.assign({}, P, { pool: 2 }));   // pools twice as wide: glaze ice to slide on
   const CIRCLES = ['Abschnitt I · Frostpforte', 'Abschnitt II · Gefrorene Tiefe', 'Abschnitt III · Gletscherherz', 'Abschnitt IV · Thron des Winters'];
   const NAMES = [['Reif', 'Frost', 'Schnee', 'Eis', 'Firn', 'Hagel', 'Kälte', 'Raureif'], ['Gletscher', 'Eis', 'Schollen', 'Kristall', 'Spiegel', 'Nebel', 'Frost', 'Tiefen'],
     ['Sturm', 'Splitter', 'Kristall', 'Wächter', 'Ritter', 'Winter', 'Hagel', 'Frost'], ['Thron', 'Gletscher', 'Winter', 'Kristall', 'Sturm', 'Schnee', 'Eis', 'Firn']];
@@ -57,7 +57,8 @@
     thin_decals: { keep: 0, names: ['moss_a', 'moss_b', 'moss_c'] },
     thin_props: { keep: .15, names: ['bone_a', 'bone_b', 'bone_c', 'bone_d', 'bone_e', 'bone_f', 'bone_g', 'bones_scatter', 'bones_t', 'rubble', 'coal', 'rocks_b', 'skull_pile_t',
       'skull_pile', 'spires_t', 'spire_mid', 'rocks_a', 'coal_skulls', 'boulders', 'cage_small', 'spire_big_b', 'rocks_lava', 'spires_lava', 'spire_big', 'spire_big_t', 'rocks_dark', 'spire_small'] },
-    snow: ['snow_a', 'snow_b', 'snow_c', 'snow_d'], size: 168, seed_cells: 9, melt: 1.7,
+    thaw: ['thaw_a', 'thaw_b', 'thaw_c'], thaw_size: 220,
+    thaw_props: ['brazier_bowl', 'brazier_pillar', 'brazier_rune', 'brazier_low', 'brazier_low_b', 'brazier_floor', 'brazier_demon', 'brazier_blue', 'torch_pillar', 'altar'],
     snowman: .35, glacier: .45, glaciers: ['glacier_a', 'glacier_b'],
   };
   const WALL_SET = ['table_a', 'table_b', 'table_c', 'candelabra', 'crate_pile', 'moss_ruin', 'sacks_b', 'candelabra', 'moss_rubble_a', 'moss_rubble_b'];

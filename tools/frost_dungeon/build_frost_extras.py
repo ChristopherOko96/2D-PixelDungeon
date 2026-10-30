@@ -25,6 +25,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, '..', '..')
 sys.path.insert(0, os.path.join(ROOT, 'tools', 'hell_dungeon'))
 import img  # noqa: E402
+sys.path.insert(0, HERE)
+import wall_snow  # noqa: E402
 
 SPR = os.path.join(ROOT, 'assets', 'sprites')
 HELL, HELL_PIX, FROST, FROST_HD = (os.path.join(SPR, d) for d in ('hell', 'hell_0x72', 'frost', 'frost_hd'))
@@ -259,67 +261,405 @@ def glacier(src, block, seed, unit=None):
     return snowcap(out, block, seed, unit)
 
 
-def ice_crack(block, seed):
-    """The ice trap at rest: a thin dark crack in the ice with a pale rim (32 x 12 cells of `block`)."""
-    W_, H_ = 32, 14
-    out = img.Img(W_ * block, H_ * block)
-    y = H_ / 2
-    for x in range(2, W_ - 2):
-        y += (noise1(x / 3.0, seed) - .5) * 1.6
-        y = max(3, min(H_ - 4, y))
-        for k, col in ((-2, '#d2f1ff'), (-1, '#6aa8e6'), (0, '#0a1a3c'), (1, '#0f2a55'), (2, '#2b5ea3'), (3, '#9fd3f6')):
-            if k in (1, 2) and noise1(x / 2.0, seed + 3) < .35:
+OUTLINE = (0x0c, 0x12, 0x26)
+
+
+def hexc(h):
+    return tuple(int(h[i:i + 2], 16) for i in (1, 3, 5))
+
+
+def grid_image(g, block, outline=True):
+    """A colour grid (None = empty) as an image of `block` px pixels, with the dark 1 px outline of
+    the pixel figures around everything solid."""
+    H_, W_ = len(g), len(g[0])
+    pad = 1 if outline else 0
+    out = img.Img((W_ + 2 * pad) * block, (H_ + 2 * pad) * block)
+    for y in range(-pad, H_ + pad):
+        for x in range(-pad, W_ + pad):
+            c = g[y][x] if 0 <= y < H_ and 0 <= x < W_ else None
+            if c is None and outline and any(0 <= y + v < H_ and 0 <= x + u < W_ and g[y + v][x + u] is not None for u, v in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+                c = OUTLINE
+            if c is None:
                 continue
-            yy = int(y) + k
-            for dy in range(block):
-                for dx in range(block):
-                    out.set(x * block + dx, yy * block + dy, tuple(int(col[i:i + 2], 16) for i in (1, 3, 5)) + (255,))
+            for yy in range((y + pad) * block, (y + pad + 1) * block):
+                for xx in range((x + pad) * block, (x + pad + 1) * block):
+                    out.set(xx, yy, tuple(c[:3]) + (255,))
     return out
+
+
+def ice_crack(block, seed):
+    """The ice trap at rest: a short jagged crack in the snow, dark blue inside, with a thin pale
+    lip of pushed-up snow on its upper side, small enough to read as a crack, not a stroke
+    (18 x 9 cells of `block`)."""
+    W_, H_ = 18, 9
+    g = [[None] * W_ for _ in range(H_)]
+    y = 4.0
+    for x in range(2, W_ - 2):
+        y += (noise1(x / 2.2, seed) - .5) * 1.8
+        y = max(2.0, min(H_ - 3.0, y))
+        width = 1 + (1 if 4 < x < W_ - 5 else 0)
+        for k in range(width):
+            g[int(y) + k][x] = hexc('#0f1f44') if k == 0 else hexc('#1d3b7a')
+        g[int(y) - 1][x] = hexc('#ffffff')
+        if g[int(y) + width][x] is None:
+            g[int(y) + width][x] = hexc('#9fbcdf')
+    return grid_image(g, block, outline=False)
 
 
 def ice_burst(block, seed):
-    """The ice trap firing: a cluster of ice shards shot up out of the crack (32 x 36 cells of `block`)."""
-    W_, H_ = 32, 36
+    """The ice trap firing: a few chunky ice spikes broken up out of the crack, each with a dark
+    outline, a lit and a shaded face and a snowy foot, like the pixel set's crystals
+    (20 x 24 cells of `block`, outlined)."""
+    W_, H_ = 20, 24
     g = [[None] * W_ for _ in range(H_)]
-    shard = ramp(['#2b5ea3', '#6aa8e6', '#b8e2fa', '#ffffff'])
-    # the outer shards lean outward (they burst out of the crack), the big one stands in the middle
-    for i, (cx, h, w) in enumerate(((5, 15, 3.0), (27, 17, 3.0), (9, 25, 3.6), (23, 27, 3.6), (13, 19, 2.6), (20, 21, 2.6), (16, 34, 4.6))):
-        for y in range(H_ - h, H_):
+    lit, shade, deep = ramp(['#9fd3f6', '#d2f1ff', '#ffffff']), ramp(['#3f78c0', '#6aa8e6', '#9fd3f6']), hexc('#2b5ea3')
+    # (foot x, height, half width at the foot, lean per row)
+    for cx, h, w, lean in ((4, 11, 2.2, -.22), (16, 13, 2.2, .22), (7, 17, 2.8, -.1), (13, 18, 2.8, .1), (10, 23, 3.4, 0.0)):
+        for y in range(H_ - h, H_ - 1):
             t = (y - (H_ - h)) / h
-            half = w * 1.6 * t ** .8
-            lean = (cx - 16) * .35 * (1 - t)
+            half = max(.5, w * t)
+            mid = cx + lean * (H_ - 1 - y)
             for x in range(W_):
-                d = x + .5 - cx - lean
+                d = x + .5 - mid
                 if abs(d) <= half:
-                    # a dark rim, a lit left face, a shaded right face, a white ridge near the tip
-                    if abs(d) > half - .9:
-                        g[y][x] = shard(.08)
-                    elif abs(d) < .6 and t < .55:
-                        g[y][x] = (255, 255, 255)
-                    else:
-                        g[y][x] = shard((.95 if d < 0 else .62) - .35 * t)
-    out = img.Img(W_ * block, H_ * block)
-    for y in range(H_):
-        for x in range(W_):
-            if g[y][x] is not None:
-                for yy in range(y * block, y * block + block):
-                    for xx in range(x * block, x * block + block):
-                        out.set(xx, yy, g[y][x] + (255,))
+                    g[y][x] = lit(1 - t) if d < 0 else (shade(1 - t) if d < half * .6 else deep)
+    for x in range(1, W_ - 1):   # the snow kicked up at the foot
+        if g[H_ - 2][x] is not None or 3 < x < W_ - 3:
+            g[H_ - 1][x] = hexc('#eef6ff')
+    return grid_image(g, block)
+
+
+def snow_tile(seed, block):
+    """A tileable snow floor cell (96 px): soft white with cold blue hollows, a few drift ridges and
+    glints, as on the snowy ground of a winter map. HD (block 1) is smooth, the pixel set (block 3)
+    keeps its grid in few steps."""
+    n = 96 // block
+    out = img.Img(96, 96)
+    per = 4   # noise period in cells: the tile repeats seamlessly
+    def tnoise(x, y, scale, s):
+        fx, fy = x / n * per * scale, y / n * per * scale
+        p = per * scale
+        i, j = int(fx), int(fy)
+        u, v = fx - i, fy - j
+        u, v = u * u * (3 - 2 * u), v * v * (3 - 2 * v)
+        h = lambda a, b: _h(a % p, b % p, s)
+        return (h(i, j) * (1 - u) + h(i + 1, j) * u) * (1 - v) + (h(i, j + 1) * (1 - u) + h(i + 1, j + 1) * u) * v
+    snow = ramp(['#a9c2e2', '#c9dcf0', '#e2eef9', '#f2f8ff'])
+    for by in range(n):
+        for bx in range(n):
+            v = .55 * tnoise(bx, by, 1, seed) + .3 * tnoise(bx, by, 2, seed + 1) + .15 * tnoise(bx, by, 4, seed + 2)
+            t = .25 + .75 * v
+            if block > 1:
+                t = round(t * 4) / 4
+            c = snow(t)
+            if _h(bx * 7 + 3, by * 5 + 1, seed + 9) > .985:
+                c = (255, 255, 255)
+            for y in range(by * block, by * block + block):
+                for x in range(bx * block, bx * block + block):
+                    out.set(x, y, c + (255,))
     return out
 
 
-WINTER_NAMES = {'snow_a', 'snow_b', 'snow_c', 'snow_d', 'snowman', 'glacier_a', 'glacier_b', 'ice_crack', 'ice_burst'}
+def _h(i, j, seed):
+    v = (i * 374761393 + j * 668265263 + seed * 2147483647) & 0xFFFFFFFF
+    v = ((v ^ (v >> 13)) * 1274126177) & 0xFFFFFFFF
+    return ((v ^ (v >> 16)) & 0xFFFF) / 65535
+
+
+def thaw(floor, seed, block, size=150):
+    """A patch where fire melted the snow: the stone floor showing through an irregular hole, a dark
+    wet rim and a lip of slush, drawn over the snow (size px, the floor texture repeated)."""
+    n = size // block
+    out = img.Img(n * block, n * block)
+    c = n / 2
+    for by in range(n):
+        for bx in range(n):
+            dx, dy = (bx - c) / c, (by - c) / c
+            d = (dx * dx + dy * dy) ** .5
+            edge = .72 + .22 * (noise2(bx / (n / 6), by / (n / 6), seed) - .5) * 2
+            if d > edge + .08:
+                continue
+            for y in range(by * block, by * block + block):
+                for x in range(bx * block, bx * block + block):
+                    f = floor.get(x % floor.w, y % floor.h)
+                    if d > edge:      # the slush lip
+                        out.set(x, y, hexc('#c9dcf0') + (int(255 * (1 - (d - edge) / .08)) if block == 1 else 255,))
+                    elif d > edge - .1:   # wet, dark rim
+                        out.set(x, y, (f[0] * 3 // 5, f[1] * 3 // 5, min(255, f[2] * 3 // 4 + 10), 255))
+                    else:   # the stone, a little lighter: wet and lit by the fire beside it
+                        out.set(x, y, (min(255, f[0] * 5 // 4 + 12), min(255, f[1] * 5 // 4 + 12), min(255, f[2] * 5 // 4 + 16), 255))
+    return out
+
+
+def snow_monster(frame):
+    """The snowman mimic, awake: three snowballs, a top hat, an angry face with glowing orange eyes
+    under heavy brows and a jagged grin, a carrot nose, twig claws. It has no legs: its walk is a
+    hop in which the three balls fly apart and come back together. 8 frames on a 32 x 64 grid (x3
+    like every pixel figure); the foot sits on the bottom row, the hop's lift is inside the frame."""
+    W_, H_ = 32, 64
+    g = [[None] * W_ for _ in range(H_)]
+
+    def put(x, y, c):
+        if 0 <= x < W_ and 0 <= y < H_:
+            g[y][x] = c
+    # (lift, gap between balls, squash) per frame: crouch, push off, rise, peak, fall, land, squash, recover
+    lift, gap, sq = ((0, 0, .82), (2, 1, 1.0), (6, 2, 1.08), (9, 3, 1.1), (7, 2, 1.04), (2, 1, .96), (0, 0, .8), (0, 0, .94))[frame]
+    body = ramp(['#7f9cc4', '#a9c2e2', '#d2e4f4', '#eef6ff', '#ffffff'])
+
+    def ball(cx, cy, r, s):
+        rx, ry = r / s ** .5, r * s
+        for y in range(H_):
+            for x in range(W_):
+                dx, dy = (x + .5 - cx) / rx, (y + .5 - cy) / ry
+                if dx * dx + dy * dy <= 1:
+                    nz = max(0, 1 - dx * dx - dy * dy) ** .5
+                    g[y][x] = body(max(0, min(1, .3 + .6 * (-.5 * dx - .6 * dy + .5 * nz))))
+    cx = 16
+    ground = H_ - 1 - lift
+    r1, r2, r3 = 8.0, 6.0, 6.2
+    y1 = ground - r1 * sq
+    y2 = y1 - r1 * sq - r2 * sq + 2 - gap
+    y3 = y2 - r2 * sq - r3 * sq + 2 - gap
+    ball(cx, y1, r1, sq); ball(cx, y2, r2, sq); ball(cx, y3, r3, sq)
+    y1, y2, y3 = int(y1), int(y2), int(y3)
+    coal = (24, 28, 40)
+    for yy in (y1 - 3, y1 + 1, y2 - 1, y2 + 2):
+        put(cx, yy, coal)
+    # twig claws from the middle ball, raised while it is in the air
+    raise_ = 3 if lift > 4 else 0
+    for side in (-1, 1):
+        x0 = cx + side * 6
+        for i in range(6):
+            put(x0 + side * i, y2 - i // 2 - (raise_ * i) // 5, hexc('#c0581a'))
+        tx, ty = x0 + side * 6, y2 - 3 - raise_
+        for ux, uy in ((side, -1), (side, 1), (0, -2), (side * 2, 0)):
+            put(tx + ux, ty + uy, hexc('#ff8a3a'))
+    # the face: heavy angry brows, glowing orange eyes, a wide jagged grin, the carrot nose
+    dark = (18, 20, 30)
+    for x, dy in ((cx - 4, -3), (cx - 3, -2), (cx - 2, -2), (cx + 2, -2), (cx + 3, -2), (cx + 4, -3)):
+        put(x, y3 + dy, dark)
+    for x in (cx - 3, cx - 2, cx + 2, cx + 3):
+        put(x, y3 - 1, hexc('#ff6a1a'))
+    put(cx - 2, y3 - 1, hexc('#ffd040')); put(cx + 2, y3 - 1, hexc('#ffd040'))
+    for x in range(cx - 4, cx + 5):
+        put(x, y3 + 3, dark)
+        put(x, y3 + 2, (240, 244, 250) if (x + cx) % 2 == 0 else dark)
+    put(cx - 5, y3 + 2, dark); put(cx + 5, y3 + 2, dark)
+    for i in range(5):
+        put(cx + 1 + i, y3 + 0, hexc('#e8781e') if i < 4 else hexc('#b04a10'))
+    # the top hat with a red band
+    top = y3 - int(r3 * sq) + 1
+    for x in range(cx - 6, cx + 6):
+        put(x, top, hexc('#1c1e28'))
+    for y in range(top - 7, top):
+        for x in range(cx - 4, cx + 4):
+            put(x, y, hexc('#8a1c2a') if y == top - 1 else hexc('#3a3d4a') if x == cx - 4 else hexc('#23252f'))
+    return grid_image(g, 3)
+
+
+ICICLE = ramp(['#6aa8e6', '#b8e2fa', '#ffffff'])
+
+
+def icicles(src, block, seed):
+    """Icicles hanging from the snow on top of a wall: under the cap, every few pixels one icicle 1
+    to 4 blocks long, tapering, pale with a bright highlight."""
+    out = img.Img(src.w, src.h, bytearray(src.buf))
+    solid = lambda x, y: 0 <= x < src.w and 0 <= y < src.h and src.get(x, y)[3] > 100
+    for bx in range(0, src.w, block):
+        top = next((y for y in range(0, src.h, block) if solid(bx, y)), None)
+        if top is None or _h(bx // block, 7, seed) < .62:
+            continue
+        start = top + 6 * block if block > 1 else top + 14
+        length = 1 + int(_h(bx // block, 3, seed) * 3.99)
+        for k in range(length * (1 if block > 1 else 3)):
+            y = start + k * (block if block > 1 else 1)
+            if not solid(bx, y):
+                break
+            col = ICICLE(1 - k / max(1, length * (1 if block > 1 else 3)))
+            w = block if block > 1 else max(1, 3 - k // 3)
+            for dy in range(block if block > 1 else 1):
+                for dx in range(w):
+                    if bx + dx < src.w and y + dy < src.h:
+                        out.set(bx + dx, y + dy, col + (255,))
+    return out
+
+
+ICICLED = {'wall_h', 'wall_h_glowpost', 'wall_post_slit', 'corner_cap', 'gate_side', 'boss_gate', 'boss_gate_blue', 'portcullis', 'demon_lintel', 'boss_arch'}
+FLOORS = ['floor_%02d' % i for i in range(12)]
+MONSTER = ['mob_snowman_f%d' % i for i in range(8)]
+# what stands on the snow and sinks into it a little: snow cushions over its lower edge (snowfoot);
+# the wall faces get them along their foot, the pits round their rim (pit_rim)
+FOOTED = {'wall_h', 'wall_h_glowpost', 'wall_post_slit', 'gate_side', 'jamb_a', 'jamb_b', 'boss_gate', 'boss_gate_blue', 'boss_arch',
+          'rune_pillar_a', 'rune_pillar_b', 'rune_pillar_c', 'rune_pillar_d', 'obelisk', 'skull_obelisk', 'skull_pile', 'skull_heap', 'coal_skulls',
+          'rocks_a', 'rocks_dark', 'rocks_lava', 'boulders', 'spire_big', 'spire_big_b', 'spire_big_t', 'spire_mid', 'spire_small', 'spires_t',
+          'spires_lava', 'spire_t', 'altar', 'stairs_down', 'statue_angel', 'statue_monk', 'gargoyle', 'barrel_a', 'barrel_b', 'barrel_c',
+          'crate_a', 'crate_b', 'crate_c', 'crate_pile', 'urn_a', 'urn_b', 'urn_c', 'urn_d', 'urn_e', 'table_a', 'table_b', 'table_c', 'bench',
+          'shelf', 'shop_table', 'sacks_a', 'sacks_b', 'sacks_c', 'chest_closed', 'chest_open', 'chest_gold', 'chest_empty', 'chest_vault',
+          'cage_small', 'moss_rubble_a', 'moss_rubble_b', 'moss_ruin', 'fountain', 'portal', 'portal_dark', 'candelabra',
+          'brazier_bowl', 'brazier_pillar', 'brazier_rune', 'brazier_low', 'brazier_low_b', 'brazier_floor', 'brazier_demon', 'brazier_blue',
+          'bowl_blue', 'torch_pillar', 'torch_pillar_blue', 'snowman', 'glacier_a', 'glacier_b'}
+RIMMED = {'pit'}
+
+
+def snowfoot(src, block, seed, unit=None):
+    """The thing stands a little sunk in the snow: small snow cushions lie over its lower edge where
+    it touches the ground, uneven lumps (unit = px per step: 3 for both sets), white on top and
+    cold blue below, some spilling a step past its sides. Done on the sprite itself, so it sits
+    exactly where the thing touches the floor."""
+    unit = unit or block
+    out = img.Img(src.w, src.h, bytearray(src.buf))
+    solid = lambda x, y: 0 <= x < src.w and 0 <= y < src.h and src.get(x, y)[3] > 100
+    cols = []
+    for x in range(0, src.w, block):
+        yb = next((y for y in range(src.h - 1, -1, -1) if solid(x, y)), None)
+        if yb is not None:
+            cols.append((x, yb))
+    if not cols:
+        return out
+    # the contact: columns whose lowest pixel lies near the sprite's lowest row
+    floor_y = max(yb for _, yb in cols)
+    contact = [(x, yb) for x, yb in cols if yb >= floor_y - 4 * unit]
+    if not contact:
+        return out
+    lo, hi = contact[0][0], contact[-1][0]
+    def lump(x):
+        # bumps of 1 to 3 steps, an extra one now and then
+        n = noise1(x / (unit * 3.2), seed) * .7 + noise1(x / (unit * 1.4), seed + 5) * .3
+        return 1 + int(n * 2.99)
+    for x, yb in contact:
+        h = lump(x) * unit
+        for k in range(0, h, block):
+            y = yb - k
+            if not solid(x, y):
+                break
+            t = k / max(1, h)
+            c = SNOW(min(1, .45 + .55 * t))   # white on top of the cushion, blue at its foot
+            for dy in range(block):
+                for dx in range(block):
+                    if x + dx < src.w and y + dy < src.h:
+                        out.set(x + dx, y + dy, c + (255,))
+        # a fine cold line where the cushion meets the thing, so the snow reads as lying on it
+        y = yb - h
+        if solid(x, y):
+            for dy in range(block):
+                for dx in range(block):
+                    if x + dx < src.w and y + dy < src.h:
+                        o = src.get(x + dx, y + dy)
+                        out.set(x + dx, y + dy, ((o[0] + 2 * 0x8e) // 3, (o[1] + 2 * 0xaa) // 3, (o[2] + 2 * 0xd0) // 3, 255))
+    # a step of snow spilling past each side at the ground
+    for side, x0 in ((-1, lo), (1, hi)):
+        for k in range(1, 3):
+            x = x0 + side * k * block
+            if 0 <= x < src.w and not solid(x, floor_y):
+                for dy in range(block):
+                    for dx in range(block):
+                        if x + dx < src.w and floor_y - dy >= 0:
+                            out.set(x + dx, floor_y - dy, SNOW(.6) + (255,))
+    return out
+
+
+def pit_rim(src, block, seed, unit=None):
+    """Snow round the rim of a pit: an uneven white border on its frame, thicker on the top edge."""
+    unit = unit or block
+    out = img.Img(src.w, src.h, bytearray(src.buf))
+    for y in range(0, src.h, block):
+        for x in range(0, src.w, block):
+            if src.get(x, y)[3] <= 100:
+                continue
+            edge = min(x, y / 1.6, src.w - 1 - x, src.h - 1 - y) / unit
+            n = noise2(x / (block * 4.0), y / (block * 4.0), seed)
+            if edge < 1.5 + n * 2.2:
+                c = SNOW(.75 + .25 * n)
+                for dy in range(block):
+                    for dx in range(block):
+                        if x + dx < src.w and y + dy < src.h:
+                            out.set(x + dx, y + dy, c + (255,))
+    return out
+
+
+DRIFTS = 6
+WINTER_NAMES = {'snow_a', 'snow_b', 'snow_c', 'snow_d', 'snowman', 'glacier_a', 'glacier_b', 'ice_crack', 'ice_burst',
+                'thaw_a', 'thaw_b', 'thaw_c'} | set(FLOORS) | set(MONSTER) | {'drift_%d' % k for k in range(DRIFTS)} | set(wall_snow.pieces(6))
+# the wall snow's anchors and counts (src/hero/frost_wall_snow.gd)
+WALL_SNOW_DATA = os.path.join(ROOT, 'assets', 'data', 'frost_wall_snow.json')
+
+
+def drift(block, seed):
+    """A small snow drift lying on the floor: two to four rounded lumps side by side, lit white on
+    top, cold blue on their lower half, a darker blue underside where they press on the ground and a
+    faint contact shade just below. The game lays rows of them at the foot of everything standing on
+    the snow, round floor plates and pits and along the walls (src/hero/frost_snow.gd), drawn over
+    the thing's lower edge so it stands a little sunk in. 48 x 24 px; the pixel set in 3 px steps."""
+    W_, H_ = 48 // block, 24 // block
+    lumps = []
+    n = 2 + int(_h(seed, 1, 3) * 2.99)
+    for i in range(n):
+        cx = (i + .5) / n * W_ + (_h(seed, i, 5) - .5) * W_ * .18
+        rx = W_ / n * (.58 + _h(seed, i, 7) * .3)
+        ry = H_ * (.36 + _h(seed, i, 9) * .16)
+        cx = max(rx + .5, min(W_ - rx - .5, cx))   # whole lumps, never cut at the frame
+        lumps.append((cx, H_ - (2 if block == 1 else 1) - ry, rx, ry))
+    shade = hexc('#7f9cc4')
+    under = hexc('#5f7eaa')
+    def inside(x, y):
+        best = None
+        for cx, cy, rx, ry in lumps:
+            dx, dy = (x + .5 - cx) / rx, (y + .5 - cy) / ry
+            d = dx * dx + dy * dy
+            if d <= 1 and (best is None or dy < best[1]):
+                best = (d, dy, dx)
+        return best
+    out = img.Img(W_ * block, H_ * block)
+    for y in range(H_):
+        for x in range(W_):
+            hit = inside(x, y)
+            if hit is None:
+                # the contact shade right under a lump
+                if inside(x, y - 1) is not None or inside(x, y - 2) is not None:
+                    c, a = under, 70 if block == 1 else 90
+                else:
+                    continue
+            else:
+                d, dy, dx = hit
+                below = inside(x, y + 1) is None
+                edge = inside(x - 1, y) is None or inside(x + 1, y) is None or inside(x, y - 1) is None
+                if below:
+                    c, a = shade, 255          # the lump's foot, darker where it sits on the floor
+                elif edge:
+                    c, a = hexc('#b9cde6'), 255   # a faint cold rim so the lump reads against the snow
+                else:
+                    # white on top, a soft cold blue towards the foot
+                    t = max(0, min(1, .9 - .38 * max(0, dy + .2) - .14 * dx))
+                    c, a = SNOW(t), 255
+            for yy in range(y * block, y * block + block):
+                for xx in range(x * block, x * block + block):
+                    out.set(xx, yy, c + (a,))
+    return out
 
 
 def winter_pieces(block):
-    """The snow pieces of one set: name -> image (block 1 = HD, 3 = pixel)."""
+    """The snow pieces of one set: name -> image (block 1 = HD, 3 = pixel). The floor cells become
+    snow; thaw patches show the old stone floor where fire melted it."""
     hell_src = HELL if block == 1 else HELL_PIX
     pieces = {('snow_' + k): snow_patch(seed, 120, block) for k, seed in zip('abcd', (3, 11, 19, 27))}
     pieces['snowman'] = snowman(3)
     pieces['glacier_a'] = glacier(img.load(os.path.join(hell_src, 'spire_big.png')), block, 5, 3)
     pieces['glacier_b'] = glacier(img.load(os.path.join(hell_src, 'spire_big_b.png')), block, 9, 3)
+    for k in range(DRIFTS):
+        pieces['drift_%d' % k] = drift(block, 11 + k * 7)
     pieces['ice_crack'] = ice_crack(3, 4)
     pieces['ice_burst'] = ice_burst(3, 4)
+    # the old stone floor (HD: the hell floor frozen; pixel: the set's own floor before the snow)
+    stone = freeze(img.load(os.path.join(HELL, 'floor_00.png')), 'floor_00') if block == 1 else img.load(os.path.join(BASE, 'floor_00.png'))
+    for k, seed in zip('abc', (5, 13, 21)):
+        pieces['thaw_' + k] = thaw(stone, seed, block)
+    for i, name in enumerate(FLOORS):
+        pieces[name] = snow_tile(31 + i * 7, block)
+    for i, name in enumerate(MONSTER):
+        pieces[name] = snow_monster(i)
+    # the snow at the walls (tools/frost_dungeon/wall_snow.py): pixel set in 3 px blocks, HD in 2 px
+    for name, (im, _) in wall_snow.pieces(3 if block == 3 else 2).items():
+        pieces[name] = im
     return pieces
 
 
@@ -357,7 +697,13 @@ def build():
         im = freeze(img.load(os.path.join(HELL, src + '.png')), name)
         if name in CAPPED:
             im = snowcap(im, 1, len(name), 3)
-        img.save(im, os.path.join(FROST_HD, name + '.png'))
+        if name in ICICLED:
+            im = icicles(im, 1, len(name))
+        if name in FOOTED:
+            im = snowfoot(im, 1, len(name), 3)
+        if name in RIMMED:
+            im = pit_rim(im, 1, len(name), 3)
+        save_safe(im, os.path.join(FROST_HD, name + '.png'))
         hd[name] = {'w': im.w, 'h': im.h, 'kind': m['kind'], 'src': 'hell %s, frozen%s (build_frost_extras.py)' % (src, ', snow cap' if name in CAPPED else '')}
     for name, m in frost.items():
         if name in hell or name in WINTER_NAMES:
@@ -366,8 +712,8 @@ def build():
         hd[name] = dict(m)
     # the snow pieces last: the pixel set has its own of the same names
     for name, im in winter_pieces(1).items():
-        img.save(im, os.path.join(FROST_HD, name + '.png'))
-        hd[name] = {'w': im.w, 'h': im.h, 'kind': 'sprite', 'src': 'drawn: %s (build_frost_extras.py)' % name}
+        save_safe(im, os.path.join(FROST_HD, name + '.png'))
+        hd[name] = {'w': im.w, 'h': im.h, 'kind': 'opaque' if name in FLOORS else 'sprite', 'src': 'drawn: %s (build_frost_extras.py)' % name}
     save_manifest(os.path.join(FROST_HD, 'manifest.json'), hd, False)
     print(len(hd), 'HD sprites ->', FROST_HD)
     # pixel: the world kit pieces the pixel set lacks
@@ -382,19 +728,44 @@ def build():
         made += 1
     # snow caps on the pixel set: always painted on the untouched sprite, kept once in BASE
     os.makedirs(BASE, exist_ok=True)
-    for name in CAPPED:
+    for name in sorted(set(CAPPED) | FOOTED | RIMMED):
         path, base = os.path.join(FROST, name + '.png'), os.path.join(BASE, name + '.png')
-        if not os.path.exists(path):
+        if not os.path.exists(path) or name in WINTER_NAMES:
             continue
         if not os.path.exists(base):
             shutil.copyfile(path, base)
-        save_safe(snowcap(img.load(base), 3, len(name)), path)
+        im = img.load(base)
+        if name in CAPPED:
+            im = snowcap(im, 3, len(name))
+        if name in ICICLED:
+            im = icicles(im, 3, len(name))
+        if name in FOOTED:
+            im = snowfoot(im, 3, len(name), 3)
+        if name in RIMMED:
+            im = pit_rim(im, 3, len(name), 3)
+        save_safe(im, path)
+    for name in FLOORS:   # the stone floor stays under the snow for the thaw patches
+        if not os.path.exists(os.path.join(BASE, name + '.png')):
+            shutil.copyfile(os.path.join(FROST, name + '.png'), os.path.join(BASE, name + '.png'))
+    # wall snow pieces a rebuild no longer draws (tools/frost_dungeon/wall_snow.py changed) leave both sets
+    for d, man in ((FROST, frost), (FROST_HD, None)):
+        for f in os.listdir(d):
+            name = f[:-4]
+            if f.startswith('snow_wall_') and f.endswith('.png') and name not in WINTER_NAMES:
+                os.remove(os.path.join(d, f))
+                if os.path.exists(os.path.join(d, f + '.import')):
+                    os.remove(os.path.join(d, f + '.import'))
+                if man is not None:
+                    man.pop(name, None)
     for name, im in winter_pieces(3).items():
-        img.save(im, os.path.join(FROST, name + '.png'))
-        frost[name] = {'w': im.w, 'h': im.h, 'kind': 'sprite', 'src': 'drawn: %s (build_frost_extras.py)' % name}
+        save_safe(im, os.path.join(FROST, name + '.png'))
+        frost[name] = {'w': im.w, 'h': im.h, 'kind': 'opaque' if name in FLOORS else 'sprite', 'src': 'drawn: %s (build_frost_extras.py)' % name}
         made += 1
     save_manifest(os.path.join(FROST, 'manifest.json'), frost, b'\r\n' in open(os.path.join(FROST, 'manifest.json'), 'rb').read())
     print(made, 'pixel sprites ->', FROST)
+    data = json.dumps(wall_snow.layout(wall_snow.pieces(6)), indent=1, ensure_ascii=False) + '\n'
+    retry(lambda: open(WALL_SNOW_DATA, 'w', encoding='utf-8', newline='').write(data))
+    print('wall snow layout ->', WALL_SNOW_DATA)
 
 
 if __name__ == '__main__':

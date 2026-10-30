@@ -349,7 +349,7 @@ function buildFloor(n, SIZES, opts = {}) {
   const GC = plan.gc, GR = plan.gr, COLS = GC * SW, ROWS = GR * SH;
   const W = { n, seed: P.seed || 1, title: P.title, circle: (opts.circles || CIRCLES)[P.circle], theme, boss: P.boss, diff: difficultyFor(n, P), final: !!P.final, COLS, ROWS, C, SW, SH,
     grid: new Uint8Array(COLS * ROWS), roomAt: new Int16Array(COLS * ROWS).fill(-1), holeAt: new Uint8Array(COLS * ROWS), tileAt: new Array(COLS * ROWS),
-    rooms: plan.rooms, doors: [], props: [], decals: [], wallDecor: [], ents: [], lights: [], groups: plan.groups || {}, occupied: new Set() };
+    rooms: plan.rooms, doors: [], props: [], decals: [], wallDecor: [], ents: [], lights: [], groups: plan.groups || {}, occupied: new Set(), sizes: SIZES };
   const idx = (x, y) => y * COLS + x, inGrid = (x, y) => x >= 0 && y >= 0 && x < COLS && y < ROWS;
   const cell = (x, y) => inGrid(x, y) ? W.grid[idx(x, y)] : 0;
   const byId = {};
@@ -683,7 +683,8 @@ function generateFeatures(W, P, r, rnd, SIZES) {
   }
   const lavaBudget = Math.round((P.lava * (big ? 2.4 : 1.2)) + rnd() * .8);
   for (let k = 0; k < lavaBudget; k++) {
-    const lw = 2 + Math.floor(rnd() * 3), lh = 1 + Math.floor(rnd() * 2), spot = tryRect(lw, lh, 0);
+    // P.pool scales the pools (the Frostgruft's wide glaze ice)
+    const lw = (2 + Math.floor(rnd() * 3)) * (P.pool || 1), lh = (1 + Math.floor(rnd() * 2)) * (P.pool || 1), spot = tryRect(lw, lh, 0);
     if (spot) { H.lava(spot[0], spot[1], lw, lh); if (rnd() < .7) { const sx = spot[0] + (rnd() < .5 ? -.3 : lw + .3); if (freeL(Math.floor(sx), spot[1] + lh - 1)) H.prop(rnd() < .5 ? 'spires_lava' : 'rocks_lava', sx + .5, spot[1] + lh - .2); } }
   }
   if (P.river && big && !r.gate && !r.seq && rnd() < P.river) riverAcross(W, r, H, rnd);

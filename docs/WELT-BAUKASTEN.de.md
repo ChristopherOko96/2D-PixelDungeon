@@ -43,6 +43,8 @@ Eine Etage braucht in Godot etwa 0,5 bis 1,1 Sekunden.
   Teppich. Banner rot auf Etage 3, 6, 9, 10, sonst eine Farbe je Etage; Etage 10 brennt blau.
 - Vier bis sechs Druckplatten in fester Reihenfolge öffnen den Riesentresor (goldene Truhe) oder
   einen verborgenen Gang; mehr Platten geben mehr Belohnung. Die Reihenfolge wird nicht angezeigt.
+- Nichts überlappt: Deko, die in eine Mauer, auf die Kante einer Südmauer oder in andere Dinge ragt,
+  fällt beim Bauen weg (`tidy`, alle Welten; Schlüsselkammer und Bosstor bleiben).
 - Kein Weg ist versperrt: Moder, Gruben, Möbel und Brunnen geben jeden Weg frei
   (`clear_ways`; Brücke über Moder, Hindernis entfernt).
 - Vasen, Fässer und Kisten zerbrechen bei jedem Angriff des Helden: nichts, Runensteine, ein Herz,
@@ -98,16 +100,31 @@ Krypta und Hölle; Schlüssel in Truhen (`key_in_chest`) sind abgeschaltet.
   Stufen auf (Thema `fog`, `src/hero/story_glow.gd`, `assets/shaders/canvas_vfx_darkness.gdshader`).
 - **Leichter Schneesturm** über dem ganzen Bild, auch über HUD und Menüs, mit Böen (Thema `snowstorm`,
   `src/vfx/snowstorm.gd`).
-- **Schnee in der Welt** (Weltpaket `winter`, JS und GDScript gleich): Schneefelder auf etwa der Hälfte
-  des Bodens, um Feuer und Licht geschmolzen; Knochen und Steinhaufen stark ausgedünnt, keine
-  Ascheflecken; Schneemänner und Eisgletscher in manchen Kampfräumen (die Wegeprüfung hält alles frei).
+- **Schnee in der Welt** (Weltpaket `winter`, JS und GDScript gleich): Der Boden selbst ist Schnee
+  (Bodenkacheln beider Sätze); um jedes Feuer ist er zu nassem Stein getaut (`thaw`); Knochen und
+  Steinhaufen stark ausgedünnt, keine Ascheflecken; Schneemänner und Eisgletscher in manchen
+  Kampfräumen; Glatteis-Teiche doppelt so groß (`pool`).
+- **Eingesunken statt aufgeklebt:** Alles, was auf dem Schnee steht, hat kleine Schneepolster auf dem
+  Boden vor seinem unteren Rand, so breit wie seine Auflage (`drift_0..5`, `src/hero/frost_snow.gd`);
+  ebenso Platten, Gruben und die Ränder getauter Stellen. Eiszapfen hängen unter den Schneekappen der Mauern.
+- **Mauern im Schnee:** Jede Mauer, die aus dem Schnee aufsteigt, hat an ihrem Fuß eine schmale
+  blaugraue Kontaktfuge und darüber eine unregelmäßige Schneelippe aus Hügeln und Lücken; Innenecken
+  ein Eckhaufen, Außenecken ein Haufen um den Eckpfosten, Seitenwände nur lose Hügel; Durchgänge,
+  Türrahmen, Treppentür und breite Banner bleiben frei, die Abgrundseite ohnehin (Thema `wall_snow`,
+  `src/hero/frost_wall_snow.gd`, Stücke aus `tools/frost_dungeon/wall_snow.py`; Story 012).
+- **Tauen:** Eine angezündete Frostflamme taut den Schnee um sich herum langsam weg.
+- **Schneemann-Mimik:** Jeder Schneemann erwacht in der Nähe des Helden (120 px) zum Schneemonster
+  (Zylinder, Fratze, Zweigkrallen); es hüpft (die drei Kugeln fliegen auseinander und zurück), stürmt und
+  springt an; der Raum verriegelt (Thema `mobs.snowman`, `moves.sets.snowman`).
 - **Schneekappen** auf Mauern, Säulen, Steinen, Schädeln, Statuen, Möbeln, Toren und Truhen in beiden
   Grafik-Sätzen; Feuer, Fackeln und Schalen bleiben frei (`build_frost_extras.py`, Pixel-Originale in
   `tools/frost_dungeon/pixel_base`).
 - **Fußspuren** von Held und Monstern im Schnee, die nach einigen Sekunden verblassen; auf Glatteis
   rutscht der Held, statt zu laufen: Beine still, Neigung in Rutschrichtung, Kratzspuren und
   Eissplitter (Thema `snow`, `src/hero/frost_snow.gd`).
-- **Eisfalle** statt Stacheln: ein Spalt im Eis, aus dem beim Auslösen eine Eislawine schießt.
+- **Eisgeysir** statt Glutschlot: ein kleiner Spalt im Schnee, aus dem beim Ausbruch eine Eislawine
+  schießt; die Stachelfallen brechen als kleine Eisspitzen auf.
+- **Rutschen:** Auf Glatteis gehen pro Sekunde nur 1,5 % des Schwungs verloren (`liquid.grip`).
 
 Belege: `production/qa/evidence/frost-welt/winter-hd/` und `winter-pixel/`
 (`scripts/capture_frost_winter.gd -- <dir> [pixel|hd]`).

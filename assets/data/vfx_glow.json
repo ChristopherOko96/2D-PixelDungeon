@@ -138,6 +138,9 @@
       "mob_frost_imp_f": [
         {"at": [24, 72], "r": 30, "color": "#bff0f7", "alpha": 0.35, "when": "dash"}
       ],
+      "mob_snowman_f": [
+        {"at": [51, 117], "r": 22, "color": "#ff8a3a", "alpha": 0.3, "pulse": 0.6}
+      ],
       "mob_frost_necromancer_f": [],
       "mob_frost_corpse_f": [],
       "mob_frost_commander": [],

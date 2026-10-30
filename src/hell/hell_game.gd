@@ -618,6 +618,13 @@ func load_floor(n: int, carry: bool) -> void:
 			var area := Rect2(cx * C, cy * C, CHUNK.x * C, CHUNK.y * C)
 			_chunk_nodes.append(_layer("back", 0, area))
 			_chunk_nodes.append(_layer("front", 20, area))
+			# in the snow: the walls' contact seams and snow lips over the walls, under the actors, and
+			# the lips at the back of front walls over those (src/hero/frost_wall_snow.gd)
+			if frost_snow != null:
+				for spec: Array in [["snow_ao", 1], ["snow_lip", 2], ["snow_front", 21]]:
+					var snow_layer := _layer(spec[0], spec[1], area)
+					snow_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+					_chunk_nodes.append(snow_layer)
 	var start := _room_of_type("start")
 	var talent: Dictionary = MetaStore.run_bonus(meta_data, meta, class_id) if not meta.is_empty() else {}
 	if not carry or state.is_empty() or _resuming:
@@ -1274,6 +1281,7 @@ func act() -> void:
 					_toast("Erst alle Gegner im Raum besiegen.")
 					return
 				e.lit = true
+				e.lit_at = float(state.t)
 				W.lights.append({"x": e.x, "y": e.y - 70, "r": 280, "c": "255,140,60"})
 				# glow hook: the bowl catches fire in a crypt burst (its bloom and light: src/hero/story_glow.gd)
 				if feel != null:
@@ -1331,6 +1339,8 @@ func _open_secret(d: Dictionary) -> void:
 	if feel != null:
 		feel.open_cells(d.cells)
 	walls = Walls.build(W.grid, W.cols, W.rows, C)
+	if frost_snow != null:
+		frost_snow.walls_changed()
 	for node: Layer in _chunk_nodes:
 		node.queue_redraw()
 
@@ -2548,6 +2558,9 @@ func draw_layer(l: Layer) -> void:
 	match l.kind:
 		"back": _draw_back(l)
 		"front": _draw_front(l)
+		"snow_ao": frost_snow.walls.draw(l, l.area, "ao")
+		"snow_lip": frost_snow.walls.draw(l, l.area, "lip")
+		"snow_front": frost_snow.walls.draw(l, l.area, "front")
 		"actors": _draw_actors(l)
 		"glow":
 			if monsters != null:
@@ -2660,7 +2673,9 @@ func _draw_back(l: Layer) -> void:
 		l.draw_texture_rect(t, rect, false, Color(1, 1, 1, float(d.a)))
 	for w: Dictionary in walls.north:
 		if w.y + 74.0 >= a.position.y and w.y + 74.0 < a.end.y and w.x1 > a.position.x and w.x0 < a.end.x:
-			l.draw_rect(Rect2(maxf(w.x0, a.position.x), w.y + 74.0, minf(w.x1, a.end.x) - maxf(w.x0, a.position.x), 40.0), Color(0, 0, 0, 0.35))
+			# the wall's shade on the floor; in the snow (frost_snow) snow drifts lie at its foot instead
+			if frost_snow == null:
+				l.draw_rect(Rect2(maxf(w.x0, a.position.x), w.y + 74.0, minf(w.x1, a.end.x) - maxf(w.x0, a.position.x), 40.0), Color(0, 0, 0, 0.35))
 			_strip(l, w, a)
 	var wv: Texture2D = tex.wall_v
 	for s: Dictionary in walls.side:
@@ -2713,6 +2728,7 @@ func _draw_actors(l: Layer) -> void:
 	FrostCombat.draw_under(self, l, t)
 	# footprints in the snow and skid marks on the ice, under everyone (src/hero/frost_snow.gd)
 	if frost_snow != null:
+		frost_snow.draw_ground(l, view)
 		frost_snow.draw_floor(l, view)
 		frost_snow.draw_chips(l)
 	if talents != null: talents.draw_world(l, t)
@@ -2733,6 +2749,12 @@ func _draw_actors(l: Layer) -> void:
 				var size := im.get_size() - Vector2(0, 0 if up else 16)
 				l.draw_texture_rect(im, Rect2(Vector2(e.x, e.y + (0 if up else 8)) - im.get_size() / 2.0, size), false, Color(1, 1, 1, 1.0 if up else 0.3))
 			"vent":
+				if tex.has("ice_crack"):
+					# the Frostgruft's ice geyser: a small crack in the snow that erupts in an ice avalanche
+					var hz: Dictionary = balance.hazards
+					var since := fmod(float(state.t) + float(e.offset), float(hz.vent_period))
+					_draw_ice_burst(l, Vector2(e.x, e.y), since if e.get("burst", false) else -1.0, 0.85)
+					continue
 				l.draw_texture(tex.vent, Vector2(e.x, e.y) - tex.vent.get_size() / 2.0)
 			"plate":
 				_draw_plate(l, e, t)
@@ -2774,6 +2796,10 @@ func _draw_actors(l: Layer) -> void:
 	list.append([player.y, "hero", player])
 	list.sort_custom(func(x: Array, y: Array) -> bool: return x[0] < y[0])
 	for item: Array in list:
+		# The shallow depression belongs behind the object. Foreground snow is fitted to the real
+		# lower silhouette (baked into substantial props, drawn here only for tiny loose items).
+		if frost_snow != null and item[1] in ["prop", "ent", "breakable"]:
+			frost_snow.draw_foot_under(l, item[1], item[2])
 		match item[1]:
 			"prop":
 				var p: Dictionary = item[2]
@@ -2793,6 +2819,9 @@ func _draw_actors(l: Layer) -> void:
 			"breakable": _draw_breakable(l, item[2], t)
 			"clone": _draw_clone(l, t)
 			"hero": _draw_hero(l, t)
+		# Tiny loose items alone need a runtime foreground accent.
+		if frost_snow != null and item[1] in ["prop", "ent", "breakable"]:
+			frost_snow.draw_foot_over(l, item[1], item[2])
 	# the cuts' chips, embers and flashes over the actors
 	if drake_rig != null:
 		drake_rig.draw_over(l)
@@ -3188,20 +3217,46 @@ func _draw_clone(l: Layer, t: float) -> void:
 		l.draw_texture_rect(im, Rect2(pos - Vector2(size.x / 2.0, 0), size), false, tint)
 
 
+## A snowman (prop "snowman", the Frostgruft's mimic) wakes as the snow monster (theme mob
+## "snowman"): the snowman is gone, a burst of snow, the room locks and the fight is on.
+func wake_snowman(p: Dictionary) -> void:
+	var at := Vector2(p.x, p.y)
+	W.props.erase(p)
+	_index_solids()
+	var room := _room_at_world(at.x, at.y)
+	if room < 0 or not theme.get("mobs", {}).has("snowman"):
+		return
+	var r: Dictionary = W.rooms[room]
+	r.fight = true
+	r.cleared = false
+	_spawn_mob(room, at, "snowman")
+	for i in range(24):
+		frost_snow.chips.append({"p": at + Vector2(randf_range(-30, 30), randf_range(-90, -10)), "v": Vector2(randf_range(-220, 220), randf_range(-380, -120)), "t": 0.0})
+	state.shake = maxf(float(state.shake), 9.0)
+	_sound("hit_bone")
+	_toast("Der Schneemann erwacht! Die Gitter fallen.")
+
+
 ## The Frostgruft's trap (tex ice_crack / ice_burst): a thin crack in the ice at rest; when it fires
 ## an ice burst shoots up out of it (quick rise, then it stands and shimmers until it sinks back).
 func _draw_ice_trap(l: Layer, e: Dictionary, up: bool) -> void:
-	var crack: Texture2D = tex.ice_crack
-	l.draw_texture(crack, Vector2(e.x, e.y) - crack.get_size() / 2.0)
-	if not up:
-		return
 	var period := float(balance.hazards.spike_period)
-	var since := fmod(float(state.t), period)
+	_draw_ice_burst(l, Vector2(e.x, e.y), fmod(float(state.t), period) if up else -1.0, 0.55)
+
+
+## A crack in the snow (tex ice_crack) and, `since` s after it broke open (negative: closed), the
+## ice bursting up out of it (tex ice_burst): a quick rise, then it stands and shimmers. `scale`
+## sizes it (the ice geysers erupt bigger than the spike traps).
+func _draw_ice_burst(l: Layer, at: Vector2, since: float, scale: float) -> void:
+	var crack: Texture2D = tex.ice_crack
+	l.draw_texture_rect(crack, Rect2(at - crack.get_size() * scale / 2.0, crack.get_size() * scale), false)
+	if since < 0.0:
+		return
 	var rise := clampf(since / 0.12, 0.0, 1.0)
 	var burst: Texture2D = tex.ice_burst
-	var size := burst.get_size() * Vector2(1.0, rise)
-	var shimmer := 0.85 + 0.15 * sin(float(state.t) * 18.0 + e.x)
-	l.draw_texture_rect(burst, Rect2(Vector2(e.x - size.x / 2.0, e.y + 8.0 - size.y), size), false, Color(1.0, 1.0, 1.0, shimmer))
+	var size := burst.get_size() * scale * Vector2(1.0, rise)
+	var shimmer := 0.85 + 0.15 * sin(float(state.t) * 18.0 + at.x)
+	l.draw_texture_rect(burst, Rect2(Vector2(at.x - size.x / 2.0, at.y + 8.0 - size.y), size), false, Color(1.0, 1.0, 1.0, shimmer))
 
 
 func _draw_hero(l: Layer, t: float) -> void:

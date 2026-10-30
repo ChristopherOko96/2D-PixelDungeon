@@ -47,8 +47,16 @@ func _run() -> void:
 	quit(1 if failures.size() > 0 else 0)
 
 
+## The worlds open in their pixel set here, whatever the player chose (src/core/graphics_settings.gd).
+const GRAPHICS := "user://frost_runtime_test.cfg"
+
+
 func _new(scene: PackedScene, floor_n := 1, class_id := "") -> Node:
+	var cfg := ConfigFile.new()
+	cfg.set_value("options", "graphics", "pixel")
+	cfg.save(GRAPHICS)
 	var game: Node = scene.instantiate()
+	game.graphics_path = GRAPHICS
 	game.start_floor = floor_n
 	game.class_id = class_id
 	root.add_child(game)

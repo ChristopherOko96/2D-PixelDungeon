@@ -68,17 +68,55 @@
       bossGate(W);
       decorate(W);
       if (PACK.winter) winter(W);
+      tidy(W);
       blueLight(W);
       // last: mire, pits, furniture and fountain never block a way (world kit rule)
       const core = (typeof self !== 'undefined' && self.WorldCore) || (typeof require === 'function' && require('../world_kit/world_core.js'));
       core.clearWays(W);
       return W;
     }
-    // A snowy world (PACK.winter): fewer bones and stone heaps (thin_decals / thin_props keep that
-    // share), snow fields on the floor grown from seeds (one per `seed_cells` cells, each 1.4 to 2.6
-    // cells across, each drift P.size px so neighbours merge into one field), never within `melt` cells of a fire or light, and here and there a snowman or a
-    // glacier against the cold (`snowman`, `glacier`: chance per fight room). Furniture rules as in
-    // decorate(); clearWays() afterwards keeps every way free.
+    // Nothing overlaps (world kit rule): a decoration prop (TIDY) whose lower part reaches into a
+    // wall, whose foot sits right on the edge of a south wall, or whose foot overlaps another
+    // prop's foot or a thing on the floor (chests, crates, bowls, plates, traps, pits) is taken
+    // away, its light with it. Key rooms and the boss gate's approach keep their furniture.
+    const TIDY = new Set(['skull_pile', 'spires_t', 'spire_mid', 'rocks_a', 'rocks_b', 'coal_skulls', 'boulders', 'cage_small', 'spire_big', 'spire_big_b',
+      'spire_big_t', 'spires_lava', 'rocks_lava', 'rocks_dark', 'spire_small', 'spire_t', 'skull_obelisk', 'rune_pillar_a', 'rune_pillar_b', 'rune_pillar_c',
+      'rune_pillar_d', 'obelisk', 'bone_a', 'bone_b', 'bone_c', 'bone_d', 'bone_e', 'bone_f', 'bone_g', 'bones_scatter', 'bones_t', 'rubble', 'coal',
+      'skull_pile_t', 'brazier_bowl', 'brazier_pillar', 'brazier_rune', 'brazier_low', 'brazier_low_b', 'brazier_floor', 'brazier_demon',
+      'table_a', 'table_b', 'table_c', 'candelabra', 'crate_pile', 'sacks_b', 'moss_rubble_a', 'moss_rubble_b', 'moss_ruin', 'snowman', 'glacier_a', 'glacier_b']);
+    const ENT_FOOT = { chest: [80, 32], crate: [60, 30], brazier: [56, 30], vault: [140, 50], well: [112, 44], stairs: [140, 50], plate: [84, 84], spikes: [96, 96],
+      vent: [96, 96], key: [40, 30], heart: [40, 30], gem: [40, 30], skullheap: [92, 40], seal: [70, 40], npc: [40, 30], portal: [144, 40], shop: [150, 44] };
+    function tidy(W) {
+      const C = 96, idx = (x, y) => y * W.COLS + x, sizes = W.sizes || {};
+      const hit = (a, b) => a[0] < b[2] && b[0] < a[2] && a[1] < b[3] && b[1] < a[3];
+      const foot = p => { const s = sizes[p.name] || [64, 64], w = s[0] * .84, h = Math.min(s[1] * .45, 60); return [p.x - w / 2, p.y - h, p.x + w / 2, p.y]; };
+      const roomOf = p => W.roomAt[idx(Math.floor(p.x / C), Math.floor((p.y - 8) / C))];
+      const spared = p => { const r = W.rooms[roomOf(p)]; return !TIDY.has(p.name) || !r || r.gtype === 'key' || W.reserved.has(idx(Math.floor(p.x / C), Math.floor((p.y - 8) / C))); };
+      // its lower part and a little below its foot must be floor of its own room
+      const inWall = p => {
+        const s = sizes[p.name] || [64, 64], r = roomOf(p), x0 = p.x - s[0] * .42, x1 = p.x + s[0] * .42, y0 = p.y - s[1] * .6, y1 = p.y + .25 * C;
+        for (let y = Math.floor(y0 / C); y <= Math.floor(y1 / C); y++) for (let x = Math.floor(x0 / C); x <= Math.floor(x1 / C); x++) if (W.grid[idx(x, y)] === 0 || W.roomAt[idx(x, y)] !== r) return true;
+        return false;
+      };
+      const taken = W.ents.filter(e => ENT_FOOT[e.type]).map(e => { const f = ENT_FOOT[e.type]; return [e.x - f[0] / 2, e.y - f[1], e.x + f[0] / 2, e.y]; });
+      for (const d of W.decals) if (d.name === 'pit') taken.push([d.x - C / 2, d.y - C / 2, d.x + C / 2, d.y + C / 2]);
+      for (const p of W.props) if (spared(p)) taken.push(foot(p));
+      const gone = new Set();
+      for (const p of W.props) {
+        if (spared(p)) continue;
+        const f = foot(p);
+        if (inWall(p) || taken.some(t => hit(f, t))) { gone.add(p); continue; }
+        taken.push(f);
+      }
+      if (!gone.size) return;
+      W.lights = W.lights.filter(l => ![...gone].some(p => Math.abs(l.x - p.x) < 2 && l.y < p.y));
+      W.props = W.props.filter(p => !gone.has(p));
+    }
+    // A snowy world (PACK.winter): the floor itself is snow (the skin's floor tiles); fewer bones and
+    // stone heaps (thin_decals / thin_props keep that share); around every burning prop (thaw_props)
+    // the snow has melted to the stone floor (a `thaw` patch, thaw_size px); here and there a snowman
+    // or a glacier against the cold (`snowman`, `glacier`: chance per fight room). Furniture rules as
+    // in decorate(); clearWays() afterwards keeps every way free.
     function winter(W) {
       const C = 96, idx = (x, y) => y * W.COLS + x, P = PACK.winter;
       let a = (W.seed * 11 + 5) | 0;
@@ -87,20 +125,11 @@
       // fewer bones and heaps
       W.decals = W.decals.filter(d => !P.thin_decals.names.includes(d.name) || rnd() < P.thin_decals.keep);
       W.props = W.props.filter(p => !P.thin_props.names.includes(p.name) || rnd() < P.thin_props.keep);
-      // fire and light melt the snow around them
-      const melt = (P.melt * C) * (P.melt * C);
-      const warm = (x, y) => W.lights.some(l => (l.x - (x + .5) * C) * (l.x - (x + .5) * C) + (l.y - (y + .5) * C) * (l.y - (y + .5) * C) < melt);
-      const snow = new Set();
+      // fire melts the snow around it down to the stone floor
+      for (const p of W.props) if (P.thaw_props.includes(p.name)) W.decals.push({ name: pick(P.thaw), x: p.x, y: p.y - 24, w: P.thaw_size, h: P.thaw_size, a: 1 });
       for (const r of W.rooms) {
         const cells = r.cells.filter(([x, y]) => W.grid[idx(x, y)] === 1 && !W.reserved.has(idx(x, y)));
         if (!cells.length) continue;
-        for (let k = 0, n = 1 + Math.floor(cells.length / P.seed_cells); k < n; k++) {
-          const [sx, sy] = cells[Math.floor(rnd() * cells.length)], rr = 2 + Math.floor(rnd() * 6);
-          for (const [x, y] of cells) if ((x - sx) * (x - sx) + (y - sy) * (y - sy) <= rr && !snow.has(idx(x, y)) && !warm(x, y)) {
-            snow.add(idx(x, y));
-            W.decals.push({ name: pick(P.snow), x: (x + .5) * C, y: (y + .5) * C, w: P.size, h: P.size, a: 1 });
-          }
-        }
         // a snowman or a glacier in some fight rooms, on free floor away from the doors
         if (r.type !== 'combat') continue;
         for (const [name, chance] of [['snowman', P.snowman], [pick(P.glaciers), P.glacier]]) {
