@@ -126,8 +126,9 @@ static func music_state(game: Node) -> String:
 ## kind, a guardian's look (its "rig", else its sprite without prefix and
 ## frame suffix: mob_frost_necromancer_f -> frost_necromancer).
 static func rig(m: Dictionary) -> String:
+	# a crypt rig worn at another world's size (drake_rig_host.gd adopt_looks: "skeleton@5@bone") sounds as that rig
 	if str(m.get("rig", "")) != "":
-		return str(m.rig)
+		return str(m.rig).get_slice("@", 0)
 	if m.has("id"):
 		return str(m.id)
 	var kind := str(m.get("kind", ""))

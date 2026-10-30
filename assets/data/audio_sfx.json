@@ -3,6 +3,7 @@
  "schema_version": 2,
  "output": "res://assets/audio/sfx/",
  "rig_materials": {
+  "skelett": "bone", "skelettschuetze": "bone", "skelettwache": "bone", "nekromant": "flesh", "zombie": "flesh", "eiszombie": "bone", "leerenbomber": "void", "mimik": "flesh", "knochenwaechter": "bone", "grabmutter": "flesh", "moderkoloss": "flesh", "nekromantenfuerst": "flesh", "truhenfresser": "flesh", "frostleiche": "flesh", "archivar": "flesh", "leerenbrut": "void", "knochenkoloss": "bone", "leerenrufer": "void",
   "skeleton": "bone",
   "skel_archer": "bone",
   "skel_guard": "bone",

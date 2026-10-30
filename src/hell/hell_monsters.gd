@@ -55,6 +55,10 @@ const PX_COL := {
 	"void": [Color("fdf7ed"), Color("f0b3dd"), Color("c278d0"), Color("8156aa")],
 	"soul": [Color("fdf7ed"), Color("cfe86b"), Color("97da3f"), Color("4ba747")],
 	"chain": [Color("fdf7ed"), Color("b6cbcf"), Color("7b8994"), Color("414859")],
+	"bone": [Color("fdf7ed"), Color("e8dcc8"), Color("c9b49a"), Color("8f7f70")],
+	"poison": [Color("e8ff9a"), Color("a8e04a"), Color("6fae3a"), Color("3b6b2a")],
+	"frost": [Color("ffffff"), Color("e6fbff"), Color("a6e3f7"), Color("6fbde8")],
+	"gold": [Color("fdf7ed"), Color("ffe08a"), Color("facb3e"), Color("c08a2a")],
 }
 ## A thrown boulder (an attack's "look": "boulder"): dark rock with a lava vein,
 ## turned a quarter at a time as it flies (a outline, b rock, c lit rock, d shade, l lava).
@@ -69,6 +73,8 @@ const CHUNK_COL := [Color("4f343c"), Color("8a5f52"), Color("2e1e28")]
 ## Floor cracks of a slam glowing hot to cold, and how long they last (s).
 const CRACK_COL := [Color("facb3e"), Color("ee8e2e"), Color("da4e38"), Color("5f2d56"), Color("1c1117")]
 const CRACK_TIME := 2.6
+## Cracks of a slam that is no fire (an element of the crypt): cold stone, no glow.
+const CRACK_COLD := [Color("4a3e44"), Color("1c1117")]
 ## Lava running over a pool's rim, white-hot where it wells over to its cooling edge.
 const SPILL_COL := [Color("ffe08a"), Color("facb3e"), Color("ee8e2e"), Color("b8401e")]
 ## Floor dust and grit a shockwave kicks up (it settles as rubble).
@@ -86,7 +92,21 @@ const HAND_FIST := [".......", ".ooooo.", "ohwhwho", "obbbbbo", "obbbbbo", "obbb
 ## Longest step of a knockback per frame (world px; well under a 96 px cell).
 const KNOCK_STEP := 24.0
 ## The crypt's wall-hit style of an enemy shot by its colour (feedback.gd WALL_STYLES).
-const SHOT_WALL := {"fire": "fire", "lava": "fire", "void": "void", "soul": "magic"}
+const SHOT_WALL := {"fire": "fire", "lava": "fire", "void": "void", "soul": "magic", "bone": "bone", "poison": "poison", "frost": "frost", "gold": "gold"}
+## The crypt's elements (Story 1, krypta_monsters.json "shot"): a figure that
+## names one shoots, lobs, breathes and slams in it, and what it leaves on the
+## floor is its matter (bone splinters, poison drops, rime, gold glints). The
+## hell's figures name none and keep Rules.shot_color and their fire.
+const OWN_ELEMENTS := ["bone", "poison", "frost", "gold", "soul", "void"]
+## The elements only the crypt has: their bursts, warnings and cracks are their own
+## (_burst_in, _warn_col); void and soul look as in the hell.
+const CRYPT_ELEMENTS := ["bone", "poison", "frost", "gold"]
+## The elements that pool as a liquid or a sheet (assets/data/vfx_pools.json "materials"):
+## a hopper of one leaves a puddle of it where it lands, the others only their residue.
+const POOL_ELEMENTS := ["poison", "frost", "void"]
+## What the hero reads when a shot of an element hits him.
+const HURT_BY := {"void": "von Leerenfeuer getroffen", "soul": "von Seelenfeuer getroffen", "bone": "von Knochen getroffen", "poison": "von Gift getroffen",
+	"frost": "von Frost getroffen", "gold": "von Gold getroffen"}
 
 var g: Node
 var defs: Dictionary = {}
@@ -169,6 +189,16 @@ func boss_label(m: Dictionary) -> String:
 
 # ---------- spawning ----------
 
+## How high above its feet a monster's body centre sits (world px): where hero
+## shots hit it and its shots and bursts start. The def's measured hit_cy (art
+## px; the crypt's figures, tools/krypta_dungeon/export_monsters.js) when it has
+## one, else 0.45 of its frame height.
+static func hit_cy(def: Dictionary) -> float:
+	if def.has("hit_cy"):
+		return float(def.hit_cy) * float(def.scale)
+	return float(def.h) * float(def.scale) * 0.45
+
+
 ## Adds monster id at pos to room; a boss takes the floor's boss HP.
 func spawn(room: int, pos: Vector2, id: String, boss := false) -> Dictionary:
 	var def: Dictionary = defs[id]
@@ -179,7 +209,7 @@ func spawn(room: int, pos: Vector2, id: String, boss := false) -> Dictionary:
 		cds.append(Rules.first_cooldown(a, randf()))
 	var m := {"room": room, "id": id, "def": def, "st": st, "boss": boss, "kind": "boss" if boss else "mob", "p": pos,
 		"hp": hp, "max": hp, "sp": float(st.speed) * (1.0 if boss else float(g.W.diff.speed)), "s": float(def.scale),
-		"r": float(st.r), "cy": float(def.h) * float(def.scale) * 0.45, "seed": randf() * 9.0, "k": Vector2.ZERO,
+		"r": float(st.r), "cy": hit_cy(def), "seed": randf() * 9.0, "k": Vector2.ZERO,
 		"hit": 0.0, "spawn": float(cfg.spawn_grow), "act": null, "anim": "idle", "at": 0.0, "face": 1.0, "alpha": 1.0,
 		"hop_t": randf(), "cds": cds, "alt": 0.0, "sink": 0.0, "burrowed": false, "intro": null, "trans": null,
 		"dying": null, "circ": 1.0, "landed": false, "trail": 0.0}
@@ -312,7 +342,7 @@ func pool_entries() -> Array:
 		if z.kind != "puddle":
 			continue
 		var dir: Vector2 = z.get("dir", Vector2.ZERO)
-		out.append({"id": int(z.id), "k": "pool", "st": "lava", "x": z.p.x, "y": z.p.y, "r": float(z.r) * 0.8, "dx": dir.x, "dy": dir.y,
+		out.append({"id": int(z.id), "k": "pool", "st": str(z.get("st", "lava")), "x": z.p.x, "y": z.p.y, "r": float(z.r) * 0.8, "dx": dir.x, "dy": dir.y,
 			"p": clampf(float(z.t) / maxf(0.01, float(z.T)), 0.0, 1.0), "L": float(z.T)})
 	return out
 
@@ -417,7 +447,8 @@ func update(dt: float) -> void:
 			# uid: Ignaroth's rig keeps falling apart in the corpse (src/hell/drake_rig_host.gd)
 			corpses.append({"id": m.id, "p": m.p, "s": m.s, "face": m.face, "t": 0.0, "uid": m.get("uid", -1)})
 		if m.trans == null and not m.get("quiet", false):
-			g._burst(m.p - Vector2(0, m.cy), 80 if m.boss else 18)
+			# a crypt figure bursts in its element (bone splinters, poison, frost, gold), the hell's in embers
+			_burst_in(m.p - Vector2(0, m.cy), 80 if m.boss else 18, own_element(m))
 			# the shared combat feel: burst in the monster's material, chips, a stain
 			FrostCombat.after_kill(g, m)
 		# experience: felled monsters and a defeated boss form; echoes and swept-away adds give none
@@ -462,7 +493,13 @@ func _move(m: Dictionary, dt: float, to: Vector2, d: float) -> Vector2:
 				v = n * m.sp * 2.3
 			elif ph < 0.45 + dt and not m.landed:
 				m.landed = true
-				_zone({"kind": "puddle", "p": m.p, "r": 40.0, "T": 1.6, "dmg": 1, "m": m})
+				# it lands in a splash of its matter: the hell's hoppers in lava, the crypt's zombies in
+				# their poison; a chest of gold only scatters gold dust (no pool of gold or bone)
+				var own := own_element(m)
+				if own == "" or own in POOL_ELEMENTS:
+					_zone({"kind": "puddle", "p": m.p, "r": 40.0, "T": 1.6, "dmg": 1, "m": m, "st": "lava" if own == "" else own})
+				else:
+					_residue(m.p, own, 3, 20.0)
 			if ph > 0.5:
 				m.landed = false
 		"skirmish":
@@ -541,7 +578,10 @@ func _run_act(m: Dictionary, dt: float) -> void:
 			head = rig_host.part_point(m, str(src[0]), Vector2(float(src[1]), float(src[2])), head)
 	var me := _me()
 	var dmg := int(cfg.hit_boss) if m.boss else int(cfg.hit_mob)
-	var color := Rules.shot_color(m.id, m.has("echo"))
+	# the crypt's figures attack in their own element, the hell's in fire (an echo is void)
+	var own := own_element(m)
+	var color := own if own != "" and not m.has("echo") else Rules.shot_color(m.id, m.has("echo"))
+	var hot := own if own != "" else "fire"
 	if A.kind in Rules.DRAGON_KINDS:
 		_run_dragon_act(m, dt)
 		return
@@ -578,7 +618,7 @@ func _run_act(m: Dictionary, dt: float) -> void:
 				for k in range(int(a.get("count", 1))):
 					var aim := me + (Vector2(randf_range(-130, 130), randf_range(-100, 100)) if k > 0 else Vector2.ZERO)
 					lobs.append({"from": head, "to": aim, "t": 0.0, "T": 0.8 + k * 0.12, "r": float(a.get("radius", 70.0)),
-						"dmg": dmg, "m": m, "c": "lava" if m.id in LAVA_LOBBERS else "fire", "done": false, "look": str(a.get("look", ""))})
+						"dmg": dmg, "m": m, "c": "lava" if m.id in LAVA_LOBBERS else hot, "done": false, "look": str(a.get("look", "")), "pool": bool(m.def.get("pool", false))})
 			if t > 0.7:
 				m.act = null
 			return
@@ -587,7 +627,7 @@ func _run_act(m: Dictionary, dt: float) -> void:
 			# a breath leaves every mouth it still has (a many-headed beast: its drawn mouths)
 			var mouths: Array = _mouths(m, a, head) if A.kind == "breath" else []
 			if A.kind == "breath":
-				_breath_fx(A, a, mouths, t, wind, dt)
+				_breath_fx(A, a, mouths, t, wind, dt, hot)
 			# souls gather in the staff before they are let go
 			if str(a.get("look", "")) == "wisp" and A.n == 0 and t < wind:
 				_charge_fx(m, A, head, color, dt)
@@ -608,7 +648,7 @@ func _run_act(m: Dictionary, dt: float) -> void:
 							ang = (me - Vector2(0, 30) - mouth).angle() + (float(h) - float(mini(heads, mouths.size()) - 1) / 2.0) * 0.25 \
 								+ ((float(k) / (count - 1) - 0.5) * spread if count > 1 else 0.0) + randf_range(-0.075, 0.075)
 							_shot(mouth, Vector2.from_angle(ang), 380.0 + randf() * 140.0,
-								{"t": float(a.get("range", 260.0)) / 450.0, "small": true, "c": "fire", "breath": true})
+								{"t": float(a.get("range", 260.0)) / 450.0, "small": true, "c": hot, "breath": true})
 						elif A.kind == "homing":
 							var fan := (k - (count - 1) / 2.0) * 0.6
 							_shot(head - Vector2(0, 20), Vector2.from_angle(ang + fan), float(a.get("speed", 250.0)), {"t": 4.5, "homing": 2.2, "c": color, "look": str(a.get("look", ""))})
@@ -678,20 +718,22 @@ func _run_act(m: Dictionary, dt: float) -> void:
 				A.n = 1
 				_released(m)
 				if a.get("line", false):
-					_zone({"kind": "line", "p": m.p, "ang": (me - m.p).angle(), "len": float(a.radius) * 2.6, "w": 70.0, "tele": 0.45, "T": 0.8, "dmg": dmg, "m": m})
+					_zone({"kind": "line", "p": m.p, "ang": (me - m.p).angle(), "len": float(a.radius) * 2.6, "w": 70.0, "tele": 0.45, "T": 0.8, "dmg": dmg, "m": m, "c": hot})
 				else:
-					_zone({"kind": "wave", "p": m.p, "r": float(a.radius), "T": 0.5, "dmg": dmg, "m": m, "c": "fire"})
-				g._burst(m.p - Vector2(0, 10), 50 if m.boss else 16)
+					_zone({"kind": "wave", "p": m.p, "r": float(a.radius), "T": 0.5, "dmg": dmg, "m": m, "c": hot})
+				_burst_in(m.p - Vector2(0, 10), 50 if m.boss else 16, hot)
 				# the floor breaks: glowing cracks, rock chunks and sparks thrown up
 				if not a.get("line", false):
-					_crack_floor(m.p, float(a.radius), 9 if m.boss else 5)
+					_crack_floor(m.p, float(a.radius), 9 if m.boss else 5, own != "")
 				_pixel_burst(m.p - Vector2(0, 4), 24 if m.boss else 8, CHUNK_COL, 300.0, 420.0, 1.1, 2)
-				_pixel_burst(m.p - Vector2(0, 8), 30 if m.boss else 10, PX_COL.lava, 420.0, 520.0, 0.7)
-				_phys_blast(m.p, float(a.radius), 18 if m.boss else 6, 1.2)
+				_pixel_burst(m.p - Vector2(0, 8), 30 if m.boss else 10, PX_COL.lava if own == "" else PX_COL[own], 420.0, 520.0, 0.7)
+				_phys_blast(m.p, float(a.radius), (18 if m.boss else 6) if own == "" else 0, 1.2)
+				if own != "":
+					_residue(m.p, own, 14 if m.boss else 6, float(a.radius) * 0.5)
 				# a cleave hits medium where the blade lands (its split strikes after); a stomp hits large
 				_impact(m.p, "medium" if a.get("line", false) else "large", m)
-				if m.id in PUDDLE_SLAMMERS:
-					_zone({"kind": "puddle", "p": m.p, "r": 120.0 if m.boss else 52.0, "T": 2.6, "dmg": 1, "m": m})
+				if m.id in PUDDLE_SLAMMERS or bool(m.def.get("pool", false)):
+					_zone({"kind": "puddle", "p": m.p, "r": 120.0 if m.boss else 52.0, "T": 2.6, "dmg": 1, "m": m, "st": "lava" if own == "" else own})
 			if A.n == 0 and not leap:
 				A.warn_at = m.p
 			if t > (1.1 if leap else 1.05):
@@ -727,7 +769,7 @@ func _run_act(m: Dictionary, dt: float) -> void:
 						var p := free_spot(m.room, m.p, 90, 200)
 						var s := spawn(m.room, p, id)
 						s.spawn = 0.8
-						g._burst(p - Vector2(0, 20), 14)
+						_burst_in(p - Vector2(0, 20), 14, color)
 						# a brood thrown out of the cauldron: lava arcs over to where it hatches
 						if str(a.get("hatch", "")) == "lava":
 							_lava_arc(m.p, m.p.y - head.y, p, 12)
@@ -743,7 +785,7 @@ func _run_act(m: Dictionary, dt: float) -> void:
 			if A.n == 0:
 				A.n = 1
 				_released(m)
-				g._burst(head, 18)
+				_burst_in(head, 18, color)
 				m.p = free_spot(m.room, me, 170, 260)
 			m.alpha = minf(1.0, (t - 0.35) / 0.3)
 			if t > 0.7:
@@ -769,7 +811,7 @@ func _run_act(m: Dictionary, dt: float) -> void:
 				for k in range(int(a.count)):
 					var p := me if k == 0 else me + Vector2(randf_range(-260, 260), randf_range(-190, 190))
 					_zone({"kind": "meteor" if meteor else "hand", "p": p, "r": float(a.radius), "t": -k * fall - float(a.get("delay", 0.0)),
-						"tele": 1.0 if meteor else 0.85, "T": 1.35 if meteor else 1.25, "dmg": dmg, "m": m, "look": str(a.get("look", ""))})
+						"tele": 1.0 if meteor else 0.85, "T": 1.35 if meteor else 1.25, "dmg": dmg, "m": m, "look": str(a.get("look", "")), "c": own})
 			if t > (0.9 if slag else 0.8):
 				m.act = null
 			return
@@ -1067,7 +1109,7 @@ func _set_form(m: Dictionary, id: String) -> void:
 	m.st = def.stats
 	m.s = float(def.scale)
 	m.r = float(def.stats.r)
-	m.cy = float(def.h) * float(def.scale) * 0.45
+	m.cy = hit_cy(def)
 	# rig hook: the next form's rig comes complete, same uid and HP (no regrow inside his forms)
 	if rig_host != null:
 		rig_host.on_form_changed(m)
@@ -1185,7 +1227,7 @@ func _update_zones(dt: float) -> void:
 			"puddle":
 				# where the lava really lies (its pool) when the floor draws pools, else its circle
 				var pools: RefCounted = g.get("pools")
-				hit = (pools.covers(me, "lava") if pools != null else d < z.r) and g.state.inv <= 0.0
+				hit = (pools.covers(me, str(z.get("st", "lava"))) if pools != null else d < z.r) and g.state.inv <= 0.0
 			"erupt", "land":
 				hit = z.dmg > 0 and d < z.r
 				z.done = true
@@ -1205,14 +1247,18 @@ func _update_zones(dt: float) -> void:
 				hit = along > 0.0 and along < z.len and absf(dir.cross(rel)) < z.w / 2.0
 				var k := 0.0
 				while k < z.len:
-					g._burst(z.p + dir * k, 4)
+					_burst_in(z.p + dir * k, 4, str(z.get("c", "")))
 					k += 60.0
 				_fissure(z)
 				z.done = true
 			_:
 				hit = d < z.r
-				g._burst(z.p - Vector2(0, 20), 26 if z.kind == "meteor" else 10)
+				_burst_in(z.p - Vector2(0, 20), 26 if z.kind == "meteor" else 10, str(z.get("c", "")))
 				z.done = true
+				# a meteor of an element shatters into its matter
+				if z.kind == "meteor" and str(z.get("c", "")) in OWN_ELEMENTS:
+					_pixel_burst(z.p - Vector2(0, 6), 14, PX_COL.get(str(z.c), PX_COL.fire), 260.0, 380.0, 0.8)
+					_residue(z.p, str(z.c), 10, float(z.r) * 0.6)
 				# a slag drop splashes: slag and lava thrown up, cracks, a small burning pool
 				if str(z.get("look", "")) == "slag":
 					_slag_spout(z.m, z.p, 7, float(z.r) * 0.6)
@@ -1232,24 +1278,28 @@ func _update_zones(dt: float) -> void:
 	# a lava pool that goes out leaves its crust glowing: embers that sizzle and cool to soot
 	for z: Dictionary in zones:
 		if z.kind == "puddle" and z.t >= z.T:
-			_residue(z.p, "lava", int(float(z.r) / 4.0), float(z.r) * 0.8)
+			_residue(z.p, str(z.get("st", "lava")), int(float(z.r) / 4.0), float(z.r) * 0.8)
 	zones = zones.filter(func(z: Dictionary) -> bool: return z.t < z.T)
 	for L: Dictionary in lobs:
 		L.t += dt
 		_lob_drips(L, dt)
 		if L.t >= L.T and not L.done:
 			L.done = true
-			g._burst(L.to - Vector2(0, 10), 22)
+			_burst_in(L.to - Vector2(0, 10), 22, str(L.c))
 			# it lands: sparks, and a boulder shatters into chunks and cracks the floor
 			_pixel_burst(L.to - Vector2(0, 6), 16, PX_COL.get(str(L.c), PX_COL.fire), 260.0, 380.0, 0.8)
 			if str(L.get("look", "")) == "boulder":
 				_pixel_burst(L.to - Vector2(0, 4), 12, CHUNK_COL, 220.0, 360.0, 1.0, 2)
 				_crack_floor(L.to, float(L.r), 5)
-			_phys_blast(L.to, float(L.r), 8, 0.8)
+			_phys_blast(L.to, float(L.r), 8 if str(L.c) in ["fire", "lava"] else 0, 0.8)
+			if str(L.c) in OWN_ELEMENTS:
+				_residue(L.to, str(L.c), 8, float(L.r) * 0.5)
 			_impact(L.to, "small", L.m)
 			_zone({"kind": "wave", "p": L.to, "r": L.r, "T": 0.3, "dmg": L.dmg, "m": L.m, "c": L.c, "push": "lob"})
 			if L.c == "lava":
 				_zone({"kind": "puddle", "p": L.to, "r": L.r * 0.6, "T": 2.2, "dmg": 1, "m": L.m, "dir": ((L.to as Vector2) - (L.from as Vector2)).normalized() if L.has("from") else Vector2.ZERO})
+			elif bool(L.get("pool", false)):
+				_zone({"kind": "puddle", "p": L.to, "r": L.r * 0.6, "T": 2.2, "dmg": 1, "m": L.m, "st": str(L.c), "dir": ((L.to as Vector2) - (L.from as Vector2)).normalized() if L.has("from") else Vector2.ZERO})
 	lobs = lobs.filter(func(L: Dictionary) -> bool: return not L.done)
 	for c: Dictionary in corpses:
 		c.t += dt
@@ -1282,7 +1332,7 @@ func update_shots(dt: float) -> void:
 			s.hist = hist
 		if g._cell_blocked(int(floor(s.p.x / g.C)), int(floor(s.p.y / g.C)), false):
 			s.t = 0.0
-			g._burst(s.p, 4)
+			_burst_in(s.p, 4, str(s.get("c", "fire")))
 			# it splashes on the wall like the crypt's shots: sparks, a splat and a crack there
 			if g.get("feel") != null and not s.has("chain"):
 				var dir: Vector2 = (s.v as Vector2).normalized()
@@ -1297,7 +1347,7 @@ func update_shots(dt: float) -> void:
 				_impact(s.p, "small", s.chain)
 			else:
 				var open := float(g.state.inv) <= 0.0 and float(g.state.dead) <= 0.0
-				g._hurt({"void": "von Leerenfeuer getroffen", "soul": "von Seelenfeuer getroffen"}.get(s.get("c", ""), "von Feuer getroffen"))
+				g._hurt(HURT_BY.get(s.get("c", ""), "von Feuer getroffen"))
 				# a landed shot nudges him along its flight
 				if open and float(g.state.inv) > 0.0:
 					_knock((s.p as Vector2) - (s.v as Vector2).normalized() * 40.0, "shot")
@@ -1536,17 +1586,17 @@ func draw_warnings(l: CanvasItem) -> void:
 		match String(z.kind):
 			"meteor", "hand":
 				if z.t >= 0.0 and z.t < z.tele:
-					_ring(l, z.p, z.r, k, Color8(170, 80, 255) if z.kind == "hand" or z.get("void", false) else Color8(255, 90, 30))
+					_ring(l, z.p, z.r, k, Color8(170, 80, 255) if z.kind == "hand" or z.get("void", false) else _warn_col(str(z.get("c", "")), Color8(255, 90, 30)))
 			"erupt", "land":
 				if z.t < z.tele:
 					_ring(l, z.p, z.r, k, Color8(255, 60, 30) if z.kind == "land" else Color8(255, 140, 40))
 			"puddle":
 				# a physics pool on the floor layer (hell_game.pools) when there is one
-				if g.get("pools") == null:
+				if g.get("pools") == null and str(z.get("st", "lava")) == "lava":
 					_px_pool(l, z.p, z.r, z.r * 0.55, minf(1.0, (z.T - z.t) * 1.5), float(g.state.t))
 			"line":
 				if z.t < z.tele:
-					_px_strip(l, z.p, Vector2.from_angle(float(z.ang)), float(z.len), float(z.w) / 2.0, k, Color8(255, 70, 30))
+					_px_strip(l, z.p, Vector2.from_angle(float(z.ang)), float(z.len), float(z.w) / 2.0, k, _warn_col(str(z.get("c", "")), Color8(255, 70, 30)))
 			"cone":
 				if z.t < z.tele:
 					_px_cone(l, z.p, float(z.r), float(z.ang), float(z.arc), k, Color8(194, 120, 208))
@@ -1554,7 +1604,7 @@ func draw_warnings(l: CanvasItem) -> void:
 	_draw_spills(l, float(g.state.t))
 	for L: Dictionary in lobs:
 		var k: float = L.t / L.T
-		_ring(l, L.to, L.r, k, Color8(255, 140, 40))
+		_ring(l, L.to, L.r, k, _warn_col(str(L.c), Color8(255, 140, 40)))
 		# its shadow on the floor, growing as it falls
 		var under: Vector2 = (L.from as Vector2).lerp(L.to, k)
 		var sh := 1.0 + 2.0 * (1.0 - sin(k * PI))
@@ -1569,9 +1619,9 @@ func draw_warnings(l: CanvasItem) -> void:
 			if A.a.get("line", false):
 				# a cleave: its strip points at the hero while it is raised
 				var aim: Vector2 = (_me() - (m.p as Vector2)).normalized()
-				_px_strip(l, m.p, aim, float(A.a.radius) * 2.6, 35.0, minf(1.0, A.t / 0.75), Color8(255, 70, 30))
+				_px_strip(l, m.p, aim, float(A.a.radius) * 2.6, 35.0, minf(1.0, A.t / 0.75), _warn_col(own_element(m), Color8(255, 70, 30)))
 			else:
-				_ring(l, A.warn_at, float(A.a.radius), minf(1.0, A.t / 0.75), Color8(255, 70, 30))
+				_ring(l, A.warn_at, float(A.a.radius), minf(1.0, A.t / 0.75), _warn_col(own_element(m), Color8(255, 70, 30)))
 		if A.kind == "beam" and A.get("warn", false):
 			# from the drawn core, like their damage (src/hell/drake_rig_host.gd)
 			var head := _beam_head(m)
@@ -1597,7 +1647,7 @@ func draw_lasers(l: CanvasItem) -> void:
 		if str(L.get("look", "")) == "boulder":
 			_px_boulder(l, at, vel, t, float(int(L.to.x) % 17))
 		else:
-			_px_ball(l, at, 3, PX_COL.get(str(L.c), PX_COL.fire), vel, t, float(int(L.to.x) % 17))
+			_px_missile(l, at, 3, str(L.c), vel, t, float(int(L.to.x) % 17))
 	# the enemy shots: pixel fireballs, a chain as links back to its thrower
 	for s: Dictionary in g.eshots:
 		var c := str(s.get("c", "fire"))
@@ -1610,7 +1660,7 @@ func draw_lasers(l: CanvasItem) -> void:
 		if str(s.get("look", "")) in ["wisp", "tear"]:
 			_px_wisp(l, s.p, PX_COL.get(c, PX_COL.soul), s.get("hist", []), t, float(hash(s.get("v", Vector2.ZERO)) % 17), str(s.get("look", "")) == "wisp")
 		else:
-			_px_ball(l, s.p, 2 if s.get("small", false) else 3, PX_COL.get(c, PX_COL.fire), s.get("v", Vector2.ZERO), t, float(hash(s.get("v", Vector2.ZERO)) % 17))
+			_px_missile(l, s.p, 2 if s.get("small", false) else 3, c, s.get("v", Vector2.ZERO), t, float(hash(s.get("v", Vector2.ZERO)) % 17))
 	# the swings' pixel slashes; slag raining down as pixel blobs with a dripping trail
 	for z: Dictionary in zones:
 		if str(z.kind) == "arc" and float(z.arc) >= 5.0:
@@ -1836,6 +1886,157 @@ func _px_ball(l: CanvasItem, p: Vector2, r: int, cols: Array, vel: Vector2, t: f
 				l.draw_rect(Rect2((e / LASER_PX).floor() * LASER_PX, Vector2.ONE * LASER_PX), cols[1] if i < 2 else cols[2])
 
 
+## A burst at `at` in element `c`: the world's embers (g._burst) for fire and
+## the hell's elements, `n` / 2 pixels of the element for the crypt's own.
+func _burst_in(at: Vector2, n: int, c: String) -> void:
+	if c in CRYPT_ELEMENTS:
+		_pixel_burst(at, maxi(4, n / 2), PX_COL[c], 260.0, 340.0, 0.7)
+	else:
+		g._burst(at, n)
+
+
+## A warning's colour for element `c`: the element's middle tone for the crypt's
+## own elements, else `fallback` (the hell's orange and red).
+static func _warn_col(c: String, fallback: Color) -> Color:
+	return PX_COL[c][2] if c in CRYPT_ELEMENTS else fallback
+
+
+## A figure's own element: its def's "shot" when that is one of OWN_ELEMENTS
+## (the crypt's figures), "" for the hell's (their attacks stay fire).
+static func own_element(m: Dictionary) -> String:
+	var def: Variant = m.get("def")
+	var element := str((def as Dictionary).get("shot", "")) if def is Dictionary else ""
+	return element if element in OWN_ELEMENTS else ""
+
+
+## A shot, lob or falling block of element `c` on the pixel grid in its
+## element's shape: a bone tumbling end over end, an ice shard, a gold coin
+## turning, a dripping glob of poison; fire, lava, void and soul as the
+## flaming pixel ball (_px_ball). `r` its size as _px_ball takes it.
+func _px_missile(l: CanvasItem, p: Vector2, r: int, c: String, vel: Vector2, t: float, seed: float) -> void:
+	match c:
+		"bone": _px_bone(l, p, r, PX_COL.bone, vel, t, seed)
+		"frost": _px_shard(l, p, r, PX_COL.frost, vel, t, seed)
+		"gold": _px_coin(l, p, r, PX_COL.gold, vel, t, seed)
+		"poison": _px_glob(l, p, r, PX_COL.poison, vel, t, seed)
+		_: _px_ball(l, p, r, PX_COL.get(c, PX_COL.fire), vel, t, seed)
+
+
+## Grid cells (Vector2i -> Color) drawn opaque with an OUTLINE round them.
+func _px_flush(l: CanvasItem, cells: Dictionary) -> void:
+	for q: Vector2i in cells:
+		for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			if not cells.has(q + d):
+				l.draw_rect(Rect2(Vector2(q + d) * LASER_PX, Vector2.ONE * LASER_PX), OUTLINE)
+	for q: Vector2i in cells:
+		l.draw_rect(Rect2(Vector2(q) * LASER_PX, Vector2.ONE * LASER_PX), cells[q])
+
+
+## A thrown bone: a shaft with a knuckle on each side of both ends, tumbling
+## an eighth of a turn per beat (LASER_FPS), and bone dust falling behind it.
+func _px_bone(l: CanvasItem, p: Vector2, r: int, cols: Array, vel: Vector2, t: float, seed: float) -> void:
+	var n := maxi(2, int(round(float(r) * PX_GROW)))
+	var tq := floorf(t * LASER_FPS)
+	var dir := Vector2.from_angle(tq * PI / 4.0 + seed)
+	var side := dir.orthogonal()
+	var at := Vector2i((p / LASER_PX).floor())
+	var cells := {}
+	for i in range(-n + 1, n):
+		cells[at + Vector2i((dir * float(i)).round())] = cols[1]
+	for end: float in [-1.0, 1.0]:
+		var e := at + Vector2i((dir * float(n) * end).round())
+		cells[e] = cols[0]
+		cells[e + Vector2i((side * 1.2).round())] = cols[2]
+		cells[e - Vector2i((side * 1.2).round())] = cols[1]
+	_px_flush(l, cells)
+	if vel.length() > 1.0:
+		var back := -vel.normalized()
+		for i in range(2):
+			if posmod(int(tq) + i, 2) == 0:
+				var e := p + back * float(n + 2 + i * 3) * LASER_PX + Vector2(0, float(i + 1) * LASER_PX)
+				l.draw_rect(Rect2((e / LASER_PX).floor() * LASER_PX, Vector2.ONE * LASER_PX), cols[3])
+
+
+## An ice shard flying point first: a long diamond with a white ridge, lit on
+## one flank and shaded on the other, frost glints blinking behind it.
+func _px_shard(l: CanvasItem, p: Vector2, r: int, cols: Array, vel: Vector2, t: float, seed: float) -> void:
+	var n := maxi(2, int(round(float(r) * PX_GROW)))
+	var dir := vel.normalized() if vel.length() > 1.0 else Vector2.RIGHT
+	var side := dir.orthogonal()
+	var front := n + 1
+	var back := n * 2
+	var cells := {}
+	for i in range(-back, front + 1):
+		var k := float(i) / float(front) if i >= 0 else -float(i) / float(back)
+		var w := int(round((1.0 - k) * float(n) * 0.5))
+		for o in range(-w, w + 1):
+			var q := Vector2i(((p + (dir * float(i) + side * float(o)) * LASER_PX) / LASER_PX).floor())
+			var col: Color = cols[1]
+			if o == 0: col = cols[0] if i > -back / 2 else cols[1]
+			elif o > 0: col = cols[3] if o == w else cols[2]
+			cells[q] = col
+	_px_flush(l, cells)
+	var tq := floorf(t * LASER_FPS)
+	for i in range(3):
+		if posmod(int(tq) + i + int(seed), 3) != 0:
+			var e := p - dir * float(back + 2 + i * 2) * LASER_PX + side * sin(float(i) * 2.1 + tq * 0.9) * LASER_PX * 1.5
+			l.draw_rect(Rect2((e / LASER_PX).floor() * LASER_PX, Vector2.ONE * LASER_PX), cols[0] if i == 0 else cols[1])
+
+
+## A gold coin turning as it flies (full face to its edge on the beat), its
+## rim darker, a glint on its face, gold specks trailing it.
+func _px_coin(l: CanvasItem, p: Vector2, r: int, cols: Array, vel: Vector2, t: float, seed: float) -> void:
+	var n := maxi(2, int(round(float(r) * PX_GROW * 0.7)))
+	var tq := floorf(t * LASER_FPS)
+	var face := absf(cos(tq * 0.6 + seed))
+	var rx := maxf(0.5, float(n) * face)
+	var at := Vector2i((p / LASER_PX).floor())
+	var cells := {}
+	for y in range(-n, n + 1):
+		for x in range(-n, n + 1):
+			var e := Vector2(float(x) / (rx + 0.4), float(y) / (float(n) + 0.4))
+			if e.length() > 1.0:
+				continue
+			var col: Color = cols[2]
+			if e.length() > 0.72: col = cols[3]
+			elif x <= 0 and y < 0: col = cols[1]
+			cells[at + Vector2i(x, y)] = col
+	if face > 0.55 and posmod(int(tq + seed), 4) == 0:
+		cells[at + Vector2i(-1, -1)] = cols[0]
+	_px_flush(l, cells)
+	if vel.length() > 1.0:
+		var back := -vel.normalized()
+		for i in range(3):
+			if posmod(int(tq) + i, 3) != 1:
+				var e := p + back * float(n * 2 + 2 + i * 3) * LASER_PX + back.orthogonal() * LASER_PX * 2.0 * sin(float(i) * 2.7 + tq)
+				l.draw_rect(Rect2((e / LASER_PX).floor() * LASER_PX, Vector2.ONE * LASER_PX), cols[1] if i == 0 else cols[2])
+
+
+## A glob of poison: a round blob lit from the upper left, a drop hanging
+## under it, drops falling off behind it on the beat.
+func _px_glob(l: CanvasItem, p: Vector2, r: int, cols: Array, vel: Vector2, t: float, seed: float) -> void:
+	var n := maxi(1, int(round(float(r) * PX_GROW)))
+	var at := Vector2i((p / LASER_PX).floor())
+	var cells := {}
+	for y in range(-n, n + 1):
+		for x in range(-n, n + 1):
+			if Vector2(x, y).length() > float(n) + 0.4:
+				continue
+			var lit := Vector2(float(x) + float(n) * 0.4, float(y) + float(n) * 0.4).length() / float(n)
+			cells[at + Vector2i(x, y)] = cols[0] if lit < 0.35 else cols[1] if lit < 0.8 else cols[2] if lit < 1.25 else cols[3]
+	cells[at + Vector2i(0, n + 1)] = cols[2]
+	_px_flush(l, cells)
+	if vel.length() > 1.0:
+		var back := -vel.normalized()
+		var tq := floorf(t * LASER_FPS)
+		for i in range(3):
+			var k := fposmod(tq * 0.34 + float(i) * 0.33 + seed * 0.1, 1.0)
+			var e := p + back * float(n * 2 + 2 + i * 3) * LASER_PX + Vector2(0, k * 5.0 * LASER_PX)
+			var q := (e / LASER_PX).floor() * LASER_PX
+			l.draw_rect(Rect2(q + Vector2(0, LASER_PX), Vector2.ONE * LASER_PX), OUTLINE)
+			l.draw_rect(Rect2(q, Vector2.ONE * LASER_PX), cols[2] if i < 2 else cols[3])
+
+
 ## A lost soul on the pixel grid (a shot's "look": "wisp", the Seelenhirte's
 ## herd), gaseous rather than solid: a round head, white-hot at its heart and
 ## cooling to its colour's edge, and a tail of gas streaming along the path it
@@ -1951,7 +2152,9 @@ func _impact(p: Vector2, tier: String, m: Dictionary = {}) -> void:
 	if shake > 0.0:
 		_shake(shake)
 	if float(spec.get("flash", 0.0)) > 0.0:
-		flashes.append({"p": p, "t": 0.0, "T": float(spec.flash), "r": float(spec.get("flash_r", 30.0))})
+		# white-hot for the hell's fire; the crypt's own elements flash in theirs
+		var element := own_element(m) if not m.is_empty() else ""
+		flashes.append({"p": p, "t": 0.0, "T": float(spec.flash), "r": float(spec.get("flash_r", 30.0)), "c": element if element in CRYPT_ELEMENTS else "fire"})
 	var hold := float(spec.get("hitstop", 0.0))
 	var feel: Variant = g.get("feel")
 	if hold > 0.0 and feel != null and feel.get("feedback") != null:
@@ -1989,6 +2192,7 @@ func _px_slash(l: CanvasItem, z: Dictionary, t: float) -> void:
 ## yellow to orange over its life.
 func _draw_flash(l: CanvasItem, f: Dictionary) -> void:
 	var k := clampf(float(f.t) / maxf(0.01, float(f.T)), 0.0, 1.0)
+	var cols: Array = PX_COL.get(str(f.get("c", "fire")), PX_COL.fire)
 	var r := float(f.r) * (1.0 - k * 0.7)
 	var base := ((f.p as Vector2) / LASER_PX).floor() * LASER_PX
 	var n := int(ceil(r / LASER_PX))
@@ -1997,7 +2201,7 @@ func _draw_flash(l: CanvasItem, f: Dictionary) -> void:
 			var d := Vector2(x, float(y) / 0.62).length() * LASER_PX / maxf(1.0, r)
 			if d > 1.0:
 				continue
-			var col: Color = PX_COL.fire[0] if d < 0.45 - k * 0.3 else PX_COL.fire[1] if d < 0.75 else PX_COL.fire[2]
+			var col: Color = cols[0] if d < 0.45 - k * 0.3 else cols[1] if d < 0.75 else cols[2]
 			l.draw_rect(Rect2(base + Vector2(x, y) * LASER_PX, Vector2.ONE * LASER_PX), Color(col, 1.0 - k * 0.6))
 
 
@@ -2088,11 +2292,14 @@ func _mouths(m: Dictionary, a: Dictionary, head: Vector2) -> Array:
 ## every mouth; once it is out, each mouth spits a jet of flame pixels at where
 ## the hero stood (they fly with drag, bounce off walls and flash out), and the
 ## floor where the jets end catches embers.
-func _breath_fx(A: Dictionary, a: Dictionary, mouths: Array, t: float, wind: float, dt: float) -> void:
+func _breath_fx(A: Dictionary, a: Dictionary, mouths: Array, t: float, wind: float, dt: float, element := "fire") -> void:
 	var P := _phys()
 	if P == null or mouths.is_empty():
 		return
 	var s := _phys_scale()
+	# the crypt's elements: their colours, and drops for poison, splinters for bone
+	var cols: Array = PX_COL.get(element, PX_COL.fire)
+	var jet_mode := {"poison": "drop", "bone": "debris"}.get(element, "spark") as String
 	var reach := float(a.get("range", 260.0))
 	A.fx_acc = float(A.get("fx_acc", 0.0)) + (70.0 if t < wind else 190.0) * dt * float(mouths.size())
 	while float(A.fx_acc) >= 1.0:
@@ -2100,20 +2307,23 @@ func _breath_fx(A: Dictionary, a: Dictionary, mouths: Array, t: float, wind: flo
 		var mouth: Vector2 = mouths[randi() % mouths.size()]
 		if t < wind:
 			P.emit((mouth + Vector2(randf_range(-10.0, 10.0), randf_range(-6.0, 6.0))) / s, Vector2(randf_range(-20.0, 20.0), randf_range(-24.0, 8.0)) / s,
-				PX_COL.fire[1 + randi() % 2], randf_range(0.2, 0.4), "ember", 2.0, 4.0, randf_range(10.0, 40.0) / s, 1.0)
+				cols[1 + randi() % 2], randf_range(0.2, 0.4), "ember", 2.0, 4.0, randf_range(10.0, 40.0) / s, 1.0)
 		else:
 			var to: Vector2 = A.get("jet_to", mouth + Vector2(1, 0))
 			var dir := (to - mouth).normalized().rotated(randf_range(-0.32, 0.32))
 			var sp := randf_range(420.0, 640.0)
 			# mostly orange and red flames, a white-hot pixel now and then
-			var col: Color = PX_COL.fire[0] if randf() < 0.08 else PX_COL.fire[1 + randi() % 3]
-			P.emit(mouth / s, dir * sp / s, col, reach / sp * randf_range(0.7, 1.05), "spark", 2.0 * float(1 + int(randf() < 0.3)), 6.0, randf_range(0.0, 50.0) / s, 0.4)
+			var col: Color = cols[0] if randf() < 0.08 else cols[1 + randi() % 3]
+			P.emit(mouth / s, dir * sp / s, col, reach / sp * randf_range(0.7, 1.05), jet_mode, 2.0 * float(1 + int(randf() < 0.3)), 6.0, randf_range(0.0, 50.0) / s, 0.4)
 	if t >= wind and not A.has("jet_floor"):
 		A.jet_floor = true
 		for mouth: Vector2 in mouths:
 			var to: Vector2 = A.get("jet_to", mouth + Vector2(1, 0))
 			var end := mouth + (to - mouth).normalized() * reach * 0.75 + Vector2(0, 30)
-			P.embers(end / s, 46.0 / s, 9)
+			if element == "fire":
+				P.embers(end / s, 46.0 / s, 9)
+			else:
+				_residue(end, element, 9, 46.0)
 
 
 ## A dash on its way: floor grit kicked up behind the beast, sparks off its
@@ -2124,6 +2334,8 @@ func _dash_fx(m: Dictionary, A: Dictionary, dt: float) -> void:
 		return
 	var s := _phys_scale()
 	var dir: Vector2 = A.dir
+	var own := own_element(m)
+	var sparks: Array = PX_COL[own] if own in CRYPT_ELEMENTS else PX_COL.fire
 	A.fx_acc = float(A.get("fx_acc", 0.0)) + 160.0 * dt
 	while float(A.fx_acc) >= 1.0:
 		A.fx_acc = float(A.fx_acc) - 1.0
@@ -2132,11 +2344,15 @@ func _dash_fx(m: Dictionary, A: Dictionary, dt: float) -> void:
 		if randf() < 0.7:
 			P.emit(at / s, vel, WAVE_DUST[randi() % WAVE_DUST.size()], randf_range(1.5, 2.6), "debris", 2.0, 2.0, randf_range(60.0, 160.0) / s, 3.0)
 		else:
-			P.emit(at / s, vel * 1.5, PX_COL.fire[1 + randi() % 3], randf_range(0.25, 0.5), "spark", 2.0, 4.0, randf_range(30.0, 90.0) / s, 1.5)
+			P.emit(at / s, vel * 1.5, sparks[1 + randi() % 3], randf_range(0.25, 0.5), "spark", 2.0, 4.0, randf_range(30.0, 90.0) / s, 1.5)
 	A.paw = float(A.get("paw", 0.0)) - dt
 	if float(A.paw) <= 0.0:
 		A.paw = 0.07
-		P.embers((m.p as Vector2) / s, 10.0 / s, 2)
+		# its prints: burning for the hell's beasts, the element's matter for the crypt's (rime, drips, bone dust, glints)
+		if own in CRYPT_ELEMENTS:
+			_residue(m.p, own, 2, 10.0)
+		else:
+			P.embers((m.p as Vector2) / s, 10.0 / s, 2)
 
 
 ## The cauldron boiling over: a fountain of lava shooting up from `head`
@@ -2229,17 +2445,25 @@ func _lava_arc(ground: Vector2, height: float, to: Vector2, n: int) -> void:
 
 ## A beast called up from below at `p`: the floor cracks open and glows, a
 ## pillar of rising flame pixels in the caller's colour, rubble lifted around.
+## In the crypt's elements the floor breaks cold: bone, frost and gold are
+## thrown up as splinters that fall back and lie there, poison rises as
+## drops, and what is left on the floor is the element's residue, no embers.
 func _rift(p: Vector2, c: String) -> void:
-	_crack_floor(p, 110.0, 6)
+	var cold := c in CRYPT_ELEMENTS
+	_crack_floor(p, 110.0, 6, cold)
 	var P := _phys()
 	if P == null:
 		return
 	var s := _phys_scale()
 	var cols: Array = PX_COL.get(c, PX_COL.fire)
+	var mode := "debris" if c in ["bone", "frost", "gold"] else "ember"
 	for k in range(30):
 		P.emit((p + Vector2(randf_range(-24.0, 24.0), randf_range(-10.0, 10.0))) / s, Vector2(randf_range(-30.0, 30.0), randf_range(-16.0, 16.0)) / s,
-			cols[randi() % 4], randf_range(0.5, 1.0), "ember", 2.0 * float(1 + int(randf() < 0.25)), 2.0, randf_range(140.0, 340.0) / s, 0.8)
-	P.embers(p / s, 30.0 / s, 10)
+			cols[randi() % 4], randf_range(0.5, 1.0) + (1.5 if mode == "debris" else 0.0), mode, 2.0 * float(1 + int(randf() < 0.25)), 2.0, randf_range(140.0, 340.0) / s, 0.8)
+	if cold:
+		_residue(p, c, 5, 30.0)
+	else:
+		P.embers(p / s, 30.0 / s, 10)
 	P.kick(p / s, 90.0 / s, 0.6)
 
 
@@ -2529,17 +2753,18 @@ func _fissure(z: Dictionary) -> void:
 			for j in range(randi_range(2, 5)):
 				b += bdir * LASER_PX
 				cells.append([(b / LASER_PX).round(), 0.6 - float(j) * 0.1])
-	cracks.append({"p": z.p, "t": 0.0, "T": CRACK_TIME * 1.3, "cells": cells})
+	var c := str(z.get("c", "fire"))
+	cracks.append({"p": z.p, "t": 0.0, "T": CRACK_TIME * 1.3, "cells": cells, "cold": c in CRYPT_ELEMENTS})
 	var d := 0.0
 	while d < length:
 		var p: Vector2 = (z.p as Vector2) + dir * d
 		_pixel_burst(p, 4, CHUNK_COL, 140.0, 300.0, 1.2, 2)
-		_pixel_burst(p, 3, PX_COL.fire, 200.0, 240.0, 0.5)
+		_pixel_burst(p, 3, PX_COL.get(c, PX_COL.fire) if c in CRYPT_ELEMENTS else PX_COL.fire, 200.0, 240.0, 0.5)
 		d += 48.0
 	_phys_blast((z.p as Vector2) + dir * length * 0.5, length * 0.5, 0, 0.8)
 	_impact((z.p as Vector2) + dir * length * 0.6, "medium", z.m)
-	# flames burst out of the split all along it, then burn down to ash
-	firewalls.append({"p": z.p, "dir": dir, "len": length, "t": 0.0, "T": FIREWALL_TIME, "seed": randf() * 10.0, "ashed": false})
+	# flames burst out of the split all along it, then burn down to ash (in the crypt: its element, _draw_firewall)
+	firewalls.append({"p": z.p, "dir": dir, "len": length, "t": 0.0, "T": FIREWALL_TIME, "seed": randf() * 10.0, "ashed": false, "c": c})
 
 
 ## A wall of pixel flames along a split floor: one column of fire per laser
@@ -2548,42 +2773,76 @@ func _fissure(z: Dictionary) -> void:
 ## root through yellow and orange to red and crimson. It leaps up in the
 ## first tenth of its time, burns, and sinks and cools from 45 % on, its last
 ## flames only red: what is left becomes ash (_ash_line).
+## In the crypt the split throws up its element ("c"): bone and frost break
+## out as rigid spikes (a jagged row, tips the lightest, shooting up in a
+## twentieth of the time and standing still until they sink), poison and gold
+## well up like the flames in their own colours, slower for poison.
 func _draw_firewall(l: CanvasItem, w: Dictionary, t: float) -> void:
+	var c := str(w.get("c", "fire"))
+	var cols: Array = PX_COL.get(c, PX_COL.fire) if c in CRYPT_ELEMENTS else PX_COL.fire
+	var spikes := c in ["bone", "frost"]
 	var k := clampf(float(w.t) / maxf(0.01, float(w.T)), 0.0, 1.0)
-	var rise := clampf(k / 0.1, 0.0, 1.0)
+	var rise := clampf(k / (0.05 if spikes else 0.1), 0.0, 1.0)
 	var fall := 1.0 - clampf((k - 0.45) / 0.55, 0.0, 1.0)
 	var high := FIREWALL_HIGH * rise * fall
 	if high < 0.5:
 		return
 	var cool := 1.0 - fall
-	var tq := floorf(t * LASER_FPS)
+	var tq := floorf(t * LASER_FPS * (0.5 if c == "poison" else 1.0))
 	var seed := float(w.seed)
 	var dir: Vector2 = w.dir
+	var top: Color = Color("9f294e") if cols == PX_COL.fire else (cols[3] as Color).darkened(0.35)
 	var drawn := {}
+	var crypt := c in CRYPT_ELEMENTS
 	for i in range(int(float(w.len) / LASER_PX)):
+		if spikes and posmod(i, 3) != 0:
+			continue
 		var base := Vector2i((((w.p as Vector2) + dir * float(i) * LASER_PX) / LASER_PX).floor())
+		if crypt:
+			# a little to either side of the split, as its crack runs: a straight row of columns
+			# along a split running down the screen would read as a beam
+			base += Vector2i((dir.orthogonal() * roundf(sin(float(i) * 1.7 + seed) * 1.6)).round())
 		if drawn.has(base):
 			continue
 		drawn[base] = true
+		if spikes:
+			# a spike every third cell, each its own height: three cells wide in its lower half,
+			# the lit side right, the shade left, the tip the element's lightest
+			var h := int(roundf(high * 1.3 * (0.55 + 0.45 * absf(sin(float(i) * 12.9898 + seed)))))
+			for j in range(h):
+				var f := float(j) / maxf(1.0, float(h))
+				var half := 1 if f < 0.45 and h >= 5 else 0
+				for x in range(-half, half + 1):
+					var col: Color = cols[0] if f >= 0.8 else (cols[3] if x < 0 else (cols[1] if x > 0 else cols[2]))
+					l.draw_rect(Rect2(Vector2(base.x + x, base.y - j - 1) * LASER_PX, Vector2.ONE * LASER_PX), col)
+			continue
 		var wave := 0.45 + 0.55 * absf(sin(tq * 1.9 + float(i) * 2.3 + seed) * cos(tq * 0.7 + float(i) * 0.9))
 		var h := int(roundf(high * wave))
 		for j in range(h):
 			var f := float(j) / maxf(1.0, float(h)) + cool * 0.5
-			var col: Color = PX_COL.fire[0] if f < 0.12 else (PX_COL.fire[1] if f < 0.35 else (PX_COL.fire[2] if f < 0.6 else (PX_COL.fire[3] if f < 0.85 else Color("9f294e"))))
+			var col: Color = cols[0] if f < 0.12 else (cols[1] if f < 0.35 else (cols[2] if f < 0.6 else (cols[3] if f < 0.85 else top)))
 			l.draw_rect(Rect2(Vector2(base.x, base.y - j - 1) * LASER_PX, Vector2.ONE * LASER_PX), col)
 		if h > 2 and sin(tq * 1.3 + float(i) * 3.1 + seed) > 0.72:
-			l.draw_rect(Rect2(Vector2(base.x, base.y - h - 2) * LASER_PX, Vector2.ONE * LASER_PX), PX_COL.fire[3])
+			l.draw_rect(Rect2(Vector2(base.x, base.y - h - 2) * LASER_PX, Vector2.ONE * LASER_PX), cols[3])
 
 
 ## A split floor burnt out: embers sizzling all along it, soot left in the
-## crack, and flakes of ash drifting up (the crypt's pixel physics).
+## crack, and flakes of ash drifting up (the crypt's pixel physics). A split of
+## the crypt's elements leaves only its residue (bone splinters, a film of
+## poison, rime, gold dust): no embers, soot or ash.
 func _ash_line(w: Dictionary) -> void:
 	var P := _phys()
 	if P == null:
 		return
 	var s := _phys_scale()
 	var dir: Vector2 = w.dir
+	var c := str(w.get("c", "fire"))
 	var d := 0.0
+	if c in CRYPT_ELEMENTS:
+		while d < float(w.len):
+			_residue((w.p as Vector2) + dir * d, c, 3, 22.0)
+			d += 36.0
+		return
 	while d < float(w.len):
 		var p: Vector2 = (w.p as Vector2) + dir * d
 		_residue(p, "fire", 4, 22.0)
@@ -2634,6 +2893,33 @@ func _residue(p: Vector2, c: String, n: int, r: float) -> void:
 			P.scatter(p / s, Color(cols[3].darkened(0.5), 0.55), r / s, n)
 		"frost", "ice":
 			P.frost(p / s, r / s, n, Color(0.8, 0.95, 1.0, 0.55))
+			# chips of ice skitter off and slide out
+			for k in range(maxi(1, n / 3)):
+				var out := Vector2.from_angle(randf() * TAU)
+				P.emit(p / s, Vector2(out.x * randf_range(60.0, 160.0), out.y * randf_range(30.0, 80.0)) / s, PX_COL.frost[1 + randi() % 3], randf_range(1.2, 2.0), "shard", 2.0, randf_range(4.0, 10.0) / s, randf_range(30.0, 90.0) / s, 1.0)
+		"bone":
+			# splinters of bone thrown up that stay where they land, a puff of bone dust
+			var cols: Array = PX_COL.bone
+			for k in range(n):
+				var out := Vector2.from_angle(randf() * TAU)
+				P.emit((p + out * r * 0.3 * randf()) / s, Vector2(out.x * randf_range(40.0, 140.0), out.y * randf_range(20.0, 70.0)) / s, cols[1 + randi() % 3],
+					randf_range(1.6, 2.6), "debris", 2.0, randf_range(4.0, 14.0) / s, randf_range(60.0, 160.0) / s, 2.5)
+			P.scatter(p / s, Color(cols[3], 0.45), r * 0.6 / s, maxi(1, n / 2))
+		"poison":
+			# drops flung out that land as small splats, and a damp green stain
+			var cols: Array = PX_COL.poison
+			for k in range(n):
+				var out := Vector2.from_angle(randf() * TAU)
+				P.emit(p / s, Vector2(out.x * randf_range(30.0, 110.0), out.y * randf_range(15.0, 50.0)) / s, cols[1 + randi() % 3],
+					randf_range(1.0, 1.8), "drop", 2.0, randf_range(6.0, 16.0) / s, randf_range(60.0, 140.0) / s, 1.5)
+			P.scatter(p / s, Color(cols[3].darkened(0.3), 0.5), r / s, n)
+		"gold":
+			# gold sparks jump up, a few glints flicker on the floor
+			var cols: Array = PX_COL.gold
+			P.sparks(p / s, Vector2.UP, maxi(3, n), [cols[0], cols[1], cols[2]])
+			for k in range(maxi(1, n / 2)):
+				var at := p + Vector2.from_angle(randf() * TAU) * r * sqrt(randf()) * Vector2(1.0, 0.62)
+				P.emit(at / s, Vector2(randf_range(-10.0, 10.0), randf_range(-6.0, 6.0)) / s, cols[1 + randi() % 2], randf_range(0.5, 1.0), "ember", 2.0, 2.0, randf_range(10.0, 30.0) / s, 1.0)
 
 
 ## A blast at `p` (radius `r`): the rubble already lying there flies again,
@@ -2651,7 +2937,7 @@ func _phys_blast(p: Vector2, r: float, embers: int, strength: float = 1.0) -> vo
 
 ## A slam's floor cracks around `p` (radius `r`): `n` jagged lines of grid cells
 ## running out from the impact, glowing hot near it, cooling to dark over CRACK_TIME.
-func _crack_floor(p: Vector2, r: float, n: int) -> void:
+func _crack_floor(p: Vector2, r: float, n: int, cold := false) -> void:
 	var cells: Array = []
 	var reach := maxi(3, int(r * 0.8 / LASER_PX))
 	for k in range(n):
@@ -2662,7 +2948,7 @@ func _crack_floor(p: Vector2, r: float, n: int) -> void:
 			ang += randf_range(-0.45, 0.45)
 			pos += Vector2(cos(ang), sin(ang) * 0.62) * LASER_PX
 			cells.append([(pos / LASER_PX).round(), 1.0 - float(i) / float(steps)])
-	cracks.append({"p": p, "t": 0.0, "T": CRACK_TIME, "cells": cells})
+	cracks.append({"p": p, "t": 0.0, "T": CRACK_TIME, "cells": cells, "cold": cold})
 
 
 ## Ages the flying pixels (gravity, bounce, rest) and the floor cracks.
@@ -2754,6 +3040,8 @@ func _draw_cracks(l: CanvasItem) -> void:
 		for cell: Array in c.cells:
 			var heat := float(cell[1]) * 1.2 - age * 1.5
 			var col: Color = CRACK_COL[0 if heat > 0.7 else 1 if heat > 0.4 else 2 if heat > 0.15 else 3 if heat > -0.2 else 4]
+			if bool(c.get("cold", false)):
+				col = CRACK_COLD[0 if heat > -0.2 else 1]
 			# two pixels wide near the impact, one at the tips
 			var wide := 2.0 if float(cell[1]) > 0.45 else 1.0
 			l.draw_rect(Rect2(base + (cell[0] as Vector2) * LASER_PX, Vector2(wide, 1.0) * LASER_PX), Color(col, fade))
@@ -2885,8 +3173,11 @@ func draw_fx(l: CanvasItem) -> void:
 				if z.kind == "meteor" and z.t >= 0.0 and z.t < z.tele:
 					var my: float = z.p.y - 900.0 * (1.0 - z.t / z.tele)
 					var void_fire: bool = z.get("void", false)
-					# a falling ball of fire with its flames streaming up behind it
-					_px_ball(l, Vector2(z.p.x, my), 7, PX_COL.void if void_fire else PX_COL.lava, Vector2(0, 600), float(g.state.t), float(int(z.p.x) % 17))
+					# a falling ball of fire with its flames streaming up behind it (a block of the crypt's element)
+					if str(z.get("c", "")) in OWN_ELEMENTS and not void_fire:
+						_px_missile(l, Vector2(z.p.x, my), 7, str(z.c), Vector2(0, 600), float(g.state.t), float(int(z.p.x) % 17))
+					else:
+						_px_ball(l, Vector2(z.p.x, my), 7, PX_COL.void if void_fire else PX_COL.lava, Vector2(0, 600), float(g.state.t), float(int(z.p.x) % 17))
 				if z.t >= z.tele:
 					var k: float = (z.t - z.tele) / (z.T - z.tele)
 					# the hit: one ragged mass of pixel fire with smoke rising off it

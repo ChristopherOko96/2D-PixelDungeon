@@ -134,6 +134,9 @@ var _last_lost: Dictionary = {}
 var _records: Dictionary = {}
 ## uid -> atlas frame size of the form last drawn alive (the corpse's glow box).
 var _atlas: Dictionary = {}
+## monster id -> the rig it is drawn with when that is another world's rig at
+## this world's size (adopt_looks; Story 1 the crypt). Empty: every rig by id.
+var looks: Dictionary = {}
 
 
 ## monster_cfg: hell_balance.json "monsters" (flight_altitude, immune_altitude
@@ -182,14 +185,40 @@ func reset(seed_value: int = 0) -> void:
 
 # ------------------------------------------------------------------ parts
 
-## The layered rig monster `m` (or a corpse) is drawn with: its id when
-## hell_rigs.json has that rig, else "".
+## The layered rig monster `m` (or a corpse) is drawn with: its look's rig
+## (adopt_looks), else its id when the library has that rig, else "".
 func rig_of(m: Dictionary) -> String:
 	var name := str(m.get("id", ""))
 	if name.is_empty(): return ""
+	name = str(looks.get(name, name))
 	var rig: Dictionary = library.rig(name)
 	# a layered hell rig (hell_rigs.json) or a crypt rig named like the monster (rigs.json "brandskelett")
 	return name if not rig.is_empty() else ""
+
+
+## Figures that wear another world's part rig (a def's "rig", e.g. the crypt's
+## "skeleton" for Story 1's "skelett", tools/krypta_dungeon/krypta_monsters.js):
+## each gets a copy of that rig at its own size, one source pixel = def.scale
+## world px (as its atlas sprite draws it), named "<rig>@<scale>" in the
+## library, so drawing, hits, lost parts and the corpse all use that size.
+## A def without "rig", or naming one the library lacks, keeps its sprite.
+func adopt_looks(defs: Dictionary) -> void:
+	for id: String in defs:
+		var def: Dictionary = defs[id]
+		var base_name := str(def.get("rig", ""))
+		var base: Dictionary = library.rig(base_name) if not base_name.is_empty() else {}
+		if base.is_empty():
+			continue
+		var scale := float(def.get("scale", 1.0))
+		var name := "%s@%s@%s" % [base_name, str(snappedf(scale, 0.01)), str(def.get("material", ""))]
+		if library.rig(name).is_empty():
+			var look: Dictionary = base.duplicate()
+			look.scale = scale
+			# what a cut part breaks like (its debris, its sound): the rig's own material, else the figure's
+			if str(look.get("material", "")).is_empty():
+				look.material = str(def.get("material", ""))
+			library.rigs[name] = look
+		looks[id] = name
 
 
 ## True once `m` carries body parts of its rig.

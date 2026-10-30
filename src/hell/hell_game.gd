@@ -333,6 +333,8 @@ func _ready() -> void:
 			pools.hot = func(p: Vector2) -> bool: return feel.feedback.particles.sinks(p / feel.scale)
 		# Ignaroth's part rig: tuning from balance.monsters.rigs (DrakeRigHost.DEFAULTS fill gaps)
 		drake_rig = DrakeRigHost.new(balance.monsters, RigLibrary.shared())
+		# figures that wear the crypt's part rigs (Story 1: krypta_monsters.json "rig")
+		drake_rig.adopt_looks(monsters.defs)
 		monsters.rig_host = drake_rig
 	elif theme.has("rigs"):
 		frost_rigs = FrostRigs.new(self, theme.rigs)

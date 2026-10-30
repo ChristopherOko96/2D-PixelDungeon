@@ -49,6 +49,16 @@
   }
  },
  "monsters": {
+  "feel": {
+   "_note": "As hell_balance.json monsters.feel without its lava slosh (the crypt has none): the crypt figures' impacts shake, hold and flash by importance, push the hero back, their shockwaves and screams shove the pixels (src/hell/hell_monsters.gd _impact, _knock, _blow_front).",
+   "shake_scale": 1,
+   "tiny": {"shake":0,"hitstop":0,"flash":0.05,"flash_r":18},
+   "small": {"shake":4,"hitstop":0,"flash":0.06,"flash_r":28},
+   "medium": {"shake":9,"hitstop":0,"flash":0.08,"flash_r":44},
+   "large": {"shake":16,"hitstop":0.07,"flash":0.1,"flash_r":70},
+   "knock": {"_note":"Knockback of the hero when a monster's blow lands (src/hell/hell_monsters.gd _knock, skill gamedev:physics-tuning): start speed in px/s away from the blow by kind, easing out quadratically over time s (the push covers about speed x time / 3 px); a mob's knock is mob_scale of it. Control stays the hero's; walls stop each axis.","time":0.22,"mob_scale":0.7,"wave":620,"slam":620,"dash":560,"arc":420,"lob":380,"contact":300,"laser":260,"shot":180,"scream":360},
+   "blow": {"_note":"Pressure fronts shoving pixels (src/hell/hell_monsters.gd _blow_front, skill gamedev:game-feel): a shockwave's ring and each of a scream's four sound arcs push the pixels they pass outward at push px/s (world) times the arc's share in fronts (first arc to last); the scream's first arc lifts one dust pixel per dust_area px^2 of the cone it sweeps; a front at half share or more makes every lava cell it crosses slosh lava_drops [min, max] drops.","push":340,"fronts":[1,0.6,0.4,0.25],"dust_area":3200,"lava_drops":[3,5]}
+  },
   "hit_mob": 1,
   "hit_boss": 2,
   "contact_reach": 22,

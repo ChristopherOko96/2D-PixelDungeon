@@ -23,6 +23,9 @@ for (const id in HM.DEFS) {
   const fw = def.w * px, fh = def.h * px, W = fw * cols, H = fh * anims.length;
   const out = new Uint8Array(W * H * 4);
   const rows = {};
+  // the body as it stands and walks (the rows used for its hit centre): top and bottom art row
+  const bodyAnims = anims.filter(a => a === 'idle' || a === 'run');
+  let top = Infinity, bottom = -Infinity;
   anims.forEach((a, row) => {
     const n = HM.frameCount(def, a);
     rows[a] = { row, frames: n };
@@ -31,6 +34,7 @@ for (const id in HM.DEFS) {
       for (let y = 0; y < r.h; y++) for (let x = 0; x < r.w; x++) {
         const i = (y * r.w + x) * 4;
         if (!r.data[i + 3]) continue;
+        if (bodyAnims.includes(a)) { top = Math.min(top, y); bottom = Math.max(bottom, y + 1); }
         for (let dy = 0; dy < px; dy++) for (let dx = 0; dx < px; dx++) {
           const o = ((row * fh + y * px + dy) * W + f * fw + x * px + dx) * 4;
           out[o] = r.data[i]; out[o + 1] = r.data[i + 1]; out[o + 2] = r.data[i + 2]; out[o + 3] = 255;
@@ -41,6 +45,31 @@ for (const id in HM.DEFS) {
   fs.writeFileSync(path.join(spriteDir, id + '.png'), encodePng(W, H, out));
   const { draw, ...plain } = def;
   defs[id] = Object.assign(plain, { px, anims: rows });
+  // hit_cy: the body's middle in art px above the feet (the frame's bottom), so the
+  // hit circle (stats.r) sits on the figure, not on its frame (src/hell/hell_monsters.gd hit_cy)
+  if (bottom > top) defs[id].hit_cy = Math.round((def.h - (top + bottom) / 2) * 10) / 10;
+  // glow: the figure's glowing pixels (P.glow: eyes, embers, sparkle) as the game's glowing
+  // parts (src/hero/story_glow.gd mob_items, the format of vfx_glow.json story.hell_monsters):
+  // the points of every frame of an animation merged within 3 art px (whatever their shade:
+  // the spot glows in its most painted colour), the six that glow most
+  const glowAnims = anims.filter(a => a !== 'death');
+  const spots = [];
+  for (const a of glowAnims) for (let f = 0; f < HM.frameCount(def, a); f++) for (const [x, y, c] of HM.glowPoints(id, a, f)) {
+    let s = spots.find(o => Math.hypot(o.x - x, o.y - y) <= 3);
+    if (!s) { s = { cols: {}, x, y, sx: 0, sy: 0, n: 0, lo: [x, y], hi: [x, y], anims: new Set() }; spots.push(s); }
+    s.sx += x; s.sy += y; s.n++; s.x = s.sx / s.n; s.y = s.sy / s.n;
+    s.lo = [Math.min(s.lo[0], x), Math.min(s.lo[1], y)]; s.hi = [Math.max(s.hi[0], x), Math.max(s.hi[1], y)];
+    s.cols[c] = (s.cols[c] || 0) + 1;
+    s.anims.add(a);
+  }
+  const glow = spots.sort((p, q) => q.n - p.n).slice(0, 6).map(s => {
+    const colour = Object.entries(s.cols).sort((p, q) => q[1] - p[1])[0][0];
+    const part = { at: [Math.round(s.x * 2) / 2, Math.round(s.y * 2) / 2], r: Math.max(3, Math.max(s.hi[0] - s.lo[0], s.hi[1] - s.lo[1]) / 2 + 3),
+      color: colour.toLowerCase(), alpha: 0.34, flicker: 8 };
+    if (s.anims.size < glowAnims.length) part.anim = [...s.anims];
+    return part;
+  });
+  if (glow.length) defs[id].glow = glow;
 }
 const floors = {};
 for (const n in HM.FLOORS) floors[n] = HM.FLOORS[n];

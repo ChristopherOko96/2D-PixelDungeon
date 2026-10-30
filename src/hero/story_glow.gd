@@ -58,8 +58,12 @@ const STRUCK := 0.1
 const ACT_RAMP := 0.35
 ## Crypt bullet style of a hell monster shot colour (hell_monsters.gd SHOT_COL;
 ## the small breath flames are "magic" cinder). Chains do not glow.
-const HELL_STYLES := {"fire": "fireball", "lava": "fireball", "void": "void_skull", "soul": "magic"}
-const HELL_ELEMENTS := {"soul": "venom", "fire": "cinder"}
+## The crypt's elements (Story 1): bone shots do not glow, ice as a shard.
+const HELL_STYLES := {"fire": "fireball", "lava": "fireball", "void": "void_skull", "soul": "magic", "bone": "", "frost": "shard", "poison": "magic", "gold": "magic"}
+const HELL_ELEMENTS := {"soul": "venom", "fire": "cinder", "frost": "frost", "poison": "venom", "gold": "cinder"}
+## The elements only the crypt's figures have (hell_monsters.gd CRYPT_ELEMENTS): their
+## lobs, meteors, impacts and slams glow in them; the hell's stay fire.
+const CRYPT_ELEMENTS := ["bone", "poison", "frost", "gold"]
 ## Crypt bullet style of an enemy move's shot style (frost_moves.gd STYLE).
 const MOVE_STYLES := {"ice": "shard", "frost": "shard", "void": "void_skull", "curse": "void_skull", "fire": "fireball", "poison": "magic", "spit": "magic"}
 const MOVE_ELEMENTS := {"poison": "venom", "spit": "venom"}
@@ -377,7 +381,9 @@ func zone_lights() -> Array:
 			match str(z.kind):
 				"meteor", "hand":
 					if t >= 0.0 and t < tele:
-						crypt.append(_crypt_zone(p, float(z.r), "void" if z.kind == "hand" or z.get("void", false) else "fire", "strike"))
+						# a meteor of the crypt's poison or frost lights in its element, the hell's in fire
+						var lit := str(z.get("c", "")) if str(z.get("c", "")) in ["poison", "frost"] else "fire"
+						crypt.append(_crypt_zone(p, float(z.r), "void" if z.kind == "hand" or z.get("void", false) else lit, "strike"))
 					elif t >= tele:
 						# the impact flares and fades
 						var k := clampf((t - tele) / maxf(0.01, float(z.T) - tele), 0.0, 1.0)
@@ -389,7 +395,9 @@ func zone_lights() -> Array:
 					var k := minf(1.0, t / maxf(0.01, float(z.T)))
 					out.append(Vector4(p.x, p.y, float(z.r) * maxf(k, 0.2), 0.6 * (1.0 - 0.5 * k)))
 				"puddle":
-					puddles.append(_puddle(z))
+					# magma glows; a puddle of poison (the crypt's pool figures) does not
+					if str(z.get("st", "lava")) == "lava":
+						puddles.append(_puddle(z))
 				"arc":
 					# a swing glows as its blade's slash (rig_renderer.gd); only a full spin lights its middle
 					if float(z.arc) >= 5.0:
@@ -421,8 +429,10 @@ func zone_lights() -> Array:
 		# a laser's wall burn lights the wall while it burns and glows on
 		for s: Dictionary in g.monsters.scorches:
 			out.append(Vector4(s.p.x, s.p.y - 12.0, BEAM_LIGHT * scale * 0.8, float(g.monsters.scorch_heat(s))))
-		# a wall of flames out of a split floor lights it all along while it burns
+		# a wall of flames out of a split floor lights it all along while it burns (spikes of bone or frost do not)
 		for w: Dictionary in g.monsters.firewalls:
+			if str(w.get("c", "fire")) in ["bone", "frost"]:
+				continue
 			var k := clampf(float(w.t) / maxf(0.01, float(w.T)), 0.0, 1.0)
 			var heat := clampf(k / 0.1, 0.0, 1.0) * (1.0 - clampf((k - 0.45) / 0.55, 0.0, 1.0))
 			var d := 0.0
@@ -877,10 +887,19 @@ func shot_items(all := false) -> Array:
 			if str(L.get("look", "")) == "boulder":
 				continue
 			var k := clampf(float(L.t) / maxf(0.01, float(L.T)), 0.0, 1.0)
-			_shot(out, (L.from as Vector2).lerp(L.to, k) - Vector2(0, sin(k * PI) * 220.0), "fireball", "", int(L.to.x))
+			# a lob of the crypt's elements glows as its shots do (a bone does not glow), the hell's as a fireball
+			var lc := str(L.get("c", "fire"))
+			var lob_style := str(HELL_STYLES.get(lc, "fireball")) if lc in CRYPT_ELEMENTS else "fireball"
+			if lob_style != "":
+				_shot(out, (L.from as Vector2).lerp(L.to, k) - Vector2(0, sin(k * PI) * 220.0), lob_style, str(HELL_ELEMENTS.get(lc, "")) if lc in CRYPT_ELEMENTS else "", int(L.to.x))
 		for z: Dictionary in g.monsters.zones:
 			if str(z.kind) == "meteor" and float(z.t) >= 0.0 and float(z.t) < float(z.tele):
 				var my: float = z.p.y - 900.0 * (1.0 - float(z.t) / float(z.tele))
+				var mc := str(z.get("c", ""))
+				if mc in CRYPT_ELEMENTS and not z.get("void", false):
+					if str(HELL_STYLES.get(mc, "")) != "":
+						_shot(out, Vector2(z.p.x, my), str(HELL_STYLES[mc]), str(HELL_ELEMENTS.get(mc, "")), int(z.p.x))
+					continue
 				_shot(out, Vector2(z.p.x, my), "void_skull" if z.get("void", false) else "fireball", "", int(z.p.x))
 	for z: Dictionary in g.state.get("mzones", []):
 		if str(z.kind) == "strike" and z.has("from"):
@@ -915,6 +934,8 @@ func attack_items() -> Array:
 					if zt >= tele:
 						var k := clampf((zt - tele) / span, 0.0, 1.0)
 						var kind := "impact_void" if z.kind == "hand" or z.get("void", false) else "impact"
+						if kind == "impact" and bloom.has("impact_" + str(z.get("c", ""))):
+							kind = "impact_" + str(z.c)
 						_add(out, p - Vector2(0, 20), float(z.r) * _size(kind), Color(_color(kind), _alpha(kind) * (1.0 - k) * spells), "impact")
 				"wave":
 					var k := minf(1.0, zt / maxf(0.01, float(z.T)))
@@ -926,7 +947,8 @@ func attack_items() -> Array:
 				"line":
 					if zt >= tele:
 						var k := clampf((zt - tele) / span, 0.0, 1.0)
-						_band(out, p, p + Vector2.from_angle(float(z.ang)) * float(z.len), float(z.w) * _size("slam"), Color(_color("slam"), _alpha("slam") * (1.0 - k) * spells), "slam")
+						var slam := "slam_" + str(z.get("c", "")) if bloom.has("slam_" + str(z.get("c", ""))) else "slam"
+						_band(out, p, p + Vector2.from_angle(float(z.ang)) * float(z.len), float(z.w) * _size(slam), Color(_color(slam), _alpha(slam) * (1.0 - k) * spells), "slam")
 				"cone":
 					if zt >= tele:
 						var k := clampf((zt - tele) / span, 0.0, 1.0)
@@ -934,8 +956,9 @@ func attack_items() -> Array:
 						_band(out, p, p + Vector2.from_angle(float(z.ang)) * reach, reach * _size("scream"), Color(_color("scream"), _alpha("scream") * (1.0 - k) * spells), "scream")
 						_add(out, p, _r("scream_mouth") * scale, Color(_color("scream_mouth"), _alpha("scream_mouth") * (1.0 - k) * spells), "scream")
 				"puddle":
-					# skill_fx.gd's own lava zone glow
-					out.append({"p": p, "kind": "puddle", "crypt": "lava", "zone": _puddle(z)})
+					# skill_fx.gd's own lava zone glow (a poison puddle of the crypt does not glow)
+					if str(z.get("st", "lava")) == "lava":
+						out.append({"p": p, "kind": "puddle", "crypt": "lava", "zone": _puddle(z)})
 		for m: Dictionary in g.mobs:
 			# Ignaroth 4's void beams: a wide violet halo, a bright core, a flare at the mouth;
 			# a pixel laser (the Blutfledermaus) the same in red, at the spells level
@@ -1018,7 +1041,11 @@ func mob_items() -> Array:
 		var corpse := not m.has("hp")
 		var fade := 1.0 - clampf(float(m.get("t", 0.0)) / 0.75, 0.0, 1.0) if corpse else 1.0
 		var seed := float(m.get("seed", 0.0))
-		for part: Dictionary in table.get(key, []):
+		# the crypt's figures carry their glowing parts (krypta_monsters.json "glow", from their painted glow pixels)
+		var parts: Array = table.get(key, [])
+		if parts.is_empty() and hell and m.get("def") is Dictionary:
+			parts = (m.def as Dictionary).get("glow", [])
+		for part: Dictionary in parts:
 			var a := float(part.get("alpha", 0.3)) * float(drawn.get("alpha", 1.0)) * fade
 			if part.has("anim") and (corpse or str(m.get("anim", "")) not in part.anim):
 				continue

@@ -373,7 +373,7 @@ func _fx_spawn(name: String, point: Vector2, rotation: float = 0.0, scale: float
 	if fx != null: fx.spawn(name, point, rotation, scale, tint, speed, true)
 
 
-const WALL_STYLES := {"fire": ["fire_burst", Color("ff9a3a"), Color("3a2418")], "frost": ["frost_burst", Color("bfeaf2"), Color("3a6a7a")], "arcane": ["arcane_burst", Color("c8a8ff"), Color("3a2a5a")], "magic": ["magic_burst", Color("8ff0b8"), Color("244a3a")], "void": ["void_burst", Color("c890f0"), Color("3a1e4a")], "poison": ["poison_burst", Color("a8e05a"), Color("2a4a1a")]}
+const WALL_STYLES := {"fire": ["fire_burst", Color("ff9a3a"), Color("3a2418")], "frost": ["frost_burst", Color("bfeaf2"), Color("3a6a7a")], "arcane": ["arcane_burst", Color("c8a8ff"), Color("3a2a5a")], "magic": ["magic_burst", Color("8ff0b8"), Color("244a3a")], "void": ["void_burst", Color("c890f0"), Color("3a1e4a")], "poison": ["poison_burst", Color("a8e05a"), Color("2a4a1a")], "gold": ["hit_spark", Color("ffe08a"), Color("5a4010")]}
 
 
 ## Something struck a wall at `point` (normal back to the floor): stone chips
@@ -391,6 +391,11 @@ func _wall_hit(point: Vector2, normal: Vector2, style: String, glow: String = ""
 		_fx_spawn("spell_burst", out, 0.0, 0.6, tint.lightened(0.15))
 		for side in [-1.0, 1.0]: particles.burst(out, tint.lightened(0.2), 6, 150.0, 0.45, along * side + normal * 0.25, 0.35, 2.0, 4.0, "spark")
 		particles.splat(point, tint.darkened(0.6), 0.35, 4.0, along)
+	elif style == "bone":
+		# a bone shatters on the stone: splinters drop, bone dust puffs
+		particles.burst(out, Color("e8dcc8"), 6, 150.0, 0.7, normal + Vector2(0, 0.4), 0.9, 2.0, 3.0)
+		particles.burst(out, Color("c9b49a"), 4, 90.0, 0.8, Vector2(0, 1), 0.6, 2.0, 2.0)
+		_fx_spawn("dust", out, 0.0, 0.6)
 	elif WALL_STYLES.has(style):
 		var data: Array = WALL_STYLES[style]
 		_fx_spawn(str(data[0]), out, 0.0, 0.55)

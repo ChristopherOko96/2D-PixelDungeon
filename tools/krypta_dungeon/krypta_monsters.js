@@ -109,20 +109,24 @@
 
   // ---------- monsters ----------
   const DEFS = {};
+  // rig: the crypt part rig (assets/data/rigs.json, src/rig/rig_library.gd) the game draws the figure with,
+  // at its own size (one source pixel = scale world px); hits, lost parts and corpses follow it
+  // (src/hell/drake_rig_host.gd adopt_looks). A figure without one keeps its atlas sprite.
+  // material: bone, flesh or void, what it sounds and breaks like (debris of a cut part, hit and kill sounds).
   DEFS.skelett = {
-    name: 'Skelett', w: 26, h: 24, scale: 5, kind: 'mob', role: 'Nahkämpfer', shot: 'bone',
+    name: 'Skelett', w: 26, h: 24, scale: 5, kind: 'mob', material: 'bone', rig: 'skeleton', role: 'Nahkämpfer', shot: 'bone',
     desc: 'Klappernder Gruftwächter mit rostigem Schwert. Stürmt heran und schlägt weit aus.',
     anims: { idle: 4, run: 4, attack: 4 },
     draw(P, a, f) { figure(P, a, f, { base: 'skelet_idle_anim_f', run: 'skelet_run_anim_f', frames: 4, weapon: 'rusty_sword', hand: [12, 11] }); },
   };
   DEFS.skelettschuetze = {
-    name: 'Skelettschütze', w: 26, h: 26, scale: 5, kind: 'mob', role: 'Fernkämpfer', shot: 'bone',
+    name: 'Skelettschütze', w: 26, h: 26, scale: 5, kind: 'mob', material: 'bone', rig: 'skel_archer', role: 'Fernkämpfer', shot: 'bone',
     desc: 'Hält Abstand und schießt Knochenpfeile, ab und zu eine Salve aus drei Pfeilen.',
     anims: { idle: 4, run: 4, attack: 4 },
     draw(P, a, f) { figure(P, a, f, { base: 'skelet_idle_anim_f', run: 'skelet_run_anim_f', frames: 4, weapon: 'bow', hand: [12, 10], grip: .15, swing: [1.2, 1.4, 1.57, 1.57], wmap: { '#8f4029': '#5f2d56' } }); },
   };
   DEFS.skelettwache = {
-    name: 'Skelettwache', w: 26, h: 24, scale: 5.4, kind: 'mob', role: 'Schildträger', shot: 'bone',
+    name: 'Skelettwache', w: 26, h: 24, scale: 5.4, kind: 'mob', material: 'bone', rig: 'skel_guard', role: 'Schildträger', shot: 'bone',
     desc: 'Vergilbtes Skelett mit Streitkolben. Rammt dich mit dem Schild und wirft Knochen.',
     anims: { idle: 4, run: 4, attack: 4 },
     draw(P, a, f) {
@@ -132,19 +136,19 @@
     },
   };
   DEFS.nekromant = {
-    name: 'Nekromant', w: 24, h: 30, scale: 4.4, kind: 'mob', role: 'Beschwörer', shot: 'soul',
+    name: 'Nekromant', w: 24, h: 30, scale: 4.4, kind: 'mob', material: 'flesh', rig: 'necro', role: 'Beschwörer', shot: 'soul',
     desc: 'Hält Abstand, schickt suchende Seelenflammen und ruft Skelette aus dem Boden.',
     anims: { idle: 4, run: 4, attack: 4, cast: 4 },
     draw(P, a, f) { figure(P, a, f, { base: 'necromancer_idle_anim_f', run: 'necromancer_run_anim_f', frames: 4, weapon: 'green_magic_staff', hand: [12, 14], grip: .1, swing: [-.2, -.5, -.3, 0], cast: SOULFIRE }); },
   };
   DEFS.zombie = {
-    name: 'Kleiner Zombie', w: 22, h: 22, scale: 5, kind: 'mob', role: 'Springer', shot: 'poison', pool: true,
+    name: 'Kleiner Zombie', w: 22, h: 22, scale: 5, kind: 'mob', material: 'flesh', rig: 'tiny_zombie', role: 'Springer', shot: 'poison', pool: true,
     desc: 'Hüpft unruhig, springt dich an und spuckt Moder, der eine Giftlache hinterlässt.',
     anims: { idle: 4, run: 4, attack: 4 },
     draw(P, a, f) { figure(P, a, f, { base: 'tiny_zombie_idle_anim_f', run: 'tiny_zombie_run_anim_f', frames: 4 }); if (a === 'attack' && f > 1) for (let i = 0; i < 4; i++) P.glow(16 + i, 12 + (i % 2), LIME); },
   };
   DEFS.eiszombie = {
-    name: 'Eiszombie', w: 22, h: 22, scale: 5, kind: 'mob', role: 'Frost', shot: 'frost',
+    name: 'Eiszombie', w: 22, h: 22, scale: 5, kind: 'mob', material: 'bone', rig: 'ice_zombie', role: 'Frost', shot: 'frost',
     desc: 'Taut nie auf. Haucht einen kurzen Froststoß, der dich verlangsamt.',
     anims: { idle: 4, run: 4, attack: 4 },
     draw(P, a, f) {
@@ -153,7 +157,7 @@
     },
   };
   DEFS.leerenbomber = {
-    name: 'Leerenbomber', w: 22, h: 24, scale: 4.4, kind: 'mob', role: 'Springer', shot: 'void',
+    name: 'Leerenbomber', w: 22, h: 24, scale: 4.4, kind: 'mob', material: 'void', rig: 'bomber', role: 'Springer', shot: 'void',
     desc: 'Springt durch die Leere neben dich und platzt in einer violetten Welle.',
     anims: { idle: 4, run: 4, attack: 4, cast: 4 },
     draw(P, a, f) {
@@ -163,7 +167,7 @@
     },
   };
   DEFS.mimik = {
-    name: 'Mimik', w: 20, h: 20, scale: 4.6, kind: 'mob', role: 'Lauerer', shot: 'gold',
+    name: 'Mimik', w: 20, h: 20, scale: 4.6, kind: 'mob', material: 'flesh', rig: 'mimic', role: 'Lauerer', shot: 'gold',
     desc: 'Sieht aus wie eine Truhe. Hüpft heran, beißt zu und spuckt Münzen im Kreis.',
     anims: { idle: 4, run: 4, attack: 4 },
     draw(P, a, f) {
@@ -175,7 +179,7 @@
 
   // ---------- bosses: drawn at twice the pixel density, with their own extras ----------
   DEFS.knochenwaechter = {
-    name: 'Knochenwächter', w: 48, h: 46, scale: 4.2, kind: 'boss', floor: 1, role: 'Boss · Etage 1', shot: 'bone',
+    name: 'Knochenwächter', w: 48, h: 46, scale: 4.2, kind: 'boss', material: 'bone', floor: 1, role: 'Boss · Etage 1', shot: 'bone',
     desc: 'Der Wächter der Vorhalle: ein riesiges Skelett mit Kronreif und Ritterschwert.',
     anims: { idle: 4, run: 4, attack: 4, cast: 4 },
     draw(P, a, f) {
@@ -184,7 +188,7 @@
     },
   };
   DEFS.grabmutter = {
-    name: 'Grabmutter', w: 44, h: 40, scale: 4.2, kind: 'boss', floor: 2, role: 'Boss · Etage 2', shot: 'poison', pool: true,
+    name: 'Grabmutter', w: 44, h: 40, scale: 6.0, kind: 'boss', material: 'flesh', floor: 2, role: 'Boss · Etage 2', shot: 'poison', pool: true,
     desc: 'Aufgedunsene Mutter aller Grabzombies. Springt, spuckt Moder und brütet Zombies aus.',
     anims: { idle: 4, run: 4, attack: 4, cast: 4 },
     draw(P, a, f) {
@@ -193,13 +197,13 @@
     },
   };
   DEFS.moderkoloss = {
-    name: 'Moderkoloss', w: 44, h: 42, scale: 4.6, kind: 'boss', floor: 3, role: 'Zwischenboss · Etage 3', shot: 'poison', pool: true,
+    name: 'Moderkoloss', w: 44, h: 42, scale: 8.0, kind: 'boss', material: 'flesh', rig: 'big_zombie', floor: 3, role: 'Zwischenboss · Etage 3', shot: 'poison', pool: true,
     desc: 'Ein Berg aus Moderfleisch. Faulatem, Giftklumpen, Sturmlauf und Erdbeben, dazu Madenbrut.',
     anims: { idle: 4, run: 4, attack: 4, cast: 4 },
     draw(P, a, f) { figure(P, a, f, { base: 'big_zombie_idle_anim_f0', bob: true, map: MODER, cast: SOULFIRE, hand: [24, 20], eyes: [[19, 9], [22, 9]], eyeC: LIME }); if (a === 'attack') P.flame(30, 14, 6, 6 + f * 2, { pal: SOULFIRE, front: true, lean: 6 }); },
   };
   DEFS.nekromantenfuerst = {
-    name: 'Nekromantenfürst', w: 44, h: 54, scale: 4.2, kind: 'boss', floor: 4, role: 'Boss · Etage 4', shot: 'soul',
+    name: 'Nekromantenfürst', w: 44, h: 54, scale: 4.2, kind: 'boss', material: 'flesh', floor: 4, role: 'Boss · Etage 4', shot: 'soul',
     desc: 'Herr der Kapelle. Seelenspiralen, suchende Seelen, Knochenkreise und ganze Skelettlegionen.',
     anims: { idle: 4, run: 4, attack: 4, cast: 4 },
     draw(P, a, f) {
@@ -208,7 +212,7 @@
     },
   };
   DEFS.truhenfresser = {
-    name: 'Truhenfresser', w: 40, h: 38, scale: 4.2, kind: 'boss', floor: 5, role: 'Boss · Etage 5', shot: 'gold',
+    name: 'Truhenfresser', w: 40, h: 38, scale: 4.2, kind: 'boss', material: 'flesh', floor: 5, role: 'Boss · Etage 5', shot: 'gold',
     desc: 'Die älteste Mimik der Gruft. Beißt doppelt, speit Münzschwälle und ruft ihre Brut.',
     anims: { idle: 4, run: 4, attack: 4, cast: 4 },
     draw(P, a, f) {
@@ -218,19 +222,19 @@
     },
   };
   DEFS.frostleiche = {
-    name: 'Frostleiche', w: 44, h: 42, scale: 4.6, kind: 'boss', floor: 6, role: 'Zwischenboss · Etage 6', shot: 'frost',
+    name: 'Frostleiche', w: 44, h: 42, scale: 4.6, kind: 'boss', material: 'flesh', rig: 'frost_corpse', floor: 6, role: 'Zwischenboss · Etage 6', shot: 'frost',
     desc: 'Gefrorener Koloss. Eissplitter, Frostnova, Hagel, Eisgleiten und erweckte Eiszombies.',
     anims: { idle: 4, run: 4, attack: 4, cast: 4 },
     draw(P, a, f) { figure(P, a, f, { base: 'big_zombie_idle_anim_f0', bob: true, map: FROST, cast: FROSTFIRE, hand: [24, 20], eyes: [[19, 9], [22, 9]], eyeC: WHITE }); sparkle(P, 22, 22, 18, a === 'cast' ? 12 : 4, FROSTFIRE, 4); },
   };
   DEFS.archivar = {
-    name: 'Der Archivar', w: 44, h: 54, scale: 4.2, kind: 'boss', floor: 7, role: 'Boss · Etage 7', shot: 'frost',
+    name: 'Der Archivar', w: 44, h: 54, scale: 4.2, kind: 'boss', material: 'flesh', floor: 7, role: 'Boss · Etage 7', shot: 'frost',
     desc: 'Hüter des Reliquienarchivs. Bannfluch, Grabeshände, ein Sturm aus Seiten und seine Schützen.',
     anims: { idle: 4, run: 4, attack: 4, cast: 4 },
     draw(P, a, f) { figure(P, a, f, { base: 'necromancer_idle_anim_f', run: 'necromancer_run_anim_f', frames: 4, k: 2, map: ARCHIVE, weapon: 'red_magic_staff', wk: 2, hand: [12, 14], grip: .1, swing: [-.2, -.5, -.3, 0], cast: FROSTFIRE }); },
   };
   DEFS.leerenbrut = {
-    name: 'Leerenbrut', w: 40, h: 44, scale: 4.2, kind: 'boss', floor: 8, role: 'Boss · Etage 8', shot: 'void',
+    name: 'Leerenbrut', w: 40, h: 44, scale: 5.0, kind: 'boss', material: 'void', floor: 8, role: 'Boss · Etage 8', shot: 'void',
     desc: 'Eine pulsierende Brutblase der Leere. Springt, blitzt, implodiert und gebiert Bomber.',
     anims: { idle: 4, run: 4, attack: 4, cast: 4 },
     draw(P, a, f) {
@@ -240,13 +244,13 @@
     },
   };
   DEFS.knochenkoloss = {
-    name: 'Knochenkoloss', w: 44, h: 42, scale: 4.8, kind: 'boss', floor: 9, role: 'Zwischenboss · Etage 9', shot: 'bone',
+    name: 'Knochenkoloss', w: 44, h: 42, scale: 4.8, kind: 'boss', material: 'bone', rig: 'bone_colossus', floor: 9, role: 'Zwischenboss · Etage 9', shot: 'bone',
     desc: 'Aus tausend Knochen getürmt. Knochenspeere, Spitzenlinien, Wirbel, Schädelhagel und die Legion.',
     anims: { idle: 4, run: 4, attack: 4, cast: 4 },
     draw(P, a, f) { figure(P, a, f, { base: 'big_zombie_idle_anim_f0', bob: true, map: BONEMAP, weapon: 'big_hammer', hand: [26, 20], cast: VOIDFIRE, eyes: [[19, 9], [22, 9]], eyeC: VIO }); },
   };
   DEFS.leerenrufer = {
-    name: 'Leerenrufer', w: 48, h: 50, scale: 5, kind: 'boss', floor: 10, role: 'Endboss · Etage 10', shot: 'void',
+    name: 'Leerenrufer', w: 48, h: 50, scale: 5, kind: 'boss', material: 'void', rig: 'void', floor: 10, role: 'Endboss · Etage 10', shot: 'void',
     desc: 'Der Herr der Krypta. Leerenrisse, Seelenfessel, Schattenschritt, Spiralen, Knochenkreise und der Doppelstrahl.',
     anims: { idle: 4, run: 4, attack: 4, cast: 4 },
     draw(P, a, f) {
@@ -325,5 +329,12 @@
     r.px.forEach((c, i) => { if (c) { const [R, G, B] = hexToRgb(c); data.set([R, G, B, 255], i * 4); } });
     return { w: r.w, h: r.h, data };
   }
-  return { DEFS, FLOORS, render, frameCount, ANIMS: ['idle', 'run', 'attack', 'cast', 'fly', 'death'] };
+  // The glowing pixels a frame paints (P.glow: eyes, embers, sparkle) as [x, y, colour].
+  function glowPoints(id, anim, frame) {
+    if (anim === 'death') return [];
+    const def = DEFS[id], p = new Painter(def.w, def.h, frame);
+    def.draw(p, anim, frame);
+    return p.front.slice();
+  }
+  return { DEFS, FLOORS, render, frameCount, glowPoints, ANIMS: ['idle', 'run', 'attack', 'cast', 'fly', 'death'] };
 });
