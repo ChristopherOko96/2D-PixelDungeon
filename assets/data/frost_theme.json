@@ -1575,6 +1575,39 @@
       }
     }
   },
+  "vfx": {
+    "_note": "The enemies' and guardians' attacks on the pixel grid (src/hell/frost_fx.gd, skill gamedev:game-feel), like the Hell's: feel = the weight of an impact by importance (shake = view shake in px, decaying at 30 px/s on smooth sines; hitstop = s the picture holds, only the large tier: a guardian's heavy blow; flash = s a white-hot pixel flash lasts, flash_r its radius in world px); a mob's impact is one tier below the same blow of a guardian; shake_scale scales every shake (lower it for less shaking). knock = the hero pushed away from a blow that lands: start speed in px/s by kind, easing out quadratically over time s (about speed x time / 3 px), a mob's mob_scale of it; walls stop each axis.",
+    "feel": {
+      "shake_scale": 1.0,
+      "tiny": {"shake": 0, "hitstop": 0.0, "flash": 0.05, "flash_r": 18},
+      "small": {"shake": 4, "hitstop": 0.0, "flash": 0.06, "flash_r": 28},
+      "medium": {"shake": 9, "hitstop": 0.0, "flash": 0.08, "flash_r": 44},
+      "large": {"shake": 16, "hitstop": 0.07, "flash": 0.1, "flash_r": 70}
+    },
+    "knock": {"time": 0.22, "mob_scale": 0.7, "wave": 600, "slam": 560, "dash": 560, "fist": 480, "breath": 300, "shot": 180},
+    "_ice_note": "Ice reads as solid, glossy ice, not water (art review, production/qa/evidence/frost-vfx-review): ice = the opaque ramp by role, shifted to cyan against the blue floor (spec = specular white, hi = highlight, gloss streaks and north edge, lite = light ice and mirrored bands, body, shade = south row, deep = cracks and the side under the south lip, outline). ice_floor = the moves ice pools joined into one slab, drawn in the floor layer over old stains and under the hero shadow (src/hero/story_feel.gd): edge_melt = s the rim melts before the middle, rebake_hz = how often a melting slab is shaded again at most, glint_period = s between the glint sweeps, twinkles = sparkles at a time on the ice, rime_twinkles = rime pixels picked per frame for a twinkle, mist = share of melting cells that give off a wisp of cold mist. rime.melt_to: vapor = frost clumps and settled ice chips go again in ordered-dither order (vfx_particles.json frost.vapor_spread), water = they melt to water that dries.",
+    "ice": {"spec": "ffffff", "hi": "e6fbff", "lite": "a6e3f7", "body": "6fbde8", "shade": "3b84c4", "deep": "23599a", "outline": "0d1a38"},
+    "ice_floor": {"edge_melt": 0.6, "rebake_hz": 15, "glint_period": 2.8, "twinkles": 3, "rime_twinkles": 2, "mist": 0.03},
+    "rime": {"melt_to": "vapor"}
+  },
+  "rigs": {
+    "_note": "The enemies as the crypt's part rigs (src/hell/frost_rigs.gd, cut by tools/frost_dungeon/export_frost_rigs.js into assets/data/rigs.json): look sprite -> rig. They walk, bob, swing, wobble and fall apart like the crypt's and the Hell's figures; a look not listed keeps its sprite.",
+    "mob_ice_zombie_f": "frost_zombie",
+    "mob_frost_skeleton_f": "frost_skeleton",
+    "mob_ice_slime_0": "frost_slime_0",
+    "mob_ice_slime_1": "frost_slime_1",
+    "mob_ice_slime_2": "frost_slime_2",
+    "mob_frost_imp_f": "frost_imp",
+    "mob_frost_whirl_0": "frost_whirl",
+    "mob_ice_knight_f": "frost_knight",
+    "mob_ice_crystal_0": "frost_crystal",
+    "mob_frost_necromancer_f": "frost_necro",
+    "mob_frost_corpse_f": "frost_leiche",
+    "mob_frost_commander": "frost_commander",
+    "boss_golem_p1_f": "frost_golem_p1",
+    "boss_golem_p2_f": "frost_golem_p2",
+    "boss_golem_p3_f": "frost_golem_p3"
+  },
   "atmosphere": {
     "_note": "The Frostgruft's flames in the crypt atmosphere's schema (src/vfx/crypt_atmosphere.gd parse, assets/data/vfx_crypt_atmosphere.json); the story worlds use only its flames: light_color tints the bloom of every brazier, torch, rune pillar and vent of the floor (src/hero/story_glow.gd; its braziers burn blue), glow_strength is the bloom's intensity (the crypt's torches 0.2), light_radius_scale scales their light in the dark (1.0 = the floor's own radius).",
     "flames": {"light_color": "#8cc8f2", "glow_strength": 0.22, "light_radius_scale": 1.0}

@@ -75,7 +75,7 @@ static func _bow_draw(pose: Dictionary, u: float, release: float = 0.62) -> void
 ## The pose of rig `rig` for actor state `a`.
 static func pose(rig: Dictionary, a: Dictionary) -> Dictionary:
 	var out := _family_pose(rig, a)
-	if bool(rig.get("layered", false)): _layered_extras(rig, a, out)
+	if bool(rig.get("layered", false)) or bool(rig.get("item_parts", false)): _layered_extras(rig, a, out)
 	_sway(rig, a, out)
 	return out
 
@@ -123,7 +123,99 @@ static func _family_pose(rig: Dictionary, a: Dictionary) -> Dictionary:
 		"bomber": return bomber(rig, a)
 		"mimic": return mimic(rig, a)
 		"drake": return drake(rig, a)
+		"slime": return slime(rig, a)
+		"spirit": return spirit(rig, a)
 	return blank()
+
+
+## Slime (the Frostgruft's Eisschleim): a jelly that breathes by squashing from
+## the floor up, its top ("top") lagging behind its base so it wobbles. It
+## moves in hops (stretched in the air, squashed on landing); "attack" swells
+## and splats wide, "roar" quivers, "hit" squashes it flat for a moment and
+## "death" melts it into the floor.
+static func slime(rig: Dictionary, a: Dictionary) -> Dictionary:
+	var pose := blank()
+	var t: float = a.t
+	var b := sin(t * TAU / 1.3)
+	pose.whole.pivot = Vector2(rig.ground)
+	pose.whole.sy = 1.0 + 0.05 * b
+	pose.whole.sx = 1.0 - 0.04 * b
+	var top := P(pose, "top")
+	top.dx = 0.7 * sin(t * TAU / 1.3 + 0.9)
+	if a.moving:
+		var ph := t * TAU / 0.55
+		var hop := absf(sin(ph))
+		pose.whole.dy = -hop * 4.0
+		pose.whole.sy += 0.12 * hop - 0.1 * (1.0 - hop)
+		pose.whole.sx += -0.08 * hop + 0.1 * (1.0 - hop)
+		top.dx += 1.2 * sin(ph + 1.2)
+	var u: float = a.u
+	match str(a.clip):
+		"attack":
+			var swell := ease_in_out(seg(u, 0.0, 0.45))
+			var splat := ease_out(seg(u, 0.45, 0.6))
+			var back := ease_in_out(seg(u, 0.65, 1.0))
+			var keep := 1.0 - back
+			pose.whole.sy += (0.2 * swell - 0.32 * splat) * keep
+			pose.whole.sx += (-0.1 * swell + 0.3 * splat) * keep
+			pose.whole.dy -= 3.0 * swell * (1.0 - splat) * keep
+			top.dy = -1.5 * swell * keep
+		"roar", "summon":
+			var k := sin(PI * u)
+			pose.whole.sx += 0.1 * k + 0.05 * sin(float(a.ct) * 40.0) * k
+			pose.whole.sy += 0.08 * k
+			top.dx += 1.5 * sin(float(a.ct) * 30.0) * k
+		"hit":
+			var k := 1.0 - ease_out(u)
+			pose.whole.sx += 0.22 * k
+			pose.whole.sy -= 0.2 * k
+			top.dx -= 2.0 * k
+		"death":
+			var k := ease_in(seg(u, 0.0, 0.8))
+			pose.whole.sy = 1.0 - 0.85 * k
+			pose.whole.sx = 1.0 + 0.5 * k
+			for p: Dictionary in rig.parts: P(pose, p.id).alpha = 1.0 - seg(u, 0.6, 1.0)
+	return pose
+
+
+## Spirit (the Frostgruft's whirl and crystal): a floating body that bobs and
+## swirls (its sway parts turn on their own, rigs.json "sway"). "attack" leans
+## back and lashes forward, "roar" (a ring, a call) swells it, "hit" knocks it
+## back, "death" spins it down to nothing and fades it.
+static func spirit(rig: Dictionary, a: Dictionary) -> Dictionary:
+	var pose := blank()
+	var t: float = a.t
+	pose.whole.dy = -3.0 - 2.0 * sin(t * TAU / 2.0)
+	pose.whole.sx = 1.0 + 0.05 * sin(t * TAU / 0.7)
+	pose.whole.rot = 0.04 * sin(t * TAU / 1.6)
+	if a.moving:
+		pose.whole.rot += 0.12
+	var u: float = a.u
+	match str(a.clip):
+		"attack":
+			var pull := ease_in_out(seg(u, 0.0, 0.45))
+			var lash := ease_out(seg(u, 0.45, 0.6))
+			var back := ease_in_out(seg(u, 0.65, 1.0))
+			var keep := 1.0 - back
+			pose.whole.rot += (-0.14 * pull + 0.28 * lash) * keep
+			pose.whole.dx = (-1.5 * pull + 3.5 * lash) * keep
+			pose.whole.sy += (0.08 * pull - 0.06 * lash) * keep
+		"roar", "summon":
+			var k := ease_out(seg(u, 0.0, 0.4)) * (1.0 - ease_in_out(seg(u, 0.7, 1.0)))
+			pose.whole.sx += 0.15 * k + 0.03 * sin(float(a.ct) * 60.0) * k
+			pose.whole.sy += 0.12 * k
+		"hit":
+			var k := 1.0 - ease_out(u)
+			pose.whole.dx = -2.5 * k
+			pose.whole.sx += 0.15 * k
+			pose.whole.sy -= 0.1 * k
+		"death":
+			var k := ease_in(seg(u, 0.1, 0.9))
+			pose.whole.sx = 1.0 - 0.9 * k
+			pose.whole.sy = 1.0 - 0.9 * k
+			pose.whole.rot = 2.0 * TAU * k * k
+			for p: Dictionary in rig.parts: P(pose, p.id).alpha = 1.0 - seg(u, 0.5, 1.0)
+	return pose
 
 
 static func hero(rig: Dictionary, a: Dictionary) -> Dictionary:

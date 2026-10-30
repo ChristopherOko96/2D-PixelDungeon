@@ -19,6 +19,7 @@ extends RefCounted
 
 const HeroLook = preload("res://src/hero/hero_look.gd")
 const AttackFx = preload("res://src/vfx/attack_fx.gd")
+const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
 const FxSprites = preload("res://src/vfx/fx_sprites.gd")
 const StorySkillFx = preload("res://src/hero/story_skill_fx.gd")
 const ClassPerks = preload("res://src/player/class_perks.gd")
@@ -157,6 +158,13 @@ func check_slam(m: Dictionary, before: Vector2, dt: float) -> void:
 	g._sound_raw("attack_slam")
 
 
+## True on walkable floor at crypt point `p` (this layer's units): where the
+## shots' pixels may show.
+func open_floor(p: Vector2) -> bool:
+	var w := p * scale
+	return g._walkable(g._cell(int(floor(w.x / float(g.C))), int(floor(w.y / float(g.C)))))
+
+
 ## Per frame: Rage's queued second swings, the shots' paths for attack_fx.
 func update(dt: float) -> void:
 	# the rig's clock, and a hit recoil on every new hit (invulnerability starts again)
@@ -275,12 +283,17 @@ func face(t: float) -> float:
 func draw_layer(canvas: CanvasItem, glow: bool) -> void:
 	var t := float(g.state.t)
 	if glow:
+		PixelPaint.clip = open_floor
 		attack.draw_glow(canvas, _snapshot, func(b: Dictionary) -> Vector2: return Vector2(float(b.x), float(b.y)), t, 1.0)
+		PixelPaint.clip = Callable()
 		skill_fx.draw_glow(canvas)
 		return
+	# the shots' streaks, rune rings, motes and flashes stop at the walls (src/vfx/pixel_paint.gd clip)
+	PixelPaint.clip = open_floor
 	for b: Dictionary in _snapshot.bullets:
 		var at := Vector2(float(b.x), float(b.y))
 		if str(b.style) == "arrow": attack.draw_arrow(canvas, b, at, t)
 		else: attack.draw_orb(canvas, b, at, t)
 	attack.draw_flashes(canvas, t)
+	PixelPaint.clip = Callable()
 	skill_fx.draw_over(canvas)

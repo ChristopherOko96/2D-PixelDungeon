@@ -39,6 +39,8 @@ extends RefCounted
 ##   and feedback.gd draw them.
 
 const Feedback = preload("res://src/vfx/feedback.gd")
+const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
+const PoolPaint = preload("res://src/vfx/pool_paint.gd")
 const StorySound = preload("res://src/hero/story_sound.gd")
 ## Crypt units per crypt cell (particles work in 32 px cells).
 const CELL := 32.0
@@ -560,9 +562,28 @@ func draw_layer(canvas: CanvasItem, mode: String) -> void:
 	match mode:
 		"ground":
 			feedback.particles.draw_stains(canvas)
+			# the Frostgruft's ice slab: over old stains, under the shadow (src/hell/frost_fx.gd, world px)
+			var frost: RefCounted = g.get("frost_fx")
+			if frost != null:
+				canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE / scale)
+				frost.draw_floor(canvas)
+				canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+			# the Hell's lava puddles as physics pools (src/vfx/pool_paint.gd, world px)
+			var pools: RefCounted = g.get("pools")
+			if pools != null:
+				canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE / scale)
+				pools.draw(canvas, float(g.state.get("t", 0.0)))
+				canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 			# thrown pools (boss_fx.gd pools) and the hero's shadow, under the figures like the crypt's
 			var conditions := condition_snapshot()
+			# warnings and pools stop at the walls (src/vfx/pixel_paint.gd clip, crypt units)
+			if g.story_hero != null:
+				PixelPaint.clip = g.story_hero.open_floor
+				# thrown potions and pools as physics pools that stop at the walls (src/vfx/pool_paint.gd)
+				if boss_fx.pools == null:
+					boss_fx.pools = PoolPaint.new(2.0, g.story_hero.open_floor)
 			boss_fx.draw_ground(canvas, conditions, _clock)
+			PixelPaint.clip = Callable()
 			draw_shadow(canvas, hero_world() / scale)
 		"over":
 			draw_perk_events(canvas, _perks)
@@ -610,7 +631,11 @@ func _enemy(m: Dictionary) -> Dictionary:
 		m.feel_id = _next_id
 		_next_id += 1
 		if float(m.get("spawn", 0.0)) > 0.0:
-			_event("enemy_spawn", m.p)
+			# the frost world's enemies break up through the ice instead of the crypt's dust (src/hell/frost_fx.gd)
+			if g.get("frost_fx") != null:
+				g.frost_fx.shatter(m.p, 12, 30.0, Vector2.ZERO, 180.0)
+			else:
+				_event("enemy_spawn", m.p)
 	var at: Vector2 = (m.p as Vector2) / scale - Vector2(0, LIFT)
 	var last: Vector2 = m.get("feel_at", at)
 	m.feel_at = at
@@ -670,10 +695,13 @@ func _pools() -> Array:
 		if not pool.has("feel_id"):
 			pool.feel_id = _next_id
 			_next_id += 1
+			# thrown from where the hero stands: it runs on that way (src/vfx/splat_shape.gd)
+			pool.feel_dir = ((pool.p as Vector2) - Vector2(g.player.x, g.player.y)).normalized()
 		var at := (pool.p as Vector2) / scale
 		var total := maxf(0.01, float(pool.get("max", pool.t)))
 		out.append({"id": int(pool.feel_id), "k": "pool", "st": str(pool.get("style", "fire" if str(pool.get("status", "")) == "burn" else "poison")),
-			"x": at.x, "y": at.y, "r": float(pool.r) / scale, "p": clampf(1.0 - float(pool.t) / total, 0.0, 1.0)})
+			"x": at.x, "y": at.y, "r": float(pool.r) / scale, "p": clampf(1.0 - float(pool.t) / total, 0.0, 1.0), "L": total,
+			"dx": (pool.feel_dir as Vector2).x, "dy": (pool.feel_dir as Vector2).y})
 	return out
 
 

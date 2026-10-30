@@ -91,10 +91,12 @@ static func draw_under(g: Node, l: CanvasItem, t: float) -> void:
 	FrostMoves.draw(g, l, t)
 
 
-## Over the actors: the hero's conditions.
+## Over the actors: the enemies' ice shards, falling hail, armour and impact
+## flashes on the pixel grid (with theme.vfx), then the hero's conditions.
 static func draw_over(g: Node, l: CanvasItem, t: float) -> void:
 	if not on(g):
 		return
+	FrostMoves.draw_over(g, l, t)
 	HeroFx.draw(g, l, t)
 
 

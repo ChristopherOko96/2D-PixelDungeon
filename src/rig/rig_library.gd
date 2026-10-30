@@ -13,7 +13,7 @@ const HELL_PATH := "res://assets/data/hell_rigs.json"
 ## Rigs are drawn at 2x, like every other 0x72 sprite in the game.
 const PIXEL_SCALE := 2.0
 ## Floating figures are drawn this many source pixels above their rest pose.
-const HOVER := {"necro": 3.0, "void": 5.0, "bomber": 3.0}
+const HOVER := {"necro": 3.0, "void": 5.0, "bomber": 3.0, "spirit": 3.0}
 
 static var _shared: RefCounted
 
@@ -211,7 +211,9 @@ func _part_fields(spec: Dictionary) -> Dictionary:
 		"disables": disabled_actions(disables) if disables is Array else str(disables if disables != null else ""), "regrow": float(spec.get("regrow", 0)),
 		"also_detach": Array(spec.get("alsoDetach", [])), "exposed": str(spec.get("exposed", "")), "unbreakable": bool(spec.get("unbreakable", false)),
 		"weakens": _weakens(spec.get("weakens", {})), "group": str(spec.get("group", "")) if spec.get("group") != null else "", "is_item": false,
-		"sway": spec.get("sway", []) if spec.get("sway") is Array else []}
+		"sway": spec.get("sway", []) if spec.get("sway") is Array else [],
+		# the blade's tip of a weapon drawn into the figure (a held item sets its own below)
+		"tip": _vec(spec.get("tip", spec.get("pivot", [0, 0])))}
 
 
 ## {attack id: {param: factor}} with float factors; anything malformed is dropped.
@@ -279,7 +281,9 @@ func _finish(name: String, def: Dictionary, parts: Array[Dictionary], items: Arr
 	return {"name": name, "family": family, "variant": str(def.get("variant", "")), "attack": str(def.get("attack", "")),
 		"ground": _vec(def.get("ground", [0, 0])), "width": float(def.get("width", 10)), "center": center, "top": float(source.get_used_rect().position.y),
 		"hover": float(HOVER.get(family, 0.0)), "size": Vector2(source.get_size()), "parts": parts, "items": items, "by_id": by_id,
-		"material": str(def.get("material", "")), "burn": def.get("burn", {}) if def.get("burn") is Dictionary else {}, "slash": str(def.get("slash", ""))}
+		"material": str(def.get("material", "")), "burn": def.get("burn", {}) if def.get("burn") is Dictionary else {}, "slash": str(def.get("slash", "")),
+		# a weapon or shield drawn into the figure is a part the family's item moves turn (the Frostgruft's knight)
+		"item_parts": bool(def.get("item_parts", false))}
 
 
 ## Leerenrufer: the body is a flipbook of 8 frames, the eye has three states,

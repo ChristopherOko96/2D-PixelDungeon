@@ -46,6 +46,9 @@ var _pools: Array[Dictionary] = []
 var _embers: Array[Dictionary] = []
 ## Frost pixels waiting to melt and water pixels waiting to dry: [art, due time].
 var _frost: Array = []
+## Frost that goes without water (vapor): [art, due time], checked every frame
+## so it leaves in its dither order.
+var _vapor: Array = []
 var _frost_head := 0
 var _water: Array = []
 var _water_head := 0
@@ -55,6 +58,8 @@ var _wet: Dictionary = {}
 ## Floor cells of a liquid that swallows what lands in it (set_sink).
 var _sink: Dictionary = {}
 const STEPS := [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]
+## 4x4 ordered dither (vapor frost leaves in this order).
+const BAYER := [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
 
 
 func _init() -> void:
@@ -204,6 +209,43 @@ func frost(point: Vector2, radius: float, count: int, color: Color) -> void:
 		if art.x < 0 or art.y < 0 or solid(_world(art)): continue
 		_blend(art, Color(color, color.a * _rng.randf_range(0.5, 1.0)), false)
 		_freeze(art)
+
+
+## Frost clumps (opaque, Frostgruft rime): `count` crystals within `radius` of
+## `point`, each a core pixel with 0-2 neighbours (plus or L shapes) in
+## `colors` (the first for the cores, the rest for the arms). One melt time
+## per clump; with `vapor` the clump goes without water, its pixels leaving in
+## ordered-dither order over frost.vapor_spread s (vfx_particles.json).
+func frost_clumps(point: Vector2, radius: float, count: int, colors: Array, vapor := false) -> void:
+	if colors.is_empty(): return
+	_marks += 1
+	var settings_for_frost: Dictionary = _data.get("frost", {})
+	var melt: Array = settings_for_frost.get("melt_after", [6.0, 10.0])
+	for i in range(count):
+		var offset := Vector2.from_angle(_rng.randf() * TAU) * radius * sqrt(_rng.randf())
+		offset.y *= 0.75
+		var core := _art(point + offset)
+		var due := _time + _rng.randf_range(float(melt[0]), float(melt[1]))
+		var cells: Array[Vector2i] = [core]
+		for j in range(_rng.randi_range(0, 2)):
+			cells.append(core + STEPS[_rng.randi_range(0, 3)])
+		for k in range(cells.size()):
+			var art: Vector2i = cells[k]
+			if art.x < 0 or art.y < 0 or solid(_world(art)): continue
+			var color: Color = colors[0] if k == 0 or colors.size() == 1 else colors[1 + _rng.randi_range(0, colors.size() - 2)]
+			_put(art, color)
+			_freeze(art, vapor, due)
+
+
+## Up to `n` art pixels of vapor frost still lying (picked at random), for
+## twinkles drawn over them.
+func frost_sample(n: int) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	if _vapor.is_empty(): return out
+	for i in range(n):
+		var spot: Vector2i = _vapor[_rng.randi_range(0, _vapor.size() - 1)][0]
+		if _frozen.has(spot): out.append(spot)
+	return out
 
 
 ## Glowing embers left by fire: `count` floor pixels within `radius` of `point`
@@ -381,6 +423,7 @@ func clear() -> void:
 	_embers.clear()
 	_frost.clear()
 	_frost_head = 0
+	_vapor.clear()
 	_water.clear()
 	_water_head = 0
 	_frozen.clear()
@@ -512,7 +555,7 @@ func _settle(particle: Dictionary) -> void:
 	var color: Color = particle.color
 	var tint := Color(color.darkened(0.15), minf(0.95, color.a))
 	var cells := maxi(1, roundi(float(particle.size) / PIXEL))
-	var frozen: bool = str(particle.get("mode", "")) == "frost"
+	var frozen: bool = str(particle.get("mode", "")) == "frost" or bool(particle.get("melts", false))
 	# The pixel under the particle, grown up-left for bigger chunks.
 	var corner := _art(Vector2(particle.pos)) - Vector2i(cells / 2, cells / 2)
 	for y in range(cells):
@@ -521,7 +564,7 @@ func _settle(particle: Dictionary) -> void:
 			if art.x < 0 or art.y < 0 or solid(_world(art)): continue
 			_blend(art, tint, false)
 			_loose[art] = true
-			if frozen: _freeze(art)
+			if frozen: _freeze(art, bool(particle.get("vapor", false)))
 
 
 func draw_stains(canvas: CanvasItem) -> void:
@@ -553,7 +596,19 @@ func draw_particles(canvas: CanvasItem) -> void:
 		# Airborne chunks cast a pixel shadow on the floor under them.
 		if size >= 4.0 and height > 3.0 and bool(particle.settle):
 			canvas.draw_rect(Rect2(_snap(ground - Vector2(size * 0.5, 0.0)), Vector2(size, PIXEL)), Color(0, 0, 0, 0.22))
-		canvas.draw_rect(Rect2(_snap(ground - Vector2(0.0, height) - Vector2(size, size) * 0.5), Vector2(size, size)), Color(color, color.a * alpha))
+		var top := _snap(ground - Vector2(0.0, height) - Vector2(size, size) * 0.5)
+		if alpha >= 1.0:
+			canvas.draw_rect(Rect2(top, Vector2(size, size)), color)
+			continue
+		# fading (smoke, dust, sparks) thins out by the ordered dither, pixel by
+		# pixel, instead of turning see-through
+		var cells := maxi(1, roundi(size / PIXEL))
+		var corner := Vector2i((top / PIXEL).round())
+		for y in range(cells):
+			for x in range(cells):
+				var q := corner + Vector2i(x, y)
+				if float(BAYER[posmod(q.y, 4) * 4 + posmod(q.x, 4)]) < alpha * 16.0:
+					canvas.draw_rect(Rect2(Vector2(q) * PIXEL, Vector2(PIXEL, PIXEL)), color)
 
 
 ## Glowing particles (sparks, embers, frost) light up in the bloom layer.
@@ -563,6 +618,8 @@ func draw_glow(canvas: CanvasItem, level: float) -> void:
 		if not bool(particle.glow): continue
 		var alpha := clampf(float(particle.life) / (float(particle.max_life) * 0.5), 0.0, 1.0) if bool(particle.fade) else 1.0
 		var point: Vector2 = Vector2(particle.pos) - Vector2(0.0, float(particle.z))
+		# a spark seen against a wall does not light the wall up (no glow through walls)
+		if solid(point): continue
 		Glow.dot(canvas, point, 6.0 + float(particle.size) * 1.5, Color(particle.color, float(particle.get("glow_a", 0.32)) * alpha * level))
 	for ember: Dictionary in _embers:
 		var heat := float(ember.life) / float(ember.max)
@@ -666,13 +723,20 @@ func _cool(ember: Dictionary) -> void:
 	_blend(ember.art, Color(str(settings_for_embers.get("soot", "1c1416")), float(settings_for_embers.get("soot_alpha", 0.6)) * faint), true)
 
 
-## Marks the pixel at `art` as frost (as it looks now) and schedules its melting.
-func _freeze(art: Vector2i) -> void:
+## Marks the pixel at `art` as frost (as it looks now) and schedules its melting
+## (at `due` when given); `vapor` frost goes without water, later by its place
+## in a 4x4 ordered dither so a clump thins out in a pattern, not at once.
+func _freeze(art: Vector2i, vapor := false, due := -1.0) -> void:
 	var settings_for_frost: Dictionary = _data.get("frost", {})
 	if _frost.size() - _frost_head >= int(settings_for_frost.get("max", 4000)): _frost_head += 1
 	var melt: Array = settings_for_frost.get("melt_after", [6.0, 10.0])
+	if due < 0.0: due = _time + _rng.randf_range(float(melt[0]), float(melt[1]))
 	_frozen[art] = _pixel(art)
-	_frost.append([art, _time + _rng.randf_range(float(melt[0]), float(melt[1]))])
+	if vapor:
+		if _vapor.size() >= int(settings_for_frost.get("max", 4000)): _vapor.pop_front()
+		_vapor.append([art, due + float(BAYER[posmod(art.y, 4) * 4 + posmod(art.x, 4)]) / 16.0 * float(settings_for_frost.get("vapor_spread", 1.2))])
+		return
+	_frost.append([art, due])
 
 
 ## Frost that is due melts to water; water that is due dries away. A frost
@@ -699,6 +763,23 @@ func _melt() -> void:
 		_wet.erase(art)
 		var here := _pixel(art)
 		if absf(here.r - water.r) + absf(here.g - water.g) + absf(here.b - water.b) < 0.04: _put(art, Color(0, 0, 0, 0))
+	# vapor frost: every due pixel goes, the rest keep their order
+	if not _vapor.is_empty():
+		var keep := 0
+		for index in range(_vapor.size()):
+			var entry: Array = _vapor[index]
+			if float(entry[1]) > _time:
+				_vapor[keep] = entry
+				keep += 1
+				continue
+			var spot: Vector2i = entry[0]
+			if not _frozen.has(spot): continue
+			var same: bool = _pixel(spot) == _frozen[spot]
+			_frozen.erase(spot)
+			if same:
+				_put(spot, Color(0, 0, 0, 0))
+				_loose.erase(spot)
+		_vapor.resize(keep)
 	if _frost_head > 512:
 		_frost = _frost.slice(_frost_head)
 		_frost_head = 0

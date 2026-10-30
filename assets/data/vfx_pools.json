@@ -1,0 +1,18 @@
+{
+  "_note": "Physics-based pools on the art grid (src/vfx/splat_shape.gd shape, src/vfx/pool_paint.gd drawing). A pool runs out from where it lands along its flight; walls and solid props stop it and its volume runs on along them (a corner fills, the open floor gets a stretched blot). squash = how flat it lies (the floor seen at a slant); momentum 0..1 = how far it keeps sliding along its flight; spread_time = s it takes to run out to its rim; edge_time = s its rim goes before its middle at the end; rebake_hz = how often a changing pool is shaded again at most; anim_hz = the frame rate of living materials (fire, lava). materials: style (liquid, void, ice, fire, lava), droplets = drops a thrown splat flings ahead, bubbles = bubbles at a time, ramp = opaque colours by role (spec specular, hi highlight and north rim, lite light swirls, body, shade, deep south row and lip, outline). Materials are opaque (no alpha); see production/qa/evidence/crypt-vfx-review.",
+  "squash": 0.75,
+  "momentum": 0.55,
+  "spread_time": 0.35,
+  "edge_time": 0.7,
+  "rebake_hz": 15,
+  "anim_hz": 6,
+  "materials": {
+    "poison": {"style": "liquid", "droplets": 3, "bubbles": 3, "ramp": {"spec": "e8ff9a", "hi": "a8e04a", "lite": "6fae3a", "body": "3b6b2a", "shade": "2c5222", "deep": "24401c", "outline": "1f2b16"}},
+    "void": {"style": "void", "droplets": 2, "bubbles": 2, "ramp": {"spec": "f2d9ff", "hi": "c27bff", "lite": "7a3fb8", "body": "3a1f5c", "shade": "241238", "deep": "1a0d2a", "outline": "120a1c"}},
+    "ice": {"style": "ice", "droplets": 0, "bubbles": 0, "ramp": {"spec": "ffffff", "hi": "e6fbff", "lite": "a6e3f7", "body": "6fbde8", "shade": "3b84c4", "deep": "23599a", "outline": "0d1a38"}},
+    "frost": {"style": "ice", "droplets": 0, "bubbles": 0, "ramp": {"spec": "ffffff", "hi": "e6fbff", "lite": "a6e3f7", "body": "6fbde8", "shade": "3b84c4", "deep": "23599a", "outline": "0d1a38"}},
+    "fire": {"style": "fire", "droplets": 2, "bubbles": 4, "ramp": {"spec": "fff2a0", "hi": "ffb03a", "lite": "e8661e", "body": "a8321e", "shade": "6a1c16", "deep": "3a0e0a", "outline": "1c1117"}},
+    "lava": {"style": "lava", "droplets": 3, "bubbles": 2, "ramp": {"spec": "fdf7ed", "hi": "facb3e", "lite": "ee8e2e", "body": "da4e38", "shade": "4f343c", "deep": "2e1e28", "outline": "1c1117"}},
+    "blood": {"style": "liquid", "droplets": 3, "bubbles": 0, "ramp": {"spec": "d4503c", "hi": "b8303a", "lite": "9c2430", "body": "7a1a26", "shade": "5c1420", "deep": "3e0e16", "outline": "2a0a10"}}
+  }
+}
