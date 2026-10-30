@@ -23,11 +23,22 @@ const SHOT_COL := {
 const LAVA_LOBBERS := ["kesselbrut", "glutwaechter"]
 const PUDDLE_SLAMMERS := ["glutwaechter"]
 ## Pixel laser (an attack with "style": "laser", the Blutfledermaus): world px
-## per laser pixel (the rigs' 2 x 2 source px), hot to cool palette, and the
+## per laser pixel, the floor's and the figures' own art pixel (16 px art x3),
+## so effects and world share one grid (art review,
+## production/qa/evidence/hell-vfx-review); hot to cool palette, and the
 ## flicker rate of its ragged edge in frames a second.
-const LASER_PX := 4.0
+const LASER_PX := 3.0
+## Sizes counted in pixels were made for a 4 px pixel: this keeps them as big.
+const PX_GROW := 4.0 / 3.0
+## The dark outline round fire, lava and shots.
+const OUTLINE := Color("1c1117")
+## 4x4 ordered dither (fading without transparency).
+const BAYER := [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
 const LASER_COL := [Color("fdf7ed"), Color("facb3e"), Color("da4e38"), Color("9f294e"), Color("5f2d56")]
 const LASER_FPS := 12.0
+## A void beam (a beam without "style": "laser") as a wide pixel laser: white
+## core, pink and violet, its flickering edge deep violet.
+const VOID_BEAM_COL := [Color("fdf7ed"), Color("f0b3dd"), Color("c278d0"), Color("8156aa"), Color("4a2a6a")]
 ## A laser's wall burn: pixel fire hot to cool, and how long its embers glow
 ## on after the laser stops (s); the crypt's fire wall hit sparks there every
 ## SCORCH_SPARK s while it burns.
@@ -64,7 +75,7 @@ const WAVE_DUST := [Color("8a5f52"), Color("a8806a"), Color("6e4a4a"), Color("5a
 const SHOT_TRAIL := 0.05
 ## A split floor's wall of flames: how long it burns (s), how high its flames rise (laser px).
 const FIREWALL_TIME := 1.5
-const FIREWALL_HIGH := 11.0
+const FIREWALL_HIGH := 15.0
 ## Flakes of ash a burnt-out fire leaves drifting up.
 const ASH_COL := [Color("5a5555"), Color("3a3535"), Color("7a7070")]
 ## A grave hand rising out of the floor, open then closed (o edge, b body, h light, w white knuckles), 7 x 9.
@@ -277,10 +288,31 @@ func _shot(from: Vector2, dir: Vector2, speed: float, extra := {}) -> void:
 	g.eshots.append(s)
 
 
+## Serial ids of the lava puddles (their pools on the floor).
+var _pool_serial := 0
+
+
 func _zone(z: Dictionary) -> void:
 	var base := {"t": 0.0, "tele": 0.0, "dmg": 0, "done": false}
 	base.merge(z, true)
+	if base.kind == "puddle":
+		_pool_serial += 1
+		base.id = _pool_serial
 	zones.append(base)
+
+
+## The lava puddles as pools for the floor's physics pools (src/vfx/pool_paint.gd
+## via hell_game.pools): each runs out from where it landed along its flight
+## and piles up against walls and props.
+func pool_entries() -> Array:
+	var out: Array = []
+	for z: Dictionary in zones:
+		if z.kind != "puddle":
+			continue
+		var dir: Vector2 = z.get("dir", Vector2.ZERO)
+		out.append({"id": int(z.id), "k": "pool", "st": "lava", "x": z.p.x, "y": z.p.y, "r": float(z.r) * 0.8, "dx": dir.x, "dy": dir.y,
+			"p": clampf(float(z.t) / maxf(0.01, float(z.T)), 0.0, 1.0), "L": float(z.T)})
+	return out
 
 
 ## Sound hook: the running act of `m` releases its strike, shot, wave or summon
@@ -1149,7 +1181,9 @@ func _update_zones(dt: float) -> void:
 				if z.dmg > 0 and absf(d - z.r * minf(1.0, z.t / z.T)) < 40.0:
 					hit = true
 			"puddle":
-				hit = d < z.r and g.state.inv <= 0.0
+				# where the lava really lies (its pool) when the floor draws pools, else its circle
+				var pools: RefCounted = g.get("pools")
+				hit = (pools.covers(me, "lava") if pools != null else d < z.r) and g.state.inv <= 0.0
 			"erupt", "land":
 				hit = z.dmg > 0 and d < z.r
 				z.done = true
@@ -1213,7 +1247,7 @@ func _update_zones(dt: float) -> void:
 			_impact(L.to, "small", L.m)
 			_zone({"kind": "wave", "p": L.to, "r": L.r, "T": 0.3, "dmg": L.dmg, "m": L.m, "c": L.c, "push": "lob"})
 			if L.c == "lava":
-				_zone({"kind": "puddle", "p": L.to, "r": L.r * 0.6, "T": 2.2, "dmg": 1, "m": L.m})
+				_zone({"kind": "puddle", "p": L.to, "r": L.r * 0.6, "T": 2.2, "dmg": 1, "m": L.m, "dir": ((L.to as Vector2) - (L.from as Vector2)).normalized() if L.has("from") else Vector2.ZERO})
 	lobs = lobs.filter(func(L: Dictionary) -> bool: return not L.done)
 	for c: Dictionary in corpses:
 		c.t += dt
@@ -1346,8 +1380,12 @@ func _ring(l: CanvasItem, c: Vector2, r: float, k: float, col: Color) -> void:
 			var q := Vector2(gx, gy) * LASER_PX * float(step)
 			if Vector2((q.x - c.x) / r, (q.y - c.y) / ry).length() <= 1.0:
 				l.draw_rect(Rect2(q, Vector2.ONE * LASER_PX), Color(col, 0.22 + 0.25 * k))
-	_px_ellipse(l, c, r, ry, Color(col, 0.9), 3 if k < 0.7 else 2, int(floorf(t * LASER_FPS)))
-	_px_ellipse(l, c, r * k, ry * k, Color(col, 0.75))
+	# the rim crawls over a dark underlay one pixel lower, so it reads on the red-cracked floor
+	_px_ellipse(l, c + Vector2(0, LASER_PX), r, ry, OUTLINE, 3 if k < 0.7 else 2, int(floorf(t * LASER_FPS)))
+	_px_ellipse(l, c, r, ry, col, 3 if k < 0.7 else 2, int(floorf(t * LASER_FPS)))
+	if k > 0.05:
+		_px_ellipse(l, c + Vector2(0, LASER_PX), r * k, ry * k, OUTLINE)
+		_px_ellipse(l, c, r * k, ry * k, col.lightened(0.25))
 
 
 ## Draws one atlas frame with its feet at foot; cut hides that many world pixels
@@ -1501,7 +1539,9 @@ func draw_warnings(l: CanvasItem) -> void:
 				if z.t < z.tele:
 					_ring(l, z.p, z.r, k, Color8(255, 60, 30) if z.kind == "land" else Color8(255, 140, 40))
 			"puddle":
-				_px_pool(l, z.p, z.r, z.r * 0.55, minf(1.0, (z.T - z.t) * 1.5), float(g.state.t))
+				# a physics pool on the floor layer (hell_game.pools) when there is one
+				if g.get("pools") == null:
+					_px_pool(l, z.p, z.r, z.r * 0.55, minf(1.0, (z.T - z.t) * 1.5), float(g.state.t))
 			"line":
 				if z.t < z.tele:
 					_px_strip(l, z.p, Vector2.from_angle(float(z.ang)), float(z.len), float(z.w) / 2.0, k, Color8(255, 70, 30))
@@ -1596,12 +1636,17 @@ func draw_lasers(l: CanvasItem) -> void:
 		_px(l, (f.p as Vector2) - Vector2(0, float(f.z)), Color(col, col.a * a), int(f.s))
 	for m: Dictionary in g.mobs:
 		var A = m.act
-		if A == null or A.kind != "beam" or A.get("warn", false) or str(A.a.get("style", "")) != "laser":
+		if A == null or A.kind != "beam" or A.get("warn", false):
 			continue
 		var head := _beam_head(m)
 		var life := (float(A.t) - 0.8) / maxf(0.05, float(A.a.get("duration", 1.0)))
+		var laser := str(A.a.get("style", "")) == "laser"
 		for b: float in A.beams:
-			_pixel_laser(l, head, b, _beam_reach(head, b, float(A.a.get("range", 1100.0))), t, life)
+			if laser:
+				_pixel_laser(l, head, b, _beam_reach(head, b, float(A.a.get("range", 1100.0))), t, life)
+			else:
+				# a void beam: as wide as its old band, on the pixel grid, opaque
+				_pixel_laser(l, head, b, _wall_len(head, b, float(A.a.get("range", 1100.0))), t, life, VOID_BEAM_COL, 3)
 
 
 ## A laser's aim on the pixel grid: every fourth laser pixel lit, crawling
@@ -1623,7 +1668,7 @@ func _pixel_aim(l: CanvasItem, from: Vector2, ang: float, length: float, t: floa
 ## crimson and dropping out now and then at LASER_FPS, a yellow core with white
 ## pulses running outward. At its end (`life` 0..1) only the core is left.
 ## A few sparks crackle at the muzzle.
-func _pixel_laser(l: CanvasItem, from: Vector2, ang: float, length: float, t: float, life: float) -> void:
+func _pixel_laser(l: CanvasItem, from: Vector2, ang: float, length: float, t: float, life: float, cols: Array = LASER_COL, wide := 1) -> void:
 	var dir := Vector2.from_angle(ang)
 	var tq := floorf(t * LASER_FPS)
 	var steps := int(length / LASER_PX)
@@ -1636,12 +1681,14 @@ func _pixel_laser(l: CanvasItem, from: Vector2, ang: float, length: float, t: fl
 			var n := sin(float(i) * 1.7 + tq * 2.3) + sin(float(i) * 0.61 - tq * 1.3)
 			if n < -1.4:
 				continue
-			block.call(from + dir * (float(i) * LASER_PX), 1, LASER_COL[3] if n > 1.0 else LASER_COL[2])
+			if wide > 1:
+				block.call(from + dir * (float(i) * LASER_PX), wide, cols[4] if cols.size() > 4 else cols[3])
+			block.call(from + dir * (float(i) * LASER_PX), wide - 1 if wide > 1 else 1, cols[3] if n > 1.0 else cols[2])
 	for i in range(steps):
-		block.call(from + dir * (float(i) * LASER_PX), 0, LASER_COL[0] if posmod(i - int(tq) * 3, 7) == 0 else LASER_COL[1])
+		block.call(from + dir * (float(i) * LASER_PX), maxi(0, wide - 2), cols[0] if posmod(i - int(tq) * 3, 7) == 0 else cols[1])
 	for k in range(3):
 		var ang_k := float(k) * 2.1 + tq * 0.9
-		block.call(from + Vector2(cos(ang_k), sin(ang_k)) * LASER_PX * float(1 + (k + int(tq)) % 2), 0, LASER_COL[k % 2])
+		block.call(from + Vector2(cos(ang_k), sin(ang_k)) * LASER_PX * float(1 + (k + int(tq)) % 2), 0, cols[k % 2])
 
 
 ## One block of the pixel grid, `size` laser pixels wide, at world point `p`.
@@ -1671,31 +1718,107 @@ func _px_ellipse(l: CanvasItem, c: Vector2, rx: float, ry: float, col: Color, ev
 		l.draw_rect(Rect2(Vector2(q) * LASER_PX, Vector2.ONE * LASER_PX), col)
 
 
-## A shot or lob on the pixel grid: a disc of `r` laser pixels from a white-hot
-## core to its edge colour (`cols`: PX_COL), its rim flickering at LASER_FPS,
-## and a tapering, flickering trail behind it against `vel`.
+## An impact at moment `k` (0..1) on the pixel grid: one ragged mass of fire
+## (the union of a few lobes with a noisy rim), white-hot only in its middle
+## and early, cooling outward to crimson, outlined; dark smoke clumps rising
+## off its top that thin out by the dither as it ends; embers flung out.
+func _px_burst(l: CanvasItem, c: Vector2, r: float, k: float, cols: Array, seed: float) -> void:
+	var at := Vector2i((c / LASER_PX).floor())
+	var R := r / LASER_PX * (0.75 + 0.45 * k)
+	var lobes := [[0.0, 0.0, 0.62], [-0.45, -0.2, 0.42], [0.5, -0.15, 0.4], [-0.2, 0.42, 0.38], [0.35, 0.4, 0.36], [0.05, -0.55, 0.34]]
+	var m := {}
+	for y in range(-int(R) - 3, int(R) + 4):
+		for x in range(-int(R) - 3, int(R) + 4):
+			var p := Vector2(x, y) / maxf(1.0, R)
+			for lb: Array in lobes:
+				var rim := float(lb[2]) * (1.0 + 0.22 * (_px_noise(x, y, int(seed)) - 0.5))
+				if p.distance_to(Vector2(float(lb[0]), float(lb[1]))) <= rim:
+					m[at + Vector2i(x, y)] = p.length()
+					break
+	var smoke := {}
+	for i in range(5):
+		var a := PI + PI * (0.15 + 0.7 * float(i) / 4.0)
+		var sc := at + Vector2i(int(cos(a) * R * 0.8), int(sin(a) * R * 0.7 - R * 0.25 * k))
+		var sr := R * (0.28 + 0.06 * float(i % 2)) * (0.8 + 0.6 * k)
+		for y in range(-int(sr) - 1, int(sr) + 2):
+			for x in range(-int(sr) - 1, int(sr) + 2):
+				if Vector2(x, y).length() <= sr * (1.0 + 0.25 * (_px_noise(x, y, 30 + i) - 0.5)):
+					var q := sc + Vector2i(x, y)
+					if not m.has(q) and float(BAYER[posmod(q.y, 4) * 4 + posmod(q.x, 4)]) < (1.0 - k * 0.6) * 16.0:
+						smoke[q] = y < -int(sr * 0.3)
+	for q: Vector2i in smoke:
+		l.draw_rect(Rect2(Vector2(q) * LASER_PX, Vector2.ONE * LASER_PX), Color("5a4656") if smoke[q] else Color("3b2a35"))
+	for q: Vector2i in m:
+		for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			if not m.has(q + d) and not smoke.has(q + d):
+				l.draw_rect(Rect2(Vector2(q + d) * LASER_PX, Vector2.ONE * LASER_PX), OUTLINE)
+	for q: Vector2i in m:
+		var heat: float = float(m[q]) + 0.25 * (_px_noise(q.x, q.y, 9) - 0.5) + k * 0.45
+		var col: Color = cols[0] if heat < 0.18 else cols[1] if heat < 0.42 else cols[2] if heat < 0.68 else cols[3] if heat < 0.88 else cols[3].darkened(0.3)
+		l.draw_rect(Rect2(Vector2(q) * LASER_PX, Vector2.ONE * LASER_PX), col)
+	for i in range(9):
+		var a := TAU * float(i) / 9.0 + 0.4
+		var e := at + Vector2i(int(cos(a) * R * (1.15 + k)), int(sin(a) * R * (1.15 + k) * 0.8))
+		l.draw_rect(Rect2(Vector2(e) * LASER_PX, Vector2.ONE * LASER_PX), cols[1] if i % 2 == 0 else cols[2])
+
+
+## Smooth value noise 0..1 over cells of 2 pixels.
+func _px_noise(x: int, y: int, s: int) -> float:
+	var fx := float(x) / 2.0
+	var fy := float(y) / 2.0
+	var gx := floori(fx)
+	var gy := floori(fy)
+	var u := fx - float(gx)
+	var v := fy - float(gy)
+	u = u * u * (3.0 - 2.0 * u)
+	v = v * v * (3.0 - 2.0 * v)
+	var h := func(a: int, b: int) -> float: return float(absi((a * 73856093) ^ (b * 19349663) ^ (s * 83492791)) % 1000) / 1000.0
+	return lerpf(lerpf(h.call(gx, gy), h.call(gx + 1, gy), u), lerpf(h.call(gx, gy + 1), h.call(gx + 1, gy + 1), u), v)
+
+
+## A shot or lob on the pixel grid: a ball of `r` pixels (of the old 4 px
+## grid, PX_GROW) from a white-hot core (one or two pixels only) to its edge
+## colour (`cols`: PX_COL), outlined in OUTLINE; flying, three stepped flame
+## tongues stream back from it against `vel`, their lengths flickering at
+## LASER_FPS, cooling to the edge colour and crimson, and embers trail it.
+## Opaque: no soft trail, the bloom over it stays small (story_glow.gd).
 func _px_ball(l: CanvasItem, p: Vector2, r: int, cols: Array, vel: Vector2, t: float, seed: float) -> void:
+	r = maxi(1, int(round(float(r) * PX_GROW)))
 	var tq := floorf(t * LASER_FPS)
-	if vel.length() > 1.0:
-		var back := -vel.normalized()
-		var n := r * 2 + 3
-		for i in range(1, n):
-			var k := float(i) / float(n)
-			if sin(tq * 2.1 + float(i) * 1.7 + seed) > 1.0 - k * 1.2:
-				continue
-			var half := int(roundf((1.0 - k) * float(r - 1)))
-			var q := ((p + back * float(i) * LASER_PX) / LASER_PX).floor() * LASER_PX - Vector2.ONE * float(half) * LASER_PX
-			l.draw_rect(Rect2(q, Vector2.ONE * float(2 * half + 1) * LASER_PX), Color(cols[2] if k < 0.45 else cols[3], 1.0 - k * 0.8))
-	var base := (p / LASER_PX).floor() * LASER_PX
+	var at := Vector2i((p / LASER_PX).floor())
+	var m := {}
 	for y in range(-r, r + 1):
 		for x in range(-r, r + 1):
-			var d := sqrt(float(x * x + y * y)) / (float(r) + 0.5)
-			if d > 1.0:
-				continue
-			if d > 0.7 and sin(tq * 1.7 + float(x * 3 + y * 5) + seed) > 0.6:
-				continue
-			var col: Color = cols[0] if d < 0.3 else cols[1] if d < 0.55 else cols[2] if d < 0.8 else cols[3]
-			l.draw_rect(Rect2(base + Vector2(x, y) * LASER_PX, Vector2.ONE * LASER_PX), col)
+			if Vector2(x, y).length() <= float(r) + 0.4:
+				m[at + Vector2i(x, y)] = Vector2(x, y).length() / float(r)
+	var tail_col: Color = cols[3].darkened(0.25)
+	if vel.length() > 1.0:
+		var back := -vel.normalized()
+		var side := back.orthogonal()
+		for f in range(-1, 2):
+			var length := r * 2 + 2 + int(2.0 * sin(tq * 1.9 + float(f) * 2.3 + seed)) - absi(f) * 2
+			for i in range(1, length):
+				var k := float(i) / float(length)
+				var w := maxi(0, int(round((1.0 - k) * float(r - 1) * (0.8 if f == 0 else 0.5))))
+				var c := p + back * float(i + r - 1) * LASER_PX + side * float(f) * LASER_PX * float(r) * 0.8 * (1.0 - k * 0.3)
+				for o in range(-w, w + 1):
+					var q := Vector2i(((c + side * float(o) * LASER_PX) / LASER_PX).floor())
+					if not m.has(q):
+						m[q] = 1.0 + k
+	for q: Vector2i in m:
+		for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			if not m.has(q + d):
+				l.draw_rect(Rect2(Vector2(q + d) * LASER_PX, Vector2.ONE * LASER_PX), OUTLINE)
+	for q: Vector2i in m:
+		var d: float = m[q]
+		var col: Color = cols[0] if d < 0.3 else cols[1] if d < 0.72 else cols[2] if d < 1.3 else cols[3] if d < 1.65 else tail_col
+		l.draw_rect(Rect2(Vector2(q) * LASER_PX, Vector2.ONE * LASER_PX), col)
+	if vel.length() > 1.0:
+		var back := -vel.normalized()
+		for i in range(3):
+			if sin(tq * 2.0 + float(i) * 1.3 + seed) > -0.2:
+				var e := p + back * float(r * 4 + i * 5) * LASER_PX + back.orthogonal() * LASER_PX * 3.0 * sin(float(i) * 2.7 + tq * 0.8)
+				l.draw_rect(Rect2((e / LASER_PX).floor() * LASER_PX, Vector2.ONE * LASER_PX), cols[1] if i < 2 else cols[2])
 
 
 ## A lost soul on the pixel grid (a shot's "look": "wisp", the Seelenhirte's
@@ -2689,7 +2812,7 @@ func _draw_scorch(l: CanvasItem, s: Dictionary, t: float) -> void:
 	var tq := floorf(t * LASER_FPS)
 	var base := ((s.p as Vector2) / LASER_PX).floor() * LASER_PX
 	var px := Vector2(LASER_PX, LASER_PX)
-	var tall := 7.0 * heat
+	var tall := 9.0 * heat
 	for i in range(-2, 3):
 		var edge := 1.0 - absf(float(i)) / 3.0
 		var wave := 0.6 + 0.4 * sin(tq * 1.9 + float(i) * 2.3 + float(s.seed))
@@ -2747,15 +2870,12 @@ func draw_fx(l: CanvasItem) -> void:
 				if z.kind == "meteor" and z.t >= 0.0 and z.t < z.tele:
 					var my: float = z.p.y - 900.0 * (1.0 - z.t / z.tele)
 					var void_fire: bool = z.get("void", false)
-					l.draw_rect(Rect2(z.p.x - 8, my - 120, 16, 120), Color(1, 0.47, 0.16, 0.35))
-					_orb(l, Vector2(z.p.x, my), 46.0, SHOT_COL.void if void_fire else SHOT_COL.lava)
+					# a falling ball of fire with its flames streaming up behind it
+					_px_ball(l, Vector2(z.p.x, my), 7, PX_COL.void if void_fire else PX_COL.lava, Vector2(0, 600), float(g.state.t), float(int(z.p.x) % 17))
 				if z.t >= z.tele:
 					var k: float = (z.t - z.tele) / (z.T - z.tele)
-					var col: Color = Color8(190, 110, 255) if z.kind == "hand" else Color8(255, 160, 60)
-					# the hit's core; its soft halo is the crypt's bloom (src/hero/story_glow.gd), flat without the light
-					if flat:
-						l.draw_circle(z.p - Vector2(0, 20), z.r * 1.3, Color(col, 0.3 * (1.0 - k)))
-					l.draw_circle(z.p - Vector2(0, 20), z.r * 0.7, Color(col, 0.6 * (1.0 - k)))
+					# the hit: one ragged mass of pixel fire with smoke rising off it
+					_px_burst(l, z.p - Vector2(0, 20), z.r * 0.7, k, PX_COL.void if z.kind == "hand" or z.get("void", false) else PX_COL.fire, float(int(z.p.x) % 17))
 					if z.kind == "hand":
 						for f in range(-2, 3):
 							var fl := 70.0 * (1.0 - absi(f) * 0.2)
@@ -2763,18 +2883,7 @@ func draw_fx(l: CanvasItem) -> void:
 	# lobs are pixel fireballs or boulders over the actors (draw_lasers)
 	for m: Dictionary in g.mobs:
 		var A = m.act
-		if A != null and A.kind == "beam" and not A.get("warn", false):
-			# from the drawn core, like their damage (src/hell/drake_rig_host.gd)
-			var head := _beam_head(m)
-			for b: float in A.beams:
-				var len := _wall_len(head, b, float(A.a.get("range", 1100.0)))
-				if str(A.a.get("style", "")) == "laser":
-					# drawn in its own colours over the actors (draw_lasers), not on this additive layer
-					continue
-				l.draw_set_transform(head, b)
-				for part: Array in [[60.0, Color(0.35, 0.12, 0.63, 0.35)], [36.0, Color(0.67, 0.31, 1, 0.6)], [16.0, Color(0.94, 0.82, 1, 0.95)]]:
-					l.draw_rect(Rect2(0, -part[0] / 2.0 + sin(t * 30.0) * 2.0, len, part[0]), part[1])
-				l.draw_set_transform(Vector2.ZERO)
+		# every beam is a pixel laser in its own colours over the actors (draw_lasers)
 		# the transformation and dying glow is the crypt's bloom (src/hero/story_glow.gd), flat without the light
 		var heat := _glow(m)
 		if flat and heat > 0.0:

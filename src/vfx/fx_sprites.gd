@@ -113,10 +113,24 @@ func frame_size(name: String) -> Vector2:
 	return _sheets[name].size if _sheets.has(name) else Vector2.ZERO
 
 
+## A sheet's scale as a whole number (at least 1): every sprite pixel is a
+## whole number of art pixels, never 0.7 or 2.4 of one (no mixed pixel sizes;
+## art review, production/qa/evidence/crypt-vfx-review).
+static func whole(scale: float) -> float:
+	return maxf(1.0, roundf(scale))
+
+
+## An unturned sheet sits on the art grid (a turned one cannot).
+static func _on_grid(point: Vector2, rotation: float) -> Vector2:
+	return point.snapped(Vector2(PIXEL, PIXEL)) if is_zero_approx(fposmod(rotation, TAU)) else point
+
+
 ## Draws the frame of a one-shot sheet at `progress` (0 = first, 1 = last
 ## frame) without keeping state, for effects whose age comes from a snapshot.
 func draw_at(canvas: CanvasItem, name: String, point: Vector2, rotation: float, scale: float, progress: float, tint: Color = Color.WHITE) -> void:
 	if not _sheets.has(name): return
+	scale = whole(scale)
+	point = _on_grid(point, rotation)
 	var sheet: Dictionary = _sheets[name]
 	var frame := clampi(int(progress * float(sheet.frames)), 0, int(sheet.frames) - 1)
 	_frame(canvas, sheet, frame, point, rotation, scale, tint, PackedVector2Array())
@@ -126,6 +140,8 @@ func draw_at(canvas: CanvasItem, name: String, point: Vector2, rotation: float, 
 ## cuts it at walls.
 func spawn(name: String, point: Vector2, rotation: float = 0.0, scale: float = 1.0, tint: Color = Color.WHITE, speed: float = 1.0, clip: bool = false) -> void:
 	if not _sheets.has(name): return
+	scale = whole(scale)
+	point = _on_grid(point, rotation)
 	if _live.size() >= MAX_LIVE: _live.pop_front()
 	var item := {"name": name, "pos": point, "rot": rotation, "scale": scale, "tint": tint, "time": 0.0, "speed": speed}
 	if clip and not _walkable.is_empty(): item.poly = _clip_polygon(_sheets[name], point, rotation, scale)
@@ -175,9 +191,10 @@ func draw_glow(canvas: CanvasItem, level: float) -> void:
 		var progress := float(item.time) / _length(sheet)
 		var alpha := 1.0 - smoothstep(float(sheet.fade), 1.0, progress)
 		var radius := maxf(float(sheet.size.x), float(sheet.size.y)) * PIXEL * float(item.scale) * (0.6 + 0.35 * progress)
-		var strength := (0.55 if MAGIC.has(item.name) else 0.3) * alpha * (1.0 - 0.4 * progress)
-		Glow.dot(canvas, item.pos, radius, Color(color, strength * level))
-		Glow.dot(canvas, item.pos, radius * 0.4, Color(color.lightened(0.4), strength * 0.8 * level))
+		# a soft halo in the effect's colour only: no white-hot core over the
+		# pixel sprite (art review: the bloom must not burn the shapes away)
+		var strength := (0.35 if MAGIC.has(item.name) else 0.16) * alpha * (1.0 - 0.4 * progress)
+		Glow.dot(canvas, item.pos, radius * 0.8, Color(color, strength * level))
 
 
 ## Light circles for the dark crypt from running magic effects (Vector4 x, y,
@@ -198,6 +215,8 @@ func lights() -> Array:
 ## shows on its far side).
 func draw_loop(canvas: CanvasItem, name: String, point: Vector2, rotation: float, scale: float, clock: float, tint: Color = Color.WHITE, clip: bool = false) -> void:
 	if not _sheets.has(name): return
+	scale = whole(scale)
+	point = _on_grid(point, rotation)
 	var sheet: Dictionary = _sheets[name]
 	var poly := PackedVector2Array()
 	if clip and _near_wall(point, maxf(float(sheet.size.x), float(sheet.size.y)) * PIXEL * scale * 0.5): poly = _clip_polygon(sheet, point, rotation, scale)

@@ -15,6 +15,9 @@ const Walls = preload("res://src/hell/hell_walls.gd")
 const Rules = preload("res://src/hell/hell_rules.gd")
 const Monsters = preload("res://src/hell/hell_monsters.gd")
 const DrakeRigHost = preload("res://src/hell/drake_rig_host.gd")
+const FrostRigs = preload("res://src/hell/frost_rigs.gd")
+const FrostFx = preload("res://src/hell/frost_fx.gd")
+const PoolPaint = preload("res://src/vfx/pool_paint.gd")
 const RigLibrary = preload("res://src/rig/rig_library.gd")
 const MobRules = preload("res://src/hell/mob_rules.gd")
 const BossKit = preload("res://src/hell/boss_kit.gd")
@@ -221,6 +224,13 @@ var glow: Layer
 var monsters: Monsters
 ## Ignaroth's part rig (src/hell/drake_rig_host.gd): body parts, part hits, rig drawing; null without monsters.
 var drake_rig: DrakeRigHost
+## The Frostgruft's enemies as the crypt's part rigs (src/hell/frost_rigs.gd, theme.rigs); null elsewhere.
+var frost_rigs: FrostRigs
+## The Frostgruft's attacks on the pixel grid with their feel and knockback (src/hell/frost_fx.gd, theme.vfx); null elsewhere.
+var frost_fx: FrostFx
+## The Hell's lava puddles as physics pools on the floor (src/vfx/pool_paint.gd,
+## drawn in src/hero/story_feel.gd's floor layer); null without monsters.
+var pools: RefCounted
 var hud: Hud
 var _chunk_nodes: Array = []
 var _vignette: GradientTexture2D
@@ -299,9 +309,14 @@ func _ready() -> void:
 	camera.make_current()
 	if not theme.has("mobs"):
 		monsters = Monsters.new(self, balance.monsters)
+		pools = PoolPaint.new(PIXEL_WORLD, _floor_open)
 		# Ignaroth's part rig: tuning from balance.monsters.rigs (DrakeRigHost.DEFAULTS fill gaps)
 		drake_rig = DrakeRigHost.new(balance.monsters, RigLibrary.shared())
 		monsters.rig_host = drake_rig
+	elif theme.has("rigs"):
+		frost_rigs = FrostRigs.new(self, theme.rigs)
+	if theme.has("vfx") and monsters == null:
+		frost_fx = FrostFx.new(self, theme.vfx)
 	actors = _layer("actors", 10)
 	glow = _layer("glow", 11)
 	var add := CanvasItemMaterial.new()
@@ -668,6 +683,12 @@ func load_floor(n: int, carry: bool) -> void:
 	if monsters != null:
 		monsters.reset()
 		drake_rig.reset()
+	if frost_rigs != null:
+		frost_rigs.reset()
+	if frost_fx != null:
+		frost_fx.reset()
+	if pools != null:
+		pools.clear()
 	allies = []
 	pending = []
 	hold = {}
@@ -795,6 +816,17 @@ func _cell(x: int, y: int) -> int:
 	if x < 0 or y < 0 or x >= W.cols or y >= W.rows:
 		return 0
 	return W.grid[y * W.cols + x]
+
+
+## World px per art pixel (the floor tiles' 16 px art drawn x3 at 48 px).
+const PIXEL_WORLD := 3.0
+
+
+## Floor a pool may cover: walkable cells outside the solid props.
+func _floor_open(p: Vector2) -> bool:
+	if not _walkable(_cell(int(floor(p.x / C)), int(floor(p.y / C)))):
+		return false
+	return not box_blocked(Rect2(p - Vector2(1, 1), Vector2(2, 2)))
 
 
 func _walkable(t: int) -> bool:
@@ -1802,6 +1834,12 @@ func _fall_into_pit() -> void:
 	if monsters != null:
 		monsters.reset()
 		drake_rig.reset()
+	if frost_rigs != null:
+		frost_rigs.reset()
+	if frost_fx != null:
+		frost_fx.reset()
+	if pools != null:
+		pools.clear()
 	state.pull = null
 	_respawn()
 	state.inv = 1.2
@@ -1988,6 +2026,12 @@ func _update(dt: float) -> void:
 	# hell_monsters.gd) leave the crypt's wall slam instead of the relics' violet quake ring
 	var slams := _slams_before()
 	_update_mobs(dt)
+	# the Frostgruft's figures: what each one does now goes to its rig
+	if frost_rigs != null:
+		frost_rigs.frame(dt)
+	# the attacks' frost waves and flashes age, the hero slides along his knockback
+	if frost_fx != null:
+		frost_fx.update(dt)
 	# Ignaroth's rig: stagger/landing timers, the closing throat, debris; then the cuts' hitstop and sound
 	if drake_rig != null:
 		drake_rig.frame(mobs, monsters.corpses, dt)
@@ -2173,8 +2217,11 @@ func _update_shots(dt: float) -> void:
 		s.t -= dt
 		if not s.get("fist", false) and _cell_blocked(int(floor(s.p.x / C)), int(floor(s.p.y / C)), false):
 			s.t = 0.0
+			# the frost world's shard breaks on the wall into ice chips and rime (src/hell/frost_fx.gd)
+			if frost_fx != null and str(s.get("style", "ice")) in ["ice", "frost"]:
+				frost_fx.shatter((s.p as Vector2) - (s.v as Vector2) * dt, 8, 14.0, -(s.v as Vector2).normalized(), 160.0)
 			# effect hook: with the feel the crypt's wall hit in the shot's style
-			if feel != null:
+			elif feel != null:
 				feel.wall_hit((s.p as Vector2) - (s.v as Vector2) * dt, s.p, feel.enemy_wall_style(s))
 			else:
 				_burst(s.p, 4)
@@ -2185,7 +2232,12 @@ func _update_shots(dt: float) -> void:
 			if s.has("dmg"):
 				FrostCombat.FrostMoves.shot_hit(self, s)
 			else:
+				var before := int(state.hp)
 				_hurt("von Feuer getroffen", 1, s.p)
+				# a guardian's plain shot pushes the hero back and bursts into ice on him
+				if frost_fx != null and int(state.hp) < before:
+					frost_fx.hit_hero((s.p as Vector2) - (s.v as Vector2).normalized() * 40.0, "fist" if s.get("fist", false) else "shot", "small" if s.get("fist", false) else "tiny")
+					frost_fx.shatter(s.p, 8, 14.0, (s.v as Vector2).normalized(), 120.0)
 		if s.t <= 0.0 and s.has("end_pool"):
 			FrostCombat.FrostMoves.shot_end(self, s)
 	eshots = eshots.filter(func(s: Dictionary) -> bool: return s.t > 0.0)
@@ -2194,6 +2246,8 @@ func _update_shots(dt: float) -> void:
 func _update_mobs(dt: float) -> void:
 	if monsters != null:
 		monsters.update(dt)
+		if pools != null:
+			pools.sync(monsters.pool_entries(), float(state.t))
 		return
 	var me := Vector2(player.x, player.y)
 	var hidden := float(state.get("stealth", 0.0)) > 0.0
@@ -2735,6 +2789,8 @@ func _draw_actors(l: Layer) -> void:
 	# Ignaroth's severed parts lie on the floor under everyone (src/hell/drake_rig_host.gd)
 	if drake_rig != null:
 		drake_rig.draw_under(l)
+	if frost_rigs != null:
+		frost_rigs.draw_under(l)
 	_draw_zones(l, t)
 	for e: Dictionary in W.ents:
 		if not view.has_point(Vector2(e.x, e.y)):
@@ -2825,6 +2881,8 @@ func _draw_actors(l: Layer) -> void:
 	# the cuts' chips, embers and flashes over the actors
 	if drake_rig != null:
 		drake_rig.draw_over(l)
+	if frost_rigs != null:
+		frost_rigs.draw_over(l)
 	# the monsters' pixel lasers in their own colours over the actors (their glow is the bloom)
 	if monsters != null:
 		monsters.draw_lasers(l)
@@ -2834,6 +2892,9 @@ func _draw_actors(l: Layer) -> void:
 	# effect hook: with the feel the hero's conditions are the crypt's (boss_fx.gd on the feel's layer)
 	if feel == null:
 		FrostCombat.draw_over(self, l, t)
+	# the frost world's ice shards, hail, armour and impact flashes on the pixel grid (src/hell/frost_fx.gd)
+	elif frost_fx != null:
+		FrostCombat.FrostMoves.draw_over(self, l, t)
 	for s: Dictionary in shots:
 		if SubKit.draw_shot(self, l, s, t):
 			continue
@@ -2874,7 +2935,7 @@ func _draw_actors(l: Layer) -> void:
 		l.draw_circle(s.p, 16.0 * big, col("shot_glow"))
 		l.draw_circle(s.p, 8.0 * big, col("shot_core"))
 	# hell monster shots glow on the additive layer instead
-	for s: Dictionary in (eshots if monsters == null else []):
+	for s: Dictionary in (eshots if monsters == null and frost_fx == null else []):
 		if FrostCombat.FrostMoves.draw_shot(l, s, t):
 			continue
 		var r := 30.0 if s.get("fist", false) else 15.0
@@ -3161,6 +3222,9 @@ func _draw_mob_sprite(l: Layer, m: Dictionary, t: float) -> void:
 	# glow hook (src/hero/story_glow.gd): where the body is drawn this frame, so its glowing parts follow it
 	story_glow.mark(m, {"foot": feet, "size": size, "src": im.get_size(), "face": -1.0 if (m.face as Vector2).x < 0.0 else 1.0,
 		"lean": float(pose.get("lean", 0.0)), "alpha": tint.a})
+	# the Frostgruft's figures move as the crypt's part rigs (src/hell/frost_rigs.gd); without one the sprite stays
+	if frost_rigs != null and frost_rigs.draw(l, m, feet, float(m.ds) * grow, tint, pose):
+		return
 	l.draw_set_transform(feet, float(pose.get("lean", 0.0)), Vector2(-1.0 if (m.face as Vector2).x < 0.0 else 1.0, 1.0))
 	l.draw_texture_rect(im, Rect2(Vector2(-size.x / 2.0, -size.y), size), false, tint)
 	# the crypt's hit flash: the silhouette in the flash colour (red hit, white kill)

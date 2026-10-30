@@ -23,6 +23,6 @@
     "hop": [30, 90], "max_lift": 60},
   "liquid": {"spread_rate": 45, "budget_scale": 0.9, "reach_scale": 2.2, "dry_after": 5.0, "dry_darken": 0.35, "max_pools": 48},
   "ember": {"life": [1.5, 4.0], "smoke_rate": 1.2, "colors": ["ffe08a", "ff8a2a", "a8361c"], "soot": "1c1416", "soot_alpha": 0.6, "max": 500},
-  "frost": {"melt_after": [6.0, 10.0], "water": "3a6a9e", "water_alpha": 0.45, "evaporate_after": 8.0, "max": 4000},
+  "frost": {"melt_after": [6.0, 10.0], "water": "3a6a9e", "water_alpha": 0.45, "evaporate_after": 8.0, "max": 4000, "vapor_spread": 1.2},
   "smoke_color": "2e2a2c"
 }

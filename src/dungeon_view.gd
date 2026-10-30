@@ -39,6 +39,8 @@ const Darkness = preload("res://src/vfx/darkness.gd")
 const Crypt72 = preload("res://src/crypt_0x72_art.gd")
 const SkillFx = preload("res://src/vfx/skill_fx.gd")
 const BossFx = preload("res://src/vfx/boss_fx.gd")
+const PoolPaint = preload("res://src/vfx/pool_paint.gd")
+const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
 const AttackFx = preload("res://src/vfx/attack_fx.gd")
 const HeroLook = preload("res://src/hero/hero_look.gd")
 const SliceFx = preload("res://src/vfx/slice_fx.gd")
@@ -340,14 +342,21 @@ func _draw() -> void:
 			_fx.set_layout(layout)
 			_attack_fx.reset()
 		# Particles bounce off this room's walls and settle on its floor.
-		if _feedback.particles.layout_key != _layout_key: _feedback.particles.set_layout(layout, _layout_key)
+		if _feedback.particles.layout_key != _layout_key:
+			_feedback.particles.set_layout(layout, _layout_key)
+			# pools are shaped by this room's walls (src/vfx/pool_paint.gd, 2 px art pixel)
+			_boss_fx.pools = PoolPaint.new(2.0, func(point: Vector2) -> bool: return not _feedback.particles.solid(point))
+			_skill_fx.pools = PoolPaint.new(2.0, func(point: Vector2) -> bool: return not _feedback.particles.solid(point))
 		_skill_fx.particles = _feedback.particles
 		_attack_fx.particles = _feedback.particles
 		_attack_fx.fx = _fx
 		_attack_fx.observe(_snapshot,_clock)
 		_feedback.particles.draw_stains(self)
 		_skill_fx.draw_ground(self,_snapshot,_clock)
+		# warnings and pools stop at the walls like the pools' liquid (src/vfx/pixel_paint.gd clip)
+		PixelPaint.clip = _open_floor
 		_boss_fx.draw_ground(self,_snapshot,_clock)
+		PixelPaint.clip = Callable()
 		_sheet_art.draw_hazards(self,_snapshot.get("hazards",[]),false,_clock)
 		_talent_fx.draw_ground(self,_snapshot.get("talents",{}),_clock)
 	if actors_visible: _talent_fx.draw_pets(self,_snapshot.get("talents",{}),_clock)
@@ -425,7 +434,9 @@ func _draw() -> void:
 		_boss_fx.draw_over(self,_snapshot,_clock,_position)
 		_sheet_art.draw_hazards(self,_snapshot.get("hazards",[]),true,_clock)
 		_talent_fx.draw_events(self,_snapshot.get("talents",{}))
+		PixelPaint.clip = _open_floor
 		_attack_fx.draw_flashes(self,_clock)
+		PixelPaint.clip = Callable()
 		_feedback.particles.draw_particles(self)
 		_fx.draw(self)
 		if not freeform and not _classic_enabled: _draw_motes()
@@ -556,7 +567,9 @@ func _draw_glow(canvas: CanvasItem) -> void:
 	var bullets := _glow.level("bullets")
 	for bullet: Dictionary in _snapshot.get("bullets", []):
 		if not AttackFx.handles(bullet): _skill_fx.bullet_glow(canvas, bullet, _position(bullet), _clock, bullets)
+	PixelPaint.clip = _open_floor
 	_attack_fx.draw_glow(canvas, _snapshot, _position, _clock, bullets)
+	PixelPaint.clip = Callable()
 	_skill_fx.draw_glow(canvas, _snapshot, _clock, _glow)
 	_fx.draw_glow(canvas, _glow.level("spells"))
 	_feedback.particles.draw_glow(canvas, _glow.level("particles"))
@@ -583,6 +596,11 @@ func set_environment_animation_enabled(enabled: bool) -> void:
 
 
 ## Keeps the camera-shake origin independent of the transient visual offset.
+## True on the room's floor (false inside walls): where effect pixels may show.
+func _open_floor(point: Vector2) -> bool:
+	return not _feedback.particles.solid(point)
+
+
 func set_world_origin(origin: Vector2) -> void:
 	_base_position = origin
 	if not _animation_enabled or _feedback.shake <= 0: position = origin
@@ -935,8 +953,11 @@ func _draw_bullet(bullet: Dictionary) -> void:
 	# talent shots: ice lance and arcane orb sheets (src/vfx/talent_fx.gd)
 	if owner > 0 and _talent_fx.draw_bullet(self,bullet,_clock): return
 	if AttackFx.handles(bullet):
+		# a hero's streak, rune ring and motes never shine through a wall
+		PixelPaint.clip = _open_floor
 		if style == "arrow": _attack_fx.draw_arrow(self,bullet,_position(bullet),_clock)
 		else: _attack_fx.draw_orb(self,bullet,_position(bullet),_clock)
+		PixelPaint.clip = Callable()
 		return
 	if _sheet_art.draw_bullet(self,bullet,point,_clock): return
 	if owner == 0 and _boss_fx.draw_bullet(self,bullet,point,_clock): return

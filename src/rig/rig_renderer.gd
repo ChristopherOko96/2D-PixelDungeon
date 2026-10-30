@@ -508,6 +508,8 @@ func _attack_mapping(rig: Dictionary, kind: String) -> Array:
 				"summon": return ["summon", 0.38, 0.5]
 			return ["attack", 0.55, 0.62]
 		"bomber": return ["attack", 1.0, 1.0]
+		# the Frostgruft's slime and whirl/crystal: a ring or a call swells them, everything else lashes out
+		"slime", "spirit": return ["roar", 0.4, 0.6] if kind in ["roar", "ring", "summon"] else ["attack", 0.45, 0.6]
 		"drake":
 			# bolt->bite, slam, dash, burrow, swing, sweep, ring/echoes->roar, beam, flight
 			var clip := str(RigPoses.DRAKE_KINDS.get(kind, ""))
@@ -709,7 +711,9 @@ func _draw_rig(canvas: CanvasItem, a: Dictionary, rig: Dictionary, point: Vector
 	if bool(pose.trail) and not weapon.is_empty() and world.has("weapon") and not a.lost.has("weapon"):
 		var xf := Transform2D(world.weapon)
 		var grip := Vector2(weapon.get("grip", weapon.get("pivot", Vector2.ZERO)))
-		a.trail.append({"p": xf * Vector2(weapon.tip), "q": xf * grip.lerp(Vector2(weapon.tip), 0.4), "age": 0.0, "life": SLASH_LIFE if not slash.is_empty() else 0.12})
+		# a weapon drawn into the figure (a part, rigs.json "tip") swings like a held one
+		var tip := Vector2(weapon.get("tip", grip))
+		a.trail.append({"p": xf * tip, "q": xf * grip.lerp(tip, 0.4), "age": 0.0, "life": SLASH_LIFE if not slash.is_empty() else 0.12})
 	if not slash.is_empty():
 		_draw_pixel_slash(canvas, a.trail, maxf(2.0, roundf(S)), slash)
 	else:

@@ -44,13 +44,19 @@ func draw_bar(canvas: CanvasItem, talents: Dictionary, centre_x: float, y: float
 	var size_px := 44.0
 	var gap := 6.0
 	var count := slots.size() + (1 if not ult.is_empty() else 0)
+	# no talent slot yet: no bar either (a lone resource bar read as a stray debug line)
+	if count == 0: return
 	var width := maxf(260.0, count * size_px + maxi(0, count - 1) * gap)
 	var x := floorf(centre_x - width * 0.5)
 	var kind := str(talents.get("res_kind", "mana"))
 	var colour: Color = {"mana": Color("5b8ff0"), "stamina": Color("7fcf5a"), "rage": CryptUI.BLOOD}.get(kind, CryptUI.GOLD)
 	var bar := Rect2(x, y - 14, width, 8)
-	canvas.draw_rect(bar, CryptUI.INK)
-	canvas.draw_rect(Rect2(bar.position + Vector2(1, 1), Vector2((bar.size.x - 2) * clampf(float(talents.get("res", 0)) / maxf(1.0, float(talents.get("res_max", 100))), 0.0, 1.0), 6)), colour)
+	# framed like the slots: a dark frame, the fill with a lighter top row
+	canvas.draw_rect(bar.grow(1), CryptUI.INK)
+	canvas.draw_rect(bar, colour.darkened(0.7))
+	var fill := (bar.size.x - 2) * clampf(float(talents.get("res", 0)) / maxf(1.0, float(talents.get("res_max", 100))), 0.0, 1.0)
+	canvas.draw_rect(Rect2(bar.position + Vector2(1, 1), Vector2(fill, 6)), colour)
+	canvas.draw_rect(Rect2(bar.position + Vector2(1, 1), Vector2(fill, 2)), colour.lightened(0.35))
 	if float(talents.get("shield", 0.0)) > 0.0: canvas.draw_rect(bar.grow(2), Color(CryptUI.FROST, 0.8), false, 2.0)
 	for index in range(count):
 		var slot: Dictionary = slots[index] if index < slots.size() else ult

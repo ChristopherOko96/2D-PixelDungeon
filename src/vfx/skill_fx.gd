@@ -15,6 +15,7 @@ const SkillIcons = preload("res://src/ui/skill_icons.gd")
 const PixelStyle = preload("res://src/pixel_style.gd")
 const FxSprites = preload("res://src/vfx/fx_sprites.gd")
 const Glow = preload("res://src/vfx/glow.gd")
+const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
 const CHEST_FRAMES := [preload("res://assets/sprites/0x72/chest_full_open_anim_f0.png"), preload("res://assets/sprites/0x72/chest_full_open_anim_f1.png"), preload("res://assets/sprites/0x72/chest_full_open_anim_f2.png")]
 const CRATE := preload("res://assets/sprites/0x72/crate.png")
 const BURSTS := {"fire": "fire_burst", "frost": "frost_burst", "arcane": "arcane_burst", "stone": "stone_burst", "void": "void_burst"}
@@ -23,6 +24,9 @@ const INK := Color("1a1414")
 var fx: RefCounted = null
 ## Pixel particles and floor marks (particles.gd), set by the view.
 var particles: RefCounted = null
+## The heroes' poison and lava zones as physics pools (src/vfx/pool_paint.gd,
+## set by the host); null draws the old circles.
+var pools: RefCounted = null
 var _seen: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
 ## Photoneneis per hero: start, strength and its last ends (kept to fade out).
@@ -78,25 +82,37 @@ func draw_ground(canvas: CanvasItem, snapshot: Dictionary, clock: float) -> void
 		for player: Dictionary in snapshot.get("players", {}).values():
 			if player.get("skills", {}).has("rage") and float(player.get("hp", 0)) > 0:
 				fx.draw_loop(canvas, "rage_aura", Vector2(float(player.x), float(player.y) + 6.0), 0.0, 0.8, clock, Color(1, 1, 1, 0.45))
+	if pools != null:
+		# poison and lava run out as pools that stop at the walls; first seen = just cast
+		var entries: Array = []
+		for zone: Dictionary in snapshot.get("skill_fx", {}).get("zones", []):
+			if str(zone.kind) in ["poison", "lava"]:
+				entries.append({"id": int(zone.id), "k": "pool", "st": str(zone.kind), "x": float(zone.x), "y": float(zone.y), "r": float(zone.r), "p": 0.0, "L": maxf(0.3, float(zone.t))})
+		pools.sync(entries, clock)
+		pools.draw(canvas, clock)
 	for zone: Dictionary in snapshot.get("skill_fx", {}).get("zones", []):
 		var point := Vector2(float(zone.x), float(zone.y))
 		var radius := float(zone.r)
 		var fade := clampf(float(zone.t) / 0.5, 0.0, 1.0)
 		match str(zone.kind):
 			"caltrops":
-				canvas.draw_circle(point, radius, Color(0.55, 0.5, 0.45, 0.12 * fade))
+				PixelPaint.disc(canvas, point, radius, radius, Color(0.3, 0.27, 0.25), 2.0, 0.12 * fade)
 				for index in range(9):
 					var spot := point + Vector2.from_angle(float(index) * 2.4 + float(zone.id)) * radius * (0.25 + 0.08 * float(index))
 					_spike(canvas, spot.round(), Color(0.8, 0.78, 0.72, fade))
 			"poison":
+				if pools != null: continue
 				canvas.draw_circle(point, radius, Color(0.55, 0.85, 0.3, 0.22 * fade))
 				canvas.draw_circle(point + Vector2(sin(clock * 3.0 + float(zone.id)) * 3.0, 0), radius * 0.5, Color(0.7, 0.95, 0.4, 0.2 * fade))
 			"lava":
+				if pools != null: continue
 				canvas.draw_circle(point, radius, Color(1.0, 0.45, 0.1, 0.28 * fade))
 				canvas.draw_circle(point, radius * 0.55, Color(1.0, 0.8, 0.3, (0.25 + 0.1 * sin(clock * 9.0 + float(zone.id))) * fade))
 			"storm":
-				canvas.draw_circle(point, radius, Color(0.5, 0.55, 1.0, 0.16))
-				canvas.draw_arc(point, radius, 0.0, TAU, 24, Color(0.75, 0.8, 1.0, 0.55), 2.0)
+				# a storm cloud on the floor: its area in the dither, a crawling dashed rim
+				PixelPaint.disc(canvas, point, radius, radius, Color(0.3, 0.33, 0.6), 2.0, 0.25)
+				PixelPaint.ellipse(canvas, point + Vector2(0, 2), radius, radius, Color("1a1414"), 2.0, 3, int(clock * PixelPaint.FPS))
+				PixelPaint.ellipse(canvas, point, radius, radius, Color(0.75, 0.8, 1.0), 2.0, 3, int(clock * PixelPaint.FPS))
 				if fmod(clock * 7.0 + float(zone.id), 1.0) < 0.35: _bolt(canvas, point + Vector2(-radius * 0.6, -radius * 0.6), point + Vector2(radius * 0.4, radius * 0.5), Color("dfe6ff"), 2.0, int(clock * 20.0))
 			"decoy":
 				# the mirror image, or a clone seal's clone in its hero's own look
@@ -712,8 +728,8 @@ func bullet_glow(canvas: CanvasItem, bullet: Dictionary, point: Vector2, clock: 
 	var owner := int(bullet.get("owner", 1))
 	match str(bullet.get("style", "")):
 		"fireball":
-			Glow.dot(canvas, point, 56.0 * pulse, Color(1.0, 0.48, 0.12, 0.55 * level))
-			Glow.dot(canvas, point, 20.0, Color(1.0, 0.85, 0.5, 0.6 * level))
+			# a warm halo only: no white core over the pixel ball (art review)
+			Glow.dot(canvas, point, 48.0 * pulse, Color(1.0, 0.48, 0.12, 0.55 * level))
 		"magic":
 			var tint: Color = ELEMENT_TINTS.get(str(bullet.get("element", "")), Color("6fe3a0"))
 			Glow.dot(canvas, point, 30.0 * pulse, Color(tint, 0.5 * level))

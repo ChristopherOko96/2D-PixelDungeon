@@ -27,7 +27,20 @@
   "masked_orc": "res://assets/sprites/0x72/masked_orc_idle_anim_f0.png",
   "cleaver": "res://assets/sprites/0x72/weapon_cleaver.png",
   "klagender_hueter_src": "res://assets/sprites/hell/bosses/klagender_hueter.png",
-  "glutwaechter_src": "res://assets/sprites/hell/bosses/glutwaechter.png"
+  "glutwaechter_src": "res://assets/sprites/hell/bosses/glutwaechter.png",
+  "frost_imp": "res://assets/sprites/frost/rigs/frost_imp.png",
+  "frost_knight": "res://assets/sprites/frost/rigs/frost_knight.png",
+  "frost_commander": "res://assets/sprites/frost/rigs/frost_commander.png",
+  "frost_slime_0": "res://assets/sprites/frost/rigs/frost_slime_0.png",
+  "frost_slime_1": "res://assets/sprites/frost/rigs/frost_slime_1.png",
+  "frost_slime_2": "res://assets/sprites/frost/rigs/frost_slime_2.png",
+  "frost_whirl": "res://assets/sprites/frost/rigs/frost_whirl.png",
+  "frost_crystal": "res://assets/sprites/frost/rigs/frost_crystal.png",
+  "frost_golem_p1": "res://assets/sprites/frost/rigs/frost_golem_p1.png",
+  "frost_golem_p2": "res://assets/sprites/frost/rigs/frost_golem_p2.png",
+  "frost_golem_p3": "res://assets/sprites/frost/rigs/frost_golem_p3.png",
+  "regular_sword": "res://assets/sprites/0x72/weapon_regular_sword.png",
+  "anime_sword": "res://assets/sprites/0x72/weapon_anime_sword.png"
  },
  "pixel_art": {
   "shield": {
@@ -70,7 +83,22 @@
   "kesselbrut": 2.3,
   "seelenhirte": 3.2,
   "kerkermeister": 3.6,
-  "klagender_hueter": 3
+  "klagender_hueter": 3,
+  "frost_zombie": 1.5,
+  "frost_skeleton": 1.5,
+  "frost_necro": 1.5,
+  "frost_leiche": 1.5,
+  "frost_imp": 1.5,
+  "frost_knight": 1.5,
+  "frost_commander": 1.5,
+  "frost_slime_0": 1.5,
+  "frost_slime_1": 1.5,
+  "frost_slime_2": 1.5,
+  "frost_whirl": 1.5,
+  "frost_crystal": 1.5,
+  "frost_golem_p1": 2,
+  "frost_golem_p2": 2,
+  "frost_golem_p3": 2
  },
  "rigs": {
   "knight": {
@@ -5537,6 +5565,3476 @@
      ]
     ]
    }
+  },
+  "frost_zombie": {
+   "img": "ice_zombie",
+   "family": "skeleton",
+   "ground": [
+    8,
+    15
+   ],
+   "width": 8,
+   "parts": [
+    {
+     "id": "leg_l",
+     "rects": [
+      [
+       4,
+       14,
+       7,
+       15
+      ]
+     ],
+     "pivot": [
+      6,
+      14
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Linkes Bein"
+    },
+    {
+     "id": "leg_r",
+     "rects": [
+      [
+       8,
+       14,
+       11,
+       15
+      ]
+     ],
+     "pivot": [
+      10,
+      14
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Rechtes Bein"
+    },
+    {
+     "id": "torso",
+     "rects": [
+      [
+       4,
+       10,
+       11,
+       13
+      ]
+     ],
+     "pivot": [
+      8,
+      13
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 3,
+     "label": "Rumpf",
+     "alsoDetach": [
+      "leg_l",
+      "leg_r"
+     ]
+    },
+    {
+     "id": "skull",
+     "rects": [
+      [
+       4,
+       0,
+       11,
+       9
+      ]
+     ],
+     "pivot": [
+      8,
+      10
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 3,
+     "label": "Kopf",
+     "vital": true
+    }
+   ],
+   "items": [],
+   "material": "frost"
+  },
+  "frost_skeleton": {
+   "img": "skelet",
+   "family": "skeleton",
+   "variant": "bow",
+   "ground": [
+    8,
+    15
+   ],
+   "width": 9,
+   "parts": [
+    {
+     "id": "leg_l",
+     "rects": [
+      [
+       4,
+       14,
+       7,
+       15
+      ]
+     ],
+     "pivot": [
+      6,
+      14
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Linkes Bein"
+    },
+    {
+     "id": "leg_r",
+     "rects": [
+      [
+       8,
+       14,
+       11,
+       15
+      ]
+     ],
+     "pivot": [
+      10,
+      14
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Rechtes Bein"
+    },
+    {
+     "id": "torso",
+     "rects": [
+      [
+       4,
+       11,
+       11,
+       13
+      ]
+     ],
+     "pivot": [
+      8,
+      13
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 3,
+     "label": "Rumpf",
+     "alsoDetach": [
+      "leg_l",
+      "leg_r"
+     ]
+    },
+    {
+     "id": "skull",
+     "rects": [
+      [
+       3,
+       2,
+       12,
+       10
+      ]
+     ],
+     "pivot": [
+      8,
+      10
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 3,
+     "label": "Schädel",
+     "vital": true
+    }
+   ],
+   "items": [
+    {
+     "id": "weapon",
+     "img": "bow",
+     "bow": true,
+     "grip": [
+      10.5,
+      13
+     ],
+     "hand": [
+      12,
+      12
+     ],
+     "parent": "torso",
+     "rest": 0,
+     "z": 4,
+     "tip": [
+      7.5,
+      13
+     ],
+     "hp": 1,
+     "label": "Bogen",
+     "disables": "attack",
+     "recolor": {
+      "#222222": "#163063",
+      "#8f4029": "#7ff6ff",
+      "#d3bfa9": "#d2f1ff",
+      "#550f0a": "#7ff6ff",
+      "#9b1a0a": "#7ff6ff"
+     }
+    }
+   ],
+   "recolor": {
+    "#222222": "#163063",
+    "#d3bfa9": "#d2f1ff",
+    "#fdf7ed": "#ffffff"
+   },
+   "material": "frost"
+  },
+  "frost_necro": {
+   "img": "necro",
+   "family": "necro",
+   "ground": [
+    7,
+    22
+   ],
+   "width": 12,
+   "parts": [
+    {
+     "id": "robe",
+     "rects": [
+      [
+       0,
+       19,
+       15,
+       22
+      ]
+     ],
+     "pivot": [
+      7,
+      22
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 6,
+     "label": "Kutte",
+     "vital": true
+    },
+    {
+     "id": "hood",
+     "rects": [
+      [
+       0,
+       8,
+       15,
+       18
+      ]
+     ],
+     "pivot": [
+      7,
+      19
+     ],
+     "parent": "robe",
+     "z": 2,
+     "hp": 6,
+     "label": "Kopf",
+     "vital": true
+    }
+   ],
+   "items": [
+    {
+     "id": "weapon",
+     "img": "red_staff",
+     "grip": [
+      3.5,
+      18
+     ],
+     "hand": [
+      14,
+      17
+     ],
+     "parent": "hood",
+     "rest": 0.12,
+     "z": 3,
+     "tip": [
+      2.5,
+      3
+     ],
+     "hp": 2,
+     "label": "Stab",
+     "disables": "cast",
+     "recolor": {
+      "#222222": "#0f1d4e",
+      "#8f4029": "#ffffff",
+      "#da4e38": "#ffffff",
+      "#fdf7ed": "#e6f8ff",
+      "#c56025": "#ffffff"
+     }
+    }
+   ],
+   "recolor": {
+    "#222222": "#0f1d4e",
+    "#5f2d56": "#1d3b8a",
+    "#9f294e": "#ffffff",
+    "#2a2a3a": "#0f1d4e",
+    "#fdf7ed": "#e6f8ff"
+   },
+   "material": "frost"
+  },
+  "frost_leiche": {
+   "img": "big_zombie",
+   "recolor": {
+    "#222222": "#163063",
+    "#4ba747": "#7ff6ff",
+    "#97da3f": "#7ff6ff",
+    "#775c55": "#4f93d6",
+    "#aa8d7a": "#8cc8f2",
+    "#333333": "#163063",
+    "#483b3a": "#2b5ea3"
+   },
+   "family": "brute",
+   "ground": [
+    16,
+    35
+   ],
+   "width": 18,
+   "parts": [
+    {
+     "id": "arm",
+     "rects": [
+      [
+       11,
+       16,
+       12,
+       16
+      ],
+      [
+       10,
+       17,
+       12,
+       17
+      ],
+      [
+       9,
+       18,
+       12,
+       18
+      ],
+      [
+       8,
+       19,
+       11,
+       19
+      ],
+      [
+       8,
+       20,
+       11,
+       20
+      ],
+      [
+       7,
+       21,
+       12,
+       21
+      ],
+      [
+       7,
+       22,
+       12,
+       22
+      ],
+      [
+       7,
+       23,
+       11,
+       23
+      ],
+      [
+       7,
+       24,
+       10,
+       24
+      ],
+      [
+       7,
+       25,
+       10,
+       25
+      ],
+      [
+       7,
+       26,
+       10,
+       26
+      ]
+     ],
+     "pivot": [
+      12,
+      17
+     ],
+     "parent": "torso",
+     "z": 4,
+     "hp": 20,
+     "label": "Arm",
+     "disables": "attack",
+     "regrow": 6
+    },
+    {
+     "id": "leg_l",
+     "rects": [
+      [
+       7,
+       29,
+       15,
+       35
+      ]
+     ],
+     "pivot": [
+      11,
+      29
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 15,
+     "label": "Linkes Bein",
+     "unbreakable": true
+    },
+    {
+     "id": "leg_r",
+     "rects": [
+      [
+       16,
+       29,
+       25,
+       35
+      ]
+     ],
+     "pivot": [
+      20,
+      29
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 15,
+     "label": "Rechtes Bein",
+     "unbreakable": true
+    },
+    {
+     "id": "head",
+     "rects": [
+      [
+       12,
+       9,
+       25,
+       21
+      ]
+     ],
+     "pivot": [
+      18,
+      21
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 30,
+     "label": "Kopf",
+     "unbreakable": true
+    },
+    {
+     "id": "torso",
+     "rects": [
+      [
+       7,
+       22,
+       25,
+       28
+      ]
+     ],
+     "pivot": [
+      16,
+      28
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 40,
+     "label": "Rumpf",
+     "unbreakable": true
+    }
+   ],
+   "items": [],
+   "material": "frost"
+  },
+  "frost_imp": {
+   "img": "frost_imp",
+   "family": "skeleton",
+   "material": "frost",
+   "ground": [
+    8,
+    31
+   ],
+   "width": 10,
+   "parts": [
+    {
+     "id": "leg_l",
+     "rects": [
+      [
+       3,
+       29,
+       6,
+       31
+      ]
+     ],
+     "pivot": [
+      5,
+      29
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Linkes Bein"
+    },
+    {
+     "id": "leg_r",
+     "rects": [
+      [
+       7,
+       29,
+       12,
+       31
+      ]
+     ],
+     "pivot": [
+      10,
+      29
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Rechtes Bein"
+    },
+    {
+     "id": "torso",
+     "rects": [
+      [
+       3,
+       27,
+       12,
+       28
+      ]
+     ],
+     "pivot": [
+      8,
+      28
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 2,
+     "label": "Leib",
+     "alsoDetach": [
+      "leg_l",
+      "leg_r"
+     ]
+    },
+    {
+     "id": "skull",
+     "rects": [
+      [
+       0,
+       0,
+       15,
+       26
+      ]
+     ],
+     "pivot": [
+      8,
+      27
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 2,
+     "label": "Kopf",
+     "vital": true
+    }
+   ],
+   "items": []
+  },
+  "frost_knight": {
+   "img": "frost_knight",
+   "family": "skeleton",
+   "variant": "guard",
+   "item_parts": true,
+   "material": "frost",
+   "ground": [
+    8,
+    31
+   ],
+   "width": 10,
+   "parts": [
+    {
+     "id": "shield",
+     "rects": [
+      [
+       0,
+       21,
+       6,
+       26
+      ]
+     ],
+     "pivot": [
+      4,
+      23
+     ],
+     "parent": "torso",
+     "z": 4,
+     "hp": 2,
+     "label": "Schild"
+    },
+    {
+     "id": "leg_l",
+     "rects": [
+      [
+       3,
+       29,
+       6,
+       31
+      ]
+     ],
+     "pivot": [
+      5,
+      29
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Linkes Bein"
+    },
+    {
+     "id": "leg_r",
+     "rects": [
+      [
+       9,
+       29,
+       13,
+       31
+      ]
+     ],
+     "pivot": [
+      11,
+      29
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Rechtes Bein"
+    },
+    {
+     "id": "torso",
+     "rects": [
+      [
+       7,
+       21,
+       15,
+       28
+      ],
+      [
+       3,
+       27,
+       13,
+       28
+      ]
+     ],
+     "pivot": [
+      8,
+      28
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 2,
+     "label": "Rumpf",
+     "alsoDetach": [
+      "leg_l",
+      "leg_r"
+     ]
+    },
+    {
+     "id": "skull",
+     "rects": [
+      [
+       3,
+       13,
+       13,
+       20
+      ]
+     ],
+     "pivot": [
+      8,
+      21
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 2,
+     "label": "Helm",
+     "vital": true
+    }
+   ],
+   "items": [
+    {
+     "id": "weapon",
+     "img": "regular_sword",
+     "grip": [
+      4.5,
+      18
+     ],
+     "hand": [
+      13.5,
+      24
+     ],
+     "parent": "torso",
+     "rest": 0.6,
+     "z": 5,
+     "tip": [
+      4.5,
+      1
+     ],
+     "hp": 1,
+     "label": "Schwert",
+     "disables": "attack"
+    }
+   ]
+  },
+  "frost_commander": {
+   "img": "frost_commander",
+   "family": "biped",
+   "material": "frost",
+   "ground": [
+    15,
+    31
+   ],
+   "width": 26,
+   "parts": [
+    {
+     "id": "head",
+     "rects": [
+      [
+       11,
+       3,
+       22,
+       10
+      ]
+     ],
+     "pivot": [
+      16,
+      11
+     ],
+     "parent": "body",
+     "z": 3,
+     "hp": 2,
+     "label": "Helm"
+    },
+    {
+     "id": "body",
+     "rects": [
+      [
+       0,
+       11,
+       28,
+       31
+      ]
+     ],
+     "pivot": [
+      15,
+      31
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 2,
+     "label": "Rumpf",
+     "vital": true
+    }
+   ],
+   "items": [
+    {
+     "id": "weapon",
+     "img": "anime_sword",
+     "grip": [
+      5.5,
+      26.5
+     ],
+     "hand": [
+      25,
+      21
+     ],
+     "parent": "body",
+     "rest": 0.3,
+     "z": 4,
+     "tip": [
+      5,
+      1
+     ],
+     "hp": 1,
+     "label": "Breitschwert",
+     "disables": "attack"
+    }
+   ]
+  },
+  "frost_slime_0": {
+   "img": "frost_slime_0",
+   "family": "slime",
+   "material": "frost",
+   "ground": [
+    15,
+    18
+   ],
+   "width": 27,
+   "parts": [
+    {
+     "id": "top",
+     "rects": [
+      [
+       0,
+       0,
+       30,
+       10
+      ]
+     ],
+     "pivot": [
+      15,
+      11
+     ],
+     "parent": "base",
+     "z": 2,
+     "hp": 2,
+     "label": "Haube"
+    },
+    {
+     "id": "base",
+     "rects": [
+      [
+       0,
+       11,
+       30,
+       18
+      ]
+     ],
+     "pivot": [
+      15,
+      18
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Leib",
+     "vital": true
+    }
+   ],
+   "items": []
+  },
+  "frost_slime_1": {
+   "img": "frost_slime_1",
+   "family": "slime",
+   "material": "frost",
+   "ground": [
+    9,
+    12
+   ],
+   "width": 15,
+   "parts": [
+    {
+     "id": "top",
+     "rects": [
+      [
+       0,
+       0,
+       18,
+       7
+      ]
+     ],
+     "pivot": [
+      9,
+      8
+     ],
+     "parent": "base",
+     "z": 2,
+     "hp": 2,
+     "label": "Haube"
+    },
+    {
+     "id": "base",
+     "rects": [
+      [
+       0,
+       8,
+       18,
+       12
+      ]
+     ],
+     "pivot": [
+      9,
+      12
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Leib",
+     "vital": true
+    }
+   ],
+   "items": []
+  },
+  "frost_slime_2": {
+   "img": "frost_slime_2",
+   "family": "slime",
+   "material": "frost",
+   "ground": [
+    7,
+    9
+   ],
+   "width": 10,
+   "parts": [
+    {
+     "id": "top",
+     "rects": [
+      [
+       0,
+       0,
+       13,
+       6
+      ]
+     ],
+     "pivot": [
+      7,
+      7
+     ],
+     "parent": "base",
+     "z": 2,
+     "hp": 2,
+     "label": "Haube"
+    },
+    {
+     "id": "base",
+     "rects": [
+      [
+       0,
+       7,
+       13,
+       9
+      ]
+     ],
+     "pivot": [
+      7,
+      9
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Leib",
+     "vital": true
+    }
+   ],
+   "items": []
+  },
+  "frost_whirl": {
+   "img": "frost_whirl",
+   "family": "spirit",
+   "material": "frost",
+   "ground": [
+    12,
+    32
+   ],
+   "width": 18,
+   "parts": [
+    {
+     "id": "top",
+     "rects": [
+      [
+       0,
+       0,
+       25,
+       10
+      ]
+     ],
+     "pivot": [
+      12,
+      11
+     ],
+     "parent": "mid",
+     "z": 3,
+     "hp": 2,
+     "label": "Krone",
+     "sway": [
+      0,
+      0.07,
+      1,
+      0
+     ]
+    },
+    {
+     "id": "tail",
+     "rects": [
+      [
+       0,
+       22,
+       25,
+       32
+      ]
+     ],
+     "pivot": [
+      12,
+      22
+     ],
+     "parent": "mid",
+     "z": 1,
+     "hp": 2,
+     "label": "Schweif",
+     "sway": [
+      0,
+      0.2,
+      1,
+      -1.3
+     ]
+    },
+    {
+     "id": "mid",
+     "rects": [
+      [
+       0,
+       11,
+       25,
+       21
+      ]
+     ],
+     "pivot": [
+      12,
+      16
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 2,
+     "label": "Wirbel",
+     "vital": true
+    }
+   ],
+   "items": []
+  },
+  "frost_crystal": {
+   "img": "frost_crystal",
+   "family": "spirit",
+   "material": "frost",
+   "ground": [
+    8,
+    39
+   ],
+   "width": 12,
+   "parts": [
+    {
+     "id": "crown",
+     "rects": [
+      [
+       0,
+       0,
+       15,
+       11
+      ]
+     ],
+     "pivot": [
+      8,
+      12
+     ],
+     "parent": "body",
+     "z": 3,
+     "hp": 2,
+     "label": "Spitzen",
+     "sway": [
+      0,
+      0.04,
+      1.6,
+      0
+     ]
+    },
+    {
+     "id": "roots",
+     "rects": [
+      [
+       0,
+       30,
+       15,
+       39
+      ]
+     ],
+     "pivot": [
+      8,
+      30
+     ],
+     "parent": "body",
+     "z": 1,
+     "hp": 2,
+     "label": "Wurzeln",
+     "sway": [
+      0,
+      0.06,
+      1.6,
+      1
+     ]
+    },
+    {
+     "id": "body",
+     "rects": [
+      [
+       0,
+       12,
+       15,
+       29
+      ]
+     ],
+     "pivot": [
+      8,
+      22
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 2,
+     "label": "Kristall",
+     "vital": true
+    }
+   ],
+   "items": []
+  },
+  "frost_golem_p1": {
+   "img": "frost_golem_p1",
+   "family": "golem",
+   "ground": [
+    23.5,
+    39
+   ],
+   "width": 26,
+   "material": "frost",
+   "parts": [
+    {
+     "id": "leg_l",
+     "rects": [
+      [
+       13,
+       37,
+       19,
+       37
+      ],
+      [
+       13,
+       38,
+       19,
+       38
+      ],
+      [
+       14,
+       39,
+       18,
+       39
+      ]
+     ],
+     "pivot": [
+      16,
+      37
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 15,
+     "label": "Linkes Bein",
+     "unbreakable": true
+    },
+    {
+     "id": "leg_r",
+     "rects": [
+      [
+       26,
+       37,
+       33,
+       37
+      ],
+      [
+       27,
+       38,
+       33,
+       38
+      ],
+      [
+       28,
+       39,
+       32,
+       39
+      ]
+     ],
+     "pivot": [
+      30,
+      37
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 15,
+     "label": "Rechtes Bein",
+     "unbreakable": true
+    },
+    {
+     "id": "torso",
+     "rects": [
+      [
+       19,
+       5,
+       31,
+       5
+      ],
+      [
+       8,
+       6,
+       15,
+       6
+      ],
+      [
+       17,
+       6,
+       33,
+       6
+      ],
+      [
+       35,
+       6,
+       40,
+       6
+      ],
+      [
+       7,
+       7,
+       41,
+       7
+      ],
+      [
+       6,
+       8,
+       42,
+       8
+      ],
+      [
+       5,
+       9,
+       42,
+       9
+      ],
+      [
+       5,
+       10,
+       42,
+       10
+      ],
+      [
+       5,
+       11,
+       42,
+       11
+      ],
+      [
+       5,
+       12,
+       42,
+       12
+      ],
+      [
+       5,
+       13,
+       42,
+       13
+      ],
+      [
+       6,
+       14,
+       41,
+       14
+      ],
+      [
+       6,
+       15,
+       41,
+       15
+      ],
+      [
+       7,
+       16,
+       40,
+       16
+      ],
+      [
+       9,
+       17,
+       38,
+       17
+      ],
+      [
+       10,
+       18,
+       37,
+       18
+      ],
+      [
+       10,
+       19,
+       37,
+       19
+      ],
+      [
+       10,
+       20,
+       37,
+       20
+      ],
+      [
+       10,
+       21,
+       21,
+       21
+      ],
+      [
+       26,
+       21,
+       37,
+       21
+      ],
+      [
+       10,
+       22,
+       20,
+       22
+      ],
+      [
+       27,
+       22,
+       37,
+       22
+      ],
+      [
+       10,
+       23,
+       20,
+       23
+      ],
+      [
+       27,
+       23,
+       37,
+       23
+      ],
+      [
+       11,
+       24,
+       20,
+       24
+      ],
+      [
+       27,
+       24,
+       36,
+       24
+      ],
+      [
+       12,
+       25,
+       21,
+       25
+      ],
+      [
+       26,
+       25,
+       36,
+       25
+      ],
+      [
+       12,
+       26,
+       35,
+       26
+      ],
+      [
+       12,
+       27,
+       34,
+       27
+      ],
+      [
+       11,
+       28,
+       34,
+       28
+      ],
+      [
+       11,
+       29,
+       34,
+       29
+      ],
+      [
+       11,
+       30,
+       34,
+       30
+      ],
+      [
+       11,
+       31,
+       34,
+       31
+      ],
+      [
+       11,
+       32,
+       34,
+       32
+      ],
+      [
+       11,
+       33,
+       33,
+       33
+      ],
+      [
+       12,
+       34,
+       33,
+       34
+      ],
+      [
+       12,
+       35,
+       33,
+       35
+      ],
+      [
+       12,
+       36,
+       33,
+       36
+      ]
+     ],
+     "pivot": [
+      23.5,
+      36
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 40,
+     "label": "Felsleib",
+     "unbreakable": true
+    },
+    {
+     "id": "kern",
+     "rects": [
+      [
+       22,
+       21,
+       25,
+       21
+      ],
+      [
+       21,
+       22,
+       26,
+       22
+      ],
+      [
+       21,
+       23,
+       26,
+       23
+      ],
+      [
+       21,
+       24,
+       26,
+       24
+      ],
+      [
+       22,
+       25,
+       25,
+       25
+      ]
+     ],
+     "pivot": [
+      23.5,
+      23
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 15,
+     "label": "Gletscherkern"
+    },
+    {
+     "id": "head",
+     "rects": [
+      [
+       19,
+       5,
+       31,
+       5
+      ],
+      [
+       17,
+       6,
+       33,
+       6
+      ],
+      [
+       35,
+       6,
+       35,
+       6
+      ],
+      [
+       17,
+       7,
+       35,
+       7
+      ],
+      [
+       17,
+       8,
+       35,
+       8
+      ],
+      [
+       17,
+       9,
+       35,
+       9
+      ],
+      [
+       17,
+       10,
+       35,
+       10
+      ],
+      [
+       17,
+       11,
+       35,
+       11
+      ],
+      [
+       17,
+       12,
+       35,
+       12
+      ],
+      [
+       17,
+       13,
+       35,
+       13
+      ],
+      [
+       17,
+       14,
+       35,
+       14
+      ],
+      [
+       17,
+       15,
+       35,
+       15
+      ],
+      [
+       17,
+       16,
+       35,
+       16
+      ],
+      [
+       17,
+       17,
+       35,
+       17
+      ]
+     ],
+     "pivot": [
+      26,
+      17
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 30,
+     "label": "Felskopf",
+     "unbreakable": true
+    },
+    {
+     "id": "shoulder_l",
+     "rects": [
+      [
+       8,
+       6,
+       15,
+       6
+      ],
+      [
+       7,
+       7,
+       16,
+       7
+      ],
+      [
+       6,
+       8,
+       16,
+       8
+      ],
+      [
+       5,
+       9,
+       16,
+       9
+      ],
+      [
+       5,
+       10,
+       16,
+       10
+      ],
+      [
+       5,
+       11,
+       16,
+       11
+      ],
+      [
+       5,
+       12,
+       16,
+       12
+      ],
+      [
+       5,
+       13,
+       16,
+       13
+      ],
+      [
+       6,
+       14,
+       16,
+       14
+      ],
+      [
+       6,
+       15,
+       16,
+       15
+      ],
+      [
+       7,
+       16,
+       16,
+       16
+      ],
+      [
+       9,
+       17,
+       13,
+       17
+      ]
+     ],
+     "pivot": [
+      12,
+      15
+     ],
+     "parent": "torso",
+     "z": 4,
+     "hp": 20,
+     "label": "Linke Schulter",
+     "unbreakable": true
+    },
+    {
+     "id": "shoulder_r",
+     "rects": [
+      [
+       36,
+       6,
+       40,
+       6
+      ],
+      [
+       36,
+       7,
+       41,
+       7
+      ],
+      [
+       36,
+       8,
+       42,
+       8
+      ],
+      [
+       36,
+       9,
+       42,
+       9
+      ],
+      [
+       36,
+       10,
+       42,
+       10
+      ],
+      [
+       36,
+       11,
+       42,
+       11
+      ],
+      [
+       36,
+       12,
+       42,
+       12
+      ],
+      [
+       36,
+       13,
+       42,
+       13
+      ],
+      [
+       36,
+       14,
+       41,
+       14
+      ],
+      [
+       36,
+       15,
+       41,
+       15
+      ],
+      [
+       36,
+       16,
+       40,
+       16
+      ]
+     ],
+     "pivot": [
+      39,
+      14
+     ],
+     "parent": "torso",
+     "z": 4,
+     "hp": 20,
+     "label": "Rechte Schulter",
+     "unbreakable": true
+    },
+    {
+     "id": "fist_l",
+     "rects": [
+      [
+       2,
+       25,
+       7,
+       25
+      ],
+      [
+       1,
+       26,
+       8,
+       26
+      ],
+      [
+       0,
+       27,
+       9,
+       27
+      ],
+      [
+       0,
+       28,
+       9,
+       28
+      ],
+      [
+       0,
+       29,
+       9,
+       29
+      ],
+      [
+       0,
+       30,
+       9,
+       30
+      ],
+      [
+       0,
+       31,
+       9,
+       31
+      ],
+      [
+       1,
+       32,
+       8,
+       32
+      ],
+      [
+       2,
+       33,
+       7,
+       33
+      ]
+     ],
+     "pivot": [
+      4.5,
+      29
+     ],
+     "parent": "torso",
+     "z": 5,
+     "hp": 15,
+     "label": "Linke Faust",
+     "weakens": {
+      "stampfer": {
+       "radius": 0.75
+      }
+     }
+    },
+    {
+     "id": "fist_r",
+     "rects": [
+      [
+       40,
+       25,
+       45,
+       25
+      ],
+      [
+       39,
+       26,
+       46,
+       26
+      ],
+      [
+       38,
+       27,
+       47,
+       27
+      ],
+      [
+       38,
+       28,
+       47,
+       28
+      ],
+      [
+       38,
+       29,
+       47,
+       29
+      ],
+      [
+       38,
+       30,
+       47,
+       30
+      ],
+      [
+       38,
+       31,
+       47,
+       31
+      ],
+      [
+       39,
+       32,
+       46,
+       32
+      ],
+      [
+       40,
+       33,
+       45,
+       33
+      ]
+     ],
+     "pivot": [
+      42.5,
+      29
+     ],
+     "parent": "torso",
+     "z": 5,
+     "hp": 15,
+     "label": "Rechte Faust",
+     "disables": [
+      "brocken"
+     ],
+     "weakens": {
+      "stampfer": {
+       "radius": 0.75
+      }
+     }
+    }
+   ],
+   "items": []
+  },
+  "frost_golem_p2": {
+   "img": "frost_golem_p2",
+   "family": "golem",
+   "ground": [
+    23.5,
+    39
+   ],
+   "width": 26,
+   "material": "frost",
+   "parts": [
+    {
+     "id": "leg_l",
+     "rects": [
+      [
+       13,
+       37,
+       19,
+       37
+      ],
+      [
+       13,
+       38,
+       19,
+       38
+      ],
+      [
+       14,
+       39,
+       18,
+       39
+      ]
+     ],
+     "pivot": [
+      16,
+      37
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 15,
+     "label": "Linkes Bein",
+     "unbreakable": true
+    },
+    {
+     "id": "leg_r",
+     "rects": [
+      [
+       26,
+       37,
+       33,
+       37
+      ],
+      [
+       27,
+       38,
+       33,
+       38
+      ],
+      [
+       28,
+       39,
+       32,
+       39
+      ]
+     ],
+     "pivot": [
+      30,
+      37
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 15,
+     "label": "Rechtes Bein",
+     "unbreakable": true
+    },
+    {
+     "id": "torso",
+     "rects": [
+      [
+       19,
+       5,
+       31,
+       5
+      ],
+      [
+       8,
+       6,
+       15,
+       6
+      ],
+      [
+       17,
+       6,
+       33,
+       6
+      ],
+      [
+       35,
+       6,
+       40,
+       6
+      ],
+      [
+       7,
+       7,
+       41,
+       7
+      ],
+      [
+       6,
+       8,
+       42,
+       8
+      ],
+      [
+       5,
+       9,
+       42,
+       9
+      ],
+      [
+       5,
+       10,
+       42,
+       10
+      ],
+      [
+       5,
+       11,
+       42,
+       11
+      ],
+      [
+       5,
+       12,
+       42,
+       12
+      ],
+      [
+       5,
+       13,
+       42,
+       13
+      ],
+      [
+       6,
+       14,
+       41,
+       14
+      ],
+      [
+       6,
+       15,
+       41,
+       15
+      ],
+      [
+       7,
+       16,
+       40,
+       16
+      ],
+      [
+       9,
+       17,
+       38,
+       17
+      ],
+      [
+       10,
+       18,
+       37,
+       18
+      ],
+      [
+       10,
+       19,
+       37,
+       19
+      ],
+      [
+       10,
+       20,
+       37,
+       20
+      ],
+      [
+       10,
+       21,
+       21,
+       21
+      ],
+      [
+       26,
+       21,
+       37,
+       21
+      ],
+      [
+       10,
+       22,
+       20,
+       22
+      ],
+      [
+       27,
+       22,
+       37,
+       22
+      ],
+      [
+       10,
+       23,
+       20,
+       23
+      ],
+      [
+       27,
+       23,
+       37,
+       23
+      ],
+      [
+       11,
+       24,
+       20,
+       24
+      ],
+      [
+       27,
+       24,
+       36,
+       24
+      ],
+      [
+       12,
+       25,
+       21,
+       25
+      ],
+      [
+       26,
+       25,
+       36,
+       25
+      ],
+      [
+       12,
+       26,
+       35,
+       26
+      ],
+      [
+       12,
+       27,
+       34,
+       27
+      ],
+      [
+       11,
+       28,
+       34,
+       28
+      ],
+      [
+       11,
+       29,
+       34,
+       29
+      ],
+      [
+       11,
+       30,
+       34,
+       30
+      ],
+      [
+       11,
+       31,
+       34,
+       31
+      ],
+      [
+       11,
+       32,
+       34,
+       32
+      ],
+      [
+       11,
+       33,
+       33,
+       33
+      ],
+      [
+       12,
+       34,
+       33,
+       34
+      ],
+      [
+       12,
+       35,
+       33,
+       35
+      ],
+      [
+       12,
+       36,
+       33,
+       36
+      ]
+     ],
+     "pivot": [
+      23.5,
+      36
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 40,
+     "label": "Felsleib",
+     "unbreakable": true
+    },
+    {
+     "id": "kern",
+     "rects": [
+      [
+       22,
+       21,
+       25,
+       21
+      ],
+      [
+       21,
+       22,
+       26,
+       22
+      ],
+      [
+       21,
+       23,
+       26,
+       23
+      ],
+      [
+       21,
+       24,
+       26,
+       24
+      ],
+      [
+       22,
+       25,
+       25,
+       25
+      ]
+     ],
+     "pivot": [
+      23.5,
+      23
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 15,
+     "label": "Gletscherkern"
+    },
+    {
+     "id": "head",
+     "rects": [
+      [
+       19,
+       5,
+       31,
+       5
+      ],
+      [
+       17,
+       6,
+       33,
+       6
+      ],
+      [
+       35,
+       6,
+       35,
+       6
+      ],
+      [
+       17,
+       7,
+       35,
+       7
+      ],
+      [
+       17,
+       8,
+       35,
+       8
+      ],
+      [
+       17,
+       9,
+       35,
+       9
+      ],
+      [
+       17,
+       10,
+       35,
+       10
+      ],
+      [
+       17,
+       11,
+       35,
+       11
+      ],
+      [
+       17,
+       12,
+       35,
+       12
+      ],
+      [
+       17,
+       13,
+       35,
+       13
+      ],
+      [
+       17,
+       14,
+       35,
+       14
+      ],
+      [
+       17,
+       15,
+       35,
+       15
+      ],
+      [
+       17,
+       16,
+       35,
+       16
+      ],
+      [
+       17,
+       17,
+       35,
+       17
+      ]
+     ],
+     "pivot": [
+      26,
+      17
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 30,
+     "label": "Felskopf",
+     "unbreakable": true
+    },
+    {
+     "id": "shoulder_l",
+     "rects": [
+      [
+       8,
+       6,
+       15,
+       6
+      ],
+      [
+       7,
+       7,
+       16,
+       7
+      ],
+      [
+       6,
+       8,
+       16,
+       8
+      ],
+      [
+       5,
+       9,
+       16,
+       9
+      ],
+      [
+       5,
+       10,
+       16,
+       10
+      ],
+      [
+       5,
+       11,
+       16,
+       11
+      ],
+      [
+       5,
+       12,
+       16,
+       12
+      ],
+      [
+       5,
+       13,
+       16,
+       13
+      ],
+      [
+       6,
+       14,
+       16,
+       14
+      ],
+      [
+       6,
+       15,
+       16,
+       15
+      ],
+      [
+       7,
+       16,
+       16,
+       16
+      ],
+      [
+       9,
+       17,
+       13,
+       17
+      ]
+     ],
+     "pivot": [
+      12,
+      15
+     ],
+     "parent": "torso",
+     "z": 4,
+     "hp": 20,
+     "label": "Linke Schulter",
+     "unbreakable": true
+    },
+    {
+     "id": "shoulder_r",
+     "rects": [
+      [
+       36,
+       6,
+       40,
+       6
+      ],
+      [
+       36,
+       7,
+       41,
+       7
+      ],
+      [
+       36,
+       8,
+       42,
+       8
+      ],
+      [
+       36,
+       9,
+       42,
+       9
+      ],
+      [
+       36,
+       10,
+       42,
+       10
+      ],
+      [
+       36,
+       11,
+       42,
+       11
+      ],
+      [
+       36,
+       12,
+       42,
+       12
+      ],
+      [
+       36,
+       13,
+       42,
+       13
+      ],
+      [
+       36,
+       14,
+       41,
+       14
+      ],
+      [
+       36,
+       15,
+       41,
+       15
+      ],
+      [
+       36,
+       16,
+       40,
+       16
+      ]
+     ],
+     "pivot": [
+      39,
+      14
+     ],
+     "parent": "torso",
+     "z": 4,
+     "hp": 20,
+     "label": "Rechte Schulter",
+     "unbreakable": true
+    },
+    {
+     "id": "fist_l",
+     "rects": [
+      [
+       2,
+       25,
+       7,
+       25
+      ],
+      [
+       1,
+       26,
+       8,
+       26
+      ],
+      [
+       0,
+       27,
+       9,
+       27
+      ],
+      [
+       0,
+       28,
+       9,
+       28
+      ],
+      [
+       0,
+       29,
+       9,
+       29
+      ],
+      [
+       0,
+       30,
+       9,
+       30
+      ],
+      [
+       0,
+       31,
+       9,
+       31
+      ],
+      [
+       1,
+       32,
+       8,
+       32
+      ],
+      [
+       2,
+       33,
+       7,
+       33
+      ]
+     ],
+     "pivot": [
+      4.5,
+      29
+     ],
+     "parent": "torso",
+     "z": 5,
+     "hp": 15,
+     "label": "Linke Faust",
+     "weakens": {
+      "stampfer": {
+       "radius": 0.75
+      }
+     }
+    },
+    {
+     "id": "fist_r",
+     "rects": [
+      [
+       40,
+       25,
+       45,
+       25
+      ],
+      [
+       39,
+       26,
+       46,
+       26
+      ],
+      [
+       38,
+       27,
+       47,
+       27
+      ],
+      [
+       38,
+       28,
+       47,
+       28
+      ],
+      [
+       38,
+       29,
+       47,
+       29
+      ],
+      [
+       38,
+       30,
+       47,
+       30
+      ],
+      [
+       38,
+       31,
+       47,
+       31
+      ],
+      [
+       39,
+       32,
+       46,
+       32
+      ],
+      [
+       40,
+       33,
+       45,
+       33
+      ]
+     ],
+     "pivot": [
+      42.5,
+      29
+     ],
+     "parent": "torso",
+     "z": 5,
+     "hp": 15,
+     "label": "Rechte Faust",
+     "disables": [
+      "brocken"
+     ],
+     "weakens": {
+      "stampfer": {
+       "radius": 0.75
+      }
+     }
+    }
+   ],
+   "items": []
+  },
+  "frost_golem_p3": {
+   "img": "frost_golem_p3",
+   "family": "golem",
+   "ground": [
+    23.5,
+    39
+   ],
+   "width": 26,
+   "material": "frost",
+   "parts": [
+    {
+     "id": "leg_l",
+     "rects": [
+      [
+       13,
+       37,
+       19,
+       37
+      ],
+      [
+       13,
+       38,
+       19,
+       38
+      ],
+      [
+       14,
+       39,
+       18,
+       39
+      ]
+     ],
+     "pivot": [
+      16,
+      37
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 15,
+     "label": "Linkes Bein",
+     "unbreakable": true
+    },
+    {
+     "id": "leg_r",
+     "rects": [
+      [
+       26,
+       37,
+       33,
+       37
+      ],
+      [
+       27,
+       38,
+       33,
+       38
+      ],
+      [
+       28,
+       39,
+       32,
+       39
+      ]
+     ],
+     "pivot": [
+      30,
+      37
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 15,
+     "label": "Rechtes Bein",
+     "unbreakable": true
+    },
+    {
+     "id": "torso",
+     "rects": [
+      [
+       19,
+       5,
+       31,
+       5
+      ],
+      [
+       8,
+       6,
+       15,
+       6
+      ],
+      [
+       17,
+       6,
+       33,
+       6
+      ],
+      [
+       35,
+       6,
+       40,
+       6
+      ],
+      [
+       7,
+       7,
+       41,
+       7
+      ],
+      [
+       6,
+       8,
+       42,
+       8
+      ],
+      [
+       5,
+       9,
+       42,
+       9
+      ],
+      [
+       5,
+       10,
+       42,
+       10
+      ],
+      [
+       5,
+       11,
+       42,
+       11
+      ],
+      [
+       5,
+       12,
+       42,
+       12
+      ],
+      [
+       5,
+       13,
+       42,
+       13
+      ],
+      [
+       6,
+       14,
+       41,
+       14
+      ],
+      [
+       6,
+       15,
+       41,
+       15
+      ],
+      [
+       7,
+       16,
+       40,
+       16
+      ],
+      [
+       9,
+       17,
+       38,
+       17
+      ],
+      [
+       10,
+       18,
+       37,
+       18
+      ],
+      [
+       10,
+       19,
+       37,
+       19
+      ],
+      [
+       10,
+       20,
+       37,
+       20
+      ],
+      [
+       10,
+       21,
+       21,
+       21
+      ],
+      [
+       26,
+       21,
+       37,
+       21
+      ],
+      [
+       10,
+       22,
+       20,
+       22
+      ],
+      [
+       27,
+       22,
+       37,
+       22
+      ],
+      [
+       10,
+       23,
+       20,
+       23
+      ],
+      [
+       27,
+       23,
+       37,
+       23
+      ],
+      [
+       11,
+       24,
+       20,
+       24
+      ],
+      [
+       27,
+       24,
+       36,
+       24
+      ],
+      [
+       12,
+       25,
+       21,
+       25
+      ],
+      [
+       26,
+       25,
+       36,
+       25
+      ],
+      [
+       12,
+       26,
+       35,
+       26
+      ],
+      [
+       12,
+       27,
+       34,
+       27
+      ],
+      [
+       11,
+       28,
+       34,
+       28
+      ],
+      [
+       11,
+       29,
+       34,
+       29
+      ],
+      [
+       11,
+       30,
+       34,
+       30
+      ],
+      [
+       11,
+       31,
+       34,
+       31
+      ],
+      [
+       11,
+       32,
+       34,
+       32
+      ],
+      [
+       11,
+       33,
+       33,
+       33
+      ],
+      [
+       12,
+       34,
+       33,
+       34
+      ],
+      [
+       12,
+       35,
+       33,
+       35
+      ],
+      [
+       12,
+       36,
+       33,
+       36
+      ]
+     ],
+     "pivot": [
+      23.5,
+      36
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 40,
+     "label": "Felsleib",
+     "unbreakable": true
+    },
+    {
+     "id": "kern",
+     "rects": [
+      [
+       22,
+       21,
+       25,
+       21
+      ],
+      [
+       21,
+       22,
+       26,
+       22
+      ],
+      [
+       21,
+       23,
+       26,
+       23
+      ],
+      [
+       21,
+       24,
+       26,
+       24
+      ],
+      [
+       22,
+       25,
+       25,
+       25
+      ]
+     ],
+     "pivot": [
+      23.5,
+      23
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 15,
+     "label": "Gletscherkern"
+    },
+    {
+     "id": "head",
+     "rects": [
+      [
+       19,
+       5,
+       31,
+       5
+      ],
+      [
+       17,
+       6,
+       33,
+       6
+      ],
+      [
+       35,
+       6,
+       35,
+       6
+      ],
+      [
+       17,
+       7,
+       35,
+       7
+      ],
+      [
+       17,
+       8,
+       35,
+       8
+      ],
+      [
+       17,
+       9,
+       35,
+       9
+      ],
+      [
+       17,
+       10,
+       35,
+       10
+      ],
+      [
+       17,
+       11,
+       35,
+       11
+      ],
+      [
+       17,
+       12,
+       35,
+       12
+      ],
+      [
+       17,
+       13,
+       35,
+       13
+      ],
+      [
+       17,
+       14,
+       35,
+       14
+      ],
+      [
+       17,
+       15,
+       35,
+       15
+      ],
+      [
+       17,
+       16,
+       35,
+       16
+      ],
+      [
+       17,
+       17,
+       35,
+       17
+      ]
+     ],
+     "pivot": [
+      26,
+      17
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 30,
+     "label": "Felskopf",
+     "unbreakable": true
+    },
+    {
+     "id": "shoulder_l",
+     "rects": [
+      [
+       8,
+       6,
+       15,
+       6
+      ],
+      [
+       7,
+       7,
+       16,
+       7
+      ],
+      [
+       6,
+       8,
+       16,
+       8
+      ],
+      [
+       5,
+       9,
+       16,
+       9
+      ],
+      [
+       5,
+       10,
+       16,
+       10
+      ],
+      [
+       5,
+       11,
+       16,
+       11
+      ],
+      [
+       5,
+       12,
+       16,
+       12
+      ],
+      [
+       5,
+       13,
+       16,
+       13
+      ],
+      [
+       6,
+       14,
+       16,
+       14
+      ],
+      [
+       6,
+       15,
+       16,
+       15
+      ],
+      [
+       7,
+       16,
+       16,
+       16
+      ],
+      [
+       9,
+       17,
+       13,
+       17
+      ]
+     ],
+     "pivot": [
+      12,
+      15
+     ],
+     "parent": "torso",
+     "z": 4,
+     "hp": 20,
+     "label": "Linke Schulter",
+     "unbreakable": true
+    },
+    {
+     "id": "shoulder_r",
+     "rects": [
+      [
+       36,
+       6,
+       40,
+       6
+      ],
+      [
+       36,
+       7,
+       41,
+       7
+      ],
+      [
+       36,
+       8,
+       42,
+       8
+      ],
+      [
+       36,
+       9,
+       42,
+       9
+      ],
+      [
+       36,
+       10,
+       42,
+       10
+      ],
+      [
+       36,
+       11,
+       42,
+       11
+      ],
+      [
+       36,
+       12,
+       42,
+       12
+      ],
+      [
+       36,
+       13,
+       42,
+       13
+      ],
+      [
+       36,
+       14,
+       41,
+       14
+      ],
+      [
+       36,
+       15,
+       41,
+       15
+      ],
+      [
+       36,
+       16,
+       40,
+       16
+      ]
+     ],
+     "pivot": [
+      39,
+      14
+     ],
+     "parent": "torso",
+     "z": 4,
+     "hp": 20,
+     "label": "Rechte Schulter",
+     "unbreakable": true
+    },
+    {
+     "id": "fist_l",
+     "rects": [
+      [
+       2,
+       25,
+       7,
+       25
+      ],
+      [
+       1,
+       26,
+       8,
+       26
+      ],
+      [
+       0,
+       27,
+       9,
+       27
+      ],
+      [
+       0,
+       28,
+       9,
+       28
+      ],
+      [
+       0,
+       29,
+       9,
+       29
+      ],
+      [
+       0,
+       30,
+       9,
+       30
+      ],
+      [
+       0,
+       31,
+       9,
+       31
+      ],
+      [
+       1,
+       32,
+       8,
+       32
+      ],
+      [
+       2,
+       33,
+       7,
+       33
+      ]
+     ],
+     "pivot": [
+      4.5,
+      29
+     ],
+     "parent": "torso",
+     "z": 5,
+     "hp": 15,
+     "label": "Linke Faust",
+     "weakens": {
+      "stampfer": {
+       "radius": 0.75
+      }
+     }
+    },
+    {
+     "id": "fist_r",
+     "rects": [
+      [
+       40,
+       25,
+       45,
+       25
+      ],
+      [
+       39,
+       26,
+       46,
+       26
+      ],
+      [
+       38,
+       27,
+       47,
+       27
+      ],
+      [
+       38,
+       28,
+       47,
+       28
+      ],
+      [
+       38,
+       29,
+       47,
+       29
+      ],
+      [
+       38,
+       30,
+       47,
+       30
+      ],
+      [
+       38,
+       31,
+       47,
+       31
+      ],
+      [
+       39,
+       32,
+       46,
+       32
+      ],
+      [
+       40,
+       33,
+       45,
+       33
+      ]
+     ],
+     "pivot": [
+      42.5,
+      29
+     ],
+     "parent": "torso",
+     "z": 5,
+     "hp": 15,
+     "label": "Rechte Faust",
+     "disables": [
+      "brocken"
+     ],
+     "weakens": {
+      "stampfer": {
+       "radius": 0.75
+      }
+     }
+    }
+   ],
+   "items": []
   }
  },
  "void": {

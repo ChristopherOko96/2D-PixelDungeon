@@ -1,0 +1,215 @@
+{
+  "package": "frostgruft-schnee-erweiterung-v1",
+  "version": 1,
+  "generated": "2026-10-30",
+  "grid": "32px world grid; source sprites retain their original 3px pixel blocks",
+  "filtering": "nearest",
+  "alpha": "transparent PNG",
+  "mode": "additive variants; no source asset replaced",
+  "asset_count": 29,
+  "assets": [
+    {
+      "file": "assets/props/barrel_a_snowfoot.png",
+      "source": "assets/sprites/frost/barrel_a.png",
+      "category": "props",
+      "treatment": "snow_foot_and_top_cap",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/props/barrel_b_snowfoot.png",
+      "source": "assets/sprites/frost/barrel_b.png",
+      "category": "props",
+      "treatment": "snow_foot_and_top_cap",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/props/barrel_c_snowfoot.png",
+      "source": "assets/sprites/frost/barrel_c.png",
+      "category": "props",
+      "treatment": "snow_foot_and_top_cap",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/props/crate_a_snowfoot.png",
+      "source": "assets/sprites/frost/crate_a.png",
+      "category": "props",
+      "treatment": "snow_foot_and_top_cap",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/props/crate_b_snowfoot.png",
+      "source": "assets/sprites/frost/crate_b.png",
+      "category": "props",
+      "treatment": "snow_foot_and_top_cap",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/props/crate_c_snowfoot.png",
+      "source": "assets/sprites/frost/crate_c.png",
+      "category": "props",
+      "treatment": "snow_foot_and_top_cap",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/props/crate_pile_snowfoot.png",
+      "source": "assets/sprites/frost/crate_pile.png",
+      "category": "props",
+      "treatment": "snow_foot_and_top_cap",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/props/urn_a_snowfoot.png",
+      "source": "assets/sprites/frost/urn_a.png",
+      "category": "props",
+      "treatment": "snow_foot_and_top_cap",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/props/urn_b_snowfoot.png",
+      "source": "assets/sprites/frost/urn_b.png",
+      "category": "props",
+      "treatment": "snow_foot_and_top_cap",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/props/urn_c_snowfoot.png",
+      "source": "assets/sprites/frost/urn_c.png",
+      "category": "props",
+      "treatment": "snow_foot_and_top_cap",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/props/urn_d_snowfoot.png",
+      "source": "assets/sprites/frost/urn_d.png",
+      "category": "props",
+      "treatment": "snow_foot_and_top_cap",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/props/urn_e_snowfoot.png",
+      "source": "assets/sprites/frost/urn_e.png",
+      "category": "props",
+      "treatment": "snow_foot_and_top_cap",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/props/table_a_snowfoot.png",
+      "source": "assets/sprites/frost/table_a.png",
+      "category": "props",
+      "treatment": "snow_foot_and_top_cap",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/props/table_b_snowfoot.png",
+      "source": "assets/sprites/frost/table_b.png",
+      "category": "props",
+      "treatment": "snow_foot_and_top_cap",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/props/table_c_snowfoot.png",
+      "source": "assets/sprites/frost/table_c.png",
+      "category": "props",
+      "treatment": "snow_foot_and_top_cap",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/props/bench_snowfoot.png",
+      "source": "assets/sprites/frost/bench.png",
+      "category": "props",
+      "treatment": "snow_foot_and_top_cap",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/props/shelf_snowfoot.png",
+      "source": "assets/sprites/frost/shelf.png",
+      "category": "props",
+      "treatment": "snow_foot_and_top_cap",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/props/shop_table_snowfoot.png",
+      "source": "assets/sprites/frost/shop_table.png",
+      "category": "props",
+      "treatment": "snow_foot_and_top_cap",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/props/skull_heap_snowfoot.png",
+      "source": "assets/sprites/frost/skull_heap.png",
+      "category": "props",
+      "treatment": "snow_foot_and_top_cap",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/props/skull_pile_snowfoot.png",
+      "source": "assets/sprites/frost/skull_pile.png",
+      "category": "props",
+      "treatment": "snow_foot_and_top_cap",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/props/skull_obelisk_snowfoot.png",
+      "source": "assets/sprites/frost/skull_obelisk.png",
+      "category": "props",
+      "treatment": "snow_foot_and_top_cap",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/props/boulders_snowfoot.png",
+      "source": "assets/sprites/frost/boulders.png",
+      "category": "props",
+      "treatment": "snow_foot_and_top_cap",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/props/rubble_snowfoot.png",
+      "source": "assets/sprites/frost/rubble.png",
+      "category": "props",
+      "treatment": "snow_foot_and_top_cap",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/props/candelabra_snowfoot.png",
+      "source": "assets/sprites/frost/candelabra.png",
+      "category": "props",
+      "treatment": "snow_foot",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/structures/altar_snowfoot.png",
+      "source": "assets/sprites/frost/altar.png",
+      "category": "structures",
+      "treatment": "snow_foot_and_top_cap",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/structures/wall_h_snowfoot.png",
+      "source": "assets/sprites/frost/wall_h.png",
+      "category": "structures",
+      "treatment": "snow_foot",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/structures/wall_v_snowfoot.png",
+      "source": "assets/sprites/frost/wall_v.png",
+      "category": "structures",
+      "treatment": "snow_foot",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/structures/wall_skull_a_snowfoot.png",
+      "source": "assets/sprites/frost/wall_skull_a.png",
+      "category": "structures",
+      "treatment": "snow_foot_and_top_cap",
+      "source_preserved": true
+    },
+    {
+      "file": "assets/structures/wall_skull_b_snowfoot.png",
+      "source": "assets/sprites/frost/wall_skull_b.png",
+      "category": "structures",
+      "treatment": "snow_foot_and_top_cap",
+      "source_preserved": true
+    }
+  ]
+}
