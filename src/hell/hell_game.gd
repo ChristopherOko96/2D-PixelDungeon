@@ -824,6 +824,18 @@ func _room_at_world(x: float, y: float) -> int:
 	return W.room_at[cy * W.cols + cx]
 
 
+## A spot of free floor in room `room` between min_d and max_d px from `near` (no wall, prop or
+## liquid under a 60 x 30 px foot); `near` when none is found. The worlds without hell monsters
+## (the Frostgruft) place their spawns with it, as hell_monsters.gd free_spot does.
+func free_floor(room: int, near: Vector2, min_d: float, max_d: float) -> Vector2:
+	for k in range(40):
+		var p := near + Vector2.from_angle(randf() * TAU) * randf_range(min_d, max_d)
+		if _room_at_world(p.x, p.y) == room and _cell(int(floor(p.x / C)), int(floor(p.y / C))) == 1 \
+				and not box_blocked(Rect2(p.x - 30, p.y - 30, 60, 30), true):
+			return p
+	return near
+
+
 func _near_door(r: Dictionary, p: Vector2, dist: float) -> bool:
 	for i: int in r.doors:
 		var d: Dictionary = W.doors[i]
@@ -1676,12 +1688,11 @@ func _break_crate(e: Dictionary) -> void:
 			r.fight = true
 			r.cleared = false
 			for k in range(2):
-				var at := Vector2(e.x + (70.0 if k == 1 else -70.0), e.y + 60.0)
+				# crates stand at the walls: the undead climb out onto free floor, never into the wall
 				if monsters != null:
-					# crates stand at the walls: the undead climb out onto free floor, never into the wall
 					monsters.spawn(r.index, monsters.free_spot(r.index, Vector2(e.x, e.y + 60.0), 70.0, 200.0), String(balance.monsters.seal_demon))
 				else:
-					_spawn_mob(r.index, at, String(balance.seal.demon_kind))
+					_spawn_mob(r.index, free_floor(r.index, Vector2(e.x, e.y + 60.0), 70.0, 200.0), String(balance.seal.demon_kind))
 			_toast("Aus der Kiste kriechen Untote! Die Gitter fallen.")
 		_:
 			_toast("Zerbrochen. Nichts darin.")

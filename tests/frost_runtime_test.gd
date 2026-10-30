@@ -29,7 +29,7 @@ func _initialize() -> void:
 
 func _run() -> void:
 	await _test_theme_loads_frost_floors_and_skin()
-	await _test_floor_key_waits_in_a_chest_and_opening_grants_it()
+	await _test_key_room_key_lies_loose_and_walking_over_it_takes_it()
 	await _test_glaze_ice_slides_and_plain_floor_stops()
 	await _test_each_class_brings_its_hero_hearts_and_weapon()
 	await _test_sword_hits_in_front_but_not_behind()
@@ -72,27 +72,29 @@ func _test_theme_loads_frost_floors_and_skin() -> void:
 	await _free(game)
 
 
-func _test_floor_key_waits_in_a_chest_and_opening_grants_it() -> void:
+## The world kit rule (docs/WELT-BAUKASTEN.de.md): the boss key lies loose in the middle of the key
+## room's rug, as in the crypt and the hell (the Frostgruft no longer hides keys in chests).
+func _test_key_room_key_lies_loose_and_walking_over_it_takes_it() -> void:
 	# Arrange
 	var game := await _new(FrostScene)
-	var loose := 0
-	var chest: Dictionary = {}
+	var key: Dictionary = {}
 	for e: Dictionary in game.W.ents:
-		if e.type == "key":
-			loose += 1
-		if e.type == "chest" and e.get("loot", {}).has("key"):
-			chest = e
-	check(loose == 0 and not chest.is_empty(), "no key lies loose; the key room's key is in a chest")
-	if chest.is_empty():
+		if e.type == "key" and str(e.key) == "C":
+			key = e
+	check(not key.is_empty() and str(game.W.rooms[int(key.room)].gtype) == "key", "the boss key lies loose in the key room")
+	if key.is_empty():
 		await _free(game)
 		return
-	var k: String = chest.loot.key
-	game.player.x = chest.x
-	game.player.y = chest.y + 60.0
+	for r: Dictionary in game.W.rooms:
+		r.fight = false
+		r.cleared = true
+	game.player.x = key.x
+	game.player.y = key.y
 	# Act
-	game.act()
+	for i in range(4):
+		await process_frame
 	# Assert
-	check(game.state.keys[k] and chest.state == "empty", "opening the chest hands over the %s" % game.key_name[k])
+	check(bool(game.state.keys.C), "walking over it hands over the %s" % game.key_name.C)
 	await _free(game)
 
 

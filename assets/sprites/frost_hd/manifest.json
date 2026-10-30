@@ -1,0 +1,1880 @@
+{
+ "ally_bear_f0": {
+  "h": 42,
+  "kind": "sprite",
+  "src": "Superdark Bear",
+  "w": 58
+ },
+ "ally_bear_f1": {
+  "h": 42,
+  "kind": "sprite",
+  "src": "Superdark Bear",
+  "w": 58
+ },
+ "ally_bear_f2": {
+  "h": 42,
+  "kind": "sprite",
+  "src": "Superdark Bear",
+  "w": 58
+ },
+ "ally_bear_f3": {
+  "h": 42,
+  "kind": "sprite",
+  "src": "Superdark Bear",
+  "w": 62
+ },
+ "ally_big_demon_f0": {
+  "h": 72,
+  "kind": "sprite",
+  "src": "0x72 big_demon_run_anim",
+  "w": 64
+ },
+ "ally_big_demon_f1": {
+  "h": 72,
+  "kind": "sprite",
+  "src": "0x72 big_demon_run_anim",
+  "w": 64
+ },
+ "ally_big_demon_f2": {
+  "h": 72,
+  "kind": "sprite",
+  "src": "0x72 big_demon_run_anim",
+  "w": 64
+ },
+ "ally_big_demon_f3": {
+  "h": 72,
+  "kind": "sprite",
+  "src": "0x72 big_demon_run_anim",
+  "w": 64
+ },
+ "ally_big_zombie_f0": {
+  "h": 72,
+  "kind": "sprite",
+  "src": "0x72 big_zombie_run_anim",
+  "w": 64
+ },
+ "ally_big_zombie_f1": {
+  "h": 72,
+  "kind": "sprite",
+  "src": "0x72 big_zombie_run_anim",
+  "w": 64
+ },
+ "ally_big_zombie_f2": {
+  "h": 72,
+  "kind": "sprite",
+  "src": "0x72 big_zombie_run_anim",
+  "w": 64
+ },
+ "ally_big_zombie_f3": {
+  "h": 72,
+  "kind": "sprite",
+  "src": "0x72 big_zombie_run_anim",
+  "w": 64
+ },
+ "ally_ent_f0": {
+  "h": 60,
+  "kind": "sprite",
+  "src": "Superdark Ent",
+  "w": 46
+ },
+ "ally_ent_f1": {
+  "h": 58,
+  "kind": "sprite",
+  "src": "Superdark Ent",
+  "w": 46
+ },
+ "ally_ent_f2": {
+  "h": 60,
+  "kind": "sprite",
+  "src": "Superdark Ent",
+  "w": 46
+ },
+ "ally_ent_f3": {
+  "h": 58,
+  "kind": "sprite",
+  "src": "Superdark Ent",
+  "w": 46
+ },
+ "ally_frost_giant_f0": {
+  "h": 144,
+  "kind": "sprite",
+  "src": "0x72 ogre_run_anim, umgefärbt (Frostriese)",
+  "w": 128
+ },
+ "ally_frost_giant_f1": {
+  "h": 144,
+  "kind": "sprite",
+  "src": "0x72 ogre_run_anim, umgefärbt (Frostriese)",
+  "w": 128
+ },
+ "ally_frost_giant_f2": {
+  "h": 144,
+  "kind": "sprite",
+  "src": "0x72 ogre_run_anim, umgefärbt (Frostriese)",
+  "w": 128
+ },
+ "ally_frost_giant_f3": {
+  "h": 144,
+  "kind": "sprite",
+  "src": "0x72 ogre_run_anim, umgefärbt (Frostriese)",
+  "w": 128
+ },
+ "ally_golem_f0": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt (Gravitationssteingolem)",
+  "w": 96
+ },
+ "ally_golem_f1": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt (Gravitationssteingolem)",
+  "w": 96
+ },
+ "ally_golem_f2": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt (Gravitationssteingolem)",
+  "w": 96
+ },
+ "ally_golem_f3": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt (Gravitationssteingolem)",
+  "w": 96
+ },
+ "ally_golem_f4": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt (Gravitationssteingolem)",
+  "w": 96
+ },
+ "ally_golem_f5": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt (Gravitationssteingolem)",
+  "w": 96
+ },
+ "ally_golem_walk_f0": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt (Gravitationssteingolem)",
+  "w": 96
+ },
+ "ally_golem_walk_f1": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt (Gravitationssteingolem)",
+  "w": 96
+ },
+ "ally_golem_walk_f2": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt (Gravitationssteingolem)",
+  "w": 96
+ },
+ "ally_golem_walk_f3": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt (Gravitationssteingolem)",
+  "w": 96
+ },
+ "ally_golem_walk_f4": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt (Gravitationssteingolem)",
+  "w": 96
+ },
+ "ally_golem_walk_f5": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt (Gravitationssteingolem)",
+  "w": 96
+ },
+ "ally_ice_elemental": {
+  "h": 57,
+  "kind": "sprite",
+  "src": "6DNLbZ Wasser-Elementar, umgefärbt (Eiselementar)",
+  "w": 93
+ },
+ "ally_skeleton_f0": {
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 skelet_run_anim",
+  "w": 48
+ },
+ "ally_skeleton_f1": {
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 skelet_run_anim",
+  "w": 48
+ },
+ "ally_skeleton_f2": {
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 skelet_run_anim",
+  "w": 48
+ },
+ "ally_skeleton_f3": {
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 skelet_run_anim",
+  "w": 48
+ },
+ "ally_wolf_f0": {
+  "h": 32,
+  "kind": "sprite",
+  "src": "Superdark Wolf",
+  "w": 60
+ },
+ "ally_wolf_f1": {
+  "h": 34,
+  "kind": "sprite",
+  "src": "Superdark Wolf",
+  "w": 60
+ },
+ "ally_wolf_f2": {
+  "h": 32,
+  "kind": "sprite",
+  "src": "Superdark Wolf",
+  "w": 60
+ },
+ "ally_wolf_f3": {
+  "h": 30,
+  "kind": "sprite",
+  "src": "Superdark Wolf",
+  "w": 60
+ },
+ "altar": {
+  "h": 114,
+  "kind": "sprite",
+  "src": "hell altar, frozen (build_frost_extras.py)",
+  "w": 190
+ },
+ "banner_1": {
+  "h": 104,
+  "kind": "sprite",
+  "src": "hell banner_1, frozen (build_frost_extras.py)",
+  "w": 76
+ },
+ "banner_2": {
+  "h": 102,
+  "kind": "sprite",
+  "src": "hell banner_2, frozen (build_frost_extras.py)",
+  "w": 69
+ },
+ "banner_3": {
+  "h": 100,
+  "kind": "sprite",
+  "src": "hell banner_3, frozen (build_frost_extras.py)",
+  "w": 67
+ },
+ "banner_4": {
+  "h": 95,
+  "kind": "sprite",
+  "src": "hell banner_4, frozen (build_frost_extras.py)",
+  "w": 59
+ },
+ "banner_5": {
+  "h": 106,
+  "kind": "sprite",
+  "src": "hell banner_5, frozen (build_frost_extras.py)",
+  "w": 66
+ },
+ "banner_a": {
+  "h": 117,
+  "kind": "sprite",
+  "src": "hell banner_a, frozen (build_frost_extras.py)",
+  "w": 84
+ },
+ "banner_b": {
+  "h": 138,
+  "kind": "sprite",
+  "src": "hell banner_b, frozen (build_frost_extras.py)",
+  "w": 90
+ },
+ "banner_chain": {
+  "h": 110,
+  "kind": "sprite",
+  "src": "hell banner_chain, frozen (build_frost_extras.py)",
+  "w": 142
+ },
+ "barrel_a": {
+  "h": 66,
+  "kind": "sprite",
+  "src": "hell barrel_a, frozen (build_frost_extras.py)",
+  "w": 43
+ },
+ "barrel_b": {
+  "h": 70,
+  "kind": "sprite",
+  "src": "hell barrel_b, frozen (build_frost_extras.py)",
+  "w": 52
+ },
+ "barrel_c": {
+  "h": 68,
+  "kind": "sprite",
+  "src": "hell barrel_c, frozen (build_frost_extras.py)",
+  "w": 51
+ },
+ "bench": {
+  "h": 52,
+  "kind": "sprite",
+  "src": "hell bench, frozen (build_frost_extras.py)",
+  "w": 131
+ },
+ "blood_a": {
+  "h": 95,
+  "kind": "sprite",
+  "src": "hell blood_a, frozen (build_frost_extras.py)",
+  "w": 95
+ },
+ "blood_b": {
+  "h": 101,
+  "kind": "sprite",
+  "src": "hell blood_b, frozen (build_frost_extras.py)",
+  "w": 88
+ },
+ "blood_c": {
+  "h": 103,
+  "kind": "sprite",
+  "src": "hell blood_c, frozen (build_frost_extras.py)",
+  "w": 84
+ },
+ "blood_d": {
+  "h": 79,
+  "kind": "sprite",
+  "src": "hell blood_d, frozen (build_frost_extras.py)",
+  "w": 109
+ },
+ "blood_e": {
+  "h": 87,
+  "kind": "sprite",
+  "src": "hell blood_e, frozen (build_frost_extras.py)",
+  "w": 96
+ },
+ "blood_f": {
+  "h": 81,
+  "kind": "sprite",
+  "src": "hell blood_f, frozen (build_frost_extras.py)",
+  "w": 95
+ },
+ "bone_a": {
+  "h": 42,
+  "kind": "sprite",
+  "src": "hell bone_a, frozen (build_frost_extras.py)",
+  "w": 46
+ },
+ "bone_b": {
+  "h": 43,
+  "kind": "sprite",
+  "src": "hell bone_b, frozen (build_frost_extras.py)",
+  "w": 41
+ },
+ "bone_c": {
+  "h": 45,
+  "kind": "sprite",
+  "src": "hell bone_c, frozen (build_frost_extras.py)",
+  "w": 37
+ },
+ "bone_d": {
+  "h": 36,
+  "kind": "sprite",
+  "src": "hell bone_d, frozen (build_frost_extras.py)",
+  "w": 40
+ },
+ "bone_e": {
+  "h": 38,
+  "kind": "sprite",
+  "src": "hell bone_e, frozen (build_frost_extras.py)",
+  "w": 46
+ },
+ "bone_f": {
+  "h": 45,
+  "kind": "sprite",
+  "src": "hell bone_f, frozen (build_frost_extras.py)",
+  "w": 32
+ },
+ "bone_g": {
+  "h": 32,
+  "kind": "sprite",
+  "src": "hell bone_g, frozen (build_frost_extras.py)",
+  "w": 39
+ },
+ "bones_scatter": {
+  "h": 36,
+  "kind": "sprite",
+  "src": "hell bones_scatter, frozen (build_frost_extras.py)",
+  "w": 71
+ },
+ "bones_t": {
+  "h": 45,
+  "kind": "sprite",
+  "src": "hell bones_t, frozen (build_frost_extras.py)",
+  "w": 55
+ },
+ "boss_arch": {
+  "h": 188,
+  "kind": "sprite",
+  "src": "hell boss_arch, frozen (build_frost_extras.py)",
+  "w": 257
+ },
+ "boss_banner": {
+  "h": 138,
+  "kind": "sprite",
+  "src": "hell boss_banner, frozen (build_frost_extras.py)",
+  "w": 90
+ },
+ "boss_banner_blue": {
+  "h": 138,
+  "kind": "sprite",
+  "src": "hell boss_banner_blue, frozen (build_frost_extras.py)",
+  "w": 90
+ },
+ "boss_banner_gold": {
+  "h": 138,
+  "kind": "sprite",
+  "src": "hell boss_banner_gold, frozen (build_frost_extras.py)",
+  "w": 90
+ },
+ "boss_banner_green": {
+  "h": 138,
+  "kind": "sprite",
+  "src": "hell boss_banner_green, frozen (build_frost_extras.py)",
+  "w": 90
+ },
+ "boss_banner_pink": {
+  "h": 138,
+  "kind": "sprite",
+  "src": "hell boss_banner_pink, frozen (build_frost_extras.py)",
+  "w": 90
+ },
+ "boss_banner_purple": {
+  "h": 138,
+  "kind": "sprite",
+  "src": "hell boss_banner_purple, frozen (build_frost_extras.py)",
+  "w": 90
+ },
+ "boss_banner_teal": {
+  "h": 138,
+  "kind": "sprite",
+  "src": "hell boss_banner_teal, frozen (build_frost_extras.py)",
+  "w": 90
+ },
+ "boss_gate": {
+  "h": 179,
+  "kind": "sprite",
+  "src": "hell boss_gate, frozen (build_frost_extras.py)",
+  "w": 288
+ },
+ "boss_gate_blue": {
+  "h": 179,
+  "kind": "sprite",
+  "src": "hell boss_gate_blue, frozen (build_frost_extras.py)",
+  "w": 288
+ },
+ "boss_golem_p1_f0": {
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt",
+  "w": 192
+ },
+ "boss_golem_p1_f1": {
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt",
+  "w": 192
+ },
+ "boss_golem_p1_f2": {
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt",
+  "w": 192
+ },
+ "boss_golem_p1_f3": {
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt",
+  "w": 192
+ },
+ "boss_golem_p1_f4": {
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt",
+  "w": 192
+ },
+ "boss_golem_p1_f5": {
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt",
+  "w": 192
+ },
+ "boss_golem_p2_f0": {
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt",
+  "w": 192
+ },
+ "boss_golem_p2_f1": {
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt",
+  "w": 192
+ },
+ "boss_golem_p2_f2": {
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt",
+  "w": 192
+ },
+ "boss_golem_p2_f3": {
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt",
+  "w": 192
+ },
+ "boss_golem_p2_f4": {
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt",
+  "w": 192
+ },
+ "boss_golem_p2_f5": {
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt",
+  "w": 192
+ },
+ "boss_golem_p3_f0": {
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt",
+  "w": 192
+ },
+ "boss_golem_p3_f1": {
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt",
+  "w": 192
+ },
+ "boss_golem_p3_f2": {
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt",
+  "w": 192
+ },
+ "boss_golem_p3_f3": {
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt",
+  "w": 192
+ },
+ "boss_golem_p3_f4": {
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt",
+  "w": 192
+ },
+ "boss_golem_p3_f5": {
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt",
+  "w": 192
+ },
+ "boss_golem_walk_f0": {
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt",
+  "w": 192
+ },
+ "boss_golem_walk_f1": {
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt",
+  "w": 192
+ },
+ "boss_golem_walk_f2": {
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt",
+  "w": 192
+ },
+ "boss_golem_walk_f3": {
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt",
+  "w": 192
+ },
+ "boss_golem_walk_f4": {
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt",
+  "w": 192
+ },
+ "boss_golem_walk_f5": {
+  "h": 192,
+  "kind": "sprite",
+  "src": "Superdark Golem (4GxFHH), umgefärbt",
+  "w": 192
+ },
+ "boulders": {
+  "h": 47,
+  "kind": "sprite",
+  "src": "hell boulders, frozen (build_frost_extras.py)",
+  "w": 63
+ },
+ "bowl_blue": {
+  "h": 84,
+  "kind": "sprite",
+  "src": "hell bowl_blue, frozen (build_frost_extras.py)",
+  "w": 80
+ },
+ "brazier_blue": {
+  "h": 99,
+  "kind": "sprite",
+  "src": "hell brazier_blue, frozen (build_frost_extras.py)",
+  "w": 70
+ },
+ "brazier_bowl": {
+  "h": 99,
+  "kind": "sprite",
+  "src": "hell brazier_bowl, frozen (build_frost_extras.py)",
+  "w": 70
+ },
+ "brazier_demon": {
+  "h": 100,
+  "kind": "sprite",
+  "src": "hell brazier_demon, frozen (build_frost_extras.py)",
+  "w": 80
+ },
+ "brazier_floor": {
+  "h": 98,
+  "kind": "sprite",
+  "src": "hell brazier_floor, frozen (build_frost_extras.py)",
+  "w": 85
+ },
+ "brazier_low": {
+  "h": 84,
+  "kind": "sprite",
+  "src": "hell brazier_low, frozen (build_frost_extras.py)",
+  "w": 80
+ },
+ "brazier_low_b": {
+  "h": 74,
+  "kind": "sprite",
+  "src": "hell brazier_low_b, frozen (build_frost_extras.py)",
+  "w": 84
+ },
+ "brazier_pillar": {
+  "h": 133,
+  "kind": "sprite",
+  "src": "hell brazier_pillar, frozen (build_frost_extras.py)",
+  "w": 74
+ },
+ "brazier_rune": {
+  "h": 113,
+  "kind": "sprite",
+  "src": "hell brazier_rune, frozen (build_frost_extras.py)",
+  "w": 64
+ },
+ "bridge_h": {
+  "h": 107,
+  "kind": "sprite",
+  "src": "hell bridge_h, frozen (build_frost_extras.py)",
+  "w": 157
+ },
+ "bridge_v": {
+  "h": 136,
+  "kind": "sprite",
+  "src": "hell bridge_v, frozen (build_frost_extras.py)",
+  "w": 167
+ },
+ "cage_hang": {
+  "h": 107,
+  "kind": "sprite",
+  "src": "hell cage_hang, frozen (build_frost_extras.py)",
+  "w": 44
+ },
+ "cage_small": {
+  "h": 130,
+  "kind": "sprite",
+  "src": "hell cage_small, frozen (build_frost_extras.py)",
+  "w": 50
+ },
+ "candelabra": {
+  "h": 114,
+  "kind": "sprite",
+  "src": "hell candelabra, frozen (build_frost_extras.py)",
+  "w": 50
+ },
+ "carpet": {
+  "h": 146,
+  "kind": "sprite",
+  "src": "hell carpet, frozen (build_frost_extras.py)",
+  "w": 58
+ },
+ "chain_a": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "hell chain_a, frozen (build_frost_extras.py)",
+  "w": 13
+ },
+ "chain_b": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "hell chain_b, frozen (build_frost_extras.py)",
+  "w": 17
+ },
+ "chain_hang": {
+  "h": 100,
+  "kind": "sprite",
+  "src": "hell chain_hang, frozen (build_frost_extras.py)",
+  "w": 22
+ },
+ "chain_hook": {
+  "h": 97,
+  "kind": "sprite",
+  "src": "hell chain_hook, frozen (build_frost_extras.py)",
+  "w": 26
+ },
+ "chain_long": {
+  "h": 95,
+  "kind": "sprite",
+  "src": "hell chain_long, frozen (build_frost_extras.py)",
+  "w": 16
+ },
+ "chain_long_b": {
+  "h": 95,
+  "kind": "sprite",
+  "src": "hell chain_long_b, frozen (build_frost_extras.py)",
+  "w": 16
+ },
+ "chain_swag": {
+  "h": 91,
+  "kind": "sprite",
+  "src": "hell chain_swag, frozen (build_frost_extras.py)",
+  "w": 77
+ },
+ "chain_swag_b": {
+  "h": 99,
+  "kind": "sprite",
+  "src": "hell chain_swag_b, frozen (build_frost_extras.py)",
+  "w": 57
+ },
+ "chest_closed": {
+  "h": 76,
+  "kind": "sprite",
+  "src": "hell chest_closed, frozen (build_frost_extras.py)",
+  "w": 97
+ },
+ "chest_empty": {
+  "h": 89,
+  "kind": "sprite",
+  "src": "hell chest_empty, frozen (build_frost_extras.py)",
+  "w": 82
+ },
+ "chest_gold": {
+  "h": 83,
+  "kind": "sprite",
+  "src": "hell chest_gold, frozen (build_frost_extras.py)",
+  "w": 76
+ },
+ "chest_open": {
+  "h": 86,
+  "kind": "sprite",
+  "src": "hell chest_open, frozen (build_frost_extras.py)",
+  "w": 85
+ },
+ "chest_vault": {
+  "h": 77,
+  "kind": "sprite",
+  "src": "hell chest_vault, frozen (build_frost_extras.py)",
+  "w": 68
+ },
+ "coal": {
+  "h": 58,
+  "kind": "sprite",
+  "src": "hell coal, frozen (build_frost_extras.py)",
+  "w": 75
+ },
+ "coal_skulls": {
+  "h": 55,
+  "kind": "sprite",
+  "src": "hell coal_skulls, frozen (build_frost_extras.py)",
+  "w": 86
+ },
+ "corner_cap": {
+  "h": 76,
+  "kind": "design",
+  "src": "hell corner_cap, frozen (build_frost_extras.py)",
+  "w": 76
+ },
+ "crate_a": {
+  "h": 88,
+  "kind": "sprite",
+  "src": "hell crate_a, frozen (build_frost_extras.py)",
+  "w": 68
+ },
+ "crate_b": {
+  "h": 76,
+  "kind": "sprite",
+  "src": "hell crate_b, frozen (build_frost_extras.py)",
+  "w": 62
+ },
+ "crate_c": {
+  "h": 88,
+  "kind": "sprite",
+  "src": "hell crate_c, frozen (build_frost_extras.py)",
+  "w": 63
+ },
+ "crate_pile": {
+  "h": 98,
+  "kind": "sprite",
+  "src": "hell crate_pile, frozen (build_frost_extras.py)",
+  "w": 90
+ },
+ "demon_head": {
+  "h": 57,
+  "kind": "sprite",
+  "src": "hell demon_head, frozen (build_frost_extras.py)",
+  "w": 75
+ },
+ "demon_lintel": {
+  "h": 110,
+  "kind": "sprite",
+  "src": "hell demon_lintel, frozen (build_frost_extras.py)",
+  "w": 264
+ },
+ "demon_plate": {
+  "h": 86,
+  "kind": "sprite",
+  "src": "hell demon_plate, frozen (build_frost_extras.py)",
+  "w": 96
+ },
+ "door_stairs": {
+  "h": 110,
+  "kind": "sprite",
+  "src": "hell door_stairs, frozen (build_frost_extras.py)",
+  "w": 162
+ },
+ "door_stairs_small": {
+  "h": 108,
+  "kind": "sprite",
+  "src": "hell door_stairs_small, frozen (build_frost_extras.py)",
+  "w": 109
+ },
+ "fire_orb": {
+  "h": 58,
+  "kind": "sprite",
+  "src": "hell fire_orb, frozen (build_frost_extras.py)",
+  "w": 52
+ },
+ "fire_plate": {
+  "h": 99,
+  "kind": "sprite",
+  "src": "hell fire_plate, frozen (build_frost_extras.py)",
+  "w": 104
+ },
+ "floor_00": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "hell floor_00, frozen (build_frost_extras.py)",
+  "w": 96
+ },
+ "floor_01": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "hell floor_01, frozen (build_frost_extras.py)",
+  "w": 96
+ },
+ "floor_02": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "hell floor_02, frozen (build_frost_extras.py)",
+  "w": 96
+ },
+ "floor_03": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "hell floor_03, frozen (build_frost_extras.py)",
+  "w": 96
+ },
+ "floor_04": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "hell floor_04, frozen (build_frost_extras.py)",
+  "w": 96
+ },
+ "floor_05": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "hell floor_05, frozen (build_frost_extras.py)",
+  "w": 96
+ },
+ "floor_06": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "hell floor_06, frozen (build_frost_extras.py)",
+  "w": 96
+ },
+ "floor_07": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "hell floor_07, frozen (build_frost_extras.py)",
+  "w": 96
+ },
+ "floor_08": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "hell floor_08, frozen (build_frost_extras.py)",
+  "w": 96
+ },
+ "floor_09": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "hell floor_09, frozen (build_frost_extras.py)",
+  "w": 96
+ },
+ "floor_10": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "hell floor_10, frozen (build_frost_extras.py)",
+  "w": 96
+ },
+ "floor_11": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "hell floor_11, frozen (build_frost_extras.py)",
+  "w": 96
+ },
+ "fountain": {
+  "h": 148,
+  "kind": "sprite",
+  "src": "hell fountain, frozen (build_frost_extras.py)",
+  "w": 120
+ },
+ "gargoyle": {
+  "h": 135,
+  "kind": "sprite",
+  "src": "hell gargoyle, frozen (build_frost_extras.py)",
+  "w": 104
+ },
+ "gate_side": {
+  "h": 133,
+  "kind": "sprite",
+  "src": "hell gate_side, frozen (build_frost_extras.py)",
+  "w": 177
+ },
+ "grate": {
+  "h": 104,
+  "kind": "sprite",
+  "src": "hell grate, frozen (build_frost_extras.py)",
+  "w": 101
+ },
+ "grate_a": {
+  "h": 64,
+  "kind": "sprite",
+  "src": "hell grate_a, frozen (build_frost_extras.py)",
+  "w": 67
+ },
+ "grate_b": {
+  "h": 65,
+  "kind": "sprite",
+  "src": "hell grate_b, frozen (build_frost_extras.py)",
+  "w": 74
+ },
+ "hanging_brazier": {
+  "h": 139,
+  "kind": "sprite",
+  "src": "hell hanging_brazier, frozen (build_frost_extras.py)",
+  "w": 64
+ },
+ "heart": {
+  "h": 55,
+  "kind": "sprite",
+  "src": "hell heart, frozen (build_frost_extras.py)",
+  "w": 57
+ },
+ "icon_chest": {
+  "h": 54,
+  "kind": "sprite",
+  "src": "hell icon_chest, frozen (build_frost_extras.py)",
+  "w": 57
+ },
+ "icon_demon": {
+  "h": 66,
+  "kind": "sprite",
+  "src": "hell icon_demon, frozen (build_frost_extras.py)",
+  "w": 63
+ },
+ "icon_demon_big": {
+  "h": 74,
+  "kind": "sprite",
+  "src": "hell icon_demon_big, frozen (build_frost_extras.py)",
+  "w": 77
+ },
+ "icon_door": {
+  "h": 61,
+  "kind": "sprite",
+  "src": "hell icon_door, frozen (build_frost_extras.py)",
+  "w": 62
+ },
+ "icon_scroll": {
+  "h": 54,
+  "kind": "sprite",
+  "src": "hell icon_scroll, frozen (build_frost_extras.py)",
+  "w": 56
+ },
+ "icon_swords": {
+  "h": 54,
+  "kind": "sprite",
+  "src": "hell icon_swords, frozen (build_frost_extras.py)",
+  "w": 54
+ },
+ "jamb_a": {
+  "h": 137,
+  "kind": "sprite",
+  "src": "hell jamb_a, frozen (build_frost_extras.py)",
+  "w": 47
+ },
+ "jamb_b": {
+  "h": 136,
+  "kind": "sprite",
+  "src": "hell jamb_b, frozen (build_frost_extras.py)",
+  "w": 47
+ },
+ "key": {
+  "h": 71,
+  "kind": "sprite",
+  "src": "hell key, frozen (build_frost_extras.py)",
+  "w": 38
+ },
+ "key_crystal": {
+  "h": 66,
+  "kind": "sprite",
+  "src": "extended Schlüssel, umgefärbt",
+  "w": 30
+ },
+ "key_gold": {
+  "h": 66,
+  "kind": "sprite",
+  "src": "extended Schlüssel (Gold)",
+  "w": 30
+ },
+ "key_ice": {
+  "h": 66,
+  "kind": "sprite",
+  "src": "extended Schlüssel, umgefärbt",
+  "w": 30
+ },
+ "lava_00": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "hell lava_00, frozen (build_frost_extras.py)",
+  "w": 96
+ },
+ "lava_01": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "hell lava_01, frozen (build_frost_extras.py)",
+  "w": 96
+ },
+ "lava_edge_top": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "hell lava_edge_top, frozen (build_frost_extras.py)",
+  "w": 96
+ },
+ "mat": {
+  "h": 55,
+  "kind": "sprite",
+  "src": "hell mat, frozen (build_frost_extras.py)",
+  "w": 81
+ },
+ "mob_frost_commander": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark knights großer Ritter, umgefärbt",
+  "w": 96
+ },
+ "mob_frost_corpse_f0": {
+  "h": 108,
+  "kind": "sprite",
+  "src": "0x72 big_zombie_idle_anim, umgefärbt",
+  "w": 96
+ },
+ "mob_frost_corpse_f1": {
+  "h": 108,
+  "kind": "sprite",
+  "src": "0x72 big_zombie_idle_anim, umgefärbt",
+  "w": 96
+ },
+ "mob_frost_corpse_f2": {
+  "h": 108,
+  "kind": "sprite",
+  "src": "0x72 big_zombie_idle_anim, umgefärbt",
+  "w": 96
+ },
+ "mob_frost_corpse_f3": {
+  "h": 108,
+  "kind": "sprite",
+  "src": "0x72 big_zombie_idle_anim, umgefärbt",
+  "w": 96
+ },
+ "mob_frost_imp_f0": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Hornkobold",
+  "w": 48
+ },
+ "mob_frost_imp_f1": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Hornkobold",
+  "w": 48
+ },
+ "mob_frost_imp_f2": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Hornkobold",
+  "w": 48
+ },
+ "mob_frost_imp_f3": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Hornkobold",
+  "w": 48
+ },
+ "mob_frost_imp_f4": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Hornkobold",
+  "w": 48
+ },
+ "mob_frost_imp_f5": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Hornkobold",
+  "w": 48
+ },
+ "mob_frost_imp_f6": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Hornkobold",
+  "w": 48
+ },
+ "mob_frost_imp_f7": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Hornkobold",
+  "w": 48
+ },
+ "mob_frost_necromancer_f0": {
+  "h": 69,
+  "kind": "sprite",
+  "src": "0x72 necromancer_anim, umgefärbt",
+  "w": 48
+ },
+ "mob_frost_necromancer_f1": {
+  "h": 69,
+  "kind": "sprite",
+  "src": "0x72 necromancer_anim, umgefärbt",
+  "w": 48
+ },
+ "mob_frost_necromancer_f2": {
+  "h": 69,
+  "kind": "sprite",
+  "src": "0x72 necromancer_anim, umgefärbt",
+  "w": 48
+ },
+ "mob_frost_necromancer_f3": {
+  "h": 69,
+  "kind": "sprite",
+  "src": "0x72 necromancer_anim, umgefärbt",
+  "w": 48
+ },
+ "mob_frost_skeleton_f0": {
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 skelet_run_anim, umgefärbt",
+  "w": 48
+ },
+ "mob_frost_skeleton_f1": {
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 skelet_run_anim, umgefärbt",
+  "w": 48
+ },
+ "mob_frost_skeleton_f2": {
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 skelet_run_anim, umgefärbt",
+  "w": 48
+ },
+ "mob_frost_skeleton_f3": {
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 skelet_run_anim, umgefärbt",
+  "w": 48
+ },
+ "mob_frost_whirl_0": {
+  "h": 99,
+  "kind": "sprite",
+  "src": "6DNLbZ Luft-Elementar, umgefärbt",
+  "w": 78
+ },
+ "mob_frost_whirl_1": {
+  "h": 48,
+  "kind": "sprite",
+  "src": "6DNLbZ Luft-Elementar, umgefärbt",
+  "w": 30
+ },
+ "mob_ice_crystal_0": {
+  "h": 120,
+  "kind": "sprite",
+  "src": "6DNLbZ Kristall-Elementar, umgefärbt",
+  "w": 48
+ },
+ "mob_ice_crystal_1": {
+  "h": 48,
+  "kind": "sprite",
+  "src": "6DNLbZ Kristall-Elementar, umgefärbt",
+  "w": 30
+ },
+ "mob_ice_knight_f0": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Ritter",
+  "w": 48
+ },
+ "mob_ice_knight_f1": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Ritter",
+  "w": 48
+ },
+ "mob_ice_knight_f2": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Ritter",
+  "w": 48
+ },
+ "mob_ice_knight_f3": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Ritter",
+  "w": 48
+ },
+ "mob_ice_knight_f4": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Ritter",
+  "w": 48
+ },
+ "mob_ice_knight_f5": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Ritter",
+  "w": 48
+ },
+ "mob_ice_knight_f6": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Ritter",
+  "w": 48
+ },
+ "mob_ice_knight_f7": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "Superdark RGngLG Ritter",
+  "w": 48
+ },
+ "mob_ice_slime_0": {
+  "h": 57,
+  "kind": "sprite",
+  "src": "6DNLbZ Wasser-Elementar, umgefärbt",
+  "w": 93
+ },
+ "mob_ice_slime_1": {
+  "h": 39,
+  "kind": "sprite",
+  "src": "6DNLbZ Wasser-Elementar, umgefärbt",
+  "w": 57
+ },
+ "mob_ice_slime_2": {
+  "h": 30,
+  "kind": "sprite",
+  "src": "6DNLbZ Wasser-Elementar, umgefärbt",
+  "w": 42
+ },
+ "mob_ice_zombie_f0": {
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 ice_zombie_anim",
+  "w": 48
+ },
+ "mob_ice_zombie_f1": {
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 ice_zombie_anim",
+  "w": 48
+ },
+ "mob_ice_zombie_f2": {
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 ice_zombie_anim",
+  "w": 48
+ },
+ "mob_ice_zombie_f3": {
+  "h": 48,
+  "kind": "sprite",
+  "src": "0x72 ice_zombie_anim",
+  "w": 48
+ },
+ "moss_a": {
+  "h": 90,
+  "kind": "sprite",
+  "src": "hell moss_a, frozen (build_frost_extras.py)",
+  "w": 90
+ },
+ "moss_b": {
+  "h": 90,
+  "kind": "sprite",
+  "src": "hell moss_b, frozen (build_frost_extras.py)",
+  "w": 90
+ },
+ "moss_c": {
+  "h": 90,
+  "kind": "sprite",
+  "src": "hell moss_c, frozen (build_frost_extras.py)",
+  "w": 90
+ },
+ "moss_rubble_a": {
+  "h": 74,
+  "kind": "sprite",
+  "src": "hell moss_rubble_a, frozen (build_frost_extras.py)",
+  "w": 85
+ },
+ "moss_rubble_b": {
+  "h": 56,
+  "kind": "sprite",
+  "src": "hell moss_rubble_b, frozen (build_frost_extras.py)",
+  "w": 96
+ },
+ "moss_ruin": {
+  "h": 109,
+  "kind": "sprite",
+  "src": "hell moss_ruin, frozen (build_frost_extras.py)",
+  "w": 83
+ },
+ "npc_idle_f0": {
+  "h": 28,
+  "kind": "sprite",
+  "src": "hell npc_idle_f0, frozen (build_frost_extras.py)",
+  "w": 16
+ },
+ "npc_idle_f1": {
+  "h": 28,
+  "kind": "sprite",
+  "src": "hell npc_idle_f1, frozen (build_frost_extras.py)",
+  "w": 16
+ },
+ "npc_idle_f2": {
+  "h": 28,
+  "kind": "sprite",
+  "src": "hell npc_idle_f2, frozen (build_frost_extras.py)",
+  "w": 16
+ },
+ "npc_idle_f3": {
+  "h": 28,
+  "kind": "sprite",
+  "src": "hell npc_idle_f3, frozen (build_frost_extras.py)",
+  "w": 16
+ },
+ "obelisk": {
+  "h": 139,
+  "kind": "sprite",
+  "src": "hell obelisk, frozen (build_frost_extras.py)",
+  "w": 83
+ },
+ "pit": {
+  "h": 99,
+  "kind": "sprite",
+  "src": "hell pit, frozen (build_frost_extras.py)",
+  "w": 106
+ },
+ "portal": {
+  "h": 127,
+  "kind": "sprite",
+  "src": "hell portal, frozen (build_frost_extras.py)",
+  "w": 169
+ },
+ "portal_dark": {
+  "h": 134,
+  "kind": "sprite",
+  "src": "hell portal_dark, frozen (build_frost_extras.py)",
+  "w": 150
+ },
+ "portcullis": {
+  "h": 105,
+  "kind": "sprite",
+  "src": "hell portcullis, frozen (build_frost_extras.py)",
+  "w": 216
+ },
+ "rock_spike": {
+  "h": 48,
+  "kind": "sprite",
+  "src": "6DNLbZ Kristall, umgefärbt (Felsdorn)",
+  "w": 30
+ },
+ "rock_throw": {
+  "h": 50,
+  "kind": "sprite",
+  "src": "6DNLbZ Steinbrocken, umgefärbt (geworfener Fels)",
+  "w": 45
+ },
+ "rocks_a": {
+  "h": 66,
+  "kind": "sprite",
+  "src": "hell rocks_a, frozen (build_frost_extras.py)",
+  "w": 69
+ },
+ "rocks_b": {
+  "h": 55,
+  "kind": "sprite",
+  "src": "hell rocks_b, frozen (build_frost_extras.py)",
+  "w": 51
+ },
+ "rocks_dark": {
+  "h": 67,
+  "kind": "sprite",
+  "src": "hell rocks_dark, frozen (build_frost_extras.py)",
+  "w": 44
+ },
+ "rocks_lava": {
+  "h": 78,
+  "kind": "sprite",
+  "src": "hell rocks_lava, frozen (build_frost_extras.py)",
+  "w": 59
+ },
+ "rubble": {
+  "h": 65,
+  "kind": "sprite",
+  "src": "hell rubble, frozen (build_frost_extras.py)",
+  "w": 87
+ },
+ "rug_blue": {
+  "h": 166,
+  "kind": "sprite",
+  "src": "hell rug_blue, frozen (build_frost_extras.py)",
+  "w": 87
+ },
+ "rug_red": {
+  "h": 168,
+  "kind": "sprite",
+  "src": "hell rug_red, frozen (build_frost_extras.py)",
+  "w": 91
+ },
+ "rug_square": {
+  "h": 59,
+  "kind": "sprite",
+  "src": "hell rug_square, frozen (build_frost_extras.py)",
+  "w": 50
+ },
+ "rune_big": {
+  "h": 100,
+  "kind": "sprite",
+  "src": "hell rune_big, frozen (build_frost_extras.py)",
+  "w": 100
+ },
+ "rune_gem": {
+  "h": 65,
+  "kind": "sprite",
+  "src": "hell rune_gem, frozen (build_frost_extras.py)",
+  "w": 44
+ },
+ "rune_pillar_a": {
+  "h": 141,
+  "kind": "sprite",
+  "src": "hell rune_pillar_a, frozen (build_frost_extras.py)",
+  "w": 97
+ },
+ "rune_pillar_b": {
+  "h": 128,
+  "kind": "sprite",
+  "src": "hell rune_pillar_b, frozen (build_frost_extras.py)",
+  "w": 77
+ },
+ "rune_pillar_c": {
+  "h": 148,
+  "kind": "sprite",
+  "src": "hell rune_pillar_c, frozen (build_frost_extras.py)",
+  "w": 85
+ },
+ "rune_pillar_d": {
+  "h": 125,
+  "kind": "sprite",
+  "src": "hell rune_pillar_d, frozen (build_frost_extras.py)",
+  "w": 67
+ },
+ "rune_plate": {
+  "h": 99,
+  "kind": "sprite",
+  "src": "hell rune_plate, frozen (build_frost_extras.py)",
+  "w": 104
+ },
+ "rune_small": {
+  "h": 76,
+  "kind": "sprite",
+  "src": "hell rune_small, frozen (build_frost_extras.py)",
+  "w": 87
+ },
+ "sacks_a": {
+  "h": 66,
+  "kind": "sprite",
+  "src": "hell sacks_a, frozen (build_frost_extras.py)",
+  "w": 74
+ },
+ "sacks_b": {
+  "h": 57,
+  "kind": "sprite",
+  "src": "hell sacks_b, frozen (build_frost_extras.py)",
+  "w": 110
+ },
+ "sacks_c": {
+  "h": 63,
+  "kind": "sprite",
+  "src": "hell sacks_c, frozen (build_frost_extras.py)",
+  "w": 102
+ },
+ "shackle_a": {
+  "h": 64,
+  "kind": "sprite",
+  "src": "hell shackle_a, frozen (build_frost_extras.py)",
+  "w": 28
+ },
+ "shackle_b": {
+  "h": 73,
+  "kind": "sprite",
+  "src": "hell shackle_b, frozen (build_frost_extras.py)",
+  "w": 26
+ },
+ "shackle_skull": {
+  "h": 74,
+  "kind": "sprite",
+  "src": "hell shackle_skull, frozen (build_frost_extras.py)",
+  "w": 34
+ },
+ "shelf": {
+  "h": 129,
+  "kind": "sprite",
+  "src": "hell shelf, frozen (build_frost_extras.py)",
+  "w": 72
+ },
+ "shop_table": {
+  "h": 107,
+  "kind": "sprite",
+  "src": "hell shop_table, frozen (build_frost_extras.py)",
+  "w": 169
+ },
+ "skull_heap": {
+  "h": 105,
+  "kind": "sprite",
+  "src": "hell spire_big_t, frozen (build_frost_extras.py)",
+  "w": 94
+ },
+ "skull_obelisk": {
+  "h": 118,
+  "kind": "sprite",
+  "src": "hell skull_obelisk, frozen (build_frost_extras.py)",
+  "w": 85
+ },
+ "skull_pile": {
+  "h": 68,
+  "kind": "sprite",
+  "src": "hell skull_pile, frozen (build_frost_extras.py)",
+  "w": 85
+ },
+ "skull_pile_t": {
+  "h": 50,
+  "kind": "sprite",
+  "src": "hell skull_pile_t, frozen (build_frost_extras.py)",
+  "w": 68
+ },
+ "spike_block": {
+  "h": 103,
+  "kind": "sprite",
+  "src": "hell spike_block, frozen (build_frost_extras.py)",
+  "w": 102
+ },
+ "spike_trap": {
+  "h": 61,
+  "kind": "sprite",
+  "src": "hell spike_trap, frozen (build_frost_extras.py)",
+  "w": 96
+ },
+ "spike_trap_b": {
+  "h": 60,
+  "kind": "sprite",
+  "src": "hell spike_trap_b, frozen (build_frost_extras.py)",
+  "w": 76
+ },
+ "spire_big": {
+  "h": 105,
+  "kind": "sprite",
+  "src": "hell spire_big, frozen (build_frost_extras.py)",
+  "w": 95
+ },
+ "spire_big_b": {
+  "h": 94,
+  "kind": "sprite",
+  "src": "hell spire_big_b, frozen (build_frost_extras.py)",
+  "w": 82
+ },
+ "spire_big_t": {
+  "h": 105,
+  "kind": "sprite",
+  "src": "hell spire_big_t, frozen (build_frost_extras.py)",
+  "w": 94
+ },
+ "spire_mid": {
+  "h": 101,
+  "kind": "sprite",
+  "src": "hell spire_mid, frozen (build_frost_extras.py)",
+  "w": 64
+ },
+ "spire_small": {
+  "h": 61,
+  "kind": "sprite",
+  "src": "hell spire_small, frozen (build_frost_extras.py)",
+  "w": 52
+ },
+ "spire_t": {
+  "h": 111,
+  "kind": "sprite",
+  "src": "hell spire_t, frozen (build_frost_extras.py)",
+  "w": 70
+ },
+ "spire_tiny": {
+  "h": 53,
+  "kind": "sprite",
+  "src": "hell spire_tiny, frozen (build_frost_extras.py)",
+  "w": 41
+ },
+ "spires_lava": {
+  "h": 101,
+  "kind": "sprite",
+  "src": "hell spires_lava, frozen (build_frost_extras.py)",
+  "w": 74
+ },
+ "spires_t": {
+  "h": 70,
+  "kind": "sprite",
+  "src": "hell spires_t, frozen (build_frost_extras.py)",
+  "w": 81
+ },
+ "stairs_down": {
+  "h": 150,
+  "kind": "sprite",
+  "src": "hell stairs_down, frozen (build_frost_extras.py)",
+  "w": 152
+ },
+ "statue_angel": {
+  "h": 135,
+  "kind": "sprite",
+  "src": "hell statue_angel, frozen (build_frost_extras.py)",
+  "w": 104
+ },
+ "statue_monk": {
+  "h": 128,
+  "kind": "sprite",
+  "src": "hell statue_monk, frozen (build_frost_extras.py)",
+  "w": 50
+ },
+ "table_a": {
+  "h": 69,
+  "kind": "sprite",
+  "src": "hell table_a, frozen (build_frost_extras.py)",
+  "w": 120
+ },
+ "table_b": {
+  "h": 78,
+  "kind": "sprite",
+  "src": "hell table_b, frozen (build_frost_extras.py)",
+  "w": 128
+ },
+ "table_c": {
+  "h": 71,
+  "kind": "sprite",
+  "src": "hell table_c, frozen (build_frost_extras.py)",
+  "w": 154
+ },
+ "torch_a": {
+  "h": 87,
+  "kind": "sprite",
+  "src": "hell torch_a, frozen (build_frost_extras.py)",
+  "w": 35
+ },
+ "torch_b": {
+  "h": 85,
+  "kind": "sprite",
+  "src": "hell torch_b, frozen (build_frost_extras.py)",
+  "w": 44
+ },
+ "torch_c": {
+  "h": 86,
+  "kind": "sprite",
+  "src": "hell torch_c, frozen (build_frost_extras.py)",
+  "w": 40
+ },
+ "torch_dead": {
+  "h": 106,
+  "kind": "sprite",
+  "src": "hell torch_dead, frozen (build_frost_extras.py)",
+  "w": 49
+ },
+ "torch_pillar": {
+  "h": 133,
+  "kind": "sprite",
+  "src": "hell torch_pillar, frozen (build_frost_extras.py)",
+  "w": 74
+ },
+ "torch_pillar_blue": {
+  "h": 133,
+  "kind": "sprite",
+  "src": "hell torch_pillar_blue, frozen (build_frost_extras.py)",
+  "w": 74
+ },
+ "urn_a": {
+  "h": 90,
+  "kind": "sprite",
+  "src": "hell urn_a, frozen (build_frost_extras.py)",
+  "w": 63
+ },
+ "urn_b": {
+  "h": 58,
+  "kind": "sprite",
+  "src": "hell urn_b, frozen (build_frost_extras.py)",
+  "w": 41
+ },
+ "urn_c": {
+  "h": 89,
+  "kind": "sprite",
+  "src": "hell urn_c, frozen (build_frost_extras.py)",
+  "w": 58
+ },
+ "urn_d": {
+  "h": 94,
+  "kind": "sprite",
+  "src": "hell urn_d, frozen (build_frost_extras.py)",
+  "w": 61
+ },
+ "urn_e": {
+  "h": 91,
+  "kind": "sprite",
+  "src": "hell urn_e, frozen (build_frost_extras.py)",
+  "w": 64
+ },
+ "vent": {
+  "h": 64,
+  "kind": "sprite",
+  "src": "hell vent, frozen (build_frost_extras.py)",
+  "w": 71
+ },
+ "wall_brazier": {
+  "h": 128,
+  "kind": "sprite",
+  "src": "hell wall_brazier, frozen (build_frost_extras.py)",
+  "w": 56
+ },
+ "wall_h": {
+  "h": 74,
+  "kind": "sprite",
+  "src": "hell wall_h, frozen (build_frost_extras.py)",
+  "w": 188
+ },
+ "wall_h_glowpost": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "hell wall_h_glowpost, frozen (build_frost_extras.py)",
+  "w": 58
+ },
+ "wall_post_slit": {
+  "h": 99,
+  "kind": "sprite",
+  "src": "hell wall_post_slit, frozen (build_frost_extras.py)",
+  "w": 63
+ },
+ "wall_skull_a": {
+  "h": 115,
+  "kind": "sprite",
+  "src": "hell wall_skull_a, frozen (build_frost_extras.py)",
+  "w": 62
+ },
+ "wall_skull_b": {
+  "h": 114,
+  "kind": "sprite",
+  "src": "hell wall_skull_b, frozen (build_frost_extras.py)",
+  "w": 65
+ },
+ "wall_torch_block": {
+  "h": 113,
+  "kind": "sprite",
+  "src": "hell wall_torch_block, frozen (build_frost_extras.py)",
+  "w": 86
+ },
+ "wall_torch_blue": {
+  "h": 106,
+  "kind": "sprite",
+  "src": "hell wall_torch_blue, frozen (build_frost_extras.py)",
+  "w": 49
+ },
+ "wall_torch_hook": {
+  "h": 106,
+  "kind": "sprite",
+  "src": "hell wall_torch_hook, frozen (build_frost_extras.py)",
+  "w": 49
+ },
+ "wall_v": {
+  "h": 70,
+  "kind": "design",
+  "src": "hell wall_v, frozen (build_frost_extras.py)",
+  "w": 62
+ },
+ "wall_v_glow": {
+  "h": 153,
+  "kind": "sprite",
+  "src": "hell wall_v_glow, frozen (build_frost_extras.py)",
+  "w": 61
+ },
+ "wall_v_glow_b": {
+  "h": 149,
+  "kind": "sprite",
+  "src": "hell wall_v_glow_b, frozen (build_frost_extras.py)",
+  "w": 77
+ },
+ "wall_v_glow_blue": {
+  "h": 153,
+  "kind": "sprite",
+  "src": "hell wall_v_glow_blue, frozen (build_frost_extras.py)",
+  "w": 61
+ },
+ "weapon_gravity_hammer": {
+  "h": 37,
+  "kind": "sprite",
+  "src": "0x72 weapon_big_hammer",
+  "w": 10
+ },
+ "weapon_gravity_staff": {
+  "h": 30,
+  "kind": "sprite",
+  "src": "0x72 weapon_red_magic_staff",
+  "w": 8
+ },
+ "weapon_shadow_dagger": {
+  "h": 13,
+  "kind": "sprite",
+  "src": "0x72 weapon_knife",
+  "w": 6
+ }
+}

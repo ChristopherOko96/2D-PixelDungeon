@@ -3,7 +3,7 @@
   "schema_version": 1,
   "stories": [
     {"id": "krypta", "number": 1, "title": "KRYPTA DER VERDAMMTEN", "subtitle": "Zehn Etagen, jede Runde neu, bis zum Leerenrufer.", "playable": true, "scene": "res://src/hell/krypta_dungeon.tscn"},
-    {"id": "frostgruft", "number": 2, "title": "DIE FROSTGRUFT", "subtitle": "Zehn Eis-Etagen bis zu Hrimgar, dem Gletscherkoloss.", "playable": true, "scene": "res://src/hell/frost_dungeon.tscn"},
+    {"id": "frostgruft", "number": 2, "title": "DIE FROSTGRUFT", "subtitle": "Zehn Eis-Etagen, jede Runde neu, bis zu Hrimgar.", "playable": true, "scene": "res://src/hell/frost_dungeon.tscn"},
     {"id": "hell_dungeon", "number": 3, "title": "DER HELL-DUNGEON", "subtitle": "Zehn Höllen-Etagen bis zu Ignaroth, dem Drachen.", "playable": true, "scene": "res://src/hell/hell_dungeon.tscn"},
     {"id": "story_4", "number": 4, "title": "STORY 4", "subtitle": "Noch nicht verraten.", "playable": false}
   ]

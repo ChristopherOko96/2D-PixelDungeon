@@ -1,7 +1,7 @@
 # Welt-Baukasten (Stand 30.10.2026)
 
-Story 1 „Krypta der Verdammten“ und Story 3 „Der Hell-Dungeon“ laufen auf dem Welt-Baukasten: Jede
-Etage wird beim Betreten aus einer Weltnummer gebaut. Ein neuer Lauf würfelt eine neue Weltnummer, also neue
+Story 1 „Krypta der Verdammten“, Story 2 „Die Frostgruft“ und Story 3 „Der Hell-Dungeon“ laufen auf
+dem Welt-Baukasten: Jede Etage wird beim Betreten aus einer Weltnummer gebaut. Ein neuer Lauf würfelt eine neue Weltnummer, also neue
 Grundrisse, Räume, Rätsel und Verstecke; Etagennamen, Bosse und Schwierigkeit bleiben fest.
 
 ## Aufbau
@@ -75,6 +75,25 @@ ihre Tests und Werkzeuge liegen.
 
 Belege: `production/qa/evidence/hell-welt/` (Pixel) und `hell-welt/hd/`
 (`scripts/capture_krypta_dungeon.gd -- <dir> <class> res://src/hell/hell_dungeon.tscn [pixel|hd]`).
+
+## Die Frostgruft (Story 2)
+
+Die Frostgruft behält Etagen, Bosse, Gefahren, Gegner (ihre eigene Kampfebene), Helden, Items,
+Talente und Oberfläche; nur die Weltkarte entsteht jetzt bei jedem Lauf neu. Es gelten die festen
+Regeln der Welten mit den Raumgrößen des Baukastens (Kampfräume mittel oder groß). Mimiks gibt es
+hier nicht (die Frostgruft hat keinen). Der Bossschlüssel liegt offen in der Schlüsselkammer wie in
+Krypta und Hölle; Schlüssel in Truhen (`key_in_chest`) sind abgeschaltet.
+
+| Teil | Datei |
+| --- | --- |
+| Frost-Daten | `tools/frost_dungeon/frost_world.js` → `assets/data/frost_world.json` (`node tools/frost_dungeon/export_world.js`) |
+| Thema | `assets/data/frost_theme.json` (`world_pack`, `world_sizes` = HD-Maße, `skins` für Pixel und HD) |
+| Grafik Pixel | `assets/sprites/frost` (0x72-Eis-Satz) plus die Baukasten-Teile, eingefroren aus `assets/sprites/hell_0x72` |
+| Grafik HD | `assets/sprites/frost_hd`: der HD-Höllensatz eingefroren (Stein blaugrau, Glut wird Eislicht, Lava wird Glatteis; rote Banner und Teppiche, Gold, Herzen, Mana und Etagenfarben bleiben). Gegner, Schlüssel und Begleiter aus dem Pixel-Satz. Beides baut `py -3 -I tools/frost_dungeon/build_frost_extras.py` |
+| Vorschau | `py -3 -I tools/frost_dungeon/build_world_preview.py <out.html>` (Gegner dort Platzhalter aus der Krypta) |
+
+Pixel und HD schaltet das Esc-Menü um, wie in der Hölle. Belege: `production/qa/evidence/frost-welt/`
+(Pixel) und `frost-welt/hd/`.
 
 ## Noch offen
 

@@ -1,6 +1,7 @@
 extends SceneTree
 ## The world kit in Godot builds exactly the floors of the browser preview: for the run numbers in
-## tests/data/world_kit_reference.json (the crypt) and world_kit_reference_hell.json (the hell),
+## tests/data/world_kit_reference.json (the crypt), world_kit_reference_hell.json (the hell) and
+## world_kit_reference_frost.json (the Frostgruft),
 ## written by tools/world_kit/dump_floors.js from the JS generator and packs,
 ## src/world_kit/world_core.gd with src/world_kit/world_pack.gd must give the same
 ## grid, rooms, doors, entities, props, decals, wall decor and lights. Also checks the 32-bit
@@ -12,6 +13,7 @@ const Pack = preload("res://src/world_kit/world_pack.gd")
 const WORLDS := [
 	["res://tests/data/world_kit_reference.json", "res://assets/data/krypta_world.json", "res://assets/sprites/krypta/manifest.json"],
 	["res://tests/data/world_kit_reference_hell.json", "res://assets/data/hell_world.json", "res://assets/sprites/hell/manifest.json"],
+	["res://tests/data/world_kit_reference_frost.json", "res://assets/data/frost_world.json", "res://assets/sprites/frost_hd/manifest.json"],
 ]
 var checked := 0
 var failures: Array[String] = []
