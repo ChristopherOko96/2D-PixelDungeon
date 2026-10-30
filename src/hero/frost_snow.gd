@@ -261,9 +261,17 @@ func _is_on_snow(p: Vector2) -> bool:
 	return g._cell(int(floor(p.x / C)), int(floor((p.y - 6.0) / C))) == 2 or on_snow(p - Vector2(0, 6))
 
 
+## True when the graphics set carries its snow in its drawings (theme "baked_snow", the Frostgruft's
+## HD set from tools/frost_dungeon/snow_hd.py): props, plates and walls bring their own snow, so the
+## drawn contact depressions, accents, inset seams and wall lips stay off.
+func baked() -> bool:
+	return bool(g.theme.get("baked_snow", false))
+
+
 ## A compressed, pixel-quantised contact depression behind an object's foot. Most of it is hidden
 ## by the object itself, unlike the old bright drift rows that floated around its outside.
 func draw_foot_under(l: CanvasItem, kind: String, o: Dictionary) -> void:
+	if baked(): return
 	var name: String = _object_name(kind, o)
 	if name == "" or not g.tex.has(name): return
 	var p := Vector2(float(o.x), float(o.y))
@@ -287,6 +295,7 @@ func _draw_contact_oval(l: CanvasItem, c: Vector2, width: float, depth: float) -
 ## Only tiny loose objects need a runtime foreground accent. Substantial props use snow baked onto
 ## their actual silhouette, so no generic mound can float beside them.
 func draw_foot_over(l: CanvasItem, kind: String, o: Dictionary) -> void:
+	if baked(): return
 	var name: String = _object_name(kind, o)
 	if name == "" or not g.tex.has(name): return
 	var style: Dictionary = embedding_style(name, kind)
@@ -306,6 +315,7 @@ func draw_ground(l: CanvasItem, view: Rect2) -> void:
 	for e: Dictionary in g.W.ents:
 		if e.type == "brazier" and e.get("lit", false) and view.grow(200).has_point(Vector2(e.x, e.y)):
 			_draw_thaw(l, e, t)
+	if baked(): return
 	var area := view.grow(60)
 	for f: Array in frame_insets:
 		if area.has_point(f[0]):

@@ -766,6 +766,9 @@ def build():
     data = json.dumps(wall_snow.layout(wall_snow.pieces(6)), indent=1, ensure_ascii=False) + '\n'
     retry(lambda: open(WALL_SNOW_DATA, 'w', encoding='utf-8', newline='').write(data))
     print('wall snow layout ->', WALL_SNOW_DATA)
+    # the HD set's snow from the user's drawings (snow_hd.py), over the drawn caps and cushions
+    import snow_hd
+    print(len(snow_hd.build()), 'HD snow sprites ->', FROST_HD)
 
 
 if __name__ == '__main__':

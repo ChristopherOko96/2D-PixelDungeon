@@ -2612,9 +2612,10 @@ func draw_layer(l: Layer) -> void:
 	match l.kind:
 		"back": _draw_back(l)
 		"front": _draw_front(l)
-		"snow_ao": frost_snow.walls.draw(l, l.area, "ao")
-		"snow_lip": frost_snow.walls.draw(l, l.area, "lip")
-		"snow_front": frost_snow.walls.draw(l, l.area, "front")
+		# the wall snow layers; a set with snow in its drawings (theme baked_snow) needs none
+		"snow_ao", "snow_lip", "snow_front":
+			if not frost_snow.baked():
+				frost_snow.walls.draw(l, l.area, l.kind.trim_prefix("snow_"))
 		"actors": _draw_actors(l)
 		"glow":
 			if monsters != null:
@@ -2638,11 +2639,22 @@ func _strip(ci: CanvasItem, w: Dictionary, area: Rect2) -> void:
 	var wh: Texture2D = tex.wall_h
 	var x0: float = maxf(w.x0, area.position.x)
 	var x1: float = minf(w.x1, area.end.x)
+	# a set with snow in its drawings (theme baked_snow): only the wall cells whose foot touches a
+	# snow floor cell wear the snowy wall; the others (abyss, ice, thaw, a doorway) the bare one
+	var bare: Texture2D = tex.get("wall_h_bare")
+	var by_cell: bool = bare != null and frost_snow != null and frost_snow.baked()
 	var x := x0
 	while x < x1:
-		var off := fmod(x - w.x0, wh.get_width())
-		var sw := minf(wh.get_width() - off, x1 - x)
-		ci.draw_texture_rect_region(wh, Rect2(x, w.y, sw, wh.get_height()), Rect2(off, 0, sw, wh.get_height()))
+		var t := wh
+		var cell_end := x1
+		if by_cell:
+			var cx := int(floor(x / C))
+			cell_end = minf(x1, (cx + 1) * C)
+			if not frost_snow.snow.has(int(floor((w.y + 75.0) / C)) * int(W.cols) + cx):
+				t = bare
+		var off := fmod(x - w.x0, t.get_width())
+		var sw := minf(t.get_width() - off, cell_end - x)
+		ci.draw_texture_rect_region(t, Rect2(x, w.y, sw, t.get_height()), Rect2(off, 0, sw, t.get_height()))
 		x += sw
 
 

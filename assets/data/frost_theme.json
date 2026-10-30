@@ -9,8 +9,8 @@
   "world_pack": "res://assets/data/frost_world.json",
   "world_sizes": "res://assets/sprites/frost_hd/manifest.json",
   "skins": {
-    "pixel": { "sprites": "res://assets/sprites/frost/", "pixel": true, "pixel_tiles": false, "hero_scale": 3.0 },
-    "hd": { "sprites": "res://assets/sprites/frost_hd/", "pixel": false, "pixel_tiles": false, "hero_scale": 3.6 }
+    "pixel": { "sprites": "res://assets/sprites/frost/", "pixel": true, "pixel_tiles": false, "hero_scale": 3.0, "baked_snow": false },
+    "hd": { "sprites": "res://assets/sprites/frost_hd/", "pixel": false, "pixel_tiles": false, "hero_scale": 3.6, "baked_snow": true }
   },
   "vault_closed": "chest_vault",
   "vault_open": "chest_gold",

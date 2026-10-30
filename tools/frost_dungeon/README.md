@@ -20,6 +20,7 @@ ihre Tests.
 | `frost_world.js` | Die Frostgruft als Weltpaket: zehn Etagen, Namen, Wortwahl, Bannerfarben, Ausstattung, keine Mimiks. |
 | `export_world.js` | `node tools/frost_dungeon/export_world.js` schreibt `assets/data/frost_world.json`. |
 | `build_frost_extras.py` | Baut den HD-Satz `assets/sprites/frost_hd` (HD-Hölle eingefroren, Gegner aus dem Pixel-Satz) und ergänzt im Pixel-Satz die Baukasten-Teile. `py -3 -I tools/frost_dungeon/build_frost_extras.py` |
+| `snow_hd.py` | Der Schnee des HD-Satzes aus den Zeichnungen des Nutzers (`snow_hd_src/`: Frost_mit_Schnee.zip und `sheet_missing_snow.png`): freistellen, zuschneiden, in die alte Leinwandgröße einpassen; Nord-/Südmauer als gespiegelte, nahtlose ZIP-Kachel, `wall_h_bare` = erste Mauer für Mauerzellen ohne Schneekontakt. Läuft am Ende von `build_frost_extras.py` mit. `py -3 -I tools/frost_dungeon/snow_hd.py [name …]` |
 | `build_world_preview.py` | Spielbare Vorschau der generierten Frostgruft. `py -3 -I tools/frost_dungeon/build_world_preview.py <out.html>` |
 
 Reihenfolge nach Änderungen: Skin bauen, Etagen backen (die Größen kommen aus dem Skin-Manifest),

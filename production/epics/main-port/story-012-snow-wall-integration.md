@@ -1,10 +1,19 @@
 # Story 012: Schnee an den Mauern der Frostgruft
 
 > **Epic**: Welt-Baukasten, Story 2 Frostgruft
-> **Status**: Zurückgestellt — implementiert, visuell nicht abgenommen (Schnee an Mauerrand und Mauerfuß wirkt noch nicht wie gewünscht; Codex-Nachbesserung ebenfalls ohne Erfolg)
+> **Status**: Neu umgesetzt 2026-10-30 — HD-Satz mit den Schnee-Zeichnungen des Nutzers (tools/frost_dungeon/snow_hd.py); visuelle Nutzerabnahme offen
 > **Type**: Visual/Feel
 > **Last Updated**: 2026-10-30
 > **Branch**: `feat/frost-world-kit`
+
+## Neuumsetzung 2026-10-30 (HD)
+
+- Statt Schnee aufzumalen kommen alle verschneiten HD-Sprites aus den Zeichnungen des Nutzers: `Frost_mit_Schnee.zip` und das Blatt `assets_mit_schnee.png` (beides in `tools/frost_dungeon/snow_hd_src/`).
+- Der Boden, die Taustellen und der Shop bleiben; der Shop-Tisch kommt aus dem Blatt.
+- Nord-/Südmauer: Kachel aus der ZIP-Mauer (Haube, Eiszapfen, Schneefuß). Mauerzellen, deren Fuß keine Schneezelle berührt (Abgrund, Eis, Taustelle), zeichnen `wall_h_bare`, die erste Mauer (`hell_game.gd` `_strip`).
+- Seitenmauer: Schneehügel auf der Mauerkrone im ZIP-Stil (`snow_hd.py` `wall_v`).
+- Im HD-Satz (`frost_theme.json` skins.hd `baked_snow`) entfallen die gezeichneten Mauerlippen, Kontaktmulden, Vordergrund-Akzente und Einlassfugen. Der Pixel-Satz bleibt unverändert.
+- Nachweis: `production/qa/evidence/frost-snow-zip/hd/`.
 
 ## Ziel und Referenz
 
