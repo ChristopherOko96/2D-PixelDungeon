@@ -72,11 +72,28 @@ var _hot_crust: Dictionary = {}
 var _reacted := -100.0
 ## The crust of the lava field being shaded (_bake -> _shade).
 var _crust: Dictionary = {}
+## The void field being shaded: cell -> Vector2(its share out from the heart,
+## its spiral angle before the turn), kept while its cells and hearts stay.
+var _void_cache: Dictionary = {}
+## The lava plates of one shading: Vector3i(grid x, grid y, plate size) ->
+## [the plate's point (art px), its crust number 0..99].
+var _lava_sites: Dictionary = {}
 ## The middle of the field being shaded (_bake -> _shade, the void's spiral).
 var _mid := Vector2.ZERO
 ## The hearts of the void pools being shaded, [middle in cells, radius in cells]
 ## each (_bake -> _shade: every pool turns round its own).
 var _hearts: Array = []
+## Bakes so far per material, and the time spent drawing (draw, bakes
+## included) over how many frames: measures for scripts/bench_vfx.gd.
+var bake_counts: Dictionary = {}
+var draw_us := 0
+var draw_parts: Dictionary = {}
+var draw_frames := 0
+## art cell -> open floor there (asked of `open` once, _open_cell), and since when (ms).
+var _open_memo: Dictionary = {}
+var _open_since := 0
+## art cell -> hot floor there (asked of `hot` once, _hot_cell).
+var _hot_memo: Dictionary = {}
 ## Melt water waiting to be laid (cells of ice that went this frame): [q, until].
 var _melts: Array = []
 ## Liquid cells that freeze (are hidden) when their ice is born: [mat, q, born].
@@ -223,6 +240,8 @@ func clear() -> void:
 	_fields.clear()
 	_waders.clear()
 	_hot_crust.clear()
+	_open_memo.clear()
+	_hot_memo.clear()
 
 
 ## True when `point` (world px) lies in a pool of `style` (any when "").
@@ -253,17 +272,34 @@ func draw(canvas: CanvasItem, now: float) -> void:
 	if frame_now == _drawn_frame:
 		return
 	_drawn_frame = frame_now
+	var started := Time.get_ticks_usec()
 	_now = now
 	_react(now)
+	var after_react := Time.get_ticks_usec()
 	var rate := 1.0 / float(cfg.get("rebake_hz", 15))
 	var anim := float(cfg.get("anim_hz", 6))
+	# at most bakes_per_frame materials are shaded again in one frame (the one
+	# waiting longest first; a new one at once), so their costs do not pile up
+	var budget := int(cfg.get("bakes_per_frame", 1))
+	var waiting: Array = []
 	for mat: String in _fields:
 		var field: Dictionary = _fields[mat]
 		var style := str(cfg.materials[mat].get("style", "liquid"))
 		var frame := int(floor(now * anim)) if style in ["fire", "lava", "void"] else 0
 		var due: bool = now >= float(field.next) or bool(field.dirty) or frame != int(field.frame)
-		if due and now - float(field.baked) >= rate:
+		if not due or now - float(field.baked) < rate:
+			continue
+		if field.tex == null and float(field.baked) < -50.0:
 			_bake(field, mat, style, now, frame)
+		else:
+			waiting.append([float(field.baked), mat, style, frame])
+	waiting.sort_custom(func(a: Array, b: Array) -> bool: return float(a[0]) < float(b[0]))
+	for entry: Array in waiting.slice(0, maxi(1, budget)):
+		_bake(_fields[entry[1]], str(entry[1]), str(entry[2]), now, int(entry[3]))
+	var after_bake := Time.get_ticks_usec()
+	for mat: String in _fields:
+		var field: Dictionary = _fields[mat]
+		var style := str(cfg.materials[mat].get("style", "liquid"))
 		if field.tex != null:
 			var box: Rect2i = field.box
 			canvas.draw_texture_rect(field.tex, Rect2(Vector2(box.position) * art, Vector2(box.size) * art), false)
@@ -272,6 +308,7 @@ func draw(canvas: CanvasItem, now: float) -> void:
 		_draw_ripples(canvas, field, mat, now)
 		_draw_cracks(canvas, field, mat, now)
 		_draw_zaps(canvas, field, now)
+	var after_layers := Time.get_ticks_usec()
 	_draw_hot_crust(canvas, now)
 	_pull(now)
 	# ice that went this frame leaves melt water (laid after the loop over the fields)
@@ -291,9 +328,17 @@ func draw(canvas: CanvasItem, now: float) -> void:
 	for key: String in _waders.keys():
 		if now - float(_waders[key].get("seen", now)) > 3.0:
 			_waders.erase(key)
+	var ended := Time.get_ticks_usec()
+	draw_us += ended - started
+	draw_frames += 1
+	draw_parts.react = int(draw_parts.get("react", 0)) + after_react - started
+	draw_parts.bake = int(draw_parts.get("bake", 0)) + after_bake - after_react
+	draw_parts.layers = int(draw_parts.get("layers", 0)) + after_layers - after_bake
+	draw_parts.rest = int(draw_parts.get("rest", 0)) + ended - after_layers
 
 
 func _bake(field: Dictionary, mat: String, style: String, now: float, frame: int) -> void:
+	bake_counts[mat] = int(bake_counts.get(mat, 0)) + 1
 	field.dirty = false
 	field.baked = now
 	field.frame = frame
@@ -327,6 +372,7 @@ func _bake(field: Dictionary, mat: String, style: String, now: float, frame: int
 		if now >= float(crust[q]): crust.erase(q)
 		else: next = minf(next, float(crust[q]))
 	_crust = crust
+	_lava_sites.clear()
 	var sum := Vector2.ZERO
 	for q: Vector2i in live: sum += Vector2(q)
 	_mid = sum / float(maxi(1, live.size()))
@@ -336,6 +382,12 @@ func _bake(field: Dictionary, mat: String, style: String, now: float, frame: int
 			var pool: Dictionary = _pools[key]
 			if str(pool.mat) == mat:
 				_hearts.append([Vector2(pool.get("at", Vector2.ZERO)) / art, maxf(2.0, float(pool.get("r", 30.0)) / art)])
+		# the spiral's places stay while its cells and hearts stay
+		var sig := "%d|%s|%s" % [live.size(), str(_mid), str(_hearts)]
+		if str(field.get("void_sig", "")) != sig:
+			field.void_sig = sig
+			field.void_cache = {}
+		_void_cache = field.void_cache
 	field.next = next
 	field.col = {}
 	field.list = []
@@ -350,39 +402,74 @@ func _bake(field: Dictionary, mat: String, style: String, now: float, frame: int
 		hi = Vector2i(maxi(hi.x, q.x), maxi(hi.y, q.y))
 	var box := Rect2i(lo - Vector2i(1, 1), hi - lo + Vector2i(3, 5))
 	var R: Dictionary = _ramps[mat]
-	var img: Image = field.img
-	if img == null or img.get_size() != box.size:
-		img = Image.create_empty(box.size.x, box.size.y, false, Image.FORMAT_RGBA8)
-	else:
-		img.fill(Color(0, 0, 0, 0))
-	# the outline round it and the dark lip under its south edge
+	var w := box.size.x
+	var h := box.size.y
+	var ox := box.position.x
+	var oy := box.position.y
+	# which cells are liquid, as a byte grid over the box with a margin of two
+	# (quicker to ask than the dictionary; every neighbour test is one index)
+	var gw := w + 4
+	var grid := PackedByteArray()
+	grid.resize(gw * (h + 4))
 	for q: Vector2i in live:
-		for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, -1)]:
-			if not live.has(q + d) and not live.has(q + d + Vector2i(0, 1)):
-				img.set_pixelv(q + d - box.position, R.outline)
+		grid[(q.y - oy + 2) * gw + q.x - ox + 2] = 1
+	var px := PackedByteArray()
+	px.resize(w * h * 4)
+	var outline: Color = R.outline
+	var deep: Color = R.deep
+	# the outline round it (beside it and above, where nothing lies there nor
+	# under that) and the dark lip under its south edge
 	for q: Vector2i in live:
-		if not live.has(q + Vector2i(0, 1)):
-			img.set_pixelv(q + Vector2i(0, 1) - box.position, R.deep)
-			if not live.has(q + Vector2i(0, 2)):
-				img.set_pixelv(q + Vector2i(0, 2) - box.position, R.outline)
+		var x := q.x - ox
+		var y := q.y - oy
+		var gi := (y + 2) * gw + x + 2
+		if grid[gi + 1] == 0 and grid[gi + 1 + gw] == 0:
+			_px(px, (y * w + x + 1) * 4, outline)
+		if grid[gi - 1] == 0 and grid[gi - 1 + gw] == 0:
+			_px(px, (y * w + x - 1) * 4, outline)
 	for q: Vector2i in live:
-		var col := _shade(q, live, R, style, now, frame)
-		img.set_pixelv(q - box.position, col)
-		field.col[q] = col
-		field.list.append(q)
-		if not live.has(q + Vector2i(0, -1)) and not live.has(q + Vector2i(1, 0)):
-			field.rim.append(q)
+		var x := q.x - ox
+		var y := q.y - oy
+		var gi := (y + 2) * gw + x + 2
+		if grid[gi + gw] == 0:
+			_px(px, ((y + 1) * w + x) * 4, deep)
+			if grid[gi + 2 * gw] == 0:
+				_px(px, ((y + 2) * w + x) * 4, outline)
+	var col_map: Dictionary = field.col
+	var list: Array = field.list
+	var rim: Array = field.rim
+	for q: Vector2i in live:
+		var x := q.x - ox
+		var y := q.y - oy
+		var gi := (y + 2) * gw + x + 2
+		# its neighbours as bits: up, up 2, down, right, left, down 2, right 2, left 2
+		var nb := grid[gi - gw] | (grid[gi - 2 * gw] << 1) | (grid[gi + gw] << 2) | (grid[gi + 1] << 3) \
+			| (grid[gi - 1] << 4) | (grid[gi + 2 * gw] << 5) | (grid[gi + 2] << 6) | (grid[gi - 2] << 7)
+		var col := _shade(q, nb, float(live[q]), R, style, now, frame)
+		_px(px, (y * w + x) * 4, col)
+		col_map[q] = col
+		list.append(q)
+		if nb & 9 == 0:
+			rim.append(q)
 	field.halo = {}
 	if style == "void":
 		# the light round it is swallowed: floor cells up to 4 beyond its rim
+		field.halo_tick = -1
+		var halo: Dictionary = field.halo
 		for q: Vector2i in live:
-			if live.has(q + Vector2i(1, 0)) and live.has(q + Vector2i(-1, 0)) and live.has(q + Vector2i(0, 1)) and live.has(q + Vector2i(0, -1)): continue
+			var gi := (q.y - oy + 2) * gw + q.x - ox + 2
+			if grid[gi + 1] == 1 and grid[gi - 1] == 1 and grid[gi + gw] == 1 and grid[gi - gw] == 1: continue
 			for dy in range(-4, 5):
 				for dx in range(-4, 5):
-					var h := q + Vector2i(dx, dy)
-					if live.has(h): continue
+					var c := q + Vector2i(dx, dy)
+					if live.has(c): continue
 					var d := maxi(absi(dx), absi(dy))
-					if d < int(field.halo.get(h, 9)) and open.call((Vector2(h) + Vector2(0.5, 0.5)) * art): field.halo[h] = d
+					if d < int(halo.get(c, 9)) and _open_cell(c): halo[c] = d
+	var img: Image = field.img
+	if img != null and img.get_size() == box.size:
+		img.set_data(w, h, false, Image.FORMAT_RGBA8, px)
+	else:
+		img = Image.create_from_data(w, h, false, Image.FORMAT_RGBA8, px)
 	field.img = img
 	if field.tex == null or (field.tex as ImageTexture).get_size() != Vector2(box.size):
 		field.tex = ImageTexture.create_from_image(img)
@@ -391,39 +478,102 @@ func _bake(field: Dictionary, mat: String, style: String, now: float, frame: int
 	field.box = box
 
 
+## The void's swallowed light round its rim (field.halo: cell -> rings out)
+## at time `t` into field.halo_tex: darkest at the rim, waves creeping in.
+func _halo_image(field: Dictionary, col: Color, t: float) -> void:
+	var halo: Dictionary = field.get("halo", {})
+	if halo.is_empty():
+		field.erase("halo_tex")
+		return
+	var box: Rect2i = field.box
+	var at := box.position - Vector2i(4, 4)
+	var size := box.size + Vector2i(8, 8)
+	var keep: Array = []
+	for d in range(5):
+		keep.append((0.95 - 0.2 * float(d)) * (0.7 + 0.3 * (0.5 + 0.5 * sin(float(d) * 1.6 + t * 5.0))) * 16.0)
+	var px := PackedByteArray()
+	px.resize(size.x * size.y * 4)
+	for h: Vector2i in halo:
+		var x := h.x - at.x
+		var y := h.y - at.y
+		if x < 0 or y < 0 or x >= size.x or y >= size.y:
+			continue
+		if float(BAYER[posmod(h.y, 4) * 4 + posmod(h.x, 4)]) < float(keep[mini(4, int(halo[h]))]):
+			_px(px, (y * size.x + x) * 4, col)
+	var image := Image.create_from_data(size.x, size.y, false, Image.FORMAT_RGBA8, px)
+	if field.get("halo_tex") != null and Vector2i(field.halo_size) == size:
+		(field.halo_tex as ImageTexture).update(image)
+	else:
+		field.halo_tex = ImageTexture.create_from_image(image)
+	field.halo_at = at
+	field.halo_size = size
+
+
+## Writes colour `c` opaque into the byte image `px` at byte `at`.
+static func _px(px: PackedByteArray, at: int, c: Color) -> void:
+	px[at] = c.r8
+	px[at + 1] = c.g8
+	px[at + 2] = c.b8
+	px[at + 3] = 255
+
+
+## Whether art cell `q` is open floor (`open` at its middle), remembered: asked
+## once per cell, forgotten every few seconds (a broken wall opens cells) and
+## with clear().
+func _open_cell(q: Vector2i) -> bool:
+	var now_ms := Time.get_ticks_msec()
+	if now_ms - _open_since > 3000 or _open_memo.size() > 200000:
+		_open_memo.clear()
+		_open_since = now_ms
+	var known: Variant = _open_memo.get(q)
+	if known != null:
+		return bool(known)
+	var free := bool(open.call((Vector2(q) + Vector2(0.5, 0.5)) * art))
+	_open_memo[q] = free
+	return free
+
+
 ## One cell's colour: the north rim lit, the row under it lighter, the south
 ## row deep, and inside the material's own pattern.
-func _shade(q: Vector2i, live: Dictionary, R: Dictionary, style: String, now: float, frame: int) -> Color:
-	var up := live.has(q + Vector2i(0, -1))
-	var up2 := live.has(q + Vector2i(0, -2))
-	var dn := live.has(q + Vector2i(0, 1))
-	var inner := up and dn and live.has(q + Vector2i(1, 0)) and live.has(q + Vector2i(-1, 0))
+## `nb`: which neighbours are liquid too, as bits (1 up, 2 two up, 4 down,
+## 8 right, 16 left, 32 two down, 64 two right, 128 two left); `rank` its
+## place from the middle (0) to the rim (1).
+func _shade(q: Vector2i, nb: int, rank: float, R: Dictionary, style: String, now: float, frame: int) -> Color:
+	var up := nb & 1 != 0
+	var up2 := nb & 2 != 0
+	var dn := nb & 4 != 0
+	var inner := nb & 29 == 29
 	match style:
 		"void":
 			# dark in its heart, a bright rim of light where it meets the floor
 			if not inner:
 				return R.hi if not up else R.lite
-			if not (up2 and live.has(q + Vector2i(0, 2)) and live.has(q + Vector2i(2, 0)) and live.has(q + Vector2i(-2, 0))):
+			if not (up2 and nb & 224 == 224):
 				return R.lite if not up2 else R.body
-			# it turns round its own heart (the nearest pool's middle)
-			var heart := _mid
-			var big := 8.0
-			var best := INF
-			for h: Array in _hearts:
-				var gap := (Vector2(q) - Vector2(h[0])).length_squared()
-				if gap < best:
-					best = gap
-					heart = h[0]
-					big = float(h[1])
-			var rel := Vector2(q) + Vector2(0.5, 0.5) - heart
-			rel.y /= 0.75
-			var dist := rel.length()
-			var k := clampf(dist / big, 0.0, 1.0)
+			# it turns round its own heart (the nearest pool's middle); where each
+			# cell sits on the spiral is worked out once (_void_cache)
+			var spot: Variant = _void_cache.get(q)
+			if spot == null:
+				var heart := _mid
+				var big := 8.0
+				var best := INF
+				for h: Array in _hearts:
+					var gap := (Vector2(q) - Vector2(h[0])).length_squared()
+					if gap < best:
+						best = gap
+						heart = h[0]
+						big = float(h[1])
+				var rel := Vector2(q) + Vector2(0.5, 0.5) - heart
+				rel.y /= 0.75
+				var dist := rel.length()
+				spot = Vector2(clampf(dist / big, 0.0, 1.0), atan2(rel.y, rel.x) * 3.0 + log(dist + 1.0) * 4.5)
+				_void_cache[q] = spot
+			var k: float = (spot as Vector2).x
 			# its heart: no light comes back out
 			if k < 0.2:
 				return R.outline
 			# bands of light winding in along a spiral, drifting inwards as it turns
-			var arm := sin(atan2(rel.y, rel.x) * 3.0 + log(dist + 1.0) * 4.5 + float(frame) * 0.9)
+			var arm := sin((spot as Vector2).y + float(frame) * 0.9)
 			if k < 0.36:
 				return R.shade if arm > 0.75 else R.deep
 			if arm > 0.8:
@@ -461,7 +611,7 @@ func _shade(q: Vector2i, live: Dictionary, R: Dictionary, style: String, now: fl
 			# a crust where a liquid hissed on it: dark plates with glowing seams
 			if _crust.has(q):
 				return _crust_colour(q, float(_crust[q]) - now, R)
-			return _lava_colour(q, float(live.get(q, 0.5)), up, inner, R, frame)
+			return _lava_colour(q, rank, up, inner, R, frame)
 		_:
 			# a liquid: one calm body, a lit north rim, a deeper band before the
 			# south lip, and short level glints of light lying on its surface
@@ -471,7 +621,7 @@ func _shade(q: Vector2i, live: Dictionary, R: Dictionary, style: String, now: fl
 				return R.lite
 			if not dn:
 				return R.shade
-			if not live.has(q + Vector2i(0, 2)):
+			if nb & 32 == 0:
 				return R.shade if posmod(q.x, 3) != 0 else R.body
 			var gx := floori(float(q.x) / 7.0)
 			var gy := floori(float(q.y) / 5.0)
@@ -502,16 +652,21 @@ func _lava_colour(q: Vector2i, rank: float, up: bool, inner: bool, R: Dictionary
 	for oy in range(-1, 2):
 		for ox in range(-1, 2):
 			var c := g + Vector2i(ox, oy)
-			var h := _h(c.x, c.y, 31)
-			var f := (Vector2(c) + Vector2(float(h % 10) / 10.0, float((h / 10) % 10) / 10.0)) * size
-			var d := p.distance_to(f)
+			# the plate's point and crust number, worked out once per shading
+			var key := Vector3i(c.x, c.y, int(size))
+			var site: Variant = _lava_sites.get(key)
+			if site == null:
+				var h := _h(c.x, c.y, 31)
+				site = [(Vector2(c) + Vector2(float(h % 10) / 10.0, float((h / 10) % 10) / 10.0)) * size, _h(c.x, c.y, 47) % 100]
+				_lava_sites[key] = site
+			var d := p.distance_to(site[0])
 			if d < d1:
 				d2 = d1
 				d1 = d
 				near = c
 			elif d < d2:
 				d2 = d
-	var crust := float(_h(near.x, near.y, 47) % 100) / 100.0 < 0.45 + 0.45 * rank
+	var crust := float(_lava_sites[Vector3i(near.x, near.y, int(size))][1]) / 100.0 < 0.45 + 0.45 * rank
 	if d2 - d1 < 1.0:
 		return R.hi if crust else R.lite
 	if crust:
@@ -538,13 +693,14 @@ func _overlay(canvas: CanvasItem, field: Dictionary, mat: String, style: String,
 		_burn(field, R, spec, now)
 		return
 	if style == "void":
-		# darkest at its rim, the darkness creeping in towards it in waves
-		var halo: Dictionary = field.get("halo", {})
-		for h: Vector2i in halo:
-			var d := float(halo[h])
-			var wave := 0.5 + 0.5 * sin(d * 1.6 + now * 5.0)
-			if _shown(h, (0.95 - 0.2 * d) * (0.7 + 0.3 * wave)):
-				_cell(canvas, h, R.outline)
+		# darkest at its rim, the darkness creeping in towards it in waves (worked
+		# out on the 12 fps beat into one texture, drawn every frame)
+		var tick := int(floor(now * FPS))
+		if int(field.get("halo_tick", -1)) != tick:
+			field.halo_tick = tick
+			_halo_image(field, R.outline, float(tick) / FPS)
+		if field.get("halo_tex") != null:
+			canvas.draw_texture_rect(field.halo_tex, Rect2(Vector2(field.halo_at) * art, Vector2(field.halo_size) * art), false)
 	if style == "fire":
 		for i in range(n * 2):
 			var slot := int(floor(now * 3.0 + float(i) * 0.41))
@@ -1011,9 +1167,15 @@ func _live(field: Dictionary, q: Vector2i, now: float) -> bool:
 func _react_pair(a: String, b: String, rule: Dictionary, now: float) -> void:
 	var fa: Dictionary = _fields[a]
 	var fb: Dictionary = _fields[b]
+	# only where the two lie over each other (their boxes of the last shading)
+	var box_a: Rect2i = fa.get("box", Rect2i())
+	var box_b: Rect2i = fb.get("box", Rect2i())
+	if not box_a.has_area() or not box_b.has_area() or not box_a.intersects(box_b):
+		return
+	var both := box_a.intersection(box_b)
 	var count := 0
 	for q: Vector2i in fa.cells:
-		if not _live(fa, q, now) or not _live(fb, q, now):
+		if not both.has_point(q) or not _live(fa, q, now) or not _live(fb, q, now):
 			continue
 		if str(rule.get("b_to", "")) == "crust" and (fb.crust as Dictionary).has(q) and str(rule.get("a_to", "")) == "":
 			continue
@@ -1029,7 +1191,7 @@ func _react_hot(a: String, rule: Dictionary, now: float) -> void:
 	var count := 0
 	var crust_time := float(cfg.reactions.get("crust_time", 4.0))
 	for q: Vector2i in fa.cells:
-		if not _live(fa, q, now) or not hot.call((Vector2(q) + Vector2(0.5, 0.5)) * art):
+		if not _hot_cell(q) or not _live(fa, q, now):
 			continue
 		_turn(str(rule.get("a_to", "")), fa, q, fa.cells[q], now)
 		if str(rule.get("b_to", "")) == "crust":
@@ -1037,6 +1199,19 @@ func _react_hot(a: String, rule: Dictionary, now: float) -> void:
 		if bool(rule.get("steam", false)) and count % int(cfg.reactions.get("steam_every", 5)) == 0:
 			_hiss((Vector2(q) + Vector2(0.5, 0.5)) * art, 2)
 		count += 1
+
+
+## Whether art cell `q` lies on a hot floor (`hot` at its middle: the Hell's
+## lava tiles), remembered like _open_cell (the tiles do not move).
+func _hot_cell(q: Vector2i) -> bool:
+	if _hot_memo.size() > 200000:
+		_hot_memo.clear()
+	var known: Variant = _hot_memo.get(q)
+	if known != null:
+		return bool(known)
+	var burns := bool(hot.call((Vector2(q) + Vector2(0.5, 0.5)) * art))
+	_hot_memo[q] = burns
+	return burns
 
 
 ## Turns the cell `q` of `field` (its record `c`): "gone", "crust" or into a material.

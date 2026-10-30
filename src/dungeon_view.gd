@@ -289,7 +289,19 @@ func _prepare_presentation(snapshot: Dictionary) -> void:
 		_room_entries.clear()
 		_fire_entries.clear()
 
+## Microseconds spent in the view's process, draw and glow passes, and frames
+## counted (a measure for scripts/bench_vfx.gd; it resets them).
+var frame_stats := {"process": 0, "draw": 0, "glow": 0, "frames": 0}
+
+
 func _process(delta: float) -> void:
+	var started := Time.get_ticks_usec()
+	_process_view(delta)
+	frame_stats.process = int(frame_stats.process) + Time.get_ticks_usec() - started
+	frame_stats.frames = int(frame_stats.frames) + 1
+
+
+func _process_view(delta: float) -> void:
 	# The music follows the moment even while menus hide the view.
 	if _music != null: _music.request(Music.decide(_snapshot, is_visible_in_tree() and music_in_run))
 	if not is_visible_in_tree(): return
@@ -317,6 +329,12 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 func _draw() -> void:
+	var started := Time.get_ticks_usec()
+	_draw_view()
+	frame_stats.draw = int(frame_stats.draw) + Time.get_ticks_usec() - started
+
+
+func _draw_view() -> void:
 	var ambient_time := _environment_clock if _environment_animation_enabled else _clock
 	var render_snapshot := _snapshot.duplicate()
 	render_snapshot.ambience_clock = ambient_time
@@ -579,6 +597,12 @@ func _draw_crypt_room(canvas: CanvasItem) -> void:
 ## Bloom: everything bright adds soft light over the dark crypt (the glow
 ## node calls this each frame; vfx_glow.json scales each source).
 func _draw_glow(canvas: CanvasItem) -> void:
+	var started := Time.get_ticks_usec()
+	_draw_glow_view(canvas)
+	frame_stats.glow = int(frame_stats.glow) + Time.get_ticks_usec() - started
+
+
+func _draw_glow_view(canvas: CanvasItem) -> void:
 	if _snapshot.is_empty() or not _effects_visible: return
 	var torches := _glow.level("torches")
 	# Void flames glow in their own violet (vfx_crypt_atmosphere.json "flames").

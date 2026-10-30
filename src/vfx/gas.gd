@@ -26,6 +26,13 @@ var _clouds: Dictionary = {}
 var _ramps: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
 var _drawn_frame := -1
+## material -> {tex: ImageTexture, at: Vector2i first art cell, size: Vector2i}
+var _layers: Dictionary = {}
+## block of 8 x 8 art cells -> where gas may show in it (_open_block), and since when (ms).
+var _open_memo: Dictionary = {}
+var _open_since := 0
+## 4x4 ordered dither thresholds (PixelPaint.BAYER).
+const BAYER := [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
 static var _data: Dictionary = {}
 
 
@@ -283,53 +290,179 @@ func step(dt: float, now: float) -> void:
 
 ## Draws every cloud on the art grid: per material the puffs' coverage merged
 ## into one shape, shown by the dither (dense = solid), lit on top, dark
-## underneath; cells stop at walls (PixelPaint.clip). Once a frame.
+## underneath; cells stop at walls (`open`). The shape is worked out at most
+## draw_hz times a second into one image per material (the pixel look moves
+## on a beat anyway; one material a frame, the one waiting longest, a new one
+## at once) and drawn as one texture every frame. Once a frame.
 func draw(canvas: CanvasItem, now: float) -> void:
 	var frame_now := Engine.get_process_frames()
 	if frame_now == _drawn_frame:
 		return
 	_drawn_frame = frame_now
-	var cover: Dictionary = {}
+	if _clouds.is_empty():
+		_layers.clear()
+		return
+	var every := 1.0 / maxf(1.0, _f("draw_hz", 15.0))
+	var alive := {}
+	for key: String in _clouds:
+		alive[str(_clouds[key].mat)] = true
+	for mat: String in _layers.keys():
+		if not alive.has(mat):
+			_layers.erase(mat)
+	var next := ""
+	var waited := -1.0
+	for mat: String in alive:
+		var built := float((_layers.get(mat, {}) as Dictionary).get("built", -1.0))
+		if built < 0.0 or now < built:
+			next = mat
+			break
+		if now - built >= every and now - built > waited:
+			next = mat
+			waited = now - built
+	if next != "":
+		_build(next, now)
+	for mat: String in _layers:
+		var layer: Dictionary = _layers[mat]
+		canvas.draw_texture_rect(layer.tex, Rect2(Vector2(layer.at) * art, Vector2(layer.size) * art), false)
+
+
+## Works out material `mat`'s shape into its image (see draw).
+func _build(mat: String, now: float) -> void:
+	var list := PackedFloat32Array()
 	for key: String in _clouds:
 		var cloud: Dictionary = _clouds[key]
-		var mat := str(cloud.mat)
-		if not cover.has(mat):
-			cover[mat] = {}
-		var map: Dictionary = cover[mat]
+		if str(cloud.mat) != mat:
+			continue
 		for puff: Dictionary in cloud.puffs:
-			var c := Vector2(puff.p) / art
 			# a puff breathes a little as it rolls
 			var rc := float(puff.r) * float(puff.get("g", 1.0)) / art * (1.0 + 0.08 * sin(now * 1.7 + float(puff.s)))
-			var ry := rc * 0.75
-			var dense := float(puff.d)
-			for y in range(int(floor(c.y - ry)), int(ceil(c.y + ry)) + 1):
-				for x in range(int(floor(c.x - rc)), int(ceil(c.x + rc)) + 1):
-					var e := Vector2((float(x) + 0.5 - c.x) / rc, (float(y) + 0.5 - c.y) / ry).length_squared()
-					if e >= 1.0:
-						continue
-					var k := dense * clampf((1.0 - e) * 1.25, 0.0, 1.0)
-					# overlapping puffs add up: one cloud, thick where they crowd
-					var q := Vector2i(x, y)
-					map[q] = minf(1.2, float(map.get(q, 0.0)) + k * 0.75)
-	for mat: String in cover:
-		var map: Dictionary = cover[mat]
-		var R: Dictionary = _ramps[mat]
-		for q: Vector2i in map:
-			var k := float(map[q])
+			if rc <= 0.01:
+				continue
+			list.append(Vector2(puff.p).x / art)
+			list.append(Vector2(puff.p).y / art)
+			list.append(rc)
+			list.append(float(puff.d))
+	if list.is_empty():
+		_layers.erase(mat)
+		return
+	_build_layer(mat, list)
+	_layers[mat].built = now
+
+
+## One material's image: the puffs' coverage added up (overlapping puffs make
+## one cloud, thick where they crowd), then per cell its colour by the dither
+## and its neighbours above and below.
+func _build_layer(mat: String, list: PackedFloat32Array) -> void:
+	var lo_x := 1 << 30
+	var lo_y := 1 << 30
+	var hi_x := -(1 << 30)
+	var hi_y := -(1 << 30)
+	for n in range(0, list.size(), 4):
+		var rc := list[n + 2]
+		lo_x = mini(lo_x, int(floor(list[n] - rc)))
+		hi_x = maxi(hi_x, int(ceil(list[n] + rc)))
+		lo_y = mini(lo_y, int(floor(list[n + 1] - rc * 0.75)))
+		hi_y = maxi(hi_y, int(ceil(list[n + 1] + rc * 0.75)))
+	# a row of air above and below for the neighbour tests
+	lo_y -= 1
+	hi_y += 1
+	var w := hi_x - lo_x + 1
+	var h := hi_y - lo_y + 1
+	var cover := PackedFloat32Array()
+	cover.resize(w * h)
+	for n in range(0, list.size(), 4):
+		var cx := list[n]
+		var cy := list[n + 1]
+		var rc := list[n + 2]
+		var ry := rc * 0.75
+		var dense := list[n + 3]
+		for y in range(int(floor(cy - ry)), int(ceil(cy + ry)) + 1):
+			var dy := (float(y) + 0.5 - cy) / ry
+			var dy2 := dy * dy
+			if dy2 >= 1.0:
+				continue
+			var half := rc * sqrt(1.0 - dy2)
+			var row := (y - lo_y) * w - lo_x
+			for x in range(int(floor(cx - half)), int(ceil(cx + half)) + 1):
+				var dx := (float(x) + 0.5 - cx) / rc
+				var e := dx * dx + dy2
+				if e >= 1.0:
+					continue
+				var i := row + x
+				cover[i] = minf(1.2, cover[i] + dense * minf(1.0, (1.0 - e) * 1.25) * 0.75)
+	var R: Dictionary = _ramps[mat]
+	var cols := [_rgb(R.body), _rgb(R.deep), _rgb(R.hi), _rgb(R.lite), _rgb(R.shade)]
+	var bytes := PackedByteArray()
+	bytes.resize(w * h * 4)
+	var block := PackedByteArray()
+	var block_key := Vector2i(1 << 30, 0)
+	for y in range(1, h - 1):
+		var qy := lo_y + y
+		var bayer_row := (qy & 3) << 2
+		for x in range(w):
+			var i := y * w + x
+			var k := cover[i]
+			var qx := lo_x + x
 			# even its thickest part keeps a few holes: gas, not a solid
-			if k < 0.06 or not PixelPaint.shown(q, minf(0.9, k * 1.1)):
+			if k < 0.06 or float(BAYER[bayer_row | (qx & 3)]) >= minf(0.9, k * 1.1) * 16.0:
+				continue
+			# walls: asked by blocks of 8 x 8 cells, remembered
+			var key := Vector2i(qx >> 3, qy >> 3)
+			if key != block_key:
+				block_key = key
+				block = _open_block(key)
+			if block[((qy & 7) << 3) | (qx & 7)] == 0:
 				continue
 			# lit on top only where it is thick, dark underneath, thinner parts in shade
-			var col: Color = R.body
-			if float(map.get(q + Vector2i(0, 1), 0.0)) < 0.08:
-				col = R.deep
-			elif k > 0.85 and float(map.get(q + Vector2i(0, -1), 0.0)) < k * 0.55:
-				col = R.hi
+			var c: int = 0
+			if cover[i + w] < 0.08:
+				c = 1
+			elif k > 0.85 and cover[i - w] < k * 0.55:
+				c = 2
 			elif k > 0.8:
-				col = R.lite
+				c = 3
 			elif k < 0.4:
-				col = R.shade
-			PixelPaint.cell(canvas, q, col, art)
+				c = 4
+			var rgb: PackedByteArray = cols[c]
+			var b := i * 4
+			bytes[b] = rgb[0]
+			bytes[b + 1] = rgb[1]
+			bytes[b + 2] = rgb[2]
+			bytes[b + 3] = 255
+	var image := Image.create_from_data(w, h, false, Image.FORMAT_RGBA8, bytes)
+	var layer: Dictionary = _layers.get(mat, {})
+	if layer.has("tex") and Vector2i(layer.size) == Vector2i(w, h):
+		(layer.tex as ImageTexture).update(image)
+	else:
+		layer.tex = ImageTexture.create_from_image(image)
+	layer.at = Vector2i(lo_x, lo_y)
+	layer.size = Vector2i(w, h)
+	_layers[mat] = layer
+
+
+static func _rgb(c: Color) -> PackedByteArray:
+	return PackedByteArray([c.r8, c.g8, c.b8])
+
+
+## Where gas may show in the block `b` of 8 x 8 art cells (`open` at each
+## cell's middle; 1 open, 0 wall), remembered: asked once per cell, forgotten
+## with the room (clear) and every open_memory_s s (a broken wall opens cells).
+func _open_block(b: Vector2i) -> PackedByteArray:
+	var now_ms := Time.get_ticks_msec()
+	if now_ms - _open_since > int(_f("open_memory_s", 3.0) * 1000.0) or _open_memo.size() > 20000:
+		_open_memo.clear()
+		_open_since = now_ms
+	var known: Variant = _open_memo.get(b)
+	if known != null:
+		return known
+	var bits := PackedByteArray()
+	bits.resize(64)
+	for y in range(8):
+		for x in range(8):
+			var q := Vector2(b.x * 8 + x, b.y * 8 + y) + Vector2(0.5, 0.5)
+			bits[y * 8 + x] = 1 if not open.is_valid() or bool(open.call(q * art)) else 0
+	_open_memo[b] = bits
+	return bits
 
 
 ## True when gas of any kind lies at `point` (world px), thick enough to see.
@@ -343,6 +476,8 @@ func covers(point: Vector2) -> bool:
 
 func clear() -> void:
 	_clouds.clear()
+	_layers.clear()
+	_open_memo.clear()
 
 
 ## Clouds alive (for the debug overlay).
