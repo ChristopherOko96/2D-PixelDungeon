@@ -296,7 +296,7 @@ func _hell_fight() -> void:
 	await _wait(5)
 	_game.mobs.clear()
 	var centre := Vector2(_game.player.x, _game.player.y)
-	var ids := ["glutschaedel", "hoellenhund", "brandskelett", "magmaschleim", "aschenpriester", "peingeist", "kettenschinder", "glutimp"]
+	var ids := ["glutschaedel", "hoellenhund", "brandskelett", "blutfledermaus", "aschenpriester", "peingeist", "kettenschinder", "glutimp"]
 	for k in range(ids.size()):
 		var m: Dictionary = _game.monsters.spawn(_game.state.room, centre + Vector2.from_angle(k * TAU / ids.size()) * (250.0 + 40.0 * (k % 2)), ids[k])
 		m.spawn = 0.0

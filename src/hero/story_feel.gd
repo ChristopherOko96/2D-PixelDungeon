@@ -705,15 +705,22 @@ func _own_death(m: Dictionary) -> bool:
 func _set_floor() -> void:
 	_serial += 1
 	var cells := {}
+	# a liquid that burns (the hell's lava) swallows what falls into it; glaze ice does not
+	var sink := {}
+	var burns: bool = bool((g.theme.get("liquid", {}) as Dictionary).get("hurt", false))
 	var per := int(round(float(g.C) / scale / CELL))
 	for cy in range(int(g.W.rows)):
 		for cx in range(int(g.W.cols)):
-			if not g._walkable(int(g.W.grid[cy * int(g.W.cols) + cx])): continue
+			var t := int(g.W.grid[cy * int(g.W.cols) + cx])
+			if not g._walkable(t): continue
 			for y in range(per):
 				for x in range(per):
 					cells[Vector2i(cx * per + x, cy * per + y)] = true
+					if burns and (t == 2 or t == 3):
+						sink[Vector2i(cx * per + x, cy * per + y)] = true
 	feedback.particles.clear()
 	feedback.particles.set_walkable(cells, "feel_%d" % _serial)
+	feedback.particles.set_sink(sink)
 	_cells = cells
 	_fallen.clear()
 	_events.clear()

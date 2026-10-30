@@ -168,6 +168,10 @@ func _build_rig(name: String, def: Dictionary, images: Dictionary, art: Dictiona
 	for spec: Dictionary in def.get("items", []):
 		var item_image := _source(str(spec.img), images, art)
 		if item_image == null: continue
+		# an item of its own colour (the Brandskelett's red blade), on a copy so other rigs keep theirs
+		if spec.get("recolor") is Dictionary:
+			item_image = item_image.duplicate() as Image
+			_recolor(item_image, spec.recolor)
 		if bool(spec.get("bow", false)): _remove_bow_string(item_image)
 		var item := _layer(item_image)
 		item.merge(_part_fields(spec), true)
@@ -206,7 +210,8 @@ func _part_fields(spec: Dictionary) -> Dictionary:
 		"z": int(spec.get("z", 0)), "hp": float(spec.get("hp", 0)), "label": str(spec.get("label", spec.id)), "vital": bool(spec.get("vital", false)),
 		"disables": disabled_actions(disables) if disables is Array else str(disables if disables != null else ""), "regrow": float(spec.get("regrow", 0)),
 		"also_detach": Array(spec.get("alsoDetach", [])), "exposed": str(spec.get("exposed", "")), "unbreakable": bool(spec.get("unbreakable", false)),
-		"weakens": _weakens(spec.get("weakens", {})), "group": str(spec.get("group", "")) if spec.get("group") != null else "", "is_item": false}
+		"weakens": _weakens(spec.get("weakens", {})), "group": str(spec.get("group", "")) if spec.get("group") != null else "", "is_item": false,
+		"sway": spec.get("sway", []) if spec.get("sway") is Array else []}
 
 
 ## {attack id: {param: factor}} with float factors; anything malformed is dropped.
@@ -273,7 +278,8 @@ func _finish(name: String, def: Dictionary, parts: Array[Dictionary], items: Arr
 	var family: String = str(def.get("family", ""))
 	return {"name": name, "family": family, "variant": str(def.get("variant", "")), "attack": str(def.get("attack", "")),
 		"ground": _vec(def.get("ground", [0, 0])), "width": float(def.get("width", 10)), "center": center, "top": float(source.get_used_rect().position.y),
-		"hover": float(HOVER.get(family, 0.0)), "size": Vector2(source.get_size()), "parts": parts, "items": items, "by_id": by_id}
+		"hover": float(HOVER.get(family, 0.0)), "size": Vector2(source.get_size()), "parts": parts, "items": items, "by_id": by_id,
+		"material": str(def.get("material", "")), "burn": def.get("burn", {}) if def.get("burn") is Dictionary else {}, "slash": str(def.get("slash", ""))}
 
 
 ## Leerenrufer: the body is a flipbook of 8 frames, the eye has three states,

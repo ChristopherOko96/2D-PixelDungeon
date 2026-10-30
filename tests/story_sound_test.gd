@@ -352,7 +352,7 @@ func test_hell_combat_sounds_once_in_crypt_materials() -> void:
 	check(game.feel.feedback.sfx == fake, "hell: the crypt's feedback plays on the world's sound player")
 	# a monster far off keeps the room from clearing while others fall
 	_hell_mob(game, "glutwaechter", Vector2(1200, 0))
-	for case: Array in [["brandskelett", "hit_bone"], ["glutschaedel", "hit_bone"], ["hoellenhund", "hit_flesh"], ["magmaschleim", "hit_flesh"], ["peingeist", "hit_void"], ["glutwaechter", "hit_bone"]]:
+	for case: Array in [["brandskelett", "hit_bone"], ["glutschaedel", "hit_bone"], ["hoellenhund", "hit_flesh"], ["blutfledermaus", "hit_flesh"], ["peingeist", "hit_void"], ["glutwaechter", "hit_bone"]]:
 		var m := _hell_mob(game, str(case[0]), Vector2(320, 0))
 		game.feel.update(DT)
 		fake.reset()
@@ -451,10 +451,10 @@ func test_hell_acts_wind_up_and_fire() -> void:
 	played = _act(game, _hell_mob(game, "glutimp", Vector2(260, 40)), "lob")
 	regular.append_array(played)
 	check(played.count("attack_soul") == 1 and played.count("attack_arrow") == 0, "hell: the fire imp's lob is a soul shot, not a bow twang (%s)" % str(played))
-	played = _act(game, _hell_mob(game, "magmaschleim", Vector2(250, 0)), "slam")
+	played = _act(game, _hell_mob(game, "blutfledermaus", Vector2(250, 0)), "beam")
 	regular.append_array(played)
-	check(played.count("attack_bite") == 1 and played.count("attack_slam") == 0 and played.count("blast") == 0,
-		"hell: the magma slime's slam is an enemy's crunch, its wave lands without the boss blast (%s)" % str(played))
+	check(played.count("attack_soul") == 1 and played.count("attack_beam") == 0,
+		"hell: the blood bat's laser is a soul shot, not the void boss's beam (%s)" % str(played))
 	check(_boss_sounds(regular).is_empty(), "hell: regular monsters never play a crypt boss sound (%s)" % str(_boss_sounds(regular)))
 	all.append_array(regular)
 	# guardians and Ignaroth keep the crypt's boss sounds
@@ -539,7 +539,7 @@ func test_hell_landings_forms_and_parts() -> void:
 	check(fake.count("blast") == 1, "hell: a landing with its own crypt burst blasts once, not twice (%s)" % str(fake.played))
 	_frames(game, 10)
 	fake.reset()
-	var slime := _hell_mob(game, "magmaschleim", Vector2(-300, 0))
+	var slime := _hell_mob(game, "blutfledermaus", Vector2(-300, 0))
 	game.monsters._zone({"kind": "wave", "p": slime.p, "r": 60.0, "tele": 0.0, "T": 0.5, "m": slime})
 	game.monsters._update_zones(DT)
 	_frames(game, 2)

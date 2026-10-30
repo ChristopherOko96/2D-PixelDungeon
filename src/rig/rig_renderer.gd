@@ -17,6 +17,20 @@ const S := RigLibrary.PIXEL_SCALE
 const SHADOW := Color(0.05, 0.04, 0.09, 0.45)
 const VIOLET := Color("a46fe0")
 const VIOLET_DARK := Color("5f2d56")
+## Pixel flames of a burning rig (rigs.json "burn"), hot to cool: white, yellow, orange, red, crimson.
+const FLAME := [Color("fdf7ed"), Color("facb3e"), Color("ee8e2e"), Color("da4e38"), Color("9f294e")]
+## Soul fire (a flame's 6th entry "soul") and void fire ("void"), hot to cool.
+const SOUL_FLAME := [Color("fdf7ed"), Color("cfe86b"), Color("97da3f"), Color("4ba747"), Color("235d3a")]
+## Pixel slash palettes (rigs.json "slash"), newest to oldest: the band a
+## swinging blade sweeps, and how long its pixels stay (s).
+const SLASH := {
+	"fire": [Color("fdf7ed"), Color("facb3e"), Color("ee8e2e"), Color("da4e38")],
+	"void": [Color("fdf7ed"), Color("f0b3dd"), Color("c278d0"), Color("8156aa")],
+	"soul": [Color("fdf7ed"), Color("cfe86b"), Color("97da3f"), Color("4ba747")],
+	"steel": [Color("fdf7ed"), Color("b6cbcf"), Color("7b8994"), Color("414859")],
+}
+const SLASH_LIFE := 0.2
+const VOID_FLAME := [Color("fdf7ed"), Color("f0b3dd"), Color("c278d0"), Color("8156aa"), Color("473579")]
 const VIOLET_HOT := Color("f2b8ff")
 const INK := Color("222222")
 ## The gore table (src/vfx/feedback.gd): a hell rig's material (rig.material)
@@ -258,7 +272,7 @@ func step(delta: float) -> void:
 			a.regrowing[id] = float(a.regrowing[id]) - delta
 			if float(a.regrowing[id]) <= 0.0: a.regrowing.erase(id)
 		for point: Dictionary in a.trail: point.age = float(point.age) + delta
-		a.trail = a.trail.filter(func(p: Dictionary) -> bool: return float(p.age) < 0.12)
+		a.trail = a.trail.filter(func(p: Dictionary) -> bool: return float(p.age) < float(p.get("life", 0.12)))
 	for d: Dictionary in _debris:
 		d.life = float(d.life) + delta
 		if bool(d.rest): continue
@@ -317,7 +331,7 @@ func draw_enemy(canvas: CanvasItem, enemy: Dictionary, point: Vector2) -> float:
 	var dying_p := float(enemy.get("dying_p", -1.0))
 	var family: String = str(rig.family)
 	# Skeletons crumble and bombers burst: nothing is left to draw.
-	if dying_p >= 0.0 and (family in ["skeleton", "bomber"]): return NAN
+	if dying_p >= 0.0 and (family in ["skeleton", "bomber", "golem"]): return NAN
 	_clip_from_snapshot(a, rig, enemy, dying_p)
 	var flash := clampf(float(enemy.get("hit_flash", 0.0)) / 0.16, 0.0, 1.0)
 	# An escaping or fading figure takes its shadow along.
@@ -339,12 +353,16 @@ func track_steps(key: String, player: Dictionary) -> Dictionary:
 
 
 ## Draws a hero-class player's body (the view draws the held weapon on top).
-func draw_hero(canvas: CanvasItem, key: String, player: Dictionary, point: Vector2, rig_name: String, face: float, alpha: float = 1.0) -> void:
+## `size` scales the rig (the story worlds draw heroes larger than the crypt),
+## `tint` colours it (a subclass colour, stealth).
+func draw_hero(canvas: CanvasItem, key: String, player: Dictionary, point: Vector2, rig_name: String, face: float, alpha: float = 1.0, size: float = 1.0, tint: Color = Color.WHITE) -> void:
 	var rig: Dictionary = library.rig(rig_name)
 	if rig.is_empty(): return
 	var a := track_steps(key, player)
 	a.rig = rig_name
 	a.alpha_mul = alpha
+	a.size_mul = size
+	a.tint = tint
 	if int(player.get("hurts", 0)) > int(a.hurts): _play(a, "hit", HIT_TIME)
 	a.hurts = int(player.get("hurts", 0))
 	if float(player.get("hp", 1)) <= 0.0:
@@ -389,6 +407,84 @@ func _clip_from_snapshot(a: Dictionary, rig: Dictionary, enemy: Dictionary, dyin
 	a.u = 0.0
 
 
+## Pixel flames on a burning rig, in each part's source pixels so they follow
+## it (rigs.json "burn": "flames" [[part, x0, base_y, width, height], ...] rise
+## from base_y; "glow" [[part, x, y], ...] are embers such as the eyes). The
+## flames flicker at 12 frames a second, column by column, like hand-drawn pixel fire.
+func _draw_burn(canvas: CanvasItem, rig: Dictionary, a: Dictionary, world: Dictionary, shown: Dictionary, alpha_of: Callable) -> void:
+	var burn: Dictionary = rig.burn
+	var tq := floorf(float(a.t) * 12.0) / 12.0
+	var seed := float(int(a.get("seed", 0)) % 97) if a.has("seed") else float(hash(str(a.get("rig", ""))) % 97)
+	for flame: Variant in burn.get("flames", []):
+		if not flame is Array or (flame as Array).size() < 5: continue
+		var id := str(flame[0])
+		if not shown.has(id) or not world.has(id): continue
+		var alpha: float = alpha_of.call(id)
+		if alpha <= 0.01: continue
+		canvas.draw_set_transform_matrix(world[id])
+		var x0 := float(flame[1])
+		var base := float(flame[2])
+		var w := int(flame[3])
+		var h := float(flame[4])
+		var kind := str(flame[5]) if (flame as Array).size() > 5 else ""
+		var pal: Array = SOUL_FLAME if kind == "soul" else VOID_FLAME if kind == "void" else FLAME
+		for i in range(w):
+			var edge := 1.0 - absf((float(i) + 0.5) / float(w) * 2.0 - 1.0)
+			var wave := 0.62 + 0.38 * sin(tq * 11.0 + float(i) * 2.3 + seed)
+			var col_h := maxf(1.0, roundf(h * (0.3 + 0.7 * edge) * wave))
+			for j in range(int(col_h)):
+				var k := float(j) / col_h
+				# the flame's foot starts yellow (no white rim on the figure)
+				var c: Color = pal[1 if k < 0.4 else 2 if k < 0.68 else 3 if k < 0.9 else 4]
+				_rect(canvas, Rect2(x0 + float(i), base - float(j) - 1.0, 1.0, 1.0), Color(c, alpha), "burn", id)
+			# a tongue of fire breaking off above the column now and then
+			if sin(tq * 7.0 + float(i) * 3.1 + seed * 1.7) > 0.72:
+				_rect(canvas, Rect2(x0 + float(i), base - col_h - 2.0, 1.0, 1.0), Color(pal[3], alpha * 0.85), "burn", id)
+	for ember: Variant in burn.get("glow", []):
+		if not ember is Array or (ember as Array).size() < 3: continue
+		var id := str(ember[0])
+		if not shown.has(id) or not world.has(id): continue
+		var alpha: float = alpha_of.call(id)
+		if alpha <= 0.01: continue
+		canvas.draw_set_transform_matrix(world[id])
+		var hot := sin(tq * 9.0 + float(ember[1]) * 1.3 + seed) > 0.2
+		_rect(canvas, Rect2(float(ember[1]), float(ember[2]), 1.0, 1.0), Color(FLAME[1] if hot else FLAME[2], alpha), "burn", id)
+	canvas.draw_set_transform_matrix(Transform2D.IDENTITY)
+
+
+## A swing's slash on the pixel grid (`px` world px per block): the band the
+## blade swept between its inner point (q) and its tip (p) over the last
+## frames, filled block by block. The newest edge is white-hot, older parts
+## cool through yellow and orange to red, and every block fades with its age;
+## the inner part of older segments drops out, so it tapers like a crescent.
+func _draw_pixel_slash(canvas: CanvasItem, trail: Array, px: float, pal: Array) -> void:
+	var n := trail.size()
+	if n < 2: return
+	for i in range(1, n):
+		var a0: Dictionary = trail[i - 1]
+		var a1: Dictionary = trail[i]
+		if not a0.has("q") or not a1.has("q"): continue
+		var age := clampf(float(a1.age) / maxf(0.01, float(a1.get("life", SLASH_LIFE))), 0.0, 1.0)
+		var newest := float(i) / float(n - 1)
+		var col: Color = pal[0] if newest > 0.88 else pal[1] if newest > 0.6 else pal[2] if newest > 0.3 else pal[3]
+		col.a = 1.0 - age
+		var p0: Vector2 = a0.p
+		var p1: Vector2 = a1.p
+		var q0: Vector2 = a0.q
+		var q1: Vector2 = a1.q
+		var steps := clampi(int(maxf(p0.distance_to(p1), q0.distance_to(q1)) / px) + 1, 1, 40)
+		var across := clampi(int(p1.distance_to(q1) / px) + 1, 1, 30)
+		var keep_from := 0.0 if newest > 0.7 else 0.45
+		for s in range(steps + 1):
+			var f := float(s) / float(steps)
+			var tip := p0.lerp(p1, f)
+			var inner := q0.lerp(q1, f)
+			for c in range(across + 1):
+				var u := float(c) / float(across)
+				if u < keep_from: continue
+				canvas.draw_rect(Rect2((inner.lerp(tip, u) / px).floor() * px, Vector2(px, px)), col)
+
+
 ## [clip, end of windup, end of active] in clip progress, per figure and move.
 func _attack_mapping(rig: Dictionary, kind: String) -> Array:
 	match str(rig.family):
@@ -398,7 +494,14 @@ func _attack_mapping(rig: Dictionary, kind: String) -> Array:
 				"guard": return ["attack", 0.45, 0.6]
 			return ["attack", 0.6, 0.75]
 		"necro": return ["summon", 0.3, 0.4] if kind == "summon" else ["attack", 0.55, 0.62]
-		"brute": return ["roar", 0.4, 0.6] if kind == "roar" else ["attack", 0.45, 0.56]
+		# a burst all round (a ring) or a call (summon) swells the body like a roar; blows swing the arm
+		"brute": return ["roar", 0.4, 0.6] if kind in ["roar", "ring", "summon"] else ["attack", 0.45, 0.56]
+		"golem":
+			# the stomp smashes both fists down, a throw hurls the right fist, a ring or a call bursts the core
+			match kind:
+				"slam": return ["slam", 0.55, 0.68]
+				"ring", "roar", "summon": return ["roar", 0.4, 0.6]
+			return ["attack", 0.45, 0.6]
 		"void":
 			match kind:
 				"beam": return ["beam", 0.3, 0.86]
@@ -433,6 +536,11 @@ func _start_death(a: Dictionary, rig: Dictionary, enemy: Dictionary) -> void:
 		"skeleton":
 			for part: Dictionary in rig.items + rig.parts: _detach(a, rig, part.id, 1.0)
 			if bool(enemy.get("summoned", false)): _burst_at(feet - Vector2(0, 14), VIOLET_DARK, 14, 50.0)
+		"golem":
+			# the golem breaks into its boulders, its glow spills out
+			for part: Dictionary in rig.items + rig.parts: _detach(a, rig, part.id, 1.0)
+			var colors := palette(str(rig.get("material", "")))
+			if not colors.is_empty(): _burst_at(feet - Vector2(0, 30), colors.burst, 22, 110.0)
 		"bomber":
 			if not bool(enemy.get("exploded", false)): _burst_at(feet - Vector2(0, 16), VIOLET, 18, 90.0)
 		"mimic":
@@ -577,6 +685,10 @@ func _draw_rig(canvas: CanvasItem, a: Dictionary, rig: Dictionary, point: Vector
 			_tex(canvas, layer.white, Color(1, 1, 1, flash * alpha), "flash", part.id, Vector2.ZERO, rows)
 			flashed.append(part.id)
 		if bool(part.get("bow", false)): _draw_bow_string(canvas, pose)
+	# a burning figure (rigs.json "burn"): pixel flames and glowing eyes on its parts, fading as it dies
+	if not (rig.get("burn", {}) as Dictionary).is_empty():
+		var fade := 1.0 - clampf(float(a.u), 0.0, 1.0) if dying else 1.0
+		_draw_burn(canvas, rig, a, world, shown, func(id: String) -> float: return float(alpha_of.call(rig.by_id[id])) * fade if rig.by_id.has(id) else 0.0)
 	canvas.draw_set_transform_matrix(Transform2D.IDENTITY)
 	# Hell rigs: a glowing wound at every severed joint, fading with its parent.
 	var stumps: Array[Dictionary] = []
@@ -590,12 +702,19 @@ func _draw_rig(canvas: CanvasItem, a: Dictionary, rig: Dictionary, point: Vector
 			_draw_stump(canvas, at, material, S, id, alpha_of.call(parent))
 			stumps.append({"id": id, "at": at})
 	a.drawn = {"shown": shown, "hittable": hittable, "flashed": flashed, "stumps": stumps, "glow": glow.duplicate(), "tint": tint, "alpha": float(a.get("alpha_mul", 1.0))}
-	# Weapon swing trail from the blade tip.
+	# Weapon swing trail from the blade tip (a rig with a "slash" palette: the
+	# blade's swept band on the pixel grid, following the swing as it goes).
 	var weapon: Dictionary = rig.by_id.get("weapon", {})
+	var slash: Array = SLASH.get(str(rig.get("slash", "")), [])
 	if bool(pose.trail) and not weapon.is_empty() and world.has("weapon") and not a.lost.has("weapon"):
-		a.trail.append({"p": Transform2D(world.weapon) * Vector2(weapon.tip), "age": 0.0})
-	for i in range(1, a.trail.size()):
-		canvas.draw_line(a.trail[i - 1].p, a.trail[i].p, Color(0.92, 0.97, 1.0, 0.65 * (1.0 - float(a.trail[i].age) / 0.12)), 2.0)
+		var xf := Transform2D(world.weapon)
+		var grip := Vector2(weapon.get("grip", weapon.get("pivot", Vector2.ZERO)))
+		a.trail.append({"p": xf * Vector2(weapon.tip), "q": xf * grip.lerp(Vector2(weapon.tip), 0.4), "age": 0.0, "life": SLASH_LIFE if not slash.is_empty() else 0.12})
+	if not slash.is_empty():
+		_draw_pixel_slash(canvas, a.trail, maxf(2.0, roundf(S)), slash)
+	else:
+		for i in range(1, a.trail.size()):
+			canvas.draw_line(a.trail[i - 1].p, a.trail[i].p, Color(0.92, 0.97, 1.0, 0.65 * (1.0 - float(a.trail[i].age) / 0.12)), 2.0)
 	if pose.has("beam"): _beams.append({"key": a.key, "eye": world.get("eye", world.base) * Vector2(rig.get("eye_center", Vector2(22, 23))), "beam": pose.beam, "t": a.t, "ct": a.ct})
 	return feet.y + cut - (float(rig.ground.y) - float(rig.top) + 1.0) * S + float(pose.whole.dy) * S
 

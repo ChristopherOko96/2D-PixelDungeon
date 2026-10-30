@@ -188,7 +188,8 @@ func rig_of(m: Dictionary) -> String:
 	var name := str(m.get("id", ""))
 	if name.is_empty(): return ""
 	var rig: Dictionary = library.rig(name)
-	return name if not rig.is_empty() and bool(rig.get("layered", false)) else ""
+	# a layered hell rig (hell_rigs.json) or a crypt rig named like the monster (rigs.json "brandskelett")
+	return name if not rig.is_empty() else ""
 
 
 ## True once `m` carries body parts of its rig.
@@ -689,6 +690,15 @@ func point(m: Dictionary, id: String, fallback: Vector2) -> Vector2:
 	if not _fresh(m): return fallback
 	var at: Variant = _records.get(int(m.uid), {}).get("points", {}).get(id)
 	return at if at is Vector2 and (at as Vector2).is_finite() else fallback
+
+
+## Where source point `at` of part `id` of `m` was last drawn (world px): a
+## mouth of a many-headed beast (hell_monsters.gd "mouths"); `fallback` while
+## it was not drawn this frame.
+func part_point(m: Dictionary, id: String, at: Vector2, fallback: Vector2) -> Vector2:
+	if renderer == null or not _fresh(m): return fallback
+	var p: Vector2 = renderer.world_point(RigRenderer.key_of(m), id, at)
+	return p if p.is_finite() and p != Vector2.ZERO else fallback
 
 
 ## Where an act of `kind` starts (cfg.muzzles: bolts, breath and sweep from
