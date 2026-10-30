@@ -78,6 +78,8 @@ var _void_cache: Dictionary = {}
 ## The lava plates of one shading: Vector3i(grid x, grid y, plate size) ->
 ## [the plate's point (art px), its crust number 0..99].
 var _lava_sites: Dictionary = {}
+## The burning ground's heat noise by drifted cell (it only moves over the field).
+var _fire_noise: Dictionary = {}
 ## The middle of the field being shaded (_bake -> _shade, the void's spiral).
 var _mid := Vector2.ZERO
 ## The hearts of the void pools being shaded, [middle in cells, radius in cells]
@@ -100,6 +102,11 @@ var _melts: Array = []
 var _freezing: Array = []
 ## "source:id" -> {mat, cells: Array[Vector2i], end, source}
 var _pools: Dictionary = {}
+## "source:id" -> a pool whose shape a worker thread is working out (add, _collect_shapes).
+var _shaping: Dictionary = {}
+## Pools still being laid into their fields, oldest first (_lay, _lay_steps):
+## {key, mat, timed, keys, i, finish?, finish_edge?}.
+var _laying: Array = []
 ## material -> field {cells: {Vector2i: [born, until, rank 0..1, drawing only?]}, img, tex, box, col, list, rim, next, dirty, baked, ripples}
 var _fields: Dictionary = {}
 ## Wading actors: key -> {mat, last, steps, at, side, seen}.
@@ -160,37 +167,139 @@ static func _key(source: String, id: int) -> String:
 ## A pool `id` of `style` from `source` landing at `at` along `dir` (radius
 ## as its volume), from `start` until `end` (seconds on the host's clock).
 ## Known pools are kept. With `splash` it has just landed: it throws drops.
+## A pool of thread_cells cells or more gets its shape worked out on a worker
+## thread (it is the same shape, a few frames later; the game never waits).
 func add(id: int, style: String, at: Vector2, dir: Vector2, radius: float, start: float, end: float, source := "", splash := false) -> void:
 	var key := _key(source, id)
-	if _pools.has(key):
+	if _pools.has(key) or _shaping.has(key):
 		return
 	var mat := material_for(style)
 	if mat == "":
 		return
-	var cells := shape(at, dir, radius, mat, art, open, id)
-	if cells.is_empty():
+	var squash := float(cfg.get("squash", 0.75))
+	if SplatShape.cells_for(radius, art, squash) >= int(cfg.get("thread_cells", 600)):
+		# the worker also times its cells (_timings); the keys it fills are there already
+		var job := {"key": key, "id": id, "mat": mat, "at": at, "dir": dir, "radius": radius, "start": start, "end": end, "source": source, "splash": splash, "cells": {}, "timed": {}}
+		var feel := art
+		var floor_open := open
+		var spread := _spread_of(mat)
+		var edge := _edge_of(start, end)
+		job.task = WorkerThreadPool.add_task(func() -> void:
+			var cells := shape(at, dir, radius, mat, feel, floor_open, id)
+			job.timed = _timings(cells, start, end, spread, edge)
+			job.cells = cells)
+		_shaping[key] = job
 		return
-	var field: Dictionary = _field(mat)
+	_lay(key, id, mat, shape(at, dir, radius, mat, art, open, id), at, dir, radius, start, end, source, splash)
+
+
+## Lays the pools whose shapes the worker threads have finished.
+func _collect_shapes() -> void:
+	for key: String in _shaping.keys():
+		var job: Dictionary = _shaping[key]
+		if not WorkerThreadPool.is_task_completed(int(job.task)):
+			continue
+		WorkerThreadPool.wait_for_task_completion(int(job.task))
+		_shaping.erase(key)
+		_lay(key, int(job.id), str(job.mat), job.cells, job.at, job.dir, float(job.radius), float(job.start), float(job.end), str(job.source), bool(job.splash), job.timed)
+
+
+## How long material `mat` takes to spread out from its middle (s).
+func _spread_of(mat: String) -> float:
+	return float(cfg.get("spread_time", 0.35)) * float(cfg.materials[mat].get("spread_scale", 1.0))
+
+
+## How long before its end a pool lasting `start`..`end` begins to go, rim first (s).
+func _edge_of(start: float, end: float) -> float:
+	return minf(float(cfg.get("edge_time", 0.7)), maxf(0.1, (end - start) * 0.4))
+
+
+## When each cell of a pool's shape (`cells`: art cell -> rank) is born and
+## goes, with its share of the rank: {cell: [born, until, k]} in the shape's
+## order. Born spreading out from the middle over `spread` s, gone rim first
+## over the last `edge` s. Touches nothing else (a worker thread may ask it).
+static func _timings(cells: Dictionary, start: float, end: float, spread: float, edge: float) -> Dictionary:
+	var out := {}
 	var n := float(maxi(1, cells.size()))
-	var spread := float(cfg.get("spread_time", 0.35)) * float(cfg.materials[mat].get("spread_scale", 1.0))
-	var edge := minf(float(cfg.get("edge_time", 0.7)), maxf(0.1, (end - start) * 0.4))
-	var list: Array[Vector2i] = []
 	for q: Vector2i in cells:
 		var k := float(cells[q]) / n
-		var born := start + spread * pow(k, 0.7)
-		var until := end - edge * k
-		var have: Array = field.cells.get(q, [])
-		# a thrown pool takes over a drop puddle lying there
-		if have.is_empty() or have.size() > 3:
-			field.cells[q] = [born, until, k]
+		out[q] = [start + spread * pow(k, 0.7), end - edge * k, k]
+	return out
+
+
+## Waits for the shapes still being worked out and drops them (a new room).
+func _drop_shapes() -> void:
+	for key: String in _shaping:
+		WorkerThreadPool.wait_for_task_completion(int(_shaping[key].task))
+	_shaping.clear()
+
+
+## Puts pool `key` (its `cells`: art cell -> rank; `timed` their _timings when
+## a worker worked them out) into its material's field.
+func _lay(key: String, id: int, mat: String, cells: Dictionary, at: Vector2, dir: Vector2, radius: float, start: float, end: float, source: String, splash: bool, timed: Dictionary = {}) -> void:
+	if cells.is_empty() or _pools.has(key):
+		return
+	var field: Dictionary = _field(mat)
+	if timed.is_empty():
+		timed = _timings(cells, start, end, _spread_of(mat), _edge_of(start, end))
+	var keys := timed.keys()
+	_pools[key] = {"mat": mat, "cells": keys, "end": end, "source": source, "at": at, "r": radius}
+	if (field.cells as Dictionary).is_empty() and _laying.is_empty():
+		# nothing lies there: all of it at once
+		(field.cells as Dictionary).merge(timed)
+	else:
+		# it meets what lies there cell by cell (_lay_step), a big pool over a
+		# few frames from its middle out (far ahead of its spreading), after
+		# the pools still being laid
+		var job := {"key": key, "mat": mat, "timed": timed, "keys": keys, "i": 0, "since": Time.get_ticks_msec()}
+		if _laying.is_empty() and keys.size() <= int(cfg.get("lay_now_cells", 1500)):
+			_lay_step(job, 1 << 62)
 		else:
-			field.cells[q] = [minf(float(have[0]), born), maxf(float(have[1]), until), minf(float(have[2]), k)]
-		list.append(q)
-	_pools[key] = {"mat": mat, "cells": list, "end": end, "source": source, "at": at, "r": radius}
+			_laying.append(job)
 	field.next = minf(float(field.next), start)
 	field.dirty = true
 	if splash:
 		_splash(mat, at, dir, radius, id)
+
+
+## Lays the pools waiting to be laid (_lay) until the clock passes `until` (usec).
+func _lay_steps(until: int) -> void:
+	while not _laying.is_empty():
+		if not _lay_step(_laying[0], until):
+			return
+		_laying.pop_front()
+
+
+## Lays the cells of a waiting pool `job` into its field, in its order, until
+## the clock passes `until` (usec); true when all are. Where the field has a
+## cell already, a drop puddle there (more than three entries) gives way, else
+## the earlier birth, the later end and the lower rank of both hold; a pool
+## that ended early meanwhile (finish) goes rim first from then (as if laid at once).
+func _lay_step(job: Dictionary, until: int) -> bool:
+	var field: Dictionary = _field(str(job.mat))
+	var cells: Dictionary = field.cells
+	var timed: Dictionary = job.timed
+	var keys: Array = job.keys
+	var ended := job.has("finish")
+	var i := int(job.i)
+	while i < keys.size():
+		var q: Vector2i = keys[i]
+		i += 1
+		# (the new pool's entries are its own: changed in place)
+		var fresh: Array = timed[q]
+		var have: Variant = cells.get(q)
+		if have != null and not (have as Array).is_empty() and (have as Array).size() <= 3:
+			fresh[0] = minf(float(have[0]), float(fresh[0]))
+			fresh[1] = maxf(float(have[1]), float(fresh[1]))
+			fresh[2] = minf(float(have[2]), float(fresh[2]))
+		if ended:
+			fresh[1] = minf(float(fresh[1]), float(job.finish) + float(job.finish_edge) * (1.0 - float(fresh[2])))
+		cells[q] = fresh
+		if i & 63 == 0 and Time.get_ticks_usec() >= until:
+			break
+	job.i = i
+	field.dirty = true
+	return i >= keys.size()
 
 
 ## A pool (its key) that ended early (its zone was removed): it goes rim first from now.
@@ -200,6 +309,11 @@ func finish(key: String, now: float) -> void:
 		return
 	var field: Dictionary = _field(str(pool.mat))
 	var edge := float(cfg.get("edge_time", 0.7)) * 0.5
+	# its cells not laid yet go the same way when they are
+	for job: Dictionary in _laying:
+		if str(job.key) == key:
+			job.finish = minf(float(job.get("finish", INF)), now)
+			job.finish_edge = edge
 	for q: Vector2i in pool.cells:
 		var have: Array = field.cells.get(q, [])
 		if not have.is_empty():
@@ -236,6 +350,8 @@ func sync(zones: Array, now: float, source := "") -> void:
 
 
 func clear() -> void:
+	_drop_shapes()
+	_laying.clear()
 	_pools.clear()
 	_fields.clear()
 	_waders.clear()
@@ -273,29 +389,53 @@ func draw(canvas: CanvasItem, now: float) -> void:
 		return
 	_drawn_frame = frame_now
 	var started := Time.get_ticks_usec()
+	_collect_shapes()
+	# a pool or picture that has been waiting longer than catch_up_after_ms gets
+	# catch_up_ms a frame instead (it does not lag far behind what happens)
+	var late := int(cfg.get("catch_up_after_ms", 100))
+	var lay_ms := float(cfg.get("lay_budget_ms", 2.0))
+	if not _laying.is_empty() and Time.get_ticks_msec() - int(_laying[0].get("since", 0)) > late:
+		lay_ms = maxf(lay_ms, float(cfg.get("catch_up_ms", 8.0)))
+	_lay_steps(Time.get_ticks_usec() + int(lay_ms * 1000.0))
+	var after_collect := Time.get_ticks_usec()
 	_now = now
 	_react(now)
 	var after_react := Time.get_ticks_usec()
 	var rate := 1.0 / float(cfg.get("rebake_hz", 15))
 	var anim := float(cfg.get("anim_hz", 6))
-	# at most bakes_per_frame materials are shaded again in one frame (the one
-	# waiting longest first; a new one at once), so their costs do not pile up
-	var budget := int(cfg.get("bakes_per_frame", 1))
+	# shading again is spread over the frames: work in progress goes on first,
+	# then the material waiting longest starts, while bake_budget_ms lasts; a
+	# new material always starts. Until its new picture is done the old shows.
+	var bake_ms := float(cfg.get("bake_budget_ms", 3.0))
+	for mat: String in _fields:
+		var waiting_field: Dictionary = _fields[mat]
+		if waiting_field.has("work") and Time.get_ticks_msec() - int(waiting_field.work.get("since", 0)) > late:
+			bake_ms = maxf(bake_ms, float(cfg.get("catch_up_ms", 8.0)))
+	var until := Time.get_ticks_usec() + int(bake_ms * 1000.0)
+	for mat: String in _fields:
+		var field: Dictionary = _fields[mat]
+		if field.has("work"):
+			_bake_step(field, until)
 	var waiting: Array = []
 	for mat: String in _fields:
 		var field: Dictionary = _fields[mat]
+		if field.has("work"):
+			continue
 		var style := str(cfg.materials[mat].get("style", "liquid"))
 		var frame := int(floor(now * anim)) if style in ["fire", "lava", "void"] else 0
 		var due: bool = now >= float(field.next) or bool(field.dirty) or frame != int(field.frame)
 		if not due or now - float(field.baked) < rate:
 			continue
-		if field.tex == null and float(field.baked) < -50.0:
-			_bake(field, mat, style, now, frame)
-		else:
-			waiting.append([float(field.baked), mat, style, frame])
+		var fresh := field.tex == null and float(field.baked) < -50.0
+		waiting.append([-1000.0 if fresh else float(field.baked), mat, style, frame, fresh])
 	waiting.sort_custom(func(a: Array, b: Array) -> bool: return float(a[0]) < float(b[0]))
-	for entry: Array in waiting.slice(0, maxi(1, budget)):
-		_bake(_fields[entry[1]], str(entry[1]), str(entry[2]), now, int(entry[3]))
+	for entry: Array in waiting:
+		if Time.get_ticks_usec() >= until and not bool(entry[4]):
+			break
+		var field: Dictionary = _fields[entry[1]]
+		_bake(field, str(entry[1]), str(entry[2]), now, int(entry[3]))
+		if field.has("work"):
+			_bake_step(field, until)
 	var after_bake := Time.get_ticks_usec()
 	for mat: String in _fields:
 		var field: Dictionary = _fields[mat]
@@ -331,51 +471,221 @@ func draw(canvas: CanvasItem, now: float) -> void:
 	var ended := Time.get_ticks_usec()
 	draw_us += ended - started
 	draw_frames += 1
-	draw_parts.react = int(draw_parts.get("react", 0)) + after_react - started
+	draw_parts.collect = int(draw_parts.get("collect", 0)) + after_collect - started
+	draw_parts.react = int(draw_parts.get("react", 0)) + after_react - after_collect
 	draw_parts.bake = int(draw_parts.get("bake", 0)) + after_bake - after_react
 	draw_parts.layers = int(draw_parts.get("layers", 0)) + after_layers - after_bake
 	draw_parts.rest = int(draw_parts.get("rest", 0)) + ended - after_layers
 
 
+## Begins shading field `mat` again for time `now` and animation frame
+## `frame`: which cells are liquid now, its outline, lip and swallowed light
+## (or the last ones when nothing but the animation changed), then the cells
+## are shaded; all of it in slices (_bake_step), the picture changing when
+## all is done (the last one shows till then).
 func _bake(field: Dictionary, mat: String, style: String, now: float, frame: int) -> void:
 	bake_counts[mat] = int(bake_counts.get(mat, 0)) + 1
+	var was_dirty := bool(field.dirty)
 	field.dirty = false
 	field.baked = now
 	field.frame = frame
+	var kept: Dictionary = field.get("shape", {})
+	if not was_dirty and not kept.is_empty() and now < float(kept.next) and float(field.next) >= float(kept.next) and str(kept.mat) == mat:
+		# only the animation moved on: the same cells, outline and lip
+		_begin_work(field, kept, style, now, frame)
+		return
+	field.work = {"phase": "scan", "mat": mat, "style": style, "now": now, "frame": frame, "i": 0, "since": Time.get_ticks_msec(), "keys": (field.cells as Dictionary).keys(),
+		"live": {}, "next": INF, "gone": [], "sum": Vector2.ZERO, "lo": Vector2i(1 << 30, 1 << 30), "hi": Vector2i(-(1 << 30), -(1 << 30))}
+
+
+## Works the field's shape out until the clock passes `until` (usec), a step
+## at a time: "scan" (which cells live now, which went, when the next changes,
+## the box and middle of the living ones), then the byte grid of the living
+## cells, the outline round them, the lip under them and the void's swallowed
+## light; then the shading begins (_begin_work). As _bake did it in one go.
+func _shape_step(field: Dictionary, until: int) -> void:
+	var work: Dictionary = field.work
+	var now := float(work.now)
+	if str(work.phase) == "scan":
+		var cells: Dictionary = field.cells
+		var hidden: Dictionary = field.hide
+		var keys: Array = work.keys
+		var live: Dictionary = work.live
+		var gone: Array = work.gone
+		var next := float(work.next)
+		var sum: Vector2 = work.sum
+		var lo: Vector2i = work.lo
+		var hi: Vector2i = work.hi
+		var i := int(work.i)
+		while i < keys.size():
+			var q: Vector2i = keys[i]
+			i += 1
+			var held: Variant = cells.get(q)
+			if held != null:
+				var c: Array = held
+				if now >= float(c[1]):
+					gone.append(q)
+				elif now >= float(c[0]):
+					if not hidden.has(q):
+						live[q] = float(c[2])
+						sum += Vector2(q)
+						lo = Vector2i(mini(lo.x, q.x), mini(lo.y, q.y))
+						hi = Vector2i(maxi(hi.x, q.x), maxi(hi.y, q.y))
+					next = minf(next, float(c[1]))
+				else:
+					next = minf(next, float(c[0]))
+			if i & 63 == 0 and Time.get_ticks_usec() >= until:
+				break
+		work.i = i
+		work.next = next
+		work.sum = sum
+		work.lo = lo
+		work.hi = hi
+		if i < keys.size():
+			return
+		work.phase = "gone"
+		work.i = 0
+	if str(work.phase) == "gone":
+		if not _shape_gone(field, work, until):
+			return
+		_shape_scanned(field, work)
+		if not field.has("work"):
+			return
+	var phase := str(work.phase)
+	var keys: Array = work.live_keys
+	var live: Dictionary = work.live
+	var grid: PackedByteArray = work.grid
+	var gw := int(work.gw)
+	var box: Rect2i = work.box
+	var w := box.size.x
+	var ox := box.position.x
+	var oy := box.position.y
+	var px: PackedByteArray = work.base
+	var i := int(work.i)
+	while phase != "done":
+		match phase:
+			"grid":
+				# which cells are liquid, as a byte grid over the box with a margin
+				# of two (quicker to ask than the dictionary; every neighbour test is one index)
+				while i < keys.size():
+					var q: Vector2i = keys[i]
+					i += 1
+					grid[(q.y - oy + 2) * gw + q.x - ox + 2] = 1
+					if i & 255 == 0 and Time.get_ticks_usec() >= until:
+						break
+			"outline":
+				# the outline round it (beside it and above, where nothing lies there nor under that)
+				var outline: Color = work.outline
+				while i < keys.size():
+					var q: Vector2i = keys[i]
+					i += 1
+					var x := q.x - ox
+					var y := q.y - oy
+					var gi := (y + 2) * gw + x + 2
+					if grid[gi + 1] == 0 and grid[gi + 1 + gw] == 0:
+						_px(px, (y * w + x + 1) * 4, outline)
+					if grid[gi - 1] == 0 and grid[gi - 1 + gw] == 0:
+						_px(px, (y * w + x - 1) * 4, outline)
+					if i & 127 == 0 and Time.get_ticks_usec() >= until:
+						break
+			"lip":
+				# the dark lip under its south edge
+				var outline: Color = work.outline
+				var deep: Color = work.deep
+				while i < keys.size():
+					var q: Vector2i = keys[i]
+					i += 1
+					var x := q.x - ox
+					var y := q.y - oy
+					var gi := (y + 2) * gw + x + 2
+					if grid[gi + gw] == 0:
+						_px(px, ((y + 1) * w + x) * 4, deep)
+						if grid[gi + 2 * gw] == 0:
+							_px(px, ((y + 2) * w + x) * 4, outline)
+					if i & 127 == 0 and Time.get_ticks_usec() >= until:
+						break
+			"halo":
+				# the light round the void is swallowed: floor cells up to 4 beyond its rim
+				var halo: Dictionary = work.halo
+				while i < keys.size():
+					var q: Vector2i = keys[i]
+					i += 1
+					var gi := (q.y - oy + 2) * gw + q.x - ox + 2
+					if not (grid[gi + 1] == 1 and grid[gi - 1] == 1 and grid[gi + gw] == 1 and grid[gi - gw] == 1):
+						for dy in range(-4, 5):
+							for dx in range(-4, 5):
+								var c := q + Vector2i(dx, dy)
+								if live.has(c): continue
+								var d := maxi(absi(dx), absi(dy))
+								if d < int(halo.get(c, 9)) and _open_cell(c): halo[c] = d
+					if i & 15 == 0 and Time.get_ticks_usec() >= until:
+						break
+		if i < keys.size():
+			work.i = i
+			work.phase = phase
+			work.grid = grid
+			work.base = px
+			return
+		i = 0
+		match phase:
+			"grid": phase = "outline"
+			"outline": phase = "lip"
+			"lip": phase = "halo" if str(work.style) == "void" else "done"
+			_: phase = "done"
+	# the shape stays for the bakes that only move the animation on (until a
+	# cell is born or goes, or a crust cools: field.next)
+	var shape := {"mat": str(work.mat), "next": float(work.next), "live": live, "keys": keys, "grid": grid, "gw": gw, "box": box, "base": px,
+		"halo": work.halo, "mid": work.mid, "hearts": work.hearts, "void_cache": work.void_cache}
+	field.shape = shape
+	_begin_work(field, shape, str(work.style), now, int(work.frame), int(work.since))
+
+
+## The cells the scan of the field's shape found gone leave it (ice leaving
+## melt water) until the clock passes `until` (usec); true when all have.
+func _shape_gone(field: Dictionary, work: Dictionary, until: int) -> bool:
 	var cells: Dictionary = field.cells
-	var live := {}
-	var next := INF
-	var gone: Array = []
 	var hidden: Dictionary = field.hide
-	for q: Vector2i in cells:
-		var c: Array = cells[q]
-		if now >= float(c[1]):
-			gone.append(q)
-			continue
-		if now >= float(c[0]):
-			if not hidden.has(q):
-				live[q] = float(c[2])
-			next = minf(next, float(c[1]))
-		else:
-			next = minf(next, float(c[0]))
+	var now := float(work.now)
+	var gone: Array = work.gone
+	var mat := str(work.mat)
 	var melt := str(cfg.materials[mat].get("melt_to", ""))
-	if melt != "" and cfg.materials.has(melt):
-		var dry: Array = _phys("water_dry", [2.5, 4.0])
-		for q: Vector2i in gone:
-			if (cells[q] as Array).size() == 3 and not hidden.has(q):
+	var melts: bool = melt != "" and cfg.materials.has(melt)
+	var dry: Array = _phys("water_dry", [2.5, 4.0]) if melts else []
+	var i := int(work.i)
+	while i < gone.size():
+		var q: Vector2i = gone[i]
+		i += 1
+		var held: Variant = cells.get(q)
+		# still gone (a pool laid since may have filled it again)
+		if held != null and now >= float((held as Array)[1]):
+			if melts and (held as Array).size() == 3 and not hidden.has(q):
 				_melts.append([q, now + _rng.randf_range(float(dry[0]), float(dry[1])), melt])
-	for q: Vector2i in gone:
-		cells.erase(q)
-		hidden.erase(q)
+			cells.erase(q)
+			hidden.erase(q)
+		if i & 63 == 0 and Time.get_ticks_usec() >= until:
+			break
+	work.i = i
+	return i >= gone.size()
+
+
+## The scan of the field's shape is done and the cells that went have left
+## (_shape_step): cooled crust goes, the middle, the void's hearts and the
+## next change are known; the grid and picture of the box are made ready for
+## the next steps (or the field shows nothing when none live).
+func _shape_scanned(field: Dictionary, work: Dictionary) -> void:
+	var mat := str(work.mat)
+	var style := str(work.style)
+	var now := float(work.now)
+	var live: Dictionary = work.live
+	var next := float(work.next)
 	var crust: Dictionary = field.crust
 	for q: Vector2i in crust.keys():
 		if now >= float(crust[q]): crust.erase(q)
 		else: next = minf(next, float(crust[q]))
 	_crust = crust
-	_lava_sites.clear()
-	var sum := Vector2.ZERO
-	for q: Vector2i in live: sum += Vector2(q)
-	_mid = sum / float(maxi(1, live.size()))
+	if _lava_sites.size() > 50000:
+		_lava_sites.clear()
+	_mid = Vector2(work.sum) / float(maxi(1, live.size()))
 	_hearts = []
 	if style == "void":
 		for key: String in _pools:
@@ -389,56 +699,83 @@ func _bake(field: Dictionary, mat: String, style: String, now: float, frame: int
 			field.void_cache = {}
 		_void_cache = field.void_cache
 	field.next = next
-	field.col = {}
-	field.list = []
-	field.rim = []
+	work.next = next
 	if live.is_empty():
 		field.tex = null
+		field.col = {}
+		field.list = []
+		field.rim = []
+		field.erase("shape")
+		field.erase("work")
 		return
-	var lo := Vector2i(1 << 30, 1 << 30)
-	var hi := Vector2i(-(1 << 30), -(1 << 30))
-	for q: Vector2i in live:
-		lo = Vector2i(mini(lo.x, q.x), mini(lo.y, q.y))
-		hi = Vector2i(maxi(hi.x, q.x), maxi(hi.y, q.y))
+	var lo: Vector2i = work.lo
+	var hi: Vector2i = work.hi
 	var box := Rect2i(lo - Vector2i(1, 1), hi - lo + Vector2i(3, 5))
 	var R: Dictionary = _ramps[mat]
+	var gw := box.size.x + 4
+	var grid := PackedByteArray()
+	grid.resize(gw * (box.size.y + 4))
+	var px := PackedByteArray()
+	px.resize(box.size.x * box.size.y * 4)
+	work.erase("keys")
+	work.erase("gone")
+	work.phase = "grid"
+	work.i = 0
+	work.live_keys = live.keys()
+	work.box = box
+	work.gw = gw
+	work.grid = grid
+	work.base = px
+	work.outline = R.outline
+	work.deep = R.deep
+	work.halo = {}
+	work.mid = _mid
+	work.hearts = _hearts
+	work.void_cache = _void_cache
+
+
+## Starts the slices of shading `shape` (see _bake); `since` when this bake
+## began (msec; now when -1), for the catch-up budget in draw.
+func _begin_work(field: Dictionary, shape: Dictionary, style: String, now: float, frame: int, since := -1) -> void:
+	field.work = {"shape": shape, "style": style, "now": now, "frame": frame, "i": 0, "px": (shape.base as PackedByteArray).duplicate(),
+		"col": {}, "list": [], "rim": [], "since": since if since >= 0 else Time.get_ticks_msec()}
+
+
+## Shades the cells of the field's work in progress until the clock passes
+## `until` (usec); when all are, its picture, colours and outline change at once.
+func _bake_step(field: Dictionary, until: int) -> void:
+	if (field.work as Dictionary).has("phase"):
+		_shape_step(field, until)
+		if not field.has("work") or (field.work as Dictionary).has("phase") or Time.get_ticks_usec() >= until:
+			return
+	var work: Dictionary = field.work
+	var shape: Dictionary = work.shape
+	var mat := str(shape.mat)
+	var style := str(work.style)
+	var now := float(work.now)
+	var frame := int(work.frame)
+	var R: Dictionary = _ramps[mat]
+	# what _shade reads of the field being shaded
+	_mid = shape.mid
+	_hearts = shape.hearts
+	_void_cache = shape.void_cache
+	_crust = field.crust
+	var keys: Array = shape.keys
+	var live: Dictionary = shape.live
+	var grid: PackedByteArray = shape.grid
+	var gw := int(shape.gw)
+	var box: Rect2i = shape.box
 	var w := box.size.x
-	var h := box.size.y
 	var ox := box.position.x
 	var oy := box.position.y
-	# which cells are liquid, as a byte grid over the box with a margin of two
-	# (quicker to ask than the dictionary; every neighbour test is one index)
-	var gw := w + 4
-	var grid := PackedByteArray()
-	grid.resize(gw * (h + 4))
-	for q: Vector2i in live:
-		grid[(q.y - oy + 2) * gw + q.x - ox + 2] = 1
-	var px := PackedByteArray()
-	px.resize(w * h * 4)
-	var outline: Color = R.outline
-	var deep: Color = R.deep
-	# the outline round it (beside it and above, where nothing lies there nor
-	# under that) and the dark lip under its south edge
-	for q: Vector2i in live:
-		var x := q.x - ox
-		var y := q.y - oy
-		var gi := (y + 2) * gw + x + 2
-		if grid[gi + 1] == 0 and grid[gi + 1 + gw] == 0:
-			_px(px, (y * w + x + 1) * 4, outline)
-		if grid[gi - 1] == 0 and grid[gi - 1 + gw] == 0:
-			_px(px, (y * w + x - 1) * 4, outline)
-	for q: Vector2i in live:
-		var x := q.x - ox
-		var y := q.y - oy
-		var gi := (y + 2) * gw + x + 2
-		if grid[gi + gw] == 0:
-			_px(px, ((y + 1) * w + x) * 4, deep)
-			if grid[gi + 2 * gw] == 0:
-				_px(px, ((y + 2) * w + x) * 4, outline)
-	var col_map: Dictionary = field.col
-	var list: Array = field.list
-	var rim: Array = field.rim
-	for q: Vector2i in live:
+	var px: PackedByteArray = work.px
+	var col_map: Dictionary = work.col
+	var list: Array = work.list
+	var rim: Array = work.rim
+	var i := int(work.i)
+	while i < keys.size():
+		var q: Vector2i = keys[i]
+		i += 1
 		var x := q.x - ox
 		var y := q.y - oy
 		var gi := (y + 2) * gw + x + 2
@@ -451,25 +788,24 @@ func _bake(field: Dictionary, mat: String, style: String, now: float, frame: int
 		list.append(q)
 		if nb & 9 == 0:
 			rim.append(q)
-	field.halo = {}
-	if style == "void":
-		# the light round it is swallowed: floor cells up to 4 beyond its rim
-		field.halo_tick = -1
-		var halo: Dictionary = field.halo
-		for q: Vector2i in live:
-			var gi := (q.y - oy + 2) * gw + q.x - ox + 2
-			if grid[gi + 1] == 1 and grid[gi - 1] == 1 and grid[gi + gw] == 1 and grid[gi - gw] == 1: continue
-			for dy in range(-4, 5):
-				for dx in range(-4, 5):
-					var c := q + Vector2i(dx, dy)
-					if live.has(c): continue
-					var d := maxi(absi(dx), absi(dy))
-					if d < int(halo.get(c, 9)) and _open_cell(c): halo[c] = d
+		if i & 63 == 0 and Time.get_ticks_usec() >= until:
+			break
+	work.i = i
+	work.px = px
+	if i < keys.size():
+		return
+	# all shaded: the new picture
+	field.erase("work")
+	field.col = col_map
+	field.list = list
+	field.rim = rim
+	field.halo = shape.halo
+	field.halo_tick = -1
 	var img: Image = field.img
 	if img != null and img.get_size() == box.size:
-		img.set_data(w, h, false, Image.FORMAT_RGBA8, px)
+		img.set_data(w, box.size.y, false, Image.FORMAT_RGBA8, px)
 	else:
-		img = Image.create_from_data(w, h, false, Image.FORMAT_RGBA8, px)
+		img = Image.create_from_data(w, box.size.y, false, Image.FORMAT_RGBA8, px)
 	field.img = img
 	if field.tex == null or (field.tex as ImageTexture).get_size() != Vector2(box.size):
 		field.tex = ImageTexture.create_from_image(img)
@@ -599,7 +935,15 @@ func _shade(q: Vector2i, nb: int, rank: float, R: Dictionary, style: String, now
 				return R.body if _h(q.x, q.y, 2) % 3 == 0 else R.shade
 			if not dn:
 				return R.deep
-			var heat := _noise(q.x + frame / 2, q.y - frame / 3, 3, 9)
+			# the heat drifts over the field: the same noise cell by cell, worked out once
+			var spot := Vector2i(q.x + frame / 2, q.y - frame / 3)
+			var known: Variant = _fire_noise.get(spot)
+			if known == null:
+				if _fire_noise.size() > 200000:
+					_fire_noise.clear()
+				known = _noise(spot.x, spot.y, 3, 9)
+				_fire_noise[spot] = known
+			var heat: float = known
 			if heat > 0.84:
 				return R.hi
 			if heat > 0.77:

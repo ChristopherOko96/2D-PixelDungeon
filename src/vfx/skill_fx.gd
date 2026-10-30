@@ -17,6 +17,7 @@ const FxSprites = preload("res://src/vfx/fx_sprites.gd")
 const Glow = preload("res://src/vfx/glow.gd")
 const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
 const PixelBolt = preload("res://src/vfx/pixel_bolt.gd")
+const PerfMarks = preload("res://src/debug/perf_marks.gd")
 const CHEST_FRAMES := [preload("res://assets/sprites/0x72/chest_full_open_anim_f0.png"), preload("res://assets/sprites/0x72/chest_full_open_anim_f1.png"), preload("res://assets/sprites/0x72/chest_full_open_anim_f2.png")]
 const CRATE := preload("res://assets/sprites/0x72/crate.png")
 const BURSTS := {"fire": "fire_burst", "frost": "frost_burst", "arcane": "arcane_burst", "stone": "stone_burst", "void": "void_burst"}
@@ -31,6 +32,8 @@ var pools: RefCounted = null
 ## The world's gas layer (src/vfx/gas.gd): poison zones give off fumes in it.
 var gas: RefCounted = null
 var _seen: Dictionary = {}
+## The storm zones' pictures of the current beat (zone id -> {tick, at, picture}).
+var _storm_pictures: Dictionary = {}
 ## Storm strikes already landed ("zone id:strike number"): each scorches once.
 var _strikes: Dictionary = {}
 ## A storm zone strikes once every this many seconds (a bolt from the cloud).
@@ -76,6 +79,7 @@ const COLORS := {"fire": Color("f39a3c"), "frost": Color("8fd8e6"), "arcane": Co
 # --- Under the actors --------------------------------------------------------------
 
 func draw_ground(canvas: CanvasItem, snapshot: Dictionary, clock: float) -> void:
+	PerfMarks.begin()
 	# Stairs on a boss floor stay barred until its boss has fallen.
 	if not bool(snapshot.get("stairs_open", true)):
 		for exit: Dictionary in snapshot.get("room_layout", {}).get("exits", []):
@@ -97,14 +101,18 @@ func draw_ground(canvas: CanvasItem, snapshot: Dictionary, clock: float) -> void
 		for zone: Dictionary in snapshot.get("skill_fx", {}).get("zones", []):
 			if str(zone.kind) in ["poison", "lava"]:
 				entries.append({"id": int(zone.id), "k": "pool", "st": str(zone.kind), "x": float(zone.x), "y": float(zone.y), "r": float(zone.r), "p": 0.0, "L": maxf(0.3, float(zone.t))})
+		PerfMarks.add("sg.start")
 		pools.sync(entries, clock, "skill")
+		PerfMarks.add("sg.pools_sync")
 		pools.draw(canvas, clock)
+		PerfMarks.add("sg.pools_draw")
 	if gas != null:
 		var fumes: Array = []
 		for zone: Dictionary in snapshot.get("skill_fx", {}).get("zones", []):
 			if str(zone.kind) == "poison":
 				fumes.append({"id": int(zone.id), "k": "gas", "st": "poison", "x": float(zone.x), "y": float(zone.y), "r": float(zone.r) * 0.8, "p": 0.0, "L": maxf(0.3, float(zone.t)), "d": 0.45})
 		gas.sync(fumes, clock, "skill")
+	PerfMarks.add("sg.gas_sync")
 	for zone: Dictionary in snapshot.get("skill_fx", {}).get("zones", []):
 		var point := Vector2(float(zone.x), float(zone.y))
 		var radius := float(zone.r)
@@ -124,7 +132,18 @@ func draw_ground(canvas: CanvasItem, snapshot: Dictionary, clock: float) -> void
 				canvas.draw_circle(point, radius, Color(1.0, 0.45, 0.1, 0.28 * fade))
 				canvas.draw_circle(point, radius * 0.55, Color(1.0, 0.8, 0.3, (0.25 + 0.1 * sin(clock * 9.0 + float(zone.id))) * fade))
 			"storm":
-				_draw_storm(canvas, zone, point, radius, clock)
+				# worked out once per 12 fps beat, drawn as a picture
+				var tick := int(clock * PixelPaint.FPS)
+				var held: Dictionary = _storm_pictures.get(int(zone.id), {})
+				if int(held.get("tick", -1)) != tick or Vector2(held.get("at", Vector2.INF)) != point:
+					var rec := PixelPaint.Recorder.new()
+					rec.art = 2.0
+					_draw_storm(rec, zone, point, radius, float(tick) / PixelPaint.FPS)
+					held = {"tick": tick, "at": point, "picture": PixelPaint.bake(rec.cells, 2.0)}
+					if _storm_pictures.size() > 16:
+						_storm_pictures.clear()
+					_storm_pictures[int(zone.id)] = held
+				PixelPaint.draw_baked(canvas, held.picture, 2.0)
 			"decoy":
 				# the mirror image, or a clone seal's clone in its hero's own look
 				var figure: Texture2D = CLONE_LOOKS.get(str(zone.get("look", "")), DECOY)
@@ -824,7 +843,7 @@ func _spike(canvas: CanvasItem, point: Vector2, color: Color) -> void:
 ## STORM_EVERY s at a spot inside it (src/vfx/pixel_bolt.gd: there at once,
 ## bright for a moment, then gone); where one lands it scorches the floor and
 ## throws sparks once, and a liquid there conducts it (pools.electrify).
-func _draw_storm(canvas: CanvasItem, zone: Dictionary, point: Vector2, radius: float, clock: float) -> void:
+func _draw_storm(canvas: Object, zone: Dictionary, point: Vector2, radius: float, clock: float) -> void:
 	var id := int(zone.id)
 	var crawl := int(clock * PixelPaint.FPS)
 	PixelPaint.disc(canvas, point, radius, radius * 0.75, Color("1c2244"), 2.0, 0.3)

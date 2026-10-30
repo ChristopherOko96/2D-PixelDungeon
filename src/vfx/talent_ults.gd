@@ -985,12 +985,61 @@ static func zone(canvas: CanvasItem, talent: String, at: Vector2, r: float, left
 		"fire_6": _burning_ground(canvas, at, r, left, total, art, clock, seed)
 
 
+## The Todeszones' cells of the current beat, by zone (seed): {tick, at, r, stage, layers}.
+static var _zone_cells: Dictionary = {}
+
+
+## The Todeszone: its picture is worked out once per 12 fps beat (its look
+## moves on that beat; PixelPaint.bake) and drawn as it is in the frames between.
 static func _death_zone(canvas: CanvasItem, at: Vector2, r: float, left: float, total: float, stage: int, every: float, art: float, clock: float, seed: int) -> void:
+	var tick := int(clock * PixelPaint.FPS)
+	var held: Dictionary = _zone_cells.get(seed, {})
+	if int(held.get("tick", -1)) != tick or Vector2(held.get("at", Vector2.INF)) != at or float(held.get("r", -1.0)) != r or int(held.get("stage", -1)) != stage:
+		# the zone at the beat's own time
+		var back := clock - float(tick) / PixelPaint.FPS
+		held = {"tick": tick, "at": at, "r": r, "stage": stage,
+			"baked": PixelPaint.bake(_draw_list(_death_zone_layers(at, r, left + back, total, stage, every, art, float(tick) / PixelPaint.FPS, seed)), art)}
+		if _zone_cells.size() > 32:
+			_zone_cells.clear()
+		_zone_cells[seed] = held
+	PixelPaint.draw_baked(canvas, held.baked, art)
+
+
+## Layers (["paint" | "under" | "flush", cells, outline]) as the cells and
+## colours they paint, in order (as _paint, _flush_under and _flush would):
+## [cell, colour, cell, colour, ...].
+static func _draw_list(layers: Array) -> Array:
+	var out: Array = []
+	for layer: Array in layers:
+		var cells: Dictionary = layer[1]
+		match str(layer[0]):
+			"under":
+				for q: Vector2i in cells:
+					if not cells.has(q + Vector2i(0, 1)):
+						out.append_array([q + Vector2i(0, 1), Pal.INK])
+			"flush":
+				if bool(layer[2]):
+					var ink := {}
+					for q: Vector2i in cells:
+						for o: Vector2i in N4:
+							if not cells.has(q + o):
+								ink[q + o] = true
+					for q: Vector2i in ink:
+						out.append_array([q, Pal.INK])
+		for q: Vector2i in cells:
+			out.append_array([q, cells[q]])
+	return out
+
+
+## The Todeszone's cells at `clock` as layers to paint in order:
+## ["paint" | "under" | "flush", cells, outline].
+static func _death_zone_layers(at: Vector2, r: float, left: float, total: float, stage: int, every: float, art: float, clock: float, seed: int) -> Array:
+	var layers: Array = []
 	var poison: Array = Pal.ramp("poison")
 	var age := total - left
 	var cover := clampf(age / 0.4, 0.0, 1.0) * clampf(left / 0.6, 0.0, 1.0)
 	if cover <= 0.0:
-		return
+		return layers
 	var frame := int(clock * PixelPaint.FPS)
 	var ph := fposmod(age, maxf(0.1, every)) / maxf(0.1, every)
 	if stage >= 1:
@@ -999,7 +1048,7 @@ static func _death_zone(canvas: CanvasItem, at: Vector2, r: float, left: float, 
 		for i in range(5):
 			var c := at + Vector2.from_angle(TAU * _h(seed, 200 + i)) * r * 0.65 * sqrt(_h(seed, 210 + i))
 			_disc(murk, c, (4.0 + 3.0 * _h(seed, 220 + i)) * art, poison[0], art, 0.45 * cover)
-		_paint(canvas, murk, art)
+		layers.append(["paint", murk, false])
 	var lines := {}
 	_oval(lines, at, r * _out(ph), r * _out(ph), 0.0, TAU, poison[3] if ph < 0.2 else poison[2], art, cover * (1.0 - ph) * 0.85)
 	_oval(lines, at, r, r, 0.0, TAU, poison[4] if ph < 0.1 else poison[3], art, cover, 3, frame)
@@ -1018,7 +1067,7 @@ static func _death_zone(canvas: CanvasItem, at: Vector2, r: float, left: float, 
 		for o: Vector2i in shape:
 			if PixelPaint.shown(spot + o, cover):
 				lines[spot + o] = poison[4] if bp >= 0.8 else poison[3]
-	_flush_under(canvas, lines, art)
+	layers.append(["under", lines, false])
 	var solid := {}
 	if stage >= 1:
 		# reeds swaying in the murk
@@ -1045,7 +1094,8 @@ static func _death_zone(canvas: CanvasItem, at: Vector2, r: float, left: float, 
 			solid[q] = heart[q]
 		for o: Vector2i in [Vector2i(2, 1), Vector2i(3, 1), Vector2i(1, 2)]:
 			solid[c + o] = poison[3] if beat else poison[2]
-	_flush(canvas, solid, art, cover > 0.5)
+	layers.append(["flush", solid, cover > 0.5])
+	return layers
 
 
 static func _burning_ground(canvas: CanvasItem, at: Vector2, r: float, left: float, total: float, art: float, clock: float, seed: int) -> void:
@@ -1194,8 +1244,7 @@ static func _hole(at: Vector2, body: Vector2, art: float) -> Rect2i:
 
 
 static func _paint(canvas: CanvasItem, cells: Dictionary, art: float) -> void:
-	for q: Vector2i in cells:
-		PixelPaint.cell(canvas, q, cells[q], art)
+	PixelPaint.paint(canvas, cells, art)
 
 
 ## Draws `cells` (Vector2i -> Color) with a Pal.INK outline round them (or
@@ -1203,21 +1252,29 @@ static func _paint(canvas: CanvasItem, cells: Dictionary, art: float) -> void:
 static func _flush(canvas: CanvasItem, cells: Dictionary, art: float, outline := true, hole := Rect2i()) -> void:
 	if outline:
 		var ink := {}
+		var holed := hole.has_area()
 		for q: Vector2i in cells:
-			for o: Vector2i in N4:
-				if not cells.has(q + o) and not hole.has_point(q + o):
-					ink[q + o] = true
-		for q: Vector2i in ink:
-			PixelPaint.cell(canvas, q, Pal.INK, art)
-	_paint(canvas, cells, art)
+			var n := q + Vector2i(1, 0)
+			if not cells.has(n) and not (holed and hole.has_point(n)): ink[n] = Pal.INK
+			n = q + Vector2i(-1, 0)
+			if not cells.has(n) and not (holed and hole.has_point(n)): ink[n] = Pal.INK
+			n = q + Vector2i(0, 1)
+			if not cells.has(n) and not (holed and hole.has_point(n)): ink[n] = Pal.INK
+			n = q + Vector2i(0, -1)
+			if not cells.has(n) and not (holed and hole.has_point(n)): ink[n] = Pal.INK
+		PixelPaint.paint(canvas, ink, art)
+	PixelPaint.paint(canvas, cells, art)
 
 
 ## Thin lines and dots: a dark underlay one cell lower instead of an outline.
 static func _flush_under(canvas: CanvasItem, cells: Dictionary, art: float) -> void:
+	var ink := {}
 	for q: Vector2i in cells:
-		if not cells.has(q + Vector2i(0, 1)):
-			PixelPaint.cell(canvas, q + Vector2i(0, 1), Pal.INK, art)
-	_paint(canvas, cells, art)
+		var n := q + Vector2i(0, 1)
+		if not cells.has(n):
+			ink[n] = Pal.INK
+	PixelPaint.paint(canvas, ink, art)
+	PixelPaint.paint(canvas, cells, art)
 
 
 ## Draws ramp ranks (Vector2i -> 0..4) with their ramp colours.
@@ -1235,6 +1292,8 @@ static func _flame(ranks: Dictionary, b: Vector2i, half: float, h: float, clock:
 	if h < 1.0 or half < 0.5:
 		return
 	var frame := int(clock * PixelPaint.FPS)
+	var bayer: Array = PixelPaint.BAYER
+	var holed := hole.has_area()
 	for j in range(int(ceilf(h)) + 1):
 		var v := float(j) / h
 		var w := half * pow(maxf(0.0, 1.0 - v), 0.65) * (1.0 + 0.14 * sin(v * 8.0 + float(frame) * 1.3 + float(seed)))
@@ -1242,11 +1301,12 @@ static func _flame(ranks: Dictionary, b: Vector2i, half: float, h: float, clock:
 		for x in range(roundi(sway - w), roundi(sway + w) + 1):
 			var q := b + Vector2i(x, -j)
 			var k := cover
-			if hole.has_point(q):
+			if holed and hole.has_point(q):
 				# sparse over the hero, thickening towards the hole's edge (no hard box)
 				var rel := (Vector2(q) - Vector2(hole.get_center())) / (Vector2(hole.size) * 0.5)
 				k *= lerpf(hole_cover, 1.0, smoothstep(0.55, 1.0, maxf(absf(rel.x), absf(rel.y) * 0.8)))
-			if k < 1.0 and not PixelPaint.shown(q, k):
+			# the dither inline (PixelPaint.shown)
+			if k < 1.0 and not (float(bayer[((q.y & 3) << 2) | (q.x & 3)]) < k * 16.0):
 				continue
 			var u := absf(float(x) - sway) / maxf(0.5, w + 0.5)
 			var rank := 2
@@ -1319,12 +1379,19 @@ static func _disc(cells: Dictionary, c: Vector2, rad: float, col: Color, art: fl
 		return
 	var lo := PixelPaint.at(c - Vector2(rad, rad), art)
 	var hi := PixelPaint.at(c + Vector2(rad, rad), art)
+	# the dither asked first (cheap, most cells of a faint disc stop there)
+	var all := cover >= 1.0
+	var thr := cover * 16.0
+	var bayer: Array = PixelPaint.BAYER
+	var holed := hole.has_area()
+	var rr := rad * rad
 	for y in range(lo.y, hi.y + 1):
+		var row := (y & 3) << 2
 		for x in range(lo.x, hi.x + 1):
-			var q := Vector2i(x, y)
-			if ((Vector2(q) + Vector2(0.5, 0.5)) * art - c).length_squared() > rad * rad or hole.has_point(q):
+			if not all and not (float(bayer[row | (x & 3)]) < thr):
 				continue
-			if cover < 1.0 and not PixelPaint.shown(q, cover):
+			var q := Vector2i(x, y)
+			if ((Vector2(q) + Vector2(0.5, 0.5)) * art - c).length_squared() > rr or (holed and hole.has_point(q)):
 				continue
 			cells[q] = col
 

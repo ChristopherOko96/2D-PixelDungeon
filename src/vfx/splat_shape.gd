@@ -47,6 +47,16 @@ static func _droplet_budget(count: int, droplets: int) -> int:
 
 static func _spread(out: Dictionary, start: Vector2i, d: Vector2, count: int, art: float, open: Callable, memo: Dictionary,
 		seed: int, squash: float, momentum: float) -> void:
+	# per step: its length on the slanted floor and how much it runs along the
+	# flight, worked out once (the same numbers as working them out per step)
+	var lengths: Array = []
+	var alongs: Array = []
+	for step: Vector2i in STEPS:
+		var v := Vector2(step)
+		lengths.append(Vector2(v.x, v.y / squash).length())
+		alongs.append(d.dot(v.normalized()) if d != Vector2.ZERO else 0.0)
+	# each cell's rim noise once (the walls are asked once per cell through `memo`)
+	var rough := {}
 	var best := {start: 0.0}
 	var buckets: Array = [[start]]
 	var at := 0
@@ -61,17 +71,38 @@ static func _spread(out: Dictionary, start: Vector2i, d: Vector2, count: int, ar
 			continue
 		out[q] = out.size()
 		var here: float = best[q]
-		for step: Vector2i in STEPS:
+		for s in range(8):
+			var step: Vector2i = STEPS[s]
 			var n: Vector2i = q + step
-			if out.has(n) or not _open(n, art, open, memo):
+			if out.has(n):
+				continue
+			var ok: Variant = memo.get(n)
+			if ok == null:
+				ok = open.call((Vector2(n) + Vector2(0.5, 0.5)) * art)
+				memo[n] = ok
+			if not ok:
 				continue
 			# a diagonal only through an open corner, so nothing leaks through a wall seam
-			if step.x != 0 and step.y != 0 and not (_open(q + Vector2i(step.x, 0), art, open, memo) and _open(q + Vector2i(0, step.y), art, open, memo)):
-				continue
-			var v := Vector2(step)
-			var length := Vector2(v.x, v.y / squash).length()
-			var along := d.dot(v.normalized()) if d != Vector2.ZERO else 0.0
-			var cost := here + length * (1.0 - 0.6 * momentum * along) * (0.7 + 0.6 * _noise(n, seed))
+			if step.x != 0 and step.y != 0:
+				var side := q + Vector2i(step.x, 0)
+				var free: Variant = memo.get(side)
+				if free == null:
+					free = open.call((Vector2(side) + Vector2(0.5, 0.5)) * art)
+					memo[side] = free
+				if not free:
+					continue
+				side = q + Vector2i(0, step.y)
+				free = memo.get(side)
+				if free == null:
+					free = open.call((Vector2(side) + Vector2(0.5, 0.5)) * art)
+					memo[side] = free
+				if not free:
+					continue
+			var noise: Variant = rough.get(n)
+			if noise == null:
+				noise = _noise(n, seed)
+				rough[n] = noise
+			var cost: float = here + float(lengths[s]) * (1.0 - 0.6 * momentum * float(alongs[s])) * (0.7 + 0.6 * float(noise))
 			if cost < float(best.get(n, INF)):
 				best[n] = cost
 				var k := int(cost * QUANT)

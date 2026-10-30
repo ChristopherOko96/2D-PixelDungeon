@@ -24,6 +24,8 @@ var particles: RefCounted = null
 var _vortices: Dictionary = {}
 ## Breath cones seen warning (id -> zone): when one goes it has struck.
 var _breaths: Dictionary = {}
+## The vortices' pictures of the current beat (zone id -> {tick, at, r, picture}).
+var _vortex_pictures: Dictionary = {}
 ## Material colour ramps by style (_ramp_of), cached.
 var _ramps: Dictionary = {}
 ## What gas a breath of each style leaves.
@@ -63,7 +65,7 @@ func _ramp_of(style: String, color: Color) -> Dictionary:
 ## dashes and brightening as they near it, and the eye is a hole of void with a
 ## ring of the last light turning round it. `p` 0..1: how far it has come (the
 ## eye opens). Cells stop at walls (PixelPaint.clip, set by the host).
-func _draw_vortex(canvas: CanvasItem, at: Vector2, radius: float, p: float, style: String, color: Color, clock: float) -> void:
+func _draw_vortex(canvas: Object, at: Vector2, radius: float, p: float, style: String, color: Color, clock: float) -> void:
 	var V := _ramp_of(style, color)
 	var tq := floorf(clock * PixelPaint.FPS)
 	var eye := radius * lerpf(0.12, 0.24, clampf(p * 3.0, 0.0, 1.0))
@@ -153,6 +155,7 @@ func _wells_of(zones: Array) -> void:
 		var gone: Dictionary = _vortices[id]
 		particles.implode(Vector2(float(gone.x), float(gone.y)), float(gone.r) * 0.6)
 		_vortices.erase(id)
+		_vortex_pictures.erase(id)
 	for id: int in now: _vortices[id] = now[id]
 
 
@@ -180,7 +183,16 @@ func draw_ground(canvas: CanvasItem, snapshot: Dictionary, clock: float) -> void
 			"ring":
 				PixelPaint.warning(canvas, at, radius, radius, progress, color, INK, ART, clock)
 			"vortex":
-				_draw_vortex(canvas, at, radius, progress, str(zone.st), color, clock)
+				# worked out once per 12 fps beat (its look moves on that beat), drawn as a picture
+				var tick := int(clock * PixelPaint.FPS)
+				var held: Dictionary = _vortex_pictures.get(int(zone.id), {})
+				if int(held.get("tick", -1)) != tick or Vector2(held.get("at", Vector2.INF)) != at or float(held.get("r", -1.0)) != radius:
+					var rec := PixelPaint.Recorder.new()
+					rec.art = ART
+					_draw_vortex(rec, at, radius, progress, str(zone.st), color, float(tick) / PixelPaint.FPS)
+					held = {"tick": tick, "at": at, "r": radius, "picture": PixelPaint.bake(rec.cells, ART)}
+					_vortex_pictures[int(zone.id)] = held
+				PixelPaint.draw_baked(canvas, held.picture, ART)
 			"skull":
 				var pulse := int(floorf(clock * 10.0)) % 2
 				var shrink := 1.0 - progress * 0.5

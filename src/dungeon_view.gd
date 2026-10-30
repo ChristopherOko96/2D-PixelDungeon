@@ -294,6 +294,15 @@ func _prepare_presentation(snapshot: Dictionary) -> void:
 var frame_stats := {"process": 0, "draw": 0, "glow": 0, "frames": 0}
 
 
+## When the section being timed began (usec, _sec).
+var _sec_t := 0
+
+
+## Adds the time since _sec_t to frame_stats[`name`] (a measure for the benches).
+func _sec(name: String) -> void:
+	frame_stats[name] = int(frame_stats.get(name, 0)) + Time.get_ticks_usec() - _sec_t
+
+
 func _process(delta: float) -> void:
 	var started := Time.get_ticks_usec()
 	_process_view(delta)
@@ -314,9 +323,15 @@ func _process_view(delta: float) -> void:
 		_clock += delta
 		_actor_motion.advance(delta)
 		if _rigs != null: _rigs.step(delta)
+	_sec_t = Time.get_ticks_usec()
 	_feedback.update(delta)
+	_sec("particles")
+	_sec_t = Time.get_ticks_usec()
 	_fx.update(delta)
+	_sec("sprites")
+	_sec_t = Time.get_ticks_usec()
 	if _gas != null and _feedback.hitstop <= 0: _gas.step(delta, _clock)
+	_sec("gas")
 	if _feedback.hitstop <= 0 and not _pending_snapshot.is_empty(): _accept_state(_pending_snapshot)
 	_update_darkness()
 	_update_fog()
@@ -391,24 +406,38 @@ func _draw_view() -> void:
 		_attack_fx.particles = _feedback.particles
 		_attack_fx.fx = _fx
 		_attack_fx.observe(_snapshot,_clock)
+		_sec_t = Time.get_ticks_usec()
 		_feedback.particles.draw_stains(self)
+		_sec("stains")
+		_sec_t = Time.get_ticks_usec()
 		_skill_fx.draw_ground(self,_snapshot,_clock)
+		_sec("skill.ground+pools")
 		# warnings and pools stop at the walls like the pools' liquid (src/vfx/pixel_paint.gd clip)
 		PixelPaint.clip = _open_floor
+		_sec_t = Time.get_ticks_usec()
 		_boss_fx.draw_ground(self,_snapshot,_clock)
+		_sec("boss+pools")
 		PixelPaint.clip = Callable()
 		_sheet_art.draw_hazards(self,_snapshot.get("hazards",[]),false,_clock)
 		PixelPaint.clip = _open_floor
+		_sec_t = Time.get_ticks_usec()
 		_talent_fx.draw_ground(self,_snapshot.get("talents",{}),_clock)
+		_sec("talent.ground")
 		PixelPaint.clip = Callable()
 		_wade_pools()
 		# the gas lies over the floor, under the actors (they stay readable over it)
 		PixelPaint.clip = _open_floor
+		_sec_t = Time.get_ticks_usec()
 		if _gas != null: _gas.draw(self, _clock)
+		_sec("gas")
 		PixelPaint.clip = Callable()
+	_sec_t = Time.get_ticks_usec()
 	if actors_visible: _talent_fx.draw_pets(self,_snapshot.get("talents",{}),_clock)
+	_sec("talent.pets")
 	var rigs_on: bool = _rigs != null and _rigs.is_ready()
+	_sec_t = Time.get_ticks_usec()
 	if rigs_on and actors_visible: _rigs.draw_under(self)
+	_sec("rigs")
 	var enemies: Array = _snapshot.get("enemies", [])
 	var players: Dictionary = _snapshot.get("players", {})
 	var depth_entries: Array[Dictionary] = []
@@ -467,7 +496,9 @@ func _draw_view() -> void:
 			"loot": _skill_fx.draw_loot(self,entry.data,_clock)
 			"reward": _draw_pedestal()
 	if room_visible and not _classic_enabled: Tiles.draw_foreground(self,render_snapshot)
+	_sec_t = Time.get_ticks_usec()
 	if rigs_on and actors_visible and _effects_visible: _rigs.draw_over(self,_snapshot)
+	_sec("rigs")
 	if _slices != null and actors_visible: _slices.draw(self,_clock)
 	# Footsteps land exactly when a hero rig's foot touches down.
 	_feedback.rig_footsteps = rigs_on
@@ -477,19 +508,31 @@ func _draw_view() -> void:
 		_rigs.footfalls.clear()
 	if _effects_visible:
 		_draw_perk_events()
+		_sec_t = Time.get_ticks_usec()
 		_skill_fx.draw_over(self,_snapshot,_clock)
+		_sec("skill.over")
+		_sec_t = Time.get_ticks_usec()
 		_boss_fx.draw_over(self,_snapshot,_clock,_position)
+		_sec("boss+pools")
 		_sheet_art.draw_hazards(self,_snapshot.get("hazards",[]),true,_clock)
 		# talent effects and what lasts on the heroes stop at the walls (src/vfx/talent_fx.gd)
 		PixelPaint.clip = _open_floor
+		_sec_t = Time.get_ticks_usec()
 		_talent_fx.draw_events(self,_snapshot.get("talents",{}),_clock)
+		_sec("talent.events")
+		_sec_t = Time.get_ticks_usec()
 		_talent_fx.draw_auras(self,_snapshot.get("talents",{}),_clock,_talent_where)
+		_sec("talent.auras")
 		PixelPaint.clip = Callable()
 		PixelPaint.clip = _open_floor
 		_attack_fx.draw_flashes(self,_clock)
 		PixelPaint.clip = Callable()
+		_sec_t = Time.get_ticks_usec()
 		_feedback.particles.draw_particles(self)
+		_sec("particles")
+		_sec_t = Time.get_ticks_usec()
 		_fx.draw(self)
+		_sec("sprites")
 		if not freeform and not _classic_enabled: _draw_motes()
 
 

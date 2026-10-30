@@ -89,17 +89,64 @@ static func _ring_cells(c: Vector2, r_out: float, width: float, art: float) -> A
 	return out
 
 
+## Rings asked of _ring, by [centre, outer radius, width, art].
+static var _rings: Dictionary = {}
+
+
+## The cells of _ring_cells as a flat list [x, y, layer, lit, ...] in the same
+## order (lit 1 where sin(angle) < -0.2: the north rim; always 0 without
+## `north`), remembered while the same ring is asked again (a nova's front
+## holding its radius).
+static func _ring(c: Vector2, r_out: float, width: float, art: float, north := true) -> PackedInt32Array:
+	var key := [c, r_out, width, art, north]
+	var held: Variant = _rings.get(key)
+	if held != null:
+		return held
+	var out := PackedInt32Array()
+	var cc := c / art
+	var big := r_out / art
+	if big >= 1.0:
+		var small := maxf(0.0, big - width)
+		var layers := maxi(1, ceili(width))
+		for gy in range(floori(cc.y - big), ceili(cc.y + big) + 1):
+			var dy := float(gy) + 0.5 - cc.y
+			if absf(dy) > big:
+				continue
+			var xo := sqrt(big * big - dy * dy)
+			var spans: Array = []
+			if absf(dy) < small:
+				var xi := sqrt(small * small - dy * dy)
+				spans = [Vector2(cc.x - xo, cc.x - xi), Vector2(cc.x + xi, cc.x + xo)]
+			else:
+				spans = [Vector2(cc.x - xo, cc.x + xo)]
+			for span: Vector2 in spans:
+				for gx in range(floori(span.x) - 1, ceili(span.y) + 1):
+					var rel := Vector2(float(gx) + 0.5 - cc.x, dy)
+					var d := rel.length()
+					if d > big or d < small:
+						continue
+					out.append(gx)
+					out.append(gy)
+					out.append(clampi(int(big - d), 0, layers - 1))
+					out.append(1 if north and sin(rel.angle()) < -0.2 else 0)
+	if _rings.size() > 64:
+		_rings.clear()
+	_rings[key] = out
+	return out
+
+
 ## Draws a cell map (cell -> colour) with a Pal.INK outline round it; `open_below`
 ## leaves the bottom edge without outline (soft gas).
 static func _flush(canvas: CanvasItem, cells: Dictionary, art: float, open_below := false) -> void:
+	var ink := {}
 	for q: Vector2i in cells:
 		for o: Vector2i in SIDES:
 			if open_below and o.y > 0:
 				continue
 			if not cells.has(q + o):
-				PixelPaint.cell(canvas, q + o, Pal.INK, art)
-	for q: Vector2i in cells:
-		PixelPaint.cell(canvas, q, cells[q], art)
+				ink[q + o] = Pal.INK
+	PixelPaint.paint(canvas, ink, art)
+	PixelPaint.paint(canvas, cells, art)
 
 
 ## Keeps only the cells of a map shown at dither coverage `cover`.
@@ -184,47 +231,79 @@ static func nova(canvas: CanvasItem, at: Vector2, r: float, p: float, element: S
 	var rad := r * (0.25 + 0.75 * _out(k))
 	var cover := 1.0 if p <= 0.3 else 1.0 - (p - 0.3) / 0.7
 	var width := 3.0 if heavy else 2.0
+	# per cell: the dither first (PixelPaint.shown inline), then the wall clip
+	# from its memo, then the pixel (as PixelPaint.cell draws it)
+	var bayer: Array = PixelPaint.BAYER
+	var clipped := PixelPaint.clip.is_valid()
+	var memo: Dictionary = PixelPaint.clip_memo() if clipped else {}
+	var ai := int(art)
+	var size := Vector2(art, art)
 	# the wake: the floor lit just behind the front, only while it runs
 	if p < 0.4:
 		var glow := 1.0 - p / 0.4
 		var wake := clampf(rad / art * 0.3, 2.0, 6.0)
-		for e: Array in _ring_cells(at, rad - width * art, wake, art):
-			var q: Vector2i = e[0]
-			var depth := float(e[1]) / wake
-			if PixelPaint.shown(q, glow * 0.55 * (1.0 - depth)):
-				PixelPaint.cell(canvas, q, cols[2] if depth < 0.3 else cols[1], art)
+		var cells := _ring(at, rad - width * art, wake, art, false)
+		for i in range(0, cells.size(), 4):
+			var x := cells[i]
+			var y := cells[i + 1]
+			var depth := float(cells[i + 2]) / wake
+			if not (float(bayer[((y & 3) << 2) | (x & 3)]) < glow * 0.55 * (1.0 - depth) * 16.0):
+				continue
+			if clipped:
+				var open: Variant = memo.get(Vector3i(x, y, ai))
+				if open == null: open = PixelPaint.open_cell(Vector2i(x, y), art)
+				if not open: continue
+			canvas.draw_rect(Rect2(Vector2(x, y) * art, size), cols[2] if depth < 0.3 else cols[1])
 	# a flash where it started
 	if p < 0.15:
 		PixelPaint.disc(canvas, at, 4.0 * art, 3.0 * art, cols[2], art, 1.0 - p / 0.15)
 		PixelPaint.disc(canvas, at, 2.0 * art, 1.5 * art, cols[3], art, 1.0 - p / 0.15)
-	# the ring of the front: underlay first, then the lit layers
-	var ring := _ring_cells(at, rad, width, art)
-	for e: Array in ring:
-		var q: Vector2i = e[0]
-		var layer: int = e[1]
-		if PixelPaint.shown(q, cover - (0.0 if p <= 0.3 else 0.15 * layer)):
-			PixelPaint.cell(canvas, q + Vector2i(0, 1), Pal.INK, art)
-	for e: Array in ring:
-		var q: Vector2i = e[0]
-		var layer: int = e[1]
-		if not PixelPaint.shown(q, cover - (0.0 if p <= 0.3 else 0.15 * layer)):
+	# the ring of the front: its dark underlay one cell lower and the lit
+	# layers, row by row (each row's underlay lands on the next row before
+	# that row's own cells cover it: the same as all underlay first)
+	var ring := _ring(at, rad, width, art)
+	for i in range(0, ring.size(), 4):
+		var x := ring[i]
+		var y := ring[i + 1]
+		var layer := ring[i + 2]
+		if not (float(bayer[((y & 3) << 2) | (x & 3)]) < (cover - (0.0 if p <= 0.3 else 0.15 * layer)) * 16.0):
 			continue
-		var north := sin(float(e[2])) < -0.2
+		var below := true
+		var here := true
+		if clipped:
+			var open: Variant = memo.get(Vector3i(x, y + 1, ai))
+			if open == null: open = PixelPaint.open_cell(Vector2i(x, y + 1), art)
+			below = open
+			open = memo.get(Vector3i(x, y, ai))
+			if open == null: open = PixelPaint.open_cell(Vector2i(x, y), art)
+			here = open
+		if below:
+			canvas.draw_rect(Rect2(Vector2(x, y + 1) * art, size), Pal.INK)
+		if not here:
+			continue
+		var north := ring[i + 3] == 1
 		var col: Color
 		match layer:
 			0: col = cols[3]
 			1: col = cols[2] if north else cols[1]
 			_: col = cols[1] if north else cols[0]
-		if layer == 0 and north and posmod(q.x * 7 + q.y * 3 + seed, 7) == 0:
+		if layer == 0 and north and posmod(x * 7 + y * 3 + seed, 7) == 0:
 			col = cols[4]
-		PixelPaint.cell(canvas, q, col, art)
+		canvas.draw_rect(Rect2(Vector2(x, y) * art, size), col)
 	# an ultimate's second, darker ring lingering inside
 	if heavy and p > 0.12 and p < 0.75:
 		var echo := 1.0 - (p - 0.12) / 0.63
-		for e: Array in _ring_cells(at, r * 0.8 * (0.3 + 0.7 * _out((p - 0.12) / 0.3)), 1.5, art):
-			var q: Vector2i = e[0]
-			if PixelPaint.shown(q, echo * 0.8):
-				PixelPaint.cell(canvas, q, cols[2] if sin(float(e[2])) < -0.2 else cols[1], art)
+		var cells := _ring(at, r * 0.8 * (0.3 + 0.7 * _out((p - 0.12) / 0.3)), 1.5, art)
+		for i in range(0, cells.size(), 4):
+			var x := cells[i]
+			var y := cells[i + 1]
+			if not (float(bayer[((y & 3) << 2) | (x & 3)]) < echo * 0.8 * 16.0):
+				continue
+			if clipped:
+				var open: Variant = memo.get(Vector3i(x, y, ai))
+				if open == null: open = PixelPaint.open_cell(Vector2i(x, y), art)
+				if not open: continue
+			canvas.draw_rect(Rect2(Vector2(x, y) * art, size), cols[2] if cells[i + 3] == 1 else cols[1])
 	# debris along the rim
 	var count := clampi(int(rad / art / (2.5 if heavy else 3.5)), 10, 40 if heavy else 30)
 	for i in range(count):

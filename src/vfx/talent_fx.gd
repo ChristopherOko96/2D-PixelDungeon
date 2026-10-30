@@ -16,6 +16,7 @@ extends RefCounted
 ## Presentation only.
 
 const FxSprites = preload("res://src/vfx/fx_sprites.gd")
+const PerfMarks = preload("res://src/debug/perf_marks.gd")
 const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
 const Glow = preload("res://src/vfx/glow.gd")
 const Pal = preload("res://src/vfx/talent_palette.gd")
@@ -109,7 +110,9 @@ func _snap(p: Vector2) -> Vector2:
 ## Floor layer: zones and traps (under the actors).
 func draw_ground(canvas: CanvasItem, state: Dictionary, clock: float) -> void:
 	_clock = clock
+	PerfMarks.begin()
 	_observe(state, clock)
+	PerfMarks.add("tg.observe")
 	var zones: Array = state.get("zones", [])
 	if pools != null:
 		var entries: Array = []
@@ -121,6 +124,7 @@ func draw_ground(canvas: CanvasItem, state: Dictionary, clock: float) -> void:
 			if float(_ult_pools[id].until) < clock: _ult_pools.erase(id)
 			else: entries.append(_ult_pools[id].entry)
 		pools.sync(entries, clock, "talent")
+		PerfMarks.add("tg.pools_sync")
 		if draw_pools: pools.draw(canvas, clock)
 	if gas != null:
 		# the poison zones' clouds: they spread, gather in corners, part round heroes
@@ -131,6 +135,7 @@ func draw_ground(canvas: CanvasItem, state: Dictionary, clock: float) -> void:
 			clouds.append({"id": int(zone.get("id", 0)), "k": "gas", "st": "poison", "x": float(zone.x), "y": float(zone.y), "r": float(zone.r),
 				"p": clampf(1.0 - float(zone.get("time", length)) / length, 0.0, 1.0), "L": length, "d": 1.0})
 		gas.sync(clouds, clock, "talent")
+	PerfMarks.add("tg.gas_sync")
 	for zone: Dictionary in zones:
 		var at := Vector2(float(zone.x), float(zone.y))
 		var r := float(zone.r)
@@ -155,6 +160,7 @@ func draw_ground(canvas: CanvasItem, state: Dictionary, clock: float) -> void:
 			var crawl := int(clock * PixelPaint.FPS)
 			PixelPaint.ellipse(canvas, at + Vector2(0, art), r, r, Pal.INK, art, 3, crawl)
 			PixelPaint.ellipse(canvas, at, r, r, Pal.ramp("poison")[3], art, 3, crawl)
+	PerfMarks.add("tg.zones")
 	for trap: Dictionary in state.get("traps", []):
 		var at := Vector2(float(trap.x), float(trap.y))
 		var boom := bool(trap.get("boom", false))
@@ -220,6 +226,7 @@ func draw_bullet(canvas: CanvasItem, bullet: Dictionary, clock: float) -> bool:
 ## (span). `clock` defaults to the one of the last draw_ground.
 func draw_events(canvas: CanvasItem, state: Dictionary, clock: float = -1.0) -> void:
 	if clock >= 0.0: _clock = clock
+	PerfMarks.begin()
 	for event: Dictionary in state.get("events", []):
 		var at := Vector2(float(event.x), float(event.y))
 		var span := maxf(0.05, float(event.get("span", 0.5)))
@@ -290,6 +297,7 @@ func draw_events(canvas: CanvasItem, state: Dictionary, clock: float = -1.0) -> 
 				elif talent == "frost_5":
 					# Kristallschild: the lasting dome is its aura; here the frost it forms from
 					TalentPixels.burst(canvas, at + body, 8, p, "ice", art, id)
+		PerfMarks.add("te." + str(event.kind) + ("-ult" if ult else ""))
 
 
 ## The flash of a buff when it starts (the buff itself lasts as an aura).

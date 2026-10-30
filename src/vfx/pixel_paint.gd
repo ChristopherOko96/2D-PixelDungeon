@@ -15,17 +15,116 @@ const FPS := 12.0
 ## set by the host around effects that must not shine through walls (the
 ## heroes' shots, floor warnings) and cleared after; empty draws everywhere.
 static var clip := Callable()
+## What `clip` said per art cell (Vector3i(x, y, art)), remembered while the
+## same clip holds and for a few seconds (a broken wall opens cells).
+static var _clip_memo: Dictionary = {}
+static var _clip_of := Callable()
+static var _clip_since := 0
 
 
 ## True when art cell `q` shows at coverage `k` (0..1).
 static func shown(q: Vector2i, k: float) -> bool:
-	return float(BAYER[posmod(q.y, 4) * 4 + posmod(q.x, 4)]) < k * 16.0
+	return float(BAYER[((q.y & 3) << 2) | (q.x & 3)]) < k * 16.0
 
 
-static func cell(canvas: CanvasItem, q: Vector2i, col: Color, art: float) -> void:
-	if clip.is_valid() and not clip.call((Vector2(q) + Vector2(0.5, 0.5)) * art):
+static func cell(canvas: Object, q: Vector2i, col: Color, art: float) -> void:
+	if clip.is_valid() and not open_cell(q, art):
 		return
 	canvas.draw_rect(Rect2(Vector2(q) * art, Vector2(art, art)), col)
+
+
+## True when `clip` lets art cell `q` show (always without a clip), remembered.
+static func open_cell(q: Vector2i, art: float) -> bool:
+	if not clip.is_valid():
+		return true
+	var memo := clip_memo()
+	var key := Vector3i(q.x, q.y, int(art))
+	var open: Variant = memo.get(key)
+	if open == null:
+		open = clip.call((Vector2(q) + Vector2(0.5, 0.5)) * art)
+		memo[key] = open
+	return bool(open)
+
+
+## What `clip` said per art cell (Vector3i(x, y, art) -> open), started afresh
+## when the clip changed, after 3 s (a broken wall opens cells) and when full.
+## For loops over many cells that ask it themselves (paint()).
+static func clip_memo() -> Dictionary:
+	if clip != _clip_of or Time.get_ticks_msec() - _clip_since > 3000 or _clip_memo.size() > 200000:
+		_clip_of = clip
+		_clip_memo.clear()
+		_clip_since = Time.get_ticks_msec()
+	return _clip_memo
+
+
+## Draws a map of art cells (Vector2i -> Color) as cell() would draw each of
+## them, in its order and cut by `clip`; the clip asked here, not per call
+## (a third of the cost for many cells).
+static func paint(canvas: Object, cells: Dictionary, art: float) -> void:
+	var size := Vector2(art, art)
+	if not clip.is_valid():
+		for q: Vector2i in cells:
+			canvas.draw_rect(Rect2(Vector2(q) * art, size), cells[q])
+		return
+	var memo := clip_memo()
+	var a := int(art)
+	for q: Vector2i in cells:
+		var key := Vector3i(q.x, q.y, a)
+		var open: Variant = memo.get(key)
+		if open == null:
+			open = clip.call((Vector2(q) + Vector2(0.5, 0.5)) * art)
+			memo[key] = open
+		if open:
+			canvas.draw_rect(Rect2(Vector2(q) * art, size), cells[q])
+
+
+## A drawing target that records the cells drawn on it ([cell, colour, ...]
+## in cells) instead of drawing them, for bake(): the pixel drawing here and
+## in the effects takes it where it takes a CanvasItem (only draw_rect).
+class Recorder extends RefCounted:
+	var art := 2.0
+	var cells: Array = []
+
+	func draw_rect(rect: Rect2, color: Color, _filled := true, _width := -1.0, _antialiased := false) -> void:
+		cells.append(Vector2i((rect.position / art).round()))
+		cells.append(color)
+
+
+## A list of opaque cells and colours ([cell, colour, cell, colour, ...], later
+## ones over earlier ones, as cell() would draw them; cut by `clip` now) as one
+## picture: {tex, at (first art cell), size}; empty for no cells. For effects
+## that change on a beat: bake once per beat, draw_baked every frame.
+static func bake(draw: Array, art: float) -> Dictionary:
+	if draw.is_empty():
+		return {}
+	var lo := Vector2i(1 << 30, 1 << 30)
+	var hi := Vector2i(-(1 << 30), -(1 << 30))
+	for i in range(0, draw.size(), 2):
+		var q: Vector2i = draw[i]
+		lo = Vector2i(mini(lo.x, q.x), mini(lo.y, q.y))
+		hi = Vector2i(maxi(hi.x, q.x), maxi(hi.y, q.y))
+	var w := hi.x - lo.x + 1
+	var h := hi.y - lo.y + 1
+	var px := PackedByteArray()
+	px.resize(w * h * 4)
+	for i in range(0, draw.size(), 2):
+		var q: Vector2i = draw[i]
+		if clip.is_valid() and not open_cell(q, art):
+			continue
+		var c: Color = draw[i + 1]
+		var b := ((q.y - lo.y) * w + q.x - lo.x) * 4
+		px[b] = c.r8
+		px[b + 1] = c.g8
+		px[b + 2] = c.b8
+		px[b + 3] = 255
+	return {"tex": ImageTexture.create_from_image(Image.create_from_data(w, h, false, Image.FORMAT_RGBA8, px)), "at": lo, "size": Vector2i(w, h)}
+
+
+## Draws a picture from bake().
+static func draw_baked(canvas: CanvasItem, baked: Dictionary, art: float) -> void:
+	if baked.is_empty():
+		return
+	canvas.draw_texture_rect(baked.tex, Rect2(Vector2(baked.at) * art, Vector2(baked.size) * art), false)
 
 
 static func at(p: Vector2, art: float) -> Vector2i:
@@ -33,7 +132,7 @@ static func at(p: Vector2, art: float) -> Vector2i:
 
 
 ## An ellipse rim of whole pixels; every `every`-th pixel (crawling with `phase`).
-static func ellipse(canvas: CanvasItem, c: Vector2, rx: float, ry: float, col: Color, art: float, every := 1, phase := 0) -> void:
+static func ellipse(canvas: Object, c: Vector2, rx: float, ry: float, col: Color, art: float, every := 1, phase := 0) -> void:
 	if rx < art or ry < art:
 		return
 	var n := maxi(12, int(TAU * maxf(rx, ry) / art))
@@ -50,7 +149,7 @@ static func ellipse(canvas: CanvasItem, c: Vector2, rx: float, ry: float, col: C
 
 
 ## A filled ellipse of whole pixels at dither coverage `cover`.
-static func disc(canvas: CanvasItem, c: Vector2, rx: float, ry: float, col: Color, art: float, cover := 1.0) -> void:
+static func disc(canvas: Object, c: Vector2, rx: float, ry: float, col: Color, art: float, cover := 1.0) -> void:
 	if cover <= 0.0:
 		return
 	for gy in range(int(floor((c.y - ry) / art)), int(ceil((c.y + ry) / art)) + 1):
@@ -63,7 +162,7 @@ static func disc(canvas: CanvasItem, c: Vector2, rx: float, ry: float, col: Colo
 ## A warning on the floor that strikes when `k` reaches 1: its area filling up
 ## by the dither (sparse to dense), a dashed rim crawling round over a dark
 ## underlay (blinking faster near the end) and a ring growing from the middle.
-static func warning(canvas: CanvasItem, c: Vector2, rx: float, ry: float, k: float, col: Color, ink: Color, art: float, t: float) -> void:
+static func warning(canvas: Object, c: Vector2, rx: float, ry: float, k: float, col: Color, ink: Color, art: float, t: float) -> void:
 	var fill := col.darkened(0.45)
 	disc(canvas, c, rx, ry, fill, art, 0.12 + 0.38 * k)
 	var crawl := int(floorf(t * FPS))

@@ -15,7 +15,7 @@ const STORM := [Color("f4f6ff"), Color("8fa4ff"), Color("3a3a8a")]
 
 ## Draws a bolt from `from` to `to` that is `age` s old (nothing before 0 or
 ## after `life`), its bends from `seed`; `cols`: spec, body, deep.
-static func draw(canvas: CanvasItem, from: Vector2, to: Vector2, age: float, seed: int, art: float, cols: Array = STORM, life: float = 0.2, branches: int = 2) -> void:
+static func draw(canvas: Object, from: Vector2, to: Vector2, age: float, seed: int, art: float, cols: Array = STORM, life: float = 0.2, branches: int = 2) -> void:
 	if age < 0.0 or age > life or from.distance_to(to) < art:
 		return
 	var bright := age < life * 0.35
@@ -51,7 +51,7 @@ static func _zigzag(from: Vector2, to: Vector2, seed: int, art: float) -> Packed
 
 
 ## One strand along `points`: core cells, a body cell beside each when `thick`.
-static func _strand(canvas: CanvasItem, points: PackedVector2Array, core: Color, body: Color, art: float, thick: bool) -> void:
+static func _strand(canvas: Object, points: PackedVector2Array, core: Color, body: Color, art: float, thick: bool) -> void:
 	for k in range(points.size() - 1):
 		var a := points[k] / art
 		var b := points[k + 1] / art
