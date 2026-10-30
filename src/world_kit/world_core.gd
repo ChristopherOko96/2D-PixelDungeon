@@ -1846,8 +1846,13 @@ static func to_raw(W: Dictionary) -> Dictionary:
 	for l: Dictionary in W.lights:
 		lights.append({"x": _r1(l.x), "y": _r1(l.y), "r": l.r, "c": l.c})
 	var th: Dictionary = W.theme
+	var theme := {"dark": th.dark, "grade": th.grade, "vignette": th.vignette, "embers": th.embers, "hot": th.hot, "wall_glow": th.wallGlow, "circle": th.circle}
+	# the world's flags (a pack's theme_flag: crypt, frost) travel with the floor, as the baked floors had them
+	for k: String in th:
+		if th[k] is bool:
+			theme[k] = th[k]
 	return {"n": W.n, "title": W.title, "circle": W.circle, "final": W.final, "seed": W.seed,
-		"theme": {"dark": th.dark, "grade": th.grade, "vignette": th.vignette, "embers": th.embers, "hot": th.hot, "wall_glow": th.wallGlow, "circle": th.circle},
+		"theme": theme,
 		"boss": W.boss, "diff": W.diff, "cols": cols, "rows": W.ROWS, "cell": int(C),
 		"grid": grid.get_string_from_ascii(), "holes": holes.get_string_from_ascii(), "tile_names": TILE_NAMES, "tiles": tiles.get_string_from_ascii(),
 		"room_at": Array(W.roomAt), "quick": quick.size() if quick != null else -1,

@@ -248,7 +248,7 @@
  "altar": {
   "h": 114,
   "kind": "sprite",
-  "src": "hell altar, frozen (build_frost_extras.py)",
+  "src": "hell altar, frozen, snow cap (build_frost_extras.py)",
   "w": 190
  },
  "banner_1": {
@@ -302,25 +302,25 @@
  "barrel_a": {
   "h": 66,
   "kind": "sprite",
-  "src": "hell barrel_a, frozen (build_frost_extras.py)",
+  "src": "hell barrel_a, frozen, snow cap (build_frost_extras.py)",
   "w": 43
  },
  "barrel_b": {
   "h": 70,
   "kind": "sprite",
-  "src": "hell barrel_b, frozen (build_frost_extras.py)",
+  "src": "hell barrel_b, frozen, snow cap (build_frost_extras.py)",
   "w": 52
  },
  "barrel_c": {
   "h": 68,
   "kind": "sprite",
-  "src": "hell barrel_c, frozen (build_frost_extras.py)",
+  "src": "hell barrel_c, frozen, snow cap (build_frost_extras.py)",
   "w": 51
  },
  "bench": {
   "h": 52,
   "kind": "sprite",
-  "src": "hell bench, frozen (build_frost_extras.py)",
+  "src": "hell bench, frozen, snow cap (build_frost_extras.py)",
   "w": 131
  },
  "blood_a": {
@@ -416,7 +416,7 @@
  "boss_arch": {
   "h": 188,
   "kind": "sprite",
-  "src": "hell boss_arch, frozen (build_frost_extras.py)",
+  "src": "hell boss_arch, frozen, snow cap (build_frost_extras.py)",
   "w": 257
  },
  "boss_banner": {
@@ -464,13 +464,13 @@
  "boss_gate": {
   "h": 179,
   "kind": "sprite",
-  "src": "hell boss_gate, frozen (build_frost_extras.py)",
+  "src": "hell boss_gate, frozen, snow cap (build_frost_extras.py)",
   "w": 288
  },
  "boss_gate_blue": {
   "h": 179,
   "kind": "sprite",
-  "src": "hell boss_gate_blue, frozen (build_frost_extras.py)",
+  "src": "hell boss_gate_blue, frozen, snow cap (build_frost_extras.py)",
   "w": 288
  },
  "boss_golem_p1_f0": {
@@ -620,7 +620,7 @@
  "boulders": {
   "h": 47,
   "kind": "sprite",
-  "src": "hell boulders, frozen (build_frost_extras.py)",
+  "src": "hell boulders, frozen, snow cap (build_frost_extras.py)",
   "w": 63
  },
  "bowl_blue": {
@@ -698,7 +698,7 @@
  "cage_small": {
   "h": 130,
   "kind": "sprite",
-  "src": "hell cage_small, frozen (build_frost_extras.py)",
+  "src": "hell cage_small, frozen, snow cap (build_frost_extras.py)",
   "w": 50
  },
  "candelabra": {
@@ -764,7 +764,7 @@
  "chest_closed": {
   "h": 76,
   "kind": "sprite",
-  "src": "hell chest_closed, frozen (build_frost_extras.py)",
+  "src": "hell chest_closed, frozen, snow cap (build_frost_extras.py)",
   "w": 97
  },
  "chest_empty": {
@@ -800,37 +800,37 @@
  "coal_skulls": {
   "h": 55,
   "kind": "sprite",
-  "src": "hell coal_skulls, frozen (build_frost_extras.py)",
+  "src": "hell coal_skulls, frozen, snow cap (build_frost_extras.py)",
   "w": 86
  },
  "corner_cap": {
   "h": 76,
   "kind": "design",
-  "src": "hell corner_cap, frozen (build_frost_extras.py)",
+  "src": "hell corner_cap, frozen, snow cap (build_frost_extras.py)",
   "w": 76
  },
  "crate_a": {
   "h": 88,
   "kind": "sprite",
-  "src": "hell crate_a, frozen (build_frost_extras.py)",
+  "src": "hell crate_a, frozen, snow cap (build_frost_extras.py)",
   "w": 68
  },
  "crate_b": {
   "h": 76,
   "kind": "sprite",
-  "src": "hell crate_b, frozen (build_frost_extras.py)",
+  "src": "hell crate_b, frozen, snow cap (build_frost_extras.py)",
   "w": 62
  },
  "crate_c": {
   "h": 88,
   "kind": "sprite",
-  "src": "hell crate_c, frozen (build_frost_extras.py)",
+  "src": "hell crate_c, frozen, snow cap (build_frost_extras.py)",
   "w": 63
  },
  "crate_pile": {
   "h": 98,
   "kind": "sprite",
-  "src": "hell crate_pile, frozen (build_frost_extras.py)",
+  "src": "hell crate_pile, frozen, snow cap (build_frost_extras.py)",
   "w": 90
  },
  "demon_head": {
@@ -842,7 +842,7 @@
  "demon_lintel": {
   "h": 110,
   "kind": "sprite",
-  "src": "hell demon_lintel, frozen (build_frost_extras.py)",
+  "src": "hell demon_lintel, frozen, snow cap (build_frost_extras.py)",
   "w": 264
  },
  "demon_plate": {
@@ -854,13 +854,13 @@
  "door_stairs": {
   "h": 110,
   "kind": "sprite",
-  "src": "hell door_stairs, frozen (build_frost_extras.py)",
+  "src": "hell door_stairs, frozen, snow cap (build_frost_extras.py)",
   "w": 162
  },
  "door_stairs_small": {
   "h": 108,
   "kind": "sprite",
-  "src": "hell door_stairs_small, frozen (build_frost_extras.py)",
+  "src": "hell door_stairs_small, frozen, snow cap (build_frost_extras.py)",
   "w": 109
  },
  "fire_orb": {
@@ -950,20 +950,32 @@
  "fountain": {
   "h": 148,
   "kind": "sprite",
-  "src": "hell fountain, frozen (build_frost_extras.py)",
+  "src": "hell fountain, frozen, snow cap (build_frost_extras.py)",
   "w": 120
  },
  "gargoyle": {
   "h": 135,
   "kind": "sprite",
-  "src": "hell gargoyle, frozen (build_frost_extras.py)",
+  "src": "hell gargoyle, frozen, snow cap (build_frost_extras.py)",
   "w": 104
  },
  "gate_side": {
   "h": 133,
   "kind": "sprite",
-  "src": "hell gate_side, frozen (build_frost_extras.py)",
+  "src": "hell gate_side, frozen, snow cap (build_frost_extras.py)",
   "w": 177
+ },
+ "glacier_a": {
+  "h": 105,
+  "kind": "sprite",
+  "src": "drawn: glacier_a (build_frost_extras.py)",
+  "w": 95
+ },
+ "glacier_b": {
+  "h": 94,
+  "kind": "sprite",
+  "src": "drawn: glacier_b (build_frost_extras.py)",
+  "w": 82
  },
  "grate": {
   "h": 104,
@@ -994,6 +1006,18 @@
   "kind": "sprite",
   "src": "hell heart, frozen (build_frost_extras.py)",
   "w": 57
+ },
+ "ice_burst": {
+  "h": 108,
+  "kind": "sprite",
+  "src": "drawn: ice_burst (build_frost_extras.py)",
+  "w": 96
+ },
+ "ice_crack": {
+  "h": 42,
+  "kind": "sprite",
+  "src": "drawn: ice_crack (build_frost_extras.py)",
+  "w": 96
  },
  "icon_chest": {
   "h": 54,
@@ -1034,13 +1058,13 @@
  "jamb_a": {
   "h": 137,
   "kind": "sprite",
-  "src": "hell jamb_a, frozen (build_frost_extras.py)",
+  "src": "hell jamb_a, frozen, snow cap (build_frost_extras.py)",
   "w": 47
  },
  "jamb_b": {
   "h": 136,
   "kind": "sprite",
-  "src": "hell jamb_b, frozen (build_frost_extras.py)",
+  "src": "hell jamb_b, frozen, snow cap (build_frost_extras.py)",
   "w": 47
  },
  "key": {
@@ -1352,19 +1376,19 @@
  "moss_rubble_a": {
   "h": 74,
   "kind": "sprite",
-  "src": "hell moss_rubble_a, frozen (build_frost_extras.py)",
+  "src": "hell moss_rubble_a, frozen, snow cap (build_frost_extras.py)",
   "w": 85
  },
  "moss_rubble_b": {
   "h": 56,
   "kind": "sprite",
-  "src": "hell moss_rubble_b, frozen (build_frost_extras.py)",
+  "src": "hell moss_rubble_b, frozen, snow cap (build_frost_extras.py)",
   "w": 96
  },
  "moss_ruin": {
   "h": 109,
   "kind": "sprite",
-  "src": "hell moss_ruin, frozen (build_frost_extras.py)",
+  "src": "hell moss_ruin, frozen, snow cap (build_frost_extras.py)",
   "w": 83
  },
  "npc_idle_f0": {
@@ -1394,7 +1418,7 @@
  "obelisk": {
   "h": 139,
   "kind": "sprite",
-  "src": "hell obelisk, frozen (build_frost_extras.py)",
+  "src": "hell obelisk, frozen, snow cap (build_frost_extras.py)",
   "w": 83
  },
  "pit": {
@@ -1406,19 +1430,19 @@
  "portal": {
   "h": 127,
   "kind": "sprite",
-  "src": "hell portal, frozen (build_frost_extras.py)",
+  "src": "hell portal, frozen, snow cap (build_frost_extras.py)",
   "w": 169
  },
  "portal_dark": {
   "h": 134,
   "kind": "sprite",
-  "src": "hell portal_dark, frozen (build_frost_extras.py)",
+  "src": "hell portal_dark, frozen, snow cap (build_frost_extras.py)",
   "w": 150
  },
  "portcullis": {
   "h": 105,
   "kind": "sprite",
-  "src": "hell portcullis, frozen (build_frost_extras.py)",
+  "src": "hell portcullis, frozen, snow cap (build_frost_extras.py)",
   "w": 216
  },
  "rock_spike": {
@@ -1436,7 +1460,7 @@
  "rocks_a": {
   "h": 66,
   "kind": "sprite",
-  "src": "hell rocks_a, frozen (build_frost_extras.py)",
+  "src": "hell rocks_a, frozen, snow cap (build_frost_extras.py)",
   "w": 69
  },
  "rocks_b": {
@@ -1448,13 +1472,13 @@
  "rocks_dark": {
   "h": 67,
   "kind": "sprite",
-  "src": "hell rocks_dark, frozen (build_frost_extras.py)",
+  "src": "hell rocks_dark, frozen, snow cap (build_frost_extras.py)",
   "w": 44
  },
  "rocks_lava": {
   "h": 78,
   "kind": "sprite",
-  "src": "hell rocks_lava, frozen (build_frost_extras.py)",
+  "src": "hell rocks_lava, frozen, snow cap (build_frost_extras.py)",
   "w": 59
  },
  "rubble": {
@@ -1496,25 +1520,25 @@
  "rune_pillar_a": {
   "h": 141,
   "kind": "sprite",
-  "src": "hell rune_pillar_a, frozen (build_frost_extras.py)",
+  "src": "hell rune_pillar_a, frozen, snow cap (build_frost_extras.py)",
   "w": 97
  },
  "rune_pillar_b": {
   "h": 128,
   "kind": "sprite",
-  "src": "hell rune_pillar_b, frozen (build_frost_extras.py)",
+  "src": "hell rune_pillar_b, frozen, snow cap (build_frost_extras.py)",
   "w": 77
  },
  "rune_pillar_c": {
   "h": 148,
   "kind": "sprite",
-  "src": "hell rune_pillar_c, frozen (build_frost_extras.py)",
+  "src": "hell rune_pillar_c, frozen, snow cap (build_frost_extras.py)",
   "w": 85
  },
  "rune_pillar_d": {
   "h": 125,
   "kind": "sprite",
-  "src": "hell rune_pillar_d, frozen (build_frost_extras.py)",
+  "src": "hell rune_pillar_d, frozen, snow cap (build_frost_extras.py)",
   "w": 67
  },
  "rune_plate": {
@@ -1532,19 +1556,19 @@
  "sacks_a": {
   "h": 66,
   "kind": "sprite",
-  "src": "hell sacks_a, frozen (build_frost_extras.py)",
+  "src": "hell sacks_a, frozen, snow cap (build_frost_extras.py)",
   "w": 74
  },
  "sacks_b": {
   "h": 57,
   "kind": "sprite",
-  "src": "hell sacks_b, frozen (build_frost_extras.py)",
+  "src": "hell sacks_b, frozen, snow cap (build_frost_extras.py)",
   "w": 110
  },
  "sacks_c": {
   "h": 63,
   "kind": "sprite",
-  "src": "hell sacks_c, frozen (build_frost_extras.py)",
+  "src": "hell sacks_c, frozen, snow cap (build_frost_extras.py)",
   "w": 102
  },
  "shackle_a": {
@@ -1568,31 +1592,31 @@
  "shelf": {
   "h": 129,
   "kind": "sprite",
-  "src": "hell shelf, frozen (build_frost_extras.py)",
+  "src": "hell shelf, frozen, snow cap (build_frost_extras.py)",
   "w": 72
  },
  "shop_table": {
   "h": 107,
   "kind": "sprite",
-  "src": "hell shop_table, frozen (build_frost_extras.py)",
+  "src": "hell shop_table, frozen, snow cap (build_frost_extras.py)",
   "w": 169
  },
  "skull_heap": {
   "h": 105,
   "kind": "sprite",
-  "src": "hell spire_big_t, frozen (build_frost_extras.py)",
+  "src": "hell spire_big_t, frozen, snow cap (build_frost_extras.py)",
   "w": 94
  },
  "skull_obelisk": {
   "h": 118,
   "kind": "sprite",
-  "src": "hell skull_obelisk, frozen (build_frost_extras.py)",
+  "src": "hell skull_obelisk, frozen, snow cap (build_frost_extras.py)",
   "w": 85
  },
  "skull_pile": {
   "h": 68,
   "kind": "sprite",
-  "src": "hell skull_pile, frozen (build_frost_extras.py)",
+  "src": "hell skull_pile, frozen, snow cap (build_frost_extras.py)",
   "w": 85
  },
  "skull_pile_t": {
@@ -1600,6 +1624,36 @@
   "kind": "sprite",
   "src": "hell skull_pile_t, frozen (build_frost_extras.py)",
   "w": 68
+ },
+ "snow_a": {
+  "h": 120,
+  "kind": "sprite",
+  "src": "drawn: snow_a (build_frost_extras.py)",
+  "w": 120
+ },
+ "snow_b": {
+  "h": 120,
+  "kind": "sprite",
+  "src": "drawn: snow_b (build_frost_extras.py)",
+  "w": 120
+ },
+ "snow_c": {
+  "h": 120,
+  "kind": "sprite",
+  "src": "drawn: snow_c (build_frost_extras.py)",
+  "w": 120
+ },
+ "snow_d": {
+  "h": 120,
+  "kind": "sprite",
+  "src": "drawn: snow_d (build_frost_extras.py)",
+  "w": 120
+ },
+ "snowman": {
+  "h": 114,
+  "kind": "sprite",
+  "src": "drawn: snowman (build_frost_extras.py)",
+  "w": 78
  },
  "spike_block": {
   "h": 103,
@@ -1622,37 +1676,37 @@
  "spire_big": {
   "h": 105,
   "kind": "sprite",
-  "src": "hell spire_big, frozen (build_frost_extras.py)",
+  "src": "hell spire_big, frozen, snow cap (build_frost_extras.py)",
   "w": 95
  },
  "spire_big_b": {
   "h": 94,
   "kind": "sprite",
-  "src": "hell spire_big_b, frozen (build_frost_extras.py)",
+  "src": "hell spire_big_b, frozen, snow cap (build_frost_extras.py)",
   "w": 82
  },
  "spire_big_t": {
   "h": 105,
   "kind": "sprite",
-  "src": "hell spire_big_t, frozen (build_frost_extras.py)",
+  "src": "hell spire_big_t, frozen, snow cap (build_frost_extras.py)",
   "w": 94
  },
  "spire_mid": {
   "h": 101,
   "kind": "sprite",
-  "src": "hell spire_mid, frozen (build_frost_extras.py)",
+  "src": "hell spire_mid, frozen, snow cap (build_frost_extras.py)",
   "w": 64
  },
  "spire_small": {
   "h": 61,
   "kind": "sprite",
-  "src": "hell spire_small, frozen (build_frost_extras.py)",
+  "src": "hell spire_small, frozen, snow cap (build_frost_extras.py)",
   "w": 52
  },
  "spire_t": {
   "h": 111,
   "kind": "sprite",
-  "src": "hell spire_t, frozen (build_frost_extras.py)",
+  "src": "hell spire_t, frozen, snow cap (build_frost_extras.py)",
   "w": 70
  },
  "spire_tiny": {
@@ -1664,49 +1718,49 @@
  "spires_lava": {
   "h": 101,
   "kind": "sprite",
-  "src": "hell spires_lava, frozen (build_frost_extras.py)",
+  "src": "hell spires_lava, frozen, snow cap (build_frost_extras.py)",
   "w": 74
  },
  "spires_t": {
   "h": 70,
   "kind": "sprite",
-  "src": "hell spires_t, frozen (build_frost_extras.py)",
+  "src": "hell spires_t, frozen, snow cap (build_frost_extras.py)",
   "w": 81
  },
  "stairs_down": {
   "h": 150,
   "kind": "sprite",
-  "src": "hell stairs_down, frozen (build_frost_extras.py)",
+  "src": "hell stairs_down, frozen, snow cap (build_frost_extras.py)",
   "w": 152
  },
  "statue_angel": {
   "h": 135,
   "kind": "sprite",
-  "src": "hell statue_angel, frozen (build_frost_extras.py)",
+  "src": "hell statue_angel, frozen, snow cap (build_frost_extras.py)",
   "w": 104
  },
  "statue_monk": {
   "h": 128,
   "kind": "sprite",
-  "src": "hell statue_monk, frozen (build_frost_extras.py)",
+  "src": "hell statue_monk, frozen, snow cap (build_frost_extras.py)",
   "w": 50
  },
  "table_a": {
   "h": 69,
   "kind": "sprite",
-  "src": "hell table_a, frozen (build_frost_extras.py)",
+  "src": "hell table_a, frozen, snow cap (build_frost_extras.py)",
   "w": 120
  },
  "table_b": {
   "h": 78,
   "kind": "sprite",
-  "src": "hell table_b, frozen (build_frost_extras.py)",
+  "src": "hell table_b, frozen, snow cap (build_frost_extras.py)",
   "w": 128
  },
  "table_c": {
   "h": 71,
   "kind": "sprite",
-  "src": "hell table_c, frozen (build_frost_extras.py)",
+  "src": "hell table_c, frozen, snow cap (build_frost_extras.py)",
   "w": 154
  },
  "torch_a": {
@@ -1748,31 +1802,31 @@
  "urn_a": {
   "h": 90,
   "kind": "sprite",
-  "src": "hell urn_a, frozen (build_frost_extras.py)",
+  "src": "hell urn_a, frozen, snow cap (build_frost_extras.py)",
   "w": 63
  },
  "urn_b": {
   "h": 58,
   "kind": "sprite",
-  "src": "hell urn_b, frozen (build_frost_extras.py)",
+  "src": "hell urn_b, frozen, snow cap (build_frost_extras.py)",
   "w": 41
  },
  "urn_c": {
   "h": 89,
   "kind": "sprite",
-  "src": "hell urn_c, frozen (build_frost_extras.py)",
+  "src": "hell urn_c, frozen, snow cap (build_frost_extras.py)",
   "w": 58
  },
  "urn_d": {
   "h": 94,
   "kind": "sprite",
-  "src": "hell urn_d, frozen (build_frost_extras.py)",
+  "src": "hell urn_d, frozen, snow cap (build_frost_extras.py)",
   "w": 61
  },
  "urn_e": {
   "h": 91,
   "kind": "sprite",
-  "src": "hell urn_e, frozen (build_frost_extras.py)",
+  "src": "hell urn_e, frozen, snow cap (build_frost_extras.py)",
   "w": 64
  },
  "vent": {
@@ -1790,19 +1844,19 @@
  "wall_h": {
   "h": 74,
   "kind": "sprite",
-  "src": "hell wall_h, frozen (build_frost_extras.py)",
+  "src": "hell wall_h, frozen, snow cap (build_frost_extras.py)",
   "w": 188
  },
  "wall_h_glowpost": {
   "h": 96,
   "kind": "sprite",
-  "src": "hell wall_h_glowpost, frozen (build_frost_extras.py)",
+  "src": "hell wall_h_glowpost, frozen, snow cap (build_frost_extras.py)",
   "w": 58
  },
  "wall_post_slit": {
   "h": 99,
   "kind": "sprite",
-  "src": "hell wall_post_slit, frozen (build_frost_extras.py)",
+  "src": "hell wall_post_slit, frozen, snow cap (build_frost_extras.py)",
   "w": 63
  },
  "wall_skull_a": {
@@ -1838,19 +1892,19 @@
  "wall_v": {
   "h": 70,
   "kind": "design",
-  "src": "hell wall_v, frozen (build_frost_extras.py)",
+  "src": "hell wall_v, frozen, snow cap (build_frost_extras.py)",
   "w": 62
  },
  "wall_v_glow": {
   "h": 153,
   "kind": "sprite",
-  "src": "hell wall_v_glow, frozen (build_frost_extras.py)",
+  "src": "hell wall_v_glow, frozen, snow cap (build_frost_extras.py)",
   "w": 61
  },
  "wall_v_glow_b": {
   "h": 149,
   "kind": "sprite",
-  "src": "hell wall_v_glow_b, frozen (build_frost_extras.py)",
+  "src": "hell wall_v_glow_b, frozen, snow cap (build_frost_extras.py)",
   "w": 77
  },
  "wall_v_glow_blue": {

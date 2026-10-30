@@ -40,6 +40,8 @@ const StoryHero = preload("res://src/hero/story_hero.gd")
 ## The crypt's darkness and bloom in this world (src/hero/story_glow.gd).
 const StoryGlow = preload("res://src/hero/story_glow.gd")
 const Darkness = preload("res://src/vfx/darkness.gd")
+const Snowstorm = preload("res://src/vfx/snowstorm.gd")
+const FrostSnow = preload("res://src/hero/frost_snow.gd")
 const StorySave = preload("res://src/save/story_save.gd")
 ## The crypt's pause menu, in its story mode (overview, quest, map, controls, display, save).
 const PauseMenu = preload("res://src/pause_menu.gd")
@@ -206,6 +208,10 @@ var camera: Camera2D
 var actors: Layer
 ## The crypt's darkness (src/vfx/darkness.gd); src/hero/story_glow.gd lights it.
 var dark: Node2D
+## The light snowstorm over the whole screen of a world with theme "snowstorm" (src/vfx/snowstorm.gd); null elsewhere.
+var snowstorm: Node2D
+## Footprints in the snow and sliding on glaze ice in a world with theme "snow" (src/hero/frost_snow.gd); null elsewhere.
+var frost_snow: RefCounted
 ## The crypt's bloom over the darkness and the darkness's lights (src/hero/story_glow.gd).
 var story_glow: StoryGlow
 ## Additive layer for attack glows and enemy shots of the hell monsters (under the
@@ -307,6 +313,8 @@ func _ready() -> void:
 	dark.z_index = 30
 	add_child(dark)
 	story_glow = StoryGlow.new(self)
+	if theme.has("snow"):
+		frost_snow = FrostSnow.new(self, theme.snow)
 	# Ignaroth's rig hands its glow record (atlas box + rig points) to the bloom like hell_monsters.gd _mark()
 	if drake_rig != null:
 		drake_rig.glow_mark = story_glow.mark
@@ -324,6 +332,14 @@ func _ready() -> void:
 	_vignette.height = 144
 	var ui := CanvasLayer.new()
 	add_child(ui)
+	# a world with a snowstorm (theme "snowstorm", the Frostgruft): light snow over everything, HUD and menus too
+	if theme.has("snowstorm"):
+		var storm_layer := CanvasLayer.new()
+		storm_layer.layer = 90
+		add_child(storm_layer)
+		snowstorm = Snowstorm.new()
+		storm_layer.add_child(snowstorm)
+		snowstorm.configure(theme.snowstorm)
 	hud = Hud.new()
 	hud.game = self
 	hud.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -589,6 +605,8 @@ func load_floor(n: int, carry: bool) -> void:
 				e.magic = false
 	walls = Walls.build(W.grid, W.cols, W.rows, C)
 	_index_solids()
+	if frost_snow != null:
+		frost_snow.reset()
 	minimap = []
 	for r: Dictionary in W.rooms:
 		minimap.append(_minimap_shape(r))
@@ -1967,6 +1985,8 @@ func _update(dt: float) -> void:
 	_slams_after(slams)
 	_update_zones(dt)
 	_update_hazards(dt)
+	if frost_snow != null:
+		frost_snow.update(dt)
 	_update_rooms()
 	_update_embers(dt)
 	_update_camera(dt)
@@ -2691,6 +2711,10 @@ func _draw_actors(l: Layer) -> void:
 	var view := _view_rect().grow(220)
 	var t: float = state.t
 	FrostCombat.draw_under(self, l, t)
+	# footprints in the snow and skid marks on the ice, under everyone (src/hero/frost_snow.gd)
+	if frost_snow != null:
+		frost_snow.draw_floor(l, view)
+		frost_snow.draw_chips(l)
 	if talents != null: talents.draw_world(l, t)
 	# Ignaroth's severed parts lie on the floor under everyone (src/hell/drake_rig_host.gd)
 	if drake_rig != null:
@@ -2701,8 +2725,11 @@ func _draw_actors(l: Layer) -> void:
 			continue
 		match e.type:
 			"spikes":
-				var im: Texture2D = tex.spike_trap
 				var up: bool = e.get("up", false)
+				if tex.has("ice_crack"):
+					_draw_ice_trap(l, e, up)
+					continue
+				var im: Texture2D = tex.spike_trap
 				var size := im.get_size() - Vector2(0, 0 if up else 16)
 				l.draw_texture_rect(im, Rect2(Vector2(e.x, e.y + (0 if up else 8)) - im.get_size() / 2.0, size), false, Color(1, 1, 1, 1.0 if up else 0.3))
 			"vent":
@@ -3161,6 +3188,22 @@ func _draw_clone(l: Layer, t: float) -> void:
 		l.draw_texture_rect(im, Rect2(pos - Vector2(size.x / 2.0, 0), size), false, tint)
 
 
+## The Frostgruft's trap (tex ice_crack / ice_burst): a thin crack in the ice at rest; when it fires
+## an ice burst shoots up out of it (quick rise, then it stands and shimmers until it sinks back).
+func _draw_ice_trap(l: Layer, e: Dictionary, up: bool) -> void:
+	var crack: Texture2D = tex.ice_crack
+	l.draw_texture(crack, Vector2(e.x, e.y) - crack.get_size() / 2.0)
+	if not up:
+		return
+	var period := float(balance.hazards.spike_period)
+	var since := fmod(float(state.t), period)
+	var rise := clampf(since / 0.12, 0.0, 1.0)
+	var burst: Texture2D = tex.ice_burst
+	var size := burst.get_size() * Vector2(1.0, rise)
+	var shimmer := 0.85 + 0.15 * sin(float(state.t) * 18.0 + e.x)
+	l.draw_texture_rect(burst, Rect2(Vector2(e.x - size.x / 2.0, e.y + 8.0 - size.y), size), false, Color(1.0, 1.0, 1.0, shimmer))
+
+
 func _draw_hero(l: Layer, t: float) -> void:
 	# effect hook: with the feel the crypt's invulnerability look (45 % blink and the hit frame,
 	# src/hero/story_feel.gd invulnerable_look) instead of vanishing; its conditions are boss_fx.gd's (no tint)
@@ -3171,7 +3214,8 @@ func _draw_hero(l: Layer, t: float) -> void:
 	var look := SubKit.look(self)
 	if feel != null:
 		look.tint.a *= float(blink.get("alpha", 1.0))
-	var frames: Array = look.frames["run" if player.moving else "idle"]
+	var slide: bool = frost_snow != null and frost_snow.sliding()
+	var frames: Array = look.frames["run" if player.moving and not slide else "idle"]
 	var im: Texture2D = frames[int(player.anim) % 4]
 	if bool(blink.get("hit", false)):
 		im = feel.hit_frame(im)
@@ -3185,7 +3229,8 @@ func _draw_hero(l: Layer, t: float) -> void:
 		var pos := Vector2(feet.x, feet.y - size.y + 6)
 		var tint: Color = look.tint
 		tint.a *= alpha
-		l.draw_set_transform(Vector2(pos.x, feet.y + 6.0), float(pose.get("lean", 0.0)), Vector2(-1.0 if face < 0 else 1.0, 1.0))
+		var lean: float = float(pose.get("lean", 0.0)) + (float(frost_snow.slide_lean()) if frost_snow != null else 0.0)
+		l.draw_set_transform(Vector2(pos.x, feet.y + 6.0), lean, Vector2(-1.0 if face < 0 else 1.0, 1.0))
 		l.draw_texture_rect(im, Rect2(Vector2(-size.x / 2.0, -size.y), size), false, tint)
 		if float(pose.get("flash", 0.0)) > 0.0:
 			l.draw_texture_rect(feel.mask(im), Rect2(Vector2(-size.x / 2.0, -size.y), size), false, StoryFeel.flash_color(pose, tint.a))

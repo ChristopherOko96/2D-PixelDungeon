@@ -91,6 +91,8 @@ func dress(W: Dictionary) -> Dictionary:
 		W.theme.vignette = float(W.theme.vignette) * float(pack.light.vignette)
 	_boss_gate(W)
 	_decorate(W)
+	if pack.get("winter") != null:
+		_winter(W)
 	_blue_light(W)
 	# last: mire, pits, furniture and fountain never block a way (world kit rule)
 	Core.clear_ways(W)
@@ -231,6 +233,72 @@ func _boss_gate(W: Dictionary) -> void:
 		W.props.append({"name": "brazier_blue", "x": px, "y": py, "flip": false, "layer": "obj", "solid": [px - 30, py - 30, px + 30, py]})
 		W.occupied[i] = true
 		W.lights.append({"x": px, "y": py - 70, "r": 330, "c": blue, "f": k})
+
+
+## A snowy world (pack.winter, the JS winter()): fewer bones and stone heaps, snow fields on the
+## floor grown from seeds and melting around fire and light, here and there a snowman or a glacier.
+func _winter(W: Dictionary) -> void:
+	var cols: int = W.COLS
+	var P: Dictionary = pack.winter
+	var rnd := Core.Rng.new(Core.f32(float(W.seed) * 11 + 5))
+	var pick := func(list: Array) -> Variant: return list[int(floor(rnd.next() * list.size()))]
+	# fewer bones and heaps
+	var thin_d: Dictionary = P.thin_decals
+	var thin_p: Dictionary = P.thin_props
+	W.decals = W.decals.filter(func(d: Dictionary) -> bool: return not (str(d.name) in thin_d.names) or rnd.next() < float(thin_d.keep))
+	W.props = W.props.filter(func(p: Dictionary) -> bool: return not (str(p.name) in thin_p.names) or rnd.next() < float(thin_p.keep))
+	# fire and light melt the snow around them
+	var melt := (float(P.melt) * C) * (float(P.melt) * C)
+	var warm := func(x: int, y: int) -> bool:
+		for l: Dictionary in W.lights:
+			var dx := float(l.x) - (x + 0.5) * C
+			var dy := float(l.y) - (y + 0.5) * C
+			if dx * dx + dy * dy < melt:
+				return true
+		return false
+	var snow := {}
+	for r: Dictionary in W.rooms:
+		var cells: Array = r.cells.filter(func(c: Array) -> bool:
+			var k: int = c[1] * cols + c[0]
+			return Core._grid(W, k) == 1 and not W.reserved.has(k))
+		if cells.is_empty():
+			continue
+		var n := 1 + int(floor(cells.size() / float(P.seed_cells)))
+		for k in range(n):
+			var s: Array = cells[int(floor(rnd.next() * cells.size()))]
+			var rr := 2 + int(floor(rnd.next() * 6))
+			for c: Array in cells:
+				var dx: int = c[0] - s[0]
+				var dy: int = c[1] - s[1]
+				var i: int = c[1] * cols + c[0]
+				if dx * dx + dy * dy <= rr and not snow.has(i) and not warm.call(c[0], c[1]):
+					snow[i] = true
+					W.decals.append({"name": pick.call(P.snow), "x": (c[0] + 0.5) * C, "y": (c[1] + 0.5) * C, "w": P.size, "h": P.size, "a": 1})
+		# a snowman or a glacier in some fight rooms, on free floor away from the doors
+		if r.type != "combat":
+			continue
+		for pair: Array in [["snowman", P.snowman], [pick.call(P.glaciers), P.glacier]]:
+			if rnd.next() >= float(pair[1]):
+				continue
+			var spots: Array = cells.filter(func(c: Array) -> bool:
+				if W.occupied.has(c[1] * cols + c[0]):
+					return false
+				for d: Dictionary in r.doors:
+					if Core._hyp((c[0] + 0.5) * C - float(d.cx), (c[1] + 0.5) * C - float(d.cy)) < 3 * C:
+						return false
+				for p: Dictionary in W.props:
+					if p.has("solid") and p.solid != null and Core._hyp(float(p.x) - (c[0] + 0.5) * C, float(p.y) - (c[1] + 0.9) * C) < 1.6 * C:
+						return false
+				return true)
+			if spots.is_empty():
+				continue
+			var c: Array = spots[int(floor(rnd.next() * spots.size()))]
+			var name: String = pair[0]
+			var f: Array = pack.foot[name]
+			var px: float = (c[0] + 0.5) * C
+			var py: float = (c[1] + 0.92) * C
+			W.props.append({"name": name, "x": px, "y": py, "flip": rnd.next() < 0.5, "layer": "obj", "solid": [px - float(f[0]) / 2, py - float(f[1]), px + float(f[0]) / 2, py]})
+			W.occupied[c[1] * cols + c[0]] = true
 
 
 ## Every blue fire bowl of the world (pack.blue_props) gives the same faint blue.

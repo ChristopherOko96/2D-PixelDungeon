@@ -965,6 +965,18 @@
   "src": "0x72 doors_leaf_open, umgefärbt",
   "w": 96
  },
+ "glacier_a": {
+  "h": 102,
+  "kind": "sprite",
+  "src": "drawn: glacier_a (build_frost_extras.py)",
+  "w": 48
+ },
+ "glacier_b": {
+  "h": 90,
+  "kind": "sprite",
+  "src": "drawn: glacier_b (build_frost_extras.py)",
+  "w": 42
+ },
  "grate": {
   "h": 64,
   "kind": "sprite",
@@ -994,6 +1006,18 @@
   "kind": "sprite",
   "src": "0x72 flask_big_red (Heiltrank)",
   "w": 40
+ },
+ "ice_burst": {
+  "h": 108,
+  "kind": "sprite",
+  "src": "drawn: ice_burst (build_frost_extras.py)",
+  "w": 96
+ },
+ "ice_crack": {
+  "h": 42,
+  "kind": "sprite",
+  "src": "drawn: ice_crack (build_frost_extras.py)",
+  "w": 96
  },
  "icon_chest": {
   "h": 56,
@@ -1600,6 +1624,36 @@
   "kind": "sprite",
   "src": "0x72 skull, umgefärbt",
   "w": 18
+ },
+ "snow_a": {
+  "h": 120,
+  "kind": "sprite",
+  "src": "drawn: snow_a (build_frost_extras.py)",
+  "w": 120
+ },
+ "snow_b": {
+  "h": 120,
+  "kind": "sprite",
+  "src": "drawn: snow_b (build_frost_extras.py)",
+  "w": 120
+ },
+ "snow_c": {
+  "h": 120,
+  "kind": "sprite",
+  "src": "drawn: snow_c (build_frost_extras.py)",
+  "w": 120
+ },
+ "snow_d": {
+  "h": 120,
+  "kind": "sprite",
+  "src": "drawn: snow_d (build_frost_extras.py)",
+  "w": 120
+ },
+ "snowman": {
+  "h": 114,
+  "kind": "sprite",
+  "src": "drawn: snowman (build_frost_extras.py)",
+  "w": 78
  },
  "spike_block": {
   "h": 96,

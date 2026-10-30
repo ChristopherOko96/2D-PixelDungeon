@@ -92,6 +92,26 @@ Krypta und Hölle; Schlüssel in Truhen (`key_in_chest`) sind abgeschaltet.
 | Grafik HD | `assets/sprites/frost_hd`: der HD-Höllensatz eingefroren (Stein blaugrau, Glut wird Eislicht, Lava wird Glatteis; rote Banner und Teppiche, Gold, Herzen, Mana und Etagenfarben bleiben). Gegner, Schlüssel und Begleiter aus dem Pixel-Satz. Beides baut `py -3 -I tools/frost_dungeon/build_frost_extras.py` |
 | Vorschau | `py -3 -I tools/frost_dungeon/build_world_preview.py <out.html>` (Gegner dort Platzhalter aus der Krypta) |
 
+### Winter (Aussehen der Frostgruft)
+
+- **Nebel statt Dunkelheit:** hell, bläulich-weiß, mit treibenden Schwaden; Licht lichtet ihn in feinen
+  Stufen auf (Thema `fog`, `src/hero/story_glow.gd`, `assets/shaders/canvas_vfx_darkness.gdshader`).
+- **Leichter Schneesturm** über dem ganzen Bild, auch über HUD und Menüs, mit Böen (Thema `snowstorm`,
+  `src/vfx/snowstorm.gd`).
+- **Schnee in der Welt** (Weltpaket `winter`, JS und GDScript gleich): Schneefelder auf etwa der Hälfte
+  des Bodens, um Feuer und Licht geschmolzen; Knochen und Steinhaufen stark ausgedünnt, keine
+  Ascheflecken; Schneemänner und Eisgletscher in manchen Kampfräumen (die Wegeprüfung hält alles frei).
+- **Schneekappen** auf Mauern, Säulen, Steinen, Schädeln, Statuen, Möbeln, Toren und Truhen in beiden
+  Grafik-Sätzen; Feuer, Fackeln und Schalen bleiben frei (`build_frost_extras.py`, Pixel-Originale in
+  `tools/frost_dungeon/pixel_base`).
+- **Fußspuren** von Held und Monstern im Schnee, die nach einigen Sekunden verblassen; auf Glatteis
+  rutscht der Held, statt zu laufen: Beine still, Neigung in Rutschrichtung, Kratzspuren und
+  Eissplitter (Thema `snow`, `src/hero/frost_snow.gd`).
+- **Eisfalle** statt Stacheln: ein Spalt im Eis, aus dem beim Auslösen eine Eislawine schießt.
+
+Belege: `production/qa/evidence/frost-welt/winter-hd/` und `winter-pixel/`
+(`scripts/capture_frost_winter.gd -- <dir> [pixel|hd]`).
+
 Pixel und HD schaltet das Esc-Menü um, wie in der Hölle. Belege: `production/qa/evidence/frost-welt/`
 (Pixel) und `frost-welt/hd/`.
 

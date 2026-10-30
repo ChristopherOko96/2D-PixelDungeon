@@ -67,11 +67,52 @@
       if (PACK.light) { W.theme.dark *= PACK.light.dark; W.theme.vignette *= PACK.light.vignette; }
       bossGate(W);
       decorate(W);
+      if (PACK.winter) winter(W);
       blueLight(W);
       // last: mire, pits, furniture and fountain never block a way (world kit rule)
       const core = (typeof self !== 'undefined' && self.WorldCore) || (typeof require === 'function' && require('../world_kit/world_core.js'));
       core.clearWays(W);
       return W;
+    }
+    // A snowy world (PACK.winter): fewer bones and stone heaps (thin_decals / thin_props keep that
+    // share), snow fields on the floor grown from seeds (one per `seed_cells` cells, each 1.4 to 2.6
+    // cells across, each drift P.size px so neighbours merge into one field), never within `melt` cells of a fire or light, and here and there a snowman or a
+    // glacier against the cold (`snowman`, `glacier`: chance per fight room). Furniture rules as in
+    // decorate(); clearWays() afterwards keeps every way free.
+    function winter(W) {
+      const C = 96, idx = (x, y) => y * W.COLS + x, P = PACK.winter;
+      let a = (W.seed * 11 + 5) | 0;
+      const rnd = () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+      const pick = list => list[Math.floor(rnd() * list.length)];
+      // fewer bones and heaps
+      W.decals = W.decals.filter(d => !P.thin_decals.names.includes(d.name) || rnd() < P.thin_decals.keep);
+      W.props = W.props.filter(p => !P.thin_props.names.includes(p.name) || rnd() < P.thin_props.keep);
+      // fire and light melt the snow around them
+      const melt = (P.melt * C) * (P.melt * C);
+      const warm = (x, y) => W.lights.some(l => (l.x - (x + .5) * C) * (l.x - (x + .5) * C) + (l.y - (y + .5) * C) * (l.y - (y + .5) * C) < melt);
+      const snow = new Set();
+      for (const r of W.rooms) {
+        const cells = r.cells.filter(([x, y]) => W.grid[idx(x, y)] === 1 && !W.reserved.has(idx(x, y)));
+        if (!cells.length) continue;
+        for (let k = 0, n = 1 + Math.floor(cells.length / P.seed_cells); k < n; k++) {
+          const [sx, sy] = cells[Math.floor(rnd() * cells.length)], rr = 2 + Math.floor(rnd() * 6);
+          for (const [x, y] of cells) if ((x - sx) * (x - sx) + (y - sy) * (y - sy) <= rr && !snow.has(idx(x, y)) && !warm(x, y)) {
+            snow.add(idx(x, y));
+            W.decals.push({ name: pick(P.snow), x: (x + .5) * C, y: (y + .5) * C, w: P.size, h: P.size, a: 1 });
+          }
+        }
+        // a snowman or a glacier in some fight rooms, on free floor away from the doors
+        if (r.type !== 'combat') continue;
+        for (const [name, chance] of [['snowman', P.snowman], [pick(P.glaciers), P.glacier]]) {
+          if (rnd() >= chance) continue;
+          const spots = cells.filter(([x, y]) => !W.occupied.has(idx(x, y)) && !r.doors.some(d => Math.hypot((x + .5) * C - d.cx, (y + .5) * C - d.cy) < 3 * C)
+            && !W.props.some(p => p.solid && Math.hypot(p.x - (x + .5) * C, p.y - (y + .9) * C) < 1.6 * C));
+          if (!spots.length) continue;
+          const [x, y] = spots[Math.floor(rnd() * spots.length)], f = PACK.foot[name], px = (x + .5) * C, py = (y + .92) * C;
+          W.props.push({ name, x: px, y: py, flip: rnd() < .5, layer: 'obj', solid: [px - f[0] / 2, py - f[1], px + f[0] / 2, py] });
+          W.occupied.add(idx(x, y));
+        }
+      }
     }
     // Banners: red on floors 3, 6, 9 and 10, another colour on every other floor; every banner of a
     // floor (boss gate and rooms) has the floor's colour. Floor 10 burns blue at the gate and in the

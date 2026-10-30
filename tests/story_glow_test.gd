@@ -264,7 +264,9 @@ func test_layers(scene: PackedScene, label: String) -> void:
 	sg.frame()
 	check(sg.glow.visible and g.dark.visible, "%s: with the light on, darkness and bloom show" % label)
 	check(int(g.dark.material.get_shader_parameter("light_count")) >= 1, "%s: the darkness has its lights" % label)
-	check(is_equal_approx(float(g.dark.material.get_shader_parameter("light_bands")), float(g.balance.view.light_bands)), "%s: the world keeps its light bands" % label)
+	# a world with fog (the Frostgruft) thins its fog in its own finer steps (theme fog.bands)
+	var bands: float = float(g.theme.fog.get("bands", 12)) if g.theme.has("fog") else float(g.balance.view.light_bands)
+	check(is_equal_approx(float(g.dark.material.get_shader_parameter("light_bands")), bands), "%s: the world keeps its light bands" % label)
 	# nothing else blooms under the darkness: the hero kit's and the feel's layers are taken over
 	var under: Array = []
 	for child: Node in g.get_children():

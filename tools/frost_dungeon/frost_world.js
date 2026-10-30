@@ -48,12 +48,23 @@
   const FOOT = {   // name: [solid width, solid depth, cells wide]
     table_a: [104, 30, 2], table_b: [110, 30, 2], table_c: [140, 30, 2], candelabra: [30, 20, 1], crate_pile: [80, 34, 1],
     sacks_b: [90, 26, 1], moss_rubble_a: [70, 30, 1], moss_rubble_b: [80, 28, 1], moss_ruin: [70, 34, 1],
+    snowman: [52, 26, 1], glacier_a: [86, 34, 1], glacier_b: [70, 30, 1],
+  };
+  // Snow (world_pack.js winter): far fewer bones and stone heaps (the core lays them as props), no
+  // ash patches (the hell's moss), snow fields on the floor (melting around fire and light), a
+  // snowman or a glacier in some fight rooms.
+  const WINTER = {
+    thin_decals: { keep: 0, names: ['moss_a', 'moss_b', 'moss_c'] },
+    thin_props: { keep: .15, names: ['bone_a', 'bone_b', 'bone_c', 'bone_d', 'bone_e', 'bone_f', 'bone_g', 'bones_scatter', 'bones_t', 'rubble', 'coal', 'rocks_b', 'skull_pile_t',
+      'skull_pile', 'spires_t', 'spire_mid', 'rocks_a', 'coal_skulls', 'boulders', 'cage_small', 'spire_big_b', 'rocks_lava', 'spires_lava', 'spire_big', 'spire_big_t', 'rocks_dark', 'spire_small'] },
+    snow: ['snow_a', 'snow_b', 'snow_c', 'snow_d'], size: 168, seed_cells: 9, melt: 1.7,
+    snowman: .35, glacier: .45, glaciers: ['glacier_a', 'glacier_b'],
   };
   const WALL_SET = ['table_a', 'table_b', 'table_c', 'candelabra', 'crate_pile', 'moss_ruin', 'sacks_b', 'candelabra', 'moss_rubble_a', 'moss_rubble_b'];
   const BREAK_SET = ['barrel_a', 'barrel_b', 'barrel_c', 'urn_a', 'urn_b', 'urn_c', 'urn_d', 'urn_e', 'crate_a', 'crate_b', 'crate_c'];
   // no mimics in the Frostgruft
   const MIMIC_FIGHT = 0, MIMIC_TREASURE = 0;
   // the pack as plain data (the Godot port reads it from assets/data/frost_world.json, see export_world.js)
-  const PACK = { floors: FLOORS, circles: CIRCLES, names: NAMES, suffixes: SUFFIXES, words: WORDS, theme_flag: 'frost', light: null, gate_banner: GATE_BANNER, blue: BLUE, blue_props: BLUE_PROPS, foot: FOOT, wall_set: WALL_SET, break_set: BREAK_SET, mimic_fight: MIMIC_FIGHT, mimic_treasure: MIMIC_TREASURE };
+  const PACK = { floors: FLOORS, circles: CIRCLES, names: NAMES, suffixes: SUFFIXES, words: WORDS, theme_flag: 'frost', light: null, gate_banner: GATE_BANNER, blue: BLUE, blue_props: BLUE_PROPS, foot: FOOT, wall_set: WALL_SET, break_set: BREAK_SET, mimic_fight: MIMIC_FIGHT, mimic_treasure: MIMIC_TREASURE, winter: WINTER };
   return WorldPack.make(PACK);
 });
