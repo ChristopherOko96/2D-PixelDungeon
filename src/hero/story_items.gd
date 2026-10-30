@@ -47,6 +47,9 @@ var pools: Array = []
 var effects: Dictionary = {}
 var _clean: Dictionary = {}
 var _kills := 0
+## True while an aftershock or chain lightning deals its follow-up hits: those hits do not start
+## a new aftershock or chain (two monsters side by side bounced them back and forth forever).
+var _proc := false
 var _first_chest_floor := -1
 var _scale := 2.4
 
@@ -300,24 +303,29 @@ func on_hit(m: Dictionary) -> void:
 		g.HeroKit.burn_mob(m, float(EFFECTS.burn_dps) * (1.0 + float(build.get("cinder", 0.0)) + float(build.get("venom", 0.0))), float(EFFECTS.burn_time))
 	if float(build.get("frost", 0.0)) > 0.0:
 		g.HeroKit.slow_mob(g, m, minf(0.6, float(build.frost) + float(EFFECTS.slow) * 0.5), float(EFFECTS.slow_time))
-	# run potions: hits shake the ground nearby (aftershock) or jump on as lightning (chain)
+	# run potions: hits shake the ground nearby (aftershock) or jump on as lightning (chain);
+	# their own follow-up hits start no new aftershock or chain
+	if _proc:
+		return
+	_proc = true
 	if float(build.get("blast", 0.0)) > 0.0:
 		# effect hook: the crypt's area perk where the ground shakes (perk_events blast)
 		if g.get("feel") != null: g.feel.mob_perk("blast", m)
-		for other: Dictionary in g.mobs:
-			if other != m and g._hittable(other) and (other.p as Vector2).distance_to(m.p) < 70.0 * _scale:
+		for other: Dictionary in g.mobs.duplicate():
+			if not is_same(other, m) and g._hittable(other) and (other.p as Vector2).distance_to(m.p) < 70.0 * _scale:
 				g._damage_mob(other, Vector2.ZERO, float(build.blast) * 0.5)
 	if float(build.get("storm", 0.0)) > 0.0:
 		var next: Dictionary = {}
 		var near := 160.0 * _scale
 		for other: Dictionary in g.mobs:
 			var gap: float = (other.p as Vector2).distance_to(m.p)
-			if other != m and g._hittable(other) and gap < near:
+			if not is_same(other, m) and g._hittable(other) and gap < near:
 				near = gap
 				next = other
 		if not next.is_empty():
 			g.fx.append({"kind": "bolt", "p": (m.p as Vector2) - Vector2(0, float(m.cy)), "q": (next.p as Vector2) - Vector2(0, float(next.cy)), "t": 0.25, "max": 0.25})
 			g._damage_mob(next, Vector2.ZERO, float(build.storm))
+	_proc = false
 	if float(m.hp) <= 0.0 and float(build.get("vampire", 0.0)) > 0.0:
 		_kills += 1
 		if _kills % maxi(1, int(build.vampire)) == 0:

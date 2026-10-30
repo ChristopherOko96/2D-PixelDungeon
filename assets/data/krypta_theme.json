@@ -1,5 +1,5 @@
 {
- "_note": "Story 1 Krypta der Verdammten on the story runtime (src/hell/hell_game.gd, scene src/hell/krypta_dungeon.tscn). world_pack: the world kit builds every floor live from the run number (src/world_kit/world_core.gd + krypta_pack.gd, pack assets/data/krypta_world.json); a new run rolls a new world, saves keep its number. The hero systems (classes, leveling, skills, relics, cards, talents, sounds, music, HUD) are the shared ones of the story worlds (hero_from), plus Story 1's combat feel (feel). Monsters: hell monster runtime with the crypt set (balance -> monsters.data / monsters.sprites). sprites: the crypt skin (tools/krypta_dungeon/build_krypta_skin.py). vault_closed / vault_open: sprite of the giant vault chest before and after opening. plate_hint false: the plates do not show their order. mimic_kind: the monster a mimic chest wakes as. zone_name: name on the result panel. Colours and keys as in THEME_DEFAULT; words turn the hell wording into the crypt's.",
+ "_note": "Story 1 Krypta der Verdammten on the story runtime (src/hell/hell_game.gd, scene src/hell/krypta_dungeon.tscn). world_pack: the world kit builds every floor live from the run number (src/world_kit/world_core.gd + krypta_pack.gd, pack assets/data/krypta_world.json); a new run rolls a new world, saves keep its number. The hero systems (classes, leveling, skills, relics, cards, talents, sounds, music, HUD) are the shared ones of the story worlds (hero_from), plus Story 1's combat feel (feel). Monsters: hell monster runtime with the crypt set (balance -> monsters.data / monsters.sprites). sprites: the crypt skin (tools/krypta_dungeon/build_krypta_skin.py). vault_closed / vault_open: sprite of the giant vault chest before and after opening. plate_hint false: the plates do not show their order. mimic_kind: the monster a mimic chest wakes as; dormant_mimics: a mimic of the roster never shows as a monster, it waits as a chest until opened. zone_name: name on the result panel. Colours and keys as in THEME_DEFAULT; words turn the hell wording into the crypt's.",
  "hero_from": "res://assets/data/frost_theme.json",
  "hero_keys": [
   "default_class",
@@ -30,6 +30,7 @@
  "vault_open": "chest_gold",
  "plate_hint": false,
  "mimic_kind": "mimik",
+ "dormant_mimics": true,
  "extra_sprites": {
   "dir": "res://assets/sprites/frost/",
   "names": [

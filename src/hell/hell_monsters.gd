@@ -114,8 +114,14 @@ func populate(r: Dictionary, cells: Array) -> void:
 	var roster: Array = floors[str(g.state.floor)].mobs
 	var first := randi() % roster.size()
 	var count: int = int(r.mobs if r.mobs > 0 else 3) + int(g.W.diff.extra)
+	# a world with dormant mimics (theme.dormant_mimics) never shows one as a monster: it waits as a chest
+	var dormant: String = str(g.theme.get("mimic_kind", "")) if g.theme.get("dormant_mimics", false) else ""
 	for k in range(mini(count, cells.size())):
-		spawn(r.index, cells[k], roster[(first + k) % roster.size()])
+		var id: String = roster[(first + k) % roster.size()]
+		if id == dormant:
+			g.place_dormant_mimic(r.index, cells[k])
+		else:
+			spawn(r.index, cells[k], id)
 	if r.type != "boss":
 		g._toast("Die Gitter fallen. Besiege alle Gegner.")
 		return

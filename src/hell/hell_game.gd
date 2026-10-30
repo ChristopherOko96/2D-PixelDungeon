@@ -1674,7 +1674,8 @@ func _break_crate(e: Dictionary) -> void:
 			for k in range(2):
 				var at := Vector2(e.x + (70.0 if k == 1 else -70.0), e.y + 60.0)
 				if monsters != null:
-					monsters.spawn(r.index, at, String(balance.monsters.seal_demon))
+					# crates stand at the walls: the undead climb out onto free floor, never into the wall
+					monsters.spawn(r.index, monsters.free_spot(r.index, Vector2(e.x, e.y + 60.0), 70.0, 200.0), String(balance.monsters.seal_demon))
 				else:
 					_spawn_mob(r.index, at, String(balance.seal.demon_kind))
 			_toast("Aus der Kiste kriechen Untote! Die Gitter fallen.")
@@ -1689,9 +1690,15 @@ func _wake_mimic(e: Dictionary) -> void:
 	var r: Dictionary = W.rooms[e.room]
 	r.fight = true
 	r.cleared = false
+	# the chest is gone (its solid too, or the mimic would stand stuck inside it)
+	for i in range(W.ents.size()):
+		if is_same(W.ents[i], e):
+			W.ents.remove_at(i)
+			break
+	_index_solids()
 	var kind := str(theme.get("mimic_kind", "mimik"))
 	if monsters != null and monsters.defs.has(kind):
-		var m: Dictionary = monsters.spawn(r.index, Vector2(e.x, e.y), kind)
+		var m: Dictionary = monsters.spawn(r.index, monsters.free_spot(r.index, Vector2(e.x, e.y), 0.0, 60.0), kind)
 		m.spawn = 0.0
 	_burst(Vector2(e.x, e.y - 40), 30, true)
 	state.shake = 0.4
@@ -1701,6 +1708,14 @@ func _wake_mimic(e: Dictionary) -> void:
 
 ## The hidden stairs: a choice of every earlier floor (keys 1-9, Esc closes). The world is rolled
 ## anew from there; hearts, stones, levels and items stay (they carry like a portal).
+## A mimic of a room's roster in a world with dormant mimics: it waits as a plain chest (not a
+## monster of the fight) until someone opens it (_wake_mimic).
+func place_dormant_mimic(room: int, at: Vector2) -> void:
+	var e := {"type": "chest", "mimic": true, "loot": {"gems": 0}, "x": at.x, "y": at.y, "room": room}
+	W.ents.append(e)
+	_add_solid(Rect2(e.x - 40, e.y - 32, 80, 32))
+
+
 func _open_stairs() -> void:
 	if int(state.floor) <= 1:
 		_toast("Die Treppe führt nirgendwohin.")
@@ -2328,6 +2343,13 @@ func _update_hazards(dt: float) -> void:
 	var cr: Dictionary = W.rooms[state.room]
 	var hz: Dictionary = balance.hazards
 	for e: Dictionary in W.ents:
+		# the timers count down first: the branches below skip the rest of the loop with `continue`,
+		# which left a wrongly stepped plate red and locked for good. A wrong plate stays marked
+		# while the hero still stands on it, then clears and can be stepped again.
+		if e.get("wrong", 0.0) > 0.0 and not (e.type == "plate" and absf(me.x - e.x) <= 44 and absf(me.y - 10 - e.y) <= 44):
+			e.wrong = maxf(0.0, e.wrong - dt)
+		if e.get("hit", 0.0) > 0.0:
+			e.hit = maxf(0.0, e.hit - dt)
 		match e.type:
 			"spikes":
 				e.up = int(state.t / float(hz.spike_period)) % 2 == int(e.phase)
@@ -2389,10 +2411,6 @@ func _update_hazards(dt: float) -> void:
 				# the crypt's pickup: its loot_taken fx event (the pickup sheet and its chime through feedback.gd)
 				if feel != null:
 					feel.fx_event("loot_taken", Vector2(e.x, e.y))
-		if e.get("wrong", 0.0) > 0.0:
-			e.wrong = maxf(0.0, e.wrong - dt)
-		if e.get("hit", 0.0) > 0.0:
-			e.hit = maxf(0.0, e.hit - dt)
 
 
 func _update_rooms() -> void:
