@@ -28,6 +28,8 @@ signal settings_changed(settings: Dictionary)
 signal rooms_saved(config: Dictionary)
 ## The Dungeon-Werkstatt asks to test-play a room.
 signal room_test_requested(room_id: String, floor: int, class_id: String)
+## Debug: the Testraum with the chosen hero class (src/game.gd start_test_arena).
+signal test_arena_requested(class_id: String)
 ## SPIELSTÄNDE: load slot 1..3 of a mode ("crypt", "hell", "frost").
 signal save_load_requested(mode: String, slot: int)
 
@@ -123,6 +125,8 @@ var _shake_check: CheckButton
 var _class_panel: Panel
 var _class_title: Label
 var _class_endless := false
+## True while the hero choice is for the Testraum.
+var _arena_pick := false
 var _class_heroes: Array[TextureRect] = []
 var _class_frames: Array = []
 
@@ -168,6 +172,9 @@ func _ready() -> void:
 	_buttons.append(_button("OPTIONEN", Vector2(470, 498), Vector2(340, 36), 16, _open_options))
 	_buttons.append(_button("BEENDEN", Vector2(470, 540), Vector2(340, 36), 16, quit_requested.emit))
 	_button("LEVEL-AUSWAHL (DEBUG)", Vector2(16, 676), Vector2(264, 32), 16, _open_debug)
+	# the Testraum: one big room to try elements, enemies, talents and cheats (debug builds)
+	var arena_button := _button("TESTRAUM (DEBUG)", Vector2(16, 596), Vector2(264, 32), 16, _open_arena)
+	arena_button.visible = OS.is_debug_build()
 	# the talent test profile: every class level 30, 99 shards, free casts (debug builds)
 	_talent_test_button = _button("", Vector2(16, 636), Vector2(330, 32), 16, _toggle_talent_test)
 	_talent_test_button.visible = OS.is_debug_build()
@@ -555,9 +562,17 @@ func take_debug_start() -> Dictionary:
 	return jump
 
 
+## The hero choice for the Testraum.
+func _open_arena() -> void:
+	_open_classes(false)
+	_arena_pick = true
+	_class_title.text = "WÄHLE DEINEN HELDEN · TESTRAUM"
+
+
 func _open_classes(endless: bool) -> void:
 	_close_panels()
 	_debug_start = {}
+	_arena_pick = false
 	if class_order.is_empty():
 		# No hero classes yet: the mode button starts the run directly.
 		start_requested.emit(endless, "")
@@ -569,6 +584,10 @@ func _open_classes(endless: bool) -> void:
 
 func _choose_class(id: String) -> void:
 	_close_panels()
+	if _arena_pick:
+		_arena_pick = false
+		test_arena_requested.emit(id)
+		return
 	var scene := _story_scene() if not _class_endless else ""
 	if scene != "":
 		story_scene_requested.emit(scene, id)

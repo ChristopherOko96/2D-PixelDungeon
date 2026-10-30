@@ -52,6 +52,8 @@ const RunProgress = preload("res://src/progress/run_progress.gd")
 const PlayerEffects = preload("res://src/combat/player_effects.gd")
 const Inventory = preload("res://src/items/inventory.gd")
 const Cheats = preload("res://src/debug/cheats.gd")
+const TestArena = preload("res://src/debug/test_arena.gd")
+const Profile = preload("res://src/progress/profile.gd")
 const SaveStore = preload("res://src/save/save_store.gd")
 const CryptSave = preload("res://src/save/crypt_save.gd")
 
@@ -217,6 +219,11 @@ signal editor_return_requested
 var editor_preview_mode := false
 ## Dungeon-Werkstatt test play: the room forced into its floor, and whether
 ## leaving the run reopens the editor.
+## Debug: the Testraum is running (start_test_arena), its test bar, and the
+## profile file of the player while the run writes to a copy.
+var test_arena := false
+var _arena_bar: Control = null
+var _arena_profile := ""
 var test_room_id := ""
 var test_room_floor := 0
 var return_to_room_editor := false
@@ -829,6 +836,7 @@ func _leave_or_return() -> void:
 
 
 func _leave_session(message: String = "Verbindung beendet.") -> void:
+	if test_arena: _end_test_arena()
 	pause_open = false
 	reward_open = false
 	_transition_state.clear()
@@ -1037,6 +1045,11 @@ func _send_local_input() -> void:
 	if throw_slot >= 0 and fire:
 		_send_action("inv_throw", throw_slot)
 		throw_slot = -1
+		fire = false
+		_fire_needs_release = true
+	# Testraum: with an element tool picked, a click sets it on the floor instead
+	if fire and is_instance_valid(_arena_bar) and _arena_bar.has_tool():
+		_arena_bar.place(mouse)
 		fire = false
 		_fire_needs_release = true
 	var live_targets: Array = state.get("enemies",[]).filter(func(enemy: Dictionary): return enemy.get("hp",0) > 0)
@@ -1955,7 +1968,7 @@ func _check_room_end() -> void:
 		run_slot = 0
 		print("TEAM_WIPE room=%d" % room)
 		_broadcast_state(true)
-	elif enemies.is_empty() and not hordes.pending():
+	elif enemies.is_empty() and not hordes.pending() and not test_arena:
 		if str(current_layout.id) not in cleared_room_ids: cleared_room_ids.append(str(current_layout.id))
 		bullets.clear()
 		perk_combat.room_cleared()
@@ -2460,6 +2473,7 @@ func _build_main_menu() -> void:
 	main_menu.quit_requested.connect(func(): get_tree().quit())
 	main_menu.rooms_saved.connect(_use_saved_rooms)
 	main_menu.room_test_requested.connect(_start_room_test)
+	main_menu.test_arena_requested.connect(start_test_arena)
 	main_menu.hell_requested.connect(_start_hell)
 	main_menu.story_scene_requested.connect(_open_story_scene)
 	main_menu.save_load_requested.connect(_load_save)
@@ -2577,6 +2591,65 @@ func _start_solo(_endless_mode: bool = false, class_id: String = "") -> void:
 	_server_action(1, "start", 0)
 	if not jump.is_empty() and phase == "combat": _debug_jump(int(jump.floor), int(jump.room))
 	_refresh_ui()
+
+
+## Debug: the Testraum (main menu TESTRAUM): a solo run in the biggest room
+## of floor 1 of a fixed seed (assets/data/debug_test_arena.json), no hordes,
+## no enemies until fetched, a room that never counts as cleared, and the test
+## bar (src/debug/test_arena.gd). The run writes to a copy of the profile; the
+## player's own profile is loaded again when it ends (_end_test_arena).
+func start_test_arena(class_id: String) -> void:
+	if not OS.is_debug_build(): return
+	var preset: Dictionary = TestArena._load(TestArena.DATA)
+	if _arena_profile.is_empty(): _arena_profile = progress.save_path
+	var copy := str(preset.get("profile_copy", "user://profile_testraum.json"))
+	Profile.save_profile(progress.profile, copy)
+	progress.save_path = copy
+	test_arena = true
+	var seed_before := requested_seed
+	requested_seed = int(preset.get("seed", 4242))
+	_start_solo(false, class_id)
+	requested_seed = seed_before
+	if not (active and hosting):
+		_end_test_arena()
+		return
+	# the room with the most open floor
+	var best := 0
+	var most := -1
+	for index in range(floor_layouts.size()):
+		var open := 0
+		for entry: Dictionary in floor_layouts[index].get("painted_tiles", []):
+			if str(entry.get("layer", "")) == "floor" and not bool(entry.get("solid", false)): open += 1
+		if open > most:
+			most = open
+			best = index
+	_debug_jump(1, best + 1)
+	enemies.clear()
+	bullets.clear()
+	hordes.enabled = false
+	phase = "combat"
+	_arena_bar = TestArena.new()
+	_arena_bar.setup(self)
+	ui.add_child(_arena_bar)
+	_broadcast_state(true)
+	_refresh_ui()
+
+
+## The Testraum again with another hero class.
+func restart_test_arena(class_id: String) -> void:
+	_leave_session("Testraum neu gestartet.")
+	start_test_arena.call_deferred(class_id)
+
+
+## Ends the Testraum: the test bar goes, the player's own profile comes back.
+func _end_test_arena() -> void:
+	test_arena = false
+	if is_instance_valid(_arena_bar): _arena_bar.queue_free()
+	_arena_bar = null
+	if not _arena_profile.is_empty():
+		progress.save_path = _arena_profile
+		progress.profile = Profile.load_profile(progress.data, _arena_profile)
+		_arena_profile = ""
 
 
 ## Debug only: moves a fresh solo run to `target_room` of `target_floor`. Rooms
