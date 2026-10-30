@@ -40,6 +40,7 @@ extends RefCounted
 
 const Feedback = preload("res://src/vfx/feedback.gd")
 const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
+const PerkMarks = preload("res://src/vfx/perk_marks.gd")
 const PoolPaint = preload("res://src/vfx/pool_paint.gd")
 const StorySound = preload("res://src/hero/story_sound.gd")
 ## Crypt units per crypt cell (particles work in 32 px cells).
@@ -80,10 +81,10 @@ const HIT_FRAME := 0.24
 ## The crypt's shadow under a hero (src/dungeon_view.gd _draw_shadow, half width 14).
 const SHADOW_HALF := 14.0
 const SHADOW_COLOR := Color(0.05, 0.04, 0.09)
-## The crypt's perk marker colours (src/dungeon_view.gd _draw_perk_events).
-const PERK_GOLD := Color("f6cf85")
-const PERK_GREEN := Color("a7ddaa")
-const PERK_BLUE := Color("a7cce8")
+## The crypt's perk marker colours (src/vfx/perk_marks.gd, shared with the crypt).
+const PERK_GOLD := PerkMarks.GOLD
+const PERK_GREEN := PerkMarks.GREEN
+const PERK_BLUE := PerkMarks.BLUE
 ## Wall style of a hero shot kind, by the crypt's src/game.gd _shot_style (fireball
 ## fire, fist frost, the blade wave metal, magic magic, void shots void, rock
 ## stone, arrows arrow); the relic's gravity ball is void, its shards arcane.
@@ -574,6 +575,15 @@ func draw_layer(canvas: CanvasItem, mode: String) -> void:
 				canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE / scale)
 				pools.draw(canvas, float(g.state.get("t", 0.0)))
 				canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+			# the world's gas over the floor, under the figures (src/vfx/gas.gd, world px)
+			var gas: RefCounted = g.get("gas")
+			# (a world without a puddle layer draws its gas over the talents' pools: src/hell/hell_talents.gd)
+			if gas != null and pools != null:
+				canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE / scale)
+				PixelPaint.clip = g._floor_open
+				gas.draw(canvas, float(g.state.get("t", 0.0)))
+				PixelPaint.clip = Callable()
+				canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 			# thrown pools (boss_fx.gd pools) and the hero's shadow, under the figures like the crypt's
 			var conditions := condition_snapshot()
 			# warnings and pools stop at the walls (src/vfx/pixel_paint.gd clip, crypt units)
@@ -582,6 +592,13 @@ func draw_layer(canvas: CanvasItem, mode: String) -> void:
 				# thrown potions and pools as physics pools that stop at the walls (src/vfx/pool_paint.gd)
 				if boss_fx.pools == null:
 					boss_fx.pools = PoolPaint.new(2.0, g.story_hero.open_floor)
+					# its drops fly in these particles (same crypt units); blasts ring it and the world's puddles
+					boss_fx.pools.particles = feedback.particles
+					boss_fx.particles = feedback.particles
+					var layers: Array = [[boss_fx.pools, 1.0]]
+					if g.get("pools") != null: layers.append([g.get("pools"), scale])
+					if g.get("gas") != null: layers.append([g.get("gas"), scale])
+					feedback.particles.set_liquids(layers)
 			boss_fx.draw_ground(canvas, conditions, _clock)
 			PixelPaint.clip = Callable()
 			draw_shadow(canvas, hero_world() / scale)
@@ -600,27 +617,11 @@ static func draw_shadow(canvas: CanvasItem, at: Vector2, half := SHADOW_HALF) ->
 	canvas.draw_rect(Rect2(floorf(at.x - half + 4.0), floorf(at.y + 18.0), half * 2.0 - 8.0, 4.0), Color(SHADOW_COLOR, 0.25))
 
 
-## The crypt's perk markers (src/dungeon_view.gd _draw_perk_events), crypt units:
-## a gold ring for blasts (28) and crits (16), a blue one for shields, a green
-## cross for heals and revives, a bent line for a chain.
+## The crypt's perk markers in crypt units (src/vfx/perk_marks.gd, shared with
+## src/dungeon_view.gd): a chain is lightning, a heal or revive a cross of light
+## lifting off, a blast, crit or shield a ring spreading out.
 static func draw_perk_events(canvas: CanvasItem, events: Array) -> void:
-	for event: Dictionary in events:
-		var point := Vector2(float(event.x), float(event.y)).round()
-		var kind := str(event.kind)
-		var tint: Color = PERK_GOLD if kind in ["blast", "crit"] else PERK_GREEN if kind in ["heal", "poison"] else PERK_BLUE
-		if kind == "chain":
-			var end := Vector2(float(event.tx), float(event.ty)).round()
-			var midpoint := ((point + end) * 0.5).round() + Vector2(4, -4)
-			canvas.draw_line(point, midpoint, tint, 2, false)
-			canvas.draw_line(midpoint, end, tint, 2, false)
-		elif kind in ["heal", "revive"]:
-			canvas.draw_rect(Rect2(floorf(point.x - 2), floorf(point.y - 26), 4, 12), tint)
-			canvas.draw_rect(Rect2(floorf(point.x - 6), floorf(point.y - 22), 12, 4), tint)
-		else:
-			var radius: float = 16 if kind in ["shield", "crit"] else 28
-			for index: int in range(8):
-				var offset := (Vector2.from_angle(TAU * index / 8) * radius).round()
-				canvas.draw_rect(Rect2(floorf(point.x + offset.x - 2), floorf(point.y + offset.y - 2), 4, 4), tint)
+	PerkMarks.draw(canvas, events)
 
 
 # --- inside -----------------------------------------------------------------------------

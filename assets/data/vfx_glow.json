@@ -150,7 +150,7 @@
       ]
     },
     "bloom": {
-      "_note": "The story worlds' own bloom kinds (src/hero/story_glow.gd), drawn at the scale named in brackets. r = radius in crypt px (the bloom node's units; world px = r x the world's hero_scale / 2); size = radius as a share of the thing's own size (a zone's or a blast's radius, a body's width, a lava cell); alpha = intensity 0..1 (some pulse around it); color = #rrggbb (a theme 'glow' colour for portal, gate and wall wins; a skill ring keeps its own). light = the darkness light of a map thing [radius world px, strength] (the world's own values from its old darkness) or, for strikes and blasts, its strength (the radius is the bloom's, both fade). time = seconds a strike flares. The crypt's own rules are not here: fires and exits (dungeon_view.gd), bullets and loot and lava zones (skill_fx.gd), embers (particles.gd).",
+      "_note": "The story worlds' own bloom kinds (src/hero/story_glow.gd), drawn at the scale named in brackets. r = radius in crypt px (the bloom node's units; world px = r x the world's hero_scale / 2); size = radius as a share of the thing's own size (a zone's or a blast's radius, a body's width, a lava cell); alpha = intensity 0..1 (some pulse around it); color = #rrggbb (a theme 'glow' colour for portal, gate and wall wins; a skill ring keeps its own). light = the darkness light of a map thing [radius world px, strength] (the world's own values from its old darkness) or, for strikes and blasts, its strength (the radius is the bloom's, both fade). time = seconds a strike flares. The crypt's own rules are not here: fires and exits (dungeon_view.gd), bullets and loot and lava zones (skill_fx.gd), embers (particles.gd). beam_* are Ignaroth 4's void beams: only the light torn round them glows (beam_halo), their core swallows light (beam_core alpha 0, 2026-10-30).",
       "rune": {"r": 30, "alpha": 0.16},
       "portal": {"r": 70, "alpha": 0.3, "light": [330, 1.0]},
       "portal_core": {"r": 30, "alpha": 0.35},
@@ -172,8 +172,8 @@
       "slam": {"size": 1.0, "alpha": 0.25, "color": "#ff9940"},
       "scream": {"size": 0.6, "alpha": 0.3, "color": "#96e6ff"},
       "scream_mouth": {"r": 30, "alpha": 0.4, "color": "#96e6ff"},
-      "beam_halo": {"r": 60, "alpha": 0.3, "color": "#a866ff"},
-      "beam_core": {"r": 24, "alpha": 0.35, "color": "#f2ccff"},
+      "beam_halo": {"r": 60, "alpha": 0.2, "color": "#a866ff"},
+      "beam_core": {"r": 24, "alpha": 0.0, "color": "#f2ccff"},
       "beam_mouth": {"r": 40, "alpha": 0.4, "color": "#bf80ff"},
       "laser_halo": {"r": 12, "alpha": 0.28, "color": "#da4e38"},
       "laser_core": {"r": 5, "alpha": 0.3, "color": "#facb3e"},

@@ -10,6 +10,8 @@ extends RefCounted
 
 const TalentCombat = preload("res://src/combat/talent_combat.gd")
 const TalentFx = preload("res://src/vfx/talent_fx.gd")
+const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
+const PoolPaint = preload("res://src/vfx/pool_paint.gd")
 const TalentBar = preload("res://src/ui/talent_bar.gd")
 const Profile = preload("res://src/progress/profile.gd")
 const Rules = preload("res://src/progress/talent_rules.gd")
@@ -51,8 +53,25 @@ func bind(game: Node, profile_ref: Dictionary, path: String, class_name_id: Stri
 	data = Profile.data()
 	tc.bind(self, data)
 	tc.reset(randi())
+	# the talent art on this world's 3 px grid, the hero's chest 38 px over his feet, cut at its walls
+	fx.set_art(3.0, Vector2(0, -38), Vector2.ZERO)
+	# fire bursts in the feel's particles (crypt units)
+	if g.feel != null:
+		fx.particles = g.feel.feedback.particles
+		fx.to_particles = 1.0 / g.feel.scale
+	# bound to the game node, not to this object: a callable on self kept by fx would
+	# hold this object (and fx) alive forever (a reference cycle)
+	fx.sprites.floor_open = g._floor_open
 	_sync_hero()
 	if data.resources.has(class_id): tc.set_build(1, Profile.build_of(profile, class_id))
+
+
+## Breaks the references that point back here (perk_combat is this object, the
+## talent runtime's game is this object), so a finished run is freed with its
+## effects and their textures. The game calls it when it drops this object.
+func release() -> void:
+	perk_combat = null
+	tc.game = null
 
 
 func _sync_hero() -> void:
@@ -119,6 +138,11 @@ func update(dt: float) -> void:
 		_step_bullets(dt)
 		_step_statuses(dt))
 	bar.step(dt)
+	# the talents' weight on the view by importance (src/vfx/talent_fx.gd take_feel)
+	for hit: Dictionary in fx.take_feel(tc.snapshot()):
+		g.state.shake = maxf(float(g.state.get("shake", 0.0)), float(hit.shake_px))
+		if float(hit.hitstop) > 0.0 and g.feel != null:
+			g.feel.feedback.hitstop = maxf(float(g.feel.feedback.hitstop), float(hit.hitstop))
 	_save_timer -= dt
 	if _dirty and _save_timer <= 0.0: save()
 
@@ -130,8 +154,10 @@ func hud_state() -> Dictionary:
 
 # --- hooks from the hell runtime -------------------------------------------------
 
-## Hero damage before the hell's own extras: difficulty, reductions, shield, counter.
-func incoming(n: int) -> int:
+## Hero damage before the hell's own extras: difficulty, reductions, shield,
+## counter. `from`: where the blow came from (ZERO when unknown), so a shield
+## dome dents on that side.
+func incoming(n: int, from := Vector2.ZERO) -> int:
 	var factor := float(data.get("difficulties", {}).get(str(profile.get("difficulty", "normal")), {}).get("damage", 1.0))
 	var exact := float(n) * factor + _damage_debt
 	n = maxi(1, floori(exact))
@@ -140,7 +166,8 @@ func incoming(n: int) -> int:
 	_sync_mobs()
 	var before: Vector2 = players[1].pos
 	var hp_before: int = players[1].hp
-	var taken := tc.incoming(1, n, Vector2.ZERO)
+	var hero_at := Vector2(float(g.player.x), float(g.player.y))
+	var taken := tc.incoming(1, n, (hero_at - from).normalized() if from != Vector2.ZERO and from != hero_at else Vector2.ZERO)
 	_write_hero(before, hp_before)
 	return taken
 
@@ -286,25 +313,69 @@ func _step_bullets(dt: float) -> void:
 
 # --- drawing ------------------------------------------------------------------------
 
-## World layer: zones, traps, wolves, projectiles and talent effects.
+## True on walkable floor at world point `p`: where pools and pixels may show.
+func _open_floor(p: Vector2) -> bool:
+	return g._walkable(g._cell(int(floor(p.x / float(g.C))), int(floor(p.y / float(g.C)))))
+
+
+## World layer (under the actors): zones, traps, wolves and projectiles.
 func draw_world(canvas: CanvasItem, clock: float) -> void:
 	var snap := tc.snapshot()
+	# world px here: the world's 3 px art pixel; pools and pixels stop at the walls
+	if fx.pools == null:
+		if g.get("pools") != null:
+			# the Hell's puddle layer: the same liquid is one pool; its ground layer draws it
+			fx.pools = g.pools
+			fx.draw_pools = false
+		else:
+			fx.pools = PoolPaint.new(3.0, g._floor_open)
+			if g.feel != null:
+				fx.pools.particles = g.feel.feedback.particles
+				fx.pools.to_particles = 1.0 / g.feel.scale
+	if fx.gas == null and g.get("gas") != null:
+		fx.gas = g.gas
+	PixelPaint.clip = _open_floor
 	fx.draw_ground(canvas, snap, clock)
+	# without the Hell's puddle layer the pools are drawn here: the gas lies over them
+	if fx.draw_pools and fx.gas != null:
+		fx.gas.draw(canvas, clock)
 	fx.draw_pets(canvas, snap, clock)
 	for b: Dictionary in bullets:
 		var at := Vector2(b.pos) - Vector2(0, 30)
 		var colour: Color = {"fireball": Color("ff7a2a"), "frost_lance": Color("8fd8e6"), "arcane": Color("b07bff")}.get(str(b.get("style", "")), Color("f3e2b0"))
-		var shot := {"x": at.x, "y": at.y, "vx": Vector2(b.velocity).x, "vy": Vector2(b.velocity).y, "style": str(b.get("style", ""))}
+		var shot := {"x": at.x, "y": at.y, "vx": Vector2(b.velocity).x, "vy": Vector2(b.velocity).y, "style": str(b.get("style", "")),
+			"talent": str(b.get("talent", "")), "stage": int(b.get("stage", 0))}
 		if fx.draw_bullet(canvas, shot, clock): continue
 		if str(b.get("style", "")) == "arrow":
+			# a shaft of pixels with a white tip and a dark outline
 			var along := Vector2(b.velocity).normalized()
-			canvas.draw_line(at - along * 12.0, at + along * 8.0, Color("1a1414"), 4.0)
-			canvas.draw_line(at - along * 11.0, at + along * 7.0, colour, 2.0)
+			for i in range(7):
+				var q := PixelPaint.at(at + along * (8.0 - float(i) * 3.0), 3.0)
+				PixelPaint.cell(canvas, q + Vector2i(0, 1), Color("1a1414"), 3.0)
+				PixelPaint.cell(canvas, q, Color.WHITE if i == 0 else colour, 3.0)
 		else:
-			canvas.draw_circle(at, 12.0, Color(colour, 0.25))
-			canvas.draw_circle(at, 6.0, colour)
-			canvas.draw_circle(at, 2.5, Color.WHITE)
-	fx.draw_events(canvas, snap)
+			PixelPaint.ball(canvas, at, 2, [colour.lightened(0.5), colour.lightened(0.3), colour, colour.darkened(0.3)], Color("1a1414"), 3.0)
+	PixelPaint.clip = Callable()
+
+
+## Over the actors: the talent events and what lasts on the hero (shields,
+## rage, the ultimates' auras), stopping at the walls.
+func draw_over(canvas: CanvasItem, clock: float) -> void:
+	var snap := tc.snapshot()
+	PixelPaint.clip = _open_floor
+	fx.draw_events(canvas, snap, clock)
+	fx.draw_auras(canvas, snap, clock, _hero_at)
+	PixelPaint.clip = Callable()
+
+
+## Bloom of the talents on the additive glow layer.
+func draw_glow(canvas: CanvasItem, clock: float) -> void:
+	fx.draw_glow(canvas, tc.snapshot(), 1.0, clock, _hero_at)
+
+
+## The hero's ground point (the only hero here).
+func _hero_at(_owner: int) -> Vector2:
+	return Vector2(float(g.player.x), float(g.player.y))
 
 
 ## HUD: the talent bar above the skill bar and the reward banner.

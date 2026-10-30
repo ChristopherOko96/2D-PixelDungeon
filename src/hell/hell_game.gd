@@ -18,6 +18,7 @@ const DrakeRigHost = preload("res://src/hell/drake_rig_host.gd")
 const FrostRigs = preload("res://src/hell/frost_rigs.gd")
 const FrostFx = preload("res://src/hell/frost_fx.gd")
 const PoolPaint = preload("res://src/vfx/pool_paint.gd")
+const Gas = preload("res://src/vfx/gas.gd")
 const RigLibrary = preload("res://src/rig/rig_library.gd")
 const MobRules = preload("res://src/hell/mob_rules.gd")
 const BossKit = preload("res://src/hell/boss_kit.gd")
@@ -147,7 +148,12 @@ var shots: Array = []
 var eshots: Array = []
 var embers: Array = []
 ## Sloshes of the lava pools owed (hell_balance.json monsters.feel.lava slosh_rate).
+## The world's gas layer (src/vfx/gas.gd): poison clouds, breath, fumes.
+var gas: RefCounted = null
 var lava_slosh := 0.0
+## Bubbles on the lava floor ({p, t, T, big}; _bubble_lava) and the spawn carry.
+var lava_bubbles: Array = []
+var lava_bubble_due := 0.0
 ## Telegraphed boss areas: icicle targets, chill fields, landing marks, safe circles.
 var zones: Array = []
 ## Class skills (hero_skills.json, scaled) and their running parts: a held skill,
@@ -289,6 +295,13 @@ func _ready() -> void:
 	if not theme.has("mobs"):
 		monsters = Monsters.new(self, balance.monsters)
 		pools = PoolPaint.new(PIXEL_WORLD, _floor_open)
+		gas = Gas.new(PIXEL_WORLD, _floor_open)
+		# drops of the puddles fly in the feel's particles (crypt units, x scale), blasts ring them
+		if feel != null:
+			pools.particles = feel.feedback.particles
+			pools.to_particles = 1.0 / feel.scale
+			# the lava tiles are hot floor: liquid on them hisses and crusts (drawing only)
+			pools.hot = func(p: Vector2) -> bool: return feel.feedback.particles.sinks(p / feel.scale)
 		# Ignaroth's part rig: tuning from balance.monsters.rigs (DrakeRigHost.DEFAULTS fill gaps)
 		drake_rig = DrakeRigHost.new(balance.monsters, RigLibrary.shared())
 		monsters.rig_host = drake_rig
@@ -639,6 +652,7 @@ func load_floor(n: int, carry: bool) -> void:
 		frost_fx.reset()
 	if pools != null:
 		pools.clear()
+		if gas != null: gas.clear()
 	allies = []
 	pending = []
 	hold = {}
@@ -655,8 +669,17 @@ func load_floor(n: int, carry: bool) -> void:
 	_respawn()
 	camera.position = Vector2(player.x, player.y)
 	if not profile.is_empty() and (talents == null or not carry):
+		if talents != null:
+			talents.release()
 		talents = HellTalents.new()
 		talents.bind(self, profile, profile_path, class_id)
+
+
+## The talents refer back to themselves (src/hell/hell_talents.gd release):
+## let them go with this game.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE and talents != null:
+		talents.release()
 
 
 ## Debug jump: puts the hero inside the boss room, two cells past the gate it
@@ -768,6 +791,25 @@ func _cell(x: int, y: int) -> int:
 
 ## World px per art pixel (the floor tiles' 16 px art drawn x3 at 48 px).
 const PIXEL_WORLD := 3.0
+
+
+## Shadow welling up at world point `p` (src/vfx/particles.gd shadow: a pool of
+## ink with tendrils reaching out and drawing back), `reach` crypt px: the mark
+## of a shadow skill (the Schattenläufer, the shadow dagger). Nothing without
+## the feel.
+func shadow_at(p: Vector2, branches: int = 5, reach: float = 34.0) -> void:
+	if feel == null or feel.get("feedback") == null:
+		return
+	feel.feedback.particles.shadow(p / feel.scale, branches, reach)
+
+
+## A cloud of smoke at world point `p`, `r` world px wide, for `length` s
+## (src/vfx/gas.gd: it spreads, flows round walls, is parted by whoever walks
+## through it); nothing without the world's gas layer.
+func smoke_at(p: Vector2, r: float, length: float) -> void:
+	if gas == null:
+		return
+	gas.emit("smoke:%d" % Time.get_ticks_msec(), "smoke", p, r, length, float(state.t))
 
 
 ## Floor a pool may cover: walkable cells outside the solid props.
@@ -981,7 +1023,7 @@ func _hurt(why: String, n := 1, from := Vector2.ZERO) -> void:
 	state.inv = float(balance.player.invulnerable)
 	# Talents: difficulty, reductions, shields, the counter (the same in every map).
 	if talents != null:
-		n = talents.incoming(n)
+		n = talents.incoming(n, from)
 		if n <= 0: return
 	_lose_hp(n, why, from)
 
@@ -1644,6 +1686,7 @@ func _fall_into_pit() -> void:
 		frost_fx.reset()
 	if pools != null:
 		pools.clear()
+		if gas != null: gas.clear()
 	state.pull = null
 	_respawn()
 	state.inv = 1.2
@@ -2050,6 +2093,11 @@ func _update_mobs(dt: float) -> void:
 		monsters.update(dt)
 		if pools != null:
 			pools.sync(monsters.pool_entries(), float(state.t))
+			# the hero and the monsters wade through the puddles (src/vfx/pool_paint.gd wade)
+			pools.wade("hero", Vector2(float(player.x), float(player.y)), bool(player.get("moving", false)), float(state.t))
+			for m: Dictionary in mobs:
+				# a monster's steps show by its moving point (wade sees it move)
+				if m.has("id"): pools.wade("m" + str(m.id), Vector2(m.p), false, float(state.t))
 		return
 	var me := Vector2(player.x, player.y)
 	var hidden := float(state.get("stealth", 0.0)) > 0.0
@@ -2352,6 +2400,8 @@ func _update_embers(dt: float) -> void:
 	if embers.size() > 360:
 		embers = embers.slice(embers.size() - 360)
 	_slosh_lava(dt)
+	_bubble_lava(dt)
+	_step_gas(dt)
 
 
 ## Now and then a lava pool in view sloshes over its rim onto the floor
@@ -2382,6 +2432,92 @@ func _slosh_lava(dt: float) -> void:
 			var drops: Array = spec.get("drops", [3, 6])
 			monsters.lava_splash(at, dir, randi_range(int(drops[0]), int(drops[1])))
 			break
+
+
+## The gas runs on; the hero and the monsters part it as they walk through.
+func _step_gas(dt: float) -> void:
+	if gas == null:
+		if talents != null and feel != null:
+			# the Frostgruft has no puddle layer: its gas is made here for the talents
+			gas = Gas.new(PIXEL_WORLD, _floor_open)
+			# blasts in the feel's particles blow it away too
+			feel.feedback.particles.add_liquid(gas, feel.scale)
+		else:
+			return
+	gas.step(dt, float(state.t))
+	gas.part(Vector2(float(player.x), float(player.y)), 22.0)
+	for m: Dictionary in mobs:
+		gas.part(Vector2(m.p), 18.0)
+
+
+## Bubbles on the lava floor in view (hell_balance.json monsters.feel.lava
+## "bubble_rate" per second, at most "bubbles" at once): each swells for a
+## moment, bursts and spits a few glowing drops in arcs (the feel's particles,
+## "glut": they lie down as embers and cool to soot, or sink into the lava).
+func _bubble_lava(dt: float) -> void:
+	if not bool((theme.get("liquid", {}) as Dictionary).get("hurt", false)):
+		return
+	var spec: Dictionary = (balance.monsters.get("feel", {}) as Dictionary).get("lava", {}) if balance.has("monsters") else {}
+	for b: Dictionary in lava_bubbles:
+		var before := float(b.t)
+		b.t = before + dt
+		if before < float(b.T) * 0.7 and float(b.t) >= float(b.T) * 0.7 and feel != null:
+			var ramp: Dictionary = PoolPaint.settings().get("materials", {}).get("lava", {}).get("ramp", {})
+			for i in range(1 + int(b.big)):
+				var drop: Dictionary = feel.feedback.particles.emit(Vector2(b.p) / feel.scale, Vector2.from_angle(randf() * TAU) * randf_range(15.0, 45.0), Color(str(ramp.get("hi", "facb3e"))),
+					1.5, "glut", 2.0, 2.0, randf_range(60.0, 110.0), 1.5)
+				drop.ember_life = randf_range(0.8, 1.4)
+				drop.soot = 0.5
+	lava_bubbles = lava_bubbles.filter(func(b: Dictionary) -> bool: return float(b.t) < float(b.T))
+	lava_bubble_due += float(spec.get("bubble_rate", 9.0)) * dt
+	while lava_bubble_due >= 1.0:
+		lava_bubble_due -= 1.0
+		if lava_bubbles.size() >= int(spec.get("bubbles", 24)):
+			break
+		for attempt in range(8):
+			var at := camera.position + Vector2(randf_range(-520, 520), randf_range(-300, 300))
+			var t := _cell(int(floor(at.x / C)), int(floor(at.y / C)))
+			if t != 2 and t != 3:
+				continue
+			lava_bubbles.append({"p": (at / PIXEL_WORLD).floor() * PIXEL_WORLD, "t": 0.0, "T": randf_range(0.45, 0.75), "big": randi() % 2})
+			break
+
+
+## The lava floor's bubbles (art cells of the world's 3 px grid): a dome that
+## swells with a lit top, then bursts into a ring of bright cells.
+func _draw_lava_bubbles(l: CanvasItem) -> void:
+	if lava_bubbles.is_empty():
+		return
+	var ramp: Dictionary = PoolPaint.settings().get("materials", {}).get("lava", {}).get("ramp", {})
+	var spec := Color(str(ramp.get("spec", "fdf7ed")))
+	var hi := Color(str(ramp.get("hi", "facb3e")))
+	var lite := Color(str(ramp.get("lite", "ee8e2e")))
+	var shade := Color(str(ramp.get("shade", "4f343c")))
+	var px := PIXEL_WORLD
+	for b: Dictionary in lava_bubbles:
+		var k := float(b.t) / float(b.T)
+		var c: Vector2 = b.p
+		if k < 0.7:
+			var r := int(round((2.0 + float(b.big)) * k / 0.7))
+			# a dark rim round the dome first: it reads against the bright, busy lava
+			for y in range(-r - 1, 1):
+				for x in range(-r - 1, r + 2):
+					if Vector2(x, y).length() <= float(r) + 1.3:
+						l.draw_rect(Rect2(c + Vector2(x, y) * px, Vector2(px, px)), shade)
+			for y in range(-r, 1):
+				for x in range(-r, r + 1):
+					if Vector2(x, y).length() > float(r) + 0.3:
+						continue
+					var col := lite
+					if y == -r: col = hi
+					if y == -r and x == -1: col = spec
+					l.draw_rect(Rect2(c + Vector2(x, y) * px, Vector2(px, px)), col)
+			l.draw_rect(Rect2(c + Vector2(-r - 1, 1) * px, Vector2((2 * r + 3) * px, px)), shade)
+		else:
+			var s := (k - 0.7) / 0.3
+			var reach := 1.0 + 2.5 * s
+			for d: Vector2 in [Vector2(-1, 0), Vector2(1, 0), Vector2(0, -1), Vector2(-0.7, -0.7), Vector2(0.7, -0.7)]:
+				l.draw_rect(Rect2(c + (d * reach).round() * px, Vector2(px, px)), spec if s < 0.5 else hi)
 
 
 func _update_camera(dt: float) -> void:
@@ -2415,6 +2551,11 @@ func draw_layer(l: Layer) -> void:
 		"glow":
 			if monsters != null:
 				monsters.draw_fx(l)
+			if talents != null:
+				talents.draw_glow(l, float(state.t))
+			# the warm light breathing over the lava and fire puddles (src/vfx/pool_paint.gd)
+			if pools != null:
+				pools.draw_glow(l, 1.0, float(state.t))
 
 
 func _tex(ci: CanvasItem, name: String, pos: Vector2, flip := false, tint := Color.WHITE, scale := 1.0) -> void:
@@ -2574,6 +2715,8 @@ func _draw_actors(l: Layer) -> void:
 	var view := _view_rect().grow(220)
 	var t: float = state.t
 	FrostCombat.draw_under(self, l, t)
+	# the lava floor bubbling (under everything standing on the floor)
+	_draw_lava_bubbles(l)
 	if talents != null: talents.draw_world(l, t)
 	# Ignaroth's severed parts lie on the floor under everyone (src/hell/drake_rig_host.gd)
 	if drake_rig != null:
@@ -2651,6 +2794,8 @@ func _draw_actors(l: Layer) -> void:
 	if monsters != null:
 		monsters.draw_lasers(l)
 	_draw_skill_fx(l, t)
+	# the talents' events and auras over the actors (src/hell/hell_talents.gd)
+	if talents != null: talents.draw_over(l, t)
 	RelicKit.draw(self, l, t)
 	SubKit.draw(self, l, t)
 	# effect hook: with the feel the hero's conditions are the crypt's (boss_fx.gd on the feel's layer)

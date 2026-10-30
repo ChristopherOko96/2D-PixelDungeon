@@ -1,5 +1,5 @@
 {
-  "_note": "Physics-based pools on the art grid (src/vfx/splat_shape.gd shape, src/vfx/pool_paint.gd drawing). A pool runs out from where it lands along its flight; walls and solid props stop it and its volume runs on along them (a corner fills, the open floor gets a stretched blot). squash = how flat it lies (the floor seen at a slant); momentum 0..1 = how far it keeps sliding along its flight; spread_time = s it takes to run out to its rim; edge_time = s its rim goes before its middle at the end; rebake_hz = how often a changing pool is shaded again at most; anim_hz = the frame rate of living materials (fire, lava). materials: style (liquid, void, ice, fire, lava), droplets = drops a thrown splat flings ahead, bubbles = bubbles at a time, ramp = opaque colours by role (spec specular, hi highlight and north rim, lite light swirls, body, shade, deep south row and lip, outline). Materials are opaque (no alpha); see production/qa/evidence/crypt-vfx-review.",
+  "_note": "Physics-based pools on the art grid (src/vfx/splat_shape.gd shape, src/vfx/pool_paint.gd drawing). A pool runs out from where it lands along its flight; walls and solid props stop it and its volume runs on along them (a corner fills, the open floor gets a stretched blot). squash = how flat it lies (the floor seen at a slant); momentum 0..1 = how far it keeps sliding along its flight; spread_time = s it takes to run out to its rim; edge_time = s its rim goes before its middle at the end; rebake_hz = how often a changing pool is shaded again at most; anim_hz = the frame rate of living materials (fire, lava). materials: style (liquid, void, ice, fire, lava), droplets = drops a thrown splat flings ahead, bubbles = bubbles at a time, splash = what a landing pool throws (drops, chips, embers, none), ripple = speed of its rings (0 none), steps = wet steps behind waders, ramp = opaque colours by role (spec specular, hi highlight and north rim, lite light swirls, body, shade, deep south row and lip, outline). Materials are opaque (no alpha); see production/qa/evidence/crypt-vfx-review. void_pull = [pull, spin] px/s of a void pool's well (it pulls loose things in), void_motes = streaks circling in per second.",
   "squash": 0.75,
   "momentum": 0.55,
   "spread_time": 0.35,
@@ -7,12 +7,48 @@
   "rebake_hz": 15,
   "anim_hz": 6,
   "materials": {
-    "poison": {"style": "liquid", "droplets": 3, "bubbles": 3, "ramp": {"spec": "e8ff9a", "hi": "a8e04a", "lite": "6fae3a", "body": "3b6b2a", "shade": "2c5222", "deep": "24401c", "outline": "1f2b16"}},
-    "void": {"style": "void", "droplets": 2, "bubbles": 2, "ramp": {"spec": "f2d9ff", "hi": "c27bff", "lite": "7a3fb8", "body": "3a1f5c", "shade": "241238", "deep": "1a0d2a", "outline": "120a1c"}},
-    "ice": {"style": "ice", "droplets": 0, "bubbles": 0, "ramp": {"spec": "ffffff", "hi": "e6fbff", "lite": "a6e3f7", "body": "6fbde8", "shade": "3b84c4", "deep": "23599a", "outline": "0d1a38"}},
-    "frost": {"style": "ice", "droplets": 0, "bubbles": 0, "ramp": {"spec": "ffffff", "hi": "e6fbff", "lite": "a6e3f7", "body": "6fbde8", "shade": "3b84c4", "deep": "23599a", "outline": "0d1a38"}},
-    "fire": {"style": "fire", "droplets": 2, "bubbles": 4, "ramp": {"spec": "fff2a0", "hi": "ffb03a", "lite": "e8661e", "body": "a8321e", "shade": "6a1c16", "deep": "3a0e0a", "outline": "1c1117"}},
-    "lava": {"style": "lava", "droplets": 3, "bubbles": 2, "ramp": {"spec": "fdf7ed", "hi": "facb3e", "lite": "ee8e2e", "body": "da4e38", "shade": "4f343c", "deep": "2e1e28", "outline": "1c1117"}},
-    "blood": {"style": "liquid", "droplets": 3, "bubbles": 0, "ramp": {"spec": "d4503c", "hi": "b8303a", "lite": "9c2430", "body": "7a1a26", "shade": "5c1420", "deep": "3e0e16", "outline": "2a0a10"}}
+    "poison": {"style": "liquid", "droplets": 3, "bubbles": 3, "ramp": {"spec": "e8ff9a", "hi": "a8e04a", "lite": "6fae3a", "body": "3b6b2a", "shade": "2c5222", "deep": "24401c", "outline": "1f2b16"}, "splash": "drops", "ripple": 1, "steps": true},
+    "void": {"style": "void", "droplets": 2, "bubbles": 2, "ramp": {"spec": "f2d9ff", "hi": "c27bff", "lite": "7a3fb8", "body": "3a1f5c", "shade": "241238", "deep": "1a0d2a", "outline": "120a1c"}, "splash": "drops", "ripple": 0.8, "steps": false, "void_pull": [140, 90], "void_motes": 6},
+    "ice": {"style": "ice", "droplets": 0, "bubbles": 0, "ramp": {"spec": "ffffff", "hi": "e6fbff", "lite": "a6e3f7", "body": "6fbde8", "shade": "3b84c4", "deep": "23599a", "outline": "0d1a38"}, "splash": "chips", "ripple": 0, "steps": false, "crack": true, "melt_to": "water"},
+    "frost": {"style": "ice", "droplets": 0, "bubbles": 0, "ramp": {"spec": "ffffff", "hi": "e6fbff", "lite": "a6e3f7", "body": "6fbde8", "shade": "3b84c4", "deep": "23599a", "outline": "0d1a38"}, "splash": "chips", "ripple": 0, "steps": false, "crack": true, "melt_to": "water"},
+    "fire": {"style": "fire", "droplets": 2, "bubbles": 4, "ramp": {"spec": "fff2a0", "hi": "ffb03a", "lite": "e8661e", "body": "a8321e", "shade": "6a1c16", "deep": "3a0e0a", "outline": "1c1117"}, "splash": "embers", "ripple": 0, "steps": false, "glow": 0.12},
+    "lava": {"style": "lava", "droplets": 3, "bubbles": 2, "ramp": {"spec": "fdf7ed", "hi": "facb3e", "lite": "ee8e2e", "body": "da4e38", "shade": "4f343c", "deep": "2e1e28", "outline": "1c1117"}, "splash": "embers", "ripple": 0.35, "steps": false, "spread_scale": 3, "glow": 0.18},
+    "blood": {"style": "liquid", "droplets": 3, "bubbles": 0, "ramp": {"spec": "d4503c", "hi": "b8303a", "lite": "9c2430", "body": "7a1a26", "shade": "5c1420", "deep": "3e0e16", "outline": "2a0a10"}, "splash": "drops", "ripple": 1, "steps": true},
+    "water": {"style": "liquid", "droplets": 3, "bubbles": 0, "ramp": {"spec": "e8fbff", "hi": "8fd8e6", "lite": "4fa0c8", "body": "2a6a9e", "shade": "1f5080", "deep": "173a5e", "outline": "102436"}, "splash": "drops", "ripple": 1, "steps": true}
+  },
+  "physics": {
+    "_note": "The living liquid (src/vfx/pool_paint.gd): a pool first seen within splash_window s of landing throws drops (drops_per_px of its radius, at most drop_max) at drop_speed px/s along its flight with drop_lift px/s upwards; a drop into its pool rings it, next to it joins it, on dry floor lies as a puddle for drop_dry s (drawing only). Rings run at ripple_speed art px/s (times the material's ripple) for ripple_life s (at most ripple_max per material), a crown jumps for crown_time s. Waders ring every wade_every s; out of a liquid with steps they leave steps wet steps, one per stride crypt px, that dry in step_dry s. User request 2026-10-30: liquids as physics. Burning ground lets fire_flames flames per cell and second rise (at most fire_flames_max per pool layer material). Materials: spread_scale slows the run-out (lava is thick: 3), glow = strength of the warm light breathing over the pool. Ice (materials crack, melt_to): a blow cracks it (at most crack_max cracks, healing over crack_life s), a frost burst freezes liquid rim first over freeze_time s, ice that goes leaves melt water drying in water_dry s. Lightning into a liquid (electrify): arcs crawl over it for zap_time s in zap_cols.",
+    "splash_window": 0.25,
+    "drops_per_px": 0.4,
+    "drop_max": 22,
+    "drop_speed": [40, 120],
+    "drop_lift": [90, 180],
+    "drop_dry": [2, 3.5],
+    "ripple_speed": 26,
+    "ripple_life": 0.7,
+    "ripple_max": 12,
+    "crown_time": 0.2,
+    "wade_every": 0.22,
+    "steps": 4,
+    "stride": 12,
+    "step_dry": 2.5,
+    "fire_flames": 0.06,
+    "fire_flames_max": 40,
+    "crack_life": 2.4,
+    "crack_max": 8,
+    "freeze_time": 0.45,
+    "water_dry": [2.5, 4],
+    "zap_time": 0.6,
+    "zap_cols": ["f4f6ff", "8fa4ff"]
+  },
+  "reactions": {
+    "_note": "Where two materials meet (keyed <style>+<style>; liquid = poison, blood, water): a_to / b_to say what becomes of each cell there: gone (hidden; drawing only, the game's hit test is untouched), crust (lava turns dark for crust_time s and glows up again), or a material name (a drawing-only cell of it); steam hisses every steam_every cells. A liquid on the hot floor (the Hell's lava tiles) reacts as liquid+lava. User decision 2026-10-30: reactions visible only.",
+    "crust_time": 4,
+    "steam_every": 9,
+    "liquid+lava": {"a_to": "gone", "b_to": "crust", "steam": true},
+    "liquid+fire": {"b_to": "gone", "steam": true},
+    "liquid+ice": {"a_to": "ice"},
+    "ice+fire": {"a_to": "water", "b_to": "gone", "steam": true},
+    "ice+lava": {"a_to": "gone", "b_to": "crust", "steam": true}
   }
 }

@@ -2207,7 +2207,7 @@ func _make_snapshot(advance_sequence: bool = true) -> Dictionary:
 		visible_enemies[-1].merge({"enemy_name":str(enemy.get("enemy_name","Kryptawesen")),"attack_kind":str(enemy.get("attack_kind","")),"attack_length":attack_length,"aim_x":attack_aim.x,"aim_y":attack_aim.y,"tx":point.x,"ty":point.y,"blocks":int(enemy.get("blocks",0)),"cast_count":int(enemy.get("summons_cast",0)),"caster_id":int(enemy.get("caster_id",0))})
 		if bool(enemy.get("sheet",false)): sheet_monsters.snapshot_entry(enemy,visible_enemies[-1])
 	var visible_bullets: Array = []
-	for bullet in bullets: visible_bullets.append({"id":bullet.get("id",-1),"radius":float(bullet.get("radius",balance.bullet.radius)),"x": bullet.pos.x, "y": bullet.pos.y, "owner": bullet.owner,"element":str(bullet.get("element","")),"critical":bool(bullet.get("critical",false)),"style":str(bullet.get("style","")),"vx":float(bullet.velocity.x),"vy":float(bullet.velocity.y)})
+	for bullet in bullets: visible_bullets.append({"id":bullet.get("id",-1),"radius":float(bullet.get("radius",balance.bullet.radius)),"x": bullet.pos.x, "y": bullet.pos.y, "owner": bullet.owner,"element":str(bullet.get("element","")),"critical":bool(bullet.get("critical",false)),"style":str(bullet.get("style","")),"talent":str(bullet.get("talent","")),"stage":int(bullet.get("stage",0)),"vx":float(bullet.velocity.x),"vy":float(bullet.velocity.y)})
 	if advance_sequence: packet_sequence += 1
 	var map_rooms: Array[Dictionary] = []
 	for i in range(floor_layouts.size()):

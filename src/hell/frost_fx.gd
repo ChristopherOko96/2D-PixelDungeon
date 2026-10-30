@@ -195,6 +195,9 @@ func shatter(p: Vector2, n: int, r: float, dir := Vector2.ZERO, speed := 240.0) 
 	for i in range(maxi(2, n / 3)):
 		var at := p + Vector2.from_angle(randf() * TAU) * r * 0.5 * randf()
 		P.emit(at / s, Vector2(randf_range(-30.0, 30.0), randf_range(-20.0, 10.0)) / s, SNOW[randi() % SNOW.size()], randf_range(0.6, 1.1), "dust", 4.0, 3.0, 0.0, 1.5)
+	# rigid shards that slide off and scratch the floor (src/vfx/particles.gd shatter)
+	if P.has_method("shatter"):
+		P.shatter(p / s, maxi(2, n / 3), dir, speed * 0.7 / s, [C.spec, C.hi, C.lite, C.body, C.shade])
 	rime(p, r, n)
 
 

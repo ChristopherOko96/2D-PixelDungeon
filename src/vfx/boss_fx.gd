@@ -11,10 +11,23 @@ extends RefCounted
 
 const SKULL := preload("res://assets/sprites/0x72/skull.png")
 const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
+const PoolPaint = preload("res://src/vfx/pool_paint.gd")
 ## World px per art pixel of the canvas (the crypt's; the story worlds draw it in crypt units).
 const ART := 2.0
 ## The pools as pixel materials (src/vfx/pool_paint.gd); null draws the old circles.
 var pools: RefCounted = null
+## The world's gas layer (src/vfx/gas.gd): fumes of poison pools, breath clouds; null: none.
+var gas: RefCounted = null
+## The particles (src/vfx/particles.gd) the void pulls in; null: none.
+var particles: RefCounted = null
+## Vortices seen (id -> zone): one that goes implodes.
+var _vortices: Dictionary = {}
+## Breath cones seen warning (id -> zone): when one goes it has struck.
+var _breaths: Dictionary = {}
+## Material colour ramps by style (_ramp_of), cached.
+var _ramps: Dictionary = {}
+## What gas a breath of each style leaves.
+const BREATH_GAS := {"poison": "poison", "frost": "frost", "void": "void"}
 const INK := Color("1a1414")
 const COLORS := {
 	"void": Color("c06bd8"), "poison": Color("8fc84a"), "ice": Color("9fe3ee"), "frost": Color("bff0f7"),
@@ -27,13 +40,129 @@ func _color(style: String) -> Color:
 	return COLORS.get(style, Color("e5c58a"))
 
 
+## The colours of a material by role (spec, hi, lite, body, shade, deep,
+## outline) from vfx_pools.json, or made from `color` when it has none.
+func _ramp_of(style: String, color: Color) -> Dictionary:
+	if _ramps.has(style):
+		return _ramps[style]
+	var spec: Dictionary = (PoolPaint.settings().get("materials", {}) as Dictionary).get(style, {}).get("ramp", {})
+	var out := {}
+	if spec.has("hi") and spec.has("outline"):
+		for role: String in spec:
+			out[role] = Color(str(spec[role]))
+	else:
+		out = {"spec": color.lightened(0.6), "hi": color.lightened(0.3), "lite": color, "body": color.darkened(0.35),
+			"shade": color.darkened(0.55), "deep": color.darkened(0.7), "outline": color.darkened(0.85)}
+	_ramps[style] = out
+	return out
+
+
+## The vortex on the floor, a drain of void: the floor round its eye darkens
+## (its light is swallowed, the darkness creeping in in waves), four arms of
+## light wind in along a spiral that tightens near the eye, flowing inwards as
+## dashes and brightening as they near it, and the eye is a hole of void with a
+## ring of the last light turning round it. `p` 0..1: how far it has come (the
+## eye opens). Cells stop at walls (PixelPaint.clip, set by the host).
+func _draw_vortex(canvas: CanvasItem, at: Vector2, radius: float, p: float, style: String, color: Color, clock: float) -> void:
+	var V := _ramp_of(style, color)
+	var tq := floorf(clock * PixelPaint.FPS)
+	var eye := radius * lerpf(0.12, 0.24, clampf(p * 3.0, 0.0, 1.0))
+	# the floor round the eye goes dark
+	var reach := eye * 2.6
+	for gy in range(int(floor((at.y - reach) / ART)), int(ceil((at.y + reach) / ART)) + 1):
+		for gx in range(int(floor((at.x - reach) / ART)), int(ceil((at.x + reach) / ART)) + 1):
+			var q := Vector2i(gx, gy)
+			var d := ((Vector2(q) + Vector2(0.5, 0.5)) * ART - at).length()
+			if d <= eye or d >= reach:
+				continue
+			var k := 1.0 - (d - eye) / (reach - eye)
+			var wave := 0.5 + 0.5 * sin(d / ART * 0.8 + clock * 6.0)
+			if PixelPaint.shown(q, k * (0.55 + 0.4 * wave)):
+				PixelPaint.cell(canvas, q, V.outline, ART)
+	# arms of light winding in
+	var arms := 4
+	var steps := int(radius / ART)
+	for arm in range(arms):
+		for step in range(steps):
+			var k := float(step) / float(maxi(1, steps))
+			var r := lerpf(radius, eye, k)
+			if r <= eye + ART:
+				break
+			# dashes flowing inwards
+			if posmod(step - int(tq), 5) == 0:
+				continue
+			var angle := -tq / PixelPaint.FPS * 2.4 + float(arm) * TAU / float(arms) + log(radius / r) * 2.2
+			var point := at + Vector2.from_angle(angle) * r
+			var q := PixelPaint.at(point, ART)
+			# faint far out (by the dither), bright and thick near the eye
+			if k < 0.35 and not PixelPaint.shown(q, 0.3 + k * 2.0):
+				continue
+			PixelPaint.cell(canvas, q + Vector2i(0, 1), INK, ART)
+			PixelPaint.cell(canvas, q, V.shade if k < 0.3 else (V.lite if k < 0.7 else V.hi), ART)
+			if k > 0.55:
+				PixelPaint.cell(canvas, PixelPaint.at(point + Vector2.from_angle(angle + PI * 0.5) * ART, ART), V.lite, ART)
+	# the eye: a hole of void, the last light turning round it
+	PixelPaint.disc(canvas, at, eye, eye, V.outline, ART)
+	PixelPaint.disc(canvas, at, eye * 0.55, eye * 0.55, (V.outline as Color).darkened(0.6), ART)
+	PixelPaint.ellipse(canvas, at + Vector2(0, ART), eye + ART, eye + ART, INK, ART)
+	PixelPaint.ellipse(canvas, at, eye + ART, eye + ART, V.lite, ART)
+	PixelPaint.ellipse(canvas, at, eye + ART, eye + ART, V.hi, ART, 2, int(tq))
+	PixelPaint.ellipse(canvas, at, eye + ART, eye + ART, V.spec, ART, 7, int(tq) * 2)
+
+
 # --- Floor zones ---------------------------------------------------------------------
+
+## The gas of the boss moves (src/vfx/gas.gd): poison pools give off fumes, and
+## a breath cone that strikes (its zone is gone) leaves a cloud blown along it
+## (poison: a green cloud, frost: mist).
+func _gas_of(zones: Array, clock: float) -> void:
+	var fumes: Array = []
+	var now := {}
+	for zone: Dictionary in zones:
+		var style := str(zone.get("st", ""))
+		if str(zone.get("k", "")) == "pool" and style == "poison":
+			fumes.append({"id": int(zone.id), "k": "gas", "st": "poison", "x": float(zone.x), "y": float(zone.y), "r": float(zone.r) * 0.8,
+				"p": float(zone.get("p", 0.0)), "L": float(zone.get("L", 4.0)), "d": 0.4})
+		elif str(zone.get("k", "")) == "cone" and style in BREATH_GAS:
+			now[int(zone.id)] = zone
+	gas.sync(fumes, clock, "boss")
+	for id: int in _breaths.keys():
+		if now.has(id): continue
+		var cone: Dictionary = _breaths[id]
+		var dir := Vector2.from_angle(float(cone.get("a", 0.0)))
+		var reach := float(cone.get("r", 150.0))
+		var origin := Vector2(float(cone.x), float(cone.y))
+		gas.emit("breath:%d" % id, str(BREATH_GAS[str(cone.st)]), origin + dir * reach * 0.5, reach * 0.42, 3.0, clock, dir * reach * 0.9, 0.9)
+		_breaths.erase(id)
+	for id: int in now:
+		_breaths[id] = now[id]
+
+
+## The void's pull of the boss moves: a vortex is a well that swirls
+## everything in (and motes circling in); when it goes it implodes.
+func _wells_of(zones: Array) -> void:
+	var now := {}
+	for zone: Dictionary in zones:
+		if str(zone.get("k", "")) != "vortex": continue
+		var id := int(zone.id)
+		var r := float(zone.r)
+		now[id] = zone
+		particles.well("vortex:%d" % id, Vector2(float(zone.x), float(zone.y)), r, 220.0, 160.0, 12.0, 0.2, 18.0)
+	for id: int in _vortices.keys():
+		if now.has(id): continue
+		var gone: Dictionary = _vortices[id]
+		particles.implode(Vector2(float(gone.x), float(gone.y)), float(gone.r) * 0.6)
+		_vortices.erase(id)
+	for id: int in now: _vortices[id] = now[id]
+
 
 ## Telegraphs and pools on the floor, under the actors.
 func draw_ground(canvas: CanvasItem, snapshot: Dictionary, clock: float) -> void:
 	if pools != null:
-		pools.sync(snapshot.get("boss_zones", []), clock)
+		pools.sync(snapshot.get("boss_zones", []), clock, "boss")
 		pools.draw(canvas, clock)
+	if gas != null: _gas_of(snapshot.get("boss_zones", []), clock)
+	if particles != null: _wells_of(snapshot.get("boss_zones", []))
 	for zone: Dictionary in snapshot.get("boss_zones", []):
 		var at := Vector2(float(zone.x), float(zone.y))
 		var radius := float(zone.r)
@@ -51,17 +180,7 @@ func draw_ground(canvas: CanvasItem, snapshot: Dictionary, clock: float) -> void
 			"ring":
 				PixelPaint.warning(canvas, at, radius, radius, progress, color, INK, ART, clock)
 			"vortex":
-				# five arms of pixels spiralling in, the eye filling by the dither
-				for arm in range(5):
-					for step in range(int(radius / ART * 0.9)):
-						var k := float(step) / maxf(1.0, radius / ART * 0.9)
-						if posmod(step + int(clock * PixelPaint.FPS), 4) == 3:
-							continue
-						var angle := -floorf(clock * PixelPaint.FPS) / PixelPaint.FPS * 3.0 + float(arm) * TAU / 5.0 + k * 2.6
-						var q := PixelPaint.at(at + Vector2.from_angle(angle) * radius * (1.0 - k * 0.85), ART)
-						PixelPaint.cell(canvas, q + Vector2i(0, 1), INK, ART)
-						PixelPaint.cell(canvas, q, color if k < 0.6 else color.lightened(0.3), ART)
-				PixelPaint.disc(canvas, at, radius * 0.25, radius * 0.25, color.darkened(0.4), ART, 0.5)
+				_draw_vortex(canvas, at, radius, progress, str(zone.st), color, clock)
 			"skull":
 				var pulse := int(floorf(clock * 10.0)) % 2
 				var shrink := 1.0 - progress * 0.5

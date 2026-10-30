@@ -40,7 +40,9 @@ const Crypt72 = preload("res://src/crypt_0x72_art.gd")
 const SkillFx = preload("res://src/vfx/skill_fx.gd")
 const BossFx = preload("res://src/vfx/boss_fx.gd")
 const PoolPaint = preload("res://src/vfx/pool_paint.gd")
+const Gas = preload("res://src/vfx/gas.gd")
 const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
+const PerkMarks = preload("res://src/vfx/perk_marks.gd")
 const AttackFx = preload("res://src/vfx/attack_fx.gd")
 const HeroLook = preload("res://src/hero/hero_look.gd")
 const SliceFx = preload("res://src/vfx/slice_fx.gd")
@@ -75,6 +77,8 @@ var _music: Node
 var music_in_run := true
 var _base_position := Vector2.ZERO
 var _shake_rng := RandomNumberGenerator.new()
+## The room's gas layer (src/vfx/gas.gd), made with the room's pools.
+var _gas: RefCounted = null
 ## Camera shake strength from the options (1 = full, 0 = off); presentation only.
 var shake_scale := 1.0
 var _classic := ClassicArt.new()
@@ -205,6 +209,7 @@ func set_state(snapshot: Dictionary, local_peer: int) -> void:
 	var sequence := "%s:%s:%s" % [key,snapshot.get("seq",-1),snapshot.get("local_visual_tick",-1)]
 	if not snapshot.has("seq") or sequence != _observed_sequence:
 		_feedback.observe(snapshot,local_peer)
+		_talent_feel(snapshot,local_peer)
 		_actor_motion.observe(snapshot)
 		if _rigs != null: _rigs.observe(snapshot)
 		_observed_sequence = sequence
@@ -299,6 +304,7 @@ func _process(delta: float) -> void:
 		if _rigs != null: _rigs.step(delta)
 	_feedback.update(delta)
 	_fx.update(delta)
+	if _gas != null and _feedback.hitstop <= 0: _gas.step(delta, _clock)
 	if _feedback.hitstop <= 0 and not _pending_snapshot.is_empty(): _accept_state(_pending_snapshot)
 	_update_darkness()
 	_update_fog()
@@ -340,13 +346,29 @@ func _draw() -> void:
 		if _fx_layout_key != _layout_key:
 			_fx_layout_key = _layout_key
 			_fx.set_layout(layout)
+			# talent sheets are cut at this room's walls too (src/vfx/fx_sprites.gd clip)
+			_talent_fx.sprites.set_layout(layout)
 			_attack_fx.reset()
 		# Particles bounce off this room's walls and settle on its floor.
 		if _feedback.particles.layout_key != _layout_key:
 			_feedback.particles.set_layout(layout, _layout_key)
 			# pools are shaped by this room's walls (src/vfx/pool_paint.gd, 2 px art pixel)
-			_boss_fx.pools = PoolPaint.new(2.0, func(point: Vector2) -> bool: return not _feedback.particles.solid(point))
-			_skill_fx.pools = PoolPaint.new(2.0, func(point: Vector2) -> bool: return not _feedback.particles.solid(point))
+			# one layer for the room: the same liquid from boss moves, skills and
+			# talents is one pool; its drops fly in the feedback's particles and
+			# blasts ring it (src/vfx/pool_paint.gd, src/vfx/particles.gd)
+			var pools := PoolPaint.new(2.0, func(point: Vector2) -> bool: return not _feedback.particles.solid(point))
+			pools.particles = _feedback.particles
+			# the room's gas: clouds of puffs that spread, flow and are blown away (src/vfx/gas.gd)
+			_gas = Gas.new(2.0, func(point: Vector2) -> bool: return not _feedback.particles.solid(point))
+			_feedback.particles.set_liquids([[pools, 1.0], [_gas, 1.0]])
+			_boss_fx.gas = _gas
+			_boss_fx.particles = _feedback.particles
+			_skill_fx.gas = _gas
+			_talent_fx.gas = _gas
+			_boss_fx.pools = pools
+			_skill_fx.pools = pools
+			_talent_fx.pools = pools
+			_talent_fx.particles = _feedback.particles
 		_skill_fx.particles = _feedback.particles
 		_attack_fx.particles = _feedback.particles
 		_attack_fx.fx = _fx
@@ -358,7 +380,14 @@ func _draw() -> void:
 		_boss_fx.draw_ground(self,_snapshot,_clock)
 		PixelPaint.clip = Callable()
 		_sheet_art.draw_hazards(self,_snapshot.get("hazards",[]),false,_clock)
+		PixelPaint.clip = _open_floor
 		_talent_fx.draw_ground(self,_snapshot.get("talents",{}),_clock)
+		PixelPaint.clip = Callable()
+		_wade_pools()
+		# the gas lies over the floor, under the actors (they stay readable over it)
+		PixelPaint.clip = _open_floor
+		if _gas != null: _gas.draw(self, _clock)
+		PixelPaint.clip = Callable()
 	if actors_visible: _talent_fx.draw_pets(self,_snapshot.get("talents",{}),_clock)
 	var rigs_on: bool = _rigs != null and _rigs.is_ready()
 	if rigs_on and actors_visible: _rigs.draw_under(self)
@@ -433,7 +462,11 @@ func _draw() -> void:
 		_skill_fx.draw_over(self,_snapshot,_clock)
 		_boss_fx.draw_over(self,_snapshot,_clock,_position)
 		_sheet_art.draw_hazards(self,_snapshot.get("hazards",[]),true,_clock)
-		_talent_fx.draw_events(self,_snapshot.get("talents",{}))
+		# talent effects and what lasts on the heroes stop at the walls (src/vfx/talent_fx.gd)
+		PixelPaint.clip = _open_floor
+		_talent_fx.draw_events(self,_snapshot.get("talents",{}),_clock)
+		_talent_fx.draw_auras(self,_snapshot.get("talents",{}),_clock,_talent_where)
+		PixelPaint.clip = Callable()
 		PixelPaint.clip = _open_floor
 		_attack_fx.draw_flashes(self,_clock)
 		PixelPaint.clip = Callable()
@@ -572,6 +605,9 @@ func _draw_glow(canvas: CanvasItem) -> void:
 	PixelPaint.clip = Callable()
 	_skill_fx.draw_glow(canvas, _snapshot, _clock, _glow)
 	_fx.draw_glow(canvas, _glow.level("spells"))
+	_talent_fx.draw_glow(canvas, _snapshot.get("talents", {}), _glow.level("spells"), _clock, _talent_where)
+	# the warm light breathing over fire and lava pools (src/vfx/pool_paint.gd)
+	if _boss_fx.pools != null: _boss_fx.pools.draw_glow(canvas, _glow.level("spells"), _clock)
 	_feedback.particles.draw_glow(canvas, _glow.level("particles"))
 	if _rigs != null and _rigs.is_ready():
 		var void_level := _glow.level("void")
@@ -664,6 +700,45 @@ func _silhouette(texture: Texture2D) -> Texture2D:
 
 func _box(x: float, y: float, width: float, height: float, color: Color) -> void:
 	draw_rect(Rect2(floorf(x), floorf(y), width, height), color)
+
+## Heroes and enemies in the room's liquid leave a wake, and wet steps out of
+## it (src/vfx/pool_paint.gd wade); their feet are 12 px under their point.
+func _wade_pools() -> void:
+	var pools: RefCounted = _boss_fx.pools
+	if pools == null: return
+	var players: Dictionary = _snapshot.get("players", {})
+	for id: Variant in players:
+		var hero: Dictionary = players[id]
+		pools.wade("p%s" % str(id), _position(hero) + Vector2(0, 12), bool(hero.get("moving", false)), _clock)
+		if _gas != null: _gas.part(_position(hero) + Vector2(0, 8), 14.0)
+	var enemies: Array = _snapshot.get("enemies", [])
+	for index in range(mini(enemies.size(), 24)):
+		var enemy: Dictionary = enemies[index]
+		if float(enemy.get("dying_p", -1.0)) >= 0.0: continue
+		pools.wade("e%s" % str(enemy.get("id", index)), _position(enemy) + Vector2(0, 12), bool(enemy.get("moving", false)), _clock)
+		if _gas != null: _gas.part(_position(enemy) + Vector2(0, 8), 12.0)
+	# shots cut lanes through the gas
+	if _gas != null:
+		for bullet: Dictionary in _snapshot.get("bullets", []):
+			_gas.cut(_position(bullet), Vector2(float(bullet.get("vx", 0.0)), float(bullet.get("vy", 0.0))), 5.0)
+
+
+## Where hero `owner` stands now (his auras follow him); INF when he is not here.
+func _talent_where(owner: int) -> Vector2:
+	var players: Dictionary = _snapshot.get("players", {})
+	var hero: Dictionary = players.get(owner, players.get(str(owner), {}))
+	return Vector2.INF if hero.is_empty() else _position(hero)
+
+
+## The talents' weight on the view (src/vfx/talent_fx.gd take_feel, by
+## importance): an ultimate shakes the view and holds the picture for its own
+## hero; another hero's casts only shake it a little.
+func _talent_feel(snapshot: Dictionary, local_peer: int) -> void:
+	for hit: Dictionary in _talent_fx.take_feel(snapshot.get("talents", {})):
+		var mine := int(hit.owner) == local_peer or int(hit.owner) < 0
+		_feedback.shake = minf(1.0, _feedback.shake + float(hit.trauma) * (1.0 if mine else 0.35))
+		if mine: _feedback.hitstop = maxf(_feedback.hitstop, float(hit.hitstop))
+
 
 func _position(entity: Dictionary) -> Vector2:
 	return Vector2(float(entity.get("x", 448.0)), float(entity.get("y", 240.0))).round()
@@ -951,7 +1026,11 @@ func _draw_bullet(bullet: Dictionary) -> void:
 	var style: String = str(bullet.get("style",""))
 	if owner > 0 and _skill_fx.draw_bullet(self,bullet,_clock): return
 	# talent shots: ice lance and arcane orb sheets (src/vfx/talent_fx.gd)
-	if owner > 0 and _talent_fx.draw_bullet(self,bullet,_clock): return
+	if owner > 0:
+		PixelPaint.clip = _open_floor
+		var talent_shot: bool = _talent_fx.draw_bullet(self,bullet,_clock)
+		PixelPaint.clip = Callable()
+		if talent_shot: return
 	if AttackFx.handles(bullet):
 		# a hero's streak, rune ring and motes never shine through a wall
 		PixelPaint.clip = _open_floor
@@ -1036,24 +1115,10 @@ func _draw_enemy_telegraph(enemy: Dictionary, point: Vector2) -> void:
 			_box(end.x-2,end.y-2,4,4,tint)
 
 
+## The perk markers (src/vfx/perk_marks.gd: a chain is lightning, a heal a
+## cross of light lifting off, a blast/crit/shield a ring spreading out).
 func _draw_perk_events() -> void:
-	for event: Dictionary in _snapshot.get("perk_events",[]):
-		var point: Vector2 = Vector2(float(event.x),float(event.y)).round()
-		var kind: String = str(event.kind)
-		var tint: Color = Color("f6cf85") if kind in ["blast","crit"] else Color("a7ddaa") if kind in ["heal","poison"] else Color("a7cce8")
-		if kind == "chain":
-			var end: Vector2 = Vector2(float(event.tx),float(event.ty)).round()
-			var midpoint: Vector2 = ((point+end)*0.5).round()+Vector2(4,-4)
-			draw_line(point,midpoint,tint,2,false)
-			draw_line(midpoint,end,tint,2,false)
-		elif kind in ["heal","revive"]:
-			_box(point.x-2,point.y-26,4,12,tint)
-			_box(point.x-6,point.y-22,12,4,tint)
-		else:
-			var radius: float = 16 if kind in ["shield","crit"] else 28
-			for index: int in range(8):
-				var offset: Vector2 = (Vector2.from_angle(TAU*index/8)*radius).round()
-				_box(point.x+offset.x-2,point.y+offset.y-2,4,4,tint)
+	PerkMarks.draw(self, _snapshot.get("perk_events", []))
 
 func _draw_pedestal() -> void:
 	var center: Vector2 = _snapshot.get("room_layout",{}).get("reward_spawn",Vector2(448,240))

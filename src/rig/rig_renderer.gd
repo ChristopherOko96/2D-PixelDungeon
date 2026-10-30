@@ -32,6 +32,8 @@ const SLASH := {
 const SLASH_LIFE := 0.2
 const VOID_FLAME := [Color("fdf7ed"), Color("f0b3dd"), Color("c278d0"), Color("8156aa"), Color("473579")]
 const VIOLET_HOT := Color("f2b8ff")
+## The core of a void beam: nothing, darker than the floor (vfx_pools.json void outline).
+const VOID_CORE := Color("120a1c")
 const INK := Color("222222")
 ## The gore table (src/vfx/feedback.gd): a hell rig's material (rig.material)
 ## names one of its materials, whose color and stain are the cut chips, so a
@@ -929,6 +931,12 @@ func draw_over(canvas: CanvasItem, snapshot: Dictionary) -> void:
 				canvas.draw_rect(Rect2(Vector2(float(flash.x), float(flash.y)) + Vector2(cos(angle), sin(angle) * 0.55) * radius, Vector2(2, 2)), Color(flash.color, 1.0 - k))
 
 
+## A beam of void from the eye to the far end of `ends` (where it stops at a
+## wall): the warning before it a flickering dotted line; then a tube of
+## nothing with the light torn bright round it, wavering, what it swallowed
+## running back up its core; light and dust beside it are drawn into it and
+## vanish, and where it strikes it tears a hole of void that sucks the floor's
+## dust in, swirling. On the 2 px grid.
 func _draw_beam(canvas: CanvasItem, drawn: Dictionary, ends: Array) -> void:
 	var eye: Vector2 = drawn.eye
 	var end := Vector2(float(ends[2]), float(ends[3]) - 16.0)
@@ -945,24 +953,59 @@ func _draw_beam(canvas: CanvasItem, drawn: Dictionary, ends: Array) -> void:
 			s += 4.0
 	var k := float(beam.get("k", 0.0))
 	if k <= 0.0: return
-	for layer: Array in [[7.0, INK], [5.2, VIOLET_DARK], [3.4, VIOLET], [1.6, VIOLET_HOT]]:
+	# a tube of void: outside in the dark outline, the light torn bright at its
+	# rim, the violet body and a core of nothing (darker than the floor); it wavers
+	for layer: Array in [[8.0, INK], [6.6, VIOLET_HOT], [5.0, VIOLET], [3.0, VOID_CORE]]:
 		var s := 0.0
 		while s <= length:
-			var wobble := 1.1 * sin(s * 0.16 - t * 38.0) + 0.7 * sin(s * 0.055 + t * 21.0) if float(layer[0]) > 2.0 else 0.0
+			var wobble := 1.1 * sin(s * 0.16 - t * 38.0) + 0.7 * sin(s * 0.055 + t * 21.0)
 			var radius := (float(layer[0]) + wobble) * k * (lerpf(0.5, 1.0, s / 12.0) if s < 12.0 else 1.0)
 			if radius >= 0.9:
 				var side := maxf(2.0, roundf(radius * 2.0 / 2.0) * 2.0)
 				canvas.draw_rect(Rect2((eye + direction * s - Vector2(side, side) * 0.5).round(), Vector2(side, side)), layer[1])
 			s += 2.0
+	# what it swallowed runs back up its core to the eye
+	if k > 0.5:
+		var s := fposmod(-t * 260.0, 14.0)
+		while s <= length:
+			canvas.draw_rect(Rect2((eye + direction * s - Vector2(1, 1)).round(), Vector2(2, 2)), VIOLET)
+			s += 14.0
+	# the eye burns; where it strikes it tears a hole of void with the light torn round it
 	var flare := 6.0 + 2.0 * sin(t * 50.0)
-	canvas.draw_circle(eye, (flare + 1.0) * k, VIOLET)
-	canvas.draw_circle(eye, flare * 0.55 * k, VIOLET_HOT)
-	canvas.draw_circle(end, (flare + 3.0) * k, VIOLET_DARK)
-	canvas.draw_circle(end, flare * k, VIOLET)
-	canvas.draw_circle(end, flare * 0.5 * k, VIOLET_HOT)
-	if _rng.randf() < 0.6:
-		_particles.append({"x": end.x, "y": end.y, "vx": -direction.x * _rng.randf_range(40, 140) + _rng.randf_range(-60, 60), "vy": -direction.y * _rng.randf_range(40, 140) + _rng.randf_range(-80, 20),
-			"life": 0.0, "max": _rng.randf_range(0.2, 0.45), "color": [VIOLET_HOT, VIOLET, INK][_rng.randi_range(0, 2)], "grav": 180.0})
+	_px_disc(canvas, eye, (flare + 1.0) * k, VIOLET)
+	_px_disc(canvas, eye, flare * 0.55 * k, VIOLET_HOT)
+	_px_disc(canvas, end, (flare + 3.0) * k, INK)
+	_px_disc(canvas, end, (flare + 1.5) * k, VIOLET_HOT)
+	_px_disc(canvas, end, flare * k, VOID_CORE)
+	# light and dust beside it are drawn in and vanish in its core
+	var across := Vector2(-direction.y, direction.x)
+	for i in range(2):
+		var off := _rng.randf_range(10.0, 24.0) * (1.0 if _rng.randf() < 0.5 else -1.0)
+		var speed := _rng.randf_range(90.0, 160.0)
+		var from := eye + direction * _rng.randf_range(12.0, length) + across * off
+		_particles.append({"x": from.x, "y": from.y, "vx": -across.x * signf(off) * speed + direction.x * 20.0, "vy": -across.y * signf(off) * speed + direction.y * 20.0,
+			"life": 0.0, "max": (absf(off) - 3.0) / speed, "color": [VIOLET_HOT, VIOLET, Color("a99d93")][_rng.randi_range(0, 2)], "grav": 0.0})
+	# and the floor round the hole is sucked into it, swirling
+	if _rng.randf() < 0.8:
+		var out := Vector2.from_angle(_rng.randf() * TAU)
+		var dist := _rng.randf_range(12.0, 26.0)
+		var speed := _rng.randf_range(110.0, 180.0)
+		var from := end + out * dist
+		var pull := -out * speed + out.orthogonal() * speed * 0.35
+		_particles.append({"x": from.x, "y": from.y, "vx": pull.x, "vy": pull.y,
+			"life": 0.0, "max": (dist - 3.0) / speed, "color": [VIOLET_HOT, Color("7b6a5e"), Color("a99d93")][_rng.randi_range(0, 2)], "grav": 0.0})
+
+
+## A filled disc on the 2 px grid (no smooth circle: the pixel look).
+func _px_disc(canvas: CanvasItem, c: Vector2, r: float, col: Color) -> void:
+	if r < 1.0:
+		return
+	var n := int(ceil(r / 2.0))
+	for gy in range(-n, n + 1):
+		for gx in range(-n, n + 1):
+			var cell := (c / 2.0).floor() + Vector2(gx, gy)
+			if ((cell + Vector2(0.5, 0.5)) * 2.0 - c).length() <= r:
+				canvas.draw_rect(Rect2(cell * 2.0, Vector2(2, 2)), col)
 
 
 func _draw_pool(canvas: CanvasItem, pool: Dictionary) -> void:

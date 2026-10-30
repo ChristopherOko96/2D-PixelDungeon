@@ -36,9 +36,11 @@ const OUTLINE := Color("1c1117")
 const BAYER := [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
 const LASER_COL := [Color("fdf7ed"), Color("facb3e"), Color("da4e38"), Color("9f294e"), Color("5f2d56")]
 const LASER_FPS := 12.0
-## A void beam (a beam without "style": "laser") as a wide pixel laser: white
-## core, pink and violet, its flickering edge deep violet.
-const VOID_BEAM_COL := [Color("fdf7ed"), Color("f0b3dd"), Color("c278d0"), Color("8156aa"), Color("4a2a6a")]
+## A void beam (a beam without "style": "laser") as a wide pixel laser of
+## nothing: its core darker than the floor (light swallowed) with violet pulses
+## running back up it, the light torn bright pink and white at its rim, its
+## outer edge deep violet. Roles: pulse, core, rim, rim flicker, outer edge.
+const VOID_BEAM_COL := [Color("c278d0"), Color("120a1c"), Color("f0b3dd"), Color("fdf7ed"), Color("4a2a6a")]
 ## A laser's wall burn: pixel fire hot to cool, and how long its embers glow
 ## on after the laser stops (s); the crypt's fire wall hit sparks there every
 ## SCORCH_SPARK s while it burns.
@@ -217,7 +219,7 @@ func _me() -> Vector2:
 ## (hell_balance.json monsters.feel.knock; "" pushes nothing).
 func _hurt_by(m: Dictionary, n: int, how: String, from := Vector2.INF, push := "") -> void:
 	var open := float(g.state.inv) <= 0.0 and float(g.state.dead) <= 0.0
-	g._hurt("von %s %s" % [m.def.name, how], n)
+	g._hurt("von %s %s" % [m.def.name, how], n, from if from.is_finite() else Vector2(m.p))
 	if open and push != "" and from.is_finite() and float(g.state.inv) > 0.0:
 		_knock(from, push, m)
 
@@ -1628,7 +1630,7 @@ func draw_lasers(l: CanvasItem) -> void:
 				_pixel_laser(l, head, b, _beam_reach(head, b, float(A.a.get("range", 1100.0))), t, life)
 			else:
 				# a void beam: as wide as its old band, on the pixel grid, opaque
-				_pixel_laser(l, head, b, _wall_len(head, b, float(A.a.get("range", 1100.0))), t, life, VOID_BEAM_COL, 3)
+				_pixel_laser(l, head, b, _wall_len(head, b, float(A.a.get("range", 1100.0))), t, life, VOID_BEAM_COL, 3, true)
 
 
 ## A laser's aim on the pixel grid: every fourth laser pixel lit, crawling
@@ -1649,8 +1651,10 @@ func _pixel_aim(l: CanvasItem, from: Vector2, ang: float, length: float, t: floa
 ## stepped along the line (each snapped to LASER_PX), a red edge flickering
 ## crimson and dropping out now and then at LASER_FPS, a yellow core with white
 ## pulses running outward. At its end (`life` 0..1) only the core is left.
-## A few sparks crackle at the muzzle.
-func _pixel_laser(l: CanvasItem, from: Vector2, ang: float, length: float, t: float, life: float, cols: Array = LASER_COL, wide := 1) -> void:
+## A few sparks crackle at the muzzle. A beam of void (`swallows`) runs the
+## other way: its pulses run back up its dark core to the source, and sparks
+## beside it are drawn in and vanish in it.
+func _pixel_laser(l: CanvasItem, from: Vector2, ang: float, length: float, t: float, life: float, cols: Array = LASER_COL, wide := 1, swallows := false) -> void:
 	var dir := Vector2.from_angle(ang)
 	var tq := floorf(t * LASER_FPS)
 	var steps := int(length / LASER_PX)
@@ -1666,8 +1670,19 @@ func _pixel_laser(l: CanvasItem, from: Vector2, ang: float, length: float, t: fl
 			if wide > 1:
 				block.call(from + dir * (float(i) * LASER_PX), wide, cols[4] if cols.size() > 4 else cols[3])
 			block.call(from + dir * (float(i) * LASER_PX), wide - 1 if wide > 1 else 1, cols[3] if n > 1.0 else cols[2])
+	var flow := -1 if swallows else 1
 	for i in range(steps):
-		block.call(from + dir * (float(i) * LASER_PX), maxi(0, wide - 2), cols[0] if posmod(i - int(tq) * 3, 7) == 0 else cols[1])
+		block.call(from + dir * (float(i) * LASER_PX), maxi(0, wide - 2), cols[0] if posmod(i - flow * int(tq) * 3, 7) == 0 else cols[1])
+	if swallows and edge:
+		# sparks beside it drawn in, each over a short while (no state: by the clock)
+		var across := dir.orthogonal()
+		for j in range(8):
+			var run := t * 2.5 + float(j) * 0.37
+			var phase := fmod(run, 1.0)
+			var cycle := int(floor(run))
+			var along := float(posmod(cycle * 7919 + j * 104729, 997)) / 997.0 * float(steps) * LASER_PX
+			var side := (1.0 if posmod(cycle + j, 2) == 0 else -1.0) * float(wide + 6) * LASER_PX * (1.0 - phase)
+			block.call(from + dir * along + across * side, 0, cols[2] if phase < 0.7 else cols[3])
 	for k in range(3):
 		var ang_k := float(k) * 2.1 + tq * 0.9
 		block.call(from + Vector2(cos(ang_k), sin(ang_k)) * LASER_PX * float(1 + (k + int(tq)) % 2), 0, cols[k % 2])

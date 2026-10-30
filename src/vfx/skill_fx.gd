@@ -16,6 +16,7 @@ const PixelStyle = preload("res://src/pixel_style.gd")
 const FxSprites = preload("res://src/vfx/fx_sprites.gd")
 const Glow = preload("res://src/vfx/glow.gd")
 const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
+const PixelBolt = preload("res://src/vfx/pixel_bolt.gd")
 const CHEST_FRAMES := [preload("res://assets/sprites/0x72/chest_full_open_anim_f0.png"), preload("res://assets/sprites/0x72/chest_full_open_anim_f1.png"), preload("res://assets/sprites/0x72/chest_full_open_anim_f2.png")]
 const CRATE := preload("res://assets/sprites/0x72/crate.png")
 const BURSTS := {"fire": "fire_burst", "frost": "frost_burst", "arcane": "arcane_burst", "stone": "stone_burst", "void": "void_burst"}
@@ -27,7 +28,15 @@ var particles: RefCounted = null
 ## The heroes' poison and lava zones as physics pools (src/vfx/pool_paint.gd,
 ## set by the host); null draws the old circles.
 var pools: RefCounted = null
+## The world's gas layer (src/vfx/gas.gd): poison zones give off fumes in it.
+var gas: RefCounted = null
 var _seen: Dictionary = {}
+## Storm strikes already landed ("zone id:strike number"): each scorches once.
+var _strikes: Dictionary = {}
+## A storm zone strikes once every this many seconds (a bolt from the cloud).
+const STORM_EVERY := 0.42
+## Sparks of lightning: white-hot, blue, deep blue (PixelBolt.STORM).
+const STORM_SPARKS := [Color("f4f6ff"), Color("8fa4ff"), Color("c8d4ff")]
 var _rng := RandomNumberGenerator.new()
 ## Photoneneis per hero: start, strength and its last ends (kept to fade out).
 var _beams: Dictionary = {}
@@ -88,8 +97,14 @@ func draw_ground(canvas: CanvasItem, snapshot: Dictionary, clock: float) -> void
 		for zone: Dictionary in snapshot.get("skill_fx", {}).get("zones", []):
 			if str(zone.kind) in ["poison", "lava"]:
 				entries.append({"id": int(zone.id), "k": "pool", "st": str(zone.kind), "x": float(zone.x), "y": float(zone.y), "r": float(zone.r), "p": 0.0, "L": maxf(0.3, float(zone.t))})
-		pools.sync(entries, clock)
+		pools.sync(entries, clock, "skill")
 		pools.draw(canvas, clock)
+	if gas != null:
+		var fumes: Array = []
+		for zone: Dictionary in snapshot.get("skill_fx", {}).get("zones", []):
+			if str(zone.kind) == "poison":
+				fumes.append({"id": int(zone.id), "k": "gas", "st": "poison", "x": float(zone.x), "y": float(zone.y), "r": float(zone.r) * 0.8, "p": 0.0, "L": maxf(0.3, float(zone.t)), "d": 0.45})
+		gas.sync(fumes, clock, "skill")
 	for zone: Dictionary in snapshot.get("skill_fx", {}).get("zones", []):
 		var point := Vector2(float(zone.x), float(zone.y))
 		var radius := float(zone.r)
@@ -109,11 +124,7 @@ func draw_ground(canvas: CanvasItem, snapshot: Dictionary, clock: float) -> void
 				canvas.draw_circle(point, radius, Color(1.0, 0.45, 0.1, 0.28 * fade))
 				canvas.draw_circle(point, radius * 0.55, Color(1.0, 0.8, 0.3, (0.25 + 0.1 * sin(clock * 9.0 + float(zone.id))) * fade))
 			"storm":
-				# a storm cloud on the floor: its area in the dither, a crawling dashed rim
-				PixelPaint.disc(canvas, point, radius, radius, Color(0.3, 0.33, 0.6), 2.0, 0.25)
-				PixelPaint.ellipse(canvas, point + Vector2(0, 2), radius, radius, Color("1a1414"), 2.0, 3, int(clock * PixelPaint.FPS))
-				PixelPaint.ellipse(canvas, point, radius, radius, Color(0.75, 0.8, 1.0), 2.0, 3, int(clock * PixelPaint.FPS))
-				if fmod(clock * 7.0 + float(zone.id), 1.0) < 0.35: _bolt(canvas, point + Vector2(-radius * 0.6, -radius * 0.6), point + Vector2(radius * 0.4, radius * 0.5), Color("dfe6ff"), 2.0, int(clock * 20.0))
+				_draw_storm(canvas, zone, point, radius, clock)
 			"decoy":
 				# the mirror image, or a clone seal's clone in its hero's own look
 				var figure: Texture2D = CLONE_LOOKS.get(str(zone.get("look", "")), DECOY)
@@ -146,7 +157,9 @@ func draw_bullet(canvas: CanvasItem, bullet: Dictionary, clock: float) -> bool:
 			for ghost in range(1, 4):
 				fx.draw_loop(canvas, "fireball", point - aim * ghost * 9.0, aim.angle(), 1.4 - ghost * 0.25, clock - ghost * 0.05, Color(1, 1, 1, 0.45 - ghost * 0.12), true)
 			fx.draw_loop(canvas, "fireball", point, aim.angle(), 1.4, clock, Color.WHITE, true)
-			# Sparks shed by the flying fireball.
+			# flames trail off the flying fireball and rise behind it, sparks are shed
+			if particles != null:
+				particles.flames(point - aim * 6.0, 1, [], 2.0, 8.0, -aim * 30.0)
 			if particles != null and _rng.randf() < 0.5:
 				particles.emit(point - aim * 6.0, -aim.rotated(_rng.randf_range(-0.8, 0.8)) * _rng.randf_range(20.0, 80.0), [PHOTON_FIRE, PHOTON_EMBER][_rng.randi_range(0, 1)], _rng.randf_range(0.25, 0.5), "ember", 2.0, 8.0, _rng.randf_range(10.0, 50.0), 2.0)
 		"wave":
@@ -190,9 +203,22 @@ func draw_over(canvas: CanvasItem, snapshot: Dictionary, clock: float) -> void:
 		var point := Vector2(float(event.x), float(event.y))
 		var life := clampf(float(event.get("life", 0.6)) / 0.6, 0.0, 1.0)
 		if str(event.kind) == "level_up":
-			# A pillar of light and rising sparks around each hero.
-			canvas.draw_rect(Rect2(point + Vector2(-18, -90 * (1.0 - life) - 40), Vector2(36, 90)), Color(1.0, 0.9, 0.5, 0.25 * life))
-			canvas.draw_arc(point, 30.0 + (1.0 - life) * 30.0, 0.0, TAU, 28, Color(1.0, 0.85, 0.4, life), 3.0)
+			# a pillar of light over each hero rising away (by the dither: dense in
+			# its middle, thinning to its sides and its top) and a ring of gold
+			# spreading over the floor; the holy motes are particles (feedback.gd)
+			var rise := (1.0 - life) * 90.0
+			var bottom := point.y - 40.0 - rise
+			for gy in range(int(floor((bottom - 90.0) / 2.0)), int(ceil(bottom / 2.0))):
+				for gx in range(int(floor((point.x - 18.0) / 2.0)), int(ceil((point.x + 18.0) / 2.0))):
+					var q := Vector2i(gx, gy)
+					var across := absf((float(gx) + 0.5) * 2.0 - point.x) / 18.0
+					var up := clampf((bottom - (float(gy) + 0.5) * 2.0) / 90.0, 0.0, 1.0)
+					if PixelPaint.shown(q, life * (1.0 - across * across) * (1.0 - up) * 0.6):
+						PixelPaint.cell(canvas, q, Color("fff6d0") if across < 0.3 else Color("f3ce7d"), 2.0)
+			var ring := 30.0 + (1.0 - life) * 30.0
+			var crawl := int(clock * PixelPaint.FPS)
+			PixelPaint.ellipse(canvas, point + Vector2(0, 2), ring, ring * 0.75, Color("1a1414"), 2.0, 1 if life > 0.5 else 2, crawl)
+			PixelPaint.ellipse(canvas, point, ring, ring * 0.75, Color("f3ce7d"), 2.0, 1 if life > 0.5 else 2, crawl)
 		elif str(event.kind) == "wall_break":
 			canvas.draw_rect(Rect2(point - Vector2(18, 18) * (1.4 - life * 0.4), Vector2(36, 36) * (1.4 - life * 0.4)), Color(0.75, 0.68, 0.6, 0.35 * life))
 
@@ -426,17 +452,12 @@ func _draw_event(canvas: CanvasItem, event: Dictionary, clock: float) -> void:
 			canvas.draw_arc(first + Vector2(0, -6), radius * (1.1 - left * 0.2), 0.0, TAU, 32, Color(1, 1, 1, 0.6 * left), 6.0)
 			canvas.draw_circle(first, radius, Color(1, 1, 1, 0.08 * left))
 		"chain":
-			# Bright bolts that ease out, then a soft afterglow along the path.
-			var bright := ease(left, 0.5)
+			# lightning: at once, a zigzag bright for a moment then an afterimage, each jump a little later
+			var age := float(event.get("length", 0.3)) - float(event.time)
 			for index in range(points.size() - 1):
 				var a := Vector2(float(points[index][0]), float(points[index][1])) + Vector2(0, -12)
 				var b := Vector2(float(points[index + 1][0]), float(points[index + 1][1])) + Vector2(0, -12)
-				canvas.draw_line(a, b, Color(0.55, 0.65, 1.0, 0.18 * left), 10.0)
-				if left > 0.25:
-					_bolt(canvas, a, b, Color(0.75, 0.82, 1.0, bright), 4.0, int(clock * 30.0) + index)
-					_bolt(canvas, a, b, Color(1, 1, 1, bright), 2.0, int(clock * 30.0) + index + 7)
-				else:
-					canvas.draw_line(a, b, Color(0.85, 0.9, 1.0, left * 2.0), 2.0)
+				PixelBolt.draw(canvas, a, b, age - float(index) * 0.03, int(event.get("id", 0)) * 7 + index, 2.0)
 		"blink":
 			var landing := Vector2(float(points[1][0]), float(points[1][1])) if points.size() > 1 else first
 			for spot: Vector2 in [first, landing]:
@@ -485,7 +506,14 @@ func _spawn_event(event: Dictionary, points: Array, first: Vector2) -> void:
 			fx.spawn("crit_spark", first + Vector2(0, -12), 0.0, 2.4)
 			fx.spawn("fire_burst", first + Vector2(0, -8), 0.0, 0.7, Color(1.0, 0.55, 0.45))
 		"chain":
-			for index in range(1, points.size()): fx.spawn("beam_hit", Vector2(float(points[index][0]), float(points[index][1])) + Vector2(0, -12), float(index), 1.3, Color(0.85, 0.9, 1.0))
+			for index in range(1, points.size()):
+				var hit := Vector2(float(points[index][0]), float(points[index][1]))
+				fx.spawn("beam_hit", hit + Vector2(0, -12), float(index), 1.3, Color(0.85, 0.9, 1.0))
+				# where it struck: a scorch star, sparks; a liquid there conducts it
+				if particles != null:
+					particles.scorch_star(hit + Vector2(0, 8), 12.0)
+					particles.sparks(hit, Vector2.UP, 6, STORM_SPARKS)
+				if pools != null: pools.electrify(hit + Vector2(0, 8), 24.0)
 		"volley", "ballista": fx.spawn("hit_spark", first + Vector2(0, -10), 0.0, 1.0, Color(1.0, 0.95, 0.8))
 		"fist": fx.spawn("frost_burst", first + Vector2(0, -10), 0.0, 0.5)
 	if particles != null: _floor_reaction(event, first)
@@ -500,12 +528,20 @@ func _floor_reaction(event: Dictionary, first: Vector2) -> void:
 			particles.kick(first, radius, 1.0)
 			match str(event.get("color", "fire")):
 				"fire":
-					particles.embers(first, radius * 0.6, int(radius * 0.4))
-					particles.smoke(first, 8, radius * 0.3)
+					# flames thrown out and rising, embers tumbling up, smoke, a scorched floor with embers
+					particles.fire_burst(first, radius * 0.7)
+					particles.embers(first, radius * 0.6, int(radius * 0.3))
 				"frost": particles.frost(first, radius * 0.7, int(radius * 0.8), PHOTON_FROST)
-		"whirl": particles.kick(first, float(event.get("radius", 80.0)), 0.6)
-		"charge", "backflip": particles.kick(first, 28.0, 0.5)
-		"wall_slam": particles.kick(first, 22.0, 0.7)
+		"whirl":
+			particles.kick(first, float(event.get("radius", 80.0)), 0.6)
+			particles.dust_flat(first, float(event.get("radius", 80.0)) * 0.5, 10)
+		"charge", "backflip":
+			particles.kick(first, 28.0, 0.5)
+			particles.dust_flat(first, 16.0, 6)
+		"wall_slam":
+			particles.kick(first, 22.0, 0.7)
+			particles.rubble(first, 5, Vector2.ZERO, 110.0)
+			particles.dust_flat(first, 14.0, 6)
 
 
 # --- Chests and loot ------------------------------------------------------------------
@@ -705,11 +741,16 @@ func draw_glow(canvas: CanvasItem, snapshot: Dictionary, clock: float, glow: Glo
 	for event: Dictionary in snapshot.get("skill_fx", {}).get("events", []):
 		var points: Array = event.get("points", [])
 		if str(event.kind) != "chain" or points.size() < 2: continue
-		var left := clampf(float(event.time) / maxf(float(event.get("length", 0.3)), 0.01), 0.0, 1.0)
+		# each jump flashes with its own bolt and is dark again with it (no light left hanging)
+		var age := float(event.get("length", 0.3)) - float(event.time)
 		for index in range(points.size() - 1):
+			var k := 1.0 - (age - float(index) * 0.03) / 0.12
+			if k <= 0.0 or k > 1.0:
+				continue
 			var a := Vector2(float(points[index][0]), float(points[index][1])) + Vector2(0, -12)
 			var b := Vector2(float(points[index + 1][0]), float(points[index + 1][1])) + Vector2(0, -12)
-			Glow.line(canvas, a, b, 48.0, Color(0.5, 0.6, 1.0, 0.5 * left * spells))
+			Glow.line(canvas, a, b, 36.0, Color(0.5, 0.6, 1.0, 0.55 * k * spells))
+			Glow.dot(canvas, b, 30.0, Color(0.6, 0.7, 1.0, 0.5 * k * spells))
 	for event: Dictionary in snapshot.get("fx_events", []):
 		if str(event.kind) != "level_up": continue
 		var life := clampf(float(event.get("life", 0.6)) / 0.6, 0.0, 1.0)
@@ -778,15 +819,33 @@ func _spike(canvas: CanvasItem, point: Vector2, color: Color) -> void:
 	canvas.draw_rect(Rect2(point - Vector2(2, 0.5), Vector2(4, 1)), color)
 
 
-## A jagged lightning line between two points (stable for one `seed_value`).
-func _bolt(canvas: CanvasItem, from: Vector2, to: Vector2, color: Color, width: float, seed_value: int) -> void:
+## A storm over the floor: the cloud's shadow on it (dark blue by the dither, a
+## crawling dashed rim) and lightning striking out of it, one bolt every
+## STORM_EVERY s at a spot inside it (src/vfx/pixel_bolt.gd: there at once,
+## bright for a moment, then gone); where one lands it scorches the floor and
+## throws sparks once, and a liquid there conducts it (pools.electrify).
+func _draw_storm(canvas: CanvasItem, zone: Dictionary, point: Vector2, radius: float, clock: float) -> void:
+	var id := int(zone.id)
+	var crawl := int(clock * PixelPaint.FPS)
+	PixelPaint.disc(canvas, point, radius, radius * 0.75, Color("1c2244"), 2.0, 0.3)
+	PixelPaint.ellipse(canvas, point + Vector2(0, 2), radius, radius * 0.75, Color("1a1414"), 2.0, 3, crawl)
+	PixelPaint.ellipse(canvas, point, radius, radius * 0.75, Color(0.75, 0.8, 1.0), 2.0, 3, crawl)
+	var run := clock / STORM_EVERY + float(id) * 0.37
+	var strike := int(floor(run))
+	var age := (run - float(strike)) * STORM_EVERY
 	var rng := RandomNumberGenerator.new()
-	rng.seed = seed_value
-	var previous := from
-	var normal := (to - from).orthogonal().normalized()
-	for index in range(1, 6):
-		var t := float(index) / 6.0
-		var next := from.lerp(to, t) + normal * rng.randf_range(-8.0, 8.0)
-		canvas.draw_line(previous, next, color, width)
-		previous = next
-	canvas.draw_line(previous, to, color, width)
+	rng.seed = id * 7919 + strike * 104729
+	var spot := point + Vector2.from_angle(rng.randf() * TAU) * radius * sqrt(rng.randf()) * Vector2(1.0, 0.75)
+	var sky := spot + Vector2(rng.randf_range(-24.0, 24.0), -rng.randf_range(70.0, 100.0))
+	PixelBolt.draw(canvas, sky, spot, age, id * 31 + strike, 2.0, PixelBolt.STORM, 0.18, 2)
+	var key := "%d:%d" % [id, strike]
+	if _strikes.has(key):
+		return
+	if _strikes.size() > 200:
+		_strikes.clear()
+	_strikes[key] = true
+	if particles != null:
+		particles.scorch_star(spot, 9.0)
+		particles.sparks(spot, Vector2.UP, 5, STORM_SPARKS)
+	if pools != null:
+		pools.electrify(spot, 20.0)
