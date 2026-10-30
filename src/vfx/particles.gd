@@ -52,6 +52,8 @@ var _water_head := 0
 ## Frost pixels on the floor (art px -> their colour when frozen) and water pixels.
 var _frozen: Dictionary = {}
 var _wet: Dictionary = {}
+## Floor cells of a liquid that swallows what lands in it (set_sink).
+var _sink: Dictionary = {}
 const STEPS := [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]
 
 
@@ -105,8 +107,9 @@ func burst(origin: Vector2, color: Color, count: int, speed: float, life: float,
 
 
 ## One particle seen at `origin`, `height` px above the floor (-1 = spawn_height),
-## moving with `velocity` in the floor plane and `lift` px/s upwards.
-func emit(origin: Vector2, velocity: Vector2, color: Color, life: float, mode: String = "debris", size: float = 2.0, height: float = -1.0, lift: float = 0.0, drag: float = 5.0) -> void:
+## moving with `velocity` in the floor plane and `lift` px/s upwards. Returns
+## the particle (a "glut" one may carry "ember_life" and "soot" for its landing).
+func emit(origin: Vector2, velocity: Vector2, color: Color, life: float, mode: String = "debris", size: float = 2.0, height: float = -1.0, lift: float = 0.0, drag: float = 5.0) -> Dictionary:
 	var settings_for_mode: Dictionary = _mode(mode)
 	if _particles.size() >= int(_data.get("max_particles", MAX_PARTICLES)): _evict()
 	var lifted := height if height >= 0.0 else float(_data.get("spawn_height", 10))
@@ -116,10 +119,13 @@ func emit(origin: Vector2, velocity: Vector2, color: Color, life: float, mode: S
 		ground = origin
 		lifted = 0.0
 	var gravity: float = float(_data.get("gravity", 620)) * float(settings_for_mode.get("gravity", 1.0))
-	_particles.append({"pos": ground, "z": lifted, "vz": lift if gravity != 0.0 else 0.0, "vel": velocity,
+	var particle := {"pos": ground, "z": lifted, "vz": lift if gravity != 0.0 else 0.0, "vel": velocity,
 		"life": life, "max_life": maxf(life, 0.01), "color": color, "size": maxf(PIXEL, roundf(size / PIXEL) * PIXEL), "drag": drag,
 		"gravity": gravity, "settle": bool(settings_for_mode.get("settle", false)), "glow": bool(settings_for_mode.get("glow", false)),
-		"fade": bool(settings_for_mode.get("fade", true)), "free": solid(ground), "mode": mode})
+		"fade": bool(settings_for_mode.get("fade", true)), "free": solid(ground), "mode": mode,
+		"glow_a": float(settings_for_mode.get("glow_alpha", 0.32))}
+	_particles.append(particle)
+	return particle
 
 
 func _mode(mode: String) -> Dictionary:
@@ -267,6 +273,103 @@ func kick(point: Vector2, radius: float, strength: float = 1.0) -> void:
 			emit(_world(art), away.rotated(_rng.randf_range(-0.4, 0.4)) * speed * push * _rng.randf_range(0.5, 1.0), Color(color, maxf(color.a, 0.85)), 0.8, mode, PIXEL, 0.0, _rng.randf_range(float(lift[0]), float(lift[1])) * push * strength, 3.0)
 
 
+## A pressure front (a shockwave's ring, a scream's sound) running from `r0`
+## to `r1` px around `origin`, within `arc` around `angle` (TAU: all round;
+## `squash` < 1 flattens the ring's height, as the hell draws its rings) shoves
+## the pixels it passes outward at about `speed` px/s: flying pixels are pushed
+## along and hop, glowing embers on the floor lift and fly as glowing pixels
+## that lie down again as embers further on, loose rubble hops along with it.
+## At most `limit` floor pixels lift per call (vfx_particles.json "blow").
+## Returns how many pixels it moved.
+func blow(origin: Vector2, r0: float, r1: float, angle: float, arc: float, speed: float, squash: float = 1.0, limit: int = -1) -> int:
+	if r1 <= r0 or speed <= 0.0: return 0
+	var settings_for_blow: Dictionary = _data.get("blow", {})
+	var hop: Array = settings_for_blow.get("hop", [30, 90])
+	var cap: int = limit if limit >= 0 else int(settings_for_blow.get("max_lift", 60))
+	var moved := 0
+	# what flies already is shoved along, what lies on the floor hops
+	for particle: Dictionary in _particles:
+		var out := _front_dir(Vector2(particle.pos), origin, r0, r1, angle, arc, squash)
+		if out == Vector2.ZERO: continue
+		particle.vel = Vector2(particle.vel) * 0.35 + out * speed * _rng.randf_range(0.7, 1.1)
+		if float(particle.gravity) > 0.0 and float(particle.z) <= 1.0:
+			particle.vz = maxf(float(particle.vz), _rng.randf_range(float(hop[0]), float(hop[1])))
+		moved += 1
+	# glowing embers lift and fly on as glowing pixels (they lie down again as embers)
+	var colors: Array = _data.get("ember", {}).get("colors", ["ffe08a", "ff8a2a", "a8361c"])
+	var lifted := 0
+	for index in range(_embers.size() - 1, -1, -1):
+		if lifted >= cap: break
+		var ember: Dictionary = _embers[index]
+		var at := _world(ember.art)
+		var out := _front_dir(at, origin, r0, r1, angle, arc, squash)
+		if out == Vector2.ZERO: continue
+		_embers.remove_at(index)
+		lifted += 1
+		var heat := float(ember.life) / float(ember.max)
+		var flung := emit(at, out.rotated(_rng.randf_range(-0.3, 0.3)) * speed * _rng.randf_range(0.5, 1.0), Color(str(colors[0 if heat > 0.66 else 1 if heat > 0.33 else 2])),
+			2.0, "glut", PIXEL, 0.0, _rng.randf_range(float(hop[0]), float(hop[1])), 2.0)
+		flung.ember_life = float(ember.life)
+		flung.ember_max = float(ember.max)
+		flung.soot = float(ember.get("soot", 1.0))
+	# loose rubble in the band hops along: row by row over the ring's band only
+	var flat := maxf(0.05, squash)
+	var middle := origin / PIXEL
+	var rows := int(ceil(r1 * flat / PIXEL))
+	for row in range(-rows, rows + 1):
+		if lifted >= cap: break
+		var y := floori(middle.y) + row
+		if y < 0: continue
+		var dy := (float(y) + 0.5 - middle.y) * PIXEL / flat
+		if absf(dy) > r1: continue
+		var outer := sqrt(r1 * r1 - dy * dy) / PIXEL
+		var inner := sqrt(maxf(0.0, r0 * r0 - dy * dy)) / PIXEL if absf(dy) < r0 else 0.0
+		for side: float in [-1.0, 1.0]:
+			var from := floori(middle.x + side * inner) if side > 0.0 else floori(middle.x - outer)
+			var to := floori(middle.x + outer) if side > 0.0 else floori(middle.x - inner)
+			for x in range(maxi(0, from), to + 1):
+				var art := Vector2i(x, y)
+				if not _loose.has(art): continue
+				var out := _front_dir(_world(art), origin, r0, r1, angle, arc, squash)
+				if out == Vector2.ZERO: continue
+				var key := Vector2i(x / CHUNK, y / CHUNK)
+				if not _chunks.has(key): continue
+				var local := art - key * CHUNK
+				var color: Color = _chunks[key].image.get_pixelv(local)
+				_chunks[key].image.set_pixelv(local, Color(0, 0, 0, 0))
+				_chunks[key].dirty = true
+				_loose.erase(art)
+				var frozen := _frozen.has(art)
+				_frozen.erase(art)
+				if color.a <= 0.05: continue
+				emit(_world(art), out.rotated(_rng.randf_range(-0.3, 0.3)) * speed * _rng.randf_range(0.4, 0.9), Color(color, maxf(color.a, 0.85)), 0.8,
+					"frost" if frozen else "debris", PIXEL, 0.0, _rng.randf_range(float(hop[0]), float(hop[1])), 3.0)
+				lifted += 1
+				if lifted >= cap: break
+	return moved + lifted
+
+
+## The outward direction at `point` when it lies in a front's band (see blow), else zero.
+func _front_dir(point: Vector2, origin: Vector2, r0: float, r1: float, angle: float, arc: float, squash: float) -> Vector2:
+	var offset := point - origin
+	var distance := Vector2(offset.x, offset.y / maxf(0.05, squash)).length()
+	if distance < r0 or distance > r1 or distance <= 0.0: return Vector2.ZERO
+	if arc < TAU and absf(wrapf(offset.angle() - angle, -PI, PI)) > arc * 0.5: return Vector2.ZERO
+	return offset.normalized()
+
+
+## Floor cells (32 px, like the walkable ones) of a liquid that swallows what
+## lands in it (the hell's lava): debris and glowing pixels sink instead of
+## settling there. Empty: nothing sinks.
+func set_sink(cells: Dictionary) -> void:
+	_sink = cells
+
+
+## True when `point` lies over a sinking liquid (set_sink).
+func sinks(point: Vector2) -> bool:
+	return not _sink.is_empty() and _sink.has(Vector2i(floori(point.x / 32.0), floori(point.y / 32.0)))
+
+
 ## Removes every particle and floor mark (a new room).
 func clear() -> void:
 	_particles.clear()
@@ -388,6 +491,24 @@ func _evict() -> void:
 ## settled frost melts later.
 func _settle(particle: Dictionary) -> void:
 	if bool(particle.free): return
+	# what falls into a sinking liquid (lava) is gone
+	if sinks(Vector2(particle.pos)): return
+	# a glowing pixel lies down as an ember again, as hot as it still is
+	if str(particle.get("mode", "")) == "glut":
+		var settings_for_embers: Dictionary = _data.get("ember", {})
+		var range_of_life: Array = settings_for_embers.get("life", [1.5, 4.0])
+		var span := float(particle.get("ember_life", _rng.randf_range(float(range_of_life[0]), float(range_of_life[1]))))
+		# a big drop lies as a little block of embers
+		var side := maxi(1, roundi(float(particle.size) / PIXEL))
+		var first := _art(Vector2(particle.pos)) - Vector2i(side / 2, side / 2)
+		for y in range(side):
+			for x in range(side):
+				var spot := first + Vector2i(x, y)
+				if spot.x < 0 or spot.y < 0 or solid(_world(spot)) or sinks(_world(spot)): continue
+				if _embers.size() >= int(settings_for_embers.get("max", 500)): _cool(_embers.pop_front())
+				var own := span * _rng.randf_range(0.8, 1.0)
+				_embers.append({"art": spot, "life": own, "max": maxf(own, float(particle.get("ember_max", own))), "smoke": _rng.randf(), "soot": float(particle.get("soot", 1.0))})
+		return
 	var color: Color = particle.color
 	var tint := Color(color.darkened(0.15), minf(0.95, color.a))
 	var cells := maxi(1, roundi(float(particle.size) / PIXEL))
@@ -442,7 +563,7 @@ func draw_glow(canvas: CanvasItem, level: float) -> void:
 		if not bool(particle.glow): continue
 		var alpha := clampf(float(particle.life) / (float(particle.max_life) * 0.5), 0.0, 1.0) if bool(particle.fade) else 1.0
 		var point: Vector2 = Vector2(particle.pos) - Vector2(0.0, float(particle.z))
-		Glow.dot(canvas, point, 6.0 + float(particle.size) * 1.5, Color(particle.color, 0.32 * alpha * level))
+		Glow.dot(canvas, point, 6.0 + float(particle.size) * 1.5, Color(particle.color, float(particle.get("glow_a", 0.32)) * alpha * level))
 	for ember: Dictionary in _embers:
 		var heat := float(ember.life) / float(ember.max)
 		Glow.dot(canvas, _world(ember.art), 5.0 + 5.0 * heat, Color(1.0, 0.5, 0.15, 0.3 * heat * level))
@@ -537,10 +658,12 @@ func _burn_embers(delta: float) -> void:
 			smoke(_world(ember.art), 1, 1.0)
 
 
-## A burnt-out ember leaves a soot pixel.
+## A burnt-out ember leaves a soot pixel (fainter for an ember with "soot" < 1).
 func _cool(ember: Dictionary) -> void:
 	var settings_for_embers: Dictionary = _data.get("ember", {})
-	_blend(ember.art, Color(str(settings_for_embers.get("soot", "1c1416")), float(settings_for_embers.get("soot_alpha", 0.6))), true)
+	var faint := float(ember.get("soot", 1.0))
+	if faint <= 0.0: return
+	_blend(ember.art, Color(str(settings_for_embers.get("soot", "1c1416")), float(settings_for_embers.get("soot_alpha", 0.6)) * faint), true)
 
 
 ## Marks the pixel at `art` as frost (as it looks now) and schedules its melting.

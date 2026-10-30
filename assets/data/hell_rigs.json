@@ -1212,6 +1212,84 @@
      ]
     }
    }
+  },
+  "blutfledermaus": {
+   "family": "skeleton",
+   "size": [
+    32,
+    16
+   ],
+   "scale": 2,
+   "ground": [
+    15.5,
+    22
+   ],
+   "width": 22,
+   "material": "blood",
+   "parts": [
+    {
+     "id": "head",
+     "frames": [
+      "res://assets/sprites/hell/rigs/blutfledermaus/head_f0.png",
+      "res://assets/sprites/hell/rigs/blutfledermaus/head_f1.png",
+      "res://assets/sprites/hell/rigs/blutfledermaus/head_f2.png",
+      "res://assets/sprites/hell/rigs/blutfledermaus/head_f3.png"
+     ],
+     "pivot": [
+      15.5,
+      10
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 3,
+     "label": "Körper",
+     "vital": true
+    },
+    {
+     "id": "wing_l",
+     "frames": [
+      "res://assets/sprites/hell/rigs/blutfledermaus/wing_l_f0.png",
+      "res://assets/sprites/hell/rigs/blutfledermaus/wing_l_f1.png",
+      "res://assets/sprites/hell/rigs/blutfledermaus/wing_l_f2.png",
+      "res://assets/sprites/hell/rigs/blutfledermaus/wing_l_f3.png"
+     ],
+     "pivot": [
+      10.5,
+      7
+     ],
+     "parent": "head",
+     "z": 2,
+     "hp": 2,
+     "label": "Linker Flügel"
+    },
+    {
+     "id": "wing_r",
+     "frames": [
+      "res://assets/sprites/hell/rigs/blutfledermaus/wing_r_f0.png",
+      "res://assets/sprites/hell/rigs/blutfledermaus/wing_r_f1.png",
+      "res://assets/sprites/hell/rigs/blutfledermaus/wing_r_f2.png",
+      "res://assets/sprites/hell/rigs/blutfledermaus/wing_r_f3.png"
+     ],
+     "pivot": [
+      19.5,
+      7
+     ],
+     "parent": "head",
+     "z": 2,
+     "hp": 2,
+     "label": "Rechter Flügel"
+    }
+   ],
+   "groups": {},
+   "points": {
+    "core": {
+     "part": "head",
+     "at": [
+      16,
+      10
+     ]
+    }
+   }
   }
  }
 }

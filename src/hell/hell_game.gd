@@ -143,6 +143,8 @@ var mobs: Array = []
 var shots: Array = []
 var eshots: Array = []
 var embers: Array = []
+## Sloshes of the lava pools owed (hell_balance.json monsters.feel.lava slosh_rate).
+var lava_slosh := 0.0
 ## Telegraphed boss areas: icicle targets, chill fields, landing marks, safe circles.
 var zones: Array = []
 ## Class skills (hero_skills.json, scaled) and their running parts: a held skill,
@@ -2287,10 +2289,45 @@ func _update_embers(dt: float) -> void:
 				embers.append({"p": Vector2(x, y), "v": Vector2(randf_range(-10, 10), randf_range(-90, -40)), "t": randf_range(1.2, 2.2), "big": false, "gold": false})
 	for p: Dictionary in embers:
 		p.p += p.v * dt
+		# a shockwave or a scream blew it along (hell_monsters.gd _blow_front); the push dies away
+		if p.has("push"):
+			p.p += (p.push as Vector2) * dt
+			p.push = (p.push as Vector2) * maxf(0.0, 1.0 - 3.5 * dt)
 		p.t -= dt
 	embers = embers.filter(func(p: Dictionary) -> bool: return p.t > 0.0)
 	if embers.size() > 360:
 		embers = embers.slice(embers.size() - 360)
+	_slosh_lava(dt)
+
+
+## Now and then a lava pool in view sloshes over its rim onto the floor
+## (hell_balance.json monsters.feel.lava "slosh_rate" per second): a few drops
+## of lava as glowing pixels that lie there as embers and cool to soot
+## (hell_monsters.gd lava_splash). Only where a lava cell borders the floor.
+func _slosh_lava(dt: float) -> void:
+	if monsters == null or not theme.liquid.get("hurt", false):
+		return
+	var spec: Dictionary = (balance.monsters.get("feel", {}) as Dictionary).get("lava", {})
+	lava_slosh += float(spec.get("slosh_rate", 0.0)) * dt
+	while lava_slosh >= 1.0:
+		lava_slosh -= 1.0
+		for attempt in range(10):
+			var cx := int(floor((camera.position.x + randf_range(-900, 900)) / C))
+			var cy := int(floor((camera.position.y + randf_range(-500, 500)) / C))
+			var t := _cell(cx, cy)
+			if t != 2 and t != 3:
+				continue
+			var outs: Array = []
+			for d: Vector2i in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+				if _cell(cx + d.x, cy + d.y) == 1:
+					outs.append(d)
+			if outs.is_empty():
+				continue
+			var dir := Vector2(outs[randi() % outs.size()] as Vector2i)
+			var at := Vector2((cx + 0.5) * C, (cy + 0.5) * C) + dir * C * 0.4 + dir.orthogonal() * randf_range(-0.4, 0.4) * C
+			var drops: Array = spec.get("drops", [3, 6])
+			monsters.lava_splash(at, dir, randi_range(int(drops[0]), int(drops[1])))
+			break
 
 
 func _update_camera(dt: float) -> void:
@@ -2306,7 +2343,10 @@ func _update_camera(dt: float) -> void:
 			else:
 				target[axis] = clampf(target[axis], lo[axis] + view[axis] / 2.0, hi[axis] - view[axis] / 2.0)
 	camera.position = camera.position.lerp(target, 1.0 - pow(0.0015, dt))
-	camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * state.shake
+	# the shake: layered sines at uneven rates (smooth, self-ending as state.shake decays),
+	# never a fresh random offset per frame, which buzzes (game feel: trauma shake)
+	var st := float(state.t) * 30.0
+	camera.offset = Vector2(0.6 * sin(st * 1.7 + 1.3) + 0.4 * sin(st * 3.1 + 2.6), 0.6 * sin(st * 2.3 + 4.1) + 0.4 * sin(st * 3.7 + 0.7)) * state.shake
 
 
 # ---------- world drawing ----------
@@ -2549,6 +2589,9 @@ func _draw_actors(l: Layer) -> void:
 	# the cuts' chips, embers and flashes over the actors
 	if drake_rig != null:
 		drake_rig.draw_over(l)
+	# the monsters' pixel lasers in their own colours over the actors (their glow is the bloom)
+	if monsters != null:
+		monsters.draw_lasers(l)
 	_draw_skill_fx(l, t)
 	RelicKit.draw(self, l, t)
 	SubKit.draw(self, l, t)
@@ -2929,7 +2972,8 @@ func _draw_hero(l: Layer, t: float) -> void:
 			l.draw_texture_rect(feel.mask(im), Rect2(Vector2(-size.x / 2.0, -size.y), size), false, StoryFeel.flash_color(pose, tint.a))
 		l.draw_set_transform(Vector2.ZERO)
 	if shared:
-		story_hero.draw_hero(l, t, size.y * 0.45, body)
+		# the class figure as the crypt's part rig (src/hero/story_hero.gd), else this frame
+		story_hero.draw_hero(l, t, size.y * 0.45, body, look)
 		return
 	body.call(Vector2(player.x, player.y), 1.0)
 	_draw_weapon(l, size)

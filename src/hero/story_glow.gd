@@ -370,9 +370,9 @@ func zone_lights() -> Array:
 				"puddle":
 					puddles.append(_puddle(z))
 				"arc":
-					var dir := Vector2.from_angle(float(z.ang))
-					var q := p + dir * float(z.r) * 0.5
-					out.append(Vector4(q.x, q.y, float(z.r) * 0.8, 0.6 * (1.0 - t / maxf(0.01, float(z.T)))))
+					# a swing glows as its blade's slash (rig_renderer.gd); only a full spin lights its middle
+					if float(z.arc) >= 5.0:
+						out.append(Vector4(p.x, p.y, float(z.r) * 0.8, 0.45 * (1.0 - t / maxf(0.01, float(z.T)))))
 				"line":
 					var dir := Vector2.from_angle(float(z.ang))
 					var k := 0.0 if t < tele else clampf((t - tele) / maxf(0.01, float(z.T) - tele), 0.0, 1.0)
@@ -397,6 +397,22 @@ func zone_lights() -> Array:
 			var heat := float(g.monsters._glow(m))
 			if heat > 0.0:
 				out.append(Vector4(m.p.x, m.p.y - m.cy - m.alt, float(m.def.w) * float(m.s) * _size("transform"), heat))
+		# a laser's wall burn lights the wall while it burns and glows on
+		for s: Dictionary in g.monsters.scorches:
+			out.append(Vector4(s.p.x, s.p.y - 12.0, BEAM_LIGHT * scale * 0.8, float(g.monsters.scorch_heat(s))))
+		# a wall of flames out of a split floor lights it all along while it burns
+		for w: Dictionary in g.monsters.firewalls:
+			var k := clampf(float(w.t) / maxf(0.01, float(w.T)), 0.0, 1.0)
+			var heat := clampf(k / 0.1, 0.0, 1.0) * (1.0 - clampf((k - 0.45) / 0.55, 0.0, 1.0))
+			var d := 0.0
+			while d < float(w.len):
+				var q: Vector2 = (w.p as Vector2) + (w.dir as Vector2) * d
+				out.append(Vector4(q.x, q.y - 20.0, BEAM_LIGHT * scale * 0.9, heat))
+				d += 70.0
+		# an attack's impact flash lights its surroundings for that moment
+		for f: Dictionary in g.monsters.flashes:
+			var fade := 1.0 - clampf(float(f.t) / maxf(0.01, float(f.T)), 0.0, 1.0)
+			out.append(Vector4(f.p.x, f.p.y - 10.0, float(f.r) * 2.2, fade))
 	for z: Dictionary in g.state.get("mzones", []):
 		var p: Vector2 = z.p
 		match str(z.kind):
@@ -464,9 +480,13 @@ func beam_segments(m: Dictionary) -> Array:
 	var A: Variant = m.get("act")
 	if g.monsters == null or not (A is Dictionary) or str(A.kind) != "beam" or bool(A.get("warn", false)):
 		return out
-	var head: Vector2 = m.p - Vector2(0, m.cy)
+	# from the drawn core, as far as the beam reaches (its range, else 1100 px)
+	var head: Vector2 = g.monsters._beam_head(m)
+	var reach := float((A.get("a", {}) as Dictionary).get("range", 1100.0))
+	var laser := str((A.get("a", {}) as Dictionary).get("style", "")) == "laser"
 	for b: float in A.get("beams", []):
-		out.append([head, head + Vector2.from_angle(b) * float(g.monsters._wall_len(head, b, 1100.0))])
+		var len := float(g.monsters._beam_reach(head, b, reach) if laser else g.monsters._wall_len(head, b, reach))
+		out.append([head, head + Vector2.from_angle(b) * len])
 	return out
 
 
@@ -807,6 +827,9 @@ func shot_items(all := false) -> Array:
 	if not all and glow.level("bullets") <= 0.0:
 		return out
 	for s: Dictionary in g.eshots:
+		# a breath's flames glow as their own pixels (hell_monsters.gd _breath_fx)
+		if s.get("breath", false):
+			continue
 		var style := ""
 		var element := ""
 		if s.has("c"):
@@ -829,6 +852,9 @@ func shot_items(all := false) -> Array:
 		_shot(out, s.p, style, element, hash(s.get("v", Vector2.ZERO)))
 	if g.monsters != null:
 		for L: Dictionary in g.monsters.lobs:
+			# a thrown boulder is dark rock, no fireball glow
+			if str(L.get("look", "")) == "boulder":
+				continue
 			var k := clampf(float(L.t) / maxf(0.01, float(L.T)), 0.0, 1.0)
 			_shot(out, (L.from as Vector2).lerp(L.to, k) - Vector2(0, sin(k * PI) * 220.0), "fireball", "", int(L.to.x))
 		for z: Dictionary in g.monsters.zones:
@@ -874,8 +900,8 @@ func attack_items() -> Array:
 					var kind := "wave_" + str(z.get("c", "")) if bloom.has("wave_" + str(z.get("c", ""))) else "wave"
 					_add(out, p, float(z.r) * _size(kind) * maxf(k, 0.15), Color(_color(kind), _alpha(kind) * (1.0 - k) * spells), "wave")
 				"arc":
-					var k := clampf(zt / maxf(0.01, float(z.T)), 0.0, 1.0)
-					_band(out, p, p + Vector2.from_angle(float(z.ang)) * float(z.r), float(z.r) * _size("swing"), Color(_color("swing"), _alpha("swing") * (1.0 - k) * spells), "swing")
+					# no straight band toward the aim: the swing is drawn as the blade's slash
+					pass
 				"line":
 					if zt >= tele:
 						var k := clampf((zt - tele) / span, 0.0, 1.0)
@@ -890,14 +916,18 @@ func attack_items() -> Array:
 					# skill_fx.gd's own lava zone glow
 					out.append({"p": p, "kind": "puddle", "crypt": "lava", "zone": _puddle(z)})
 		for m: Dictionary in g.mobs:
-			# Ignaroth 4's void beams: a wide violet halo, a bright core, a flare at the mouth
+			# Ignaroth 4's void beams: a wide violet halo, a bright core, a flare at the mouth;
+			# a pixel laser (the Blutfledermaus) the same in red, at the spells level
 			var segs := beam_segments(m)
+			var laser := str(((m.act if m.act is Dictionary else {}) as Dictionary).get("a", {}).get("style", "")) == "laser"
+			var pre := "laser" if laser else "beam"
+			var level := spells if laser else void_level
 			for seg: Array in segs:
 				var surge := 0.9 + 0.1 * sin(t * 24.0)
-				for kind: String in ["beam_halo", "beam_core"]:
-					_band(out, seg[0], seg[1], _r(kind) * scale, Color(_color(kind), _alpha(kind) * surge * void_level), "beam")
+				for kind: String in [pre + "_halo", pre + "_core"]:
+					_band(out, seg[0], seg[1], _r(kind) * scale, Color(_color(kind), _alpha(kind) * surge * level), "beam")
 			if not segs.is_empty():
-				_add(out, segs[0][0], _r("beam_mouth") * scale, Color(_color("beam_mouth"), _alpha("beam_mouth") * void_level), "beam")
+				_add(out, segs[0][0], _r(pre + "_mouth") * scale, Color(_color(pre + "_mouth"), _alpha(pre + "_mouth") * level), "beam")
 			# the transformation and the dying glow
 			var heat := float(g.monsters._glow(m))
 			var mid: Vector2 = m.p - Vector2(0, m.cy + m.alt)

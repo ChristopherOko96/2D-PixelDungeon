@@ -186,20 +186,21 @@
       "range": 150,
       "radius": 150,
       "arc": 2.2,
+      "element": "fire",
       "desc": "Weiter Schwerthieb vor sich."
      }
     ]
    },
    "px": 4
   },
-  "magmaschleim": {
-   "name": "Magmaschleim",
-   "w": 22,
-   "h": 18,
+  "blutfledermaus": {
+   "name": "Blutfledermaus",
+   "w": 32,
+   "h": 16,
    "scale": 3.4,
    "kind": "mob",
-   "role": "Hüpfer",
-   "desc": "Ein Klumpen flüssiger Schlacke. Hüpft auf dich zu und hinterlässt kurz brennende Lachen.",
+   "role": "Schütze",
+   "desc": "Eine Fledermaus der Hölle. Umkreist dich in der Luft, zielt kurz und schießt einen geraden Blutlaser.",
    "anims": {
     "idle": {
      "row": 0,
@@ -215,30 +216,28 @@
     },
     "death": {
      "row": 3,
-     "frames": 6
+     "frames": 4
     }
    },
    "stats": {
-    "hp": 7,
-    "speed": 120,
-    "r": 30,
-    "ai": "hop",
+    "hp": 5,
+    "speed": 140,
+    "r": 26,
+    "ai": "hover",
     "attacks": [
      {
-      "id": "sprung",
-      "name": "Lavasprung",
-      "kind": "slam",
-      "every": 2.2,
-      "range": 260,
-      "radius": 110,
-      "desc": "Springt dich an; beim Aufprall spritzt Lava im Kreis."
-     },
-     {
-      "id": "spur",
-      "name": "Schlackenspur",
-      "kind": "trail",
-      "every": 0,
-      "desc": "Wo er landet, brennt der Boden kurz."
+      "id": "laser",
+      "name": "Blutlaser",
+      "kind": "beam",
+      "every": 3.2,
+      "range": 1400,
+      "duration": 0.45,
+      "beams": 1,
+      "turn": 0,
+      "track": 0.5,
+      "style": "laser",
+      "hit_width": 22,
+      "desc": "Zielt mit einer blinkenden Pixel-Linie auf dich und schießt dann einen geraden Laser."
      }
     ]
    },
@@ -453,7 +452,7 @@
     "r": 72,
     "ai": "chase",
     "adds": [
-     "magmaschleim",
+     "blutfledermaus",
      "glutschaedel"
     ],
     "attacks": [
@@ -474,6 +473,7 @@
       "range": 900,
       "count": 3,
       "radius": 80,
+      "look": "boulder",
       "desc": "Wirft drei glühende Brocken."
      },
      {
@@ -537,6 +537,7 @@
       "range": 420,
       "count": 15,
       "heads": 3,
+      "mouths": [["head", 19.5, 10.5], ["head_l", 7.5, 14.5], ["head_r", 31.5, 14.5]],
       "desc": "Alle drei Köpfe speien Feuer im Fächer."
      },
      {
@@ -572,7 +573,7 @@
    "kind": "boss",
    "floor": 4,
    "role": "Boss · Etage 4",
-   "desc": "Ein aufgedunsener Dämon, der aus einem Lavakessel wächst. Spuckt Lava im Bogen und brütet Magmaschleime aus.",
+   "desc": "Ein aufgedunsener Dämon, der aus einem Lavakessel wächst. Spuckt Lava im Bogen und brütet Blutfledermäuse aus.",
    "anims": {
     "idle": {
      "row": 0,
@@ -601,7 +602,7 @@
     "r": 74,
     "ai": "drift",
     "adds": [
-     "magmaschleim"
+     "blutfledermaus"
     ],
     "attacks": [
      {
@@ -620,20 +621,25 @@
       "kind": "summon",
       "every": 7,
       "mobs": [
-       "magmaschleim",
-       "magmaschleim"
+       "blutfledermaus",
+       "blutfledermaus"
       ],
       "max": 5,
-      "desc": "Brütet Magmaschleime aus."
+      "hatch": "lava",
+      "desc": "Brütet Blutfledermäuse aus."
      },
      {
       "id": "ueberkochen",
       "name": "Überkochen",
-      "kind": "ring",
-      "every": 6,
-      "count": 18,
-      "speed": 240,
-      "desc": "Der Kessel kocht über: Ring aus Lava."
+      "kind": "meteors",
+      "look": "slag",
+      "every": 6.5,
+      "range": 900,
+      "count": 12,
+      "radius": 60,
+      "delay": 0.35,
+      "fall": 0.14,
+      "desc": "Der Kessel kocht über: Die Schlacke schießt als Fontäne hoch und regnet nach und nach auf dich herab. Jeder Einschlag hinterlässt eine brennende Lavapfütze."
      }
     ]
    },
@@ -690,7 +696,9 @@
       "rate": 0.09,
       "arms": 3,
       "speed": 280,
-      "desc": "Drei Arme aus Seelenflammen drehen sich aus der Laterne."
+      "from": ["weapon", 2.5, 3],
+      "look": "wisp",
+      "desc": "Drei Arme aus verlorenen Seelen drehen sich aus der Spitze seines Hirtenstabs."
      },
      {
       "id": "herde",
@@ -700,7 +708,9 @@
       "range": 900,
       "speed": 230,
       "count": 3,
-      "desc": "Drei suchende Seelen."
+      "from": ["weapon", 2.5, 3],
+      "look": "wisp",
+      "desc": "Drei suchende Seelen aus seinem Hirtenstab."
      },
      {
       "id": "ruf",
@@ -712,6 +722,7 @@
        "peingeist"
       ],
       "max": 3,
+      "from": ["weapon", 2.5, 3],
       "desc": "Ruft Aschenpriester und Peingeist."
      }
     ]
@@ -855,6 +866,7 @@
       "id": "tränen",
       "name": "Tränenregen",
       "kind": "ring",
+      "look": "tear",
       "every": 3,
       "count": 20,
       "speed": 220,
@@ -1236,7 +1248,7 @@
    "mobs": [
     "glutschaedel",
     "brandskelett",
-    "magmaschleim"
+    "blutfledermaus"
    ],
    "boss": "glutwaechter"
   },
@@ -1245,7 +1257,7 @@
     "glutschaedel",
     "brandskelett",
     "hoellenhund",
-    "magmaschleim"
+    "blutfledermaus"
    ],
    "boss": "dreischlund"
   },
@@ -1261,7 +1273,7 @@
   "4": {
    "mobs": [
     "glutimp",
-    "magmaschleim",
+    "blutfledermaus",
     "hoellenhund",
     "aschenpriester"
    ],

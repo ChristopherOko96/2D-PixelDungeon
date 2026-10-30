@@ -256,21 +256,29 @@
     draw(P, a, f) {
       const run = a === 'run', atk = a === 'attack', bob = run ? cyc(f, [0, -1, 0, -1]) : cyc(f, [0, 0, 1, 1]) * 0;
       const sw = run ? cyc(f, [-2, 0, 2, 0]) : 0, x = 9, top = 3 + bob;
+      // rig parts (export_mob_rigs.js): the tags and joints change nothing in the atlas
+      P.part('flame_back').joint('flame_back', x + .5, top + 8);
       P.flame(x - 4, top + 4, 9, 8, { seed: 5 });
-      P.line(x - 1, 18, x - 2 - sw, 25, M.bone, 1); P.line(x + 1, 18, x + 2 + sw, 25, M.bone, 1);
-      P.rect(x - 3 - sw, 25, 3, 1, M.bone).rect(x + 1 + sw, 25, 3, 1, M.bone);
+      P.part('leg_l').joint('leg_l', x - .5, 18.5);
+      P.line(x - 1, 18, x - 2 - sw, 25, M.bone, 1); P.rect(x - 3 - sw, 25, 3, 1, M.bone);
+      P.part('leg_r').joint('leg_r', x + 1.5, 18.5);
+      P.line(x + 1, 18, x + 2 + sw, 25, M.bone, 1); P.rect(x + 1 + sw, 25, 3, 1, M.bone);
+      P.part('torso').joint('torso', x + .5, 17.5);
       P.rect(x - 2, 16 + bob, 5, 2, M.bone);
       P.line(x, 11 + bob, x, 16 + bob, M.bone, 1);
       for (let k = 0; k < 3; k++) P.line(x - 3 + (k === 2 ? 1 : 0), 11 + bob + k * 2, x + 3 - (k === 2 ? 1 : 0), 11 + bob + k * 2, M.bone, 1);
       for (let k = 0; k < 2; k++) P.dot(x - 1 + k * 2, 12 + bob + k * 2, cyc(f + k, [ORA, YEL, ORA, RED]));
       P.line(x - 4, 11 + bob, x - 5, 16 + bob, M.bone, 1);
+      P.part('skull').joint('skull', x + .5, top + 8).joint('core', x + .5, 13);
       P.ell(x, top + 4, 3.8, 3.4, M.bone);
       P.rect(x - 2, top + 6, 5, 2, M.bone);
       P.rect(x - 3, top + 3, 2, 2, K).rect(x + 1, top + 3, 2, 2, K);
       P.dot(x - 2, top + 4, ORA).dot(x + 2, top + 4, ORA).dot(x - 1, top + 7, K).dot(x + 1, top + 7, K);
+      P.part('flame_head').joint('flame_head', x + .5, top + 3);
       P.flame(x - 3, top + 1, 7, 3, { seed: 9, front: true, sparks: false });
       // sword: [hand x, hand y, tip x, tip y] per attack frame
       const S = atk ? cyc(f, [[x + 2, top + 2, x - 4, top - 2], [x + 5, top + 8, x + 12, top + 2], [x + 5, 15, x + 12, 22], [x + 4, 15, x + 10, 9]]) : [x + 4, 15 + bob, x + 10, 9 + bob];
+      P.part('weapon').joint('weapon', x + 3.5, 11.5 + bob).joint('hand', S[2] + .5, S[3] + .5);
       P.line(x + 3, 11 + bob, S[0], S[1], M.bone, 1);
       P.line(S[0], S[1], S[2], S[3], M.ember, 2);
       P.dot(S[0], S[1], M.iron[2]);

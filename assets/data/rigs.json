@@ -15,7 +15,19 @@
   "red_staff": "res://assets/sprites/0x72/weapon_red_magic_staff.png",
   "green_staff": "res://assets/sprites/0x72/weapon_green_magic_staff.png",
   "bow": "res://assets/sprites/0x72/weapon_bow.png",
-  "arrow": "res://assets/sprites/0x72/weapon_arrow.png"
+  "arrow": "res://assets/sprites/0x72/weapon_arrow.png",
+  "wogol": "res://assets/sprites/0x72/wogol_idle_anim_f0.png",
+  "orc_warrior": "res://assets/sprites/0x72/orc_warrior_idle_anim_f0.png",
+  "imp": "res://assets/sprites/0x72/imp_idle_anim_f0.png",
+  "orc_shaman": "res://assets/sprites/0x72/orc_shaman_idle_anim_f0.png",
+  "waraxe": "res://assets/sprites/0x72/weapon_waraxe.png",
+  "dreischlund_src": "res://assets/sprites/hell/bosses/dreischlund.png",
+  "kesselbrut_src": "res://assets/sprites/hell/bosses/kesselbrut.png",
+  "seelenhirte_src": "res://assets/sprites/hell/bosses/seelenhirte.png",
+  "masked_orc": "res://assets/sprites/0x72/masked_orc_idle_anim_f0.png",
+  "cleaver": "res://assets/sprites/0x72/weapon_cleaver.png",
+  "klagender_hueter_src": "res://assets/sprites/hell/bosses/klagender_hueter.png",
+  "glutwaechter_src": "res://assets/sprites/hell/bosses/glutwaechter.png"
  },
  "pixel_art": {
   "shield": {
@@ -45,7 +57,20 @@
   "void": 3,
   "big_zombie": 3,
   "frost_corpse": 3,
-  "bone_colossus": 3
+  "bone_colossus": 3,
+  "brandskelett": 2,
+  "glutschaedel": 2,
+  "hoellenhund": 2,
+  "glutimp": 2,
+  "aschenpriester": 2,
+  "kettenschinder": 2.4,
+  "peingeist": 2,
+  "glutwaechter": 2,
+  "dreischlund": 2.4,
+  "kesselbrut": 2.3,
+  "seelenhirte": 3.2,
+  "kerkermeister": 3.6,
+  "klagender_hueter": 3
  },
  "rigs": {
   "knight": {
@@ -1480,6 +1505,4038 @@
     }
    ],
    "items": []
+  },
+  "brandskelett": {
+   "img": "skelet",
+   "family": "skeleton",
+   "variant": "sword",
+   "ground": [
+    8,
+    15
+   ],
+   "width": 9,
+   "parts": [
+    {
+     "id": "leg_l",
+     "rects": [
+      [
+       4,
+       14,
+       7,
+       15
+      ]
+     ],
+     "pivot": [
+      6,
+      14
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Linkes Bein"
+    },
+    {
+     "id": "leg_r",
+     "rects": [
+      [
+       8,
+       14,
+       11,
+       15
+      ]
+     ],
+     "pivot": [
+      10,
+      14
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Rechtes Bein"
+    },
+    {
+     "id": "torso",
+     "rects": [
+      [
+       4,
+       11,
+       11,
+       13
+      ]
+     ],
+     "pivot": [
+      8,
+      13
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 3,
+     "label": "Rumpf",
+     "alsoDetach": [
+      "leg_l",
+      "leg_r"
+     ]
+    },
+    {
+     "id": "skull",
+     "rects": [
+      [
+       3,
+       2,
+       12,
+       10
+      ]
+     ],
+     "pivot": [
+      8,
+      10
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 3,
+     "label": "Schädel",
+     "vital": true
+    }
+   ],
+   "items": [
+    {
+     "id": "weapon",
+     "img": "rusty_sword",
+     "grip": [
+      4.5,
+      18
+     ],
+     "hand": [
+      11,
+      13
+     ],
+     "parent": "torso",
+     "rest": 0.55,
+     "z": 4,
+     "tip": [
+      4.5,
+      1
+     ],
+     "hp": 1,
+     "label": "Glutklinge",
+     "disables": [
+      "hieb"
+     ],
+     "recolor": {
+      "#72d6ce": "#da4e38",
+      "#55a894": "#9f294e",
+      "#fdf7ed": "#ee8e2e"
+     }
+    }
+   ],
+   "recolor": {
+    "#fdf7ed": "#d3bfa9",
+    "#d3bfa9": "#aa8d7a"
+   },
+   "material": "bone",
+   "burn": {
+    "flames": [
+     [
+      "skull",
+      4,
+      4,
+      8,
+      7
+     ],
+     [
+      "torso",
+      6,
+      13,
+      4,
+      3
+     ]
+    ],
+    "glow": [
+     [
+      "skull",
+      6,
+      5
+     ],
+     [
+      "skull",
+      7,
+      6
+     ],
+     [
+      "skull",
+      11,
+      5
+     ],
+     [
+      "skull",
+      11,
+      6
+     ],
+     [
+      "torso",
+      7,
+      12
+     ],
+     [
+      "torso",
+      8,
+      12
+     ]
+    ]
+   },
+   "slash": "fire"
+  },
+  "glutschaedel": {
+   "img": "skelet",
+   "family": "skeleton",
+   "material": "bone",
+   "ground": [
+    8,
+    10
+   ],
+   "width": 8,
+   "recolor": {
+    "#fdf7ed": "#d3bfa9",
+    "#d3bfa9": "#aa8d7a"
+   },
+   "parts": [
+    {
+     "id": "skull",
+     "rects": [
+      [
+       3,
+       2,
+       12,
+       10
+      ]
+     ],
+     "pivot": [
+      8,
+      10
+     ],
+     "parent": null,
+     "z": 3,
+     "hp": 3,
+     "label": "Schädel",
+     "vital": true
+    }
+   ],
+   "items": [],
+   "burn": {
+    "flames": [
+     [
+      "skull",
+      3,
+      4,
+      10,
+      8
+     ]
+    ],
+    "glow": [
+     [
+      "skull",
+      6,
+      5
+     ],
+     [
+      "skull",
+      7,
+      6
+     ],
+     [
+      "skull",
+      11,
+      5
+     ],
+     [
+      "skull",
+      11,
+      6
+     ]
+    ]
+   }
+  },
+  "hoellenhund": {
+   "img": "wogol",
+   "recolor": {
+    "#da4e38": "#a8201a",
+    "#9f294e": "#6e1a24",
+    "#5f2d56": "#4a1620",
+    "#fdf7ed": "#ffa030"
+   },
+   "family": "skeleton",
+   "ground": [
+    8,
+    22
+   ],
+   "width": 10,
+   "parts": [
+    {
+     "id": "leg_l",
+     "rects": [
+      [
+       3,
+       21,
+       7,
+       22
+      ]
+     ],
+     "pivot": [
+      5,
+      21
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Linkes Bein"
+    },
+    {
+     "id": "leg_r",
+     "rects": [
+      [
+       8,
+       21,
+       13,
+       22
+      ]
+     ],
+     "pivot": [
+      9,
+      21
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Rechtes Bein"
+    },
+    {
+     "id": "torso",
+     "rects": [
+      [
+       3,
+       15,
+       13,
+       20
+      ]
+     ],
+     "pivot": [
+      8,
+      20
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 4,
+     "label": "Glutbauch",
+     "unbreakable": true
+    },
+    {
+     "id": "head",
+     "rects": [
+      [
+       3,
+       7,
+       13,
+       14
+      ]
+     ],
+     "pivot": [
+      8,
+      15
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 3,
+     "label": "Kopf",
+     "vital": true
+    }
+   ],
+   "items": [],
+   "material": "blood",
+   "burn": {
+    "flames": [
+     [
+      "head",
+      4,
+      9,
+      9,
+      6
+     ],
+     [
+      "torso",
+      4,
+      16,
+      3,
+      3
+     ]
+    ]
+   }
+  },
+  "glutimp": {
+   "img": "imp",
+   "family": "skeleton",
+   "material": "blood",
+   "ground": [
+    8,
+    15
+   ],
+   "width": 9,
+   "parts": [
+    {
+     "id": "leg_l",
+     "rects": [
+      [
+       5,
+       14,
+       7,
+       15
+      ]
+     ],
+     "pivot": [
+      6,
+      14
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Linkes Bein"
+    },
+    {
+     "id": "leg_r",
+     "rects": [
+      [
+       9,
+       14,
+       12,
+       15
+      ]
+     ],
+     "pivot": [
+      10,
+      14
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Rechtes Bein"
+    },
+    {
+     "id": "torso",
+     "rects": [
+      [
+       4,
+       11,
+       12,
+       13
+      ]
+     ],
+     "pivot": [
+      8,
+      13
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 3,
+     "label": "Leib",
+     "unbreakable": true,
+     "alsoDetach": [
+      "leg_l",
+      "leg_r"
+     ]
+    },
+    {
+     "id": "head",
+     "rects": [
+      [
+       4,
+       4,
+       13,
+       10
+      ]
+     ],
+     "pivot": [
+      8,
+      11
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 3,
+     "label": "Kopf",
+     "vital": true
+    }
+   ],
+   "items": [],
+   "burn": {
+    "flames": [
+     [
+      "head",
+      8,
+      6,
+      3,
+      5
+     ]
+    ],
+    "glow": [
+     [
+      "head",
+      7,
+      9
+     ],
+     [
+      "head",
+      11,
+      9
+     ]
+    ]
+   }
+  },
+  "aschenpriester": {
+   "img": "necro",
+   "family": "necro",
+   "ground": [
+    7,
+    22
+   ],
+   "width": 12,
+   "parts": [
+    {
+     "id": "robe",
+     "rects": [
+      [
+       0,
+       19,
+       15,
+       22
+      ]
+     ],
+     "pivot": [
+      7,
+      22
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 6,
+     "label": "Kutte",
+     "vital": true
+    },
+    {
+     "id": "hood",
+     "rects": [
+      [
+       0,
+       8,
+       15,
+       18
+      ]
+     ],
+     "pivot": [
+      7,
+      19
+     ],
+     "parent": "robe",
+     "z": 2,
+     "hp": 6,
+     "label": "Kopf",
+     "vital": true
+    }
+   ],
+   "items": [
+    {
+     "id": "weapon",
+     "img": "green_staff",
+     "grip": [
+      3.5,
+      18
+     ],
+     "hand": [
+      14,
+      17
+     ],
+     "parent": "hood",
+     "rest": 0.12,
+     "z": 3,
+     "tip": [
+      2.5,
+      3
+     ],
+     "hp": 2,
+     "label": "Seelenstab",
+     "disables": [
+      "seele"
+     ]
+    }
+   ],
+   "recolor": {
+    "#5f2d56": "#483b3a",
+    "#9f294e": "#c56025",
+    "#fdf7ed": "#97da3f"
+   },
+   "material": "ash",
+   "burn": {
+    "flames": [
+     [
+      "weapon",
+      1,
+      4,
+      4,
+      6,
+      "soul"
+     ],
+     [
+      "hood",
+      4,
+      10,
+      3,
+      3
+     ]
+    ]
+   }
+  },
+  "kettenschinder": {
+   "img": "orc_warrior",
+   "recolor": {
+    "#3d734f": "#a8201a",
+    "#314152": "#6e1a24",
+    "#8f4029": "#483b3a",
+    "#62232f": "#2a0f16",
+    "#fdf7ed": "#ffe080"
+   },
+   "family": "skeleton",
+   "variant": "sword",
+   "ground": [
+    8,
+    22
+   ],
+   "width": 10,
+   "parts": [
+    {
+     "id": "leg_l",
+     "rects": [
+      [
+       4,
+       21,
+       7,
+       22
+      ]
+     ],
+     "pivot": [
+      5,
+      21
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Linkes Bein"
+    },
+    {
+     "id": "leg_r",
+     "rects": [
+      [
+       8,
+       21,
+       15,
+       22
+      ]
+     ],
+     "pivot": [
+      9,
+      21
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Rechtes Bein"
+    },
+    {
+     "id": "torso",
+     "rects": [
+      [
+       4,
+       16,
+       15,
+       20
+      ]
+     ],
+     "pivot": [
+      8,
+      20
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 4,
+     "label": "Rumpf",
+     "unbreakable": true
+    },
+    {
+     "id": "head",
+     "rects": [
+      [
+       4,
+       7,
+       15,
+       15
+      ]
+     ],
+     "pivot": [
+      8,
+      16
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 3,
+     "label": "Kopf",
+     "vital": true
+    }
+   ],
+   "items": [
+    {
+     "id": "weapon",
+     "img": "waraxe",
+     "grip": [
+      3.5,
+      19
+     ],
+     "hand": [
+      12,
+      18
+     ],
+     "parent": "torso",
+     "rest": 0.5,
+     "z": 4,
+     "tip": [
+      9,
+      5
+     ],
+     "hp": 1,
+     "label": "Kriegsaxt",
+     "disables": [
+      "kreis",
+      "wurf"
+     ],
+     "recolor": {
+      "#72d6ce": "#da4e38",
+      "#55a894": "#9f294e",
+      "#fdf7ed": "#ee8e2e",
+      "#4b8a73": "#9f294e",
+      "#3e8e86": "#9f294e"
+     }
+    }
+   ],
+   "material": "blood",
+   "burn": {
+    "flames": [
+     [
+      "torso",
+      4,
+      17,
+      3,
+      3
+     ],
+     [
+      "torso",
+      12,
+      17,
+      3,
+      3
+     ]
+    ],
+    "glow": []
+   },
+   "slash": "fire"
+  },
+  "peingeist": {
+   "img": "orc_shaman",
+   "recolor": {
+    "#3d734f": "#8156aa",
+    "#314152": "#473579",
+    "#d44e52": "#c278d0",
+    "#8f4029": "#5f2d56",
+    "#62232f": "#2c1832",
+    "#fdf7ed": "#f0b3dd"
+   },
+   "family": "necro",
+   "ground": [
+    8,
+    22
+   ],
+   "width": 10,
+   "parts": [
+    {
+     "id": "robe",
+     "rects": [
+      [
+       0,
+       17,
+       15,
+       22
+      ]
+     ],
+     "pivot": [
+      8,
+      22
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 6,
+     "label": "Kutte",
+     "vital": true
+    },
+    {
+     "id": "hood",
+     "rects": [
+      [
+       0,
+       8,
+       15,
+       16
+      ]
+     ],
+     "pivot": [
+      8,
+      17
+     ],
+     "parent": "robe",
+     "z": 2,
+     "hp": 6,
+     "label": "Kopf",
+     "vital": true
+    }
+   ],
+   "items": [
+    {
+     "id": "weapon",
+     "img": "red_staff",
+     "grip": [
+      3.5,
+      18
+     ],
+     "hand": [
+      14,
+      17
+     ],
+     "parent": "hood",
+     "rest": 0.12,
+     "z": 3,
+     "tip": [
+      2.5,
+      3
+     ],
+     "hp": 2,
+     "label": "Leerenstab",
+     "disables": [
+      "blitz"
+     ]
+    }
+   ],
+   "material": "soul",
+   "burn": {
+    "flames": [
+     [
+      "weapon",
+      1,
+      4,
+      4,
+      6,
+      "void"
+     ],
+     [
+      "hood",
+      6,
+      10,
+      5,
+      4,
+      "void"
+     ]
+    ]
+   }
+  },
+  "glutwaechter": {
+   "img": "glutwaechter_src",
+   "family": "golem",
+   "ground": [
+    23.5,
+    37
+   ],
+   "width": 26,
+   "material": "magma",
+   "parts": [
+    {
+     "id": "leg_l",
+     "rects": [
+      [
+       13,
+       35,
+       19,
+       35
+      ],
+      [
+       13,
+       36,
+       19,
+       36
+      ],
+      [
+       14,
+       37,
+       18,
+       37
+      ]
+     ],
+     "pivot": [
+      16,
+      35
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 15,
+     "label": "Linkes Bein",
+     "unbreakable": true
+    },
+    {
+     "id": "leg_r",
+     "rects": [
+      [
+       26,
+       35,
+       33,
+       35
+      ],
+      [
+       27,
+       36,
+       33,
+       36
+      ],
+      [
+       28,
+       37,
+       32,
+       37
+      ]
+     ],
+     "pivot": [
+      30,
+      35
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 15,
+     "label": "Rechtes Bein",
+     "unbreakable": true
+    },
+    {
+     "id": "torso",
+     "rects": [
+      [
+       19,
+       3,
+       31,
+       3
+      ],
+      [
+       8,
+       4,
+       15,
+       4
+      ],
+      [
+       17,
+       4,
+       33,
+       4
+      ],
+      [
+       35,
+       4,
+       40,
+       4
+      ],
+      [
+       7,
+       5,
+       41,
+       5
+      ],
+      [
+       6,
+       6,
+       42,
+       6
+      ],
+      [
+       5,
+       7,
+       42,
+       7
+      ],
+      [
+       5,
+       8,
+       42,
+       8
+      ],
+      [
+       5,
+       9,
+       42,
+       9
+      ],
+      [
+       5,
+       10,
+       42,
+       10
+      ],
+      [
+       5,
+       11,
+       42,
+       11
+      ],
+      [
+       6,
+       12,
+       41,
+       12
+      ],
+      [
+       6,
+       13,
+       41,
+       13
+      ],
+      [
+       7,
+       14,
+       40,
+       14
+      ],
+      [
+       9,
+       15,
+       38,
+       15
+      ],
+      [
+       10,
+       16,
+       37,
+       16
+      ],
+      [
+       10,
+       17,
+       37,
+       17
+      ],
+      [
+       10,
+       18,
+       37,
+       18
+      ],
+      [
+       10,
+       19,
+       21,
+       19
+      ],
+      [
+       26,
+       19,
+       37,
+       19
+      ],
+      [
+       10,
+       20,
+       20,
+       20
+      ],
+      [
+       27,
+       20,
+       37,
+       20
+      ],
+      [
+       10,
+       21,
+       20,
+       21
+      ],
+      [
+       27,
+       21,
+       37,
+       21
+      ],
+      [
+       11,
+       22,
+       20,
+       22
+      ],
+      [
+       27,
+       22,
+       36,
+       22
+      ],
+      [
+       12,
+       23,
+       21,
+       23
+      ],
+      [
+       26,
+       23,
+       36,
+       23
+      ],
+      [
+       12,
+       24,
+       35,
+       24
+      ],
+      [
+       12,
+       25,
+       34,
+       25
+      ],
+      [
+       11,
+       26,
+       34,
+       26
+      ],
+      [
+       11,
+       27,
+       34,
+       27
+      ],
+      [
+       11,
+       28,
+       34,
+       28
+      ],
+      [
+       11,
+       29,
+       34,
+       29
+      ],
+      [
+       11,
+       30,
+       34,
+       30
+      ],
+      [
+       11,
+       31,
+       33,
+       31
+      ],
+      [
+       12,
+       32,
+       33,
+       32
+      ],
+      [
+       12,
+       33,
+       33,
+       33
+      ],
+      [
+       12,
+       34,
+       33,
+       34
+      ]
+     ],
+     "pivot": [
+      23.5,
+      34
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 40,
+     "label": "Felsleib",
+     "unbreakable": true
+    },
+    {
+     "id": "kern",
+     "rects": [
+      [
+       22,
+       19,
+       25,
+       19
+      ],
+      [
+       21,
+       20,
+       26,
+       20
+      ],
+      [
+       21,
+       21,
+       26,
+       21
+      ],
+      [
+       21,
+       22,
+       26,
+       22
+      ],
+      [
+       22,
+       23,
+       25,
+       23
+      ]
+     ],
+     "pivot": [
+      23.5,
+      21
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 15,
+     "label": "Lavakern",
+     "disables": [
+      "kern"
+     ]
+    },
+    {
+     "id": "head",
+     "rects": [
+      [
+       19,
+       3,
+       31,
+       3
+      ],
+      [
+       17,
+       4,
+       33,
+       4
+      ],
+      [
+       35,
+       4,
+       35,
+       4
+      ],
+      [
+       17,
+       5,
+       35,
+       5
+      ],
+      [
+       17,
+       6,
+       35,
+       6
+      ],
+      [
+       17,
+       7,
+       35,
+       7
+      ],
+      [
+       17,
+       8,
+       35,
+       8
+      ],
+      [
+       17,
+       9,
+       35,
+       9
+      ],
+      [
+       17,
+       10,
+       35,
+       10
+      ],
+      [
+       17,
+       11,
+       35,
+       11
+      ],
+      [
+       17,
+       12,
+       35,
+       12
+      ],
+      [
+       17,
+       13,
+       35,
+       13
+      ],
+      [
+       17,
+       14,
+       35,
+       14
+      ],
+      [
+       17,
+       15,
+       35,
+       15
+      ]
+     ],
+     "pivot": [
+      26,
+      15
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 30,
+     "label": "Felskopf",
+     "unbreakable": true
+    },
+    {
+     "id": "shoulder_l",
+     "rects": [
+      [
+       8,
+       4,
+       15,
+       4
+      ],
+      [
+       7,
+       5,
+       16,
+       5
+      ],
+      [
+       6,
+       6,
+       16,
+       6
+      ],
+      [
+       5,
+       7,
+       16,
+       7
+      ],
+      [
+       5,
+       8,
+       16,
+       8
+      ],
+      [
+       5,
+       9,
+       16,
+       9
+      ],
+      [
+       5,
+       10,
+       16,
+       10
+      ],
+      [
+       5,
+       11,
+       16,
+       11
+      ],
+      [
+       6,
+       12,
+       16,
+       12
+      ],
+      [
+       6,
+       13,
+       16,
+       13
+      ],
+      [
+       7,
+       14,
+       16,
+       14
+      ],
+      [
+       9,
+       15,
+       13,
+       15
+      ]
+     ],
+     "pivot": [
+      12,
+      13
+     ],
+     "parent": "torso",
+     "z": 4,
+     "hp": 20,
+     "label": "Linke Schulter",
+     "unbreakable": true
+    },
+    {
+     "id": "shoulder_r",
+     "rects": [
+      [
+       36,
+       4,
+       40,
+       4
+      ],
+      [
+       36,
+       5,
+       41,
+       5
+      ],
+      [
+       36,
+       6,
+       42,
+       6
+      ],
+      [
+       36,
+       7,
+       42,
+       7
+      ],
+      [
+       36,
+       8,
+       42,
+       8
+      ],
+      [
+       36,
+       9,
+       42,
+       9
+      ],
+      [
+       36,
+       10,
+       42,
+       10
+      ],
+      [
+       36,
+       11,
+       42,
+       11
+      ],
+      [
+       36,
+       12,
+       41,
+       12
+      ],
+      [
+       36,
+       13,
+       41,
+       13
+      ],
+      [
+       36,
+       14,
+       40,
+       14
+      ]
+     ],
+     "pivot": [
+      39,
+      12
+     ],
+     "parent": "torso",
+     "z": 4,
+     "hp": 20,
+     "label": "Rechte Schulter",
+     "unbreakable": true
+    },
+    {
+     "id": "fist_l",
+     "rects": [
+      [
+       2,
+       23,
+       7,
+       23
+      ],
+      [
+       1,
+       24,
+       8,
+       24
+      ],
+      [
+       0,
+       25,
+       9,
+       25
+      ],
+      [
+       0,
+       26,
+       9,
+       26
+      ],
+      [
+       0,
+       27,
+       9,
+       27
+      ],
+      [
+       0,
+       28,
+       9,
+       28
+      ],
+      [
+       0,
+       29,
+       9,
+       29
+      ],
+      [
+       1,
+       30,
+       8,
+       30
+      ],
+      [
+       2,
+       31,
+       7,
+       31
+      ]
+     ],
+     "pivot": [
+      4.5,
+      27
+     ],
+     "parent": "torso",
+     "z": 5,
+     "hp": 15,
+     "label": "Linke Faust",
+     "weakens": {
+      "stampfer": {
+       "radius": 0.75
+      }
+     }
+    },
+    {
+     "id": "fist_r",
+     "rects": [
+      [
+       40,
+       23,
+       45,
+       23
+      ],
+      [
+       39,
+       24,
+       46,
+       24
+      ],
+      [
+       38,
+       25,
+       47,
+       25
+      ],
+      [
+       38,
+       26,
+       47,
+       26
+      ],
+      [
+       38,
+       27,
+       47,
+       27
+      ],
+      [
+       38,
+       28,
+       47,
+       28
+      ],
+      [
+       38,
+       29,
+       47,
+       29
+      ],
+      [
+       39,
+       30,
+       46,
+       30
+      ],
+      [
+       40,
+       31,
+       45,
+       31
+      ]
+     ],
+     "pivot": [
+      42.5,
+      27
+     ],
+     "parent": "torso",
+     "z": 5,
+     "hp": 15,
+     "label": "Rechte Faust",
+     "disables": [
+      "brocken"
+     ],
+     "weakens": {
+      "stampfer": {
+       "radius": 0.75
+      }
+     }
+    }
+   ],
+   "items": [],
+   "burn": {
+    "flames": [
+     [
+      "head",
+      20,
+      4,
+      11,
+      7
+     ],
+     [
+      "shoulder_l",
+      8,
+      5,
+      6,
+      4
+     ],
+     [
+      "shoulder_r",
+      37,
+      5,
+      4,
+      3
+     ],
+     [
+      "kern",
+      21,
+      24,
+      6,
+      9
+     ]
+    ],
+    "glow": [
+     [
+      "head",
+      26,
+      12
+     ],
+     [
+      "head",
+      27,
+      12
+     ],
+     [
+      "head",
+      31,
+      12
+     ],
+     [
+      "kern",
+      22,
+      20
+     ],
+     [
+      "kern",
+      23,
+      21
+     ],
+     [
+      "kern",
+      25,
+      20
+     ],
+     [
+      "kern",
+      22,
+      22
+     ],
+     [
+      "kern",
+      25,
+      22
+     ],
+     [
+      "kern",
+      24,
+      21
+     ],
+     [
+      "shoulder_l",
+      8,
+      6
+     ],
+     [
+      "shoulder_r",
+      38,
+      9
+     ],
+     [
+      "shoulder_l",
+      9,
+      13
+     ],
+     [
+      "torso",
+      21,
+      18
+     ],
+     [
+      "torso",
+      13,
+      21
+     ],
+     [
+      "torso",
+      14,
+      23
+     ],
+     [
+      "torso",
+      17,
+      25
+     ],
+     [
+      "torso",
+      22,
+      26
+     ],
+     [
+      "fist_r",
+      40,
+      28
+     ],
+     [
+      "torso",
+      21,
+      30
+     ]
+    ]
+   }
+  },
+  "dreischlund": {
+   "img": "dreischlund_src",
+   "family": "skeleton",
+   "ground": [
+    19.5,
+    21
+   ],
+   "width": 30,
+   "material": "blood",
+   "parts": [
+    {
+     "id": "leg_l",
+     "rects": [
+      [
+       5,
+       19,
+       14,
+       19
+      ],
+      [
+       5,
+       20,
+       14,
+       20
+      ],
+      [
+       5,
+       21,
+       7,
+       21
+      ],
+      [
+       12,
+       21,
+       14,
+       21
+      ]
+     ],
+     "pivot": [
+      10,
+      19
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 15,
+     "label": "Vorderbeine",
+     "unbreakable": true
+    },
+    {
+     "id": "leg_r",
+     "rects": [
+      [
+       24,
+       19,
+       33,
+       19
+      ],
+      [
+       24,
+       20,
+       33,
+       20
+      ],
+      [
+       24,
+       21,
+       26,
+       21
+      ],
+      [
+       31,
+       21,
+       33,
+       21
+      ]
+     ],
+     "pivot": [
+      29,
+      19
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 15,
+     "label": "Hinterbeine",
+     "unbreakable": true
+    },
+    {
+     "id": "torso",
+     "rects": [
+      [
+       13,
+       9,
+       13,
+       9
+      ],
+      [
+       25,
+       9,
+       25,
+       9
+      ],
+      [
+       13,
+       10,
+       13,
+       10
+      ],
+      [
+       25,
+       10,
+       25,
+       10
+      ],
+      [
+       12,
+       11,
+       13,
+       11
+      ],
+      [
+       24,
+       11,
+       25,
+       11
+      ],
+      [
+       12,
+       12,
+       25,
+       12
+      ],
+      [
+       12,
+       13,
+       25,
+       13
+      ],
+      [
+       12,
+       14,
+       25,
+       14
+      ],
+      [
+       12,
+       15,
+       25,
+       15
+      ],
+      [
+       6,
+       16,
+       33,
+       16
+      ],
+      [
+       7,
+       17,
+       32,
+       17
+      ],
+      [
+       8,
+       18,
+       31,
+       18
+      ],
+      [
+       15,
+       19,
+       23,
+       19
+      ]
+     ],
+     "pivot": [
+      19.5,
+      19
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 40,
+     "label": "Leib",
+     "unbreakable": true
+    },
+    {
+     "id": "head_l",
+     "rects": [
+      [
+       3,
+       5,
+       3,
+       5
+      ],
+      [
+       11,
+       5,
+       11,
+       5
+      ],
+      [
+       2,
+       6,
+       4,
+       6
+      ],
+      [
+       10,
+       6,
+       12,
+       6
+      ],
+      [
+       2,
+       7,
+       5,
+       7
+      ],
+      [
+       9,
+       7,
+       12,
+       7
+      ],
+      [
+       2,
+       8,
+       12,
+       8
+      ],
+      [
+       2,
+       9,
+       12,
+       9
+      ],
+      [
+       2,
+       10,
+       11,
+       10
+      ],
+      [
+       2,
+       11,
+       11,
+       11
+      ],
+      [
+       2,
+       12,
+       11,
+       12
+      ],
+      [
+       2,
+       13,
+       11,
+       13
+      ],
+      [
+       2,
+       14,
+       11,
+       14
+      ],
+      [
+       2,
+       15,
+       11,
+       15
+      ]
+     ],
+     "pivot": [
+      7,
+      14
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 18,
+     "label": "Linker Kopf",
+     "weakens": {
+      "atem": {
+       "heads": 0.67
+      },
+      "rudel": {
+       "max": 0.7
+      }
+     }
+    },
+    {
+     "id": "head_r",
+     "rects": [
+      [
+       27,
+       5,
+       27,
+       5
+      ],
+      [
+       35,
+       5,
+       35,
+       5
+      ],
+      [
+       26,
+       6,
+       28,
+       6
+      ],
+      [
+       34,
+       6,
+       36,
+       6
+      ],
+      [
+       26,
+       7,
+       29,
+       7
+      ],
+      [
+       33,
+       7,
+       36,
+       7
+      ],
+      [
+       26,
+       8,
+       36,
+       8
+      ],
+      [
+       26,
+       9,
+       36,
+       9
+      ],
+      [
+       26,
+       10,
+       35,
+       10
+      ],
+      [
+       26,
+       11,
+       35,
+       11
+      ],
+      [
+       26,
+       12,
+       35,
+       12
+      ],
+      [
+       26,
+       13,
+       35,
+       13
+      ],
+      [
+       26,
+       14,
+       35,
+       14
+      ],
+      [
+       26,
+       15,
+       35,
+       15
+      ]
+     ],
+     "pivot": [
+      31,
+      14
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 18,
+     "label": "Rechter Kopf",
+     "weakens": {
+      "atem": {
+       "heads": 0.67
+      },
+      "rudel": {
+       "max": 0.7
+      }
+     }
+    },
+    {
+     "id": "head",
+     "rects": [
+      [
+       15,
+       1,
+       15,
+       1
+      ],
+      [
+       23,
+       1,
+       23,
+       1
+      ],
+      [
+       14,
+       2,
+       16,
+       2
+      ],
+      [
+       22,
+       2,
+       24,
+       2
+      ],
+      [
+       14,
+       3,
+       17,
+       3
+      ],
+      [
+       21,
+       3,
+       24,
+       3
+      ],
+      [
+       14,
+       4,
+       24,
+       4
+      ],
+      [
+       14,
+       5,
+       24,
+       5
+      ],
+      [
+       14,
+       6,
+       23,
+       6
+      ],
+      [
+       14,
+       7,
+       23,
+       7
+      ],
+      [
+       14,
+       8,
+       23,
+       8
+      ],
+      [
+       14,
+       9,
+       23,
+       9
+      ],
+      [
+       14,
+       10,
+       23,
+       10
+      ],
+      [
+       14,
+       11,
+       23,
+       11
+      ]
+     ],
+     "pivot": [
+      19.5,
+      11
+     ],
+     "parent": "torso",
+     "z": 4,
+     "hp": 30,
+     "label": "Mittlerer Kopf",
+     "unbreakable": true
+    }
+   ],
+   "items": [],
+   "burn": {
+    "flames": [
+     [
+      "head",
+      17,
+      4,
+      5,
+      6
+     ],
+     [
+      "head_l",
+      5,
+      8,
+      5,
+      4
+     ],
+     [
+      "head_r",
+      29,
+      8,
+      5,
+      4
+     ]
+    ],
+    "glow": [
+     [
+      "head",
+      17,
+      8
+     ],
+     [
+      "head",
+      18,
+      9
+     ],
+     [
+      "head",
+      22,
+      8
+     ],
+     [
+      "head_l",
+      5,
+      12
+     ],
+     [
+      "head_l",
+      6,
+      13
+     ],
+     [
+      "head_l",
+      10,
+      12
+     ],
+     [
+      "head_r",
+      29,
+      12
+     ],
+     [
+      "head_r",
+      30,
+      13
+     ],
+     [
+      "head_r",
+      34,
+      12
+     ]
+    ]
+   }
+  },
+  "kesselbrut": {
+   "img": "kesselbrut_src",
+   "family": "brute",
+   "ground": [
+    17.5,
+    37
+   ],
+   "width": 30,
+   "material": "magma",
+   "parts": [
+    {
+     "id": "kessel",
+     "rects": [
+      [
+       3,
+       27,
+       32,
+       27
+      ],
+      [
+       3,
+       28,
+       32,
+       28
+      ],
+      [
+       3,
+       29,
+       32,
+       29
+      ],
+      [
+       4,
+       30,
+       31,
+       30
+      ],
+      [
+       4,
+       31,
+       31,
+       31
+      ],
+      [
+       5,
+       32,
+       30,
+       32
+      ],
+      [
+       6,
+       33,
+       29,
+       33
+      ],
+      [
+       7,
+       34,
+       28,
+       34
+      ],
+      [
+       9,
+       35,
+       26,
+       35
+      ],
+      [
+       9,
+       36,
+       11,
+       36
+      ],
+      [
+       17,
+       36,
+       19,
+       36
+      ],
+      [
+       25,
+       36,
+       27,
+       36
+      ],
+      [
+       9,
+       37,
+       11,
+       37
+      ],
+      [
+       17,
+       37,
+       19,
+       37
+      ],
+      [
+       25,
+       37,
+       27,
+       37
+      ]
+     ],
+     "pivot": [
+      17.5,
+      36
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 40,
+     "label": "Kessel",
+     "unbreakable": true
+    },
+    {
+     "id": "torso",
+     "rects": [
+      [
+       13,
+       12,
+       13,
+       12
+      ],
+      [
+       13,
+       13,
+       13,
+       13
+      ],
+      [
+       13,
+       14,
+       13,
+       14
+      ],
+      [
+       13,
+       15,
+       13,
+       15
+      ],
+      [
+       13,
+       16,
+       13,
+       16
+      ],
+      [
+       13,
+       17,
+       13,
+       17
+      ],
+      [
+       13,
+       18,
+       13,
+       18
+      ],
+      [
+       13,
+       19,
+       14,
+       19
+      ],
+      [
+       13,
+       20,
+       14,
+       20
+      ],
+      [
+       14,
+       21,
+       26,
+       21
+      ],
+      [
+       14,
+       22,
+       26,
+       22
+      ]
+     ],
+     "pivot": [
+      17.5,
+      24
+     ],
+     "parent": "kessel",
+     "z": 2,
+     "hp": 30,
+     "label": "Wanst",
+     "unbreakable": true
+    },
+    {
+     "id": "head",
+     "rects": [
+      [
+       15,
+       8,
+       24,
+       8
+      ],
+      [
+       14,
+       9,
+       25,
+       9
+      ],
+      [
+       14,
+       10,
+       25,
+       10
+      ],
+      [
+       14,
+       11,
+       25,
+       11
+      ],
+      [
+       14,
+       12,
+       25,
+       12
+      ],
+      [
+       14,
+       13,
+       25,
+       13
+      ],
+      [
+       14,
+       14,
+       26,
+       14
+      ],
+      [
+       14,
+       15,
+       26,
+       15
+      ],
+      [
+       14,
+       16,
+       26,
+       16
+      ],
+      [
+       14,
+       17,
+       26,
+       17
+      ],
+      [
+       14,
+       18,
+       26,
+       18
+      ],
+      [
+       15,
+       19,
+       26,
+       19
+      ],
+      [
+       15,
+       20,
+       26,
+       20
+      ]
+     ],
+     "pivot": [
+      20,
+      20
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 25,
+     "label": "Kopf",
+     "unbreakable": true
+    },
+    {
+     "id": "arm",
+     "rects": [
+      [
+       10,
+       12,
+       10,
+       12
+      ],
+      [
+       12,
+       12,
+       12,
+       12
+      ],
+      [
+       11,
+       13,
+       12,
+       13
+      ],
+      [
+       8,
+       14,
+       8,
+       14
+      ],
+      [
+       10,
+       14,
+       12,
+       14
+      ],
+      [
+       9,
+       15,
+       12,
+       15
+      ],
+      [
+       8,
+       16,
+       12,
+       16
+      ],
+      [
+       9,
+       17,
+       12,
+       17
+      ],
+      [
+       8,
+       18,
+       12,
+       18
+      ],
+      [
+       9,
+       19,
+       12,
+       19
+      ],
+      [
+       9,
+       20,
+       12,
+       20
+      ],
+      [
+       9,
+       21,
+       13,
+       21
+      ],
+      [
+       9,
+       22,
+       13,
+       22
+      ]
+     ],
+     "pivot": [
+      12,
+      14
+     ],
+     "parent": "torso",
+     "z": 4,
+     "hp": 18,
+     "label": "Brutarm",
+     "disables": [
+      "brut"
+     ]
+    },
+    {
+     "id": "rand",
+     "rects": [
+      [
+       3,
+       23,
+       32,
+       23
+      ],
+      [
+       2,
+       24,
+       33,
+       24
+      ],
+      [
+       2,
+       25,
+       33,
+       25
+      ],
+      [
+       2,
+       26,
+       33,
+       26
+      ]
+     ],
+     "pivot": [
+      17.5,
+      25
+     ],
+     "parent": "kessel",
+     "z": 5,
+     "hp": 18,
+     "label": "Kesselrand",
+     "weakens": {
+      "ueberkochen": {
+       "count": 0.5
+      }
+     }
+    }
+   ],
+   "items": [],
+   "burn": {
+    "flames": [
+     [
+      "rand",
+      4,
+      24,
+      28,
+      4
+     ]
+    ]
+   }
+  },
+  "seelenhirte": {
+   "img": "seelenhirte_src",
+   "family": "necro",
+   "ground": [
+    11,
+    30
+   ],
+   "width": 12,
+   "material": "ash",
+   "parts": [
+    {
+     "id": "robe",
+     "rects": [
+      [
+       5,
+       27,
+       16,
+       27
+      ],
+      [
+       5,
+       28,
+       16,
+       28
+      ],
+      [
+       5,
+       29,
+       16,
+       29
+      ],
+      [
+       5,
+       30,
+       16,
+       30
+      ]
+     ],
+     "pivot": [
+      11,
+      30
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 40,
+     "label": "Gewand",
+     "unbreakable": true
+    },
+    {
+     "id": "hood",
+     "rects": [
+      [
+       5,
+       6,
+       5,
+       6
+      ],
+      [
+       18,
+       6,
+       18,
+       6
+      ],
+      [
+       4,
+       7,
+       6,
+       7
+      ],
+      [
+       17,
+       7,
+       19,
+       7
+      ],
+      [
+       3,
+       8,
+       6,
+       8
+      ],
+      [
+       10,
+       8,
+       10,
+       8
+      ],
+      [
+       13,
+       8,
+       13,
+       8
+      ],
+      [
+       17,
+       8,
+       20,
+       8
+      ],
+      [
+       2,
+       9,
+       7,
+       9
+      ],
+      [
+       9,
+       9,
+       14,
+       9
+      ],
+      [
+       16,
+       9,
+       21,
+       9
+      ],
+      [
+       3,
+       10,
+       7,
+       10
+      ],
+      [
+       9,
+       10,
+       14,
+       10
+      ],
+      [
+       16,
+       10,
+       20,
+       10
+      ],
+      [
+       4,
+       11,
+       19,
+       11
+      ],
+      [
+       6,
+       12,
+       10,
+       12
+      ],
+      [
+       13,
+       12,
+       17,
+       12
+      ],
+      [
+       7,
+       13,
+       9,
+       13
+      ],
+      [
+       14,
+       13,
+       16,
+       13
+      ],
+      [
+       7,
+       14,
+       9,
+       14
+      ],
+      [
+       14,
+       14,
+       16,
+       14
+      ],
+      [
+       8,
+       15,
+       10,
+       15
+      ],
+      [
+       13,
+       15,
+       15,
+       15
+      ],
+      [
+       6,
+       16,
+       17,
+       16
+      ],
+      [
+       6,
+       17,
+       17,
+       17
+      ],
+      [
+       6,
+       18,
+       17,
+       18
+      ],
+      [
+       6,
+       19,
+       17,
+       19
+      ],
+      [
+       6,
+       20,
+       17,
+       20
+      ],
+      [
+       6,
+       21,
+       17,
+       21
+      ],
+      [
+       6,
+       22,
+       17,
+       22
+      ],
+      [
+       6,
+       23,
+       17,
+       23
+      ],
+      [
+       6,
+       24,
+       17,
+       24
+      ],
+      [
+       6,
+       25,
+       17,
+       25
+      ],
+      [
+       6,
+       26,
+       17,
+       26
+      ]
+     ],
+     "pivot": [
+      11,
+      27
+     ],
+     "parent": "robe",
+     "z": 2,
+     "hp": 30,
+     "label": "Geweihschädel",
+     "unbreakable": true
+    }
+   ],
+   "items": [
+    {
+     "id": "weapon",
+     "img": "green_staff",
+     "grip": [
+      3.5,
+      18
+     ],
+     "hand": [
+      18,
+      25
+     ],
+     "parent": "robe",
+     "rest": 0.12,
+     "z": 4,
+     "tip": [
+      2.5,
+      3
+     ],
+     "hp": 18,
+     "label": "Hirtenstab",
+     "disables": [
+      "ruf"
+     ],
+     "weakens": {
+      "spirale": {
+       "arms": 0.5
+      }
+     }
+    }
+   ],
+   "burn": {
+    "flames": [
+     [
+      "weapon",
+      1,
+      4,
+      4,
+      7,
+      "soul"
+     ],
+     [
+      "hood",
+      5,
+      7,
+      1,
+      3,
+      "soul"
+     ],
+     [
+      "hood",
+      18,
+      7,
+      1,
+      3,
+      "soul"
+     ]
+    ]
+   }
+  },
+  "kerkermeister": {
+   "img": "masked_orc",
+   "family": "skeleton",
+   "variant": "sword",
+   "ground": [
+    9,
+    22
+   ],
+   "width": 10,
+   "material": "blood",
+   "recolor": {
+    "#3d734f": "#2c1832",
+    "#314152": "#1a1018",
+    "#8f4029": "#6e1a24",
+    "#62232f": "#2a0f16"
+   },
+   "parts": [
+    {
+     "id": "leg_l",
+     "rects": [
+      [
+       3,
+       21,
+       7,
+       22
+      ]
+     ],
+     "pivot": [
+      5,
+      21
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Linkes Bein",
+     "unbreakable": true
+    },
+    {
+     "id": "leg_r",
+     "rects": [
+      [
+       8,
+       21,
+       15,
+       22
+      ]
+     ],
+     "pivot": [
+      9,
+      21
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Rechtes Bein",
+     "unbreakable": true
+    },
+    {
+     "id": "torso",
+     "rects": [
+      [
+       3,
+       16,
+       15,
+       20
+      ]
+     ],
+     "pivot": [
+      8,
+      20
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 4,
+     "label": "Rumpf",
+     "unbreakable": true
+    },
+    {
+     "id": "head",
+     "rects": [
+      [
+       3,
+       7,
+       15,
+       15
+      ]
+     ],
+     "pivot": [
+      8,
+      16
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 3,
+     "label": "Henkerskapuze",
+     "vital": false,
+     "unbreakable": true
+    }
+   ],
+   "items": [
+    {
+     "id": "weapon",
+     "img": "cleaver",
+     "grip": [
+      1.5,
+      16
+     ],
+     "hand": [
+      12,
+      18
+     ],
+     "parent": "torso",
+     "rest": 0.55,
+     "z": 4,
+     "tip": [
+      4,
+      1
+     ],
+     "hp": 18,
+     "label": "Hackbeil",
+     "weakens": {
+      "spalter": {
+       "radius": 0.6
+      }
+     }
+    }
+   ],
+   "slash": "fire",
+   "burn": {
+    "glow": [
+     [
+      "head",
+      9,
+      12
+     ],
+     [
+      "head",
+      12,
+      12
+     ]
+    ]
+   }
+  },
+  "klagender_hueter": {
+   "img": "klagender_hueter_src",
+   "family": "brute",
+   "ground": [
+    17,
+    35
+   ],
+   "width": 22,
+   "material": "soul",
+   "parts": [
+    {
+     "id": "leg_l",
+     "rects": [
+      [
+       6,
+       32,
+       6,
+       32
+      ],
+      [
+       9,
+       32,
+       16,
+       32
+      ],
+      [
+       10,
+       33,
+       13,
+       33
+      ],
+      [
+       10,
+       34,
+       12,
+       34
+      ],
+      [
+       10,
+       35,
+       12,
+       35
+      ]
+     ],
+     "pivot": [
+      12,
+      32
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 15,
+     "label": "Linker Fuß",
+     "unbreakable": true
+    },
+    {
+     "id": "leg_r",
+     "rects": [
+      [
+       17,
+       32,
+       24,
+       32
+      ],
+      [
+       20,
+       33,
+       23,
+       33
+      ],
+      [
+       20,
+       34,
+       22,
+       34
+      ],
+      [
+       20,
+       35,
+       22,
+       35
+      ]
+     ],
+     "pivot": [
+      21,
+      32
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 15,
+     "label": "Rechter Fuß",
+     "unbreakable": true
+    },
+    {
+     "id": "torso",
+     "rects": [
+      [
+       11,
+       20,
+       23,
+       20
+      ],
+      [
+       11,
+       21,
+       23,
+       21
+      ],
+      [
+       11,
+       22,
+       23,
+       22
+      ],
+      [
+       7,
+       23,
+       8,
+       23
+      ],
+      [
+       10,
+       23,
+       24,
+       23
+      ],
+      [
+       27,
+       23,
+       27,
+       23
+      ],
+      [
+       8,
+       24,
+       27,
+       24
+      ],
+      [
+       7,
+       25,
+       26,
+       25
+      ],
+      [
+       7,
+       26,
+       25,
+       26
+      ],
+      [
+       8,
+       27,
+       25,
+       27
+      ],
+      [
+       8,
+       28,
+       25,
+       28
+      ],
+      [
+       8,
+       29,
+       26,
+       29
+      ],
+      [
+       7,
+       30,
+       27,
+       30
+      ],
+      [
+       6,
+       31,
+       25,
+       31
+      ],
+      [
+       27,
+       31,
+       27,
+       31
+      ]
+     ],
+     "pivot": [
+      17,
+      31
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 40,
+     "label": "Klageschlund",
+     "unbreakable": true
+    },
+    {
+     "id": "head",
+     "rects": [
+      [
+       18,
+       6,
+       18,
+       6
+      ],
+      [
+       15,
+       7,
+       15,
+       7
+      ],
+      [
+       17,
+       7,
+       17,
+       7
+      ],
+      [
+       22,
+       7,
+       22,
+       7
+      ],
+      [
+       14,
+       8,
+       15,
+       8
+      ],
+      [
+       17,
+       8,
+       17,
+       8
+      ],
+      [
+       19,
+       8,
+       19,
+       8
+      ],
+      [
+       21,
+       8,
+       21,
+       8
+      ],
+      [
+       14,
+       9,
+       21,
+       9
+      ],
+      [
+       15,
+       10,
+       22,
+       10
+      ],
+      [
+       25,
+       10,
+       26,
+       10
+      ],
+      [
+       15,
+       11,
+       25,
+       11
+      ],
+      [
+       15,
+       12,
+       25,
+       12
+      ],
+      [
+       15,
+       13,
+       25,
+       13
+      ],
+      [
+       27,
+       13,
+       27,
+       13
+      ],
+      [
+       15,
+       14,
+       27,
+       14
+      ],
+      [
+       14,
+       15,
+       26,
+       15
+      ],
+      [
+       13,
+       16,
+       25,
+       16
+      ],
+      [
+       11,
+       17,
+       25,
+       17
+      ],
+      [
+       8,
+       18,
+       25,
+       18
+      ],
+      [
+       10,
+       19,
+       24,
+       19
+      ]
+     ],
+     "pivot": [
+      10,
+      19
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 30,
+     "label": "Kopf",
+     "unbreakable": true
+    },
+    {
+     "id": "arm",
+     "rects": [
+      [
+       9,
+       9,
+       11,
+       9
+      ],
+      [
+       10,
+       10,
+       14,
+       10
+      ],
+      [
+       9,
+       11,
+       14,
+       11
+      ],
+      [
+       6,
+       12,
+       14,
+       12
+      ],
+      [
+       7,
+       13,
+       14,
+       13
+      ],
+      [
+       8,
+       14,
+       14,
+       14
+      ],
+      [
+       7,
+       15,
+       13,
+       15
+      ],
+      [
+       7,
+       16,
+       12,
+       16
+      ],
+      [
+       6,
+       17,
+       10,
+       17
+      ]
+     ],
+     "pivot": [
+      14,
+      16
+     ],
+     "parent": "torso",
+     "z": 4,
+     "hp": 18,
+     "label": "Arm",
+     "weakens": {
+      "haende": {
+       "count": 0.4
+      }
+     }
+    },
+    {
+     "id": "chain_l1",
+     "rects": [
+      [
+       4,
+       17,
+       5,
+       17
+      ],
+      [
+       3,
+       18,
+       7,
+       18
+      ],
+      [
+       3,
+       19,
+       7,
+       19
+      ],
+      [
+       3,
+       20,
+       6,
+       20
+      ],
+      [
+       3,
+       21,
+       6,
+       21
+      ]
+     ],
+     "pivot": [
+      6.5,
+      18
+     ],
+     "parent": "torso",
+     "z": 5,
+     "hp": 18,
+     "label": "Linke Kette",
+     "sway": [
+      0.85,
+      0.19,
+      2.2,
+      0
+     ],
+     "weakens": {
+      "tränen": {
+       "count": 0.7
+      }
+     }
+    },
+    {
+     "id": "chain_l2",
+     "rects": [
+      [
+       3,
+       22,
+       6,
+       22
+      ],
+      [
+       3,
+       23,
+       6,
+       23
+      ],
+      [
+       3,
+       24,
+       6,
+       24
+      ],
+      [
+       3,
+       25,
+       6,
+       25
+      ]
+     ],
+     "pivot": [
+      4.5,
+      22
+     ],
+     "parent": "chain_l1",
+     "z": 5,
+     "hp": 12,
+     "label": "Linke Kette",
+     "sway": [
+      0.28,
+      0.26,
+      2.2,
+      -0.9
+     ],
+     "unbreakable": true
+    },
+    {
+     "id": "chain_l3",
+     "rects": [
+      [
+       3,
+       26,
+       6,
+       26
+      ],
+      [
+       3,
+       27,
+       6,
+       27
+      ],
+      [
+       3,
+       28,
+       6,
+       28
+      ]
+     ],
+     "pivot": [
+      4.5,
+      26
+     ],
+     "parent": "chain_l2",
+     "z": 5,
+     "hp": 12,
+     "label": "Linke Kette",
+     "sway": [
+      0.28,
+      0.33,
+      2.2,
+      -1.8
+     ],
+     "unbreakable": true
+    },
+    {
+     "id": "chain_l4",
+     "rects": [
+      [
+       3,
+       29,
+       6,
+       29
+      ],
+      [
+       3,
+       30,
+       6,
+       30
+      ],
+      [
+       3,
+       31,
+       5,
+       31
+      ],
+      [
+       4,
+       32,
+       5,
+       32
+      ]
+     ],
+     "pivot": [
+      4.5,
+      29
+     ],
+     "parent": "chain_l3",
+     "z": 5,
+     "hp": 12,
+     "label": "Linke Kette",
+     "sway": [
+      0.28,
+      0.4,
+      2.2,
+      -2.7
+     ],
+     "unbreakable": true
+    },
+    {
+     "id": "chain_r1",
+     "rects": [
+      [
+       27,
+       15,
+       29,
+       15
+      ],
+      [
+       26,
+       16,
+       30,
+       16
+      ],
+      [
+       26,
+       17,
+       30,
+       17
+      ],
+      [
+       27,
+       18,
+       30,
+       18
+      ],
+      [
+       27,
+       19,
+       30,
+       19
+      ]
+     ],
+     "pivot": [
+      26.5,
+      16
+     ],
+     "parent": "torso",
+     "z": 5,
+     "hp": 18,
+     "label": "Rechte Kette",
+     "sway": [
+      -0.85,
+      0.19,
+      2.2,
+      1.3
+     ],
+     "weakens": {
+      "tränen": {
+       "count": 0.7
+      }
+     }
+    },
+    {
+     "id": "chain_r2",
+     "rects": [
+      [
+       27,
+       20,
+       30,
+       20
+      ],
+      [
+       27,
+       21,
+       30,
+       21
+      ],
+      [
+       27,
+       22,
+       30,
+       22
+      ],
+      [
+       28,
+       23,
+       30,
+       23
+      ]
+     ],
+     "pivot": [
+      28.5,
+      20
+     ],
+     "parent": "chain_r1",
+     "z": 5,
+     "hp": 12,
+     "label": "Rechte Kette",
+     "sway": [
+      -0.28,
+      0.26,
+      2.2,
+      0.4
+     ],
+     "unbreakable": true
+    },
+    {
+     "id": "chain_r3",
+     "rects": [
+      [
+       28,
+       24,
+       30,
+       24
+      ],
+      [
+       27,
+       25,
+       30,
+       25
+      ],
+      [
+       27,
+       26,
+       30,
+       26
+      ]
+     ],
+     "pivot": [
+      28.5,
+      24
+     ],
+     "parent": "chain_r2",
+     "z": 5,
+     "hp": 12,
+     "label": "Rechte Kette",
+     "sway": [
+      -0.28,
+      0.33,
+      2.2,
+      -0.5
+     ],
+     "unbreakable": true
+    },
+    {
+     "id": "chain_r4",
+     "rects": [
+      [
+       27,
+       27,
+       30,
+       27
+      ],
+      [
+       27,
+       28,
+       30,
+       28
+      ],
+      [
+       27,
+       29,
+       30,
+       29
+      ],
+      [
+       28,
+       30,
+       30,
+       30
+      ],
+      [
+       28,
+       31,
+       29,
+       31
+      ]
+     ],
+     "pivot": [
+      28.5,
+      27
+     ],
+     "parent": "chain_r3",
+     "z": 5,
+     "hp": 12,
+     "label": "Rechte Kette",
+     "sway": [
+      -0.28,
+      0.4,
+      2.2,
+      -1.4000000000000001
+     ],
+     "unbreakable": true
+    }
+   ],
+   "items": [],
+   "burn": {
+    "flames": [
+     [
+      "head",
+      14,
+      9,
+      8,
+      5,
+      "void"
+     ],
+     [
+      "torso",
+      9,
+      30,
+      4,
+      3,
+      "void"
+     ],
+     [
+      "torso",
+      21,
+      30,
+      4,
+      3,
+      "void"
+     ]
+    ]
+   }
   }
  },
  "void": {
@@ -1626,10 +5683,23 @@
  },
  "mimic": {
   "_note": "Mimik: a 0x72 chest that bites (chest_mimic_open_anim). frames: 0 closed (same as a normal chest), 1 teeth, 2 open mouth. The pose (rig_poses.gd mimic) hops and chomps.",
-  "frames": ["res://assets/sprites/0x72/chest_mimic_open_anim_f0.png", "res://assets/sprites/0x72/chest_mimic_open_anim_f1.png", "res://assets/sprites/0x72/chest_mimic_open_anim_f2.png"],
+  "frames": [
+   "res://assets/sprites/0x72/chest_mimic_open_anim_f0.png",
+   "res://assets/sprites/0x72/chest_mimic_open_anim_f1.png",
+   "res://assets/sprites/0x72/chest_mimic_open_anim_f2.png"
+  ],
   "fps": 8,
-  "ground": [8, 15],
+  "ground": [
+   8,
+   15
+  ],
   "width": 8,
-  "parts": {"body": {"hp": 1, "label": "Truhe", "vital": true}}
+  "parts": {
+   "body": {
+    "hp": 1,
+    "label": "Truhe",
+    "vital": true
+   }
+  }
  }
 }

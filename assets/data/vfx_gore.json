@@ -21,7 +21,7 @@
     "frost_skeleton": "bone", "ice_knight": "bone",
     "ice_slime": "frost", "ice_slime_m": "frost", "ice_slime_s": "frost", "frost_imp": "frost", "frost_whirl": "frost", "ice_crystal": "frost",
     "glutschaedel": "ember", "glutimp": "blood", "hoellenhund": "blood", "dreischlund": "blood", "kettenschinder": "blood", "kerkermeister": "blood",
-    "brandskelett": "bone", "magmaschleim": "magma", "kesselbrut": "magma", "aschenpriester": "ash",
+    "brandskelett": "bone", "blutfledermaus": "blood", "kesselbrut": "magma", "aschenpriester": "ash",
     "peingeist": "soul", "seelenhirte": "soul", "klagender_hueter": "soul", "glutwaechter": "obsidian",
     "drache1": "ember", "drache2": "ember", "drache3": "ember", "drache4": "obsidian"
   },

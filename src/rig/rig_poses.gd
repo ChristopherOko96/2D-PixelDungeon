@@ -74,12 +74,51 @@ static func _bow_draw(pose: Dictionary, u: float, release: float = 0.62) -> void
 
 ## The pose of rig `rig` for actor state `a`.
 static func pose(rig: Dictionary, a: Dictionary) -> Dictionary:
+	var out := _family_pose(rig, a)
+	if bool(rig.get("layered", false)): _layered_extras(rig, a, out)
+	_sway(rig, a, out)
+	return out
+
+
+## Parts that sway on their own whatever the family does (rigs.json part
+## "sway": [rest, amplitude, period, phase] in rad, rad, s, rad): turned by
+## rest plus a sine. Hung one on another with growing phases they move like a
+## tentacle, a wave running down to the tip (the Klagender Hüter's chains).
+static func _sway(rig: Dictionary, a: Dictionary, out: Dictionary) -> void:
+	var t := float(a.get("t", 0.0))
+	for part: Dictionary in rig.get("parts", []):
+		var sw: Variant = part.get("sway", [])
+		if not sw is Array or (sw as Array).size() < 4:
+			continue
+		P(out, str(part.id)).rot += float(sw[0]) + float(sw[1]) * sin(t * TAU / maxf(0.1, float(sw[2])) + float(sw[3]))
+
+
+## Hell mobs reuse the crypt families on layered rigs (assets/data/hell_rigs.json):
+## a held weapon is a part there, so the family's item motion moves that part;
+## flame flipbooks the family does not drive flicker at 8 frames a second.
+static func _layered_extras(rig: Dictionary, a: Dictionary, out: Dictionary) -> void:
+	var by_id: Dictionary = rig.get("by_id", {})
+	for id: String in out.items:
+		if not by_id.has(id) or bool(by_id[id].get("is_item", false)): continue
+		var item: Dictionary = out.items[id]
+		var part := P(out, id)
+		part.dx += float(item.get("dx", 0.0))
+		part.dy += float(item.get("dy", 0.0))
+		part.rot += float(item.get("rot", 0.0))
+	if not out.has("frames"): out.frames = {}
+	for part: Dictionary in rig.get("parts", []):
+		if part.get("frames") is Array and (part.frames as Array).size() > 1 and not out.frames.has(part.id):
+			out.frames[part.id] = int(floor(float(a.get("t", 0.0)) * 8.0 + float(int(part.get("z", 0)) * 3))) % (part.frames as Array).size()
+
+
+static func _family_pose(rig: Dictionary, a: Dictionary) -> Dictionary:
 	match str(rig.get("family", "")):
 		"hero": return hero(rig, a)
 		"skeleton": return skeleton(rig, a)
 		"necro": return necro(rig, a)
 		"biped": return biped(rig, a)
 		"brute": return brute(rig, a)
+		"golem": return golem(rig, a)
 		"void": return void_lord(rig, a)
 		"bomber": return bomber(rig, a)
 		"mimic": return mimic(rig, a)
@@ -303,6 +342,82 @@ static func biped(rig: Dictionary, a: Dictionary) -> Dictionary:
 			pose.whole.pivot = Vector2(float(rig.ground.x) - 5.0, float(rig.ground.y))
 			pose.whole.dy = 1.0 * k
 			for part: Dictionary in rig.parts: P(pose, part.id).alpha = 1.0 - ease_in(seg(u, 0.6, 1.0))
+	return pose
+
+
+## Golem (the Glutwächter): a rock body on two stubby legs with its fists
+## floating free beside it. Body, head and shoulders breathe on one 1.4 s
+## period a little apart; each fist bobs on its own (1.9 s, 0.7 rad behind
+## the other). Walking stomps and swings the fists. Clips: "slam" both fists
+## rise high and smash down, "attack" the right fist pulls back and hurls,
+## "roar" the fists spread wide and the body swells (its core bursts), "hit"
+## knocks it back. A lost fist regrows growing from nothing.
+static func golem(_rig: Dictionary, a: Dictionary) -> Dictionary:
+	var pose := blank()
+	var t: float = a.t
+	var breath := TAU / 1.4
+	P(pose, "torso").dy = -0.4 * sin(t * breath)
+	P(pose, "head").dy = -0.6 * sin(t * breath - 0.4)
+	P(pose, "shoulder_l").dy = -0.5 * sin(t * breath - 0.2)
+	P(pose, "shoulder_r").dy = -0.5 * sin(t * breath - 0.6)
+	var fl := P(pose, "fist_l")
+	var fr := P(pose, "fist_r")
+	fl.dy = -1.2 * sin(t * TAU / 1.9)
+	fr.dy = -1.2 * sin(t * TAU / 1.9 + 0.7)
+	if a.moving:
+		var ph := t * TAU / 0.9
+		_walk_legs(pose, "leg_l", "leg_r", ph, 1.2, 1.4)
+		pose.whole.dy = -absf(sin(ph)) * 1.2
+		pose.whole.rot = 0.04 * sin(ph)
+		fl.dx = 1.5 * sin(ph)
+		fr.dx = -1.5 * sin(ph)
+	var regrowing: Dictionary = a.regrowing
+	for id: String in ["fist_l", "fist_r"]:
+		if regrowing.has(id):
+			var k := ease_out(1.0 - float(regrowing[id]) / 1.2)
+			P(pose, id).sx = lerpf(0.15, 1.0, k)
+			P(pose, id).sy = lerpf(0.15, 1.0, k)
+	var u: float = a.u
+	match str(a.clip):
+		"slam":
+			var raise := ease_out(seg(u, 0.0, 0.55))
+			var smash := ease_in(seg(u, 0.55, 0.68))
+			var back := ease_in_out(seg(u, 0.75, 1.0))
+			var keep := 1.0 - back
+			fl.dy += (-12.0 * raise + 16.0 * smash) * keep
+			fr.dy += (-12.0 * raise + 16.0 * smash) * keep
+			fl.dx += (-2.0 * raise + 5.0 * smash) * keep
+			fr.dx += (2.0 * raise - 5.0 * smash) * keep
+			pose.whole.sy += (0.05 * raise - 0.12 * smash) * keep
+			pose.whole.sx += 0.1 * smash * keep
+			P(pose, "head").dy -= 1.5 * raise * keep
+			if u > 0.55 and u < 0.72: pose.trail = true
+		"attack":
+			var pull := ease_out(seg(u, 0.0, 0.45))
+			var fling := ease_out(seg(u, 0.45, 0.6))
+			var back := ease_in_out(seg(u, 0.7, 1.0))
+			var keep := 1.0 - back
+			fr.dx += (-5.0 * pull + 11.0 * fling) * keep
+			fr.dy += (-7.0 * pull + 3.0 * fling) * keep
+			fr.rot = (-0.6 * pull + 1.2 * fling) * keep
+			pose.whole.rot = (-0.06 * pull + 0.09 * fling) * keep
+			if u > 0.45 and u < 0.62: pose.trail = true
+		"roar":
+			var k := ease_out(seg(u, 0.0, 0.4)) * (1.0 - ease_in_out(seg(u, 0.7, 1.0)))
+			fl.dx -= 5.0 * k
+			fr.dx += 5.0 * k
+			fl.dy -= 4.0 * k
+			fr.dy -= 4.0 * k
+			pose.whole.sx += 0.07 * k + 0.02 * sin(float(a.ct) * 60.0) * k
+			pose.whole.sy += 0.06 * k
+			P(pose, "head").dy -= 1.0 * k
+		"hit":
+			var k := 1.0 - ease_out(u)
+			pose.whole.dx = -1.5 * k
+			pose.whole.sx += 0.08 * k
+			pose.whole.sy -= 0.06 * k
+			fl.dx -= 1.5 * k
+			fr.dx -= 1.5 * k
 	return pose
 
 
