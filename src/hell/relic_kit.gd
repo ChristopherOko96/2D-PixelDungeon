@@ -184,6 +184,8 @@ static func press(g: Node, key: String) -> bool:
 			var tm := float(s.time) + float(CardKit.value(g, "thick_smoke", "time", 0.0)) * CardKit.level(g, "thick_smoke")
 			g.state.stealth = tm
 			g.zones.append({"kind": "smoke", "p": Vector2(g.player.x, g.player.y), "r": float(s.radius), "t": tm, "max": tm, "slow": float(s.slow)})
+			# the smoke itself as gas: it spreads, rolls round walls, parts round who walks in it
+			g.smoke_at(Vector2(g.player.x, g.player.y), float(s.radius), tm)
 			g._sound_raw("blast")
 		"d_thousand":
 			g.zones.append({"kind": "blades", "p": at, "r": float(s.radius), "t": float(s.time), "max": float(s.time), "tick": 0.0, "every": float(s.every), "dmg": float(s.damage)})
@@ -270,10 +272,13 @@ static func update(g: Node, dt: float) -> void:
 				var m: Dictionary = p.m
 				if g.mobs.has(m):
 					var from := Vector2(g.player.x, g.player.y - 40)
+					# the shadow he steps into and out of
+					g.shadow_at(from + Vector2(0, 40))
 					var behind: Vector2 = m.p - (m.face as Vector2) * 60.0
 					if not g.box_blocked(g._player_box(behind.x, behind.y)):
 						g.player.x = behind.x
 						g.player.y = behind.y
+					g.shadow_at(Vector2(g.player.x, g.player.y), 4, 24.0)
 					g.fx.append({"kind": "blink", "p": from, "q": Vector2(g.player.x, g.player.y - 40), "t": 0.25, "max": 0.25})
 					g._damage_mob(m, (m.p - from).normalized() * 300.0, float(s.damage) * float(g.theme.shadow_dagger.attack.backstab))
 			"death_shot":

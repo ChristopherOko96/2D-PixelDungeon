@@ -1,0 +1,10 @@
+Use case: style-transfer
+Asset type: production reference sheet for a top-down 2D pixel-art dungeon tileset expansion
+Primary request: Create a clean transparent sprite sheet of isolated SNOW ACCENTS ONLY that can be layered non-destructively onto existing Frost Crypt props. Include 12 distinct low snow banks for the feet of barrels, urns, crates, tables, shelves, rubble and skull piles, plus 8 small top snow caps suitable for skulls, barrels, table edges and wall crowns. Do not include the underlying props; snow shapes only.
+Input images: Image 1 is the authoritative snow color, chunky pixel shape and distribution reference; Images 2-5 are authoritative pixel scale, palette context and object footprint references.
+Scene/backdrop: genuinely transparent background, no checkerboard, no ground plane.
+Style/medium: crisp hand-authored pixel art, hard-edged square pixels, nearest-neighbor appearance, no antialiasing, same blue-white snow palette and chunky stepped silhouettes as Image 1.
+Composition/framing: evenly spaced isolated accents in four rows, no overlap, generous transparent gutters, each accent fully visible.
+Color palette: bright cold white highlights, pale icy blue midtones, restrained medium-blue underside shadows; match Image 1.
+Constraints: snow accents only; preserve a coherent 32-pixel-world-grid look; each bank should read as accumulated snow at an object's foot; top caps must be thin and irregular; hard alpha; no text; no labels; no watermark.
+Avoid: objects, skulls, furniture, walls, gradients, soft glow, blur, semitransparent fog, realistic snow, outlines unrelated to the supplied pixel style.

@@ -3,6 +3,8 @@
 // the top left, two or three tones per material, flames that loop over 4 frames.
 // Every monster is a draw(P, anim, frame) function; render() turns one frame into
 // RGBA pixels. The browser preview and a later Godot sheet export use the same code.
+// Ignaroth (drache1..4) is the exception: drake_hybrid.js draws his four forms as rig
+// parts, and his atlas frames are posed from those parts (def.frame).
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else root.HellMonsters = factory();
@@ -30,15 +32,24 @@
   const VOIDFIRE = [LILAC, VIO, VIOD, PURP, INDIGO];
 
   // ---------- painter ----------
-  function Painter(w, h, frame) {
+  // only: a part tag. When set, every draw call made under another tag (P.part) is
+  // dropped, so one part renders isolated with its full shape and its own outline
+  // (the rig export). Without it the tags change nothing.
+  function Painter(w, h, frame, only) {
     this.w = w; this.h = h; this.f = frame || 0;
     this.solid = new Array(w * h).fill(null);
     this.back = []; this.front = [];
+    this.tag = null; this.only = only == null ? null : only; this.joints = {}; this.tags = [];
   }
   const P = Painter.prototype;
+  // Part tags and joints for rigs: P.part(name) tags the draw calls that follow,
+  // P.joint(name, x, y) records a pivot or point in source pixels (continuous coordinates).
+  P.part = function (name) { this.tag = name; if (!this.tags.includes(name)) this.tags.push(name); return this; };
+  P.joint = function (name, x, y) { this.joints[name] = [x, y]; return this; };
+  P.keep = function () { return this.only === null || this.tag === this.only; };
   P.inside = function (x, y) { return x >= 0 && y >= 0 && x < this.w && y < this.h; };
-  P.dot = function (x, y, c) { x = Math.round(x); y = Math.round(y); if (this.inside(x, y)) this.solid[y * this.w + x] = c; return this; };
-  P.clear = function (x, y) { x = Math.round(x); y = Math.round(y); if (this.inside(x, y)) this.solid[y * this.w + x] = null; return this; };
+  P.dot = function (x, y, c) { if (!this.keep()) return this; x = Math.round(x); y = Math.round(y); if (this.inside(x, y)) this.solid[y * this.w + x] = c; return this; };
+  P.clear = function (x, y) { if (!this.keep()) return this; x = Math.round(x); y = Math.round(y); if (this.inside(x, y)) this.solid[y * this.w + x] = null; return this; };
   // Stamps a shape given by inside(px, py) over the box; shades by the shape's own edges.
   P.shape = function (x0, y0, x1, y1, inside, mat, opt) {
     opt = opt || {};
@@ -95,6 +106,7 @@
   };
   // A flame of width w rising h pixels above its base row; loops over the 4 frames.
   P.flame = function (x0, base, w, h, opt) {
+    if (!this.keep()) return this;
     opt = opt || {};
     x0 = Math.round(x0); base = Math.round(base); w = Math.max(1, Math.round(w)); h = Math.max(1, Math.round(h));
     const pal = opt.pal || FIRE, layer = opt.front ? this.front : this.back, seed = opt.seed || 0;
@@ -113,12 +125,14 @@
     }
     return this;
   };
-  P.glow = function (x, y, c) { this.front.push([Math.round(x), Math.round(y), c]); return this; };
-  P.finish = function () {
+  P.glow = function (x, y, c) { if (this.keep()) this.front.push([Math.round(x), Math.round(y), c]); return this; };
+  // skip(i): optional, true for pixel indices that get no outline (a rig part's joint with
+  // its neighbour, so chains show no seam where they overlap).
+  P.finish = function (skip) {
     const w = this.w, h = this.h, out = new Array(w * h).fill(null);
     for (const [x, y, c] of this.back) if (this.inside(x, y)) out[y * w + x] = c;
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-      if (this.solid[y * w + x]) continue;
+      if (this.solid[y * w + x] || (skip && skip(y * w + x))) continue;
       const n = (xx, yy) => xx >= 0 && yy >= 0 && xx < w && yy < h && this.solid[yy * w + xx];
       if (n(x - 1, y) || n(x + 1, y) || n(x, y - 1) || n(x, y + 1)) out[y * w + x] = K;
     }
@@ -164,127 +178,16 @@
     });
   }
 
-  // ---------- Ignaroth, the glow dragon (floors 3, 6, 9, 10) ----------
-  // Stands on two legs in every phase (side view, facing right). 1 salamander with a
-  // spark on the tail, 2 horns, teeth, longer claws, 3 adult with big horns and two
-  // wings, 4 obsidian form: gold horns, claws, wing tusks, spikes along tail and back
-  // (half hidden between the wings), small flames at both mouth corners.
-  const DRAKE = [null,
-    { s: .98, hide: [BROWN, BORA, ORA], belly: [ORA, YEL, WHITE], fire: FIRE, horn: M.bone, claw: M.bone },
-    { s: 1.15, hide: [CRIM, RED, ORA], belly: [BORA, ORA, YEL], fire: FIRE, horn: M.bone, claw: M.bone, scars: true },
-    { s: 1.45, hide: [MAROON, CRIM, RED], belly: [BORA, ORA, YEL], fire: FIRE, horn: M.bone, claw: M.bone, scars: true, wingMat: [PLUM, MAROON, CRIM] },
-    { s: 1.95, hide: [SOOT, COAL, STONE], belly: [PURP, MAG, VIO], fire: VOIDFIRE, horn: M.gold, claw: M.gold, coreMat: M.ghost, wingMat: [INDIGO, PURP, MAG], tuskMat: M.gold, scars: true },
-  ];
-  // Pose for one frame: every motion is a sine over the 8-frame loop, so loops are seamless.
-  function drakePose(p, a, f) {
-    const t = (f % 8) / 8 * Math.PI * 2, o = { bob: Math.sin(t) * .55, stride: 0, wingLift: Math.sin(t) * .06, mouth: 0, headX: 0, headY: 0, tail: Math.sin(t), crouch: 0, fly: false };
-    if (a === 'run') { o.stride = Math.sin(t); o.bob = -Math.abs(Math.cos(t)) * .9; o.headY = Math.cos(t * 2) * .25; o.wingLift = -.15; }
-    if (a === 'attack') { const k = [0, -.4, -.8, .6, 1.2, 1, .6, .2][f % 8]; o.headX = k * 1.4; o.headY = -Math.min(0, k) * .8; o.mouth = Math.max(0, k); o.bob = -k * .3; o.wingLift = -k * .25; }
-    if (a === 'cast') {
-      const k = [0, .3, .7, 1, 1, 1, .7, .3][f % 8];
-      if (p <= 2) { o.crouch = k * 1.6; o.headY = k * 1.2; o.headX = k * .5; o.mouth = k * .4; }
-      else { o.headY = -k * 1.4; o.headX = -k * .4; o.mouth = k; o.wingLift = -k * .55; o.bob = -k * .4; }
-    }
-    if (a === 'fly') { o.fly = true; o.wingLift = Math.sin(t) * .75; o.bob = -Math.sin(t) * .8; o.headY = -.4; o.tail = Math.sin(t + 1) * 1.4; }
-    return o;
-  }
-  function drakeWing(P, sx, sy, span, mat, boneMat, s, lift, tusks, tuskMat) {
-    // lift: -1 wings up, +1 wings down (flap); the elbow follows part of the way
-    const el = [sx - span * .2, sy - span * .8 + lift * span * .28];
-    const tips = [[sx - span * .95, sy - span * .62 + lift * span * .62], [sx - span * 1.08, sy - span * .2 + lift * span * .5], [sx - span * .82, sy + span * .1 + lift * span * .36], [sx - span * .45, sy + span * .12 + lift * span * .2]];
-    const notch = (a, b) => [(a[0] + b[0]) / 2 * .62 + el[0] * .38, (a[1] + b[1]) / 2 * .62 + el[1] * .38 + span * .06];
-    P.poly([[sx, sy], el, tips[0], notch(tips[0], tips[1]), tips[1], notch(tips[1], tips[2]), tips[2], notch(tips[2], tips[3]), tips[3], [sx - span * .05, sy + 3 * s]], mat);
-    P.line(sx, sy, el[0], el[1], boneMat, Math.max(2, 1.4 * s));
-    for (const tp of tips) P.line(el[0], el[1], tp[0], tp[1], boneMat, 1);
-    P.poly([[el[0] - 1, el[1]], [el[0] + 1.5, el[1]], [el[0] + 1, el[1] - 2 * s]], M.bone);
-    if (tusks) { const t0 = tips[0]; for (const [x, y, len] of [[el[0], el[1], 4.2], [(el[0] + t0[0]) / 2, (el[1] + t0[1]) / 2 - 1, 2.8]]) { P.line(x, y, x + .8 * s, y - len * .55 * s, tuskMat, Math.max(1.5, 1.1 * s)); P.line(x + .8 * s, y - len * .55 * s, x + 2.2 * s, y - len * s, tuskMat, 1); } }
-  }
-  function drake(P, p, a, f) {
-    const o = DRAKE[p], q = drakePose(p, a, f), s = o.s, foot = P.h - 1, cx = P.w * (p >= 3 ? .45 : .46);
-    const hide = o.hide, dark = [hide[0], hide[0], hide[1]], claw = o.claw, pal = o.fire;
-    const clawLen = [0, 1, 1.8, 2.2, 2.6][p], up = (q.bob - q.crouch * .6) * s + (q.fly ? -3 * s : 0);
-    const hipX = cx - 1 * s, hipY = foot - 8 * s + up + q.crouch * s;
-    const torso = [cx + 1 * s, foot - 13 * s + up + q.crouch * .8 * s], chestR = [4.4 * s, 6 * s];
-    const head = [cx + 5.5 * s + q.headX * s, foot - 21 * s + up + q.headY * s + q.crouch * s];
-    let nearWing = null;
-    if (p >= 3) {
-      const span = (p === 4 ? 24 : 19) * s * .8, sx = cx - 1.5 * s, sy = foot - 17.5 * s + up;
-      drakeWing(P, sx + 2.5 * s, sy - 2.5 * s, span * .92, [o.wingMat[0], o.wingMat[0], o.wingMat[1]], dark, s, q.wingLift * 1.1, p === 4, o.tuskMat);
-      nearWing = () => drakeWing(P, sx, sy, span, o.wingMat, hide, s, q.wingLift, p === 4, o.tuskMat);
-    }
-    // tail from the hip back towards the ground, sweeping with the pose
-    const tl = (p === 1 ? 11 : 13) * s;
-    let prev = [hipX - 1 * s, hipY + 1 * s];
-    for (let k = 1; k <= 10; k++) {
-      const u = k / 10, pt = [hipX - 1 * s - tl * u, hipY + 1 * s + u * (q.fly ? 2 : 5) * s - Math.sin(u * Math.PI) * 1.5 * s + Math.sin(u * 2.4) * q.tail * .9 * s * u];
-      P.line(prev[0], prev[1], pt[0], pt[1], hide, Math.max(1, 3 * s * (1 - u * .85)));
-      if (p === 4 && k % 2 === 1) { const th = 3 * s * (1 - u * .85), top = pt[1] - th / 2, h = (4.2 - k * .38) * s, b = Math.max(1, (1.6 - k * .12) * s); P.poly([[pt[0] - b, top + 1], [pt[0] + b, top + 1], [pt[0] - b * 1.4, top - h * .55], [pt[0] - b * 1.8, top - h]], o.horn); }
-      prev = pt;
-    }
-    const tf = [0, 3, 5, 8, 13][p];
-    P.flame(prev[0] - Math.round(tf / 3), prev[1] + 1, Math.max(2, Math.round(tf * .55)), tf, { seed: 3, pal, front: true });
-    if (p === 1) P.glow(prev[0] - 1, prev[1] - 4, YEL).glow(prev[0] + 1, prev[1] - 5, ORA);
-    // digitigrade legs with claws; in flight they tuck back
-    const leg = (dx, mat, st) => {
-      const hx = hipX + dx;
-      P.ell(hx + .5 * s, hipY + .5 * s, 2.8 * s, 3.2 * s, mat);
-      if (q.fly) { const kx = hx - 1 * s, ky = hipY + 4 * s, fx = hx - 4 * s, fy = hipY + 5.5 * s; P.line(hx, hipY + 1.5 * s, kx, ky, mat, Math.max(2, 2.2 * s)); P.line(kx, ky, fx, fy, mat, Math.max(1.5, 1.5 * s)); for (let t = 0; t < 3; t++) P.line(fx, fy, fx - clawLen - 1, fy + t - 1, claw, 1); return; }
-      const fwd = st * 2.4 * s, lift = Math.max(0, st) * 1.4 * s;
-      const kx = hx + 2.6 * s + fwd * .5, ky = foot - 5 * s - lift, ax = hx - .3 * s + fwd, ay = foot - 1.6 * s - lift * .8, fy = foot - .5 - lift * .7;
-      P.line(hx + .5 * s, hipY + 1.5 * s, kx, ky, mat, Math.max(2, 2.4 * s));
-      P.line(kx, ky, ax, ay, mat, Math.max(1.5, 1.8 * s));
-      P.line(ax, ay, ax + 3.2 * s, fy, mat, Math.max(1.5, 1.6 * s));
-      for (let t = 0; t < 3; t++) P.line(ax + (1.6 + t * .9) * s, fy, ax + (1.6 + t * .9) * s + clawLen, fy, claw, 1);
-      P.line(ax - .2 * s, fy, ax - .2 * s - clawLen * .6, fy, claw, 1);
-    };
-    leg(1.6 * s, dark, -q.stride);
-    P.ell(torso[0], torso[1], chestR[0], chestR[1], hide);
-    P.ell(torso[0] + 1.6 * s, torso[1] + .8 * s, chestR[0] * .55, chestR[1] * .8, o.belly);
-    for (let k = -2; k <= 3; k++) P.line(torso[0] + .6 * s, torso[1] + k * 1.6 * s, torso[0] + 2.8 * s, torso[1] + k * 1.6 * s, o.belly[0], 1);
-    if (o.scars) for (const [x0, y0] of [[-2, -3], [-1, -1], [-2.5, 1]]) P.line(torso[0] + x0 * s, torso[1] + y0 * s, torso[0] + (x0 + 1.5) * s, torso[1] + (y0 + 1) * s, ORA, 1);
-    if (p === 4) { P.ell(torso[0] + 1.6 * s, torso[1] - .8 * s, 1.4 * s, 1.4 * s, o.coreMat); P.glow(torso[0] + 1.6 * s, torso[1] - .8 * s, f % 4 < 2 ? WHITE : LILAC); }
-    leg(-.2 * s, hide, q.stride);
-    if (p >= 2) { const n = p >= 3 ? 5 : 3; for (let k = 0; k < n; k++) { const u = k / Math.max(1, n - 1), x = torso[0] - chestR[0] * .7 + u * 2 * s, y = torso[1] - chestR[1] * .2 - u * chestR[1] * .65; P.poly([[x - 1.2 * s, y + .6 * s], [x + .8 * s, y - .4 * s], [x - 2 * s - (p >= 3 ? s : 0), y - 1.2 * s]], p === 4 ? M.gold : M.bone); } }
-    // back horns sit between the two wings: the near wing hides most of them
-    if (p === 4) for (let k = 0; k < 4; k++) { const u = k / 3, ang = -1.35 - u * 1.1, x = torso[0] - .5 * s + Math.cos(ang) * chestR[0] * 1.02, y = torso[1] + Math.sin(ang) * chestR[1] * 1.02, h = (4.6 - k * .8) * s, tx = x - h * .55, ty = y - h * .85; P.line(x, y, (x + tx) / 2, (y + ty) / 2, o.horn, Math.max(1.5, (1.3 - k * .15) * s)); P.line((x + tx) / 2, (y + ty) / 2, tx, ty, o.horn, 1); }
-    if (nearWing) nearWing();
-    // arms with clawed hands; they reach forward when attacking
-    const reach = q.mouth * 1.2 * s, sh = [torso[0] + 2.4 * s, torso[1] - 3.5 * s], el = [sh[0] + 2.2 * s + reach * .4, sh[1] + 3 * s], hand = [el[0] + 2.4 * s + reach, el[1] - 1.6 * s - reach * .3];
-    P.line(sh[0], sh[1], el[0], el[1], hide, Math.max(1.5, 1.8 * s)); P.line(el[0], el[1], hand[0], hand[1], hide, Math.max(1.5, 1.5 * s));
-    for (let t = -1; t <= 1; t++) P.line(hand[0], hand[1], hand[0] + clawLen * .9 + .5, hand[1] + t * 1.1 + clawLen * .35, claw, 1);
-    // neck and head
-    P.line(torso[0] + .8 * s, torso[1] - chestR[1] * .7, head[0] - 1 * s, head[1] + 1 * s, hide, Math.max(2.5, 3 * s));
-    const hr = [0, 2.8, 3, 3.3, 3.5][p] * s, snout = [0, 4, 4.4, 5.6, 6][p] * s, maw = [0, 1.4, 1.8, 2.4, 2.6][p] * s;
-    P.ell(head[0], head[1], hr, hr * .85, hide);
-    P.poly([[head[0] + hr * .3, head[1] - hr * .55], [head[0] + hr + snout, head[1] - hr * .1], [head[0] + hr + snout, head[1] + hr * .3], [head[0] + hr * .3, head[1] + hr * .45]], hide);
-    const open = (p >= 3 ? 1.1 : p === 2 ? .5 : 0) * s + q.mouth * (p === 1 ? 1.2 : 1.8) * s;
-    P.poly([[head[0] - hr * .2, head[1] + hr * .45], [head[0] + hr + snout * .9, head[1] + hr * .45 + open], [head[0] + hr + snout * .85, head[1] + hr * .45 + maw * .6 + open], [head[0] - hr * .2, head[1] + hr * .45 + maw * .7]], dark);
-    if (open > .5) P.poly([[head[0] + hr * .4, head[1] + hr * .45], [head[0] + hr + snout * .95, head[1] + hr * .32], [head[0] + hr + snout * .9, head[1] + hr * .45 + open]], MAROON);
-    if (p >= 2) { const n = p >= 3 ? 5 : 3; for (let t = 0; t < n; t++) { const x = head[0] + hr * .6 + t * (snout + hr * .3) / n; P.dot(x, head[1] + hr * .45, WHITE); if (p >= 3 || open > 1) P.dot(x + 1, head[1] + hr * .45 + open, WHITE); } }
-    P.dot(head[0] + hr + snout - 1, head[1] - hr * .05, K);
-    P.line(head[0] - hr * .4, head[1] - hr * .55, head[0] + hr * .7, head[1] - hr * .45, hide[0], 1);
-    // horns: nubs in phase 2, big swept-back horns in 3 and 4
-    if (p === 2) for (const dx of [0, -1.2]) P.poly([[head[0] + dx * s - .8 * s, head[1] - hr * .6], [head[0] + dx * s + .6 * s, head[1] - hr * .7], [head[0] + dx * s - 1.4 * s, head[1] - hr - 1.8 * s]], o.horn);
-    if (p >= 3) {
-      const L = p === 4 ? 10 : 8.5;
-      for (const [dx, k, th] of [[0, 1, 1.4], [-1.4, .75, 1]]) {
-        const pts = [[head[0] + dx * s, head[1] - hr * .6], [head[0] + (dx - 2.2 * k) * s, head[1] - hr - 2.6 * k * s], [head[0] + (dx - 5 * k) * s, head[1] - hr - 4 * k * s], [head[0] + (dx - L * k) * s, head[1] - hr - 3.4 * k * s]];
-        for (let i = 0; i < 3; i++) P.line(pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1], o.horn, Math.max(1, th * s * (1 - i * .28)));
-      }
-      P.poly([[head[0] - hr * .8, head[1] + hr * .1], [head[0] - hr * 1.6, head[1] + hr * .6], [head[0] - hr * .6, head[1] + hr * .55]], o.horn);
-    }
-    // eye: a glowing slit, drawn on top so flames never hide it
-    const ex = head[0] + hr * .7, ey = head[1] - hr * .12, eye = p === 4 ? [ORA, YEL, WHITE] : [ORA, YEL, YEL];
-    P.glow(ex - 1, ey, eye[0]).glow(ex, ey, eye[1]).glow(ex + 1, ey, eye[2]);
-    if (p >= 3) P.glow(ex, ey + 1, eye[0]);
-    // the final form burns at both mouth corners all the time
-    if (p === 4) {
-      const mx = head[0] + hr * .45, my = head[1] + hr * .5;
-      P.flame(mx - .5 * s, my + 1, Math.round(1.8 * s), Math.round(3.2 * s), { seed: 11, pal, front: true, dir: 1, lean: -2, sparks: false });
-      P.flame(mx + 2.6 * s, my + 1.5, Math.round(1.6 * s), Math.round(2.6 * s), { seed: 17, pal, front: true, dir: 1, lean: -1, sparks: false });
-      P.glow(ex - 1, ey, eye[0]).glow(ex, ey, eye[1]).glow(ex + 1, ey, eye[2]);
-    }
-    if (q.mouth > .6 && a === 'attack') P.flame(head[0] + hr + snout - 1, head[1] + hr * .5 + open * .5, Math.round(2 + p), Math.round(2 + p), { seed: 5, front: true, pal, lean: 3, sparks: false });
+  // ---------- Ignaroth, the dragon (floors 3, 6, 9, 10): the art lives in drake_hybrid.js ----------
+  // The four forms are the approved concept "Hybrid" (sculpted rig parts, docs/HOELLE-RIGS.de.md),
+  // drawn by drake_hybrid.js with this module's Painter. So that module loads after this one: it is
+  // required on first use in Node and is window.DrakeHybrid in the browser preview (build_preview.py
+  // inlines it right after this file).
+  let hybridArt = null;
+  function hybrid() {
+    if (!hybridArt) hybridArt = typeof module === 'object' && module.exports && typeof require === 'function' ? require('./drake_hybrid.js') : self.DrakeHybrid;
+    if (!hybridArt) throw new Error('drake_hybrid.js is not loaded (Ignaroth\'s art)');
+    return hybridArt;
   }
 
   // ---------- monsters ----------
@@ -353,21 +256,29 @@
     draw(P, a, f) {
       const run = a === 'run', atk = a === 'attack', bob = run ? cyc(f, [0, -1, 0, -1]) : cyc(f, [0, 0, 1, 1]) * 0;
       const sw = run ? cyc(f, [-2, 0, 2, 0]) : 0, x = 9, top = 3 + bob;
+      // rig parts (export_mob_rigs.js): the tags and joints change nothing in the atlas
+      P.part('flame_back').joint('flame_back', x + .5, top + 8);
       P.flame(x - 4, top + 4, 9, 8, { seed: 5 });
-      P.line(x - 1, 18, x - 2 - sw, 25, M.bone, 1); P.line(x + 1, 18, x + 2 + sw, 25, M.bone, 1);
-      P.rect(x - 3 - sw, 25, 3, 1, M.bone).rect(x + 1 + sw, 25, 3, 1, M.bone);
+      P.part('leg_l').joint('leg_l', x - .5, 18.5);
+      P.line(x - 1, 18, x - 2 - sw, 25, M.bone, 1); P.rect(x - 3 - sw, 25, 3, 1, M.bone);
+      P.part('leg_r').joint('leg_r', x + 1.5, 18.5);
+      P.line(x + 1, 18, x + 2 + sw, 25, M.bone, 1); P.rect(x + 1 + sw, 25, 3, 1, M.bone);
+      P.part('torso').joint('torso', x + .5, 17.5);
       P.rect(x - 2, 16 + bob, 5, 2, M.bone);
       P.line(x, 11 + bob, x, 16 + bob, M.bone, 1);
       for (let k = 0; k < 3; k++) P.line(x - 3 + (k === 2 ? 1 : 0), 11 + bob + k * 2, x + 3 - (k === 2 ? 1 : 0), 11 + bob + k * 2, M.bone, 1);
       for (let k = 0; k < 2; k++) P.dot(x - 1 + k * 2, 12 + bob + k * 2, cyc(f + k, [ORA, YEL, ORA, RED]));
       P.line(x - 4, 11 + bob, x - 5, 16 + bob, M.bone, 1);
+      P.part('skull').joint('skull', x + .5, top + 8).joint('core', x + .5, 13);
       P.ell(x, top + 4, 3.8, 3.4, M.bone);
       P.rect(x - 2, top + 6, 5, 2, M.bone);
       P.rect(x - 3, top + 3, 2, 2, K).rect(x + 1, top + 3, 2, 2, K);
       P.dot(x - 2, top + 4, ORA).dot(x + 2, top + 4, ORA).dot(x - 1, top + 7, K).dot(x + 1, top + 7, K);
+      P.part('flame_head').joint('flame_head', x + .5, top + 3);
       P.flame(x - 3, top + 1, 7, 3, { seed: 9, front: true, sparks: false });
       // sword: [hand x, hand y, tip x, tip y] per attack frame
       const S = atk ? cyc(f, [[x + 2, top + 2, x - 4, top - 2], [x + 5, top + 8, x + 12, top + 2], [x + 5, 15, x + 12, 22], [x + 4, 15, x + 10, 9]]) : [x + 4, 15 + bob, x + 10, 9 + bob];
+      P.part('weapon').joint('weapon', x + 3.5, 11.5 + bob).joint('hand', S[2] + .5, S[3] + .5);
       P.line(x + 3, 11 + bob, S[0], S[1], M.bone, 1);
       P.line(S[0], S[1], S[2], S[3], M.ember, 2);
       P.dot(S[0], S[1], M.iron[2]);
@@ -669,15 +580,26 @@
   };
 
   // ---------- Ignaroth, one dragon in four phases (floors 3, 6, 9, 10) ----------
-  const drakeDef = (p, w, h, name, role, desc) => ({ name, w, h, scale: 5, kind: 'lord', floor: [0, 3, 6, 9, 10][p], phase: p, role, desc,
-    anims: Object.assign({ idle: 8, run: 8, attack: 8, cast: 8 }, p >= 3 ? { fly: 8 } : {}), draw(P, a, f) { drake(P, p, a, f); } });
-  DEFS.drache1 = drakeDef(1, 34, 30, 'Ignaroth · Salamander', 'Boss · Etage 3 · Phase I',
+  // The frame size comes from the art (drake_hybrid.js sheetLayout: every row's poses, the feet's
+  // middle at the frame's centre, the ground row at its bottom); frame(a, f) returns a finished
+  // frame (drawn and outlined by the rig parts) instead of drawing into a Painter. px: the atlas
+  // stores each source px as 3x3 (not 5x5 like the small monsters): the frames are up to 222x155,
+  // at 5x the form-4 atlas alone would be 8880x4650 (165 MB of RGBA). 3x keeps a source px's
+  // middle texel clean under the HD set's linear filtering (2x blended half of every source px)
+  // for 98 MB over all four atlases (69 MB for the old, smaller drakes at 5x; 2x was 43 MB, 4x
+  // would be 173 MB). The game reads px from hell_monsters.json; in the pixel set it draws with
+  // nearest filtering. ash: the colours the death row crumbles into (form 4, the only one that
+  // dies, is obsidian and void fire, not ember).
+  const drakeDef = (p, name, role, desc) => ({ name, get w() { return hybrid().sheetLayout(p).W; }, get h() { return hybrid().sheetLayout(p).H; },
+    scale: 5, px: 3, kind: 'lord', floor: [0, 3, 6, 9, 10][p], phase: p, role, desc, ash: p === 4 ? [VIO, VIOD, PURP] : null,
+    anims: Object.assign({ idle: 8, run: 8, attack: 8, cast: 8 }, p >= 3 ? { fly: 8 } : {}), frame(a, f) { return hybrid().sheetFrame(p, a, f); } });
+  DEFS.drache1 = drakeDef(1, 'Ignaroth · Salamander', 'Boss · Etage 3 · Phase I',
     'Ein flinker Glutsalamander auf zwei Beinen, schon größer als du, mit einem Funken am Schwanz. Springt, spuckt, huscht und gräbt sich ein. Bei 0 LP stirbt er nicht: Er verwandelt sich und verschwindet im Boden.');
-  DEFS.drache2 = drakeDef(2, 40, 36, 'Ignaroth · Jungdrache', 'Boss · Etage 6 · Phase II',
+  DEFS.drache2 = drakeDef(2, 'Ignaroth · Jungdrache', 'Boss · Etage 6 · Phase II',
     'Hörner, Zähne, längere Krallen und eine größere Schwanzflamme. Noch flügellos, aber schneller und härter: Doppelsprünge, Feuersalven, Schwanzwirbel, Lavaausbrüche aus dem Boden.');
-  DEFS.drache3 = drakeDef(3, 70, 62, 'Ignaroth · Glutdrache', 'Boss · Etage 9 · Phase III',
+  DEFS.drache3 = drakeDef(3, 'Ignaroth · Glutdrache', 'Boss · Etage 9 · Phase III',
     'Ausgewachsen mit großen Hörnern, großem Maul und zwei Schwingen. Fliegt ein, greift aus der Luft an und ist dort unverwundbar. Feuerfächer, schwenkender Feueratem, Feuerringe und Bombenflüge.');
-  DEFS.drache4 = drakeDef(4, 100, 80, 'Ignaroth · Obsidianform', 'Endboss · Etage 10 · Phase IV',
+  DEFS.drache4 = drakeDef(4, 'Ignaroth · Obsidianform', 'Endboss · Etage 10 · Phase IV',
     'Die ultimative Form aus Obsidian und Gold mit Leerenfeuer. Ruft die Geister seiner drei früheren Formen zurück, die neben ihm kämpfen. Drehende Leerenstrahlen, Leerenregen aus der Luft, Sternringe. Erst hier stirbt er.');
 
   // ---------- behaviour and attacks ----------
@@ -705,10 +627,14 @@
     klagender_hueter: { hpMul: 1, speed: 70, r: 70, ai: 'drift', adds: ['peingeist'], attacks: [A('schrei', 'Klageschrei', 'scream', 5, { range: 520, arc: 1.2, desc: 'Ein Schrei im Kegel: Schaden und 2 s verlangsamt.' }), A('haende', 'Grabeshände', 'hands', 4, { count: 5, radius: 70, desc: 'Geisterhände greifen aus dem Boden unter dir.' }), A('tränen', 'Tränenregen', 'ring', 3, { count: 20, speed: 220, desc: 'Ein Ring aus Seelentränen.' })] },
     // Ignaroth. Phase 1 is small and quick: spit, pounce, dash, burrow. From phase 3 on he flies
     // (cannot be hit in the air) and fights from range; phase 4 calls back his earlier forms.
-    drache1: { hpMul: 1, speed: 235, r: 44, ai: 'skirmish', intro: 'burrow', attacks: [A('spucke', 'Glutspucke', 'bolt', 1.7, { range: 760, speed: 600, count: 1, desc: 'Spuckt schnelle Feuerbälle.' }), A('satz', 'Sprungangriff', 'slam', 3.3, { range: 560, radius: 140, leap: true, desc: 'Springt dich an; beim Aufprall glüht der Boden.' }), A('huschen', 'Huschen', 'dash', 2.4, { range: 480, speed: 1050, desc: 'Blitzschneller Dash mit Biss.' }), A('graben', 'Eingraben', 'burrow', 7.5, { ring: 10, radius: 150, desc: 'Gräbt sich ein, wühlt unter dir hindurch und bricht mit einem Glutring hervor.' })] },
-    drache2: { hpMul: 1, speed: 215, r: 54, ai: 'skirmish', intro: 'burrow', attacks: [A('salve', 'Feuersalve', 'bolt', 2.2, { range: 800, speed: 640, count: 3, spread: .32, desc: 'Drei Feuerbälle im Fächer.' }), A('doppelsatz', 'Doppelsprung', 'slam', 3.6, { range: 620, radius: 170, leap: true, repeat: 2, desc: 'Zwei Sprungangriffe direkt hintereinander.' }), A('hatz', 'Hetzjagd', 'dash', 3, { range: 520, speed: 1100, repeat: 2, desc: 'Zwei Dashs hintereinander.' }), A('schwanz', 'Schwanzwirbel', 'swing', 4, { range: 220, radius: 210, arc: 6.3, desc: 'Dreht sich und fegt mit dem brennenden Schwanz rundum.' }), A('lavabruch', 'Lavabruch', 'burrow', 7, { ring: 16, radius: 180, lava: true, desc: 'Bricht unter dir hervor und lässt Lava zurück.' })] },
-    drache3: { hpMul: 1, speed: 150, r: 86, ai: 'chase', intro: 'flyin', attacks: [A('faecher', 'Feuerfächer', 'bolt', 2.6, { range: 900, speed: 540, count: 7, spread: 1.05, desc: 'Sieben Feuerbälle im weiten Fächer.' }), A('atem', 'Glutatem', 'sweep', 5.4, { duration: 1.7, arc: 1.6, rate: .035, speed: 520, desc: 'Schwenkt einen Feuerstrahl in breitem Bogen über die Arena.' }), A('kreise', 'Feuerkreise', 'ring', 4.4, { count: 18, speed: 300, waves: 2, desc: 'Zwei versetzte Feuerringe.' }), A('bombenflug', 'Bombenflug', 'flight', 11, { duration: 4.2, drop: .5, radius: 95, desc: 'Steigt auf, ist in der Luft unverwundbar, wirft Feuerbomben auf dich und landet mit einer Schockwelle.' })] },
-    drache4: { hpMul: 1, speed: 140, r: 112, ai: 'chase', intro: 'flyin', attacks: [A('echos', 'Echos der Glut', 'echoes', 17, { first: 4, life: 10, desc: 'Ruft die Geister seiner drei früheren Formen. Salamander, Jungdrache und Glutdrache kämpfen als violette Echos mit.' }), A('strahlen', 'Leerenstrahlen', 'beam', 9, { duration: 3.6, beams: 3, turn: 1.0, desc: 'Drei Strahlen aus Leerenfeuer drehen sich durch die Arena.' }), A('leerenregen', 'Leerenregen', 'flight', 12, { duration: 4.6, drop: .38, radius: 105, void: true, desc: 'Fliegt auf und lässt Leerenfeuer regnen; in der Luft unverwundbar.' }), A('sterne', 'Sternringe', 'ring', 4.2, { count: 20, speed: 290, waves: 3, void: true, desc: 'Drei versetzte Ringe aus Leerenfeuer.' }), A('atem', 'Leerenatem', 'sweep', 6, { duration: 1.9, arc: 1.8, rate: .03, speed: 560, void: true, desc: 'Ein schwenkender Strahl aus violettem Feuer.' })] },
+    // r: half his body-and-legs footprint in world px (hell_rigs.json "width" x 5 / 2, rounded to
+    // 5; wings, tail, neck and head left out): 85 / 115 / 145 / 190 for the hybrid forms, whose
+    // rest frames are 79 / 92 / 120 / 186 source px wide (x5 world px), so r is ~20 % of the
+    // drawn width as before (44 / 54 / 86 / 112 for the old 34-100 px drakes).
+    drache1: { hpMul: 1, speed: 235, r: 85, ai: 'skirmish', intro: 'burrow', attacks: [A('spucke', 'Glutspucke', 'bolt', 1.7, { range: 760, speed: 600, count: 1, desc: 'Spuckt schnelle Feuerbälle.' }), A('satz', 'Sprungangriff', 'slam', 3.3, { range: 560, radius: 140, leap: true, desc: 'Springt dich an; beim Aufprall glüht der Boden.' }), A('huschen', 'Huschen', 'dash', 2.4, { range: 480, speed: 1050, desc: 'Blitzschneller Dash mit Biss.' }), A('graben', 'Eingraben', 'burrow', 7.5, { ring: 10, radius: 150, desc: 'Gräbt sich ein, wühlt unter dir hindurch und bricht mit einem Glutring hervor.' })] },
+    drache2: { hpMul: 1, speed: 215, r: 115, ai: 'skirmish', intro: 'burrow', attacks: [A('salve', 'Feuersalve', 'bolt', 2.2, { range: 800, speed: 640, count: 3, spread: .32, desc: 'Drei Feuerbälle im Fächer.' }), A('doppelsatz', 'Doppelsprung', 'slam', 3.6, { range: 620, radius: 170, leap: true, repeat: 2, desc: 'Zwei Sprungangriffe direkt hintereinander.' }), A('hatz', 'Hetzjagd', 'dash', 3, { range: 520, speed: 1100, repeat: 2, desc: 'Zwei Dashs hintereinander.' }), A('schwanz', 'Schwanzwirbel', 'swing', 4, { range: 220, radius: 210, arc: 6.3, desc: 'Dreht sich und fegt mit dem brennenden Schwanz rundum.' }), A('lavabruch', 'Lavabruch', 'burrow', 7, { ring: 16, radius: 180, lava: true, desc: 'Bricht unter dir hervor und lässt Lava zurück.' })] },
+    drache3: { hpMul: 1, speed: 150, r: 145, ai: 'chase', intro: 'flyin', attacks: [A('faecher', 'Feuerfächer', 'bolt', 2.6, { range: 900, speed: 540, count: 7, spread: 1.05, desc: 'Sieben Feuerbälle im weiten Fächer.' }), A('atem', 'Glutatem', 'sweep', 5.4, { duration: 1.7, arc: 1.6, rate: .035, speed: 520, desc: 'Schwenkt einen Feuerstrahl in breitem Bogen über die Arena.' }), A('kreise', 'Feuerkreise', 'ring', 4.4, { count: 18, speed: 300, waves: 2, desc: 'Zwei versetzte Feuerringe.' }), A('bombenflug', 'Bombenflug', 'flight', 11, { duration: 4.2, drop: .5, radius: 95, desc: 'Steigt auf, ist in der Luft unverwundbar, wirft Feuerbomben auf dich und landet mit einer Schockwelle.' })] },
+    drache4: { hpMul: 1, speed: 140, r: 190, ai: 'chase', intro: 'flyin', attacks: [A('echos', 'Echos der Glut', 'echoes', 17, { first: 4, life: 10, forms: 3, desc: 'Ruft die Geister seiner drei früheren Formen. Salamander, Jungdrache und Glutdrache kämpfen als violette Echos mit.' }), A('strahlen', 'Leerenstrahlen', 'beam', 9, { duration: 3.6, beams: 3, turn: 1.0, desc: 'Drei Strahlen aus Leerenfeuer drehen sich durch die Arena.' }), A('leerenregen', 'Leerenregen', 'flight', 12, { duration: 4.6, drop: .38, radius: 105, void: true, desc: 'Fliegt auf und lässt Leerenfeuer regnen; in der Luft unverwundbar.' }), A('sterne', 'Sternringe', 'ring', 4.2, { count: 20, speed: 290, waves: 3, void: true, desc: 'Drei versetzte Ringe aus Leerenfeuer.' }), A('atem', 'Leerenatem', 'sweep', 6, { duration: 1.9, arc: 1.8, rate: .03, speed: 560, void: true, desc: 'Ein schwenkender Strahl aus violettem Feuer.' })] },
   };
   for (const id in STATS) DEFS[id].stats = STATS[id];
 
@@ -728,24 +654,30 @@
 
   // ---------- rendering ----------
   function frameCount(def, anim) { return anim === 'death' ? 6 : (def.anims[anim] || 4); }
-  // Returns { w, h, px: array of colour strings or null } for one frame.
+  // Returns { w, h, px: array of colour strings or null } for one frame. A def with frame(anim, f)
+  // (Ignaroth) hands over finished frames; the others draw into a Painter.
   function renderColors(id, anim, frame) {
     const def = DEFS[id];
-    if (anim === 'death') return deathColors(def, renderColors(id, 'idle', 0), frame);
+    if (anim === 'death') return deathColors(def, renderColors(id, 'idle', 0), frame, !!def.frame);
+    if (def.frame) return def.frame(anim, frame);
     const p = new Painter(def.w, def.h, frame);
     def.draw(p, anim, frame);
     return { w: def.w, h: def.h, px: p.finish() };
   }
-  // Death: the body cools and crumbles from the top into embers and ash.
-  function deathColors(def, base, frame) {
-    const { w, h } = base, out = new Array(w * h).fill(null), k = frame / 5;
+  // Death: the body cools and crumbles from the top into embers and ash. grain: an unsigned
+  // hash, so the pixels crumble one by one; the signed one (the small monsters, whose atlases
+  // keep it until they are redrawn) drops whole blocks where its sign bit is set, which shows
+  // as rectangles on Ignaroth's large frames. def.ash: the three hot colours (bright to dark) the
+  // pixels glow in before they fall, default ember (ORA, RED, CRIM).
+  function deathColors(def, base, frame, grain) {
+    const { w, h } = base, out = new Array(w * h).fill(null), k = frame / 5, [ASH0, ASH1, ASH2] = def.ash || [ORA, RED, CRIM];
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
       const c = base.px[y * w + x]; if (!c) continue;
-      const r = ((x * 73856093) ^ (y * 19349663)) % 997 / 997, gone = r < k * 1.15 - (y / h) * .35;
+      const hsh = (x * 73856093) ^ (y * 19349663), r = (grain ? hsh >>> 0 : hsh) % 997 / 997, gone = r < k * 1.15 - (y / h) * .35;
       if (gone) continue;
       const fall = Math.floor(k * k * 6 * (1 - y / h) + (r < k ? 1 : 0)), yy = Math.min(h - 1, y + fall);
       const hot = r < k * 1.6 && c !== K;
-      out[yy * w + x] = hot ? (r < k * .7 ? ORA : r < k * 1.2 ? RED : CRIM) : c;
+      out[yy * w + x] = hot ? (r < k * .7 ? ASH0 : r < k * 1.2 ? ASH1 : ASH2) : c;
     }
     return { w, h, px: out };
   }
@@ -755,5 +687,10 @@
     r.px.forEach((c, i) => { if (c) { const [R, G, B] = hexToRgb(c); data.set([R, G, B, 255], i * 4); } });
     return { w: r.w, h: r.h, data };
   }
-  return { DEFS, FLOORS, render, frameCount, ANIMS: ['idle', 'run', 'attack', 'cast', 'fly', 'death'] };
+  // Ignaroth's part rig (export_rigs.js): form p (1-4) in its rest pose, drawn by drake_hybrid.js.
+  // part = a part id renders only that part, isolated with its own outline; null renders all of
+  // them in drawing order. frame drives the flames (flipbook parts). skip(i) suppresses the
+  // outline at pixel index i (see P.finish). Returns { w, h, px, solid, joints, tags }.
+  function renderDrakeRig(p, part, frame, skip) { return hybrid().renderRig(p, part, frame, skip); }
+  return { DEFS, FLOORS, render, frameCount, renderDrakeRig, hexToRgb, Painter, ANIMS: ['idle', 'run', 'attack', 'cast', 'fly', 'death'] };
 });

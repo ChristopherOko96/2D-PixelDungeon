@@ -802,5 +802,401 @@
   "h": 70,
   "kind": "design",
   "src": "combat_A_obsidian_pillars.png @ 38,628 62x70"
+ },
+ "fountain": {
+  "w": 120,
+  "h": 148,
+  "kind": "sprite",
+  "src": "krypta fountain, hell stone"
+ },
+ "boss_gate": {
+  "w": 288,
+  "h": 179,
+  "kind": "sprite",
+  "src": "krypta boss_gate, hell stone"
+ },
+ "boss_arch": {
+  "w": 257,
+  "h": 188,
+  "kind": "sprite",
+  "src": "krypta boss_arch, hell stone"
+ },
+ "stairs_down": {
+  "w": 152,
+  "h": 150,
+  "kind": "sprite",
+  "src": "krypta stairs_down, hell stone"
+ },
+ "moss_rubble_a": {
+  "w": 85,
+  "h": 74,
+  "kind": "sprite",
+  "src": "krypta moss_rubble_a, hell stone"
+ },
+ "moss_rubble_b": {
+  "w": 96,
+  "h": 56,
+  "kind": "sprite",
+  "src": "krypta moss_rubble_b, hell stone"
+ },
+ "moss_ruin": {
+  "w": 83,
+  "h": 109,
+  "kind": "sprite",
+  "src": "krypta moss_ruin, hell stone"
+ },
+ "statue_monk": {
+  "w": 50,
+  "h": 128,
+  "kind": "sprite",
+  "src": "krypta statue_monk, hell stone"
+ },
+ "gargoyle": {
+  "w": 104,
+  "h": 135,
+  "kind": "sprite",
+  "src": "krypta gargoyle, hell stone"
+ },
+ "shop_table": {
+  "w": 169,
+  "h": 107,
+  "kind": "sprite",
+  "src": "krypta shop_table, hell wood"
+ },
+ "table_a": {
+  "w": 120,
+  "h": 69,
+  "kind": "sprite",
+  "src": "krypta table_a, hell wood"
+ },
+ "table_b": {
+  "w": 128,
+  "h": 78,
+  "kind": "sprite",
+  "src": "krypta table_b, hell wood"
+ },
+ "table_c": {
+  "w": 154,
+  "h": 71,
+  "kind": "sprite",
+  "src": "krypta table_c, hell wood"
+ },
+ "bench": {
+  "w": 131,
+  "h": 52,
+  "kind": "sprite",
+  "src": "krypta bench, hell wood"
+ },
+ "shelf": {
+  "w": 72,
+  "h": 129,
+  "kind": "sprite",
+  "src": "krypta shelf, hell wood"
+ },
+ "barrel_a": {
+  "w": 43,
+  "h": 66,
+  "kind": "sprite",
+  "src": "krypta barrel_a, hell wood"
+ },
+ "barrel_b": {
+  "w": 52,
+  "h": 70,
+  "kind": "sprite",
+  "src": "krypta barrel_b, hell wood"
+ },
+ "barrel_c": {
+  "w": 51,
+  "h": 68,
+  "kind": "sprite",
+  "src": "krypta barrel_c, hell wood"
+ },
+ "crate_a": {
+  "w": 68,
+  "h": 88,
+  "kind": "sprite",
+  "src": "krypta crate_a, hell wood"
+ },
+ "crate_b": {
+  "w": 62,
+  "h": 76,
+  "kind": "sprite",
+  "src": "krypta crate_b, hell wood"
+ },
+ "crate_c": {
+  "w": 63,
+  "h": 88,
+  "kind": "sprite",
+  "src": "krypta crate_c, hell wood"
+ },
+ "crate_pile": {
+  "w": 90,
+  "h": 98,
+  "kind": "sprite",
+  "src": "krypta crate_pile, hell wood"
+ },
+ "candelabra": {
+  "w": 50,
+  "h": 114,
+  "kind": "sprite",
+  "src": "krypta candelabra, hell wood"
+ },
+ "sacks_a": {
+  "w": 74,
+  "h": 66,
+  "kind": "sprite",
+  "src": "krypta sacks_a, hell wood"
+ },
+ "sacks_b": {
+  "w": 110,
+  "h": 57,
+  "kind": "sprite",
+  "src": "krypta sacks_b, hell wood"
+ },
+ "sacks_c": {
+  "w": 102,
+  "h": 63,
+  "kind": "sprite",
+  "src": "krypta sacks_c, hell wood"
+ },
+ "urn_a": {
+  "w": 63,
+  "h": 90,
+  "kind": "sprite",
+  "src": "krypta urn_a, hell stone"
+ },
+ "urn_b": {
+  "w": 41,
+  "h": 58,
+  "kind": "sprite",
+  "src": "krypta urn_b, hell stone"
+ },
+ "urn_c": {
+  "w": 58,
+  "h": 89,
+  "kind": "sprite",
+  "src": "krypta urn_c, hell stone"
+ },
+ "urn_d": {
+  "w": 61,
+  "h": 94,
+  "kind": "sprite",
+  "src": "krypta urn_d, hell stone"
+ },
+ "urn_e": {
+  "w": 64,
+  "h": 91,
+  "kind": "sprite",
+  "src": "krypta urn_e, hell stone"
+ },
+ "carpet": {
+  "w": 58,
+  "h": 146,
+  "kind": "sprite",
+  "src": "krypta carpet"
+ },
+ "rug_red": {
+  "w": 91,
+  "h": 168,
+  "kind": "sprite",
+  "src": "krypta rug_red"
+ },
+ "rug_blue": {
+  "w": 87,
+  "h": 166,
+  "kind": "sprite",
+  "src": "krypta rug_blue"
+ },
+ "mat": {
+  "w": 81,
+  "h": 55,
+  "kind": "sprite",
+  "src": "krypta mat"
+ },
+ "rug_square": {
+  "w": 50,
+  "h": 59,
+  "kind": "sprite",
+  "src": "krypta rug_square"
+ },
+ "chest_vault": {
+  "w": 68,
+  "h": 77,
+  "kind": "sprite",
+  "src": "krypta chest_vault"
+ },
+ "npc_idle_f0": {
+  "w": 16,
+  "h": 28,
+  "kind": "sprite",
+  "src": "krypta npc_idle_f0"
+ },
+ "npc_idle_f1": {
+  "w": 16,
+  "h": 28,
+  "kind": "sprite",
+  "src": "krypta npc_idle_f1"
+ },
+ "npc_idle_f2": {
+  "w": 16,
+  "h": 28,
+  "kind": "sprite",
+  "src": "krypta npc_idle_f2"
+ },
+ "npc_idle_f3": {
+  "w": 16,
+  "h": 28,
+  "kind": "sprite",
+  "src": "krypta npc_idle_f3"
+ },
+ "statue_angel": {
+  "w": 104,
+  "h": 135,
+  "kind": "sprite",
+  "src": "krypta gargoyle, hell stone"
+ },
+ "boss_banner": {
+  "w": 90,
+  "h": 138,
+  "kind": "sprite",
+  "src": "hell banner_b"
+ },
+ "boss_banner_blue": {
+  "w": 90,
+  "h": 138,
+  "kind": "sprite",
+  "src": "hell banner_b, blue"
+ },
+ "boss_banner_green": {
+  "w": 90,
+  "h": 138,
+  "kind": "sprite",
+  "src": "hell banner_b, green"
+ },
+ "boss_banner_purple": {
+  "w": 90,
+  "h": 138,
+  "kind": "sprite",
+  "src": "hell banner_b, purple"
+ },
+ "boss_banner_gold": {
+  "w": 90,
+  "h": 138,
+  "kind": "sprite",
+  "src": "hell banner_b, gold"
+ },
+ "boss_banner_teal": {
+  "w": 90,
+  "h": 138,
+  "kind": "sprite",
+  "src": "hell banner_b, teal"
+ },
+ "boss_banner_pink": {
+  "w": 90,
+  "h": 138,
+  "kind": "sprite",
+  "src": "hell banner_b, pink"
+ },
+ "brazier_blue": {
+  "w": 70,
+  "h": 99,
+  "kind": "sprite",
+  "src": "hell brazier_bowl, blue fire"
+ },
+ "bowl_blue": {
+  "w": 80,
+  "h": 84,
+  "kind": "sprite",
+  "src": "hell brazier_low, blue fire"
+ },
+ "wall_torch_blue": {
+  "w": 49,
+  "h": 106,
+  "kind": "sprite",
+  "src": "hell wall_torch_hook, blue fire"
+ },
+ "wall_v_glow_blue": {
+  "w": 61,
+  "h": 153,
+  "kind": "sprite",
+  "src": "hell wall_v_glow, blue glow"
+ },
+ "torch_pillar": {
+  "w": 74,
+  "h": 133,
+  "kind": "sprite",
+  "src": "hell brazier_pillar"
+ },
+ "torch_pillar_blue": {
+  "w": 74,
+  "h": 133,
+  "kind": "sprite",
+  "src": "hell brazier_pillar, blue fire"
+ },
+ "boss_gate_blue": {
+  "w": 288,
+  "h": 179,
+  "kind": "sprite",
+  "src": "boss_gate, blue fire"
+ },
+ "torch_dead": {
+  "w": 49,
+  "h": 106,
+  "kind": "sprite",
+  "src": "hell wall_torch_hook without flame"
+ },
+ "blood_a": {
+  "w": 95,
+  "h": 95,
+  "kind": "sprite",
+  "src": "krypta blood_a, stain only"
+ },
+ "blood_b": {
+  "w": 88,
+  "h": 101,
+  "kind": "sprite",
+  "src": "krypta blood_b, stain only"
+ },
+ "blood_c": {
+  "w": 84,
+  "h": 103,
+  "kind": "sprite",
+  "src": "krypta blood_c, stain only"
+ },
+ "blood_d": {
+  "w": 109,
+  "h": 79,
+  "kind": "sprite",
+  "src": "krypta blood_d, stain only"
+ },
+ "blood_e": {
+  "w": 96,
+  "h": 87,
+  "kind": "sprite",
+  "src": "krypta blood_e, stain only"
+ },
+ "blood_f": {
+  "w": 95,
+  "h": 81,
+  "kind": "sprite",
+  "src": "krypta blood_f, stain only"
+ },
+ "moss_a": {
+  "w": 90,
+  "h": 90,
+  "kind": "sprite",
+  "src": "ash patch (moss slot), seed 3"
+ },
+ "moss_b": {
+  "w": 90,
+  "h": 90,
+  "kind": "sprite",
+  "src": "ash patch (moss slot), seed 11"
+ },
+ "moss_c": {
+  "w": 90,
+  "h": 90,
+  "kind": "sprite",
+  "src": "ash patch (moss slot), seed 23"
  }
 }

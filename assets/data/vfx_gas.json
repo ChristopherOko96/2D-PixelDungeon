@@ -1,0 +1,14 @@
+{
+  "_note": "Gas on the floor as clouds of puffs (src/vfx/gas.gd). A cloud of radius r has one puff per px_per_puff px of it (min_puffs..max_puffs), each about puff_share of r across (puff_min..puff_max world px at art 2, scaled with the art pixel). Puffs burst out from where the gas appears at spawn_speed px/s, fresh ones small and at full density, swelling from grow_from of their size to full over grow_time s (fresh gas is at its thickest), push each other apart (spread) until they are overlap times their summed radii apart (below 1: they keep overlapping, one cloud), are held softly in their zone (hold, past hold_from of r), roll slowly (drift px/s), slow down (damping 1/s) and stop at walls, where what runs into them fans out along the wall (wall_fan: share of the speed into the wall turned along it). A thrown cloud (an emitted one, not a zone) travels as a whole along its push, slowing by travel_damping 1/s, and stops and slides at walls, so it piles up against them and gathers in corners; its puffs keep pace with it (their push is scaled by damping / travel_damping) and burst out only thrown_burst as fast, so it flies as one glob. Blasts push them away at blast_speed px/s and thin them (blast_thin); actors part them (part_speed); shots cut through them (cut_speed). An ended cloud thins out over fade s, its outer puffs first (edge_fade). The shape is worked out at most draw_hz times a second into one image per material (drawn as one texture every frame); whether a cell is open floor is remembered for open_memory_s s. Density shows by the 4x4 dither (dense = solid), never by alpha; colours by role: hi the lit top, lite and body the cloud, shade its lower part, deep its dark underside. User request 2026-10-30: gas as physics (flows round walls, gathers in corners, blown away by blasts).",
+  "px_per_puff": 12, "min_puffs": 8, "max_puffs": 22, "puff_share": 0.4, "puff_min": 9, "puff_max": 38,
+  "spawn_speed": 70, "spread": 5.0, "overlap": 0.55, "hold": 2.2, "hold_from": 0.7, "drift": 7, "damping": 1.6,
+  "travel_damping": 2.0, "thrown_burst": 0.5, "wall_fan": 0.6, "grow_from": 0.35, "grow_time": 0.45,
+  "blast_speed": 220, "blast_thin": 0.3, "part_speed": 70, "cut_speed": 110, "fade": 1.4, "edge_fade": 1.5, "draw_hz": 15, "open_memory_s": 3,
+  "materials": {
+    "poison": {"ramp": {"hi": "d8ff9a", "lite": "a8e04a", "body": "6fae3a", "shade": "3b6b2a", "deep": "24401c"}},
+    "smoke": {"ramp": {"hi": "a49ca2", "lite": "807880", "body": "5e585c", "shade": "403a3e", "deep": "221e20"}},
+    "steam": {"ramp": {"hi": "e8f0f8", "lite": "c8d4e0", "body": "a8b4c4", "shade": "8090a4", "deep": "5a6478"}},
+    "void": {"ramp": {"hi": "c27bff", "lite": "7a3fb8", "body": "4a2a7a", "shade": "2a1650", "deep": "160a28"}},
+    "frost": {"ramp": {"hi": "e8fbff", "lite": "a6e3f7", "body": "6fbde8", "shade": "3b84c4", "deep": "1e3a52"}}
+  }
+}

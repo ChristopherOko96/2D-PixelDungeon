@@ -1,12 +1,101 @@
 {
-  "_note": "Story 3 Hell-Dungeon on the hell runtime (src/hell/hell_game.gd, theme_path in src/hell/hell_dungeon.tscn). The hell look stays THEME_DEFAULT; this file only adds the hero systems the other worlds have (talents: the lasting talents and soul crystals, the same in every world, docs/LAUF-DESIGN.de.md). hero_from / hero_keys: these keys are taken from that theme file first, so classes, leveling, skills, relics, cards, sounds and music are shared with the Frostgruft and tuned in one place; keys written here override them. extra_sprites: textures the hero systems draw (relics, rock throws, the golem) loaded from dir when the world's own sprites lack them. No mobs key: the hell keeps its own monsters (src/hell/hell_monsters.gd).",
+  "_note": "Story 3 Hell-Dungeon on the hell runtime (src/hell/hell_game.gd, theme_path in src/hell/hell_dungeon.tscn). The hell look stays THEME_DEFAULT; this file only adds the hero systems the other worlds have (talents: the lasting talents and soul crystals, the same in every world, docs/LAUF-DESIGN.de.md). hero_from / hero_keys: these keys are taken from that theme file first, so classes, leveling, skills, relics, cards, sounds and music are shared with the Frostgruft and tuned in one place; keys written here override them. extra_sprites: textures the hero systems draw (relics, rock throws, the golem) loaded from dir when the world's own sprites lack them. No mobs key: the hell keeps its own monsters (src/hell/hell_monsters.gd). world_pack: the world kit builds every floor live from the run number (src/world_kit/world_core.gd + world_pack.gd, pack assets/data/hell_world.json from tools/hell_dungeon/hell_world.js); a new run rolls a new world, saves keep its number; the baked hell_floors.json is no longer read here. world_sizes: the HD manifest, so the pixel and HD sets build the same floor. vault_closed / vault_open: the giant vault chest before and after opening. plate_hint false: the plates do not show their order. mimic_kind: the monster a mimic chest wakes as (borrowed in hell_balance.json monsters.borrow); dormant_mimics: a mimic never shows as a monster. keys: the hell keys, the boss key now lies in the key room.",
   "hero_from": "res://assets/data/frost_theme.json",
-  "hero_keys": ["default_class", "classes", "weapon_scale", "leveling", "gravity_staff", "gravity_hammer", "relics", "cards", "talents", "master_cooldown", "sounds", "music", "styled_hud"],
+  "hero_keys": [
+    "default_class",
+    "classes",
+    "weapon_scale",
+    "leveling",
+    "gravity_staff",
+    "gravity_hammer",
+    "relics",
+    "cards",
+    "talents",
+    "master_cooldown",
+    "sounds",
+    "music",
+    "styled_hud"
+  ],
   "placeholder_note": false,
+  "world_pack": "res://assets/data/hell_world.json",
+  "world_sizes": "res://assets/sprites/hell/manifest.json",
+  "vault_closed": "chest_vault",
+  "vault_open": "chest_gold",
+  "plate_hint": false,
+  "mimic_kind": "mimik",
+  "dormant_mimics": true,
+  "keys": {
+    "A": {
+      "name": "Glutschlüssel",
+      "hint": "fällt in einem Seitenraum vor dem verschlossenen Tor.",
+      "color": "#ff8a3c",
+      "tint": [
+        1,
+        1,
+        1
+      ],
+      "sprite": "key"
+    },
+    "B": {
+      "name": "Knochenschlüssel",
+      "hint": "fällt in einem Kampfraum.",
+      "color": "#e8dccb",
+      "tint": [
+        1.55,
+        1.5,
+        1.4
+      ],
+      "sprite": "key"
+    },
+    "C": {
+      "name": "Dämonenschlüssel",
+      "hint": "liegt in der Schlüsselkammer, in der Mitte des großen Teppichs.",
+      "color": "#b07cff",
+      "tint": [
+        0.75,
+        0.5,
+        1.7
+      ],
+      "sprite": "key"
+    }
+  },
   "extra_sprites": {
     "dir": "res://assets/sprites/frost/",
-    "names": ["weapon_gravity_staff", "weapon_gravity_hammer", "rock_throw", "rock_spike",
-      "ally_golem_f0", "ally_golem_f1", "ally_golem_f2", "ally_golem_f3", "ally_golem_f4", "ally_golem_f5",
-      "ally_golem_walk_f0", "ally_golem_walk_f1", "ally_golem_walk_f2", "ally_golem_walk_f3", "ally_golem_walk_f4", "ally_golem_walk_f5"]
+    "names": [
+      "weapon_gravity_staff",
+      "weapon_gravity_hammer",
+      "rock_throw",
+      "rock_spike",
+      "ally_golem_f0",
+      "ally_golem_f1",
+      "ally_golem_f2",
+      "ally_golem_f3",
+      "ally_golem_f4",
+      "ally_golem_f5",
+      "ally_golem_walk_f0",
+      "ally_golem_walk_f1",
+      "ally_golem_walk_f2",
+      "ally_golem_walk_f3",
+      "ally_golem_walk_f4",
+      "ally_golem_walk_f5"
+    ]
+  },
+  "feel": {
+    "_note": "The world's combat feel is the crypt's (src/vfx/feedback.gd through src/hero/story_feel.gd; materials in assets/data/vfx_gore.json; docs/VFX-SYSTEM.de.md). Here only the footsteps and growls: step_every = seconds between steps, idle_gap = seconds between growls, idle_range = px around the hero in which monsters growl.",
+    "step_every": 0.3,
+    "idle_gap": 1.6,
+    "idle_range": 760
+  },
+  "glow": {
+    "_note": "Bloom colours of the Hell-Dungeon (src/hero/story_glow.gd): portal = an awakened portal, wall = the walls' glowing slits and door posts, gate = gates that hold a fight. liquid = the lava banks: light_radius (world px) and light_strength (0..1) of their light in the dark, color and alpha (0..1) of their bloom (skill_fx.gd's lava glow, 0.32). The braziers keep the colour of their own light (hell_floors.json lights).",
+    "portal": "#ff6b2c",
+    "wall": "#e8432a",
+    "gate": "#ff5a3c",
+    "liquid": {
+      "light_radius": 230,
+      "light_strength": 0.75,
+      "color": "#ff6b1a",
+      "alpha": 0.32
+    }
   }
 }

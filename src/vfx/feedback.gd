@@ -71,9 +71,11 @@ static func _gore_data() -> Dictionary:
 
 
 ## What an enemy (or "player") is made of: {material, color, stain, ...}.
+## `kind` is an enemy kind of the table, or a material name itself.
 static func gore(kind: String) -> Dictionary:
 	var data := _gore_data()
-	var name := str(data.get("kinds", {}).get(kind, data.get("default", "blood")))
+	var fallback: String = kind if (data.get("materials", {}) as Dictionary).has(kind) else str(data.get("default", "blood"))
+	var name := str(data.get("kinds", {}).get(kind, fallback))
 	var material: Dictionary = data.get("materials", {}).get(name, {}).duplicate()
 	material.material = name
 	return material
@@ -124,9 +126,9 @@ func observe(snapshot: Dictionary, local_peer: int) -> void:
 		var fx_kind := str(event.get("kind", ""))
 		var fx_point := Vector2(float(event.get("x", 0.0)), float(event.get("y", 0.0)))
 		if fx_kind == "void_burst":
-			particles.kick(fx_point, 56.0, 1.3)
+			# the void implodes: a hard pull, a frame of void, a pressure ring (src/vfx/particles.gd)
+			particles.implode(fx_point, 56.0)
 			_play("void_burst")
-			_fx_spawn("void_burst", fx_point, 0.0, 1.3)
 		elif fx_kind == "wall_hit":
 			var wall_style := str(event.get("style", "arrow"))
 			var shooter: Dictionary = snapshot.get("players", {}).get(int(event.get("o", 0)), {})
@@ -146,7 +148,10 @@ func observe(snapshot: Dictionary, local_peer: int) -> void:
 		elif fx_kind == "enemy_spawn":
 			_fx_spawn("dust", fx_point + Vector2(0, 6), 0.0, 2.2)
 			particles.burst(fx_point, Color("5a4e48"), 8, 90.0, 0.5, Vector2.UP, 1.2, 3.0, 3.0, "dust")
-		elif fx_kind == "level_up": _fx_spawn("level_up", fx_point + Vector2(0, 12), 0.0, 1.2)
+		elif fx_kind == "level_up":
+			_fx_spawn("level_up", fx_point + Vector2(0, 12), 0.0, 1.2)
+			# holy light: shafts falling that sparkle where they land, gold motes rising
+			particles.holy(fx_point + Vector2(0, 8), 10, 18.0)
 		elif fx_kind == "chest_open":
 			particles.burst(fx_point, Color("b8864a"), 16, 200.0, 0.6, Vector2.ZERO, PI, 3.0, 4.0)
 			_fx_spawn("wood_burst", fx_point, 0.0, 1.4)
@@ -180,13 +185,44 @@ func observe(snapshot: Dictionary, local_peer: int) -> void:
 				"identify":
 					particles.burst(fx_point, Color("8fd8e6"), 16, 120.0, 0.6, Vector2.UP, 1.4, 3.0, 3.0)
 					_play_any(["perk"], 0.05)
+		elif fx_kind == "element":
+			# a reaction of the elements (src/combat/elements.gd)
+			var reach := float(event.get("r", 30.0))
+			match str(event.get("do", "")):
+				"explode":
+					particles.fire_burst(fx_point, reach)
+					particles.embers(fx_point, reach * 0.6, 10)
+					particles.kick(fx_point, reach, 1.0)
+					particles.scorch_star(fx_point + Vector2(0, 6), reach * 0.4)
+					_add_shake(0.35)
+					_play_any(["blast"], 0.0)
+				"freeze":
+					particles.freeze_liquids(fx_point, reach * 1.2)
+					particles.rime_grow(fx_point, 4, reach * 0.4)
+					_play_any(["frost"], 0.05)
+				"thaw":
+					particles.thaw_liquids(fx_point, reach * 1.3)
+					particles.steam(fx_point, 10, reach * 0.5)
+				"steam", "crust":
+					particles.steam(fx_point, 16, reach * 0.6)
 		elif fx_kind == "zone_burst":
 			# A boss move lands: dust, ice, poison, void or bone, by its style.
 			var colours := {"void": Color("c06bd8"), "poison": Color("8fc84a"), "ice": Color("9fe3ee"), "frost": Color("bff0f7"), "quake": Color("b08a5a"), "spikes": Color("e6dcc6"), "bone": Color("e6dcc6"), "flesh": Color("c8323a"), "fire": Color("f7883a"), "curse": Color("8a6be0")}
 			var style := str(event.get("style", "quake"))
 			var tint: Color = colours.get(style, Color("b08a5a"))
 			var size := float(event.get("r", 30.0))
-			particles.burst(fx_point, tint, clampi(int(size * 0.4), 6, 28), 120.0 + size, 0.5, Vector2.ZERO, PI, 3.0, 3.0)
+			if style in ["ice", "frost"]:
+				# ice is rigid: shards burst and slide, rime grows, liquid near it freezes
+				particles.shatter(fx_point, clampi(int(size * 0.15), 4, 12), Vector2.ZERO, 120.0 + size)
+				particles.rime_grow(fx_point, 4, size * 0.35)
+				particles.freeze_liquids(fx_point, size)
+			elif style in ["quake", "spikes", "bone"]:
+				# stone is heavy: rubble that stops hard, dust creeping flat, cracks that stay
+				particles.rubble(fx_point, clampi(int(size * 0.2), 4, 14), Vector2.ZERO, 100.0 + size)
+				particles.dust_flat(fx_point, size * 0.5, clampi(int(size * 0.25), 6, 18))
+				particles.floor_crack(fx_point, size * 0.6, 4 if size >= 60.0 else 3)
+			else:
+				particles.burst(fx_point, tint, clampi(int(size * 0.4), 6, 28), 120.0 + size, 0.5, Vector2.ZERO, PI, 3.0, 3.0)
 			if style in ["quake", "spikes", "bone"]: particles.kick(fx_point, size * 0.6, 0.5)
 			if size >= 80.0: _add_shake(0.25)
 			_play_any(["blast", "break_bone"] if style in ["quake", "spikes", "bone"] else ["frost", "blast"] if style in ["ice", "frost"] else ["blast"], 0.08)
@@ -201,7 +237,11 @@ func observe(snapshot: Dictionary, local_peer: int) -> void:
 			particles.burst(fx_point, Color("c06bd8"), 16, 160.0, 0.5, Vector2.ZERO, PI, 3.0, 3.0)
 			_fx_spawn("void_burst", fx_point, 0.0, 0.8)
 		elif fx_kind in ["ice_block_break", "bone_cage_break"]:
-			particles.burst(fx_point, Color("9fe3ee") if fx_kind == "ice_block_break" else Color("e6dcc6"), 14, 180.0, 0.6, Vector2.ZERO, PI, 3.0, 3.0)
+			if fx_kind == "ice_block_break":
+				# the block breaks into big shards that slide off and scratch the floor
+				particles.shatter(fx_point, 12, Vector2.ZERO, 170.0, [], 4)
+			else:
+				particles.burst(fx_point, Color("e6dcc6"), 14, 180.0, 0.6, Vector2.ZERO, PI, 3.0, 3.0)
 			_play_any(["frost", "break_bone"] if fx_kind == "ice_block_break" else ["break_bone"], 0.08)
 		elif fx_kind == "mimic_spring":
 			# The chest was a Mimik: splinters, a snap and a hard shake.
@@ -390,7 +430,8 @@ func _observe_enemy(state: Dictionary, enemy: Dictionary) -> void:
 	var boss: bool = kind == "boss"
 	var origin := Vector2(float(enemy.get("x", 0.0)), float(enemy.get("y", 0.0)))
 	var direction := Vector2(float(enemy.get("dx", 0.0)), float(enemy.get("dy", 0.0)))
-	var material := gore(kind)
+	# the story worlds name their monsters' material directly (src/hero/story_feel.gd)
+	var material := gore(str(enemy.get("gore", kind)))
 	var blood: Color = Color(str(material.get("color", "c8323a")))
 	var stain_color: Color = Color(str(material.get("stain", "7a1a22")))
 	var stain_alpha: float = float(material.get("stain_alpha", 0.6))
@@ -403,11 +444,13 @@ func _observe_enemy(state: Dictionary, enemy: Dictionary) -> void:
 		state.hits = hits
 		_flash(state, Color.WHITE, 0.14)
 		_kick(state, Vector2(0.45, -0.4) * (0.5 if boss else 1.0), direction.x * 0.5)
-		particles.burst(origin, blood, 70 if boss else 24, 260.0 if boss else 190.0, 0.9 if boss else 0.6, direction, 1.3, 4.0 if boss else 3.0)
+		# a liquid flies as drops that land as small splats (bone flies as chips)
+		var flies := "debris" if bool(material.get("chips", false)) else "drop"
+		particles.burst(origin, blood, 70 if boss else 24, 260.0 if boss else 190.0, 0.9 if boss else 0.6, direction, 1.3, 4.0 if boss else 3.0, 5.0, flies)
 		particles.burst(origin, DUST, 30 if boss else 10, 120.0, 0.7, Vector2.ZERO, PI, 4.0, 3.0, "dust")
 		particles.splat(origin + Vector2(0, 10), stain_color, stain_alpha, float(material.get("death_splat", 18)) * (2.0 if boss else 1.0), direction)
 		if bool(material.get("chips", false)): particles.burst(origin, blood, 16 if boss else 10, 210.0, 0.8, direction, 1.2, 4.0, 4.0)
-		var death_fx: String = {"bone": "stone_burst", "slime": "poison_burst", "frost": "frost_burst", "void": "void_burst", "blood": "blood_burst"}.get(str(material.get("material", "blood")), "blood_burst")
+		var death_fx: String = str(material.get("death_fx", {"bone": "stone_burst", "slime": "poison_burst", "frost": "frost_burst", "void": "void_burst", "blood": "blood_burst"}.get(str(material.get("material", "blood")), "blood_burst")))
 		_fx_spawn(death_fx, origin + Vector2(0, -8), 0.0, 2.2 if boss else 1.0)
 		_play_death(enemy, boss)
 		_add_shake(0.95 if boss else 0.32)
@@ -423,7 +466,7 @@ func _observe_enemy(state: Dictionary, enemy: Dictionary) -> void:
 		_kick(state, Vector2(0.14, -0.12) if boss else Vector2(0.34, -0.3), direction.x * (0.1 if boss else 0.3))
 		particles.burst(origin - direction * 6.0, SPARK, 6, 170.0, 0.22, -direction, 0.7, 2.0, 8.0, "spark")
 		_fx_spawn("hit_spark", origin - direction * 10.0 + Vector2(0, -10), float(hits) * 0.7, 1.3 if boss else 1.0)
-		particles.burst(origin, blood, 6 if boss else 4, 130.0, 0.45, direction, 0.6, 3.0)
+		particles.burst(origin, blood, 6 if boss else 4, 130.0, 0.45, direction, 0.6, 3.0, 5.0, "debris" if bool(material.get("chips", false)) else "drop")
 		# Liquids spray onto the floor behind the target; bone only chips.
 		if float(material.get("hit_splat", 0)) > 0.0: particles.splat(origin + Vector2(0, 8) + direction * 10.0, stain_color, stain_alpha * 0.85, float(material.hit_splat) * (1.6 if boss else 1.0), direction)
 		elif bool(material.get("chips", false)): particles.burst(origin, blood, 5, 160.0, 0.5, direction, 0.8, 3.0, 5.0)

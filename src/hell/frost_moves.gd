@@ -63,6 +63,15 @@ static func _hero(g: Node) -> Vector2:
 	return Vector2(g.player.x, g.player.y)
 
 
+## The world's pixel look and feel of the attacks (src/hell/frost_fx.gd), null without theme.vfx.
+static func _fx(g: Node) -> RefCounted:
+	return g.get("frost_fx")
+
+
+static func _boss(m: Dictionary) -> bool:
+	return str(m.get("kind", "")) == "boss"
+
+
 # ---------- choosing and running ----------
 
 static func update(g: Node, dt: float) -> void:
@@ -183,7 +192,9 @@ static func _place_strikes(g: Node, m: Dictionary, run: Dictionary) -> void:
 	for i in range(pts.size()):
 		var delay: float = delays[i] if i < delays.size() else 0.0
 		var z := {"kind": "strike", "p": pts[i], "r": maxf(20.0, float(spec.get("radius", 30)) * k), "t": warn + delay, "max": warn + delay,
-			"dmg": _dmg(g, spec.get("damage", 1)), "effect": spec.get("effect", {}), "style": str(spec.get("style", "ice")), "pool": spec.get("pool", {})}
+			"dmg": _dmg(g, spec.get("damage", 1)), "effect": spec.get("effect", {}), "style": str(spec.get("style", "ice")), "pool": spec.get("pool", {}),
+			# who struck and how: around itself a burst of frost, elsewhere hail from above (frost_fx.gd)
+			"src": m.p, "boss": _boss(m), "self": str(spec.get("pattern", "")) == "self", "seed": randf() * 9.0}
 		if str(spec.type) == "lob":
 			z.from = (m.p as Vector2) - Vector2(0, m.cy)
 		_zones(g).append(z)
@@ -243,8 +254,12 @@ static func _release(g: Node, m: Dictionary, run: Dictionary) -> void:
 				_:
 					angles = [aim.angle()]
 			for a: float in angles:
-				_bullet(g, from, a, spec)
+				_bullet(g, from, a, spec, m)
 			g._sound_raw("attack_salve" if angles.size() > 2 else "attack_arrow")
+			# the shards break loose: frost chips and sparkles at the muzzle
+			if _fx(g) != null and str(spec.get("style", "")) in ["ice", "frost"]:
+				_fx(g).shatter(from, 6 + angles.size(), 12.0, aim, 140.0)
+				_fx(g).impact(from, "small" if angles.size() > 2 else "tiny", _boss(m))
 		"blink":
 			var lo := float(spec.get("min", 100)) * k
 			var hi := float(spec.get("max", 200)) * k
@@ -263,8 +278,11 @@ static func _release(g: Node, m: Dictionary, run: Dictionary) -> void:
 		"cone":
 			var to := me - (m.p as Vector2)
 			if to.length() < float(spec.reach) * k + 20.0 and absf(angle_difference((run.aim as Vector2).angle(), to.angle())) < float(spec.angle) / 2.0 + 0.1:
-				_hit_hero(g, _dmg(g, spec.get("damage", 1)), spec.get("effect", {}), "vom Frostatem getroffen")
-			if g.feel != null:
+				_hit_hero(g, _dmg(g, spec.get("damage", 1)), spec.get("effect", {}), "vom Frostatem getroffen", m.p, "breath", _boss(m))
+			if _fx(g) != null:
+				_fx(g).breath((m.p as Vector2) - Vector2(0, float(m.cy) * 0.6), run.aim, float(spec.reach) * k, float(spec.angle))
+				_fx(g).impact(m.p, "small", _boss(m))
+			elif g.feel != null:
 				g.feel.on_blast((m.p as Vector2) + (run.aim as Vector2) * float(spec.reach) * k * 0.5, float(spec.reach) * k * 0.6, str(spec.get("style", "frost")))
 			g._sound_raw("attack_beam")
 		"summon":
@@ -275,14 +293,30 @@ static func _release(g: Node, m: Dictionary, run: Dictionary) -> void:
 				if not (g.theme.get("mobs", {}) as Dictionary).has(kind):
 					continue
 				var a := TAU * i / kinds.size()
-				g._spawn_mob(m.room, (m.p as Vector2) + Vector2(cos(a), sin(a)) * float(spec.get("offset", 70)) * k, kind)
+				var at := (m.p as Vector2) + Vector2(cos(a), sin(a)) * float(spec.get("offset", 70)) * k
+				g._spawn_mob(m.room, at, kind)
+				# the dead break up through the ice: chips, snow and rime where each one rises
+				if _fx(g) != null:
+					_fx(g).shatter(at, 14, 34.0, Vector2.ZERO, 200.0)
 			g._sound_raw("attack_summon")
+			if _fx(g) != null:
+				_fx(g).nova(m.p, float(spec.get("offset", 70)) * k * 1.3, 0.4)
+				_fx(g).impact(m.p, "small", _boss(m))
 		"armor":
 			m.armor_t = float(spec.time)
+			m.armor_max = float(spec.time)
 			m.armor = float(spec.scale)
 			g._sound_raw("block")
+			# the ice grows round it with a crack: crystals and sparkles
+			if _fx(g) != null:
+				_fx(g).shatter((m.p as Vector2) - Vector2(0, float(m.cy) * 0.5), 12, float(m.r), Vector2.ZERO, 120.0)
+				_fx(g).impact(m.p, "small", _boss(m))
 		"dash", "spin", "vortex":
 			g._sound_raw("attack_bite" if str(spec.type) == "dash" else "attack_slam")
+			# it pushes off: snow kicked up behind it
+			if str(spec.type) == "dash" and _fx(g) != null:
+				_fx(g).kick(m.p, 14, run.aim)
+				_fx(g).impact(m.p, "tiny", _boss(m))
 	# strikes and lob zones were placed at the windup and burst by themselves
 
 
@@ -303,9 +337,12 @@ static func _active(g: Node, m: Dictionary, run: Dictionary, dt: float) -> void:
 			run.moved = float(run.moved) + step.length()
 			if spec.has("lane_pool") and fmod(float(run.moved), 60.0) < step.length():
 				_zones(g).append(_pool(g, m.p, spec.lane_pool))
+			# snow sprays from under it as it slides
+			if _fx(g) != null and randf() < 0.6:
+				_fx(g).kick(m.p, 2, run.aim)
 			if not run.hit and float(spec.get("damage", 0)) > 0.0 and me.distance_to(m.p) < maxf(30.0, float(spec.width) * k * 0.5) + m.r:
 				run.hit = true
-				_hit_hero(g, _dmg(g, spec.damage), spec.get("effect", {}), "überrannt")
+				_hit_hero(g, _dmg(g, spec.damage), spec.get("effect", {}), "überrannt", m.p, "dash", _boss(m))
 		"spin":
 			if float(spec.get("chase", 0)) > 0.0:
 				m.p += (me - (m.p as Vector2)).normalized() * float(spec.chase) * k * dt
@@ -331,7 +368,7 @@ static func _active(g: Node, m: Dictionary, run: Dictionary, dt: float) -> void:
 					run.spin = float(run.get("spin", 0.0)) + float(spec.get("turn", 1.5)) * float(spec.get("rate", 0.2))
 					var arms := int(spec.get("arms", 3))
 					for i in range(arms):
-						_bullet(g, (m.p as Vector2) - Vector2(0, m.cy), float(run.spin) + TAU * i / arms, spec)
+						_bullet(g, (m.p as Vector2) - Vector2(0, m.cy), float(run.spin) + TAU * i / arms, spec, m)
 
 
 static func _finish(g: Node, m: Dictionary, run: Dictionary) -> void:
@@ -339,17 +376,21 @@ static func _finish(g: Node, m: Dictionary, run: Dictionary) -> void:
 	var k := _k(g)
 	if str(spec.type) == "vortex":
 		if _hero(g).distance_to(m.p) < float(spec.burst) * k:
-			_hit_hero(g, _dmg(g, spec.damage), {}, "vom Sog verschlungen")
-		if g.feel != null:
+			_hit_hero(g, _dmg(g, spec.damage), {}, "vom Sog verschlungen", m.p, "wave", _boss(m))
+		if _fx(g) != null:
+			_fx(g).nova(m.p, float(spec.burst) * k)
+			_fx(g).impact(m.p, "medium", _boss(m))
+		elif g.feel != null:
 			g.feel.on_blast(m.p, float(spec.burst) * k, str(spec.get("style", "void")))
 
 
-## An enemy shot of a move: an eshot with damage, effect and style.
-static func _bullet(g: Node, from: Vector2, a: float, spec: Dictionary) -> void:
+## An enemy shot of a move: an eshot with damage, effect and style (and
+## whether a guardian threw it, for the weight of its hit).
+static func _bullet(g: Node, from: Vector2, a: float, spec: Dictionary, m: Dictionary = {}) -> void:
 	var k := _k(g)
 	g.eshots.append({"p": from, "v": Vector2(cos(a), sin(a)) * float(spec.get("speed", 200)) * k, "t": float(spec.get("life", 3.0)),
 		"dmg": _dmg(g, spec.get("damage", 1)), "effect": spec.get("effect", {}), "style": str(spec.get("style", "ice")), "size": float(spec.get("radius", 6)) * k * 0.5,
-		"end_pool": spec.get("end_pool", {})})
+		"end_pool": spec.get("end_pool", {}), "boss": _boss(m), "seed": randf() * 9.0})
 
 
 static func _pool(g: Node, p: Vector2, spec: Dictionary) -> Dictionary:
@@ -357,26 +398,48 @@ static func _pool(g: Node, p: Vector2, spec: Dictionary) -> Dictionary:
 		"dps": float(spec.get("dps", 0.0)), "slip": bool(spec.get("slip", false)), "style": str(spec.get("style", "ice")), "tick": 0.0}
 
 
-## A hit from a move: hearts (via the game's hurt) and the move's condition.
-static func _hit_hero(g: Node, dmg: int, effect: Variant, why: String) -> void:
+## A hit from a move: hearts (via the game's hurt) and the move's condition;
+## with frost_fx the blow from `from` pushes the hero back (`kind`,
+## theme.vfx.knock) and is felt (a guardian's harder than a mob's).
+static func _hit_hero(g: Node, dmg: int, effect: Variant, why: String, from := Vector2.INF, kind := "", boss := true, tier := "small") -> void:
 	if dmg > 0:
 		var before: int = g.state.hp
 		g._hurt(why, dmg)
 		if int(g.state.hp) >= before:
 			return
+		if _fx(g) != null and from.is_finite() and kind != "":
+			_fx(g).hit_hero(from, kind, tier, boss)
 	if effect is Dictionary and not (effect as Dictionary).is_empty():
 		HeroFx.apply_spec(g, effect)
 
 
 ## An enemy shot of a move reached the hero (called by the game instead of its plain hit).
 static func shot_hit(g: Node, s: Dictionary) -> void:
-	_hit_hero(g, int(s.get("dmg", 1)), s.get("effect", {}), "von Eis getroffen")
+	var from: Vector2 = (s.p as Vector2) - (s.v as Vector2).normalized() * 40.0
+	_hit_hero(g, int(s.get("dmg", 1)), s.get("effect", {}), "von Eis getroffen", from, "shot", bool(s.get("boss", true)), "tiny")
+	# the shard bursts on him
+	if _fx(g) != null and str(s.get("style", "ice")) in ["ice", "frost"]:
+		_fx(g).shatter(s.p, 8, 14.0, (s.v as Vector2).normalized(), 120.0)
 
 
 ## A move's shot ended: a pool where it had one (fire arrow).
 static func shot_end(g: Node, s: Dictionary) -> void:
 	if not (s.get("end_pool", {}) as Dictionary).is_empty():
 		_zones(g).append(_pool(g, s.p, s.end_pool))
+
+
+## A strike bursting with frost_fx: around its caster a ring of frost running
+## out (a nova), elsewhere a hailstone smashing into ice chips, snow and rime.
+static func _strike_fx(g: Node, z: Dictionary, big: bool) -> void:
+	var fx := _fx(g)
+	var boss := bool(z.get("boss", true))
+	if big:
+		fx.nova(z.p, float(z.r))
+		fx.shatter(z.p, 18, float(z.r) * 0.3, Vector2.ZERO, 260.0)
+		fx.impact(z.p, "large" if boss else "medium", boss)
+	else:
+		fx.shatter(z.p, 16, float(z.r), Vector2.ZERO, 220.0)
+		fx.impact(z.p, "small", boss)
 
 
 static func _update_zones(g: Node, dt: float) -> void:
@@ -386,11 +449,15 @@ static func _update_zones(g: Node, dt: float) -> void:
 		match str(z.kind):
 			"strike":
 				if float(z.t) <= 0.0:
+					var big := bool(z.get("self", false)) and float(z.r) > 60.0
 					if me.distance_to(z.p) < float(z.r) + 20.0:
-						_hit_hero(g, int(z.dmg), z.effect, "von %s getroffen" % ("Hagel" if str(z.style) == "ice" else "der Wucht"))
+						_hit_hero(g, int(z.dmg), z.effect, "von %s getroffen" % ("Hagel" if str(z.style) == "ice" else "der Wucht"),
+							z.get("src", z.p) if big else z.p, "wave" if big else "slam", bool(z.get("boss", true)), "medium" if big else "small")
 					if not (z.pool as Dictionary).is_empty():
 						_zones(g).append(_pool(g, z.p, z.pool))
-					if g.feel != null and float(z.r) > 0.0:
+					if _fx(g) != null and float(z.r) > 0.0:
+						_strike_fx(g, z, big)
+					elif g.feel != null and float(z.r) > 0.0:
 						g.feel.on_blast(z.p, float(z.r), str(z.style))
 			"pool":
 				if me.distance_to(z.p) < float(z.r):
@@ -413,14 +480,21 @@ static func tick_mob(g: Node, m: Dictionary, dt: float) -> void:
 		if float(m.armor_t) <= 0.0:
 			var spec := move("ice_armor")
 			for i in range(int(spec.get("shards", 10))):
-				_bullet(g, (m.p as Vector2) - Vector2(0, m.cy), TAU * i / float(spec.get("shards", 10)), spec)
+				_bullet(g, (m.p as Vector2) - Vector2(0, m.cy), TAU * i / float(spec.get("shards", 10)), spec, m)
 			g._sound_raw("blast")
+			# the shell bursts: its crystals fly as shards, chips rain down round it
+			if _fx(g) != null:
+				_fx(g).shatter((m.p as Vector2) - Vector2(0, float(m.cy) * 0.5), 22, float(m.r) * 1.3, Vector2.ZERO, 260.0)
+				_fx(g).impact(m.p, "medium", _boss(m))
 
 
 # ---------- drawing ----------
 
 ## Warnings that fill up, pools, globs in flight, armour and windup glow.
 static func draw(g: Node, l: CanvasItem, t: float) -> void:
+	if _fx(g) != null:
+		_draw_px(g, l, t)
+		return
 	for z: Dictionary in _zones(g):
 		var c: Color = STYLE.get(str(z.get("style", "ice")), Color(0.8, 0.9, 1.0))
 		var k: float = 1.0 - float(z.t) / maxf(0.01, float(z.get("max", 1.0)))
@@ -456,7 +530,71 @@ static func draw(g: Node, l: CanvasItem, t: float) -> void:
 			l.draw_arc(mid, float(m.r) * 1.3 + 10.0, 0.0, TAU, 6, Color(0.9, 0.98, 1.0, 0.9), 4.0)
 
 
-## A move's enemy shot in its style; false for plain shots.
+## The warnings on the pixel grid (frost_fx.gd), under the actors: rings that
+## fill with a dot grid and a growing inner ring, lanes and cones the same,
+## other pools as rings, and a crawling rim at a winding-up foot. Ice pools
+## are drawn by frost_fx.gd as one slab under the hero's shadow.
+static func _draw_px(g: Node, l: CanvasItem, t: float) -> void:
+	var fx := _fx(g)
+	for z: Dictionary in _zones(g):
+		var c: Color = STYLE.get(str(z.get("style", "ice")), Color(0.8, 0.9, 1.0))
+		var k: float = 1.0 - float(z.t) / maxf(0.01, float(z.get("max", 1.0)))
+		match str(z.kind):
+			"strike":
+				if float(z.r) > 0.0:
+					fx.ring(l, z.p, float(z.r), k, c, t)
+			"pool":
+				# ice pools are one slab on the floor's own layer (frost_fx.gd draw_floor)
+				if not str(z.style) in ["ice", "frost"]:
+					var fade := clampf(float(z.t), 0.0, 1.0) * clampf((float(z.max) - float(z.t)) / 0.3, 0.0, 1.0)
+					fx.ring(l, z.p, float(z.r), 0.0, Color(c, fade), t)
+			"lane":
+				var to: Vector2 = (z.q as Vector2) - (z.p as Vector2)
+				fx.strip(l, z.p, to.normalized(), to.length(), float(z.w) * 0.5, k, c, t)
+			"cone":
+				fx.cone(l, z.p, float(z.r), float(z.a), float(z.arc), k, c, t)
+	for m: Dictionary in g.mobs:
+		if m.get("tele", false):
+			fx.px_ellipse(l, m.p, float(m.r) + 18.0, (float(m.r) + 18.0) * 0.62, Color(1.0, 0.55, 0.5, 0.85), 3, int(floorf(t * 12.0)))
+
+
+## Over the actors (frost_fx.gd): ice shards in flight, hail falling onto its
+## warnings, globs on their arc, a guardian's ice armour and impact flashes.
+static func draw_over(g: Node, l: CanvasItem, t: float) -> void:
+	var fx := _fx(g)
+	if fx == null:
+		return
+	for z: Dictionary in _zones(g):
+		if str(z.kind) != "strike" or float(z.r) <= 0.0 or bool(z.get("self", false)):
+			continue
+		var k: float = 1.0 - float(z.t) / maxf(0.01, float(z.get("max", 1.0)))
+		if z.has("from"):
+			# a glob thrown in an arc
+			var q: Vector2 = (z.from as Vector2).lerp(z.p, k)
+			fx.hailstone(l, q, sin(k * PI) * 160.0, 2, k)
+		elif k > 0.55:
+			# hail: a stone dropping out of the dark onto its warning
+			var f := (k - 0.55) / 0.45
+			fx.hailstone(l, z.p, (1.0 - f * f) * 420.0, 2 + int(float(z.r) > 50.0), f)
+	for m: Dictionary in g.mobs:
+		if float(m.get("armor_t", 0.0)) > 0.0:
+			var share := clampf(float(m.armor_t) / maxf(0.1, float(m.get("armor_max", 4.0))), 0.0, 1.0)
+			# the shell stands round the figure as it is drawn (a guardian is drawn much larger than its body)
+			var span := maxf(float(m.r) * 1.25 + 8.0, float(m.cy) * 0.95)
+			fx.armor(l, (m.p as Vector2) - Vector2(0, 6), span, share, t, clampi(int(span / 22.0), 3, 8))
+	for s: Dictionary in g.eshots:
+		var size := clampi(int(float(s.get("size", 8.0)) / 3.0) + 3, 4, 8)
+		if s.get("fist", false):
+			size = 9
+		if str(s.get("style", "ice")) in ["ice", "frost"] or not s.has("style"):
+			fx.shard(l, s.p, s.v, size, t, float(s.get("seed", 0.0)))
+		else:
+			draw_shot(l, s, t)
+	fx.draw_flashes(l)
+
+
+## A move's enemy shot in its style; false for plain shots. With frost_fx every
+## shot is drawn over the actors instead (draw_over), so this reports it drawn.
 static func draw_shot(l: CanvasItem, s: Dictionary, t: float) -> bool:
 	if not s.has("style"):
 		return false

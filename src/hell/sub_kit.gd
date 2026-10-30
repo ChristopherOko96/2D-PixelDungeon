@@ -341,6 +341,8 @@ static func cast(g: Node, s: Dictionary) -> bool:
 			g.state.stealth = float(s.time)
 			g.state.ambush = float(s.ambush)
 			g._burst(me - Vector2(0, 40), 20)
+			# he melts into a shadow on the floor
+			g.shadow_at(me, 6, 40.0)
 			g._sound_raw("void_burst")
 		"step":
 			var near: Array = g.mobs.filter(func(m: Dictionary) -> bool: return m.spawn <= 0.0 and (m.p as Vector2).distance_to(me) < float(s.range))
@@ -530,10 +532,13 @@ static func _update_queue(g: Node, dt: float) -> void:
 				if not g.mobs.has(m):
 					continue
 				var from := Vector2(g.player.x, g.player.y - 40)
+				# the shadow he steps into and out of
+				g.shadow_at(from + Vector2(0, 40))
 				var behind: Vector2 = m.p - (m.face as Vector2) * 60.0
 				if not g.box_blocked(g._player_box(behind.x, behind.y)):
 					g.player.x = behind.x
 					g.player.y = behind.y
+				g.shadow_at(Vector2(g.player.x, g.player.y), 4, 24.0)
 				g.fx.append({"kind": "blink", "p": from, "q": Vector2(g.player.x, g.player.y - 40), "t": 0.25, "max": 0.25})
 				g._damage_mob(m, ((m.p as Vector2) - from).normalized() * 300.0, float(s.damage) * float(g.sub_kit.attack.get("backstab", 2.0)))
 			"corpse":

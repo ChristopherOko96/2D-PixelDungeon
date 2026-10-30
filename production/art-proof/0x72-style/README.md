@@ -48,3 +48,15 @@ zerstörbaren Körperteilen. Erst nach der Freigabe wird etwas ins Spiel überno
   `make_void.gd` schneidet auch die Leerenbomber-Bilder aus.
 - **Hilfsskripte:** `slice_frames.gd` (Einzelbilder ausschneiden), `serve.js`
   (lokaler Server für die Vorschau auf Port 8765).
+- **Exporter und spätere Änderungen (29.10.2026):** `export_rigs.js` gibt
+  `rigs.json` wieder genau so aus, wie die Datei heute ist. Erhalten bleiben die
+  unzerstörbaren Boss-Teile (`bossParts`/`GAME_BOSSES` in der Vorlage, aus
+  Commit 3a29399), der unzerstörbare Leerenkern und die Mimik. Mit
+  `node export_rigs.js --check` wird verglichen, ohne zu schreiben.
+- **0x72-Varianten (Kandidaten, 29.10.2026):** 21 Gegner und Bosse für Krypta,
+  Frostgruft und Hölle, im Abschnitt `VARIANTS` und `VARIANT_ROSTER` der
+  Vorlage. Neue Farben gibt es nur per Pipette (`recolor`, exakter
+  hex→hex-Tausch). Die Seite zeigt sie nicht. `node export_rigs.js --variants`
+  schreibt sie nach `production/qa/evidence/0x72-variants/rigs_variants.json`.
+  Dort liegen auch die Nachweis-Bilder und eine README. Sie kommen erst nach
+  der Freigabe ins Spiel, mit `node export_rigs.js --with-variants`.

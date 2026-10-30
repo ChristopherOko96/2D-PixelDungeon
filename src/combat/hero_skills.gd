@@ -554,6 +554,7 @@ func _fireball_burst(owner: int, point: Vector2) -> void:
 		_hit(owner, enemy, float(player.damage) * float(skill.damage), (Vector2(enemy.pos) - point).normalized(), point)
 		game.perk_combat._status(enemy, "burn", float(skill.burn_dps), float(skill.burn_time), owner)
 	_event("burst", [point], 0.4, {"radius": radius, "color": "fire"})
+	game.elements.fire_at(point, radius, owner)
 
 
 func _chain(id: int, player: Dictionary, skill: Dictionary, target: Vector2, index: int) -> bool:
@@ -594,6 +595,9 @@ func _chain(id: int, player: Dictionary, skill: Dictionary, target: Vector2, ind
 		var field := ClassPerks.upgrade(skill, "storm_field")
 		_zone({"kind": "storm", "pos": Vector2(points.back()), "radius": float(field.radius), "time": float(field.time), "owner": id, "dps": float(field.dps), "tick": 0.0})
 	_event("chain", points, 0.45)
+	# where it struck, a puddle conducts it (boss_moves.electrify)
+	for point_index in range(1, points.size()):
+		game.boss_moves.electrify(Vector2(points[point_index]), float(game.balance.element.reach), id)
 	# Rückkopplung shortens the cooldown that _spent starts next.
 	if ClassPerks.has(player, "feedback"):
 		_delayed.append({"time": 0.0, "kind": "refund", "id": id, "index": index, "amount": float(ClassPerks.upgrade(skill, "feedback").refund) * float(hit.size() - 1)})
@@ -860,10 +864,13 @@ func _step_zones(delta: float) -> void:
 				for enemy: Dictionary in inside: game.perk_combat._status(enemy, "poison", float(zone.dps), 1.0, int(zone.owner))
 			"lava":
 				for enemy: Dictionary in inside: game.perk_combat._status(enemy, "burn", float(zone.dps), 1.0, int(zone.owner))
+				game.elements.fire_at(Vector2(zone.pos), float(zone.radius), int(zone.owner))
 			"storm":
 				zone.tick = float(zone.get("tick", 0.0)) + delta
 				if float(zone.tick) >= 0.5:
 					zone.tick = 0.0
+					# the storm's lightning charges the puddles under it
+					game.boss_moves.electrify(Vector2(zone.pos), float(zone.radius), int(zone.owner))
 					for enemy: Dictionary in inside: _hit(int(zone.owner), enemy, float(zone.dps) * 0.5, Vector2.ZERO, enemy.pos)
 		if float(zone.time) <= 0.0: zones.remove_at(index)
 

@@ -3,11 +3,18 @@ extends RefCounted
 ## light streak behind each arrow (longer and golden on a critical hit), a
 ## burning orb with orbiting motes and a turning rune ring for each spell, a
 ## flash where a shot leaves the bow or staff, a burst where it ends, light in
-## the dark along its path and bloom in the glow layer. Tinted by the weapon's
+## the dark along its path and a soft, small bloom in the glow layer. Drawn on
+## the crypt's art pixel (2 world px, src/vfx/pixel_paint.gd): opaque pixels
+## with a dark outline, fading by the ordered dither, cores never whiter than
+## a pixel or two (art review, production/qa/evidence/crypt-vfx-review). Tinted by the weapon's
 ## glow colour (items.json "glow", sent as the player's "glow") or by the
 ## element of the hero's build. Pure presentation: it only reads snapshots.
 
 const Glow = preload("res://src/vfx/glow.gd")
+const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
+## World px per art pixel.
+const ART := 2.0
+const INK := Color("1a1414")
 const ARROW := preload("res://assets/sprites/0x72/weapon_arrow.png")
 const ELEMENT_TINTS := {"cinder": Color("f7b46b"), "venom": Color("b8d878"), "frost": Color("9bdde6"), "storm": Color("baabe9")}
 const ARROW_TINT := Color("f3e3b5")
@@ -146,8 +153,9 @@ func _impact(track: Dictionary) -> void:
 
 # --- Drawing ---------------------------------------------------------------------------
 
-## An arrow: soft outer streak, bright inner streak and a white-hot core
-## behind the 0x72 arrow; the air parts in a thin cone at its head.
+## An arrow: a streak of light pixels behind it (bright at the arrow, thinning
+## out by the dither towards its end, a pixel wide, two on a critical shot),
+## the 0x72 arrow on the pixel grid and a white pixel at its head.
 func draw_arrow(canvas: CanvasItem, bullet: Dictionary, point: Vector2, clock: float) -> void:
 	var id := int(bullet.get("id", -1))
 	var track: Dictionary = _tracks.get(id, {})
@@ -156,62 +164,83 @@ func draw_arrow(canvas: CanvasItem, bullet: Dictionary, point: Vector2, clock: f
 	var aim := Vector2(float(bullet.get("vx", 1.0)), float(bullet.get("vy", 0.0))).normalized()
 	if aim.is_zero_approx(): aim = Vector2.RIGHT
 	var trail := _trail(id, point, CRIT_STREAK if crit else STREAK)
-	var count := trail.size()
-	for index in range(count - 1):
-		var fade := 1.0 - float(index) / float(maxi(1, count - 1))
-		canvas.draw_line(trail[index], trail[index + 1], Color(tint, 0.22 * fade), 7.0 * fade + 1.0)
-		canvas.draw_line(trail[index], trail[index + 1], Color(tint.lightened(0.25), 0.6 * fade), 3.0 * fade + 0.5)
-		if fade > 0.45: canvas.draw_line(trail[index], trail[index + 1], Color(1, 1, 1, 0.85 * fade), 1.5)
-	var side := aim.orthogonal()
-	canvas.draw_line(point + aim * 8.0, point - aim * 6.0 + side * 7.0, Color(tint.lightened(0.4), 0.45), 1.0)
-	canvas.draw_line(point + aim * 8.0, point - aim * 6.0 - side * 7.0, Color(tint.lightened(0.4), 0.45), 1.0)
-	canvas.draw_circle(point + aim * 8.0, 6.0 + sin(clock * 30.0 + float(id)) * 1.0, Color(tint, 0.3))
+	_streak(canvas, trail, tint, 2 if crit else 1)
 	var size := Vector2(ARROW.get_width(), ARROW.get_height()) * 2.0
-	canvas.draw_set_transform(point.round(), aim.angle() + PI * 0.5, Vector2.ONE)
+	canvas.draw_set_transform(point.snapped(Vector2(ART, ART)), aim.angle() + PI * 0.5, Vector2.ONE)
 	canvas.draw_texture_rect(ARROW, Rect2(-size * 0.5, size), false)
 	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	canvas.draw_circle(point + aim * 9.0, 2.0, Color(1, 1, 1, 0.9))
+	PixelPaint.cell(canvas, PixelPaint.at(point + aim * 9.0, ART), Color(1, 1, 1), ART)
 	if crit:
-		# A spinning four-point star rides the head of a critical arrow.
-		var spin := clock * 14.0
-		for ray in range(4):
-			var direction := Vector2.from_angle(spin + float(ray) * PI * 0.5)
-			canvas.draw_line(point + aim * 9.0 - direction * 3.0, point + aim * 9.0 + direction * 11.0, Color(CRIT_TINT, 0.9), 2.0)
+		# a four-point star at its head, turning in steps: plus, then cross
+		var head := PixelPaint.at(point + aim * 9.0, ART)
+		var diag := posmod(int(floorf(clock * PixelPaint.FPS)) / 2, 2) == 1
+		for r in range(1, 4):
+			for d: Vector2i in ([Vector2i(1, 1), Vector2i(-1, -1), Vector2i(1, -1), Vector2i(-1, 1)] if diag else [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]):
+				PixelPaint.cell(canvas, head + d * r, CRIT_TINT if r < 3 else CRIT_TINT.darkened(0.2), ART)
 	if particles != null and _rng.randf() < 0.35:
+		var side := aim.orthogonal()
 		var drift := -aim * _rng.randf_range(20.0, 60.0) + side * _rng.randf_range(-25.0, 25.0)
 		particles.emit(point - aim * 10.0, drift, tint.lightened(0.35), _rng.randf_range(0.18, 0.32), _mode_for(bullet), 1.5, 12.0)
 
 
-## A spell: a pulsing halo, a trail of shrinking glows, a turning rune ring,
-## the orb itself with a white core and three motes circling it.
+## A streak along `trail` (head first): pixels of the ramp from near-white at
+## the head to the tint, `width` pixels across, thinning out by the dither.
+func _streak(canvas: CanvasItem, trail: PackedVector2Array, tint: Color, width: int) -> void:
+	var count := trail.size()
+	if count < 2: return
+	var seen := {}
+	var total := 0.0
+	for index in range(count - 1): total += trail[index].distance_to(trail[index + 1])
+	var run := 0.0
+	for index in range(count - 1):
+		var a := trail[index]
+		var b := trail[index + 1]
+		var length := a.distance_to(b)
+		var steps := maxi(1, int(length / ART))
+		var side := (b - a).normalized().orthogonal()
+		for s in range(steps):
+			var p := a.lerp(b, float(s) / float(steps))
+			var k := (run + length * float(s) / float(steps)) / maxf(1.0, total)
+			for w in range(width):
+				var q := PixelPaint.at(p + side * float(w) * ART, ART)
+				if seen.has(q) or not PixelPaint.shown(q, 1.0 - k * 0.9): continue
+				seen[q] = true
+				PixelPaint.cell(canvas, q, Color(1, 1, 1) if k < 0.12 else tint.lightened(0.35) if k < 0.45 else tint, ART)
+		run += length
+
+
+## A spell: a ball of the tint's ramp with a dark outline and one white pixel,
+## a trail of shrinking pixels behind it, a ring of rune dashes turning round
+## it in steps and three motes circling it.
 func draw_orb(canvas: CanvasItem, bullet: Dictionary, point: Vector2, clock: float) -> void:
 	var id := int(bullet.get("id", -1))
 	var track: Dictionary = _tracks.get(id, {})
 	var crit := bool(bullet.get("critical", false))
 	var tint: Color = track.get("tint", ORB_TINT)
 	if crit: tint = tint.lerp(CRIT_TINT, 0.5)
-	var pulse := 0.5 + 0.5 * sin(clock * 18.0 + float(id))
+	var tq := int(floorf(clock * PixelPaint.FPS))
 	var trail := _trail(id, point, ORB_TRAIL)
 	var count := trail.size()
 	for index in range(count - 1, 0, -1):
 		var fade := 1.0 - float(index) / float(maxi(1, count - 1))
-		canvas.draw_circle(trail[index], 2.0 + 7.0 * fade, Color(tint, 0.3 * fade))
-	canvas.draw_circle(point, 18.0 + pulse * 3.0, Color(tint, 0.12))
-	canvas.draw_circle(point, 11.0 + pulse * 1.5, Color(tint, 0.3))
-	var turn := clock * 4.0 + float(id)
-	for rune in range(6):
-		var start := turn + float(rune) * TAU / 6.0
-		canvas.draw_arc(point, 16.0, start, start + 0.45, 4, Color(tint.lightened(0.35), 0.75), 1.5)
-	# A neutral pixel orb (make_fx_sprites.gd) takes the weapon colour exactly.
+		var q := PixelPaint.at(trail[index], ART)
+		if PixelPaint.shown(q, fade):
+			PixelPaint.cell(canvas, q, tint if fade > 0.5 else tint.darkened(0.3), ART)
+			if fade > 0.7:
+				PixelPaint.cell(canvas, q + Vector2i(0, 1), tint.darkened(0.3), ART)
+	# the rune ring: dashes on a pixel ellipse, turning in steps
+	PixelPaint.ellipse(canvas, point, 16.0, 16.0, Color(tint.lightened(0.35)), ART, 4, tq / 2)
+	# a neutral pixel orb (make_fx_sprites.gd) at the art pixel (scale 1) takes the tint exactly
 	if fx != null and fx.has("spell_orb"):
-		fx.draw_loop(canvas, "spell_orb", point, 0.0, 1.6, clock + float(id) * 0.1, tint.lightened(0.15), true)
+		fx.draw_loop(canvas, "spell_orb", point.snapped(Vector2(ART, ART)), 0.0, 1.0, clock + float(id) * 0.1, tint.lightened(0.15), true)
 	else:
-		canvas.draw_circle(point, 7.0, tint)
-	canvas.draw_circle(point, 3.5, Color(1, 1, 1, 0.95))
+		PixelPaint.ball(canvas, point, 3, [tint.lightened(0.6), tint.lightened(0.3), tint, tint.darkened(0.3)], INK, ART)
+	PixelPaint.cell(canvas, PixelPaint.at(point - Vector2(2, 2), ART), Color(1, 1, 1), ART)
 	for mote in range(3):
-		var angle := clock * 10.0 + float(mote) * TAU / 3.0 + float(id)
-		var at := point + Vector2(cos(angle) * 13.0, sin(angle) * 6.0)
-		canvas.draw_rect(Rect2(at - Vector2(1.5, 1.5), Vector2(3, 3)), Color(tint.lightened(0.55), 0.95))
+		var angle := floorf(clock * PixelPaint.FPS) / PixelPaint.FPS * 10.0 + float(mote) * TAU / 3.0 + float(id)
+		var q := PixelPaint.at(point + Vector2(cos(angle) * 13.0, sin(angle) * 6.0), ART)
+		PixelPaint.cell(canvas, q + Vector2i(0, 1), INK, ART)
+		PixelPaint.cell(canvas, q, tint.lightened(0.55), ART)
 	if particles != null and _rng.randf() < 0.5:
 		var aim := Vector2(float(bullet.get("vx", 1.0)), float(bullet.get("vy", 0.0))).normalized()
 		var drift := -aim * _rng.randf_range(10.0, 40.0) + Vector2(_rng.randf_range(-20.0, 20.0), _rng.randf_range(-30.0, 0.0))
@@ -225,7 +254,8 @@ func _mode_for(bullet: Dictionary) -> String:
 	return "spark"
 
 
-## Release flashes and impact bursts, over the actors.
+## Release flashes and impact bursts over the actors, on the pixel grid,
+## thinning out by the dither as they end.
 func draw_flashes(canvas: CanvasItem, clock: float) -> void:
 	for flash: Dictionary in _flashes:
 		var k := 1.0 - clampf((clock - float(flash.born)) / float(flash.life), 0.0, 1.0)
@@ -235,37 +265,52 @@ func draw_flashes(canvas: CanvasItem, clock: float) -> void:
 		var tint: Color = flash.tint
 		match str(flash.kind):
 			"bow":
-				# The string snaps: a crescent of air opens forward, a spark leaves the bow.
-				canvas.draw_arc(point, 6.0 + 16.0 * grow, aim.angle() - 0.9, aim.angle() + 0.9, 10, Color(tint.lightened(0.3), 0.8 * k), 2.0)
-				canvas.draw_line(point, point + aim * (10.0 + 26.0 * grow), Color(1, 1, 1, k), 3.0 * k + 0.5)
+				# the string snaps: a short crescent of air opens forward, a spark leaves the bow
+				var r := 6.0 + 16.0 * grow
+				var n := maxi(5, int(1.8 * r / ART))
+				for i in range(n + 1):
+					var q := PixelPaint.at(point + Vector2.from_angle(aim.angle() - 0.9 + 1.8 * float(i) / float(n)) * r, ART)
+					if PixelPaint.shown(q, k): PixelPaint.cell(canvas, q, tint.lightened(0.3), ART)
+				for i in range(int((6.0 + 14.0 * grow) / ART)):
+					var q := PixelPaint.at(point + aim * float(i) * ART, ART)
+					if PixelPaint.shown(q, k): PixelPaint.cell(canvas, q, Color(1, 1, 1) if i > 2 else tint.lightened(0.4), ART)
 			"cast":
-				# A small magic circle flares at the staff and turns away.
+				# a small magic circle flares at the staff: two dashed rings and ticks
 				var radius := 8.0 + 18.0 * grow
-				canvas.draw_arc(point, radius, 0.0, TAU, 24, Color(tint, 0.8 * k), 2.0)
-				canvas.draw_arc(point, radius * 0.62, 0.0, TAU, 18, Color(tint.lightened(0.3), 0.6 * k), 1.0)
-				for tick in range(8):
-					var angle := clock * 3.0 + float(tick) * TAU / 8.0
-					canvas.draw_line(point + Vector2.from_angle(angle) * radius * 0.62, point + Vector2.from_angle(angle) * radius, Color(tint.lightened(0.4), 0.7 * k), 1.0)
-				canvas.draw_circle(point, 6.0 * k, Color(1, 1, 1, 0.7 * k))
+				var tq := int(floorf(clock * PixelPaint.FPS))
+				if k > 0.15:
+					PixelPaint.ellipse(canvas, point, radius, radius, tint, ART, 2 if k > 0.5 else 3, tq)
+					PixelPaint.ellipse(canvas, point, radius * 0.62, radius * 0.62, tint.lightened(0.3), ART, 3, -tq)
+				if k > 0.6:
+					PixelPaint.cell(canvas, PixelPaint.at(point, ART), Color(1, 1, 1), ART)
 			"pierce":
-				# A four-point star where the arrow struck.
-				var reach := (10.0 + 10.0 * grow) * (1.5 if bool(flash.crit) else 1.0)
-				for direction: Vector2 in [aim, -aim, aim.orthogonal(), -aim.orthogonal()]:
-					canvas.draw_line(point, point + direction * reach, Color(tint.lightened(0.4), k), 2.0)
-				canvas.draw_circle(point, 4.0 * k + 1.0, Color(1, 1, 1, k))
-				if bool(flash.crit): canvas.draw_arc(point, 8.0 + 22.0 * grow, 0.0, TAU, 20, Color(CRIT_TINT, k), 2.0)
+				# a four-point star where the arrow struck
+				var reach := int(((8.0 + 8.0 * grow) * (1.5 if bool(flash.crit) else 1.0)) / ART)
+				var c := PixelPaint.at(point, ART)
+				for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+					for r in range(1, reach + 1):
+						if PixelPaint.shown(c + d * r, k * (1.0 - float(r) / float(reach + 1) * 0.5)):
+							PixelPaint.cell(canvas, c + d * r, tint.lightened(0.4) if r > 1 else Color(1, 1, 1), ART)
+				PixelPaint.cell(canvas, c, Color(1, 1, 1), ART)
+				if bool(flash.crit) and k > 0.3:
+					PixelPaint.ellipse(canvas, point, 8.0 + 22.0 * grow, 8.0 + 22.0 * grow, CRIT_TINT, ART, 2)
 			"nova":
-				# The spell bursts: a bright core, a double shock ring and short rays.
-				canvas.draw_circle(point, 10.0 + 18.0 * grow, Color(tint, 0.22 * k))
-				canvas.draw_arc(point, 10.0 + 34.0 * grow, 0.0, TAU, 28, Color(tint.lightened(0.3), 0.9 * k), 3.0 * k + 1.0)
-				canvas.draw_arc(point, 6.0 + 20.0 * grow, 0.0, TAU, 20, Color(1, 1, 1, 0.6 * k), 1.5)
+				# the spell bursts: a core of pixels, a ring running out, short rays
+				PixelPaint.disc(canvas, point, 8.0 + 10.0 * grow, 8.0 + 10.0 * grow, tint, ART, 0.8 * k)
+				PixelPaint.ellipse(canvas, point, 10.0 + 34.0 * grow, 10.0 + 34.0 * grow, tint.lightened(0.3), ART, 1 if k > 0.5 else 2)
 				for ray in range(8):
 					var direction := Vector2.from_angle(float(ray) * TAU / 8.0 + float(flash.born))
-					canvas.draw_line(point + direction * (12.0 + 26.0 * grow), point + direction * (18.0 + 36.0 * grow), Color(tint.lightened(0.4), k), 2.0)
-				canvas.draw_circle(point, 7.0 * k, Color(1, 1, 1, 0.9 * k))
+					for i in range(3):
+						var q := PixelPaint.at(point + direction * (14.0 + 30.0 * grow + float(i) * ART), ART)
+						if PixelPaint.shown(q, k): PixelPaint.cell(canvas, q, tint.lightened(0.4), ART)
+				if k > 0.5:
+					var c := PixelPaint.at(point, ART)
+					for d: Vector2i in [Vector2i.ZERO, Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+						PixelPaint.cell(canvas, c + d, Color(1, 1, 1), ART)
 
 
-## Bloom for the glow layer: streaks, orbs, flashes.
+## A small, soft bloom for the glow layer, in the shot's colour only (no white
+## burn-out): the pixel shapes stay readable under it.
 func draw_glow(canvas: CanvasItem, snapshot: Dictionary, position: Callable, clock: float, level: float) -> void:
 	if level <= 0.0: return
 	for bullet: Dictionary in snapshot.get("bullets", []):
@@ -276,19 +321,29 @@ func draw_glow(canvas: CanvasItem, snapshot: Dictionary, position: Callable, clo
 		var crit := bool(bullet.get("critical", false))
 		var tint: Color = CRIT_TINT if crit and str(bullet.style) == "arrow" else track.get("tint", ARROW_TINT)
 		if str(bullet.style) == "arrow":
-			var trail := _trail(id, point, (CRIT_STREAK if crit else STREAK) * 0.7)
-			Glow.line(canvas, point, trail[trail.size() - 1], 16.0, Color(tint, 0.3 * level))
-			Glow.dot(canvas, point, 18.0, Color(tint, 0.4 * level))
+			Glow.dot(canvas, point, _room(point, 12.0), Color(tint, 0.18 * level))
 		else:
-			var pulse := 0.85 + 0.15 * sin(clock * 18.0 + float(id))
-			var trail := _trail(id, point, ORB_TRAIL)
-			Glow.line(canvas, point, trail[trail.size() - 1], 26.0, Color(tint, 0.25 * level))
-			Glow.dot(canvas, point, 46.0 * pulse, Color(tint, 0.55 * level))
-			Glow.dot(canvas, point, 16.0, Color(1, 1, 1, 0.35 * level))
+			Glow.dot(canvas, point, _room(point, 24.0), Color(tint, 0.28 * level))
 	for flash: Dictionary in _flashes:
 		var k := 1.0 - clampf((clock - float(flash.born)) / float(flash.life), 0.0, 1.0)
-		var radius := 70.0 if str(flash.kind) == "nova" else 40.0
-		Glow.dot(canvas, flash.pos, radius * (0.6 + 0.4 * k), Color(flash.tint, 0.5 * k * level))
+		var radius := 40.0 if str(flash.kind) == "nova" else 22.0
+		Glow.dot(canvas, flash.pos, _room(flash.pos, radius * (0.6 + 0.4 * k)), Color(flash.tint, 0.3 * k * level))
+
+
+## The bloom's radius at `point`, cut back to the nearest wall so no glow
+## shines through it (PixelPaint.clip, set by the host; else `radius`).
+func _room(point: Vector2, radius: float) -> float:
+	if not PixelPaint.clip.is_valid(): return radius
+	var r := radius
+	for i in range(8):
+		var dir := Vector2.from_angle(TAU * float(i) / 8.0)
+		var step := 4.0
+		while step < r:
+			if not PixelPaint.clip.call(point + dir * step):
+				r = step
+				break
+			step += 4.0
+	return r
 
 
 ## Light in the dark crypt (Vector4 x, y, radius, strength): every flying shot

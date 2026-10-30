@@ -1,8 +1,8 @@
 extends SceneTree
 ## The Pixel / HD switch (src/core/graphics_settings.gd): one stored choice for
-## every world; the Hell-Dungeon has both sets and switches at once (sprites,
-## filtering, hero size), the Frostgruft and the crypt keep their pixel look and
-## say so; the pause menu shows the choice; other options stay in the file.
+## every world; the Hell-Dungeon and the Frostgruft have both sets and switch at
+## once (sprites, filtering, hero size), the crypt keeps its one look and says so;
+## the pause menu shows the choice; other options stay in the file.
 
 const GraphicsSettings = preload("res://src/core/graphics_settings.gd")
 const HellScene = preload("res://src/hell/hell_dungeon.tscn")
@@ -84,8 +84,9 @@ func _test_hell() -> void:
 func _test_frost() -> void:
 	GraphicsSettings.store("hd", PATH)
 	var game: Node = await _open(FrostScene)
-	check(str(game.theme.sprites) == "res://assets/sprites/frost/", "the Frostgruft keeps its own set (no hell sprites)")
-	check(not game.apply_graphics("hd"), "the Frostgruft has no HD set yet")
-	check(GraphicsSettings.note(game.theme, "hd").contains("nur PIXEL"), "the Frostgruft says it keeps pixel art")
+	check(str(game.theme.sprites) == "res://assets/sprites/frost_hd/", "the Frostgruft opens in its own HD set (no hell sprites)")
+	check(not bool(game.theme.pixel), "the HD set draws smooth")
+	check(game.apply_graphics("pixel") and str(game.theme.sprites) == "res://assets/sprites/frost/", "the Frostgruft switches to its pixel set at once")
+	check(GraphicsSettings.note(game.theme, "hd") == "Grafik: HD", "the Frostgruft says it has HD graphics")
 	game.queue_free()
 	await process_frame

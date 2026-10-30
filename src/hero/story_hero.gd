@@ -12,13 +12,21 @@ extends RefCounted
 ## - the skills' effects through story_skill_fx.gd (the crypt's skill_fx.gd:
 ##   whirl dust, blade wave, fireball, chain lightning, blink, Photoneneis,
 ##   caltrops, Rage, with pixel particles, floor marks and bloom).
+## - the hero's body through the crypt's part rigs (assets/data/rigs.json knight,
+##   elf, wizard via src/rig/rig_renderer.gd draw_hero): bob, walk, plume and hat
+##   sway, hit recoil, death, at the story worlds' pixel size.
 ## The world keeps its own rules, skills, subclasses and relics.
 
 const HeroLook = preload("res://src/hero/hero_look.gd")
 const AttackFx = preload("res://src/vfx/attack_fx.gd")
+const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
 const FxSprites = preload("res://src/vfx/fx_sprites.gd")
 const StorySkillFx = preload("res://src/hero/story_skill_fx.gd")
 const ClassPerks = preload("res://src/player/class_perks.gd")
+const RigLibrary = preload("res://src/rig/rig_library.gd")
+const RigRenderer = preload("res://src/rig/rig_renderer.gd")
+## The crypt's class figures (src/dungeon_view.gd CLASS_RIGS).
+const CLASS_RIGS := {"swordsman": "knight", "archer": "elf", "mage": "wizard"}
 const KEY := "hero"
 ## Shots whose look comes from attack_fx (the hero's arrows and spells).
 const SHOT_STYLES := {"arrow": "arrow", "magic": "magic"}
@@ -40,6 +48,11 @@ var _glow_layer: Node2D
 var _ground_layer: Node2D
 ## The skills' effects (crypt look).
 var skill_fx: StorySkillFx
+## The hero's part rig (the crypt's class figure); null when the rigs are missing.
+var rigs: RigRenderer
+## Hits taken, for the rig's hit recoil (counted on each new invulnerability).
+var hurts := 0
+var _last_inv := 0.0
 
 
 class ShotLayer extends Node2D:
@@ -62,6 +75,8 @@ func _init(game: Node) -> void:
 	look.staff_hand = Vector2(5, 0)
 	feel = ClassPerks.data().get("sword_feel", {})
 	skill_fx = StorySkillFx.new(g, scale)
+	rigs = RigRenderer.new(RigLibrary.shared())
+	if not rigs.is_ready(): rigs = null
 	attack.fx = skill_fx.fx
 	attack.particles = skill_fx.particles
 	_ground_layer = ShotLayer.new()
@@ -143,8 +158,22 @@ func check_slam(m: Dictionary, before: Vector2, dt: float) -> void:
 	g._sound_raw("attack_slam")
 
 
+## True on walkable floor at crypt point `p` (this layer's units): where the
+## shots' pixels may show.
+func open_floor(p: Vector2) -> bool:
+	var w := p * scale
+	return g._walkable(g._cell(int(floor(w.x / float(g.C))), int(floor(w.y / float(g.C)))))
+
+
 ## Per frame: Rage's queued second swings, the shots' paths for attack_fx.
 func update(dt: float) -> void:
+	# the rig's clock, and a hit recoil on every new hit (invulnerability starts again)
+	if rigs != null:
+		rigs.step(dt)
+		rigs.footfalls.clear()
+	var inv := float(g.state.get("inv", 0.0))
+	if inv > _last_inv + 0.05: hurts += 1
+	_last_inv = inv
 	for q: Dictionary in _queue:
 		q.t = float(q.t) - dt
 	var due := _queue.filter(func(q: Dictionary) -> bool: return float(q.t) <= 0.0)
@@ -209,8 +238,24 @@ func view_state() -> Dictionary:
 
 ## Draws the hero through the shared look. `draw_body(feet, alpha)` draws the
 ## figure standing at `feet`; the hero's chest is `lift` pixels above the feet.
-func draw_hero(canvas: CanvasItem, t: float, lift: float, draw_body: Callable) -> void:
+## With `hero_look` (SubKit.look: frames, tint, scale) the class figure is drawn
+## as the crypt's part rig; a changed figure (the ogre form) keeps `draw_body`.
+func draw_hero(canvas: CanvasItem, t: float, lift: float, draw_body: Callable, hero_look: Dictionary = {}) -> void:
 	var view := view_state()
+	var rig := rig_name(hero_look)
+	if not rig.is_empty():
+		var size := scale * float(hero_look.get("scale", 1.0))
+		var tint: Color = hero_look.get("tint", Color.WHITE)
+		# steps keep pace with the hero's speed like the crypt's (stride 32 crypt px / speed)
+		var pace := maxf(60.0, (g.player.get("vel", Vector2.ZERO) as Vector2).length())
+		var body_view := {"moving": bool(g.player.get("moving", false)), "hp": float(g.state.get("hp", 1)), "hurts": hurts, "step_time": 32.0 * scale / pace}
+		var facing := face(t)
+		# the rig is placed by its centre; the story worlds give the feet
+		var shape: Dictionary = rigs.library.rig(rig)
+		var up := Vector2(0, (float(shape.ground.y) - float(shape.center.y)) * float(shape.scale) * size)
+		draw_body = func(feet: Vector2, alpha: float) -> void:
+			var key := KEY if alpha >= 1.0 else "ghost"
+			rigs.draw_hero(canvas, key, body_view, feet - up, rig, facing, tint.a * alpha, size, Color(tint.r, tint.g, tint.b))
 	var feet := Vector2(g.player.x, g.player.y)
 	var chest := feet - Vector2(0, lift)
 	var aim: Vector2 = g.HeroKit._aim(g)
@@ -223,6 +268,13 @@ func draw_hero(canvas: CanvasItem, t: float, lift: float, draw_body: Callable) -
 		look.draw_weapon(canvas, KEY, view, chest + offset, aim, t, g.weapon_tex, AttackFx.tint_for({"style": "arrow"}, {"glow": str(g.state.get("glow", ""))}))
 
 
+## The crypt rig of the hero's class, or "" (no rigs, another figure such as the ogre form).
+func rig_name(hero_look: Dictionary) -> String:
+	if rigs == null or hero_look.is_empty() or not CLASS_RIGS.has(str(g.class_id)): return ""
+	if hero_look.get("frames") != g.hero_frames: return ""
+	return str(CLASS_RIGS[str(g.class_id)])
+
+
 ## The way the hero faces: the aim, or turning with a whirling blade.
 func face(t: float) -> float:
 	return look.face(view_state(), g.HeroKit._aim(g), t)
@@ -231,12 +283,17 @@ func face(t: float) -> float:
 func draw_layer(canvas: CanvasItem, glow: bool) -> void:
 	var t := float(g.state.t)
 	if glow:
+		PixelPaint.clip = open_floor
 		attack.draw_glow(canvas, _snapshot, func(b: Dictionary) -> Vector2: return Vector2(float(b.x), float(b.y)), t, 1.0)
+		PixelPaint.clip = Callable()
 		skill_fx.draw_glow(canvas)
 		return
+	# the shots' streaks, rune rings, motes and flashes stop at the walls (src/vfx/pixel_paint.gd clip)
+	PixelPaint.clip = open_floor
 	for b: Dictionary in _snapshot.bullets:
 		var at := Vector2(float(b.x), float(b.y))
 		if str(b.style) == "arrow": attack.draw_arrow(canvas, b, at, t)
 		else: attack.draw_orb(canvas, b, at, t)
 	attack.draw_flashes(canvas, t)
+	PixelPaint.clip = Callable()
 	skill_fx.draw_over(canvas)

@@ -3,14 +3,17 @@ extends RefCounted
 ## rig's parts by their weights, so the parts always add up to the enemy's HP.
 ## A hit lands on the part at the impact point; a destroyed vital part kills,
 ## other parts fall off (and may grow back), and some parts enable an action
-## ("attack", "cast", "block", "beam", "summon") that is lost with them.
+## ("attack", "cast", "block", "beam", "summon") that is lost with them. Hell
+## rigs list several attack ids per part, disable an attack once a whole part
+## group is gone (both wings) and weaken attacks while parts are lost
+## (scale(): "weakens" {attack: {param: factor}}, multiplied over lost parts).
 ## Only the host calls this; clients draw `parts_lost` from the snapshot.
 
 const RigLibrary = preload("res://src/rig/rig_library.gd")
 
 var _library: RefCounted
 var _rng := RandomNumberGenerator.new()
-## enemy id -> part id chosen by the caller for the next damage to that enemy.
+## enemy key (uid, else id) -> part id chosen by the caller for the next damage.
 var _pending: Dictionary = {}
 ## rig name -> broad-phase reach in world px.
 var _reach: Dictionary = {}
@@ -93,13 +96,14 @@ func part_near(enemy: Dictionary, point: Vector2) -> String:
 
 ## The caller's impact part for the next damage to this enemy.
 func set_pending(enemy: Dictionary, part: String) -> void:
-	if not part.is_empty(): _pending[int(enemy.id)] = part
+	if not part.is_empty(): _pending[_key(enemy)] = part
 
 
+## The pending impact part of this enemy (used once), or "".
 func take_pending(enemy: Dictionary) -> String:
-	var id := int(enemy.get("id", -1))
-	var part: String = str(_pending.get(id, ""))
-	_pending.erase(id)
+	var key: Variant = _key(enemy)
+	var part: String = str(_pending.get(key, ""))
+	_pending.erase(key)
 	return part
 
 
@@ -108,7 +112,8 @@ func take_pending(enemy: Dictionary) -> String:
 ## part breaks off once its own HP is gone, and a broken vital part kills at
 ## once. An `unbreakable` part (a boss's legs, head and body) never breaks and
 ## never kills on its own: only the total HP decides. Without a part, a seeded
-## choice prefers non-vital parts (3 in 4), like the review page.
+## choice prefers non-vital parts (3 in 4), like the review page; on hell rigs
+## it never picks a hidden `exposed` part or one without pixels (_fallback).
 ## Returns {"part", "destroyed", "killed"}.
 func damage(enemy: Dictionary, amount: float, part: String = "") -> Dictionary:
 	var living := alive(enemy)
@@ -131,7 +136,10 @@ func damage(enemy: Dictionary, amount: float, part: String = "") -> Dictionary:
 			if enemy.parts.has(extra) and not extra in enemy.parts_lost:
 				enemy.parts[extra].hp = 0.0
 				_lose(enemy, extra)
-		if float(spec.get("regrow", 0.0)) > 0.0: enemy.regrow[part] = float(spec.regrow)
+		# The rig's own delay wins; else the enemy's (a hell boss: regrow_after).
+		var regrow := float(spec.get("regrow", 0.0))
+		if regrow <= 0.0: regrow = float(enemy.get("regrow_after", 0.0))
+		if regrow > 0.0: enemy.regrow[part] = regrow
 		enemy.part_breaks = int(enemy.get("part_breaks", 0)) + 1
 	# Every part gone (no vital one hit): the enemy falls apart.
 	if alive(enemy).is_empty(): result.killed = true
@@ -139,7 +147,9 @@ func damage(enemy: Dictionary, amount: float, part: String = "") -> Dictionary:
 	return result
 
 
-## Regrowth: a lost part returns with half its HP after its delay.
+## Regrowth: a lost part returns with half its HP after its delay. The parts
+## that fell with it (also_detach, a tail's tip) return with it unless they
+## wait for a regrowth of their own.
 func step(enemy: Dictionary, delta: float) -> void:
 	if not has_parts(enemy) or float(enemy.hp) <= 0.0: return
 	var regrow: Dictionary = enemy.regrow
@@ -149,17 +159,70 @@ func step(enemy: Dictionary, delta: float) -> void:
 		regrow.erase(id)
 		enemy.parts_lost.erase(id)
 		enemy.parts[id].hp = float(enemy.parts[id].max) * 0.5
+		for extra: String in _spec(enemy, id).get("also_detach", []):
+			if extra in enemy.parts_lost and not regrow.has(extra) and enemy.parts.has(extra):
+				enemy.parts_lost.erase(extra)
+				enemy.parts[extra].hp = float(enemy.parts[extra].max) * 0.5
 		enemy.part_regrows = int(enemy.get("part_regrows", 0)) + 1
 		# A regrown part brings its HP back to the total (up to the maximum).
 		enemy.hp = minf(float(enemy.max_hp), float(enemy.hp) + float(enemy.parts[id].hp))
 
 
-## False while a part that enables `action` is lost.
+## The part a hit on `part` counts on: a living breakable part that would take
+## an unbreakable `part` with it (also_detach: a hit on the dragon's tail tip
+## counts on the severable tail_2), else `part` itself.
+func carrier(enemy: Dictionary, part: String) -> String:
+	if part.is_empty() or not bool(_spec(enemy, part).get("unbreakable", false)): return part
+	var living := alive(enemy)
+	for id: String in living:
+		var spec: Dictionary = _spec(enemy, id)
+		if bool(spec.get("unbreakable", false)): continue
+		if part in Array(spec.get("also_detach", [])): return id
+	return part
+
+
+## False while a part that enables `action` is lost (its "disables" names the
+## action: one string in the crypt, a list in hell rigs), or while every part
+## of a rig group that disables `action` is lost (both wings: no bombing run).
 func can(enemy: Dictionary, action: String) -> bool:
 	if not has_parts(enemy): return true
-	for id: String in enemy.parts_lost:
-		if str(_spec(enemy, id).get("disables", "")) == action: return false
+	var lost: Array = enemy.get("parts_lost", [])
+	for id: Variant in lost:
+		if action in RigLibrary.disabled_actions(_spec(enemy, str(id)).get("disables", "")): return false
+	var groups: Dictionary = _library.rig(str(enemy.get("rig", ""))).get("groups", {})
+	for group_id: Variant in groups:
+		var group: Dictionary = groups[group_id]
+		if not action in RigLibrary.disabled_actions(group.get("disables", [])): continue
+		var members: Array = group.get("parts", [])
+		if members.is_empty(): continue
+		var all_lost := true
+		for member: Variant in members:
+			if not str(member) in lost:
+				all_lost = false
+				break
+		if all_lost: return false
 	return true
+
+
+## Strength factor of one parameter of `action` while parts are lost: the
+## product of the "weakens"[action][param] factors of every lost part (1.0
+## when none). Callers round counts (min 1) and treat 0 on a flag as off.
+func scale(enemy: Dictionary, action: String, param: String) -> float:
+	return float(weakened(enemy, action).get(param, 1.0))
+
+
+## Every weakened parameter of `action` -> its combined factor (for logs and
+## tests); empty while nothing that weakens `action` is lost.
+func weakened(enemy: Dictionary, action: String) -> Dictionary:
+	var result: Dictionary = {}
+	if not has_parts(enemy): return result
+	for id: Variant in enemy.get("parts_lost", []):
+		var weakens: Variant = _spec(enemy, str(id)).get("weakens", {})
+		if not weakens is Dictionary or not weakens.get(action) is Dictionary: continue
+		var params: Dictionary = weakens[action]
+		for param: Variant in params:
+			result[str(param)] = float(result.get(str(param), 1.0)) * float(params[param])
+	return result
 
 
 ## Movement scale from lost legs (one 0.6, both 0.35) or a skeleton's torso (0.7).
@@ -188,6 +251,14 @@ func _spec(enemy: Dictionary, id: String) -> Dictionary:
 	return _library.rig(str(enemy.get("rig", ""))).get("by_id", {}).get(id, {})
 
 
+## Per-enemy key: hell monsters carry a string id and an int uid, crypt enemies
+## an int id. Numbers are keyed as int so 5 and 5.0 stay the same enemy.
+func _key(enemy: Dictionary) -> Variant:
+	var key: Variant = enemy.get("uid", enemy.get("id", -1))
+	if key is int or key is float: return int(key)
+	return str(key)
+
+
 func _face(enemy: Dictionary) -> float:
 	return -1.0 if float(enemy.get("face", 1.0)) < 0.0 else 1.0
 
@@ -196,10 +267,27 @@ func _active(enemy: Dictionary) -> String:
 	return str(enemy.get("exposed_action", ""))
 
 
+## The part hit by damage without an impact point (statuses, burn ticks): a
+## seeded choice, vital parts 1 in 4. On layered (hell) rigs only parts a hit
+## could reach are candidates: no `exposed` part outside its action (the throat
+## between breaths) and no part without pixels (missing image); if that leaves
+## none, every living part is. Crypt rigs keep the legacy candidates, so their
+## seeded sequence is unchanged.
 func _fallback(enemy: Dictionary, living: Dictionary) -> String:
+	var candidates: Array = living.keys()
+	if bool(_library.rig(str(enemy.get("rig", ""))).get("layered", false)):
+		var active := _active(enemy)
+		var reachable: Array = []
+		for id: Variant in candidates:
+			var spec: Dictionary = _spec(enemy, str(id))
+			var exposed := str(spec.get("exposed", ""))
+			if not exposed.is_empty() and exposed != active: continue
+			if not Rect2(spec.get("bounds", Rect2())).has_area(): continue
+			reachable.append(id)
+		if not reachable.is_empty(): candidates = reachable
 	var vitals: Array[String] = []
 	var others: Array[String] = []
-	for id: String in living:
+	for id: String in candidates:
 		if bool(_spec(enemy, id).get("vital", false)): vitals.append(id)
 		else: others.append(id)
 	vitals.sort()

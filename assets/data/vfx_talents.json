@@ -1,0 +1,26 @@
+{
+	"_note": "Weight of the talent effects on the view (src/vfx/talent_fx.gd take_feel), by importance: per tier the crypt's shake trauma (0..1, src/vfx/feedback.gd), the story worlds' shake in px (hell_game state.shake), a hold of the picture (hitstop, s) for the hero's own casts only, and a bloom flash in the element's colour (flash s, flash_r art cells). Events pick a tier; an ultimate's cast and its waves weigh most, each bought stage a bit more (stage_bonus). Client-side pools of the ultimates (pools): material, radius as a share of the hit radius (or art cells), length in s (0 = as long as the ultimate's buff). aura_glow: bloom strength of a lasting buff on the hero. Game feel review 2026-10-30 (production/qa/evidence/talent-vfx-review).",
+	"tiers": {
+		"small": {"trauma": 0.1, "shake_px": 3, "hitstop": 0.0, "flash": 0.12, "flash_r": 16},
+		"medium": {"trauma": 0.22, "shake_px": 6, "hitstop": 0.03, "flash": 0.18, "flash_r": 26},
+		"large": {"trauma": 0.42, "shake_px": 11, "hitstop": 0.05, "flash": 0.28, "flash_r": 40},
+		"huge": {"trauma": 0.62, "shake_px": 15, "hitstop": 0.08, "flash": 0.42, "flash_r": 60}
+	},
+	"events": {"nova": "small", "shout": "small", "trap_boom": "medium", "dash": "small", "leap": "small", "parry": "small", "crit": "small"},
+	"ult_cast": "huge",
+	"ult_wave": "large",
+	"stage_bonus": 0.12,
+	"pools": {
+		"fire_6": {"st": "fire", "share": 0.3, "time": 2.2},
+		"frost_6": {"st": "ice", "share": 0.42, "time": 4.0, "time_stage2": 3.0},
+		"berserk_6": {"st": "blood", "cells": 17, "time": 0.0},
+		"berserk_6_wave": {"st": "blood", "share": 0.45, "time": 4.0}
+	},
+	"dome": {
+		"_note": "The shields as a rubber dome over the hero (src/vfx/talent_dome.gd). sizes: [W base half width, D base half depth, H height over the feet] in art cells for a guard flash, a shield (Kristallschild, Schutzwall, Wächtereid) and Unbezwingbar; the hero is about 16 x 28 cells. spring pulls each outline point back (1/s^2), damping slows it (1/s; low = wobbly), tension ties neighbours so a dent runs round as a wave, keep_volume (1/s) pushes the rest out when one side dents, push = a blow's speed into the dome (cells/s at power 1), max_dent a share of W, squash_* the whole dome's squash and spring back. User request 2026-10-30: a rubber dome that gives on the side an arrow hits and springs back.",
+		"sizes": [[17, 7, 30], [20, 8, 34], [25, 10, 40]],
+		"spring": 110, "damping": 6, "tension": 300, "keep_volume": 25, "push": 150, "max_dent": 0.5,
+		"squash_spring": 200, "squash_damping": 9, "squash_push": 3
+	},
+	"aura_glow": {"bloodlust": 0.14, "frenzy": 0.07, "timebreak": 0.12, "unbreakable": 0.1, "bulwark": 0.06, "oath": 0.06, "shield": 0.06, "channel": 0.08}
+}

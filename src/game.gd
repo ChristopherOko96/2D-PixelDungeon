@@ -47,12 +47,15 @@ const Aggro = preload("res://src/combat/aggro.gd")
 const BodyParts = preload("res://src/combat/body_parts.gd")
 const VoidBossAI = preload("res://src/combat/void_boss_ai.gd")
 const BossMoves = preload("res://src/combat/boss_moves.gd")
+const Elements = preload("res://src/combat/elements.gd")
 const SheetMonsters = preload("res://src/combat/sheet_monsters.gd")
 const TalentCombat = preload("res://src/combat/talent_combat.gd")
 const RunProgress = preload("res://src/progress/run_progress.gd")
 const PlayerEffects = preload("res://src/combat/player_effects.gd")
 const Inventory = preload("res://src/items/inventory.gd")
 const Cheats = preload("res://src/debug/cheats.gd")
+const TestArena = preload("res://src/debug/test_arena.gd")
+const Profile = preload("res://src/progress/profile.gd")
 const SaveStore = preload("res://src/save/save_store.gd")
 const CryptSave = preload("res://src/save/crypt_save.gd")
 
@@ -102,6 +105,8 @@ var body_parts := BodyParts.new()
 var void_ai := VoidBossAI.new()
 ## Extra moves of bosses and crypt enemies, and their floor zones (host).
 var boss_moves := BossMoves.new()
+## Element reactions with gameplay (fire on poison, Glatteis, steam, crust).
+var elements := Elements.new()
 ## 0x72 sheet monsters and floor bosses of the themed endless floors (host).
 var sheet_monsters := SheetMonsters.new()
 ## Talent trees in the run: resources, talent bar, ultimate, wolves, traps (host).
@@ -223,6 +228,11 @@ signal editor_return_requested
 var editor_preview_mode := false
 ## Dungeon-Werkstatt test play: the room forced into its floor, and whether
 ## leaving the run reopens the editor.
+## Debug: the Testraum is running (start_test_arena), its test bar, and the
+## profile file of the player while the run writes to a copy.
+var test_arena := false
+var _arena_bar: Control = null
+var _arena_profile := ""
 var test_room_id := ""
 var test_room_floor := 0
 var return_to_room_editor := false
@@ -326,6 +336,7 @@ func _ready() -> void:
 	crypt_ai.bind(self)
 	void_ai.bind(self)
 	boss_moves.bind(self)
+	elements.bind(self)
 	sheet_monsters.bind(self)
 	progress.bind(self)
 	talent_combat.bind(self)
@@ -748,6 +759,7 @@ func _step_world(delta: float) -> void:
 		inventory.step(delta)
 	if phase in ["combat", "explore"]:
 		boss_moves.update(delta)
+		elements.update(delta)
 		sheet_monsters.update(delta)
 	if phase == "combat":
 		hordes.step(delta)
@@ -864,6 +876,7 @@ func _leave_or_return() -> void:
 
 
 func _leave_session(message: String = "Verbindung beendet.") -> void:
+	if test_arena: _end_test_arena()
 	pause_open = false
 	reward_open = false
 	_transition_state.clear()
@@ -1072,6 +1085,11 @@ func _send_local_input() -> void:
 	if throw_slot >= 0 and fire:
 		_send_action("inv_throw", throw_slot)
 		throw_slot = -1
+		fire = false
+		_fire_needs_release = true
+	# Testraum: with an element tool picked, a click sets it on the floor instead
+	if fire and is_instance_valid(_arena_bar) and _arena_bar.has_tool():
+		_arena_bar.place(mouse)
 		fire = false
 		_fire_needs_release = true
 	var live_targets: Array = state.get("enemies",[]).filter(func(enemy: Dictionary): return enemy.get("hp",0) > 0)
@@ -1381,6 +1399,7 @@ func _spawn_room(from_room: int = 0) -> void:
 	crypt_ai.bind(self)
 	void_ai.bind(self)
 	boss_moves.reset()
+	elements.reset()
 	sheet_monsters.reset()
 	fx_events.clear()
 	if room < 1 or room > floor_layouts.size(): return
@@ -1997,7 +2016,7 @@ func _check_room_end() -> void:
 		run_slot = 0
 		print("TEAM_WIPE room=%d" % room)
 		_broadcast_state(true)
-	elif enemies.is_empty() and not hordes.pending():
+	elif enemies.is_empty() and not hordes.pending() and not test_arena:
 		if str(current_layout.id) not in cleared_room_ids: cleared_room_ids.append(str(current_layout.id))
 		bullets.clear()
 		perk_combat.room_cleared()
@@ -2249,13 +2268,13 @@ func _make_snapshot(advance_sequence: bool = true) -> Dictionary:
 		visible_enemies[-1].merge({"enemy_name":str(enemy.get("enemy_name","Kryptawesen")),"attack_kind":str(enemy.get("attack_kind","")),"attack_length":attack_length,"aim_x":attack_aim.x,"aim_y":attack_aim.y,"tx":point.x,"ty":point.y,"blocks":int(enemy.get("blocks",0)),"cast_count":int(enemy.get("summons_cast",0)),"caster_id":int(enemy.get("caster_id",0))})
 		if bool(enemy.get("sheet",false)): sheet_monsters.snapshot_entry(enemy,visible_enemies[-1])
 	var visible_bullets: Array = []
-	for bullet in bullets: visible_bullets.append({"id":bullet.get("id",-1),"radius":float(bullet.get("radius",balance.bullet.radius)),"x": bullet.pos.x, "y": bullet.pos.y, "owner": bullet.owner,"element":str(bullet.get("element","")),"critical":bool(bullet.get("critical",false)),"style":str(bullet.get("style","")),"talent":str(bullet.get("talent","")),"vx":float(bullet.velocity.x),"vy":float(bullet.velocity.y)})
+	for bullet in bullets: visible_bullets.append({"id":bullet.get("id",-1),"radius":float(bullet.get("radius",balance.bullet.radius)),"x": bullet.pos.x, "y": bullet.pos.y, "owner": bullet.owner,"element":str(bullet.get("element","")),"critical":bool(bullet.get("critical",false)),"style":str(bullet.get("style","")),"talent":str(bullet.get("talent","")),"stage":int(bullet.get("stage",0)),"vx":float(bullet.velocity.x),"vy":float(bullet.velocity.y)})
 	if advance_sequence: packet_sequence += 1
 	var map_rooms: Array[Dictionary] = []
 	for i in range(floor_layouts.size()):
 		var layout: Dictionary = floor_layouts[i]
 		map_rooms.append({"id": layout.id, "title": layout.title, "boss": layout.boss, "grid_x": layout.grid_x, "grid_y": layout.grid_y, "cleared": str(layout.id) in cleared_room_ids})
-	return {"server_time":Time.get_ticks_usec()/1000000.0,"players": visible_players, "enemies": visible_enemies, "bullets": visible_bullets, "room": room, "phase": phase, "seed": floor_seed, "run_seed": run_seed, "run_serial": run_serial, "floor_index": floor_index, "cleared_room_ids": cleared_room_ids.duplicate(), "seq": packet_sequence, "peer_count": players.size(), "max_players":int(balance.network.max_players), "perk_options": perk_options, "perk_offers":perk_offers.duplicate(), "perk_events":perk_combat.visual_events(), "room_layout": current_layout, "room_layout_revision": _room_layout_revision, "room_serial": _room_serial, "floor_map": map_rooms, "generator_version": Dungeon.GENERATOR_VERSION, "boss_name":balance.boss.get("display_name","BOSS"),"fx_events":fx_events.duplicate(true),"team":team_progress.snapshot(),"loot_chests":chests.snapshot(),"boss_zones":boss_moves.snapshot(),"horde":hordes.snapshot(),"stairs_open":stairs_open(),"skill_fx":hero_skills.snapshot(),"hazards":sheet_monsters.snapshot(),"talents":talent_combat.snapshot(),"progress":progress.snapshot(),"transition":(_transition_state if not _transition_state.is_empty() else _last_transition_state).duplicate()}
+	return {"server_time":Time.get_ticks_usec()/1000000.0,"players": visible_players, "enemies": visible_enemies, "bullets": visible_bullets, "room": room, "phase": phase, "seed": floor_seed, "run_seed": run_seed, "run_serial": run_serial, "floor_index": floor_index, "cleared_room_ids": cleared_room_ids.duplicate(), "seq": packet_sequence, "peer_count": players.size(), "max_players":int(balance.network.max_players), "perk_options": perk_options, "perk_offers":perk_offers.duplicate(), "perk_events":perk_combat.visual_events(), "room_layout": current_layout, "room_layout_revision": _room_layout_revision, "room_serial": _room_serial, "floor_map": map_rooms, "generator_version": Dungeon.GENERATOR_VERSION, "boss_name":balance.boss.get("display_name","BOSS"),"fx_events":fx_events.duplicate(true),"team":team_progress.snapshot(),"loot_chests":chests.snapshot(),"boss_zones":boss_moves.snapshot(),"element_gas":elements.snapshot(),"horde":hordes.snapshot(),"stairs_open":stairs_open(),"skill_fx":hero_skills.snapshot(),"hazards":sheet_monsters.snapshot(),"talents":talent_combat.snapshot(),"progress":progress.snapshot(),"transition":(_transition_state if not _transition_state.is_empty() else _last_transition_state).duplicate()}
 
 
 func _broadcast_state(reliable: bool) -> void:
@@ -2502,6 +2521,7 @@ func _build_main_menu() -> void:
 	main_menu.quit_requested.connect(func(): get_tree().quit())
 	main_menu.rooms_saved.connect(_use_saved_rooms)
 	main_menu.room_test_requested.connect(_start_room_test)
+	main_menu.test_arena_requested.connect(start_test_arena)
 	main_menu.hell_requested.connect(_start_hell)
 	main_menu.story_scene_requested.connect(_open_story_scene)
 	main_menu.save_load_requested.connect(_load_save)
@@ -2619,6 +2639,65 @@ func _start_solo(_endless_mode: bool = false, class_id: String = "") -> void:
 	_server_action(1, "start", 0)
 	if not jump.is_empty() and phase == "combat": _debug_jump(int(jump.floor), int(jump.room))
 	_refresh_ui()
+
+
+## Debug: the Testraum (main menu TESTRAUM): a solo run in the biggest room
+## of floor 1 of a fixed seed (assets/data/debug_test_arena.json), no hordes,
+## no enemies until fetched, a room that never counts as cleared, and the test
+## bar (src/debug/test_arena.gd). The run writes to a copy of the profile; the
+## player's own profile is loaded again when it ends (_end_test_arena).
+func start_test_arena(class_id: String) -> void:
+	if not OS.is_debug_build(): return
+	var preset: Dictionary = TestArena._load(TestArena.DATA)
+	if _arena_profile.is_empty(): _arena_profile = progress.save_path
+	var copy := str(preset.get("profile_copy", "user://profile_testraum.json"))
+	Profile.save_profile(progress.profile, copy)
+	progress.save_path = copy
+	test_arena = true
+	var seed_before := requested_seed
+	requested_seed = int(preset.get("seed", 4242))
+	_start_solo(false, class_id)
+	requested_seed = seed_before
+	if not (active and hosting):
+		_end_test_arena()
+		return
+	# the room with the most open floor
+	var best := 0
+	var most := -1
+	for index in range(floor_layouts.size()):
+		var open := 0
+		for entry: Dictionary in floor_layouts[index].get("painted_tiles", []):
+			if str(entry.get("layer", "")) == "floor" and not bool(entry.get("solid", false)): open += 1
+		if open > most:
+			most = open
+			best = index
+	_debug_jump(1, best + 1)
+	enemies.clear()
+	bullets.clear()
+	hordes.enabled = false
+	phase = "combat"
+	_arena_bar = TestArena.new()
+	_arena_bar.setup(self)
+	ui.add_child(_arena_bar)
+	_broadcast_state(true)
+	_refresh_ui()
+
+
+## The Testraum again with another hero class.
+func restart_test_arena(class_id: String) -> void:
+	_leave_session("Testraum neu gestartet.")
+	start_test_arena.call_deferred(class_id)
+
+
+## Ends the Testraum: the test bar goes, the player's own profile comes back.
+func _end_test_arena() -> void:
+	test_arena = false
+	if is_instance_valid(_arena_bar): _arena_bar.queue_free()
+	_arena_bar = null
+	if not _arena_profile.is_empty():
+		progress.save_path = _arena_profile
+		progress.profile = Profile.load_profile(progress.data, _arena_profile)
+		_arena_profile = ""
 
 
 ## Debug only: moves a fresh solo run to `target_room` of `target_floor`. Rooms

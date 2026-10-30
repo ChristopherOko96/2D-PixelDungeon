@@ -10,7 +10,11 @@ extends RefCounted
 ## clients draw `snapshot()`.
 
 const Dungeon = preload("res://src/dungeon/dungeon_generator.gd")
+const FxSprites = preload("res://src/vfx/fx_sprites.gd")
+const PoolPaint = preload("res://src/vfx/pool_paint.gd")
 const DATA_PATH := "res://assets/data/combat_boss_moves.json"
+## World px per art pixel in the crypt: pools are shaped on this grid.
+const ART := 2.0
 
 var game: Node
 var data: Dictionary = {}
@@ -19,6 +23,9 @@ var data: Dictionary = {}
 var zones: Array = []
 var _next_id := 1
 var _rng := RandomNumberGenerator.new()
+## The floor cells of the current room (FxSprites.walkable_cells), for the pools' shapes.
+var _walk: Dictionary = {}
+var _walk_of: Dictionary = {}
 
 
 func bind(owner: Node, path: String = DATA_PATH) -> void:
@@ -361,7 +368,7 @@ func _blink(enemy: Dictionary, state: Dictionary, spec: Dictionary) -> void:
 		best = spot
 		break
 	if best == from: return
-	if spec.has("pool"): _pool(from, spec.pool)
+	if spec.has("pool"): _pool(from, spec.pool, best - from)
 	game.add_fx("blink", from, float(enemy.radius) + 8.0)
 	enemy.pos = best
 	game.add_fx("blink", best, float(enemy.radius) + 8.0)
@@ -452,7 +459,7 @@ func _active(enemy: Dictionary, state: Dictionary, spec: Dictionary, delta: floa
 			enemy.moving = true
 			if spec.has("lane_pool") and Vector2(state.get("last_pool", Vector2.INF)).distance_to(enemy.pos) > 40.0:
 				state.last_pool = Vector2(enemy.pos)
-				_pool(Vector2(enemy.pos), spec.lane_pool)
+				_pool(Vector2(enemy.pos), spec.lane_pool, direction)
 			if float(spec.get("damage", 0)) > 0.0:
 				for id: int in game.players:
 					var player: Dictionary = game.players[id]
@@ -513,14 +520,71 @@ func _zone(kind: String, style: String, pos: Vector2, radius: float, warn: float
 
 
 ## A pool that stays a while: damage each second, slow or slippery ground.
-func _pool(pos: Vector2, spec: Dictionary) -> Dictionary:
+## Thrown along `dir` it runs out that way and piles up against walls
+## (src/vfx/splat_shape.gd); its cells, not its circle, are where it hurts.
+func _pool(pos: Vector2, spec: Dictionary, dir := Vector2.ZERO) -> Dictionary:
 	var zone := _zone("pool", str(spec.get("style", "poison")), pos, float(spec.get("radius", 36)), float(spec.get("time", 4.0)))
 	zone.state = "live"
+	zone.dir = dir.normalized() if dir.length() > 0.01 else Vector2.ZERO
+	var paint_style := str(zone.style)
+	if PoolPaint.settings().get("materials", {}).has(paint_style):
+		zone.cells = PoolPaint.shape(pos, zone.dir, float(zone.radius), paint_style, ART, _open_floor, int(zone.id))
 	zone.dps = int(spec.get("dps", 0))
 	zone.slow = float(spec.get("slow", 0.0))
 	zone.slip = bool(spec.get("slip", false))
 	zone.tick = {}
 	return zone
+
+
+## Lightning at `at` reaching `radius`: every liquid pool there (vfx_pools.json
+## style liquid; ice and lava do not conduct) is charged for
+## balance.element.charge_time s and hurts and stuns enemies standing in it
+## (_charge_tick). `owner` is the hero whose lightning it was.
+func electrify(at: Vector2, radius: float, owner: int) -> void:
+	var rules: Dictionary = game.balance.get("element", {})
+	var materials: Dictionary = PoolPaint.settings().get("materials", {})
+	for zone: Dictionary in zones:
+		if str(zone.kind) != "pool" or str(zone.get("state", "")) != "live": continue
+		var mat := str(zone.style)
+		if not materials.has(mat) or str(materials[mat].get("style", "liquid")) != "liquid": continue
+		# Glatteis (src/combat/elements.gd) insulates
+		if float(zone.get("frozen", 0.0)) > 0.0: continue
+		if not _touches(zone, at, radius): continue
+		if float(zone.get("charge", 0.0)) <= 0.0: zone.charge_tick = 0.0
+		zone.charge = float(rules.get("charge_time", 3.0))
+		zone.charge_owner = owner
+
+
+## True when a circle at `at` of `radius` reaches the pool (its cells or circle).
+func _touches(zone: Dictionary, at: Vector2, radius: float) -> bool:
+	if not zone.has("cells"):
+		return at.distance_to(zone.pos) <= float(zone.radius) + radius
+	if at.distance_to(zone.pos) > float(zone.radius) * 2.0 + radius:
+		return false
+	var middle := Vector2i((at / ART).floor())
+	var reach := int(ceil(radius / ART))
+	var cells: Dictionary = zone.cells
+	for dy in range(-reach, reach + 1):
+		for dx in range(-reach, reach + 1):
+			if dx * dx + dy * dy <= reach * reach and cells.has(middle + Vector2i(dx, dy)):
+				return true
+	return false
+
+
+## A charged puddle: every charge_tick s each living enemy in it takes
+## charge_damage and is stunned (bosses half as long); heroes are spared.
+func _charge_tick(zone: Dictionary, delta: float) -> void:
+	var rules: Dictionary = game.balance.get("element", {})
+	zone.charge = float(zone.charge) - delta
+	zone.charge_tick = float(zone.get("charge_tick", 0.0)) - delta
+	if float(zone.charge_tick) > 0.0: return
+	zone.charge_tick = float(rules.get("charge_tick", 0.5))
+	var owner := int(zone.get("charge_owner", 0))
+	for enemy: Dictionary in game.enemies.duplicate():
+		if float(enemy.hp) <= 0 or not _in_pool(zone, Vector2(enemy.pos), float(enemy.radius)): continue
+		game._damage_enemy(enemy, float(rules.get("charge_damage", 2.0)), Vector2.ZERO, owner, true, false)
+		var stun := float(rules.get("charge_stun", 0.35)) * (0.5 if bool(enemy.get("boss", false)) else 1.0)
+		enemy.hitstun = maxf(float(enemy.get("hitstun", 0.0)), stun)
 
 
 ## A warning circle that strikes heroes (the thorn curse).
@@ -538,7 +602,8 @@ func hero_strike(pos: Vector2, radius: float, warn: float, damage: float, style:
 
 ## A pool from a thrown potion: it burns or poisons enemies, never heroes.
 func hero_pool(pos: Vector2, spec: Dictionary, owner: int) -> void:
-	var zone := _pool(pos, spec)
+	var thrower: Dictionary = game.players.get(owner, {})
+	var zone := _pool(pos, spec, pos - Vector2(thrower.pos) if not thrower.is_empty() else Vector2.ZERO)
 	zone.hostile = owner
 	zone.hero_dps = float(spec.get("dps", 1.0))
 	zone.status = str(spec.get("status", ""))
@@ -547,7 +612,7 @@ func hero_pool(pos: Vector2, spec: Dictionary, owner: int) -> void:
 
 ## A bullet ended (wall, hit or time): a fire arrow leaves its blaze.
 func bullet_end(bullet: Dictionary) -> void:
-	if bullet.has("end_pool"): _pool(Vector2(bullet.pos), bullet.end_pool)
+	if bullet.has("end_pool"): _pool(Vector2(bullet.pos), bullet.end_pool, Vector2(float(bullet.get("vx", 0.0)), float(bullet.get("vy", 0.0))))
 
 
 ## A boss bullet struck a hero: its effect (slow, poison, the soul chain's pull).
@@ -586,6 +651,7 @@ func update(delta: float) -> void:
 					zones.remove_at(index)
 					continue
 				_pool_tick(zone, delta)
+				if float(zone.get("charge", 0.0)) > 0.0: _charge_tick(zone, delta)
 			_:
 				if float(zone.timer) <= 0.0: zones.remove_at(index)
 	for enemy: Dictionary in game.enemies:
@@ -602,6 +668,9 @@ func update(delta: float) -> void:
 
 func _strike(zone: Dictionary) -> void:
 	game.add_fx("zone_burst", Vector2(zone.pos), float(zone.radius), {"style": str(zone.style)})
+	# fire and ice strikes react with the pools there (src/combat/elements.gd)
+	if str(zone.style) == "fire": game.elements.fire_at(Vector2(zone.pos), float(zone.radius), int(zone.get("hostile", 0)))
+	elif str(zone.style) in ["ice", "frost"]: game.elements.frost_at(Vector2(zone.pos), float(zone.radius), int(zone.get("hostile", 0)))
 	if zone.has("hostile"):
 		for enemy: Dictionary in game.enemies.duplicate():
 			if float(enemy.hp) > 0 and Vector2(enemy.pos).distance_to(zone.pos) <= float(zone.radius) + float(enemy.radius):
@@ -615,23 +684,25 @@ func _strike(zone: Dictionary) -> void:
 				zone.hit[id] = true
 				if int(zone.damage) > 0: game._damage_player(id, int(zone.damage), (Vector2(player.pos) - Vector2(zone.pos)).normalized())
 				game.player_effects.apply_spec(player, zone.effect)
-	if zone.has("pool") and not Dictionary(zone.pool).is_empty(): _pool(Vector2(zone.pos), zone.pool)
+	if zone.has("pool") and not Dictionary(zone.pool).is_empty(): _pool(Vector2(zone.pos), zone.pool, Vector2(zone.pos) - Vector2(zone.from) if zone.has("from") else Vector2.ZERO)
 
 
 func _pool_tick(zone: Dictionary, delta: float) -> void:
+	# crusted lava (water met it, src/combat/elements.gd) is harmless for a while
+	if float(zone.get("crust", 0.0)) > 0.0: return
 	if zone.has("hostile"):
 		var wait := float(zone.get("hero_tick", 0.0)) - delta
 		if wait <= 0.0:
 			wait = 1.0
 			for enemy: Dictionary in game.enemies.duplicate():
-				if float(enemy.hp) <= 0 or Vector2(enemy.pos).distance_to(zone.pos) > float(zone.radius) + float(enemy.radius): continue
+				if float(enemy.hp) <= 0 or not _in_pool(zone, Vector2(enemy.pos), float(enemy.radius)): continue
 				game._damage_enemy(enemy, float(zone.hero_dps), Vector2.ZERO, int(zone.hostile), true, false)
 				if not str(zone.get("status", "")).is_empty(): game.perk_combat._status(enemy, str(zone.status), float(zone.hero_dps), 2.0, int(zone.hostile))
 		zone.hero_tick = wait
 		return
 	for id: int in game.players:
 		var player: Dictionary = game.players[id]
-		if int(player.hp) <= 0 or Vector2(player.pos).distance_to(zone.pos) > float(zone.radius): continue
+		if int(player.hp) <= 0 or not _in_pool(zone, Vector2(player.pos), 0.0): continue
 		if bool(zone.slip): game.player_effects.apply(player, "slip", 0.25, 1.0)
 		if float(zone.slow) > 0.0: game.player_effects.apply(player, "slow", 0.3, float(zone.slow))
 		if int(zone.dps) <= 0: continue
@@ -640,6 +711,28 @@ func _pool_tick(zone: Dictionary, delta: float) -> void:
 			wait = 1.0
 			game.dot_player(id, int(zone.dps), str(zone.style))
 		zone.tick[id] = wait
+
+
+## True when an actor at `pos` (body radius `reach` beyond its feet) stands
+## in the pool: on its cells when it has a shape, else inside its circle.
+func _in_pool(zone: Dictionary, pos: Vector2, reach: float) -> bool:
+	if not zone.has("cells"):
+		return pos.distance_to(zone.pos) <= float(zone.radius) + reach
+	var cells: Dictionary = zone.cells
+	var r := maxf(4.0, reach * 0.5)
+	for p: Vector2 in [pos, pos + Vector2(r, 0), pos - Vector2(r, 0), pos + Vector2(0, r * 0.6), pos - Vector2(0, r * 0.6)]:
+		if cells.has(Vector2i((p / ART).floor())):
+			return true
+	return false
+
+
+## Floor a pool may cover: the room's floor cells (walls and obstacles stop it).
+func _open_floor(point: Vector2) -> bool:
+	var layout: Dictionary = game.current_layout if game != null else {}
+	if not is_same(layout, _walk_of):
+		_walk_of = layout
+		_walk = FxSprites.walkable_cells(layout)
+	return _walk.is_empty() or _walk.has(Vector2i(floori(point.x / 32.0), floori(point.y / 32.0)))
 
 
 ## The ice armour bursts into shards when it ends.
@@ -715,5 +808,8 @@ func snapshot() -> Array:
 		if zone.has("to"): entry.merge({"tx": Vector2(zone.to).x, "ty": Vector2(zone.to).y})
 		if zone.has("from"): entry.merge({"fx": Vector2(zone.from).x, "fy": Vector2(zone.from).y, "fl": float(zone.get("flight", 1.0))})
 		if zone.has("aim"): entry.merge({"a": float(zone.aim), "w": float(zone.angle)})
+		if zone.has("dir"): entry.merge({"dx": Vector2(zone.dir).x, "dy": Vector2(zone.dir).y})
+		if float(zone.get("charge", 0.0)) > 0.0: entry.ch = float(zone.charge)
+		if float(zone.get("crust", 0.0)) > 0.0: entry.cr = float(zone.crust)
 		result.append(entry)
 	return result

@@ -1,0 +1,218 @@
+
+== hell: a fight room of floor 2: doors lock, monsters rise, the archer shoots (hits and kills in the crypt materials)
+[hell   0.08s] doors_lock      group=world    bus=SFX    level= -15.3 dB
+[hell   0.53s] idle_bone       group=idle     bus=SFX    level= -20.3 dB
+[hell   1.43s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell   1.45s] idle_flesh      group=idle     bus=SFX    level= -21.0 dB
+[hell   1.57s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell   1.58s] shoot_arrow     group=hero     bus=SFX    level=  -9.8 dB
+[hell   1.60s] hit_bone        group=impact   bus=SFX    level= -15.1 dB +layer rattle_bone
+[hell   1.68s] shoot_arrow     group=hero     bus=SFX    level=  -9.2 dB
+[hell   1.70s] hit_flesh       group=impact   bus=SFX    level= -13.4 dB
+[hell   1.78s] shoot_arrow     group=hero     bus=SFX    level=  -9.3 dB
+[hell   1.83s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell   1.85s] hit_bone        group=impact   bus=SFX    level= -15.1 dB +layer rattle_bone
+[hell   1.88s] shoot_arrow     group=hero     bus=SFX    level=  -9.8 dB
+[hell   1.95s] kill_bone       group=enemy    bus=SFX    level= -11.0 dB +layer collapse_bone
+[hell   1.98s] shoot_arrow     group=hero     bus=SFX    level=  -9.3 dB
+[hell   2.02s] hit_flesh       group=impact   bus=SFX    level= -13.2 dB
+[hell   2.08s] shoot_arrow     group=hero     bus=SFX    level=  -9.1 dB
+[hell   2.10s] attack_soul     group=enemy    bus=SFX    level= -19.8 dB
+[hell   2.12s] hit_flesh       group=impact   bus=SFX    level= -12.6 dB
+[hell   2.18s] shoot_arrow     group=hero     bus=SFX    level=  -9.3 dB
+[hell   2.22s] hit_flesh       group=impact   bus=SFX    level= -13.4 dB
+[hell   2.27s] attack_soul     group=enemy    bus=SFX    level= -19.8 dB
+[hell   2.27s] idle_flesh      group=idle     bus=SFX    level= -19.6 dB
+[hell   2.28s] shoot_arrow     group=hero     bus=SFX    level=  -9.8 dB
+[hell   2.33s] hit_bone        group=impact   bus=SFX    level= -14.7 dB +layer rattle_bone
+[hell   2.35s] attack_slash    group=enemy    bus=SFX    level= -16.3 dB
+[hell   2.38s] shoot_arrow     group=hero     bus=SFX    level=  -9.2 dB
+[hell   2.45s] hit_flesh       group=impact   bus=SFX    level= -12.9 dB
+[hell   2.48s] shoot_arrow     group=hero     bus=SFX    level=  -9.1 dB
+[hell   2.53s] hit_flesh       group=impact   bus=SFX    level= -13.4 dB
+[hell   2.58s] shoot_arrow     group=hero     bus=SFX    level=  -9.3 dB
+[hell   2.63s] hit_flesh       group=impact   bus=SFX    level= -13.2 dB
+[hell   2.68s] shoot_arrow     group=hero     bus=SFX    level=  -9.8 dB
+[hell   2.70s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell   2.72s] hit_flesh       group=impact   bus=SFX    level= -12.6 dB
+[hell   2.78s] shoot_arrow     group=hero     bus=SFX    level=  -9.1 dB
+[hell   2.82s] kill_flesh      group=enemy    bus=SFX    level= -16.4 dB
+[hell   2.88s] shoot_arrow     group=hero     bus=SFX    level=  -9.3 dB
+[hell   2.90s] hit_flesh       group=impact   bus=SFX    level= -12.6 dB
+[hell   2.98s] shoot_arrow     group=hero     bus=SFX    level=  -9.2 dB
+[hell   3.00s] hit_bone        group=impact   bus=SFX    level= -15.1 dB +layer rattle_bone
+[hell   3.02s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell   3.07s] idle_flesh      group=idle     bus=SFX    level= -21.0 dB
+[hell   3.08s] shoot_arrow     group=hero     bus=SFX    level=  -9.1 dB
+[hell   3.10s] hit_bone        group=impact   bus=SFX    level= -14.3 dB +layer rattle_bone
+[hell   3.18s] shoot_arrow     group=hero     bus=SFX    level=  -9.3 dB
+[hell   3.20s] hit_flesh       group=impact   bus=SFX    level= -13.2 dB
+[hell   3.22s] attack_slash    group=enemy    bus=SFX    level= -16.3 dB
+[hell   3.28s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell   3.28s] shoot_arrow     group=hero     bus=SFX    level=  -9.8 dB
+[hell   3.30s] kill_flesh      group=enemy    bus=SFX    level= -13.6 dB
+[hell   3.38s] shoot_arrow     group=hero     bus=SFX    level=  -9.2 dB
+[hell   3.42s] hit_bone        group=impact   bus=SFX    level= -14.2 dB +layer rattle_bone
+[hell   3.48s] shoot_arrow     group=hero     bus=SFX    level=  -9.1 dB
+[hell   3.52s] hit_bone        group=impact   bus=SFX    level= -14.3 dB +layer rattle_bone
+
+== hell: regular monsters' attacks at the crypt's enemy level: hellhound bite and fire breath, magma slime slam (no boss blast)
+[hell   3.58s] start monster hoellenhund (breath)
+[hell   3.72s] attack_soul     group=enemy    bus=SFX    level= -19.8 dB
+[hell   3.97s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell   4.00s] idle_flesh      group=idle     bus=SFX    level= -21.5 dB
+[hell   4.05s] attack_slash    group=enemy    bus=SFX    level= -16.3 dB
+[hell   4.07s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell   4.25s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell   4.58s] start monster hoellenhund (dash)
+[hell   4.60s] idle_flesh      group=idle     bus=SFX    level= -23.9 dB
+[hell   4.82s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell   4.87s] attack_slash    group=enemy    bus=SFX    level= -16.3 dB
+[hell   5.15s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell   5.47s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell   5.53s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell   5.65s] idle_bone       group=idle     bus=SFX    level= -21.1 dB
+[hell   5.72s] attack_slash    group=enemy    bus=SFX    level= -16.3 dB
+[hell   6.08s] start monster magmaschleim (slam)
+[hell   6.08s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell   6.17s] attack_soul     group=enemy    bus=SFX    level= -19.8 dB
+[hell   6.43s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell   6.47s] idle_bone       group=idle     bus=SFX    level= -20.5 dB
+[hell   6.55s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell   6.62s] attack_slash    group=enemy    bus=SFX    level= -16.3 dB
+[hell   6.83s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell   7.12s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell   7.27s] idle_bone       group=idle     bus=SFX    level= -20.2 dB
+[hell   7.42s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell   7.42s] attack_slash    group=enemy    bus=SFX    level= -16.3 dB
+[hell   7.60s] SCREENSHOT hoelle-1-kampf (0)
+
+== hell: a heart dropped at the hero: the crypt's loot_taken
+[hell   7.62s] perk            group=focus    bus=Focus  level=  -6.0 dB
+[hell   7.92s] idle_flesh      group=idle     bus=SFX    level= -19.6 dB
+[hell   8.00s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+
+== hell: the guardian's room: its arrival, its breath (boss level), its fall: boss kill and room clear only
+[hell   8.27s] doors_lock      group=world    bus=SFX    level= -13.6 dB
+[hell   8.27s] boss_intro      group=stinger  bus=Focus  level= -11.7 dB
+[hell   8.92s] idle_flesh      group=idle     bus=SFX    level= -21.0 dB
+[hell   9.27s] start guardian dreischlund (breath)
+[hell   9.42s] attack_roar     group=boss     bus=SFX    level= -12.5 dB
+[hell   9.52s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell   9.88s] idle_flesh      group=idle     bus=SFX    level= -21.2 dB
+[hell  10.02s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell  10.22s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell  10.45s] attack_soul     group=enemy    bus=SFX    level= -20.4 dB
+[hell  10.77s] start guardian dreischlund (summon)
+[hell  10.77s] idle_bone       group=idle     bus=SFX    level= -20.7 dB
+[hell  11.05s] attack_summon   group=boss     bus=SFX    level=  -8.0 dB
+[hell  11.22s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell  11.50s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell  11.78s] idle_bone       group=idle     bus=SFX    level= -21.1 dB
+[hell  11.82s] attack_slash    group=enemy    bus=SFX    level= -16.3 dB
+[hell  11.92s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell  12.32s] SCREENSHOT hoelle-2-waechter (0)
+
+== hell: the guardian falls
+[hell  12.33s] room_clear      group=stinger  bus=Focus  level= -11.6 dB
+[hell  12.33s] boss_kill       group=stinger  bus=Focus  level= -13.3 dB
+[hell  12.33s] attack_roar     group=boss     bus=SFX    level=  -9.5 dB
+[hell  12.43s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell  12.50s] idle_flesh      group=idle     bus=SFX    level= -21.0 dB
+[hell  12.72s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell  12.73s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell  12.75s] attack_slash    group=enemy    bus=SFX    level= -16.3 dB
+[hell  12.83s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell  13.05s] idle_bone       group=idle     bus=SFX    level= -20.3 dB
+[hell  13.17s] attack_soul     group=enemy    bus=SFX    level= -19.8 dB
+[hell  13.58s] attack_soul     group=enemy    bus=SFX    level= -19.8 dB
+[hell  13.62s] attack_slash    group=enemy    bus=SFX    level= -16.3 dB
+[hell  13.70s] attack_soul     group=enemy    bus=SFX    level= -20.4 dB
+[hell  13.70s] idle_flesh      group=idle     bus=SFX    level= -21.2 dB
+[hell  13.98s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+[hell  14.15s] attack_bite     group=enemy    bus=SFX    level= -14.9 dB
+
+== frost: a fight room of floor 2
+[frost  14.40s] doors_lock      group=world    bus=SFX    level= -15.3 dB
+[frost  14.65s] idle_bone       group=idle     bus=SFX    level= -20.3 dB
+[frost  15.30s] attack_arrow    group=enemy    bus=SFX    level= -13.8 dB
+[frost  15.67s] idle_flesh      group=idle     bus=SFX    level= -21.2 dB
+[frost  15.85s] attack_arrow    group=enemy    bus=SFX    level= -13.3 dB
+[frost  15.90s] attack_arrow    group=enemy    bus=SFX    level= -13.8 dB
+[frost  15.90s] shoot_arrow     group=hero     bus=SFX    level=  -9.2 dB
+[frost  15.98s] hit_flesh       group=impact   bus=SFX    level= -12.6 dB
+[frost  16.00s] shoot_arrow     group=hero     bus=SFX    level=  -9.1 dB
+[frost  16.07s] hit_bone        group=impact   bus=SFX    level= -15.1 dB +layer rattle_bone
+[frost  16.10s] shoot_arrow     group=hero     bus=SFX    level=  -9.3 dB
+[frost  16.18s] hit_bone        group=impact   bus=SFX    level= -14.0 dB +layer rattle_bone
+[frost  16.20s] shoot_arrow     group=hero     bus=SFX    level=  -9.8 dB
+[frost  16.27s] hit_flesh       group=impact   bus=SFX    level= -12.9 dB
+[frost  16.30s] shoot_arrow     group=hero     bus=SFX    level=  -9.3 dB
+[frost  16.33s] attack_arrow    group=enemy    bus=SFX    level= -13.2 dB
+[frost  16.37s] hit_flesh       group=impact   bus=SFX    level= -13.4 dB
+[frost  16.40s] shoot_arrow     group=hero     bus=SFX    level=  -9.1 dB
+[frost  16.47s] hit_flesh       group=impact   bus=SFX    level= -12.9 dB
+[frost  16.47s] idle_flesh      group=idle     bus=SFX    level= -21.0 dB
+[frost  16.50s] shoot_arrow     group=hero     bus=SFX    level=  -9.3 dB
+[frost  16.58s] hit_flesh       group=impact   bus=SFX    level= -12.6 dB
+[frost  16.60s] shoot_arrow     group=hero     bus=SFX    level=  -9.8 dB
+[frost  16.67s] hit_bone        group=impact   bus=SFX    level= -15.1 dB +layer rattle_bone
+[frost  16.70s] shoot_arrow     group=hero     bus=SFX    level=  -9.2 dB
+[frost  16.77s] hit_flesh       group=impact   bus=SFX    level= -13.2 dB
+[frost  16.80s] shoot_arrow     group=hero     bus=SFX    level=  -9.3 dB
+[frost  16.87s] hit_flesh       group=impact   bus=SFX    level= -13.4 dB
+[frost  16.87s] attack_arrow    group=enemy    bus=SFX    level= -13.3 dB
+[frost  16.90s] shoot_arrow     group=hero     bus=SFX    level=  -9.8 dB
+[frost  16.92s] attack_arrow    group=enemy    bus=SFX    level= -13.2 dB
+[frost  16.93s] blast           group=hero     bus=SFX    level=  -9.0 dB
+[frost  16.95s] attack_arrow    group=enemy    bus=SFX    level= -13.8 dB
+[frost  16.97s] hit_flesh       group=impact   bus=SFX    level= -12.9 dB
+[frost  17.00s] shoot_arrow     group=hero     bus=SFX    level=  -9.1 dB
+[frost  17.02s] attack_arrow    group=enemy    bus=SFX    level= -13.1 dB
+[frost  17.07s] hit_flesh       group=impact   bus=SFX    level= -13.4 dB
+[frost  17.10s] shoot_arrow     group=hero     bus=SFX    level=  -9.2 dB
+[frost  17.12s] attack_arrow    group=enemy    bus=SFX    level= -13.3 dB
+[frost  17.17s] hit_flesh       group=impact   bus=SFX    level= -12.6 dB
+[frost  17.20s] shoot_arrow     group=hero     bus=SFX    level=  -9.1 dB
+[frost  17.27s] hit_flesh       group=impact   bus=SFX    level= -13.2 dB
+[frost  17.30s] shoot_arrow     group=hero     bus=SFX    level=  -9.3 dB
+[frost  17.33s] attack_arrow    group=enemy    bus=SFX    level= -13.1 dB
+[frost  17.37s] hit_flesh       group=impact   bus=SFX    level= -12.6 dB
+[frost  17.37s] idle_flesh      group=idle     bus=SFX    level= -23.9 dB
+
+== frost: an ice zombie winds up its frost breath (the crypt's lean-back) and breathes a soul shot
+[frost  17.87s] attack_arrow    group=enemy    bus=SFX    level= -13.3 dB
+[frost  17.88s] windup pose: lean 0.106 scale (0.883775, 1.145281) attack windup
+[frost  17.92s] SCREENSHOT frost-1-ausholen (0)
+[frost  17.92s] attack_arrow    group=enemy    bus=SFX    level= -13.8 dB
+[frost  17.98s] blast           group=hero     bus=SFX    level=  -9.0 dB
+[frost  17.98s] attack_soul     group=enemy    bus=SFX    level= -20.4 dB
+[frost  18.08s] idle_flesh      group=idle     bus=SFX    level= -19.0 dB
+[frost  18.33s] attack_arrow    group=enemy    bus=SFX    level= -13.2 dB
+[frost  18.90s] attack_arrow    group=enemy    bus=SFX    level= -13.3 dB
+
+== frost: an ice crystal's five-shot fan: a soul shot at the enemy level
+[frost  18.95s] attack_arrow    group=enemy    bus=SFX    level= -13.8 dB
+[frost  19.00s] idle_bone       group=idle     bus=SFX    level= -20.6 dB
+[frost  19.27s] attack_soul     group=enemy    bus=SFX    level= -19.8 dB
+[frost  19.37s] attack_arrow    group=enemy    bus=SFX    level= -13.2 dB
+[frost  19.52s] attack_arrow    group=enemy    bus=SFX    level= -13.1 dB
+[frost  19.68s] blast           group=hero     bus=SFX    level=  -9.0 dB
+[frost  19.70s] attack_arrow    group=enemy    bus=SFX    level= -13.2 dB
+[frost  19.73s] attack_arrow    group=enemy    bus=SFX    level= -13.3 dB
+[frost  19.85s] idle_flesh      group=idle     bus=SFX    level= -21.2 dB
+[frost  19.90s] attack_arrow    group=enemy    bus=SFX    level= -13.8 dB
+[frost  19.93s] attack_arrow    group=enemy    bus=SFX    level= -13.2 dB
+
+== frost: the hero falls while a foe bursts: the crypt keeps moving its particles through the death timer
+[frost  20.25s] hit_flesh       group=impact   bus=SFX    level= -12.9 dB
+[frost  20.25s] hit_bone        group=impact   bus=SFX    level= -14.0 dB +layer rattle_bone
+[frost  20.25s] hit_bone        (throttled or unknown)
+[frost  20.27s] kill_flesh      group=enemy    bus=SFX    level= -15.0 dB
+[frost  20.27s] kill_bone       group=enemy    bus=SFX    level= -11.0 dB +layer collapse_bone
+[frost  20.27s] kill_bone       group=enemy    bus=SFX    level= -11.0 dB +layer collapse_bone
+[frost  20.30s] team_wipe       group=stinger  bus=Focus  level= -13.6 dB
+[frost  20.30s] hurt            group=focus    bus=Focus  level= -11.2 dB +layer hurt_voice
+[frost  20.52s] SCREENSHOT frost-2-tod-a (0)
+[frost  20.77s] SCREENSHOT frost-2-tod-b (0)
+[frost  20.77s] death timer 1.37s -> 0.80s: 90 of 120 crypt particles moved, 50687 play-field pixels changed between the two pictures

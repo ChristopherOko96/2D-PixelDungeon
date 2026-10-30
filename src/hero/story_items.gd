@@ -47,6 +47,9 @@ var pools: Array = []
 var effects: Dictionary = {}
 var _clean: Dictionary = {}
 var _kills := 0
+## True while an aftershock or chain lightning deals its follow-up hits: those hits do not start
+## a new aftershock or chain (two monsters side by side bounced them back and forth forever).
+var _proc := false
 var _first_chest_floor := -1
 var _scale := 2.4
 
@@ -244,7 +247,7 @@ func give(item: Dictionary, at: Vector2) -> void:
 	if hero.inventory.bag.size() < int(inventory.data.get("bag", 12)) or str(item.type) not in ["weapon", "gear"] and hero.inventory.bag.any(func(h: Dictionary) -> bool: return str(h.type) == str(item.type) and str(h.get("potion", "")) == str(item.get("potion", ""))):
 		inventory.add(hero, item)
 	else:
-		floor_items.append({"item": item, "p": at})
+		floor_items.append({"item": item, "p": at, "born": float(g.state.get("t", 0.0))})
 		inventory.note(hero, "Rucksack voll: %s liegt am Boden." % inventory.name_of(item))
 	_store()
 
@@ -284,6 +287,8 @@ func update(dt: float) -> void:
 		if (drop.p as Vector2).distance_to(me) < 70.0 and hero.inventory.bag.size() < int(inventory.data.get("bag", 12)):
 			floor_items.erase(drop)
 			inventory.add(hero, drop.item)
+			# effect hook: the crypt's pickup (loot_taken: its sheet and chime)
+			if g.get("feel") != null: g.feel.fx_event("loot_taken", drop.p)
 			_store()
 	_layer.queue_redraw()
 	_sync_out()
@@ -298,25 +303,36 @@ func on_hit(m: Dictionary) -> void:
 		g.HeroKit.burn_mob(m, float(EFFECTS.burn_dps) * (1.0 + float(build.get("cinder", 0.0)) + float(build.get("venom", 0.0))), float(EFFECTS.burn_time))
 	if float(build.get("frost", 0.0)) > 0.0:
 		g.HeroKit.slow_mob(g, m, minf(0.6, float(build.frost) + float(EFFECTS.slow) * 0.5), float(EFFECTS.slow_time))
-	# run potions: hits shake the ground nearby (aftershock) or jump on as lightning (chain)
+	# run potions: hits shake the ground nearby (aftershock) or jump on as lightning (chain);
+	# their own follow-up hits start no new aftershock or chain
+	if _proc:
+		return
+	_proc = true
 	if float(build.get("blast", 0.0)) > 0.0:
-		for other: Dictionary in g.mobs:
-			if other != m and g._hittable(other) and (other.p as Vector2).distance_to(m.p) < 70.0 * _scale:
+		# effect hook: the crypt's area perk where the ground shakes (perk_events blast)
+		if g.get("feel") != null: g.feel.mob_perk("blast", m)
+		for other: Dictionary in g.mobs.duplicate():
+			if not is_same(other, m) and g._hittable(other) and (other.p as Vector2).distance_to(m.p) < 70.0 * _scale:
 				g._damage_mob(other, Vector2.ZERO, float(build.blast) * 0.5)
 	if float(build.get("storm", 0.0)) > 0.0:
 		var next: Dictionary = {}
 		var near := 160.0 * _scale
 		for other: Dictionary in g.mobs:
 			var gap: float = (other.p as Vector2).distance_to(m.p)
-			if other != m and g._hittable(other) and gap < near:
+			if not is_same(other, m) and g._hittable(other) and gap < near:
 				near = gap
 				next = other
 		if not next.is_empty():
 			g.fx.append({"kind": "bolt", "p": (m.p as Vector2) - Vector2(0, float(m.cy)), "q": (next.p as Vector2) - Vector2(0, float(next.cy)), "t": 0.25, "max": 0.25})
 			g._damage_mob(next, Vector2.ZERO, float(build.storm))
+	_proc = false
 	if float(m.hp) <= 0.0 and float(build.get("vampire", 0.0)) > 0.0:
 		_kills += 1
-		if _kills % maxi(1, int(build.vampire)) == 0: g.state.hp = mini(int(g.state.max_hp), int(g.state.hp) + 1)
+		if _kills % maxi(1, int(build.vampire)) == 0:
+			var before := int(g.state.hp)
+			g.state.hp = mini(int(g.state.max_hp), int(g.state.hp) + 1)
+			# effect hook: the crypt's heal marker (perk_combat.gd _heal: only when it heals)
+			if int(g.state.hp) > before and g.get("feel") != null: g.feel.hero_perk("heal")
 
 
 ## The shield potion's charges: true when one stops this hit.
@@ -324,7 +340,9 @@ func consume_shield() -> bool:
 	var runtime: Dictionary = players.get(1, {}).get("perk_runtime", {})
 	if int(runtime.get("shield", 0)) <= 0: return false
 	runtime.shield = int(runtime.shield) - 1
-	g._burst(Vector2(float(g.player.x), float(g.player.y) - 40.0), 16, true)
+	# effect hook: with the feel the crypt's shield marker (perk_combat.gd _absorb)
+	if g.get("feel") != null: g.feel.hero_perk("shield")
+	else: g._burst(Vector2(float(g.player.x), float(g.player.y) - 40.0), 16, true)
 	return true
 
 
@@ -352,8 +370,18 @@ var enemies: Array:
 		return out
 
 
+## The rules' item effects (inventory.gd add_fx: potion_throw, potion_blast, drink,
+## curse, cleanse, identify). With the feel they are the crypt's own fx events
+## (feedback.gd: the potion's colour, its splash, the sound; src/hero/story_feel.gd)
+## at the world point, radius in the feel's crypt units.
 func add_fx(kind: String, at: Vector2, radius: float, _extra: Dictionary = {}) -> void:
 	var p := at * _scale
+	var feel: RefCounted = g.get("feel")
+	if feel != null:
+		var extra := _extra.duplicate()
+		extra.r = radius * _scale / float(feel.scale)
+		feel.fx_event(kind, p, extra)
+		return
 	match kind:
 		"potion_blast", "potion_throw": g.fx.append({"kind": "blast", "p": p, "r": radius * _scale, "t": 0.3, "max": 0.3, "gravity": false})
 		"curse": g._burst(p, 20)
@@ -387,7 +415,9 @@ func apply(_player: Dictionary, kind: String, time: float, value: float) -> void
 
 ## A thrown fire or poison pool that hurts monsters for a while.
 func hero_pool(at: Vector2, spec: Dictionary, _owner: int) -> void:
-	pools.append({"p": at * _scale, "r": float(spec.get("radius", 60)) * _scale, "t": float(spec.get("time", 5)), "dps": float(spec.get("dps", 2)), "status": str(spec.get("status", ""))})
+	# style and max: the crypt's pool look (boss_fx.gd through src/hero/story_feel.gd)
+	pools.append({"p": at * _scale, "r": float(spec.get("radius", 60)) * _scale, "t": float(spec.get("time", 5)), "max": float(spec.get("time", 5)), "dps": float(spec.get("dps", 2)),
+		"status": str(spec.get("status", "")), "style": str(spec.get("style", ""))})
 
 
 ## The thorn ward blessing: a spike under the monster.
@@ -439,11 +469,17 @@ func summon_clone(_id: int, hero: Dictionary, time: float) -> void:
 
 ## Floor items drop where the hero stands (the rules' "drop" action).
 func drop_item(item: Dictionary, at: Vector2) -> void:
-	floor_items.append({"item": item, "p": at * _scale})
+	floor_items.append({"item": item, "p": at * _scale, "born": float(g.state.get("t", 0.0))})
 
 
 ## Draws the items waiting on the floor and the thrown pools (world layer).
 func draw(l: CanvasItem, t: float) -> void:
+	# effect hook: with the feel the pools are the crypt's (boss_fx.gd on the feel's ground layer) and the
+	# finds on the floor the crypt's loot (skill_fx.gd draw_loot: rarity glow, rays, the name up close)
+	var feel: RefCounted = g.get("feel")
+	if feel != null and g.get("story_hero") != null:
+		_draw_crypt_loot(l, t, float(feel.scale))
+		return
 	for pool: Dictionary in pools:
 		var tint := Color(1.0, 0.5, 0.15, 0.25) if str(pool.status) == "burn" else Color(0.5, 0.9, 0.3, 0.22)
 		l.draw_circle(pool.p, float(pool.r), tint)
@@ -457,3 +493,23 @@ func draw(l: CanvasItem, t: float) -> void:
 			var size := tex.get_size() * 3.0
 			l.draw_circle(drop.p + Vector2(0, 4), 18.0, Color(str(v.get("color", "ffffff")), 0.25))
 			l.draw_texture_rect(tex, Rect2(drop.p - Vector2(size.x * 0.5, size.y - bob), size), false)
+
+
+## The finds on the floor as the crypt's item loot (crypt units: world px / `k`);
+## the nearest one within reach shows its name.
+func _draw_crypt_loot(l: CanvasItem, t: float, k: float) -> void:
+	var skill: RefCounted = g.story_hero.skill_fx.skill
+	var me := Vector2(float(g.player.x), float(g.player.y))
+	var best := 140.0
+	skill.nearest_loot = -1
+	for i in range(floor_items.size()):
+		var gap := (floor_items[i].p as Vector2).distance_to(me)
+		if gap < best:
+			best = gap
+			skill.nearest_loot = i
+	l.draw_set_transform(Vector2.ZERO, 0.0, Vector2(k, k))
+	for i in range(floor_items.size()):
+		var drop: Dictionary = floor_items[i]
+		var at := (drop.p as Vector2) / k
+		skill.draw_loot(l, {"kind": "item", "view": inventory.view(drop.item), "x": at.x, "y": at.y, "id": i, "age": t - float(drop.get("born", t - 1.0))}, t)
+	l.draw_set_transform(Vector2.ZERO)

@@ -6,12 +6,15 @@ extends RefCounted
 
 ## The state keys hell_game.load_floor carries from floor to floor.
 const CARRIED := ["hp", "max_hp", "gems", "dmg", "rate", "speed_mul", "range", "buffs", "skill", "level", "exp", "relic", "relic_on",
-	"upgrades", "offer", "cards_due", "relic_floor", "relic_item", "talent", "crystals_run", "run_id", "items"]
+	"upgrades", "offer", "cards_due", "relic_floor", "relic_item", "talent", "crystals_run", "run_id", "items", "world_run"]
 
 
-## "frost" for the Frostgruft theme, otherwise "hell".
+## "frost" for the Frostgruft theme, "krypta" for the crypt (Story 1), otherwise "hell".
 static func mode(game: Node) -> String:
-	return "frost" if str(game.theme_path).contains("frost") else "hell"
+	var path := str(game.theme_path)
+	if path.contains("frost"):
+		return "frost"
+	return "krypta" if path.contains("krypta") else "hell"
 
 
 ## The save record for the floor the game just loaded.
