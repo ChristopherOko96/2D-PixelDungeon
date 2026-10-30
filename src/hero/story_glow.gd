@@ -272,7 +272,9 @@ func lights() -> Array:
 	var reach := view.grow(REACH)
 	var centre := view.get_center()
 	var most := mini(int(g.balance.view.get("max_lights", Darkness.MAX_LIGHTS)), Darkness.MAX_LIGHTS)
-	var own := float(g.balance.view.player_light) * (0.55 if g.story_items != null and g.story_items.dim() else 1.0)
+	# a world with fog may give the hero a smaller light of its own (theme fog.player_light)
+	var reach_own := float(g.theme.get("fog", {}).get("player_light", g.balance.view.player_light))
+	var own := reach_own * (0.55 if g.story_items != null and g.story_items.dim() else 1.0)
 	var out: Array = [Vector4(g.player.x, g.player.y - 40, own, 1.0)]
 	if not (g.clone as Dictionary).is_empty():
 		out.append(Vector4(g.clone.p.x, g.clone.p.y - 40, 240, 0.9))
