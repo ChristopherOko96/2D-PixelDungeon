@@ -1,7 +1,8 @@
 extends RefCounted
-## Story 1 Krypta der Verdammten as a world kit pack: the GDScript port of
-## tools/krypta_dungeon/krypta_floors.js. Floors, names, wording and dressing tables come from
-## assets/data/krypta_world.json (written from the JS by tools/krypta_dungeon/export_world.js).
+## A world on the world kit (Story 1 the crypt, Story 3 the hell): the GDScript port of
+## tools/world_kit/world_pack.js. Floors, names, wording, dressing tables and colours come from the
+## world's pack JSON (assets/data/krypta_world.json, assets/data/hell_world.json, written from the JS
+## by tools/krypta_dungeon/export_world.js and tools/hell_dungeon/export_world.js).
 ##
 ## A run: one run number decides all ten floors; each floor's layout seed is derived from it, so
 ## the same run number always rebuilds the same world (saves), a new one gives new layouts.
@@ -65,27 +66,29 @@ func build_raw(n: int, run: int) -> Dictionary:
 	return raw
 
 
-## Hell wording in crypt terms (longest first).
-func crypt(text: String) -> String:
-	for pair: Array in pack.words:
+## The generator's wording in the world's terms (pack.words, longest first).
+func wording(text: String) -> String:
+	for pair: Array in pack.get("words", []):
 		text = text.replace(pair[0], pair[1])
 	return text
 
 
-## The crypt's touches on a built floor (the dress() of the JS).
+## The world's touches on a built floor (the dress() of the JS).
 func dress(W: Dictionary) -> Dictionary:
 	_straighten_bridges(W)
 	for r: Dictionary in W.rooms:
-		r.name = crypt(r.name)
-		r.kind = crypt(r.kind)
-		r.info = crypt(r.get("info", ""))
+		r.name = wording(r.name)
+		r.kind = wording(r.kind)
+		r.info = wording(r.get("info", ""))
 	for g: Dictionary in W.groups.values():
 		if g.has("label"):
-			g.label = crypt(g.label)
-	W.theme.crypt = true
-	# a touch lighter than the hell
-	W.theme.dark = float(W.theme.dark) * 0.86
-	W.theme.vignette = float(W.theme.vignette) * 0.85
+			g.label = wording(g.label)
+	if pack.get("theme_flag") != null:
+		W.theme[str(pack.theme_flag)] = true
+	# a world lighter or darker than the hell
+	if pack.get("light") != null:
+		W.theme.dark = float(W.theme.dark) * float(pack.light.dark)
+		W.theme.vignette = float(W.theme.vignette) * float(pack.light.vignette)
 	_boss_gate(W)
 	_decorate(W)
 	_blue_light(W)
@@ -230,10 +233,10 @@ func _boss_gate(W: Dictionary) -> void:
 		W.lights.append({"x": px, "y": py - 70, "r": 330, "c": blue, "f": k})
 
 
-## Every blue fire bowl gives the same faint blue.
+## Every blue fire bowl of the world (pack.blue_props) gives the same faint blue.
 func _blue_light(W: Dictionary) -> void:
 	for p: Dictionary in W.props:
-		if p.name in ["brazier_bowl", "brazier_blue", "bowl_blue"]:
+		if p.name in pack.blue_props:
 			for l: Dictionary in W.lights:
 				if absf(float(l.x) - float(p.x)) < 2 and float(l.y) < float(p.y):
 					l.c = pack.blue

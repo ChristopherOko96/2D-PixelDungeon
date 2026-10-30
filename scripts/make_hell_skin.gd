@@ -33,6 +33,11 @@ const HEX := {
 	"w0": "2a0c14", "w1": "4a1620", "w2": "6a2228", "w3": "8e3a30",
 	"g1": "b07a2a", "g2": "e8b84a", "g3": "fff0a0",
 	"k1": "6a5a5a", "k2": "b8a8a0", "k3": "f0e4dc",
+	# the world kit pieces (tools/hell_dungeon/build_hell_extras.py): blue fire and mana (u), the
+	# floor-colour banners (dark, light): blue (n), green (v), purple (p), teal (t), pink (q); gold is g
+	"u0": "1a2a5a", "u1": "2f5fa8", "u2": "6aa8ff", "u3": "c8e8ff",
+	"n1": "1c2c6a", "n2": "3a62c8", "v1": "1e5a2a", "v2": "3fae4a", "p1": "4a1e6a", "p2": "8a4ac8",
+	"t1": "1a5a5a", "t2": "3ab0a8", "q1": "6a1e4a", "q2": "d85a9a",
 }
 
 ## 0x72 colour -> hell role, per material. Unlisted colours fall back by brightness.

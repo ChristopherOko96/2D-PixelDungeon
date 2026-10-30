@@ -37,7 +37,7 @@ for i in range(4):
     assets[n] = b64(os.path.join(ROOT, 'assets', 'sprites', '0x72', n + '.png'))
 html = text(HERE, 'krypta_template.html')
 for key, val in (('__ASSETS__', json.dumps(assets)), ('__SIZES__', json.dumps(sizes)), ('__CORE__', text(ROOT, 'tools', 'world_kit', 'world_core.js')),
-                 ('__PIX__', text(HERE, 'krypta_pix.js')), ('__FLOORS__', text(HERE, 'krypta_floors.js')), ('__MONSTERS__', text(HERE, 'krypta_monsters.js'))):
+                 ('__PIX__', text(HERE, 'krypta_pix.js')), ('__FLOORS__', text(ROOT, 'tools', 'world_kit', 'world_pack.js') + '\n' + text(HERE, 'krypta_floors.js')), ('__MONSTERS__', text(HERE, 'krypta_monsters.js'))):
     assert key in html, key
     html = html.replace(key, val)
 open(out, 'w', encoding='utf-8').write(html)

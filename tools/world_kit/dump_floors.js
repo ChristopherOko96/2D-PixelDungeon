@@ -1,12 +1,14 @@
 // Writes reference floors of the JS world kit for the Godot parity test
-// (tests/world_kit_parity_test.gd): for a few run numbers all ten crypt floors, reduced to what
+// (tests/world_kit_parity_test.gd): for a few run numbers all ten floors of a world, reduced to what
 // the runtime reads. Usage (repo root):
-//   node tools/world_kit/dump_floors.js <skin manifest.json> [out=tests/data/world_kit_reference.json]
+//   node tools/world_kit/dump_floors.js <skin manifest.json> [out=tests/data/world_kit_reference.json] [pack module]
+// The pack module defaults to the crypt; the hell: node tools/world_kit/dump_floors.js
+//   assets/sprites/hell/manifest.json tests/data/world_kit_reference_hell.json tools/hell_dungeon/hell_world.js
 'use strict';
 const fs = require('fs');
 const path = require('path');
 const core = require('./world_core.js');
-const KF = require('../krypta_dungeon/krypta_floors.js');
+const KF = require(process.argv[4] ? path.resolve(process.argv[4]) : '../krypta_dungeon/krypta_floors.js');
 
 const root = path.resolve(__dirname, '..', '..');
 const man = JSON.parse(fs.readFileSync(path.resolve(process.argv[2]), 'utf8'));

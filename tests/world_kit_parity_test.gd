@@ -1,13 +1,18 @@
 extends SceneTree
 ## The world kit in Godot builds exactly the floors of the browser preview: for the run numbers in
-## tests/data/world_kit_reference.json (written by tools/world_kit/dump_floors.js from the JS
-## generator) src/world_kit/world_core.gd with src/world_kit/krypta_pack.gd must give the same
+## tests/data/world_kit_reference.json (the crypt) and world_kit_reference_hell.json (the hell),
+## written by tools/world_kit/dump_floors.js from the JS generator and packs,
+## src/world_kit/world_core.gd with src/world_kit/world_pack.gd must give the same
 ## grid, rooms, doors, entities, props, decals, wall decor and lights. Also checks the 32-bit
 ## helpers against known JS values.
 
 const Core = preload("res://src/world_kit/world_core.gd")
-const Pack = preload("res://src/world_kit/krypta_pack.gd")
-const REFERENCE := "res://tests/data/world_kit_reference.json"
+const Pack = preload("res://src/world_kit/world_pack.gd")
+## [reference floors, world pack, sprite manifest] per world
+const WORLDS := [
+	["res://tests/data/world_kit_reference.json", "res://assets/data/krypta_world.json", "res://assets/sprites/krypta/manifest.json"],
+	["res://tests/data/world_kit_reference_hell.json", "res://assets/data/hell_world.json", "res://assets/sprites/hell/manifest.json"],
+]
 var checked := 0
 var failures: Array[String] = []
 
@@ -29,10 +34,18 @@ func _run() -> void:
 	check(absf(rng.next() - 0.6270739405881613) < 1e-12, "mulberry32(1) first value")
 	check(absf(Core.hash3(3, 4, 5) - 0.5985523597337306) < 1e-12, "hash(3, 4, 5)")
 	check(absf(Core.hash3(7.35, 12.6, 9) - 0.43380333785898983) < 1e-12, "hash(7.35, 12.6, 9) with fractions")
-	var ref: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(REFERENCE))
-	var pack := Pack.new(Pack.PACK_PATH, "res://assets/sprites/krypta/manifest.json")
+	for world: Array in WORLDS:
+		_check_world(world[0], world[1], world[2])
+	print("WORLD_KIT_PARITY checked=%d failed=%d" % [checked, failures.size()])
+	quit(1 if failures.size() > 0 else 0)
+
+
+func _check_world(reference: String, pack_path: String, manifest: String) -> void:
+	var ref: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(reference))
+	var pack := Pack.new(pack_path, manifest)
+	var world := pack_path.get_file().get_basename()
 	for f: Dictionary in ref.floors:
-		var tag := "run %d E%d" % [int(f.run), int(f.n)]
+		var tag := "%s run %d E%d" % [world, int(f.run), int(f.n)]
 		var W := Core.build_floor(int(f.n), pack.sizes, pack.for_run(int(f.run)))
 		pack.dress(W)
 		check(int(W.seed) == int(f.seed), tag + " seed %d vs %d" % [int(W.seed), int(f.seed)])
@@ -49,8 +62,6 @@ func _run() -> void:
 		_same_list(tag + " decals", W.decals.map(func(d: Dictionary) -> Array: return [d.name, Core._r1(d.x), Core._r1(d.y)]), f.decals)
 		_same_list(tag + " wall decor", W.wallDecor.map(func(w: Dictionary) -> Array: return [w.name, Core._r1(w.x), Core._r1(w.y)]), f.wall)
 		_same_list(tag + " lights", W.lights.map(func(l: Dictionary) -> Array: return [Core._r1(l.x), Core._r1(l.y), l.c]), f.lights)
-	print("WORLD_KIT_PARITY checked=%d failed=%d" % [checked, failures.size()])
-	quit(1 if failures.size() > 0 else 0)
 
 
 func _same_list(tag: String, mine: Array, theirs: Array) -> void:

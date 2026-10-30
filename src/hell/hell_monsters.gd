@@ -45,12 +45,21 @@ func _init(game: Node, monster_cfg: Dictionary) -> void:
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(str(cfg.get("data", DATA_PATH))))
 	defs = data.defs
 	floors = data.floors
+	# monsters a world borrows from another set without putting them in its floors' rosters
+	# (cfg.borrow: data file, atlas folder, ids; e.g. the hell's mimic chests wake as the crypt's
+	# mimic, drawn from a hell-coloured atlas)
+	var borrow: Dictionary = cfg.get("borrow", {})
+	var borrowed: Array = borrow.get("ids", [])
+	if not borrowed.is_empty():
+		var more: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(str(borrow.data)))
+		for id: String in borrowed:
+			defs[id] = more.defs[id]
 	# experience per kill for the hero's levels (hero_kit.gd reads def.exp)
 	var exp: Dictionary = cfg.get("exp", {})
 	for id: String in defs:
 		defs[id].exp = int(exp.get(id, 0))
 	for id: String in defs:
-		atlas[id] = load(sprite_dir + id + ".png")
+		atlas[id] = load((str(borrow.sprites) if id in borrowed else sprite_dir) + id + ".png")
 
 
 ## Drops every attack effect (death, pit, new floor).

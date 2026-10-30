@@ -1,14 +1,15 @@
 extends SceneTree
-## Soak run of Story 1 (the crypt world): on every floor the hero fights for a while in a fight room,
+## Soak run of a world on the world kit (Story 1 the crypt, Story 3 the hell): on every floor the hero fights for a while in a fight room,
 ## wakes a mimic chest, breaks crates (undead), steps plates wrongly and rightly and fights the
 ## floor's boss, attacking all the time. Prints SOAK lines; a script error (e.g. a stack overflow)
 ## shows in the output. Usage:
-##   godot --headless --path . -s res://scripts/soak_krypta.gd -- [class_id] [seconds per scene]
-const KryptaScene = preload("res://src/hell/krypta_dungeon.tscn")
+##   godot --headless --path . -s res://scripts/soak_krypta.gd -- [class_id] [seconds per scene] [scene]
+## scene defaults to the crypt; the hell: res://src/hell/hell_dungeon.tscn
 
 var _game: Node
 var _class := "swordsman"
 var _secs := 8.0
+var _scene := "res://src/hell/krypta_dungeon.tscn"
 
 
 func _initialize() -> void:
@@ -17,6 +18,8 @@ func _initialize() -> void:
 		_class = args[0]
 	if args.size() > 1:
 		_secs = float(args[1])
+	if args.size() > 2:
+		_scene = args[2]
 	_run.call_deferred()
 
 
@@ -54,7 +57,7 @@ func _go(x: float, y: float) -> void:
 
 
 func _run() -> void:
-	_game = KryptaScene.instantiate()
+	_game = (load(_scene) as PackedScene).instantiate()
 	_game.class_id = _class
 	root.add_child(_game)
 	await process_frame

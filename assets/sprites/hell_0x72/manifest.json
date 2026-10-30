@@ -53,6 +53,66 @@
   "src": "drawn: 0x72-style banner on chain hooks",
   "w": 90
  },
+ "barrel_a": {
+  "h": 39,
+  "kind": "sprite",
+  "src": "hell barrel_a in the 0x72 manner (build_hell_extras.py)",
+  "w": 30
+ },
+ "barrel_b": {
+  "h": 42,
+  "kind": "sprite",
+  "src": "hell barrel_b in the 0x72 manner (build_hell_extras.py)",
+  "w": 33
+ },
+ "barrel_c": {
+  "h": 42,
+  "kind": "sprite",
+  "src": "hell barrel_c in the 0x72 manner (build_hell_extras.py)",
+  "w": 33
+ },
+ "bench": {
+  "h": 33,
+  "kind": "sprite",
+  "src": "hell bench in the 0x72 manner (build_hell_extras.py)",
+  "w": 72
+ },
+ "blood_a": {
+  "h": 54,
+  "kind": "sprite",
+  "src": "hell blood_a in the 0x72 manner (build_hell_extras.py)",
+  "w": 54
+ },
+ "blood_b": {
+  "h": 57,
+  "kind": "sprite",
+  "src": "hell blood_b in the 0x72 manner (build_hell_extras.py)",
+  "w": 51
+ },
+ "blood_c": {
+  "h": 60,
+  "kind": "sprite",
+  "src": "hell blood_c in the 0x72 manner (build_hell_extras.py)",
+  "w": 48
+ },
+ "blood_d": {
+  "h": 48,
+  "kind": "sprite",
+  "src": "hell blood_d in the 0x72 manner (build_hell_extras.py)",
+  "w": 63
+ },
+ "blood_e": {
+  "h": 51,
+  "kind": "sprite",
+  "src": "hell blood_e in the 0x72 manner (build_hell_extras.py)",
+  "w": 54
+ },
+ "blood_f": {
+  "h": 48,
+  "kind": "sprite",
+  "src": "hell blood_f in the 0x72 manner (build_hell_extras.py)",
+  "w": 54
+ },
  "bone_a": {
   "h": 15,
   "kind": "sprite",
@@ -107,11 +167,83 @@
   "src": "drawn bones + 0x72 skull",
   "w": 51
  },
+ "boss_arch": {
+  "h": 102,
+  "kind": "sprite",
+  "src": "hell boss_arch in the 0x72 manner (build_hell_extras.py)",
+  "w": 135
+ },
+ "boss_banner": {
+  "h": 78,
+  "kind": "sprite",
+  "src": "hell boss_banner in the 0x72 manner (build_hell_extras.py)",
+  "w": 42
+ },
+ "boss_banner_blue": {
+  "h": 78,
+  "kind": "sprite",
+  "src": "hell boss_banner_blue in the 0x72 manner (build_hell_extras.py)",
+  "w": 42
+ },
+ "boss_banner_gold": {
+  "h": 78,
+  "kind": "sprite",
+  "src": "hell boss_banner_gold in the 0x72 manner (build_hell_extras.py)",
+  "w": 42
+ },
+ "boss_banner_green": {
+  "h": 78,
+  "kind": "sprite",
+  "src": "hell boss_banner_green in the 0x72 manner (build_hell_extras.py)",
+  "w": 42
+ },
+ "boss_banner_pink": {
+  "h": 78,
+  "kind": "sprite",
+  "src": "hell boss_banner_pink in the 0x72 manner (build_hell_extras.py)",
+  "w": 42
+ },
+ "boss_banner_purple": {
+  "h": 78,
+  "kind": "sprite",
+  "src": "hell boss_banner_purple in the 0x72 manner (build_hell_extras.py)",
+  "w": 42
+ },
+ "boss_banner_teal": {
+  "h": 78,
+  "kind": "sprite",
+  "src": "hell boss_banner_teal in the 0x72 manner (build_hell_extras.py)",
+  "w": 42
+ },
+ "boss_gate": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "hell boss_gate in the 0x72 manner (build_hell_extras.py)",
+  "w": 150
+ },
+ "boss_gate_blue": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "hell boss_gate_blue in the 0x72 manner (build_hell_extras.py)",
+  "w": 150
+ },
  "boulders": {
   "h": 39,
   "kind": "sprite",
   "src": "drawn: 0x72-style boulders",
   "w": 63
+ },
+ "bowl_blue": {
+  "h": 42,
+  "kind": "sprite",
+  "src": "hell bowl_blue in the 0x72 manner (build_hell_extras.py)",
+  "w": 36
+ },
+ "brazier_blue": {
+  "h": 84,
+  "kind": "sprite",
+  "src": "hell brazier_blue in the 0x72 manner (build_hell_extras.py)",
+  "w": 42
  },
  "brazier_bowl": {
   "h": 84,
@@ -178,6 +310,18 @@
   "kind": "sprite",
   "src": "drawn: 0x72-style standing cage with 0x72 skull",
   "w": 42
+ },
+ "candelabra": {
+  "h": 63,
+  "kind": "sprite",
+  "src": "hell candelabra in the 0x72 manner (build_hell_extras.py)",
+  "w": 33
+ },
+ "carpet": {
+  "h": 81,
+  "kind": "sprite",
+  "src": "hell carpet in the 0x72 manner (build_hell_extras.py)",
+  "w": 36
  },
  "chain_a": {
   "h": 90,
@@ -251,6 +395,12 @@
   "src": "0x72 chest (open, full), hell wood",
   "w": 48
  },
+ "chest_vault": {
+  "h": 45,
+  "kind": "sprite",
+  "src": "hell chest_vault in the 0x72 manner (build_hell_extras.py)",
+  "w": 42
+ },
  "coal": {
   "h": 27,
   "kind": "sprite",
@@ -268,6 +418,30 @@
   "kind": "design",
   "src": "drawn: 0x72-style capstone with red stud",
   "w": 76
+ },
+ "crate_a": {
+  "h": 51,
+  "kind": "sprite",
+  "src": "hell crate_a in the 0x72 manner (build_hell_extras.py)",
+  "w": 42
+ },
+ "crate_b": {
+  "h": 45,
+  "kind": "sprite",
+  "src": "hell crate_b in the 0x72 manner (build_hell_extras.py)",
+  "w": 39
+ },
+ "crate_c": {
+  "h": 51,
+  "kind": "sprite",
+  "src": "hell crate_c in the 0x72 manner (build_hell_extras.py)",
+  "w": 39
+ },
+ "crate_pile": {
+  "h": 57,
+  "kind": "sprite",
+  "src": "hell crate_pile in the 0x72 manner (build_hell_extras.py)",
+  "w": 51
  },
  "demon_head": {
   "h": 30,
@@ -383,6 +557,18 @@
   "src": "0x72 floor_1..8 (+ extended cracks), hell palette",
   "w": 96
  },
+ "fountain": {
+  "h": 81,
+  "kind": "sprite",
+  "src": "hell fountain in the 0x72 manner (build_hell_extras.py)",
+  "w": 66
+ },
+ "gargoyle": {
+  "h": 75,
+  "kind": "sprite",
+  "src": "hell gargoyle in the 0x72 manner (build_hell_extras.py)",
+  "w": 60
+ },
  "gate_side": {
   "h": 96,
   "kind": "sprite",
@@ -491,6 +677,72 @@
   "src": "drawn: 0x72-style brick lip with glowing crust",
   "w": 96
  },
+ "mat": {
+  "h": 36,
+  "kind": "sprite",
+  "src": "hell mat in the 0x72 manner (build_hell_extras.py)",
+  "w": 48
+ },
+ "moss_a": {
+  "h": 51,
+  "kind": "sprite",
+  "src": "hell moss_a in the 0x72 manner (build_hell_extras.py)",
+  "w": 51
+ },
+ "moss_b": {
+  "h": 51,
+  "kind": "sprite",
+  "src": "hell moss_b in the 0x72 manner (build_hell_extras.py)",
+  "w": 51
+ },
+ "moss_c": {
+  "h": 51,
+  "kind": "sprite",
+  "src": "hell moss_c in the 0x72 manner (build_hell_extras.py)",
+  "w": 51
+ },
+ "moss_rubble_a": {
+  "h": 45,
+  "kind": "sprite",
+  "src": "hell moss_rubble_a in the 0x72 manner (build_hell_extras.py)",
+  "w": 51
+ },
+ "moss_rubble_b": {
+  "h": 36,
+  "kind": "sprite",
+  "src": "hell moss_rubble_b in the 0x72 manner (build_hell_extras.py)",
+  "w": 54
+ },
+ "moss_ruin": {
+  "h": 63,
+  "kind": "sprite",
+  "src": "hell moss_ruin in the 0x72 manner (build_hell_extras.py)",
+  "w": 48
+ },
+ "npc_idle_f0": {
+  "h": 28,
+  "kind": "sprite",
+  "src": "hell npc_idle_f0 in the 0x72 manner (build_hell_extras.py)",
+  "w": 16
+ },
+ "npc_idle_f1": {
+  "h": 28,
+  "kind": "sprite",
+  "src": "hell npc_idle_f1 in the 0x72 manner (build_hell_extras.py)",
+  "w": 16
+ },
+ "npc_idle_f2": {
+  "h": 28,
+  "kind": "sprite",
+  "src": "hell npc_idle_f2 in the 0x72 manner (build_hell_extras.py)",
+  "w": 16
+ },
+ "npc_idle_f3": {
+  "h": 28,
+  "kind": "sprite",
+  "src": "hell npc_idle_f3 in the 0x72 manner (build_hell_extras.py)",
+  "w": 16
+ },
  "obelisk": {
   "h": 87,
   "kind": "sprite",
@@ -551,6 +803,24 @@
   "src": "drawn: 0x72-style rubble",
   "w": 60
  },
+ "rug_blue": {
+  "h": 90,
+  "kind": "sprite",
+  "src": "hell rug_blue in the 0x72 manner (build_hell_extras.py)",
+  "w": 51
+ },
+ "rug_red": {
+  "h": 90,
+  "kind": "sprite",
+  "src": "hell rug_red in the 0x72 manner (build_hell_extras.py)",
+  "w": 54
+ },
+ "rug_square": {
+  "h": 36,
+  "kind": "sprite",
+  "src": "hell rug_square in the 0x72 manner (build_hell_extras.py)",
+  "w": 33
+ },
  "rune_big": {
   "h": 96,
   "kind": "sprite",
@@ -599,6 +869,24 @@
   "src": "drawn: 0x72-style rune circle",
   "w": 72
  },
+ "sacks_a": {
+  "h": 39,
+  "kind": "sprite",
+  "src": "hell sacks_a in the 0x72 manner (build_hell_extras.py)",
+  "w": 45
+ },
+ "sacks_b": {
+  "h": 36,
+  "kind": "sprite",
+  "src": "hell sacks_b in the 0x72 manner (build_hell_extras.py)",
+  "w": 63
+ },
+ "sacks_c": {
+  "h": 39,
+  "kind": "sprite",
+  "src": "hell sacks_c in the 0x72 manner (build_hell_extras.py)",
+  "w": 57
+ },
  "shackle_a": {
   "h": 69,
   "kind": "sprite",
@@ -616,6 +904,18 @@
   "kind": "sprite",
   "src": "drawn shackle + 0x72 skull",
   "w": 27
+ },
+ "shelf": {
+  "h": 72,
+  "kind": "sprite",
+  "src": "hell shelf in the 0x72 manner (build_hell_extras.py)",
+  "w": 42
+ },
+ "shop_table": {
+  "h": 60,
+  "kind": "sprite",
+  "src": "hell shop_table in the 0x72 manner (build_hell_extras.py)",
+  "w": 93
  },
  "skull_heap": {
   "h": 84,
@@ -713,6 +1013,42 @@
   "src": "drawn: 0x72-style spire cluster",
   "w": 57
  },
+ "stairs_down": {
+  "h": 81,
+  "kind": "sprite",
+  "src": "hell stairs_down in the 0x72 manner (build_hell_extras.py)",
+  "w": 84
+ },
+ "statue_angel": {
+  "h": 75,
+  "kind": "sprite",
+  "src": "hell statue_angel in the 0x72 manner (build_hell_extras.py)",
+  "w": 60
+ },
+ "statue_monk": {
+  "h": 72,
+  "kind": "sprite",
+  "src": "hell statue_monk in the 0x72 manner (build_hell_extras.py)",
+  "w": 33
+ },
+ "table_a": {
+  "h": 42,
+  "kind": "sprite",
+  "src": "hell table_a in the 0x72 manner (build_hell_extras.py)",
+  "w": 66
+ },
+ "table_b": {
+  "h": 45,
+  "kind": "sprite",
+  "src": "hell table_b in the 0x72 manner (build_hell_extras.py)",
+  "w": 72
+ },
+ "table_c": {
+  "h": 42,
+  "kind": "sprite",
+  "src": "hell table_c in the 0x72 manner (build_hell_extras.py)",
+  "w": 84
+ },
  "torch_a": {
   "h": 69,
   "kind": "sprite",
@@ -730,6 +1066,54 @@
   "kind": "sprite",
   "src": "extended 0x72 torch, hell fire",
   "w": 24
+ },
+ "torch_dead": {
+  "h": 75,
+  "kind": "sprite",
+  "src": "hell torch_dead in the 0x72 manner (build_hell_extras.py)",
+  "w": 24
+ },
+ "torch_pillar": {
+  "h": 138,
+  "kind": "sprite",
+  "src": "hell torch_pillar in the 0x72 manner (build_hell_extras.py)",
+  "w": 42
+ },
+ "torch_pillar_blue": {
+  "h": 138,
+  "kind": "sprite",
+  "src": "hell torch_pillar_blue in the 0x72 manner (build_hell_extras.py)",
+  "w": 42
+ },
+ "urn_a": {
+  "h": 51,
+  "kind": "sprite",
+  "src": "hell urn_a in the 0x72 manner (build_hell_extras.py)",
+  "w": 39
+ },
+ "urn_b": {
+  "h": 36,
+  "kind": "sprite",
+  "src": "hell urn_b in the 0x72 manner (build_hell_extras.py)",
+  "w": 27
+ },
+ "urn_c": {
+  "h": 51,
+  "kind": "sprite",
+  "src": "hell urn_c in the 0x72 manner (build_hell_extras.py)",
+  "w": 36
+ },
+ "urn_d": {
+  "h": 54,
+  "kind": "sprite",
+  "src": "hell urn_d in the 0x72 manner (build_hell_extras.py)",
+  "w": 39
+ },
+ "urn_e": {
+  "h": 54,
+  "kind": "sprite",
+  "src": "hell urn_e in the 0x72 manner (build_hell_extras.py)",
+  "w": 39
  },
  "vent": {
   "h": 45,
@@ -785,6 +1169,12 @@
   "src": "extended 0x72 torch on a drawn stone block",
   "w": 36
  },
+ "wall_torch_blue": {
+  "h": 75,
+  "kind": "sprite",
+  "src": "hell wall_torch_blue in the 0x72 manner (build_hell_extras.py)",
+  "w": 24
+ },
  "wall_torch_hook": {
   "h": 75,
   "kind": "sprite",
@@ -807,6 +1197,12 @@
   "h": 96,
   "kind": "sprite",
   "src": "drawn: rune plate in a 0x72 side wall",
+  "w": 62
+ },
+ "wall_v_glow_blue": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "hell wall_v_glow_blue in the 0x72 manner (build_hell_extras.py)",
   "w": 62
  }
 }

@@ -106,14 +106,15 @@ function tryGenerate(P, rnd) {
     for (const o of opts) { t -= o.w; if (t <= 0) { ch = o; break; } }
     dir = ch.d; path.push([c + dir[0], r + dir[1]]); occ.set(key(c + dir[0], r + dir[1]), 'path');
   }
-  // 2. chunk the path into fight rooms of 2 or 3 slots (never a single slot)
+  // 2. chunk the path into fight rooms of 2 or 3 slots (never a single slot); P.two is the share of
+  // 2-slot rooms (P.twoSide in the side branches), P.trimLarge cuts the corners of 3-slot rooms
   const rooms = [], doors = [];
   const mk = (slots, type, extra = {}) => { const room = Object.assign({ id: 'r' + rooms.length, slots, type, children: [] }, extra); rooms.push(room); for (const s of slots) occ.set(key(...s), room.id); return room; };
   const start = mk([path[0]], 'start', { onPath: true, depth: 0 });
   let i = 1, prev = start;
   const bossAt = path.length - 1;
   while (i < bossAt) {
-    const left = bossAt - i, size = left <= 3 ? left : left === 4 ? 2 : rnd() < .55 ? 2 : 3;
+    const left = bossAt - i, size = left <= 3 ? left : left === 4 ? 2 : rnd() < (P.two ?? .55) ? 2 : 3;
     const room = mk(path.slice(i, i + size), 'combat', { onPath: true, parent: prev, depth: prev.depth + 1 });
     doors.push({ a: prev, b: room, sa: path[i - 1], sb: path[i], kind: 'open' }); prev.children.push(room);
     prev = room; i += size;
@@ -145,7 +146,7 @@ function tryGenerate(P, rnd) {
     for (const s of from.slots) for (const [dx, dy] of N4) if (free(s[0] + dx, s[1] + dy)) cands.push([s, [s[0] + dx, s[1] + dy], [dx, dy]]);
     if (!cands.length) continue;
     const [sa, sb, d] = pick(cands);
-    const slots = [sb], want = rnd() < .6 ? 2 : 3, mine = (c, r) => slots.some(s => s[0] === c && s[1] === r);
+    const slots = [sb], want = rnd() < (P.twoSide ?? .6) ? 2 : 3, mine = (c, r) => slots.some(s => s[0] === c && s[1] === r);
     while (slots.length < want) {
       const [c, r] = slots[slots.length - 1];
       const opts = N4.filter(([dx, dy]) => free(c + dx, r + dy) && !mine(c + dx, r + dy));
@@ -285,6 +286,7 @@ function describe(P, gen, rnd, names = NAME_A, suffixes = NAME_B) {
     if (g.type === 'boss') { r.shape = 'oct'; r.cut = n === 4 ? 6 : 4; }
     else if (['start', 'secret', 'hidden', 'vault', 'pvault', 'stairs'].includes(g.type)) { r.shape = 'oct'; r.cut = g.type === 'secret' || g.type === 'hidden' ? 4 : 3; }
     else if (n === 1) r.shape = 'rect';
+    else if (n >= 3 && P.trimLarge) { r.shape = 'oct'; r.cut = P.trimLarge; }
     else { r.shape = n === 2 && rnd() < .25 ? 'oct' : 'rect'; r.cut = 2; }
     if (r.type === 'combat') r.mobs = Math.min(9, 2 + n * 2 + Math.floor(rnd() * 2)) + (g.type === 'shrine' ? -2 : 0);
     if (r.type === 'boss') r.mobs = 3;
@@ -705,7 +707,8 @@ function riverAcross(W, r, H, rnd) {
     for (let t = 0; t < len; t++) for (let w = 0; w < 2; w++) {
       const x = vertical ? at + w : t, y = vertical ? t : at + w, gx = r.bx + x, gy = r.by + y;
       if (W.roomAt[idx(gx, gy)] !== r.index) continue;
-      if (W.grid[idx(gx, gy)] !== 1) { ok = false; break; }
+      // never over a thing already standing there (a fire bowl in the river could not be reached)
+      if (W.grid[idx(gx, gy)] !== 1 || W.ents.some(e => e.room === r.index && Math.floor(e.x / C) === gx && Math.floor((e.y - 10) / C) === gy)) { ok = false; break; }
       band.push([x, y, r.lanes.has(idx(gx, gy))]);
     }
     if (!ok || band.length < len) continue;

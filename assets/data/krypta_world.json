@@ -1,5 +1,5 @@
 {
- "_note": "Story 1 Krypta der Verdammten: the world pack for the world kit generator (src/world_kit/world_core.gd, src/world_kit/krypta_pack.gd). Written by tools/krypta_dungeon/export_world.js from krypta_floors.js; the browser preview reads the same values. floors: per floor title, ring (circle), boss, size of the slot grid (gc x gr), critical path length, hazard shares (lava = mire, river, spikes, vents, holes, pits), loop share, soul bowls (fire), shooters, final. names/suffixes: room name parts per ring. words: hell wording -> crypt wording. gate_banner: banner colour per floor (red when missing). foot: furniture footprints [solid width, depth, cells]. mimic_fight / mimic_treasure: share of chests that are mimics.",
+ "_note": "Story 1 Krypta der Verdammten: the world pack for the world kit generator (src/world_kit/world_core.gd, src/world_kit/world_pack.gd). Written by tools/krypta_dungeon/export_world.js from krypta_floors.js; the browser preview reads the same values. floors: per floor title, ring (circle), boss, size of the slot grid (gc x gr), critical path length, hazard shares (lava = mire, river, spikes, vents, holes, pits), loop share, soul bowls (fire), shooters, final. names/suffixes: room name parts per ring. words: hell wording -> crypt wording. gate_banner: banner colour per floor (red when missing). foot: furniture footprints [solid width, depth, cells]. mimic_fight / mimic_treasure: share of chests that are mimics.",
  "schema": 1,
  "floors": [
   null,
@@ -405,6 +405,11 @@
    "Der Herr dieser Etage wartet."
   ]
  ],
+ "theme_flag": "crypt",
+ "light": {
+  "dark": 0.86,
+  "vignette": 0.85
+ },
  "gate_banner": {
   "1": "blue",
   "2": "green",
@@ -414,6 +419,11 @@
   "8": "pink"
  },
  "blue": "190,205,245",
+ "blue_props": [
+  "brazier_bowl",
+  "brazier_blue",
+  "bowl_blue"
+ ],
  "foot": {
   "table_a": [
    104,

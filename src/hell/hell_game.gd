@@ -55,8 +55,8 @@ const InventoryPanel = preload("res://src/ui/inventory_panel.gd")
 const HudKit = preload("res://src/ui/hud_kit.gd")
 const HudStyle = preload("res://src/ui/hud_style.gd")
 ## The world kit (src/world_kit): a world with theme.world_pack builds every floor live from the
-## run number instead of reading baked floors (Story 1, the crypt).
-const WorldPack = preload("res://src/world_kit/krypta_pack.gd")
+## run number instead of reading baked floors (Story 1 the crypt, Story 3 the hell).
+const WorldPack = preload("res://src/world_kit/world_pack.gd")
 const BALANCE_PATH := "res://assets/data/hell_balance.json"
 const HERO := "res://assets/sprites/0x72/%s_%s_anim_f%d.png"
 const WEAPON := "res://assets/sprites/0x72/%s.png"
@@ -239,7 +239,9 @@ func _ready() -> void:
 	balance = JSON.parse_string(FileAccess.get_file_as_string(theme.balance))
 	if theme.has("world_pack"):
 		# a generated world: floors are built when entered (load_floor); only their number is known
-		world = WorldPack.new(str(theme.world_pack), str(theme.sprites) + "manifest.json")
+		# world_sizes: the sprite sizes the generator reads (lights over props); a world with two graphics
+		# sets names one, so both build the same floor from the same run number
+		world = WorldPack.new(str(theme.world_pack), str(theme.get("world_sizes", str(theme.sprites) + "manifest.json")))
 		floors_raw = []
 		floors_raw.resize(world.floor_count())
 	else:

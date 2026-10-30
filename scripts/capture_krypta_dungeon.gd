@@ -1,15 +1,19 @@
 extends SceneTree
-## Captures evidence of Story 1, the crypt on the world kit, from the real windowed game
+## Captures evidence of a world on the world kit (Story 1 the crypt, Story 3 the hell) from the real windowed game
 ## (docs/WELT-BAUKASTEN.de.md): the start, the key room (shop, merchant, fountain), the dressed boss
 ## gate, a breakable crate hit by the hero's own attack, a mimic chest waking, the plate puzzle,
 ## the hidden stairs behind the extinguished torch and the floor choice, a new world on floor 1,
 ## and the blue gate on floor 10. Prints a CHECK line per step. The hero is kept at full hearts.
 ## Usage:
-##   godot --path . --resolution 1280x720 -s res://scripts/capture_krypta_dungeon.gd -- <output_dir> [class_id]
-const KryptaScene = preload("res://src/hell/krypta_dungeon.tscn")
+##   godot --path . --resolution 1280x720 -s res://scripts/capture_krypta_dungeon.gd -- <output_dir> [class_id] [scene] [pixel|hd]
+## scene defaults to the crypt; the hell: res://src/hell/hell_dungeon.tscn. The graphics set defaults to
+## the player's setting; pixel or hd pick one for this capture (its own user:// file, deleted after).
 
 var _out := "res://production/qa/evidence/krypta-welt"
 var _class := "swordsman"
+var _scene := "res://src/hell/krypta_dungeon.tscn"
+var _graphics := ""
+const GRAPHICS_FILE := "user://capture_graphics.cfg"
 var _game: Node
 var _fails := 0
 
@@ -20,6 +24,10 @@ func _initialize() -> void:
 		_out = args[0]
 	if args.size() > 1:
 		_class = args[1]
+	if args.size() > 2:
+		_scene = args[2]
+	if args.size() > 3:
+		_graphics = args[3]
 	_run.call_deferred()
 
 
@@ -73,8 +81,13 @@ func _signature() -> String:
 
 func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(_out))
-	_game = KryptaScene.instantiate()
+	_game = (load(_scene) as PackedScene).instantiate()
 	_game.class_id = _class
+	if _graphics != "":
+		var cfg := ConfigFile.new()
+		cfg.set_value("options", "graphics", _graphics)
+		cfg.save(GRAPHICS_FILE)
+		_game.graphics_path = GRAPHICS_FILE
 	root.add_child(_game)
 	await _wait(40)
 	_check(_game.world != null and int(_game.state.get("world_run", 0)) > 0, "floor 1 built live, world %d" % int(_game.state.get("world_run", 0)))
@@ -211,5 +224,7 @@ func _run() -> void:
 	await _wait(40)
 	_game.camera.position = Vector2(gate.cx, (gate.y1 + 1.6) * 96.0)
 	await _shot("13-etage10-bosstor.png")
+	if _graphics != "":
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(GRAPHICS_FILE))
 	print("KRYPTA_CAPTURE fails=%d" % _fails)
 	quit(1 if _fails > 0 else 0)

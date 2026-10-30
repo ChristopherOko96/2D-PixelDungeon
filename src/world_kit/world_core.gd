@@ -2,7 +2,7 @@ extends RefCounted
 ## World kit floor core: the shared generator every story world runs on. A GDScript port of
 ## tools/world_kit/world_core.js (the browser preview runs the JS); both build the same floor from
 ## the same seed (tests/world_kit_parity_test.gd). A world brings its own floors, names and
-## dressing (e.g. src/world_kit/krypta_pack.gd); build_floor() returns the floor as plain
+## dressing (e.g. src/world_kit/world_pack.gd); build_floor() returns the floor as plain
 ## dictionaries, to_raw() turns it into the floor schema src/hell/hell_floor_data.gd reads.
 ##
 ## Fixed rules on every floor, whatever the seed (docs/WELT-BAUKASTEN.de.md):
@@ -206,7 +206,8 @@ static func _try_generate(P: Dictionary, rnd: Rng) -> Dictionary:
 		dir = ch.d
 		path.append([c + dir[0], r + dir[1]])
 		occ[_key(c + dir[0], r + dir[1])] = "path"
-	# 2. chunk the path into fight rooms of 2 or 3 slots (never a single slot)
+	# 2. chunk the path into fight rooms of 2 or 3 slots (never a single slot); P.two is the share of
+	# 2-slot rooms (P.twoSide in the side branches), P.trimLarge cuts the corners of 3-slot rooms
 	var rooms: Array = []
 	var doors: Array = []
 	var mk := func(slots: Array, type: String, extra: Dictionary) -> Dictionary:
@@ -222,7 +223,7 @@ static func _try_generate(P: Dictionary, rnd: Rng) -> Dictionary:
 	var boss_at := path.size() - 1
 	while i < boss_at:
 		var left := boss_at - i
-		var size := left if left <= 3 else (2 if left == 4 else (2 if rnd.next() < 0.55 else 3))
+		var size := left if left <= 3 else (2 if left == 4 else (2 if rnd.next() < float(P.get("two", 0.55)) else 3))
 		var room: Dictionary = mk.call(path.slice(i, i + size), "combat", {"onPath": true, "parent": prev, "depth": int(prev.depth) + 1})
 		doors.append({"a": prev, "b": room, "sa": path[i - 1], "sb": path[i], "kind": "open"})
 		prev.children.append(room)
@@ -288,7 +289,7 @@ static func _try_generate(P: Dictionary, rnd: Rng) -> Dictionary:
 		var sb: Array = cd[1]
 		var dd: Array = cd[2]
 		var slots: Array = [sb]
-		var want := 2 if rnd.next() < 0.6 else 3
+		var want := 2 if rnd.next() < float(P.get("twoSide", 0.6)) else 3
 		while slots.size() < want:
 			var c2: int = slots[-1][0]
 			var r2: int = slots[-1][1]
@@ -584,6 +585,9 @@ static func describe(P: Dictionary, gen: Dictionary, rnd: Rng, names: Array, suf
 			r.cut = 4 if g.type == "secret" or g.type == "hidden" else 3
 		elif n == 1:
 			r.shape = "rect"
+		elif n >= 3 and P.has("trimLarge"):
+			r.shape = "oct"
+			r.cut = int(P.trimLarge)
 		else:
 			r.shape = "oct" if n == 2 and rnd.next() < 0.25 else "rect"
 			r.cut = 2
@@ -1229,6 +1233,14 @@ static func _generate_features(W: Dictionary, P: Dictionary, r: Dictionary, rnd:
 
 
 ## A mire band across a big room; lane cells crossing it become bridges.
+## True when an entity of the room stands on cell (x, y) (its foot cell, as the way checks read it).
+static func _ent_on(W: Dictionary, room: int, x: int, y: int) -> bool:
+	for e: Dictionary in W.ents:
+		if int(e.room) == room and int(floor(float(e.x) / C)) == x and int(floor((float(e.y) - 10) / C)) == y:
+			return true
+	return false
+
+
 static func _river_across(W: Dictionary, r: Dictionary, rnd: Rng) -> bool:
 	var cols: int = W.COLS
 	var vertical: bool = int(r.bw) > int(r.bh)
@@ -1245,7 +1257,8 @@ static func _river_across(W: Dictionary, r: Dictionary, rnd: Rng) -> bool:
 				var gi := (int(r.by) + y) * cols + int(r.bx) + x
 				if _room_at(W, gi) != int(r.index):
 					continue
-				if _grid(W, gi) != 1:
+				# never over a thing already standing there (a fire bowl in the river could not be reached)
+				if _grid(W, gi) != 1 or _ent_on(W, int(r.index), int(r.bx) + x, int(r.by) + y):
 					ok = false
 					break
 				band.append([x, y, r.lanes.has(gi)])

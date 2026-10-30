@@ -1,10 +1,11 @@
 // Builds many random crypt runs (10 floors each) and checks every floor against the dungeon rules.
 // Prints what failed and how often; exit code 1 if any floor broke a rule.
-// Usage (repo root): node tools/krypta_dungeon/check_runs.js <skin manifest.json> [runs=200] [first run number]
+// Usage (repo root): node tools/krypta_dungeon/check_runs.js <skin manifest.json> [runs=200] [first run number] [pack module]
+// The pack module defaults to the crypt; the hell: tools/hell_dungeon/hell_world.js.
 'use strict';
 const path = require('path');
 const HC = require('../world_kit/world_core.js');
-const KF = require('./krypta_floors.js');
+const KF = require(process.argv[5] ? path.resolve(process.argv[5]) : './krypta_floors.js');
 
 const man = require(path.resolve(process.argv[2]));
 const RUNS = +(process.argv[3] || 200), FIRST = +(process.argv[4] || 1);

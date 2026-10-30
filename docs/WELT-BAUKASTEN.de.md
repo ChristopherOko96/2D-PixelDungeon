@@ -1,7 +1,7 @@
-# Welt-Baukasten (Stand 29.10.2026)
+# Welt-Baukasten (Stand 30.10.2026)
 
-Story 1 „Krypta der Verdammten“ läuft als erste Welt auf dem Welt-Baukasten: Jede Etage wird beim
-Betreten aus einer Weltnummer gebaut. Ein neuer Lauf würfelt eine neue Weltnummer, also neue
+Story 1 „Krypta der Verdammten“ und Story 3 „Der Hell-Dungeon“ laufen auf dem Welt-Baukasten: Jede
+Etage wird beim Betreten aus einer Weltnummer gebaut. Ein neuer Lauf würfelt eine neue Weltnummer, also neue
 Grundrisse, Räume, Rätsel und Verstecke; Etagennamen, Bosse und Schwierigkeit bleiben fest.
 
 ## Aufbau
@@ -9,7 +9,8 @@ Grundrisse, Räume, Rätsel und Verstecke; Etagennamen, Bosse und Schwierigkeit 
 | Teil | Datei |
 | --- | --- |
 | Generator (für alle Welten) | `src/world_kit/world_core.gd`, Vorlage `tools/world_kit/world_core.js` |
-| Krypta-Paket (Wortwahl, Ausstattung, Weltnummer → Etagen-Seeds) | `src/world_kit/krypta_pack.gd`, Vorlage `tools/krypta_dungeon/krypta_floors.js` |
+| Weltpaket (Wortwahl, Ausstattung, Weltnummer → Etagen-Seeds; für jede Welt dasselbe) | `src/world_kit/world_pack.gd`, Vorlage `tools/world_kit/world_pack.js` |
+| Krypta-Daten in JS | `tools/krypta_dungeon/krypta_floors.js` |
 | Krypta-Daten (Etagen, Bosse, Namen, Tabellen) | `assets/data/krypta_world.json` (aus dem JS: `node tools/krypta_dungeon/export_world.js`) |
 | Krypta-Thema | `assets/data/krypta_theme.json`, Szene `src/hell/krypta_dungeon.tscn` |
 | Grafiken | `assets/sprites/krypta/` (`build_krypta_skin.py`), Monster `assets/sprites/krypta/monsters/` |
@@ -24,8 +25,10 @@ Die Weltnummer steht im Lauf-Zustand (`world_run`) und wird mit jedem Spielstand
 (`src/save/story_save.gd`); ein geladener Stand baut dieselbe Welt nach.
 
 Vorschau und Spiel bauen aus derselben Weltnummer genau dieselbe Welt:
-`tests/world_kit_parity_test.gd` vergleicht 20 Etagen Feld für Feld mit dem JS
-(`node tools/world_kit/dump_floors.js assets/sprites/krypta/manifest.json`).
+`tests/world_kit_parity_test.gd` vergleicht je Welt 20 Etagen Feld für Feld mit dem JS
+(`node tools/world_kit/dump_floors.js assets/sprites/krypta/manifest.json` für die Krypta,
+`node tools/world_kit/dump_floors.js assets/sprites/hell/manifest.json tests/data/world_kit_reference_hell.json tools/hell_dungeon/hell_world.js`
+für die Hölle).
 Eine Etage braucht in Godot etwa 0,5 bis 1,1 Sekunden.
 
 ## Feste Regeln jeder Etage
@@ -49,6 +52,29 @@ Eine Etage braucht in Godot etwa 0,5 bis 1,1 Sekunden.
 - Ab Etage 2 manchmal eine Vergessene Stiege hinter einer glatten Wand. Eine einzige erloschene
   Fackel im Raum davor öffnet sie (anzünden mit E). Die Treppe führt in eine frühere Etage nach
   Wahl (Taste 1–9), mit neu gewürfelter Welt; Herzen, Steine, Level und Gegenstände bleiben.
+
+## Die Hölle (Story 3)
+
+Der Hell-Dungeon behält Aussehen, Licht, Lava, Gegner, Bosse und alle Spielmechanik; nur die
+Weltkarte entsteht jetzt bei jedem Lauf neu, auch Etage 1. Es gelten dieselben festen Regeln wie
+in der Krypta (Schlüsselkammer, Prunktor, Druckplatten, Zerbrechliches, Mimiks, Vergessene
+Stiege, kein Weg versperrt), mit Höllen-Raumgrößen: Kampfräume sind meist mittelgroß (zwei
+Felder, `two`/`twoSide` = 0,8), die wenigen großen verlieren leicht ihre Ecken (`trimLarge` 2).
+
+| Teil | Datei |
+| --- | --- |
+| Höllen-Daten (Etagen, Bosse, Namen, Tabellen) | `tools/hell_dungeon/hell_world.js` → `assets/data/hell_world.json` (`node tools/hell_dungeon/export_world.js`) |
+| Thema | `assets/data/hell_theme.json` (`world_pack`; `world_sizes`: HD-Maße, damit Pixel- und HD-Satz dieselbe Etage bauen) |
+| Fehlende Grafiken (Brunnen, Laden, Wasserspeier, Prunktor, Banner je Etagenfarbe, Fässer, Urnen, Kisten, Teppiche, Treppe, erloschene Fackel, blaues Feuer, Asche) | `tools/hell_dungeon/build_hell_extras.py`: aus den Krypta-Gegenstücken in Höllenstein und verkohltem Holz, für `assets/sprites/hell` und den Pixel-Satz `assets/sprites/hell_0x72` (Höllen-Palette aus `scripts/make_hell_skin.gd`) |
+| Mimik | die Krypta-Mimik in Höllenholz, geliehen über `assets/data/hell_balance.json` → `monsters.borrow`; sie steht in keiner Etagen-Mischung |
+| Vorschau | `py -3 -I tools/hell_dungeon/build_world_preview.py <out.html>` |
+
+Regeln prüfen: `node tools/krypta_dungeon/check_runs.js assets/sprites/hell/manifest.json 200 1 tools/hell_dungeon/hell_world.js`.
+Die gebackenen Etagen `assets/data/hell_floors.json` liest die Hölle nicht mehr; sie bleiben für
+ihre Tests und Werkzeuge liegen.
+
+Belege: `production/qa/evidence/hell-welt/` (Pixel) und `hell-welt/hd/`
+(`scripts/capture_krypta_dungeon.gd -- <dir> <class> res://src/hell/hell_dungeon.tscn [pixel|hd]`).
 
 ## Noch offen
 

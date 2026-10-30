@@ -1,6 +1,8 @@
 # Welt-Baukasten
 
-`world_core.js` ist der gemeinsame Etagen-Generator für alle Welten. Eine Welt bringt nur Daten mit:
+`world_core.js` ist der gemeinsame Etagen-Generator für alle Welten, `world_pack.js` die gemeinsame
+Ausstattung danach (`WorldPack.make(PACK)`: Wortwahl, Banner, Möbel, Zerbrechliches, Mimiks,
+Brücken, blaues Feuer, freie Wege). Eine Welt bringt nur Daten mit:
 zehn Etagen (Titel, fester Boss, Werte), Raumnamen, Wortwahl und einen Skin. Jeder Lauf würfelt
 eine Weltnummer; aus ihr und der Etagennummer entsteht der Seed jeder Etage (siehe
 `tools/krypta_dungeon/krypta_floors.js`, `forRun`).
@@ -10,7 +12,8 @@ Hölle und Frostgruft ihre gebackenen Etagen daraus beziehen.
 
 ## Feste Regeln auf jeder Etage
 
-- Kampfräume sind mittel oder groß (2 bis 3 Felder). Kleine Räume (1 Feld) gibt es nur für den
+- Kampfräume sind mittel oder groß (2 bis 3 Felder; Anteil der mittleren `two`/`twoSide`, Ecken
+  großer Räume kappen `trimLarge`; die Hölle setzt 0,8 / 0,8 / 2). Kleine Räume (1 Feld) gibt es nur für den
   Start, die Schlüsselkammer, Tresore, Beutekammer, Geheimräume und die Abstiegskammer.
 - Das Bosstor öffnet nur mit dem Bossschlüssel. Der liegt in einer kleinen Schlüsselkammer in der
   Mitte; an der Nordwand der Manabrunnen (einmal benutzbar), daneben der Ladentisch (später ein
