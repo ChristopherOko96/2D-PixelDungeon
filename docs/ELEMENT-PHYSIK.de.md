@@ -78,7 +78,7 @@ Werte in `reactions`; im Hauptdungeon gewinnen die eigenen Werte aus
 | Frost auf Wasser | Glatteis (`ice_time`); Feuer taut es wieder. |
 | Frost auf Dampf | kondensiert: fällt als Wasser (`rain_scale`). |
 | Wasser auf Lava | Kruste (`crust_time`), das Wasser verdampft. |
-| Blitz in Wasser/Gift/Blut | geladen (`charge_*`, Hauptdungeon). |
+| Blitz in Wasser/Gift/Blut | geladen: alle `charge_tick` s nimmt jeder Gegner darin Schaden und ist kurz betäubt (`charge_stun`, Bosse die Hälfte); der Held bleibt verschont, Glatteis isoliert. Hauptdungeon: `charge_*` in `src/data/balance.json`. Story-Welten (seit 2026-10-31): `story_elements.gd lightning_at`, Schaden in Heldentreffern (`charge_hits`), die Pfütze knistert (`pool_paint.gd charge_pool`). |
 
 Auslöser: die Talente des Helden (Feuer, Frost: `talent_combat.gd _element`),
 die Angriffe der Monster beim Aufschlag (Lob, Meteor, Slam: `_react`), ein
@@ -136,6 +136,8 @@ Feuer 0.5, Gift 0.45, Leere 0.55, Dampf 0.5, Giftgas 0.4. Monster behalten ihre
 Ticks (`enemy_hurt` × `tick`).
 
 ## Testraum
+
+Story-Testraum (`src/debug/story_testraum.gd`, Werte `debug_story_testraum.json` `elements.kraft`): BLITZ (Kettenblitz, lädt Pfützen), STURM, DRUCKWELLE (bläst Gas weg, Pfützen schwingen), BEBEN (Risse, Eis bricht, Betäubung) und HEILIG (Untote/Leere nehmen Schaden, der Held im Licht heilt) über `story_elements.gd` `lightning_at`, `wave_at`, `quake_at`, `holy_at`.
 
 Pfützen liegen 60 s, Gase 30 s (`debug_test_arena.json`), damit die Reaktionen
 der anderen Elemente darauf geprüft werden können.

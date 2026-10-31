@@ -37,7 +37,6 @@ const PerkCombat = preload("res://src/perk_combat.gd")
 const CryptEnemyAI = preload("res://src/crypt_enemy_ai.gd")
 const MainMenu = preload("res://src/main_menu.gd")
 const HellFloorData = preload("res://src/hell/hell_floor_data.gd")
-const HellScene = preload("res://src/hell/hell_dungeon.tscn")
 const HeroClass = preload("res://src/player/hero_class.gd")
 const TeamProgress = preload("res://src/player/team_progress.gd")
 const HeroSkills = preload("res://src/combat/hero_skills.gd")
@@ -2635,7 +2634,7 @@ func _build_main_menu() -> void:
 	main_menu.endless_available = false
 	main_menu.stories = _load_stories()
 	main_menu.debug_entries = _debug_entries()
-	main_menu.hell_entries = _hell_entries()
+	main_menu.story_worlds = _story_worlds()
 	ui.add_child(main_menu)
 	main_menu.start_requested.connect(_start_solo)
 	main_menu.settings_changed.connect(_apply_menu_settings)
@@ -2646,35 +2645,70 @@ func _build_main_menu() -> void:
 	main_menu.rooms_saved.connect(_use_saved_rooms)
 	main_menu.room_test_requested.connect(_start_room_test)
 	main_menu.test_arena_requested.connect(start_test_arena)
-	main_menu.hell_requested.connect(_start_hell)
+	main_menu.story_floor_requested.connect(_start_story_floor)
 	main_menu.story_scene_requested.connect(_open_story_scene)
 	main_menu.save_load_requested.connect(_load_save)
 	# Saved fullscreen is applied in _ready, only when the game opens on the menu.
 	view.shake_scale = 1.0 if bool(main_menu.settings.get("shake", true)) else 0.0
 
 
-## Hell-Dungeon world for the debug level choice: one entry per baked floor.
-func _hell_entries() -> Array:
-	var entries: Array = []
-	for f: Dictionary in HellFloorData.load_all():
-		entries.append({"floor": int(f.n), "title": str(f.title), "boss": str(f.boss.name)})
-	return entries
+## The story worlds for the debug level choice, in menu order: every playable story with its
+## own scene (assets/data/story_campaigns.json) and that world's floors, read from the theme
+## the scene names (the same floor titles and boss names the run shows):
+## [{id, title, scene, floors: [{floor, title, boss, mini, final}]}].
+func _story_worlds() -> Array:
+	var worlds: Array = []
+	for story: Dictionary in _load_stories():
+		var scene := str(story.get("scene", ""))
+		if not bool(story.get("playable", false)) or scene.is_empty() or not ResourceLoader.exists(scene):
+			continue
+		var floors := _world_floors(_scene_theme(scene))
+		if not floors.is_empty():
+			worlds.append({"id": str(story.id), "title": str(story.title), "scene": scene, "floors": floors})
+	return worlds
 
 
-## Leaves the crypt for the Hell-Dungeon scene on that floor, at its entrance
-## or right in its boss room.
-func _start_hell(floor_number: int, boss: bool) -> void:
-	var hell: Node = HellScene.instantiate()
-	hell.start_floor = floor_number
-	hell.start_at_boss = boss
-	var tree := get_tree()
-	tree.root.add_child(hell)
-	tree.current_scene = hell
-	queue_free()
+## The theme_path a story scene's root sets (src/hell/hell_game.gd), read without instancing it.
+func _scene_theme(scene_path: String) -> String:
+	var state := (load(scene_path) as PackedScene).get_state()
+	for i in range(state.get_node_property_count(0)):
+		if state.get_node_property_name(0, i) == &"theme_path":
+			return str(state.get_node_property_value(0, i))
+	return ""
+
+
+## One entry per floor of a world theme: its world pack's floors (generated worlds) or its baked
+## floors file (hell_game.gd THEME_DEFAULT "floors"); [] when the theme is missing.
+func _world_floors(theme_path: String) -> Array:
+	var theme: Variant = JSON.parse_string(FileAccess.get_file_as_string(theme_path)) if FileAccess.file_exists(theme_path) else null
+	if not theme is Dictionary:
+		return []
+	var raw: Array = []
+	if (theme as Dictionary).has("world_pack"):
+		var pack: Variant = JSON.parse_string(FileAccess.get_file_as_string(str(theme.world_pack)))
+		raw = pack.get("floors", []) if pack is Dictionary else []
+	else:
+		raw = HellFloorData.load_all(str(theme.get("floors", HellFloorData.DATA_PATH)))
+	var floors: Array = []
+	for f: Variant in raw:
+		if not f is Dictionary:
+			continue
+		var boss: Dictionary = (f as Dictionary).get("boss", {})
+		floors.append({"floor": int(f.n), "title": str(f.title), "boss": str(boss.get("name", "")),
+			"mini": bool(boss.get("mini", false)), "final": bool(boss.get("final", false))})
+	return floors
+
+
+## Debug level choice: a story world's scene with the chosen hero on `floor_number`, at its
+## entrance or, with `boss`, inside its boss room (hell_game.gd start_floor / start_at_boss).
+func _start_story_floor(path: String, class_id: String, floor_number: int, boss: bool) -> void:
+	_open_story_scene(path, class_id, {}, {"start_floor": floor_number, "start_at_boss": boss})
+
 
 ## Swaps the menu for a story's own scene (e.g. the Frostgruft) with the chosen hero class;
-## `resume` is a loaded story save to continue from.
-func _open_story_scene(path: String, class_id: String, resume: Dictionary = {}) -> void:
+## `resume` is a loaded story save to continue from; `jump` sets scene properties before it
+## enters the tree (the debug floor start: start_floor, start_at_boss).
+func _open_story_scene(path: String, class_id: String, resume: Dictionary = {}, jump: Dictionary = {}) -> void:
 	if not ResourceLoader.exists(path):
 		main_menu.show_toast("Die Welt dieses Spielstands fehlt.")
 		return
@@ -2683,6 +2717,9 @@ func _open_story_scene(path: String, class_id: String, resume: Dictionary = {}) 
 		scene.class_id = class_id
 	if not resume.is_empty() and "resume" in scene:
 		scene.resume = resume
+	for key: String in jump:
+		if key in scene:
+			scene.set(key, jump[key])
 	var tree := get_tree()
 	var old := tree.current_scene
 	tree.root.add_child(scene)

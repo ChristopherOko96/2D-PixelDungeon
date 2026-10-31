@@ -15,9 +15,10 @@ extends Control
 ## A solo run with the chosen mode and hero class.
 signal start_requested(endless: bool, class_id: String)
 signal multiplayer_requested
-## Debug pick in the Hell-Dungeon world: start that floor at its entrance, or
-## right in its boss room when boss is true (src/hell/hell_dungeon.tscn).
-signal hell_requested(floor_number: int, boss: bool)
+## Debug level choice: start a story world's scene (story "scene" in story_campaigns.json)
+## with the picked hero on that floor, at its entrance, or right in its boss room when
+## boss is true (src/hell/hell_game.gd start_floor / start_at_boss).
+signal story_floor_requested(scene_path: String, class_id: String, floor_number: int, boss: bool)
 ## The player picked a hero for a story that runs in its own scene (story "scene" in story_campaigns.json).
 signal story_scene_requested(scene_path: String, class_id: String)
 signal quit_requested
@@ -66,10 +67,14 @@ var account: Node
 var classes: Dictionary = {}
 var class_order: Array = []
 var weapons: Dictionary = {}
-## Debug level list of the crypt world: {label, endless, floor, room}; set by the game.
+## Jumps into the old crypt run: {label, endless, floor, room}; set by the game. No longer
+## listed in the level choice (the old crypt is obsolete); kept for _pick_debug callers.
 var debug_entries: Array = []
-## Debug floors of the Hell-Dungeon world: {floor, title, boss}; set by the game.
-var hell_entries: Array = []
+## The story worlds of the level choice, in menu order; set by the game (game.gd _story_worlds):
+## {id, title, scene, floors: [{floor, title, boss, mini, final}]}.
+var story_worlds: Array = []
+## The debug floor start waiting for the hero choice: {scene, floor, boss}; empty otherwise.
+var _story_jump: Dictionary = {}
 ## False until the endless mode exists: the button is shown disabled.
 var endless_available := true
 var _endless_button: Button
@@ -100,8 +105,8 @@ var _debug_dim: ColorRect
 ## How dark the dim behind the debug panels is (0 clear .. 1 black).
 const DEBUG_DIM_ALPHA := 0.62
 var _debug_panel: Panel
-var _crypt_panel: Panel
-var _hell_panel: Panel
+## The floor list of each story world by world id (see story_worlds).
+var _world_panels: Dictionary = {}
 ## The mage's frames as loaded ("run" of the chase, "idle" of his class card), before
 ## the element skin (src/hero/element_skin.gd) recolours them.
 var _mage_frames: Dictionary = {}
@@ -511,35 +516,56 @@ func _open_debug_hub() -> void:
 	_refresh_talent_test()
 
 
-## Debug: the level choice first lists the built worlds, one below the other.
-## A world shows its levels; a crypt pick goes through the hero choice and
-## then starts right there, a hell pick starts that floor (entrance or boss).
+## Debug: the level choice first lists the story worlds (Krypta, Frostgruft, Hölle; see
+## story_worlds), one below the other. A world shows its floors, each with START (its
+## entrance) and BOSS (inside its boss room); a pick goes through the hero choice and
+## then starts that world's scene on that floor (story_floor_requested).
 func _build_debug_panel() -> void:
 	_debug_panel = _panel("LEVEL-AUSWAHL (DEBUG) · WELT WÄHLEN")
-	_debug_panel.size = Vector2(800, 320)
+	_debug_panel.size = Vector2(800, 66 + story_worlds.size() * 86 + 66)
 	_debug_panel.position = (SCREEN - _debug_panel.size) * 0.5 + Vector2(0, 20)
-	_world_button(_debug_panel, "KRYPTA", "Räume, Ebenen, Minibosse, Leerenrufer", Vector2(30, 66), _open_world.bind("crypt"))
-	_world_button(_debug_panel, "HELL-DUNGEON", "10 Etagen, Start und Boss je Etage", Vector2(30, 152), _open_world.bind("hell"))
-	_panel_button(_debug_panel, "ZURÜCK", Vector2(30, 258), Vector2(740, 36), _open_debug_hub)
-	_crypt_panel = _panel("WELT · KRYPTA")
-	_crypt_panel.size = Vector2(800, 470)
-	_crypt_panel.position = (SCREEN - _crypt_panel.size) * 0.5 + Vector2(0, 20)
-	for i in range(debug_entries.size()):
-		var entry: Dictionary = debug_entries[i]
-		var button := _panel_button(_crypt_panel, str(entry.label), Vector2(30 + (i % 2) * 375, 62 + (i / 2) * 40), Vector2(365, 34), func(): _pick_debug(entry))
-		button.add_theme_font_size_override("font_size", 16)
-	_panel_button(_crypt_panel, "ZURÜCK ZU DEN WELTEN", Vector2(30, 420), Vector2(740, 36), _open_debug)
-	_hell_panel = _panel("WELT · HELL-DUNGEON")
-	_hell_panel.size = Vector2(960, 520)
-	_hell_panel.position = (SCREEN - _hell_panel.size) * 0.5 + Vector2(0, 20)
-	for i in range(hell_entries.size()):
-		var entry: Dictionary = hell_entries[i]
+	for i in range(story_worlds.size()):
+		var world: Dictionary = story_worlds[i]
+		var floors: Array = world.floors
+		var last: Dictionary = floors[-1] if not floors.is_empty() else {"boss": "?"}
+		# short: the 740 px button grows past the panel with a longer line
+		var hint := "%d Etagen · Endboss %s" % [floors.size(), str(last.boss)]
+		_world_button(_debug_panel, str(world.title), hint, Vector2(30, 66 + i * 86), _open_world.bind(str(world.id)))
+		_world_panels[str(world.id)] = _build_world_panel(world)
+	_panel_button(_debug_panel, "ZURÜCK", Vector2(30, _debug_panel.size.y - 62), Vector2(740, 36), _open_debug_hub)
+
+
+## One story world's floor list: per floor its number and title, START and BOSS · its
+## boss (the world's last boss in gold).
+func _build_world_panel(world: Dictionary) -> Panel:
+	var panel := _panel("WELT · " + str(world.title))
+	# wide enough for the longest names (ETAGE 10 · THRON DES GLETSCHERKOLOSSES,
+	# BOSS · HRIMGAR, DER GLETSCHERKOLOSS) at 16 px
+	panel.size = Vector2(1200, 520)
+	panel.position = (SCREEN - panel.size) * 0.5 + Vector2(0, 20)
+	var floors: Array = world.floors
+	for i in range(floors.size()):
+		var entry: Dictionary = floors[i]
 		var y := 62.0 + i * 40.0
-		var label := _panel_label(_hell_panel, "ETAGE %d · %s" % [int(entry.floor), str(entry.title).to_upper()], Vector2(30, y + 6))
-		label.size = Vector2(400, 26)
-		_panel_button(_hell_panel, "START", Vector2(440, y), Vector2(110, 34), hell_requested.emit.bind(int(entry.floor), false))
-		_panel_button(_hell_panel, "BOSS · " + str(entry.boss).to_upper(), Vector2(560, y), Vector2(370, 34), hell_requested.emit.bind(int(entry.floor), true))
-	_panel_button(_hell_panel, "ZURÜCK ZU DEN WELTEN", Vector2(30, 470), Vector2(900, 36), _open_debug)
+		var label := _panel_label(panel, "ETAGE %d · %s" % [int(entry.floor), str(entry.title).to_upper()], Vector2(30, y + 6))
+		label.size = Vector2(520, 26)
+		_panel_button(panel, "START", Vector2(560, y), Vector2(110, 34), _pick_story_floor.bind(world, entry, false))
+		var boss := _panel_button(panel, "BOSS · " + str(entry.boss).to_upper(), Vector2(680, y), Vector2(490, 34), _pick_story_floor.bind(world, entry, true))
+		if bool(entry.get("final", false)): boss.add_theme_color_override("font_color", GOLD)
+	_panel_button(panel, "ZURÜCK ZU DEN WELTEN", Vector2(30, 470), Vector2(1140, 36), _open_debug)
+	return panel
+
+
+## A floor start of the level choice: the hero choice first (the game has classes),
+## then story_floor_requested in _choose_class.
+func _pick_story_floor(world: Dictionary, entry: Dictionary, boss: bool) -> void:
+	if class_order.is_empty():
+		_close_panels()
+		story_floor_requested.emit(str(world.scene), "", int(entry.floor), boss)
+		return
+	_open_classes(false)
+	_story_jump = {"scene": str(world.scene), "floor": int(entry.floor), "boss": boss}
+	_class_title.text = "WÄHLE DEINEN HELDEN · %s · ETAGE %d%s" % [str(world.title), int(entry.floor), " · BOSS" if boss else ""]
 
 
 func _world_button(panel: Panel, title: String, hint: String, at: Vector2, callback: Callable) -> Button:
@@ -549,10 +575,11 @@ func _world_button(panel: Panel, title: String, hint: String, at: Vector2, callb
 	return button
 
 
+## Shows the floor list of the story world `world` (its id in story_worlds).
 func _open_world(world: String) -> void:
 	_close_panels()
-	var panel := _crypt_panel if world == "crypt" else _hell_panel
-	panel.visible = true
+	var panel: Panel = _world_panels.get(world)
+	if panel != null: panel.visible = true
 
 
 ## Opens the Dungeon-Werkstatt over the menu at `room_id` (or the first room).
@@ -616,6 +643,7 @@ func _open_arena() -> void:
 func _open_classes(endless: bool) -> void:
 	_close_panels()
 	_debug_start = {}
+	_story_jump = {}
 	_arena_pick = false
 	if class_order.is_empty():
 		# No hero classes yet: the mode button starts the run directly.
@@ -633,6 +661,12 @@ func _choose_class(id: String) -> void:
 		# the story Testraum: the Krypta first, the world switch sits in its panel
 		var testraum: Variant = load("res://src/debug/story_testraum.gd")
 		testraum.start(get_tree(), "", id)
+		return
+	if not _story_jump.is_empty():
+		# a floor start of the level choice: that world, that floor, entrance or boss room
+		var jump := _story_jump
+		_story_jump = {}
+		story_floor_requested.emit(str(jump.scene), id, int(jump.floor), bool(jump.boss))
 		return
 	var scene := _story_scene() if not _class_endless else ""
 	if scene != "":
@@ -725,7 +759,7 @@ func _apply_settings() -> void:
 
 ## True while a debug panel (hub, level choice, its worlds) or the Klangwerkstatt is open.
 func _debug_open() -> bool:
-	for panel: Control in [_hub_panel, _debug_panel, _crypt_panel, _hell_panel, sound_workshop]:
+	for panel: Control in [_hub_panel, _debug_panel, sound_workshop] + _world_panels.values():
 		if panel != null and panel.visible: return true
 	return false
 
@@ -735,8 +769,7 @@ func _close_panels() -> void:
 	_options_panel.visible = false
 	if _hub_panel != null: _hub_panel.visible = false
 	if _debug_panel != null: _debug_panel.visible = false
-	if _crypt_panel != null: _crypt_panel.visible = false
-	if _hell_panel != null: _hell_panel.visible = false
+	for panel: Panel in _world_panels.values(): panel.visible = false
 	if _class_panel != null: _class_panel.visible = false
 	if _story_panel != null: _story_panel.visible = false
 	if _talent_panel != null: _talent_panel.visible = false

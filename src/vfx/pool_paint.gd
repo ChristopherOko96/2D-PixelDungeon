@@ -1450,6 +1450,13 @@ func _charge(key: String, until: float) -> void:
 	(field.zaps as Array).append({"t0": _now, "seed": _rng.randi() % 997, "until": until, "pool": key})
 
 
+## A pool the story game charged (src/hell/story_elements.gd lightning_at:
+## lightning into water, poison or blood): pool `id` of `source` crackles all
+## over until `until` (the host's clock), like a snapshot's "ch" (_charge).
+func charge_pool(id: int, until: float, source := "") -> void:
+	_charge(_key(source, id), until)
+
+
 ## The arcs crawling over a pool that conducts: short zigzags between its own
 ## cells, drawn anew every two frames, only over the liquid. A charged pool
 ## (its zap has "until") crackles all over until then: more and longer arcs

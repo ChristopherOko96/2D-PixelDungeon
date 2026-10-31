@@ -41,7 +41,7 @@ func _run() -> void:
 	await _test_story_one_starts_solo_run_and_leaving_returns_to_menu()
 	await _test_debug_room_jump_starts_in_that_room_with_earlier_rooms_cleared()
 	await _test_debug_floor_two_starts_on_the_next_floor()
-	await _test_level_choice_lists_worlds_and_hell_floors()
+	await _test_level_choice_lists_story_worlds_and_floors()
 	await _test_shake_option_scales_view_shake()
 	finish()
 
@@ -225,37 +225,30 @@ func _test_debug_floor_two_starts_on_the_next_floor() -> void:
 	game.queue_free()
 	await process_frame
 
-func _test_level_choice_lists_worlds_and_hell_floors() -> void:
+func _test_level_choice_lists_story_worlds_and_floors() -> void:
 	# Arrange
 	var game = await _new_game()
 	var menu = game.main_menu
-	var picks: Array = []
-	menu.hell_requested.connect(func(floor_number: int, boss: bool): picks.append([floor_number, boss]))
-	# Act: the debug button opens the world choice first.
+	# Act: the debug level choice opens on the world list.
 	menu._open_debug()
+	# Assert: the three story worlds, each with its ten floors
+	check(menu._debug_panel.visible, "the level choice opens on the world list")
+	check(menu.story_worlds.size() == 3, "the level choice lists the three story worlds")
+	for world: Dictionary in menu.story_worlds:
+		check((world.floors as Array).size() == 10, "%s lists its ten floors" % str(world.title))
+	var first: Dictionary = menu.story_worlds[0]
+	menu._open_world(str(first.id))
+	var panel: Panel = menu._world_panels[str(first.id)]
+	check(panel.visible and not menu._debug_panel.visible, "a world shows its floor list")
+	var buttons: Array = []
+	for node: Node in panel.get_children():
+		if node is Button: buttons.append(node)
+	check(buttons.size() == 21, "each floor has a start and a boss button, plus back")
+	check((buttons[1] as Button).text.begins_with("BOSS · "), "the boss button names the floor's boss")
+	# Act: press floor 3's boss button (the hero choice comes first)
+	(buttons[5] as Button).pressed.emit()
 	# Assert
-	check(menu._debug_panel.visible and not menu._crypt_panel.visible and not menu._hell_panel.visible, "the level choice opens on the world list")
-	var labels: Array = []
-	for node: Node in menu.get_children():
-		if node is Button: labels.append((node as Button).text)
-	check(not labels.has("HELL-DUNGEON (NEU)"), "the title screen keeps only the level-choice button bottom left")
-	# Act: open each world.
-	menu._open_world("crypt")
-	check(menu._crypt_panel.visible and not menu._debug_panel.visible, "the crypt world shows its rooms and floors")
-	menu._open_world("hell")
-	check(menu._hell_panel.visible and not menu._crypt_panel.visible, "the Hell-Dungeon world shows its floors")
-	check(menu.hell_entries.size() == 10 and int(menu.hell_entries[0].floor) == 1 and int(menu.hell_entries[9].floor) == 10, "the Hell-Dungeon lists its ten floors in order")
-	var hell_buttons: Array = []
-	for node: Node in menu._hell_panel.get_children():
-		if node is Button: hell_buttons.append(node)
-	check(hell_buttons.size() == 21, "each hell floor has a start and a boss button, plus back")
-	check((hell_buttons[1] as Button).text.begins_with("BOSS · "), "the boss button names the floor's boss")
-	# Act: press floor 3's start and floor 3's boss without leaving the crypt scene.
-	menu.hell_requested.disconnect(game._start_hell)
-	(hell_buttons[4] as Button).pressed.emit()
-	(hell_buttons[5] as Button).pressed.emit()
-	# Assert
-	check(picks == [[3, false], [3, true]], "start and boss buttons request that floor at the entrance or the boss")
+	check(int(menu._story_jump.get("floor", 0)) == 3 and bool(menu._story_jump.get("boss", false)), "the boss button asks for floor 3 at its boss after the hero choice")
 	game.queue_free()
 	await process_frame
 

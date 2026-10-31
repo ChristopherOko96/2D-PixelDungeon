@@ -113,6 +113,15 @@ var resume: Dictionary = {}
 ## mini-map and the Testraum's own profile file; empty plays the story.
 var testraum: Dictionary = {}
 const TESTRAUM_SCRIPT := "res://src/debug/story_testraum.gd"
+## Debug Testraum input hooks (src/debug/story_testraum.gd): mouse_taken while
+## one of its floor tools is armed or the mouse is over its panel (the left
+## button never attacks then); keys_taken while its search field is typed in
+## (no walking, no arrow-key attacks).
+var mouse_taken := false
+var keys_taken := false
+## Debug Testraum hook (src/debug/story_testraum_tools.gd damage numbers):
+## called with each hit of the hero's weapon (monster, damage, crit).
+var on_hero_hit := Callable()
 ## The save record of the floor start (written into a slot from the pause menu).
 var floor_save: Dictionary = {}
 var saves := SaveStore.new()
@@ -1156,6 +1165,8 @@ func _skill_key_now(key: String, pressed: bool) -> void:
 
 
 func _axis(neg: Key, pos: Key) -> float:
+	if keys_taken:
+		return 0.0
 	return (1.0 if Input.is_physical_key_pressed(pos) else 0.0) - (1.0 if Input.is_physical_key_pressed(neg) else 0.0)
 
 
@@ -1658,6 +1669,8 @@ func _damage_mob(m: Dictionary, push: Vector2, mult := 1.0) -> bool:
 		drake_rig.damage(m, dealt, rig_part)
 	else:
 		m.hp -= dealt
+	if on_hero_hit.is_valid():
+		on_hero_hit.call(m, dealt, crit > 1.0)
 	if story_items != null and mult > 0.0:
 		story_items.on_hit(m)
 	# with the feel the hit sounds in the monster's crypt material (feedback.gd via FrostCombat.after_hit)
@@ -2300,7 +2313,7 @@ func _update_player(dt: float) -> void:
 	var aim := Vector2(_axis(KEY_LEFT, KEY_RIGHT), _axis(KEY_UP, KEY_DOWN)) * mirror
 	if aim != Vector2.ZERO:
 		_fire(aim)
-	elif Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and not state.get("tree_open", false) and throw_slot < 0 and (inventory_panel == null or not inventory_panel.open):
+	elif Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and not mouse_taken and not state.get("tree_open", false) and throw_slot < 0 and (inventory_panel == null or not inventory_panel.open):
 		_fire((get_global_mouse_position() - Vector2(player.x, player.y - 40)) * mirror)
 	if here == 2 and liquid.hurt:
 		_hurt("in der Lava verbrannt")

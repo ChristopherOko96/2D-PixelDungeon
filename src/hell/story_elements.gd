@@ -14,12 +14,27 @@ extends RefCounted
 ##   Frost on water: Glatteis; whoever stands on it slides (element_rules.json ice).
 ##   Water touching lava: the lava crusts over and is harmless for crust_time s;
 ##     the water steams away.
+##   Lightning into a liquid that conducts (water, poison, blood; Glatteis
+##     insulates): the puddle is charged for charge_time s, and every
+##     charge_tick s each monster standing in it takes charge_hits hero hits
+##     and is stunned charge_stun s (lightning_at; the hero is spared, the
+##     lightning is his). The pool crackles while it holds the charge.
+##   A shockwave blows the gas away, rings the liquid and throws the monsters
+##     back (wave_at); a quake cracks the floor and the ice, knocks rock up and
+##     stuns whoever stands in it (quake_at); holy light burns the undead and
+##     void creatures and heals the hero standing in it (holy_at). Their values
+##     come from the caller (`spec`), the charge's defaults are
+##     src/data/balance.json element's (debug Testraum: debug_story_testraum.json
+##     elements.kraft).
 ## Every reaction spares the hero (the fire was his, or he was lucky). Called
 ## by the monsters' attacks landing in their element (hell_monsters.gd _react)
 ## and the talents' fire and frost (src/combat/talent_combat.gd _element via
 ## src/hell/hell_talents.gd elements).
 
 const ElementRules = preload("res://src/combat/element_rules.gd")
+const PixelBolt = preload("res://src/vfx/pixel_bolt.gd")
+## The liquids that carry lightning (vfx_pools.json style liquid), unless the caller names its own.
+const CONDUCTS := ["water", "poison", "blood"]
 
 var g: Node
 var _contact := 0.0
@@ -142,6 +157,7 @@ func update(dt: float) -> void:
 	for z: Dictionary in g.monsters.zones:
 		if str(z.kind) == "puddle" and float(z.get("crust", 0.0)) > 0.0:
 			z.crust = float(z.crust) - dt
+	_step_charges(dt)
 	_contact -= dt
 	if _contact <= 0.0:
 		_contact = 0.2
@@ -408,3 +424,271 @@ func _pools_call(method: String, args: Array) -> void:
 	var layer: RefCounted = g._pool_layer() if g.has_method("_pool_layer") else null
 	if layer != null and layer.has_method(method):
 		layer.callv(method, args)
+
+
+# ---------- lightning, force and light ----------
+
+## The values of a charged puddle: src/data/balance.json element's charge
+## block in the story's units (charge_hits: hero hits per tick, as
+## explode_hits; boss_share of damage and stun for bosses), the world's
+## balance "element" over them, the caller's `spec` over those.
+func _charge_rules(spec: Dictionary) -> Dictionary:
+	var C := {"charge_time": 3.0, "charge_tick": 0.5, "charge_hits": 0.5, "charge_stun": 0.35, "boss_share": 0.5, "conducts": CONDUCTS}
+	var R := rules()
+	for key: String in C.keys():
+		if R.has(key):
+			C[key] = R[key]
+	C.merge(spec, true)
+	return C
+
+
+## Lightning striking at `at` reaching `r` (world px): every live puddle there
+## of a liquid that conducts (not frozen: Glatteis insulates) is charged for
+## charge_time s (its pool crackles all over, src/vfx/pool_paint.gd
+## charge_pool; a strike again renews it). Sparks fly off it and arcs creep
+## over the liquid at the strike (pool_paint electrify). Returns how many
+## puddles it charged.
+func lightning_at(at: Vector2, r: float, spec: Dictionary = {}) -> int:
+	if g.monsters == null:
+		return 0
+	var C := _charge_rules(spec)
+	var conducts: Array = C.conducts
+	var now := float(g.state.t)
+	var n := 0
+	var P := _particles()
+	for z: Dictionary in _puddles(at, r):
+		var st := str(z.get("st", "lava"))
+		if bool(z.get("frozen", false)) or not (st in conducts or ElementRules.material(st) in conducts):
+			continue
+		if float(z.get("charge", 0.0)) <= 0.0:
+			z.charge_tick = 0.0
+		z.charge = float(C.charge_time)
+		z.charge_rules = C
+		n += 1
+		_pools_call("charge_pool", [int(z.get("id", -1)), now + float(C.charge_time)])
+		if P != null:
+			PixelBolt.sparks(P, Vector2(z.p) / _pscale(), 10)
+	if n > 0:
+		_pools_call("electrify", [at, maxf(r, 24.0)])
+	return n
+
+
+## The charged puddles (lightning_at): every charge_tick s each monster
+## standing in one takes charge_hits hero hits and is stunned charge_stun s
+## (bosses boss_share), sparks jumping off it (m.zap_t: when it was struck);
+## the hero is spared. Frost on the water ends the charge.
+func _step_charges(dt: float) -> void:
+	for z: Dictionary in g.monsters.zones:
+		if str(z.kind) != "puddle" or float(z.get("charge", 0.0)) <= 0.0:
+			continue
+		if float(z.t) >= float(z.T) or bool(z.get("frozen", false)):
+			z.charge = 0.0
+			continue
+		z.charge = float(z.charge) - dt
+		z.charge_tick = float(z.get("charge_tick", 0.0)) - dt
+		if float(z.charge_tick) > 0.0:
+			continue
+		var C: Dictionary = z.get("charge_rules", {})
+		if C.is_empty():
+			C = _charge_rules({})
+		z.charge_tick = float(C.charge_tick)
+		var zapped := false
+		var P := _particles()
+		for m: Dictionary in g.mobs:
+			if not _stands_in(z, m):
+				continue
+			hurt_mob(m, float(C.charge_hits), "lightning", Vector2(m.p), float(C.boss_share))
+			stun_mob(m, float(C.charge_stun), float(C.boss_share))
+			m.zap_t = float(g.state.t)
+			zapped = true
+			if P != null:
+				PixelBolt.sparks(P, Vector2(m.p) / _pscale(), 5)
+		if zapped:
+			_pools_call("electrify", [z.p, float(z.r)])
+
+
+## True when monster `m` stands in puddle `z` on its feet (not flying, not
+## burrowed): on the drawn pool where the pool layer has it, else in its circle.
+func _stands_in(z: Dictionary, m: Dictionary) -> bool:
+	if float(m.hp) <= 0.0 or bool(m.get("burrowed", false)) or float(m.get("alt", 0.0)) > 20.0:
+		return false
+	var d := Vector2(m.p).distance_to(z.p)
+	var layer: RefCounted = g._pool_layer() if g.has_method("_pool_layer") else null
+	if layer != null and layer.has_method("covers"):
+		return d <= float(z.r) * 1.6 + float(m.get("r", 0.0)) and bool(layer.covers(Vector2(m.p), str(z.get("st", ""))))
+	return d <= float(z.r) + float(m.get("r", 0.0)) * 0.3
+
+
+## Hurts monster `m` by `hits` hero hits (x state.dmg) of element `el` coming
+## from `from` (bosses take `boss_share`): rigged figures through their parts
+## (src/hell/drake_rig_host.gd damage, the part nearest `from`), the hit flash
+## and the feel's hit. m.last_el / last_el_t name the element for readouts
+## (the debug Testraum's damage numbers). Returns the damage dealt (0 for a
+## monster that cannot be hit now).
+func hurt_mob(m: Dictionary, hits: float, el: String, from: Vector2, boss_share := 0.5) -> float:
+	if float(m.hp) <= 0.0 or hits <= 0.0 or not bool(g._hittable(m)):
+		return 0.0
+	var boss := bool(m.get("boss", false)) or str(m.get("kind", "")) == "boss"
+	var amount := hits * float(g.state.dmg) * (boss_share if boss else 1.0)
+	var rig: Variant = g.get("drake_rig")
+	if rig != null:
+		if rig.has_rig(m):
+			rig.aim_at(m, from)
+		rig.damage(m, amount)
+	else:
+		m.hp = float(m.hp) - amount
+	m.hit = 0.12
+	m.last_el = el
+	m.last_el_t = float(g.state.t)
+	if g.get("feel") != null:
+		g.feel.on_hit(m, Vector2(m.p) - from, false)
+	return amount
+
+
+## Stuns monster `m` for `time` s (bosses `boss_share` of it; kit bosses
+## stand through it, src/hell/hero_kit.gd tick_mob).
+func stun_mob(m: Dictionary, time: float, boss_share := 0.5) -> void:
+	if float(m.hp) <= 0.0 or time <= 0.0:
+		return
+	var boss := bool(m.get("boss", false)) or str(m.get("kind", "")) == "boss"
+	m.stun = maxf(float(m.get("stun", 0.0)), time * (boss_share if boss else 1.0))
+
+
+## A shockwave at `at` reaching `r` (world px): the gas there is blown away
+## and thinned (src/vfx/gas.gd impulse, spec.gas its strength), the liquid
+## rings and ice cracks (_ripple_ring), loose particles are kicked out, and
+## every monster in it on its feet is thrown back by spec.push px/s (less
+## with distance; kit bosses stand, bosses boss_share) taking spec.hits hero
+## hits. Returns how many monsters it reached.
+func wave_at(at: Vector2, r: float, spec: Dictionary = {}) -> int:
+	var gas: RefCounted = g.get("gas")
+	if gas != null:
+		gas.impulse(at, r, float(spec.get("gas", 1.0)))
+	_ripple_ring(at, r, float(spec.get("ripple", 1.0)), int(spec.get("rings", 6)))
+	_kick(at, r, float(spec.get("kick", 1.0)))
+	var share := float(spec.get("boss_share", 0.5))
+	var n := 0
+	for m: Dictionary in g.mobs:
+		if float(m.hp) <= 0.0 or float(m.get("alt", 0.0)) > 20.0:
+			continue
+		var off: Vector2 = Vector2(m.p) - at
+		var d := off.length()
+		if d > r + float(m.get("r", 0.0)):
+			continue
+		var fall := clampf(1.0 - d / maxf(1.0, r), 0.3, 1.0)
+		hurt_mob(m, float(spec.get("hits", 0.0)) * fall, "wave", at, share)
+		if not m.has("kit"):
+			var boss := bool(m.get("boss", false)) or str(m.get("kind", "")) == "boss"
+			m.k = (off / d if d > 1.0 else Vector2.RIGHT) * float(spec.get("push", 520.0)) * fall * (share if boss else 1.0)
+		n += 1
+	if g.monsters != null:
+		g.monsters._impact(at, "small")
+	return n
+
+
+## A quake at `at` reaching `r` (world px): the floor cracks
+## (hell_monsters.gd _crack_floor, the particles' floor_crack), rock chunks
+## are knocked up and fall back (_pixel_burst, rubble, dust), ice cracks and
+## the liquid rings, the gas shudders, and every monster on its feet in it is
+## stunned spec.stun s (bosses boss_share) taking spec.hits hero hits.
+## Returns how many monsters it stunned.
+func quake_at(at: Vector2, r: float, spec: Dictionary = {}) -> int:
+	var debris := int(spec.get("debris", 26))
+	if g.monsters != null:
+		g.monsters._crack_floor(at, r * 0.6, int(spec.get("cracks", 6)), true)
+		g.monsters._pixel_burst(at, debris, g.monsters.CHUNK_COL, float(spec.get("debris_speed", 90.0)), float(spec.get("debris_up", 230.0)), 1.1, 2)
+		g.monsters._impact(at, "large")
+	var P := _particles()
+	if P != null:
+		var s := _pscale()
+		P.floor_crack(at / s, r * 0.5 / s, 4)
+		P.rubble(at / s, int(float(debris) * 0.5), Vector2.ZERO, 150.0)
+		P.dust_flat(at / s, r * 0.7 / s, 18)
+	_ripple_ring(at, r, float(spec.get("ripple", 1.4)), int(spec.get("rings", 8)))
+	var gas: RefCounted = g.get("gas")
+	if gas != null:
+		gas.impulse(at, r * 0.6, float(spec.get("gas", 0.4)))
+	var share := float(spec.get("boss_share", 0.5))
+	var n := 0
+	for m: Dictionary in g.mobs:
+		if float(m.hp) <= 0.0 or float(m.get("alt", 0.0)) > 20.0 or bool(m.get("burrowed", false)):
+			continue
+		if Vector2(m.p).distance_to(at) > r + float(m.get("r", 0.0)):
+			continue
+		hurt_mob(m, float(spec.get("hits", 0.0)), "quake", at, share)
+		stun_mob(m, float(spec.get("stun", 1.2)), share)
+		n += 1
+	g._sound("blast")
+	return n
+
+
+## Holy light at `at` reaching `r` (world px): undead and void creatures in
+## it (_undead) take spec.hits hero hits (bosses boss_share) and are pushed
+## out of it a little; the hero standing in it heals spec.heal (half hearts);
+## light motes rise (the particles' holy). Returns {hurt: monsters hurt,
+## healed: half hearts}.
+func holy_at(at: Vector2, r: float, spec: Dictionary = {}) -> Dictionary:
+	var P := _particles()
+	if P != null:
+		P.holy(at / _pscale(), int(spec.get("motes", 28)), r / _pscale())
+	var share := float(spec.get("boss_share", 0.5))
+	var hurt := 0
+	for m: Dictionary in g.mobs:
+		if float(m.hp) <= 0.0 or Vector2(m.p).distance_to(at) > r + float(m.get("r", 0.0)) or not _undead(m, spec):
+			continue
+		if hurt_mob(m, float(spec.get("hits", 2.0)), "holy", at, share) > 0.0:
+			hurt += 1
+			if not m.has("kit"):
+				m.k = (Vector2(m.p) - at).normalized() * float(spec.get("push", 140.0))
+	var healed := 0
+	var st: Dictionary = g.state
+	if float(st.get("dead", 0.0)) <= 0.0 and Vector2(float(g.player.x), float(g.player.y)).distance_to(at) <= r + float(spec.get("hero_reach", 20.0)):
+		var before := int(st.hp)
+		st.hp = mini(int(st.max_hp), before + int(spec.get("heal", 2)))
+		healed = int(st.hp) - before
+	return {"hurt": hurt, "healed": healed}
+
+
+## True for an undead or void creature: one of spec.tags among its element
+## tags (hell_monsters.gd mob_tags), or one of spec.words in its id or name.
+func _undead(m: Dictionary, spec: Dictionary) -> bool:
+	if g.monsters != null and m.has("cds"):
+		var tags: Array = g.monsters.mob_tags(m)
+		for t: Variant in spec.get("tags", []):
+			if t in tags:
+				return true
+	var def: Dictionary = m.get("def", {})
+	var name := (str(m.get("id", m.get("kind", ""))) + " " + str(def.get("name", ""))).to_lower()
+	for w: Variant in spec.get("words", []):
+		if name.contains(str(w)):
+			return true
+	return false
+
+
+## A blow at `at` reaching `r` rings the liquid round it: at its middle and on
+## `rings` points of a ring (src/vfx/pool_paint.gd ripple: water rings, ice
+## cracks), and the gas there ripples (src/vfx/gas.gd ripple_near).
+func _ripple_ring(at: Vector2, r: float, strength: float, rings: int) -> void:
+	_pools_call("ripple_near", [at, r * 0.4, strength])
+	for k in range(rings):
+		_pools_call("ripple", [at + Vector2.from_angle(TAU * float(k) / float(maxi(1, rings))) * r * 0.6, strength * 0.7])
+	var gas: RefCounted = g.get("gas")
+	if gas != null:
+		gas.ripple_near(at, r, strength)
+
+
+## Loose particles kicked away from `at` (the crypt particles of the feel).
+func _kick(at: Vector2, r: float, strength: float) -> void:
+	var P := _particles()
+	if P != null:
+		P.kick(at / _pscale(), r / _pscale(), strength)
+
+
+## The crypt particles of the feel (src/vfx/particles.gd: their px are world
+## px over feel.scale), null without the feel.
+func _particles() -> RefCounted:
+	return g.feel.feedback.particles if g.get("feel") != null else null
+
+
+func _pscale() -> float:
+	return float(g.feel.scale) if g.get("feel") != null else 1.0

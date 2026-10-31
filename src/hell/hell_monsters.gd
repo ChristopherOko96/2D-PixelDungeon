@@ -533,7 +533,10 @@ func update(dt: float) -> void:
 		var to: Vector2 = (_me() if not _mad_on.is_empty() else me) - m.p
 		var d := maxf(to.length(), 1.0)
 		var v := Vector2.ZERO
-		if m.act != null:
+		if bool(m.get("ai_off", false)):
+			# a training dummy of the debug Testraum (src/debug/story_testraum_tools.gd): no act, no walking
+			m.act = null
+		elif m.act != null:
 			_run_act(m, dt)
 			if m.act != null:
 				v = m.act.get("v", Vector2.ZERO)
