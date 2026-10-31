@@ -161,6 +161,8 @@ func _ready() -> void:
 	_rigs = RigRenderer.new()
 	_slices = SliceFx.new(_rigs.library)
 	_talent_fx.rigs = _rigs
+	# the rigs' debris bounces off the room's walls (the particles know the walkable cells; _feedback is renewed per room)
+	_rigs.solid = func(point: Vector2) -> bool: return _feedback != null and _feedback.particles != null and _feedback.particles.solid(point)
 	if not Engine.is_editor_hint():
 		# Room and fog layers come first: they draw behind the view itself
 		# (or the fog over the actors, under the darkness, when the data says so).

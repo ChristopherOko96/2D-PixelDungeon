@@ -131,6 +131,12 @@ var firewalls: Array = []
 var spills: Array = []
 ## Ignaroth's part rig (src/hell/drake_rig_host.gd), set by hell_game.gd; null keeps the atlas sprites.
 var rig_host: RefCounted = null
+## WAHN (element_rules.json madness): the mad monster whose turn runs now and
+## the monster it turned on ({} for none). While _mad_on is set, _me() is the
+## victim's feet, _hurt_by lands on the victim and _shot / _zone / lobs are
+## marked mad, so every attack of the monster really goes at the victim.
+var _mad_from: Dictionary = {}
+var _mad_on: Dictionary = {}
 
 
 ## game: the hell game node; cfg: the "monsters" block of the world's balance file. A world with
@@ -260,6 +266,8 @@ func populate(r: Dictionary, cells: Array) -> void:
 # ---------- update ----------
 
 func _me() -> Vector2:
+	if not _mad_on.is_empty():
+		return Vector2(_mad_on.p)
 	return Vector2(g.player.x, g.player.y)
 
 
@@ -267,6 +275,10 @@ func _me() -> Vector2:
 ## pushes him away from `from` with the knock of kind `push`
 ## (hell_balance.json monsters.feel.knock; "" pushes nothing).
 func _hurt_by(m: Dictionary, n: int, how: String, from := Vector2.INF, push := "") -> void:
+	# WAHN: a monster turned on another one strikes that one, not the hero
+	if not _mad_on.is_empty() and is_same(m, _mad_from):
+		_mad_strike(m, _mad_on, n)
+		return
 	var open := float(g.state.inv) <= 0.0 and float(g.state.dead) <= 0.0
 	g._hurt("von %s %s" % [m.def.name, how], n, from if from.is_finite() else Vector2(m.p))
 	if open and push != "" and from.is_finite() and float(g.state.inv) > 0.0:
@@ -316,8 +328,14 @@ func _shake(n: float) -> void:
 
 
 func _shot(from: Vector2, dir: Vector2, speed: float, extra := {}) -> void:
+	# WAHN: a mad monster's shots scatter (a boss's less); a turned one's hunt its victim and hurt monsters
+	if not _mad_from.is_empty():
+		dir = ElementRules.scatter(dir.normalized(), bool(_mad_from.boss), randf())
 	var s := {"p": from, "v": dir.normalized() * speed, "t": 2.6, "c": "fire"}
 	s.merge(extra, true)
+	if not _mad_on.is_empty():
+		s.mad = _mad_from
+		s.mad_to = _mad_on
 	g.eshots.append(s)
 
 
@@ -328,6 +346,9 @@ var _pool_serial := 0
 func _zone(z: Dictionary) -> void:
 	var base := {"t": 0.0, "tele": 0.0, "dmg": 0, "done": false}
 	base.merge(z, true)
+	# WAHN: a blow or blast of a turned monster hurts the monsters it covers (_mad_zone)
+	if not _mad_on.is_empty() and is_same(base.get("m"), _mad_from) and not base.has("mad"):
+		base.mad = true
 	if base.kind == "puddle":
 		_pool_serial += 1
 		base.id = _pool_serial
@@ -458,6 +479,8 @@ func _medium_on_mob(m: Dictionary, rule: Dictionary, tick_key: String, dt: float
 				HeroKit.slow_mob(g, m, 1.0 - float(spec[0]), float(spec[1]))
 			"wet":
 				m.wet_t = maxf(float(m.get("wet_t", 0.0)), float(spec[1]))
+			"mad":
+				ElementRules.madden(m, float(spec[1]), mob_tags(m))
 	if bool(rule.get("douse", false)):
 		m.burn_t = 0.0
 		m.fire_t = 0.0
@@ -468,6 +491,8 @@ func _medium_on_mob(m: Dictionary, rule: Dictionary, tick_key: String, dt: float
 func update(dt: float) -> void:
 	var me := _me()
 	for m: Dictionary in g.mobs:
+		_mad_from = {}
+		_mad_on = {}
 		if m.spawn > 0.0:
 			m.spawn -= dt
 			continue
@@ -495,11 +520,17 @@ func update(dt: float) -> void:
 			continue
 		for i in range(m.cds.size()):
 			m.cds[i] -= dt
+		# WAHN (element_rules.json madness): a mad monster staggers, scatters its shots and may turn on another
+		m.mad_t = maxf(0.0, float(m.get("mad_t", 0.0)) - dt)
+		m.mad_cd = maxf(0.0, float(m.get("mad_cd", 0.0)) - dt)
+		if float(m.mad_t) > 0.0:
+			_mad_from = m
+			_mad_on = _mad_victim(m, dt)
 		# hero skills: slows, burns and stuns tick here; a stunned or held monster waits
 		var pace := HeroKit.tick_mob(g, m, dt)
 		# a dragon reeling from a severed part (src/hell/drake_rig_host.gd) stands and starts no attack
 		var held: bool = pace <= 0.0 or m.get("hold", false) or (rig_host != null and rig_host.staggered(m))
-		var to: Vector2 = me - m.p
+		var to: Vector2 = (_me() if not _mad_on.is_empty() else me) - m.p
 		var d := maxf(to.length(), 1.0)
 		var v := Vector2.ZERO
 		if m.act != null:
@@ -525,6 +556,8 @@ func update(dt: float) -> void:
 				var od := off.length()
 				if od > 0.0 and od < (m.r + o.r) * 0.8:
 					v += off / od * 120.0
+		if float(m.mad_t) > 0.0 and not m.boss:
+			v += ElementRules.wobble(m, to / d, dt, randf()) * g.PIXEL_WORLD / 2.0
 		v *= 0.0 if held else pace
 		# on ice or blood it keeps its momentum (element_rules.gd slide), the void pulls it in
 		var env: Dictionary = m.get("env", {})
@@ -555,17 +588,25 @@ func update(dt: float) -> void:
 		if d < m.r + float(cfg.contact_reach) and m.alpha > 0.6 and not immune(m) and not airborne:
 			# a body blow pushes him off; a dashing beast runs him over harder
 			_hurt_by(m, 1, "erschlagen" if m.boss else "erwischt", m.p, "dash" if act != null and str(act.kind) == "dash" else "contact")
+		if not _mad_on.is_empty() and m.act != null and not bool(m.get("mad_acted", false)):
+			m.mad_acted = true
+			m.mad_acts = int(m.get("mad_acts", 0)) + 1
 		var want: String = act.anim if act != null else ("run" if v.length() > 20.0 else "idle")
 		if want != m.anim:
 			m.anim = want
 			m.at = 0.0
+	_mad_from = {}
+	_mad_on = {}
 	for m: Dictionary in g.mobs.duplicate():
 		var lord_boss: bool = Rules.is_lord(m.def) and m.boss
 		if not ((m.hp <= 0.0 and not lord_boss) or m.get("remove", false)):
 			continue
 		if m.dying != null or (m.trans == null and not m.has("echo")):
 			# uid: Ignaroth's rig keeps falling apart in the corpse (src/hell/drake_rig_host.gd)
-			corpses.append({"id": m.id, "p": m.p, "s": m.s, "face": m.face, "t": 0.0, "uid": m.get("uid", -1)})
+			# kill, tumble: how the blow threw it, for its rig's ragdoll (src/rig/rig_renderer.gd); the parts bounce off this floor's walls
+			corpses.append({"id": m.id, "p": m.p, "s": m.s, "face": m.face, "t": 0.0, "uid": m.get("uid", -1), "kill": _kill_fx(m), "tumble": float(m.get("tumble", 0.0))})
+			if rig_host != null and rig_host.has_method("bind_world"):
+				rig_host.bind_world(func(p: Vector2) -> bool: return g.box_blocked(Rect2(p - Vector2(2, 2), Vector2(4, 4))))
 		if m.trans == null and not m.get("quiet", false):
 			# a crypt figure bursts in its element (bone splinters, poison, frost, gold), the hell's in embers
 			_burst_in(m.p - Vector2(0, m.cy), 80 if m.boss else 18, own_element(m))
@@ -738,7 +779,7 @@ func _run_act(m: Dictionary, dt: float) -> void:
 				for k in range(int(a.get("count", 1))):
 					var aim := me + (Vector2(randf_range(-130, 130), randf_range(-100, 100)) if k > 0 else Vector2.ZERO)
 					lobs.append({"from": head, "to": aim, "t": 0.0, "T": 0.8 + k * 0.12, "r": float(a.get("radius", 70.0)),
-						"dmg": dmg, "m": m, "c": "lava" if m.id in LAVA_LOBBERS else hot, "done": false, "look": str(a.get("look", "")), "pool": bool(m.def.get("pool", false))})
+						"dmg": dmg, "m": m, "c": "lava" if m.id in LAVA_LOBBERS else hot, "done": false, "mad": not _mad_on.is_empty(), "look": str(a.get("look", "")), "pool": bool(m.def.get("pool", false))})
 			if t > 0.7:
 				m.act = null
 			return
@@ -1337,6 +1378,8 @@ func _update_zones(dt: float) -> void:
 			_sound_fronts(z)
 		if z.t < z.tele or (z.done and z.kind != "puddle"):
 			continue
+		if bool(z.get("mad", false)):
+			_mad_zone(z)
 		var d := me.distance_to(z.p)
 		var hit := false
 		match String(z.kind):
@@ -1424,7 +1467,7 @@ func _update_zones(dt: float) -> void:
 			if str(L.c) in OWN_ELEMENTS:
 				_residue(L.to, str(L.c), 8, float(L.r) * 0.5)
 			_impact(L.to, "small", L.m)
-			_zone({"kind": "wave", "p": L.to, "r": L.r, "T": 0.3, "dmg": L.dmg, "m": L.m, "c": L.c, "push": "lob"})
+			_zone({"kind": "wave", "p": L.to, "r": L.r, "T": 0.3, "dmg": L.dmg, "m": L.m, "c": L.c, "push": "lob", "mad": bool(L.get("mad", false))})
 			if L.c == "lava":
 				_zone({"kind": "puddle", "p": L.to, "r": L.r * 0.6, "T": 2.2, "dmg": 1, "m": L.m, "dir": ((L.to as Vector2) - (L.from as Vector2)).normalized() if L.has("from") else Vector2.ZERO})
 			elif bool(L.get("pool", false)):
@@ -1445,12 +1488,15 @@ func update_shots(dt: float) -> void:
 			continue
 		if s.has("homing"):
 			var a0: float = s.v.angle()
-			var turn := clampf(wrapf((me - s.p).angle() - a0, -PI, PI), -s.homing * dt, s.homing * dt)
+			var turn := clampf(wrapf((_shot_goal(s, me) - s.p).angle() - a0, -PI, PI), -s.homing * dt, s.homing * dt)
 			s.v = Vector2.from_angle(a0 + turn) * s.v.length()
 		var was: Vector2 = s.p
 		s.p += s.v * dt
 		s.t -= dt
 		_shot_trail(s, dt)
+		# WAHN: a turned monster's shot hurts the monsters it meets (not its shooter)
+		if s.has("mad") and _mad_shot_hits(s):
+			continue
 		# a shot of fire through poison gas sets it off (src/hell/story_elements.gd)
 		if str(s.get("c", "")) in ["fire", "lava"] and g.get("story_elements") != null:
 			g.story_elements.fire_passes(s.p)
@@ -3372,3 +3418,133 @@ func draw_fx(l: CanvasItem) -> void:
 			l.draw_circle(c, r, Color(1, 0.47, 0.16, 0.18 * heat))
 			l.draw_circle(c, r * 0.55, Color(1, 0.9, 0.63, 0.35 * heat))
 	# the enemy shots are pixel fireballs over the actors (draw_lasers); their soft glow is the bloom
+
+
+# ---------- WAHN (element_rules.json madness) ----------
+
+## The monster mad `m` has turned on ({} for none). At each attack decision
+## (no act running, an attack's cooldown run out) it rolls madness.turn_chance
+## and takes the nearest other monster of its room; it lets go once the act it
+## began on it is over, the victim fell or turn_hold s passed. Bosses never
+## turn: their shots only scatter (_shot).
+func _mad_victim(m: Dictionary, dt: float) -> Dictionary:
+	if m.boss:
+		return {}
+	var M := ElementRules.madness()
+	var on: Dictionary = m.get("mad_on", {})
+	if not on.is_empty():
+		m.mad_hold = float(m.get("mad_hold", 0.0)) - dt
+		var over: bool = m.act == null and bool(m.get("mad_acted", false))
+		if on.hp <= 0.0 or float(m.mad_hold) <= 0.0 or over or not g.mobs.any(func(o: Dictionary) -> bool: return is_same(o, on)):
+			on = {}
+	if on.is_empty():
+		m.mad_on = {}
+		m.mad_acted = false
+		var ready := false
+		for cd: Variant in m.cds:
+			if float(cd) <= 0.0:
+				ready = true
+		if m.act != null:
+			m.mad_rolled = false
+		elif ready and not bool(m.get("mad_rolled", false)):
+			m.mad_rolled = true
+			if randf() < float(M.get("turn_chance", 0.3)):
+				on = ElementRules.nearest_other(m, g.mobs, "p", func(o: Dictionary) -> bool: return o.room == m.room and o.hp > 0.0 and float(o.spawn) <= 0.0 and not immune(o), g.PIXEL_WORLD / 2.0)
+				if not on.is_empty():
+					m.mad_on = on
+					m.mad_hold = float(M.get("turn_hold", 3.0))
+					m.mad_turns = int(m.get("mad_turns", 0)) + 1
+	return on
+
+
+## A mad monster's blow, shot or blast landing on another monster:
+## madness.story_hits hero hits per blow (a boss takes half); a body blow
+## (`body`: contact, beam) at most every madness.mad_cd s.
+func _mad_strike(attacker: Dictionary, victim: Dictionary, n: int, body := true) -> void:
+	if victim.is_empty() or victim.hp <= 0.0 or immune(victim):
+		return
+	var M := ElementRules.madness()
+	if body:
+		if float(attacker.get("mad_cd", 0.0)) > 0.0:
+			return
+		attacker.mad_cd = float(M.get("mad_cd", 0.6))
+	var hurt := float(M.get("story_hits", 1.0)) * float(maxi(1, n)) * (0.5 if victim.boss else 1.0) * float(g.state.dmg)
+	victim.hp -= hurt
+	victim.mad_taken = float(victim.get("mad_taken", 0.0)) + hurt
+	victim.hit = 0.12
+	attacker.mad_hits = int(attacker.get("mad_hits", 0)) + 1
+	if g.get("feel") != null:
+		g.feel.on_hit(victim, (Vector2(victim.p) - Vector2(attacker.p)).normalized(), false)
+
+
+## A turned monster's zone (wave, arc, cone, line, meteor, hand, ...) hurts
+## every other monster it covers, each once.
+func _mad_zone(z: Dictionary) -> void:
+	if int(z.get("dmg", 0)) <= 0 or z.kind == "puddle":
+		return
+	var hit: Array = z.get("mad_hit", [])
+	for o: Dictionary in g.mobs:
+		if is_same(o, z.get("m")) or o.hp <= 0.0 or immune(o) or hit.any(func(h: Dictionary) -> bool: return is_same(h, o)):
+			continue
+		var p: Vector2 = Vector2(o.p) - Vector2(0, 20)
+		var d := p.distance_to(z.p)
+		var body := float(o.r) * 0.3
+		var inside := false
+		match String(z.kind):
+			"wave":
+				inside = absf(d - float(z.r) * minf(1.0, float(z.t) / maxf(0.01, float(z.T)))) < 40.0 + body
+			"arc", "cone":
+				inside = d < float(z.r) + body and Rules.angle_gap((p - Vector2(z.p)).angle(), float(z.ang)) < float(z.arc) / 2.0
+			"line":
+				var dir := Vector2.from_angle(float(z.ang))
+				var rel: Vector2 = p - Vector2(z.p)
+				var along := rel.dot(dir)
+				inside = along > 0.0 and along < float(z.len) and absf(dir.cross(rel)) < float(z.w) / 2.0 + body
+			_:
+				inside = d < float(z.r) + body
+		if inside:
+			hit.append(o)
+			_mad_strike(z.m, o, int(z.dmg), false)
+	z.mad_hit = hit
+
+
+## A turned monster's shot meeting another monster (not its shooter): it
+## hurts it and is spent; true when it hit.
+func _mad_shot_hits(s: Dictionary) -> bool:
+	var shooter: Dictionary = s.mad
+	for o: Dictionary in g.mobs:
+		if is_same(o, shooter) or o.hp <= 0.0 or float(o.spawn) > 0.0 or immune(o):
+			continue
+		if (s.p as Vector2).distance_to(Vector2(o.p) - Vector2(0, float(o.cy))) < float(o.r) * 0.6 + (14.0 if s.get("small", false) else 22.0):
+			s.t = 0.0
+			_mad_strike(shooter, o, 1, false)
+			_shot_impact(s.p, str(s.get("c", "fire")), bool(s.get("small", false)))
+			return true
+	return false
+
+
+## Where a homing shot steers: a turned monster's at its living victim's body, else at the hero.
+func _shot_goal(s: Dictionary, me: Vector2) -> Vector2:
+	var to: Variant = s.get("mad_to")
+	if to is Dictionary and float((to as Dictionary).get("hp", 0.0)) > 0.0:
+		return Vector2(to.p) - Vector2(0, float((to as Dictionary).get("cy", 34.0)))
+	return me
+
+
+## How the blow that felled `m` threw it, for its rig's ragdoll
+## (src/rig/rig_renderer.gd snapshot "kill"): a fresh talent hit's look
+## (src/combat/talent_combat.gd _stamp: direction, talent, ultimate, wall),
+## else away from the hero along its knockback, small, in the element it
+## burned, froze or rotted in. Presentation only.
+func _kill_fx(m: Dictionary) -> Dictionary:
+	var fx: Variant = m.get("hit_fx", {})
+	if fx is Dictionary and not (fx as Dictionary).is_empty() and Time.get_ticks_msec() - int(fx.get("ms", 0)) <= 600: return fx
+	var away: Vector2 = m.get("k") if m.get("k") is Vector2 else Vector2.ZERO
+	if away.length() < 1.0: away = Vector2(m.p) - Vector2(float(g.player.x), float(g.player.y))
+	away = away.normalized() if away.length() > 0.01 else Vector2.ZERO
+	var statuses: Dictionary = m.get("statuses", {}) if m.get("statuses") is Dictionary else {}
+	var el := ""
+	if float(m.get("fire_t", 0.0)) > 0.0 or statuses.has("burn"): el = "fire"
+	elif statuses.has("poison"): el = "poison"
+	elif statuses.has("freeze"): el = "ice"
+	return {"dx": away.x, "dy": away.y, "tier": "small", "el": el}

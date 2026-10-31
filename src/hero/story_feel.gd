@@ -381,6 +381,41 @@ func condition_snapshot() -> Dictionary:
 	return {"players": {1: {"x": at.x, "y": at.y, "hp": float(g.state.get("hp", 1)), "effects": effects}}, "boss_zones": _pools()}
 
 
+## The monster with talent id `id` (src/hell/hell_talents.gd gives every mob
+## one) as {x, y (world px), kind}, {} when it is gone: how the talents' art
+## (src/vfx/talent_fx.gd enemy_at) finds the Singularitaet's caught monsters.
+func mob_at(id: int) -> Dictionary:
+	var mobs: Variant = g.get("mobs")
+	if not mobs is Array: return {}
+	for m: Variant in mobs:
+		if m is Dictionary and int(m.get("tid", -1)) == id and m.get("p") is Vector2:
+			return {"x": (m.p as Vector2).x, "y": (m.p as Vector2).y, "kind": str(m.get("kind", ""))}
+	return {}
+
+
+## The crypt snapshot boss_fx.gd draws over the figures: the conditions
+## (condition_snapshot) with the hero's madness (state.mad s, state.mad_warn
+## 0..1) and the monsters going mad (m.mad_t s) as enemies at their crypt
+## points (the swirl, the eyes, the "?"; boss_fx.gd _draw_madness).
+func _over_snapshot() -> Dictionary:
+	var out := condition_snapshot()
+	var hero: Dictionary = out.players[1]
+	hero.mad = float(g.state.get("mad", 0.0))
+	hero.mad_warn = float(g.state.get("mad_warn", 0.0))
+	out.local_peer = 1
+	var mad: Array = []
+	var mobs: Variant = g.get("mobs")
+	if mobs is Array:
+		for m: Variant in mobs:
+			if not m is Dictionary or float(m.get("mad_t", 0.0)) <= 0.0 or not m.get("p") is Vector2: continue
+			var at: Vector2 = (m.p as Vector2) / scale - Vector2(0, LIFT)
+			var face: Variant = m.get("face", 1.0)
+			mad.append({"x": at.x, "y": at.y, "mad": float(m.mad_t), "radius": float(m.get("r", 14.0 * scale)) / scale, "id": int(m.get("feel_id", 0)),
+				"face": (face as Vector2).x if face is Vector2 else float(face)})
+	out.enemies = mad
+	return out
+
+
 ## True when a crypt burst (on_blast) was raised within `radius` world px of
 ## `p` a moment ago: that landing already sounds through feedback.gd
 ## (src/hero/story_sound.gd skips its own blast then).
@@ -604,7 +639,10 @@ func draw_layer(canvas: CanvasItem, mode: String) -> void:
 			draw_shadow(canvas, hero_world() / scale)
 		"over":
 			draw_perk_events(canvas, _perks)
-			boss_fx.draw_over(canvas, condition_snapshot(), _clock, func(e: Dictionary) -> Vector2: return Vector2(float(e.x), float(e.y)))
+			boss_fx.draw_over(canvas, _over_snapshot(), _clock, func(e: Dictionary) -> Vector2: return Vector2(float(e.x), float(e.y)))
+			# the talents' art finds the Singularitaet's caught monsters by their talent id (src/vfx/talent_fx.gd enemy_at)
+			var adapter: Variant = g.get("talents")
+			if adapter != null and adapter.get("fx") != null and not (adapter.fx.get("enemy_at") as Callable).is_valid(): adapter.fx.enemy_at = mob_at
 			feedback.particles.draw_particles(canvas)
 		"glow":
 			var kit: RefCounted = g.story_hero.skill_fx if g.story_hero != null else null

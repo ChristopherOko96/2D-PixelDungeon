@@ -179,7 +179,7 @@
 
   // ---------- bosses: drawn at twice the pixel density, with their own extras ----------
   DEFS.knochenwaechter = {
-    name: 'Knochenwächter', w: 48, h: 46, scale: 4.2, kind: 'boss', material: 'bone', floor: 1, role: 'Boss · Etage 1', shot: 'bone',
+    name: 'Knochenwächter', w: 48, h: 46, scale: 4.2, kind: 'boss', material: 'bone', rig: 'krypta_knochenwaechter', floor: 1, role: 'Boss · Etage 1', shot: 'bone',
     desc: 'Der Wächter der Vorhalle: ein riesiges Skelett mit Kronreif und Ritterschwert.',
     anims: { idle: 4, run: 4, attack: 4, cast: 4 },
     draw(P, a, f) {
@@ -188,7 +188,7 @@
     },
   };
   DEFS.grabmutter = {
-    name: 'Grabmutter', w: 44, h: 40, scale: 6.0, kind: 'boss', material: 'flesh', floor: 2, role: 'Boss · Etage 2', shot: 'poison', pool: true,
+    name: 'Grabmutter', w: 44, h: 40, scale: 6.0, kind: 'boss', material: 'flesh', rig: 'krypta_grabmutter', floor: 2, role: 'Boss · Etage 2', shot: 'poison', pool: true,
     desc: 'Aufgedunsene Mutter aller Grabzombies. Springt, spuckt Moder und brütet Zombies aus.',
     anims: { idle: 4, run: 4, attack: 4, cast: 4 },
     draw(P, a, f) {
@@ -203,7 +203,7 @@
     draw(P, a, f) { figure(P, a, f, { base: 'big_zombie_idle_anim_f0', bob: true, map: MODER, cast: SOULFIRE, hand: [24, 20], eyes: [[19, 9], [22, 9]], eyeC: LIME }); if (a === 'attack') P.flame(30, 14, 6, 6 + f * 2, { pal: SOULFIRE, front: true, lean: 6 }); },
   };
   DEFS.nekromantenfuerst = {
-    name: 'Nekromantenfürst', w: 44, h: 54, scale: 4.2, kind: 'boss', material: 'flesh', floor: 4, role: 'Boss · Etage 4', shot: 'soul',
+    name: 'Nekromantenfürst', w: 44, h: 54, scale: 4.2, kind: 'boss', material: 'flesh', rig: 'krypta_nekromantenfuerst', floor: 4, role: 'Boss · Etage 4', shot: 'soul',
     desc: 'Herr der Kapelle. Seelenspiralen, suchende Seelen, Knochenkreise und ganze Skelettlegionen.',
     anims: { idle: 4, run: 4, attack: 4, cast: 4 },
     draw(P, a, f) {
@@ -212,7 +212,7 @@
     },
   };
   DEFS.truhenfresser = {
-    name: 'Truhenfresser', w: 40, h: 38, scale: 4.2, kind: 'boss', material: 'flesh', floor: 5, role: 'Boss · Etage 5', shot: 'gold',
+    name: 'Truhenfresser', w: 40, h: 38, scale: 4.2, kind: 'boss', material: 'flesh', rig: 'krypta_truhenfresser', floor: 5, role: 'Boss · Etage 5', shot: 'gold',
     desc: 'Die älteste Mimik der Gruft. Beißt doppelt, speit Münzschwälle und ruft ihre Brut.',
     anims: { idle: 4, run: 4, attack: 4, cast: 4 },
     draw(P, a, f) {
@@ -228,13 +228,13 @@
     draw(P, a, f) { figure(P, a, f, { base: 'big_zombie_idle_anim_f0', bob: true, map: FROST, cast: FROSTFIRE, hand: [24, 20], eyes: [[19, 9], [22, 9]], eyeC: WHITE }); sparkle(P, 22, 22, 18, a === 'cast' ? 12 : 4, FROSTFIRE, 4); },
   };
   DEFS.archivar = {
-    name: 'Der Archivar', w: 44, h: 54, scale: 4.2, kind: 'boss', material: 'flesh', floor: 7, role: 'Boss · Etage 7', shot: 'frost',
+    name: 'Der Archivar', w: 44, h: 54, scale: 4.2, kind: 'boss', material: 'flesh', rig: 'krypta_archivar', floor: 7, role: 'Boss · Etage 7', shot: 'frost',
     desc: 'Hüter des Reliquienarchivs. Bannfluch, Grabeshände, ein Sturm aus Seiten und seine Schützen.',
     anims: { idle: 4, run: 4, attack: 4, cast: 4 },
     draw(P, a, f) { figure(P, a, f, { base: 'necromancer_idle_anim_f', run: 'necromancer_run_anim_f', frames: 4, k: 2, map: ARCHIVE, weapon: 'red_magic_staff', wk: 2, hand: [12, 14], grip: .1, swing: [-.2, -.5, -.3, 0], cast: FROSTFIRE }); },
   };
   DEFS.leerenbrut = {
-    name: 'Leerenbrut', w: 40, h: 44, scale: 5.0, kind: 'boss', material: 'void', floor: 8, role: 'Boss · Etage 8', shot: 'void',
+    name: 'Leerenbrut', w: 40, h: 44, scale: 5.0, kind: 'boss', material: 'void', rig: 'krypta_leerenbrut', floor: 8, role: 'Boss · Etage 8', shot: 'void',
     desc: 'Eine pulsierende Brutblase der Leere. Springt, blitzt, implodiert und gebiert Bomber.',
     anims: { idle: 4, run: 4, attack: 4, cast: 4 },
     draw(P, a, f) {
@@ -271,17 +271,18 @@
     nekromant: { hp: 6, speed: 95, r: 26, ai: 'keep', keep: 460, attacks: [A('fluch', 'Seelenfluch', 'homing', 3.2, { range: 800, speed: 240, desc: 'Eine grüne Seele, die dir folgt.' }), A('ruf', 'Knochenruf', 'summon', 9, { mobs: ['skelett', 'skelett'], max: 3, desc: 'Ruft zwei Skelette aus dem Boden.' })] },
     zombie: { hp: 4, speed: 150, r: 24, ai: 'hop', attacks: [A('sprung', 'Anspringen', 'dash', 2.8, { range: 360, speed: 820, desc: 'Springt dich an.' }), A('spucke', 'Moderspucke', 'lob', 4, { range: 520, radius: 56, desc: 'Spuckt Moder; wo er landet, bleibt eine Giftlache.' })] },
     eiszombie: { hp: 7, speed: 110, r: 26, ai: 'chase', attacks: [A('atem', 'Frostatem', 'breath', 4.5, { range: 240, count: 7, desc: 'Kurzer Froststoß aus dem Maul.' })] },
-    leerenbomber: { hp: 3, speed: 190, r: 24, ai: 'skirmish', attacks: [A('sprung', 'Leerensprung', 'teleport', 4, { range: 800, desc: 'Verschwindet und taucht neben dir auf.' }), A('platzen', 'Leerenwelle', 'slam', 3, { range: 200, radius: 120, desc: 'Platzt in einer violetten Welle.' })] },
+    // platzen: range <= radius + 40 (the wave's hit band), else a hero 160-200 px away is never hit (BEFUND gegner-bugs)
+    leerenbomber: { hp: 3, speed: 190, r: 24, ai: 'skirmish', attacks: [A('sprung', 'Leerensprung', 'teleport', 4, { range: 800, desc: 'Verschwindet und taucht neben dir auf.' }), A('platzen', 'Leerenwelle', 'slam', 3, { range: 150, radius: 120, desc: 'Platzt in einer violetten Welle.' })] },
     mimik: { hp: 8, speed: 130, r: 26, ai: 'hop', attacks: [A('biss', 'Truhenbiss', 'dash', 2.4, { range: 300, speed: 900, desc: 'Schnappt blitzschnell zu.' }), A('muenzen', 'Münzspucke', 'ring', 8, { count: 8, speed: 260, desc: 'Spuckt einen Kreis aus Münzen.' })] },
 
-    knochenwaechter: { hpMul: 1, speed: 85, r: 64, ai: 'chase', adds: ['skelett', 'skelettschuetze'], attacks: [A('stampfer', 'Schwertstampfer', 'slam', 3.6, { range: 340, radius: 280, desc: 'Rammt das Schwert in den Boden: Schockwelle.' }), A('wurf', 'Knochenwurf', 'lob', 3, { range: 900, count: 3, radius: 70, desc: 'Wirft drei Knochen im Bogen.' }), A('legion', 'Knochenlegion', 'summon', 9, { mobs: ['skelett', 'skelett'], max: 4, desc: 'Ruft zwei Skelette.' })] },
+    knochenwaechter: { hpMul: 1, speed: 85, r: 64, ai: 'chase', adds: ['skelett', 'skelettschuetze'], attacks: [A('stampfer', 'Schwertstampfer', 'slam', 3.6, { range: 300, radius: 280, desc: 'Rammt das Schwert in den Boden: Schockwelle.' }), A('wurf', 'Knochenwurf', 'lob', 3, { range: 900, count: 3, radius: 70, desc: 'Wirft drei Knochen im Bogen.' }), A('legion', 'Knochenlegion', 'summon', 9, { mobs: ['skelett', 'skelett'], max: 4, desc: 'Ruft zwei Skelette.' })] },
     grabmutter: { hpMul: 1, speed: 95, r: 64, ai: 'hop', adds: ['zombie'], attacks: [A('satz', 'Grabsprung', 'slam', 3.2, { range: 560, radius: 160, leap: true, desc: 'Springt dich an; der Aufprall schleudert Moder.' }), A('spucke', 'Moderschwall', 'lob', 2.4, { range: 900, count: 4, radius: 70, desc: 'Spuckt Moder in hohen Bögen.' }), A('brut', 'Zombiebrut', 'summon', 7, { mobs: ['zombie', 'zombie'], max: 5, desc: 'Brütet zwei kleine Zombies aus.' })] },
     moderkoloss: { hpMul: 1, speed: 90, r: 74, ai: 'chase', adds: ['zombie'], attacks: [A('atem', 'Faulatem', 'breath', 3.4, { range: 380, count: 13, desc: 'Giftkegel nach vorn (M1).' }), A('klumpen', 'Moderklumpen', 'lob', 3, { range: 900, count: 3, radius: 80, desc: 'Drei Klumpen im Bogen, Giftlachen am Boden (M2).' }), A('sturm', 'Sturmlauf', 'dash', 5, { range: 700, speed: 950, desc: 'Warnlinie, dann rennt er quer durch den Raum (M3).' }), A('beben', 'Erdbeben', 'slam', 4, { range: 320, radius: 280, line: true, desc: 'Eine Linie aus Erdstößen (M4).' }), A('maden', 'Madenbrut', 'summon', 10, { mobs: ['zombie', 'zombie', 'zombie'], max: 4, desc: 'Ruft drei kleine Zombies (M5).' }), A('regen', 'Fleischregen', 'ring', 7, { count: 16, speed: 250, desc: 'Ein Ring aus Brocken (M7).' })] },
     nekromantenfuerst: { hpMul: 1, speed: 75, r: 60, ai: 'keep', keep: 440, adds: ['nekromant', 'skelett'], attacks: [A('spirale', 'Seelenspirale', 'spiral', 6, { duration: 3, rate: .09, arms: 3, speed: 260, desc: 'Drei Arme aus Seelenflammen drehen sich aus ihm heraus.' }), A('herde', 'Seelenherde', 'homing', 3.4, { range: 900, speed: 230, count: 3, desc: 'Drei suchende Seelen.' }), A('kreis', 'Knochenkreis', 'ring', 5, { count: 18, speed: 260, desc: 'Ein Ring aus Knochenspitzen.' }), A('schritt', 'Schattenschritt', 'teleport', 7, { range: 900, desc: 'Verschwindet und taucht an anderer Stelle auf.' }), A('legion', 'Legion', 'summon', 11, { mobs: ['skelett', 'skelettwache'], max: 4, desc: 'Ruft Skelett und Skelettwache.' })] },
     truhenfresser: { hpMul: 1, speed: 120, r: 60, ai: 'hop', adds: ['mimik'], attacks: [A('biss', 'Doppelbiss', 'dash', 2.8, { range: 600, speed: 1000, repeat: 2, desc: 'Zwei schnelle Bisse hintereinander.' }), A('schwall', 'Münzschwall', 'breath', 4, { range: 380, count: 11, desc: 'Speit Münzen im Fächer.' }), A('sprung', 'Deckelsprung', 'slam', 3.6, { range: 520, radius: 180, leap: true, desc: 'Springt dich an.' }), A('ruf', 'Mimikruf', 'summon', 10, { mobs: ['mimik'], max: 3, desc: 'Eine Truhe im Raum erwacht.' })] },
     frostleiche: { hpMul: 1, speed: 80, r: 74, ai: 'chase', adds: ['eiszombie'], attacks: [A('splitter', 'Eissplitter', 'bolt', 2.4, { range: 800, speed: 560, count: 5, spread: .5, desc: 'Fächer aus fünf Eisspitzen (F1).' }), A('nova', 'Frostnova', 'ring', 4.5, { count: 16, speed: 280, desc: 'Eisring um sie herum (F2).' }), A('hagel', 'Hagel', 'meteors', 6, { count: 5, radius: 80, desc: 'Markierte Kreise, dann fallen Eisbrocken (F4).' }), A('gleiten', 'Eisgleiten', 'dash', 5, { range: 640, speed: 900, desc: 'Rutscht auf dich zu (F5).' }), A('erweckung', 'Frosterweckung', 'summon', 10, { mobs: ['eiszombie', 'eiszombie'], max: 4, desc: 'Zwei Eiszombies steigen aus dem Boden (F7).' })] },
     archivar: { hpMul: 1, speed: 70, r: 60, ai: 'drift', adds: ['nekromant', 'skelettschuetze'], attacks: [A('bann', 'Bannfluch', 'scream', 5, { range: 520, arc: 1.2, desc: 'Ein Fluch im Kegel: Schaden und 2 s verlangsamt.' }), A('haende', 'Grabeshände', 'hands', 4, { count: 5, radius: 70, desc: 'Hände greifen aus dem Boden unter dir.' }), A('seiten', 'Seitensturm', 'bolt', 2.6, { range: 800, speed: 520, count: 5, spread: .8, desc: 'Fünf verfluchte Seiten im Fächer.' }), A('ruf', 'Archivruf', 'summon', 11, { mobs: ['skelettschuetze', 'nekromant'], max: 3, desc: 'Ruft Schütze und Nekromant.' })] },
-    leerenbrut: { hpMul: 1, speed: 70, r: 60, ai: 'drift', adds: ['leerenbomber'], attacks: [A('sprung', 'Leerensprung', 'teleport', 5, { range: 900, desc: 'Verschwindet und taucht neben dir auf.' }), A('blitz', 'Leerenblitze', 'bolt', 2.2, { range: 800, speed: 520, count: 3, spread: .35, desc: 'Drei violette Blitze im Fächer.' }), A('implosion', 'Implosion', 'slam', 4, { range: 320, radius: 240, desc: 'Fällt in sich zusammen und stößt eine Welle aus.' }), A('brut', 'Bomberbrut', 'summon', 8, { mobs: ['leerenbomber', 'leerenbomber'], max: 4, desc: 'Gebiert zwei Leerenbomber.' })] },
+    leerenbrut: { hpMul: 1, speed: 70, r: 60, ai: 'drift', adds: ['leerenbomber'], attacks: [A('sprung', 'Leerensprung', 'teleport', 5, { range: 900, desc: 'Verschwindet und taucht neben dir auf.' }), A('blitz', 'Leerenblitze', 'bolt', 2.2, { range: 800, speed: 520, count: 3, spread: .35, desc: 'Drei violette Blitze im Fächer.' }), A('implosion', 'Implosion', 'slam', 4, { range: 260, radius: 240, desc: 'Fällt in sich zusammen und stößt eine Welle aus.' }), A('brut', 'Bomberbrut', 'summon', 8, { mobs: ['leerenbomber', 'leerenbomber'], max: 4, desc: 'Gebiert zwei Leerenbomber.' })] },
     knochenkoloss: { hpMul: 1, speed: 95, r: 76, ai: 'chase', adds: ['skelett', 'skelettwache'], attacks: [A('speere', 'Knochenspeere', 'bolt', 2.4, { range: 900, speed: 760, count: 3, spread: .25, desc: 'Wirft drei Speere (K1).' }), A('linie', 'Spitzenlinie', 'slam', 3.6, { range: 360, radius: 300, line: true, desc: 'Knochenspitzen brechen in einer Linie hervor (K2).' }), A('wirbel', 'Knochenwirbel', 'swing', 4, { range: 220, radius: 220, arc: 6.3, desc: 'Dreht sich mit ausgestrecktem Arm (K3).' }), A('hagel', 'Schädelhagel', 'lob', 4.5, { range: 900, count: 4, radius: 60, desc: 'Vier Schädel im Bogen (K4).' }), A('legion', 'Knochenlegion', 'summon', 11, { mobs: ['skelett', 'skelett', 'skelettwache'], max: 4, desc: 'Ruft drei Skelette (K7).' })] },
     leerenrufer: { hpMul: 1, speed: 80, r: 90, ai: 'drift', adds: ['leerenbomber', 'nekromant'], attacks: [A('riss', 'Leerenriss', 'hands', 3.4, { count: 4, radius: 80, desc: 'Unter dir öffnet sich die Leere (L1).' }), A('fessel', 'Seelenfessel', 'chain', 5, { range: 700, speed: 700, desc: 'Eine Seelenkette zieht dich zu ihm (L2).' }), A('schritt', 'Schattenschritt', 'teleport', 7, { range: 900, desc: 'Er löst sich auf und erscheint woanders (L3).' }), A('spirale', 'Leerenspirale', 'spiral', 9, { duration: 4, rate: .09, arms: 3, speed: 260, desc: 'Drei Arme aus Seelenschädeln (L4).' }), A('kreis', 'Knochenkreis', 'ring', 6, { count: 22, speed: 260, desc: 'Ein Ring aus Knochenspitzen (L5).' }), A('strahl', 'Doppelstrahl', 'beam', 10, { duration: 3.4, beams: 2, turn: .6, desc: 'Zwei Leerenstrahlen drehen sich durch die Arena (L7).' })] },
   };

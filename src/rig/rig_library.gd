@@ -13,6 +13,10 @@ const HELL_PATH := "res://assets/data/hell_rigs.json"
 ## The companions' part rigs (src/vfx/companion_rigs.gd), rigs.json's format;
 ## optional, loaded after the crypt so it may reuse the crypt's image keys.
 const COMPANION_PATH := "res://assets/data/companion_rigs.json"
+## The six Krypta bosses' part rigs (Story 1: knochenwaechter ... leerenbrut),
+## rigs.json's format with pixel_art frames; optional, loaded after the
+## companions. Their story defs name them (tools/krypta_dungeon/krypta_monsters.js "rig").
+const KRYPTA_BOSS_PATH := "res://assets/data/krypta_boss_rigs.json"
 ## Rigs are drawn at 2x, like every other 0x72 sprite in the game.
 const PIXEL_SCALE := 2.0
 ## Floating figures are drawn this many source pixels above their rest pose
@@ -43,11 +47,13 @@ static func shared() -> RefCounted:
 ## nothing and reports no error, so the crypt never depends on it; an empty
 ## `path` skips the crypt (tests load only a fixture). The companions' rigs at
 ## `companion_path` (same format, optional, never fail the load) come after
-## the crypt and may use its image keys. Returns false when the crypt data
+## the crypt and may use its image keys; the Krypta bosses' rigs at
+## `boss_path` (same format, optional) come after them. Returns false when the crypt data
 ## file is missing or invalid, or when no rig was built at all.
-func load_data(path: String = DATA_PATH, hell_path: String = HELL_PATH, companion_path: String = COMPANION_PATH) -> bool:
+func load_data(path: String = DATA_PATH, hell_path: String = HELL_PATH, companion_path: String = COMPANION_PATH, boss_path: String = KRYPTA_BOSS_PATH) -> bool:
 	var crypt_ok := path.is_empty() or _load_crypt(path)
 	if not companion_path.is_empty(): _load_crypt(companion_path)
+	if not boss_path.is_empty(): _load_crypt(boss_path)
 	_load_hell(hell_path)
 	ready = not rigs.is_empty()
 	return crypt_ok and ready
@@ -199,7 +205,11 @@ func _build_rig(name: String, def: Dictionary, images: Dictionary, art: Dictiona
 		item.bow = bool(spec.get("bow", false))
 		item.bounds = _item_bounds(item)
 		items.append(item)
-	return _finish(name, def, parts, items, source)
+	var built := _finish(name, def, parts, items, source)
+	# where its attacks start (mouth, core: drake_rig_host.gd muzzle), only for a rig that names them
+	# (krypta_boss_rigs.json); without, the host falls back to the body centre as before
+	if def.get("points") is Dictionary: built.points = _points(def.points)
+	return built
 
 
 func _in_rects(rects: Array, x: int, y: int) -> bool:

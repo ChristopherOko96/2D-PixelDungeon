@@ -719,6 +719,13 @@ func _pool_tick(zone: Dictionary, delta: float) -> void:
 			if float(rule.get("slow", 1.0)) < 1.0: game.perk_combat._status(enemy, "slow", (1.0 - float(rule.slow)) * (0.5 if bool(enemy.get("boss", false)) else 1.0), 0.3, 0)
 			if rule.has("pull") and not bool(enemy.get("boss", false)): enemy.knockback = Vector2(enemy.get("knockback", Vector2.ZERO)) + ElementRules.pull(rule, Vector2(enemy.pos), Vector2(zone.pos)) * 0.5
 	if zone.has("hostile"):
+		# a hero's own void pool drives the monsters in it mad too (element_rules.json madness;
+		# elements.gd _status_enemy spares the void's own creatures)
+		var mad: Array = rule.get("status", {}).get("mad", [])
+		if not mad.is_empty():
+			for enemy: Dictionary in game.enemies:
+				if float(enemy.hp) > 0 and _in_pool(zone, Vector2(enemy.pos), float(enemy.radius)):
+					game.elements._status_enemy(enemy, {"status": {"mad": mad}}, int(zone.hostile))
 		var wait := float(zone.get("hero_tick", 0.0)) - delta
 		if wait <= 0.0:
 			wait = 1.0

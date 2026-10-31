@@ -7,6 +7,16 @@ extends RefCounted
 ## or underlay, a lit north rim and spec colour only in single highlight cells
 ## (palette: src/vfx/talent_palette.gd). Decorative sizes are in art cells
 ## (crypt 2 world px, story worlds 3), hit radii in exact world px. Presentation only.
+##
+## Shapes here, matter in the particles (review 2026-10-31, BEFUND.md 5): while
+## the host has particles (paint_matter false, set by src/vfx/talent_fx.gd
+## before it draws) these effects paint only what is a shape, not matter: the
+## flash frames, rings and pressure rings, cores, tears, the fireball and its
+## licks, the ice star, the void's gulp and the core's flash. Every flying bit
+## (a nova's rim debris, the boom's sparks, the shatter's shards and mist, the
+## blizzard's flakes and slivers, the crater's tongues and embers, the chain's
+## sparks, the void's motes, the Gefuege's comets and streams) is thrown into
+## src/vfx/particles.gd instead, where it falls, bounces, slides and lies.
 
 const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
 const Pal = preload("res://src/vfx/talent_palette.gd")
@@ -18,6 +28,15 @@ const HERO_HALF := Vector2(8.0, 14.0)
 const WHITE_HOT := Color("fff6e6")
 ## Ash the Flammenmeer burns down to (dark to light).
 const ASH := [Color("3a3330"), Color("6a625c"), Color("9a918a")]
+## The white of a frost flash frame and a lance's glinting tip (single cells, one frame).
+const FROST_WHITE := Color("f4feff")
+## The void's black heart, deeper than any floor (its cores, tears and folds).
+const VOID_BLACK := Color("0a0612")
+## The 8 facings of an ice sliver (art cell steps).
+const DIR8 := [Vector2i(1, 0), Vector2i(1, -1), Vector2i(0, -1), Vector2i(-1, -1), Vector2i(-1, 0), Vector2i(-1, 1), Vector2i(0, 1), Vector2i(1, 1)]
+## False while the host's particles carry the flying matter (talent_fx sets it
+## before every draw): the effects then paint their shapes only.
+static var paint_matter := true
 ## A 3x5 pixel font: five rows of three bits per glyph.
 const FONT := {
 	"A": ["010", "101", "111", "101", "101"], "B": ["110", "101", "110", "101", "110"], "C": ["011", "100", "100", "100", "011"],
@@ -309,7 +328,9 @@ static func nova(canvas: CanvasItem, at: Vector2, r: float, p: float, element: S
 				if open == null: open = PixelPaint.open_cell(Vector2i(x, y), art)
 				if not open: continue
 			canvas.draw_rect(Rect2(Vector2(x, y) * art, size), cols[2] if cells[i + 3] == 1 else cols[1])
-	# debris along the rim
+	# debris along the rim (the particles' when the host has them: talent_fx._rim)
+	if not paint_matter:
+		return
 	var count := clampi(int(rad / art / (2.5 if heavy else 3.5)), 10, 40 if heavy else 30)
 	for i in range(count):
 		var born := 0.04 + _rnd(seed, i) * 0.18
@@ -782,21 +803,33 @@ static func _oval_ring(cells: Dictionary, c: Vector2i, rx: float, ry: float, dar
 ## the upper left, the spec colour in single cells. `fire` (vfx_talents.json
 ## "fire"): heart = radius of a white-hot heart in the ball, tail = cells of
 ## ember tail behind it that cool down the ramp and sag as they fall, style
-## "spear" = the Infernospeer (an ember spear with its heat shimmer).
+## "spear" = the Infernospeer (an ember spear with its heat shimmer). The same
+## dictionary carries the other mages' looks: style "lance" = the Frostlanze
+## (_lance: length cells, mist cover of its frost-mist trail), style "void" =
+## the Leerengeschoss (_void_core: a dark core whose trail of motes is drawn
+## in towards it; crack > 0 the Leerenlanze's tear behind it, no outward trail).
 static func shot(canvas: CanvasItem, at: Vector2, dir: Vector2, element: String, art: float, core: int, trail: int, clock: float, seed: int, fire: Dictionary = {}) -> void:
 	var cols := Pal.ramp(element)
 	var kind := Pal.kind(element)
 	var d := dir.normalized() if dir.length() > 0.01 else Vector2.RIGHT
 	var frame := _frame(clock)
-	if trail > 0:
+	var style := str(fire.get("style", ""))
+	if trail > 0 and style != "void":
 		shot_trail(canvas, at, d, element, art, trail, clock)
 	var c := PixelPaint.at(at, art)
 	var cells := {}
 	var r := maxi(1, core)
 	var haze := {}
-	if element == "fire" and str(fire.get("style", "")) == "spear":
+	var motes := {}
+	if element == "fire" and style == "spear":
 		kind = "spear"
+	elif style == "lance" or style == "void":
+		kind = style
 	match kind:
+		"lance":
+			_lance(cells, haze, c, d, r, int(fire.get("length", 5)), float(fire.get("mist", 0.8)), cols, frame, seed)
+		"void":
+			_void_core(cells, motes, c, d, r, trail, int(fire.get("crack", 0)), cols, clock, frame, seed)
 		"spear":
 			_spear(cells, haze, c, d, r, int(fire.get("length", 7)), float(fire.get("shimmer", 0.4)), cols, frame, seed)
 		"shard":
@@ -844,9 +877,17 @@ static func shot(canvas: CanvasItem, at: Vector2, dir: Vector2, element: String,
 				var lick := c - Vector2i((d * float(r + 1)).round()) + Vector2i(0, [0, -1, 0, 1][frame % 4])
 				cells[lick] = cols[3]
 				cells[lick - Vector2i(d.round())] = cols[2]
-	_flush(canvas, cells, art)
-	if not haze.is_empty():
+	if not haze.is_empty() and kind == "lance":
+		# the frost mist lies behind the lance, under its outline
 		PixelPaint.paint(canvas, haze, art)
+	_flush(canvas, cells, art)
+	if not haze.is_empty() and kind != "lance":
+		PixelPaint.paint(canvas, haze, art)
+	if not motes.is_empty():
+		for q: Vector2i in motes:
+			if not motes.has(q + Vector2i(0, 1)) and not cells.has(q + Vector2i(0, 1)):
+				PixelPaint.cell(canvas, q + Vector2i(0, 1), Pal.INK, art)
+		PixelPaint.paint(canvas, motes, art)
 	if element == "fire":
 		var side := d.orthogonal()
 		var tail := int(fire.get("tail", 0))
@@ -977,7 +1018,10 @@ static func boom(canvas: CanvasItem, at: Vector2, dir: Vector2, p: float, art: f
 			continue
 		var rad := reach * (0.3 + 1.3 * _out(t)) * (1.0 - 0.12 * float(j))
 		_pressure_ring(canvas, at, rad, 1.0 - t * t, cols, art, seed + j)
-	# sparks flung out in arcs and falling (streaks while fast)
+	# sparks flung out in arcs and falling (streaks while fast); the particles'
+	# ember_sparks when the host has them (they bounce and lie as embers)
+	if not paint_matter:
+		return
 	var sparks := {}
 	var biased := dir.length() > 0.1
 	for i in range(6 + size):
@@ -1116,8 +1160,8 @@ static func ember_chain(canvas: CanvasItem, from: Vector2, to: Vector2, reach: f
 			cells[q] = cols[4]
 		else:
 			cells[q] = cols[3] if posmod(k + frame, 3) == 0 else cols[2]
-	# sparks leaping off the links
-	for i in range(maxi(2, steps / 4)):
+	# sparks leaping off the links (the particles' when the host has them)
+	for i in range(maxi(2, steps / 4) if paint_matter else 0):
 		var f := _rnd(seed, i)
 		var ph := fmod(clock * 3.0 + _rnd(seed, i + 40), 1.0)
 		var q := PixelPaint.at(from + d * f * length + side * (_rnd(seed, i + 80) - 0.5) * 6.0 * art - Vector2(0, (ph - ph * ph * 0.5) * 6.0 * art), art)
@@ -1180,7 +1224,10 @@ static func crater(canvas: CanvasItem, at: Vector2, r: float, k: float, art: flo
 		if not cracks.has(q + Vector2i(0, 1)):
 			PixelPaint.cell(canvas, q + Vector2i(0, 1), Pal.INK, art)
 	PixelPaint.paint(canvas, cracks, art)
-	# tongues at a few spots, embers rising off the field
+	# tongues at a few spots, embers rising off the field: the particles'
+	# buoyant flames and embers when the host has them (talent_fx._zone_matter)
+	if not paint_matter:
+		return
 	var tongues := {}
 	for i in range(4):
 		var b := PixelPaint.at(at + Vector2.from_angle(TAU * float(i) / 4.0 + 0.8 + _rnd(seed, i + 30)) * r * (0.3 + 0.35 * _rnd(seed, i + 40)), art)
@@ -1381,3 +1428,835 @@ static func trap(canvas: CanvasItem, at: Vector2, kind: String, half: float, pul
 	if spring > 0.0:
 		cells = _thin(cells, 1.0 - spring)
 	_flush(canvas, cells, art)
+
+
+# ---------- frost: the Frostmagier's language (2026-10-31) ----------
+
+## A crystal standing on the floor at cell `b` into a cell map: `h` cells
+## tall, `half` wide at its base, its tip leaning `lean` cells; the lit left
+## facet, a ridge brightest towards the tip, the shaded right facet and a dark
+## root; `cover` thins it by the dither.
+static func _crystal(cells: Dictionary, b: Vector2i, h: float, half: float, lean: float, cols: Array, cover: float) -> void:
+	if h < 1.0:
+		return
+	var top := roundi(h)
+	for j in range(top + 1):
+		var v := float(j) / h
+		var w := half * (1.0 - v)
+		var axis := lean * v
+		for x in range(roundi(axis - w), roundi(axis + w) + 1):
+			var q := b + Vector2i(x, -j)
+			if cover < 1.0 and not PixelPaint.shown(q, cover):
+				continue
+			var col: Color = cols[2]
+			if j == 0:
+				col = cols[1]
+			elif float(x) < axis - 0.3:
+				col = cols[3]
+			elif float(x) <= axis + 0.3:
+				col = cols[3] if v < 0.6 else cols[4]
+			elif float(x) >= axis + w - 0.5:
+				col = cols[1]
+			cells[q] = col
+
+
+## One ice sliver into a cell map at cell `q`: `length` cells back along
+## facing `facing` (0..7 of DIR8), its leading cell lit (spec when `glint`).
+static func _sliver(cells: Dictionary, q: Vector2i, facing: int, length: int, cols: Array, glint: bool) -> void:
+	var step: Vector2i = DIR8[posmod(facing, 8)]
+	for i in range(length):
+		cells[q - step * i] = ((cols[4] if glint else cols[3]) if i == 0 else (cols[2] if i < length - 1 else cols[1]))
+
+
+## The Frostlanze into a cell map: a lance of ice `length` cells before and
+## behind cell `c` along `d`, `r` wide a third behind its point, faceted (the
+## upper facet lit, a bright ridge, the lower facet shaded), its tip glinting
+## white on the beat with a glint running down the ridge; `mist` takes the
+## frost-mist trail behind it (pale cells drifting apart and sinking as they
+## fall behind, shown at `cover`, drawn without outline).
+static func _lance(cells: Dictionary, mist: Dictionary, c: Vector2i, d: Vector2, r: int, length: int, cover: float, cols: Array, frame: int, seed: int) -> void:
+	var side := d.orthogonal()
+	for k in range(-length, length + 1):
+		var hw: int
+		if k > length / 3:
+			hw = int(floor(float(r) * float(length - k) / (float(length) * 0.67) + 0.35))
+		else:
+			hw = int(floor(float(r) * (0.35 + 0.65 * float(k + length) / (float(length) * 1.33)) + 0.35))
+		for o in range(-hw, hw + 1):
+			var q := c + Vector2i((d * float(k) + side * float(o)).round())
+			var lit := float(o) * side.y < 0.0
+			var col: Color
+			if k >= length - 1:
+				col = ((FROST_WHITE if posmod(frame + seed, 4) == 0 else cols[4]) if o == 0 else cols[3])
+			elif o == 0:
+				col = cols[4] if k > length / 2 else cols[3]
+			elif lit:
+				col = cols[3] if k > -length / 2 else cols[2]
+			else:
+				col = cols[1] if absi(o) == hw else cols[2]
+			cells[q] = col
+	var g := length - 1 - posmod(frame * 2 + seed, 2 * length + 6)
+	if g >= -length:
+		var gq := c + Vector2i((d * float(g)).round())
+		if cells.has(gq):
+			cells[gq] = FROST_WHITE
+	for i in range(length + 1, length * 3 + 6):
+		var f := float(i - length - 1) / float(length * 2 + 5)
+		var spread := 0.5 + f * 2.8
+		for s in range(2):
+			var off := (_rnd(seed + frame / 2, i * 2 + s) - 0.5) * 2.0 * spread
+			var q := c - Vector2i((d * float(i)).round()) + Vector2i((side * off).round()) + Vector2i(0, int(f * 2.5))
+			if mist.has(q) or cells.has(q) or not PixelPaint.shown(q + Vector2i(frame, 0), cover * (1.0 - f) * 0.9):
+				continue
+			mist[q] = cols[4] if f < 0.2 and s == 0 else (cols[3] if f < 0.6 else cols[2])
+
+
+## IMPACT of ice, in pushes (the Frostmagier's language): one white flash
+## frame, the lance breaking into a star of ice that thins away, cold
+## pressure rings running out, a ring of shards flung out in low arcs and
+## tumbling (one of eight facings, turning on the beat) that land and lie as
+## rime flecks glinting now and then, and frost mist settling low round the
+## spot; `p` 0..1 over its life, `size` art cells its reach, `dir` the flight
+## (the shards fly on round it; zero all round). spec: vfx_talents.json
+## frost.shatter (flash, pulses, shards, fly). The shards that skid, the rime
+## that grows and the pools that freeze are the particles' (src/vfx/particles.gd
+## shatter, rime_grow, freeze_liquids).
+static func shatter(canvas: CanvasItem, at: Vector2, dir: Vector2, p: float, art: float, size: int, seed: int, spec: Dictionary = {}) -> void:
+	if p >= 1.0 or p < 0.0:
+		return
+	var cols := Pal.ramp("ice")
+	var c := PixelPaint.at(at, art)
+	var frame := int(p * 60.0)
+	var flash := float(spec.get("flash", 0.08))
+	var reach := float(size) * art
+	if p < flash:
+		var fr := reach * (0.55 + 0.25 * p / flash)
+		PixelPaint.disc(canvas, at, fr, fr * 0.8, cols[4], art)
+		PixelPaint.disc(canvas, at, fr * 0.5, fr * 0.4, FROST_WHITE, art)
+	if p < 0.45:
+		var star := {}
+		var go := _out(p / 0.2)
+		for k in range(8):
+			var a := TAU * float(k) / 8.0 + _rnd(seed, k) * 0.3
+			var long := float(size) * (0.8 if k % 2 == 0 else 0.45) * go
+			var ray := Vector2.from_angle(a)
+			var s := 0.0
+			while s <= long:
+				var w := 1 if s < long * 0.5 and k % 2 == 0 else 0
+				for o in range(-w, w + 1):
+					var q := c + Vector2i((ray * s + ray.orthogonal() * float(o)).round())
+					star[q] = cols[4] if s > long - 1.0 else (cols[3] if o <= 0 else cols[2])
+				s += 1.0
+		_flush(canvas, _thin(star, 1.0 - smoothstep(0.15, 0.45, p)), art)
+	var pulses := int(spec.get("pulses", 2))
+	for j in range(pulses):
+		var tj := (p - float(j) * 0.08) / 0.4
+		if tj <= 0.0 or tj >= 1.0:
+			continue
+		_pressure_ring(canvas, at, reach * (0.3 + 1.1 * _out(tj)) * (1.0 - 0.15 * float(j)), 1.0 - tj * tj, cols, art, seed + j)
+	# the shards and the mist: the particles' when the host has them (they skid and lie as frost)
+	if not paint_matter:
+		return
+	var shards := {}
+	var biased := dir.length() > 0.1
+	var n := int(spec.get("shards", 8)) + size
+	var fly := float(spec.get("fly", 0.32))
+	var t := clampf(p / fly, 0.0, 1.0)
+	var lie := 1.0 - smoothstep(0.7, 1.0, p)
+	for i in range(n):
+		var a := dir.angle() + (_rnd(seed, i + 200) - 0.5) * 3.6 if biased else TAU * (float(i) + _rnd(seed, i + 200) * 0.7) / float(n)
+		var far := reach * (0.9 + 0.8 * _rnd(seed, i + 400))
+		var pos := at + Vector2.from_angle(a) * far * _out(t) * Vector2(1.0, 0.7) - Vector2(0.0, reach * 0.5 * (4.0 * t - 4.0 * t * t) * _rnd(seed, i + 500))
+		var q := PixelPaint.at(pos, art)
+		if not PixelPaint.shown(q, lie):
+			continue
+		if t < 1.0:
+			_sliver(shards, q, posmod(int(round(a / (TAU / 8.0))) + (frame / 3) * (1 if i % 2 == 0 else -1), 8), 2 + i % 2, cols, i % 3 == 0)
+		else:
+			shards[q] = cols[3]
+			shards[q + Vector2i(1, 0)] = cols[2]
+			if posmod(frame / 4 + i, 5) == 0:
+				shards[q] = FROST_WHITE
+	_flush(canvas, shards, art)
+	if p > 0.1:
+		var mist := {}
+		var k := 1.0 - smoothstep(0.5, 1.0, p)
+		for i in range(10 + size * 2):
+			var a := _rnd(seed, i + 600) * TAU
+			var rad := reach * (0.3 + 0.9 * _rnd(seed, i + 700)) * (0.6 + 0.4 * p)
+			var q := PixelPaint.at(at + Vector2.from_angle(a) * rad * Vector2(1.0, 0.45) + Vector2(sin(p * 6.0 + float(i)) * art, -p * 3.0 * art), art)
+			if PixelPaint.shown(q, k * 0.7):
+				mist[q] = cols[4] if i % 5 == 0 else cols[3]
+		PixelPaint.paint(canvas, mist, art)
+
+
+## Blizzard over its frost pools (the pools, the rime and the frost gas are
+## the host's layers): frost mist crawling low over the floor, snow flakes
+## driven round the middle in a swirl (each on its own orbit, faster near the
+## middle, bobbing, the inner ones whipping past as short streaks) and ice
+## slivers tumbling with them; `k` 0..1 its strength (it builds up and dies
+## down), `r` world px its hit radius. spec: vfx_talents.json frost.blizzard.
+static func blizzard(canvas: CanvasItem, at: Vector2, r: float, k: float, art: float, clock: float, seed: int, spec: Dictionary = {}) -> void:
+	if k <= 0.0 or r < art * 4.0:
+		return
+	var cols := Pal.ramp("ice")
+	var frame := _frame(clock)
+	var rc := r / art
+	var spin := float(spec.get("spin", 1.6))
+	var mist := {}
+	for i in range(int(rc * 1.6)):
+		var a := _rnd(seed, i + 900) * TAU + clock * spin * 0.25
+		var rad := r * sqrt(_rnd(seed, i + 950))
+		var q := PixelPaint.at(at + Vector2.from_angle(a) * rad * Vector2(1.0, 0.6), art)
+		if PixelPaint.shown(q + Vector2i(frame / 3, 0), 0.45 * k):
+			mist[q] = cols[3] if i % 4 else cols[4]
+	PixelPaint.paint(canvas, mist, art)
+	# flakes and slivers: the particles' when the host has them (they fall and lie as frost)
+	if not paint_matter:
+		return
+	var snow := {}
+	for i in range(int(spec.get("flakes", 70))):
+		var orbit := 0.15 + 0.85 * _rnd(seed, i)
+		var w := spin * (1.45 - orbit)
+		var a := _rnd(seed, i + 100) * TAU + clock * w
+		var rad := r * orbit * (1.0 + 0.12 * sin(clock * 1.7 + float(i)))
+		var lift := (6.0 + 10.0 * _rnd(seed, i + 200)) * art * (1.0 - orbit * 0.5) * (0.5 + 0.5 * sin(clock * 2.0 + float(i)))
+		var pos := at + Vector2(cos(a), sin(a) * 0.6) * rad - Vector2(0, lift)
+		var q := PixelPaint.at(pos, art)
+		if not PixelPaint.shown(q, k):
+			continue
+		snow[q] = FROST_WHITE if i % 7 == 0 else cols[4]
+		if orbit < 0.6:
+			var back := PixelPaint.at(pos - Vector2(-sin(a), cos(a) * 0.6) * art * 1.5, art)
+			if not snow.has(back):
+				snow[back] = cols[3]
+	for q: Vector2i in snow:
+		if not snow.has(q + Vector2i(0, 1)):
+			PixelPaint.cell(canvas, q + Vector2i(0, 1), cols[1], art)
+	PixelPaint.paint(canvas, snow, art)
+	var slivers := {}
+	for i in range(int(spec.get("shards", 14))):
+		var orbit := 0.3 + 0.65 * _rnd(seed, i + 300)
+		var a := _rnd(seed, i + 400) * TAU + clock * spin * (1.2 - orbit * 0.6)
+		var pos := at + Vector2(cos(a), sin(a) * 0.6) * r * orbit - Vector2(0, (4.0 + 6.0 * _rnd(seed, i + 500)) * art)
+		var q := PixelPaint.at(pos, art)
+		if PixelPaint.shown(q, k):
+			_sliver(slivers, q, posmod(int(a * 4.0 / PI) + 2 + frame / 2, 8), 2, cols, i % 3 == 0)
+	_flush(canvas, slivers, art)
+
+
+## The path of the Frostsprung from `from` to `to` (ground points): a band of
+## frost along it and rime crystals (2-5 cells) shooting up one after another
+## from the start with a pop, glinting on the beat, then thinning by the
+## dither from the start end first; `every` cells between crystals. The shard
+## bursts at both ends are shatter's.
+static func ice_trail(canvas: CanvasItem, from: Vector2, to: Vector2, p: float, art: float, seed: int, every := 4.0) -> void:
+	var length := from.distance_to(to)
+	if length < art * 2.0 or p >= 1.0:
+		return
+	var cols := Pal.ramp("ice")
+	var d := (to - from) / length
+	var side := d.orthogonal()
+	var steps := int(length / art)
+	var frame := int(p * 60.0)
+	var band := {}
+	for i in range(steps + 1):
+		var f := float(i) / float(maxi(1, steps))
+		var cover := clampf((p * 3.0 - f) * 2.0, 0.0, 1.0) * (1.0 - smoothstep(0.5 + f * 0.3, 1.0, p))
+		if cover <= 0.0:
+			continue
+		for o in range(-1, 2):
+			var q := PixelPaint.at(from + d * float(i) * art + side * float(o) * art, art)
+			if not band.has(q) and PixelPaint.shown(q, cover * (1.0 if o == 0 else 0.6)):
+				band[q] = cols[3] if o == 0 else cols[2]
+	_flush(canvas, band, art)
+	var crystals := {}
+	var n := maxi(2, int(float(steps) / maxf(1.0, every)))
+	for i in range(n + 1):
+		var f := (float(i) + 0.5 * _rnd(seed, i)) / float(n + 1)
+		var g := _back(clampf((p - f * 0.33) / 0.12, 0.0, 1.0))
+		if g <= 0.0:
+			continue
+		var b := PixelPaint.at(from + d * f * length + side * (_rnd(seed, i + 40) - 0.5) * 4.0 * art, art)
+		var h := (2.0 + 3.0 * _rnd(seed, i + 80)) * g
+		_crystal(crystals, b, h, 1.0 + float(i % 2), (_rnd(seed, i + 120) - 0.5) * 2.0, cols, 1.0 - smoothstep(0.5 + f * 0.3, 1.0, p))
+		var tip := b + Vector2i(0, -roundi(h))
+		if posmod(frame / 3 + i, 4) == 0 and crystals.has(tip):
+			crystals[tip] = FROST_WHITE
+	_flush(canvas, crystals, art)
+
+
+# ---------- the void: the Leerenmagier's language (2026-10-31) ----------
+
+## The Leerengeschoss into cell maps: a dark core `r` cells round (an
+## ink-black heart, deeper than the floor) with a violet rim whose lit cell
+## crawls round on the beat; `motes` takes its trail, which bends towards
+## it: motes behind and beside it are drawn in along a narrowing funnel,
+## slow far out and fast near the rim, each with a short streak behind it;
+## `crack` > 0 (the Leerenlanze) tears a jagged line of split space behind it.
+static func _void_core(cells: Dictionary, motes: Dictionary, c: Vector2i, d: Vector2, r: int, trail: int, crack: int, cols: Array, clock: float, frame: int, seed: int) -> void:
+	var side := d.orthogonal()
+	for y in range(-r - 1, r + 2):
+		for x in range(-r - 1, r + 2):
+			var dd := Vector2(x, y).length()
+			if dd > float(r) + 0.6:
+				continue
+			var q := c + Vector2i(x, y)
+			if dd < float(r) - 0.7:
+				cells[q] = VOID_BLACK if dd < float(r) - 1.5 or r < 2 else cols[0]
+			else:
+				var lit := posmod(int(round(atan2(float(y), float(x)) * 3.0)) + frame, 6) == 0
+				cells[q] = cols[4] if lit else (cols[3] if y <= 0 else cols[2])
+	for i in range(4 + trail):
+		var age := fmod(clock * 2.2 + _rnd(seed, i), 1.0)
+		var pull := age * age
+		var far := float(trail) * (0.5 + 0.6 * _rnd(seed, i + 30)) + float(r)
+		var lateral := (_rnd(seed, i + 60) - 0.5) * 2.0 * (2.0 + float(trail) * 0.45) * (1.0 - pull)
+		var swing := sin(pull * PI) * 1.5 * signf(lateral + 0.01)
+		var spot := Vector2(c) - d * far * (1.0 - pull) + side * (lateral + swing)
+		var q := Vector2i(spot.round())
+		if cells.has(q) or motes.has(q):
+			continue
+		motes[q] = cols[4] if pull > 0.7 else (cols[3] if pull > 0.35 else cols[2])
+		if pull > 0.15 and pull < 0.9:
+			var tail := Vector2i((spot - (Vector2(c) - spot).normalized()).round())
+			if not cells.has(tail) and not motes.has(tail):
+				motes[tail] = cols[1]
+	if crack > 0:
+		for k in range(r + 1, r + 2 + crack * 4):
+			var zig: int = [0, 1, 0, -1, -1, 0, 1][posmod(k + seed, 7)]
+			var q := c - Vector2i((d * float(k)).round()) + Vector2i((side * float(zig)).round())
+			if not cells.has(q):
+				cells[q] = VOID_BLACK if k % 3 else cols[0]
+			var lip := q + Vector2i((side * (1.0 if zig >= 0 else -1.0)).round())
+			if not cells.has(lip) and posmod(k + frame, 4) == 0:
+				motes[lip] = cols[3]
+
+
+## A tear in space into a cell map: a jagged line `half` cells to both sides
+## of cell `c` along `d`, `open` cells wide in its middle (black inside, a
+## violet lip lit on its upper edge), narrowing to its ends; `cover` thins it.
+static func _tear(cells: Dictionary, c: Vector2i, d: Vector2, half: float, open: float, cols: Array, cover: float, seed: int) -> void:
+	var side := d.orthogonal()
+	var s := -half
+	while s <= half:
+		var zig := sin(s * 1.3 + float(seed % 13)) * 1.2 + (_rnd(seed, int(s + 200.0)) - 0.5) * 1.4
+		var w := open * (1.0 - absf(s) / maxf(1.0, half))
+		var base := Vector2(c) + d * s + side * zig
+		for o in range(-int(w) - 1, int(w) + 2):
+			var q := Vector2i((base + side * float(o)).round())
+			if cover < 1.0 and not PixelPaint.shown(q, cover):
+				continue
+			if absf(float(o)) <= w - 0.5:
+				cells[q] = VOID_BLACK
+			elif not cells.has(q):
+				cells[q] = cols[3] if float(o) * side.y < 0.0 else cols[2]
+		s += 1.0
+
+
+## The void's ramp one step darker (its ghost and its pressure rings).
+static func _shade(cols: Array) -> Array:
+	return [VOID_BLACK, cols[0], cols[1], cols[2], cols[3]]
+
+
+## IMPACT of the void (the Leerenmagier's language): the pull first, then the
+## burst. Over the first `pull` of its life motes are drawn in from a ring
+## round the hit on tightening spirals while a dark core gathers (a violet
+## rim crawling round a black heart); then one frame of void (the core at its
+## biggest, its rim spec-bright), violet motes flung out as streaks, a dark
+## pressure ring and the core closing. `size` art cells its reach, `crack` > 0
+## tears a jagged line of split space across it (the Leerenlanze). spec:
+## vfx_talents.json void.implode (pull, motes). The pull on the host's dust,
+## the stain and the swallowing are the particles', the pools' and the host's.
+static func implosion(canvas: CanvasItem, at: Vector2, p: float, art: float, size: int, seed: int, spec: Dictionary = {}, crack := 0) -> void:
+	if p >= 1.0 or p < 0.0:
+		return
+	var cols := Pal.ramp("void")
+	var c := PixelPaint.at(at, art)
+	var frame := int(p * 60.0)
+	var pull := float(spec.get("pull", 0.25))
+	var reach := float(size)
+	var n := int(spec.get("motes", 10)) + size
+	var cells := {}
+	var motes := {}
+	if crack > 0 and p > pull * 0.5:
+		var tear := {}
+		var span := reach * (0.9 + 0.25 * float(crack)) * _out((p - pull * 0.5) / 0.2)
+		_tear(tear, c, Vector2.from_angle(_rnd(seed, 777) * PI), span, 1.0 + 0.5 * float(crack), cols, 1.0 - smoothstep(0.6, 1.0, p), seed)
+		_flush(canvas, tear, art)
+	if p < pull:
+		var k := p / pull
+		var kk := k * k
+		# the motes drawn in and flung out: the particles' implode when the host has them
+		for i in range(n if paint_matter else 0):
+			var a := _rnd(seed, i) * TAU + kk * 2.4
+			var pos := Vector2(c) + Vector2.from_angle(a) * reach * (1.1 + 0.6 * _rnd(seed, i + 40)) * (1.0 - kk) * Vector2(1.0, 0.75)
+			var q := Vector2i(pos.round())
+			motes[q] = cols[4] if kk > 0.6 and i % 2 == 0 else cols[3]
+			var tail := Vector2i((Vector2(c) + (pos - Vector2(c)) * 1.18).round())
+			if tail != q and not motes.has(tail):
+				motes[tail] = cols[2]
+	var core := 0.0
+	if p < pull:
+		core = 1.0 + reach * 0.28 * p / pull
+	elif p < pull + 0.3:
+		core = (1.0 + reach * 0.32) * (1.0 - (p - pull) / 0.3)
+	if core >= 1.0:
+		var bright := p >= pull and p < pull + 0.06
+		for y in range(-int(core) - 1, int(core) + 2):
+			for x in range(-int(core) - 1, int(core) + 2):
+				var dd := Vector2(float(x), float(y) / 0.8).length()
+				if dd > core + 0.5:
+					continue
+				var q := c + Vector2i(x, y)
+				if dd > core - 0.8:
+					var crawl := posmod(int(round(atan2(float(y), float(x)) * 4.0)) - frame, 8) == 0
+					cells[q] = cols[4] if bright or crawl else cols[3]
+				else:
+					cells[q] = VOID_BLACK if dd < core - 1.8 else cols[0]
+	if p >= pull:
+		var t := (p - pull) / (1.0 - pull)
+		for i in range(n + 4 if paint_matter else 0):
+			var a := _rnd(seed, i + 300) * TAU
+			var pos := Vector2(c) + Vector2.from_angle(a) * reach * (1.0 + 0.9 * _rnd(seed, i + 340)) * _out(t / 0.7) * Vector2(1.0, 0.75) - Vector2(0, t * 3.0)
+			var q := Vector2i(pos.round())
+			if not PixelPaint.shown(q, 1.0 - t):
+				continue
+			motes[q] = cols[4] if t < 0.25 else (cols[3] if t < 0.6 else cols[2])
+			if t < 0.5:
+				var back := Vector2i((Vector2(c) + (pos - Vector2(c)) * 0.82).round())
+				if not motes.has(back):
+					motes[back] = cols[2]
+		var rt := t / 0.55
+		if rt < 1.0:
+			_pressure_ring(canvas, at, reach * art * (0.3 + 1.2 * _out(rt)), 1.0 - rt * rt, _shade(cols), art, seed)
+	_flush(canvas, cells, art)
+	for q: Vector2i in motes:
+		if not motes.has(q + Vector2i(0, 1)) and not cells.has(q + Vector2i(0, 1)):
+			PixelPaint.cell(canvas, q + Vector2i(0, 1), Pal.INK, art)
+	PixelPaint.paint(canvas, motes, art)
+
+
+## Leerenriss: a tear in the floor at `at` that opens into a ring and ends in
+## a pressure ring reaching exactly `r` (world px). Up to spec.open of its life
+## a jagged black line rips open across the spot (violet lip); up to spec.ring
+## it bends round into a torn ring, the floor inside going dark, while motes
+## stream in from past the hit radius on spirals (everything is drawn in);
+## then the pressure ring runs out to `r` and thins and the dark closes.
+static func rift(canvas: CanvasItem, at: Vector2, r: float, p: float, art: float, seed: int, spec: Dictionary = {}) -> void:
+	if p >= 1.0 or p < 0.0 or r < art * 3.0:
+		return
+	var cols := Pal.ramp("void")
+	var c := PixelPaint.at(at, art)
+	var rc := r / art
+	var frame := int(p * 60.0)
+	var open_end := float(spec.get("open", 0.22))
+	var ring_end := float(spec.get("ring", 0.42))
+	var a0 := _rnd(seed, 1) * PI
+	var d := Vector2.from_angle(a0)
+	var cells := {}
+	var half := rc * float(spec.get("tear", 0.5))
+	if p < open_end:
+		_tear(cells, c, d, half * _out(p / open_end), 1.0 + 1.5 * _out(p / open_end), cols, 1.0, seed)
+	else:
+		var k := _out(clampf((p - open_end) / (ring_end - open_end), 0.0, 1.0))
+		var close := clampf((p - ring_end) / (1.0 - ring_end), 0.0, 1.0)
+		var cover := 1.0 - smoothstep(0.3, 1.0, close)
+		var rad := half * 0.8 * (1.0 - 0.6 * close)
+		var count := maxi(24, int(TAU * rad))
+		for i in range(count):
+			var s := float(i) / float(count) * 2.0 - 1.0
+			var line := Vector2(c) + d * s * half
+			var ring := Vector2(c) + Vector2.from_angle(a0 + PI * (s + 1.0)) * rad * Vector2(1.0, 0.75)
+			var pos := line.lerp(ring, k) + Vector2(sin(s * 9.0 + float(seed % 7)), cos(s * 7.0)) * 0.9
+			var q := Vector2i(pos.round())
+			if not PixelPaint.shown(q, cover):
+				continue
+			cells[q] = cols[4] if posmod(i + frame / 2, 9) == 0 else (cols[3] if (pos - Vector2(c)).y < 0.0 else cols[2])
+			var inner := Vector2i((Vector2(c) + (pos - Vector2(c)) * 0.85).round())
+			if not cells.has(inner):
+				cells[inner] = VOID_BLACK
+		if k > 0.2:
+			var dark := {}
+			for y in range(-int(rad), int(rad) + 1):
+				for x in range(-int(rad), int(rad) + 1):
+					var q := c + Vector2i(x, y)
+					if Vector2(float(x), float(y) / 0.75).length() < rad * 0.8 * k and not cells.has(q) and PixelPaint.shown(q, 0.7 * cover):
+						dark[q] = VOID_BLACK if PixelPaint.shown(q, 0.5) else cols[0]
+			PixelPaint.paint(canvas, dark, art)
+	var motes := {}
+	var pull := clampf((p - open_end * 0.5) / (ring_end + 0.1 - open_end * 0.5), 0.0, 1.0)
+	if pull > 0.0 and pull < 1.0:
+		# the motes streaming in: the particles' well when the host has them
+		for i in range(int(spec.get("motes", 18)) if paint_matter else 0):
+			var ph := fmod(pull + _rnd(seed, i + 50), 1.0)
+			var ease := ph * ph
+			var a := _rnd(seed, i + 90) * TAU + ease * 2.2
+			var pos := Vector2(c) + Vector2.from_angle(a) * rc * (1.25 - ease * 1.1) * Vector2(1.0, 0.75)
+			var q := Vector2i(pos.round())
+			motes[q] = cols[4] if ease > 0.6 else cols[3]
+			var tail := Vector2i((Vector2(c) + (pos - Vector2(c)) * 1.1).round())
+			if tail != q and not motes.has(tail):
+				motes[tail] = cols[1]
+	_flush(canvas, cells, art)
+	for q: Vector2i in motes:
+		PixelPaint.cell(canvas, q + Vector2i(0, 1), Pal.INK, art)
+	PixelPaint.paint(canvas, motes, art)
+	if p > ring_end:
+		var t := (p - ring_end) / (1.0 - ring_end)
+		_pressure_ring(canvas, at, r * (0.35 + 0.65 * _out(t / 0.5)), 1.0 - t, _shade(cols) if t > 0.3 else cols, art, seed)
+
+
+## Raumsprung: space folding at `at` (chest height), `size` art cells at its
+## widest. `closing`: a dark ring collapsing to a point (violet rim with a
+## crawling glint, black inside, motes drawn into it, a spec cell where it
+## shuts); else a ring opening out of a point and thinning, motes flung out.
+## `k` 0..1 over the fold.
+static func fold(canvas: CanvasItem, at: Vector2, k: float, closing: bool, size: int, art: float, seed: int) -> void:
+	if k >= 1.0 or k < 0.0:
+		return
+	var cols := Pal.ramp("void")
+	var c := PixelPaint.at(at, art)
+	var rad := float(size) * ((1.0 - _out(k)) if closing else _out(k))
+	var cover := 1.0 - (smoothstep(0.7, 1.0, k) * 0.5 if closing else smoothstep(0.4, 1.0, k))
+	var frame := int(k * 40.0)
+	var cells := {}
+	if rad >= 1.0:
+		for e: Array in _ring_cells(at, rad * art, 1.6, art):
+			var q: Vector2i = e[0]
+			if PixelPaint.shown(q, cover):
+				cells[q] = cols[4] if posmod(int(float(e[2]) * 5.0) + frame, 6) == 0 else (cols[3] if int(e[1]) == 0 else cols[2])
+		for y in range(-int(rad), int(rad) + 1):
+			for x in range(-int(rad), int(rad) + 1):
+				var q := c + Vector2i(x, y)
+				if Vector2(x, y).length() < rad - 1.6 and not cells.has(q) and PixelPaint.shown(q, cover * (0.95 if closing else 0.6)):
+					cells[q] = VOID_BLACK
+	elif closing and k > 0.8:
+		cells[c] = cols[4]
+		for o: Vector2i in SIDES:
+			cells[c + o] = cols[3]
+	# its motes: the particles' (implode where he leaves, flung out where he lands) when the host has them
+	for i in range(8 if paint_matter else 0):
+		var a := _rnd(seed, i) * TAU + k * (2.0 if closing else -1.0)
+		var dist := float(size) * ((1.7 * (1.0 - k) + 0.2) if closing else (0.4 + 1.5 * k))
+		var q := c + Vector2i((Vector2.from_angle(a) * dist * Vector2(1.0, 0.8)).round())
+		if not cells.has(q) and PixelPaint.shown(q, cover):
+			cells[q] = cols[4] if i % 3 == 0 else cols[3]
+	_flush(canvas, cells, art)
+
+
+## The dotted void trail of a Raumsprung from `from` to `to`: a dot every
+## `every` cells (black with a violet cell beside it, alternating sides),
+## appearing from the start and thinning by the dither from the start end.
+static func void_dots(canvas: CanvasItem, from: Vector2, to: Vector2, p: float, art: float, seed: int, every := 3) -> void:
+	var length := from.distance_to(to)
+	if length < art * 2.0 or p >= 1.0:
+		return
+	var cols := Pal.ramp("void")
+	var d := (to - from) / length
+	var side := d.orthogonal()
+	var steps := int(length / art)
+	var cells := {}
+	var i := 0
+	while i <= steps:
+		var f := float(i) / float(maxi(1, steps))
+		var cover := clampf((p * 3.0 - f) * 3.0, 0.0, 1.0) * (1.0 - smoothstep(0.35 + f * 0.4, 1.0, p))
+		var q := PixelPaint.at(from + d * float(i) * art, art)
+		if PixelPaint.shown(q, cover):
+			cells[q] = VOID_BLACK
+			cells[q + Vector2i((side * (1.0 if (i / maxi(1, every)) % 2 == 0 else -1.0)).round())] = cols[3] if posmod(i + seed, 4) else cols[4]
+		i += maxi(1, every)
+	_flush(canvas, cells, art)
+
+
+## Magisches Echo: a darker violet ghost of the hero's last spell (`at`
+## chest height, `angle` its aim) in the void's ramp one step down: `kind`
+## "shot" a ghost of the shot flying out along the aim and dissolving with a
+## lagging double behind it, "ring" a ghost ring running out to `r` world px,
+## else a ghost of the gather at the hand; `p` 0..1 over the echo.
+static func echo(canvas: CanvasItem, at: Vector2, angle: float, kind: String, r: float, p: float, art: float, seed: int) -> void:
+	if p >= 1.0 or p < 0.0:
+		return
+	var ghost := _shade(Pal.ramp("void"))
+	var d := Vector2.from_angle(angle)
+	var cover := 1.0 - smoothstep(0.45, 1.0, p)
+	match kind:
+		"shot":
+			for lag in range(2):
+				var cells := {}
+				var head := PixelPaint.at(at + d * (_out(p) * 70.0 - float(lag) * 5.0) * art * 0.5, art)
+				_ball(cells, head, 2, ghost)
+				for i in range(1, 7):
+					var q := head - Vector2i((d * float(i + 2)).round())
+					if PixelPaint.shown(q, (1.0 - float(i) / 7.0) * cover):
+						cells[q] = ghost[2] if i < 3 else ghost[1]
+				_flush(canvas, _thin(cells, cover * (1.0 if lag == 0 else 0.4)), art)
+		"ring":
+			var rad := maxf(art * 3.0, r * _out(p / 0.6))
+			var cells := {}
+			for e: Array in _ring_cells(at, rad, 2.0, art):
+				var q: Vector2i = e[0]
+				if PixelPaint.shown(q, cover):
+					cells[q] = ghost[3] if int(e[1]) == 0 else ghost[1]
+			for e: Array in _ring_cells(at, rad * 0.85, 1.0, art):
+				var q: Vector2i = e[0]
+				if not cells.has(q) and PixelPaint.shown(q, cover * 0.4):
+					cells[q] = ghost[2]
+			_flush(canvas, cells, art)
+		_:
+			gather(canvas, at + d * 5.0 * art, p, "void", art, 9, 9.0, 4, seed)
+
+
+## Singularität at `at` reaching `r` (world px): a black core with a thin
+## spec-bright horizon and a dark lensing ring round it, a violet accretion
+## ring of motes spiralling in (tightening orbits on a tilted disc, brighter
+## and streaking as they near the core, then gone), spiral arms of darkened
+## floor crawling inward (the floor bends in) and, from stage 1 (Ereignis-
+## horizont), a wider ring of slow motes; `k` 0..1 its strength (grows in,
+## sinks at its end: the collapse is the closing wave). The pull on the dust
+## and the swallowing are the particles' well and the host's.
+static func singularity(canvas: CanvasItem, at: Vector2, r: float, k: float, art: float, clock: float, seed: int, stage: int, spec: Dictionary = {}) -> void:
+	if k <= 0.0 or r < art * 4.0:
+		return
+	var cols := Pal.ramp("void")
+	var c := PixelPaint.at(at, art)
+	var rc := r / art
+	var frame := _frame(clock)
+	var spin := float(spec.get("spin", 1.4))
+	var arms := {}
+	var n_arms := int(spec.get("arms", 3))
+	for arm in range(n_arms):
+		var steps := int(rc * 1.2)
+		for s in range(steps):
+			var f := float(s) / float(maxi(1, steps))
+			var rad := rc * 0.95 * (1.0 - f)
+			var a := TAU * float(arm) / float(n_arms) + f * 3.6 + clock * spin * 0.5
+			var q := c + Vector2i((Vector2(cos(a), sin(a) * 0.6) * rad).round())
+			if posmod(s - frame, 5) < 2 and PixelPaint.shown(q, (0.25 + 0.5 * f) * k):
+				arms[q] = cols[0] if f < 0.6 else VOID_BLACK
+	PixelPaint.paint(canvas, arms, art)
+	var core := maxf(2.0, rc * float(spec.get("core", 0.12))) * clampf(k * 1.3, 0.0, 1.0)
+	var cells := {}
+	for y in range(-int(core) - 3, int(core) + 4):
+		for x in range(-int(core) - 3, int(core) + 4):
+			var dd := Vector2(float(x), float(y) / 0.8).length()
+			var q := c + Vector2i(x, y)
+			if dd <= core - 0.5:
+				cells[q] = VOID_BLACK
+			elif dd <= core + 0.5:
+				var lit := posmod(int(round(atan2(float(y), float(x)) * 5.0)) + frame, 10) < 2
+				cells[q] = cols[4] if lit else cols[3]
+			elif dd <= core + 2.0 and PixelPaint.shown(q, 0.6 * k):
+				cells[q] = cols[0]
+	var motes := {}
+	# the motes falling in: the particles' well (void.singularity.mote_rate) when the host has them
+	for i in range(int(spec.get("motes", 40)) if paint_matter else 0):
+		var ph := fmod(clock * float(spec.get("fall", 0.45)) + _rnd(seed, i), 1.0)
+		var ease := ph * ph
+		var rad := core + (rc * 0.6 * (0.6 + 0.4 * _rnd(seed, i + 70)) - core) * (1.0 - ease)
+		var a := _rnd(seed, i + 30) * TAU + ease * 5.0 + clock * spin
+		var pos := Vector2(c) + Vector2(cos(a), sin(a) * 0.45) * rad
+		var q := Vector2i(pos.round())
+		if cells.has(q) or not PixelPaint.shown(q, k):
+			continue
+		motes[q] = cols[4] if ease > 0.7 else (cols[3] if ease > 0.3 else cols[2])
+		if ease > 0.35:
+			var back := Vector2i((Vector2(c) + Vector2(cos(a - 0.35), sin(a - 0.35) * 0.45) * rad).round())
+			if not motes.has(back) and not cells.has(back):
+				motes[back] = cols[2]
+	if stage >= 1:
+		for i in range(18):
+			var a := TAU * float(i) / 18.0 - clock * spin * 0.35
+			var q := c + Vector2i((Vector2(cos(a), sin(a) * 0.55) * rc * (0.9 + 0.05 * sin(clock * 3.0 + float(i)))).round())
+			if PixelPaint.shown(q, k * 0.8):
+				motes[q] = cols[3] if i % 3 else cols[4]
+	for q: Vector2i in motes:
+		if not motes.has(q + Vector2i(0, 1)):
+			PixelPaint.cell(canvas, q + Vector2i(0, 1), Pal.INK, art)
+	_flush(canvas, cells, art)
+	PixelPaint.paint(canvas, motes, art)
+
+
+# ---------- the Arkanes Gefüge (the Leerenmagier) ----------
+
+## A point on the quadratic curve from `a` over `ctrl` to `b` at `t` 0..1.
+static func _bez(a: Vector2, ctrl: Vector2, b: Vector2, t: float) -> Vector2:
+	var u := 1.0 - t
+	return a * u * u + ctrl * 2.0 * u * t + b * t * t
+
+
+## SWALLOW (the Arkanes Gefüge eats): the matter streams from `from` (the
+## eaten spot, `spread` world px round it) into the mouth `to` as motes in the
+## eaten elements' colours, one per entry of `els` (element names), each on
+## its own curve bent to one side. They leave over spec.leave of the event,
+## each takes spec.travel of it and is pulled (slow out, fast in), its lite
+## cell leading (spec when nearly in), a body and a shade cell trailing over
+## an ink underlay. At the mouth a small dark gulp opens while they come (a
+## black heart with a violet rim whose glint steps on as they arrive) and
+## closes after. `p` 0..1 over the event; spec: vfx_talents.json void.swallow.
+static func stream(canvas: CanvasItem, from: Vector2, to: Vector2, spread: float, els: Array, p: float, art: float, seed: int, spec: Dictionary = {}) -> void:
+	if p >= 1.0 or p < 0.0 or els.is_empty():
+		return
+	var a := from / art
+	var b := to / art
+	var length := a.distance_to(b)
+	var side := (b - a).orthogonal() / maxf(0.01, length)
+	var bend := float(spec.get("bend", 0.35))
+	var leave := float(spec.get("leave", 0.55))
+	var travel := maxf(0.05, float(spec.get("travel", 0.4)))
+	var motes := {}
+	var arrived := 0
+	for i in range(els.size()):
+		var t := (p - leave * _rnd(seed, i)) / travel
+		if t < 0.0:
+			continue
+		if t >= 1.0:
+			arrived += 1
+			continue
+		# the motes themselves: the particles' when the host has them (pulled into the mouth)
+		if not paint_matter:
+			continue
+		var e := t * t
+		var start := a + Vector2.from_angle(_rnd(seed, i + 50) * TAU) * (spread / art) * sqrt(_rnd(seed, i + 90)) * Vector2(1.0, 0.75)
+		var ctrl := (start + b) * 0.5 + side * length * bend * (_rnd(seed, i + 130) * 2.0 - 1.0)
+		var cols := Pal.ramp(str(els[i]))
+		for s in range(3):
+			var q := Vector2i(_bez(start, ctrl, b, maxf(0.0, e - float(s) * 0.07)).floor())
+			if not motes.has(q):
+				motes[q] = [cols[4] if e > 0.8 else cols[3], cols[2], cols[1]][s]
+	var gulp := sin(clampf(p / maxf(0.1, leave + travel), 0.0, 1.0) * PI)
+	var cells := {}
+	if gulp > 0.15:
+		var v := Pal.ramp("void")
+		var mouth := Vector2i(b.floor())
+		var rad := 1.0 + float(spec.get("mouth", 2)) * gulp
+		for y in range(-int(rad) - 1, int(rad) + 2):
+			for x in range(-int(rad) - 1, int(rad) + 2):
+				var dd := Vector2(float(x), float(y) / 0.8).length()
+				if dd > rad + 0.5:
+					continue
+				cells[mouth + Vector2i(x, y)] = VOID_BLACK if dd < rad - 0.6 else (v[4] if posmod(x + y + arrived, 5) == 0 else v[3])
+	for q: Vector2i in motes:
+		if not motes.has(q + Vector2i(0, 1)):
+			PixelPaint.cell(canvas, q + Vector2i(0, 1), Pal.INK, art)
+	_flush(canvas, cells, art)
+	PixelPaint.paint(canvas, motes, art)
+
+
+## EJECT (the Gefüge bursting at the Urknall): the swallowed units burst out
+## of `at` as comet pixels in their elements' colours on a spiral, one per
+## entry of `els`. Each turns spec.turn rad as it flies out (ease-out) over
+## spec.fly of the event to its landing within `r` world px, arcing up
+## spec.arc cells: a spec head for its first quarter, then its lite colour,
+## three tail cells darkening behind it along the spiral over an ink
+## underlay; where it lands a splash of its colour thins away over
+## spec.splash (the pool is the host's). The first spec.flash of the event
+## shows one frame of void at the core (black heart, spec rim). `p` 0..1.
+static func comets(canvas: CanvasItem, at: Vector2, r: float, els: Array, p: float, art: float, seed: int, spec: Dictionary = {}) -> void:
+	if p >= 1.0 or p < 0.0 or els.is_empty():
+		return
+	var c := Vector2(PixelPaint.at(at, art))
+	var reach := r / art
+	var fly := maxf(0.1, float(spec.get("fly", 0.6)))
+	var turn := float(spec.get("turn", 2.6)) * (1.0 if posmod(seed, 2) == 0 else -1.0)
+	var arc := float(spec.get("arc", 6))
+	var n := els.size()
+	var cells := {}
+	var splash := {}
+	# the comets and their splashes: the particles' (particles.comet, landing on the
+	# real spots) when the host has them; the core's flash stays a shape
+	for i in range(n if paint_matter else 0):
+		var cols := Pal.ramp(str(els[i]))
+		var a0 := TAU * float(i) / float(n) + _rnd(seed, i) * 0.7
+		var land := reach * (0.35 + 0.65 * _rnd(seed, i + 20))
+		var t := (p - 0.1 * _rnd(seed, i + 40)) / fly
+		if t < 0.0:
+			continue
+		if t < 1.0:
+			var e := _out(t)
+			for s in range(4):
+				var es := maxf(0.0, e - float(s) * 0.07)
+				var pos := c + Vector2.from_angle(a0 + turn * es) * land * es * Vector2(1.0, 0.75) - Vector2(0.0, sin(es * PI) * arc)
+				var q := Vector2i(pos.round())
+				if not cells.has(q):
+					cells[q] = [cols[4] if t < 0.25 else cols[3], cols[3], cols[2], cols[1]][s]
+		else:
+			var k := (t - 1.0) * fly / maxf(0.05, float(spec.get("splash", 0.3)))
+			if k >= 1.0:
+				continue
+			var spot := c + Vector2.from_angle(a0 + turn) * land * Vector2(1.0, 0.75)
+			for j in range(5):
+				var q := Vector2i((spot + Vector2.from_angle(_rnd(seed, i * 7 + j) * TAU) * (0.5 + 1.8 * k) * float(mini(j, 2))).round())
+				if PixelPaint.shown(q, 1.0 - k):
+					splash[q] = cols[3] if j == 0 else cols[2]
+	if p < float(spec.get("flash", 0.1)):
+		var v := Pal.ramp("void")
+		var cq := Vector2i(c)
+		for y in range(-3, 4):
+			for x in range(-3, 4):
+				var dd := Vector2(float(x), float(y)).length()
+				if dd <= 3.2:
+					cells[cq + Vector2i(x, y)] = VOID_BLACK if dd < 2.2 else v[4]
+	PixelPaint.paint(canvas, splash, art)
+	for q: Vector2i in cells:
+		if not cells.has(q + Vector2i(0, 1)):
+			PixelPaint.cell(canvas, q + Vector2i(0, 1), Pal.INK, art)
+	PixelPaint.paint(canvas, cells, art)
+
+
+## A caught enemy of the Singularität (it cannot be moved, so it is drawn
+## held): a dark violet tether from `from` (the enemy's chest) to the core
+## `to`, swaying across its middle (still at both ends), black every few
+## cells on the beat with a lit cell crawling along it, inked round; the
+## enemy's essence (`essence`, a 5-step ramp) flowing along it into the core
+## as motes pulled faster near the core; and the "being drained" shimmer:
+## cells of its essence and the void flickering on a ring round the enemy at
+## the pixel beat (spec.ring cells), drawn in towards it. `k` 0..1 the zone's
+## strength. spec: vfx_talents.json void.tether.
+static func tether(canvas: CanvasItem, from: Vector2, to: Vector2, k: float, essence: Array, art: float, clock: float, seed: int, spec: Dictionary = {}) -> void:
+	if k <= 0.0 or essence.size() < 5:
+		return
+	var cols := Pal.ramp("void")
+	var a := from / art
+	var b := to / art
+	var length := a.distance_to(b)
+	if length < 2.0:
+		return
+	var side := (b - a).orthogonal() / length
+	var sway := float(spec.get("sway", 2.0)) * sin(clock * 2.3 + float(posmod(seed, 17)))
+	var frame := _frame(clock)
+	var line := {}
+	var steps := int(length)
+	for s in range(steps + 1):
+		var f := float(s) / float(maxi(1, steps))
+		var q := Vector2i((a.lerp(b, f) + side * sway * sin(f * PI)).floor())
+		if not PixelPaint.shown(q, k):
+			continue
+		line[q] = VOID_BLACK if posmod(s + frame, 4) == 0 else cols[1]
+		if posmod(s - frame * 2, 7) == 0 and not line.has(q + Vector2i(0, -1)):
+			line[q + Vector2i(0, -1)] = cols[2]
+	var motes := {}
+	# the essence flowing in: the particles' (pulled by the core's well) when the host has them
+	for i in range(int(spec.get("motes", 5)) if paint_matter else 0):
+		var e := pow(fmod(clock * float(spec.get("flow", 0.9)) + _rnd(seed, i), 1.0), 2.0)
+		var q := Vector2i((a.lerp(b, e) + side * sway * sin(e * PI)).floor())
+		motes[q] = essence[4] if e > 0.75 else essence[3]
+		var eb := maxf(0.0, e - 0.05)
+		var back := Vector2i((a.lerp(b, eb) + side * sway * sin(eb * PI)).floor())
+		if back != q and not motes.has(back):
+			motes[back] = essence[2]
+	var ring: Array = spec.get("ring", [6, 9])
+	var count := int(spec.get("shimmer", 10))
+	for i in range(count):
+		if posmod(frame + i, 3) == 0:
+			continue
+		var ph := fmod(clock * 1.3 + _rnd(seed, i + 60), 1.0)
+		var ang := TAU * float(i) / float(maxi(1, count)) + clock * 1.6
+		var q := Vector2i((a + Vector2(cos(ang) * float(ring[0]), sin(ang) * float(ring[1])) * (1.0 - 0.35 * ph)).floor())
+		if not motes.has(q):
+			motes[q] = essence[3] if i % 2 == 0 else cols[3]
+	_flush(canvas, line, art)
+	for q: Vector2i in motes:
+		if not motes.has(q + Vector2i(0, 1)) and not line.has(q + Vector2i(0, 1)):
+			PixelPaint.cell(canvas, q + Vector2i(0, 1), Pal.INK, art)
+	PixelPaint.paint(canvas, motes, art)

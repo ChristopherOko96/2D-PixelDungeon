@@ -48,6 +48,7 @@ const BodyParts = preload("res://src/combat/body_parts.gd")
 const VoidBossAI = preload("res://src/combat/void_boss_ai.gd")
 const BossMoves = preload("res://src/combat/boss_moves.gd")
 const Elements = preload("res://src/combat/elements.gd")
+const ElementRules = preload("res://src/combat/element_rules.gd")
 const SheetMonsters = preload("res://src/combat/sheet_monsters.gd")
 const TalentCombat = preload("res://src/combat/talent_combat.gd")
 const RunProgress = preload("res://src/progress/run_progress.gd")
@@ -140,6 +141,12 @@ var scripted_target := Vector2.INF
 var scripted_fire := false
 ## Mirror-image decoys enemies may chase this step: negative id -> {pos, hp}.
 var decoys: Dictionary = {}
+## WAHN (element_rules.json madness): a mad enemy hunting another enemy hands its
+## AI the decoy id -(MAD_DECOY + victim id); _mad_actor is the mad enemy whose
+## turn runs (its shots scatter in _add_bullet); its own dice.
+const MAD_DECOY := 100000
+var _mad_actor: Dictionary = {}
+var _mad_rng := RandomNumberGenerator.new()
 ## Short-lived host effects for clients (void bursts, slams): id, kind, x, y, r, life.
 var fx_events: Array[Dictionary] = []
 var _next_fx_id := 1
@@ -1688,6 +1695,8 @@ func _simulate_players(delta: float) -> void:
 		if player.hitstun > 0.0: continue
 		var command: Dictionary = commands.get(id, {})
 		if command.is_empty() or now - command.time > float(balance.network.input_timeout): continue
+		# WAHN: a hero driven mad by a void pool plays mirrored (player_effects.gd inverted)
+		if player_effects.inverted(player): command = _mad_command(command, player)
 		player.aim = command.aim
 		if absf(command.aim.x) > 0.01: player.face = signf(command.aim.x)
 		var acting: bool = player_effects.can_act(player)
@@ -1723,8 +1732,12 @@ func _add_bullet(position: Vector2, velocity: Vector2, owner: int, damage: float
 			if int(bullet.owner) == owner: owned += 1
 		if owned >= int(limits.get("max_player_projectiles",24)): return {}
 		if bullets.size() >= total_limit-int(limits.get("reserved_enemy_projectiles",32)): return {}
+	# WAHN: a mad enemy's shots scatter (bosses less); one turned on another enemy hurts enemies
+	if owner == 0 and not _mad_actor.is_empty():
+		velocity = ElementRules.scatter(velocity, bool(_mad_actor.get("boss", false)) or bool(_mad_actor.get("miniboss", false)), _mad_rng.randf())
 	var result: Dictionary = {"id":_next_bullet_id,"pos": position, "velocity": velocity, "owner": owner, "damage": damage, "life": float(balance.bullet.lifetime) if owner != 0 else 5.0}
 	result.merge(metadata,true)
+	if owner == 0 and not _mad_actor.is_empty() and int(_mad_actor.get("mad_target", -1)) >= 0: result.mad_from = int(_mad_actor.id)
 	bullets.append(result)
 	_next_bullet_id += 1
 	return result
@@ -1735,6 +1748,7 @@ func _simulate_enemies(delta: float) -> void:
 	decoys.clear()
 	# Summoning may append a new actor; it first participates on the next tick.
 	for enemy in enemies.duplicate():
+		_mad_actor = {}
 		enemy.moving = false
 		enemy.motion = Vector2.ZERO
 		var simulation_start: Vector2 = enemy.pos
@@ -1771,6 +1785,8 @@ func _simulate_enemies(delta: float) -> void:
 				if str(zone.kind) == "decoy" and enemy.pos.distance_to(zone.pos) <= float(zone.radius):
 					target = -int(zone.id)
 					decoys[target] = {"pos": Vector2(zone.pos), "hp": 1}
+		# WAHN: a mad one staggers and may turn on the nearest other enemy (element_rules.json madness)
+		target = _madness_step(enemy, target, delta)
 		if target < 0:
 			if crypt_ai.step(enemy,target,delta): enemy.motion = (enemy.pos-simulation_start)/maxf(delta,0.000001)
 			continue
@@ -1797,7 +1813,91 @@ func _simulate_enemies(delta: float) -> void:
 			_damage_player(target, int(balance.enemy.damage), (players[target].pos - enemy.pos).normalized())
 		if enemy.boss and enemy.hp > 0:
 			_update_boss_attack(enemy,delta)
+	_mad_actor = {}
 	enemies = enemies.filter(func(enemy: Dictionary): return enemy.hp > 0 or float(enemy.get("dying",0.0)) > 0.0)
+
+
+## WAHN (element_rules.json madness): one host tick of a mad enemy's mind
+## before its AI runs. It staggers sideways (not a boss or miniboss, they only
+## scatter their shots: _add_bullet). A crypt-roster enemy (crypt_enemy_ai.gd)
+## rolls madness.turn_chance at each attack decision (idle, its cooldown run
+## out) and on success hunts the nearest other enemy through the decoy id
+## -(MAD_DECOY + victim id) until it struck once, the victim fell or turn_hold
+## s passed. Returns the target to hand the AI; enemy.mad = s of madness left.
+func _madness_step(enemy: Dictionary, target: int, delta: float) -> int:
+	var left := float(enemy.get("statuses",{}).get("mad",{}).get("time",0.0))
+	enemy.mad = left
+	if left <= 0.0:
+		enemy.mad_target = -1
+		return target
+	_mad_actor = enemy
+	if bool(enemy.get("boss",false)) or bool(enemy.get("miniboss",false)): return target
+	var M := ElementRules.madness()
+	var forward: Vector2 = enemy.get("facing_dir",Vector2.RIGHT)
+	enemy.pos = Dungeon.move_actor(enemy.pos,ElementRules.wobble(enemy,forward,delta,_mad_rng.randf())*delta,enemy.radius,current_layout)
+	# the turn needs an AI that takes a decoy target: the crypt roster's (sheet figures only scatter and stagger)
+	if bool(enemy.get("sheet",false)) or crypt_ai.definition(str(enemy.get("kind",""))).is_empty(): return target
+	var idle := str(enemy.get("attack","")).is_empty()
+	var victim: Dictionary = _enemy_by_id(int(enemy.get("mad_target",-1)))
+	if not victim.is_empty():
+		enemy.mad_hold = float(enemy.get("mad_hold",0.0))-delta
+		var struck: bool = idle and int(enemy.get("attacks",0)) > int(enemy.get("mad_from_attacks",0))
+		if float(victim.hp) <= 0 or float(enemy.mad_hold) <= 0.0 or struck: victim = {}
+	if victim.is_empty():
+		enemy.mad_target = -1
+		var ready: bool = idle and float(enemy.get("shot_timer",0.0)) <= 0.0
+		if idle and not ready: enemy.mad_rolled = false
+		if ready and not bool(enemy.get("mad_rolled",false)):
+			enemy.mad_rolled = true
+			if _mad_rng.randf() < float(M.get("turn_chance",0.3)):
+				victim = ElementRules.nearest_other(enemy,enemies,"pos",func(other: Dictionary) -> bool: return float(other.hp) > 0)
+				if not victim.is_empty():
+					enemy.mad_target = int(victim.id)
+					enemy.mad_hold = float(M.get("turn_hold",3.0))
+					enemy.mad_from_attacks = int(enemy.get("attacks",0))
+					enemy.mad_turns = int(enemy.get("mad_turns",0))+1
+	if victim.is_empty(): return target
+	var decoy := -(MAD_DECOY+int(victim.id))
+	decoys[decoy] = {"pos": Vector2(victim.pos), "hp": 1, "mad_enemy": int(victim.id)}
+	return decoy
+
+
+## The enemy a mad decoy id stands for ({} for any other target id).
+func mad_victim(target_id: int) -> Dictionary:
+	if target_id > -MAD_DECOY: return {}
+	var victim := _enemy_by_id(-target_id-MAD_DECOY)
+	return victim if not victim.is_empty() and float(victim.hp) > 0 else {}
+
+
+## A mad enemy's blow or shot landing on another enemy: madness.enemy_damage
+## damage points per half heart of it, credited to no hero. Counts
+## attacker.mad_hits / mad_dealt and victim.mad_taken. Returns the damage dealt.
+func mad_hit(attacker: Dictionary, victim: Dictionary, half_hearts: float, direction: Vector2) -> float:
+	if victim.is_empty() or float(victim.hp) <= 0: return 0.0
+	var dealt := _damage_enemy(victim,half_hearts*float(ElementRules.madness().get("enemy_damage",3.0)),direction,0,true,true)
+	if not attacker.is_empty():
+		attacker.mad_hits = int(attacker.get("mad_hits",0))+1
+		attacker.mad_dealt = float(attacker.get("mad_dealt",0.0))+dealt
+	victim.mad_taken = float(victim.get("mad_taken",0.0))+dealt
+	return dealt
+
+
+func _enemy_by_id(id: int) -> Dictionary:
+	if id < 0: return {}
+	for enemy: Dictionary in enemies:
+		if int(enemy.get("id",-1)) == id: return enemy
+	return {}
+
+
+## A hero's input mirrored while he is mad (WAHN): movement and aim turned
+## round, a ground target reflected through him. A copy: the stored command stays.
+func _mad_command(command: Dictionary, player: Dictionary) -> Dictionary:
+	var mirrored := command.duplicate()
+	mirrored.move = -Vector2(command.move)
+	mirrored.aim = -Vector2(command.aim)
+	if command.has("target") and Vector2(command.target).is_finite():
+		mirrored.target = Vector2(player.pos)*2.0-Vector2(command.target)
+	return mirrored
 
 
 func _update_boss_attack(enemy: Dictionary, delta: float) -> void:
@@ -1859,10 +1959,22 @@ func _simulate_bullets(delta: float) -> void:
 				bullet.bounces = int(bullet.bounces)-1
 				bullet.pos = previous
 			else: removed = true
+		# WAHN: the shot of an enemy turned on another enemy hurts the enemies it meets (not its caster)
+		if not removed and bullet.owner == 0 and bullet.has("mad_from"):
+			for enemy: Dictionary in enemies:
+				if enemy.hp <= 0 or int(enemy.id) == int(bullet.mad_from): continue
+				if perk_combat.segment_hits(previous,bullet.pos,enemy.pos,float(enemy.radius)+radius):
+					mad_hit(_enemy_by_id(int(bullet.mad_from)),enemy,float(bullet.damage),bullet.velocity.normalized())
+					removed = true
+					break
 		if not removed and bullet.owner == 0:
 			for id in players:
 				if players[id].hp > 0 and perk_combat.segment_hits(previous,bullet.pos,players[id].pos,float(balance.player.radius)+radius):
 					if id in Array(bullet.get("player_hits", [])): continue
+					# Leerenschild: the void mage's shield swallows the shot into his Gefüge
+					if talent_combat.catch_shot(id, _shot_style(bullet), bullet.pos):
+						removed = true
+						break
 					_damage_player(id, int(bullet.damage), bullet.velocity.normalized())
 					boss_moves.bullet_hit(bullet, id)
 					if bool(bullet.get("pierce_players", false)):
@@ -1982,6 +2094,9 @@ func _enemy_fell(enemy: Dictionary, direction: Vector2, owner: int, kill_effects
 	var boss: bool = enemy.boss
 	enemy.dying = float(balance.death.boss_duration if boss else balance.death.duration)
 	enemy.knockback = direction.normalized()*float(balance.death.boss_kick if boss else balance.death.kick)
+	# how the blow threw it, for its rig's ragdoll (src/rig/rig_renderer.gd kill): a fresh talent hit's look (talent_combat _stamp), else this blow's direction
+	var fx: Variant = enemy.get("hit_fx", {})
+	enemy.kill_fx = fx if fx is Dictionary and not (fx as Dictionary).is_empty() and Time.get_ticks_msec() - int(fx.get("ms", 0)) <= 600 else {"dx": direction.normalized().x, "dy": direction.normalized().y, "tier": "small"}
 	perk_combat.killed(enemy,owner,kill_effects)
 	team_progress.enemy_killed(enemy)
 	if bool(enemy.get("boss",false)) or bool(enemy.get("miniboss",false)): floor_boss_down = true
@@ -2231,6 +2346,10 @@ func _make_snapshot(advance_sequence: bool = true) -> Dictionary:
 		visible_players[id].reserve_shield = int(player.get("reserve_shield",0))
 		visible_players[id].radius = float(balance.player.radius)
 		visible_players[id].effects = player_effects.kinds(player)
+		# WAHN: s of inverted controls left and the creeping-in warning 0..1 (absent = 0)
+		if float(player.get("mad",0.0)) > 0.0 or float(player.get("mad_warn",0.0)) > 0.0:
+			visible_players[id].mad = snappedf(float(player.get("mad",0.0)),0.01)
+			visible_players[id].mad_warn = snappedf(float(player.get("mad_warn",0.0)),0.01)
 		visible_players[id].glow = str(player.get("attack_glow",""))
 		if player.has("cheat_god") or player.has("cheat_no_cooldown"): visible_players[id].cheats = {"god":bool(player.get("cheat_god",false)),"no_cooldown":bool(player.get("cheat_no_cooldown",false))}
 		visible_players[id].inventory = inventory.snapshot(player)
@@ -2246,7 +2365,7 @@ func _make_snapshot(advance_sequence: bool = true) -> Dictionary:
 		var attack: String = enemy.get("attack","")
 		var attack_length: float = float(balance.attacks.boss.get(attack,1.0)) if enemy.boss and not void_ai.handles(enemy) and not bool(enemy.get("sheet",false)) else float(enemy.get("attack_length",1.0))
 		var death_length := float(balance.death.boss_duration if enemy.boss else balance.death.duration)
-		visible_enemies.append({"x": enemy.pos.x, "y": enemy.pos.y, "hp": enemy.hp, "max_hp": enemy.max_hp, "boss": enemy.boss, "hitstun": enemy.get("hitstun", 0.0), "hit_flash": enemy.get("hit_flash", 0.0),"id":enemy.get("id",-1),"kind":enemy.get("kind","chaser"),"hits":enemy.get("hits",0),"attacks":enemy.get("attacks",0),"moving":enemy.get("moving",false),"face":enemy.get("face",-1.0),"dx":direction.x,"dy":direction.y,"attack":attack,"attack_p":clampf(1.0-float(enemy.get("attack_time",0.0))/maxf(0.001,attack_length),0.0,1.0),"dying_p":clampf(1.0-float(enemy.get("dying",0.0))/death_length,0.0,1.0) if enemy.hp <= 0 else -1.0})
+		visible_enemies.append({"x": enemy.pos.x, "y": enemy.pos.y, "hp": enemy.hp, "max_hp": enemy.max_hp, "boss": enemy.boss, "hitstun": enemy.get("hitstun", 0.0), "hit_flash": enemy.get("hit_flash", 0.0),"id":enemy.get("id",-1),"kind":enemy.get("kind","chaser"),"hits":enemy.get("hits",0),"attacks":enemy.get("attacks",0),"moving":enemy.get("moving",false),"face":enemy.get("face",-1.0),"dx":direction.x,"dy":direction.y,"attack":attack,"attack_p":clampf(1.0-float(enemy.get("attack_time",0.0))/maxf(0.001,attack_length),0.0,1.0),"dying_p":clampf(1.0-float(enemy.get("dying",0.0))/death_length,0.0,1.0) if enemy.hp <= 0 else -1.0,"kill":enemy.get("kill_fx",{}) if enemy.hp <= 0 else {},"tumble":float(enemy.get("tumble",0.0))})
 		visible_enemies[-1].radius = float(enemy.radius)
 		# cut in two by Rage: the angle of the cut for the slice effect
 		if enemy.has("slice"): visible_enemies[-1].slice = float(enemy.slice)
@@ -2254,6 +2373,8 @@ func _make_snapshot(advance_sequence: bool = true) -> Dictionary:
 		var facing: Vector2 = enemy.get("facing_dir",Vector2.LEFT)
 		visible_enemies[-1].merge({"mx":motion.x,"my":motion.y,"facing_x":facing.x,"facing_y":facing.y,"last_hit_damage":float(enemy.get("last_hit_damage",0))})
 		visible_enemies[-1].statuses = enemy.get("statuses",{}).keys()
+		# WAHN: s of madness left (absent = sane)
+		if float(enemy.get("mad",0.0)) > 0.0: visible_enemies[-1].mad = snappedf(float(enemy.mad),0.01)
 		var attack_aim: Vector2 = enemy.get("attack_aim",Vector2.LEFT)
 		var point: Vector2 = enemy.get("summon_point",enemy.pos) if str(enemy.get("attack_kind","")) == "summon" else enemy.get("attack_point",enemy.pos)
 		# Part rigs: which figure, which parts are gone, the open eye and the beam.

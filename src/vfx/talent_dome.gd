@@ -11,6 +11,11 @@ extends RefCounted
 ## upper left, gold hex plates on the big dome. Fades by the ordered dither,
 ## never see-through. Tuning: assets/data/vfx_talents.json "dome". Presentation
 ## only (src/vfx/talent_fx.gd keeps one per hero).
+## In the mages' languages (docs/ZAUBER-SPRACHE.de.md §4b, §4c): an ice dome
+## (Kristallschild) is faceted crystal that cracks visibly where blows land
+## (the cracks stay and grow in number; talent_fx shatters it into shards at
+## its end), a void dome (Manaschild) is dark violet with motes drifting in
+## from its rim, and a blow sends a ripple running inwards instead of a spark.
 
 const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
 const Pal = preload("res://src/vfx/talent_palette.gd")
@@ -32,6 +37,8 @@ var _sizes: Array = [Vector3(17, 7, 30), Vector3(20, 8, 34), Vector3(25, 10, 40)
 var _time := -1.0
 ## Light where blows landed: {i, t0, power}.
 var _sparks: Array = []
+## Cracks where blows landed (ice): {i (outline point), seed, t0}; at most dome.cracks.
+var _cracks: Array = []
 ## The shape as last worked out (_build_shape) and what it was worked out for.
 var _shape_key := PackedInt32Array()
 var _poly := PackedVector2Array()
@@ -85,6 +92,8 @@ func hit(dir: Vector2, power: float, clock: float) -> void:
 		speed[at] += push * exp(-float(j * j) / 12.0)
 	squash_speed += _f("squash_push", 3.0) * power
 	_sparks.append({"i": best, "t0": clock, "power": power})
+	if _cracks.size() < int(_f("cracks", 6)):
+		_cracks.append({"i": best, "seed": _cracks.size() * 7 + best, "t0": clock})
 
 
 ## Runs the rubber up to `clock` (seconds) in small fixed steps.
@@ -158,6 +167,13 @@ func draw(canvas: CanvasItem, feet: Vector2, grow: float, fade: float, element: 
 		var q := o + q0
 		if fade >= 1.0 or PixelPaint.shown(q, fade):
 			PixelPaint.cell(canvas, q, col, art)
+	var kind := Pal.resolve(element)
+	var centre := Vector2(0.0, -float(_sizes[clampi(size, 0, 2)].z) * 0.45 * g)
+	if kind == "ice" and not _cracks.is_empty():
+		_draw_cracks(canvas, o, centre, fade, cols, art, clock)
+	if kind == "void":
+		_draw_void(canvas, o, centre, fade, cols, art, clock)
+		return
 	# sparks where blows landed: a small star on the dent, gone in a moment
 	for k in range(_sparks.size() - 1, -1, -1):
 		var spark: Dictionary = _sparks[k]
@@ -172,6 +188,65 @@ func draw(canvas: CanvasItem, feet: Vector2, grow: float, fade: float, element: 
 			for step: Vector2i in [Vector2i(r, 0), Vector2i(-r, 0), Vector2i(0, r), Vector2i(0, -r)]:
 				PixelPaint.cell(canvas, c + step, col, art)
 		PixelPaint.cell(canvas, c, cols[4], art)
+
+
+## The cracks of a crystal dome standing at cell `o`: from each blow's rim
+## point a jagged dark line runs in towards `centre` (cells from the feet),
+## shooting out within 0.08 s, a lit cell beside it on its upper side and a
+## short branch off its middle; they stay till the dome goes.
+func _draw_cracks(canvas: CanvasItem, o: Vector2i, centre: Vector2, fade: float, cols: Array, art: float, clock: float) -> void:
+	for crack: Dictionary in _cracks:
+		var age := clock - float(crack.t0)
+		if age < 0.0:
+			continue
+		var from: Vector2 = _poly[int(crack.i)]
+		var to := centre
+		var whole := from.distance_to(to) * (0.45 + 0.15 * float(int(crack.seed) % 3))
+		var reach := whole * clampf(age / 0.08, 0.0, 1.0)
+		var d := (to - from).normalized()
+		var side := d.orthogonal()
+		var s := 0.0
+		var seed := int(crack.seed)
+		while s <= reach:
+			var zig: int = [0, 1, 1, 0, -1, -1, 0, 1][posmod(int(s) + seed, 8)]
+			var q := o + Vector2i((from + d * s + side * float(zig)).round())
+			if fade >= 1.0 or PixelPaint.shown(q, fade):
+				PixelPaint.cell(canvas, q, cols[0], art)
+				PixelPaint.cell(canvas, q + Vector2i(0, -1), cols[4] if int(s) % 3 == 0 else cols[3], art)
+			if absf(s - whole * 0.5) < 0.5:
+				for b in range(1, 4):
+					var e := o + Vector2i((from + d * (s + float(b)) + side * float(b + zig) * (1.0 if seed % 2 == 0 else -1.0)).round())
+					PixelPaint.cell(canvas, e, cols[0], art)
+			s += 1.0
+
+
+## The void dome's own life at cell `o`: motes drifting in from its rim
+## towards `centre` (cells from the feet) and slowly dimming, and for each
+## fresh blow a ripple ring running inwards from where it landed.
+func _draw_void(canvas: CanvasItem, o: Vector2i, centre: Vector2, fade: float, cols: Array, art: float, clock: float) -> void:
+	var count := int(_f("void_motes", 10))
+	for m in range(count):
+		var ph := fmod(clock * 0.5 + float(m) / float(count), 1.0)
+		var turn := int(floor(clock * 0.5 + float(m) / float(count)))
+		var i := posmod(m * N / maxi(1, count) + turn * 7, N)
+		var q := o + Vector2i((_poly[i].lerp(centre, ph * 0.6)).round())
+		if PixelPaint.shown(q, fade * (1.0 - ph)):
+			PixelPaint.cell(canvas, q, cols[4] if ph < 0.2 else (cols[3] if ph < 0.6 else cols[2]), art)
+	var span := _f("ripple", 0.35)
+	for k in range(_sparks.size() - 1, -1, -1):
+		var spark: Dictionary = _sparks[k]
+		var age := clock - float(spark.t0)
+		if age > span or age < 0.0:
+			_sparks.remove_at(k)
+			continue
+		var t := age / span
+		var c: Vector2 = _poly[int(spark.i)].lerp(centre, t * 0.8)
+		var rad := 1.0 + 3.0 * (1.0 - t) * float(spark.power)
+		var n := maxi(8, int(TAU * rad))
+		for j in range(n):
+			var q := o + Vector2i((c + Vector2.from_angle(TAU * float(j) / float(n)) * rad * Vector2(1.0, 0.8)).round())
+			if PixelPaint.shown(q, (1.0 - t) * fade):
+				PixelPaint.cell(canvas, q, cols[4] if j % 4 == 0 else cols[3], art)
 
 
 ## The shape for _shape_key (dents, squash, pop-in, size, element as rounded

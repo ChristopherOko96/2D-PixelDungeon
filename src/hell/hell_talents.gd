@@ -7,7 +7,12 @@ extends RefCounted
 ## hell's status helpers (HeroKit.slow_mob / burn_mob, SubKit.freeze), its
 ## walls (box_blocked) and its HUD. It also brings EXP, gold, level-ups and
 ## the difficulty of the shared profile into these maps.
+## The Leerenmagier's Arkanes Gefüge works here too: the world's void
+## (src/hell/story_elements.gd) feeds it through feed_all, his pools are
+## friendly puddles of the monster runtime (talent_pool), and Leerenschild
+## catches the monsters' shots (g.eshots) before they move (_catch_shots).
 
+const HudKit = preload("res://src/ui/hud_kit.gd")
 const TalentCombat = preload("res://src/combat/talent_combat.gd")
 const TalentFx = preload("res://src/vfx/talent_fx.gd")
 const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
@@ -106,9 +111,12 @@ func _write_hero(before: Vector2, hp_before: int) -> void:
 func _sync_mobs() -> void:
 	enemies = g.mobs
 	for m: Dictionary in enemies:
-		if not m.has("id"):
-			m.id = _next_mob_id
+		# the talents key monsters by a number; a story monster's "id" is its kind
+		if not m.has("tid"):
+			m.tid = _next_mob_id
 			_next_mob_id += 1
+		if not m.has("id"):
+			m.id = m.tid
 		m.pos = m.p
 		m.radius = float(m.get("r", 14.0))
 		if not m.has("statuses"): m.statuses = {}
@@ -156,15 +164,16 @@ func toggle_pet(slot: int) -> void:
 	tc.toggle_pet_auto(1, slot)
 
 
-## The companion ability under `point` (screen px) on the skill bar, or -1.
-func pet_slot_at(screen: Vector2, point: Vector2) -> int:
-	var slots := skill_slots()
-	return TalentBar.pet_slot(slots, SkillBar.slot_at(screen, slots, point))
+## The companion ability under `point` (screen px) on the companion bar
+## (src/ui/hud_kit.gd pet_panel), or -1. `screen` is kept for the callers.
+func pet_slot_at(_screen: Vector2, point: Vector2) -> int:
+	return HudKit.pet_slot_at(point)
 
 
 func update(dt: float) -> void:
 	_with_sync(func():
 		_hold()
+		_catch_shots(dt)
 		tc.step(dt)
 		_step_bullets(dt)
 		_step_statuses(dt))
@@ -260,7 +269,61 @@ func save() -> void:
 	Profile.save_profile(profile, profile_path)
 
 
+# --- the Arkane Gefüge in the story worlds ---------------------------------------
+
+## The void ate something here (src/hell/story_elements.gd void_at and
+## _void_swallows): into the hero's Gefüge (src/combat/talent_combat.gd feed_all).
+func feed_all(owner: int, ate: Dictionary, mouth: Vector2 = Vector2.INF) -> int:
+	return tc.feed_all(owner, ate, mouth)
+
+
+## One swallowed thing into the Gefüge (src/combat/talent_combat.gd feed).
+func feed(owner: int, el: String, n: int) -> int:
+	return tc.feed(owner, el, n)
+
+
+## What a swallowed thing is worth: [element, units] (talent_combat.gd swallow_value).
+func swallow_value(mat: String, kind: String, radius: float) -> Array:
+	return tc.swallow_value(mat, kind, radius)
+
+
+## Leerenschild: an enemy shot about to reach the hero this frame while his
+## shield catches is taken out of the world into his Gefüge (its element "c";
+## the Frostgruft's shots their "style"). hell_game updates the talents before
+## the shots, so a caught shot never hurts and leaves no residue.
+func _catch_shots(dt: float) -> void:
+	var rt := tc.runtime(1)
+	if rt.is_empty() or int(rt.get("catch_left", 0)) <= 0 or g.get("eshots") == null: return
+	var me := Vector2(float(g.player.x), float(g.player.y) - 34.0)
+	var reach := float(g.balance.get("enemy_shot", {}).get("hit_radius", 26.0)) * 1.25
+	var shots: Array = g.eshots
+	for i in range(shots.size() - 1, -1, -1):
+		var s: Dictionary = shots[i]
+		if s.has("chain") or float(s.get("held", 0.0)) > 0.0 or float(s.get("t", 0.0)) <= 0.0: continue
+		var at: Vector2 = s.p
+		var next: Vector2 = at + Vector2(s.get("v", Vector2.ZERO)) * dt
+		if Geometry2D.get_closest_point_to_segment(me, at, next).distance_to(me) > reach: continue
+		if tc.catch_shot(1, str(s.get("c", s.get("style", ""))), at): shots.remove_at(i)
+
+
+## A pool of the hero's from a talent (the Leerengeschoss's void stain, a
+## Gefüge element landing): a friendly puddle of the monster runtime (it works
+## on the monsters by the element physics and spares the hero), marked as his
+## own Gefüge drop (fed_by) so his void does not eat it again. The Frostgruft
+## has no monster runtime: no pool there (the landing still hurts and reacts).
+func talent_pool(style: String, at: Vector2, r: float, time: float, owner: int) -> void:
+	if g.get("monsters") == null: return
+	g.monsters._zone({"kind": "puddle", "p": at, "r": r, "T": time, "dmg": 0, "friend": true, "st": style, "owner": owner, "fed_by": owner,
+		"m": {"id": "leere", "def": {"name": "Leere"}, "boss": false}, "dir": Vector2.ZERO})
+
+
 # --- what talent_combat calls on its "game" ---------------------------------------
+
+## Story world px per crypt px (the hell runtime draws on a 3 px art grid, the
+## crypt on 2): talent_combat scales the companions' follow distance and pace by it.
+func talent_world_scale() -> float:
+	return float(g.PIXEL_WORLD) / 2.0
+
 
 func talent_move(from: Vector2, step: Vector2, radius: float) -> Vector2:
 	var pos := from

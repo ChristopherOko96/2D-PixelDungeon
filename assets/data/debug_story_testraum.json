@@ -1,0 +1,126 @@
+{
+  "_note": "Story Testraum (src/debug/story_testraum.gd; user decision 2026-10-31): one room of floor 1 of a story world with a fold-out debug panel under the mini-map. It replaces the old crypt Testraum (src/debug/test_arena.gd, assets/data/debug_test_arena.json) in the DEBUG hub. The Testraum plays on its own profile and soul-crystal files, never the player's.",
+  "seed": 424242,
+  "profile_path": "user://profile_story_testraum.json",
+  "meta_path": "user://meta_story_testraum.json",
+  "default_world": "krypta",
+  "default_class": "swordsman",
+  "toast_time": 2.6,
+  "world_order": ["krypta", "frost", "hell"],
+  "worlds": {
+    "krypta": {"name": "Krypta", "scene": "res://src/hell/krypta_dungeon.tscn"},
+    "frost": {"name": "Frostgruft", "scene": "res://src/hell/frost_dungeon.tscn"},
+    "hell": {"name": "Hölle", "scene": "res://src/hell/hell_dungeon.tscn"}
+  },
+  "_room_note": "The biggest open room of floor 1 (most floor cells), not of these types. Every room counts as cleared: no fight starts, the doors stay open. The hero falls and stands up again revive_at s before the run would end (dead counts down from 1.8 s); card offers stay closed (no_cards).",
+  "room": {"exclude_types": ["boss", "secret"], "revive_at": 1.0, "no_cards": true},
+  "defaults": {"spec": "", "level": 30, "stage": 1, "companion": "wolf", "count": 1, "open": false,
+    "god": false, "mana": false, "nocd": false, "freeze": false, "scale": 1.0},
+  "_spawn_note": "Spawns at distance px from the hero in his aim direction, spread rad apart; bosses one at a time at boss_distance.",
+  "spawn": {"counts": [1, 3, 5], "distance": 260, "boss_distance": 340, "npc_distance": 150, "spread": 0.55, "boss_count": 1},
+  "sections": [
+    {"id": "welt", "title": "WELT", "closed": false},
+    {"id": "held", "title": "HELD", "closed": false},
+    {"id": "monster", "title": "MONSTER", "closed": false},
+    {"id": "bosse", "title": "BOSSE", "closed": true},
+    {"id": "npcs", "title": "NPCS", "closed": true},
+    {"id": "elemente", "title": "ELEMENTE", "closed": true},
+    {"id": "cheats", "title": "CHEATS", "closed": true}
+  ],
+  "classes": [
+    {"id": "swordsman", "name": "SCHWERT"},
+    {"id": "archer", "name": "BOGEN"},
+    {"id": "mage", "name": "MAGIER"},
+    {"id": "necromancer", "name": "NEKRO"}
+  ],
+  "levels": [10, 30, 60],
+  "ult_stages": [1, 2, 3],
+  "companion_specs": ["beast"],
+  "companions": [
+    {"id": "wolf", "name": "Wolf"}, {"id": "bear", "name": "Bär"}, {"id": "falcon", "name": "Falke"},
+    {"id": "skeleton", "name": "Skelett"}, {"id": "water_elemental", "name": "Wasserelem."},
+    {"id": "bone_warrior", "name": "Knochenkr."}, {"id": "colossus", "name": "Koloss"}, {"id": "pyro", "name": "Pyro"}
+  ],
+  "_sets_note": "The hell_monsters.gd monster sets merged into the running monster runtime of the Krypta and the Hölle (defs, atlas, exp from the balance file); world: the world pack whose floors name the guardians' HP.",
+  "monster_sets": {
+    "krypta": {"data": "res://assets/data/krypta_monsters.json", "sprites": "res://assets/sprites/krypta/monsters/", "balance": "res://assets/data/krypta_balance.json", "world": "res://assets/data/krypta_world.json"},
+    "hell": {"data": "res://assets/data/hell_monsters.json", "sprites": "res://assets/sprites/hell/monsters/", "balance": "res://assets/data/hell_balance.json", "world": "res://assets/data/hell_world.json"}
+  },
+  "_roster_note": "runtime monsters: hell_monsters.gd defs, spawnable in the Krypta and the Hölle (both sets merged). runtime theme: the Frostgruft's theme mobs (frost_theme.json mobs) and its floor guardians (frost_world.json floors, boss_kits on 3/6/9/10); they run only in the Frostgruft's own loop (hell_game.gd _update_mobs), so they are greyed out elsewhere, and the hell_monsters sets are greyed out in the Frostgruft (it has no monster runtime).",
+  "roster_order": ["krypta", "hell", "frost"],
+  "roster": {
+    "krypta": {"name": "Krypta", "runtime": "monsters", "grey": "nicht in der Frostgruft",
+      "mobs": [
+        {"id": "skelett", "name": "Skelett"}, {"id": "skelettschuetze", "name": "Skelettschütze"},
+        {"id": "skelettwache", "name": "Skelettwache"}, {"id": "nekromant", "name": "Nekromant"},
+        {"id": "zombie", "name": "Kleiner Zombie"}, {"id": "eiszombie", "name": "Eiszombie"},
+        {"id": "leerenbomber", "name": "Leerenbomber"}, {"id": "mimik", "name": "Mimik"}],
+      "bosses": [
+        {"id": "knochenwaechter", "name": "Knochenwächter", "tag": "E1"}, {"id": "grabmutter", "name": "Grabmutter", "tag": "E2"},
+        {"id": "moderkoloss", "name": "Moderkoloss", "tag": "E3"}, {"id": "nekromantenfuerst", "name": "Nekromantenfürst", "tag": "E4"},
+        {"id": "truhenfresser", "name": "Truhenfresser", "tag": "E5"}, {"id": "frostleiche", "name": "Frostleiche", "tag": "E6"},
+        {"id": "archivar", "name": "Der Archivar", "tag": "E7"}, {"id": "leerenbrut", "name": "Leerenbrut", "tag": "E8"},
+        {"id": "knochenkoloss", "name": "Knochenkoloss", "tag": "E9"}, {"id": "leerenrufer", "name": "Leerenrufer", "tag": "E10"}]},
+    "hell": {"name": "Hölle", "runtime": "monsters", "grey": "nicht in der Frostgruft",
+      "mobs": [
+        {"id": "glutschaedel", "name": "Glutschädel"}, {"id": "hoellenhund", "name": "Höllenhund"},
+        {"id": "glutimp", "name": "Glutimp"}, {"id": "brandskelett", "name": "Brandskelett"},
+        {"id": "blutfledermaus", "name": "Blutfledermaus"}, {"id": "aschenpriester", "name": "Aschenpriester"},
+        {"id": "kettenschinder", "name": "Kettenschinder"}, {"id": "peingeist", "name": "Peingeist"}],
+      "bosses": [
+        {"id": "glutwaechter", "name": "Glutwächter", "tag": "E1"}, {"id": "dreischlund", "name": "Dreischlund", "tag": "E2"},
+        {"id": "drache1", "name": "Ignaroth · Salamander", "tag": "E3"}, {"id": "kesselbrut", "name": "Kesselbrut", "tag": "E4"},
+        {"id": "seelenhirte", "name": "Seelenhirte", "tag": "E5"}, {"id": "drache2", "name": "Ignaroth · Jungdrache", "tag": "E6"},
+        {"id": "kerkermeister", "name": "Kerkermeister", "tag": "E7"}, {"id": "klagender_hueter", "name": "Klagender Hüter", "tag": "E8"},
+        {"id": "drache3", "name": "Ignaroth · Glutdrache", "tag": "E9"}, {"id": "drache4", "name": "Ignaroth · Obsidianform", "tag": "E10"}]},
+    "frost": {"name": "Frostgruft", "runtime": "theme", "grey": "nur in der Frostgruft", "world": "res://assets/data/frost_world.json",
+      "mobs": [
+        {"id": "ice_zombie", "name": "Eis-Zombie"}, {"id": "frost_skeleton", "name": "Frost-Skelett"},
+        {"id": "ice_slime", "name": "Eisschleim (groß)"}, {"id": "ice_slime_m", "name": "Eisschleim (mittel)"},
+        {"id": "ice_slime_s", "name": "Eisschleim (klein)"}, {"id": "frost_imp", "name": "Frostkobold"},
+        {"id": "frost_whirl", "name": "Frostwirbel"}, {"id": "ice_knight", "name": "Eisritter"},
+        {"id": "snowman", "name": "Schneemann"}, {"id": "ice_crystal", "name": "Eiskristall"}],
+      "bosses": [
+        {"floor": 1, "name": "Großer Eisschleim", "tag": "E1"}, {"floor": 2, "name": "Kobold-Rudelführer", "tag": "E2"},
+        {"floor": 3, "name": "Frostnekromant", "tag": "E3 Kit"}, {"floor": 4, "name": "Frostwirbel-Zwillinge", "tag": "E4"},
+        {"floor": 5, "name": "Kristallwächter", "tag": "E5"}, {"floor": 6, "name": "Frostleiche", "tag": "E6 Kit"},
+        {"floor": 7, "name": "Eisritter-Garde", "tag": "E7"}, {"floor": 8, "name": "Sturmkristall", "tag": "E8"},
+        {"floor": 9, "name": "Frostkommandant", "tag": "E9 Kit"}, {"floor": 10, "name": "Hrimgar", "tag": "E10 Kit"}]}
+  },
+  "_npcs_note": "Entities of type npc next to the hero (the merchant figure of the world kit's shop room, world_core.gd); greyed out where the world's sprite set lacks its frames (tex).",
+  "npcs": [{"type": "npc", "name": "Händler", "tex": "npc_idle_f0"}],
+  "_elements_note": "Click tools: arm one, then every left click on the floor places it, right click lays it down. Puddles are hell_monsters.gd puddle zones (st = vfx_pools.json material; frozen: water frozen by frost_at after freeze_delay s), gases src/vfx/gas.gd clouds (vfx_gas.json), reactions src/hell/story_elements.gd. needs monsters: only with the monster runtime (Krypta, Hölle); the Frostgruft has none.",
+  "elements": {
+    "puddle": {"title": "PFÜTZEN", "r": 60, "time": 30, "freeze_delay": 0.35, "kinds": [
+      {"st": "lava", "name": "Lava"}, {"st": "fire", "name": "Feuer"}, {"st": "poison", "name": "Gift"},
+      {"st": "water", "name": "Wasser"}, {"st": "water", "frozen": true, "name": "Glatteis"}, {"st": "ice", "name": "Eis"},
+      {"st": "frost", "name": "Reif"}, {"st": "blood", "name": "Blut"}, {"st": "void", "name": "Leere"}]},
+    "gas": {"title": "GASE", "r": 90, "time": 12, "kinds": [
+      {"mat": "poison", "name": "Giftgas"}, {"mat": "steam", "name": "Dampf"}, {"mat": "smoke", "name": "Rauch"},
+      {"mat": "frost", "name": "Frostnebel"}, {"mat": "void", "name": "Leerennebel"}]},
+    "react": {"title": "REAKTIONEN", "r": 90, "kinds": [
+      {"do": "fire", "name": "Feuer", "needs": "monsters"}, {"do": "frost", "name": "Frost", "needs": "monsters"},
+      {"do": "water", "name": "Wasser", "needs": "monsters"}, {"do": "void", "name": "Leere (Sog)"},
+      {"do": "shadow", "name": "Schatten"}]}
+  },
+  "cheats": {
+    "shards": 10,
+    "toggles": [
+      {"id": "god", "name": "UNVERWUNDBAR"}, {"id": "mana", "name": "RESSOURCE UNENDLICH"},
+      {"id": "nocd", "name": "KEINE ABKLINGZEITEN"}, {"id": "freeze", "name": "GEGNER EINFRIEREN"}],
+    "time_scales": [{"v": 0.25, "name": "0,25x"}, {"v": 1.0, "name": "NORMAL"}]
+  },
+  "_panel_note": "Layout px of the panel column under the mini-map (src/ui/hud_kit.gd menu_rect): gap to the ESC chip, chip height, inner pad, extra height of a row over the small font, gap between rows, space kept free at the bottom, wheel step.",
+  "panel": {"gap": 4, "chip_height": 22, "pad": 6, "row_pad": 7, "row_gap": 2, "bottom_margin": 92, "scroll_step": 42},
+  "texts": {
+    "chip": "TESTRAUM · F1",
+    "tool_hint": "Werkzeug wählen, dann auf den Boden klicken. Rechtsklick legt es ab.",
+    "npc_missing": "fehlt hier",
+    "no_runtime": "Pfützen und Reaktionen nur in Krypta und Hölle",
+    "no_talents": "Kein Profil: Talente aus",
+    "revived": "Testraum: wieder aufgestanden",
+    "cleared": "Alle Gegner entfernt",
+    "wiped": "Pfützen und Gase entfernt",
+    "not_here": "in dieser Welt nicht verfügbar"
+  }
+}

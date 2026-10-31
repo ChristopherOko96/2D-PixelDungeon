@@ -676,7 +676,7 @@ func draw(l: CanvasItem, m: Dictionary, foot: Vector2, size: float = 1.0, tint: 
 	var e := {"rig": rig_of(m), "uid": int(m.uid), "face": float(m.get("face", 1.0)), "moving": str(m.get("anim", "")) == "run",
 		"flying": str(m.get("anim", "")) == "fly", "tint": Color(tint.r, tint.g, tint.b, 1.0), "alpha": tint.a, "size": size, "cut": cut,
 		"shadow": false, "hit_part": "" if whole_flash else str(m.get("rig_hit_part", "")), "hit_flash": flash,
-		"hits": int(m.get("rig_hits", 0)), "lost": Array(m.get("parts_lost", [])).duplicate(), "dying_p": _dying_p(m)}
+		"hits": int(m.get("rig_hits", 0)), "lost": Array(m.get("parts_lost", [])).duplicate(), "dying_p": _dying_p(m), "tumble": float(m.get("tumble", 0.0))}
 	e.merge(phase, true)
 	var top: float = renderer.draw_enemy(l, e, foot - Vector2(0, (float(rig.ground.y) - float(rig.center.y)) * S))
 	m.rig_drawn = frame_index
@@ -697,7 +697,7 @@ func draw_corpse(l: CanvasItem, c: Dictionary) -> bool:
 	var fade := 1.0 - clampf(float(c.get("t", 0.0)) / maxf(0.01, float(cfg.corpse_time)), 0.0, 1.0)
 	var foot: Vector2 = Vector2(c.p) + Vector2(0, float(cfg.foot_drop))
 	var e := {"rig": rig_of(c), "uid": int(c.uid), "face": float(c.get("face", 1.0)), "alpha": fade, "shadow": false,
-		"lost": Array(_last_lost.get(int(c.uid), [])).duplicate(), "dying_p": _corpse_p(c)}
+		"lost": Array(_last_lost.get(int(c.uid), [])).duplicate(), "dying_p": _corpse_p(c), "tumble": float(c.get("tumble", 0.0)), "kill": c.get("kill", {})}
 	renderer.draw_enemy(l, e, foot - Vector2(0, (float(rig.ground.y) - float(rig.center.y)) * S))
 	_mark(c, rig, foot, S, 0.0, fade)
 	return true
@@ -711,6 +711,13 @@ func draw_under(l: CanvasItem) -> void:
 ## Chips, embers and flashes of the cuts (over the actors).
 func draw_over(l: CanvasItem) -> void:
 	if renderer != null: renderer.draw_over(l, _snapshot)
+
+
+## The world's walls for the debris of cut and fallen parts (RigRenderer
+## solid): `blocked` takes a world point and is true inside a wall, closed
+## gate or solid prop (src/hell/hell_monsters.gd hands in the game's box_blocked).
+func bind_world(blocked: Callable) -> void:
+	if renderer != null: renderer.solid = blocked
 
 
 ## World position of rig point `id` (mouth, throat, hand, tail_tip, core) as
@@ -1058,11 +1065,11 @@ func _view_snapshot(mobs: Array, corpses: Array) -> Dictionary:
 		if not m is Dictionary or not has_rig(m): continue
 		var at := centre(m)
 		var e := {"rig": rig_of(m), "uid": int(m.uid), "hits": int(m.get("rig_hits", 0)), "lost": Array(m.parts_lost).duplicate(),
-			"dying_p": _dying_p(m), "x": at.x, "y": at.y}
+			"dying_p": _dying_p(m), "x": at.x, "y": at.y, "tumble": float(m.get("tumble", 0.0)), "kill": m.get("kill_fx", {})}
 		e.merge(act_phase(m), true)
 		enemies.append(e)
 	for c: Variant in corpses:
 		if not c is Dictionary or not c.has("uid") or rig_of(c).is_empty(): continue
 		var p: Vector2 = c.get("p", Vector2.ZERO)
-		enemies.append({"rig": rig_of(c), "uid": int(c.uid), "lost": Array(_last_lost.get(int(c.uid), [])).duplicate(), "dying_p": _corpse_p(c), "x": p.x, "y": p.y})
+		enemies.append({"rig": rig_of(c), "uid": int(c.uid), "lost": Array(_last_lost.get(int(c.uid), [])).duplicate(), "dying_p": _corpse_p(c), "x": p.x, "y": p.y, "tumble": float(c.get("tumble", 0.0)), "kill": c.get("kill", {})})
 	return {"enemies": enemies}

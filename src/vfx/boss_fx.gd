@@ -7,11 +7,20 @@ extends RefCounted
 ## spit); and the conditions on heroes and bosses (poison, burns, ice, slow,
 ## armour, rage). Pure drawing, no game state. With `pools` (src/vfx/pool_paint.gd,
 ## set by the host) the pools are opaque pixel materials shaped by the splat's
-## physics instead of circles.
+## physics instead of circles. Madness (the Leerenmagier's void, enemies'
+## and heroes' "mad" s, the hero's "mad_warn" 0..1): a swirl of violet pixels
+## round the head, violet eyes and a rising "?" on the figure; on the local
+## hero's screen edge a violet vignette that pulses with whisper dither and,
+## when mad, ripples and flickers inverted (_draw_madness).
 
 const SKULL := preload("res://assets/sprites/0x72/skull.png")
 const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
 const PoolPaint = preload("res://src/vfx/pool_paint.gd")
+const Pal = preload("res://src/vfx/talent_palette.gd")
+## The madness look's values: assets/data/vfx_talents.json void.mad.
+const TALENTS_FX_PATH := "res://assets/data/vfx_talents.json"
+## The "?" over a mad figure: five rows of three cells.
+const QUESTION := ["111", "001", "010", "000", "010"]
 ## World px per art pixel of the canvas (the crypt's; the story worlds draw it in crypt units).
 const ART := 2.0
 ## The pools as pixel materials (src/vfx/pool_paint.gd); null draws the old circles.
@@ -24,6 +33,10 @@ var particles: RefCounted = null
 var _vortices: Dictionary = {}
 ## Breath cones seen warning (id -> zone): when one goes it has struck.
 var _breaths: Dictionary = {}
+## The madness values (vfx_talents.json void.mad), read once.
+static var _mad: Dictionary = {}
+## The vignette's dither textures, one per Bayer level 0..16 (4x4, white where shown).
+static var _dithers: Array = []
 ## The vortices' pictures of the current beat (zone id -> {tick, at, r, picture}).
 var _vortex_pictures: Dictionary = {}
 ## Material colour ramps by style (_ramp_of), cached.
@@ -366,6 +379,165 @@ func draw_over(canvas: CanvasItem, snapshot: Dictionary, clock: float, position:
 			var r := size + 8.0 + float(posmod(tq / 2, 2)) * 4.0
 			PixelPaint.ellipse(canvas, at - Vector2(0, size * 0.4) + Vector2(0, ART), r, r, INK, ART, 2, tq)
 			PixelPaint.ellipse(canvas, at - Vector2(0, size * 0.4), r, r, Color("ff4a3a"), ART, 2, tq)
+	_draw_madness(canvas, snapshot, clock, position)
+
+
+# --- Madness ---------------------------------------------------------------------------
+
+## vfx_talents.json void.mad, read once.
+static func _mad_spec() -> Dictionary:
+	if _mad.is_empty():
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(TALENTS_FX_PATH)) if FileAccess.file_exists(TALENTS_FX_PATH) else null
+		var spec: Variant = parsed.get("void", {}).get("mad", {}) if parsed is Dictionary else {}
+		_mad = spec if spec is Dictionary and not spec.is_empty() else {"swirl": 4}
+	return _mad
+
+
+## The madness look: every enemy (snapshot enemies[i].mad s > 0, not dying)
+## and every other hero (players[id].mad) gets the swirl, the eyes and the
+## "?" (_mad_head); the local hero (snapshot local_peer, else the canvas's
+## _local_peer, else the only hero) gets the screen edge (_mad_vignette) from
+## his mad_warn and mad. Every read has a default: nothing mad, nothing drawn.
+func _draw_madness(canvas: CanvasItem, snapshot: Dictionary, clock: float, position: Callable) -> void:
+	var spec := _mad_spec()
+	for enemy: Dictionary in snapshot.get("enemies", []):
+		if float(enemy.get("mad", 0.0)) <= 0.0 or float(enemy.get("dying_p", -1.0)) >= 0.0: continue
+		_mad_head(canvas, position.call(enemy), float(enemy.get("radius", 14)), float(enemy.get("face", enemy.get("facing_x", 1.0))), clock, int(enemy.get("id", 0)), spec)
+	var players: Dictionary = snapshot.get("players", {})
+	var local: Variant = snapshot.get("local_peer", canvas.get("_local_peer"))
+	if local == null and players.size() == 1: local = players.keys()[0]
+	for key: Variant in players:
+		var player: Dictionary = players[key]
+		if float(player.get("hp", 1)) <= 0: continue
+		var mad := float(player.get("mad", 0.0))
+		var warn := clampf(float(player.get("mad_warn", 0.0)), 0.0, 1.0)
+		if local != null and str(key) == str(local):
+			if warn > 0.0 or mad > 0.0: _mad_vignette(canvas, snapshot.get("view_rect", null), warn, mad, clock, spec)
+		elif mad > 0.0:
+			_mad_head(canvas, position.call(player), 14.0, float(player.get("face", 1.0)), clock, 900 + str(key).to_int(), spec)
+
+
+## A mad figure at `at` (its point, `size` its radius, `face` its facing):
+## spec.swirl violet pixels circling its head on a flat ellipse (a dark cell
+## trailing each, ink under, one spec-lit in turn), its two eyes glowing
+## violet (a halo cell beside each, dimming for a beat now and then) and,
+## every spec.glyph_every s for spec.glyph_time s, an inked "?" rising
+## beside its head and thinning by the dither. On the 2 px grid.
+func _mad_head(canvas: CanvasItem, at: Vector2, size: float, face: float, clock: float, seed: int, spec: Dictionary) -> void:
+	var cols := Pal.ramp("void")
+	var head := at - Vector2(0, size * float(spec.get("head_share", 1.0)) + float(spec.get("head_px", 2)))
+	var tq := int(floorf(clock * PixelPaint.FPS))
+	var radii: Array = spec.get("swirl_r", [8, 3])
+	var n := maxi(1, int(spec.get("swirl", 4)))
+	var beat := floorf(clock * PixelPaint.FPS) / PixelPaint.FPS
+	for i in range(n):
+		var angle := beat * float(spec.get("swirl_speed", 4.0)) + float(i) * TAU / float(n) + float(posmod(seed, 7))
+		var q := PixelPaint.at(head + Vector2(cos(angle) * float(radii[0]), sin(angle) * float(radii[1])), ART)
+		var behind := PixelPaint.at(head + Vector2(cos(angle - 0.5) * float(radii[0]), sin(angle - 0.5) * float(radii[1])), ART)
+		PixelPaint.cell(canvas, q + Vector2i(0, 1), INK, ART)
+		if behind != q: PixelPaint.cell(canvas, behind, cols[1], ART)
+		PixelPaint.cell(canvas, q, cols[4] if posmod(i + tq / 3, n) == 0 else cols[3], ART)
+	var side := 1.0 if face >= 0.0 else -1.0
+	var eyes := head + Vector2(side * 1.0, float(spec.get("eye_dy", 5)))
+	var dx := float(spec.get("eye_dx", 3))
+	for s: float in [-1.0, 1.0]:
+		var e := PixelPaint.at(eyes + Vector2(s * dx, 0.0), ART)
+		PixelPaint.cell(canvas, e, cols[4] if posmod(tq + seed, 12) < 9 else cols[3], ART)
+		var halo := e + Vector2i(int(s), 0)
+		if PixelPaint.shown(halo, 0.5): PixelPaint.cell(canvas, halo, cols[2], ART)
+	var every := maxf(0.5, float(spec.get("glyph_every", 2.6)))
+	var shown_for := float(spec.get("glyph_time", 0.7))
+	var phase := fposmod(clock + float(posmod(seed, 13)) * 0.37, every)
+	if phase < shown_for:
+		var k := phase / maxf(0.05, shown_for)
+		var base := PixelPaint.at(head + Vector2(side * (size * 0.6 + 4.0), -8.0 - k * 6.0), ART)
+		var glyph: Array = []
+		for y in range(5):
+			for x in range(3):
+				if QUESTION[y][x] == "1": glyph.append(base + Vector2i(x, y))
+		for q: Vector2i in glyph:
+			for o: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+				if not (q + o) in glyph and PixelPaint.shown(q + o, 1.0 - k * k): PixelPaint.cell(canvas, q + o, INK, ART)
+		for q: Vector2i in glyph:
+			if PixelPaint.shown(q, 1.0 - k * k): PixelPaint.cell(canvas, q, cols[4] if k < 0.2 else cols[3], ART)
+
+
+## A 4x4 texture of the ordered dither at `level` (0..16 shown cells), white where shown.
+static func _dither(level: int) -> Texture2D:
+	if _dithers.is_empty():
+		for lv in range(17):
+			var image := Image.create_empty(4, 4, false, Image.FORMAT_RGBA8)
+			for y in range(4):
+				for x in range(4):
+					image.set_pixel(x, y, Color.WHITE if int(PixelPaint.BAYER[(y << 2) | x]) < lv else Color(0, 0, 0, 0))
+			_dithers.append(ImageTexture.create_from_image(image))
+	return _dithers[clampi(level, 0, 16)]
+
+
+## The local hero's madness on the edge of the view (`view` a Rect2 in canvas
+## px, else the canvas's visible rect): a band of the void's deep and shade
+## colours thinning inwards by the ordered dither (spec.vignette levels, one
+## tiled texture per level and edge segment: cheap), spec depth of the view's
+## smaller side deep. mad_warn pulses it (pulse_hz) with whisper dither (short
+## strokes of lit violet flickering in the band on every second beat); mad
+## holds it strong, ripples its inner edge (ripple, ripple_hz over segments)
+## and every flicker_every s flickers its inner half inverted for
+## flicker_frames beats. Reduced flashing (vignette.flicker false or the
+## Engine meta "reduce_flashing"): no flicker, half the pulse and ripple.
+func _mad_vignette(canvas: CanvasItem, override: Variant, warn: float, mad: float, clock: float, spec: Dictionary) -> void:
+	var vs: Dictionary = spec.get("vignette", {})
+	var view: Rect2 = override if override is Rect2 else canvas.get_global_transform_with_canvas().affine_inverse() * canvas.get_viewport_rect()
+	var cells := (view.size / ART).floor()
+	if cells.x < 8.0 or cells.y < 8.0: return
+	var calm := not bool(vs.get("flicker", true)) or (Engine.has_meta("reduce_flashing") and bool(Engine.get_meta("reduce_flashing")))
+	var pulse := 0.5 + 0.5 * sin(clock * TAU * float(vs.get("pulse_hz", 0.7)) * (0.5 if calm else 1.0))
+	var strength := clampf(maxf(warn * (0.55 + 0.45 * pulse), (0.85 + 0.15 * pulse) if mad > 0.0 else 0.0), 0.0, 1.0)
+	var depth := maxf(4.0, minf(cells.x, cells.y) * float(vs.get("depth", 0.16)) * (0.6 + 0.4 * strength))
+	var levels := maxi(2, int(vs.get("levels", 8)))
+	var segments := maxi(1, int(vs.get("segments", 14))) if mad > 0.0 else 1
+	var ripple := (float(vs.get("ripple", 0.35)) * (0.5 if calm else 1.0)) if mad > 0.0 else 0.0
+	var tq := int(floorf(clock * PixelPaint.FPS))
+	var flick := mad > 0.0 and not calm and fposmod(clock, maxf(0.3, float(vs.get("flicker_every", 1.7)))) < float(vs.get("flicker_frames", 2)) / PixelPaint.FPS
+	var cols := Pal.ramp("void")
+	var inverse := Color(1.0 - cols[1].r, 1.0 - cols[1].g, 1.0 - cols[1].b)
+	var origin := (view.position / ART).floor()
+	canvas.draw_set_transform(origin * ART, 0.0, Vector2(ART, ART))
+	for edge in range(4):
+		var along := cells.x if edge < 2 else cells.y
+		for j in range(segments):
+			var s0 := floorf(along * float(j) / float(segments))
+			var s1 := floorf(along * float(j + 1) / float(segments))
+			var d := depth * (1.0 + ripple * sin(float(j) * 0.9 + clock * TAU * float(vs.get("ripple_hz", 0.9)) + float(edge) * 1.7))
+			for lv in range(levels):
+				var level := clampi(roundi(strength * pow(1.0 - float(lv) / float(levels), 1.6) * 16.0), 0, 16)
+				var d0 := floorf(d * float(lv) / float(levels))
+				var d1 := floorf(d * float(lv + 1) / float(levels))
+				if level <= 0 or d1 <= d0: continue
+				var col: Color = cols[0] if lv < levels / 2 else cols[1]
+				if flick and lv >= levels / 2: col = inverse
+				var rect: Rect2
+				match edge:
+					0: rect = Rect2(s0, d0, s1 - s0, d1 - d0)
+					1: rect = Rect2(s0, cells.y - d1, s1 - s0, d1 - d0)
+					2: rect = Rect2(d0, s0, d1 - d0, s1 - s0)
+					_: rect = Rect2(cells.x - d1, s0, d1 - d0, s1 - s0)
+				canvas.draw_texture_rect(_dither(level), rect, true, col)
+	# whispers: short strokes of lit violet flickering in the band
+	var count := int(float(vs.get("whispers", 60)) * strength)
+	for i in range(count):
+		var h := absi(hash(Vector3i(i, tq / 2, 7)))
+		var edge := h % 4
+		var along := cells.x if edge < 2 else cells.y
+		var s := float((h / 4) % maxi(1, int(along)))
+		var d := floorf(depth * (0.25 + 0.85 * float((h / 4096) % 100) / 100.0))
+		var length := float(1 + (h / 977) % 3)
+		var col: Color = (cols[3] if i % 3 else cols[2]) if not flick else inverse
+		match edge:
+			0: canvas.draw_rect(Rect2(s, d, length, 1), col)
+			1: canvas.draw_rect(Rect2(s, cells.y - 1.0 - d, length, 1), col)
+			2: canvas.draw_rect(Rect2(d, s, 1, length), col)
+			_: canvas.draw_rect(Rect2(cells.x - 1.0 - d, s, 1, length), col)
+	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 
 ## A hero frozen in a block of ice that holds all of him, head, weapon and

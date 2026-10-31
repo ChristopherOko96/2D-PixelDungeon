@@ -5,7 +5,8 @@ extends RefCounted
 ## 29.10.2026): the learned actives sit on keys 1-4 of the skill bar
 ## (src/ui/skill_bar.gd), the ultimate on R; empty slots wait for talents. The
 ## companion's abilities (5, 6) are drawn on the companion bar (HudKit.pet_panel).
-## Above the bar the resource (mana blue, stamina green, rage red). Banner:
+## Above the bar the resource (mana blue, stamina green, rage red); beside the
+## Leerenmagier's mana his Arkanes Gefüge (draw_gefuege). Banner:
 ## "+2 SEELENSPLITTER" with the crystal, or a level-up note; queued, one at a time.
 
 const CryptUI = preload("res://src/ui/crypt_ui.gd")
@@ -14,12 +15,30 @@ const TalentIcons = preload("res://src/ui/talent_icons.gd")
 const TalentScreen = preload("res://src/ui/talent_screen.gd")
 const HudKit = preload("res://src/ui/hud_kit.gd")
 const Profile = preload("res://src/progress/profile.gd")
+const Pal = preload("res://src/vfx/talent_palette.gd")
+const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
+## The Gefüge gauge's look: assets/data/ui_hud_style.json "gefuege".
+const STYLE_PATH := "res://assets/data/ui_hud_style.json"
+## What the gauge falls back to when the style table lacks a key.
+const GAUGE_DEFAULTS := {"radius": 17, "cell": 2, "gap": 6, "lift": -4, "glow": 0.4, "pulse_time": 0.35, "burst_time": 0.6,
+	"burst_speed": 60, "orbit_speed": 1.4, "squash": 0.82, "core": 2, "tone": {}}
+## The void's black heart (the orb's inside).
+const VOID_BLACK := Color("0a0612")
 
 var _font: Font = PixelStyle.create_font()
 var _specs: Dictionary = {}
 var _reward: Dictionary = {}
 var _queue: Array = []
 var _clock := 0.0
+## The Gefüge gauge's style (ui_hud_style.json "gefuege" over GAUGE_DEFAULTS), read once.
+static var _gauge_style: Dictionary = {}
+## The unit colours the gauge held when last drawn, oldest first (more pulse, none bursts).
+var _gef_units: Array = []
+## When units last entered (the swallow pulse), _clock s.
+var _gef_pulse := -10.0
+## The pixels flung out when the pocket emptied: [{col, a, v}] and when (_clock s).
+var _gef_burst: Array = []
+var _gef_burst_t := -10.0
 
 
 ## Queues a reward from a profile event ({kind: "shard" | "level", ...}).
@@ -109,6 +128,149 @@ func draw_resource(canvas: CanvasItem, talents: Dictionary, centre_x: float, y: 
 	if float(talents.get("shield", 0.0)) > 0.0: canvas.draw_rect(bar.grow(2), Color(CryptUI.FROST, 0.8), false, 2.0)
 	var name: String = {"mana": "MANA", "stamina": "AUSDAUER", "rage": "ZORN"}.get(kind, "")
 	_centered(canvas, bar.get_center() + Vector2(0, -6), "%s %d / %d" % [name, int(float(talents.get("res", 0))), int(float(talents.get("res_max", 100)))], 8, Color(colour.lightened(0.35)))
+	# the Leerenmagier's Arkanes Gefüge right of his mana (only a snapshot that carries one)
+	var gefuege: Variant = talents.get("gefuege", null)
+	if gefuege is Dictionary:
+		var style := gauge_style()
+		var radius := float(style.radius)
+		draw_gefuege(canvas, gefuege, Vector2(bar.end.x + float(style.gap) + radius, bar.position.y + float(style.lift)))
+	else:
+		_gef_units = []
+
+
+# ---------- the Arkanes Gefüge ----------
+
+## The Gefüge gauge's style: ui_hud_style.json "gefuege" over GAUGE_DEFAULTS.
+static func gauge_style() -> Dictionary:
+	if _gauge_style.is_empty():
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(STYLE_PATH)) if FileAccess.file_exists(STYLE_PATH) else null
+		var table: Variant = parsed.get("gefuege", {}) if parsed is Dictionary else {}
+		_gauge_style = GAUGE_DEFAULTS.duplicate(true)
+		if table is Dictionary: _gauge_style.merge(table, true)
+	return _gauge_style
+
+
+## The colour of one swallowed unit of `element`: its ramp's lite colour
+## (src/vfx/talent_palette.gd), or the ramp step the style's "tone" names for
+## it (lava, water and ice would read like fire and each other otherwise).
+static func unit_colour(element: String) -> Color:
+	var tones: Dictionary = gauge_style().get("tone", {})
+	var ramp: Array = Pal.ramp(element)
+	return ramp[clampi(int(tones.get(element, 3)), 0, ramp.size() - 1)]
+
+
+## The units of a Gefüge snapshot ({cap, units: [{el, n}]}) as one colour per
+## unit, oldest first, at most `cap` of them.
+static func unit_colours(units: Variant, cap: int) -> Array:
+	var out: Array = []
+	if not units is Array: return out
+	for group: Variant in units:
+		if not group is Dictionary: continue
+		var colour := unit_colour(str(group.get("el", "void")))
+		for i in range(maxi(0, int(group.get("n", 0)))):
+			if out.size() >= cap: return out
+			out.append(colour)
+	return out
+
+
+## The Arkanes Gefüge, the Leerenmagier's pocket of swallowed elements, as a
+## small dark orb centred on `centre` (screen px): an ink rim with a faint
+## violet glow outside it (dithered), a black inside, a fill arc of n / cap
+## running clockwise from the top just inside the rim, and one coloured pixel
+## (style cell, 2x2 screen px) per unit swirling round a tiny core on its own
+## orbit, the oldest nearest the core, inner orbits faster. When units enter
+## the orb pulses (rim and glow brighten, the newest unit falls in from the
+## rim); when it empties its last units burst outward and the glow flares.
+## `gefuege` is talents.player_state(id).gefuege; every read has a default.
+func draw_gefuege(canvas: CanvasItem, gefuege: Dictionary, centre: Vector2) -> void:
+	var style := gauge_style()
+	var cap := maxi(1, int(gefuege.get("cap", 1)))
+	var units := unit_colours(gefuege.get("units", []), cap)
+	if units.size() > _gef_units.size(): _gef_pulse = _clock
+	elif units.is_empty() and not _gef_units.is_empty(): _burst_gefuege(_gef_units)
+	_gef_units = units
+	var cell := maxf(1.0, float(style.cell))
+	var r := float(style.radius)
+	var c := (centre / cell).floor() * cell
+	var cols := Pal.ramp("void")
+	var pulse := 1.0 - clampf((_clock - _gef_pulse) / maxf(0.05, float(style.pulse_time)), 0.0, 1.0)
+	var burst := 1.0 - clampf((_clock - _gef_burst_t) / maxf(0.05, float(style.burst_time)), 0.0, 1.0)
+	var flare := maxf(pulse, burst)
+	var n := int(ceil((r + cell * 3.0) / cell))
+	var cq := Vector2i((c / cell).round())
+	var share := float(units.size()) / float(cap)
+	var lead := -1
+	if units.size() > 0: lead = clampi(int(share * 64.0) - 1, 0, 63)
+	for gy in range(-n, n + 1):
+		for gx in range(-n, n + 1):
+			var rel := (Vector2(gx, gy) + Vector2(0.5, 0.5)) * cell
+			var d := rel.length()
+			var q := cq + Vector2i(gx, gy)
+			var colour := Color(0, 0, 0, 0)
+			if d > r + cell * 2.5:
+				continue
+			elif d > r:
+				# the faint violet glow outside the rim, thinning outwards by the dither
+				var cover := (float(style.glow) + 0.5 * flare) * (1.0 - (d - r) / (cell * 2.5))
+				if PixelPaint.shown(q, cover): colour = cols[2] if d < r + cell else cols[1]
+			elif d > r - cell:
+				colour = CryptUI.INK if flare < 0.5 or d > r - cell * 0.5 else cols[1]
+			elif d > r - cell * 2.0:
+				# the fill arc: n / cap clockwise from the top, its leading cell lit
+				var turn := fposmod(rel.angle() + PI * 0.5, TAU) / TAU
+				var step := int(turn * 64.0)
+				if turn < share: colour = cols[4] if step == lead else cols[3]
+				else: colour = cols[0]
+			elif d > r - cell * 3.0:
+				# the inside's rim: deep violet, lit on a pulse
+				colour = cols[1] if PixelPaint.shown(q, 0.5 + 0.5 * flare) else VOID_BLACK
+			else:
+				colour = VOID_BLACK
+			if colour.a > 0.0: canvas.draw_rect(Rect2(Vector2(q) * cell, Vector2(cell, cell)), colour)
+	# the tiny core: a dark heart with one violet glint crawling round it
+	var core := float(style.core)
+	var frame := int(floorf(_clock * PixelPaint.FPS))
+	for i in range(8):
+		var a := TAU * float(i) / 8.0
+		var q := cq + Vector2i((Vector2(cos(a), sin(a)) * core).round())
+		canvas.draw_rect(Rect2(Vector2(q) * cell, Vector2(cell, cell)), cols[4] if posmod(i - frame, 8) == 0 else cols[1])
+	# the units: one pixel each on its orbit, the oldest nearest the core
+	var count := units.size()
+	var r_min := cell * (core + 1.5)
+	var r_max := r - cell * 3.5
+	var speed := float(style.orbit_speed)
+	var squash := float(style.squash)
+	for i in range(count):
+		var f := float(i) / float(maxi(1, count - 1)) if count > 1 else 0.0
+		var rad := lerpf(r_min, r_max, f)
+		if i == count - 1 and pulse > 0.0: rad = lerpf(rad, r - cell * 2.0, pulse)
+		var a := float(i) * 2.39996 + _clock * speed * sqrt(r_max / maxf(1.0, rad))
+		var spot := c + Vector2(cos(a), sin(a) * squash) * rad
+		var q := Vector2i((spot / cell).floor())
+		var back := Vector2i(((c + Vector2(cos(a - 0.45), sin(a - 0.45) * squash) * rad) / cell).floor())
+		var colour: Color = units[i]
+		if back != q: canvas.draw_rect(Rect2(Vector2(back) * cell, Vector2(cell, cell)), colour.darkened(0.55))
+		canvas.draw_rect(Rect2(Vector2(q) * cell, Vector2(cell, cell)), colour)
+	# the burst when it emptied: the last units flung outward, thinning by the dither
+	if burst > 0.0:
+		var t := 1.0 - burst
+		for piece: Dictionary in _gef_burst:
+			var spot := c + Vector2.from_angle(float(piece.a)) * (r * 0.4 + float(piece.v) * t)
+			var q := Vector2i((spot / cell).floor())
+			if not PixelPaint.shown(q, burst + 0.2): continue
+			canvas.draw_rect(Rect2(Vector2(q) * cell, Vector2(cell, cell)), piece.col)
+			var tail := Vector2i(((spot - Vector2.from_angle(float(piece.a)) * cell * 1.5) / cell).floor())
+			if tail != q: canvas.draw_rect(Rect2(Vector2(tail) * cell, Vector2(cell, cell)), (piece.col as Color).darkened(0.5))
+
+
+## The units' pixels when the pocket empties: each flung out at its own angle and speed.
+func _burst_gefuege(units: Array) -> void:
+	var style := gauge_style()
+	_gef_burst = []
+	_gef_burst_t = _clock
+	for i in range(units.size()):
+		var spread := 0.6 + 0.4 * float((i * 7919) % 101) / 100.0
+		_gef_burst.append({"col": units[i], "a": float(i) * 2.39996 + _clock, "v": float(style.burst_speed) * spread})
 
 
 func _load_specs() -> void:

@@ -26,6 +26,8 @@ var _contact := 0.0
 var _steam_serial := 0
 var _gulp := 0.0
 var _mote_acc := 0.0
+## Gas cloud keys a hero's void already counted into his Gefüge (each cloud once).
+var _eaten_gas := {}
 
 
 func _init(game: Node) -> void:
@@ -47,10 +49,18 @@ func touch(element: String, at: Vector2, r: float) -> void:
 			frost_at(at, r)
 		"water":
 			water_at(at, r)
+		"void":
+			void_at(at, r)
 
 
-## Fire at `at` reaching `r`: poison explodes, water boils, ice thaws.
-func fire_at(at: Vector2, r: float, depth := 0) -> void:
+## Fire at `at` reaching `r`: poison explodes, water boils, ice thaws. The
+## third argument is the caster (talent_combat.gd _element passes its owner),
+## unused here: a chain of explosions runs through _fire_at with its depth.
+func fire_at(at: Vector2, r: float, _owner := 0) -> void:
+	_fire_at(at, r, 0)
+
+
+func _fire_at(at: Vector2, r: float, depth: int) -> void:
 	var R := rules()
 	for z: Dictionary in _puddles(at, r):
 		match ElementRules.material(str(z.get("st", "lava"))):
@@ -89,7 +99,7 @@ func fire_passes(p: Vector2) -> void:
 
 ## Frost at `at` reaching `r`: the water lying there freezes to Glatteis
 ## (drawn by the pool layer, read as ice by the rules).
-func frost_at(at: Vector2, r: float) -> void:
+func frost_at(at: Vector2, r: float, _owner := 0) -> void:
 	var froze := false
 	for z: Dictionary in _puddles(at, r):
 		if ElementRules.material(str(z.get("st", "lava"))) == "water" and not bool(z.get("frozen", false)):
@@ -112,7 +122,7 @@ func frost_at(at: Vector2, r: float) -> void:
 
 
 ## Water at `at` reaching `r`: lava there crusts over, fire puddles go out.
-func water_at(at: Vector2, r: float) -> void:
+func water_at(at: Vector2, r: float, _owner := 0) -> void:
 	var R := rules()
 	for z: Dictionary in _puddles(at, r):
 		match ElementRules.material(str(z.get("st", "lava"))):
@@ -139,11 +149,45 @@ func update(dt: float) -> void:
 		_floor_meets_puddles()
 
 
+## A void spell landing at `at` reaching `r` (world px): the puddles there
+## (not void) drain away within swallow.time s, their matter streaming as motes
+## into the hit, and the gas there is gulped in (a strong short pull). Returns
+## what it ate for the caster's Arkanes Gefüge ({element: units}; each puddle
+## or cloud once, nothing for `owner` 0; his own Gefüge drops it leaves alone).
+func void_at(at: Vector2, r: float, owner := 0) -> Dictionary:
+	var S: Dictionary = ElementRules.data().get("swallow", {})
+	var reach := r * float(S.get("reach", 1.6))
+	var drain := float(S.get("time", 0.7))
+	var ate := {}
+	if g.monsters != null:
+		for z: Dictionary in g.monsters.zones:
+			if str(z.kind) != "puddle" or float(z.t) >= float(z.T): continue
+			var mat := ElementRules.material(str(z.get("st", "lava")))
+			if mat == "void" or Vector2(z.p).distance_to(at) > reach + float(z.r): continue
+			if owner > 0 and int(z.get("fed_by", 0)) == owner: continue
+			if float(z.T) - float(z.t) > drain:
+				z.T = float(z.t) + drain
+			_eat(ate, z, "ice" if bool(z.get("frozen", false)) else mat, float(z.r), owner)
+			var cols: Array = g.monsters.PX_COL.get("frost" if mat == "ice" else mat, g.monsters.PX_COL.void)
+			for k in range(6):
+				var from: Vector2 = Vector2(z.p) + Vector2.from_angle(randf() * TAU) * float(z.r) * randf()
+				var T := clampf(from.distance_to(at) / 220.0, 0.2, 0.9)
+				g.monsters.pfx.append({"p": from, "v": (at - from) / T, "z": 6.0, "vz": 0.0, "fly": true, "t": 0.0, "T": T, "c": cols[randi() % cols.size()], "s": 1})
+	var gas: RefCounted = g.get("gas")
+	if gas != null:
+		_eat_gas(ate, at, reach, owner)
+		gas.suck(at, reach, float(S.get("pull", 170.0)) * 3.0, float(S.get("thin", 1.3)) * 2.0, 0.3, float(g.state.t))
+	return ate
+
+
 ## The void eats what lies near it (element_rules.json swallow; user decision
-## 2026-10-31): a void puddle or a pulling talent zone (the Singularität)
-## drains the other puddles within reach x its radius (their matter streams as
-## motes into the mouth) and sucks the gas clouds in until they are gone; the
-## mouth gulps now and then.
+## 2026-10-31): a void puddle or a talent mouth (the Singularität's pull,
+## Raumsprung's rift) drains the other puddles within reach x its radius (their
+## matter streams as motes into the mouth) and sucks the gas clouds in until
+## they are gone; the mouth gulps now and then. A mouth of the Leerenmagier
+## (his void puddle: owner, his talent zone) feeds what it eats into his
+## Arkanes Gefüge (src/hell/hell_talents.gd feed_all), each thing once; his own
+## Gefüge drops (fed_by) it leaves alone. A monster's void feeds nobody.
 func _void_swallows(dt: float) -> void:
 	var S: Dictionary = ElementRules.data().get("swallow", {})
 	if S.is_empty():
@@ -152,12 +196,12 @@ func _void_swallows(dt: float) -> void:
 	var mouths: Array = []
 	for z: Dictionary in zones:
 		if str(z.kind) == "puddle" and float(z.t) < float(z.T) and ElementRules.material(str(z.get("st", "lava"))) == "void":
-			mouths.append([Vector2(z.p), float(z.r)])
+			mouths.append([Vector2(z.p), float(z.r), int(z.get("owner", 0))])
 	var talents: Variant = g.get("talents")
 	if talents != null and talents.get("tc") != null:
 		for z: Dictionary in talents.tc.zones:
-			if float(z.get("pull", 0.0)) > 0.0:
-				mouths.append([Vector2(z.pos), float(z.r)])
+			if float(z.get("pull", 0.0)) > 0.0 or bool(z.get("mouth", false)):
+				mouths.append([Vector2(z.pos), float(z.r), int(z.get("owner", 0))])
 	if mouths.is_empty():
 		return
 	var now := float(g.state.t)
@@ -169,6 +213,8 @@ func _void_swallows(dt: float) -> void:
 	for mouth: Array in mouths:
 		var at: Vector2 = mouth[0]
 		var reach: float = float(mouth[1]) * reach_k
+		var owner: int = int(mouth[2])
+		var ate := {}
 		var fed := false
 		for z: Dictionary in zones:
 			if str(z.kind) != "puddle" or float(z.t) >= float(z.T):
@@ -176,10 +222,13 @@ func _void_swallows(dt: float) -> void:
 			var mat := ElementRules.material(str(z.get("st", "lava")))
 			if mat == "void" or Vector2(z.p).distance_to(at) > reach + float(z.r):
 				continue
+			if owner > 0 and int(z.get("fed_by", 0)) == owner:
+				continue
 			# it drains: its life ends in drain s, its matter streams as motes to the mouth
 			if float(z.T) - float(z.t) > drain:
 				z.T = float(z.t) + drain
 			fed = true
+			_eat(ate, z, "ice" if bool(z.get("frozen", false)) else mat, float(z.r), owner)
 			_mote_acc += motes * dt
 			var cols: Array = g.monsters.PX_COL.get("frost" if mat == "ice" else mat, g.monsters.PX_COL.void)
 			while _mote_acc >= 1.0:
@@ -188,11 +237,56 @@ func _void_swallows(dt: float) -> void:
 				var span := at - from
 				var T := clampf(span.length() / 180.0, 0.25, 1.2)
 				g.monsters.pfx.append({"p": from, "v": span / T, "z": 6.0, "vz": 0.0, "fly": true, "t": 0.0, "T": T, "c": cols[randi() % cols.size()], "s": 1})
+		_eat_gas(ate, at, reach, owner)
 		if gas != null and gas.suck(at, reach, float(S.get("pull", 170.0)), float(S.get("thin", 1.3)), dt, now):
 			fed = true
+		_feed(owner, ate, at)
 		if fed and _gulp <= 0.0 and g.monsters != null:
 			_gulp = float(S.get("gulp", 0.35))
 			g.monsters._pixel_burst(at - Vector2(0, 8), 3, g.monsters.PX_COL.void, 70.0, 140.0, 0.4)
+
+
+## Counts a puddle a mouth of hero `owner` ate into `ate` ({element: units},
+## src/combat/talent_combat.gd swallow_value through the world's talents):
+## each puddle once, its radius in crypt px (the world's art px over 2).
+func _eat(ate: Dictionary, z: Dictionary, mat: String, r: float, owner: int) -> void:
+	if owner <= 0 or bool(z.get("eaten", false)):
+		return
+	z.eaten = true
+	_count(ate, mat, "pool", r / maxf(0.01, float(g.PIXEL_WORLD) / 2.0))
+
+
+## Counts the gas clouds within `reach` of `at` a mouth of hero `owner` gulps
+## (each cloud once; the materials of element_rules.json gefuege.gas).
+func _eat_gas(ate: Dictionary, at: Vector2, reach: float, owner: int) -> void:
+	var gas: RefCounted = g.get("gas")
+	if owner <= 0 or gas == null:
+		return
+	var now := float(g.state.t)
+	var mats: Array = ElementRules.data().get("gefuege", {}).get("gas", [])
+	for mat: Variant in mats:
+		for c: Dictionary in gas.clouds_of(str(mat), now):
+			if _eaten_gas.has(str(c.key)) or Vector2(c.at).distance_to(at) > reach + float(c.r):
+				continue
+			_eaten_gas[str(c.key)] = true
+			_count(ate, str(mat), "gas", float(c.r))
+
+
+## Adds what one swallowed thing is worth to `ate` (the world's talents know the Gefüge's rules).
+func _count(ate: Dictionary, mat: String, kind: String, r: float) -> void:
+	var talents: Variant = g.get("talents")
+	if talents == null or not talents.has_method("swallow_value"):
+		return
+	var got: Array = talents.swallow_value(mat, kind, r)
+	if int(got[1]) > 0:
+		ate[str(got[0])] = int(ate.get(str(got[0]), 0)) + int(got[1])
+
+
+## Hands what a mouth of hero `owner` ate to the world's talents (src/hell/hell_talents.gd feed_all).
+func _feed(owner: int, ate: Dictionary, at: Vector2) -> void:
+	var talents: Variant = g.get("talents")
+	if owner > 0 and not ate.is_empty() and talents != null and talents.has_method("feed_all"):
+		talents.feed_all(owner, ate, at)
 
 
 ## A puddle lying on the world's own liquid floor (tile 2: the hell's lava,
@@ -257,7 +351,7 @@ func _explode(at: Vector2, r: float, depth: int) -> void:
 	if g.get("feel") != null:
 		g.feel.feedback.particles.kick(at / g.feel.scale, reach / g.feel.scale, 1.0)
 	if depth < int(R.get("explode_chain", 6)):
-		fire_at(at, reach, depth + 1)
+		_fire_at(at, reach, depth + 1)
 
 
 ## Water boiling: the puddle goes, a steam cloud rises where it lay.

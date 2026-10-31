@@ -25,5 +25,174 @@
     "peingeist": "soul", "seelenhirte": "soul", "klagender_hueter": "soul", "glutwaechter": "obsidian",
     "drache1": "ember", "drache2": "ember", "drache3": "ember", "drache4": "obsidian"
   },
-  "default": "blood"
+  "default": "blood",
+  "_splat_note": "A body flung against a wall at the Leerenmagier's Urknall (src/vfx/talent_fx.gd splat -> src/vfx/particles.gd splat_burst, src/rig/rig_renderer.gd fling_near). class: a material's burst (flesh, bone, void, gold; unknown ones flesh); colours from the material above (color, stain, stain_alpha) or the class's own. flesh: drops sprayed back off the wall, chunks (chunk_colors, chunk_lift px/s) that bounce and lie, floor_splat and wall_splat px; spray px/s of the throw. bone: splinters, dust puffs, skull rolling away (skull_roll px/s), eyes its sockets. void: motes, stain_r px. gold: coins, glints. kick: how hard the loose floor pixels round it jump. fling (rig_renderer): time s a fling waits for the death it tears apart, speed px/s of the parts, lift [min, max] px/s upwards, spread rad round the rebound.",
+  "splat": {
+    "class": {"blood": "flesh", "flesh": "flesh", "slime": "flesh", "frost": "flesh", "magma": "flesh", "bone": "bone", "ash": "bone", "ember": "bone", "obsidian": "bone", "void": "void", "soul": "void", "gold": "gold"},
+    "flesh": {"color": "c8323a", "stain": "7a1a22", "drops": 26, "chunks": 7, "chunk_colors": ["6e1a1e", "a8343a", "d8786a"], "chunk_lift": [80, 170], "floor_splat": 16, "wall_splat": 9, "spray": 170, "kick": 1.0},
+    "bone": {"color": "e6dcc6", "stain": "8f877a", "splinters": 24, "dust": 20, "skull": 1, "skull_roll": [90, 140], "eyes": "2a2420", "colors": ["e6dcc6", "b8aa90", "fff8ec"], "kick": 1.0},
+    "void": {"color": "b06ad8", "stain": "5a2a7a", "motes": 22, "stain_r": 10, "kick": 0.8},
+    "gold": {"color": "f3ce7d", "stain": "8a6020", "coins": 12, "glints": 6, "colors": ["f3ce7d", "c89a3a", "fff0c0"], "spray": 160, "kick": 0.8},
+    "fling": {"time": 0.6, "speed": 150, "lift": [120, 220], "spread": 0.8}
+  },
+  "_ragdoll_note": "Rig debris as a ragdoll (src/rig/rig_renderer.gd): a dying enemy's snapshot kill {dx, dy, tier|talent+ult|force, el, wall} throws every part with v = dir * speed * tiers[tier] * jitter, rotated by +-spread rad, plus pop px/s outward from the body, depth scales the ground-plane y, lift px/s up times the root of the impulse, spin rad/s times the impulse; velocities scale with the rig's size (story figures). gravity px/s2; a landing faster than rest_vz bounces (bounce of vz, ground_keep of the slide, spin_keep of the spin), walls (the host's solid test) reflect wall_bounce; sliding loses friction per s; under rest_speed it lies still. radius: pieces shove each other apart (px). Settled parts stay; above cap the oldest crumble by a 4x4 dither over dither_time s. tiers: small (arrows, blows), medium, large (Feuerball), huge (ultimates: Meteor), splat (flung against a wall at the Urknall). split: families of few parts cut into pieces of piece_px source rows (most pieces). talent_element: talent id or class prefix -> element look. elements: tint (multiplier on the part), embers (pixels glowing through the flame ramp over ember_time s), rime (top-edge pixels in rime_color), shatter (pieces at the first hard landing, shatter_speed px/s, chips in chip_color), matter: particles a fresh corpse gives off (rate per s until s, colors, vx spread, vy [lo, hi], grav, life [lo, hi]). loose: a held item (weapon, shield) comes off the hand on its own path - the blow direction turned by side rad to the hand side, speed and lift as factors of a body part's, spin [min, max] rad/s either way - so it never rides with the skull at its held angle.",
+  "ragdoll": {
+    "speed": 90,
+    "spread": 0.6,
+    "jitter": [
+      0.6,
+      1.2
+    ],
+    "pop": 24,
+    "depth": 0.7,
+    "lift": [
+      70,
+      140
+    ],
+    "spin": 10,
+    "tiers": {
+      "small": 1.0,
+      "medium": 1.6,
+      "large": 2.4,
+      "huge": 3.5,
+      "splat": 3.2
+    },
+    "gravity": 520,
+    "bounce": 0.35,
+    "wall_bounce": 0.4,
+    "ground_keep": 0.6,
+    "spin_keep": 0.5,
+    "friction": 9.0,
+    "rest_speed": 6,
+    "rest_vz": 30,
+    "radius": 4,
+    "cap": 60,
+    "dither_time": 0.6,
+    "loose": {
+      "side": 0.9,
+      "speed": 0.8,
+      "lift": 0.5,
+      "spin": [
+        9.0,
+        15.0
+      ]
+    },
+    "split": {
+      "families": [
+        "biped",
+        "mimic",
+        "bomber",
+        "necro"
+      ],
+      "piece_px": 5,
+      "most": 4
+    },
+    "talent_element": {
+      "fire": "fire",
+      "frost": "ice",
+      "arcane": "void"
+    },
+    "elements": {
+      "fire": {
+        "tint": "6e5f58",
+        "embers": 5,
+        "ember_time": 3.0,
+        "matter": [
+          {
+            "rate": 3.0,
+            "until": 2.5,
+            "colors": [
+              "3a3438",
+              "554c50",
+              "6e6468"
+            ],
+            "vx": 6,
+            "vy": [
+              -34,
+              -16
+            ],
+            "grav": -8,
+            "life": [
+              0.7,
+              1.2
+            ]
+          },
+          {
+            "rate": 2.0,
+            "until": 1.5,
+            "colors": [
+              "facb3e",
+              "ee8e2e"
+            ],
+            "vx": 10,
+            "vy": [
+              -70,
+              -40
+            ],
+            "grav": 30,
+            "life": [
+              0.25,
+              0.5
+            ]
+          }
+        ]
+      },
+      "ice": {
+        "tint": "c4e4f4",
+        "rime": 8,
+        "rime_color": "f4fbff",
+        "shatter": 3,
+        "shatter_speed": 70,
+        "chips": 10,
+        "chip_color": "cfefff"
+      },
+      "void": {
+        "tint": "8e7aa6",
+        "matter": [
+          {
+            "rate": 4.0,
+            "until": 3.0,
+            "colors": [
+              "c278d0",
+              "8156aa",
+              "f0b3dd"
+            ],
+            "vx": 8,
+            "vy": [
+              -44,
+              -22
+            ],
+            "grav": -12,
+            "life": [
+              0.6,
+              1.1
+            ]
+          }
+        ]
+      },
+      "poison": {
+        "tint": "98c87a",
+        "matter": [
+          {
+            "rate": 3.0,
+            "until": 3.0,
+            "colors": [
+              "7fbf3a",
+              "4f8a24"
+            ],
+            "vx": 2,
+            "vy": [
+              4,
+              14
+            ],
+            "grav": 260,
+            "life": [
+              0.25,
+              0.45
+            ]
+          }
+        ]
+      }
+    }
+  }
 }

@@ -108,6 +108,11 @@ const THEME_DEFAULT := {
 @export var class_id := ""
 ## A loaded save (src/save/story_save.gd): set before the node enters the tree to continue on its floor.
 var resume: Dictionary = {}
+## Debug Testraum (src/debug/story_testraum.gd): its settings, set before the node enters
+## the tree. Non-empty: floor 1 becomes one test room with the debug panel under the
+## mini-map and the Testraum's own profile file; empty plays the story.
+var testraum: Dictionary = {}
+const TESTRAUM_SCRIPT := "res://src/debug/story_testraum.gd"
 ## The save record of the floor start (written into a slot from the pause menu).
 var floor_save: Dictionary = {}
 var saves := SaveStore.new()
@@ -282,6 +287,10 @@ class Hud extends Control:
 
 
 func _ready() -> void:
+	# the Testraum points the profile and soul-crystal files at its own before they load
+	if not testraum.is_empty():
+		var testraum_script: Variant = load(TESTRAUM_SCRIPT)
+		testraum_script.prepare(self)
 	_load_theme()
 	balance = JSON.parse_string(FileAccess.get_file_as_string(theme.balance))
 	if theme.has("world_pack"):
@@ -429,6 +438,11 @@ func _ready() -> void:
 		return
 	load_floor(clampi(start_floor, 1, floors_raw.size()), false)
 	_start_items(ui)
+	if not testraum.is_empty():
+		# one test room without the story; its panel mounts in the HUD layer
+		var testraum_room: Variant = load(TESTRAUM_SCRIPT)
+		testraum_room.mount(self, ui)
+		return
 	if start_at_boss:
 		enter_boss_room()
 
@@ -881,6 +895,11 @@ func _cell(x: int, y: int) -> int:
 
 ## World px per art pixel (the floor tiles' 16 px art drawn x3 at 48 px).
 const PIXEL_WORLD := 3.0
+## WAHN (element_rules.json madness) on a themed world's enemies: the mad one
+## whose turn runs now (its shots scatter: _enemy_shot) and the enemy it turned
+## on ({} for none; its shots then hurt enemies: _themed_mad_shot).
+var _mad_mob: Dictionary = {}
+var _mad_prey: Dictionary = {}
 
 
 ## Shadow welling up at world point `p` (src/vfx/particles.gd shadow: a pool of
@@ -1794,7 +1813,12 @@ func _drop(kind: String, room: int, at: Vector2, extra := {}) -> void:
 
 
 func _enemy_shot(from: Vector2, dir: Vector2, speed: float) -> void:
+	# WAHN: a mad enemy's shots scatter (a boss's less); a turned one's hurt the enemies they meet
+	if not _mad_mob.is_empty():
+		dir = ElementRules.scatter(dir.normalized(), _mad_mob.kind == "boss", randf())
 	eshots.append({"p": from, "v": dir.normalized() * speed, "t": float(balance.enemy_shot.life)})
+	if not _mad_prey.is_empty():
+		eshots[-1].mad = _mad_mob
 
 
 func _burst(at: Vector2, n: int, gold := false) -> void:
@@ -2233,6 +2257,9 @@ func _update_music() -> void:
 
 func _update_player(dt: float) -> void:
 	var move := Vector2(_axis(KEY_A, KEY_D), _axis(KEY_W, KEY_S))
+	# WAHN: mad, he walks and aims mirrored (src/hell/hero_fx.gd inverted)
+	var mirror := -1.0 if FrostCombat.HeroFx.inverted(self) else 1.0
+	move *= mirror
 	if not dash.is_empty():
 		move = Vector2.ZERO
 	var here := _cell(int(floor(player.x / C)), int(floor((player.y - 6.0) / C)))
@@ -2270,11 +2297,11 @@ func _update_player(dt: float) -> void:
 	if absf(move.x) > 0.0:
 		player.face = signf(move.x)
 	player.anim += dt * (10.0 if player.moving else 5.0)
-	var aim := Vector2(_axis(KEY_LEFT, KEY_RIGHT), _axis(KEY_UP, KEY_DOWN))
+	var aim := Vector2(_axis(KEY_LEFT, KEY_RIGHT), _axis(KEY_UP, KEY_DOWN)) * mirror
 	if aim != Vector2.ZERO:
 		_fire(aim)
 	elif Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and not state.get("tree_open", false) and throw_slot < 0 and (inventory_panel == null or not inventory_panel.open):
-		_fire(get_global_mouse_position() - Vector2(player.x, player.y - 40))
+		_fire((get_global_mouse_position() - Vector2(player.x, player.y - 40)) * mirror)
 	if here == 2 and liquid.hurt:
 		_hurt("in der Lava verbrannt")
 	for e: Dictionary in pits:
@@ -2361,6 +2388,9 @@ func _update_shots(dt: float) -> void:
 			s.v = ((owner.p - Vector2(0, owner.cy)) - s.p).normalized() * (s.v as Vector2).length()
 		s.p += s.v * dt
 		s.t -= dt
+		# WAHN: a turned enemy's shot hurts the enemies it meets (not its shooter)
+		if s.has("mad") and _themed_mad_shot(s):
+			continue
 		if not s.get("fist", false) and _cell_blocked(int(floor(s.p.x / C)), int(floor(s.p.y / C)), false):
 			s.t = 0.0
 			# the frost world's shard breaks on the wall into ice chips and rime (src/hell/frost_fx.gd)
@@ -2414,6 +2444,14 @@ func _update_mobs(dt: float) -> void:
 		# taunting allies (bone colossus, great bear) draw enemies away from the hero
 		var goal := SubKit.chase(self, m, me)
 		if talents != null: goal = talents.chase_goal(m, goal)
+		# WAHN (element_rules.json madness): a mad one staggers, scatters its shots and may turn on another
+		m.mad_t = maxf(0.0, float(m.get("mad_t", 0.0)) - dt)
+		m.mad_cd = maxf(0.0, float(m.get("mad_cd", 0.0)) - dt)
+		var prey := _themed_mad_victim(m, dt)
+		if not prey.is_empty():
+			goal = prey.p
+		_mad_mob = m if float(m.mad_t) > 0.0 else {}
+		_mad_prey = prey
 		var to: Vector2 = goal - m.p
 		var d := maxf(to.length(), 1.0)
 		var dir := to / d
@@ -2452,6 +2490,8 @@ func _update_mobs(dt: float) -> void:
 				var od := off.length()
 				if od > 0.0 and od < m.r + o.r:
 					v += off / od * 120.0
+		if float(m.mad_t) > 0.0 and m.kind != "boss":
+			v += ElementRules.wobble(m, dir, dt, randf()) * PIXEL_WORLD / 2.0
 		if m.get("hold", false) or m.get("mv_hold", false):
 			v = Vector2.ZERO
 		v *= HeroKit.tick_mob(self, m, dt)
@@ -2491,6 +2531,8 @@ func _update_mobs(dt: float) -> void:
 			_hurt("von %s erschlagen" % W.boss.name if m.kind == "boss" else who, 1, m.p)
 			if def.has("chill"):
 				state.chill = float(def.chill)
+		if not prey.is_empty() and d < m.r + float(prey.r) * 0.5 + 22.0:
+			_themed_mad_strike(m, prey, true)
 		if m.kind == "spucker" or beh == "shooter":
 			m.shoot -= dt
 			if m.shoot <= 0.0:
@@ -2534,6 +2576,8 @@ func _update_mobs(dt: float) -> void:
 					for k in range(n):
 						var a: float = m.spin + float(k) / n * TAU
 						_enemy_shot(m.p - Vector2(0, 70), Vector2(cos(a), sin(a)), float(balance.enemy_shot.ring_speed))
+	_mad_mob = {}
+	_mad_prey = {}
 	for m: Dictionary in mobs.duplicate():
 		if m.hp > 0.0 or (m.has("kit") and BossKit.next_phase(self, m)):
 			continue
@@ -2770,6 +2814,9 @@ func _step_elements(dt: float) -> void:
 				_ease_vision(dt)
 				return
 			hero_medium = ElementRules.medium(hero_medium_style).duplicate()
+			# the Leerenmagier holds the void: his own medium neither hurts, silences, pulls nor maddens him
+			if ElementRules.material(hero_medium_style) == "void" and _void_mind():
+				hero_medium = {}
 			# crusted lava (water met it) is cool stone for a while
 			if ElementRules.material(hero_medium_style) == "lava" and story_elements != null and story_elements.crusted(feet):
 				hero_medium = {}
@@ -2790,12 +2837,19 @@ func _step_elements(dt: float) -> void:
 				_skid = 0.09
 				var back: Vector2 = -(player.vel as Vector2).normalized()
 				monsters._pixel_burst(feet + back * 10.0, 2, monsters.PX_COL.frost, 90.0, 160.0, 0.5)
+	# WAHN (element_rules.json madness): a void pool drives him mad after madness.hero_delay s, his
+	# controls invert until hero_after s after he left it (src/hell/hero_fx.gd mad_step: state.mad,
+	# state.mad_warn). The void pools he can step in that are his own are the Leerenmagier's: immune.
+	var maddening: bool = not hero_medium.is_empty() and (hero_medium.get("status", {}) as Dictionary).has("mad")
+	FrostCombat.HeroFx.mad_step(self, maddening and not _void_mind(), dt)
 	if gas != null:
 		# the hero parts the gas round him (_step_gas): what he breathes is the cloud at arm's length
 		var cloud: Dictionary = gas.around(feet, 22.0 * PIXEL_WORLD / 2.0 + 24.0)
 		if float(cloud.d) >= ElementRules.dense_from() and not _hero_combo(str(cloud.mat)):
 			hero_gas_mat = str(cloud.mat)
 			hero_gas = ElementRules.gas(hero_gas_mat)
+			if hero_gas_mat == "void" and _void_mind():
+				hero_gas = {}
 	if not hero_gas.is_empty():
 		if hero_gas.has("hurt"):
 			dot_hurt_f(float(hero_gas.hurt) * dt, str(hero_gas.get("why", "im %s" % hero_gas_mat)))
@@ -2859,6 +2913,8 @@ func _medium_on_themed_mob(m: Dictionary, rule: Dictionary, tick_key: String, dt
 				HeroKit.slow_mob(self, m, 1.0 - float(spec[0]), float(spec[1]))
 			"wet":
 				m.wet_t = maxf(float(m.get("wet_t", 0.0)), float(spec[1]))
+			"mad":
+				ElementRules.madden(m, float(spec[1]), m.get("tags", []))
 	if bool(rule.get("douse", false)):
 		m.burn_t = 0.0
 		m.fire_t = 0.0
@@ -2892,6 +2948,9 @@ func _hero_conditions(rule: Dictionary) -> void:
 	var status: Dictionary = rule.get("status", {})
 	for kind: String in status:
 		var spec: Array = status[kind]
+		# WAHN is no plain condition: its clock runs in _step_elements (hero_fx.gd mad_step)
+		if kind == "mad":
+			continue
 		FrostCombat.HeroFx.apply(self, kind, float(spec[1]), float(spec[0]))
 	if bool(rule.get("douse", false)):
 		FrostCombat.HeroFx.clear(self, "burn")
@@ -4184,3 +4243,92 @@ func _route_rig_events() -> void:
 			DrakeRigHost.EVENT_CANCEL:
 				# the attack fizzles where it was gathering
 				_burst(e.at, 8)
+
+
+# ---------- WAHN (element_rules.json madness) ----------
+
+## True when the story hero is the Leerenmagier (madness.immune_class with
+## immune_spec as main specialisation): the spec with the most points in the
+## talent build he plays with (src/combat/talent_combat.gd runtime ranks), else
+## the one of his saved profile (src/hero/element_skin.gd main_spec).
+func _void_mind() -> bool:
+	var spec := ""
+	if talents != null and talents.get("tc") != null:
+		var ranks: Dictionary = talents.tc.runtime(1).get("ranks", {})
+		var points := {}
+		for talent: String in ranks:
+			var own := talent.get_slice("_", 0)
+			points[own] = int(points.get(own, 0)) + int(ranks[talent])
+		var best := 0
+		for own: String in points:
+			if int(points[own]) > best:
+				best = int(points[own])
+				spec = own
+	if spec.is_empty():
+		spec = preload("res://src/hero/element_skin.gd").main_spec(profile, class_id)
+	return ElementRules.void_mind(class_id, spec)
+
+
+## A themed world's enemy `m` turned on another ({} for none). Mad and without
+## one, it rolls madness.turn_chance every madness.decide s (these enemies
+## have no attack decision of their own) and takes the nearest other enemy of
+## its room; it lets go after one blow or shot landed on it, when the victim
+## fell or after turn_hold s. Bosses never turn (their shots only scatter).
+func _themed_mad_victim(m: Dictionary, dt: float) -> Dictionary:
+	if float(m.get("mad_t", 0.0)) <= 0.0 or m.kind == "boss":
+		m.erase("mad_on")
+		return {}
+	var M := ElementRules.madness()
+	var on: Dictionary = m.get("mad_on", {})
+	if not on.is_empty():
+		m.mad_hold = float(m.get("mad_hold", 0.0)) - dt
+		if on.hp <= 0.0 or float(m.mad_hold) <= 0.0 or bool(m.get("mad_done", false)) or not mobs.any(func(o: Dictionary) -> bool: return is_same(o, on)):
+			on = {}
+	if on.is_empty():
+		m.mad_on = {}
+		m.mad_done = false
+		m.mad_roll_t = float(m.get("mad_roll_t", 0.0)) - dt
+		if float(m.mad_roll_t) <= 0.0:
+			m.mad_roll_t = float(M.get("decide", 1.0))
+			if randf() < float(M.get("turn_chance", 0.3)):
+				on = ElementRules.nearest_other(m, mobs, "p", func(o: Dictionary) -> bool: return o.room == m.room and o.hp > 0.0 and float(o.get("spawn", 0.0)) <= 0.0, PIXEL_WORLD / 2.0)
+				if not on.is_empty():
+					m.mad_on = on
+					m.mad_hold = float(M.get("turn_hold", 3.0))
+					m.mad_turns = int(m.get("mad_turns", 0)) + 1
+	return on
+
+
+## A mad themed enemy's blow or shot landing on another enemy:
+## madness.story_hits hero hits (a boss takes half); a body blow (`body`) at
+## most every madness.mad_cd s. It is its one attack on the victim (mad_done).
+func _themed_mad_strike(attacker: Dictionary, victim: Dictionary, body: bool) -> void:
+	if victim.is_empty() or victim.hp <= 0.0:
+		return
+	var M := ElementRules.madness()
+	if body:
+		if float(attacker.get("mad_cd", 0.0)) > 0.0:
+			return
+		attacker.mad_cd = float(M.get("mad_cd", 0.6))
+	var hurt := float(M.get("story_hits", 1.0)) * (0.5 if victim.kind == "boss" else 1.0) * float(state.dmg)
+	victim.hp -= hurt
+	victim.mad_taken = float(victim.get("mad_taken", 0.0)) + hurt
+	victim.hit = 0.12
+	attacker.mad_hits = int(attacker.get("mad_hits", 0)) + 1
+	attacker.mad_done = true
+	if feel != null:
+		feel.on_hit(victim, (Vector2(victim.p) - Vector2(attacker.p)).normalized(), false)
+
+
+## A turned themed enemy's shot meeting another enemy (not its shooter): it
+## hurts it and is spent; true when it hit.
+func _themed_mad_shot(s: Dictionary) -> bool:
+	var shooter: Dictionary = s.mad
+	for o: Dictionary in mobs:
+		if is_same(o, shooter) or o.hp <= 0.0 or float(o.get("spawn", 0.0)) > 0.0:
+			continue
+		if (s.p as Vector2).distance_to(Vector2(o.p) - Vector2(0, float(o.get("cy", 30.0)))) < float(o.r) * 0.6 + 18.0:
+			s.t = 0.0
+			_themed_mad_strike(shooter, o, false)
+			return true
+	return false

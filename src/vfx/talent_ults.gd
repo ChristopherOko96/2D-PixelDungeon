@@ -13,9 +13,19 @@ extends RefCounted
 ## outline or underlay, lit from the upper left, thinning by the ordered dither,
 ## no white-hot cores. Floor parts leave the hero's figure free. The nova ring,
 ## the bloom, the shake and the hitstop are the host's. Presentation only.
+## The Frost- and Leerenmagier's ultimates speak their element's language
+## (docs/ZAUBER-SPRACHE.de.md §4b, §4c; 2026-10-31): Gletschergrab's call is a
+## crystal bursting in the hand, its block ice spires breaking out of the
+## floor in waves over a Glatteis pool (glacier_field), Eissturz its shatter;
+## Singularität's call a black core gathering motes in the hand, its collapse
+## a huge implosion (_collapse). Their values: vfx_talents.json frost, void (cfg).
 
 const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
 const Pal = preload("res://src/vfx/talent_palette.gd")
+const TalentPixels = preload("res://src/vfx/talent_pixels.gd")
+## assets/data/vfx_talents.json, set by src/vfx/talent_fx.gd (the frost and
+## void sections the mages' ultimates read; defaults without it).
+static var cfg: Dictionary = {}
 
 ## The four neighbours of a cell (outlines).
 const N4: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
@@ -60,8 +70,8 @@ static func cast(canvas: CanvasItem, talent: String, at: Vector2, body: Vector2,
 	p = clampf(p, 0.0, 1.0)
 	match talent:
 		"fire_14": _meteor_call(canvas, at, body, at + feet, r, p, stage, art, clock, seed)
-		"frost_14": _zero(canvas, at, body, r, p, stage, art, clock, seed)
-		"arcane_14": _clock_face(canvas, at, body, p, stage, art, clock)
+		"frost_14": _glacier_call(canvas, at, body, at + feet, p, stage, angle, art, clock, seed)
+		"arcane_14": _void_call(canvas, at, body, at + feet, p, stage, art, clock, seed)
 		"sniper_14": _aim(canvas, at, body, p, stage, angle, art, clock)
 		"trapper_14": _flask(canvas, at, body, p, angle, art, seed)
 		"beast_14": _howl(canvas, at, body, p, stage, art, clock, seed)
@@ -767,8 +777,11 @@ static func wave(canvas: CanvasItem, talent: String, at: Vector2, r: float, p: f
 	p = clampf(p, 0.0, 1.0)
 	match talent:
 		"fire_14": _firestorm(canvas, at, r, p, art, clock, seed)
-		"frost_14": _shatter(canvas, at, r, p, art, clock, seed)
-		"arcane_14": _rune_burst(canvas, at, r, p, art, seed)
+		"frost_14":
+			# Eissturz: the block bursts, its shards flung out, a white burst in the middle
+			_shatter(canvas, at, r, p, art, clock, seed)
+			TalentPixels.shatter(canvas, at, Vector2.ZERO, p, art, int(clampf(r / art * 0.3, 10.0, 24.0)), seed, cfg.get("frost", {}).get("shatter", {}))
+		"arcane_14": _collapse(canvas, at, r, p, stage, art, seed)
 		"berserk_14": _blood_crown(canvas, at, r, p, art, seed)
 		"guard_14": _plates_out(canvas, at, r, p, stage, art, clock, seed)
 		"blade_14": _finale(canvas, at, r, p, art, seed)
@@ -1458,3 +1471,206 @@ static func _burst_sparks(canvas: CanvasItem, c: Vector2, rad: float, cover: flo
 			if PixelPaint.shown(q, cover):
 				cells[q] = ramp[4] if j == 0 and i % 3 == 0 else ramp[3]
 	_flush_under(canvas, cells, art)
+
+# ---------- the frost and void mages' ultimates (2026-10-31) ----------
+
+## Gletschergrab's call (the Frostmagier's language, docs/ZAUBER-SPRACHE.de.md
+## §4b): frost mist creeps out over the floor round the hero's feet, a
+## crystal of ice grows upright in his raised hand (lit facet, a glint running
+## up it) and bursts at frost.glacier.throw of the cast into a white flash
+## and slivers flung along the aim `angle` (the glacier itself lands at its
+## spot: glacier_field); Ewiger Winter adds a ring of rime crystals round his
+## feet, Eissturz hairline cracks running up the crystal before it bursts
+## and a bigger burst.
+static func _glacier_call(canvas: CanvasItem, at: Vector2, body: Vector2, foot: Vector2, p: float, stage: int, angle: float, art: float, clock: float, seed: int) -> void:
+	var ice: Array = Pal.ramp("ice")
+	var hole := _hole(at, body, art)
+	var frost: Dictionary = cfg.get("frost", {})
+	var throw := float(frost.get("glacier", {}).get("throw", 0.35))
+	var cover := 1.0 - _span(p, 0.75, 1.0)
+	var mist := {}
+	var k := 0.6 * _span(p, 0.0, 0.2) * (1.0 - _span(p, 0.55, 1.0))
+	var rad := 24.0 * art * (0.5 + 0.5 * _out(_span(p, 0.0, 0.4)))
+	for i in range(36):
+		var q := PixelPaint.at(foot + Vector2.from_angle(TAU * _h(seed, 200 + i)) * rad * sqrt(_h(seed, 300 + i)) * Vector2(1.0, 0.5) + Vector2(sin(clock * 1.3 + float(i)) * 2.0 * art, 0.0), art)
+		if not hole.has_point(q) and PixelPaint.shown(q, k):
+			mist[q] = ice[4] if i % 6 == 0 else ice[3]
+	_paint(canvas, mist, art)
+	if stage >= 1:
+		var rime := {}
+		var g := _back(_span(p, 0.1, 0.25))
+		for i in range(14):
+			var b := PixelPaint.at(foot + Vector2.from_angle(TAU * float(i) / 14.0) * Vector2(20.0, 9.0) * art, art)
+			_shard(rime, b, (2.0 + float(i % 3)) * g, 1.0, 0.0, ice, cover, 0.0, i)
+		_flush(canvas, rime, art, cover > 0.5)
+	var hand := at + body + Vector2(0.0, -7.0 * art)
+	if p < throw:
+		var cells := {}
+		var grow := _out(p / throw)
+		var crack := _span(p, throw * 0.5, throw) if stage >= 2 else 0.0
+		_shard(cells, PixelPaint.at(hand, art), 10.0 * grow, 2.5 * grow, 0.0, ice, 1.0, crack, seed)
+		var q := PixelPaint.at(hand, art) + Vector2i(0, -int(fposmod(clock * 2.0, 1.0) * 10.0 * grow))
+		if cells.has(q):
+			cells[q] = TalentPixels.FROST_WHITE
+		_flush(canvas, cells, art)
+	else:
+		TalentPixels.shatter(canvas, hand + Vector2(0.0, -4.0 * art), Vector2.from_angle(angle), _span(p, throw, throw + 0.45), art, 8 + 3 * stage, seed, frost.get("shatter", {}))
+
+
+## Gletschergrab's block on the floor at `at` (hit radius `r` world px; the
+## Glatteis under it is the host's pool): ice spires burst from the floor in
+## waves from the middle out (ZERO_RINGS, the middle tallest, frost.glacier
+## wave s between the rings), each with a pop and two slivers flung off its
+## foot as it breaks through, a cluster crystal leaning off it and a glint
+## running up its ridge; Ewiger Winter adds rime crystals round the rim. In
+## the last frost.glacier.sink s the spires crack and sink by the dither (the
+## Eissturz's shatter is the closing wave). `left`/`total` the zone's time s.
+static func glacier_field(canvas: CanvasItem, at: Vector2, r: float, left: float, total: float, stage: int, art: float, clock: float, seed: int) -> void:
+	var ice: Array = Pal.ramp("ice")
+	var gl: Dictionary = cfg.get("frost", {}).get("glacier", {})
+	var age := total - left
+	var wave := float(gl.get("wave", 0.12))
+	var cover := clampf(left / maxf(0.05, float(gl.get("sink", 0.6))), 0.0, 1.0)
+	if stage >= 1:
+		var rime := {}
+		var count := maxi(12, int(TAU * r / art / 5.0))
+		var g := _back(clampf((age - wave * 3.0) / 0.15, 0.0, 1.0))
+		for i in range(count):
+			var b := PixelPaint.at(at + Vector2.from_angle(TAU * float(i) / float(count)) * r * Vector2(1.0, 0.75), art)
+			_shard(rime, b, (2.0 + float(i % 2) + _h(seed, 500 + i)) * g, 1.0, 0.0, ice, cover, 0.0, i)
+		_flush(canvas, rime, art)
+	var spikes := glacier_spires(at, r, art, seed)
+	spikes.sort_custom(func(x: Dictionary, y: Dictionary) -> bool: return float(x.pos.y) < float(y.pos.y))
+	for s: Dictionary in spikes:
+		var since := age - float(s.appear)
+		var g := _back(clampf(since / 0.1, 0.0, 1.0))
+		if g <= 0.0:
+			continue
+		var cells := {}
+		var base := PixelPaint.at(s.pos, art)
+		var side := 1 if _h(seed, int(s.id) + 91) < 0.5 else -1
+		var half := float(s.half) * minf(1.0, g * 1.4)
+		_shard(cells, base + Vector2i(side * roundi(half + 1.0), 1), float(s.h) * 0.45 * g, maxf(1.0, half * 0.6), float(s.lean) + float(side) * 2.0, ice, cover, 0.0, int(s.id))
+		_shard(cells, base, float(s.h) * g, half, float(s.lean), ice, cover, 1.0 - cover, int(s.id) + seed)
+		var j := int(fposmod(clock * 1.6 + float(s.id) * 0.3, 1.0) * float(s.h) * g)
+		var q := base + Vector2i(roundi(float(s.lean) * float(j) / maxf(1.0, float(s.h))), -j)
+		if cells.has(q):
+			cells[q] = TalentPixels.FROST_WHITE
+		var t := since / 0.18
+		# two slivers flung off its foot as it breaks through the floor (the
+		# particles' shards when the host has them: talent_fx._zone_matter)
+		if TalentPixels.paint_matter and t > 0.0 and t < 1.0:
+			for e in range(2):
+				var out: Vector2 = Vector2(s.out).rotated(0.8 if e == 0 else -0.8)
+				var fly := base + Vector2i((out * t * 6.0 + Vector2(0.0, -(4.0 * t - 4.0 * t * t) * 5.0)).round())
+				TalentPixels._sliver(cells, fly, posmod(int(t * 8.0) + e * 3, 8), 2, ice, e == 0)
+		_flush(canvas, cells, art, cover > 0.5)
+
+
+## Gletschergrab's spires of a block at `at` (hit radius `r` world px, `art`
+## the grid, `seed` the zone's id): [{pos, h, half, lean, appear (s after the
+## block lands), id, out}] ring by ring (ZERO_RINGS, frost.glacier wave s
+## apart). glacier_field draws them; src/vfx/talent_fx.gd throws the slivers
+## off their feet into the particles as each one breaks through.
+static func glacier_spires(at: Vector2, r: float, art: float, seed: int) -> Array:
+	var gl: Dictionary = cfg.get("frost", {}).get("glacier", {})
+	var wave := float(gl.get("wave", 0.12))
+	var tall := clampf(r / (art * 60.0), 0.6, 1.4) * float(gl.get("spires", 1.0))
+	var spikes: Array = []
+	for ring in range(ZERO_RINGS.size()):
+		var spec: Array = ZERO_RINGS[ring]
+		var frac := float(spec[0])
+		var n := int(spec[1])
+		for i in range(n):
+			var id := ring * 31 + i
+			var a := TAU * (float(i) + 0.37 * float(ring)) / float(n) + (_h(seed, id) - 0.5) * 0.4
+			var dir := Vector2.from_angle(a)
+			spikes.append({"pos": at + dir * r * frac * (0.92 + 0.16 * _h(seed, id + 7)) * Vector2(1.0, 0.75), "h": float(spec[2]) * tall * (0.8 + 0.4 * _h(seed, id + 13)),
+				"half": 2.5 + roundf(2.0 * _h(seed, id + 3) * (1.0 - frac * 0.5)), "lean": clampf(dir.x * 3.0, -3.0, 3.0),
+				"appear": 0.02 + wave * float(ring) + 0.04 * _h(seed, id + 17), "id": id, "out": dir})
+	return spikes
+
+
+## Singularität's call (the Leerenmagier's language, §4c): motes from all
+## round are drawn into the hero's raised hand (a wide void gather) where a
+## black core with a violet horizon forms and swells, and at void.call.throw
+## of the cast it snaps shut to a spec point (it is cast to its spot);
+## Ereignishorizont adds a dark ring round his feet closing in with motes on
+## it, Urknall a counter-turning ring of glints round the core.
+static func _void_call(canvas: CanvasItem, at: Vector2, body: Vector2, foot: Vector2, p: float, stage: int, art: float, clock: float, seed: int) -> void:
+	var vo: Array = Pal.ramp("void")
+	var hole := _hole(at, body, art)
+	var throw := float(cfg.get("void", {}).get("call", {}).get("throw", 0.4))
+	var hand := at + body + Vector2(0.0, -7.0 * art)
+	var h := PixelPaint.at(hand, art)
+	var frame := int(clock * PixelPaint.FPS)
+	if stage >= 1:
+		var k := _span(p, 0.05, throw + 0.1)
+		var ring := {}
+		var rx := (22.0 * (1.0 - _out(k)) + 3.0) * art
+		_oval(ring, foot, rx, rx * 0.45, 0.0, TAU, vo[0], art, 1.0 - _span(p, throw, throw + 0.2), 0, 0, hole)
+		var n := maxi(8, int(TAU * rx / art / 4.0))
+		for i in range(n):
+			var a := TAU * float(i) / float(n) + clock * 1.5
+			var q := PixelPaint.at(foot + Vector2(cos(a), sin(a) * 0.45) * rx, art)
+			if ring.has(q):
+				ring[q] = vo[4] if i % 3 == 0 else vo[3]
+		_flush(canvas, ring, art)
+	if p < throw:
+		TalentPixels.gather(canvas, hand, p / throw * 0.95, "void", art, 22, 22.0, 0, seed)
+	var core := 0.0
+	if p < throw:
+		core = 1.0 + 3.0 * _out(p / throw)
+	elif p < throw + 0.06:
+		core = 4.0 * (1.0 - (p - throw) / 0.06)
+	var cells := {}
+	if core >= 1.0:
+		for y in range(-int(core) - 1, int(core) + 2):
+			for x in range(-int(core) - 1, int(core) + 2):
+				var dd := Vector2(x, y).length()
+				if dd > core + 0.5:
+					continue
+				var q := h + Vector2i(x, y)
+				if dd > core - 0.8:
+					cells[q] = vo[4] if posmod(int(round(atan2(float(y), float(x)) * 3.0)) + frame, 6) == 0 else vo[3]
+				else:
+					cells[q] = TalentPixels.VOID_BLACK
+		if stage >= 2:
+			for i in range(6):
+				var a := -clock * 4.0 + TAU * float(i) / 6.0
+				cells[h + Vector2i((Vector2.from_angle(a) * (core + 3.0)).round())] = vo[4]
+	elif p < throw + 0.16:
+		cells[h] = vo[4]
+		for o: Vector2i in N4:
+			cells[h + o] = vo[4]
+			cells[h + o * 2] = vo[3]
+	_flush(canvas, cells, art)
+
+
+## Singularität's collapse (its closing wave, hit radius `r` world px): the
+## void implodes hugely (TalentPixels.implosion over void.collapse.size_share
+## of `r`: motes drawn in, a frame of void, the burst and a dark pressure
+## ring) with a tear of split space across it; Urknall adds spec-bright rays
+## bursting out to `r` after the pull.
+static func _collapse(canvas: CanvasItem, at: Vector2, r: float, p: float, stage: int, art: float, seed: int) -> void:
+	var vo: Dictionary = cfg.get("void", {})
+	var col: Dictionary = vo.get("collapse", {})
+	var spec: Dictionary = (vo.get("implode", {}) as Dictionary).duplicate()
+	spec["pull"] = float(col.get("pull", 0.3))
+	spec["motes"] = int(col.get("motes", 24))
+	var size := int(clampf(r / art * float(col.get("size_share", 0.35)), 8.0, float(col.get("max", 30))))
+	TalentPixels.implosion(canvas, at, p, art, size, seed, spec, 2)
+	var pull := float(spec.pull)
+	if stage >= 2 and p > pull:
+		var t := (p - pull) / (1.0 - pull)
+		var ramp: Array = Pal.ramp("void")
+		var rays := {}
+		var c := PixelPaint.at(at, art)
+		for i in range(12):
+			var dir := Vector2.from_angle(TAU * float(i) / 12.0 + _h(seed, i) * 0.3)
+			var head := r / art * _out(t / 0.6) * (0.7 + 0.3 * _h(seed, i + 20))
+			for j in range(4):
+				var q := c + Vector2i((dir * (head - float(j)) * Vector2(1.0, 0.75)).round())
+				if PixelPaint.shown(q, 1.0 - t):
+					rays[q] = ramp[4] if j == 0 else ramp[3]
+		_flush(canvas, rays, art)

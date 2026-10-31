@@ -60,5 +60,20 @@
     "pyro": "res://assets/sprites/companions/pyro_idle_f0.png",
     "water_elemental": "res://assets/sprites/companions/water_elemental_idle_f0.png",
     "bone_warrior": "res://assets/sprites/companions/bone_warrior_idle_f0.png"
+  },
+  "gefuege": {
+    "_note": "The Leerenmagier's Arkanes Gefüge beside his mana (src/ui/talent_bar.gd draw_gefuege), screen px: radius of the orb, cell the pixel size of its art (one unit = one cell), gap between the mana bar's end and the orb, lift of its centre from the bar's top, glow dither coverage of the violet rim glow, pulse_time s of the pulse when units enter, burst_time s and burst_speed px/s of the burst when it empties, orbit_speed rad/s of the outer orbit (inner ones faster), squash of the orbits, core cells of the tiny core. tone: the ramp step (src/vfx/talent_palette.gd, 0 deep .. 4 spec; default 3 lite) a unit of that element is drawn in.",
+    "radius": 17,
+    "cell": 2,
+    "gap": 6,
+    "lift": -4,
+    "glow": 0.4,
+    "pulse_time": 0.35,
+    "burst_time": 0.6,
+    "burst_speed": 60,
+    "orbit_speed": 1.4,
+    "squash": 0.82,
+    "core": 2,
+    "tone": {"lava": 2, "water": 2, "ice": 4}
   }
 }

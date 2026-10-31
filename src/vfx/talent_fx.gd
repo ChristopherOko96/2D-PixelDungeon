@@ -40,6 +40,54 @@ extends RefCounted
 ## cools, the Phönixschritt a fire trail with ember wings. Every fire residue
 ## is a real pool (the host's element physics apply to what stands in it);
 ## values in vfx_talents.json "fire".
+## The Frostmagier's language (§4b): the Frostlanze a faceted lance with a
+## glinting tip and a frost-mist trail, every ice impact a shatter in pushes
+## (TalentPixels.shatter: white flash, a star of ice, cold pressure rings,
+## shards flung out that lie as rime; in the particles shards that skid, rime
+## growing and liquids freezing) leaving an ice pool; the Blizzard snow and
+## slivers in a swirl over frost pools that spread, rime and frost gas, melting
+## to water at its end; the Frostsprung an ice trail with rime crystals; the
+## Kristallschild a crystal dome that cracks where it is hit and shatters at
+## its end; Gletschergrab ice spires breaking out of the floor in waves over
+## Glatteis. The Leerenmagier's language (§4c): a dark core whose trail is
+## drawn in towards it, every void impact an implosion (the pull first, then
+## the burst; TalentPixels.implosion, particles.implode) leaving a void stain;
+## the Leerenriss a tear that opens into a ring; the Raumsprung a fold in
+## space at both ends; Magisches Echo a darker ghost of the last spell; the
+## Manaschild a dark dome with motes drifting in, rippling inwards; the
+## Singularität a black core with an accretion ring and a well in the
+## particles (the host swallows the puddles and the gas). Values in
+## vfx_talents.json "frost" and "void".
+## The Leerenmagier's Arkanes Gefüge (§4c, the pocket of swallowed elements;
+## the gauge is src/ui/talent_bar.gd's): a "swallow" streams the eaten matter
+## from the spot into his mouth as motes in its colours (TalentPixels.stream;
+## the particles' well sucks the dust there); an "eject" bursts the units out
+## as comet pixels on a spiral (TalentPixels.comets) with their matter in the
+## particles (the pools are the host's); the Singularität's caught enemies
+## hang on dark violet tethers with their essence flowing into the core
+## (TalentPixels.tether); a "splat" (an enemy flung against a wall at the
+## Urknall) bursts in its material (particles.splat_burst, vfx_gore.json
+## "splat") and a rigged one comes apart along the rebound (rigs.fling_near).
+## Values in vfx_talents.json "void" (swallow, eject, tether, splat).
+## Matter, not paint (review 2026-10-31, BEFUND.md 5, 7, 9, 10): with the
+## host's particles every flying bit of the mages' effects is a particle that
+## falls, bounces, slides and lies (TalentPixels.paint_matter off: the
+## painters keep the shapes). A nova's rim throws its element's matter when
+## the front gets there (_rim), the boom's sparks are ember_sparks, the
+## shatter's shards and mist the particles' shards and frost, the Leerenriss
+## and the swallow pull motes in through a well, the caught enemies' essence
+## drifts into the Singularität's well, the Blizzard's flakes fall and lie as
+## frost in a wind (particles.snow), the crater's tongues are rising flames
+## and embers, the Glutkette's sparks fly when each link strikes, the
+## Gletschergrab's slivers break off each spire's foot as it comes up. The
+## Urknall's Gefuege units are comets (particles.comet) that fly to the spots
+## the host lands them on and splash there into the pool layer. The glow is
+## tight and short (vfx_talents.json glow: per tier its time, radius and
+## alpha), the white flash a hard pixel frame. The small talents weigh a
+## little (talent_events: Raumsprung, Leerenschild, Kristallschild): the
+## Raumsprung kicks the floor and flings motes where he lands, the shields
+## draw their matter in as they form, chip where they are struck and burst
+## into shards or motes when they go (void.fold, void.shield, frost.shield).
 ## Presentation only.
 
 const FxSprites = preload("res://src/vfx/fx_sprites.gd")
@@ -71,11 +119,19 @@ const INK := Color("1a1414")
 const LOOKS := ["flames", "firewall", "lava", "ice", "arcane", "snow", "arrows", "crater", "souls", "plague"]
 ## How long a shot's painted impact plays (s).
 const IMPACT_TIME := 0.45
+## The gore table (assets/data/vfx_gore.json): an enemy kind's material and the splat classes.
+const GORE_PATH := "res://assets/data/vfx_gore.json"
+## The gore table, read on first use.
+static var _gore: Dictionary = {}
 
 var sprites := FxSprites.new()
 ## The companions as part rigs (src/vfx/companion_rigs.gd); `rigs` is the view's rig renderer (debris, clocks), set by the host.
 var companion_rigs := CompanionRigs.new()
 var rigs: RefCounted = null
+## The host's lookup of an enemy by id (the Singularität's caught list): a
+## Dictionary with x, y (and kind) or a Vector2; unset, an entry's own x and
+## y, the zone's caught_at or the view's rigs stand in.
+var enemy_at: Callable = Callable()
 ## The poison zones (Todeszone), burning ground (Feuersturm) and the residue
 ## the talents leave as physics pools that run out and stop at the walls
 ## (src/vfx/pool_paint.gd, set by the host with its art pixel); null draws
@@ -141,11 +197,35 @@ var _flask_texture: Texture2D
 var _domes: Dictionary = {}
 ## A dome for one-off flashes (a guard), never dented.
 var _flash_dome: RefCounted
+## The element each hero's shield dome is drawn in, from the cast that raised
+## it (Kristallschild ice, Manaschild void; the snapshot's shield has no talent): owner -> element.
+var _shield_el: Dictionary = {}
+## Where each hero's dome stood last and in what element (it breaks there when it goes): owner -> {at, element}.
+var _dome_last: Dictionary = {}
+## The heroes' last casts (Magisches Echo shows a ghost of the one it repeats): [{at, talent, angle, t}].
+var _last_casts: Array = []
+## The bought stage of each ultimate as last cast (its zone does not carry it): talent -> stage.
+var _stages: Dictionary = {}
+## When each zone was first seen and how long it had then (its age; the
+## snapshot's total is its time left for zones without one): id -> [clock, left].
+var _zone_born: Dictionary = {}
+## Client-side impacts a moment later (a companion's lance landing): [{t, at, dir, size}].
+var _later: Array = []
+## Once-per-tick keys of the zones' lasting matter (Blizzard rime and frost gas): key -> when.
+var _ticked: Dictionary = {}
+## Particle matter that comes a moment after its event's first sight: a
+## nova's rim debris when the front gets there, a chain link's sparks when it
+## strikes, Gletschergrab's slivers as each spire breaks through, the
+## Urknall's comets in their launch order: {t, kind, ...} (_run_deferred).
+var _deferred: Array = []
+## Keys done once (a Gletschergrab block's spires thrown): key -> when.
+var _once: Dictionary = {}
 
 
 func _init() -> void:
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(DATA_PATH)) if FileAccess.file_exists(DATA_PATH) else null
 	cfg = parsed if parsed is Dictionary else {}
+	TalentUlts.cfg = cfg
 	_flash_dome = TalentDome.new(cfg.get("dome", {}))
 	_flash_dome.size = 0
 
@@ -224,9 +304,17 @@ func _cast_tier(talent: String, ult: bool) -> String:
 ## Floor layer: zones, residue and traps (under the actors).
 func draw_ground(canvas: CanvasItem, state: Dictionary, clock: float) -> void:
 	_clock = clock
+	# with particles the painters keep the shapes, the matter flies here
+	TalentPixels.paint_matter = particles == null
 	PerfMarks.begin()
 	_settle_shots(clock, state)
 	_observe(state, clock)
+	for i in range(_later.size() - 1, -1, -1):
+		var later: Dictionary = _later[i]
+		if float(later.t) > clock: continue
+		_later.remove_at(i)
+		_shatter_at(later.at, later.dir, int(later.size), clock, 0.0)
+	_run_deferred(clock)
 	PerfMarks.add("tg.observe")
 	var zones: Array = state.get("zones", [])
 	if pools != null:
@@ -236,6 +324,7 @@ func draw_ground(canvas: CanvasItem, state: Dictionary, clock: float) -> void:
 			var p := clampf(1.0 - float(zone.get("time", length)) / length, 0.0, 1.0)
 			if _own_look(zone):
 				_fire_look_pools(entries, zone, p, length, clock)
+				_mage_look_pools(entries, zone, clock)
 				continue
 			entries.append({"id": int(zone.get("id", 0)), "k": "pool", "st": "fire" if str(zone.get("status", "")) == "burn" else "poison",
 				"x": float(zone.x), "y": float(zone.y), "r": float(zone.r), "p": p, "L": length})
@@ -256,6 +345,8 @@ func draw_ground(canvas: CanvasItem, state: Dictionary, clock: float) -> void:
 				"p": clampf(1.0 - float(zone.get("time", length)) / length, 0.0, 1.0), "L": length, "d": 1.0})
 		gas.sync(clouds, clock, "talent")
 	PerfMarks.add("tg.gas_sync")
+	for zone: Dictionary in zones:
+		_zone_matter(zone, clock)
 	for drawing: Dictionary in state.get("drawings", []):
 		_draw_line_preview(canvas, drawing, clock)
 	_draw_looks(canvas, zones, clock)
@@ -315,6 +406,150 @@ func _fire_look_pools(entries: Array, zone: Dictionary, p: float, length: float,
 		entries.append({"id": -(id * 64 + 1), "k": "pool", "st": "lava", "x": float(zone.x), "y": float(zone.y), "r": float(zone.r) * float(me.get("lava_share", 0.5)), "p": p, "L": length})
 		var at := Vector2(float(zone.x), float(zone.y))
 		_smoke_along([[at.x - float(zone.r) * 0.3, at.y], [at.x + float(zone.r) * 0.3, at.y]], 1, float(me.get("smoke_every", 1.2)), float(zone.r) * 0.35, id, clock, 0.0)
+
+
+## The frost and void mages' zones as real pools (their element's physics
+## apply): the Blizzard's frost pools spreading as it blows (one more every
+## frost.blizzard.grow s, round its middle), Gletschergrab's block on a big
+## Glatteis pool (frost.glacier.pool_share of its radius). The Singularität
+## leaves none: it swallows (the host drains the puddles round it).
+func _mage_look_pools(entries: Array, zone: Dictionary, clock: float) -> void:
+	var look := str(zone.get("look", ""))
+	if look != "snow" and look != "ice": return
+	var id := int(zone.get("id", 0))
+	var at := Vector2(float(zone.x), float(zone.y))
+	var r := float(zone.r)
+	var life := _zone_life(zone, clock)
+	var left := maxf(0.3, life.y - life.x)
+	if look == "snow":
+		var bz: Dictionary = cfg.get("frost", {}).get("blizzard", {})
+		var n := int(bz.get("pools", 6))
+		var grow := float(bz.get("grow", 0.6))
+		for j in range(n):
+			if life.x < float(j) * grow: break
+			var spot := at if j == 0 else at + Vector2.from_angle(float(j) * 2.39996) * r * 0.55 * sqrt(float(j) / float(n)) * Vector2(1.0, 0.75)
+			entries.append({"id": -(id * 64 + j + 1), "k": "pool", "st": str(bz.get("st", "frost")), "x": spot.x, "y": spot.y,
+				"r": r * float(bz.get("pool_share", 0.3)) * (1.0 if j == 0 else 0.75), "p": 0.0, "L": left})
+	else:
+		var gl: Dictionary = cfg.get("frost", {}).get("glacier", {})
+		entries.append({"id": -(id * 64 + 1), "k": "pool", "st": "ice", "x": at.x, "y": at.y, "r": r * float(gl.get("pool_share", 0.75)), "p": 0.0, "L": left})
+
+
+## How long zone `zone` has lain and how long it lasts in all, s (x, y): from
+## when this client first saw it, so a zone without a total still ages.
+func _zone_life(zone: Dictionary, clock: float) -> Vector2:
+	var id := int(zone.get("id", 0))
+	var left := float(zone.get("time", 1.0))
+	if not _zone_born.has(id): _zone_born[id] = [clock, maxf(left, float(zone.get("total", left)))]
+	var born: Array = _zone_born[id]
+	return Vector2(clock - float(born[0]), maxf(0.3, float(born[1])))
+
+
+## True once every `every` s for `key` (the zones' lasting matter).
+func _tick(key: String, every: float, clock: float) -> bool:
+	var full := "%s:%d" % [key, int(clock / maxf(0.1, every))]
+	if _ticked.has(full): return false
+	_ticked[full] = clock
+	if _ticked.size() > 128:
+		for k: String in _ticked.keys():
+			if float(_ticked[k]) < clock - 10.0: _ticked.erase(k)
+	return true
+
+
+## The lasting matter of the mages' zones, every frame: the Blizzard's rime
+## growing over the floor at a new spot every frost.blizzard.rime_every s and
+## its frost mist in the gas layer every mist_every s; the Singularität's well
+## in the particles (the floor's dust, loose pixels and embers swirl in and
+## are swallowed; the puddles and the gas are the host's).
+func _zone_matter(zone: Dictionary, clock: float) -> void:
+	var look := str(zone.get("look", ""))
+	if not look in ["snow", "arcane", "crater", "ice"]: return
+	var id := int(zone.get("id", 0))
+	var at := Vector2(float(zone.x), float(zone.y))
+	var r := float(zone.r)
+	var s := to_particles
+	if look == "crater":
+		_crater_matter(zone, id, at, r, clock)
+		return
+	if look == "ice":
+		_glacier_matter(zone, id, at, r, clock)
+		return
+	if look == "snow":
+		var bz: Dictionary = cfg.get("frost", {}).get("blizzard", {})
+		_snow_matter(zone, bz, id, at, r, clock)
+		var every := float(bz.get("rime_every", 1.2))
+		if particles != null and _tick("bz_rime:%d" % id, every, clock):
+			var n := int(clock / maxf(0.1, every))
+			var spot := at + Vector2.from_angle(_h(id * 31 + n) * TAU) * r * 0.6 * _h(id * 17 + n * 3) * Vector2(1.0, 0.75)
+			particles.rime_grow(spot * s, 3, r * s * float(bz.get("rime_reach", 0.35)))
+			particles.frost(spot * s, r * s * 0.4, 10, Pal.ramp("ice")[3])
+			particles.freeze_liquids(spot * s, r * s * 0.5)
+		var mist := float(bz.get("mist_every", 1.0))
+		if gas != null and _tick("bz_mist:%d" % id, mist, clock):
+			gas.emit("talent_frost:%d:%d" % [id, int(clock / maxf(0.1, mist))], "frost", at, r * float(bz.get("mist_share", 0.6)), mist * 1.6, clock, Vector2.ZERO, float(bz.get("mist_dense", 0.5)))
+	elif particles != null:
+		var sg: Dictionary = cfg.get("void", {}).get("singularity", {})
+		particles.well("talent_sing:%d" % id, at * s, r * s * float(sg.get("reach", 1.2)), float(sg.get("pull", 260)), float(sg.get("swirl", 180)),
+			r * s * float(sg.get("core", 0.12)), 0.2, float(sg.get("mote_rate", 30)), [])
+
+
+## The Blizzard's snow: flakes fall all over it (frost.blizzard flake_rate per
+## s at its strength, every snow_every s) driven round by a wind (a well that
+## leaves the floor alone: wind_spin round, wind_pull in) and lie as frost
+## that melts, ice slivers whirled along now and then (sliver_every s) that
+## skid and lie.
+func _snow_matter(zone: Dictionary, bz: Dictionary, id: int, at: Vector2, r: float, clock: float) -> void:
+	if particles == null: return
+	var s := to_particles
+	var life := _zone_life(zone, clock)
+	var k := clampf(life.x / 0.5, 0.0, 1.0) * clampf((life.y - life.x) / 0.6, 0.0, 1.0)
+	if k <= 0.0: return
+	var spin := float(bz.get("flake_spin", 70))
+	particles.well("bz_wind:%d" % id, at * s, r * s * 1.1, float(bz.get("wind_pull", 10)), float(bz.get("wind_spin", 40)), 1.0, 0.2, 0.0, [], false)
+	var every := float(bz.get("snow_every", 0.05))
+	if _tick("bz_snow:%d" % id, every, clock):
+		particles.snow(at * s, r * s, int(round(float(bz.get("flake_rate", 60)) * every * k)), spin * s)
+	if _tick("bz_sliver:%d" % id, float(bz.get("sliver_every", 0.25)), clock):
+		var n := int(clock / maxf(0.05, float(bz.get("sliver_every", 0.25))))
+		var off := Vector2.from_angle(_h(id * 11 + n) * TAU) * r * 0.7 * Vector2(1.0, 0.75)
+		particles.shatter((at + off) * s, 1, off.orthogonal().normalized(), float(bz.get("sliver_speed", 140)), [], 2, _u(10.0) * s)
+
+
+## The meteor's crater cooling: flames licking up at a spot of it every
+## fire.meteor flame_every s (buoyant, they run down the fire ramp and smoke)
+## and embers rising off it now and then (ember_chance), fewer as it cools.
+func _crater_matter(zone: Dictionary, id: int, at: Vector2, r: float, clock: float) -> void:
+	if particles == null: return
+	var me: Dictionary = cfg.get("fire", {}).get("meteor", {})
+	var left := float(zone.get("time", 1.0))
+	var total := maxf(0.3, float(zone.get("total", left)))
+	var k := clampf(left / 1.0, 0.0, 1.0) * clampf((total - left) / 0.2, 0.0, 1.0)
+	var every := float(me.get("flame_every", 0.08))
+	if k <= 0.0 or not _tick("crater:%d" % id, every, clock): return
+	var s := to_particles
+	var n := int(clock / maxf(0.02, every))
+	var spot := at + Vector2.from_angle(_h(id * 13 + n) * TAU) * r * (0.15 + 0.5 * _h(id * 7 + n * 3)) * Vector2(1.0, 0.75)
+	particles.flames(spot * s, maxi(1, int(round(float(me.get("flames", 2)) * k))), [], _u(3.0) * s, 0.0)
+	if _h(id + n * 5) < k * float(me.get("ember_chance", 0.6)):
+		var ember: Dictionary = particles.emit(spot * s, Vector2((_h(n * 3 + id) - 0.5) * 30.0, 0.0), Pal.ramp_hot("fire")[1], 1.2, "ember", 2.0, 2.0, 40.0, 0.8)
+		ember.seed = n % 997
+
+
+## Gletschergrab's block comes up: as each spire breaks through the floor
+## (TalentUlts.glacier_spires, the same as drawn) two slivers fly off its
+## foot into the particles (frost.glacier slivers, sliver_speed) and frost
+## puffs there; queued once per block.
+func _glacier_matter(zone: Dictionary, id: int, at: Vector2, r: float, clock: float) -> void:
+	if particles == null or _once.has("spires:%d" % id): return
+	_once["spires:%d" % id] = clock
+	if _once.size() > 64:
+		for key: String in _once.keys():
+			if float(_once[key]) < clock - 30.0: _once.erase(key)
+	var age := _zone_life(zone, clock).x
+	for spire: Dictionary in TalentUlts.glacier_spires(at, r, art, id):
+		var when := clock + float(spire.appear) - age
+		if when < clock - 0.1: continue
+		_defer(maxf(clock, when), {"kind": "spire", "at": spire.pos, "out": spire.out})
 
 
 ## Smoke puffs rising off burning ground: a cloud of the gas layer (material
@@ -441,8 +676,21 @@ func draw_bullet(canvas: CanvasItem, bullet: Dictionary, clock: float) -> bool:
 		TalentUlts.arrow(canvas, at, aim, int(bullet.get("stage", 0)), art, clock)
 		return true
 	if not SHOT_STYLES.has(style): return false
-	TalentPixels.shot(canvas, at, aim, element, art, int(tier.get("core", 1)), int(tier.get("trail", 5)), clock, talent.hash() & 0xffff, _fire_shot(tier_name, style))
+	TalentPixels.shot(canvas, at, aim, element, art, int(tier.get("core", 1)), int(tier.get("trail", 5)), clock, talent.hash() & 0xffff, _shot_look(tier_name, style, element, talent))
 	return true
+
+
+## The look a shot carries beyond its element: the Frostlanze's lance and
+## frost mist (vfx_talents.json frost.lance), the void's drawn-in core with the
+## Leerenlanze's tear (void.lance.crack per talent), else fire's (_fire_shot).
+func _shot_look(tier: String, style: String, element: String, talent: String) -> Dictionary:
+	var res := Pal.resolve(element)
+	if style == "frost_lance" and res == "ice":
+		var fl: Dictionary = cfg.get("frost", {}).get("lance", {})
+		return {"style": "lance", "length": int(fl.get("length", {}).get(tier, 5)), "mist": float(fl.get("mist", 0.8))}
+	if style == "arcane" and res == "void":
+		return {"style": "void", "crack": int(cfg.get("void", {}).get("lance", {}).get("crack", {}).get(talent, 0))}
+	return _fire_shot(tier, style)
 
 
 ## What a fire shot of `tier` carries beyond its element (vfx_talents.json
@@ -510,15 +758,24 @@ func _impact(at: Vector2, v: Vector2, element: String, tier_name: String, clock:
 	var dir := v.normalized() if v.length() > 0.1 else Vector2.RIGHT
 	var size := int(tier.get("burst", 6))
 	var key := _residue_key(talent, element)
-	if Pal.resolve(element) == "fire":
+	var res := Pal.resolve(element)
+	var k := float(TIER_K.get(tier_name, 0.0))
+	if res == "fire":
 		# fire: the fat explosion (TalentPixels.boom) and its bouncing sparks
-		_boom(at, dir, size, clock, float(TIER_K.get(tier_name, 0.0)))
+		_boom(at, dir, size, clock, k)
 		if key == "lava" and particles != null:
 			# the spear cracks the floor where it strikes
 			particles.floor_crack(at * to_particles, _u(float(size) * 2.4) * to_particles, int(cfg.get("fire", {}).get("spear", {}).get("crack", 3)))
+	elif res == "ice":
+		# ice: the shatter in pushes, shards that skid, rime, liquids freezing
+		_shatter_at(at, dir, size, clock, k)
+	elif res == "void":
+		# the void: the implosion (the pull first, then the burst)
+		_implode_at(at, dir, size, clock, k, int(cfg.get("void", {}).get("lance", {}).get("crack", {}).get(talent, 0)))
 	else:
 		_impacts.append({"at": at, "dir": dir, "element": element, "size": size, "t0": clock, "seed": _local_id(), "kind": "", "T": IMPACT_TIME})
-	_matter(at, dir, element, int(tier.get("parts", 8)), int(tier.get("crack", 0)), _u(float(size) * 2.0))
+	if res != "ice" and res != "void":
+		_matter(at, dir, element, int(tier.get("parts", 8)), int(tier.get("crack", 0)), _u(float(size) * 2.0))
 	var spec: Dictionary = cfg.get("residue", {}).get(key, {})
 	if not spec.is_empty():
 		var cells: Array = spec.get("cells", [4, 9])
@@ -527,7 +784,7 @@ func _impact(at: Vector2, v: Vector2, element: String, tier_name: String, clock:
 	if feel != "":
 		var weight: Dictionary = cfg.get("tiers", {}).get(feel, {})
 		_pending_feel.append({"owner": -1, "trauma": float(weight.get("trauma", 0.0)), "shake_px": float(weight.get("shake_px", 0.0)), "hitstop": float(weight.get("hitstop", 0.0))})
-		_flashes.append({"at": at + body, "col": Pal.ramp(element)[3], "t0": clock, "T": float(weight.get("flash", 0.12)), "r": float(weight.get("flash_r", 16.0)) * art, "strength": 0.5})
+		_flashes.append({"at": at + body, "col": Pal.ramp(element)[3], "t0": clock, "T": float(weight.get("flash", 0.12)), "r": float(weight.get("flash_r", 16.0)) * art, "strength": 0.5, "tier": feel})
 
 
 ## The residue key of a talent's impact: its own (vfx_talents.json
@@ -549,6 +806,41 @@ func _boom(at: Vector2, dir: Vector2, size: int, clock: float, k: float) -> void
 	var sparks: Array = spec.get("sparks", [8, 22])
 	particles.ember_sparks(p, int(lerpf(float(sparks[0]), float(sparks[1]), clampf(k, 0.0, 1.0))), dir, 0.8 + 0.5 * k)
 	particles.scorch_star(p, float(size) * art * s * float(spec.get("scorch", 0.7)))
+
+
+## A frost impact at `at` (its floor point) reaching `size` art cells: the
+## painted shatter in pushes and, in the particles, shards that skid and lie
+## as frost, rime growing out of the spot, frost flecks and the liquids
+## there freezing (vfx_talents.json frost.shatter: parts, rime, rime_reach,
+## freeze); `k` 0..1 the weight between the smallest and the biggest.
+func _shatter_at(at: Vector2, dir: Vector2, size: int, clock: float, k: float) -> void:
+	var spec: Dictionary = cfg.get("frost", {}).get("shatter", {})
+	_impacts.append({"at": at, "dir": dir, "element": "ice", "size": size, "t0": clock, "seed": _local_id(), "kind": "shatter", "T": float(spec.get("time", 0.7))})
+	if particles == null: return
+	var s := to_particles
+	var p := at * s
+	var r := float(size) * art * s
+	var parts: Array = spec.get("parts", [8, 20])
+	particles.shatter(p, int(lerpf(float(parts[0]), float(parts[1]), k)), dir * 0.5, 150.0 + 90.0 * k, [], 3)
+	var rime: Array = spec.get("rime", [2, 5])
+	particles.rime_grow(p, int(lerpf(float(rime[0]), float(rime[1]), k)), r * float(spec.get("rime_reach", 1.0)))
+	particles.frost(p, r * 0.6, 6 + int(k * 10.0), Pal.ramp("ice")[3])
+	particles.freeze_liquids(p, r * float(spec.get("freeze", 1.4)))
+
+
+## A void impact at `at` reaching `size` art cells: the painted implosion
+## (the pull first, then the burst; `crack` > 0 a tear across it) and, in the
+## particles, the implosion that drags dust and loose pixels in before it
+## throws them out, the Leerenlanze's floor crack (vfx_talents.json
+## void.implode: time, pull, motes, reach); `k` 0..1 the weight.
+func _implode_at(at: Vector2, dir: Vector2, size: int, clock: float, k: float, crack := 0) -> void:
+	var spec: Dictionary = cfg.get("void", {}).get("implode", {})
+	_impacts.append({"at": at, "dir": dir, "element": "void", "size": size, "t0": clock, "seed": _local_id(), "kind": "implode", "T": float(spec.get("time", 0.6)), "crack": crack})
+	if particles == null: return
+	var p := at * to_particles
+	var r := float(size) * art * to_particles
+	particles.implode(p, r * float(spec.get("reach", 1.4)) * (1.0 + 0.3 * k), [])
+	if crack > 0: particles.floor_crack(p, r * 1.4, 2 + crack)
 
 
 ## The matter of `element` bursting out of a hit at `at` along `dir` into the
@@ -656,6 +948,7 @@ func _residue_entries(clock: float) -> Array:
 ## (span), and the shots' impacts. `clock` defaults to the one of the last draw_ground.
 func draw_events(canvas: CanvasItem, state: Dictionary, clock: float = -1.0) -> void:
 	if clock >= 0.0: _clock = clock
+	TalentPixels.paint_matter = particles == null
 	PerfMarks.begin()
 	for guard: Dictionary in state.get("guards", []):
 		_draw_guard(canvas, guard)
@@ -665,10 +958,11 @@ func draw_events(canvas: CanvasItem, state: Dictionary, clock: float = -1.0) -> 
 		if k >= 1.0 or k < 0.0:
 			_impacts.remove_at(i)
 			continue
-		if str(hit.get("kind", "")) == "boom":
-			TalentPixels.boom(canvas, hit.at, hit.dir, k, art, int(hit.size), int(hit.seed), cfg.get("fire", {}).get("boom", {}))
-		else:
-			TalentPixels.impact(canvas, hit.at, hit.dir, k, str(hit.element), art, int(hit.size), int(hit.seed))
+		match str(hit.get("kind", "")):
+			"boom": TalentPixels.boom(canvas, hit.at, hit.dir, k, art, int(hit.size), int(hit.seed), cfg.get("fire", {}).get("boom", {}))
+			"shatter": TalentPixels.shatter(canvas, hit.at, hit.dir, k, art, int(hit.size), int(hit.seed), cfg.get("frost", {}).get("shatter", {}))
+			"implode": TalentPixels.implosion(canvas, hit.at, k, art, int(hit.size), int(hit.seed), cfg.get("void", {}).get("implode", {}), int(hit.get("crack", 0)))
+			_: TalentPixels.impact(canvas, hit.at, hit.dir, k, str(hit.element), art, int(hit.size), int(hit.seed))
 	# chain targets burning (TalentPixels.flames round them for fire.chain.burn s)
 	for i in range(_burning.size() - 1, -1, -1):
 		var burn: Dictionary = _burning[i]
@@ -681,7 +975,7 @@ func draw_events(canvas: CanvasItem, state: Dictionary, clock: float = -1.0) -> 
 	for event: Dictionary in state.get("events", []):
 		var at := Vector2(float(event.x), float(event.y))
 		var span := maxf(0.05, float(event.get("span", 0.5)))
-		var p := 1.0 - clampf(float(event.life) / span, 0.0, 1.0)
+		var p := 1.0 - clampf(float(event.get("life", 0.0)) / span, 0.0, 1.0)
 		var fade := 1.0 - smoothstep(0.55, 1.0, p)
 		var id := int(event.get("id", 0))
 		var talent := str(event.get("talent", ""))
@@ -691,8 +985,10 @@ func draw_events(canvas: CanvasItem, state: Dictionary, clock: float = -1.0) -> 
 		var r := float(event.get("r", 0.0))
 		match str(event.kind):
 			"nova":
-				# the exact hit radius as a shock ring; an ultimate's is heavier
-				TalentPixels.nova(canvas, at, r, p, element, art, id, ult)
+				# the exact hit radius as a shock ring; an ultimate's is heavier;
+				# the Leerenriss tears the floor open and ends in its pressure ring
+				if talent == "arcane_7": TalentPixels.rift(canvas, at, r, p, art, id, cfg.get("void", {}).get("rift", {}))
+				else: TalentPixels.nova(canvas, at, r, p, element, art, id, ult)
 				if bool(event.get("wave", false)):
 					TalentUlts.wave(canvas, talent, at, r, p, stage, art, _clock, id)
 				elif talent == "berserk_3" and sprites.has("whirl"):
@@ -703,7 +999,11 @@ func draw_events(canvas: CanvasItem, state: Dictionary, clock: float = -1.0) -> 
 			"blink", "dash", "leap":
 				var to := Vector2(float(event.get("tx", at.x)), float(event.get("ty", at.y)))
 				var kind := str(event.kind)
-				TalentPixels.trail(canvas, at, to, p, element if kind == "blink" else ("beast" if kind == "leap" else element), art, id)
+				if kind == "blink" and (talent == "frost_11" or talent == "arcane_5"):
+					_mage_blink(canvas, talent, at, to, p, id)
+					kind = ""
+				else:
+					TalentPixels.trail(canvas, at, to, p, element if kind == "blink" else ("beast" if kind == "leap" else element), art, id)
 				match kind:
 					"blink":
 						TalentPixels.burst(canvas, at + body, 7, p, element, art, id)
@@ -733,7 +1033,19 @@ func draw_events(canvas: CanvasItem, state: Dictionary, clock: float = -1.0) -> 
 			"trap":
 				_sprung_trap(canvas, event, at, r, p, id)
 			"echo":
-				TalentPixels.nova(canvas, at, maxf(r, _u(26.0)), p, "void", art, id)
+				_echo(canvas, at, r, p, id)
+			"swallow":
+				# the Arkanes Gefüge eats: the matter streams from the spot into his mouth
+				var sw: Dictionary = cfg.get("void", {}).get("swallow", {})
+				var mouth := Vector2(float(event.get("tx", at.x)), float(event.get("ty", at.y))) + body * float(sw.get("mouth_lift", 1.0))
+				TalentPixels.stream(canvas, at, mouth, maxf(r, _u(8.0)), _unit_list(event.get("els", {}), int(sw.get("per_unit", 2)), int(sw.get("cap", 32))), p, art, id, sw)
+			"eject":
+				# the Urknall empties the pocket: comet pixels on a spiral
+				var ej: Dictionary = cfg.get("void", {}).get("eject", {})
+				TalentPixels.comets(canvas, at, maxf(r, _u(30.0)), _unit_list(event.get("els", []), int(ej.get("per_unit", 1)), int(ej.get("cap", 40))), p, art, id, ej)
+			"splat":
+				# an enemy flung against a wall: the smack of its matter where it struck
+				TalentPixels.burst(canvas, at, int(cfg.get("void", {}).get("splat", {}).get("smack", 9)), clampf(p * 2.0, 0.0, 1.0), _splat_element(str(event.get("material", "flesh"))), art, id)
 			"buff":
 				_buff(canvas, str(event.get("buff", "")), at, p, id)
 			"cast":
@@ -741,13 +1053,51 @@ func draw_events(canvas: CanvasItem, state: Dictionary, clock: float = -1.0) -> 
 				if ult:
 					# the ultimate's own form and its stage layers (src/vfx/talent_ults.gd)
 					TalentUlts.cast(canvas, talent, at, body, r, p, stage, float(event.get("angle", 0.0)), art, _clock, id, feet)
-				elif talent == "frost_5":
+				elif talent == "frost_5" and particles == null:
 					# Kristallschild: the lasting dome is its aura; here the frost it forms from
+					# (with particles: chips crystallising out of the air, _shield_cast_physics)
 					TalentPixels.burst(canvas, at + body, 8, p, "ice", art, id)
 				_gather(canvas, at, float(event.get("angle", 0.0)), p, span, element, tier, id)
 			_:
 				_extra_event(canvas, event, at, p, 1.0 - p)
 		PerfMarks.add("te." + str(event.kind) + ("-ult" if ult else ""))
+
+
+## The mages' blinks in their element's language: the Frostsprung an ice
+## trail with rime crystals along the path and shards bursting at both ends
+## (frost.sprung), the Raumsprung a fold in space at both ends (a dark ring
+## collapsing where he leaves, one opening where he lands) over a dotted void
+## trail (void.fold).
+func _mage_blink(canvas: CanvasItem, talent: String, at: Vector2, to: Vector2, p: float, id: int) -> void:
+	if talent == "frost_11":
+		var fs: Dictionary = cfg.get("frost", {}).get("sprung", {})
+		var size := int(fs.get("end_size", 7))
+		var shatter: Dictionary = cfg.get("frost", {}).get("shatter", {})
+		TalentPixels.ice_trail(canvas, at, to, p, art, id, float(fs.get("every", 4)))
+		TalentPixels.shatter(canvas, at + body * 0.5, (at - to).normalized() if at != to else Vector2.ZERO, clampf(p * 1.4, 0.0, 1.0), art, size - 2, id, shatter)
+		TalentPixels.shatter(canvas, to + body * 0.5, Vector2.ZERO, (p - 0.15) * 1.4, art, size, id + 1, shatter)
+	else:
+		var vf: Dictionary = cfg.get("void", {}).get("fold", {})
+		var size := int(vf.get("size", 9))
+		TalentPixels.void_dots(canvas, at, to, p, art, id, int(vf.get("dots", 3)))
+		TalentPixels.fold(canvas, at + body, p / 0.45, true, size, art, id)
+		TalentPixels.fold(canvas, to + body, (p - 0.2) / 0.6, false, size, art, id + 1)
+
+
+## Magisches Echo: a darker violet ghost of the spell it repeats (the hero's
+## last cast near `at`): a ghost shot along its aim for a shot, a ghost ring
+## for a nova or zone, else a ghost gather; and a faint ghost ring at his feet.
+func _echo(canvas: CanvasItem, at: Vector2, r: float, p: float, id: int) -> void:
+	var last := {}
+	for cast: Dictionary in _last_casts:
+		if Vector2(cast.at).distance_to(at) < _u(90.0) and (last.is_empty() or float(cast.t) > float(last.t)): last = cast
+	var kind := "gather"
+	if not last.is_empty():
+		match _type_of(str(last.talent)):
+			"projectile": kind = "shot"
+			"nova", "zone": kind = "ring"
+	TalentPixels.echo(canvas, at + body, float(last.get("angle", 0.0)), kind, _u(float(cfg.get("void", {}).get("echo", {}).get("ring", 60))), p, art, id)
+	TalentPixels.echo(canvas, at, 0.0, "ring", maxf(r, _u(26.0)), p, art, id + 1)
 
 
 ## CAST: the element gathering at the caster's hand (chest plus `hand` cells
@@ -842,31 +1192,81 @@ func _draw_domes(canvas: CanvasItem, auras: Array, clock: float, where: Callable
 			var dome: RefCounted = _dome(owner)
 			dome.size = int(spec[1])
 			dome.step(clock)
-			dome.draw(canvas, _snap(at) + feet, clampf((total - left) / 0.3, 0.0, 1.0), clampf(left / 0.6, 0.0, 1.0), str(spec[2]), art, clock)
+			var element := str(_shield_el.get(owner, spec[2])) if str(spec[0]) == "shield" else str(spec[2])
+			_dome_last[owner] = {"at": _snap(at), "element": element}
+			dome.draw(canvas, _snap(at) + feet, clampf((total - left) / 0.3, 0.0, 1.0), clampf(left / 0.6, 0.0, 1.0), element, art, clock)
 	for owner: int in _domes.keys():
-		if not shown.has(owner): _domes.erase(owner)
+		if not shown.has(owner):
+			_domes.erase(owner)
+			_dome_end(owner, clock)
+
+
+## A shield dome that just went (it ran out or broke): the crystal one
+## shatters (a painted shatter at the hero's chest, shards and frost in the
+## particles; frost.shield), the void one folds in on itself (an implosion; void.shield).
+func _dome_end(owner: int, clock: float) -> void:
+	var last: Dictionary = _dome_last.get(owner, {})
+	_dome_last.erase(owner)
+	if last.is_empty(): return
+	var foot: Vector2 = last.at
+	match Pal.resolve(str(last.element)):
+		"ice":
+			var fs: Dictionary = cfg.get("frost", {}).get("shield", {})
+			_impacts.append({"at": foot + body, "dir": Vector2.ZERO, "element": "ice", "size": int(fs.get("end_size", 10)), "t0": clock, "seed": _local_id(), "kind": "shatter",
+				"T": float(cfg.get("frost", {}).get("shatter", {}).get("time", 0.7))})
+			if particles != null:
+				# the dome bursts at chest height: its shards fall, skid and lie as frost
+				var s := to_particles
+				particles.shatter((foot + body * 0.5) * s, int(fs.get("shards", 16)), Vector2.ZERO, float(fs.get("shard_speed", 150)), [], 3, -body.y * 0.5 * s)
+				particles.frost(foot * s, _u(18.0) * s, 12, Pal.ramp("ice")[3])
+		"void":
+			var vs: Dictionary = cfg.get("void", {}).get("shield", {})
+			_implode_at(foot + body * 0.5, Vector2.ZERO, int(vs.get("end_size", 8)), clock, 0.3)
+			if particles != null:
+				# the dome folds in, then its motes are thrown out and the floor kicked
+				var s := to_particles
+				var vo := Pal.ramp("void")
+				particles.motes(foot * s, int(vs.get("end_motes", 16)), [vo[3], vo[4], vo[2]], 3.0, -body.y * 0.5 * s, float(vs.get("end_speed", 2.4)))
+				particles.kick(foot * s, _u(float(vs.get("cast_r", 30))) * s, 0.6)
 
 
 ## Bloom (the host's additive glow layer, `level` its strength): the flashes
 ## of weighty events in their element's colour, the shots in flight and their
 ## impacts, and a faint light of the lasting buffs; small, never a white-hot core.
+## The light is tight and short so it never washes the pixels out (review
+## 2026-10-31; vfx_talents.json glow): a flash lasts at most glow.flash_s of
+## its tier, reaches at most glow.flash_r art cells at glow.flash_alpha; an
+## impact's light (boom, shatter, implode, other) lives glow.<kind>.s, r x its
+## size, alpha; a shot's glow.shot.r x its tier glow cells at its alpha.
 func draw_glow(canvas: CanvasItem, state: Dictionary, level: float, clock: float, where: Callable) -> void:
 	if level <= 0.0: return
+	var gl: Dictionary = cfg.get("glow", {})
 	for i in range(_flashes.size() - 1, -1, -1):
 		var flash: Dictionary = _flashes[i]
-		var k := (clock - float(flash.t0)) / maxf(0.01, float(flash.T))
+		var tier := str(flash.get("tier", "small"))
+		var length := minf(float(flash.T), float(gl.get("flash_s", {}).get(tier, 0.06)))
+		var k := (clock - float(flash.t0)) / maxf(0.01, length)
 		if k >= 1.0 or k < 0.0:
 			_flashes.remove_at(i)
 			continue
-		Glow.dot(canvas, flash.at, float(flash.r) * (0.7 + 0.3 * k), Color(flash.col, float(flash.strength) * (1.0 - k) * (1.0 - k) * level))
+		var reach := minf(float(flash.r), float(gl.get("flash_r", {}).get(tier, 10)) * art)
+		var alpha := minf(float(flash.strength), float(gl.get("flash_alpha", {}).get(tier, 0.2)))
+		Glow.dot(canvas, flash.at, reach, Color(flash.col, alpha * (1.0 - k) * level))
+	var shot_spec: Dictionary = gl.get("shot", {})
 	for shot: Dictionary in (_shots_pass if not _shots_pass.is_empty() else _shots_live):
-		Glow.dot(canvas, shot.at, float(shot.glow) * art, Color(Pal.ramp(str(shot.element))[3], 0.3 * level))
+		Glow.dot(canvas, shot.at, float(shot.glow) * art * float(shot_spec.get("r", 0.6)), Color(Pal.ramp(str(shot.element))[3], float(shot_spec.get("alpha", 0.18)) * level))
 	for hit: Dictionary in _impacts:
-		var k := (clock - float(hit.t0)) / float(hit.get("T", IMPACT_TIME))
-		if str(hit.get("kind", "")) == "boom" and k < 0.2:
-			# the explosion's white flash lights the floor
-			Glow.dot(canvas, hit.at, float(hit.size) * art * 2.6, Color(Pal.ramp("fire")[4], 0.7 * (1.0 - k * 5.0) * level))
-		if k < 0.5: Glow.dot(canvas, hit.at, float(hit.size) * art * 1.5, Color(Pal.ramp(str(hit.element))[3], 0.4 * (1.0 - k * 2.0) * level))
+		var age := clock - float(hit.t0)
+		var hit_kind := str(hit.get("kind", ""))
+		var spec: Dictionary = gl.get(hit_kind if hit_kind in ["boom", "shatter", "implode"] else "impact", {})
+		var start := 0.0
+		if hit_kind == "implode":
+			# the void swallows light while it pulls; only its burst glows, faintly
+			start = float(cfg.get("void", {}).get("implode", {}).get("pull", 0.25)) * float(hit.get("T", IMPACT_TIME))
+		var k := (age - start) / maxf(0.01, float(spec.get("s", 0.05)))
+		if k < 0.0 or k >= 1.0: continue
+		var col: Color = Pal.ramp("fire")[4] if hit_kind == "boom" else (Pal.ramp("ice")[4] if hit_kind == "shatter" else Pal.ramp(str(hit.element))[3])
+		Glow.dot(canvas, hit.at, float(hit.size) * art * float(spec.get("r", 1.0)), Color(col, float(spec.get("alpha", 0.25)) * (1.0 - k) * level))
 	var strengths: Dictionary = cfg.get("aura_glow", {})
 	for aura: Dictionary in state.get("auras", []):
 		var kind := str(aura.get("kind", ""))
@@ -890,6 +1290,10 @@ func _tier(event: Dictionary) -> String:
 		if bool(event.get("impact", false)): return str(cfg.get("ult_impact", cfg.get("ult_wave", "large")))
 		if bool(event.get("wave", false)): return str(cfg.get("ult_wave", "large"))
 		return ""
+	# a talent's own weight for one of its events (the small mage talents)
+	var own: Dictionary = cfg.get("talent_events", {})
+	var key := "%s:%s" % [str(event.get("talent", "")), kind]
+	if own.has(key): return str(own[key])
 	var events: Dictionary = cfg.get("events", {})
 	if kind == "trap": return str(events.get("trap_boom", "")) if bool(event.get("boom", false)) else ""
 	return str(events.get(kind, ""))
@@ -914,34 +1318,71 @@ func _observe(state: Dictionary, clock: float) -> void:
 		var at := Vector2(float(event.x), float(event.y))
 		var r := float(event.get("r", 0.0))
 		var kind := str(event.get("kind", ""))
+		if kind == "swallow" or kind == "eject": element = "void"
+		elif kind == "splat": element = _splat_element(str(event.get("material", "flesh")))
 		if tier != "":
 			var spec: Dictionary = cfg.get("tiers", {}).get(tier, {})
 			_flashes.append({"at": at + body, "col": Pal.ramp(element)[3], "t0": clock,
-				"T": float(spec.get("flash", 0.15)) * _boost(event), "r": float(spec.get("flash_r", 20.0)) * art * _boost(event), "strength": 0.5})
+				"T": float(spec.get("flash", 0.15)) * _boost(event), "r": float(spec.get("flash_r", 20.0)) * art * _boost(event), "strength": 0.5, "tier": tier})
 		if bool(event.get("ult", false)): _ult_pool(event, state, clock)
 		match kind:
+			"cast":
+				# the mages remember what they cast: the shield's element, the echo's spell, the ultimate's stage
+				var owner := int(event.get("owner", -1))
+				if talent == "frost_5": _shield_el[owner] = "ice"
+				elif talent == "arcane_11": _shield_el[owner] = "void"
+				if talent != "arcane_3":
+					_last_casts.append({"at": at, "talent": talent, "angle": float(event.get("angle", 0.0)), "t": clock})
+					if _last_casts.size() > 8: _last_casts.pop_front()
+				if bool(event.get("ult", false)): _stages[talent] = int(event.get("stage", 0))
+				# the shields draw their matter in as they form
+				if talent == "frost_5": _shield_cast_physics(at, "ice")
+				elif talent == "arcane_11": _shield_cast_physics(at, "void")
+				elif talent == "frost_14" and bool(event.get("ult", false)): _glacier_throw(event, at, clock)
+			"pet_lance":
+				# the companion's ice lance lands halfway through the event: it shatters there
+				var to := Vector2(float(event.get("tx", at.x)), float(event.get("ty", at.y)))
+				_later.append({"t": clock + maxf(0.05, float(event.get("span", 0.5))) * 0.5, "at": to, "dir": (to - at).normalized() if to != at else Vector2.ZERO,
+					"size": int(cfg.get("frost", {}).get("pet_lance", 5))})
 			"nova":
+				if talent == "frost_14" and not bool(event.get("wave", false)):
+					# Gletschergrab lands: a cold white flash over the block
+					var big: Dictionary = cfg.get("tiers", {}).get("large", {})
+					_flashes.append({"at": at, "col": Pal.ramp("ice")[4], "t0": clock, "T": float(big.get("flash", 0.28)), "r": float(big.get("flash_r", 40)) * art, "strength": 0.6, "tier": "large"})
 				if bool(event.get("impact", false)):
 					# the meteor's landing: the huge boom, rock and lava
 					var me: Dictionary = cfg.get("fire", {}).get("meteor", {})
 					var size: Array = me.get("size", [12, 24])
 					_boom(at, Vector2.ZERO, int(clampf(r / art * float(me.get("size_share", 0.4)), float(size[0]), float(size[1]))), clock, 1.0)
 				_burst_physics(at, r, element, bool(event.get("ult", false)), bool(event.get("impact", false)), clock, talent)
+				# the rim's matter when the front gets there; the Leerenriss pulls motes in
+				if talent == "arcane_7": _rift_physics(event, at, r)
+				else: _defer_rim(at, r, element, bool(event.get("ult", false)), event, clock)
 			"explosion":
 				# the Feuerball's splash: the fat explosion over the hit radius
 				var bo: Dictionary = cfg.get("fire", {}).get("boom", {})
 				var size: Array = bo.get("size", [8, 16])
 				_boom(at, Vector2.ZERO, int(clampf(r / art * float(bo.get("size_share", 0.5)), float(size[0]), float(size[1]))), clock, 0.6)
 				_burst_physics(at, r, "fire", false, false, clock, talent)
+				_defer_rim(at, r, "fire", false, event, clock)
+			"buff":
+				# the buffs that ring out (bloodlust, unbreakable, timebreak): their rim's matter
+				var ring := {"bloodlust": [70.0, "blood"], "unbreakable": [80.0, "stone"], "timebreak": [90.0, "void"]}
+				var buff := str(event.get("buff", ""))
+				if ring.has(buff): _defer_rim(at, _u(float(ring[buff][0])), str(ring[buff][1]), true, event, clock)
 			"chain":
-				# every link's hit: sparks off the target, and it burns for a while
+				# every link's hit when the chain gets there: sparks off the target, it burns for a while
 				var ch: Dictionary = cfg.get("fire", {}).get("chain", {})
 				var points: Array = event.get("points", [])
+				var links := points.size() - 1
+				var span := maxf(0.05, float(event.get("span", 0.5)))
 				for i in range(1, points.size()):
 					var hit := Vector2(float(points[i][0]), float(points[i][1]))
 					var prev := Vector2(float(points[i - 1][0]), float(points[i - 1][1]))
-					_matter(hit + body, (hit - prev).normalized() if hit != prev else Vector2.UP, element, int(ch.get("sparks", 6)), 0, _u(12.0))
-					_burning.append({"at": hit, "until": clock + float(ch.get("burn", 0.6)), "seed": id + i})
+					var strikes := (float(i - 1) / maxf(1.0, float(links)) * 0.6 + 0.6 / maxf(1.0, float(links))) * span
+					var entry := {"kind": "link", "at": hit, "prev": prev, "element": element, "n": int(ch.get("sparks", 6)), "burn": float(ch.get("burn", 0.6)), "seed": id + i, "sparks": int(ch.get("link_sparks", 3))}
+					if particles == null: _link_hit(entry, clock)
+					else: _defer(clock + strikes, entry)
 			"trap":
 				match _trap_kind(event):
 					"iron": _burst_physics(at, r, "fire", false, false, clock)
@@ -956,6 +1397,7 @@ func _observe(state: Dictionary, clock: float) -> void:
 				_matter(at, (to - at).normalized() if to != at else Vector2.ZERO, element, 5, 0, _u(16.0))
 			"leap_slam":
 				_burst_physics(Vector2(float(event.get("tx", at.x)), float(event.get("ty", at.y))), r, "stone", true, false, clock)
+				_defer_rim(Vector2(float(event.get("tx", at.x)), float(event.get("ty", at.y))), r, "stone", true, event, clock)
 			"parry":
 				_matter(at + body, Vector2.UP, "steel", 5, 0, _u(10.0))
 			"crit":
@@ -971,8 +1413,23 @@ func _observe(state: Dictionary, clock: float) -> void:
 			"pet_fell":
 				_matter(at, Vector2.UP, "ice" if str(event.get("kind", "")) == "water_elemental" else "bone", 6, 0, _u(12.0))
 			"dome_hit":
-				# the blow dents the hero's dome on the side it came from
+				# the blow dents the hero's dome on the side it came from, chips fly off there
 				_dome(int(event.get("owner", 1))).hit(Vector2(float(event.get("dx", 0.0)), float(event.get("dy", 1.0))), float(event.get("power", 1.0)), clock)
+				_dome_hit_physics(event, at)
+			"summon":
+				_defer_rim(at, _u(46.0), "ice" if str(event.get("kind", "")) == "water_elemental" else "bone", false, event, clock)
+			"pet_cleave":
+				_defer_rim(at, r, "steel", false, event, clock)
+			"arrow_finale":
+				_defer_rim(at, r, "stone", true, event, clock)
+			"drawn":
+				_defer_rim(at, r * 0.4, "fire", false, event, clock)
+			"swallow":
+				_swallow_physics(event, at, r)
+			"eject":
+				_eject_physics(event, at, clock)
+			"splat":
+				_splat_physics(event, at, r)
 	_seen = now
 	_zone_residue(state.get("zones", []), clock)
 
@@ -989,6 +1446,30 @@ func _blink_physics(at: Vector2, to: Vector2, element: String, talent: String, c
 		for i in range(n + 1):
 			_leave(at.lerp(to, float(i) / float(n)), (to - at).normalized() if to != at else Vector2.ZERO, "fire", float(ph.get("trail_cells", 5)), clock, float(ph.get("trail", 1.5)))
 		_matter(to, Vector2.ZERO, "fire", 8, 0, _u(16.0))
+	if talent == "frost_11" and particles != null:
+		# Frostsprung: shards at both ends, frost and rime along the path, the landing's liquids freeze
+		var s := to_particles
+		var ice := Pal.ramp("ice")
+		particles.shatter(to * s, 14, Vector2.ZERO, 160.0, [], 3)
+		var every := _u(float(cfg.get("frost", {}).get("sprung", {}).get("frost_every", 12)))
+		var n := maxi(1, int(at.distance_to(to) / maxf(1.0, every)))
+		for i in range(n + 1):
+			particles.frost(at.lerp(to, float(i) / float(n)) * s, _u(6.0) * s, 4, ice[3])
+		particles.rime_grow(to * s, 3, _u(22.0) * s)
+		particles.freeze_liquids(to * s, _u(30.0) * s)
+		_leave(to, Vector2.ZERO, "ice", float(cfg.get("residue", {}).get("ice", {}).get("cells", [4, 10])[0]), clock)
+	if talent == "arcane_5" and particles != null:
+		# Raumsprung: space opens where he lands: a shove that kicks the floor's
+		# loose pixels up and pushes what flies, motes flung out, dust rolling
+		# off (void.fold); where he left the implosion drags it all in (below)
+		var vf: Dictionary = cfg.get("void", {}).get("fold", {})
+		var vo := Pal.ramp("void")
+		var s := to_particles
+		var reach := _u(float(vf.get("kick_r", 24))) * s
+		particles.kick(to * s, reach, float(vf.get("kick", 0.8)))
+		particles.blow(to * s, 0.0, reach * 1.6, 0.0, TAU, float(vf.get("blow_speed", 220)))
+		particles.motes(to * s, int(vf.get("motes_out", 14)), [vo[3], vo[4], vo[2]], 4.0, -body.y * s * 0.6, float(vf.get("mote_speed", 2.2)))
+		particles.dust_flat(to * s, reach * 0.5, int(vf.get("dust", 6)))
 	if particles != null:
 		var s := to_particles
 		var p := at * s
@@ -1025,6 +1506,10 @@ func _zone_residue(zones: Array, clock: float) -> void:
 	for id: int in _zones_seen:
 		if now.has(id): continue
 		var zone: Dictionary = _zones_seen[id]
+		_zone_born.erase(id)
+		if str(zone.get("look", "")) == "ice":
+			# Gletschergrab's spires break as the block goes
+			_shatter_at(Vector2(float(zone.x), float(zone.y)), Vector2.ZERO, int(cfg.get("frost", {}).get("glacier", {}).get("end_size", 14)), clock, 1.0)
 		var element := _zone_element(zone)
 		if element == "": continue
 		var key := _residue_key(str(zone.get("talent", "")), element)
@@ -1124,28 +1609,20 @@ func _draw_looks(canvas: CanvasItem, zones: Array, clock: float) -> void:
 					var spot := at + Vector2.from_angle(TAU * i / 4.0 + 0.6) * r * 0.45
 					sprites.draw_loop(canvas, "flame_tongue", spot, 0.0, 0.7, clock + i * 0.4)
 			"ice":
-				# Gletschergrab: frozen ground with crystal clusters, the middle the tallest
-				canvas.draw_circle(at, r, Color(0.55, 0.85, 1.0, 0.16))
-				canvas.draw_arc(at, r, 0.0, TAU, 48, Color(0.8, 0.95, 1.0, 0.45), 2.0)
-				for i in range(7):
-					var spot := at + Vector2.from_angle(TAU * i / 7.0 + 0.4) * r * 0.62
-					sprites.draw_loop(canvas, "ice_block", spot, 0.0, 0.55, clock + i * 0.21)
-				sprites.draw_loop(canvas, "ice_block", at + Vector2(0, 10), 0.0, 1.0, clock)
+				# Gletschergrab: ice spires breaking out of the floor in waves over its Glatteis (draw_ground)
+				var life := _zone_life(zone, clock)
+				TalentUlts.glacier_field(canvas, at, r, life.y - life.x, life.y, int(_stages.get(str(zone.get("talent", "")), int(zone.get("stage", 0)))), art, clock, int(zone.get("id", 0)))
 			"arcane":
-				# Singularität: the whirl turns over a dark disc, motes stream inwards
-				canvas.draw_circle(at, r, Color(0.25, 0.12, 0.45, 0.22))
-				sprites.draw_loop(canvas, "vortex", at, -clock * 2.5, clampf(r / 64.0, 0.6, 2.2), clock)
-				for i in range(10):
-					var k := fmod(clock * 0.8 + i * 0.1, 1.0)
-					var mote := at + Vector2.from_angle(i * 2.4 + clock) * r * (1.0 - k)
-					canvas.draw_rect(Rect2(mote - Vector2(1.5, 1.5), Vector2(3, 3)), Color(0.85, 0.75, 1.0, k))
+				# Singularität: a black core with its accretion ring, the floor drawn in (the well is the particles')
+				var life := _zone_life(zone, clock)
+				var k := clampf(life.x / 0.4, 0.0, 1.0) * clampf((life.y - life.x) / 0.3, 0.0, 1.0)
+				TalentPixels.singularity(canvas, at, r, k, art, clock, int(zone.get("id", 0)), int(_stages.get(str(zone.get("talent", "")), int(zone.get("stage", 0)))), cfg.get("void", {}).get("singularity", {}))
+				_draw_caught(canvas, zone, at, k, clock)
 			"snow":
-				# Blizzard: a cold haze with snow driving across it
-				canvas.draw_circle(at, r, Color(0.7, 0.9, 1.0, 0.14))
-				for i in range(6):
-					var spot := at + Vector2.from_angle(TAU * i / 6.0) * r * 0.5
-					sprites.draw_loop(canvas, "snowfall", spot, 0.0, clampf(r / 40.0, 0.8, 2.0), clock + i * 0.17)
-				sprites.draw_loop(canvas, "snowfall", at, 0.0, clampf(r / 40.0, 0.8, 2.0), clock)
+				# Blizzard: snow and slivers driven in a swirl over its frost pools (draw_ground)
+				var life := _zone_life(zone, clock)
+				var k := clampf(life.x / 0.5, 0.0, 1.0) * clampf((life.y - life.x) / 0.6, 0.0, 1.0)
+				TalentPixels.blizzard(canvas, at, r, k, art, clock, int(zone.get("id", 0)), cfg.get("frost", {}).get("blizzard", {}))
 			"arrows":
 				# Pfeilhagel: the field darkens under the volley, big arrows plunge in all
 				# over it and every one strikes with dust, splinters and a quivering shaft
@@ -1289,7 +1766,16 @@ func _nova_extra(canvas: CanvasItem, event: Dictionary, at: Vector2, p: float, t
 	elif talent == "fire_14":
 		TalentPixels.impact(canvas, at, Vector2.ZERO, p, "fire", art, int(clampf(r / art * 0.4, 6.0, 12.0)), id)
 	elif r > 0.0 and not bool(event.get("wave", false)):
-		TalentPixels.impact(canvas, at, Vector2.ZERO, p, element, art, int(clampf(r / art * 0.25, 4.0, 10.0)), id)
+		var size := int(clampf(r / art * 0.25, 4.0, 10.0))
+		match Pal.resolve(element):
+			"ice":
+				# frost novas (the Wasserelementar's Frostnova, Gletschergrab's landing) shatter
+				if talent == "frost_14": size = int(cfg.get("frost", {}).get("glacier", {}).get("burst_size", 16))
+				TalentPixels.shatter(canvas, at, Vector2.ZERO, p, art, size, id, cfg.get("frost", {}).get("shatter", {}))
+			"void":
+				if talent != "arcane_7": TalentPixels.implosion(canvas, at, p, art, size, id, cfg.get("void", {}).get("implode", {}))
+			_:
+				TalentPixels.impact(canvas, at, Vector2.ZERO, p, element, art, size, id)
 
 
 ## The events of the newer talents (src/combat/talent_combat.gd): companions'
@@ -1308,8 +1794,11 @@ func _extra_event(canvas: CanvasItem, event: Dictionary, at: Vector2, p: float, 
 			var from := at - Vector2(0, 20)
 			var flight := clampf(p * 2.0, 0.0, 1.0)
 			var spot := from.lerp(to, flight)
-			if flight < 1.0: TalentPixels.shot(canvas, _snap(spot), to - from, "ice" if lance else "void", art, 1, 4, _clock, id)
-			else: TalentPixels.burst(canvas, to, 5, (p - 0.5) * 2.0, "ice" if lance else "void", art, id)
+			if lance:
+				# the Wasserelementar's ice lance: a small Frostlanze; it shatters where it lands (_later)
+				if flight < 1.0: TalentPixels.shot(canvas, _snap(spot), to - from, "ice", art, 1, 4, _clock, id, {"style": "lance", "length": 4, "mist": 0.7})
+			elif flight < 1.0: TalentPixels.shot(canvas, _snap(spot), to - from, "void", art, 1, 4, _clock, id)
+			else: TalentPixels.burst(canvas, to, 5, (p - 0.5) * 2.0, "void", art, id)
 		"no_res":
 			# "Wenig Mana" rises over the hero and fades
 			var tint: Color = {"mana": Color("7fb0ff"), "stamina": Color("9fe07a"), "rage": Color("ff7a5a")}.get(str(event.get("res", "mana")), Color.WHITE)
@@ -1453,3 +1942,336 @@ func _extra_event(canvas: CanvasItem, event: Dictionary, at: Vector2, p: float, 
 			TalentPixels.burst(canvas, at + body, 7, p, element, art, id)
 		"pet_fell":
 			TalentPixels.burst(canvas, at + Vector2(0, -12), 8, p, "ice" if str(event.get("kind", "")) == "water_elemental" else "bone", art, id)
+
+
+# ---------- the Arkanes Gefüge ----------
+
+## The gore table (assets/data/vfx_gore.json), read once.
+static func gore() -> Dictionary:
+	if _gore.is_empty():
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(GORE_PATH)) if FileAccess.file_exists(GORE_PATH) else null
+		_gore = parsed if parsed is Dictionary else {"materials": {}, "kinds": {}}
+	return _gore
+
+
+## The element a splat of `material` is drawn in: its class (vfx_gore.json
+## splat.class: flesh, bone, void, gold) to void.splat.element of vfx_talents.json.
+func _splat_element(material: String) -> String:
+	var cls := str(gore().get("splat", {}).get("class", {}).get(material, material))
+	return str(cfg.get("void", {}).get("splat", {}).get("element", {}).get(cls, "blood"))
+
+
+## The units of a Gefüge event as element names, `per` per unit, at most
+## `cap`, mixed round-robin so the colours interleave: `els` a {el: n} of a
+## swallow or a [el, ...] of an eject.
+static func _unit_list(els: Variant, per: int, cap: int) -> Array:
+	var groups: Array = []
+	if els is Dictionary:
+		for el: Variant in els: groups.append([str(el), maxi(0, int(els[el])) * maxi(1, per)])
+	elif els is Array:
+		for el: Variant in els: groups.append([str(el), maxi(1, per)])
+	var out: Array = []
+	var left := true
+	while left and out.size() < cap:
+		left = false
+		for group: Array in groups:
+			if int(group[1]) <= 0: continue
+			out.append(group[0])
+			group[1] = int(group[1]) - 1
+			left = true
+			if out.size() >= cap: break
+	return out
+
+
+## SWALLOW's physics: a short well at the eaten spot sucks the loose dust and
+## pixels in (void.swallow well_*), and void motes puff at the mouth.
+func _swallow_physics(event: Dictionary, at: Vector2, r: float) -> void:
+	if particles == null: return
+	var sw: Dictionary = cfg.get("void", {}).get("swallow", {})
+	var s := to_particles
+	var reach := maxf(r, _u(float(sw.get("well_r", 20)))) * s
+	particles.well("swallow:%d" % int(event.get("id", 0)), at * s, reach, float(sw.get("well_pull", 300)), float(sw.get("well_swirl", 160)), reach * 0.15, float(sw.get("well_time", 0.35)))
+	var mouth := Vector2(float(event.get("tx", at.x)), float(event.get("ty", at.y))) + body * float(sw.get("mouth_lift", 1.0))
+	var vo := Pal.ramp("void")
+	particles.motes(mouth * s, int(sw.get("mouth_motes", 5)), [vo[3], vo[4], vo[2]], 4.0)
+	# the eaten matter streams to him: motes in its colours rise off the spot,
+	# thrown towards him, and a well at his feet pulls them round and in
+	var feet_at := Vector2(float(event.get("tx", at.x)), float(event.get("ty", at.y)))
+	var high := -body.y * float(sw.get("mouth_lift", 1.0)) * s
+	var id := int(event.get("id", 0))
+	var far := maxf(_u(30.0), feet_at.distance_to(at) * 1.3)
+	particles.well("gulp:%d" % id, feet_at * s, far * s, float(sw.get("mouth_pull", 380)), float(sw.get("mouth_swirl", 160)), _u(4.0) * s,
+		maxf(0.3, float(event.get("span", 0.6))), 0.0, [], false)
+	var els := _unit_list(event.get("els", {}), int(sw.get("per_unit", 2)), int(sw.get("cap", 32)))
+	var spread := maxf(r, _u(8.0))
+	for i in range(particles.room(els.size())):
+		var cols := Pal.ramp_hot(str(els[i]))
+		var start := at + Vector2.from_angle(_h(id + i * 13) * TAU) * spread * sqrt(_h(id + i * 17)) * Vector2(1.0, 0.75)
+		var toward := (feet_at - start).normalized().rotated((_h(id + i * 29) - 0.5) * 1.6) if feet_at != start else Vector2.UP
+		var mote: Dictionary = particles.emit(start * s - Vector2(0.0, 2.0), toward * float(sw.get("mote_speed", 70)) * s, cols[0] if i % 3 == 0 else cols[1], float(sw.get("mote_life", 1.2)), "mote", 2.0, 2.0, 0.0, 0.2)
+		mote.streak = true
+		mote.z_to = high
+
+
+## EJECT's physics: every bolt of the Gefuege (event els: {el, n, tx, ty, t})
+## is a comet in the particles (particles.comet) that leaves the core in
+## its launch order and flies a ballistic arc onto the very spot the host
+## lands it on, arriving when the host's landing happens (t s after the
+## collapse; void.eject fly_share of it in the air, at least fly_min). How it
+## lands is its element's (void.eject kind: liquids and fire splash into the
+## pool layer as pool_mat, ice breaks, bone and gold bounce, souls puff); the
+## lasting pool there is the host's. A few bolts, a few landings (gefuege
+## eject_max in element_rules.json).
+func _eject_physics(event: Dictionary, at: Vector2, clock: float) -> void:
+	if particles == null: return
+	var ej: Dictionary = cfg.get("void", {}).get("eject", {})
+	var bolts: Variant = event.get("els", [])
+	if not bolts is Array: return
+	for bolt: Variant in bolts:
+		if not bolt is Dictionary or not (bolt as Dictionary).has("tx"): continue
+		var t := float(bolt.get("t", 0.4))
+		var fly := clampf(t * float(ej.get("fly_share", 0.85)), minf(t, float(ej.get("fly_min", 0.18))), maxf(t, 0.05))
+		_defer(clock + t - fly, {"kind": "comet", "from": at, "to": Vector2(float(bolt.tx), float(bolt.ty)), "fly": fly, "el": Pal.resolve(str(bolt.get("el", "void"))), "n": int(bolt.get("n", 1))})
+
+
+## One Gefuege comet leaving the core now (_eject_physics).
+func _comet(entry: Dictionary) -> void:
+	var ej: Dictionary = cfg.get("void", {}).get("eject", {})
+	var el := str(entry.el)
+	var kind := str(ej.get("kind", {}).get(el, "drop"))
+	var mat := str(ej.get("pool_mat", {}).get(el, el))
+	var layer: Object = pools if _pool_has(mat) else null
+	var s := to_particles
+	particles.comet(Vector2(entry.from) * s, Vector2(entry.to) * s, float(entry.fly), Pal.ramp_hot(el), kind, int(entry.n), layer, mat, _u(float(ej.get("height", 10))) * s)
+
+
+## True when the pool layer has a liquid of `mat` (its drops can land in it).
+func _pool_has(mat: String) -> bool:
+	if pools == null or not pools.has_method("drop_landed"): return false
+	var ramps: Variant = pools.get("_ramps")
+	return ramps is Dictionary and (ramps as Dictionary).has(mat)
+
+
+## Queues `entry` (a dict with "kind") to happen at `t` (clock s); nothing
+## without particles.
+func _defer(t: float, entry: Dictionary) -> void:
+	if particles == null: return
+	entry.t = t
+	_deferred.append(entry)
+
+
+## The queued matter that is due by `clock` (_defer).
+func _run_deferred(clock: float) -> void:
+	if _deferred.is_empty() or particles == null: return
+	var due: Array = []
+	for i in range(_deferred.size() - 1, -1, -1):
+		if float(_deferred[i].t) <= clock:
+			due.append(_deferred[i])
+			_deferred.remove_at(i)
+	for entry: Dictionary in due:
+		match str(entry.kind):
+			"rim": _rim(entry.at, float(entry.r), str(entry.element), bool(entry.heavy))
+			"link": _link_hit(entry, clock)
+			"comet": _comet(entry)
+			"spire":
+				var gl: Dictionary = cfg.get("frost", {}).get("glacier", {})
+				var s := to_particles
+				particles.shatter(Vector2(entry.at) * s, int(gl.get("slivers", 2)), entry.out, float(gl.get("sliver_speed", 110)), [], 2, 2.0)
+				particles.frost(Vector2(entry.at) * s, _u(4.0) * s, 2, Pal.ramp("ice")[3])
+			"throw":
+				var s := to_particles
+				particles.shatter(Vector2(entry.hand) * s, int(entry.n), entry.dir, float(entry.speed), [], 3, float(entry.h) * s)
+
+
+## A nova's rim matter (_rim) queued for when its front gets there
+## (matter.rim.front of its span).
+func _defer_rim(at: Vector2, r: float, element: String, heavy: bool, event: Dictionary, clock: float) -> void:
+	if particles == null or r < art * 2.0: return
+	var front := float(cfg.get("matter", {}).get("rim", {}).get("front", 0.21))
+	_defer(clock + maxf(0.05, float(event.get("span", 0.5))) * front, {"kind": "rim", "at": at, "r": r, "element": element, "heavy": heavy})
+
+
+## A ring's matter on its rim at `r` round `at` (the painted debris of
+## TalentPixels.nova as particles; matter.rim): fire throws glowing sparks
+## that lie as embers, ice and bone shards that skid, liquids drops that
+## splat, the void and the souls motes that drift and dissolve, steel and
+## gold sparks, the rest dust creeping off; each outwards, more for an
+## ultimate's (`heavy`).
+func _rim(at: Vector2, r: float, element: String, heavy: bool) -> void:
+	if particles == null or r < art * 2.0: return
+	var spec: Dictionary = cfg.get("matter", {}).get("rim", {})
+	var s := to_particles
+	var res := Pal.resolve(element)
+	var cols := Pal.ramp(res)
+	var n := clampi(int(r / art / float(spec.get("every", 5.0))), int(spec.get("min", 8)), int(spec.get("max_heavy", 22)) if heavy else int(spec.get("max", 14)))
+	var kind := Pal.kind(res)
+	var seed := int(at.x * 7.0 + at.y * 13.0)
+	for i in range(n):
+		var out := Vector2.from_angle(TAU * (float(i) + _h(seed + i) * 0.6) / float(n))
+		var p := (at + out * r * Vector2(1.0, 0.75)) * s
+		match kind:
+			"spark":
+				if res == "fire": particles.ember_sparks(p, 1, out, float(spec.get("fire_speed", 0.45)))
+				else: particles.sparks(p, out, 1, [cols[4], cols[3], cols[2]])
+			"shard": particles.shatter(p, 1, out, float(spec.get("shard_speed", 90.0)), [] if res == "ice" else Pal.ramp_hot(res), 2)
+			"drop": particles.drops(p, 1, out, [cols[2], cols[3]])
+			"mote": particles.motes(p, 1, [cols[3], cols[4], cols[2]], 8.0)
+			_: particles.dust_flat(p, 3.0, 1)
+
+
+## A Glutkette link striking its target (queued for when the chain gets
+## there): ember sparks off the target, a few sparks leaping off the link
+## itself that fall and lie as embers, and the target burning for a while.
+func _link_hit(entry: Dictionary, clock: float) -> void:
+	var hit: Vector2 = entry.at
+	var prev: Vector2 = entry.prev
+	var dir := (hit - prev).normalized() if hit != prev else Vector2.UP
+	_matter(hit + body, dir, str(entry.element), int(entry.n), 0, _u(12.0))
+	_burning.append({"at": hit, "until": clock + float(entry.burn), "seed": int(entry.seed)})
+	if particles == null: return
+	for k in range(int(entry.get("sparks", 3))):
+		var along := prev.lerp(hit, _h(int(entry.seed) * 5 + k))
+		particles.ember_sparks(along * to_particles, 1, dir.orthogonal() * (1.0 if k % 2 == 0 else -1.0), 0.35)
+
+
+## The Leerenriss: a well at the tear pulls motes in from past its hit
+## radius for void.rift well_time of the event (motes streaking in on
+## spirals; the floor's loose pixels are lifted into it).
+func _rift_physics(event: Dictionary, at: Vector2, r: float) -> void:
+	if particles == null: return
+	var rf: Dictionary = cfg.get("void", {}).get("rift", {})
+	var s := to_particles
+	var span := maxf(0.05, float(event.get("span", 0.5)))
+	particles.well("rift:%d" % int(event.get("id", 0)), at * s, r * s * float(rf.get("well_reach", 1.3)), float(rf.get("well_pull", 300)), float(rf.get("well_swirl", 200)),
+		r * s * 0.12, span * float(rf.get("ring", 0.42)), float(rf.get("mote_rate", 40)))
+
+
+## A shield forming round the hero at `at` (his floor point): the
+## Leerenschild's motes drawn in from all round on spirals by a short well
+## that leaves the floor alone (void.shield cast_*), the Kristallschild's
+## frost crystallising out of the air as chips that fall and lie
+## (frost.shield cast_chips).
+func _shield_cast_physics(at: Vector2, element: String) -> void:
+	if particles == null: return
+	var s := to_particles
+	var chest := -body.y * s * 0.6
+	if element == "void":
+		var vs: Dictionary = cfg.get("void", {}).get("shield", {})
+		var vo := Pal.ramp("void")
+		var reach := _u(float(vs.get("cast_r", 30))) * s
+		particles.well("vshield:%d" % _local_id(), at * s, reach * 1.4, float(vs.get("cast_pull", 320)), float(vs.get("cast_swirl", 200)), reach * 0.12, float(vs.get("cast_time", 0.4)), 0.0, [], false)
+		var n := int(vs.get("cast_motes", 16))
+		for i in range(n):
+			var a := TAU * float(i) / float(maxi(1, n))
+			var spot := at * s + Vector2.from_angle(a) * reach * Vector2(1.0, 0.75)
+			var mote: Dictionary = particles.emit(spot - Vector2(0.0, chest), Vector2.from_angle(a).orthogonal() * 50.0, vo[4] if i % 3 == 0 else vo[3], float(vs.get("cast_time", 0.4)) + 0.3, "mote", 2.0, chest, 0.0, 0.3)
+			mote.streak = true
+	else:
+		var fs: Dictionary = cfg.get("frost", {}).get("shield", {})
+		particles.shatter(at * s - Vector2(0.0, chest * 1.4), int(fs.get("cast_chips", 8)), Vector2.ZERO, 50.0, [], 2, chest * 1.4)
+		particles.frost(at * s, _u(14.0) * s, 8, Pal.ramp("ice")[3])
+
+
+## A blow on a hero's shield dome (event dome_hit {dx, dy, power}): where it
+## dents, the crystal chips (frost.shield hit_shards) or the void throws motes
+## (void.shield hit_motes), more for a harder blow.
+func _dome_hit_physics(event: Dictionary, at: Vector2) -> void:
+	if particles == null: return
+	var owner := int(event.get("owner", 1))
+	var element := Pal.resolve(str(_shield_el.get(owner, "ice")))
+	var d := Vector2(float(event.get("dx", 0.0)), float(event.get("dy", 1.0)))
+	d = d.normalized() if d.length() > 0.01 else Vector2.UP
+	var s := to_particles
+	var power := clampf(float(event.get("power", 1.0)), 0.0, 1.0)
+	var dent := (at + d * _u(14.0)) * s
+	var h := -body.y * s * 0.6
+	if element == "void":
+		var vo := Pal.ramp("void")
+		var span: Array = cfg.get("void", {}).get("shield", {}).get("hit_motes", [3, 7])
+		particles.motes(dent, int(lerpf(float(span[0]), float(span[1]), power)), [vo[3], vo[4], vo[2]], 2.0, h, 1.6)
+	else:
+		var span: Array = cfg.get("frost", {}).get("shield", {}).get("hit_shards", [2, 5])
+		particles.shatter(dent - Vector2(0.0, h), int(lerpf(float(span[0]), float(span[1]), power)), d, 100.0, [], 2, h)
+
+
+## Gletschergrab's throw: when the crystal leaves the hand (frost.glacier
+## throw of the cast), it breaks there and its shards fly along the aim,
+## fall and skid (the painted crystal is the shape).
+func _glacier_throw(event: Dictionary, at: Vector2, clock: float) -> void:
+	if particles == null: return
+	var gl: Dictionary = cfg.get("frost", {}).get("glacier", {})
+	var span := maxf(0.05, float(event.get("span", 0.5)))
+	var hand := at + body + Vector2(0.0, -11.0 * art)
+	var stage := int(event.get("stage", 0))
+	_defer(clock + span * float(gl.get("throw", 0.35)), {"kind": "throw", "hand": hand, "h": at.y - hand.y, "dir": Vector2.from_angle(float(event.get("angle", 0.0))),
+		"n": int(gl.get("throw_shards", 10)) + 3 * stage, "speed": float(gl.get("throw_speed", 150))})
+
+
+## SPLAT's physics (an enemy flung against a wall at the Urknall, `dir` into
+## the wall): the material's burst in the particles (particles.splat_burst:
+## blood spray, chunks and splats on wall and floor; splinters, dust and a
+## rolling skull; motes; coins) and a rigged enemy near it torn apart along
+## the rebound (rigs.fling_near: every part flies off away from the wall).
+func _splat_physics(event: Dictionary, at: Vector2, r: float) -> void:
+	var sp: Dictionary = cfg.get("void", {}).get("splat", {})
+	var raw: Variant = event.get("dir", [0.0, 0.0])
+	var dir := Vector2(float(raw[0]), float(raw[1])) if raw is Array and raw.size() >= 2 else Vector2.ZERO
+	if dir.length() > 0.01: dir = dir.normalized()
+	var material := str(event.get("material", "flesh"))
+	if rigs != null and rigs.has_method("fling_near"):
+		rigs.fling_near(at, -dir if dir != Vector2.ZERO else Vector2.UP, float(sp.get("fling", 1.0)), _u(float(sp.get("fling_reach", 48))))
+	if particles != null and particles.has_method("splat_burst"):
+		particles.splat_burst(at * to_particles, dir, material, maxf(r, _u(float(sp.get("radius", 14)))) * to_particles)
+
+
+## The Singularität's caught enemies (zone "caught": enemy ids): each on a
+## dark violet tether into the core with its essence flowing in and the
+## drain shimmer round it (TalentPixels.tether, void.tether).
+func _draw_caught(canvas: CanvasItem, zone: Dictionary, core: Vector2, k: float, clock: float) -> void:
+	var caught: Variant = zone.get("caught", [])
+	if not caught is Array or (caught as Array).is_empty(): return
+	var spec: Dictionary = cfg.get("void", {}).get("tether", {})
+	var essence: Dictionary = spec.get("essence", {})
+	for i in range((caught as Array).size()):
+		var found := _caught_enemy(caught[i], i, zone)
+		if found.is_empty(): continue
+		var element := str(essence.get(str(found.material), spec.get("default", "soul")))
+		TalentPixels.tether(canvas, Vector2(found.at), core, k, Pal.ramp(element), art, clock, int(zone.get("id", 0)) * 31 + i, spec)
+		# its essence drifts off it into the core: motes the Singularitaet's well pulls in
+		if particles != null and _tick("tether:%d:%d" % [int(zone.get("id", 0)), i], float(spec.get("emit_every", 0.15)), clock):
+			var cols := Pal.ramp_hot(element)
+			var lift := body * float(spec.get("chest", 0.6))
+			var s := to_particles
+			var floor_at := Vector2(found.at) - lift
+			var mote: Dictionary = particles.emit(Vector2(found.at) * s, (core - floor_at).normalized() * 40.0 * s, cols[1] if posmod(i, 2) == 0 else cols[0], 1.4, "mote", 2.0, -lift.y * s, 0.0, 0.3)
+			mote.streak = true
+			mote.z_to = 2.0
+
+
+## Where a caught enemy is and what it is made of ({at (its chest), material}),
+## or {}: an entry carrying x and y, the zone's caught_at[index], the host's
+## enemy_at(id), else the view's rigs (actor "e<id>" where last drawn).
+func _caught_enemy(entry: Variant, index: int, zone: Dictionary) -> Dictionary:
+	var lift := body * float(cfg.get("void", {}).get("tether", {}).get("chest", 0.6))
+	if entry is Dictionary and entry.has("x"):
+		return {"at": Vector2(float(entry.x), float(entry.get("y", 0.0))) + lift, "material": _material_of(str(entry.get("kind", "")), str(entry.get("material", "")))}
+	var points: Variant = zone.get("caught_at", [])
+	if points is Array and index < points.size() and points[index] is Array and points[index].size() >= 2:
+		return {"at": Vector2(float(points[index][0]), float(points[index][1])) + lift, "material": ""}
+	var id := int(entry.get("id", -1)) if entry is Dictionary else int(entry)
+	if enemy_at.is_valid():
+		var hit: Variant = enemy_at.call(id)
+		if hit is Vector2 and (hit as Vector2).is_finite(): return {"at": hit + lift, "material": ""}
+		if hit is Dictionary and not (hit as Dictionary).is_empty():
+			return {"at": Vector2(float(hit.get("x", 0.0)), float(hit.get("y", 0.0))) + lift, "material": _material_of(str(hit.get("kind", "")), str(hit.get("gore", "")))}
+	if rigs != null and rigs.has_method("actor_feet"):
+		var feet: Vector2 = rigs.actor_feet("e%d" % id)
+		if feet.is_finite(): return {"at": feet + body * 1.1, "material": str(rigs.actor_material("e%d" % id))}
+	return {}
+
+
+## The gore material of an enemy: `material` if given, else its kind's in
+## vfx_gore.json (kinds), else "".
+func _material_of(kind: String, material: String) -> String:
+	if not material.is_empty(): return material
+	return str(gore().get("kinds", {}).get(kind, ""))

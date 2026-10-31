@@ -98,6 +98,14 @@
   "pet": {
     "speed": 170,
     "leash_m": 3,
+    "_follow_note": "How a companion follows its hero when it has no enemy (user wish 2026-10-31: not glued to the hero, a beat late): it rests follow_m metres behind the way the hero walks (that direction turns at most follow_turn rad/s), fanned out by follow_fan rad per companion; it sets off only when its spot is more than follow_slack_m away for follow_delay s, walks until within follow_arrive_m, and beyond leash_m hurries at follow_catchup times its speed.",
+    "follow_m": 2.2,
+    "follow_turn": 2.5,
+    "follow_fan": 0.7,
+    "follow_slack_m": 0.9,
+    "follow_delay": 0.35,
+    "follow_arrive_m": 0.3,
+    "follow_catchup": 2.0,
     "attack_range_m": 1.5,
     "radius": 10,
     "_kinds_note": "Companion of the beast master, chosen in the talent menu (profile class entry 'companion'). hp, dmg, every and speed multiply the talent's values; sprites: assets/sprites/forest_0x72/<kind>_idle|walk_f0..3.png (wolf, bear), assets/sprites/companions/ (falcon, drawn by scripts/make_falcon.py). flying: drawn above its shadow. rig: the part rig the kind wears (assets/data/companion_rigs.json, or rigs.json for skeleton and bone_colossus; src/vfx/companion_rigs.gd draws it, src/combat/body_parts.gd splits its HP over the parts). portrait: the idle frame the companion bar shows. tempo: pace of its idle and walk poses (1 = the wolf's; the bear and the colossus are slower).",
@@ -1400,17 +1408,23 @@
       "name": "Leerengeschoss",
       "kind": "active",
       "icon": "bolt",
-      "text": "130/150/170 % Schaden.",
+      "text": "125/140/155 % Schaden. Verschlingt Pfützen und Gas am Einschlag in dein Arkanes Gefüge, treibt das Ziel kurz in den Wahn und hinterlässt einen Fleck Leere, der selbst frisst, was neben ihm liegt.",
       "ranks": 3,
       "type": "projectile",
       "dmg": [
-        1.3,
-        1.5,
-        1.7
+        1.25,
+        1.4,
+        1.55
       ],
       "style": "arcane",
+      "mad_s": 1.5,
+      "stain": {
+        "radius_m": 0.9,
+        "time": 4,
+        "dps": 0.15
+      },
       "cost": 14,
-      "cd": 5,
+      "cd": 4,
       "id": "arcane_1",
       "class": "mage",
       "spec": "arcane",
@@ -1418,7 +1432,7 @@
       "tier": 1
     },
     "arcane_2": {
-      "name": "Manaquelle",
+      "name": "Leerenquelle",
       "kind": "passive",
       "icon": "drop",
       "text": "+10/20/30 maximales Mana, +5/10/15 % Manaregeneration.",
@@ -1441,12 +1455,13 @@
       "tier": 1
     },
     "arcane_3": {
-      "name": "Magisches Echo",
+      "name": "Nachhall",
       "kind": "active",
       "icon": "echo",
-      "text": "Der nächste Schadenszauber wird mit 25/35/45 % seiner Stärke wiederholt. Das Echo kostet nichts und löst kein weiteres Echo aus.",
+      "text": "Der nächste Schadenszauber hallt mit 25/35/45 % seiner Stärke nach. Der Nachhall trägt das älteste Element deines Gefüges (1 Einheit) mit und lässt es am Einschlag nieder: als Pfütze seines Elements, Knochen, Seelen und Gold als Splitter. Kostet nichts und löst keinen weiteren Nachhall aus.",
       "ranks": 3,
       "type": "echo",
+      "carry": 1,
       "pct": [
         25,
         35,
@@ -1461,17 +1476,16 @@
       "tier": 2
     },
     "arcane_4": {
-      "name": "Leerenkreislauf",
+      "name": "Verzehr",
       "kind": "passive",
       "icon": "cycle",
-      "text": "Jeder dritte Zauber, der Mana kostet, gibt 4/6/8 Mana zurück.",
+      "text": "Jede Einheit, die deine Leere verschlingt, gibt dir 1/2/3 Mana (auch wenn das Gefüge voll ist).",
       "ranks": 3,
-      "type": "refund",
-      "every": 3,
+      "type": "devour",
       "amount": [
-        4,
-        6,
-        8
+        1,
+        2,
+        3
       ],
       "id": "arcane_4",
       "class": "mage",
@@ -1483,7 +1497,7 @@
       "name": "Raumsprung",
       "kind": "active",
       "icon": "blink",
-      "text": "Teleport über 5/7/9 m, entfernt Verlangsamungen.",
+      "text": "Teleport über 5/7/9 m, entfernt Verlangsamungen. Beide Enden verschlingen, was dort liegt, und am Absprung bleibt 2 s ein Riss (1,5 m), der Pfützen und Gas in dein Gefüge saugt.",
       "ranks": 3,
       "type": "blink",
       "dist_m": [
@@ -1492,8 +1506,12 @@
         9
       ],
       "cleanse": true,
+      "rift": {
+        "radius_m": 1.5,
+        "time": 2
+      },
       "cost": 20,
-      "cd": 18,
+      "cd": 16,
       "fx": "arcane",
       "id": "arcane_5",
       "class": "mage",
@@ -1525,8 +1543,10 @@
       "kind": "active",
       "icon": "ring",
       "type": "nova",
-      "text": "Ein Riss der Leere um dich, 3,5 m Radius: 90/110/130 % Schaden.",
+      "text": "Ein Riss der Leere um dich, 3,5 m Radius: zieht Gegner 1,5 m herein (Bosse nicht), 90/110/130 % Schaden, kurzer Wahn, und verschlingt alle Pfützen und Gas darin in dein Gefüge.",
       "radius_m": 3.5,
+      "pull_m": 1.5,
+      "mad_s": 1.5,
       "dmg": [
         0.9,
         1.1,
@@ -1543,15 +1563,15 @@
       "ranks": 3
     },
     "arcane_8": {
-      "name": "Konzentration",
+      "name": "Fassungsvermögen",
       "kind": "passive",
       "icon": "eye",
-      "type": "crit_chance",
-      "text": "+3/6/9 % kritische Trefferchance.",
-      "pct": [
-        3,
-        6,
-        9
+      "type": "gefuege_cap",
+      "text": "Dein Arkanes Gefüge fasst 10/20/30 Einheiten mehr (Grundwert 30).",
+      "amount": [
+        10,
+        20,
+        30
       ],
       "id": "arcane_8",
       "class": "mage",
@@ -1565,12 +1585,18 @@
       "kind": "active",
       "icon": "pierce",
       "type": "projectile",
-      "text": "Durchbohrt jeden Gegner auf ihrer Bahn: 100/120/140 % Schaden.",
+      "text": "Durchbohrt jeden Gegner auf ihrer Bahn: 100/120/140 % Schaden und kurzer Wahn. Trägt 1/2/3 Einheiten deines Gefüges (die ältesten) hinaus und lässt sie gleichmäßig entlang der Bahn als Pfützen ihres Elements fallen.",
       "dmg": [
         1.0,
         1.2,
         1.4
       ],
+      "spend": [
+        1,
+        2,
+        3
+      ],
+      "mad_s": 1.5,
       "pierce": 99,
       "style": "arcane",
       "cost": 28,
@@ -1601,15 +1627,20 @@
       "ranks": 3
     },
     "arcane_11": {
-      "name": "Manaschild",
+      "name": "Leerenschild",
       "kind": "active",
       "icon": "helmet",
       "type": "shield",
-      "text": "Schild für 6 s, hält 100/140/180 % deines Schadens ab.",
+      "text": "Schild für 6 s, hält 100/140/180 % deines Schadens ab und fängt bis zu 3/5/7 feindliche Geschosse, die dich erreichen, in dein Gefüge (als ihr Element).",
       "base_pct": [
         100,
         140,
         180
+      ],
+      "catch": [
+        3,
+        5,
+        7
       ],
       "time": 6,
       "cost": 30,
@@ -1622,15 +1653,15 @@
       "ranks": 3
     },
     "arcane_12": {
-      "name": "Geistesschärfe",
+      "name": "Entfesselte Leere",
       "kind": "passive",
       "icon": "skull",
-      "type": "crit_damage",
-      "text": "+10/20/30 % kritischer Schaden.",
+      "type": "eject_pct",
+      "text": "Elemente, die du aus dem Gefüge freisetzt (Nachhall, Leerenlanze, Singularität), wirken 15/30/45 % stärker.",
       "pct": [
-        10,
-        20,
-        30
+        15,
+        30,
+        45
       ],
       "id": "arcane_12",
       "class": "mage",
@@ -1640,16 +1671,17 @@
       "ranks": 3
     },
     "arcane_13": {
-      "name": "Macht der Leere",
+      "name": "Mischung",
       "kind": "passive",
       "icon": "burst",
-      "type": "damage_pct",
-      "text": "+3/6/9 % Schaden mit allem.",
+      "type": "mix_pct",
+      "text": "+1/1,5/2 % Schaden mit allem je verschiedenem Element in deinem Gefüge (höchstens 5 Sorten).",
       "pct": [
-        3,
-        6,
-        9
+        1,
+        1.5,
+        2
       ],
+      "max_kinds": 5,
       "id": "arcane_13",
       "class": "mage",
       "spec": "arcane",
@@ -1678,11 +1710,15 @@
       ],
       "pull": 80,
       "fx": "arcane",
+      "core_m": 1.5,
+      "fling": {
+        "wall_pct": 200
+      },
       "collapse": {
         "dmg": 1.8,
         "radius_m": 5
       },
-      "text": "Ein Wirbel an der Zielstelle zieht 4 s lang Gegner in 5 m zu sich (Bosse nicht) und trifft jede halbe Sekunde mit 30 %. Am Ende fällt er in sich zusammen: 180 %.",
+      "text": "Ein Wirbel an der Zielstelle zieht 4 s lang Gegner in 5 m zu sich (Bosse nicht), verschlingt Pfützen und Gas in dein Gefüge und trifft jede halbe Sekunde mit 30 %. Wer in seinen Kern (1,5 m) gerät, ist gefangen und kreist um ihn (Minibosse werden nur gezogen); jeder Gefangene gibt seine Essenz ins Gefüge. Am Ende fällt er zusammen: 180 %, dein ganzes Gefüge bricht chaotisch heraus (bis zu 24 Elementgeschosse, 6–8 m weit, jedes landet als sein Element) und die Gefangenen werden nach außen geschleudert: wer gegen eine Wand prallt, nimmt 200 %.",
       "stages": [
         {
           "name": "Ereignishorizont",
@@ -1694,12 +1730,17 @@
         },
         {
           "name": "Urknall",
-          "text": "Der Zusammenbruch macht 250 % in 6 m, und alle anderen Fähigkeiten laden sofort nach.",
+          "text": "Der Zusammenbruch macht 250 % in 6 m, alle anderen Fähigkeiten laden sofort nach, und wer gegen eine Wand geschleudert wird, zerplatzt (Minibosse nehmen 300 %).",
           "set": {
             "collapse": {
               "dmg": 2.5,
               "radius_m": 6,
               "reset_cds": true
+            },
+            "fling": {
+              "wall_pct": 200,
+              "wall_kill": true,
+              "miniboss_pct": 300
             }
           }
         }

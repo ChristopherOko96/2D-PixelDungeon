@@ -9,13 +9,14 @@ extends RefCounted
 ## invulnerability after a hit but lands only once a second.
 
 const DOTS := ["poison", "burn"]
+const ElementRules = preload("res://src/combat/element_rules.gd")
 ## Colours of the condition icons and the hero's tint.
 const LOOK := {"slow": Color(0.6, 0.85, 1.0), "freeze": Color(0.7, 0.95, 1.0), "poison": Color(0.55, 0.95, 0.35), "burn": Color(1.0, 0.55, 0.2),
 	"slip": Color(0.8, 0.95, 1.0), "blind": Color(0.35, 0.3, 0.45), "silence": Color(0.75, 0.6, 1.0), "weak": Color(0.7, 0.65, 0.6),
 	"strength": Color(1.0, 0.4, 0.3), "haste": Color(1.0, 0.9, 0.4), "regen": Color(0.5, 1.0, 0.55), "shield": Color(1.0, 0.85, 0.4),
-	"wet": Color(0.55, 0.75, 1.0)}
+	"wet": Color(0.55, 0.75, 1.0), "mad": Color(0.78, 0.45, 1.0)}
 const NAMES := {"slow": "LANGSAM", "freeze": "GEFROREN", "poison": "GIFT", "burn": "BRAND", "slip": "GLATT", "blind": "BLIND", "silence": "STUMM",
-	"weak": "SCHWACH", "strength": "STÄRKE", "haste": "EILE", "regen": "ERHOLUNG", "shield": "SCHUTZ", "wet": "NASS"}
+	"weak": "SCHWACH", "strength": "STÄRKE", "haste": "EILE", "regen": "ERHOLUNG", "shield": "SCHUTZ", "wet": "NASS", "mad": "WAHN"}
 
 
 static func _all(g: Node) -> Dictionary:
@@ -162,3 +163,21 @@ static func draw_hud(g: Node, h: CanvasItem, pos: Vector2, font: Font) -> void:
 		h.draw_rect(Rect2(Vector2(x, pos.y), Vector2(w, 20)), LOOK.get(kind, Color.WHITE), false, 2.0)
 		h.draw_string(font, Vector2(x + 7, pos.y + 15), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, LOOK.get(kind, Color.WHITE))
 		x += w + 6.0
+
+
+## WAHN (element_rules.json madness): the hero's madness clock; `inside` = he
+## stands in a maddening void pool not his own this frame. state.mad = s of
+## inverted controls left, state.mad_warn = 0..1 while it creeps in (for the
+## visuals); the condition chip "WAHN" shows while he is mad.
+static func mad_step(g: Node, inside: bool, dt: float) -> void:
+	if not inside and float(g.state.get("mad", 0.0)) <= 0.0 and float(g.state.get("mad_in", 0.0)) <= 0.0:
+		g.state.mad_warn = 0.0
+		return
+	ElementRules.hero_mad_step(g.state, inside, dt)
+	if float(g.state.get("mad", 0.0)) > 0.0:
+		apply(g, "mad", float(g.state.mad), 1.0)
+
+
+## True while the hero's controls are inverted (movement and aim mirrored: hell_game.gd _update_player).
+static func inverted(g: Node) -> bool:
+	return not g.state.is_empty() and float(g.state.get("mad", 0.0)) > 0.0

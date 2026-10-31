@@ -10,6 +10,10 @@ extends RefCounted
 ## `_damage_player`, `enemy_killed` from `_enemy_fell`, and `forced_target`
 ## while picking enemy targets. Bosses ignore freeze, root and taunts.
 ## Clients draw `snapshot()` and `player_state(id)`.
+## The Leerenmagier (the mage's arcane spec) keeps an Arkanes Gefüge: his own
+## void (talents, pools, rifts) swallows puddles, gas, shots and essences into
+## it (feed, called by src/combat/elements.gd and src/hell/story_elements.gd),
+## Nachhall and Leerenlanze spend a little, the Singularität ejects it all.
 
 const Dungeon = preload("res://src/dungeon/dungeon_generator.gd")
 const Aggro = preload("res://src/combat/aggro.gd")
@@ -17,6 +21,7 @@ const Profile = preload("res://src/progress/profile.gd")
 const Rules = preload("res://src/progress/talent_rules.gd")
 const BodyParts = preload("res://src/combat/body_parts.gd")
 const RigLibrary = preload("res://src/rig/rig_library.gd")
+const ElementRules = preload("res://src/combat/element_rules.gd")
 
 ## Input bits: 4-7 talent bar slots (keys 1-4), 8 the ultimate (R), 9-10 the
 ## companion's two abilities (keys 5 and 6), 11-12 toggle their auto-cast
@@ -61,6 +66,21 @@ var _ult_stage := -1
 var _cur_talent := ""
 ## The companion dealing the current hit (-1: a hero), for the threat tally.
 var _pet_source := -1
+## Gefüge elements in flight: {time, el, n, pos, owner, talent, base, eject}
+## (Leerenlanze's drops, the Singularität's ejection); they land in _land.
+var drops: Array = []
+## Enemies the collapsing Singularität flings outward: {enemy, dir, left, owner, talent, base, fling}.
+var flung: Array = []
+## True while Gefüge drops deal damage (their kills give no essence).
+var _dropping := false
+## True while an echo (Nachhall) runs; the Gefüge element it carries ("" none).
+var _in_echo := false
+var _echo_el := ""
+## Where the area hit being dealt bursts from (Vector2.INF: none): its kills fly away from it (_stamp).
+var _blast_at := Vector2.INF
+## Seconds from the Gletschergrab's cast to its landing when talents.json gives no
+## land_s (the picture's landing, BEFUND 8): its first damage and its freeze wait for it.
+const GLACIER_LAND_S := 0.5
 
 
 ## The class's Shift defense (talents.json "defense"): a fresh state with full charges or hits.
@@ -87,6 +107,8 @@ func reset(seed_value: int = 0) -> void:
 	zones.clear()
 	orbs.clear()
 	events.clear()
+	drops.clear()
+	flung.clear()
 
 
 ## Leaving a room: summons, traps and zones stay behind, channels end. A
@@ -100,6 +122,8 @@ func room_changed() -> void:
 		pet.target = -1
 	traps.clear()
 	zones.clear()
+	drops.clear()
+	flung.clear()
 	for rt: Dictionary in runtimes.values():
 		rt.channel = {}
 		rt.counter = {}
@@ -132,7 +156,7 @@ func set_build(id: int, build: Dictionary, keep: bool = false) -> void:
 		"bar": bar, "level": state.level, "res_kind": str(res.kind), "res_max": float(res.max), "regen": float(res.regen), "cds": {}, "gcd": 0.0,
 		"buffs": {}, "shield": 0.0, "shield_time": 0.0, "counter": {}, "channel": {}, "after": [], "echo": 0.0, "casts": 0, "prev_bits": 0,
 		"debt_in": 0.0, "debt_heal": 0.0, "debt_ally": 0.0, "guard_cd": 0.0, "pet_target": -1, "companion": _companion(str(build.get("companion", ""))),
-		"pet_auto": [true, true], "pet_cds": {}, "hero_target": -1, "defense": _defense_state(class_id)}
+		"pet_auto": [true, true], "pet_cds": {}, "hero_target": -1, "defense": _defense_state(class_id), "gefuege": [], "catch_left": 0}
 	var bonus := _passive(rt, "resource_bonus")
 	if not bonus.is_empty():
 		rt.res_max += _value(bonus, "max", rt)
@@ -142,6 +166,16 @@ func set_build(id: int, build: Dictionary, keep: bool = false) -> void:
 	if not before.is_empty():
 		rt.pet_auto = before.pet_auto
 		rt.pet_cds = before.pet_cds
+		# the Arkane Gefüge stays through a new build of the same class, cut to its new capacity (oldest first)
+		if str(before["class"]) == class_id:
+			rt.gefuege = before.get("gefuege", [])
+			var over := gefuege_units(rt) - gefuege_cap(rt)
+			while over > 0 and not (rt.gefuege as Array).is_empty():
+				var oldest: Dictionary = rt.gefuege[0]
+				var cut := mini(over, int(oldest.n))
+				oldest.n = int(oldest.n) - cut
+				over -= cut
+				if int(oldest.n) <= 0: (rt.gefuege as Array).pop_front()
 		# a new build mid-run (talent menu on K): no free refill, no reset cooldowns
 		if keep and str(before["class"]) == class_id:
 			rt.res = minf(float(before.res), float(rt.res_max))
@@ -305,9 +339,14 @@ func cast(id: int, talent: String, command: Dictionary = {}) -> bool:
 	if not refund.is_empty() and float(info.cost) > 0.0:
 		rt.casts = int(rt.casts) + 1
 		if int(rt.casts) % int(refund.every) == 0: rt.res = minf(float(rt.res_max), float(rt.res) + _value(refund, "amount", rt))
-	# Magisches Echo: the next damaging spell repeats once, free and without a new echo.
+	# Nachhall: the next damaging spell repeats once, free and without a new echo;
+	# it carries the oldest element of the Gefüge (echo_carry units) to where it lands.
 	if spell and float(rt.echo) > 0.0 and info.has("dmg") and str(info.type) != "echo":
-		rt.echo_cast = {"talent": talent, "scale": float(rt.echo) / 100.0, "time": 0.35, "aim": aim, "target": target}
+		var carried := spend(id, int(rt.get("echo_carry", 0)))
+		if not carried.is_empty():
+			var book := _gf_log(rt)
+			book.echo = int(book.echo) + 1
+		rt.echo_cast = {"talent": talent, "scale": float(rt.echo) / 100.0, "time": 0.35, "aim": aim, "target": target, "el": str(carried[0]) if not carried.is_empty() else ""}
 		rt.echo = 0.0
 	# an ultimate's cast plays a full second with its aim and hit radius
 	var reach := float(info.get("radius_m", 0.0)) * float(data.meter_px)
@@ -324,19 +363,30 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 	match str(info.type):
 		"projectile":
 			var style := str(info.get("style", "arcane"))
+			var speed := 560.0 if style == "arrow" else 440.0
 			# an ultimate stage may fan the shot out (Pfeilsturm)
 			var fan: Dictionary = info.get("fan", {})
 			var count := maxi(1, int(fan.get("count", 1)))
 			for k in range(count):
 				var dir := aim.rotated((float(k) - float(count - 1) * 0.5) * float(fan.get("spread", 0.0)))
-				var shot: Dictionary = game._add_bullet(Vector2(player.pos) + dir * 16.0, dir * (560.0 if style == "arrow" else 440.0), id, dmg,
+				var shot: Dictionary = game._add_bullet(Vector2(player.pos) + dir * 16.0, dir * speed, id, dmg,
 					{"talent": talent, "style": style, "primary": false, "radius": 6.0, "pierce": int(info.get("pierce", 1)) - 1, "life": 1.6, "stage": maxi(0, _ult_stage)})
-				if not shot.is_empty(): shot.always_crit = bool(info.get("always_crit", false))
+				if not shot.is_empty():
+					shot.always_crit = bool(info.get("always_crit", false))
+					# Nachhall's carried element rides on the echoed shot (bullet_hit lets it land)
+					if not _echo_el.is_empty() and k == 0: shot.gefuege_el = _echo_el
+			# Leerenlanze: it carries Gefüge units out and drops them along its flight (not its echo)
+			if info.has("spend") and not _in_echo: _lance_drops(id, rt, talent, info, Vector2(player.pos), aim, speed, base)
 		"nova":
 			var radius := float(info.radius_m) * meter
+			# Leerenriss: the rift drags the enemies in first (never bosses)
+			if info.has("pull_m"): _drag_in(Vector2(player.pos), radius, _value(info, "pull_m", rt, talent) * meter)
 			_area(id, rt, talent, info, Vector2(player.pos), radius, dmg)
 			# ultimates play longer (the inferno column, absolute zero)
-			_event("nova", player.pos, radius, {"fx": str(info.get("fx", "fire")), "talent": talent, "life": 0.9 if str(info.kind) == "ultimate" else 0.5})
+			var nova := {"fx": str(info.get("fx", "fire")), "talent": talent, "life": 0.9 if str(info.kind) == "ultimate" else 0.5}
+			# the void mage's rift eats what lies in it into his Gefüge (_event -> _element void with its owner)
+			if _void_talent(talent): nova.owner = id
+			_event("nova", player.pos, radius, nova)
 		"blink":
 			var origin: Vector2 = player.pos
 			var distance := _value(info, "dist_m", rt, talent) * meter
@@ -345,11 +395,21 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 			if info.has("dmg") and bool(info.get("arrive", false)): _area(id, rt, talent, info, Vector2(player.pos), float(info.get("radius_m", 2)) * meter, dmg)
 			if bool(info.get("cleanse", false)) and game.has_method("cleanse_slows"): game.cleanse_slows(id)
 			_event("blink", origin, 0.0, {"tx": player.pos.x, "ty": player.pos.y, "fx": str(info.get("fx", "arcane")), "talent": talent, "life": 0.8 if talent == "fire_5" else 0.5})
-			# Phönixschritt: the fire trail it leaves sets the elements off along the way (poison goes up, water steams)
-			if str(info.get("fx", "")) == "fire":
+			# Phönixschritt leaves fire along the way (poison goes up, water steams), Frostsprung frost
+			# (water freezes, steam condenses), Raumsprung's fold eats what lies at both ends
+			var trail := str(info.get("fx", ""))
+			if trail in ["fire", "ice"]:
 				var hops := maxi(1, int(origin.distance_to(player.pos) / 28.0))
 				for h in range(hops + 1):
-					_element("fire", origin.lerp(player.pos, float(h) / float(hops)), 18.0, id)
+					_element(trail, origin.lerp(player.pos, float(h) / float(hops)), 18.0, id)
+			elif trail == "arcane" and talent.begins_with("arcane_"):
+				_element("void", origin, 24.0, id)
+				_element("void", Vector2(player.pos), 24.0, id)
+				# Raumsprung: a rift stays at the departure point for a while, a mouth that eats puddles and gas
+				var rift: Dictionary = info.get("rift", {})
+				if not rift.is_empty():
+					zones.append({"id": _take_id(), "owner": id, "talent": talent, "pos": origin, "r": float(rift.radius_m) * meter, "time": float(rift.time), "every": 1.0, "tick": 1.0,
+						"dmg": 0.0, "status": "", "look": "rift", "mouth": true, "info": {}, "total": float(rift.time)})
 		"dash":
 			var from: Vector2 = player.pos
 			player.pos = _move(player.pos, aim * _value(info, "dist_m", rt, talent) * meter, float(game.balance.player.radius), game.current_layout)
@@ -370,6 +430,8 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 			rt.shield = _value(info, "base_pct", rt, talent) / 100.0 * float(player.get("damage", 1.0))
 			rt.shield_time = float(info.time)
 			rt.shield_total = float(info.time)
+			# Leerenschild: while it holds it catches enemy shots into the Gefüge (catch_shot)
+			rt.catch_left = int(_value(info, "catch", rt, talent)) if info.has("catch") else 0
 		"buff":
 			var buff: Dictionary = {"time": float(info.time), "total": float(info.time), "talent": talent, "stage": maxi(0, _ult_stage)}
 			for key: String in ["spell_pct", "cdr_pct", "attack_speed_pct", "damage_pct", "lifesteal_pct", "taken_pct", "reduction_pct", "ally_pct", "solo_reduction_pct", "range_m"]:
@@ -379,6 +441,7 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 			_event("buff", player.pos, 30.0, {"buff": str(info.buff)})
 		"echo":
 			rt.echo = _value(info, "pct", rt, talent)
+			rt.echo_carry = int(info.get("carry", 0))
 		"wall":
 			# Flammenwall: a line of fire across the aim at the target; it burns what touches it
 			var spot := _spot(player, target, info)
@@ -399,12 +462,12 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 				_hit(id, current, strength, info, rt, talent)
 				# Glutkette: every link lands as fire on the floor under its target
 				if str(info.get("fx", "fire")) == "fire": _element("fire", Vector2(current.pos), 20.0, id)
-				hit_ids[int(current.id)] = true
+				hit_ids[_eid(current)] = true
 				points.append([current.pos.x, current.pos.y])
 				var next := {}
 				var best := float(info.jump_m) * meter
 				for other: Dictionary in _living():
-					if hit_ids.has(int(other.id)): continue
+					if hit_ids.has(_eid(other)): continue
 					var gap: float = Vector2(other.pos).distance_to(current.pos)
 					if gap <= best:
 						best = gap
@@ -428,9 +491,10 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 				"dmg": dmg, "status": "", "look": "ice", "info": {"slow": float(info.slow), "slow_time": float(info.slow_time)},
 				"on_end": {} if shatter.is_empty() else {"dmg": float(shatter.dmg) * base, "r": float(shatter.radius_m) * meter, "fx": "ice",
 					"info": {"freeze": float(shatter.freeze), "boss_slow": float(shatter.boss_slow), "boss_slow_time": float(shatter.boss_slow_time)}}})
-			for enemy: Dictionary in _living():
-				if Vector2(enemy.pos).distance_to(spot) <= float(info.freeze_center_m) * meter + float(enemy.radius):
-					_apply_status(id, enemy, {"freeze": float(info.freeze), "boss_slow": float(info.boss_slow), "boss_slow_time": float(info.boss_slow_time)}, rt, talent)
+			# it lands where the picture lands (BEFUND 8): the first tick and the freeze at its heart wait for it (_land_freeze)
+			var block: Dictionary = zones[-1]
+			block.tick = float(info.get("land_s", GLACIER_LAND_S))
+			block.land_freeze = {"r": float(info.freeze_center_m) * meter, "info": {"freeze": float(info.freeze), "boss_slow": float(info.boss_slow), "boss_slow_time": float(info.boss_slow_time)}}
 			_event("nova", spot, radius, {"fx": "ice", "talent": talent, "life": 0.7})
 		"singularity":
 			# Singularität: a whirl that pulls (never bosses), then collapses
@@ -438,6 +502,8 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 			var collapse: Dictionary = info.collapse
 			zones.append({"id": _take_id(), "owner": id, "talent": talent, "pos": spot, "r": float(info.radius_m) * meter, "time": float(info.time), "every": float(info.every),
 				"tick": 0.0, "dmg": dmg, "status": "", "look": "arcane", "pull": float(info.pull), "info": {},
+				# its core catches (zone.caught: ids), the collapse ejects the Gefüge and flings the caught (_collapse)
+				"core": float(info.get("core_m", 0.0)) * meter, "caught": [], "stage": maxi(0, _ult_stage), "base": base, "fling": info.get("fling", {}), "total": float(info.time),
 				"on_end": {"dmg": float(collapse.dmg) * base, "r": float(collapse.radius_m) * meter, "fx": "arcane", "reset_cds": bool(collapse.get("reset_cds", false)), "info": {}}})
 		"line":
 			# Himmelsspeer: a giant arrow through everything in a line, up to a wall
@@ -549,8 +615,8 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 				var pet: Dictionary = _own_pets(id)[0]
 				var from: Vector2 = pet.pos
 				pet.pos = _move(pet.pos, (enemy.pos - pet.pos) * 0.85, 10.0, game.current_layout)
-				pet.target = int(enemy.id)
-				rt.pet_target = int(enemy.id)
+				pet.target = _eid(enemy)
+				rt.pet_target = _eid(enemy)
 				_hit(id, enemy, dmg, info, rt, talent)
 				for other: Dictionary in _living():
 					if not _boss(other) and other.pos.distance_to(pet.pos) < 5.0 * meter: other.pet_taunt = {"pet": int(pet.id), "time": float(info.taunt)}
@@ -591,7 +657,9 @@ func step(delta: float) -> void:
 			if float(rt.buffs[name].time) <= 0.0: rt.buffs.erase(name)
 		if float(rt.shield_time) > 0.0:
 			rt.shield_time = float(rt.shield_time) - delta
-			if float(rt.shield_time) <= 0.0: rt.shield = 0.0
+			if float(rt.shield_time) <= 0.0:
+				rt.shield = 0.0
+				rt.catch_left = 0
 		if not rt.counter.is_empty():
 			rt.counter.time = float(rt.counter.time) - delta
 			if float(rt.counter.time) <= 0.0: rt.counter = {}
@@ -600,10 +668,18 @@ func step(delta: float) -> void:
 			if float(rt.echo_cast.time) <= 0.0 and int(player.hp) > 0:
 				var echo: Dictionary = rt.echo_cast
 				rt.erase("echo_cast")
+				var echoed: Dictionary = data.talents[str(echo.talent)]
 				_spell_hit = true
-				_run(int(id), player, rt, str(echo.talent), data.talents[str(echo.talent)], echo.aim, echo.target, float(echo.scale))
+				_in_echo = true
+				# Nachhall: the carried element rides on an echoed shot, else it lands where the echo lands
+				_echo_el = str(echo.get("el", ""))
+				_run(int(id), player, rt, str(echo.talent), echoed, echo.aim, echo.target, float(echo.scale))
+				if not _echo_el.is_empty() and str(echoed.type) != "projectile":
+					_drop_now(int(id), _echo_el, _echo_point(player, echoed, echo.target), str(echo.talent), float(player.get("damage", 1.0)) * float(echo.scale))
+				_echo_el = ""
+				_in_echo = false
 				_spell_hit = false
-				_event("echo", player.pos, 26.0, {})
+				_event("echo", player.pos, 26.0, {"el": str(echo.get("el", ""))})
 		if not rt.channel.is_empty() and int(player.hp) > 0:
 			rt.channel.timer = float(rt.channel.timer) - delta
 			if float(rt.channel.timer) <= 0.0:
@@ -626,6 +702,8 @@ func step(delta: float) -> void:
 	_step_traps(delta)
 	_step_zones(delta)
 	_step_orbs(delta)
+	_step_drops(delta)
+	_step_flung(delta)
 	for enemy: Dictionary in game.enemies:
 		for key: String in ["talent_mark", "pet_taunt", "talent_taunt", "talent_weak"]:
 			if enemy.has(key):
@@ -667,8 +745,11 @@ func outgoing(owner: int, enemy: Dictionary, damage: float, feedback: bool = tru
 	for talent: String in rt.ranks:
 		var info: Dictionary = data.talents[talent]
 		if str(info.type) == "bonus_vs_status" and Array(info.statuses).any(func(s: String) -> bool: return statuses.has(s)): pct += _value(info, "pct", rt, talent)
-		elif str(info.type) == "bonus_vs_pet_target" and int(enemy.get("id", -1)) == int(rt.pet_target): pct += _value(info, "pct", rt, talent)
+		elif str(info.type) == "bonus_vs_pet_target" and _eid(enemy) == int(rt.pet_target): pct += _value(info, "pct", rt, talent)
 	pct += _sum(rt, "damage_pct", "pct")
+	# Mischung: per distinct element in the Gefüge (at most max_kinds)
+	var mix := _passive(rt, "mix_pct")
+	if not mix.is_empty(): pct += _value(mix, "pct", rt) * mini(_gefuege_kinds(rt), int(mix.get("max_kinds", 5)))
 	if not _cur_talent.is_empty():
 		for talent: String in rt.ranks:
 			var boost: Dictionary = data.talents[talent]
@@ -696,7 +777,7 @@ func dealt(owner: int, enemy: Dictionary, amount: float, feedback: bool = true) 
 	threat[key] = float(threat.get(key, 0.0)) + amount
 	enemy.threat = threat
 	# the companion goes for what its hero attacks (a hero's own hit, not damage over time)
-	if _pet_source < 0 and feedback: rt.hero_target = int(enemy.get("id", -1))
+	if _pet_source < 0 and feedback: rt.hero_target = _eid(enemy)
 	if bool(enemy.get("boss", false)):
 		var tally: Dictionary = enemy.get("damage_by", {})
 		tally[owner] = float(tally.get(owner, 0.0)) + amount
@@ -817,6 +898,10 @@ func interval_scale(player: Dictionary, id: int) -> float:
 ## may leave mana on the ground (a mana orb; a boss or mini-boss a potion).
 func enemy_killed(enemy: Dictionary, owner: int) -> void:
 	_drop_mana(enemy)
+	# a void-killed enemy gives the Leerenmagier its essence, once (in the story worlds
+	# the kill comes later: _hit marked it void_kill); kills by Gefüge drops do not
+	var killer := int(enemy.get("void_kill", owner if _void_talent(_cur_talent) and not _dropping else -1))
+	if killer >= 0: _essence(killer, enemy, Vector2.INF)
 	for zone: Dictionary in zones:
 		var raise: Dictionary = zone.get("raise", {})
 		if raise.is_empty() or Vector2(enemy.pos).distance_to(zone.pos) > float(zone.r) or bool(enemy.get("boss", false)): continue
@@ -919,7 +1004,7 @@ func pet_cast(id: int, slot: int, manual: bool = false) -> bool:
 	var meter := float(data.meter_px)
 	var prey := {}
 	for enemy: Dictionary in _living():
-		if int(enemy.id) == int(pet.target): prey = enemy
+		if _eid(enemy) == int(pet.target): prey = enemy
 	var reach := float(data.pet.attack_range_m) * meter
 	if prey.is_empty(): prey = _nearest(pet.pos, float(ability.get("range_m", 6)) * meter)
 	var dmg := float(ability.get("dmg", 0.0)) * float(pet.base)
@@ -1011,8 +1096,12 @@ func snapshot() -> Dictionary:
 		"ax": Vector2(zone.wall.a).x if zone.has("wall") else 0.0, "ay": Vector2(zone.wall.a).y if zone.has("wall") else 0.0,
 		"bx": Vector2(zone.wall.b).x if zone.has("wall") else 0.0, "by": Vector2(zone.wall.b).y if zone.has("wall") else 0.0,
 		"path": (zone.path as Array).map(func(p: Vector2) -> Array: return [p.x, p.y]) if zone.has("path") else [], "w": float(zone.get("w", 0.0)),
-		"talent": str(zone.get("talent", "")), "total": float(zone.get("total", zone.time)), "every": float(zone.get("every", 1.0)), "stage": int(zone.get("stage", 0)), "ground": bool(zone.get("ground", false))})
+		"talent": str(zone.get("talent", "")), "total": float(zone.get("total", zone.time)), "every": float(zone.get("every", 1.0)), "stage": int(zone.get("stage", 0)), "ground": bool(zone.get("ground", false)),
+		# the Singularität: the ids caught in its core and the core's radius
+		"caught": Array(zone.get("caught", [])).duplicate(), "core": float(zone.get("core", 0.0))})
 	out.auras = auras()
+	# enemies the Singularität's collapse is flinging: where they are and where they fly
+	out.flung = flung.map(func(f: Dictionary) -> Dictionary: return {"x": Vector2(f.enemy.pos).x, "y": Vector2(f.enemy.pos).y, "dx": Vector2(f.dir).x, "dy": Vector2(f.dir).y})
 	return out
 
 
@@ -1043,7 +1132,8 @@ func player_state(id: int) -> Dictionary:
 	return {"res": snappedf(float(rt.res), 0.1), "res_max": float(rt.res_max), "res_kind": str(rt.res_kind), "slots": slots,
 		"ult": _slot(id, rt, str(rt.ultimate)) if not str(rt.ultimate).is_empty() else {}, "buffs": rt.buffs.keys(), "shield": float(rt.shield),
 		"counter": not rt.counter.is_empty(), "channel": not rt.channel.is_empty(), "pet": _pet_state(id, rt), "defense": _defense_hud(rt),
-		"drawing": {} if not rt.has("drawing") else {"left": float(rt.drawing.left), "max": float(rt.drawing.max)}}
+		"drawing": {} if not rt.has("drawing") else {"left": float(rt.drawing.left), "max": float(rt.drawing.max)},
+		"gefuege": gefuege_state(rt)}
 
 
 ## The Shift defense for the HUD: name, text, charges or hits left, and the wait.
@@ -1086,9 +1176,14 @@ func _slot(id: int, rt: Dictionary, talent: String) -> Dictionary:
 # ---------- effects ----------
 
 func _area(id: int, rt: Dictionary, talent: String, info: Dictionary, center: Vector2, radius: float, dmg: float) -> void:
+	var outer := _blast_at
+	_blast_at = center
 	for enemy: Dictionary in _living():
+		# flung by the Urknall: it dies at the wall it flies into, not here (_fling_caught)
+		if bool(enemy.get("flung_out", false)): continue
 		if enemy.pos.distance_to(center) > radius + float(enemy.radius): continue
 		_hit(id, enemy, dmg, info, rt, talent)
+	_blast_at = outer
 
 
 ## One talent hit on an enemy: damage plus the talent's status, slow, freeze or root.
@@ -1097,7 +1192,12 @@ func _hit(id: int, enemy: Dictionary, dmg: float, info: Dictionary, rt: Dictiona
 	var player: Dictionary = game.players.get(id, {})
 	var direction: Vector2 = (Vector2(enemy.pos) - Vector2(player.get("pos", enemy.pos))).normalized()
 	_cur_talent = talent
+	# the look of the blow for its ragdoll if it fells it: away from an area's burst, else from the hero
+	var away: Vector2 = (Vector2(enemy.pos) - _blast_at) if _blast_at.is_finite() and Vector2(enemy.pos).distance_to(_blast_at) > 0.5 else direction
+	_stamp(enemy, away, talent, not talent.is_empty() and talent == str(rt.get("ultimate", "")))
 	if dmg > 0.0: game._damage_enemy(enemy, dmg, direction, id, true)
+	# a kill by the void mage's own talent is a void kill: its essence (enemy_killed)
+	if float(enemy.hp) <= 0.0 and not _dropping and _void_talent(talent): enemy.void_kill = id
 	_cur_talent = ""
 	_apply_status(id, enemy, info, rt, talent)
 
@@ -1111,6 +1211,8 @@ func _apply_status(id: int, enemy: Dictionary, info: Dictionary, rt: Dictionary,
 		var dps := base * float(config.pct) / 100.0 * (1.0 + _dot_bonus(rt, status) / 100.0)
 		_status(enemy, status, dps, float(info.get("status_time", config.time)), id)
 	if info.has("slow"): _status(enemy, "slow", _value(info, "slow", rt, talent), float(info.get("slow_time", 4)), id)
+	# the Leerenmagier's void hits drive their victims mad for a moment (talents.json mad_s)
+	if info.has("mad_s"): _madden(id, enemy, _value(info, "mad_s", rt, talent))
 	if info.has("freeze"):
 		if _boss(enemy):
 			if info.has("boss_slow"): _status(enemy, "slow", float(info.boss_slow), float(info.boss_slow_time), id)
@@ -1159,6 +1261,21 @@ func bullet_hit(bullet: Dictionary, enemy: Dictionary) -> void:
 	elif str(bullet.get("style", "")) in ["fireball", "infernospear"]:
 		# a fire shot without a splash (Infernospeer) still lands as fire where it struck
 		_element("fire", Vector2(enemy.pos), 20.0, id)
+	elif str(bullet.get("style", "")) == "frost_lance":
+		# Frostlanze, Splittersalve: frost where it struck (water freezes, steam falls as rain)
+		_element("ice", Vector2(enemy.pos), 20.0, id)
+	elif str(bullet.get("style", "")) == "arcane" and talent.begins_with("arcane_"):
+		# Leerengeschoss, Leerenlanze: the void eats the puddles and gas where it struck (into the Gefüge)
+		_element("void", Vector2(enemy.pos), 28.0, id)
+		# Leerengeschoss leaves its stain: a small void pool of the hero's that eats what lies near it
+		var stain: Dictionary = info.get("stain", {})
+		if not stain.is_empty():
+			_pool_at(id, "void", Vector2(enemy.pos), float(stain.radius_m) * float(data.meter_px), float(stain.time),
+				float(stain.get("dps", 0.0)) * float(game.players.get(id, {}).get("damage", 1.0)), str(stain.get("status", "")))
+	# Nachhall: the element the echoed shot carries lands where it struck
+	if bullet.has("gefuege_el"):
+		_drop_now(id, str(bullet.gefuege_el), Vector2(enemy.pos), talent, float(game.players.get(id, {}).get("damage", 1.0)))
+		bullet.erase("gefuege_el")
 	_talent_hit = false
 	_spell_hit = false
 
@@ -1228,13 +1345,24 @@ func _step_pets(delta: float) -> void:
 			continue
 		var prey := _pet_prey(pet, owner)
 		if permanent: _care(pet, owner, prey, delta)
-		var goal: Vector2 = owner.pos + Vector2(-28.0 * float(owner.get("face", 1.0)), 18.0)
+		var goal := _pet_rest(pet, owner, i, delta)
 		if not prey.is_empty(): goal = prey.pos
 		var before: Vector2 = pet.pos
-		if Vector2(pet.pos).distance_to(goal) > (_pet_reach(pet) * 0.8 if not prey.is_empty() else 14.0):
-			pet.pos = _move(pet.pos, (goal - pet.pos).limit_length(float(config.speed) * float(pet.get("speed", 1.0)) * pet_parts.speed_scale(pet) * delta), float(config.radius), game.current_layout)
+		# the story worlds are drawn larger than the crypt (talent_world_scale): the companion keeps pace with them
+		var speed: float = float(config.speed) * float(pet.get("speed", 1.0)) * float(pet_parts.speed_scale(pet)) * _world_scale()
+		if not prey.is_empty():
+			pet.follow_walk = false
+			if Vector2(pet.pos).distance_to(goal) > _pet_reach(pet) * 0.8:
+				pet.pos = _move(pet.pos, (goal - pet.pos).limit_length(speed * delta), float(config.radius), game.current_layout)
+		elif _pet_follows(pet, goal, delta):
+			# far behind (beyond the leash) it hurries to catch up
+			var far := Vector2(pet.pos).distance_to(goal) > float(config.get("leash_m", 3.0)) * meter * _world_scale()
+			pet.pos = _move(pet.pos, (goal - pet.pos).limit_length(speed * (float(config.get("follow_catchup", 1.6)) if far else 1.0) * delta), float(config.radius), game.current_layout)
 		pet.moving = Vector2(pet.pos).distance_squared_to(before) > 0.01
-		if absf(goal.x - pet.pos.x) > 2.0: pet.face = signf(goal.x - pet.pos.x)
+		# walking it looks where it goes; resting it looks where its hero looks
+		if pet.moving and absf(goal.x - pet.pos.x) > 2.0: pet.face = signf(goal.x - pet.pos.x)
+		elif not pet.moving and prey.is_empty(): pet.face = signf(float(owner.get("face", 1.0))) if float(owner.get("face", 1.0)) != 0.0 else float(pet.get("face", 1.0))
+		elif not prey.is_empty() and absf(goal.x - pet.pos.x) > 2.0: pet.face = signf(goal.x - pet.pos.x)
 		pet.timer = float(pet.timer) - delta
 		var in_reach := not prey.is_empty() and Vector2(pet.pos).distance_to(prey.pos) <= _pet_reach(pet) + float(prey.radius)
 		# a lost weapon arm or sword (body_parts "disables": "attack") stops the bite until it grows back
@@ -1282,7 +1410,7 @@ func _pet_prey(pet: Dictionary, owner: Dictionary) -> Dictionary:
 	var rt := runtime(int(pet.owner))
 	var living := _living()
 	var by_id := {}
-	for enemy: Dictionary in living: by_id[int(enemy.id)] = enemy
+	for enemy: Dictionary in living: by_id[_eid(enemy)] = enemy
 	var prey: Dictionary = by_id.get(int(rt.get("hero_target", -1)), {})
 	if prey.is_empty(): prey = by_id.get(int(pet.target), {})
 	if prey.is_empty():
@@ -1422,12 +1550,15 @@ func _step_zones(delta: float) -> void:
 		zone.time = float(zone.time) - delta
 		zone.tick = float(zone.tick) - delta
 		if float(zone.get("pull", 0.0)) > 0.0:
-			# Singularität drags everything but bosses towards its heart
+			# Singularität drags everything but bosses towards its heart (minibosses too: they are only never caught)
 			for enemy: Dictionary in _living():
-				if _boss(enemy) or enemy.pos.distance_to(zone.pos) > float(zone.r) + float(enemy.radius): continue
+				if bool(enemy.get("boss", false)) or int(enemy.get("caught_by", -1)) == int(zone.id) or enemy.pos.distance_to(zone.pos) > float(zone.r) + float(enemy.radius): continue
 				_shove(enemy, _move(enemy.pos, (Vector2(zone.pos) - Vector2(enemy.pos)).limit_length(float(zone.pull) * delta), float(enemy.radius), game.current_layout))
+			if float(zone.get("core", 0.0)) > 0.0: _catch_step(zone, delta)
 		if float(zone.tick) <= 0.0:
 			zone.tick = float(zone.every)
+			# a thrown block (the Gletschergrab) freezes its heart when it lands, with its first tick
+			if zone.has("land_freeze"): _land_freeze(zone)
 			_zone_element(zone)
 			var rt := runtime(int(zone.owner))
 			_talent_hit = true
@@ -1438,6 +1569,8 @@ func _step_zones(delta: float) -> void:
 			_talent_hit = false
 		if float(zone.time) <= 0.0:
 			if str(zone.get("look", "")) == "arrows": _event("arrow_finale", zone.pos, float(zone.r), {"life": 0.9})
+			# the Singularität throws its caught out whole before the collapse's blast: they die at the wall, not in the middle
+			if zone.has("core"): _fling_caught(zone)
 			var closing: Dictionary = zone.get("on_end", {})
 			if not closing.is_empty():
 				var owner_rt := runtime(int(zone.owner))
@@ -1448,7 +1581,478 @@ func _step_zones(delta: float) -> void:
 				if bool(closing.get("reset_cds", false)) and not owner_rt.is_empty():
 					for other: String in owner_rt.cds.keys():
 						if other != str(zone.talent): owner_rt.cds[other] = 0.0
+			# the Singularität's collapse: the Gefüge breaks out, the caught fly outward
+			if zone.has("core"): _collapse(zone)
 			zones.remove_at(i)
+
+
+# ---------- the Arkane Gefüge (Leerenmagier, user design 2026-10-31) ----------
+# FEED (his own void eats puddles, gas, shots and essences) -> LOAD (Nachhall
+# and Leerenlanze spend a little) -> EJECT (the Singularität's collapse spends
+# it all). Rules: assets/data/element_rules.json "gefuege".
+
+## The Gefüge's rules: capacity, what a swallowed thing is worth, the
+## essences, the landings, the Singularität's ejection and fling.
+func _gf_cfg() -> Dictionary:
+	return ElementRules.data().get("gefuege", {})
+
+
+## True for the Leerenmagier: a hero with a learned talent of the Gefüge's
+## spec (gefuege.spec). Only his own void feeds his Gefüge.
+func _void_mage(rt: Dictionary) -> bool:
+	if rt.is_empty() or not rt.has("ranks"): return false
+	var spec := str(_gf_cfg().get("spec", "arcane"))
+	for talent: String in rt.ranks:
+		if int(rt.ranks[talent]) > 0 and str(data.talents.get(talent, {}).get("spec", "")) == spec: return true
+	return false
+
+
+## True when hero `owner` has a Gefüge.
+func feeds(owner: int) -> bool:
+	return _void_mage(runtime(owner))
+
+
+## True when `talent` belongs to the Gefüge's spec (its kills are void kills).
+func _void_talent(talent: String) -> bool:
+	return not talent.is_empty() and str(data.talents.get(talent, {}).get("spec", "")) == str(_gf_cfg().get("spec", "arcane"))
+
+
+## How many units the Gefüge holds: gefuege.cap plus Fassungsvermögen (gefuege_cap).
+func gefuege_cap(rt: Dictionary) -> int:
+	return int(_gf_cfg().get("cap", 30)) + int(_sum(rt, "gefuege_cap", "amount"))
+
+
+## The units in a hero's Gefüge.
+func gefuege_units(rt: Dictionary) -> int:
+	var total := 0
+	for entry: Dictionary in rt.get("gefuege", []): total += int(entry.n)
+	return total
+
+
+## The distinct elements in a hero's Gefüge (Mischung).
+func _gefuege_kinds(rt: Dictionary) -> int:
+	var seen := {}
+	for entry: Dictionary in rt.get("gefuege", []): seen[str(entry.el)] = true
+	return seen.size()
+
+
+## The Gefüge element a material is: gefuege.aliases (steam is water, smoke
+## nothing), else the element rules' material, if it is one of
+## gefuege.elements; "" when it gives nothing (void, unknown).
+func gefuege_element(mat: String) -> String:
+	var cfg := _gf_cfg()
+	var aliases: Dictionary = cfg.get("aliases", {})
+	var el := str(aliases.get(mat, ElementRules.material(mat)))
+	return el if el in Array(cfg.get("elements", [])) else ""
+
+
+## What a swallowed thing is worth: [element, units] (["", 0] for nothing).
+## `kind` "pool": units by its radius in crypt px (gefuege.puddle_units over
+## gefuege.puddle_r); "gas": gefuege.gas_units. Asked by the elements code
+## (src/combat/elements.gd, src/hell/story_elements.gd) for what a mouth ate.
+func swallow_value(mat: String, kind: String, radius: float = 0.0) -> Array:
+	var cfg := _gf_cfg()
+	var el := gefuege_element(mat)
+	if el.is_empty(): return ["", 0]
+	if kind == "gas": return [el, int(cfg.get("gas_units", 4))]
+	var units: Array = cfg.get("puddle_units", [3, 8])
+	var span: Array = cfg.get("puddle_r", [20, 70])
+	var k := clampf(inverse_lerp(float(span[0]), float(span[1]), radius), 0.0, 1.0)
+	return [el, roundi(lerpf(float(units[0]), float(units[1]), k))]
+
+
+## Puts `n` units of `el` into the Gefüge (newest at the back; a run of the
+## same element grows). What does not fit is lost, yet every swallowed unit
+## still gives Verzehr's mana (devour). Returns the units stored.
+func _store(rt: Dictionary, el: String, n: int) -> int:
+	var pocket: Array = rt.get("gefuege", [])
+	rt.gefuege = pocket
+	var stored := mini(n, maxi(0, gefuege_cap(rt) - gefuege_units(rt)))
+	if stored > 0:
+		if not pocket.is_empty() and str(pocket[-1].el) == el: pocket[-1].n = int(pocket[-1].n) + stored
+		else: pocket.append({"el": el, "n": stored})
+	var devour := _passive(rt, "devour")
+	if not devour.is_empty() and str(rt.res_kind) == "mana":
+		rt.res = minf(float(rt.res_max), float(rt.res) + _value(devour, "amount", rt) * n)
+	return stored
+
+
+## The void of hero `owner` ate `n` units of `el` (a puddle, a gas cloud, a
+## caught shot, an essence): into his Gefüge if he is the Leerenmagier.
+## `from` is where it was eaten, `mouth` the mouth. Returns the units stored.
+func feed(owner: int, el: String, n: int, from: Vector2 = Vector2.INF, mouth: Vector2 = Vector2.INF) -> int:
+	return feed_all(owner, {el: n}, mouth, from)
+
+
+## Feeds what one mouth ate ({material or element: units}) into `owner`'s
+## Gefüge and tells the clients once: event "swallow" at `from` (the mouth
+## when unknown) with {els, owner, tx, ty (the mouth), stored}.
+func feed_all(owner: int, ate: Dictionary, mouth: Vector2 = Vector2.INF, from: Vector2 = Vector2.INF) -> int:
+	var rt := runtime(owner)
+	if not _void_mage(rt): return 0
+	var els := {}
+	var stored := 0
+	for key: Variant in ate:
+		var el := gefuege_element(str(key))
+		var n := int(ate[key])
+		if el.is_empty() or n <= 0: continue
+		els[el] = int(els.get(el, 0)) + n
+		stored += _store(rt, el, n)
+	if els.is_empty(): return 0
+	var hero: Vector2 = Vector2(game.players[owner].pos) if game.players.has(owner) else Vector2.ZERO
+	var to := mouth if mouth.is_finite() else hero
+	var at := from if from.is_finite() else to
+	_event("swallow", at, 0.0, {"els": els, "owner": owner, "tx": to.x, "ty": to.y, "stored": stored, "life": 0.6})
+	return stored
+
+
+## Takes `n` units out of hero `owner`'s Gefüge, oldest first: one element name per unit.
+func spend(owner: int, n: int) -> Array:
+	var pocket: Array = runtime(owner).get("gefuege", [])
+	var out: Array = []
+	while n > 0 and not pocket.is_empty():
+		var entry: Dictionary = pocket[0]
+		out.append(str(entry.el))
+		entry.n = int(entry.n) - 1
+		if int(entry.n) <= 0: pocket.pop_front()
+		n -= 1
+	return out
+
+
+## The Gefüge for the HUD and the clients (player_state.gefuege): {cap,
+## units: [{el, n}] oldest first, kinds}; {} for a hero without one.
+func gefuege_state(rt: Dictionary) -> Dictionary:
+	if not _void_mage(rt): return {}
+	var units: Array = []
+	for entry: Dictionary in rt.get("gefuege", []): units.append({"el": str(entry.el), "n": int(entry.n)})
+	return {"cap": gefuege_cap(rt), "units": units, "kinds": _gefuege_kinds(rt)}
+
+
+## What the last Gefüge acts did (probes, HUD): {lance, echo, ejected, eject_units, caught, wall_kills}.
+func _gf_log(rt: Dictionary) -> Dictionary:
+	if not rt.has("gf_log"): rt.gf_log = {"lance": 0, "echo": 0, "ejected": 0, "eject_units": 0, "caught": 0, "wall_kills": 0}
+	return rt.gf_log
+
+
+## Leerenschild: a hostile shot reaching hero `id` while his shield holds is
+## caught into his Gefüge (its element by gefuege.shot_el, gefuege.shot_units),
+## at most the talent's catch count per cast. The host calls it before the
+## shot hurts (`element` the shot's element or style, `at` where it is) and
+## drops the shot when it returns true.
+func catch_shot(id: int, element: String, at: Vector2 = Vector2.INF) -> bool:
+	var rt := runtime(id)
+	if rt.is_empty() or int(rt.get("catch_left", 0)) <= 0 or float(rt.get("shield_time", 0.0)) <= 0.0 or float(rt.get("shield", 0.0)) <= 0.0: return false
+	rt.catch_left = int(rt.catch_left) - 1
+	var cfg := _gf_cfg()
+	var shot_el: Dictionary = cfg.get("shot_el", {})
+	var el := str(shot_el.get(element, element))
+	var hero: Vector2 = Vector2(game.players[id].pos) if game.players.has(id) else at
+	var from := at if at.is_finite() else hero
+	feed(id, el, int(cfg.get("shot_units", 1)), from, hero)
+	_event("catch", from, 18.0, {"owner": id, "el": gefuege_element(el), "tx": hero.x, "ty": hero.y, "left": int(rt.catch_left), "life": 0.4})
+	return true
+
+
+## The element tags of an enemy: its own (the crypt keeps them on it), else
+## the words of its kind, id and rig, its shot element and material
+## (src/combat/element_rules.gd tags).
+func _tags_of(enemy: Dictionary) -> Array:
+	if enemy.get("tags") is Array: return enemy.tags
+	var def: Dictionary = enemy.get("def") if enemy.get("def") is Dictionary else {}
+	var words := "%s %s %s" % [str(enemy.get("kind", "")), str(enemy.get("id", "")), str(enemy.get("rig", ""))]
+	return ElementRules.tags(words, str(def.get("shot", "")), str(def.get("material", enemy.get("material", ""))))
+
+
+## The essence of an enemy (gefuege.essence): the elements of its first tag
+## in tag_order (void: none, fire: fire, frost: ice, poison: poison + blood,
+## undead: bone), else of its material, else the default.
+func essence_of(enemy: Dictionary) -> Array:
+	var cfg: Dictionary = _gf_cfg().get("essence", {})
+	var tags := _tags_of(enemy)
+	var by_tag: Dictionary = cfg.get("tags", {})
+	for tag: Variant in cfg.get("tag_order", []):
+		if str(tag) in tags: return Array(by_tag.get(str(tag), []))
+	var by_mat: Dictionary = cfg.get("material", {})
+	var def: Dictionary = enemy.get("def") if enemy.get("def") is Dictionary else {}
+	var mat := str(enemy.get("material", def.get("material", "")))
+	if by_mat.has(mat): return Array(by_mat[mat])
+	return Array(cfg.get("default", []))
+
+
+## The material an enemy bursts into: its own, else by its tags
+## (gefuege.material_by_tag), else gefuege.material_default.
+func _material_of(enemy: Dictionary) -> String:
+	var def: Dictionary = enemy.get("def") if enemy.get("def") is Dictionary else {}
+	var mat := str(enemy.get("material", def.get("material", "")))
+	if not mat.is_empty(): return mat
+	var cfg := _gf_cfg()
+	var by_tag: Dictionary = cfg.get("material_by_tag", {})
+	for tag: Variant in _tags_of(enemy):
+		if by_tag.has(str(tag)): return str(by_tag[str(tag)])
+	return str(cfg.get("material_default", "flesh"))
+
+
+## A void-killed or caught enemy gives the Leerenmagier its essence, once.
+func _essence(owner: int, enemy: Dictionary, mouth: Vector2) -> void:
+	if bool(enemy.get("essence_given", false)) or not _void_mage(runtime(owner)): return
+	enemy.essence_given = true
+	var got := {}
+	for el: Variant in essence_of(enemy): got[str(el)] = int(got.get(str(el), 0)) + 1
+	if not got.is_empty(): feed_all(owner, got, mouth, Vector2(enemy.get("pos", Vector2.ZERO)))
+
+
+## Drives an enemy mad for `seconds` (Wahn, src/combat/element_rules.gd): a
+## story mob through ElementRules.madden (its mad_t), a crypt enemy as the
+## status "mad" through the crypt's element physics. The void's own are immune.
+func _madden(owner: int, enemy: Dictionary, seconds: float) -> void:
+	if seconds <= 0.0: return
+	if enemy.has("p"):
+		ElementRules.madden(enemy, seconds, _tags_of(enemy))
+		return
+	var reactions: Variant = game.get("elements")
+	if reactions != null and reactions.has_method("_status_enemy"): reactions._status_enemy(enemy, ElementRules.mad_rule(seconds), owner)
+
+
+## Holds an enemy still for `time` s (caught or flung): the crypt's hitstun,
+## the story worlds' stun (their mobs keep their position in "p").
+func _hold_enemy(enemy: Dictionary, time: float) -> void:
+	if enemy.has("p"): enemy.stun = maxf(float(enemy.get("stun", 0.0)), time)
+	else: enemy.hitstun = maxf(float(enemy.get("hitstun", 0.0)), time)
+
+
+## Leerenriss: drags the enemies within `radius` of `center` up to `dist` px
+## towards it (never past it, never bosses).
+func _drag_in(center: Vector2, radius: float, dist: float) -> void:
+	for enemy: Dictionary in _living():
+		if bool(enemy.get("boss", false)) or Vector2(enemy.pos).distance_to(center) > radius + float(enemy.radius): continue
+		var way := center - Vector2(enemy.pos)
+		var reach := minf(dist, maxf(0.0, way.length() - float(enemy.radius)))
+		if reach > 0.5: _shove(enemy, _move(enemy.pos, way.limit_length(reach), float(enemy.radius), game.current_layout))
+
+
+## Where an echoed talent lands for Nachhall's carried element: on the hero
+## for the talents around him, else at its aimed spot.
+func _echo_point(player: Dictionary, info: Dictionary, target: Vector2) -> Vector2:
+	if str(info.type) in ["nova", "harvest", "channel", "blink", "dash", "melee", "shield", "buff", "taunt_area", "counter"]: return Vector2(player.pos)
+	return _spot(player, target, info)
+
+
+## Leerenlanze: spends its units (oldest first) and drops them evenly along
+## the lance's flight (up to a wall), each when the lance passes there.
+func _lance_drops(id: int, rt: Dictionary, talent: String, info: Dictionary, from: Vector2, aim: Vector2, speed: float, base: float) -> void:
+	var els := spend(id, int(_value(info, "spend", rt, talent)))
+	var book := _gf_log(rt)
+	book.lance = els.size()
+	if els.is_empty(): return
+	var end := _move(from, aim * speed * 1.6, 4.0, game.current_layout)
+	for k in range(els.size()):
+		var at := from.lerp(end, float(k + 1) / float(els.size() + 1))
+		drops.append({"time": from.distance_to(at) / maxf(1.0, speed), "el": str(els[k]), "n": 1, "pos": at, "owner": id, "talent": talent, "base": base})
+
+
+## One Gefüge element lands at once (Nachhall's carried element).
+func _drop_now(owner: int, el: String, at: Vector2, talent: String, base: float) -> void:
+	_land({"el": el, "n": 1, "pos": at, "owner": owner, "talent": talent, "base": base})
+
+
+## Gefüge drops land when their flight is over (_land).
+func _step_drops(delta: float) -> void:
+	for i in range(drops.size() - 1, -1, -1):
+		var drop: Dictionary = drops[i]
+		drop.time = float(drop.time) - delta
+		if float(drop.time) > 0.0: continue
+		drops.remove_at(i)
+		_land(drop)
+
+
+## A Gefüge element lands (gefuege.land[el]): it hurts the enemies round it
+## (never a hero), lies as a pool of its element (fire, lava, frost, water,
+## poison, blood) and does its reaction there (fire_at, frost_at, water_at:
+## poison goes off, water boils or freezes; the chains stay capped by
+## element_rules.json reactions); bone, soul and gold are shards that only
+## hurt. A bundle of n units hits harder (bundle_scale); Entfesselte Leere
+## (eject_pct) makes every landing stronger. Event "land" {el, n, owner, eject}.
+func _land(drop: Dictionary) -> void:
+	var owner := int(drop.owner)
+	var rt := runtime(owner)
+	var cfg := _gf_cfg()
+	var lands: Dictionary = cfg.get("land", {})
+	var land: Dictionary = lands.get(str(drop.el), {})
+	if land.is_empty() or rt.is_empty(): return
+	var at: Vector2 = drop.pos
+	var size := 1.0 + float(int(drop.n) - 1) * float(cfg.get("bundle_scale", 0.5))
+	var power := size * (1.0 + _sum(rt, "eject_pct", "pct") / 100.0)
+	var radius := float(land.get("radius_m", 0.8)) * float(data.meter_px) * minf(sqrt(size), 2.0)
+	var base := float(drop.get("base", 1.0))
+	var status := str(land.get("status", ""))
+	if float(land.get("dmg", 0.0)) > 0.0:
+		_dropping = true
+		_talent_hit = true
+		_area(owner, rt, str(drop.talent), {"status": status}, at, radius, float(land.dmg) * base * power)
+		_talent_hit = false
+		_dropping = false
+	var pool := str(land.get("pool", ""))
+	if not pool.is_empty(): _pool_at(owner, pool, at, radius, float(land.get("time", 5.0)), float(land.get("dps", 0.0)) * base * power, status)
+	var react := str(land.get("react", ""))
+	if not react.is_empty(): _react(react, at, radius, owner)
+	_event("land", at, radius, {"el": str(drop.el), "n": int(drop.n), "owner": owner, "eject": bool(drop.get("eject", false)), "life": 0.6})
+
+
+## A pool of `style` the hero owns at `at`: the host's (the story worlds'
+## talent_pool puddles, the crypt's boss_moves hero pools). It hurts enemies,
+## never heroes, and is marked as his own Gefüge drop (fed_by) so his own
+## void does not eat it again.
+func _pool_at(owner: int, style: String, at: Vector2, radius: float, time: float, dps: float, status: String) -> void:
+	if game.has_method("talent_pool"):
+		game.talent_pool(style, at, radius, time, owner)
+		return
+	var moves: Variant = game.get("boss_moves")
+	if moves == null: return
+	moves.hero_pool(at, {"style": style, "radius": radius, "time": time, "dps": dps, "status": status}, owner)
+	if not (moves.zones as Array).is_empty(): moves.zones[-1].fed_by = owner
+
+
+## The reaction of a landing element in the host's element physics.
+func _react(kind: String, at: Vector2, radius: float, owner: int) -> void:
+	var reactions: Variant = game.get("elements") if game != null else null
+	if reactions == null: return
+	match kind:
+		"fire": reactions.fire_at(at, radius, owner)
+		"frost": reactions.frost_at(at, radius, owner)
+		"water":
+			if reactions.has_method("water_at"): reactions.water_at(at, radius, owner)
+
+
+## The Singularität's core: non-boss enemies that reach it are caught (they
+## stop acting and orbit the core; each gives its essence once); minibosses
+## are only pulled. zone.caught keeps the ids for the clients.
+func _catch_step(zone: Dictionary, delta: float) -> void:
+	var cfg := _gf_cfg()
+	var held: Array = zone.get("_held", [])
+	var book := _gf_log(runtime(int(zone.owner)))
+	for enemy: Dictionary in _living():
+		if _boss(enemy) or int(enemy.get("caught_by", -1)) == int(zone.id): continue
+		if Vector2(enemy.pos).distance_to(zone.pos) > float(zone.core) + float(enemy.radius) * 0.5: continue
+		enemy.caught_by = int(zone.id)
+		held.append(enemy)
+		book.caught = int(book.caught) + 1
+		_essence(int(zone.owner), enemy, Vector2(zone.pos))
+	held = held.filter(func(e: Dictionary) -> bool: return float(e.hp) > 0.0)
+	zone._held = held
+	zone.caught = held.map(func(e: Dictionary) -> Variant: return _eid(e))
+	zone.spin = float(zone.get("spin", 0.0)) + float(cfg.get("orbit_speed", 4.5)) * delta
+	for k in range(held.size()):
+		var enemy: Dictionary = held[k]
+		var angle := float(zone.spin) + TAU * float(k) / float(held.size())
+		_shove(enemy, Vector2(zone.pos) + Vector2.from_angle(angle) * float(zone.core) * float(cfg.get("orbit_r", 0.6)))
+		_hold_enemy(enemy, float(cfg.get("hold_s", 0.25)))
+
+
+## The Singularität collapses: the whole Gefüge breaks out chaotically (at
+## most gefuege.eject_max bolts, a golden-angle spiral to spots eject_m away,
+## each landing as its element: _land), event "eject" {els: [{el, n, tx, ty,
+## t}], owner}; the caught enemies (and minibosses pulled into the core) fly
+## radially outward (_step_flung).
+func _collapse(zone: Dictionary) -> void:
+	var owner := int(zone.owner)
+	var rt := runtime(owner)
+	var cfg := _gf_cfg()
+	var meter := float(data.meter_px)
+	var center: Vector2 = zone.pos
+	var book := _gf_log(rt)
+	var els := spend(owner, gefuege_units(rt))
+	var bolts := _bundle(els, int(cfg.get("eject_max", 24)))
+	var span: Array = cfg.get("eject_m", [6, 8])
+	var start := _rng.randf() * TAU
+	var out: Array = []
+	var longest := 0.0
+	for k in range(bolts.size()):
+		var bolt: Dictionary = bolts[k]
+		var away := Vector2.from_angle(start + float(k) * 2.399963)
+		var at := _move(center, away * lerpf(float(span[0]), float(span[1]), _rng.randf()) * meter, 6.0, game.current_layout)
+		var delay := float(cfg.get("eject_delay", 0.04)) * float(k) + center.distance_to(at) / maxf(1.0, float(cfg.get("eject_speed", 520)))
+		longest = maxf(longest, delay)
+		drops.append({"time": delay, "el": str(bolt.el), "n": int(bolt.n), "pos": at, "owner": owner, "talent": str(zone.talent), "base": float(zone.get("base", 1.0)), "eject": true})
+		out.append({"el": str(bolt.el), "n": int(bolt.n), "tx": at.x, "ty": at.y, "t": delay})
+	book.ejected = out.size()
+	book.eject_units = els.size()
+	if not out.is_empty(): _event("eject", center, float(zone.r), {"els": out, "owner": owner, "life": longest + 0.4})
+	# the caught were flung out before the blast (_fling_caught)
+
+
+## Bundles element units (oldest first) into at most `most` bolts: runs of
+## one element stay together; with too many, the smallest joins a neighbour.
+func _bundle(els: Array, most: int) -> Array:
+	var bolts: Array = []
+	if els.is_empty() or most <= 0: return bolts
+	var per := ceili(float(els.size()) / float(most))
+	for el: Variant in els:
+		if not bolts.is_empty() and str(bolts[-1].el) == str(el) and int(bolts[-1].n) < per: bolts[-1].n = int(bolts[-1].n) + 1
+		else: bolts.append({"el": str(el), "n": 1})
+	while bolts.size() > most:
+		var small := 0
+		for k in range(bolts.size()):
+			if int(bolts[k].n) < int(bolts[small].n): small = k
+		var into := small - 1 if small > 0 else 1
+		bolts[into].n = int(bolts[into].n) + int(bolts[small].n)
+		bolts.remove_at(small)
+	return bolts
+
+
+## Flung enemies fly on outward (gefuege.fling_speed px/s) until fling_m is
+## used up; one whose step a wall blocks slams into it (_wall_slam).
+func _step_flung(delta: float) -> void:
+	var cfg := _gf_cfg()
+	var speed := float(cfg.get("fling_speed", 760))
+	for i in range(flung.size() - 1, -1, -1):
+		var fly: Dictionary = flung[i]
+		var enemy: Dictionary = fly.enemy
+		if float(enemy.hp) <= 0.0 or float(fly.left) <= 0.0:
+			flung.remove_at(i)
+			_flight_over(fly, enemy)
+			continue
+		var step := minf(speed * delta, float(fly.left))
+		var dir: Vector2 = fly.dir
+		var from: Vector2 = enemy.pos
+		var to := _move(from, dir * step, float(enemy.radius), game.current_layout)
+		_shove(enemy, to)
+		_hold_enemy(enemy, float(cfg.get("hold_s", 0.25)))
+		# it turns over as it flies (the rig draws enemy.tumble, src/rig/rig_renderer.gd)
+		enemy.tumble = float(enemy.get("tumble", 0.0)) + float(cfg.get("fling_spin", 12.0)) * float(fly.get("turn", 1.0)) * delta
+		fly.left = float(fly.left) - step
+		if step > 1.0 and (to - from).dot(dir) < step * 0.5:
+			flung.remove_at(i)
+			_wall_slam(fly, enemy)
+
+
+## A flung enemy against a wall: fling.wall_pct of the ultimate's base
+## (Urknall's wall_kill: a normal enemy dies at once, a miniboss takes
+## miniboss_pct). Events "wall_slam" {dx, dy}; dying there, "splat" with its
+## material (bone, flesh, void, gold, ...) and the flight's direction.
+func _wall_slam(fly: Dictionary, enemy: Dictionary) -> void:
+	var owner := int(fly.owner)
+	var fling: Dictionary = fly.fling
+	var base := float(fly.base)
+	var dir: Vector2 = fly.dir
+	var dmg := float(fling.get("wall_pct", 200)) / 100.0 * base
+	if bool(fling.get("wall_kill", false)):
+		dmg = float(fling.get("miniboss_pct", 300)) / 100.0 * base if _boss(enemy) else float(enemy.hp) * 4.0 + 10.0
+	enemy.erase("flung_out")
+	# the collapse's blast it was spared lands with the wall
+	dmg += float(fly.get("late", 0.0))
+	_talent_hit = true
+	_cur_talent = str(fly.talent)
+	# it dies at the wall: its parts fly back off it (the ragdoll's splat, src/rig/rig_renderer.gd)
+	_stamp(enemy, -dir, str(fly.talent), true, {"wall": true})
+	game._damage_enemy(enemy, dmg, dir, owner, true)
+	if float(enemy.hp) <= 0.0 and _void_talent(str(fly.talent)): enemy.void_kill = owner
+	_cur_talent = ""
+	_talent_hit = false
+	_event("wall_slam", enemy.pos, float(enemy.radius), {"dx": dir.x, "dy": dir.y, "owner": owner, "life": 0.4})
+	if float(enemy.hp) <= 0.0:
+		var book := _gf_log(runtime(owner))
+		book.wall_kills = int(book.wall_kills) + 1
+		_event("splat", enemy.pos, float(enemy.radius), {"material": _material_of(enemy), "dir": [dir.x, dir.y], "owner": owner, "life": 0.8, "enemy": enemy.get("uid", enemy.get("id", -1))})
 
 
 # ---------- helpers ----------
@@ -1673,6 +2277,63 @@ func _boss(enemy: Dictionary) -> bool:
 	return bool(enemy.get("boss", false)) or bool(enemy.get("miniboss", false))
 
 
+## Where a companion rests by its hero (user wish 2026-10-31: not glued to the
+## hero, so it never covers him): pet.follow_m metres behind the way the hero
+## walks (that direction turns at most follow_turn rad/s, so a quick turn does
+## not swing it round at once), fanned out by follow_fan rad per companion so
+## several never stack.
+func _pet_rest(pet: Dictionary, owner: Dictionary, index: int, delta: float) -> Vector2:
+	var config: Dictionary = data.pet
+	var meter := float(data.meter_px)
+	var at: Vector2 = owner.pos
+	var last: Vector2 = pet.get("owner_last", at)
+	pet.owner_last = at
+	var walked := at - last
+	var back: Vector2 = pet.get("follow_back", Vector2(-float(owner.get("face", 1.0)), 0.35).normalized())
+	if walked.length() > 0.5:
+		var want := -walked.normalized()
+		var turn := clampf(wrapf(want.angle() - back.angle(), -PI, PI), -float(config.get("follow_turn", 2.5)) * delta, float(config.get("follow_turn", 2.5)) * delta)
+		back = Vector2.from_angle(back.angle() + turn)
+	pet.follow_back = back
+	var fan := float(config.get("follow_fan", 0.7)) * (float(index % 3) - 1.0)
+	return at + back.rotated(fan) * float(config.get("follow_m", 1.8)) * meter * _world_scale()
+
+
+## True while a companion with no enemy walks to its rest spot `goal`. It only
+## sets off when the spot is more than follow_slack_m away and stayed so for
+## follow_delay s (it reacts a beat late), and then walks until within
+## follow_arrive_m: it does not dance on the hero's heels.
+func _pet_follows(pet: Dictionary, goal: Vector2, delta: float) -> bool:
+	var config: Dictionary = data.pet
+	var meter := float(data.meter_px) * _world_scale()
+	var away := Vector2(pet.pos).distance_to(goal)
+	if bool(pet.get("follow_walk", false)):
+		if away <= float(config.get("follow_arrive_m", 0.3)) * meter:
+			pet.follow_walk = false
+		return bool(pet.follow_walk)
+	if away > float(config.get("follow_slack_m", 0.9)) * meter:
+		pet.follow_wait = float(pet.get("follow_wait", 0.0)) + delta
+		if float(pet.follow_wait) >= float(config.get("follow_delay", 0.35)):
+			pet.follow_walk = true
+			pet.follow_wait = 0.0
+	else:
+		pet.follow_wait = 0.0
+	return bool(pet.get("follow_walk", false))
+
+
+## World px of the host per crypt px: 1 in the crypt, larger in the story worlds
+## (src/hell/hell_talents.gd talent_world_scale).
+func _world_scale() -> float:
+	return float(game.talent_world_scale()) if game != null and game.has_method("talent_world_scale") else 1.0
+
+
+## An enemy's key in the talents: its numeric id in the crypt; in the story
+## worlds the monsters' "id" is their kind, so src/hell/hell_talents.gd gives
+## each one a unique "tid".
+func _eid(enemy: Dictionary) -> int:
+	return int(enemy.tid) if enemy.has("tid") else int(enemy.get("id", -1))
+
+
 func _living() -> Array:
 	return game.enemies.filter(func(e: Dictionary) -> bool: return float(e.hp) > 0.0)
 
@@ -1712,6 +2373,11 @@ func _element(fx: String, at: Vector2, radius: float, owner: int) -> void:
 	if reactions == null: return
 	if fx in ["fire", "lava", "flames"]: reactions.fire_at(at, radius, owner)
 	elif fx in ["ice", "frost", "snow"]: reactions.frost_at(at, radius, owner)
+	# the void mage's spells eat what lies there (element_rules.json swallow)
+	elif fx == "void" and reactions.has_method("void_at"):
+		# what it ate goes into the Leerenmagier's Gefüge (owner 0: nobody's)
+		var ate: Variant = reactions.void_at(at, radius, owner)
+		if owner > 0 and ate is Dictionary and not (ate as Dictionary).is_empty(): feed_all(owner, ate, at)
 
 
 ## A ground zone's tick: burning ground is fire, ice and snow are frost; a
@@ -1737,4 +2403,74 @@ func _event(kind: String, at: Vector2, radius: float, extra: Dictionary) -> void
 	# its whole length, so clients can play an animation over it
 	entry.span = float(entry.life)
 	events.append(entry)
-	if kind in ["nova", "explosion", "impact"]: _element(str(entry.get("fx", "")), at, radius, int(extra.get("owner", 0)))
+	if kind in ["nova", "explosion", "impact"]:
+		var fx := str(entry.get("fx", ""))
+		# "arcane" is the void only for the void mage (other specs use it as a plain flash)
+		if fx == "arcane" and str(entry.get("talent", "")).begins_with("arcane_"): fx = "void"
+		_element(fx, at, radius, int(extra.get("owner", 0)))
+
+
+## Hands the look of this hit to the enemy it may fell (enemy.hit_fx, read at
+## its death by the hosts for its rig's ragdoll, src/rig/rig_renderer.gd kill):
+## the direction it throws (dx, dy), the talent (its feel tier and element),
+## whether it is the ultimate and extras (wall: flung against a wall); ms
+## dates it so an old hit's look never rides a later death. Presentation only.
+func _stamp(enemy: Dictionary, dir: Vector2, talent: String, ult: bool, extra: Dictionary = {}) -> void:
+	var away := dir.normalized() if dir.length() > 0.001 else Vector2.ZERO
+	var fx := {"dx": away.x, "dy": away.y, "talent": talent, "ult": ult, "ms": Time.get_ticks_msec()}
+	fx.merge(extra, true)
+	enemy.hit_fx = fx
+
+
+## The Singularität's caught enemies (and minibosses near its core) fly
+## radially outward whole (_step_flung, turning: enemy.tumble) and are spared
+## the collapse's blast (flung_out): they die at the wall they hit
+## (_wall_slam, which deals the blast's damage late), or take the blast where
+## their flight ends (_flight_over).
+func _fling_caught(zone: Dictionary) -> void:
+	var cfg := _gf_cfg()
+	var meter := float(data.meter_px)
+	var center: Vector2 = zone.pos
+	var closing: Dictionary = zone.get("on_end", {})
+	var thrown: Array = Array(zone.get("_held", [])).filter(func(e: Dictionary) -> bool: return float(e.hp) > 0.0)
+	for enemy: Dictionary in _living():
+		if bool(enemy.get("miniboss", false)) and not bool(enemy.get("boss", false)) and Vector2(enemy.pos).distance_to(center) <= float(zone.core) * 1.5 + float(enemy.radius):
+			if not thrown.has(enemy): thrown.append(enemy)
+	var throw_px := float(cfg.get("fling_m", 10)) * meter
+	for enemy: Dictionary in thrown:
+		enemy.erase("caught_by")
+		enemy.flung_out = true
+		var outward: Vector2 = Vector2(enemy.pos) - center
+		if outward.length() < 1.0: outward = Vector2.from_angle(_rng.randf() * TAU)
+		flung.append({"enemy": enemy, "dir": outward.normalized(), "left": throw_px, "owner": int(zone.owner), "talent": str(zone.talent), "base": float(zone.get("base", 1.0)),
+			"fling": zone.get("fling", {}), "late": float(closing.get("dmg", 0.0)), "turn": 1.0 if outward.x >= 0.0 else -1.0})
+	zone._held = []
+	zone.caught = []
+
+
+## A flight that ended without a wall: the enemy lands upright and takes the collapse's blast it was spared.
+func _flight_over(fly: Dictionary, enemy: Dictionary) -> void:
+	enemy.erase("flung_out")
+	if float(enemy.hp) <= 0.0: return
+	enemy.erase("tumble")
+	var late := float(fly.get("late", 0.0))
+	if late <= 0.0: return
+	var dir: Vector2 = fly.dir
+	_talent_hit = true
+	_cur_talent = str(fly.talent)
+	_stamp(enemy, dir, str(fly.talent), true)
+	game._damage_enemy(enemy, late, dir, int(fly.owner), true)
+	if float(enemy.hp) <= 0.0 and _void_talent(str(fly.talent)): enemy.void_kill = int(fly.owner)
+	_cur_talent = ""
+	_talent_hit = false
+
+
+## The Gletschergrab lands (its first tick): enemies at its heart freeze, bosses only slow.
+func _land_freeze(zone: Dictionary) -> void:
+	var spec: Dictionary = zone.land_freeze
+	zone.erase("land_freeze")
+	var owner := int(zone.owner)
+	var rt := runtime(owner)
+	for enemy: Dictionary in _living():
+		if Vector2(enemy.pos).distance_to(zone.pos) <= float(spec.r) + float(enemy.radius):
+			_apply_status(owner, enemy, spec.info, rt, str(zone.talent))

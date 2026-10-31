@@ -105,6 +105,8 @@ func _attack(kind: String) -> Dictionary:
 
 func _begin_attack(enemy: Dictionary, target_id: int, target_point: Vector2, kind: String) -> void:
 	enemy.attack_target = target_id
+	# WAHN: an attack begun on another enemy (game.gd _madness_step hands the decoy id)
+	if target_id < 0 and _game.has_method("mad_victim") and not _game.mad_victim(target_id).is_empty(): enemy.mad_strikes = int(enemy.get("mad_strikes",0))+1
 	enemy.attack_point = target_point
 	enemy.attack_aim = (target_point-Vector2(enemy.pos)).normalized()
 	if Vector2(enemy.attack_aim).is_zero_approx(): enemy.attack_aim = Vector2.RIGHT
@@ -165,6 +167,12 @@ func _release(enemy: Dictionary) -> bool:
 			var offset: Vector2 = Vector2(target.pos)-Vector2(enemy.pos)
 			if offset.length() <= float(data.get("range",56)) and offset.normalized().dot(aim) >= float(data.get("arc_dot",0.35)) and not Dungeon.segment_blocked(enemy.pos,target.pos,0.0,_game.current_layout):
 				_game._damage_player(target_id,int(data.get("damage",1)),aim if offset.is_zero_approx() else offset.normalized())
+		# WAHN: the blow of a mad enemy turned on another enemy lands on it (game.gd mad_victim / mad_hit)
+		var victim: Dictionary = _game.mad_victim(int(enemy.attack_target)) if _game.has_method("mad_victim") else {}
+		if not victim.is_empty():
+			var to_victim: Vector2 = Vector2(victim.pos)-Vector2(enemy.pos)
+			if to_victim.length() <= float(data.get("range",56))+float(victim.radius) and (to_victim.is_zero_approx() or to_victim.normalized().dot(aim) >= float(data.get("arc_dot",0.35))) and not Dungeon.segment_blocked(enemy.pos,victim.pos,0.0,_game.current_layout):
+				_game.mad_hit(enemy,victim,float(data.get("damage",1)),aim if to_victim.is_zero_approx() else to_victim.normalized())
 		if kind == "slam": _game.add_fx("slam",Vector2(enemy.pos)+aim*float(data.get("range",56))*0.5,float(data.get("range",56)))
 		return true
 	if kind == "fuse":

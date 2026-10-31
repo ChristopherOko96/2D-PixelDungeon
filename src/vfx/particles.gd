@@ -43,6 +43,26 @@ extends RefCounted
 ## stay; holy light falls in shafts that sparkle where they land while gold
 ## motes rise; shadow is ink that crawls over the floor tip first with a cold
 ## violet rim and goes again, its motes sinking.
+##
+## A body flung against a wall bursts in its material (splat_burst, the
+## Leerenmagier's Urknall; vfx_gore.json "splat"): flesh sprays blood back off
+## the wall, its chunks fly, bounce and lie, and blood splats on the floor and
+## runs down the wall (wall_splat); bone throws splinters and a dust cloud and
+## its skull rolls away (a 3x3 skull turning a quarter every few px, lying
+## where it stops); the void throws motes; gold coins bounce and glint.
+##
+## Matter, not paint (review 2026-10-31, BEFUND.md 5/7): the talents' flying
+## bits live here. Snow flakes (snow; modes.flake) float down nearly
+## weightless, flutter on the beat, lie as frost and melt. Lying ice shards
+## glint now and then while their frost lasts (ice.glint_*). A comet (comet;
+## the Urknall's Gefuege units) flies a ballistic arc solved for its landing
+## spot and lands by what it is: a liquid or fire blob splashes (a crown of
+## droplets thrown on, the rest a small puddle in the pool layer through
+## drop_landed), ice breaks into chips, bone and gold bounce and lie, a soul
+## streak puffs into motes. Cosmetic emitters ask room() first: above
+## soft_cap of max_particles they throw fewer, at the cap none, so the
+## collapse of an ultimate stays under the limit. Glow is tight to the pixel
+## (glow: radius, per_size, alpha_cap).
 
 const FxSprites = preload("res://src/vfx/fx_sprites.gd")
 const Glow = preload("res://src/vfx/glow.gd")
@@ -54,6 +74,12 @@ const CHUNK := 128
 ## Art px per room cell (32 world px).
 const CELL_ART := 16
 const MAX_PARTICLES := 600
+## The gore table (materials' colours and the splat classes).
+const GORE_PATH := "res://assets/data/vfx_gore.json"
+## A rolling skull's 3x3 cells, row by row: 0 bone, 1 shade, 2 socket.
+const SKULL := ["000", "202", "101"]
+## The gore table, read on first use.
+static var _gore: Dictionary = {}
 
 ## Room key of the floor cells in use (the view sets the layout when it changes).
 var layout_key := ""
@@ -92,6 +118,9 @@ var _wells: Dictionary = {}
 var _implosions: Array = []
 ## Rime growing over the floor: {p (art px), d (direction), left, carry, col, gen} (rime_grow).
 var _growth: Array = []
+## Glints on lying ice shards: [art px, until, seed] (a spec pixel flashing on
+## the beat while its frost lies; ice.glint_*).
+var _glints: Array = []
 ## The 8 facings of an ice shard (art px steps).
 const DIR8 := [Vector2i(1, 0), Vector2i(1, -1), Vector2i(0, -1), Vector2i(-1, -1), Vector2i(-1, 0), Vector2i(-1, 1), Vector2i(0, 1), Vector2i(1, 1)]
 ## Wet steps and dots that dry away: [art, due time, colour] (wet()).
@@ -172,12 +201,29 @@ func emit(origin: Vector2, velocity: Vector2, color: Color, life: float, mode: S
 		"fade": bool(settings_for_mode.get("fade", true)), "free": solid(ground), "mode": mode,
 		"glow_a": float(settings_for_mode.get("glow_alpha", 0.32))}
 	if mode == "spark": particle.streak = true
+	# snow lies as frost that melts
+	if bool(settings_for_mode.get("melts", false)): particle.melts = true
 	_particles.append(particle)
 	return particle
 
 
 func _mode(mode: String) -> Dictionary:
 	return _data.get("modes", {}).get(mode, {"gravity": 1.0, "lift": [40, 150], "settle": true, "glow": false, "fade": false})
+
+
+## How many of `count` cosmetic particles may still be thrown: all of them
+## while fewer than soft_cap x max_particles fly, fewer and fewer above that
+## and none at the limit, rounded by chance so small asks still get some
+## (vfx_particles.json soft_cap). `weight` > 0 (an ultimate's own matter)
+## always gets its full share.
+func room(count: int, weight := 0) -> int:
+	if weight > 0 or count <= 0: return count
+	var most := float(_data.get("max_particles", MAX_PARTICLES))
+	var soft := most * float(_data.get("soft_cap", 0.8))
+	var have := float(_particles.size())
+	if have <= soft: return count
+	var keep := float(count) * clampf((most - have) / maxf(1.0, most - soft), 0.0, 1.0)
+	return int(keep) + (1 if _rng.randf() < keep - floorf(keep) else 0)
 
 
 ## Leaves a splat of a few overlapping rectangles on the floor.
@@ -310,6 +356,7 @@ func embers(point: Vector2, radius: float, count: int) -> void:
 ## `height` px over the floor), each running down `ramp` (hot to cool colours;
 ## vfx_particles.json fire.ramp when empty) and pushed along by `push`.
 func flames(point: Vector2, count: int, ramp: Array = [], radius: float = 3.0, height: float = 0.0, push: Vector2 = Vector2.ZERO) -> void:
+	count = room(count)
 	var spec: Dictionary = _data.get("fire", {})
 	var colours: Array = ramp if not ramp.is_empty() else _fire_ramp()
 	var life: Array = spec.get("life", [0.3, 0.55])
@@ -355,6 +402,7 @@ func fire_burst(point: Vector2, radius: float, ramp: Array = []) -> void:
 ## the floor and lie down as embers that die over fire.ember_lie s, leaving a
 ## faint soot pixel each (vfx_particles.json "fire").
 func ember_sparks(point: Vector2, count: int, dir: Vector2 = Vector2.ZERO, scale: float = 1.0) -> void:
+	count = room(count)
 	var spec: Dictionary = _data.get("fire", {})
 	var speed: Array = spec.get("spark_speed", [120, 260])
 	var lie: Array = spec.get("ember_lie", [1.0, 1.8])
@@ -382,19 +430,145 @@ func _ice_ramp() -> Array:
 ## `count` rigid ice shards bursting from `point` along `dir` (all round when
 ## zero) at about `speed` px/s, each `2..big` pixels long, coloured by `ramp`
 ## (spec, lite, body, shade, deep; vfx_particles.json ice.ramp when empty), and
-## a glint where they burst.
-func shatter(point: Vector2, count: int, dir: Vector2 = Vector2.ZERO, speed: float = 160.0, ramp: Array = [], big: int = 3) -> void:
+## a glint where they burst; `height` px over the floor where they start
+## (-1: 2..10, a hit near the floor; a hand or a dome sets its own).
+func shatter(point: Vector2, count: int, dir: Vector2 = Vector2.ZERO, speed: float = 160.0, ramp: Array = [], big: int = 3, height := -1.0) -> void:
+	count = room(count)
 	var colours: Array = ramp if ramp.size() >= 5 else _ice_ramp()
 	var lift: Array = _mode("shard").get("lift", [40, 120])
 	for i in range(count):
 		var out := dir.normalized().rotated(_rng.randf_range(-1.0, 1.0)) if dir.length() > 0.01 else Vector2.from_angle(_rng.randf() * TAU)
-		var shard := emit(point, out * speed * _rng.randf_range(0.4, 1.0), colours[2], _rng.randf_range(2.5, 4.0), "shard", 2.0, _rng.randf_range(2.0, 10.0), _rng.randf_range(float(lift[0]), float(lift[1])), 0.2)
+		var high := _rng.randf_range(2.0, 10.0) if height < 0.0 else height + _rng.randf_range(0.0, 3.0)
+		var shard := emit(point, out * speed * _rng.randf_range(0.4, 1.0), colours[2], _rng.randf_range(2.5, 4.0), "shard", 2.0, high, _rng.randf_range(float(lift[0]), float(lift[1])), 0.2)
 		shard.shard = _rng.randi() % 8
 		shard.spin = 1 if _rng.randf() < 0.5 else -1
 		shard.len = _rng.randi_range(mini(2, big), maxi(1, big))
 		shard.ice = colours
 	for i in range(mini(3, maxi(1, count / 3))):
-		emit(point, Vector2.from_angle(_rng.randf() * TAU) * 60.0, colours[0], 0.12, "spark", 2.0, 6.0, 40.0, 4.0)
+		emit(point, Vector2.from_angle(_rng.randf() * TAU) * 60.0, colours[0], 0.12, "spark", 2.0, 6.0 if height < 0.0 else height, 40.0, 4.0)
+
+
+## `count` snow flakes over the disc of `radius` round `point` (its floor
+## point), seen ice.flake_height px over the floor and driven round it at
+## `spin` px/s with a pull of ice.flake_pull towards its middle: each a
+## single pixel (spec or lite of `ramp`, ice.ramp when empty) that floats down
+## nearly weightless with much drag (modes.flake), flutters on the beat,
+## lies where it lands as frost and melts later.
+func snow(point: Vector2, radius: float, count: int, spin: float, ramp: Array = []) -> void:
+	count = room(count)
+	var colours: Array = ramp if ramp.size() >= 5 else _ice_ramp()
+	var high: Array = _data.get("ice", {}).get("flake_height", [14, 40])
+	var pull := _ice("flake_pull", 0.25)
+	var drag := float(_mode("flake").get("drag", 1.2))
+	for i in range(count):
+		var off := Vector2.from_angle(_rng.randf() * TAU) * radius * sqrt(_rng.randf())
+		off.y *= 0.75
+		var turn := off.orthogonal().normalized() if off.length() > 0.5 else Vector2.RIGHT
+		var near := 1.0 - clampf(off.length() / maxf(1.0, radius), 0.0, 1.0)
+		var velocity := turn * spin * (0.5 + 0.8 * near) - off.normalized() * absf(spin) * pull * _rng.randf()
+		var h := _rng.randf_range(float(high[0]), float(high[1]))
+		var flake := emit(point + off - Vector2(0.0, h), velocity, colours[0] if _rng.randf() < 0.3 else colours[1], _rng.randf_range(2.5, 4.5), "flake", 2.0, h, 0.0, drag)
+		flake.seed = _rng.randi() % 997
+
+
+## A comet of matter flung from the floor point `from` (leaving `height` px
+## over it) to land on the floor point `to` after `time` s: a ballistic arc
+## (no drag; its speed and lift solved for the landing), `n` drops of it
+## following a little behind and short (comet.trail_*). How it lands is what
+## it is (`kind`): "drop" liquid and "glut" fire splash where they hit (a
+## crown of droplets thrown on along the flight, the rest a small puddle of
+## `mat` in the pool `layer` through its drop_landed; floor pixels or embers
+## without one), "shard" ice breaks into chips there and lies as frost (its
+## puddle the layer's too), "chip" bone or gold bounces and lies, "mote" a
+## soul streak flies straight, sinks and puffs into motes. `cols` spec, lite,
+## body, shade, deep (the particles' order). The units it carries (`n`)
+## size its splash. Never skipped: it is the matter of a landing that hurts.
+func comet(from: Vector2, to: Vector2, time: float, cols: Array, kind: String, n: int = 1, layer: Object = null, mat := "", height := 10.0) -> void:
+	if cols.size() < 5: return
+	var t := maxf(0.08, time)
+	var mode: String = {"drop": "drop", "glut": "glut", "shard": "shard", "chip": "debris", "mote": "mote"}.get(kind, "drop")
+	var g := float(_data.get("gravity", 620)) * float(_mode(mode).get("gravity", 1.0))
+	var spec: Dictionary = _data.get("comet", {})
+	var trail := clampi(n, 0, int(spec.get("trail_max", 3)))
+	var back := (from - to).normalized() if from.distance_to(to) > 1.0 else Vector2.ZERO
+	for k in range(trail + 1):
+		# the lead, then its drops: each a little later and a little short of it
+		var tk := t * (1.0 + float(k) * float(spec.get("trail_lag", 0.06)))
+		var land := to + back * float(k) * float(spec.get("trail_gap", 3.0)) + Vector2(_rng.randf_range(-2.0, 2.0), _rng.randf_range(-1.5, 1.5)) * float(k)
+		var velocity := (land - from) / tk
+		var lift := (0.5 * g * tk * tk - height) / tk if g > 0.0 else 0.0
+		var colour: Color = cols[1] if k == 0 else cols[2 + (k % 2)]
+		var p := emit(from - Vector2(0.0, height), velocity, colour, tk + 2.0 if g > 0.0 else tk, mode, 4.0 if k == 0 else 2.0, height, lift, 0.0)
+		p.free = false
+		match kind:
+			"drop", "glut":
+				p.splash = n if k == 0 else 0
+				if layer != null:
+					p.land_ref = weakref(layer)
+					p.land_mat = mat
+				if kind == "glut": p.ember_life = _rng.randf_range(1.2, 2.2)
+			"shard":
+				p.shard = _rng.randi() % 8
+				p.spin = 1 if _rng.randf() < 0.5 else -1
+				p.len = 3 if k == 0 else 2
+				p.ice = cols
+				# the lead breaks where it strikes; the chips behind it skid and lie
+				if k == 0:
+					p.splash = n
+					if layer != null:
+						p.land_ref = weakref(layer)
+						p.land_mat = mat
+			"mote":
+				p.streak = true
+				p.z_to = 2.0
+				if k == 0: p.pop = cols
+
+
+## A comet's blob striking the floor (comet): a crown of droplets thrown on
+## along its flight (comet.crown plus one per unit, fewer when the room is
+## full), the rest lying as a small puddle round the spot, comet.cells per
+## unit (at most cells_max): pool cells of its layer, else floor pixels, fire
+## as embers, ice as frost; ice breaks into chips.
+func _land_splash(particle: Dictionary) -> void:
+	var spec: Dictionary = _data.get("comet", {})
+	var at: Vector2 = particle.pos
+	var units := int(particle.get("splash", 0))
+	var vel: Vector2 = particle.vel
+	var mode := str(particle.get("mode", "drop"))
+	var ice := particle.has("shard")
+	var layer: Object = (particle.land_ref as WeakRef).get_ref() if particle.has("land_ref") else null
+	var crown := room(int(spec.get("crown", 3)) + mini(units, 4)) if units > 0 else 0
+	var ahead := vel.normalized() if vel.length() > 1.0 else Vector2.ZERO
+	for i in range(crown):
+		var out := ahead.rotated(_rng.randf_range(-1.2, 1.2)) * vel.length() * _rng.randf_range(0.12, 0.35) if ahead != Vector2.ZERO else Vector2.from_angle(_rng.randf() * TAU) * 40.0
+		var drop := emit(at, out, particle.color if i % 2 else Color(particle.color).lightened(0.2), 1.5, mode, 2.0, 1.0, _rng.randf_range(40.0, 100.0), 1.0)
+		drop.free = false
+		if ice:
+			drop.shard = _rng.randi() % 8
+			drop.spin = 1
+			drop.len = 1
+			drop.ice = particle.ice
+		elif layer != null:
+			drop.land_ref = particle.land_ref
+			drop.land_mat = particle.get("land_mat", "")
+	if units <= 0 and not ice:
+		_settle(particle)
+		return
+	var cells := mini(int(spec.get("cells", 4)) * maxi(1, units), int(spec.get("cells_max", 18)))
+	var reach := PIXEL * (1.0 + sqrt(float(cells)) * float(spec.get("spread", 0.8)))
+	var colour: Color = particle.color
+	for k in range(cells):
+		var spot := at + (Vector2.from_angle(_rng.randf() * TAU) * reach * sqrt(_rng.randf()) + ahead * reach * 0.5 * _rng.randf()) * Vector2(1.0, 0.75)
+		if solid(spot): continue
+		if layer != null: layer.drop_landed(spot, str(particle.get("land_mat", "")))
+		elif mode == "glut": embers(spot, PIXEL, 1)
+		elif ice:
+			var q := _art(spot)
+			_put(q, (particle.ice as Array)[1 if k % 3 == 0 else 2])
+			_freeze(q)
+		else: _disc(spot, PIXEL * 0.6, Color(colour.darkened(0.2), 1.0))
+	if mode == "glut": embers(at, reach * 0.6, 2 + units)
+	if ice: _settle(particle)
 
 
 ## A shard that hit a wall hard breaks into 3-5 chips flying back off it.
@@ -560,8 +734,10 @@ func _void_ramp() -> Array:
 ## `spin` round, both px/s and stronger the closer), what reaches `core` is
 ## swallowed, loose pixels and embers are lifted into it, and `motes` streaks
 ## a second circle in. `ramp`: spec, lite, body, shade, deep (void when empty).
-func well(key: String, point: Vector2, radius: float, pull: float, spin: float, core: float, ttl: float = 0.2, motes: float = 0.0, ramp: Array = []) -> void:
+## `suck` false leaves the floor alone (a wind, the Blizzard's swirl).
+func well(key: String, point: Vector2, radius: float, pull: float, spin: float, core: float, ttl: float = 0.2, motes: float = 0.0, ramp: Array = [], suck := true) -> void:
 	var w: Dictionary = _wells.get(key, {"carry": 0.0, "suck": 0.0})
+	w.floor = suck
 	w.p = point
 	w.r = maxf(radius, 1.0)
 	w.pull = pull
@@ -579,7 +755,7 @@ func implode(point: Vector2, radius: float, ramp: Array = []) -> void:
 	var cols: Array = ramp if ramp.size() >= 5 else _void_ramp()
 	var hold := _void("implode_time", 0.28)
 	well("implode:%d" % _implosions.size() + str(_time), point, radius * 1.5, _void("implode_pull", 420.0), _void("implode_spin", 160.0), radius * 0.12, hold, 0.0, cols)
-	for i in range(int(radius * 0.4)):
+	for i in range(room(int(radius * 0.4))):
 		var at := point + Vector2.from_angle(_rng.randf() * TAU) * radius * _rng.randf_range(0.6, 1.1) * Vector2(1.0, 0.75)
 		var mote := emit(at, (point - at).orthogonal().normalized() * 40.0, cols[1] if i % 3 else cols[0], hold + 0.1, "mote", 2.0, 4.0, 0.0, 0.5)
 		mote.streak = true
@@ -613,12 +789,13 @@ func _step_wells(delta: float) -> void:
 		w.carry = float(w.carry) + float(w.motes) * delta
 		while float(w.carry) >= 1.0:
 			w.carry = float(w.carry) - 1.0
+			if room(1) == 0: continue
 			var at := p + Vector2.from_angle(_rng.randf() * TAU) * r * _rng.randf_range(0.6, 1.0) * Vector2(1.0, 0.75)
 			var mote := emit(at, (p - at).orthogonal().normalized() * float(w.spin) * 0.5, (w.cols as Array)[1 if _rng.randf() < 0.7 else 0], _rng.randf_range(0.8, 1.4), "mote", 2.0, _rng.randf_range(2.0, 8.0), 0.0, 0.3)
 			mote.streak = true
 		# now and then the floor is lifted into it: loose pixels and embers
 		w.suck = float(w.suck) - delta
-		if float(w.suck) <= 0.0:
+		if float(w.suck) <= 0.0 and bool(w.get("floor", true)):
 			w.suck = 0.25
 			_suck(p, r * 0.8)
 
@@ -661,7 +838,7 @@ func _step_implosions() -> void:
 			blow(p, 0.0, r, 0.0, TAU, r * 4.0)
 			kick(p, r * 0.6, 0.7)
 			var cols: Array = imp.cols
-			for i in range(int(r * 0.3)):
+			for i in range(room(int(r * 0.3))):
 				var mote := emit(p, Vector2.from_angle(_rng.randf() * TAU) * _rng.randf_range(80.0, 200.0), cols[1], _rng.randf_range(0.3, 0.6), "mote", 2.0, 4.0, 0.0, 2.0)
 				mote.streak = true
 		if age > 0.7:
@@ -708,6 +885,7 @@ func _el(key: String) -> Array:
 ## `normal` (away from the struck surface), quick and gone; `colors` their
 ## colours (elements.spark, hot metal, when empty; lightning gives its own).
 func sparks(point: Vector2, normal: Vector2, count: int, colors: Array = []) -> void:
+	count = room(count)
 	var cols: Array = colors if colors.size() > 0 else _el("spark")
 	var away := normal.normalized() if normal.length() > 0.01 else Vector2.UP
 	for i in range(count):
@@ -723,6 +901,7 @@ func _shot(key: String, fallback: Array) -> Array:
 ## land and lie as floor pixels (vfx_particles.json "shot").
 func drops(point: Vector2, count: int, dir: Vector2, colors: Array) -> void:
 	if colors.is_empty(): return
+	count = room(count)
 	var speed: Array = _shot("drops", [60, 160])
 	var life: Array = _shot("drop_life", [1.5, 3.0])
 	var lift: Array = _mode("drop").get("lift", [50, 140])
@@ -733,15 +912,18 @@ func drops(point: Vector2, count: int, dir: Vector2, colors: Array) -> void:
 
 
 ## `count` motes of a spirit element (soul, curse, spirit) drifting out of
-## `point` as short glowing streaks in `colors`, rising a little, soon gone.
-func motes(point: Vector2, count: int, colors: Array, rise := 12.0) -> void:
+## `point` as short glowing streaks in `colors`, rising a little, soon gone
+## (they thin out by the dither); `height` px over the floor (-1: 4..14),
+## `speed` x shot.motes px/s.
+func motes(point: Vector2, count: int, colors: Array, rise := 12.0, height := -1.0, speed := 1.0) -> void:
 	if colors.is_empty(): return
-	var speed: Array = _shot("motes", [20, 60])
+	count = room(count)
+	var fast: Array = _shot("motes", [20, 60])
 	var life: Array = _shot("mote_life", [0.35, 0.7])
 	for i in range(count):
 		var out := Vector2.from_angle(_rng.randf() * TAU)
-		var mote := emit(point + out * _rng.randf_range(0.0, 6.0), out * _rng.randf_range(float(speed[0]), float(speed[1])) + Vector2(0, -rise),
-			colors[_rng.randi_range(0, colors.size() - 1)], _rng.randf_range(float(life[0]), float(life[1])), "mote", 2.0, _rng.randf_range(4.0, 14.0), 0.0, 0.8)
+		var mote := emit(point + out * _rng.randf_range(0.0, 6.0), out * _rng.randf_range(float(fast[0]), float(fast[1])) * speed + Vector2(0, -rise),
+			colors[_rng.randi_range(0, colors.size() - 1)], _rng.randf_range(float(life[0]), float(life[1])), "mote", 2.0, _rng.randf_range(4.0, 14.0) if height < 0.0 else height + _rng.randf_range(0.0, 4.0), 0.0, 0.8)
 		mote.streak = true
 
 
@@ -750,6 +932,7 @@ func motes(point: Vector2, count: int, colors: Array, rise := 12.0) -> void:
 ## as floor pixels that stay.
 func chips(point: Vector2, count: int, dir: Vector2, colors: Array) -> void:
 	if colors.is_empty(): return
+	count = room(count)
 	var speed: Array = _shot("chips", [80, 180])
 	var life: Array = _shot("chip_life", [2.0, 3.5])
 	var lift: Array = _mode("debris").get("lift", [40, 150])
@@ -782,6 +965,7 @@ func rubble(point: Vector2, count: int, dir: Vector2 = Vector2.ZERO, speed: floa
 
 ## Dust creeping flat over the floor from `point` (within `radius`), settling soon.
 func dust_flat(point: Vector2, radius: float, count: int) -> void:
+	count = room(count)
 	var cols := _el("dust")
 	for i in range(count):
 		var out := Vector2.from_angle(_rng.randf() * TAU) * Vector2(1.0, 0.7)
@@ -1101,6 +1285,7 @@ func clear() -> void:
 	_damp.clear()
 	_damp_head = 0
 	_growth.clear()
+	_glints.clear()
 	_wells.clear()
 	_implosions.clear()
 
@@ -1167,12 +1352,22 @@ func update(delta: float) -> void:
 			_particles.remove_at(i)
 			continue
 		elif float(particle.life) <= 0.0:
+			# a soul comet puffs into motes where it arrives
+			if particle.has("pop"):
+				var pop: Array = particle.pop
+				motes(Vector2(particle.pos), int(_data.get("comet", {}).get("pop", 4)), [pop[0], pop[1], pop[2]], 6.0, maxf(2.0, float(particle.z)))
 			if particle.has("smoke_p") and _rng.randf() < float(particle.smoke_p):
 				var color := Color(str(_data.get("smoke_color", "2e2a2c")))
 				emit(Vector2(particle.pos), Vector2(particle.vel) * 0.3, color, _rng.randf_range(0.8, 1.4), "smoke", 4.0, float(particle.z), _rng.randf_range(10.0, 25.0), 0.6)
 			_particles.remove_at(i)
 			continue
+		if particle.has("skull"): particle.roll = float(particle.get("roll", 0.0)) + Vector2(particle.vel).length() * delta
 		_move(particle, delta)
+		if bool(particle.get("landed", false)):
+			# a comet's blob struck the floor: it splashes
+			_particles.remove_at(i)
+			_land_splash(particle)
+			continue
 		if bool(particle.get("burst", false)):
 			_break_shard(particle)
 			_particles.remove_at(i)
@@ -1227,6 +1422,11 @@ func _move(particle: Dictionary, delta: float) -> void:
 		particle.z = float(particle.z) + float(particle.vz) * delta
 		if gravity > 0.0 and float(particle.z) <= 0.0:
 			particle.z = 0.0
+			# a comet's blob does not bounce: it splashes (update, _land_splash)
+			if particle.has("splash"):
+				particle.landed = true
+				particle.vel = velocity
+				return
 			if float(particle.vz) < -float(_data.get("bounce_min", 70)):
 				# ice hardly bounces and keeps sliding
 				var shard := particle.has("shard")
@@ -1242,6 +1442,9 @@ func _move(particle: Dictionary, delta: float) -> void:
 					particle.bounced = true
 			else:
 				particle.vz = 0.0
+	elif particle.has("z_to"):
+		# weightless matter sinks (or rises) to the height it is pulled to
+		particle.z = lerpf(float(particle.z), float(particle.z_to), 1.0 - exp(-float(_data.get("z_ease", 5.0)) * delta))
 	var on_floor: bool = float(particle.z) <= 0.0 and float(particle.vz) == 0.0 and gravity > 0.0
 	if on_floor and particle.has("shard"):
 		# ice on stone: an even grip (dry friction), so it skids a short way and stops
@@ -1263,6 +1466,15 @@ func _evict() -> void:
 ## settled frost melts later.
 func _settle(particle: Dictionary) -> void:
 	if bool(particle.free): return
+	# a skull lies where it stopped rolling, turned as it came to rest
+	if particle.has("skull"):
+		var middle := _art(Vector2(particle.pos))
+		for cell: Array in _skull_cells(int(float(particle.get("roll", 0.0)) / 6.0)):
+			var q: Vector2i = middle + (cell[0] as Vector2i)
+			if q.x < 0 or q.y < 0 or solid(_world(q)): continue
+			_put(q, _skull_colour(particle, int(cell[1])))
+			_loose[q] = true
+		return
 	# a shard at rest lies as frost pixels along its facing (they melt later)
 	if particle.has("shard"):
 		if sinks(Vector2(particle.pos)):
@@ -1278,6 +1490,10 @@ func _settle(particle: Dictionary) -> void:
 			_put(q, colours[1] if k == n - 1 else colours[2])
 			_loose[q] = true
 			_freeze(q)
+		# its tip catches the light now and then while it lies (draw_stains)
+		if _glints.size() < int(_ice("glint_max", 80)) and _rng.randf() < _ice("glint_share", 0.6):
+			var span: Array = _data.get("ice", {}).get("glint_life", [2.0, 4.5])
+			_glints.append([middle + face * (n - 1 - n / 2), _time + _rng.randf_range(float(span[0]), float(span[1])), _rng.randi() % 97])
 		return
 	# a drop of a pool comes down: its pool takes it (src/vfx/pool_paint.gd drop_landed)
 	if particle.has("land_ref"):
@@ -1346,6 +1562,18 @@ func draw_stains(canvas: CanvasItem) -> void:
 		var color := Color(str(colors[0 if heat > 0.66 else 1 if heat > 0.33 else 2]))
 		color.a = clampf(0.7 + 0.3 * sin(_time * 23.0 + float(art.x) * 1.7 + float(art.y) * 2.3), 0.4, 1.0)
 		canvas.draw_rect(Rect2(Vector2(art) * PIXEL, Vector2(PIXEL, PIXEL)), color)
+	# lying ice shards glint: their tip flashes spec for one beat now and then
+	if not _glints.is_empty():
+		var spec_colour: Color = _ice_ramp()[0]
+		var beat := int(_time * 12.0)
+		var every := maxi(2, int(_ice("glint_every", 10)))
+		for i in range(_glints.size() - 1, -1, -1):
+			var glint: Array = _glints[i]
+			if float(glint[1]) < _time or not _frozen.has(glint[0]):
+				_glints.remove_at(i)
+				continue
+			if posmod(beat + int(glint[2]), every) == 0:
+				canvas.draw_rect(Rect2(Vector2(glint[0] as Vector2i) * PIXEL, Vector2(PIXEL, PIXEL)), spec_colour)
 
 
 func draw_particles(canvas: CanvasItem) -> void:
@@ -1370,6 +1598,14 @@ func draw_particles(canvas: CanvasItem) -> void:
 		# Airborne chunks cast a pixel shadow on the floor under them.
 		if size >= 4.0 and height > 3.0 and bool(particle.settle):
 			canvas.draw_rect(Rect2(_snap(ground - Vector2(size * 0.5, 0.0)), Vector2(size, PIXEL)), Color(0, 0, 0, 0.22))
+		if particle.has("skull"):
+			# a skull rolling: its 3x3 cells turned a quarter for every 6 px it rolls
+			var middle := Vector2i(((ground - Vector2(0.0, height)) / PIXEL).floor())
+			if height > 3.0:
+				canvas.draw_rect(Rect2(_snap(ground - Vector2(3.0, 0.0)), Vector2(6.0, PIXEL)), Color(0, 0, 0, 0.22))
+			for cell: Array in _skull_cells(int(float(particle.get("roll", 0.0)) / 6.0)):
+				canvas.draw_rect(Rect2(Vector2(middle + (cell[0] as Vector2i)) * PIXEL, Vector2(PIXEL, PIXEL)), _skull_colour(particle, int(cell[1])))
+			continue
 		if particle.has("rock"):
 			# a chunk of rubble: lit top row, dark bottom row
 			var rc: Array = particle.rock
@@ -1457,19 +1693,28 @@ func draw_rime_tips(canvas: CanvasItem) -> void:
 		canvas.draw_rect(Rect2(Vector2(Vector2i((branch.p as Vector2).floor())) * PIXEL, Vector2(PIXEL, PIXEL)), tip)
 
 
-## Glowing particles (sparks, embers, frost) light up in the bloom layer.
+## Glowing particles (sparks, embers, frost) light up in the bloom layer,
+## tight round their pixel so they never wash it out (vfx_particles.json glow:
+## radius + per_size x size px, alpha at most alpha_cap; embers ember_r
+## [cold, hot] px at ember_alpha).
 func draw_glow(canvas: CanvasItem, level: float) -> void:
 	if level <= 0.0: return
+	var spec: Dictionary = _data.get("glow", {})
+	var base := float(spec.get("radius", 3.0))
+	var per := float(spec.get("per_size", 1.0))
+	var cap := float(spec.get("alpha_cap", 0.22))
 	for particle: Dictionary in _particles:
 		if not bool(particle.glow): continue
 		var alpha := clampf(float(particle.life) / (float(particle.max_life) * 0.5), 0.0, 1.0) if bool(particle.fade) else 1.0
 		var point: Vector2 = Vector2(particle.pos) - Vector2(0.0, float(particle.z))
 		# a spark seen against a wall does not light the wall up (no glow through walls)
 		if solid(point): continue
-		Glow.dot(canvas, point, 6.0 + float(particle.size) * 1.5, Color(particle.color, float(particle.get("glow_a", 0.32)) * alpha * level))
+		Glow.dot(canvas, point, base + float(particle.size) * per, Color(particle.color, minf(cap, float(particle.get("glow_a", 0.32))) * alpha * level))
+	var ember_r: Array = spec.get("ember_r", [2.0, 5.0])
+	var ember_a := float(spec.get("ember_alpha", 0.2))
 	for ember: Dictionary in _embers:
 		var heat := float(ember.life) / float(ember.max)
-		Glow.dot(canvas, _world(ember.art), 5.0 + 5.0 * heat, Color(1.0, 0.5, 0.15, 0.3 * heat * level))
+		Glow.dot(canvas, _world(ember.art), lerpf(float(ember_r[0]), float(ember_r[1]), heat), Color(1.0, 0.5, 0.15, ember_a * heat * level))
 
 
 func count() -> int:
@@ -1724,3 +1969,138 @@ func _chunk(art: Vector2i) -> Dictionary:
 	if not _chunks.has(key):
 		_chunks[key] = {"image": Image.create_empty(CHUNK, CHUNK, false, Image.FORMAT_RGBA8), "texture": null, "dirty": true}
 	return _chunks[key]
+
+
+# --- Splats (a body flung against a wall) ---------------------------------------------
+
+## The gore table (assets/data/vfx_gore.json), read once.
+static func _gore_table() -> Dictionary:
+	if _gore.is_empty():
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(GORE_PATH)) if FileAccess.file_exists(GORE_PATH) else null
+		_gore = parsed if parsed is Dictionary else {"materials": {}}
+	return _gore
+
+
+## A colour from a table: a hex string, else `fallback`.
+static func _hex_or(value: Variant, fallback: Color) -> Color:
+	if value is String and Color.html_is_valid(value): return Color.html(value)
+	return fallback
+
+
+## Colours from a list of hex strings, else `fallback`.
+static func _hexes(values: Variant, fallback: Array) -> Array:
+	var out: Array = []
+	if values is Array:
+		for value: Variant in values:
+			if value is String and Color.html_is_valid(value): out.append(Color.html(value))
+	return out if not out.is_empty() else fallback
+
+
+## SPLAT (src/vfx/talent_fx.gd "splat": an enemy flung against a wall at the
+## Urknall) in the enemy's `material`, `dir` pointing into the wall it struck,
+## `radius` px the burst's reach. vfx_gore.json "splat": the material's class
+## (class: flesh, bone, void, gold; unknown ones flesh) and that class's
+## counts; colours from the material's own entry (color, stain) or the
+## class's. flesh: drops sprayed back off the wall, chunks that fly, bounce
+## and lie, a splat on the floor and one on the wall running down; bone:
+## splinters off the wall, a dust cloud that rises and creeps, the skull
+## rolling away and a crack in the wall; void: motes flung out over a dark
+## stain; gold: coins that bounce and settle, with glints. Every class kicks
+## the loose floor pixels round it.
+func splat_burst(point: Vector2, dir: Vector2, material: String, radius: float = 16.0) -> void:
+	var table: Dictionary = _gore_table().get("splat", {})
+	var cls := str(table.get("class", {}).get(material, material))
+	if not table.has(cls) or not table[cls] is Dictionary: cls = "flesh"
+	var spec: Dictionary = table.get(cls, {})
+	var mat: Variant = _gore_table().get("materials", {}).get(material, {})
+	if not mat is Dictionary: mat = {}
+	var color := _hex_or(mat.get("color", spec.get("color", "")), Color("c8323a"))
+	var stain_color := _hex_or(mat.get("stain", spec.get("stain", "")), color.darkened(0.5))
+	var into := dir.normalized() if dir.length() > 0.01 else Vector2.UP
+	var back := -into
+	var spray := float(spec.get("spray", 170))
+	match cls:
+		"flesh":
+			drops(point, int(spec.get("drops", 24)), back, [color, color.darkened(0.3), color.lightened(0.15)])
+			var flesh := _hexes(spec.get("chunk_colors", []), [color.darkened(0.4), color, color.lightened(0.3)])
+			var lift: Array = spec.get("chunk_lift", [80, 170])
+			for i in range(int(spec.get("chunks", 6))):
+				var out := back.rotated(_rng.randf_range(-1.1, 1.1)) * _rng.randf_range(spray * 0.45, spray)
+				emit(point, out, flesh[i % flesh.size()], _rng.randf_range(2.0, 3.5), "debris", [4.0, 4.0, 6.0][i % 3], 8.0, _rng.randf_range(float(lift[0]), float(lift[1])), 2.0)
+			splat(point + back * radius * 0.5, stain_color, float(mat.get("stain_alpha", spec.get("stain_alpha", 0.9))), float(spec.get("floor_splat", 16)), back)
+			wall_splat(point, into, color.darkened(0.15), float(spec.get("wall_splat", 9)))
+		"bone":
+			var bone := _hexes(spec.get("colors", []), [color, color.darkened(0.25), color.lightened(0.2)])
+			chips(point, int(spec.get("splinters", 14)), back, bone)
+			var dust := _el("dust")
+			for i in range(int(spec.get("dust", 12))):
+				var drift := Vector2.from_angle(_rng.randf() * TAU) * _rng.randf_range(20.0, 70.0) + back * 30.0
+				emit(point + Vector2(_rng.randf_range(-4.0, 4.0), _rng.randf_range(-3.0, 3.0)), drift, dust[_rng.randi_range(0, dust.size() - 1)], _rng.randf_range(0.7, 1.3), "dust", 4.0, _rng.randf_range(2.0, 10.0), _rng.randf_range(10.0, 40.0), 2.5)
+			dust_flat(point, radius, maxi(2, int(spec.get("dust", 12)) / 2))
+			var roll: Array = spec.get("skull_roll", [90, 140])
+			for i in range(int(spec.get("skull", 1))):
+				var skull := emit(point + back * 4.0, back.rotated(_rng.randf_range(-0.6, 0.6)) * _rng.randf_range(float(roll[0]), float(roll[1])), bone[0], 5.0, "debris", 6.0, 10.0, _rng.randf_range(60.0, 110.0), 0.8)
+				skull.skull = true
+				skull.eyes = _hex_or(spec.get("eyes", ""), Color("2a2420"))
+			crack(point + into * PIXEL * 2.0, back)
+			stain(point, stain_color, radius * 0.3)
+		"void":
+			var v := _void_ramp()
+			motes(point, int(spec.get("motes", 20)), [v[0], v[1], v[2]], 14.0)
+			splat(point + back * radius * 0.3, stain_color, 0.85, float(spec.get("stain_r", 10)), back)
+		"gold":
+			var gold := _hexes(spec.get("colors", []), [Color("f3ce7d"), Color("c89a3a"), Color("fff0c0")])
+			for i in range(int(spec.get("coins", 10))):
+				var out := back.rotated(_rng.randf_range(-1.3, 1.3)) * _rng.randf_range(spray * 0.35, spray)
+				emit(point, out, gold[i % 2], _rng.randf_range(2.0, 3.0), "debris", 4.0, 8.0, _rng.randf_range(90.0, 180.0), 1.5)
+			sparks(point, back, int(spec.get("glints", 6)), [gold[gold.size() - 1], gold[0]])
+	kick(point, radius, float(spec.get("kick", 1.0)))
+
+
+## A liquid of `color` splashed on the wall a body struck at `point` (`into`
+## pointing into it): where the first wall pixel along `into` lies within
+## `reach` px, a ragged blob `size` px across painted over the wall's foot
+## and face (unmasked, like crack), drips running down from it and a few
+## spots flung round it. Without a wall in reach (or without a room) nothing.
+func wall_splat(point: Vector2, into: Vector2, color: Color, size: float, reach: float = 24.0) -> void:
+	var dir := into.normalized() if into.length() > 0.01 else Vector2.UP
+	var hit := Vector2.INF
+	var s := 0.0
+	while s <= reach:
+		if solid(point + dir * s):
+			hit = point + dir * s
+			break
+		s += PIXEL
+	if not hit.is_finite(): return
+	_marks += 1
+	var c := _art(hit)
+	var n := maxi(1, int(size / PIXEL))
+	for y in range(-n, n + 1):
+		for x in range(-n, n + 1):
+			if Vector2(float(x), float(y) * 1.3).length() <= float(n) * _rng.randf_range(0.55, 1.0):
+				_blend(c + Vector2i(x, y), Color(color, 0.95), false)
+	for i in range(maxi(2, n)):
+		var x := _rng.randi_range(-n, n)
+		var length := _rng.randi_range(2, n * 2 + 2)
+		for k in range(length):
+			_blend(c + Vector2i(x, k), Color(color.darkened(0.25 * float(k) / float(length)), 0.9), false)
+	for i in range(4):
+		_blend(c + Vector2i(_rng.randi_range(-n * 2, n * 2), _rng.randi_range(-n * 2, n)), Color(color, 0.9), false)
+
+
+## A rolling skull's cells turned `turn` quarter turns: [offset, shade] (0 bone, 1 shade, 2 socket).
+static func _skull_cells(turn: int) -> Array:
+	var out: Array = []
+	for y in range(3):
+		for x in range(3):
+			var o := Vector2i(x - 1, y - 1)
+			for i in range(posmod(turn, 4)): o = Vector2i(-o.y, o.x)
+			out.append([o, int(SKULL[y][x])])
+	return out
+
+
+## The colour of a skull cell: its bone, the bone's shade or the socket.
+static func _skull_colour(particle: Dictionary, shade: int) -> Color:
+	var bone: Color = particle.color
+	if shade == 2: return particle.get("eyes", Color("2a2420"))
+	return bone.darkened(0.3) if shade == 1 else bone

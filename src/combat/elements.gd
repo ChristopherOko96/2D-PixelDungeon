@@ -182,22 +182,26 @@ func dot_f(id: int, player: Dictionary, amount: float, mat: String) -> void:
 
 
 ## The void eats what lies near it (element_rules.json swallow; user decision
-## 2026-10-31): a void pool, an active vortex or a pulling talent zone (the
-## Singularität) drains the other pools within reach x its radius and draws the
-## gas clouds in, shrinking them until they are gone.
+## 2026-10-31): a void pool, an active vortex or a talent mouth (the
+## Singularität's pull, Raumsprung's rift) drains the other pools within reach
+## x its radius and draws the gas clouds in, shrinking them until they are
+## gone. A mouth of the Leerenmagier (his void pool: hostile = his id, his
+## talent zone) feeds what it eats into his Arkanes Gefüge
+## (src/combat/talent_combat.gd feed_all), each pool or cloud once; his own
+## Gefüge drops (fed_by) it leaves alone. Boss mouths feed nobody.
 func _void_swallows(delta: float) -> void:
 	var S: Dictionary = ElementRules.data().get("swallow", {})
 	if S.is_empty(): return
 	var mouths: Array = []
 	for zone: Dictionary in game.boss_moves.zones:
 		if str(zone.kind) == "pool" and ElementRules.material(str(zone.style)) == "void" and float(zone.timer) > 0.0:
-			mouths.append([Vector2(zone.pos), float(zone.radius)])
+			mouths.append([Vector2(zone.pos), float(zone.radius), int(zone.get("hostile", 0))])
 		elif str(zone.kind) == "vortex":
 			# a boss's vortex and the Testraum's Strudel (its warn phase is the whirl itself)
-			mouths.append([Vector2(zone.pos), float(zone.radius)])
+			mouths.append([Vector2(zone.pos), float(zone.radius), 0])
 	for zone: Dictionary in game.talent_combat.zones:
-		if float(zone.get("pull", 0.0)) > 0.0:
-			mouths.append([Vector2(zone.pos), float(zone.r)])
+		if float(zone.get("pull", 0.0)) > 0.0 or bool(zone.get("mouth", false)):
+			mouths.append([Vector2(zone.pos), float(zone.r), int(zone.get("owner", 0))])
 	if mouths.is_empty(): return
 	var reach_k := float(S.get("reach", 1.6))
 	var drain := float(S.get("time", 0.7))
@@ -206,17 +210,63 @@ func _void_swallows(delta: float) -> void:
 	for mouth: Array in mouths:
 		var at: Vector2 = mouth[0]
 		var reach: float = float(mouth[1]) * reach_k
+		var owner: int = int(mouth[2])
+		var ate := {}
 		for zone: Dictionary in game.boss_moves.zones:
 			if str(zone.kind) != "pool" or ElementRules.material(str(zone.style)) == "void": continue
-			if Vector2(zone.pos).distance_to(at) <= reach + float(zone.radius) and float(zone.timer) > drain:
-				zone.timer = drain
+			if owner > 0 and int(zone.get("fed_by", 0)) == owner: continue
+			if Vector2(zone.pos).distance_to(at) <= reach + float(zone.radius) and float(zone.timer) > 0.0:
+				if float(zone.timer) > drain: zone.timer = drain
+				_eat(ate, zone, "pool", _pool_mat(zone), float(zone.radius), owner)
 		for cloud: Dictionary in clouds:
 			if str(cloud.mat) == "void": continue
 			var off: Vector2 = at - Vector2(cloud.pos)
 			if off.length() > reach + float(cloud.radius): continue
+			_eat(ate, cloud, "gas", str(cloud.mat), float(cloud.radius), owner)
 			cloud.pos = Vector2(cloud.pos) + off.limit_length(pull * delta)
 			cloud.radius = float(cloud.radius) - shrink * delta
 			if float(cloud.radius) < 10.0: cloud.timer = 0.0
+		if not ate.is_empty(): game.talent_combat.feed_all(owner, ate, at)
+
+
+## A void spell landing at `at` reaching `radius` (world px): the puddles
+## there (not void) drain away within swallow.time s and the gas clouds are
+## pulled in and shrink by half (element_rules.json swallow). Returns what it
+## ate for the caster's Arkanes Gefüge ({element: units}; each pool or cloud
+## once, nothing for `owner` 0; his own Gefüge drops it leaves alone).
+func void_at(at: Vector2, radius: float, owner := 0) -> Dictionary:
+	var S: Dictionary = ElementRules.data().get("swallow", {})
+	var reach := radius * float(S.get("reach", 1.6))
+	var drain := float(S.get("time", 0.7))
+	var ate := {}
+	for zone: Dictionary in game.boss_moves.zones:
+		if str(zone.kind) != "pool" or ElementRules.material(str(zone.style)) == "void": continue
+		if owner > 0 and int(zone.get("fed_by", 0)) == owner: continue
+		if Vector2(zone.pos).distance_to(at) <= reach + float(zone.radius) and float(zone.timer) > 0.0:
+			if float(zone.timer) > drain: zone.timer = drain
+			_eat(ate, zone, "pool", _pool_mat(zone), float(zone.radius), owner)
+	for cloud: Dictionary in clouds:
+		if str(cloud.mat) == "void" or Vector2(cloud.pos).distance_to(at) > reach + float(cloud.radius): continue
+		_eat(ate, cloud, "gas", str(cloud.mat), float(cloud.radius), owner)
+		cloud.pos = Vector2(cloud.pos).lerp(at, 0.5)
+		cloud.radius = float(cloud.radius) * 0.5
+		if float(cloud.radius) < 10.0: cloud.timer = 0.0
+	return ate
+
+
+## Counts what a mouth of hero `owner` ate into `ate` ({element: units} by
+## src/combat/talent_combat.gd swallow_value): each pool or cloud once, and
+## only for a hero (owner > 0).
+func _eat(ate: Dictionary, thing: Dictionary, kind: String, mat: String, radius: float, owner: int) -> void:
+	if owner <= 0 or bool(thing.get("eaten", false)): return
+	thing.eaten = true
+	var got: Array = game.talent_combat.swallow_value(mat, kind, radius)
+	if int(got[1]) > 0: ate[str(got[0])] = int(ate.get(str(got[0]), 0)) + int(got[1])
+
+
+## The material a pool is to the void: its style, ice while it is frozen (Glatteis).
+func _pool_mat(zone: Dictionary) -> String:
+	return "ice" if float(zone.get("frozen", 0.0)) > 0.0 else str(zone.style)
 
 
 ## The element tags of an enemy (src/combat/element_rules.gd tags), from the
@@ -227,8 +277,11 @@ static func enemy_tags(enemy: Dictionary) -> Array:
 	return enemy.tags
 
 
-## The conditions a medium or gas rule puts on an enemy (burn, poison, slow)
-## and what it takes away (water douses its burning).
+## The conditions a medium or gas rule puts on an enemy (burn, poison, slow,
+## mad) and what it takes away (water douses its burning). "mad" (WAHN,
+## element_rules.json madness) is also the void spells' way in:
+## `_status_enemy(enemy, ElementRules.mad_rule(seconds), owner)`; a creature of
+## the void (madness.immune_tags) never takes it.
 func _status_enemy(enemy: Dictionary, rule: Dictionary, owner: int) -> void:
 	var status: Dictionary = rule.get("status", {})
 	for kind: String in status:
@@ -236,6 +289,9 @@ func _status_enemy(enemy: Dictionary, rule: Dictionary, owner: int) -> void:
 		match kind:
 			"burn", "poison", "wet": game.perk_combat._status(enemy, kind, float(spec[0]), float(spec[1]), owner)
 			"slow": game.perk_combat._status(enemy, "slow", 1.0 - float(spec[0]), float(spec[1]), owner)
+			"mad":
+				if not ElementRules.mad_immune(enemy_tags(enemy)):
+					game.perk_combat._status(enemy, "mad", float(spec[0]), float(spec[1]), owner)
 	if bool(rule.get("douse", false)) and enemy.has("statuses"):
 		(enemy.statuses as Dictionary).erase("burn")
 
@@ -277,11 +333,17 @@ func combo_player(id: int, player: Dictionary, mat: String) -> void:
 
 ## The conditions a medium or gas rule puts on a hero (its status table: burn,
 ## poison, slip with the medium's grip, silence, wet) and what it takes away.
+## "mad" is no plain condition on a hero: a void POOL (a gas rule has
+## "vision") only marks him as standing in it; player_effects.gd turns that
+## into inverted controls after madness.hero_delay s (WAHN).
 func condition_player(player: Dictionary, rule: Dictionary) -> void:
 	var status: Dictionary = rule.get("status", {})
 	for kind: String in status:
 		var spec: Array = status[kind]
 		var value := float(spec[0])
+		if kind == "mad":
+			if not rule.has("vision"): game.player_effects.touch_mad(player)
+			continue
 		if kind == "slip": value = float(rule.get("grip", 0.0067))
 		game.player_effects.apply(player, kind, float(spec[1]), value)
 	if bool(rule.get("douse", false)):

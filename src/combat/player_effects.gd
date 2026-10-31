@@ -9,6 +9,8 @@ extends RefCounted
 ## second. Clients see the kinds (`kinds`) and draw them.
 
 const DOTS := ["poison", "burn"]
+const ElementRules = preload("res://src/combat/element_rules.gd")
+const ElementSkin = preload("res://src/hero/element_skin.gd")
 
 var game: Node
 
@@ -48,10 +50,12 @@ func clear(player: Dictionary, kind: String = "") -> void:
 	else: player.effects.erase(kind)
 
 
-## Counts down every hero's effects and deals damage over time.
+## Counts down every hero's effects, deals damage over time and runs the
+## madness clock (WAHN: touch_mad, element_rules.gd hero_mad_step).
 func step(delta: float) -> void:
 	for id: int in game.players:
 		var player: Dictionary = game.players[id]
+		_step_mad(id, player, delta)
 		if not player.has("effects") or player.effects.is_empty(): continue
 		if int(player.hp) <= 0:
 			player.effects.clear()
@@ -114,3 +118,54 @@ func skills_sealed(player: Dictionary) -> bool:
 ## The kinds on a hero, for clients.
 func kinds(player: Dictionary) -> Array:
 	return Array(player.get("effects", {}).keys())
+
+
+# ---------- WAHN (element_rules.json madness) ----------
+
+## Marks a hero as standing in a maddening void pool this frame (the pools of
+## monsters and bosses: src/combat/elements.gd condition_player; a hero's own
+## pool never reaches him, boss_moves.gd _pool_tick).
+func touch_mad(player: Dictionary) -> void:
+	player.mad_touch = true
+
+
+## True while a hero's controls are inverted: movement and aim mirrored (game.gd _mad_command).
+func inverted(player: Dictionary) -> bool:
+	return float(player.get("mad", 0.0)) > 0.0
+
+
+## The madness clock of one hero: after madness.hero_delay s inside his controls
+## invert, hero_after s after leaving they come back. player.mad = s of
+## inversion left, player.mad_warn = 0..1 while it creeps in (for the visuals).
+## The Leerenmagier (void_mind) never goes mad.
+func _step_mad(id: int, player: Dictionary, delta: float) -> void:
+	var inside: bool = bool(player.get("mad_touch", false)) and int(player.get("hp", 0)) > 0
+	player.mad_touch = false
+	if inside:
+		player.mind_check = float(player.get("mind_check", 0.0)) - delta
+		if float(player.mind_check) <= 0.0 or not player.has("void_mind"):
+			player.mind_check = 1.0
+			player.void_mind = void_mind(id, player)
+		if bool(player.void_mind): inside = false
+	if not inside and float(player.get("mad", 0.0)) <= 0.0 and float(player.get("mad_in", 0.0)) <= 0.0:
+		player.mad_warn = 0.0
+		return
+	ElementRules.hero_mad_step(player, inside, delta)
+
+
+## True when hero `id` is the Leerenmagier (madness.immune_class with
+## immune_spec as main specialisation by his build's ranks, or such talents on
+## his bar / as his ultimate).
+func void_mind(id: int, player: Dictionary) -> bool:
+	var class_id := str(player.get("class_id", ""))
+	if class_id != str(ElementRules.madness().get("immune_class", "mage")): return false
+	var spec := ""
+	if game.get("progress") != null and game.progress.has_method("build_for"):
+		var build: Dictionary = game.progress.build_for(id, class_id)
+		spec = ElementSkin.main_spec({"classes": {class_id: {"ranks": build.get("ranks", {})}}}, class_id)
+	var bar: Array = []
+	if game.get("talent_combat") != null:
+		var rt: Dictionary = game.talent_combat.runtimes.get(id, {})
+		if not rt.is_empty(): bar = Array(rt.get("bar", [])) + [str(rt.get("ultimate", ""))]
+	var infos: Dictionary = ElementSkin.talents().get("talents", {})
+	return ElementRules.void_mind(class_id, spec, bar, func(talent: String) -> String: return str(infos.get(talent, {}).get("spec", "")))

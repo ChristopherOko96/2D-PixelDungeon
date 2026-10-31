@@ -685,10 +685,11 @@ static func bomber(rig: Dictionary, a: Dictionary) -> Dictionary:
 ## Mimik: a chest that hops after the heroes and chomps (frame 0 shut, 1 teeth,
 ## 2 wide open). Each hop squashes on landing; the bite opens the lid wide,
 ## lunges and snaps shut on the strike.
-static func mimic(_rig: Dictionary, a: Dictionary) -> Dictionary:
+static func mimic(rig: Dictionary, a: Dictionary) -> Dictionary:
 	var pose := blank()
 	var t: float = a.t
-	pose.whole.pivot = Vector2(8, 15)
+	# squash and turn about the feet: the Mimik's chest (8, 15), a bigger chest beast its own ground
+	pose.whole.pivot = Vector2(rig.ground) if rig.get("ground") is Vector2 else Vector2(8, 15)
 	pose.frames = {"body": 0}
 	if a.moving:
 		var hop := fmod(t, 0.42) / 0.42
@@ -726,6 +727,13 @@ static func mimic(_rig: Dictionary, a: Dictionary) -> Dictionary:
 			pose.whole.dy = 2.0 * k
 			pose.frames = {"body": 2}
 			P(pose, "body").alpha = 1.0 - ease_in(seg(u, 0.55, 1.0))
+	# a chest beast cut into parts (krypta_boss_rigs.json Truhenfresser) has no mouth frames:
+	# its lid lifts about the back hinge as far as the flipbook would open (0 shut, 1 teeth, 2 wide)
+	if (rig.get("by_id", {}) as Dictionary).has("lid"):
+		var open: float = [0.0, 0.35, 1.0][clampi(int(pose.frames.get("body", 0)), 0, 2)]
+		P(pose, "lid").rot = -0.32 * open
+		P(pose, "lid").dy = -2.0 * open
+		P(pose, "tongue").dx = 1.5 * open
 	return pose
 
 

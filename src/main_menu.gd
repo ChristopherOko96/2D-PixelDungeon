@@ -28,7 +28,8 @@ signal settings_changed(settings: Dictionary)
 signal rooms_saved(config: Dictionary)
 ## The Dungeon-Werkstatt asks to test-play a room.
 signal room_test_requested(room_id: String, floor: int, class_id: String)
-## Debug: the Testraum with the chosen hero class (src/game.gd start_test_arena).
+## Debug: the old crypt Testraum (src/game.gd start_test_arena). The DEBUG hub no longer
+## emits it: its TESTRAUM opens the story Testraum (src/debug/story_testraum.gd).
 signal test_arena_requested(class_id: String)
 ## SPIELSTÄNDE: load slot 1..3 of a mode ("krypta", "hell", "frost", "crypt" = endless).
 signal save_load_requested(mode: String, slot: int)
@@ -94,6 +95,10 @@ var _canvas_size := SCREEN
 var _debug_start: Dictionary = {}
 ## DEBUG hub (debug builds): level choice, Testraum, talent test, Klangwerkstatt.
 var _hub_panel: Panel
+## Darkens the menu behind the debug panels so they read well (user wish 2026-10-31).
+var _debug_dim: ColorRect
+## How dark the dim behind the debug panels is (0 clear .. 1 black).
+const DEBUG_DIM_ALPHA := 0.62
 var _debug_panel: Panel
 var _crypt_panel: Panel
 var _hell_panel: Panel
@@ -193,6 +198,14 @@ func _ready() -> void:
 	if not version.is_empty():
 		_label("v" + version, Vector2(1080, 690), Vector2(184, 20), 16, MUTED, HORIZONTAL_ALIGNMENT_RIGHT)
 	_toast = _label("", Vector2(0, 520), Vector2(SCREEN.x, 24), 16, GOLD, HORIZONTAL_ALIGNMENT_CENTER)
+	# the dim lies over the menu and under every panel built after it
+	_debug_dim = ColorRect.new()
+	_debug_dim.color = Color(CryptUI.INK, DEBUG_DIM_ALPHA)
+	_debug_dim.position = Vector2(-2000, -2000)
+	_debug_dim.size = SCREEN + Vector2(4000, 4000)
+	_debug_dim.mouse_filter = Control.MOUSE_FILTER_STOP
+	_debug_dim.visible = false
+	add_child(_debug_dim)
 	_build_login_panel()
 	_build_options_panel()
 	_build_story_panel()
@@ -214,6 +227,7 @@ func _process(delta: float) -> void:
 		return
 	_clock += delta
 	_toast_time = maxf(0.0, _toast_time - delta)
+	if _debug_dim != null: _debug_dim.visible = _debug_open()
 	_toast.modulate.a = minf(1.0, _toast_time)
 	if _class_panel.visible:
 		for i in range(_class_heroes.size()):
@@ -475,7 +489,8 @@ func _build_class_panel() -> void:
 
 
 ## The DEBUG hub (debug builds): one panel with the level choice, the Testraum
-## (one big room to try elements, enemies, talents and cheats), the talent test
+## (src/debug/story_testraum.gd: one room of a story world with every monster, boss
+## and NPC of Krypta, Frostgruft and Hölle, elements, classes and cheats), the talent test
 ## profile (every class level 30, 99 shards; casts cost mana as in a real run)
 ## and the Klangwerkstatt. The sub-panels' ZURÜCK leads back here.
 func _build_debug_hub() -> void:
@@ -591,11 +606,11 @@ func take_debug_start() -> Dictionary:
 	return jump
 
 
-## The hero choice for the Testraum.
+## The hero choice for the story Testraum (src/debug/story_testraum.gd).
 func _open_arena() -> void:
 	_open_classes(false)
 	_arena_pick = true
-	_class_title.text = "WÄHLE DEINEN HELDEN · TESTRAUM"
+	_class_title.text = "WÄHLE DEINEN HELDEN · TESTRAUM (KRYPTA · FROSTGRUFT · HÖLLE)"
 
 
 func _open_classes(endless: bool) -> void:
@@ -615,7 +630,9 @@ func _choose_class(id: String) -> void:
 	_close_panels()
 	if _arena_pick:
 		_arena_pick = false
-		test_arena_requested.emit(id)
+		# the story Testraum: the Krypta first, the world switch sits in its panel
+		var testraum: Variant = load("res://src/debug/story_testraum.gd")
+		testraum.start(get_tree(), "", id)
 		return
 	var scene := _story_scene() if not _class_endless else ""
 	if scene != "":
@@ -705,6 +722,13 @@ func _apply_settings() -> void:
 
 
 # --- Widgets ----------------------------------------------------------------
+
+## True while a debug panel (hub, level choice, its worlds) or the Klangwerkstatt is open.
+func _debug_open() -> bool:
+	for panel: Control in [_hub_panel, _debug_panel, _crypt_panel, _hell_panel, sound_workshop]:
+		if panel != null and panel.visible: return true
+	return false
+
 
 func _close_panels() -> void:
 	_login_panel.visible = false
