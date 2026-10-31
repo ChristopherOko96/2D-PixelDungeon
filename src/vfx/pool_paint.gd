@@ -377,6 +377,23 @@ func covers(point: Vector2, style := "") -> bool:
 	return false
 
 
+## The materials of every pool lying under `point` (world px), for the game's
+## rules (src/combat/element_rules.gd top() picks the one that counts); empty
+## on firm floor. Drop puddles are drawing only and never count.
+func materials_at(point: Vector2) -> Array:
+	var q := Vector2i((point / art).floor())
+	var out: Array = []
+	for mat: String in _fields:
+		var have: Array = _fields[mat].cells.get(q, [])
+		if have.is_empty() or float(have[0]) > _now or _now >= float(have[1]):
+			continue
+		# a pool's own cells, and the ice frozen out of a liquid (freeze_near: its cells
+		# carry a fourth entry like drop puddles do, but the ice is ground one stands on)
+		if have.size() == 3 or mat == "ice":
+			out.append(mat)
+	return out
+
+
 func _field(mat: String) -> Dictionary:
 	if not _fields.has(mat):
 		_fields[mat] = {"cells": {}, "img": null, "tex": null, "box": Rect2i(), "col": {}, "list": [], "rim": [], "next": 0.0, "dirty": true, "baked": -100.0, "frame": -1, "ripples": [], "hide": {}, "crust": {}, "cracks": [], "zaps": []}

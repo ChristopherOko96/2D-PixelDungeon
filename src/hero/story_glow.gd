@@ -37,6 +37,7 @@ extends RefCounted
 
 const Glow = preload("res://src/vfx/glow.gd")
 const Darkness = preload("res://src/vfx/darkness.gd")
+const ElementRules = preload("res://src/combat/element_rules.gd")
 const BossFx = preload("res://src/vfx/boss_fx.gd")
 const SkillFx = preload("res://src/vfx/skill_fx.gd")
 const CryptAtmosphere = preload("res://src/vfx/crypt_atmosphere.gd")
@@ -158,6 +159,9 @@ func frame() -> void:
 	var dark: Darkness = g.dark
 	dark.visible = on
 	glow.visible = on and glow.enabled
+	# inside gas the far blooms are swallowed with the view (hell_game.gd vision)
+	var vision_k := float((g.get("vision") as Dictionary).get("k", 0.0)) if g.get("vision") is Dictionary else 0.0
+	glow.modulate = Color(1.0, 1.0, 1.0, 1.0 - 0.85 * vision_k)
 	if not on:
 		return
 	dark.configure({"darkness": darkness(), "shade_color": shade()})
@@ -175,6 +179,21 @@ func frame() -> void:
 		mat.set_shader_parameter("time", clock())
 	dark.set_world_size(Vector2(float(g.W.cols), float(g.W.rows)) * float(g.C))
 	last_lights = lights()
+	# inside gas (src/hell/hell_game.gd vision, element_rules.json): the world outside the
+	# cloud goes dark, the hero keeps the cloud round him; the other lights are swallowed
+	var vision: Dictionary = g.get("vision") if g.get("vision") is Dictionary else {}
+	var closed := float(vision.get("k", 0.0))
+	if closed > 0.0:
+		var full := float(ElementRules.vision().get("dark", 0.94))
+		dark.configure({"darkness": maxf(darkness(), lerpf(darkness(), full, closed)), "shade_color": shade().lerp(Color(0.02, 0.02, 0.03), closed * 0.8)})
+		var keep := float(vision.get("r", 200.0))
+		var seen: Array = [Vector4(g.player.x, g.player.y - 40, keep, 1.0)]
+		for l: Vector4 in last_lights.slice(1):
+			var d := Vector2(l.x, l.y).distance_to(Vector2(g.player.x, g.player.y - 40))
+			# a light inside the cloud still shows, dimmer the more the view is closed
+			if d + l.z * 0.5 < keep:
+				seen.append(Vector4(l.x, l.y, l.z * (1.0 - 0.6 * closed), l.w * (1.0 - 0.5 * closed)))
+		last_lights = seen
 	dark.set_lights(last_lights)
 	if glow.visible:
 		glow.queue_redraw()

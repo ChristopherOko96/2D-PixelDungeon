@@ -131,11 +131,13 @@ static func status(g: Node, h: Control, size: Vector2) -> void:
 	if not atk.is_empty():
 		rate = float(atk.cooldown) * CardKit.rate_mult(g)
 	var cfg: Dictionary = g.theme.leveling
+	# the life as the bar shows it: hp minus what a poison or burn has already taken (hp_f), in half hearts
+	var hp_f := clampf(float(g.state.get("hp_f", g.state.hp)), 0.0, float(g.state.max_hp))
 	var rows := [
 		["Klasse", str(g.hero.get("name", "-"))],
 		["Waffe", str(rel.get("name", g.weapon.get("name", "-")))],
 		["Level", "%d  (%d / %d EP)" % [int(g.state.level), int(g.state.exp), HeroKit.need(cfg, int(g.state.level))]],
-		["Herzen", "%.1f / %d" % [float(g.state.hp) / 2.0, int(g.state.max_hp) / 2]],
+		["Leben", "%d / %d LP" % [HudKit.life_shown(int(g.state.hp), hp_f), int(g.state.max_hp)]],
 		["Schaden", "%.1f je Treffer" % dmg],
 		["Angriffe", "%.1f pro Sekunde" % (1.0 / maxf(0.05, rate))],
 		["Lauftempo", "%d" % int(float(g.hero.get("speed", 300)) * CardKit.speed_mult(g) * float(g.state.speed_mul))],

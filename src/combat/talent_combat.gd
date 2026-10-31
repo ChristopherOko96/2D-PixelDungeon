@@ -15,6 +15,8 @@ const Dungeon = preload("res://src/dungeon/dungeon_generator.gd")
 const Aggro = preload("res://src/combat/aggro.gd")
 const Profile = preload("res://src/progress/profile.gd")
 const Rules = preload("res://src/progress/talent_rules.gd")
+const BodyParts = preload("res://src/combat/body_parts.gd")
+const RigLibrary = preload("res://src/rig/rig_library.gd")
 
 ## Input bits: 4-7 talent bar slots (keys 1-4), 8 the ultimate (R), 9-10 the
 ## companion's two abilities (keys 5 and 6), 11-12 toggle their auto-cast
@@ -34,6 +36,12 @@ var data: Dictionary = {}
 ## Peer id -> runtime {class, ranks, ultimate, soul_tier, bar, res, res_max, regen, cds, gcd, buffs, ...}.
 var runtimes: Dictionary = {}
 var pets: Array = []
+## The companions' body parts (src/combat/body_parts.gd, user decision
+## 2026-10-31): a rigged companion (talents.json pet.kinds[kind].rig, rigs in
+## assets/data/companion_rigs.json) splits its HP over its parts, a hit lands
+## on the part nearest the attacker, a destroyed vital part kills it. Its own
+## instance, because the story worlds' host (src/hell/hell_talents.gd) has none.
+var pet_parts: RefCounted = BodyParts.new()
 var traps: Array = []
 var zones: Array = []
 ## Mana on the ground: {id, pos, potion, life} (talents.json "mana_orbs").
@@ -85,7 +93,7 @@ func reset(seed_value: int = 0) -> void:
 ## permanent companion comes along and appears beside its hero.
 func room_changed() -> void:
 	orbs.clear()
-	pets = pets.filter(func(p: Dictionary) -> bool: return bool(p.get("permanent", false)))
+	pets = pets.filter(func(p: Dictionary) -> bool: return bool(p.get("permanent", false)) and not p.has("dying"))
 	for pet: Dictionary in pets:
 		var owner: Dictionary = game.players.get(int(pet.owner), {})
 		if not owner.is_empty(): pet.pos = Vector2(owner.pos) + Vector2(-24, 14)
@@ -337,6 +345,11 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 			if info.has("dmg") and bool(info.get("arrive", false)): _area(id, rt, talent, info, Vector2(player.pos), float(info.get("radius_m", 2)) * meter, dmg)
 			if bool(info.get("cleanse", false)) and game.has_method("cleanse_slows"): game.cleanse_slows(id)
 			_event("blink", origin, 0.0, {"tx": player.pos.x, "ty": player.pos.y, "fx": str(info.get("fx", "arcane")), "talent": talent, "life": 0.8 if talent == "fire_5" else 0.5})
+			# Phönixschritt: the fire trail it leaves sets the elements off along the way (poison goes up, water steams)
+			if str(info.get("fx", "")) == "fire":
+				var hops := maxi(1, int(origin.distance_to(player.pos) / 28.0))
+				for h in range(hops + 1):
+					_element("fire", origin.lerp(player.pos, float(h) / float(hops)), 18.0, id)
 		"dash":
 			var from: Vector2 = player.pos
 			player.pos = _move(player.pos, aim * _value(info, "dist_m", rt, talent) * meter, float(game.balance.player.radius), game.current_layout)
@@ -384,6 +397,8 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 			for k in range(int(info.jumps) + 1):
 				if current.is_empty(): break
 				_hit(id, current, strength, info, rt, talent)
+				# Glutkette: every link lands as fire on the floor under its target
+				if str(info.get("fx", "fire")) == "fire": _element("fire", Vector2(current.pos), 20.0, id)
 				hit_ids[int(current.id)] = true
 				points.append([current.pos.x, current.pos.y])
 				var next := {}
@@ -830,7 +845,7 @@ func forced_target(enemy: Dictionary) -> Dictionary:
 	if _boss(enemy): return {}
 	if enemy.has("pet_taunt"):
 		for pet: Dictionary in pets:
-			if int(pet.id) == int(enemy.pet_taunt.pet):
+			if int(pet.id) == int(enemy.pet_taunt.pet) and not pet.has("dying"):
 				enemy.pet_focus = int(pet.id)
 				return {"id": PET_KEY - int(pet.id), "pos": pet.pos}
 	if enemy.has("talent_taunt") and game.players.has(int(enemy.talent_taunt.owner)): return {"id": int(enemy.talent_taunt.owner), "pos": game.players[int(enemy.talent_taunt.owner)].pos}
@@ -838,7 +853,7 @@ func forced_target(enemy: Dictionary) -> Dictionary:
 	if focus == -1: return {}
 	if focus <= PET_KEY:
 		for pet: Dictionary in pets:
-			if PET_KEY - int(pet.id) == focus:
+			if PET_KEY - int(pet.id) == focus and not pet.has("dying"):
 				enemy.pet_focus = int(pet.id)
 				return {"id": focus, "pos": pet.pos}
 		return {}
@@ -853,7 +868,8 @@ func threat_focus(enemy: Dictionary) -> int:
 	var threat: Dictionary = enemy.get("threat", {})
 	if threat.is_empty(): return -1
 	var alive := {}
-	for pet: Dictionary in pets: alive[PET_KEY - int(pet.id)] = true
+	for pet: Dictionary in pets:
+		if not pet.has("dying"): alive[PET_KEY - int(pet.id)] = true
 	for id: Variant in game.players:
 		if int(game.players[id].hp) > 0: alive[int(id)] = true
 	var best := -1
@@ -946,7 +962,7 @@ func pet_cast(id: int, slot: int, manual: bool = false) -> bool:
 			hit = true
 	if not hit: return false
 	rt.pet_cds[ability.id] = float(ability.cd)
-	pet.cast = 0.45
+	pet.cast = _pet_rig_cfg("cast_s", 0.45)
 	pet.cast_slot = slot
 	return true
 
@@ -986,7 +1002,10 @@ func snapshot() -> Dictionary:
 	for orb: Dictionary in orbs: out.orbs.append({"id": orb.id, "x": orb.pos.x, "y": orb.pos.y, "potion": bool(orb.potion), "life": float(orb.life)})
 	for pet: Dictionary in pets: out.pets.append({"id": pet.id, "x": pet.pos.x, "y": pet.pos.y, "face": pet.face, "owner": pet.owner, "bite": float(pet.bite), "pack": bool(pet.pack), "moving": bool(pet.moving), "kind": str(pet.get("kind", "wolf")),
 		"permanent": bool(pet.get("permanent", false)), "hp": float(pet.hp) / maxf(0.1, float(pet.get("hp_max", pet.hp))), "cast": float(pet.get("cast", 0.0)), "cast_slot": int(pet.get("cast_slot", 0)), "hurt": float(pet.get("hurt", 0.0)),
-		"awake": float(pet.get("awake", 0.0)) > 0.0})
+		"awake": float(pet.get("awake", 0.0)) > 0.0,
+		# the part rig (src/vfx/companion_rigs.gd): which rig, the parts fallen off, hits for the hurt clip, the bite's wind-up and the crumbling progress
+		"rig": str(pet.get("rig", "")), "parts_lost": Array(pet.get("parts_lost", [])).duplicate(), "hits": int(pet.get("hits", 0)), "wind": float(pet.get("wind", 0.0)),
+		"dying_p": clampf(float(pet.dying) / maxf(0.01, _pet_rig_cfg("death_s", 0.9)), 0.0, 1.0) if pet.has("dying") else -1.0})
 	for trap: Dictionary in traps: out.traps.append({"id": trap.id, "x": trap.pos.x, "y": trap.pos.y, "r": trap.r, "owner": trap.owner, "boom": float(trap.root) <= 0.0, "cloud": not Dictionary(trap.get("cloud", {})).is_empty()})
 	for zone: Dictionary in zones: out.zones.append({"id": zone.id, "x": zone.pos.x, "y": zone.pos.y, "r": zone.r, "time": zone.time, "status": str(zone.get("status", "")), "look": str(zone.get("look", "")),
 		"ax": Vector2(zone.wall.a).x if zone.has("wall") else 0.0, "ay": Vector2(zone.wall.a).y if zone.has("wall") else 0.0,
@@ -1047,7 +1066,8 @@ func _pet_state(id: int, rt: Dictionary) -> Dictionary:
 	var kind := str(info.get("pet_kind", rt.get("companion", "wolf")))
 	var pet := permanent_pet(id)
 	var out := {"kind": kind, "name": str(data.pet.kinds.get(kind, {}).get("name", kind)), "spec": str(info.spec), "alive": not pet.is_empty(),
-		"hp": snappedf(float(pet.get("hp", 0.0)), 0.1), "hp_max": float(pet.get("hp_max", 1.0)), "respawn": snappedf(float(rt.cds.get(talent, 0.0)), 0.05), "abilities": []}
+		"hp": snappedf(float(pet.get("hp", 0.0)), 0.1), "hp_max": float(pet.get("hp_max", 1.0)), "respawn": snappedf(float(rt.cds.get(talent, 0.0)), 0.05), "abilities": [],
+		"parts_lost": Array(pet.get("parts_lost", [])).duplicate()}
 	for slot in range(2):
 		var ability := pet_ability(kind, slot)
 		if ability.is_empty(): continue
@@ -1136,6 +1156,9 @@ func bullet_hit(bullet: Dictionary, enemy: Dictionary) -> void:
 			if other != enemy and Vector2(other.pos).distance_to(enemy.pos) <= reach + float(other.radius):
 				_hit(id, other, float(bullet.damage) * float(info.splash), info, rt, talent)
 		_event("explosion", enemy.pos, reach, {"fx": "fire", "life": 0.6})
+	elif str(bullet.get("style", "")) in ["fireball", "infernospear"]:
+		# a fire shot without a splash (Infernospeer) still lands as fire where it struck
+		_element("fire", Vector2(enemy.pos), 20.0, id)
 	_talent_hit = false
 	_spell_hit = false
 
@@ -1160,6 +1183,7 @@ func _spawn_pet(id: int, rt: Dictionary, talent: String, info: Dictionary, at: V
 		"calm": 0.0, "cast": 0.0, "hurt": 0.0, "cleave_m": float(info.get("cleave_m", 0.0)), "taunt_m": float(info.get("taunt_m", 0.0)), "taunt": float(info.get("taunt", 0.0)),
 		"death_burst": info.get("death_burst", {}),
 		"pack": pack, "target": -1, "face": 1.0, "bite": 0.0, "moving": false, "kind": kind, "speed": float(traits.get("speed", 1.0))})
+	_rig_pet(pets[-1], traits)
 
 
 func _step_pets(delta: float) -> void:
@@ -1169,6 +1193,11 @@ func _step_pets(delta: float) -> void:
 		var pet: Dictionary = pets[i]
 		var owner: Dictionary = game.players.get(int(pet.owner), {})
 		var permanent := bool(pet.get("permanent", false))
+		# A killed rigged companion crumbles for death_s (clients draw dying_p), then it is gone.
+		if pet.has("dying"):
+			pet.dying = float(pet.dying) + delta
+			if float(pet.dying) >= _pet_rig_cfg("death_s", 0.9): pets.remove_at(i)
+			continue
 		if not permanent: pet.life = float(pet.life) - delta
 		pet.bite = maxf(0.0, float(pet.bite) - delta)
 		pet.cast = maxf(0.0, float(pet.get("cast", 0.0)) - delta)
@@ -1191,7 +1220,11 @@ func _step_pets(delta: float) -> void:
 				var fallen := runtime(int(pet.owner))
 				if not fallen.is_empty(): fallen.pet_fell = true
 				_event("pet_fell", pet.pos, 18.0, {"kind": str(pet.kind)})
-			pets.remove_at(i)
+			if float(pet.hp) <= 0.0 and pet_parts.has_parts(pet) and _pet_rig_cfg("death_s", 0.9) > 0.0:
+				pet.dying = 0.0
+				pet.hp = 0.0
+			else:
+				pets.remove_at(i)
 			continue
 		var prey := _pet_prey(pet, owner)
 		if permanent: _care(pet, owner, prey, delta)
@@ -1199,13 +1232,19 @@ func _step_pets(delta: float) -> void:
 		if not prey.is_empty(): goal = prey.pos
 		var before: Vector2 = pet.pos
 		if Vector2(pet.pos).distance_to(goal) > (_pet_reach(pet) * 0.8 if not prey.is_empty() else 14.0):
-			pet.pos = _move(pet.pos, (goal - pet.pos).limit_length(float(config.speed) * float(pet.get("speed", 1.0)) * delta), float(config.radius), game.current_layout)
+			pet.pos = _move(pet.pos, (goal - pet.pos).limit_length(float(config.speed) * float(pet.get("speed", 1.0)) * pet_parts.speed_scale(pet) * delta), float(config.radius), game.current_layout)
 		pet.moving = Vector2(pet.pos).distance_squared_to(before) > 0.01
 		if absf(goal.x - pet.pos.x) > 2.0: pet.face = signf(goal.x - pet.pos.x)
 		pet.timer = float(pet.timer) - delta
-		if not prey.is_empty() and Vector2(pet.pos).distance_to(prey.pos) <= _pet_reach(pet) + float(prey.radius) and float(pet.timer) <= 0.0:
+		var in_reach := not prey.is_empty() and Vector2(pet.pos).distance_to(prey.pos) <= _pet_reach(pet) + float(prey.radius)
+		# a lost weapon arm or sword (body_parts "disables": "attack") stops the bite until it grows back
+		var can_bite: bool = pet_parts.can(pet, "attack")
+		# the wind-up clients pose before the bite lands (talents.json pet.rig.windup_s)
+		var windup := _pet_rig_cfg("windup_s", 0.2)
+		pet.wind = clampf(1.0 - float(pet.timer) / windup, 0.0, 1.0) if in_reach and can_bite and windup > 0.0 else 0.0
+		if in_reach and can_bite and float(pet.timer) <= 0.0:
 			pet.timer = float(pet.every)
-			pet.bite = 0.25
+			pet.bite = _pet_rig_cfg("bite_s", 0.25)
 			var rt := runtime(int(pet.owner))
 			rt.pet_target = int(prey.id)
 			_talent_hit = true
@@ -1231,9 +1270,7 @@ func _step_pets(delta: float) -> void:
 		for enemy: Dictionary in _living():
 			if int(enemy.get("pet_focus", -1)) == int(pet.id) and enemy.pos.distance_to(pet.pos) < float(enemy.radius) + 16.0:
 				var dps := float(cfg.get("boss_dps", 2.0)) if bool(enemy.get("miniboss", false)) else float(cfg.get("enemy_dps", 0.8))
-				pet.hp = float(pet.hp) - dps * delta
-				pet.calm = 0.0
-				pet.hurt = 0.2
+				_hurt_pet(pet, dps * delta, Vector2(enemy.pos))
 
 
 ## Whom a companion fights (user wish 30.10.2026): the enemy its hero
@@ -1268,6 +1305,70 @@ func _pet_reach(pet: Dictionary) -> float:
 	return float(pet.range_m) * meter if bool(pet.get("ranged", false)) else float(data.pet.attack_range_m) * meter
 
 
+## talents.json pet.rig: timings of the companions' part rigs (bite_s, cast_s,
+## windup_s, death_s, hurt_s), `fallback` when the key is missing.
+func _pet_rig_cfg(key: String, fallback: float) -> float:
+	return float(data.get("pet", {}).get("rig", {}).get(key, fallback))
+
+
+## Gives a fresh companion its part rig (talents.json pet.kinds[kind].rig,
+## assets/data/companion_rigs.json): the parts split its HP by their weights
+## (body_parts.attach). A kind without a rig stays a single HP pool.
+func _rig_pet(pet: Dictionary, traits: Dictionary) -> void:
+	pet.hits = 0
+	pet.wind = 0.0
+	var rig := str(traits.get("rig", ""))
+	if rig.is_empty(): return
+	pet.max_hp = float(pet.hp_max)
+	pet_parts.attach(pet, rig)
+
+
+## The companion's body centre in world px (pet.pos is its feet): the origin
+## its rig's rest pose is tested from for the part nearest an impact point.
+func _pet_center(pet: Dictionary) -> Vector2:
+	var rig: Dictionary = RigLibrary.shared().rig(str(pet.get("rig", "")))
+	if rig.is_empty(): return Vector2(pet.pos)
+	return Vector2(pet.pos) - Vector2(0.0, (float(rig.ground.y) - float(rig.center.y)) * float(rig.get("scale", RigLibrary.PIXEL_SCALE)))
+
+
+## Damage to a companion from an attacker at `from`: on a rigged one it lands
+## on the part nearest the attacker (body_parts.damage: the part falls off at
+## 0 HP, a destroyed vital part kills), a plain one just loses HP. Counts one
+## hit per hurt window for the clients' hurt clip.
+func _hurt_pet(pet: Dictionary, amount: float, from: Vector2) -> void:
+	if amount <= 0.0: return
+	if pet_parts.has_parts(pet):
+		var view := pet.duplicate()
+		view.pos = _pet_center(pet)
+		pet_parts.damage(pet, amount, pet_parts.part_near(view, from))
+	else:
+		pet.hp = float(pet.hp) - amount
+	if float(pet.get("hurt", 0.0)) <= 0.0: pet.hits = int(pet.get("hits", 0)) + 1
+	pet.calm = 0.0
+	pet.hurt = _pet_rig_cfg("hurt_s", 0.2)
+
+
+## Healing of a companion: the HP returns to its living parts in proportion
+## to what each is missing; back at full life its lost parts grow back
+## (talents.json pet.rig.regrow_at_full).
+func _heal_pet(pet: Dictionary, amount: float) -> void:
+	var before := float(pet.hp)
+	pet.hp = minf(float(pet.hp_max), before + amount)
+	if not pet_parts.has_parts(pet): return
+	var gained := float(pet.hp) - before
+	var living: Dictionary = pet_parts.alive(pet)
+	var room := 0.0
+	for id: String in living: room += maxf(0.0, float(pet.parts[id].max) - float(pet.parts[id].hp))
+	if gained > 0.0 and room > 0.0:
+		for id: String in living:
+			var missing := maxf(0.0, float(pet.parts[id].max) - float(pet.parts[id].hp))
+			pet.parts[id].hp = minf(float(pet.parts[id].max), float(pet.parts[id].hp) + gained * missing / room)
+	var full := float(pet.hp) >= float(pet.hp_max) - 0.01
+	if full and not pet.parts_lost.is_empty() and bool(data.get("pet", {}).get("rig", {}).get("regrow_at_full", true)):
+		pet.parts_lost.clear()
+		for id: String in pet.parts: pet.parts[id].hp = float(pet.parts[id].max)
+
+
 ## A permanent companion between fights: it heals after a quiet spell, jumps
 ## back to a hero who ran far away, and uses its auto-cast abilities in a fight.
 func _care(pet: Dictionary, owner: Dictionary, prey: Dictionary, delta: float) -> void:
@@ -1276,7 +1377,7 @@ func _care(pet: Dictionary, owner: Dictionary, prey: Dictionary, delta: float) -
 	pet.calm = float(pet.get("calm", 0.0)) + delta
 	if not prey.is_empty(): pet.calm = minf(float(pet.calm), 1.0)
 	if float(pet.calm) >= float(cfg.get("heal_after_s", 4)):
-		pet.hp = minf(float(pet.hp_max), float(pet.hp) + float(pet.hp_max) * float(cfg.get("heal_pct_per_s", 8)) / 100.0 * delta)
+		_heal_pet(pet, float(pet.hp_max) * float(cfg.get("heal_pct_per_s", 8)) / 100.0 * delta)
 	if prey.is_empty() and Vector2(pet.pos).distance_to(owner.pos) > float(cfg.get("teleport_m", 14)) * meter:
 		pet.pos = Vector2(owner.pos) + Vector2(-24, 14)
 		pet.target = -1
@@ -1587,8 +1688,9 @@ func _nearest(point: Vector2, reach: float) -> Dictionary:
 	return best
 
 
+## A hero's companions that still stand (a crumbling one no longer counts).
 func _own_pets(id: int) -> Array:
-	return pets.filter(func(p: Dictionary) -> bool: return int(p.owner) == id)
+	return pets.filter(func(p: Dictionary) -> bool: return int(p.owner) == id and not p.has("dying"))
 
 
 func _take_id() -> int:

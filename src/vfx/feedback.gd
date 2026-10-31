@@ -133,9 +133,8 @@ func observe(snapshot: Dictionary, local_peer: int) -> void:
 			var wall_style := str(event.get("style", "arrow"))
 			var shooter: Dictionary = snapshot.get("players", {}).get(int(event.get("o", 0)), {})
 			if wall_style == "magic" and str(shooter.get("class_id", "")) == "mage" and str(shooter.get("glow", "")).is_empty():
-				# the mage's fireball bursts on the wall too
+				# the mage's fireball scorches the wall too (its burst is the shot's own: src/vfx/attack_fx.gd)
 				wall_style = "fire"
-				_fx_spawn("fire_explosion", fx_point, 0.0, 0.45)
 			_wall_hit(fx_point, Vector2(float(event.get("nx", 0.0)), float(event.get("ny", 0.0))), wall_style, str(shooter.get("glow", "")))
 		elif fx_kind == "crate_break":
 			particles.kick(fx_point, 20.0, 0.6)
@@ -273,15 +272,8 @@ func observe(snapshot: Dictionary, local_peer: int) -> void:
 		var key := "%d:%d" % [int(event.get("x", 0)), int(event.get("y", 0))]
 		if _blasts.has(key): continue
 		_blasts[key] = _clock
-		# A found staff's splash bursts in its own glow colour; otherwise the emerald burst.
-		var glow := str(snapshot.get("players", {}).get(int(event.get("o", 0)), {}).get("glow", ""))
-		var mage := str(snapshot.get("players", {}).get(int(event.get("o", 0)), {}).get("class_id", "")) == "mage"
-		if mage and glow.is_empty():
-			# the mage's fireball bursts (user wish 30.10.2026)
-			_fx_spawn("fire_explosion", Vector2(float(event.get("x", 0)), float(event.get("y", 0))) - Vector2(0, 6), 0.0, 0.55)
-			_fx_spawn("fire_sparks", Vector2(float(event.get("x", 0)), float(event.get("y", 0))) - Vector2(0, 6), 0.0, 0.5)
-		elif not glow.is_empty(): _fx_spawn("spell_burst", Vector2(float(event.get("x", 0)), float(event.get("y", 0))), 0.0, 1.1, Color(glow).lightened(0.15))
-		else: _fx_spawn("magic_burst", Vector2(float(event.get("x", 0)), float(event.get("y", 0))), 0.0, 1.2)
+		# the splash itself is the shot's own pixel burst in its element or glow colour
+		# (src/vfx/attack_fx.gd _impact, element_burst): only the sound here, no sheet
 		_play("blast")
 	var seen: Dictionary = {}
 	for value: Variant in snapshot.get("enemies", []):
@@ -377,8 +369,10 @@ const WALL_STYLES := {"fire": ["fire_burst", Color("ff9a3a"), Color("3a2418")], 
 
 
 ## Something struck a wall at `point` (normal back to the floor): stone chips
-## drop, a crack remains; metal and arrows spark, magic splashes along the wall.
-## glow: a found bow's or staff's colour; its shots splash in that colour.
+## drop, a crack remains; metal and arrows spark, magic splashes along the wall
+## (its burst is the shot's own pixel matter, src/vfx/attack_fx.gd _impact: no
+## sheet here, only the wall's share). glow: a found bow's or staff's colour;
+## its shots splash in that colour.
 func _wall_hit(point: Vector2, normal: Vector2, style: String, glow: String = "") -> void:
 	if normal == Vector2.ZERO: normal = Vector2.DOWN
 	var out := point + normal * 4.0
@@ -388,7 +382,6 @@ func _wall_hit(point: Vector2, normal: Vector2, style: String, glow: String = ""
 	particles.crack(point, normal)
 	if not glow.is_empty() and style == "magic":
 		var tint := Color(glow)
-		_fx_spawn("spell_burst", out, 0.0, 0.6, tint.lightened(0.15))
 		for side in [-1.0, 1.0]: particles.burst(out, tint.lightened(0.2), 6, 150.0, 0.45, along * side + normal * 0.25, 0.35, 2.0, 4.0, "spark")
 		particles.splat(point, tint.darkened(0.6), 0.35, 4.0, along)
 	elif style == "bone":
@@ -398,7 +391,7 @@ func _wall_hit(point: Vector2, normal: Vector2, style: String, glow: String = ""
 		_fx_spawn("dust", out, 0.0, 0.6)
 	elif WALL_STYLES.has(style):
 		var data: Array = WALL_STYLES[style]
-		_fx_spawn(str(data[0]), out, 0.0, 0.55)
+		if style == "gold": _fx_spawn(str(data[0]), out, 0.0, 0.55)
 		if style == "fire":
 			particles.embers(out, 6.0, 3)
 			particles.smoke(out, 2, 3.0)

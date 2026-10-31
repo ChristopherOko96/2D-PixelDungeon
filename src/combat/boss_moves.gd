@@ -12,6 +12,7 @@ extends RefCounted
 const Dungeon = preload("res://src/dungeon/dungeon_generator.gd")
 const FxSprites = preload("res://src/vfx/fx_sprites.gd")
 const PoolPaint = preload("res://src/vfx/pool_paint.gd")
+const ElementRules = preload("res://src/combat/element_rules.gd")
 const DATA_PATH := "res://assets/data/combat_boss_moves.json"
 ## World px per art pixel in the crypt: pools are shaped on this grid.
 const ART := 2.0
@@ -346,6 +347,12 @@ func _cone(enemy: Dictionary, state: Dictionary, spec: Dictionary) -> void:
 	var reach := float(spec.get("reach", 150))
 	var half := float(spec.get("angle", 1.0)) * 0.5
 	game.add_fx("zone_burst", Vector2(enemy.pos) + Vector2(state.aim) * reach * 0.5, reach * 0.5, {"style": str(spec.get("style", "poison"))})
+	# the breath hangs in the air where it went: a cloud of its gas (element_rules.json breath_gas),
+	# poison that poisons and closes the view, frost that chills, fire that smokes
+	var rules := ElementRules.data()
+	var mat := str(rules.get("breath_gas", {}).get(str(spec.get("style", "poison")), ""))
+	if mat != "":
+		game.elements.add_gas(mat, Vector2(enemy.pos) + Vector2(state.aim) * reach * 0.6, reach * float(rules.get("breath_r", 0.3)) * (1.3 if bool(enemy.get("boss", false)) else 1.0), float(rules.get("breath_time", 3.5)), 0)
 	for id: int in game.players:
 		var player: Dictionary = game.players[id]
 		if int(player.hp) <= 0: continue
@@ -690,6 +697,27 @@ func _strike(zone: Dictionary) -> void:
 func _pool_tick(zone: Dictionary, delta: float) -> void:
 	# crusted lava (water met it, src/combat/elements.gd) is harmless for a while
 	if float(zone.get("crust", 0.0)) > 0.0: return
+	# the element physics of the liquid (src/combat/element_rules.gd): what standing in it does
+	# to anyone, hero or monster, unless the move's own spec says more (dps, slow, slip)
+	var rule := ElementRules.medium(str(zone.style))
+	if float(zone.get("frozen", 0.0)) > 0.0: rule = ElementRules.medium("ice")
+	if not zone.has("hostile") and not rule.is_empty():
+		# monsters in a pool no hero threw: it hurts them like it hurts the heroes, unless they are of its element
+		var wait := float(zone.get("mob_tick", 0.0)) - delta
+		var due := wait <= 0.0
+		if due: wait = float(rule.get("tick", 1.0))
+		zone.mob_tick = wait
+		for enemy: Dictionary in game.enemies.duplicate():
+			if float(enemy.hp) <= 0 or not _in_pool(zone, Vector2(enemy.pos), float(enemy.radius)): continue
+			# a burning monster sets a poison pool off (element_rules.json combos)
+			game.elements.combo_enemy(enemy, ElementRules.material(str(zone.style)), Vector2(enemy.pos))
+			if float(zone.timer) <= 0.0: return
+			if ElementRules.immune(game.elements.enemy_tags(enemy), rule): continue
+			if due and rule.has("enemy_hurt"):
+				game._damage_enemy(enemy, float(rule.enemy_hurt) * float(rule.get("tick", 1.0)) * (0.5 if bool(enemy.get("boss", false)) else 1.0), Vector2.ZERO, 0, true, false)
+			game.elements._status_enemy(enemy, rule, 0)
+			if float(rule.get("slow", 1.0)) < 1.0: game.perk_combat._status(enemy, "slow", (1.0 - float(rule.slow)) * (0.5 if bool(enemy.get("boss", false)) else 1.0), 0.3, 0)
+			if rule.has("pull") and not bool(enemy.get("boss", false)): enemy.knockback = Vector2(enemy.get("knockback", Vector2.ZERO)) + ElementRules.pull(rule, Vector2(enemy.pos), Vector2(zone.pos)) * 0.5
 	if zone.has("hostile"):
 		var wait := float(zone.get("hero_tick", 0.0)) - delta
 		if wait <= 0.0:
@@ -703,14 +731,24 @@ func _pool_tick(zone: Dictionary, delta: float) -> void:
 	for id: int in game.players:
 		var player: Dictionary = game.players[id]
 		if int(player.hp) <= 0 or not _in_pool(zone, Vector2(player.pos), 0.0): continue
+		# a burning hero sets a poison pool off (element_rules.json combos)
+		game.elements.combo_player(id, player, ElementRules.material(str(zone.style)))
+		if float(zone.timer) <= 0.0: return
 		if bool(zone.slip): game.player_effects.apply(player, "slip", 0.25, 1.0)
 		if float(zone.slow) > 0.0: game.player_effects.apply(player, "slow", 0.3, float(zone.slow))
-		if int(zone.dps) <= 0: continue
-		var wait := float(zone.tick.get(id, 0.0)) - delta
-		if wait <= 0.0:
-			wait = 1.0
-			game.dot_player(id, int(zone.dps), str(zone.style))
-		zone.tick[id] = wait
+		elif float(rule.get("slow", 1.0)) < 1.0: game.player_effects.apply(player, "slow", 0.3, float(rule.slow))
+		# the liquid's own conditions (burn in lava, poison, slip on ice, silence in the void) and the void's pull
+		game.elements.condition_player(player, rule)
+		if rule.has("pull"): player.knockback = Vector2(player.get("knockback", Vector2.ZERO)) + ElementRules.pull(rule, Vector2(player.pos), Vector2(zone.pos)) * 0.5
+		if int(zone.dps) > 0:
+			var wait := float(zone.tick.get(id, 0.0)) - delta
+			if wait <= 0.0:
+				wait = 1.0
+				game.dot_player(id, int(zone.dps), str(zone.style))
+			zone.tick[id] = wait
+		elif float(rule.get("hurt", 0.0)) > 0.0:
+			# the liquid's own hurt: half hearts per second, collected into whole points (elements.gd dot_f)
+			game.elements.dot_f(id, player, float(rule.hurt) * delta, str(zone.style))
 
 
 ## True when an actor at `pos` (body radius `reach` beyond its feet) stands

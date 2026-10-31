@@ -19,6 +19,8 @@ const FrostRigs = preload("res://src/hell/frost_rigs.gd")
 const FrostFx = preload("res://src/hell/frost_fx.gd")
 const PoolPaint = preload("res://src/vfx/pool_paint.gd")
 const Gas = preload("res://src/vfx/gas.gd")
+const ElementRules = preload("res://src/combat/element_rules.gd")
+const StoryElements = preload("res://src/hell/story_elements.gd")
 const RigLibrary = preload("res://src/rig/rig_library.gd")
 const MobRules = preload("res://src/hell/mob_rules.gd")
 const BossKit = preload("res://src/hell/boss_kit.gd")
@@ -161,6 +163,23 @@ var embers: Array = []
 ## Sloshes of the lava pools owed (hell_balance.json monsters.feel.lava slosh_rate).
 ## The world's gas layer (src/vfx/gas.gd): poison clouds, breath, fumes.
 var gas: RefCounted = null
+## What the hero stands in right now (src/combat/element_rules.gd, _step_elements):
+## the medium's rule ({} on firm floor), its style, the gas rule and material, and
+## the ticks of their hurt.
+var hero_medium: Dictionary = {}
+var hero_medium_style := ""
+var hero_gas: Dictionary = {}
+var hero_gas_mat := ""
+var _medium_tick := 0.0
+var _gas_tick := 0.0
+var _skid := 0.0
+## The view inside gas (element_rules.json vision; src/hero/story_glow.gd frame
+## darkens the world outside it): k = how closed it is 0..1, r = world px it
+## keeps open round the hero, goal = what the gas asks for, probe = s to the
+## next measurement of the cloud's reach.
+var vision := {"k": 0.0, "r": 0.0, "goal": 0.0, "probe": 0.0, "mat": ""}
+## The element reactions of this world (src/hell/story_elements.gd: fire on poison, water, ice).
+var story_elements: RefCounted = null
 var lava_slosh := 0.0
 ## Bubbles on the lava floor ({p, t, T, big}; _bubble_lava) and the spawn carry.
 var lava_bubbles: Array = []
@@ -351,6 +370,8 @@ func _ready() -> void:
 	dark.z_index = 30
 	add_child(dark)
 	story_glow = StoryGlow.new(self)
+	# the element reactions, the same in every story world (src/hell/story_elements.gd)
+	story_elements = StoryElements.new(self)
 	if theme.has("snow"):
 		frost_snow = FrostSnow.new(self, theme.snow)
 	# Ignaroth's rig hands its glow record (atlas box + rig points) to the bloom like hell_monsters.gd _mark()
@@ -1156,10 +1177,36 @@ func dot_hurt(n: int, why: String) -> void:
 	_lose_hp(n, why)
 
 
-## Takes n half hearts: the flash, the hurt sounds, the feel; the phoenix or death at zero.
-func _lose_hp(n: int, why: String, from := Vector2.ZERO) -> void:
+## Damage over time in half hearts, fractional (lava, poison, burn, gas:
+## element_rules.json hurt per second): collects in state.dot and takes a half
+## heart whenever a whole one is owed, quietly (a short flash and the hurt
+## sound, no punch); the life bar shows hp minus the debt draining (hp_f).
+## Lands through the invulnerability after a hit, not while dying.
+func dot_hurt_f(amount: float, why: String) -> void:
+	if amount <= 0.0 or state.dead > 0.0 or state.won or int(state.hp) <= 0:
+		return
+	state.dot = float(state.get("dot", 0.0)) + amount
+	while float(state.dot) >= 1.0 and int(state.hp) > 0:
+		state.dot = float(state.dot) - 1.0
+		_lose_hp(1, why, Vector2.ZERO, true)
+	if int(state.hp) <= 0:
+		state.dot = 0.0
+
+
+## The life the bar shows: the half hearts left minus what the damage over
+## time already owes (src/ui/hud_kit.gd hero_panel hp_f).
+func hp_f() -> float:
+	return maxf(0.0, float(state.hp) - float(state.get("dot", 0.0)))
+
+
+## Takes n half hearts: the flash, the hurt sounds, the feel; the phoenix or
+## death at zero. `soft`: a tick of damage over time, shown without the punch.
+func _lose_hp(n: int, why: String, from := Vector2.ZERO, soft := false) -> void:
 	state.hp = maxi(0, state.hp - n)
-	if feel != null:
+	if soft:
+		state.flash = maxf(float(state.get("flash", 0.0)), 0.12)
+		_sound("hurt")
+	elif feel != null:
 		# the crypt's hurt: punch with its groan layer (feedback.gd), once; like the crypt
 		# no red wash over the whole screen (the hero's flash, blood, shake and hitstop show it)
 		feel.on_hurt(from)
@@ -2192,17 +2239,25 @@ func _update_player(dt: float) -> void:
 	var liquid: Dictionary = theme.liquid
 	var slow: float = float(balance.player.lava_slow) if float(liquid.slow) < 0.0 else float(liquid.slow)
 	var chill := float(theme.get("chill_speed", 1.0)) if state.chill > 0.0 else 1.0
-	var speed := float(hero.get("speed", balance.player.speed)) * float(state.speed_mul) * chill * HeroKit.move_scale(self) * CardKit.speed_mult(self) * (slow if here == 2 else 1.0) * (0.5 if state.slow > 0.0 else 1.0) * FrostCombat.move_scale(self)
+	# the element physics (src/combat/element_rules.gd, _step_elements): a pool or gas the hero
+	# stands in slows him (lava, poison, void, frost mist) and ice or blood takes his footing
+	var medium_slow := float(hero_medium.get("slow", 1.0)) * float(hero_gas.get("slow", 1.0))
+	var speed := float(hero.get("speed", balance.player.speed)) * float(state.speed_mul) * chill * HeroKit.move_scale(self) * CardKit.speed_mult(self) * (slow if here == 2 else 1.0) * (0.5 if state.slow > 0.0 else 1.0) * FrostCombat.move_scale(self) * medium_slow
 	player.moving = move != Vector2.ZERO and speed > 0.0
 	var want := move.normalized() * speed if player.moving else Vector2.ZERO
-	if feel != null and FrostCombat.HeroFx.slip(self) > 0.0:
-		player.vel = (player.vel as Vector2).lerp(want, 1.0 - pow(0.08, dt))
-	elif here == 2 and liquid.slide:
-		# glaze ice: the hero keeps sliding; grip = share of the old speed left after one second
-		player.vel = (player.vel as Vector2).lerp(want, 1.0 - pow(float(liquid.grip), dt))
-	else:
-		player.vel = want
-	var v: Vector2 = player.vel * dt
+	# grip = share of the old speed left after one second: glaze ice tiles (theme liquid), a pool
+	# of ice or blood (its rule), the slip condition; firm floor takes the wanted speed at once
+	var grip := 1.0
+	if here == 2 and liquid.slide:
+		grip = float(liquid.grip)
+	elif bool(hero_medium.get("slide", false)):
+		grip = float(hero_medium.get("grip", 0.1))
+	elif feel != null and FrostCombat.HeroFx.slip(self) > 0.0:
+		grip = 0.08
+	player.vel = ElementRules.slide(player.vel, want, grip, dt)
+	# the void pulls towards its heart
+	var pull := ElementRules.pull(hero_medium, Vector2(player.x, player.y), Vector2(hero_medium.get("centre", Vector2(player.x, player.y))))
+	var v: Vector2 = (player.vel + pull) * dt
 	if v != Vector2.ZERO:
 		if not box_blocked(_player_box(player.x + v.x, player.y)):
 			player.x += v.x
@@ -2400,6 +2455,24 @@ func _update_mobs(dt: float) -> void:
 		if m.get("hold", false) or m.get("mv_hold", false):
 			v = Vector2.ZERO
 		v *= HeroKit.tick_mob(self, m, dt)
+		# the element physics (src/combat/element_rules.gd): the pool or gas it stands in, and on the
+		# world's glaze ice tiles (theme liquid slide) it keeps its momentum like the hero, unless it
+		# is a creature of frost, sure-footed on its own ice
+		if not m.has("tags"):
+			m.tags = ElementRules.tags(str(m.kind), str(def.get("shot", "")), str(def.get("material", "")), ["frost"] if def.has("chill") else [])
+		var env := _step_mob_medium(m, dt)
+		var grip := 1.0
+		if bool(theme.liquid.get("slide", false)) and _cell(int(floor(m.p.x / C)), int(floor((m.p.y - 6.0) / C))) == 2 and not "frost" in m.tags:
+			grip = float(theme.liquid.get("grip", 0.015))
+		elif bool(env.get("slide", false)):
+			grip = float(env.get("grip", 0.1))
+		if grip < 1.0:
+			m.sv = ElementRules.slide(m.get("sv", v), v, grip, dt)
+			v = m.sv
+		else:
+			m.sv = v
+		if env.has("pull"):
+			v += ElementRules.pull(env, m.p, env.get("centre", m.p))
 		v += m.k
 		m.k *= 0.86
 		var moved_from: Vector2 = m.p
@@ -2652,6 +2725,215 @@ func _update_embers(dt: float) -> void:
 	_slosh_lava(dt)
 	_bubble_lava(dt)
 	_step_gas(dt)
+	_step_elements(dt)
+
+
+## The pool layer the hero and the monsters stand in: the world's own (the
+## hell's and the crypt's puddles) or the talents' (the Frostgruft draws its
+## pools there); null without one.
+func _pool_layer() -> RefCounted:
+	if pools != null:
+		return pools
+	if talents != null and talents.fx != null:
+		return talents.fx.pools
+	return null
+
+
+## The element physics on the hero (src/combat/element_rules.gd,
+## assets/data/element_rules.json): what he stands in and what he breathes.
+## A pool of lava, fire, poison or void hurts on its tick and puts its
+## condition on (burn, poison, silence), ice and blood take his footing
+## (_update_player), the void pulls, water puts out his burning; a gas cloud
+## thick enough hurts and conditions the same way and closes the view round
+## him (vision: src/hero/story_glow.gd). The lava and ice TILES of a world keep
+## their theme.liquid rule in _update_player; this is the pools' and clouds'.
+func _step_elements(dt: float) -> void:
+	hero_medium = {}
+	hero_medium_style = ""
+	hero_gas = {}
+	hero_gas_mat = ""
+	vision.goal = 0.0
+	if story_elements != null:
+		story_elements.update(dt)
+	if state.is_empty() or state.dead > 0.0:
+		_ease_vision(dt)
+		return
+	var feet := Vector2(player.x, player.y)
+	var layer := _pool_layer()
+	if layer != null:
+		var under: Array = layer.materials_at(feet)
+		if not under.is_empty():
+			hero_medium_style = ElementRules.top(under)
+			# burning, he sets the poison he steps in off (element_rules.json combos)
+			if _hero_combo(ElementRules.material(hero_medium_style)):
+				hero_medium_style = ""
+				_ease_vision(dt)
+				return
+			hero_medium = ElementRules.medium(hero_medium_style).duplicate()
+			# crusted lava (water met it) is cool stone for a while
+			if ElementRules.material(hero_medium_style) == "lava" and story_elements != null and story_elements.crusted(feet):
+				hero_medium = {}
+				hero_medium_style = ""
+			# the void pulls towards the middle of its pool: the nearest puddle zone of that style
+			if hero_medium.has("pull"):
+				hero_medium.centre = _pool_centre(feet, hero_medium_style)
+	if not hero_medium.is_empty():
+		# it hurts continuously: half hearts per second, drained smoothly onto the life bar
+		if hero_medium.has("hurt"):
+			dot_hurt_f(float(hero_medium.hurt) * dt, str(hero_medium.get("why", "im %s" % hero_medium_style)))
+		_hero_conditions(hero_medium)
+		# sliding fast over ice the boots scratch it: ice chips spray behind (the Frostgruft's
+		# snow layer does this on its tiles; this is the pools' ice in every world)
+		if bool(hero_medium.get("slide", false)) and monsters != null and (player.vel as Vector2).length() > 140.0:
+			_skid -= dt
+			if _skid <= 0.0:
+				_skid = 0.09
+				var back: Vector2 = -(player.vel as Vector2).normalized()
+				monsters._pixel_burst(feet + back * 10.0, 2, monsters.PX_COL.frost, 90.0, 160.0, 0.5)
+	if gas != null:
+		# the hero parts the gas round him (_step_gas): what he breathes is the cloud at arm's length
+		var cloud: Dictionary = gas.around(feet, 22.0 * PIXEL_WORLD / 2.0 + 24.0)
+		if float(cloud.d) >= ElementRules.dense_from() and not _hero_combo(str(cloud.mat)):
+			hero_gas_mat = str(cloud.mat)
+			hero_gas = ElementRules.gas(hero_gas_mat)
+	if not hero_gas.is_empty():
+		if hero_gas.has("hurt"):
+			dot_hurt_f(float(hero_gas.hurt) * dt, str(hero_gas.get("why", "im %s" % hero_gas_mat)))
+		_hero_conditions(hero_gas)
+		vision.goal = float(hero_gas.get("vision", 0.0))
+		vision.mat = hero_gas_mat
+	_ease_vision(dt)
+
+
+## The element physics on a themed world's enemy (the Frostgruft's, theme.mobs;
+## the hell monsters have their own in hell_monsters.gd _step_medium): the
+## pool it stands in hurts it on its tick (enemy_hurt hero hits per second,
+## unless it is of that element), burns, poisons or slows it, douses its
+## burning; a gas cloud thick enough does the same. Returns the medium's rule
+## ({} on firm floor) for the movement (slide, pull).
+func _step_mob_medium(m: Dictionary, dt: float) -> Dictionary:
+	var env := {}
+	if m.hp <= 0.0:
+		return env
+	var layer := _pool_layer()
+	if layer != null:
+		var under: Array = layer.materials_at(m.p)
+		if not under.is_empty():
+			var style := ElementRules.top(under)
+			var rule := ElementRules.medium(style)
+			if not rule.is_empty() and not ElementRules.immune(m.tags, rule) and not (ElementRules.material(style) == "lava" and story_elements != null and story_elements.crusted(m.p)):
+				env = rule.duplicate()
+				if rule.has("pull"):
+					env.centre = _pool_centre(m.p, style)
+				_medium_on_themed_mob(m, rule, "env_tick", dt)
+	if gas != null:
+		var cloud: Dictionary = gas.around(m.p, 42.0, 4)
+		if float(cloud.d) >= ElementRules.dense_from():
+			var rule := ElementRules.gas(str(cloud.mat))
+			if not rule.is_empty() and not ElementRules.immune(m.tags, rule):
+				_medium_on_themed_mob(m, rule, "gas_tick", dt)
+				if rule.has("blind_shots"):
+					m.shoot = maxf(float(m.get("shoot", 0.0)), float(rule.blind_shots))
+	return env
+
+
+func _medium_on_themed_mob(m: Dictionary, rule: Dictionary, tick_key: String, dt: float) -> void:
+	if rule.has("enemy_hurt"):
+		m[tick_key] = float(m.get(tick_key, 0.0)) - dt
+		if float(m[tick_key]) <= 0.0:
+			var tick := float(rule.get("tick", 1.0))
+			m[tick_key] = tick
+			m.hp -= float(rule.enemy_hurt) * tick * (0.5 if m.kind == "boss" else 1.0) * float(state.dmg)
+			m.hit = 0.12
+			if feel != null:
+				feel.on_hit(m, Vector2.ZERO, false)
+	var status: Dictionary = rule.get("status", {})
+	for kind: String in status:
+		var spec: Array = status[kind]
+		match kind:
+			"burn", "poison":
+				HeroKit.burn_mob(m, float(spec[0]) * 0.5, float(spec[1]))
+				if kind == "burn" and float(m.get("wet_t", 0.0)) <= 0.0:
+					m.fire_t = maxf(float(m.get("fire_t", 0.0)), float(spec[1]))
+			"slow":
+				HeroKit.slow_mob(self, m, 1.0 - float(spec[0]), float(spec[1]))
+			"wet":
+				m.wet_t = maxf(float(m.get("wet_t", 0.0)), float(spec[1]))
+	if bool(rule.get("douse", false)):
+		m.burn_t = 0.0
+		m.fire_t = 0.0
+
+
+## What the hero's own condition does with the material he meets
+## (element_rules.json combos): burning, he sets poison off (true: it is gone);
+## wet, frost mist freezes him solid for a moment.
+func _hero_combo(mat: String) -> bool:
+	if feel == null:
+		return false
+	var combos: Dictionary = ElementRules.data().get("combos", {})
+	var burning := FrostCombat.HeroFx.has(self, "burn")
+	var wet := FrostCombat.HeroFx.has(self, "wet")
+	if burning and mat == "poison" and bool(combos.get("burn_ignites_poison", true)) and story_elements != null:
+		story_elements.fire_at(Vector2(player.x, player.y), float(combos.get("explode_r", 30.0)) * PIXEL_WORLD / 2.0)
+		return true
+	if wet and mat == "frost" and float(combos.get("freeze_wet", 0.0)) > 0.0 and not FrostCombat.HeroFx.has(self, "freeze"):
+		FrostCombat.HeroFx.apply(self, "freeze", float(combos.get("freeze_wet", 0.7)), 1.0)
+		FrostCombat.HeroFx.clear(self, "wet")
+		if monsters != null:
+			monsters._burst_in(Vector2(player.x, player.y - 40), 12, "frost")
+	return false
+
+
+## The conditions a medium or gas rule puts on the hero (its status table), and
+## what it takes away (water douses his burning).
+func _hero_conditions(rule: Dictionary) -> void:
+	if feel == null:
+		return
+	var status: Dictionary = rule.get("status", {})
+	for kind: String in status:
+		var spec: Array = status[kind]
+		FrostCombat.HeroFx.apply(self, kind, float(spec[1]), float(spec[0]))
+	if bool(rule.get("douse", false)):
+		FrostCombat.HeroFx.clear(self, "burn")
+		state.burn = 0.0
+
+
+## The middle of the nearest puddle zone of `style` round `at` (the hell's own
+## puddles; `at` itself when none is known).
+func _pool_centre(at: Vector2, style: String) -> Vector2:
+	var best := at
+	var best_d := INF
+	if monsters != null:
+		for z: Dictionary in monsters.zones:
+			if str(z.kind) != "puddle" or ElementRules.material(str(z.get("st", "lava"))) != ElementRules.material(style):
+				continue
+			var d: float = at.distance_squared_to(z.p)
+			if d < best_d:
+				best_d = d
+				best = z.p
+	return best
+
+
+## The view inside gas closes in and opens again (element_rules.json vision):
+## its reach is the cloud's reach round the hero, measured probe_hz times a
+## second along eight rays, between min_radius and max_radius (world px).
+func _ease_vision(dt: float) -> void:
+	var rules := ElementRules.vision()
+	var goal := float(vision.goal)
+	var rate := dt / maxf(0.05, float(rules.get("fade_in", 0.35)) if goal > float(vision.k) else float(rules.get("fade_out", 0.55)))
+	vision.k = move_toward(float(vision.k), goal, rate)
+	if goal <= 0.0 and float(vision.k) <= 0.0:
+		vision.r = 0.0
+		return
+	vision.probe = float(vision.probe) - dt
+	if goal > 0.0 and gas != null and float(vision.probe) <= 0.0:
+		vision.probe = 1.0 / maxf(1.0, float(rules.get("probe_hz", 8)))
+		var feet := Vector2(player.x, player.y)
+		var reach: float = gas.extent(feet, str(vision.mat), float(rules.get("thin", 0.12)), float(rules.get("step", 12)) * PIXEL_WORLD / 2.0, float(rules.get("max_radius", 420)) * PIXEL_WORLD / 2.0)
+		var lo := float(rules.get("min_radius", 70)) * PIXEL_WORLD / 2.0
+		var hi := float(rules.get("max_radius", 420)) * PIXEL_WORLD / 2.0
+		var want := clampf(reach + lo * 0.5, lo, hi)
+		vision.r = want if float(vision.r) <= 0.0 else lerpf(float(vision.r), want, 0.5)
 
 
 ## Now and then a lava pool in view sloshes over its rim onto the floor
@@ -3651,9 +3933,11 @@ func draw_hud(h: Control) -> void:
 	status.append_array(FrostCombat.status_lines(self))
 	var leveled := heroic()
 	var need := maxf(1.0, float(HeroKit.need(theme.leveling, int(state.level)))) if leveled else 1.0
+	# the life shown, for the status sheet too (src/hell/frost_hud.gd reads state.hp_f)
+	state.hp_f = hp_f()
 	var hero_rect := HudKit.hero_panel(h, FONT, Vector2(HudStyle.size("margin"), HudStyle.size("margin")), {"title": "P1 · " + str(hero.get("name", class_id)).to_upper(),
 		"points": RunTree.points_left(CardKit.tree(self), CardKit.ranks(self), int(state.level)) if leveled else 0,
-		"hp": int(state.hp), "max_hp": int(state.max_hp), "hearts": hearts, "level": int(state.level) if leveled else -1,
+		"hp": int(state.hp), "hp_f": hp_f(), "max_hp": int(state.max_hp), "hearts": hearts, "level": int(state.level) if leveled else -1,
 		"exp": float(state.exp) / need if leveled else -1.0, "resources": resources, "status": status,
 		"low": int(state.hp) <= 2 and int(state.hp) > 0, "clock": float(state.t)})
 	if talents != null:

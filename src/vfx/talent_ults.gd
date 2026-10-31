@@ -1,6 +1,6 @@
 extends RefCounted
 ## The nine ultimates as pixel art (assets/data/talents.json; drawn by
-## src/vfx/talent_fx.gd): each one's cast moment (the Inferno's flame column,
+## src/vfx/talent_fx.gd): each one's cast moment (the Meteor's call to the sky,
 ## Absoluter Nullpunkt's ice spikes, Zeitbruch's clock face, the Letzter
 ## Pfeil's aim line, the Todeszone flask, Alpharuf's spirit howl, Blutrausch's
 ## blood burst, Unbezwingbar's hex plates, Klingentanz's blades), the lasting
@@ -59,75 +59,80 @@ const RUNES := [["x.x", ".x.", "x.x"], ["xxx", "x..", "xxx"], [".x.", "xxx", ".x
 static func cast(canvas: CanvasItem, talent: String, at: Vector2, body: Vector2, r: float, p: float, stage: int, angle: float, art: float, clock: float, seed: int, feet: Vector2 = Vector2.ZERO) -> void:
 	p = clampf(p, 0.0, 1.0)
 	match talent:
-		"fire_6": _inferno(canvas, at, body, at + feet, r, p, stage, art, clock, seed)
-		"frost_6": _zero(canvas, at, body, r, p, stage, art, clock, seed)
-		"arcane_6": _clock_face(canvas, at, body, p, stage, art, clock)
-		"sniper_6": _aim(canvas, at, body, p, stage, angle, art, clock)
-		"trapper_6": _flask(canvas, at, body, p, angle, art, seed)
-		"beast_6": _howl(canvas, at, body, p, stage, art, clock, seed)
-		"berserk_6": _blood_burst(canvas, at, body, at + feet, p, stage, art, seed)
-		"guard_6": _plates_in(canvas, at + feet, p, stage, art, clock)
-		"blade_6":
+		"fire_14": _meteor_call(canvas, at, body, at + feet, r, p, stage, art, clock, seed)
+		"frost_14": _zero(canvas, at, body, r, p, stage, art, clock, seed)
+		"arcane_14": _clock_face(canvas, at, body, p, stage, art, clock)
+		"sniper_14": _aim(canvas, at, body, p, stage, angle, art, clock)
+		"trapper_14": _flask(canvas, at, body, p, angle, art, seed)
+		"beast_14": _howl(canvas, at, body, p, stage, art, clock, seed)
+		"berserk_14": _blood_burst(canvas, at, body, at + feet, p, stage, art, seed)
+		"guard_14": _plates_in(canvas, at + feet, p, stage, art, clock)
+		"blade_14":
 			# the blades fly out to their orbit and hand over to the aura (same spin, same radius)
 			if p < 0.25:
 				_burst_sparks(canvas, at + body * 0.5, 4.0 + 10.0 * _out(p / 0.25), 1.0 - p / 0.25, Pal.ramp("steel"), art, seed)
 			_blade_ring(canvas, at, body, r, _out(p / 0.35), 3 + stage, art, clock, 1.0 - _span(p, 0.4, 0.65), false, false)
 
 
-## Inferno: a flame column rising from the hero (anticipation squash, rise
-## with overshoot, flicker, collapse to embers); Glutkern adds an ember core on
-## the floor and a taller column, Feuersturm three side columns.
-static func _inferno(canvas: CanvasItem, at: Vector2, body: Vector2, foot: Vector2, r: float, p: float, stage: int, art: float, clock: float, seed: int) -> void:
+## Meteor's call (user feedback 2026-10-31, the fire in one language): the
+## hero's hand gathers embers that stream up into the sky as a column of
+## rising ember cells (dense at the hand, thinning upwards, flickering on the
+## beat), a flash at the hand when the call goes out, embers raining back down
+## round him as it fades; Glutkrater adds the ember core glowing on the floor,
+## Meteorschauer three thin side streams (the shower's call).
+static func _meteor_call(canvas: CanvasItem, at: Vector2, body: Vector2, foot: Vector2, r: float, p: float, stage: int, art: float, clock: float, seed: int) -> void:
 	var fire: Array = Pal.ramp("fire")
 	var hole := _hole(at, body, art)
 	if stage >= 1:
 		_ember_core(canvas, at, r, p, art, clock, seed, hole)
+	var hand := at + body + Vector2(0.0, -6.0 * art)
 	if stage >= 2:
 		for k in range(3):
 			var a := -PI * 0.5 + TAU * float(k) / 3.0 + PI / 3.0
-			_column(canvas, at + Vector2.from_angle(a) * r * 0.55, Rect2i(), _span(p, 0.1 + 0.07 * float(k), 1.0), 5.5, 36.0, fire, art, clock, seed + 17 * (k + 1))
-	_column(canvas, foot, hole, p, 9.5, 64.0 if stage == 0 else 78.0, fire, art, clock, seed)
+			_sky_stream(canvas, foot + Vector2.from_angle(a) * r * 0.45, _span(p, 0.12 + 0.06 * float(k), 1.0), 1.5, 40.0, fire, art, clock, seed + 17 * (k + 1))
+	_sky_stream(canvas, hand, p, 3.0, 70.0, fire, art, clock, seed)
+	# the flash at the hand as the call goes out
+	var f := _span(p, 0.1, 0.3)
+	if f > 0.0 and f < 1.0:
+		var rr := 4.0 * art * minf(1.0, f * 3.0)
+		PixelPaint.disc(canvas, hand, rr, rr * 0.8, fire[3], art, (1.0 - f) * 0.8)
+		if f < 0.3:
+			PixelPaint.cell(canvas, PixelPaint.at(hand, art), fire[4], art)
 
 
-## One flame column standing at `foot`; inside `hole` (the hero) it is sparse
-## after the first impact frames so he shows through.
-static func _column(canvas: CanvasItem, foot: Vector2, hole: Rect2i, p: float, half: float, top: float, fire: Array, art: float, clock: float, seed: int) -> void:
-	if p <= 0.0:
+## A stream of embers rising from `base` into the sky: `half` cells wide at
+## its root, `top` cells high, its cells climbing on the beat and thinning
+## upwards; it rises over the first third of `p`, holds and burns down.
+static func _sky_stream(canvas: CanvasItem, base: Vector2, p: float, half: float, top: float, fire: Array, art: float, clock: float, seed: int) -> void:
+	if p <= 0.0 or p >= 1.0:
 		return
-	var b := PixelPaint.at(foot, art)
-	var ranks := {}
-	var fade := _span(p, 0.62, 1.0)
-	var cover := 1.0 - fade
-	var see := 1.0 if p < 0.16 else 0.12
-	if p < 0.08:
-		# anticipation: a low, wide flare at the feet
-		var k := p / 0.08
-		_flame(ranks, b, half * (1.25 + 0.3 * k), 3.0 + 5.0 * k, clock, seed, 1.0, hole, 1.0)
-	else:
-		var rise := _back(_span(p, 0.08, 0.3))
-		var h := top * rise * (1.0 - 0.3 * fade)
-		# stretched thin while it shoots up, settling to its width
-		var w := half * (1.0 - 0.22 * sin(PI * _span(p, 0.08, 0.3)))
-		_flame(ranks, b, w, h, clock, seed, cover, hole, see)
-		_flame(ranks, b + Vector2i(-roundi(w), 0), w * 0.5, h * 0.36, clock, seed + 3, cover, hole, see)
-		_flame(ranks, b + Vector2i(roundi(w), 0), w * 0.5, h * 0.42, clock, seed + 5, cover, hole, see)
-		# tongues licking off the top
-		for i in range(4):
-			var lick := 0.5 + 0.5 * sin(clock * 9.0 + float(i) * 2.1 + float(seed))
-			var off := Vector2i(roundi((float(i) - 1.5) * w * 0.6), -roundi(h * (0.52 + 0.09 * float(i % 2))))
-			_flame(ranks, b + off, w * 0.32, h * (0.3 + 0.2 * lick), clock, seed + 11 * (i + 1), cover, hole, see)
-	# no outline over the hero: the sparse flames in front of him stay loose cells
-	_flush_ramp(canvas, ranks, fire, art, cover > 0.5, hole if see < 1.0 else Rect2i())
-	# embers rising off it, the more the further it has burnt down
-	if p > 0.1:
-		var embers := {}
-		for i in range(16):
-			var ph := fposmod(p * 1.4 + _h(seed, i), 1.0)
-			var x := (_h(seed, 40 + i) - 0.5) * half * 3.6 + sin(clock * 3.0 + float(i)) * 1.5
-			var q := b + Vector2i(roundi(x), -roundi(ph * (top + 14.0)))
-			if PixelPaint.shown(q, (1.0 - ph) * (0.5 + 0.5 * fade + 0.3)):
-				embers[q] = fire[3] if i % 3 == 0 else fire[2]
-		_flush_under(canvas, embers, art)
+	var b := PixelPaint.at(base, art)
+	var frame := int(clock * PixelPaint.FPS)
+	var rise := _out(_span(p, 0.0, 0.3))
+	var fade := _span(p, 0.6, 1.0)
+	var h := top * rise
+	var cells := {}
+	for j in range(int(h)):
+		var v := float(j) / maxf(1.0, top)
+		var w := half * (1.0 - v * 0.7)
+		var sway := sin(v * 4.0 + float(frame) * 0.9 + float(seed)) * 1.5 * v
+		for x in range(roundi(sway - w), roundi(sway + w) + 1):
+			var q := b + Vector2i(x, -j)
+			# climbing: the dither phase runs up with the beat; sparser towards the top and the end
+			if not PixelPaint.shown(q + Vector2i(0, frame), (1.0 - v * 0.75) * (1.0 - fade)):
+				continue
+			var u := absf(float(x) - sway) / maxf(0.5, w)
+			cells[q] = fire[4] if u < 0.3 and v < 0.3 and posmod(j + frame, 5) == 0 else (fire[3] if u < 0.5 else (fire[2] if v < 0.6 else fire[1]))
+	_flush_under(canvas, cells, art)
+	# embers raining back down round the stream as it fades
+	if fade > 0.0:
+		var rain := {}
+		for i in range(10):
+			var ph := fposmod(fade * 1.6 + _h(seed, i), 1.0)
+			var q := b + Vector2i(roundi((_h(seed, 40 + i) - 0.5) * half * 6.0), -roundi((1.0 - ph * ph) * top * 0.8))
+			if PixelPaint.shown(q, 1.0 - ph):
+				rain[q] = fire[3] if ph < 0.4 else fire[2]
+		_flush_under(canvas, rain, art)
 
 
 ## Glutkern: the floor under the column glows (dithered rings of the fire ramp, flickering glints).
@@ -761,12 +766,12 @@ static func _blade(cells: Dictionary, pos: Vector2, along: Vector2, out: Vector2
 static func wave(canvas: CanvasItem, talent: String, at: Vector2, r: float, p: float, stage: int, art: float, clock: float, seed: int) -> void:
 	p = clampf(p, 0.0, 1.0)
 	match talent:
-		"fire_6": _firestorm(canvas, at, r, p, art, clock, seed)
-		"frost_6": _shatter(canvas, at, r, p, art, clock, seed)
-		"arcane_6": _rune_burst(canvas, at, r, p, art, seed)
-		"berserk_6": _blood_crown(canvas, at, r, p, art, seed)
-		"guard_6": _plates_out(canvas, at, r, p, stage, art, clock, seed)
-		"blade_6": _finale(canvas, at, r, p, art, seed)
+		"fire_14": _firestorm(canvas, at, r, p, art, clock, seed)
+		"frost_14": _shatter(canvas, at, r, p, art, clock, seed)
+		"arcane_14": _rune_burst(canvas, at, r, p, art, seed)
+		"berserk_14": _blood_crown(canvas, at, r, p, art, seed)
+		"guard_14": _plates_out(canvas, at, r, p, stage, art, clock, seed)
+		"blade_14": _finale(canvas, at, r, p, art, seed)
 
 
 static func _firestorm(canvas: CanvasItem, at: Vector2, r: float, p: float, art: float, clock: float, seed: int) -> void:
@@ -981,8 +986,8 @@ static func _finale(canvas: CanvasItem, at: Vector2, r: float, p: float, art: fl
 ## a beating heart in the middle); Feuersturm's burning ground as flickering flames.
 static func zone(canvas: CanvasItem, talent: String, at: Vector2, r: float, left: float, total: float, stage: int, every: float, art: float, clock: float, seed: int) -> void:
 	match talent:
-		"trapper_6": _death_zone(canvas, at, r, left, total, stage, every, art, clock, seed)
-		"fire_6": _burning_ground(canvas, at, r, left, total, art, clock, seed)
+		"trapper_14": _death_zone(canvas, at, r, left, total, stage, every, art, clock, seed)
+		"fire_14": _burning_ground(canvas, at, r, left, total, art, clock, seed)
 
 
 ## The Todeszones' cells of the current beat, by zone (seed): {tick, at, r, stage, layers}.

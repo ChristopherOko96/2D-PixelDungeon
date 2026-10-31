@@ -6,8 +6,11 @@ extends RefCounted
 ## scaled by their stage), the effects of potions drunk this run (augments),
 ## and every equipped piece's curse or, once broken, its blessing (slower
 ## attacks, slower walking, a sealed skill, heavier hits taken, a dim light,
-## faster cooldowns...). Pure functions on the player dictionary; the
-## inventory (inventory.gd) owns finding, carrying and using items.
+## faster cooldowns...), and the items' Elementsprache: which element a piece
+## or potion fights in (items.json "element", else its effects through
+## effect_elements) and the glow colour its shots and held blade take from it.
+## Pure functions on the player dictionary; the inventory (inventory.gd) owns
+## finding, carrying and using items.
 
 const DATA_PATH := "res://assets/data/items.json"
 
@@ -110,6 +113,70 @@ static func stuck(item: Dictionary) -> bool:
 	return str(item.get("type", "")) in ["weapon", "gear"] and not str(item.get("curse", "")).is_empty() and bool(item.get("identified", false)) and not bool(item.get("blessed", false))
 
 
+# --- elements ------------------------------------------------------------------------
+
+## The elements table (items.json elements): element -> {name, ramp, glow, motes}.
+static func elements() -> Dictionary:
+	return data().get("elements", {})
+
+
+## One element's row ({} for an unknown element): name (shown), ramp (palette
+## ramp, src/vfx/talent_palette.gd), glow (hex), motes (how its pixels move).
+static func element_info(element: String) -> Dictionary:
+	return elements().get(element, {})
+
+
+## The element a set of effects implies (a spec's, a blessing's or a hero's
+## whole build): the first key of items.json effect_elements, in its order,
+## that is present and above zero; "" for none.
+static func element_of_effects(effects: Dictionary) -> String:
+	var table: Dictionary = data().get("effect_elements", {})
+	for key: String in table:
+		if float(effects.get(key, 0.0)) > 0.0: return str(table[key])
+	return ""
+
+
+## The element of a weapon or gear definition: its explicit "element", else
+## what its effects imply; "" for a plain piece.
+static func element_of_spec(spec: Dictionary) -> String:
+	var explicit := str(spec.get("element", ""))
+	return explicit if not explicit.is_empty() else element_of_effects(spec.get("effects", {}))
+
+
+## The element an item fights in: a weapon's or gear piece's own, else that of
+## its curse (the burning blade burns either way; blessed, its blessing's),
+## a potion's kind's; "" for none. Whether the item is identified is the
+## caller's business (an unknown piece shows nothing, inventory.gd view).
+static func element_of(item: Dictionary) -> String:
+	match str(item.get("type", "")):
+		"weapon", "gear":
+			var own := element_of_spec(spec_of(item))
+			if not own.is_empty(): return own
+			var rules := curse(str(item.get("curse", "")))
+			if rules.is_empty(): return ""
+			if bool(item.get("blessed", false)):
+				var blessing: Dictionary = rules.get("blessing", {})
+				var blessed := str(blessing.get("element", ""))
+				return blessed if not blessed.is_empty() else element_of_effects(blessing.get("effects", {}))
+			return str(rules.get("element", ""))
+		"potion":
+			return str(data().get("potions", {}).get(str(item.get("potion", "")), {}).get("element", ""))
+	return ""
+
+
+## The glow colour of an element as hex without "#" (its lite tone; "" for an
+## unknown element).
+static func element_glow(element: String) -> String:
+	return str(element_info(element).get("glow", ""))
+
+
+## The colour a weapon's shots and held blade glow in, as hex: the weapon's own
+## "glow" first (its look), else its element's; "" leaves the class default.
+static func glow_of(item: Dictionary) -> String:
+	var own := str(spec_of(item).get("glow", ""))
+	return own if not own.is_empty() else element_glow(element_of(item))
+
+
 ## The weapon's base values replace the class weapon's (call before PerkRules.rebuild).
 static func set_base(player: Dictionary) -> void:
 	var item: Dictionary = player.get("inventory", {}).get("weapon", {})
@@ -128,8 +195,11 @@ static func set_base(player: Dictionary) -> void:
 		player._class_shot_speed = player.shot_speed
 		player._class_splash = player.splash
 	player.weapons = ["res://assets/sprites/" + str(spec.get("sprite", "")) + ".png"]
-	# The colour the weapon's shots glow in (src/vfx/attack_fx.gd); empty: element or default.
-	player.attack_glow = str(spec.get("glow", ""))
+	# The colour the weapon's shots glow in (src/vfx/attack_fx.gd tint_for reads it as the
+	# player's "glow"): the weapon's own glow, else its element's; empty: build element or default.
+	player.attack_glow = glow_of(item)
+	# The element the held weapon fights in ("" for none), for the hero look and the HUD.
+	player.attack_element = element_of(item)
 
 
 ## After PerkRules has rebuilt the stats: weapon and gear effects, gear stats

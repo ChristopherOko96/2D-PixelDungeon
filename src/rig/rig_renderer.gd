@@ -13,6 +13,8 @@ extends RefCounted
 
 const RigLibrary = preload("res://src/rig/rig_library.gd")
 const RigPoses = preload("res://src/rig/rig_poses.gd")
+## Hero element skins: a hero rig's parts drawn in his main spec's colours (hero_skins.json).
+const ElementSkin = preload("res://src/hero/element_skin.gd")
 const S := RigLibrary.PIXEL_SCALE
 const SHADOW := Color(0.05, 0.04, 0.09, 0.45)
 const VIOLET := Color("a46fe0")
@@ -85,11 +87,30 @@ var _rng := RandomNumberGenerator.new()
 static var _gore_materials: Dictionary = {}
 static var _gore_loaded := false
 static var _palettes: Dictionary = {}
+## Pose families the renderer does not know itself (the companions' beast,
+## bird, elemental and demon, src/vfx/companion_rigs.gd): family -> {"pose":
+## Callable(rig, a) -> pose, "attacks": Callable(rig, kind) -> [clip, end of
+## windup, end of active]}. A registered family crumbles on death like a
+## skeleton: every part falls off as debris and nothing is left to draw.
+var families: Dictionary = {}
 
 
 func _init(rig_library: RefCounted = null) -> void:
 	library = rig_library if rig_library != null else RigLibrary.shared()
 	_rng.seed = 90210
+
+
+## Adds (or replaces) a pose family: `pose` builds the RigPoses-style pose of
+## a rig for an actor state, `attacks` maps an attack kind to its clip and
+## windows (an invalid Callable keeps the default attack clip).
+func register_family(name: String, pose: Callable, attacks: Callable = Callable()) -> void:
+	families[name] = {"pose": pose, "attacks": attacks}
+
+
+## Drops the clip state of actor `key` (a companion that is gone); its debris
+## stays on the floor until it fades.
+func forget(key: String) -> void:
+	_actors.erase(key)
 
 
 ## True when the rig data loaded; otherwise the view keeps its old sprites.
@@ -158,42 +179,8 @@ func observe(snapshot: Dictionary) -> void:
 	if not is_ready(): return
 	var seen: Dictionary = {}
 	for enemy: Dictionary in snapshot.get("enemies", []):
-		var rig_name := str(enemy.get("rig", ""))
-		if rig_name.is_empty(): continue
-		var key := _key(enemy)
-		seen[key] = true
-		var fresh := not _actors.has(key)
-		var a := _actor(key, enemy)
-		var rig: Dictionary = library.rig(rig_name)
-		var dying_now := float(enemy.get("dying_p", -1.0)) >= 0.0
-		var seen_rig := str(a.get("rig_seen", ""))
-		var renewed := (not seen_rig.is_empty() and seen_rig != rig_name) or (bool(a.dying) and not dying_now)
-		if renewed: _renew(a)
-		a.rig_seen = rig_name
-		if fresh and bool(enemy.get("summoned", false)) and not dying_now: _start_rise(a, rig, enemy)
-		var staggering: bool = str(a.clip) == "hit" and float(a.clip_len) - float(a.ct) > HIT_TIME
-		if int(enemy.get("hits", 0)) > int(a.hits) and str(enemy.get("attack", "")).is_empty() and not dying_now and not staggering: _play(a, "hit", HIT_TIME)
-		if int(enemy.get("blocks", 0)) > int(a.blocks): _play(a, "block", BLOCK_TIME)
-		a.hits = int(enemy.get("hits", 0))
-		a.blocks = int(enemy.get("blocks", 0))
-		var lost: Dictionary = {}
-		for id: Variant in enemy.get("lost", []): lost[str(id)] = true
-		var severed := false
-		for id: String in lost:
-			if not a.lost.has(id) and not fresh and not renewed:
-				_detach(a, rig, id, 1.0)
-				severed = true
-		var colors := palette(str(rig.get("material", "")))
-		for id: String in a.lost:
-			if not lost.has(id):
-				a.regrowing[id] = REGROW_TIME
-				_debris = _debris.filter(func(d: Dictionary) -> bool: return not (d.key == a.key and d.id == id))
-				var regrow_color: Color = colors.glow if not colors.is_empty() else VIOLET if rig_name in ["void", "bomber"] else Color("97da3f")
-				_burst_at(Vector2(a.get("feet", Vector2(float(enemy.get("x", 0)), float(enemy.get("y", 0))))) - Vector2(0, 24), regrow_color, 12, 60.0)
-		a.lost = lost
-		# A hell rig reels for a moment when a part is cut off (PART-03).
-		if severed and not dying_now and not colors.is_empty(): _play(a, "hit", STAGGER_TIME)
-		if dying_now and not bool(a.dying): _start_death(a, rig, enemy)
+		var key := observe_one(enemy)
+		if not key.is_empty(): seen[key] = true
 	for key: String in _actors.keys():
 		if str(key).begins_with("e") and not seen.has(key): _actors.erase(key)
 	for event: Dictionary in snapshot.get("fx_events", []):
@@ -204,6 +191,51 @@ func observe(snapshot: Dictionary) -> void:
 	if _fx_seen.size() > 256: _fx_seen.clear()
 
 
+## Reads one entity's snapshot (an enemy of observe(), or a companion handed
+## in by src/vfx/companion_rigs.gd before it is drawn): see observe(). Returns
+## the actor key, "" for an entity without a rig. Keys not starting with "e"
+## (a companion's "actor_key") are never swept by observe(); the caller drops
+## them with forget().
+func observe_one(enemy: Dictionary) -> String:
+	if not is_ready(): return ""
+	var rig_name := str(enemy.get("rig", ""))
+	if rig_name.is_empty(): return ""
+	var key := _key(enemy)
+	var fresh := not _actors.has(key)
+	var a := _actor(key, enemy)
+	var rig: Dictionary = library.rig(rig_name)
+	var dying_now := float(enemy.get("dying_p", -1.0)) >= 0.0
+	var seen_rig := str(a.get("rig_seen", ""))
+	var renewed := (not seen_rig.is_empty() and seen_rig != rig_name) or (bool(a.dying) and not dying_now)
+	if renewed: _renew(a)
+	a.rig_seen = rig_name
+	if fresh and bool(enemy.get("summoned", false)) and not dying_now: _start_rise(a, rig, enemy)
+	var staggering: bool = str(a.clip) == "hit" and float(a.clip_len) - float(a.ct) > HIT_TIME
+	if int(enemy.get("hits", 0)) > int(a.hits) and str(enemy.get("attack", "")).is_empty() and not dying_now and not staggering: _play(a, "hit", HIT_TIME)
+	if int(enemy.get("blocks", 0)) > int(a.blocks): _play(a, "block", BLOCK_TIME)
+	a.hits = int(enemy.get("hits", 0))
+	a.blocks = int(enemy.get("blocks", 0))
+	var lost: Dictionary = {}
+	for id: Variant in enemy.get("lost", []): lost[str(id)] = true
+	var severed := false
+	for id: String in lost:
+		if not a.lost.has(id) and not fresh and not renewed:
+			_detach(a, rig, id, 1.0)
+			severed = true
+	var colors := palette(str(rig.get("material", "")))
+	for id: String in a.lost:
+		if not lost.has(id):
+			a.regrowing[id] = REGROW_TIME
+			_debris = _debris.filter(func(d: Dictionary) -> bool: return not (d.key == a.key and d.id == id))
+			var regrow_color: Color = colors.glow if not colors.is_empty() else VIOLET if rig_name in ["void", "bomber"] else Color("97da3f")
+			_burst_at(Vector2(a.get("feet", Vector2(float(enemy.get("x", 0)), float(enemy.get("y", 0))))) - Vector2(0, 24), regrow_color, 12, 60.0)
+	a.lost = lost
+	# A hell rig reels for a moment when a part is cut off (PART-03).
+	if severed and not dying_now and not colors.is_empty(): _play(a, "hit", STAGGER_TIME)
+	if dying_now and not bool(a.dying): _start_death(a, rig, enemy)
+	return key
+
+
 func _actor(key: String, entity: Dictionary) -> Dictionary:
 	if not _actors.has(key):
 		_actors[key] = {"key": key, "t": _rng.randf_range(0.0, 3.0), "clip": "", "ct": 0.0, "clip_len": 0.0, "hits": int(entity.get("hits", 0)), "blocks": int(entity.get("blocks", 0)),
@@ -212,9 +244,11 @@ func _actor(key: String, entity: Dictionary) -> Dictionary:
 	return _actors[key]
 
 
-## Actor key of an enemy: "e" + its uid (hell monsters carry a string id and an
+## Actor key of an enemy: its own "actor_key" when it brings one (a companion,
+## "p" + pet id), else "e" + its uid (hell monsters carry a string id and an
 ## int uid), else its int id (crypt enemies).
 static func _key(enemy: Dictionary) -> String:
+	if enemy.has("actor_key"): return str(enemy.actor_key)
 	return "e%d" % int(enemy.get("uid", enemy.get("id", 0)))
 
 
@@ -332,8 +366,8 @@ func draw_enemy(canvas: CanvasItem, enemy: Dictionary, point: Vector2) -> float:
 	var face := -1.0 if float(enemy.get("face", -1.0)) < 0.0 else 1.0
 	var dying_p := float(enemy.get("dying_p", -1.0))
 	var family: String = str(rig.family)
-	# Skeletons crumble and bombers burst: nothing is left to draw.
-	if dying_p >= 0.0 and (family in ["skeleton", "bomber", "golem"]): return NAN
+	# Skeletons (and the companions' registered families) crumble and bombers burst: nothing is left to draw.
+	if dying_p >= 0.0 and (family in ["skeleton", "bomber", "golem"] or families.has(family)): return NAN
 	_clip_from_snapshot(a, rig, enemy, dying_p)
 	var flash := clampf(float(enemy.get("hit_flash", 0.0)) / 0.16, 0.0, 1.0)
 	# An escaping or fading figure takes its shadow along.
@@ -365,6 +399,10 @@ func draw_hero(canvas: CanvasItem, key: String, player: Dictionary, point: Vecto
 	a.alpha_mul = alpha
 	a.size_mul = size
 	a.tint = tint
+	# the element skin (src/hero/element_skin.gd): the mage's parts in his main spec's colours;
+	# the story worlds give the element with the player, the crypt's comes from its talents
+	a.skin = ElementSkin.class_for_rig(rig_name)
+	a.element = ElementSkin.element_for_player(player) if not str(a.skin).is_empty() else ""
 	if int(player.get("hurts", 0)) > int(a.hurts): _play(a, "hit", HIT_TIME)
 	a.hurts = int(player.get("hurts", 0))
 	if float(player.get("hp", 1)) <= 0.0:
@@ -489,6 +527,10 @@ func _draw_pixel_slash(canvas: CanvasItem, trail: Array, px: float, pal: Array) 
 
 ## [clip, end of windup, end of active] in clip progress, per figure and move.
 func _attack_mapping(rig: Dictionary, kind: String) -> Array:
+	var registered: Dictionary = families.get(str(rig.family), {})
+	if not registered.is_empty() and (registered.attacks as Callable).is_valid():
+		var mapped: Variant = registered.attacks.call(rig, kind)
+		if mapped is Array and (mapped as Array).size() >= 3: return mapped
 	match str(rig.family):
 		"skeleton":
 			match str(rig.variant):
@@ -536,6 +578,10 @@ func _start_death(a: Dictionary, rig: Dictionary, enemy: Dictionary) -> void:
 	if enemy.has("slice"): return
 	var family: String = str(rig.family)
 	var feet: Vector2 = a.get("feet", Vector2(float(enemy.get("x", 0)), float(enemy.get("y", 0))))
+	# A companion (registered family) falls apart like a skeleton: every part drops.
+	if families.has(family):
+		for part: Dictionary in rig.items + rig.parts: _detach(a, rig, part.id, 0.8)
+		return
 	match family:
 		"skeleton":
 			for part: Dictionary in rig.items + rig.parts: _detach(a, rig, part.id, 1.0)
@@ -608,8 +654,17 @@ static func cut_colors(rig: Dictionary) -> Array:
 	return [VIOLET_DARK] if str(rig.get("family", "")) in ["void", "bomber"] else [Color("fdf7ed")]
 
 
+## The pose of a rig for an actor state: a registered family's own, else RigPoses'.
+func _pose(rig: Dictionary, a: Dictionary) -> Dictionary:
+	var registered: Dictionary = families.get(str(rig.get("family", "")), {})
+	if not registered.is_empty() and (registered.pose as Callable).is_valid():
+		var pose: Variant = registered.pose.call(rig, a)
+		if pose is Dictionary and pose.has("whole") and pose.has("parts"): return pose
+	return RigPoses.pose(rig, a)
+
+
 func _draw_rig(canvas: CanvasItem, a: Dictionary, rig: Dictionary, point: Vector2, face: float, flash: float, with_items: bool, shadow_alpha: float) -> float:
-	var pose: Dictionary = RigPoses.pose(rig, a)
+	var pose: Dictionary = _pose(rig, a)
 	var S: float = _actor_scale(rig, a)
 	var feet := point + Vector2(0, (float(rig.ground.y) - float(rig.center.y)) * S)
 	a.feet = feet
@@ -682,7 +737,7 @@ func _draw_rig(canvas: CanvasItem, a: Dictionary, rig: Dictionary, point: Vector
 		var rows := _rows_above(part, Transform2D(world[part.id]), clip_y)
 		if rows <= float(Rect2(part.bounds).position.y): continue
 		hittable[part.id] = true
-		_tex(canvas, layer.texture, Color(tint.r, tint.g, tint.b, tint.a * alpha), "part", part.id, Vector2.ZERO, rows)
+		_tex(canvas, _skinned(layer.texture, a), Color(tint.r, tint.g, tint.b, tint.a * alpha), "part", part.id, Vector2.ZERO, rows)
 		var heat := clampf(float(glow.get(part.id, 0.0)), 0.0, 1.0)
 		if heat > 0.0 and layer.get("white") != null: _tex(canvas, layer.white, Color(glow_color, 0.55 * heat * alpha), "glow", part.id, Vector2.ZERO, rows)
 		if flash > 0.0 and (flash_part.is_empty() or flash_part == part.id):
@@ -765,6 +820,15 @@ func _hidden(rig: Dictionary, a: Dictionary, id: String) -> bool:
 		if a.lost.has(at) or a.shed.has(at): return true
 		at = str(rig.by_id.get(at, {}).get("parent", ""))
 	return false
+
+
+## A part texture in the actor's element colours (src/hero/element_skin.gd,
+## cached there by texture and element); the texture itself for actors without
+## a skin or element.
+func _skinned(texture: Texture2D, a: Dictionary) -> Texture2D:
+	var element := str(a.get("element", ""))
+	if element.is_empty(): return texture
+	return ElementSkin.texture(texture, element, str(a.get("skin", "")))
 
 
 ## One texture of an actor, logged in draw_log while record_draws is on;

@@ -1,0 +1,382 @@
+{
+ "_note": "The element physics every world obeys (src/combat/element_rules.gd; read by the crypt game src/game.gd + src/combat/elements.gd + src/combat/boss_moves.gd and by the story worlds src/hell/hell_game.gd + src/hell/hell_monsters.gd). User decision 2026-10-31: everything that stands in a material feels it, hero and monster alike, in every chapter; only a creature of that element is spared (its tags, see actor_tags). Units: px are crypt world px (the story worlds scale by their art px, 1.5x); hurt = half hearts the hero loses per tick; enemy_hurt = hero hits per second a monster loses (the crypt: damage points per second); tick = s between hero ticks; slow = share of walking speed left (1 = none); grip = share of the momentum left after one second on it (0.015 = glaze ice, 1 = firm ground); status = {kind: [value, seconds]} put on whoever stands in it every frame (so it lingers that long after leaving: lava keeps burning); immune = tags of creatures that feel nothing of it; douse = puts out burning; conducts = lightning charges it; priority = which material counts where pools overlap (first wins). why = what the hero reads when it hurts him.",
+ "priority": [
+  "lava",
+  "fire",
+  "ice",
+  "poison",
+  "void",
+  "water",
+  "blood"
+ ],
+ "aliases": {
+  "frost": "ice",
+  "flesh": "blood",
+  "curse": "void",
+  "magma": "lava"
+ },
+ "mediums": {
+  "lava": {
+   "hurt": 0.7,
+   "tick": 1,
+   "enemy_hurt": 0.4,
+   "slow": 0.62,
+   "status": {
+    "burn": [
+     0.45,
+     1.5
+    ]
+   },
+   "immune": [
+    "fire",
+    "lava",
+    "hell"
+   ],
+   "ignites": true,
+   "why": "in der Lava verbrannt"
+  },
+  "fire": {
+   "hurt": 0.5,
+   "tick": 1,
+   "enemy_hurt": 0.45,
+   "slow": 0.9,
+   "status": {
+    "burn": [
+     0.4,
+     1.5
+    ]
+   },
+   "immune": [
+    "fire",
+    "lava",
+    "hell"
+   ],
+   "ignites": true,
+   "why": "im Feuer verbrannt"
+  },
+  "water": {
+   "slow": 0.82,
+   "status": {
+    "wet": [
+     1,
+     1.5
+    ]
+   },
+   "douse": true,
+   "conducts": true
+  },
+  "ice": {
+   "slow": 1,
+   "slide": true,
+   "grip": 0.015,
+   "status": {
+    "slip": [
+     1,
+     0.25
+    ]
+   },
+   "immune": [
+    "frost"
+   ]
+  },
+  "poison": {
+   "hurt": 0.45,
+   "tick": 1.2,
+   "enemy_hurt": 0.3,
+   "slow": 0.85,
+   "status": {
+    "poison": [
+     0.35,
+     2.5
+    ]
+   },
+   "immune": [
+    "poison",
+    "undead",
+    "void"
+   ],
+   "conducts": true,
+   "why": "im Gift"
+  },
+  "blood": {
+   "slow": 0.92,
+   "slide": true,
+   "grip": 0.35,
+   "status": {
+    "slip": [
+     1,
+     0.15
+    ]
+   },
+   "conducts": true
+  },
+  "void": {
+   "hurt": 0.55,
+   "tick": 1.6,
+   "enemy_hurt": 0.3,
+   "slow": 0.7,
+   "pull": 36,
+   "status": {
+    "silence": [
+     1,
+     0.6
+    ]
+   },
+   "immune": [
+    "void"
+   ],
+   "why": "von der Leere zerrissen"
+  }
+ },
+ "_gases_note": "Gas on the floor (src/vfx/gas.gd clouds): what breathing it does. vision = how far the view closes while inside (0 none, 1 only the cloud itself stays visible); blind_shots = s a monster in it cannot shoot; dense_from = the cloud's thickness (0..1) from which it counts as standing in it.",
+ "gases": {
+  "steam": {
+   "hurt": 0.5,
+   "tick": 1.4,
+   "enemy_hurt": 0.25,
+   "vision": 1,
+   "blind_shots": 0.4,
+   "status": {
+    "wet": [
+     1,
+     1
+    ]
+   },
+   "immune": [
+    "fire",
+    "lava",
+    "hell"
+   ],
+   "douse": true,
+   "why": "im Dampf verbrüht"
+  },
+  "smoke": {
+   "vision": 0.85,
+   "blind_shots": 0.3
+  },
+  "poison": {
+   "hurt": 0.4,
+   "tick": 1.6,
+   "enemy_hurt": 0.2,
+   "vision": 0.55,
+   "status": {
+    "poison": [
+     0.3,
+     2.0
+    ]
+   },
+   "immune": [
+    "poison",
+    "undead",
+    "void"
+   ],
+   "why": "Giftgas geatmet"
+  },
+  "void": {
+   "vision": 0.9,
+   "slow": 0.8,
+   "status": {
+    "silence": [
+     1,
+     0.6
+    ]
+   },
+   "immune": [
+    "void"
+   ]
+  },
+  "frost": {
+   "vision": 0.45,
+   "slow": 0.7,
+   "status": {
+    "slow": [
+     0.7,
+     0.8
+    ]
+   },
+   "immune": [
+    "frost"
+   ],
+   "chill": true
+  }
+ },
+ "dense_from": 0.35,
+ "_vision_note": "The view inside gas (src/hero/story_glow.gd frame, src/dungeon_view.gd _update_darkness): the world outside the cloud goes dark, only the cloud around the hero stays. dark = darkness strength at full vision loss; min_radius / max_radius = px the view keeps at least / at most; fade_in / fade_out = s the dark closes in and opens again; probe_hz = how often a second the cloud's reach is measured; thin = cloud thickness below which a ray is out of it.",
+ "vision": {
+  "dark": 0.94,
+  "min_radius": 70,
+  "max_radius": 420,
+  "fade_in": 0.35,
+  "fade_out": 0.55,
+  "probe_hz": 8,
+  "thin": 0.12,
+  "step": 12
+ },
+ "_reactions_note": "What meets what (src/combat/elements.gd in the crypt game, src/hell/hell_monsters.gd in the story worlds; the crypt's own values in src/data/balance.json element win there). Fire on poison (pool or gas) explodes: explode_damage to enemies within the poison radius + explode_reach px, setting off poison next to it up to explode_chain times. Frost on water: Glatteis for ice_time s; fire thaws it. Fire or lava on water: steam (radius x steam_scale, steam_time s). Water touching lava: the lava is harmless for crust_time s. Frost on steam: it condenses, the steam falls as water (rain_scale of its radius). explode_hits = hero hits the blast deals to a monster in the story worlds (the crypt game uses explode_damage).",
+ "reactions": {
+  "explode_damage": 8,
+  "explode_reach": 20,
+  "explode_chain": 6,
+  "ice_time": 8,
+  "ice_slow": 0.4,
+  "ice_slide": 40,
+  "steam_scale": 1.3,
+  "steam_time": 5,
+  "steam_damage": 1,
+  "steam_blind": 0.4,
+  "crust_time": 4,
+  "rain_scale": 0.7,
+  "explode_hits": 2.5
+ },
+ "_actor_tags_note": "Which creature is of which element: a tag per word in its id or kind (the story defs add their shot element and material: assets/data/krypta_monsters.json; every hell monster is of the hell: fire and lava do nothing to it). undead = no breath, no blood: poison does nothing.",
+ "actor_tags": {
+  "skel": [
+   "undead"
+  ],
+  "bone": [
+   "undead"
+  ],
+  "knochen": [
+   "undead"
+  ],
+  "necro": [
+   "undead"
+  ],
+  "nekro": [
+   "undead"
+  ],
+  "lich": [
+   "undead"
+  ],
+  "geist": [
+   "undead"
+  ],
+  "ghost": [
+   "undead"
+  ],
+  "zombie": [
+   "poison"
+  ],
+  "moder": [
+   "poison"
+  ],
+  "grab": [
+   "poison"
+  ],
+  "rot": [
+   "poison"
+  ],
+  "spucker": [
+   "poison"
+  ],
+  "ice": [
+   "frost"
+  ],
+  "frost": [
+   "frost"
+  ],
+  "eis": [
+   "frost"
+  ],
+  "crystal": [
+   "frost"
+  ],
+  "kristall": [
+   "frost"
+  ],
+  "void": [
+   "void"
+  ],
+  "leere": [
+   "void"
+  ],
+  "leeren": [
+   "void"
+  ],
+  "soul": [
+   "void"
+  ],
+  "seele": [
+   "void"
+  ],
+  "imp": [
+   "fire"
+  ],
+  "chort": [
+   "fire"
+  ],
+  "wogol": [
+   "fire"
+  ],
+  "glut": [
+   "fire"
+  ],
+  "brand": [
+   "fire"
+  ],
+  "asche": [
+   "fire"
+  ],
+  "hoellen": [
+   "fire"
+  ],
+  "pyro": [
+   "fire"
+  ],
+  "flame": [
+   "fire"
+  ],
+  "drache": [
+   "fire"
+  ],
+  "lava": [
+   "fire"
+  ],
+  "magma": [
+   "fire"
+  ]
+ },
+ "material_tags": {
+  "bone": [
+   "undead"
+  ],
+  "void": [
+   "void"
+  ],
+  "stone": [
+   "stone"
+  ],
+  "metal": [
+   "stone"
+  ]
+ },
+ "_combos_note": "What a creature's own condition does with the medium it meets (src/combat/elements.gd and src/hell/hell_game.gd / hell_monsters.gd): a burning creature walking into poison (pool or gas) sets it off (explode_r = px of fire round it); a wet creature cannot be set burning (water on the skin), and frost gas or ice freezes it solid for freeze_wet s (bosses never).",
+ "combos": {
+  "burn_ignites_poison": true,
+  "explode_r": 30,
+  "wet_blocks_burn": true,
+  "freeze_wet": 0.7
+ },
+ "_breath_gas_note": "The gas a breath or cone of an element leaves hanging (src/vfx/gas.gd materials): poison and frost their own, fire and lava smoke; none for bone, gold or souls. breath_r = share of the breath's reach the cloud is wide, breath_time = s it hangs.",
+ "breath_gas": {
+  "poison": "poison",
+  "frost": "frost",
+  "ice": "frost",
+  "fire": "smoke",
+  "lava": "smoke",
+  "void": "void"
+ },
+ "breath_r": 0.3,
+ "breath_time": 3.5,
+ "hurt_note": "hurt: half hearts per second for the hero, drained continuously onto the life bar (src/hell/hell_game.gd dot_hurt_f; the crypt accumulates whole points, src/combat/elements.gd dot_f); enemy_hurt: hero hits per second on a monster, landed every tick s. status values: burn/poison in half hearts per second, slow/wet/slip/silence as before.",
+ "swallow": {
+  "_note": "The void swallows what lies near it (user decision 2026-10-31): a void puddle, a Singularität or a boss vortex pulls other puddles and gas clouds within reach x its radius into itself and eats them. time: s a swallowed puddle takes to drain; pull: px/s gas puffs stream inward; thin: gas density lost per second inside; motes: void motes per second streaming from a swallowed puddle to the centre; gulp: s between gulps of the centre (a small void burst).",
+  "reach": 1.6,
+  "time": 0.7,
+  "pull": 170,
+  "thin": 1.3,
+  "motes": 9,
+  "gulp": 0.35,
+  "cloud_shrink": 28
+ }
+}

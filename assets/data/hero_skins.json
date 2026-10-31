@@ -1,0 +1,43 @@
+{
+  "_note": "Hero skins by element (src/hero/element_skin.gd) and the mage's familiar, the Irrwisch (src/hero/familiar.gd). The mage is the 0x72 wizard (assets/sprites/0x72/wizzard_m_*, part rig 'wizard' in rigs.json). His blues (hat and robe) are mapped onto the ramp of his main specialisation: the spec with the most spent talent points in his talent profile (talents.json classes.mage.specs: fire, frost, arcane); 'arcane' plays as void, no points or a tie is the neutral mage, which is the wizard unchanged. Ink outline, beard and skin keep their colours. Colours are hex without '#'. The recolour is applied to the rig's part textures (src/rig/rig_renderer.gd draw_hero) and to the menu's and story worlds' frames.",
+  "_calibration": "Measured on wizzard_m_idle/run_anim_f0..3.png and wizzard_m_hit_anim_f0.png (7 colours in every frame): hat 5956bd (hue 242, HSV sat 0.54, HSL light 0.54), hat band and robe side 5698cc (hue 206, sat 0.58, light 0.57), beard and robe front fdf7ed (sat 0.06), skin d3bfa9 / b58057 / 8a503e (hue 14..31), ink 222222. The two blues lie 0.03 apart in lightness, so 'map' places each on the ramp explicitly (t 0..1, 0 = darkest step); 'band' + 'lightness' is the fallback rule for any other blue pixel.",
+  "spec_elements": {"fire": "fire", "frost": "ice", "arcane": "void"},
+  "skins": {
+    "mage": {
+      "source": "wizzard_m",
+      "rig": "wizard",
+      "keep": ["222222", "fdf7ed", "d3bfa9", "b58057", "8a503e"],
+      "map": {"5956bd": 0.3, "5698cc": 0.6},
+      "band": {"hue_from": 190, "hue_to": 260, "saturation_min": 0.25},
+      "lightness": [0.4, 0.7],
+      "snap": false,
+      "elements": {
+        "": {"name": "Magier", "unchanged": true, "ramp": ["2e2e6a", "5956bd", "5698cc", "8ec4e8", "e8f0ff"], "spec": "e8f0ff"},
+        "fire": {"name": "Feuermagier", "ramp": ["5a1414", "9c2419", "c83c22", "d84c26", "ffd060"], "spec": "ffd060"},
+        "ice": {"name": "Frostmagier", "ramp": ["1e3a52", "3a7aa0", "5fb4d8", "9fe0ee", "e8fbff"], "spec": "e8fbff"},
+        "void": {"name": "Leerenmagier", "ramp": ["1a0d2a", "2e1848", "4a2878", "8a4fd0", "c27bff"], "spec": "f2d9ff"}
+      }
+    }
+  },
+  "familiar": {
+    "_note": "Distances in art pixels (the crypt draws 2 world px per art px, the story worlds 3), times in seconds. head_above_feet is in source sprite pixels: the wizard's 16x28 frame stands on row 27, his head fills rows 17-22 and the hat rows 9-16, so 10 + orbit.above 4 puts the orbit through the hat's brim.",
+    "classes": ["mage"],
+    "head_above_feet": 10,
+    "orbit": {"rx": 7, "ry": 3, "speed": 0.9, "above": 4},
+    "bob": {"amp": 1.2, "hz": 0.7},
+    "lag": 0.15,
+    "lead": 0.07,
+    "snap_px": 160,
+    "max_step": 0.05,
+    "trail": {"count": 3, "every": 0.045},
+    "halo_alpha": 0.4,
+    "halo_pulse": 0.12,
+    "pulse_hz": 2.2,
+    "colors": {
+      "": {"core": "e8f0ff", "halo": "8ec4e8", "trail": ["c6d8f4", "8ec4e8", "5698cc"]},
+      "fire": {"core": "ffe080", "halo": "ff8a2a", "trail": ["ffd060", "d84c26", "9c2419"]},
+      "ice": {"core": "e8fbff", "halo": "5fb4d8", "trail": ["9fe0ee", "5fb4d8", "3a7aa0"]},
+      "void": {"core": "f2d9ff", "halo": "8a4fd0", "trail": ["c27bff", "8a4fd0", "4a2878"]}
+    }
+  }
+}

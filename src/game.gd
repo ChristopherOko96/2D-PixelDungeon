@@ -1836,6 +1836,9 @@ func _simulate_bullets(delta: float) -> void:
 		bullet.pos += bullet.velocity * delta
 		bullet.distance = float(bullet.get("distance",0.0))+previous.distance_to(bullet.pos)
 		bullet.life -= delta
+		# a shot of fire through poison gas sets it off (src/combat/elements.gd)
+		if not elements.clouds.is_empty() and _shot_style(bullet) in ["fire", "fireball", "lava", "flame", "flames", "fire_arrow"]:
+			elements.fire_passes(bullet.pos, int(bullet.owner))
 		# Wide skill shots (blade wave, Pfeilfaust) hit enemies with their full width
 		# but meet walls with a thin core, so they fly through corridors.
 		var wall_radius: float = float(bullet.get("wall_radius",radius))
@@ -2211,7 +2214,7 @@ func _make_snapshot(advance_sequence: bool = true) -> Dictionary:
 	for id in players:
 		var player: Dictionary = players[id]
 		var aim: Vector2 = player.get("aim",Vector2.RIGHT)
-		visible_players[id] = {"x": player.pos.x, "y": player.pos.y, "hp": player.hp, "max_hp": player.max_hp, "color": player.color, "ready": player.ready, "picked": player.picked, "perks": player.perks.duplicate(), "hitstun": player.get("hitstun", 0.0), "hit_flash": player.get("hit_flash", 0.0), "invulnerable": player.invulnerable,"shots":player.get("shots",0),"hurts":player.get("hurts",0),"step_time":float(balance.player.get("stride", 32)) / maxf(1.0, float(player.get("speed", 152.0))),"moving":player.get("moving",false),"face":player.get("face",1.0),"ax":aim.x,"ay":aim.y}
+		visible_players[id] = {"x": player.pos.x, "y": player.pos.y, "hp": player.hp, "hp_f": float(player.hp) - float(player.get("dot_acc", 0.0)), "max_hp": player.max_hp, "color": player.color, "ready": player.ready, "picked": player.picked, "perks": player.perks.duplicate(), "hitstun": player.get("hitstun", 0.0), "hit_flash": player.get("hit_flash", 0.0), "invulnerable": player.invulnerable,"shots":player.get("shots",0),"hurts":player.get("hurts",0),"step_time":float(balance.player.get("stride", 32)) / maxf(1.0, float(player.get("speed", 152.0))),"moving":player.get("moving",false),"face":player.get("face",1.0),"ax":aim.x,"ay":aim.y}
 		visible_players[id].build = player.get("build",{}).duplicate()
 		# Hero skills, class cards and the open card choice (level-up / boss).
 		visible_players[id].skills = hero_skills.player_state(player)

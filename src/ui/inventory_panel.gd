@@ -9,12 +9,16 @@ extends Control
 ## next click in the world as the target. Also shows a short note when
 ## something is found or happens, and a small INVENTAR button. Sends actions
 ## only; the rules decide (src/items/inventory.gd, docs/ITEM-SYSTEM-V2.de.md).
+## An identified item of an element wears its glow frame and sheds a few of its
+## pixel motes (src/item_art.gd: embers, drops, rime, zaps, orbiting motes),
+## redrawn on the pixel beat, not every frame; unknown items stay unknown.
 
 signal acted(action: String, value: int)
 signal throw_armed(slot: int)
 
 const PixelStyle = preload("res://src/pixel_style.gd")
 const HudStyle = preload("res://src/ui/hud_style.gd")
+const ItemArt = preload("res://src/item_art.gd")
 const HAND := 99
 ## Slot values of the equipment slots (the bag uses 0..size-1), as inventory.gd.
 const EQUIP := {"weapon": 99, "armor": 98, "ring": 97, "amulet": 96}
@@ -33,6 +37,11 @@ var _toast := ""
 var _toast_time := 0.0
 var _notes_seen := -1
 var _font: Font
+## The clock of the element motes, and the pixel beat last drawn.
+var _clock := 0.0
+var _beat := -1
+## True while the view holds an identified item of an element (something moves).
+var _animated := false
 
 
 func _ready() -> void:
@@ -95,6 +104,11 @@ func set_view(view: Dictionary) -> void:
 			_toast_time = 3.5
 		_notes_seen = notes
 	var bag: Array = _view.get("bag", [])
+	_animated = false
+	for key: String in EQUIP:
+		if not str((_view.get(key, {}) as Dictionary).get("element", "")).is_empty(): _animated = true
+	for item: Dictionary in bag:
+		if not str(item.get("element", "")).is_empty(): _animated = true
 	if not _is_equip(selected) and selected >= bag.size(): selected = HAND
 	_toggle.text = "INVENTAR · I  %d/%d" % [bag.size(), int(_view.get("size", 12))]
 	_refresh_buttons()
@@ -102,9 +116,16 @@ func set_view(view: Dictionary) -> void:
 
 
 func _process(delta: float) -> void:
+	_clock += delta
 	if _toast_time > 0.0:
 		_toast_time -= delta
 		queue_redraw()
+	# the element motes move on the pixel beat (src/item_art.gd FPS), not every frame
+	if open and _animated:
+		var beat := int(_clock * ItemArt.FPS)
+		if beat != _beat:
+			_beat = beat
+			queue_redraw()
 
 
 func _is_equip(slot: int) -> bool:
@@ -230,6 +251,12 @@ func _draw_slot(rect: Rect2, item: Dictionary, chosen: bool) -> void:
 		scale = floorf(scale) if scale >= 1.0 else scale
 		var size := Vector2(texture.get_width(), texture.get_height()) * scale
 		draw_texture_rect(texture, Rect2(rect.get_center() - size * 0.5, size), false)
+		var element := str(item.get("element", ""))
+		if not element.is_empty() and bool(item.get("identified", false)):
+			# the element's glow frame round the icon and its motes drifting over the slot (src/item_art.gd)
+			var art := maxf(1.0, floorf(scale))
+			ItemArt.draw_frame(self, Rect2(rect.get_center() - size * 0.5, size).grow(art), element, _clock, art)
+			ItemArt.draw_motes(self, rect.grow(-4.0), element, _clock, art, int(item.get("uid", 0)), 3 + int(item.get("uid", 0)) % 3)
 	if int(item.get("count", 1)) > 1: _text(rect.end - Vector2(18, 6), str(item.count), 14, HudStyle.color("text"))
 	if str(item.get("type", "")) in ["weapon", "gear", "potion"] and not bool(item.get("identified", false)): _text(rect.position + Vector2(5, 17), "?", 16, HudStyle.color("accent"))
 	if bool(item.get("blessed", false)): draw_circle(rect.position + Vector2(rect.size.x - 9, 9), 4.0, HudStyle.color("accent"))
@@ -246,6 +273,8 @@ func _draw_details(item: Dictionary) -> void:
 	var room := PANEL.end.x - at.x - 18.0
 	for line: String in item.get("lines", []):
 		var colour := HudStyle.color("danger") if line.begins_with("FLUCH") else HudStyle.color("accent") if line.begins_with("SEGEN") or line.begins_with("STUFE") else HudStyle.color("text")
+		# the element line in the element's own light
+		if line.begins_with("ELEMENT"): colour = ItemArt.glow(str(item.get("element", "")), colour)
 		# long lines wrap inside the panel
 		for part: String in _wrap(line, 14, room):
 			_text(at + Vector2(0, y), part, 14, colour)

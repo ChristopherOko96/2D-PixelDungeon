@@ -10,6 +10,9 @@ extends RefCounted
 ##   snaps forward on release; Ballistapfeil holds a full draw.
 ## - Staff: held upright at the side, orb above the hand; a spell lifts it
 ##   and tips it toward the target.
+## - A weapon of an element (items.json element, src/item_art.gd) glows in its
+##   colour at the blade's tip, the bow's grip or the staff's orb and sheds a
+##   few of its motes now and then: embers, drips, rime glints, zaps.
 ## `px` is world pixels per weapon art pixel; `hero_px` per hero art pixel
 ## (crypt 2 / 2, story worlds 2 / 3).
 
@@ -29,6 +32,9 @@ const AFTERIMAGE_TIME := 0.22
 const STRING_COLOR := Color("#d3bfa9")
 const SMEAR := Color("#eaf8ff")
 const SMEAR_RAGE := Color("#ff6a4a")
+const ItemArt = preload("res://src/item_art.gd")
+## How many motes a held weapon of an element sheds at a time (src/item_art.gd).
+const WEAPON_MOTES := 3
 
 var px := 2.0
 ## World pixels per hero art pixel (the staff is sized and placed by the body).
@@ -125,21 +131,26 @@ func draw_dash_lines(canvas: CanvasItem, key: String, player: Dictionary, point:
 		canvas.draw_line(point + offset + dir * 6.0 * px, point + offset + dir * length, tint, maxf(1.0, px * 0.5))
 
 
-## The weapon in hand. `texture` is the weapon art (pointing up); `glow` the shot colour.
-func draw_weapon(canvas: CanvasItem, key: String, player: Dictionary, point: Vector2, aim: Vector2, clock: float, texture: Texture2D, glow: Color = Color(1, 0.95, 0.8)) -> void:
+## The weapon in hand. `texture` is the weapon art (pointing up); `glow` the shot
+## colour; `element` the weapon's element (items.json; "" takes the held weapon's
+## from the player's inventory view, none for an unknown or plain weapon).
+func draw_weapon(canvas: CanvasItem, key: String, player: Dictionary, point: Vector2, aim: Vector2, clock: float, texture: Texture2D, glow: Color = Color(1, 0.95, 0.8), element: String = "") -> void:
 	if texture == null: return
 	var skills: Dictionary = player.get("skills", {})
+	if element.is_empty():
+		var held: Dictionary = (player.get("inventory", {}) as Dictionary).get("weapon", {})
+		element = str(held.get("element", ""))
 	if bool(player.get("melee", false)):
-		_draw_sword(canvas, key, player, point, aim, clock, texture, skills)
+		_draw_sword(canvas, key, player, point, aim, clock, texture, skills, glow, element)
 	elif str(player.get("class_id", "")) == "archer":
-		_draw_bow(canvas, key, player, point, aim, clock, texture, skills, glow)
+		_draw_bow(canvas, key, player, point, aim, clock, texture, skills, glow, element)
 	else:
-		_draw_staff(canvas, key, point, aim, clock, texture)
+		_draw_staff(canvas, key, point, aim, clock, texture, glow, element)
 
 
 # --- sword -------------------------------------------------------------------------
 
-func _draw_sword(canvas: CanvasItem, key: String, player: Dictionary, point: Vector2, aim: Vector2, clock: float, texture: Texture2D, skills: Dictionary) -> void:
+func _draw_sword(canvas: CanvasItem, key: String, player: Dictionary, point: Vector2, aim: Vector2, clock: float, texture: Texture2D, skills: Dictionary, glow: Color = Color(1, 0.95, 0.8), element: String = "") -> void:
 	var rage := skills.has("rage")
 	var reach := float(player.get("reach", 32.0 * px))
 	var size := texture.get_size() * px
@@ -168,6 +179,12 @@ func _draw_sword(canvas: CanvasItem, key: String, player: Dictionary, point: Vec
 		var blade := off_blade if off_blade != null else texture
 		_blade(canvas, blade, off_hand, off_angle, blade.get_size() * px, Color(1.0, 0.8, 0.75))
 	_blade(canvas, texture, hand, main_angle, size, Color.WHITE)
+	if not element.is_empty():
+		# the element at the blade: its glow at the tip, its motes off the upper half
+		var along := Vector2.RIGHT.rotated(main_angle)
+		var tip := hand + along * size.y * 0.9
+		ItemArt.draw_tip_glow(canvas, tip - along * px, glow, clock, px)
+		ItemArt.draw_weapon_motes(canvas, tip, along, size.y * 0.5, element, clock, px, key.hash(), WEAPON_MOTES)
 
 
 func _blade(canvas: CanvasItem, texture: Texture2D, hand: Vector2, angle: float, size: Vector2, tint: Color) -> void:
@@ -217,7 +234,7 @@ func _draw_whirl(canvas: CanvasItem, point: Vector2, reach: float, clock: float,
 # --- bow ---------------------------------------------------------------------------
 
 ## The bow drawn from the side: wood toward the target, string pulled toward the hero.
-func _draw_bow(canvas: CanvasItem, key: String, player: Dictionary, point: Vector2, aim: Vector2, clock: float, texture: Texture2D, skills: Dictionary, glow: Color) -> void:
+func _draw_bow(canvas: CanvasItem, key: String, player: Dictionary, point: Vector2, aim: Vector2, clock: float, texture: Texture2D, skills: Dictionary, glow: Color, element: String = "") -> void:
 	var bow: Dictionary = _bow(texture)
 	var angle := aim.angle()
 	var hand := point + aim * 4.0 * px + Vector2(0, -1.0 * px)
@@ -243,6 +260,10 @@ func _draw_bow(canvas: CanvasItem, key: String, player: Dictionary, point: Vecto
 		canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		if draw >= 0.999:
 			canvas.draw_circle(nock + aim * length, 2.0 * px + sin(clock * 30.0) * px * 0.5, Color(glow, 0.7))
+	if not element.is_empty():
+		# the element along the bow: its glow at the grip, its motes between the limb tips
+		ItemArt.draw_tip_glow(canvas, hand + aim * px, glow, clock, px)
+		ItemArt.draw_weapon_motes(canvas, top, (top - bottom).normalized(), top.distance_to(bottom), element, clock, px, key.hash(), WEAPON_MOTES)
 
 
 ## How far the string is pulled (0..1): rising between shots while the hero keeps
@@ -299,7 +320,7 @@ func _bow(texture: Texture2D) -> Dictionary:
 ## wanderer's staff: a little shorter than the hero, gripped below the orb,
 ## leaning slightly toward the aim. A spell lifts it and tips it at the target,
 ## then it settles back.
-func _draw_staff(canvas: CanvasItem, key: String, point: Vector2, aim: Vector2, clock: float, texture: Texture2D) -> void:
+func _draw_staff(canvas: CanvasItem, key: String, point: Vector2, aim: Vector2, clock: float, texture: Texture2D, glow: Color = Color(1, 0.95, 0.8), element: String = "") -> void:
 	var side := -1.0 if aim.x < -0.1 else 1.0
 	var since := clock - float(_shot.get(key, {}).get("start", -INF))
 	var cast := (1.0 - clampf(since / STAFF_CAST_TIME, 0.0, 1.0)) if since >= 0.0 else 0.0
@@ -313,3 +334,8 @@ func _draw_staff(canvas: CanvasItem, key: String, point: Vector2, aim: Vector2, 
 	canvas.draw_set_transform(hand, tilt, Vector2.ONE)
 	canvas.draw_texture_rect(texture, Rect2(Vector2(-size.x * 0.5, -size.y * STAFF_GRIP), size), false)
 	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	if not element.is_empty():
+		# the element at the orb: its glow on the orb, its motes rising from it
+		var orb := hand + Vector2(0, -size.y * STAFF_GRIP + 2.0 * hero_px).rotated(tilt)
+		ItemArt.draw_tip_glow(canvas, orb, glow, clock, px)
+		ItemArt.draw_weapon_motes(canvas, orb + Vector2(0, -hero_px), Vector2.DOWN, 3.0 * hero_px, element, clock, px, key.hash(), WEAPON_MOTES)

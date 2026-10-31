@@ -3,7 +3,8 @@ extends RefCounted
 ## every map: the run HUD of the crypt and the Frostgruft / Hölle HUD draw them
 ## through this object. There are no standard class skills (user decision
 ## 29.10.2026): the learned actives sit on keys 1-4 of the skill bar
-## (src/ui/skill_bar.gd), the ultimate on R; empty slots wait for talents.
+## (src/ui/skill_bar.gd), the ultimate on R; empty slots wait for talents. The
+## companion's abilities (5, 6) are drawn on the companion bar (HudKit.pet_panel).
 ## Above the bar the resource (mana blue, stamina green, rage red). Banner:
 ## "+2 SEELENSPLITTER" with the crystal, or a level-up note; queued, one at a time.
 
@@ -11,6 +12,7 @@ const CryptUI = preload("res://src/ui/crypt_ui.gd")
 const PixelStyle = preload("res://src/pixel_style.gd")
 const TalentIcons = preload("res://src/ui/talent_icons.gd")
 const TalentScreen = preload("res://src/ui/talent_screen.gd")
+const HudKit = preload("res://src/ui/hud_kit.gd")
 const Profile = preload("res://src/progress/profile.gd")
 
 var _font: Font = PixelStyle.create_font()
@@ -37,8 +39,10 @@ func step(delta: float) -> void:
 
 ## The skill bar's slots (src/ui/skill_bar.gd entries) from a hero's talent
 ## state: keys 1-4 with the learned actives (empty until learned), R with the
-## ultimate, then the permanent companion's two abilities on 5 and 6 ("pet",
-## "auto": its auto-cast is on; right-click on the icon toggles it).
+## ultimate, Shift with the class's defense. The companion's two abilities
+## (keys 5 and 6) are not here any more: they sit on the companion bar under
+## the hero strip (HudKit.pet_panel, user decision 31.10.2026); the keys and
+## the right-click on an icon (auto-cast on / off) keep working.
 func skill_slots(talents: Dictionary) -> Array:
 	_load_specs()
 	var out: Array = []
@@ -67,16 +71,6 @@ func skill_slots(talents: Dictionary) -> Array:
 			"charge": float(guard.get("refill", 0.0)) if int(guard.left) < int(guard.max) and float(guard.get("cd", 0.0)) <= 0.0 else -1.0,
 			"active": Color("8fd6ff") if bool(guard.get("up", false)) else Color(0, 0, 0, 0), "text": str(guard.get("text", "")),
 			"meta": "Hält %d Treffer" % int(guard.max) if str(guard.type) == "block" else "%d Ladungen" % int(guard.max)})
-	var pet: Dictionary = talents.get("pet", {})
-	var first_pet := true
-	for ability: Dictionary in pet.get("abilities", []):
-		var alive := bool(pet.get("alive", false))
-		out.append({"key": str(ability.key), "pet": true, "auto": bool(ability.auto) and alive, "gap_before": first_pet, "text": str(ability.get("text", "")),
-			"meta": "Abklingzeit %s s · Rechtsklick: Auto an / aus" % _number(float(ability.get("cd_max", 0.0))),
-			"name": "%s: %s · Rechtsklick: Auto %s" % [str(pet.get("name", "")), str(ability.name), "aus" if bool(ability.auto) else "an"] if alive else "%s ist gefallen" % str(pet.get("name", "")),
-			"cd": float(ability.get("cd", 0.0)), "max": float(ability.get("cd_max", 1.0)), "locked": not alive,
-			"icon": TalentIcons.make(_specs.get(str(pet.get("spec", "")), {}), str(ability.get("icon", "burst")), true, false)})
-		first_pet = false
 	return out
 
 
@@ -92,10 +86,15 @@ static func _number(value: float) -> String:
 	return str(int(value)) if is_equal_approx(value, roundf(value)) else ("%.1f" % value).replace(".", ",")
 
 
-## Which companion ability (0 or 1) the slot at `index` of skill_slots() is, or -1.
+## Which companion ability (0 or 1) a right-click means, or -1: the slot at
+## `index` of skill_slots() when a bar still carries "pet" entries, otherwise
+## the slot under the mouse on the companion bar (HudKit.pet_panel remembers
+## its ability slots and the canvas it was drawn on). The HUDs call this with
+## the skill bar's hit index; the companion bar is where the icons live now.
 static func pet_slot(slots: Array, index: int) -> int:
-	if index < 0 or index >= slots.size() or not bool(slots[index].get("pet", false)): return -1
-	return int(str(slots[index].key)) - 5
+	if index >= 0 and index < slots.size() and bool(slots[index].get("pet", false)):
+		return int(str(slots[index].key)) - 5
+	return HudKit.pet_slot_at()
 
 
 ## The resource line above the skill bar, `width` px wide, centred on

@@ -141,6 +141,37 @@ func impulse(at: Vector2, radius: float, strength: float) -> void:
 			puff.d = float(puff.d) * (1.0 - thin * k)
 
 
+## The void at `at` sucks the gas within `radius` (world px) toward it: the
+## puffs stream inward at up to `pull` px/s, inside the mouth they thin by
+## `thin` per second and the cloud's own density goes with them, so a cloud
+## eaten whole ends. Returns true while any puff was touched.
+func suck(at: Vector2, radius: float, pull: float, thin: float, dt: float, now: float) -> bool:
+	var any := false
+	for key: String in _clouds:
+		var cloud: Dictionary = _clouds[key]
+		var touched := false
+		for puff: Dictionary in cloud.puffs:
+			var off: Vector2 = Vector2(puff.p) - at
+			var dist := off.length()
+			var reach := radius + float(puff.r)
+			if dist >= reach:
+				continue
+			touched = true
+			var k := 1.0 - dist / reach
+			var inward := -off / dist if dist > 0.01 else Vector2.ZERO
+			puff.v = Vector2(puff.v) + inward * pull * (0.5 + k) * dt * 3.0
+			if dist < radius * 0.4:
+				puff.d = float(puff.d) - thin * dt
+				cloud.dense = maxf(0.0, float(cloud.dense) - thin * dt * 0.5)
+		if touched:
+			any = true
+			# its middle follows what is left of it; eaten to nothing, it ends
+			cloud.at = Vector2(cloud.at).lerp(at, clampf(dt * 1.2, 0.0, 1.0))
+			if float(cloud.dense) <= 0.06 or (cloud.puffs as Array).size() <= 1:
+				cloud.end = minf(float(cloud.end), now)
+	return any
+
+
 ## The blast hook of the particles (src/vfx/particles.gd kick): gas has no
 ## surface to ring, it is blown away. Returns false (no liquid rang).
 func ripple_near(at: Vector2, radius: float, strength: float) -> bool:
@@ -187,6 +218,99 @@ func cut(at: Vector2, dir: Vector2, width: float) -> void:
 			if absf(across) >= reach:
 				continue
 			puff.v = Vector2(puff.v) + side * signf(across if absf(across) > 0.01 else 1.0) * speed * (1.0 - absf(across) / reach) * 0.25
+
+
+## How thick the gas is at `point` (world px), for the game's rules
+## (src/combat/element_rules.gd): the material lying thickest there and its
+## thickness 0..1, the puffs' coverage added up as the drawing adds it (a puff
+## is an ellipse, three quarters as high as wide). {"mat": "", "d": 0} in clear air.
+func at(point: Vector2) -> Dictionary:
+	var best_mat := ""
+	var best := 0.0
+	for key: String in _clouds:
+		var cloud: Dictionary = _clouds[key]
+		var sum := _cover(cloud.puffs, point)
+		if sum > best:
+			best = sum
+			best_mat = str(cloud.mat)
+	return {"mat": best_mat, "d": clampf(best, 0.0, 1.0)}
+
+
+## The gas round someone standing at `point`: whoever stands in a cloud parts
+## it (part), so right under the feet it is thin; the thickest of `samples`
+## points on a ring of `radius` round the feet (and the feet themselves) is
+## what they breathe. Same result as at().
+func around(point: Vector2, radius: float, samples := 8) -> Dictionary:
+	var best := at(point)
+	for i in range(samples):
+		var sample := at(point + Vector2.from_angle(TAU * float(i) / float(samples)) * radius)
+		if float(sample.d) > float(best.d):
+			best = sample
+	return best
+
+
+## The clouds of `mat` alive (for the game's reactions: fire sets poison gas
+## off): {key, at, r} each, `at` the middle of its puffs now.
+func clouds_of(mat: String, now := -INF) -> Array:
+	var out: Array = []
+	for key: String in _clouds:
+		var cloud: Dictionary = _clouds[key]
+		if str(cloud.mat) != mat or (cloud.puffs as Array).is_empty():
+			continue
+		# a cloud already ended (used up by a reaction) only thins out: it is gone for the rules
+		if float(cloud.end) <= now:
+			continue
+		var at := Vector2.ZERO
+		for puff: Dictionary in cloud.puffs:
+			at += Vector2(puff.p)
+		out.append({"key": key, "at": at / float((cloud.puffs as Array).size()), "r": float(cloud.r)})
+	return out
+
+
+## Ends cloud `key` now: it thins out from its rim (a reaction used it up).
+func end_cloud(key: String, now: float) -> void:
+	if _clouds.has(key):
+		_clouds[key].end = minf(float(_clouds[key].end), now)
+
+
+## The thickness of `mat` alone at `point` (0..1).
+func thickness(point: Vector2, mat: String) -> float:
+	var sum := 0.0
+	for key: String in _clouds:
+		var cloud: Dictionary = _clouds[key]
+		if str(cloud.mat) == mat:
+			sum += _cover(cloud.puffs, point)
+	return clampf(sum, 0.0, 1.0)
+
+
+func _cover(puffs: Array, point: Vector2) -> float:
+	var sum := 0.0
+	for puff: Dictionary in puffs:
+		var rc := float(puff.r) * float(puff.get("g", 1.0))
+		if rc <= 0.01:
+			continue
+		var off: Vector2 = point - Vector2(puff.p)
+		var k := sqrt((off.x * off.x) / (rc * rc) + (off.y * off.y) / (rc * rc * 0.5625))
+		if k < 1.0:
+			sum += (1.0 - k) * float(puff.d)
+	return sum
+
+
+## How far the gas of `mat` reaches round `point` (world px): the farthest a
+## ray in eight directions gets before the cloud thins below `thin`, at most
+## `max_len`. The view inside a cloud reaches that far (element_rules.gd vision).
+func extent(point: Vector2, mat: String, thin: float, step: float, max_len: float) -> float:
+	var far := 0.0
+	for i in range(8):
+		var dir := Vector2.from_angle(TAU * float(i) / 8.0)
+		var l := 0.0
+		while l < max_len:
+			var next := l + step
+			if thickness(point + dir * next, mat) < thin:
+				break
+			l = next
+		far = maxf(far, l)
+	return far
 
 
 ## Runs the gas `dt` seconds on: puffs spread, roll, are held in their zone,

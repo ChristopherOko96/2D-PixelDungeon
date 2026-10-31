@@ -693,6 +693,9 @@ func _pools() -> Array:
 	if items == null:
 		return out
 	for pool: Dictionary in items.pools:
+		# a pool that is a puddle zone of the world (story_items.gd hero_pool zoned) is drawn by its layer
+		if bool(pool.get("zoned", false)):
+			continue
 		if not pool.has("feel_id"):
 			pool.feel_id = _next_id
 			_next_id += 1

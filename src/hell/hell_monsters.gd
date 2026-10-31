@@ -10,6 +10,7 @@ const Rules = preload("res://src/hell/hell_monster_rules.gd")
 const HeroKit = preload("res://src/hell/hero_kit.gd")
 const FrostCombat = preload("res://src/hell/frost_combat.gd")
 const StoryFeel = preload("res://src/hero/story_feel.gd")
+const ElementRules = preload("res://src/combat/element_rules.gd")
 const DATA_PATH := "res://assets/data/hell_monsters.json"
 const SPRITE_DIR := "res://assets/sprites/hell/monsters/"
 ## Shot colours: core, middle, rim.
@@ -343,7 +344,7 @@ func pool_entries() -> Array:
 			continue
 		var dir: Vector2 = z.get("dir", Vector2.ZERO)
 		out.append({"id": int(z.id), "k": "pool", "st": str(z.get("st", "lava")), "x": z.p.x, "y": z.p.y, "r": float(z.r) * 0.8, "dx": dir.x, "dy": dir.y,
-			"p": clampf(float(z.t) / maxf(0.01, float(z.T)), 0.0, 1.0), "L": float(z.T)})
+			"p": clampf(float(z.t) / maxf(0.01, float(z.T)), 0.0, 1.0), "L": float(z.T), "cr": float(z.get("crust", 0.0))})
 	return out
 
 
@@ -357,6 +358,111 @@ func _released(m: Dictionary) -> void:
 		rig_host.on_release(m)
 
 
+## The attacks a blinded monster (in steam or smoke) can still make: blows at arm's length.
+const BLIND_ATTACKS := ["swing", "dash", "slam", "ring", "sweep"]
+
+
+## The element tags of a monster (src/combat/element_rules.gd tags): the words
+## of its id, its own shot element and material; a figure without a shot of
+## its own is one of the hell's (fire and lava do nothing to it).
+static func mob_tags(m: Dictionary) -> Array:
+	var def: Dictionary = m.def
+	if not m.has("tags"):
+		m.tags = ElementRules.tags(str(m.id), str(def.get("shot", "")), str(def.get("material", "")), [] if def.has("shot") else ["hell", "fire", "lava"])
+	return m.tags
+
+
+## The element physics on a monster (src/combat/element_rules.gd,
+## assets/data/element_rules.json): the pool it stands in hurts it on its tick
+## (hero hits per second, unless it is of that element), burns, poisons or
+## slows it, douses its burning (water), takes its footing (ice, blood: the
+## movement in update slides it) or pulls it (void); a gas cloud thick enough
+## does the same and blinds its shots (steam, smoke). m.env carries the rule
+## the movement reads.
+func _step_medium(m: Dictionary, dt: float) -> void:
+	m.env = {}
+	m.blind = maxf(0.0, float(m.get("blind", 0.0)) - dt)
+	if m.hp <= 0.0 or m.get("burrowed", false) or float(m.get("alt", 0.0)) > 20.0:
+		return
+	var layer: RefCounted = g._pool_layer() if g.has_method("_pool_layer") else g.get("pools")
+	var tags := mob_tags(m)
+	if layer != null:
+		var under: Array = layer.materials_at(m.p)
+		if not under.is_empty():
+			var style := ElementRules.top(under)
+			var rule := ElementRules.medium(style)
+			# a burning monster sets the poison it stands in off, whatever its own element
+			if _combo(m, ElementRules.material(style)):
+				return
+			# crusted lava (water met it: src/hell/story_elements.gd) is cool stone for a while
+			var crusted: bool = ElementRules.material(style) == "lava" and g.get("story_elements") != null and g.story_elements.crusted(m.p)
+			if not rule.is_empty() and not crusted and not ElementRules.immune(tags, rule):
+				m.env = rule.duplicate()
+				if rule.has("pull"):
+					m.env.centre = g._pool_centre(m.p, style) if g.has_method("_pool_centre") else m.p
+				_medium_on_mob(m, rule, "env_tick", dt)
+	var gas: RefCounted = g.get("gas")
+	if gas != null:
+		# it parts the gas round itself (hell_game.gd _step_gas): what it breathes is the cloud at arm's length
+		var cloud: Dictionary = gas.around(m.p, 18.0 + 24.0, 4)
+		if float(cloud.d) >= ElementRules.dense_from():
+			if _combo(m, str(cloud.mat)):
+				return
+			var rule := ElementRules.gas(str(cloud.mat))
+			if not rule.is_empty() and not ElementRules.immune(tags, rule):
+				_medium_on_mob(m, rule, "gas_tick", dt)
+				if rule.has("blind_shots"):
+					m.blind = maxf(float(m.blind), float(rule.blind_shots))
+
+
+## What a monster's own condition does with the material it stands in
+## (element_rules.json combos): burning, it sets poison off (true: the pool or
+## cloud is gone); wet, frost freezes it solid for a moment.
+func _combo(m: Dictionary, mat: String) -> bool:
+	var combos: Dictionary = ElementRules.data().get("combos", {})
+	# on fire (fire_t: lava, fire, a burn), not merely poisoned (burn_t is every damage over time)
+	var burning := float(m.get("fire_t", 0.0)) > 0.0
+	var wet := float(m.get("wet_t", 0.0)) > 0.0
+	if burning and mat == "poison" and bool(combos.get("burn_ignites_poison", true)) and g.get("story_elements") != null:
+		g.story_elements.fire_at(m.p, float(combos.get("explode_r", 30.0)) * g.PIXEL_WORLD / 2.0)
+		return true
+	if wet and mat in ["frost", "ice"] and float(combos.get("freeze_wet", 0.0)) > 0.0 and not m.boss and float(m.get("stun", 0.0)) <= 0.0:
+		m.stun = float(combos.get("freeze_wet", 0.7))
+		m.wet_t = 0.0
+		_burst_in(m.p - Vector2(0, m.cy), 10, "frost")
+	return false
+
+
+## What a medium or gas rule does to a monster: its hurt on the tick (enemy_hurt
+## hero hits per second, bosses half), its conditions, its dousing.
+func _medium_on_mob(m: Dictionary, rule: Dictionary, tick_key: String, dt: float) -> void:
+	if rule.has("enemy_hurt"):
+		m[tick_key] = float(m.get(tick_key, 0.0)) - dt
+		if float(m[tick_key]) <= 0.0:
+			var tick := float(rule.get("tick", 1.0))
+			m[tick_key] = tick
+			var hits := float(rule.enemy_hurt) * tick * (0.5 if m.boss else 1.0)
+			m.hp -= hits * float(g.state.dmg)
+			m.hit = 0.12
+			if g.get("feel") != null:
+				g.feel.on_hit(m, Vector2.ZERO, false)
+	var status: Dictionary = rule.get("status", {})
+	for kind: String in status:
+		var spec: Array = status[kind]
+		match kind:
+			"burn", "poison":
+				HeroKit.burn_mob(m, float(spec[0]) * 0.5, float(spec[1]))
+				if kind == "burn" and float(m.get("wet_t", 0.0)) <= 0.0:
+					m.fire_t = maxf(float(m.get("fire_t", 0.0)), float(spec[1]))
+			"slow":
+				HeroKit.slow_mob(g, m, 1.0 - float(spec[0]), float(spec[1]))
+			"wet":
+				m.wet_t = maxf(float(m.get("wet_t", 0.0)), float(spec[1]))
+	if bool(rule.get("douse", false)):
+		m.burn_t = 0.0
+		m.fire_t = 0.0
+
+
 ## Moves, aims and attacks every monster, ends Ignaroth's phases, removes the dead
 ## and clears a room when its last monster falls.
 func update(dt: float) -> void:
@@ -367,6 +473,8 @@ func update(dt: float) -> void:
 			continue
 		m.hit = maxf(0.0, m.hit - dt)
 		m.at += dt
+		# the element physics: what it stands in and breathes (src/combat/element_rules.gd)
+		_step_medium(m, dt)
 		if m.has("echo"):
 			m.echo -= dt
 			if m.echo <= 0.0 and m.hp > 0.0:
@@ -400,6 +508,9 @@ func update(dt: float) -> void:
 				v = m.act.get("v", Vector2.ZERO)
 		else:
 			var i := -1 if g.state.dead > 0.0 or held else Rules.pick_attack(m.st.attacks, m.cds, d)
+			# in steam or smoke it cannot see to shoot: only a blow at arm's length goes (element_rules.json blind_shots)
+			if i >= 0 and float(m.get("blind", 0.0)) > 0.0 and not str(m.st.attacks[i].kind) in BLIND_ATTACKS:
+				i = -1
 			if i >= 0:
 				_start_act(m, i, to, d)
 			else:
@@ -415,6 +526,15 @@ func update(dt: float) -> void:
 				if od > 0.0 and od < (m.r + o.r) * 0.8:
 					v += off / od * 120.0
 		v *= 0.0 if held else pace
+		# on ice or blood it keeps its momentum (element_rules.gd slide), the void pulls it in
+		var env: Dictionary = m.get("env", {})
+		if bool(env.get("slide", false)):
+			m.sv = ElementRules.slide(m.get("sv", v), v, float(env.get("grip", 0.1)), dt)
+			v = m.sv
+		else:
+			m.sv = v
+		if env.has("pull"):
+			v += ElementRules.pull(env, m.p, env.get("centre", m.p))
 		v += m.k
 		m.k *= 0.86
 		var moved_from: Vector2 = m.p
@@ -655,6 +775,10 @@ func _run_act(m: Dictionary, dt: float) -> void:
 						else:
 							_shot(head, Vector2.from_angle(ang), float(a.get("speed", 500.0)), {"c": color})
 			if t > wind + 0.3:
+				# a breath of poison, frost or fire hangs in the air where it went: a gas cloud that
+				# poisons, chills or smokes whoever stands in it (element_rules.json gases)
+				if A.kind == "breath" and A.has("jet_to"):
+					_breath_cloud(m, hot, mouths[0] if not mouths.is_empty() else head, A.jet_to, float(a.get("range", 260.0)))
 				m.act = null
 			return
 		"ring":
@@ -722,6 +846,7 @@ func _run_act(m: Dictionary, dt: float) -> void:
 				else:
 					_zone({"kind": "wave", "p": m.p, "r": float(a.radius), "T": 0.5, "dmg": dmg, "m": m, "c": hot})
 				_burst_in(m.p - Vector2(0, 10), 50 if m.boss else 16, hot)
+				_react(hot, m.p, float(a.radius) * 0.5)
 				# the floor breaks: glowing cracks, rock chunks and sparks thrown up
 				if not a.get("line", false):
 					_crack_floor(m.p, float(a.radius), 9 if m.boss else 5, own != "")
@@ -1227,7 +1352,9 @@ func _update_zones(dt: float) -> void:
 			"puddle":
 				# where the lava really lies (its pool) when the floor draws pools, else its circle
 				var pools: RefCounted = g.get("pools")
-				hit = (pools.covers(me, str(z.get("st", "lava"))) if pools != null else d < z.r) and g.state.inv <= 0.0
+				# crusted lava (water met it: src/hell/story_elements.gd) is harmless for a while;
+				# a pool the hero threw himself (friend: a potion, src/hero/story_items.gd) spares him
+				hit = not bool(z.get("friend", false)) and (pools.covers(me, str(z.get("st", "lava"))) if pools != null else d < z.r) and g.state.inv <= 0.0 and float(z.get("crust", 0.0)) <= 0.0
 			"erupt", "land":
 				hit = z.dmg > 0 and d < z.r
 				z.done = true
@@ -1254,6 +1381,7 @@ func _update_zones(dt: float) -> void:
 			_:
 				hit = d < z.r
 				_burst_in(z.p - Vector2(0, 20), 26 if z.kind == "meteor" else 10, str(z.get("c", "")))
+				_react(str(z.get("c", "")), z.p, float(z.r))
 				z.done = true
 				# a meteor of an element shatters into its matter
 				if z.kind == "meteor" and str(z.get("c", "")) in OWN_ELEMENTS:
@@ -1286,6 +1414,7 @@ func _update_zones(dt: float) -> void:
 		if L.t >= L.T and not L.done:
 			L.done = true
 			_burst_in(L.to - Vector2(0, 10), 22, str(L.c))
+			_react(str(L.c), L.to, float(L.r))
 			# it lands: sparks, and a boulder shatters into chunks and cracks the floor
 			_pixel_burst(L.to - Vector2(0, 6), 16, PX_COL.get(str(L.c), PX_COL.fire), 260.0, 380.0, 0.8)
 			if str(L.get("look", "")) == "boulder":
@@ -1322,6 +1451,9 @@ func update_shots(dt: float) -> void:
 		s.p += s.v * dt
 		s.t -= dt
 		_shot_trail(s, dt)
+		# a shot of fire through poison gas sets it off (src/hell/story_elements.gd)
+		if str(s.get("c", "")) in ["fire", "lava"] and g.get("story_elements") != null:
+			g.story_elements.fire_passes(s.p)
 		# a soul keeps the path it flew: its gas tail streams along it
 		if str(s.get("look", "")) in ["wisp", "tear"]:
 			var hist: Array = s.get("hist", [])
@@ -1332,7 +1464,7 @@ func update_shots(dt: float) -> void:
 			s.hist = hist
 		if g._cell_blocked(int(floor(s.p.x / g.C)), int(floor(s.p.y / g.C)), false):
 			s.t = 0.0
-			_burst_in(s.p, 4, str(s.get("c", "fire")))
+			_shot_impact(s.p, str(s.get("c", "fire")), bool(s.get("small", false)))
 			# it splashes on the wall like the crypt's shots: sparks, a splat and a crack there
 			if g.get("feel") != null and not s.has("chain"):
 				var dir: Vector2 = (s.v as Vector2).normalized()
@@ -1348,6 +1480,7 @@ func update_shots(dt: float) -> void:
 			else:
 				var open := float(g.state.inv) <= 0.0 and float(g.state.dead) <= 0.0
 				g._hurt(HURT_BY.get(s.get("c", ""), "von Feuer getroffen"))
+				_shot_impact(s.p, str(s.get("c", "fire")), bool(s.get("small", false)))
 				# a landed shot nudges him along its flight
 				if open and float(g.state.inv) > 0.0:
 					_knock((s.p as Vector2) - (s.v as Vector2).normalized() * 40.0, "shot")
@@ -1888,11 +2021,48 @@ func _px_ball(l: CanvasItem, p: Vector2, r: int, cols: Array, vel: Vector2, t: f
 
 ## A burst at `at` in element `c`: the world's embers (g._burst) for fire and
 ## the hell's elements, `n` / 2 pixels of the element for the crypt's own.
+## A breath's cloud (element_rules.json breath_gas: poison and frost their own,
+## fire and lava smoke): where the breath went, as wide as breath_r of its
+## range, drifting on along the breath for breath_time s; the hero and the
+## monsters breathe it (element_rules.json gases).
+func _breath_cloud(m: Dictionary, element: String, mouth: Vector2, aim: Vector2, reach: float) -> void:
+	var gas: RefCounted = g.get("gas")
+	var rules := ElementRules.data()
+	var mat := str(rules.get("breath_gas", {}).get(element, ""))
+	if gas == null or mat == "":
+		return
+	var dir := (aim - mouth).normalized() if aim.distance_to(mouth) > 1.0 else Vector2.RIGHT
+	# where the breath went: at its aim (the hero's feet then), drawn a little back towards the mouth
+	var at := (aim + Vector2(0, 30)).lerp(mouth, 0.2)
+	var time := float(rules.get("breath_time", 3.5)) * (1.3 if m.boss else 1.0)
+	gas.emit("breath:%d:%d" % [int(m.get("uid", 0)), int(g.state.t * 10.0)], mat, at, reach * float(rules.get("breath_r", 0.3)) * (1.3 if m.boss else 1.0), time, float(g.state.t), dir * 30.0, 0.9)
+
+
+## An attack of element `c` landing at `at` reaching `r` meets what lies there
+## (src/hell/story_elements.gd: fire sets poison off and boils water, frost
+## freezes water); nothing in a world without the reactions.
+func _react(c: String, at: Vector2, r: float) -> void:
+	var reactions: RefCounted = g.get("story_elements")
+	if reactions != null and c != "":
+		reactions.touch(c, at, r)
+
+
 func _burst_in(at: Vector2, n: int, c: String) -> void:
 	if c in CRYPT_ELEMENTS:
 		_pixel_burst(at, maxi(4, n / 2), PX_COL[c], 260.0, 340.0, 0.7)
 	else:
 		g._burst(at, n)
+
+
+## A shot of element `c` landing at `at` (a wall, the hero): a white-hot flash
+## frame, a burst of its element's pixels that fly, fall and settle, and the
+## small impact feel; its residue on the floor below follows in update_shots.
+## No sheet animation: the fireball ends as matter (user decision 2026-10-31).
+func _shot_impact(at: Vector2, c: String, small: bool) -> void:
+	var cols: Array = PX_COL.get(c, PX_COL.fire)
+	flashes.append({"p": at, "t": 0.0, "T": 0.1, "r": 14.0 if small else 22.0, "c": c if c in CRYPT_ELEMENTS else "fire"})
+	_pixel_burst(at, 6 if small else 12, cols, 200.0, 260.0, 0.75)
+	_impact(at, "small")
 
 
 ## A warning's colour for element `c`: the element's middle tone for the crypt's
@@ -2956,6 +3126,10 @@ func _update_pixel_fx(dt: float) -> void:
 	for f: Dictionary in pfx:
 		f.t = float(f.t) + dt
 		if f.get("rest", false):
+			continue
+		# a mote the void draws in flies its line, nothing pulls it down (story_elements.gd)
+		if f.get("fly", false):
+			f.p = (f.p as Vector2) + (f.v as Vector2) * dt
 			continue
 		f.vz = float(f.vz) - 900.0 * dt
 		f.z = float(f.z) + float(f.vz) * dt

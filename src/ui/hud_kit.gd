@@ -4,79 +4,240 @@ extends RefCounted
 ## data; mechanics a world does not have simply stay empty (no keys in the
 ## crypt yet, no team-mates in the story worlds), so the crypt is ready for
 ## keys, rune gems, puzzle progress and timed powers when it gets them.
-## - hero_panel: top left, one compact strip: name and HP, hearts with the
-##   level beside them, the EXP line, resources (keys, gems, braziers) and
-##   short status lines (clone, blessings, shield).
+## - hero_panel: top left, one compact strip: name and HP, the life bar (blood
+##   that drains smoothly under poison, burn or lava) with the level beside it,
+##   the EXP line, resources (keys, gems, braziers) and short status lines
+##   (clone, blessings, shield).
 ## - floor_panel + menu_chip: top right: floor, place, the fight state and the
 ##   mini-map area; "ESC · MENÜ" under it.
 ## - boss_bar: top centre, with phase segments.
 ## - banner, toast, prompt: floor titles, hints over the skill bar, "E" prompts.
-## - pet_panel: the permanent companion's life right under the hero strip.
-## Static, display only.
+## - pet_panel: the companion bar right under the hero strip: portrait, name,
+##   life, the two abilities on 5 and 6 (no command buttons).
+## Static, display only. The only state is each life bar's animation (the
+## ghost of a hit, the heal sweep), kept per bar key between frames, the
+## cached companion portraits and the ability slots of the last companion bar
+## (for the right-click on an icon).
 
 const HudStyle = preload("res://src/ui/hud_style.gd")
+const TalentIcons = preload("res://src/ui/talent_icons.gd")
+const Profile = preload("res://src/progress/profile.gd")
+
+# Per life bar key: gap (the ghost's length in half hearts), hold (seconds
+# before it starts to shrink), speed (half hearts per second), heal (sweep
+# progress 0..1, -1 none), last (life seen last frame), clock (that frame's time).
+static var _life_bars: Dictionary = {}
+# Companion kind -> {texture, region} (or {} when no frame exists), loaded once.
+static var _portraits: Dictionary = {}
+# Talent branch id -> {id, color, color2} for the companion's ability icons.
+static var _specs: Dictionary = {}
+# The ability slots of the companion bar drawn last, and the canvas it was drawn on.
+static var _pet_slots: Array = []
+static var _pet_canvas: CanvasItem = null
 
 
-## The permanent companion under the hero strip: its name, a life bar that
-## turns red when low, or "GEFALLEN" with the seconds until it can be called
-## again. `pet` is talent_combat's player_state().pet; `width` matches
-## the hero strip. Returns the row's rectangle (zero size without a companion).
+## The companion bar right under the hero strip (the "Begleiterleiste", user
+## decision 31.10.2026: portrait, life and abilities, no command buttons): a
+## framed row of `width` px, as wide as the hero strip. Left the portrait slot
+## with the companion's idle frame (assets/data/ui_hud_style.json
+## "pet_portraits"; a drawn glyph when the file is missing), beside it the
+## name over its life bar (HudKit.life_bar, the fill green turning red as the
+## life share falls, the bar's own state under "pet:<kind>") with the numbers
+## at the right; fallen, the bar gives way to "GEFALLEN · 12 s" with the
+## seconds until it returns. Right the two abilities as small slots: the
+## talent icon, the key (5, 6), the cooldown as a shade with the seconds, the
+## auto-cast marker (a pulsing glow and a dot in the corner). `pet` is
+## talent_combat's player_state().pet ({kind, name, spec, alive, hp, hp_max,
+## respawn, abilities: [{id, name, icon, text, cd, cd_max, auto, key}]}).
+## Remembers the ability slots for pet_slot_at(). Returns the row's rectangle
+## (zero size without a companion).
 static func pet_panel(canvas: CanvasItem, font: Font, origin: Vector2, width: float, pet: Dictionary, clock: float) -> Rect2:
+	_pet_slots = []
+	_pet_canvas = canvas
 	if pet.is_empty(): return Rect2(origin, Vector2.ZERO)
+	var pad := HudStyle.size("pet_pad")
 	var small := int(HudStyle.size("font_small"))
-	var rect := Rect2(origin, Vector2(width, small + 22.0))
+	var portrait_px := HudStyle.size("pet_portrait")
+	var slot_px := HudStyle.size("pet_slot")
+	var gap := HudStyle.size("pet_slot_gap")
+	var rect := Rect2(origin, Vector2(width, HudStyle.size("pet_row_height")))
 	HudStyle.panel(canvas, rect)
 	var alive := bool(pet.get("alive", false))
-	HudStyle.text(canvas, font, rect.position + Vector2(10, small + 4), str(pet.get("name", "")).to_upper(), small, HudStyle.color("text_dim"))
-	var bar := Rect2(rect.position + Vector2(10, small + 9), Vector2(width - 20, 6))
-	canvas.draw_rect(bar, HudStyle.color("track"))
+	var kind := str(pet.get("kind", ""))
+	var name := str(pet.get("name", kind)).to_upper()
+	# the portrait slot at the left, the figure centred in it, grey once fallen
+	var portrait := Rect2(rect.position + Vector2(pad, floorf((rect.size.y - portrait_px) * 0.5)), Vector2(portrait_px, portrait_px))
+	_pet_portrait(canvas, font, portrait, kind, name, alive)
+	# the ability slots at the right, a gap between them
+	var abilities: Array = pet.get("abilities", [])
+	var slots_w := abilities.size() * slot_px + maxi(0, abilities.size() - 1) * gap
+	var slot_x := rect.end.x - pad - slots_w
+	var spec := _spec(str(pet.get("spec", "")))
+	for index in range(abilities.size()):
+		var slot := Rect2(Vector2(slot_x + index * (slot_px + gap), rect.position.y + floorf((rect.size.y - slot_px) * 0.5)), Vector2(slot_px, slot_px))
+		_pet_ability(canvas, font, slot, abilities[index], spec, alive, clock)
+		_pet_slots.append(slot)
+	# the text column between them: the name over the life bar
+	var x := portrait.end.x + 8.0
+	var right := (slot_x - 8.0) if not abilities.is_empty() else (rect.end.x - pad)
+	var column_w := maxf(0.0, right - x)
+	var bar_h := HudStyle.size("pet_bar_height")
+	var top := rect.position.y + floorf((rect.size.y - (small + 4.0 + bar_h)) * 0.5)
+	var baseline := top + small
+	var bar := Rect2(Vector2(x, top + small + 4.0), Vector2(column_w, bar_h))
+	HudStyle.text(canvas, font, Vector2(x, baseline), name, small, HudStyle.color("text") if alive else HudStyle.color("text_muted"))
 	if alive:
-		var share := clampf(float(pet.get("hp", 0)) / maxf(0.1, float(pet.get("hp_max", 1))), 0.0, 1.0)
-		var colour := HudStyle.color("ok") if share > 0.35 else HudStyle.color("danger").lerp(Color.WHITE, 0.2 + 0.2 * sin(clock * 9.0))
-		canvas.draw_rect(Rect2(bar.position, Vector2(roundf(bar.size.x * share), bar.size.y)), colour)
+		var hp_max := maxf(1.0, float(pet.get("hp_max", 1.0)))
+		var hp := clampf(float(pet.get("hp", 0.0)), 0.0, hp_max)
+		var share := hp / hp_max
+		# the fill: green while hale, red when the share runs low
+		var tint := HudStyle.color("ok").lerp(HudStyle.color("danger"), clampf((0.7 - share) / 0.45, 0.0, 1.0))
+		life_bar(canvas, bar, hp, ceili(hp_max), "pet:" + kind, clock, false, tint)
 		# the numbers only where they fit beside the name (the crypt's strip is narrow)
-		var numbers := "%d / %d" % [ceili(float(pet.hp)), ceili(float(pet.hp_max))]
-		if HudStyle.width(font, str(pet.get("name", "")).to_upper(), small) + HudStyle.width(font, numbers, small) + 30.0 <= width:
-			HudStyle.text(canvas, font, Vector2(rect.end.x - 10, rect.position.y + small + 4), numbers, small, HudStyle.color("text"), 2)
+		var numbers := "%d / %d" % [ceili(hp - 0.001) if hp > 0.0 else 0, ceili(hp_max)]
+		if HudStyle.width(font, name, small) + HudStyle.width(font, numbers, small) + 12.0 <= column_w:
+			HudStyle.text(canvas, font, Vector2(right, baseline), numbers, small, HudStyle.color("text_dim"), 2)
 	else:
+		# fallen: no bar, the countdown in its place
 		var wait := float(pet.get("respawn", 0.0))
-		HudStyle.text(canvas, font, Vector2(rect.end.x - 10, rect.position.y + small + 4), "GEFALLEN · %d S" % ceili(wait) if wait > 0.0 else "GEFALLEN", small, HudStyle.color("danger"), 2)
+		var fallen := ("GEFALLEN · %d s" % ceili(wait)) if wait > 0.0 else "GEFALLEN"
+		var pulse := 0.75 + 0.25 * sin(clock * TAU * HudStyle.size("life_low_pulse_hz") * 0.5)
+		HudStyle.text(canvas, font, Vector2(x, bar.end.y + 2.0), fallen, small, Color(HudStyle.color("danger"), pulse))
 	return rect
 
 
-## The hero strip at `origin`. `data`: title, hp, max_hp, hearts ({full, half,
-## empty} textures), level (int, -1 none), exp (0..1, -1 none), points (unspent
-## run talent points, "+n" beside the level), low (bool:
-## pulse the hearts), resources [{icon, tint, text, dim}], status [{text,
-## color}], clock. Returns the strip's rectangle.
+## The companion ability (0 or 1) whose slot on the last drawn companion bar
+## holds `point` (px of the canvas the bar was drawn on), or -1. Without a
+## point, the mouse over that canvas is used (the right-click toggle of the
+## auto-cast asks that way through TalentBar.pet_slot).
+static func pet_slot_at(point: Vector2 = Vector2.INF) -> int:
+	if _pet_slots.is_empty(): return -1
+	var at := point
+	if not at.is_finite():
+		if not is_instance_valid(_pet_canvas): return -1
+		at = _pet_canvas.get_local_mouse_position()
+	for index in range(_pet_slots.size()):
+		if (_pet_slots[index] as Rect2).has_point(at): return index
+	return -1
+
+
+## The portrait slot: a dark box with the companion's idle frame centred in it
+## (1x, or 2x when the figure is small enough), the first letter of its name
+## in the accent colour when there is no frame. Grey and dim once fallen.
+static func _pet_portrait(canvas: CanvasItem, font: Font, slot: Rect2, kind: String, name: String, alive: bool) -> void:
+	canvas.draw_rect(slot, HudStyle.color("slot"))
+	var frame := _portrait(kind)
+	var inner := slot.grow(-1.0)
+	var tint := Color.WHITE if alive else Color(0.36, 0.34, 0.38, 0.85)
+	if frame.is_empty():
+		HudStyle.text(canvas, font, Vector2(slot.get_center().x, slot.get_center().y + 7.0), name.left(1), int(HudStyle.size("font_body")), HudStyle.color("accent") if alive else HudStyle.color("text_muted"), 1)
+	else:
+		var texture: Texture2D = frame.texture
+		var region: Rect2 = frame.region
+		var scale := maxf(1.0, floorf(minf(inner.size.x / maxf(1.0, region.size.x), inner.size.y / maxf(1.0, region.size.y))))
+		var size := (region.size * scale).round()
+		canvas.draw_texture_rect_region(texture, Rect2((inner.get_center() - size * 0.5).round(), size), region, tint)
+	canvas.draw_rect(slot, HudStyle.color("panel_edge") if alive else Color(HudStyle.color("panel_edge"), 0.08), false, 1.0)
+
+
+## One ability slot of the companion bar: the talent icon, the key in the
+## corner, the cooldown as a shade shrinking from the top with the seconds,
+## a frame in the accent while ready, the auto-cast marker; dim while the
+## companion is fallen.
+static func _pet_ability(canvas: CanvasItem, font: Font, slot: Rect2, ability: Dictionary, spec: Dictionary, alive: bool, clock: float) -> void:
+	var cooldown := float(ability.get("cd", 0.0))
+	var maximum := maxf(0.01, float(ability.get("cd_max", 1.0)))
+	var ready := alive and cooldown <= 0.0
+	canvas.draw_rect(slot, HudStyle.color("slot"))
+	var icon := TalentIcons.make(spec, str(ability.get("icon", "burst")), alive, false)
+	var icon_px := HudStyle.size("pet_icon")
+	var tint := Color(0.32, 0.3, 0.3, 0.8) if not alive else Color(0.62, 0.6, 0.6) if cooldown > 0.0 else Color.WHITE
+	canvas.draw_texture_rect(icon, Rect2((slot.get_center() - Vector2(icon_px, icon_px) * 0.5).round(), Vector2(icon_px, icon_px)), false, tint)
+	if alive and cooldown > 0.0:
+		var share := clampf(cooldown / maximum, 0.0, 1.0)
+		canvas.draw_rect(Rect2(slot.position, Vector2(slot.size.x, roundf(slot.size.y * share))), Color(HudStyle.color("outline"), 0.6))
+		var seconds := ("%d" % ceili(cooldown)) if cooldown >= 1.0 else ("%.1f" % cooldown)
+		HudStyle.text(canvas, font, slot.get_center() + Vector2(0.0, 5.0), seconds, int(HudStyle.size("pet_number_size")), HudStyle.color("text"), 1)
+	var frame := Color(HudStyle.color("accent"), 0.85) if ready else HudStyle.color("panel_edge")
+	if not alive: frame = Color(HudStyle.color("panel_edge"), 0.08)
+	canvas.draw_rect(slot, frame, false, 1.0)
+	if alive and bool(ability.get("auto", false)):
+		# auto-cast on: a soft pulsing glow around the slot and a dot in the corner
+		var glow := HudStyle.color("auto")
+		canvas.draw_rect(slot.grow(1.0), Color(glow, 0.35 + 0.2 * sin(clock * 5.0)), false, 1.0)
+		var dot := Rect2(slot.end - Vector2(7.0, 7.0), Vector2(4.0, 4.0))
+		canvas.draw_rect(dot.grow(1.0), HudStyle.color("outline"))
+		canvas.draw_rect(dot, glow)
+	var key := str(ability.get("key", ""))
+	if not key.is_empty():
+		var key_px := int(HudStyle.size("pet_key_size"))
+		HudStyle.text(canvas, font, slot.position + Vector2(3.0, key_px + 1.0), key, key_px, HudStyle.color("text_dim"))
+
+
+## The companion `kind`'s portrait, loaded once: {texture, region (the pixels
+## the frame uses, so the figure sits centred)}; {} when the table has no
+## path for the kind or the file is missing.
+static func _portrait(kind: String) -> Dictionary:
+	if _portraits.has(kind): return _portraits[kind]
+	var entry: Dictionary = {}
+	var path := str(HudStyle.table("pet_portraits").get(kind, ""))
+	if not path.is_empty() and ResourceLoader.exists(path):
+		var texture := load(path) as Texture2D
+		if texture != null:
+			var region := Rect2(Vector2.ZERO, texture.get_size())
+			var image := texture.get_image()
+			if image != null:
+				var used := image.get_used_rect()
+				if used.size.x > 0 and used.size.y > 0: region = Rect2(used)
+			entry = {"texture": texture, "region": region}
+	_portraits[kind] = entry
+	return entry
+
+
+## The talent branch `id` ({id, color, color2}) for the icon colours, from the
+## profile's class data; {} (grey icons) when unknown.
+static func _spec(id: String) -> Dictionary:
+	if _specs.is_empty():
+		for class_entry: Dictionary in Profile.data().get("classes", {}).values():
+			for spec: Dictionary in class_entry.get("specs", []): _specs[str(spec.get("id", ""))] = spec
+	return _specs.get(id, {})
+
+
+## The hero strip at `origin`. `data`: title, hp, max_hp (half hearts), hp_f
+## (float, the life shown: hp minus the fraction a poison, burn or lava has
+## already taken; falls back to hp), hearts (textures; kept for compatibility,
+## no longer drawn), level (int, -1 none), exp (0..1, -1 none), points (unspent
+## run talent points, "+n" beside the level), low (bool: the bar pulses harder
+## and its frame turns red), resources [{icon, tint, text, dim}], status
+## [{text, color}], clock, key (names the bar's animation state; defaults to
+## the title). Returns the strip's rectangle.
 static func hero_panel(canvas: CanvasItem, font: Font, origin: Vector2, data: Dictionary) -> Rect2:
 	var pad := HudStyle.size("pad")
-	var heart := HudStyle.size("heart_size")
-	var gap := HudStyle.size("heart_gap")
-	var per_row := maxi(1, int(HudStyle.size("hearts_per_row")))
+	var bar_w := HudStyle.size("bar_width")
+	var bar_h := HudStyle.size("bar_height")
 	var small := int(HudStyle.size("font_small"))
 	var body := int(HudStyle.size("font_body"))
 	var hp := int(data.get("hp", 0))
 	var max_hp := int(data.get("max_hp", 0))
-	var icons := heart_icons(hp, max_hp)
-	var rows := maxi(1, ceili(icons.size() / float(per_row)))
+	var hp_f := clampf(float(data.get("hp_f", hp)), 0.0, float(maxi(max_hp, 0)))
 	var level := int(data.get("level", -1))
 	var experience := float(data.get("exp", -1.0))
 	var resources: Array = data.get("resources", [])
 	var status: Array = data.get("status", [])
-	var hp_text := "%d / %d" % [hp, max_hp] if hp > 0 else "GEFALLEN"
+	var hp_text := "%d / %d" % [life_shown(hp, hp_f), max_hp] if hp > 0 else "GEFALLEN"
 	var title := str(data.get("title", ""))
-	# widths: hearts row with the level badge beside it, the header, the resources
-	var hearts_w := minf(icons.size(), per_row) * (heart + gap) - gap
+	# widths: the life bar with the level badge beside it, the header, the resources
 	# the level badge grows with its number (LV 9, LV 13, LV 100)
-	var badge := Vector2(18.0 + HudStyle.width(font, "LV", small) + HudStyle.width(font, str(level), body), heart) if level >= 0 else Vector2.ZERO
+	var badge := Vector2(18.0 + HudStyle.width(font, "LV", small) + HudStyle.width(font, str(level), body), HudStyle.size("badge_height")) if level >= 0 else Vector2.ZERO
+	# the bar row is as tall as the badge beside it; the bar sits centred in it
+	var row_h := maxf(bar_h, badge.y)
 	var resource_w := 0.0
 	for r: Dictionary in resources: resource_w += 26.0 + HudStyle.width(font, str(r.get("text", "")), body) + 14.0
 	# unspent run talent points: a small "+n" beside the level badge
 	var points := int(data.get("points", 0))
 	var points_w := (HudStyle.width(font, "+%d" % points, body) + 10.0) if points > 0 and level >= 0 else 0.0
-	var inner_w := maxf(hearts_w + (badge.x + 10.0 + points_w if level >= 0 else 0.0), maxf(HudStyle.width(font, title, small) + HudStyle.width(font, hp_text, small) + 24.0, resource_w))
-	var height := pad + small + 6.0 + rows * (heart + gap) - gap + (8.0 if experience >= 0.0 else 0.0) + (30.0 if not resources.is_empty() else 0.0) + status.size() * (small + 6.0) + pad
+	var inner_w := maxf(bar_w + (badge.x + 10.0 + points_w if level >= 0 else 0.0), maxf(HudStyle.width(font, title, small) + HudStyle.width(font, hp_text, small) + 24.0, resource_w))
+	var height := pad + small + 6.0 + row_h + (8.0 if experience >= 0.0 else 0.0) + (30.0 if not resources.is_empty() else 0.0) + status.size() * (small + 6.0) + pad
 	var rect := Rect2(origin, Vector2(inner_w + pad * 2.0, height))
 	HudStyle.panel(canvas, rect)
 	var x := rect.position.x + pad
@@ -84,18 +245,12 @@ static func hero_panel(canvas: CanvasItem, font: Font, origin: Vector2, data: Di
 	HudStyle.text(canvas, font, Vector2(x, y + small), title, small, HudStyle.color("text_dim"))
 	HudStyle.text(canvas, font, Vector2(rect.end.x - pad, y + small), hp_text, small, HudStyle.color("text") if hp > 0 else HudStyle.color("danger"), 2)
 	y += small + 6.0
-	var textures: Dictionary = data.get("hearts", {})
 	var clock := float(data.get("clock", 0.0))
 	var low := bool(data.get("low", false))
-	for index in range(icons.size()):
-		var at := Vector2(x + (index % per_row) * (heart + gap), y + (index / per_row) * (heart + gap))
-		var texture: Texture2D = textures.get(icons[index], null)
-		if texture == null: continue
-		var grow := 0.12 * sin(clock * 8.0) if low and icons[index] != "empty" else 0.0
-		var box := Rect2(at - Vector2(heart, heart) * grow * 0.5, Vector2(heart, heart) * (1.0 + grow))
-		canvas.draw_texture_rect(texture, box, false)
+	var bar := Rect2(Vector2(x, y + floorf((row_h - bar_h) * 0.5)), Vector2(bar_w, bar_h))
+	life_bar(canvas, bar, hp_f, max_hp, str(data.get("key", title)), clock, low)
 	if level >= 0:
-		var b := Rect2(Vector2(x + hearts_w + 10.0, y), badge)
+		var b := Rect2(Vector2(x + bar_w + 10.0, y + floorf((row_h - badge.y) * 0.5)), badge)
 		canvas.draw_rect(b, HudStyle.color("slot"))
 		canvas.draw_rect(b, HudStyle.color("panel_edge"), false, 1.0)
 		HudStyle.text(canvas, font, Vector2(b.position.x + 6, b.get_center().y + 5), "LV", small, HudStyle.color("text_dim"))
@@ -103,7 +258,7 @@ static func hero_panel(canvas: CanvasItem, font: Font, origin: Vector2, data: Di
 		if points > 0:
 			var glow := 0.65 + 0.35 * sin(clock * 5.0)
 			HudStyle.text(canvas, font, Vector2(b.end.x + 8, b.get_center().y + 7), "+%d" % points, body, Color(HudStyle.color("accent"), glow))
-	y += rows * (heart + gap) - gap
+	y += row_h
 	if experience >= 0.0:
 		HudStyle.bar(canvas, Rect2(x, y + 4, inner_w, 3), experience, HudStyle.color("exp"))
 		y += 8.0
@@ -130,6 +285,113 @@ static func hero_panel(canvas: CanvasItem, font: Font, origin: Vector2, data: Di
 		HudStyle.text(canvas, font, Vector2(x, y + small + 4), str(line.get("text", "")), small, line.get("color", HudStyle.color("text_dim")))
 		y += small + 6.0
 	return rect
+
+
+## A blood-filled life bar in `rect` (its ink outline included): `hp_f` of
+## `max_hp` half hearts, drawn every frame. The fill drains smoothly; a hit
+## leaves a brighter ghost of what was lost that holds a moment and shrinks
+## away; a heal sends a light across the bar; the surface wobbles, glows in a
+## slow pulse and carries drifting highlights. `key` names the bar's state
+## between frames (one per bar), `clock` drives every motion (a frozen clock
+## freezes the bar), `low` pulses harder and tints the frame red; the bar does
+## that on its own below the low-life share. `tint` (alpha > 0) colours the
+## liquid instead of blood (the companion bar's green turning red); the dark
+## base, light edge and glow follow it. Looks and timings:
+## assets/data/ui_hud_style.json.
+static func life_bar(canvas: CanvasItem, rect: Rect2, hp_f: float, max_hp: int, key: String, clock: float, low: bool = false, tint: Color = Color(0, 0, 0, 0)) -> void:
+	var cap := maxf(1.0, float(max_hp))
+	var life := clampf(hp_f, 0.0, cap)
+	var s := _life_state(key, life, clock)
+	var hot := low or (life > 0.0 and life / cap < HudStyle.size("life_low_share"))
+	var pulse := 0.5 + 0.5 * sin(clock * TAU * HudStyle.size("life_low_pulse_hz" if hot else "life_pulse_hz"))
+	# the frame: an ink outline around a dark slot; the outline turns red when life runs low
+	var outline := HudStyle.color("outline")
+	if hot: outline = outline.lerp(HudStyle.color("danger"), 0.4 + 0.5 * pulse)
+	canvas.draw_rect(rect, outline)
+	var slot := rect.grow(-1.0)
+	canvas.draw_rect(slot, HudStyle.color("slot"))
+	var inner := slot.grow(-1.0)
+	if inner.size.x < 4.0 or inner.size.y < 3.0: return
+	# the surface: the right end wobbles a pixel unless the vessel is full or dry
+	var wobble := roundf(sin(clock * TAU * HudStyle.size("life_wobble_hz"))) if life > 0.0 and life < cap else 0.0
+	var fill_w := clampf(floorf(inner.size.x * life / cap) + wobble, 1.0 if life > 0.0 else 0.0, inner.size.x)
+	# the ghost: the chunk a hit took, still lit, shrinking towards the fill
+	var ghost_w := clampf(floorf(inner.size.x * (life + float(s.gap)) / cap), fill_w, inner.size.x)
+	if ghost_w > fill_w:
+		canvas.draw_rect(Rect2(inner.position + Vector2(fill_w, 0.0), Vector2(ghost_w - fill_w, inner.size.y)), Color(HudStyle.color("text"), 0.85))
+	if fill_w <= 0.0: return
+	var fill := Rect2(inner.position, Vector2(fill_w, inner.size.y))
+	# the liquid's colours: blood, or the tint with its own dark base, light edge and glow
+	var tinted := tint.a > 0.0
+	var body := Color(tint, 1.0) if tinted else HudStyle.color("danger")
+	var dark := body.darkened(0.6) if tinted else HudStyle.color("danger_dark")
+	var lite := body.lightened(0.45) if tinted else HudStyle.color("blood_lite")
+	var glow := body.lightened(0.2) if tinted else HudStyle.color("blood_glow")
+	var glow_a := (0.18 + 0.32 * pulse) if hot else (0.07 + 0.11 * pulse)
+	# a faint rim of glow one pixel around the liquid, then the liquid itself:
+	# a dark base, the body, a lighter top edge and the pulse over its upper half
+	canvas.draw_rect(fill.grow(1.0), Color(glow, glow_a * 0.5))
+	canvas.draw_rect(fill, dark)
+	var base_h := minf(3.0, floorf(fill.size.y * 0.3))
+	canvas.draw_rect(Rect2(fill.position, Vector2(fill_w, fill.size.y - base_h)), body)
+	canvas.draw_rect(Rect2(fill.position, Vector2(fill_w, 1.0)), lite)
+	canvas.draw_rect(Rect2(fill.position, Vector2(fill_w, floorf(fill.size.y * 0.5))), Color(glow, glow_a))
+	# two or three highlight pixels drift along the surface
+	if fill_w >= 6.0:
+		for i in range(3 if fill_w >= 24.0 else 2):
+			var drift := fposmod(clock * (7.0 + 4.0 * i) + i * 37.0, fill_w - 2.0)
+			var spark := Rect2(fill.position + Vector2(1.0 + floorf(drift), 0.0), Vector2(2.0 if i == 0 else 1.0, 1.0))
+			canvas.draw_rect(spark, lite.lerp(Color.WHITE, 0.5 + 0.3 * sin(clock * 3.0 + i)))
+	# the heal sweep: a light band running left to right, fading as it goes
+	var heal := float(s.heal)
+	if heal >= 0.0:
+		var fade := 1.0 - heal
+		canvas.draw_rect(fill, Color(1.0, 1.0, 1.0, 0.22 * fade))
+		var band := Rect2(floorf(fill.position.x + heal * fill_w) - 2.0, fill.position.y, 4.0, fill.size.y).intersection(fill)
+		if band.size.x > 0.0: canvas.draw_rect(band, Color(1.0, 1.0, 1.0, 0.7 * fade))
+
+
+## Advances and returns the animation state of the life bar `key` for the
+## `life` seen at `clock`: a loss of at least the hit threshold within one
+## frame lights the lost chunk as a ghost (held, then shrunk away in the ghost
+## time); a gain of that size starts the heal sweep; smaller changes (a drain,
+## a trickle) just move the bar and carry the ghost along unchanged.
+static func _life_state(key: String, life: float, clock: float) -> Dictionary:
+	var s: Dictionary = _life_bars.get(key, {})
+	if s.is_empty():
+		s = {"gap": 0.0, "hold": 0.0, "speed": 0.0, "heal": -1.0, "last": life, "clock": clock}
+		_life_bars[key] = s
+	var delta := clampf(clock - float(s.clock), 0.0, 0.25)
+	var change := life - float(s.last)
+	var threshold := HudStyle.size("life_hit_threshold")
+	var gap := float(s.gap)
+	if change <= -threshold:
+		# a hit: the lost chunk stays lit, holds a moment, then shrinks away
+		gap -= change
+		s.hold = HudStyle.size("life_ghost_hold")
+		s.speed = gap / maxf(0.05, HudStyle.size("life_ghost_time"))
+	elif change >= threshold:
+		# a heal: the ghost is gone, a light sweeps the bar
+		gap = 0.0
+		s.heal = 0.0
+	s.hold = maxf(0.0, float(s.hold) - delta)
+	if float(s.hold) <= 0.0 and gap > 0.0:
+		gap = maxf(0.0, gap - delta * float(s.speed))
+	s.gap = gap
+	if float(s.heal) >= 0.0:
+		s.heal = float(s.heal) + delta / maxf(0.05, HudStyle.size("life_heal_sweep"))
+		if float(s.heal) >= 1.0: s.heal = -1.0
+	s.last = life
+	s.clock = clock
+	return s
+
+
+## The life to print for a hero with `hp` whole half hearts whose bar shows
+## `hp_f`: the ceiling of the shown life, at least 1 while the hero stands,
+## never above hp (0 once fallen).
+static func life_shown(hp: int, hp_f: float) -> int:
+	if hp <= 0: return 0
+	return clampi(ceili(hp_f - 0.001), 1, hp)
 
 
 ## Heart icons for `hp` of `max_hp` (two HP per heart): "full", "half", "empty".

@@ -22,6 +22,8 @@ func bind(owner: Node) -> void:
 func apply(player: Dictionary, kind: String, time: float, value: float = 0.0) -> void:
 	if int(player.get("hp", 0)) <= 0 or time <= 0.0: return
 	if not player.has("effects"): player.effects = {}
+	# a wet hero cannot be set burning (assets/data/element_rules.json combos wet_blocks_burn)
+	if kind == "burn" and player.effects.has("wet"): return
 	var current: Dictionary = player.effects.get(kind, {})
 	var stronger: float = maxf(value, float(current.get("value", 0.0))) if kind != "slow" else (minf(value, float(current.get("value", 1.0))) if not current.is_empty() else value)
 	player.effects[kind] = {"time": maxf(time, float(current.get("time", 0.0))), "value": stronger, "tick": float(current.get("tick", 1.0))}
@@ -58,10 +60,8 @@ func step(delta: float) -> void:
 			var entry: Dictionary = player.effects[kind]
 			entry.time = float(entry.time) - delta
 			if kind in DOTS:
-				entry.tick = float(entry.get("tick", 1.0)) - delta
-				if float(entry.tick) <= 0.0:
-					entry.tick = 1.0
-					game.dot_player(id, int(maxf(1.0, float(entry.value))), kind)
+				# continuous: the value is half hearts per second, collected into whole points (elements.gd dot_f)
+				game.elements.dot_f(id, player, float(entry.value) * delta, kind)
 			elif kind == "regen":
 				# Healing over time: half a heart every `value` seconds.
 				entry.tick = float(entry.get("tick", float(entry.value))) - delta
@@ -97,9 +97,14 @@ func attack_scale(player: Dictionary) -> float:
 	return 1.0 + float(effects.weak.value) if effects.has("weak") else 1.0
 
 
-## How much movement keeps its momentum on ice (0 = full grip).
+## How much movement keeps its momentum per frame on ice (0 = full grip). The
+## effect's value is the ground's grip (share of the momentum left after one
+## second, element_rules.json); a slip without one is glaze ice.
 func slip(player: Dictionary) -> float:
-	return 0.92 if player.get("effects", {}).has("slip") else 0.0
+	var effects: Dictionary = player.get("effects", {})
+	if not effects.has("slip"): return 0.0
+	var grip := float(effects.slip.get("value", 1.0))
+	return 0.92 if grip >= 1.0 or grip <= 0.0 else pow(grip, 1.0 / 60.0)
 
 
 func skills_sealed(player: Dictionary) -> bool:

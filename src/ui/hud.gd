@@ -1,15 +1,20 @@
 extends Control
 ## Run HUD in the game's CanvasLayer, so screen shake and room changes never move
-## it. Hearts sit top left (full = 2 HP, half = 1 HP, empty = lost capacity, new
-## rows after HEARTS_PER_ROW); level, EXP bar and numbers in the top band; the
-## stats column in the side panel. Everything shown is the local player's
+## it. The life bar sits top left (half hearts as the unit: a blood bar that
+## drains smoothly, shared with the story worlds through src/ui/hud_kit.gd) with
+## "LEBEN" and the numbers over it; level, EXP bar and numbers in the top band;
+## the stats column in the side panel. Everything shown is the local player's
 ## authoritative snapshot values (see src/player/progression.gd); the HUD only
 ## animates the changes it sees.
 
-const HEART_FULL := preload("res://assets/sprites/0x72/ui_heart_full.png")
-const HEART_HALF := preload("res://assets/sprites/0x72/ui_heart_half.png")
-const HEART_EMPTY := preload("res://assets/sprites/0x72/ui_heart_empty.png")
+const HudKit = preload("res://src/ui/hud_kit.gd")
+const HudStyle = preload("res://src/ui/hud_style.gd")
+# The life bar's corner (where the hearts used to start); its label sits above
+# it, its width stops short of the level badge, its height comes from
+# assets/data/ui_hud_style.json.
 const HEARTS_ORIGIN := Vector2(34, 16)
+const LIFE_LABEL_HEIGHT := 14.0
+# The old heart grid, kept for heart_position() (callers and tests); nothing draws it.
 const HEART_STEP := Vector2(30, 27)
 const HEARTS_PER_ROW := 8
 const LEVEL_ORIGIN := Vector2(300, 22)
@@ -42,9 +47,9 @@ var _player: Dictionary = {}
 var _clock := 0.0
 var _hp := -1
 var _max_hp := -1
-# Per heart: seconds left of its damage blink / heal sparkle.
-var _hurt: Dictionary = {}
-var _healed: Dictionary = {}
+# The life shown: hp minus what a poison or burn has already taken (the host's
+# hp_f, falling back to hp), so the bar drains smoothly between whole half hearts.
+var _hp_f := 0.0
 var _stats: Dictionary = {}
 # Stat name -> {"time": seconds left, "up": bool} after a value changed.
 var _stat_changes: Dictionary = {}
@@ -70,6 +75,7 @@ func _ready() -> void:
 
 ## How each heart container is filled: 2 = full, 1 = half, 0 = empty. A player
 ## with `max_hp` HP has ceil(max_hp / 2) containers; hp is clamped to them.
+## (The HUD draws a life bar now; the count stays the shared half-heart rule.)
 static func heart_fills(hp: int, max_hp: int) -> Array[int]:
 	var fills: Array[int] = []
 	var capacity: int = maxi(max_hp, 0)
@@ -79,9 +85,17 @@ static func heart_fills(hp: int, max_hp: int) -> Array[int]:
 	return fills
 
 
-## Top-left corner of heart `index`; hearts fill rows of HEARTS_PER_ROW.
+## Top-left corner of heart `index` in the old heart grid (rows of
+## HEARTS_PER_ROW); kept for callers, nothing in the HUD draws hearts any more.
 static func heart_position(index: int) -> Vector2:
 	return HEARTS_ORIGIN + Vector2(float(index % HEARTS_PER_ROW) * HEART_STEP.x, floorf(float(index) / HEARTS_PER_ROW) * HEART_STEP.y)
+
+
+## The life bar's rectangle (outline included): under the "LEBEN" label, as wide
+## as the shared bar allows but stopping short of the level badge.
+static func life_rect() -> Rect2:
+	var width := minf(HudStyle.size("bar_width"), LEVEL_ORIGIN.x - HEARTS_ORIGIN.x - 12.0)
+	return Rect2(HEARTS_ORIGIN + Vector2(0.0, LIFE_LABEL_HEIGHT), Vector2(width, HudStyle.size("bar_height")))
 
 
 ## Endless mode: which floor the party is on. A deeper floor shows a banner.
@@ -110,25 +124,22 @@ func showing() -> bool:
 
 
 ## Shows the local player's snapshot entry; an empty dictionary hides the HUD.
-## Changes since the last call start their animations.
+## `hp_f` (float, optional) is the life to show between whole half hearts while
+## a poison or burn drains it; without it the bar shows `hp`. Changes since the
+## last call start their animations (the life bar animates its own).
 func show_player(player: Dictionary) -> void:
 	if player.is_empty():
 		_player = {}
 		_hp = -1
+		_hp_f = 0.0
 		_level = 0
 		_stats = {}
 		return
 	var hp := int(player.get("hp", 0))
 	var max_hp := int(player.get("max_hp", 0))
-	if _hp >= 0:
-		var before := heart_fills(_hp, _max_hp)
-		var after := heart_fills(hp, max_hp)
-		for i in range(after.size()):
-			var old_fill: int = before[i] if i < before.size() else 0
-			if after[i] < old_fill: _hurt[i] = 0.6
-			elif after[i] > old_fill or i >= before.size(): _healed[i] = 0.7
 	_hp = hp
 	_max_hp = max_hp
+	_hp_f = clampf(float(player.get("hp_f", hp)), 0.0, float(maxi(max_hp, 0)))
 	var stats: Dictionary = player.get("stats", {})
 	for name: String in STAT_ORDER:
 		if not stats.has(name): continue
@@ -153,10 +164,6 @@ func _process(delta: float) -> void:
 		# The trail waits a moment after a hit, then drains to the real value.
 		if _boss_hit <= 0.0: _boss_trail = move_toward(_boss_trail, ratio, delta * 0.6)
 		_boss_trail = maxf(_boss_trail, ratio)
-	for timers: Dictionary in [_hurt, _healed]:
-		for key: Variant in timers.keys():
-			timers[key] = float(timers[key]) - delta
-			if timers[key] <= 0.0: timers.erase(key)
 	for name: Variant in _stat_changes.keys():
 		_stat_changes[name].time = float(_stat_changes[name].time) - delta
 		if _stat_changes[name].time <= 0.0: _stat_changes.erase(name)
@@ -169,7 +176,7 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	if _player.is_empty():
 		return
-	_draw_hearts()
+	_draw_life()
 	_draw_weapons()
 	_draw_level()
 	_draw_stats()
@@ -177,51 +184,24 @@ func _draw() -> void:
 	_draw_boss_bar()
 
 
-func _draw_hearts() -> void:
-	var fills := heart_fills(_hp, _max_hp)
-	var last_filled: int = -1
-	for i in range(fills.size()):
-		if fills[i] > 0: last_filled = i
-	for i in range(fills.size()):
-		var texture: Texture2D = [HEART_EMPTY, HEART_HALF, HEART_FULL][fills[i]]
-		var center: Vector2 = heart_position(i) + Vector2(13, 12)
-		var scale := 1.0
-		var offset := Vector2.ZERO
-		var tint := Color.WHITE
-		# Low health: the last heart beats.
-		if i == last_filled and _hp <= 2 and _hp > 0:
-			var beat: float = pow(maxf(0.0, sin(_clock * 7.0)), 6.0)
-			scale += 0.18 * beat
-		if _hurt.has(i):
-			var t: float = float(_hurt[i]) / 0.6
-			scale += 0.3 * t
-			offset.x = roundf(sin(_clock * 70.0) * 2.0 * t)
-			if fmod(_clock, 0.12) < 0.06: tint = Color(3, 3, 3)
-		if _healed.has(i):
-			var t: float = float(_healed[i]) / 0.7
-			scale += 0.25 * sin(t * PI)
-			tint = Color(1.0, 1.0 + 0.6 * t, 1.0)
-		if _hp <= 0: tint = Color(0.45, 0.45, 0.5)
-		draw_set_transform(center + offset, 0.0, Vector2(scale, scale))
-		draw_texture_rect(texture, Rect2(Vector2(-13, -12), Vector2(26, 24)), false, tint)
-		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-		if _healed.has(i):
-			# Small green plus signs rise from a healed heart.
-			var t: float = 1.0 - float(_healed[i]) / 0.7
-			for k in range(3):
-				var p: Vector2 = center + Vector2(-8 + k * 8, -10 - t * 18 - k * 3)
-				var color := Color(0.5, 1.0, 0.55, 1.0 - t)
-				draw_rect(Rect2(p.x - 3, p.y - 1, 6, 2), color)
-				draw_rect(Rect2(p.x - 1, p.y - 3, 2, 6), color)
+## The life bar with "LEBEN" and "x / y" (half hearts) over it; the shared bar
+## (src/ui/hud_kit.gd) drains, ghosts a hit, sweeps a heal and pulses when low.
+func _draw_life() -> void:
+	var font: Font = ThemeDB.fallback_font
+	var bar := life_rect()
+	var baseline := Vector2(bar.position.x, bar.position.y - 4.0)
+	draw_string(font, baseline, "LEBEN", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, MUTED)
+	var numbers := "%d / %d" % [HudKit.life_shown(_hp, _hp_f), _max_hp] if _hp > 0 else "GEFALLEN"
+	draw_string(font, baseline, numbers, HORIZONTAL_ALIGNMENT_RIGHT, bar.size.x, 12, TEXT if _hp > 0 else STAT_COLORS.damage)
+	HudKit.life_bar(self, bar, _hp_f, _max_hp, "crypt", _clock, _hp <= 2 and _hp > 0)
 
 
-## The carried weapons under the hearts; the held one is framed in gold.
+## The carried weapons under the life bar; the held one is framed in gold.
 func _draw_weapons() -> void:
 	var weapons: Array = _player.get("weapons", [])
 	if weapons.is_empty():
 		return
-	var rows: int = ceili(float(heart_fills(_hp, _max_hp).size()) / HEARTS_PER_ROW)
-	var top := Vector2(HEARTS_ORIGIN.x, HEARTS_ORIGIN.y + rows * HEART_STEP.y + 2)
+	var top := Vector2(HEARTS_ORIGIN.x, life_rect().end.y + 6.0)
 	var held: int = int(_player.get("weapon_index", 0))
 	for i in range(weapons.size()):
 		var box := Rect2(top + Vector2(i * 30, 0), Vector2(26, 26))

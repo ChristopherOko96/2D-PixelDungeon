@@ -1,26 +1,403 @@
 {
-	"_note": "Weight of the talent effects on the view (src/vfx/talent_fx.gd take_feel), by importance: per tier the crypt's shake trauma (0..1, src/vfx/feedback.gd), the story worlds' shake in px (hell_game state.shake), a hold of the picture (hitstop, s) for the hero's own casts only, and a bloom flash in the element's colour (flash s, flash_r art cells). Events pick a tier; an ultimate's cast and its waves weigh most, each bought stage a bit more (stage_bonus). Client-side pools of the ultimates (pools): material, radius as a share of the hit radius (or art cells), length in s (0 = as long as the ultimate's buff). aura_glow: bloom strength of a lasting buff on the hero. Game feel review 2026-10-30 (production/qa/evidence/talent-vfx-review).",
+	"_note": "Weight of the talent effects on the view (src/vfx/talent_fx.gd take_feel), by importance: per tier the crypt's shake trauma (0..1, src/vfx/feedback.gd), the story worlds' shake in px (hell_game state.shake), a hold of the picture (hitstop, s) for the hero's own casts only, and a bloom flash in the element's colour (flash s, flash_r art cells). Events pick a tier; an ultimate's cast and its waves weigh most, each bought stage a bit more (stage_bonus). Client-side pools of the ultimates (pools): material, radius as a share of the hit radius (or art cells), length in s (0 = as long as the ultimate's buff). aura_glow: bloom strength of a lasting buff on the hero. Game feel review 2026-10-30 (production/qa/evidence/talent-vfx-review). The Elementsprache (docs/ZAUBER-SPRACHE.de.md, 2026-10-31): shots (flight language per tier, impact size, the tier of each shot talent, the feel tier of an impact), cast (the CAST beat: element pixels gathering at the hand), residue (what an element leaves on the floor after an impact or a zone's end: a pool material with its radius in art cells per shot tier [small, huge] or as a share of a zone's radius, and how long it lies [min, max] s; elements without a pool leave settled chips only) and traps (the pixel traps' sizes). Fire overhaul (user feedback 2026-10-31: the fire mage's attacks looked weak, no pixel animation, the Flammenmeer drawn as lines): the fire section below carries the Feuermagier's own language (a white-hot heart, an ember tail, the fat explosion in pushes, the Flammenmeer's tongues and smoke, the spear's shimmer and lava, the chain's burning, the meteor's crater, the phoenix's fire trail); shots.talent_feel and residue.talent_residue let a talent override its tier's feel and its element's residue material.",
 	"tiers": {
-		"small": {"trauma": 0.1, "shake_px": 3, "hitstop": 0.0, "flash": 0.12, "flash_r": 16},
-		"medium": {"trauma": 0.22, "shake_px": 6, "hitstop": 0.03, "flash": 0.18, "flash_r": 26},
-		"large": {"trauma": 0.42, "shake_px": 11, "hitstop": 0.05, "flash": 0.28, "flash_r": 40},
-		"huge": {"trauma": 0.62, "shake_px": 15, "hitstop": 0.08, "flash": 0.42, "flash_r": 60}
+		"small": {
+			"trauma": 0.1,
+			"shake_px": 3,
+			"hitstop": 0.0,
+			"flash": 0.12,
+			"flash_r": 16
+		},
+		"medium": {
+			"trauma": 0.22,
+			"shake_px": 6,
+			"hitstop": 0.03,
+			"flash": 0.18,
+			"flash_r": 26
+		},
+		"large": {
+			"trauma": 0.42,
+			"shake_px": 11,
+			"hitstop": 0.05,
+			"flash": 0.28,
+			"flash_r": 40
+		},
+		"huge": {
+			"trauma": 0.62,
+			"shake_px": 15,
+			"hitstop": 0.08,
+			"flash": 0.42,
+			"flash_r": 60
+		}
 	},
-	"events": {"nova": "small", "shout": "small", "trap_boom": "medium", "dash": "small", "leap": "small", "parry": "small", "crit": "small"},
+	"events": {
+		"nova": "small",
+		"shout": "small",
+		"trap_boom": "medium",
+		"dash": "small",
+		"leap": "small",
+		"parry": "small",
+		"crit": "small",
+		"explosion": "medium",
+		"leap_slam": "medium",
+		"chain": "small"
+	},
 	"ult_cast": "huge",
 	"ult_wave": "large",
 	"stage_bonus": 0.12,
 	"pools": {
-		"fire_6": {"st": "fire", "share": 0.3, "time": 2.2},
-		"frost_6": {"st": "ice", "share": 0.42, "time": 4.0, "time_stage2": 3.0},
-		"berserk_6": {"st": "blood", "cells": 17, "time": 0.0},
-		"berserk_6_wave": {"st": "blood", "share": 0.45, "time": 4.0}
+		"_note": "Legacy table of the old ultimates (fire_6 ...): the ultimates were renumbered to <spec>_14 and their residue now comes from the residue table like every other talent's. Kept for hosts that still read it."
 	},
 	"dome": {
 		"_note": "The shields as a rubber dome over the hero (src/vfx/talent_dome.gd). sizes: [W base half width, D base half depth, H height over the feet] in art cells for a guard flash, a shield (Kristallschild, Schutzwall, Wächtereid) and Unbezwingbar; the hero is about 16 x 28 cells. spring pulls each outline point back (1/s^2), damping slows it (1/s; low = wobbly), tension ties neighbours so a dent runs round as a wave, keep_volume (1/s) pushes the rest out when one side dents, push = a blow's speed into the dome (cells/s at power 1), max_dent a share of W, squash_* the whole dome's squash and spring back. User request 2026-10-30: a rubber dome that gives on the side an arrow hits and springs back.",
-		"sizes": [[17, 7, 30], [20, 8, 34], [25, 10, 40]],
-		"spring": 110, "damping": 6, "tension": 300, "keep_volume": 25, "push": 150, "max_dent": 0.5,
-		"squash_spring": 200, "squash_damping": 9, "squash_push": 3
+		"sizes": [
+			[
+				17,
+				7,
+				30
+			],
+			[
+				20,
+				8,
+				34
+			],
+			[
+				25,
+				10,
+				40
+			]
+		],
+		"spring": 110,
+		"damping": 6,
+		"tension": 300,
+		"keep_volume": 25,
+		"push": 150,
+		"max_dent": 0.5,
+		"squash_spring": 200,
+		"squash_damping": 9,
+		"squash_push": 3
 	},
-	"aura_glow": {"bloodlust": 0.14, "frenzy": 0.07, "timebreak": 0.12, "unbreakable": 0.1, "bulwark": 0.06, "oath": 0.06, "shield": 0.06, "channel": 0.08}
+	"aura_glow": {
+		"bloodlust": 0.14,
+		"frenzy": 0.07,
+		"timebreak": 0.12,
+		"unbreakable": 0.1,
+		"bulwark": 0.06,
+		"oath": 0.06,
+		"shield": 0.06,
+		"channel": 0.08
+	},
+	"shots": {
+		"_note": "FLIGHT and IMPACT by tier: core = radius of the shot's core ball in art cells, trail = cells of dithered element trail behind it, burst = reach of the painted impact burst in art cells, parts = particles the impact throws (sparks, shards, drops, motes or chips by the element's kind), crack = floor cracks it leaves (0 none), glow = bloom radius of the shot in art cells. talent_tier: the tier of each shot talent (others: small). feel: the feel tier (tiers above) an impact of a shot tier has (empty: none). fizzle_tol: a shot that vanishes within this many crypt px of where it was predicted is a hit; its last position is where it struck. talent_feel: a shot talent's own feel tier (over feel by tier): fire_1 medium (the fat explosion), fire_9 large (the spear cracks the floor).",
+		"tiers": {
+			"small": {
+				"core": 1,
+				"trail": 5,
+				"burst": 5,
+				"parts": 6,
+				"crack": 0,
+				"glow": 7
+			},
+			"medium": {
+				"core": 2,
+				"trail": 7,
+				"burst": 7,
+				"parts": 10,
+				"crack": 1,
+				"glow": 10
+			},
+			"large": {
+				"core": 2,
+				"trail": 9,
+				"burst": 9,
+				"parts": 14,
+				"crack": 1,
+				"glow": 13
+			},
+			"huge": {
+				"core": 3,
+				"trail": 12,
+				"burst": 12,
+				"parts": 20,
+				"crack": 2,
+				"glow": 18
+			}
+		},
+		"talent_tier": {
+			"fire_1": "large",
+			"fire_9": "large",
+			"frost_1": "medium",
+			"frost_9": "small",
+			"arcane_1": "medium",
+			"arcane_9": "large",
+			"curse_1": "medium",
+			"curse_9": "large",
+			"minion_3": "medium",
+			"soul_1": "medium",
+			"soul_9": "large",
+			"trapper_1": "small",
+			"blade_9": "small",
+			"sniper_1": "medium",
+			"sniper_3": "medium",
+			"sniper_7": "small",
+			"beast_6": "small"
+		},
+		"feel": {
+			"small": "",
+			"medium": "small",
+			"large": "small",
+			"huge": "medium"
+		},
+		"fizzle_tol": 24,
+		"talent_feel": {
+			"fire_1": "medium",
+			"fire_9": "large"
+		}
+	},
+	"cast": {
+		"_note": "The CAST beat: cells element pixels gather from reach art cells away at the caster's hand over span s (by tier; the cast event itself lasts 0.5 s), then a flash of flash cells. hand: the hand's offset from the chest along the aim in art cells. Tier of a cast: the shot tier of a shot talent, else by its talents.json type (kind_tier); an ultimate is huge.",
+		"span": {
+			"small": 0.1,
+			"medium": 0.14,
+			"large": 0.18,
+			"huge": 0.22
+		},
+		"cells": {
+			"small": 6,
+			"medium": 9,
+			"large": 12,
+			"huge": 16
+		},
+		"reach": {
+			"small": 7,
+			"medium": 9,
+			"large": 11,
+			"huge": 14
+		},
+		"flash": {
+			"small": 3,
+			"medium": 4,
+			"large": 5,
+			"huge": 7
+		},
+		"hand": 5,
+		"kind_tier": {
+			"projectile": "small",
+			"nova": "medium",
+			"zone": "medium",
+			"blink": "small",
+			"dash": "small",
+			"melee": "small",
+			"shield": "medium",
+			"buff": "small",
+			"summon": "medium",
+			"trap": "small",
+			"drawn": "medium",
+			"chain": "medium",
+			"mark": "small",
+			"leap": "medium",
+			"net": "medium",
+			"echo": "small",
+			"counter": "small",
+			"pet_leap": "small",
+			"taunt_area": "medium"
+		}
+	},
+	"residue": {
+		"_note": "RESIDUE: what stays on the floor. Pool elements: st the pool material (vfx_pools.json), cells its radius in art cells for a shot impact by tier [small, huge] (linear between), share its radius as a share of a nova's or zone's hit radius (capped at cap art cells), time how long it lies [min, max] s (a zone's residue lasts zone_time). Elements without a pool (bone, steel, gold, soul, stone, beast, spirit, curse) leave settled chips only: chips per tier [small, huge]. A drawn line (Flammenmeer) leaves a pool every path_every points. Auto-attacks leave nothing; Giftpfeil (trapper_1) only at its impact. lava: the hot residue of the Infernospeer and the Meteor (talent_residue maps a talent to a residue key other than its element's; a zone's residue follows its talent too). The Flammenmeer leaves ash, not a pool (fire.flammenmeer).",
+		"fire": {
+			"st": "fire",
+			"cells": [
+				4,
+				9
+			],
+			"share": 0.3,
+			"cap": 40,
+			"time": [
+				1.2,
+				2.4
+			]
+		},
+		"ice": {
+			"st": "ice",
+			"cells": [
+				4,
+				10
+			],
+			"share": 0.32,
+			"cap": 44,
+			"time": [
+				2.5,
+				4.0
+			]
+		},
+		"poison": {
+			"st": "poison",
+			"cells": [
+				4,
+				10
+			],
+			"share": 0.3,
+			"cap": 40,
+			"time": [
+				2.0,
+				3.5
+			]
+		},
+		"blood": {
+			"st": "blood",
+			"cells": [
+				3,
+				8
+			],
+			"share": 0.26,
+			"cap": 36,
+			"time": [
+				3.0,
+				5.0
+			]
+		},
+		"void": {
+			"st": "void",
+			"cells": [
+				3,
+				8
+			],
+			"share": 0.26,
+			"cap": 36,
+			"time": [
+				1.5,
+				2.5
+			]
+		},
+		"water": {
+			"st": "water",
+			"cells": [
+				3,
+				8
+			],
+			"share": 0.3,
+			"cap": 36,
+			"time": [
+				2.0,
+				3.0
+			]
+		},
+		"lava": {
+			"st": "lava",
+			"cells": [
+				6,
+				11
+			],
+			"share": 0.4,
+			"cap": 44,
+			"time": [
+				3.0,
+				5.0
+			]
+		},
+		"chips": [
+			4,
+			12
+		],
+		"zone_time": [
+			2.0,
+			4.0
+		],
+		"path_every": 3,
+		"talent_residue": {
+			"fire_9": "lava",
+			"fire_14": "lava"
+		}
+	},
+	"traps": {
+		"_note": "The pixel traps (src/vfx/talent_pixels.gd trap): kinds thorn (Dornenfalle: a ring of thorns dripping poison), iron (Explosionsfalle, Jagdgrund: an iron trap with an ember core), net (Netzfalle: a rope net). Inferred from the snapshot: boom (no root) = iron, else net when the trap radius is over net_over crypt px (Netzfalle 2 m, Dornenfalle 1 m), else thorn. radius: the drawn half width in art cells per kind, pulse: the armed pulse per s, spring: s the trigger burst plays.",
+		"net_over": 40,
+		"radius": {
+			"thorn": 7,
+			"iron": 6,
+			"net": 9
+		},
+		"pulse": {
+			"thorn": 0.8,
+			"iron": 1.6,
+			"net": 0.5
+		},
+		"spring": 0.45
+	},
+	"ult_impact": "huge",
+	"fire": {
+		"_note": "The Feuermagier's language (src/vfx/talent_fx.gd, talent_pixels.gd, talent_ults.gd; all sizes art cells, times s). heart: radius of the white-hot heart in a fire shot's core by shot tier (0 none); tail: cells of ember tail behind the ball that cool down the ramp and sag as they fall. boom (the fat explosion in pushes, TalentPixels.boom): time s the painted boom plays, flash the share of it the white flash frame holds, pulses pressure rings running out one after another within pulse_span of it, size [min, max] cells of the boom of an explosion event by its hit radius (size_share x r in cells), sparks [small, huge] glowing sparks the particles throw that bounce and lie as embers dying over lie [min, max] s (vfx_particles.json fire.ember_lie), scorch share of the reach the scorch star takes. spear (Infernospeer): length cells of the ember spear before and behind its point, shimmer cover of the heat haze beside it, crack branches the floor cracks into. flammenmeer: tongue [min, max] cells tall, every cells between tongues along the stroke, pool_every path points between the fire pools under it, pool_share of the stroke's half width a pool's radius takes, smoke_every s between smoke puffs, smoke_stride path points between them, smoke_r crypt px, ash s before the end the fire burns down to ash. chain (Glutkette): burn s the hit targets show flames, sparks the particles throw per link. meteor: shadow the darkness of the grown shadow (dither cover), size [min, max] cells of the landing's boom (size_share x r), lava_share of the crater radius its lava pool takes, chips rock chips the landing throws, smoke_every s between the crater's smoke puffs. phoenix (Phoenixschritt): trail s the fire along the dash burns, trail_every crypt px between its pools, trail_cells their radius, wings cells each ember wing spans.",
+		"heart": {
+			"small": 0,
+			"medium": 1,
+			"large": 1,
+			"huge": 2
+		},
+		"tail": {
+			"small": 3,
+			"medium": 5,
+			"large": 7,
+			"huge": 9
+		},
+		"boom": {
+			"time": 0.65,
+			"flash": 0.09,
+			"pulses": 3,
+			"pulse_span": 0.4,
+			"size": [
+				8,
+				16
+			],
+			"size_share": 0.5,
+			"sparks": [
+				8,
+				22
+			],
+			"lie": [
+				1.0,
+				1.8
+			],
+			"scorch": 0.7
+		},
+		"spear": {
+			"length": 7,
+			"shimmer": 0.4,
+			"crack": 3
+		},
+		"flammenmeer": {
+			"tongue": [
+				3,
+				5
+			],
+			"every": 8,
+			"pool_every": 2,
+			"pool_share": 1.1,
+			"smoke_every": 1.5,
+			"smoke_stride": 8,
+			"smoke_r": 16,
+			"ash": 0.8
+		},
+		"chain": {
+			"burn": 0.6,
+			"sparks": 6
+		},
+		"meteor": {
+			"shadow": 0.85,
+			"size": [
+				12,
+				24
+			],
+			"size_share": 0.4,
+			"lava_share": 0.5,
+			"chips": 18,
+			"smoke_every": 1.2
+		},
+		"phoenix": {
+			"trail": 1.5,
+			"trail_every": 14,
+			"trail_cells": 5,
+			"wings": 9
+		}
+	}
 }

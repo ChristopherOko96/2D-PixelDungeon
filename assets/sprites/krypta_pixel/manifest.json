@@ -1,0 +1,1208 @@
+{
+ "altar": {
+  "h": 204,
+  "kind": "sprite",
+  "src": "drawn: stone altar with skull and candles",
+  "w": 130
+ },
+ "banner_1": {
+  "h": 120,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style banner, red",
+  "w": 66
+ },
+ "banner_2": {
+  "h": 109,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style banner, blue",
+  "w": 65
+ },
+ "banner_3": {
+  "h": 108,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style banner, green",
+  "w": 62
+ },
+ "banner_4": {
+  "h": 98,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style banner, gold",
+  "w": 60
+ },
+ "banner_5": {
+  "h": 110,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style banner, purple, skull sigil",
+  "w": 63
+ },
+ "banner_a": {
+  "h": 142,
+  "kind": "sprite",
+  "src": "drawn: long 0x72-style banner, skull sigil",
+  "w": 77
+ },
+ "banner_b": {
+  "h": 156,
+  "kind": "sprite",
+  "src": "drawn: long black 0x72-style banner, skull sigil",
+  "w": 85
+ },
+ "banner_chain": {
+  "h": 202,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style banner on chains",
+  "w": 71
+ },
+ "barrel_a": {
+  "h": 66,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style barrel",
+  "w": 43
+ },
+ "barrel_b": {
+  "h": 70,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style barrel",
+  "w": 52
+ },
+ "barrel_c": {
+  "h": 68,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style barrel on its side",
+  "w": 51
+ },
+ "bench": {
+  "h": 52,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style wooden bench",
+  "w": 131
+ },
+ "blood_a": {
+  "h": 95,
+  "kind": "sprite",
+  "src": "drawn: blood splat (seeded)",
+  "w": 95
+ },
+ "blood_b": {
+  "h": 101,
+  "kind": "sprite",
+  "src": "drawn: blood splat (seeded)",
+  "w": 88
+ },
+ "blood_c": {
+  "h": 103,
+  "kind": "sprite",
+  "src": "drawn: blood splat (seeded)",
+  "w": 84
+ },
+ "blood_d": {
+  "h": 79,
+  "kind": "sprite",
+  "src": "drawn: blood splat (seeded)",
+  "w": 109
+ },
+ "blood_e": {
+  "h": 87,
+  "kind": "sprite",
+  "src": "drawn: blood splat (seeded)",
+  "w": 96
+ },
+ "blood_f": {
+  "h": 81,
+  "kind": "sprite",
+  "src": "drawn: blood splat (seeded)",
+  "w": 95
+ },
+ "bone_a": {
+  "h": 65,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style bone",
+  "w": 31
+ },
+ "bone_b": {
+  "h": 43,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style bone",
+  "w": 41
+ },
+ "bone_c": {
+  "h": 53,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style bone",
+  "w": 42
+ },
+ "bone_d": {
+  "h": 39,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style bone",
+  "w": 37
+ },
+ "bone_e": {
+  "h": 43,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style bone",
+  "w": 49
+ },
+ "bone_f": {
+  "h": 38,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style bone",
+  "w": 48
+ },
+ "bone_g": {
+  "h": 39,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style bone",
+  "w": 50
+ },
+ "bones_scatter": {
+  "h": 53,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style bones",
+  "w": 68
+ },
+ "bones_t": {
+  "h": 47,
+  "kind": "sprite",
+  "src": "drawn bones + skull",
+  "w": 69
+ },
+ "boss_arch": {
+  "h": 188,
+  "kind": "sprite",
+  "src": "0x72 door frames + doors_leaf_open with soul glow, x4",
+  "w": 257
+ },
+ "boss_banner": {
+  "h": 147,
+  "kind": "sprite",
+  "src": "drawn: tall 0x72-style boss banner, red, skull sigil",
+  "w": 84
+ },
+ "boss_banner_blue": {
+  "h": 147,
+  "kind": "sprite",
+  "src": "drawn: tall 0x72-style boss banner, blue, skull sigil",
+  "w": 84
+ },
+ "boss_banner_gold": {
+  "h": 147,
+  "kind": "sprite",
+  "src": "drawn: tall 0x72-style boss banner, gold, skull sigil",
+  "w": 84
+ },
+ "boss_banner_green": {
+  "h": 147,
+  "kind": "sprite",
+  "src": "drawn: tall 0x72-style boss banner, green, skull sigil",
+  "w": 84
+ },
+ "boss_banner_pink": {
+  "h": 147,
+  "kind": "sprite",
+  "src": "drawn: tall 0x72-style boss banner, pink, skull sigil",
+  "w": 84
+ },
+ "boss_banner_purple": {
+  "h": 147,
+  "kind": "sprite",
+  "src": "drawn: tall 0x72-style boss banner, purple, skull sigil",
+  "w": 84
+ },
+ "boss_banner_teal": {
+  "h": 147,
+  "kind": "sprite",
+  "src": "drawn: tall 0x72-style boss banner, teal, skull sigil",
+  "w": 84
+ },
+ "boss_gate": {
+  "h": 179,
+  "kind": "sprite",
+  "src": "0x72 door frames + doors_leaf_closed, crypt_props torches, x4",
+  "w": 288
+ },
+ "boss_gate_blue": {
+  "h": 179,
+  "kind": "sprite",
+  "src": "0x72 door frames + doors_leaf_closed, blue torches, x4",
+  "w": 288
+ },
+ "boulders": {
+  "h": 62,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style boulders",
+  "w": 69
+ },
+ "bowl_blue": {
+  "h": 84,
+  "kind": "sprite",
+  "src": "drawn: faint blue bowl",
+  "w": 80
+ },
+ "brazier_blue": {
+  "h": 94,
+  "kind": "sprite",
+  "src": "drawn: blue soul bowl, decor fire",
+  "w": 80
+ },
+ "brazier_bowl": {
+  "h": 93,
+  "kind": "sprite",
+  "src": "drawn: soul bowl on a foot, decor fire (flame above row 46)",
+  "w": 89
+ },
+ "brazier_demon": {
+  "h": 122,
+  "kind": "sprite",
+  "src": "drawn: skull soul bowl, decor fire",
+  "w": 65
+ },
+ "brazier_floor": {
+  "h": 98,
+  "kind": "sprite",
+  "src": "drawn: floor soul bowl, decor fire",
+  "w": 82
+ },
+ "brazier_low": {
+  "h": 104,
+  "kind": "sprite",
+  "src": "drawn: low soul bowl, decor fire",
+  "w": 82
+ },
+ "brazier_low_b": {
+  "h": 97,
+  "kind": "sprite",
+  "src": "drawn: low soul bowl with embers, decor fire",
+  "w": 92
+ },
+ "brazier_pillar": {
+  "h": 158,
+  "kind": "sprite",
+  "src": "drawn: soul bowl on a pillar, decor fire",
+  "w": 88
+ },
+ "brazier_rune": {
+  "h": 114,
+  "kind": "sprite",
+  "src": "drawn: soul bowl on a rune pillar, decor fire",
+  "w": 64
+ },
+ "bridge_h": {
+  "h": 212,
+  "kind": "sprite",
+  "src": "drawn: planks between iron rails",
+  "w": 212
+ },
+ "bridge_v": {
+  "h": 212,
+  "kind": "sprite",
+  "src": "drawn: planks between iron rails",
+  "w": 212
+ },
+ "cage_hang": {
+  "h": 132,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style hanging cage with skull",
+  "w": 54
+ },
+ "cage_small": {
+  "h": 119,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style standing cage with skull",
+  "w": 55
+ },
+ "candelabra": {
+  "h": 114,
+  "kind": "sprite",
+  "src": "crypt_props candle_column_f0",
+  "w": 50
+ },
+ "carpet": {
+  "h": 146,
+  "kind": "sprite",
+  "src": "decor rug_red as a runner, nine-sliced",
+  "w": 58
+ },
+ "chain_a": {
+  "h": 92,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style iron chain",
+  "w": 15
+ },
+ "chain_b": {
+  "h": 81,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style iron chain",
+  "w": 22
+ },
+ "chain_hang": {
+  "h": 132,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style iron chain",
+  "w": 21
+ },
+ "chain_hook": {
+  "h": 116,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style chain with hook",
+  "w": 32
+ },
+ "chain_long": {
+  "h": 116,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style iron chain",
+  "w": 19
+ },
+ "chain_long_b": {
+  "h": 116,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style iron chain",
+  "w": 18
+ },
+ "chain_swag": {
+  "h": 131,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style chains with a sagging link",
+  "w": 52
+ },
+ "chain_swag_b": {
+  "h": 131,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style chains with a sagging link",
+  "w": 52
+ },
+ "chest_closed": {
+  "h": 79,
+  "kind": "sprite",
+  "src": "0x72 chest_full_open_anim_f0",
+  "w": 76
+ },
+ "chest_empty": {
+  "h": 84,
+  "kind": "sprite",
+  "src": "0x72 chest_empty_open_anim_f2",
+  "w": 67
+ },
+ "chest_gold": {
+  "h": 81,
+  "kind": "sprite",
+  "src": "0x72 chest_full_open_anim_f2, x4 (the vault chest open)",
+  "w": 67
+ },
+ "chest_open": {
+  "h": 88,
+  "kind": "sprite",
+  "src": "0x72 chest_full_open_anim_f2",
+  "w": 67
+ },
+ "chest_vault": {
+  "h": 77,
+  "kind": "sprite",
+  "src": "0x72 chest_full_open_anim_f0, x4 (the vault chest)",
+  "w": 68
+ },
+ "coal": {
+  "h": 65,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style coals with soul embers",
+  "w": 86
+ },
+ "coal_skulls": {
+  "h": 67,
+  "kind": "sprite",
+  "src": "drawn coals + skull",
+  "w": 98
+ },
+ "corner_cap": {
+  "h": 76,
+  "kind": "design",
+  "src": "drawn: 0x72-style capstone",
+  "w": 76
+ },
+ "crate_a": {
+  "h": 88,
+  "kind": "sprite",
+  "src": "0x72 crate",
+  "w": 68
+ },
+ "crate_b": {
+  "h": 76,
+  "kind": "sprite",
+  "src": "0x72 crate, mirrored, decor skull_small",
+  "w": 62
+ },
+ "crate_c": {
+  "h": 88,
+  "kind": "sprite",
+  "src": "0x72 crate with a drawn bone",
+  "w": 63
+ },
+ "crate_pile": {
+  "h": 98,
+  "kind": "sprite",
+  "src": "0x72 crates stacked",
+  "w": 90
+ },
+ "demon_head": {
+  "h": 73,
+  "kind": "sprite",
+  "src": "drawn: carved skull in the floor",
+  "w": 58
+ },
+ "demon_lintel": {
+  "h": 132,
+  "kind": "sprite",
+  "src": "0x72 doors_frame_top nine-sliced + carved skull",
+  "w": 268
+ },
+ "demon_plate": {
+  "h": 93,
+  "kind": "sprite",
+  "src": "drawn: stone plate with carved skull",
+  "w": 85
+ },
+ "door_stairs": {
+  "h": 125,
+  "kind": "sprite",
+  "src": "0x72 door frames + doors_leaf_open + floor_stairs",
+  "w": 168
+ },
+ "door_stairs_small": {
+  "h": 115,
+  "kind": "sprite",
+  "src": "0x72 doors_leaf_open + floor_stairs",
+  "w": 117
+ },
+ "fire_orb": {
+  "h": 58,
+  "kind": "sprite",
+  "src": "drawn: soul orb",
+  "w": 52
+ },
+ "fire_plate": {
+  "h": 104,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style soul grate plate",
+  "w": 86
+ },
+ "floor_00": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor tiles 2x2 (floor_1, floor_1, floor_1, floor_1)",
+  "w": 96
+ },
+ "floor_01": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor tiles 2x2 (floor_1, floor_2, floor_1, floor_1)",
+  "w": 96
+ },
+ "floor_02": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor tiles 2x2 (floor_4, floor_1, floor_1, floor_2)",
+  "w": 96
+ },
+ "floor_03": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor tiles 2x2 (floor_1, floor_6, floor_1, floor_1)",
+  "w": 96
+ },
+ "floor_04": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor tiles 2x2 (floor_1, floor_1, floor_1, floor_5)",
+  "w": 96
+ },
+ "floor_05": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor tiles 2x2 (@floor_dark_1, floor_1, floor_1, @floor_dark_2)",
+  "w": 96
+ },
+ "floor_06": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor tiles 2x2 (floor_1, @floor_moss, @floor_crack_3, floor_1)",
+  "w": 96
+ },
+ "floor_07": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor tiles 2x2 (floor_8, floor_1, floor_1, floor_6)",
+  "w": 96
+ },
+ "floor_08": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor tiles 2x2 (floor_1, floor_1, floor_1, floor_7)",
+  "w": 96
+ },
+ "floor_09": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor tiles 2x2 (floor_1, floor_7, floor_8, floor_1)",
+  "w": 96
+ },
+ "floor_10": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor tiles 2x2 (floor_5, floor_1, floor_1, floor_1)",
+  "w": 96
+ },
+ "floor_11": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "0x72 floor tiles 2x2 (floor_1, floor_1, floor_3, floor_1)",
+  "w": 96
+ },
+ "fountain": {
+  "h": 148,
+  "kind": "sprite",
+  "src": "0x72 wall_fountain top + mid + basin (blue)",
+  "w": 120
+ },
+ "gargoyle": {
+  "h": 135,
+  "kind": "sprite",
+  "src": "0x72 big_demon frame turned to stone, on a pedestal",
+  "w": 104
+ },
+ "gate_side": {
+  "h": 130,
+  "kind": "sprite",
+  "src": "0x72 door frames + doors_leaf_closed",
+  "w": 177
+ },
+ "grate": {
+  "h": 88,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style floor grate",
+  "w": 111
+ },
+ "grate_a": {
+  "h": 67,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style floor grate",
+  "w": 64
+ },
+ "grate_b": {
+  "h": 53,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style grate with soul glow",
+  "w": 61
+ },
+ "hanging_brazier": {
+  "h": 82,
+  "kind": "sprite",
+  "src": "drawn: hanging fire basket, decor fire",
+  "w": 109
+ },
+ "heart": {
+  "h": 55,
+  "kind": "sprite",
+  "src": "0x72 ui_heart_full",
+  "w": 57
+ },
+ "icon_chest": {
+  "h": 57,
+  "kind": "sprite",
+  "src": "0x72 chest_full_open_anim_f0",
+  "w": 54
+ },
+ "icon_demon": {
+  "h": 80,
+  "kind": "sprite",
+  "src": "drawn skull, x5",
+  "w": 57
+ },
+ "icon_demon_big": {
+  "h": 105,
+  "kind": "sprite",
+  "src": "drawn big skull, x4",
+  "w": 80
+ },
+ "icon_door": {
+  "h": 84,
+  "kind": "sprite",
+  "src": "0x72 doors_leaf_closed, x2",
+  "w": 81
+ },
+ "icon_scroll": {
+  "h": 62,
+  "kind": "sprite",
+  "src": "decor sign_1",
+  "w": 64
+ },
+ "icon_swords": {
+  "h": 74,
+  "kind": "sprite",
+  "src": "drawn: crossed swords",
+  "w": 56
+ },
+ "jamb_a": {
+  "h": 136,
+  "kind": "sprite",
+  "src": "0x72 column",
+  "w": 61
+ },
+ "jamb_b": {
+  "h": 136,
+  "kind": "sprite",
+  "src": "0x72 column, mirrored",
+  "w": 62
+ },
+ "key": {
+  "h": 70,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style key",
+  "w": 30
+ },
+ "lava_00": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "drawn: tileable 32 px poison mire",
+  "w": 96
+ },
+ "lava_01": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "drawn: tileable 32 px poison mire",
+  "w": 96
+ },
+ "lava_edge_top": {
+  "h": 96,
+  "kind": "opaque",
+  "src": "drawn: 0x72-style brick lip with slime line",
+  "w": 96
+ },
+ "mat": {
+  "h": 55,
+  "kind": "sprite",
+  "src": "decor rug_beige, nine-sliced",
+  "w": 81
+ },
+ "moss_a": {
+  "h": 90,
+  "kind": "sprite",
+  "src": "decor floor_moss specks (two patches)",
+  "w": 94
+ },
+ "moss_b": {
+  "h": 92,
+  "kind": "sprite",
+  "src": "decor floor_moss specks (two patches)",
+  "w": 98
+ },
+ "moss_c": {
+  "h": 97,
+  "kind": "sprite",
+  "src": "decor floor_moss specks (two patches)",
+  "w": 91
+ },
+ "moss_rubble_a": {
+  "h": 74,
+  "kind": "sprite",
+  "src": "drawn rubble + decor floor_moss specks",
+  "w": 85
+ },
+ "moss_rubble_b": {
+  "h": 56,
+  "kind": "sprite",
+  "src": "drawn rubble + decor floor_moss specks",
+  "w": 96
+ },
+ "moss_ruin": {
+  "h": 109,
+  "kind": "sprite",
+  "src": "0x72 column stump + decor floor_moss specks",
+  "w": 83
+ },
+ "npc_idle_f0": {
+  "h": 28,
+  "kind": "sprite",
+  "src": "0x72 dwarf_m idle (as in the HD set)",
+  "w": 16
+ },
+ "npc_idle_f1": {
+  "h": 28,
+  "kind": "sprite",
+  "src": "0x72 dwarf_m idle (as in the HD set)",
+  "w": 16
+ },
+ "npc_idle_f2": {
+  "h": 28,
+  "kind": "sprite",
+  "src": "0x72 dwarf_m idle (as in the HD set)",
+  "w": 16
+ },
+ "npc_idle_f3": {
+  "h": 28,
+  "kind": "sprite",
+  "src": "0x72 dwarf_m idle (as in the HD set)",
+  "w": 16
+ },
+ "obelisk": {
+  "h": 162,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style obelisk with soul runes",
+  "w": 68
+ },
+ "pit": {
+  "h": 104,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style pit",
+  "w": 110
+ },
+ "portal": {
+  "h": 120,
+  "kind": "sprite",
+  "src": "0x72 doors_leaf_open with soul glow",
+  "w": 112
+ },
+ "portal_dark": {
+  "h": 120,
+  "kind": "sprite",
+  "src": "0x72 doors_leaf_open, dark",
+  "w": 112
+ },
+ "portcullis": {
+  "h": 128,
+  "kind": "sprite",
+  "src": "0x72 door frames + doors_leaf_closed with drawn iron bars",
+  "w": 206
+ },
+ "rocks_a": {
+  "h": 76,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style rocks",
+  "w": 75
+ },
+ "rocks_b": {
+  "h": 46,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style rocks",
+  "w": 61
+ },
+ "rocks_dark": {
+  "h": 77,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style dark rocks",
+  "w": 41
+ },
+ "rocks_lava": {
+  "h": 90,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style rocks with slime",
+  "w": 52
+ },
+ "rubble": {
+  "h": 78,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style rubble",
+  "w": 91
+ },
+ "rug_blue": {
+  "h": 166,
+  "kind": "sprite",
+  "src": "decor rug_red turned blue, nine-sliced",
+  "w": 87
+ },
+ "rug_red": {
+  "h": 168,
+  "kind": "sprite",
+  "src": "decor rug_red, nine-sliced",
+  "w": 91
+ },
+ "rug_square": {
+  "h": 59,
+  "kind": "sprite",
+  "src": "decor rug_beige, nine-sliced",
+  "w": 50
+ },
+ "rune_big": {
+  "h": 87,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style soul rune circle",
+  "w": 78
+ },
+ "rune_gem": {
+  "h": 76,
+  "kind": "sprite",
+  "src": "drawn: soul gem",
+  "w": 59
+ },
+ "rune_pillar_a": {
+  "h": 184,
+  "kind": "sprite",
+  "src": "0x72 column, soul rune",
+  "w": 74
+ },
+ "rune_pillar_b": {
+  "h": 133,
+  "kind": "sprite",
+  "src": "0x72 column, soul rune",
+  "w": 63
+ },
+ "rune_pillar_c": {
+  "h": 173,
+  "kind": "sprite",
+  "src": "0x72 column, soul rune",
+  "w": 73
+ },
+ "rune_pillar_d": {
+  "h": 127,
+  "kind": "sprite",
+  "src": "crypt_props candle_column_f0",
+  "w": 50
+ },
+ "rune_plate": {
+  "h": 91,
+  "kind": "sprite",
+  "src": "0x72 button_blue_up in a drawn stone plate",
+  "w": 85
+ },
+ "rune_small": {
+  "h": 88,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style soul rune circle",
+  "w": 92
+ },
+ "sacks_a": {
+  "h": 66,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style sacks",
+  "w": 74
+ },
+ "sacks_b": {
+  "h": 57,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style sacks in a row",
+  "w": 110
+ },
+ "sacks_c": {
+  "h": 63,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style sack pile",
+  "w": 102
+ },
+ "shackle_a": {
+  "h": 77,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style shackle on a chain",
+  "w": 34
+ },
+ "shackle_b": {
+  "h": 73,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style shackle on a chain",
+  "w": 32
+ },
+ "shackle_skull": {
+  "h": 68,
+  "kind": "sprite",
+  "src": "drawn shackle + skull",
+  "w": 42
+ },
+ "shelf": {
+  "h": 129,
+  "kind": "sprite",
+  "src": "decor cabinet",
+  "w": 72
+ },
+ "shop_table": {
+  "h": 107,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style counter with 0x72 flasks",
+  "w": 169
+ },
+ "skull_heap": {
+  "h": 83,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style skull heap (secret wall marker)",
+  "w": 105
+ },
+ "skull_obelisk": {
+  "h": 144,
+  "kind": "sprite",
+  "src": "0x72 column + drawn skull",
+  "w": 69
+ },
+ "skull_pile": {
+  "h": 56,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style skull pile",
+  "w": 90
+ },
+ "skull_pile_t": {
+  "h": 59,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style skull pile",
+  "w": 75
+ },
+ "spike_block": {
+  "h": 108,
+  "kind": "sprite",
+  "src": "drawn: stone block with bone spikes",
+  "w": 94
+ },
+ "spike_trap": {
+  "h": 96,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style spike plate",
+  "w": 90
+ },
+ "spike_trap_b": {
+  "h": 76,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style spike plate",
+  "w": 66
+ },
+ "spire_big": {
+  "h": 124,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style stone spire",
+  "w": 81
+ },
+ "spire_big_b": {
+  "h": 102,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style stone spire",
+  "w": 68
+ },
+ "spire_big_t": {
+  "h": 109,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style spire group",
+  "w": 83
+ },
+ "spire_mid": {
+  "h": 122,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style stone spire",
+  "w": 46
+ },
+ "spire_small": {
+  "h": 63,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style stone spire",
+  "w": 50
+ },
+ "spire_t": {
+  "h": 141,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style spire pair",
+  "w": 55
+ },
+ "spire_tiny": {
+  "h": 45,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style stone spire",
+  "w": 42
+ },
+ "spires_lava": {
+  "h": 93,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style spires slimed at the base",
+  "w": 83
+ },
+ "spires_t": {
+  "h": 63,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style spire cluster",
+  "w": 90
+ },
+ "stairs_down": {
+  "h": 150,
+  "kind": "sprite",
+  "src": "0x72 doors_leaf_open + floor_stairs",
+  "w": 152
+ },
+ "statue_angel": {
+  "h": 144,
+  "kind": "sprite",
+  "src": "0x72 angel frame turned to stone, on a pedestal",
+  "w": 69
+ },
+ "statue_monk": {
+  "h": 128,
+  "kind": "sprite",
+  "src": "0x72 necromancer frame turned to stone, on a pedestal",
+  "w": 50
+ },
+ "table_a": {
+  "h": 69,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style wooden table",
+  "w": 120
+ },
+ "table_b": {
+  "h": 78,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style wooden table with skull",
+  "w": 128
+ },
+ "table_c": {
+  "h": 71,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style wooden table with candles",
+  "w": 154
+ },
+ "torch_a": {
+  "h": 93,
+  "kind": "sprite",
+  "src": "crypt_props wall_torch_f0",
+  "w": 37
+ },
+ "torch_b": {
+  "h": 108,
+  "kind": "sprite",
+  "src": "crypt_props wall_torch_f3",
+  "w": 50
+ },
+ "torch_c": {
+  "h": 107,
+  "kind": "sprite",
+  "src": "crypt_props wall_torch_f6",
+  "w": 45
+ },
+ "torch_dead": {
+  "h": 102,
+  "kind": "sprite",
+  "src": "crypt_props wall_torch_f0 without flame",
+  "w": 70
+ },
+ "torch_pillar": {
+  "h": 136,
+  "kind": "sprite",
+  "src": "crypt_props candle_column_f0",
+  "w": 61
+ },
+ "torch_pillar_blue": {
+  "h": 136,
+  "kind": "sprite",
+  "src": "crypt_props candle_column_f0, blue flames",
+  "w": 61
+ },
+ "urn_a": {
+  "h": 90,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style stone urn",
+  "w": 63
+ },
+ "urn_b": {
+  "h": 58,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style clay pot",
+  "w": 41
+ },
+ "urn_c": {
+  "h": 89,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style stone urn",
+  "w": 58
+ },
+ "urn_d": {
+  "h": 94,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style clay urn",
+  "w": 61
+ },
+ "urn_e": {
+  "h": 91,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style stone urn with a bone",
+  "w": 64
+ },
+ "vent": {
+  "h": 83,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style vent with soul glow",
+  "w": 94
+ },
+ "wall_brazier": {
+  "h": 101,
+  "kind": "sprite",
+  "src": "drawn: wall soul bowl, decor fire",
+  "w": 65
+ },
+ "wall_h": {
+  "h": 85,
+  "kind": "sprite",
+  "src": "0x72 wall_top_mid + wall_mid",
+  "w": 186
+ },
+ "wall_h_glowpost": {
+  "h": 106,
+  "kind": "sprite",
+  "src": "drawn: 0x72-style wall post with soul slit",
+  "w": 46
+ },
+ "wall_post_slit": {
+  "h": 116,
+  "kind": "sprite",
+  "src": "0x72 column_wall",
+  "w": 60
+ },
+ "wall_skull_a": {
+  "h": 115,
+  "kind": "sprite",
+  "src": "drawn: wall niche with 0x72-style skull",
+  "w": 82
+ },
+ "wall_skull_b": {
+  "h": 99,
+  "kind": "sprite",
+  "src": "drawn: wall niche with two skulls",
+  "w": 74
+ },
+ "wall_top": {
+  "h": 96,
+  "kind": "design",
+  "src": "0x72 wall top (flat), fills wall islands",
+  "w": 96
+ },
+ "wall_torch_block": {
+  "h": 160,
+  "kind": "sprite",
+  "src": "crypt_props wall_torch_f5 on a drawn stone block",
+  "w": 68
+ },
+ "wall_torch_blue": {
+  "h": 102,
+  "kind": "sprite",
+  "src": "crypt_props wall_torch_f0, blue flame",
+  "w": 70
+ },
+ "wall_torch_hook": {
+  "h": 102,
+  "kind": "sprite",
+  "src": "0x72_extended wall_torch_anim_f2",
+  "w": 70
+ },
+ "wall_v": {
+  "h": 70,
+  "kind": "design",
+  "src": "drawn: dark wall top, lit edge strip (0x72 wall_edge_mid)",
+  "w": 62
+ },
+ "wall_v_glow": {
+  "h": 159,
+  "kind": "sprite",
+  "src": "drawn side wall + crypt_props wall_torch",
+  "w": 69
+ },
+ "wall_v_glow_b": {
+  "h": 150,
+  "kind": "sprite",
+  "src": "drawn side wall + skull niche",
+  "w": 63
+ },
+ "wall_v_glow_blue": {
+  "h": 159,
+  "kind": "sprite",
+  "src": "drawn side wall + crypt_props wall_torch",
+  "w": 69
+ }
+}

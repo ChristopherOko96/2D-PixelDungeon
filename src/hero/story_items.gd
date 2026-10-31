@@ -184,9 +184,12 @@ func _apply_stats() -> void:
 	if not spec.is_empty() and not bool(spec.get("start", false)):
 		var path := "res://assets/sprites/" + str(spec.sprite) + ".png"
 		if ResourceLoader.exists(path) and not g.relic_on(): g.weapon_tex = load(path)
-		g.state.glow = str(spec.get("glow", ""))
+		# its glow (own, else its element's) and its element: the held weapon shows them (hero_look.gd)
+		g.state.glow = ItemRules.glow_of(spec)
+		g.state.weapon_element = ItemRules.element_of(spec)
 	elif not spec.is_empty():
 		g.state.glow = ""
+		g.state.weapon_element = ItemRules.element_of(spec)
 
 
 # --- the item window (I) ------------------------------------------------------------
@@ -299,8 +302,14 @@ func update(dt: float) -> void:
 func on_hit(m: Dictionary) -> void:
 	var build: Dictionary = players.get(1, {}).get("build", {})
 	if build.is_empty() or m.has("kit"): return
-	if float(build.get("cinder", 0.0)) > 0.0 or float(build.get("venom", 0.0)) > 0.0:
-		g.HeroKit.burn_mob(m, float(EFFECTS.burn_dps) * (1.0 + float(build.get("cinder", 0.0)) + float(build.get("venom", 0.0))), float(EFFECTS.burn_time))
+	# a fire weapon sets it alight (fire_t: the burning look, wet blocks it), a poison weapon
+	# poisons it (poison_mob: its own damage over time, wet does not stop it) — each its element
+	if float(build.get("cinder", 0.0)) > 0.0:
+		g.HeroKit.burn_mob(m, float(EFFECTS.burn_dps) * (1.0 + float(build.get("cinder", 0.0))), float(EFFECTS.burn_time))
+		if float(m.get("wet_t", 0.0)) <= 0.0:
+			m.fire_t = maxf(float(m.get("fire_t", 0.0)), float(EFFECTS.burn_time))
+	if float(build.get("venom", 0.0)) > 0.0:
+		g.HeroKit.poison_mob(m, float(EFFECTS.burn_dps) * (1.0 + float(build.get("venom", 0.0))), float(EFFECTS.burn_time))
 	if float(build.get("frost", 0.0)) > 0.0:
 		g.HeroKit.slow_mob(g, m, minf(0.6, float(build.frost) + float(EFFECTS.slow) * 0.5), float(EFFECTS.slow_time))
 	# run potions: hits shake the ground nearby (aftershock) or jump on as lightning (chain);
@@ -416,8 +425,18 @@ func apply(_player: Dictionary, kind: String, time: float, value: float) -> void
 ## A thrown fire or poison pool that hurts monsters for a while.
 func hero_pool(at: Vector2, spec: Dictionary, _owner: int) -> void:
 	# style and max: the crypt's pool look (boss_fx.gd through src/hero/story_feel.gd)
-	pools.append({"p": at * _scale, "r": float(spec.get("radius", 60)) * _scale, "t": float(spec.get("time", 5)), "max": float(spec.get("time", 5)), "dps": float(spec.get("dps", 2)),
-		"status": str(spec.get("status", "")), "style": str(spec.get("style", ""))})
+	var pool := {"p": at * _scale, "r": float(spec.get("radius", 60)) * _scale, "t": float(spec.get("time", 5)), "max": float(spec.get("time", 5)), "dps": float(spec.get("dps", 2)),
+		"status": str(spec.get("status", "")), "style": str(spec.get("style", ""))}
+	pools.append(pool)
+	# in a world with the monster runtime the pool is also a puddle zone of its element
+	# (src/hell/hell_monsters.gd): the puddle layer draws it, the element physics work on it
+	# (monsters in it burn or are poisoned, fire boils water, the void eats it), the hero
+	# who threw it is spared (friend). The feel's own drawing of it steps back (zoned).
+	if g.get("monsters") != null:
+		var style := str(spec.get("style", "")) if not str(spec.get("style", "")).is_empty() else ("fire" if str(spec.get("status", "")) == "burn" else "poison")
+		g.monsters._zone({"kind": "puddle", "p": pool.p, "r": float(pool.r), "T": float(pool.t), "dmg": 0, "friend": true, "st": style,
+			"m": {"id": "trank", "def": {"name": "Trank"}, "boss": false}, "dir": ((pool.p as Vector2) - Vector2(g.player.x, g.player.y)).normalized()})
+		pool.zoned = true
 
 
 ## The thorn ward blessing: a spike under the monster.

@@ -347,8 +347,8 @@ func _draw_skills(local: Dictionary) -> void:
 func pet_slot_at(point: Vector2) -> int:
 	var local: Dictionary = _snapshot.get("players", {}).get(_local_peer, {})
 	if not local.has("talents"): return -1
-	var slots: Array = _talent_bar.skill_slots(local.talents)
-	return TalentBar.pet_slot(slots, SkillBar.slot_at(size, slots, point))
+	# the companion's abilities sit on the companion bar now (src/ui/hud_kit.gd pet_panel)
+	return HudKit.pet_slot_at(point)
 
 
 # --- Talent bar and rewards (src/ui/talent_bar.gd, the same in every map) -----

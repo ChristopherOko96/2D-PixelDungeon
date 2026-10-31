@@ -318,6 +318,12 @@ func draw_over(canvas: CanvasItem, snapshot: Dictionary, clock: float, position:
 		var at: Vector2 = position.call(player)
 		if "freeze" in effects:
 			_ice_block(canvas, at, clock)
+		if "wet" in effects:
+			# drops running off the hero and falling (element_rules.json water: wet)
+			for index in range(3):
+				var fall := fposmod(clock * 1.6 + float(index) * 0.37, 1.0)
+				var q := PixelPaint.at(at + Vector2(cos(float(tq) * 0.3 + float(index) * 2.1) * 7.0, -14.0 + fall * 22.0), ART)
+				PixelPaint.cell(canvas, q, Color("8fd8e6") if fall < 0.5 else Color("4fa0c8"), ART)
 		if "slow" in effects or "slip" in effects:
 			for index in range(3):
 				var angle := floorf(clock * PixelPaint.FPS) / PixelPaint.FPS * 4.0 + float(index) * TAU / 3.0

@@ -17,7 +17,9 @@ extends RefCounted
 ## its blessing), drink, throw (at the mouse point) and drop. A cursed weapon,
 ## once equipped, cannot be swapped until its curse is broken. Also rolls the
 ## loot of crates, chests, Mimiks and gold crates, and runs the curses that act
-## over time (thorns, blood toll, the burning blade).
+## over time (thorns, blood toll, the burning blade). The views (view, snapshot)
+## carry an identified item's element (ItemRules.element_of, items.json
+## elements) for the inventory window's glow and motes and the hero look.
 
 const ItemRules = preload("res://src/items/item_rules.gd")
 const PerkRules = preload("res://src/perk_rules.gd")
@@ -533,6 +535,9 @@ func _throw(id: int, player: Dictionary, value: int, target: Vector2) -> void:
 		"poison": game.boss_moves.hero_pool(point, {"style": "poison", "radius": radius, "time": float(spec.get("pool_time", 5)), "dps": float(spec.get("dps", 1.5)), "status": "poison"}, id)
 		"ice":
 			for enemy: Dictionary in _enemies_near(point, radius): game.perk_combat._status(enemy, "freeze", 1, float(spec.get("freeze", 2.5)), id)
+			# frost is frost: the water it lands on freezes to Glatteis like every other frost source
+			# (src/combat/elements.gd); the story worlds have no crypt pools and no `elements`
+			if game.get("elements") != null: game.elements.frost_at(point, radius, id)
 		"blind":
 			for enemy: Dictionary in _enemies_near(point, radius):
 				var daze := float(spec.get("daze", 4)) * (0.35 if bool(enemy.get("boss", false)) or bool(enemy.get("miniboss", false)) else 1.0)
@@ -657,7 +662,8 @@ func view(item: Dictionary) -> Dictionary:
 			var spec := ItemRules.weapon(str(item.id))
 			var rarity: Dictionary = data.rarities.get(str(spec.get("rarity", "common")), {})
 			result.merge({"sprite": "res://assets/sprites/" + str(spec.sprite) + ".png", "rarity": str(spec.get("rarity", "common")), "rarity_label": str(rarity.get("label", "")), "color": str(rarity.get("color", "c9c0b6")), "slot": "weapon",
-				"class": str(spec.get("class", "")), "identified": bool(item.get("identified", false)), "cursed": ItemRules.stuck(item), "blessed": bool(item.get("blessed", false))})
+				"class": str(spec.get("class", "")), "identified": bool(item.get("identified", false)), "cursed": ItemRules.stuck(item), "blessed": bool(item.get("blessed", false)),
+				"element": ItemRules.element_of(item) if bool(item.get("identified", false)) else ""})
 			var lines: Array[String] = []
 			var known_weapon := bool(item.get("identified", false))
 			lines.append("SCHADEN %s · %.2f s" % [str(snappedf(float(spec.get("damage", 0)) * (ItemRules.stage_factor(item) if known_weapon else 1.0), 0.1)), float(spec.get("interval", 0.4)) * (ItemRules.stage_factor(item, true) if known_weapon else 1.0)])
@@ -666,6 +672,7 @@ func view(item: Dictionary) -> Dictionary:
 				var effects: Array[String] = []
 				for key: String in spec.get("effects", {}): effects.append(_effect_name(key))
 				if not effects.is_empty(): lines.append("EFFEKT: " + ", ".join(effects))
+				if not _element_line(item).is_empty(): lines.append(_element_line(item))
 				var curse_id := str(item.get("curse", ""))
 				if not curse_id.is_empty():
 					var rules := ItemRules.curse(curse_id)
@@ -676,20 +683,24 @@ func view(item: Dictionary) -> Dictionary:
 			result.lines = lines
 		"potion":
 			var kind := str(item.potion)
-			result.merge({"sprite": "res://assets/sprites/items/potion_%s.png" % str(colors.get(kind, "red")), "rarity": "common", "color": "d3bfa9", "identified": known.has(kind)})
+			result.merge({"sprite": "res://assets/sprites/items/potion_%s.png" % str(colors.get(kind, "red")), "rarity": "common", "color": "d3bfa9", "identified": known.has(kind),
+				"element": ItemRules.element_of(item) if known.has(kind) else ""})
 			result.lines = ["TRINKEN: " + str(data.potions[kind].get("drink", "")), "WERFEN: " + str(data.potions[kind].get("throw", ""))] if known.has(kind) else ["Unbekannter Trank. Ein Kristall verrät ihn, oder du probierst ihn."]
+			if known.has(kind) and not _element_line(item).is_empty(): result.lines.append(_element_line(item))
 		"gear":
 			var spec := ItemRules.gear(str(item.id))
 			var rarity: Dictionary = data.rarities.get(str(spec.get("rarity", "common")), {})
 			var known_piece := bool(item.get("identified", false))
 			result.merge({"sprite": "res://assets/sprites/" + str(spec.sprite) + ".png", "rarity": str(spec.get("rarity", "common")), "rarity_label": str(rarity.get("label", "")) + " · " + str(data.get("slots", {}).get(str(spec.slot), "")),
-				"color": str(rarity.get("color", "c9c0b6")), "slot": str(spec.slot), "identified": known_piece, "cursed": ItemRules.stuck(item), "blessed": bool(item.get("blessed", false))})
+				"color": str(rarity.get("color", "c9c0b6")), "slot": str(spec.slot), "identified": known_piece, "cursed": ItemRules.stuck(item), "blessed": bool(item.get("blessed", false)),
+				"element": ItemRules.element_of(item) if known_piece else ""})
 			var lines: Array[String] = []
 			lines.append(_stats_text(spec.get("stats", {}), ItemRules.stage_factor(item) if known_piece else 1.0))
 			if known_piece:
 				var effects: Array[String] = []
 				for key: String in spec.get("effects", {}): effects.append(_effect_name(key))
 				if not effects.is_empty(): lines.append("EFFEKT: " + ", ".join(effects))
+				if not _element_line(item).is_empty(): lines.append(_element_line(item))
 				lines.append("STUFE %s" % (ItemRules.stage_text(item) if ItemRules.stage(item) != 0 else "0"))
 				var curse_id := str(item.get("curse", ""))
 				if not curse_id.is_empty():
@@ -729,6 +740,13 @@ func _effect_name(key: String) -> String:
 	for perk: Dictionary in game.balance.get("perks", []):
 		if str(perk.get("id", "")) == key: return str(perk.get("name", key))
 	return key.to_upper()
+
+
+## "ELEMENT: FEUER" for an item of an element (items.json elements.name), "" for none.
+func _element_line(item: Dictionary) -> String:
+	var element := ItemRules.element_of(item)
+	if element.is_empty(): return ""
+	return "ELEMENT: " + str(data.get("elements", {}).get(element, {}).get("name", element.to_upper()))
 
 
 ## The hero's inventory for clients.

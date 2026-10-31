@@ -57,7 +57,7 @@
     },
     "mage": {
       "name": "MAGIER",
-      "sprite": "custom_pyromancer",
+      "sprite": "wizzard_m",
       "hp": 10,
       "speed": 350,
       "weapon": {

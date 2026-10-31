@@ -225,13 +225,14 @@ func weakened(enemy: Dictionary, action: String) -> Dictionary:
 	return result
 
 
-## Movement scale from lost legs (one 0.6, both 0.35) or a skeleton's torso (0.7).
+## Movement scale from lost legs (one 0.6, both 0.35) or a skeleton's torso
+## (0.7). A four-legged companion's leg pairs (paws, hind) count as legs.
 func speed_scale(enemy: Dictionary) -> float:
 	if not has_parts(enemy): return 1.0
 	var lost: Array = enemy.parts_lost
 	if "torso" in lost and _library.rig(str(enemy.rig)).get("family", "") == "skeleton": return 0.7
 	var legs := 0
-	for id: String in ["leg_l", "leg_r", "foot_l", "foot_r"]:
+	for id: String in ["leg_l", "leg_r", "foot_l", "foot_r", "paws", "hind"]:
 		if id in lost: legs += 1
 	return 0.35 if legs >= 2 else 0.6 if legs == 1 else 1.0
 

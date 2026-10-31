@@ -6,8 +6,10 @@ extends RefCounted
 ## pixel-art sprites (fx_sprites.gd), pixel particles and floor marks
 ## (particles.gd) and bloom:
 ## - whirl: the blade circling the hero (hero_look.gd) and dust from the floor;
-## - blade wave, fireball and arrow fist: the crypt's projectiles; fireball and
-##   fist bursts with embers, smoke and frost on the floor;
+## - blade wave, fireball and arrow fist: the crypt's projectiles, the fireball
+##   in the shots' pixel language (src/vfx/attack_fx.gd fireball); fireball and
+##   fist bursts as pixel matter of their element: embers that land and die,
+##   frost shards and rime on the floor (skill_fx.gd, attack_fx element_burst);
 ## - chain lightning: forked bolts with an afterglow and sparks at every hit;
 ## - blink: violet flashes at both ends; Rage: the red aura and its burst;
 ## - Photoneneis: the ice-and-fire beam, stopped at the first wall;
@@ -26,7 +28,8 @@ const CELL := 32.0
 const SHOT_STYLES := {"wave": "wave", "fireball": "fireball", "fist": "fist"}
 ## Crypt size of each skill shot (the look, not the hit area).
 const SHOT_RADIUS := {"wave": 30.0, "fireball": 7.0, "fist": 32.0}
-## World blasts that become crypt bursts (shot kind -> burst colour).
+## World blasts that become crypt bursts (shot kind -> burst colour, skill_fx.gd
+## BURST_ELEMENTS); a fireball dying without a blast bursts along its flight ("dir").
 const BLASTS := {"fireball": "fire", "fist": "frost", "sub_ice": "frost"}
 ## World effects drawn here (the world skips them).
 const FX_KINDS := ["whirl", "bolt", "blink"]
@@ -189,7 +192,7 @@ func _read_shots(blasts: Array) -> void:
 		if not handles_shot(s): continue
 		var at := (s.p as Vector2) / scale
 		var v: Vector2 = s.v
-		alive[int(s.crypt_id)] = {"at": at, "kind": kind}
+		alive[int(s.crypt_id)] = {"at": at, "kind": kind, "v": v}
 		bullets.append({"id": int(s.crypt_id), "x": at.x, "y": at.y, "vx": v.x, "vy": v.y, "owner": 1, "style": SHOT_STYLES[kind], "radius": float(SHOT_RADIUS[kind])})
 	if new_arrows >= 3: event("volley", [hero_point()])
 	for id: int in _shots:
@@ -197,7 +200,10 @@ func _read_shots(blasts: Array) -> void:
 		var last: Dictionary = _shots[id]
 		if str(last.kind) != "fireball": continue
 		var exploded := blasts.any(func(b: Vector2) -> bool: return b.distance_to(last.at) < 60.0)
-		if not exploded: event("burst", [Vector2(last.at)], {"radius": 22.0, "color": "fire"})
+		if not exploded:
+			# it died on a wall or ran out: its embers fly on the way it flew
+			var along := (last.v as Vector2).normalized()
+			event("burst", [Vector2(last.at)], {"radius": 22.0, "color": "fire", "dir": [along.x, along.y]})
 	_shots = alive
 
 

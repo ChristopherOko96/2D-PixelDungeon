@@ -1,19 +1,26 @@
 extends RefCounted
 ## The neutral HUD look every world shares (crypt, Hell-Dungeon, Frostgruft):
 ## dark see-through panels with a faint light edge, off-white text with a dark
-## outline, one warm accent for what is ready or important, red for danger,
-## green for experience. No world tints its HUD. Colours and sizes:
-## assets/data/ui_hud_style.json. Static helpers, display only.
+## outline, one warm accent for what is ready or important, red for danger and
+## the blood of the life bar, green for experience. No world tints its HUD.
+## Colours, sizes and the life bar's timings: assets/data/ui_hud_style.json.
+## Static helpers, display only.
 
 const DATA_PATH := "res://assets/data/ui_hud_style.json"
 const DEFAULT_COLORS := {"panel": "0f0f12c8", "panel_edge": "ffffff2e", "panel_shine": "ffffff10", "slot": "0b0b0ee6", "text": "f2efe8",
 	"text_dim": "aaa59d", "text_muted": "6f6b65", "outline": "08080a", "accent": "f2c66d", "danger": "e2584a", "danger_dark": "5a2320",
-	"exp": "7dd3a2", "track": "26262b", "ok": "8fd6a5"}
-const DEFAULT_SIZES := {"margin": 16, "pad": 10, "heart_size": 26, "heart_gap": 3, "hearts_per_row": 10, "map_panel_width": 236,
-	"map_panel_height": 160, "boss_bar_width": 560, "font_title": 16, "font_small": 12, "font_body": 16, "font_banner": 28}
+	"blood_lite": "f4917a", "blood_glow": "ff7a5a", "exp": "7dd3a2", "track": "26262b", "ok": "8fd6a5", "auto": "7fe3ff"}
+const DEFAULT_SIZES := {"margin": 16, "pad": 10, "heart_size": 26, "heart_gap": 3, "hearts_per_row": 10, "bar_width": 287, "bar_height": 14,
+	"badge_height": 26, "map_panel_width": 236, "map_panel_height": 160, "boss_bar_width": 560, "font_title": 16, "font_small": 12,
+	"font_body": 16, "font_banner": 28, "life_ghost_hold": 0.1, "life_ghost_time": 0.4, "life_heal_sweep": 0.45, "life_pulse_hz": 1.2,
+	"life_low_pulse_hz": 2.4, "life_wobble_hz": 0.6, "life_low_share": 0.25, "life_hit_threshold": 0.5, "pet_row_height": 44, "pet_pad": 4,
+	"pet_portrait": 36, "pet_slot": 36, "pet_icon": 36, "pet_slot_gap": 4, "pet_bar_height": 8, "pet_key_size": 10, "pet_number_size": 14}
+# Named lookup tables (string -> string), e.g. "pet_portraits": companion kind -> idle frame path.
+const DEFAULT_TABLES := {"pet_portraits": {}}
 
 static var _colors: Dictionary = {}
 static var _sizes: Dictionary = {}
+static var _tables: Dictionary = {}
 
 
 static func _load() -> void:
@@ -24,6 +31,9 @@ static func _load() -> void:
 		_colors[key] = Color(str(colors.get(key, DEFAULT_COLORS[key])))
 	for key: String in DEFAULT_SIZES:
 		_sizes[key] = float(data.get(key, DEFAULT_SIZES[key]))
+	for key: String in DEFAULT_TABLES:
+		var table: Variant = data.get(key, DEFAULT_TABLES[key])
+		_tables[key] = (table as Dictionary).duplicate() if table is Dictionary else {}
 
 
 ## A colour of the HUD by role ("panel", "text", "accent", "danger", ...).
@@ -32,10 +42,16 @@ static func color(role: String) -> Color:
 	return _colors.get(role, Color.MAGENTA)
 
 
-## A size of the HUD by name ("margin", "heart_size", "font_body", ...).
+## A size or timing of the HUD by name ("margin", "bar_width", "life_pulse_hz", "font_body", ...).
 static func size(name: String) -> float:
 	if _sizes.is_empty(): _load()
 	return float(_sizes.get(name, 0.0))
+
+
+## A lookup table of the HUD by name ("pet_portraits": companion kind -> texture path); {} when unknown.
+static func table(name: String) -> Dictionary:
+	if _tables.is_empty(): _load()
+	return _tables.get(name, {})
 
 
 ## A panel: dark see-through fill, a faint light edge and a shine on its top line.

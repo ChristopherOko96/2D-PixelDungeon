@@ -4,7 +4,11 @@ extends RefCounted
 ## fields, mirror images, EXP orbs), skill projectiles (blade wave, ballista
 ## bolt, Pfeilfaust, fireball, shards) and effects over the actors (whirl,
 ## chain lightning, blink, bursts, warnings, the Photoneneis beam, Rage aura and
-## second blade, ballista charge line, shields, level-ups, wall rubble).
+## second blade, ballista charge line, shields, level-ups, wall rubble). The
+## fireball and every burst speak the shots' pixel language (src/vfx/attack_fx.gd
+## fireball, blast, element_burst): pixel matter of the element that flies,
+## lands and lies; sheets stay only for shapes that read (blade wave, dust,
+## hit and crit sparks).
 
 const ARROW := preload("res://assets/sprites/0x72/weapon_arrow.png")
 const DECOY := preload("res://assets/sprites/0x72/wizzard_m_idle_anim_f0.png")
@@ -17,10 +21,14 @@ const FxSprites = preload("res://src/vfx/fx_sprites.gd")
 const Glow = preload("res://src/vfx/glow.gd")
 const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
 const PixelBolt = preload("res://src/vfx/pixel_bolt.gd")
+const AttackFx = preload("res://src/vfx/attack_fx.gd")
 const PerfMarks = preload("res://src/debug/perf_marks.gd")
 const CHEST_FRAMES := [preload("res://assets/sprites/0x72/chest_full_open_anim_f0.png"), preload("res://assets/sprites/0x72/chest_full_open_anim_f1.png"), preload("res://assets/sprites/0x72/chest_full_open_anim_f2.png")]
 const CRATE := preload("res://assets/sprites/0x72/crate.png")
-const BURSTS := {"fire": "fire_burst", "frost": "frost_burst", "arcane": "arcane_burst", "stone": "stone_burst", "void": "void_burst"}
+## A burst event's colour name (hero_skills.gd "color") -> palette element.
+const BURST_ELEMENTS := {"fire": "fire", "frost": "ice", "arcane": "arcane", "stone": "stone", "void": "void"}
+## The cells of a plus (a lightning hit's first frame).
+const PLUS := [Vector2i.ZERO, Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 const INK := Color("1a1414")
 ## Effect animations (FxSprites), set by the view.
 var fx: RefCounted = null
@@ -41,6 +49,8 @@ const STORM_EVERY := 0.42
 ## Sparks of lightning: white-hot, blue, deep blue (PixelBolt.STORM).
 const STORM_SPARKS := [Color("f4f6ff"), Color("8fa4ff"), Color("c8d4ff")]
 var _rng := RandomNumberGenerator.new()
+## The fireball's tail points (reused every frame).
+var _tail := PackedVector2Array()
 ## Photoneneis per hero: start, strength and its last ends (kept to fade out).
 var _beams: Dictionary = {}
 ## Seconds the beam takes to grow out of the hand, and to thin out after it ends.
@@ -73,7 +83,6 @@ var local_point := Vector2.INF
 ## Id of the floor find nearest to the local hero (-1: none close); only it shows its name.
 var nearest_loot := -1
 
-const COLORS := {"fire": Color("f39a3c"), "frost": Color("8fd8e6"), "arcane": Color("b38cf0"), "stone": Color("c9b49a"), "void": Color("b06ad8")}
 
 
 # --- Under the actors --------------------------------------------------------------
@@ -172,15 +181,6 @@ func draw_bullet(canvas: CanvasItem, bullet: Dictionary, clock: float) -> bool:
 	match str(bullet.get("style", "")):
 		"wave" when fx != null and fx.has("blade_wave"):
 			fx.draw_loop(canvas, "blade_wave", point, aim.angle(), radius / 20.0, clock, Color.WHITE, true)
-		"fireball" when fx != null and fx.has("fireball"):
-			for ghost in range(1, 4):
-				fx.draw_loop(canvas, "fireball", point - aim * ghost * 9.0, aim.angle(), 1.4 - ghost * 0.25, clock - ghost * 0.05, Color(1, 1, 1, 0.45 - ghost * 0.12), true)
-			fx.draw_loop(canvas, "fireball", point, aim.angle(), 1.4, clock, Color.WHITE, true)
-			# flames trail off the flying fireball and rise behind it, sparks are shed
-			if particles != null:
-				particles.flames(point - aim * 6.0, 1, [], 2.0, 8.0, -aim * 30.0)
-			if particles != null and _rng.randf() < 0.5:
-				particles.emit(point - aim * 6.0, -aim.rotated(_rng.randf_range(-0.8, 0.8)) * _rng.randf_range(20.0, 80.0), [PHOTON_FIRE, PHOTON_EMBER][_rng.randi_range(0, 1)], _rng.randf_range(0.25, 0.5), "ember", 2.0, 8.0, _rng.randf_range(10.0, 50.0), 2.0)
 		"wave":
 			# A silver crescent across the flight, with a fading after-image.
 			for layer in range(3):
@@ -196,17 +196,36 @@ func draw_bullet(canvas: CanvasItem, bullet: Dictionary, clock: float) -> bool:
 			canvas.draw_circle(point, radius + 6.0, Color(0.6, 0.9, 1.0, 0.14 + 0.06 * sin(clock * 30.0)))
 			canvas.draw_arc(point, radius, aim.angle() - 1.4, aim.angle() + 1.4, 16, Color(0.85, 0.95, 1.0, 0.7), 4.0)
 			_arrow(canvas, point, aim, 5.0)
-		"fireball":
-			var pulse := 0.5 + 0.5 * sin(clock * 22.0)
-			canvas.draw_circle(point - aim * 8.0, 7.0, Color(1.0, 0.5, 0.15, 0.35))
-			canvas.draw_circle(point, 12.0 + pulse * 2.0, Color(1.0, 0.55, 0.15, 0.25))
-			canvas.draw_circle(point, 8.0, Color("f39a3c"))
-			canvas.draw_circle(point, 4.0, Color("ffe7a8"))
+		"fireball": _draw_fireball(canvas, bullet, point, aim, radius, clock)
 		"shard":
 			canvas.draw_line(point - aim * 6.0, point + aim * 6.0, INK, 5.0)
 			canvas.draw_line(point - aim * 5.0, point + aim * 5.0, Color("bfeaf2"), 3.0)
 		_: return false
 	return true
+
+
+## The hero's fireball in the shots' pixel language (src/vfx/attack_fx.gd
+## fireball): a ball of the fire ramp with its hot core and an ember tail
+## straight behind it (its flight is straight), stopped at walls; flames trail
+## off it and rise, embers are shed.
+func _draw_fireball(canvas: CanvasItem, bullet: Dictionary, point: Vector2, aim: Vector2, radius: float, clock: float) -> void:
+	if _tail.size() != 9: _tail.resize(9)
+	for i in range(9): _tail[i] = point - aim * float(i) * 6.0
+	var own_clip := not PixelPaint.clip.is_valid() and particles != null
+	if own_clip: PixelPaint.clip = _open
+	AttackFx.fireball(canvas, point, _tail, AttackFx.ramp_for("fire"), clampi(roundi(radius * 0.45), 3, 4), int(floorf(clock * PixelPaint.FPS)), int(bullet.get("id", 0)), 2.0, true)
+	if own_clip: PixelPaint.clip = Callable()
+	if particles == null: return
+	# flames trail off the flying fireball and rise behind it, embers are shed
+	particles.flames(point - aim * 6.0, 1, [], 2.0, 8.0, -aim * 30.0)
+	if _rng.randf() < 0.5:
+		particles.emit(point - aim * 6.0, -aim.rotated(_rng.randf_range(-0.8, 0.8)) * _rng.randf_range(20.0, 80.0), PHOTON_FIRE if _rng.randf() < 0.5 else PHOTON_EMBER, _rng.randf_range(0.25, 0.5), "ember", 2.0, 8.0, _rng.randf_range(10.0, 50.0), 2.0)
+
+
+## True where the effects' pixels may show (the floor; for PixelPaint.clip when
+## the host set none).
+func _open(point: Vector2) -> bool:
+	return not particles.solid(point)
 
 
 # --- Over the actors ---------------------------------------------------------------
@@ -463,7 +482,7 @@ func _draw_event(canvas: CanvasItem, event: Dictionary, clock: float) -> void:
 		_seen[int(event.get("id", -1))] = true
 		if _seen.size() > 400: _seen.clear()
 		_spawn_event(event, points, first)
-	if fx != null and str(event.kind) in ["whirl", "burst", "blink", "charge", "backflip", "parry", "rage"]: return
+	if fx != null and str(event.kind) in ["whirl", "blink", "charge", "backflip", "parry", "rage"]: return
 	var left := clampf(float(event.time) / maxf(float(event.get("length", 0.3)), 0.01), 0.0, 1.0)
 	match str(event.kind):
 		"whirl":
@@ -477,16 +496,23 @@ func _draw_event(canvas: CanvasItem, event: Dictionary, clock: float) -> void:
 				var a := Vector2(float(points[index][0]), float(points[index][1])) + Vector2(0, -12)
 				var b := Vector2(float(points[index + 1][0]), float(points[index + 1][1])) + Vector2(0, -12)
 				PixelBolt.draw(canvas, a, b, age - float(index) * 0.03, int(event.get("id", 0)) * 7 + index, 2.0)
+				# where a jump lands: a plus of the spec colour for its first frame
+				if age - float(index) * 0.03 >= 0.0 and age - float(index) * 0.03 < 0.09:
+					var c := PixelPaint.at(b, 2.0)
+					for d: Vector2i in PLUS: PixelPaint.cell(canvas, c + d, PixelBolt.STORM[0], 2.0)
 		"blink":
 			var landing := Vector2(float(points[1][0]), float(points[1][1])) if points.size() > 1 else first
 			for spot: Vector2 in [first, landing]:
 				canvas.draw_circle(spot + Vector2(0, -12), 18.0 * (1.2 - left * 0.4), Color(0.7, 0.55, 1.0, 0.35 * left))
 			canvas.draw_line(first + Vector2(0, -12), landing + Vector2(0, -12), Color(0.8, 0.7, 1.0, 0.4 * left), 3.0)
 		"burst":
+			# the blast in the shots' pixel language: white-hot for a frame or two, then a ring
+			# of the element running out with short rays, stopped at walls (attack_fx blast)
 			var radius := float(event.get("radius", 64.0))
-			var tint: Color = COLORS.get(str(event.get("color", "fire")), COLORS.fire)
-			canvas.draw_circle(first, radius * (1.0 - left * 0.35), Color(tint, 0.3 * left))
-			canvas.draw_arc(first, radius * (1.05 - left * 0.3), 0.0, TAU, 32, Color(tint.lightened(0.4), left), 4.0)
+			var own_clip := not PixelPaint.clip.is_valid() and particles != null
+			if own_clip: PixelPaint.clip = _open
+			AttackFx.blast(canvas, first, left, AttackFx.ramp_for(_burst_element(event)), clampf(radius / 40.0, 0.8, 2.2), 2.0, int(event.get("id", 0)))
+			if own_clip: PixelPaint.clip = Callable()
 		"parry":
 			canvas.draw_circle(first, 8.0 + (1.0 - left) * 10.0, Color(1.0, 0.95, 0.7, left))
 		"rage":
@@ -512,7 +538,8 @@ func _spawn_event(event: Dictionary, points: Array, first: Vector2) -> void:
 	match str(event.kind):
 		# the blade circling the hero carries the whirl (src/hero/hero_look.gd); the floor answers with dust
 		"whirl": fx.spawn("dust", first + Vector2(0, 4), 0.0, float(event.get("radius", 80.0)) / 40.0)
-		"burst": fx.spawn(str(BURSTS.get(str(event.get("color", "fire")), "fire_burst")), first, 0.0, float(event.get("radius", 64.0)) / 56.0, Color.WHITE, 1.0, true)
+		# a burst is pixel matter of its element (_floor_reaction), its flash drawn from the event (_draw_event)
+		"burst": pass
 		"blink":
 			for point: Array in points: fx.spawn("blink", Vector2(float(point[0]), float(point[1])) + Vector2(0, -12), 0.0, 1.4)
 		"charge", "backflip": fx.spawn("dust", first + Vector2(0, 6), 0.0, 1.0)
@@ -522,19 +549,18 @@ func _spawn_event(event: Dictionary, points: Array, first: Vector2) -> void:
 		"charge_hit": fx.spawn("hit_spark", first + Vector2(0, -10), 0.0, 1.8, Color(1.0, 0.95, 0.8))
 		"parry": fx.spawn("hit_spark", first, 0.0, 1.6)
 		"rage":
+			# the spark reads as a shape; the flare is blood-red flames (_floor_reaction)
 			fx.spawn("crit_spark", first + Vector2(0, -12), 0.0, 2.4)
-			fx.spawn("fire_burst", first + Vector2(0, -8), 0.0, 0.7, Color(1.0, 0.55, 0.45))
 		"chain":
 			for index in range(1, points.size()):
 				var hit := Vector2(float(points[index][0]), float(points[index][1]))
-				fx.spawn("beam_hit", hit + Vector2(0, -12), float(index), 1.3, Color(0.85, 0.9, 1.0))
-				# where it struck: a scorch star, sparks; a liquid there conducts it
+				# where it struck: a scorch star and sparks that fall and lie glowing before they go
+				# (src/vfx/pixel_bolt.gd sparks; the hit's flash: _draw_event); a liquid there conducts it
 				if particles != null:
 					particles.scorch_star(hit + Vector2(0, 8), 12.0)
-					particles.sparks(hit, Vector2.UP, 6, STORM_SPARKS)
+					PixelBolt.sparks(particles, hit, 6, STORM_SPARKS)
 				if pools != null: pools.electrify(hit + Vector2(0, 8), 24.0)
 		"volley", "ballista": fx.spawn("hit_spark", first + Vector2(0, -10), 0.0, 1.0, Color(1.0, 0.95, 0.8))
-		"fist": fx.spawn("frost_burst", first + Vector2(0, -10), 0.0, 0.5)
 	if particles != null: _floor_reaction(event, first)
 
 
@@ -544,13 +570,34 @@ func _floor_reaction(event: Dictionary, first: Vector2) -> void:
 	match str(event.kind):
 		"burst":
 			var radius := float(event.get("radius", 64.0))
+			var element := _burst_element(event)
+			var dir_data: Array = event.get("dir", [])
+			var back := -Vector2(float(dir_data[0]), float(dir_data[1])) if dir_data.size() >= 2 else Vector2.ZERO
 			particles.kick(first, radius, 1.0)
-			match str(event.get("color", "fire")):
+			# the element's matter flies out, bounces and lies (attack_fx element_burst), seen a little above the floor
+			AttackFx.element_burst(particles, first - Vector2(0, 6), back, element, AttackFx.ramp_for(element), clampi(int(radius * 0.3), 10, 24), 6.0)
+			match element:
 				"fire":
 					# flames thrown out and rising, embers tumbling up, smoke, a scorched floor with embers
 					particles.fire_burst(first, radius * 0.7)
 					particles.embers(first, radius * 0.6, int(radius * 0.3))
-				"frost": particles.frost(first, radius * 0.7, int(radius * 0.8), PHOTON_FROST)
+				"ice":
+					# frost crystals under it and rime growing out of the cold
+					particles.frost(first, radius * 0.7, int(radius * 0.8), PHOTON_FROST)
+					particles.rime_grow(first, 4, radius * 0.6)
+				"stone": particles.floor_crack(first, radius * 0.5, 4)
+		"fist":
+			# the frost fist leaves the hands: a few rigid shards and a frost fleck
+			var cold: Array = AttackFx.ramp_for("ice").duplicate()
+			cold.reverse()
+			particles.shatter(first + Vector2(0, -10), 6, Vector2.ZERO, 120.0, cold, 2)
+			particles.frost(first, 10.0, 6, PHOTON_FROST)
+		"rage":
+			# Rage flares: blood-red flames off the hero, the floor kicked
+			var blood: Array = AttackFx.ramp_for("blood").duplicate()
+			blood.reverse()
+			particles.flames(first + Vector2(0, -8), 8, blood, 10.0, 12.0)
+			particles.kick(first, 30.0, 0.5)
 		"whirl":
 			particles.kick(first, float(event.get("radius", 80.0)), 0.6)
 			particles.dust_flat(first, float(event.get("radius", 80.0)) * 0.5, 10)
@@ -561,6 +608,11 @@ func _floor_reaction(event: Dictionary, first: Vector2) -> void:
 			particles.kick(first, 22.0, 0.7)
 			particles.rubble(first, 5, Vector2.ZERO, 110.0)
 			particles.dust_flat(first, 14.0, 6)
+
+
+## The palette element of a burst event's colour name (hero_skills.gd "color").
+func _burst_element(event: Dictionary) -> String:
+	return str(BURST_ELEMENTS.get(str(event.get("color", "fire")), "fire"))
 
 
 # --- Chests and loot ------------------------------------------------------------------

@@ -17,6 +17,7 @@ extends RefCounted
 ## and the gas clouds (snapshot()).
 
 const PoolPaint = preload("res://src/vfx/pool_paint.gd")
+const ElementRules = preload("res://src/combat/element_rules.gd")
 
 var game: Node
 ## Gas clouds: {id, mat, pos, radius, timer, length, owner, tick}.
@@ -34,8 +35,9 @@ func reset() -> void:
 	clouds.clear()
 
 
+## The reaction values: element_rules.json's, the crypt's own balance.json "element" over them.
 func _rules() -> Dictionary:
-	return game.balance.get("element", {})
+	return ElementRules.reactions(game.balance.get("element", {}))
 
 
 ## A gas cloud of `mat` (vfx_gas.json: poison, smoke, frost, void, steam) at
@@ -58,8 +60,9 @@ func _fire(at: Vector2, radius: float, owner: int, depth: int) -> void:
 	for zone: Dictionary in _pools_at(at, radius):
 		var style := str(zone.style)
 		if style == "poison":
-			_explode(Vector2(zone.pos), float(zone.radius), owner, depth)
+			# used up first: the blast's own fire must not find this pool again
 			zone.timer = 0.0
+			_explode(Vector2(zone.pos), float(zone.radius), owner, depth)
 		elif _is_water(style):
 			if float(zone.get("frozen", 0.0)) > 0.0:
 				zone.frozen = 0.0
@@ -70,6 +73,15 @@ func _fire(at: Vector2, radius: float, owner: int, depth: int) -> void:
 		if str(cloud.mat) == "poison" and clouds.has(cloud) and Vector2(cloud.pos).distance_to(at) <= float(cloud.radius) + radius:
 			clouds.erase(cloud)
 			_explode(Vector2(cloud.pos), float(cloud.radius), owner, depth)
+
+
+## A shot of fire flying at `at`: poison gas it flies through goes off (the
+## fumes catch); the pools under it are untouched (it is in the air).
+func fire_passes(at: Vector2, owner := 0) -> void:
+	for cloud: Dictionary in clouds.duplicate():
+		if str(cloud.mat) == "poison" and clouds.has(cloud) and Vector2(cloud.pos).distance_to(at) <= float(cloud.radius) * 0.85:
+			clouds.erase(cloud)
+			_explode(Vector2(cloud.pos), float(cloud.radius), owner, 0)
 
 
 ## Frost at `at` reaching `radius`: the water there freezes to Glatteis.
@@ -118,11 +130,29 @@ func update(delta: float) -> void:
 		cloud.tick = float(cloud.tick) - delta
 		var due := float(cloud.tick) <= 0.0
 		if due: cloud.tick = 1.0
+		# what breathing the gas does, to monsters and heroes alike (src/combat/element_rules.gd):
+		# steam scalds and blinds the shots, poison poisons, void seals the skills, frost chills
+		var rule := ElementRules.gas(str(cloud.mat))
+		if not rule.is_empty():
+			for enemy: Dictionary in _enemies_in(Vector2(cloud.pos), float(cloud.radius)):
+				# a burning one sets poison gas off, a wet one freezes in frost mist (whatever its element)
+				combo_enemy(enemy, str(cloud.mat), Vector2(enemy.pos))
+				if not clouds.has(cloud): break
+				if ElementRules.immune(enemy_tags(enemy), rule): continue
+				if rule.has("blind_shots"): enemy.shot_timer = maxf(float(enemy.get("shot_timer", 0.0)), float(rule.blind_shots))
+				if due and rule.has("enemy_hurt"):
+					game._damage_enemy(enemy, float(rule.enemy_hurt) * (0.5 if bool(enemy.get("boss", false)) else 1.0), Vector2.ZERO, int(cloud.owner), true, false)
+				_status_enemy(enemy, rule, int(cloud.owner))
+			if not clouds.has(cloud): continue
+			for id: int in game.players:
+				var player: Dictionary = game.players[id]
+				if int(player.hp) <= 0 or Vector2(player.pos).distance_to(cloud.pos) > float(cloud.radius): continue
+				combo_player(id, player, str(cloud.mat))
+				if not clouds.has(cloud): break
+				if rule.has("hurt"): dot_f(id, player, float(rule.hurt) * delta, str(cloud.mat))
+				condition_player(player, rule)
+			if not clouds.has(cloud): continue
 		match str(cloud.mat):
-			"steam":
-				for enemy: Dictionary in _enemies_in(Vector2(cloud.pos), float(cloud.radius)):
-					enemy.shot_timer = maxf(float(enemy.get("shot_timer", 0.0)), float(rules.get("steam_blind", 0.4)))
-					if due: game._damage_enemy(enemy, float(rules.get("steam_damage", 1.0)), Vector2.ZERO, int(cloud.owner), true, false)
 			"frost":
 				if due: frost_at(Vector2(cloud.pos), float(cloud.radius), int(cloud.owner))
 	for zone: Dictionary in game.boss_moves.zones:
@@ -131,14 +161,141 @@ func update(delta: float) -> void:
 		if float(zone.get("frozen", 0.0)) > 0.0:
 			zone.frozen = float(zone.frozen) - delta
 			_glatteis(zone, rules)
+	_void_swallows(delta)
 	_contact_wait -= delta
 	if _contact_wait <= 0.0:
 		_contact_wait = 0.2
 		_lava_meets_water()
 
 
-## Enemies on Glatteis: slowed, and they slide on along their way.
+## Fractional damage over time on a hero (half hearts; element_rules.json hurt
+## per second): collects in the player's dot_acc and lands whole points through
+## game.dot_player; the HUD shows hp minus the debt draining (game.gd hp_f).
+func dot_f(id: int, player: Dictionary, amount: float, mat: String) -> void:
+	if amount <= 0.0 or int(player.hp) <= 0: return
+	# the crypt hero has few hearts next to the story worlds' (balance.json element.hero_dot_scale)
+	player.dot_acc = float(player.get("dot_acc", 0.0)) + amount * float(game.balance.get("element", {}).get("hero_dot_scale", 1.0))
+	while float(player.dot_acc) >= 1.0 and int(player.hp) > 0:
+		player.dot_acc = float(player.dot_acc) - 1.0
+		game.dot_player(id, 1, mat)
+	if int(player.hp) <= 0: player.dot_acc = 0.0
+
+
+## The void eats what lies near it (element_rules.json swallow; user decision
+## 2026-10-31): a void pool, an active vortex or a pulling talent zone (the
+## Singularität) drains the other pools within reach x its radius and draws the
+## gas clouds in, shrinking them until they are gone.
+func _void_swallows(delta: float) -> void:
+	var S: Dictionary = ElementRules.data().get("swallow", {})
+	if S.is_empty(): return
+	var mouths: Array = []
+	for zone: Dictionary in game.boss_moves.zones:
+		if str(zone.kind) == "pool" and ElementRules.material(str(zone.style)) == "void" and float(zone.timer) > 0.0:
+			mouths.append([Vector2(zone.pos), float(zone.radius)])
+		elif str(zone.kind) == "vortex":
+			# a boss's vortex and the Testraum's Strudel (its warn phase is the whirl itself)
+			mouths.append([Vector2(zone.pos), float(zone.radius)])
+	for zone: Dictionary in game.talent_combat.zones:
+		if float(zone.get("pull", 0.0)) > 0.0:
+			mouths.append([Vector2(zone.pos), float(zone.r)])
+	if mouths.is_empty(): return
+	var reach_k := float(S.get("reach", 1.6))
+	var drain := float(S.get("time", 0.7))
+	var pull := float(S.get("pull", 170.0))
+	var shrink := float(S.get("cloud_shrink", 28.0))
+	for mouth: Array in mouths:
+		var at: Vector2 = mouth[0]
+		var reach: float = float(mouth[1]) * reach_k
+		for zone: Dictionary in game.boss_moves.zones:
+			if str(zone.kind) != "pool" or ElementRules.material(str(zone.style)) == "void": continue
+			if Vector2(zone.pos).distance_to(at) <= reach + float(zone.radius) and float(zone.timer) > drain:
+				zone.timer = drain
+		for cloud: Dictionary in clouds:
+			if str(cloud.mat) == "void": continue
+			var off: Vector2 = at - Vector2(cloud.pos)
+			if off.length() > reach + float(cloud.radius): continue
+			cloud.pos = Vector2(cloud.pos) + off.limit_length(pull * delta)
+			cloud.radius = float(cloud.radius) - shrink * delta
+			if float(cloud.radius) < 10.0: cloud.timer = 0.0
+
+
+## The element tags of an enemy (src/combat/element_rules.gd tags), from the
+## words of its kind; kept on it.
+static func enemy_tags(enemy: Dictionary) -> Array:
+	if not enemy.has("tags"):
+		enemy.tags = ElementRules.tags(str(enemy.get("kind", "")))
+	return enemy.tags
+
+
+## The conditions a medium or gas rule puts on an enemy (burn, poison, slow)
+## and what it takes away (water douses its burning).
+func _status_enemy(enemy: Dictionary, rule: Dictionary, owner: int) -> void:
+	var status: Dictionary = rule.get("status", {})
+	for kind: String in status:
+		var spec: Array = status[kind]
+		match kind:
+			"burn", "poison", "wet": game.perk_combat._status(enemy, kind, float(spec[0]), float(spec[1]), owner)
+			"slow": game.perk_combat._status(enemy, "slow", 1.0 - float(spec[0]), float(spec[1]), owner)
+	if bool(rule.get("douse", false)) and enemy.has("statuses"):
+		(enemy.statuses as Dictionary).erase("burn")
+
+
+## What a creature's own condition does with the medium it meets
+## (element_rules.json combos): a burning one sets poison off, a wet one
+## freezes solid in frost. `burning` / `wet` are the creature's conditions,
+## `mat` the medium's material; returns "explode" / "freeze" / "".
+static func combo(burning: bool, wet: bool, mat: String) -> String:
+	var combos: Dictionary = ElementRules.data().get("combos", {})
+	if burning and mat == "poison" and bool(combos.get("burn_ignites_poison", true)): return "explode"
+	if wet and mat in ["frost", "ice"] and float(combos.get("freeze_wet", 0.0)) > 0.0: return "freeze"
+	return ""
+
+
+## The combos on an enemy standing in `mat` (a pool's or cloud's material).
+func combo_enemy(enemy: Dictionary, mat: String, at: Vector2) -> void:
+	var statuses: Dictionary = enemy.get("statuses", {})
+	var combos: Dictionary = ElementRules.data().get("combos", {})
+	match combo(statuses.has("burn"), statuses.has("wet"), mat):
+		"explode": fire_at(Vector2(enemy.pos), float(combos.get("explode_r", 30.0)), 0)
+		"freeze":
+			if not bool(enemy.get("boss", false)) and not statuses.has("freeze"):
+				game.perk_combat._status(enemy, "freeze", 1.0, float(combos.get("freeze_wet", 0.7)), 0)
+				game.add_fx("zone_burst", at, float(enemy.radius) + 10.0, {"style": "ice"})
+
+
+## The combos on a hero standing in `mat`.
+func combo_player(id: int, player: Dictionary, mat: String) -> void:
+	var effects: Dictionary = player.get("effects", {})
+	var combos: Dictionary = ElementRules.data().get("combos", {})
+	match combo(effects.has("burn"), effects.has("wet"), mat):
+		"explode": fire_at(Vector2(player.pos), float(combos.get("explode_r", 30.0)), id)
+		"freeze":
+			if not effects.has("freeze"):
+				game.player_effects.apply(player, "freeze", float(combos.get("freeze_wet", 0.7)), 1.0)
+				game.add_fx("zone_burst", Vector2(player.pos), 24.0, {"style": "ice"})
+
+
+## The conditions a medium or gas rule puts on a hero (its status table: burn,
+## poison, slip with the medium's grip, silence, wet) and what it takes away.
+func condition_player(player: Dictionary, rule: Dictionary) -> void:
+	var status: Dictionary = rule.get("status", {})
+	for kind: String in status:
+		var spec: Array = status[kind]
+		var value := float(spec[0])
+		if kind == "slip": value = float(rule.get("grip", 0.0067))
+		game.player_effects.apply(player, kind, float(spec[1]), value)
+	if bool(rule.get("douse", false)):
+		game.player_effects.clear(player, "burn")
+
+
+## Enemies on Glatteis: slowed, and they slide on along their way. Heroes on it
+## keep their momentum like on any ice (element_rules.json ice).
 func _glatteis(zone: Dictionary, rules: Dictionary) -> void:
+	var ice := ElementRules.medium("ice")
+	for id: int in game.players:
+		var player: Dictionary = game.players[id]
+		if int(player.hp) > 0 and game.boss_moves._in_pool(zone, Vector2(player.pos), 0.0):
+			condition_player(player, ice)
 	for enemy: Dictionary in game.enemies:
 		if float(enemy.hp) <= 0 or not game.boss_moves._in_pool(zone, Vector2(enemy.pos), float(enemy.radius)): continue
 		var power := float(rules.get("ice_slow", 0.4)) * (0.5 if bool(enemy.get("boss", false)) else 1.0)

@@ -349,6 +349,25 @@ func fire_burst(point: Vector2, radius: float, ramp: Array = []) -> void:
 	stain(point, Color(str(_data.get("ember", {}).get("soot", "1c1416"))), radius * 0.35)
 
 
+## `count` glowing sparks of a fire blast from `point` (biased along `dir`, all
+## round when zero), the talents' fat explosions (user feedback 2026-10-31):
+## they fly as glowing pixels at fire.spark_speed px/s (x `scale`), bounce on
+## the floor and lie down as embers that die over fire.ember_lie s, leaving a
+## faint soot pixel each (vfx_particles.json "fire").
+func ember_sparks(point: Vector2, count: int, dir: Vector2 = Vector2.ZERO, scale: float = 1.0) -> void:
+	var spec: Dictionary = _data.get("fire", {})
+	var speed: Array = spec.get("spark_speed", [120, 260])
+	var lie: Array = spec.get("ember_lie", [1.0, 1.8])
+	var colours: Array = _fire_ramp()
+	var lift: Array = _mode("glut").get("lift", [30, 90])
+	for i in range(count):
+		var angle := _rng.randf() * TAU if dir == Vector2.ZERO else dir.angle() + _rng.randf_range(-1.3, 1.3)
+		var velocity := Vector2.from_angle(angle) * _rng.randf_range(float(speed[0]), float(speed[1])) * scale
+		var spark := emit(point, velocity, colours[_rng.randi_range(0, 1)], _rng.randf_range(0.45, 0.9), "glut", 2.0, 4.0, _rng.randf_range(float(lift[0]), float(lift[1])) * scale, 2.5)
+		spark.ember_life = _rng.randf_range(float(lie[0]), float(lie[1]))
+		spark.soot = float(spec.get("spark_soot", 0.5))
+
+
 func _ice(key: String, fallback: float) -> float:
 	return float(_data.get("ice", {}).get(key, fallback))
 
@@ -693,6 +712,51 @@ func sparks(point: Vector2, normal: Vector2, count: int, colors: Array = []) -> 
 	var away := normal.normalized() if normal.length() > 0.01 else Vector2.UP
 	for i in range(count):
 		emit(point, away.rotated(_rng.randf_range(-0.6, 0.6)) * _rng.randf_range(120.0, 280.0), cols[_rng.randi_range(0, cols.size() - 1)], _rng.randf_range(0.08, 0.18), "spark", 2.0, 6.0, _rng.randf_range(20.0, 60.0), 3.0)
+
+
+func _shot(key: String, fallback: Array) -> Array:
+	return _data.get("shot", {}).get(key, fallback)
+
+
+## `count` drops of a liquid (poison, blood, water) flung from `point` along
+## `dir` (all round when zero) in `colors` (body first): they fly in arcs,
+## land and lie as floor pixels (vfx_particles.json "shot").
+func drops(point: Vector2, count: int, dir: Vector2, colors: Array) -> void:
+	if colors.is_empty(): return
+	var speed: Array = _shot("drops", [60, 160])
+	var life: Array = _shot("drop_life", [1.5, 3.0])
+	var lift: Array = _mode("drop").get("lift", [50, 140])
+	for i in range(count):
+		var out := dir.normalized().rotated(_rng.randf_range(-1.2, 1.2)) if dir.length() > 0.01 else Vector2.from_angle(_rng.randf() * TAU)
+		emit(point, out * _rng.randf_range(float(speed[0]), float(speed[1])), colors[_rng.randi_range(0, colors.size() - 1)],
+			_rng.randf_range(float(life[0]), float(life[1])), "drop", 2.0 if i % 3 else 4.0, _rng.randf_range(2.0, 8.0), _rng.randf_range(float(lift[0]), float(lift[1])), 2.0)
+
+
+## `count` motes of a spirit element (soul, curse, spirit) drifting out of
+## `point` as short glowing streaks in `colors`, rising a little, soon gone.
+func motes(point: Vector2, count: int, colors: Array, rise := 12.0) -> void:
+	if colors.is_empty(): return
+	var speed: Array = _shot("motes", [20, 60])
+	var life: Array = _shot("mote_life", [0.35, 0.7])
+	for i in range(count):
+		var out := Vector2.from_angle(_rng.randf() * TAU)
+		var mote := emit(point + out * _rng.randf_range(0.0, 6.0), out * _rng.randf_range(float(speed[0]), float(speed[1])) + Vector2(0, -rise),
+			colors[_rng.randi_range(0, colors.size() - 1)], _rng.randf_range(float(life[0]), float(life[1])), "mote", 2.0, _rng.randf_range(4.0, 14.0), 0.0, 0.8)
+		mote.streak = true
+
+
+## `count` chips of a hard element (bone, steel, gold, stone) from `point`
+## along `dir` (all round when zero) in `colors`: they fall, bounce and settle
+## as floor pixels that stay.
+func chips(point: Vector2, count: int, dir: Vector2, colors: Array) -> void:
+	if colors.is_empty(): return
+	var speed: Array = _shot("chips", [80, 180])
+	var life: Array = _shot("chip_life", [2.0, 3.5])
+	var lift: Array = _mode("debris").get("lift", [40, 150])
+	for i in range(count):
+		var out := dir.normalized().rotated(_rng.randf_range(-1.0, 1.0)) if dir.length() > 0.01 else Vector2.from_angle(_rng.randf() * TAU)
+		emit(point, out * _rng.randf_range(float(speed[0]), float(speed[1])), colors[_rng.randi_range(0, colors.size() - 1)],
+			_rng.randf_range(float(life[0]), float(life[1])), "debris", 2.0 if i % 2 else 4.0, _rng.randf_range(2.0, 8.0), _rng.randf_range(float(lift[0]), float(lift[1])), 3.0)
 
 
 ## Where lightning struck: a star of scorch lines burnt into the floor and a

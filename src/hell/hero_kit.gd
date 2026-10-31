@@ -436,18 +436,39 @@ static func slow_mob(g: Node, m: Dictionary, share: float, time: float) -> void:
 	m.slow_t = maxf(float(m.get("slow_t", 0.0)), time)
 
 
+## Sets an enemy burning: `dps` damage over time for `time` s (the stronger
+## source holds). Fire alone: a wet monster cannot be set burning.
 static func burn_mob(m: Dictionary, dps: float, time: float) -> void:
+	# a wet monster (it stood in water, element_rules.json combos) cannot be set burning
+	if float(m.get("wet_t", 0.0)) > 0.0:
+		return
 	m.burn = maxf(float(m.get("burn", 0.0)), dps)
 	m.burn_t = maxf(float(m.get("burn_t", 0.0)), time)
 
 
-## Ticks an enemy's slow, burn and stun; returns its speed factor (0 while stunned).
+## Poisons an enemy: `dps` damage over time for `time` s that water does not
+## wash off (a wet monster is still poisoned; only fire is blocked by wet).
+## Ticks in tick_mob beside the burn. For a venom weapon's hits
+## (items.json effect venom -> element poison); the fire path stays burn_mob.
+static func poison_mob(m: Dictionary, dps: float, time: float) -> void:
+	m.poison = maxf(float(m.get("poison", 0.0)), dps)
+	m.poison_t = maxf(float(m.get("poison_t", 0.0)), time)
+
+
+## Ticks an enemy's slow, burn, poison and stun; returns its speed factor (0 while stunned).
 static func tick_mob(g: Node, m: Dictionary, dt: float) -> float:
 	m.slow_t = maxf(0.0, float(m.get("slow_t", 0.0)) - dt)
 	m.stun = maxf(0.0, float(m.get("stun", 0.0)) - dt)
+	m.wet_t = maxf(0.0, float(m.get("wet_t", 0.0)) - dt)
+	# fire_t: the monster is on fire (lava, a fire pool, a burn); burn_t alone is any damage over time
+	m.fire_t = maxf(0.0, float(m.get("fire_t", 0.0)) - dt)
 	if float(m.get("burn_t", 0.0)) > 0.0:
 		m.burn_t = float(m.burn_t) - dt
 		m.hp -= float(m.burn) * float(g.state.dmg) * dt
+	# poison_t: poisoned (poison_mob), a damage over time of its own that wet does not stop
+	if float(m.get("poison_t", 0.0)) > 0.0:
+		m.poison_t = float(m.poison_t) - dt
+		m.hp -= float(m.poison) * float(g.state.dmg) * dt
 	for z: Dictionary in g.zones:
 		if z.kind == "caltrop" and m.p.distance_to(z.p) < float(z.r):
 			slow_mob(g, m, float(z.slow), 0.2)

@@ -100,7 +100,7 @@
     "leash_m": 3,
     "attack_range_m": 1.5,
     "radius": 10,
-    "_kinds_note": "Companion of the beast master, chosen in the talent menu (profile class entry 'companion'). hp, dmg, every and speed multiply the talent's values; sprites: assets/sprites/forest_0x72/<kind>_idle|walk_f0..3.png (wolf, bear), assets/sprites/companions/ (falcon, drawn by scripts/make_falcon.py). flying: drawn above its shadow.",
+    "_kinds_note": "Companion of the beast master, chosen in the talent menu (profile class entry 'companion'). hp, dmg, every and speed multiply the talent's values; sprites: assets/sprites/forest_0x72/<kind>_idle|walk_f0..3.png (wolf, bear), assets/sprites/companions/ (falcon, drawn by scripts/make_falcon.py). flying: drawn above its shadow. rig: the part rig the kind wears (assets/data/companion_rigs.json, or rigs.json for skeleton and bone_colossus; src/vfx/companion_rigs.gd draws it, src/combat/body_parts.gd splits its HP over the parts). portrait: the idle frame the companion bar shows. tempo: pace of its idle and walk poses (1 = the wolf's; the bear and the colossus are slower).",
     "default_kind": "wolf",
     "kinds": {
       "wolf": {
@@ -112,7 +112,9 @@
         "abilities": [
           "maul",
           "howl"
-        ]
+        ],
+        "rig": "wolf",
+        "portrait": "res://assets/sprites/forest_0x72/wolf_idle_f0.png"
       },
       "bear": {
         "name": "Bär",
@@ -123,7 +125,10 @@
         "abilities": [
           "swipe",
           "roar"
-        ]
+        ],
+        "rig": "bear",
+        "portrait": "res://assets/sprites/forest_0x72/bear_idle_f0.png",
+        "tempo": 0.7
       },
       "falcon": {
         "name": "Falke",
@@ -135,7 +140,9 @@
         "abilities": [
           "dive",
           "blind"
-        ]
+        ],
+        "rig": "falcon",
+        "portrait": "res://assets/sprites/companions/falcon_idle_f0.png"
       },
       "skeleton": {
         "name": "Skelett",
@@ -143,7 +150,9 @@
         "dmg": 1.0,
         "every": 1.0,
         "speed": 0.9,
-        "summon_only": true
+        "summon_only": true,
+        "rig": "skeleton",
+        "portrait": "res://assets/sprites/0x72/skelet_idle_anim_f0.png"
       },
       "water_elemental": {
         "name": "Wasserelementar",
@@ -157,7 +166,9 @@
           "ice_lance",
           "frost_nova"
         ],
-        "summon_only": true
+        "summon_only": true,
+        "rig": "water_elemental",
+        "portrait": "res://assets/sprites/companions/water_elemental_idle_f0.png"
       },
       "bone_warrior": {
         "name": "Knochenkrieger",
@@ -169,7 +180,9 @@
           "shield_bash",
           "bone_shout"
         ],
-        "summon_only": true
+        "summon_only": true,
+        "rig": "bone_warrior",
+        "portrait": "res://assets/sprites/0x72/skelet_idle_anim_f0.png"
       },
       "colossus": {
         "name": "Knochenkoloss",
@@ -178,7 +191,10 @@
         "every": 1.0,
         "speed": 0.7,
         "summon_only": true,
-        "big": true
+        "big": true,
+        "rig": "bone_colossus",
+        "portrait": "res://assets/sprites/0x72/big_zombie_idle_anim_f0.png",
+        "tempo": 0.6
       },
       "pyro": {
         "name": "Pyro-Monster",
@@ -190,7 +206,9 @@
           "ember_fist",
           "fire_ring"
         ],
-        "summon_only": true
+        "summon_only": true,
+        "rig": "pyro_demon",
+        "portrait": "res://assets/sprites/companions/pyro_demon_idle_f0.png"
       }
     },
     "_skeleton_note": "skeleton: the necromancer's summons (talent key pet_kind), drawn with the 0x72 skelet frames; never offered as the beast master's companion.",
@@ -201,6 +219,15 @@
       "enemy_dps": 0.8,
       "boss_dps": 2.0,
       "teleport_m": 14
+    },
+    "_rig_note": "Companion part rigs (user decision 2026-10-31): every companion has body parts with their own HP like the skeletons. bite_s: how long the bite lunge shows after it lands; windup_s: how long before a due bite the clients pose the wind-up; cast_s: how long an ability's pose shows; hurt_s: the hurt flash; death_s: how long a killed companion crumbles (dying_p 0..1 in the snapshot) before it is gone, 0 = at once; regrow_at_full: lost parts grow back when the companion heals to full life out of combat.",
+    "rig": {
+      "bite_s": 0.25,
+      "windup_s": 0.2,
+      "cast_s": 0.45,
+      "hurt_s": 0.2,
+      "death_s": 0.9,
+      "regrow_at_full": true
     },
     "threat": {
       "_note": "Enemies attack whoever dealt them the most damage (heroes and companions); a new target needs switch_pct more. Taunts win, bosses stay on the nearest hero.",
@@ -453,9 +480,9 @@
             "arcane_13",
             "arcane_14"
           ],
-          "name": "Arkanmagier",
-          "color": "#9a63e8",
-          "color2": "#e6d4ff"
+          "name": "Leerenmagier",
+          "color": "#8a4fd0",
+          "color2": "#f2d9ff"
         }
       ]
     },
@@ -1370,7 +1397,7 @@
       "cost": 40
     },
     "arcane_1": {
-      "name": "Arkangeschoss",
+      "name": "Leerengeschoss",
       "kind": "active",
       "icon": "bolt",
       "text": "130/150/170 % Schaden.",
@@ -1434,7 +1461,7 @@
       "tier": 2
     },
     "arcane_4": {
-      "name": "Arkaner Kreislauf",
+      "name": "Leerenkreislauf",
       "kind": "passive",
       "icon": "cycle",
       "text": "Jeder dritte Zauber, der Mana kostet, gibt 4/6/8 Mana zurück.",
@@ -1475,11 +1502,11 @@
       "tier": 3
     },
     "arcane_6": {
-      "name": "Arkane Wucht",
+      "name": "Leerenwucht",
       "kind": "passive",
       "icon": "bolt",
       "type": "talent_pct",
-      "text": "Arkangeschoss verursacht +15/30/45 % Schaden.",
+      "text": "Leerengeschoss verursacht +15/30/45 % Schaden.",
       "target": "arcane_1",
       "pct": [
         15,
@@ -1494,11 +1521,11 @@
       "ranks": 3
     },
     "arcane_7": {
-      "name": "Arkane Explosion",
+      "name": "Leerenriss",
       "kind": "active",
       "icon": "ring",
       "type": "nova",
-      "text": "Arkane Welle um dich, 3,5 m Radius: 90/110/130 % Schaden.",
+      "text": "Ein Riss der Leere um dich, 3,5 m Radius: 90/110/130 % Schaden.",
       "radius_m": 3.5,
       "dmg": [
         0.9,
@@ -1534,7 +1561,7 @@
       "ranks": 3
     },
     "arcane_9": {
-      "name": "Arkanlanze",
+      "name": "Leerenlanze",
       "kind": "active",
       "icon": "pierce",
       "type": "projectile",
@@ -1613,7 +1640,7 @@
       "ranks": 3
     },
     "arcane_13": {
-      "name": "Arkane Macht",
+      "name": "Macht der Leere",
       "kind": "passive",
       "icon": "burst",
       "type": "damage_pct",

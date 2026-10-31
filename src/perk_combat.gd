@@ -298,6 +298,8 @@ func _apply_elements(player: Dictionary, enemy: Dictionary, owner: int) -> void:
 
 func _status(enemy: Dictionary, key: String, power: float, duration: float, owner: int) -> void:
 	if not enemy.has("statuses"): enemy.statuses = {}
+	# a wet enemy (it stood in water, assets/data/element_rules.json combos) cannot be set burning
+	if key == "burn" and enemy.statuses.has("wet"): return
 	var existing: Dictionary = enemy.statuses.get(key,{})
 	# Strongest source owns the tick. Weaker attacks may refresh but never steal a kill.
 	if not existing.is_empty() and float(existing.power) > power:

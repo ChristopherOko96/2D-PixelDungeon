@@ -5,12 +5,28 @@ extends RefCounted
 ## pixel beside it, short branches that die before the main strand. It lives
 ## a fifth of a second: bright for its first third, then an afterimage in the
 ## deep colour, then it is gone (no long glow, no smooth curve). Cells stop at
-## walls (PixelPaint.clip). Presentation only; stateless (age-based), so it
-## can be drawn from a snapshot.
+## walls (PixelPaint.clip). Its hit sparks (sparks) are pixel particles that
+## fall, bounce once and lie glowing before they go out, like every element's
+## burst (src/vfx/attack_fx.gd element_burst). Presentation only; the drawing
+## is stateless (age-based), so it can be drawn from a snapshot.
 
 const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
 ## Storm colours: spec (core), body, deep (afterimage).
 const STORM := [Color("f4f6ff"), Color("8fa4ff"), Color("3a3a8a")]
+## Dice of the sparks.
+static var _dice := RandomNumberGenerator.new()
+
+
+## `count` sparks of lightning off a hit at `point` (seen `height` px above the
+## floor) into `particles` (src/vfx/particles.gd): short streaks thrown up and
+## out in `cols` (spec, body) that fall, bounce once and lie glowing on the
+## floor before they go out by the dither (about a second), like the other
+## elements' bursts; no floor mark of their own (scorch_star leaves that).
+static func sparks(particles: RefCounted, point: Vector2, count: int, cols: Array = STORM, height: float = 12.0) -> void:
+	if particles == null or cols.size() < 2: return
+	for i in range(count):
+		var out := Vector2.UP.rotated(_dice.randf_range(-1.4, 1.4)) * _dice.randf_range(60.0, 200.0)
+		particles.emit(point, out, cols[0] if i % 3 == 0 else cols[1], _dice.randf_range(0.8, 1.3), "spark", 2.0, height, _dice.randf_range(40.0, 140.0), 2.5)
 
 
 ## Draws a bolt from `from` to `to` that is `age` s old (nothing before 0 or

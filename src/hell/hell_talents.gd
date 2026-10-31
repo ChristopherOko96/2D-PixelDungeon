@@ -21,6 +21,11 @@ const SubKit = preload("res://src/hell/sub_kit.gd")
 const BossKit = preload("res://src/hell/boss_kit.gd")
 
 var g: Node
+## The world's element reactions for the talents' fire and frost
+## (src/combat/talent_combat.gd _element asks game.elements): src/hell/story_elements.gd.
+var elements: RefCounted:
+	get:
+		return g.get("story_elements") if g != null else null
 var tc := TalentCombat.new()
 var fx := TalentFx.new()
 var bar := TalentBar.new()
@@ -59,6 +64,9 @@ func bind(game: Node, profile_ref: Dictionary, path: String, class_name_id: Stri
 	# fire bursts in the feel's particles (crypt units)
 	if g.feel != null:
 		fx.particles = g.feel.feedback.particles
+	# the companions' part rigs draw through the story hero's rig renderer (debris, clocks)
+	if g.get("story_hero") != null and g.story_hero.get("rigs") != null:
+		fx.rigs = g.story_hero.rigs
 		fx.to_particles = 1.0 / g.feel.scale
 	# bound to the game node, not to this object: a callable on self kept by fx would
 	# hold this object (and fx) alive forever (a reference cycle)
@@ -311,7 +319,10 @@ func _status(m: Dictionary, key: String, power: float, duration: float, _owner: 
 	statuses[key] = {"power": maxf(power, float(old.get("power", 0.0))), "time": maxf(duration, float(old.get("time", 0.0)))}
 	m.statuses = statuses
 	match key:
-		"burn", "poison", "bleed": HeroKit.burn_mob(m, power, duration)
+		"burn", "poison", "bleed":
+			HeroKit.burn_mob(m, power, duration)
+			# on fire for the element physics (a burning monster sets poison off; water puts it out)
+			if key == "burn" and float(m.get("wet_t", 0.0)) <= 0.0: m.fire_t = maxf(float(m.get("fire_t", 0.0)), duration)
 		"freeze": SubKit.freeze(g, m, duration)
 		"slow":
 			if power >= 1.0: SubKit.freeze(g, m, duration, true)
@@ -332,6 +343,9 @@ func _step_bullets(dt: float) -> void:
 		var from: Vector2 = b.pos
 		b.pos = from + Vector2(b.velocity) * dt
 		b.life = float(b.life) - dt
+		# a fire shot through poison gas sets it off (src/hell/story_elements.gd)
+		if elements != null and str(b.get("style", "")).begins_with("fire"):
+			elements.fire_passes(b.pos)
 		var gone: bool = float(b.life) <= 0.0 or talent_blocked(from, b.pos, 3.0)
 		if not gone:
 			for m: Dictionary in enemies:

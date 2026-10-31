@@ -12,9 +12,10 @@ const DOTS := ["poison", "burn"]
 ## Colours of the condition icons and the hero's tint.
 const LOOK := {"slow": Color(0.6, 0.85, 1.0), "freeze": Color(0.7, 0.95, 1.0), "poison": Color(0.55, 0.95, 0.35), "burn": Color(1.0, 0.55, 0.2),
 	"slip": Color(0.8, 0.95, 1.0), "blind": Color(0.35, 0.3, 0.45), "silence": Color(0.75, 0.6, 1.0), "weak": Color(0.7, 0.65, 0.6),
-	"strength": Color(1.0, 0.4, 0.3), "haste": Color(1.0, 0.9, 0.4), "regen": Color(0.5, 1.0, 0.55), "shield": Color(1.0, 0.85, 0.4)}
+	"strength": Color(1.0, 0.4, 0.3), "haste": Color(1.0, 0.9, 0.4), "regen": Color(0.5, 1.0, 0.55), "shield": Color(1.0, 0.85, 0.4),
+	"wet": Color(0.55, 0.75, 1.0)}
 const NAMES := {"slow": "LANGSAM", "freeze": "GEFROREN", "poison": "GIFT", "burn": "BRAND", "slip": "GLATT", "blind": "BLIND", "silence": "STUMM",
-	"weak": "SCHWACH", "strength": "STÄRKE", "haste": "EILE", "regen": "ERHOLUNG", "shield": "SCHUTZ"}
+	"weak": "SCHWACH", "strength": "STÄRKE", "haste": "EILE", "regen": "ERHOLUNG", "shield": "SCHUTZ", "wet": "NASS"}
 
 
 static func _all(g: Node) -> Dictionary:
@@ -29,6 +30,9 @@ static func apply(g: Node, kind: String, time: float, value := 0.0) -> void:
 	if int(g.state.get("hp", 0)) <= 0 or time <= 0.0:
 		return
 	var all := _all(g)
+	# a wet hero cannot be set burning (element_rules.json combos wet_blocks_burn)
+	if kind == "burn" and all.has("wet"):
+		return
 	var cur: Dictionary = all.get(kind, {})
 	var stronger: float = maxf(value, float(cur.get("value", 0.0))) if kind != "slow" else (minf(value, float(cur.get("value", 1.0))) if not cur.is_empty() else value)
 	all[kind] = {"time": maxf(time, float(cur.get("time", 0.0))), "value": stronger, "tick": float(cur.get("tick", 1.0))}
@@ -67,10 +71,8 @@ static func step(g: Node, dt: float) -> void:
 		var e: Dictionary = all[kind]
 		e.time = float(e.time) - dt
 		if kind in DOTS:
-			e.tick = float(e.get("tick", 1.0)) - dt
-			if float(e.tick) <= 0.0:
-				e.tick = 1.0
-				g.dot_hurt(int(maxf(1.0, float(e.value))), "an Gift gestorben" if kind == "poison" else "verbrannt")
+			# continuous: the value is half hearts per second, drained onto the life bar (hell_game.gd dot_hurt_f)
+			g.dot_hurt_f(float(e.value) * dt, "an Gift gestorben" if kind == "poison" else "verbrannt")
 		elif kind == "regen":
 			e.tick = float(e.get("tick", float(e.value))) - dt
 			if float(e.tick) <= 0.0:
@@ -141,6 +143,10 @@ static func draw(g: Node, l: CanvasItem, t: float) -> void:
 			l.draw_circle(q + Vector2(6, 0), 6.0, Color(LOOK.burn, 0.75))
 		if all.has("slow") or all.has("slip"):
 			l.draw_circle(q + Vector2(-6, 8), 3.5, Color(0.95, 0.98, 1.0, 0.8))
+		if all.has("wet"):
+			# drops running off him and falling
+			var drop := at + Vector2(cos(t * 3.0 + i * 2.1) * 18.0, fmod(t * 90.0 + i * 31.0, 60.0) - 20.0)
+			l.draw_rect(Rect2(drop, Vector2(2, 5)), Color(LOOK.wet, 0.85))
 	if all.has("shield"):
 		l.draw_arc(at, 66.0, 0.0, TAU, 32, Color(LOOK.shield, 0.8), 4.0)
 

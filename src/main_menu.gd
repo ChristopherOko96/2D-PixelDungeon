@@ -44,9 +44,11 @@ const Profile = preload("res://src/progress/profile.gd")
 const AudioMix = preload("res://src/audio/audio_mix.gd")
 const SoundWorkshop = preload("res://src/ui/sound_workshop.gd")
 const RoomEditor = preload("res://src/editor/room_editor.gd")
+const ElementSkin = preload("res://src/hero/element_skin.gd")
 const SCREEN := Vector2(1280, 720)
 const SPRITE_ROOT := "res://assets/sprites/0x72/"
-const HEROES := ["knight_m", "elf_f", "custom_pyromancer", "lizard_m"]
+## The chase's heroes; the mage is the 0x72 wizard, recoloured by his element (src/hero/element_skin.gd).
+const HEROES := ["knight_m", "elf_f", "wizzard_m", "lizard_m"]
 const CHASERS := ["skelet", "skelet", "necromancer"]
 const PROPS_ROOT := "res://assets/sprites/crypt_props/"
 ## Backdrop tiles are 16 px 0x72 tiles drawn at 3x.
@@ -90,9 +92,14 @@ var _story_cards: Array[Button] = []
 var _canvas_origin := Vector2.ZERO
 var _canvas_size := SCREEN
 var _debug_start: Dictionary = {}
+## DEBUG hub (debug builds): level choice, Testraum, talent test, Klangwerkstatt.
+var _hub_panel: Panel
 var _debug_panel: Panel
 var _crypt_panel: Panel
 var _hell_panel: Panel
+## The mage's frames as loaded ("run" of the chase, "idle" of his class card), before
+## the element skin (src/hero/element_skin.gd) recolours them.
+var _mage_frames: Dictionary = {}
 var settings := {"volume": 80, "music": 70, "effects": 85, "fullscreen": false, "shake": true, "graphics": "pixel"}
 # Starts mid-chase so the heroes are on screen from the first frame.
 var _clock := 7.0
@@ -171,14 +178,10 @@ func _ready() -> void:
 	_buttons.append(_button("EDITOR", Vector2(470, 456), Vector2(340, 36), 16, open_room_editor.bind("")))
 	_buttons.append(_button("OPTIONEN", Vector2(470, 498), Vector2(340, 36), 16, _open_options))
 	_buttons.append(_button("BEENDEN", Vector2(470, 540), Vector2(340, 36), 16, quit_requested.emit))
-	_button("LEVEL-AUSWAHL (DEBUG)", Vector2(16, 676), Vector2(264, 32), 16, _open_debug)
-	# the Testraum: one big room to try elements, enemies, talents and cheats (debug builds)
-	var arena_button := _button("TESTRAUM (DEBUG)", Vector2(16, 596), Vector2(264, 32), 16, _open_arena)
-	arena_button.visible = OS.is_debug_build()
-	# the talent test profile: every class level 30, 99 shards (debug builds); casts cost mana as in a real run
-	_talent_test_button = _button("", Vector2(16, 636), Vector2(330, 32), 16, _toggle_talent_test)
-	_talent_test_button.visible = OS.is_debug_build()
-	_refresh_talent_test()
+	# the DEBUG hub (debug builds only): one button bottom-left opens the panel with the
+	# level choice, the Testraum, the talent test profile and the Klangwerkstatt
+	var debug_button := _button("DEBUG", Vector2(16, 676), Vector2(140, 32), 16, _open_debug_hub)
+	debug_button.visible = OS.is_debug_build()
 	_buttons[0].add_theme_color_override("font_color", GOLD)
 	_buttons[0].grab_focus()
 	_account_label = _label("", Vector2(820, 20), Vector2(300, 22), 16, TEXT, HORIZONTAL_ALIGNMENT_RIGHT)
@@ -194,8 +197,10 @@ func _ready() -> void:
 	_build_options_panel()
 	_build_story_panel()
 	_build_class_panel()
+	_build_debug_hub()
 	_build_debug_panel()
 	_build_saves_panel()
+	_apply_mage_skin()
 	_load_settings()
 	if account != null:
 		account.changed.connect(_refresh_account)
@@ -430,8 +435,10 @@ func _build_class_panel() -> void:
 		card.position = Vector2(30 + i * 240, 62)
 		_class_panel.add_child(card)
 		var frames: Array = []
+		# a class with an element skin shows the skin's figure (the mage: the wizard), else its own sprite
+		var sprite := ElementSkin.source(id) if not ElementSkin.source(id).is_empty() else str(hero.sprite)
 		for frame in range(4):
-			frames.append(load("%s%s_idle_anim_f%d.png" % [SPRITE_ROOT, hero.sprite, frame]))
+			frames.append(load("%s%s_idle_anim_f%d.png" % [SPRITE_ROOT, sprite, frame]))
 		_class_frames.append(frames)
 		var picture := TextureRect.new()
 		picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -467,6 +474,28 @@ func _build_class_panel() -> void:
 	_panel_button(_class_panel, "ZURÜCK", Vector2(30, 444), Vector2(944, 38), _close_panels)
 
 
+## The DEBUG hub (debug builds): one panel with the level choice, the Testraum
+## (one big room to try elements, enemies, talents and cheats), the talent test
+## profile (every class level 30, 99 shards; casts cost mana as in a real run)
+## and the Klangwerkstatt. The sub-panels' ZURÜCK leads back here.
+func _build_debug_hub() -> void:
+	_hub_panel = _panel("DEBUG")
+	_hub_panel.size = Vector2(420, 344)
+	_hub_panel.position = (SCREEN - _hub_panel.size) * 0.5 + Vector2(0, 20)
+	_panel_button(_hub_panel, "LEVEL-AUSWAHL", Vector2(30, 66), Vector2(360, 40), _open_debug)
+	_panel_button(_hub_panel, "TESTRAUM", Vector2(30, 114), Vector2(360, 40), _open_arena)
+	_talent_test_button = _panel_button(_hub_panel, "", Vector2(30, 162), Vector2(360, 40), _toggle_talent_test)
+	_refresh_talent_test()
+	_panel_button(_hub_panel, "KLANGWERKSTATT", Vector2(30, 210), Vector2(360, 40), open_sound_workshop)
+	_panel_button(_hub_panel, "ZURÜCK", Vector2(30, 274), Vector2(360, 38), _close_panels)
+
+
+func _open_debug_hub() -> void:
+	_close_panels()
+	_hub_panel.visible = true
+	_refresh_talent_test()
+
+
 ## Debug: the level choice first lists the built worlds, one below the other.
 ## A world shows its levels; a crypt pick goes through the hero choice and
 ## then starts right there, a hell pick starts that floor (entrance or boss).
@@ -476,8 +505,7 @@ func _build_debug_panel() -> void:
 	_debug_panel.position = (SCREEN - _debug_panel.size) * 0.5 + Vector2(0, 20)
 	_world_button(_debug_panel, "KRYPTA", "Räume, Ebenen, Minibosse, Leerenrufer", Vector2(30, 66), _open_world.bind("crypt"))
 	_world_button(_debug_panel, "HELL-DUNGEON", "10 Etagen, Start und Boss je Etage", Vector2(30, 152), _open_world.bind("hell"))
-	_panel_button(_debug_panel, "ZURÜCK", Vector2(30, 258), Vector2(365, 36), _close_panels)
-	_panel_button(_debug_panel, "KLANGWERKSTATT", Vector2(405, 258), Vector2(365, 36), open_sound_workshop)
+	_panel_button(_debug_panel, "ZURÜCK", Vector2(30, 258), Vector2(740, 36), _open_debug_hub)
 	_crypt_panel = _panel("WELT · KRYPTA")
 	_crypt_panel.size = Vector2(800, 470)
 	_crypt_panel.position = (SCREEN - _crypt_panel.size) * 0.5 + Vector2(0, 20)
@@ -530,7 +558,7 @@ func open_sound_workshop() -> void:
 	if sound_workshop == null:
 		sound_workshop = SoundWorkshop.new()
 		add_child(sound_workshop)
-		sound_workshop.closed.connect(_open_debug)
+		sound_workshop.closed.connect(_open_debug_hub)
 	sound_workshop.open()
 
 
@@ -681,6 +709,7 @@ func _apply_settings() -> void:
 func _close_panels() -> void:
 	_login_panel.visible = false
 	_options_panel.visible = false
+	if _hub_panel != null: _hub_panel.visible = false
 	if _debug_panel != null: _debug_panel.visible = false
 	if _crypt_panel != null: _crypt_panel.visible = false
 	if _hell_panel != null: _hell_panel.visible = false
@@ -788,7 +817,29 @@ func _toggle_talent_test() -> void:
 	progress.save_path = Profile.default_path()
 	progress.profile = Profile.load_profile(progress.data, progress.save_path)
 	_refresh_talent_test()
+	_apply_mage_skin()
 	talents_changed.emit()
+
+
+## The mage's wizard frames in the chase and on his class card take the colours
+## of his main specialisation in the run's profile (src/hero/element_skin.gd):
+## the wizard's own blue without talent points, red as a fire mage, pale ice
+## blue for frost, violet for arcane. Called again whenever the talent build or
+## the test profile changes.
+func _apply_mage_skin() -> void:
+	var class_id := "mage"
+	var sprite := ElementSkin.source(class_id)
+	if sprite.is_empty(): return
+	var profile: Dictionary = progress.profile if progress != null and progress.get("profile") is Dictionary else {}
+	var skinned := ElementSkin.element(profile, class_id)
+	var recolor := func(frame: Texture2D) -> Texture2D: return ElementSkin.texture(frame, skinned, class_id)
+	if _frames.has(sprite):
+		if not _mage_frames.has("run"): _mage_frames.run = (_frames[sprite] as Array).duplicate()
+		_frames[sprite] = (_mage_frames.run as Array).map(recolor)
+	for i in range(mini(class_order.size(), _class_frames.size())):
+		if str(class_order[i]) != class_id: continue
+		if not _mage_frames.has("idle"): _mage_frames.idle = (_class_frames[i] as Array).duplicate()
+		_class_frames[i] = (_mage_frames.idle as Array).map(recolor)
 
 
 func _refresh_talent_test() -> void:
@@ -804,7 +855,9 @@ func _open_talents() -> void:
 	if _talent_screen == null:
 		_talent_screen = TalentScreen.new()
 		add_child(_talent_screen)
-		_talent_screen.profile_changed.connect(func(): talents_changed.emit())
+		_talent_screen.profile_changed.connect(func():
+			_apply_mage_skin()
+			talents_changed.emit())
 	_talent_screen.open(progress.data, progress.profile, progress.save_path, _talent_class)
 
 

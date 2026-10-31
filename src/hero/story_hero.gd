@@ -15,9 +15,14 @@ extends RefCounted
 ## - the hero's body through the crypt's part rigs (assets/data/rigs.json knight,
 ##   elf, wizard via src/rig/rig_renderer.gd draw_hero): bob, walk, plume and hat
 ##   sway, hit recoil, death, at the story worlds' pixel size.
+## - the mage's element skin (src/hero/element_skin.gd): the wizard rig's parts
+##   (and the world's wizard frames) in the colours of his main specialisation,
+##   and his familiar, the Irrwisch (src/hero/familiar.gd), floating round his hat.
 ## The world keeps its own rules, skills, subclasses and relics.
 
 const HeroLook = preload("res://src/hero/hero_look.gd")
+const ElementSkin = preload("res://src/hero/element_skin.gd")
+const Familiar = preload("res://src/hero/familiar.gd")
 const AttackFx = preload("res://src/vfx/attack_fx.gd")
 const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
 const FxSprites = preload("res://src/vfx/fx_sprites.gd")
@@ -25,9 +30,13 @@ const StorySkillFx = preload("res://src/hero/story_skill_fx.gd")
 const ClassPerks = preload("res://src/player/class_perks.gd")
 const RigLibrary = preload("res://src/rig/rig_library.gd")
 const RigRenderer = preload("res://src/rig/rig_renderer.gd")
-## The crypt's class figures (src/dungeon_view.gd CLASS_RIGS).
+## The crypt's class figures (src/dungeon_view.gd CLASS_RIGS). The mage is the
+## 0x72 wizard rig, recoloured by his element (hero_skins.json).
 const CLASS_RIGS := {"swordsman": "knight", "archer": "elf", "mage": "wizard"}
 const KEY := "hero"
+## How often the mage's element is read again from the profile (s): a talent
+## build changed mid-run recolours him at the next check.
+const SKIN_CHECK := 0.5
 ## Shots whose look comes from attack_fx (the hero's arrows and spells).
 const SHOT_STYLES := {"arrow": "arrow", "magic": "magic"}
 
@@ -53,6 +62,13 @@ var rigs: RigRenderer
 ## Hits taken, for the rig's hit recoil (counted on each new invulnerability).
 var hurts := 0
 var _last_inv := 0.0
+## The mage's element ("" neutral, "fire", "ice", "void"): his main specialisation.
+var element := ""
+## The mage's Irrwisch (src/hero/familiar.gd); null for the other classes.
+var familiar: RefCounted
+## The world's hero frames as loaded, before the element skin, by kind ("idle", "run").
+var _source_frames: Dictionary = {}
+var _skin_check := 0.0
 
 
 class ShotLayer extends Node2D:
@@ -77,6 +93,9 @@ func _init(game: Node) -> void:
 	skill_fx = StorySkillFx.new(g, scale)
 	rigs = RigRenderer.new(RigLibrary.shared())
 	if not rigs.is_ready(): rigs = null
+	# the mage's familiar and his element skin on the world's frames
+	if Familiar.has_familiar(str(g.class_id)): familiar = Familiar.new()
+	_apply_skin(true)
 	attack.fx = skill_fx.fx
 	attack.particles = skill_fx.particles
 	_ground_layer = ShotLayer.new()
@@ -174,6 +193,13 @@ func update(dt: float) -> void:
 	var inv := float(g.state.get("inv", 0.0))
 	if inv > _last_inv + 0.05: hurts += 1
 	_last_inv = inv
+	# the mage's element follows his talent build (changed in the pause menu mid-run)
+	_skin_check -= dt
+	if _skin_check <= 0.0:
+		_skin_check = SKIN_CHECK
+		_apply_skin(false)
+	if familiar != null:
+		familiar.step(dt, float(g.state.get("t", 0.0)), Vector2(g.player.x, g.player.y), float(g.theme.get("hero_scale", 3.0)), g.player.get("vel", Vector2.ZERO))
 	for q: Dictionary in _queue:
 		q.t = float(q.t) - dt
 	var due := _queue.filter(func(q: Dictionary) -> bool: return float(q.t) <= 0.0)
@@ -248,7 +274,8 @@ func draw_hero(canvas: CanvasItem, t: float, lift: float, draw_body: Callable, h
 		var tint: Color = hero_look.get("tint", Color.WHITE)
 		# steps keep pace with the hero's speed like the crypt's (stride 32 crypt px / speed)
 		var pace := maxf(60.0, (g.player.get("vel", Vector2.ZERO) as Vector2).length())
-		var body_view := {"moving": bool(g.player.get("moving", false)), "hp": float(g.state.get("hp", 1)), "hurts": hurts, "step_time": 32.0 * scale / pace}
+		# the element goes with the view: the rig draws the mage's parts in its colours
+		var body_view := {"moving": bool(g.player.get("moving", false)), "hp": float(g.state.get("hp", 1)), "hurts": hurts, "step_time": 32.0 * scale / pace, "element": element}
 		var facing := face(t)
 		# the rig is placed by its centre; the story worlds give the feet
 		var shape: Dictionary = rigs.library.rig(rig)
@@ -265,7 +292,32 @@ func draw_hero(canvas: CanvasItem, t: float, lift: float, draw_body: Callable, h
 	var offset := look.body_offset(KEY, view, aim, t)
 	draw_body.call(feet + offset, 1.0)
 	if g.weapon_tex != null and not g.relic_on():
-		look.draw_weapon(canvas, KEY, view, chest + offset, aim, t, g.weapon_tex, AttackFx.tint_for({"style": "arrow"}, {"glow": str(g.state.get("glow", ""))}))
+		look.draw_weapon(canvas, KEY, view, chest + offset, aim, t, g.weapon_tex, AttackFx.tint_for({"style": "arrow"}, {"glow": str(g.state.get("glow", ""))}), str(g.state.get("weapon_element", "")))
+	# the mage's Irrwisch over the hero, on the world's art grid; gone with a fallen hero
+	if familiar != null and float(g.state.get("dead", 0.0)) <= 0.0:
+		familiar.draw(canvas, float(g.theme.get("hero_scale", 3.0)), t)
+
+
+## The mage's element (src/hero/element_skin.gd) for the rig and the familiar, and
+## the world's wizard frames recoloured in place to match (the clone and any
+## frame-drawn fallback); the sources are kept for the next change. Frames only
+## for a class whose sprite the skin knows (hero_skins.json skins.<class>.source).
+func _apply_skin(force: bool) -> void:
+	var class_id := str(g.class_id)
+	if ElementSkin.skin(class_id).is_empty(): return
+	var profile: Dictionary = g.profile if g.get("profile") is Dictionary else {}
+	var next := ElementSkin.element(profile, class_id)
+	if not force and next == element: return
+	element = next
+	if familiar != null: familiar.element = element
+	var sprite := str((g.hero as Dictionary).get("sprite", "")) if g.get("hero") is Dictionary else ""
+	if sprite.is_empty() or sprite != ElementSkin.source(class_id): return
+	for kind: String in g.hero_frames:
+		if not _source_frames.has(kind): _source_frames[kind] = (g.hero_frames[kind] as Array).duplicate()
+		var frames: Array = g.hero_frames[kind]
+		var sources: Array = _source_frames[kind]
+		for i in range(mini(frames.size(), sources.size())):
+			frames[i] = ElementSkin.texture(sources[i], element, class_id)
 
 
 ## The crypt rig of the hero's class, or "" (no rigs, another figure such as the ogre form).

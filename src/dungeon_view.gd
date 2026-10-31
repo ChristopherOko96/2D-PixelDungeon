@@ -21,7 +21,8 @@ const ENEMY_SPRITES := {"chaser":"goblin","shooter":"orc_shaman","boss":"big_dem
 const SPRITE_ROOT := "res://assets/sprites/0x72/"
 # Hero classes (step 2, from main): class -> 0x72 figure, weapon -> 0x72 sprite
 # (drawn blade-up in the art). Players with a class use these, not the chibi bank.
-const CLASS_SPRITES := {"swordsman":"knight_m","archer":"elf_f","mage":"custom_pyromancer","necromancer":"necromancer"}
+## The mage is the 0x72 wizard; his element only recolours him (src/hero/element_skin.gd), the pyromancer look is the fire spec (user decision 2026-10-31).
+const CLASS_SPRITES := {"swordsman":"knight_m","archer":"elf_f","mage":"wizzard_m","necromancer":"necromancer"}
 const WEAPON_SPRITES := {"sword":"weapon_regular_sword","bow":"weapon_bow","staff":"weapon_green_magic_staff","bone_staff":"weapon_red_magic_staff"}
 const ARROW_TEXTURE := preload("res://assets/sprites/0x72/weapon_arrow.png")
 const FRAMES_PER_SECOND := 8.0
@@ -41,10 +42,12 @@ const SkillFx = preload("res://src/vfx/skill_fx.gd")
 const BossFx = preload("res://src/vfx/boss_fx.gd")
 const PoolPaint = preload("res://src/vfx/pool_paint.gd")
 const Gas = preload("res://src/vfx/gas.gd")
+const ElementRules = preload("res://src/combat/element_rules.gd")
 const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
 const PerkMarks = preload("res://src/vfx/perk_marks.gd")
 const AttackFx = preload("res://src/vfx/attack_fx.gd")
 const HeroLook = preload("res://src/hero/hero_look.gd")
+const Familiar = preload("res://src/hero/familiar.gd")
 const SliceFx = preload("res://src/vfx/slice_fx.gd")
 const FxSprites = preload("res://src/vfx/fx_sprites.gd")
 const Glow = preload("res://src/vfx/glow.gd")
@@ -53,8 +56,9 @@ const FogMemory = preload("res://src/vfx/fog_memory.gd")
 const TalentFx = preload("res://src/vfx/talent_fx.gd")
 const CryptAtmosphere = preload("res://src/vfx/crypt_atmosphere.gd")
 ## Hero class -> part rig of its 0x72 figure (assets/data/rigs.json).
-## The mage plays its own pyromancer frames (no rig; user decision 30.10.2026).
-const CLASS_RIGS := {"swordsman":"knight","archer":"elf"}
+## The mage is the wizard rig again, its parts recoloured by his element
+## (src/hero/element_skin.gd, hero_skins.json; user decision 31.10.2026).
+const CLASS_RIGS := {"swordsman":"knight","archer":"elf","mage":"wizard"}
 
 @export var style_profile: Resource = preload("res://assets/data/art_style_reference.tres")
 
@@ -80,6 +84,10 @@ var _base_position := Vector2.ZERO
 var _shake_rng := RandomNumberGenerator.new()
 ## The room's gas layer (src/vfx/gas.gd), made with the room's pools.
 var _gas: RefCounted = null
+## The view inside gas (_step_vision, element_rules.json vision): k = how closed
+## it is 0..1, r = world px kept open round the local hero, probe = s to the next
+## measurement of the cloud's reach.
+var _vision := {"k": 0.0, "r": 0.0, "probe": 0.0}
 ## Camera shake strength from the options (1 = full, 0 = off); presentation only.
 var shake_scale := 1.0
 var _classic := ClassicArt.new()
@@ -152,6 +160,7 @@ func _ready() -> void:
 	_actor_motion.configure(_actor_bank.catalog())
 	_rigs = RigRenderer.new()
 	_slices = SliceFx.new(_rigs.library)
+	_talent_fx.rigs = _rigs
 	if not Engine.is_editor_hint():
 		# Room and fog layers come first: they draw behind the view itself
 		# (or the fog over the actors, under the darkness, when the data says so).
@@ -332,6 +341,7 @@ func _process_view(delta: float) -> void:
 	_sec("sprites")
 	_sec_t = Time.get_ticks_usec()
 	if _gas != null and _feedback.hitstop <= 0: _gas.step(delta, _clock)
+	_step_vision(delta)
 	_sec("gas")
 	if _feedback.hitstop <= 0 and not _pending_snapshot.is_empty(): _accept_state(_pending_snapshot)
 	_update_darkness()
@@ -541,11 +551,19 @@ func _draw_view() -> void:
 ## magic shots and void effects light the dark too. Hidden outside live runs.
 func _update_darkness() -> void:
 	if _darkness == null: return
-	var on: bool = darkness_enabled and not _snapshot.is_empty() and bool(lighting.get("enabled", true))
+	var closed := float(_vision.k)
+	var on: bool = (darkness_enabled and not _snapshot.is_empty() and bool(lighting.get("enabled", true))) or closed > 0.0
 	_darkness.visible = on
 	if not on: return
 	var void_crypt := _atmosphere_on()
-	_darkness.configure(CryptAtmosphere.lighting_with_darkness(lighting, atmosphere) if void_crypt else lighting)
+	var look: Dictionary = CryptAtmosphere.lighting_with_darkness(lighting, atmosphere) if void_crypt else lighting
+	if closed > 0.0:
+		# inside gas (element_rules.json vision): the world outside the cloud goes dark; the hero
+		# keeps the cloud round him and the lights inside it (set below), nothing else
+		look = look.duplicate()
+		var base := float(look.get("darkness", 0.0)) if darkness_enabled else 0.0
+		look.darkness = lerpf(base, float(ElementRules.vision().get("dark", 0.94)), closed)
+	_darkness.configure(look)
 	var size: Array = _presentation_layout.get("world_size", [1280, 720])
 	_darkness.set_world_size(Vector2(float(size[0]), float(size[1])))
 	var lights: Array = []
@@ -585,7 +603,51 @@ func _update_darkness() -> void:
 	for exit: Dictionary in _presentation_layout.get("exits", []):
 		var rect: Array = exit.get("rect", [])
 		if rect.size() == 4: lights.append(Vector4(float(rect[0]) + float(rect[2]) * 0.5, float(rect[1]) + float(rect[3]) * 0.5, 56.0, 0.5))
+	if closed > 0.0 and _snapshot.get("players", {}).has(_local_peer):
+		# only what lies inside the cloud round the hero still shows (dimmer the more the view is closed)
+		var me := _position(_snapshot.players[_local_peer])
+		var keep := float(_vision.r)
+		var seen: Array = [Vector4(me.x, me.y - 8.0, keep, 1.0)]
+		for light: Variant in lights:
+			var at := Vector2(light.x, light.y)
+			var reach := float(light.z)
+			if at.distance_to(me) + reach * 0.5 < keep:
+				seen.append(Vector4(at.x, at.y, reach * (1.0 - 0.6 * closed), (float(light.w) if light is Vector4 else 1.0) * (1.0 - 0.5 * closed)))
+		lights = seen
 	_darkness.set_lights(lights)
+
+
+## The view inside gas (src/combat/element_rules.gd vision): when the local hero
+## stands in a cloud thick enough, the dark closes in round him to the cloud's
+## reach (measured probe_hz times a second along eight rays) and opens again
+## as he leaves; _update_darkness draws it.
+func _step_vision(delta: float) -> void:
+	var rules := ElementRules.vision()
+	var goal := 0.0
+	var mat := ""
+	var me := Vector2.INF
+	if _gas != null and _snapshot.get("players", {}).has(_local_peer):
+		var hero: Dictionary = _snapshot.players[_local_peer]
+		if float(hero.get("hp", 1)) > 0:
+			me = _position(hero) + Vector2(0, 8)
+			# the hero parts the gas round him (_wade_pools): what he stands in is the cloud at arm's length
+			var cloud: Dictionary = _gas.around(me, 30.0)
+			if float(cloud.d) >= ElementRules.dense_from():
+				mat = str(cloud.mat)
+				goal = float(ElementRules.gas(mat).get("vision", 0.0))
+	var rate := delta / maxf(0.05, float(rules.get("fade_in", 0.35)) if goal > float(_vision.k) else float(rules.get("fade_out", 0.55)))
+	_vision.k = move_toward(float(_vision.k), goal, rate)
+	if goal <= 0.0:
+		if float(_vision.k) <= 0.0: _vision.r = 0.0
+		return
+	_vision.probe = float(_vision.probe) - delta
+	if float(_vision.probe) <= 0.0 and me != Vector2.INF:
+		_vision.probe = 1.0 / maxf(1.0, float(rules.get("probe_hz", 8)))
+		var lo := float(rules.get("min_radius", 70))
+		var hi := float(rules.get("max_radius", 420))
+		var reach: float = _gas.extent(me, mat, float(rules.get("thin", 0.12)), float(rules.get("step", 12)), hi)
+		var want := clampf(reach + lo * 0.5, lo, hi)
+		_vision.r = want if float(_vision.r) <= 0.0 else lerpf(float(_vision.r), want, 0.5)
 
 
 ## Fog of war on themed open floors: unseen areas black, explored ones dimmed,
@@ -942,6 +1004,8 @@ func _draw_class_hero(player: Dictionary, peer_id: int) -> void:
 			pose.alpha *= 0.45 if fmod(_clock, 0.16) < 0.08 else 1.0
 		_draw_sprite(texture, point, face, 16.0, pose)
 	_draw_class_weapon(player, peer_id, point, aim)
+	# the local mage's Irrwisch over him (src/hero/familiar.gd), on the crypt's 2 px art grid
+	if peer_id == _local_peer: Familiar.draw_for("crypt:p%d" % peer_id, self, point + Vector2(0, 16.0), _clock, 2.0, player)
 	if show_player_health: _draw_health(point + Vector2(0,-44), hp, float(player.get("max_hp", hp)), 32.0, color)
 
 
