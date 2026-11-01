@@ -151,6 +151,9 @@ func press(slot: int) -> bool:
 	var hp_before: int = players[1].hp
 	var fired := tc.cast(1, talent, {"aim": (target - Vector2(g.player.x, g.player.y)).normalized(), "target": target, "slot": maxi(0, slot)})
 	_write_hero(before, hp_before)
+	# the ultimate's moment: the camera punches in briefly (src/hell/story_camera.gd)
+	if fired and slot < 0 and g.has_method("camera_punch"):
+		g.camera_punch("ultimate")
 	return fired
 
 
@@ -201,7 +204,11 @@ func _hold() -> void:
 
 ## The hero's talent state for the HUD (same shape as the crypt's snapshot).
 func hud_state() -> Dictionary:
-	return tc.player_state(1)
+	var snapshot: Dictionary = tc.player_state(1)
+	# the Arkanes Gefüge belongs to the void path (Leere) only; every other hero gets no orb
+	if snapshot.has("gefuege") and not tc.feeds(1):
+		snapshot.erase("gefuege")
+	return snapshot
 
 
 # --- hooks from the hell runtime -------------------------------------------------
@@ -319,6 +326,12 @@ func talent_pool(style: String, at: Vector2, r: float, time: float, owner: int) 
 
 # --- what talent_combat calls on its "game" ---------------------------------------
 
+## Sound hook of src/combat/talent_combat.gd (_sound): a talent moment to the
+## story's sound router (src/hero/story_sound.gd talent).
+func talent_sound(kind: String, at: Vector2, extra: Dictionary) -> void:
+	if g != null and g.get("sound") != null: g.sound.talent(kind, at, extra, tc)
+
+
 ## Story world px per crypt px (the hell runtime draws on a 3 px art grid, the
 ## crypt on 2): talent_combat scales the companions' follow distance and pace by it.
 func talent_world_scale() -> float:
@@ -359,7 +372,9 @@ func _damage_enemy(m: Dictionary, damage: float, direction: Vector2 = Vector2.ZE
 	if feedback:
 		m.hit = 0.12
 		if not m.has("kit"): m.k = direction * (12.0 if str(m.get("kind", "")) == "boss" else 60.0)
-		g._sound("hit_" + str(m.get("def", {}).get("material", "void")))
+		# sound hook: the talent hit in the monster's material at the monster, with its voice and coat
+		if g.get("sound") != null: g.sound.mob_hit(m)
+		else: g._sound("hit_" + str(m.get("def", {}).get("material", "void")))
 	tc.dealt(owner, m, damage, feedback)
 	return damage
 

@@ -1,0 +1,166 @@
+{
+  "_note": "Sound rules of the story worlds (src/vfx/sfx.gd resolver and voice pool, src/hero/story_sound.gd routing; docs/KLANG-KONZEPT.de.md, docs/KLANG-EREIGNISSE.de.md). The files stay in audio_sfx.json; this file only says WHICH key a moment asks for and HOW it plays. Resolver: a requested event tries prefer[event], the event, fallback[event], ctx fallbacks and prefix_fallback; each base name tries <base>_<set> (material, element, surface, kind; set_alias adds the renamed sets: frost -> ice, poison -> slime, holy -> spirit), then the material chain (material_fallback), and for each of them <name>@<profile>, <name>@<world>, <name>. The first key with files wins; nothing found = silent and counted in sfx.misses. A strict voice profile (voices.strict) never falls back to another voice for voice events (vo_*, hurt_voice): silence instead of the wrong gender. Priorities 1-4 (1 = must be heard, centred, own 8 voice reserve, never stolen; 4 = bed, never steals). spatial: world px; one tile = tile_px. particles: one sound per particle call (cluster), landing ticks by chance and budget. An event with \"loop\": true in audio_sfx.json sounds as one looped player per emitter (sfx.gd set_loop) that fades out when its emitter stops asking.",
+  "schema_version": 1,
+  "worlds": {
+    "ids": ["krypta", "frost", "hell"],
+    "by_theme": {"krypta_theme": "krypta", "frost_theme": "frost", "hell_theme": "hell"},
+    "default": "hell"
+  },
+  "voices": {
+    "profiles": ["female", "male_knight", "male_wizard", "male_necro"],
+    "by_sprite": {"elf_f": "female", "knight_m": "male_knight", "wizzard_m": "male_wizard", "custom_pyromancer": "male_wizard", "necromancer": "male_necro"},
+    "by_class": {"archer": "female", "swordsman": "male_knight", "mage": "male_wizard", "necromancer": "male_necro"},
+    "strict": ["female", "monster_female"],
+    "voice_events": ["vo_", "hurt_voice"],
+    "hero_events": ["hurt", "hurt_voice", "hurt_element", "vo_", "shoot", "shoot_", "swing", "swing_heavy", "step", "foley_move", "dodge", "block_", "dash", "dash_land", "blink_", "pit_fall", "bodyfall", "lowhp_heartbeat", "gas_breath", "medium_", "ice_skid", "drink", "skill_cast", "tal_cast", "respawn"],
+    "companions": ["wolf", "bear", "falcon", "water_elemental", "pyro", "bone_warrior"],
+    "companion_by_kind": {"wolf": "wolf", "bear": "bear", "falcon": "falcon", "hawk": "falcon", "water": "water_elemental", "water_elemental": "water_elemental", "elemental": "water_elemental", "pyro": "pyro", "pyro_monster": "pyro", "skeleton": "bone_warrior", "bone_warrior": "bone_warrior", "bone_colossus": "bone_warrior", "colossus": "bone_warrior"}
+  },
+  "materials_list": ["bone", "flesh", "void", "gold", "ice", "fire", "stone", "slime", "spirit"],
+  "material_events": ["hit", "kill", "break", "idle", "move", "vo_enemy_hurt", "vo_enemy_death", "settle_tick", "splat"],
+  "material_fallback": {"ice": "void", "fire": "flesh", "stone": "bone", "slime": "flesh", "spirit": "void", "gold": "bone"},
+  "sizes": {"small": 1.15, "normal": 1.0, "big": 0.8},
+  "materials": {
+    "skelett": {"mat": "bone"}, "skelettschuetze": {"mat": "bone"}, "skelettwache": {"mat": "bone"},
+    "knochenwaechter": {"mat": "bone", "size": "big"}, "knochenkoloss": {"mat": "bone", "size": "big"},
+    "nekromant": {"mat": "flesh"}, "nekromantenfuerst": {"mat": "flesh", "size": "big"},
+    "zombie": {"mat": "flesh"}, "moderkoloss": {"mat": "flesh", "size": "big"},
+    "frostleiche": {"mat": "flesh", "coat": "frost"}, "eiszombie": {"mat": "flesh", "coat": "frost"},
+    "grabmutter": {"mat": "flesh", "size": "big", "voice": "monster_female"},
+    "leerenbomber": {"mat": "void"}, "leerenbrut": {"mat": "void"}, "leerenrufer": {"mat": "void"},
+    "mimik": {"mat": "flesh"}, "truhenfresser": {"mat": "flesh"}, "archivar": {"mat": "spirit"},
+    "frost_skeleton": {"mat": "bone", "coat": "frost"}, "ice_knight": {"mat": "bone", "coat": "frost"}, "frost_commander": {"mat": "bone", "coat": "frost"},
+    "golem": {"mat": "stone", "coat": "frost", "size": "big"},
+    "ice_slime": {"mat": "slime", "coat": "frost", "size": "big"}, "ice_slime_m": {"mat": "slime", "coat": "frost"}, "ice_slime_s": {"mat": "slime", "coat": "frost", "size": "small"},
+    "frost_necromancer": {"mat": "flesh", "coat": "frost"}, "frost_imp": {"mat": "flesh", "coat": "frost", "size": "small"},
+    "frost_whirl": {"mat": "ice"}, "ice_crystal": {"mat": "ice"}, "ice_zombie": {"mat": "flesh", "coat": "frost"}, "snowman": {"mat": "ice"},
+    "glutschaedel": {"mat": "bone", "coat": "fire", "size": "small"}, "brandskelett": {"mat": "bone", "coat": "fire"},
+    "glutwaechter": {"mat": "stone", "coat": "lava", "size": "big"},
+    "hoellenhund": {"mat": "flesh", "coat": "fire"}, "dreischlund": {"mat": "flesh", "coat": "fire", "size": "big"},
+    "glutimp": {"mat": "fire", "size": "small"}, "blutfledermaus": {"mat": "flesh", "size": "small"},
+    "aschenpriester": {"mat": "flesh", "coat": "fire"}, "kettenschinder": {"mat": "flesh"}, "kerkermeister": {"mat": "flesh", "size": "big"},
+    "kesselbrut": {"mat": "slime", "coat": "lava"},
+    "drache1": {"mat": "flesh", "coat": "fire", "size": "big"}, "drache2": {"mat": "flesh", "coat": "fire", "size": "big"}, "drache3": {"mat": "flesh", "coat": "fire", "size": "big"},
+    "drache4": {"mat": "void", "size": "big"},
+    "peingeist": {"mat": "spirit"}, "seelenhirte": {"mat": "spirit"}, "klagender_hueter": {"mat": "spirit"}
+  },
+  "prefer": {"hurt_voice": ["vo_hurt"], "shoot": ["shoot_necro"]},
+  "fallback": {"shoot": ["shoot_magic"]},
+  "prefix_fallback": {"windup_": "windup_generic"},
+  "set_alias": {"frost": ["ice"], "poison": ["slime"], "holy": ["spirit"]},
+  "surface_events": ["step", "step_ally"],
+  "layers": {"step": ["foley_move"], "vo_death": ["bodyfall"], "pit_fall": ["vo_fall"]},
+  "priorities": {
+    "categories": {"focus": 1, "stinger": 1, "voice": 2, "hero": 2, "pet": 2, "boss": 2, "enemy": 2, "impact": 2, "world": 3, "ally": 3, "step": 3, "ui": 3, "idle": 4, "debris": 4, "amb_point": 4, "ambience": 4},
+    "default": 3
+  },
+  "event_defaults": {
+    "hurt": {"priority": 1}, "hurt_element": {"priority": 2}, "scream_front": {"min_interval": 0.5, "max_voices": 1}, "boss_roar_": {"priority": 1}, "boss_hurt_": {"priority": 1}, "boss_death_": {"priority": 1}, "vo_hurt": {"priority": 1}, "vo_hurt_heavy": {"priority": 1}, "vo_death": {"priority": 1}, "bodyfall": {"priority": 1},
+    "lowhp_heartbeat": {"priority": 1}, "pit_fall": {"priority": 1}, "level_up": {"priority": 1}, "run_won": {"priority": 1}, "team_wipe": {"priority": 1},
+    "boss_intro": {"priority": 1}, "boss_flyin": {"priority": 1}, "boss_vo_": {"priority": 1}, "boss_rage": {"priority": 1}, "boss_form_swap": {"priority": 1},
+    "boss_lord_end": {"priority": 1}, "boss_kill": {"priority": 1}, "boss_defeated": {"priority": 1}, "boss_last_stand": {"priority": 1},
+    "ult_": {"priority": 1}, "tal_meteor_fall": {"priority": 1}, "zone_meteor": {"priority": 1}, "zone_land": {"priority": 1},
+    "icicles_fall": {"priority": 1}, "meteors_incoming": {"priority": 1}, "puzzle_solved": {"priority": 1}, "mimic_spring": {"priority": 1}, "snowman_wake": {"priority": 1}, "vault_open": {"priority": 1},
+    "windup_": {"min_interval": 0.1, "max_voices": 3, "priority": 2},
+    "status_": {"min_interval": 0.35, "max_voices": 2, "priority": 3},
+    "vo_enemy_hurt_": {"min_interval": 0.6, "max_voices": 2, "priority": 3}, "vo_enemy_death_": {"min_interval": 0.05, "max_voices": 3},
+    "coat_": {"min_interval": 0.04, "max_voices": 3},
+    "tal_cast": {"min_interval": 0.06}, "tal_projectile": {"min_interval": 0.05, "max_voices": 4}, "tal_impact": {"min_interval": 0.05, "max_voices": 4},
+    "tal_chain": {"max_voices": 4}, "gefuege_": {"min_interval": 0.08, "max_voices": 2, "priority": 3}, "heal": {"min_interval": 0.3, "max_voices": 1},
+    "mana_orb": {"min_interval": 0.08, "max_voices": 2, "priority": 3}, "eshot_passby": {"min_interval": 0.12, "max_voices": 2, "priority": 3},
+    "eshot_impact_": {"min_interval": 0.05, "priority": 3}, "lava_splash": {"min_interval": 0.06, "priority": 3}, "crack_floor": {"min_interval": 0.1, "max_voices": 2, "priority": 3},
+    "react_explode": {"min_interval": 0.08}, "react_boil": {"min_interval": 0.1, "max_voices": 2}, "react_": {"max_voices": 2},
+    "charge_zap": {"min_interval": 0.15}, "void_swallow": {"min_interval": 0.6, "max_voices": 2, "priority": 3}, "void_gulp": {"min_interval": 0.6, "max_voices": 2, "priority": 3},
+    "enemy_spawn": {"min_interval": 0.1}, "drop_": {"min_interval": 0.05, "priority": 3}, "gold_": {"min_interval": 0.05, "max_voices": 2, "priority": 3},
+    "toast": {"min_interval": 0.5, "max_voices": 1, "priority": 4}, "vo_cough": {"min_interval": 1.2, "max_voices": 1, "priority": 2},
+    "pet_idle": {"min_interval": 6.0, "max_voices": 1, "priority": 3}, "puddle_spawn": {"min_interval": 0.1, "priority": 3}, "no_mana": {"min_interval": 0.3, "max_voices": 1}, "on_cooldown": {"min_interval": 0.3, "max_voices": 1},
+    "burst_debris": {"min_interval": 0.05, "priority": 3}, "burst_drops": {"min_interval": 0.05, "priority": 3}, "burst_dust": {"min_interval": 0.1, "max_voices": 2},
+    "sparks": {"min_interval": 0.04, "priority": 3}, "splat": {"min_interval": 0.06, "priority": 3}, "drip": {"min_interval": 0.4, "max_voices": 2},
+    "wall_crack": {"min_interval": 0.08, "max_voices": 2, "priority": 3}, "rubble": {"min_interval": 0.08, "priority": 3}, "chips": {"min_interval": 0.05, "priority": 3},
+    "shatter": {"min_interval": 0.05, "priority": 3}, "shard_": {"min_interval": 0.05, "priority": 3}, "embers": {"min_interval": 0.15, "max_voices": 2},
+    "fire_burst": {"min_interval": 0.06, "max_voices": 2, "priority": 3}, "steam": {"min_interval": 0.2, "max_voices": 2, "priority": 3}, "smoke": {"min_interval": 0.2, "max_voices": 2, "priority": 3},
+    "snow_puff": {"min_interval": 0.15, "max_voices": 2}, "comet": {"min_interval": 0.06, "priority": 3}, "land_splash": {"min_interval": 0.06, "priority": 3},
+    "implode": {"max_voices": 2, "priority": 2}, "motes": {"min_interval": 0.2, "max_voices": 2}, "holy_motes": {"min_interval": 0.2, "max_voices": 2}, "shadow": {"min_interval": 0.2, "max_voices": 2},
+    "liquid_freeze": {"max_voices": 2, "priority": 3}, "liquid_thaw": {"max_voices": 2, "priority": 3}, "rime_grow": {"min_interval": 0.3, "max_voices": 1},
+    "floor_crack": {"max_voices": 2, "priority": 3}, "scorch_star": {"max_voices": 2}, "blow": {"max_voices": 1, "priority": 3},
+    "settle_tick": {"min_interval": 0.04, "max_voices": 8}, "settle_patter": {"min_interval": 0.1, "max_voices": 2}
+  },
+  "voice_pool": {
+    "size": 40, "p1_reserved": 8, "max_voices": 3, "loops": 6, "loop_fade_s": 0.2, "loop_idle_s": 0.25,
+    "bus_caps": {"Debris": 8, "Step": 4, "Idle": 3, "Enemy": 10, "Impact": 8, "World": 6, "Voices": 4, "Boss": 4, "Hero": 6}
+  },
+  "spatial": {
+    "tile_px": 96, "max_tiles": 14, "attenuation": 1.6, "panning_strength": 0.5,
+    "far_from_tiles": 8, "far_bus": "Far", "far_from_buses": ["Hero", "Boss", "Enemy", "Impact", "World", "Step", "Idle", "Debris"],
+    "reach_by_category": {"boss": 1.5, "debris": 0.643, "idle": 0.571, "step": 0.43},
+    "p4_cull_tiles": 9, "windup_reach": 1.5,
+    "centred_categories": ["focus", "stinger", "ui"],
+    "hint_events": ["hit_", "kill_", "break_", "block", "boss_hit", "bomber_pop", "regrow", "collapse_", "rattle_", "void_burst", "crate_break", "chest_open", "potion_"],
+    "passby_px": 150, "listener_lift_px": 40
+  },
+  "particles": {
+    "events": {"burst_debris": "burst_debris", "burst_drop": "burst_drops", "burst_dust": "burst_dust", "burst_spark": "sparks", "burst_chip": "chips"},
+    "cluster_px": 60, "cluster_s": 0.06, "base_count": 8, "db_per_doubling": 4.0, "min_db": -6.0, "max_db": 3.0,
+    "settle": {
+      "chance": {"bone": 0.2, "stone": 0.2, "ice": 0.2, "liquid": 0.15}, "chance_default": 0.2,
+      "materials": {"shard": "ice", "skull": "bone", "debris": "stone", "chip": "bone", "drop": "liquid"},
+      "ticks_per_s": 14, "bundle_s": 0.1, "bundle_max": 6, "bundle_event": "settle_patter"
+    }
+  },
+  "surfaces": {"krypta": "stone", "frost": "snow", "hell": "ash", "skid": "ice", "media": {"water": "wet", "blood": "wet", "poison": "wet", "lava": "ash"}},
+  "ambience": {
+    "krypta": [{"event": "amb_drip", "every": [3, 9], "near": [200, 900]}, {"event": "amb_bone_settle", "every": [10, 30], "near": [500, 1100]}],
+    "frost": [{"event": "amb_drip", "every": [5, 12], "near": [200, 900]}, {"event": "amb_ice_creak", "every": [8, 20], "near": [400, 1100]}],
+    "hell": [{"event": "amb_far_hell", "every": [15, 40], "near": [700, 1200]}]
+  },
+  "elements": {
+    "alias": {"fire": "fire", "fireball": "fire", "pyro": "fire", "inferno": "fire", "burn": "fire", "lava": "fire", "ember": "fire",
+      "frost": "frost", "ice": "frost", "frost_lance": "frost", "cold": "frost", "freeze": "frost", "slow": "frost", "snow": "frost",
+      "arcane": "arcane", "void": "void", "shock": "shock", "lightning": "shock", "storm": "shock", "poison": "poison", "toxic": "poison", "acid": "poison",
+      "holy": "holy", "light": "holy", "bone": "bone", "soul": "bone", "necro": "bone", "steel": "physical", "arrow": "physical", "blood": "physical", "bleed": "physical", "physical": "physical", "water": "water"},
+    "void_prefix": "arcane_"
+  },
+  "talents": {
+    "events": {
+      "dodge": "dodge", "dash": "dash", "swing": "tal_melee", "buff": "tal_buff_on", "meteor_fall": "tal_meteor_fall", "spear": "tal_line", "net": "tal_net",
+      "leap_slam": "dash_land", "soul": "tal_harvest", "mark": "tal_mark", "summon": "tal_summon", "leap": "pet_ability_1", "dive": "pet_ability_1", "echo": "tal_echo",
+      "block_hit": "block_hit", "block_break": "block_break", "guard": "block_hit", "parry": "tal_counter", "shield": "tal_shield_hit", "dome_hit": "tal_shield_hit",
+      "explosion": "tal_impact", "pet_lance": "pet_ability_1", "pet_cleave": "pet_ability_1", "pet_strike": "pet_attack", "pet_bolt": "pet_attack", "pet_fell": "pet_death",
+      "trap": "tal_trap_snap", "arrow_finale": "tal_zone_end", "catch": "catch_shot", "land": "lance_drops", "eject": "ult_singularity_release",
+      "wall_slam": "wall_slam", "splat": "splat", "mana": "mana_orb", "no_res": "no_mana",
+      "heal": "heal", "gefuege_spend": "gefuege_spend", "pet_spawn": "pet_spawn", "pet_hurt": "pet_hurt", "tal_impact": "tal_impact",
+      "crit": "", "dodged": "", "drawn": ""
+    },
+    "cast_by_type": {"projectile": "tal_projectile", "zone": "tal_zone_start", "trap": "tal_trap_set", "shield": "tal_shield_on", "glacier": "tal_glacier",
+      "line": "tal_line", "counter": "tal_counter", "bulwark": "tal_bulwark", "taunt_area": "tal_taunt_area", "harvest": "tal_harvest", "channel": "tal_channel_start",
+      "devour": "tal_devour", "melee": "tal_melee", "awaken": "tal_awaken"},
+    "status": {"freeze": "status_freeze_on"},
+    "hero_own": ["dodge", "dash", "buff", "block_hit", "block_break", "guard", "parry", "shield", "dome_hit", "no_res", "heal", "gefuege_spend"],
+    "pet_kinds": ["leap", "dive", "pet_lance", "pet_cleave", "pet_strike", "pet_bolt", "pet_fell", "pet_spawn", "pet_hurt"],
+    "effort_chance": 0.3, "dodge_effort_chance": 0.4, "chain_step_s": 0.06, "chain_pitch_step": 0.06
+  },
+  "zones": {
+    "keys": {"wave": "zone_wave", "line": "zone_fissure", "arc": "zone_arc", "meteor": "zone_meteor", "cone": "zone_cone", "erupt": "zone_erupt", "land": "zone_land", "hand": "zone_hand"},
+    "at_start": ["meteor"]
+  },
+  "attacks": {
+    "positional": true,
+    "raw": {"breath": "attack_breath", "lob": "attack_lob", "chain": "attack_chain", "scream": "attack_scream", "burrow": "attack_burrow", "flight": "attack_flight",
+      "teleport": "attack_teleport", "trail": "trail", "frost_nova": "frost_nova", "cone": "frost_cone", "spin": "whirl", "vortex": "whirl", "strikes": "ice_strikes",
+      "armor": "ice_armor", "icicles": "icicles_fall", "chill_zones": "chill_zone", "meteors": "meteors_incoming", "hands": "hands_rise"}
+  },
+  "monsters": {"hurt_voice_chance": 0.3, "boss_hurt_voice_chance": 0.15},
+  "theme_events": {
+    "chest": {"keys": ["chest_open"]}, "gate_open": {"keys": ["gate_open", "door"]}, "gate_locked": {"keys": ["gate_locked", "doors_lock"]},
+    "fight_start": {"keys": ["stinger_fight_start"], "keep": true}, "stairs": {"keys": ["stairs"]}, "room_clear": {"keys": ["room_clear"]},
+    "key": {"keys": ["key_pickup", "perk"]}, "relic": {"keys": ["relic_pickup", "perk"]}, "level_up": {"keys": ["level_up", "perk"]},
+    "run_won": {"keys": ["run_won", "perk"]}, "boss_intro": {"keys": ["boss_intro"]}, "boss_phase": {"keys": ["boss_phase", "attack_roar"]},
+    "boss_dead": {"keys": ["boss_defeated"]}, "plate": {"keys": ["plate", "ui_click"]}, "plate_wrong": {"keys": ["plate_wrong", "ui_back"]},
+    "puzzle_solved": {"keys": ["puzzle_solved", "regrow"]}, "secret": {"keys": ["secret_open", "collapse_bone"]}, "no_cooldown": {"keys": ["on_cooldown", "ui_back"]},
+    "blink": {"keys": ["blink_out", "void_burst"]}, "hurt_voice": {"keys": ["vo_hurt", "hurt_voice"]},
+    "crate_break": {"keys": ["crate_break", "hit_bone"]}, "breakable_hit": {"keys": ["breakable_hit", "hit_bone"]}, "snowman_wake": {"keys": ["snowman_wake", "hit_bone"]}
+  },
+  "dot_words": {"lava": "burn", "feuer": "burn", "brand": "burn", "glut": "burn", "dampf": "burn", "flamm": "burn", "gift": "poison", "gas": "poison", "säure": "poison",
+    "frost": "frost", "eis": "frost", "kälte": "frost", "leere": "void", "blitz": "shock", "strom": "shock"},
+  "cough_except": ["steam", "dampf"]
+}

@@ -353,6 +353,7 @@ func _zone(z: Dictionary) -> void:
 		_pool_serial += 1
 		base.id = _pool_serial
 	zones.append(base)
+	if g.sound != null: g.sound.zone(base)
 
 
 ## The lava puddles as pools for the floor's physics pools (src/vfx/pool_paint.gd
@@ -622,6 +623,8 @@ func update(dt: float) -> void:
 			# sound hook: with the feel the kill sounds in the crypt material (feedback.gd via after_kill)
 			if g.feel == null:
 				g._sound("kill_" + str(m.def.get("material", "void")))
+			# sound hook: the death voice and the coat's end at the monster (story_sound.gd mob_died)
+			if g.sound != null: g.sound.mob_died(m)
 		g.mobs.erase(m)
 		var rest: Array = g.mobs.filter(func(o: Dictionary) -> bool: return o.room == m.room and o.hp > 0.0 and not o.get("remove", false))
 		if rest.is_empty():
@@ -1052,6 +1055,7 @@ func _run_act(m: Dictionary, dt: float) -> void:
 
 ## Starts the boss arrival: a long swoop from the sky, or a burst out of the floor.
 func start_intro(m: Dictionary) -> void:
+	if g.sound != null: g.sound.boss_roar(m, "boss_flyin")
 	var kind := String(m.st.get("intro", "burrow"))
 	m.intro = {"kind": kind, "t": 0.0}
 	if kind == "flyin":
@@ -1286,6 +1290,7 @@ func _set_form(m: Dictionary, id: String) -> void:
 
 # At 0 HP on floors 3, 6 and 9 he changes into his next form and escapes; on 10 he dies.
 func _start_lord_end(m: Dictionary) -> void:
+	if g.sound != null: g.sound.at("boss_lord_end", Vector2(m.p))
 	g.eshots.clear()
 	zones = zones.filter(func(z: Dictionary) -> bool: return z.kind == "puddle")
 	lobs.clear()
@@ -2108,6 +2113,7 @@ func _burst_in(at: Vector2, n: int, c: String) -> void:
 ## small impact feel; its residue on the floor below follows in update_shots.
 ## No sheet animation: the fireball ends as matter (user decision 2026-10-31).
 func _shot_impact(at: Vector2, c: String, small: bool) -> void:
+	if g.sound != null: g.sound.at("eshot_impact", at, {"set": c})
 	var cols: Array = PX_COL.get(c, PX_COL.fire)
 	flashes.append({"p": at, "t": 0.0, "T": 0.1, "r": 14.0 if small else 22.0, "c": c if c in CRYPT_ELEMENTS else "fire"})
 	_pixel_burst(at, 6 if small else 12, cols, 200.0, 260.0, 0.75)
@@ -2668,6 +2674,7 @@ func _lava_arc(ground: Vector2, height: float, to: Vector2, n: int) -> void:
 ## thrown up as splinters that fall back and lie there, poison rises as
 ## drops, and what is left on the floor is the element's residue, no embers.
 func _rift(p: Vector2, c: String) -> void:
+	if g.sound != null: g.sound.at("rift", p, {"set": c})
 	var cold := c in CRYPT_ELEMENTS
 	_crack_floor(p, 110.0, 6, cold)
 	var P := _phys()
@@ -2761,6 +2768,7 @@ func _px_sound(l: CanvasItem, z: Dictionary, t: float) -> void:
 ## A scream strikes: the blow felt at its source and the floor at its mouth
 ## torn up; its sound then runs out through the cone (_sound_fronts).
 func _scream_blast(z: Dictionary) -> void:
+	if g.sound != null: g.sound.at("scream_front", Vector2(z.get("p", Vector2.INF)))
 	_impact(z.p, "medium", z.m)
 	var P := _phys()
 	if P == null:
@@ -2879,6 +2887,7 @@ func _blow_front(z: Dictionary, r0: float, r1: float, ang: float, arc: float, sq
 ## embers that sizzle, smoke and cool to faint soot ("soot"), those falling
 ## back into the pool sink. Through the crypt's pixel physics.
 func lava_splash(at: Vector2, dir: Vector2, n: int, power: float = 1.0, spill: bool = true) -> void:
+	if g.sound != null: g.sound.at("lava_splash", at)
 	var spec: Dictionary = (cfg.get("feel", {}) as Dictionary).get("lava", {})
 	# at a rim the lava itself runs over it as a tongue of pixels and back (_draw_spills)
 	if spill:
@@ -3144,6 +3153,7 @@ func _residue(p: Vector2, c: String, n: int, r: float) -> void:
 ## A blast at `p` (radius `r`): the rubble already lying there flies again,
 ## embers glow on the floor, smoke rises. Through the crypt's pixel physics.
 func _phys_blast(p: Vector2, r: float, embers: int, strength: float = 1.0) -> void:
+	if g.sound != null: g.sound.at("phys_blast_embers", p)
 	var P := _phys()
 	if P == null:
 		return
@@ -3157,6 +3167,7 @@ func _phys_blast(p: Vector2, r: float, embers: int, strength: float = 1.0) -> vo
 ## A slam's floor cracks around `p` (radius `r`): `n` jagged lines of grid cells
 ## running out from the impact, glowing hot near it, cooling to dark over CRACK_TIME.
 func _crack_floor(p: Vector2, r: float, n: int, cold := false) -> void:
+	if g.sound != null: g.sound.at("crack_floor", p, {"set": "ice" if cold else ""})
 	var cells: Array = []
 	var reach := maxi(3, int(r * 0.8 / LASER_PX))
 	for k in range(n):
@@ -3464,6 +3475,7 @@ func _mad_victim(m: Dictionary, dt: float) -> Dictionary:
 ## madness.story_hits hero hits per blow (a boss takes half); a body blow
 ## (`body`: contact, beam) at most every madness.mad_cd s.
 func _mad_strike(attacker: Dictionary, victim: Dictionary, n: int, body := true) -> void:
+	if g.sound != null: g.sound.at("mad_strike", Vector2(victim.p))
 	if victim.is_empty() or victim.hp <= 0.0 or immune(victim):
 		return
 	var M := ElementRules.madness()

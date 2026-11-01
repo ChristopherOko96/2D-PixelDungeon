@@ -1,6 +1,6 @@
 {
-  "_note": "Background music (src/audio/music.gd). states: which track plays when (menu = title, lobby and after a defeat; explore = a quiet room; combat = a fight with enemies alive or a horde still coming; boss = a boss or mini-boss alive). track names a music entry of audio_library.json; volume_db trims it on top of its gain_db; ambience true lays the ambience track under it on the Ambience bus. crossfade: seconds between two tracks; calm_hold: seconds a fight must be over before the music calms down again (no flip-flopping between waves). Change the choices in the Klangwerkstatt (debug menu) or here.",
-  "schema_version": 1,
+  "_note": "Background music (src/audio/music.gd). states: which track plays when (menu = title, lobby and after a defeat; explore = a quiet room; combat = a fight with enemies alive or a horde still coming; boss = a boss or mini-boss alive). track names a music entry of audio_library.json (one id or a list: the first that exists plays); volume_db trims it on top of its gain_db; ambience true lays the ambience track under it on the Ambience bus. worlds: the story worlds' own explore, combat and boss tracks and ambience bed (src/hero/story_sound.gd tells music.gd the world: krypta, frost, hell); a world track that does not exist yet falls back to states and ambience, so the files can come one by one (docs/KLANG-KONZEPT.de.md 3.8, docs/KLANG-EREIGNISSE.de.md). crossfade: seconds between two tracks; calm_hold: seconds a fight must be over before the music calms down again (no flip-flopping between waves). Change the choices in the Klangwerkstatt (debug menu) or here.",
+  "schema_version": 2,
   "crossfade": 1.8,
   "calm_hold": 6.0,
   "states": {
@@ -9,5 +9,25 @@
     "combat": {"track": "heavy_dungeon", "volume_db": -4, "ambience": true},
     "boss": {"track": "heavy_boss_battle_1", "volume_db": -3, "ambience": false}
   },
-  "ambience": {"track": "dungeon_wind_drips", "volume_db": 0}
+  "ambience": {"track": "dungeon_wind_drips", "volume_db": 0},
+  "worlds": {
+    "krypta": {
+      "explore": {"track": "krypta_explore_in_darkness", "volume_db": 0, "ambience": true},
+      "combat": {"track": "krypta_combat_clash", "volume_db": -4, "ambience": true},
+      "boss": {"track": "krypta_boss_final_boss_lair", "volume_db": -3, "ambience": false},
+      "ambience": {"track": "amb_krypta_dark_cavern", "volume_db": 0}
+    },
+    "frost": {
+      "explore": {"track": "frost_explore_ice_cave", "volume_db": 0, "ambience": true},
+      "combat": {"track": "frost_combat_cold_sanctuary", "volume_db": -4, "ambience": true},
+      "boss": {"track": "determined_pursuit", "volume_db": -3, "ambience": false},
+      "ambience": {"track": "amb_frost_wind", "volume_db": 0}
+    },
+    "hell": {
+      "explore": {"track": "hell_explore_heated_lands", "volume_db": 0, "ambience": true},
+      "combat": {"track": "hell_combat_9th_circle", "volume_db": -4, "ambience": true},
+      "boss": {"track": "heavy_boss_battle_1", "volume_db": -3, "ambience": false},
+      "ambience": {"track": "amb_hell_lava", "volume_db": 0}
+    }
+  }
 }

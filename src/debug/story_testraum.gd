@@ -140,7 +140,7 @@ func _ready() -> void:
 	p.set("host", self)
 	panel = p
 	ui.add_child(p)
-	_say("Testraum · %s · %s" % [str(cfg.worlds[str(o.world)].name), str(g.class_id)])
+	_say("Testraum · %s · %s" % [str(cfg.worlds[str(o.world)].name), str(g.hero.get("name", g.class_id))])
 
 
 func _exit_tree() -> void:

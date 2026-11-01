@@ -9,22 +9,47 @@ signal display_mode_requested
 signal graphics_mode_requested
 ## A debug cheat button (index into debug_cheats.json "order").
 signal cheat_requested(index: int)
+## Story mode: "Talente" was chosen. The pause has hidden itself; the host opens its talent screen.
+signal talents_requested
+## Story mode: "Inventar" was chosen. The pause has hidden itself; the host opens the inventory.
+signal inventory_requested
+## Story mode: an option on the Optionen page changed (OptionsPanel.changed, passed on).
+## Fullscreen and graphics also still come as display_mode_requested / graphics_mode_requested.
+signal option_changed(key: String, value: Variant)
 
 const CryptUI = preload("res://src/ui/crypt_ui.gd")
 const PerkIcons = preload("res://src/perk_icons.gd")
 const ClassPerks = preload("res://src/player/class_perks.gd")
 const QuestView = preload("res://src/ui/quest_view.gd")
 const TalentScreen = preload("res://src/ui/talent_screen.gd")
+const OptionsPanel = preload("res://src/ui/options_panel.gd")
 ## A save slot button (1..3): the host saves the start of the current floor.
 signal save_requested(slot: int)
 
-const SECTIONS := ["overview","quest","map","party","reward","controls","display","session","save","cheats"]
-const TITLES := ["Übersicht","Auftrag","Karte","Gruppe & Perks","Belohnung","Steuerung","Anzeige","Sitzung","Speichern","Cheats"]
-## Pages each mode shows: the crypt run, and the story worlds (Hölle, Frostgruft).
+const SECTIONS := ["overview","quest","map","floor","party","reward","talents","inventory","options","controls","display","session","save","cheats"]
+const TITLES := ["Übersicht","Auftrag","Karte","Etage","Gruppe & Perks","Belohnung","Talente","Inventar","Optionen","Steuerung","Anzeige","Sitzung","Speichern","Cheats"]
+## Pages each mode shows: the crypt run, and the story worlds (Krypta, Frostgruft, Hölle).
+## Story: Weiterspielen sits above these buttons and Hauptmenü below them.
 const MODE_SECTIONS := {
 	"crypt": ["overview","quest","map","party","reward","controls","display","session","save","cheats"],
-	"story": ["overview","quest","map","controls","display","save"],
+	"story": ["floor","talents","inventory","options","controls","save"],
 }
+## Older page names the story mode answers with its own pages.
+const STORY_ALIASES := {"overview": "floor", "quest": "floor", "map": "floor", "display": "options"}
+## Story layout (design px): frame, page inset, page, first section button.
+const STORY_PANEL := Rect2(40,24,1200,672)
+const STORY_INSET := Rect2(304,104,912,544)
+const STORY_PAGE := Rect2(320,116,880,520)
+const STORY_NAV := Rect2(72,112,216,40)
+const STORY_STEP := 48.0
+## Extra space above Hauptmenü, apart from the pages.
+const STORY_GAP := 24.0
+## Etage page: width of the goal column; the map fills the rest.
+const STORY_QUEST_W := 480.0
+## Steuerung page: space between the two columns; the tab stop (action | key)
+## follows the longest action of a column, at most this share of its width.
+const CONTROLS_GAP := 24.0
+const CONTROLS_TAB_SHARE := 0.55
 ## Returns the save slot lines (SaveStore.summaries); set by the game.
 var save_rows := Callable()
 var save_buttons: Array[Button] = []
@@ -34,13 +59,14 @@ var _save_enabled := false
 ## "crypt" or "story" (use_story_mode).
 var mode := "crypt"
 var controls_label: Label
-## The Auftragsliste page (src/ui/quest_view.gd), the same in every story.
+## The Auftragsliste (src/ui/quest_view.gd), the same in every story.
 var quest_view: QuestView
 ## The soul shards of the profile, top right in every story (set_shards).
 var shard_label: Label
 var _shard_icon: Control
 var _shard_clock := 0.0
-## Story map: a page-sized canvas the world draws its big map on (story_map_draw(canvas)).
+## Story map: a canvas the world draws its big map on (story_map_draw(canvas)).
+## In story mode it fills the right column of the Etage page.
 var story_map: Control
 var story_map_draw := Callable()
 var section := "overview"
@@ -53,17 +79,30 @@ var session_details: Label
 var map_view: Control
 var map_note: Label
 var resume_button: Button
+## "Zum Hauptmenü" (story: "Hauptmenü", the last section button).
+var leave_button: Button
 var main_action_button: Button
 var shade: ColorRect
 var display_mode_button: Button
 var display_status: Label
 var graphics_status: Label
 var graphics_button: Button
+## The shared options (src/ui/options_panel.gd) on the story Optionen page.
+var options_panel: Control
 var _definitions: Array = []
 var cheat_buttons: Array[Button] = []
 var _cheat_data: Dictionary = {}
 var _cheats_enabled := false
 var _definition_by_id: Dictionary = {}
+var _frame: Panel
+var _inset: Panel
+var _heading: Label
+var _hint: Label
+var _controls_grid: HBoxContainer
+var _fullscreen := false
+var _graphics_mode := "pixel"
+## Story section buttons top to bottom (Weiterspielen ... Hauptmenü).
+var _nav_order: Array[Button] = []
 
 func _ready() -> void:
 	size = Vector2(1280,720)
@@ -72,20 +111,20 @@ func _ready() -> void:
 	shade.color = Color(CryptUI.INK,0.82)
 	shade.size = size
 	add_child(shade)
-	var panel := Panel.new()
-	panel.position = Vector2(160,64)
-	panel.size = Vector2(960,592)
-	add_child(panel)
+	_frame = Panel.new()
+	_frame.position = Vector2(160,64)
+	_frame.size = Vector2(960,592)
+	add_child(_frame)
 	# The page area sits in its own inset, apart from the section list.
-	var inset := Panel.new()
-	inset.position = Vector2(420,164)
-	inset.size = Vector2(680,398)
-	inset.add_theme_stylebox_override("panel",CryptUI.box("inset"))
-	inset.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(inset)
-	var heading := CryptUI.heading("PAUSE",32)
-	heading.position = Vector2(192,84)
-	add_child(heading)
+	_inset = Panel.new()
+	_inset.position = Vector2(420,164)
+	_inset.size = Vector2(680,398)
+	_inset.add_theme_stylebox_override("panel",CryptUI.box("inset"))
+	_inset.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_inset)
+	_heading = CryptUI.heading("PAUSE",32)
+	_heading.position = Vector2(192,84)
+	add_child(_heading)
 	pause_note = _text(self,"",Vector2(432,128),Vector2(656,26),13)
 	_shard_icon = Control.new()
 	_shard_icon.position = Vector2(836,88)
@@ -136,6 +175,12 @@ func _ready() -> void:
 	graphics_status = _text(pages.display,"Grafik: PIXEL",Vector2(0,164),Vector2(640,40),16)
 	graphics_button = _button(pages.display,"Zu HD wechseln",Vector2(0,196),Vector2(416,44),func(): graphics_mode_requested.emit())
 	_text(pages.display,"F11 oder Alt + Enter wechseln die Ansicht.\nEsc öffnet weiterhin das Pausenmenü.\n\nDie Spielansicht nutzt die gesamte Fläche.\nHerzen und Menü bleiben am Bildschirmrand.",Vector2(0,264),Vector2(640,128),16)
+	# Story Optionen: the same panel the title menu uses.
+	options_panel = OptionsPanel.new()
+	options_panel.size = STORY_PAGE.size
+	pages.options.add_child(options_panel)
+	options_panel.changed.connect(_on_option_changed)
+	options_panel.set_exit_focus(navigation.options)
 	session_details = _text(pages.session,"",Vector2.ZERO,Vector2(640,378),16)
 	save_hint = _text(pages.save,"Ein Klick speichert den Beginn dieser Ebene.\nLaden und Löschen: Hauptmenü, SPIELSTÄNDE.",Vector2.ZERO,Vector2(640,52),16)
 	for slot in range(1,4):
@@ -145,28 +190,137 @@ func _ready() -> void:
 	save_note = _text(pages.save,"",Vector2(0,232),Vector2(640,60),16)
 	save_note.add_theme_color_override("font_color",CryptUI.GOLD)
 	resume_button = _button(self,"Weiterspielen",Vector2(192,528),Vector2(208,42),func(): resume_pressed.emit())
-	_button(self,"Zum Hauptmenü",Vector2(192,582),Vector2(208,34),func(): leave_pressed.emit())
+	leave_button = _button(self,"Zum Hauptmenü",Vector2(192,582),Vector2(208,34),func(): leave_pressed.emit())
 	main_action_button = _button(self,"",Vector2(432,574),Vector2(656,42),func(): main_action_pressed.emit())
-	_text(self,"ESC · Zurück zum Spiel",Vector2(432,626),Vector2(656,22),12)
+	_hint = _text(self,"ESC · Zurück zum Spiel",Vector2(432,626),Vector2(656,22),12)
 	_layout_navigation()
 	select_section("overview")
 	visible = false
 	set_display_state(false,Vector2(1280,720))
 
 
-## Story worlds (Hölle, Frostgruft): their own controls text, a quest page, their big
-## map on the map page; no party, reward, session or cheat pages. Call once after adding.
+## Story worlds (Krypta, Frostgruft, Hölle): a wider pause with the sections
+## Weiterspielen · Etage (goals and map) · Talente · Inventar · Optionen ·
+## Steuerung · Speichern · Hauptmenü. `controls_text` fills Steuerung (see
+## set_controls_text). Call once after adding.
 func use_story_mode(controls_text: String) -> void:
 	mode = "story"
-	controls_label.text = controls_text
 	map_view.visible = false
 	map_note.visible = false
-	story_map.visible = true
 	main_action_button.visible = false
-	pause_note.text = "SPIEL ANGEHALTEN"
+	# "PAUSE" already says it; no second title line
+	pause_note.visible = false
+	_frame.position = STORY_PANEL.position
+	_frame.size = STORY_PANEL.size
+	_inset.position = STORY_INSET.position
+	_inset.size = STORY_INSET.size
+	_heading.position = Vector2(STORY_NAV.position.x,36)
+	_shard_icon.position = Vector2(952,40)
+	shard_label.position = Vector2(990,48)
+	shard_label.size = Vector2(230,24)
+	_hint.position = Vector2(STORY_PAGE.position.x,656)
+	_hint.size = Vector2(STORY_PAGE.size.x,24)
+	_hint.add_theme_color_override("font_color",CryptUI.MUTED)
+	for key: String in pages:
+		pages[key].position = STORY_PAGE.position
+		pages[key].size = STORY_PAGE.size
+	# Etage: the goals on the left, the map filling the right column.
+	quest_view.reparent(pages.floor,false)
+	quest_view.position = Vector2(0,8)
+	quest_view.size = Vector2(STORY_QUEST_W,STORY_PAGE.size.y-8)
+	var divider := ColorRect.new()
+	divider.color = CryptUI.STONE
+	divider.position = Vector2(STORY_QUEST_W+10,0)
+	divider.size = Vector2(2,STORY_PAGE.size.y)
+	divider.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pages.floor.add_child(divider)
+	story_map.reparent(pages.floor,false)
+	story_map.position = Vector2(STORY_QUEST_W+24,0)
+	story_map.size = Vector2(STORY_PAGE.size.x-STORY_QUEST_W-24,STORY_PAGE.size.y)
+	story_map.visible = true
+	leave_button.text = "Hauptmenü"
 	save_hint.text = "Ein Klick speichert den Beginn dieser Etage.\nLaden und Löschen: Hauptmenü, SPIELSTÄNDE."
+	set_controls_text(controls_text)
 	_layout_navigation()
-	select_section("overview")
+	select_section("floor")
+
+
+## Steuerung text. Groups are split by a blank line; the first line of a group is
+## its header (capitals), then "Aktion: Taste" lines. Groups show as headed blocks
+## in two columns; text without a blank line stays one plain label.
+func set_controls_text(text: String) -> void:
+	controls_label.text = text
+	if _controls_grid != null:
+		_controls_grid.queue_free()
+		_controls_grid = null
+	var groups := control_groups(text)
+	controls_label.visible = groups.is_empty()
+	if groups.is_empty(): return
+	_controls_grid = HBoxContainer.new()
+	_controls_grid.size = pages.controls.size
+	_controls_grid.add_theme_constant_override("separation",int(CONTROLS_GAP))
+	_controls_grid.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	pages.controls.add_child(_controls_grid)
+	# Groups keep their order; the left column takes about half of the rows.
+	var total := 0
+	for group: Dictionary in groups: total += (group.rows as Array).size()+1
+	var split: Array = [[],[]]
+	var used := 0
+	var right := false
+	for group: Dictionary in groups:
+		var count: int = (group.rows as Array).size()+1
+		right = right or used*2+count > total and used > 0
+		split[1 if right else 0].append(group)
+		used += count
+	var font: Font = get_theme_font("font","Label")
+	var column_w: float = (pages.controls.size.x-CONTROLS_GAP)/2.0
+	for side in range(2):
+		var column := VBoxContainer.new()
+		column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		column.add_theme_constant_override("separation",8)
+		_controls_grid.add_child(column)
+		# the tab stop: the longest action in this column, capped
+		var tab := 96.0
+		for group: Dictionary in split[side]:
+			for row: Array in group.rows:
+				if not str(row[1]).is_empty():
+					tab = maxf(tab,font.get_string_size(str(row[0]),HORIZONTAL_ALIGNMENT_LEFT,-1,16).x)
+		tab = minf(tab,column_w*CONTROLS_TAB_SHARE)
+		for group: Dictionary in split[side]:
+			if column.get_child_count() > 0:
+				var gap := Control.new()
+				gap.custom_minimum_size = Vector2(0,12)
+				column.add_child(gap)
+			column.add_child(_row_label(str(group.header),CryptUI.GOLD,0.0))
+			for row: Array in group.rows:
+				if str(row[1]).is_empty():
+					column.add_child(_row_label(str(row[0]),CryptUI.BONE,0.0))
+					continue
+				var line := HBoxContainer.new()
+				line.add_theme_constant_override("separation",12)
+				line.add_child(_row_label(str(row[0]),CryptUI.BONE,tab))
+				var key := _row_label(str(row[1]),CryptUI.CREAM,0.0)
+				key.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				line.add_child(key)
+				column.add_child(line)
+
+
+## Splits a controls text into [{header, rows: [[action, key]]}]; [] when it has
+## no blank line. A line without ": " keeps its text as the action, key "".
+static func control_groups(text: String) -> Array:
+	var clean := text.replace("\r","").strip_edges()
+	if not clean.contains("\n\n"): return []
+	var out: Array = []
+	for block: String in clean.split("\n\n",false):
+		var lines := block.strip_edges().split("\n",false)
+		if lines.is_empty(): continue
+		var rows: Array = []
+		for index in range(1,lines.size()):
+			var line := lines[index].strip_edges()
+			var cut := line.find(": ")
+			rows.append([line.substr(0,cut),line.substr(cut+2)] if cut > 0 else [line,""])
+		out.append({"header": lines[0].strip_edges(), "rows": rows})
+	return out
 
 
 ## Story worlds feed their pages: {overview: text, quest_title: "ETAGE 3",
@@ -180,13 +334,54 @@ func set_story_state(info: Dictionary) -> void:
 ## Stacks the section buttons of the current mode without gaps.
 func _layout_navigation() -> void:
 	var shown: Array = MODE_SECTIONS[mode]
+	for key: String in SECTIONS:
+		navigation[key].visible = key in shown and (key != "cheats" or _cheats_enabled)
+	if mode == "story":
+		_layout_story_navigation()
+		return
 	var row := 0
 	for key: String in SECTIONS:
-		var visible_here: bool = key in shown and (key != "cheats" or _cheats_enabled)
-		navigation[key].visible = visible_here
-		if visible_here:
+		if navigation[key].visible:
 			navigation[key].position = Vector2(192,160+row*36)
 			row += 1
+
+
+## Story column: Weiterspielen, the page buttons, then Hauptmenü after a gap.
+func _layout_story_navigation() -> void:
+	_nav_order = [resume_button]
+	for key: String in MODE_SECTIONS.story: _nav_order.append(navigation[key])
+	_nav_order.append(leave_button)
+	for index in range(_nav_order.size()):
+		var button := _nav_order[index]
+		var gap := STORY_GAP if button == leave_button else 0.0
+		button.position = Vector2(STORY_NAV.position.x,STORY_NAV.position.y+index*STORY_STEP+gap)
+		button.size = STORY_NAV.size
+	_link_story_focus()
+
+
+## Story focus: the section buttons top to bottom (no wrap); right enters the
+## open page where it has controls (Optionen, Speichern), left leads back.
+func _link_story_focus() -> void:
+	if _nav_order.is_empty(): return
+	var target: Control = null
+	if section == "options": target = options_panel.first_focus()
+	elif section == "save" and _save_enabled: target = save_buttons[0]
+	for index in range(_nav_order.size()):
+		var button := _nav_order[index]
+		var above: Control = _nav_order[maxi(index-1,0)]
+		var below: Control = _nav_order[mini(index+1,_nav_order.size()-1)]
+		button.focus_neighbor_top = button.get_path_to(above)
+		button.focus_neighbor_bottom = button.get_path_to(below)
+		button.focus_previous = button.focus_neighbor_top
+		button.focus_next = button.focus_neighbor_bottom
+		button.focus_neighbor_left = button.get_path_to(button)
+		button.focus_neighbor_right = button.get_path_to(target if target != null else button)
+	for index in range(save_buttons.size()):
+		var slot := save_buttons[index]
+		slot.focus_neighbor_left = slot.get_path_to(navigation.save)
+		slot.focus_neighbor_right = slot.get_path_to(slot)
+		slot.focus_neighbor_top = slot.get_path_to(save_buttons[maxi(index-1,0)])
+		slot.focus_neighbor_bottom = slot.get_path_to(save_buttons[mini(index+1,save_buttons.size()-1)])
 
 
 ## Shows the profile's soul shards (the same in the crypt, the Frostgruft and the Hölle).
@@ -200,6 +395,13 @@ func _process(delta: float) -> void:
 	_shard_icon.queue_redraw()
 
 
+## A pad's B closes the story pause like Esc does (the host handles the Esc key).
+func _unhandled_input(event: InputEvent) -> void:
+	if mode == "story" and visible and event is InputEventJoypadButton and event.is_action_pressed("ui_cancel"):
+		get_viewport().set_input_as_handled()
+		resume_pressed.emit()
+
+
 ## Covers expanded aspect ratios while the menu keeps its centered design size.
 func set_canvas_size(dimensions: Vector2, design_origin: Vector2) -> void:
 	if shade == null: return
@@ -207,18 +409,37 @@ func set_canvas_size(dimensions: Vector2, design_origin: Vector2) -> void:
 	shade.size = dimensions
 
 
-## Reflects the local window mode; changing it never sends a gameplay action.
-## The graphics line and button: `note` says what the mode means in this world.
-func set_graphics_state(note: String, mode: String) -> void:
+## The graphics line and button, and the HD check on Optionen: `note` says what
+## the mode means in this world, `value` is "pixel" or "hd".
+func set_graphics_state(note: String, value: String) -> void:
+	_graphics_mode = value
+	if options_panel != null:
+		options_panel.show_value("graphics",value)
+		options_panel.set_graphics_note(note)
 	if graphics_status == null or graphics_button == null: return
 	graphics_status.text = note
-	graphics_button.text = "Zu Pixel wechseln" if mode == "hd" else "Zu HD wechseln"
+	graphics_button.text = "Zu Pixel wechseln" if value == "hd" else "Zu HD wechseln"
 
 
+## Reflects the local window mode; changing it never sends a gameplay action.
 func set_display_state(fullscreen: bool, _logical_size: Vector2) -> void:
+	_fullscreen = fullscreen
+	if options_panel != null: options_panel.show_value("fullscreen",fullscreen)
 	if display_status == null or display_mode_button == null: return
 	display_status.text = "Ansicht: Vollbild" if fullscreen else "Ansicht: Fenster"
 	display_mode_button.text = "Zum Fenster wechseln" if fullscreen else "Vollbild einschalten"
+
+
+## Optionen changes: fullscreen and graphics also go out as the old requests,
+## so a host that only knows those keeps working; everything goes out as option_changed.
+func _on_option_changed(key: String, value: Variant) -> void:
+	if key == "fullscreen" and bool(value) != _fullscreen:
+		_fullscreen = bool(value)
+		display_mode_requested.emit()
+	elif key == "graphics" and str(value) != _graphics_mode:
+		_graphics_mode = str(value)
+		graphics_mode_requested.emit()
+	option_changed.emit(key,value)
 
 ## Builds the debug cheat buttons from debug_cheats.json (labels, order).
 func configure_cheats(data: Dictionary) -> void:
@@ -245,6 +466,7 @@ func set_save_enabled(enabled: bool) -> void:
 	if enabled == _save_enabled: return
 	_save_enabled = enabled
 	if section == "save": refresh_save()
+	if mode == "story": _link_story_focus()
 
 
 ## Rewrites the slot buttons from the save files; `message` reports the last save.
@@ -265,11 +487,19 @@ func configure(definitions: Array) -> void:
 		_definition_by_id[str(definition.get("id",""))] = definition
 
 ## Selects one information page, keeping every other page out of the playfield.
+## Story mode reads overview / quest / map as Etage and display as Optionen;
+## Talente and Inventar hide the pause and emit their request.
 func select_section(key: String) -> void:
+	if mode == "story": key = STORY_ALIASES.get(key, key)
 	if key not in SECTIONS or key not in MODE_SECTIONS[mode]: return
 	if key == "cheats" and not _cheats_enabled: return
 	if key == "reward":
 		reward_requested.emit()
+		return
+	if key == "talents" or key == "inventory":
+		visible = false
+		if key == "talents": talents_requested.emit()
+		else: inventory_requested.emit()
 		return
 	section = key
 	if key == "save": refresh_save()
@@ -283,6 +513,7 @@ func select_section(key: String) -> void:
 		else:
 			button.remove_theme_color_override("font_color")
 			button.remove_theme_stylebox_override("normal")
+	if mode == "story": _link_story_focus()
 
 ## Displays authoritative snapshots. Buttons only request ordinary game actions.
 func set_state(snapshot: Dictionary, local_id: int, host: bool, port: int, solo_paused: bool) -> void:
@@ -385,6 +616,19 @@ func _text(parent: Control, value: String, point: Vector2, dimensions: Vector2, 
 	label.add_theme_color_override("font_color",CryptUI.BONE)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	parent.add_child(label)
+	return label
+
+## One Steuerung cell at 16 px; `width` > 0 fixes the column (the tab stop).
+func _row_label(value: String, colour: Color, width: float) -> Label:
+	var label := Label.new()
+	label.text = value
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.custom_minimum_size = Vector2(width,0)
+	# wrapped cells start at the row's top line
+	label.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	label.add_theme_font_size_override("font_size",16)
+	label.add_theme_color_override("font_color",colour)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return label
 
 func _button(parent: Control, value: String, point: Vector2, dimensions: Vector2, action: Callable) -> Button:

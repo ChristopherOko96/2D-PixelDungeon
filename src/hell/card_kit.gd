@@ -66,6 +66,13 @@ static func _skill_open(g: Node, set: String, key: String) -> bool:
 	return false
 
 
+## True when this run hands out level-up cards to pick (7 8 9 or a click).
+## The story worlds give run talent points instead, so their help and status
+## sheet leave the card lines out.
+static func offers_cards(g: Node) -> bool:
+	return not (g.state.get("offer", []) as Array).is_empty() or int(g.state.get("cards_due", 0)) > 0
+
+
 ## A level-up: one more point for the run talent tree (the level itself counts it).
 static func on_level_up(g: Node) -> void:
 	if g.theme.get("cards", {}).is_empty():

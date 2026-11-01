@@ -86,6 +86,7 @@ func _fire_at(at: Vector2, r: float, depth: int) -> void:
 				if bool(z.get("frozen", false)):
 					# fire on Glatteis: the ice thaws back to water
 					z.frozen = false
+					if g.sound != null: g.sound.at("react_thaw", Vector2(z.p))
 					_pools_call("thaw_near", [z.p, float(z.r) * 1.2])
 					g.monsters._burst_in(z.p - Vector2(0, 10), 8, "frost")
 				else:
@@ -109,6 +110,7 @@ func fire_passes(p: Vector2) -> void:
 	for c: Dictionary in gas.clouds_of("poison", float(g.state.t)):
 		if Vector2(c.at).distance_to(p) <= float(c.r) * 0.85:
 			gas.end_cloud(str(c.key), float(g.state.t))
+			if g.sound != null: g.sound.at("react_ignite", Vector2(c.at))
 			_explode(c.at, float(c.r), 0)
 
 
@@ -120,6 +122,7 @@ func frost_at(at: Vector2, r: float, _owner := 0) -> void:
 		if ElementRules.material(str(z.get("st", "lava"))) == "water" and not bool(z.get("frozen", false)):
 			z.frozen = true
 			froze = true
+			if g.sound != null: g.sound.at("react_freeze", Vector2(z.p))
 			# the water snaps shut: a crack of ice, rime thrown up, a short jolt
 			g.monsters._burst_in(z.p - Vector2(0, 8), 14, "frost")
 			g.monsters._impact(z.p, "small")
@@ -143,8 +146,10 @@ func water_at(at: Vector2, r: float, _owner := 0) -> void:
 		match ElementRules.material(str(z.get("st", "lava"))):
 			"lava":
 				z.crust = float(R.get("crust_time", 4.0))
+				if g.sound != null: g.sound.at("react_crust", Vector2(z.p))
 			"fire":
 				_end(z)
+				if g.sound != null: g.sound.at("react_douse", Vector2(z.p))
 
 
 ## Once a frame: crusts run down, lava and water meet.
@@ -171,6 +176,7 @@ func update(dt: float) -> void:
 ## what it ate for the caster's Arkanes Gefüge ({element: units}; each puddle
 ## or cloud once, nothing for `owner` 0; his own Gefüge drops it leaves alone).
 func void_at(at: Vector2, r: float, owner := 0) -> Dictionary:
+	if g.sound != null: g.sound.at("void_swallow", at)
 	var S: Dictionary = ElementRules.data().get("swallow", {})
 	var reach := r * float(S.get("reach", 1.6))
 	var drain := float(S.get("time", 0.7))
@@ -330,6 +336,7 @@ func _floor_meets_puddles() -> void:
 				elif icy and not bool(z.get("frozen", false)):
 					z.frozen = true
 					_pools_call("freeze_near", [z.p, float(z.r) * 1.2])
+					if g.sound != null: g.sound.at("floor_meets", Vector2(z.p), {"set": "freeze"})
 
 
 ## True when the lava at `at` is crusted over (harmless): a crusted lava
@@ -363,7 +370,8 @@ func _explode(at: Vector2, r: float, depth: int) -> void:
 	g.monsters._burst_in(at - Vector2(0, 10), 44, "poison")
 	g.monsters._crack_floor(at, reach * 0.6, 4, true)
 	g.monsters._impact(at, "large")
-	g._sound("blast")
+	if g.sound != null and g.sound.real(): g.sound.at("react_explode", at, {"fallback": ["blast"], "delay": 0.08 * depth, "pitch": 1.0 - 0.04 * depth})
+	else: g._sound("blast")
 	if g.get("feel") != null:
 		g.feel.feedback.particles.kick(at / g.feel.scale, reach / g.feel.scale, 1.0)
 	if depth < int(R.get("explode_chain", 6)):
@@ -372,6 +380,7 @@ func _explode(at: Vector2, r: float, depth: int) -> void:
 
 ## Water boiling: the puddle goes, a steam cloud rises where it lay.
 func _boil(z: Dictionary) -> void:
+	if g.sound != null: g.sound.at("react_boil", Vector2(z.get("p", Vector2.INF)))
 	var R := rules()
 	_end(z)
 	var gas: RefCounted = g.get("gas")
@@ -401,6 +410,7 @@ func _lava_meets_water() -> void:
 			if float(water.t) >= float(water.T) or Vector2(lava.p).distance_to(water.p) > float(lava.r) + float(water.r):
 				continue
 			lava.crust = float(R.get("crust_time", 4.0))
+			if g.sound != null: g.sound.at("react_crust", Vector2(lava.p))
 			_boil(water)
 
 
@@ -449,6 +459,7 @@ func _charge_rules(spec: Dictionary) -> Dictionary:
 ## over the liquid at the strike (pool_paint electrify). Returns how many
 ## puddles it charged.
 func lightning_at(at: Vector2, r: float, spec: Dictionary = {}) -> int:
+	if g.sound != null: g.sound.at("react_charge", at)
 	if g.monsters == null:
 		return 0
 	var C := _charge_rules(spec)
@@ -501,6 +512,7 @@ func _step_charges(dt: float) -> void:
 			stun_mob(m, float(C.charge_stun), float(C.boss_share))
 			m.zap_t = float(g.state.t)
 			zapped = true
+			if g.sound != null: g.sound.at("charge_zap", Vector2(m.p))
 			if P != null:
 				PixelBolt.sparks(P, Vector2(m.p) / _pscale(), 5)
 		if zapped:
@@ -561,6 +573,7 @@ func stun_mob(m: Dictionary, time: float, boss_share := 0.5) -> void:
 ## with distance; kit bosses stand, bosses boss_share) taking spec.hits hero
 ## hits. Returns how many monsters it reached.
 func wave_at(at: Vector2, r: float, spec: Dictionary = {}) -> int:
+	if g.sound != null: g.sound.at("react_wave", at)
 	var gas: RefCounted = g.get("gas")
 	if gas != null:
 		gas.impulse(at, r, float(spec.get("gas", 1.0)))
@@ -618,7 +631,8 @@ func quake_at(at: Vector2, r: float, spec: Dictionary = {}) -> int:
 		hurt_mob(m, float(spec.get("hits", 0.0)), "quake", at, share)
 		stun_mob(m, float(spec.get("stun", 1.2)), share)
 		n += 1
-	g._sound("blast")
+	if g.sound != null and g.sound.real(): g.sound.at("react_quake", at, {"fallback": ["blast"]})
+	else: g._sound("blast")
 	return n
 
 
@@ -628,6 +642,7 @@ func quake_at(at: Vector2, r: float, spec: Dictionary = {}) -> int:
 ## light motes rise (the particles' holy). Returns {hurt: monsters hurt,
 ## healed: half hearts}.
 func holy_at(at: Vector2, r: float, spec: Dictionary = {}) -> Dictionary:
+	if g.sound != null: g.sound.at("react_holy", at)
 	var P := _particles()
 	if P != null:
 		P.holy(at / _pscale(), int(spec.get("motes", 28)), r / _pscale())

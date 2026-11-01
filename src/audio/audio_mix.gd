@@ -1,9 +1,17 @@
 extends RefCounted
-## The game's mix (assets/data/audio_mix.json): the audio buses under Master
-## (Music, Ambience, SFX with its Focus part, UI), music ducking under Focus,
-## a limiter on Master, the sound categories that give every event its bus and
-## level, and the volume sliders. Everything is static so the menu, the sound
-## player and the music can share it without a scene singleton.
+## The game's mix (assets/data/audio_mix.json; docs/KLANG-KONZEPT.de.md section
+## 3): the bus tree under Master (Music, Ambience, SFX with Focus, Voices and
+## Room; Room holds Hero, Boss, Enemy, Impact, World, Step, Idle, Debris and
+## Far; UI), each bus's effects by id (reverb, low-pass, high-pass, compressor),
+## the ducking (sidechain compressors: a bus gets quieter while its key bus
+## sounds), a limiter on Master, the per-world reverb (spaces, set_space), the
+## low-pass the hero's gas drives (filters, set_muffle), the sound categories
+## that give every event its bus and level, and the volume sliders. Everything
+## is static so the menu, the sound player and the music share it without a
+## scene singleton.
+## Engine notes (docs/engine-reference/godot/modules/audio.md, Godot 4.7): a
+## bus sends only to a bus with a lower index, so audio_mix.json lists parents
+## before children; effects are found again by their resource_name (the id).
 
 const DATA_PATH := "res://assets/data/audio_mix.json"
 ## Lowest level a slider can set before it mutes.
@@ -12,6 +20,11 @@ const SILENT_DB := -80.0
 static var _data: Dictionary = {}
 ## Slider values (0..1) by slider name ("volume", "music", "effects").
 static var _sliders: Dictionary = {}
+## The world whose room the reverbs hold ("" before set_space).
+static var _space := ""
+## The last muffle value set (set_muffle skips repeats).
+static var _muffle_k := -1.0
+static var _muffle_mat := ""
 
 
 ## audio_mix.json, cached.
@@ -22,29 +35,38 @@ static func data() -> Dictionary:
 	return _data
 
 
-## Creates the buses, the ducking and the limiter once (safe to call again).
+## Creates the buses, their effects, the ducking and the limiter once (safe to
+## call again: present buses and effects are kept).
 static func ensure_buses() -> void:
 	var settings := data()
 	for bus: Dictionary in settings.get("buses", []):
 		var name := str(bus.name)
 		if AudioServer.get_bus_index(name) >= 0: continue
 		AudioServer.add_bus()
-		var index := AudioServer.bus_count - 1
-		AudioServer.set_bus_name(index, name)
-	# Sends after all buses exist (Focus sends into SFX).
+		AudioServer.set_bus_name(AudioServer.bus_count - 1, name)
+	# Sends after all buses exist (Focus sends into SFX, Hero into Room).
 	for bus: Dictionary in settings.get("buses", []):
 		AudioServer.set_bus_send(AudioServer.get_bus_index(str(bus.name)), StringName(str(bus.get("send", "Master"))))
-	var duck: Dictionary = settings.get("duck", {})
-	for name: String in duck.get("buses", []):
-		var index := AudioServer.get_bus_index(name)
-		if index < 0 or _has_effect(index, "AudioEffectCompressor"): continue
-		var compressor := AudioEffectCompressor.new()
-		compressor.sidechain = StringName(str(duck.get("key", "Focus")))
-		compressor.threshold = float(duck.get("threshold_db", -30))
-		compressor.ratio = float(duck.get("ratio", 6))
-		compressor.attack_us = float(duck.get("attack_us", 2000))
-		compressor.release_ms = float(duck.get("release_ms", 450))
-		AudioServer.add_bus_effect(index, compressor)
+	for bus: Dictionary in settings.get("buses", []):
+		var index := AudioServer.get_bus_index(str(bus.name))
+		for spec: Dictionary in bus.get("effects", []):
+			_add_effect(index, spec)
+	# ducking: one sidechain compressor per ducked bus and key
+	for duck: Dictionary in settings.get("ducks", []):
+		for name: String in duck.get("buses", []):
+			var spec := duck.duplicate()
+			spec.id = "duck:" + str(duck.get("key", "Focus"))
+			spec.type = "compressor"
+			spec.sidechain = str(duck.get("key", "Focus"))
+			_add_effect(AudioServer.get_bus_index(name), spec)
+	# the first mix's single duck block (schema 1)
+	var legacy: Dictionary = settings.get("duck", {})
+	for name: String in legacy.get("buses", []):
+		var spec := legacy.duplicate()
+		spec.id = "duck:" + str(legacy.get("key", "Focus"))
+		spec.type = "compressor"
+		spec.sidechain = str(legacy.get("key", "Focus"))
+		_add_effect(AudioServer.get_bus_index(name), spec)
 	if not _has_effect(0, "AudioEffectHardLimiter"):
 		var limiter := AudioEffectHardLimiter.new()
 		limiter.ceiling_db = float(settings.get("limiter", {}).get("ceiling_db", -1.0))
@@ -52,10 +74,107 @@ static func ensure_buses() -> void:
 	_apply_levels()
 
 
+## Adds effect `spec` ({id, type, ...}) to bus `index` unless one with its id is there.
+static func _add_effect(index: int, spec: Dictionary) -> void:
+	var id := str(spec.get("id", spec.get("type", "")))
+	if index < 0 or id.is_empty() or _find(index, id) >= 0: return
+	var effect: AudioEffect
+	match str(spec.get("type", "")):
+		"reverb":
+			var reverb := AudioEffectReverb.new()
+			for key: String in ["room_size", "damping", "spread", "hipass", "predelay_msec", "predelay_feedback"]:
+				if spec.has(key): reverb.set(key, float(spec[key]))
+			reverb.dry = float(spec.get("dry", 1.0))
+			reverb.wet = float(spec.get("wet", 0.0))
+			effect = reverb
+		"lowpass":
+			var low := AudioEffectLowPassFilter.new()
+			low.cutoff_hz = float(spec.get("cutoff_hz", 20000))
+			low.resonance = float(spec.get("resonance", 0.5))
+			effect = low
+		"highpass":
+			var high := AudioEffectHighPassFilter.new()
+			high.cutoff_hz = float(spec.get("cutoff_hz", 30))
+			effect = high
+		"compressor":
+			var compressor := AudioEffectCompressor.new()
+			compressor.threshold = float(spec.get("threshold_db", -20))
+			compressor.ratio = float(spec.get("ratio", 4))
+			compressor.attack_us = float(spec.get("attack_us", 2000))
+			compressor.release_ms = float(spec.get("release_ms", 250))
+			compressor.gain = float(spec.get("gain_db", 0))
+			if str(spec.get("sidechain", "")) != "": compressor.sidechain = StringName(str(spec.sidechain))
+			effect = compressor
+		_:
+			return
+	effect.resource_name = id
+	AudioServer.add_bus_effect(index, effect)
+	var at := AudioServer.get_bus_effect_count(index) - 1
+	var reverb_off := effect is AudioEffectReverb and float(spec.get("wet", 0.0)) <= 0.0
+	if not bool(spec.get("enabled", true)) or reverb_off: AudioServer.set_bus_effect_enabled(index, at, false)
+
+
+## Index of the effect named `id` on bus `bus`, or -1.
+static func _find(bus: int, id: String) -> int:
+	if bus < 0: return -1
+	for index in range(AudioServer.get_bus_effect_count(bus)):
+		if AudioServer.get_bus_effect(bus, index).resource_name == id: return index
+	return -1
+
+
 static func _has_effect(bus: int, type: String) -> bool:
 	for index in range(AudioServer.get_bus_effect_count(bus)):
 		if AudioServer.get_bus_effect(bus, index).is_class(type): return true
 	return false
+
+
+## The room of story world `world` (audio_mix.json spaces): every bus named in
+## its "wet" gets the world's reverb at that wet share (dry stays 1).
+static func set_space(world: String) -> void:
+	var space: Dictionary = data().get("spaces", {}).get(world, {})
+	if space.is_empty(): return
+	_space = world
+	var wet: Dictionary = space.get("wet", {})
+	for bus_name: String in wet:
+		var index := AudioServer.get_bus_index(bus_name)
+		var at := _find(index, "reverb")
+		if at < 0: continue
+		var reverb := AudioServer.get_bus_effect(index, at) as AudioEffectReverb
+		for key: String in ["room_size", "damping", "spread", "hipass", "predelay_msec", "predelay_feedback"]:
+			if space.has(key): reverb.set(key, float(space[key]))
+		reverb.dry = 1.0
+		reverb.wet = float(wet[bus_name])
+		AudioServer.set_bus_effect_enabled(index, at, reverb.wet > 0.0)
+
+
+## The world whose room the reverbs hold now ("" before any).
+static func space() -> String:
+	return _space
+
+
+## The hero's gas or steam dulls the world (KLANG-KONZEPT 3.7): every bus of
+## filters.gas[mat] (else .default) gets its "muffle" low-pass, the cutoff
+## gliding from open_hz to the gas's Hz as `k` (the vision value 0..1) grows;
+## off at k = 0. Focus and UI are never filtered.
+static func set_muffle(k: float, mat: String) -> void:
+	k = clampf(k, 0.0, 1.0)
+	if absf(k - _muffle_k) < 0.005 and mat == _muffle_mat: return
+	_muffle_k = k
+	_muffle_mat = mat
+	var filters: Dictionary = data().get("filters", {})
+	var gas: Dictionary = filters.get("gas", {})
+	var spec: Dictionary = gas.get(mat, gas.get("default", {}))
+	var open := float(filters.get("open_hz", 20000))
+	var targets: Dictionary = spec.get("buses", {})
+	for bus_name: String in targets:
+		var index := AudioServer.get_bus_index(bus_name)
+		var at := _find(index, "muffle")
+		if at < 0: continue
+		var on := k > 0.01
+		if on:
+			var filter := AudioServer.get_bus_effect(index, at) as AudioEffectFilter
+			filter.cutoff_hz = open * pow(maxf(20.0, float(targets[bus_name])) / open, k)
+		if AudioServer.is_bus_effect_enabled(index, at) != on: AudioServer.set_bus_effect_enabled(index, at, on)
 
 
 ## Bus and level of a sound category; unknown names fall back to plain SFX.

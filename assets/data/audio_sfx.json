@@ -3,7 +3,24 @@
  "schema_version": 2,
  "output": "res://assets/audio/sfx/",
  "rig_materials": {
-  "skelett": "bone", "skelettschuetze": "bone", "skelettwache": "bone", "nekromant": "flesh", "zombie": "flesh", "eiszombie": "bone", "leerenbomber": "void", "mimik": "flesh", "knochenwaechter": "bone", "grabmutter": "flesh", "moderkoloss": "flesh", "nekromantenfuerst": "flesh", "truhenfresser": "flesh", "frostleiche": "flesh", "archivar": "flesh", "leerenbrut": "void", "knochenkoloss": "bone", "leerenrufer": "void",
+  "skelett": "bone",
+  "skelettschuetze": "bone",
+  "skelettwache": "bone",
+  "nekromant": "flesh",
+  "zombie": "flesh",
+  "eiszombie": "bone",
+  "leerenbomber": "void",
+  "mimik": "flesh",
+  "knochenwaechter": "bone",
+  "grabmutter": "flesh",
+  "moderkoloss": "flesh",
+  "nekromantenfuerst": "flesh",
+  "truhenfresser": "flesh",
+  "frostleiche": "flesh",
+  "archivar": "flesh",
+  "leerenbrut": "void",
+  "knochenkoloss": "bone",
+  "leerenrufer": "void",
   "skeleton": "bone",
   "skel_archer": "bone",
   "skel_guard": "bone",
@@ -194,17 +211,21 @@
    "variants": 4
   },
   "shoot_arrow": {
-   "label": "Bogenschuss des Helden",
+   "label": "Bogenschuss (Sehne + Federn)",
    "category": "hero",
    "files": [
     "res://assets/audio/sfx/shoot_arrow_0.wav",
     "res://assets/audio/sfx/shoot_arrow_1.wav",
     "res://assets/audio/sfx/shoot_arrow_2.wav",
-    "res://assets/audio/sfx/shoot_arrow_3.wav"
+    "res://assets/audio/sfx/shoot_arrow_3.wav",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_bow_arrow_shoot_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_bow_arrow_shoot_02.ogg"
    ],
-   "spread": 0.06,
+   "spread": 0.05,
    "src": "SWSH_MOVEMENT-Bamboo Whip_HY_PC.wav",
-   "variants": 4
+   "variants": 4,
+   "volume_db": 0,
+   "min_interval": 0.06
   },
   "shoot_magic": {
    "label": "Zauberkugel des Magiers",
@@ -434,13 +455,19 @@
    "variants": 4
   },
   "attack_bite": {
-   "label": "Mini-Zombie beißt",
+   "label": "Biss/Ansturm",
    "category": "enemy",
    "files": [
-    "res://assets/audio/sfx/attack_bite_0.wav"
+    "res://assets/audio/sfx/attack_bite_0.wav",
+    "res://assets/audio/library/dog_snarl/dog-snarl.ogg",
+    "res://assets/audio/library/lrsf_voices/demon_00.ogg",
+    "res://assets/audio/library/lrsf_voices/demon_01.ogg",
+    "res://assets/audio/library/lrsf_voices/demon_03.ogg"
    ],
    "spread": 0.1,
-   "src": "Combat and Gore/crunch_quick.wav"
+   "src": "Combat and Gore/crunch_quick.wav",
+   "volume_db": 0,
+   "min_interval": 0.05
   },
   "attack_arrow": {
    "label": "Skelettschütze schießt",
@@ -616,14 +643,20 @@
    "src": "Musical Effects/harpsichord_mystery.wav"
   },
   "doors_lock": {
-   "label": "Türen schließen sich",
+   "label": "Türen schlagen zu (Kampf)",
    "category": "world",
    "files": [
     "res://assets/audio/sfx/doors_lock_0.wav",
-    "res://assets/audio/sfx/doors_lock_1.wav"
+    "res://assets/audio/sfx/doors_lock_1.wav",
+    "res://assets/audio/library/door_open_close_set/qubodup-doorclose01.ogg",
+    "res://assets/audio/library/door_open_close_set/qubodup-doorclose02.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/metal_slam_01.ogg"
    ],
    "src": "UIMisc_INTERFACE-Lock_HY_PC.wav",
-   "variants": 2
+   "variants": 2,
+   "volume_db": 1,
+   "spread": 0.03,
+   "min_interval": 0.5
   },
   "room_clear": {
    "label": "Raum frei",
@@ -782,17 +815,5897 @@
    "spread": 0.06
   },
   "chest_open": {
-   "label": "Truhe geht auf",
+   "label": "Truhe öffnet",
    "category": "world",
    "files": [
     "res://assets/audio/library/kenney_impact/impact_wood_heavy_000.ogg",
     "res://assets/audio/library/kenney_impact/impact_wood_heavy_001.ogg",
     "res://assets/audio/library/kenney_impact/impact_wood_heavy_002.ogg",
     "res://assets/audio/library/kenney_impact/impact_wood_heavy_003.ogg",
-    "res://assets/audio/library/kenney_impact/impact_wood_heavy_004.ogg"
+    "res://assets/audio/library/kenney_impact/impact_wood_heavy_004.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/door_open_01.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/wood_squeak_01.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/wood_squeak_02.ogg"
    ],
    "pitch": 0.9,
+   "spread": 0.04,
+   "volume_db": 0,
+   "min_interval": 0.3,
+   "with": "chest_coins"
+  },
+  "vo_hurt@female": {
+   "label": "Schmerzlaut der Bogenschützin",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/female_rpg_voice_starter/type_2_damaged1.ogg",
+    "res://assets/audio/library/female_rpg_voice_starter/type_2_damaged2.ogg",
+    "res://assets/audio/library/female_rpg_voice_starter/type_2_damaged3.ogg",
+    "res://assets/audio/library/female_hurt_grunts/female_hurt_grunts_groans_1_s01.ogg",
+    "res://assets/audio/library/female_hurt_grunts/female_hurt_grunts_groans_1_s04.ogg",
+    "res://assets/audio/library/female_hurt_grunts/female_hurt_grunts_groans_1_s07.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.03,
+   "min_interval": 0.35
+  },
+  "vo_hurt_heavy@female": {
+   "label": "Schwerer Treffer, Bogenschützin",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/female_hurt_grunts/female_hurt_grunts_groans_1_s01.ogg",
+    "res://assets/audio/library/female_hurt_grunts/female_hurt_grunts_groans_1_s03.ogg",
+    "res://assets/audio/library/female_hurt_grunts/female_hurt_grunts_groans_1_s05.ogg",
+    "res://assets/audio/library/female_hurt_grunts/female_hurt_grunts_groans_1_s07.ogg"
+   ],
+   "volume_db": 1,
+   "spread": 0.03,
+   "min_interval": 0.6
+  },
+  "vo_death@female": {
+   "label": "Tod der Bogenschützin",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/dying_voices_female/death_--_high_dying_noise.ogg",
+    "res://assets/audio/library/dying_voices_female/death_--_misc_female_british_noise.ogg",
+    "res://assets/audio/library/female_hurt_grunts/female_hurt_grunts_groans_1_s01.ogg"
+   ],
+   "volume_db": 1,
+   "spread": 0.02,
+   "min_interval": 1
+  },
+  "vo_effort@female": {
+   "label": "Anstrengung der Bogenschützin",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/female_rpg_voice_starter/type_2_attack1.ogg",
+    "res://assets/audio/library/female_rpg_voice_starter/type_2_attack2.ogg",
+    "res://assets/audio/library/female_rpg_voice_starter/type_2_attack3.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.03,
+   "min_interval": 1.5
+  },
+  "vo_dodge@female": {
+   "label": "Ausweichen der Bogenschützin",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/female_rpg_voice_starter/type_2_jump1.ogg",
+    "res://assets/audio/library/female_rpg_voice_starter/type_2_jump2.ogg",
+    "res://assets/audio/library/female_rpg_voice_starter/type_2_jump3.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.03,
+   "min_interval": 0.8
+  },
+  "vo_levelup@female": {
+   "label": "Stufenaufstieg, Bogenschützin",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/female_rpg_voice_starter/type_2_healed1.ogg",
+    "res://assets/audio/library/female_rpg_voice_starter/type_2_healed2.ogg",
+    "res://assets/audio/library/female_rpg_voice_starter/type_2_healed3.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.02,
+   "min_interval": 2
+  },
+  "vo_taunt@female": {
+   "label": "Kampfschrei der Bogenschützin",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/female_rpg_voice_starter/type_2_attack3.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.02,
+   "min_interval": 1.5
+  },
+  "vo_hurt@male_knight": {
+   "label": "Schmerzlaut des Schwertkämpfers",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/male_grunt_yelling/3yell3.ogg",
+    "res://assets/audio/library/male_grunt_yelling/3yell4.ogg",
+    "res://assets/audio/library/male_grunt_yelling/3yell7.ogg",
+    "res://assets/audio/library/male_grunt_yelling/3yell8.ogg",
+    "res://assets/audio/library/male_grunt_yelling/3yell12.ogg",
+    "res://assets/audio/library/male_grunt_yelling/3yell15.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.03,
+   "min_interval": 0.35
+  },
+  "vo_hurt_heavy@male_knight": {
+   "label": "Schwerer Treffer, Schwertkämpfer",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/male_grunt_yelling/3yell16.ogg",
+    "res://assets/audio/library/male_grunt_yelling/3yell13.ogg",
+    "res://assets/audio/library/male_grunt_yelling/3yell6.ogg",
+    "res://assets/audio/library/male_grunt_yelling/3yell1.ogg"
+   ],
+   "volume_db": 1,
+   "spread": 0.03,
+   "min_interval": 0.6
+  },
+  "vo_death@male_knight": {
+   "label": "Tod des Schwertkämpfers",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/baradari_11_male_pain/die2.ogg",
+    "res://assets/audio/library/baradari_11_male_pain/die1.ogg",
+    "res://assets/audio/library/baradari_11_male_pain/deathh.ogg"
+   ],
+   "volume_db": 1,
+   "spread": 0.02,
+   "min_interval": 1
+  },
+  "vo_effort@male_knight": {
+   "label": "Anstrengung des Schwertkämpfers",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/male_grunt_yelling/3grunt1.ogg",
+    "res://assets/audio/library/male_grunt_yelling/3grunt2.ogg",
+    "res://assets/audio/library/male_grunt_yelling/3grunt3.ogg",
+    "res://assets/audio/library/male_grunt_yelling/3grunt4.ogg",
+    "res://assets/audio/library/male_grunt_yelling/3grunt5.ogg",
+    "res://assets/audio/library/male_grunt_yelling/3grunt6.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.03,
+   "min_interval": 1.5
+  },
+  "vo_dodge@male_knight": {
+   "label": "Blocken/Ausweichen, Schwertkämpfer",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/male_grunt_yelling/3grunt3.ogg",
+    "res://assets/audio/library/male_grunt_yelling/3grunt4.ogg",
+    "res://assets/audio/library/male_grunt_yelling/3grunt5.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.03,
+   "min_interval": 0.8
+  },
+  "vo_taunt@male_knight": {
+   "label": "Kriegsschrei des Schwertkämpfers",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/male_grunt_yelling/3yell16.ogg",
+    "res://assets/audio/library/male_grunt_yelling/3yell13.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.02,
+   "min_interval": 1.5
+  },
+  "vo_cough@male_knight": {
+   "label": "Husten im Gas, Schwertkämpfer",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/creatures_1/cough_01.ogg",
+    "res://assets/audio/library/creatures_1/cough_02.ogg",
+    "res://assets/audio/library/creatures_1/cough_03.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.03,
+   "min_interval": 1.2
+  },
+  "vo_hurt@male_wizard": {
+   "label": "Schmerzlaut des Magiers",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-01.ogg",
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-07.ogg",
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-06.ogg",
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-09.ogg",
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-13.ogg",
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-03.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.03,
+   "min_interval": 0.35
+  },
+  "vo_hurt_heavy@male_wizard": {
+   "label": "Schwerer Treffer, Magier",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-15.ogg",
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-10.ogg",
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-05.ogg",
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-14.ogg"
+   ],
+   "volume_db": 1,
+   "spread": 0.03,
+   "min_interval": 0.6
+  },
+  "vo_death@male_wizard": {
+   "label": "Tod des Magiers",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/lrsf_voices/human_dyingbreath_00.ogg",
+    "res://assets/audio/library/lrsf_voices/human_dyingbreath_02.ogg",
+    "res://assets/audio/library/lrsf_voices/human_dyingbreath_03.ogg"
+   ],
+   "volume_db": 1,
+   "spread": 0.02,
+   "min_interval": 1
+  },
+  "vo_effort@male_wizard": {
+   "label": "Anstrengung des Magiers",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-11.ogg",
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-02.ogg",
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-12.ogg",
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-08.ogg",
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-01.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.03,
+   "min_interval": 1.5
+  },
+  "vo_dodge@male_wizard": {
+   "label": "Blocken/Ausweichen, Magier",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-11.ogg",
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-02.ogg",
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-12.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.03,
+   "min_interval": 0.8
+  },
+  "vo_cough@male_wizard": {
+   "label": "Husten im Gas, Magier",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/creatures_1/cough_01.ogg",
+    "res://assets/audio/library/creatures_1/cough_02.ogg",
+    "res://assets/audio/library/creatures_1/cough_03.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.03,
+   "min_interval": 1.2
+  },
+  "vo_hurt@male_necro": {
+   "label": "Schmerzlaut des Nekromanten",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/male_grunt_yelling/2yell1.ogg",
+    "res://assets/audio/library/male_grunt_yelling/2yell3.ogg",
+    "res://assets/audio/library/male_grunt_yelling/2yell10.ogg",
+    "res://assets/audio/library/male_grunt_yelling/2yell2.ogg",
+    "res://assets/audio/library/male_grunt_yelling/2yell7.ogg",
+    "res://assets/audio/library/male_grunt_yelling/2yell8.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.03,
+   "min_interval": 0.35,
+   "pitch": 0.86
+  },
+  "vo_hurt_heavy@male_necro": {
+   "label": "Schwerer Treffer, Nekromant",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/male_grunt_yelling/2yell6.ogg",
+    "res://assets/audio/library/male_grunt_yelling/2yell5.ogg",
+    "res://assets/audio/library/male_grunt_yelling/2yell4.ogg",
+    "res://assets/audio/library/male_grunt_yelling/2yell11.ogg"
+   ],
+   "volume_db": 1,
+   "spread": 0.03,
+   "min_interval": 0.6,
+   "pitch": 0.86
+  },
+  "vo_death@male_necro": {
+   "label": "Tod des Nekromanten",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/zombie_skeleton_monster_voice/humandeath1.ogg",
+    "res://assets/audio/library/zombie_skeleton_monster_voice/humandeath2.ogg"
+   ],
+   "volume_db": 1,
+   "spread": 0.02,
+   "min_interval": 1,
+   "pitch": 0.86
+  },
+  "vo_effort@male_necro": {
+   "label": "Anstrengung des Nekromanten",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/zombie_skeleton_monster_voice/humanyell3.ogg",
+    "res://assets/audio/library/zombie_skeleton_monster_voice/humanyell1.ogg",
+    "res://assets/audio/library/zombie_skeleton_monster_voice/humanyell5.ogg",
+    "res://assets/audio/library/zombie_skeleton_monster_voice/humanyell4.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.03,
+   "min_interval": 1.5,
+   "pitch": 0.86
+  },
+  "vo_taunt@male_necro": {
+   "label": "Ruf des Nekromanten",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/zombie_skeleton_monster_voice/humanyell2.ogg",
+    "res://assets/audio/library/zombie_skeleton_monster_voice/humanyell4.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.02,
+   "min_interval": 1.5,
+   "pitch": 0.86
+  },
+  "vo_cough@male_necro": {
+   "label": "Husten im Gas, Nekromant",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/creatures_1/cough_01.ogg",
+    "res://assets/audio/library/creatures_1/cough_02.ogg",
+    "res://assets/audio/library/creatures_1/cough_03.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.03,
+   "min_interval": 1.2,
+   "pitch": 0.86
+  },
+  "step@frost": {
+   "label": "Schritte im Schnee (Frostgruft)",
+   "category": "step",
+   "files": [
+    "res://assets/audio/library/kenney_impact/footstep_snow_000.ogg",
+    "res://assets/audio/library/kenney_impact/footstep_snow_001.ogg",
+    "res://assets/audio/library/kenney_impact/footstep_snow_002.ogg",
+    "res://assets/audio/library/kenney_impact/footstep_snow_003.ogg",
+    "res://assets/audio/library/kenney_impact/footstep_snow_004.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.06,
+   "min_interval": 0.1
+  },
+  "step@hell": {
+   "label": "Schritte auf Asche/Kies (Hölle)",
+   "category": "step",
+   "files": [
+    "res://assets/audio/library/lrsf_fantasy/footstep_dirt_00.ogg",
+    "res://assets/audio/library/lrsf_fantasy/footstep_dirt_02.ogg",
+    "res://assets/audio/library/lrsf_fantasy/footstep_dirt_04.ogg",
+    "res://assets/audio/library/lrsf_fantasy/footstep_dirt_05.ogg",
+    "res://assets/audio/library/lrsf_fantasy/footstep_dirt_07.ogg",
+    "res://assets/audio/library/lrsf_fantasy/footstep_dirt_09.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.06,
+   "min_interval": 0.1
+  },
+  "foley_move@male_knight": {
+   "label": "Rüstung klirrt beim Gehen",
+   "category": "step",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/chain_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/chain_02.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/chain_03.ogg"
+   ],
+   "volume_db": -9,
+   "spread": 0.05,
+   "min_interval": 0.25
+  },
+  "foley_move@female": {
+   "label": "Leder und Köcher beim Gehen",
+   "category": "step",
+   "files": [
+    "res://assets/audio/library/kenney_rpg/belthandle1.ogg",
+    "res://assets/audio/library/kenney_rpg/cloth1.ogg",
+    "res://assets/audio/library/kenney_rpg/cloth4.ogg",
+    "res://assets/audio/library/kenney_rpg/clothbelt2.ogg"
+   ],
+   "volume_db": -9,
+   "spread": 0.05,
+   "min_interval": 0.25
+  },
+  "foley_move@male_wizard": {
+   "label": "Robe beim Gehen",
+   "category": "step",
+   "files": [
+    "res://assets/audio/library/kenney_rpg/cloth1.ogg",
+    "res://assets/audio/library/kenney_rpg/cloth3.ogg",
+    "res://assets/audio/library/kenney_rpg/cloth4.ogg",
+    "res://assets/audio/library/kenney_rpg/clothbelt2.ogg"
+   ],
+   "volume_db": -10,
+   "spread": 0.05,
+   "min_interval": 0.25
+  },
+  "foley_move@male_necro": {
+   "label": "Robe + Knochenstab beim Gehen",
+   "category": "step",
+   "files": [
+    "res://assets/audio/library/kenney_rpg/cloth1.ogg",
+    "res://assets/audio/library/kenney_rpg/cloth4.ogg",
+    "res://assets/audio/library/kenney_rpg/clothbelt2.ogg",
+    "res://assets/audio/library/bones/bones_rattle_0.ogg",
+    "res://assets/audio/library/bones/bones_rattle_9.ogg"
+   ],
+   "volume_db": -10,
+   "spread": 0.05,
+   "min_interval": 0.25
+  },
+  "swing_heavy": {
+   "label": "Schwerer Schwerthieb",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_heavy_sword_swing_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_heavy_sword_swing_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_heavy_sword_swing_03.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.04,
+   "min_interval": 0.05
+  },
+  "bow_draw": {
+   "label": "Bogen spannen",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_bow_arrow_draw_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_bow_arrow_draw_02.ogg"
+   ],
+   "volume_db": -5,
+   "spread": 0.04,
+   "min_interval": 0.2
+  },
+  "shoot_magic_fire": {
+   "label": "Zauberschuss Feuer",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_launch_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_launch_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_launch_03.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/spell_fire_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/spell_fire_03.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.05,
+   "min_interval": 0.08
+  },
+  "shoot_magic_ice": {
+   "label": "Zauberschuss Frost",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_launch_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_launch_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_launch_03.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.05,
+   "min_interval": 0.08
+  },
+  "shoot_magic_void": {
+   "label": "Zauberschuss Leere",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/lrsf_fantasy/spell_02.ogg",
+    "res://assets/audio/library/lrsf_fantasy/spell_03.ogg",
+    "res://assets/audio/library/lrsf_fantasy/spell_04.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.05,
+   "min_interval": 0.08
+  },
+  "shoot_necro": {
+   "label": "Seelenschuss des Nekromanten",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/lrsf_fantasy/spell_00.ogg",
+    "res://assets/audio/library/lrsf_fantasy/spell_01.ogg",
+    "res://assets/audio/library/leohpaz_8_heals_buffs/21_debuff_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/seq_mana_drain_start.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.05,
+   "min_interval": 0.08
+  },
+  "wall_hit_arrow": {
+   "label": "Pfeil trifft Wand",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_bow_arrow_hit_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_bow_arrow_hit_02.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/wood_hit_01.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/wood_hit_03.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.08,
+   "min_interval": 0.05
+  },
+  "wall_hit_fire": {
+   "label": "Feuer trifft Wand",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_impact_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_impact_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_impact_03.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.08,
+   "min_interval": 0.05
+  },
+  "wall_hit_ice": {
+   "label": "Frost trifft Wand",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_impact_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_impact_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_impact_03.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.08,
+   "min_interval": 0.05
+  },
+  "wall_hit_void": {
+   "label": "Leere trifft Wand",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_heals_buffs/39_absorb_04.ogg",
+    "res://assets/audio/library/portal_sounds_4/1.ogg",
+    "res://assets/audio/library/portal_sounds_4/2.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.08,
+   "min_interval": 0.05
+  },
+  "wall_hit_slime": {
+   "label": "Gift trifft Wand",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_01.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_02.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_03.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_04.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.08,
+   "min_interval": 0.05
+  },
+  "wall_hit_gold": {
+   "label": "Gold trifft Wand",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/item_coins_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_coins_03.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_coins_04.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.08,
+   "min_interval": 0.05
+  },
+  "wall_hit_bone": {
+   "label": "Knochen trifft Wand",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/bones/bones_rattle_0.ogg",
+    "res://assets/audio/library/bones/bones_rattle_5.ogg",
+    "res://assets/audio/library/bones/bones_rattle_9.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.08,
+   "min_interval": 0.05
+  },
+  "hurt_element_fire": {
+   "label": "Held brennt",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_1.ogg",
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_3.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/spell_fire_04.ogg"
+   ],
+   "volume_db": -5,
+   "spread": 0.06,
+   "min_interval": 0.5
+  },
+  "hurt_element_ice": {
+   "label": "Held friert",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/ice_shattering/ledasluzta2.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta5.ogg"
+   ],
+   "volume_db": -5,
+   "spread": 0.06,
+   "min_interval": 0.5
+  },
+  "hurt_element_slime": {
+   "label": "Held vergiftet",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_01.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_02.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_03.ogg"
+   ],
+   "volume_db": -5,
+   "spread": 0.06,
+   "min_interval": 0.5
+  },
+  "hurt_element_void": {
+   "label": "Held in der Leere",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/portal_sounds_4/1.ogg",
+    "res://assets/audio/library/portal_sounds_4/3.ogg"
+   ],
+   "volume_db": -5,
+   "spread": 0.06,
+   "min_interval": 0.5
+  },
+  "hurt_element_shock": {
+   "label": "Held unter Strom",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_03.ogg"
+   ],
+   "volume_db": -5,
+   "spread": 0.06,
+   "min_interval": 0.5
+  },
+  "dodge": {
+   "label": "Ausweichrolle",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_swing_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_swing_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_swing_03.ogg",
+    "res://assets/audio/library/kenney_rpg/cloth1.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.05,
+   "min_interval": 0.15
+  },
+  "block_raise": {
+   "label": "Block wird gehoben",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_magic_shield_activation_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_magic_shield_activation_02.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.05,
+   "min_interval": 0.2
+  },
+  "block_hit@male_knight": {
+   "label": "Treffer auf den Schild",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_heavy_sword_hit_metal_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_heavy_sword_hit_metal_03.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_sword_hit_metal_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_sword_hit_metal_03.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.05,
+   "min_interval": 0.05
+  },
+  "block_hit@male_wizard": {
+   "label": "Treffer auf die Glas-Barriere",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/glass_001.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/glass_003.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/glass_004.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/glass_006.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.05,
+   "min_interval": 0.05
+  },
+  "block_hit@male_necro": {
+   "label": "Treffer auf die Knochenwand",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/bones/bones_rattle_0.ogg",
+    "res://assets/audio/library/bones/bones_rattle_5.ogg",
+    "res://assets/audio/library/bones/bones_rattle_9.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.05,
+   "min_interval": 0.05
+  },
+  "block_break": {
+   "label": "Block bricht",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_06.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_metal_falling_01.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.04,
+   "min_interval": 0.3
+  },
+  "dash": {
+   "label": "Sprint/Sprung",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_swing_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_swing_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_swing_03.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.05,
+   "min_interval": 0.15
+  },
+  "dash_land": {
+   "label": "Landung nach dem Sprint",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_hit_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_hit_03.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_hit_04.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.05,
+   "min_interval": 0.15
+  },
+  "blink_out": {
+   "label": "Blinzeln: weg",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_teleport_out.ogg",
+    "res://assets/audio/library/portal_sounds_4/1.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.04,
+   "min_interval": 0.1
+  },
+  "blink_in": {
+   "label": "Blinzeln: da",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_teleport_in.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.04,
+   "min_interval": 0.1
+  },
+  "medium_enter_water": {
+   "label": "Hinein ins Wasser",
+   "category": "step",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_01.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_07.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_05.ogg"
+   ],
+   "volume_db": 4,
+   "spread": 0.05,
+   "min_interval": 0.3
+  },
+  "medium_wade_water": {
+   "label": "Waten im Wasser (Schleife)",
+   "category": "step",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/loop_water_01_loop.ogg"
+   ],
+   "volume_db": 0,
+   "loop": true
+  },
+  "medium_exit_water": {
+   "label": "Aus dem Wasser",
+   "category": "step",
+   "files": [
+    "res://assets/audio/library/lrsf_fantasy/footstep_water_00.ogg",
+    "res://assets/audio/library/lrsf_fantasy/footstep_water_04.ogg",
+    "res://assets/audio/library/lrsf_fantasy/footstep_water_07.ogg"
+   ],
+   "volume_db": 2,
+   "spread": 0.05,
+   "min_interval": 0.3
+  },
+  "medium_enter_lava": {
+   "label": "Hinein in Lava",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/lava_splash/lava.ogg",
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_4.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.05,
+   "min_interval": 0.3
+  },
+  "medium_wade_lava": {
+   "label": "In Lava (Schleife)",
+   "category": "step",
+   "files": [
+    "res://assets/audio/library/lava_loop/lavaloop_loop.ogg"
+   ],
+   "volume_db": 2,
+   "loop": true
+  },
+  "medium_enter_poison": {
+   "label": "Hinein ins Gift",
+   "category": "step",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_10.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_11.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_12.ogg"
+   ],
+   "volume_db": 3,
+   "spread": 0.05,
+   "min_interval": 0.3
+  },
+  "medium_wade_poison": {
+   "label": "Im Gift (Schleife)",
+   "category": "step",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/loop_bubbles_1_loop.ogg"
+   ],
+   "volume_db": 0,
+   "loop": true
+  },
+  "medium_enter_blood": {
+   "label": "Hinein ins Blut",
+   "category": "step",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_13.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_15.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_16.ogg"
+   ],
+   "volume_db": 3,
+   "spread": 0.05,
+   "min_interval": 0.3
+  },
+  "mad_whisper": {
+   "label": "Wahn-Flüstern (Schleife)",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/ghostly_loops_4/atmoseerie01.mp3_loop.ogg"
+   ],
+   "volume_db": 6,
+   "loop": true
+  },
+  "pit_fall": {
+   "label": "Sturz in die Grube",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/25_wind_01.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.02,
+   "min_interval": 1
+  },
+  "level_up": {
+   "label": "Stufenaufstieg",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/level_up_coin_get/rise03.ogg",
+    "res://assets/audio/library/level_up_coin_get/rise06.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0,
+   "min_interval": 1
+  },
+  "clone_spawn": {
+   "label": "Klon erscheint",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_heals_buffs/30_revive_03.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.04,
+   "min_interval": 0.5
+  },
+  "clone_end": {
+   "label": "Klon zerfällt",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_heals_buffs/44_sleep_01.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.04,
+   "min_interval": 0.5
+  },
+  "mana_orb": {
+   "label": "Mana-Kugel eingesammelt",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/glass_001.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/glass_003.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/glass_004.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/glass_006.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.06,
+   "min_interval": 0.08
+  },
+  "no_mana": {
+   "label": "Kein Mana / Abklingzeit",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/error_001.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/error_004.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.03,
+   "min_interval": 0.3
+  },
+  "crystals_bank": {
+   "label": "Kristalle eingelagert",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/item_gem_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_gem_02.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_gem_03.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_gem_04.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.03,
+   "min_interval": 0.5
+  },
+  "familiar_chirp": {
+   "label": "Irrwisch zirpt",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/creatures_1/cute_01.ogg",
+    "res://assets/audio/library/creatures_1/cute_03.ogg",
+    "res://assets/audio/library/creatures_1/cute_04.ogg",
+    "res://assets/audio/library/creatures_1/cute_06.ogg",
+    "res://assets/audio/library/creatures_1/cute_07.ogg",
+    "res://assets/audio/library/creatures_1/cute_09.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.08,
+   "min_interval": 6
+  },
+  "familiar_whoosh": {
+   "label": "Irrwisch saust vorbei",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_swing_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_swing_03.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.08,
+   "min_interval": 0.5
+  },
+  "run_won@krypta": {
+   "label": "Sieg (Krypta)",
+   "category": "stinger",
+   "files": [
+    "res://assets/audio/library/kenney_music_jingles/jingles_pizzi00.ogg"
+   ],
+   "volume_db": 0
+  },
+  "run_won@frost": {
+   "label": "Sieg (Frostgruft)",
+   "category": "stinger",
+   "files": [
+    "res://assets/audio/library/lrsf_fantasy/jingle_win_00.ogg"
+   ],
+   "volume_db": 0
+  },
+  "run_won@hell": {
+   "label": "Sieg (Hölle)",
+   "category": "stinger",
+   "files": [
+    "res://assets/audio/library/kenney_music_jingles/jingles_hit00.ogg"
+   ],
+   "volume_db": 0
+  },
+  "tal_cast_fire": {
+   "label": "Talent laden: Feuer",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_buildup.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.05,
+   "min_interval": 0.06
+  },
+  "tal_cast_ice": {
+   "label": "Talent laden: Frost",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_spell_buildup.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.05,
+   "min_interval": 0.06
+  },
+  "tal_cast_shock": {
+   "label": "Talent laden: Blitz",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_buildup.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.05,
+   "min_interval": 0.06
+  },
+  "tal_cast_void": {
+   "label": "Talent laden: Leere",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/seq_mana_drain_start.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.05,
+   "min_interval": 0.06
+  },
+  "tal_cast_slime": {
+   "label": "Talent laden: Gift",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/46_poison_01.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.05,
+   "min_interval": 0.06
+  },
+  "tal_cast_spirit": {
+   "label": "Talent laden: Heilig",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_heals_buffs/02_heal_02.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.05,
+   "min_interval": 0.06
+  },
+  "tal_cast_physical": {
+   "label": "Talent laden: Kraft",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/45_charge_05.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.05,
+   "min_interval": 0.06
+  },
+  "tal_projectile_fire": {
+   "label": "Talent-Geschoss: Feuer",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_launch_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_launch_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_launch_03.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/spell_fire_05.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/spell_fire_07.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "tal_projectile_ice": {
+   "label": "Talent-Geschoss: Frost",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_launch_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_launch_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_launch_03.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "tal_projectile_shock": {
+   "label": "Talent-Geschoss: Blitz",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_launch_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_launch_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_launch_03.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "tal_projectile_void": {
+   "label": "Talent-Geschoss: Leere",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/lrsf_fantasy/spell_02.ogg",
+    "res://assets/audio/library/lrsf_fantasy/spell_03.ogg",
+    "res://assets/audio/library/lrsf_fantasy/spell_04.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "tal_projectile_slime": {
+   "label": "Talent-Geschoss: Gift",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/creature_slime_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/creature_slime_03.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/creature_slime_04.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "tal_impact_fire": {
+   "label": "Talent-Einschlag: Feuer",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_impact_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_impact_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_impact_03.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "tal_impact_ice": {
+   "label": "Talent-Einschlag: Frost",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_impact_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_impact_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_impact_03.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta2.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "tal_impact_shock": {
+   "label": "Talent-Einschlag: Blitz",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_03.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "tal_impact_void": {
+   "label": "Talent-Einschlag: Leere",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_heals_buffs/39_absorb_04.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/seq_mana_drain_end.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "tal_impact_slime": {
+   "label": "Talent-Einschlag: Gift",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_05.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_06.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_07.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_08.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "tal_impact_spirit": {
+   "label": "Talent-Einschlag: Heilig",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_healing_chime_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_healing_chime_02.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.04,
+   "min_interval": 0.05
+  },
+  "tal_nova_fire": {
+   "label": "Nova: Feuer-Ring",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/04_fire_explosion_04_medium.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.04,
+   "min_interval": 0.2
+  },
+  "tal_nova_ice": {
+   "label": "Nova: Frost",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/13_ice_explosion_01.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.04,
+   "min_interval": 0.2
+  },
+  "tal_nova_shock": {
+   "label": "Nova: Blitz",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/18_thunder_02.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.04,
+   "min_interval": 0.2
+  },
+  "tal_nova_void": {
+   "label": "Nova: Leere-Implosion",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/portal_sounds_4/4.ogg",
+    "res://assets/audio/library/portal_sounds_4/2.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.04,
+   "min_interval": 0.2
+  },
+  "tal_nova_spirit": {
+   "label": "Nova: heilige Glocke",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_heals_buffs/30_revive_03.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.03,
+   "min_interval": 0.2
+  },
+  "tal_nova_slime": {
+   "label": "Nova: Gift",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/46_poison_01.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.04,
+   "min_interval": 0.2
+  },
+  "tal_zone_loop_fire": {
+   "label": "Zone: Feuerbett (Schleife)",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/loop_fireball_hold_loop.ogg"
+   ],
+   "volume_db": -8,
+   "loop": true
+  },
+  "tal_zone_loop_ice": {
+   "label": "Zone: Frostwind (Schleife)",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/loop_ice_spell_hold_loop.ogg"
+   ],
+   "volume_db": -8,
+   "loop": true
+  },
+  "tal_zone_loop_shock": {
+   "label": "Zone: Strom (Schleife)",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/loop_electric_spell_hold_loop.ogg"
+   ],
+   "volume_db": -8,
+   "loop": true
+  },
+  "tal_zone_loop_void": {
+   "label": "Zone: Leere-Summen (Schleife)",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/seq_mana_drain_mid_loop_loop.ogg"
+   ],
+   "volume_db": -8,
+   "loop": true
+  },
+  "tal_zone_loop_slime": {
+   "label": "Zone: Giftblubbern (Schleife)",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/loop_bubbles_02_loop.ogg"
+   ],
+   "volume_db": -8,
+   "loop": true
+  },
+  "tal_meteor_fall": {
+   "label": "Meteor fällt (Ansage)",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/25_wind_01.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.03,
+   "min_interval": 0.3
+  },
+  "tal_meteor_hit": {
+   "label": "Meteor schlägt ein",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/04_fire_explosion_04_medium.ogg",
+    "res://assets/audio/library/leohpaz_8_magic_attacks/30_earth_02.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.03,
+   "min_interval": 0.2
+  },
+  "tal_glacier": {
+   "label": "Eiswand wächst",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/13_ice_explosion_01.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta33.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta4.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.04,
+   "min_interval": 0.3
+  },
+  "tal_chain": {
+   "label": "Kettenblitz-Sprung",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_03.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.06,
+   "min_interval": 0.06
+  },
+  "tal_line": {
+   "label": "Durchschuss",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_swing_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_swing_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_swing_03.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.05,
+   "min_interval": 0.1
+  },
+  "tal_trap_set": {
+   "label": "Falle gesetzt",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/rubberduck_100_metal_wood/metal_spring_01.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/metal_spring_02.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/lock_01.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.05,
+   "min_interval": 0.2
+  },
+  "tal_trap_arm": {
+   "label": "Falle scharf",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/tick_001.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/tick_004.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.05,
+   "min_interval": 0.2
+  },
+  "tal_trap_snap": {
+   "label": "Falle schnappt zu",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/lrsf_fantasy/trap_00.ogg",
+    "res://assets/audio/library/lrsf_fantasy/trap_01.ogg",
+    "res://assets/audio/library/lrsf_fantasy/trap_02.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.05,
+   "min_interval": 0.1
+  },
+  "tal_net": {
+   "label": "Netz geworfen",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/rubberduck_100_metal_wood/wood_squeak_01.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/wood_squeak_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_swing_01.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.05,
+   "min_interval": 0.3
+  },
+  "tal_summon": {
+   "label": "Beschwörung",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_heals_buffs/30_revive_03.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_teleport_in.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.03,
+   "min_interval": 0.5
+  },
+  "tal_buff_on": {
+   "label": "Stärkung an",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_heals_buffs/16_atk_buff_04.ogg",
+    "res://assets/audio/library/leohpaz_8_heals_buffs/17_def_buff_01.ogg",
+    "res://assets/audio/library/leohpaz_8_heals_buffs/48_speed_up_02.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.03,
+   "min_interval": 0.3
+  },
+  "tal_buff_off": {
+   "label": "Stärkung aus",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_heals_buffs/21_debuff_01.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.03,
+   "min_interval": 0.3
+  },
+  "tal_awaken": {
+   "label": "Erwachen mit Gebrüll",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_heals_buffs/16_atk_buff_04.ogg",
+    "res://assets/audio/library/big_scary_troll/troll-roars_0_s01.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.03,
+   "min_interval": 0.5
+  },
+  "tal_shield_on": {
+   "label": "Kuppel an",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_magic_shield_activation_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_magic_shield_activation_02.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.03,
+   "min_interval": 0.3
+  },
+  "tal_shield_hit": {
+   "label": "Treffer auf die Kuppel",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/glass_004.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/glass_005.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/glass_006.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "tal_shield_break": {
+   "label": "Kuppel zerspringt",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_04.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_05.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_06.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.04,
+   "min_interval": 0.3
+  },
+  "tal_devour": {
+   "label": "Verschlingen",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/seq_mana_drain_end.ogg",
+    "res://assets/audio/library/leohpaz_8_heals_buffs/39_absorb_04.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.05,
+   "min_interval": 0.1
+  },
+  "catch_shot": {
+   "label": "Geschoss gefangen",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_heals_buffs/39_absorb_04.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.06,
+   "min_interval": 0.1
+  },
+  "essence": {
+   "label": "Essenz fliegt zum Helden",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan05.ogg",
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan01.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.08,
+   "min_interval": 0.1
+  },
+  "gefuege_store": {
+   "label": "Arkanes Gefüge: Einheit gespeichert",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/glass_001.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/glass_002.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/glass_003.ogg"
+   ],
+   "volume_db": -8,
+   "spread": 0.02,
+   "min_interval": 0.08
+  },
+  "gefuege_spend": {
+   "label": "Arkanes Gefüge: ausgegeben",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_healing_chime_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_healing_chime_02.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.02,
+   "min_interval": 0.2
+  },
+  "ult_singularity_charge": {
+   "label": "Singularität: Sog",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/seq_mana_drain_mid_loop_loop.ogg"
+   ],
+   "volume_db": -2,
+   "loop": true
+  },
+  "ult_singularity_collapse": {
+   "label": "Singularität: Implosion",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/seq_mana_drain_end.ogg"
+   ],
+   "volume_db": 0
+  },
+  "ult_singularity_bang": {
+   "label": "Singularität: Urknall",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/30_earth_02.ogg"
+   ],
+   "volume_db": 1
+  },
+  "tal_mark": {
+   "label": "Ziel markiert",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/bong_001.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.03,
+   "min_interval": 0.3
+  },
+  "tal_harvest": {
+   "label": "Seelen ernten",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan01.ogg",
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan04.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.06,
+   "min_interval": 0.2
+  },
+  "tal_channel_loop": {
+   "label": "Strahl (Schleife)",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/loop_electric_spell_hold_loop.ogg"
+   ],
+   "volume_db": -6,
+   "loop": true
+  },
+  "tal_counter": {
+   "label": "Konter: Parier-Klirren",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_hit_metal_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_hit_metal_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_hit_metal_03.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.05,
+   "min_interval": 0.1
+  },
+  "tal_bulwark": {
+   "label": "Bollwerk",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_heals_buffs/17_def_buff_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/metal_01.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.03,
+   "min_interval": 0.5
+  },
+  "tal_melee_fire": {
+   "label": "Feuerklinge",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/spell_fire_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/spell_fire_03.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/spell_fire_04.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.05,
+   "min_interval": 0.05
+  },
+  "tal_melee_ice": {
+   "label": "Frostklinge",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_launch_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_launch_03.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.05,
+   "min_interval": 0.05
+  },
+  "tal_melee_shock": {
+   "label": "Blitzklinge",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_launch_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_launch_03.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.05,
+   "min_interval": 0.05
+  },
+  "wall_slam": {
+   "label": "Gegner prallt an die Wand",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_hit_05.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_hit_07.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_hit_01.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.05,
+   "min_interval": 0.08
+  },
+  "lance_drops": {
+   "label": "Tropfen und Splitter landen",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_falling_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_falling_03.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_falling_04.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_falling_02.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.1,
+   "min_interval": 0.05
+  },
+  "tal_pool": {
+   "label": "Pfütze entsteht",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_02.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_13.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_03.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.06,
+   "min_interval": 0.2
+  },
+  "ult_ready": {
+   "label": "Ultimate bereit",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/confirmation_001.ogg"
+   ],
+   "volume_db": -8
+  },
+  "status_burn": {
+   "label": "Zustand: brennt",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_1.ogg",
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_3.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.08,
+   "min_interval": 0.35
+  },
+  "status_poison": {
+   "label": "Zustand: vergiftet",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_01.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_02.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_03.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.08,
+   "min_interval": 0.35
+  },
+  "status_bleed": {
+   "label": "Zustand: blutet",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_10.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_09.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_06.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.08,
+   "min_interval": 0.35
+  },
+  "status_freeze_on": {
+   "label": "Zustand: eingefroren",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/ice_shattering/ledasluzta.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta5.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.06,
+   "min_interval": 0.35
+  },
+  "status_freeze_off": {
+   "label": "Zustand: taut auf",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/rubberduck_100_metal_wood/wood_cracking_01.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/wood_cracking_04.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.06,
+   "min_interval": 0.35
+  },
+  "status_stun": {
+   "label": "Zustand: benommen",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/glass_002.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/glass_003.ogg"
+   ],
+   "volume_db": -5,
+   "spread": 0.06,
+   "min_interval": 0.35
+  },
+  "status_slow": {
+   "label": "Zustand: verlangsamt",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/scratch_001.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/scratch_005.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.06,
+   "min_interval": 0.35
+  },
+  "status_mad": {
+   "label": "Zustand: Wahn",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan05.ogg",
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan01.ogg"
+   ],
+   "volume_db": -5,
+   "spread": 0.06,
+   "min_interval": 0.5
+  },
+  "status_blind": {
+   "label": "Zustand: geblendet",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_heals_buffs/44_sleep_01.ogg"
+   ],
+   "volume_db": -5,
+   "spread": 0.06,
+   "min_interval": 0.5
+  },
+  "heal": {
+   "label": "Heilung",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_healing_chime_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_healing_chime_02.ogg",
+    "res://assets/audio/library/leohpaz_8_heals_buffs/02_heal_02.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.03,
+   "min_interval": 0.3
+  },
+  "pet_arrive@wolf": {
+   "label": "Wolf erscheint",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/creatures_1/howl.ogg",
+    "res://assets/audio/library/dog_snarl/dog-growl.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.04,
+   "min_interval": 1
+  },
+  "pet_idle@wolf": {
+   "label": "Wolf knurrt",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/dog_snarl/dog-growl.ogg",
+    "res://assets/audio/library/dog_snarl/dog-grumble.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.06,
+   "min_interval": 6
+  },
+  "pet_attack@wolf": {
+   "label": "Wolf zerfleischt",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/dog_snarl/dog-snarl.ogg",
+    "res://assets/audio/library/creatures_2/attack_01.ogg",
+    "res://assets/audio/library/creatures_2/attack_03.ogg",
+    "res://assets/audio/library/creatures_2/attack_05.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.06,
+   "min_interval": 0.2
+  },
+  "pet_skill@wolf": {
+   "label": "Wolf heult (Spott)",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/creatures_1/howl.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.03,
+   "min_interval": 2
+  },
+  "pet_arrive@bear": {
+   "label": "Bär erscheint (Brüllen)",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/bear_growls/bear_01.ogg",
+    "res://assets/audio/library/bear_growls/bear_02.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.04,
+   "min_interval": 1
+  },
+  "pet_idle@bear": {
+   "label": "Bär brummt",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/big_scary_troll/troll-idle-noises_0_s01.ogg",
+    "res://assets/audio/library/big_scary_troll/troll-idle-noises_0_s05.ogg",
+    "res://assets/audio/library/big_scary_troll/troll-idle-noises_0_s08.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.06,
+   "min_interval": 6
+  },
+  "pet_attack@bear": {
+   "label": "Bär: Prankenhieb",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_heavy_sword_swing_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_heavy_sword_swing_03.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.05,
+   "min_interval": 0.2
+  },
+  "pet_skill@bear": {
+   "label": "Bär brüllt (Spott)",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/bear_growls/bear_01.ogg",
+    "res://assets/audio/library/bear_growls/bear_02.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.03,
+   "min_interval": 2
+  },
+  "pet_hurt@bear": {
+   "label": "Bär getroffen",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/big_scary_troll/scrapped-troll-sounds_s01.ogg",
+    "res://assets/audio/library/big_scary_troll/scrapped-troll-sounds_s05.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.05,
+   "min_interval": 0.5
+  },
+  "pet_attack@falcon": {
+   "label": "Falke: Sturzflug",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/25_wind_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_swing_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_swing_03.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.05,
+   "min_interval": 0.3
+  },
+  "pet_arrive@water_elemental": {
+   "label": "Wasserelementar wallt auf",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/22_water_02.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.04,
+   "min_interval": 1
+  },
+  "pet_idle@water_elemental": {
+   "label": "Wasserelementar blubbert",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_01.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_02.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_03.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.08,
+   "min_interval": 6
+  },
+  "pet_attack@water_elemental": {
+   "label": "Wasserelementar: Eislanze",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_launch_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_launch_03.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.05,
+   "min_interval": 0.2
+  },
+  "pet_skill@water_elemental": {
+   "label": "Wasserelementar: Frostnova",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/13_ice_explosion_01.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.03,
+   "min_interval": 1
+  },
+  "pet_hurt@water_elemental": {
+   "label": "Wasserelementar getroffen",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_10.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_09.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_06.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.06,
+   "min_interval": 0.4
+  },
+  "pet_death@water_elemental": {
+   "label": "Wasserelementar fällt zusammen",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_01.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_07.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.03,
+   "min_interval": 1
+  },
+  "pet_arrive@pyro": {
+   "label": "Pyro-Monster: Feuersäule",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/04_fire_explosion_04_medium.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.04,
+   "min_interval": 1
+  },
+  "pet_idle@pyro": {
+   "label": "Pyro-Monster knurrt",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/lrsf_voices/demon_04.ogg",
+    "res://assets/audio/library/lrsf_voices/demon_05.ogg",
+    "res://assets/audio/library/lrsf_voices/demon_06.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.06,
+   "min_interval": 6
+  },
+  "pet_attack@pyro": {
+   "label": "Pyro-Monster: Glutfaust",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_impact_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_impact_03.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.05,
+   "min_interval": 0.2
+  },
+  "pet_skill@pyro": {
+   "label": "Pyro-Monster: Feuerkreis",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/spell_fire_06.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/spell_fire_07.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.03,
+   "min_interval": 1
+  },
+  "pet_hurt@pyro": {
+   "label": "Pyro-Monster getroffen",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_1.ogg",
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_3.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.06,
+   "min_interval": 0.4
+  },
+  "pet_death@pyro": {
+   "label": "Pyro-Monster brennt aus",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/fire_crackling/fire-1.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.03,
+   "min_interval": 1
+  },
+  "pet_arrive@bone_warrior": {
+   "label": "Knochenkrieger erscheint",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/bones/bones_rattle_0.ogg",
+    "res://assets/audio/library/bones/bones_rattle_9.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.04,
+   "min_interval": 1
+  },
+  "pet_attack@bone_warrior": {
+   "label": "Knochenkrieger: Schildschlag",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_heavy_sword_hit_metal_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_sword_hit_metal_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_sword_hit_metal_03.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.05,
+   "min_interval": 0.2
+  },
+  "pet_skill@bone_warrior": {
+   "label": "Knochenkrieger: Knochenschrei (Spott)",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/zombie_skeleton_monster_voice/zombieyell8.ogg",
+    "res://assets/audio/library/zombie_skeleton_monster_voice/zombieyell10.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.03,
+   "min_interval": 2
+  },
+  "pet_idle@bone_warrior": {
+   "label": "Knochenkrieger raunt",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/zombie_skeleton_monster_voice/zombieyell6.ogg",
+    "res://assets/audio/library/zombie_skeleton_monster_voice/zombieyell1.ogg",
+    "res://assets/audio/library/zombie_skeleton_monster_voice/zombieyell2.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.06,
+   "min_interval": 6
+  },
+  "pet_heal": {
+   "label": "Begleiter wird geheilt",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_healing_chime_01.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.03,
+   "min_interval": 0.5
+  },
+  "pet_return": {
+   "label": "Begleiter kehrt zurück",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_teleport_in.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.04,
+   "min_interval": 0.5
+  },
+  "pet_auto_toggle": {
+   "label": "Begleiter: Automatik an/aus",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/toggle_001.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/toggle_004.ogg"
+   ],
+   "volume_db": -4
+  },
+  "hit_ice": {
+   "label": "Treffer: Eis",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_impact_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_impact_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_impact_03.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta2.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.07,
+   "min_interval": 0.04
+  },
+  "break_ice": {
+   "label": "Teilbruch: Eis splittert",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_02.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_03.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "kill_ice": {
+   "label": "Tod: Eis zerspringt",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/ice_shattering/ledasluzta33.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta4.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta5.ogg",
+    "res://assets/audio/library/leohpaz_8_magic_attacks/13_ice_explosion_01.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.06,
+   "min_interval": 0.03
+  },
+  "idle_ice": {
+   "label": "Eiswesen knistert",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/glass_001.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/glass_004.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/glass_006.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.1,
+   "min_interval": 0.8
+  },
+  "hit_fire": {
+   "label": "Treffer: Feuer",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/spell_fire_02.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/spell_fire_03.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/spell_fire_05.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/spell_fire_06.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.07,
+   "min_interval": 0.04
+  },
+  "break_fire": {
+   "label": "Teilbruch: Glut stiebt",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_1.ogg",
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_3.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "kill_fire": {
+   "label": "Tod: brennt aus",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_impact_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_impact_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_impact_03.ogg",
+    "res://assets/audio/library/leohpaz_8_magic_attacks/04_fire_explosion_04_medium.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.06,
+   "min_interval": 0.03
+  },
+  "idle_fire": {
+   "label": "Feuerwesen knistert",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/fire_crackling/fire-1_s01.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.1,
+   "min_interval": 0.8
+  },
+  "hit_stone": {
+   "label": "Treffer: Stein",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_hit_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_02.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_03.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_04.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.07,
+   "min_interval": 0.04
+  },
+  "break_stone": {
+   "label": "Teilbruch: Stein bricht",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_02.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_03.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "kill_stone": {
+   "label": "Tod: Stein zerfällt",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_02.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_03.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.06,
+   "min_interval": 0.03
+  },
+  "idle_stone": {
+   "label": "Steinwesen knirscht",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/stones_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/stones_03.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/stones_04.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.1,
+   "min_interval": 0.8
+  },
+  "move_stone": {
+   "label": "Steinwesen stampft",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_04.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_06.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_07.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.08,
+   "min_interval": 0.3
+  },
+  "hit_slime": {
+   "label": "Treffer: Schleim",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_01.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_03.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_04.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_06.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_07.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_09.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.07,
+   "min_interval": 0.04
+  },
+  "break_slime": {
+   "label": "Teilbruch: Schleim reißt",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_10.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_11.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_12.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "kill_slime": {
+   "label": "Tod: Schleim zerplatzt",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_13.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_15.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_14.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_16.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.06,
+   "min_interval": 0.03
+  },
+  "idle_slime": {
+   "label": "Schleim schmatzt",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/creature_slime_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/creature_slime_02.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/creature_slime_03.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/creature_slime_04.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.1,
+   "min_interval": 0.8
+  },
+  "move_slime": {
+   "label": "Schleim gleitet",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_06.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_02.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_07.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.08,
+   "min_interval": 0.3
+  },
+  "hit_spirit": {
+   "label": "Treffer: Geist",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_heals_buffs/39_absorb_04.ogg",
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan05.ogg",
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan01.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.07,
+   "min_interval": 0.04
+  },
+  "kill_spirit": {
+   "label": "Tod: Geist verweht",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan03.ogg",
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan02.ogg",
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan04.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.05,
+   "min_interval": 0.03
+  },
+  "idle_spirit": {
+   "label": "Geist klagt",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan05.ogg",
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan01.ogg",
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan04.ogg",
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan02.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.08,
+   "min_interval": 1
+  },
+  "hit_gold": {
+   "label": "Treffer: Gold/Mimik",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/item_coins_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_coins_02.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_coins_03.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_coins_04.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.07,
+   "min_interval": 0.04
+  },
+  "break_gold": {
+   "label": "Teilbruch: Münzen fallen",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/lrsf_coins/coins_several_00.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_several_11.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_several_22.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "kill_gold": {
+   "label": "Tod: Goldregen",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/lrsf_coins/coins_pouring_01.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_pouring_11.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_pouring_12.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.05,
+   "min_interval": 0.03
+  },
+  "vo_enemy_hurt_flesh": {
+   "label": "Schmerzlaut: Untote",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/zombies_sound_pack/zombie-24.ogg",
+    "res://assets/audio/library/zombies_sound_pack/zombie-5.ogg",
+    "res://assets/audio/library/zombies_sound_pack/zombie-11.ogg",
+    "res://assets/audio/library/zombies_sound_pack/zombie-6.ogg",
+    "res://assets/audio/library/zombies_sound_pack/zombie-13.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.06,
+   "min_interval": 0.6
+  },
+  "vo_enemy_death_flesh": {
+   "label": "Todeslaut: Untote",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/zombie_skeleton_monster_voice/zombiedeath1.ogg",
+    "res://assets/audio/library/zombie_skeleton_monster_voice/zombiedeath2.ogg",
+    "res://assets/audio/library/zombie_skeleton_monster_voice/zombiedeath3.ogg",
+    "res://assets/audio/library/zombie_skeleton_monster_voice/zombiedeath4.ogg",
+    "res://assets/audio/library/zombies_sound_pack/zombie-17.ogg",
+    "res://assets/audio/library/zombies_sound_pack/zombie-16.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.05,
+   "min_interval": 0.05
+  },
+  "vo_enemy_hurt_ice": {
+   "label": "Schmerzlaut: gefrorene Untote",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/zombies_sound_pack/zombie-2.ogg",
+    "res://assets/audio/library/zombies_sound_pack/zombie-4.ogg",
+    "res://assets/audio/library/zombies_sound_pack/zombie-12.ogg",
+    "res://assets/audio/library/zombies_sound_pack/zombie-23.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.06,
+   "min_interval": 0.6
+  },
+  "vo_enemy_death_ice": {
+   "label": "Todeslaut: gefrorene Untote",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/zombies_sound_pack/zombie-17.ogg",
+    "res://assets/audio/library/zombies_sound_pack/zombie-16.ogg",
+    "res://assets/audio/library/zombies_sound_pack/zombie-18.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.05,
+   "min_interval": 0.05
+  },
+  "vo_enemy_hurt_fire": {
+   "label": "Schmerzlaut: Imp/Höllenhund",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/baradari_15_monster/painb.ogg",
+    "res://assets/audio/library/baradari_15_monster/paind.ogg",
+    "res://assets/audio/library/baradari_15_monster/paine.ogg",
+    "res://assets/audio/library/baradari_15_monster/painp.ogg",
+    "res://assets/audio/library/baradari_15_monster/painr.ogg",
+    "res://assets/audio/library/baradari_15_monster/pains.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.06,
+   "min_interval": 0.6
+  },
+  "vo_enemy_death_fire": {
+   "label": "Todeslaut: Imp/Höllenhund",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/baradari_15_monster/deathb.ogg",
+    "res://assets/audio/library/baradari_15_monster/deathd.ogg",
+    "res://assets/audio/library/baradari_15_monster/deathe.ogg",
+    "res://assets/audio/library/baradari_15_monster/deathr.ogg",
+    "res://assets/audio/library/baradari_15_monster/deaths.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.05,
+   "min_interval": 0.05
+  },
+  "vo_enemy_hurt_stone": {
+   "label": "Schmerzlaut: Golem",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/monster_pack_vol1/monster-8.ogg",
+    "res://assets/audio/library/monster_pack_vol1/monster-10.ogg",
+    "res://assets/audio/library/monster_pack_vol1/monster-9.ogg",
+    "res://assets/audio/library/monster_pack_vol1/monster-4.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.05,
+   "min_interval": 0.6
+  },
+  "vo_enemy_death_stone": {
+   "label": "Todeslaut: Golem",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/monster_pack_vol1/monster-2.ogg",
+    "res://assets/audio/library/monster_pack_vol1/monster-1.ogg",
+    "res://assets/audio/library/monster_pack_vol1/monster-3.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.04,
+   "min_interval": 0.05
+  },
+  "vo_enemy_hurt_slime": {
+   "label": "Schmerzlaut: Schleim",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/creature_hurt_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/creature_hurt_02.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.08,
+   "min_interval": 0.6
+  },
+  "vo_enemy_death_slime": {
+   "label": "Todeslaut: Schleim",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/creature_die_01.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_01.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_03.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "vo_enemy_hurt_void": {
+   "label": "Schmerzlaut: Leerenwesen",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/lrsf_voices/smallcreature2_00.ogg",
+    "res://assets/audio/library/lrsf_voices/smallcreature2_03.ogg",
+    "res://assets/audio/library/lrsf_voices/smallcreature2_06.ogg",
+    "res://assets/audio/library/lrsf_voices/smallcreature2_09.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.08,
+   "min_interval": 0.6
+  },
+  "vo_enemy_death_void": {
+   "label": "Todeslaut: Leerenwesen",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/lrsf_voices/demon_20.ogg",
+    "res://assets/audio/library/lrsf_voices/demon_28.ogg",
+    "res://assets/audio/library/lrsf_voices/demon_29.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "vo_enemy_hurt_spirit": {
+   "label": "Schmerzlaut: Geist",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan05.ogg",
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan01.ogg",
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan04.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.06,
+   "min_interval": 0.6
+  },
+  "vo_enemy_hurt_caster": {
+   "label": "Schmerzlaut: Robenträger/Kettenschinder",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/male_grunt_yelling/1yell1.ogg",
+    "res://assets/audio/library/male_grunt_yelling/1yell2.ogg",
+    "res://assets/audio/library/male_grunt_yelling/1yell6.ogg",
+    "res://assets/audio/library/male_grunt_yelling/1yell8.ogg",
+    "res://assets/audio/library/male_grunt_yelling/1yell9.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.04,
+   "min_interval": 0.6
+  },
+  "vo_enemy_death_caster": {
+   "label": "Todeslaut: Robenträger/Kettenschinder",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/male_grunt_yelling/1yell3.ogg",
+    "res://assets/audio/library/male_grunt_yelling/1yell11.ogg",
+    "res://assets/audio/library/male_grunt_yelling/1yell16.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.04,
+   "min_interval": 0.05
+  },
+  "vo_enemy_death": {
+   "label": "Todeslaut (Rückfall)",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/creature_die_01.ogg",
+    "res://assets/audio/library/baradari_15_monster/deathb.ogg",
+    "res://assets/audio/library/baradari_15_monster/deaths.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/creature_monster_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/creature_monster_04.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "idle_beast": {
+   "label": "Höllenhund knurrt",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/dog_snarl/dog-growl.ogg",
+    "res://assets/audio/library/dog_snarl/dog-grumble.ogg",
+    "res://assets/audio/library/dog_snarl/dog-snarl.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.1,
+   "min_interval": 0.8
+  },
+  "idle_imp": {
+   "label": "Imp kichert",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/lrsf_voices/smallcreature1_00.ogg",
+    "res://assets/audio/library/lrsf_voices/smallcreature1_04.ogg",
+    "res://assets/audio/library/lrsf_voices/smallcreature1_08.ogg",
+    "res://assets/audio/library/lrsf_voices/smallcreature1_13.ogg",
+    "res://assets/audio/library/lrsf_voices/smallcreature1_17.ogg",
+    "res://assets/audio/library/lrsf_voices/smallcreature1_21.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.1,
+   "min_interval": 0.8
+  },
+  "idle_caster": {
+   "label": "Beschwörer murmelt",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/lrsf_voices/human_evil_00.ogg",
+    "res://assets/audio/library/lrsf_voices/human_evil_05.ogg",
+    "res://assets/audio/library/lrsf_voices/human_evil_09.ogg",
+    "res://assets/audio/library/lrsf_voices/human_evil_14.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.06,
+   "min_interval": 1
+  },
+  "move_chain": {
+   "label": "Ketten schleifen",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/chain_winch/extracted_winch_-_marker_2.ogg",
+    "res://assets/audio/library/chain_winch/winch_-_marker_3.ogg",
+    "res://assets/audio/library/chain_winch/winch_-_region_1.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.08,
+   "min_interval": 0.4
+  },
+  "windup_slash": {
+   "label": "Ansage: Ausholen",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_swing_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_swing_03.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.05,
+   "min_interval": 0.1
+  },
+  "windup_bite": {
+   "label": "Ansage: Knurren vor dem Biss",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/dog_snarl/dog-growl.ogg",
+    "res://assets/audio/library/dog_snarl/dog-snarl.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.06,
+   "min_interval": 0.1
+  },
+  "windup_arrow": {
+   "label": "Ansage: Bogen spannen",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_bow_arrow_draw_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_bow_arrow_draw_02.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.05,
+   "min_interval": 0.1
+  },
+  "windup_soul": {
+   "label": "Ansage: Seelenkugel lädt",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/seq_mana_drain_start.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.05,
+   "min_interval": 0.1
+  },
+  "windup_salve": {
+   "label": "Ansage: Salve lädt",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/45_charge_05.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.05,
+   "min_interval": 0.1
+  },
+  "windup_slam": {
+   "label": "Ansage: Ausholen zum Stampfen",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/big_scary_troll/troll-idle-noises_0_s01.ogg",
+    "res://assets/audio/library/big_scary_troll/troll-idle-noises_0_s08.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.05,
+   "min_interval": 0.1
+  },
+  "windup_roar": {
+   "label": "Ansage: Einatmen vor dem Gebrüll",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/lrsf_fantasy/dragon_growl_00.ogg",
+    "res://assets/audio/library/lrsf_fantasy/dragon_growl_01.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.05,
+   "min_interval": 0.1
+  },
+  "windup_chain": {
+   "label": "Ansage: Kette schwingt",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/chain_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/chain_03.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.05,
+   "min_interval": 0.1
+  },
+  "windup_breath_fire": {
+   "label": "Ansage: Feueratem lädt",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_buildup.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.04,
+   "min_interval": 0.1
+  },
+  "windup_breath_ice": {
+   "label": "Ansage: Frostatem lädt",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_spell_buildup.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.04,
+   "min_interval": 0.1
+  },
+  "windup_shock": {
+   "label": "Ansage: Blitz lädt",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_buildup.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.04,
+   "min_interval": 0.1
+  },
+  "attack_arrow_ice": {
+   "label": "Eissplitter-Schuss",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_launch_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_launch_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_launch_03.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.05,
+   "min_interval": 0.05
+  },
+  "attack_soul_fire": {
+   "label": "Feuerkugel (Gegner)",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/spell_fire_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/spell_fire_02.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/spell_fire_03.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "attack_soul_slime": {
+   "label": "Giftkugel (Gegner)",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/creature_slime_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/creature_slime_04.ogg",
+    "res://assets/audio/library/leohpaz_8_magic_attacks/46_poison_01.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "attack_soul_ice": {
+   "label": "Frostkugel (Gegner)",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_launch_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_launch_03.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "attack_breath_fire": {
+   "label": "Feueratem (Schleife)",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/loop_fireball_hold_loop.ogg"
+   ],
+   "volume_db": -2,
+   "loop": true
+  },
+  "attack_breath_ice": {
+   "label": "Frostatem (Schleife)",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/loop_ice_spell_hold_loop.ogg"
+   ],
+   "volume_db": -2,
+   "loop": true
+  },
+  "attack_breath_slime": {
+   "label": "Giftatem",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_4.ogg",
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_2.ogg",
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_5.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.05,
+   "min_interval": 0.2
+  },
+  "attack_breath_void": {
+   "label": "Leere-Sog-Atem (Schleife)",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/seq_mana_drain_mid_loop_loop.ogg"
+   ],
+   "volume_db": -2,
+   "loop": true
+  },
+  "attack_lob_fire": {
+   "label": "Mörser-Abschuss Lava",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/spell_fire_04.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/spell_fire_06.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/spell_fire_07.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.06,
+   "min_interval": 0.1
+  },
+  "lob_land_fire": {
+   "label": "Lava-Klatsch (Landung)",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/lava_splash/lava.ogg",
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_3.ogg",
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_5.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.06,
+   "min_interval": 0.1
+  },
+  "lob_land_slime": {
+   "label": "Gift-Klatsch (Landung)",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_02.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_13.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_03.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.06,
+   "min_interval": 0.1
+  },
+  "attack_chain": {
+   "label": "Kettenpeitsche",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/chain_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/chain_02.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/chain_03.ogg",
+    "res://assets/audio/library/chain_winch/extracted_winch_-_marker_2.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.06,
+   "min_interval": 0.1
+  },
+  "attack_scream": {
+   "label": "Schrei (Geist/Banshee)",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/creatures_1/scream_01.ogg",
+    "res://assets/audio/library/creatures_1/scream_02.ogg",
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan03.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.04,
+   "min_interval": 0.3
+  },
+  "attack_burrow": {
+   "label": "Graben + Auftauchen",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_03.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_09.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.06,
+   "min_interval": 0.2
+  },
+  "attack_flight": {
+   "label": "Vorbeiflug (Flügel)",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/25_wind_01.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.05,
+   "min_interval": 0.3
+  },
+  "attack_teleport": {
+   "label": "Teleport: weg - da",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_teleport_in.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_teleport_out.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.05,
+   "min_interval": 0.1
+  },
+  "trail_fire": {
+   "label": "Feuerspur (Schleife)",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/fire_crackling/fire-1_loop.ogg"
+   ],
+   "volume_db": -6,
+   "loop": true
+  },
+  "frost_nova": {
+   "label": "Frostnova (Gegner)",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/13_ice_explosion_01.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta33.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.04,
+   "min_interval": 0.2
+  },
+  "frost_cone": {
+   "label": "Frostatem-Kegel (Schleife)",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/loop_ice_spell_hold_loop.ogg"
+   ],
+   "volume_db": -2,
+   "loop": true
+  },
+  "whirl": {
+   "label": "Wirbelwind (Schleife)",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/wind1/wind3_loop.ogg"
+   ],
+   "volume_db": -2,
+   "loop": true
+  },
+  "ice_strikes": {
+   "label": "Eisdornen brechen aus",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_impact_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_impact_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_impact_03.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta5.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.08,
+   "min_interval": 0.06
+  },
+  "ice_armor": {
+   "label": "Eisrüstung wächst",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_spell_buildup.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.04,
+   "min_interval": 0.3
+  },
+  "icicles_fall": {
+   "label": "Eiszapfen fallen",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_falling_02.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_falling_04.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta33.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.06,
+   "min_interval": 0.08
+  },
+  "chill_zone": {
+   "label": "Frost zischt auf den Boden",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_3.ogg",
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_5.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.05,
+   "min_interval": 0.2
+  },
+  "meteors_incoming": {
+   "label": "Meteore: Grollen von oben",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/25_wind_01.ogg",
+    "res://assets/audio/library/leohpaz_8_magic_attacks/30_earth_02.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.04,
+   "min_interval": 0.3
+  },
+  "hands_rise": {
+   "label": "Knochenhände greifen",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_03.ogg",
+    "res://assets/audio/library/bones/bones_rattle_0.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.05,
+   "min_interval": 0.2
+  },
+  "eshot_passby": {
+   "label": "Gegnerschuss zischt vorbei",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_swing_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_swing_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_swing_03.ogg"
+   ],
+   "volume_db": -8,
+   "spread": 0.08,
+   "min_interval": 0.12
+  },
+  "eshot_impact_fire": {
+   "label": "Gegnerschuss-Einschlag: Feuer",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_impact_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_impact_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_impact_03.ogg"
+   ],
+   "volume_db": -5,
+   "spread": 0.08,
+   "min_interval": 0.05
+  },
+  "eshot_impact_ice": {
+   "label": "Gegnerschuss-Einschlag: Frost",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_impact_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_impact_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_impact_03.ogg"
+   ],
+   "volume_db": -5,
+   "spread": 0.08,
+   "min_interval": 0.05
+  },
+  "eshot_impact_shock": {
+   "label": "Gegnerschuss-Einschlag: Blitz",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_03.ogg"
+   ],
+   "volume_db": -5,
+   "spread": 0.08,
+   "min_interval": 0.05
+  },
+  "eshot_impact_slime": {
+   "label": "Gegnerschuss-Einschlag: Gift",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_01.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_03.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_04.ogg"
+   ],
+   "volume_db": -5,
+   "spread": 0.08,
+   "min_interval": 0.05
+  },
+  "eshot_impact_void": {
+   "label": "Gegnerschuss-Einschlag: Leere",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_heals_buffs/39_absorb_04.ogg"
+   ],
+   "volume_db": -5,
+   "spread": 0.08,
+   "min_interval": 0.05
+  },
+  "boss_intro@frost": {
+   "label": "Boss-Auftritt (Frostgruft)",
+   "category": "stinger",
+   "files": [
+    "res://assets/audio/library/kenney_music_jingles/jingles_steel00.ogg"
+   ],
+   "volume_db": 0
+  },
+  "boss_intro@hell": {
+   "label": "Boss-Auftritt (Hölle)",
+   "category": "stinger",
+   "files": [
+    "res://assets/audio/library/kenney_music_jingles/jingles_hit10.ogg"
+   ],
+   "volume_db": 0
+  },
+  "boss_defeated@frost": {
+   "label": "Boss besiegt (Frostgruft)",
+   "category": "stinger",
+   "files": [
+    "res://assets/audio/library/lrsf_fantasy/jingle_achievement_00.ogg"
+   ],
+   "volume_db": 0
+  },
+  "boss_defeated@hell": {
+   "label": "Boss besiegt (Hölle)",
+   "category": "stinger",
+   "files": [
+    "res://assets/audio/library/kenney_music_jingles/jingles_hit02.ogg"
+   ],
+   "volume_db": 0
+  },
+  "boss_roar_drache": {
+   "label": "Ignaroth brüllt",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/deep_monster_roar/monster_roar.ogg",
+    "res://assets/audio/library/lrsf_fantasy/dragon_growl_00.ogg",
+    "res://assets/audio/library/lrsf_fantasy/dragon_growl_01.ogg"
+   ],
+   "volume_db": 1,
+   "spread": 0.03,
+   "min_interval": 0.5
+  },
+  "boss_roar_dreischlund": {
+   "label": "Dreischlund brüllt",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/lrsf_voices/demon_11.ogg",
+    "res://assets/audio/library/lrsf_voices/demon_12.ogg",
+    "res://assets/audio/library/lrsf_voices/demon_13.ogg"
+   ],
+   "volume_db": 1,
+   "spread": 0.03,
+   "min_interval": 0.5
+  },
+  "boss_roar_kerkermeister": {
+   "label": "Kerkermeister brüllt",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/male_grunt_yelling/yell1.ogg",
+    "res://assets/audio/library/male_grunt_yelling/yell11.ogg",
+    "res://assets/audio/library/male_grunt_yelling/yell10.ogg"
+   ],
+   "volume_db": 1,
+   "spread": 0.03,
+   "min_interval": 0.5
+  },
+  "boss_roar_koloss": {
+   "label": "Koloss brüllt (Knochen/Moder)",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/big_scary_troll/troll-roars_0_s01.ogg",
+    "res://assets/audio/library/big_scary_troll/troll-roars_0_s04.ogg",
+    "res://assets/audio/library/big_scary_troll/troll-roars_0_s06.ogg"
+   ],
+   "volume_db": 1,
+   "spread": 0.03,
+   "min_interval": 0.5
+  },
+  "boss_roar_golem": {
+   "label": "Eisgolem grollt",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/monster_pack_vol1/monster-2.ogg",
+    "res://assets/audio/library/monster_pack_vol1/monster-1.ogg",
+    "res://assets/audio/library/monster_pack_vol1/monster-3.ogg"
+   ],
+   "volume_db": 1,
+   "spread": 0.03,
+   "min_interval": 0.5
+  },
+  "boss_roar_nekromantenfuerst": {
+   "label": "Nekromantenfürst lacht",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/lrsf_voices/human_evil_14.ogg",
+    "res://assets/audio/library/lrsf_voices/human_evil_12.ogg",
+    "res://assets/audio/library/lrsf_voices/human_evil_13.ogg"
+   ],
+   "volume_db": 1,
+   "spread": 0.02,
+   "min_interval": 0.5
+  },
+  "boss_roar_geist": {
+   "label": "Seelenhirte/Hüter klagt",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan03.ogg",
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan02.ogg"
+   ],
+   "volume_db": 1,
+   "spread": 0.03,
+   "min_interval": 0.5
+  },
+  "boss_rage": {
+   "label": "Boss-Wut",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/big_scary_troll/troll-roars_0_s01.ogg",
+    "res://assets/audio/library/deep_monster_roar/monster_roar.ogg"
+   ],
+   "volume_db": 1,
+   "spread": 0.03,
+   "min_interval": 1
+  },
+  "boss_form_swap": {
+   "label": "Ignaroth verwandelt sich",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_buildup.ogg"
+   ],
+   "volume_db": 1,
+   "with": "boss_roar_drache"
+  },
+  "boss_hit_layer": {
+   "label": "Boss-Treffer: tiefer Wumms",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/rubberduck_100_metal_wood/wood_slam_01.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/wood_slam_03.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/wood_slam_04.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.05,
+   "min_interval": 0.06
+  },
+  "boss_last_stand": {
+   "label": "Boss: letztes Aufbäumen",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/deep_monster_roar/monster_roar.ogg"
+   ],
+   "volume_db": 1
+  },
+  "boss_lord_end": {
+   "label": "Langes Boss-Ende: Bröckeln",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_03.ogg"
+   ],
+   "volume_db": -2
+  },
+  "zone_wave": {
+   "label": "Bodenwelle",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/30_earth_02.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_03.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.04,
+   "min_interval": 0.2
+  },
+  "zone_fissure": {
+   "label": "Riss + Lava schießt hoch",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_03.ogg",
+    "res://assets/audio/library/lava_splash/lava.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.04,
+   "min_interval": 0.2
+  },
+  "zone_arc": {
+   "label": "Bogen-Schlag",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_heavy_sword_swing_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_heavy_sword_swing_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_heavy_sword_swing_03.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.05,
+   "min_interval": 0.2
+  },
+  "zone_meteor": {
+   "label": "Meteor-Zone: Einschlag",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/04_fire_explosion_04_medium.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_01.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.05,
+   "min_interval": 0.08
+  },
+  "zone_cone_fire": {
+   "label": "Feuer-Kegel (Schleife)",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/loop_fireball_hold_loop.ogg"
+   ],
+   "volume_db": -2,
+   "loop": true
+  },
+  "zone_cone_ice": {
+   "label": "Frost-Kegel (Schleife)",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/loop_ice_spell_hold_loop.ogg"
+   ],
+   "volume_db": -2,
+   "loop": true
+  },
+  "zone_erupt": {
+   "label": "Lava bricht aus",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/lava_splash/lava.ogg",
+    "res://assets/audio/library/leohpaz_8_magic_attacks/04_fire_explosion_04_medium.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.05,
+   "min_interval": 0.2
+  },
+  "zone_land": {
+   "label": "Drache landet",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_02.ogg"
+   ],
+   "volume_db": 1
+  },
+  "zone_hand": {
+   "label": "Boden reißt, Hand greift",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_03.ogg",
+    "res://assets/audio/library/bones/bones_rattle_0.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.05,
+   "min_interval": 0.2
+  },
+  "firewall_loop": {
+   "label": "Feuerwand (Schleife)",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/fire_crackling/fire-1_loop.ogg"
+   ],
+   "volume_db": -4,
+   "loop": true
+  },
+  "ash_line": {
+   "label": "Asche rieselt",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/stones_04.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/stones_01.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.1,
+   "min_interval": 0.3
+  },
+  "lava_splash": {
+   "label": "Lavaspritzer brutzelt",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/lava_splash/lava.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_10.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_09.ogg",
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_1.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.1,
+   "min_interval": 0.06
+  },
+  "rift": {
+   "label": "Riss in der Leere",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/portal_sounds_4/1.ogg",
+    "res://assets/audio/library/portal_sounds_4/3.ogg",
+    "res://assets/audio/library/portal_sounds_4/4.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.05,
+   "min_interval": 0.2
+  },
+  "scream_front": {
+   "label": "Schall-Front des Schreis",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/25_wind_01.ogg"
+   ],
+   "volume_db": -2
+  },
+  "crack_floor": {
+   "label": "Bodenriss läuft",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_03.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_02.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.06,
+   "min_interval": 0.1
+  },
+  "scorch_sizzle": {
+   "label": "Brandfleck brutzelt",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_1.ogg",
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_3.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.08,
+   "min_interval": 0.3
+  },
+  "phys_blast_embers": {
+   "label": "Glutfunken stieben",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/fire_crackling/fire-1_s01.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.08,
+   "min_interval": 0.2
+  },
+  "mob_in_medium_lava": {
+   "label": "Gegner brennt in Lava",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_3.ogg",
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_5.ogg"
+   ],
+   "volume_db": -5,
+   "spread": 0.06,
+   "min_interval": 0.4
+  },
+  "mob_in_medium_water": {
+   "label": "Gegner watet im Wasser",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/lrsf_fantasy/footstep_water_00.ogg",
+    "res://assets/audio/library/lrsf_fantasy/footstep_water_04.ogg",
+    "res://assets/audio/library/lrsf_fantasy/footstep_water_07.ogg"
+   ],
+   "volume_db": -5,
+   "spread": 0.06,
+   "min_interval": 0.4
+  },
+  "mob_in_medium_poison": {
+   "label": "Gegner im Gift",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_01.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_03.ogg"
+   ],
+   "volume_db": -5,
+   "spread": 0.06,
+   "min_interval": 0.4
+  },
+  "hazard_spikes": {
+   "label": "Dornen schnellen hoch",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/rubberduck_100_metal_wood/metal_spring_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_hit_metal_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_hit_metal_03.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.05,
+   "min_interval": 0.2
+  },
+  "ice_trap": {
+   "label": "Eisfalle bricht aus",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/13_ice_explosion_01.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta33.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.05,
+   "min_interval": 0.2
+  },
+  "lava_bubble": {
+   "label": "Lavablase platzt",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_01.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_02.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_03.ogg",
+    "res://assets/audio/library/creatures_1/burble_01.ogg",
+    "res://assets/audio/library/creatures_1/burble_02.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.12,
+   "min_interval": 0.2
+  },
+  "lava_slosh": {
+   "label": "Lava schwappt",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_01.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_07.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_05.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.08,
+   "min_interval": 0.4
+  },
+  "ember_float": {
+   "label": "Glut in der Luft (Schleife)",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/fire_crackling/fire-1_loop.ogg"
+   ],
+   "volume_db": -6,
+   "loop": true
+  },
+  "react_explode": {
+   "label": "Reaktion: Explosion",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/04_fire_explosion_04_medium.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_impact_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_impact_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_impact_03.ogg"
+   ],
+   "volume_db": 2,
+   "spread": 0.04,
+   "min_interval": 0.08
+  },
+  "react_ignite": {
+   "label": "Reaktion: Gas zündet",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_launch_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_launch_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_launch_03.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.05,
+   "min_interval": 0.1
+  },
+  "react_boil": {
+   "label": "Reaktion: Wasser kocht, Dampfstoß",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_4.ogg",
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_2.ogg",
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_5.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.05,
+   "min_interval": 0.1
+  },
+  "react_thaw": {
+   "label": "Reaktion: Eis taut",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/rubberduck_100_metal_wood/wood_cracking_01.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/wood_cracking_04.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_01.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.06,
+   "min_interval": 0.1
+  },
+  "react_freeze": {
+   "label": "Reaktion: Wasser gefriert",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_spell_buildup.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta5.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.05,
+   "min_interval": 0.1
+  },
+  "react_crust": {
+   "label": "Reaktion: Lava-Kruste",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_3.ogg",
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_5.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_01.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.05,
+   "min_interval": 0.1
+  },
+  "react_douse": {
+   "label": "Reaktion: Feuer geht aus",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_3.ogg",
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_5.ogg",
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_2.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.05,
+   "min_interval": 0.1
+  },
+  "react_charge": {
+   "label": "Reaktion: Blitz schlägt ein",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/18_thunder_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_03.ogg"
+   ],
+   "volume_db": 1,
+   "spread": 0.05,
+   "min_interval": 0.1
+  },
+  "charge_loop": {
+   "label": "Geladene Pfütze brummt (Schleife)",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/loop_electric_spell_hold_loop.ogg"
+   ],
+   "volume_db": 0,
+   "loop": true
+  },
+  "charge_zap": {
+   "label": "Zap je Gegner",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_03.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.1,
+   "min_interval": 0.15
+  },
+  "react_wave": {
+   "label": "Reaktion: Druckwelle",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/25_wind_01.ogg",
+    "res://assets/audio/library/leohpaz_8_magic_attacks/30_earth_02.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.04,
+   "min_interval": 0.1
+  },
+  "react_quake": {
+   "label": "Reaktion: Beben",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/30_earth_02.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_03.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.04,
+   "min_interval": 0.1
+  },
+  "react_holy": {
+   "label": "Reaktion: heiliges Licht",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_heals_buffs/30_revive_03.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_healing_chime_01.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.03,
+   "min_interval": 0.2
+  },
+  "holy_heal": {
+   "label": "Heil-Glöckchen am Helden",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_healing_chime_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_healing_chime_02.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.03,
+   "min_interval": 0.3
+  },
+  "void_swallow": {
+   "label": "Leere frisst Pfütze/Gas",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/seq_mana_drain_start.ogg",
+    "res://assets/audio/library/leohpaz_8_heals_buffs/39_absorb_04.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.05,
+   "min_interval": 0.6
+  },
+  "void_gulp": {
+   "label": "Leere schluckt",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_01.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_03.ogg",
+    "res://assets/audio/library/portal_sounds_4/1.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.08,
+   "min_interval": 0.6
+  },
+  "void_eject": {
+   "label": "Leere speit aus",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/seq_mana_drain_end.ogg",
+    "res://assets/audio/library/portal_sounds_4/4.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.05,
+   "min_interval": 0.3
+  },
+  "floor_meets_boom": {
+   "label": "Gift auf Lava knallt",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/04_fire_explosion_04_medium.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.05,
+   "min_interval": 0.2
+  },
+  "floor_meets_boil": {
+   "label": "Wasser auf Lava kocht",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_4.ogg",
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_2.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.05,
+   "min_interval": 0.2
+  },
+  "floor_meets_freeze": {
+   "label": "Wasser auf Eis gefriert",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/ice_shattering/ledasluzta.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta5.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.05,
+   "min_interval": 0.2
+  },
+  "puddle_spawn_lava": {
+   "label": "Lavapfütze klatscht auf",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/lava_splash/lava.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_02.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_13.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.08,
+   "min_interval": 0.1
+  },
+  "puddle_spawn_poison": {
+   "label": "Giftpfütze klatscht auf",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_05.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_07.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_08.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.08,
+   "min_interval": 0.1
+  },
+  "puddle_spawn_void": {
+   "label": "Leerepfütze öffnet sich",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_heals_buffs/39_absorb_04.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.08,
+   "min_interval": 0.1
+  },
+  "puddle_spawn_ice": {
+   "label": "Frostpfütze",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/ice_shattering/ledasluzta2.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.08,
+   "min_interval": 0.1
+  },
+  "puddle_spawn_blood": {
+   "label": "Blutpfütze klatscht auf",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_13.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_15.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_16.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.08,
+   "min_interval": 0.1
+  },
+  "puddle_loop_lava": {
+   "label": "Lava blubbert (Schleife)",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/lava_loop/lavaloop_loop.ogg"
+   ],
+   "volume_db": -2,
+   "loop": true
+  },
+  "puddle_loop_poison": {
+   "label": "Gift sprudelt (Schleife)",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/loop_bubbles_1_loop.ogg"
+   ],
+   "volume_db": -2,
+   "loop": true
+  },
+  "puddle_loop_void": {
+   "label": "Leere summt (Schleife)",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/seq_mana_drain_mid_loop_loop.ogg"
+   ],
+   "volume_db": -4,
+   "loop": true
+  },
+  "gas_cloud_loop": {
+   "label": "Giftgas blubbert (Schleife)",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/loop_bubbles_02_loop.ogg"
+   ],
+   "volume_db": -4,
+   "loop": true
+  },
+  "pool_charge_loop": {
+   "label": "Pfütze unter Strom (Schleife)",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/loop_electric_spell_hold_loop.ogg"
+   ],
+   "volume_db": -2,
+   "loop": true
+  },
+  "pool_spread": {
+   "label": "Flüssigkeit breitet sich aus (Schleife)",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/loop_water_02_loop.ogg"
+   ],
+   "volume_db": -8,
+   "loop": true
+  },
+  "snowstorm_wind": {
+   "label": "Schneesturm (Schleife)",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/wind1/wind2_loop.ogg"
+   ],
+   "volume_db": 4,
+   "loop": true
+  },
+  "snowstorm_gust": {
+   "label": "Sturmböe",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/wind1/wind4_s01.ogg",
+    "res://assets/audio/library/wind1/wind5_s01.ogg"
+   ],
+   "volume_db": 2,
+   "spread": 0.06,
+   "min_interval": 2
+  },
+  "burst_debris": {
+   "label": "Steinsplitter prasseln",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/stones_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/stones_03.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/stones_04.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_02.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_03.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_01.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.1,
+   "min_interval": 0.05
+  },
+  "burst_drops": {
+   "label": "Tropfen prasseln",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_10.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_09.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_06.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_15.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.1,
+   "min_interval": 0.05
+  },
+  "sparks": {
+   "label": "Metallfunken",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_metal_hit_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_metal_hit_05.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_metal_hit_06.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_metal_hit_04.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_hit_metal_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_hit_metal_03.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.12,
+   "min_interval": 0.04
+  },
+  "splat_flesh": {
+   "label": "Nasser Klatsch (Fleisch)",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_16.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_14.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_15.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_13.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.08,
+   "min_interval": 0.06
+  },
+  "splat_slime": {
+   "label": "Nasser Klatsch (Schleim)",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_06.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_02.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_07.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_05.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.08,
+   "min_interval": 0.06
+  },
+  "drip": {
+   "label": "Tropfspur",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_02.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_03.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_01.ogg"
+   ],
+   "volume_db": -8,
+   "spread": 0.15,
+   "min_interval": 0.4
+  },
+  "wall_crack": {
+   "label": "Kleiner Riss im Stein",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_hit_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_01.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.08,
+   "min_interval": 0.08
+  },
+  "rubble": {
+   "label": "Geröll rollt aus",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_03.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_05.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_07.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_09.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.08,
+   "min_interval": 0.08
+  },
+  "chips": {
+   "label": "Knochen-/Steinsplitter ticken",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_04.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_02.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_03.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_01.ogg",
+    "res://assets/audio/library/bones/bones_rattle_0.ogg",
+    "res://assets/audio/library/bones/bones_rattle_9.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.12,
+   "min_interval": 0.05
+  },
+  "shatter": {
+   "label": "Eissplitter klirren",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_02.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_05.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_01.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta4.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta33.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.1,
+   "min_interval": 0.05
+  },
+  "shard_break": {
+   "label": "Splitter zerbricht beim Landen",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_falling_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_falling_02.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_falling_03.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_falling_04.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.1,
+   "min_interval": 0.05
+  },
+  "shard_scratch": {
+   "label": "Splitter kratzt über den Boden",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/scratch_001.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/scratch_002.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/scratch_004.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/scratch_005.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.1,
+   "min_interval": 0.1
+  },
+  "liquid_freeze": {
+   "label": "Flüssigkeit gefriert",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_spell_buildup.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.06,
+   "min_interval": 0.2
+  },
+  "liquid_thaw": {
+   "label": "Flüssigkeit taut",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_100_metal_wood/wood_cracking_01.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/wood_cracking_04.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_01.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.06,
+   "min_interval": 0.2
+  },
+  "melt": {
+   "label": "Schmelzen",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_01.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_02.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_03.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.08,
+   "min_interval": 0.2
+  },
+  "embers": {
+   "label": "Glut knistert",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/fire_crackling/fire-1_s01.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.1,
+   "min_interval": 0.15
+  },
+  "flames": {
+   "label": "Flammen flattern",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/spell_fire_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/spell_fire_02.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/spell_fire_03.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.08,
+   "min_interval": 0.2
+  },
+  "fire_burst": {
+   "label": "Feuer-Wumms",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_impact_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_impact_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_impact_03.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.06,
+   "min_interval": 0.1
+  },
+  "scorch_star": {
+   "label": "Brandstern brutzelt",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_1.ogg",
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_3.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.08,
+   "min_interval": 0.2
+  },
+  "steam": {
+   "label": "Dampf zischt",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_1.ogg",
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_3.ogg",
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_5.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.06,
+   "min_interval": 0.2
+  },
+  "smoke": {
+   "label": "Rauch-Whoosh",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/25_wind_01.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.06,
+   "min_interval": 0.2
+  },
+  "snow_puff": {
+   "label": "Schnee-Puff",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/kenney_impact/footstep_snow_000.ogg",
+    "res://assets/audio/library/kenney_impact/footstep_snow_002.ogg",
+    "res://assets/audio/library/kenney_impact/footstep_snow_004.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.1,
+   "min_interval": 0.15
+  },
+  "comet": {
+   "label": "Flug-Whoosh",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_swing_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_swing_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_swing_03.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.1,
+   "min_interval": 0.06
+  },
+  "land_splash": {
+   "label": "Kleiner Spritzer beim Aufkommen",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_10.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_09.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_06.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.1,
+   "min_interval": 0.06
+  },
+  "well": {
+   "label": "Sog-Brunnen",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/seq_mana_drain_start.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.05,
+   "min_interval": 0.3
+  },
+  "implode": {
+   "label": "Implosion",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/seq_mana_drain_end.ogg",
+    "res://assets/audio/library/leohpaz_8_heals_buffs/39_absorb_04.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.05,
+   "min_interval": 0.2
+  },
+  "motes": {
+   "label": "Leiser Schimmer",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/glass_001.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/glass_002.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/glass_003.ogg"
+   ],
+   "volume_db": -8,
+   "spread": 0.1,
+   "min_interval": 0.2
+  },
+  "holy_motes": {
+   "label": "Heiliges Funkeln",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_healing_chime_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_healing_chime_02.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.08,
+   "min_interval": 0.2
+  },
+  "shadow": {
+   "label": "Dunkler Whoosh",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan05.ogg",
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan01.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.08,
+   "min_interval": 0.2
+  },
+  "blow": {
+   "label": "Böe bläst fort",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/25_wind_01.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.06,
+   "min_interval": 0.5
+  },
+  "settle_tick_stone": {
+   "label": "Landetick: Stein",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_04.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_02.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_03.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/stones_04.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/stones_01.ogg"
+   ],
+   "volume_db": -9,
+   "spread": 0.12,
+   "min_interval": 0.07
+  },
+  "settle_tick_bone": {
+   "label": "Landetick: Knochen",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/bones/bones_rattle_0.ogg",
+    "res://assets/audio/library/bones/bones_rattle_3.ogg",
+    "res://assets/audio/library/bones/bones_rattle_6.ogg",
+    "res://assets/audio/library/bones/bones_rattle_9.ogg"
+   ],
+   "volume_db": -9,
+   "spread": 0.12,
+   "min_interval": 0.07
+  },
+  "settle_tick_gold": {
+   "label": "Landetick: Münze",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/lrsf_coins/coins_single_13.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_single_43.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_single_09.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_single_44.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_single_14.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_single_11.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_single_07.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_single_06.ogg"
+   ],
+   "volume_db": -9,
+   "spread": 0.12,
+   "min_interval": 0.07
+  },
+  "settle_tick_ice": {
+   "label": "Landetick: Eis/Glas",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_hit_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_hit_02.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/glass_005.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/glass_006.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/glass_003.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/glass_002.ogg"
+   ],
+   "volume_db": -9,
+   "spread": 0.12,
+   "min_interval": 0.07
+  },
+  "settle_tick_metal": {
+   "label": "Landetick: Metall",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_metal_falling_05.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_metal_falling_03.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_metal_falling_04.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_metal_falling_02.ogg"
+   ],
+   "volume_db": -9,
+   "spread": 0.12,
+   "min_interval": 0.07
+  },
+  "settle_tick_fire": {
+   "label": "Landetick: Glut",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/fire_crackling/fire-1_s01.ogg"
+   ],
+   "volume_db": -10,
+   "spread": 0.12,
+   "min_interval": 0.07
+  },
+  "settle_tick_flesh": {
+   "label": "Landetick: Fleisch",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_12.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_11.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_06.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_16.ogg"
+   ],
+   "volume_db": -10,
+   "spread": 0.12,
+   "min_interval": 0.07
+  },
+  "settle_tick_wood": {
+   "label": "Landetick: Holz",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_wood_hit_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_wood_hit_02.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_wood_hit_03.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_wood_falling_02.ogg"
+   ],
+   "volume_db": -9,
+   "spread": 0.12,
+   "min_interval": 0.07
+  },
+  "floor_crack": {
+   "label": "Bodenriss breitet sich aus",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_03.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_02.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.06,
+   "min_interval": 0.2
+  },
+  "wall_snow_puff": {
+   "label": "Schnee rieselt von der Wand",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/kenney_impact/footstep_snow_000.ogg",
+    "res://assets/audio/library/kenney_impact/footstep_snow_004.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.1,
+   "min_interval": 0.3
+  },
+  "gate_open@krypta": {
+   "label": "Tor öffnet (Krypta, Holz)",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/door_open_close_set/qubodup-dooropen01.ogg",
+    "res://assets/audio/library/door_open_close_set/qubodup-dooropen08.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.03,
+   "min_interval": 0.5
+  },
+  "gate_open@hell": {
+   "label": "Eisengitter rasselt hoch (Hölle)",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/chain_winch/winch_-_marker_9.ogg",
+    "res://assets/audio/library/chain_winch/extracted_winch_-_marker_2.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/metal_open_01.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.03,
+   "min_interval": 0.5
+  },
+  "gate_open@frost": {
+   "label": "Eistor knackt (Frostgruft)",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/ice_shattering/ledasluzta33.ogg",
+    "res://assets/audio/library/door_open_close_set/qubodup-dooropen05.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.03,
+   "min_interval": 0.5
+  },
+  "gate_locked": {
+   "label": "Verschlossen: Rütteln",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/lock_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/lock_02.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/lock_03.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.04,
+   "min_interval": 0.5
+  },
+  "chest_coins": {
+   "label": "Münzen in der Truhe",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/lrsf_coins/coins_few_33.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_few_26.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_few_15.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.05,
+   "min_interval": 0.3
+  },
+  "vault_open": {
+   "label": "Tresortruhe öffnet",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/rubberduck_100_metal_wood/lock_open_01.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/metal_open_01.ogg"
+   ],
+   "volume_db": -2,
+   "with": "gold_cascade"
+  },
+  "gold_cascade": {
+   "label": "Gold-Kaskade",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/lrsf_coins/coins_pouring_08.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_pouring_07.ogg"
+   ],
+   "volume_db": -3
+  },
+  "breakable_hit": {
+   "label": "Krug/Urne getroffen",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_hit_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_hit_05.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_hit_09.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_hit_13.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.06,
+   "min_interval": 0.1
+  },
+  "breakable_break_clay": {
+   "label": "Krug zerspringt",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_breaking_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_breaking_02.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_breaking_03.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_01.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.05,
+   "min_interval": 0.1
+  },
+  "breakable_break_wood": {
+   "label": "Fass/Holz bricht",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_wood_breaking_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_wood_breaking_03.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_wood_breaking_04.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/wood_breaking_01.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/wood_breaking_02.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.05,
+   "min_interval": 0.1
+  },
+  "breakable_break_bone": {
+   "label": "Knochenurne bricht",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/bones/bones_rattle_0.ogg",
+    "res://assets/audio/library/bones/bones_rattle_5.ogg",
+    "res://assets/audio/library/bones/bones_rattle_9.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.05,
+   "min_interval": 0.1
+  },
+  "seal_break": {
+   "label": "Siegel zerbricht",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_03.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_06.ogg",
+    "res://assets/audio/library/leohpaz_8_heals_buffs/21_debuff_01.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.04,
+   "min_interval": 0.3
+  },
+  "mimic_spring": {
+   "label": "Mimik springt auf",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/rubberduck_100_metal_wood/wood_breaking_01.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/wood_breaking_02.ogg"
+   ],
+   "volume_db": 1,
+   "with": "attack_bite"
+  },
+  "snowman_wake": {
+   "label": "Schneemann erwacht",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/big_scary_troll/troll-idle-noises_0_s01.ogg",
+    "res://assets/audio/library/big_scary_troll/troll-idle-noises_0_s08.ogg"
+   ],
+   "volume_db": 1,
+   "with": "snow_puff"
+  },
+  "secret_open": {
+   "label": "Geheimgang: Stein mahlt",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_03.ogg"
+   ],
+   "volume_db": 0
+  },
+  "wall_break": {
+   "label": "Wand bricht",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_02.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_03.ogg"
+   ],
+   "volume_db": 1,
+   "spread": 0.04,
+   "min_interval": 0.3
+  },
+  "plate": {
+   "label": "Druckplatte senkt sich",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_03.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_02.ogg"
+   ],
+   "volume_db": -1,
+   "spread": 0.04,
+   "min_interval": 0.2
+  },
+  "plate_wrong": {
+   "label": "Druckplatte: falsch",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/rubberduck_100_metal_wood/wood_hit_04.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/wood_hit_06.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.04,
+   "min_interval": 0.3
+  },
+  "puzzle_solved": {
+   "label": "Rätsel gelöst",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/lock_02.ogg"
+   ],
+   "volume_db": -2,
+   "with": "holy_heal"
+  },
+  "key_pickup": {
+   "label": "Schlüssel aufgehoben",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/rubberduck_100_metal_wood/keys_01.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/keys_04.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/keys_07.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.04,
+   "min_interval": 0.2
+  },
+  "relic_pickup": {
+   "label": "Relikt aufgehoben",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_heals_buffs/16_atk_buff_04.ogg",
+    "res://assets/audio/library/leohpaz_8_heals_buffs/17_def_buff_01.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.02,
+   "min_interval": 0.5
+  },
+  "enemy_spawn": {
+   "label": "Gegner steigt auf",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_04.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_02.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_03.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.06,
+   "min_interval": 0.1
+  },
+  "drop_gold": {
+   "label": "Gold fällt",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/lrsf_coins/coins_single_26.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_single_38.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_single_17.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_single_39.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "drop_heart": {
+   "label": "Herz fällt",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/drop_001.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/drop_003.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/drop_004.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "drop_key": {
+   "label": "Schlüssel fällt",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/rubberduck_100_metal_wood/keys_05.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/keys_07.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "drop_orb": {
+   "label": "Kugel fällt",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/glass_004.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/glass_006.ogg"
+   ],
+   "volume_db": -5,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "gold_burst": {
+   "label": "Münzen fächern auf",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/lrsf_coins/coins_several_00.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_several_07.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_several_15.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_several_22.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "gold_pickup": {
+   "label": "Gold aufgesammelt",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/lrsf_fantasy/pickup_gold_00.ogg",
+    "res://assets/audio/library/lrsf_fantasy/pickup_gold_01.ogg",
+    "res://assets/audio/library/lrsf_fantasy/pickup_gold_02.ogg",
+    "res://assets/audio/library/lrsf_fantasy/pickup_gold_03.ogg",
+    "res://assets/audio/library/lrsf_fantasy/pickup_gold_04.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.06,
+   "min_interval": 0.05
+  },
+  "loot_taken": {
+   "label": "Beute aufgenommen",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/item_misc_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_misc_04.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_misc_06.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.04,
+   "min_interval": 0.1
+  },
+  "torch_loop": {
+   "label": "Fackel knistert (Schleife)",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/fire_crackling/fire-1_loop.ogg"
+   ],
+   "volume_db": -6,
+   "loop": true
+  },
+  "respawn": {
+   "label": "Rückkehr-Schimmer",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_heals_buffs/30_revive_03.ogg"
+   ],
+   "volume_db": -2
+  },
+  "potion_break": {
+   "label": "Trank zerspringt",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_03.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_04.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_06.ogg"
+   ],
+   "volume_db": 0,
+   "spread": 0.05,
+   "min_interval": 0.1
+  },
+  "potion_blast": {
+   "label": "Trank explodiert",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/04_fire_explosion_04_medium.ogg"
+   ],
+   "volume_db": 1,
+   "spread": 0.04,
+   "min_interval": 0.1,
+   "with": "potion_break"
+  },
+  "drink": {
+   "label": "Trinken",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_01.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_03.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_misc_04.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.04,
+   "min_interval": 0.5
+  },
+  "curse": {
+   "label": "Fluch",
+   "category": "focus",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_heals_buffs/21_debuff_01.ogg"
+   ],
+   "volume_db": -3
+  },
+  "cleanse": {
+   "label": "Reinigung",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_heals_buffs/02_heal_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_healing_chime_01.ogg"
+   ],
+   "volume_db": -2
+  },
+  "identify": {
+   "label": "Identifizieren",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_healing_chime_02.ogg"
+   ],
+   "volume_db": -6
+  },
+  "equip_metal": {
+   "label": "Ausrüsten: Metall",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/metal_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/metal_02.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/metal_03.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.05,
+   "min_interval": 0.1
+  },
+  "equip_leather": {
+   "label": "Ausrüsten: Leder",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/library/kenney_rpg/belthandle1.ogg",
+    "res://assets/audio/library/kenney_rpg/belthandle2.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.05,
+   "min_interval": 0.1
+  },
+  "equip_cloth": {
+   "label": "Ausrüsten: Stoff",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/library/kenney_rpg/cloth1.ogg",
+    "res://assets/audio/library/kenney_rpg/cloth4.ogg",
+    "res://assets/audio/library/kenney_rpg/clothbelt2.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.05,
+   "min_interval": 0.1
+  },
+  "equip_jewel": {
+   "label": "Ausrüsten: Schmuck",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/item_gem_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_gem_03.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_gem_04.ogg"
+   ],
+   "volume_db": -4,
+   "spread": 0.05,
+   "min_interval": 0.1
+  },
+  "bag_full": {
+   "label": "Tasche voll",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/error_005.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/error_008.ogg"
+   ],
+   "volume_db": -4
+  },
+  "item_drop": {
+   "label": "Gegenstand fallen gelassen",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/drop_001.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/drop_004.ogg"
+   ],
+   "volume_db": -4,
    "spread": 0.05
+  },
+  "inventory_open": {
+   "label": "Inventar auf",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/library/lrsf_fantasy/inventory_open_00.ogg",
+    "res://assets/audio/library/lrsf_fantasy/inventory_open_01.ogg"
+   ],
+   "volume_db": -3
+  },
+  "inventory_close": {
+   "label": "Inventar zu",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/close_001.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/close_004.ogg"
+   ],
+   "volume_db": -4
+  },
+  "throw_arm": {
+   "label": "Trank gezogen",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/item_misc_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_misc_03.ogg"
+   ],
+   "volume_db": -4
+  },
+  "ui_hover": {
+   "label": "Maus über Knopf",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/tick_001.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/tick_002.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/tick_004.ogg"
+   ],
+   "volume_db": -12,
+   "spread": 0.03,
+   "min_interval": 0.04
+  },
+  "talent_open": {
+   "label": "Talentbuch auf",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/book_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/book_04.ogg"
+   ],
+   "volume_db": -3
+  },
+  "talent_learn": {
+   "label": "Talent gelernt",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/confirmation_001.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/confirmation_004.ogg"
+   ],
+   "volume_db": -2
+  },
+  "talent_refund": {
+   "label": "Talent zurückgesetzt",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/minimize_001.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/minimize_003.ogg"
+   ],
+   "volume_db": -4
+  },
+  "skill_ready": {
+   "label": "Fähigkeit bereit",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/glass_001.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/glass_002.ogg"
+   ],
+   "volume_db": -10
+  },
+  "toast": {
+   "label": "Hinweis",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/pluck_001.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/pluck_002.ogg"
+   ],
+   "volume_db": -8
+  },
+  "map_open": {
+   "label": "Karte auf",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/book_03.ogg"
+   ],
+   "volume_db": -4
+  },
+  "pause_open": {
+   "label": "Pause auf",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/minimize_004.ogg"
+   ],
+   "volume_db": -4
+  },
+  "pause_close": {
+   "label": "Pause zu",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/maximize_004.ogg"
+   ],
+   "volume_db": -4
+  },
+  "save_ok": {
+   "label": "Gespeichert",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/confirmation_003.ogg"
+   ],
+   "volume_db": -4
+  },
+  "stairs_pick": {
+   "label": "Treppe gewählt",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/select_001.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/select_008.ogg"
+   ],
+   "volume_db": -4
+  },
+  "run_tree": {
+   "label": "Lauf-Baum: Auswahl",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/switch_001.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/switch_007.ogg"
+   ],
+   "volume_db": -6
+  },
+  "amb_ice_creak": {
+   "label": "Eis knarzt (Frostgruft)",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/rubberduck_100_metal_wood/wood_cracking_01.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/wood_cracking_02.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/wood_cracking_04.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/wood_squeak_01.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/wood_squeak_02.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.1,
+   "min_interval": 8
+  },
+  "amb_far_hell": {
+   "label": "Ferne Ketten und Schreie (Hölle)",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/chain_winch/winch_-_marker_5.ogg",
+    "res://assets/audio/library/chain_winch/winch_-_marker_7.ogg",
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan01.ogg",
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan04.ogg"
+   ],
+   "volume_db": -8,
+   "spread": 0.06,
+   "min_interval": 15
+  },
+  "amb_lava_rumble": {
+   "label": "Lava grollt (Punktquelle)",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/lava_loop/lavaloop_loop.ogg"
+   ],
+   "volume_db": -6,
+   "loop": true
+  },
+  "amb_room_tone": {
+   "label": "Raumton (Höhle)",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/lrsf_fantasy/ambience_cave_00_loop.ogg"
+   ],
+   "volume_db": -8,
+   "loop": true
+  },
+  "amb_bone_settle": {
+   "label": "Fernes Knochenrieseln (Krypta)",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/bones/bones_rattle_0.ogg",
+    "res://assets/audio/library/bones/bones_rattle_5.ogg",
+    "res://assets/audio/library/bones/bones_rattle_9.ogg"
+   ],
+   "volume_db": -10,
+   "spread": 0.08,
+   "min_interval": 10
+  },
+  "settle_tick": {
+   "label": "Trümmer landet (allgemein)",
+   "category": "debris",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_04.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_02.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_03.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/stones_04.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/stones_01.ogg"
+   ],
+   "volume_db": -4,
+   "min_interval": 0.05,
+   "spread": 0.12
+  },
+  "settle_tick_liquid": {
+   "label": "Tropfen landet",
+   "category": "debris",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_10.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_09.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_06.ogg"
+   ],
+   "volume_db": -8,
+   "min_interval": 0.06,
+   "spread": 0.15
+  },
+  "settle_patter": {
+   "label": "Viele Trümmer prasseln",
+   "category": "debris",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_04.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_02.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_03.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/stones_04.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/stones_01.ogg",
+    "res://assets/audio/library/bones/bones_rattle_0.ogg",
+    "res://assets/audio/library/bones/bones_rattle_3.ogg",
+    "res://assets/audio/library/bones/bones_rattle_6.ogg",
+    "res://assets/audio/library/bones/bones_rattle_9.ogg"
+   ],
+   "volume_db": -2,
+   "min_interval": 0.12,
+   "spread": 0.1
+  },
+  "burst_dust": {
+   "label": "Staub stiebt auf",
+   "category": "debris",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/stones_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/stones_03.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/stones_04.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_02.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_03.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_01.ogg"
+   ],
+   "volume_db": -6,
+   "min_interval": 0.08,
+   "spread": 0.1
+  },
+  "splat": {
+   "label": "Aufprall/Splatter",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_16.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_14.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_15.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_13.ogg"
+   ],
+   "volume_db": -2,
+   "min_interval": 0.08
+  },
+  "splat_bone": {
+   "label": "Knochen zersplittern",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_02.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_05.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_01.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta4.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta33.ogg",
+    "res://assets/audio/library/bones/bones_rattle_0.ogg",
+    "res://assets/audio/library/bones/bones_rattle_3.ogg",
+    "res://assets/audio/library/bones/bones_rattle_6.ogg",
+    "res://assets/audio/library/bones/bones_rattle_9.ogg"
+   ],
+   "volume_db": -2,
+   "min_interval": 0.08
+  },
+  "vo_enemy_death_bone": {
+   "label": "Skelett zerfällt (Stimme)",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/kenney_impact/impact_wood_heavy_000.ogg",
+    "res://assets/audio/library/kenney_impact/impact_wood_heavy_001.ogg",
+    "res://assets/audio/library/kenney_impact/impact_wood_heavy_002.ogg",
+    "res://assets/audio/library/kenney_impact/impact_wood_heavy_003.ogg",
+    "res://assets/audio/library/kenney_impact/impact_wood_heavy_004.ogg",
+    "res://assets/audio/library/bones/bones-2.ogg"
+   ],
+   "volume_db": -2,
+   "min_interval": 0.1
+  },
+  "coat_fire_hit": {
+   "label": "Waffe (fire) trifft",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_1.ogg",
+    "res://assets/audio/library/steam_release/steam_hisses_-_marker_3.ogg"
+   ],
+   "volume_db": -6,
+   "min_interval": 0.08,
+   "spread": 0.08
+  },
+  "coat_fire_kill": {
+   "label": "Waffe (fire) tötet",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_impact_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_impact_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_impact_03.ogg"
+   ],
+   "volume_db": -3,
+   "min_interval": 0.1
+  },
+  "coat_ice_hit": {
+   "label": "Waffe (ice) trifft",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/ice_shattering/ledasluzta.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta5.ogg"
+   ],
+   "volume_db": -6,
+   "min_interval": 0.08,
+   "spread": 0.08
+  },
+  "coat_ice_kill": {
+   "label": "Waffe (ice) tötet",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_02.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_05.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_01.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta4.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta33.ogg"
+   ],
+   "volume_db": -3,
+   "min_interval": 0.1
+  },
+  "coat_poison_hit": {
+   "label": "Waffe (poison) trifft",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_01.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_02.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_03.ogg"
+   ],
+   "volume_db": -6,
+   "min_interval": 0.08,
+   "spread": 0.08
+  },
+  "coat_poison_kill": {
+   "label": "Waffe (poison) tötet",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_06.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_02.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_07.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_05.ogg"
+   ],
+   "volume_db": -3,
+   "min_interval": 0.1
+  },
+  "coat_slime_hit": {
+   "label": "Waffe (slime) trifft",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_01.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_02.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_03.ogg"
+   ],
+   "volume_db": -6,
+   "min_interval": 0.08,
+   "spread": 0.08
+  },
+  "coat_slime_kill": {
+   "label": "Waffe (slime) tötet",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_06.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_02.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_07.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_05.ogg"
+   ],
+   "volume_db": -3,
+   "min_interval": 0.1
+  },
+  "coat_shock_hit": {
+   "label": "Waffe (shock) trifft",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_03.ogg"
+   ],
+   "volume_db": -6,
+   "min_interval": 0.08,
+   "spread": 0.08
+  },
+  "coat_shock_kill": {
+   "label": "Waffe (shock) tötet",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_03.ogg"
+   ],
+   "volume_db": -3,
+   "min_interval": 0.1
+  },
+  "coat_void_hit": {
+   "label": "Waffe (void) trifft",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_01.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_03.ogg",
+    "res://assets/audio/library/portal_sounds_4/1.ogg"
+   ],
+   "volume_db": -6,
+   "min_interval": 0.08,
+   "spread": 0.08
+  },
+  "coat_void_kill": {
+   "label": "Waffe (void) tötet",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/sfx/void_burst_0.wav",
+    "res://assets/audio/sfx/void_burst_1.wav",
+    "res://assets/audio/sfx/void_burst_2.wav"
+   ],
+   "volume_db": -3,
+   "min_interval": 0.1
+  },
+  "coat_blood_hit": {
+   "label": "Waffe (blood) trifft",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_10.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_09.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/splash_06.ogg"
+   ],
+   "volume_db": -6,
+   "min_interval": 0.08,
+   "spread": 0.08
+  },
+  "coat_blood_kill": {
+   "label": "Waffe (blood) tötet",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_16.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_14.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_15.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_13.ogg"
+   ],
+   "volume_db": -3,
+   "min_interval": 0.1
+  },
+  "coat_spirit_hit": {
+   "label": "Waffe (spirit) trifft",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan05.ogg",
+    "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan01.ogg"
+   ],
+   "volume_db": -6,
+   "min_interval": 0.08,
+   "spread": 0.08
+  },
+  "coat_spirit_kill": {
+   "label": "Waffe (spirit) tötet",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/sfx/void_burst_0.wav",
+    "res://assets/audio/sfx/void_burst_1.wav",
+    "res://assets/audio/sfx/void_burst_2.wav"
+   ],
+   "volume_db": -3,
+   "min_interval": 0.1
+  },
+  "pet_spawn": {
+   "label": "Begleiter erscheint",
+   "category": "ally",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_heals_buffs/02_heal_02.ogg",
+    "res://assets/audio/library/creatures_1/howl.ogg",
+    "res://assets/audio/library/dog_snarl/dog-growl.ogg"
+   ],
+   "volume_db": -3,
+   "min_interval": 0.5
+  },
+  "pet_ability_1": {
+   "label": "Begleiter-Fähigkeit",
+   "category": "ally",
+   "files": [
+    "res://assets/audio/library/creatures_1/howl.ogg"
+   ],
+   "volume_db": -4,
+   "min_interval": 0.3
+  },
+  "pet_ability_2": {
+   "label": "Begleiter heult/spottet",
+   "category": "ally",
+   "files": [
+    "res://assets/audio/library/creatures_2/roar_04.ogg",
+    "res://assets/audio/library/creatures_2/roar_05.ogg",
+    "res://assets/audio/library/creatures_2/roar_06.ogg"
+   ],
+   "volume_db": -4,
+   "min_interval": 0.5
+  },
+  "pet_spawn@wolf": {
+   "label": "wolf erscheint",
+   "category": "ally",
+   "files": [
+    "res://assets/audio/library/creatures_1/howl.ogg",
+    "res://assets/audio/library/dog_snarl/dog-growl.ogg"
+   ],
+   "volume_db": -3,
+   "min_interval": 0.5
+  },
+  "pet_ability_1@wolf": {
+   "label": "wolf Fähigkeit",
+   "category": "ally",
+   "files": [
+    "res://assets/audio/library/creatures_1/howl.ogg"
+   ],
+   "volume_db": -4,
+   "min_interval": 0.3
+  },
+  "pet_spawn@bear": {
+   "label": "bear erscheint",
+   "category": "ally",
+   "files": [
+    "res://assets/audio/library/bear_growls/bear_01.ogg",
+    "res://assets/audio/library/bear_growls/bear_02.ogg"
+   ],
+   "volume_db": -3,
+   "min_interval": 0.5
+  },
+  "pet_ability_1@bear": {
+   "label": "bear Fähigkeit",
+   "category": "ally",
+   "files": [
+    "res://assets/audio/library/bear_growls/bear_01.ogg",
+    "res://assets/audio/library/bear_growls/bear_02.ogg"
+   ],
+   "volume_db": -4,
+   "min_interval": 0.3
+  },
+  "pet_spawn@water_elemental": {
+   "label": "water_elemental erscheint",
+   "category": "ally",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/22_water_02.ogg"
+   ],
+   "volume_db": -3,
+   "min_interval": 0.5
+  },
+  "pet_ability_1@water_elemental": {
+   "label": "water_elemental Fähigkeit",
+   "category": "ally",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/13_ice_explosion_01.ogg"
+   ],
+   "volume_db": -4,
+   "min_interval": 0.3
+  },
+  "pet_spawn@pyro": {
+   "label": "pyro erscheint",
+   "category": "ally",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/04_fire_explosion_04_medium.ogg"
+   ],
+   "volume_db": -3,
+   "min_interval": 0.5
+  },
+  "pet_ability_1@pyro": {
+   "label": "pyro Fähigkeit",
+   "category": "ally",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/spell_fire_06.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/spell_fire_07.ogg"
+   ],
+   "volume_db": -4,
+   "min_interval": 0.3
+  },
+  "pet_spawn@bone_warrior": {
+   "label": "bone_warrior erscheint",
+   "category": "ally",
+   "files": [
+    "res://assets/audio/library/bones/bones_rattle_0.ogg",
+    "res://assets/audio/library/bones/bones_rattle_9.ogg"
+   ],
+   "volume_db": -3,
+   "min_interval": 0.5
+  },
+  "pet_ability_1@bone_warrior": {
+   "label": "bone_warrior Fähigkeit",
+   "category": "ally",
+   "files": [
+    "res://assets/audio/library/zombie_skeleton_monster_voice/zombieyell8.ogg",
+    "res://assets/audio/library/zombie_skeleton_monster_voice/zombieyell10.ogg"
+   ],
+   "volume_db": -4,
+   "min_interval": 0.3
+  },
+  "windup_generic": {
+   "label": "Gegner holt aus",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/sfx/windup_summon_0.wav",
+    "res://assets/audio/sfx/windup_summon_1.wav"
+   ],
+   "volume_db": -8,
+   "min_interval": 0.2
+  },
+  "boss_phase": {
+   "label": "Boss wechselt die Phase",
+   "category": "stinger",
+   "files": [
+    "res://assets/audio/sfx/boss_intro_0.wav"
+   ],
+   "volume_db": -3,
+   "min_interval": 2.0
+  },
+  "boss_flyin": {
+   "label": "Boss fliegt ein",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/library/creatures_2/roar_04.ogg",
+    "res://assets/audio/library/creatures_2/roar_05.ogg",
+    "res://assets/audio/library/creatures_2/roar_06.ogg"
+   ],
+   "volume_db": -2,
+   "min_interval": 2.0
+  },
+  "stinger_fight_start": {
+   "label": "Kampf beginnt",
+   "category": "stinger",
+   "files": [
+    "res://assets/audio/sfx/doors_lock_0.wav",
+    "res://assets/audio/sfx/doors_lock_1.wav",
+    "res://assets/audio/library/door_open_close_set/qubodup-doorclose01.ogg",
+    "res://assets/audio/library/door_open_close_set/qubodup-doorclose02.ogg",
+    "res://assets/audio/library/rubberduck_100_metal_wood/metal_slam_01.ogg"
+   ],
+   "volume_db": -4,
+   "min_interval": 2.0
+  },
+  "ult_cast": {
+   "label": "Ultimate wird gewirkt",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/seq_mana_drain_mid_loop_loop.ogg",
+    "res://assets/audio/sfx/windup_beam_0.wav",
+    "res://assets/audio/sfx/windup_beam_1.wav"
+   ],
+   "volume_db": 0,
+   "min_interval": 1.0
+  },
+  "ult_singularity_release": {
+   "label": "Singularität entlädt sich",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/leohpaz_8_magic_attacks/30_earth_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/seq_mana_drain_end.ogg",
+    "res://assets/audio/library/portal_sounds_4/4.ogg"
+   ],
+   "volume_db": 0,
+   "min_interval": 1.0
+  },
+  "vo_cast_ult@female": {
+   "label": "Kampfschrei beim Ultimate",
+   "category": "voice",
+   "files": [
+    "res://assets/audio/library/female_rpg_voice_starter/type_2_attack1.ogg",
+    "res://assets/audio/library/female_rpg_voice_starter/type_2_attack2.ogg",
+    "res://assets/audio/library/female_rpg_voice_starter/type_2_attack3.ogg"
+   ],
+   "volume_db": 0,
+   "min_interval": 1.0
+  },
+  "vo_fall@female": {
+   "label": "Sturz",
+   "category": "voice",
+   "files": [
+    "res://assets/audio/library/female_hurt_grunts/female_hurt_grunts_groans_1_s01.ogg",
+    "res://assets/audio/library/female_hurt_grunts/female_hurt_grunts_groans_1_s03.ogg",
+    "res://assets/audio/library/female_hurt_grunts/female_hurt_grunts_groans_1_s05.ogg",
+    "res://assets/audio/library/female_hurt_grunts/female_hurt_grunts_groans_1_s07.ogg"
+   ],
+   "volume_db": 0,
+   "min_interval": 0.5
+  },
+  "vo_cast_ult@male_knight": {
+   "label": "Kampfschrei beim Ultimate",
+   "category": "voice",
+   "files": [
+    "res://assets/audio/library/male_grunt_yelling/3grunt1.ogg",
+    "res://assets/audio/library/male_grunt_yelling/3grunt2.ogg",
+    "res://assets/audio/library/male_grunt_yelling/3grunt3.ogg",
+    "res://assets/audio/library/male_grunt_yelling/3grunt4.ogg",
+    "res://assets/audio/library/male_grunt_yelling/3grunt5.ogg",
+    "res://assets/audio/library/male_grunt_yelling/3grunt6.ogg"
+   ],
+   "volume_db": 0,
+   "min_interval": 1.0
+  },
+  "vo_fall@male_knight": {
+   "label": "Sturz",
+   "category": "voice",
+   "files": [
+    "res://assets/audio/library/male_grunt_yelling/3yell16.ogg",
+    "res://assets/audio/library/male_grunt_yelling/3yell13.ogg",
+    "res://assets/audio/library/male_grunt_yelling/3yell6.ogg",
+    "res://assets/audio/library/male_grunt_yelling/3yell1.ogg"
+   ],
+   "volume_db": 0,
+   "min_interval": 0.5
+  },
+  "vo_cast_ult@male_wizard": {
+   "label": "Kampfschrei beim Ultimate",
+   "category": "voice",
+   "files": [
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-11.ogg",
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-02.ogg",
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-12.ogg",
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-08.ogg",
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-01.ogg"
+   ],
+   "volume_db": 0,
+   "min_interval": 1.0
+  },
+  "vo_fall@male_wizard": {
+   "label": "Sturz",
+   "category": "voice",
+   "files": [
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-15.ogg",
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-10.ogg",
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-05.ogg",
+    "res://assets/audio/library/qubodup_15_male_strain/slightscream-14.ogg"
+   ],
+   "volume_db": 0,
+   "min_interval": 0.5
+  },
+  "vo_cast_ult@male_necro": {
+   "label": "Kampfschrei beim Ultimate",
+   "category": "voice",
+   "files": [
+    "res://assets/audio/library/zombie_skeleton_monster_voice/humanyell3.ogg",
+    "res://assets/audio/library/zombie_skeleton_monster_voice/humanyell1.ogg",
+    "res://assets/audio/library/zombie_skeleton_monster_voice/humanyell5.ogg",
+    "res://assets/audio/library/zombie_skeleton_monster_voice/humanyell4.ogg"
+   ],
+   "volume_db": 0,
+   "min_interval": 1.0,
+   "pitch": 0.86
+  },
+  "vo_fall@male_necro": {
+   "label": "Sturz",
+   "category": "voice",
+   "files": [
+    "res://assets/audio/library/male_grunt_yelling/2yell6.ogg",
+    "res://assets/audio/library/male_grunt_yelling/2yell5.ogg",
+    "res://assets/audio/library/male_grunt_yelling/2yell4.ogg",
+    "res://assets/audio/library/male_grunt_yelling/2yell11.ogg"
+   ],
+   "volume_db": 0,
+   "min_interval": 0.5,
+   "pitch": 0.86
+  },
+  "tal_channel_start": {
+   "label": "Kanalisieren beginnt",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/sfx/windup_beam_0.wav",
+    "res://assets/audio/sfx/windup_beam_1.wav"
+   ],
+   "volume_db": -4,
+   "min_interval": 0.5
+  },
+  "tal_echo": {
+   "label": "Nachhall",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/seq_mana_drain_start.ogg"
+   ],
+   "volume_db": -6,
+   "min_interval": 0.3,
+   "pitch": 0.85
+  },
+  "tal_taunt_area": {
+   "label": "Spott-Schrei",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/creatures_2/roar_04.ogg",
+    "res://assets/audio/library/creatures_2/roar_05.ogg",
+    "res://assets/audio/library/creatures_2/roar_06.ogg"
+   ],
+   "volume_db": -4,
+   "min_interval": 0.5
+  },
+  "tal_zone_start": {
+   "label": "Zone entsteht",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_02.ogg"
+   ],
+   "volume_db": -5,
+   "min_interval": 0.3
+  },
+  "tal_zone_end": {
+   "label": "Zone vergeht",
+   "category": "hero",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_04.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_02.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_03.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_stone_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/stones_04.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/stones_01.ogg"
+   ],
+   "volume_db": -12,
+   "min_interval": 0.3
+  },
+  "shock": {
+   "label": "Elektrischer Schlag",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_01.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_02.ogg",
+    "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_03.ogg"
+   ],
+   "volume_db": -3,
+   "min_interval": 0.08
+  },
+  "mad_strike": {
+   "label": "Gegner im Wahn schlägt Gegner",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/sfx/attack_slash_0.wav",
+    "res://assets/audio/sfx/attack_slash_1.wav",
+    "res://assets/audio/sfx/attack_slash_2.wav",
+    "res://assets/audio/sfx/attack_slash_3.wav"
+   ],
+   "volume_db": -5,
+   "min_interval": 0.15
+  },
+  "on_cooldown": {
+   "label": "Fähigkeit noch nicht bereit",
+   "category": "ui",
+   "files": [
+    "res://assets/audio/library/kenney_interface_sounds/error_001.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/error_004.ogg"
+   ],
+   "volume_db": -6,
+   "min_interval": 0.3
+  },
+  "rime_grow": {
+   "label": "Reif wächst",
+   "category": "debris",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_hit_01.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_hit_02.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/glass_005.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/glass_006.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/glass_003.ogg",
+    "res://assets/audio/library/kenney_interface_sounds/glass_002.ogg"
+   ],
+   "volume_db": -12,
+   "min_interval": 0.3
+  },
+  "crack_floor_ice": {
+   "label": "Eis bricht",
+   "category": "impact",
+   "files": [
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_02.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_05.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_01.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta4.ogg",
+    "res://assets/audio/library/ice_shattering/ledasluzta33.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_03.ogg",
+    "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_02.ogg"
+   ],
+   "volume_db": -3,
+   "min_interval": 0.2
+  },
+  "breath": {
+   "label": "Atem-Angriff",
+   "category": "boss",
+   "files": [
+    "res://assets/audio/sfx/attack_beam_0.wav",
+    "res://assets/audio/sfx/attack_beam_1.wav",
+    "res://assets/audio/sfx/attack_beam_2.wav"
+   ],
+   "volume_db": -4,
+   "min_interval": 0.5
+  },
+  "bodyfall": {
+   "label": "Körper fällt",
+   "category": "debris",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_12.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_11.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_06.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/slime_16.ogg",
+    "res://assets/audio/library/bones/bones_rattle_0.ogg",
+    "res://assets/audio/library/bones/bones_rattle_3.ogg",
+    "res://assets/audio/library/bones/bones_rattle_6.ogg",
+    "res://assets/audio/library/bones/bones_rattle_9.ogg"
+   ],
+   "volume_db": -2,
+   "min_interval": 0.1
+  },
+  "amb_drip": {
+   "label": "Tropfen (Raum)",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_02.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_03.ogg",
+    "res://assets/audio/library/rubberduck_40_water_slime/bubble_01.ogg"
+   ],
+   "volume_db": -14,
+   "min_interval": 1.5
+  },
+  "amb_point": {
+   "label": "Fackel/Becken (Raum)",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/fire_crackling/fire-1_loop.ogg"
+   ],
+   "volume_db": -16,
+   "min_interval": 2.0
+  },
+  "vo_enemy_hurt_bone": {
+   "label": "Skelett klappert getroffen",
+   "category": "enemy",
+   "files": [
+    "res://assets/audio/library/bones/bones_rattle_0.ogg",
+    "res://assets/audio/library/bones/bones_rattle_1.ogg",
+    "res://assets/audio/library/bones/bones_rattle_2.ogg",
+    "res://assets/audio/library/bones/bones_rattle_3.ogg",
+    "res://assets/audio/library/bones/bones_rattle_4.ogg",
+    "res://assets/audio/library/bones/bones_rattle_5.ogg"
+   ],
+   "volume_db": -6,
+   "min_interval": 0.12,
+   "spread": 0.1
   }
  }
 }

@@ -134,6 +134,20 @@ static func _on_frame(rect: Rect2, d: float) -> Vector2:
 	return Vector2(rect.position.x, rect.end.y - (d - rect.size.x))
 
 
+## Where a slot's icon sits: below the key's own row at the top (so the key never
+## covers it), as large as fits up to `icon`, in whole multiples of the icon's own
+## pixels when it can (18 px icons at 36, 32 px icons at 32: no uneven scaling).
+static func icon_rect(rect: Rect2, icon: Texture2D, keyed: bool) -> Rect2:
+	var l := layout()
+	var strip := float(l.key_size) + 2.0 if keyed else 0.0
+	var room := minf(float(l.icon), minf(rect.size.x - 4.0, rect.size.y - strip - 2.0))
+	var native := float(maxi(icon.get_width(), icon.get_height()))
+	var side := floorf(room / native) * native if native > 0.0 and room >= native else room
+	var area := Rect2(rect.position + Vector2(0, strip), Vector2(rect.size.x, rect.size.y - strip))
+	var size := Vector2(side, side)
+	return Rect2((area.get_center() - size * 0.5).round(), size)
+
+
 static func _slot(canvas: CanvasItem, font: Font, rect: Rect2, entry: Dictionary, clock: float, accent: Color) -> void:
 	var l := layout()
 	var locked := bool(entry.get("locked", false))
@@ -143,17 +157,19 @@ static func _slot(canvas: CanvasItem, font: Font, rect: Rect2, entry: Dictionary
 	canvas.draw_rect(rect, HudStyle.color("slot"))
 	var icon: Texture2D = entry.get("icon", null)
 	if icon != null:
-		var size := Vector2(float(l.icon), float(l.icon))
 		var tint := Color(0.32, 0.3, 0.3, 0.8) if locked else Color(0.62, 0.6, 0.6) if cooldown > 0.0 else Color.WHITE
-		canvas.draw_texture_rect(icon, Rect2((rect.get_center() - size * 0.5).round(), size), false, tint)
+		canvas.draw_texture_rect(icon, icon_rect(rect, icon, not str(entry.get("key", "")).is_empty()), false, tint)
 	if not locked and cooldown > 0.0:
 		# the shade shrinks from the top as the skill recharges
 		var share := clampf(cooldown / maximum, 0.0, 1.0)
 		canvas.draw_rect(Rect2(rect.position, Vector2(rect.size.x, roundf(rect.size.y * share))), Color(HudStyle.color("outline"), 0.6))
-		_centered(canvas, font, rect.get_center() + Vector2(0, 6), ("%d" % ceili(cooldown)) if cooldown >= 1.0 else ("%.1f" % cooldown), int(l.number_size), HudStyle.color("text"))
+		# the seconds sit on the icon, below the key's row
+		var keyed := not str(entry.get("key", "")).is_empty()
+		var middle := rect.position.y + (float(l.key_size) + 2.0 if keyed else 0.0) + (rect.size.y - (float(l.key_size) + 2.0 if keyed else 0.0)) * 0.5
+		_centered(canvas, font, Vector2(rect.get_center().x, middle + floorf(float(l.number_size) * 0.4)), ("%d" % ceili(cooldown)) if cooldown >= 1.0 else ("%.1f" % cooldown), int(l.number_size), HudStyle.color("text"))
 	# an empty talent slot ("empty") shows only its key until a talent is learned
 	if locked and not bool(entry.get("empty", false)):
-		_centered(canvas, font, Vector2(rect.get_center().x, rect.end.y - 4), "LV %d" % int(entry.get("unlock", 1)), 10, HudStyle.color("text_dim"))
+		_centered(canvas, font, Vector2(rect.get_center().x, rect.end.y - 4), "ST %d" % int(entry.get("unlock", 1)), 10, HudStyle.color("text_dim"))
 	var frame := Color(accent, 0.85) if ready else HudStyle.color("panel_edge")
 	if locked: frame = Color(HudStyle.color("panel_edge"), 0.08)
 	canvas.draw_rect(rect, frame, false, 1.0)

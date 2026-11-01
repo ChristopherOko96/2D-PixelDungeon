@@ -3687,6 +3687,5636 @@
      "gain_db": 0
     }
    ]
+  },
+  "female_rpg_voice_starter": {
+   "name": "Female RPG Voice Starter Pack",
+   "author": "cicifyre",
+   "url": "https://opengameart.org/content/female-rpg-voice-starter-pack",
+   "via": "",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0). Credit appreciated: cicifyre",
+   "files": [
+    {
+     "path": "res://assets/audio/library/female_rpg_voice_starter/type_2_attack1.ogg",
+     "name": "type_2_attack1",
+     "seconds": 0.284,
+     "mean_db": -22.4,
+     "peak_db": -9.1,
+     "gain_db": 2.4,
+     "source": "extracted/RPG Voice Starter Pack/Type 2/attack1.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/female_rpg_voice_starter/type_2_attack2.ogg",
+     "name": "type_2_attack2",
+     "seconds": 0.315,
+     "mean_db": -23,
+     "peak_db": -9,
+     "gain_db": 3,
+     "source": "extracted/RPG Voice Starter Pack/Type 2/attack2.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/female_rpg_voice_starter/type_2_attack3.ogg",
+     "name": "type_2_attack3",
+     "seconds": 0.255,
+     "mean_db": -24.9,
+     "peak_db": -9.5,
+     "gain_db": 4.9,
+     "source": "extracted/RPG Voice Starter Pack/Type 2/attack3.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/female_rpg_voice_starter/type_2_damaged1.ogg",
+     "name": "type_2_damaged1",
+     "seconds": 0.42,
+     "mean_db": -26.5,
+     "peak_db": -9,
+     "gain_db": 6.5,
+     "source": "extracted/RPG Voice Starter Pack/Type 2/damaged1.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/female_rpg_voice_starter/type_2_damaged2.ogg",
+     "name": "type_2_damaged2",
+     "seconds": 0.27,
+     "mean_db": -23.1,
+     "peak_db": -8.8,
+     "gain_db": 3.1,
+     "source": "extracted/RPG Voice Starter Pack/Type 2/damaged2.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/female_rpg_voice_starter/type_2_damaged3.ogg",
+     "name": "type_2_damaged3",
+     "seconds": 0.312,
+     "mean_db": -22.7,
+     "peak_db": -9.1,
+     "gain_db": 2.7,
+     "source": "extracted/RPG Voice Starter Pack/Type 2/damaged3.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/female_rpg_voice_starter/type_2_healed1.ogg",
+     "name": "type_2_healed1",
+     "seconds": 0.455,
+     "mean_db": -22.2,
+     "peak_db": -8.9,
+     "gain_db": 2.2,
+     "source": "extracted/RPG Voice Starter Pack/Type 2/healed1.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/female_rpg_voice_starter/type_2_healed2.ogg",
+     "name": "type_2_healed2",
+     "seconds": 0.531,
+     "mean_db": -20,
+     "peak_db": -9,
+     "gain_db": 0,
+     "source": "extracted/RPG Voice Starter Pack/Type 2/healed2.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/female_rpg_voice_starter/type_2_healed3.ogg",
+     "name": "type_2_healed3",
+     "seconds": 1.223,
+     "mean_db": -20.8,
+     "peak_db": -9.3,
+     "gain_db": 0.8,
+     "source": "extracted/RPG Voice Starter Pack/Type 2/healed3.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/female_rpg_voice_starter/type_2_jump1.ogg",
+     "name": "type_2_jump1",
+     "seconds": 0.14,
+     "mean_db": -23.6,
+     "peak_db": -10,
+     "gain_db": 3.6,
+     "source": "extracted/RPG Voice Starter Pack/Type 2/jump1.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/female_rpg_voice_starter/type_2_jump2.ogg",
+     "name": "type_2_jump2",
+     "seconds": 0.224,
+     "mean_db": -22.2,
+     "peak_db": -9.5,
+     "gain_db": 2.2,
+     "source": "extracted/RPG Voice Starter Pack/Type 2/jump2.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/female_rpg_voice_starter/type_2_jump3.ogg",
+     "name": "type_2_jump3",
+     "seconds": 0.169,
+     "mean_db": -22.8,
+     "peak_db": -9.6,
+     "gain_db": 2.8,
+     "source": "extracted/RPG Voice Starter Pack/Type 2/jump3.wav",
+     "loop": false
+    }
+   ]
+  },
+  "female_hurt_grunts": {
+   "name": "Female Hurt Grunts & Groans",
+   "author": "Nocturnal_Vanguard",
+   "url": "https://opengameart.org/content/female-hurt-grunts-groans",
+   "via": "",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0).",
+   "files": [
+    {
+     "path": "res://assets/audio/library/female_hurt_grunts/female_hurt_grunts_groans_1_s01.ogg",
+     "name": "female_hurt_grunts_groans_1_s01",
+     "seconds": 0.79,
+     "mean_db": -22,
+     "peak_db": -7.5,
+     "gain_db": 2,
+     "source": "female_hurt_grunts_groans_1.ogg#take1",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/female_hurt_grunts/female_hurt_grunts_groans_1_s03.ogg",
+     "name": "female_hurt_grunts_groans_1_s03",
+     "seconds": 0.395,
+     "mean_db": -20,
+     "peak_db": -7.4,
+     "gain_db": 0,
+     "source": "female_hurt_grunts_groans_1.ogg#take3",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/female_hurt_grunts/female_hurt_grunts_groans_1_s04.ogg",
+     "name": "female_hurt_grunts_groans_1_s04",
+     "seconds": 1.182,
+     "mean_db": -19.4,
+     "peak_db": -6.3,
+     "gain_db": -0.6,
+     "source": "female_hurt_grunts_groans_1.ogg#take4",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/female_hurt_grunts/female_hurt_grunts_groans_1_s05.ogg",
+     "name": "female_hurt_grunts_groans_1_s05",
+     "seconds": 0.761,
+     "mean_db": -18.7,
+     "peak_db": -7.9,
+     "gain_db": -1.3,
+     "source": "female_hurt_grunts_groans_1.ogg#take5",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/female_hurt_grunts/female_hurt_grunts_groans_1_s07.ogg",
+     "name": "female_hurt_grunts_groans_1_s07",
+     "seconds": 0.863,
+     "mean_db": -17.7,
+     "peak_db": -5.8,
+     "gain_db": -2.3,
+     "source": "female_hurt_grunts_groans_1.ogg#take7",
+     "loop": false
+    }
+   ]
+  },
+  "dying_voices_female": {
+   "name": "Dying Voices - Female - RPG",
+   "author": "Galacti-Chron (voice: Sky Rae)",
+   "url": "https://opengameart.org/node/99640",
+   "via": "",
+   "license": "CC0 1.0 (dual-licensed page, CC0 chosen)",
+   "credit": "Not required (CC0). Credit appreciated: Galacti-Chron (voice: Sky Rae)",
+   "files": [
+    {
+     "path": "res://assets/audio/library/dying_voices_female/death_--_high_dying_noise.ogg",
+     "name": "death_--_high_dying_noise",
+     "seconds": 1.475,
+     "mean_db": -30.7,
+     "peak_db": -15.1,
+     "gain_db": 10.7,
+     "source": "extracted/DEATH -- HIgh dying noise.mp3",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/dying_voices_female/death_--_misc_female_british_noise.ogg",
+     "name": "death_--_misc_female_british_noise",
+     "seconds": 0.39,
+     "mean_db": -30.7,
+     "peak_db": -17.2,
+     "gain_db": 10.7,
+     "source": "extracted/DEATH -- misc female british noise.mp3",
+     "loop": false
+    }
+   ]
+  },
+  "male_grunt_yelling": {
+   "name": "Male Grunt/Yelling sounds",
+   "author": "HaelDB",
+   "url": "https://opengameart.org/content/male-gruntyelling-sounds",
+   "via": "",
+   "license": "CC0 1.0 (dual-licensed page, CC0 chosen)",
+   "credit": "Not required (CC0). Optional: HaelDB",
+   "files": [
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/1yell1.ogg",
+     "name": "1yell1",
+     "seconds": 0.339,
+     "mean_db": -21.8,
+     "peak_db": -6.3,
+     "gain_db": 1.8,
+     "source": "extracted/yelling sounds/1yell1.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/1yell11.ogg",
+     "name": "1yell11",
+     "seconds": 0.568,
+     "mean_db": -23,
+     "peak_db": -7.4,
+     "gain_db": 3,
+     "source": "extracted/yelling sounds/1yell11.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/1yell16.ogg",
+     "name": "1yell16",
+     "seconds": 0.322,
+     "mean_db": -22.2,
+     "peak_db": -6.4,
+     "gain_db": 2.2,
+     "source": "extracted/yelling sounds/1yell16.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/1yell2.ogg",
+     "name": "1yell2",
+     "seconds": 0.652,
+     "mean_db": -24.5,
+     "peak_db": -9.5,
+     "gain_db": 4.5,
+     "source": "extracted/yelling sounds/1yell2.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/1yell3.ogg",
+     "name": "1yell3",
+     "seconds": 0.785,
+     "mean_db": -19.2,
+     "peak_db": -6.2,
+     "gain_db": -0.8,
+     "source": "extracted/yelling sounds/1yell3.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/1yell6.ogg",
+     "name": "1yell6",
+     "seconds": 0.457,
+     "mean_db": -23.8,
+     "peak_db": -10.1,
+     "gain_db": 3.8,
+     "source": "extracted/yelling sounds/1yell6.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/1yell8.ogg",
+     "name": "1yell8",
+     "seconds": 0.525,
+     "mean_db": -22.2,
+     "peak_db": -8.4,
+     "gain_db": 2.2,
+     "source": "extracted/yelling sounds/1yell8.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/1yell9.ogg",
+     "name": "1yell9",
+     "seconds": 0.304,
+     "mean_db": -19.2,
+     "peak_db": -7.7,
+     "gain_db": -0.8,
+     "source": "extracted/yelling sounds/1yell9.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/2yell1.ogg",
+     "name": "2yell1",
+     "seconds": 0.386,
+     "mean_db": -21,
+     "peak_db": -9.6,
+     "gain_db": 1,
+     "source": "extracted/yelling sounds/2yell1.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/2yell10.ogg",
+     "name": "2yell10",
+     "seconds": 0.601,
+     "mean_db": -20.8,
+     "peak_db": -7.8,
+     "gain_db": 0.8,
+     "source": "extracted/yelling sounds/2yell10.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/2yell11.ogg",
+     "name": "2yell11",
+     "seconds": 1.147,
+     "mean_db": -16.5,
+     "peak_db": -3.6,
+     "gain_db": -3.5,
+     "source": "extracted/yelling sounds/2yell11.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/2yell2.ogg",
+     "name": "2yell2",
+     "seconds": 0.743,
+     "mean_db": -18.9,
+     "peak_db": -6.6,
+     "gain_db": -1.1,
+     "source": "extracted/yelling sounds/2yell2.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/2yell3.ogg",
+     "name": "2yell3",
+     "seconds": 0.927,
+     "mean_db": -20.9,
+     "peak_db": -5.6,
+     "gain_db": 0.9,
+     "source": "extracted/yelling sounds/2yell3.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/2yell4.ogg",
+     "name": "2yell4",
+     "seconds": 1.354,
+     "mean_db": -22.9,
+     "peak_db": -3.8,
+     "gain_db": 2.8,
+     "source": "extracted/yelling sounds/2yell4.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/2yell5.ogg",
+     "name": "2yell5",
+     "seconds": 1.6,
+     "mean_db": -26,
+     "peak_db": -8.7,
+     "gain_db": 6,
+     "source": "extracted/yelling sounds/2yell5.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/2yell6.ogg",
+     "name": "2yell6",
+     "seconds": 1.6,
+     "mean_db": -29.9,
+     "peak_db": -12.6,
+     "gain_db": 9.9,
+     "source": "extracted/yelling sounds/2yell6.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/2yell7.ogg",
+     "name": "2yell7",
+     "seconds": 0.707,
+     "mean_db": -16.1,
+     "peak_db": -3.2,
+     "gain_db": -3.9,
+     "source": "extracted/yelling sounds/2yell7.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/2yell8.ogg",
+     "name": "2yell8",
+     "seconds": 1,
+     "mean_db": -18.8,
+     "peak_db": -5.4,
+     "gain_db": -1.2,
+     "source": "extracted/yelling sounds/2yell8.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/3grunt1.ogg",
+     "name": "3grunt1",
+     "seconds": 0.339,
+     "mean_db": -15,
+     "peak_db": -6.1,
+     "gain_db": -5,
+     "source": "extracted/yelling sounds/3grunt1.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/3grunt2.ogg",
+     "name": "3grunt2",
+     "seconds": 0.599,
+     "mean_db": -27.7,
+     "peak_db": -9,
+     "gain_db": 7.7,
+     "source": "extracted/yelling sounds/3grunt2.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/3grunt3.ogg",
+     "name": "3grunt3",
+     "seconds": 0.452,
+     "mean_db": -22.4,
+     "peak_db": -8.9,
+     "gain_db": 2.4,
+     "source": "extracted/yelling sounds/3grunt3.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/3grunt4.ogg",
+     "name": "3grunt4",
+     "seconds": 0.215,
+     "mean_db": -19.4,
+     "peak_db": -7,
+     "gain_db": -0.6,
+     "source": "extracted/yelling sounds/3grunt4.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/3grunt5.ogg",
+     "name": "3grunt5",
+     "seconds": 0.353,
+     "mean_db": -21.5,
+     "peak_db": -6.5,
+     "gain_db": 1.5,
+     "source": "extracted/yelling sounds/3grunt5.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/3grunt6.ogg",
+     "name": "3grunt6",
+     "seconds": 0.8,
+     "mean_db": -24.7,
+     "peak_db": -7.2,
+     "gain_db": 4.7,
+     "source": "extracted/yelling sounds/3grunt6.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/3yell1.ogg",
+     "name": "3yell1",
+     "seconds": 1.484,
+     "mean_db": -12.1,
+     "peak_db": -2.3,
+     "gain_db": -7.9,
+     "source": "extracted/yelling sounds/3yell1.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/3yell12.ogg",
+     "name": "3yell12",
+     "seconds": 0.891,
+     "mean_db": -15.4,
+     "peak_db": -3.7,
+     "gain_db": -4.6,
+     "source": "extracted/yelling sounds/3yell12.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/3yell13.ogg",
+     "name": "3yell13",
+     "seconds": 1.8,
+     "mean_db": -27.4,
+     "peak_db": -14.1,
+     "gain_db": 7.4,
+     "source": "extracted/yelling sounds/3yell13.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/3yell15.ogg",
+     "name": "3yell15",
+     "seconds": 0.96,
+     "mean_db": -15.2,
+     "peak_db": -3.7,
+     "gain_db": -4.8,
+     "source": "extracted/yelling sounds/3yell15.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/3yell16.ogg",
+     "name": "3yell16",
+     "seconds": 1.8,
+     "mean_db": -20.5,
+     "peak_db": -7.9,
+     "gain_db": 0.5,
+     "source": "extracted/yelling sounds/3yell16.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/3yell3.ogg",
+     "name": "3yell3",
+     "seconds": 0.347,
+     "mean_db": -18.3,
+     "peak_db": -5.9,
+     "gain_db": -1.7,
+     "source": "extracted/yelling sounds/3yell3.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/3yell4.ogg",
+     "name": "3yell4",
+     "seconds": 0.458,
+     "mean_db": -18.5,
+     "peak_db": -6.3,
+     "gain_db": -1.5,
+     "source": "extracted/yelling sounds/3yell4.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/3yell6.ogg",
+     "name": "3yell6",
+     "seconds": 1.6,
+     "mean_db": -17.8,
+     "peak_db": -6.2,
+     "gain_db": -2.2,
+     "source": "extracted/yelling sounds/3yell6.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/3yell7.ogg",
+     "name": "3yell7",
+     "seconds": 0.843,
+     "mean_db": -22.8,
+     "peak_db": -8.9,
+     "gain_db": 2.8,
+     "source": "extracted/yelling sounds/3yell7.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/3yell8.ogg",
+     "name": "3yell8",
+     "seconds": 0.82,
+     "mean_db": -21.1,
+     "peak_db": -5.4,
+     "gain_db": 1.1,
+     "source": "extracted/yelling sounds/3yell8.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/yell1.ogg",
+     "name": "yell1",
+     "seconds": 2,
+     "mean_db": -16.5,
+     "peak_db": -3.9,
+     "gain_db": -3.5,
+     "source": "extracted/yelling sounds/yell1.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/yell10.ogg",
+     "name": "yell10",
+     "seconds": 1.657,
+     "mean_db": -14.9,
+     "peak_db": -3.9,
+     "gain_db": -5.1,
+     "source": "extracted/yelling sounds/yell10.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/male_grunt_yelling/yell11.ogg",
+     "name": "yell11",
+     "seconds": 2,
+     "mean_db": -14.5,
+     "peak_db": -3.8,
+     "gain_db": -5.5,
+     "source": "extracted/yelling sounds/yell11.wav",
+     "loop": false
+    }
+   ]
+  },
+  "baradari_11_male_pain": {
+   "name": "11 male human pain/death sounds",
+   "author": "Michel Baradari (submitted by qubodup)",
+   "url": "https://opengameart.org/content/11-male-human-paindeath-sounds",
+   "via": "",
+   "license": "CC BY 3.0",
+   "credit": "\"11 male human pain/death sounds\" by Michel Baradari, https://opengameart.org/content/11-male-human-paindeath-sounds - CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/) - cut/converted.",
+   "files": [
+    {
+     "path": "res://assets/audio/library/baradari_11_male_pain/deathh.ogg",
+     "name": "deathh",
+     "seconds": 0.543,
+     "mean_db": -19.1,
+     "peak_db": -3.7,
+     "gain_db": -0.9,
+     "source": "extracted/player/deathh.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/baradari_11_male_pain/die1.ogg",
+     "name": "die1",
+     "seconds": 0.829,
+     "mean_db": -20.4,
+     "peak_db": -4.6,
+     "gain_db": 0.4,
+     "source": "extracted/player/die1.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/baradari_11_male_pain/die2.ogg",
+     "name": "die2",
+     "seconds": 0.972,
+     "mean_db": -20.4,
+     "peak_db": -4.4,
+     "gain_db": 0.4,
+     "source": "extracted/player/die2.wav",
+     "loop": false
+    }
+   ]
+  },
+  "qubodup_15_male_strain": {
+   "name": "15 vocal male strain/hurt/pain/jump sounds",
+   "author": "qubodup",
+   "url": "https://opengameart.org/content/15-vocal-male-strainhurtpainjump-sounds",
+   "via": "",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0). Optional credit: qubodup",
+   "files": [
+    {
+     "path": "res://assets/audio/library/qubodup_15_male_strain/slightscream-01.ogg",
+     "name": "slightscream-01",
+     "seconds": 0.431,
+     "mean_db": -11.8,
+     "peak_db": 0,
+     "gain_db": -8.2,
+     "source": "extracted/slightscream-01.flac",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/qubodup_15_male_strain/slightscream-02.ogg",
+     "name": "slightscream-02",
+     "seconds": 0.363,
+     "mean_db": -15,
+     "peak_db": 0,
+     "gain_db": -5,
+     "source": "extracted/slightscream-02.flac",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/qubodup_15_male_strain/slightscream-03.ogg",
+     "name": "slightscream-03",
+     "seconds": 0.547,
+     "mean_db": -11.6,
+     "peak_db": 0,
+     "gain_db": -8.4,
+     "source": "extracted/slightscream-03.flac",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/qubodup_15_male_strain/slightscream-05.ogg",
+     "name": "slightscream-05",
+     "seconds": 0.682,
+     "mean_db": -13.9,
+     "peak_db": 0,
+     "gain_db": -6.1,
+     "source": "extracted/slightscream-05.flac",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/qubodup_15_male_strain/slightscream-06.ogg",
+     "name": "slightscream-06",
+     "seconds": 0.495,
+     "mean_db": -9.9,
+     "peak_db": 0,
+     "gain_db": -10.1,
+     "source": "extracted/slightscream-06.flac",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/qubodup_15_male_strain/slightscream-07.ogg",
+     "name": "slightscream-07",
+     "seconds": 0.466,
+     "mean_db": -14.2,
+     "peak_db": 0,
+     "gain_db": -5.8,
+     "source": "extracted/slightscream-07.flac",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/qubodup_15_male_strain/slightscream-08.ogg",
+     "name": "slightscream-08",
+     "seconds": 0.393,
+     "mean_db": -9.3,
+     "peak_db": 0,
+     "gain_db": -10.7,
+     "source": "extracted/slightscream-08.flac",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/qubodup_15_male_strain/slightscream-09.ogg",
+     "name": "slightscream-09",
+     "seconds": 0.473,
+     "mean_db": -13.5,
+     "peak_db": 0,
+     "gain_db": -6.5,
+     "source": "extracted/slightscream-09.flac",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/qubodup_15_male_strain/slightscream-10.ogg",
+     "name": "slightscream-10",
+     "seconds": 0.676,
+     "mean_db": -12.8,
+     "peak_db": 0,
+     "gain_db": -7.2,
+     "source": "extracted/slightscream-10.flac",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/qubodup_15_male_strain/slightscream-11.ogg",
+     "name": "slightscream-11",
+     "seconds": 0.297,
+     "mean_db": -11.4,
+     "peak_db": 0,
+     "gain_db": -8.6,
+     "source": "extracted/slightscream-11.flac",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/qubodup_15_male_strain/slightscream-12.ogg",
+     "name": "slightscream-12",
+     "seconds": 0.365,
+     "mean_db": -14.3,
+     "peak_db": 0,
+     "gain_db": -5.7,
+     "source": "extracted/slightscream-12.flac",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/qubodup_15_male_strain/slightscream-13.ogg",
+     "name": "slightscream-13",
+     "seconds": 0.482,
+     "mean_db": -13.8,
+     "peak_db": 0,
+     "gain_db": -6.2,
+     "source": "extracted/slightscream-13.flac",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/qubodup_15_male_strain/slightscream-14.ogg",
+     "name": "slightscream-14",
+     "seconds": 0.512,
+     "mean_db": -11,
+     "peak_db": 0,
+     "gain_db": -9,
+     "source": "extracted/slightscream-14.flac",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/qubodup_15_male_strain/slightscream-15.ogg",
+     "name": "slightscream-15",
+     "seconds": 0.753,
+     "mean_db": -16,
+     "peak_db": 0,
+     "gain_db": -4,
+     "source": "extracted/slightscream-15.flac",
+     "loop": false
+    }
+   ]
+  },
+  "lrsf_voices": {
+   "name": "Voices Sound Effects Library",
+   "author": "Little Robot Sound Factory",
+   "url": "https://opengameart.org/content/voices-sound-effects-library",
+   "via": "",
+   "license": "CC BY 3.0",
+   "credit": "\"Voices Sound Effects Library\" by Little Robot Sound Factory (www.littlerobotsoundfactory.com), https://opengameart.org/content/voices-sound-effects-library - CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/) - cut/converted.",
+   "files": [
+    {
+     "path": "res://assets/audio/library/lrsf_voices/demon_00.ogg",
+     "name": "demon_00",
+     "seconds": 0.8,
+     "mean_db": -12.7,
+     "peak_db": 0,
+     "gain_db": -7.3,
+     "source": "extracted/Wav/Demon/Demon_00.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/demon_01.ogg",
+     "name": "demon_01",
+     "seconds": 0.8,
+     "mean_db": -13.3,
+     "peak_db": -0.6,
+     "gain_db": -6.7,
+     "source": "extracted/Wav/Demon/Demon_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/demon_03.ogg",
+     "name": "demon_03",
+     "seconds": 0.8,
+     "mean_db": -12.2,
+     "peak_db": 0,
+     "gain_db": -7.8,
+     "source": "extracted/Wav/Demon/Demon_03.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/demon_04.ogg",
+     "name": "demon_04",
+     "seconds": 1.2,
+     "mean_db": -12.9,
+     "peak_db": 0,
+     "gain_db": -7.1,
+     "source": "extracted/Wav/Demon/Demon_04.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/demon_05.ogg",
+     "name": "demon_05",
+     "seconds": 1.2,
+     "mean_db": -17.9,
+     "peak_db": -3.7,
+     "gain_db": -2.1,
+     "source": "extracted/Wav/Demon/Demon_05.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/demon_06.ogg",
+     "name": "demon_06",
+     "seconds": 1.2,
+     "mean_db": -15.1,
+     "peak_db": -0.3,
+     "gain_db": -4.9,
+     "source": "extracted/Wav/Demon/Demon_06.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/demon_11.ogg",
+     "name": "demon_11",
+     "seconds": 0.787,
+     "mean_db": -18,
+     "peak_db": -3.4,
+     "gain_db": -2,
+     "source": "extracted/Wav/Demon/Demon_11.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/demon_12.ogg",
+     "name": "demon_12",
+     "seconds": 0.731,
+     "mean_db": -15.7,
+     "peak_db": -0.3,
+     "gain_db": -4.3,
+     "source": "extracted/Wav/Demon/Demon_12.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/demon_13.ogg",
+     "name": "demon_13",
+     "seconds": 0.676,
+     "mean_db": -14.1,
+     "peak_db": 0,
+     "gain_db": -5.9,
+     "source": "extracted/Wav/Demon/Demon_13.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/demon_20.ogg",
+     "name": "demon_20",
+     "seconds": 1.5,
+     "mean_db": -15.7,
+     "peak_db": -0.2,
+     "gain_db": -4.3,
+     "source": "extracted/Wav/Demon/Demon_20.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/demon_28.ogg",
+     "name": "demon_28",
+     "seconds": 1.351,
+     "mean_db": -15.1,
+     "peak_db": 0,
+     "gain_db": -4.9,
+     "source": "extracted/Wav/Demon/Demon_28.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/demon_29.ogg",
+     "name": "demon_29",
+     "seconds": 1.145,
+     "mean_db": -7.2,
+     "peak_db": 0,
+     "gain_db": -12.8,
+     "source": "extracted/Wav/Demon/Demon_29.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/human_dyingbreath_00.ogg",
+     "name": "human_dyingbreath_00",
+     "seconds": 2.027,
+     "mean_db": -16.7,
+     "peak_db": -1.2,
+     "gain_db": -3.3,
+     "source": "extracted/Wav/Human/Human_DyingBreath_00.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/human_dyingbreath_02.ogg",
+     "name": "human_dyingbreath_02",
+     "seconds": 2.5,
+     "mean_db": -17.8,
+     "peak_db": -0.4,
+     "gain_db": -2.2,
+     "source": "extracted/Wav/Human/Human_DyingBreath_02.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/human_dyingbreath_03.ogg",
+     "name": "human_dyingbreath_03",
+     "seconds": 2.5,
+     "mean_db": -20.3,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/Wav/Human/Human_DyingBreath_03.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/human_evil_00.ogg",
+     "name": "human_evil_00",
+     "seconds": 1.5,
+     "mean_db": -18.1,
+     "peak_db": -1.8,
+     "gain_db": -1.9,
+     "source": "extracted/Wav/Human/Human_Evil_00.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/human_evil_05.ogg",
+     "name": "human_evil_05",
+     "seconds": 0.759,
+     "mean_db": -20.7,
+     "peak_db": -2.7,
+     "gain_db": 0.7,
+     "source": "extracted/Wav/Human/Human_Evil_05.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/human_evil_09.ogg",
+     "name": "human_evil_09",
+     "seconds": 0.773,
+     "mean_db": -18.4,
+     "peak_db": -2.9,
+     "gain_db": -1.6,
+     "source": "extracted/Wav/Human/Human_Evil_09.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/human_evil_12.ogg",
+     "name": "human_evil_12",
+     "seconds": 1.517,
+     "mean_db": -17.9,
+     "peak_db": -1.6,
+     "gain_db": -2.1,
+     "source": "extracted/Wav/Human/Human_Evil_12.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/human_evil_13.ogg",
+     "name": "human_evil_13",
+     "seconds": 1.362,
+     "mean_db": -20.1,
+     "peak_db": -0.3,
+     "gain_db": -0.7,
+     "source": "extracted/Wav/Human/Human_Evil_13.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/human_evil_14.ogg",
+     "name": "human_evil_14",
+     "seconds": 1.673,
+     "mean_db": -18.3,
+     "peak_db": -3.2,
+     "gain_db": -1.7,
+     "source": "extracted/Wav/Human/Human_Evil_14.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/smallcreature1_00.ogg",
+     "name": "smallcreature1_00",
+     "seconds": 1,
+     "mean_db": -17,
+     "peak_db": 0,
+     "gain_db": -3,
+     "source": "extracted/Wav/Small Creature/SmallCreature1_00.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/smallcreature1_04.ogg",
+     "name": "smallcreature1_04",
+     "seconds": 1,
+     "mean_db": -17.9,
+     "peak_db": 0,
+     "gain_db": -2.1,
+     "source": "extracted/Wav/Small Creature/SmallCreature1_04.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/smallcreature1_08.ogg",
+     "name": "smallcreature1_08",
+     "seconds": 1,
+     "mean_db": -16,
+     "peak_db": -0.2,
+     "gain_db": -4,
+     "source": "extracted/Wav/Small Creature/SmallCreature1_08.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/smallcreature1_13.ogg",
+     "name": "smallcreature1_13",
+     "seconds": 1,
+     "mean_db": -13.5,
+     "peak_db": 0,
+     "gain_db": -6.5,
+     "source": "extracted/Wav/Small Creature/SmallCreature1_13.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/smallcreature1_17.ogg",
+     "name": "smallcreature1_17",
+     "seconds": 1,
+     "mean_db": -8.5,
+     "peak_db": 0,
+     "gain_db": -11.5,
+     "source": "extracted/Wav/Small Creature/SmallCreature1_17.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/smallcreature1_21.ogg",
+     "name": "smallcreature1_21",
+     "seconds": 1,
+     "mean_db": -16.5,
+     "peak_db": 0,
+     "gain_db": -3.5,
+     "source": "extracted/Wav/Small Creature/SmallCreature1_21.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/smallcreature2_00.ogg",
+     "name": "smallcreature2_00",
+     "seconds": 0.8,
+     "mean_db": -17.3,
+     "peak_db": 0,
+     "gain_db": -2.7,
+     "source": "extracted/Wav/Small Creature/SmallCreature2_00.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/smallcreature2_03.ogg",
+     "name": "smallcreature2_03",
+     "seconds": 0.363,
+     "mean_db": -16,
+     "peak_db": 0,
+     "gain_db": -4,
+     "source": "extracted/Wav/Small Creature/SmallCreature2_03.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/smallcreature2_06.ogg",
+     "name": "smallcreature2_06",
+     "seconds": 0.555,
+     "mean_db": -14.1,
+     "peak_db": 0,
+     "gain_db": -5.9,
+     "source": "extracted/Wav/Small Creature/SmallCreature2_06.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_voices/smallcreature2_09.ogg",
+     "name": "smallcreature2_09",
+     "seconds": 0.565,
+     "mean_db": -10.5,
+     "peak_db": 0,
+     "gain_db": -9.5,
+     "source": "extracted/Wav/Small Creature/SmallCreature2_09.wav",
+     "loop": false
+    }
+   ]
+  },
+  "zombie_skeleton_monster_voice": {
+   "name": "Zombie / Skeleton / Monster Voice Effects",
+   "author": "ArcadeParty",
+   "url": "https://opengameart.org/content/zombie-skeleton-monster-voice-effects",
+   "via": "",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0).",
+   "files": [
+    {
+     "path": "res://assets/audio/library/zombie_skeleton_monster_voice/humandeath1.ogg",
+     "name": "humandeath1",
+     "seconds": 0.493,
+     "mean_db": -21.4,
+     "peak_db": -8.6,
+     "gain_db": 1.4,
+     "source": "extracted/Voice Effects Zombie-Skeleton-Monster Human Male/humanDeath1.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/zombie_skeleton_monster_voice/humandeath2.ogg",
+     "name": "humandeath2",
+     "seconds": 0.607,
+     "mean_db": -20.5,
+     "peak_db": -3.9,
+     "gain_db": 0.5,
+     "source": "extracted/Voice Effects Zombie-Skeleton-Monster Human Male/humanDeath2.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/zombie_skeleton_monster_voice/humanyell1.ogg",
+     "name": "humanyell1",
+     "seconds": 0.371,
+     "mean_db": -21.7,
+     "peak_db": -7.2,
+     "gain_db": 1.7,
+     "source": "extracted/Voice Effects Zombie-Skeleton-Monster Human Male/humanYell1.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/zombie_skeleton_monster_voice/humanyell2.ogg",
+     "name": "humanyell2",
+     "seconds": 0.29,
+     "mean_db": -24.7,
+     "peak_db": -10.9,
+     "gain_db": 4.7,
+     "source": "extracted/Voice Effects Zombie-Skeleton-Monster Human Male/humanYell2.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/zombie_skeleton_monster_voice/humanyell3.ogg",
+     "name": "humanyell3",
+     "seconds": 0.219,
+     "mean_db": -26.1,
+     "peak_db": -14.5,
+     "gain_db": 6.1,
+     "source": "extracted/Voice Effects Zombie-Skeleton-Monster Human Male/humanYell3.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/zombie_skeleton_monster_voice/humanyell4.ogg",
+     "name": "humanyell4",
+     "seconds": 0.347,
+     "mean_db": -26.7,
+     "peak_db": -13.4,
+     "gain_db": 6.7,
+     "source": "extracted/Voice Effects Zombie-Skeleton-Monster Human Male/humanYell4.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/zombie_skeleton_monster_voice/humanyell5.ogg",
+     "name": "humanyell5",
+     "seconds": 0.341,
+     "mean_db": -26.3,
+     "peak_db": -11.4,
+     "gain_db": 6.3,
+     "source": "extracted/Voice Effects Zombie-Skeleton-Monster Human Male/humanYell5.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/zombie_skeleton_monster_voice/zombiedeath1.ogg",
+     "name": "zombiedeath1",
+     "seconds": 0.533,
+     "mean_db": -23.7,
+     "peak_db": -7.4,
+     "gain_db": 3.7,
+     "source": "extracted/Voice Effects Zombie-Skeleton-Monster Human Male/zombieDeath1.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/zombie_skeleton_monster_voice/zombiedeath2.ogg",
+     "name": "zombiedeath2",
+     "seconds": 0.472,
+     "mean_db": -20.5,
+     "peak_db": -2.5,
+     "gain_db": 0.5,
+     "source": "extracted/Voice Effects Zombie-Skeleton-Monster Human Male/zombieDeath2.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/zombie_skeleton_monster_voice/zombiedeath3.ogg",
+     "name": "zombiedeath3",
+     "seconds": 0.651,
+     "mean_db": -19.9,
+     "peak_db": -3.2,
+     "gain_db": -0.1,
+     "source": "extracted/Voice Effects Zombie-Skeleton-Monster Human Male/zombieDeath3.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/zombie_skeleton_monster_voice/zombiedeath4.ogg",
+     "name": "zombiedeath4",
+     "seconds": 0.594,
+     "mean_db": -22.6,
+     "peak_db": -3.3,
+     "gain_db": 2.3,
+     "source": "extracted/Voice Effects Zombie-Skeleton-Monster Human Male/zombieDeath4.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/zombie_skeleton_monster_voice/zombieyell1.ogg",
+     "name": "zombieyell1",
+     "seconds": 0.307,
+     "mean_db": -21.8,
+     "peak_db": -3.3,
+     "gain_db": 1.8,
+     "source": "extracted/Voice Effects Zombie-Skeleton-Monster Human Male/zombieYell1.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/zombie_skeleton_monster_voice/zombieyell10.ogg",
+     "name": "zombieyell10",
+     "seconds": 0.313,
+     "mean_db": -22.8,
+     "peak_db": -2.2,
+     "gain_db": 1.2,
+     "source": "extracted/Voice Effects Zombie-Skeleton-Monster Human Male/zombieYell10.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/zombie_skeleton_monster_voice/zombieyell2.ogg",
+     "name": "zombieyell2",
+     "seconds": 0.296,
+     "mean_db": -22.3,
+     "peak_db": -3.6,
+     "gain_db": 2.3,
+     "source": "extracted/Voice Effects Zombie-Skeleton-Monster Human Male/zombieYell2.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/zombie_skeleton_monster_voice/zombieyell6.ogg",
+     "name": "zombieyell6",
+     "seconds": 0.246,
+     "mean_db": -19.4,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/Voice Effects Zombie-Skeleton-Monster Human Male/zombieYell6.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/zombie_skeleton_monster_voice/zombieyell8.ogg",
+     "name": "zombieyell8",
+     "seconds": 0.31,
+     "mean_db": -24.8,
+     "peak_db": -8.1,
+     "gain_db": 4.8,
+     "source": "extracted/Voice Effects Zombie-Skeleton-Monster Human Male/zombieYell8.wav",
+     "loop": false
+    }
+   ]
+  },
+  "lrsf_fantasy": {
+   "name": "Fantasy Sound Effects Library",
+   "author": "Little Robot Sound Factory",
+   "url": "https://opengameart.org/content/fantasy-sound-effects-library",
+   "via": "",
+   "license": "CC BY 3.0",
+   "credit": "\"Fantasy Sound Effects Library\" by Little Robot Sound Factory (www.littlerobotsoundfactory.com), https://opengameart.org/content/fantasy-sound-effects-library - CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/) - cut/converted.",
+   "files": [
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/ambience_cave_00_loop.ogg",
+     "name": "ambience_cave_00_loop",
+     "seconds": 55.419,
+     "mean_db": -22.4,
+     "peak_db": -8.3,
+     "gain_db": 2.4,
+     "source": "extracted/Fantasy Sound Library/Wav/Ambience_Cave_00.wav",
+     "loop": true
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/dragon_growl_00.ogg",
+     "name": "dragon_growl_00",
+     "seconds": 3,
+     "mean_db": -14.9,
+     "peak_db": 0,
+     "gain_db": -5.1,
+     "source": "extracted/Fantasy Sound Library/Wav/Dragon_Growl_00.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/dragon_growl_01.ogg",
+     "name": "dragon_growl_01",
+     "seconds": 3,
+     "mean_db": -18.1,
+     "peak_db": -5.1,
+     "gain_db": -1.9,
+     "source": "extracted/Fantasy Sound Library/Wav/Dragon_Growl_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/footstep_dirt_00.ogg",
+     "name": "footstep_dirt_00",
+     "seconds": 0.154,
+     "mean_db": -36.3,
+     "peak_db": -18.1,
+     "gain_db": 16.3,
+     "source": "extracted/Fantasy Sound Library/Wav/Footsteps/Footstep_Dirt_00.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/footstep_dirt_02.ogg",
+     "name": "footstep_dirt_02",
+     "seconds": 0.235,
+     "mean_db": -33.5,
+     "peak_db": -5.1,
+     "gain_db": 4.1,
+     "source": "extracted/Fantasy Sound Library/Wav/Footsteps/Footstep_Dirt_02.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/footstep_dirt_04.ogg",
+     "name": "footstep_dirt_04",
+     "seconds": 0.147,
+     "mean_db": -33.6,
+     "peak_db": -11.6,
+     "gain_db": 10.6,
+     "source": "extracted/Fantasy Sound Library/Wav/Footsteps/Footstep_Dirt_04.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/footstep_dirt_05.ogg",
+     "name": "footstep_dirt_05",
+     "seconds": 0.195,
+     "mean_db": -33.2,
+     "peak_db": -8.8,
+     "gain_db": 7.8,
+     "source": "extracted/Fantasy Sound Library/Wav/Footsteps/Footstep_Dirt_05.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/footstep_dirt_07.ogg",
+     "name": "footstep_dirt_07",
+     "seconds": 0.169,
+     "mean_db": -33.5,
+     "peak_db": -13,
+     "gain_db": 12,
+     "source": "extracted/Fantasy Sound Library/Wav/Footsteps/Footstep_Dirt_07.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/footstep_dirt_09.ogg",
+     "name": "footstep_dirt_09",
+     "seconds": 0.112,
+     "mean_db": -30.6,
+     "peak_db": -10.1,
+     "gain_db": 9.1,
+     "source": "extracted/Fantasy Sound Library/Wav/Footsteps/Footstep_Dirt_09.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/footstep_water_00.ogg",
+     "name": "footstep_water_00",
+     "seconds": 0.6,
+     "mean_db": -19.8,
+     "peak_db": -0.6,
+     "gain_db": -0.4,
+     "source": "extracted/Fantasy Sound Library/Wav/Footsteps/Footstep_Water_00.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/footstep_water_04.ogg",
+     "name": "footstep_water_04",
+     "seconds": 0.6,
+     "mean_db": -22.7,
+     "peak_db": -5.9,
+     "gain_db": 2.7,
+     "source": "extracted/Fantasy Sound Library/Wav/Footsteps/Footstep_Water_04.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/footstep_water_07.ogg",
+     "name": "footstep_water_07",
+     "seconds": 0.6,
+     "mean_db": -23.6,
+     "peak_db": -0.9,
+     "gain_db": -0.1,
+     "source": "extracted/Fantasy Sound Library/Wav/Footsteps/Footstep_Water_07.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/inventory_open_00.ogg",
+     "name": "inventory_open_00",
+     "seconds": 0.342,
+     "mean_db": -23.2,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/Fantasy Sound Library/Wav/Inventory_Open_00.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/inventory_open_01.ogg",
+     "name": "inventory_open_01",
+     "seconds": 0.8,
+     "mean_db": -19.7,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/Fantasy Sound Library/Wav/Inventory_Open_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/jingle_achievement_00.ogg",
+     "name": "jingle_achievement_00",
+     "seconds": 3.563,
+     "mean_db": -17.4,
+     "peak_db": 0,
+     "gain_db": -2.6,
+     "source": "extracted/Fantasy Sound Library/Wav/Jingle_Achievement_00.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/jingle_win_00.ogg",
+     "name": "jingle_win_00",
+     "seconds": 7.816,
+     "mean_db": -12.1,
+     "peak_db": 0,
+     "gain_db": -7.9,
+     "source": "extracted/Fantasy Sound Library/Wav/Jingle_Win_00.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/pickup_gold_00.ogg",
+     "name": "pickup_gold_00",
+     "seconds": 0.261,
+     "mean_db": -16.3,
+     "peak_db": 0,
+     "gain_db": -3.7,
+     "source": "extracted/Fantasy Sound Library/Wav/Pickup_Gold_00.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/pickup_gold_01.ogg",
+     "name": "pickup_gold_01",
+     "seconds": 0.192,
+     "mean_db": -18.8,
+     "peak_db": 0,
+     "gain_db": -1.2,
+     "source": "extracted/Fantasy Sound Library/Wav/Pickup_Gold_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/pickup_gold_02.ogg",
+     "name": "pickup_gold_02",
+     "seconds": 0.215,
+     "mean_db": -19,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/Fantasy Sound Library/Wav/Pickup_Gold_02.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/pickup_gold_03.ogg",
+     "name": "pickup_gold_03",
+     "seconds": 0.201,
+     "mean_db": -19.7,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/Fantasy Sound Library/Wav/Pickup_Gold_03.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/pickup_gold_04.ogg",
+     "name": "pickup_gold_04",
+     "seconds": 0.141,
+     "mean_db": -21.9,
+     "peak_db": -2,
+     "gain_db": 1,
+     "source": "extracted/Fantasy Sound Library/Wav/Pickup_Gold_04.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/spell_00.ogg",
+     "name": "spell_00",
+     "seconds": 0.8,
+     "mean_db": -19.5,
+     "peak_db": -5.7,
+     "gain_db": -0.5,
+     "source": "extracted/Fantasy Sound Library/Wav/Spell_00.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/spell_01.ogg",
+     "name": "spell_01",
+     "seconds": 0.8,
+     "mean_db": -19.6,
+     "peak_db": -1.9,
+     "gain_db": -0.4,
+     "source": "extracted/Fantasy Sound Library/Wav/Spell_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/spell_02.ogg",
+     "name": "spell_02",
+     "seconds": 0.8,
+     "mean_db": -6.8,
+     "peak_db": 0,
+     "gain_db": -13.2,
+     "source": "extracted/Fantasy Sound Library/Wav/Spell_02.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/spell_03.ogg",
+     "name": "spell_03",
+     "seconds": 0.8,
+     "mean_db": -22.5,
+     "peak_db": -13.2,
+     "gain_db": 2.5,
+     "source": "extracted/Fantasy Sound Library/Wav/Spell_03.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/spell_04.ogg",
+     "name": "spell_04",
+     "seconds": 0.8,
+     "mean_db": -6.9,
+     "peak_db": 0,
+     "gain_db": -13.1,
+     "source": "extracted/Fantasy Sound Library/Wav/Spell_04.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/trap_00.ogg",
+     "name": "trap_00",
+     "seconds": 0.565,
+     "mean_db": -14.6,
+     "peak_db": 0,
+     "gain_db": -5.4,
+     "source": "extracted/Fantasy Sound Library/Wav/Trap_00.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/trap_01.ogg",
+     "name": "trap_01",
+     "seconds": 0.8,
+     "mean_db": -14.4,
+     "peak_db": 0,
+     "gain_db": -5.6,
+     "source": "extracted/Fantasy Sound Library/Wav/Trap_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_fantasy/trap_02.ogg",
+     "name": "trap_02",
+     "seconds": 0.53,
+     "mean_db": -12.8,
+     "peak_db": 0,
+     "gain_db": -7.2,
+     "source": "extracted/Fantasy Sound Library/Wav/Trap_02.wav",
+     "loop": false
+    }
+   ]
+  },
+  "rubberduck_80_rpg": {
+   "name": "80 CC0 RPG SFX",
+   "author": "rubberduck",
+   "url": "https://opengameart.org/content/80-cc0-rpg-sfx",
+   "via": "",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0).",
+   "files": [
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/book_01.ogg",
+     "name": "book_01",
+     "seconds": 0.588,
+     "mean_db": -26.1,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/book_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/book_03.ogg",
+     "name": "book_03",
+     "seconds": 0.8,
+     "mean_db": -24.8,
+     "peak_db": -3.7,
+     "gain_db": 2.7,
+     "source": "extracted/book_03.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/book_04.ogg",
+     "name": "book_04",
+     "seconds": 0.8,
+     "mean_db": -29.2,
+     "peak_db": -4.2,
+     "gain_db": 3.2,
+     "source": "extracted/book_04.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/chain_01.ogg",
+     "name": "chain_01",
+     "seconds": 0.388,
+     "mean_db": -14.6,
+     "peak_db": 0,
+     "gain_db": -5.4,
+     "source": "extracted/chain_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/chain_02.ogg",
+     "name": "chain_02",
+     "seconds": 0.344,
+     "mean_db": -15.8,
+     "peak_db": -0.8,
+     "gain_db": -4.2,
+     "source": "extracted/chain_02.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/chain_03.ogg",
+     "name": "chain_03",
+     "seconds": 0.69,
+     "mean_db": -19.7,
+     "peak_db": -1.3,
+     "gain_db": -0.3,
+     "source": "extracted/chain_03.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/creature_die_01.ogg",
+     "name": "creature_die_01",
+     "seconds": 0.71,
+     "mean_db": -10.6,
+     "peak_db": 0,
+     "gain_db": -9.4,
+     "source": "extracted/creature_die_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/creature_hurt_01.ogg",
+     "name": "creature_hurt_01",
+     "seconds": 0.453,
+     "mean_db": -13.9,
+     "peak_db": -0.2,
+     "gain_db": -6.1,
+     "source": "extracted/creature_hurt_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/creature_hurt_02.ogg",
+     "name": "creature_hurt_02",
+     "seconds": 0.423,
+     "mean_db": -18.4,
+     "peak_db": -1.2,
+     "gain_db": -1.6,
+     "source": "extracted/creature_hurt_02.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/creature_monster_01.ogg",
+     "name": "creature_monster_01",
+     "seconds": 0.125,
+     "mean_db": -17,
+     "peak_db": 0,
+     "gain_db": -3,
+     "source": "extracted/creature_monster_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/creature_monster_04.ogg",
+     "name": "creature_monster_04",
+     "seconds": 0.577,
+     "mean_db": -23.2,
+     "peak_db": -8.9,
+     "gain_db": 3.2,
+     "source": "extracted/creature_monster_04.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/creature_slime_01.ogg",
+     "name": "creature_slime_01",
+     "seconds": 0.506,
+     "mean_db": -19.9,
+     "peak_db": -1.7,
+     "gain_db": -0.1,
+     "source": "extracted/creature_slime_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/creature_slime_02.ogg",
+     "name": "creature_slime_02",
+     "seconds": 0.422,
+     "mean_db": -20.4,
+     "peak_db": -0.7,
+     "gain_db": -0.3,
+     "source": "extracted/creature_slime_02.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/creature_slime_03.ogg",
+     "name": "creature_slime_03",
+     "seconds": 0.333,
+     "mean_db": -19,
+     "peak_db": -1.7,
+     "gain_db": -1,
+     "source": "extracted/creature_slime_03.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/creature_slime_04.ogg",
+     "name": "creature_slime_04",
+     "seconds": 0.45,
+     "mean_db": -19.6,
+     "peak_db": -1.6,
+     "gain_db": -0.4,
+     "source": "extracted/creature_slime_04.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/item_coins_01.ogg",
+     "name": "item_coins_01",
+     "seconds": 0.332,
+     "mean_db": -24.7,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/item_coins_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/item_coins_02.ogg",
+     "name": "item_coins_02",
+     "seconds": 0.542,
+     "mean_db": -23.5,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/item_coins_02.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/item_coins_03.ogg",
+     "name": "item_coins_03",
+     "seconds": 0.444,
+     "mean_db": -23.5,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/item_coins_03.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/item_coins_04.ogg",
+     "name": "item_coins_04",
+     "seconds": 0.6,
+     "mean_db": -25.5,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/item_coins_04.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/item_gem_01.ogg",
+     "name": "item_gem_01",
+     "seconds": 0.207,
+     "mean_db": -19.2,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/item_gem_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/item_gem_02.ogg",
+     "name": "item_gem_02",
+     "seconds": 0.082,
+     "mean_db": -25,
+     "peak_db": -1.7,
+     "gain_db": 0.7,
+     "source": "extracted/item_gem_02.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/item_gem_03.ogg",
+     "name": "item_gem_03",
+     "seconds": 0.152,
+     "mean_db": -22.4,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/item_gem_03.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/item_gem_04.ogg",
+     "name": "item_gem_04",
+     "seconds": 0.511,
+     "mean_db": -24.4,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/item_gem_04.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/item_misc_01.ogg",
+     "name": "item_misc_01",
+     "seconds": 0.321,
+     "mean_db": -22.5,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/item_misc_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/item_misc_03.ogg",
+     "name": "item_misc_03",
+     "seconds": 0.249,
+     "mean_db": -22.6,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/item_misc_03.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/item_misc_04.ogg",
+     "name": "item_misc_04",
+     "seconds": 0.14,
+     "mean_db": -19.5,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/item_misc_04.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/item_misc_06.ogg",
+     "name": "item_misc_06",
+     "seconds": 0.508,
+     "mean_db": -19.2,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/item_misc_06.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/item_stone_01.ogg",
+     "name": "item_stone_01",
+     "seconds": 0.407,
+     "mean_db": -21.2,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/item_stone_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/item_stone_02.ogg",
+     "name": "item_stone_02",
+     "seconds": 0.127,
+     "mean_db": -24.3,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/item_stone_02.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/item_stone_03.ogg",
+     "name": "item_stone_03",
+     "seconds": 0.328,
+     "mean_db": -24,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/item_stone_03.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/item_stone_04.ogg",
+     "name": "item_stone_04",
+     "seconds": 0.215,
+     "mean_db": -22.4,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/item_stone_04.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/lock_01.ogg",
+     "name": "lock_01",
+     "seconds": 0.299,
+     "mean_db": -26.2,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/lock_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/lock_02.ogg",
+     "name": "lock_02",
+     "seconds": 0.138,
+     "mean_db": -22.9,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/lock_02.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/lock_03.ogg",
+     "name": "lock_03",
+     "seconds": 0.243,
+     "mean_db": -25.9,
+     "peak_db": -0.4,
+     "gain_db": -0.6,
+     "source": "extracted/lock_03.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/metal_01.ogg",
+     "name": "metal_01",
+     "seconds": 0.416,
+     "mean_db": -24.1,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/metal_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/metal_02.ogg",
+     "name": "metal_02",
+     "seconds": 0.505,
+     "mean_db": -16.7,
+     "peak_db": 0,
+     "gain_db": -3.3,
+     "source": "extracted/metal_02.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/metal_03.ogg",
+     "name": "metal_03",
+     "seconds": 0.32,
+     "mean_db": -16.6,
+     "peak_db": 0,
+     "gain_db": -3.4,
+     "source": "extracted/metal_03.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/spell_fire_01.ogg",
+     "name": "spell_fire_01",
+     "seconds": 0.672,
+     "mean_db": -35.9,
+     "peak_db": -15.6,
+     "gain_db": 14.6,
+     "source": "extracted/spell_fire_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/spell_fire_02.ogg",
+     "name": "spell_fire_02",
+     "seconds": 0.586,
+     "mean_db": -37.3,
+     "peak_db": -22.1,
+     "gain_db": 17.3,
+     "source": "extracted/spell_fire_02.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/spell_fire_03.ogg",
+     "name": "spell_fire_03",
+     "seconds": 1,
+     "mean_db": -33.5,
+     "peak_db": -12.2,
+     "gain_db": 11.2,
+     "source": "extracted/spell_fire_03.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/spell_fire_04.ogg",
+     "name": "spell_fire_04",
+     "seconds": 0.8,
+     "mean_db": -34.1,
+     "peak_db": -12.3,
+     "gain_db": 11.3,
+     "source": "extracted/spell_fire_04.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/spell_fire_05.ogg",
+     "name": "spell_fire_05",
+     "seconds": 0.8,
+     "mean_db": -32.5,
+     "peak_db": -17.2,
+     "gain_db": 12.5,
+     "source": "extracted/spell_fire_05.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/spell_fire_06.ogg",
+     "name": "spell_fire_06",
+     "seconds": 0.746,
+     "mean_db": -28.9,
+     "peak_db": -8.7,
+     "gain_db": 7.7,
+     "source": "extracted/spell_fire_06.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/spell_fire_07.ogg",
+     "name": "spell_fire_07",
+     "seconds": 0.433,
+     "mean_db": -27.2,
+     "peak_db": -14.3,
+     "gain_db": 7.2,
+     "source": "extracted/spell_fire_07.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/stones_01.ogg",
+     "name": "stones_01",
+     "seconds": 0.436,
+     "mean_db": -24.6,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/stones_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/stones_03.ogg",
+     "name": "stones_03",
+     "seconds": 0.689,
+     "mean_db": -23.1,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/stones_03.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_80_rpg/stones_04.ogg",
+     "name": "stones_04",
+     "seconds": 0.212,
+     "mean_db": -18.8,
+     "peak_db": 0,
+     "gain_db": -1.2,
+     "source": "extracted/stones_04.ogg",
+     "loop": false
+    }
+   ]
+  },
+  "jc_sounds_fantasy_vol1": {
+   "name": "JC Sounds - Fantasy SFX Pack Vol 1",
+   "author": "JC Sounds",
+   "url": "https://opengameart.org/content/jc-sounds-fantasy-sfx-pack-vol-1",
+   "via": "",
+   "license": "CC BY 4.0",
+   "credit": "\"JC Sounds - Fantasy SFX Pack Vol 1\" by JC Sounds, https://opengameart.org/content/jc-sounds-fantasy-sfx-pack-vol-1 - CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/) - cut/converted.",
+   "files": [
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/loop_electric_spell_hold_loop.ogg",
+     "name": "loop_electric_spell_hold_loop",
+     "seconds": 1.8,
+     "mean_db": -27.1,
+     "peak_db": -9.4,
+     "gain_db": 7.1,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Loop_Fantasy SFX Pack Vol 1_Electric Spell_Hold.wav",
+     "loop": true
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/loop_fireball_hold_loop.ogg",
+     "name": "loop_fireball_hold_loop",
+     "seconds": 2,
+     "mean_db": -23,
+     "peak_db": -5.9,
+     "gain_db": 3,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Loop_Fantasy SFX Pack Vol 1_Fireball_Hold.wav",
+     "loop": true
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/loop_ice_spell_hold_loop.ogg",
+     "name": "loop_ice_spell_hold_loop",
+     "seconds": 1.367,
+     "mean_db": -27,
+     "peak_db": -4.4,
+     "gain_db": 3.4,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Loop_Fantasy SFX Pack Vol 1_Ice Spell_Hold.wav",
+     "loop": true
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/seq_mana_drain_end.ogg",
+     "name": "seq_mana_drain_end",
+     "seconds": 1.479,
+     "mean_db": -22.7,
+     "peak_db": -3.6,
+     "gain_db": 2.6,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Seq_Fantasy SFX Pack Vol 1_Mana Drain_End.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/seq_mana_drain_mid_loop_loop.ogg",
+     "name": "seq_mana_drain_mid_loop_loop",
+     "seconds": 2,
+     "mean_db": -24.6,
+     "peak_db": -10.9,
+     "gain_db": 4.6,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Seq_Fantasy SFX Pack Vol 1_Mana Drain_Mid_LOOP.wav",
+     "loop": true
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/seq_mana_drain_start.ogg",
+     "name": "seq_mana_drain_start",
+     "seconds": 1.402,
+     "mean_db": -20.5,
+     "peak_db": -5.5,
+     "gain_db": 0.5,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Seq_Fantasy SFX Pack Vol 1_Mana Drain_Start.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_bow_arrow_draw_01.ogg",
+     "name": "single_bow_arrow_draw_01",
+     "seconds": 0.7,
+     "mean_db": -28.2,
+     "peak_db": -7.6,
+     "gain_db": 6.6,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Bow_Arrow_Draw_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_bow_arrow_draw_02.ogg",
+     "name": "single_bow_arrow_draw_02",
+     "seconds": 0.7,
+     "mean_db": -27.2,
+     "peak_db": -6.3,
+     "gain_db": 5.3,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Bow_Arrow_Draw_02.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_bow_arrow_hit_01.ogg",
+     "name": "single_bow_arrow_hit_01",
+     "seconds": 0.167,
+     "mean_db": -18.4,
+     "peak_db": -0.1,
+     "gain_db": -1.6,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Bow_Arrow_Hit_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_bow_arrow_hit_02.ogg",
+     "name": "single_bow_arrow_hit_02",
+     "seconds": 0.27,
+     "mean_db": -21.1,
+     "peak_db": -0.4,
+     "gain_db": -0.6,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Bow_Arrow_Hit_02.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_bow_arrow_shoot_01.ogg",
+     "name": "single_bow_arrow_shoot_01",
+     "seconds": 0.222,
+     "mean_db": -19.1,
+     "peak_db": -0.1,
+     "gain_db": -0.9,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Bow_Arrow_Shoot_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_bow_arrow_shoot_02.ogg",
+     "name": "single_bow_arrow_shoot_02",
+     "seconds": 0.212,
+     "mean_db": -18.6,
+     "peak_db": -0.5,
+     "gain_db": -1.4,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Bow_Arrow_Shoot_02.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_hit_metal_01.ogg",
+     "name": "single_dagger_hit_metal_01",
+     "seconds": 0.267,
+     "mean_db": -19.1,
+     "peak_db": -1.8,
+     "gain_db": -0.9,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Dagger_Hit_Metal_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_hit_metal_02.ogg",
+     "name": "single_dagger_hit_metal_02",
+     "seconds": 0.256,
+     "mean_db": -19,
+     "peak_db": -1,
+     "gain_db": -1,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Dagger_Hit_Metal_02.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_hit_metal_03.ogg",
+     "name": "single_dagger_hit_metal_03",
+     "seconds": 0.256,
+     "mean_db": -20.1,
+     "peak_db": -2.3,
+     "gain_db": 0.1,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Dagger_Hit_Metal_03.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_swing_01.ogg",
+     "name": "single_dagger_swing_01",
+     "seconds": 0.179,
+     "mean_db": -16.2,
+     "peak_db": -0.4,
+     "gain_db": -3.8,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Dagger_Swing_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_swing_02.ogg",
+     "name": "single_dagger_swing_02",
+     "seconds": 0.187,
+     "mean_db": -16.3,
+     "peak_db": -0.5,
+     "gain_db": -3.7,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Dagger_Swing_02.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_dagger_swing_03.ogg",
+     "name": "single_dagger_swing_03",
+     "seconds": 0.339,
+     "mean_db": -19.4,
+     "peak_db": -1.8,
+     "gain_db": -0.6,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Dagger_Swing_03.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_buildup.ogg",
+     "name": "single_electric_spell_buildup",
+     "seconds": 1.052,
+     "mean_db": -21.2,
+     "peak_db": -2.8,
+     "gain_db": 1.2,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Electric Spell_Buildup.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_01.ogg",
+     "name": "single_electric_spell_hit_01",
+     "seconds": 0.72,
+     "mean_db": -19.4,
+     "peak_db": -1,
+     "gain_db": -0.6,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Electric Spell_Hit_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_02.ogg",
+     "name": "single_electric_spell_hit_02",
+     "seconds": 0.762,
+     "mean_db": -19.5,
+     "peak_db": -2.7,
+     "gain_db": -0.5,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Electric Spell_Hit_02.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_hit_03.ogg",
+     "name": "single_electric_spell_hit_03",
+     "seconds": 0.72,
+     "mean_db": -18.9,
+     "peak_db": -2.9,
+     "gain_db": -1.1,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Electric Spell_Hit_03.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_launch_01.ogg",
+     "name": "single_electric_spell_launch_01",
+     "seconds": 0.8,
+     "mean_db": -20.4,
+     "peak_db": -4.5,
+     "gain_db": 0.4,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Electric Spell_Launch_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_launch_02.ogg",
+     "name": "single_electric_spell_launch_02",
+     "seconds": 0.8,
+     "mean_db": -20.2,
+     "peak_db": -4.3,
+     "gain_db": 0.2,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Electric Spell_Launch_02.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_electric_spell_launch_03.ogg",
+     "name": "single_electric_spell_launch_03",
+     "seconds": 0.8,
+     "mean_db": -20.2,
+     "peak_db": -4.2,
+     "gain_db": 0.2,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Electric Spell_Launch_03.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_buildup.ogg",
+     "name": "single_fireball_buildup",
+     "seconds": 0.966,
+     "mean_db": -21.8,
+     "peak_db": -3.4,
+     "gain_db": 1.8,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Fireball_Buildup.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_impact_01.ogg",
+     "name": "single_fireball_impact_01",
+     "seconds": 1.046,
+     "mean_db": -18.9,
+     "peak_db": -3,
+     "gain_db": -1.1,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Fireball Impact_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_impact_02.ogg",
+     "name": "single_fireball_impact_02",
+     "seconds": 1.056,
+     "mean_db": -19.4,
+     "peak_db": -3.4,
+     "gain_db": -0.6,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Fireball Impact_02.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_impact_03.ogg",
+     "name": "single_fireball_impact_03",
+     "seconds": 1.058,
+     "mean_db": -20,
+     "peak_db": -2.7,
+     "gain_db": 0,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Fireball Impact_03.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_launch_01.ogg",
+     "name": "single_fireball_launch_01",
+     "seconds": 0.8,
+     "mean_db": -18.6,
+     "peak_db": -2.5,
+     "gain_db": -1.4,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Fireball Launch_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_launch_02.ogg",
+     "name": "single_fireball_launch_02",
+     "seconds": 0.8,
+     "mean_db": -18.7,
+     "peak_db": -2.4,
+     "gain_db": -1.3,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Fireball Launch_02.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_fireball_launch_03.ogg",
+     "name": "single_fireball_launch_03",
+     "seconds": 0.8,
+     "mean_db": -18.4,
+     "peak_db": -4.4,
+     "gain_db": -1.6,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Fireball Launch_03.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_healing_chime_01.ogg",
+     "name": "single_healing_chime_01",
+     "seconds": 2,
+     "mean_db": -30,
+     "peak_db": -13.2,
+     "gain_db": 10,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Healing Chime_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_healing_chime_02.ogg",
+     "name": "single_healing_chime_02",
+     "seconds": 1.4,
+     "mean_db": -29.4,
+     "peak_db": -12.5,
+     "gain_db": 9.4,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Healing Chime_02.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_heavy_sword_hit_metal_01.ogg",
+     "name": "single_heavy_sword_hit_metal_01",
+     "seconds": 0.667,
+     "mean_db": -20.9,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Heavy Sword_Hit_Metal_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_heavy_sword_hit_metal_03.ogg",
+     "name": "single_heavy_sword_hit_metal_03",
+     "seconds": 0.7,
+     "mean_db": -21.5,
+     "peak_db": -0.5,
+     "gain_db": -0.5,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Heavy Sword_Hit_Metal_03.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_heavy_sword_swing_01.ogg",
+     "name": "single_heavy_sword_swing_01",
+     "seconds": 0.534,
+     "mean_db": -17,
+     "peak_db": -0.6,
+     "gain_db": -3,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Heavy Sword_Swing_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_heavy_sword_swing_02.ogg",
+     "name": "single_heavy_sword_swing_02",
+     "seconds": 0.538,
+     "mean_db": -17,
+     "peak_db": -0.5,
+     "gain_db": -3,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Heavy Sword_Swing_02.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_heavy_sword_swing_03.ogg",
+     "name": "single_heavy_sword_swing_03",
+     "seconds": 0.534,
+     "mean_db": -17.2,
+     "peak_db": -0.4,
+     "gain_db": -2.8,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Heavy Sword_Swing_03.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_impact_01.ogg",
+     "name": "single_ice_shard_projectile_impact_01",
+     "seconds": 0.8,
+     "mean_db": -19.9,
+     "peak_db": -0.9,
+     "gain_db": -0.1,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Ice Shard  Projectile_Impact_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_impact_02.ogg",
+     "name": "single_ice_shard_projectile_impact_02",
+     "seconds": 0.8,
+     "mean_db": -19.8,
+     "peak_db": -1.3,
+     "gain_db": -0.2,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Ice Shard  Projectile_Impact_02.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_impact_03.ogg",
+     "name": "single_ice_shard_projectile_impact_03",
+     "seconds": 0.8,
+     "mean_db": -19.9,
+     "peak_db": -1.5,
+     "gain_db": -0.1,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Ice Shard  Projectile_Impact_03.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_launch_01.ogg",
+     "name": "single_ice_shard_projectile_launch_01",
+     "seconds": 0.8,
+     "mean_db": -23.2,
+     "peak_db": -5.2,
+     "gain_db": 3.2,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Ice Shard Projectile_Launch_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_launch_02.ogg",
+     "name": "single_ice_shard_projectile_launch_02",
+     "seconds": 0.8,
+     "mean_db": -23.3,
+     "peak_db": -4.8,
+     "gain_db": 3.3,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Ice Shard Projectile_Launch_02.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_shard_projectile_launch_03.ogg",
+     "name": "single_ice_shard_projectile_launch_03",
+     "seconds": 0.8,
+     "mean_db": -23.6,
+     "peak_db": -5.1,
+     "gain_db": 3.6,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Ice Shard Projectile_Launch_03.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_ice_spell_buildup.ogg",
+     "name": "single_ice_spell_buildup",
+     "seconds": 1.101,
+     "mean_db": -26.4,
+     "peak_db": -4.8,
+     "gain_db": 3.8,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Ice Spell_Buildup.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_magic_shield_activation_01.ogg",
+     "name": "single_magic_shield_activation_01",
+     "seconds": 1.2,
+     "mean_db": -20,
+     "peak_db": -1.2,
+     "gain_db": 0,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Magic Shield_Activation_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_magic_shield_activation_02.ogg",
+     "name": "single_magic_shield_activation_02",
+     "seconds": 1.2,
+     "mean_db": -19.7,
+     "peak_db": -1.4,
+     "gain_db": -0.3,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Magic Shield_Activation_02.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_sword_hit_metal_01.ogg",
+     "name": "single_sword_hit_metal_01",
+     "seconds": 0.199,
+     "mean_db": -15.1,
+     "peak_db": -0.2,
+     "gain_db": -4.9,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Sword_Hit_Metal_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_sword_hit_metal_03.ogg",
+     "name": "single_sword_hit_metal_03",
+     "seconds": 0.233,
+     "mean_db": -18.1,
+     "peak_db": 0,
+     "gain_db": -1.9,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Sword_Hit_Metal_03.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_teleport_in.ogg",
+     "name": "single_teleport_in",
+     "seconds": 1.026,
+     "mean_db": -20.4,
+     "peak_db": -5.5,
+     "gain_db": 0.4,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Teleport_In.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/jc_sounds_fantasy_vol1/single_teleport_out.ogg",
+     "name": "single_teleport_out",
+     "seconds": 0.8,
+     "mean_db": -20,
+     "peak_db": -4.3,
+     "gain_db": 0,
+     "source": "extracted/Fantasy SFX Pack Vol 1/Single_Fantasy SFX Pack Vol 1_Teleport_Out.wav",
+     "loop": false
+    }
+   ]
+  },
+  "leohpaz_8_heals_buffs": {
+   "name": "8 Heals and Buffs SFX",
+   "author": "Leohpaz",
+   "url": "https://opengameart.org/content/8-heals-and-buffs-sfx",
+   "via": "",
+   "license": "CC BY 4.0",
+   "credit": "\"8 Heals and Buffs SFX\" by Leohpaz, https://opengameart.org/content/8-heals-and-buffs-sfx - CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/) - cut/converted.",
+   "files": [
+    {
+     "path": "res://assets/audio/library/leohpaz_8_heals_buffs/02_heal_02.ogg",
+     "name": "02_heal_02",
+     "seconds": 1.033,
+     "mean_db": -20.9,
+     "peak_db": -0.7,
+     "gain_db": -0.3,
+     "source": "extracted/02_Heal_02.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/leohpaz_8_heals_buffs/16_atk_buff_04.ogg",
+     "name": "16_atk_buff_04",
+     "seconds": 1.893,
+     "mean_db": -21.7,
+     "peak_db": -9.3,
+     "gain_db": 1.7,
+     "source": "extracted/16_Atk_buff_04.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/leohpaz_8_heals_buffs/17_def_buff_01.ogg",
+     "name": "17_def_buff_01",
+     "seconds": 1.6,
+     "mean_db": -26.7,
+     "peak_db": -4,
+     "gain_db": 3,
+     "source": "extracted/17_Def_buff_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/leohpaz_8_heals_buffs/21_debuff_01.ogg",
+     "name": "21_debuff_01",
+     "seconds": 1.6,
+     "mean_db": -20.7,
+     "peak_db": -6.6,
+     "gain_db": 0.7,
+     "source": "extracted/21_Debuff_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/leohpaz_8_heals_buffs/30_revive_03.ogg",
+     "name": "30_revive_03",
+     "seconds": 2,
+     "mean_db": -27.2,
+     "peak_db": -12.3,
+     "gain_db": 7.2,
+     "source": "extracted/30_Revive_03.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/leohpaz_8_heals_buffs/39_absorb_04.ogg",
+     "name": "39_absorb_04",
+     "seconds": 1.5,
+     "mean_db": -26,
+     "peak_db": -11.8,
+     "gain_db": 6,
+     "source": "extracted/39_Absorb_04.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/leohpaz_8_heals_buffs/44_sleep_01.ogg",
+     "name": "44_sleep_01",
+     "seconds": 1.2,
+     "mean_db": -27.3,
+     "peak_db": -12.6,
+     "gain_db": 7.3,
+     "source": "extracted/44_Sleep_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/leohpaz_8_heals_buffs/48_speed_up_02.ogg",
+     "name": "48_speed_up_02",
+     "seconds": 1.5,
+     "mean_db": -25.8,
+     "peak_db": -8.3,
+     "gain_db": 5.8,
+     "source": "extracted/48_Speed_up_02.wav",
+     "loop": false
+    }
+   ]
+  },
+  "rubberduck_100_metal_wood": {
+   "name": "100 CC0 metal and wood SFX",
+   "author": "rubberduck",
+   "url": "https://opengameart.org/content/100-cc0-metal-and-wood-sfx",
+   "via": "",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0).",
+   "files": [
+    {
+     "path": "res://assets/audio/library/rubberduck_100_metal_wood/door_open_01.ogg",
+     "name": "door_open_01",
+     "seconds": 0.259,
+     "mean_db": -19.5,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/door_open_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_100_metal_wood/keys_01.ogg",
+     "name": "keys_01",
+     "seconds": 0.267,
+     "mean_db": -22.1,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/keys_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_100_metal_wood/keys_04.ogg",
+     "name": "keys_04",
+     "seconds": 0.28,
+     "mean_db": -15.9,
+     "peak_db": 0,
+     "gain_db": -4.1,
+     "source": "extracted/keys_04.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_100_metal_wood/keys_05.ogg",
+     "name": "keys_05",
+     "seconds": 0.409,
+     "mean_db": -15.5,
+     "peak_db": 0,
+     "gain_db": -4.5,
+     "source": "extracted/keys_05.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_100_metal_wood/keys_07.ogg",
+     "name": "keys_07",
+     "seconds": 0.516,
+     "mean_db": -14.4,
+     "peak_db": 0,
+     "gain_db": -5.6,
+     "source": "extracted/keys_07.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_100_metal_wood/lock_open_01.ogg",
+     "name": "lock_open_01",
+     "seconds": 0.617,
+     "mean_db": -21,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/lock_open_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_100_metal_wood/metal_open_01.ogg",
+     "name": "metal_open_01",
+     "seconds": 0.504,
+     "mean_db": -21.4,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/metal_open_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_100_metal_wood/metal_slam_01.ogg",
+     "name": "metal_slam_01",
+     "seconds": 0.35,
+     "mean_db": -17.9,
+     "peak_db": 0,
+     "gain_db": -2.1,
+     "source": "extracted/metal_slam_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_100_metal_wood/metal_spring_01.ogg",
+     "name": "metal_spring_01",
+     "seconds": 0.332,
+     "mean_db": -24,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/metal_spring_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_100_metal_wood/metal_spring_02.ogg",
+     "name": "metal_spring_02",
+     "seconds": 0.31,
+     "mean_db": -18.2,
+     "peak_db": 0,
+     "gain_db": -1.8,
+     "source": "extracted/metal_spring_02.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_100_metal_wood/wood_breaking_01.ogg",
+     "name": "wood_breaking_01",
+     "seconds": 0.381,
+     "mean_db": -16.9,
+     "peak_db": 0,
+     "gain_db": -3.1,
+     "source": "extracted/wood_breaking_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_100_metal_wood/wood_breaking_02.ogg",
+     "name": "wood_breaking_02",
+     "seconds": 0.443,
+     "mean_db": -18.7,
+     "peak_db": 0,
+     "gain_db": -1.3,
+     "source": "extracted/wood_breaking_02.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_100_metal_wood/wood_cracking_01.ogg",
+     "name": "wood_cracking_01",
+     "seconds": 0.12,
+     "mean_db": -26.3,
+     "peak_db": -1.9,
+     "gain_db": 0.9,
+     "source": "extracted/wood_cracking_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_100_metal_wood/wood_cracking_02.ogg",
+     "name": "wood_cracking_02",
+     "seconds": 0.13,
+     "mean_db": -23.6,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/wood_cracking_02.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_100_metal_wood/wood_cracking_04.ogg",
+     "name": "wood_cracking_04",
+     "seconds": 0.155,
+     "mean_db": -19.7,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/wood_cracking_04.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_100_metal_wood/wood_hit_01.ogg",
+     "name": "wood_hit_01",
+     "seconds": 0.182,
+     "mean_db": -20.9,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/wood_hit_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_100_metal_wood/wood_hit_03.ogg",
+     "name": "wood_hit_03",
+     "seconds": 0.249,
+     "mean_db": -17.5,
+     "peak_db": 0,
+     "gain_db": -2.5,
+     "source": "extracted/wood_hit_03.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_100_metal_wood/wood_hit_04.ogg",
+     "name": "wood_hit_04",
+     "seconds": 0.25,
+     "mean_db": -18.9,
+     "peak_db": 0,
+     "gain_db": -1.1,
+     "source": "extracted/wood_hit_04.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_100_metal_wood/wood_hit_06.ogg",
+     "name": "wood_hit_06",
+     "seconds": 0.137,
+     "mean_db": -21,
+     "peak_db": -0.1,
+     "gain_db": -0.9,
+     "source": "extracted/wood_hit_06.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_100_metal_wood/wood_slam_01.ogg",
+     "name": "wood_slam_01",
+     "seconds": 0.178,
+     "mean_db": -19.9,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/wood_slam_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_100_metal_wood/wood_slam_03.ogg",
+     "name": "wood_slam_03",
+     "seconds": 0.377,
+     "mean_db": -19.2,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/wood_slam_03.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_100_metal_wood/wood_slam_04.ogg",
+     "name": "wood_slam_04",
+     "seconds": 0.312,
+     "mean_db": -18.9,
+     "peak_db": -0.8,
+     "gain_db": -1.1,
+     "source": "extracted/wood_slam_04.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_100_metal_wood/wood_squeak_01.ogg",
+     "name": "wood_squeak_01",
+     "seconds": 0.357,
+     "mean_db": -22.8,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/wood_squeak_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_100_metal_wood/wood_squeak_02.ogg",
+     "name": "wood_squeak_02",
+     "seconds": 0.264,
+     "mean_db": -22.4,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/wood_squeak_02.ogg",
+     "loop": false
+    }
+   ]
+  },
+  "portal_sounds_4": {
+   "name": "4 Space / Portal Sounds",
+   "author": "Écrivain",
+   "url": "https://opengameart.org/content/4-space-portal-sounds",
+   "via": "",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0).",
+   "files": [
+    {
+     "path": "res://assets/audio/library/portal_sounds_4/1.ogg",
+     "name": "1",
+     "seconds": 1.4,
+     "mean_db": -19.6,
+     "peak_db": -6.5,
+     "gain_db": -0.4,
+     "source": "extracted/1.mp3",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/portal_sounds_4/2.ogg",
+     "name": "2",
+     "seconds": 1.6,
+     "mean_db": -15.7,
+     "peak_db": -1.9,
+     "gain_db": -4.3,
+     "source": "extracted/2.mp3",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/portal_sounds_4/3.ogg",
+     "name": "3",
+     "seconds": 1.4,
+     "mean_db": -34.3,
+     "peak_db": -20.6,
+     "gain_db": 14.3,
+     "source": "extracted/3.mp3",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/portal_sounds_4/4.ogg",
+     "name": "4",
+     "seconds": 1.6,
+     "mean_db": -24.7,
+     "peak_db": -9.3,
+     "gain_db": 4.7,
+     "source": "extracted/4.mp3",
+     "loop": false
+    }
+   ]
+  },
+  "rubberduck_40_water_slime": {
+   "name": "40 CC0 water / splash / slime SFX",
+   "author": "rubberduck",
+   "url": "https://opengameart.org/content/40-cc0-water-splash-slime-sfx",
+   "via": "",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0).",
+   "files": [
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/bubble_01.ogg",
+     "name": "bubble_01",
+     "seconds": 0.519,
+     "mean_db": -17,
+     "peak_db": -0.7,
+     "gain_db": -3,
+     "source": "extracted/bubble_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/bubble_02.ogg",
+     "name": "bubble_02",
+     "seconds": 0.23,
+     "mean_db": -16.6,
+     "peak_db": -3.8,
+     "gain_db": -3.4,
+     "source": "extracted/bubble_02.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/bubble_03.ogg",
+     "name": "bubble_03",
+     "seconds": 0.502,
+     "mean_db": -22.1,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/bubble_03.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/loop_bubbles_02_loop.ogg",
+     "name": "loop_bubbles_02_loop",
+     "seconds": 7.334,
+     "mean_db": -30.4,
+     "peak_db": -7.8,
+     "gain_db": 6.8,
+     "source": "extracted/loop_bubbles_02.ogg",
+     "loop": true
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/loop_bubbles_1_loop.ogg",
+     "name": "loop_bubbles_1_loop",
+     "seconds": 4.407,
+     "mean_db": -31.3,
+     "peak_db": -9.8,
+     "gain_db": 8.8,
+     "source": "extracted/loop_bubbles_1.ogg",
+     "loop": true
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/loop_water_01_loop.ogg",
+     "name": "loop_water_01_loop",
+     "seconds": 3.38,
+     "mean_db": -30.1,
+     "peak_db": -8.8,
+     "gain_db": 7.8,
+     "source": "extracted/loop_water_01.ogg",
+     "loop": true
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/loop_water_02_loop.ogg",
+     "name": "loop_water_02_loop",
+     "seconds": 7.014,
+     "mean_db": -29.2,
+     "peak_db": -14,
+     "gain_db": 9.2,
+     "source": "extracted/loop_water_02.ogg",
+     "loop": true
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/slime_01.ogg",
+     "name": "slime_01",
+     "seconds": 0.293,
+     "mean_db": -27.6,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/slime_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/slime_02.ogg",
+     "name": "slime_02",
+     "seconds": 0.264,
+     "mean_db": -23.9,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/slime_02.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/slime_03.ogg",
+     "name": "slime_03",
+     "seconds": 0.5,
+     "mean_db": -25.8,
+     "peak_db": -1.5,
+     "gain_db": 0.5,
+     "source": "extracted/slime_03.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/slime_04.ogg",
+     "name": "slime_04",
+     "seconds": 0.283,
+     "mean_db": -19.3,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/slime_04.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/slime_05.ogg",
+     "name": "slime_05",
+     "seconds": 0.344,
+     "mean_db": -26.6,
+     "peak_db": -1.7,
+     "gain_db": 0.7,
+     "source": "extracted/slime_05.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/slime_06.ogg",
+     "name": "slime_06",
+     "seconds": 0.355,
+     "mean_db": -27.9,
+     "peak_db": -3.9,
+     "gain_db": 2.9,
+     "source": "extracted/slime_06.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/slime_07.ogg",
+     "name": "slime_07",
+     "seconds": 0.335,
+     "mean_db": -25.4,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/slime_07.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/slime_08.ogg",
+     "name": "slime_08",
+     "seconds": 0.378,
+     "mean_db": -27.4,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/slime_08.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/slime_09.ogg",
+     "name": "slime_09",
+     "seconds": 0.5,
+     "mean_db": -20,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/slime_09.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/slime_10.ogg",
+     "name": "slime_10",
+     "seconds": 0.411,
+     "mean_db": -22.8,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/slime_10.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/slime_11.ogg",
+     "name": "slime_11",
+     "seconds": 0.331,
+     "mean_db": -27,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/slime_11.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/slime_12.ogg",
+     "name": "slime_12",
+     "seconds": 0.178,
+     "mean_db": -25.6,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/slime_12.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/slime_13.ogg",
+     "name": "slime_13",
+     "seconds": 0.434,
+     "mean_db": -26.1,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/slime_13.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/slime_14.ogg",
+     "name": "slime_14",
+     "seconds": 0.302,
+     "mean_db": -24.3,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/slime_14.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/slime_15.ogg",
+     "name": "slime_15",
+     "seconds": 0.379,
+     "mean_db": -17.1,
+     "peak_db": 0,
+     "gain_db": -2.9,
+     "source": "extracted/slime_15.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/slime_16.ogg",
+     "name": "slime_16",
+     "seconds": 0.304,
+     "mean_db": -18.7,
+     "peak_db": 0,
+     "gain_db": -1.3,
+     "source": "extracted/slime_16.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/splash_01.ogg",
+     "name": "splash_01",
+     "seconds": 0.887,
+     "mean_db": -29.5,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/splash_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/splash_02.ogg",
+     "name": "splash_02",
+     "seconds": 0.554,
+     "mean_db": -24.6,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/splash_02.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/splash_03.ogg",
+     "name": "splash_03",
+     "seconds": 0.525,
+     "mean_db": -26.8,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/splash_03.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/splash_05.ogg",
+     "name": "splash_05",
+     "seconds": 0.708,
+     "mean_db": -28.5,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/splash_05.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/splash_06.ogg",
+     "name": "splash_06",
+     "seconds": 0.363,
+     "mean_db": -20.9,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/splash_06.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/splash_07.ogg",
+     "name": "splash_07",
+     "seconds": 1.093,
+     "mean_db": -24.6,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/splash_07.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/splash_09.ogg",
+     "name": "splash_09",
+     "seconds": 0.186,
+     "mean_db": -23.7,
+     "peak_db": -2.8,
+     "gain_db": 1.8,
+     "source": "extracted/splash_09.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/splash_10.ogg",
+     "name": "splash_10",
+     "seconds": 0.218,
+     "mean_db": -20.7,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/splash_10.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/splash_13.ogg",
+     "name": "splash_13",
+     "seconds": 0.592,
+     "mean_db": -24.8,
+     "peak_db": -1,
+     "gain_db": 0,
+     "source": "extracted/splash_13.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_40_water_slime/splash_15.ogg",
+     "name": "splash_15",
+     "seconds": 0.374,
+     "mean_db": -24.1,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/splash_15.ogg",
+     "loop": false
+    }
+   ]
+  },
+  "steam_release": {
+   "name": "Steam release sounds",
+   "author": "bart",
+   "url": "https://opengameart.org/content/steam-release-sounds",
+   "via": "",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0). Attribution appreciated: bart",
+   "files": [
+    {
+     "path": "res://assets/audio/library/steam_release/steam_hisses_-_marker_1.ogg",
+     "name": "steam_hisses_-_marker_1",
+     "seconds": 0.754,
+     "mean_db": -28.3,
+     "peak_db": -12.2,
+     "gain_db": 8.3,
+     "source": "extracted/steam hisses - Marker #1.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/steam_release/steam_hisses_-_marker_2.ogg",
+     "name": "steam_hisses_-_marker_2",
+     "seconds": 0.782,
+     "mean_db": -29,
+     "peak_db": -12.2,
+     "gain_db": 9,
+     "source": "extracted/steam hisses - Marker #2.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/steam_release/steam_hisses_-_marker_3.ogg",
+     "name": "steam_hisses_-_marker_3",
+     "seconds": 0.759,
+     "mean_db": -28.3,
+     "peak_db": -12.2,
+     "gain_db": 8.3,
+     "source": "extracted/steam hisses - Marker #3.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/steam_release/steam_hisses_-_marker_4.ogg",
+     "name": "steam_hisses_-_marker_4",
+     "seconds": 0.792,
+     "mean_db": -28.4,
+     "peak_db": -10.8,
+     "gain_db": 8.4,
+     "source": "extracted/steam hisses - Marker #4.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/steam_release/steam_hisses_-_marker_5.ogg",
+     "name": "steam_hisses_-_marker_5",
+     "seconds": 0.738,
+     "mean_db": -29.7,
+     "peak_db": -12.3,
+     "gain_db": 9.7,
+     "source": "extracted/steam hisses - Marker #5.wav",
+     "loop": false
+    }
+   ]
+  },
+  "ice_shattering": {
+   "name": "Ice breaking/shattering",
+   "author": "IgnasD",
+   "url": "https://opengameart.org/content/ice-breakingshattering",
+   "via": "",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0).",
+   "files": [
+    {
+     "path": "res://assets/audio/library/ice_shattering/ledasluzta.ogg",
+     "name": "ledasluzta",
+     "seconds": 0.417,
+     "mean_db": -24.3,
+     "peak_db": -2.1,
+     "gain_db": 1.1,
+     "source": "extracted/IceShatters/LedasLuzta.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/ice_shattering/ledasluzta2.ogg",
+     "name": "ledasluzta2",
+     "seconds": 0.317,
+     "mean_db": -23.9,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/IceShatters/LedasLuzta2.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/ice_shattering/ledasluzta33.ogg",
+     "name": "ledasluzta33",
+     "seconds": 1.077,
+     "mean_db": -19.6,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/IceShatters/LedasLuzta33.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/ice_shattering/ledasluzta4.ogg",
+     "name": "ledasluzta4",
+     "seconds": 0.793,
+     "mean_db": -22.2,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/IceShatters/LedasLuzta4.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/ice_shattering/ledasluzta5.ogg",
+     "name": "ledasluzta5",
+     "seconds": 0.728,
+     "mean_db": -17,
+     "peak_db": 0,
+     "gain_db": -3,
+     "source": "extracted/IceShatters/LedasLuzta5.ogg",
+     "loop": false
+    }
+   ]
+  },
+  "kenney_interface_sounds": {
+   "name": "Interface Sounds",
+   "author": "Kenney (kenney.nl)",
+   "url": "https://kenney.nl/assets/interface-sounds",
+   "via": "",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0).",
+   "files": [
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/bong_001.ogg",
+     "name": "bong_001",
+     "seconds": 0.123,
+     "mean_db": -16.2,
+     "peak_db": -0.9,
+     "gain_db": -3.8,
+     "source": "extracted/Audio/bong_001.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/close_001.ogg",
+     "name": "close_001",
+     "seconds": 0.148,
+     "mean_db": -15,
+     "peak_db": -1.1,
+     "gain_db": -5,
+     "source": "extracted/Audio/close_001.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/close_004.ogg",
+     "name": "close_004",
+     "seconds": 0.316,
+     "mean_db": -17.5,
+     "peak_db": -0.6,
+     "gain_db": -2.5,
+     "source": "extracted/Audio/close_004.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/confirmation_001.ogg",
+     "name": "confirmation_001",
+     "seconds": 0.289,
+     "mean_db": -11.4,
+     "peak_db": -0.9,
+     "gain_db": -8.6,
+     "source": "extracted/Audio/confirmation_001.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/confirmation_003.ogg",
+     "name": "confirmation_003",
+     "seconds": 0.314,
+     "mean_db": -15.1,
+     "peak_db": -0.8,
+     "gain_db": -4.9,
+     "source": "extracted/Audio/confirmation_003.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/confirmation_004.ogg",
+     "name": "confirmation_004",
+     "seconds": 0.482,
+     "mean_db": -11.6,
+     "peak_db": -0.9,
+     "gain_db": -8.4,
+     "source": "extracted/Audio/confirmation_004.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/drop_001.ogg",
+     "name": "drop_001",
+     "seconds": 0.114,
+     "mean_db": -17.6,
+     "peak_db": 0,
+     "gain_db": -2.4,
+     "source": "extracted/Audio/drop_001.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/drop_003.ogg",
+     "name": "drop_003",
+     "seconds": 0.191,
+     "mean_db": -16.7,
+     "peak_db": 0,
+     "gain_db": -3.3,
+     "source": "extracted/Audio/drop_003.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/drop_004.ogg",
+     "name": "drop_004",
+     "seconds": 0.287,
+     "mean_db": -17.8,
+     "peak_db": 0,
+     "gain_db": -2.2,
+     "source": "extracted/Audio/drop_004.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/error_001.ogg",
+     "name": "error_001",
+     "seconds": 0.165,
+     "mean_db": -16.2,
+     "peak_db": 0,
+     "gain_db": -3.8,
+     "source": "extracted/Audio/error_001.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/error_004.ogg",
+     "name": "error_004",
+     "seconds": 0.107,
+     "mean_db": -13.5,
+     "peak_db": 0,
+     "gain_db": -6.5,
+     "source": "extracted/Audio/error_004.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/error_005.ogg",
+     "name": "error_005",
+     "seconds": 0.157,
+     "mean_db": -13.6,
+     "peak_db": -1,
+     "gain_db": -6.4,
+     "source": "extracted/Audio/error_005.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/error_008.ogg",
+     "name": "error_008",
+     "seconds": 0.139,
+     "mean_db": -21,
+     "peak_db": -1.3,
+     "gain_db": 0.3,
+     "source": "extracted/Audio/error_008.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/glass_001.ogg",
+     "name": "glass_001",
+     "seconds": 0.235,
+     "mean_db": -19.3,
+     "peak_db": -0.9,
+     "gain_db": -0.7,
+     "source": "extracted/Audio/glass_001.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/glass_002.ogg",
+     "name": "glass_002",
+     "seconds": 0.101,
+     "mean_db": -17.8,
+     "peak_db": -0.9,
+     "gain_db": -2.2,
+     "source": "extracted/Audio/glass_002.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/glass_003.ogg",
+     "name": "glass_003",
+     "seconds": 0.124,
+     "mean_db": -16.3,
+     "peak_db": -1.2,
+     "gain_db": -3.7,
+     "source": "extracted/Audio/glass_003.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/glass_004.ogg",
+     "name": "glass_004",
+     "seconds": 0.6,
+     "mean_db": -17.3,
+     "peak_db": -0.9,
+     "gain_db": -2.7,
+     "source": "extracted/Audio/glass_004.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/glass_005.ogg",
+     "name": "glass_005",
+     "seconds": 0.057,
+     "mean_db": -16.6,
+     "peak_db": -0.8,
+     "gain_db": -3.4,
+     "source": "extracted/Audio/glass_005.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/glass_006.ogg",
+     "name": "glass_006",
+     "seconds": 0.063,
+     "mean_db": -15.9,
+     "peak_db": -1.1,
+     "gain_db": -4.1,
+     "source": "extracted/Audio/glass_006.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/maximize_004.ogg",
+     "name": "maximize_004",
+     "seconds": 0.399,
+     "mean_db": -15.1,
+     "peak_db": -1.2,
+     "gain_db": -4.9,
+     "source": "extracted/Audio/maximize_004.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/minimize_001.ogg",
+     "name": "minimize_001",
+     "seconds": 0.258,
+     "mean_db": -13.2,
+     "peak_db": -1,
+     "gain_db": -6.8,
+     "source": "extracted/Audio/minimize_001.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/minimize_003.ogg",
+     "name": "minimize_003",
+     "seconds": 0.208,
+     "mean_db": -20.5,
+     "peak_db": -1.3,
+     "gain_db": 0.3,
+     "source": "extracted/Audio/minimize_003.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/minimize_004.ogg",
+     "name": "minimize_004",
+     "seconds": 0.399,
+     "mean_db": -15,
+     "peak_db": -1.1,
+     "gain_db": -5,
+     "source": "extracted/Audio/minimize_004.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/pluck_001.ogg",
+     "name": "pluck_001",
+     "seconds": 0.102,
+     "mean_db": -17.7,
+     "peak_db": 0,
+     "gain_db": -2.3,
+     "source": "extracted/Audio/pluck_001.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/pluck_002.ogg",
+     "name": "pluck_002",
+     "seconds": 0.114,
+     "mean_db": -17.4,
+     "peak_db": 0,
+     "gain_db": -2.6,
+     "source": "extracted/Audio/pluck_002.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/scratch_001.ogg",
+     "name": "scratch_001",
+     "seconds": 0.127,
+     "mean_db": -12.6,
+     "peak_db": -0.7,
+     "gain_db": -7.4,
+     "source": "extracted/Audio/scratch_001.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/scratch_002.ogg",
+     "name": "scratch_002",
+     "seconds": 0.127,
+     "mean_db": -11.8,
+     "peak_db": -0.3,
+     "gain_db": -8.2,
+     "source": "extracted/Audio/scratch_002.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/scratch_004.ogg",
+     "name": "scratch_004",
+     "seconds": 0.291,
+     "mean_db": -20.3,
+     "peak_db": -0.8,
+     "gain_db": -0.2,
+     "source": "extracted/Audio/scratch_004.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/scratch_005.ogg",
+     "name": "scratch_005",
+     "seconds": 0.306,
+     "mean_db": -15.4,
+     "peak_db": -0.5,
+     "gain_db": -4.6,
+     "source": "extracted/Audio/scratch_005.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/select_001.ogg",
+     "name": "select_001",
+     "seconds": 0.042,
+     "mean_db": -14.4,
+     "peak_db": 0,
+     "gain_db": -5.6,
+     "source": "extracted/Audio/select_001.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/select_008.ogg",
+     "name": "select_008",
+     "seconds": 0.047,
+     "mean_db": -19.1,
+     "peak_db": -1.4,
+     "gain_db": -0.9,
+     "source": "extracted/Audio/select_008.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/switch_001.ogg",
+     "name": "switch_001",
+     "seconds": 0.136,
+     "mean_db": -17.8,
+     "peak_db": 0,
+     "gain_db": -2.2,
+     "source": "extracted/Audio/switch_001.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/switch_007.ogg",
+     "name": "switch_007",
+     "seconds": 0.142,
+     "mean_db": -18.3,
+     "peak_db": 0,
+     "gain_db": -1.7,
+     "source": "extracted/Audio/switch_007.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/tick_001.ogg",
+     "name": "tick_001",
+     "seconds": 0.015,
+     "mean_db": -15.9,
+     "peak_db": -1.5,
+     "gain_db": -4.1,
+     "source": "extracted/Audio/tick_001.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/tick_002.ogg",
+     "name": "tick_002",
+     "seconds": 0.023,
+     "mean_db": -17,
+     "peak_db": -1.3,
+     "gain_db": -3,
+     "source": "extracted/Audio/tick_002.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/tick_004.ogg",
+     "name": "tick_004",
+     "seconds": 0.058,
+     "mean_db": -16,
+     "peak_db": -1,
+     "gain_db": -4,
+     "source": "extracted/Audio/tick_004.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/toggle_001.ogg",
+     "name": "toggle_001",
+     "seconds": 0.102,
+     "mean_db": -12.6,
+     "peak_db": -0.8,
+     "gain_db": -7.4,
+     "source": "extracted/Audio/toggle_001.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_interface_sounds/toggle_004.ogg",
+     "name": "toggle_004",
+     "seconds": 0.066,
+     "mean_db": -16.4,
+     "peak_db": -1.2,
+     "gain_db": -3.6,
+     "source": "extracted/Audio/toggle_004.ogg",
+     "loop": false
+    }
+   ]
+  },
+  "rubberduck_75_breaking": {
+   "name": "75 CC0 breaking / falling / hit sfx",
+   "author": "rubberduck",
+   "url": "https://opengameart.org/content/75-cc0-breaking-falling-hit-sfx",
+   "via": "",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0).",
+   "files": [
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_breaking_01.ogg",
+     "name": "bfh1_breaking_01",
+     "seconds": 0.844,
+     "mean_db": -27.1,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/bfh1_breaking_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_breaking_02.ogg",
+     "name": "bfh1_breaking_02",
+     "seconds": 0.235,
+     "mean_db": -23.8,
+     "peak_db": -0.7,
+     "gain_db": -0.3,
+     "source": "extracted/bfh1_breaking_02.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_breaking_03.ogg",
+     "name": "bfh1_breaking_03",
+     "seconds": 0.375,
+     "mean_db": -23,
+     "peak_db": -3.3,
+     "gain_db": 2.3,
+     "source": "extracted/bfh1_breaking_03.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_01.ogg",
+     "name": "bfh1_glass_breaking_01",
+     "seconds": 0.383,
+     "mean_db": -21.8,
+     "peak_db": -2,
+     "gain_db": 1,
+     "source": "extracted/bfh1_glass_breaking_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_02.ogg",
+     "name": "bfh1_glass_breaking_02",
+     "seconds": 0.321,
+     "mean_db": -20.8,
+     "peak_db": -0.7,
+     "gain_db": -0.3,
+     "source": "extracted/bfh1_glass_breaking_02.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_03.ogg",
+     "name": "bfh1_glass_breaking_03",
+     "seconds": 0.587,
+     "mean_db": -27.9,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/bfh1_glass_breaking_03.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_04.ogg",
+     "name": "bfh1_glass_breaking_04",
+     "seconds": 0.591,
+     "mean_db": -25.3,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/bfh1_glass_breaking_04.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_05.ogg",
+     "name": "bfh1_glass_breaking_05",
+     "seconds": 0.357,
+     "mean_db": -22.3,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/bfh1_glass_breaking_05.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_breaking_06.ogg",
+     "name": "bfh1_glass_breaking_06",
+     "seconds": 0.749,
+     "mean_db": -17.2,
+     "peak_db": -0.7,
+     "gain_db": -2.8,
+     "source": "extracted/bfh1_glass_breaking_06.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_falling_01.ogg",
+     "name": "bfh1_glass_falling_01",
+     "seconds": 0.306,
+     "mean_db": -16.1,
+     "peak_db": 0,
+     "gain_db": -3.9,
+     "source": "extracted/bfh1_glass_falling_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_falling_02.ogg",
+     "name": "bfh1_glass_falling_02",
+     "seconds": 0.776,
+     "mean_db": -23.8,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/bfh1_glass_falling_02.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_falling_03.ogg",
+     "name": "bfh1_glass_falling_03",
+     "seconds": 0.459,
+     "mean_db": -25.7,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/bfh1_glass_falling_03.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_falling_04.ogg",
+     "name": "bfh1_glass_falling_04",
+     "seconds": 0.486,
+     "mean_db": -18.4,
+     "peak_db": 0,
+     "gain_db": -1.6,
+     "source": "extracted/bfh1_glass_falling_04.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_hit_01.ogg",
+     "name": "bfh1_glass_hit_01",
+     "seconds": 0.165,
+     "mean_db": -17.7,
+     "peak_db": 0,
+     "gain_db": -2.3,
+     "source": "extracted/bfh1_glass_hit_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_glass_hit_02.ogg",
+     "name": "bfh1_glass_hit_02",
+     "seconds": 0.217,
+     "mean_db": -16,
+     "peak_db": -0.7,
+     "gain_db": -4,
+     "source": "extracted/bfh1_glass_hit_02.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_hit_01.ogg",
+     "name": "bfh1_hit_01",
+     "seconds": 0.397,
+     "mean_db": -22.5,
+     "peak_db": -0.3,
+     "gain_db": -0.7,
+     "source": "extracted/bfh1_hit_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_hit_03.ogg",
+     "name": "bfh1_hit_03",
+     "seconds": 0.188,
+     "mean_db": -25.3,
+     "peak_db": -1.4,
+     "gain_db": 0.4,
+     "source": "extracted/bfh1_hit_03.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_hit_04.ogg",
+     "name": "bfh1_hit_04",
+     "seconds": 0.12,
+     "mean_db": -23.9,
+     "peak_db": -0.2,
+     "gain_db": -0.8,
+     "source": "extracted/bfh1_hit_04.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_hit_05.ogg",
+     "name": "bfh1_hit_05",
+     "seconds": 0.082,
+     "mean_db": -24.8,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/bfh1_hit_05.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_hit_07.ogg",
+     "name": "bfh1_hit_07",
+     "seconds": 0.381,
+     "mean_db": -15.9,
+     "peak_db": -0.3,
+     "gain_db": -4.1,
+     "source": "extracted/bfh1_hit_07.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_hit_09.ogg",
+     "name": "bfh1_hit_09",
+     "seconds": 0.117,
+     "mean_db": -22.1,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/bfh1_hit_09.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_hit_13.ogg",
+     "name": "bfh1_hit_13",
+     "seconds": 0.248,
+     "mean_db": -20.8,
+     "peak_db": -0.4,
+     "gain_db": -0.6,
+     "source": "extracted/bfh1_hit_13.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_metal_falling_01.ogg",
+     "name": "bfh1_metal_falling_01",
+     "seconds": 0.761,
+     "mean_db": -22.5,
+     "peak_db": -0.5,
+     "gain_db": -0.5,
+     "source": "extracted/bfh1_metal_falling_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_metal_falling_02.ogg",
+     "name": "bfh1_metal_falling_02",
+     "seconds": 0.4,
+     "mean_db": -14.9,
+     "peak_db": 0,
+     "gain_db": -5.1,
+     "source": "extracted/bfh1_metal_falling_02.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_metal_falling_03.ogg",
+     "name": "bfh1_metal_falling_03",
+     "seconds": 0.227,
+     "mean_db": -15.4,
+     "peak_db": 0,
+     "gain_db": -4.6,
+     "source": "extracted/bfh1_metal_falling_03.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_metal_falling_04.ogg",
+     "name": "bfh1_metal_falling_04",
+     "seconds": 0.218,
+     "mean_db": -15.1,
+     "peak_db": 0,
+     "gain_db": -4.9,
+     "source": "extracted/bfh1_metal_falling_04.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_metal_falling_05.ogg",
+     "name": "bfh1_metal_falling_05",
+     "seconds": 0.278,
+     "mean_db": -21.3,
+     "peak_db": -0.2,
+     "gain_db": -0.8,
+     "source": "extracted/bfh1_metal_falling_05.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_metal_hit_01.ogg",
+     "name": "bfh1_metal_hit_01",
+     "seconds": 0.133,
+     "mean_db": -21.8,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/bfh1_metal_hit_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_metal_hit_04.ogg",
+     "name": "bfh1_metal_hit_04",
+     "seconds": 0.204,
+     "mean_db": -18.4,
+     "peak_db": -0.2,
+     "gain_db": -1.6,
+     "source": "extracted/bfh1_metal_hit_04.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_metal_hit_05.ogg",
+     "name": "bfh1_metal_hit_05",
+     "seconds": 0.228,
+     "mean_db": -19.2,
+     "peak_db": -1.5,
+     "gain_db": -0.8,
+     "source": "extracted/bfh1_metal_hit_05.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_metal_hit_06.ogg",
+     "name": "bfh1_metal_hit_06",
+     "seconds": 0.178,
+     "mean_db": -19,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/bfh1_metal_hit_06.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_01.ogg",
+     "name": "bfh1_rock_breaking_01",
+     "seconds": 0.428,
+     "mean_db": -27.2,
+     "peak_db": -1,
+     "gain_db": 0,
+     "source": "extracted/bfh1_rock_breaking_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_02.ogg",
+     "name": "bfh1_rock_breaking_02",
+     "seconds": 0.807,
+     "mean_db": -27,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/bfh1_rock_breaking_02.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_breaking_03.ogg",
+     "name": "bfh1_rock_breaking_03",
+     "seconds": 0.4,
+     "mean_db": -28.3,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/bfh1_rock_breaking_03.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_01.ogg",
+     "name": "bfh1_rock_falling_01",
+     "seconds": 0.769,
+     "mean_db": -26.5,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/bfh1_rock_falling_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_02.ogg",
+     "name": "bfh1_rock_falling_02",
+     "seconds": 0.274,
+     "mean_db": -26.8,
+     "peak_db": -3.2,
+     "gain_db": 2.2,
+     "source": "extracted/bfh1_rock_falling_02.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_03.ogg",
+     "name": "bfh1_rock_falling_03",
+     "seconds": 0.637,
+     "mean_db": -30.6,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/bfh1_rock_falling_03.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_04.ogg",
+     "name": "bfh1_rock_falling_04",
+     "seconds": 0.156,
+     "mean_db": -22.7,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/bfh1_rock_falling_04.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_05.ogg",
+     "name": "bfh1_rock_falling_05",
+     "seconds": 0.276,
+     "mean_db": -24.4,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/bfh1_rock_falling_05.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_06.ogg",
+     "name": "bfh1_rock_falling_06",
+     "seconds": 0.151,
+     "mean_db": -22.6,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/bfh1_rock_falling_06.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_07.ogg",
+     "name": "bfh1_rock_falling_07",
+     "seconds": 0.24,
+     "mean_db": -27.1,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/bfh1_rock_falling_07.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_falling_09.ogg",
+     "name": "bfh1_rock_falling_09",
+     "seconds": 0.463,
+     "mean_db": -28.9,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/bfh1_rock_falling_09.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_rock_hit_01.ogg",
+     "name": "bfh1_rock_hit_01",
+     "seconds": 0.061,
+     "mean_db": -19.4,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/bfh1_rock_hit_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_wood_breaking_01.ogg",
+     "name": "bfh1_wood_breaking_01",
+     "seconds": 0.126,
+     "mean_db": -25.5,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/bfh1_wood_breaking_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_wood_breaking_03.ogg",
+     "name": "bfh1_wood_breaking_03",
+     "seconds": 0.28,
+     "mean_db": -19.6,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/bfh1_wood_breaking_03.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_wood_breaking_04.ogg",
+     "name": "bfh1_wood_breaking_04",
+     "seconds": 0.21,
+     "mean_db": -23.5,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/bfh1_wood_breaking_04.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_wood_falling_02.ogg",
+     "name": "bfh1_wood_falling_02",
+     "seconds": 0.3,
+     "mean_db": -19.7,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/bfh1_wood_falling_02.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_wood_hit_01.ogg",
+     "name": "bfh1_wood_hit_01",
+     "seconds": 0.126,
+     "mean_db": -15.7,
+     "peak_db": 0,
+     "gain_db": -4.3,
+     "source": "extracted/bfh1_wood_hit_01.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_wood_hit_02.ogg",
+     "name": "bfh1_wood_hit_02",
+     "seconds": 0.211,
+     "mean_db": -14.7,
+     "peak_db": 0,
+     "gain_db": -5.3,
+     "source": "extracted/bfh1_wood_hit_02.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/rubberduck_75_breaking/bfh1_wood_hit_03.ogg",
+     "name": "bfh1_wood_hit_03",
+     "seconds": 0.202,
+     "mean_db": -20.2,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/bfh1_wood_hit_03.ogg",
+     "loop": false
+    }
+   ]
+  },
+  "lava_splash": {
+   "name": "Lava splash",
+   "author": "Michel Baradari (submitted by qubodup)",
+   "url": "https://opengameart.org/content/lava-splash",
+   "via": "",
+   "license": "CC BY 3.0",
+   "credit": "\"Lava splash\" by Michel Baradari, https://opengameart.org/content/lava-splash - CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/) - cut/converted.",
+   "files": [
+    {
+     "path": "res://assets/audio/library/lava_splash/lava.ogg",
+     "name": "lava",
+     "seconds": 1.319,
+     "mean_db": -16.5,
+     "peak_db": 0,
+     "gain_db": -3.5,
+     "source": "lava.flac",
+     "loop": false
+    }
+   ]
+  },
+  "lava_loop": {
+   "name": "Lava loop",
+   "author": "Blender Foundation - Yo Frankie! (submitted by Lamoot)",
+   "url": "https://opengameart.org/content/lava-loop",
+   "via": "",
+   "license": "CC BY 3.0",
+   "credit": "\"Lava loop\" by Blender Foundation - Yo Frankie! (submitted by Lamoot), https://opengameart.org/content/lava-loop - CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/) - cut/converted.",
+   "files": [
+    {
+     "path": "res://assets/audio/library/lava_loop/lavaloop_loop.ogg",
+     "name": "lavaloop_loop",
+     "seconds": 12,
+     "mean_db": -22.6,
+     "peak_db": -3.8,
+     "gain_db": 2.6,
+     "source": "extracted/LavaLoop.wav",
+     "loop": true
+    }
+   ]
+  },
+  "ghostly_loops_4": {
+   "name": "4 Atmospheric ghostly loops",
+   "author": "Independent.nu (submitted by qubodup)",
+   "url": "https://opengameart.org/content/4-atmospheric-ghostly-loops",
+   "via": "",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0).",
+   "files": [
+    {
+     "path": "res://assets/audio/library/ghostly_loops_4/atmoseerie01.mp3_loop.ogg",
+     "name": "atmoseerie01.mp3_loop",
+     "seconds": 20.011,
+     "mean_db": -25.2,
+     "peak_db": -13.5,
+     "gain_db": 5.2,
+     "source": "extracted/atmosmoody/atmoseerie01.mp3.flac",
+     "loop": true
+    }
+   ]
+  },
+  "leohpaz_8_magic_attacks": {
+   "name": "8 Magic Attacks",
+   "author": "Leohpaz",
+   "url": "https://opengameart.org/content/8-magic-attacks",
+   "via": "",
+   "license": "CC BY 4.0",
+   "credit": "\"8 Magic Attacks\" by Leohpaz, https://opengameart.org/content/8-magic-attacks - CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/) - cut/converted.",
+   "files": [
+    {
+     "path": "res://assets/audio/library/leohpaz_8_magic_attacks/04_fire_explosion_04_medium.ogg",
+     "name": "04_fire_explosion_04_medium",
+     "seconds": 1.705,
+     "mean_db": -25.6,
+     "peak_db": -10.2,
+     "gain_db": 5.6,
+     "source": "extracted/04_Fire_explosion_04_medium.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/leohpaz_8_magic_attacks/13_ice_explosion_01.ogg",
+     "name": "13_ice_explosion_01",
+     "seconds": 0.984,
+     "mean_db": -24.3,
+     "peak_db": -5.8,
+     "gain_db": 4.3,
+     "source": "extracted/13_Ice_explosion_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/leohpaz_8_magic_attacks/18_thunder_02.ogg",
+     "name": "18_thunder_02",
+     "seconds": 1.6,
+     "mean_db": -26.5,
+     "peak_db": -11.3,
+     "gain_db": 6.5,
+     "source": "extracted/18_Thunder_02.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/leohpaz_8_magic_attacks/22_water_02.ogg",
+     "name": "22_water_02",
+     "seconds": 1.44,
+     "mean_db": -23.7,
+     "peak_db": -8.1,
+     "gain_db": 3.7,
+     "source": "extracted/22_Water_02.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/leohpaz_8_magic_attacks/25_wind_01.ogg",
+     "name": "25_wind_01",
+     "seconds": 0.976,
+     "mean_db": -21.1,
+     "peak_db": -4,
+     "gain_db": 1.1,
+     "source": "extracted/25_Wind_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/leohpaz_8_magic_attacks/30_earth_02.ogg",
+     "name": "30_earth_02",
+     "seconds": 1.856,
+     "mean_db": -20.3,
+     "peak_db": -4.4,
+     "gain_db": 0.3,
+     "source": "extracted/30_Earth_02.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/leohpaz_8_magic_attacks/45_charge_05.ogg",
+     "name": "45_charge_05",
+     "seconds": 1.2,
+     "mean_db": -13.3,
+     "peak_db": -1,
+     "gain_db": -6.7,
+     "source": "extracted/45_Charge_05.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/leohpaz_8_magic_attacks/46_poison_01.ogg",
+     "name": "46_poison_01",
+     "seconds": 1.307,
+     "mean_db": -24.6,
+     "peak_db": -9.4,
+     "gain_db": 4.6,
+     "source": "extracted/46_Poison_01.wav",
+     "loop": false
+    }
+   ]
+  },
+  "level_up_coin_get": {
+   "name": "Level up, power up, Coin get (13 Sounds)",
+   "author": "wobbleboxx",
+   "url": "https://opengameart.org/content/level-up-power-up-coin-get-13-sounds",
+   "via": "",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0). Optional credit: WobbleBoxx Workshop",
+   "files": [
+    {
+     "path": "res://assets/audio/library/level_up_coin_get/rise03.ogg",
+     "name": "rise03",
+     "seconds": 0.738,
+     "mean_db": -20.5,
+     "peak_db": -1.7,
+     "gain_db": 0.5,
+     "source": "extracted/Rise03.aif",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/level_up_coin_get/rise06.ogg",
+     "name": "rise06",
+     "seconds": 1.014,
+     "mean_db": -28.7,
+     "peak_db": -12.9,
+     "gain_db": 8.7,
+     "source": "extracted/Rise06.aif",
+     "loop": false
+    }
+   ]
+  },
+  "kenney_music_jingles": {
+   "name": "Music Jingles",
+   "author": "Kenney (kenney.nl)",
+   "url": "https://kenney.nl/assets/music-jingles",
+   "via": "",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0).",
+   "files": [
+    {
+     "path": "res://assets/audio/library/kenney_music_jingles/jingles_hit00.ogg",
+     "name": "jingles_hit00",
+     "seconds": 0.243,
+     "mean_db": -12.3,
+     "peak_db": -1,
+     "gain_db": -7.7,
+     "source": "extracted/Audio/Hit jingles/jingles_HIT00.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_music_jingles/jingles_hit02.ogg",
+     "name": "jingles_hit02",
+     "seconds": 0.473,
+     "mean_db": -12.5,
+     "peak_db": -1,
+     "gain_db": -7.5,
+     "source": "extracted/Audio/Hit jingles/jingles_HIT02.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_music_jingles/jingles_hit10.ogg",
+     "name": "jingles_hit10",
+     "seconds": 0.704,
+     "mean_db": -12.7,
+     "peak_db": -1.2,
+     "gain_db": -7.3,
+     "source": "extracted/Audio/Hit jingles/jingles_HIT10.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_music_jingles/jingles_pizzi00.ogg",
+     "name": "jingles_pizzi00",
+     "seconds": 0.494,
+     "mean_db": -14.5,
+     "peak_db": -3.2,
+     "gain_db": -5.5,
+     "source": "extracted/Audio/Pizzicato jingles/jingles_PIZZI00.ogg",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/kenney_music_jingles/jingles_steel00.ogg",
+     "name": "jingles_steel00",
+     "seconds": 0.933,
+     "mean_db": -15.9,
+     "peak_db": 0,
+     "gain_db": -4.1,
+     "source": "extracted/Audio/Steel jingles/jingles_STEEL00.ogg",
+     "loop": false
+    }
+   ]
+  },
+  "big_scary_troll": {
+   "name": "Big scary troll sounds",
+   "author": "Darsycho",
+   "url": "https://opengameart.org/content/big-scary-troll-sounds",
+   "via": "",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0). Credit appreciated: Darsycho",
+   "files": [
+    {
+     "path": "res://assets/audio/library/big_scary_troll/scrapped-troll-sounds_s01.ogg",
+     "name": "scrapped-troll-sounds_s01",
+     "seconds": 1,
+     "mean_db": -8.8,
+     "peak_db": -0.6,
+     "gain_db": -11.2,
+     "source": "scrapped-troll-sounds.ogg#take1",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/big_scary_troll/scrapped-troll-sounds_s05.ogg",
+     "name": "scrapped-troll-sounds_s05",
+     "seconds": 1,
+     "mean_db": -5.3,
+     "peak_db": 0,
+     "gain_db": -14.7,
+     "source": "scrapped-troll-sounds.ogg#take5",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/big_scary_troll/troll-idle-noises_0_s01.ogg",
+     "name": "troll-idle-noises_0_s01",
+     "seconds": 1.6,
+     "mean_db": -19.5,
+     "peak_db": -7.2,
+     "gain_db": -0.5,
+     "source": "troll-idle-noises_0.ogg#take1",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/big_scary_troll/troll-idle-noises_0_s05.ogg",
+     "name": "troll-idle-noises_0_s05",
+     "seconds": 1.495,
+     "mean_db": -9.5,
+     "peak_db": 0,
+     "gain_db": -10.5,
+     "source": "troll-idle-noises_0.ogg#take5",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/big_scary_troll/troll-idle-noises_0_s08.ogg",
+     "name": "troll-idle-noises_0_s08",
+     "seconds": 1.6,
+     "mean_db": -12.7,
+     "peak_db": 0,
+     "gain_db": -7.3,
+     "source": "troll-idle-noises_0.ogg#take8",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/big_scary_troll/troll-roars_0_s01.ogg",
+     "name": "troll-roars_0_s01",
+     "seconds": 1.232,
+     "mean_db": -10,
+     "peak_db": -0.9,
+     "gain_db": -10,
+     "source": "troll-roars_0.ogg#take1",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/big_scary_troll/troll-roars_0_s04.ogg",
+     "name": "troll-roars_0_s04",
+     "seconds": 1.175,
+     "mean_db": -15.3,
+     "peak_db": -0.8,
+     "gain_db": -4.7,
+     "source": "troll-roars_0.ogg#take4",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/big_scary_troll/troll-roars_0_s06.ogg",
+     "name": "troll-roars_0_s06",
+     "seconds": 1.047,
+     "mean_db": -12.9,
+     "peak_db": 0,
+     "gain_db": -7.1,
+     "source": "troll-roars_0.ogg#take6",
+     "loop": false
+    }
+   ]
+  },
+  "ghost_monster_moaning": {
+   "name": "Ghost Monster Voice Moaning & Growling",
+   "author": "qubodup",
+   "url": "https://opengameart.org/content/ghost-monster-voice-moaning-growling",
+   "via": "",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0).",
+   "files": [
+    {
+     "path": "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan01.ogg",
+     "name": "qubodup-ghostmoan01",
+     "seconds": 2.972,
+     "mean_db": -13.1,
+     "peak_db": 0,
+     "gain_db": -6.9,
+     "source": "extracted/qubodup-GhostMoans/wav/qubodup-GhostMoan01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan02.ogg",
+     "name": "qubodup-ghostmoan02",
+     "seconds": 3,
+     "mean_db": -11.6,
+     "peak_db": 0,
+     "gain_db": -8.4,
+     "source": "extracted/qubodup-GhostMoans/wav/qubodup-GhostMoan02.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan03.ogg",
+     "name": "qubodup-ghostmoan03",
+     "seconds": 3,
+     "mean_db": -10.7,
+     "peak_db": 0,
+     "gain_db": -9.3,
+     "source": "extracted/qubodup-GhostMoans/wav/qubodup-GhostMoan03.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan04.ogg",
+     "name": "qubodup-ghostmoan04",
+     "seconds": 3,
+     "mean_db": -12.9,
+     "peak_db": 0,
+     "gain_db": -7.1,
+     "source": "extracted/qubodup-GhostMoans/wav/qubodup-GhostMoan04.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/ghost_monster_moaning/qubodup-ghostmoan05.ogg",
+     "name": "qubodup-ghostmoan05",
+     "seconds": 1.734,
+     "mean_db": -13.8,
+     "peak_db": 0,
+     "gain_db": -6.2,
+     "source": "extracted/qubodup-GhostMoans/wav/qubodup-GhostMoan05.wav",
+     "loop": false
+    }
+   ]
+  },
+  "dog_snarl": {
+   "name": "Dog Snarl Grunt Grumble",
+   "author": "qubodup",
+   "url": "https://opengameart.org/content/dog-snarl-grunt-grumble",
+   "via": "",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0).",
+   "files": [
+    {
+     "path": "res://assets/audio/library/dog_snarl/dog-growl.ogg",
+     "name": "dog-growl",
+     "seconds": 0.55,
+     "mean_db": -11.5,
+     "peak_db": 0,
+     "gain_db": -8.5,
+     "source": "extracted/dog/dog-growl.flac",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/dog_snarl/dog-grumble.ogg",
+     "name": "dog-grumble",
+     "seconds": 0.554,
+     "mean_db": -12.9,
+     "peak_db": 0,
+     "gain_db": -7.1,
+     "source": "extracted/dog/dog-grumble.flac",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/dog_snarl/dog-snarl.ogg",
+     "name": "dog-snarl",
+     "seconds": 0.644,
+     "mean_db": -12.2,
+     "peak_db": 0,
+     "gain_db": -7.8,
+     "source": "extracted/dog/dog-snarl.flac",
+     "loop": false
+    }
+   ]
+  },
+  "bear_growls": {
+   "name": "Bear Growls",
+   "author": "AntumDeluge (source: U.S. Fish & Wildlife Service)",
+   "url": "https://opengameart.org/content/bear-growls",
+   "via": "",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0).",
+   "files": [
+    {
+     "path": "res://assets/audio/library/bear_growls/bear_01.ogg",
+     "name": "bear_01",
+     "seconds": 1.042,
+     "mean_db": -15.4,
+     "peak_db": -6,
+     "gain_db": -4.6,
+     "source": "extracted/flac/bear_01.flac",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/bear_growls/bear_02.ogg",
+     "name": "bear_02",
+     "seconds": 1.116,
+     "mean_db": -17.4,
+     "peak_db": -6.2,
+     "gain_db": -2.6,
+     "source": "extracted/flac/bear_02.flac",
+     "loop": false
+    }
+   ]
+  },
+  "fire_crackling": {
+   "name": "Fire Crackling",
+   "author": "AntumDeluge",
+   "url": "https://opengameart.org/content/fire-crackling",
+   "via": "",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0).",
+   "files": [
+    {
+     "path": "res://assets/audio/library/fire_crackling/fire-1.ogg",
+     "name": "fire-1",
+     "seconds": 2,
+     "mean_db": -31,
+     "peak_db": -8.1,
+     "gain_db": 7.1,
+     "source": "fire-1.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/fire_crackling/fire-1_loop.ogg",
+     "name": "fire-1_loop",
+     "seconds": 2.871,
+     "mean_db": -34.4,
+     "peak_db": -11.3,
+     "gain_db": 10.3,
+     "source": "fire-1.wav",
+     "loop": true
+    },
+    {
+     "path": "res://assets/audio/library/fire_crackling/fire-1_s01.ogg",
+     "name": "fire-1_s01",
+     "seconds": 1,
+     "mean_db": -31.3,
+     "peak_db": -8.1,
+     "gain_db": 7.1,
+     "source": "fire-1.wav#take1",
+     "loop": false
+    }
+   ]
+  },
+  "lrsf_coins": {
+   "name": "Coins Sound Effects Library",
+   "author": "Little Robot Sound Factory",
+   "url": "https://opengameart.org/content/coins-sound-effects-library",
+   "via": "",
+   "license": "CC BY 3.0",
+   "credit": "\"Coins Sound Effects Library\" by Little Robot Sound Factory (www.littlerobotsoundfactory.com), https://opengameart.org/content/coins-sound-effects-library - CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/) - cut/converted.",
+   "files": [
+    {
+     "path": "res://assets/audio/library/lrsf_coins/coins_few_15.ogg",
+     "name": "coins_few_15",
+     "seconds": 0.427,
+     "mean_db": -28.6,
+     "peak_db": -8,
+     "gain_db": 7,
+     "source": "extracted/Wav/Coins_Few/Coins_Few_15.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_coins/coins_few_26.ogg",
+     "name": "coins_few_26",
+     "seconds": 0.342,
+     "mean_db": -31.4,
+     "peak_db": -8.5,
+     "gain_db": 7.5,
+     "source": "extracted/Wav/Coins_Few/Coins_Few_26.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_coins/coins_few_33.ogg",
+     "name": "coins_few_33",
+     "seconds": 0.245,
+     "mean_db": -18.8,
+     "peak_db": -2.8,
+     "gain_db": -1.2,
+     "source": "extracted/Wav/Coins_Few/Coins_Few_33.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_coins/coins_pouring_01.ogg",
+     "name": "coins_pouring_01",
+     "seconds": 0.267,
+     "mean_db": -16.7,
+     "peak_db": 0,
+     "gain_db": -3.3,
+     "source": "extracted/Wav/Coins_Pouring/Coins_Pouring_01.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_coins/coins_pouring_07.ogg",
+     "name": "coins_pouring_07",
+     "seconds": 2.5,
+     "mean_db": -22.7,
+     "peak_db": -2.7,
+     "gain_db": 1.7,
+     "source": "extracted/Wav/Coins_Pouring/Coins_Pouring_07.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_coins/coins_pouring_08.ogg",
+     "name": "coins_pouring_08",
+     "seconds": 2.5,
+     "mean_db": -24.6,
+     "peak_db": -3,
+     "gain_db": 2,
+     "source": "extracted/Wav/Coins_Pouring/Coins_Pouring_08.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_coins/coins_pouring_11.ogg",
+     "name": "coins_pouring_11",
+     "seconds": 1.065,
+     "mean_db": -23.5,
+     "peak_db": -6.5,
+     "gain_db": 3.5,
+     "source": "extracted/Wav/Coins_Pouring/Coins_Pouring_11.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_coins/coins_pouring_12.ogg",
+     "name": "coins_pouring_12",
+     "seconds": 1.547,
+     "mean_db": -29.9,
+     "peak_db": -6,
+     "gain_db": 5,
+     "source": "extracted/Wav/Coins_Pouring/Coins_Pouring_12.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_coins/coins_several_00.ogg",
+     "name": "coins_several_00",
+     "seconds": 0.421,
+     "mean_db": -21.5,
+     "peak_db": -3.2,
+     "gain_db": 1.5,
+     "source": "extracted/Wav/Coins_Several/Coins_Several_00.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_coins/coins_several_07.ogg",
+     "name": "coins_several_07",
+     "seconds": 0.512,
+     "mean_db": -20.8,
+     "peak_db": -0.3,
+     "gain_db": -0.7,
+     "source": "extracted/Wav/Coins_Several/Coins_Several_07.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_coins/coins_several_11.ogg",
+     "name": "coins_several_11",
+     "seconds": 0.8,
+     "mean_db": -18.5,
+     "peak_db": 0,
+     "gain_db": -1.5,
+     "source": "extracted/Wav/Coins_Several/Coins_Several_11.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_coins/coins_several_15.ogg",
+     "name": "coins_several_15",
+     "seconds": 1,
+     "mean_db": -26.7,
+     "peak_db": -6.3,
+     "gain_db": 5.3,
+     "source": "extracted/Wav/Coins_Several/Coins_Several_15.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_coins/coins_several_22.ogg",
+     "name": "coins_several_22",
+     "seconds": 0.845,
+     "mean_db": -30.3,
+     "peak_db": -6.7,
+     "gain_db": 5.7,
+     "source": "extracted/Wav/Coins_Several/Coins_Several_22.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_coins/coins_single_06.ogg",
+     "name": "coins_single_06",
+     "seconds": 0.114,
+     "mean_db": -25.6,
+     "peak_db": -5.9,
+     "gain_db": 4.9,
+     "source": "extracted/Wav/Coins_Single/Coins_Single_06.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_coins/coins_single_07.ogg",
+     "name": "coins_single_07",
+     "seconds": 0.138,
+     "mean_db": -27.3,
+     "peak_db": -5.2,
+     "gain_db": 4.2,
+     "source": "extracted/Wav/Coins_Single/Coins_Single_07.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_coins/coins_single_09.ogg",
+     "name": "coins_single_09",
+     "seconds": 0.087,
+     "mean_db": -26.2,
+     "peak_db": -4,
+     "gain_db": 3,
+     "source": "extracted/Wav/Coins_Single/Coins_Single_09.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_coins/coins_single_11.ogg",
+     "name": "coins_single_11",
+     "seconds": 0.128,
+     "mean_db": -30.2,
+     "peak_db": -8.3,
+     "gain_db": 7.3,
+     "source": "extracted/Wav/Coins_Single/Coins_Single_11.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_coins/coins_single_13.ogg",
+     "name": "coins_single_13",
+     "seconds": 0.085,
+     "mean_db": -25.2,
+     "peak_db": -4.7,
+     "gain_db": 3.7,
+     "source": "extracted/Wav/Coins_Single/Coins_Single_13.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_coins/coins_single_14.ogg",
+     "name": "coins_single_14",
+     "seconds": 0.12,
+     "mean_db": -27.2,
+     "peak_db": -4.1,
+     "gain_db": 3.1,
+     "source": "extracted/Wav/Coins_Single/Coins_Single_14.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_coins/coins_single_17.ogg",
+     "name": "coins_single_17",
+     "seconds": 0.267,
+     "mean_db": -27.1,
+     "peak_db": -4.2,
+     "gain_db": 3.2,
+     "source": "extracted/Wav/Coins_Single/Coins_Single_17.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_coins/coins_single_26.ogg",
+     "name": "coins_single_26",
+     "seconds": 0.254,
+     "mean_db": -35.8,
+     "peak_db": -9.3,
+     "gain_db": 8.3,
+     "source": "extracted/Wav/Coins_Single/Coins_Single_26.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_coins/coins_single_38.ogg",
+     "name": "coins_single_38",
+     "seconds": 0.261,
+     "mean_db": -31.9,
+     "peak_db": -8,
+     "gain_db": 7,
+     "source": "extracted/Wav/Coins_Single/Coins_Single_38.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_coins/coins_single_39.ogg",
+     "name": "coins_single_39",
+     "seconds": 0.147,
+     "mean_db": -23.9,
+     "peak_db": -5.9,
+     "gain_db": 3.9,
+     "source": "extracted/Wav/Coins_Single/Coins_Single_39.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_coins/coins_single_43.ogg",
+     "name": "coins_single_43",
+     "seconds": 0.085,
+     "mean_db": -33.6,
+     "peak_db": -10.9,
+     "gain_db": 9.9,
+     "source": "extracted/Wav/Coins_Single/Coins_Single_43.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/lrsf_coins/coins_single_44.ogg",
+     "name": "coins_single_44",
+     "seconds": 0.112,
+     "mean_db": -27.6,
+     "peak_db": -4.6,
+     "gain_db": 3.6,
+     "source": "extracted/Wav/Coins_Single/Coins_Single_44.wav",
+     "loop": false
+    }
+   ]
+  },
+  "zombies_sound_pack": {
+   "name": "Zombies Sound Pack",
+   "author": "artisticdude",
+   "url": "https://opengameart.org/content/zombies-sound-pack",
+   "via": "",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0).",
+   "files": [
+    {
+     "path": "res://assets/audio/library/zombies_sound_pack/zombie-11.ogg",
+     "name": "zombie-11",
+     "seconds": 0.481,
+     "mean_db": -13.1,
+     "peak_db": 0,
+     "gain_db": -6.9,
+     "source": "extracted/zombies/zombie-11.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/zombies_sound_pack/zombie-12.ogg",
+     "name": "zombie-12",
+     "seconds": 0.763,
+     "mean_db": -12.3,
+     "peak_db": 0,
+     "gain_db": -7.7,
+     "source": "extracted/zombies/zombie-12.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/zombies_sound_pack/zombie-13.ogg",
+     "name": "zombie-13",
+     "seconds": 0.525,
+     "mean_db": -13.5,
+     "peak_db": 0,
+     "gain_db": -6.5,
+     "source": "extracted/zombies/zombie-13.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/zombies_sound_pack/zombie-16.ogg",
+     "name": "zombie-16",
+     "seconds": 1.394,
+     "mean_db": -13.9,
+     "peak_db": 0,
+     "gain_db": -6.1,
+     "source": "extracted/zombies/zombie-16.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/zombies_sound_pack/zombie-17.ogg",
+     "name": "zombie-17",
+     "seconds": 1.524,
+     "mean_db": -12.5,
+     "peak_db": 0,
+     "gain_db": -7.5,
+     "source": "extracted/zombies/zombie-17.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/zombies_sound_pack/zombie-18.ogg",
+     "name": "zombie-18",
+     "seconds": 1.063,
+     "mean_db": -11.7,
+     "peak_db": 0,
+     "gain_db": -8.3,
+     "source": "extracted/zombies/zombie-18.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/zombies_sound_pack/zombie-2.ogg",
+     "name": "zombie-2",
+     "seconds": 0.674,
+     "mean_db": -12.3,
+     "peak_db": 0,
+     "gain_db": -7.7,
+     "source": "extracted/zombies/zombie-2.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/zombies_sound_pack/zombie-23.ogg",
+     "name": "zombie-23",
+     "seconds": 0.731,
+     "mean_db": -13.4,
+     "peak_db": 0,
+     "gain_db": -6.6,
+     "source": "extracted/zombies/zombie-23.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/zombies_sound_pack/zombie-24.ogg",
+     "name": "zombie-24",
+     "seconds": 0.295,
+     "mean_db": -11.6,
+     "peak_db": 0,
+     "gain_db": -8.4,
+     "source": "extracted/zombies/zombie-24.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/zombies_sound_pack/zombie-4.ogg",
+     "name": "zombie-4",
+     "seconds": 0.712,
+     "mean_db": -9.6,
+     "peak_db": 0,
+     "gain_db": -10.4,
+     "source": "extracted/zombies/zombie-4.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/zombies_sound_pack/zombie-5.ogg",
+     "name": "zombie-5",
+     "seconds": 0.461,
+     "mean_db": -10.7,
+     "peak_db": 0,
+     "gain_db": -9.3,
+     "source": "extracted/zombies/zombie-5.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/zombies_sound_pack/zombie-6.ogg",
+     "name": "zombie-6",
+     "seconds": 0.47,
+     "mean_db": -10,
+     "peak_db": 0,
+     "gain_db": -10,
+     "source": "extracted/zombies/zombie-6.wav",
+     "loop": false
+    }
+   ]
+  },
+  "baradari_15_monster": {
+   "name": "15 monster grunt/pain/death sounds",
+   "author": "Michel Baradari (submitted by qubodup)",
+   "url": "https://opengameart.org/content/15-monster-gruntpaindeath-sounds",
+   "via": "",
+   "license": "CC BY 3.0",
+   "credit": "\"15 monster grunt/pain/death sounds\" by Michel Baradari, https://opengameart.org/content/15-monster-gruntpaindeath-sounds - CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/) - cut/converted.",
+   "files": [
+    {
+     "path": "res://assets/audio/library/baradari_15_monster/deathb.ogg",
+     "name": "deathb",
+     "seconds": 1.123,
+     "mean_db": -22.6,
+     "peak_db": -5.2,
+     "gain_db": 2.6,
+     "source": "extracted/monster/deathb.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/baradari_15_monster/deathd.ogg",
+     "name": "deathd",
+     "seconds": 0.571,
+     "mean_db": -20.6,
+     "peak_db": -0.7,
+     "gain_db": -0.3,
+     "source": "extracted/monster/deathd.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/baradari_15_monster/deathe.ogg",
+     "name": "deathe",
+     "seconds": 0.797,
+     "mean_db": -16.9,
+     "peak_db": -3.3,
+     "gain_db": -3.1,
+     "source": "extracted/monster/deathe.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/baradari_15_monster/deathr.ogg",
+     "name": "deathr",
+     "seconds": 0.909,
+     "mean_db": -15.3,
+     "peak_db": -1.8,
+     "gain_db": -4.7,
+     "source": "extracted/monster/deathr.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/baradari_15_monster/deaths.ogg",
+     "name": "deaths",
+     "seconds": 0.596,
+     "mean_db": -17.8,
+     "peak_db": -3.1,
+     "gain_db": -2.2,
+     "source": "extracted/monster/deaths.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/baradari_15_monster/painb.ogg",
+     "name": "painb",
+     "seconds": 0.703,
+     "mean_db": -20.1,
+     "peak_db": -3.3,
+     "gain_db": 0.1,
+     "source": "extracted/monster/painb.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/baradari_15_monster/paind.ogg",
+     "name": "paind",
+     "seconds": 0.278,
+     "mean_db": -18.6,
+     "peak_db": -1.3,
+     "gain_db": -1.4,
+     "source": "extracted/monster/paind.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/baradari_15_monster/paine.ogg",
+     "name": "paine",
+     "seconds": 0.477,
+     "mean_db": -17.3,
+     "peak_db": -4.7,
+     "gain_db": -2.7,
+     "source": "extracted/monster/paine.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/baradari_15_monster/painp.ogg",
+     "name": "painp",
+     "seconds": 0.651,
+     "mean_db": -24.6,
+     "peak_db": -4.3,
+     "gain_db": 3.3,
+     "source": "extracted/monster/painp.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/baradari_15_monster/painr.ogg",
+     "name": "painr",
+     "seconds": 0.408,
+     "mean_db": -16.2,
+     "peak_db": -3.3,
+     "gain_db": -3.8,
+     "source": "extracted/monster/painr.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/baradari_15_monster/pains.ogg",
+     "name": "pains",
+     "seconds": 0.51,
+     "mean_db": -18.6,
+     "peak_db": -2.9,
+     "gain_db": -1.4,
+     "source": "extracted/monster/pains.wav",
+     "loop": false
+    }
+   ]
+  },
+  "monster_pack_vol1": {
+   "name": "Monster Sound Pack, Volume 1",
+   "author": "Ogrebane",
+   "url": "https://opengameart.org/content/monster-sound-pack-volume-1",
+   "via": "",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0).",
+   "files": [
+    {
+     "path": "res://assets/audio/library/monster_pack_vol1/monster-1.ogg",
+     "name": "monster-1",
+     "seconds": 0.603,
+     "mean_db": -18.7,
+     "peak_db": 0,
+     "gain_db": -1.3,
+     "source": "extracted/Monster-Sounds-Volume-2/Monster-1.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/monster_pack_vol1/monster-10.ogg",
+     "name": "monster-10",
+     "seconds": 0.241,
+     "mean_db": -21.4,
+     "peak_db": -2.9,
+     "gain_db": 1.4,
+     "source": "extracted/Monster-Sounds-Volume-2/monster-10.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/monster_pack_vol1/monster-2.ogg",
+     "name": "monster-2",
+     "seconds": 0.823,
+     "mean_db": -17.8,
+     "peak_db": 0,
+     "gain_db": -2.2,
+     "source": "extracted/Monster-Sounds-Volume-2/Monster-2.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/monster_pack_vol1/monster-3.ogg",
+     "name": "monster-3",
+     "seconds": 0.607,
+     "mean_db": -19.3,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/Monster-Sounds-Volume-2/Monster-3.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/monster_pack_vol1/monster-4.ogg",
+     "name": "monster-4",
+     "seconds": 0.271,
+     "mean_db": -15.4,
+     "peak_db": 0,
+     "gain_db": -4.6,
+     "source": "extracted/Monster-Sounds-Volume-2/Monster-4.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/monster_pack_vol1/monster-8.ogg",
+     "name": "monster-8",
+     "seconds": 0.211,
+     "mean_db": -15.8,
+     "peak_db": 0,
+     "gain_db": -4.2,
+     "source": "extracted/Monster-Sounds-Volume-2/Monster-8.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/monster_pack_vol1/monster-9.ogg",
+     "name": "monster-9",
+     "seconds": 0.322,
+     "mean_db": -20.7,
+     "peak_db": -0.3,
+     "gain_db": -0.7,
+     "source": "extracted/Monster-Sounds-Volume-2/monster-9.wav",
+     "loop": false
+    }
+   ]
+  },
+  "chain_winch": {
+   "name": "Chain winch sounds",
+   "author": "bart",
+   "url": "https://opengameart.org/content/chain-winch-sounds",
+   "via": "",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0). Credit appreciated: bart",
+   "files": [
+    {
+     "path": "res://assets/audio/library/chain_winch/extracted_winch_-_marker_2.ogg",
+     "name": "extracted_winch_-_marker_2",
+     "seconds": 0.872,
+     "mean_db": -23.6,
+     "peak_db": -3.4,
+     "gain_db": 2.4,
+     "source": "extracted/winch - Marker #2.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/chain_winch/winch_-_marker_3.ogg",
+     "name": "winch_-_marker_3",
+     "seconds": 0.872,
+     "mean_db": -23.6,
+     "peak_db": -3.4,
+     "gain_db": 2.4,
+     "source": "extracted/winch - Marker #3.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/chain_winch/winch_-_marker_5.ogg",
+     "name": "winch_-_marker_5",
+     "seconds": 1.274,
+     "mean_db": -23.8,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/winch - Marker #5.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/chain_winch/winch_-_marker_7.ogg",
+     "name": "winch_-_marker_7",
+     "seconds": 1.724,
+     "mean_db": -26.7,
+     "peak_db": -3,
+     "gain_db": 2,
+     "source": "extracted/winch - Marker #7.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/chain_winch/winch_-_marker_9.ogg",
+     "name": "winch_-_marker_9",
+     "seconds": 2.498,
+     "mean_db": -34.1,
+     "peak_db": -15.8,
+     "gain_db": 14.1,
+     "source": "extracted/winch - Marker #9.wav",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/chain_winch/winch_-_region_1.ogg",
+     "name": "winch_-_region_1",
+     "seconds": 0.872,
+     "mean_db": -23.6,
+     "peak_db": -3.4,
+     "gain_db": 2.4,
+     "source": "extracted/winch - Region #1.wav",
+     "loop": false
+    }
+   ]
+  },
+  "wind1": {
+   "name": "wind1",
+   "author": "Luke.RUSTLTD",
+   "url": "https://opengameart.org/content/wind1",
+   "via": "",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0).",
+   "files": [
+    {
+     "path": "res://assets/audio/library/wind1/wind2_loop.ogg",
+     "name": "wind2_loop",
+     "seconds": 40,
+     "mean_db": -42.3,
+     "peak_db": -25.8,
+     "gain_db": 18,
+     "source": "wind2.wav",
+     "loop": true
+    },
+    {
+     "path": "res://assets/audio/library/wind1/wind3_loop.ogg",
+     "name": "wind3_loop",
+     "seconds": 8,
+     "mean_db": -42.6,
+     "peak_db": -27.2,
+     "gain_db": 18,
+     "source": "wind3.wav",
+     "loop": true
+    },
+    {
+     "path": "res://assets/audio/library/wind1/wind4_s01.ogg",
+     "name": "wind4_s01",
+     "seconds": 4,
+     "mean_db": -39.1,
+     "peak_db": -24.8,
+     "gain_db": 18,
+     "source": "wind4.wav#take1",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/wind1/wind5_s01.ogg",
+     "name": "wind5_s01",
+     "seconds": 4,
+     "mean_db": -38.4,
+     "peak_db": -24.2,
+     "gain_db": 18,
+     "source": "wind5.wav#take1",
+     "loop": false
+    }
+   ]
+  },
+  "deep_monster_roar": {
+   "name": "CC0 Deep Monster Roar",
+   "author": "trazzz123",
+   "url": "https://opengameart.org/content/cc0-deep-monster-roar",
+   "via": "",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0).",
+   "files": [
+    {
+     "path": "res://assets/audio/library/deep_monster_roar/monster_roar.ogg",
+     "name": "monster_roar",
+     "seconds": 3,
+     "mean_db": -11.3,
+     "peak_db": 0,
+     "gain_db": -8.7,
+     "source": "monster_roar.wav",
+     "loop": false
+    }
+   ]
+  },
+  "door_open_close_set": {
+   "name": "Door Open, Door Close Set",
+   "author": "qubodup",
+   "url": "https://opengameart.org/content/door-open-door-close-set",
+   "via": "",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0).",
+   "files": [
+    {
+     "path": "res://assets/audio/library/door_open_close_set/qubodup-doorclose01.ogg",
+     "name": "qubodup-doorclose01",
+     "seconds": 0.846,
+     "mean_db": -23.7,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/qubodup-DoorSet/flac/qubodup-DoorClose01.flac",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/door_open_close_set/qubodup-doorclose02.ogg",
+     "name": "qubodup-doorclose02",
+     "seconds": 0.52,
+     "mean_db": -21.1,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/qubodup-DoorSet/flac/qubodup-DoorClose02.flac",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/door_open_close_set/qubodup-dooropen01.ogg",
+     "name": "qubodup-dooropen01",
+     "seconds": 0.664,
+     "mean_db": -22.5,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/qubodup-DoorSet/flac/qubodup-DoorOpen01.flac",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/door_open_close_set/qubodup-dooropen05.ogg",
+     "name": "qubodup-dooropen05",
+     "seconds": 0.485,
+     "mean_db": -19.5,
+     "peak_db": 0,
+     "gain_db": -1,
+     "source": "extracted/qubodup-DoorSet/flac/qubodup-DoorOpen05.flac",
+     "loop": false
+    },
+    {
+     "path": "res://assets/audio/library/door_open_close_set/qubodup-dooropen08.ogg",
+     "name": "qubodup-dooropen08",
+     "seconds": 0.43,
+     "mean_db": -18.9,
+     "peak_db": 0,
+     "gain_db": -1.1,
+     "source": "extracted/qubodup-DoorSet/flac/qubodup-DoorOpen08.flac",
+     "loop": false
+    }
+   ]
   }
  },
  "music": {
@@ -3744,6 +9374,174 @@
    "mean_db": -15.1,
    "peak_db": -1.6,
    "gain_db": -4.9
+  },
+  "krypta_explore_in_darkness": {
+   "name": "Essentials Pack for Fantasy Games - LOOP BOX #3",
+   "author": "Of Far Different Nature",
+   "url": "https://opengameart.org/content/essentials-pack-for-fantasy-games-loop-box-3-orchestral-soundtracks-for-rpgs-and-adventures",
+   "license": "CC BY 4.0",
+   "credit": "\"Essentials Pack for Fantasy Games - LOOP BOX #3: Orchestral soundtracks for RPGs and Adventures\" by Of Far Different Nature (https://fardifferent.carrd.co/), https://opengameart.org/content/essentials-pack-for-fantasy-games-loop-box-3-orchestral-soundtracks-for-rpgs-and-adventures - CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/) - cut/converted.",
+   "kind": "music",
+   "source": "extracted/Of Far Different Nature - In Darkness [v2] (CC-BY).ogg",
+   "path": "res://assets/audio/music/krypta_explore_in_darkness.ogg",
+   "seconds": 128,
+   "mean_db": -10.6,
+   "peak_db": 0,
+   "gain_db": -9.4
+  },
+  "krypta_combat_clash": {
+   "name": "Essentials Pack for Fantasy Games - LOOP BOX #3",
+   "author": "Of Far Different Nature",
+   "url": "https://opengameart.org/content/essentials-pack-for-fantasy-games-loop-box-3-orchestral-soundtracks-for-rpgs-and-adventures",
+   "license": "CC BY 4.0",
+   "credit": "\"Essentials Pack for Fantasy Games - LOOP BOX #3: Orchestral soundtracks for RPGs and Adventures\" by Of Far Different Nature (https://fardifferent.carrd.co/), https://opengameart.org/content/essentials-pack-for-fantasy-games-loop-box-3-orchestral-soundtracks-for-rpgs-and-adventures - CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/) - cut/converted.",
+   "kind": "music",
+   "source": "extracted/Of Far Different Nature - Clash (CC-BY).ogg",
+   "path": "res://assets/audio/music/krypta_combat_clash.ogg",
+   "seconds": 16,
+   "mean_db": -11.3,
+   "peak_db": 0,
+   "gain_db": -8.7
+  },
+  "krypta_combat_obscurium": {
+   "name": "Essentials Pack for Fantasy Games - LOOP BOX #3",
+   "author": "Of Far Different Nature",
+   "url": "https://opengameart.org/content/essentials-pack-for-fantasy-games-loop-box-3-orchestral-soundtracks-for-rpgs-and-adventures",
+   "license": "CC BY 4.0",
+   "credit": "\"Essentials Pack for Fantasy Games - LOOP BOX #3: Orchestral soundtracks for RPGs and Adventures\" by Of Far Different Nature (https://fardifferent.carrd.co/), https://opengameart.org/content/essentials-pack-for-fantasy-games-loop-box-3-orchestral-soundtracks-for-rpgs-and-adventures - CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/) - cut/converted.",
+   "kind": "music",
+   "source": "extracted/Of Far Different Nature - Obscurium (CC-BY).ogg",
+   "path": "res://assets/audio/music/krypta_combat_obscurium.ogg",
+   "seconds": 21.333,
+   "mean_db": -8.2,
+   "peak_db": 0,
+   "gain_db": -11.8
+  },
+  "krypta_boss_final_boss_lair": {
+   "name": "Final_Boss_Lair",
+   "author": "Hitctrl",
+   "url": "https://opengameart.org/content/finalbosslair",
+   "license": "CC BY 3.0",
+   "credit": "\"Final_Boss_Lair\" by Hitctrl, https://opengameart.org/content/finalbosslair - CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/) - cut/converted.",
+   "kind": "music",
+   "source": "Final_Boss_Lair.ogg",
+   "path": "res://assets/audio/music/krypta_boss_final_boss_lair.ogg",
+   "seconds": 213.394,
+   "mean_db": -16.5,
+   "peak_db": -1.2,
+   "gain_db": -3.5
+  },
+  "frost_explore_ice_cave": {
+   "name": "Ice Cave",
+   "author": "TAD",
+   "url": "https://opengameart.org/content/ice-cave",
+   "license": "CC BY 4.0",
+   "credit": "\"Ice Cave\" by TAD, https://opengameart.org/content/ice-cave - CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/) - cut/converted.",
+   "kind": "music",
+   "source": "Ice Cave_0.ogg",
+   "path": "res://assets/audio/music/frost_explore_ice_cave.ogg",
+   "seconds": 64.052,
+   "mean_db": -22,
+   "peak_db": -6.3,
+   "gain_db": 2
+  },
+  "frost_combat_cold_sanctuary": {
+   "name": "Cold Sanctuary (RPG Orchestral Essentials)",
+   "author": "Jonathan Shaw (InspectorJ)",
+   "url": "https://opengameart.org/content/cold-sanctuary-rpg-orchestral-essentials-dungeon-music",
+   "license": "CC BY 3.0",
+   "credit": "\"Cold Sanctuary\" Composed by Jonathan Shaw (www.jshaw.co.uk), https://opengameart.org/content/cold-sanctuary-rpg-orchestral-essentials-dungeon-music - CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/) - cut/converted.",
+   "kind": "music",
+   "source": "extracted/Cold Sanctuary MP3.mp3",
+   "path": "res://assets/audio/music/frost_combat_cold_sanctuary.ogg",
+   "seconds": 123.455,
+   "mean_db": -16.3,
+   "peak_db": -0.9,
+   "gain_db": -3.7
+  },
+  "hell_explore_heated_lands": {
+   "name": "Heated Lands (RPG Orchestral Essentials)",
+   "author": "Jonathan Shaw (InspectorJ)",
+   "url": "https://opengameart.org/content/heated-lands-rpg-orchestral-essentials-dungeon-music",
+   "license": "CC BY 3.0",
+   "credit": "\"Heated Lands\" Composed by Jonathan Shaw (www.jshaw.co.uk), https://opengameart.org/content/heated-lands-rpg-orchestral-essentials-dungeon-music - CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/) - cut/converted.",
+   "kind": "music",
+   "source": "extracted/Heated Lands - MP3.mp3",
+   "path": "res://assets/audio/music/hell_explore_heated_lands.ogg",
+   "seconds": 188.421,
+   "mean_db": -15,
+   "peak_db": 0,
+   "gain_db": -5
+  },
+  "hell_combat_9th_circle": {
+   "name": "The 9th Circle",
+   "author": "Joth",
+   "url": "https://opengameart.org/content/the-9th-circle",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0). Credit to Joth appreciated",
+   "kind": "music",
+   "source": "The 9th Circle V2.mp3",
+   "path": "res://assets/audio/music/hell_combat_9th_circle.ogg",
+   "seconds": 170.736,
+   "mean_db": -16.6,
+   "peak_db": -0.2,
+   "gain_db": -3.4
+  },
+  "amb_krypta_dark_cavern": {
+   "name": "Dark Cavern Ambient",
+   "author": "Paul Wortmann",
+   "url": "https://opengameart.org/content/dark-cavern-ambient",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0).",
+   "kind": "ambience",
+   "source": "dark_cavern_ambient_002.ogg",
+   "path": "res://assets/audio/music/amb_krypta_dark_cavern.ogg",
+   "seconds": 119.998,
+   "mean_db": -14.9,
+   "peak_db": 0,
+   "gain_db": -5.1
+  },
+  "amb_frost_wind": {
+   "name": "wind1",
+   "author": "Luke.RUSTLTD",
+   "url": "https://opengameart.org/content/wind1",
+   "license": "CC0 1.0",
+   "credit": "Not required (CC0).",
+   "kind": "ambience",
+   "source": "wind1.wav",
+   "path": "res://assets/audio/music/amb_frost_wind.ogg",
+   "seconds": 45,
+   "mean_db": -42.1,
+   "peak_db": -25.6,
+   "gain_db": 18
+  },
+  "amb_hell_lava": {
+   "name": "Lava loop",
+   "author": "Blender Foundation - Yo Frankie! (submitted by Lamoot)",
+   "url": "https://opengameart.org/content/lava-loop",
+   "license": "CC BY 3.0",
+   "credit": "\"Lava loop\" by Blender Foundation - Yo Frankie! (submitted by Lamoot), https://opengameart.org/content/lava-loop - CC BY 3.0 (https://creativecommons.org/licenses/by/3.0/) - cut/converted.",
+   "kind": "ambience",
+   "source": "extracted/LavaLoop.wav",
+   "path": "res://assets/audio/music/amb_hell_lava.ogg",
+   "seconds": 19.242,
+   "mean_db": -22.5,
+   "peak_db": -2.8,
+   "gain_db": 1.8
+  },
+  "amb_hell_evil_temple": {
+   "name": "Evil temple Ambiance loop",
+   "author": "Brandon Morris (submitted by HaelDB)",
+   "url": "https://opengameart.org/content/evil-temple-ambiance-loop",
+   "license": "CC0 1.0 (dual-licensed page, CC0 chosen)",
+   "credit": "Not required (CC0).",
+   "kind": "ambience",
+   "source": "evil_temple.ogg",
+   "path": "res://assets/audio/music/amb_hell_evil_temple.ogg",
+   "seconds": 60,
+   "mean_db": -21.6,
+   "peak_db": -5.8,
+   "gain_db": 1.6
   }
  }
 }

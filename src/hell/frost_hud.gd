@@ -55,21 +55,36 @@ static func goals(g: Node) -> Array:
 	return out
 
 
-## Notes goals as they finish: a main goal plays a sound, every goal shows a
-## short note ("Auftrag erfüllt: ..."). Goals done when the floor starts stay quiet.
-## The list itself is on the pause menu's quest page. Returns the goals.
+## Notes goals as they finish: a main goal plays a sound, one finished goal
+## shows "Auftrag erfüllt: ...", several at once one "n Ziele erfüllt". The
+## first look at a floor (a new floor, a debug jump) takes the goals already
+## done without a word. The list itself is on the pause menu's quest page.
+## Returns the goals.
 static func track(g: Node) -> Array:
 	var list := goals(g)
+	var first: bool = not g.state.has("goal_done")
 	var seen: Dictionary = g.state.get("goal_done", {})
+	var fresh: Array = []
 	for it: Dictionary in list:
 		if it.done and not seen.has(it.text):
 			seen[it.text] = g.state.t
-			if float(g.state.t) > 0.5:
-				if it.main:
-					g._sound("puzzle_solved")
-				g._toast("Auftrag erfüllt: " + str(it.text))
+			if not first:
+				fresh.append(it)
 	g.state.goal_done = seen
+	if not fresh.is_empty():
+		if fresh.any(func(it: Dictionary) -> bool: return bool(it.main)):
+			g._sound("puzzle_solved")
+		g._toast(("Auftrag erfüllt: " + str(fresh[0].text)) if fresh.size() == 1 else ("%d Ziele erfüllt" % fresh.size()))
 	return list
+
+
+## Takes every goal done right now as seen, silently (a jump into the boss room).
+static func hush(g: Node) -> void:
+	var seen: Dictionary = g.state.get("goal_done", {})
+	for it: Dictionary in goals(g):
+		if it.done:
+			seen[it.text] = g.state.t
+	g.state.goal_done = seen
 
 
 ## The mission list under the minimap (no longer drawn by the hell, kept for other
@@ -109,21 +124,28 @@ static func mission(g: Node, h: Control, size: Vector2) -> void:
 
 # ---------- banner ----------
 
-## The room or level banner: a plate that slides down, holds and fades.
+## True while the room banner is on screen.
+static func banner_up(g: Node) -> bool:
+	return float(g.state.banner.t) < HudKit.rule("banner_time", 2.0)
+
+
+## The room or level banner: a plate that slides down, holds and fades, all
+## within banner_time (ui_hud_style.json "rules").
 static func banner(g: Node, h: Control, size: Vector2, y: float) -> void:
 	var b: Dictionary = g.state.banner
 	var t: float = b.t
-	var a := clampf(t / 0.35, 0.0, 1.0) if t < 2.6 else maxf(0.0, 1.0 - (t - 2.6) / 0.6)
-	var slide := (1.0 - clampf(t / 0.35, 0.0, 1.0)) * -30.0
+	var total := HudKit.rule("banner_time", 2.0)
+	var fade_in := maxf(0.05, HudKit.rule("banner_in", 0.3))
+	var a := clampf(t / fade_in, 0.0, 1.0) * clampf((total - t) / maxf(0.05, HudKit.rule("banner_out", 0.4)), 0.0, 1.0)
+	var slide := (1.0 - clampf(t / fade_in, 0.0, 1.0)) * -30.0
 	HudKit.banner(h, FONT, size, y + slide, str(b.text), String(b.sub), a)
 
 
 # ---------- status ----------
 
 ## The status sheet (C / Tab): who the hero is and what the numbers are now.
+## The card list only in a run that hands out level-up cards.
 static func status(g: Node, h: Control, size: Vector2) -> void:
-	var r := Rect2(40, 160, 420, 400)
-	frame(h, r)
 	var rel: Dictionary = RelicKit.wielded(g)
 	var rate: float = float(g.state.rate) * CardKit.rate_mult(g)
 	var atk: Dictionary = rel.get("ball", rel.get("attack", {}))
@@ -131,36 +153,41 @@ static func status(g: Node, h: Control, size: Vector2) -> void:
 	if not atk.is_empty():
 		rate = float(atk.cooldown) * CardKit.rate_mult(g)
 	var cfg: Dictionary = g.theme.leveling
-	# the life as the bar shows it: hp minus what a poison or burn has already taken (hp_f), in half hearts
+	# the life as the bar shows it: hp minus what a poison or burn has already taken (hp_f)
 	var hp_f := clampf(float(g.state.get("hp_f", g.state.hp)), 0.0, float(g.state.max_hp))
 	var rows := [
 		["Klasse", str(g.hero.get("name", "-"))],
 		["Waffe", str(rel.get("name", g.weapon.get("name", "-")))],
-		["Level", "%d  (%d / %d EP)" % [int(g.state.level), int(g.state.exp), HeroKit.need(cfg, int(g.state.level))]],
-		["Leben", "%d / %d LP" % [HudKit.life_shown(int(g.state.hp), hp_f), int(g.state.max_hp)]],
+		["Stufe", "%d  (%d / %d EP)" % [int(g.state.level), int(g.state.exp), HeroKit.need(cfg, int(g.state.level))]],
+		["LP", "%d / %d" % [HudKit.life_shown(int(g.state.hp), hp_f), int(g.state.max_hp)]],
 		["Schaden", "%.1f je Treffer" % dmg],
 		["Angriffe", "%.1f pro Sekunde" % (1.0 / maxf(0.05, rate))],
 		["Lauftempo", "%d" % int(float(g.hero.get("speed", 300)) * CardKit.speed_mult(g) * float(g.state.speed_mul))],
-		["Eissplitter", str(int(g.state.gems))]]
+		[g.say("Runensteine"), str(int(g.state.gems))]]
+	var cards := CardKit.offers_cards(g)
+	var row_h := 28.0
+	var r := Rect2(40, 200, 440, 70.0 + rows.size() * row_h + (40.0 + 6 * 22.0 if cards else 0.0) + 34.0)
+	frame(h, r)
 	g._text(h, "STATUS", Vector2(r.position.x + 20, r.position.y + 34), 20, HudStyle.color("accent"))
 	var y := r.position.y + 70.0
 	for row: Array in rows:
-		g._text(h, row[0], Vector2(r.position.x + 20, y), 14, Color(HudStyle.color("text_dim"), 0.9))
-		g._text(h, row[1], Vector2(r.position.x + 170, y), 14, HudStyle.color("text"))
-		y += 26.0
-	g._text(h, "KARTEN", Vector2(r.position.x + 20, y + 10), 16, HudStyle.color("accent"))
-	y += 34.0
-	var ups: Dictionary = g.state.get("upgrades", {})
-	var names: Array = []
-	for c: Dictionary in CardKit._all(g):
-		if ups.has(str(c.id)):
-			names.append("%s %d/%d" % [c.name, int(ups[c.id]), int(c.max)])
-	if names.is_empty():
-		names = ["noch keine"]
-	for n: String in names.slice(0, 6):
-		g._text(h, n, Vector2(r.position.x + 20, y), 12, HudStyle.color("text"))
-		y += 20.0
-	g._text(h, "C / Tab schließt", Vector2(r.position.x + 20, r.end.y - 14), 12, Color(HudStyle.color("text"), 0.5))
+		g._text(h, str(row[0]), Vector2(r.position.x + 20, y), 16, Color(HudStyle.color("text_dim"), 0.9))
+		g._text(h, HudKit.ellipsis(FONT, str(row[1]), 16, r.size.x - 200.0), Vector2(r.position.x + 180, y), 16, HudStyle.color("text"))
+		y += row_h
+	if cards:
+		g._text(h, "KARTEN", Vector2(r.position.x + 20, y + 10), 16, HudStyle.color("accent"))
+		y += 40.0
+		var ups: Dictionary = g.state.get("upgrades", {})
+		var names: Array = []
+		for c: Dictionary in CardKit._all(g):
+			if ups.has(str(c.id)):
+				names.append("%s %d/%d" % [c.name, int(ups[c.id]), int(c.max)])
+		if names.is_empty():
+			names = ["noch keine"]
+		for n: String in names.slice(0, 6):
+			g._text(h, n, Vector2(r.position.x + 20, y), 16, HudStyle.color("text"))
+			y += 22.0
+	g._text(h, "C / Tab / Esc schließt", Vector2(r.position.x + 20, r.end.y - 14), 16, Color(HudStyle.color("text"), 0.5))
 
 
 # ---------- level-up cards ----------
@@ -180,7 +207,7 @@ static func _card_rects(g: Node, size: Vector2) -> Array:
 ## The three cards of a level-up: name, effect, its step, key 7/8/9 or a click.
 static func cards(g: Node, h: Control, size: Vector2) -> void:
 	var rects := _card_rects(g, size)
-	g._text(h, "LEVEL %d · WÄHLE EINE VERBESSERUNG" % int(g.state.level), Vector2(0, size.y / 2.0 - 60), 20, HudStyle.color("accent"), size.x)
+	g._text(h, "STUFE %d · WÄHLE EINE VERBESSERUNG" % int(g.state.level), Vector2(0, size.y / 2.0 - 60), 20, HudStyle.color("accent"), size.x)
 	var mouse := h.get_local_mouse_position()
 	for i in range(rects.size()):
 		var c: Dictionary = g.state.offer[i]

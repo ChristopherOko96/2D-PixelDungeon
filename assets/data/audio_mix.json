@@ -1,28 +1,63 @@
 {
-  "_note": "The mix (src/audio/audio_mix.gd). buses: created at start under Master with a base level in dB; the player's sliders scale them (Gesamt = Master, Musik = Music and Ambience, Effekte = SFX and UI). Focus is a part of SFX for the sounds you must never miss (your hero is hit, perks, stingers); the Music and Ambience buses duck under it (sidechain compressor: threshold in dB, ratio, attack in microseconds, release in ms). limiter keeps the Master below ceiling_db. categories: every sound event names one; it decides the bus and a level in dB, so sounds sit at different heights (your hero first, enemies and steps lower). Final level of a sound = base_db + category volume_db + event volume_db + the file's gain_db from audio_library.json.",
-  "schema_version": 1,
+  "_note": "The mix (src/audio/audio_mix.gd; docs/KLANG-KONZEPT.de.md section 3). buses: created at start in this order under Master (a bus only sends to one listed before it); volume_db is the bus base level, the player's sliders scale them (Gesamt = Master, Musik = Music and Ambience, Effekte = SFX and UI). Levels of the sound groups stay on the categories (bus base 0 dB except Far), so a category moved to its own bus keeps its old height. effects: added once per bus by id (reverb, lowpass, highpass, compressor); the reverbs take their room from spaces[world] when a story world loads (dry 1, wet per bus); the effects with id muffle are the low-pass the hero's gas or steam drives (filters.gas, cutoff from open_hz towards the gas's Hz by the vision value 0..1). ducks: sidechain compressors - every listed bus gets quieter while the key bus sounds (threshold dB, ratio; depth noted for a key at about -12 dBFS). limiter keeps the Master below ceiling_db. Loudness target in the game (PC): -16 LUFS integrated over a 10-minute session, true peak <= -1 dBTP; the files are levelled by audio_library.json gain_db (sound designer). categories: every sound event names one; it decides the bus and a level in dB. Final level of a sound = base_db + category volume_db + event volume_db + the file's gain_db.",
+  "schema_version": 2,
   "base_db": -6,
   "buses": [
-    {"name": "Music", "send": "Master", "volume_db": -7},
-    {"name": "Ambience", "send": "Master", "volume_db": -12},
-    {"name": "SFX", "send": "Master", "volume_db": 0},
-    {"name": "Focus", "send": "SFX", "volume_db": 0},
-    {"name": "UI", "send": "Master", "volume_db": -3}
+    {"name": "Music", "send": "Master", "volume_db": -7, "effects": [{"id": "muffle", "type": "lowpass", "cutoff_hz": 20000, "resonance": 0.6, "enabled": false}]},
+    {"name": "Ambience", "send": "Master", "volume_db": -12, "effects": [{"id": "muffle", "type": "lowpass", "cutoff_hz": 20000, "resonance": 0.6, "enabled": false}]},
+    {"name": "SFX", "send": "Master", "volume_db": 0, "effects": [{"id": "hipass", "type": "highpass", "cutoff_hz": 30}, {"id": "glue", "type": "compressor", "threshold_db": -14, "ratio": 2, "attack_us": 5000, "release_ms": 150}]},
+    {"name": "Focus", "send": "SFX", "volume_db": 0, "effects": [{"id": "reverb", "type": "reverb", "wet": 0.0}]},
+    {"name": "UI", "send": "Master", "volume_db": -3},
+    {"name": "Voices", "send": "SFX", "volume_db": 0, "effects": [{"id": "voice_comp", "type": "compressor", "threshold_db": -18, "ratio": 3, "attack_us": 3000, "release_ms": 120}, {"id": "reverb", "type": "reverb", "wet": 0.0}]},
+    {"name": "Room", "send": "SFX", "volume_db": 0, "effects": [{"id": "reverb", "type": "reverb", "wet": 0.0}, {"id": "muffle", "type": "lowpass", "cutoff_hz": 20000, "resonance": 0.6, "enabled": false}]},
+    {"name": "Hero", "send": "Room", "volume_db": 0},
+    {"name": "Boss", "send": "Room", "volume_db": 0},
+    {"name": "Enemy", "send": "Room", "volume_db": 0},
+    {"name": "Impact", "send": "Room", "volume_db": 0},
+    {"name": "World", "send": "Room", "volume_db": 0},
+    {"name": "Step", "send": "Room", "volume_db": 0},
+    {"name": "Idle", "send": "Room", "volume_db": 0},
+    {"name": "Debris", "send": "Room", "volume_db": 0, "effects": [{"id": "debris_comp", "type": "compressor", "threshold_db": -26, "ratio": 4, "attack_us": 1000, "release_ms": 120}, {"id": "debris_lp", "type": "lowpass", "cutoff_hz": 9000, "resonance": 0.5}]},
+    {"name": "Far", "send": "Room", "volume_db": -3, "effects": [{"id": "far_lp", "type": "lowpass", "cutoff_hz": 3500, "resonance": 0.5}, {"id": "reverb", "type": "reverb", "wet": 0.0}]}
   ],
-  "duck": {"buses": ["Music", "Ambience"], "key": "Focus", "threshold_db": -30, "ratio": 6, "attack_us": 2000, "release_ms": 450},
+  "ducks": [
+    {"key": "Focus", "buses": ["Music", "Ambience", "Debris"], "threshold_db": -24, "ratio": 2, "attack_us": 2000, "release_ms": 450, "depth_note": "about -6 dB"},
+    {"key": "Focus", "buses": ["Room"], "threshold_db": -24, "ratio": 1.33, "attack_us": 1000, "release_ms": 250, "depth_note": "about -3 dB"},
+    {"key": "Boss", "buses": ["Enemy", "Idle", "Debris", "Music"], "threshold_db": -24, "ratio": 1.33, "attack_us": 5000, "release_ms": 400, "depth_note": "about -3 dB"},
+    {"key": "Voices", "buses": ["Step", "Debris"], "threshold_db": -24, "ratio": 1.33, "attack_us": 2000, "release_ms": 200, "depth_note": "about -3 dB"}
+  ],
+  "spaces": {
+    "krypta": {"label": "Steingewölbe, Nachhall ca. 1,4 s, Höhen gedämpft", "room_size": 0.55, "damping": 0.65, "spread": 0.8, "hipass": 0.15, "predelay_msec": 20, "predelay_feedback": 0.25, "wet": {"Room": 0.20, "Voices": 0.08, "Focus": 0.05, "Far": 0.10}},
+    "frost": {"label": "Eishalle, Nachhall ca. 2,2 s, hell", "room_size": 0.75, "damping": 0.15, "spread": 1.0, "hipass": 0.25, "predelay_msec": 40, "predelay_feedback": 0.35, "wet": {"Room": 0.24, "Voices": 0.10, "Focus": 0.06, "Far": 0.10}},
+    "hell": {"label": "Kaverne, Nachhall ca. 2,8 s, dunkel", "room_size": 0.90, "damping": 0.75, "spread": 0.9, "hipass": 0.05, "predelay_msec": 55, "predelay_feedback": 0.30, "wet": {"Room": 0.22, "Voices": 0.10, "Focus": 0.06, "Far": 0.10}}
+  },
+  "filters": {
+    "open_hz": 20000,
+    "gas": {
+      "steam": {"buses": {"Room": 2200, "Ambience": 2200, "Music": 4000}},
+      "poison": {"buses": {"Room": 1500, "Ambience": 1500, "Music": 3000}},
+      "default": {"buses": {"Room": 1800, "Ambience": 1800, "Music": 3500}}
+    }
+  },
   "limiter": {"ceiling_db": -1.0},
+  "loudness": {"target_lufs_integrated": -16, "true_peak_dbtp": -1, "lra_lu": [8, 12]},
   "sliders": {"volume": ["Master"], "music": ["Music", "Ambience"], "effects": ["SFX", "UI"]},
   "categories": {
     "focus": {"bus": "Focus", "volume_db": 0, "label": "Wichtig (eigener Held getroffen, Perks)"},
     "stinger": {"bus": "Focus", "volume_db": -3, "label": "Musik-Signale (Boss, Raum frei, Niederlage)"},
-    "hero": {"bus": "SFX", "volume_db": -3, "label": "Eigene Angriffe und Fähigkeiten"},
-    "impact": {"bus": "SFX", "volume_db": -4, "label": "Treffer an Gegnern"},
-    "enemy": {"bus": "SFX", "volume_db": -7, "label": "Gegner greifen an, sterben"},
-    "boss": {"bus": "SFX", "volume_db": -2, "label": "Boss-Angriffe"},
-    "world": {"bus": "SFX", "volume_db": -7, "label": "Türen, Kisten, Truhen, Mauern"},
-    "ally": {"bus": "SFX", "volume_db": -10, "label": "Mitspieler"},
-    "step": {"bus": "SFX", "volume_db": -13, "label": "Schritte"},
-    "idle": {"bus": "SFX", "volume_db": -15, "label": "Gegner nebenbei (Klappern, Stöhnen)"},
+    "voice": {"bus": "Voices", "volume_db": -2, "label": "Stimmen (Held, Begleiter, Bosse, Kreaturen)"},
+    "hero": {"bus": "Hero", "volume_db": -3, "label": "Eigene Angriffe und Fähigkeiten"},
+    "pet": {"bus": "Hero", "volume_db": -6, "label": "Begleiter-Fähigkeiten"},
+    "impact": {"bus": "Impact", "volume_db": -4, "label": "Treffer an Gegnern"},
+    "enemy": {"bus": "Enemy", "volume_db": -7, "label": "Gegner greifen an, sterben"},
+    "boss": {"bus": "Boss", "volume_db": -2, "label": "Boss-Angriffe"},
+    "world": {"bus": "World", "volume_db": -7, "label": "Türen, Kisten, Truhen, Mauern"},
+    "ally": {"bus": "Hero", "volume_db": -10, "label": "Mitspieler"},
+    "step": {"bus": "Step", "volume_db": -13, "label": "Schritte"},
+    "idle": {"bus": "Idle", "volume_db": -15, "label": "Gegner nebenbei (Klappern, Stöhnen)"},
+    "debris": {"bus": "Debris", "volume_db": -14, "label": "Partikel und Trümmer"},
+    "amb_point": {"bus": "Ambience", "volume_db": 0, "label": "Ambience-Punktquellen (Tropfen, Knarzen)"},
+    "ambience": {"bus": "Ambience", "volume_db": 0, "label": "Ambience (Betten, Punktquellen, Pfützen)"},
     "ui": {"bus": "UI", "volume_db": 0, "label": "Menüs"}
   }
 }

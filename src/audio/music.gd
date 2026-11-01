@@ -7,6 +7,11 @@ extends Node
 ## does not flip between waves. The ambience (wind, drips) lies underneath on
 ## its own bus where the state asks for it. Music and Ambience duck under the
 ## Focus bus (audio_mix.gd), e.g. when your hero is hit.
+## Story worlds (set_world: "krypta", "frost", "hell"): worlds[world] names
+## its own explore, combat and boss tracks and its ambience bed; a world track
+## that does not exist yet (no library entry or file) falls back to the shared
+## states and ambience, so the files can arrive one by one. A track is one
+## library id or a list (the first that exists plays).
 
 const AudioMix = preload("res://src/audio/audio_mix.gd")
 const TABLE_PATH := "res://assets/data/audio_music.json"
@@ -22,6 +27,8 @@ static var hush := false
 var state := ""
 ## Track id that plays now ("" = none).
 var track := ""
+## The story world whose tracks play ("" = the shared states only).
+var world := ""
 var table: Dictionary = {}
 var library: Dictionary = {}
 var _players: Array[AudioStreamPlayer] = []
@@ -87,6 +94,29 @@ func request(next: String) -> void:
 	_wanted = next
 
 
+## Switches to story world `id` (audio_music.json worlds); the playing state
+## crossfades to the world's own track and ambience when they exist.
+func set_world(id: String) -> void:
+	if id == world: return
+	world = id
+	if not state.is_empty(): _enter(state)
+
+
+## The spec of `next` in the current world (its track exists), else the shared state's.
+func _spec(next: String) -> Dictionary:
+	var own: Variant = (table.get("worlds", {}).get(world, {}) as Dictionary).get(next)
+	if own is Dictionary and _pick((own as Dictionary).get("track", "")) != "": return own
+	return table.get("states", {}).get(next, {})
+
+
+## The first playable library id of a track entry (a String or a list), "" when none.
+func _pick(entry: Variant) -> String:
+	var ids: Array = entry if entry is Array else [entry]
+	for id: Variant in ids:
+		if str(id) != "" and _stream(str(id)) != null: return str(id)
+	return ""
+
+
 func _process(delta: float) -> void:
 	if _loaded_version != table_version: reload()
 	var next := "menu" if hush else _wanted
@@ -108,9 +138,9 @@ func _calmer(next: String) -> bool:
 
 func _enter(next: String) -> void:
 	state = next
-	var spec: Dictionary = table.get("states", {}).get(next, {})
+	var spec := _spec(next)
 	var fade := float(table.get("crossfade", 1.8))
-	var wanted := "" if hush else str(spec.get("track", ""))
+	var wanted := "" if hush else _pick(spec.get("track", ""))
 	var level := _level(wanted, float(spec.get("volume_db", 0.0)))
 	if wanted == track and not wanted.is_empty():
 		_fade(_players[_current], level, fade)
@@ -129,8 +159,10 @@ func _enter(next: String) -> void:
 
 
 func _set_ambience(on: bool, fade: float) -> void:
-	var spec: Dictionary = table.get("ambience", {})
-	var id := str(spec.get("track", ""))
+	# the world's own bed when it exists, else the shared one
+	var own: Variant = (table.get("worlds", {}).get(world, {}) as Dictionary).get("ambience")
+	var spec: Dictionary = own if own is Dictionary and _pick((own as Dictionary).get("track", "")) != "" else table.get("ambience", {})
+	var id := _pick(spec.get("track", ""))
 	if on and _stream(id) != null:
 		if not _ambience_on or _ambience.stream != _stream(id):
 			_ambience.stream = _stream(id)

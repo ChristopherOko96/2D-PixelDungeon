@@ -128,6 +128,9 @@ var _damp: Array = []
 var _damp_head := 0
 ## The pool layers blasts ring (src/vfx/pool_paint.gd ripple_near): [WeakRef, scale to their px].
 var _liquids: Array = []
+## Sound sink (src/vfx/sfx.gd attach_particles): one sound per call below, the
+## landing ticks of _settle; null keeps the particles silent (tests, the crypt).
+var sound: Object = null
 const STEPS := [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]
 ## 4x4 ordered dither (vapor frost leaves in this order).
 const BAYER := [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
@@ -171,7 +174,13 @@ func solid(point: Vector2) -> bool:
 ## spread in the floor plane (Vector2.ZERO = all around); `drag` slows them.
 ## `mode` is one of vfx_particles.json "modes": debris lands and stays as floor
 ## pixels, spark and ember glow and fade, dust floats and fades.
+## Sound hook: one sound for this call at `point` (particle units), its level by `count`.
+func _sound(kind: String, point: Vector2, count: int) -> void:
+	if sound != null: sound.particle(kind, point, count)
+
+
 func burst(origin: Vector2, color: Color, count: int, speed: float, life: float, direction: Vector2 = Vector2.ZERO, spread: float = PI, size: float = 3.0, drag: float = 5.0, mode: String = "debris", height: float = -1.0) -> void:
+	_sound("burst_" + mode, origin, count)
 	var base_angle: float = direction.angle() if direction != Vector2.ZERO else 0.0
 	var arc: float = spread if direction != Vector2.ZERO else PI
 	var lift: Array = _mode(mode).get("lift", [0, 0])
@@ -241,6 +250,7 @@ func stain(origin: Vector2, color: Color, radius: float) -> void:
 ## A liquid splat on the floor: one pool, smaller blobs around it, and drops
 ## thrown along `direction` (the hit's direction). `alpha` is the pool opacity.
 func splat(origin: Vector2, color: Color, alpha: float, radius: float, direction: Vector2 = Vector2.ZERO) -> void:
+	_sound("splat", origin, int(radius))
 	if radius <= 0.0: return
 	_marks += 1
 	var tint := Color(color, alpha)
@@ -256,6 +266,7 @@ func splat(origin: Vector2, color: Color, alpha: float, radius: float, direction
 
 ## One drop of a drip trail behind a wounded enemy.
 func drip(origin: Vector2, color: Color, alpha: float, size: float) -> void:
+	_sound("drip", origin, 1)
 	_marks += 1
 	var tint := Color(color, alpha)
 	_disc(origin, maxf(PIXEL, size), tint)
@@ -265,6 +276,7 @@ func drip(origin: Vector2, color: Color, alpha: float, size: float) -> void:
 ## A small crack where something struck a wall: jagged dark lines spreading
 ## from the impact into the wall, away from the floor side.
 func crack(origin: Vector2, normal: Vector2) -> void:
+	_sound("wall_crack", origin, 4)
 	_marks += 1
 	var tint := Color(0.08, 0.06, 0.06, 0.75)
 	for branch in range(3):
@@ -340,6 +352,7 @@ func frost_sample(n: int) -> Array[Vector2i]:
 ## Glowing embers left by fire: `count` floor pixels within `radius` of `point`
 ## that flicker, cool from yellow to dark red, give off smoke and leave soot.
 func embers(point: Vector2, radius: float, count: int) -> void:
+	_sound("embers", point, count)
 	var settings_for_embers: Dictionary = _data.get("ember", {})
 	var life: Array = settings_for_embers.get("life", [1.5, 4.0])
 	for i in range(count):
@@ -382,6 +395,7 @@ func _fire_ramp() -> Array:
 ## up from it, embers rising and tumbling, smoke rolling off, the floor kicked,
 ## scorched and left with glowing embers.
 func fire_burst(point: Vector2, radius: float, ramp: Array = []) -> void:
+	_sound("fire_burst", point, int(radius))
 	var spec: Dictionary = _data.get("fire", {})
 	var count := clampi(int(radius * float(spec.get("burst_per_px", 0.5))), 6, int(spec.get("burst_max", 36)))
 	var colours: Array = ramp if not ramp.is_empty() else _fire_ramp()
@@ -402,6 +416,7 @@ func fire_burst(point: Vector2, radius: float, ramp: Array = []) -> void:
 ## the floor and lie down as embers that die over fire.ember_lie s, leaving a
 ## faint soot pixel each (vfx_particles.json "fire").
 func ember_sparks(point: Vector2, count: int, dir: Vector2 = Vector2.ZERO, scale: float = 1.0) -> void:
+	_sound("embers", point, count)
 	count = room(count)
 	var spec: Dictionary = _data.get("fire", {})
 	var speed: Array = spec.get("spark_speed", [120, 260])
@@ -433,6 +448,7 @@ func _ice_ramp() -> Array:
 ## a glint where they burst; `height` px over the floor where they start
 ## (-1: 2..10, a hit near the floor; a hand or a dome sets its own).
 func shatter(point: Vector2, count: int, dir: Vector2 = Vector2.ZERO, speed: float = 160.0, ramp: Array = [], big: int = 3, height := -1.0) -> void:
+	_sound("shatter", point, count)
 	count = room(count)
 	var colours: Array = ramp if ramp.size() >= 5 else _ice_ramp()
 	var lift: Array = _mode("shard").get("lift", [40, 120])
@@ -455,6 +471,7 @@ func shatter(point: Vector2, count: int, dir: Vector2 = Vector2.ZERO, speed: flo
 ## nearly weightless with much drag (modes.flake), flutters on the beat,
 ## lies where it lands as frost and melts later.
 func snow(point: Vector2, radius: float, count: int, spin: float, ramp: Array = []) -> void:
+	_sound("snow_puff", point, count)
 	count = room(count)
 	var colours: Array = ramp if ramp.size() >= 5 else _ice_ramp()
 	var high: Array = _data.get("ice", {}).get("flake_height", [14, 40])
@@ -484,6 +501,7 @@ func snow(point: Vector2, radius: float, count: int, spin: float, ramp: Array = 
 ## body, shade, deep (the particles' order). The units it carries (`n`)
 ## size its splash. Never skipped: it is the matter of a landing that hurts.
 func comet(from: Vector2, to: Vector2, time: float, cols: Array, kind: String, n: int = 1, layer: Object = null, mat := "", height := 10.0) -> void:
+	_sound("comet", from, n)
 	if cols.size() < 5: return
 	var t := maxf(0.08, time)
 	var mode: String = {"drop": "drop", "glut": "glut", "shard": "shard", "chip": "debris", "mote": "mote"}.get(kind, "drop")
@@ -530,6 +548,7 @@ func comet(from: Vector2, to: Vector2, time: float, cols: Array, kind: String, n
 ## unit (at most cells_max): pool cells of its layer, else floor pixels, fire
 ## as embers, ice as frost; ice breaks into chips.
 func _land_splash(particle: Dictionary) -> void:
+	_sound("land_splash", Vector2(particle.pos), 1)
 	var spec: Dictionary = _data.get("comet", {})
 	var at: Vector2 = particle.pos
 	var units := int(particle.get("splash", 0))
@@ -573,6 +592,7 @@ func _land_splash(particle: Dictionary) -> void:
 
 ## A shard that hit a wall hard breaks into 3-5 chips flying back off it.
 func _break_shard(particle: Dictionary) -> void:
+	_sound("shard_break", Vector2(particle.pos), 1)
 	var colours: Array = particle.ice
 	var back := -Vector2(particle.vel).normalized() if Vector2(particle.vel).length() > 1.0 else Vector2.UP
 	for i in range(_rng.randi_range(3, 5)):
@@ -601,6 +621,7 @@ func _scratch(point: Vector2, particle: Dictionary) -> void:
 ## both sides, longest near the root, now and then a side fern; they stop at
 ## walls and liquids, and the frost goes later (thinning in a dither).
 func rime_grow(point: Vector2, branches: int, reach: float, color: Color = Color(0, 0, 0, 0)) -> void:
+	_sound("rime_grow", point, branches)
 	var colours := _ice_ramp()
 	var col: Color = color if color.a > 0.0 else colours[2]
 	var start := Vector2(_art(point)) + Vector2(0.5, 0.5)
@@ -752,6 +773,7 @@ func well(key: String, point: Vector2, radius: float, pull: float, spin: float, 
 ## An implosion at `point` reaching `radius`: a hard pull for a moment
 ## (void.implode_time s), then one frame of void and a pressure ring outwards.
 func implode(point: Vector2, radius: float, ramp: Array = []) -> void:
+	_sound("implode", point, int(radius))
 	var cols: Array = ramp if ramp.size() >= 5 else _void_ramp()
 	var hold := _void("implode_time", 0.28)
 	well("implode:%d" % _implosions.size() + str(_time), point, radius * 1.5, _void("implode_pull", 420.0), _void("implode_spin", 160.0), radius * 0.12, hold, 0.0, cols)
@@ -885,6 +907,7 @@ func _el(key: String) -> Array:
 ## `normal` (away from the struck surface), quick and gone; `colors` their
 ## colours (elements.spark, hot metal, when empty; lightning gives its own).
 func sparks(point: Vector2, normal: Vector2, count: int, colors: Array = []) -> void:
+	_sound("sparks", point, count)
 	count = room(count)
 	var cols: Array = colors if colors.size() > 0 else _el("spark")
 	var away := normal.normalized() if normal.length() > 0.01 else Vector2.UP
@@ -900,6 +923,7 @@ func _shot(key: String, fallback: Array) -> Array:
 ## `dir` (all round when zero) in `colors` (body first): they fly in arcs,
 ## land and lie as floor pixels (vfx_particles.json "shot").
 func drops(point: Vector2, count: int, dir: Vector2, colors: Array) -> void:
+	_sound("burst_drops", point, count)
 	if colors.is_empty(): return
 	count = room(count)
 	var speed: Array = _shot("drops", [60, 160])
@@ -931,6 +955,7 @@ func motes(point: Vector2, count: int, colors: Array, rise := 12.0, height := -1
 ## along `dir` (all round when zero) in `colors`: they fall, bounce and settle
 ## as floor pixels that stay.
 func chips(point: Vector2, count: int, dir: Vector2, colors: Array) -> void:
+	_sound("chips", point, count)
 	if colors.is_empty(): return
 	count = room(count)
 	var speed: Array = _shot("chips", [80, 180])
@@ -945,6 +970,7 @@ func chips(point: Vector2, count: int, dir: Vector2, colors: Array) -> void:
 ## Where lightning struck: a star of scorch lines burnt into the floor and a
 ## few embers glowing in it.
 func scorch_star(point: Vector2, size: float) -> void:
+	_sound("scorch_star", point, int(size))
 	var soot := Color(str(_data.get("ember", {}).get("soot", "1c1416")))
 	for i in range(6):
 		var dir := Vector2.from_angle(TAU * float(i) / 6.0 + _rng.randf_range(-0.3, 0.3)) * Vector2(1.0, 0.75)
@@ -955,6 +981,7 @@ func scorch_star(point: Vector2, size: float) -> void:
 ## `count` chunks of rubble from `point` along `dir` (all round when zero):
 ## heavy, one low bounce, they stop hard and lie as loose pixels.
 func rubble(point: Vector2, count: int, dir: Vector2 = Vector2.ZERO, speed: float = 140.0) -> void:
+	_sound("rubble", point, count)
 	var cols := _el("stone")
 	var lift: Array = _mode("rock").get("lift", [40, 110])
 	for i in range(count):
@@ -965,6 +992,7 @@ func rubble(point: Vector2, count: int, dir: Vector2 = Vector2.ZERO, speed: floa
 
 ## Dust creeping flat over the floor from `point` (within `radius`), settling soon.
 func dust_flat(point: Vector2, radius: float, count: int) -> void:
+	_sound("burst_dust", point, count)
 	count = room(count)
 	var cols := _el("dust")
 	for i in range(count):
@@ -977,6 +1005,7 @@ func dust_flat(point: Vector2, radius: float, count: int) -> void:
 ## its middle, its far rim catching the light); each crack is lit along its
 ## lower lip near the dent, where it is widest. They stay.
 func floor_crack(point: Vector2, length: float, branches: int) -> void:
+	_sound("floor_crack", point, branches * 4)
 	var dark := Color(0.08, 0.06, 0.06, 0.8)
 	var lit := Color(_el("stone")[0], 0.4)
 	var hollow := maxf(PIXEL * 3.0, length * 0.28)
@@ -1012,6 +1041,7 @@ func floor_crack(point: Vector2, length: float, branches: int) -> void:
 ## Holy light at `point`: `count` shafts falling from above that sparkle where
 ## they land, and gold motes rising slowly round it (within `radius`).
 func holy(point: Vector2, count: int, radius: float) -> void:
+	_sound("holy_motes", point, count)
 	var cols := _el("holy")
 	for i in range(count):
 		var at := point + Vector2(_rng.randf_range(-radius, radius), _rng.randf_range(-radius, radius) * 0.5)
@@ -1029,6 +1059,7 @@ func holy(point: Vector2, count: int, radius: float) -> void:
 ## and draw back into the pool tip first, then the pool shrinks from its rim
 ## (elements.shadow_hold, shadow_back s). Dark motes sink round it.
 func shadow(point: Vector2, branches: int, reach: float) -> void:
+	_sound("shadow", point, branches)
 	var cols := _el("shadow")
 	var hold := float(_data.get("elements", {}).get("shadow_hold", 0.5))
 	var back := float(_data.get("elements", {}).get("shadow_back", 0.6))
@@ -1062,6 +1093,7 @@ func shadow(point: Vector2, branches: int, reach: float) -> void:
 ## Freezes the liquid lying within `radius` of `point` in the pool layers
 ## (src/vfx/pool_paint.gd freeze_near): it freezes from its rim inwards.
 func freeze_liquids(point: Vector2, radius: float) -> void:
+	_sound("liquid_freeze", point, int(radius))
 	for link: Array in _liquids:
 		var layer: Object = (link[0] as WeakRef).get_ref()
 		if layer != null and layer.has_method("freeze_near"): layer.freeze_near(point * float(link[1]), radius * float(link[1]))
@@ -1069,6 +1101,7 @@ func freeze_liquids(point: Vector2, radius: float) -> void:
 
 ## Fire on Glatteis: the liquid layers' ice at `point` thaws (pool_paint thaw_near).
 func thaw_liquids(point: Vector2, radius: float) -> void:
+	_sound("liquid_thaw", point, int(radius))
 	for link: Array in _liquids:
 		var layer: Object = (link[0] as WeakRef).get_ref()
 		if layer != null and layer.has_method("thaw_near"): layer.thaw_near(point * float(link[1]), radius * float(link[1]))
@@ -1077,6 +1110,7 @@ func thaw_liquids(point: Vector2, radius: float) -> void:
 ## `count` puffs of steam hissing up from `point` (a liquid on lava or fire,
 ## ice melting, an ember put out): light, quick, thinning by the dither.
 func steam(point: Vector2, count: int, radius: float = 4.0) -> void:
+	_sound("steam", point, count)
 	var color := Color(str(_data.get("steam_color", "d8dce6")))
 	for i in range(count):
 		var spot := point + Vector2(_rng.randf_range(-radius, radius), _rng.randf_range(-radius, radius) * 0.6)
@@ -1093,6 +1127,7 @@ func _in_liquid(point: Vector2) -> bool:
 
 ## `count` puffs of smoke rising from `point` (spread `radius` px).
 func smoke(point: Vector2, count: int, radius: float = 6.0) -> void:
+	_sound("smoke", point, count)
 	var color := Color(str(_data.get("smoke_color", "2e2a2c")), 0.55)
 	var lift: Array = _mode("smoke").get("lift", [10, 30])
 	for i in range(count):
@@ -1178,6 +1213,7 @@ func kick(point: Vector2, radius: float, strength: float = 1.0) -> void:
 ## At most `limit` floor pixels lift per call (vfx_particles.json "blow").
 ## Returns how many pixels it moved.
 func blow(origin: Vector2, r0: float, r1: float, angle: float, arc: float, speed: float, squash: float = 1.0, limit: int = -1) -> int:
+	_sound("blow", origin, 8)
 	if r1 <= r0 or speed <= 0.0: return 0
 	var settings_for_blow: Dictionary = _data.get("blow", {})
 	var hop: Array = settings_for_blow.get("hop", [30, 90])
@@ -1466,6 +1502,7 @@ func _evict() -> void:
 ## settled frost melts later.
 func _settle(particle: Dictionary) -> void:
 	if bool(particle.free): return
+	if sound != null: sound.settle(particle)
 	# a skull lies where it stopped rolling, turned as it came to rest
 	if particle.has("skull"):
 		var middle := _art(Vector2(particle.pos))

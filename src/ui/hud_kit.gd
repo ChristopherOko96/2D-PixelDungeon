@@ -22,6 +22,7 @@ extends RefCounted
 const HudStyle = preload("res://src/ui/hud_style.gd")
 const TalentIcons = preload("res://src/ui/talent_icons.gd")
 const Profile = preload("res://src/progress/profile.gd")
+const STYLE_PATH := "res://assets/data/ui_hud_style.json"
 
 # Per life bar key: gap (the ghost's length in half hearts), hold (seconds
 # before it starts to shrink), speed (half hearts per second), heal (sweep
@@ -34,6 +35,8 @@ static var _specs: Dictionary = {}
 # The ability slots of the companion bar drawn last, and the canvas it was drawn on.
 static var _pet_slots: Array = []
 static var _pet_canvas: CanvasItem = null
+# The HUD rules (ui_hud_style.json "rules"), read once.
+static var _rules: Dictionary = {}
 
 
 ## The companion bar right under the hero strip (the "Begleiterleiste", user
@@ -50,8 +53,9 @@ static var _pet_canvas: CanvasItem = null
 ## talent_combat's player_state().pet ({kind, name, spec, alive, hp, hp_max,
 ## respawn, abilities: [{id, name, icon, text, cd, cd_max, auto, key}]}).
 ## Remembers the ability slots for pet_slot_at(). Returns the row's rectangle
-## (zero size without a companion).
-static func pet_panel(canvas: CanvasItem, font: Font, origin: Vector2, width: float, pet: Dictionary, clock: float) -> Rect2:
+## (zero size without a companion). `alpha` below 1 steps the bar back (a
+## companion at full life with nothing cooling down).
+static func pet_panel(canvas: CanvasItem, font: Font, origin: Vector2, width: float, pet: Dictionary, clock: float, alpha: float = 1.0) -> Rect2:
 	_pet_slots = []
 	_pet_canvas = canvas
 	if pet.is_empty(): return Rect2(origin, Vector2.ZERO)
@@ -70,12 +74,18 @@ static func pet_panel(canvas: CanvasItem, font: Font, origin: Vector2, width: fl
 	_pet_portrait(canvas, font, portrait, kind, name, alive)
 	# the ability slots at the right, a gap between them
 	var abilities: Array = pet.get("abilities", [])
-	var slots_w := abilities.size() * slot_px + maxi(0, abilities.size() - 1) * gap
+	# each slot's key (5, 6) stands in its own column left of the slot, never on the icon
+	var key_px := int(HudStyle.size("pet_key_size"))
+	var key_w := HudStyle.width(font, "6", key_px) + 4.0
+	var slots_w := abilities.size() * (key_w + slot_px) + maxi(0, abilities.size() - 1) * gap
 	var slot_x := rect.end.x - pad - slots_w
 	var spec := _spec(str(pet.get("spec", "")))
 	for index in range(abilities.size()):
-		var slot := Rect2(Vector2(slot_x + index * (slot_px + gap), rect.position.y + floorf((rect.size.y - slot_px) * 0.5)), Vector2(slot_px, slot_px))
+		var slot := Rect2(Vector2(slot_x + key_w + index * (key_w + slot_px + gap), rect.position.y + floorf((rect.size.y - slot_px) * 0.5)), Vector2(slot_px, slot_px))
 		_pet_ability(canvas, font, slot, abilities[index], spec, alive, clock)
+		var key := str((abilities[index] as Dictionary).get("key", ""))
+		if not key.is_empty():
+			HudStyle.text(canvas, font, Vector2(slot.position.x - key_w, slot.get_center().y + floorf(key_px * 0.45)), key, key_px, HudStyle.color("text_dim") if alive else HudStyle.color("text_muted"))
 		_pet_slots.append(slot)
 	# the text column between them: the name over the life bar
 	var x := portrait.end.x + 8.0
@@ -103,6 +113,7 @@ static func pet_panel(canvas: CanvasItem, font: Font, origin: Vector2, width: fl
 		var fallen := ("GEFALLEN · %d s" % ceili(wait)) if wait > 0.0 else "GEFALLEN"
 		var pulse := 0.75 + 0.25 * sin(clock * TAU * HudStyle.size("life_low_pulse_hz") * 0.5)
 		HudStyle.text(canvas, font, Vector2(x, bar.end.y + 2.0), fallen, small, Color(HudStyle.color("danger"), pulse))
+	dim(canvas, rect, alpha)
 	return rect
 
 
@@ -157,7 +168,8 @@ static func _pet_ability(canvas: CanvasItem, font: Font, slot: Rect2, ability: D
 		var share := clampf(cooldown / maximum, 0.0, 1.0)
 		canvas.draw_rect(Rect2(slot.position, Vector2(slot.size.x, roundf(slot.size.y * share))), Color(HudStyle.color("outline"), 0.6))
 		var seconds := ("%d" % ceili(cooldown)) if cooldown >= 1.0 else ("%.1f" % cooldown)
-		HudStyle.text(canvas, font, slot.get_center() + Vector2(0.0, 5.0), seconds, int(HudStyle.size("pet_number_size")), HudStyle.color("text"), 1)
+		# the seconds at the bottom right (the key stands left of the slot)
+		HudStyle.text(canvas, font, slot.end - Vector2(3.0, 4.0), seconds, int(HudStyle.size("pet_number_size")), HudStyle.color("text"), 2)
 	var frame := Color(HudStyle.color("accent"), 0.85) if ready else HudStyle.color("panel_edge")
 	if not alive: frame = Color(HudStyle.color("panel_edge"), 0.08)
 	canvas.draw_rect(slot, frame, false, 1.0)
@@ -165,13 +177,9 @@ static func _pet_ability(canvas: CanvasItem, font: Font, slot: Rect2, ability: D
 		# auto-cast on: a soft pulsing glow around the slot and a dot in the corner
 		var glow := HudStyle.color("auto")
 		canvas.draw_rect(slot.grow(1.0), Color(glow, 0.35 + 0.2 * sin(clock * 5.0)), false, 1.0)
-		var dot := Rect2(slot.end - Vector2(7.0, 7.0), Vector2(4.0, 4.0))
+		var dot := Rect2(Vector2(slot.end.x - 7.0, slot.position.y + 3.0), Vector2(4.0, 4.0))
 		canvas.draw_rect(dot.grow(1.0), HudStyle.color("outline"))
 		canvas.draw_rect(dot, glow)
-	var key := str(ability.get("key", ""))
-	if not key.is_empty():
-		var key_px := int(HudStyle.size("pet_key_size"))
-		HudStyle.text(canvas, font, slot.position + Vector2(3.0, key_px + 1.0), key, key_px, HudStyle.color("text_dim"))
 
 
 ## The companion `kind`'s portrait, loaded once: {texture, region (the pixels
@@ -210,7 +218,9 @@ static func _spec(id: String) -> Dictionary:
 ## run talent points, "+n" beside the level), low (bool: the bar pulses harder
 ## and its frame turns red), resources [{icon, tint, text, dim}], status
 ## [{text, color}], clock, key (names the bar's animation state; defaults to
-## the title). Returns the strip's rectangle.
+## the title), level_label (the badge's word, default "LV"), hp_unit (after
+## the life numbers, e.g. "LP"), resource_alpha (0..1: the resource row fades
+## as a whole; at 0 it takes no room). Returns the strip's rectangle.
 static func hero_panel(canvas: CanvasItem, font: Font, origin: Vector2, data: Dictionary) -> Rect2:
 	var pad := HudStyle.size("pad")
 	var bar_w := HudStyle.size("bar_width")
@@ -222,13 +232,16 @@ static func hero_panel(canvas: CanvasItem, font: Font, origin: Vector2, data: Di
 	var hp_f := clampf(float(data.get("hp_f", hp)), 0.0, float(maxi(max_hp, 0)))
 	var level := int(data.get("level", -1))
 	var experience := float(data.get("exp", -1.0))
-	var resources: Array = data.get("resources", [])
+	var resource_alpha := clampf(float(data.get("resource_alpha", 1.0)), 0.0, 1.0)
+	var resources: Array = data.get("resources", []) if resource_alpha > 0.0 else []
 	var status: Array = data.get("status", [])
-	var hp_text := "%d / %d" % [life_shown(hp, hp_f), max_hp] if hp > 0 else "GEFALLEN"
+	var unit := str(data.get("hp_unit", ""))
+	var hp_text := ("%d / %d" % [life_shown(hp, hp_f), max_hp] + (" " + unit if unit != "" else "")) if hp > 0 else "GEFALLEN"
+	var level_label := str(data.get("level_label", "LV"))
 	var title := str(data.get("title", ""))
 	# widths: the life bar with the level badge beside it, the header, the resources
 	# the level badge grows with its number (LV 9, LV 13, LV 100)
-	var badge := Vector2(18.0 + HudStyle.width(font, "LV", small) + HudStyle.width(font, str(level), body), HudStyle.size("badge_height")) if level >= 0 else Vector2.ZERO
+	var badge := Vector2(18.0 + HudStyle.width(font, level_label, small) + HudStyle.width(font, str(level), body), HudStyle.size("badge_height")) if level >= 0 else Vector2.ZERO
 	# the bar row is as tall as the badge beside it; the bar sits centred in it
 	var row_h := maxf(bar_h, badge.y)
 	var resource_w := 0.0
@@ -253,7 +266,7 @@ static func hero_panel(canvas: CanvasItem, font: Font, origin: Vector2, data: Di
 		var b := Rect2(Vector2(x + bar_w + 10.0, y + floorf((row_h - badge.y) * 0.5)), badge)
 		canvas.draw_rect(b, HudStyle.color("slot"))
 		canvas.draw_rect(b, HudStyle.color("panel_edge"), false, 1.0)
-		HudStyle.text(canvas, font, Vector2(b.position.x + 6, b.get_center().y + 5), "LV", small, HudStyle.color("text_dim"))
+		HudStyle.text(canvas, font, Vector2(b.position.x + 6, b.get_center().y + floorf(small * 0.5) - 1.0), level_label, small, HudStyle.color("text_dim"))
 		HudStyle.text(canvas, font, Vector2(b.end.x - 6, b.get_center().y + 7), str(level), body, HudStyle.color("accent"), 2)
 		if points > 0:
 			var glow := 0.65 + 0.35 * sin(clock * 5.0)
@@ -273,11 +286,13 @@ static func hero_panel(canvas: CanvasItem, font: Font, origin: Vector2, data: Di
 				var draw_size := (s * scale).round()
 				var tint: Color = r.get("tint", Color.WHITE)
 				if dim: tint.a *= 0.25
+				tint.a *= resource_alpha
 				canvas.draw_texture_rect(icon, Rect2(Vector2(rx, y + 6 + (22.0 - draw_size.y) * 0.5), draw_size), false, tint)
 				rx += draw_size.x + 4.0
 			var label := str(r.get("text", ""))
 			if not label.is_empty():
-				HudStyle.text(canvas, font, Vector2(rx, y + 24), label, body, HudStyle.color("text_muted") if dim else HudStyle.color("text"))
+				var ink: Color = HudStyle.color("text_muted") if dim else HudStyle.color("text")
+				HudStyle.text(canvas, font, Vector2(rx, y + 24), label, body, Color(ink, ink.a * resource_alpha))
 				rx += HudStyle.width(font, label, body)
 			rx += 14.0
 		y += 30.0
@@ -404,8 +419,9 @@ static func heart_icons(hp: int, max_hp: int) -> Array[String]:
 	return result
 
 
-## The floor panel at the top right of a `screen`. `data`: title, subtitle,
-## tag, tag_color, alpha. Returns the area left for the mini-map.
+## The floor panel at the top right of a `screen`. `data`: title, subtitle
+## (cut to fit), tag (shown in the subtitle's place, e.g. "VERRIEGELT · 3"),
+## tag_color, alpha. Returns the area left for the mini-map.
 static func floor_panel(canvas: CanvasItem, font: Font, screen: Vector2, data: Dictionary) -> Rect2:
 	var rect := floor_rect(screen)
 	var alpha := float(data.get("alpha", 1.0))
@@ -415,26 +431,23 @@ static func floor_panel(canvas: CanvasItem, font: Font, screen: Vector2, data: D
 	var x := rect.position.x + pad
 	var y := rect.position.y + pad
 	HudStyle.text(canvas, font, Vector2(x, y + 16), str(data.get("title", "")), int(HudStyle.size("font_title")), Color(HudStyle.color("text"), alpha))
-	var line := y + 34.0
-	var subtitle := str(data.get("subtitle", ""))
-	if not subtitle.is_empty():
-		HudStyle.text(canvas, font, Vector2(x, line), subtitle, small, Color(HudStyle.color("text_dim"), alpha))
-		line += small + 6.0
-	# the state of the floor (fight, horde, explore) on its own line
+	# one line under the title: a fight's state while there is one, else the place
+	var room := rect.size.x - pad * 2.0
 	var tag := str(data.get("tag", ""))
 	if not tag.is_empty():
 		var tint: Color = data.get("tag_color", HudStyle.color("text_dim"))
-		HudStyle.text(canvas, font, Vector2(x, line), tag, small, Color(tint, tint.a * alpha))
+		HudStyle.text(canvas, font, Vector2(x, y + 36.0), ellipsis(font, tag, small, room), small, Color(tint, tint.a * alpha))
+	else:
+		HudStyle.text(canvas, font, Vector2(x, y + 36.0), ellipsis(font, str(data.get("subtitle", "")), small, room), small, Color(HudStyle.color("text_dim"), alpha))
 	return map_area(screen)
 
 
-## The mini-map's area inside the floor panel (under title, place and state;
-## fixed, so the map never jumps when a line is empty).
+## The mini-map's area inside the floor panel, under the title and its one
+## line (fixed, so the map never jumps).
 static func map_area(screen: Vector2) -> Rect2:
 	var rect := floor_rect(screen)
 	var pad := HudStyle.size("pad")
-	var small := HudStyle.size("font_small")
-	var top := rect.position.y + pad + 34.0 + (small + 6.0) * 2.0 - small + 4.0
+	var top := rect.position.y + pad + 36.0 + 8.0
 	return Rect2(rect.position.x + pad, top, rect.size.x - pad * 2.0, rect.end.y - pad - top)
 
 
@@ -460,14 +473,17 @@ static func menu_chip(canvas: CanvasItem, font: Font, screen: Vector2, label: St
 
 ## The boss bar at the top centre. `data`: name, tag, ratio (0..1), chip
 ## (trailing white share), flash (0..1), segments (Array of 0..1 fills; empty =
-## one bar), value (text right of the name), boss (bool: end boss). Leaves room
-## for the corner panels.
+## one bar), value (text right of the name), boss (bool: end boss), left /
+## right (px: the free span between the hero strip's right end and the floor
+## panel's left edge; the bar centres in it, a margin off both, never over
+## them). Without them it leaves room for two corner panels.
 static func boss_bar(canvas: CanvasItem, font: Font, screen: Vector2, data: Dictionary) -> Rect2:
 	var margin := HudStyle.size("margin")
-	var room := screen.x - 2.0 * (HudStyle.size("map_panel_width") + margin * 2.0)
-	var width := minf(HudStyle.size("boss_bar_width"), room)
+	var left := float(data.get("left", margin + HudStyle.size("map_panel_width") + margin))
+	var right := float(data.get("right", screen.x - margin - HudStyle.size("map_panel_width") - margin))
+	var width := minf(HudStyle.size("boss_bar_width"), right - left - margin * 2.0)
 	if width < 200.0: return Rect2()
-	var rect := Rect2((screen.x - width) * 0.5, margin, width, 52)
+	var rect := Rect2(floorf((left + right - width) * 0.5), margin, width, 52)
 	HudStyle.panel(canvas, rect)
 	var pad := HudStyle.size("pad")
 	var small := int(HudStyle.size("font_small"))
@@ -492,7 +508,7 @@ static func boss_bar(canvas: CanvasItem, font: Font, screen: Vector2, data: Dict
 			canvas.draw_rect(Rect2(seg.position, Vector2(floorf(w * clampf(float(segments[i]), 0.0, 1.0)), seg.size.y)), fill)
 	var tag := str(data.get("tag", ""))
 	if not tag.is_empty():
-		HudStyle.text(canvas, font, Vector2(screen.x * 0.5, rect.end.y + 16), tag, small, HudStyle.color("text_dim"), 1)
+		HudStyle.text(canvas, font, Vector2(rect.get_center().x, rect.end.y + 18), tag, small, HudStyle.color("text_dim"), 1)
 	return rect
 
 
@@ -512,7 +528,9 @@ static func banner(canvas: CanvasItem, font: Font, screen: Vector2, y: float, ti
 ## The result panel in the middle of the screen, the same in every world: a
 ## floor won, a run ended by death, a zone conquered. `data`: title, tone
 ## ("win", "loss", "floor"), lines [[label, value]], note (one line under the
-## rows, e.g. soul crystals), hints (e.g. "E · NEUER LAUF   ESC · MENÜ").
+## rows, e.g. soul crystals), hints (e.g. "E · NEUER LAUF   ESC · MENÜ"),
+## buttons (count of real buttons the game lays into result_button_row; they
+## take the hint line's place).
 static func result_panel(canvas: CanvasItem, font: Font, screen: Vector2, data: Dictionary) -> Rect2:
 	canvas.draw_rect(Rect2(Vector2.ZERO, screen), Color(HudStyle.color("outline"), 0.62))
 	var lines: Array = data.get("lines", [])
@@ -524,7 +542,8 @@ static func result_panel(canvas: CanvasItem, font: Font, screen: Vector2, data: 
 	for row: Array in lines:
 		width = maxf(width, HudStyle.width(font, str(row[0]), body) + HudStyle.width(font, str(row[1]), body) + 96.0)
 	width = minf(width, screen.x - 64.0)
-	var height := 72.0 + lines.size() * 26.0 + 36.0 + 40.0
+	var buttons := int(data.get("buttons", 0))
+	var height := 72.0 + lines.size() * 26.0 + 36.0 + (64.0 if buttons > 0 else 40.0)
 	var rect := Rect2((screen - Vector2(width, height)) * 0.5, Vector2(width, height))
 	HudStyle.panel(canvas, rect)
 	var tone := str(data.get("tone", "floor"))
@@ -539,8 +558,14 @@ static func result_panel(canvas: CanvasItem, font: Font, screen: Vector2, data: 
 	var note := str(data.get("note", ""))
 	if not note.is_empty():
 		HudStyle.text(canvas, font, Vector2(screen.x * 0.5, y + 10), note, small, HudStyle.color("accent"), 1)
-	HudStyle.text(canvas, font, Vector2(screen.x * 0.5, rect.end.y - 16), str(data.get("hints", "")), small, HudStyle.color("text_dim"), 1)
+	if buttons <= 0:
+		HudStyle.text(canvas, font, Vector2(screen.x * 0.5, rect.end.y - 16), str(data.get("hints", "")), small, HudStyle.color("text_dim"), 1)
 	return rect
+
+
+## The row the result panel `rect` keeps free for its buttons (data.buttons).
+static func result_button_row(rect: Rect2) -> Rect2:
+	return Rect2(rect.position.x + 28.0, rect.end.y - 58.0, rect.size.x - 56.0, 40.0)
 
 
 ## A hint centred at height `y` (hints stack over the skill bar).
@@ -554,14 +579,83 @@ static func toast(canvas: CanvasItem, font: Font, screen: Vector2, y: float, val
 	HudStyle.text(canvas, font, Vector2(screen.x * 0.5 + 1, y + 6), value, body, Color(HudStyle.color("text"), alpha), 1)
 
 
-## An interaction prompt centred on `at`: a key cap and what it does.
-static func prompt(canvas: CanvasItem, font: Font, at: Vector2, key: String, label: String) -> void:
+## The story worlds' one toast: its lower left corner at `corner`, one line,
+## two when longer than `max_width` (the rest cut with "..."). Returns its rectangle.
+static func toast_at(canvas: CanvasItem, font: Font, corner: Vector2, value: String, alpha: float, max_width: float = 620.0) -> Rect2:
+	if alpha <= 0.0: return Rect2()
+	var body := int(HudStyle.size("font_body"))
+	var lines := _wrap(font, value, body, max_width - 34.0, 2)
+	var width := 0.0
+	for line: String in lines: width = maxf(width, HudStyle.width(font, line, body))
+	var line_h := float(body) + 8.0
+	var height := 12.0 + lines.size() * line_h
+	var rect := Rect2(corner.x, corner.y - height, width + 34.0, height)
+	HudStyle.panel(canvas, rect, alpha)
+	canvas.draw_rect(Rect2(rect.position, Vector2(3, rect.size.y)), Color(HudStyle.color("accent"), alpha))
+	for i in range(lines.size()):
+		HudStyle.text(canvas, font, Vector2(rect.position.x + 17.0, rect.position.y + 7.0 + body + i * line_h), lines[i], body, Color(HudStyle.color("text"), alpha))
+	return rect
+
+
+## An interaction prompt centred on `at`: a key cap and what it does, kept on
+## the `screen` (the canvas's viewport when not given) a margin off every edge.
+static func prompt(canvas: CanvasItem, font: Font, at: Vector2, key: String, label: String, screen: Vector2 = Vector2.ZERO) -> void:
 	var body := int(HudStyle.size("font_body"))
 	var width := HudStyle.width(font, label, body) + 52.0
-	var rect := Rect2(at.x - width * 0.5, at.y - 17, width, 34)
+	var view := screen if screen != Vector2.ZERO else canvas.get_viewport_rect().size
+	var margin := HudStyle.size("margin")
+	var x := clampf(at.x - width * 0.5, margin, maxf(margin, view.x - margin - width))
+	var y := clampf(at.y - 17.0, margin, maxf(margin, view.y - margin - 34.0))
+	var rect := Rect2(x, y, width, 34)
 	HudStyle.panel(canvas, rect)
 	var cap := Rect2(rect.position + Vector2(6, 6), Vector2(22, 22))
 	canvas.draw_rect(cap, HudStyle.color("slot"))
 	canvas.draw_rect(cap, Color(HudStyle.color("accent"), 0.9), false, 1.0)
 	HudStyle.text(canvas, font, Vector2(cap.get_center().x, cap.get_center().y + 6), key, body, HudStyle.color("accent"), 1)
-	HudStyle.text(canvas, font, Vector2(cap.end.x + 10, at.y + 6), label, body, HudStyle.color("text"))
+	HudStyle.text(canvas, font, Vector2(cap.end.x + 10, rect.position.y + 23.0), label, body, HudStyle.color("text"))
+
+
+## A value of the story worlds' HUD rules (assets/data/ui_hud_style.json
+## "rules": fade timings, the toast queue, label sizes), `fallback` when missing.
+static func rule(name: String, fallback: float) -> float:
+	if _rules.is_empty():
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(STYLE_PATH)) if FileAccess.file_exists(STYLE_PATH) else null
+		var table: Variant = (parsed as Dictionary).get("rules", {}) if parsed is Dictionary else {}
+		_rules = (table as Dictionary).duplicate() if table is Dictionary else {}
+		_rules["_read"] = true
+	return float(_rules.get(name, fallback))
+
+
+## Steps a drawn part back to `alpha` (0..1) by laying the HUD's ink over it.
+static func dim(canvas: CanvasItem, rect: Rect2, alpha: float) -> void:
+	if alpha >= 1.0: return
+	canvas.draw_rect(rect, Color(HudStyle.color("outline"), clampf(1.0 - alpha, 0.0, 1.0)))
+
+
+## `value` cut with "..." so it fits `max_width` px at `font_size`.
+static func ellipsis(font: Font, value: String, font_size: int, max_width: float) -> String:
+	if HudStyle.width(font, value, font_size) <= max_width: return value
+	var cut := value
+	while cut.length() > 1 and HudStyle.width(font, cut + "...", font_size) > max_width:
+		cut = cut.left(cut.length() - 1)
+	return cut.strip_edges() + "..."
+
+
+## `value` broken into lines no wider than `width` px at `font_size`, at most
+## `max_lines` (the last one cut with "...").
+static func _wrap(font: Font, value: String, font_size: int, width: float, max_lines: int) -> Array[String]:
+	var out: Array[String] = []
+	var current := ""
+	for word: String in value.split(" ", false):
+		var next := word if current.is_empty() else current + " " + word
+		if not current.is_empty() and HudStyle.width(font, next, font_size) > width:
+			out.append(current)
+			current = word
+		else:
+			current = next
+	if not current.is_empty(): out.append(current)
+	if out.size() > max_lines:
+		var rest := " ".join(PackedStringArray(out.slice(max_lines - 1)))
+		out = out.slice(0, max_lines - 1)
+		out.append(ellipsis(font, rest, font_size, width))
+	return out

@@ -25,15 +25,15 @@ static func layout(screen: Vector2, tree: Dictionary) -> Dictionary:
 	var most := 1
 	for b: Dictionary in branches:
 		most = maxi(most, (b.nodes as Array).size())
-	var room := inner.size.y - 42.0 - 14.0
+	var room := inner.size.y - 54.0 - 14.0
 	var node_h := clampf(floorf((room - (most - 1) * NODE_GAP) / most), 30.0, NODE_H)
 	var nodes := {}
 	var heads: Array = []
 	for i in range(branches.size()):
 		var b: Dictionary = branches[i]
 		var x := inner.position.x + i * (col_w + 10.0)
-		heads.append(Rect2(x, inner.position.y, col_w, 34))
-		var y := inner.position.y + 42.0
+		heads.append(Rect2(x, inner.position.y, col_w, 46))
+		var y := inner.position.y + 54.0
 		var tier := 1
 		for n: Dictionary in b.nodes:
 			if int(n.tier) != tier:
@@ -53,18 +53,21 @@ static func hit(screen: Vector2, tree: Dictionary, point: Vector2) -> String:
 	return ""
 
 
-## Paints the window. `data`: title (e.g. "MAGIER"), mouse (screen point), clock.
+## Paints the window. `data`: title (e.g. "MAGIER"), mouse (screen point), clock,
+## embedded (true inside the talent screen's LAUF tab: no dimming, Esc closes).
 static func draw(canvas: CanvasItem, font: Font, screen: Vector2, tree: Dictionary, ranks: Dictionary, level: int, data: Dictionary) -> void:
 	var lay := layout(screen, tree)
 	var panel: Rect2 = lay.panel
-	canvas.draw_rect(Rect2(Vector2.ZERO, screen), Color(HudStyle.color("outline"), 0.45))
+	var embedded := bool(data.get("embedded", false))
+	if not embedded:
+		canvas.draw_rect(Rect2(Vector2.ZERO, screen), Color(HudStyle.color("outline"), 0.45))
 	# a dense base: the window reads clearly over the corner panels
 	canvas.draw_rect(panel, Color(HudStyle.color("outline"), 0.85))
 	HudStyle.panel(canvas, panel)
 	var left := RunTree.points_left(tree, ranks, level)
 	HudStyle.text(canvas, font, panel.position + Vector2(24, 40), "LAUF-TALENTE · %s" % str(data.get("title", "")).to_upper(), 24, HudStyle.color("text"))
 	HudStyle.text(canvas, font, Vector2(panel.end.x - 24, panel.position.y + 38), "PUNKTE %d" % left, 16, HudStyle.color("accent") if left > 0 else HudStyle.color("text_dim"), 2)
-	HudStyle.text(canvas, font, Vector2(panel.end.x - 24, panel.position.y + 58), "LEVEL %d · VERFÄLLT BEIM TOD" % level, 12, HudStyle.color("text_muted"), 2)
+	HudStyle.text(canvas, font, Vector2(panel.end.x - 24, panel.position.y + 58), "LAUFSTUFE %d · VERFÄLLT BEIM TOD" % level, 16, HudStyle.color("text_muted"), 2)
 	var branches: Array = tree.get("branches", [])
 	var mouse: Vector2 = data.get("mouse", Vector2(-1, -1))
 	var hovered: Dictionary = {}
@@ -74,9 +77,9 @@ static func draw(canvas: CanvasItem, font: Font, screen: Vector2, tree: Dictiona
 		var head: Rect2 = lay.heads[i]
 		var open := level >= int(b.unlock)
 		canvas.draw_rect(Rect2(head.position + Vector2(0, head.size.y - 2), Vector2(head.size.x, 2)), Color(HudStyle.color("accent") if open else HudStyle.color("panel_edge"), 0.8))
-		HudStyle.text(canvas, font, head.position + Vector2(4, 16), str(b.title).to_upper(), 12, HudStyle.color("text") if open else HudStyle.color("text_muted"))
-		var sub := "%d PUNKTE" % RunTree.branch_points(b, ranks) if open else "AB LEVEL %d" % int(b.unlock)
-		HudStyle.text(canvas, font, head.position + Vector2(4, 30), sub, 10, HudStyle.color("text_dim") if open else HudStyle.color("text_muted"))
+		HudStyle.text(canvas, font, head.position + Vector2(4, 18), str(b.title).to_upper(), 16, HudStyle.color("text") if open else HudStyle.color("text_muted"))
+		var sub := "%d PUNKTE" % RunTree.branch_points(b, ranks) if open else "AB STUFE %d" % int(b.unlock)
+		HudStyle.text(canvas, font, head.position + Vector2(4, 40), sub, 16, HudStyle.color("text_dim") if open else HudStyle.color("text_muted"))
 		var tier_drawn := false
 		for n: Dictionary in b.nodes:
 			var rect: Rect2 = lay.nodes[str(n.id)]
@@ -92,13 +95,13 @@ static func draw(canvas: CanvasItem, font: Font, screen: Vector2, tree: Dictiona
 	var foot := Rect2(panel.position.x + 20, panel.end.y - 82, panel.size.x - 40, 62)
 	canvas.draw_rect(foot, HudStyle.color("slot"))
 	if hovered.is_empty():
-		HudStyle.text(canvas, font, foot.position + Vector2(12, 26), "Jedes Level gibt einen Punkt. Die ersten zwei Talente eines Astes sind frei, die übrigen öffnen nach 2 Punkten im Ast.", 12, HudStyle.color("text_dim"))
+		HudStyle.text(canvas, font, foot.position + Vector2(12, 26), "Jede Stufe: 1 Punkt. Tiefere Talente öffnen nach 2 Punkten im Ast.", 16, HudStyle.color("text_dim"))
 	else:
 		HudStyle.text(canvas, font, foot.position + Vector2(12, 24), "%s  ·  %d / %d" % [str(hovered.name), int(ranks.get(str(hovered.id), 0)), int(hovered.max)], 16, HudStyle.color("accent"))
 		var why: String = {"skill_locked": "  ·  Fähigkeit noch nicht frei", "tier_locked": "  ·  erst 2 Punkte im Ast", "no_points": "  ·  kein Punkt frei", "maxed": "  ·  voll",
 			"meta_locked": "  ·  im Hauptmenü unter TALENTE freischalten"}.get(hovered_state, "")
 		HudStyle.text(canvas, font, foot.position + Vector2(12, 46), str(hovered.get("text", "")) + why, 12, HudStyle.color("text"))
-	HudStyle.text(canvas, font, Vector2(panel.get_center().x, panel.end.y - 8), "KLICK · PUNKT SETZEN     %s · SCHLIESSEN" % str(RunTree.settings().key), 10, HudStyle.color("text_muted"), 1)
+	HudStyle.text(canvas, font, Vector2(panel.get_center().x, panel.end.y - 8), ("KLICK · PUNKT SETZEN     ESC · ZURÜCK" if embedded else "KLICK · PUNKT SETZEN     %s · SCHLIESSEN" % str(RunTree.settings().key)), 16, HudStyle.color("text_muted"), 1)
 
 
 static func _node(canvas: CanvasItem, font: Font, rect: Rect2, n: Dictionary, rank: int, state: String, hot: bool) -> void:

@@ -51,7 +51,10 @@ const FrostSnow = preload("res://src/hero/frost_snow.gd")
 const StorySave = preload("res://src/save/story_save.gd")
 ## The crypt's pause menu, in its story mode (overview, quest, map, controls, display, save).
 const PauseMenu = preload("res://src/pause_menu.gd")
-const STORY_CONTROLS := "Bewegen: WASD\nAngreifen: Linksklick oder Pfeiltasten\nTalente: 1 2 3 4, Ultimate: R (mit Relikt: seine Fähigkeiten auf 1 2 3 4)\nBegleiter: 5 6, Rechtsklick aufs Symbol: Auto an / aus\nAusweichen / Block: Shift\nTalentmenü (auch im Lauf): K\nKarte wählen: 7 8 9 oder Klick\nAktion (Tür, Truhe, Schale): E oder Leertaste\nRelikt / Waffe wechseln: T · Klon: Q\nKarte: M · Licht: L · Status: C oder Tab\nLauf-Talente: B\nNach dem Tod: E neuer Lauf\nMenü öffnen / schließen: Esc"
+## The pause page's controls in groups: a blank line between groups, each
+## group's header in capitals on its first line, then "Aktion: Taste" lines
+## (story_controls adds the card line when the run hands out cards).
+const STORY_CONTROLS := "BEWEGEN\nLaufen: WASD\nAusweichen / Block: Shift\n\nKAMPF\nAngreifen: Linksklick oder Pfeiltasten\nFähigkeiten: 1 2 3 4 (mit Relikt: die des Relikts)\nUltimate: R\nBegleiter: 5 6 (Rechtsklick aufs Symbol: Auto an / aus)\nRelikt / Waffe wechseln: T\nKlon: Q\n\nWELT\nAktion (Tür, Truhe, Schale): E oder Leertaste\nLicht: L\n\nFENSTER\nMenü: Esc (schließt zuerst das oberste Fenster)\nInventar: I\nTalente: K · Lauf-Talente: B\nKarte: M\nStatus: C oder Tab\nNeuer Lauf nach dem Tod: E"
 const DARKNESS_SHADER := preload("res://assets/shaders/canvas_vfx_darkness.gdshader")
 const FONT := preload("res://assets/fonts/pixel_operator8.ttf")
 const SkillBar = preload("res://src/ui/skill_bar.gd")
@@ -64,6 +67,8 @@ const StoryItems = preload("res://src/hero/story_items.gd")
 const InventoryPanel = preload("res://src/ui/inventory_panel.gd")
 const HudKit = preload("res://src/ui/hud_kit.gd")
 const HudStyle = preload("res://src/ui/hud_style.gd")
+## The camera's lead, fight framing, zoom breathing, punch and kick (src/hell/story_camera.gd).
+const StoryCamera = preload("res://src/hell/story_camera.gd")
 ## The world kit (src/world_kit): a world with theme.world_pack builds every floor live from the
 ## run number instead of reading baked floors (Story 1 the crypt, Story 3 the hell).
 const WorldPack = preload("res://src/world_kit/world_pack.gd")
@@ -249,6 +254,11 @@ var solid_grid: Dictionary = {}
 var door_at: Dictionary = {}
 var minimap: Array = []
 var camera: Camera2D
+## Drives the camera each frame (src/hell/story_camera.gd, assets/data/story_camera.json).
+var cam_rig: RefCounted
+## The options file the camera and the pause read (probes point it at a test file).
+var settings_path := GraphicsSettings.SETTINGS_PATH
+var _shake_was := 0.0
 var actors: Layer
 ## The crypt's darkness (src/vfx/darkness.gd); src/hero/story_glow.gd lights it.
 var dark: Node2D
@@ -275,6 +285,15 @@ var pools: RefCounted
 var hud: Hud
 ## The talent menu opened mid-run with K; the world stands still while it is open.
 var run_talents: Control
+## The result panel's real buttons (mouse, pad) and what the last HUD frame drew:
+## the panel's rectangle and the main button's label ("" = no buttons).
+var result_ui: Control
+var result_main: Button
+var result_menu: Button
+var _result_rect := Rect2()
+var _result_label := ""
+## True while a window (pause, map, inventory, talents, status) covers the HUD.
+var _windows := false
 var _chunk_nodes: Array = []
 var _vignette: GradientTexture2D
 
@@ -358,6 +377,8 @@ func _ready() -> void:
 	camera.zoom = Vector2.ONE * float(balance.view.base_width) / float(balance.view.width)
 	add_child(camera)
 	camera.make_current()
+	cam_rig = StoryCamera.new()
+	cam_rig.read_options(settings_path)
 	if not theme.has("mobs"):
 		monsters = Monsters.new(self, balance.monsters)
 		pools = PoolPaint.new(PIXEL_WORLD, _floor_open)
@@ -422,10 +443,11 @@ func _ready() -> void:
 	hud.set_anchors_preset(Control.PRESET_FULL_RECT)
 	hud.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	ui.add_child(hud)
+	_build_result_buttons(ui)
 	pause_menu = PauseMenu.new()
 	pause_menu.theme = CryptUI.create_theme()
 	ui.add_child(pause_menu)
-	pause_menu.use_story_mode(STORY_CONTROLS)
+	pause_menu.use_story_mode(story_controls(CardKit.offers_cards(self)))
 	pause_menu.save_rows = func() -> Array: return saves.summaries(StorySave.mode(self))
 	pause_menu.set_save_enabled(true)
 	pause_menu.story_map_draw = func(canvas: Control) -> void: _draw_map(canvas, canvas.size, true, true)
@@ -433,6 +455,12 @@ func _ready() -> void:
 	pause_menu.save_requested.connect(save_slot)
 	pause_menu.leave_pressed.connect(func() -> void: get_tree().change_scene_to_file(MENU_SCENE))
 	pause_menu.display_mode_requested.connect(_toggle_fullscreen)
+	# the pause's Talente / Inventar pages open the run's own windows; its options reach the camera
+	pause_menu.talents_requested.connect(open_run_talents)
+	pause_menu.inventory_requested.connect(func() -> void:
+		if inventory_panel != null and heroic(): inventory_panel.set_open(true))
+	pause_menu.option_changed.connect(func(key: String, value: Variant) -> void: cam_rig.set_option(key, value))
+	if pause_menu.options_panel != null: pause_menu.options_panel.setup(settings_path)
 	pause_menu.graphics_mode_requested.connect(func() -> void:
 		apply_graphics(GraphicsSettings.other(graphics))
 		pause_menu.set_graphics_state(GraphicsSettings.note(theme, graphics), graphics))
@@ -467,6 +495,9 @@ func _start_items(ui: CanvasLayer) -> void:
 	ui.add_child(inventory_panel)
 	inventory_panel.acted.connect(func(action: String, value: int) -> void: story_items.act(action, value))
 	inventory_panel.throw_armed.connect(func(slot: int) -> void: throw_slot = slot)
+	# the bag's notes join the one message channel; its chip shows only when it matters
+	inventory_panel.noted.connect(_toast)
+	inventory_panel.auto_hide_chip = true
 	inventory_panel.set_view(story_items.view())
 
 
@@ -520,6 +551,7 @@ static func _color(v: Variant) -> Color:
 ## With the feel, the crypt's feedback.gd plays the combat moments itself and
 ## src/hero/story_sound.gd drops what it would play twice.
 func _sound(event: String, category := "") -> void:
+	if sound != null and sound.theme_event(event, category): return
 	var name := str(theme.get("sounds", {}).get(event, ""))
 	if name != "" and (sound == null or sound.keep_event(event)):
 		_play_sfx(name, category)
@@ -580,6 +612,7 @@ func base_damage() -> float:
 
 ## A dash ended (charge with shockwave card, hammer leap): its landing blow.
 func on_dash_land(what: String) -> void:
+	if sound != null: sound.hero("dash_land")
 	if what == "shockwave":
 		var s: Dictionary = theme.cards.swordsman.filter(func(c: Dictionary) -> bool: return c.id == "shockwave")[0]
 		RelicKit._area(self, Vector2(player.x, player.y), float(s.radius), float(s.damage), 0.0)
@@ -821,7 +854,9 @@ func enter_boss_room() -> void:
 	player.y = at.y
 	state.room = boss.index
 	state.visited[boss.index] = true
-	state.banner = {"text": boss.name, "sub": "Debug-Start beim Boss", "t": 0.0}
+	state.banner = {"text": boss.name, "sub": str(boss.get("kind", "")), "t": 0.0}
+	# the goals the jump finished (key, gate) stay quiet
+	FrostHud.hush(self)
 	camera.position = Vector2(player.x, player.y)
 
 
@@ -833,6 +868,7 @@ func _room_of_type(kind: String) -> Dictionary:
 
 
 func _respawn() -> void:
+	if sound != null: sound.hero("respawn")
 	var s := _room_of_type("start")
 	var spawn: Array = s.spawn if s.spawn != null else [s.bw / 2.0, s.bh / 2.0]
 	player = {"x": (s.bx + float(spawn[0])) * C, "y": (s.by + float(spawn[1])) * C, "face": 1.0, "anim": 0.0, "moving": false, "vel": Vector2.ZERO, "aim": Vector2.RIGHT}
@@ -1010,12 +1046,130 @@ func _near_door(r: Dictionary, p: Vector2, dist: float) -> bool:
 
 
 ## K: the talent menu over the run; a changed build counts at once.
-func open_run_talents() -> void:
+## K (or the pause's Talente) opens the talent window; B opens it on the LAUF tab.
+func open_run_talents(on_run_page := false) -> void:
+	if sound != null: sound.at("talent_open", Vector2.INF)
 	if run_talents == null:
 		run_talents = TalentScreenScript.new()
 		pause_menu.get_parent().add_child(run_talents)
 		run_talents.profile_changed.connect(func() -> void: talents.tc.set_build(1, Profile.build_of(profile, class_id), true))
-	run_talents.open(Profile.data(), profile, profile_path, class_id)
+	# one talent window: the hero's talents and, mid-run, the run tree as its LAUF tab
+	var page := {"title": "LAUF", "draw": _draw_run_page, "click": _click_run_page} if heroic() else {}
+	run_talents.open(Profile.data(), profile, profile_path, class_id, true, page)
+	if on_run_page and not page.is_empty():
+		run_talents.show_run_page()
+
+
+var _run_page_rect := Rect2()
+
+
+## Draws the run tree inside the talent screen's LAUF tab (`rect`: its content area).
+func _draw_run_page(canvas: CanvasItem, rect: Rect2) -> void:
+	_run_page_rect = rect
+	canvas.draw_set_transform(rect.position)
+	RunTreeView.draw(canvas, FONT, rect.size, CardKit.tree(self), CardKit.ranks(self), int(state.level),
+		{"title": str(hero.get("name", class_id)), "mouse": canvas.get_local_mouse_position() - rect.position, "embedded": true})
+	canvas.draw_set_transform(Vector2.ZERO)
+
+
+## A click on the LAUF tab spends a run point on the node under it.
+func _click_run_page(at: Vector2) -> bool:
+	var picked := RunTreeView.hit(_run_page_rect.size, CardKit.tree(self), at - _run_page_rect.position)
+	if picked == "":
+		return false
+	CardKit.take_node(self, picked)
+	return true
+
+
+## The pause page's controls (STORY_CONTROLS), with the card line only when the
+## run hands out level-up cards.
+static func story_controls(cards: bool) -> String:
+	if not cards:
+		return STORY_CONTROLS
+	return STORY_CONTROLS.replace("\n\nWELT", "\nKarte wählen: 7 8 9 oder Klick\n\nWELT")
+
+
+## The result panel's buttons (mouse, pad): the main one (NEUER LAUF / WEITER,
+## the same as E) with the focus, HAUPTMENÜ beside it; _sync_overlays places them.
+func _build_result_buttons(ui: CanvasLayer) -> void:
+	result_ui = Control.new()
+	result_ui.set_anchors_preset(Control.PRESET_FULL_RECT)
+	result_ui.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	result_ui.theme = CryptUI.create_theme()
+	result_ui.visible = false
+	ui.add_child(result_ui)
+	result_main = Button.new()
+	result_main.pressed.connect(act)
+	result_menu = Button.new()
+	result_menu.text = "HAUPTMENÜ"
+	result_menu.pressed.connect(func() -> void: get_tree().change_scene_to_file(MENU_SCENE))
+	for button: Button in [result_main, result_menu]:
+		button.add_theme_font_size_override("font_size", int(HudStyle.size("font_body")))
+		result_ui.add_child(button)
+	result_main.focus_neighbor_right = result_menu.get_path()
+	result_menu.focus_neighbor_left = result_main.get_path()
+
+
+## Applies what the last HUD frame decided to the real controls: the result
+## buttons under the result panel (hidden under the pause), the inventory chip
+## off while a window or a result is up.
+func _sync_overlays() -> void:
+	if inventory_panel != null:
+		inventory_panel.chip_blocked = _windows or _result_rect.size.x > 0.0
+	if result_ui == null:
+		return
+	if _result_rect.size.x <= 0.0 or _result_label == "" or (pause_menu != null and pause_menu.visible):
+		result_ui.visible = false
+		return
+	var row := HudKit.result_button_row(_result_rect)
+	var gap := 12.0
+	var main_w := floorf((row.size.x - gap) * 0.6)
+	result_main.text = _result_label
+	result_main.position = row.position
+	result_main.size = Vector2(main_w, row.size.y)
+	result_menu.position = row.position + Vector2(main_w + gap, 0.0)
+	result_menu.size = Vector2(row.size.x - main_w - gap, row.size.y)
+	if not result_ui.visible:
+		result_ui.visible = true
+		result_main.grab_focus()
+
+
+## True while a window covers the HUD: pause, talent menu (K), inventory (I),
+## run talents (B), status (C) or the big map (M).
+func _window_open() -> bool:
+	return (pause_menu != null and pause_menu.visible) or (run_talents != null and run_talents.visible) \
+		or (inventory_panel != null and inventory_panel.open) or bool(state.get("tree_open", false)) \
+		or bool(state.get("status", false)) or bool(state.get("map", false))
+
+
+## Esc: closes the topmost open window (pause, inventory, run talents, status,
+## map) and says so; false when none was open (then Esc opens the pause).
+func _close_top_window() -> bool:
+	if pause_menu != null and pause_menu.visible:
+		pause_menu.visible = false
+	elif inventory_panel != null and inventory_panel.open:
+		inventory_panel.set_open(false)
+	elif bool(state.get("tree_open", false)):
+		state.tree_open = false
+	elif bool(state.get("status", false)):
+		state.status = false
+	elif bool(state.get("map", false)):
+		state.map = false
+	else:
+		return false
+	return true
+
+
+## True for a companion at full life with nothing cooling down (its bar steps back).
+func _pet_idle(pet: Dictionary) -> bool:
+	if pet.is_empty() or not bool(pet.get("alive", false)):
+		return false
+	if float(pet.get("hp", 0.0)) < float(pet.get("hp_max", 1.0)):
+		return false
+	for ability: Dictionary in pet.get("abilities", []):
+		if float(ability.get("cd", 0.0)) > 0.0:
+			return false
+	return true
 
 
 # ---------- input ----------
@@ -1030,7 +1184,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		open_run_talents()
 		get_viewport().set_input_as_handled()
 		return
-	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and pause_menu != null and not state.map \
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and pause_menu != null and not _window_open() \
 			and HudKit.menu_rect(get_viewport_rect().size).has_point(event.position):
 		open_pause()
 		get_viewport().set_input_as_handled()
@@ -1116,9 +1270,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_L:
 			state.light = not state.light
 		KEY_ESCAPE:
-			if pause_menu.visible:
-				pause_menu.visible = false
-			else:
+			# Esc closes the topmost window first (inventory, run talents, status, map), only then opens the pause
+			if not _close_top_window():
 				open_pause()
 		KEY_T:
 			if str(state.relic) != "":
@@ -1134,9 +1287,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			if inventory_panel != null and heroic():
 				inventory_panel.set_open(not inventory_panel.open)
 		KEY_B:
-			# the run talent tree (docs/LAUF-DESIGN.de.md); the world keeps running
+			# the run talent tree (docs/LAUF-DESIGN.de.md); the world waits while it is open (_process)
 			if heroic():
-				state.tree_open = not state.get("tree_open", false)
+				open_run_talents(true)
 		KEY_PAGEUP:
 			# debug: one level up
 			if heroic():
@@ -1172,10 +1325,21 @@ func _axis(neg: Key, pos: Key) -> float:
 
 # ---------- gameplay ----------
 
+## The one message channel: one toast on screen at a time, the rest wait their
+## turn (ui_hud_style.json "rules": toast_time each, toast_queue waiting); the
+## same text twice is not queued. The sound plays when a toast shows.
 func _toast(text: String) -> void:
-	state.toasts.append({"text": say(text), "t": 3.6})
-	if state.toasts.size() > 3:
-		state.toasts.pop_front()
+	var said := say(text)
+	var queue: Array = state.get("toasts", [])
+	for t: Dictionary in queue:
+		if str(t.text) == said:
+			return
+	if queue.is_empty() and sound != null: sound.at("toast", Vector2.INF)
+	queue.append({"text": said, "t": HudKit.rule("toast_time", 2.0)})
+	# too many waiting: the oldest waiting one goes, never the one on screen
+	while queue.size() > 1 + int(HudKit.rule("toast_queue", 3.0)):
+		queue.remove_at(1)
+	state.toasts = queue
 
 
 ## Costs the hero n half hearts unless he is still invulnerable from the last hit
@@ -1233,13 +1397,16 @@ func hp_f() -> float:
 ## death at zero. `soft`: a tick of damage over time, shown without the punch.
 func _lose_hp(n: int, why: String, from := Vector2.ZERO, soft := false) -> void:
 	state.hp = maxi(0, state.hp - n)
+	if not soft and from != Vector2.ZERO:
+		camera_kick(Vector2(player.x, player.y) - from, "hero_hit")
 	if soft:
 		state.flash = maxf(float(state.get("flash", 0.0)), 0.12)
-		_sound("hurt")
+		if sound == null or not sound.dot_tick(why): _sound("hurt")
 	elif feel != null:
 		# the crypt's hurt: punch with its groan layer (feedback.gd), once; like the crypt
 		# no red wash over the whole screen (the hero's flash, blood, shake and hitstop show it)
 		feel.on_hurt(from)
+		if sound != null and n >= 2: sound.hero("vo_hurt_heavy")
 	else:
 		state.flash = 0.25
 		_sound("hurt")
@@ -1258,6 +1425,7 @@ func _lose_hp(n: int, why: String, from := Vector2.ZERO, soft := false) -> void:
 		return
 	if state.hp == 0:
 		state.dead = 1.8
+		if sound != null: sound.hero("vo_death")
 		state.death_why = why
 		_toast("Gestorben: %s." % why)
 
@@ -1345,20 +1513,20 @@ func end_run(won: bool) -> void:
 	dash = {}
 	# a lost run already sounded the crypt's defeat when the hero fell (story_sound.gd phase "dead")
 	if won or feel == null:
-		_sound("level_up" if won else "hurt_voice")
+		_sound("run_won" if won else "hurt_voice")
 
 
 ## The result panel's rows for an ended run.
 func run_result(over: Dictionary) -> Dictionary:
 	var won := bool(over.get("won", false))
 	var zone := str(theme.get("zone_name", "FROSTGRUFT" if StorySave.mode(self) == "frost" else "HÖLLE"))
-	var lines: Array = [["ZONE", zone], ["ERREICHT", "ETAGE %d · %s" % [int(over.floor), str(over.title).to_upper()]], ["LEVEL", str(int(over.level))]]
+	var lines: Array = [["ZONE", zone], ["ERREICHT", "ETAGE %d · %s" % [int(over.floor), str(over.title).to_upper()]], ["STUFE", str(int(over.level))]]
 	if not won and str(over.why) != "":
 		lines.append(["URSACHE", str(over.why).to_upper()])
 	# the profile keeps level, gold and soul shards (docs/TALENTE-SEELENSPLITTER.de.md)
 	var note := ""
 	if not profile.is_empty():
-		note = "PROFIL: LEVEL %d · %d GOLD · %d SEELENSPLITTER" % [int(Profile.class_state(profile, class_id).level), int(profile.gold), int(profile.shards.have)]
+		note = "HELDENSTUFE %d · %d GOLD · %d SEELENSPLITTER" % [int(Profile.class_state(profile, class_id).level), int(profile.gold), int(profile.shards.have)]
 	return {"title": say("Die Hölle ist bezwungen").to_upper() if won else "LAUF BEENDET", "tone": "win" if won else "loss",
 		"lines": lines, "note": note, "hints": "E · NEUER LAUF   ESC · MENÜ"}
 
@@ -1406,8 +1574,9 @@ func act() -> void:
 				else:
 					_burst(Vector2(e.x, e.y - 50), 60, true)
 					_sound("relic")
-				var names: Array = (theme[e.item].skills as Array).map(func(s: Dictionary) -> String: return "%s (%s, ab LV %d)" % [s.short, s.key, int(s.unlock)])
-				state.banner = {"text": str(theme[e.item].name), "sub": " · ".join(PackedStringArray(names)) + " · T wechselt", "t": 0.0}
+				var names: Array = (theme[e.item].skills as Array).map(func(s: Dictionary) -> String: return "%s (%s, ab Stufe %d)" % [s.short, s.key, int(s.unlock)])
+				# a message, not a room banner (banners only for new rooms and floors)
+				_toast("%s: %s · T wechselt" % [str(theme[e.item].name), " · ".join(PackedStringArray(names))])
 			"chest":
 				if e.get("mimic", false):
 					_wake_mimic(e)
@@ -1680,6 +1849,7 @@ func _damage_mob(m: Dictionary, push: Vector2, mult := 1.0) -> bool:
 	# kit bosses stand firm: no knockback
 	m.k = Vector2.ZERO if m.has("kit") else push * (0.05 if m.kind == "boss" else 0.25)
 	FrostCombat.after_hit(self, m, push, crit > 1.0)
+	if sound != null: sound.mob_hurt(m)
 	if feel != null:
 		# effect hooks: a critical hit's gold ring (the crypt's crit marker); a charge (hero_kit.gd
 		# _update_dash: its push and multiple) striking through is the crypt's charge_hit
@@ -1703,6 +1873,7 @@ func _mob_def(kind: String) -> Dictionary:
 
 
 func _spawn_mob(room: int, pos: Vector2, kind: String) -> void:
+	if sound != null: sound.at("enemy_spawn", pos)
 	var def := _mob_def(kind)
 	var diff: Dictionary = W.diff
 	var hp: float = (float(W.boss.hp) if kind == "boss" else round(float(def.hp) * float(diff.hp))) * (talents.hp_scale() if talents != null else 1.0)
@@ -1820,6 +1991,7 @@ func _clear_room(r: Dictionary, at: Vector2) -> void:
 
 
 func _drop(kind: String, room: int, at: Vector2, extra := {}) -> void:
+	if sound != null: sound.at("drop_" + kind, at)
 	var e := {"type": kind, "x": at.x + randf_range(-30, 30), "y": at.y + randf_range(-20, 20), "room": room}
 	e.merge(extra)
 	W.ents.append(e)
@@ -1839,6 +2011,7 @@ func _burst(at: Vector2, n: int, gold := false) -> void:
 	# src/hero/story_feel.gd), so hero_kit.gd _level_up's gold embers (raised as levelfx starts) stay out
 	if feel != null and gold and not levelfx.is_empty() and float(levelfx.t) == 0.0 and at.is_equal_approx(Vector2(player.x, player.y - 50)):
 		return
+	if gold and sound != null: sound.at("gold_burst", at)
 	for k in range(n):
 		embers.append({"p": at, "v": Vector2(randf_range(-150, 150), randf_range(-210, 90)), "t": randf_range(0.35, 0.85), "big": n > 20, "gold": gold})
 
@@ -1846,6 +2019,7 @@ func _burst(at: Vector2, n: int, gold := false) -> void:
 # ---------- seals, skull heaps, pits and the clone ----------
 
 func _hit_breakable(e: Dictionary, at: Vector2) -> void:
+	if sound != null and str(e.get("type", "")) != "skullheap": sound.at("breakable_hit", at)
 	e.hit = 0.15
 	# effect hook: with the feel a blow chips stone like the crypt's chests take a hit (a small burst sheet;
 	# the heap or seal shakes like skill_fx.gd draw_chest: _draw_breakable)
@@ -1877,6 +2051,7 @@ func _hit_breakable(e: Dictionary, at: Vector2) -> void:
 
 ## A broken seal blesses the hero (bless_chance) or releases demons that lock the room again.
 func _break_seal(e: Dictionary) -> void:
+	if sound != null: sound.at("seal_break", Vector2(e.x, e.y))
 	var cfg: Dictionary = balance.seal
 	if randf() < float(cfg.bless_chance):
 		var id: String = Rules.BLESSINGS[randi() % Rules.BLESSINGS.size()]
@@ -1907,7 +2082,7 @@ func _break_seal(e: Dictionary) -> void:
 ## A broken urn, barrel or crate (world kit): nothing, rune stones, a heart, or (crates only)
 ## undead that lock the room.
 func _break_crate(e: Dictionary) -> void:
-	_sound("hit_bone")
+	if sound == null or not sound.theme_event("crate_break"): _sound("hit_bone")
 	match str(e.get("drop", "none")):
 		"gem":
 			_drop("gem", e.room, Vector2(e.x - 14, e.y))
@@ -1933,6 +2108,7 @@ func _break_crate(e: Dictionary) -> void:
 
 ## A chest that was a mimic: it wakes on opening, the room locks and the fight is on.
 func _wake_mimic(e: Dictionary) -> void:
+	if sound != null: sound.at("mimic_spring", Vector2(e.x, e.y))
 	e.state = "empty"
 	e.taken = true
 	var r: Dictionary = W.rooms[e.room]
@@ -1974,6 +2150,7 @@ func _open_stairs() -> void:
 
 ## Takes the hidden stairs down to floor n of a new world.
 func choose_stairs(n: int) -> void:
+	if sound != null: sound.at("stairs_pick", Vector2.INF)
 	if stairs_pick.is_empty() or n < 1 or n >= int(state.floor):
 		return
 	stairs_pick = {}
@@ -1983,6 +2160,7 @@ func choose_stairs(n: int) -> void:
 
 
 func _fall_into_pit() -> void:
+	if sound != null: sound.hero("pit_fall")
 	state.hp = maxi(0, state.hp - int(balance.pit.damage))
 	# the fall hurts like a hit: the crypt's hurt (feedback.gd: flash, blood, shake, hitstop), dust
 	# rising from the pit, no red wash over the screen (the crypt has none)
@@ -2076,6 +2254,7 @@ func _update_clone(dt: float) -> void:
 
 ## Writes the floor-start state into save slot 1..3 of this world; true on success.
 func save_slot(slot: int) -> bool:
+	if sound != null: sound.at("save_ok", Vector2.INF)
 	var ok := not floor_save.is_empty() and saves.write(StorySave.mode(self), slot, floor_save)
 	if ok:
 		run_slot = slot
@@ -2086,6 +2265,7 @@ func save_slot(slot: int) -> bool:
 
 ## Esc: the shared pause menu (the world stands still), centred on the screen, on its overview.
 func open_pause() -> void:
+	if sound != null: sound.at("pause_open", Vector2.INF)
 	var screen := get_viewport().get_visible_rect().size
 	var origin := ((screen - Vector2(1280, 720)) / 2.0).floor()
 	pause_menu.position = origin
@@ -2109,8 +2289,8 @@ func pause_info() -> Dictionary:
 	var blessings: Array = (state.buffs as Array).map(func(b: String) -> String: return b.get_slice(":", 0))
 	var lines: Array = [
 		"Etage %d · %s" % [state.floor, W.title], str(W.circle), "",
-		"%s · LV %d · %s" % [hero_name, int(state.get("level", 1)), held],
-		"Leben: %s von %d Herzen" % [str(int(state.hp) / 2) + (",5" if int(state.hp) % 2 == 1 else ""), int(state.max_hp) / 2],
+		"%s · STUFE %d · %s" % [hero_name, int(state.get("level", 1)), held],
+		"LP: %d / %d" % [HudKit.life_shown(int(state.hp), hp_f()), int(state.max_hp)],
 		"Runensteine: %d" % int(state.gems),
 		"Schlüssel: %s" % (", ".join(PackedStringArray(keys)) if not keys.is_empty() else "keiner"),
 		"Segen: %s" % (", ".join(PackedStringArray(blessings)) if not blessings.is_empty() else "keiner"),
@@ -2129,8 +2309,9 @@ func _toggle_fullscreen() -> void:
 
 func _process(delta: float) -> void:
 	var dt := minf(delta, 0.05)
-	# the world stands still while the pause menu or the talent menu (K) is open
-	if (pause_menu != null and pause_menu.visible) or (run_talents != null and run_talents.visible):
+	_sync_overlays()
+	# the world stands still while the pause menu, the talent menu (K) or the run talents (B) are open
+	if (pause_menu != null and pause_menu.visible) or (run_talents != null and run_talents.visible) or bool(state.get("tree_open", false)):
 		hud.queue_redraw()
 		return
 	# a kill or a hurt holds the picture for a moment, as in the crypt (hitstop, src/hero/story_feel.gd)
@@ -2159,9 +2340,14 @@ func _update(dt: float) -> void:
 		state[k] = maxf(0.0, state[k] - dt)
 	state.shake = maxf(0.0, state.shake - dt * 30.0)
 	state.white = maxf(0.0, state.white - dt * 1.6)
-	for t: Dictionary in state.toasts:
-		t.t -= dt
-	state.toasts = state.toasts.filter(func(t: Dictionary) -> bool: return t.t > 0.0)
+	# one toast at a time: only the one on screen runs down, then the next one shows
+	var queue: Array = state.toasts
+	if not queue.is_empty():
+		queue[0].t = float(queue[0].t) - dt
+		queue[0].age = float(queue[0].get("age", 0.0)) + dt
+		if float(queue[0].t) <= 0.0:
+			queue.pop_front()
+			if not queue.is_empty() and sound != null: sound.at("toast", Vector2.INF)
 	state.banner.t += dt
 	if state.won:
 		state.won_t += dt
@@ -2601,6 +2787,7 @@ func _update_mobs(dt: float) -> void:
 		# with the feel the kill sounds in the crypt material (feedback.gd via FrostCombat.after_kill)
 		if feel == null:
 			_sound("kill_" + str((m.def as Dictionary).get("material", "void")))
+		if sound != null: sound.mob_died(m)
 		HeroKit.gain(self, HeroKit.exp_for(self, m))
 		SubKit.on_kill(self, m)
 		if talents != null: talents.killed(m)
@@ -2743,8 +2930,10 @@ func _update_rooms() -> void:
 	var ri := _room_at_world(player.x, player.y - 12.0)
 	if ri >= 0 and ri != state.room:
 		state.room = ri
+		# the room banner only the first time a room is entered
+		if not state.visited.has(ri):
+			state.banner = {"text": W.rooms[ri].name, "sub": W.rooms[ri].kind, "t": 0.0}
 		state.visited[ri] = true
-		state.banner = {"text": W.rooms[ri].name, "sub": W.rooms[ri].kind, "t": 0.0}
 	var r: Dictionary = W.rooms[state.room]
 	if r.cleared or r.fight:
 		return
@@ -3126,21 +3315,60 @@ func _draw_lava_bubbles(l: CanvasItem) -> void:
 
 func _update_camera(dt: float) -> void:
 	var r: Dictionary = W.rooms[state.room]
-	var target := Vector2(player.x, player.y - 40)
+	var hero := Vector2(player.x, player.y - 40)
 	var view := Vector2(float(balance.view.width), float(balance.view.width) * 9.0 / 16.0)
+	var bounds := Rect2()
 	if _room_at_world(player.x, player.y - 12.0) >= 0:
 		var lo := Vector2(r.bx * C - 70, r.by * C - 110)
 		var hi := Vector2((r.bx + r.bw) * C + 70, (r.by + r.bh) * C + 80)
-		for axis in [0, 1]:
-			if hi[axis] - lo[axis] <= view[axis]:
-				target[axis] = (lo[axis] + hi[axis]) / 2.0
-			else:
-				target[axis] = clampf(target[axis], lo[axis] + view[axis] / 2.0, hi[axis] - view[axis] / 2.0)
-	camera.position = camera.position.lerp(target, 1.0 - pow(0.0015, dt))
-	# the shake: layered sines at uneven rates (smooth, self-ending as state.shake decays),
-	# never a fresh random offset per frame, which buzzes (game feel: trauma shake)
-	var st := float(state.t) * 30.0
-	camera.offset = Vector2(0.6 * sin(st * 1.7 + 1.3) + 0.4 * sin(st * 3.1 + 2.6), 0.6 * sin(st * 2.3 + 4.1) + 0.4 * sin(st * 3.7 + 0.7)) * state.shake
+		bounds = Rect2(lo, hi - lo)
+	# a jump made elsewhere (floor load, respawn, a Testraum teleport) starts the camera fresh
+	if camera.position.distance_to(cam_rig.position) > 1.0:
+		cam_rig.reset(hero)
+	var foes := _camera_foes()
+	# a big jump of the shake (a slam, a blast, a heavy hit) also shoves the view away from the fight
+	var shake := float(state.shake)
+	if shake - _shake_was >= 10.0 and not foes.is_empty():
+		cam_rig.kick(hero - (foes[0] as Vector2), "slam")
+	_shake_was = shake
+	var aim := get_global_mouse_position() if heroic() and not _window_open() else Vector2.INF
+	cam_rig.step(dt, {"hero": hero, "aim": aim, "foes": foes, "boss": _camera_boss, "bounds": bounds,
+		"view": view, "shake": shake, "t": float(state.t)})
+	camera.position = cam_rig.position
+	camera.zoom = Vector2.ONE * float(balance.view.base_width) / float(balance.view.width) * float(cam_rig.zoom)
+	camera.offset = cam_rig.offset
+
+
+var _camera_boss := false
+
+
+## The live foes of the fight the hero is in (their middles), the boss first.
+func _camera_foes() -> Array:
+	var out: Array = []
+	_camera_boss = false
+	var r: Dictionary = W.rooms[state.room]
+	if not bool(r.get("fight", false)):
+		return out
+	for m: Dictionary in mobs:
+		if int(m.get("room", -1)) != int(state.room) or float(m.get("hp", 0.0)) <= 0.0 or bool(m.get("remove", false)) or m.get("dying") != null:
+			continue
+		var at: Vector2 = (m.p as Vector2) - Vector2(0, float(m.get("cy", 20.0)))
+		if bool(m.get("boss", false)) or str(m.get("kind", "")) == "boss":
+			_camera_boss = true
+			out.push_front(at)
+		else:
+			out.append(at)
+	return out
+
+
+## Zooms the camera in for a moment (an ultimate: "ultimate", a heavy blow: "heavy").
+func camera_punch(kind := "ultimate") -> void:
+	if cam_rig != null: cam_rig.punch(kind)
+
+
+## Shoves the view along `dir` (assets/data/story_camera.json kick names or px).
+func camera_kick(dir: Vector2, px: Variant = "hero_hit") -> void:
+	if cam_rig != null: cam_rig.kick(dir, px)
 
 
 # ---------- world drawing ----------
@@ -3328,8 +3556,8 @@ func _draw_front(l: Layer) -> void:
 
 
 func _view_rect() -> Rect2:
-	var size := Vector2(float(balance.view.width), float(balance.view.width) * 9.0 / 16.0)
-	return Rect2(camera.position - size / 2.0, size)
+	var size := Vector2(float(balance.view.width), float(balance.view.width) * 9.0 / 16.0) / (float(cam_rig.zoom) if cam_rig != null else 1.0)
+	return Rect2(camera.position + camera.offset - size / 2.0, size)
 
 
 func _draw_actors(l: Layer) -> void:
@@ -3860,7 +4088,7 @@ func wake_snowman(p: Dictionary) -> void:
 	for i in range(24):
 		frost_snow.chips.append({"p": at + Vector2(randf_range(-30, 30), randf_range(-90, -10)), "v": Vector2(randf_range(-220, 220), randf_range(-380, -120)), "t": 0.0})
 	state.shake = maxf(float(state.shake), 9.0)
-	_sound("hit_bone")
+	if sound == null or not sound.theme_event("snowman_wake"): _sound("hit_bone")
 	_toast("Der Schneemann erwacht! Die Gitter fallen.")
 
 
@@ -3983,15 +4211,75 @@ func draw_hud(h: Control) -> void:
 		h.draw_rect(Rect2(Vector2.ZERO, size), Color(1, 0.925, 0.82, minf(1.0, state.white)))
 	# blindness darkens the view around the hero, under the HUD panels
 	FrostCombat.draw_hud(self, h, size)
-	# the hero strip top left, the same in every world (src/ui/hud_kit.gd): hearts
-	# with the level beside them, the EXP line, keys, rune stones, braziers, clone, blessings
+	# the life shown, for the status sheet too (src/hell/frost_hud.gd reads state.hp_f)
+	state.hp_f = hp_f()
+	_windows = _window_open()
+	_result_rect = Rect2()
+	_result_label = ""
+	# the big map (M) is a window of its own: no HUD panels, chips or toasts under it
+	if state.map:
+		_draw_map(h, size, true)
+		FrostHud.track(self)
+		_draw_result(h, size)
+		return
+	var left_edge := _draw_hero_strip(h)
+	# no help line at the bottom: controls and goals live in the pause menu (Esc)
+	if heroic():
+		_draw_skill_bar(h, size)
+	var boss_mob: Dictionary = {}
+	for m: Dictionary in mobs:
+		if m.kind == "boss":
+			boss_mob = m
+	# the room banner (new rooms and floors only) sits below the guardian's bar while it stands
+	FrostHud.banner(self, h, size, 96.0 if boss_mob.is_empty() else 112.0)
+	if not boss_mob.is_empty():
+		_draw_boss_bar(h, size, boss_mob, left_edge)
+	_draw_floor_panel(h, size, not boss_mob.is_empty())
+	# chips, prompt and the toast only while no window and no result panel covers the HUD
+	var result_up: bool = state.won or not (state.get("over", {}) as Dictionary).is_empty() or not stairs_pick.is_empty()
+	if not _windows and not result_up:
+		var chip_hot := HudKit.menu_rect(size).has_point(h.get_local_mouse_position())
+		HudKit.menu_chip(h, FONT, size, "ESC · MENÜ", 1.0 if chip_hot else HudKit.rule("menu_chip_alpha", 0.5), chip_hot)
+		var n := _nearest()
+		if not n.is_empty() and state.dead <= 0.0 and not state.won:
+			HudKit.prompt(h, FONT, _to_screen(n.p, size) - Vector2(0, 70), "E", say(n.label), size)
+		_draw_toast(h, size)
+	if theme.placeholder_note:
+		_text(h, "Figur: Platzhalter" if monsters != null else "Figur und Gegner: Platzhalter", Vector2(20, size.y - 14), 16, Color(ink, 0.45))
+	if state.dead > 0.0:
+		h.draw_rect(Rect2(Vector2.ZERO, size), Color(0.12, 0, 0, 0.55))
+	# the goal list sits in the pause menu now; finished goals still ring and show a note
+	FrostHud.track(self)
+	if theme.get("styled_hud", false) and not state.won:
+		if state.get("status", false):
+			FrostHud.status(self, h, size)
+	# the run talent tree window (B), the same in every world; the world waits while it is open
+	if state.get("tree_open", false) and heroic():
+		RunTreeView.draw(h, FONT, size, CardKit.tree(self), CardKit.ranks(self), int(state.level), {"title": str(hero.get("name", class_id)), "mouse": h.get_local_mouse_position()})
+	_draw_result(h, size)
+
+
+## The hero strip top left, the same in every world (src/ui/hud_kit.gd): the
+## name and LP (no "P1 ·": the story worlds are solo), the life bar with the
+## Stufe beside it, the EXP line, the resource row (a key only once found, rune
+## stones, braziers; it fades after a quiet while and comes back with the next
+## change), clone, blessings, conditions; the companion bar under it (stepped
+## back while it needs nothing). Returns the right edge of both.
+func _draw_hero_strip(h: Control) -> float:
 	var resources: Array = []
 	for k in ["A", "B", "C"]:
-		resources.append({"icon": tex[key_sprite[k]], "tint": key_tint[k], "dim": not state.keys[k]})
+		if state.keys[k]:
+			resources.append({"icon": tex[key_sprite[k]], "tint": key_tint[k]})
 	resources.append({"icon": tex.rune_gem, "text": str(int(state.gems))})
 	var fire := Rules.group_progress(W.ents, "feuer")
 	if fire.y > 0:
 		resources.append({"icon": tex.brazier_bowl, "text": "%d/%d" % [fire.x, fire.y], "dim": fire.x >= fire.y})
+	var sig := "%s%s%s|%d|%d" % [state.keys["A"], state.keys["B"], state.keys["C"], int(state.gems), fire.x]
+	if str(state.get("res_sig", "")) != sig:
+		state.res_sig = sig
+		state.res_t = float(state.t)
+	var quiet := float(state.t) - float(state.res_t) - HudKit.rule("resource_hold", 4.0)
+	var res_alpha := 1.0 - clampf(quiet / maxf(0.05, HudKit.rule("resource_fade", 0.5)), 0.0, 1.0)
 	var status: Array = []
 	var sk: Dictionary = state.skill
 	if sk.owned:
@@ -4005,52 +4293,54 @@ func draw_hud(h: Control) -> void:
 	status.append_array(FrostCombat.status_lines(self))
 	var leveled := heroic()
 	var need := maxf(1.0, float(HeroKit.need(theme.leveling, int(state.level)))) if leveled else 1.0
-	# the life shown, for the status sheet too (src/hell/frost_hud.gd reads state.hp_f)
-	state.hp_f = hp_f()
-	var hero_rect := HudKit.hero_panel(h, FONT, Vector2(HudStyle.size("margin"), HudStyle.size("margin")), {"title": "P1 · " + str(hero.get("name", class_id)).to_upper(),
+	var margin := HudStyle.size("margin")
+	var hero_rect := HudKit.hero_panel(h, FONT, Vector2(margin, margin), {"title": str(hero.get("name", class_id)).to_upper(),
+		"level_label": "STUFE", "hp_unit": "LP",
 		"points": RunTree.points_left(CardKit.tree(self), CardKit.ranks(self), int(state.level)) if leveled else 0,
-		"hp": int(state.hp), "hp_f": hp_f(), "max_hp": int(state.max_hp), "hearts": hearts, "level": int(state.level) if leveled else -1,
-		"exp": float(state.exp) / need if leveled else -1.0, "resources": resources, "status": status,
+		"hp": int(state.hp), "hp_f": float(state.hp_f), "max_hp": int(state.max_hp), "hearts": hearts, "level": int(state.level) if leveled else -1,
+		"exp": float(state.exp) / need if leveled else -1.0, "resources": resources, "resource_alpha": res_alpha, "status": status,
 		"low": int(state.hp) <= 2 and int(state.hp) > 0, "clock": float(state.t)})
+	var edge := hero_rect.end.x
 	if talents != null:
-		HudKit.pet_panel(h, FONT, Vector2(hero_rect.position.x, hero_rect.end.y + 6.0), hero_rect.size.x, talents.hud_state().get("pet", {}), float(state.t))
-	# no help line at the bottom: controls and goals live in the pause menu (Esc)
-	if heroic():
-		_draw_skill_bar(h, size)
-	var boss_mob: Dictionary = {}
-	for m: Dictionary in mobs:
-		if m.kind == "boss":
-			boss_mob = m
-	# the banner moves below the guardian's bar while it stands
-	var b: Dictionary = state.banner
-	var ba := clampf(b.t / 0.4, 0.0, 1.0) if b.t < 2.6 else maxf(0.0, 1.0 - (b.t - 2.6) / 0.8)
-	var banner_y := 96.0 if boss_mob.is_empty() else 112.0
-	FrostHud.banner(self, h, size, banner_y)
-	if not boss_mob.is_empty():
-		# the guardian's bar at the top centre, the same in every world (src/ui/hud_kit.gd)
-		var bars: int = boss_mob.phase_hp.size() if boss_mob.has("kit") else 1
-		var phase_i: int = int(boss_mob.phase) if boss_mob.has("kit") else 0
-		var segments: Array = []
+		var pet: Dictionary = talents.hud_state().get("pet", {})
+		var pet_rect := HudKit.pet_panel(h, FONT, Vector2(hero_rect.position.x, hero_rect.end.y + 6.0), hero_rect.size.x, pet, float(state.t),
+			HudKit.rule("pet_idle_alpha", 0.6) if _pet_idle(pet) else 1.0)
+		edge = maxf(edge, pet_rect.end.x)
+	return edge
+
+
+## The guardian's bar, the same in every world (src/ui/hud_kit.gd), between the
+## hero strip (`left`) and the floor panel; no "WÄCHTER DER ETAGE" while the
+## room banner still names the place.
+func _draw_boss_bar(h: Control, size: Vector2, boss_mob: Dictionary, left: float) -> void:
+	var bars: int = boss_mob.phase_hp.size() if boss_mob.has("kit") else 1
+	var phase_i: int = int(boss_mob.phase) if boss_mob.has("kit") else 0
+	var segments: Array = []
+	for i in range(bars):
+		# spent bars empty, the current one draining, later ones full
+		segments.append(0.0 if i < phase_i else (1.0 if i > phase_i else clampf(boss_mob.hp / boss_mob.max, 0.0, 1.0)))
+	var pname := str(BossKit.phase(boss_mob).get("name", "")) if boss_mob.has("kit") else ""
+	var title: String = str(W.boss.name) + (" · " + pname if pname != "" else "")
+	if monsters != null:
+		title = monsters.boss_label(boss_mob)
+	var total := 0.0
+	var left_hp := maxf(0.0, boss_mob.hp)
+	if boss_mob.has("kit"):
 		for i in range(bars):
-			# spent bars empty, the current one draining, later ones full
-			segments.append(0.0 if i < phase_i else (1.0 if i > phase_i else clampf(boss_mob.hp / boss_mob.max, 0.0, 1.0)))
-		var pname := str(BossKit.phase(boss_mob).get("name", "")) if boss_mob.has("kit") else ""
-		var title: String = str(W.boss.name) + (" · " + pname if pname != "" else "")
-		if monsters != null:
-			title = monsters.boss_label(boss_mob)
-		var total := 0.0
-		var left_hp := maxf(0.0, boss_mob.hp)
-		if boss_mob.has("kit"):
-			for i in range(bars):
-				total += float(boss_mob.phase_hp[i])
-				if i > phase_i:
-					left_hp += float(boss_mob.phase_hp[i])
-		else:
-			total = boss_mob.max
-		HudKit.boss_bar(h, FONT, size, {"name": title.to_upper(), "tag": "WÄCHTER DER ETAGE", "segments": segments,
-			"ratio": clampf(left_hp / maxf(1.0, total), 0.0, 1.0), "flash": 1.0 if float(boss_mob.get("inv", 0.0)) > 0.0 else 0.0,
-			"value": "%d %%" % int(ceil(left_hp / maxf(1.0, total) * 100.0))})
-	# the floor panel top right: floor, its name, the fight state; the mini-map inside it
+			total += float(boss_mob.phase_hp[i])
+			if i > phase_i:
+				left_hp += float(boss_mob.phase_hp[i])
+	else:
+		total = boss_mob.max
+	HudKit.boss_bar(h, FONT, size, {"name": title.to_upper(), "tag": "" if FrostHud.banner_up(self) else "WÄCHTER DER ETAGE", "segments": segments,
+		"ratio": clampf(left_hp / maxf(1.0, total), 0.0, 1.0), "flash": 1.0 if float(boss_mob.get("inv", 0.0)) > 0.0 else 0.0,
+		"value": "%d %%" % int(ceil(left_hp / maxf(1.0, total) * 100.0)), "left": left, "right": HudKit.floor_rect(size).position.x})
+
+
+## The floor panel top right: the floor, one line (the place, or "VERRIEGELT ·
+## n" in red while a fight holds the gates), the mini-map; it steps back
+## outside fights.
+func _draw_floor_panel(h: Control, size: Vector2, boss_up: bool) -> void:
 	var cr: Dictionary = W.rooms[state.room]
 	var locked := 0
 	if cr.fight:
@@ -4058,47 +4348,48 @@ func draw_hud(h: Control) -> void:
 			if m.room == cr.index:
 				locked += 1
 	var map_area := HudKit.floor_panel(h, FONT, size, {"title": "ETAGE %d" % int(state.floor), "subtitle": str(W.title).to_upper(),
-		"tag": ("VERRIEGELT · %d" % locked) if cr.fight else "ERKUNDEN", "tag_color": HudStyle.color("danger") if cr.fight else HudStyle.color("text_dim")})
-	HudKit.menu_chip(h, FONT, size, "ESC · MENÜ", 1.0, HudKit.menu_rect(size).has_point(h.get_local_mouse_position()))
-	var n := _nearest()
-	if not n.is_empty() and state.dead <= 0.0 and not state.won:
-		HudKit.prompt(h, FONT, _to_screen(n.p, size) - Vector2(0, 70), "E", say(n.label))
-	var toasts: Array = state.toasts
-	for i in range(toasts.size()):
-		var tt: Dictionary = toasts[i]
-		# hints stack above the skill bar, the same in every world (src/ui/hud_kit.gd)
-		var bottom := SkillBar.top(size, false) - 28.0 if heroic() else size.y - 40.0
-		HudKit.toast(h, FONT, size, bottom - (toasts.size() - 1 - i) * 40.0, str(tt.text), minf(1.0, tt.t * 2.0))
-	if theme.placeholder_note:
-		_text(h, "Figur: Platzhalter" if monsters != null else "Figur und Gegner: Platzhalter", Vector2(20, size.y - 14), 16, Color(ink, 0.45))
-	if state.dead > 0.0:
-		h.draw_rect(Rect2(Vector2.ZERO, size), Color(0.12, 0, 0, 0.55))
-	_draw_map(h, size, state.map, false, map_area)
-	# the goal list sits in the pause menu now; finished goals still ring and show a note
-	FrostHud.track(self)
-	if theme.get("styled_hud", false) and not state.map and not state.won:
-		if state.get("status", false):
-			FrostHud.status(self, h, size)
-	# the run talent tree window (B), the same in every world
-	if state.get("tree_open", false) and heroic():
-		RunTreeView.draw(h, FONT, size, CardKit.tree(self), CardKit.ranks(self), int(state.level), {"title": str(hero.get("name", class_id)), "mouse": h.get_local_mouse_position()})
-	# floor won, run over: the result panel every world shares (src/ui/hud_kit.gd)
+		"tag": ("VERRIEGELT · %d" % locked) if cr.fight else "", "tag_color": HudStyle.color("danger")})
+	_draw_map(h, size, false, false, map_area)
+	if not cr.fight and not boss_up:
+		HudKit.dim(h, HudKit.floor_rect(size), HudKit.rule("floor_calm_alpha", 0.7))
+
+
+## The one toast on screen: bottom left above the skill bar's row, clear of the
+## hero and the resource bar, fading in and out.
+func _draw_toast(h: Control, size: Vector2) -> void:
+	var queue: Array = state.toasts
+	if queue.is_empty():
+		return
+	var tt: Dictionary = queue[0]
+	var a := clampf(float(tt.get("age", 0.0)) / maxf(0.01, HudKit.rule("toast_in", 0.12)), 0.0, 1.0) \
+		* clampf(float(tt.t) / maxf(0.05, HudKit.rule("toast_fade", 0.25)), 0.0, 1.0)
+	var bottom := (SkillBar.top(size, false) - 34.0) if heroic() else size.y - 24.0
+	HudKit.toast_at(h, FONT, Vector2(HudStyle.size("margin"), bottom), str(tt.text), a, HudKit.rule("toast_max_width", 620.0))
+
+
+## Floor won, run over, the hidden stairs: the result panel every world shares
+## (src/ui/hud_kit.gd). The first two get real buttons (_sync_overlays); E and
+## Esc work as before.
+func _draw_result(h: Control, size: Vector2) -> void:
 	var over: Dictionary = state.get("over", {})
 	if not over.is_empty():
-		HudKit.result_panel(h, FONT, size, run_result(over))
+		var data := run_result(over)
+		data["buttons"] = 2
+		_result_rect = HudKit.result_panel(h, FONT, size, data)
+		_result_label = "NEUER LAUF  (E)"
 	elif state.won:
-		var note := _floor_reward
-		HudKit.result_panel(h, FONT, size, {"title": "ETAGE %d GESCHAFFT" % int(state.floor), "tone": "floor",
+		_result_rect = HudKit.result_panel(h, FONT, size, {"title": "ETAGE %d GESCHAFFT" % int(state.floor), "tone": "floor", "buttons": 2,
 			"lines": [["RÄUME ERKUNDET", "%d / %d" % [state.visited.size(), W.rooms.size()]], [say("RUNENSTEINE"), str(int(state.gems))],
-				["HERZEN", "%d" % (int(state.max_hp) / 2)], ["LEVEL", str(int(state.level))]],
-			"note": note, "hints": "E · WEITER ZU ETAGE %d" % (int(state.floor) + 1)})
+				["LP", "%d / %d" % [HudKit.life_shown(int(state.hp), float(state.hp_f)), int(state.max_hp)]], ["STUFE", str(int(state.level))]],
+			"note": _floor_reward})
+		_result_label = "WEITER  (E)"
 	elif not stairs_pick.is_empty():
 		# the hidden stairs: every earlier floor, in a new world
 		var lines: Array = []
 		for fn: int in stairs_pick.floors:
 			lines.append(["TASTE %d" % fn, "ETAGE %d · %s" % [fn, str(world.pack.floors[fn].title).to_upper() if world != null else ""]])
 		HudKit.result_panel(h, FONT, size, {"title": "VERGESSENE STIEGE", "tone": "floor", "lines": lines,
-			"note": "Die Welt wird neu gewürfelt. Herzen, Steine, Level und Gegenstände bleiben.", "hints": "1-%d · ETAGE WÄHLEN   E · BLEIBEN" % (stairs_pick.floors as Array).size()})
+			"note": "Die Welt wird neu gewürfelt. LP, Runensteine, Stufe und Gegenstände bleiben.", "hints": "1-%d · ETAGE WÄHLEN   E · BLEIBEN" % (stairs_pick.floors as Array).size()})
 
 
 ## The skill bar at the bottom: one slot per key with icon, key, cooldown shade
@@ -4229,7 +4520,7 @@ func _draw_map(h: Control, screen: Vector2, big: bool, framed := false, area := 
 		if big and FONT.get_string_size(r.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x < room_w:
 			_text(h, r.name, Vector2(c.x - room_w / 2.0, c.y + isz * 0.9), 16, ink, room_w)
 	if big and not framed:
-		_text(h, "Hell: besucht · Türen rot: verriegelt · farbig: Schlüssel · gelb: Rätsel · M schließt", Vector2(0, screen.y - 12), 16, Color("#b89c8e"), screen.x)
+		_text(h, "Heller Raum: besucht · Rote Tür: verriegelt · Farbige Tür: Schlüssel · Gelbe Tür: Rätsel · M / Esc schließt", Vector2(0, screen.y - 12), 16, Color("#b89c8e"), screen.x)
 	h.draw_circle(origin + Vector2(player.x, player.y - 20) / C * s, 6.0 if big else 3.0, Color("#fff1c2"))
 
 

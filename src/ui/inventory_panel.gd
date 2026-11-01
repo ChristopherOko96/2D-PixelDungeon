@@ -7,7 +7,11 @@ extends Control
 ## (Aufwertungsstein), reroll a stage (Würfelstein), use (drink a potion, break
 ## a clone seal, look into a mirror crystal), throw, drop. Throwing arms the
 ## next click in the world as the target. Also shows a short note when
-## something is found or happens, and a small INVENTAR button. Sends actions
+## something is found or happens (handed to the game's message channel through
+## `noted` while closed, when connected), and a small INVENTAR chip (with
+## auto_hide_chip only for a while after the bag changed or under the mouse;
+## off while the game sets chip_blocked). Only the actions that fit the chosen
+## item show. Sends actions
 ## only; the rules decide (src/items/inventory.gd, docs/ITEM-SYSTEM-V2.de.md).
 ## An identified item of an element wears its glow frame and sheds a few of its
 ## pixel motes (src/item_art.gd: embers, drops, rime, zaps, orbiting motes),
@@ -15,9 +19,13 @@ extends Control
 
 signal acted(action: String, value: int)
 signal throw_armed(slot: int)
+## A note for the game's message channel (the bag closed); unconnected, the panel shows it itself.
+signal noted(text: String)
 
 const PixelStyle = preload("res://src/pixel_style.gd")
 const HudStyle = preload("res://src/ui/hud_style.gd")
+const HudKit = preload("res://src/ui/hud_kit.gd")
+const CryptUI = preload("res://src/ui/crypt_ui.gd")
 const ItemArt = preload("res://src/item_art.gd")
 const HAND := 99
 ## Slot values of the equipment slots (the bag uses 0..size-1), as inventory.gd.
@@ -25,7 +33,13 @@ const EQUIP := {"weapon": 99, "armor": 98, "ring": 97, "amulet": 96}
 const EQUIP_LABELS := {"weapon": "WAFFE", "armor": "RÜSTUNG", "ring": "RING", "amulet": "AMULETT"}
 const SLOT := 60.0
 const GAP := 6.0
+## The equipment column: wide enough for its 16 px labels under the slots; the bag sits right of it.
+const EQUIP_COLUMN := 112.0
+const BAG_X := 16.0 + EQUIP_COLUMN + 12.0
 const PANEL := Rect2(280, 72, 720, 560)
+## The item actions in the order they line up: id, label.
+const ACTIONS := [["inv_equip", "ANLEGEN"], ["inv_use", "BENUTZEN"], ["inv_identify", "IDENTIFIZIEREN"], ["inv_cleanse", "FLUCH BRECHEN"],
+	["inv_upgrade", "AUFWERTEN"], ["inv_reroll", "NEU WÜRFELN"], ["inv_throw", "WERFEN"], ["inv_drop", "WEGWERFEN"]]
 
 var open := false
 var selected := HAND
@@ -42,6 +56,12 @@ var _clock := 0.0
 var _beat := -1
 ## True while the view holds an identified item of an element (something moves).
 var _animated := false
+## The chip's rules: auto_hide_chip (story worlds) shows it only after a bag
+## change or under the mouse; chip_blocked (a window, the pause, a result) hides it.
+var auto_hide_chip := false
+var chip_blocked := false
+var _chip_time := 0.0
+var _bag_sig := ""
 
 
 func _ready() -> void:
@@ -50,20 +70,16 @@ func _ready() -> void:
 	_font = PixelStyle.create_font()
 	# The toggle sits in the bottom-right corner, as wide as its longest text.
 	_toggle = _button("INVENTAR · I  12/12", Rect2(0, 676, 10, 28), func(): set_open(not open))
-	_toggle.add_theme_font_size_override("font_size", 12)
+	_toggle.add_theme_font_size_override("font_size", 16)
 	# the HUD's neutral look, like the menu button (src/ui/hud_style.gd)
 	HudStyle.style_button(_toggle)
-	_toggle.size.x = _toggle.get_combined_minimum_size().x + 16.0
-	_toggle.position.x = 1264.0 - _toggle.size.x
-	# Action buttons in two rows of four, wide enough for every label.
-	var width := (PANEL.size.x - 32.0 - 12.0) / 4.0
-	var entries := [["inv_equip", "ANLEGEN"], ["inv_identify", "IDENTIFIZIEREN"], ["inv_cleanse", "FLUCH BRECHEN"], ["inv_upgrade", "AUFWERTEN"],
-		["inv_use", "BENUTZEN"], ["inv_throw", "WERFEN"], ["inv_reroll", "NEU WÜRFELN"], ["inv_drop", "WEGWERFEN"]]
-	for index in range(entries.size()):
-		var action: String = entries[index][0]
-		var at := Vector2(PANEL.position.x + 16.0 + float(index % 4) * (width + 4.0), PANEL.end.y - 92.0 + float(index / 4) * 42.0)
-		var button := _button(str(entries[index][1]), Rect2(at, Vector2(width, 36)), func(): _act(action))
-		button.add_theme_font_size_override("font_size", 12)
+	_toggle.size = Vector2(_toggle.get_combined_minimum_size().x + 16.0, maxf(28.0, _toggle.get_combined_minimum_size().y))
+	_toggle.position = Vector2(1264.0 - _toggle.size.x, 704.0 - _toggle.size.y)
+	# the action buttons; only those that fit the chosen item show (_refresh_buttons)
+	for entry: Array in ACTIONS:
+		var action: String = entry[0]
+		var button := _button(str(entry[1]), Rect2(PANEL.position, Vector2(120, 36)), func(): _act(action))
+		button.add_theme_font_size_override("font_size", 16)
 		HudStyle.style_button(button)
 		_buttons[action] = button
 	set_open(false)
@@ -83,8 +99,8 @@ func _button(text: String, area: Rect2, callback: Callable) -> Button:
 func set_open(value: bool) -> void:
 	open = value
 	mouse_filter = Control.MOUSE_FILTER_STOP if open else Control.MOUSE_FILTER_IGNORE
-	for button: Button in _buttons.values(): button.visible = open
 	_refresh_buttons()
+	_update_chip(0.0)
 	queue_redraw()
 
 
@@ -100,10 +116,20 @@ func set_view(view: Dictionary) -> void:
 	var notes := int(_view.get("notes", 0))
 	if notes != _notes_seen:
 		if _notes_seen >= 0 and not str(_view.get("note", "")).is_empty():
-			_toast = str(_view.note)
-			_toast_time = 3.5
+			# closed: the game's one message channel takes it; open: over the panel
+			if not open and not noted.get_connections().is_empty():
+				noted.emit(str(_view.note))
+			else:
+				_toast = str(_view.note)
+				_toast_time = 3.5
 		_notes_seen = notes
 	var bag: Array = _view.get("bag", [])
+	# a change in the bag shows the chip for a while
+	var sig := ""
+	for item: Dictionary in bag: sig += "%s:%d," % [str(item.get("uid", item.get("name", ""))), int(item.get("count", 1))]
+	if sig != _bag_sig:
+		_bag_sig = sig
+		_chip_time = HudKit.rule("inventory_chip_hold", 3.0)
 	_animated = false
 	for key: String in EQUIP:
 		if not str((_view.get(key, {}) as Dictionary).get("element", "")).is_empty(): _animated = true
@@ -117,6 +143,7 @@ func set_view(view: Dictionary) -> void:
 
 func _process(delta: float) -> void:
 	_clock += delta
+	_update_chip(delta)
 	if _toast_time > 0.0:
 		_toast_time -= delta
 		queue_redraw()
@@ -126,6 +153,20 @@ func _process(delta: float) -> void:
 		if beat != _beat:
 			_beat = beat
 			queue_redraw()
+
+
+## The INVENTAR chip: off while blocked or while the bag is open (story
+## worlds); with auto_hide_chip only after a bag change or under the mouse.
+func _update_chip(delta: float) -> void:
+	if _toggle == null: return
+	_chip_time = maxf(0.0, _chip_time - delta)
+	if not auto_hide_chip:
+		_toggle.visible = not chip_blocked
+		_toggle.modulate.a = 1.0
+		return
+	_toggle.visible = not chip_blocked and not open
+	var near := _toggle.get_global_rect().grow(12.0).has_point(get_global_mouse_position())
+	_toggle.modulate.a = 1.0 if near else clampf(_chip_time / 0.4, 0.0, 1.0)
 
 
 func _is_equip(slot: int) -> bool:
@@ -160,6 +201,24 @@ func _refresh_buttons() -> void:
 	_buttons.inv_use.disabled = worn or not (type == "potion" or bool(item.get("usable", false)))
 	_buttons.inv_throw.disabled = type != "potion"
 	_buttons.inv_drop.disabled = worn or item.is_empty()
+	# only the actions that fit the chosen item, in rows from the left; a full row pushes up
+	var rows: Array = [[]]
+	var used := 0.0
+	for entry: Array in ACTIONS:
+		var button: Button = _buttons[entry[0]]
+		button.visible = open and not button.disabled
+		if not button.visible: continue
+		button.size = Vector2(maxf(120.0, button.get_combined_minimum_size().x + 16.0), 36.0)
+		if used > 0.0 and used + button.size.x > PANEL.size.x - 32.0:
+			rows.append([])
+			used = 0.0
+		(rows[rows.size() - 1] as Array).append(button)
+		used += button.size.x + 8.0
+	for index in range(rows.size()):
+		var x := PANEL.position.x + 16.0
+		for button: Button in rows[index]:
+			button.position = Vector2(x, PANEL.end.y - 92.0 - (rows.size() - 1 - index) * 42.0)
+			x += button.size.x + 8.0
 
 
 func _act(action: String) -> void:
@@ -176,11 +235,11 @@ func _act(action: String) -> void:
 # --- Layout and input ----------------------------------------------------------------
 
 func _equip_rect(index: int) -> Rect2:
-	return Rect2(PANEL.position + Vector2(16, 72 + index * (SLOT + 22.0)), Vector2(SLOT, SLOT))
+	return Rect2(PANEL.position + Vector2(16.0 + (EQUIP_COLUMN - SLOT) * 0.5, 72 + index * (SLOT + 30.0)), Vector2(SLOT, SLOT))
 
 
 func _slot_rect(index: int) -> Rect2:
-	var origin := PANEL.position + Vector2(112, 72)
+	var origin := PANEL.position + Vector2(BAG_X, 72)
 	return Rect2(origin + Vector2((index % 6) * (SLOT + GAP), (index / 6) * (SLOT + GAP)), Vector2(SLOT, SLOT))
 
 
@@ -219,18 +278,22 @@ func _draw() -> void:
 	if not open:
 		if _toast_time > 0.0: _draw_toast()
 		return
-	draw_rect(PANEL, Color(HudStyle.color("outline"), 0.85))
-	HudStyle.panel(self, PANEL)
+	# the pause menu's panel look (src/ui/crypt_ui.gd)
+	draw_rect(PANEL, Color(HudStyle.color("outline"), 0.6))
+	draw_style_box(CryptUI.box("panel"), PANEL)
 	_text(PANEL.position + Vector2(18, 38), "INVENTAR", 24, HudStyle.color("text"))
 	var title_width := _font.get_string_size("INVENTAR", HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x
-	_text(PANEL.position + Vector2(18.0 + title_width + 24.0, 36), "Doppelklick: anlegen / benutzen", 12, HudStyle.color("text_dim"))
+	_text(PANEL.position + Vector2(18.0 + title_width + 24.0, 36), "Doppelklick: anlegen / benutzen", 16, HudStyle.color("text_dim"))
 	if float(_view.get("clone", 0.0)) > 0.0:
-		_text(Vector2(PANEL.end.x - 18 - _font.get_string_size("KLON %d s" % int(_view.clone), HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x, PANEL.position.y + 36), "KLON %d s" % int(_view.clone), 12, HudStyle.color("accent"))
+		_text(Vector2(PANEL.end.x - 18 - _font.get_string_size("KLON %d s" % int(_view.clone), HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x, PANEL.position.y + 36), "KLON %d s" % int(_view.clone), 16, HudStyle.color("accent"))
+	_text(Vector2(PANEL.position.x + 18, PANEL.end.y - 20), "I / Esc schließt", 16, Color(HudStyle.color("text_dim"), 0.9))
 	var keys := EQUIP.keys()
 	for index in range(keys.size()):
 		var rect := _equip_rect(index)
 		_draw_slot(rect, _view.get(keys[index], {}), selected == int(EQUIP[keys[index]]))
-		_text(rect.position + Vector2(0, SLOT + 14), str(EQUIP_LABELS[keys[index]]), 10, HudStyle.color("text_dim"))
+		var label := str(EQUIP_LABELS[keys[index]])
+		var width := _font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
+		_text(Vector2(rect.get_center().x - width * 0.5, rect.end.y + 20.0), label, 16, HudStyle.color("text_dim"))
 	var bag: Array = _view.get("bag", [])
 	for index in range(int(_view.get("size", 12))):
 		_draw_slot(_slot_rect(index), bag[index] if index < bag.size() else {}, selected == index)
@@ -257,28 +320,28 @@ func _draw_slot(rect: Rect2, item: Dictionary, chosen: bool) -> void:
 			var art := maxf(1.0, floorf(scale))
 			ItemArt.draw_frame(self, Rect2(rect.get_center() - size * 0.5, size).grow(art), element, _clock, art)
 			ItemArt.draw_motes(self, rect.grow(-4.0), element, _clock, art, int(item.get("uid", 0)), 3 + int(item.get("uid", 0)) % 3)
-	if int(item.get("count", 1)) > 1: _text(rect.end - Vector2(18, 6), str(item.count), 14, HudStyle.color("text"))
+	if int(item.get("count", 1)) > 1: _text(rect.end - Vector2(20, 6), str(item.count), 16, HudStyle.color("text"))
 	if str(item.get("type", "")) in ["weapon", "gear", "potion"] and not bool(item.get("identified", false)): _text(rect.position + Vector2(5, 17), "?", 16, HudStyle.color("accent"))
 	if bool(item.get("blessed", false)): draw_circle(rect.position + Vector2(rect.size.x - 9, 9), 4.0, HudStyle.color("accent"))
 
 
 func _draw_details(item: Dictionary) -> void:
-	var at := PANEL.position + Vector2(112, 72 + 2.0 * (SLOT + GAP) + 34.0)
+	var at := PANEL.position + Vector2(BAG_X, 72 + 2.0 * (SLOT + GAP) + 34.0)
 	if item.is_empty():
 		_text(at, "Leerer Platz.", 16, HudStyle.color("text_dim"))
 		return
 	_text(at, str(item.get("name", "")), 18, Color(str(item.get("color", "d3bfa9"))))
-	if not str(item.get("rarity_label", "")).is_empty(): _text(at + Vector2(0, 20), str(item.rarity_label), 12, Color(str(item.get("color", "d3bfa9"))))
-	var y := 44.0
+	if not str(item.get("rarity_label", "")).is_empty(): _text(at + Vector2(0, 22), str(item.rarity_label), 16, Color(str(item.get("color", "d3bfa9"))))
+	var y := 48.0
 	var room := PANEL.end.x - at.x - 18.0
 	for line: String in item.get("lines", []):
 		var colour := HudStyle.color("danger") if line.begins_with("FLUCH") else HudStyle.color("accent") if line.begins_with("SEGEN") or line.begins_with("STUFE") else HudStyle.color("text")
 		# the element line in the element's own light
 		if line.begins_with("ELEMENT"): colour = ItemArt.glow(str(item.get("element", "")), colour)
 		# long lines wrap inside the panel
-		for part: String in _wrap(line, 14, room):
-			_text(at + Vector2(0, y), part, 14, colour)
-			y += 20.0
+		for part: String in _wrap(line, 16, room):
+			_text(at + Vector2(0, y), part, 16, colour)
+			y += 22.0
 
 
 ## Splits a line into pieces no wider than `width` at `size`.

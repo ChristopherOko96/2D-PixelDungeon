@@ -103,7 +103,7 @@
        {
         "id": "f_heart",
         "name": "GLUTHERZ",
-        "desc": "+1 Herz je Punkt.",
+        "desc": "+2 LP je Punkt.",
         "max": 2,
         "stat": "hearts",
         "value": 2
@@ -120,7 +120,7 @@
        {
         "id": "f_phoenix",
         "name": "PHÖNIX",
-        "desc": "Taste 5: Ein Flammenring kreist 8 s um dich. Einmal je Etage stehst du nach dem Tod mit halben Herzen wieder auf.",
+        "desc": "Taste 5: Ein Flammenring kreist 8 s um dich. Einmal je Etage stehst du nach dem Tod mit der Hälfte deiner LP wieder auf.",
         "max": 1,
         "master": "phoenix"
        }
@@ -591,7 +591,7 @@
        {
         "id": "t_iron",
         "name": "EISERNE HAUT",
-        "desc": "+1 Herz je Punkt.",
+        "desc": "+2 LP je Punkt.",
         "max": 2,
         "stat": "hearts",
         "value": 2
@@ -687,7 +687,7 @@
        {
         "id": "ta_skin",
         "name": "EISENHAUT",
-        "desc": "+1 halbes Herz je Punkt.",
+        "desc": "+1 LP je Punkt.",
         "max": 4,
         "stat": "hearts",
         "value": 1
@@ -870,7 +870,7 @@
        {
         "id": "ax_hide",
         "name": "DICKE HAUT",
-        "desc": "+1 halbes Herz je Punkt.",
+        "desc": "+1 LP je Punkt.",
         "max": 4,
         "stat": "hearts",
         "value": 1

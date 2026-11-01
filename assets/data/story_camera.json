@@ -1,0 +1,16 @@
+{
+  "_doc": "Story camera (src/hell/story_camera.gd): follow, lead, fight framing, zoom breathing, ultimate punch, impact kick. Distances in world px, rates per second (exponential smoothing 1 - exp(-rate * dt)), zoom values multiply the base zoom.",
+  "follow_rate": 6.5,
+  "snap_distance": 1400.0,
+  "velocity_rate": 8.0,
+  "max_offset": 240.0,
+  "vertical_scale": 0.75,
+  "lead": {"move": 90.0, "run_speed": 350.0, "aim": 60.0, "aim_dead": 140.0, "aim_range": 360.0, "rate": 2.5},
+  "frame": {"range": 1100.0, "weight": 0.3, "boss_weight": 3.0, "max_pull": 200.0, "rate": 2.0},
+  "zoom": {"rate": 1.2, "crowd_from": 2, "crowd_to": 8, "crowd": 0.92, "boss": 0.88, "min": 0.82, "fit_margin": 140.0,
+           "rest": 1.05, "rest_delay": 2.5, "rest_speed": 30.0},
+  "punch": {"ultimate": 0.07, "heavy": 0.03, "max": 0.1, "decay": 6.0, "attack": 25.0},
+  "kick": {"speed": 14.0, "spring": 220.0, "damping": 18.0, "max": 26.0, "hero_hit": 10.0, "slam": 16.0},
+  "shake": {"amount": 1.0},
+  "calm": {"lead": 0.0, "frame": 0.0, "zoom": false, "punch": false, "kick": 0.35, "shake": 0.5}
+}

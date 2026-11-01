@@ -62,7 +62,7 @@ static func check_rank_up(d: Dictionary, profile: Dictionary, class_id: String, 
 	if not chosen.is_empty() and chosen != str(info.spec):
 		return "Du bist %s. Ein anderer Zweig geht erst nach dem Zurücksetzen." % spec_name(d, class_id, chosen)
 	var tier: Dictionary = d.tiers[str(int(info.tier))]
-	if int(state.level) < int(tier.level): return "Benötigt Charakterlevel %d." % int(tier.level)
+	if int(state.level) < int(tier.level): return "Benötigt Heldenstufe %d." % int(tier.level)
 	if spec_points(d, state, str(info.spec), int(info.tier)) < int(tier.points):
 		return "Benötigt %d Punkte im Zweig (jetzt %d)." % [int(tier.points), spec_points(d, state, str(info.spec), int(info.tier))]
 	if free_points(d, state) <= 0: return "Kein freier Talentpunkt."

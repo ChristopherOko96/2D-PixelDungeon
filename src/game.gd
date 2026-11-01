@@ -2619,10 +2619,11 @@ func _build_ui() -> void:
 	_build_main_menu()
 
 
-## Title screen from main. Story opens the story choice
-## (assets/data/story_campaigns.json), then the hero choice. Endless (open
-## floors, src/dungeon/open_floor.gd) shows as coming soon. Online accounts
-## (Firebase, not decided) are not wired yet.
+## Title screen from main: SPIELEN opens the story choice
+## (assets/data/story_campaigns.json; each card continues its world's newest save
+## or starts NEU with the hero choice), TALENTE, OPTIONEN, BEENDEN; Mehrspieler and
+## the editor live in the DEBUG hub. Online accounts (Firebase, not decided) are
+## not wired yet.
 func _build_main_menu() -> void:
 	main_menu = MainMenu.new()
 	main_menu.account = null
@@ -2631,7 +2632,7 @@ func _build_main_menu() -> void:
 	main_menu.classes = balance.get("classes",{})
 	main_menu.class_order = balance.get("class_order",[])
 	main_menu.weapons = balance.get("weapons",{})
-	main_menu.endless_available = false
+	main_menu.hero_cards = _hero_cards()
 	main_menu.stories = _load_stories()
 	main_menu.debug_entries = _debug_entries()
 	main_menu.story_worlds = _story_worlds()
@@ -2650,6 +2651,28 @@ func _build_main_menu() -> void:
 	main_menu.save_load_requested.connect(_load_save)
 	# Saved fullscreen is applied in _ready, only when the game opens on the menu.
 	view.shake_scale = 1.0 if bool(main_menu.settings.get("shake", true)) else 0.0
+
+
+## The title's hero cards from the story classes (talent_screen.gd story_classes: the
+## Krypta theme's hero_from classes) and the talent data (resources, specs):
+## {class_id: {name, sprite, role, hp, resource, kind, paths: [{name, color}]}}.
+func _hero_cards() -> Dictionary:
+	var cards := {}
+	var talent_data: Dictionary = progress.data if not progress.data.is_empty() else Profile.data()
+	var resources: Dictionary = talent_data.get("resources", {})
+	var talent_classes: Dictionary = talent_data.get("classes", {})
+	var story_classes: Dictionary = TalentScreenScript.story_classes()
+	for id: String in story_classes:
+		var hero: Dictionary = story_classes[id]
+		var weapon: Dictionary = hero.get("weapon", {})
+		var resource: Dictionary = resources.get(id, {})
+		var paths: Array = []
+		for spec: Dictionary in (talent_classes.get(id, {}) as Dictionary).get("specs", []):
+			paths.append({"name": str(spec.get("name", spec.id)), "color": str(spec.get("color", "#d8c8a8"))})
+		cards[id] = {"name": str(hero.get("name", id.to_upper())), "sprite": str(hero.get("sprite", "")),
+			"role": "Nahkampf" if str(weapon.get("type", "")) == "melee" else "Fernkampf",
+			"hp": int(hero.get("hp", 0)), "resource": str(resource.get("name", "")), "kind": str(resource.get("kind", "")), "paths": paths}
+	return cards
 
 
 ## The story worlds for the debug level choice, in menu order: every playable story with its

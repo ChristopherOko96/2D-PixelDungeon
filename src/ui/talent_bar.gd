@@ -10,6 +10,7 @@ extends RefCounted
 ## "+2 SEELENSPLITTER" with the crystal, or a level-up note; queued, one at a time.
 
 const CryptUI = preload("res://src/ui/crypt_ui.gd")
+const HudStyle = preload("res://src/ui/hud_style.gd")
 const PixelStyle = preload("res://src/pixel_style.gd")
 const TalentIcons = preload("res://src/ui/talent_icons.gd")
 const TalentScreen = preload("res://src/ui/talent_screen.gd")
@@ -123,11 +124,21 @@ func draw_resource(canvas: CanvasItem, talents: Dictionary, centre_x: float, y: 
 	var kind := str(talents.get("res_kind", "mana"))
 	var colour: Color = {"mana": Color("5b8ff0"), "stamina": Color("7fcf5a"), "rage": CryptUI.BLOOD}.get(kind, CryptUI.GOLD)
 	var bar := Rect2(floorf(centre_x - width * 0.5), y, width, 8)
+	var share := clampf(float(talents.get("res", 0)) / maxf(1.0, float(talents.get("res_max", 100))), 0.0, 1.0)
 	canvas.draw_rect(bar, CryptUI.INK)
-	canvas.draw_rect(Rect2(bar.position + Vector2(1, 1), Vector2((bar.size.x - 2) * clampf(float(talents.get("res", 0)) / maxf(1.0, float(talents.get("res_max", 100))), 0.0, 1.0), 6)), colour)
+	canvas.draw_rect(Rect2(bar.position + Vector2(1, 1), Vector2((bar.size.x - 2) * share, 6)), colour)
 	if float(talents.get("shield", 0.0)) > 0.0: canvas.draw_rect(bar.grow(2), Color(CryptUI.FROST, 0.8), false, 2.0)
 	var name: String = {"mana": "MANA", "stamina": "AUSDAUER", "rage": "ZORN"}.get(kind, "")
-	_centered(canvas, bar.get_center() + Vector2(0, -6), "%s %d / %d" % [name, int(float(talents.get("res", 0))), int(float(talents.get("res_max", 100)))], 8, Color(colour.lightened(0.35)))
+	# the name left of the bar; the numbers over it only under the mouse or when
+	# the resource runs low (ui_hud_style.json "rules")
+	var label_px := int(HudKit.rule("resource_label_size", 16.0))
+	var tint := Color(colour.lightened(0.35))
+	var name_w := HudStyle.width(_font, name, label_px)
+	HudStyle.text(canvas, _font, Vector2(bar.position.x - 8.0, bar.get_center().y + 6.0), name, label_px, tint, 2)
+	var near := Rect2(bar.position - Vector2(name_w + 12.0, 16.0), bar.size + Vector2(name_w + 12.0, 24.0)).has_point(canvas.get_local_mouse_position())
+	# rage starts empty and builds up: its numbers only under the mouse
+	if near or (kind != "rage" and share < HudKit.rule("resource_low_share", 0.25)):
+		HudStyle.text(canvas, _font, Vector2(bar.get_center().x, bar.position.y - 4.0), "%d / %d" % [int(float(talents.get("res", 0))), int(float(talents.get("res_max", 100)))], label_px, tint, 1)
 	# the Leerenmagier's Arkanes Gefüge right of his mana (only a snapshot that carries one)
 	var gefuege: Variant = talents.get("gefuege", null)
 	if gefuege is Dictionary:

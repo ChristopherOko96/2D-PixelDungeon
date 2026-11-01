@@ -53,7 +53,7 @@ func _run() -> void:
 	sfx.play("hurt")
 	check(sfx.last_bus == "Focus", "your hero being hit plays on the Focus bus the music ducks under (%s)" % sfx.last_bus)
 	sfx.play("step")
-	check(sfx.last_bus == "SFX", "footsteps play on the effects bus")
+	check(sfx.last_bus == "Step", "footsteps play on their own Step bus under the room reverb")
 	sfx.play("ui_click")
 	check(sfx.last_bus == "UI", "menu clicks play on the UI bus")
 	var before: int = sfx.play_count

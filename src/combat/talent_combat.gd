@@ -1222,6 +1222,7 @@ func _apply_status(id: int, enemy: Dictionary, info: Dictionary, rt: Dictionary,
 func _status(enemy: Dictionary, key: String, power: float, duration: float, owner: int) -> void:
 	# Same effect again refreshes its duration instead of stacking (perk status system).
 	game.perk_combat._status(enemy, key, power, duration, owner)
+	_sound("status_" + key, Vector2(enemy.pos), {})
 
 
 func _taunt(enemy: Dictionary, id: int, time: float) -> void:
@@ -1238,6 +1239,7 @@ func _heal(id: int, rt: Dictionary, amount: float) -> void:
 	if whole <= 0: return
 	rt.debt_heal = float(rt.debt_heal) - whole
 	player.hp = mini(int(player.max_hp), int(player.hp) + whole)
+	_sound("heal", Vector2(player.pos), {})
 
 
 ## Projectile talents land here instead of the perk hit path.
@@ -1251,6 +1253,7 @@ func bullet_hit(bullet: Dictionary, enemy: Dictionary) -> void:
 	_spell_hit = str(rt["class"]) == "mage"
 	rt.force_crit = bool(bullet.get("always_crit", false))
 	_hit(id, enemy, float(bullet.damage), info, rt, talent)
+	_sound("tal_impact", Vector2(enemy.pos), {"talent": talent, "style": str(bullet.get("style", ""))})
 	rt.force_crit = false
 	if info.has("splash_m"):
 		var reach := float(info.splash_m) * float(data.meter_px)
@@ -1301,6 +1304,7 @@ func _spawn_pet(id: int, rt: Dictionary, talent: String, info: Dictionary, at: V
 		"death_burst": info.get("death_burst", {}),
 		"pack": pack, "target": -1, "face": 1.0, "bite": 0.0, "moving": false, "kind": kind, "speed": float(traits.get("speed", 1.0))})
 	_rig_pet(pets[-1], traits)
+	_sound("pet_spawn", Vector2(at), {"kind": kind})
 
 
 func _step_pets(delta: float) -> void:
@@ -1471,6 +1475,7 @@ func _hurt_pet(pet: Dictionary, amount: float, from: Vector2) -> void:
 		pet_parts.damage(pet, amount, pet_parts.part_near(view, from))
 	else:
 		pet.hp = float(pet.hp) - amount
+	if float(pet.get("hurt", 0.0)) <= 0.0: _sound("pet_hurt", Vector2(pet.pos), {"kind": str(pet.get("kind", ""))})
 	if float(pet.get("hurt", 0.0)) <= 0.0: pet.hits = int(pet.get("hits", 0)) + 1
 	pet.calm = 0.0
 	pet.hurt = _pet_rig_cfg("hurt_s", 0.2)
@@ -1716,6 +1721,7 @@ func spend(owner: int, n: int) -> Array:
 		entry.n = int(entry.n) - 1
 		if int(entry.n) <= 0: pocket.pop_front()
 		n -= 1
+	if not out.is_empty(): _sound("gefuege_spend", Vector2.ZERO, {"el": str(out[0])})
 	return out
 
 
@@ -2394,6 +2400,12 @@ func _zone_element(zone: Dictionary) -> void:
 		_element(fx, Vector2(path[i]), maxf(16.0, float(zone.get("w", 16.0))), int(zone.owner))
 
 
+## Sound hook (src/hero/story_sound.gd talent, through the host's talent_sound):
+## every event and the talent moments without one; inert on a host without it.
+func _sound(kind: String, at: Vector2, extra: Dictionary) -> void:
+	if game != null and game.has_method("talent_sound"): game.talent_sound(kind, at, extra)
+
+
 func _event(kind: String, at: Vector2, radius: float, extra: Dictionary) -> void:
 	var entry := {"id": _take_id(), "kind": kind, "x": at.x, "y": at.y, "r": radius, "life": 0.5}
 	if _ult_stage >= 0:
@@ -2403,6 +2415,7 @@ func _event(kind: String, at: Vector2, radius: float, extra: Dictionary) -> void
 	# its whole length, so clients can play an animation over it
 	entry.span = float(entry.life)
 	events.append(entry)
+	_sound(kind, at, entry)
 	if kind in ["nova", "explosion", "impact"]:
 		var fx := str(entry.get("fx", ""))
 		# "arcane" is the void only for the void mage (other specs use it as a plain flash)
