@@ -48,6 +48,7 @@ const StoryGlow = preload("res://src/hero/story_glow.gd")
 const Darkness = preload("res://src/vfx/darkness.gd")
 const Snowstorm = preload("res://src/vfx/snowstorm.gd")
 const FireAnim = preload("res://src/vfx/fire_anim.gd")
+const GoldLoot = preload("res://src/hell/gold_loot.gd")
 const FrostSnow = preload("res://src/hero/frost_snow.gd")
 const StorySave = preload("res://src/save/story_save.gd")
 ## The crypt's pause menu, in its story mode (overview, quest, map, controls, display, save).
@@ -267,6 +268,8 @@ var dark: Node2D
 var snowstorm: Node2D
 ## The burning fires and the flowing fountain water of the loaded set (src/vfx/fire_anim.gd).
 var fire_anim := FireAnim.new()
+## The gold in the world: thrown coins and bags, the magnet, the rising '+N' (src/hell/gold_loot.gd).
+var gold_loot: GoldLoot
 ## Footprints in the snow and sliding on glaze ice in a world with theme "snow" (src/hero/frost_snow.gd); null elsewhere.
 var frost_snow: RefCounted
 ## The crypt's bloom over the darkness and the darkness's lights (src/hero/story_glow.gd).
@@ -433,6 +436,7 @@ func _ready() -> void:
 	_vignette.height = 144
 	var ui := CanvasLayer.new()
 	add_child(ui)
+	gold_loot = GoldLoot.new(self)
 	# a world with a snowstorm (theme "snowstorm", the Frostgruft): light snow over everything, HUD and menus too
 	if theme.has("snowstorm"):
 		var storm_layer := CanvasLayer.new()
@@ -734,6 +738,13 @@ func load_floor(n: int, carry: bool) -> void:
 	_index_solids()
 	if frost_snow != null:
 		frost_snow.reset()
+	# the floor's loose finds lie there as gold (the world's "gem" finds: one gold each)
+	if gold_loot != null:
+		gold_loot.reset()
+		for e: Dictionary in W.ents:
+			if e.type == "gem":
+				gold_loot.place(Vector2(e.x, e.y), 1)
+				e.taken = true
 	minimap = []
 	for r: Dictionary in W.rooms:
 		minimap.append(_minimap_shape(r))
@@ -1601,15 +1612,16 @@ func act() -> void:
 						_burst(Vector2(e.x, e.y - 40), 30, true)
 					_toast("Truhe geöffnet: %s genommen!" % key_name[e.loot.key])
 				elif e.get("state", "") == "":
-					e.state = "open"
+					# the gold flies out at once; a heart stays inside to be taken
+					e.state = "open" if e.loot.get("heart", false) else "empty"
 					if feel != null:
 						feel.fx_event("chest_open", Vector2(e.x, e.y - 30))
-					_toast("Truhe geöffnet: %d Runensteine%s" % [e.loot.gems, " und ein Herz" if e.loot.get("heart", false) else ""])
+					gold_loot.spew(Vector2(e.x, e.y - 10), int(e.loot.gems))
+					_toast("Truhe geöffnet: %d Gold%s" % [e.loot.gems, " und ein Herz" if e.loot.get("heart", false) else ""])
 					if story_items != null:
 						story_items.loot("chest", Vector2(e.x, e.y + 40))
 				else:
 					e.state = "empty"
-					state.gems += int(e.loot.gems)
 					if feel != null:
 						feel.fx_event("loot_taken", Vector2(e.x, e.y - 30))
 					if e.loot.get("heart", false):
@@ -1622,7 +1634,7 @@ func act() -> void:
 				var tier := int(e.get("tier", 4))
 				var hearts := int(balance.vault.heart_containers) + (1 if tier >= 6 else 0)
 				var gems: int = roundi((int(balance.vault.gems_base) + state.floor * int(balance.vault.gems_per_floor)) * (1.0 + (tier - 4) * 0.5))
-				state.gems += gems
+				gold_loot.spew(Vector2(e.x, e.y - 20), gems)
 				state.max_hp = mini(int(balance.player.max_hp_cap), state.max_hp + 2 * hearts)
 				state.hp = state.max_hp
 				# effect hook: with the feel the vault opens like the crypt's chests (chest_open)
@@ -1631,7 +1643,7 @@ func act() -> void:
 					feel.hero_perk("heal")
 				else:
 					_burst(Vector2(e.x, e.y - 60), 60 + maxi(0, tier - 4) * 10, true)
-				_toast("Riesentresor! +%d Herzcontainer, volle Gesundheit, +%d Runensteine" % [hearts, gems])
+				_toast("Riesentresor! +%d Herzcontainer, volle Gesundheit, %d Gold" % [hearts, gems])
 				if story_items != null:
 					story_items.loot("gold_crate", Vector2(e.x, e.y + 60))
 			"portal":
@@ -1993,8 +2005,7 @@ func _clear_room(r: Dictionary, at: Vector2) -> void:
 	if r.reward != null:
 		if r.reward.get("heart", false):
 			_drop("heart", r.index, at)
-		for k in range(int(r.reward.get("gems", 0))):
-			_drop("gem", r.index, at)
+		gold_loot.spew(at, int(r.reward.get("gems", 0)))
 	elif randf() < float(balance.drops.heart):
 		_drop("heart", r.index, at)
 	elif randf() < float(balance.drops.gem):
@@ -2002,10 +2013,28 @@ func _clear_room(r: Dictionary, at: Vector2) -> void:
 
 
 func _drop(kind: String, room: int, at: Vector2, extra := {}) -> void:
+	# gold is thrown out as coins (src/hell/gold_loot.gd), the rest lies as a pickup
+	if kind == "gem":
+		gold_loot.spew(at, 1)
+		return
 	if sound != null: sound.at("drop_" + kind, at)
 	var e := {"type": kind, "x": at.x + randf_range(-30, 30), "y": at.y + randf_range(-20, 20), "room": room}
 	e.merge(extra)
 	W.ents.append(e)
+
+
+## The hero's gold: the profile's gold (kept from run to run, the talent reset costs it).
+func gold_count() -> int:
+	return int(profile.get("gold", 0))
+
+
+## Gold taken (src/hell/gold_loot.gd): into the profile, saved soon, shown in the HUD's resource row.
+func add_gold(n: int) -> void:
+	if profile.is_empty():
+		return
+	profile.gold = int(profile.gold) + n
+	if talents != null:
+		talents.request_save()
 
 
 func _enemy_shot(from: Vector2, dir: Vector2, speed: float) -> void:
@@ -2090,15 +2119,14 @@ func _break_seal(e: Dictionary) -> void:
 	_toast("Das Siegel bricht: drei Dämonen springen heraus! Die Gitter fallen.")
 
 
-## A broken urn, barrel or crate (world kit): nothing, rune stones, a heart, or (crates only)
+## A broken urn, barrel or crate (world kit): nothing, gold, a heart, or (crates only)
 ## undead that lock the room.
 func _break_crate(e: Dictionary) -> void:
 	if sound == null or not sound.theme_event("crate_break"): _sound("hit_bone")
 	match str(e.get("drop", "none")):
 		"gem":
-			_drop("gem", e.room, Vector2(e.x - 14, e.y))
-			_drop("gem", e.room, Vector2(e.x + 16, e.y + 8))
-			_toast("Zerbrochen: Runensteine.")
+			gold_loot.spew(Vector2(e.x, e.y - 10), 2)
+			_toast("Zerbrochen: Gold.")
 		"heart":
 			_drop("heart", e.room, Vector2(e.x, e.y + 4))
 			_toast("Zerbrochen: ein Herz.")
@@ -2302,7 +2330,7 @@ func pause_info() -> Dictionary:
 		"Etage %d · %s" % [state.floor, W.title], str(W.circle), "",
 		"%s · STUFE %d · %s" % [hero_name, int(state.get("level", 1)), held],
 		"LP: %d / %d" % [HudKit.life_shown(int(state.hp), hp_f()), int(state.max_hp)],
-		"Runensteine: %d" % int(state.gems),
+		"Gold: %d" % gold_count(),
 		"Schlüssel: %s" % (", ".join(PackedStringArray(keys)) if not keys.is_empty() else "keiner"),
 		"Segen: %s" % (", ".join(PackedStringArray(blessings)) if not blessings.is_empty() else "keiner"),
 		"", "Räume besucht: %d von %d" % [state.visited.size(), W.rooms.size()],
@@ -2412,6 +2440,7 @@ func _update(dt: float) -> void:
 	_update_hazards(dt)
 	if frost_snow != null:
 		frost_snow.update(dt)
+	gold_loot.update(dt)
 	_update_rooms()
 	_update_embers(dt)
 	_update_camera(dt)
@@ -2930,8 +2959,6 @@ func _update_hazards(dt: float) -> void:
 					if feel != null:
 						feel.hero_perk("heal")
 					_toast("+1 Herz")
-				else:
-					state.gems += 1
 				# the crypt's pickup: its loot_taken fx event (the pickup sheet and its chime through feedback.gd)
 				if feel != null:
 					feel.fx_event("loot_taken", Vector2(e.x, e.y))
@@ -3589,6 +3616,8 @@ func _draw_actors(l: Layer) -> void:
 	# the lava floor bubbling (under everything standing on the floor)
 	_draw_lava_bubbles(l)
 	_draw_wall_fires(l, view)
+	# the gold on the floor and in the air, under everyone standing
+	gold_loot.draw(l, view)
 	# footprints in the snow and skid marks on the ice, under everyone (src/hero/frost_snow.gd)
 	if frost_snow != null:
 		frost_snow.draw_ground(l, view)
@@ -3698,6 +3727,8 @@ func _draw_actors(l: Layer) -> void:
 	_draw_skill_fx(l, t)
 	# the talents' events and auras over the actors (src/hell/hell_talents.gd)
 	if talents != null: talents.draw_over(l, t)
+	# the rising '+N' of gold taken and of slain enemies (src/hell/gold_loot.gd)
+	gold_loot.draw_pops(l, FONT)
 	RelicKit.draw(self, l, t)
 	SubKit.draw(self, l, t)
 	# effect hook: with the feel the hero's conditions are the crypt's (boss_fx.gd on the feel's layer)
@@ -4298,11 +4329,11 @@ func _draw_hero_strip(h: Control) -> float:
 	for k in ["A", "B", "C"]:
 		if state.keys[k]:
 			resources.append({"icon": tex[key_sprite[k]], "tint": key_tint[k]})
-	resources.append({"icon": tex.rune_gem, "text": str(int(state.gems))})
+	resources.append({"icon": gold_loot.coin(float(state.t)), "text": str(gold_count())})
 	var fire := Rules.group_progress(W.ents, "feuer")
 	if fire.y > 0:
 		resources.append({"icon": tex.brazier_bowl, "text": "%d/%d" % [fire.x, fire.y], "dim": fire.x >= fire.y})
-	var sig := "%s%s%s|%d|%d" % [state.keys["A"], state.keys["B"], state.keys["C"], int(state.gems), fire.x]
+	var sig := "%s%s%s|%d|%d" % [state.keys["A"], state.keys["B"], state.keys["C"], gold_count(), fire.x]
 	if str(state.get("res_sig", "")) != sig:
 		state.res_sig = sig
 		state.res_t = float(state.t)
@@ -4407,7 +4438,7 @@ func _draw_result(h: Control, size: Vector2) -> void:
 		_result_label = "NEUER LAUF  (E)"
 	elif state.won:
 		_result_rect = HudKit.result_panel(h, FONT, size, {"title": "ETAGE %d GESCHAFFT" % int(state.floor), "tone": "floor", "buttons": 2,
-			"lines": [["RÄUME ERKUNDET", "%d / %d" % [state.visited.size(), W.rooms.size()]], [say("RUNENSTEINE"), str(int(state.gems))],
+			"lines": [["RÄUME ERKUNDET", "%d / %d" % [state.visited.size(), W.rooms.size()]], ["GOLD", str(gold_count())],
 				["LP", "%d / %d" % [HudKit.life_shown(int(state.hp), float(state.hp_f)), int(state.max_hp)]], ["STUFE", str(int(state.level))]],
 			"note": _floor_reward})
 		_result_label = "WEITER  (E)"

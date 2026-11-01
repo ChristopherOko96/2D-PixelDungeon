@@ -163,7 +163,7 @@ static func status(g: Node, h: Control, size: Vector2) -> void:
 		["Schaden", "%.1f je Treffer" % dmg],
 		["Angriffe", "%.1f pro Sekunde" % (1.0 / maxf(0.05, rate))],
 		["Lauftempo", "%d" % int(float(g.hero.get("speed", 300)) * CardKit.speed_mult(g) * float(g.state.speed_mul))],
-		[g.say("Runensteine"), str(int(g.state.gems))]]
+		["Gold", str(g.gold_count())]]
 	var cards := CardKit.offers_cards(g)
 	var row_h := 28.0
 	var r := Rect2(40, 200, 440, 70.0 + rows.size() * row_h + (40.0 + 6 * 22.0 if cards else 0.0) + 34.0)

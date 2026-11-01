@@ -259,7 +259,7 @@ func interval_scale() -> float:
 	return tc.interval_scale(players.get(1, {}), 1)
 
 
-## A mob fell: Blutdurst, EXP and gold into the profile.
+## A mob fell: Blutdurst, EXP and gold into the profile (its gold shown rising over it).
 func killed(m: Dictionary) -> void:
 	_sync_hero()
 	tc.enemy_killed(m, 1)
@@ -267,7 +267,11 @@ func killed(m: Dictionary) -> void:
 	if bool(m.get("summoned", false)): return
 	var kind := "boss" if str(m.get("kind", "")) == "boss" or bool(m.get("boss", false)) else "kill"
 	var state := Profile.class_state(profile, class_id)
-	profile.gold = int(profile.gold) + int(data.gold.per_boss if kind == "boss" else data.gold.per_kill)
+	var gold := int(data.gold.per_boss if kind == "boss" else data.gold.per_kill)
+	profile.gold = int(profile.gold) + gold
+	# seen, never hidden: a small golden '+N' with a coin rises where it fell (src/hell/gold_loot.gd)
+	if g.get("gold_loot") != null and m.has("p"):
+		g.gold_loot.kill_popup(Vector2(m.p), gold)
 	var gained := Rules.add_exp(data, state, int(data.exp[kind]))
 	if gained > 0: bar.show_reward({"kind": "level", "level": int(state.level), "points": Rules.free_points(data, state)})
 	_dirty = true
@@ -283,6 +287,11 @@ func chase_goal(m: Dictionary, goal: Vector2) -> Vector2:
 	_sync_mobs()
 	var forced := tc.forced_target(m)
 	return Vector2(forced.pos) if not forced.is_empty() and int(forced.id) < 0 else goal
+
+
+## The profile changed outside the talents (gold taken): saved with the next save tick.
+func request_save() -> void:
+	_dirty = true
 
 
 func save() -> void:
