@@ -51,6 +51,7 @@ func _run() -> void:
 	test_rune_from_a_slain_enemy_is_taken_at_once_with_a_rising_plus_one()
 	test_rune_from_a_chest_is_thrown_out_and_picked_up()
 	test_rune_rates_between_rare_and_common_pay_a_reset()
+	test_talent_test_profile_has_rune_stones_enough()
 	await test_a_floor_has_gold_instead_of_rune_stones()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(Profile.default_path()))
 	print("GOLD_LOOT checked=%d failures=%d" % [checked, failures.size()])
@@ -183,6 +184,28 @@ func test_rune_rates_between_rare_and_common_pay_a_reset() -> void:
 	check(float(chance.breakable) > float(chance.mob) and float(chance.chest) > float(chance.breakable) and float(chance.chest) < 0.5, "breakables and chests more often, never always")
 	check(run >= reset * 2.0 and run <= reset * 5.0, "a run finds enough for 2 to 5 resets at Heldenstufe 30, not more (%.0f stones, reset %d)" % [run, reset])
 	game.free()
+
+
+func test_talent_test_profile_has_rune_stones_enough() -> void:
+	# Arrange: a talent test profile written before rune stones paid the reset, and a player's own
+	var d := Profile.data()
+	var debug_path := "user://gold_loot_test_debug_profile.json"
+	var own_path := "user://gold_loot_test_own_profile.json"
+	var old := Profile.fresh(d)
+	old.debug_free = true
+	old.runes = 2
+	Profile.save_profile(old, debug_path)
+	var own := Profile.fresh(d)
+	own.runes = 2
+	Profile.save_profile(own, own_path)
+	# Act
+	var loaded_debug := Profile.load_profile(d, debug_path)
+	var loaded_own := Profile.load_profile(d, own_path)
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(debug_path))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(own_path))
+	# Assert
+	check(not OS.is_debug_build() or int(loaded_debug.runes) == Profile.DEBUG_RUNES, "the talent test profile has 999999 rune stones to reset with")
+	check(int(loaded_own.runes) == 2, "a player's own profile keeps its rune stones")
 
 
 func test_a_floor_has_gold_instead_of_rune_stones() -> void:

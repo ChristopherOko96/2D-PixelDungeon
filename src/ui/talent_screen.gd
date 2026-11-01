@@ -30,6 +30,10 @@ const Rules = preload("res://src/progress/talent_rules.gd")
 const CryptUI = preload("res://src/ui/crypt_ui.gd")
 const PixelStyle = preload("res://src/pixel_style.gd")
 const TalentIcons = preload("res://src/ui/talent_icons.gd")
+## The rune stone of the story worlds' loot (assets/sprites/loot, src/hell/gold_loot.gd): the same
+## stone beside the reset's price and in the purse.
+const RUNE := preload("res://assets/sprites/loot/rune_hd.png")
+const RUNE_BLUE := Color("9edcff")
 
 ## Emitted after every change that was saved (the game resends builds in multiplayer).
 signal profile_changed
@@ -342,7 +346,8 @@ func _refresh() -> void:
 	if _font != null and _font.get_string_size(companion.text, HORIZONTAL_ALIGNMENT_LEFT, -1, TEXT).x > companion.size.x - 12.0:
 		companion.text = "Begleiter: %s" % str(kinds.get(str(state.get("companion", "wolf")), {}).get("name", "Wolf"))
 	companion.tooltip_text = "Klick wechselt den Begleiter."
-	_buttons.reset.text = "Zurücksetzen · %d Gold" % Rules.reset_cost(data, profile, class_id)
+	var cost := Rules.reset_cost(data, profile, class_id)
+	_buttons.reset.text = "Zurücksetzen · %d %s" % [cost, "Rune" if cost == 1 else "Runen"]
 	_buttons.reset.disabled = state.ranks.is_empty() or int(profile.get("runes", 0)) < Rules.reset_cost(data, profile, class_id)
 	_buttons.reset.visible = true
 	if _page == "run":
@@ -529,7 +534,7 @@ func _diamond(at: Vector2, r: float, color: Color) -> void:
 
 
 ## Top right: the class with its Heldenstufe and the free talent points
-## (singular for one). Gold and soul shards sit in the footer (_draw_purse).
+## (singular for one). Rune stones and soul shards sit in the footer (_draw_purse).
 func _draw_info() -> void:
 	var state := _state()
 	_card(INFO, Color(0.05, 0.04, 0.05, 0.9), Color(1, 1, 1, 0.1), 4, 4)
@@ -544,15 +549,18 @@ func _draw_info() -> void:
 	_say("1 Talentpunkt frei" if free == 1 else "%d Talentpunkte frei" % free, INFO.position + Vector2(14, 47), TEXT, CryptUI.GOLD if free > 0 else CryptUI.MUTED)
 
 
-## The footer beside the reset (which costs rune stones): soul shards and rune stones.
+## The footer beside the reset (which costs rune stones): soul shards and rune stones (the stone and its count).
 func _draw_purse() -> void:
 	var y := 698.0
-	var gold := "Runensteine %d" % int(profile.get("runes", 0))
+	# the rune stones: the stone and its count, right-aligned
+	var runes := str(int(profile.get("runes", 0)))
+	var runes_x := TREE.end.x - 4.0 - _width(runes)
+	_say(runes, Vector2(runes_x, y), TEXT, RUNE_BLUE)
+	var icon := RUNE.get_size() * (20.0 / RUNE.get_size().y)
+	draw_texture_rect(RUNE, Rect2(Vector2(runes_x - icon.x - 6.0, y - 16.0), icon), false)
 	var have := int(profile.shards.have)
 	var shards := "1 Seelensplitter" if have == 1 else "%d Seelensplitter" % have
-	var gold_x := TREE.end.x - 4.0 - _width(gold)
-	_say(gold, Vector2(gold_x, y), TEXT, CryptUI.GOLD)
-	var shard_x := gold_x - 28.0 - _width(shards)
+	var shard_x := runes_x - icon.x - 34.0 - _width(shards)
 	_say(shards, Vector2(shard_x, y), TEXT, Color("e2d4ff"))
 	draw_crystal(self, Vector2(shard_x - 16.0, y - 7.0), 0.55, _clock)
 

@@ -19,6 +19,8 @@ const SAVE_PATH := "user://profile.json"
 ## own profile stays untouched while it is on.
 const DEBUG_PATH := "user://profile_debug.json"
 const DEBUG_FLAG := "user://talent_debug.flag"
+## Rune stones of the talent test profile: enough to reset as often as testing needs.
+const DEBUG_RUNES := 999999
 ## 2: the 8-row trees (29.10.2026); the old ultimates <spec>_6 became <spec>_14.
 const VERSION := 2
 ## Old ultimate ids of version 1 profiles.
@@ -39,14 +41,14 @@ static func debug_enabled() -> bool:
 
 
 ## Turns the talent test profile on (written fresh: level 30 everywhere, 99
-## shards, 999 rune stones, 9999 gold per character; casts cost mana as usual) or off. Debug builds only.
+## shards, DEBUG_RUNES rune stones, 9999 gold per character; casts cost mana as usual) or off. Debug builds only.
 static func set_debug(on: bool, d: Dictionary) -> void:
 	if not OS.is_debug_build(): return
 	if not on:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(DEBUG_FLAG))
 		return
 	var profile := fresh(d)
-	profile.runes = 999
+	profile.runes = DEBUG_RUNES
 	profile.shards = {"have": 99, "earned": 99, "spent": 0}
 	profile.debug_free = true
 	for id: String in profile.classes:
@@ -167,6 +169,9 @@ static func sanitize(raw: Variant, d: Dictionary) -> Dictionary:
 static func load_profile(d: Dictionary, path: String = SAVE_PATH) -> Dictionary:
 	if not FileAccess.file_exists(path): return fresh(d)
 	var profile := sanitize(JSON.parse_string(FileAccess.get_file_as_string(path)), d)
+	# the talent test profile always has rune stones enough, also one written before they paid the reset
+	if bool(profile.get("debug_free", false)):
+		profile.runes = maxi(int(profile.runes), DEBUG_RUNES)
 	# loaded at run time: talent_rules.gd preloads this script
 	var rules: GDScript = load("res://src/progress/talent_rules.gd")
 	for class_id: String in profile.classes: rules.repair(d, profile, class_id)
