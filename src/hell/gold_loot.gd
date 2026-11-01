@@ -1,6 +1,10 @@
 extends RefCounted
-## The gold of the story worlds (src/hell/hell_game.gd): one currency, the profile's gold, always
-## seen. Chests, vaults, broken crates, room rewards and loose finds throw it out as turning coins
+## The loot of the story worlds (src/hell/hell_game.gd), always seen: the character's gold and the
+## account's rune stones (assets/data/loot_runes.json: random drops; from a slain enemy or boss
+## they are taken at once and rise as a blue '+N' with the stone where it fell, like its gold;
+## chests, breakables and vaults throw them out to be picked up like gold; rune_drop and
+## rune_pickup sounds).
+## Gold: Chests, vaults, broken crates, room rewards and loose finds throw it out as turning coins
 ## and money bags (bag_value gold each); they arc out, bounce once and lie turning, glinting now
 ## and then; near the hero they fly to him and are taken. Every pickup and every slain enemy's
 ## gold rises as a small golden '+N' with a coin. Sounds are the same in every world: the spill
@@ -12,10 +16,15 @@ extends RefCounted
 ## are the gold's amounts.
 
 const DATA_PATH := "res://assets/data/loot_gold.json"
+const RUNES_PATH := "res://assets/data/loot_runes.json"
+## Sources whose rune stones are taken at once with a rising '+N' (a slain enemy, like its gold).
+const SLAIN := ["mob", "boss", "final"]
 const SPRITES := "res://assets/sprites/loot/"
 
 var g: Node
 var cfg: Dictionary = {}
+## The rune stones' drop rules and look (loot_runes.json).
+var runes: Dictionary = {}
 ## The gold in the world: {p (ground point), h (height over it), v (ground speed), vh (upward
 ## speed), value, bag, wait (s before it leaves), bounced, landed (s since landing, -1 in the air),
 ## fly (pulled to the hero), phase}.
@@ -36,6 +45,8 @@ func _init(game: Node, data: Dictionary = {}) -> void:
 	cfg = data
 	if cfg.is_empty() and FileAccess.file_exists(DATA_PATH):
 		cfg = JSON.parse_string(FileAccess.get_file_as_string(DATA_PATH))
+	if FileAccess.file_exists(RUNES_PATH):
+		runes = JSON.parse_string(FileAccess.get_file_as_string(RUNES_PATH))
 	_rng.randomize()
 
 
@@ -71,6 +82,38 @@ func spew(at: Vector2, amount: int) -> void:
 			"wait": n * float(spill.get("stagger", 0.035)), "bounced": false, "landed": -1.0, "fly": false, "phase": _rng.randf() * 10.0})
 		n += 1
 	_play("gold_spill", at)
+
+
+## A rune stone may drop at `at` from `source` (mob, breakable, chest, boss, final, vault), by its
+## chance in loot_runes.json; `roll` (0..1) for tests, random otherwise. From a slain enemy or boss
+## the stones are the account's at once and rise as '+N' (above its gold's '+N'); from the rest
+## they are thrown out to be picked up. True when stones dropped.
+func roll_rune(source: String, at: Vector2, roll := -1.0) -> bool:
+	var chance := float((runes.get("chance", {}) as Dictionary).get(source, 0.0))
+	if (roll if roll >= 0.0 else _rng.randf()) >= chance:
+		return false
+	var n := int((runes.get("count", {}) as Dictionary).get(source, 1))
+	if source in SLAIN:
+		if g.has_method("add_runes"):
+			g.add_runes(n)
+		_play("rune_drop", at)
+		pops.append({"p": at + Vector2(0, -80), "amount": n, "t": -float(cfg.popup.get("delay", 0.12)) - 0.1, "rune": true})
+	else:
+		spew_runes(at, n)
+	return true
+
+
+## Throws `n` rune stones out at `at`, like gold.
+func spew_runes(at: Vector2, n: int) -> void:
+	var spill: Dictionary = cfg.get("spill", {})
+	for k in range(n):
+		var dir := Vector2.from_angle(_rng.randf_range(0.0, TAU))
+		dir.y *= 0.6
+		pieces.append({"p": at, "h": float(spill.get("height", 34)), "v": dir * _rng.randf_range(float(spill.speed[0]), float(spill.speed[1])) * 0.7,
+			"vh": _rng.randf_range(float(spill.up[0]), float(spill.up[1])), "value": 1, "bag": false, "rune": true,
+			"wait": k * 0.12, "bounced": false, "landed": -1.0, "fly": false, "phase": _rng.randf() * 10.0})
+	if n > 0:
+		_play("rune_drop", at)
 
 
 ## Gold lying at `at` from the start (a loose find on the floor).
@@ -146,9 +189,16 @@ func update(dt: float) -> void:
 	_update_glint(dt, hero)
 
 
-## The gold reaches the hero: into the profile, its sound, and a '+N' over him (quick pickups add up).
+## The loot reaches the hero: gold to the character, a rune stone to the account, its sound, and a
+## '+N' over him (quick pickups of the same kind add up).
 func _take(piece: Dictionary) -> void:
 	var value := int(piece.value)
+	if bool(piece.get("rune", false)):
+		if g.has_method("add_runes"):
+			g.add_runes(value)
+		_play("rune_pickup", piece.p)
+		pops.append({"p": Vector2(float(g.player.x), float(g.player.y) - 125.0), "amount": value, "t": 0.0, "hero": true, "rune": true})
+		return
 	if g.has_method("add_gold"):
 		g.add_gold(value)
 	_streak += 1
@@ -160,7 +210,7 @@ func _take(piece: Dictionary) -> void:
 	var hero := Vector2(float(g.player.x), float(g.player.y) - 90.0)
 	if not pops.is_empty():
 		var last: Dictionary = pops[-1]
-		if bool(last.get("hero", false)) and float(last.t) < float(cfg.popup.get("merge", 0.45)):
+		if bool(last.get("hero", false)) and not bool(last.get("rune", false)) and float(last.t) < float(cfg.popup.get("merge", 0.45)):
 			last.amount = int(last.amount) + value
 			last.t = 0.0
 			last.p = hero
@@ -213,6 +263,16 @@ func _texture(name: String) -> Texture2D:
 	return _tex[name]
 
 
+## The rune stone's picture (for the HUD and the '+N' too).
+func rune() -> Texture2D:
+	return _texture(str(_rune_look().get("rune", "rune_hd")))
+
+
+func _rune_look() -> Dictionary:
+	var looks: Dictionary = runes.get("look", {})
+	return looks.get(str(g.get("graphics")), looks.get("hd", {}))
+
+
 ## The coin's picture at time `t` (for the HUD and the '+N' too).
 func coin(t: float, phase := 0.0) -> Texture2D:
 	var look := _look()
@@ -227,16 +287,22 @@ func draw(l: CanvasItem, view: Rect2) -> void:
 		if float(piece.wait) > 0.0 or not view.has_point(piece.p):
 			continue
 		var bag := bool(piece.bag)
-		var tex := _texture(str(look.bag)) if bag else coin(t, float(piece.phase))
+		var is_rune := bool(piece.get("rune", false))
+		var tex := rune() if is_rune else (_texture(str(look.bag)) if bag else coin(t, float(piece.phase)))
 		if tex == null:
 			continue
-		var size := tex.get_size() * float(look.get("bag_scale" if bag else "coin_scale", 1.0))
+		var scale := float(_rune_look().get("scale", 1.0)) if is_rune else float(look.get("bag_scale" if bag else "coin_scale", 1.0))
+		var size := tex.get_size() * scale
 		var bob := 0.0 if float(piece.landed) < 0.0 or bag else sin(t * 3.0 + float(piece.phase)) * 1.5
 		var ground: Vector2 = piece.p
 		l.draw_set_transform(ground, 0.0, Vector2(1.0, 0.35))
 		l.draw_circle(Vector2.ZERO, size.x * (0.32 if bag else 0.22), Color(0, 0, 0, 0.28))
 		l.draw_set_transform(Vector2.ZERO)
 		var top := ground - Vector2(size.x / 2.0, size.y + float(piece.h) + bob)
+		if is_rune:
+			# a rune stone hovers a little and breathes a cold light
+			top.y -= 6.0 + sin(t * 2.4 + float(piece.phase)) * 3.0
+			l.draw_circle(top + size / 2.0, size.x * 0.75, Color(0.45, 0.75, 1.0, 0.12 + 0.06 * sin(t * 3.0 + float(piece.phase))))
 		l.draw_texture_rect(tex, Rect2(top, size), false)
 		if not _glint.is_empty() and _glint.piece == piece:
 			_draw_glint(l, top + Vector2(size.x * 0.65, size.y * 0.3), float(_glint.t), look)
@@ -273,12 +339,15 @@ func draw_pops(l: CanvasItem, font: Font) -> void:
 		var text := "+%d" % int(pop.amount)
 		var size := int(cfg.popup.get("size", 26))
 		var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
-		var tex := coin(t)
+		var is_rune := bool(pop.get("rune", false))
+		var tex := rune() if is_rune else coin(t)
 		# the coin as tall as the digits
 		var icon := tex.get_size() * (float(size) * 0.95 / maxf(1.0, tex.get_size().y)) if tex != null else Vector2.ZERO
 		var left := at.x - (w + icon.x + 4.0) / 2.0
 		if tex != null:
 			l.draw_texture_rect(tex, Rect2(Vector2(left, at.y - icon.y + 3.0), icon), false, Color(1, 1, 1, a))
 		var pos := Vector2(left + icon.x + 4.0, at.y)
-		l.draw_string_outline(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 6, Color(0.18, 0.09, 0.0, a * 0.9))
-		l.draw_string(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, Color(1.0, 0.84, 0.28, a))
+		var edge := Color(0.04, 0.08, 0.2, a * 0.9) if is_rune else Color(0.18, 0.09, 0.0, a * 0.9)
+		var ink := Color(0.62, 0.86, 1.0, a) if is_rune else Color(1.0, 0.84, 0.28, a)
+		l.draw_string_outline(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 6, edge)
+		l.draw_string(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, ink)

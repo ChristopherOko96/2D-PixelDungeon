@@ -1,7 +1,8 @@
 extends SceneTree
 ## Captures the gold (src/hell/gold_loot.gd) from the real windowed game, in one world and one
-## graphics set: a chest with 23 gold (2 bags, 3 coins) opening beside the hero, its gold in the
-## air and lying, a slain enemy's '+1' rising, and the HUD's gold row. Each picture is the frame's
+## graphics set: a chest with 23 gold (2 bags, 3 coins) and a rune stone opening beside the hero,
+## its loot in the air and lying, a slain enemy's '+1' gold and '+1' rune stone rising, and the
+## HUD's purse (gold and rune stones, always shown). Each picture is the frame's
 ## centre, enlarged 2x with nearest filtering.
 ## Usage:
 ##   godot --path . --resolution 1280x720 -s res://scripts/capture_gold_loot.gd -- <output_dir> <frost|hell|krypta> [hd|pixel]
@@ -73,14 +74,17 @@ func _run() -> void:
 	var hero := Vector2(_game.player.x, _game.player.y)
 	var chest := {"type": "chest", "x": hero.x, "y": hero.y - 30.0, "room": int(_game.state.room), "loot": {"gems": 23}}
 	_game.W.ents.append(chest)
+	# this chest holds a rune stone too (its chance set to sure for the picture)
+	_game.gold_loot.runes.chance.chest = 1.0
 	_game.act()
 	_game.player.y = hero.y + 260.0
 	await _wait_s(0.22)
 	_shot("01-auswurf", Vector2(chest.x, chest.y - 20))
 	await _wait_s(1.3)
 	_shot("02-gelandet", Vector2(chest.x, chest.y))
-	# a slain enemy's gold
+	# a slain enemy's gold, and its rune stone (a sure roll for the picture)
 	_game.gold_loot.kill_popup(Vector2(chest.x + 150, chest.y + 40), 1)
+	_game.gold_loot.roll_rune("mob", Vector2(chest.x + 150, chest.y + 40), 0.0)
 	await _wait_s(0.3)
 	_shot("03-kill-plus-eins", Vector2(chest.x + 150, chest.y))
 	# the hero walks into the gold: taken, '+N' over him, the HUD's gold row

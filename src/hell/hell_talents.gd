@@ -300,10 +300,12 @@ func killed(m: Dictionary) -> void:
 	var kind := "boss" if str(m.get("kind", "")) == "boss" or bool(m.get("boss", false)) else "kill"
 	var state := Profile.class_state(profile, class_id)
 	var gold := int(data.gold.per_boss if kind == "boss" else data.gold.per_kill)
-	profile.gold = int(profile.gold) + gold
-	# seen, never hidden: a small golden '+N' with a coin rises where it fell (src/hell/gold_loot.gd)
+	Profile.add_gold(profile, class_id, gold)
+	# seen, never hidden: a small golden '+N' with a coin rises where it fell, and now and then
+	# a rune stone drops there (src/hell/gold_loot.gd)
 	if g.get("gold_loot") != null and m.has("p"):
 		g.gold_loot.kill_popup(Vector2(m.p), gold)
+		g.gold_loot.roll_rune(("final" if bool(g.W.get("final", false)) else "boss") if kind == "boss" else "mob", Vector2(m.p))
 	var mul: float = float(elements.exp_mul(m)) if elements != null and elements.has_method("exp_mul") else 1.0
 	var gained := Rules.add_exp(data, state, roundi(float(data.exp[kind]) * mul))
 	if mul > 1.0: _reaction_bonus(m, mul)

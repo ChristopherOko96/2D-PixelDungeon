@@ -5320,6 +5320,32 @@
    "spread": 0.04,
    "min_interval": 0.5
   },
+  "rune_drop": {
+   "label": "Runenstein fällt",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/item_gem_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_gem_03.ogg"
+   ],
+   "pitch": 0.85,
+   "volume_db": -2,
+   "spread": 0.04,
+   "min_interval": 0.15
+  },
+  "rune_pickup": {
+   "label": "Runenstein aufgehoben",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/item_gem_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_gem_02.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_gem_03.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_gem_04.ogg"
+   ],
+   "pitch": 1.1,
+   "volume_db": -1,
+   "spread": 0.03,
+   "min_interval": 0.06
+  },
   "gold_spill": {
    "label": "Gold fliegt aus Truhe oder Tresor",
    "category": "world",

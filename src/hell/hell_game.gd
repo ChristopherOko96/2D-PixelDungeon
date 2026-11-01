@@ -613,7 +613,7 @@ func _bank_crystals() -> void:
 	if profile.is_empty(): return
 	var state_class := Profile.class_state(profile, class_id)
 	var gained := TalentRules.add_exp(profile_data, state_class, int(profile_data.exp.floor) + (int(profile_data.exp.boss) if W.final else int(profile_data.exp.miniboss)))
-	profile.gold = int(profile.gold) + int(profile_data.gold.per_floor) + (int(profile_data.gold.per_boss) if W.final else 0)
+	Profile.add_gold(profile, class_id, int(profile_data.gold.per_floor) + (int(profile_data.gold.per_boss) if W.final else 0))
 	_floor_reward = "+%d Gold" % (int(profile_data.gold.per_floor) + (int(profile_data.gold.per_boss) if W.final else 0))
 	if gained > 0: _floor_reward += "  ·  Heldenstufe %d, neuer Talentpunkt" % int(state_class.level)
 	if W.final:
@@ -1526,6 +1526,7 @@ func _lose_hp(n: int, why: String, from := Vector2.ZERO, soft := false) -> void:
 		return
 	if state.hp == 0:
 		state.dead = 1.8
+		_gold_lost()
 		if sound != null: sound.hero("vo_death")
 		state.death_why = why
 		_toast("Gestorben: %s." % why)
@@ -1634,7 +1635,9 @@ func run_result(over: Dictionary) -> Dictionary:
 	# the profile keeps level, gold and soul shards (docs/TALENTE-SEELENSPLITTER.de.md)
 	var note := ""
 	if not profile.is_empty():
-		note = "%d GOLD · %d SEELENSPLITTER" % [int(profile.gold), int(profile.shards.have)]
+		# the character's gold stays with a win and is gone with a death; rune stones and shards stay
+		var gold_note := ("%d GOLD VERLOREN" % int(state.get("gold_lost", 0))) if not won else ("%d GOLD" % gold_count())
+		note = "%s · %d RUNENSTEINE · %d SEELENSPLITTER" % [gold_note, int(profile.get("runes", 0)), int(profile.shards.have)]
 	return {"title": say("Die Hölle ist bezwungen").to_upper() if won else "LAUF BEENDET", "tone": "win" if won else "loss",
 		"lines": lines, "note": note, "hints": "E · NEUER LAUF   ESC · MENÜ"}
 
@@ -1707,6 +1710,7 @@ func act() -> void:
 					if feel != null:
 						feel.fx_event("chest_open", Vector2(e.x, e.y - 30))
 					gold_loot.spew(Vector2(e.x, e.y - 10), int(e.loot.gems))
+					gold_loot.roll_rune("chest", Vector2(e.x, e.y - 10))
 					_toast("Truhe geöffnet: %d Gold%s" % [e.loot.gems, " und ein Herz" if e.loot.get("heart", false) else ""])
 					if story_items != null:
 						story_items.loot("chest", Vector2(e.x, e.y + 40))
@@ -1725,6 +1729,7 @@ func act() -> void:
 				var hearts := int(balance.vault.heart_containers) + (1 if tier >= 6 else 0)
 				var gems: int = roundi((int(balance.vault.gems_base) + state.floor * int(balance.vault.gems_per_floor)) * (1.0 + (tier - 4) * 0.5))
 				gold_loot.spew(Vector2(e.x, e.y - 20), gems)
+				gold_loot.roll_rune("vault", Vector2(e.x, e.y - 20))
 				var max_before := int(state.max_hp)
 				state.max_hp = Rules.raised_max_hp(state, 2 * hearts, int(balance.player.max_hp_cap))
 				state.hp = state.max_hp
@@ -2130,18 +2135,43 @@ func _drop(kind: String, room: int, at: Vector2, extra := {}) -> void:
 	W.ents.append(e)
 
 
-## The hero's gold: the profile's gold (kept from run to run, the talent reset costs it).
+## The character's gold (src/progress/profile.gd: each class its own, kept from run to run
+## while the character lives, gone when it dies; the round shop will take it).
 func gold_count() -> int:
-	return int(profile.get("gold", 0))
+	return 0 if profile.is_empty() else Profile.gold(profile, class_id)
 
 
-## Gold taken (src/hell/gold_loot.gd): into the profile, saved soon, shown in the HUD's resource row.
+## The account's rune stones (they pay the talent reset; every character shares them).
+func rune_count() -> int:
+	return int(profile.get("runes", 0))
+
+
+## Gold taken (src/hell/gold_loot.gd): to the character, saved soon.
 func add_gold(n: int) -> void:
 	if profile.is_empty():
 		return
-	profile.gold = int(profile.gold) + n
+	Profile.add_gold(profile, class_id, n)
 	if talents != null:
 		talents.request_save()
+
+
+## A rune stone taken (src/hell/gold_loot.gd): to the account, saved soon.
+func add_runes(n: int) -> void:
+	if profile.is_empty():
+		return
+	Profile.add_runes(profile, n)
+	if talents != null:
+		talents.request_save()
+
+
+## The hero fell: the character's gold is gone at once (saved now, so quitting cannot keep it),
+## and so is the gold still lying on the floor.
+func _gold_lost() -> void:
+	if profile.is_empty():
+		return
+	state.gold_lost = Profile.lose_gold(profile, class_id)
+	gold_loot.reset()
+	Profile.save_profile(profile, profile_path)
 
 
 func _enemy_shot(from: Vector2, dir: Vector2, speed: float, by: Dictionary = {}) -> void:
@@ -2211,6 +2241,8 @@ func _break_seal(e: Dictionary) -> void:
 ## undead that lock the room.
 func _break_crate(e: Dictionary) -> void:
 	if sound == null or not sound.theme_event("crate_break"): _sound("hit_bone")
+	# now and then a rune stone was hidden inside (src/hell/gold_loot.gd)
+	gold_loot.roll_rune("breakable", Vector2(e.x, e.y - 10))
 	match str(e.get("drop", "none")):
 		"gem":
 			gold_loot.spew(Vector2(e.x, e.y - 10), 2)
@@ -2305,6 +2337,7 @@ func _fall_into_pit() -> void:
 		_burst(Vector2(player.x, player.y - 30), 24)
 	if state.hp == 0:
 		state.dead = 1.8
+		_gold_lost()
 		state.death_why = "in eine Grube gestürzt"
 		_toast("In die Grube gestürzt.")
 		return
@@ -2425,7 +2458,7 @@ func pause_info() -> Dictionary:
 		"Etage %d · %s" % [state.floor, W.title], str(W.circle), "",
 		"%s · LAUFSTUFE %d · %s" % [hero_name, int(state.get("level", 1)), held],
 		"LP: %d / %d" % [HudKit.life_shown(int(state.hp), hp_f()), int(state.max_hp)],
-		"Gold: %d" % gold_count(),
+		"Gold: %d · Runensteine: %d" % [gold_count(), rune_count()],
 		"Schlüssel: %s" % (", ".join(PackedStringArray(keys)) if not keys.is_empty() else "keiner"),
 		"Segen: %s" % (", ".join(PackedStringArray(blessings)) if not blessings.is_empty() else "keiner"),
 		"", "Räume besucht: %d von %d" % [state.visited.size(), W.rooms.size()],
@@ -4510,11 +4543,10 @@ func _draw_hero_strip(h: Control) -> float:
 	for k in ["A", "B", "C"]:
 		if state.keys[k]:
 			resources.append({"icon": tex[key_sprite[k]], "tint": key_tint[k]})
-	resources.append({"icon": gold_loot.coin(float(state.t)), "text": str(gold_count())})
 	var fire := Rules.group_progress(W.ents, "feuer")
 	if fire.y > 0:
 		resources.append({"icon": tex.brazier_bowl, "text": "%d/%d" % [fire.x, fire.y], "dim": fire.x >= fire.y})
-	var sig := "%s%s%s|%d|%d" % [state.keys["A"], state.keys["B"], state.keys["C"], gold_count(), fire.x]
+	var sig := "%s%s%s|%d" % [state.keys["A"], state.keys["B"], state.keys["C"], fire.x]
 	if str(state.get("res_sig", "")) != sig:
 		state.res_sig = sig
 		state.res_t = float(state.t)
@@ -4542,10 +4574,12 @@ func _draw_hero_strip(h: Control) -> float:
 		"exp": float(state.exp) / need if leveled else -1.0, "resources": resources, "resource_alpha": res_alpha, "status": status,
 		"low": int(state.hp) <= 2 and int(state.hp) > 0, "clock": float(state.t)})
 	var edge := hero_rect.end.x
-	var bottom := hero_rect.end.y
+	# the purse, always shown: the character's gold and the account's rune stones
+	var purse := _draw_purse(h, Vector2(hero_rect.position.x, hero_rect.end.y + 6.0), hero_rect.size.x)
+	var bottom := purse.end.y
 	if talents != null:
 		var pet: Dictionary = talents.hud_state().get("pet", {})
-		var pet_rect := HudKit.pet_panel(h, FONT, Vector2(hero_rect.position.x, hero_rect.end.y + 6.0), hero_rect.size.x, pet, float(state.t),
+		var pet_rect := HudKit.pet_panel(h, FONT, Vector2(hero_rect.position.x, purse.end.y + 6.0), hero_rect.size.x, pet, float(state.t),
 			HudKit.rule("pet_idle_alpha", 0.6) if _pet_idle(pet) else 1.0)
 		edge = maxf(edge, pet_rect.end.x)
 		bottom = maxf(bottom, pet_rect.end.y)
@@ -4553,6 +4587,28 @@ func _draw_hero_strip(h: Control) -> float:
 	if inventory_panel != null:
 		inventory_panel.fit_below(bottom + HudStyle.size("inventory_gap"))
 	return edge
+
+
+## The purse under the hero panel, always shown in every world: the turning coin with the
+## character's gold (lost when it dies) and the rune stone with the account's stones (they pay
+## the talent reset). Returns its rect.
+func _draw_purse(h: Control, origin: Vector2, width: float) -> Rect2:
+	var pad := HudStyle.size("pad")
+	var body := int(HudStyle.size("font_body"))
+	var rect := Rect2(origin, Vector2(width, body + pad * 2.0))
+	HudStyle.panel(h, rect)
+	var y := rect.get_center().y
+	var x := rect.position.x + pad
+	for item: Array in [[gold_loot.coin(float(state.t)), str(gold_count()), Color(1.0, 0.84, 0.3)], [gold_loot.rune(), str(rune_count()), Color(0.62, 0.86, 1.0)]]:
+		var icon: Texture2D = item[0]
+		if icon != null:
+			var s := float(body + 2) / maxf(1.0, icon.get_size().y)
+			var size := icon.get_size() * s
+			h.draw_texture_rect(icon, Rect2(Vector2(x, y - size.y / 2.0), size), false)
+			x += size.x + 6.0
+		HudStyle.text(h, FONT, Vector2(x, y + floorf(body * 0.5) - 1.0), str(item[1]), body, item[2])
+		x += HudStyle.width(FONT, str(item[1]), body) + 22.0
+	return rect
 
 
 ## The guardian's bar, the same in every world (src/ui/hud_kit.gd), between the
@@ -4625,7 +4681,7 @@ func _draw_result(h: Control, size: Vector2) -> void:
 		_result_label = "NEUER LAUF  (E)"
 	elif state.won:
 		_result_rect = HudKit.result_panel(h, FONT, size, {"title": "ETAGE %d GESCHAFFT" % int(state.floor), "tone": "floor", "buttons": 2,
-			"lines": [["RÄUME ERKUNDET", "%d / %d" % [state.visited.size(), W.rooms.size()]], ["GOLD", str(gold_count())],
+			"lines": [["RÄUME ERKUNDET", "%d / %d" % [state.visited.size(), W.rooms.size()]], ["GOLD", str(gold_count())], ["RUNENSTEINE", str(rune_count())],
 				["LP", "%d / %d" % [HudKit.life_shown(int(state.hp), float(state.hp_f)), int(state.max_hp)]], ["LAUFSTUFE", str(int(state.level))]],
 			"note": _floor_reward})
 		_result_label = "WEITER  (E)"

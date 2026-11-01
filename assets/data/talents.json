@@ -417,8 +417,13 @@
     }
   },
   "boss_level_per_floor": 2,
-  "reset_gold_per_level": 25,
+  "reset_runes": {
+    "_note": "A talent reset costs rune stones (account-wide, src/hell/gold_loot.gd drops them): base + one per per_levels hero levels (level 10: 4, 20: 7, 30: 9). A 10-floor story run finds about 25 (assets/data/loot_runes.json), so a reset is a choice.",
+    "base": 2,
+    "per_levels": 4
+  },
   "gold": {
+    "_note": "Character gold (each class its own, lost when the character dies): per kill, per boss, per floor reached.",
     "per_kill": 1,
     "per_boss": 40,
     "per_floor": 15

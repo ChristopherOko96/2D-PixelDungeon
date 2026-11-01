@@ -1,5 +1,5 @@
-"""The gold of the story worlds (src/hell/gold_loot.gd): coin and money bag sprites in both
-graphics sets, written to assets/sprites/loot/.
+"""The loot of the story worlds (src/hell/gold_loot.gd): coin, money bag and rune stone sprites in
+both graphics sets, written to assets/sprites/loot/. One look in every world.
 
 - HD coin: the 0x72 coin (assets/sprites/0x72/coin_anim_f0-f3.png, 6x7), enlarged 4x with
   nearest pixels, so the HD set's smooth filtering keeps it crisp.
@@ -8,6 +8,9 @@ graphics sets, written to assets/sprites/loot/.
 - Pixel bag: the items sheet's money bag (assets/items/item_sheet_items.png, cell [32,80]).
 - HD bag: the same bag drawn up to 64x64 with Scale2x (EPX) twice: edges and curves smoothed
   instead of blocky, the colours of the original kept.
+- HD rune stone: the cut ice-blue rune diamond of the HD set (assets/sprites/frost_hd/rune_gem.png).
+- Pixel rune stone: the same diamond of the 0x72 set (assets/sprites/hell_0x72/rune_gem.png),
+  recoloured by brightness into the HD stone's blues, so both sets show one stone.
 
 py -3 -I tools/loot/build_gold_sprites.py
 """
@@ -65,8 +68,37 @@ def build():
     img.save(bag, os.path.join(OUT, 'bag_px.png'))
     img.save(scale2x(scale2x(bag)), os.path.join(OUT, 'bag_hd.png'))
     made += ['bag_px', 'bag_hd']
+    hd = img.load(os.path.join(ROOT, 'assets', 'sprites', 'frost_hd', 'rune_gem.png'))
+    img.save(hd, os.path.join(OUT, 'rune_hd.png'))
+    img.save(recolour(img.load(os.path.join(ROOT, 'assets', 'sprites', 'hell_0x72', 'rune_gem.png')), palette(hd)),
+             os.path.join(OUT, 'rune_px.png'))
+    made += ['rune_hd', 'rune_px']
     return made
 
 
+def palette(im, steps=6):
+    """The image's colours sorted by brightness, `steps` of them evenly picked."""
+    seen = sorted({im.get(x, y)[:3] for y in range(im.h) for x in range(im.w) if im.get(x, y)[3] > 200},
+                  key=lambda c: 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2])
+    return [seen[round(i * (len(seen) - 1) / (steps - 1))] for i in range(steps)]
+
+
+def recolour(im, ramp):
+    """Every opaque pixel takes the ramp colour of its own brightness (the shape stays)."""
+    lums = [0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2] for y in range(im.h) for x in range(im.w)
+            for c in [im.get(x, y)] if c[3] > 0]
+    lo, hi = min(lums), max(lums)
+    out = img.Img(im.w, im.h)
+    for y in range(im.h):
+        for x in range(im.w):
+            r, g, b, a = im.get(x, y)
+            if a == 0:
+                continue
+            t = (0.299 * r + 0.587 * g + 0.114 * b - lo) / max(1.0, hi - lo)
+            t = t ** 0.45 if t > 0.08 else 0.0   # the stone lit like the HD one, the outline stays dark
+            out.set(x, y, ramp[min(len(ramp) - 1, int(t * len(ramp)))] + (a,))
+    return out
+
+
 if __name__ == '__main__':
-    print(len(build()), 'gold sprites ->', OUT)
+    print(len(build()), 'loot sprites ->', OUT)

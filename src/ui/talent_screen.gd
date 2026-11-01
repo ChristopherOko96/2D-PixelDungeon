@@ -343,7 +343,7 @@ func _refresh() -> void:
 		companion.text = "Begleiter: %s" % str(kinds.get(str(state.get("companion", "wolf")), {}).get("name", "Wolf"))
 	companion.tooltip_text = "Klick wechselt den Begleiter."
 	_buttons.reset.text = "Zurücksetzen · %d Gold" % Rules.reset_cost(data, profile, class_id)
-	_buttons.reset.disabled = state.ranks.is_empty() or int(profile.gold) < Rules.reset_cost(data, profile, class_id)
+	_buttons.reset.disabled = state.ranks.is_empty() or int(profile.get("runes", 0)) < Rules.reset_cost(data, profile, class_id)
 	_buttons.reset.visible = true
 	if _page == "run":
 		# the run page shows its own tree: no class talent buttons
@@ -544,10 +544,10 @@ func _draw_info() -> void:
 	_say("1 Talentpunkt frei" if free == 1 else "%d Talentpunkte frei" % free, INFO.position + Vector2(14, 47), TEXT, CryptUI.GOLD if free > 0 else CryptUI.MUTED)
 
 
-## The footer beside the reset (which costs gold): soul shards and gold.
+## The footer beside the reset (which costs rune stones): soul shards and rune stones.
 func _draw_purse() -> void:
 	var y := 698.0
-	var gold := "Gold %d" % int(profile.gold)
+	var gold := "Runensteine %d" % int(profile.get("runes", 0))
 	var have := int(profile.shards.have)
 	var shards := "1 Seelensplitter" if have == 1 else "%d Seelensplitter" % have
 	var gold_x := TREE.end.x - 4.0 - _width(gold)
