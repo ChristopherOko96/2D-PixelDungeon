@@ -368,8 +368,12 @@ static func track_defense(g: Node) -> void:
 ## it). True when Shift came in time (talents.json defense <class>.perfect
 ## window) and the hit is spent: a block raised within the window holds it
 ## without losing a charge and `by` reels (stagger); a roll started within the
-## window slips it and readies the counter shot (arm_counter).
-static func perfect_defense(g: Node, from := Vector2.ZERO, by: Dictionary = {}) -> bool:
+## window slips it and readies the counter shot (arm_counter). `shot`: the
+## projectile (or ranged blow) that hit, when it was one ({} for a blow): it
+## breaks on a perfect block or roll (its life "t" ends, it is marked
+## "perfect") and the block's matter flies towards it; its shooter `by` reels
+## only within perfect.reel_reach world px of the hero (past its own radius).
+static func perfect_defense(g: Node, from := Vector2.ZERO, by: Dictionary = {}, shot: Dictionary = {}) -> bool:
 	var d := _defense(g)
 	if d.is_empty() or int(g.state.get("hp", 0)) <= 0:
 		return false
@@ -381,6 +385,8 @@ static func perfect_defense(g: Node, from := Vector2.ZERO, by: Dictionary = {}) 
 	var window := float(perfect.get("window", 0.15))
 	var hero := Vector2(float(g.player.x), float(g.player.y))
 	var toward: Vector2 = Vector2(by.p) if by.has("p") else (from if from != Vector2.ZERO else Vector2.INF)
+	if shot.has("p"):
+		toward = Vector2(shot.p)
 	if str(guard.get("type", "")) == "dodge":
 		var left := float(guard.get("iframes", 0.0))
 		if left <= 0.0 or float(info.get("iframes", 0.0)) - left > window:
@@ -395,12 +401,26 @@ static func perfect_defense(g: Node, from := Vector2.ZERO, by: Dictionary = {}) 
 			return false
 		# one perfect block per press: held on, the next blow is a plain block
 		g.state.def_press = NO_PRESS
-		if not by.is_empty():
+		# the attacker reels; a shooter only when it stands in melee reach
+		if not by.is_empty() and (shot.is_empty() or in_reel_reach(by, hero, perfect)):
 			stagger(g, by, perfect, hero)
 		_perfect_feel(g, perfect, hero, toward, "block", str(info.get("look", "")))
+	# a projectile met in time breaks where it is
+	if not shot.is_empty():
+		if shot.has("t"): shot.t = 0.0
+		shot.perfect = true
 	g.state.inv = maxf(float(g.state.inv), float(g.balance.player.invulnerable))
 	g.state.def_perfect = float(g.state.t)
 	return true
+
+
+## True when monster `m` stands within `perfect`.reel_reach world px of the hero
+## at `hero` (measured from its edge: its radius "r" off the distance), so a
+## perfect block against its shot lets it reel. Without reel_reach no shooter reels.
+static func in_reel_reach(m: Dictionary, hero: Vector2, perfect: Dictionary) -> bool:
+	if not m.has("p") or not perfect.has("reel_reach"):
+		return false
+	return Vector2(m.p).distance_to(hero) - float(m.get("r", 0.0)) <= float(perfect.reel_reach)
 
 
 ## True right after a perfect block or roll in this frame: the blow that met
@@ -624,7 +644,25 @@ static func poison_mob(m: Dictionary, dps: float, time: float) -> void:
 	m.poison_t = maxf(float(m.get("poison_t", 0.0)), time)
 
 
-## Ticks an enemy's slow, burn, poison and stun; returns its speed factor (0 while stunned).
+## Makes an enemy bleed: `dps` damage over time for `time` s, its own kind
+## beside burn and poison (the stronger source holds): water neither stops nor
+## washes it off, and it does not set the monster on fire. For the talents'
+## bleeding (src/hell/hell_talents.gd _status).
+static func bleed_mob(m: Dictionary, dps: float, time: float) -> void:
+	m.bleed = maxf(float(m.get("bleed", 0.0)), dps)
+	m.bleed_t = maxf(float(m.get("bleed_t", 0.0)), time)
+
+
+## The damage over time running on an enemy for its look (the health bar's
+## tint): "burn", "poison" or "bleed" (in that order when several run), "" for none.
+static func dot_kind(m: Dictionary) -> String:
+	for kind: String in ["burn", "poison", "bleed"]:
+		if float(m.get(kind + "_t", 0.0)) > 0.0: return kind
+	return ""
+
+
+## Ticks an enemy's slow, burn, poison, bleed and stun; returns its speed factor (0 while stunned).
+## Every damage over time is in the hero's hits per second (x state.dmg here, once).
 static func tick_mob(g: Node, m: Dictionary, dt: float) -> float:
 	m.slow_t = maxf(0.0, float(m.get("slow_t", 0.0)) - dt)
 	m.stun = maxf(0.0, float(m.get("stun", 0.0)) - dt)
@@ -641,6 +679,10 @@ static func tick_mob(g: Node, m: Dictionary, dt: float) -> float:
 	if float(m.get("poison_t", 0.0)) > 0.0:
 		m.poison_t = float(m.poison_t) - dt
 		m.hp -= float(m.poison) * float(g.state.dmg) * dt
+	# bleed_t: bleeding (bleed_mob), the talents' cuts
+	if float(m.get("bleed_t", 0.0)) > 0.0:
+		m.bleed_t = float(m.bleed_t) - dt
+		m.hp -= float(m.bleed) * float(g.state.dmg) * dt
 	for z: Dictionary in g.zones:
 		if z.kind == "caltrop" and m.p.distance_to(z.p) < float(z.r):
 			slow_mob(g, m, float(z.slow), 0.2)

@@ -69,7 +69,8 @@ func skill_slots(talents: Dictionary) -> Array:
 	_load_specs()
 	var out: Array = []
 	var slots: Array = talents.get("slots", [])
-	for index in range(int(Profile.data().get("bar_slots", 4))):
+	# every HUD frame: the shared, kept talent data, not a fresh parse of talents.json (F3)
+	for index in range(int(Profile.data_view().get("bar_slots", 4))):
 		if index < slots.size():
 			var slot: Dictionary = slots[index]
 			out.append({"key": str(index + 1), "name": str(slot.get("name", "")), "cd": float(slot.get("cd", 0.0)), "max": float(slot.get("cd_max", 1.0)),
@@ -120,10 +121,13 @@ static func power_slot(power: Dictionary) -> Dictionary:
 ## lower right corner (never over the icon), "H/G" as its key, a hover card with its
 ## name (or UNBEKANNTER TRANK) and the keys, a short glow after use
 ## (ui_hud_style.json rules.quick_potion_flash). Its own group right of the skills.
+## Empty, it shows a dim flask ("hint": "potion", skill_bar.gd) and its hover card
+## says how a potion gets there (story_items.gd quick_slot, set_quick) and what H and G do.
 static func potion_slot(potion: Dictionary, since: float) -> Dictionary:
 	var keys := "H trinken · G werfen"
 	if potion.is_empty():
-		return {"key": "H/G", "name": "SCHNELLTRANK", "text": "Kein Trank im Inventar.", "meta": keys, "locked": true, "empty": true, "gap_before": true}
+		return {"key": "H/G", "name": "SCHNELLTRANK", "text": "Leer. Ein gefundener Trank kommt von selbst hierher, ein Heiltrank zuerst. Im Inventar (I) legt ein Rechtsklick einen anderen Trank hierher.",
+			"meta": keys, "locked": true, "empty": true, "gap_before": true, "hint": "potion"}
 	var count := int(potion.get("count", 1))
 	var path := str(potion.get("sprite", ""))
 	if not _potion_icons.has(path): _potion_icons[path] = load(path) if ResourceLoader.exists(path) else null

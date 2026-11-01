@@ -1,4 +1,5 @@
 extends SceneTree
+# test: window (it reads back a drawn frame; scripts/Dev.ps1 Tests runs it only with -Windowed)
 ## Physical overrides must not add/remove/reshape any authored room artwork.
 var checked := 0
 var failures := 0

@@ -53,11 +53,19 @@ static func set_debug(on: bool, d: Dictionary) -> void:
 	if flag != null: flag.store_string("talent test profile on")
 
 
-## The talent data (assets/data/talents.json); empty when missing or broken.
+## The talent data (assets/data/talents.json) as a private copy the caller may
+## change; empty when missing or broken. The file is parsed once and kept
+## (src/core/data_cache.gd, F3); each call costs a deep copy, so per-frame reads
+## use data_view().
 static func data(path: String = DATA_PATH) -> Dictionary:
-	if not FileAccess.file_exists(path): return {}
-	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
-	return parsed if parsed is Dictionary else {}
+	return DataCache.load_dict_copy(path)
+
+
+## The talent data shared and read-only (src/core/data_cache.gd): for reads every
+## frame, such as the HUD's skill bar; writing into it is an error. Empty when
+## missing or broken.
+static func data_view(path: String = DATA_PATH) -> Dictionary:
+	return DataCache.load_dict(path)
 
 
 ## A fresh profile: level 1 in every class, nothing learned, no shards.

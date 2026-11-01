@@ -1597,12 +1597,12 @@ func _step_zones(delta: float) -> void:
 # ---------- the Arkane Gefüge (Leerenmagier, user design 2026-10-31) ----------
 # FEED (his own void eats puddles, gas, shots and essences) -> LOAD (Nachhall
 # and Leerenlanze spend a little) -> EJECT (the Singularität's collapse spends
-# it all). Rules: assets/data/element_rules.json "gefuege".
+# it all). Rules: assets/data/madness_rules.json "gefuege" (src/combat/madness_rules.gd).
 
 ## The Gefüge's rules: capacity, what a swallowed thing is worth, the
 ## essences, the landings, the Singularität's ejection and fling.
 func _gf_cfg() -> Dictionary:
-	return ElementRules.data().get("gefuege", {})
+	return MadnessRules.gefuege()
 
 
 ## True for the Leerenmagier: a hero with a learned talent of the Gefüge's

@@ -14,6 +14,7 @@ const KryptaScene = preload("res://src/hell/krypta_dungeon.tscn")
 const HeroKit = preload("res://src/hell/hero_kit.gd")
 const CardKit = preload("res://src/hell/card_kit.gd")
 const Rules = preload("res://src/hell/hell_rules.gd")
+const FrostMoves = preload("res://src/hell/frost_moves.gd")
 var checked := 0
 var failures: Array[String] = []
 
@@ -38,6 +39,10 @@ func _run() -> void:
 		_test_block_inside_window_staggers_and_keeps_charge(game)
 		_test_block_outside_window_is_plain(game)
 		_test_mashed_block_is_plain(game)
+		_test_perfect_block_breaks_far_shot_shooter_stands(game)
+		_test_perfect_block_shot_in_reach_reels_shooter(game)
+		_test_plain_shot_still_hurts(game)
+		_test_frost_move_hit_names_its_attacker(game)
 		_test_seal_offers_two_and_applies_only_the_chosen(game)
 		_test_seal_price_never_kills(game)
 	game.queue_free()
@@ -45,6 +50,7 @@ func _run() -> void:
 	var archer: Node = await _new("archer")
 	if archer.talents != null:
 		_test_perfect_roll_readies_counter(archer)
+		_test_perfect_roll_breaks_shot(archer)
 	else:
 		check(false, "the Krypta archer has his talents (Shift roll)")
 	archer.queue_free()
@@ -105,6 +111,118 @@ func _monster(game: Node) -> Dictionary:
 	var m: Dictionary = game.monsters.spawn(int(game.state.room), hero + Vector2(40, 0), str(game.monsters.defs.keys()[0]))
 	m.spawn = 0.0
 	return m
+
+
+## Monster `id` (the first def for "") at the hero + `offset`, grown in, its attacks far off.
+func _monster_at(game: Node, offset: Vector2, id := "") -> Dictionary:
+	var hero := Vector2(game.player.x, game.player.y)
+	var m: Dictionary = game.monsters.spawn(int(game.state.room), hero + offset, id if id != "" else str(game.monsters.defs.keys()[0]))
+	m.spawn = 0.0
+	for k in range(m.cds.size()):
+		m.cds[k] = 99.0
+	return m
+
+
+## A shot of `by` (hell_monsters.gd's kind, its shooter named) right at the hero's
+## body, flying at him from the east; the monsters' shot update lands it.
+func _shot_at_hero(game: Node, by: Dictionary) -> Dictionary:
+	var s := {"p": Vector2(game.player.x, game.player.y - 34), "v": Vector2(-380, 0), "t": 2.0, "c": "bone", "by": by}
+	game.eshots.append(s)
+	game.monsters.update_shots(0.001)
+	return s
+
+
+## A block raised `share` of the window before the hit, at game time `t`.
+func _block_in_time(game: Node, t: float, share: float) -> void:
+	var window := float(game.talents.tc.data.defense.swordsman.perfect.window)
+	_shift(game, true, t)
+	game.state.t = t + window * share
+
+
+## L4: a perfect block against a projectile breaks it with the PERFEKT feedback,
+## costs nothing; its shooter, far off, does not reel.
+func _test_perfect_block_breaks_far_shot_shooter_stands(game: Node) -> void:
+	# Arrange: an archer far east, the block raised inside the window
+	_calm(game)
+	var reach := float(game.talents.tc.data.defense.swordsman.perfect.reel_reach)
+	var shooter := _monster_at(game, Vector2(reach + 300.0, 0))
+	var guard := _guard(game)
+	_block_in_time(game, 60.0, 0.5)
+	var hp: int = game.state.hp
+	# Act
+	var s := _shot_at_hero(game, shooter)
+	# Assert
+	check(int(game.state.hp) == hp and float(guard.left) == float(guard.max), "a perfect block takes a shot whole and keeps its charge")
+	check(bool(s.get("perfect", false)) and float(s.t) <= 0.0 and not game.eshots.has(s), "the shot breaks on the perfect block")
+	check(HeroKit.perfect_now(game), "the shot met a perfect block (PERFEKT feedback)")
+	check(float(shooter.get("reel", 0.0)) <= 0.0, "a shooter out of melee reach does not reel")
+
+
+## L4: the same against a shooter within reel_reach: it reels.
+func _test_perfect_block_shot_in_reach_reels_shooter(game: Node) -> void:
+	# Arrange: an archer close by
+	_calm(game)
+	var reach := float(game.talents.tc.data.defense.swordsman.perfect.reel_reach)
+	var shooter := _monster_at(game, Vector2(maxf(10.0, reach * 0.5), 0))
+	_block_in_time(game, 70.0, 0.5)
+	var hp: int = game.state.hp
+	# Act
+	var s := _shot_at_hero(game, shooter)
+	# Assert
+	check(int(game.state.hp) == hp and bool(s.get("perfect", false)), "the close shot breaks on the perfect block")
+	check(float(shooter.get("reel", 0.0)) > 0.5, "a shooter in melee reach reels")
+
+
+## L4: without Shift in time a shot still lands and nobody reels.
+func _test_plain_shot_still_hurts(game: Node) -> void:
+	# Arrange: no block raised
+	_calm(game)
+	var shooter := _monster_at(game, Vector2(60, 0))
+	game.state.t = 80.0
+	var hp: int = game.state.hp
+	# Act
+	var s := _shot_at_hero(game, shooter)
+	# Assert
+	check(int(game.state.hp) < hp and not bool(s.get("perfect", false)), "an unblocked shot hurts")
+	check(float(shooter.get("reel", 0.0)) <= 0.0, "an unblocked shot lets nobody reel")
+
+
+## L4: a Frostgruft move hit (frost_moves.gd) names its attacker: a perfect
+## block lets it reel; its projectiles name their shooter too.
+func _test_frost_move_hit_names_its_attacker(game: Node) -> void:
+	# Arrange: a monster dashing into the hero, the block in time
+	_calm(game)
+	var dasher := _monster_at(game, Vector2(40, 0))
+	_block_in_time(game, 90.0, 0.5)
+	var hp: int = game.state.hp
+	# Act
+	FrostMoves._hit_hero(game, 1, {}, "überrannt", Vector2(dasher.p), "dash", false, "small", dasher)
+	# Assert
+	check(int(game.state.hp) == hp and float(dasher.get("reel", 0.0)) > 0.5, "a frost move's blow met by a perfect block lets its attacker reel")
+	# a move's bullet carries its shooter
+	var before: int = game.eshots.size()
+	FrostMoves._bullet(game, Vector2(dasher.p), 0.0, {"speed": 200}, dasher)
+	check(game.eshots.size() == before + 1 and is_same((game.eshots[-1] as Dictionary).get("by"), dasher), "a frost move's bullet names its shooter")
+	game.eshots.clear()
+
+
+## L4: a perfect roll against a shot breaks it too and readies the counter.
+func _test_perfect_roll_breaks_shot(game: Node) -> void:
+	# Arrange: the roll began inside the window
+	_calm(game)
+	var guard := _guard(game)
+	var info: Dictionary = game.talents.tc.data.defense.archer
+	var shooter := _monster_at(game, Vector2(500, 0))
+	game.state.t = 100.0
+	game.talents.tc.hold(1, false, true, Vector2.INF, Vector2.RIGHT)
+	guard.iframes = float(info.iframes) - float(info.perfect.window) * 0.5
+	var hp: int = game.state.hp
+	# Act
+	var s := _shot_at_hero(game, shooter)
+	# Assert
+	check(int(game.state.hp) == hp and bool(s.get("perfect", false)) and not game.eshots.has(s), "a perfect roll breaks the shot")
+	check(not (game.state.get("counter", {}) as Dictionary).is_empty(), "a perfect roll through a shot readies the counter")
+	check(float(shooter.get("reel", 0.0)) <= 0.0, "a roll lets no shooter reel")
 
 
 func _test_block_inside_window_staggers_and_keeps_charge(game: Node) -> void:
@@ -206,6 +324,9 @@ func _test_seal_offers_two_and_applies_only_the_chosen(game: Node) -> void:
 
 func _test_seal_price_never_kills(game: Node) -> void:
 	_calm(game)
+	# the Krypta's balance names its own seal (nacharbeit L7): offers and price, no dead keys
+	var own: Dictionary = game.balance.get("seal", {})
+	check(own.has("offers") and own.has("price_hp") and not own.has("bless_chance") and not own.has("demons"), "krypta_balance.json seal holds offers and price_hp, no bless_chance or demons")
 	game.state.buffs = []
 	var price := int(CardKit.seal_cfg(game).price_hp)
 	game.state.hp = price

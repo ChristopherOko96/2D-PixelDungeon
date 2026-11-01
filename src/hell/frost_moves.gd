@@ -217,7 +217,7 @@ static func _place_strikes(g: Node, m: Dictionary, run: Dictionary) -> void:
 		var z := {"kind": "strike", "p": pts[i], "r": maxf(20.0, float(spec.get("radius", 30)) * k), "t": warn + delay, "max": warn + delay,
 			"dmg": _dmg(g, spec.get("damage", 1)), "effect": spec.get("effect", {}), "style": str(spec.get("style", "ice")), "pool": spec.get("pool", {}),
 			# who struck and how: around itself a burst of frost, elsewhere hail from above (frost_fx.gd)
-			"src": m.p, "boss": _boss(m), "self": str(spec.get("pattern", "")) == "self", "seed": randf() * 9.0}
+			"src": m.p, "boss": _boss(m), "self": str(spec.get("pattern", "")) == "self", "seed": randf() * 9.0, "by": m}
 		if str(spec.type) == "lob":
 			z.from = (m.p as Vector2) - Vector2(0, m.cy)
 		_zones(g).append(z)
@@ -304,7 +304,8 @@ static func _release(g: Node, m: Dictionary, run: Dictionary) -> void:
 		"cone":
 			var to := me - (m.p as Vector2)
 			if to.length() < float(spec.reach) * k + 20.0 and absf(angle_difference((run.aim as Vector2).angle(), to.angle())) < float(spec.angle) / 2.0 + 0.1:
-				_hit_hero(g, _dmg(g, spec.get("damage", 1)), spec.get("effect", {}), "vom Frostatem getroffen", m.p, "breath", _boss(m))
+				# a breath reaches from afar: its breather reels only in melee reach (B3)
+				_hit_hero(g, _dmg(g, spec.get("damage", 1)), spec.get("effect", {}), "vom Frostatem getroffen", m.p, "breath", _boss(m), "small", m, {"p": me})
 			if _fx(g) != null:
 				_fx(g).breath((m.p as Vector2) - Vector2(0, float(m.cy) * 0.6), run.aim, float(spec.reach) * k, float(spec.angle))
 				_fx(g).impact(m.p, "small", _boss(m))
@@ -368,7 +369,7 @@ static func _active(g: Node, m: Dictionary, run: Dictionary, dt: float) -> void:
 				_fx(g).kick(m.p, 2, run.aim)
 			if not run.hit and float(spec.get("damage", 0)) > 0.0 and me.distance_to(m.p) < maxf(30.0, float(spec.width) * k * 0.5) + m.r:
 				run.hit = true
-				_hit_hero(g, _dmg(g, spec.damage), spec.get("effect", {}), "überrannt", m.p, "dash", _boss(m))
+				_hit_hero(g, _dmg(g, spec.damage), spec.get("effect", {}), "überrannt", m.p, "dash", _boss(m), "small", m)
 		"spin":
 			if float(spec.get("chase", 0)) > 0.0:
 				m.p += (me - (m.p as Vector2)).normalized() * float(spec.chase) * k * dt
@@ -376,7 +377,7 @@ static func _active(g: Node, m: Dictionary, run: Dictionary, dt: float) -> void:
 			if float(run.tick) <= 0.0:
 				run.tick = float(spec.get("tick", 0.4))
 				if me.distance_to(m.p) < float(spec.radius) * k:
-					_hit_hero(g, _dmg(g, spec.damage), {}, "im Wirbel zerschnitten")
+					_hit_hero(g, _dmg(g, spec.damage), {}, "im Wirbel zerschnitten", Vector2.INF, "", true, "small", m)
 				if g.feel != null:
 					g.feel.spawn("whirl", (m.p as Vector2) - Vector2(0, m.cy), float(spec.radius) / 60.0)
 		"vortex":
@@ -402,7 +403,7 @@ static func _finish(g: Node, m: Dictionary, run: Dictionary) -> void:
 	var k := _k(g)
 	if str(spec.type) == "vortex":
 		if _hero(g).distance_to(m.p) < float(spec.burst) * k:
-			_hit_hero(g, _dmg(g, spec.damage), {}, "vom Sog verschlungen", m.p, "wave", _boss(m))
+			_hit_hero(g, _dmg(g, spec.damage), {}, "vom Sog verschlungen", m.p, "wave", _boss(m), "small", m)
 		if _fx(g) != null:
 			_fx(g).nova(m.p, float(spec.burst) * k)
 			_fx(g).impact(m.p, "medium", _boss(m))
@@ -416,7 +417,7 @@ static func _bullet(g: Node, from: Vector2, a: float, spec: Dictionary, m: Dicti
 	var k := _k(g)
 	g.eshots.append({"p": from, "v": Vector2(cos(a), sin(a)) * float(spec.get("speed", 200)) * k, "t": float(spec.get("life", 3.0)),
 		"dmg": _dmg(g, spec.get("damage", 1)), "effect": spec.get("effect", {}), "style": str(spec.get("style", "ice")), "size": float(spec.get("radius", 6)) * k * 0.5,
-		"end_pool": spec.get("end_pool", {}), "boss": _boss(m), "seed": randf() * 9.0})
+		"end_pool": spec.get("end_pool", {}), "boss": _boss(m), "seed": randf() * 9.0, "by": m})
 
 
 static func _pool(g: Node, p: Vector2, spec: Dictionary) -> Dictionary:
@@ -426,11 +427,14 @@ static func _pool(g: Node, p: Vector2, spec: Dictionary) -> Dictionary:
 
 ## A hit from a move: hearts (via the game's hurt) and the move's condition;
 ## with frost_fx the blow from `from` pushes the hero back (`kind`,
-## theme.vfx.knock) and is felt (a guardian's harder than a mob's).
-static func _hit_hero(g: Node, dmg: int, effect: Variant, why: String, from := Vector2.INF, kind := "", boss := true, tier := "small") -> void:
+## theme.vfx.knock) and is felt (a guardian's harder than a mob's). `by`: the
+## monster whose move it is (B3: a perfect block lets it reel); `shot`: the
+## projectile or the ranged blow it came as ({} at arm's length): it breaks,
+## and `by` reels only in melee reach (hero_kit.gd perfect_defense).
+static func _hit_hero(g: Node, dmg: int, effect: Variant, why: String, from := Vector2.INF, kind := "", boss := true, tier := "small", by: Dictionary = {}, shot: Dictionary = {}) -> void:
 	if dmg > 0:
 		var before: int = g.state.hp
-		g._hurt(why, dmg)
+		g._hurt(why, dmg, Vector2.ZERO, by, shot)
 		if int(g.state.hp) >= before:
 			return
 		if _fx(g) != null and from.is_finite() and kind != "":
@@ -442,7 +446,7 @@ static func _hit_hero(g: Node, dmg: int, effect: Variant, why: String, from := V
 ## An enemy shot of a move reached the hero (called by the game instead of its plain hit).
 static func shot_hit(g: Node, s: Dictionary) -> void:
 	var from: Vector2 = (s.p as Vector2) - (s.v as Vector2).normalized() * 40.0
-	_hit_hero(g, int(s.get("dmg", 1)), s.get("effect", {}), "von Eis getroffen", from, "shot", bool(s.get("boss", true)), "tiny")
+	_hit_hero(g, int(s.get("dmg", 1)), s.get("effect", {}), "von Eis getroffen", from, "shot", bool(s.get("boss", true)), "tiny", s.get("by", {}), s)
 	# the shard bursts on him
 	if _fx(g) != null and str(s.get("style", "ice")) in ["ice", "frost"]:
 		_fx(g).shatter(s.p, 8, 14.0, (s.v as Vector2).normalized(), 120.0)
@@ -477,8 +481,10 @@ static func _update_zones(g: Node, dt: float) -> void:
 				if float(z.t) <= 0.0:
 					var big := bool(z.get("self", false)) and float(z.r) > 60.0
 					if me.distance_to(z.p) < float(z.r) + 20.0:
+						# its striker (B3): a burst round itself is a blow at arm's length, hail and lobs come from afar
 						_hit_hero(g, int(z.dmg), z.effect, "von %s getroffen" % ("Hagel" if str(z.style) == "ice" else "der Wucht"),
-							z.get("src", z.p) if big else z.p, "wave" if big else "slam", bool(z.get("boss", true)), "medium" if big else "small")
+							z.get("src", z.p) if big else z.p, "wave" if big else "slam", bool(z.get("boss", true)), "medium" if big else "small",
+							z.get("by", {}), {} if bool(z.get("self", false)) else {"p": z.p})
 					if not (z.pool as Dictionary).is_empty():
 						_zones(g).append(_pool(g, z.p, z.pool))
 					if _fx(g) != null and float(z.r) > 0.0:

@@ -37,6 +37,7 @@ func _run() -> void:
 	for i in range(2):
 		await process_frame
 	_test_windups_come_from_data()
+	_test_rig_windup_peaks_at_release()
 	_test_swing_aim_locks_after_share()
 	_test_bolt_aim_locks_after_share()
 	_test_frost_shot_aim_locks_after_share()
@@ -134,6 +135,41 @@ func _test_windups_come_from_data() -> void:
 	_step(0.1)
 	# Assert
 	check(not _arc_of(skel).is_empty(), "the blow lands right after the windup")
+
+
+## B1 gap (nacharbeit L3): a rigged figure's attack clip (src/hell/drake_rig_host.gd
+## act_phase) runs its windup over the act's own windup from combat_tells.json,
+## so it peaks at the release, not at the old 0.35 s.
+func _test_rig_windup_peaks_at_release() -> void:
+	# Arrange: a skeleton and an archer start their acts
+	_calm()
+	var host: RefCounted = game.drake_rig
+	check(host != null, "the Krypta has its rig host")
+	if host == null:
+		return
+	var skel := _spawn("skelett", Vector2(100, 0))
+	var archer := _spawn("skelettschuetze", Vector2(300, 0))
+	var swing := _start(skel, "swing")
+	var bolt := _start(archer, "bolt")
+	for pair: Array in [[skel, swing, float(tells.tells.swing)], [archer, bolt, float(tells.tells.bolt)]]:
+		var m: Dictionary = pair[0]
+		var act: Dictionary = pair[1]
+		var wind: float = pair[2]
+		# Act: at the old fixed windup (0.35 s) and just before the release
+		act.t = 0.35
+		var early: Dictionary = host.act_phase(m)
+		act.t = wind - STEP
+		var late: Dictionary = host.act_phase(m)
+		# Assert: still winding up at 0.35 s, at its peak only at the release
+		check(str(early.attack) == "windup" and float(early.attack_p) < 0.9, "%s: no windup peak at 0.35 s of %.2f (p %.2f)" % [str(act.kind), wind, float(early.attack_p)])
+		check(str(late.attack) == "windup" and float(late.attack_p) > 0.95, "%s: the windup peaks at the release (p %.2f)" % [str(act.kind), float(late.attack_p)])
+		# an act without its own windup (an old save, a test) takes the data's for its kind
+		var bare := act.duplicate()
+		bare.erase("wind")
+		bare.t = wind - STEP
+		m.act = bare
+		check(float(host.act_phase(m).attack_p) > 0.95, "%s: without act.wind the clip follows combat_tells.json" % str(act.kind))
+		m.act = act
 
 
 func _test_swing_aim_locks_after_share() -> void:

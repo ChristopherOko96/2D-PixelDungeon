@@ -80,6 +80,19 @@ func _act(action: String, value: int, target: Vector2 = Vector2.INF) -> void:
 	inv.act(1, action, value, target)
 
 
+## A point `distance` px from `from` with open floor all the way (boss_moves.gd
+## _open_floor every 8 px), trying right, left, down, up; `from` + right when none is.
+func _open_spot(from: Vector2, distance: float) -> Vector2:
+	for dir: Vector2 in [Vector2.RIGHT, Vector2.LEFT, Vector2.DOWN, Vector2.UP]:
+		var clear := true
+		for step in range(1, int(distance / 8.0) + 1):
+			if not game.boss_moves._open_floor(from + dir * minf(distance, step * 8.0)):
+				clear = false
+				break
+		if clear: return from + dir * distance
+	return from + Vector2.RIGHT * distance
+
+
 func _test_catalog() -> void:
 	var data: Dictionary = inv.data
 	var weapons: Array = data.weapons
@@ -224,7 +237,12 @@ func _test_drinking_and_throwing() -> void:
 	inv.add(hero, inv.make_stack("potion", "ice"))
 	_act("inv_throw", 0, Vector2(foe.pos))
 	check(game.perk_combat.frozen(foe), "a thrown ice potion freezes foes")
-	foe = game._create_enemy("skeleton", Vector2(hero.pos) + Vector2(120, 0))
+	# Since the physics pools (57f3fa60, "walls and obstacles stop it", boss_moves.gd
+	# _open_floor) a pool only covers open floor, and the throw stops at the first wall.
+	# hero.pos + (120, 0) lies inside an obstacle of this room: the fire lands in front
+	# of it and never reaches a foe placed in it. The foe stands on open floor at the
+	# same distance instead; the check itself (foe burns, thrower does not) is unchanged.
+	foe = game._create_enemy("skeleton", _open_spot(Vector2(hero.pos), 120.0))
 	game.enemies = [foe]
 	hp = float(foe.hp)
 	inv.add(hero, inv.make_stack("potion", "fire"))

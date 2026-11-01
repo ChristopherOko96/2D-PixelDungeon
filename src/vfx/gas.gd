@@ -1,20 +1,20 @@
 extends RefCounted
-## Gas on the floor (poison clouds, breath, fumes, smoke, steam, void and
-## frost mist) as clouds of puffs that move by simple physics
-## (assets/data/vfx_gas.json). A cloud bursts out from where it appears, its
-## puffs push each other apart, so it spreads into the room around it, flows
-## through gaps and gathers in corners; walls stop and deflect them; it rolls
-## slowly and is held softly in its zone. A blast blows it away and thins it
-## (impulse), heroes and monsters walking through part it (part), shots cut
-## a lane through it that closes again (cut). An ended cloud thins out from
-## its rim inwards. Drawn on the art grid (`art` world px per art pixel) as
-## one shape per material: overlapping puffs merge, density shows by the 4x4
-## ordered dither, a lit top and a dark underside; it is a see-through veil
-## (review A6 2026-11-01): every pixel lets the floor show through by its
-## thickness, even its thickest part keeps holes, and its grain churns and
-## frays at the rim (two noises drifting apart). It lies under the actors
-## (they always stay readable in it). Presentation only: every client runs
-## its own; the zones the game hurts with are elsewhere.
+## The drawing of gas on the floor (poison clouds, breath, fumes, smoke, steam,
+## void and frost mist). The gas itself, its puffs and their physics and what
+## a creature breathes, is the gameplay field src/physics_kit/gas_field.gd
+## (GasField, BAUPLAN M1d: the truth); this painter owns one (`gas_field`) and
+## draws it. Its old API stays: sync, emit, impulse, suck, ripple_near, part,
+## cut, step, at, around, thickness, extent, clouds_of, end_cloud, covers,
+## count and clear forward to the field, so the hosts keep working.
+##
+## Drawn on the art grid (`art` world px per art pixel) as one shape per
+## material: overlapping puffs merge, density shows by the 4x4 ordered dither,
+## a lit top and a dark underside; it is a see-through veil (review A6
+## 2026-11-01): every pixel lets the floor show through by its thickness, even
+## its thickest part keeps holes, and its grain churns and frays at the rim
+## (two noises drifting apart). It lies under the actors (they always stay
+## readable in it). Drawing only reads the field; the drawing's own clock
+## (draw's `now`, the frames) never moves the gas.
 
 const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
 const DATA_PATH := "res://assets/data/vfx_gas.json"
@@ -23,29 +23,28 @@ const DATA_PATH := "res://assets/data/vfx_gas.json"
 var art := 2.0
 ## Callable(world point) -> bool: floor gas may be on (false inside walls).
 var open: Callable
+## vfx_gas.json (the field's, shared).
 var cfg: Dictionary = {}
-## "source:id" -> {mat, puffs: Array[{p, v, r, d, s}], end, at, r, source, dense}
-var _clouds: Dictionary = {}
+## The gas this draws: puffs, physics and the gameplay answers (src/physics_kit/gas_field.gd).
+var gas_field: GasField
 var _ramps: Dictionary = {}
-var _rng := RandomNumberGenerator.new()
 var _drawn_frame := -1
 ## material -> {tex: ImageTexture, at: Vector2i first art cell, size: Vector2i}
 var _layers: Dictionary = {}
 ## block of 8 x 8 art cells -> where gas may show in it (_open_block), and since when (ms).
 var _open_memo: Dictionary = {}
 var _open_since := 0
-## 4x4 ordered dither thresholds (PixelPaint.BAYER).
-const BAYER := [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
-static var _data: Dictionary = {}
 ## The churn noise (_churn_table), made once.
 static var _churn := PackedFloat32Array()
 
 
+## A painter on a canvas of `art_px` world px per art pixel with its own gas
+## field; `open_floor` (Callable(world point) -> bool) is where gas may lie.
 func _init(art_px: float, open_floor: Callable) -> void:
 	art = art_px
 	open = open_floor
-	cfg = settings()
-	_rng.seed = 7
+	gas_field = GasField.new(art_px, GasField.CallableHost.new(open_floor))
+	cfg = gas_field.cfg
 	for mat: String in cfg.get("materials", {}):
 		var ramp := {}
 		var spec: Dictionary = cfg.materials[mat].get("ramp", {})
@@ -54,368 +53,111 @@ func _init(art_px: float, open_floor: Callable) -> void:
 		_ramps[mat] = ramp
 
 
-## vfx_gas.json, cached.
+## vfx_gas.json, cached (GasField.settings).
 static func settings() -> Dictionary:
-	if _data.is_empty():
-		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(DATA_PATH)) if FileAccess.file_exists(DATA_PATH) else null
-		_data = parsed if parsed is Dictionary else {"materials": {}}
-	return _data
+	return GasField.settings()
 
 
 func _f(key: String, fallback: float) -> float:
 	return float(cfg.get(key, fallback))
 
 
-## A crypt size in world px of this canvas (the story worlds are 1.5 times larger).
-func _u(crypt_px: float) -> float:
-	return crypt_px * art / 2.0
+# ---------- the old gameplay API: forwarded to the field ----------
 
-
-## Takes in a source's gas zones ({id, k "gas", st material, x, y, r, p 0..1,
-## L its length in s, d density 0..1, dx, dy a push}) and lets that source's
-## clouds that left the list thin out.
+## GasField.sync: a source's gas zones at the host's time `now`.
 func sync(zones: Array, now: float, source := "") -> void:
-	var seen := {}
-	for zone: Dictionary in zones:
-		if str(zone.get("k", "")) != "gas":
-			continue
-		var mat := str(zone.get("st", "poison"))
-		if not _ramps.has(mat):
-			continue
-		var key := "%s:%d" % [source, int(zone.get("id", -1))]
-		seen[key] = true
-		var at := Vector2(float(zone.x), float(zone.y))
-		if _clouds.has(key):
-			_clouds[key].at = at
-			continue
-		var length := float(zone.get("L", 4.0))
-		var start := now - float(zone.get("p", 0.0)) * length
-		_add(key, mat, at, float(zone.r), start + length, source, float(zone.get("d", 1.0)), Vector2(float(zone.get("dx", 0.0)), float(zone.get("dy", 0.0))), now - start < 0.3)
-	for key: String in _clouds.keys():
-		var cloud: Dictionary = _clouds[key]
-		if str(cloud.source) == source and not seen.has(key) and float(cloud.end) > now:
-			cloud.end = now
+	gas_field.sync(zones, now, source)
 
 
-## A cloud that is not a zone (a breath, a burst of smoke): `mat` at `at`,
-## radius `r`, for `length` s from `now`, thrown along `push` (world px/s).
+## GasField.emit: a cloud that is not a zone (a breath, a burst of smoke).
 func emit(key: String, mat: String, at: Vector2, r: float, length: float, now: float, push := Vector2.ZERO, dense := 1.0) -> void:
-	if not _ramps.has(mat) or _clouds.has("fx:" + key):
-		return
-	_add("fx:" + key, mat, at, r, now + length, "fx", dense, push, true)
+	gas_field.emit(key, mat, at, r, length, now, push, dense)
 
 
-func _add(key: String, mat: String, at: Vector2, r: float, end: float, source: String, dense: float, push: Vector2, fresh: bool) -> void:
-	var count := clampi(int(r / _u(_f("px_per_puff", 13.0))), int(_f("min_puffs", 5)), int(_f("max_puffs", 16)))
-	var size := clampf(r * _f("puff_share", 0.3), _u(_f("puff_min", 7.0)), _u(_f("puff_max", 16.0)))
-	var puffs: Array = []
-	for i in range(count):
-		var out := Vector2.from_angle(_rng.randf() * TAU)
-		# a fresh cloud bursts out from its middle; a known one is already spread
-		var spot := at + out * r * (_rng.randf_range(0.0, 0.25) if fresh else _rng.randf_range(0.2, 0.8)) * Vector2(1.0, 0.75)
-		if not open.call(spot):
-			spot = at
-		var speed := _u(_f("spawn_speed", 70.0)) * _rng.randf_range(0.5, 1.0) if fresh else 0.0
-		# a thrown cloud flies as one glob (its puffs keep pace with its middle, which
-		# slows by travel_damping) and only spreads where it lands
-		var carry := _f("damping", 1.6) / maxf(0.1, _f("travel_damping", 2.0))
-		if push.length() > 1.0:
-			speed *= _f("thrown_burst", 0.5)
-		# fresh gas is at its thickest: a puff starts small and dense and swells (g 0..1 of its size)
-		puffs.append({"p": spot, "v": out * speed + push * carry * _rng.randf_range(0.85, 1.1), "r": size * _rng.randf_range(0.75, 1.15), "d": dense, "g": _f("grow_from", 0.35) if fresh else 1.0, "s": _rng.randf() * 100.0})
-	# a thrown cloud (not a zone) travels as a whole along its push until it slows or meets a wall
-	var travel := push if source == "fx" else Vector2.ZERO
-	_clouds[key] = {"mat": mat, "puffs": puffs, "end": end, "at": at, "av": travel, "r": r, "source": source, "dense": dense}
-
-
-## A blast at `at` reaching `radius` (world px, `strength` 1 an explosion)
-## blows the gas away from it and thins it there.
+## GasField.impulse: a blast blows the gas away and thins it.
 func impulse(at: Vector2, radius: float, strength: float) -> void:
-	var speed := _u(_f("blast_speed", 220.0)) * strength
-	var thin := _f("blast_thin", 0.3) * strength
-	for key: String in _clouds:
-		for puff: Dictionary in _clouds[key].puffs:
-			var off: Vector2 = Vector2(puff.p) - at
-			var reach := radius + float(puff.r)
-			var dist := off.length()
-			if dist >= reach:
-				continue
-			var k := 1.0 - dist / reach
-			var away := off / dist if dist > 0.01 else Vector2.from_angle(_rng.randf() * TAU)
-			puff.v = Vector2(puff.v) + away * speed * k
-			puff.d = float(puff.d) * (1.0 - thin * k)
+	gas_field.impulse(at, radius, strength)
 
 
-## The void at `at` sucks the gas within `radius` (world px) toward it: the
-## puffs stream inward at up to `pull` px/s, inside the mouth they thin by
-## `thin` per second and the cloud's own density goes with them, so a cloud
-## eaten whole ends. Returns true while any puff was touched.
+## GasField.suck: the void sucks the gas in; true while any puff was touched.
 func suck(at: Vector2, radius: float, pull: float, thin: float, dt: float, now: float) -> bool:
-	var any := false
-	for key: String in _clouds:
-		var cloud: Dictionary = _clouds[key]
-		var touched := false
-		for puff: Dictionary in cloud.puffs:
-			var off: Vector2 = Vector2(puff.p) - at
-			var dist := off.length()
-			var reach := radius + float(puff.r)
-			if dist >= reach:
-				continue
-			touched = true
-			var k := 1.0 - dist / reach
-			var inward := -off / dist if dist > 0.01 else Vector2.ZERO
-			puff.v = Vector2(puff.v) + inward * pull * (0.5 + k) * dt * 3.0
-			if dist < radius * 0.4:
-				puff.d = float(puff.d) - thin * dt
-				cloud.dense = maxf(0.0, float(cloud.dense) - thin * dt * 0.5)
-		if touched:
-			any = true
-			# its middle follows what is left of it; eaten to nothing, it ends
-			cloud.at = Vector2(cloud.at).lerp(at, clampf(dt * 1.2, 0.0, 1.0))
-			if float(cloud.dense) <= 0.06 or (cloud.puffs as Array).size() <= 1:
-				cloud.end = minf(float(cloud.end), now)
-	return any
+	return gas_field.suck(at, radius, pull, thin, dt, now)
 
 
-## The blast hook of the particles (src/vfx/particles.gd kick): gas has no
-## surface to ring, it is blown away. Returns false (no liquid rang).
+## GasField.ripple_near: the particles' blast hook (the gas is blown away; false).
 func ripple_near(at: Vector2, radius: float, strength: float) -> bool:
-	impulse(at, radius * 1.4, strength)
-	return false
+	return gas_field.ripple_near(at, radius, strength)
 
 
 ## The particles ask the layers they touch whether a liquid lies somewhere:
 ## gas is none.
-func wet_at(_point: Vector2) -> bool:
-	return false
+func wet_at(point: Vector2) -> bool:
+	return gas_field.wet_at(point)
 
 
-## Someone standing at `at` (world px), `radius` wide, parts the gas round them.
+## GasField.part: someone standing at `at`, `radius` wide, parts the gas.
 func part(at: Vector2, radius: float) -> void:
-	var speed := _u(_f("part_speed", 70.0))
-	for key: String in _clouds:
-		for puff: Dictionary in _clouds[key].puffs:
-			var off: Vector2 = Vector2(puff.p) - at
-			var reach := radius + float(puff.r) * 0.6
-			var dist := off.length()
-			if dist >= reach or dist < 0.01:
-				continue
-			var k := 1.0 - dist / reach
-			puff.v = Vector2(puff.v) + off / dist * speed * k * 0.2
-			puff.p = Vector2(puff.p) + off / dist * k * 0.6
+	gas_field.part(at, radius)
 
 
-## A shot at `at` flying along `dir` cuts a lane `width` wide through the gas:
-## the puffs it passes are pushed aside (the lane closes again by itself).
+## GasField.cut: a shot cuts a lane through the gas.
 func cut(at: Vector2, dir: Vector2, width: float) -> void:
-	if dir.length() < 0.01:
-		return
-	var along := dir.normalized()
-	var side := along.orthogonal()
-	var speed := _u(_f("cut_speed", 110.0))
-	for key: String in _clouds:
-		for puff: Dictionary in _clouds[key].puffs:
-			var off: Vector2 = Vector2(puff.p) - at
-			if absf(off.dot(along)) > float(puff.r) + width:
-				continue
-			var across := off.dot(side)
-			var reach := float(puff.r) * 0.7 + width
-			if absf(across) >= reach:
-				continue
-			puff.v = Vector2(puff.v) + side * signf(across if absf(across) > 0.01 else 1.0) * speed * (1.0 - absf(across) / reach) * 0.25
+	gas_field.cut(at, dir, width)
 
 
-## How thick the gas is at `point` (world px), for the game's rules
-## (src/combat/element_rules.gd): the material lying thickest there and its
-## thickness 0..1, the puffs' coverage added up as the drawing adds it (a puff
-## is an ellipse, three quarters as high as wide). {"mat": "", "d": 0} in clear air.
+## GasField.at: the thickest material at `point` and its thickness.
 func at(point: Vector2) -> Dictionary:
-	var best_mat := ""
-	var best := 0.0
-	for key: String in _clouds:
-		var cloud: Dictionary = _clouds[key]
-		var sum := _cover(cloud.puffs, point)
-		if sum > best:
-			best = sum
-			best_mat = str(cloud.mat)
-	return {"mat": best_mat, "d": clampf(best, 0.0, 1.0)}
+	return gas_field.at(point)
 
 
-## The gas round someone standing at `point`: whoever stands in a cloud parts
-## it (part), so right under the feet it is thin; the thickest of `samples`
-## points on a ring of `radius` round the feet (and the feet themselves) is
-## what they breathe. Same result as at().
+## GasField.around: what someone standing at `point` breathes.
 func around(point: Vector2, radius: float, samples := 8) -> Dictionary:
-	var best := at(point)
-	for i in range(samples):
-		var sample := at(point + Vector2.from_angle(TAU * float(i) / float(samples)) * radius)
-		if float(sample.d) > float(best.d):
-			best = sample
-	return best
+	return gas_field.around(point, radius, samples)
 
 
-## The clouds of `mat` alive (for the game's reactions: fire sets poison gas
-## off): {key, at, r} each, `at` the middle of its puffs now.
+## GasField.clouds_of: the clouds of `mat` alive at `now`.
 func clouds_of(mat: String, now := -INF) -> Array:
-	var out: Array = []
-	for key: String in _clouds:
-		var cloud: Dictionary = _clouds[key]
-		if str(cloud.mat) != mat or (cloud.puffs as Array).is_empty():
-			continue
-		# a cloud already ended (used up by a reaction) only thins out: it is gone for the rules
-		if float(cloud.end) <= now:
-			continue
-		var at := Vector2.ZERO
-		for puff: Dictionary in cloud.puffs:
-			at += Vector2(puff.p)
-		out.append({"key": key, "at": at / float((cloud.puffs as Array).size()), "r": float(cloud.r)})
-	return out
+	return gas_field.clouds_of(mat, now)
 
 
-## Ends cloud `key` now: it thins out from its rim (a reaction used it up).
+## GasField.end_cloud: cloud `key` thins out from now.
 func end_cloud(key: String, now: float) -> void:
-	if _clouds.has(key):
-		_clouds[key].end = minf(float(_clouds[key].end), now)
+	gas_field.end_cloud(key, now)
 
 
-## The thickness of `mat` alone at `point` (0..1).
+## GasField.thickness: the thickness of `mat` alone at `point`.
 func thickness(point: Vector2, mat: String) -> float:
-	var sum := 0.0
-	for key: String in _clouds:
-		var cloud: Dictionary = _clouds[key]
-		if str(cloud.mat) == mat:
-			sum += _cover(cloud.puffs, point)
-	return clampf(sum, 0.0, 1.0)
+	return gas_field.thickness(point, mat)
 
 
-func _cover(puffs: Array, point: Vector2) -> float:
-	var sum := 0.0
-	for puff: Dictionary in puffs:
-		var rc := float(puff.r) * float(puff.get("g", 1.0))
-		if rc <= 0.01:
-			continue
-		var off: Vector2 = point - Vector2(puff.p)
-		var k := sqrt((off.x * off.x) / (rc * rc) + (off.y * off.y) / (rc * rc * 0.5625))
-		if k < 1.0:
-			sum += (1.0 - k) * float(puff.d)
-	return sum
-
-
-## How far the gas of `mat` reaches round `point` (world px): the farthest a
-## ray in eight directions gets before the cloud thins below `thin`, at most
-## `max_len`. The view inside a cloud reaches that far (element_rules.gd vision).
+## GasField.extent: how far the gas of `mat` reaches round `point`.
 func extent(point: Vector2, mat: String, thin: float, step: float, max_len: float) -> float:
-	var far := 0.0
-	for i in range(8):
-		var dir := Vector2.from_angle(TAU * float(i) / 8.0)
-		var l := 0.0
-		while l < max_len:
-			var next := l + step
-			if thickness(point + dir * next, mat) < thin:
-				break
-			l = next
-		far = maxf(far, l)
-	return far
+	return gas_field.extent(point, mat, thin, step, max_len)
 
 
-## Runs the gas `dt` seconds on: puffs spread, roll, are held in their zone,
-## slow down and slide along walls; ended clouds thin out rim first.
+## GasField.step: the gas runs `dt` s on (the host's clock `now`).
 func step(dt: float, now: float) -> void:
-	if dt <= 0.0:
-		return
-	dt = minf(dt, 0.05)
-	var spread := _f("spread", 5.0)
-	var hold := _f("hold", 2.2)
-	var hold_from := _f("hold_from", 0.85)
-	var drift := _u(_f("drift", 7.0))
-	var damping := _f("damping", 1.6)
-	var fade := maxf(0.1, _f("fade", 1.4))
-	var edge := _f("edge_fade", 1.5)
-	var travel_damping := _f("travel_damping", 2.0)
-	var fan := _f("wall_fan", 0.6)
-	var overlap := _f("overlap", 0.55)
-	var grow := dt / maxf(0.05, _f("grow_time", 0.45))
-	for key: String in _clouds.keys():
-		var cloud: Dictionary = _clouds[key]
-		var puffs: Array = cloud.puffs
-		var at: Vector2 = cloud.at
-		# a thrown cloud's middle travels on, slows, and stops at a wall (sliding along it)
-		var av: Vector2 = cloud.get("av", Vector2.ZERO)
-		if av.length_squared() > 1.0:
-			var to := at + av * dt
-			if not open.call(to):
-				if open.call(Vector2(to.x, at.y)):
-					to = Vector2(to.x, at.y)
-					av.y = 0.0
-				elif open.call(Vector2(at.x, to.y)):
-					to = Vector2(at.x, to.y)
-					av.x = 0.0
-				else:
-					to = at
-					av = Vector2.ZERO
-			at = to
-			cloud.at = at
-			cloud.av = av * maxf(0.0, 1.0 - travel_damping * dt)
-		var r := maxf(1.0, float(cloud.r))
-		var fading := now > float(cloud.end)
-		# puffs push each other apart: the cloud spreads into the room
-		for i in range(puffs.size()):
-			var a: Dictionary = puffs[i]
-			for j in range(i + 1, puffs.size()):
-				var b: Dictionary = puffs[j]
-				var delta: Vector2 = Vector2(b.p) - Vector2(a.p)
-				var d := delta.length()
-				# by their swollen size: a fresh cloud swells apart, it does not burst
-				var least := (float(a.r) * float(a.get("g", 1.0)) + float(b.r) * float(b.get("g", 1.0))) * overlap
-				if d >= least:
-					continue
-				var push := (delta / d if d > 0.01 else Vector2.from_angle(float(i + j))) * (least - d) * spread * dt
-				a.v = Vector2(a.v) - push * 8.0
-				b.v = Vector2(b.v) + push * 8.0
-		for index in range(puffs.size() - 1, -1, -1):
-			var puff: Dictionary = puffs[index]
-			puff.g = minf(1.0, float(puff.get("g", 1.0)) + grow)
-			var p: Vector2 = puff.p
-			var v: Vector2 = puff.v
-			var off := p - at
-			var dist := Vector2(off.x, off.y / 0.75).length()
-			# held softly in its zone, rolling slowly
-			if not fading and dist > r * hold_from:
-				v -= off.normalized() * (dist - r * hold_from) * hold * dt * 4.0
-			var s := float(puff.s)
-			v += Vector2(sin(now * 0.7 + s), cos(now * 0.53 + s * 1.3) * 0.6) * drift * dt * 2.0
-			v *= maxf(0.0, 1.0 - damping * dt)
-			# walls stop it: what runs into a wall fans out along it (the way it already
-			# leans, else to its own side) and only a little bounces back
-			var next := p + v * dt
-			if not open.call(next):
-				var side := signf(sin(s * 7.0)) if absf(sin(s * 7.0)) > 0.01 else 1.0
-				if open.call(Vector2(next.x, p.y)):
-					next = Vector2(next.x, p.y)
-					v.x += (signf(v.x) if absf(v.x) > 2.0 else side) * absf(v.y) * fan
-					v.y = -v.y * 0.15
-				elif open.call(Vector2(p.x, next.y)):
-					next = Vector2(p.x, next.y)
-					v.y += (signf(v.y) if absf(v.y) > 2.0 else side) * absf(v.x) * fan
-					v.x = -v.x * 0.15
-				else:
-					# a corner: it stays, packed in
-					next = p
-					v = -v * 0.15
-			puff.p = next
-			puff.v = v
-			# thinning: an ended cloud goes, its rim first; puffs far out are thinner
-			var d := float(puff.d)
-			if fading:
-				d -= dt / fade * (1.0 + edge * clampf(dist / r, 0.0, 2.0))
-			else:
-				d = minf(lerpf(d, float(cloud.dense), clampf(dt * 0.8, 0.0, 1.0)), float(cloud.dense) * clampf(1.6 - dist / r, 0.25, 1.0))
-			puff.d = d
-			if d <= 0.02:
-				puffs.remove_at(index)
-		if puffs.is_empty() and fading:
-			_clouds.erase(key)
+	gas_field.step(dt, now)
 
+
+## GasField.covers: gas thick enough to see lies at `point`.
+func covers(point: Vector2) -> bool:
+	return gas_field.covers(point)
+
+
+## Forgets every cloud and what the drawing remembered (a new room).
+func clear() -> void:
+	gas_field.clear()
+	_layers.clear()
+	_open_memo.clear()
+
+
+## Clouds alive (for the debug overlay).
+func count() -> int:
+	return gas_field.count()
+
+
+# ---------- drawing ----------
 
 ## Draws every cloud on the art grid: per material the puffs' coverage merged
 ## into one shape, shown by the dither (dense = solid), lit on top, dark
@@ -428,13 +170,14 @@ func draw(canvas: CanvasItem, now: float) -> void:
 	if frame_now == _drawn_frame:
 		return
 	_drawn_frame = frame_now
-	if _clouds.is_empty():
+	var clouds := gas_field.clouds()
+	if clouds.is_empty():
 		_layers.clear()
 		return
 	var every := 1.0 / maxf(1.0, _f("draw_hz", 15.0))
 	var alive := {}
-	for key: String in _clouds:
-		alive[str(_clouds[key].mat)] = true
+	for key: String in clouds:
+		alive[str(clouds[key].mat)] = true
 	for mat: String in _layers.keys():
 		if not alive.has(mat):
 			_layers.erase(mat)
@@ -458,8 +201,9 @@ func draw(canvas: CanvasItem, now: float) -> void:
 ## Works out material `mat`'s shape into its image (see draw).
 func _build(mat: String, now: float) -> void:
 	var list := PackedFloat32Array()
-	for key: String in _clouds:
-		var cloud: Dictionary = _clouds[key]
+	var clouds := gas_field.clouds()
+	for key: String in clouds:
+		var cloud: Dictionary = clouds[key]
 		if str(cloud.mat) != mat:
 			continue
 		for puff: Dictionary in cloud.puffs:
@@ -540,6 +284,8 @@ func _build_layer(mat: String, list: PackedFloat32Array, now: float) -> void:
 	var ay := int(floor(now * speed * 0.4))
 	var bx := -int(floor(now * speed * 0.7))
 	var by := int(floor(now * speed * 0.8))
+	# the ordered dither (MatterKit), its row picked once per row
+	var bayer: Array = MatterKit.BAYER
 	for y in range(1, h - 1):
 		var qy := lo_y + y
 		var bayer_row := (qy & 3) << 2
@@ -554,7 +300,7 @@ func _build_layer(mat: String, list: PackedFloat32Array, now: float) -> void:
 			var n := (churn[row_a | ((qx + ax) & 63)] + churn[row_b | ((qx + bx) & 63)]) * 0.5
 			k += (n - 0.5) * fray * clampf(1.25 - k, 0.2, 1.0)
 			# even its thickest part keeps holes: gas, not a solid
-			if k < 0.06 or float(BAYER[bayer_row | (qx & 3)]) >= minf(top, k * 1.1) * 16.0:
+			if k < 0.06 or float(bayer[bayer_row | (qx & 3)]) >= minf(top, k * 1.1) * 16.0:
 				continue
 			# walls: asked by blocks of 8 x 8 cells, remembered
 			var key := Vector2i(qx >> 3, qy >> 3)
@@ -602,35 +348,14 @@ static func _churn_table() -> PackedFloat32Array:
 		_churn.resize(64 * 64)
 		for y in range(64):
 			for x in range(64):
-				_churn[y * 64 + x] = _tile_noise(x, y, 8) * 0.62 + _tile_noise(x, y, 4) * 0.38
+				_churn[y * 64 + x] = MatterKit.tiling_noise(x, y, 8, 64) * 0.62 + MatterKit.tiling_noise(x, y, 4, 64) * 0.38
 	return _churn
-
-
-## Smooth value noise 0..1 at (`x`, `y`) over cells of `size` that tiles every 64.
-static func _tile_noise(x: int, y: int, size: int) -> float:
-	var span := 64 / size
-	var fx := float(x) / float(size)
-	var fy := float(y) / float(size)
-	var gx := int(floor(fx))
-	var gy := int(floor(fy))
-	var u := fx - float(gx)
-	var v := fy - float(gy)
-	u = u * u * (3.0 - 2.0 * u)
-	v = v * v * (3.0 - 2.0 * v)
-	var a := _lattice(gx % span, gy % span, size)
-	var b := _lattice((gx + 1) % span, gy % span, size)
-	var c := _lattice(gx % span, (gy + 1) % span, size)
-	var e := _lattice((gx + 1) % span, (gy + 1) % span, size)
-	return lerpf(lerpf(a, b, u), lerpf(c, e, u), v)
-
-
-static func _lattice(x: int, y: int, s: int) -> float:
-	return float(absi((x * 73856093) ^ (y * 19349663) ^ (s * 83492791)) % 1000) / 1000.0
 
 
 ## Where gas may show in the block `b` of 8 x 8 art cells (`open` at each
 ## cell's middle; 1 open, 0 wall), remembered: asked once per cell, forgotten
 ## with the room (clear) and every open_memory_s s (a broken wall opens cells).
+## The drawing's own memory: the gas's physics asks its field's host.
 func _open_block(b: Vector2i) -> PackedByteArray:
 	var now_ms := Time.get_ticks_msec()
 	if now_ms - _open_since > int(_f("open_memory_s", 3.0) * 1000.0) or _open_memo.size() > 20000:
@@ -647,23 +372,3 @@ func _open_block(b: Vector2i) -> PackedByteArray:
 			bits[y * 8 + x] = 1 if not open.is_valid() or bool(open.call(q * art)) else 0
 	_open_memo[b] = bits
 	return bits
-
-
-## True when gas of any kind lies at `point` (world px), thick enough to see.
-func covers(point: Vector2) -> bool:
-	for key: String in _clouds:
-		for puff: Dictionary in _clouds[key].puffs:
-			if Vector2(puff.p).distance_to(point) < float(puff.r) * 0.8 and float(puff.d) > 0.2:
-				return true
-	return false
-
-
-func clear() -> void:
-	_clouds.clear()
-	_layers.clear()
-	_open_memo.clear()
-
-
-## Clouds alive (for the debug overlay).
-func count() -> int:
-	return _clouds.size()

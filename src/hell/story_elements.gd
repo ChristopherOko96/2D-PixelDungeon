@@ -311,13 +311,13 @@ func _eat(ate: Dictionary, z: Dictionary, mat: String, r: float, owner: int) -> 
 
 
 ## Counts the gas clouds within `reach` of `at` a mouth of hero `owner` gulps
-## (each cloud once; the materials of element_rules.json gefuege.gas).
+## (each cloud once; the materials of madness_rules.json gefuege.gas).
 func _eat_gas(ate: Dictionary, at: Vector2, reach: float, owner: int) -> void:
 	var gas: RefCounted = g.get("gas")
 	if owner <= 0 or gas == null:
 		return
 	var now := float(g.state.t)
-	var mats: Array = ElementRules.data().get("gefuege", {}).get("gas", [])
+	var mats: Array = MadnessRules.gefuege().get("gas", [])
 	for mat: Variant in mats:
 		for c: Dictionary in gas.clouds_of(str(mat), now):
 			if _eaten_gas.has(str(c.key)) or Vector2(c.at).distance_to(at) > reach + float(c.r):
@@ -400,14 +400,20 @@ func _explode(at: Vector2, r: float, depth: int, owner := 0, id := "explode") ->
 		if m.hp <= 0.0 or m.p.distance_to(at) > reach + float(m.r):
 			continue
 		# the blast is fire and shrapnel: a creature of poison is not spared
-		m.hp -= hits * float(g.state.dmg) * (0.5 if m.boss else 1.0)
+		# (a hell monster carries boss, a Frostgruft one is of kind "boss")
+		var boss: bool = bool(m.get("boss", false)) or str(m.get("kind", "")) == "boss"
+		m.hp -= hits * float(g.state.dmg) * (0.5 if boss else 1.0)
 		m.hit = 0.12
 		m.k = (m.p - at).normalized() * 160.0
 		if g.get("feel") != null:
 			g.feel.on_hit(m, m.p - at, false)
-	g.monsters._burst_in(at - Vector2(0, 10), 44, "poison")
-	g.monsters._crack_floor(at, reach * 0.6, 4, true)
-	g.monsters._impact(at, "large")
+	if g.monsters != null:
+		g.monsters._burst_in(at - Vector2(0, 10), 44, "poison")
+		g.monsters._crack_floor(at, reach * 0.6, 4, true)
+		g.monsters._impact(at, "large")
+	elif g.get("frost_fx") != null:
+		# the Frostgruft has no monster runtime: its own impact (shake, flash, hold)
+		g.frost_fx.impact(at, "large")
 	if g.sound != null and g.sound.real(): g.sound.at("react_explode", at, {"fallback": ["blast"], "delay": 0.08 * depth, "pitch": 1.0 - 0.04 * depth})
 	else: g._sound("blast")
 	if g.get("feel") != null:

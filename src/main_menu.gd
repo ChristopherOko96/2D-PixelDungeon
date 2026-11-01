@@ -41,6 +41,7 @@ signal test_arena_requested(class_id: String)
 signal save_load_requested(mode: String, slot: int)
 
 const SaveStore = preload("res://src/save/save_store.gd")
+const StorySave = preload("res://src/save/story_save.gd")
 ## The save tabs in story order (the endless tab left with the mode).
 const SAVE_MODES := ["krypta", "frost", "hell"]
 const Progress = preload("res://src/online/progress.gd")
@@ -61,8 +62,9 @@ const CHASERS := ["skelet", "skelet", "necromancer"]
 const PROPS_ROOT := "res://assets/sprites/crypt_props/"
 ## Backdrop tiles are 16 px 0x72 tiles drawn at 3x.
 const TILE := 48.0
-const SETTINGS_PATH := "user://settings.cfg"
 const GraphicsSettings = preload("res://src/core/graphics_settings.gd")
+## The one options file of the game (src/core/graphics_settings.gd SETTINGS_PATH).
+const SETTINGS_PATH: String = GraphicsSettings.SETTINGS_PATH
 ## The same options page as the pause (src/ui/options_panel.gd).
 const OptionsPanel = preload("res://src/ui/options_panel.gd")
 const GOLD := CryptUI.GOLD
@@ -515,14 +517,10 @@ func _latest_save(mode: String) -> Dictionary:
 	return best
 
 
-## A story's save mode, the same rule as src/save/story_save.gd mode(); "" without a scene.
+## A story's save mode: the world_id of the theme its scene runs (src/save/story_save.gd
+## world_of_scene, the same id the world saves under); "" without a scene.
 static func _save_mode_of(story: Dictionary) -> String:
-	var scene := str(story.get("scene", ""))
-	if scene.is_empty():
-		return ""
-	if scene.contains("frost"):
-		return "frost"
-	return "krypta" if scene.contains("krypta") else "hell"
+	return StorySave.world_of_scene(str(story.get("scene", "")))
 
 
 ## FORTSETZEN on a story card: loads that world's newest save (as LADEN does in the saves).

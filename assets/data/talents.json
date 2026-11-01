@@ -4648,7 +4648,7 @@
   "ultimate_cd": 60,
   "_ultimate_note": "The 12 signature ultimates (user decision 30.10.2026): one minute to reload, stages 2 and 3 for 2 and 3 soul shards change them. Bosses never freeze, are never held, pulled or executed: they slow instead.",
   "_defense_note": "Shift (user decision 30.10.2026): every class has one defense. dodge: a quick roll in the move direction, briefly untouchable, `charges` that refill one every `recharge` s. block: held, it stops whole hits; its life is `hits` hits, it regains one every `regen` s while lowered, and breaks for `broken` s when the last one is used.",
-  "_perfect_note": "Perfect timing in the story worlds (balance package B3, src/hell/hero_kit.gd perfect_defense): `perfect.window` s. A block raised (Shift pressed) at most window s before a hit lands is perfect: the hit costs no block charge, the attacker (when the blow names one) reels `stagger` s (a boss `stagger_boss` s, a kit boss stands firm), is pushed back at `push` px/s and starts no attack; the picture holds `hitstop` s, the view shakes `shake` px, `sound` plays. A press within `rearm` s of the previous one is a plain block (no mashing). A roll started at most window s before a hit is a perfect roll: the next shot within `counter_time` s deals `counter_mul` times its damage (`counter_sound` on release).",
+  "_perfect_note": "Perfect timing in the story worlds (balance package B3, src/hell/hero_kit.gd perfect_defense): `perfect.window` s. A block raised (Shift pressed) at most window s before a hit lands is perfect: the hit costs no block charge, the attacker (when the blow names one) reels `stagger` s (a boss `stagger_boss` s, a kit boss stands firm), is pushed back at `push` px/s and starts no attack; the picture holds `hitstop` s, the view shakes `shake` px, `sound` plays. A press within `rearm` s of the previous one is a plain block (no mashing). A projectile, beam or thrown blow met by a perfect block or roll breaks (no damage, the PERFEKT feedback); its shooter reels only while it stands within `reel_reach` world px of the hero (past its own radius), so only blows within melee reach make it reel. A roll started at most window s before a hit is a perfect roll: the next shot within `counter_time` s deals `counter_mul` times its damage (`counter_sound` on release).",
   "defense": {
     "archer": {
       "type": "dodge",
@@ -4669,7 +4669,7 @@
       "regen": 3,
       "broken": 8,
       "look": "mana_bubble",
-      "perfect": { "window": 0.15, "stagger": 1.0, "stagger_boss": 0.35, "push": 260, "hitstop": 0.07, "shake": 4, "rearm": 0.4, "sound": "tal_counter" },
+      "perfect": { "window": 0.15, "stagger": 1.0, "stagger_boss": 0.35, "push": 260, "reel_reach": 150, "hitstop": 0.07, "shake": 4, "rearm": 0.4, "sound": "tal_counter" },
       "text": "Shift halten: ein magisches Schild fängt ganze Treffer ab. Es hält 2 Treffer, dann zerbricht es für 8 s. Gesenkt kommt alle 3 s ein Treffer zurück. Im letzten Moment gedrückt (0,15 s vor dem Treffer) blockst du perfekt: der Schild hält ohne Verlust und der Angreifer taumelt 1 s."
     },
     "swordsman": {
@@ -4680,7 +4680,7 @@
       "regen": 3,
       "broken": 8,
       "look": "gold_bubble",
-      "perfect": { "window": 0.15, "stagger": 1.0, "stagger_boss": 0.35, "push": 260, "hitstop": 0.07, "shake": 4, "rearm": 0.4, "sound": "tal_counter" },
+      "perfect": { "window": 0.15, "stagger": 1.0, "stagger_boss": 0.35, "push": 260, "reel_reach": 150, "hitstop": 0.07, "shake": 4, "rearm": 0.4, "sound": "tal_counter" },
       "text": "Shift halten: du hebst den Schild und fängst ganze Treffer ab. Er hält 2 Treffer, dann ist er 8 s lang offen. Gesenkt kommt alle 3 s ein Treffer zurück. Im letzten Moment gehoben (0,15 s vor dem Treffer) blockst du perfekt: der Schild hält ohne Verlust und der Angreifer taumelt 1 s."
     },
     "necromancer": {
@@ -4691,7 +4691,7 @@
       "regen": 3,
       "broken": 8,
       "look": "soul_bubble",
-      "perfect": { "window": 0.15, "stagger": 1.0, "stagger_boss": 0.35, "push": 260, "hitstop": 0.07, "shake": 4, "rearm": 0.4, "sound": "tal_counter" },
+      "perfect": { "window": 0.15, "stagger": 1.0, "stagger_boss": 0.35, "push": 260, "reel_reach": 150, "hitstop": 0.07, "shake": 4, "rearm": 0.4, "sound": "tal_counter" },
       "text": "Shift halten: kreisende Knochen fangen ganze Treffer ab. Sie halten 2 Treffer, dann zerfallen sie für 8 s. Gesenkt kommt alle 3 s ein Treffer zurück. Im letzten Moment gedrückt (0,15 s vor dem Treffer) blockst du perfekt: die Knochen halten ohne Verlust und der Angreifer taumelt 1 s."
     }
   }

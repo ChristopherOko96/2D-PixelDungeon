@@ -76,7 +76,9 @@ static func branch_points(branch: Dictionary, ranks: Dictionary) -> int:
 
 ## A node's state: "maxed", "open", "no_points", "skill_locked" (the branch's
 ## skill is not open yet), "tier_locked" (needs points in tier 1 first),
-## "meta_locked" (a lasting talent must open it first) or "".
+## "meta_locked" (a lasting talent must open it first), "closed" (the world
+## closed it for now: its node's "closed" names why, e.g. a heart at the life
+## cap) or "".
 static func state_of(tree: Dictionary, ranks: Dictionary, level: int, id: String) -> String:
 	for b: Dictionary in tree.get("branches", []):
 		for n: Dictionary in b.nodes:
@@ -86,6 +88,8 @@ static func state_of(tree: Dictionary, ranks: Dictionary, level: int, id: String
 				return "meta_locked"
 			if int(ranks.get(id, 0)) >= int(n.max):
 				return "maxed"
+			if not str(n.get("closed", "")).is_empty():
+				return "closed"
 			if level < int(b.unlock):
 				return "skill_locked"
 			if int(n.tier) > 1 and branch_points(b, ranks) < int(settings().tier_points):

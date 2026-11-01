@@ -9,12 +9,14 @@ extends RefCounted
 const DATA_PATH := "res://assets/data/ui_hud_style.json"
 const DEFAULT_COLORS := {"panel": "0f0f12c8", "panel_edge": "ffffff2e", "panel_shine": "ffffff10", "slot": "0b0b0ee6", "text": "f2efe8",
 	"text_dim": "aaa59d", "text_muted": "6f6b65", "outline": "08080a", "accent": "f2c66d", "danger": "e2584a", "danger_dark": "5a2320",
-	"blood_lite": "f4917a", "blood_glow": "ff7a5a", "exp": "7dd3a2", "track": "26262b", "ok": "8fd6a5", "auto": "7fe3ff", "map_base": "0b0b0e"}
+	"blood_lite": "f4917a", "blood_glow": "ff7a5a", "exp": "7dd3a2", "track": "26262b", "ok": "8fd6a5", "auto": "7fe3ff", "map_base": "0b0b0e",
+	"mob_bar": "ff5d73", "mob_bar_burn": "ffaa55", "mob_bar_poison": "8fd65a", "mob_bar_bleed": "c8323a"}
 const DEFAULT_SIZES := {"margin": 16, "pad": 10, "heart_size": 26, "heart_gap": 3, "hearts_per_row": 10, "bar_width": 287, "bar_height": 14,
 	"badge_height": 26, "map_panel_width": 236, "map_panel_height": 160, "boss_bar_width": 560, "font_title": 16, "font_small": 12,
 	"font_body": 16, "font_banner": 28, "life_ghost_hold": 0.1, "life_ghost_time": 0.4, "life_heal_sweep": 0.45, "life_pulse_hz": 1.2,
 	"life_low_pulse_hz": 2.4, "life_wobble_hz": 0.6, "life_low_share": 0.25, "life_hit_threshold": 0.5, "pet_row_height": 44, "pet_pad": 4,
-	"pet_portrait": 36, "pet_slot": 36, "pet_icon": 36, "pet_slot_gap": 4, "pet_bar_height": 8, "pet_key_size": 10, "pet_number_size": 14}
+	"pet_portrait": 36, "pet_slot": 36, "pet_icon": 36, "pet_slot_gap": 4, "pet_bar_height": 8, "pet_key_size": 10, "pet_number_size": 14,
+	"inventory_gap": 8, "inventory_bottom": 624, "inventory_equip_step_min": 84}
 # Named lookup tables (string -> string), e.g. "pet_portraits": companion kind -> idle frame path.
 const DEFAULT_TABLES := {"pet_portraits": {}}
 

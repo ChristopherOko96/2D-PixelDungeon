@@ -140,7 +140,7 @@ var scripted_target := Vector2.INF
 var scripted_fire := false
 ## Mirror-image decoys enemies may chase this step: negative id -> {pos, hp}.
 var decoys: Dictionary = {}
-## WAHN (element_rules.json madness): a mad enemy hunting another enemy hands its
+## WAHN (madness_rules.json madness): a mad enemy hunting another enemy hands its
 ## AI the decoy id -(MAD_DECOY + victim id); _mad_actor is the mad enemy whose
 ## turn runs (its shots scatter in _add_bullet); its own dice.
 const MAD_DECOY := 100000
@@ -1784,7 +1784,7 @@ func _simulate_enemies(delta: float) -> void:
 				if str(zone.kind) == "decoy" and enemy.pos.distance_to(zone.pos) <= float(zone.radius):
 					target = -int(zone.id)
 					decoys[target] = {"pos": Vector2(zone.pos), "hp": 1}
-		# WAHN: a mad one staggers and may turn on the nearest other enemy (element_rules.json madness)
+		# WAHN: a mad one staggers and may turn on the nearest other enemy (madness_rules.json madness)
 		target = _madness_step(enemy, target, delta)
 		if target < 0:
 			if crypt_ai.step(enemy,target,delta): enemy.motion = (enemy.pos-simulation_start)/maxf(delta,0.000001)
@@ -1816,7 +1816,7 @@ func _simulate_enemies(delta: float) -> void:
 	enemies = enemies.filter(func(enemy: Dictionary): return enemy.hp > 0 or float(enemy.get("dying",0.0)) > 0.0)
 
 
-## WAHN (element_rules.json madness): one host tick of a mad enemy's mind
+## WAHN (madness_rules.json madness): one host tick of a mad enemy's mind
 ## before its AI runs. It staggers sideways (not a boss or miniboss, they only
 ## scatter their shots: _add_bullet). A crypt-roster enemy (crypt_enemy_ai.gd)
 ## rolls madness.turn_chance at each attack decision (idle, its cooldown run

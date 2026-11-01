@@ -10,6 +10,7 @@ const Rules = preload("res://src/hell/hell_monster_rules.gd")
 const HeroKit = preload("res://src/hell/hero_kit.gd")
 const FrostCombat = preload("res://src/hell/frost_combat.gd")
 const StoryFeel = preload("res://src/hero/story_feel.gd")
+const StoryMotionHost = preload("res://src/hell/story_motion_host.gd")
 const ElementRules = preload("res://src/combat/element_rules.gd")
 const ShotLooks = preload("res://src/vfx/shot_looks.gd")
 ## The shared fair-combat rules (windups, aim lock, attack tokens, white hit flash,
@@ -38,8 +39,6 @@ const LASER_PX := 3.0
 const PX_GROW := 4.0 / 3.0
 ## The dark outline round fire, lava and shots.
 const OUTLINE := Color("1c1117")
-## 4x4 ordered dither (fading without transparency).
-const BAYER := [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
 const LASER_COL := [Color("fdf7ed"), Color("facb3e"), Color("da4e38"), Color("9f294e"), Color("5f2d56")]
 const LASER_FPS := 12.0
 ## A void beam (a beam without "style": "laser") as a wide pixel laser of
@@ -97,8 +96,6 @@ const ASH_COL := [Color("5a5555"), Color("3a3535"), Color("7a7070")]
 ## A grave hand rising out of the floor, open then closed (o edge, b body, h light, w white knuckles), 7 x 9.
 const HAND_OPEN := [".o.o.o.", "ohohoho", "ohohoho", "ohbhbho", "obbbbbo", "obbwbbo", ".obbbo.", ".obbbo.", "..obo.."]
 const HAND_FIST := [".......", ".ooooo.", "ohwhwho", "obbbbbo", "obbbbbo", "obbbbbo", ".obbbo.", ".obbbo.", "..obo.."]
-## Longest step of a knockback per frame (world px; well under a 96 px cell).
-const KNOCK_STEP := 24.0
 ## The crypt's wall-hit style of an enemy shot by its colour (feedback.gd WALL_STYLES).
 const SHOT_WALL := {"fire": "fire", "lava": "fire", "void": "void", "soul": "magic", "bone": "bone", "poison": "poison", "frost": "frost", "gold": "gold"}
 ## The crypt's elements (Story 1, krypta_monsters.json "shot"): a figure that
@@ -138,7 +135,7 @@ var firewalls: Array = []
 var spills: Array = []
 ## Ignaroth's part rig (src/hell/drake_rig_host.gd), set by hell_game.gd; null keeps the atlas sprites.
 var rig_host: RefCounted = null
-## WAHN (element_rules.json madness): the mad monster whose turn runs now and
+## WAHN (madness_rules.json madness): the mad monster whose turn runs now and
 ## the monster it turned on ({} for none). While _mad_on is set, _me() is the
 ## victim's feet, _hurt_by lands on the victim and _shot / _zone / lobs are
 ## marked mad, so every attack of the monster really goes at the victim.
@@ -148,6 +145,10 @@ var _mad_on: Dictionary = {}
 var _taunt_at := Vector2.INF
 ## The look rule of the shots the act running now fires (src/vfx/shot_looks.gd: bone arrows).
 var _look: Dictionary = {}
+## The monster whose act runs now: the shots it fires carry it as "by" (B3).
+var _shooter: Dictionary = {}
+## The motion kit of this runtime (_mover; src/physics_kit/motion_kit.gd).
+var _motion: MotionKit = null
 ## The mimic's bite and reveal (assets/data/mimic_bite.json), read once.
 static var _mimic: Dictionary = {}
 
@@ -293,8 +294,10 @@ func _aim_goal() -> Vector2:
 
 ## Hurts the hero by `m`; when the hit lands (he was not invulnerable), it
 ## pushes him away from `from` with the knock of kind `push`
-## (hell_balance.json monsters.feel.knock; "" pushes nothing).
-func _hurt_by(m: Dictionary, n: int, how: String, from := Vector2.INF, push := "") -> void:
+## (hell_balance.json monsters.feel.knock; "" pushes nothing). `shot`: the
+## projectile or thrown blow it came as ({} for a blow at arm's length): a
+## perfect block lets `m` reel only in melee reach (HeroKit.perfect_defense).
+func _hurt_by(m: Dictionary, n: int, how: String, from := Vector2.INF, push := "", shot: Dictionary = {}) -> void:
 	# WAHN: a monster turned on another one strikes that one, not the hero
 	if not _mad_on.is_empty() and is_same(m, _mad_from):
 		_mad_strike(m, _mad_on, n)
@@ -303,7 +306,7 @@ func _hurt_by(m: Dictionary, n: int, how: String, from := Vector2.INF, push := "
 	if float(m.get("reel", 0.0)) > 0.0:
 		return
 	var open := float(g.state.inv) <= 0.0 and float(g.state.dead) <= 0.0
-	g._hurt("von %s %s" % [m.def.name, how], n, from if from.is_finite() else Vector2(m.p), m)
+	g._hurt("von %s %s" % [m.def.name, how], n, from if from.is_finite() else Vector2(m.p), m, shot)
 	# a perfect block (HeroKit.perfect_defense) stands its ground: no knock
 	if open and push != "" and from.is_finite() and float(g.state.inv) > 0.0 and not HeroKit.perfect_now(g):
 		_knock(from, push, m)
@@ -312,39 +315,26 @@ func _hurt_by(m: Dictionary, n: int, how: String, from := Vector2.INF, push := "
 ## Starts the hero's knockback away from `from` (game feel + physics tuning):
 ## a speed by kind from hell_balance.json monsters.feel.knock (a mob's a share
 ## lower), squashed on the floor's depth like everything in this view; it eases
-## out over knock.time in update_shots and never carries him through a wall.
+## out over knock.time in update_shots and never carries him through a wall
+## (MotionKit.knock_hero, src/physics_kit/motion_kit.gd).
 func _knock(from: Vector2, kind: String, m: Dictionary = {}) -> void:
 	var knock: Dictionary = (cfg.get("feel", {}) as Dictionary).get("knock", {}) if cfg.get("feel") is Dictionary else {}
-	var speed := float(knock.get(kind, 0.0))
-	if speed <= 0.0:
-		return
-	if not m.is_empty() and not bool(m.get("boss", false)):
-		speed *= float(knock.get("mob_scale", 0.7))
-	var away := Vector2(g.player.x, g.player.y) - from
-	if away.length() < 1.0:
-		away = Vector2.RIGHT.rotated(randf() * TAU)
-	g.state.knock = {"v": away.normalized() * Vector2(1.0, 0.75) * speed, "t": 0.0, "T": float(knock.get("time", 0.22))}
+	_mover().knock_hero(from, kind, knock, not m.is_empty() and not bool(m.get("boss", false)))
 
 
-## Moves the hero along his knockback: its speed eases out (quadratically)
-## over its time, axis by axis so a wall stops one axis and he slides along
-## it; no step is longer than KNOCK_STEP, so nothing tunnels.
+## Moves the hero along his knockback (MotionKit.step_knock): its speed eases
+## out over its time, axis by axis so a wall stops one axis and he slides along
+## it; no step is longer than physics_motion.json knock.step_max, so nothing tunnels.
 func _update_knock(dt: float) -> void:
-	var K: Variant = g.state.get("knock")
-	if not K is Dictionary:
-		return
-	K.t = float(K.t) + dt
-	var k := float(K.t) / maxf(0.01, float(K.T))
-	if k >= 1.0:
-		g.state.knock = null
-		return
-	var mv: Vector2 = (K.v as Vector2) * pow(1.0 - k, 2.0) * dt
-	if mv.length() > KNOCK_STEP:
-		mv = mv.normalized() * KNOCK_STEP
-	if not g.box_blocked(g._player_box(g.player.x + mv.x, g.player.y)):
-		g.player.x += mv.x
-	if not g.box_blocked(g._player_box(g.player.x, g.player.y + mv.y)):
-		g.player.y += mv.y
+	_mover().step_knock(dt)
+
+
+## This runtime's motion kit (src/physics_kit/motion_kit.gd) on the world's
+## host (src/hell/story_motion_host.gd), made on first use.
+func _mover() -> MotionKit:
+	if _motion == null:
+		_motion = MotionKit.new(StoryMotionHost.new(g))
+	return _motion
 
 
 func _shake(n: float) -> void:
@@ -357,6 +347,9 @@ func _shot(from: Vector2, dir: Vector2, speed: float, extra := {}) -> void:
 		dir = ElementRules.scatter(dir.normalized(), bool(_mad_from.boss), randf())
 	var s := {"p": from, "v": dir.normalized() * speed, "t": 2.6, "c": "fire"}
 	s.merge(extra, true)
+	# its shooter (the monster whose act fires it): a perfect block lets it reel in melee reach (B3)
+	if not _shooter.is_empty() and not s.has("by"):
+		s.by = _shooter
 	ShotLooks.apply(s, _look)
 	if not _mad_on.is_empty():
 		s.mad = _mad_from
@@ -419,97 +412,18 @@ static func mob_tags(m: Dictionary) -> Array:
 	return m.tags
 
 
-## The element physics on a monster (src/combat/element_rules.gd,
-## assets/data/element_rules.json): the pool it stands in hurts it on its tick
-## (hero hits per second, unless it is of that element), burns, poisons or
-## slows it, douses its burning (water), takes its footing (ice, blood: the
-## movement in update slides it) or pulls it (void); a gas cloud thick enough
-## does the same and blinds its shots (steam, smoke). m.env carries the rule
-## the movement reads.
+## The element physics on a monster: the world's ElementExposure
+## (src/physics_kit/element_exposure.gd through src/hell/story_exposure_host.gd,
+## hell_game.gd exposure()) lets the pool it stands in and the gas it breathes
+## act on it: hurt on the tick, burn, poison, slow, douse, combos. m.env keeps
+## the pool's rule the movement in update reads (slide, grip, pull), m.blind
+## the s its shots are blind (steam, smoke).
 func _step_medium(m: Dictionary, dt: float) -> void:
-	m.env = {}
 	m.blind = maxf(0.0, float(m.get("blind", 0.0)) - dt)
-	if m.hp <= 0.0 or m.get("burrowed", false) or float(m.get("alt", 0.0)) > 20.0:
-		return
-	var layer: RefCounted = g._pool_layer() if g.has_method("_pool_layer") else g.get("pools")
-	var tags := mob_tags(m)
-	if layer != null:
-		var under: Array = layer.materials_at(m.p)
-		if not under.is_empty():
-			var style := ElementRules.top(under)
-			var rule := ElementRules.medium(style)
-			# a burning monster sets the poison it stands in off, whatever its own element
-			if _combo(m, ElementRules.material(style)):
-				return
-			# crusted lava (water met it: src/hell/story_elements.gd) is cool stone for a while
-			var crusted: bool = ElementRules.material(style) == "lava" and g.get("story_elements") != null and g.story_elements.crusted(m.p)
-			if not rule.is_empty() and not crusted and not ElementRules.immune(tags, rule):
-				m.env = rule.duplicate()
-				if rule.has("pull"):
-					m.env.centre = g._pool_centre(m.p, style) if g.has_method("_pool_centre") else m.p
-				_medium_on_mob(m, rule, "env_tick", dt)
-	var gas: RefCounted = g.get("gas")
-	if gas != null:
-		# it parts the gas round itself (hell_game.gd _step_gas): what it breathes is the cloud at arm's length
-		var cloud: Dictionary = gas.around(m.p, 18.0 + 24.0, 4)
-		if float(cloud.d) >= ElementRules.dense_from():
-			if _combo(m, str(cloud.mat)):
-				return
-			var rule := ElementRules.gas(str(cloud.mat))
-			if not rule.is_empty() and not ElementRules.immune(tags, rule):
-				_medium_on_mob(m, rule, "gas_tick", dt)
-				if rule.has("blind_shots"):
-					m.blind = maxf(float(m.blind), float(rule.blind_shots))
-
-
-## What a monster's own condition does with the material it stands in
-## (element_rules.json combos): burning, it sets poison off (true: the pool or
-## cloud is gone); wet, frost freezes it solid for a moment.
-func _combo(m: Dictionary, mat: String) -> bool:
-	var combos: Dictionary = ElementRules.data().get("combos", {})
-	# on fire (fire_t: lava, fire, a burn), not merely poisoned (burn_t is every damage over time)
-	var burning := float(m.get("fire_t", 0.0)) > 0.0
-	var wet := float(m.get("wet_t", 0.0)) > 0.0
-	if burning and mat == "poison" and bool(combos.get("burn_ignites_poison", true)) and g.get("story_elements") != null:
-		g.story_elements.fire_at(m.p, float(combos.get("explode_r", 30.0)) * g.PIXEL_WORLD / 2.0)
-		return true
-	if wet and mat in ["frost", "ice"] and float(combos.get("freeze_wet", 0.0)) > 0.0 and not m.boss and float(m.get("stun", 0.0)) <= 0.0:
-		m.stun = float(combos.get("freeze_wet", 0.7))
-		m.wet_t = 0.0
-		_burst_in(m.p - Vector2(0, m.cy), 10, "frost")
-	return false
-
-
-## What a medium or gas rule does to a monster: its hurt on the tick (enemy_hurt
-## hero hits per second, bosses half), its conditions, its dousing.
-func _medium_on_mob(m: Dictionary, rule: Dictionary, tick_key: String, dt: float) -> void:
-	if rule.has("enemy_hurt"):
-		m[tick_key] = float(m.get(tick_key, 0.0)) - dt
-		if float(m[tick_key]) <= 0.0:
-			var tick := float(rule.get("tick", 1.0))
-			m[tick_key] = tick
-			var hits := float(rule.enemy_hurt) * tick * (0.5 if m.boss else 1.0)
-			m.hp -= hits * float(g.state.dmg)
-			m.hit = 0.12
-			if g.get("feel") != null:
-				g.feel.on_hit(m, Vector2.ZERO, false)
-	var status: Dictionary = rule.get("status", {})
-	for kind: String in status:
-		var spec: Array = status[kind]
-		match kind:
-			"burn", "poison":
-				HeroKit.burn_mob(m, float(spec[0]) * 0.5, float(spec[1]))
-				if kind == "burn" and float(m.get("wet_t", 0.0)) <= 0.0:
-					m.fire_t = maxf(float(m.get("fire_t", 0.0)), float(spec[1]))
-			"slow":
-				HeroKit.slow_mob(g, m, 1.0 - float(spec[0]), float(spec[1]))
-			"wet":
-				m.wet_t = maxf(float(m.get("wet_t", 0.0)), float(spec[1]))
-			"mad":
-				ElementRules.madden(m, float(spec[1]), mob_tags(m))
-	if bool(rule.get("douse", false)):
-		m.burn_t = 0.0
-		m.fire_t = 0.0
+	var met: Dictionary = g.exposure().step(m, dt)
+	m.env = met.medium
+	if float(met.blind) > 0.0:
+		m.blind = maxf(float(m.blind), float(met.blind))
 
 
 ## Moves, aims and attacks every monster, ends Ignaroth's phases, removes the dead
@@ -550,7 +464,7 @@ func update(dt: float) -> void:
 			continue
 		for i in range(m.cds.size()):
 			m.cds[i] -= dt
-		# WAHN (element_rules.json madness): a mad monster staggers, scatters its shots and may turn on another
+		# WAHN (madness_rules.json madness): a mad monster staggers, scatters its shots and may turn on another
 		m.mad_t = maxf(0.0, float(m.get("mad_t", 0.0)) - dt)
 		m.mad_cd = maxf(0.0, float(m.get("mad_cd", 0.0)) - dt)
 		if float(m.mad_t) > 0.0:
@@ -575,7 +489,9 @@ func update(dt: float) -> void:
 			m.erase("wait")
 			# the look of the shots this act fires (a bone arrow: src/vfx/shot_looks.gd, shot_looks.json)
 			_look = ShotLooks.look_for(str(m.id), str((m.act.get("a", {}) as Dictionary).get("id", "")))
+			_shooter = m
 			_run_act(m, dt)
+			_shooter = {}
 			_look = {}
 			if m.act != null:
 				v = m.act.get("v", Vector2.ZERO)
@@ -612,26 +528,20 @@ func update(dt: float) -> void:
 		if float(m.mad_t) > 0.0 and not m.boss:
 			v += ElementRules.wobble(m, to / d, dt, randf()) * g.PIXEL_WORLD / 2.0
 		v *= 0.0 if held else pace
-		# on ice or blood it keeps its momentum (element_rules.gd slide), the void pulls it in
+		# on ice or blood it keeps its momentum, the void pulls it in, its push (m.k) decays, and it
+		# moves axis by axis against the walls (MotionKit.step_body, src/physics_kit/motion_kit.gd)
 		var env: Dictionary = m.get("env", {})
-		if bool(env.get("slide", false)):
-			m.sv = ElementRules.slide(m.get("sv", v), v, float(env.get("grip", 0.1)), dt)
-			v = m.sv
-		else:
-			m.sv = v
-		if env.has("pull"):
-			v += ElementRules.pull(env, m.p, env.get("centre", m.p))
-		v += m.k
-		m.k *= 0.86
+		var mover := _mover()
+		var grip := float(env.get("grip", mover.grip("medium"))) if bool(env.get("slide", false)) else MotionKit.FIRM
+		var pull := ElementRules.pull(env, m.p, env.get("centre", m.p)) if env.has("pull") else Vector2.ZERO
 		var moved_from: Vector2 = m.p
 		var rr := minf(m.r * 0.7, 40.0)
 		var avoid: bool = not m.boss and m.st.ai != "hover" and m.st.ai != "drift"
-		var nx: float = m.p.x + v.x * dt
-		if not g.box_blocked(Rect2(nx - rr, m.p.y - rr, rr * 2.0, rr), avoid) and not HeroKit.wall_blocks(g, Vector2(nx, m.p.y), rr):
-			m.p = Vector2(nx, m.p.y)
-		var ny: float = m.p.y + v.y * dt
-		if not g.box_blocked(Rect2(m.p.x - rr, ny - rr, rr * 2.0, rr), avoid) and not HeroKit.wall_blocks(g, Vector2(m.p.x, ny), rr):
-			m.p = Vector2(m.p.x, ny)
+		var step: Dictionary = mover.step_body(m.p, m.get("sv", v), v, grip, pull, m.k, dt, mover.host.mob_solid(rr, avoid))
+		v = step.v
+		m.sv = step.vel
+		m.k = step.push
+		m.p = step.p
 		# a body thrown by Rage slams into the wall it meets (src/hero/story_hero.gd)
 		if g.story_hero != null and m.has("slam"):
 			# sound hook: the slam is the hero's (src/hero/story_sound.gd source "hero")
@@ -1174,10 +1084,12 @@ func _run_act(m: Dictionary, dt: float) -> void:
 				_react(hot, m.p, float(a.radius) * 0.5)
 				# the floor breaks: glowing cracks, rock chunks and sparks thrown up
 				if not a.get("line", false):
-					_crack_floor(m.p, float(a.radius), 9 if m.boss else 5, own != "")
-					# a boss's stomp dents the floor for good: cracks, dust creeping out, rubble
+					# a boss's stomp breaks the floor hard (A10, _boss_scar): thick glowing cracks running
+					# out, a floor flash, dust puffs that settle as rubble, chips bouncing, a lasting dent
 					if m.boss:
-						_boss_scar(m.p, float(a.radius))
+						_boss_scar(m.p, float(a.radius), own)
+					else:
+						_crack_floor(m.p, float(a.radius), 5, own != "")
 				_pixel_burst(m.p - Vector2(0, 4), 24 if m.boss else 8, CHUNK_COL, 300.0, 420.0, 1.1, 2)
 				_pixel_burst(m.p - Vector2(0, 8), 30 if m.boss else 10, PX_COL.lava if own == "" else PX_COL[own], 420.0, 520.0, 0.7)
 				_phys_blast(m.p, float(a.radius), (18 if m.boss else 6) if own == "" else 0, 1.2)
@@ -1317,7 +1229,8 @@ func _run_act(m: Dictionary, dt: float) -> void:
 				var along := rel.dot(dir)
 				var len := _beam_reach(head, b, reach) if laser else _wall_len(head, b, reach)
 				if along > 0.0 and along < len and absf(dir.cross(rel)) < float(a.get("hit_width", 36.0)):
-					_hurt_by(m, 1, "verbrannt", head, "laser" if laser else "")
+					# a beam comes from afar: its caster reels on a perfect block only in melee reach (B3)
+					_hurt_by(m, 1, "verbrannt", head, "laser" if laser else "", {"p": head + rel})
 				# a laser burns into the wall it meets: pixel fire that glows on, and the crypt's fire wall hit
 				if laser and len < reach:
 					var contact := head + dir * len
@@ -1747,7 +1660,10 @@ func _update_zones(dt: float) -> void:
 		if hit and g.state.dead <= 0.0:
 			# the blow pushes him away from where it struck (a scream and a puddle do not)
 			var push: String = str(z.get("push", {"wave": "wave", "arc": "arc", "line": "slam", "erupt": "slam", "land": "slam", "meteor": "lob", "hand": "lob"}.get(String(z.kind), "")))
-			_hurt_by(z.m, int(z.dmg), "niedergeschrien" if z.kind == "cone" else "getroffen", z.p, push)
+			# a thrown blow (a lob landing, a meteor, a grave hand) or a scream comes from afar:
+			# met by a perfect block its thrower reels only in melee reach (B3)
+			var thrown: Dictionary = {"p": z.p} if push == "lob" or z.kind == "cone" else {}
+			_hurt_by(z.m, int(z.dmg), "niedergeschrien" if z.kind == "cone" else "getroffen", z.p, push, thrown)
 	# a lava pool that goes out leaves its crust glowing: embers that sizzle and cool to soot
 	for z: Dictionary in zones:
 		if z.kind == "puddle" and z.t >= z.T:
@@ -1820,14 +1736,17 @@ func update_shots(dt: float) -> void:
 		elif s.p.distance_to(me) < (26.0 if s.get("small", false) else float(g.balance.enemy_shot.hit_radius)):
 			s.t = 0.0
 			if s.has("chain"):
-				g.state.pull = {"m": s.chain, "t": 0.6}
-				g._hurt("von der Kette gepackt")
+				# a hook met by a perfect block or roll (B3) breaks off and pulls nobody
+				g._hurt("von der Kette gepackt", 1, Vector2.ZERO, s.chain, s)
+				if not HeroKit.perfect_now(g):
+					g.state.pull = {"m": s.chain, "t": 0.6}
 				# the hook bites: sparks and a jolt
 				_pixel_burst(s.p, 10, PX_COL.chain, 240.0, 180.0, 0.45)
 				_impact(s.p, "small", s.chain)
 			else:
 				var open := float(g.state.inv) <= 0.0 and float(g.state.dead) <= 0.0
-				g._hurt(HURT_BY.get(s.get("c", ""), "von Feuer getroffen"))
+				# its shooter goes with it (B3: a perfect block breaks the shot, the shooter reels in melee reach)
+				g._hurt(HURT_BY.get(s.get("c", ""), "von Feuer getroffen"), 1, Vector2.ZERO, s.get("by", {}), s)
 				_shot_impact(s.p, str(s.get("c", "fire")), bool(s.get("small", false)), s)
 				# a landed shot nudges him along its flight (not one met by a perfect block)
 				if open and float(g.state.inv) > 0.0 and not HeroKit.perfect_now(g):
@@ -1845,10 +1764,8 @@ func update_shots(dt: float) -> void:
 		var step := minf(dl - P.m.r - 30.0, 1100.0 * dt)
 		if step > 0.0:
 			var mv := to / dl * step
-			if not g.box_blocked(g._player_box(g.player.x + mv.x, g.player.y)):
-				g.player.x += mv.x
-			if not g.box_blocked(g._player_box(g.player.x, g.player.y + mv.y)):
-				g.player.y += mv.y
+			# axis by axis against the walls (MotionKit.move_hero)
+			_mover().move_hero(mv)
 			# dragged over the floor: his heels kick up dust and grit behind him
 			var Ph := _phys()
 			if Ph != null and randf() < 0.8:
@@ -2094,6 +2011,9 @@ func draw_warnings(l: CanvasItem) -> void:
 				if z.t < z.tele:
 					_px_cone(l, z.p, float(z.r), float(z.ang), float(z.arc), k, Color8(194, 120, 208))
 	_draw_cracks(l)
+	for f: Dictionary in flashes:
+		if bool(f.get("floor", false)):
+			_draw_floor_flash(l, f)
 	_draw_spills(l, float(g.state.t))
 	for L: Dictionary in lobs:
 		var k: float = L.t / L.T
@@ -2184,9 +2104,10 @@ func draw_lasers(l: CanvasItem) -> void:
 			_px_sound(l, z, t)
 		elif str(z.kind) == "hand" and float(z.t) >= float(z.tele):
 			_px_hand(l, z, t)
-	# the impacts' white-hot flashes
+	# the impacts' white-hot flashes (a stomp's floor flash lies under the actors: draw_warnings)
 	for f: Dictionary in flashes:
-		_draw_flash(l, f)
+		if not bool(f.get("floor", false)):
+			_draw_flash(l, f)
 	# chunks and sparks in the air
 	for f: Dictionary in pfx:
 		var a := 1.0 - clampf((float(f.t) / float(f.T) - 0.7) / 0.3, 0.0, 1.0)
@@ -2362,7 +2283,7 @@ func _px_burst(l: CanvasItem, c: Vector2, r: float, k: float, cols: Array, seed:
 			for x in range(-int(sr) - 1, int(sr) + 2):
 				if Vector2(x, y).length() <= sr * (1.0 + 0.25 * (_px_noise(x, y, 30 + i) - 0.5)):
 					var q := sc + Vector2i(x, y)
-					if not m.has(q) and float(BAYER[posmod(q.y, 4) * 4 + posmod(q.x, 4)]) < (1.0 - k * 0.6) * 16.0:
+					if not m.has(q) and MatterKit.bayer(q) < (1.0 - k * 0.6) * 16.0:
 						smoke[q] = y < -int(sr * 0.3)
 	for q: Vector2i in smoke:
 		l.draw_rect(Rect2(Vector2(q) * LASER_PX, Vector2.ONE * LASER_PX), Color("5a4656") if smoke[q] else Color("3b2a35"))
@@ -2380,18 +2301,9 @@ func _px_burst(l: CanvasItem, c: Vector2, r: float, k: float, cols: Array, seed:
 		l.draw_rect(Rect2(Vector2(e) * LASER_PX, Vector2.ONE * LASER_PX), cols[1] if i % 2 == 0 else cols[2])
 
 
-## Smooth value noise 0..1 over cells of 2 pixels.
+## Smooth value noise 0..1 over cells of 2 pixels (MatterKit.value_noise).
 func _px_noise(x: int, y: int, s: int) -> float:
-	var fx := float(x) / 2.0
-	var fy := float(y) / 2.0
-	var gx := floori(fx)
-	var gy := floori(fy)
-	var u := fx - float(gx)
-	var v := fy - float(gy)
-	u = u * u * (3.0 - 2.0 * u)
-	v = v * v * (3.0 - 2.0 * v)
-	var h := func(a: int, b: int) -> float: return float(absi((a * 73856093) ^ (b * 19349663) ^ (s * 83492791)) % 1000) / 1000.0
-	return lerpf(lerpf(h.call(gx, gy), h.call(gx + 1, gy), u), lerpf(h.call(gx, gy + 1), h.call(gx + 1, gy + 1), u), v)
+	return MatterKit.value_noise(x, y, 2, s)
 
 
 ## A shot or lob on the pixel grid: a ball of `r` pixels (of the old 4 px
@@ -3556,12 +3468,19 @@ func _crack_floor(p: Vector2, r: float, n: int, cold := false) -> void:
 	cracks.append({"p": p, "t": 0.0, "T": CRACK_TIME, "cells": cells, "cold": cold})
 
 
-## A boss's stomp at `p` (radius `r`) marks the floor (A10, combat_tells.json
-## boss_impact): the crypt's dent with cracks running out of it, which stays,
-## dust creeping out flat over the floor and rubble chunks thrown aside, all
-## through the crypt's pixel physics; without it, grit flies as pfx.
-func _boss_scar(p: Vector2, r: float) -> void:
+## A boss's stomp at `p` (radius `r`, the boss's own element `element`, "" for
+## fire) breaks the floor (A10, combat_tells.json boss_impact; skill
+## gamedev:game-feel, layered by importance): thick branching cracks that run
+## out from the impact glowing in the element's light and cool (glow_cracks),
+## a short flash over the floor (floor_flash), chunky dust puffs that billow
+## out and settle as grit (puffs), stone chips thrown up that bounce and lie
+## (chips), and the crypt's lasting dent with dark cracks, flat dust and
+## rubble, all through the crypt's pixel physics; without it, grit flies as
+## pfx. The camera's "slam" kick comes with the large impact's shake.
+func _boss_scar(p: Vector2, r: float, element := "") -> void:
 	var B: Dictionary = FrostMoves.tells().get("boss_impact", {})
+	_glow_cracks(p, r, element, B.get("glow_cracks", {}))
+	_floor_flash(p, r, element, B.get("floor_flash", {}))
 	var P := _phys()
 	if P == null:
 		_pixel_burst(p - Vector2(0, 4), int(B.get("dust", 26)), WAVE_DUST, 260.0, 120.0, 1.4, 2)
@@ -3570,6 +3489,195 @@ func _boss_scar(p: Vector2, r: float) -> void:
 	P.floor_crack(p / s, r * float(B.get("crack_reach", 0.5)) / s, int(B.get("crack_branches", 7)))
 	P.dust_flat(p / s, r * float(B.get("dust_reach", 0.8)) / s, int(B.get("dust", 26)))
 	P.rubble(p / s, int(B.get("rubble", 6)), Vector2.ZERO, 180.0 / s)
+	_dust_puffs(P, s, p, r, B.get("puffs", {}))
+	_stone_chips(P, s, p, B.get("chips", {}))
+
+
+## A [lo, hi] pair of `spec` key `key` as a Vector2 (`fallback` when missing).
+static func _pair(spec: Dictionary, key: String, fallback: Vector2) -> Vector2:
+	var v: Variant = spec.get(key)
+	return Vector2(float(v[0]), float(v[1])) if v is Array and (v as Array).size() >= 2 else fallback
+
+
+## A boss stomp's thick glowing cracks (boss_impact.glow_cracks): `branches`
+## jagged lines on the 3 px grid run out from `p` to `reach` x `r`: each runs
+## in straight pieces of `segment` cells, every piece kinked up to `jag` rad
+## off its heading, the heading itself drifting up to `turn` rad a piece;
+## they fork (`fork` chance per cell, `fork_turn` rad aside, at most `depth`
+## forks deep); 3 cells wide near the impact (u below wide[0]), 2 further out
+## (below wide[1]), 1 at the tips, a fork one narrower; they stop at walls. The
+## core line glows hottest (`core` heat over its sides). Drawn by _draw_glow_crack.
+func _glow_cracks(p: Vector2, r: float, element: String, spec: Dictionary) -> void:
+	if g.sound != null: g.sound.at("crack_floor", p, {"set": "ice" if element != "" else ""})
+	if spec.is_empty():
+		return
+	var reach := r * float(spec.get("reach", 0.75))
+	var branches := int(spec.get("branches", 7))
+	var jitter := float(spec.get("jitter", 0.35))
+	var turn := float(spec.get("turn", 0.12))
+	var jag := float(spec.get("jag", 0.45))
+	var segment := _pair(spec, "segment", Vector2(3.0, 6.0))
+	var fork := float(spec.get("fork", 0.04))
+	var fork_turn := _pair(spec, "fork_turn", Vector2(0.5, 1.0))
+	var depth_max := int(spec.get("depth", 2))
+	var wide := _pair(spec, "wide", Vector2(0.3, 0.65))
+	var core := float(spec.get("core", 0.25))
+	# a cell's heat at the start: heat[0] at the impact, heat[1] less at a tip
+	var hot := _pair(spec, "heat", Vector2(1.0, 0.6))
+	var origin := ((p / LASER_PX).floor() + Vector2(0.5, 0.5)) * LASER_PX
+	# grid cell -> [u (0 at the impact .. 1 at a tip), heat at the start]
+	var cells: Dictionary = {}
+	var paths: Array = []
+	for k in range(branches):
+		paths.append([Vector2.ZERO, float(k) / float(branches) * TAU + randf_range(-jitter, jitter), reach * randf_range(0.7, 1.0), 0.0, 0])
+	while not paths.is_empty():
+		var path: Array = paths.pop_back()
+		var pos: Vector2 = path[0]
+		var heading := float(path[1])
+		var ang := heading
+		var piece := 0
+		var u0 := float(path[3])
+		var depth := int(path[4])
+		var steps := maxi(2, int(float(path[2]) / LASER_PX))
+		for i in range(steps):
+			# a new straight piece: the heading drifts, the piece kinks off it
+			if piece <= 0:
+				piece = int(randf_range(segment.x, segment.y + 1.0))
+				heading += randf_range(-turn, turn)
+				ang = heading + randf_range(-jag, jag)
+			piece -= 1
+			pos += Vector2(cos(ang), sin(ang) * 0.62)
+			var world := origin + pos * LASER_PX
+			if g._cell(int(floor(world.x / g.C)), int(floor(world.y / g.C))) != 1:
+				break
+			var u := u0 + (1.0 - u0) * float(i + 1) / float(steps)
+			var w := maxi(1, (3 if u < wide.x else 2 if u < wide.y else 1) - depth)
+			var at := Vector2i(pos.round())
+			var lo := -((w - 1) / 2)
+			for dy in range(lo, lo + w):
+				for dx in range(lo, lo + w):
+					var q := at + Vector2i(dx, dy)
+					var heat := hot.x - u * hot.y + (core if dx == 0 and dy == 0 else -core * 0.5)
+					var was: Array = cells.get(q, [])
+					if was.is_empty() or float(was[1]) < heat:
+						cells[q] = [minf(u, float(was[0])) if not was.is_empty() else u, heat]
+			if depth < depth_max and i > 2 and i < steps - 3 and randf() < fork:
+				paths.append([pos, ang + (fork_turn.x + randf() * (fork_turn.y - fork_turn.x)) * (1.0 if randf() < 0.5 else -1.0), float(steps - i) * LASER_PX * 0.6, u, depth + 1])
+	if cells.is_empty():
+		return
+	# the dark lip round every crack cell
+	var edges: Dictionary = {}
+	for q: Vector2i in cells:
+		for step: Vector2i in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			var n := q + step
+			if not cells.has(n) and (not edges.has(n) or float(edges[n]) > float(cells[q][0])):
+				edges[n] = float(cells[q][0])
+	var ramps: Dictionary = spec.get("ramp", {})
+	var hexes: Array = ramps.get(element, ramps.get("default", [])) if ramps is Dictionary else []
+	var ramp: Array = []
+	for hex: Variant in hexes:
+		ramp.append(Color(str(hex)))
+	if ramp.is_empty():
+		ramp = CRACK_COL.duplicate()
+	var list: Array = []
+	for q: Vector2i in cells:
+		list.append([Vector2(q), float(cells[q][0]), float(cells[q][1])])
+	var edge_list: Array = []
+	for q: Vector2i in edges:
+		edge_list.append([Vector2(q), float(edges[q])])
+	cracks.append({"p": origin, "t": 0.0, "T": float(spec.get("time", 2.4)), "cells": list, "edges": edge_list, "ramp": ramp,
+		"edge": Color(str(spec.get("edge", "#1c1117")), float(spec.get("edge_alpha", 0.9))), "run": float(spec.get("run", 0.14)),
+		"cool": maxf(0.05, float(spec.get("cool", 1.2)))})
+
+
+## A boss stomp's flash over the floor (boss_impact.floor_flash): `reach` x `r`
+## round `p`, squashed like the floor, `time` s, at `alpha`; in the element's
+## light (fire's white-hot for none). Kept with the impacts' flashes (it also
+## lights the room for that moment, src/hero/story_glow.gd) but drawn on the
+## floor under the actors (_draw_floor_flash).
+func _floor_flash(p: Vector2, r: float, element: String, spec: Dictionary) -> void:
+	if spec.is_empty():
+		return
+	flashes.append({"p": p, "t": 0.0, "T": maxf(0.02, float(spec.get("time", 0.12))), "r": r * float(spec.get("reach", 0.55)),
+		"c": element if PX_COL.has(element) else "fire", "floor": true, "alpha": float(spec.get("alpha", 0.8)), "squash": float(spec.get("squash", 0.62))})
+
+
+## A floor flash on the 3 px grid: an ellipse that opens out a little as it
+## fades, white at its middle through the element's light to its rim, the rim
+## dithered (Bayer 4x4) so it ends in loose pixels, not a soft edge.
+func _draw_floor_flash(l: CanvasItem, f: Dictionary) -> void:
+	var k := clampf(float(f.t) / maxf(0.01, float(f.T)), 0.0, 1.0)
+	var cols: Array = PX_COL.get(str(f.get("c", "fire")), PX_COL.fire)
+	var r := float(f.r) * (0.75 + 0.25 * (1.0 - pow(1.0 - k, 2.0)))
+	var squash := float(f.get("squash", 0.62))
+	var alpha := float(f.get("alpha", 0.8)) * (1.0 - k)
+	var base := ((f.p as Vector2) / LASER_PX).floor() * LASER_PX
+	var nx := int(ceil(r / LASER_PX))
+	var ny := int(ceil(r * squash / LASER_PX))
+	for y in range(-ny, ny + 1):
+		for x in range(-nx, nx + 1):
+			var d := Vector2(float(x), float(y) / squash).length() * LASER_PX / maxf(1.0, r)
+			if d > 1.0:
+				continue
+			# the rim breaks up into loose pixels
+			if d > 0.7 and MatterKit.bayer_xy(x, y) / 16.0 < (d - 0.7) / 0.3:
+				continue
+			var col: Color = cols[0] if d < 0.35 else cols[1] if d < 0.7 else cols[2]
+			l.draw_rect(Rect2(base + Vector2(x, y) * LASER_PX, Vector2.ONE * LASER_PX), Color(col, alpha * (1.0 - d * 0.5)))
+
+
+## A boss stomp's dust puffs (boss_impact.puffs): `count` puffs round `p` on a
+## ring of `ring` x `r`, each a cluster of `bits` chunky dust blocks (`size`
+## crypt px) thrown out at `speed` world px/s, each block up to `spread` px off
+## the puff's middle and `spread` px/s off its speed so the cluster swells,
+## slowed by `drag` so the puff billows out and stops, fading over `life` s;
+## `grit` bits of each puff fly the same way, fall and settle as grit on the
+## floor (the crypt's pixel physics `particles`, crypt px = world px / `s`).
+func _dust_puffs(particles: RefCounted, s: float, p: Vector2, r: float, spec: Dictionary) -> void:
+	if spec.is_empty():
+		return
+	var count := int(particles.room(int(spec.get("count", 10))))
+	var ring := _pair(spec, "ring", Vector2(0.12, 0.45))
+	var speed := _pair(spec, "speed", Vector2(70.0, 150.0))
+	var size := _pair(spec, "size", Vector2(4.0, 6.0))
+	var life := _pair(spec, "life", Vector2(0.9, 1.6))
+	var spread := float(spec.get("spread", 30.0))
+	var drag := float(spec.get("drag", 2.2))
+	var cols: Array = []
+	for hex: Variant in spec.get("colors", ["c9b9a0", "a8957c", "8a7866"]):
+		cols.append(Color(str(hex)))
+	var grit_cols: Array = CHUNK_COL
+	for k in range(count):
+		var dir := Vector2.from_angle(float(k) / float(maxi(1, count)) * TAU + randf_range(-0.3, 0.3))
+		var at := p + dir * r * randf_range(ring.x, ring.y) * Vector2(1.0, 0.62)
+		var out := dir * Vector2(1.0, 0.62) * randf_range(speed.x, speed.y)
+		for b in range(int(spec.get("bits", 5))):
+			var jitter := Vector2(randf_range(-1.0, 1.0), randf_range(-0.6, 0.6)) * spread
+			var bit_size := roundf(randf_range(size.x, size.y) / 2.0) * 2.0
+			particles.emit((at + jitter) / s, (out * randf_range(0.85, 1.15) + jitter) / s, cols[randi() % cols.size()], randf_range(life.x, life.y), "dust", bit_size, randf_range(0.0, 6.0), 0.0, drag)
+		for b in range(int(spec.get("grit", 2))):
+			particles.emit(at / s, out * randf_range(0.4, 0.8) / s, grit_cols[randi() % grit_cols.size()], 3.0, "debris", 2.0, 4.0, randf_range(40.0, 90.0), drag)
+
+
+## A boss stomp's stone chips (boss_impact.chips): `count` chips of `colors`
+## (`size` crypt px) thrown out of the impact at `speed` world px/s (slowed by `drag`) and up at
+## `lift`, arcing, bouncing off the floor and walls and lying as grit after
+## `life` s (the crypt's pixel physics, "debris" mode).
+func _stone_chips(particles: RefCounted, s: float, p: Vector2, spec: Dictionary) -> void:
+	if spec.is_empty():
+		return
+	var count := int(particles.room(int(spec.get("count", 14))))
+	var speed := _pair(spec, "speed", Vector2(140.0, 300.0))
+	var lift := _pair(spec, "lift", Vector2(140.0, 260.0))
+	var size := _pair(spec, "size", Vector2(2.0, 4.0))
+	var life := _pair(spec, "life", Vector2(2.5, 4.0))
+	var cols: Array = []
+	for hex: Variant in spec.get("colors", ["b8a890", "7a6a58", "3e342c"]):
+		cols.append(Color(str(hex)))
+	for k in range(count):
+		var out := Vector2.from_angle(randf() * TAU) * Vector2(1.0, 0.62) * randf_range(speed.x, speed.y)
+		var chip := roundf(randf_range(size.x, size.y) / 2.0) * 2.0
+		particles.emit(p / s, out / s, cols[randi() % cols.size()], randf_range(life.x, life.y), "debris", chip, 6.0, randf_range(lift.x, lift.y) / s, float(spec.get("drag", 1.2)))
 
 
 ## Ages the flying pixels (gravity, bounce, rest) and the floor cracks.
@@ -3655,10 +3763,36 @@ func _draw_spills(l: CanvasItem, t: float) -> void:
 			u += LASER_PX * 0.75
 
 
+## A boss stomp's glowing crack (_glow_cracks): a cell shows once the crack
+## has run out to it (its u x `run` s), its dark lip with it; the cell's heat
+## falls by 1 every `cool` s from its start (hottest on the core line near the
+## impact) and picks its colour from `ramp`, hot end first (1 and more) to the
+## dark end (0 and less); all of it fades in the last quarter of its time.
+func _draw_glow_crack(l: CanvasItem, c: Dictionary) -> void:
+	var age := float(c.t)
+	var fade := 1.0 - clampf((age / float(c.T) - 0.75) / 0.25, 0.0, 1.0)
+	var base: Vector2 = (c.p as Vector2) - Vector2.ONE * LASER_PX * 0.5
+	var run := float(c.run)
+	var edge: Color = c.edge
+	for cell: Array in c.edges:
+		if age >= float(cell[1]) * run:
+			l.draw_rect(Rect2(base + (cell[0] as Vector2) * LASER_PX, Vector2.ONE * LASER_PX), Color(edge, edge.a * fade))
+	var ramp: Array = c.ramp
+	var last := ramp.size() - 1
+	for cell: Array in c.cells:
+		if age < float(cell[1]) * run:
+			continue
+		var heat := clampf(float(cell[2]) - age / float(c.cool), 0.0, 1.0)
+		l.draw_rect(Rect2(base + (cell[0] as Vector2) * LASER_PX, Vector2.ONE * LASER_PX), Color(ramp[clampi(roundi((1.0 - heat) * last), 0, last)], fade))
+
+
 ## The floor cracks: each cell's heat falls with its distance from the impact and
 ## with time, from yellow through red to a dark crack that fades at the end.
 func _draw_cracks(l: CanvasItem) -> void:
 	for c: Dictionary in cracks:
+		if c.has("edges"):
+			_draw_glow_crack(l, c)
+			continue
 		var age := float(c.t) / float(c.T)
 		var fade := 1.0 - clampf((age - 0.75) / 0.25, 0.0, 1.0)
 		var base := ((c.p as Vector2) / LASER_PX).floor() * LASER_PX
@@ -3815,7 +3949,7 @@ func draw_fx(l: CanvasItem) -> void:
 	# the enemy shots are pixel fireballs over the actors (draw_lasers); their soft glow is the bloom
 
 
-# ---------- WAHN (element_rules.json madness) ----------
+# ---------- WAHN (madness_rules.json madness) ----------
 
 ## The monster mad `m` has turned on ({} for none). At each attack decision
 ## (no act running, an attack's cooldown run out) it rolls madness.turn_chance

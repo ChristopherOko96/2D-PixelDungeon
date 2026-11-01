@@ -13,6 +13,8 @@ const FrostScene = preload("res://src/hell/frost_dungeon.tscn")
 const HeroKit = preload("res://src/hell/hero_kit.gd")
 const CardKit = preload("res://src/hell/card_kit.gd")
 const StorySave = preload("res://src/save/story_save.gd")
+const HudStyle = preload("res://src/ui/hud_style.gd")
+const TalentBar = preload("res://src/ui/talent_bar.gd")
 
 var checked := 0
 var failures: Array[String] = []
@@ -63,10 +65,33 @@ func _mob(game: Node, offset: Vector2) -> Dictionary:
 	return m
 
 
+## Nacharbeit L5: below the hero strip (bottom 122 + gap) and below a companion
+## bar too (bottom 172 + gap) the open bag window covers neither, stays above the
+## resource label over the skill bar, and its equipment column, labels and
+## footer still fit inside it; the empty quick slot explains itself.
+func _test_window_clears_hero_strip(game: Node, world: String) -> void:
+	var panel: Control = game.inventory_panel
+	for strip_bottom: float in [122.0, 172.0]:
+		# Act
+		var top := strip_bottom + HudStyle.size("inventory_gap")
+		panel.fit_below(top)
+		var area: Rect2 = panel.panel
+		var last: Rect2 = panel._equip_rect(3)
+		# Assert
+		check(area.position.y >= top and area.end.y <= HudStyle.size("inventory_bottom") and area.end.y < 628.0,
+			"%s: the bag window sits below a HUD column ending at %d and above the skill bar (%s)" % [world, int(strip_bottom), str(area)])
+		check(last.end.y + 24.0 <= area.end.y - 32.0 and panel._equip_rect(1).position.y - panel._equip_rect(0).end.y >= 20.0,
+			"%s: the equipment column, its labels and the footer fit (step %d)" % [world, int(panel.equip_step)])
+	var slot: Dictionary = TalentBar.potion_slot({}, -1.0)
+	check(str(slot.get("hint", "")) == "potion" and str(slot.text).contains("Rechtsklick") and str(slot.meta).contains("H trinken") and str(slot.meta).contains("G werfen"),
+		"%s: the empty quick slot shows a flask and says how a potion gets there, H drinks, G throws" % world)
+
+
 func _test_world(scene: PackedScene, world: String) -> void:
 	var game: Node = await _open(scene)
 	var items: Node = game.story_items
 	check(items != null and game.inventory_panel != null, "%s: a class hero carries the bag and its window" % world)
+	_test_window_clears_hero_strip(game, world)
 	var view: Dictionary = items.view()
 	check(view.has("weapon") and view.has("armor") and view.has("ring") and view.has("amulet"), "%s: four equipment slots" % world)
 	# the first chest of a floor holds its fixed finds

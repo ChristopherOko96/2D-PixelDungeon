@@ -24,8 +24,9 @@
       "ambience": {"track": "amb_frost_wind", "volume_db": 0}
     },
     "hell": {
+      "_note": "The Hell's explore track also carries its fights (user, 2026-11-01): the same track only changes level, it does not restart (music.gd _enter). hell_combat_9th_circle stays in the library.",
       "explore": {"track": "hell_explore_heated_lands", "volume_db": 0, "ambience": true},
-      "combat": {"track": "hell_combat_9th_circle", "volume_db": -4, "ambience": true},
+      "combat": {"track": "hell_explore_heated_lands", "volume_db": 0, "ambience": true},
       "boss": {"track": "heavy_boss_battle_1", "volume_db": -3, "ambience": false},
       "ambience": {"track": "amb_hell_lava", "volume_db": 0}
     }

@@ -12,7 +12,9 @@ extends RefCounted
 ## "Bildschirmwackeln" off (shake_on false) drops shake and kicks.
 
 const DATA_PATH := "res://assets/data/story_camera.json"
-const SETTINGS_PATH := "user://settings.cfg"
+const GraphicsSettings = preload("res://src/core/graphics_settings.gd")
+## The one options file of the game (src/core/graphics_settings.gd SETTINGS_PATH).
+const SETTINGS_PATH: String = GraphicsSettings.SETTINGS_PATH
 
 ## Tuning values (the json); tests may pass their own.
 var cfg: Dictionary = {}

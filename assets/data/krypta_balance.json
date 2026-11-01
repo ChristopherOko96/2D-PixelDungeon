@@ -113,8 +113,10 @@
   "light_bands": 6
  },
  "seal": {
-  "bless_chance": 0.5,
-  "demons": 3,
+  "_note": "Grave seals as a real choice, the same rules as hell_balance.json seal (balance package D1, src/hell/card_kit.gd seal_cfg / seal_offer): a broken seal offers `offers` different open blessings on cards; taking one costs `price_hp` half hearts (only while more than that is left, it never kills); leaving both costs nothing. arm_s: real seconds the cards ignore clicks and number keys after they open. demon_kind: the undead of a crate without the crypt's monsters (hell_game.gd).",
+  "offers": 2,
+  "price_hp": 2,
+  "arm_s": 0.35,
   "demon_kind": "gross"
  },
  "blessings": {

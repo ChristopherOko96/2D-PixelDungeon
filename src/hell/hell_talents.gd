@@ -4,7 +4,8 @@ extends RefCounted
 ## game towards src/combat/talent_combat.gd (players, enemies, damage,
 ## statuses, movement, projectiles) and translates to the hell runtime: the
 ## hero (player.x/y, state.hp, state.dmg), the mobs (m.p, m.r, m.hp), the
-## hell's status helpers (HeroKit.slow_mob / burn_mob, SubKit.freeze), its
+## hell's status helpers (HeroKit.slow_mob / burn_mob / poison_mob / bleed_mob,
+## SubKit.freeze), its
 ## walls (box_blocked) and its HUD. It also brings EXP, gold, level-ups and
 ## the difficulty of the shared profile into these maps.
 ## The Leerenmagier's Arkanes Gefüge works here too: the world's void
@@ -24,6 +25,17 @@ const Rules = preload("res://src/progress/talent_rules.gd")
 const HeroKit = preload("res://src/hell/hero_kit.gd")
 const SubKit = preload("res://src/hell/sub_kit.gd")
 const BossKit = preload("res://src/hell/boss_kit.gd")
+## The hero's slowing conditions (src/hell/hero_fx.gd state.effects) a cleanse
+## takes off: "slow" (curses, boss moves, frost pools' and gases' status).
+const SLOW_CONDITIONS: Array[String] = ["slow"]
+## The hero's slowing timers on g.state a cleanse ends: "chill" (the frost
+## chill, theme chill_speed: chilling shots, defs and fields) and "slow" (half
+## speed: hell_monsters.gd scream cones, the Archivar's Bannfluch).
+const SLOW_TIMERS: Array[String] = ["chill", "slow"]
+## The per-frame slows of what he stands in and breathes (hell_game.gd
+## hero_medium, hero_gas: their "slow"), worked out again every frame where he
+## stands: a cleanse drops them for the frame it happens in.
+const SLOW_MEDIA: Array[String] = ["hero_medium", "hero_gas"]
 
 var g: Node
 ## The world's element reactions for the talents' fire and frost
@@ -381,6 +393,28 @@ func talent_world_scale() -> float:
 	return float(g.PIXEL_WORLD) / 2.0
 
 
+## A talent that frees the hero (talents.json "cleanse": Raumsprung, called by
+## src/combat/talent_combat.gd blink): every slow on him ends now, the
+## conditions (SLOW_CONDITIONS), the timers (SLOW_TIMERS) and this frame's
+## pool and gas slow (SLOW_MEDIA). A pool or gas he still stands in slows him
+## again from the next frame; the story worlds have no webs. `_id`: the hero
+## (the only one here).
+func cleanse_slows(_id: int) -> void:
+	if g == null or g.state.is_empty(): return
+	var effects: Variant = g.state.get("effects")
+	if effects is Dictionary:
+		for kind: String in SLOW_CONDITIONS: (effects as Dictionary).erase(kind)
+	for key: String in SLOW_TIMERS:
+		if g.state.has(key): g.state[key] = 0.0
+	for field: String in SLOW_MEDIA:
+		var medium: Variant = g.get(field)
+		if medium is Dictionary and (medium as Dictionary).has("slow"):
+			# a copy: hero_gas may be the shared rule of element_rules.json itself
+			var freed: Dictionary = (medium as Dictionary).duplicate()
+			freed.erase("slow")
+			g.set(field, freed)
+
+
 func talent_move(from: Vector2, step: Vector2, radius: float) -> Vector2:
 	var pos := from
 	var steps := maxi(1, ceili(step.length() / 8.0))
@@ -440,14 +474,27 @@ func _status(m: Dictionary, key: String, power: float, duration: float, _owner: 
 	statuses[key] = {"power": maxf(power, float(old.get("power", 0.0))), "time": maxf(duration, float(old.get("time", 0.0)))}
 	m.statuses = statuses
 	match key:
-		"burn", "poison", "bleed":
-			HeroKit.burn_mob(m, power, duration)
+		# each its own damage over time (HeroKit.tick_mob), the hero's damage counted once (_story_dps)
+		"burn":
+			HeroKit.burn_mob(m, _story_dps(power), duration)
 			# on fire for the element physics (a burning monster sets poison off; water puts it out)
-			if key == "burn" and float(m.get("wet_t", 0.0)) <= 0.0: m.fire_t = maxf(float(m.get("fire_t", 0.0)), duration)
+			if float(m.get("wet_t", 0.0)) <= 0.0: m.fire_t = maxf(float(m.get("fire_t", 0.0)), duration)
+		"poison": HeroKit.poison_mob(m, _story_dps(power), duration)
+		"bleed": HeroKit.bleed_mob(m, _story_dps(power), duration)
 		"freeze": SubKit.freeze(g, m, duration)
 		"slow":
 			if power >= 1.0: SubKit.freeze(g, m, duration, true)
 			else: HeroKit.slow_mob(g, m, power, duration)
+
+
+## A talent's damage over time in the story's unit. talent_combat.gd hands an
+## absolute dps (the hero's damage x the status pct of talents.json
+## "statuses", plus its bonuses); the story's monster ticks (HeroKit.tick_mob)
+## count in hero hits per second and multiply by state.dmg themselves. So the
+## dps is divided by state.dmg here, and the hero's damage counts once.
+func _story_dps(power: float) -> float:
+	var hit := float(g.state.get("dmg", 1.0))
+	return power / hit if hit > 0.0 else 0.0
 
 
 func _step_statuses(dt: float) -> void:

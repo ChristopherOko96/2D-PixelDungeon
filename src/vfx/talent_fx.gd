@@ -287,7 +287,9 @@ func _shot_tier(name: String) -> Dictionary:
 func _type_of(talent: String) -> String:
 	if not _types_read:
 		_types_read = true
-		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(TALENTS_PATH)) if FileAccess.file_exists(TALENTS_PATH) else null
+		# the shared, kept talents.json (src/core/data_cache.gd): the world's first cast
+		# no longer parses the 112 KB file again
+		var parsed: Variant = DataCache.load_json(TALENTS_PATH)
 		if parsed is Dictionary:
 			for id: String in parsed.get("talents", {}):
 				_types[id] = str(parsed.talents[id].get("type", ""))
@@ -2039,7 +2041,7 @@ func _swallow_physics(event: Dictionary, at: Vector2, r: float) -> void:
 ## lands is its element's (void.eject kind: liquids and fire splash into the
 ## pool layer as pool_mat, ice breaks, bone and gold bounce, souls puff); the
 ## lasting pool there is the host's. A few bolts, a few landings (gefuege
-## eject_max in element_rules.json).
+## eject_max in madness_rules.json gefuege).
 func _eject_physics(event: Dictionary, at: Vector2, clock: float) -> void:
 	if particles == null: return
 	var ej: Dictionary = cfg.get("void", {}).get("eject", {})

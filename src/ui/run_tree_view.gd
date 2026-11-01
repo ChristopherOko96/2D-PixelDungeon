@@ -108,7 +108,7 @@ static func draw(canvas: CanvasItem, font: Font, screen: Vector2, tree: Dictiona
 	else:
 		HudStyle.text(canvas, font, foot.position + Vector2(12, 24), _fit(font, "%s  ·  %d / %d" % [str(hovered.name), int(ranks.get(str(hovered.id), 0)), int(hovered.max)], room), 16, HudStyle.color("accent"))
 		var why: String = {"skill_locked": "  ·  Fähigkeit noch nicht frei", "tier_locked": "  ·  erst 2 Punkte im Ast", "no_points": "  ·  kein Punkt frei", "maxed": "  ·  voll",
-			"meta_locked": "  ·  im Hauptmenü unter TALENTE freischalten"}.get(hovered_state, "")
+			"meta_locked": "  ·  im Hauptmenü unter TALENTE freischalten", "closed": "  ·  " + str(hovered.get("closed", ""))}.get(hovered_state, "")
 		# the text in two 16 px lines at most
 		var lines := _wrap(font, str(hovered.get("text", "")) + why, room)
 		for k in range(mini(2, lines.size())):
@@ -118,7 +118,7 @@ static func draw(canvas: CanvasItem, font: Font, screen: Vector2, tree: Dictiona
 
 
 static func _node(canvas: CanvasItem, font: Font, rect: Rect2, n: Dictionary, rank: int, state: String, hot: bool) -> void:
-	var locked := state in ["skill_locked", "tier_locked", "meta_locked"]
+	var locked := state in ["skill_locked", "tier_locked", "meta_locked", "closed"]
 	var fill := HudStyle.color("slot")
 	if rank > 0:
 		fill = Color(HudStyle.color("accent"), 0.16)
@@ -136,8 +136,13 @@ static func _node(canvas: CanvasItem, font: Font, rect: Rect2, n: Dictionary, ra
 		canvas.draw_texture_rect(icon, Rect2(Vector2(x, rect.get_center().y - side * 0.5), Vector2(side, side)), false, Color(1, 1, 1, 0.35 if locked else 1.0))
 		x += side + 6.0
 	var tint := HudStyle.color("text_muted") if locked else (HudStyle.color("accent") if rank > 0 else HudStyle.color("text"))
+	# a node the world closed names why in short at its right ("closed_tag"; the foot says it in full)
+	var tag := str(n.get("closed_tag", "")) if state == "closed" else ""
+	var tag_w := HudStyle.width(font, tag, 16) + 10.0 if not tag.is_empty() else 0.0
+	if not tag.is_empty():
+		HudStyle.text(canvas, font, Vector2(rect.end.x - 6.0, rect.position.y + floorf((rect.size.y - 24.0) * 0.5) + 14.0), tag, 16, HudStyle.color("danger"), 2)
 	# the name at 16 px; a name too long for its node ends in "…"
-	var name := _fit(font, str(n.name), rect.end.x - x - 6.0)
+	var name := _fit(font, str(n.name), rect.end.x - x - 6.0 - tag_w)
 	var top := rect.position.y + floorf((rect.size.y - 24.0) * 0.5)
 	HudStyle.text(canvas, font, Vector2(x, top + 14), name, 16, tint)
 	# rank pips

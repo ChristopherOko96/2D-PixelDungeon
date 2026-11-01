@@ -202,6 +202,12 @@ func test_cards() -> void:
 	game.state.items = items
 	game.state.max_hp = cap + 6
 	check(not CardKit.pool(game).any(func(c: Dictionary) -> bool: return c.id == "vigor"), "EISERNE HAUT is not offered at the life cap")
+	# the run tree draws it closed with the reason at the cap (nacharbeit L6), not open
+	var at_cap := CardKit.tree(game)
+	var closed_node := RunTree.node(at_cap, "vigor")
+	check(not closed_node.is_empty() and RunTree.state_of(at_cap, {}, 20, "vigor") == "closed" and not str(closed_node.get("closed", "")).is_empty(),
+		"the run tree shows EISERNE HAUT closed with its reason at the life cap (%s)" % RunTree.state_of(at_cap, {}, 20, "vigor"))
+	check(not RunTree.can_take(at_cap, {}, 20, "vigor"), "a closed node takes no point")
 	CardKit.take(game, CardKit._all(game).filter(func(c: Dictionary) -> bool: return c.id == "vigor")[0])
 	check(int(game.state.max_hp) == cap + 6, "a heart card at the cap never lowers max life (%d)" % int(game.state.max_hp))
 	items.hp_bonus = had_bonus

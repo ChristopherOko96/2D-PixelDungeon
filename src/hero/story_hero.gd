@@ -3,7 +3,9 @@ extends RefCounted
 ## Hell-Dungeon and Frostgruft). Shares the crypt's look and feel:
 ## - the hero and its weapon through hero_look.gd (lean into swings, crescent,
 ##   Rage's two blades and crossed second swing, whirl, dash afterimages, bow
-##   draw, staff recoil), at the story worlds' pixel size;
+##   draw, staff recoil), at the story worlds' pixel size; on the part rig the
+##   weapon is the rig's held weapon item (src/rig_kit/rig_held.gd, through
+##   src/hero/story_weapon_host.gd), so it and its effects follow his body;
 ## - arrows and spells through attack_fx.gd (light streaks, glowing orbs, release
 ##   and impact flashes, bloom), drawn on a layer scaled to that pixel size;
 ## - the swordsman's feel (hero_skills.json "sword_feel"): a step into each
@@ -30,6 +32,7 @@ const StorySkillFx = preload("res://src/hero/story_skill_fx.gd")
 const ClassPerks = preload("res://src/player/class_perks.gd")
 const RigLibrary = preload("res://src/rig/rig_library.gd")
 const RigRenderer = preload("res://src/rig/rig_renderer.gd")
+const StoryWeaponHost = preload("res://src/hero/story_weapon_host.gd")
 ## The crypt's class figures (src/dungeon_view.gd CLASS_RIGS). The mage is the
 ## 0x72 wizard rig, recoloured by his element (hero_skins.json); the necromancer
 ## wears necro_hero (assets/data/story_rigs.json: his 0x72 sprite, the Knochenstab held).
@@ -68,6 +71,8 @@ var _ground_layer: Node2D
 var skill_fx: StorySkillFx
 ## The hero's part rig (the crypt's class figure); null when the rigs are missing.
 var rigs: RigRenderer
+## The weapon the rig holds (its held weapon item, src/rig_kit/rig_held.gd).
+var weapon_host: StoryWeaponHost
 ## Seconds the hero view has run, also while the hero lies fallen: the clock of
 ## his dropped weapon (hero_look.gd drop_weapon), independent of the world's time.
 var drop_clock := 0.0
@@ -83,6 +88,10 @@ var _source_frames: Dictionary = {}
 var _skin_check := 0.0
 ## OUTLINE with the theme's "outline" keys over it.
 var outline: Dictionary = OUTLINE.duplicate()
+## The x-ray look read once (xray()).
+var _xray: Dictionary = {}
+## The fair-combat data that holds the hero's x-ray look (hero_xray).
+const TELLS_PATH := "res://assets/data/combat_tells.json"
 ## The hero's rig figure was drawn in this frame's draw_hero (its opacity), so a
 ## cover ring may go round it; false for another figure (the ogre form).
 var _rig_shown := false
@@ -139,6 +148,7 @@ func _init(game: Node) -> void:
 	skill_fx = StorySkillFx.new(g, scale)
 	rigs = RigRenderer.new(RigLibrary.shared())
 	if not rigs.is_ready(): rigs = null
+	weapon_host = StoryWeaponHost.new(look)
 	# the mage's familiar and his element skin on the world's frames
 	if Familiar.has_familiar(str(g.class_id)): familiar = Familiar.new()
 	_apply_skin(true)
@@ -318,6 +328,9 @@ func draw_hero(canvas: CanvasItem, t: float, lift: float, draw_body: Callable, h
 	var view := view_state()
 	var rig := rig_name(hero_look)
 	_rig_shown = not rig.is_empty()
+	# the weapon in the figure's hand: its rig's held weapon item (src/rig_kit/rig_held.gd),
+	# posed by the rig, so the blade, the bow and the staff and their effects follow his body
+	var held := not rig.is_empty() and RigHeld.holds(rigs.library.rig(rig))
 	if not rig.is_empty():
 		var size := scale * float(hero_look.get("scale", 1.0))
 		var tint: Color = hero_look.get("tint", Color.WHITE)
@@ -335,22 +348,27 @@ func draw_hero(canvas: CanvasItem, t: float, lift: float, draw_body: Callable, h
 		var up := Vector2(0, (float(shape.ground.y) - float(shape.center.y)) * float(shape.scale) * size)
 		draw_body = func(feet: Vector2, alpha: float) -> void:
 			var key := KEY if alpha >= 1.0 else "ghost"
-			rigs.draw_hero(canvas, key, body_view, feet - up, rig, facing, tint.a * alpha, size, Color(tint.r, tint.g, tint.b))
+			rigs.draw_hero(canvas, key, body_view, feet - up, rig, facing, tint.a * alpha, size, Color(tint.r, tint.g, tint.b), weapon_host if alpha >= 1.0 and held else null)
 	var feet := Vector2(g.player.x, g.player.y)
 	var chest := feet - Vector2(0, lift)
 	var aim: Vector2 = g.HeroKit._aim(g)
+	var fallen := float(g.state.get("hp", 1)) <= 0.0
+	var armed: bool = g.weapon_tex != null and not g.relic_on()
+	var glow := AttackFx.tint_for({"style": "arrow"}, {"glow": str(g.state.get("glow", ""))})
+	var weapon_element := str(g.state.get("weapon_element", ""))
+	weapon_host.frame(view, aim, t, g.weapon_tex, glow, weapon_element, armed and not fallen)
 	look.observe(KEY, view, chest, t)
 	look.draw_dash_lines(canvas, KEY, view, chest, t)
 	look.draw_afterimages(KEY, t, func(at: Vector2, alpha: float) -> void: draw_body.call(at + Vector2(0, lift), alpha))
 	var offset := look.body_offset(KEY, view, aim, t)
 	draw_body.call(feet + offset, 1.0)
-	# a fallen hero's weapon leaves his hand and falls on its own path (hero_look.gd drop_weapon)
-	var fallen := float(g.state.get("hp", 1)) <= 0.0
+	# a fallen hero's weapon leaves his hand where the rig last held it and falls on its own
+	# path (hero_look.gd drop_weapon, RigDebris); without a held item the look draws it itself
 	if not fallen: look.forget_drop(KEY)
-	if g.weapon_tex != null and not g.relic_on() and fallen:
+	if armed and fallen:
 		look.drop_weapon(canvas, KEY, drop_clock, feet.y, face(t))
-	elif g.weapon_tex != null and not g.relic_on():
-		look.draw_weapon(canvas, KEY, view, chest + offset, aim, t, g.weapon_tex, AttackFx.tint_for({"style": "arrow"}, {"glow": str(g.state.get("glow", ""))}), str(g.state.get("weapon_element", "")))
+	elif armed and not held:
+		look.draw_weapon(canvas, KEY, view, chest + offset, aim, t, g.weapon_tex, glow, weapon_element)
 	# the mage's Irrwisch over the hero, on the world's art grid; gone with a fallen hero
 	if familiar != null and float(g.state.get("dead", 0.0)) <= 0.0:
 		familiar.draw(canvas, float(g.theme.get("hero_scale", 3.0)), t)
@@ -380,17 +398,42 @@ func guard(canvas: CanvasItem) -> void:
 
 
 ## After the world's actors: when an enemy standing in front of the hero
-## covered him this frame, a thin light ring and a dark ring one art pixel
-## round his figure, over everything, so he is never lost in a crowd.
-## Not for another figure (the ogre form), a fallen or a hidden (stealth) hero.
+## covered him this frame, his x-ray over it (A3, combat_tells.json hero_xray):
+## where the enemies' bodies hide him, his own silhouette in one solid colour
+## with a dark one-pixel rim, partly transparent, so he is never lost in a
+## crowd on bones, stone or snow; with hero_xray "ring" also the thin light and
+## dark ring round his whole figure. Not for another figure (the ogre form), a
+## fallen or a hidden (stealth) hero.
 func draw_cover(canvas: CanvasItem) -> void:
 	if rigs == null or not _rig_shown or _rig_alpha < 0.5 or float(g.state.get("hp", 1)) <= 0.0: return
 	var covered := false
+	var covers: Array = []
 	for host: Variant in [g.get("drake_rig"), g.get("frost_rigs")]:
-		if host != null and host.get("renderer") != null and bool(host.renderer.hero_covered): covered = true
+		if host != null and host.get("renderer") != null and bool(host.renderer.hero_covered):
+			covered = true
+			covers.append_array(host.renderer.get("hero_cover") if host.renderer.get("hero_cover") is Array else [])
 	if not covered: return
+	var x := xray()
+	rigs.draw_xray(canvas, KEY, covers, Color(Color.html(str(x.fill)), float(x.fill_alpha)), Color(Color.html(str(x.rim)), float(x.rim_alpha)))
+	if not bool(x.ring): return
 	var a := float(outline.cover_alpha)
 	rigs.draw_ring(canvas, KEY, Color(Color.html(str(outline.cover_inner)), a), Color(Color.html(str(outline.cover_outer)), a))
+
+
+## The hero's x-ray look (combat_tells.json hero_xray: fill, fill_alpha, rim,
+## rim_alpha, ring) with this world's theme "outline" xray_* keys over it.
+## Without the data: no x-ray (alpha 0) and the ring as before.
+func xray() -> Dictionary:
+	if _xray.is_empty():
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(TELLS_PATH)) if FileAccess.file_exists(TELLS_PATH) else null
+		var data: Dictionary = (parsed as Dictionary).get("hero_xray", {}) if parsed is Dictionary else {}
+		_xray = {"fill": str(data.get("fill", "#ffffff")), "fill_alpha": float(data.get("fill_alpha", 0.0)), "rim": str(data.get("rim", "#000000")),
+			"rim_alpha": float(data.get("rim_alpha", 0.0)), "ring": bool(data.get("ring", true))}
+		var theme_outline: Variant = g.theme.get("outline", {}) if g.get("theme") is Dictionary else {}
+		if theme_outline is Dictionary:
+			for k: String in ["fill", "fill_alpha", "rim", "rim_alpha"]:
+				if (theme_outline as Dictionary).has("xray_" + k): _xray[k] = theme_outline["xray_" + k]
+	return _xray
 
 
 ## The mage's element (src/hero/element_skin.gd) for the rig and the familiar, and

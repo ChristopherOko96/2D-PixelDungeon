@@ -51,7 +51,7 @@ func clear(player: Dictionary, kind: String = "") -> void:
 
 
 ## Counts down every hero's effects, deals damage over time and runs the
-## madness clock (WAHN: touch_mad, element_rules.gd hero_mad_step).
+## madness clock (WAHN: touch_mad, madness_rules.gd hero_mad_step).
 func step(delta: float) -> void:
 	for id: int in game.players:
 		var player: Dictionary = game.players[id]
@@ -120,7 +120,7 @@ func kinds(player: Dictionary) -> Array:
 	return Array(player.get("effects", {}).keys())
 
 
-# ---------- WAHN (element_rules.json madness) ----------
+# ---------- WAHN (madness_rules.json madness) ----------
 
 ## Marks a hero as standing in a maddening void pool this frame (the pools of
 ## monsters and bosses: src/combat/elements.gd condition_player; a hero's own

@@ -111,7 +111,11 @@ func _test_existing_rigs_unchanged() -> void:
 			spec.id = id
 			row.append(_signature(spec))
 		found[extra] = row
-	check(found.keys().size() == EXPECTED.keys().size(), "rigs.json still holds exactly the %d game rigs (%s)" % [EXPECTED.size(), found.keys()])
+	# rigs.json has grown on purpose since 29.10 (the Hell's and the Frostgruft's own rigs:
+	# fcc797b4, c52355e9, tools/frost_dungeon/export_frost_rigs.js), so the gate is that the 15
+	# rigs of then are all still there unchanged (below) and that no candidate leaked in
+	var missing := EXPECTED.keys().filter(func(name: String) -> bool: return not found.has(name))
+	check(missing.is_empty(), "rigs.json still holds the %d game rigs of 29.10 (missing %s)" % [EXPECTED.size(), missing])
 	for name: String in EXPECTED:
 		check(found.get(name, []) == EXPECTED[name], "rigs.json %s is unchanged: %s" % [name, found.get(name, [])])
 	for name: String in ROSTER: check(not game.rigs.has(name), "candidate %s is not in the game's rigs.json (proof gate)" % name)

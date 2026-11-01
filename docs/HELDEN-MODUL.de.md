@@ -65,6 +65,13 @@ die Welt-Logik (Schlüssel, Rätsel, Talente, Unterklassen, Relikte) anzufassen:
 - Der Held wird über `hero_look.gd` gezeichnet (Pixelgröße der Welt, Waffen in
   `weapon_scale`), schaut in Zielrichtung und dreht sich beim Wirbel mit. Mit einem
   Relikt in der Hand bleibt die Relikt-Darstellung der Welt.
+- Seit 01.11.2026 (M2d) ist die Waffe ein Rig-Teil der Heldenfigur: das Waffen-Item
+  des Rigs trägt einen `held`-Block (Stil, Schulter `hand`, Griff, Spitze, Drehung,
+  Größe; siehe `tools/rig_kit/README.md`). `hero_look.gd` liefert die Teile samt
+  Sichel, Sehne, Pfeil und Glühen, `src/hero/story_weapon_host.gd` reicht sie an das
+  Rig, und `src/rig_kit/rig_held.gd` trägt sie mit dem Körper mit: Atmen, Schritte,
+  Trefferruck und Umriss (Frostgruft) gelten jetzt auch für die Waffe. Fällt der
+  Held, fliegt sie von dort, wo das Rig sie zuletzt hielt (RigDebris).
 - Pfeile und Zauberkugeln des Helden kommen aus `attack_fx.gd` (Leuchtspur, Kugel
   mit Runenring, Abschuss- und Einschlagsblitz, Bloom), auf eigenen, um den
   Pixelfaktor vergrößerten Ebenen; die Welt zeichnet diese Schüsse nicht mehr selbst.

@@ -11,7 +11,8 @@ extends RefCounted
 
 const HudStyle = preload("res://src/ui/hud_style.gd")
 const DATA_PATH := "res://assets/data/ui_run_hud.json"
-const DEFAULTS := {"slot": 44, "gap": 4, "bottom": 10, "pad": 3, "icon": 32, "key_size": 10, "number_size": 16, "label_size": 14, "exp_height": 3}
+const DEFAULTS := {"slot": 44, "gap": 4, "bottom": 10, "pad": 3, "icon": 32, "key_size": 10, "number_size": 16, "label_size": 14, "exp_height": 3,
+	"hint_cell": 2, "hint_alpha": 0.55}
 
 static var _layout: Dictionary = {}
 
@@ -158,6 +159,8 @@ static func _slot(canvas: CanvasItem, font: Font, rect: Rect2, entry: Dictionary
 	# an empty slot (no talent learned for it yet) steps back: a dimmer well and a small lock
 	canvas.draw_rect(rect, Color(HudStyle.color("slot"), 0.45) if empty else HudStyle.color("slot"))
 	if empty and bool(entry.get("lock", false)): _lock(canvas, rect.get_center() + Vector2(0, 4), Color(HudStyle.color("text_muted"), 0.7))
+	# an empty quick-potion slot ("hint": "potion") shows a dim flask: a potion belongs here
+	if empty and str(entry.get("hint", "")) == "potion": _flask(canvas, rect.get_center() + Vector2(0, 4), float(l.hint_cell), Color(HudStyle.color("text_muted"), float(l.hint_alpha)))
 	var icon: Texture2D = entry.get("icon", null)
 	if icon != null:
 		var tint := Color(0.32, 0.3, 0.3, 0.8) if locked else Color(0.62, 0.6, 0.6) if cooldown > 0.0 else Color.WHITE
@@ -217,6 +220,15 @@ const LOCK_CELLS := [".###.", "#...#", "#####", "#####", "##.##", "#####"]
 
 static func _shift_glyph(canvas: CanvasItem, at: Vector2, key_size: float, tint: Color) -> void:
 	_cells(canvas, SHIFT_CELLS, at, maxf(1.0, floorf(key_size / 8.0)), tint)
+
+
+## A flask outline for an empty quick-potion slot: 7x9 cells.
+const FLASK_CELLS := ["..###..", "...#...", "..#.#..", ".#...#.", "#.....#", "#.###.#", "#.###.#", ".#...#.", "..###.."]
+
+
+## A dim flask centred at `centre` in `cell` px squares (the empty quick-potion slot's hint).
+static func _flask(canvas: CanvasItem, centre: Vector2, cell: float, tint: Color) -> void:
+	_cells(canvas, FLASK_CELLS, (centre - Vector2(7, 9) * cell * 0.5).round(), cell, tint, false)
 
 
 static func _lock(canvas: CanvasItem, centre: Vector2, tint: Color) -> void:

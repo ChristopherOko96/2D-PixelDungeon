@@ -122,20 +122,27 @@
     "dust_cap": 140,
     "rest_cap": 340,
     "crumble_time": 0.7,
-    "max_air_time": 4.0,
     "redraw_move": 360.0,
     "view_margin": 520.0,
-    "lava_sink": 0.7
+    "lava_sink": 0.7,
+    "sink_speed": 20.0
   },
+  "_materials_note": "Each material's debris physics are RigDebris' (src/rig_kit/rig_debris.gd, its header lists every key), over \"default\": gravity px/s2; a landing faster than rest_vz px/s bounces, keeping bounce of the fall, ground_keep of the slide and spin_keep of the spin (negative turns it round); a wall throws back wall_bounce of the speed (wall_spin on the spin); sliding slows by drag px/s2 and the spin by spin_drag rad/s2, shards ease onto quarter turns (snap_turn 0.25 turn at snap_rate per s); below rest_speed px/s it lies still, after max_air s it lies down anyway. The look: spin (launch rad/s), tick/tick_vz (the sound of a shard landing harder than tick_vz), break, ember_share/cool_time/ember (hot chips cooling), glint, splinter. debris: air_cap/rest_cap/dust_cap pieces, crumble_time s, lava_sink s a piece sinks in lava at sink_speed px/s.",
   "materials": {
     "default": {
       "gravity": 1600.0,
       "bounce": 0.32,
-      "bounce_min": 80.0,
-      "bounce_keep": 0.62,
-      "friction": 900.0,
+      "rest_vz": 80.0,
+      "ground_keep": 0.62,
+      "drag": 900.0,
       "wall_bounce": 0.35,
-      "settle_speed": 18.0,
+      "rest_speed": 18.0,
+      "spin_keep": -0.6,
+      "wall_spin": 1.0,
+      "spin_drag": 30.0,
+      "snap_turn": 0.25,
+      "snap_rate": 8.0,
+      "max_air": 4.0,
       "spin": 9.0,
       "tick": "settle_tick_stone",
       "break": "break_stone",
@@ -144,7 +151,7 @@
     "stone": {
       "gravity": 1750.0,
       "bounce": 0.28,
-      "friction": 1000.0,
+      "drag": 1000.0,
       "spin": 8.0,
       "tick": "settle_tick_stone",
       "break": "break_stone"
@@ -152,7 +159,7 @@
     "basalt": {
       "gravity": 1800.0,
       "bounce": 0.26,
-      "friction": 1050.0,
+      "drag": 1050.0,
       "spin": 8.0,
       "tick": "settle_tick_stone",
       "break": "break_stone",
@@ -167,11 +174,11 @@
     "ice": {
       "gravity": 1500.0,
       "bounce": 0.46,
-      "bounce_min": 64.0,
-      "bounce_keep": 0.75,
-      "friction": 520.0,
+      "rest_vz": 64.0,
+      "ground_keep": 0.75,
+      "drag": 520.0,
       "wall_bounce": 0.62,
-      "settle_speed": 12.0,
+      "rest_speed": 12.0,
       "spin": 13.0,
       "tick": "settle_tick_ice",
       "break": "break_ice",
@@ -180,8 +187,8 @@
     "clay": {
       "gravity": 1650.0,
       "bounce": 0.34,
-      "bounce_keep": 0.66,
-      "friction": 820.0,
+      "ground_keep": 0.66,
+      "drag": 820.0,
       "spin": 12.0,
       "tick": "settle_tick_stone",
       "break": "breakable_break_clay"
@@ -189,8 +196,8 @@
     "wood": {
       "gravity": 1450.0,
       "bounce": 0.4,
-      "bounce_keep": 0.7,
-      "friction": 700.0,
+      "ground_keep": 0.7,
+      "drag": 700.0,
       "wall_bounce": 0.45,
       "spin": 15.0,
       "tick": "settle_tick_wood",
@@ -200,8 +207,8 @@
     "bone": {
       "gravity": 1500.0,
       "bounce": 0.42,
-      "bounce_keep": 0.72,
-      "friction": 760.0,
+      "ground_keep": 0.72,
+      "drag": 760.0,
       "spin": 14.0,
       "tick": "settle_tick_bone",
       "break": "breakable_break_bone"
@@ -209,8 +216,8 @@
     "metal": {
       "gravity": 1900.0,
       "bounce": 0.48,
-      "bounce_keep": 0.7,
-      "friction": 640.0,
+      "ground_keep": 0.7,
+      "drag": 640.0,
       "wall_bounce": 0.5,
       "spin": 11.0,
       "tick": "settle_tick_stone",
@@ -219,9 +226,9 @@
     "snow": {
       "gravity": 1150.0,
       "bounce": 0.05,
-      "bounce_min": 400.0,
-      "friction": 2400.0,
-      "settle_speed": 40.0,
+      "rest_vz": 400.0,
+      "drag": 2400.0,
+      "rest_speed": 40.0,
       "spin": 4.0,
       "tick": "",
       "break": "wall_snow_puff"

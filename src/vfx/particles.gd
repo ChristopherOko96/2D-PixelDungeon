@@ -137,8 +137,6 @@ var _liquids: Array = []
 ## landing ticks of _settle; null keeps the particles silent (tests, the crypt).
 var sound: Object = null
 const STEPS := [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]
-## 4x4 ordered dither (vapor frost leaves in this order).
-const BAYER := [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
 
 
 func _init() -> void:
@@ -331,9 +329,9 @@ func _blob(centre: Vector2, radius: float, ramp: Array, seed: int, painted: Arra
 			var d := Vector2(float(x), float(y) / 0.75).length() / across
 			var angle := atan2(float(y), float(x))
 			var lobes := sin(angle * 3.0 + turn) * 0.12 + sin(angle * 5.0 + turn * 1.7) * 0.07
-			if d + lobes + (_cell_noise(q, seed) - 0.5) * rag > 1.0 or solid(_world(q)):
+			if d + lobes + (MatterKit.cell_noise(q, seed) - 0.5) * rag > 1.0 or solid(_world(q)):
 				continue
-			var grain := _cell_noise(q, seed + 7)
+			var grain := MatterKit.cell_noise(q, seed + 7)
 			var col: Color = ramp[1]
 			if d > 0.78:
 				col = ramp[4] if grain > 0.3 else ramp[0]
@@ -441,13 +439,13 @@ func frost_crust(point: Vector2, radius: float, splinters := 6) -> void:
 			var d := Vector2(float(x), float(y) / 0.75).length() / across
 			var angle := atan2(float(y), float(x))
 			var lobes := sin(angle * 3.0 + turn) * 0.12 + sin(angle * 5.0 + turn * 1.3) * 0.07
-			if d + lobes + (_cell_noise(q, seed) - 0.5) * rag > 1.0 or solid(_world(q)) or sinks(_world(q)):
+			if d + lobes + (MatterKit.cell_noise(q, seed) - 0.5) * rag > 1.0 or solid(_world(q)) or sinks(_world(q)):
 				continue
 			cells[q] = d
 	var glint_life: Array = _data.get("ice", {}).get("glint_life", [2.0, 4.5])
 	for q: Vector2i in cells:
 		var d := float(cells[q])
-		var grain := _cell_noise(q, seed + 3)
+		var grain := MatterKit.cell_noise(q, seed + 3)
 		var col: Color = ramp[2]
 		if not cells.has(q + Vector2i.UP):
 			# its lit north edge, a spec pixel here and there
@@ -772,13 +770,6 @@ func rime_grow(point: Vector2, branches: int, reach: float, color: Color = Color
 		_growth.append({"p": start + d * core * 0.6, "d": d, "left": left, "len": left, "carry": 0.0, "col": col, "lite": colours[1], "gen": 0, "lean": _ice("rime_axis", 0.06)})
 
 
-## A fixed 0..1 value per floor pixel (so a crust's crystals do not flicker).
-static func _cell_noise(q: Vector2i, seed: int) -> float:
-	var h := (q.x * 374761393 + q.y * 668265263 + seed * 1442695041) & 0x7fffffff
-	h = ((h ^ (h >> 13)) * 1274126177) & 0x7fffffff
-	return float((h ^ (h >> 16)) % 1024) / 1024.0
-
-
 ## The frost crust spreads one ring further: thick near the middle (its lightest
 ## crystals there), broken up towards its rim.
 func _grow_crust(patch: Dictionary, delta: float, rate: float) -> void:
@@ -794,7 +785,7 @@ func _grow_crust(patch: Dictionary, delta: float, rate: float) -> void:
 			if dist < from or dist >= to or q.x < 0 or q.y < 0:
 				continue
 			var keep := 1.0 - dist / big
-			var n := _cell_noise(q, int(patch.seed))
+			var n := MatterKit.cell_noise(q, int(patch.seed))
 			if n > keep * _ice("rime_fill", 1.1) + 0.1 or solid(_world(q)) or sinks(_world(q)):
 				continue
 			var col: Color = patch.spec if n < 0.025 else (patch.lite if n < keep * 0.4 else patch.col)
@@ -1025,7 +1016,7 @@ func _draw_implosions(canvas: CanvasItem) -> void:
 			var n := maxi(16, int(TAU * rr))
 			for i in range(n):
 				var q := Vector2i(c + Vector2(cos(TAU * i / n) * rr, sin(TAU * i / n) * rr * 0.75))
-				if float(BAYER[posmod(q.y, 4) * 4 + posmod(q.x, 4)]) >= (1.0 - k) * 16.0: continue
+				if MatterKit.bayer(q) >= (1.0 - k) * 16.0: continue
 				if solid(_world(q)): continue
 				canvas.draw_rect(Rect2(Vector2(q) * PIXEL, Vector2(PIXEL, PIXEL)), cols[1] if i % 3 else cols[0])
 
@@ -1153,7 +1144,7 @@ func floor_crack(point: Vector2, length: float, branches: int) -> void:
 				continue
 			if e > 0.7 and y > 0:
 				_blend(q, lit, true)
-			elif e < 0.55 or float(BAYER[posmod(q.y, 4) * 4 + posmod(q.x, 4)]) < (1.0 - e) * 30.0:
+			elif e < 0.55 or MatterKit.bayer(q) < (1.0 - e) * 30.0:
 				_blend(q, dark, true)
 	for b in range(branches):
 		var p := point
@@ -1210,7 +1201,7 @@ func shadow(point: Vector2, branches: int, reach: float) -> void:
 			if e > 1.0 or q.x < 0 or q.y < 0 or solid(_world(q)):
 				continue
 			# a ragged edge
-			if e > 0.6 and float(BAYER[posmod(q.y, 4) * 4 + posmod(q.x, 4)]) >= (1.0 - e) * 40.0:
+			if e > 0.6 and MatterKit.bayer(q) >= (1.0 - e) * 40.0:
 				continue
 			_put(q, cols[1] if e > 0.65 and y < 0 else cols[0])
 			_freeze(q, true, gone + 0.6 * (1.0 - e), 0.15)
@@ -1817,7 +1808,7 @@ func draw_particles(canvas: CanvasItem) -> void:
 			var shown := alpha
 			for k in range(3 if Vector2(particle.vel).length() > 60.0 else 2):
 				var q := head + step * k
-				if float(BAYER[posmod(q.y, 4) * 4 + posmod(q.x, 4)]) >= shown * 16.0: continue
+				if MatterKit.bayer(q) >= shown * 16.0: continue
 				canvas.draw_rect(Rect2(Vector2(q) * PIXEL, Vector2(PIXEL, PIXEL)), color if k == 0 else color.darkened(0.35 * float(k)))
 			continue
 		if particle.has("shard"):
@@ -1859,7 +1850,7 @@ func draw_particles(canvas: CanvasItem) -> void:
 		for y in range(cells):
 			for x in range(cells):
 				var q := corner + Vector2i(x, y)
-				if float(BAYER[posmod(q.y, 4) * 4 + posmod(q.x, 4)]) < alpha * 16.0:
+				if MatterKit.bayer(q) < alpha * 16.0:
 					canvas.draw_rect(Rect2(Vector2(q) * PIXEL, Vector2(PIXEL, PIXEL)), color)
 
 
@@ -2002,7 +1993,7 @@ func _fade_later(middle: Vector2i, px: Array[Vector2i]) -> void:
 	var buckets: Array = []
 	for i in range(10): buckets.append([])
 	for q: Vector2i in px:
-		var level := clampi(int((1.0 - Vector2(q - middle).length() / far) * 7.0 + _cell_noise(q, 5) * 3.0), 0, 9)
+		var level := clampi(int((1.0 - Vector2(q - middle).length() / far) * 7.0 + MatterKit.cell_noise(q, 5) * 3.0), 0, 9)
 		(buckets[level] as Array).append(q)
 	var order: Array[Vector2i] = []
 	var cols: Array = []
@@ -2082,7 +2073,7 @@ func _freeze(art: Vector2i, vapor := false, due := -1.0, spread := 1.0) -> void:
 	_frozen[art] = _pixel(art)
 	if vapor:
 		if _vapor.size() >= int(settings_for_frost.get("max", 4000)): _vapor.pop_front()
-		_vapor.append([art, due + float(BAYER[posmod(art.y, 4) * 4 + posmod(art.x, 4)]) / 16.0 * float(settings_for_frost.get("vapor_spread", 1.2)) * spread])
+		_vapor.append([art, due + MatterKit.bayer(art) / 16.0 * float(settings_for_frost.get("vapor_spread", 1.2)) * spread])
 		return
 	_frost.append([art, due])
 

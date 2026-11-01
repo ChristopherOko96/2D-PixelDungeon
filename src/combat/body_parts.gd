@@ -7,6 +7,9 @@ extends RefCounted
 ## rigs list several attack ids per part, disable an attack once a whole part
 ## group is gone (both wings) and weaken attacks while parts are lost
 ## (scale(): "weakens" {attack: {param: factor}}, multiplied over lost parts).
+## A story monster's attack is gated by can_attack: a lost part takes it away
+## when it names the attack's id or the rig action the attack needs
+## (assets/data/rig_actions.json), so the crypt rigs worn in the Krypta work.
 ## Only the host calls this; clients draw `parts_lost` from the snapshot.
 
 const RigLibrary = preload("res://src/rig/rig_library.gd")
@@ -202,6 +205,58 @@ func can(enemy: Dictionary, action: String) -> bool:
 				break
 		if all_lost: return false
 	return true
+
+
+## False while a lost part (or every part of a lost rig group) carries the
+## monster attack `attack` ({id, kind, optional needs}; a story monster's
+## m.st.attacks entry): its "disables" names the attack's id or one of the rig
+## actions it needs (RigLibrary.attack_needs: "attack", "cast", "block" by
+## its kind, assets/data/rig_actions.json). `own` are the monster's own attack
+## ids: a part that names one of them is precise (carries()). The crypt's
+## can(enemy, action) stays as it was. True without parts.
+func can_attack(enemy: Dictionary, attack: Dictionary, own: Array = []) -> bool:
+	return disabler(enemy, attack, own).is_empty()
+
+
+## The lost part that takes the attack `attack` away (see can_attack): a lost
+## part that carries it, else the last member of a wholly lost group that
+## does, else "" (the attack is possible).
+func disabler(enemy: Dictionary, attack: Dictionary, own: Array = []) -> String:
+	if not has_parts(enemy): return ""
+	var action := str(attack.get("id", ""))
+	var needs: Array[String] = []
+	if _library.has_method("attack_needs"): needs = _library.attack_needs(attack, str(enemy.get("id", "")))
+	var lost: Array = enemy.get("parts_lost", [])
+	for id: Variant in lost:
+		if carries(_spec(enemy, str(id)).get("disables", ""), action, needs, own): return str(id)
+	var groups: Dictionary = _library.rig(str(enemy.get("rig", ""))).get("groups", {})
+	for group_id: Variant in groups:
+		var group: Dictionary = groups[group_id]
+		if not carries(group.get("disables", []), action, needs, own): continue
+		var members: Array = group.get("parts", [])
+		if members.is_empty(): continue
+		var all_lost := true
+		for member: Variant in members:
+			if not str(member) in lost:
+				all_lost = false
+				break
+		if all_lost: return str(members[-1])
+	return ""
+
+
+## True when a part's (or group's) "disables" (the crypt's single string or a
+## list) carries the attack `action` that needs the rig actions `needs`: it
+## names `action` itself, or one of `needs`, unless it also names an id of
+## `own` (the monster's attack ids): such a part is precise, only its ids
+## count (krypta_boss_rigs.json lists the crypt action beside the story ids).
+static func carries(disables: Variant, action: String, needs: Array[String], own: Array = []) -> bool:
+	var names := RigLibrary.disabled_actions(disables)
+	if action in names: return true
+	for name: String in names:
+		if name in own: return false
+	for need: String in needs:
+		if need in names: return true
+	return false
 
 
 ## Strength factor of one parameter of `action` while parts are lost: the

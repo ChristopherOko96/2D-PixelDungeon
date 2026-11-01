@@ -105,6 +105,18 @@ static func heart_room(hero: Dictionary, cap: int) -> bool:
 	return int(hero.get("max_hp", 0)) - gear_hp(hero) < cap
 
 
+## The giant vault's note (hell_game.gd "vault"): the life it really added,
+## `gained` half hearts (LP) after the life cap took its share, then the full
+## heal and `gems` rune stones. Whole hearts read as heart containers with
+## their LP; nothing gained says the life is already at its cap.
+static func vault_note(gained: int, gems: int) -> String:
+	if gained <= 0:
+		return "Riesentresor! Leben schon am Höchstwert, volle Gesundheit, +%d Runensteine" % gems
+	if gained % 2 == 0:
+		return "Riesentresor! +%d Herzcontainer (+%d LP), volle Gesundheit, +%d Runensteine" % [int(gained / 2.0), gained, gems]
+	return "Riesentresor! +%d LP Höchstleben, volle Gesundheit, +%d Runensteine" % [gained, gems]
+
+
 ## Applies one blessing to the hero state (dmg, rate, speed_mul, range, hp,
 ## max_hp, buffs) with the values of hell_balance.json "blessings"; max_cap
 ## limits heart containers (raised_max_hp). The rate stops at rate_min, speed at

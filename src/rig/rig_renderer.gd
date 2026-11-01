@@ -33,6 +33,15 @@ extends RefCounted
 ## "scale"), an "outline" rim round a figure, held weapons of enemies in front
 ## of the hero that overlap him drawn behind the actors (guard_hero) and a ring
 ## round a hidden hero (draw_ring).
+## Held items (src/rig_kit/rig_held.gd): an item with a "held" block holds art
+## the host picks at run time (the hero's equipped weapon, draw_hero's `held`);
+## it is drawn in the item's z slot and moves with its parent part.
+## This file is the drawing facade of the rig kit (its public API is what every
+## host uses): the debris physics run in RigDebris (src/rig_kit/rig_debris.gd,
+## `debris`), the particles and boss effects in RigFx (src/rig_kit/rig_fx.gd,
+## `fx`), both on this renderer's random numbers, so a fixed seed draws the same
+## picture. What each pose family does (attack clips, death, crumbling,
+## material, chips, shadow) is data: assets/data/rig_families.json.
 
 const RigLibrary = preload("res://src/rig/rig_library.gd")
 const RigPoses = preload("res://src/rig/rig_poses.gd")
@@ -40,26 +49,23 @@ const RigPoses = preload("res://src/rig/rig_poses.gd")
 const ElementSkin = preload("res://src/hero/element_skin.gd")
 const S := RigLibrary.PIXEL_SCALE
 const SHADOW := Color(0.05, 0.04, 0.09, 0.45)
-const VIOLET := Color("a46fe0")
-const VIOLET_DARK := Color("5f2d56")
+const VIOLET := RigFx.VIOLET
+const VIOLET_DARK := RigFx.VIOLET_DARK
 ## Pixel flames of a burning rig (rigs.json "burn"), hot to cool: white, yellow, orange, red, crimson.
 const FLAME := [Color("fdf7ed"), Color("facb3e"), Color("ee8e2e"), Color("da4e38"), Color("9f294e")]
 ## Soul fire (a flame's 6th entry "soul") and void fire ("void"), hot to cool.
 const SOUL_FLAME := [Color("fdf7ed"), Color("cfe86b"), Color("97da3f"), Color("4ba747"), Color("235d3a")]
-## Pixel slash palettes (rigs.json "slash"), newest to oldest: the band a
-## swinging blade sweeps, and how long its pixels stay (s).
-const SLASH := {
-	"fire": [Color("fdf7ed"), Color("facb3e"), Color("ee8e2e"), Color("da4e38")],
-	"void": [Color("fdf7ed"), Color("f0b3dd"), Color("c278d0"), Color("8156aa")],
-	"soul": [Color("fdf7ed"), Color("cfe86b"), Color("97da3f"), Color("4ba747")],
-	"steel": [Color("fdf7ed"), Color("b6cbcf"), Color("7b8994"), Color("414859")],
-}
-const SLASH_LIFE := 0.2
+## Pixel slash palettes (rigs.json "slash"): RigFx.SLASH.
+const SLASH := RigFx.SLASH
+const SLASH_LIFE := RigFx.SLASH_LIFE
 const VOID_FLAME := [Color("fdf7ed"), Color("f0b3dd"), Color("c278d0"), Color("8156aa"), Color("473579")]
-const VIOLET_HOT := Color("f2b8ff")
-## The core of a void beam: nothing, darker than the floor (vfx_pools.json void outline).
-const VOID_CORE := Color("120a1c")
-const INK := Color("222222")
+const VIOLET_HOT := RigFx.VIOLET_HOT
+const VOID_CORE := RigFx.VOID_CORE
+const INK := RigFx.INK
+## What each pose family does (see its _note).
+const FAMILIES_PATH := "res://assets/data/rig_families.json"
+## The attack clip when rig_families.json is missing: "attack" over the whole move.
+const NEUTRAL_CLIP := ["attack", 0.0, 1.0]
 ## The gore table (src/vfx/feedback.gd): a hell rig's material (rig.material)
 ## names one of its materials, whose color and stain are the cut chips, so a
 ## part cut off sprays what a hit on the same monster sprays.
@@ -76,8 +82,6 @@ const MATERIALS := {
 	"obsidian": {"color": Color("2a1240"), "stain": Color("5f2d56"), "glow": Color("f2b8ff"),
 		"wound": [Color("1a0b2a"), Color("a46fe0"), Color("f4c64e")], "burst": Color("a46fe0")},
 }
-## Ignaroth's parts that fall off as debris when the dragon dies.
-const DRAKE_SHED: Array[String] = ["wing_far", "wing_near", "horns", "jaw", "crystal_1", "crystal_2", "crystal_3", "tail_2", "tail_3", "tail_4", "tail_5", "tail_flame"]
 const HIT_TIME := 0.3
 ## A hell rig staggers this long when one of its parts is cut off.
 const STAGGER_TIME := 1.0
@@ -86,16 +90,23 @@ const RISE_TIME := 1.1
 const REGROW_TIME := 1.2
 
 var library: RefCounted
+## The fallen and cut parts on the floor (RigDebris on vfx_gore.json "ragdoll"):
+## pieces {key (actor), id (part), texture, layer, material, el, look, ...}.
+var debris: RigDebris
+## Particles, summoning pools, flashes, beams and fx events of the rigs.
+var fx: RigFx
 var _actors: Dictionary = {}
-var _debris: Array[Dictionary] = []
-var _particles: Array[Dictionary] = []
-var _pools: Array[Dictionary] = []
-var _flashes: Array[Dictionary] = []
-var _beams: Array[Dictionary] = []
 var _fx_seen: Dictionary = {}
 var _clock := 0.0
+## The debris pieces (debris.pieces), kept for tests and capture checks.
+var _debris: Array[Dictionary]:
+	get: return debris.pieces
+## The particles (fx.particles), kept for tests and capture checks.
+var _particles: Array[Dictionary]:
+	get: return fx.particles
 ## Beams drawn in the last draw_over (for tests and capture checks).
-var beams_drawn := 0
+var beams_drawn: int:
+	get: return fx.beams_drawn
 ## Hero walk cycle in seconds when a snapshot has no step_time (two footfalls).
 const WALK_CYCLE := 0.42
 ## Actor keys of heroes whose foot touched down since the view last took them.
@@ -111,7 +122,9 @@ static var _gore_materials: Dictionary = {}
 static var _gore_loaded := false
 ## vfx_gore.json splat.fling: time, speed, lift, spread of a splat's parts.
 static var _gore_fling: Dictionary = {}
-## vfx_gore.json "ragdoll": the detached parts' physics, tiers, cap, split and element looks (RAGDOLL fills gaps).
+## vfx_gore.json "ragdoll": the detached parts' physics (RigDebris), tiers, cap,
+## split and element looks. One dictionary, reloaded in place by load_gore, so
+## every renderer's debris sees the reload.
 static var _ragdoll: Dictionary = {}
 static var _looks: Dictionary = {}
 static var _band_cache: Dictionary = {}
@@ -120,19 +133,14 @@ static var _talent_read := false
 static var _talent_tiers: Dictionary = {}
 static var _kind_tiers: Dictionary = {}
 static var _talent_types: Dictionary = {}
+## rig_families.json, read on first use (load_families).
+static var _family_table: Dictionary = {}
+static var _families_loaded := false
 ## Read for a kill's feel tier (kill_tier), as src/vfx/talent_fx.gd weighs a cast.
 const TALENTS_PATH := "res://assets/data/talents.json"
 const VFX_TALENTS_PATH := "res://assets/data/vfx_talents.json"
 ## 4x4 Bayer order: a crumbling piece drops its pixels in this order.
 const BAYER := [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
-## Fallbacks of vfx_gore.json "ragdoll" (see its _ragdoll_note).
-const RAGDOLL := {"speed": 90.0, "spread": 0.6, "jitter": [0.6, 1.2], "pop": 24.0, "depth": 0.7, "lift": [70.0, 140.0], "spin": 10.0,
-	"tiers": {"small": 1.0, "medium": 1.6, "large": 2.4, "huge": 3.5, "splat": 3.2},
-	"gravity": 520.0, "bounce": 0.35, "wall_bounce": 0.4, "ground_keep": 0.6, "spin_keep": 0.5, "friction": 9.0, "rest_speed": 6.0, "rest_vz": 30.0,
-	"radius": 4.0, "cap": 60, "dither_time": 0.6, "split": {"families": ["biped", "mimic", "bomber", "necro"], "piece_px": 5, "most": 4},
-	"turn_steps": 16, "turn_new": 3, "outline": "222222",
-	"loose": {"side": 0.9, "speed": 0.8, "lift": 0.5, "spin": [9.0, 15.0]},
-	"talent_element": {"fire": "fire", "frost": "ice", "arcane": "void"}, "elements": {}}
 ## The host's walls for the debris: solid.call(world point) -> true inside a
 ## wall (story worlds: src/hell/drake_rig_host.gd bind_world). Unset: no walls.
 var solid: Callable = Callable()
@@ -143,6 +151,10 @@ var hero_box := Rect2()
 ## True once an enemy drawn in front of the hero this frame covers hero_box with
 ## its body (the host then outlines the hero, src/hero/story_hero.gd).
 var hero_covered := false
+## The parts of those enemies that cover hero_box this frame, as drawn:
+## [{xform (world transform), image (its frame's Image), bounds (Rect2i of its
+## pixels in the image)}], for the hero's x-ray (draw_xray); cleared by guard_hero().
+var hero_cover: Array = []
 ## The canvas item under the host's actors that held items behind the hero go on
 ## (a child of the actors canvas, drawn behind it); cleared by guard_hero().
 var _back := RID()
@@ -163,9 +175,44 @@ static var _palettes: Dictionary = {}
 var families: Dictionary = {}
 
 
+## The rig look as RigDebris' world: walls from the renderer's `solid`, the
+## element matter of a fresh corpse, dust off walls and frozen parts shattering
+## at their first hard landing. Holds the renderer weakly (it owns the debris).
+class DebrisLook extends RigDebrisHost:
+	var _view: WeakRef
+
+	func _init(view: RefCounted) -> void:
+		_view = weakref(view)
+
+	## True inside a wall of the renderer's world (its `solid`; unset: never).
+	func solid(point: Vector2) -> bool:
+		var view: Variant = _view.get_ref()
+		return view != null and (view.solid as Callable).is_valid() and bool(view.solid.call(point))
+
+	## The element matter a fresh corpse piece gives off (RigFx.matter).
+	func on_tick(piece: Dictionary, delta: float) -> void:
+		var view: Variant = _view.get_ref()
+		if view == null: return
+		var clock: float = view.debris.clock
+		view.fx.matter(piece, clock - float(piece.get("born", clock)), delta)
+
+	## Dust of its chips off the wall (RigFx.wall_dust).
+	func on_wall(piece: Dictionary) -> void:
+		var view: Variant = _view.get_ref()
+		if view != null: view.fx.wall_dust(piece)
+
+	## A frozen piece breaks into shards (RigRenderer._shatter).
+	func on_land(piece: Dictionary) -> Array[Dictionary]:
+		var view: Variant = _view.get_ref()
+		if view == null: return []
+		return view._shatter(piece)
+
+
 func _init(rig_library: RefCounted = null) -> void:
 	library = rig_library if rig_library != null else RigLibrary.shared()
 	_rng.seed = 90210
+	fx = RigFx.new(_rng)
+	debris = RigDebris.new(ragdoll_table(), DebrisLook.new(self), _rng)
 
 
 func _notification(what: int) -> void:
@@ -180,6 +227,7 @@ func _notification(what: int) -> void:
 func guard_hero(canvas: CanvasItem, box: Rect2) -> void:
 	hero_box = box
 	hero_covered = false
+	hero_cover = []
 	if canvas == null or not canvas.is_inside_tree():
 		return
 	var parent := canvas.get_canvas_item()
@@ -244,9 +292,47 @@ static func load_gore(path: String = GORE_PATH) -> void:
 	var fling: Variant = splat.get("fling", {}) if splat is Dictionary else {}
 	_gore_fling = fling if fling is Dictionary else {}
 	var ragdoll: Variant = parsed.get("ragdoll", {}) if parsed is Dictionary else {}
-	_ragdoll = ragdoll if ragdoll is Dictionary else {}
+	# reloaded in place: every renderer's debris runs on this very dictionary
+	_ragdoll.clear()
+	if ragdoll is Dictionary: _ragdoll.merge(ragdoll)
 	_looks.clear()
 	_gore_loaded = true
+
+
+## vfx_gore.json "ragdoll" (loaded on first use): the physics every renderer's
+## RigDebris runs on, plus tiers, split and element looks; {} without the table.
+static func ragdoll_table() -> Dictionary:
+	if not _gore_loaded: load_gore()
+	return _ragdoll
+
+
+## Loads rig_families.json (what each pose family does, see its _note); a
+## missing or broken file leaves every family on neutral behaviour. Runs on
+## first use; tests call it with another path.
+static func load_families(path: String = FAMILIES_PATH) -> void:
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path)) if FileAccess.file_exists(path) else null
+	_family_table = parsed if parsed is Dictionary else {}
+	_families_loaded = true
+
+
+## What pose family `family` does for `key` (rig_families.json): its own
+## entry's value, else the "default" entry's, else `neutral`.
+static func family_value(family: String, key: String, neutral: Variant = null) -> Variant:
+	if not _families_loaded: load_families()
+	var listed: Variant = _family_table.get("families", {})
+	var own: Variant = listed.get(family, {}) if listed is Dictionary else {}
+	if own is Dictionary and (own as Dictionary).has(key): return own[key]
+	var base: Variant = _family_table.get("default", {})
+	if base is Dictionary and (base as Dictionary).has(key): return base[key]
+	return neutral
+
+
+## What a family added through register_family (the companions') does for
+## `key` (rig_families.json "registered"), else `neutral`.
+static func registered_value(key: String, neutral: Variant = null) -> Variant:
+	if not _families_loaded: load_families()
+	var spec: Variant = _family_table.get("registered", {})
+	return spec.get(key, neutral) if spec is Dictionary else neutral
 
 
 ## The colours of a hell rig material: chips [color, stain, glow] sprayed by
@@ -283,11 +369,8 @@ static func _hex(value: Variant, fallback: Color) -> Color:
 ## Clears every actor, debris piece and effect (new run or room).
 func reset() -> void:
 	_actors.clear()
-	_debris.clear()
-	_particles.clear()
-	_pools.clear()
-	_flashes.clear()
-	_beams.clear()
+	debris.reset()
+	fx.reset()
 	_fx_seen.clear()
 
 
@@ -307,7 +390,7 @@ func observe(snapshot: Dictionary) -> void:
 		var id := int(event.get("id", 0))
 		if _fx_seen.has(id): continue
 		_fx_seen[id] = true
-		_play_fx(event)
+		fx.play(event)
 	if _fx_seen.size() > 256: _fx_seen.clear()
 
 
@@ -346,9 +429,9 @@ func observe_one(enemy: Dictionary) -> String:
 	for id: String in a.lost:
 		if not lost.has(id):
 			a.regrowing[id] = REGROW_TIME
-			_debris = _debris.filter(func(d: Dictionary) -> bool: return not (d.key == a.key and d.id == id))
+			debris.pieces = debris.pieces.filter(func(d: Dictionary) -> bool: return not (d.key == a.key and d.id == id))
 			var regrow_color: Color = colors.glow if not colors.is_empty() else VIOLET if rig_name in ["void", "bomber"] else Color("97da3f")
-			_burst_at(Vector2(a.get("feet", Vector2(float(enemy.get("x", 0)), float(enemy.get("y", 0))))) - Vector2(0, 24), regrow_color, 12, 60.0)
+			fx.burst(Vector2(a.get("feet", Vector2(float(enemy.get("x", 0)), float(enemy.get("y", 0))))) - Vector2(0, 24), regrow_color, 12, 60.0)
 	a.lost = lost
 	# A hell rig reels for a moment when a part is cut off (PART-03).
 	if severed and not dying_now and not colors.is_empty(): _play(a, "hit", STAGGER_TIME)
@@ -382,7 +465,7 @@ static func key_of(enemy: Dictionary) -> String:
 ## copies): what tests and capture checks read of the cut parts.
 func debris_of(key: String) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
-	for d: Dictionary in _debris:
+	for d: Dictionary in debris.pieces:
 		if str(d.get("key", "")) == key: out.append(d.duplicate())
 	return out
 
@@ -432,18 +515,8 @@ func step(delta: float) -> void:
 			if float(a.regrowing[id]) <= 0.0: a.regrowing.erase(id)
 		for point: Dictionary in a.trail: point.age = float(point.age) + delta
 		a.trail = a.trail.filter(func(p: Dictionary) -> bool: return float(p.age) < float(p.get("life", 0.12)))
-	_step_debris(delta)
-	for p: Dictionary in _particles:
-		p.life = float(p.life) + delta
-		p.x = float(p.x) + float(p.vx) * delta
-		p.y = float(p.y) + float(p.vy) * delta
-		p.vy = float(p.vy) + float(p.get("grav", 0.0)) * delta
-	_particles = _particles.filter(func(p: Dictionary) -> bool: return float(p.life) < float(p.max))
-	if _particles.size() > 900: _particles = _particles.slice(_particles.size() - 900)
-	for pool: Dictionary in _pools: pool.life = float(pool.life) + delta
-	_pools = _pools.filter(func(p: Dictionary) -> bool: return float(p.life) < float(p.max))
-	for flash: Dictionary in _flashes: flash.life = float(flash.life) + delta
-	_flashes = _flashes.filter(func(f: Dictionary) -> bool: return float(f.life) < float(f.max))
+	debris.step(delta)
+	fx.step(delta)
 
 
 # ------------------------------------------------------------------ actors
@@ -478,15 +551,23 @@ func draw_enemy(canvas: CanvasItem, enemy: Dictionary, point: Vector2) -> float:
 	var face := -1.0 if float(enemy.get("face", -1.0)) < 0.0 else 1.0
 	var dying_p := float(enemy.get("dying_p", -1.0))
 	var family: String = str(rig.family)
-	# Skeletons (and the companions' registered families) crumble and bombers burst: nothing is left to draw.
 	# a flung figure turns over as it flies (snapshot "tumble", the Urknall)
 	a.tumble = float(enemy.get("tumble", 0.0))
-	# ... and so does every figure that came apart as a ragdoll (_start_death)
-	if dying_p >= 0.0 and (family in ["skeleton", "bomber", "golem"] or families.has(family) or bool(a.get("ragdoll", false))): return NAN
+	# Skeletons (and the companions' registered families) crumble and bombers burst (rig_families.json
+	# "crumble"): nothing is left to draw; nor of a figure that came apart as a ragdoll (_start_death)
+	if dying_p >= 0.0 and (_crumbles(family) or bool(a.get("ragdoll", false))): return NAN
 	_clip_from_snapshot(a, rig, enemy, dying_p)
 	var flash := clampf(float(enemy.get("hit_flash", 0.0)) / 0.16, 0.0, 1.0)
 	# An escaping or fading figure takes its shadow along.
 	return _draw_rig(canvas, a, rig, point, face, flash, true, float(a.alpha_mul))
+
+
+## True when a dead figure of `family` leaves nothing to draw (its parts fell as
+## debris): rig_families.json "crumble", or "registered" for a family added
+## through register_family.
+func _crumbles(family: String) -> bool:
+	if families.has(family): return bool(registered_value("crumble", false))
+	return bool(family_value(family, "crumble", false))
 
 
 ## The hero's walk cycle follows its speed: one foot touches down every
@@ -503,10 +584,14 @@ func track_steps(key: String, player: Dictionary) -> Dictionary:
 	return a
 
 
-## Draws a hero-class player's body (the view draws the held weapon on top).
-## `size` scales the rig (the story worlds draw heroes larger than the crypt),
-## `tint` colours it (a subclass colour, stealth).
-func draw_hero(canvas: CanvasItem, key: String, player: Dictionary, point: Vector2, rig_name: String, face: float, alpha: float = 1.0, size: float = 1.0, tint: Color = Color.WHITE) -> void:
+## Draws a hero-class player's body. `size` scales the rig (the story worlds
+## draw heroes larger than the crypt), `tint` colours it (a subclass colour,
+## stealth; the held art keeps its colours and takes only the alpha). With
+## `held` (src/rig_kit/rig_held_host.gd) the rig's items that have a "held"
+## block hold the host's art (the equipped weapon) in their z slot and carry it
+## with their parent part; without it no item is drawn (the crypt view draws
+## the weapon on top itself).
+func draw_hero(canvas: CanvasItem, key: String, player: Dictionary, point: Vector2, rig_name: String, face: float, alpha: float = 1.0, size: float = 1.0, tint: Color = Color.WHITE, held: RigHeldHost = null) -> void:
 	var rig: Dictionary = library.rig(rig_name)
 	if rig.is_empty(): return
 	var a := track_steps(key, player)
@@ -514,6 +599,7 @@ func draw_hero(canvas: CanvasItem, key: String, player: Dictionary, point: Vecto
 	a.alpha_mul = alpha
 	a.size_mul = size
 	a.tint = tint
+	a.held = held
 	# the element skin (src/hero/element_skin.gd): the mage's parts in his main spec's colours;
 	# the story worlds give the element with the player, the crypt's comes from its talents
 	a.skin = ElementSkin.class_for_rig(rig_name)
@@ -610,75 +696,35 @@ func _draw_burn(canvas: CanvasItem, rig: Dictionary, a: Dictionary, world: Dicti
 	canvas.draw_set_transform_matrix(Transform2D.IDENTITY)
 
 
-## A swing's slash on the pixel grid (`px` world px per block): the band the
-## blade swept between its inner point (q) and its tip (p) over the last
-## frames, filled block by block. The newest edge is white-hot, older parts
-## cool through yellow and orange to red, and every block fades with its age;
-## the inner part of older segments drops out, so it tapers like a crescent.
-func _draw_pixel_slash(canvas: CanvasItem, trail: Array, px: float, pal: Array) -> void:
-	var n := trail.size()
-	if n < 2: return
-	for i in range(1, n):
-		var a0: Dictionary = trail[i - 1]
-		var a1: Dictionary = trail[i]
-		if not a0.has("q") or not a1.has("q"): continue
-		var age := clampf(float(a1.age) / maxf(0.01, float(a1.get("life", SLASH_LIFE))), 0.0, 1.0)
-		var newest := float(i) / float(n - 1)
-		var col: Color = pal[0] if newest > 0.88 else pal[1] if newest > 0.6 else pal[2] if newest > 0.3 else pal[3]
-		col.a = 1.0 - age
-		var p0: Vector2 = a0.p
-		var p1: Vector2 = a1.p
-		var q0: Vector2 = a0.q
-		var q1: Vector2 = a1.q
-		var steps := clampi(int(maxf(p0.distance_to(p1), q0.distance_to(q1)) / px) + 1, 1, 40)
-		var across := clampi(int(p1.distance_to(q1) / px) + 1, 1, 30)
-		var keep_from := 0.0 if newest > 0.7 else 0.45
-		for s in range(steps + 1):
-			var f := float(s) / float(steps)
-			var tip := p0.lerp(p1, f)
-			var inner := q0.lerp(q1, f)
-			for c in range(across + 1):
-				var u := float(c) / float(across)
-				if u < keep_from: continue
-				canvas.draw_rect(Rect2((inner.lerp(tip, u) / px).floor() * px, Vector2(px, px)), col)
-
-
-## [clip, end of windup, end of active] in clip progress, per figure and move.
+## [clip, end of windup, end of active] in clip progress, per figure and move:
+## a registered family's own mapping, else rig_families.json "attacks" of its
+## family (by the rig's variant, the drake's pose table, by the attack's kind,
+## else the family's default).
 func _attack_mapping(rig: Dictionary, kind: String) -> Array:
 	var registered: Dictionary = families.get(str(rig.family), {})
 	if not registered.is_empty() and (registered.attacks as Callable).is_valid():
 		var mapped: Variant = registered.attacks.call(rig, kind)
 		if mapped is Array and (mapped as Array).size() >= 3: return mapped
-	match str(rig.family):
-		"skeleton":
-			match str(rig.variant):
-				"bow": return ["attack", 0.7, 0.8]
-				"guard": return ["attack", 0.45, 0.6]
-			return ["attack", 0.6, 0.75]
-		"necro": return ["summon", 0.3, 0.4] if kind == "summon" else ["attack", 0.55, 0.62]
-		# a burst all round (a ring) or a call (summon) swells the body like a roar; blows swing the arm
-		"brute": return ["roar", 0.4, 0.6] if kind in ["roar", "ring", "summon"] else ["attack", 0.45, 0.56]
-		"golem":
-			# the stomp smashes both fists down, a throw hurls the right fist, a ring or a call bursts the core
-			match kind:
-				"slam": return ["slam", 0.55, 0.68]
-				"ring", "roar", "summon": return ["roar", 0.4, 0.6]
-			return ["attack", 0.45, 0.6]
-		"void":
-			match kind:
-				"beam": return ["beam", 0.3, 0.86]
-				"summon": return ["summon", 0.38, 0.5]
-			return ["attack", 0.55, 0.62]
-		"bomber": return ["attack", 1.0, 1.0]
-		# the Frostgruft's slime and whirl/crystal: a ring or a call swells them, everything else lashes out
-		"slime", "spirit": return ["roar", 0.4, 0.6] if kind in ["roar", "ring", "summon"] else ["attack", 0.45, 0.6]
-		"drake":
-			# bolt->bite, slam, dash, burrow, swing, sweep, ring/echoes->roar, beam, flight
-			var clip := str(RigPoses.DRAKE_KINDS.get(kind, ""))
-			if clip.is_empty(): return ["bite", 0.5, 0.65]
+	var spec: Variant = family_value(str(rig.family), "attacks", {})
+	var attacks: Dictionary = spec if spec is Dictionary else {}
+	var variants: Variant = attacks.get("variants", {})
+	var variant := str(rig.get("variant", ""))
+	if variants is Dictionary and (variants as Dictionary).has(variant): return _clip_of(variants[variant])
+	if str(attacks.get("pose_table", "")) == "drake":
+		# bolt->bite, slam, dash, burrow, swing, sweep, ring/echoes->roar, beam, flight
+		var clip := str(RigPoses.DRAKE_KINDS.get(kind, ""))
+		if not clip.is_empty():
 			var windows: Array = RigPoses.DRAKE_WINDOWS[clip]
 			return [clip, float(windows[0]), float(windows[1])]
-	return ["attack", 0.45, 0.6]
+	var kinds: Variant = attacks.get("kinds", {})
+	if kinds is Dictionary and (kinds as Dictionary).has(kind): return _clip_of(kinds[kind])
+	return _clip_of(attacks.get("default", NEUTRAL_CLIP))
+
+
+## A [clip, end of windup, end of active] of rig_families.json as a new array; NEUTRAL_CLIP when malformed.
+static func _clip_of(value: Variant) -> Array:
+	if value is Array and (value as Array).size() >= 3: return [str(value[0]), float(value[1]), float(value[2])]
+	return NEUTRAL_CLIP.duplicate()
 
 
 func _start_rise(a: Dictionary, rig: Dictionary, enemy: Dictionary) -> void:
@@ -687,9 +733,14 @@ func _start_rise(a: Dictionary, rig: Dictionary, enemy: Dictionary) -> void:
 	for part: Dictionary in rig.parts + rig.items: from[part.id] = {"dx": _rng.randf_range(-3, 3), "dy": _rng.randf_range(8, 13), "rot": _rng.randf_range(-1.2, 1.2)}
 	a.rise_from = from
 	var feet := Vector2(float(enemy.get("x", 0)), float(enemy.get("y", 0))) + Vector2(0, (float(rig.ground.y) - float(rig.center.y)) * _scale(rig))
-	_pools.append({"x": feet.x, "y": feet.y, "r": 18.0, "life": 0.0, "max": 2.6})
+	fx.pool(feet, 18.0, 2.6)
 
 
+## The death of actor `a` by its family's rig_families.json "death": every part
+## flies with the blow (ragdoll; a brute only under a tearing blow, else it
+## sheds its weapon, arm and head), named parts fall off (shed), bursts and
+## flashes; a registered family (companion) comes apart like a skeleton. Cut in
+## two by Rage (snapshot "slice"), the slice effect shows it instead.
 func _start_death(a: Dictionary, rig: Dictionary, enemy: Dictionary) -> void:
 	a.dying = true
 	# cut in two by Rage: the slice effect (src/vfx/slice_fx.gd) shows the halves
@@ -701,58 +752,45 @@ func _start_death(a: Dictionary, rig: Dictionary, enemy: Dictionary) -> void:
 	a.kill = kill
 	var impulse := float(kill.impulse)
 	# only an ultimate's or a wall's blow tears a big body wholly apart (weight by importance)
-	var tears: bool = bool(kill.wall) or impulse >= float(Dictionary(_rag("tiers")).get("huge", 3.5))
+	var tears: bool = bool(kill.wall) or impulse >= float(Dictionary(_rag("tiers", {})).get("huge", INF))
 	# A companion (registered family) falls apart like a skeleton: every part drops.
 	if families.has(family):
-		_ragdoll_all(a, rig, kill, 0.8 * impulse)
+		_ragdoll_all(a, rig, kill, float(Dictionary(registered_value("death", {})).get("ragdoll", 1.0)) * impulse)
 		return
-	match family:
-		"skeleton":
-			_ragdoll_all(a, rig, kill, impulse)
-			if bool(enemy.get("summoned", false)): _burst_at(feet - Vector2(0, 14), VIOLET_DARK, 14, 50.0)
-		"golem":
-			# the golem breaks into its boulders, its glow spills out
-			_ragdoll_all(a, rig, kill, impulse)
-			var colors := palette(str(rig.get("material", "")))
-			if not colors.is_empty(): _burst_at(feet - Vector2(0, 30), colors.burst, 22, 110.0)
-		"bomber":
-			if not bool(enemy.get("exploded", false)): _burst_at(feet - Vector2(0, 16), VIOLET, 18, 90.0)
-		"mimic":
-			# the chest beast breaks into lid, teeth and box (vfx_gore.json ragdoll.split), splinters and a glint of gold
-			_ragdoll_all(a, rig, kill, impulse)
-			_burst_at(feet - Vector2(0, 12), Color("b8743a"), 14, 80.0)
-			_burst_at(feet - Vector2(0, 14), Color("f4c64e"), 6, 60.0)
-		"biped", "hero", "necro":
-			# the fleshy figures come apart like the skeletons: every part flies with the blow
-			_ragdoll_all(a, rig, kill, impulse)
-		"brute":
-			if tears: _ragdoll_all(a, rig, kill, impulse)
-			else:
-				# a held weapon (the Knochenkoloss' hammer) leaves the hand on its own path; what flies
-				# off is shed, so the falling body no longer draws it as well
-				for item: Dictionary in rig.items:
-					_detach(a, rig, str(item.id), 0.6 * impulse, kill)
-					a.shed[str(item.id)] = true
-				for id: String in ["arm", "head"]:
-					_detach(a, rig, id, 0.5 * impulse, kill)
-					a.shed[id] = true
-		"void":
-			for id: String in ["claw_l", "claw_r"]: _detach(a, rig, id, 0.7 * impulse, kill)
-			_flashes.append({"x": feet.x, "y": feet.y - 40.0, "r": 150.0, "life": 0.0, "max": 1.8, "color": VIOLET})
-		"drake":
-			# Wings, horns, jaw, crystals and the tail beyond its root fall off;
-			# body, neck and head stay and the death pose collapses them.
-			for id: String in DRAKE_SHED:
-				if not rig.by_id.has(id) or a.lost.has(id): continue
-				_detach(a, rig, id, 0.6 * impulse, kill)
-				a.shed[id] = true
-			var colors := palette(str(rig.get("material", "")))
-			if colors.is_empty(): colors = palette("ember")
-			_burst_at(feet - Vector2(0, 24), colors.burst, 20, 90.0)
-			if str(rig.get("material", "")) == "obsidian": _flashes.append({"x": feet.x, "y": feet.y - 40.0, "r": 150.0, "life": 0.0, "max": 1.8, "color": VIOLET})
+	var spec: Variant = family_value(family, "death", {})
+	var death: Dictionary = spec if spec is Dictionary else {}
+	var material := str(rig.get("material", ""))
+	if death.has("ragdoll"): _ragdoll_all(a, rig, kill, float(death.ragdoll) * impulse)
+	elif death.has("tear_ragdoll") and tears: _ragdoll_all(a, rig, kill, float(death.tear_ragdoll) * impulse)
+	else:
+		# a held weapon (the Knochenkoloss' hammer) leaves the hand on its own path; what flies
+		# off and hides is shed, so the falling body no longer draws it as well
+		for shed: Dictionary in death.get("shed", []):
+			var ids: Array = []
+			if str(shed.get("ids", "")) == "items":
+				for item: Dictionary in rig.items: ids.append(str(item.id))
+			else: ids = shed.get("ids", [])
+			for id: Variant in ids:
+				if bool(shed.get("skip_gone", false)) and (not rig.by_id.has(str(id)) or a.lost.has(str(id))): continue
+				_detach(a, rig, str(id), float(shed.get("impulse", 1.0)) * impulse, kill)
+				if bool(shed.get("hide", false)): a.shed[str(id)] = true
+	for spec_burst: Dictionary in death.get("bursts", []):
+		if spec_burst.has("when") and not bool(enemy.get(str(spec_burst.when), false)): continue
+		if spec_burst.has("unless") and bool(enemy.get(str(spec_burst.unless), false)): continue
+		var color := Color.WHITE
+		if spec_burst.has("palette"):
+			var colors := palette(material)
+			if colors.is_empty() and spec_burst.has("fallback_material"): colors = palette(str(spec_burst.fallback_material))
+			if colors.is_empty(): continue
+			color = colors[str(spec_burst.palette)]
+		else: color = _hex(spec_burst.get("color"), Color.WHITE)
+		fx.burst(feet - Vector2(0, float(spec_burst.get("at", 0.0))), color, int(spec_burst.get("count", 0)), float(spec_burst.get("speed", 0.0)))
+	for flash: Dictionary in death.get("flashes", []):
+		if flash.has("material") and str(flash.material) != material: continue
+		fx.flash(feet.x, feet.y - float(flash.get("at", 0.0)), float(flash.get("r", 0.0)), float(flash.get("max", 0.0)), _hex(flash.get("color"), VIOLET))
 	# flung against a wall a moment ago (fling_near) without a wall kill of its own: it comes apart along the rebound
 	var fling: Dictionary = a.get("fling", {})
-	if not bool(kill.wall) and not fling.is_empty() and _clock - float(fling.get("t", -100.0)) <= _fling_value("time", 0.6): _fling_apart(a)
+	if not bool(kill.wall) and not fling.is_empty() and _clock - float(fling.get("t", -100.0)) <= _fling_value("time"): _fling_apart(a)
 
 
 ## Every part and item of actor `a` flies off as debris with the blow `kill`;
@@ -774,7 +812,7 @@ static func _kill_of(enemy: Dictionary) -> Dictionary:
 	var wall := bool(fx.get("wall", false))
 	var tier := "splat" if wall else str(fx.get("tier", ""))
 	if tier.is_empty(): tier = kill_tier(str(fx.get("talent", "")), bool(fx.get("ult", false)))
-	var tiers: Dictionary = _rag("tiers")
+	var tiers: Dictionary = _rag("tiers", {})
 	var impulse := float(fx.get("force", tiers.get(tier, 1.0)))
 	return {"dir": dir.normalized() if dir.length() > 0.01 else Vector2.ZERO, "impulse": maxf(0.2, impulse), "tier": tier, "el": kill_element(fx), "wall": wall}
 
@@ -797,7 +835,7 @@ static func kill_element(fx: Dictionary) -> String:
 	if not el.is_empty(): return el
 	var talent := str(fx.get("talent", ""))
 	if talent.is_empty(): return ""
-	var map: Dictionary = _rag("talent_element")
+	var map: Dictionary = _rag("talent_element", {})
 	if map.has(talent): return str(map[talent])
 	return str(map.get(talent.get_slice("_", 0), ""))
 
@@ -821,10 +859,10 @@ static func _json(path: String) -> Variant:
 	return JSON.parse_string(FileAccess.get_file_as_string(path)) if FileAccess.file_exists(path) else null
 
 
-## A value of vfx_gore.json "ragdoll", else RAGDOLL's.
-static func _rag(key: String) -> Variant:
+## A value of vfx_gore.json "ragdoll", else `neutral`.
+static func _rag(key: String, neutral: Variant = 0.0) -> Variant:
 	if not _gore_loaded: load_gore()
-	return _ragdoll.get(key, RAGDOLL.get(key))
+	return _ragdoll.get(key, neutral)
 
 
 ## Turns a part into debris from where it was last drawn: it flies with the
@@ -844,7 +882,7 @@ func _detach(a: Dictionary, rig: Dictionary, id: String, impulse: float, kill: D
 	var material := str(rig.get("material", ""))
 	var center: Vector2 = xform * Vector2(part.center)
 	var body: Vector2 = Transform2D(world.base) * Vector2(rig.center) if world.has("base") else center
-	var split: Dictionary = _rag("split")
+	var split: Dictionary = _rag("split", {})
 	var pieces := 1
 	if str(rig.family) in Array(split.get("families", [])):
 		var tall := float(Rect2(layer.get("bounds", Rect2())).size.y)
@@ -852,72 +890,35 @@ func _detach(a: Dictionary, rig: Dictionary, id: String, impulse: float, kill: D
 	# a weapon or shield (rig.items carry a "hand"; a weapon drawn into the figure a "tip") comes loose from the hand
 	var held := part.has("hand") or part.has("tip")
 	for piece: Dictionary in _bands(layer, pieces):
-		_debris.append(_piece(a, rig, id, piece, xform, impulse, kill, body, material, held))
+		debris.add(_piece(a, rig, id, piece, xform, impulse, kill, body, material, held))
 	var chips: Array = cut_colors(rig)
-	for i in range(6): _particles.append({"x": center.x, "y": center.y, "vx": _rng.randf_range(-60, 60), "vy": _rng.randf_range(-60, 20), "life": 0.0, "max": _rng.randf_range(0.25, 0.5),
+	for i in range(6): fx.add({"x": center.x, "y": center.y, "vx": _rng.randf_range(-60, 60), "vy": _rng.randf_range(-60, 20), "life": 0.0, "max": _rng.randf_range(0.25, 0.5),
 		"color": chips[i % chips.size()], "grav": 240.0})
 	# Glowing rigs spit embers (or void sparks) from the cut.
 	var colors := palette(material)
-	if not colors.is_empty(): _burst_at(center, colors.glow, 8, 70.0)
+	if not colors.is_empty(): fx.burst(center, colors.glow, 8, 70.0)
 
 
-## One debris piece of part `id` (its drawable `layer`, posed by `xform`).
-## `held`: a weapon or shield coming loose from the hand (ragdoll.loose): it
-## leaves the blow's cone by loose.side rad to the side its hand is on (either
-## side when the hand lies on the blow's axis), at loose.speed and loose.lift
-## of a body part's flight, and turns over at loose.spin rad/s (times the root
-## of the impulse) - it never keeps its held angle next to the skull, which
-## read as a sword still carried by a flying body.
+## One debris piece of part `id` (its drawable `layer`, posed by `xform`),
+## launched by RigDebris.launch from the blow `kill` (impulse, its direction
+## out of `body`, the figure's scale). `held`: a weapon or shield coming loose
+## from the hand (ragdoll.loose): it leaves the blow's cone to the side its hand
+## is on and turns over - it never keeps its held angle next to the skull,
+## which read as a sword still carried by a flying body.
 func _piece(a: Dictionary, rig: Dictionary, id: String, layer: Dictionary, xform: Transform2D, impulse: float, kill: Dictionary, body: Vector2, material: String, held := false) -> Dictionary:
 	var center: Vector2 = xform * Vector2(layer.center)
 	var ground: float = Vector2(a.get("feet", center)).y
-	var dir: Vector2 = kill.get("dir", Vector2.ZERO)
-	var loose: Dictionary = _loose() if held else {}
-	var out := center - body
-	var v := Vector2.ZERO
-	if dir == Vector2.ZERO:
-		v = Vector2(_rng.randf_range(-56, 56), _rng.randf_range(-16, 16)) * impulse
-	else:
-		var jitter: Array = _rag("jitter")
-		var spread := float(_rag("spread"))
-		var aim := dir.rotated(_rng.randf_range(-spread, spread))
-		if held:
-			var across := dir.cross(out.normalized()) if out.length() > 0.5 else 0.0
-			var side := signf(across) if absf(across) > 0.15 else (1.0 if _rng.randf() < 0.5 else -1.0)
-			aim = dir.rotated(side * float(loose.side) + _rng.randf_range(-spread, spread) * 0.5)
-		v = aim * float(_rag("speed")) * impulse * _rng.randf_range(float(jitter[0]), float(jitter[1])) * (float(loose.speed) if held else 1.0)
-		if out.length() > 0.5: v += out.normalized() * float(_rag("pop")) * sqrt(impulse)
 	# a bigger figure (story worlds) throws in proportion: the same flight in its own source px
 	var k := _scale(rig) / S
-	v *= k
-	var lift: Array = _rag("lift")
+	var flight := debris.launch(kill.get("dir", Vector2.ZERO), center - body, impulse, k, held)
 	var el := str(kill.get("el", ""))
 	var look := _look(el)
-	var vz := _rng.randf_range(float(lift[0]), float(lift[1])) * sqrt(maxf(0.1, impulse)) * k * (float(loose.lift) if held else 1.0)
-	var spin := _rng.randf_range(-1.0, 1.0) * float(_rag("spin")) * impulse
-	if held: spin = _loose_spin(loose, impulse)
 	return {"key": a.key, "id": id, "texture": layer.texture, "white": layer.get("white"), "layer": layer, "center": layer.center,
 		"x": center.x, "y": ground + _rng.randf_range(-4, 6), "z": maxf(0.0, ground - center.y),
-		"vx": v.x, "vy": v.y * float(_rag("depth")), "vz": vz, "k": k, "held": held,
-		"ang": xform.get_rotation(), "spin": spin,
+		"vx": flight.vx, "vy": flight.vy, "vz": flight.vz, "k": k, "held": held,
+		"ang": xform.get_rotation(), "spin": flight.spin,
 		"face": signf(xform.x.x) if absf(xform.x.x) > 0.01 else 1.0, "scale": _scale(rig) * (RigLibrary.item_factor(rig.by_id.get(id, {}), _scale(rig)) if held else 1.0), "life": 0.0, "max": INF, "rest": false,
 		"material": material, "el": el, "look": look, "born": _clock, "spots": _spots_for(layer, look)}
-
-
-## vfx_gore.json ragdoll.loose over RAGDOLL's, key by key: how a held item
-## comes loose (side rad, speed and lift factors, spin [min, max] rad/s).
-static func _loose() -> Dictionary:
-	var out: Dictionary = Dictionary(RAGDOLL.loose).duplicate()
-	var over: Variant = _rag("loose")
-	if over is Dictionary: out.merge(over, true)
-	return out
-
-
-## The turn of a loose item: loose.spin [min, max] rad/s either way, times the
-## root of the impulse (never below the minimum).
-func _loose_spin(loose: Dictionary, impulse: float) -> float:
-	var turn: Array = loose.spin if loose.get("spin") is Array and (loose.spin as Array).size() >= 2 else RAGDOLL.loose.spin
-	return (1.0 if _rng.randf() < 0.5 else -1.0) * _rng.randf_range(float(turn[0]), float(turn[1])) * maxf(1.0, sqrt(maxf(0.0, impulse)))
 
 
 ## A part's layer cut into `n` textured pieces along jagged rows (cached per
@@ -953,7 +954,7 @@ func _bands(layer: Dictionary, n: int) -> Array:
 static func _look(el: String) -> Dictionary:
 	if el.is_empty(): return {}
 	if _looks.has(el): return _looks[el]
-	var spec: Variant = Dictionary(_rag("elements")).get(el, {})
+	var spec: Variant = Dictionary(_rag("elements", {})).get(el, {})
 	var look: Dictionary = (spec as Dictionary).duplicate(true) if spec is Dictionary else {}
 	if not look.is_empty():
 		look.tint_color = _hex(look.get("tint"), Color.WHITE)
@@ -995,130 +996,10 @@ func _spots_for(layer: Dictionary, look: Dictionary) -> Array:
 	return spots
 
 
-## Ragdoll physics of the debris: gravity and floor bounces that lose energy,
-## the world's walls (solid, set by the host) reflecting them, friction while
-## they slide, a shove between pieces so they knock and pile, settling at
-## rest. A frozen part shatters at its first hard landing; element looks emit
-## their matter (smoke, sparks, motes, drips). Settled parts stay; above
-## ragdoll.cap the oldest crumble away by a 4x4 dither (never by transparency).
-func _step_debris(delta: float) -> void:
-	var g := float(_rag("gravity"))
-	var bounce := float(_rag("bounce"))
-	var wall := float(_rag("wall_bounce"))
-	var keep := float(_rag("ground_keep"))
-	var spin_keep := float(_rag("spin_keep"))
-	var slide := maxf(0.0, 1.0 - float(_rag("friction")) * delta)
-	var rest_speed := float(_rag("rest_speed"))
-	var rest_vz := float(_rag("rest_vz"))
-	var born: Array[Dictionary] = []
-	for d: Dictionary in _debris:
-		d.life = float(d.life) + delta
-		_debris_matter(d, delta)
-		if bool(d.rest): continue
-		var k := float(d.get("k", 1.0))
-		d.vz = float(d.vz) - g * k * delta
-		d.z = float(d.z) + float(d.vz) * delta
-		var at := Vector2(float(d.x), float(d.y))
-		# a piece that starts inside a wall (cut at the wall) may leave it freely
-		var inside := _solid_at(at)
-		var nx := at.x + float(d.vx) * delta
-		if not inside and _solid_at(Vector2(nx, at.y)):
-			d.vx = -float(d.vx) * wall
-			d.spin = -float(d.spin) * wall
-			_wall_dust(d)
-		else: d.x = nx
-		var ny := at.y + float(d.get("vy", 0.0)) * delta
-		if not inside and _solid_at(Vector2(float(d.x), ny)):
-			d.vy = -float(d.get("vy", 0.0)) * wall
-			d.spin = -float(d.spin) * wall
-			_wall_dust(d)
-		else: d.y = ny
-		d.ang = float(d.ang) + float(d.spin) * delta
-		if float(d.z) > 0.0: continue
-		d.z = 0.0
-		if float(d.vz) < -rest_vz * k:
-			# a hard landing: it bounces back up and loses energy; a frozen part breaks
-			d.vz = -float(d.vz) * bounce
-			d.vx = float(d.vx) * keep
-			d.vy = float(d.get("vy", 0.0)) * keep
-			d.spin = float(d.spin) * spin_keep
-			if not bool(d.get("landed", false)):
-				d.landed = true
-				born.append_array(_shatter(d))
-		else:
-			# on the floor: it slides with friction until it lies still
-			d.vz = 0.0
-			d.vx = float(d.vx) * slide
-			d.vy = float(d.get("vy", 0.0)) * slide
-			d.spin = float(d.spin) * slide
-			if Vector2(float(d.vx), float(d.vy)).length() < rest_speed * k and absf(float(d.spin)) < 1.5:
-				d.rest = true
-				d.vx = 0.0
-				d.vy = 0.0
-				d.spin = 0.0
-	_separate()
-	if not born.is_empty(): _debris.append_array(born)
-	var dither := float(_rag("dither_time"))
-	_debris = _debris.filter(func(d: Dictionary) -> bool: return not bool(d.get("broken", false)) and not (float(d.get("gone_at", -1.0)) >= 0.0 and _clock - float(d.gone_at) > dither))
-	_cap_debris()
-
-
-## True when world point `p` lies in a wall of the host's world (solid unset: never).
-func _solid_at(p: Vector2) -> bool:
-	return solid.is_valid() and bool(solid.call(p))
-
-
-## A piece knocking against a wall throws up a little dust of its chips.
-func _wall_dust(d: Dictionary) -> void:
-	if Vector2(float(d.vx), float(d.get("vy", 0.0))).length() < 40.0: return
-	var look: Dictionary = d.get("look", {})
-	var color: Color = look.get("chip_c", Color("a99d93")) if not look.is_empty() else Color("a99d93")
-	for i in range(3): _particles.append({"x": float(d.x), "y": float(d.y) - float(d.z), "vx": _rng.randf_range(-30, 30), "vy": _rng.randf_range(-50, -10), "life": 0.0, "max": _rng.randf_range(0.2, 0.4), "color": color, "grav": 200.0})
-
-
-## Pieces on the floor shove each other apart (circles of ragdoll.radius):
-## a moving one is pushed out and bounces off, a resting one stays put, so
-## they knock and pile up.
-func _separate() -> void:
-	var r2 := float(_rag("radius")) * 2.0
-	if r2 <= 0.0: return
-	for d: Dictionary in _debris:
-		if bool(d.rest) or float(d.z) > r2: continue
-		for o: Dictionary in _debris:
-			if is_same(o, d) or float(o.z) > r2 or float(o.get("gone_at", -1.0)) >= 0.0: continue
-			var gap := Vector2(float(d.x) - float(o.x), float(d.y) - float(o.y))
-			var dist := gap.length()
-			if dist >= r2 or dist < 0.01: continue
-			var n := gap / dist
-			var to := Vector2(float(d.x), float(d.y)) + n * (r2 - dist) * 0.5
-			if not _solid_at(to):
-				d.x = to.x
-				d.y = to.y
-			var v := Vector2(float(d.vx), float(d.get("vy", 0.0)))
-			var into := v.dot(n)
-			if into < 0.0:
-				v -= n * into * 1.4
-				d.vx = v.x
-				d.vy = v.y
-
-
-## Above ragdoll.cap standing pieces, the oldest resting ones start to crumble (gone_at).
-func _cap_debris() -> void:
-	var standing := 0
-	for d: Dictionary in _debris:
-		if float(d.get("gone_at", -1.0)) < 0.0: standing += 1
-	var over := standing - int(_rag("cap"))
-	if over <= 0: return
-	for d: Dictionary in _debris:
-		if over <= 0: break
-		if float(d.get("gone_at", -1.0)) >= 0.0 or not bool(d.rest): continue
-		d.gone_at = _clock
-		over -= 1
-
-
 ## A frozen piece (look "shatter": pieces) breaks at its first hard landing
 ## into that many shards that fly on, with ice chips; returns the shards and
-## marks the piece broken. [] for every other piece.
+## marks the piece broken. [] for every other piece. RigDebris calls it through
+## DebrisLook.on_land.
 func _shatter(d: Dictionary) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var look: Dictionary = d.get("look", {})
@@ -1136,27 +1017,9 @@ func _shatter(d: Dictionary) -> Array[Dictionary]:
 			"z": maxf(0.0, float(d.z) - off.y), "vx": float(d.vx) + side.x, "vy": float(d.get("vy", 0.0)) + side.y * 0.6, "vz": float(d.vz) + _rng.randf_range(10.0, 40.0),
 			"spin": _rng.randf_range(-12.0, 12.0), "shard": true, "spots": _spots_for(layer, look)}, true)
 		out.append(piece)
-	_burst_at(Vector2(float(d.x), float(d.y) - 2.0), look.get("chip_c", Color("cfefff")), int(look.get("chips", 8)), 70.0)
+	fx.burst(Vector2(float(d.x), float(d.y) - 2.0), look.get("chip_c", Color("cfefff")), int(look.get("chips", 8)), 70.0)
 	d.broken = true
 	return out
-
-
-## The element matter a corpse piece gives off while it is fresh (look
-## "matter": [{rate per s, until s, colors, vx, vy [lo, hi], grav, life [lo, hi]}]):
-## smoke and sparks of a charred one, motes leaving a drained one, drips of a poisoned one.
-func _debris_matter(d: Dictionary, delta: float) -> void:
-	var look: Dictionary = d.get("look", {})
-	if look.is_empty() or float(d.get("gone_at", -1.0)) >= 0.0: return
-	var age := _clock - float(d.get("born", _clock))
-	for m: Dictionary in look.get("matter", []):
-		if age > float(m.get("until", 2.0)) or _rng.randf() >= float(m.get("rate", 1.0)) * delta: continue
-		var vy: Array = m.get("vy", [-30, -15])
-		var life: Array = m.get("life", [0.5, 0.9])
-		var cols: Array = m.cols
-		var spread := float(m.get("vx", 6.0))
-		_particles.append({"x": float(d.x) + _rng.randf_range(-3.0, 3.0), "y": float(d.y) - float(d.z) - _rng.randf_range(1.0, 5.0), "vx": _rng.randf_range(-spread, spread),
-			"vy": _rng.randf_range(float(vy[0]), float(vy[1])), "life": 0.0, "max": _rng.randf_range(float(life[0]), float(life[1])), "color": cols[_rng.randi_range(0, cols.size() - 1)],
-			"grav": float(m.get("grav", 0.0))})
 
 
 ## A piece's texture with `level` (1..3) quarters of its pixels dropped by a
@@ -1213,17 +1076,16 @@ func actor_feet(key: String) -> Vector2:
 	return Vector2(a.feet) if a.has("feet") else Vector2.INF
 
 
-## The gore material of actor `key`: its rig's material, bone for the
-## skeletons, void for void figures, "" unknown.
+## The gore material of actor `key`: its rig's material, else its family's
+## (rig_families.json "material": bone for the skeletons, void for void
+## figures, blood for the rest), "" unknown.
 func actor_material(key: String) -> String:
 	var a: Dictionary = _actors.get(key, {})
 	if a.is_empty() or library == null: return ""
 	var rig: Dictionary = library.rig(str(a.get("rig", "")))
 	if not str(rig.get("material", "")).is_empty(): return str(rig.material)
-	match str(rig.get("family", "")):
-		"skeleton", "golem": return "bone"
-		"void", "bomber": return "void"
-	return "blood" if not rig.is_empty() else ""
+	if rig.is_empty(): return ""
+	return str(family_value(str(rig.get("family", "")), "material", ""))
 
 
 ## A splat (src/vfx/talent_fx.gd "splat": an enemy flung against a wall at
@@ -1260,46 +1122,38 @@ func _fling_apart(a: Dictionary) -> void:
 	var rig: Dictionary = library.rig(str(a.get("rig", ""))) if library != null else {}
 	if fling.is_empty() or rig.is_empty(): return
 	var fallen: Dictionary = {}
-	for d: Dictionary in _debris:
+	for d: Dictionary in debris.pieces:
 		if str(d.key) == str(a.key): fallen[str(d.id)] = true
 	for part: Dictionary in rig.items + rig.parts:
 		var id := str(part.id)
 		if fallen.has(id) or a.lost.has(id) or a.shed.has(id): continue
 		_detach(a, rig, id, 1.0)
 		a.shed[id] = true
-	var lift: Array = _gore_fling.get("lift", [120, 220])
-	var spread := _fling_value("spread", 0.8)
-	for d: Dictionary in _debris:
-		if str(d.key) != str(a.key) or float(d.life) > _fling_value("time", 0.6) or bool(d.get("flung", false)): continue
-		var out := Vector2(fling.dir).rotated(_rng.randf_range(-spread, spread)) * _fling_value("speed", 150.0) * float(fling.power) * _rng.randf_range(0.6, 1.2)
-		d.vz = _rng.randf_range(float(lift[0]), float(lift[1])) * float(fling.power)
-		d.spin = _rng.randf_range(-16.0, 16.0)
+	if not _gore_loaded: load_gore()
+	for d: Dictionary in debris.pieces:
+		if str(d.key) != str(a.key) or float(d.life) > _fling_value("time") or bool(d.get("flung", false)): continue
 		# a loose weapon or shield leaves the rebound's line and turns over (ragdoll.loose, see _piece)
-		if bool(d.get("held", false)):
-			var loose := _loose()
-			out = out.rotated((1.0 if _rng.randf() < 0.5 else -1.0) * float(loose.side)) * float(loose.speed)
-			d.vz = float(d.vz) * float(loose.lift)
-			d.spin = _loose_spin(loose, float(fling.power))
-		d.vx = out.x
-		d.vy = out.y * 0.5
-		d.rest = false
+		debris.fling(d, Vector2(fling.dir), float(fling.power), _gore_fling)
 		d.flung = true
 	a.fling = {}
 
 
-## A number of vfx_gore.json splat.fling, else `fallback`.
-static func _fling_value(key: String, fallback: float) -> float:
+## A number of vfx_gore.json splat.fling, else `neutral`.
+static func _fling_value(key: String, neutral: float = 0.0) -> float:
 	if not _gore_loaded: load_gore()
-	return float(_gore_fling.get(key, fallback))
+	return float(_gore_fling.get(key, neutral))
 
 
-## Colours of the chips cut from a rig: its material's (hell rigs), violet for
-## void figures, bone white for the rest.
+## Colours of the chips cut from a rig: its material's (hell rigs), else its
+## family's (rig_families.json "chips": violet for void figures, bone white for
+## the rest).
 static func cut_colors(rig: Dictionary) -> Array:
 	var material := str(rig.get("material", ""))
 	var colors := palette(material)
 	if not colors.is_empty(): return colors.chips
-	return [VIOLET_DARK] if str(rig.get("family", "")) in ["void", "bomber"] else [Color("fdf7ed")]
+	var out: Array = []
+	for c: Variant in family_value(str(rig.get("family", "")), "chips", []): out.append(_hex(c, Color.WHITE))
+	return out if not out.is_empty() else [Color.WHITE]
 
 
 ## The pose of a rig for an actor state: a registered family's own, else RigPoses'.
@@ -1309,6 +1163,26 @@ func _pose(rig: Dictionary, a: Dictionary) -> Dictionary:
 		var pose: Variant = registered.pose.call(rig, a)
 		if pose is Dictionary and pose.has("whole") and pose.has("parts"): return pose
 	return RigPoses.pose(rig, a)
+
+
+## Held items of actor `a` (src/rig_kit/rig_held.gd): asks `host` for the pieces
+## of every rig item with a "held" block (placed for the figure standing still
+## at `feet`, `face` and its size), carries each with its parent part's motion
+## in `world` and puts the item into `layers` (sorted by z) in its z slot.
+func _hold(rig: Dictionary, a: Dictionary, host: RigHeldHost, feet: Vector2, face: float, world: Dictionary, layers: Array) -> void:
+	var scale := _actor_scale(rig, a)
+	# the figure standing still: _solve's base for a neutral pose (every part's rest)
+	var rest := _t(feet) * _s(Vector2(face * scale, scale)) * _t(-Vector2(rig.ground))
+	rest.origin = rest.origin.round()
+	for item: Dictionary in rig.items:
+		if RigHeld.spec(item).is_empty() or a.lost.has(item.id) or (a.get("shed", {}) as Dictionary).has(item.id): continue
+		var pieces: Array[Dictionary] = host.pieces(str(a.key), item, rest)
+		if pieces.is_empty(): continue
+		var parent := str(item.get("parent", ""))
+		var posed: Transform2D = world[parent] if world.has(parent) and not a.lost.has(parent) else world.base
+		var held: Array[Dictionary] = []
+		for piece: Dictionary in pieces: held.append({"piece": piece, "follow": RigHeld.follow(rest, posed, Vector2(piece.get("hand", Vector2.ZERO)))})
+		layers.insert(RigHeld.slot(layers, int(item.get("z", 0))), {"id": str(item.id), "z": int(item.get("z", 0)), "holding": held})
 
 
 func _draw_rig(canvas: CanvasItem, a: Dictionary, rig: Dictionary, point: Vector2, face: float, flash: float, with_items: bool, shadow_alpha: float) -> float:
@@ -1325,10 +1199,13 @@ func _draw_rig(canvas: CanvasItem, a: Dictionary, rig: Dictionary, point: Vector
 	var material := str(rig.get("material", ""))
 	var colors := palette(material)
 	var layered := not colors.is_empty()
-	if (not dying or not (str(rig.family) in ["void", "necro"])) and not bool(a.get("no_shadow", false)):
+	var family := str(rig.family)
+	# rig_families.json: void figures and necromancers lose their shadow as they die
+	if (not dying or bool(family_value(family, "dying_shadow", true))) and not bool(a.get("no_shadow", false)):
 		var shadow := float(rig.width) * S
-		# A flying dragon's shadow shrinks below it.
-		if str(rig.family) == "drake": shadow *= 1.0 - clampf(-float(pose.whole.dy) / 40.0, 0.0, 0.45)
+		# A flying dragon's shadow shrinks below it (rig_families.json "flight_shadow").
+		var lift: Variant = family_value(family, "flight_shadow", null)
+		if lift is Array and (lift as Array).size() >= 2: shadow *= 1.0 - clampf(-float(pose.whole.dy) / float(lift[0]), 0.0, float(lift[1]))
 		_rect(canvas, Rect2(feet.x - shadow * 0.5, feet.y - S, shadow, 3.0 * S), Color(SHADOW, SHADOW.a * shadow_alpha), "shadow", "")
 	var layers: Array = []
 	for part: Dictionary in rig.parts:
@@ -1340,11 +1217,16 @@ func _draw_rig(canvas: CanvasItem, a: Dictionary, rig: Dictionary, point: Vector
 		for item: Dictionary in rig.items:
 			if not a.lost.has(item.id) and not (a.get("shed", {}) as Dictionary).has(item.id) and world.has(item.id): layers.append(item)
 	layers.sort_custom(func(p: Dictionary, q: Dictionary) -> bool: return int(p.z) < int(q.z))
+	# held items (src/rig_kit/rig_held.gd): the host's art in an item's hand, in the item's z slot
+	var held_host: Variant = a.get("held")
+	if held_host is RigHeldHost: _hold(rig, a, held_host, feet + Vector2(0, cut), face, world, layers)
 	var frames: Dictionary = pose.get("frames", {})
+	# a summoned figure fades in as it rises, a skeleton climbs out opaque (rig_families.json "rise_fade")
+	var rise_fade := bool(family_value(family, "rise_fade", true))
 	var alpha_of := func(part: Dictionary) -> float:
 		var state: Dictionary = pose.parts.get(part.id, {})
 		var alpha: float = float(state.get("alpha", 1.0))
-		if float(a.rise) > 0.0 and str(rig.family) != "skeleton": alpha *= 1.0 - float(a.rise) / RISE_TIME
+		if float(a.rise) > 0.0 and rise_fade: alpha *= 1.0 - float(a.rise) / RISE_TIME
 		alpha *= float(a.get("alpha_mul", 1.0))
 		return alpha
 	var layer_of := func(part: Dictionary) -> Dictionary:
@@ -1358,17 +1240,25 @@ func _draw_rig(canvas: CanvasItem, a: Dictionary, rig: Dictionary, point: Vector
 	var behind: Dictionary = {}
 	if bool(a.get("guard", false)) and hero_box.has_area() and feet.y > hero_box.end.y:
 		for part: Dictionary in layers:
+			if part.has("holding"): continue
 			var item := bool(part.get("is_item", false))
 			# a held item's bounds are its box in the figure (rig_library.gd _item_bounds): test its own image
 			var box := Rect2(Vector2.ZERO, Vector2(part.get("size", Vector2.ZERO))) if item else Rect2(part.bounds)
 			if not _world_box(Transform2D(world[part.id]), box).intersects(hero_box): continue
 			if item and not bool(part.get("bow", false)) and _back.is_valid(): behind[part.id] = true
-			else: hero_covered = true
+			else:
+				hero_covered = true
+				# the covering part as drawn, for the hero's x-ray (draw_xray)
+				var shape: Dictionary = layer_of.call(part)
+				if shape.get("image") is Image and float(alpha_of.call(part)) > 0.01:
+					hero_cover.append({"xform": Transform2D(world[part.id]), "image": shape.image,
+						"bounds": Rect2i(box) if item else Rect2i(Rect2(shape.get("bounds", part.bounds)))})
 	# Void figures: a violet rim around the whole silhouette.
 	var aura := float(pose.get("aura", 0.0))
 	if aura > 0.0:
 		var offsets := [Vector2(2, 0), Vector2(-2, 0), Vector2(0, 1), Vector2(0, -1)] if bool(pose.get("glitch", false)) else [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1)]
 		for part: Dictionary in layers:
+			if part.has("holding"): continue
 			var alpha: float = alpha_of.call(part)
 			if alpha <= 0.01: continue
 			var layer: Dictionary = layer_of.call(part)
@@ -1378,6 +1268,9 @@ func _draw_rig(canvas: CanvasItem, a: Dictionary, rig: Dictionary, point: Vector
 	if outline.a > 0.0:
 		for part: Dictionary in layers:
 			var alpha: float = alpha_of.call(part)
+			if part.has("holding"):
+				for h: Dictionary in part.holding: RigHeld.draw_outline(canvas, h.piece, h.follow, Color(outline, outline.a * alpha), RING)
+				continue
 			var layer: Dictionary = layer_of.call(part)
 			if alpha <= 0.01 or layer.get("white") == null: continue
 			var rows := _rows_above(part, Transform2D(world[part.id]), clip_y)
@@ -1386,7 +1279,8 @@ func _draw_rig(canvas: CanvasItem, a: Dictionary, rig: Dictionary, point: Vector
 	var fuse := float(pose.get("fuse", 0.0))
 	if fuse > 0.0: flash = maxf(flash, 0.8 * fuse if sin(float(a.ct) * (20.0 + 50.0 * fuse)) > 0.0 else 0.0)
 	var shown: Dictionary = {}
-	for part: Dictionary in layers: shown[part.id] = true
+	for part: Dictionary in layers:
+		if not part.has("holding"): shown[part.id] = true
 	# The hit flash lights only the struck part while it is drawn.
 	var flash_part := str(a.get("hit_part", ""))
 	if not shown.has(flash_part): flash_part = ""
@@ -1396,9 +1290,18 @@ func _draw_rig(canvas: CanvasItem, a: Dictionary, rig: Dictionary, point: Vector
 	var flashed: Array[String] = []
 	# Parts actually put on the canvas (visible, not wholly below the floor): what a hit can land on.
 	var hittable: Dictionary = {}
+	# where each held item's pieces went (item id -> placed pieces)
+	var held_drawn: Dictionary = {}
 	for part: Dictionary in layers:
 		var alpha: float = alpha_of.call(part)
 		if alpha <= 0.01: continue
+		if part.has("holding"):
+			var placed: Array[Dictionary] = []
+			for h: Dictionary in part.holding: placed.append(RigHeld.draw(canvas, h.piece, h.follow, alpha))
+			held_drawn[part.id] = placed
+			(held_host as RigHeldHost).drawn(str(a.key), str(part.id), placed)
+			if record_draws: draw_log.append({"what": "held", "id": part.id, "color": Color(1, 1, 1, alpha)})
+			continue
 		var layer: Dictionary = layer_of.call(part)
 		var back: bool = behind.has(part.id)
 		canvas.draw_set_transform_matrix(world[part.id])
@@ -1429,7 +1332,8 @@ func _draw_rig(canvas: CanvasItem, a: Dictionary, rig: Dictionary, point: Vector
 			if at.y > clip_y: continue
 			_draw_stump(canvas, at, material, S, id, alpha_of.call(parent))
 			stumps.append({"id": id, "at": at})
-	a.drawn = {"shown": shown, "hittable": hittable, "flashed": flashed, "stumps": stumps, "glow": glow.duplicate(), "tint": tint, "alpha": float(a.get("alpha_mul", 1.0))}
+	a.drawn = {"shown": shown, "hittable": hittable, "flashed": flashed, "stumps": stumps, "glow": glow.duplicate(), "tint": tint, "alpha": float(a.get("alpha_mul", 1.0)),
+		"held": held_drawn}
 	# Weapon swing trail from the blade tip (a rig with a "slash" palette: the
 	# blade's swept band on the pixel grid, following the swing as it goes).
 	var weapon: Dictionary = rig.by_id.get("weapon", {})
@@ -1441,11 +1345,11 @@ func _draw_rig(canvas: CanvasItem, a: Dictionary, rig: Dictionary, point: Vector
 		var tip := Vector2(weapon.get("tip", grip))
 		a.trail.append({"p": xf * tip, "q": xf * grip.lerp(tip, 0.4), "age": 0.0, "life": SLASH_LIFE if not slash.is_empty() else 0.12})
 	if not slash.is_empty():
-		_draw_pixel_slash(canvas, a.trail, maxf(2.0, roundf(S)), slash)
+		RigFx.draw_slash(canvas, a.trail, maxf(2.0, roundf(S)), slash)
 	else:
 		for i in range(1, a.trail.size()):
 			canvas.draw_line(a.trail[i - 1].p, a.trail[i].p, Color(0.92, 0.97, 1.0, 0.65 * (1.0 - float(a.trail[i].age) / 0.12)), 2.0)
-	if pose.has("beam"): _beams.append({"key": a.key, "eye": world.get("eye", world.base) * Vector2(rig.get("eye_center", Vector2(22, 23))), "beam": pose.beam, "t": a.t, "ct": a.ct})
+	if pose.has("beam"): fx.beams.append({"key": a.key, "eye": world.get("eye", world.base) * Vector2(rig.get("eye_center", Vector2(22, 23))), "beam": pose.beam, "t": a.t, "ct": a.ct})
 	return feet.y + cut - (float(rig.ground.y) - float(rig.top) + 1.0) * S + float(pose.whole.dy) * S
 
 
@@ -1555,7 +1459,7 @@ func _draw_stump(canvas: CanvasItem, at: Vector2, material: String, pixel: float
 	_rect(canvas, Rect2(c - Vector2(1, 1) * px, Vector2(2, 2) * px), Color(colors[1], (0.55 + 0.45 * pulse) * alpha), "stump", id)
 	_rect(canvas, Rect2(c - Vector2(0.5, 0.5) * px, Vector2(1, 1) * px), Color(colors[2], pulse * alpha), "stump", id)
 	if _rng.randf() < 0.06:
-		_particles.append({"x": c.x, "y": c.y, "vx": _rng.randf_range(-8, 8), "vy": _rng.randf_range(-50, -25), "life": 0.0, "max": _rng.randf_range(0.3, 0.6), "color": colors[2]})
+		fx.add({"x": c.x, "y": c.y, "vx": _rng.randf_range(-8, 8), "vy": _rng.randf_range(-50, -25), "life": 0.0, "max": _rng.randf_range(0.3, 0.6), "color": colors[2]})
 
 
 ## World position of `source_point` (source px of the rig's full frame, rest
@@ -1582,28 +1486,10 @@ func world_point(key: String, part_id: String, source_point: Vector2) -> Vector2
 ## hero hidden behind an enemy keeps his outline (src/hero/story_hero.gd).
 ## Returns the number of ring pixels drawn (0 for an unknown or undrawn actor).
 func draw_ring(canvas: CanvasItem, key: String, inner: Color, outer: Color) -> int:
-	var a: Dictionary = _actors.get(key, {})
-	var world: Dictionary = a.get("world", {})
-	var shown: Dictionary = a.get("drawn", {}).get("shown", {})
-	var rig: Dictionary = library.rig(str(a.get("rig", ""))) if library != null else {}
-	if rig.is_empty() or not world.has("base") or shown.is_empty(): return 0
-	var base: Transform2D = world.base
-	var to_base := base.affine_inverse()
-	# the figure's pixels in its base frame (every shown part placed by its pose)
-	var mask: Dictionary = {}
-	for part: Dictionary in rig.parts + rig.items:
-		if not shown.has(part.id) or not world.has(part.id): continue
-		var layer: Dictionary = part
-		if part.get("frames") is Array and not part.frames.is_empty(): layer = part.frames[int(a.get("frame_" + str(part.id), 0)) % part.frames.size()]
-		var image: Variant = layer.get("image")
-		if not image is Image: continue
-		var local: Transform2D = to_base * Transform2D(world[part.id])
-		var box := Rect2i(Rect2(layer.get("bounds", Rect2())))
-		for y in range(maxi(0, box.position.y), mini(box.end.y, (image as Image).get_height())):
-			for x in range(maxi(0, box.position.x), mini(box.end.x, (image as Image).get_width())):
-				if (image as Image).get_pixel(x, y).a < 0.5: continue
-				var q := local * Vector2(x + 0.5, y + 0.5)
-				mask[Vector2i(floori(q.x), floori(q.y))] = true
+	var figure := _silhouette(key)
+	if figure.is_empty(): return 0
+	var base: Transform2D = figure.base
+	var mask: Dictionary = figure.mask
 	var first: Dictionary = {}
 	for cell: Vector2i in mask:
 		for step: Vector2 in RING:
@@ -1625,6 +1511,84 @@ func draw_ring(canvas: CanvasItem, key: String, inner: Color, outer: Color) -> i
 			drawn += 1
 	canvas.draw_set_transform_matrix(Transform2D.IDENTITY)
 	return drawn
+
+
+## The x-ray of actor `key` (the hero) where the figures in front of him hide
+## him: every source px of his last drawn silhouette that lies under an opaque
+## pixel of one of `covers` (hero_cover of the enemies' renderers: {xform,
+## image, bounds}) is drawn in `fill`, and the px round those cells outside his
+## silhouette in `rim` (his dark one-pixel outline), on his own pixel grid, over
+## whatever stands in front of him. Where he is visible nothing is drawn.
+## Returns the number of x-ray px drawn (0: nothing of him is hidden).
+func draw_xray(canvas: CanvasItem, key: String, covers: Array, fill: Color, rim: Color) -> int:
+	if covers.is_empty() or fill.a <= 0.0: return 0
+	var figure := _silhouette(key)
+	if figure.is_empty(): return 0
+	var base: Transform2D = figure.base
+	var mask: Dictionary = figure.mask
+	# each cover's opaque pixels, found from a world point through its inverse placement
+	var tests: Array = []
+	for c: Dictionary in covers:
+		var image: Variant = c.get("image")
+		if not image is Image: continue
+		var xform: Transform2D = c.get("xform", Transform2D.IDENTITY)
+		var box := Rect2i(c.get("bounds", Rect2i(Vector2i.ZERO, (image as Image).get_size())))
+		box = box.intersection(Rect2i(Vector2i.ZERO, (image as Image).get_size()))
+		if not box.has_area(): continue
+		tests.append({"inv": xform.affine_inverse(), "image": image, "box": box, "world": _world_box(xform, Rect2(box))})
+	if tests.is_empty(): return 0
+	var hidden: Dictionary = {}
+	for cell: Vector2i in mask:
+		var at := base * (Vector2(cell) + Vector2(0.5, 0.5))
+		for t: Dictionary in tests:
+			if not (t.world as Rect2).has_point(at): continue
+			var q := Vector2i(((t.inv as Transform2D) * at).floor())
+			if (t.box as Rect2i).has_point(q) and (t.image as Image).get_pixelv(q).a >= 0.5:
+				hidden[cell] = true
+				break
+	if hidden.is_empty(): return 0
+	var edge: Dictionary = {}
+	if rim.a > 0.0:
+		for cell: Vector2i in hidden:
+			for step: Vector2 in RING:
+				var n := cell + Vector2i(step)
+				if not mask.has(n): edge[n] = true
+	canvas.draw_set_transform_matrix(base)
+	for cell: Vector2i in edge:
+		canvas.draw_rect(Rect2(Vector2(cell), Vector2.ONE), rim)
+	for cell: Vector2i in hidden:
+		canvas.draw_rect(Rect2(Vector2(cell), Vector2.ONE), fill)
+	canvas.draw_set_transform_matrix(Transform2D.IDENTITY)
+	return hidden.size()
+
+
+## The silhouette actor `key` showed in its last draw: {base (its base part's
+## world transform), mask ({Vector2i source px in the base frame: true})}, or
+## {} for an unknown or undrawn actor. Every shown part and item is placed by
+## its pose; a pixel counts from alpha 0.5.
+func _silhouette(key: String) -> Dictionary:
+	var a: Dictionary = _actors.get(key, {})
+	var world: Dictionary = a.get("world", {})
+	var shown: Dictionary = a.get("drawn", {}).get("shown", {})
+	var rig: Dictionary = library.rig(str(a.get("rig", ""))) if library != null else {}
+	if rig.is_empty() or not world.has("base") or shown.is_empty(): return {}
+	var base: Transform2D = world.base
+	var to_base := base.affine_inverse()
+	var mask: Dictionary = {}
+	for part: Dictionary in rig.parts + rig.items:
+		if not shown.has(part.id) or not world.has(part.id): continue
+		var layer: Dictionary = part
+		if part.get("frames") is Array and not part.frames.is_empty(): layer = part.frames[int(a.get("frame_" + str(part.id), 0)) % part.frames.size()]
+		var image: Variant = layer.get("image")
+		if not image is Image: continue
+		var local: Transform2D = to_base * Transform2D(world[part.id])
+		var box := Rect2i(Rect2(layer.get("bounds", Rect2())))
+		for y in range(maxi(0, box.position.y), mini(box.end.y, (image as Image).get_height())):
+			for x in range(maxi(0, box.position.x), mini(box.end.x, (image as Image).get_width())):
+				if (image as Image).get_pixel(x, y).a < 0.5: continue
+				var q := local * Vector2(x + 0.5, y + 0.5)
+				mask[Vector2i(floori(q.x), floori(q.y))] = true
+	return {"base": base, "mask": mask}
 
 
 ## What the last draw of actor `key` showed (tests and capture checks):
@@ -1705,16 +1669,14 @@ static func _s(scale: Vector2) -> Transform2D:
 ## piece turns on its own pixel grid (_turned: its sprite's pixels, a dark rim
 ## on its cut edge), so a falling skull reads as pixel matter, not a card.
 func draw_under(canvas: CanvasItem) -> void:
-	for pool: Dictionary in _pools: _draw_pool(canvas, pool)
-	var dither := maxf(0.01, float(_rag("dither_time")))
-	_turn_budget = int(_rag("turn_new"))
-	for d: Dictionary in _debris:
+	fx.draw_pools(canvas)
+	_turn_budget = int(_rag("turn_new", 0))
+	for d: Dictionary in debris.pieces:
 		var texture: Texture2D = d.texture
 		var gone := float(d.get("gone_at", -1.0))
-		var level := 0
-		if gone >= 0.0:
-			level = int((_clock - gone) / dither * 4.0) + 1
-			if level >= 4: continue
+		# crumbling (above ragdoll.cap): a quarter more of its pixels gone each dither_time / 4
+		var level := debris.crumble_level(d)
+		if level >= 4: continue
 		if float(d.z) > 1.0: canvas.draw_rect(Rect2(float(d.x) - 8, float(d.y) - 2, 16, 4), Color(SHADOW, 0.3))
 		var pos := Vector2(float(d.x), float(d.y) - float(d.z)).round()
 		var scale := float(d.get("scale", S))
@@ -1880,167 +1842,25 @@ static func _dark_int(v: int) -> bool:
 	return float(v & 0xFF) * 0.3 + float((v >> 8) & 0xFF) * 0.59 + float((v >> 16) & 0xFF) * 0.11 < 72.0
 
 
-## Beams, particles and flashes are drawn over the actors. The beams list is
-## rebuilt each frame by draw_enemy.
+## Beams, particles and flashes are drawn over the actors (RigFx.draw_over):
+## the beams posed this frame by draw_enemy whose snapshot enemy carries
+## "beam" (and Rage's second "beam_b"), in the snapshot's order.
 func draw_over(canvas: CanvasItem, snapshot: Dictionary) -> void:
 	var beams_by_key: Dictionary = {}
-	for beam: Dictionary in _beams: beams_by_key[beam.key] = beam
-	beams_drawn = 0
+	for beam: Dictionary in fx.beams: beams_by_key[beam.key] = beam
+	var posed: Array = []
+	var count := 0
 	for enemy: Dictionary in snapshot.get("enemies", []):
 		var key := _key(enemy)
 		if beams_by_key.has(key) and enemy.get("beam") is Array:
-			_draw_beam(canvas, beams_by_key[key], enemy.beam)
-			beams_drawn += 1
+			posed.append([beams_by_key[key], enemy.beam])
+			count += 1
 			# Rage: a second beam beside the first (the gap between them is safe).
-			if enemy.get("beam_b") is Array: _draw_beam(canvas, beams_by_key[key], enemy.beam_b)
-	_beams.clear()
-	for p: Dictionary in _particles:
-		var k := 1.0 - float(p.life) / float(p.max)
-		canvas.draw_rect(Rect2(Vector2(float(p.x), float(p.y)).round(), Vector2(2, 2)), Color(p.color, k))
-	for flash: Dictionary in _flashes:
-		var k := float(flash.life) / float(flash.max)
-		if str(flash.get("kind", "")) == "ring":
-			var radius := lerpf(6.0, float(flash.r), RigPoses.ease_out(k))
-			for i in range(48):
-				var angle := TAU * i / 48.0
-				canvas.draw_rect(Rect2(Vector2(float(flash.x), float(flash.y)) + Vector2(cos(angle), sin(angle) * 0.55) * radius, Vector2(2, 2)), Color(flash.color, 1.0 - k))
+			if enemy.get("beam_b") is Array: posed.append([beams_by_key[key], enemy.beam_b])
+	fx.beams_drawn = count
+	fx.draw_over(canvas, posed)
 
 
-## A beam of void from the eye to the far end of `ends` (where it stops at a
-## wall): the warning before it a flickering dotted line; then a tube of
-## nothing with the light torn bright round it, wavering, what it swallowed
-## running back up its core; light and dust beside it are drawn into it and
-## vanish, and where it strikes it tears a hole of void that sucks the floor's
-## dust in, swirling. On the 2 px grid.
-func _draw_beam(canvas: CanvasItem, drawn: Dictionary, ends: Array) -> void:
-	var eye: Vector2 = drawn.eye
-	var end := Vector2(float(ends[2]), float(ends[3]) - 16.0)
-	var beam: Dictionary = drawn.beam
-	var t: float = drawn.t
-	var length := maxf(1.0, eye.distance_to(end))
-	var direction := (end - eye) / length
-	var warn := float(beam.get("warn", 0.0))
-	if warn > 0.0:
-		var flick := 0.35 + 0.35 * sin(float(drawn.ct) * 40.0)
-		var s := 8.0
-		while s < length:
-			if int(s / 4.0) % 3 != 0: canvas.draw_rect(Rect2((eye + direction * s).round(), Vector2(2, 2)), Color(VIOLET, flick * warn))
-			s += 4.0
-	var k := float(beam.get("k", 0.0))
-	if k <= 0.0: return
-	# a tube of void: outside in the dark outline, the light torn bright at its
-	# rim, the violet body and a core of nothing (darker than the floor); it wavers
-	for layer: Array in [[8.0, INK], [6.6, VIOLET_HOT], [5.0, VIOLET], [3.0, VOID_CORE]]:
-		var s := 0.0
-		while s <= length:
-			var wobble := 1.1 * sin(s * 0.16 - t * 38.0) + 0.7 * sin(s * 0.055 + t * 21.0)
-			var radius := (float(layer[0]) + wobble) * k * (lerpf(0.5, 1.0, s / 12.0) if s < 12.0 else 1.0)
-			if radius >= 0.9:
-				var side := maxf(2.0, roundf(radius * 2.0 / 2.0) * 2.0)
-				canvas.draw_rect(Rect2((eye + direction * s - Vector2(side, side) * 0.5).round(), Vector2(side, side)), layer[1])
-			s += 2.0
-	# what it swallowed runs back up its core to the eye
-	if k > 0.5:
-		var s := fposmod(-t * 260.0, 14.0)
-		while s <= length:
-			canvas.draw_rect(Rect2((eye + direction * s - Vector2(1, 1)).round(), Vector2(2, 2)), VIOLET)
-			s += 14.0
-	# the eye burns; where it strikes it tears a hole of void with the light torn round it
-	var flare := 6.0 + 2.0 * sin(t * 50.0)
-	_px_disc(canvas, eye, (flare + 1.0) * k, VIOLET)
-	_px_disc(canvas, eye, flare * 0.55 * k, VIOLET_HOT)
-	_px_disc(canvas, end, (flare + 3.0) * k, INK)
-	_px_disc(canvas, end, (flare + 1.5) * k, VIOLET_HOT)
-	_px_disc(canvas, end, flare * k, VOID_CORE)
-	# light and dust beside it are drawn in and vanish in its core
-	var across := Vector2(-direction.y, direction.x)
-	for i in range(2):
-		var off := _rng.randf_range(10.0, 24.0) * (1.0 if _rng.randf() < 0.5 else -1.0)
-		var speed := _rng.randf_range(90.0, 160.0)
-		var from := eye + direction * _rng.randf_range(12.0, length) + across * off
-		_particles.append({"x": from.x, "y": from.y, "vx": -across.x * signf(off) * speed + direction.x * 20.0, "vy": -across.y * signf(off) * speed + direction.y * 20.0,
-			"life": 0.0, "max": (absf(off) - 3.0) / speed, "color": [VIOLET_HOT, VIOLET, Color("a99d93")][_rng.randi_range(0, 2)], "grav": 0.0})
-	# and the floor round the hole is sucked into it, swirling
-	if _rng.randf() < 0.8:
-		var out := Vector2.from_angle(_rng.randf() * TAU)
-		var dist := _rng.randf_range(12.0, 26.0)
-		var speed := _rng.randf_range(110.0, 180.0)
-		var from := end + out * dist
-		var pull := -out * speed + out.orthogonal() * speed * 0.35
-		_particles.append({"x": from.x, "y": from.y, "vx": pull.x, "vy": pull.y,
-			"life": 0.0, "max": (dist - 3.0) / speed, "color": [VIOLET_HOT, Color("7b6a5e"), Color("a99d93")][_rng.randi_range(0, 2)], "grav": 0.0})
-
-
-## A filled disc on the 2 px grid (no smooth circle: the pixel look).
-func _px_disc(canvas: CanvasItem, c: Vector2, r: float, col: Color) -> void:
-	if r < 1.0:
-		return
-	var n := int(ceil(r / 2.0))
-	for gy in range(-n, n + 1):
-		for gx in range(-n, n + 1):
-			var cell := (c / 2.0).floor() + Vector2(gx, gy)
-			if ((cell + Vector2(0.5, 0.5)) * 2.0 - c).length() <= r:
-				canvas.draw_rect(Rect2(cell * 2.0, Vector2(2, 2)), col)
-
-
-func _draw_pool(canvas: CanvasItem, pool: Dictionary) -> void:
-	var k := float(pool.life) / float(pool.max)
-	var grow := RigPoses.ease_out(RigPoses.seg(k, 0.0, 0.12)) * (1.0 - RigPoses.ease_in(RigPoses.seg(k, 0.7, 1.0)))
-	var rx := float(pool.r) * grow
-	var ry := rx * 0.45
-	if rx < 2.0: return
-	var rows := int(ceil(ry / 2.0))
-	for row in range(-rows, rows + 1):
-		var y := float(row) * 2.0
-		var half := rx * sqrt(maxf(0.0, 1.0 - pow(y / (ry + 1.0), 2.0)))
-		if half < 1.0: continue
-		canvas.draw_rect(Rect2(Vector2(float(pool.x) - half, float(pool.y) + y).round(), Vector2(roundf(half * 2.0), 2)), VIOLET_DARK)
-		if half > 3.0: canvas.draw_rect(Rect2(Vector2(float(pool.x) - half + 2.0, float(pool.y) + y).round(), Vector2(roundf(half * 2.0 - 4.0), 2)), Color("13111c"))
-	for i in range(3):
-		var angle := float(pool.life) * 2.0 + i * TAU / 3.0
-		canvas.draw_rect(Rect2(Vector2(float(pool.x) + cos(angle) * rx * 0.6, float(pool.y) + sin(angle) * ry * 0.6).round(), Vector2(2, 2)), Color(VIOLET, 0.8))
-	if _rng.randf() < 0.3:
-		_particles.append({"x": float(pool.x) + _rng.randf_range(-rx, rx) * 0.7, "y": float(pool.y), "vx": _rng.randf_range(-6, 6), "vy": _rng.randf_range(-60, -28), "life": 0.0, "max": 0.55, "color": [Color("efe6d6"), VIOLET, VIOLET_DARK][_rng.randi_range(0, 2)]})
-
-
-func _play_fx(event: Dictionary) -> void:
-	var point := Vector2(float(event.get("x", 0)), float(event.get("y", 0)))
-	var radius := float(event.get("r", 64))
-	match str(event.get("kind", "")):
-		"void_burst":
-			_flashes.append({"kind": "ring", "x": point.x, "y": point.y, "r": radius, "life": 0.0, "max": 0.45, "color": VIOLET})
-			_flashes.append({"kind": "ring", "x": point.x, "y": point.y, "r": radius * 0.6, "life": 0.0, "max": 0.35, "color": VIOLET_HOT})
-			_flashes.append({"x": point.x, "y": point.y, "r": radius * 1.6, "life": 0.0, "max": 0.5, "color": VIOLET})
-			_burst_at(point, VIOLET, 36, 220.0)
-			_burst_at(point, INK, 18, 140.0)
-		"slam":
-			_flashes.append({"kind": "ring", "x": point.x, "y": point.y, "r": radius, "life": 0.0, "max": 0.4, "color": Color("a99d93")})
-			for i in range(24): _particles.append({"x": point.x + _rng.randf_range(-radius, radius) * 0.5, "y": point.y, "vx": _rng.randf_range(-100, 100), "vy": _rng.randf_range(-90, -10), "life": 0.0, "max": _rng.randf_range(0.3, 0.6), "color": [Color("7b6a5e"), Color("a99d93")][_rng.randi_range(0, 1)], "grav": 280.0})
-
-
-func _burst_at(point: Vector2, color: Color, count: int, speed: float) -> void:
-	for i in range(count):
-		var angle := TAU * float(i) / float(count) + _rng.randf_range(-0.2, 0.2)
-		var velocity := Vector2(cos(angle), sin(angle)) * speed * _rng.randf_range(0.5, 1.0)
-		_particles.append({"x": point.x, "y": point.y, "vx": velocity.x, "vy": velocity.y, "life": 0.0, "max": _rng.randf_range(0.3, 0.7), "color": color})
-
-
-## Light sources from void effects for the dark crypt: [Vector3(x, y, radius)].
+## Light sources from void effects for the dark crypt: [Vector3(x, y, radius)] (RigFx.lights).
 func lights(snapshot: Dictionary) -> Array[Vector3]:
-	var result: Array[Vector3] = []
-	for enemy: Dictionary in snapshot.get("enemies", []):
-		if enemy.get("beam") is Array and str(enemy.get("attack", "")) == "active" and str(enemy.get("attack_kind", "")) == "beam":
-			var ends: Array = enemy.beam
-			var from := Vector2(float(ends[0]), float(ends[1]))
-			var to := Vector2(float(ends[2]), float(ends[3]))
-			var steps := maxi(1, int(from.distance_to(to) / 40.0))
-			for i in range(steps + 1): result.append(Vector3(lerpf(from.x, to.x, float(i) / steps), lerpf(from.y, to.y, float(i) / steps) - 16.0, 68.0))
-			if enemy.get("beam_b") is Array:
-				var other := Vector2(float(enemy.beam_b[2]), float(enemy.beam_b[3]))
-				for i in range(steps + 1): result.append(Vector3(lerpf(from.x, other.x, float(i) / steps), lerpf(from.y, other.y, float(i) / steps) - 16.0, 68.0))
-		elif str(enemy.get("rig", "")) in ["void", "bomber"] and float(enemy.get("dying_p", -1.0)) < 0.0:
-			result.append(Vector3(float(enemy.get("x", 0)), float(enemy.get("y", 0)) - 8.0, 72.0 if str(enemy.rig) == "void" else 40.0))
-	for pool: Dictionary in _pools: result.append(Vector3(float(pool.x), float(pool.y), 44.0))
-	for flash: Dictionary in _flashes:
-		if str(flash.get("kind", "")) != "ring": result.append(Vector3(float(flash.x), float(flash.y), float(flash.r) * (1.0 - float(flash.life) / float(flash.max))))
-	return result
+	return fx.lights(snapshot)

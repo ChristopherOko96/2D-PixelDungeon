@@ -108,10 +108,16 @@ static func tree(g: Node) -> Dictionary:
 	return RunTree.build(branches)
 
 
+## A tree node for card `c`. A heart card at the life cap (take_node refuses it)
+## is closed with its reason (RunTree "closed": drawn locked, the reason shown).
 static func _node(c: Dictionary, g: Node) -> Dictionary:
 	var crypt := ClassPerks.find(str(g.class_id), str(c.id))
-	return {"id": str(c.id), "name": str(c.name), "text": str(c.get("desc", "")), "max": int(c.max),
+	var node := {"id": str(c.id), "name": str(c.name), "text": str(c.get("desc", "")), "max": int(c.max),
 		"icon": SkillIcons.card(crypt if not crypt.is_empty() else {"id": str(c.id)}, str(g.class_id))}
+	if c.has("hearts") and not Rules.heart_room(g.state, int(g.balance.player.max_hp_cap)):
+		node.closed = "Leben am Höchstwert, mehr Herzen gehen nicht"
+		node.closed_tag = "LEBEN VOLL"
+	return node
 
 
 ## Ranks of the run tree's nodes: the cards taken in this run.
@@ -173,8 +179,9 @@ static func take(g: Node, c: Dictionary) -> void:
 
 # ---------- demon seals: two blessings, one safe price (balance package D1) ----------
 
-## The seal values of this world's balance ("seal": offers, price_hp); a world
-## whose balance does not name them yet (krypta_balance.json) takes the hell's.
+## The seal values of this world's balance ("seal": offers, price_hp, arm_s:
+## hell_balance.json and krypta_balance.json both name them); a world whose
+## balance does not takes the hell's.
 static func seal_cfg(g: Node) -> Dictionary:
 	var cfg: Dictionary = g.balance.get("seal", {})
 	if cfg.has("offers") and cfg.has("price_hp"):

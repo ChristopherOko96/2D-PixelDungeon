@@ -40,13 +40,22 @@ const GAP := 6.0
 const EQUIP_COLUMN := 112.0
 const BAG_X := 16.0 + EQUIP_COLUMN + 12.0
 ## Ends above the resource label over the skill bar (y 637), never covering it.
+## Where the window sits unless fit_below() moves it under the HUD's left column.
 const PANEL := Rect2(280, 64, 720, 552)
+## Height the equipment column needs besides its three steps between slots:
+## its top row (72), the last slot, its label under it, the footer line and a
+## few px between the label and the footer.
+const EQUIP_ROOM := 190.0
 ## The item actions in the order they line up: id, label.
 const ACTIONS := [["inv_equip", "ANLEGEN"], ["inv_use", "BENUTZEN"], ["inv_identify", "IDENTIFIZIEREN"], ["inv_cleanse", "FLUCH BRECHEN"],
 	["inv_upgrade", "AUFWERTEN"], ["inv_reroll", "NEU WÜRFELN"], ["inv_throw", "WERFEN"], ["inv_drop", "WEGWERFEN"]]
 
 var open := false
 var selected := HAND
+## Where the window sits now: PANEL, or below the HUD's hero strip (fit_below).
+var panel: Rect2 = PANEL
+## Px from one equipment slot's top to the next (the slot and its label under it).
+var equip_step := SLOT + 30.0
 var _view: Dictionary = {}
 var _textures: Dictionary = {}
 var _buttons: Dictionary = {}
@@ -85,11 +94,30 @@ func _ready() -> void:
 	# the action buttons; only those that fit the chosen item show (_refresh_buttons)
 	for entry: Array in ACTIONS:
 		var action: String = entry[0]
-		var button := _button(str(entry[1]), Rect2(PANEL.position, Vector2(120, 36)), func(): _act(action))
+		var button := _button(str(entry[1]), Rect2(panel.position, Vector2(120, 36)), func(): _act(action))
 		button.add_theme_font_size_override("font_size", 16)
 		HudStyle.style_button(button)
 		_buttons[action] = button
 	set_open(false)
+
+
+## Moves the window's top to `top` (screen px: the bottom of the HUD's hero
+## strip and companion bar plus a gap, ui_hud_style.json inventory_gap) so it
+## never covers them; its bottom goes down to inventory_bottom, still above the
+## resource label over the skill bar. The equipment column closes up to fit (a
+## slot every inventory_equip_step_min px at least); the actions line up right
+## of it. A `top` at or above PANEL's top keeps PANEL.
+func fit_below(top: float) -> void:
+	var next := PANEL
+	if top > PANEL.position.y:
+		var bottom := maxf(PANEL.end.y, HudStyle.size("inventory_bottom"))
+		next = Rect2(PANEL.position.x, top, PANEL.size.x, maxf(0.0, bottom - top))
+	var step := clampf(floorf((next.size.y - EQUIP_ROOM) / 3.0), HudStyle.size("inventory_equip_step_min"), SLOT + 30.0)
+	if next == panel and is_equal_approx(step, equip_step): return
+	panel = next
+	equip_step = step
+	_refresh_buttons()
+	queue_redraw()
 
 
 func _button(text: String, area: Rect2, callback: Callable) -> Button:
@@ -262,15 +290,15 @@ func _refresh_buttons() -> void:
 		button.visible = open and not button.disabled
 		if not button.visible: continue
 		button.size = Vector2(maxf(120.0, button.get_combined_minimum_size().x + 16.0), 36.0)
-		if used > 0.0 and used + button.size.x > PANEL.size.x - 32.0:
+		if used > 0.0 and used + button.size.x > panel.size.x - BAG_X - 16.0:
 			rows.append([])
 			used = 0.0
 		(rows[rows.size() - 1] as Array).append(button)
 		used += button.size.x + 8.0
 	for index in range(rows.size()):
-		var x := PANEL.position.x + 16.0
+		var x := panel.position.x + BAG_X
 		for button: Button in rows[index]:
-			button.position = Vector2(x, PANEL.end.y - 92.0 - (rows.size() - 1 - index) * 42.0)
+			button.position = Vector2(x, panel.end.y - 92.0 - (rows.size() - 1 - index) * 42.0)
 			x += button.size.x + 8.0
 
 
@@ -288,18 +316,18 @@ func _act(action: String) -> void:
 # --- Layout and input ----------------------------------------------------------------
 
 func _equip_rect(index: int) -> Rect2:
-	return Rect2(PANEL.position + Vector2(16.0 + (EQUIP_COLUMN - SLOT) * 0.5, 72 + index * (SLOT + 30.0)), Vector2(SLOT, SLOT))
+	return Rect2(panel.position + Vector2(16.0 + (EQUIP_COLUMN - SLOT) * 0.5, 72 + index * equip_step), Vector2(SLOT, SLOT))
 
 
 func _slot_rect(index: int) -> Rect2:
-	var origin := PANEL.position + Vector2(BAG_X, 72)
+	var origin := panel.position + Vector2(BAG_X, 72)
 	return Rect2(origin + Vector2((index % 6) * (SLOT + GAP), (index / 6) * (SLOT + GAP)), Vector2(SLOT, SLOT))
 
 
 func _gui_input(event: InputEvent) -> void:
 	if not open or not event is InputEventMouseButton or not event.pressed: return
 	var click := (event as InputEventMouseButton).position
-	if not PANEL.has_point(click):
+	if not panel.has_point(click):
 		set_open(false)
 		accept_event()
 		return
@@ -336,16 +364,16 @@ func _draw() -> void:
 		if _toast_time > 0.0: _draw_toast()
 		return
 	# the pause menu's panel look (src/ui/crypt_ui.gd)
-	draw_rect(PANEL, Color(HudStyle.color("outline"), 0.6))
-	draw_style_box(CryptUI.box("panel"), PANEL)
-	_text(PANEL.position + Vector2(18, 38), "INVENTAR", 24, HudStyle.color("text"))
+	draw_rect(panel, Color(HudStyle.color("outline"), 0.6))
+	draw_style_box(CryptUI.box("panel"), panel)
+	_text(panel.position + Vector2(18, 38), "INVENTAR", 24, HudStyle.color("text"))
 	var title_width := _font.get_string_size("INVENTAR", HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x
 	# the window's own messages take the hint's place in the header while they show
 	if _toast_time <= 0.0:
-		_text(PANEL.position + Vector2(18.0 + title_width + 24.0, 36), "Doppelklick: anlegen / benutzen", 16, HudStyle.color("text_dim"))
+		_text(panel.position + Vector2(18.0 + title_width + 24.0, 36), "Doppelklick: anlegen / benutzen", 16, HudStyle.color("text_dim"))
 	if float(_view.get("clone", 0.0)) > 0.0 and _toast_time <= 0.0:
-		_text(Vector2(PANEL.end.x - 18 - _font.get_string_size("KLON %d s" % int(_view.clone), HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x, PANEL.position.y + 36), "KLON %d s" % int(_view.clone), 16, HudStyle.color("accent"))
-	_text(Vector2(PANEL.position.x + 18, PANEL.end.y - 20), "I / Esc schließt", 16, Color(HudStyle.color("text_dim"), 0.9))
+		_text(Vector2(panel.end.x - 18 - _font.get_string_size("KLON %d s" % int(_view.clone), HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x, panel.position.y + 36), "KLON %d s" % int(_view.clone), 16, HudStyle.color("accent"))
+	_text(Vector2(panel.position.x + 18, panel.end.y - 20), "I / Esc schließt", 16, Color(HudStyle.color("text_dim"), 0.9))
 	var keys := EQUIP.keys()
 	for index in range(keys.size()):
 		var rect := _equip_rect(index)
@@ -386,14 +414,14 @@ func _draw_slot(rect: Rect2, item: Dictionary, chosen: bool) -> void:
 
 
 func _draw_details(item: Dictionary) -> void:
-	var at := PANEL.position + Vector2(BAG_X, 72 + 2.0 * (SLOT + GAP) + 34.0)
+	var at := panel.position + Vector2(BAG_X, 72 + 2.0 * (SLOT + GAP) + 34.0)
 	if item.is_empty():
 		_text(at, "Leerer Platz.", 16, HudStyle.color("text_dim"))
 		return
 	_text(at, str(item.get("name", "")), 18, Color(str(item.get("color", "d3bfa9"))))
 	if not str(item.get("rarity_label", "")).is_empty(): _text(at + Vector2(0, 22), str(item.rarity_label), 16, Color(str(item.get("color", "d3bfa9"))))
 	var y := 48.0
-	var room := PANEL.end.x - at.x - 18.0
+	var room := panel.end.x - at.x - 18.0
 	for line: String in item.get("lines", []):
 		var colour := HudStyle.color("danger") if line.begins_with("FLUCH") else HudStyle.color("accent") if line.begins_with("SEGEN") or line.begins_with("STUFE") else HudStyle.color("text")
 		# the element line in the element's own light
@@ -442,8 +470,8 @@ func _draw_toast() -> void:
 	# In the open window it sits in the header beside the title (never over the HUD), in
 	# up to two lines; a longer note sits centred above the panel, as wide as it needs.
 	var title_width := _font.get_string_size("INVENTAR", HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x
-	var at := PANEL.position + Vector2(18.0 + title_width + 16.0, 14.0)
-	var room := PANEL.end.x - 18.0 - (at.x + 14.0)
+	var at := panel.position + Vector2(18.0 + title_width + 16.0, 14.0)
+	var room := panel.end.x - 18.0 - (at.x + 14.0)
 	var lines: Array[String] = [text]
 	if width > room:
 		lines = _wrap(text, 16, room)
@@ -455,9 +483,9 @@ func _draw_toast() -> void:
 	var height := 30.0 + 22.0 * (lines.size() - 1)
 	var rect := Rect2(at, Vector2(width + 28, height))
 	if lines.size() > 1 and at.is_finite():
-		rect.position.y = PANEL.position.y + 8.0
+		rect.position.y = panel.position.y + 8.0
 	elif not at.is_finite():
-		rect.position = Vector2(640 - (width + 28) * 0.5, PANEL.position.y - 6.0 - height)
+		rect.position = Vector2(640 - (width + 28) * 0.5, panel.position.y - 6.0 - height)
 	var alpha := clampf(_toast_time, 0.0, 1.0)
 	HudStyle.panel(self, rect, alpha)
 	draw_rect(Rect2(rect.position, Vector2(3, rect.size.y)), Color(HudStyle.color("accent"), alpha))

@@ -89,6 +89,12 @@ func _initialize() -> void:
 	check(Rules.raised_max_hp(armoured, 2, 18) == 30 and not Rules.heart_room(armoured, 18), "above the cap a heart never lowers max life (base 20, cap 18)")
 	var plain := {"hp": 20, "max_hp": 20}
 	check(Rules.raised_max_hp(plain, 2, 18) == 20, "a max life above the cap stays as it is")
+	# the giant vault says the life it really added (nacharbeit L6)
+	var vault := {"hp": 16, "max_hp": 16}
+	var vault_gain := Rules.raised_max_hp(vault, 4, 18) - int(vault.max_hp)
+	check(vault_gain == 2 and Rules.vault_note(vault_gain, 9).contains("+1 Herzcontainer (+2 LP)"), "a vault of 2 hearts at 16 of 18 LP names the 1 container the cap let through (%s)" % Rules.vault_note(vault_gain, 9))
+	check(Rules.vault_note(0, 9).contains("schon am Höchstwert") and not Rules.vault_note(0, 9).contains("Herzcontainer"), "at the cap the vault names no container")
+	check(Rules.vault_note(1, 9).contains("+1 LP") and Rules.vault_note(4, 9).contains("+2 Herzcontainer (+4 LP)") and Rules.vault_note(4, 9).contains("+9 Runensteine"), "half a heart reads in LP, whole ones as containers with their LP and the stones")
 	# the seal's price in words the pixel font can draw (it has no "½")
 	check(Rules.price_text(1) == "ein halbes Herz" and Rules.price_text(2) == "1 Herz" and Rules.price_text(3) == "1,5 Herzen" and Rules.price_text(4) == "2 Herzen", "prices read ein halbes Herz / 1 Herz / 1,5 Herzen / 2 Herzen")
 	var missing := ""

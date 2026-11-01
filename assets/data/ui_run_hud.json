@@ -9,7 +9,9 @@
   "slot_height": 72,
   "slot_gap": 8,
   "skill_bar": {
-    "_note": "Slim skill bar (src/ui/skill_bar.gd), crypt and story worlds: slot size, gap, distance to the bottom edge, padding, icon size, key/number/label font sizes, EXP line height (px).",
+    "_note": "Slim skill bar (src/ui/skill_bar.gd), crypt and story worlds: slot size, gap, distance to the bottom edge, padding, icon size, key/number/label font sizes, EXP line height (px). hint_cell / hint_alpha: the dim flask in an empty quick-potion slot (H/G), its cell size in px and its opacity.",
+    "hint_cell": 2,
+    "hint_alpha": 0.55,
     "slot": 56,
     "gap": 4,
     "bottom": 10,

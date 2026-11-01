@@ -9,7 +9,8 @@ extends RefCounted
 ##   wins) shatter into shards cut from their own sprite that fly with the blow, bounce off walls
 ##   and floor and settle as debris; the world's crates/urns/barrels (breakable ents) do too.
 ## Everything scales with the blow's power (a sword chip 1, a boss slam 3+), nothing blocks input,
-## everything comes to rest. Data: assets/data/story_wreck.json.
+## everything comes to rest. Data: assets/data/story_wreck.json. Shards and chips fly by the shared
+## debris physics (src/rig_kit/rig_debris.gd, RigDebris), each with its material's values.
 ## Hooks: hell_game.gd _ready (new), load_floor (reset), _update (update), _update_shots (shot,
 ## hit_dir, hit_line), _swing (swing), _explode (blast), _hit_breakable (smash_ent), _slams_after
 ## (hit_line); src/hero/story_feel.gd wall_hit (every wall contact) and on_blast (enemy blasts).
@@ -20,6 +21,20 @@ const PX := 3.0
 ## hell_walls.gd: north faces rise this high over the floor line, side columns are this wide.
 const NORTH_HEIGHT := 74.0
 const SIDE_WIDTH := 62.0
+
+
+## The floor grid as RigDebris' world: a debris piece is thrown back by a blocked cell.
+## Holds the wreck weakly (the wreck owns the debris).
+class WreckFloor extends RigDebrisHost:
+	var _wreck: WeakRef
+
+	func _init(wreck: RefCounted) -> void:
+		_wreck = weakref(wreck)
+
+	## True on a blocked cell of the floor (story_wreck _blocked).
+	func solid(point: Vector2) -> bool:
+		var wreck: Variant = _wreck.get_ref()
+		return wreck != null and bool(wreck._blocked(point))
 
 
 ## One drawing layer of the wreck (marks_back, marks_front, rest, air).
@@ -38,7 +53,8 @@ var world_key := "hell"
 var hit_dir := Vector2.ZERO
 ## Persistent wall marks: {p, face, line, depth, seed, cells, colors}.
 var marks: Array = []
-## Flying or sliding debris, settled debris, crumbling debris, dust puffs.
+## Flying or sliding debris (RigDebris pieces: x, y, z, vx, vy, vz, ang, spin, phys = m), settled
+## debris, crumbling debris, dust puffs.
 var pieces: Array = []
 var rest: Array = []
 var crumbs: Array = []
@@ -61,6 +77,8 @@ var _sound_at: Dictionary = {}
 var _clock := 0.0
 var _seed := 1
 var _rng := RandomNumberGenerator.new()
+## The shared debris physics the pieces fly by (each piece brings its material as "phys").
+var _debris: RigDebris
 
 
 func _init(game: Node) -> void:
@@ -70,6 +88,7 @@ func _init(game: Node) -> void:
 	var base := str(g.get("theme_path")).get_file().get_basename().trim_suffix("_theme")
 	world_key = base if _sect("worlds").has(base) else str(cfg.get("default_world", "hell"))
 	_rng.seed = 7919
+	_debris = RigDebris.new({}, WreckFloor.new(self))
 	for spec: Array in [["marks_back", 3], ["rest", 4], ["air", 13], ["marks_front", 22]]:
 		var layer := WreckLayer.new()
 		layer.kit = self
@@ -617,8 +636,8 @@ func _shatter(name: String, foot: Vector2, flip: bool, dir: Vector2, power: floa
 		var away := (drawn - at).normalized() if drawn.distance_to(at) > 1.0 else Vector2(_rng.randf_range(-1.0, 1.0), -1.0).normalized()
 		var v := dir * speed * _rng.randf_range(0.4, 1.1) + Vector2(away.x, away.y * 0.5) * spread * _rng.randf_range(0.3, 1.0)
 		var height := maxf(0.0, foot.y - drawn.y)
-		var q := {"kind": "shard", "p": Vector2(drawn.x, foot.y + _rng.randf_range(-4.0, 4.0)), "z": height, "v": v, "vz": up * _rng.randf_range(0.4, 1.0) * (1.0 - 0.4 * height / maxf(1.0, size.y)),
-			"rot": 0.0, "spin": _rng.randf_range(-1.0, 1.0) * float(m.get("spin", 10.0)), "m": m, "tex": t, "pts": s.pts, "uvs": s.uvs, "flip": flip, "r": float(s.r), "life": 0.0, "heat": 0.0}
+		var q := {"kind": "shard", "x": drawn.x, "y": foot.y + _rng.randf_range(-4.0, 4.0), "z": height, "vx": v.x, "vy": v.y, "vz": up * _rng.randf_range(0.4, 1.0) * (1.0 - 0.4 * height / maxf(1.0, size.y)),
+			"ang": 0.0, "spin": _rng.randf_range(-1.0, 1.0) * float(m.get("spin", 10.0)), "m": m, "phys": m, "tex": t, "pts": s.pts, "uvs": s.uvs, "flip": flip, "r": float(s.r), "life": 0.0, "heat": 0.0, "rest": false}
 		_add_piece(q)
 	if shard_list.is_empty():
 		for k in range(10):
@@ -707,7 +726,8 @@ func _spawn_chip(ground: Vector2, z: float, v: Vector2, vz: float, c: Color, siz
 	var heat := 0.0
 	if _rng.randf() < float(m.get("ember_share", 0.0)):
 		heat = 1.0
-	_add_piece({"kind": "chip", "p": ground, "z": maxf(0.0, z), "v": v, "vz": vz, "rot": 0.0, "spin": 0.0, "m": m, "c": c, "s": size, "life": 0.0, "heat": heat, "seed": _next_seed()})
+	_add_piece({"kind": "chip", "x": ground.x, "y": ground.y, "z": maxf(0.0, z), "vx": v.x, "vy": v.y, "vz": vz, "ang": 0.0, "spin": 0.0, "m": m, "phys": m,
+		"c": c, "s": size, "life": 0.0, "heat": heat, "seed": _next_seed(), "rest": false})
 
 
 func _add_piece(q: Dictionary) -> void:
@@ -716,69 +736,42 @@ func _add_piece(q: Dictionary) -> void:
 	pieces.append(q)
 
 
-## One debris step on the floor plane (p) with height z: gravity, bounces that lose energy,
-## walls that throw it back, friction of its material until it rests; in lava it sinks.
+## One debris step of piece `q` (RigDebris.step_piece with its material: gravity, bounces that
+## lose energy, walls that throw it back, its slide until it rests); a shard landing hard ticks,
+## one landing on lava sinks into it. False once it has settled (it moved to `rest`).
 func _step(q: Dictionary, dt: float) -> bool:
 	var m: Dictionary = q.m
-	q.life = float(q.life) + dt
 	if q.has("sink"):
+		q.life = float(q.life) + dt
 		q.sink = float(q.sink) - dt
-		q.z = float(q.z) - 20.0 * dt
+		q.z = float(q.z) - float(_sect("debris").get("sink_speed", 0.0)) * dt
 		return float(q.sink) > 0.0
 	if float(q.heat) > 0.0:
 		q.heat = maxf(0.0, float(q.heat) - dt / maxf(0.1, float(m.get("cool_time", 1.6))))
-	q.vz = float(q.vz) - float(m.gravity) * dt
-	q.z = float(q.z) + float(q.vz) * dt
-	var v: Vector2 = q.v
-	var p: Vector2 = q.p
-	var step := v * dt
-	if _blocked(p + Vector2(step.x, 0.0)):
-		v.x = -v.x * float(m.wall_bounce)
-		step.x = 0.0
-	if _blocked(p + Vector2(0.0, step.y)):
-		v.y = -v.y * float(m.wall_bounce)
-		step.y = 0.0
-	q.p = p + step
-	q.rot = float(q.rot) + float(q.spin) * dt
-	if float(q.z) <= 0.0:
+	var got := _debris.step_piece(q, dt)
+	if got == RigDebris.Step.AIR:
+		return true
+	if got == RigDebris.Step.BOUNCE and float(q.get("impact", 0.0)) > float(m.get("tick_vz", 160.0)) and str(q.kind) == "shard":
+		_sound(str(m.get("tick", "")), _at(q), 0.07)
+	if _lava(_at(q)):
+		q.sink = float(_sect("debris").get("lava_sink", 0.7))
+		q.heat = 1.0
 		q.z = 0.0
-		var fall := -float(q.vz)
-		if fall > float(m.bounce_min):
-			q.vz = fall * float(m.bounce)
-			v *= float(m.bounce_keep)
-			q.spin = -float(q.spin) * 0.6
-			if fall > float(m.get("tick_vz", 160.0)) and str(q.kind) == "shard":
-				_sound(str(m.get("tick", "")), q.p, 0.07)
-			if _lava(q.p):
-				q.sink = float(_sect("debris").get("lava_sink", 0.7))
-				q.heat = 1.0
-				return true
-		else:
-			q.vz = 0.0
-			if _lava(q.p):
-				q.sink = float(_sect("debris").get("lava_sink", 0.7))
-				q.heat = 1.0
-				return true
-			v = v.move_toward(Vector2.ZERO, float(m.friction) * dt)
-			q.spin = move_toward(float(q.spin), 0.0, 30.0 * dt)
-			if str(q.kind) == "shard":
-				var snapped := roundf(float(q.rot) / (PI / 2.0)) * (PI / 2.0)
-				q.rot = lerp_angle(float(q.rot), snapped, 1.0 - exp(-8.0 * dt))
-			if v.length() < float(m.settle_speed):
-				q.v = Vector2.ZERO
-				_settle(q)
-				return false
-	q.v = v
-	if float(q.life) > float(_sect("debris").get("max_air_time", 4.0)):
-		q.z = 0.0
+		return true
+	if got == RigDebris.Step.REST:
 		_settle(q)
 		return false
 	return true
 
 
+## Where piece `q` lies on the floor plane (world px).
+static func _at(q: Dictionary) -> Vector2:
+	return Vector2(float(q.x), float(q.y))
+
+
 func _settle(q: Dictionary) -> void:
 	if str(q.kind) == "shard":
-		q.rot = roundf(float(q.rot) / (PI / 2.0)) * (PI / 2.0)
+		q.ang = RigDebris.snapped_angle(float(q.ang), q.m)
 	q.heat = 0.0
 	rest.append(q)
 	var cap := int(_sect("debris").get("rest_cap", 340))
@@ -816,7 +809,7 @@ func draw(l: Node2D, mode: String) -> void:
 					l.draw_rect(Rect2(cells[i], Vector2(PX, PX)), colors[i])
 		"rest":
 			for q: Dictionary in rest:
-				if view.has_point(q.p):
+				if view.has_point(_at(q)):
 					_draw_piece(l, q, 1.0)
 		"air":
 			for q: Dictionary in crumbs:
@@ -826,7 +819,7 @@ func draw(l: Node2D, mode: String) -> void:
 			for q: Dictionary in pieces:
 				if float(q.z) > 4.0:
 					var sw := clampf(float(q.get("r", PX)) * 0.9, PX, 18.0)
-					l.draw_rect(Rect2(((q.p as Vector2) - Vector2(sw * 0.5, 1.0) / 1.0).snapped(Vector2(PX, PX)), Vector2(sw, PX)), Color(0, 0, 0, 0.22))
+					l.draw_rect(Rect2((_at(q) - Vector2(sw * 0.5, 1.0) / 1.0).snapped(Vector2(PX, PX)), Vector2(sw, PX)), Color(0, 0, 0, 0.22))
 				_draw_piece(l, q, 1.0)
 			for d: Dictionary in dust:
 				var life := 1.0 - float(d.t) / float(d.life)
@@ -843,7 +836,7 @@ func draw(l: Node2D, mode: String) -> void:
 
 
 func _draw_piece(l: CanvasItem, q: Dictionary, alpha: float) -> void:
-	var at: Vector2 = (q.p as Vector2) - Vector2(0.0, float(q.z))
+	var at: Vector2 = _at(q) - Vector2(0.0, float(q.z))
 	var m: Dictionary = q.m
 	var heat := float(q.get("heat", 0.0))
 	var ember := _color(m.get("ember", null), Color(1.0, 0.5, 0.15))
@@ -853,7 +846,7 @@ func _draw_piece(l: CanvasItem, q: Dictionary, alpha: float) -> void:
 		var tint := Color(1, 1, 1, alpha)
 		if heat > 0.0:
 			tint = Color(1.0, 1.0 - 0.4 * heat, 1.0 - 0.7 * heat, alpha)
-		l.draw_set_transform(at, float(q.rot), Vector2(-1.0 if bool(q.flip) else 1.0, 1.0))
+		l.draw_set_transform(at, float(q.ang), Vector2(-1.0 if bool(q.flip) else 1.0, 1.0))
 		l.draw_polygon(q.pts, PackedColorArray([tint]), q.uvs, q.tex)
 		l.draw_set_transform(Vector2.ZERO)
 		return
@@ -885,9 +878,6 @@ func _mat(name: String) -> Dictionary:
 	var mats := _sect("materials")
 	var out: Dictionary = (mats.get("default", {}) as Dictionary).duplicate()
 	out.merge(mats.get(name, {}), true)
-	for k: String in ["gravity", "bounce", "bounce_min", "bounce_keep", "friction", "wall_bounce", "settle_speed"]:
-		if not out.has(k):
-			out[k] = {"gravity": 1600.0, "bounce": 0.3, "bounce_min": 80.0, "bounce_keep": 0.6, "friction": 900.0, "wall_bounce": 0.35, "settle_speed": 18.0}[k]
 	return out
 
 

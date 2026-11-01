@@ -1,0 +1,16 @@
+{
+  "_note": "What a rigged monster's attack needs from its body, so a cut part takes it away (src/rig/rig_library.gd attack_needs, src/combat/body_parts.gd can_attack, src/hell/drake_rig_host.gd prepare). A part's (or rig group's) \"disables\" in the rig files names either attack ids of the monster (hieb, fluch, the Hell's and the Krypta bosses' rigs) or a rig action (the old dungeon's names attack, cast, block, which the crypt rigs worn in the Krypta keep). Every attack needs its own id, plus the rig actions of its explicit needs: the attack's own \"needs\" (a string or a list, in the monster data) wins, else needs[monster id][attack id] here, else kind_category[its kind] (\"\" = nothing but its id). A part that names any attack id of the monster is precise: only those ids count on it, its rig action names stay for the old dungeon. tests/rig_disables_test.gd checks that every disables entry of every story-world rig reaches an attack.",
+  "_categories_note": "attack: a weapon, a hand or an arm swings, throws or shoots (sword, bow, mace, a brute's arm). cast: a spell from a staff or a book. block: a shield. dash, breath, sweep, burrow and flight are the body's own (legs, mouth, wings): no category.",
+  "categories": ["attack", "cast", "block"],
+  "kind_category": {
+    "swing": "attack", "slam": "attack", "lob": "attack", "bolt": "attack", "chain": "attack",
+    "homing": "cast", "summon": "cast", "spiral": "cast", "ring": "cast", "scream": "cast", "hands": "cast",
+    "meteors": "cast", "teleport": "cast", "beam": "cast", "echoes": "cast",
+    "dash": "", "breath": "", "sweep": "", "burrow": "", "flight": ""
+  },
+  "_needs_note": "Attacks whose body need differs from their kind's category (tools/krypta_dungeon/krypta_monsters.js STATS may carry a \"needs\" of its own instead). skelett sprung: the leap comes with the raised sword. skelettwache schild: the shield bash needs the shield, not the mace.",
+  "needs": {
+    "skelett": {"sprung": ["attack"]},
+    "skelettwache": {"schild": ["block"]}
+  }
+}
