@@ -55,6 +55,9 @@ const WEAPON_MOTES := 3
 ## turning at `spin` rad/s, one bounce, then it lies still on its flat side.
 const GORE_PATH := "res://assets/data/vfx_gore.json"
 static var _drop_phys: Dictionary = {}
+## How the weapons move (the sword's guard and stroke): presentation only.
+const MOTION_PATH := "res://assets/data/hero_weapon_motion.json"
+static var _sword_motion: Variant = null
 
 var px := 2.0
 ## World pixels per hero art pixel (the staff is sized and placed by the body).
@@ -111,10 +114,40 @@ func observe(key: String, player: Dictionary, point: Vector2, clock: float) -> v
 	_trail[key] = trail
 
 
-## 0..1 progress of the running swing, or -1.
+## 0..1 progress of the running swing (its whole stroke: lift, cut, follow-through
+## and the way back to the guard, swing_time()), or -1.
+## [codeblock]
+## if look.swing_progress("hero", clock) >= 0.0: print("the blade is moving")
+## [/codeblock]
 func swing_progress(key: String, clock: float) -> float:
 	var elapsed := clock - float(_swing.get(key, {}).get("start", -INF))
-	return elapsed / SWING_TIME if elapsed >= 0.0 and elapsed < SWING_TIME else -1.0
+	var time := swing_time()
+	return elapsed / time if elapsed >= 0.0 and elapsed < time else -1.0
+
+
+## Seconds one sword stroke takes to look through (hero_weapon_motion.json
+## sword.swing.time; SWING_TIME without the file).
+static func swing_time() -> float:
+	return maxf(0.05, float((sword_motion().get("swing", {}) as Dictionary).get("time", SWING_TIME)))
+
+
+## The "sword" block of assets/data/hero_weapon_motion.json: its "guard" (the
+## resting hold) and "swing" (the stroke). {} without the file.
+## [codeblock]
+## var tilt := float(HeroLook.sword_motion().get("guard", {}).get("tilt", 0.6))
+## [/codeblock]
+static func sword_motion() -> Dictionary:
+	# read once (asked several times every frame); reload_motion() reads it again
+	if _sword_motion == null:
+		var sword: Variant = DataCache.load_dict(MOTION_PATH).get("sword", {})
+		_sword_motion = sword if sword is Dictionary else {}
+	return _sword_motion
+
+
+## Forgets the read motion data, so the next frame reads the file again.
+static func reload_motion() -> void:
+	DataCache.clear(MOTION_PATH)
+	_sword_motion = null
 
 
 ## Which way the hero faces (+1 right, -1 left): the aim, or turning with the blade while it whirls.
@@ -124,11 +157,14 @@ func face(player: Dictionary, aim: Vector2, clock: float) -> float:
 	return -1.0 if aim.x < -0.1 else 1.0
 
 
-## The hero sprite leans into a sword swing: forward with the blade, then back.
+## The hero sprite leans into a sword swing: forward with the cut, back by the
+## end of its follow-through (hero_weapon_motion.json sword.swing settle, lean).
 func body_offset(key: String, player: Dictionary, aim: Vector2, clock: float) -> Vector2:
 	var p := swing_progress(key, clock)
 	if p < 0.0 or not bool(player.get("melee", false)): return Vector2.ZERO
-	return (aim * sin(p * PI) * 3.0 * px).round()
+	var cut: Dictionary = sword_motion().get("swing", {})
+	var settle := clampf(float(cut.get("settle", 0.6)), 0.05, 1.0)
+	return (aim * sin(clampf(p / settle, 0.0, 1.0) * PI) * float(cut.get("lean", 3.0)) * px).round()
 
 
 ## Afterimages of a dash, oldest faintest. `draw_hero(position, alpha)` draws the hero.
@@ -222,27 +258,73 @@ func _sword(key: String, player: Dictionary, point: Vector2, aim: Vector2, clock
 	if skills.has("whirl_time"):
 		var whirl: Array[Dictionary] = [_whirl(point, reach, clock, texture, rage, rect, turn)]
 		return whirl
-	var hand := point + aim * 5.0 * px + Vector2(0, px)
-	var off_hand := point - aim * 2.0 * px + aim.orthogonal() * 5.0 * px * (1.0 if aim.x >= 0.0 else -1.0) + Vector2(0, px)
+	# the guard: held low before the body, the blade up and leaning forward, a little
+	# toward the aim (hero_weapon_motion.json sword.guard; not a pointer at the head)
+	var motion := sword_motion()
+	var guard: Dictionary = motion.get("guard", {})
+	var cut: Dictionary = motion.get("swing", {})
+	var facing := face(player, aim, clock)
+	var hand := point + _hero_offset(guard.get("hand", [2.5, 4.5]), facing)
+	var main_angle := -PI * 0.5 + facing * (float(guard.get("tilt", 0.6)) + aim.y * float(guard.get("aim_lean", 0.3)))
+	var off_hand := point + _hero_offset(guard.get("off_hand", [-1.5, 4.0]), facing)
+	var off_angle := -PI * 0.5 + facing * float(guard.get("off_tilt", 1.0))
 	var p := swing_progress(key, clock)
-	var main_angle := aim.angle()
-	var off_angle := aim.angle() + (-0.9 if aim.x >= 0.0 else 0.9)
 	var crescent := Callable()
 	if p >= 0.0:
 		var swing: Dictionary = _swing[key]
-		var dir := int(swing.get("dir", 1))
+		var mirrored := int(swing.get("dir", 1)) < 0
 		var arc := float(swing.get("arc", 2.0))
-		var start := float(swing.angle) - arc * 0.5 * dir
-		var now := start + arc * dir * ease(p, 0.4)
-		var center := point + Vector2(0, -2.0 * px)
-		var smear := SMEAR_RAGE if rage else SMEAR
-		crescent = func(canvas: CanvasItem, _follow: Transform2D) -> void: _crescent(canvas, center, reach * 0.85, start, now, 1.0 - p, smear)
-		if dir > 0:
-			main_angle = now
-			hand = point + Vector2.RIGHT.rotated(now) * 6.0 * px + Vector2(0, px)
+		var mid := float(swing.angle)
+		var rest_hand := off_hand if mirrored else hand
+		var rest_angle := off_angle if mirrored else main_angle
+		# the cut starts at the end of the arc nearest the raised blade (a downward cut);
+		# Rage's mirrored second swing comes back the other way
+		var near := 1.0 if absf(angle_difference(main_angle, mid - arc * 0.5)) <= absf(angle_difference(main_angle, mid + arc * 0.5)) else -1.0
+		var dir := -near if mirrored else near
+		var start := mid - arc * 0.5 * dir
+		var past := mid + (arc * 0.5 + float(cut.get("overshoot", 0.35))) * dir
+		var radius := float(cut.get("reach", 6.0)) * px
+		var lift := clampf(float(cut.get("lift", 0.12)), 0.0, 0.5)
+		var strike := clampf(float(cut.get("strike", 0.45)), lift + 0.01, 1.0)
+		var settle := clampf(float(cut.get("settle", 0.6)), strike, 1.0)
+		var on_arc := func(angle: float) -> Vector2: return point + Vector2.RIGHT.rotated(angle) * radius + Vector2(0, px)
+		var now := start
+		var at: Vector2 = on_arc.call(start)
+		var cut_to := start
+		var life := 0.0
+		if p < lift:
+			# anticipation: the blade rises from the guard to the start of the cut
+			var k := ease(p / maxf(0.001, lift), 0.5)
+			now = lerp_angle(rest_angle, start, k)
+			at = rest_hand.lerp(at, k)
+		elif p < strike:
+			# the cut: fast, eased out, past the end of the arc
+			var k := ease((p - lift) / (strike - lift), float(cut.get("strike_ease", 0.35)))
+			now = lerpf(start, past, k)
+			at = on_arc.call(now)
+			cut_to = now
+			life = 1.0 - 0.3 * k
+		elif p < settle:
+			# follow-through: the blade hangs where the cut ended, the smear fades
+			now = past
+			at = on_arc.call(past)
+			cut_to = past
+			life = 0.7 * (1.0 - (p - strike) / maxf(0.001, settle - strike))
 		else:
+			# back to the guard, eased in and out
+			var k := smoothstep(0.0, 1.0, (p - settle) / maxf(0.001, 1.0 - settle))
+			now = lerp_angle(past, rest_angle, k)
+			at = (on_arc.call(past) as Vector2).lerp(rest_hand, k)
+		if life > 0.0:
+			var center := point + Vector2(0, -2.0 * px)
+			var smear := SMEAR_RAGE if rage else SMEAR
+			crescent = func(canvas: CanvasItem, _follow: Transform2D) -> void: _crescent(canvas, center, reach * 0.85, start, cut_to, life, smear)
+		if mirrored:
 			off_angle = now
-			off_hand = point + Vector2.RIGHT.rotated(now) * 6.0 * px + Vector2(0, px)
+			off_hand = at
+		else:
+			main_angle = now
+			hand = at
 	var out: Array[Dictionary] = []
 	if rage:
 		var blade := off_blade if off_blade != null else texture
@@ -260,6 +342,13 @@ func _sword(key: String, player: Dictionary, point: Vector2, aim: Vector2, clock
 			ItemArt.draw_weapon_motes(canvas, tip, along, size.y * 0.5, element, clock, px, key.hash(), WEAPON_MOTES)
 	out.append(main)
 	return out
+
+
+## An offset [x, y] in hero art px from the motion data as world px, x toward
+## the side the hero faces (`facing` +1 right, -1 left).
+func _hero_offset(at: Variant, facing: float) -> Vector2:
+	var pair: Array = at if at is Array and (at as Array).size() >= 2 else [0.0, 0.0]
+	return Vector2(facing * float(pair[0]), float(pair[1])) * hero_px
 
 
 ## A filled crescent from `from` to `to` (radians): bright at the blade, fading to the tail.

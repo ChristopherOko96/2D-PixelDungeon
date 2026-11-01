@@ -191,12 +191,34 @@ func _test_look_pieces() -> void:
 	var point := Vector2(100, 100)
 	var pieces: Array[Dictionary] = look.hold("k", knight, point, Vector2.RIGHT, 1.0, sword)
 	var size := sword.get_size() * 2.0
+	# the guard from assets/data/hero_weapon_motion.json: low before the body, blade up and leaning forward
+	var guard: Dictionary = HeroLook.sword_motion().get("guard", {})
+	var guard_hand := Vector2(float(guard.hand[0]), float(guard.hand[1])) * look.hero_px
+	var guard_turn := float(guard.tilt)
 	check(pieces.size() == 1 and bool(pieces[0].get("main", false)), "a resting sword is one piece, the hero's own")
-	check(Vector2(pieces[0].hand) == point + Vector2(10, 2) and is_equal_approx(float(pieces[0].angle), PI * 0.5) and Rect2(pieces[0].rect) == Rect2(-size * HeroLook.SWORD_GRIP, size),
-		"the sword is held 5 weapon px toward the aim, pointing at it, gripped near its pommel")
+	check(Vector2(pieces[0].hand).is_equal_approx(point + guard_hand) and is_equal_approx(float(pieces[0].angle), guard_turn) and Rect2(pieces[0].rect) == Rect2(-size * HeroLook.SWORD_GRIP, size),
+		"the resting sword is held low before the body, its blade up and leaning forward, gripped near its pommel")
+	check(Vector2(pieces[0].hand).y > point.y and absf(float(pieces[0].angle)) < PI * 0.5, "the resting blade does not point at the aim from the shoulder")
+	var facing_left: Array[Dictionary] = look.hold("k", knight, point, Vector2.LEFT, 1.0, sword)
+	check(Vector2(facing_left[0].hand).is_equal_approx(point + Vector2(-guard_hand.x, guard_hand.y)) and is_equal_approx(float(facing_left[0].angle), -guard_turn), "facing left the guard is mirrored")
 	var spec := {"style": "sword", "grip": Vector2(0.5, 0.5), "rest": 0.25}
 	var moved: Array[Dictionary] = look.hold("k", knight, point, Vector2.RIGHT, 1.0, sword, Color.WHITE, "", spec)
-	check(Rect2(moved[0].rect) == Rect2(-size * 0.5, size) and is_equal_approx(float(moved[0].angle), PI * 0.5 + 0.25), "the rig data's grip and rest replace the look's own")
+	check(Rect2(moved[0].rect) == Rect2(-size * 0.5, size) and is_equal_approx(float(moved[0].angle), guard_turn + 0.25), "the rig data's grip and rest replace the look's own")
+	# a stroke: lifted, cut down through the aim past the arc, then back to the guard
+	look.observe("s", knight, point, 0.0)
+	knight.swings = 1
+	knight.swing_angle = 0.0
+	knight.swing_arc = 2.0
+	knight.swing_dir = 1
+	look.observe("s", knight, point, 1.0)
+	var time := HeroLook.swing_time()
+	var cut: Dictionary = HeroLook.sword_motion().get("swing", {})
+	var mid_cut: Array[Dictionary] = look.hold("s", knight, point, Vector2.RIGHT, 1.0 + time * (float(cut.lift) + float(cut.strike)) * 0.5, sword)
+	var follow: Array[Dictionary] = look.hold("s", knight, point, Vector2.RIGHT, 1.0 + time * (float(cut.strike) + float(cut.settle)) * 0.5, sword)
+	var back: Array[Dictionary] = look.hold("s", knight, point, Vector2.RIGHT, 1.0 + time * 1.2, sword)
+	check(float(mid_cut[0].angle) > guard_turn and (mid_cut[0].get("under") as Callable).is_valid(), "mid-stroke the blade has cut down from the guard and leaves a smear")
+	check(float(follow[0].angle) > PI * 0.5 + 1.0, "the follow-through carries the blade past the end of the arc")
+	check(is_equal_approx(float(back[0].angle), guard_turn) and Vector2(back[0].hand).is_equal_approx(point + guard_hand), "after the stroke the blade is back in the guard")
 	var knife := {"melee": true, "swings": 0, "class_id": "archer"}
 	var other: Array[Dictionary] = look.hold("e", knife, point, Vector2.RIGHT, 1.0, sword, Color.WHITE, "", {"style": "bow", "grip": Vector2(0.1, 0.1)})
 	check(Rect2(other[0].rect) == Rect2(-size * HeroLook.SWORD_GRIP, size), "a held block of another style (the elf's bow, a knife in hand) is not used")
