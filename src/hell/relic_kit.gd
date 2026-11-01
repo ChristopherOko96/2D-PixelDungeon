@@ -127,7 +127,7 @@ static func press(g: Node, key: String) -> bool:
 	if s.is_empty():
 		return false
 	if int(g.state.level) < int(s.unlock):
-		g._toast("%s ab Level %d." % [s.name, int(s.unlock)])
+		g._toast("%s ab Laufstufe %d." % [s.name, int(s.unlock)])
 		return true
 	if float(g.state.skill_cd.get(str(s.id), 0.0)) > 0.0:
 		g._sound("no_cooldown")

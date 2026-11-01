@@ -9,6 +9,7 @@ extends RefCounted
 ## kit bosses (boss_kit.gd) keep theirs. Bullets are enemy shots (game.eshots)
 ## with damage, effect and style, so gravity walls and shield walls stop them.
 
+const ShotLooks = preload("res://src/vfx/shot_looks.gd")
 const HeroFx = preload("res://src/hell/hero_fx.gd")
 const DATA_PATH := "res://assets/data/combat_boss_moves.json"
 ## Move types this runtime plays (barrier, cage, grab, shield and twin_beam need the crypt's rooms and team).
@@ -16,8 +17,21 @@ const TYPES := ["strikes", "bullets", "lob", "dash", "blink", "vortex", "cone", 
 const STYLE := {"ice": Color(0.65, 0.9, 1.0), "frost": Color(0.8, 0.96, 1.0), "quake": Color(0.75, 0.6, 0.45), "poison": Color(0.55, 0.9, 0.35),
 	"void": Color(0.75, 0.45, 0.95), "bone": Color(0.92, 0.88, 0.78), "fire": Color(1.0, 0.55, 0.25), "curse": Color(0.6, 0.45, 0.9), "charge": Color(1.0, 0.45, 0.4),
 	"dust": Color(0.75, 0.7, 0.65), "arrow": Color(0.95, 0.9, 0.8), "spit": Color(0.6, 0.85, 0.35), "skull": Color(0.92, 0.88, 0.78)}
+## Fair combat in all three story worlds (VORSCHLAEGE.md B1, B2, A10, A12): windups,
+## aim lock, attack tokens, the white hit flash and a boss's area warning. Shared here
+## as statics so hell_monsters.gd (Krypta, Hoelle) and hell_game.gd (the Frostgruft's
+## themed mobs) read the same rules.
+const TELLS_PATH := "res://assets/data/combat_tells.json"
+## Move types that strike the moment their windup ends (no floor warning after it).
+const DIRECT_TYPES := ["bullets", "dash", "cone", "spin", "vortex"]
+## The m.hit every damage path sets on a hit (hell_game.gd _damage_mob and the others):
+## the time since a hit is HIT_SET - m.hit.
+const HIT_SET := 0.12
+## The world's art pixel (16 px art drawn x3).
+const PX := 3.0
 
 static var _data: Dictionary = {}
+static var _tells: Dictionary = {}
 
 
 static func data() -> Dictionary:
@@ -98,14 +112,19 @@ static func update(g: Node, dt: float) -> void:
 			_run(g, m, run, dt)
 			continue
 		m.mv_hold = false
-		if hidden or float(m.get("stun", 0.0)) > 0.0:
+		# a plain shot or dash winding up (basic_tell) holds the moves back
+		if hidden or float(m.get("stun", 0.0)) > 0.0 or not (m.get("tell", {}) as Dictionary).is_empty():
 			continue
 		mv.next = float(mv.next) - dt
 		if float(mv.next) > 0.0:
 			continue
+		var pick := choose(g, m, set)
+		# attack tokens (combat_tells.json tokens): without a free one it tries again soon, the move unspent
+		if not pick.is_empty() and not token_free(g, m, str(move(str(pick.move)).get("type", ""))):
+			mv.next = float(token_cfg().get("retry", 0.2))
+			continue
 		var every: Array = set.get("every", [3.0, 5.0])
 		mv.next = randf_range(float(every[0]), float(every[1])) * (float(data().get("rage", {}).get("cooldown_scale", 0.6)) if mv.rage else 1.0)
-		var pick := choose(g, m, set)
 		if not pick.is_empty():
 			_begin(g, m, pick)
 	_update_zones(g, dt)
@@ -143,7 +162,11 @@ static func _begin(g: Node, m: Dictionary, e: Dictionary) -> void:
 	m.mv.cd[id] = float(e.get("cooldown", 0.0))
 	m.mv.used[id] = true
 	var aim: Vector2 = (_hero(g) - (m.p as Vector2)).normalized()
-	m.mv.run = {"id": id, "spec": spec, "phase": "windup", "t": float(spec.get("windup", 0.5)), "aim": aim, "at": _hero(g), "tick": 0.0, "hit": false, "moved": 0.0}
+	# a move that strikes at once never winds up shorter than the other worlds' tells of its lane
+	var wind := float(spec.get("windup", 0.5))
+	if str(spec.get("type", "")) in DIRECT_TYPES and float(spec.get("damage", 0)) > 0.0:
+		wind = maxf(wind, float((tells().get("frost_min_windup", {}) as Dictionary).get(lane_of(str(spec.type)), 0.0)))
+	m.mv.run = {"id": id, "spec": spec, "phase": "windup", "t": wind, "wind": wind, "aim": aim, "at": _hero(g), "tick": 0.0, "hit": false, "moved": 0.0}
 	m.mv_hold = true
 	match str(spec.get("anim", "attack")):
 		"roar":
@@ -163,9 +186,9 @@ static func _begin(g: Node, m: Dictionary, e: Dictionary) -> void:
 			var dir: Vector2 = -aim if spec.get("away", false) else aim
 			m.mv.run.aim = dir
 			if not spec.get("away", false):
-				_zones(g).append({"kind": "lane", "p": m.p, "q": (m.p as Vector2) + dir * float(spec.distance) * k, "w": maxf(30.0, float(spec.width) * k), "t": float(spec.windup), "max": float(spec.windup), "style": str(spec.get("style", "charge"))})
+				_zones(g).append({"kind": "lane", "p": m.p, "q": (m.p as Vector2) + dir * float(spec.distance) * k, "w": maxf(30.0, float(spec.width) * k), "t": wind, "max": wind, "style": str(spec.get("style", "charge"))})
 		"cone":
-			_zones(g).append({"kind": "cone", "p": m.p, "a": aim.angle(), "r": float(spec.reach) * k, "arc": float(spec.angle), "t": float(spec.windup), "max": float(spec.windup), "style": str(spec.get("style", "frost"))})
+			_zones(g).append({"kind": "cone", "p": m.p, "a": aim.angle(), "r": float(spec.reach) * k, "arc": float(spec.angle), "t": wind, "max": wind, "style": str(spec.get("style", "frost"))})
 
 
 ## Strike points by pattern; each warns, then bursts (lob: a glob flies first).
@@ -206,6 +229,9 @@ static func _run(g: Node, m: Dictionary, run: Dictionary, dt: float) -> void:
 	match str(run.phase):
 		"windup":
 			m.tele = true
+			# the aim of its shots stays where the hero stood once aim_lock of the windup has run
+			if not run.has("lock") and float(run.t) <= float(run.get("wind", 0.0)) * (1.0 - aim_lock()):
+				run.lock = _hero(g)
 			if float(run.t) > 0.0:
 				return
 			m.tele = false
@@ -233,7 +259,7 @@ static func _release(g: Node, m: Dictionary, run: Dictionary) -> void:
 	var k := _k(g)
 	var me := _hero(g)
 	var from: Vector2 = (m.p as Vector2) - Vector2(0, m.cy)
-	var aim: Vector2 = (me - Vector2(0, 30) - from).normalized()
+	var aim: Vector2 = ((run.get("lock", me) as Vector2) - Vector2(0, 30) - from).normalized()
 	match str(spec.type):
 		"bullets":
 			var pattern := str(spec.get("pattern", "single"))
@@ -542,6 +568,9 @@ static func _draw_px(g: Node, l: CanvasItem, t: float) -> void:
 		match str(z.kind):
 			"strike":
 				if float(z.r) > 0.0:
+					# a guardian's strike reads as danger first: the red area charging up under its ice ring
+					if bool(z.get("boss", false)):
+						danger_ring(l, z.p, float(z.r), k, t, c, false)
 					fx.ring(l, z.p, float(z.r), k, c, t)
 			"pool":
 				# ice pools are one slab on the floor's own layer (frost_fx.gd draw_floor)
@@ -556,6 +585,13 @@ static func _draw_px(g: Node, l: CanvasItem, t: float) -> void:
 	for m: Dictionary in g.mobs:
 		if m.get("tele", false):
 			fx.px_ellipse(l, m.p, float(m.r) + 18.0, (float(m.r) + 18.0) * 0.62, Color(1.0, 0.55, 0.5, 0.85), 3, int(floorf(t * 12.0)))
+		# a plain dash winding up (basic_tell): its lane fills toward the hero, still once its aim is fixed
+		var tl: Dictionary = m.get("tell", {})
+		if str(tl.get("kind", "")) == "dash":
+			var to: Vector2 = (tl.get("at", _hero(g)) as Vector2) - (m.p as Vector2)
+			var def: Dictionary = m.get("def", {})
+			fx.strip(l, m.p, to.normalized() if to.length() > 1.0 else Vector2.RIGHT, float(def.get("dash_speed", 400.0)) * float(def.get("dash_time", 0.3)),
+				maxf(18.0, float(m.r) * 0.8), clampf(float(tl.t) / maxf(0.01, float(tl.T)), 0.0, 1.0), STYLE.charge, t)
 
 
 ## Over the actors (frost_fx.gd): ice shards in flight, hail falling onto its
@@ -586,7 +622,10 @@ static func draw_over(g: Node, l: CanvasItem, t: float) -> void:
 		var size := clampi(int(float(s.get("size", 8.0)) / 3.0) + 3, 4, 8)
 		if s.get("fist", false):
 			size = 9
-		if str(s.get("style", "ice")) in ["ice", "frost"] or not s.has("style"):
+		if ShotLooks.is_arrow(s):
+			# the Frost-Skelett's rimed bone arrow (src/vfx/shot_looks.gd, shot_looks.json)
+			ShotLooks.draw_arrow(l, s.p, s.v, t, 3.0, str(s.get("tint", "")) == "frost")
+		elif str(s.get("style", "ice")) in ["ice", "frost"] or not s.has("style"):
 			fx.shard(l, s.p, s.v, size, t, float(s.get("seed", 0.0)))
 		else:
 			draw_shot(l, s, t)
@@ -609,3 +648,271 @@ static func draw_shot(l: CanvasItem, s: Dictionary, t: float) -> bool:
 		l.draw_circle(s.p, r * 1.5, Color(c, 0.35))
 		l.draw_circle(s.p, r * 0.8, c)
 	return true
+
+
+# ---------- fair combat: windups, aim lock, attack tokens (all story worlds) ----------
+
+## The fair-combat rules (assets/data/combat_tells.json), read once.
+static func tells() -> Dictionary:
+	if _tells.is_empty():
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(TELLS_PATH))
+		_tells = parsed if parsed is Dictionary else {}
+	return _tells
+
+
+## The windup (s) of an attack of `kind`: a boss's own value (boss_tells) first, then
+## the kind's (tells), else `fallback`.
+static func tell_time(kind: String, boss := false, fallback := 0.5) -> float:
+	var own: Dictionary = tells().get("boss_tells", {})
+	if boss and own.has(kind):
+		return float(own[kind])
+	return float((tells().get("tells", {}) as Dictionary).get(kind, fallback))
+
+
+## The share of a windup (0..1) after which an attack's aim stays where the hero stood.
+static func aim_lock() -> float:
+	return clampf(float(tells().get("aim_lock", 0.6)), 0.0, 1.0)
+
+
+## The token rules (combat_tells.json tokens).
+static func token_cfg() -> Dictionary:
+	return tells().get("tokens", {})
+
+
+## The token lane of an attack kind or move type: "melee", "ranged", or "" for one
+## that needs no token (summons, blinks, teleports, armour).
+static func lane_of(kind: String) -> String:
+	var T := token_cfg()
+	if kind in Array(T.get("melee", [])):
+		return "melee"
+	if kind in Array(T.get("ranged", [])):
+		return "ranged"
+	return ""
+
+
+## How many monsters of a lane may attack at once.
+static func token_max(lane: String) -> int:
+	return int(token_cfg().get("max_" + lane, 3))
+
+
+static func _is_boss(m: Dictionary) -> bool:
+	return bool(m.get("boss", false)) or str(m.get("kind", "")) == "boss"
+
+
+## The lane `m` is attacking in now, "" when it is in no windup or strike: a hell
+## monster's act (m.act), a frost move before its recovery (m.mv.run), a plain
+## shot or dash winding up (m.tell) or a themed dash flying (m.dash).
+static func attacking(m: Dictionary) -> String:
+	var act: Variant = m.get("act")
+	if act is Dictionary:
+		return lane_of(str((act as Dictionary).get("kind", "")))
+	var mv: Variant = m.get("mv")
+	if mv is Dictionary:
+		var run: Dictionary = (mv as Dictionary).get("run", {})
+		if not run.is_empty() and str(run.get("phase", "")) != "recovery":
+			return lane_of(str((run.get("spec", {}) as Dictionary).get("type", "")))
+	var tl: Variant = m.get("tell")
+	if tl is Dictionary and not (tl as Dictionary).is_empty():
+		return lane_of(str((tl as Dictionary).get("kind", "")))
+	if float(m.get("dash", 0.0)) > 0.0:
+		return "melee"
+	return ""
+
+
+## How many living monsters of `room` attack in `lane` now (`skip` not counted).
+static func attackers(g: Node, room: int, lane: String, skip: Dictionary = {}) -> int:
+	var n := 0
+	for o: Dictionary in g.mobs:
+		if is_same(o, skip) or int(o.get("room", -1)) != room or float(o.get("hp", 0.0)) <= 0.0:
+			continue
+		if attacking(o) == lane:
+			n += 1
+	return n
+
+
+## True when `m` is never held back by the tokens: a boss, or any monster while a
+## boss lives in its room (its adds). They still count against the others.
+static func token_exempt(g: Node, m: Dictionary) -> bool:
+	if _is_boss(m):
+		return true
+	for o: Dictionary in g.mobs:
+		if _is_boss(o) and int(o.get("room", -1)) == int(m.get("room", -2)) and float(o.get("hp", 0.0)) > 0.0:
+			return true
+	return false
+
+
+## True when `m` may start an attack of `kind` now: it needs no token, it is exempt,
+## or fewer than the lane's maximum of its room's monsters attack in that lane.
+static func token_free(g: Node, m: Dictionary, kind: String) -> bool:
+	var lane := lane_of(kind)
+	if lane == "" or token_exempt(g, m):
+		return true
+	return attackers(g, int(m.get("room", -1)), lane, m) < token_max(lane)
+
+
+## The Frostgruft's plain attacks (a shooter's or turret's shot as "bolt", a
+## dasher's dash: hell_game.gd _update_mobs) wind up like the other worlds' acts.
+## Once `ready` (its timer ran out) and a token is free, `m` holds still for the
+## kind's tell (m.tell; m.tele draws its warning) and its aim follows `target`
+## until aim_lock of the tell, then stays. Returns the point it aims at on the
+## frame it lets go, else Vector2.INF (winding up, waiting for a token, busy with
+## a move). Not `ready` any more (blinded, its timer pushed back) cancels the
+## tell, and so does a stun or the reel after a perfect block (HeroKit.stagger).
+static func basic_tell(g: Node, m: Dictionary, kind: String, target: Vector2, dt: float, ready: bool) -> Vector2:
+	var tl: Dictionary = m.get("tell", {})
+	if float(m.get("reel", 0.0)) > 0.0 or float(m.get("stun", 0.0)) > 0.0:
+		ready = false
+	if not ready:
+		if not tl.is_empty():
+			_end_tell(m)
+		return Vector2.INF
+	if tl.is_empty():
+		var mv: Variant = m.get("mv")
+		var busy: bool = mv is Dictionary and not ((mv as Dictionary).get("run", {}) as Dictionary).is_empty()
+		if busy or not token_free(g, m, kind):
+			return Vector2.INF
+		tl = {"kind": kind, "t": 0.0, "T": tell_time(kind, _is_boss(m), 0.45)}
+		m.tell = tl
+	tl.t = float(tl.t) + dt
+	if not tl.has("at") and float(tl.t) >= float(tl.T) * aim_lock():
+		tl.at = target
+	m.tele = true
+	if float(tl.t) < float(tl.T):
+		return Vector2.INF
+	var at: Vector2 = tl.get("at", target)
+	_end_tell(m)
+	return at
+
+
+static func _end_tell(m: Dictionary) -> void:
+	m.erase("tell")
+	m.tele = false
+
+
+## `pose` (the crypt feel's, story_feel.gd) with the hard white hit flash laid over
+## it (A12): for hit_flash.time s after a hit the whole figure flashes white at
+## hit_flash.strength (a boss at hit_flash.boss), then the feel's own flash runs
+## out. pose.hit_white tells a rig to flash all of it, not only the struck part.
+## Returns `pose` itself when there is no flash (never changes it).
+static func white_hit(m: Dictionary, pose: Dictionary) -> Dictionary:
+	var spec: Dictionary = tells().get("hit_flash", {})
+	var strength := float(spec.get("boss", 0.0) if _is_boss(m) else spec.get("strength", 1.0))
+	var hit := float(m.get("hit", 0.0))
+	if strength <= 0.0 or hit <= 0.0 or HIT_SET - hit > float(spec.get("time", 0.05)) + 0.001:
+		return pose
+	var out := pose.duplicate()
+	out.flash = maxf(float(pose.get("flash", 0.0)), strength)
+	out.flash_color = Color(str(spec.get("color", "#ffffff")))
+	out.hit_white = true
+	return out
+
+
+## A boss's area warning on the 3 px grid (A10, combat_tells.json boss_telegraph):
+## the area (radius `r`, the floor's 0.62 squash) filled red, a charge filling it
+## from the middle as the windup runs (`k` 0..1) with its front in `accent` (the
+## boss's element), and with `rim` a solid red rim on a dark underlay that blinks
+## hot in the last part of the windup (`t` the clock).
+static func danger_ring(l: CanvasItem, c: Vector2, r: float, k: float, t: float, accent: Color, rim := true) -> void:
+	var B: Dictionary = tells().get("boss_telegraph", {})
+	var ry := r * 0.62
+	var kk := clampf(k, 0.0, 1.0)
+	px_disc(l, c, r, ry, Color(Color(str(B.get("fill", "#da4e38"))), float(B.get("fill_alpha", 0.14)) + float(B.get("fill_ramp", 0.1)) * kk))
+	if kk > 0.02:
+		px_disc(l, c, r * kk, ry * kk, Color(Color(str(B.get("charge", "#da4e38"))), float(B.get("charge_alpha", 0.26)) + float(B.get("charge_ramp", 0.22)) * kk))
+		px_rim(l, c, r * kk, ry * kk, Color(accent.lightened(0.2), 0.95))
+	if not rim:
+		return
+	var hot := kk >= float(B.get("blink_from", 0.8)) and fmod(t * float(B.get("blink_hz", 10.0)), 1.0) < 0.5
+	px_rim(l, c + Vector2(0, PX), r, ry, Color(str(B.get("outline", "#1c1117"))))
+	px_rim(l, c, r, ry, Color(str(B.get("hot" if hot else "rim", "#da4e38"))))
+
+
+## A boss's strip warning on the 3 px grid (a cleave, A10), as danger_ring: the
+## strip from `from` along `dir` (`length`, `half` its half width) filled red, a
+## charge running down it as the windup runs (`k` 0..1) with its front in
+## `accent`, and a solid red edge on a dark underlay blinking hot at the end.
+static func danger_strip(l: CanvasItem, from: Vector2, dir: Vector2, length: float, half: float, k: float, t: float, accent: Color) -> void:
+	var B: Dictionary = tells().get("boss_telegraph", {})
+	var kk := clampf(k, 0.0, 1.0)
+	var side := dir.orthogonal() * half
+	var end := from + dir * length
+	px_poly(l, PackedVector2Array([from + side, end + side, end - side, from - side]), Color(Color(str(B.get("fill", "#da4e38"))), float(B.get("fill_alpha", 0.14)) + float(B.get("fill_ramp", 0.1)) * kk))
+	if kk > 0.02:
+		var front := from + dir * length * kk
+		px_poly(l, PackedVector2Array([from + side, front + side, front - side, from - side]), Color(Color(str(B.get("charge", "#da4e38"))), float(B.get("charge_alpha", 0.26)) + float(B.get("charge_ramp", 0.22)) * kk))
+		px_line(l, front + side, front - side, Color(accent.lightened(0.2), 0.95))
+	var hot := kk >= float(B.get("blink_from", 0.8)) and fmod(t * float(B.get("blink_hz", 10.0)), 1.0) < 0.5
+	var rim := Color(str(B.get("hot" if hot else "rim", "#da4e38")))
+	var dark := Color(str(B.get("outline", "#1c1117")))
+	for e: Vector2 in [side, -side]:
+		px_line(l, from + e + Vector2(0, PX), end + e + Vector2(0, PX), dark)
+		px_line(l, from + e, end + e, rim)
+	px_line(l, end + side, end - side, rim)
+
+
+## A line on the PX grid: one block per grid cell it passes.
+static func px_line(l: CanvasItem, a: Vector2, b: Vector2, col: Color) -> void:
+	var n := maxi(1, int(ceil(a.distance_to(b) / PX)))
+	var last := Vector2i(1 << 30, 0)
+	for i in range(n + 1):
+		var q := Vector2i((a.lerp(b, float(i) / float(n)) / PX).floor())
+		if q != last:
+			last = q
+			l.draw_rect(Rect2(Vector2(q) * PX, Vector2.ONE * PX), col)
+
+
+## A filled convex polygon on the PX grid, one rect per grid row (stepped edges).
+static func px_poly(l: CanvasItem, pts: PackedVector2Array, col: Color) -> void:
+	if pts.size() < 3 or col.a <= 0.0:
+		return
+	var y_lo := INF
+	var y_hi := -INF
+	for p: Vector2 in pts:
+		y_lo = minf(y_lo, p.y)
+		y_hi = maxf(y_hi, p.y)
+	for gy in range(int(floor(y_lo / PX)), int(ceil(y_hi / PX)) + 1):
+		var y := (float(gy) + 0.5) * PX
+		var lo := INF
+		var hi := -INF
+		for i in range(pts.size()):
+			var a: Vector2 = pts[i]
+			var b: Vector2 = pts[(i + 1) % pts.size()]
+			if (a.y <= y and b.y > y) or (b.y <= y and a.y > y):
+				var x := a.x + (y - a.y) / (b.y - a.y) * (b.x - a.x)
+				lo = minf(lo, x)
+				hi = maxf(hi, x)
+		var x0 := int(round(lo / PX)) if lo < INF else 0
+		var x1 := int(round(hi / PX)) if hi > -INF else 0
+		if x1 > x0:
+			l.draw_rect(Rect2(float(x0) * PX, float(gy) * PX, float(x1 - x0) * PX, PX), col)
+
+
+## A filled ellipse on the PX grid, one rect per grid row (stepped edges, cheap).
+static func px_disc(l: CanvasItem, c: Vector2, rx: float, ry: float, col: Color) -> void:
+	if rx < PX or ry < PX or col.a <= 0.0:
+		return
+	for gy in range(int(floor((c.y - ry) / PX)), int(ceil((c.y + ry) / PX)) + 1):
+		var yc := (float(gy) + 0.5) * PX - c.y
+		var f := 1.0 - (yc / ry) * (yc / ry)
+		if f <= 0.0:
+			continue
+		var half := rx * sqrt(f)
+		var x0 := int(round((c.x - half) / PX))
+		var x1 := int(round((c.x + half) / PX))
+		if x1 > x0:
+			l.draw_rect(Rect2(float(x0) * PX, float(gy) * PX, float(x1 - x0) * PX, PX), col)
+
+
+## An ellipse outline on the PX grid: one block per grid cell along it.
+static func px_rim(l: CanvasItem, c: Vector2, rx: float, ry: float, col: Color) -> void:
+	if rx < PX or ry <= 0.0:
+		return
+	var n := maxi(12, int(TAU * maxf(rx, ry) / PX))
+	var last := Vector2i(1 << 30, 0)
+	for k in range(n):
+		var a := float(k) / float(n) * TAU
+		var q := Vector2i(((c + Vector2(cos(a) * rx, sin(a) * ry)) / PX).floor())
+		if q == last:
+			continue
+		last = q
+		l.draw_rect(Rect2(Vector2(q) * PX, Vector2.ONE * PX), col)

@@ -27,6 +27,12 @@ extends RefCounted
 ## over, so it never rides along with the body pieces at its held angle. Figures of few parts (ragdoll.split:
 ## zombie, mimic) break into textured pieces. A flung figure (snapshot
 ## "tumble", the Urknall) turns over as it flies and comes apart where it dies.
+## Pieces turn on their own pixel grid (RotSprite-like, ragdoll.turn_steps) with
+## a dark rim on their cut edges, never as smoothly turned cards.
+## Readability in a crowd: a held item of body proportion (rigs.json item
+## "scale"), an "outline" rim round a figure, held weapons of enemies in front
+## of the hero that overlap him drawn behind the actors (guard_hero) and a ring
+## round a hidden hero (draw_ring).
 
 const RigLibrary = preload("res://src/rig/rig_library.gd")
 const RigPoses = preload("res://src/rig/rig_poses.gd")
@@ -124,11 +130,30 @@ const RAGDOLL := {"speed": 90.0, "spread": 0.6, "jitter": [0.6, 1.2], "pop": 24.
 	"tiers": {"small": 1.0, "medium": 1.6, "large": 2.4, "huge": 3.5, "splat": 3.2},
 	"gravity": 520.0, "bounce": 0.35, "wall_bounce": 0.4, "ground_keep": 0.6, "spin_keep": 0.5, "friction": 9.0, "rest_speed": 6.0, "rest_vz": 30.0,
 	"radius": 4.0, "cap": 60, "dither_time": 0.6, "split": {"families": ["biped", "mimic", "bomber", "necro"], "piece_px": 5, "most": 4},
+	"turn_steps": 16, "turn_new": 3, "outline": "222222",
 	"loose": {"side": 0.9, "speed": 0.8, "lift": 0.5, "spin": [9.0, 15.0]},
 	"talent_element": {"fire": "fire", "frost": "ice", "arcane": "void"}, "elements": {}}
 ## The host's walls for the debris: solid.call(world point) -> true inside a
 ## wall (story worlds: src/hell/drake_rig_host.gd bind_world). Unset: no walls.
 var solid: Callable = Callable()
+## The hero's body (world px) this frame, set by guard_hero(): an enemy standing
+## in front of him (feet lower) draws a held item that overlaps it behind the
+## host's actors, so his figure stays readable. Empty: off.
+var hero_box := Rect2()
+## True once an enemy drawn in front of the hero this frame covers hero_box with
+## its body (the host then outlines the hero, src/hero/story_hero.gd).
+var hero_covered := false
+## The canvas item under the host's actors that held items behind the hero go on
+## (a child of the actors canvas, drawn behind it); cleared by guard_hero().
+var _back := RID()
+var _back_parent := RID()
+## The 1-source-px ring of an outline (under a figure, around a fallen piece).
+const RING := [Vector2(1, 0), Vector2(-1, 0), Vector2(0, 1), Vector2(0, -1)]
+## Pixel-grid turns of debris (_turned): upscaled sources and turned images,
+## by texture; new turns built per frame are capped (the rest draw as before).
+static var _up_cache: Dictionary = {}
+static var _turn_cache: Dictionary = {}
+var _turn_budget := 0
 static var _palettes: Dictionary = {}
 ## Pose families the renderer does not know itself (the companions' beast,
 ## bird, elemental and demon, src/vfx/companion_rigs.gd): family -> {"pose":
@@ -141,6 +166,52 @@ var families: Dictionary = {}
 func _init(rig_library: RefCounted = null) -> void:
 	library = rig_library if rig_library != null else RigLibrary.shared()
 	_rng.seed = 90210
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE and _back.is_valid():
+		RenderingServer.free_rid(_back)
+
+
+## Starts a frame of the host's actors drawn on `canvas` (call it before them):
+## `box` is the hero's body in world px (empty: off). Held items of enemies in
+## front of him that overlap it go on a canvas item behind `canvas`, and
+## hero_covered tells afterwards whether such an enemy's body covered him.
+func guard_hero(canvas: CanvasItem, box: Rect2) -> void:
+	hero_box = box
+	hero_covered = false
+	if canvas == null or not canvas.is_inside_tree():
+		return
+	var parent := canvas.get_canvas_item()
+	if not _back.is_valid():
+		_back = RenderingServer.canvas_item_create()
+		RenderingServer.canvas_item_set_draw_behind_parent(_back, true)
+	if parent != _back_parent:
+		_back_parent = parent
+		RenderingServer.canvas_item_set_parent(_back, parent)
+		RenderingServer.canvas_item_set_default_texture_filter(_back, _filter_of(canvas) as RenderingServer.CanvasItemTextureFilter)
+		# the back item goes with the actors canvas (a new world or floor builds another)
+		if not canvas.tree_exiting.is_connected(_drop_back): canvas.tree_exiting.connect(_drop_back)
+	RenderingServer.canvas_item_clear(_back)
+
+
+## Frees the canvas item behind the actors (their canvas left the tree).
+func _drop_back() -> void:
+	if _back.is_valid(): RenderingServer.free_rid(_back)
+	_back = RID()
+	_back_parent = RID()
+
+
+## The texture filter `item` really draws with (its own, else the nearest
+## ancestor's that sets one), as a RenderingServer filter.
+static func _filter_of(item: CanvasItem) -> int:
+	var at: Node = item
+	while at is CanvasItem:
+		var f := (at as CanvasItem).texture_filter
+		if f != CanvasItem.TEXTURE_FILTER_PARENT_NODE:
+			return int(f)
+		at = at.get_parent()
+	return RenderingServer.CANVAS_ITEM_TEXTURE_FILTER_DEFAULT
 
 
 ## Adds (or replaces) a pose family: `pose` builds the RigPoses-style pose of
@@ -400,6 +471,10 @@ func draw_enemy(canvas: CanvasItem, enemy: Dictionary, point: Vector2) -> float:
 	a.size_mul = maxf(0.0, float(enemy.get("size", 1.0)))
 	a.cut = maxf(0.0, float(enemy.get("cut", 0.0)))
 	a.no_shadow = not bool(enemy.get("shadow", true))
+	# "outline": a dark rim one source px round the figure (the Frostgruft: pale figures on snow)
+	a.outline = _color_of(enemy.get("outline", Color(0, 0, 0, 0)), Color(0, 0, 0, 0))
+	# an enemy minds the hero's box (guard_hero): its weapon over him goes behind
+	a.guard = true
 	var face := -1.0 if float(enemy.get("face", -1.0)) < 0.0 else 1.0
 	var dying_p := float(enemy.get("dying_p", -1.0))
 	var family: String = str(rig.family)
@@ -443,6 +518,9 @@ func draw_hero(canvas: CanvasItem, key: String, player: Dictionary, point: Vecto
 	# the story worlds give the element with the player, the crypt's comes from its talents
 	a.skin = ElementSkin.class_for_rig(rig_name)
 	a.element = ElementSkin.element_for_player(player) if not str(a.skin).is_empty() else ""
+	# player "outline": a dark rim round the hero (the Frostgruft); the hero never hides behind himself
+	a.outline = _color_of(player.get("outline", Color(0, 0, 0, 0)), Color(0, 0, 0, 0))
+	a.guard = false
 	if int(player.get("hurts", 0)) > int(a.hurts): _play(a, "hit", HIT_TIME)
 	a.hurts = int(player.get("hurts", 0))
 	if float(player.get("hp", 1)) <= 0.0:
@@ -650,7 +728,14 @@ func _start_death(a: Dictionary, rig: Dictionary, enemy: Dictionary) -> void:
 		"brute":
 			if tears: _ragdoll_all(a, rig, kill, impulse)
 			else:
-				for id: String in ["arm", "head"]: _detach(a, rig, id, 0.5 * impulse, kill)
+				# a held weapon (the Knochenkoloss' hammer) leaves the hand on its own path; what flies
+				# off is shed, so the falling body no longer draws it as well
+				for item: Dictionary in rig.items:
+					_detach(a, rig, str(item.id), 0.6 * impulse, kill)
+					a.shed[str(item.id)] = true
+				for id: String in ["arm", "head"]:
+					_detach(a, rig, id, 0.5 * impulse, kill)
+					a.shed[id] = true
 		"void":
 			for id: String in ["claw_l", "claw_r"]: _detach(a, rig, id, 0.7 * impulse, kill)
 			_flashes.append({"x": feet.x, "y": feet.y - 40.0, "r": 150.0, "life": 0.0, "max": 1.8, "color": VIOLET})
@@ -815,7 +900,7 @@ func _piece(a: Dictionary, rig: Dictionary, id: String, layer: Dictionary, xform
 		"x": center.x, "y": ground + _rng.randf_range(-4, 6), "z": maxf(0.0, ground - center.y),
 		"vx": v.x, "vy": v.y * float(_rag("depth")), "vz": vz, "k": k, "held": held,
 		"ang": xform.get_rotation(), "spin": spin,
-		"face": signf(xform.x.x) if absf(xform.x.x) > 0.01 else 1.0, "scale": _scale(rig), "life": 0.0, "max": INF, "rest": false,
+		"face": signf(xform.x.x) if absf(xform.x.x) > 0.01 else 1.0, "scale": _scale(rig) * (RigLibrary.item_factor(rig.by_id.get(id, {}), _scale(rig)) if held else 1.0), "life": 0.0, "max": INF, "rest": false,
 		"material": material, "el": el, "look": look, "born": _clock, "spots": _spots_for(layer, look)}
 
 
@@ -1094,20 +1179,23 @@ func _dithered(d: Dictionary, level: int) -> Texture2D:
 
 ## A piece's element look on its pixels (in its transform, source px): embers
 ## glowing and cooling through the flame ramp over look ember_time, and rime.
-func _draw_look(canvas: CanvasItem, d: Dictionary, look: Dictionary) -> void:
+## A piece turned on its pixel grid (`turn` from _turned) moves its spots along.
+func _draw_look(canvas: CanvasItem, d: Dictionary, look: Dictionary, turn: Dictionary = {}) -> void:
 	var spots: Array = d.get("spots", [])
 	if spots.is_empty(): return
 	var age := _clock - float(d.get("born", _clock))
 	var heat := 1.0 - clampf(age / maxf(0.01, float(look.get("ember_time", 3.0))), 0.0, 1.0)
 	for i in range(spots.size()):
 		var spot: Dictionary = spots[i]
+		var at := Vector2(spot.p)
+		if not turn.is_empty(): at = ((at + Vector2(0.5, 0.5) - Vector2(turn.c)).rotated(float(turn.theta)) + Vector2(turn.half)).floor()
 		if str(spot.kind) == "ember":
 			if heat <= 0.0: continue
 			var hot := heat * (0.6 + 0.4 * (0.5 + 0.5 * sin(_clock * 9.0 + float(i) * 2.1)))
 			var color: Color = FLAME[1] if hot > 0.7 else FLAME[2] if hot > 0.4 else FLAME[3] if hot > 0.15 else FLAME[4]
-			canvas.draw_rect(Rect2(Vector2(spot.p), Vector2.ONE), color)
+			canvas.draw_rect(Rect2(at, Vector2.ONE), color)
 		else:
-			canvas.draw_rect(Rect2(Vector2(spot.p), Vector2.ONE), look.rime_c)
+			canvas.draw_rect(Rect2(at, Vector2.ONE), look.rime_c)
 
 
 ## The turn of a flung figure (a.tumble rad, snapshot "tumble") about its body centre.
@@ -1246,11 +1334,11 @@ func _draw_rig(canvas: CanvasItem, a: Dictionary, rig: Dictionary, point: Vector
 	for part: Dictionary in rig.parts:
 		if not world.has(part.id): continue
 		# Hell rigs: a part hangs on its parent, so it goes with a lost one.
-		if (_hidden(rig, a, part.id) if layered else a.lost.has(part.id)): continue
+		if (_hidden(rig, a, part.id) if layered else (a.lost.has(part.id) or (a.get("shed", {}) as Dictionary).has(part.id))): continue
 		layers.append(part)
 	if with_items:
 		for item: Dictionary in rig.items:
-			if not a.lost.has(item.id) and world.has(item.id): layers.append(item)
+			if not a.lost.has(item.id) and not (a.get("shed", {}) as Dictionary).has(item.id) and world.has(item.id): layers.append(item)
 	layers.sort_custom(func(p: Dictionary, q: Dictionary) -> bool: return int(p.z) < int(q.z))
 	var frames: Dictionary = pose.get("frames", {})
 	var alpha_of := func(part: Dictionary) -> float:
@@ -1265,6 +1353,17 @@ func _draw_rig(canvas: CanvasItem, a: Dictionary, rig: Dictionary, point: Vector
 			a["frame_" + str(part.id)] = index
 			return part.frames[index]
 		return part
+	# An enemy standing in front of the hero (guard_hero): a held weapon over his body goes on the
+	# canvas item behind the actors, so it passes behind him; its body over him is noted (hero_covered)
+	var behind: Dictionary = {}
+	if bool(a.get("guard", false)) and hero_box.has_area() and feet.y > hero_box.end.y:
+		for part: Dictionary in layers:
+			var item := bool(part.get("is_item", false))
+			# a held item's bounds are its box in the figure (rig_library.gd _item_bounds): test its own image
+			var box := Rect2(Vector2.ZERO, Vector2(part.get("size", Vector2.ZERO))) if item else Rect2(part.bounds)
+			if not _world_box(Transform2D(world[part.id]), box).intersects(hero_box): continue
+			if item and not bool(part.get("bow", false)) and _back.is_valid(): behind[part.id] = true
+			else: hero_covered = true
 	# Void figures: a violet rim around the whole silhouette.
 	var aura := float(pose.get("aura", 0.0))
 	if aura > 0.0:
@@ -1273,8 +1372,17 @@ func _draw_rig(canvas: CanvasItem, a: Dictionary, rig: Dictionary, point: Vector
 			var alpha: float = alpha_of.call(part)
 			if alpha <= 0.01: continue
 			var layer: Dictionary = layer_of.call(part)
-			canvas.draw_set_transform_matrix(world[part.id])
-			for offset: Vector2 in offsets: _tex(canvas, layer.white, Color(VIOLET_DARK, clampf(aura, 0.0, 1.0) * alpha), "aura", part.id, offset)
+			for offset: Vector2 in offsets: _put(canvas, behind.has(part.id), world[part.id], layer.white, Color(VIOLET_DARK, clampf(aura, 0.0, 1.0) * alpha), "aura", part.id, offset)
+	# An outlined figure (a.outline): its silhouette one source px out on every side, under all its parts
+	var outline: Color = a.get("outline", Color(0, 0, 0, 0))
+	if outline.a > 0.0:
+		for part: Dictionary in layers:
+			var alpha: float = alpha_of.call(part)
+			var layer: Dictionary = layer_of.call(part)
+			if alpha <= 0.01 or layer.get("white") == null: continue
+			var rows := _rows_above(part, Transform2D(world[part.id]), clip_y)
+			if rows <= float(Rect2(part.bounds).position.y): continue
+			for offset: Vector2 in RING: _put(canvas, behind.has(part.id), world[part.id], layer.white, Color(outline, outline.a * alpha), "outline", part.id, offset, rows)
 	var fuse := float(pose.get("fuse", 0.0))
 	if fuse > 0.0: flash = maxf(flash, 0.8 * fuse if sin(float(a.ct) * (20.0 + 50.0 * fuse)) > 0.0 else 0.0)
 	var shown: Dictionary = {}
@@ -1292,16 +1400,17 @@ func _draw_rig(canvas: CanvasItem, a: Dictionary, rig: Dictionary, point: Vector
 		var alpha: float = alpha_of.call(part)
 		if alpha <= 0.01: continue
 		var layer: Dictionary = layer_of.call(part)
+		var back: bool = behind.has(part.id)
 		canvas.draw_set_transform_matrix(world[part.id])
 		# Below the floor line (a sinking figure) nothing of the part is drawn.
 		var rows := _rows_above(part, Transform2D(world[part.id]), clip_y)
 		if rows <= float(Rect2(part.bounds).position.y): continue
 		hittable[part.id] = true
-		_tex(canvas, _skinned(layer.texture, a), Color(tint.r, tint.g, tint.b, tint.a * alpha), "part", part.id, Vector2.ZERO, rows)
+		_put(canvas, back, world[part.id], _skinned(layer.texture, a), Color(tint.r, tint.g, tint.b, tint.a * alpha), "part", part.id, Vector2.ZERO, rows)
 		var heat := clampf(float(glow.get(part.id, 0.0)), 0.0, 1.0)
-		if heat > 0.0 and layer.get("white") != null: _tex(canvas, layer.white, Color(glow_color, 0.55 * heat * alpha), "glow", part.id, Vector2.ZERO, rows)
+		if heat > 0.0 and layer.get("white") != null: _put(canvas, back, world[part.id], layer.white, Color(glow_color, 0.55 * heat * alpha), "glow", part.id, Vector2.ZERO, rows)
 		if flash > 0.0 and (flash_part.is_empty() or flash_part == part.id):
-			_tex(canvas, layer.white, Color(1, 1, 1, flash * alpha), "flash", part.id, Vector2.ZERO, rows)
+			_put(canvas, back, world[part.id], layer.white, Color(1, 1, 1, flash * alpha), "flash", part.id, Vector2.ZERO, rows)
 			flashed.append(part.id)
 		if bool(part.get("bow", false)): _draw_bow_string(canvas, pose)
 	# a burning figure (rigs.json "burn"): pixel flames and glowing eyes on its parts, fading as it dies
@@ -1403,6 +1512,31 @@ func _tex(canvas: CanvasItem, texture: Texture2D, color: Color, what: String, id
 	if record_draws: draw_log.append({"what": what, "id": id, "color": color})
 
 
+## One texture of an actor under `xform`: on `canvas`, or with `back` on the
+## canvas item behind the host's actors (guard_hero; logged with "behind").
+func _put(canvas: CanvasItem, back: bool, xform: Transform2D, texture: Texture2D, color: Color, what: String, id: String, offset := Vector2.ZERO, rows := INF) -> void:
+	if not back or not _back.is_valid():
+		canvas.draw_set_transform_matrix(xform)
+		_tex(canvas, texture, color, what, id, offset, rows)
+		return
+	var size := texture.get_size()
+	RenderingServer.canvas_item_add_set_transform(_back, xform)
+	if rows < size.y:
+		var keep := Rect2(Vector2.ZERO, Vector2(size.x, maxf(0.0, rows)))
+		RenderingServer.canvas_item_add_texture_rect_region(_back, Rect2(offset, keep.size), texture.get_rid(), keep, color)
+	else:
+		RenderingServer.canvas_item_add_texture_rect(_back, Rect2(offset, size), texture.get_rid(), false, color)
+	if record_draws: draw_log.append({"what": what, "id": id, "color": color, "behind": true})
+
+
+## The world box of source rect `box` under `xform` (its four corners).
+static func _world_box(xform: Transform2D, box: Rect2) -> Rect2:
+	var out := Rect2(xform * box.position, Vector2.ZERO)
+	for corner: Vector2 in [Vector2(box.end.x, box.position.y), box.end, Vector2(box.position.x, box.end.y)]:
+		out = out.expand(xform * corner)
+	return out
+
+
 ## One box of an actor (shadow, wound), logged in draw_log while record_draws is on.
 func _rect(canvas: CanvasItem, rect: Rect2, color: Color, what: String, id: String) -> void:
 	canvas.draw_rect(rect, color)
@@ -1440,6 +1574,57 @@ func world_point(key: String, part_id: String, source_point: Vector2) -> Vector2
 		if world.has(at) and shown.has(at): return Transform2D(world[at]) * source_point
 		at = str(by_id[at].get("parent", ""))
 	return a.get("feet", Vector2.ZERO)
+
+
+## Rings round the figure actor `key` showed in its last draw, on its own pixel
+## grid, drawn over whatever stands in front of it: `inner` one source px round
+## its silhouette, `outer` one px further out (alpha 0 leaves a ring out). The
+## hero hidden behind an enemy keeps his outline (src/hero/story_hero.gd).
+## Returns the number of ring pixels drawn (0 for an unknown or undrawn actor).
+func draw_ring(canvas: CanvasItem, key: String, inner: Color, outer: Color) -> int:
+	var a: Dictionary = _actors.get(key, {})
+	var world: Dictionary = a.get("world", {})
+	var shown: Dictionary = a.get("drawn", {}).get("shown", {})
+	var rig: Dictionary = library.rig(str(a.get("rig", ""))) if library != null else {}
+	if rig.is_empty() or not world.has("base") or shown.is_empty(): return 0
+	var base: Transform2D = world.base
+	var to_base := base.affine_inverse()
+	# the figure's pixels in its base frame (every shown part placed by its pose)
+	var mask: Dictionary = {}
+	for part: Dictionary in rig.parts + rig.items:
+		if not shown.has(part.id) or not world.has(part.id): continue
+		var layer: Dictionary = part
+		if part.get("frames") is Array and not part.frames.is_empty(): layer = part.frames[int(a.get("frame_" + str(part.id), 0)) % part.frames.size()]
+		var image: Variant = layer.get("image")
+		if not image is Image: continue
+		var local: Transform2D = to_base * Transform2D(world[part.id])
+		var box := Rect2i(Rect2(layer.get("bounds", Rect2())))
+		for y in range(maxi(0, box.position.y), mini(box.end.y, (image as Image).get_height())):
+			for x in range(maxi(0, box.position.x), mini(box.end.x, (image as Image).get_width())):
+				if (image as Image).get_pixel(x, y).a < 0.5: continue
+				var q := local * Vector2(x + 0.5, y + 0.5)
+				mask[Vector2i(floori(q.x), floori(q.y))] = true
+	var first: Dictionary = {}
+	for cell: Vector2i in mask:
+		for step: Vector2 in RING:
+			var n := cell + Vector2i(step)
+			if not mask.has(n): first[n] = true
+	var second: Dictionary = {}
+	if outer.a > 0.0:
+		for cell: Vector2i in first:
+			for step: Vector2 in RING:
+				var n := cell + Vector2i(step)
+				if not mask.has(n) and not first.has(n): second[n] = true
+	canvas.draw_set_transform_matrix(base)
+	var drawn := 0
+	for ring: Array in [[second, outer], [first, inner]]:
+		var color: Color = ring[1]
+		if color.a <= 0.0: continue
+		for cell: Vector2i in ring[0]:
+			canvas.draw_rect(Rect2(Vector2(cell), Vector2.ONE), color)
+			drawn += 1
+	canvas.draw_set_transform_matrix(Transform2D.IDENTITY)
+	return drawn
 
 
 ## What the last draw of actor `key` showed (tests and capture checks):
@@ -1481,7 +1666,9 @@ func _solve(rig: Dictionary, a: Dictionary, pose: Dictionary, feet: Vector2, fac
 			var parent: String = str(item.parent)
 			var parent_world: Transform2D = world[parent] if world.has(parent) and not a.lost.has(parent) else base
 			var o: Dictionary = pose.items.get(item.id, {"dx": 0.0, "dy": 0.0, "rot": 0.0})
-			world[item.id] = parent_world * _t(Vector2(item.hand) + Vector2(float(o.dx), float(o.dy))) * Transform2D(float(item.rest) + float(o.rot), Vector2.ZERO) * _t(-Vector2(item.grip))
+			# an item of body proportion (rigs.json item "scale") is drawn smaller, still on the pixel grid
+			var k := RigLibrary.item_factor(item, _scale(rig))
+			world[item.id] = parent_world * _t(Vector2(item.hand) + Vector2(float(o.dx), float(o.dy))) * Transform2D(float(item.rest) + float(o.rot), Vector2.ZERO) * _s(Vector2(k, k)) * _t(-Vector2(item.grip))
 	return world
 
 
@@ -1514,32 +1701,183 @@ static func _s(scale: Vector2) -> Transform2D:
 
 ## Debris and summoning pools lie on the floor, under every actor. A piece
 ## shows its kill's element look (tint, embers, rime); a crumbling one (above
-## ragdoll.cap) drops its pixels by a 4x4 dither, never by transparency.
+## ragdoll.cap) drops its pixels by a 4x4 dither, never by transparency. A
+## piece turns on its own pixel grid (_turned: its sprite's pixels, a dark rim
+## on its cut edge), so a falling skull reads as pixel matter, not a card.
 func draw_under(canvas: CanvasItem) -> void:
 	for pool: Dictionary in _pools: _draw_pool(canvas, pool)
 	var dither := maxf(0.01, float(_rag("dither_time")))
+	_turn_budget = int(_rag("turn_new"))
 	for d: Dictionary in _debris:
 		var texture: Texture2D = d.texture
 		var gone := float(d.get("gone_at", -1.0))
+		var level := 0
 		if gone >= 0.0:
-			var level := int((_clock - gone) / dither * 4.0) + 1
+			level = int((_clock - gone) / dither * 4.0) + 1
 			if level >= 4: continue
-			texture = _dithered(d, level)
-			if texture == null: continue
 		if float(d.z) > 1.0: canvas.draw_rect(Rect2(float(d.x) - 8, float(d.y) - 2, 16, 4), Color(SHADOW, 0.3))
-		var xform := _t(Vector2(float(d.x), float(d.y) - float(d.z)).round()) * Transform2D(float(d.ang), Vector2.ZERO) * _s(Vector2(float(d.face) * float(d.get("scale", S)), float(d.get("scale", S)))) * _t(-Vector2(d.center))
-		canvas.draw_set_transform_matrix(xform)
+		var pos := Vector2(float(d.x), float(d.y) - float(d.z)).round()
+		var scale := float(d.get("scale", S))
 		var look: Dictionary = d.get("look", {})
 		var tint: Color = look.get("tint_color", Color.WHITE) if not look.is_empty() else Color.WHITE
+		var turn := _turned(d, level)
+		var white: Variant = d.get("white")
+		if not turn.is_empty():
+			canvas.draw_set_transform_matrix(_t(pos) * _s(Vector2(float(d.face) * scale, scale)) * _t(-Vector2(turn.half)))
+			texture = turn.tex
+			white = turn.white
+		else:
+			# not turned yet (a few new turns per frame): drawn turned smoothly, as before
+			if level > 0:
+				texture = _dithered(d, level)
+				if texture == null: continue
+			canvas.draw_set_transform_matrix(_t(pos) * Transform2D(float(d.ang), Vector2.ZERO) * _s(Vector2(float(d.face) * scale, scale)) * _t(-Vector2(d.center)))
 		canvas.draw_texture(texture, Vector2.ZERO, tint)
 		if gone >= 0.0: continue
-		if not look.is_empty(): _draw_look(canvas, d, look)
+		if not look.is_empty(): _draw_look(canvas, d, look, turn)
 		# Hell debris glows in its material's colour and cools down.
 		var heat := 1.0 - clampf(float(d.life) / 1.5, 0.0, 1.0)
 		var hot := palette(str(d.get("material", "")))
-		if heat > 0.0 and not hot.is_empty() and d.get("white") != null:
-			canvas.draw_texture(d.white, Vector2.ZERO, Color(hot.glow, 0.6 * heat))
+		if heat > 0.0 and not hot.is_empty() and white != null:
+			canvas.draw_texture(white, Vector2.ZERO, Color(hot.glow, 0.6 * heat))
 	canvas.draw_set_transform_matrix(Transform2D.IDENTITY)
+
+
+## A debris piece turned on its own pixel grid, RotSprite-like: its layer's
+## pixels (a small piece first doubled twice by Scale2x, so edges stay clean)
+## sampled at its angle quantised to ragdoll.turn_steps, mirrored by its face
+## when drawn; a ring in ragdoll.outline where its edge has no dark pixel of its
+## own (a cut edge); `level` 1..3 drops pixels by the 4x4 dither. Cached by
+## texture, step and level: {tex, white, half (image centre = piece centre),
+## theta, c (piece centre, source px)}. {} without image or when this frame's
+## ragdoll.turn_new new turns are used up.
+func _turned(d: Dictionary, level: int) -> Dictionary:
+	var layer: Dictionary = d.get("layer", {}) if d.get("layer") is Dictionary else {}
+	var image: Variant = layer.get("image")
+	if not image is Image or not d.get("texture") is Texture2D: return {}
+	var steps := maxi(4, int(_rag("turn_steps")))
+	var step := posmod(roundi(float(d.ang) * float(d.face) / TAU * float(steps)), steps)
+	var key := "%d:%d:%d:%d" % [(d.texture as Texture2D).get_instance_id(), steps, step, level]
+	if _turn_cache.has(key): return _turn_cache[key]
+	if _turn_budget <= 0: return {}
+	_turn_budget -= 1
+	# a held item's bounds are its box in the figure (rig_library.gd _item_bounds): its own pixels count
+	var box := Rect2((image as Image).get_used_rect()) if bool(layer.get("is_item", false)) else Rect2(layer.get("bounds", Rect2()))
+	var up := _upscaled(d.texture as Texture2D, image as Image, box)
+	if up.is_empty(): return {}
+	var theta := TAU * float(step) / float(steps)
+	# turned about a pixel corner, so unturned every pixel is sampled at its centre (the piece
+	# shifts by under half a source px)
+	var c := Vector2(d.center).round()
+	var reach := 0.0
+	for corner: Vector2 in [box.position, Vector2(box.end.x, box.position.y), box.end, Vector2(box.position.x, box.end.y)]: reach = maxf(reach, corner.distance_to(c))
+	var half := ceili(reach) + 2
+	var size := half * 2
+	var px: PackedInt32Array = up.px
+	var w: int = up.w
+	var h: int = up.h
+	var f := float(up.f)
+	var origin: Vector2 = up.origin
+	var cs := cos(-theta)
+	var sn := sin(-theta)
+	var body := PackedInt32Array()
+	body.resize(size * size)
+	for j in range(size):
+		var qy := float(j) + 0.5 - float(half)
+		for i in range(size):
+			var qx := float(i) + 0.5 - float(half)
+			var u := floori((c.x + qx * cs - qy * sn - origin.x) * f)
+			var v := floori((c.y + qx * sn + qy * cs - origin.y) * f)
+			if u < 0 or v < 0 or u >= w or v >= h: continue
+			body[j * size + i] = px[v * w + u]
+	# the white silhouette (hot hell debris glows through it), before the ring
+	var white := PackedInt32Array()
+	white.resize(size * size)
+	for k in range(size * size):
+		if body[k] != 0: white[k] = -1
+	var ink := _rgba_int(_hex(_rag("outline"), INK))
+	var shape := body.duplicate()
+	for j in range(size):
+		for i in range(size):
+			if shape[j * size + i] != 0: continue
+			for n: Vector2i in [Vector2i(i + 1, j), Vector2i(i - 1, j), Vector2i(i, j + 1), Vector2i(i, j - 1)]:
+				if n.x < 0 or n.y < 0 or n.x >= size or n.y >= size: continue
+				var col := shape[n.y * size + n.x]
+				if col != 0 and not _dark_int(col):
+					body[j * size + i] = ink
+					break
+	if level > 0:
+		for j in range(size):
+			for i in range(size):
+				if BAYER[(j % 4) * 4 + i % 4] < level * 4:
+					body[j * size + i] = 0
+					white[j * size + i] = 0
+	var out := {"tex": ImageTexture.create_from_image(Image.create_from_data(size, size, false, Image.FORMAT_RGBA8, body.to_byte_array())),
+		"white": ImageTexture.create_from_image(Image.create_from_data(size, size, false, Image.FORMAT_RGBA8, white.to_byte_array())),
+		"half": Vector2(half, half), "theta": theta, "c": c}
+	if _turn_cache.size() > 2048: _turn_cache.clear()
+	_turn_cache[key] = out
+	return out
+
+
+## A piece's pixels (its bounds and a 1 px margin) as RGBA8 ints (transparent
+## = 0), doubled by Scale2x twice for a piece up to 24 px, once up to 48 px:
+## {px, w, h, f (upscale), origin (source px of px[0])}. Cached by texture.
+func _upscaled(texture: Texture2D, image: Image, bounds: Rect2) -> Dictionary:
+	var key := texture.get_instance_id()
+	if _up_cache.has(key): return _up_cache[key]
+	var box := Rect2i(bounds).grow(1).intersection(Rect2i(Vector2i.ZERO, image.get_size()))
+	if box.size.x <= 0 or box.size.y <= 0: return {}
+	var crop := image.get_region(box)
+	crop.convert(Image.FORMAT_RGBA8)
+	var px := crop.get_data().to_int32_array()
+	for k in range(px.size()):
+		if (px[k] >> 24) & 0xFF < 128: px[k] = 0
+	var w := box.size.x
+	var h := box.size.y
+	var f := 1
+	var big := maxi(w, h)
+	for _round in range(2 if big <= 26 else 1 if big <= 50 else 0):
+		px = _scale2x(px, w, h)
+		w *= 2
+		h *= 2
+		f *= 2
+	var out := {"px": px, "w": w, "h": h, "f": f, "origin": Vector2(box.position)}
+	if _up_cache.size() > 512: _up_cache.clear()
+	_up_cache[key] = out
+	return out
+
+
+## Scale2x (EPX) of a `w` x `h` RGBA8 int image: each pixel becomes four that
+## follow the diagonal edges of its neighbours, so a turned piece keeps clean steps.
+static func _scale2x(src: PackedInt32Array, w: int, h: int) -> PackedInt32Array:
+	var out := PackedInt32Array()
+	out.resize(w * h * 4)
+	var w2 := w * 2
+	for y in range(h):
+		for x in range(w):
+			var p := src[y * w + x]
+			var up := src[(y - 1) * w + x] if y > 0 else 0
+			var right := src[y * w + x + 1] if x < w - 1 else 0
+			var left := src[y * w + x - 1] if x > 0 else 0
+			var down := src[(y + 1) * w + x] if y < h - 1 else 0
+			var o := y * 2 * w2 + x * 2
+			out[o] = up if left == up and left != down and up != right else p
+			out[o + 1] = right if up == right and up != left and right != down else p
+			out[o + w2] = left if down == left and down != right and left != up else p
+			out[o + w2 + 1] = down if right == down and right != up and down != left else p
+	return out
+
+
+## A colour as an RGBA8 int (little-endian r, g, b, a: Image data read as int32).
+static func _rgba_int(c: Color) -> int:
+	var v := c.r8 | (c.g8 << 8) | (c.b8 << 16) | (c.a8 << 24)
+	return v - 0x100000000 if v >= 0x80000000 else v
+
+
+## True for an RGBA8 int dark enough to be an outline already (the sprite's own ink).
+static func _dark_int(v: int) -> bool:
+	return float(v & 0xFF) * 0.3 + float((v >> 8) & 0xFF) * 0.59 + float((v >> 16) & 0xFF) * 0.11 < 72.0
 
 
 ## Beams, particles and flashes are drawn over the actors. The beams list is

@@ -28,6 +28,7 @@
     {"id": "bosse", "title": "BOSSE", "closed": true},
     {"id": "npcs", "title": "NPCS", "closed": true},
     {"id": "elemente", "title": "ELEMENTE", "closed": true},
+    {"id": "ruestungen", "title": "RÜSTUNGEN", "closed": true},
     {"id": "cheats", "title": "CHEATS", "closed": true}
   ],
   "classes": [
@@ -134,6 +135,8 @@
     "readout": {"offset": [18, 16], "panel_gap": 6, "names": {"lava": "Lava", "fire": "Feuer", "poison": "Gift", "water": "Wasser", "ice": "Eis", "frost": "Reif",
       "blood": "Blut", "void": "Leere", "steam": "Dampf", "smoke": "Rauch"}}
   },
+  "_armor_note": "RÜSTUNGEN (src/debug/story_testraum.gd _rows_armor): every power armour of items.json (gear with power, src/hero/armor_powers.gd) into the bag, known and clean; the hero class first, the others carry their class (other: %s the class id) and show the class lock in the inventory. given: the toast (%s the name).",
+  "armor": {"hint": "Ins Inventar (I öffnet es); angelegt liegt die Fähigkeit auf F.", "other": "nur %s", "given": "%s im Inventar"},
   "cheats": {
     "shards": 10,
     "toggles": [

@@ -19,7 +19,9 @@
     "exp": "7dd3a2",
     "track": "26262b",
     "ok": "8fd6a5",
-    "auto": "7fe3ff"
+    "auto": "7fe3ff",
+    "_map_base_note": "map_base: the opaque ground under the floor panel (mini-map) and the boss bar's subtitle plate, so nothing of the world shows through.",
+    "map_base": "0b0b0e"
   },
   "margin": 16,
   "pad": 10,
@@ -68,6 +70,8 @@
     "toast_fade": 0.25,
     "toast_queue": 3,
     "toast_max_width": 620,
+    "_toast_merge_note": "toast_merge: s a shown find toast still takes more finds into one line (\"3 Funde: ...\"); a waiting one always does.",
+    "toast_merge": 0.6,
     "banner_time": 2.0,
     "banner_in": 0.3,
     "banner_out": 0.4,

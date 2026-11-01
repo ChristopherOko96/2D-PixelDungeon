@@ -9,9 +9,12 @@ extends RefCounted
 ## a lane through it that closes again (cut). An ended cloud thins out from
 ## its rim inwards. Drawn on the art grid (`art` world px per art pixel) as
 ## one shape per material: overlapping puffs merge, density shows by the 4x4
-## ordered dither, a lit top and a dark underside, never alpha. It lies under
-## the actors (they always stay readable over it). Presentation only: every
-## client runs its own; the zones the game hurts with are elsewhere.
+## ordered dither, a lit top and a dark underside; it is a see-through veil
+## (review A6 2026-11-01): every pixel lets the floor show through by its
+## thickness, even its thickest part keeps holes, and its grain churns and
+## frays at the rim (two noises drifting apart). It lies under the actors
+## (they always stay readable in it). Presentation only: every client runs
+## its own; the zones the game hurts with are elsewhere.
 
 const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
 const DATA_PATH := "res://assets/data/vfx_gas.json"
@@ -34,6 +37,8 @@ var _open_since := 0
 ## 4x4 ordered dither thresholds (PixelPaint.BAYER).
 const BAYER := [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
 static var _data: Dictionary = {}
+## The churn noise (_churn_table), made once.
+static var _churn := PackedFloat32Array()
 
 
 func _init(art_px: float, open_floor: Callable) -> void:
@@ -469,14 +474,17 @@ func _build(mat: String, now: float) -> void:
 	if list.is_empty():
 		_layers.erase(mat)
 		return
-	_build_layer(mat, list)
+	_build_layer(mat, list, now)
 	_layers[mat].built = now
 
 
-## One material's image: the puffs' coverage added up (overlapping puffs make
-## one cloud, thick where they crowd), then per cell its colour by the dither
-## and its neighbours above and below.
-func _build_layer(mat: String, list: PackedFloat32Array) -> void:
+## One material's image at time `now`: the puffs' coverage added up
+## (overlapping puffs make one cloud, thick where they crowd), frayed by two
+## noises drifting apart (it churns: churn art cells/s, fray its strength,
+## most at its thin rim), then per cell its colour by the dither and its
+## neighbours above and below, seen through by its thickness (veil_alpha);
+## even its thickest part keeps holes (max_cover).
+func _build_layer(mat: String, list: PackedFloat32Array, now: float) -> void:
 	var lo_x := 1 << 30
 	var lo_y := 1 << 30
 	var hi_x := -(1 << 30)
@@ -520,15 +528,33 @@ func _build_layer(mat: String, list: PackedFloat32Array) -> void:
 	bytes.resize(w * h * 4)
 	var block := PackedByteArray()
 	var block_key := Vector2i(1 << 30, 0)
+	var churn := _churn_table()
+	var speed := _f("churn", 2.0)
+	var fray := _f("fray", 0.9)
+	var top := _f("max_cover", 0.72)
+	var veil: Array = cfg.get("veil_alpha", [0.4, 0.78])
+	var a_thin := float(veil[0]) * 255.0
+	var a_thick := float(veil[1]) * 255.0
+	# the two noises drift apart (whole art cells): the grain churns, it does not slide
+	var ax := int(floor(now * speed))
+	var ay := int(floor(now * speed * 0.4))
+	var bx := -int(floor(now * speed * 0.7))
+	var by := int(floor(now * speed * 0.8))
 	for y in range(1, h - 1):
 		var qy := lo_y + y
 		var bayer_row := (qy & 3) << 2
+		var row_a := ((qy + ay) & 63) << 6
+		var row_b := ((qy + by) & 63) << 6
 		for x in range(w):
 			var i := y * w + x
 			var k := cover[i]
+			if k < 0.03:
+				continue
 			var qx := lo_x + x
-			# even its thickest part keeps a few holes: gas, not a solid
-			if k < 0.06 or float(BAYER[bayer_row | (qx & 3)]) >= minf(0.9, k * 1.1) * 16.0:
+			var n := (churn[row_a | ((qx + ax) & 63)] + churn[row_b | ((qx + bx) & 63)]) * 0.5
+			k += (n - 0.5) * fray * clampf(1.25 - k, 0.2, 1.0)
+			# even its thickest part keeps holes: gas, not a solid
+			if k < 0.06 or float(BAYER[bayer_row | (qx & 3)]) >= minf(top, k * 1.1) * 16.0:
 				continue
 			# walls: asked by blocks of 8 x 8 cells, remembered
 			var key := Vector2i(qx >> 3, qy >> 3)
@@ -552,7 +578,8 @@ func _build_layer(mat: String, list: PackedFloat32Array) -> void:
 			bytes[b] = rgb[0]
 			bytes[b + 1] = rgb[1]
 			bytes[b + 2] = rgb[2]
-			bytes[b + 3] = 255
+			# seen through: the thinner, the more of the floor and the figures shows
+			bytes[b + 3] = int(lerpf(a_thin, a_thick, clampf(k, 0.0, 1.0)))
 	var image := Image.create_from_data(w, h, false, Image.FORMAT_RGBA8, bytes)
 	var layer: Dictionary = _layers.get(mat, {})
 	if layer.has("tex") and Vector2i(layer.size) == Vector2i(w, h):
@@ -566,6 +593,39 @@ func _build_layer(mat: String, list: PackedFloat32Array) -> void:
 
 static func _rgb(c: Color) -> PackedByteArray:
 	return PackedByteArray([c.r8, c.g8, c.b8])
+
+
+## A tiling 64 x 64 value noise 0..1 (two octaves over 8 and 4 art cells),
+## made once: the churn of every cloud reads it (_build_layer).
+static func _churn_table() -> PackedFloat32Array:
+	if _churn.is_empty():
+		_churn.resize(64 * 64)
+		for y in range(64):
+			for x in range(64):
+				_churn[y * 64 + x] = _tile_noise(x, y, 8) * 0.62 + _tile_noise(x, y, 4) * 0.38
+	return _churn
+
+
+## Smooth value noise 0..1 at (`x`, `y`) over cells of `size` that tiles every 64.
+static func _tile_noise(x: int, y: int, size: int) -> float:
+	var span := 64 / size
+	var fx := float(x) / float(size)
+	var fy := float(y) / float(size)
+	var gx := int(floor(fx))
+	var gy := int(floor(fy))
+	var u := fx - float(gx)
+	var v := fy - float(gy)
+	u = u * u * (3.0 - 2.0 * u)
+	v = v * v * (3.0 - 2.0 * v)
+	var a := _lattice(gx % span, gy % span, size)
+	var b := _lattice((gx + 1) % span, gy % span, size)
+	var c := _lattice(gx % span, (gy + 1) % span, size)
+	var e := _lattice((gx + 1) % span, (gy + 1) % span, size)
+	return lerpf(lerpf(a, b, u), lerpf(c, e, u), v)
+
+
+static func _lattice(x: int, y: int, s: int) -> float:
+	return float(absi((x * 73856093) ^ (y * 19349663) ^ (s * 83492791)) % 1000) / 1000.0
 
 
 ## Where gas may show in the block `b` of 8 x 8 art cells (`open` at each

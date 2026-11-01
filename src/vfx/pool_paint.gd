@@ -47,6 +47,14 @@ extends RefCounted
 ## light round it (the floor up to four cells beyond its rim darkens by the
 ## dither, the darkness creeping in towards it) and pulls loose things, embers
 ## and drops into it (a particles well per pool, materials.void_pull).
+##
+## Poison (look "miasma"; review A6 2026-11-01): a see-through sludge under
+## its own fumes, never an opaque sheet: a grain of its colours with alpha
+## and dither holes (the floor and whoever stands in it show through), thick
+## in its middle and fraying towards its rim with no outline, the grain
+## churning slowly; wisps of fume rise off it. It is still a liquid for the
+## rules and reactions (its style). The Hölle's lava floor gets a ragged
+## crust of pixels along its edge (lava_rim) instead of a straight frame.
 
 const SplatShape = preload("res://src/vfx/splat_shape.gd")
 const Glow = preload("res://src/vfx/glow.gd")
@@ -80,6 +88,10 @@ var _void_cache: Dictionary = {}
 var _lava_sites: Dictionary = {}
 ## The burning ground's heat noise by drifted cell (it only moves over the field).
 var _fire_noise: Dictionary = {}
+## A miasma's churning noise by Vector3i(drifted cell, layer) (_miasma_grain).
+var _miasma_noise: Dictionary = {}
+## The miasma being shaded: its veil (cover cap, alpha thin, alpha thick; materials.<mat>.veil).
+var _veil := Vector3(0.92, 0.42, 0.8)
 ## The middle of the field being shaded (_bake -> _shade, the void's spiral).
 var _mid := Vector2.ZERO
 ## The hearts of the void pools being shaded, [middle in cells, radius in cells]
@@ -442,8 +454,10 @@ func draw(canvas: CanvasItem, now: float) -> void:
 		var field: Dictionary = _fields[mat]
 		if field.has("work"):
 			continue
-		var style := str(cfg.materials[mat].get("style", "liquid"))
+		var style := _look(mat)
 		var frame := int(floor(now * anim)) if style in ["fire", "lava", "void"] else 0
+		if style == "miasma":
+			frame = int(floor(now * float(cfg.materials[mat].get("churn_hz", 2.5))))
 		var due: bool = now >= float(field.next) or bool(field.dirty) or frame != int(field.frame)
 		if not due or now - float(field.baked) < rate:
 			continue
@@ -460,7 +474,7 @@ func draw(canvas: CanvasItem, now: float) -> void:
 	var after_bake := Time.get_ticks_usec()
 	for mat: String in _fields:
 		var field: Dictionary = _fields[mat]
-		var style := str(cfg.materials[mat].get("style", "liquid"))
+		var style := _look(mat)
 		if field.tex != null:
 			var box: Rect2i = field.box
 			canvas.draw_texture_rect(field.tex, Rect2(Vector2(box.position) * art, Vector2(box.size) * art), false)
@@ -649,7 +663,8 @@ func _shape_step(field: Dictionary, until: int) -> void:
 			return
 		i = 0
 		match phase:
-			"grid": phase = "outline"
+			# a miasma has no outline nor lip: it frays out (_shade)
+			"grid": phase = "done" if str(work.style) == "miasma" else "outline"
 			"outline": phase = "lip"
 			"lip": phase = "halo" if str(work.style) == "void" else "done"
 			_: phase = "done"
@@ -777,6 +792,9 @@ func _bake_step(field: Dictionary, until: int) -> void:
 	var frame := int(work.frame)
 	var R: Dictionary = _ramps[mat]
 	# what _shade reads of the field being shaded
+	if style == "miasma":
+		var veil: Array = cfg.materials[mat].get("veil", [0.92, 0.42, 0.8])
+		_veil = Vector3(float(veil[0]), float(veil[1]), float(veil[2]))
 	_mid = shape.mid
 	_hearts = shape.hearts
 	_void_cache = shape.void_cache
@@ -866,12 +884,13 @@ func _halo_image(field: Dictionary, col: Color, t: float) -> void:
 	field.halo_size = size
 
 
-## Writes colour `c` opaque into the byte image `px` at byte `at`.
+## Writes colour `c` into the byte image `px` at byte `at` (the ramps are
+## opaque; a miasma's veil and holes carry their own alpha).
 static func _px(px: PackedByteArray, at: int, c: Color) -> void:
 	px[at] = c.r8
 	px[at + 1] = c.g8
 	px[at + 2] = c.b8
-	px[at + 3] = 255
+	px[at + 3] = c.a8
 
 
 ## Whether art cell `q` is open floor (`open` at its middle), remembered: asked
@@ -977,6 +996,36 @@ func _shade(q: Vector2i, nb: int, rank: float, R: Dictionary, style: String, now
 			if _crust.has(q):
 				return _crust_colour(q, float(_crust[q]) - now, R)
 			return _lava_colour(q, rank, up, inner, R, frame)
+		"miasma":
+			# a toxic sludge under its own fumes: a see-through grain (the floor and
+			# whoever stands in it show through), thick in its middle and fraying
+			# towards its rim; two noises drifting apart churn the grain slowly
+			# (frame); no outline holds it (_shape_step skips it)
+			var n := (_miasma_grain(q.x + frame, q.y - frame / 3, 0) + _miasma_grain(q.x - frame / 2, q.y + frame / 2, 1)) * 0.5
+			var thick := clampf((1.0 - rank) * 1.3 - 0.05 + (n - 0.5) * 1.1, 0.0, 1.0)
+			if rank >= 0.999:
+				# a drop puddle (no rank of its own): a small dense spot
+				thick = 0.45 + (n - 0.5) * 0.6
+			if not inner:
+				thick *= 0.55
+			var gate := (float(BAYER[posmod(q.y, 4) * 4 + posmod(q.x, 4)]) + float(_h(q.x, q.y, 37) % 100) / 100.0) / 17.0
+			if gate >= thick * _veil.x:
+				return Color(0, 0, 0, 0)
+			var col: Color = R.shade
+			if not up:
+				col = R.hi if n > 0.45 else R.lite
+			elif not dn:
+				col = R.deep
+			elif n > 0.66:
+				col = R.lite
+			elif n > 0.44:
+				col = R.body
+			elif n < 0.26:
+				col = R.deep
+			# a fleck of froth on the sludge
+			if _h(q.x, q.y, 41) % 47 == 0:
+				col = R.hi
+			return Color(col, lerpf(_veil.y, _veil.z, thick))
 		_:
 			# a liquid: one calm body, a lit north rim, a deeper band before the
 			# south lip, and short level glints of light lying on its surface
@@ -1057,6 +1106,8 @@ func _overlay(canvas: CanvasItem, field: Dictionary, mat: String, style: String,
 	if style == "fire" and particles != null:
 		_burn(field, R, spec, now)
 		return
+	if style == "miasma":
+		_fumes(canvas, field, R, spec, now)
 	if style == "void":
 		# darkest at its rim, the darkness creeping in towards it in waves (worked
 		# out on the 12 fps beat into one texture, drawn every frame)
@@ -1565,6 +1616,13 @@ func _style(mat: String) -> String:
 	return str(cfg.materials.get(mat, {}).get("style", "liquid"))
 
 
+## How material `mat` is drawn: its "look" (vfx_pools.json; "miasma": the
+## poison's see-through fuming sludge) or else its style. The rules and
+## reactions keep asking _style.
+func _look(mat: String) -> String:
+	return str(cfg.materials.get(mat, {}).get("look", _style(mat)))
+
+
 ## Where two materials meet, they react (vfx_pools.json "reactions", keyed
 ## "<style>+<style>"): a_to / b_to "gone" hides the cell (drawing only),
 ## "crust" crusts lava there, a material name turns it into that material (a
@@ -1771,6 +1829,51 @@ func wade(key: String, feet: Vector2, moving: bool, now: float) -> void:
 	_waders[key] = state
 
 
+## The miasma's grain at drifted cell (`x`, `y`) of noise `layer` (0..1, two
+## octaves), worked out once per cell.
+func _miasma_grain(x: int, y: int, layer: int) -> float:
+	var key := Vector3i(x, y, layer)
+	var known: Variant = _miasma_noise.get(key)
+	if known == null:
+		if _miasma_noise.size() > 200000:
+			_miasma_noise.clear()
+		known = _noise(x, y, 5, 23 + layer) * 0.65 + _noise(x, y, 2, 29 + layer) * 0.35
+		_miasma_noise[key] = known
+	return float(known)
+
+
+## Fumes rising off a miasma field: small dithered wisps of its lit colours
+## drifting up and sideways from random cells of it, see-through, each gone
+## within its life (vfx_pools.json materials.<mat>.fumes: max wisps, one per
+## per_cells cells, life s, rise and sway in art cells, alpha); they stop at walls.
+func _fumes(canvas: CanvasItem, field: Dictionary, R: Dictionary, spec: Dictionary, now: float) -> void:
+	var list: Array = field.list
+	var f: Dictionary = spec.get("fumes", {})
+	var count := mini(int(f.get("max", 14)), 1 + list.size() / maxi(1, int(f.get("per_cells", 60))))
+	var life := maxf(0.2, float(f.get("life", 2.6)))
+	var rise := float(f.get("rise", 9.0))
+	var sway := float(f.get("sway", 2.0))
+	var alpha := float(f.get("alpha", 0.4))
+	for i in range(count):
+		var t := now / life + float(i) * 0.618
+		var slot := int(floor(t))
+		var k := t - float(slot)
+		var q: Vector2i = list[posmod(slot * 7919 + i * 104729, list.size())]
+		var c := Vector2(q) + Vector2(sin(k * PI + float(i) * 1.7) * sway, -k * rise)
+		var a := alpha * sin(k * PI)
+		# it swells as it rises and thins by the dither
+		var big := 1 + int(k > 0.4)
+		var base := Vector2i(roundi(c.x), roundi(c.y))
+		for dy in range(-1, 1):
+			for dx in range(-big, big + 1):
+				var cell := base + Vector2i(dx, dy)
+				if not _shown(cell + Vector2i(slot, slot * 3), (1.0 - k * 0.55) * (1.0 - absf(float(dx)) / float(big + 1) * 0.6)):
+					continue
+				if not _open_cell(cell):
+					continue
+				_cell(canvas, cell, Color(R.lite if dy < 0 else R.body, a))
+
+
 static func _h(x: int, y: int, s := 0) -> int:
 	return absi((x * 73856093) ^ (y * 19349663) ^ (s * 83492791)) % 1000
 
@@ -1790,3 +1893,128 @@ static func _noise(x: int, y: int, size: int, s: int) -> float:
 	var c := float(_h(gx, gy + 1, s)) / 1000.0
 	var e := float(_h(gx + 1, gy + 1, s)) / 1000.0
 	return lerpf(lerpf(a, b, u), lerpf(c, e, u), v)
+
+
+# ---------- the lava floor's edge ----------
+
+## True when the world drawn with sprite set `sprites` has a lava floor whose
+## edge is a ragged crust (vfx_pools.json floor_crust.sprites; the Hölle).
+static func crusts(sprites: String) -> bool:
+	return (settings().get("floor_crust", {}).get("sprites", []) as Array).has(sprites)
+
+
+## The edge of a world's lava floor (cells of tile 2 or 3; `cell` (x, y) ->
+## tile) in the chunk of `cols` x `rows` cells from cell (`x0`, `y0`), cells
+## `cell_px` world px wide on an art grid of `art_px` world px, as a ragged
+## crust of single pixels instead of a straight stone frame (vfx_pools.json
+## floor_crust, colours of materials.lava): cooled rock reaching into the
+## melt a depth that wanders along the edge, a glowing seam where it meets
+## the melt, cracks glowing through it, and a little rock and a few cinders
+## spilt onto the floor. Drawing only: the cells stay what they are. {} when
+## the chunk has no lava edge, else {tex, rect (world px)}; built once.
+static func lava_rim(cell: Callable, x0: int, y0: int, cols: int, rows: int, cell_px: float, art_px: float) -> Dictionary:
+	var c := settings()
+	var spec: Dictionary = c.get("floor_crust", {})
+	var ramp: Dictionary = c.get("materials", {}).get("lava", {}).get("ramp", {})
+	var R := {}
+	for role: String in ramp:
+		R[role] = Color(str(ramp[role]))
+	if R.size() < 7:
+		return {}
+	var n := maxi(1, roundi(cell_px / art_px))
+	var depth: Array = spec.get("depth", [2, 7])
+	var spill := float(spec.get("spill", 2.5))
+	var cracks := float(spec.get("cracks", 0.8))
+	var cinders := float(spec.get("cinders", 0.06))
+	var corner_r := float(spec.get("round", 10.0))
+	var limits := [int(ceil(float(depth[1]))) + 2, int(ceil(spill)) + 3]
+	var px := {}
+	for cy in range(y0, y0 + rows):
+		for cx in range(x0, x0 + cols):
+			var t := int(cell.call(cx, cy))
+			var lava := t == 2 or t == 3
+			if t == 0 and not lava:
+				continue
+			# the neighbours of the other kind (floor or wall for lava, lava for floor)
+			var others: Array[Vector2i] = []
+			var sides := Vector4i.ZERO
+			for oy in range(-1, 2):
+				for ox in range(-1, 2):
+					if ox == 0 and oy == 0:
+						continue
+					var nt := int(cell.call(cx + ox, cy + oy))
+					if lava == (nt == 2 or nt == 3):
+						continue
+					others.append(Vector2i(ox, oy))
+					if ox < 0: sides.x = 1
+					if ox > 0: sides.y = 1
+					if oy < 0: sides.z = 1
+					if oy > 0: sides.w = 1
+			if others.is_empty():
+				continue
+			var limit: int = limits[0] if lava else limits[1]
+			# the lava's outer corners are rounded off by the crust (a quarter circle of floor_crust.round art px)
+			var corners: Array[Vector2i] = []
+			if lava:
+				for k: Vector2i in [Vector2i(-1, -1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(1, 1)]:
+					if others.has(Vector2i(k.x, 0)) and others.has(Vector2i(0, k.y)):
+						corners.append(k)
+			for ay in range(n):
+				var near_y := (sides.z == 1 and ay < limit) or (sides.w == 1 and ay >= n - limit)
+				for ax in range(n):
+					if not near_y and not ((sides.x == 1 and ax < limit) or (sides.y == 1 and ax >= n - limit)):
+						continue
+					# how far (art px) this pixel's middle lies from the nearest other-kind cell
+					var d := INF
+					for o: Vector2i in others:
+						var dx := 0.0
+						var dy := 0.0
+						if o.x < 0: dx = float(ax) + 0.5
+						elif o.x > 0: dx = float(n - ax) - 0.5
+						if o.y < 0: dy = float(ay) + 0.5
+						elif o.y > 0: dy = float(n - ay) - 0.5
+						d = minf(d, Vector2(dx, dy).length())
+					for k: Vector2i in corners:
+						var cx2 := (float(ax) + 0.5) if k.x < 0 else (float(n - ax) - 0.5)
+						var cy2 := (float(ay) + 0.5) if k.y < 0 else (float(n - ay) - 0.5)
+						if cx2 < corner_r and cy2 < corner_r:
+							d = minf(d, maxf(0.0, corner_r - Vector2(corner_r - cx2, corner_r - cy2).length()))
+					if d > float(limit):
+						continue
+					var g := Vector2i(cx * n + ax, cy * n + ay)
+					var wander := _noise(g.x, g.y, 8, 61)
+					var jit := float(_h(g.x, g.y, 67)) / 1000.0
+					if lava:
+						var reach := lerpf(float(depth[0]), float(depth[1]), wander) + (jit - 0.5) * 1.2
+						if d > reach:
+							continue
+						if reach - d < 1.0:
+							# the seam where the crust meets the melt glows
+							px[g] = R.hi if jit > 0.55 else R.lite
+						elif _noise(g.x, g.y, 3, 71) > cracks and jit > 0.3:
+							px[g] = R.body
+						elif d < 1.0 and jit > 0.6:
+							# a lit rock here and there on its lip (never a drawn line)
+							px[g] = R.shade
+						else:
+							px[g] = R.deep if jit > 0.25 else R.outline
+					else:
+						var out := wander * spill + (jit - 0.5)
+						if d <= out:
+							px[g] = R.deep if jit > 0.4 else R.outline
+						elif d <= out + 2.0 and jit > 1.0 - cinders:
+							px[g] = R.shade
+	if px.is_empty():
+		return {}
+	var lo := Vector2i(1 << 30, 1 << 30)
+	var hi := Vector2i(-(1 << 30), -(1 << 30))
+	for g: Vector2i in px:
+		lo = Vector2i(mini(lo.x, g.x), mini(lo.y, g.y))
+		hi = Vector2i(maxi(hi.x, g.x), maxi(hi.y, g.y))
+	var size := hi - lo + Vector2i.ONE
+	var bytes := PackedByteArray()
+	bytes.resize(size.x * size.y * 4)
+	for g: Vector2i in px:
+		_px(bytes, ((g.y - lo.y) * size.x + g.x - lo.x) * 4, px[g])
+	var image := Image.create_from_data(size.x, size.y, false, Image.FORMAT_RGBA8, bytes)
+	return {"tex": ImageTexture.create_from_image(image), "rect": Rect2(Vector2(lo) * art_px, Vector2(size) * art_px)}

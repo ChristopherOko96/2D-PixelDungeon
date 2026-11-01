@@ -36,6 +36,7 @@ const CONFIG_PATH := "res://assets/data/debug_story_testraum.json"
 const SELF_PATH := "res://src/debug/story_testraum.gd"
 const Profile = preload("res://src/progress/profile.gd")
 const HudKit = preload("res://src/ui/hud_kit.gd")
+const ArmorPowers = preload("res://src/hero/armor_powers.gd")
 const MonsterRules = preload("res://src/hell/hell_monster_rules.gd")
 const RoomPanel = preload("res://src/debug/story_testraum_panel.gd")
 const Tools = preload("res://src/debug/story_testraum_tools.gd")
@@ -549,7 +550,26 @@ func rows() -> Array:
 				_rows_elements(out)
 			"cheats":
 				_rows_cheats(out)
+			"ruestungen":
+				_rows_armor(out)
 	return out
+
+
+## RÜSTUNGEN: every power armour (items.json gear with a power,
+## src/hero/armor_powers.gd) into the bag, the hero's class first; the
+## others show their class (they cannot be worn, the inventory shows the lock).
+func _rows_armor(out: Array) -> void:
+	var spec: Dictionary = cfg.get("armor", {})
+	out.append({"kind": "text", "label": str(spec.get("hint", ""))})
+	var items: Node = g.get("story_items")
+	var gear: Array = ArmorPowers.ItemRules.data().get("gear", []).filter(func(e: Dictionary) -> bool: return not str(e.get("power", "")).is_empty())
+	var own_first: Array = gear.filter(func(e: Dictionary) -> bool: return str(e.get("class", "")) == str(g.class_id))
+	own_first.append_array(gear.filter(func(e: Dictionary) -> bool: return str(e.get("class", "")) != str(g.class_id)))
+	for e: Dictionary in own_first:
+		var own := str(e.get("class", "")) == str(g.class_id)
+		var power: Dictionary = ArmorPowers.power(str(e.power))
+		out.append({"kind": "item", "label": str(e.name), "act": "armor", "arg": str(e.id), "on": false, "off": items == null,
+			"note": ("F " + str(power.get("name", ""))) if own else str(spec.get("other", "%s")) % str(e.get("class", ""))})
 
 
 ## A search key: lower case, umlauts folded (ä a, ö o, ü u, ß ss).
@@ -767,6 +787,12 @@ func act(action: String, arg: Variant) -> void:
 			(g.W.ents as Array).append({"type": str(spec.type), "x": at.x, "y": at.y, "room": room_index, "testraum": true})
 			_say(str(spec.name))
 			_remember(str(spec.name), "npc", spec)
+		"armor":
+			var items: Node = g.get("story_items")
+			var name := str(ArmorPowers.ItemRules.gear(str(arg)).get("name", arg))
+			if items != null and items.give_armor(str(arg)):
+				_say(str(cfg.get("armor", {}).get("given", "%s")) % name)
+				_remember(name, "armor", arg)
 		"npc_clear":
 			var ents: Array = g.W.ents
 			for i in range(ents.size() - 1, -1, -1):

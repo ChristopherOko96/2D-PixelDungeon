@@ -93,8 +93,27 @@ static func apply(g: Node, talent: Dictionary) -> void:
 			if str(n.get("buff", "")) == "transform":
 				kit.ogre = _frames(str(n.sprite))
 	if g.weapon.has("sprite"):
-		g.weapon_tex = load(WEAPON % str(g.weapon.sprite))
+		var tex := weapon_texture(str(g.weapon.sprite))
+		if tex != null:
+			g.weapon_tex = tex
 	g.hero_frames = _frames(sprite)
+
+
+## The resource path of a weapon sprite id: a bare 0x72 name ("weapon_axe") lives in
+## assets/sprites/0x72/, an id with a folder ("items/staff_necro", "0x72/weapon_bow") under
+## assets/sprites/.
+static func weapon_path(sprite: String) -> String:
+	return WEAPON % sprite if not sprite.contains("/") else "res://assets/sprites/%s.png" % sprite
+
+
+## The texture of a weapon sprite id (see weapon_path), or null with a warning when the file
+## is missing (the caller keeps the weapon it had).
+static func weapon_texture(sprite: String) -> Texture2D:
+	var path := weapon_path(sprite)
+	if sprite.is_empty() or not ResourceLoader.exists(path):
+		push_warning("sub_kit: weapon sprite '%s' not found at %s" % [sprite, path])
+		return null
+	return load(path) as Texture2D
 
 
 static func _frames(sprite: String) -> Dictionary:
@@ -228,7 +247,7 @@ static func press(g: Node, key: String) -> bool:
 		if str(s.key) != key:
 			continue
 		if int(g.state.level) < int(s.unlock):
-			g._toast("%s ab Level %d." % [s.name, int(s.unlock)])
+			g._toast("%s ab Laufstufe %d." % [s.name, int(s.unlock)])
 			return true
 		if float(g.state.skill_cd.get(key, 0.0)) > 0.0:
 			g._sound("no_cooldown")

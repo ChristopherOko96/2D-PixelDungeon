@@ -1,0 +1,74 @@
+{
+  "_note": "Fair monster combat in the three story worlds (VORSCHLAEGE.md B1, B2, A10, A12; MECHANIK.md F1, M2). Read by src/hell/frost_moves.gd (the shared static rules) for src/hell/hell_monsters.gd (Krypta, Hoelle), the Frostgruft's themed mobs in src/hell/hell_game.gd and the frost moves.",
+  "aim_lock": 0.6,
+  "_aim_lock": "Share of a windup after which the aim stays where the hero stood then (swing, bolt, breath, homing, chain, dash, cleave; the Frostgruft's bullets and basic shots). 0.6 x 0.5 s leaves 0.2 s to step out of a blow.",
+  "tells": {
+    "_note": "Windup (s) from the start of an act to its release, by act kind (hell_monsters.gd _run_act). An attack in the monster data may set its own \"tell\". swing 0.5 and bolt 0.45 per F1 (was 0.35 each); the rest as they were. leap: a slam with a leap (its flight). Frostgruft: dash and bolt also time the themed dashers, shooters and turrets (hell_game.gd _update_mobs).",
+    "swing": 0.5,
+    "bolt": 0.45,
+    "homing": 0.35,
+    "breath": 0.3,
+    "chain": 0.35,
+    "lob": 0.45,
+    "dash": 0.5,
+    "ring": 0.45,
+    "spiral": 0.4,
+    "slam": 0.75,
+    "leap": 0.7,
+    "summon": 0.6,
+    "teleport": 0.35,
+    "meteors": 0.5,
+    "hands": 0.5,
+    "scream": 0.1,
+    "beam": 0.8
+  },
+  "boss_tells": {
+    "_note": "A boss's own windups where they differ (F1: a boss's swing 0.45).",
+    "swing": 0.45
+  },
+  "frost_min_windup": {
+    "_note": "The Frostgruft's moves (combat_boss_moves.json windup) never wind up shorter than the other worlds' tells of their lane when they strike at once (bullets, dash, cone, spin, vortex); strikes and lobs warn on the floor after their windup.",
+    "melee": 0.5,
+    "ranged": 0.45
+  },
+  "tokens": {
+    "_note": "Attack tokens (M2): at most max_melee monsters of a room in a melee windup or strike at once, max_ranged in a ranged one. Bosses and every monster in a living boss's room are never held back but count. A monster without a token tries again after retry s; a melee one circles the hero at keep px (plus its radius) at pace x its speed, the others keep their own movement.",
+    "max_melee": 3,
+    "max_ranged": 3,
+    "retry": 0.2,
+    "keep": 170,
+    "pace": 0.7,
+    "melee": ["swing", "dash", "slam", "sweep", "mimic_bite", "spin", "cone", "vortex"],
+    "ranged": ["bolt", "homing", "breath", "lob", "ring", "spiral", "chain", "beam", "meteors", "hands", "scream", "bullets", "strikes"]
+  },
+  "hit_flash": {
+    "_note": "A12: a hard white flash of the whole figure for the first time s after a hit (2-3 frames), at strength; a boss at boss (0: the feel's own softer flash only).",
+    "time": 0.05,
+    "strength": 1.0,
+    "boss": 0.0,
+    "color": "#ffffff"
+  },
+  "boss_telegraph": {
+    "_note": "A10: a boss's area warning on the 3 px grid: the area filled red (fill_alpha + fill_ramp x charge), a charge filling it from the middle as the windup runs (charge_alpha + charge_ramp x charge), its front in the boss's element, a solid rim on a dark underlay that blinks to hot from blink_from of the windup at blink_hz.",
+    "fill": "#da4e38",
+    "fill_alpha": 0.14,
+    "fill_ramp": 0.1,
+    "charge": "#da4e38",
+    "charge_alpha": 0.26,
+    "charge_ramp": 0.22,
+    "rim": "#da4e38",
+    "hot": "#fdf7ed",
+    "outline": "#1c1117",
+    "blink_from": 0.8,
+    "blink_hz": 10.0
+  },
+  "boss_impact": {
+    "_note": "A10: a boss's stomp leaves the crypt's floor dent with cracks (crack_reach x its radius, crack_branches lines), dust creeping over the floor (dust puffs within dust_reach x its radius) and rubble chunks.",
+    "crack_reach": 0.5,
+    "crack_branches": 7,
+    "dust": 26,
+    "dust_reach": 0.8,
+    "rubble": 6,
+    "line_dust_every": 90
+  }
+}

@@ -1036,7 +1036,10 @@ func pet_cast(id: int, slot: int, manual: bool = false) -> bool:
 			_pet_strike(pet, prey, ability)
 			hit = true
 		"taunt":
-			var radius := float(ability.radius_m) * meter
+			# Heulen / Brüllen: every non-boss enemy within radius_m (metres of the host's
+			# world, so the story worlds' larger pixels keep the reach) goes for the
+			# companion for `taunt` s (forced_target, the hell's chase_goal).
+			var radius := float(ability.radius_m) * meter * _world_scale()
 			var drawn := 0
 			for enemy: Dictionary in _living():
 				if not _boss(enemy) and Vector2(enemy.pos).distance_to(pet.pos) <= radius:

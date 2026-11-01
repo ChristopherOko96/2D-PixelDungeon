@@ -134,7 +134,7 @@ func _test_world(scene: PackedScene, world: String) -> void:
 	# a find is announced once, by the inventory window, as in the crypt
 	game.state.toasts = []
 	items.update(0.016)
-	check((game.state.toasts as Array).filter(func(t: Dictionary) -> bool: return str(t.text).contains("Rucksack voll")).is_empty(), "%s: an item note is not toasted a second time by the world" % world)
+	check((game.state.toasts as Array).filter(func(t: Dictionary) -> bool: return str(t.text).contains("Inventar voll")).is_empty(), "%s: an item note is not toasted a second time by the world" % world)
 	_bag(game).pop_back()
 	items.update(0.016)
 	check(items.floor_items.is_empty() and _index(game, "gear", "ring_storm") >= 0, "%s: walking over it picks it up" % world)

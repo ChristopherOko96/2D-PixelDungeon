@@ -40,13 +40,15 @@ var _gef_pulse := -10.0
 ## The pixels flung out when the pocket emptied: [{col, a, v}] and when (_clock s).
 var _gef_burst: Array = []
 var _gef_burst_t := -10.0
+## The quick potions' icons by sprite path (potion_slot), loaded once.
+static var _potion_icons: Dictionary = {}
 
 
 ## Queues a reward from a profile event ({kind: "shard" | "level", ...}).
 func show_reward(event: Dictionary) -> void:
 	match str(event.get("kind", "")):
 		"shard": _queue.append({"kind": "shard", "text": "+%d SEELENSPLITTER" % maxi(1, int(event.get("count", 1))), "sub": "Du hast jetzt %d. Verlorene Seelen gehören nun dir." % int(event.get("have", 0)), "time": 3.2})
-		"level": _queue.append({"kind": "level", "text": "LEVEL %d" % int(event.get("level", 1)), "sub": "Ein neuer Talentpunkt (%d frei)." % int(event.get("points", 0)), "time": 2.2})
+		"level": _queue.append({"kind": "level", "text": "HELDENSTUFE %d" % int(event.get("level", 1)), "sub": "Neuer Talentpunkt (%d frei) · K öffnet die Talente" % int(event.get("points", 0)), "time": 3.2})
 
 
 func step(delta: float) -> void:
@@ -75,10 +77,10 @@ func skill_slots(talents: Dictionary) -> Array:
 				"locked": false, "short": not bool(slot.get("ready", false)) and float(slot.get("cd", 0.0)) <= 0.0,
 				"text": str(slot.get("text", "")), "meta": _meta(slot)})
 		else:
-			out.append({"key": str(index + 1), "name": "Frei: lerne ein aktives Talent", "locked": true, "empty": true})
+			out.append({"key": str(index + 1), "name": "Frei: lerne ein aktives Talent", "locked": true, "empty": true, "lock": true})
 	var ult: Dictionary = talents.get("ult", {})
 	if ult.is_empty():
-		out.append({"key": "R", "name": "Ultimate: noch nicht freigeschaltet", "locked": true, "empty": true, "ultimate": true})
+		out.append({"key": "R", "name": "Ultimate: noch nicht freigeschaltet", "locked": true, "empty": true, "lock": true, "ultimate": true})
 	else:
 		out.append({"key": "R", "name": str(ult.get("name", "")), "cd": float(ult.get("cd", 0.0)), "max": float(ult.get("cd_max", 1.0)), "ultimate": true,
 			"icon": TalentIcons.make(_specs.get(str(ult.get("spec", "")), {}), str(ult.get("icon", "burst")), true, true), "locked": false,
@@ -90,8 +92,45 @@ func skill_slots(talents: Dictionary) -> Array:
 			"icon": TalentIcons.make({}, str(guard.get("icon", "shield")), true, false), "locked": false, "pips": [int(guard.left), int(guard.max)],
 			"charge": float(guard.get("refill", 0.0)) if int(guard.left) < int(guard.max) and float(guard.get("cd", 0.0)) <= 0.0 else -1.0,
 			"active": Color("8fd6ff") if bool(guard.get("up", false)) else Color(0, 0, 0, 0), "text": str(guard.get("text", "")),
-			"meta": "Hält %d Treffer" % int(guard.max) if str(guard.type) == "block" else "%d Ladungen" % int(guard.max)})
+			# the slot shows the Shift arrow; the card says the key in words
+			"meta": "Taste Shift · " + ("Hält %d Treffer" % int(guard.max) if str(guard.type) == "block" else "%d Ladungen" % int(guard.max))})
+	# F: the worn armour's ability (src/hero/armor_powers.gd slot_view), right of SH
+	if talents.has("power") and not (talents.power as Dictionary).is_empty():
+		out.append(power_slot(talents.power))
 	return out
+
+
+## The skill bar's F slot for a worn power armour (`power`: armor_powers.gd
+## slot_view: name, text, cd, max, cooldown, icon motif, colour, running,
+## armor): icon, cooldown shade, the hover card with name, text and cooldown,
+## a glow in the power's colour while it runs.
+static func power_slot(power: Dictionary) -> Dictionary:
+	var colour := Color(str(power.get("color", "ffffff")))
+	var meta := "Abklingzeit %s s" % _number(float(power.get("cooldown", power.get("max", 0.0))))
+	if not str(power.get("armor", "")).is_empty(): meta += " · " + str(power.armor)
+	return {"key": "F", "name": "%s (F)" % str(power.get("name", "")), "cd": float(power.get("cd", 0.0)), "max": maxf(0.01, float(power.get("max", 1.0))),
+		"icon": TalentIcons.make({}, str(power.get("icon", "shield")), true, false), "locked": false, "power": true,
+		"active": colour if bool(power.get("running", false)) else Color(0, 0, 0, 0), "text": str(power.get("text", "")), "meta": meta}
+
+
+## The skill bar's quick-potion slot (keys H and G, R4 of
+## production/qa/evidence/gameplay-review/BEWERTUNG.md). `potion`: the
+## inventory.gd view of the stack (empty without a potion); `since`: seconds
+## since it was last used. The icon in the potion's own colour, the count in the
+## lower right corner (never over the icon), "H/G" as its key, a hover card with its
+## name (or UNBEKANNTER TRANK) and the keys, a short glow after use
+## (ui_hud_style.json rules.quick_potion_flash). Its own group right of the skills.
+static func potion_slot(potion: Dictionary, since: float) -> Dictionary:
+	var keys := "H trinken · G werfen"
+	if potion.is_empty():
+		return {"key": "H/G", "name": "SCHNELLTRANK", "text": "Kein Trank im Inventar.", "meta": keys, "locked": true, "empty": true, "gap_before": true}
+	var count := int(potion.get("count", 1))
+	var path := str(potion.get("sprite", ""))
+	if not _potion_icons.has(path): _potion_icons[path] = load(path) if ResourceLoader.exists(path) else null
+	var flash := since >= 0.0 and since < HudKit.rule("quick_potion_flash", 0.35)
+	return {"key": "H/G", "name": str(potion.get("name", "TRANK")) if bool(potion.get("identified", false)) else "UNBEKANNTER TRANK",
+		"icon": _potion_icons[path], "count": str(count), "locked": false, "gap_before": true, "text": keys,
+		"meta": "%d im Inventar" % count, "active": HudStyle.color("accent") if flash else Color(0, 0, 0, 0)}
 
 
 ## The line under a skill's description: its cost and cooldown.

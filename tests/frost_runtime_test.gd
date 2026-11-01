@@ -7,11 +7,13 @@ extends SceneTree
 ## and weapon (sword arc in front only, arrows, magic splash), the frost monsters
 ## fill rooms by floor and act their part (zombie chills, slime splits, knight
 ## blocks from the front, crystal stands and fires a fan, whirl pulls, imp
-## dashes), guardians wear their floor's look, and the hell scene without a
+## dashes; crystal and imp wind up first, combat_tells.json tells), guardians
+## wear their floor's look, and the hell scene without a
 ## theme keeps its own look, hero, enemies and lava.
 
 const FrostScene = preload("res://src/hell/frost_dungeon.tscn")
 const HellScene = preload("res://src/hell/hell_dungeon.tscn")
+const FrostMoves = preload("res://src/hell/frost_moves.gd")
 var checked := 0
 var failures: Array[String] = []
 
@@ -290,11 +292,19 @@ func _test_crystal_stands_and_fires_a_fan() -> void:
 	crystal.spawn = 0.0
 	crystal.shoot = 0.0
 	var p0: Vector2 = crystal.p
-	# Act
+	var wind := FrostMoves.tell_time("bolt", false, 0.45)
+	# Act: one step starts its windup (combat_tells.json tells.bolt), then it lets go
 	game._update_mobs(0.05)
+	var telegraphed: bool = game.eshots.is_empty() and crystal.has("tell")
+	var t := 0.05
+	while game.eshots.is_empty() and t < wind + 0.2:
+		game._update_mobs(0.05)
+		t += 0.05
 	# Assert
 	check(crystal.p.distance_to(p0) < 0.01, "the ice crystal does not move")
+	check(telegraphed, "the ice crystal winds up before it fires")
 	check(game.eshots.size() == int(game.theme.mobs.ice_crystal.fan), "the ice crystal fires a fan of %d shards" % int(game.theme.mobs.ice_crystal.fan))
+	check(t >= wind - 0.001, "it holds the fan for the windup (%.2f s of %.2f)" % [t, wind])
 	await _free(game)
 
 
@@ -314,7 +324,14 @@ func _test_whirl_pulls_and_imp_dashes() -> void:
 	var imp := _mob_at(game, Vector2(-500, 0), "frost_imp")
 	imp.spawn = 0.0
 	imp.dash_t = 0.0
-	game._update_mobs(0.01)
+	var wind := FrostMoves.tell_time("dash", false, 0.5)
+	# one step starts its windup (combat_tells.json tells.dash), then it dashes
+	game._update_mobs(0.05)
+	check(float(imp.dash) <= 0.0 and imp.has("tell"), "the frost imp winds up before it dashes")
+	var t := 0.05
+	while float(imp.dash) <= 0.0 and t < wind + 0.2:
+		game._update_mobs(0.05)
+		t += 0.05
 	check(imp.dash > 0.0 and (imp.dash_dir as Vector2).x > 0.9, "the frost imp dashes straight at the hero")
 	await _free(game)
 

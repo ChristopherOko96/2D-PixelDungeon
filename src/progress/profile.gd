@@ -3,7 +3,8 @@ extends RefCounted
 ## build, plus gold, soul shards, the bosses already beaten on Albtraum and the boss completions already rewarded
 ## (docs/TALENTE-SEELENSPLITTER.de.md). Pure functions on a plain Dictionary,
 ##   {version, gold, shards: {have, earned, spent}, nightmare_firsts: [],
-##    rewarded: [], difficulty, classes: {class_id: {level, exp, ranks: {talent: rank},
+##    rewarded: [], reactions: [element reaction ids the hero set off himself,
+##    src/hell/story_elements.gd], difficulty, classes: {class_id: {level, exp, ranks: {talent: rank},
 ##    ultimate, soul_tier, soul_paid, bar: [talent ids]}}}
 ## so the rules test without files; load / save keep it in user://profile.json.
 ## Saving writes a temporary file first and then replaces the old one, so a
@@ -65,7 +66,7 @@ static func fresh(d: Dictionary) -> Dictionary:
 	for id: String in d.get("classes", {}):
 		classes[id] = fresh_class()
 	return {"version": VERSION, "gold": 0, "shards": {"have": 0, "earned": 0, "spent": 0},
-		"nightmare_firsts": [], "rewarded": [], "difficulty": "normal", "classes": classes, "debug_free": false}
+		"nightmare_firsts": [], "rewarded": [], "reactions": [], "difficulty": "normal", "classes": classes, "debug_free": false}
 
 
 static func fresh_class() -> Dictionary:
@@ -89,7 +90,7 @@ static func sanitize(raw: Variant, d: Dictionary) -> Dictionary:
 	var earned := maxi(0, int(shards.get("earned", 0)))
 	var spent := clampi(int(shards.get("spent", 0)), 0, earned)
 	profile.shards = {"have": earned - spent, "earned": earned, "spent": spent}
-	for key: String in ["nightmare_firsts", "rewarded"]:
+	for key: String in ["nightmare_firsts", "rewarded", "reactions"]:
 		var list: Variant = raw.get(key, [])
 		if list is Array: profile[key] = list.filter(func(v: Variant) -> bool: return v is String).slice(-int(d.get("soul_shards", {}).get("reward_memory", 200)) if key == "rewarded" else 0)
 	var difficulty := str(raw.get("difficulty", "normal"))

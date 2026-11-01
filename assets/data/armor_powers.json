@@ -1,0 +1,81 @@
+{
+	"_note": "Armour with an ability (src/hero/armor_powers.gd; user request 2026-11-01: 'das absolut Wichtigste'). The pieces are items.json gear with 'class' (only that class wears them) and 'power' (an entry of 'powers' here). Worn, the power sits on key F (skill bar slot F right of SH, src/ui/talent_bar.gd power_slot) with its cooldown (seconds, scaled by the hero's cooldown factor). Distances are world px of the story worlds (crypt px x 2.4), times seconds, 'hits' hero hits (1.0 = one weapon hit), heals half hearts. Sounds: audio_sfx.json events played through hell_game.gd _sound_raw.",
+	"schema_version": 1,
+	"_drops_note": "Extra roll for a power armour per source (chance 0..1; 'boss' is a mini guardian's drop, floor guardians drop as 'mimic'); own_class: share of power armours (rolled here or by the generic gear roll) that are of the hero's class; curse_chance: chance that an extra power armour carries a curse.",
+	"drops": {"chest": 0.1, "gold_crate": 0.2, "mimic": 0.35, "boss": 0.5, "crate": 0.0, "own_class": 0.8, "curse_chance": 0.2},
+	"_passive_note": "Stats the item rules do not know (items.json gear stats): armor = chance to shrug off a hit; range = longer arrow / bolt flight; mana = share added to the mana pool (hell_talents.gd _sync_gear_mana).",
+	"texts": {
+		"class_only": "NUR FÜR %s",
+		"class_wrong": "Nur für %s.",
+		"ability": "FÄHIGKEIT [F] %s: %s",
+		"cooldown": "Abklingzeit %s s",
+		"not_ready": "%s: noch %s s",
+		"slot_name": "%s (F)",
+		"slot_meta": "Abklingzeit %s s · %s",
+		"armor": "RÜSTUNG %d %% (Treffer abgewehrt)",
+		"range": "REICHWEITE +%d %%",
+		"mana": "MANA +%d %%",
+		"given": "%s ins Inventar",
+		"shrug": "Abgewehrt"
+	},
+	"pixel": 3.0,
+	"gravity": 900.0,
+	"max_bits": 420,
+	"settle_time": 5.0,
+	"powers": {
+		"shield_wall": {
+			"name": "BOLLWERK", "icon": "wall", "color": "d9c48a", "element": "",
+			"text": "3 s blockt der Schild alles von vorn: Treffer und Geschosse prallen ab, Angreifer werden zurückgeschleudert.",
+			"cooldown": 14.0, "time": 3.0, "arc_deg": 130.0, "reach": 170.0, "shot_reach": 80.0, "push": 700.0, "bash_hits": 0.5, "turn": 10.0, "shake": 5.0,
+			"sounds": {"cast": "block_raise", "block": "block_hit@male_knight", "end": "tal_buff_off"}
+		},
+		"blood_rush": {
+			"name": "BLUTZORN", "icon": "axe", "color": "d23a3a", "element": "blood",
+			"text": "6 s schnellere Hiebe (+35 %), jeder vierte Treffer heilt ein halbes Herz.",
+			"cooldown": 20.0, "time": 6.0, "rate": 0.65, "heal_every": 4, "heal_max": 3, "shake": 3.0,
+			"sounds": {"cast": "tal_buff_on", "heal": "essence", "end": "tal_buff_off"}
+		},
+		"shadow_leap": {
+			"name": "SCHATTENSPRUNG", "icon": "dash", "color": "6f7a68", "element": "",
+			"text": "Kurzer Sprung in Laufrichtung; Gegner in der Nähe verlieren 2 s deine Spur.",
+			"cooldown": 12.0, "dash": 230.0, "dash_time": 0.18, "lost": 2.0, "lost_radius": 460.0, "boss_share": 0.5, "inv_extra": 0.15,
+			"sounds": {"cast": "dash", "land": "dash_land"}
+		},
+		"arrow_hail": {
+			"name": "PFEILHAGEL", "icon": "arrow", "color": "b8d4e8", "element": "",
+			"text": "Ein Pfeilregen geht auf den Mauspunkt nieder: 16 Pfeile in 1 s, jeder trifft, was darunter steht.",
+			"cooldown": 16.0, "range": 560.0, "radius": 110.0, "telegraph": 0.45, "rain": 1.0, "count": 16, "fall": 280.0, "fall_speed": 1100.0, "hit_radius": 26.0, "hits": 0.6, "stick": 1.6, "shake": 2.0,
+			"sounds": {"cast": "bow_draw", "rain": "attack_arrow", "land": "wall_hit_arrow"}
+		},
+		"flame_ring": {
+			"name": "FLAMMENKREIS", "icon": "flamewall", "color": "ff8a2a", "element": "fire",
+			"text": "Ein Feuerring um dich brennt 4 s: wer ihn berührt, fängt Feuer; Öl, Gift und Gas darin entzünden sich.",
+			"cooldown": 15.0, "time": 4.0, "radius": 150.0, "band": 34.0, "points": 12, "puddle_r": 34.0, "tick": 0.5, "hits": 0.35, "burn_dps": 0.7, "burn_time": 3.0, "reignite": 2.0, "shake": 4.0,
+			"sounds": {"cast": "tal_nova_fire", "tick": "status_burn", "end": "tal_buff_off"}
+		},
+		"ice_armor": {
+			"name": "EISPANZER", "icon": "snowflake", "color": "9fe0f4", "element": "ice",
+			"text": "Ein Eispanzer fängt 3 Treffer ab (8 s); wer zuschlägt, wird unterkühlt. Der Boden um dich überfriert.",
+			"cooldown": 18.0, "time": 8.0, "charges": 3, "chill": 0.5, "chill_time": 2.5, "chill_radius": 150.0, "crust_radius": 150.0, "crust_time": 6.0, "shake": 3.0,
+			"sounds": {"cast": "tal_shield_on", "hit": "tal_shield_hit", "break": "tal_shield_break"}
+		},
+		"void_step": {
+			"name": "LEERENSCHRITT", "icon": "blink", "color": "b07bff", "element": "void",
+			"text": "Blinzelt zum Mauspunkt; wo du warst, reißt ein kleiner Leerensog Gegner zusammen und frisst Pfützen und Gas.",
+			"cooldown": 9.0, "range": 330.0, "inv": 0.3, "pull_time": 1.4, "pull_radius": 190.0, "pull_speed": 260.0, "boss_share": 0.3, "eat_radius": 80.0, "collapse_radius": 80.0, "hits": 0.8, "shake": 4.0,
+			"sounds": {"cast": "blink_out", "land": "blink_in", "collapse": "void_burst"}
+		},
+		"bone_shield": {
+			"name": "GEBEINKRANZ", "icon": "skull", "color": "e8dcb0", "element": "bone",
+			"text": "Drei Knochen kreisen 12 s um dich; jeder fängt ein Geschoss ab und zersplittert dabei.",
+			"cooldown": 16.0, "time": 12.0, "count": 3, "orbit": 62.0, "lift": 34.0, "spin": 3.2, "block_radius": 22.0, "splinters": 10,
+			"sounds": {"cast": "rattle_bone", "block": "break_bone", "end": "collapse_bone"}
+		},
+		"soul_drain": {
+			"name": "SEELENSOG", "icon": "echo", "color": "8fd0e0", "element": "soul",
+			"text": "2,4 s saugst du nahen Gegnern das Leben aus; die Seelenfäden heilen dich (bis 2 halbe Herzen).",
+			"cooldown": 18.0, "time": 2.4, "radius": 240.0, "tick": 0.4, "targets": 5, "hits": 0.4, "heal_every": 5, "heal_max": 2, "streak_time": 0.55,
+			"sounds": {"cast": "tal_devour", "heal": "essence", "end": "tal_buff_off"}
+		}
+	}
+}

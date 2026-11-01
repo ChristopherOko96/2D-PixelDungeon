@@ -5,6 +5,8 @@
   "velocity_rate": 8.0,
   "max_offset": 240.0,
   "vertical_scale": 0.75,
+  "_hud_bottom_doc": "hud_bottom: the share (0..0.4) of the view height the skill bar and its hints cover at the bottom of the screen (about 76 of 720 px). The view sits half of it lower (view_shift, added to the camera offset), the room clamp grows by that at both ends, and the crowd zoom fits foes into the free part only.",
+  "hud_bottom": 0.1,
   "lead": {"move": 90.0, "run_speed": 350.0, "aim": 60.0, "aim_dead": 140.0, "aim_range": 360.0, "rate": 2.5},
   "frame": {"range": 1100.0, "weight": 0.3, "boss_weight": 3.0, "max_pull": 200.0, "rate": 2.0},
   "zoom": {"rate": 1.2, "crowd_from": 2, "crowd_to": 8, "crowd": 0.92, "boss": 0.88, "min": 0.82, "fit_margin": 140.0,

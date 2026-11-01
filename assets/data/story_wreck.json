@@ -1,0 +1,399 @@
+{
+  "_note": "Light destruction of the story worlds (src/hell/story_wreck.gd): wall wear (pixel bites and cracks on wall faces, walls stay solid) and smashable decorative props. Powers scale every effect (a sword chip 1, a boss slam 3+). Prop kinds match a prop name by prefix or by '_<pattern>'; never_break always wins (doors, gates, stairs, portals, chests, braziers, Schalen, plates, levers, seals, anything a puzzle or goal needs are entities or listed here). Colours 'auto' are sampled from the world's wall sprite (wall_h).",
+  "default_world": "hell",
+  "worlds": {
+    "krypta": {
+      "wall_material": "stone",
+      "dust": [
+        0.66,
+        0.62,
+        0.55
+      ],
+      "dust_fall": -18.0,
+      "rim_light": 0.18
+    },
+    "frost": {
+      "wall_material": "ice",
+      "dust": [
+        0.9,
+        0.96,
+        1.0
+      ],
+      "dust_fall": 34.0,
+      "crack": [
+        0.9,
+        0.97,
+        1.0,
+        0.9
+      ],
+      "hole": [
+        0.16,
+        0.3,
+        0.44
+      ],
+      "rim_light": 0.35
+    },
+    "hell": {
+      "wall_material": "basalt",
+      "dust": [
+        0.32,
+        0.27,
+        0.26
+      ],
+      "dust_fall": -46.0,
+      "rim_light": 0.12,
+      "ember_core": [
+        1.0,
+        0.42,
+        0.1,
+        0.85
+      ]
+    }
+  },
+  "wall": {
+    "spot": 26,
+    "max_depth": 4,
+    "marks_cap": 140,
+    "face_lift_north": 28,
+    "face_lift_south": 24,
+    "side_inset": 18,
+    "jitter": 12,
+    "bite_base": 1.2,
+    "bite_grow": 1.15,
+    "crack_from": 2,
+    "crack_len": 4,
+    "ember_from": 3,
+    "chips_per_power": 3,
+    "chunks_from_power": 2.0,
+    "dust_per_power": 2,
+    "chip_speed": 170,
+    "chip_up": 160,
+    "sound_small": "chips",
+    "sound_crack": "wall_crack",
+    "sound_big": "rubble",
+    "sound_gap": 0.09,
+    "core_from": 2,
+    "core_grow": 0.85
+  },
+  "powers": {
+    "default": 1.0,
+    "enemy_scale": 0.8,
+    "metal": 1.0,
+    "arrow": 0.8,
+    "magic": 1.4,
+    "fire": 1.4,
+    "frost": 1.2,
+    "ice": 1.2,
+    "void": 1.4,
+    "slime": 0.6,
+    "gold": 1.2,
+    "bone": 1.0,
+    "shadow": 1.0,
+    "slam": 2.6,
+    "blast": 2.0,
+    "enemy_blast": 2.6,
+    "boss": 3.4,
+    "shots": {
+      "arrow": 1.0,
+      "magic": 1.4,
+      "fireball": 1.6,
+      "pyro": 1.6,
+      "rock": 2.0,
+      "wave": 1.6,
+      "gravity": 1.2,
+      "shard": 1.0
+    }
+  },
+  "blast": {
+    "rays": 10,
+    "max_bites": 4,
+    "min_radius": 24.0,
+    "prop_reach": 30.0
+  },
+  "smash": {
+    "speed": 250.0,
+    "spread": 150.0,
+    "up": 270.0,
+    "dust": 6,
+    "chips": 6
+  },
+  "debris": {
+    "air_cap": 260,
+    "dust_cap": 140,
+    "rest_cap": 340,
+    "crumble_time": 0.7,
+    "max_air_time": 4.0,
+    "redraw_move": 360.0,
+    "view_margin": 520.0,
+    "lava_sink": 0.7
+  },
+  "materials": {
+    "default": {
+      "gravity": 1600.0,
+      "bounce": 0.32,
+      "bounce_min": 80.0,
+      "bounce_keep": 0.62,
+      "friction": 900.0,
+      "wall_bounce": 0.35,
+      "settle_speed": 18.0,
+      "spin": 9.0,
+      "tick": "settle_tick_stone",
+      "break": "break_stone",
+      "tick_vz": 160.0
+    },
+    "stone": {
+      "gravity": 1750.0,
+      "bounce": 0.28,
+      "friction": 1000.0,
+      "spin": 8.0,
+      "tick": "settle_tick_stone",
+      "break": "break_stone"
+    },
+    "basalt": {
+      "gravity": 1800.0,
+      "bounce": 0.26,
+      "friction": 1050.0,
+      "spin": 8.0,
+      "tick": "settle_tick_stone",
+      "break": "break_stone",
+      "ember_share": 0.35,
+      "cool_time": 1.6,
+      "ember": [
+        1.0,
+        0.5,
+        0.14
+      ]
+    },
+    "ice": {
+      "gravity": 1500.0,
+      "bounce": 0.46,
+      "bounce_min": 64.0,
+      "bounce_keep": 0.75,
+      "friction": 520.0,
+      "wall_bounce": 0.62,
+      "settle_speed": 12.0,
+      "spin": 13.0,
+      "tick": "settle_tick_ice",
+      "break": "break_ice",
+      "glint": true
+    },
+    "clay": {
+      "gravity": 1650.0,
+      "bounce": 0.34,
+      "bounce_keep": 0.66,
+      "friction": 820.0,
+      "spin": 12.0,
+      "tick": "settle_tick_stone",
+      "break": "breakable_break_clay"
+    },
+    "wood": {
+      "gravity": 1450.0,
+      "bounce": 0.4,
+      "bounce_keep": 0.7,
+      "friction": 700.0,
+      "wall_bounce": 0.45,
+      "spin": 15.0,
+      "tick": "settle_tick_wood",
+      "break": "breakable_break_wood",
+      "splinter": true
+    },
+    "bone": {
+      "gravity": 1500.0,
+      "bounce": 0.42,
+      "bounce_keep": 0.72,
+      "friction": 760.0,
+      "spin": 14.0,
+      "tick": "settle_tick_bone",
+      "break": "breakable_break_bone"
+    },
+    "metal": {
+      "gravity": 1900.0,
+      "bounce": 0.48,
+      "bounce_keep": 0.7,
+      "friction": 640.0,
+      "wall_bounce": 0.5,
+      "spin": 11.0,
+      "tick": "settle_tick_stone",
+      "break": "block_break"
+    },
+    "snow": {
+      "gravity": 1150.0,
+      "bounce": 0.05,
+      "bounce_min": 400.0,
+      "friction": 2400.0,
+      "settle_speed": 40.0,
+      "spin": 4.0,
+      "tick": "",
+      "break": "wall_snow_puff"
+    }
+  },
+  "props": {
+    "never_break": [
+      "brazier",
+      "torch",
+      "bowl",
+      "altar",
+      "portal",
+      "door",
+      "gate",
+      "stair",
+      "chest",
+      "vault",
+      "well",
+      "fountain",
+      "lever",
+      "switch",
+      "plate",
+      "seal",
+      "rune",
+      "shrine",
+      "throne",
+      "snowman",
+      "boss",
+      "arch",
+      "glacier",
+      "spire",
+      "pillar",
+      "column",
+      "obelisk",
+      "key",
+      "relic",
+      "thaw",
+      "banner",
+      "carpet",
+      "rug",
+      "moss",
+      "rubble",
+      "rocks",
+      "boulder",
+      "coal",
+      "puddle",
+      "lava",
+      "web",
+      "shop",
+      "merchant",
+      "counter",
+      "stall"
+    ],
+    "kinds": [
+      {
+        "match": [
+          "urn",
+          "vase",
+          "pot",
+          "jar",
+          "amphora"
+        ],
+        "material": "clay",
+        "piece": 15.0,
+        "max_pieces": 14,
+        "hits": 1.0,
+        "loot": {
+          "chance": 0.08,
+          "drop": "gem"
+        }
+      },
+      {
+        "match": [
+          "barrel",
+          "crate",
+          "box",
+          "sack",
+          "sacks"
+        ],
+        "material": "wood",
+        "piece": 16.0,
+        "max_pieces": 14,
+        "hits": 1.0,
+        "loot": {
+          "chance": 0.06,
+          "drop": "gem"
+        }
+      },
+      {
+        "match": [
+          "table",
+          "bench",
+          "chair",
+          "stool",
+          "shelf",
+          "cart"
+        ],
+        "material": "wood",
+        "piece": 20.0,
+        "max_pieces": 16,
+        "hits": 2.0
+      },
+      {
+        "match": [
+          "bone",
+          "bones",
+          "skull",
+          "ribs",
+          "ribcage"
+        ],
+        "material": "bone",
+        "piece": 12.0,
+        "max_pieces": 12,
+        "hits": 1.0
+      },
+      {
+        "match": [
+          "candle",
+          "candles",
+          "candelabra",
+          "cauldron",
+          "cage"
+        ],
+        "material": "metal",
+        "piece": 14.0,
+        "max_pieces": 12,
+        "hits": 1.0
+      },
+      {
+        "match": [
+          "statue",
+          "grave",
+          "gravestone",
+          "tomb",
+          "headstone",
+          "cross",
+          "bust"
+        ],
+        "material": "stone",
+        "piece": 18.0,
+        "max_pieces": 14,
+        "hits": 2.0,
+        "loot": {
+          "chance": 0.05,
+          "drop": "gem"
+        }
+      },
+      {
+        "match": [
+          "icicle",
+          "ice_block",
+          "crystal",
+          "frozen",
+          "ice"
+        ],
+        "material": "ice",
+        "piece": 14.0,
+        "max_pieces": 14,
+        "hits": 1.0
+      },
+      {
+        "match": [
+          "snow_pile",
+          "snowpile",
+          "snow",
+          "drift"
+        ],
+        "material": "snow",
+        "piece": 16.0,
+        "max_pieces": 10,
+        "hits": 1.0
+      }
+    ]
+  }
+}

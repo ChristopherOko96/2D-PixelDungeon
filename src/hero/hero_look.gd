@@ -35,6 +35,11 @@ const SMEAR_RAGE := Color("#ff6a4a")
 const ItemArt = preload("res://src/item_art.gd")
 ## How many motes a held weapon of an element sheds at a time (src/item_art.gd).
 const WEAPON_MOTES := 3
+## A fallen hero's weapon (drop_weapon), in weapon pixels (px) per second: thrown
+## forward at `speed` and up at `lift`, pulled down by `gravity`, turning at `spin`
+## rad/s; a bounce keeps `bounce` of its fall speed and `friction` of its slide;
+## after `settle` s it lies still on its flat side.
+const DROP := {"speed": 22.0, "lift": 38.0, "gravity": 300.0, "spin": 9.0, "bounce": 0.35, "friction": 0.6, "settle": 2.5}
 
 var px := 2.0
 ## World pixels per hero art pixel (the staff is sized and placed by the body).
@@ -49,6 +54,10 @@ var _swing: Dictionary = {}
 var _shot: Dictionary = {}
 var _trail: Dictionary = {}
 var _bows: Dictionary = {}
+## The weapon each hero last held: key -> {texture, hand, angle, rect} (draw_weapon).
+var _held: Dictionary = {}
+## A fallen hero's weapon on its own path: key -> its start (drop_weapon).
+var _dropped: Dictionary = {}
 
 
 func _init(pixel: float = 2.0, sword: Texture2D = null, arrow: Texture2D = null) -> void:
@@ -178,6 +187,7 @@ func _draw_sword(canvas: CanvasItem, key: String, player: Dictionary, point: Vec
 	if rage:
 		var blade := off_blade if off_blade != null else texture
 		_blade(canvas, blade, off_hand, off_angle, blade.get_size() * px, Color(1.0, 0.8, 0.75))
+	_hold(key, texture, hand, main_angle + PI * 0.5, Rect2(Vector2(-size.x * 0.5, -size.y * 0.9), size))
 	_blade(canvas, texture, hand, main_angle, size, Color.WHITE)
 	if not element.is_empty():
 		# the element at the blade: its glow at the tip, its motes off the upper half
@@ -243,6 +253,7 @@ func _draw_bow(canvas: CanvasItem, key: String, player: Dictionary, point: Vecto
 	var snap := clock - float(_shot.get(key, {}).get("start", -INF))
 	var shake := sin(snap * 90.0) * px * clampf(1.0 - snap / 0.12, 0.0, 1.0) if snap >= 0.0 and snap < 0.12 else 0.0
 	var xf := Transform2D(angle, hand)
+	_hold(key, bow.texture, hand, angle, Rect2(-size * 0.5, size))
 	canvas.draw_set_transform(hand, angle, Vector2.ONE)
 	canvas.draw_texture_rect(bow.texture, Rect2(-size * 0.5, size), false)
 	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
@@ -331,6 +342,7 @@ func _draw_staff(canvas: CanvasItem, key: String, point: Vector2, aim: Vector2, 
 	# upright, leaning a little toward the aim; a cast tips it further at the target
 	var toward := wrapf(aim.angle() + PI * 0.5, -PI, PI)
 	var tilt := clampf(toward, -STAFF_LEAN, STAFF_LEAN) * 0.4 + clampf(toward, -STAFF_CAST_LEAN, STAFF_CAST_LEAN) * 0.6 * cast
+	_hold(key, texture, hand, tilt, Rect2(Vector2(-size.x * 0.5, -size.y * STAFF_GRIP), size))
 	canvas.draw_set_transform(hand, tilt, Vector2.ONE)
 	canvas.draw_texture_rect(texture, Rect2(Vector2(-size.x * 0.5, -size.y * STAFF_GRIP), size), false)
 	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
@@ -339,3 +351,59 @@ func _draw_staff(canvas: CanvasItem, key: String, point: Vector2, aim: Vector2, 
 		var orb := hand + Vector2(0, -size.y * STAFF_GRIP + 2.0 * hero_px).rotated(tilt)
 		ItemArt.draw_tip_glow(canvas, orb, glow, clock, px)
 		ItemArt.draw_weapon_motes(canvas, orb + Vector2(0, -hero_px), Vector2.DOWN, 3.0 * hero_px, element, clock, px, key.hash(), WEAPON_MOTES)
+
+
+# --- the fallen hero's weapon ------------------------------------------------------
+
+## Remembers where the weapon of `key` is drawn this frame (its transform and
+## texture rect), so a fall can throw it from there.
+func _hold(key: String, texture: Texture2D, hand: Vector2, angle: float, rect: Rect2) -> void:
+	_held[key] = {"texture": texture, "hand": hand, "angle": angle, "rect": rect}
+
+
+## Draws the weapon of a fallen hero instead of draw_weapon: on the first call it
+## leaves the hand where it was last drawn, flies forward (`face` +1 right, -1
+## left) and up, turning over, falls to `floor_y` (the hero's feet), bounces once
+## and comes to rest on its flat side, like an enemy's held item coming loose
+## (rig_renderer.gd _piece). `clock` in seconds; the path is worked out from its
+## start every frame (fixed 1/120 s steps), so it never depends on frame times.
+## Nothing is drawn for a hero who never held a weapon.
+func drop_weapon(canvas: CanvasItem, key: String, clock: float, floor_y: float, face: float) -> void:
+	if not _dropped.has(key):
+		if not _held.has(key): return
+		var held: Dictionary = _held[key]
+		var start_rect: Rect2 = held.rect
+		var dir := 1.0 if face >= 0.0 else -1.0
+		_dropped[key] = {"t0": clock, "texture": held.texture, "rect": start_rect, "angle": float(held.angle),
+			"center": Vector2(held.hand) + start_rect.get_center().rotated(float(held.angle)),
+			"vel": Vector2(dir * float(DROP.speed), -float(DROP.lift)) * px, "spin": dir * float(DROP.spin)}
+	var d: Dictionary = _dropped[key]
+	var rect: Rect2 = d.rect
+	var rest_y := floor_y - minf(rect.size.x, rect.size.y) * 0.5
+	var center: Vector2 = d.center
+	var vel: Vector2 = d.vel
+	var angle := float(d.angle)
+	var spin := float(d.spin)
+	var landings := 0
+	var step := 1.0 / 120.0
+	for i in range(int(clampf(clock - float(d.t0), 0.0, float(DROP.settle)) / step)):
+		if landings >= 2:
+			# lying: it turns onto its flat side
+			angle = lerpf(angle, roundf((angle - PI * 0.5) / PI) * PI + PI * 0.5, 0.12)
+			continue
+		vel.y += float(DROP.gravity) * px * step
+		center += vel * step
+		angle += spin * step
+		if center.y >= rest_y and vel.y > 0.0:
+			center.y = rest_y
+			landings += 1
+			vel = Vector2(vel.x * float(DROP.friction), -vel.y * float(DROP.bounce)) if landings < 2 else Vector2.ZERO
+			spin *= 0.4
+	canvas.draw_set_transform(center - rect.get_center().rotated(angle), angle, Vector2.ONE)
+	canvas.draw_texture_rect(d.texture, rect, false)
+	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## The hero of `key` stands again: his next fall throws the weapon anew.
+func forget_drop(key: String) -> void:
+	_dropped.erase(key)

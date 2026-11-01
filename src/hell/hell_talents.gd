@@ -98,6 +98,23 @@ func _sync_hero() -> void:
 	hero.face = float(g.player.get("face", 1.0))
 	hero.class_id = class_id
 	players[1] = hero
+	_sync_gear_mana()
+
+
+## Worn gear with mana (the Seelenmantel) widens the mana pool; a new talent build
+## (set_build) sets a fresh base, which is noticed because res_max moved.
+func _sync_gear_mana() -> void:
+	var rt := tc.runtime(1)
+	if rt.is_empty() or str(rt.get("res_kind", "")) != "mana": return
+	var items: Object = g.get("story_items")
+	var bonus: float = items.powers.mana_bonus() if items != null and items.get("powers") != null else 0.0
+	if not is_equal_approx(float(rt.res_max), float(rt.get("res_max_applied", -1.0))):
+		rt.res_max_base = float(rt.res_max)
+	var want := float(rt.get("res_max_base", rt.res_max)) * (1.0 + bonus)
+	if not is_equal_approx(want, float(rt.res_max)):
+		rt.res_max = want
+		rt.res = minf(float(rt.res), want)
+	rt.res_max_applied = float(rt.res_max)
 
 
 func _write_hero(before: Vector2, hp_before: int) -> void:
@@ -244,7 +261,10 @@ func interval_scale() -> float:
 	return tc.interval_scale(players.get(1, {}), 1)
 
 
-## A mob fell: Blutdurst, EXP and gold into the profile.
+## A mob fell: Blutdurst, EXP and gold into the profile. A mob a reaction of
+## the hero caught pays more EXP (src/hell/story_elements.gd exp_mul,
+## assets/data/reactions_lexicon.json reward): the talents' EXP here and the
+## run level's on top of what the world already gave (_reaction_bonus).
 func killed(m: Dictionary) -> void:
 	_sync_hero()
 	tc.enemy_killed(m, 1)
@@ -253,9 +273,32 @@ func killed(m: Dictionary) -> void:
 	var kind := "boss" if str(m.get("kind", "")) == "boss" or bool(m.get("boss", false)) else "kill"
 	var state := Profile.class_state(profile, class_id)
 	profile.gold = int(profile.gold) + int(data.gold.per_boss if kind == "boss" else data.gold.per_kill)
-	var gained := Rules.add_exp(data, state, int(data.exp[kind]))
+	var mul: float = float(elements.exp_mul(m)) if elements != null and elements.has_method("exp_mul") else 1.0
+	var gained := Rules.add_exp(data, state, roundi(float(data.exp[kind]) * mul))
+	if mul > 1.0: _reaction_bonus(m, mul)
 	if gained > 0: bar.show_reward({"kind": "level", "level": int(state.level), "points": Rules.free_points(data, state)})
 	_dirty = true
+
+
+## The reaction reward of a kill: the run level's EXP share of `mul` (the
+## world gave the plain EXP before calling killed) and "+N % EP" rising from it.
+func _reaction_bonus(m: Dictionary, mul: float) -> void:
+	var extra := roundi(float(HeroKit.exp_for(g, m)) * (mul - 1.0))
+	if extra > 0: HeroKit.gain(g, extra)
+	if elements != null and elements.has_method("exp_bonus"):
+		elements.exp_bonus(Vector2(m.p) - Vector2(0, float(m.get("cy", 30.0))), roundi((mul - 1.0) * 100.0))
+
+
+## Something lasting in the profile changed outside the talents (a reaction
+## discovered, src/hell/story_elements.gd): written with the next save.
+func note_progress() -> void:
+	_dirty = true
+
+
+## The hero's unspent talent points (Heldenstufe), for the HUD's talent chip.
+func free_points() -> int:
+	if profile.is_empty(): return 0
+	return Rules.free_points(data, Profile.class_state(profile, class_id))
 
 
 ## Enemy HP factor of the profile's difficulty (applied when mobs spawn).
@@ -423,7 +466,7 @@ func _step_bullets(dt: float) -> void:
 		b.life = float(b.life) - dt
 		# a fire shot through poison gas sets it off (src/hell/story_elements.gd)
 		if elements != null and str(b.get("style", "")).begins_with("fire"):
-			elements.fire_passes(b.pos)
+			elements.fire_passes(b.pos, int(b.get("owner", 1)))
 		var gone: bool = float(b.life) <= 0.0 or talent_blocked(from, b.pos, 3.0)
 		if not gone:
 			for m: Dictionary in enemies:

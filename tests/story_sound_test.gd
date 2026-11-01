@@ -136,6 +136,18 @@ func _frames(game: Node, n: int) -> void:
 		game.feel.update(DT)
 
 
+## Runs the Frostgruft's mobs (and the feel) until a new enemy shot flies, at most
+## the bolt windup (combat_tells.json tells.bolt) plus half a second.
+func _until_shot(game: Node) -> void:
+	var shots: int = game.eshots.size()
+	var limit := FrostMoves.tell_time("bolt", false, 0.45) + 0.5
+	var t := 0.0
+	while game.eshots.size() <= shots and t < limit:
+		game._update_mobs(DT)
+		game.feel.update(DT)
+		t += DT
+
+
 ## Starts hell monster `m`'s attack of `kind`; false when it has none.
 func _start(game: Node, m: Dictionary, kind: String) -> bool:
 	for k in range((m.st.attacks as Array).size()):
@@ -714,8 +726,8 @@ func test_frost_enemies_moves_and_kits() -> void:
 	game.feel.update(DT)
 	fake.reset()
 	skeleton.shoot = 0.0001
-	game._update_mobs(DT)
-	game.feel.update(DT)
+	# it winds up first (combat_tells.json tells.bolt, frost_moves.gd basic_tell), then shoots
+	_until_shot(game)
 	check(fake.count("attack_arrow") == 1 and fake.count("enemy_shoot") == 0, "frost: a frost skeleton's shot sounds like the crypt's skeleton archer (%s)" % str(fake.played))
 	game.mobs.erase(skeleton)
 	# the ice crystal's five-shot fan: a soul shot at the enemies' level, not the void boss's salve
@@ -723,8 +735,7 @@ func test_frost_enemies_moves_and_kits() -> void:
 	game.feel.update(DT)
 	fake.reset()
 	crystal.shoot = 0.0001
-	game._update_mobs(DT)
-	game.feel.update(DT)
+	_until_shot(game)
 	check(fake.count("attack_soul") == 1 and fake.count("attack_salve") == 0, "frost: an ice crystal's fan is one soul shot, not the boss salve (%s)" % str(fake.played))
 	game.mobs.erase(crystal)
 	# moves of regular enemies: the windup stays quiet, the release sounds once at the enemies' level

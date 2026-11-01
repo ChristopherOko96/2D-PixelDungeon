@@ -26,14 +26,22 @@ const OptionsPanel = preload("res://src/ui/options_panel.gd")
 ## A save slot button (1..3): the host saves the start of the current floor.
 signal save_requested(slot: int)
 
-const SECTIONS := ["overview","quest","map","floor","party","reward","talents","inventory","options","controls","display","session","save","cheats"]
-const TITLES := ["Übersicht","Auftrag","Karte","Etage","Gruppe & Perks","Belohnung","Talente","Inventar","Optionen","Steuerung","Anzeige","Sitzung","Speichern","Cheats"]
+const SECTIONS := ["overview","quest","map","floor","party","reward","talents","inventory","elements","options","controls","display","session","save","cheats"]
+const TITLES := ["Übersicht","Auftrag","Karte","Etage","Gruppe & Perks","Belohnung","Talente","Inventar","Elemente","Optionen","Steuerung","Anzeige","Sitzung","Speichern","Cheats"]
 ## Pages each mode shows: the crypt run, and the story worlds (Krypta, Frostgruft, Hölle).
 ## Story: Weiterspielen sits above these buttons and Hauptmenü below them.
 const MODE_SECTIONS := {
 	"crypt": ["overview","quest","map","party","reward","controls","display","session","save","cheats"],
-	"story": ["floor","talents","inventory","options","controls","save"],
+	"story": ["floor","talents","inventory","elements","options","controls","save"],
 }
+## Elemente page (story): the reactions lexicon and its pixel signs (src/hell/story_elements.gd).
+const StoryElements = preload("res://src/hell/story_elements.gd")
+## Elemente page: one sign's pixel size, the gap between the two columns and between rows.
+const REACTION_CELL := 4.0
+const REACTION_GAP := Vector2(24,14)
+## Elemente page rows as last shown: [{id, seen}] in the lexicon's order.
+var reaction_rows: Array = []
+var _reaction_box: Control
 ## Older page names the story mode answers with its own pages.
 const STORY_ALIASES := {"overview": "floor", "quest": "floor", "map": "floor", "display": "options"}
 ## Story layout (design px): frame, page inset, page, first section button.
@@ -46,10 +54,17 @@ const STORY_STEP := 48.0
 const STORY_GAP := 24.0
 ## Etage page: width of the goal column; the map fills the rest.
 const STORY_QUEST_W := 480.0
-## Steuerung page: space between the two columns; the tab stop (action | key)
-## follows the longest action of a column, at most this share of its width.
+## Steuerung page: space between the two columns. Each column is as wide as its
+## longest action plus its longest key (the free width split evenly on top), so
+## the keys do not wrap; only when both together do not fit does a column shrink
+## and its tab stop (action | key) stay at most this share of its width.
 const CONTROLS_GAP := 24.0
 const CONTROLS_TAB_SHARE := 0.55
+## Space between the action and the key of one row.
+const CONTROLS_CELL_GAP := 12.0
+## Story pause: how dark the shade over the whole screen is (the HUD's corners
+## must not show beside the frame; the crypt keeps its lighter shade).
+const STORY_SHADE_ALPHA := 0.95
 ## Returns the save slot lines (SaveStore.summaries); set by the game.
 var save_rows := Callable()
 var save_buttons: Array[Button] = []
@@ -205,6 +220,7 @@ func _ready() -> void:
 ## set_controls_text). Call once after adding.
 func use_story_mode(controls_text: String) -> void:
 	mode = "story"
+	shade.color = Color(CryptUI.INK,STORY_SHADE_ALPHA)
 	map_view.visible = false
 	map_note.visible = false
 	main_action_button.visible = false
@@ -240,6 +256,8 @@ func use_story_mode(controls_text: String) -> void:
 	story_map.visible = true
 	leave_button.text = "Hauptmenü"
 	save_hint.text = "Ein Klick speichert den Beginn dieser Etage.\nLaden und Löschen: Hauptmenü, SPIELSTÄNDE."
+	# Elemente: the lexicon at once; the world marks the discovered ones (set_story_state)
+	set_reactions([])
 	set_controls_text(controls_text)
 	_layout_navigation()
 	select_section("floor")
@@ -273,19 +291,28 @@ func set_controls_text(text: String) -> void:
 		split[1 if right else 0].append(group)
 		used += count
 	var font: Font = get_theme_font("font","Label")
-	var column_w: float = (pages.controls.size.x-CONTROLS_GAP)/2.0
+	# each column: its longest action (the tab stop) and its longest key
+	var tabs: Array[float] = [96.0,96.0]
+	var keys: Array[float] = [0.0,0.0]
 	for side in range(2):
-		var column := VBoxContainer.new()
-		column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		column.add_theme_constant_override("separation",8)
-		_controls_grid.add_child(column)
-		# the tab stop: the longest action in this column, capped
-		var tab := 96.0
 		for group: Dictionary in split[side]:
 			for row: Array in group.rows:
-				if not str(row[1]).is_empty():
-					tab = maxf(tab,font.get_string_size(str(row[0]),HORIZONTAL_ALIGNMENT_LEFT,-1,16).x)
-		tab = minf(tab,column_w*CONTROLS_TAB_SHARE)
+				if str(row[1]).is_empty(): continue
+				tabs[side] = maxf(tabs[side],ceilf(font.get_string_size(str(row[0]),HORIZONTAL_ALIGNMENT_LEFT,-1,16).x))
+				keys[side] = maxf(keys[side],ceilf(font.get_string_size(str(row[1]),HORIZONTAL_ALIGNMENT_LEFT,-1,16).x))
+	var room: float = pages.controls.size.x-CONTROLS_GAP
+	var needs: Array[float] = [tabs[0]+CONTROLS_CELL_GAP+keys[0],tabs[1]+CONTROLS_CELL_GAP+keys[1]]
+	var widths: Array[float] = []
+	for side in range(2):
+		if needs[0]+needs[1] <= room: widths.append(needs[side]+(room-needs[0]-needs[1])*0.5)
+		else: widths.append(room*needs[side]/(needs[0]+needs[1]))
+	for side in range(2):
+		var column := VBoxContainer.new()
+		column.custom_minimum_size = Vector2(floorf(widths[side]),0)
+		column.add_theme_constant_override("separation",8)
+		_controls_grid.add_child(column)
+		# the tab stop: the longest action in this column (capped only when it must shrink)
+		var tab: float = tabs[side] if needs[0]+needs[1] <= room else minf(tabs[side],widths[side]*CONTROLS_TAB_SHARE)
 		for group: Dictionary in split[side]:
 			if column.get_child_count() > 0:
 				var gap := Control.new()
@@ -297,7 +324,7 @@ func set_controls_text(text: String) -> void:
 					column.add_child(_row_label(str(row[0]),CryptUI.BONE,0.0))
 					continue
 				var line := HBoxContainer.new()
-				line.add_theme_constant_override("separation",12)
+				line.add_theme_constant_override("separation",int(CONTROLS_CELL_GAP))
 				line.add_child(_row_label(str(row[0]),CryptUI.BONE,tab))
 				var key := _row_label(str(row[1]),CryptUI.CREAM,0.0)
 				key.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -324,11 +351,90 @@ static func control_groups(text: String) -> Array:
 
 
 ## Story worlds feed their pages: {overview: text, quest_title: "ETAGE 3",
-## quests: [{text, done, main}]}.
+## quests: [{text, done, main}], reactions: [discovered reaction ids]}.
 func set_story_state(info: Dictionary) -> void:
 	overview_label.text = str(info.get("overview", ""))
 	quest_view.set_goals(info.get("quests", []), str(info.get("quest_title", "")))
 	story_map.queue_redraw()
+	if info.get("reactions") is Array: set_reactions(info.reactions)
+
+
+## Elemente page: every reaction of the lexicon (assets/data/reactions_lexicon.json,
+## its order) in two columns with its pixel sign, name, cause and effect; the
+## ones in `seen` (the profile's discovered ids) marked ENTDECKT in gold, the
+## others greyed. Rebuilt on each call (the pause opens rarely).
+func set_reactions(seen: Array) -> void:
+	var lex: Dictionary = StoryElements.lexicon()
+	var all: Dictionary = lex.get("reactions", {})
+	var order: Array = lex.get("order", all.keys())
+	var words: Dictionary = lex.get("page", {})
+	var page: Control = pages.elements
+	if _reaction_box != null:
+		page.remove_child(_reaction_box)
+		_reaction_box.queue_free()
+	_reaction_box = Control.new()
+	_reaction_box.size = page.size
+	_reaction_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	page.add_child(_reaction_box)
+	reaction_rows.clear()
+	var found := 0
+	for id: Variant in order:
+		if all.has(str(id)) and seen.has(str(id)): found += 1
+	var title := _text(_reaction_box,str(words.get("title","ELEMENT-REAKTIONEN")),Vector2.ZERO,Vector2(page.size.x*0.6,24),16)
+	title.add_theme_color_override("font_color",CryptUI.GOLD)
+	var count := _text(_reaction_box,str(words.get("count","%d / %d")) % [found,all.size()],Vector2(page.size.x*0.6,0),Vector2(page.size.x*0.4,24),16)
+	count.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	var pct := roundi((float(lex.get("reward",{}).get("hero_exp_mul",1.0))-1.0)*100.0)
+	var hint := _text(_reaction_box,str(words.get("hint","%d")) % pct,Vector2(0,26),Vector2(page.size.x,24),16)
+	hint.add_theme_color_override("font_color",CryptUI.SAND)
+	var scroll := ScrollContainer.new()
+	scroll.position = Vector2(0,62)
+	scroll.size = Vector2(page.size.x,page.size.y-62)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.focus_mode = Control.FOCUS_NONE
+	_reaction_box.add_child(scroll)
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation",int(REACTION_GAP.x))
+	grid.add_theme_constant_override("v_separation",int(REACTION_GAP.y))
+	scroll.add_child(grid)
+	# two columns beside the scroll bar; the text beside the sign wraps
+	var column := floorf((page.size.x-REACTION_GAP.x-16.0)*0.5)
+	var badge := Vector2(9,9)*REACTION_CELL
+	for id: Variant in order:
+		var key := str(id)
+		if not all.has(key): continue
+		var info: Dictionary = all[key]
+		var known := seen.has(key)
+		reaction_rows.append({"id": key, "seen": known})
+		var cell := HBoxContainer.new()
+		cell.custom_minimum_size = Vector2(column,0)
+		cell.add_theme_constant_override("separation",12)
+		cell.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		grid.add_child(cell)
+		var icon := Control.new()
+		icon.custom_minimum_size = badge
+		icon.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		icon.draw.connect(func() -> void: StoryElements.draw_icon(icon,key,Vector2.ZERO,REACTION_CELL,1.0 if known else 0.6,not known))
+		cell.add_child(icon)
+		var lines := VBoxContainer.new()
+		lines.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		lines.add_theme_constant_override("separation",2)
+		lines.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		cell.add_child(lines)
+		var text_w := column-badge.x-12.0
+		var head := str(info.get("name",key))+"  ·  "+str(words.get("seen" if known else "unseen",""))
+		lines.add_child(_wrap_label(head,CryptUI.GOLD if known else CryptUI.MUTED,text_w))
+		lines.add_child(_wrap_label(str(words.get("cause",""))+str(info.get("cause","")),CryptUI.BONE if known else CryptUI.SAND,text_w))
+		lines.add_child(_wrap_label(str(words.get("effect",""))+str(info.get("effect","")),CryptUI.BONE if known else CryptUI.SAND,text_w))
+
+
+## One wrapped 16 px line block of the Elemente page, `width` px wide.
+func _wrap_label(value: String, colour: Color, width: float) -> Label:
+	var label := _row_label(value,colour,width)
+	label.custom_minimum_size = Vector2(width,0)
+	return label
 
 
 ## Stacks the section buttons of the current mode without gaps.
@@ -382,6 +488,15 @@ func _link_story_focus() -> void:
 		slot.focus_neighbor_right = slot.get_path_to(slot)
 		slot.focus_neighbor_top = slot.get_path_to(save_buttons[maxi(index-1,0)])
 		slot.focus_neighbor_bottom = slot.get_path_to(save_buttons[mini(index+1,save_buttons.size()-1)])
+
+
+## Gives the keyboard / pad focus to the open section's button (story), so the
+## focus frame and the lit section are the same button; Weiterspielen otherwise.
+func focus_section() -> void:
+	var target: Button = resume_button
+	if mode == "story" and navigation.has(section) and (navigation[section] as Button).visible:
+		target = navigation[section]
+	if target.is_inside_tree(): target.grab_focus()
 
 
 ## Shows the profile's soul shards (the same in the crypt, the Frostgruft and the Hölle).

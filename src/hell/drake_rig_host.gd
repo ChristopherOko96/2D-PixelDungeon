@@ -671,7 +671,8 @@ func draw(l: CanvasItem, m: Dictionary, foot: Vector2, size: float = 1.0, tint: 
 	# the full height plus SINK_MARGIN, so breathing and bobbing never lift a sliver out of the floor
 	var cut := clampf(sink, 0.0, 1.0) * (float(rig.ground.y) - float(rig.top) + 1.0 + SINK_MARGIN) * S
 	var phase := act_phase(m)
-	var whole_flash := float(m.get("rig_flash", 0.0)) > 0.0
+	# a sever, and the first frames after any hit (pose.hit_white, frost_moves.gd white_hit), flash the whole figure
+	var whole_flash := float(m.get("rig_flash", 0.0)) > 0.0 or bool(pose.get("hit_white", false))
 	var flash := maxf(float(m.get("rig_flash", 0.0)), maxf(float(m.get("hit", 0.0)), float(pose.get("flash", 0.0)) * 0.16))
 	var e := {"rig": rig_of(m), "uid": int(m.uid), "face": float(m.get("face", 1.0)), "moving": str(m.get("anim", "")) == "run",
 		"flying": str(m.get("anim", "")) == "fly", "tint": Color(tint.r, tint.g, tint.b, 1.0), "alpha": tint.a, "size": size, "cut": cut,

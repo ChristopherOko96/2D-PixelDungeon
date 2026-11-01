@@ -1,0 +1,30 @@
+{
+  "_doc": "Room signs (proposal D2, MECHANIK.md M4): a side room (rooms[].on_path false) and the boss room show what waits in them before they are entered, as a small sign over every door into them the hero sees from a room he stands in or has visited, and on the minimap and the big map once their door is known (src/hell/hell_game.gd room_sign, _draw_room_signs, _draw_map). Secret rooms behind a wall not yet broken are never shown (hell_rules.gd known_rooms skips them, and their doors are walls). order: the first kind a room still holds names its sign; icons: the world's texture for each kind (every story sprite set has them). boss: the guardian not yet beaten; shop: the key room's shop; secret: a found secret room not yet entered; chest: a chest not emptied or a vault not opened; seal: a demon seal not broken; brazier: a fire bowl not lit; heart: a heart lying there or a fight room that pays one. door: size of the icon in world px (its longer side), lift: world px over the door's middle (gate: over the dressed boss gate's top), the plate around it (plate colour and alpha, rim colour), bob: world px it floats up and down (whole 3 px art pixels) at bob_rate, alpha_far / alpha_near: how strong it shows far from the hero and within near world px. map: alpha of a sign for a room not yet entered.",
+  "order": ["boss", "shop", "secret", "chest", "seal", "brazier", "heart"],
+  "icons": {
+    "boss": "icon_demon_big",
+    "shop": "sacks_a",
+    "secret": "rune_gem",
+    "chest": "icon_chest",
+    "seal": "demon_plate",
+    "brazier": "brazier_bowl",
+    "heart": "heart"
+  },
+  "door": {
+    "size": 33.0,
+    "lift": 96.0,
+    "gate_lift": 24.0,
+    "pad": 6.0,
+    "plate": "1a1012",
+    "plate_alpha": 0.72,
+    "rim": "9c8a7e",
+    "bob": 3.0,
+    "bob_rate": 2.2,
+    "alpha_far": 0.55,
+    "alpha_near": 0.95,
+    "near": 700.0
+  },
+  "map": {
+    "alpha": 0.8
+  }
+}

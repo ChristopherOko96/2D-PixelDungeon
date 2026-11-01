@@ -209,10 +209,11 @@ func _test_exp_levels() -> void:
 	Rules.add_exp(d, state, 100000000)
 	check(state.level == 30 and state.exp == 0, "the level stops at 30")
 	# Max level only after several full runs (user decision 29.10.2026, was 1.5
-	# floors): one floor brings roughly 60 kills and the floor bonus, a run 10 floors.
+	# floors): one floor brings roughly 60 kills and its guardian (in the story
+	# worlds every guardian gives exp.boss, src/hell/hell_talents.gd killed), a run 10 floors.
 	var total := 0
 	for level in range(1, 30): total += Rules.exp_to_next(d, level)
-	var per_run: int = (60 * int(d.exp.kill) + int(d.exp.floor)) * 10
+	var per_run: int = (60 * int(d.exp.kill) + int(d.exp.boss)) * 10
 	check(float(total) / per_run >= 2.5 and float(total) / per_run <= 4.0, "level 30 takes several full runs (%.2f)" % (float(total) / per_run))
 	check(Rules.exp_to_next(d, 2) == 2 * Rules.exp_to_next(d, 1) and Rules.exp_to_next(d, 29) == 29 * Rules.exp_to_next(d, 1), "every level follows the same rule (base x level)")
 

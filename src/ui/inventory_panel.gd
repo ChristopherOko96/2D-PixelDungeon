@@ -21,6 +21,9 @@ signal acted(action: String, value: int)
 signal throw_armed(slot: int)
 ## A note for the game's message channel (the bag closed); unconnected, the panel shows it itself.
 signal noted(text: String)
+## A right-click on a potion: that bag slot becomes the quick potion (keys H / G,
+## src/hero/story_items.gd set_quick).
+signal quick_chosen(slot: int)
 
 const PixelStyle = preload("res://src/pixel_style.gd")
 const HudStyle = preload("res://src/ui/hud_style.gd")
@@ -36,7 +39,8 @@ const GAP := 6.0
 ## The equipment column: wide enough for its 16 px labels under the slots; the bag sits right of it.
 const EQUIP_COLUMN := 112.0
 const BAG_X := 16.0 + EQUIP_COLUMN + 12.0
-const PANEL := Rect2(280, 72, 720, 560)
+## Ends above the resource label over the skill bar (y 637), never covering it.
+const PANEL := Rect2(280, 64, 720, 552)
 ## The item actions in the order they line up: id, label.
 const ACTIONS := [["inv_equip", "ANLEGEN"], ["inv_use", "BENUTZEN"], ["inv_identify", "IDENTIFIZIEREN"], ["inv_cleanse", "FLUCH BRECHEN"],
 	["inv_upgrade", "AUFWERTEN"], ["inv_reroll", "NEU WÜRFELN"], ["inv_throw", "WERFEN"], ["inv_drop", "WEGWERFEN"]]
@@ -62,6 +66,9 @@ var auto_hide_chip := false
 var chip_blocked := false
 var _chip_time := 0.0
 var _bag_sig := ""
+## The bag slot of the quick potion (H drinks, G throws), -1 for none; the game
+## sets it from story_items.gd quick_slot(), the panel only shows it.
+var quick := -1
 
 
 func _ready() -> void:
@@ -110,17 +117,63 @@ func set_state(snapshot: Dictionary, local_peer: int) -> void:
 	set_view(player.get("inventory", {}))
 
 
+## The start of a find note (inventory.gd add).
+const FIND_PREFIX := "Gefunden: "
+
+
+## The item name of a find note ("Gefunden: ROTER TRANK" -> "ROTER TRANK"), "" for any other note.
+static func found_name(note: String) -> String:
+	return note.trim_prefix(FIND_PREFIX).strip_edges() if note.begins_with(FIND_PREFIX) else ""
+
+
+## One line for finds: one stays "Gefunden: NAME", several become
+## "3 Funde: ROTER TRANK, 2× BLAUER TRANK" (in the order found).
+static func finds_line(names: Array) -> String:
+	if names.size() == 1:
+		return FIND_PREFIX + str(names[0])
+	var order: Array = []
+	var counts := {}
+	for item: Variant in names:
+		if not counts.has(item): order.append(item)
+		counts[item] = int(counts.get(item, 0)) + 1
+	var parts := PackedStringArray()
+	for item: Variant in order:
+		parts.append(("%d× %s" % [int(counts[item]), str(item)]) if int(counts[item]) > 1 else str(item))
+	return "%d Funde: %s" % [names.size(), ", ".join(parts)]
+
+
+## Several notes as one line: the finds joined (finds_line), else the last note.
+static func summary(notes: Array) -> String:
+	var finds: Array = []
+	var last := ""
+	for text: Variant in notes:
+		var found := found_name(str(text))
+		if found.is_empty(): last = str(text)
+		else: finds.append(found)
+	return finds_line(finds) if not finds.is_empty() else last
+
+
+# The notes new since the last view: the last `count` of the view's note_log
+# (every one of a burst in one frame), or just the last note without a log.
+func _fresh_notes(count: int) -> Array:
+	var recent: Array = _view.get("note_log", [])
+	var out: Array = recent.slice(maxi(0, recent.size() - maxi(1, count))) if not recent.is_empty() else [str(_view.get("note", ""))]
+	return out.filter(func(text: Variant) -> bool: return not str(text).is_empty())
+
+
 ## The inventory view itself (inventory.gd snapshot); the story worlds hand it in directly.
 func set_view(view: Dictionary) -> void:
 	_view = view
 	var notes := int(_view.get("notes", 0))
 	if notes != _notes_seen:
-		if _notes_seen >= 0 and not str(_view.get("note", "")).is_empty():
-			# closed: the game's one message channel takes it; open: over the panel
+		var fresh := _fresh_notes(notes - _notes_seen) if _notes_seen >= 0 else []
+		if not fresh.is_empty():
+			# closed: the game's one message channel takes every note (it joins
+			# finds close together into one); open: one line over the panel
 			if not open and not noted.get_connections().is_empty():
-				noted.emit(str(_view.note))
+				for text: String in fresh: noted.emit(text)
 			else:
-				_toast = str(_view.note)
+				_toast = summary(fresh)
 				_toast_time = 3.5
 		_notes_seen = notes
 	var bag: Array = _view.get("bag", [])
@@ -255,8 +308,12 @@ func _gui_input(event: InputEvent) -> void:
 		if _equip_rect(index).has_point(click): selected = int(EQUIP[keys[index]])
 	for index in range(int(_view.get("size", 12))):
 		if _slot_rect(index).has_point(click) and index < Array(_view.get("bag", [])).size(): selected = index
+	var button := (event as InputEventMouseButton).button_index
+	# A right-click on a potion makes it the quick potion (H drinks, G throws at the mouse).
+	if button == MOUSE_BUTTON_RIGHT and not _is_equip(selected) and str(_item(selected).get("type", "")) == "potion":
+		quick_chosen.emit(selected)
 	# A double click is the item's natural action: equip a weapon or piece, use a consumable.
-	if (event as InputEventMouseButton).double_click and not _is_equip(selected):
+	if button == MOUSE_BUTTON_LEFT and (event as InputEventMouseButton).double_click and not _is_equip(selected):
 		var item := _item(selected)
 		var type := str(item.get("type", ""))
 		if type in ["weapon", "gear"]: acted.emit("inv_equip", selected)
@@ -283,8 +340,10 @@ func _draw() -> void:
 	draw_style_box(CryptUI.box("panel"), PANEL)
 	_text(PANEL.position + Vector2(18, 38), "INVENTAR", 24, HudStyle.color("text"))
 	var title_width := _font.get_string_size("INVENTAR", HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x
-	_text(PANEL.position + Vector2(18.0 + title_width + 24.0, 36), "Doppelklick: anlegen / benutzen", 16, HudStyle.color("text_dim"))
-	if float(_view.get("clone", 0.0)) > 0.0:
+	# the window's own messages take the hint's place in the header while they show
+	if _toast_time <= 0.0:
+		_text(PANEL.position + Vector2(18.0 + title_width + 24.0, 36), "Doppelklick: anlegen / benutzen", 16, HudStyle.color("text_dim"))
+	if float(_view.get("clone", 0.0)) > 0.0 and _toast_time <= 0.0:
 		_text(Vector2(PANEL.end.x - 18 - _font.get_string_size("KLON %d s" % int(_view.clone), HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x, PANEL.position.y + 36), "KLON %d s" % int(_view.clone), 16, HudStyle.color("accent"))
 	_text(Vector2(PANEL.position.x + 18, PANEL.end.y - 20), "I / Esc schließt", 16, Color(HudStyle.color("text_dim"), 0.9))
 	var keys := EQUIP.keys()
@@ -297,6 +356,7 @@ func _draw() -> void:
 	var bag: Array = _view.get("bag", [])
 	for index in range(int(_view.get("size", 12))):
 		_draw_slot(_slot_rect(index), bag[index] if index < bag.size() else {}, selected == index)
+		if index == quick and index < bag.size(): _draw_quick_badge(_slot_rect(index))
 	_draw_details(_item(selected))
 	if _toast_time > 0.0: _draw_toast()
 
@@ -342,6 +402,21 @@ func _draw_details(item: Dictionary) -> void:
 		for part: String in _wrap(line, 16, room):
 			_text(at + Vector2(0, y), part, 16, colour)
 			y += 22.0
+	# a potion says how it becomes the quick potion, or that it is one
+	if str(item.get("type", "")) == "potion" and not _is_equip(selected):
+		var hint := "SCHNELLTRANK · H trinken · G werfen" if selected == quick else "Rechtsklick: Schnelltrank (H trinken · G werfen)"
+		for part: String in _wrap(hint, 16, room):
+			_text(at + Vector2(0, y), part, 16, HudStyle.color("accent") if selected == quick else HudStyle.color("text_dim"))
+			y += 22.0
+
+
+## The quick potion's mark: a small "H" plate in the slot's lower left corner.
+func _draw_quick_badge(rect: Rect2) -> void:
+	var plate := Rect2(rect.position + Vector2(3, rect.size.y - 17), Vector2(14, 14))
+	draw_rect(plate, Color(HudStyle.color("outline"), 0.9))
+	draw_rect(plate, HudStyle.color("accent"), false, 1.0)
+	var width := _font.get_string_size("H", HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x
+	draw_string(_font, plate.position + Vector2((plate.size.x - width) * 0.5, 11), "H", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, HudStyle.color("accent"))
 
 
 ## Splits a line into pieces no wider than `width` at `size`.
@@ -360,15 +435,34 @@ func _wrap(line: String, size: int, width: float) -> Array[String]:
 
 
 func _draw_toast() -> void:
+	# with the window closed its messages run in the HUD's one toast channel (hell_game noted)
+	if not open: return
 	var text := _toast
 	var width := _font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
-	# Above the world while playing; above the open panel so it never hides behind it.
-	var top := PANEL.position.y - 40.0 if open else 128.0
-	var rect := Rect2(Vector2(640 - width * 0.5 - 14, top), Vector2(width + 28, 30))
+	# In the open window it sits in the header beside the title (never over the HUD), in
+	# up to two lines; a longer note sits centred above the panel, as wide as it needs.
+	var title_width := _font.get_string_size("INVENTAR", HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x
+	var at := PANEL.position + Vector2(18.0 + title_width + 16.0, 14.0)
+	var room := PANEL.end.x - 18.0 - (at.x + 14.0)
+	var lines: Array[String] = [text]
+	if width > room:
+		lines = _wrap(text, 16, room)
+		if lines.size() > 2:
+			lines = _wrap(text, 16, 1280.0 - 64.0)
+			at = Vector2.INF
+		width = 0.0
+		for line: String in lines: width = maxf(width, _font.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x)
+	var height := 30.0 + 22.0 * (lines.size() - 1)
+	var rect := Rect2(at, Vector2(width + 28, height))
+	if lines.size() > 1 and at.is_finite():
+		rect.position.y = PANEL.position.y + 8.0
+	elif not at.is_finite():
+		rect.position = Vector2(640 - (width + 28) * 0.5, PANEL.position.y - 6.0 - height)
 	var alpha := clampf(_toast_time, 0.0, 1.0)
 	HudStyle.panel(self, rect, alpha)
 	draw_rect(Rect2(rect.position, Vector2(3, rect.size.y)), Color(HudStyle.color("accent"), alpha))
-	draw_string(_font, rect.position + Vector2(14, 21), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(HudStyle.color("text"), alpha))
+	for i in range(lines.size()):
+		draw_string(_font, rect.position + Vector2(14, 21 + 22 * i), lines[i], HORIZONTAL_ALIGNMENT_LEFT, -1, 16, Color(HudStyle.color("text"), alpha))
 
 
 func _text(at: Vector2, value: String, font_size: int, colour: Color) -> void:

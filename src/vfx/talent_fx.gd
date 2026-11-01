@@ -119,6 +119,9 @@ const INK := Color("1a1414")
 const LOOKS := ["flames", "firewall", "lava", "ice", "arcane", "snow", "arrows", "crater", "souls", "plague"]
 ## How long a shot's painted impact plays (s).
 const IMPACT_TIME := 0.45
+## "KRIT" over a critical hit (vfx_talents.json "crit_text" overrides): at least
+## min_px screen px tall, one art cell size bigger for the first pop s.
+const CRIT_TEXT := {"min_px": 16.0, "pop": 0.09}
 ## The gore table (assets/data/vfx_gore.json): an enemy kind's material and the splat classes.
 const GORE_PATH := "res://assets/data/vfx_gore.json"
 ## The gore table, read on first use.
@@ -942,6 +945,21 @@ func _residue_entries(clock: float) -> Array:
 	return out
 
 
+# "KRIT" over a critical hit at `at`: pixel letters on the art grid in whole
+# multiples of the art cell, big enough for CRIT_TEXT.min_px on screen; one
+# cell size bigger for the first CRIT_TEXT.pop s (the pop), then it rises a
+# little and dithers out with `fade`.
+func _crit_word(canvas: CanvasItem, at: Vector2, p: float, span: float, fade: float) -> void:
+	var c: Dictionary = CRIT_TEXT.duplicate()
+	c.merge(cfg.get("crit_text", {}), true)
+	var screen_scale := absf(canvas.get_global_transform_with_canvas().get_scale().y)
+	var cell_px := maxf(0.01, art * screen_scale)
+	var mult := maxi(2, ceili(float(c.min_px) / (5.0 * cell_px)))
+	if p * span < float(c.pop): mult += 1
+	var cell := art * float(mult)
+	TalentPixels.text(canvas, at + Vector2(0, -7.0 * art * p - 2.0 * cell), "KRIT", Pal.ramp("gold")[3], cell, fade)
+
+
 # ---------- events ----------
 
 ## Effect layer: short events over everything, each played over its life
@@ -1022,7 +1040,7 @@ func draw_events(canvas: CanvasItem, state: Dictionary, clock: float = -1.0) -> 
 					TalentPixels.nova(canvas, at, r, p, element, art, id)
 			"crit":
 				TalentPixels.burst(canvas, at + body * 1.15, 6, p, "gold", art, id)
-				TalentPixels.text(canvas, at + body * 2.1 + Vector2(0, -7.0 * art * p), "KRIT", Pal.ramp("gold")[3], art, fade)
+				_crit_word(canvas, at + body * 2.1, p, span, fade)
 			"guard":
 				# a wolf takes part of a blow: a short dome flash round the hero
 				_flash_dome.draw(canvas, _snap(at) + feet, clampf(p * 4.0, 0.0, 1.0), fade, "gold", art, _clock)

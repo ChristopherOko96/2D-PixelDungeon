@@ -247,7 +247,8 @@ func _test_curses_over_time() -> void:
 	inv.add(hero, inv.make_weapon("axe", false, "bloodthirst"))
 	_act("inv_equip", 0)
 	var before := int(hero.hp)
-	for tick in range(26 * 4): inv.step(0.25)
+	# one tick more than the toll's interval (items.json curses.bloodthirst.every)
+	for tick in range(int((float(inv.data.curses.bloodthirst.every) + 1.0) * 4.0)): inv.step(0.25)
 	check(int(hero.hp) < before, "the blood toll drains the hero")
 	hero = _fresh("swordsman")
 	inv.add(hero, inv.make_weapon("axe", false, "burning_blade"))
@@ -305,4 +306,4 @@ func _test_drops_and_pickup() -> void:
 	check(shown.loot.all(func(item: Dictionary) -> bool: return str(item.kind) != "item" or item.has("view")), "clients see dropped items with their look")
 	# A full bag refuses more.
 	while hero.inventory.bag.size() < int(inv.data.bag): hero.inventory.bag.append(inv.make_weapon("short_bow", true, ""))
-	check(not inv.add(hero, inv.make_weapon("sun_bow", false, "")) and str(hero.item_note) == "Rucksack voll.", "a full bag refuses more")
+	check(not inv.add(hero, inv.make_weapon("sun_bow", false, "")) and str(hero.item_note) == "Inventar voll.", "a full bag refuses more")

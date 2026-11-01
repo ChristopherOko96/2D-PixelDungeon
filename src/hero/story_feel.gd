@@ -88,7 +88,7 @@ const PERK_BLUE := PerkMarks.BLUE
 ## Wall style of a hero shot kind, by the crypt's src/game.gd _shot_style (fireball
 ## fire, fist frost, the blade wave metal, magic magic, void shots void, rock
 ## stone, arrows arrow); the relic's gravity ball is void, its shards arcane.
-const SHOT_WALL_STYLES := {"arrow": "arrow", "magic": "magic", "fireball": "fire", "fist": "frost", "wave": "metal", "gravity": "void", "rock": "stone", "shard": "arcane"}
+const SHOT_WALL_STYLES := {"arrow": "arrow", "magic": "magic", "fireball": "fire", "pyro": "fire", "icicle": "frost", "void_orb": "void", "fist": "frost", "wave": "metal", "gravity": "void", "rock": "stone", "shard": "arcane"}
 ## Wall style of an enemy move's shot (frost_moves.gd styles) by the same rule.
 const ENEMY_WALL_STYLES := {"ice": "frost", "frost": "frost", "void": "void", "curse": "void", "fire": "fire", "poison": "poison", "spit": "poison"}
 ## Seconds a dead hero takes to fall (the crypt's fall of a felled actor, feedback.gd pose).
@@ -189,6 +189,9 @@ func on_hurt(from := Vector2.ZERO) -> void:
 
 ## A blast of an enemy move at world point `p`: the crypt's burst of its style.
 func on_blast(p: Vector2, radius: float, style := "magic") -> void:
+	# an enemy blast or slam bites the walls and smashes props around it (src/hell/story_wreck.gd)
+	if g.get("wreck") != null:
+		g.wreck.blast(p, radius, "enemy_blast", false)
 	var crypt_style := str(BLAST_STYLES.get(style, "void"))
 	_event("zone_burst", p, {"style": crypt_style, "r": radius / scale})
 	_spawn(str(BLAST_SHEETS.get(crypt_style, "magic_burst")), p, clampf(radius / 130.0, 0.5, 2.0))
@@ -277,6 +280,9 @@ func wall_hit(from: Vector2, to: Vector2, style: String, owner := 0) -> bool:
 		normal = Vector2(-signf(travel.x), 0.0)
 	elif side_y and not side_x:
 		normal = Vector2(0.0, -signf(travel.y))
+	# the contact wears the wall (src/hell/story_wreck.gd: bites, cracks, chips, dust)
+	if g.get("wreck") != null:
+		g.wreck.wall_hit(contact, normal, style, owner)
 	var extra := {"style": style, "nx": normal.x, "ny": normal.y, "r": 8.0}
 	if owner > 0:
 		extra.o = owner

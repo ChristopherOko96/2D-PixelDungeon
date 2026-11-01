@@ -1,0 +1,117 @@
+{
+  "_doc": "Element reactions made readable and rewarded (proposal D3, MECHANIK.md M5). src/hell/story_elements.gd reports every reaction it makes (_reacted with one of its REACTIONS ids; each id has an entry here) and shows its sign and name for a moment over the reaction point (draw_hud, popup values). A reaction the hero caused (an owner > 0: his talents, his fireballs, his armour powers, his potions) is entered as discovered in the profile (its reactions list, src/progress/profile.gd) and marks the monsters within its reach plus reward.reach_pad world px; their kill within reward.window s pays reward.hero_exp_mul times the EXP (src/hell/hell_talents.gd killed: the talents' EXP and the run level's). The pause's Elemente page (src/pause_menu.gd set_reactions) lists every entry in order with its sign, cause and effect and marks the discovered ones. icon: 7 rows of 7 pixels, '.' empty, other letters the colours of pal (drawn with an ink rim, popup.cell screen px per pixel on the HUD, 4 on the pause page).",
+  "ink": "1a1012",
+  "reward": {
+    "hero_exp_mul": 1.25,
+    "window": 3.0,
+    "reach_pad": 30.0
+  },
+  "popup": {
+    "_doc": "time / new_time / exp_time: seconds a sign shows (a first discovery longer, the EXP reward shorter); lift: screen px over the point, rise: how far it drifts up (eased); pop: seconds the hero's sign is popped by pop_cell extra px per pixel; fade: the last share of its life it fades; other_alpha: signs the monsters or the world caused; merge_time / merge_reach: the same reaction near one still showing renews it (x2, x3 ...); stack: px a different sign near one showing sits higher; max: signs at once.",
+    "time": 1.5,
+    "new_time": 2.8,
+    "exp_time": 1.0,
+    "lift": 64.0,
+    "rise": 22.0,
+    "cell": 3,
+    "pop": 0.14,
+    "pop_cell": 1,
+    "fade": 0.35,
+    "font": 16,
+    "gap": 6,
+    "other_alpha": 0.7,
+    "merge_time": 0.9,
+    "merge_reach": 140.0,
+    "stack": 26.0,
+    "max": 5,
+    "name_col": "f3e2b0",
+    "hero_col": "ffd36a",
+    "new_col": "ffd36a",
+    "exp_col": "ffd36a",
+    "new_text": "NEU ENTDECKT",
+    "exp_text": "+%d %% EP",
+    "toast": "Reaktion entdeckt: %s · Menü › Elemente"
+  },
+  "page": {
+    "title": "ELEMENT-REAKTIONEN",
+    "count": "Entdeckt: %d von %d",
+    "hint": "Selbst ausgelöste Reaktionen geben +%d %% EP für jeden Gegner, den sie erwischen.",
+    "seen": "ENTDECKT",
+    "unseen": "noch nicht selbst ausgelöst",
+    "cause": "Ursache: ",
+    "effect": "Wirkung: "
+  },
+  "order": ["explode", "ignite", "steam", "thaw", "freeze", "rain", "crust", "douse", "swallow", "charge"],
+  "reactions": {
+    "explode": {
+      "name": "Giftexplosion",
+      "cause": "Feuer oder Lava trifft Gift (Pfütze oder Wolke).",
+      "effect": "Explodiert, verletzt Gegner ringsum und zündet Gift daneben.",
+      "pal": { "a": "ffb030", "b": "fff2a0", "c": "8fd14f", "w": "ffffff" },
+      "icon": ["c..b..c", ".cabac.", ".abwba.", "bbwwwbb", ".abwba.", ".cabac.", "c..b..c"]
+    },
+    "ignite": {
+      "name": "Stichflamme",
+      "cause": "Ein Feuergeschoss fliegt durch Giftgas.",
+      "effect": "Das Gas verpufft in der Luft und verletzt die Gegner darin.",
+      "pal": { "a": "ff7a2a", "b": "ffd060", "c": "7fb84a", "w": "fff6d0" },
+      "icon": ["...b...", "..bab..", ".baaab.", ".aawaa.", "ccaaacc", "c.ccc.c", ".c...c."]
+    },
+    "steam": {
+      "name": "Dampf",
+      "cause": "Feuer oder Lava trifft Wasser.",
+      "effect": "Eine Dampfwolke steigt auf: sie verbrüht und nimmt die Sicht.",
+      "pal": { "a": "b8c6ce", "b": "e8f0f4", "w": "ffffff" },
+      "icon": [".b..b..", "..b..b.", ".b..b..", ".aaaaa.", "aawwwaa", "awwwwwa", ".aaaaa."]
+    },
+    "thaw": {
+      "name": "Tauwetter",
+      "cause": "Feuer trifft Glatteis.",
+      "effect": "Das Eis schmilzt wieder zu Wasser.",
+      "pal": { "a": "5aa8e0", "b": "bfe8ff", "c": "ff8a3a", "w": "ffffff" },
+      "icon": ["...b...", "..bwb..", ".bwaab.", ".baaab.", "..bbb..", "c..c..c", ".ccccc."]
+    },
+    "freeze": {
+      "name": "Glatteis",
+      "cause": "Frost trifft Wasser.",
+      "effect": "Die Pfütze friert: wer darauf steht, rutscht.",
+      "pal": { "a": "8fd8e6", "b": "d8f4ff", "w": "ffffff" },
+      "icon": ["...a...", ".a.a.a.", "..bab..", "aaawaaa", "..bab..", ".a.a.a.", "...a..."]
+    },
+    "rain": {
+      "name": "Regen",
+      "cause": "Frost trifft Dampf.",
+      "effect": "Der Dampf schlägt als Wasserpfütze nieder.",
+      "pal": { "a": "b8c6ce", "b": "5aa8e0", "w": "ffffff" },
+      "icon": [".aaaaa.", "aawwwaa", ".aaaaa.", "b..b..b", ".b..b..", "b..b..b", ".b..b.."]
+    },
+    "crust": {
+      "name": "Lavakruste",
+      "cause": "Wasser trifft Lava.",
+      "effect": "Die Lava erstarrt eine Weile zu harmlosem Stein.",
+      "pal": { "a": "ff7a2a", "c": "6a5650", "d": "3a2c28" },
+      "icon": [".ccccc.", "cacddac", "cdacadc", "cddaddc", "cdacadc", "cacddac", ".ccccc."]
+    },
+    "douse": {
+      "name": "Gelöscht",
+      "cause": "Wasser trifft Feuer am Boden.",
+      "effect": "Das Feuer geht aus.",
+      "pal": { "b": "5aa8e0", "c": "9a9a9a", "d": "5a3a2a", "w": "d8f4ff" },
+      "icon": ["...b...", "..bwb..", "..bbb..", "...b...", ".c.c.c.", "..ccc..", ".ddddd."]
+    },
+    "swallow": {
+      "name": "Verschlungen",
+      "cause": "Leere trifft Pfützen oder Gas.",
+      "effect": "Die Leere saugt sie ein; der Leerenmagier nährt damit sein Gefüge.",
+      "pal": { "a": "b07bff", "b": "6a3ac8", "w": "1a0828" },
+      "icon": ["..aaa..", ".a...a.", "a.bbb.a", "a.bwb.a", "a.bb..a", ".a...a.", "..aaa.."]
+    },
+    "charge": {
+      "name": "Strom im Wasser",
+      "cause": "Blitz trifft Wasser, Gift oder Blut.",
+      "effect": "Die Pfütze steht unter Strom: Gegner darin werden verletzt und betäubt.",
+      "pal": { "a": "ffe060", "b": "5aa8e0", "w": "ffffff" },
+      "icon": ["...aa..", "..aa...", ".awwa..", "..aawa.", "...aa..", "bb.a.bb", ".bbbbb."]
+    }
+  }
+}
