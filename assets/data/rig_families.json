@@ -1,0 +1,67 @@
+{
+  "_note": "How each pose family of the part rigs (rigs.json and the other rig files: a rig's \"family\") behaves in src/rig/rig_renderer.gd, beside its pose code (src/rig/rig_poses.gd). A family not listed here takes \"default\"; a key a family leaves out takes default's. attacks: the clip an attack plays and its windows [clip, end of windup, end of active] in clip progress (0..1): \"variants\" by the rig's variant first, then \"kinds\" by the attack's kind, else \"default\"; \"pose_table\": \"drake\" takes the clip and windows from RigPoses.DRAKE_KINDS / DRAKE_WINDOWS (default when the kind has none). crumble: when it dies nothing is left to draw (its parts fell as debris). material: the gore material of a rig without its own (feedback, talent_fx). chips: the colours cut parts spray when the rig has no material palette. dying_shadow: false drops the shadow while it dies. rise_fade: false keeps a summoned figure opaque while it rises (it climbs out of the pool). flight_shadow: [height px, most]: the shadow shrinks by up to `most` as the pose lifts it `height` px. death: what its death does, in this order: ragdoll (every part and item flies off with the blow, times this impulse factor) or, with tear_ragdoll, only a tearing blow (against a wall or of the huge tier) ragdolls and any other sheds; shed: [{ids (part ids, or \"items\" for every held item), impulse (factor), hide (true: the falling body no longer draws them), skip_gone (true: parts the rig lacks or already lost are left alone)}]; bursts: [{at (px above the feet), color (hex) or palette (a key of the rig material's palette, e.g. \"burst\"; fallback_material when the rig has none), count, speed px/s, when / unless (a snapshot flag: summoned, exploded)}]; flashes: [{at, r, max (s), color, material (only for that rig material)}]. registered: companion families added through register_family (src/vfx/companion_rigs.gd) crumble and ragdoll with this impulse factor.",
+  "default": {
+    "attacks": {"default": ["attack", 0.45, 0.6]},
+    "crumble": false,
+    "material": "blood",
+    "chips": ["fdf7ed"],
+    "dying_shadow": true,
+    "rise_fade": true,
+    "death": {}
+  },
+  "registered": {"crumble": true, "death": {"ragdoll": 0.8}},
+  "families": {
+    "skeleton": {
+      "attacks": {"default": ["attack", 0.6, 0.75], "variants": {"bow": ["attack", 0.7, 0.8], "guard": ["attack", 0.45, 0.6]}},
+      "crumble": true,
+      "material": "bone",
+      "rise_fade": false,
+      "death": {"ragdoll": 1.0, "bursts": [{"at": 14, "color": "5f2d56", "count": 14, "speed": 50, "when": "summoned"}]}
+    },
+    "necro": {
+      "attacks": {"default": ["attack", 0.55, 0.62], "kinds": {"summon": ["summon", 0.3, 0.4]}},
+      "dying_shadow": false,
+      "death": {"ragdoll": 1.0}
+    },
+    "brute": {
+      "attacks": {"default": ["attack", 0.45, 0.56], "kinds": {"roar": ["roar", 0.4, 0.6], "ring": ["roar", 0.4, 0.6], "summon": ["roar", 0.4, 0.6]}},
+      "death": {"tear_ragdoll": 1.0, "shed": [{"ids": "items", "impulse": 0.6, "hide": true}, {"ids": ["arm", "head"], "impulse": 0.5, "hide": true}]}
+    },
+    "golem": {
+      "attacks": {"default": ["attack", 0.45, 0.6], "kinds": {"slam": ["slam", 0.55, 0.68], "ring": ["roar", 0.4, 0.6], "roar": ["roar", 0.4, 0.6], "summon": ["roar", 0.4, 0.6]}},
+      "crumble": true,
+      "material": "bone",
+      "death": {"ragdoll": 1.0, "bursts": [{"at": 30, "palette": "burst", "count": 22, "speed": 110}]}
+    },
+    "void": {
+      "attacks": {"default": ["attack", 0.55, 0.62], "kinds": {"beam": ["beam", 0.3, 0.86], "summon": ["summon", 0.38, 0.5]}},
+      "material": "void",
+      "chips": ["5f2d56"],
+      "dying_shadow": false,
+      "death": {"shed": [{"ids": ["claw_l", "claw_r"], "impulse": 0.7}], "flashes": [{"at": 40, "r": 150, "max": 1.8, "color": "a46fe0"}]}
+    },
+    "bomber": {
+      "attacks": {"default": ["attack", 1.0, 1.0]},
+      "crumble": true,
+      "material": "void",
+      "chips": ["5f2d56"],
+      "death": {"bursts": [{"at": 16, "color": "a46fe0", "count": 18, "speed": 90, "unless": "exploded"}]}
+    },
+    "mimic": {
+      "death": {"ragdoll": 1.0, "bursts": [{"at": 12, "color": "b8743a", "count": 14, "speed": 80}, {"at": 14, "color": "f4c64e", "count": 6, "speed": 60}]}
+    },
+    "biped": {"death": {"ragdoll": 1.0}},
+    "hero": {"death": {"ragdoll": 1.0}},
+    "slime": {"attacks": {"default": ["attack", 0.45, 0.6], "kinds": {"roar": ["roar", 0.4, 0.6], "ring": ["roar", 0.4, 0.6], "summon": ["roar", 0.4, 0.6]}}},
+    "spirit": {"attacks": {"default": ["attack", 0.45, 0.6], "kinds": {"roar": ["roar", 0.4, 0.6], "ring": ["roar", 0.4, 0.6], "summon": ["roar", 0.4, 0.6]}}},
+    "drake": {
+      "attacks": {"default": ["bite", 0.5, 0.65], "pose_table": "drake"},
+      "flight_shadow": [40, 0.45],
+      "death": {
+        "shed": [{"ids": ["wing_far", "wing_near", "horns", "jaw", "crystal_1", "crystal_2", "crystal_3", "tail_2", "tail_3", "tail_4", "tail_5", "tail_flame"], "impulse": 0.6, "hide": true, "skip_gone": true}],
+        "bursts": [{"at": 24, "palette": "burst", "fallback_material": "ember", "count": 20, "speed": 90}],
+        "flashes": [{"at": 40, "r": 150, "max": 1.8, "color": "a46fe0", "material": "obsidian"}]
+      }
+    }
+  }
+}

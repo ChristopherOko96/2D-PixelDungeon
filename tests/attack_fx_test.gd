@@ -66,7 +66,9 @@ func _test_release_trail_and_impact() -> void:
 	view.observe({"players": players, "bullets": [_bullet(11, Vector2(320, 200), "magic")]}, 0.72)
 	check(not view._tracks.has(10) and view._flashes.any(func(flash: Dictionary) -> bool: return str(flash.kind) == "pierce"), "a shot that ends bursts where it was")
 	view.observe({"players": players, "bullets": []}, 0.74)
-	check(view._flashes.any(func(flash: Dictionary) -> bool: return str(flash.kind) == "nova"), "a spell that ends bursts in a nova")
+	# the visual overhaul (385d6c21, docs/ZAUBER-SPRACHE.de.md) renamed the spell's end
+	# flash from "nova" to "blast": white-hot frames and a ring, then the element's matter
+	check(view._flashes.any(func(flash: Dictionary) -> bool: return str(flash.kind) == "blast"), "a spell that ends bursts in its blast")
 	view.observe({"players": players, "bullets": []}, 5.0)
 	check(view._flashes.is_empty() and view._tracks.is_empty(), "flashes fade and nothing is kept")
 	# A shot unseen for a while (effects hidden) does not burst late.

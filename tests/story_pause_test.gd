@@ -63,7 +63,12 @@ func _test_world_opens_the_shared_menu(scene: PackedScene, world: String) -> voi
 	var quests: int = menu.quest_view.goals.size()
 	# Assert
 	check(menu is PauseMenu and menu.visible and menu.mode == "story", "%s: Esc opens the crypt's pause menu in story mode" % world)
-	check(_shown(menu) == ["overview", "quest", "map", "controls", "display", "save"], "%s: overview, quest, map, controls, display, save (%s)" % [world, str(_shown(menu))])
+	# The story pages since the UX polish (b178a185, production/qa/evidence/ux-review/BEFUND.md):
+	# overview, quest and map became the one Etage page, display joined the shared options
+	# page, and the story pause shows talents, inventory and the Elemente lexicon
+	# (pause_menu.gd MODE_SECTIONS.story; STORY_ALIASES keeps the old names working).
+	var pages := ["floor", "talents", "inventory", "elements", "options", "controls", "save"]
+	check(_shown(menu) == pages, "%s: floor, talents, inventory, elements, options, controls, save (%s)" % [world, str(_shown(menu))])
 	check(is_equal_approx(float(game.state.t), t), "%s: the world stands still" % world)
 	check(quests == FrostHud.goals(game).size() and quests > 0, "%s: the floor's goals are on the quest page (%d)" % [world, quests])
 	check(str(menu.overview_label.text).contains("Etage 1"), "%s: the overview names the floor" % world)

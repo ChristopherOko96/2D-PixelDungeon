@@ -8,6 +8,10 @@
 // and points are its P.joint(name, x, y). MOBS below says which family of
 // src/rig/rig_poses.gd moves it, the parents, layers, HP weights and what a cut does.
 // Usage: node tools/hell_dungeon/export_mob_rigs.js [repo_root] [--only id,id]
+// Not a step of the one rig build (tools/rig_kit/build_rigs.js; assets/data/rig_manifest.json
+// "not_built"): its only MOBS entry, brandskelett, is the rect-cut rig in rigs.json
+// (tools/rig_kit/hand_rigs/hell_0x72.json) the game draws. RigLibrary keeps a crypt rig over a
+// layered one of the same name, so a run here only adds a copy it skips with a warning.
 'use strict';
 const fs = require('fs');
 const path = require('path');

@@ -1,4 +1,5 @@
 extends SceneTree
+# test: window (it reads back a drawn frame; scripts/Dev.ps1 Tests runs it only with -Windowed)
 ## Real Compatibility-rendered pixels: no implicit floor, frame or gateways.
 var checked := 0
 var failures := 0

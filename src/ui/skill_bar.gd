@@ -11,7 +11,8 @@ extends RefCounted
 
 const HudStyle = preload("res://src/ui/hud_style.gd")
 const DATA_PATH := "res://assets/data/ui_run_hud.json"
-const DEFAULTS := {"slot": 44, "gap": 4, "bottom": 10, "pad": 3, "icon": 32, "key_size": 10, "number_size": 16, "label_size": 14, "exp_height": 3}
+const DEFAULTS := {"slot": 44, "gap": 4, "bottom": 10, "pad": 3, "icon": 32, "key_size": 10, "number_size": 16, "label_size": 14, "exp_height": 3,
+	"hint_cell": 2, "hint_alpha": 0.55}
 
 static var _layout: Dictionary = {}
 
@@ -154,7 +155,12 @@ static func _slot(canvas: CanvasItem, font: Font, rect: Rect2, entry: Dictionary
 	var cooldown := float(entry.get("cd", 0.0))
 	var maximum := maxf(float(entry.get("max", 1.0)), 0.01)
 	var ready := not locked and cooldown <= 0.0
-	canvas.draw_rect(rect, HudStyle.color("slot"))
+	var empty := bool(entry.get("empty", false))
+	# an empty slot (no talent learned for it yet) steps back: a dimmer well and a small lock
+	canvas.draw_rect(rect, Color(HudStyle.color("slot"), 0.45) if empty else HudStyle.color("slot"))
+	if empty and bool(entry.get("lock", false)): _lock(canvas, rect.get_center() + Vector2(0, 4), Color(HudStyle.color("text_muted"), 0.7))
+	# an empty quick-potion slot ("hint": "potion") shows a dim flask: a potion belongs here
+	if empty and str(entry.get("hint", "")) == "potion": _flask(canvas, rect.get_center() + Vector2(0, 4), float(l.hint_cell), Color(HudStyle.color("text_muted"), float(l.hint_alpha)))
 	var icon: Texture2D = entry.get("icon", null)
 	if icon != null:
 		var tint := Color(0.32, 0.3, 0.3, 0.8) if locked else Color(0.62, 0.6, 0.6) if cooldown > 0.0 else Color.WHITE
@@ -189,18 +195,69 @@ static func _slot(canvas: CanvasItem, font: Font, rect: Rect2, entry: Dictionary
 	if charge >= 0.0:
 		canvas.draw_rect(Rect2(rect.position + Vector2(3, rect.size.y - 5), Vector2((rect.size.x - 6) * clampf(charge, 0.0, 1.0), 2)), HudStyle.color("accent"))
 	var key := str(entry.get("key", ""))
-	if not key.is_empty():
-		_text(canvas, font, rect.position + Vector2(3, float(l.key_size) + 1), key, int(l.key_size), HudStyle.color("accent") if bool(entry.get("ultimate", false)) else HudStyle.color("text_dim"))
+	var key_tint := HudStyle.color("accent") if bool(entry.get("ultimate", false)) else HudStyle.color("text_dim")
+	if empty: key_tint = HudStyle.color("text_muted")
+	if key == "SH":
+		# Shift as the keyboard's arrow symbol (the hover card names it in words)
+		_shift_glyph(canvas, rect.position + Vector2(3, 3), float(l.key_size), key_tint)
+	elif not key.is_empty():
+		_text(canvas, font, rect.position + Vector2(3, float(l.key_size) + 1), key, int(l.key_size), key_tint)
+	# "count": a stack's size (the quick potion), small in the lower right corner, apart from
+	# the key in the top row; a potion sprite is transparent there, so it never covers the potion
+	var count := str(entry.get("count", ""))
+	if not count.is_empty():
+		var count_size := maxi(8, int(l.key_size) - 4)
+		var width := font.get_string_size(count, HORIZONTAL_ALIGNMENT_LEFT, -1, count_size).x
+		_text(canvas, font, Vector2(rect.end.x - 3.0 - width, rect.end.y - 3.0), count, count_size, HudStyle.color("text"))
+
+
+# The keyboard's Shift arrow (a hollow arrow up) on the key's row: 7x7 cells,
+# one cell = an eighth of the key text size, with a dark one-cell rim.
+const SHIFT_CELLS := ["...#...", "..#.#..", ".#...#.", "###.###", "..#.#..", "..#.#..", "..###.."]
+# A small padlock for an empty slot: 5x6 cells.
+const LOCK_CELLS := [".###.", "#...#", "#####", "#####", "##.##", "#####"]
+
+
+static func _shift_glyph(canvas: CanvasItem, at: Vector2, key_size: float, tint: Color) -> void:
+	_cells(canvas, SHIFT_CELLS, at, maxf(1.0, floorf(key_size / 8.0)), tint)
+
+
+## A flask outline for an empty quick-potion slot: 7x9 cells.
+const FLASK_CELLS := ["..###..", "...#...", "..#.#..", ".#...#.", "#.....#", "#.###.#", "#.###.#", ".#...#.", "..###.."]
+
+
+## A dim flask centred at `centre` in `cell` px squares (the empty quick-potion slot's hint).
+static func _flask(canvas: CanvasItem, centre: Vector2, cell: float, tint: Color) -> void:
+	_cells(canvas, FLASK_CELLS, (centre - Vector2(7, 9) * cell * 0.5).round(), cell, tint, false)
+
+
+static func _lock(canvas: CanvasItem, centre: Vector2, tint: Color) -> void:
+	var cell := 2.0
+	_cells(canvas, LOCK_CELLS, (centre - Vector2(5, 6) * cell * 0.5).round(), cell, tint, false)
+
+
+# Draws a cell pattern ("#" lit) from `at` in `cell` px squares, with a dark rim unless `rim` is false.
+static func _cells(canvas: CanvasItem, rows: Array, at: Vector2, cell: float, tint: Color, rim: bool = true) -> void:
+	for pass_index in range(2 if rim else 1):
+		var outline := rim and pass_index == 0
+		for y in range(rows.size()):
+			var row: String = rows[y]
+			for x in range(row.length()):
+				if row[x] != "#": continue
+				var square := Rect2(at + Vector2(x, y) * cell, Vector2(cell, cell))
+				if outline: canvas.draw_rect(square.grow(cell * 0.5), Color(HudStyle.color("outline"), tint.a * 0.85))
+				else: canvas.draw_rect(square, tint)
 
 
 ## The hovered skill's card above the strip (user wish 30.10.2026): its name,
 ## what it does (wrapped) and its cost and cooldown, kept on screen.
 static func _card(canvas: CanvasItem, font: Font, foot: Vector2, entry: Dictionary, screen: Vector2) -> void:
 	var title_size := int(layout().label_size)
-	var body_size := maxi(10, title_size - 3)
-	var width := 300.0
-	var lines := _wrap(font, str(entry.text), body_size, width)
+	# the text at the title's size: Pixel Operator reads clean only at whole multiples of 8
+	var body_size := title_size
 	var meta := str(entry.get("meta", ""))
+	var width := clampf(maxf(font.get_string_size(meta, HORIZONTAL_ALIGNMENT_LEFT, -1, body_size).x, font.get_string_size(str(entry.name), HORIZONTAL_ALIGNMENT_LEFT, -1, title_size).x), 340.0, screen.x - 48.0)
+	var lines := _wrap(font, str(entry.text), body_size, width)
 	var line_h := float(body_size) + 4.0
 	var height := float(title_size) + 10.0 + lines.size() * line_h + (line_h + 4.0 if not meta.is_empty() else 0.0) + 8.0
 	var plate := Rect2(foot.x - width * 0.5 - 10.0, foot.y - height, width + 20.0, height)

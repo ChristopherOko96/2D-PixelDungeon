@@ -1,5 +1,5 @@
 {
- "_note": "Story 2 Die Frostgruft: the world pack for the world kit generator (src/world_kit/world_core.gd, src/world_kit/world_pack.gd). Written by tools/frost_dungeon/export_world.js from frost_world.js; the browser preview reads the same values. floors: per floor title, ring (circle), boss, size of the slot grid (gc x gr), critical path length, hazard shares (lava = glaze ice, river, spikes, vents, holes, pits), loop share, frost flames (fire), shooters, final. names/suffixes: room name parts per ring. words: generator wording -> frost wording. gate_banner: banner colour per floor (red when missing). blue / blue_props: floor 10 blue fire. foot: furniture footprints [solid width, depth, cells]. mimic_fight / mimic_treasure: 0, the Frostgruft has no mimics.",
+ "_note": "Story 2 Die Frostgruft: the world pack for the world kit generator (src/world_kit/world_core.gd, src/world_kit/world_pack.gd). Written by tools/frost_dungeon/export_world.js from frost_world.js; the browser preview reads the same values. floors: per floor title, ring (circle), boss, size of the slot grid (gc x gr), critical path length, hazard shares (lava = glaze ice, river, spikes, vents, holes, pits), loop share, frost flames (fire), shooters, final. names/suffixes: room name parts per ring. words: generator wording -> frost wording. gate_banner: banner colour per floor (red when missing). blue / blue_props: floor 10 blue fire. foot: furniture footprints [solid width, depth, cells]. mimic_fight / mimic_treasure: 0, the Frostgruft has no mimics. diff: the difficulty curve of the world per floor n (src/world_kit/world_core.gd difficulty_for): enemy hp x (1 + (n-1) hp_step), speed x (1 + (n-1) speed_step), one more enemy per fight room every extra_every floors.",
  "schema": 1,
  "floors": [
   null,
@@ -23,7 +23,7 @@
    "seq": false,
    "boss": {
     "name": "Großer Eisschleim",
-    "hp": 46,
+    "hp": 115,
     "summon": 4,
     "ring": 0
    },
@@ -49,7 +49,7 @@
    "seq": true,
    "boss": {
     "name": "Kobold-Rudelführer",
-    "hp": 60,
+    "hp": 150,
     "summon": 4,
     "ring": 0
    },
@@ -75,7 +75,7 @@
    "seq": true,
    "boss": {
     "name": "Frostnekromant",
-    "hp": 90,
+    "hp": 225,
     "summon": 3.6,
     "ring": 3.4,
     "mini": true
@@ -104,7 +104,7 @@
    "shooters": true,
    "boss": {
     "name": "Frostwirbel-Zwillinge",
-    "hp": 105,
+    "hp": 260,
     "summon": 3.6,
     "ring": 3.2
    },
@@ -132,7 +132,7 @@
    "shooters": true,
    "boss": {
     "name": "Kristallwächter",
-    "hp": 120,
+    "hp": 300,
     "summon": 3.4,
     "ring": 3
    },
@@ -160,7 +160,7 @@
    "shooters": true,
    "boss": {
     "name": "Frostleiche",
-    "hp": 160,
+    "hp": 400,
     "summon": 3.2,
     "ring": 2.6,
     "mini": true
@@ -189,7 +189,7 @@
    "shooters": true,
    "boss": {
     "name": "Eisritter-Garde",
-    "hp": 175,
+    "hp": 440,
     "summon": 3,
     "ring": 2.6
    },
@@ -217,7 +217,7 @@
    "shooters": true,
    "boss": {
     "name": "Sturmkristall",
-    "hp": 190,
+    "hp": 475,
     "summon": 2.8,
     "ring": 2.4
    },
@@ -245,7 +245,7 @@
    "shooters": true,
    "boss": {
     "name": "Frostkommandant",
-    "hp": 240,
+    "hp": 600,
     "summon": 2.6,
     "ring": 2,
     "mini": true
@@ -275,7 +275,7 @@
    "final": true,
    "boss": {
     "name": "Hrimgar, der Gletscherkoloss",
-    "hp": 340,
+    "hp": 1200,
     "summon": 2.4,
     "ring": 1.6,
     "final": true
@@ -523,6 +523,11 @@
  ],
  "mimic_fight": 0,
  "mimic_treasure": 0,
+ "diff": {
+  "hp_step": 0.3,
+  "speed_step": 0.04,
+  "extra_every": 3
+ },
  "winter": {
   "thin_decals": {
    "keep": 0,

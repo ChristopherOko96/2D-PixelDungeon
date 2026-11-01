@@ -19,7 +19,8 @@ static func layout(screen: Vector2, tree: Dictionary) -> Dictionary:
 	var panel := Rect2(((screen - PANEL) * 0.5).floor(), PANEL)
 	var branches: Array = tree.get("branches", [])
 	var count := maxi(1, branches.size())
-	var inner := Rect2(panel.position + Vector2(20, 76), Vector2(panel.size.x - 40, panel.size.y - 76 - 92))
+	# the foot (hover text, two 16 px lines, and the key hint) takes the last 112 px
+	var inner := Rect2(panel.position + Vector2(20, 76), Vector2(panel.size.x - 40, panel.size.y - 76 - 112))
 	var col_w := floorf((inner.size.x - (count - 1) * 10.0) / count)
 	# nodes shrink (down to 30 px) so the longest branch fits above the foot
 	var most := 1
@@ -65,9 +66,15 @@ static func draw(canvas: CanvasItem, font: Font, screen: Vector2, tree: Dictiona
 	canvas.draw_rect(panel, Color(HudStyle.color("outline"), 0.85))
 	HudStyle.panel(canvas, panel)
 	var left := RunTree.points_left(tree, ranks, level)
-	HudStyle.text(canvas, font, panel.position + Vector2(24, 40), "LAUF-TALENTE · %s" % str(data.get("title", "")).to_upper(), 24, HudStyle.color("text"))
-	HudStyle.text(canvas, font, Vector2(panel.end.x - 24, panel.position.y + 38), "PUNKTE %d" % left, 16, HudStyle.color("accent") if left > 0 else HudStyle.color("text_dim"), 2)
-	HudStyle.text(canvas, font, Vector2(panel.end.x - 24, panel.position.y + 58), "LAUFSTUFE %d · VERFÄLLT BEIM TOD" % level, 16, HudStyle.color("text_muted"), 2)
+	var free := "1 PUNKT FREI" if left == 1 else "%d PUNKTE FREI" % left
+	if embedded:
+		# the talent screen's LAUF tab already names the page: no second title
+		HudStyle.text(canvas, font, panel.position + Vector2(24, 40), "LAUFSTUFE %d" % level, 24, HudStyle.color("text"))
+		HudStyle.text(canvas, font, Vector2(panel.end.x - 24, panel.position.y + 38), free, 16, HudStyle.color("accent") if left > 0 else HudStyle.color("text_dim"), 2)
+	else:
+		HudStyle.text(canvas, font, panel.position + Vector2(24, 40), "LAUF-TALENTE · %s" % str(data.get("title", "")).to_upper(), 24, HudStyle.color("text"))
+		HudStyle.text(canvas, font, Vector2(panel.end.x - 24, panel.position.y + 38), free, 16, HudStyle.color("accent") if left > 0 else HudStyle.color("text_dim"), 2)
+		HudStyle.text(canvas, font, Vector2(panel.end.x - 24, panel.position.y + 58), "LAUFSTUFE %d · VERFÄLLT BEIM TOD" % level, 16, HudStyle.color("text_muted"), 2)
 	var branches: Array = tree.get("branches", [])
 	var mouse: Vector2 = data.get("mouse", Vector2(-1, -1))
 	var hovered: Dictionary = {}
@@ -78,7 +85,8 @@ static func draw(canvas: CanvasItem, font: Font, screen: Vector2, tree: Dictiona
 		var open := level >= int(b.unlock)
 		canvas.draw_rect(Rect2(head.position + Vector2(0, head.size.y - 2), Vector2(head.size.x, 2)), Color(HudStyle.color("accent") if open else HudStyle.color("panel_edge"), 0.8))
 		HudStyle.text(canvas, font, head.position + Vector2(4, 18), str(b.title).to_upper(), 16, HudStyle.color("text") if open else HudStyle.color("text_muted"))
-		var sub := "%d PUNKTE" % RunTree.branch_points(b, ranks) if open else "AB STUFE %d" % int(b.unlock)
+		# points placed in this branch (the free points stand once, top right)
+		var sub := "%d GESETZT" % RunTree.branch_points(b, ranks) if open else "AB LAUFSTUFE %d" % int(b.unlock)
 		HudStyle.text(canvas, font, head.position + Vector2(4, 40), sub, 16, HudStyle.color("text_dim") if open else HudStyle.color("text_muted"))
 		var tier_drawn := false
 		for n: Dictionary in b.nodes:
@@ -92,20 +100,25 @@ static func draw(canvas: CanvasItem, font: Font, screen: Vector2, tree: Dictiona
 				hovered = n
 				hovered_state = state
 	# the hovered node's text, or how the tree works
-	var foot := Rect2(panel.position.x + 20, panel.end.y - 82, panel.size.x - 40, 62)
+	var foot := Rect2(panel.position.x + 20, panel.end.y - 102, panel.size.x - 40, 82)
 	canvas.draw_rect(foot, HudStyle.color("slot"))
+	var room := foot.size.x - 24.0
 	if hovered.is_empty():
-		HudStyle.text(canvas, font, foot.position + Vector2(12, 26), "Jede Stufe: 1 Punkt. Tiefere Talente öffnen nach 2 Punkten im Ast.", 16, HudStyle.color("text_dim"))
+		HudStyle.text(canvas, font, foot.position + Vector2(12, 26), _fit(font, "Jede Laufstufe: 1 Punkt. Tiefere Talente öffnen nach 2 Punkten im Ast.", room), 16, HudStyle.color("text_dim"))
 	else:
-		HudStyle.text(canvas, font, foot.position + Vector2(12, 24), "%s  ·  %d / %d" % [str(hovered.name), int(ranks.get(str(hovered.id), 0)), int(hovered.max)], 16, HudStyle.color("accent"))
+		HudStyle.text(canvas, font, foot.position + Vector2(12, 24), _fit(font, "%s  ·  %d / %d" % [str(hovered.name), int(ranks.get(str(hovered.id), 0)), int(hovered.max)], room), 16, HudStyle.color("accent"))
 		var why: String = {"skill_locked": "  ·  Fähigkeit noch nicht frei", "tier_locked": "  ·  erst 2 Punkte im Ast", "no_points": "  ·  kein Punkt frei", "maxed": "  ·  voll",
-			"meta_locked": "  ·  im Hauptmenü unter TALENTE freischalten"}.get(hovered_state, "")
-		HudStyle.text(canvas, font, foot.position + Vector2(12, 46), str(hovered.get("text", "")) + why, 12, HudStyle.color("text"))
+			"meta_locked": "  ·  im Hauptmenü unter TALENTE freischalten", "closed": "  ·  " + str(hovered.get("closed", ""))}.get(hovered_state, "")
+		# the text in two 16 px lines at most
+		var lines := _wrap(font, str(hovered.get("text", "")) + why, room)
+		for k in range(mini(2, lines.size())):
+			var line := lines[k] if k == 0 or lines.size() <= 2 else _fit(font, lines[k] + " " + " ".join(PackedStringArray(lines.slice(2))), room)
+			HudStyle.text(canvas, font, foot.position + Vector2(12, 48 + k * 22), line, 16, HudStyle.color("text"))
 	HudStyle.text(canvas, font, Vector2(panel.get_center().x, panel.end.y - 8), ("KLICK · PUNKT SETZEN     ESC · ZURÜCK" if embedded else "KLICK · PUNKT SETZEN     %s · SCHLIESSEN" % str(RunTree.settings().key)), 16, HudStyle.color("text_muted"), 1)
 
 
 static func _node(canvas: CanvasItem, font: Font, rect: Rect2, n: Dictionary, rank: int, state: String, hot: bool) -> void:
-	var locked := state in ["skill_locked", "tier_locked", "meta_locked"]
+	var locked := state in ["skill_locked", "tier_locked", "meta_locked", "closed"]
 	var fill := HudStyle.color("slot")
 	if rank > 0:
 		fill = Color(HudStyle.color("accent"), 0.16)
@@ -123,12 +136,42 @@ static func _node(canvas: CanvasItem, font: Font, rect: Rect2, n: Dictionary, ra
 		canvas.draw_texture_rect(icon, Rect2(Vector2(x, rect.get_center().y - side * 0.5), Vector2(side, side)), false, Color(1, 1, 1, 0.35 if locked else 1.0))
 		x += side + 6.0
 	var tint := HudStyle.color("text_muted") if locked else (HudStyle.color("accent") if rank > 0 else HudStyle.color("text"))
-	# a long name takes the smaller size, so it stays inside its node; a talent lock shows a small mark
-	var name := str(n.name)
-	var size := 12 if HudStyle.width(font, name, 12) <= rect.end.x - x - 4.0 else 10
-	var top := rect.position.y + (rect.size.y - 22.0) * 0.5
-	HudStyle.text(canvas, font, Vector2(x, top + 12), name, size, tint)
+	# a node the world closed names why in short at its right ("closed_tag"; the foot says it in full)
+	var tag := str(n.get("closed_tag", "")) if state == "closed" else ""
+	var tag_w := HudStyle.width(font, tag, 16) + 10.0 if not tag.is_empty() else 0.0
+	if not tag.is_empty():
+		HudStyle.text(canvas, font, Vector2(rect.end.x - 6.0, rect.position.y + floorf((rect.size.y - 24.0) * 0.5) + 14.0), tag, 16, HudStyle.color("danger"), 2)
+	# the name at 16 px; a name too long for its node ends in "…"
+	var name := _fit(font, str(n.name), rect.end.x - x - 6.0 - tag_w)
+	var top := rect.position.y + floorf((rect.size.y - 24.0) * 0.5)
+	HudStyle.text(canvas, font, Vector2(x, top + 14), name, 16, tint)
 	# rank pips
 	for i in range(int(n.max)):
-		var pip := Rect2(x + i * 12.0, top + 16, 8, 6)
+		var pip := Rect2(x + i * 12.0, top + 18, 8, 6)
 		canvas.draw_rect(pip, HudStyle.color("accent") if i < rank else HudStyle.color("track"))
+
+
+# `text` shortened with "…" until it is no wider than `width` at 16 px.
+static func _fit(font: Font, text: String, width: float) -> String:
+	if HudStyle.width(font, text, 16) <= width:
+		return text
+	var cut := text
+	while cut.length() > 1 and HudStyle.width(font, cut + "…", 16) > width:
+		cut = cut.left(cut.length() - 1)
+	return cut.strip_edges() + "…"
+
+
+# `text` split into lines no wider than `width` at 16 px.
+static func _wrap(font: Font, text: String, width: float) -> Array[String]:
+	var lines: Array[String] = []
+	var current := ""
+	for word: String in text.split(" ", false):
+		var trial := word if current.is_empty() else current + " " + word
+		if HudStyle.width(font, trial, 16) > width and not current.is_empty():
+			lines.append(current)
+			current = word
+		else:
+			current = trial
+	if not current.is_empty():
+		lines.append(current)
+	return lines

@@ -24,7 +24,8 @@ const CryptUI = preload("res://src/ui/crypt_ui.gd")
 const AudioMix = preload("res://src/audio/audio_mix.gd")
 const GraphicsSettings = preload("res://src/core/graphics_settings.gd")
 
-const DEFAULT_PATH := "user://settings.cfg"
+## The one options file of the game (src/core/graphics_settings.gd SETTINGS_PATH).
+const DEFAULT_PATH: String = GraphicsSettings.SETTINGS_PATH
 const SECTION := "options"
 ## The main menu's defaults, plus camera_calm.
 const DEFAULTS := {"volume": 80, "music": 70, "effects": 85, "fullscreen": false, "shake": true, "camera_calm": false, "graphics": "pixel"}

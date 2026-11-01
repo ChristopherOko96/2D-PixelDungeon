@@ -1,0 +1,12 @@
+{
+  "_note": "Pixel-grid units and the wall clip of the matter kit (src/physics_kit/matter_kit.gd, MatterKit; BAUPLAN M1a). units: world px per art pixel of the crypt (crypt px, the unit the crypt's effects, particles and feel work in) and of the story worlds (their floor tiles' 16 px art drawn x3); a story world px is crypt_scale = story_art_px / crypt_art_px crypt px. clip: what a wall clip remembers per art cell: memo_max answers at most (then it starts afresh), refresh_s = seconds a clip built from a bare Callable keeps its answers (it cannot tell when a wall breaks; a clip built from a MatterHost forgets on its wall_revision instead), cache_max = clips src/vfx/pixel_paint.gd keeps for the Callables set as its legacy PixelPaint.clip.",
+  "units": {
+    "crypt_art_px": 2,
+    "story_art_px": 3
+  },
+  "clip": {
+    "memo_max": 200000,
+    "refresh_s": 3.0,
+    "cache_max": 16
+  }
+}

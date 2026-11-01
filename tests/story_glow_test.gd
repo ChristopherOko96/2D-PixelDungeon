@@ -208,7 +208,10 @@ func test_data() -> void:
 		if str(wfx[k]) != "" and not k.begins_with("_"): kinds.append(str(wfx[k]))
 	for k: String in wz:
 		if (wz[k] is Dictionary) and (wz[k] as Dictionary).has("impact"): kinds.append(str(wz[k].impact))
-	var broken := kinds.filter(func(k: String) -> bool: return not bloom.has(k) or float(bloom[k].get("alpha", 0.0)) <= 0.0 or float(bloom[k].get("r", bloom[k].get("size", 0.0))) <= 0.0)
+	# beam_core is dark on purpose: Ignaroth's void beam swallows light (vfx_glow.json story.bloom
+	# _note "beam_core alpha 0, 2026-10-30"), so it only needs its entry and radius
+	var dark := ["beam_core"]
+	var broken := kinds.filter(func(k: String) -> bool: return not bloom.has(k) or (float(bloom[k].get("alpha", 0.0)) <= 0.0 and not k in dark) or float(bloom[k].get("r", bloom[k].get("size", 0.0))) <= 0.0)
 	check(broken.is_empty(), "every bloom kind of story.bloom has a radius and an intensity (%s)" % [broken])
 	check(bloom.has("vault") and (bloom.vault.light as Array).size() == 2, "the vault keeps the world's own light")
 	# a mirrored body mirrors its parts: pixel x of a body facing left sits where w - 1 - x sits facing right
@@ -247,8 +250,8 @@ func test_crypt_parity() -> void:
 	check(view.contains("float(rect[3]) * 0.5, 56.0, 0.5)") and StoryGlow.EXIT_LIGHT == Vector2(56.0, 0.5), "exit light matches dungeon_view.gd (56 px, 0.5)")
 	var particles := FileAccess.get_file_as_string("res://src/vfx/particles.gd")
 	check(particles.contains("5.0 + 5.0 * heat, Color(1.0, 0.5, 0.15, 0.3 * heat * level)") and StoryGlow.EMBER_GLOW == Vector3(5.0, 5.0, 0.3), "ember bloom matches particles.gd draw_glow")
-	var rig := FileAccess.get_file_as_string("res://src/rig/rig_renderer.gd")
-	check(rig.contains("- 16.0, 68.0))") and is_equal_approx(StoryGlow.BEAM_LIGHT, 68.0), "beam light matches rig_renderer.gd lights (68 px)")
+	# the rig's lights moved with the effects into src/rig_kit/rig_fx.gd (RigFx.lights, BEAM_LIGHT)
+	check(is_equal_approx(RigFx.BEAM_LIGHT, 68.0) and is_equal_approx(StoryGlow.BEAM_LIGHT, RigFx.BEAM_LIGHT), "beam light matches the rig's lights (RigFx.BEAM_LIGHT, 68 px)")
 
 
 # --- one bloom over the darkness ------------------------------------------------------
@@ -486,7 +489,10 @@ func test_world_zones() -> void:
 	f.state.t = float(f.state.t) + 0.05
 	sg.frame()
 	var flare: Array = _of(sg.attack_items(), "strike")
-	check(flare.size() == 1 and Color(flare[0].color).a > 0.3, "the icicle's strike flares in the bloom")
+	# 0.05 s into its flare: still above 80 % of the tuned strength (its bloom alpha at the spells
+	# level, halved by bc148b48 to 0.5, so the old fixed 0.3 no longer fits)
+	var full_flare: float = sg._alpha(str(sg._flares[0].kind)) * sg.glow.level("spells") if not (sg._flares as Array).is_empty() else 0.0
+	check(flare.size() == 1 and full_flare > 0.0 and Color(flare[0].color).a > full_flare * 0.8, "the icicle's strike flares in the bloom (%.3f of %.3f)" % [Color(flare[0].color).a if flare.size() == 1 else -1.0, full_flare])
 	check(_light_near(sg.combat_lights(), me + Vector2(160, 20), 1.0).z > 70.0, "the strike lights the dark")
 	f.state.t = float(f.state.t) + 1.0
 	sg.frame()
@@ -657,7 +663,9 @@ func test_attacks() -> void:
 	boss.spawn = 0.0
 	boss.act = {"kind": "beam", "beams": [0.5], "warn": false, "t": 1.2, "a": {"turn": 0.5, "duration": 4.0}, "anim": "cast", "dir": Vector2.RIGHT, "n": 0, "v": Vector2.ZERO}
 	var beam: Array = _of(sg.attack_items(), "beam")
-	check(beam.filter(func(i: Dictionary) -> bool: return i.has("to")).size() == 2 and beam.filter(func(i: Dictionary) -> bool: return not i.has("to")).size() == 1, "a burning void beam: a halo band, a core band, a flare at the mouth")
+	# since 2026-10-30 the beam's core swallows light (beam_core alpha 0, vfx_glow.json): only the
+	# halo band and the mouth's flare bloom, no core band any more
+	check(beam.filter(func(i: Dictionary) -> bool: return i.has("to")).size() == 1 and beam.filter(func(i: Dictionary) -> bool: return not i.has("to")).size() == 1, "a burning void beam: a halo band and a flare at the mouth, its core stays dark")
 	boss.act.warn = true
 	check(_of(sg.attack_items(), "beam").is_empty(), "a beam's warning does not bloom")
 	boss.act.warn = false
@@ -667,7 +675,10 @@ func test_attacks() -> void:
 	g.mobs.clear()
 	g.monsters.zones.append({"kind": "meteor", "p": me + Vector2(0, 120), "r": 80.0, "T": 1.35, "t": 1.0, "tele": 1.0, "dmg": 1, "done": true, "m": {}})
 	var impact: Array = _of(sg.attack_items(), "impact")
-	check(impact.size() == 1 and Color(impact[0].color).a > 0.4, "a meteor's impact flares in the bloom")
+	# full strength at the strike: the bloom's impact alpha at the spells level; bc148b48 halved
+	# both (impact 0.5 -> 0.25, scales.spells 1.0 -> 0.5), so the old fixed 0.4 no longer fits
+	var full_impact: float = sg._alpha("impact") * sg.glow.level("spells")
+	check(impact.size() == 1 and full_impact > 0.0 and Color(impact[0].color).a >= full_impact * 0.99, "a meteor's impact flares in the bloom (%.3f, want %.3f)" % [Color(impact[0].color).a if impact.size() == 1 else -1.0, full_impact])
 	g.monsters.zones[0].t = 1.35
 	check(_of(sg.attack_items(), "impact").is_empty(), "the impact's glow is gone when the zone ends")
 	g.monsters.zones.clear()

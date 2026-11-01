@@ -1,0 +1,27 @@
+{
+  "_note": "How bodies move physically (src/physics_kit/motion_kit.gd, MotionKit; BAUPLAN M1b, skill gamedev:physics-tuning). The knock speeds per blow kind stay with each world (hell_balance.json / krypta_balance.json monsters.feel.knock, frost_theme.json vfx.knock); everything else is here.",
+  "knock": {
+    "_note": "The hero's knockback: start speed (px/s, from the world's table) away from the blow, squashed on the floor's depth by squash [x, y]; it eases out as (1 - t/time)^ease_power over the world's time s (time_min the shortest), so it covers about speed x time / 3 px; no frame moves him more than step_max px (world px, well under a 96 px cell), so he never tunnels; walls stop each axis. time and mob_scale (a mob's blow pushes this share) are used when the world's table has none.",
+    "step_max": 24,
+    "squash": [1.0, 0.75],
+    "ease_power": 2.0,
+    "time_min": 0.01,
+    "time": 0.22,
+    "mob_scale": 0.7
+  },
+  "grip": {
+    "_note": "Grip = the share of the old speed left after one second (1 = firm floor, the wanted speed at once). slip = under the slip condition (src/hell/hero_fx.gd), medium = a sliding pool or gas without its own grip (element_rules.json gives ice 0.015 and blood 0.35), glaze = the world's glaze ice tiles without their own (theme liquid grip).",
+    "slip": 0.08,
+    "medium": 0.1,
+    "glaze": 0.015
+  },
+  "skid": {
+    "_note": "Sliding over a pool's ice or blood faster than speed px/s, the hero's boots scratch it: a spray of chips every s seconds.",
+    "speed": 140,
+    "every": 0.09
+  },
+  "push": {
+    "_note": "A monster's push velocity (px/s, set by blows, blasts and waves) is added to its movement and keeps this share each frame (per frame, not per second: at 60 fps it halves in about 4.6 frames).",
+    "decay": 0.86
+  }
+}

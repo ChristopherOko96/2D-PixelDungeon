@@ -121,6 +121,14 @@ func _pool(at: Vector2, style: String, dps := 0) -> Dictionary:
 	return game.boss_moves._pool(at, {"style": style, "radius": 40, "time": 30, "dps": dps}, Vector2.RIGHT)
 
 
+## A point `distance` px from `from` on open floor (boss_moves.gd _open_floor), trying
+## down, up, right, left; `from` + down when none is.
+func _open_beside(from: Vector2, distance: float) -> Vector2:
+	for dir: Vector2 in [Vector2.DOWN, Vector2.UP, Vector2.RIGHT, Vector2.LEFT]:
+		if game.boss_moves._open_floor(from + dir * distance): return from + dir * distance
+	return from + Vector2.DOWN * distance
+
+
 func _alive(zone: Dictionary) -> bool:
 	return game.boss_moves.zones.has(zone)
 
@@ -240,8 +248,11 @@ func _test_talents_and_skills_set_off_reactions() -> void:
 	game.talent_combat._event("nova", spot, 30.0, {"fx": "fire", "owner": 1})
 	_settle(0.1)
 	check(not _alive(poison), "a fire talent's nova sets poison off")
-	var water := _pool(spot + Vector2(0, 100), "water")
-	game.talent_combat._event("nova", spot + Vector2(0, 100), 30.0, {"fx": "ice", "owner": 1})
+	# pools only cover open floor since the physics pools (57f3fa60, boss_moves.gd _open_floor);
+	# spot + (0, 100) lies in a wall of this arena, so that water had no cells to freeze
+	var wet := _open_beside(spot, 100.0)
+	var water := _pool(wet, "water")
+	game.talent_combat._event("nova", wet, 30.0, {"fx": "ice", "owner": 1})
 	check(float(water.get("frozen", 0.0)) > 0.0, "a frost talent's nova freezes water")
 	hero = _arena()
 	water = _pool(spot, "water")

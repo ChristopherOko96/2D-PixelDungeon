@@ -279,7 +279,7 @@ static func enemy_tags(enemy: Dictionary) -> Array:
 
 ## The conditions a medium or gas rule puts on an enemy (burn, poison, slow,
 ## mad) and what it takes away (water douses its burning). "mad" (WAHN,
-## element_rules.json madness) is also the void spells' way in:
+## madness_rules.json madness) is also the void spells' way in:
 ## `_status_enemy(enemy, ElementRules.mad_rule(seconds), owner)`; a creature of
 ## the void (madness.immune_tags) never takes it.
 func _status_enemy(enemy: Dictionary, rule: Dictionary, owner: int) -> void:

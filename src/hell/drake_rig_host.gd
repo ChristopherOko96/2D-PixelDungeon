@@ -32,6 +32,8 @@ extends RefCounted
 const BodyParts = preload("res://src/combat/body_parts.gd")
 const RigLibrary = preload("res://src/rig/rig_library.gd")
 const RigRenderer = preload("res://src/rig/rig_renderer.gd")
+## The fair-combat windups (assets/data/combat_tells.json) for acts without their own.
+const FrostMoves = preload("res://src/hell/frost_moves.gd")
 
 ## A part was cut off. Payload: see _sever().
 const EVENT_SEVER := "rig_sever"
@@ -46,9 +48,13 @@ const EVENT_REGROW := "rig_regrow"
 ## times them (release at the end of the windup). They map the act onto the
 ## rig's attack clip; the attack's own duration, waves or range replace the
 ## active time where it has one (_times). Default of DEFAULTS.act_times.
+## The windup here is only the last fallback: a running act's own windup
+## (act.wind, hell_monsters.gd _wind: the attack's "tell" or
+## assets/data/combat_tells.json) comes first, then combat_tells.json's for
+## the kind, so the clip peaks exactly at the release.
 const ACT_TIMES := {
-	"bolt": [0.35, 0.12, 0.18], "breath": [0.3, 0.12, 0.18], "homing": [0.35, 0.12, 0.18],
-	"dash": [0.5, 0.45, 0.05], "slam": [0.75, 0.15, 0.15], "swing": [0.35, 0.2, 0.05],
+	"bolt": [0.45, 0.12, 0.18], "breath": [0.3, 0.12, 0.18], "homing": [0.35, 0.12, 0.18],
+	"dash": [0.5, 0.45, 0.05], "slam": [0.75, 0.15, 0.15], "swing": [0.5, 0.2, 0.05],
 	"ring": [0.45, 0.35, 0.1], "burrow": [0.55, 0.3, 0.4], "flight": [0.7, 4.0, 0.7],
 	"sweep": [0.45, 1.7, 0.1], "echoes": [0.8, 0.2, 0.4], "beam": [0.8, 3.6, 0.1],
 	"lob": [0.45, 0.1, 0.15], "spiral": [0.4, 2.0, 0.1], "summon": [0.6, 0.1, 0.2],
@@ -226,6 +232,25 @@ func has_rig(m: Dictionary) -> bool:
 	return parts.has_parts(m) and not rig_of(m).is_empty()
 
 
+## True while no lost part (or wholly lost rig group) of `m` takes its attack
+## `a` away (BodyParts.can_attack): a part names the attack's id, or the rig
+## action the attack needs ("attack", "cast", "block" by its kind or its
+## needs, assets/data/rig_actions.json), so the crypt rigs the Krypta wears
+## disable their weapon's attacks. True without body parts.
+func can_attack(m: Dictionary, a: Dictionary) -> bool:
+	return parts.can_attack(m, a, attack_ids(m))
+
+
+## The ids of `m`'s attacks (m.st.attacks): a part naming one of them only
+## disables those (BodyParts.carries).
+func attack_ids(m: Dictionary) -> Array[String]:
+	var ids: Array[String] = []
+	var st: Variant = m.get("st", {})
+	for a: Variant in (st.get("attacks", []) if st is Dictionary else []):
+		if a is Dictionary and not str(a.get("id", "")).is_empty(): ids.append(str(a.id))
+	return ids
+
+
 ## Gives `m` the body parts of its form's rig: the HP (m.max) split by the
 ## part weights, every part attached, an int m.uid when it has none, its
 ## regrow delay (Ignaroth: none), no stagger, lock or pending hit, and m.pos =
@@ -313,7 +338,7 @@ func freeze(dt: float) -> void:
 
 ## The attack `a` (a dict of m.st.attacks, shared with every monster of its
 ## kind: never changed here) as it starts now: `a` itself without a rig; {}
-## while he staggers, a lost part or group disables it (BodyParts.can) or a
+## while he staggers, a lost part or group disables it (can_attack) or a
 ## flight or burrow would follow a landing too soon (BOSS-04); else a deep
 ## copy with every weakened parameter scaled (counts rounded, min 1; a flag
 ## turned off by a factor 0) and a flight capped at max_flight(). The copy
@@ -324,7 +349,7 @@ func prepare(m: Dictionary, a: Dictionary) -> Dictionary:
 	if not has_rig(m): return a
 	if staggered(m): return {}
 	var action := str(a.get("id", ""))
-	if not parts.can(m, action): return {}
+	if not can_attack(m, a): return {}
 	if str(a.get("kind", "")) in cfg.immune_kinds and float(m.get("rig_ground", 0.0)) > 0.0: return {}
 	var copy: Dictionary = a.duplicate(true)
 	var base: Dictionary = {}
@@ -362,7 +387,7 @@ func cancels(m: Dictionary) -> bool:
 	var action := str(a.get("id", ""))
 	var kind := str(act.get("kind", ""))
 	var out := _released(act)
-	var gone := not parts.can(m, action)
+	var gone := not can_attack(m, a)
 	var cut := "" if out else _cut_since(m, a)
 	var channelled: bool = kind in cfg.channel_kinds
 	var stop: bool = (gone and (not out or channelled)) or not cut.is_empty()
@@ -373,7 +398,7 @@ func cancels(m: Dictionary) -> bool:
 			m.sink = 0.0
 		m.exposed_action = ""
 		_events.append({"name": EVENT_CANCEL, "uid": int(m.uid), "monster": str(m.id), "action": action, "kind": kind,
-			"part": cut if not cut.is_empty() else _disabling_part(m, action), "released": out, "at": point(m, "core", centre(m))})
+			"part": cut if not cut.is_empty() else _disabling_part(m, a), "released": out, "at": point(m, "core", centre(m))})
 		return true
 	if act.get("beams") is Array:
 		var beams: Array = act.beams
@@ -400,7 +425,7 @@ func on_release(m: Dictionary) -> void:
 func echo_forms(m: Dictionary, a: Dictionary, earlier: Array) -> Array:
 	if not has_rig(m): return earlier
 	var action := str(a.get("id", "echos"))
-	if not parts.can(m, action): return []
+	if not can_attack(m, a.merged({"id": action})): return []
 	var total := float(a.get("rig_base", {}).get("forms", a.get("forms", earlier.size())))
 	var count := clampi(roundi(total * parts.scale(m, action, "forms")), 0, earlier.size())
 	return earlier.slice(0, count)
@@ -671,7 +696,8 @@ func draw(l: CanvasItem, m: Dictionary, foot: Vector2, size: float = 1.0, tint: 
 	# the full height plus SINK_MARGIN, so breathing and bobbing never lift a sliver out of the floor
 	var cut := clampf(sink, 0.0, 1.0) * (float(rig.ground.y) - float(rig.top) + 1.0 + SINK_MARGIN) * S
 	var phase := act_phase(m)
-	var whole_flash := float(m.get("rig_flash", 0.0)) > 0.0
+	# a sever, and the first frames after any hit (pose.hit_white, frost_moves.gd white_hit), flash the whole figure
+	var whole_flash := float(m.get("rig_flash", 0.0)) > 0.0 or bool(pose.get("hit_white", false))
 	var flash := maxf(float(m.get("rig_flash", 0.0)), maxf(float(m.get("hit", 0.0)), float(pose.get("flash", 0.0)) * 0.16))
 	var e := {"rig": rig_of(m), "uid": int(m.uid), "face": float(m.get("face", 1.0)), "moving": str(m.get("anim", "")) == "run",
 		"flying": str(m.get("anim", "")) == "fly", "tint": Color(tint.r, tint.g, tint.b, 1.0), "alpha": tint.a, "size": size, "cut": cut,
@@ -810,19 +836,17 @@ func _cut_since(m: Dictionary, a: Dictionary) -> String:
 	return ""
 
 
-## A lost part whose loss disables `action` (directly or as the last of its group), else "".
-func _disabling_part(m: Dictionary, action: String) -> String:
-	var rig: Dictionary = library.rig(rig_of(m))
-	for id: Variant in m.parts_lost:
-		if action in RigLibrary.disabled_actions(rig.by_id.get(str(id), {}).get("disables", [])): return str(id)
-	for group: Variant in rig.get("groups", {}).values():
-		if group is Dictionary and action in RigLibrary.disabled_actions(group.get("disables", [])):
-			var members: Array = group.get("parts", [])
-			if not members.is_empty(): return str(members[-1])
-	return ""
+## A lost part whose loss disables the attack `a` (directly or as the last of
+## its wholly lost group: BodyParts.disabler), else "".
+func _disabling_part(m: Dictionary, a: Dictionary) -> String:
+	return parts.disabler(m, a, attack_ids(m))
 
 
 ## [windup, active, recover] of a running act (act_times with its own values).
+## The windup is the act's own (act.wind, set by hell_monsters.gd _start_act
+## from the attack's "tell" or combat_tells.json), else combat_tells.json's
+## for its kind ("leap" for a leaping slam), else the table's: the rig reaches
+## its windup peak at the release, not before (B1).
 func _times(act: Dictionary) -> Vector3:
 	var kind := str(act.get("kind", ""))
 	var a: Dictionary = act.get("a", {})
@@ -833,7 +857,10 @@ func _times(act: Dictionary) -> Vector3:
 		"sweep", "beam", "spiral", "flight": times.y = float(a.get("duration", times.y))
 		"ring": times.y = 0.35 * float(a.get("waves", 1))
 		"dash": times.y = minf(0.55, float(a.get("range", 500.0)) / maxf(1.0, float(a.get("speed", 1000.0))))
-		"slam": times.x = 0.7 if bool(a.get("leap", false)) else 0.75
+	if act.has("wind"):
+		times.x = float(act.wind)
+	else:
+		times.x = float(a.tell) if a.has("tell") else FrostMoves.tell_time("leap" if kind == "slam" and bool(a.get("leap", false)) else kind, false, times.x)
 	if kind == "flight": times.z = float(cfg.flight_land)
 	return times
 
@@ -864,7 +891,7 @@ func _sever(m: Dictionary, part: String, gone: Array[String], killed: bool) -> v
 	for a: Variant in m.get("st", {}).get("attacks", []):
 		if not a is Dictionary: continue
 		var action := str(a.get("id", ""))
-		if not parts.can(m, action): disabled.append(action)
+		if not can_attack(m, a): disabled.append(action)
 		var factors: Dictionary = parts.weakened(m, action)
 		if not factors.is_empty(): weakened[action] = factors
 	var also: Array[String] = []

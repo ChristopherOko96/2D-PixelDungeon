@@ -9,12 +9,17 @@
 //   assets/sprites/frost/rigs/<rig>.png   one art-size image per figure (the sprite shrunk back by its x3 / x4)
 // Poses move in art pixels, so every rig image has one pixel per art pixel; the
 // scale (1.5, Hrimgar 2) brings them back to the size the frost sprites have.
-// Usage (repo root): node tools/frost_dungeon/export_frost_rigs.js
+// Usage (repo root): node tools/frost_dungeon/export_frost_rigs.js [repo_root]
+//   merges these rigs into assets/data/rigs.json and writes their PNGs. The one rig build
+//   (node tools/rig_kit/build_rigs.js, order in assets/data/rig_manifest.json) runs it as the
+//   last step of rigs.json through rigKit(): build() then returns the data and the PNGs and
+//   writes nothing.
 'use strict';
 const fs = require('fs');
 const path = require('path');
 
-const root = process.argv[2] || path.join(__dirname, '..', '..');
+// required by the rig build: this checkout (process.argv belongs to the build then)
+const root = (require.main === module && process.argv[2]) || path.join(__dirname, '..', '..');
 const H = require(path.join(root, 'tools/hell_dungeon/concepts/hybrid.js'));
 const { encodePng } = require(path.join(root, 'tools/hell_dungeon/monster_sheet.js'));
 const FROST = path.join(root, 'assets/sprites/frost');
@@ -45,9 +50,12 @@ function shrink(img, k) {
   return { w, h, d };
 }
 
+// The PNGs of a run: written at once (the CLI), or collected as { file, png } (build(data, true)).
+let collected = null;
 function save(name, img) {
-  fs.mkdirSync(OUT, { recursive: true });
-  fs.writeFileSync(path.join(OUT, name + '.png'), encodePng(img.w, img.h, img.d));
+  const file = path.join(OUT, name + '.png'), png = encodePng(img.w, img.h, img.d);
+  if (collected) collected.push({ file, png });
+  else { fs.mkdirSync(OUT, { recursive: true }); fs.writeFileSync(file, png); }
   return RES + name + '.png';
 }
 
@@ -71,7 +79,15 @@ function rampMap(file, ramp, glow = true) {
 const clone = (o) => JSON.parse(JSON.stringify(o));
 const part = (id, rects, pivot, parent, z, label, extra = {}) => Object.assign({ id, rects, pivot, parent, z, hp: 2, label }, extra);
 
-const data = JSON.parse(fs.readFileSync(RIGS, 'utf8'));
+/**
+ * Merges the Frostgruft's rigs into `data` (a parsed rigs.json that already holds ice_zombie,
+ * skel_archer, necro, big_zombie and glutwaechter, the rigs they are cut from) and returns
+ * { data, files, added }: `files` the art-size PNGs as { file, png } when `collect` is true
+ * (nothing written), else they are written at once and `files` is empty; `added` the merged
+ * rig ids in order. The body below keeps the script's column, so its history stays readable.
+ */
+function build(data, collect = false) {
+collected = collect ? [] : null;
 const rigs = {};
 const scales = {};
 
@@ -105,9 +121,7 @@ rigs.frost_imp = {
   ],
   items: [],
 };
-// The weapons the humanoids hold: the 0x72 blades, already in steel blue (grip and tip in the weapon's pixels)
-images.regular_sword = 'res://assets/sprites/0x72/weapon_regular_sword.png';
-images.anime_sword = 'res://assets/sprites/0x72/weapon_anime_sword.png';
+// (the blades frost_knight and frost_commander hold come into `images` after the cuts, see below)
 // Eisritter (Superdark's knight): the whole helm is the head, the block on the left his shield
 // (a part the guard's moves push), a real sword in his right hand
 rigs.frost_knight = {
@@ -201,8 +215,32 @@ for (const ph of ['p1', 'p2', 'p3']) {
   rigs[id] = rig;
   scales[id] = 2;
 }
+// The weapons the humanoids hold: the 0x72 blades, already in steel blue (grip and tip in the
+// weapon's pixels). After the cuts, so a fresh build keeps rigs.json's image order (they came
+// with a later export than the cuts).
+images.regular_sword = 'res://assets/sprites/0x72/weapon_regular_sword.png';
+images.anime_sword = 'res://assets/sprites/0x72/weapon_anime_sword.png';
 
 Object.assign(data.images, images);
 for (const [id, rig] of Object.entries(rigs)) { data.rigs[id] = rig; data.scales[id] = scales[id]; }
-fs.writeFileSync(RIGS, JSON.stringify(data, null, 1) + '\n');
-console.log('rigs.json +', Object.keys(rigs).join(', '));
+const files = collected || [];
+collected = null;
+return { data, files, added: Object.keys(rigs) };
+}
+
+/**
+ * The rig build's step (tools/rig_kit/build_rigs.js, assets/data/rig_manifest.json):
+ * ctx.data is rigs.json as built so far; returns it with these rigs and their PNGs (not written).
+ */
+function rigKit(ctx) {
+  const { data, files } = build(ctx.data, true);
+  return { data, files };
+}
+
+module.exports = { build, rigKit };
+
+if (require.main === module) {
+  const { data, added } = build(JSON.parse(fs.readFileSync(RIGS, 'utf8')));
+  fs.writeFileSync(RIGS, JSON.stringify(data, null, 1) + '\n');
+  console.log('rigs.json +', added.join(', '));
+}

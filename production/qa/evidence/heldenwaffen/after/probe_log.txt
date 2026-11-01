@@ -1,0 +1,96 @@
+IMG krypta-swordsman-01-ruhe-rechts held_hand=(3322.0, 5810.2) held_angle=1.5708 drop={  }
+IMG krypta-swordsman-02-ruhe-links held_hand=(3302.0, 5810.2) held_angle=4.7124 drop={  }
+IMG krypta-swordsman-03-ruhe-oben held_hand=(3315.303, 5800.762) held_angle=0.3367 drop={  }
+IMG krypta-swordsman-04-atmen held_hand=(3322.612, 5811.07) held_angle=1.5708 drop={  }
+IMG krypta-swordsman-05-angriff held_hand=(3329.441, 5812.819) held_angle=1.8771 drop={  }
+IMG krypta-swordsman-06-angriff-links held_hand=(3294.744, 5807.041) held_angle=5.0663 drop={  }
+IMG krypta-swordsman-07-gehen held_hand=(3324.756, 5808.468) held_angle=1.6408 drop={  }
+IMG krypta-swordsman-08-treffer held_hand=(3306.543, 5809.383) held_angle=1.3908 drop={  }
+IMG krypta-swordsman-09-rage held_hand=(3328.222, 5816.486) held_angle=2.1221 drop={  }
+IMG krypta-swordsman-10-wirbel held_hand=(3328.222, 5816.486) held_angle=2.1221 drop={  }
+IMG krypta-swordsman-11-fallen held_hand=(3322.0, 5810.2) held_angle=1.5708 drop={ "center": (3359.775, 5833.308), "angle": 5.75579632679491 }
+IMG krypta-archer-01-ruhe-rechts held_hand=(8696.0, 5806.2) held_angle=0.0000 drop={  }
+IMG krypta-archer-02-ruhe-links held_hand=(8680.0, 5806.2) held_angle=3.1416 drop={  }
+IMG krypta-archer-03-ruhe-oben held_hand=(8690.643, 5798.649) held_angle=-1.2341 drop={  }
+IMG krypta-archer-04-atmen held_hand=(8696.522, 5807.17) held_angle=0.0000 drop={  }
+IMG krypta-archer-05-angriff held_hand=(8695.761, 5804.26) held_angle=-0.2450 drop={  }
+IMG krypta-archer-06-angriff-links held_hand=(8680.155, 5807.769) held_angle=2.9442 drop={  }
+IMG krypta-archer-07-gehen held_hand=(8699.048, 5804.128) held_angle=0.0700 drop={  }
+IMG krypta-archer-08-treffer held_hand=(8679.908, 5805.343) held_angle=-0.1800 drop={  }
+IMG krypta-archer-11-fallen held_hand=(8696.0, 5806.2) held_angle=0.0000 drop={ "center": (8716.947, 5829.308), "angle": 4.18500000000001 }
+IMG krypta-mage-01-ruhe-rechts held_hand=(639.0, 4752.094) held_angle=0.2000 drop={  }
+IMG krypta-mage-02-ruhe-links held_hand=(609.0, 4751.296) held_angle=-0.2000 drop={  }
+IMG krypta-mage-03-ruhe-oben held_hand=(639.0, 4753.37) held_angle=0.1347 drop={  }
+IMG krypta-mage-04-atmen held_hand=(639.3511, 4752.659) held_angle=0.2000 drop={  }
+IMG krypta-mage-05-angriff held_hand=(639.0, 4745.246) held_angle=0.6243 drop={  }
+IMG krypta-mage-06-angriff-links held_hand=(609.0, 4745.001) held_angle=-0.6243 drop={  }
+IMG krypta-mage-07-gehen held_hand=(637.2439, 4749.192) held_angle=0.1547 drop={  }
+IMG krypta-mage-08-treffer held_hand=(623.0774, 4750.374) held_angle=0.0200 drop={  }
+IMG krypta-mage-11-fallen held_hand=(639.0, 4752.38) held_angle=0.2000 drop={ "center": (658.0691, 4779.976), "angle": 4.29500000000001 }
+IMG krypta-necromancer-01-ruhe-rechts held_hand=(639.0, 3702.844) held_angle=0.2000 drop={  }
+IMG krypta-necromancer-02-ruhe-links held_hand=(609.0, 3702.046) held_angle=-0.2000 drop={  }
+IMG krypta-necromancer-03-ruhe-oben held_hand=(639.0, 3704.12) held_angle=0.1347 drop={  }
+IMG krypta-necromancer-04-atmen held_hand=(639.2971, 3703.615) held_angle=0.2000 drop={  }
+IMG krypta-necromancer-05-angriff held_hand=(639.0, 3695.995) held_angle=0.6243 drop={  }
+IMG krypta-necromancer-06-angriff-links held_hand=(609.0, 3695.751) held_angle=-0.6243 drop={  }
+IMG krypta-necromancer-07-gehen held_hand=(637.6058, 3699.762) held_angle=0.1547 drop={  }
+IMG krypta-necromancer-08-treffer held_hand=(624.6489, 3700.794) held_angle=0.0200 drop={  }
+IMG krypta-necromancer-11-fallen held_hand=(639.0, 3703.13) held_angle=0.2000 drop={ "center": (657.3358, 3724.887), "angle": 4.07 }
+IMG frost-swordsman-01-ruhe-rechts held_hand=(8698.0, 5810.2) held_angle=1.5708 drop={  }
+IMG frost-swordsman-02-ruhe-links held_hand=(8678.0, 5810.2) held_angle=4.7124 drop={  }
+IMG frost-swordsman-03-ruhe-oben held_hand=(8691.304, 5800.762) held_angle=0.3367 drop={  }
+IMG frost-swordsman-04-atmen held_hand=(8698.612, 5811.07) held_angle=1.5708 drop={  }
+IMG frost-swordsman-05-angriff held_hand=(8705.441, 5812.819) held_angle=1.8771 drop={  }
+IMG frost-swordsman-06-angriff-links held_hand=(8670.744, 5807.041) held_angle=5.0663 drop={  }
+IMG frost-swordsman-07-gehen held_hand=(8700.756, 5808.468) held_angle=1.6408 drop={  }
+IMG frost-swordsman-08-treffer held_hand=(8682.543, 5809.383) held_angle=1.3908 drop={  }
+IMG frost-swordsman-09-rage held_hand=(8704.222, 5816.486) held_angle=2.1221 drop={  }
+IMG frost-swordsman-10-wirbel held_hand=(8704.222, 5816.486) held_angle=2.1221 drop={  }
+IMG frost-swordsman-11-fallen held_hand=(8698.0, 5810.2) held_angle=1.5708 drop={ "center": (8735.747, 5833.308), "angle": 5.75579632679491 }
+IMG frost-archer-01-ruhe-rechts held_hand=(7352.0, 5806.2) held_angle=0.0000 drop={  }
+IMG frost-archer-02-ruhe-links held_hand=(7336.0, 5806.2) held_angle=3.1416 drop={  }
+IMG frost-archer-03-ruhe-oben held_hand=(7346.643, 5798.649) held_angle=-1.2341 drop={  }
+IMG frost-archer-04-atmen held_hand=(7352.522, 5807.17) held_angle=0.0000 drop={  }
+IMG frost-archer-05-angriff held_hand=(7351.761, 5804.26) held_angle=-0.2450 drop={  }
+IMG frost-archer-06-angriff-links held_hand=(7336.155, 5807.769) held_angle=2.9442 drop={  }
+IMG frost-archer-07-gehen held_hand=(7355.048, 5804.128) held_angle=0.0700 drop={  }
+IMG frost-archer-08-treffer held_hand=(7335.907, 5805.343) held_angle=-0.1800 drop={  }
+IMG frost-archer-11-fallen held_hand=(7352.0, 5806.2) held_angle=0.0000 drop={ "center": (7372.977, 5829.308), "angle": 4.18500000000001 }
+IMG frost-mage-01-ruhe-rechts held_hand=(639.0, 4752.094) held_angle=0.2000 drop={  }
+IMG frost-mage-02-ruhe-links held_hand=(609.0, 4751.296) held_angle=-0.2000 drop={  }
+IMG frost-mage-03-ruhe-oben held_hand=(639.0, 4753.37) held_angle=0.1347 drop={  }
+IMG frost-mage-04-atmen held_hand=(639.3511, 4752.659) held_angle=0.2000 drop={  }
+IMG frost-mage-05-angriff held_hand=(639.0, 4745.246) held_angle=0.6243 drop={  }
+IMG frost-mage-06-angriff-links held_hand=(609.0, 4745.001) held_angle=-0.6243 drop={  }
+IMG frost-mage-07-gehen held_hand=(637.2439, 4749.192) held_angle=0.1547 drop={  }
+IMG frost-mage-08-treffer held_hand=(623.0774, 4750.374) held_angle=0.0200 drop={  }
+IMG frost-mage-11-fallen held_hand=(639.0, 4752.38) held_angle=0.2000 drop={ "center": (658.0691, 4779.976), "angle": 4.29500000000001 }
+IMG frost-necromancer-01-ruhe-rechts held_hand=(639.0, 1590.844) held_angle=0.2000 drop={  }
+IMG frost-necromancer-02-ruhe-links held_hand=(609.0, 1590.046) held_angle=-0.2000 drop={  }
+IMG frost-necromancer-03-ruhe-oben held_hand=(639.0, 1592.12) held_angle=0.1347 drop={  }
+IMG frost-necromancer-04-atmen held_hand=(639.2971, 1591.615) held_angle=0.2000 drop={  }
+IMG frost-necromancer-05-angriff held_hand=(639.0, 1583.995) held_angle=0.6243 drop={  }
+IMG frost-necromancer-06-angriff-links held_hand=(609.0, 1583.751) held_angle=-0.6243 drop={  }
+IMG frost-necromancer-07-gehen held_hand=(637.6058, 1587.762) held_angle=0.1547 drop={  }
+IMG frost-necromancer-08-treffer held_hand=(624.6489, 1588.794) held_angle=0.0200 drop={  }
+IMG frost-necromancer-11-fallen held_hand=(639.0, 1591.13) held_angle=0.2000 drop={ "center": (657.3358, 1612.887), "angle": 4.07 }
+IMG hoelle-swordsman-01-ruhe-rechts held_hand=(634.0, 4754.2) held_angle=1.5708 drop={  }
+IMG hoelle-swordsman-02-ruhe-links held_hand=(614.0, 4754.2) held_angle=4.7124 drop={  }
+IMG hoelle-swordsman-03-ruhe-oben held_hand=(627.3035, 4744.762) held_angle=0.3367 drop={  }
+IMG hoelle-swordsman-04-atmen held_hand=(634.612, 4755.07) held_angle=1.5708 drop={  }
+IMG hoelle-swordsman-05-angriff held_hand=(641.4413, 4756.819) held_angle=1.8771 drop={  }
+IMG hoelle-archer-01-ruhe-rechts held_hand=(632.0, 3694.2) held_angle=0.0000 drop={  }
+IMG hoelle-archer-02-ruhe-links held_hand=(616.0, 3694.2) held_angle=3.1416 drop={  }
+IMG hoelle-archer-03-ruhe-oben held_hand=(626.6428, 3686.649) held_angle=-1.2341 drop={  }
+IMG hoelle-archer-04-atmen held_hand=(632.522, 3695.17) held_angle=0.0000 drop={  }
+IMG hoelle-archer-05-angriff held_hand=(631.7612, 3692.26) held_angle=-0.2450 drop={  }
+IMG hoelle-mage-01-ruhe-rechts held_hand=(639.0, 1584.094) held_angle=0.2000 drop={  }
+IMG hoelle-mage-02-ruhe-links held_hand=(609.0, 1583.296) held_angle=-0.2000 drop={  }
+IMG hoelle-mage-03-ruhe-oben held_hand=(639.0, 1585.37) held_angle=0.1347 drop={  }
+IMG hoelle-mage-04-atmen held_hand=(639.3511, 1584.659) held_angle=0.2000 drop={  }
+IMG hoelle-mage-05-angriff held_hand=(639.0, 1577.245) held_angle=0.6243 drop={  }
+IMG hoelle-necromancer-01-ruhe-rechts held_hand=(6015.0, 5814.844) held_angle=0.2000 drop={  }
+IMG hoelle-necromancer-02-ruhe-links held_hand=(5985.0, 5814.046) held_angle=-0.2000 drop={  }
+IMG hoelle-necromancer-03-ruhe-oben held_hand=(6015.0, 5816.12) held_angle=0.1347 drop={  }
+IMG hoelle-necromancer-04-atmen held_hand=(6015.297, 5815.615) held_angle=0.2000 drop={  }
+IMG hoelle-necromancer-05-angriff held_hand=(6015.0, 5807.996) held_angle=0.6243 drop={  }

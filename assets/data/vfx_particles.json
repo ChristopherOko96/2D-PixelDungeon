@@ -229,7 +229,10 @@
     "glint_life": [
       2.0,
       4.5
-    ]
+    ],
+    "_crust_note": "frost_crust (a thrown ice potion, review A6): its rim frayed by crust_ragged, it goes after frost.melt_after x crust_melt s, rim first, thinning by the dither (vapor frost, no water sheet).",
+    "crust_ragged": 0.45,
+    "crust_melt": 1.5
   },
   "void": {
     "_note": "The void (particles.gd well, implode): ramp spec, lite, body, shade, deep; an implosion pulls with implode_pull px/s inwards and implode_spin round for implode_time s, then shows a frame of void and throws a pressure ring. Motes are streaks (modes.mote). User request 2026-10-30: void energy as physics.",
@@ -292,12 +295,24 @@
     "max_lift": 60
   },
   "liquid": {
+    "_note": "Splats as pixel matter (particles.gd splat, review A6 2026-11-01): the body is a grain of the colour's shades at alpha + core_alpha (its rim at alpha), its outline lobed and its rim frayed by ragged; blobs smaller bodies round it; drops [min, max] pixels or short streaks (single_drops of them one pixel) thrown along the hit, drops_per_px per px of radius. Dried marks fade after fade_after s (+-15 %) over fade_time s, rim first; fade_keep of their pixels stay as specks at residue_alpha of their opacity; at most max_fading marks fade at once (the oldest is done at once).",
     "spread_rate": 45,
     "budget_scale": 0.9,
     "reach_scale": 2.2,
     "dry_after": 5.0,
     "dry_darken": 0.35,
-    "max_pools": 48
+    "max_pools": 48,
+    "core_alpha": 0.25,
+    "ragged": 0.5,
+    "blobs": 3,
+    "drops": [4, 12],
+    "drops_per_px": 0.5,
+    "single_drops": 0.6,
+    "fade_after": 8.0,
+    "fade_time": 6.0,
+    "fade_keep": 0.12,
+    "residue_alpha": 0.55,
+    "max_fading": 240
   },
   "ember": {
     "life": [

@@ -30,6 +30,9 @@ var library: RefCounted
 var map: Dictionary = {}
 var _next_uid := 1
 var _snapshot: Dictionary = {"enemies": []}
+## The dark rim round every figure (theme "outline": enemies, alpha), so pale ice
+## figures read on the snow; alpha 0 without one.
+var outline := Color(0, 0, 0, 0)
 
 
 ## game: the frost world (src/hell/hell_game.gd); rigs: theme.rigs.
@@ -38,6 +41,9 @@ func _init(game: Node, rigs: Dictionary) -> void:
 	library = RigLibrary.shared()
 	renderer = RigRenderer.new(library)
 	map = rigs
+	var look: Dictionary = game.theme.get("outline", {}) if game.get("theme") is Dictionary else {}
+	if Color.html_is_valid(str(look.get("enemies", ""))):
+		outline = Color(Color.html(str(look.enemies)), float(look.get("alpha", 1.0)))
 
 
 ## Forgets every figure, its debris and effects (a new floor, a new run).
@@ -99,6 +105,7 @@ func draw(l: CanvasItem, m: Dictionary, feet: Vector2, size: float, tint: Color,
 	e.alpha = tint.a
 	e.size = size
 	e.hit_flash = float(pose.get("flash", 0.0)) * 0.16
+	e.outline = outline
 	var S := float(rig.scale) * size
 	renderer.draw_enemy(l, e, feet - Vector2(0, (float(rig.ground.y) - float(rig.center.y)) * S))
 	return true

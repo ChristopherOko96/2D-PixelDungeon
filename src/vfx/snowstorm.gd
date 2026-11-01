@@ -1,7 +1,7 @@
 extends Node2D
 ## A light, never-ending snowfall over the whole screen (the Frostgruft's theme "snowstorm"),
-## drawn in screen space on its own canvas layer above the world, the HUD and the menus, so the
-## cold is felt everywhere. Flakes fall in three depths (far: small, slow, faint; near: larger,
+## drawn in screen space on its own canvas layer above the world but under the HUD and every
+## window (hell_game.gd: storm layer 1, UI layer 2), so text stays clean. Flakes fall in three depths (far: small, slow, faint; near: larger,
 ## faster), are carried by a steady light wind from the right that swells into gusts now and then,
 ## and sway a little. Faint wind lines sweep across the screen from right to left all the time, so
 ## the wind can be seen; during a gust some flakes draw as short streaks.

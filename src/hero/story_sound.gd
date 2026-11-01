@@ -89,9 +89,15 @@ static func is_boss(m: Variant) -> bool:
 	return str(d.get("kind", "")) == "boss" or bool(d.get("boss", false))
 
 
-## The story world id of `game` (audio_rules.json worlds.by_theme by its theme file).
+## The story world id of `game`: its theme's "world_id" (assets/data/*_theme.json)
+## when audio_rules.json worlds.ids knows it; a theme without it keeps the old rule
+## (worlds.by_theme by its theme file, else worlds.default).
 static func world_of(game: Node, rules: Dictionary) -> String:
 	var worlds: Dictionary = rules.get("worlds", {})
+	var theme: Variant = game.get("theme")
+	var id := str((theme as Dictionary).get("world_id", "")) if theme is Dictionary else ""
+	if not id.is_empty() and (worlds.get("ids", [id]) as Array).has(id):
+		return id
 	var file := str(game.get("theme_path")).get_file().get_basename()
 	return str((worlds.get("by_theme", {}) as Dictionary).get(file, worlds.get("default", "")))
 
@@ -253,7 +259,9 @@ static func rig(m: Dictionary) -> String:
 	# a crypt rig worn at another world's size (drake_rig_host.gd adopt_looks: "skeleton@5@bone") sounds as that rig
 	if str(m.get("rig", "")) != "":
 		return str(m.rig).get_slice("@", 0)
-	if m.has("id"):
+	# a hell monster's id is its kind (a String); the number hell_talents.gd _sync_mobs
+	# gives a Frostgruft mob as its "id" is no rig name, so that mob sounds by its kind
+	if m.get("id") is String and not str(m.id).is_empty():
 		return str(m.id)
 	var kind := str(m.get("kind", ""))
 	if kind != "boss":

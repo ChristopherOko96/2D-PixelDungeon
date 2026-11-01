@@ -35,8 +35,8 @@ static func _level_up(g: Node, cfg: Dictionary) -> void:
 	g.state.hp = mini(int(g.state.max_hp), int(g.state.hp) + int(cfg.heal))
 	g.levelfx = {"t": 0.0, "level": int(g.state.level)}
 	# no class skills open any more: the talents on 1-4 come from the talent menu (29.10.2026)
-	var sub := "+1 Herz"
-	g.state.banner = {"text": "LEVEL %d" % int(g.state.level), "sub": sub, "t": 0.0}
+	var sub := "+1 Herz · 1 Talentpunkt" if not g.theme.get("cards", {}).is_empty() else "+1 Herz"
+	g.state.banner = {"text": "LAUFSTUFE %d" % int(g.state.level), "sub": sub, "t": 0.0}
 	g._burst(Vector2(g.player.x, g.player.y - 50), 50, true)
 	g._sound("level_up")
 	CardKit.on_level_up(g)
@@ -83,7 +83,7 @@ static func press(g: Node, key: String) -> void:
 		if str(s.key) != key:
 			continue
 		if not unlocked(g, s):
-			g._toast("%s ab Level %d." % [s.name, int(s.unlock)])
+			g._toast("%s ab Laufstufe %d." % [s.name, int(s.unlock)])
 			return
 		# a curse on an equipped piece can seal a skill (src/hero/story_items.gd)
 		if g.get("story_items") != null and g.story_items.sealed(key):
@@ -318,6 +318,195 @@ static func update(g: Node, dt: float) -> void:
 	for b: Dictionary in g.gbars:
 		b.t = float(b.t) - dt
 	g.gbars = g.gbars.filter(func(b: Dictionary) -> bool: return float(b.t) > 0.0)
+	track_defense(g)
+	var counter: Dictionary = g.state.get("counter", {})
+	if not counter.is_empty():
+		counter.t = float(counter.get("t", 0.0)) - dt
+		if float(counter.t) <= 0.0:
+			g.state.erase("counter")
+
+
+# ---------- Shift in time: the perfect block and roll (balance package B3) ----------
+
+## Long before any press (s): no press counts as recent.
+const NO_PRESS := -1000.0
+
+
+## The hero's Shift defense: [its talent state (src/combat/talent_combat.gd:
+## type, left, up, held, iframes), its talents.json "defense" entry], or []
+## without talents.
+static func _defense(g: Node) -> Array:
+	var talents: Variant = g.get("talents")
+	if talents == null:
+		return []
+	var rt: Dictionary = talents.tc.runtime(1)
+	var guard: Dictionary = rt.get("defense", {})
+	if guard.is_empty():
+		return []
+	return [guard, (talents.tc.data.get("defense", {}) as Dictionary).get(str(rt.get("class", "")), {})]
+
+
+## Notes when Shift goes down (the block is raised): perfect_defense measures
+## its window from there. A press within `perfect.rearm` s of the last one
+## counts as a plain block, so mashing Shift is no perfect block. Per frame,
+## after the talents read the keys (hell_talents.gd _hold).
+static func track_defense(g: Node) -> void:
+	var d := _defense(g)
+	if d.is_empty():
+		return
+	var held := bool((d[0] as Dictionary).get("held", false))
+	if held and not bool(g.state.get("def_held", false)):
+		var t := float(g.state.t)
+		var rearm := float((d[1] as Dictionary).get("perfect", {}).get("rearm", 0.0))
+		g.state.def_press = t if t - float(g.state.get("def_last", NO_PRESS)) >= rearm else NO_PRESS
+		g.state.def_last = t
+	g.state.def_held = held
+
+
+## A hit is about to land on the hero (hell_game.gd _hurt; `from`: where it
+## came from, ZERO unknown; `by`: the monster striking, when the blow names
+## it). True when Shift came in time (talents.json defense <class>.perfect
+## window) and the hit is spent: a block raised within the window holds it
+## without losing a charge and `by` reels (stagger); a roll started within the
+## window slips it and readies the counter shot (arm_counter). `shot`: the
+## projectile (or ranged blow) that hit, when it was one ({} for a blow): it
+## breaks on a perfect block or roll (its life "t" ends, it is marked
+## "perfect") and the block's matter flies towards it; its shooter `by` reels
+## only within perfect.reel_reach world px of the hero (past its own radius).
+static func perfect_defense(g: Node, from := Vector2.ZERO, by: Dictionary = {}, shot: Dictionary = {}) -> bool:
+	var d := _defense(g)
+	if d.is_empty() or int(g.state.get("hp", 0)) <= 0:
+		return false
+	var guard: Dictionary = d[0]
+	var info: Dictionary = d[1]
+	var perfect: Dictionary = info.get("perfect", {})
+	if perfect.is_empty():
+		return false
+	var window := float(perfect.get("window", 0.15))
+	var hero := Vector2(float(g.player.x), float(g.player.y))
+	var toward: Vector2 = Vector2(by.p) if by.has("p") else (from if from != Vector2.ZERO else Vector2.INF)
+	if shot.has("p"):
+		toward = Vector2(shot.p)
+	if str(guard.get("type", "")) == "dodge":
+		var left := float(guard.get("iframes", 0.0))
+		if left <= 0.0 or float(info.get("iframes", 0.0)) - left > window:
+			return false
+		var time := float(perfect.get("counter_time", 1.5))
+		g.state.counter = {"t": time, "max": time, "mul": float(perfect.get("counter_mul", 1.5)), "sound": str(perfect.get("counter_sound", ""))}
+		_perfect_feel(g, perfect, hero, toward, "counter", "")
+	else:
+		if not bool(guard.get("up", false)) or float(guard.get("left", 0.0)) < 1.0:
+			return false
+		if float(g.state.t) - float(g.state.get("def_press", NO_PRESS)) > window:
+			return false
+		# one perfect block per press: held on, the next blow is a plain block
+		g.state.def_press = NO_PRESS
+		# the attacker reels; a shooter only when it stands in melee reach
+		if not by.is_empty() and (shot.is_empty() or in_reel_reach(by, hero, perfect)):
+			stagger(g, by, perfect, hero)
+		_perfect_feel(g, perfect, hero, toward, "block", str(info.get("look", "")))
+	# a projectile met in time breaks where it is
+	if not shot.is_empty():
+		if shot.has("t"): shot.t = 0.0
+		shot.perfect = true
+	g.state.inv = maxf(float(g.state.inv), float(g.balance.player.invulnerable))
+	g.state.def_perfect = float(g.state.t)
+	return true
+
+
+## True when monster `m` stands within `perfect`.reel_reach world px of the hero
+## at `hero` (measured from its edge: its radius "r" off the distance), so a
+## perfect block against its shot lets it reel. Without reel_reach no shooter reels.
+static func in_reel_reach(m: Dictionary, hero: Vector2, perfect: Dictionary) -> bool:
+	if not m.has("p") or not perfect.has("reel_reach"):
+		return false
+	return Vector2(m.p).distance_to(hero) - float(m.get("r", 0.0)) <= float(perfect.reel_reach)
+
+
+## True right after a perfect block or roll in this frame: the blow that met
+## it pushes the hero nowhere (hell_monsters.gd _hurt_by).
+static func perfect_now(g: Node) -> bool:
+	return float(g.state.get("def_perfect", NO_PRESS)) == float(g.state.t)
+
+
+## Monster `m` reels after a perfect block: `stagger` s (a boss `stagger_boss`
+## s) it stands (stun), starts no attack and deals none (m.reel: hell_monsters.gd
+## _hurt_by, the themed mobs' touch); a running attack stops (not a boss's, not
+## one in the air, under the ground or mid-teleport). It flashes and is pushed
+## away from the hero at `push` px/s. A kit boss (the Frostgruft's) stands firm.
+static func stagger(g: Node, m: Dictionary, perfect: Dictionary, hero: Vector2) -> void:
+	if m.has("kit") or float(m.get("hp", 1.0)) <= 0.0:
+		return
+	var boss: bool = bool(m.get("boss", false)) or str(m.get("kind", "")) == "boss"
+	var time := float(perfect.get("stagger_boss" if boss else "stagger", 1.0))
+	if time <= 0.0:
+		return
+	m.reel = maxf(float(m.get("reel", 0.0)), time)
+	m.stun = maxf(float(m.get("stun", 0.0)), time)
+	m.hit = maxf(float(m.get("hit", 0.0)), 0.12)
+	var act: Variant = m.get("act")
+	if act is Dictionary and not boss and float(m.get("alt", 0.0)) <= 0.0 and not bool(m.get("burrowed", false)) \
+			and str((act as Dictionary).get("kind", "")) != "teleport":
+		m.act = null
+	if not boss:
+		# a Frostgruft mob: its plain windup (frost_moves.gd basic_tell), a running frost move
+		# (m.mv.run in windup or strike) and a plain dash stop too
+		if m.has("tell"):
+			m.erase("tell")
+			m.tele = false
+		var mv: Variant = m.get("mv")
+		if mv is Dictionary and str(((mv as Dictionary).get("run", {}) as Dictionary).get("phase", "")) in ["windup", "active"]:
+			(mv as Dictionary).run = {}
+			m.mv_hold = false
+			m.tele = false
+		if m.get("dash") is float and float(m.dash) > 0.0:
+			m.dash = 0.0
+	var away: Vector2 = Vector2(m.p) - hero
+	if not boss and away.length() > 0.1:
+		m.k = Vector2(m.get("k", Vector2.ZERO)) + away.normalized() * float(perfect.get("push", 0.0))
+
+
+## The feel of a perfect block or roll (game feel: layered by importance, back
+## at rest within half a second, input never held): the picture holds
+## `hitstop` s, `sound` rings at the hero, a short shake, and the pixels of the
+## block's matter or the readied bow's gold (src/hero/story_hero.gd perfect).
+static func _perfect_feel(g: Node, perfect: Dictionary, hero: Vector2, toward: Vector2, kind: String, look_id: String) -> void:
+	var feel: Variant = g.get("feel")
+	if feel != null and float(perfect.get("hitstop", 0.0)) > 0.0:
+		feel.feedback.hitstop = maxf(float(feel.feedback.hitstop), float(perfect.hitstop))
+	g.state.shake = maxf(float(g.state.get("shake", 0.0)), float(perfect.get("shake", 0.0)))
+	_hero_sound(g, str(perfect.get("sound", "")), hero)
+	var view: Variant = g.get("story_hero")
+	if view != null:
+		view.perfect(kind, hero, toward, look_id)
+
+
+static func _hero_sound(g: Node, name: String, at: Vector2) -> void:
+	var sound: Variant = g.get("sound")
+	if name == "" or sound == null:
+		return
+	if g.has_method("as_source"):
+		g.as_source("hero", func() -> void: sound.at(name, at))
+	else:
+		sound.at(name, at)
+
+
+## The archer's counter (a perfect roll): the next shot fired while it lasts
+## deals counter_mul times its damage, flies with the critical look and leaves
+## in gold sparks; the counter is spent. False when none is ready.
+static func arm_counter(g: Node, shot: Dictionary) -> bool:
+	var counter: Dictionary = g.state.get("counter", {})
+	if counter.is_empty() or float(counter.get("t", 0.0)) <= 0.0:
+		return false
+	g.state.erase("counter")
+	shot.mult = float(shot.get("mult", 1.0)) * float(counter.get("mul", 1.0))
+	shot.counter = true
+	var hero := Vector2(float(g.player.x), float(g.player.y))
+	_hero_sound(g, str(counter.get("sound", "")), hero)
+	var view: Variant = g.get("story_hero")
+	if view != null:
+		view.perfect("counter_shot", hero, Vector2(shot.get("v", Vector2.RIGHT)), "")
+	return true
 
 
 ## Running master skills: the phoenix's flame ring and the blade storm.
@@ -455,11 +644,32 @@ static func poison_mob(m: Dictionary, dps: float, time: float) -> void:
 	m.poison_t = maxf(float(m.get("poison_t", 0.0)), time)
 
 
-## Ticks an enemy's slow, burn, poison and stun; returns its speed factor (0 while stunned).
+## Makes an enemy bleed: `dps` damage over time for `time` s, its own kind
+## beside burn and poison (the stronger source holds): water neither stops nor
+## washes it off, and it does not set the monster on fire. For the talents'
+## bleeding (src/hell/hell_talents.gd _status).
+static func bleed_mob(m: Dictionary, dps: float, time: float) -> void:
+	m.bleed = maxf(float(m.get("bleed", 0.0)), dps)
+	m.bleed_t = maxf(float(m.get("bleed_t", 0.0)), time)
+
+
+## The damage over time running on an enemy for its look (the health bar's
+## tint): "burn", "poison" or "bleed" (in that order when several run), "" for none.
+static func dot_kind(m: Dictionary) -> String:
+	for kind: String in ["burn", "poison", "bleed"]:
+		if float(m.get(kind + "_t", 0.0)) > 0.0: return kind
+	return ""
+
+
+## Ticks an enemy's slow, burn, poison, bleed and stun; returns its speed factor (0 while stunned).
+## Every damage over time is in the hero's hits per second (x state.dmg here, once).
 static func tick_mob(g: Node, m: Dictionary, dt: float) -> float:
 	m.slow_t = maxf(0.0, float(m.get("slow_t", 0.0)) - dt)
 	m.stun = maxf(0.0, float(m.get("stun", 0.0)) - dt)
-	m.wet_t = maxf(0.0, float(m.get("wet_t", 0.0)) - dt)
+	# reeling from a perfect block (stagger): it deals no blow until this runs out
+	if m.has("reel"):
+		m.reel = maxf(0.0, float(m.reel) - dt)
+	m.wet_t =maxf(0.0, float(m.get("wet_t", 0.0)) - dt)
 	# fire_t: the monster is on fire (lava, a fire pool, a burn); burn_t alone is any damage over time
 	m.fire_t = maxf(0.0, float(m.get("fire_t", 0.0)) - dt)
 	if float(m.get("burn_t", 0.0)) > 0.0:
@@ -469,6 +679,10 @@ static func tick_mob(g: Node, m: Dictionary, dt: float) -> float:
 	if float(m.get("poison_t", 0.0)) > 0.0:
 		m.poison_t = float(m.poison_t) - dt
 		m.hp -= float(m.poison) * float(g.state.dmg) * dt
+	# bleed_t: bleeding (bleed_mob), the talents' cuts
+	if float(m.get("bleed_t", 0.0)) > 0.0:
+		m.bleed_t = float(m.bleed_t) - dt
+		m.hp -= float(m.bleed) * float(g.state.dmg) * dt
 	for z: Dictionary in g.zones:
 		if z.kind == "caltrop" and m.p.distance_to(z.p) < float(z.r):
 			slow_mob(g, m, float(z.slow), 0.2)

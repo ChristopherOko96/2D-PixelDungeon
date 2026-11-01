@@ -4,14 +4,15 @@ extends SceneTree
 ## bear and the necromancer's bone warrior come with a learned talent, stay
 ## across rooms, heal between fights and are only called again after they
 ## fell. Their two abilities fire on keys 5 and 6 and by themselves while
-## auto-cast is on (right-click toggles it); the HUD shows them after R and
-## the companion's life. Enemies fight whoever hurt them most (hero or
+## auto-cast is on (right-click toggles it); the HUD shows them with the
+## companion's life on the companion bar under the hero strip (31.10.2026). Enemies fight whoever hurt them most (hero or
 ## companion), switching only for 10 % more; taunts win.
 
 const Game = preload("res://src/game.gd")
 const TalentCombat = preload("res://src/combat/talent_combat.gd")
 const TalentBar = preload("res://src/ui/talent_bar.gd")
 const SkillBar = preload("res://src/ui/skill_bar.gd")
+const HudKit = preload("res://src/ui/hud_kit.gd")
 var checked := 0
 var failures: Array[String] = []
 var game
@@ -42,7 +43,7 @@ func _run() -> void:
 	test_enemy_fights_whoever_hurt_it_most()
 	test_threat_needs_ten_percent_more_to_switch()
 	test_taunt_beats_threat_and_enemies_hurt_the_companion()
-	test_hud_shows_companion_slots_and_life()
+	await test_hud_shows_companion_slots_and_life()
 	test_bone_warrior_and_wolf_have_their_abilities()
 	test_falcon_dives_bleeds_and_blinds()
 	test_wolf_and_bear_wounds_bleed()
@@ -256,17 +257,34 @@ func test_hud_shows_companion_slots_and_life() -> void:
 	var slots: Array = TalentBar.new().skill_slots(state)
 	# Assert
 	check(str(state.pet.name) == "Wasserelementar" and float(state.pet.hp) > 0.0, "the HUD knows the companion and its life")
-	# 1-4, R, Shift (the defense), then the companion on 5 and 6
-	check(slots.size() == 8 and str(slots[6].key) == "5" and str(slots[7].key) == "6", "the companion's abilities sit on 5 and 6 after R and Shift")
-	check(bool(slots[6].auto) and not bool(slots[7].auto), "the slot shows whether auto-cast is on")
-	check(TalentBar.pet_slot(slots, 7) == 1 and TalentBar.pet_slot(slots, 4) == -1 and TalentBar.pet_slot(slots, 5) == -1, "a click on slot 6 is the second ability, R and Shift are none")
-	var screen := Vector2(1280, 720)
+	# User decision 31.10.2026 (src/ui/talent_bar.gd skill_slots, docs/TALENTE-SEELENSPLITTER.de.md
+	# HUD): the skill bar holds 1-4, R and Shift only; the companion's two abilities (keys 5
+	# and 6) sit on the companion bar under the hero strip (HudKit.pet_panel). Until then
+	# they were slots 7 and 8 of the skill bar, which this test still expected.
+	var abilities: Array = state.pet.get("abilities", [])
+	var on_bar := slots.filter(func(slot: Dictionary) -> bool: return bool(slot.get("pet", false)))
+	check(on_bar.is_empty() and abilities.size() == 2 and str(abilities[0].get("key", "")) == "5" and str(abilities[1].get("key", "")) == "6",
+		"the companion's abilities sit on 5 and 6 on the companion bar, not on the skill bar")
+	check(abilities.size() == 2 and bool(abilities[0].get("auto", false)) and not bool(abilities[1].get("auto", true)), "the slot shows whether auto-cast is on")
+	# the companion bar as the HUD draws it: it remembers its slots for the right-click
+	var canvas := Control.new()
+	canvas.size = Vector2(1280, 720)
+	var drawn := {"row": Rect2()}
+	canvas.draw.connect(func() -> void: drawn.row = HudKit.pet_panel(canvas, ThemeDB.fallback_font, Vector2(40, 100), 360.0, state.pet, 0.0))
+	root.add_child(canvas)
+	canvas.queue_redraw()
+	await process_frame
+	await process_frame
+	var row: Rect2 = drawn.row
 	var found := -1
-	for x in range(0, 1280, 4):
-		if SkillBar.slot_at(screen, slots, Vector2(x, SkillBar.top(screen, false) + 20.0)) == 6:
+	for x in range(int(row.position.x), int(row.end.x), 2):
+		if HudKit.pet_slot_at(Vector2(x, row.get_center().y)) == 1:
 			found = x
 			break
-	check(found > 0, "the HUD finds the companion icon under the mouse")
+	check(row.size.x > 0.0 and found > 0, "the HUD finds the companion's second icon under the pointer")
+	# R (4) and Shift (5) of the skill bar are no companion ability (the pointer is off the bar)
+	check(TalentBar.pet_slot(slots, 4) == -1 and TalentBar.pet_slot(slots, 5) == -1, "a click on R or Shift is no companion ability")
+	canvas.free()
 
 
 func test_bone_warrior_and_wolf_have_their_abilities() -> void:

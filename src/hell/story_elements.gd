@@ -30,13 +30,26 @@ extends RefCounted
 ## by the monsters' attacks landing in their element (hell_monsters.gd _react)
 ## and the talents' fire and frost (src/combat/talent_combat.gd _element via
 ## src/hell/hell_talents.gd elements).
+## Readable and rewarded (proposal D3, assets/data/reactions_lexicon.json):
+## every reaction is reported (_reacted, one of REACTIONS) and shows its pixel
+## sign and name over its point for a moment (draw_hud). One the hero caused
+## (an owner > 0) is entered as discovered in the profile and marks the
+## monsters in its reach; their kill pays more EXP (exp_mul, read by
+## src/hell/hell_talents.gd killed).
 
 const ElementRules = preload("res://src/combat/element_rules.gd")
 const PixelBolt = preload("res://src/vfx/pixel_bolt.gd")
 ## The liquids that carry lightning (vfx_pools.json style liquid), unless the caller names its own.
 const CONDUCTS := ["water", "poison", "blood"]
+## Names, causes, effects and signs of the reactions, the hero's reward and the popup's look.
+const LEXICON_PATH := "res://assets/data/reactions_lexicon.json"
+## Every reaction id this file reports (_reacted); the lexicon has an entry for each.
+const REACTIONS := ["explode", "ignite", "steam", "thaw", "freeze", "rain", "crust", "douse", "swallow", "charge"]
+static var _lexicon: Dictionary = {}
 
 var g: Node
+## The reaction signs showing now: {id, p (world px), t0, hero, fresh, n, row, kind ("" or "exp")}.
+var popups: Array = []
 var _contact := 0.0
 var _steam_serial := 0
 var _gulp := 0.0
@@ -56,32 +69,34 @@ func rules() -> Dictionary:
 
 ## An attack of `element` landing at `at` reaching `r` (world px): fire and
 ## lava burn, frost freezes, water douses; other elements react with nothing.
-func touch(element: String, at: Vector2, r: float) -> void:
+## `owner`: the hero who cast it (0 for the monsters).
+func touch(element: String, at: Vector2, r: float, owner := 0) -> void:
 	match ElementRules.material(element):
 		"fire", "lava":
-			fire_at(at, r)
+			fire_at(at, r, owner)
 		"ice":
-			frost_at(at, r)
+			frost_at(at, r, owner)
 		"water":
-			water_at(at, r)
+			water_at(at, r, owner)
 		"void":
-			void_at(at, r)
+			void_at(at, r, owner)
 
 
 ## Fire at `at` reaching `r`: poison explodes, water boils, ice thaws. The
-## third argument is the caster (talent_combat.gd _element passes its owner),
-## unused here: a chain of explosions runs through _fire_at with its depth.
-func fire_at(at: Vector2, r: float, _owner := 0) -> void:
-	_fire_at(at, r, 0)
+## third argument is the caster (talent_combat.gd _element passes its owner;
+## 0 for the monsters and the world): a hero's fire makes his reactions
+## (discovered, reward). A chain of explosions runs through _fire_at with its depth.
+func fire_at(at: Vector2, r: float, owner := 0) -> void:
+	_fire_at(at, r, 0, owner)
 
 
-func _fire_at(at: Vector2, r: float, depth: int) -> void:
+func _fire_at(at: Vector2, r: float, depth: int, owner := 0) -> void:
 	var R := rules()
 	for z: Dictionary in _puddles(at, r):
 		match ElementRules.material(str(z.get("st", "lava"))):
 			"poison":
 				_end(z)
-				_explode(z.p, float(z.r), depth)
+				_explode(z.p, float(z.r), depth, owner)
 			"water":
 				if bool(z.get("frozen", false)):
 					# fire on Glatteis: the ice thaws back to water
@@ -89,21 +104,23 @@ func _fire_at(at: Vector2, r: float, depth: int) -> void:
 					if g.sound != null: g.sound.at("react_thaw", Vector2(z.p))
 					_pools_call("thaw_near", [z.p, float(z.r) * 1.2])
 					g.monsters._burst_in(z.p - Vector2(0, 10), 8, "frost")
+					_reacted("thaw", Vector2(z.p), float(z.r), owner)
 				else:
-					_boil(z)
+					_boil(z, owner)
 	var gas: RefCounted = g.get("gas")
 	if gas != null:
 		for c: Dictionary in gas.clouds_of("poison", float(g.state.t)):
 			if Vector2(c.at).distance_to(at) <= float(c.r) + r:
 				gas.end_cloud(str(c.key), float(g.state.t))
-				_explode(c.at, float(c.r), depth)
+				_explode(c.at, float(c.r), depth, owner)
 	if R.is_empty():
 		push_warning("element_rules.json has no reactions")
 
 
 ## A shot of fire flying at `p`: poison gas it flies through goes off (the
-## fumes catch); water and poison pools under it are untouched (it is in the air).
-func fire_passes(p: Vector2) -> void:
+## fumes catch); water and poison pools under it are untouched (it is in the
+## air). `owner`: the hero who shot it (0 for the monsters).
+func fire_passes(p: Vector2, owner := 0) -> void:
 	var gas: RefCounted = g.get("gas")
 	if gas == null:
 		return
@@ -111,12 +128,12 @@ func fire_passes(p: Vector2) -> void:
 		if Vector2(c.at).distance_to(p) <= float(c.r) * 0.85:
 			gas.end_cloud(str(c.key), float(g.state.t))
 			if g.sound != null: g.sound.at("react_ignite", Vector2(c.at))
-			_explode(c.at, float(c.r), 0)
+			_explode(c.at, float(c.r), 0, owner, "ignite")
 
 
 ## Frost at `at` reaching `r`: the water lying there freezes to Glatteis
-## (drawn by the pool layer, read as ice by the rules).
-func frost_at(at: Vector2, r: float, _owner := 0) -> void:
+## (drawn by the pool layer, read as ice by the rules). `owner`: the caster.
+func frost_at(at: Vector2, r: float, owner := 0) -> void:
 	var froze := false
 	for z: Dictionary in _puddles(at, r):
 		if ElementRules.material(str(z.get("st", "lava"))) == "water" and not bool(z.get("frozen", false)):
@@ -126,6 +143,7 @@ func frost_at(at: Vector2, r: float, _owner := 0) -> void:
 			# the water snaps shut: a crack of ice, rime thrown up, a short jolt
 			g.monsters._burst_in(z.p - Vector2(0, 8), 14, "frost")
 			g.monsters._impact(z.p, "small")
+			_reacted("freeze", Vector2(z.p), float(z.r), owner)
 	# steam in the frost condenses: it falls as water where the cloud hung
 	var gas: RefCounted = g.get("gas")
 	if gas != null:
@@ -135,21 +153,25 @@ func frost_at(at: Vector2, r: float, _owner := 0) -> void:
 				gas.end_cloud(str(c.key), float(g.state.t))
 				g.monsters._zone({"kind": "puddle", "p": c.at, "r": float(c.r) * float(R.get("rain_scale", 0.7)), "T": 8.0, "dmg": 0, "m": {"id": "regen", "def": {"name": "Regen"}, "boss": false}, "st": "water"})
 				g.monsters._burst_in(c.at - Vector2(0, 20), 12, "frost")
+				_reacted("rain", Vector2(c.at), float(c.r), owner)
 	if froze:
 		_pools_call("freeze_near", [at, r])
 
 
 ## Water at `at` reaching `r`: lava there crusts over, fire puddles go out.
-func water_at(at: Vector2, r: float, _owner := 0) -> void:
+## `owner`: the caster.
+func water_at(at: Vector2, r: float, owner := 0) -> void:
 	var R := rules()
 	for z: Dictionary in _puddles(at, r):
 		match ElementRules.material(str(z.get("st", "lava"))):
 			"lava":
 				z.crust = float(R.get("crust_time", 4.0))
 				if g.sound != null: g.sound.at("react_crust", Vector2(z.p))
+				_reacted("crust", Vector2(z.p), float(z.r), owner)
 			"fire":
 				_end(z)
 				if g.sound != null: g.sound.at("react_douse", Vector2(z.p))
+				_reacted("douse", Vector2(z.p), float(z.r), owner)
 
 
 ## Once a frame: crusts run down, lava and water meet.
@@ -181,6 +203,7 @@ func void_at(at: Vector2, r: float, owner := 0) -> Dictionary:
 	var reach := r * float(S.get("reach", 1.6))
 	var drain := float(S.get("time", 0.7))
 	var ate := {}
+	var hit := false
 	if g.monsters != null:
 		for z: Dictionary in g.monsters.zones:
 			if str(z.kind) != "puddle" or float(z.t) >= float(z.T): continue
@@ -189,6 +212,7 @@ func void_at(at: Vector2, r: float, owner := 0) -> Dictionary:
 			if owner > 0 and int(z.get("fed_by", 0)) == owner: continue
 			if float(z.T) - float(z.t) > drain:
 				z.T = float(z.t) + drain
+			hit = true
 			_eat(ate, z, "ice" if bool(z.get("frozen", false)) else mat, float(z.r), owner)
 			var cols: Array = g.monsters.PX_COL.get("frost" if mat == "ice" else mat, g.monsters.PX_COL.void)
 			for k in range(6):
@@ -198,7 +222,10 @@ func void_at(at: Vector2, r: float, owner := 0) -> Dictionary:
 	var gas: RefCounted = g.get("gas")
 	if gas != null:
 		_eat_gas(ate, at, reach, owner)
-		gas.suck(at, reach, float(S.get("pull", 170.0)) * 3.0, float(S.get("thin", 1.3)) * 2.0, 0.3, float(g.state.t))
+		if gas.suck(at, reach, float(S.get("pull", 170.0)) * 3.0, float(S.get("thin", 1.3)) * 2.0, 0.3, float(g.state.t)):
+			hit = true
+	if hit:
+		_reacted("swallow", at, reach, owner)
 	return ate
 
 
@@ -218,12 +245,12 @@ func _void_swallows(dt: float) -> void:
 	var mouths: Array = []
 	for z: Dictionary in zones:
 		if str(z.kind) == "puddle" and float(z.t) < float(z.T) and ElementRules.material(str(z.get("st", "lava"))) == "void":
-			mouths.append([Vector2(z.p), float(z.r), int(z.get("owner", 0))])
+			mouths.append([Vector2(z.p), float(z.r), int(z.get("owner", 0)), z])
 	var talents: Variant = g.get("talents")
 	if talents != null and talents.get("tc") != null:
 		for z: Dictionary in talents.tc.zones:
 			if float(z.get("pull", 0.0)) > 0.0 or bool(z.get("mouth", false)):
-				mouths.append([Vector2(z.pos), float(z.r), int(z.get("owner", 0))])
+				mouths.append([Vector2(z.pos), float(z.r), int(z.get("owner", 0)), z])
 	if mouths.is_empty():
 		return
 	var now := float(g.state.t)
@@ -263,6 +290,11 @@ func _void_swallows(dt: float) -> void:
 		if gas != null and gas.suck(at, reach, float(S.get("pull", 170.0)), float(S.get("thin", 1.3)), dt, now):
 			fed = true
 		_feed(owner, ate, at)
+		# a mouth says once that it swallows (its sign, the hero's reward), not every frame
+		var mouth_zone: Dictionary = mouth[3]
+		if fed and not bool(mouth_zone.get("swallow_said", false)):
+			mouth_zone.swallow_said = true
+			_reacted("swallow", at, reach, owner)
 		if fed and _gulp <= 0.0 and g.monsters != null:
 			_gulp = float(S.get("gulp", 0.35))
 			g.monsters._pixel_burst(at - Vector2(0, 8), 3, g.monsters.PX_COL.void, 70.0, 140.0, 0.4)
@@ -279,13 +311,13 @@ func _eat(ate: Dictionary, z: Dictionary, mat: String, r: float, owner: int) -> 
 
 
 ## Counts the gas clouds within `reach` of `at` a mouth of hero `owner` gulps
-## (each cloud once; the materials of element_rules.json gefuege.gas).
+## (each cloud once; the materials of madness_rules.json gefuege.gas).
 func _eat_gas(ate: Dictionary, at: Vector2, reach: float, owner: int) -> void:
 	var gas: RefCounted = g.get("gas")
 	if owner <= 0 or gas == null:
 		return
 	var now := float(g.state.t)
-	var mats: Array = ElementRules.data().get("gefuege", {}).get("gas", [])
+	var mats: Array = MadnessRules.gefuege().get("gas", [])
 	for mat: Variant in mats:
 		for c: Dictionary in gas.clouds_of(str(mat), now):
 			if _eaten_gas.has(str(c.key)) or Vector2(c.at).distance_to(at) > reach + float(c.r):
@@ -325,18 +357,21 @@ func _floor_meets_puddles() -> void:
 			continue
 		if g._cell(int(floor(float(z.p.x) / g.C)), int(floor(float(z.p.y) / g.C))) != 2:
 			continue
+		# a puddle the hero laid (his talent pools) makes his reaction
+		var owner := int(z.get("owner", 0))
 		match ElementRules.material(str(z.get("st", "lava"))):
 			"poison":
 				if hot:
 					_end(z)
-					_explode(z.p, float(z.r), 0)
+					_explode(z.p, float(z.r), 0, owner)
 			"water":
 				if hot and not bool(z.get("frozen", false)):
-					_boil(z)
+					_boil(z, owner)
 				elif icy and not bool(z.get("frozen", false)):
 					z.frozen = true
 					_pools_call("freeze_near", [z.p, float(z.r) * 1.2])
 					if g.sound != null: g.sound.at("floor_meets", Vector2(z.p), {"set": "freeze"})
+					_reacted("freeze", Vector2(z.p), float(z.r), owner)
 
 
 ## True when the lava at `at` is crusted over (harmless): a crusted lava
@@ -352,34 +387,44 @@ func crusted(at: Vector2) -> bool:
 
 ## Poison going off at `at`: hero hits to every monster within its reach plus
 ## explode_reach, the floor cracked, a burst in poison green; the next poison
-## next to it goes off too, up to explode_chain times.
-func _explode(at: Vector2, r: float, depth: int) -> void:
+## next to it goes off too, up to explode_chain times. It is reaction `id`
+## of `owner` (the chain's links mark the monsters but show no second sign).
+func _explode(at: Vector2, r: float, depth: int, owner := 0, id := "explode") -> void:
 	var R := rules()
 	var scale: float = g.PIXEL_WORLD / 2.0
 	var reach := r + float(R.get("explode_reach", 20.0)) * scale
 	var hits := float(R.get("explode_hits", 2.5))
+	# reported before the blast: the monsters it fells are marked for the hero's reward
+	_reacted(id, at, reach, owner, depth == 0)
 	for m: Dictionary in g.mobs:
 		if m.hp <= 0.0 or m.p.distance_to(at) > reach + float(m.r):
 			continue
 		# the blast is fire and shrapnel: a creature of poison is not spared
-		m.hp -= hits * float(g.state.dmg) * (0.5 if m.boss else 1.0)
+		# (a hell monster carries boss, a Frostgruft one is of kind "boss")
+		var boss: bool = bool(m.get("boss", false)) or str(m.get("kind", "")) == "boss"
+		m.hp -= hits * float(g.state.dmg) * (0.5 if boss else 1.0)
 		m.hit = 0.12
 		m.k = (m.p - at).normalized() * 160.0
 		if g.get("feel") != null:
 			g.feel.on_hit(m, m.p - at, false)
-	g.monsters._burst_in(at - Vector2(0, 10), 44, "poison")
-	g.monsters._crack_floor(at, reach * 0.6, 4, true)
-	g.monsters._impact(at, "large")
+	if g.monsters != null:
+		g.monsters._burst_in(at - Vector2(0, 10), 44, "poison")
+		g.monsters._crack_floor(at, reach * 0.6, 4, true)
+		g.monsters._impact(at, "large")
+	elif g.get("frost_fx") != null:
+		# the Frostgruft has no monster runtime: its own impact (shake, flash, hold)
+		g.frost_fx.impact(at, "large")
 	if g.sound != null and g.sound.real(): g.sound.at("react_explode", at, {"fallback": ["blast"], "delay": 0.08 * depth, "pitch": 1.0 - 0.04 * depth})
 	else: g._sound("blast")
 	if g.get("feel") != null:
 		g.feel.feedback.particles.kick(at / g.feel.scale, reach / g.feel.scale, 1.0)
 	if depth < int(R.get("explode_chain", 6)):
-		_fire_at(at, reach, depth + 1)
+		_fire_at(at, reach, depth + 1, owner)
 
 
-## Water boiling: the puddle goes, a steam cloud rises where it lay.
-func _boil(z: Dictionary) -> void:
+## Water boiling: the puddle goes, a steam cloud rises where it lay (reaction
+## "steam" of `owner`).
+func _boil(z: Dictionary, owner := 0) -> void:
 	if g.sound != null: g.sound.at("react_boil", Vector2(z.get("p", Vector2.INF)))
 	var R := rules()
 	_end(z)
@@ -389,6 +434,7 @@ func _boil(z: Dictionary) -> void:
 		gas.emit("steam:%d" % _steam_serial, "steam", z.p, float(z.r) * float(R.get("steam_scale", 1.3)), float(R.get("steam_time", 5.0)), float(g.state.t))
 	g.monsters._burst_in(z.p - Vector2(0, 10), 10, "frost")
 	g.monsters._impact(z.p, "small")
+	_reacted("steam", Vector2(z.p), float(z.r) * float(R.get("steam_scale", 1.3)), owner)
 
 
 ## Lava and (unfrozen) water touching: the lava crusts, the water boils away.
@@ -411,7 +457,10 @@ func _lava_meets_water() -> void:
 				continue
 			lava.crust = float(R.get("crust_time", 4.0))
 			if g.sound != null: g.sound.at("react_crust", Vector2(lava.p))
-			_boil(water)
+			# the hero's reaction when one of the two puddles is his (talent pools)
+			var owner := maxi(int(lava.get("owner", 0)), int(water.get("owner", 0)))
+			_reacted("crust", Vector2(lava.p), float(lava.r), owner)
+			_boil(water, owner)
 
 
 ## The live puddle zones a circle at `at` of `r` reaches.
@@ -456,14 +505,16 @@ func _charge_rules(spec: Dictionary) -> Dictionary:
 ## of a liquid that conducts (not frozen: Glatteis insulates) is charged for
 ## charge_time s (its pool crackles all over, src/vfx/pool_paint.gd
 ## charge_pool; a strike again renews it). Sparks fly off it and arcs creep
-## over the liquid at the strike (pool_paint electrify). Returns how many
-## puddles it charged.
+## over the liquid at the strike (pool_paint electrify). spec.owner: the hero
+## who struck (0 for the monsters and the world; his charge's zaps mark the
+## monsters for his reward). Returns how many puddles it charged.
 func lightning_at(at: Vector2, r: float, spec: Dictionary = {}) -> int:
 	if g.sound != null: g.sound.at("react_charge", at)
 	if g.monsters == null:
 		return 0
 	var C := _charge_rules(spec)
 	var conducts: Array = C.conducts
+	var owner := int(spec.get("owner", 0))
 	var now := float(g.state.t)
 	var n := 0
 	var P := _particles()
@@ -475,12 +526,14 @@ func lightning_at(at: Vector2, r: float, spec: Dictionary = {}) -> int:
 			z.charge_tick = 0.0
 		z.charge = float(C.charge_time)
 		z.charge_rules = C
+		z.charge_owner = owner
 		n += 1
 		_pools_call("charge_pool", [int(z.get("id", -1)), now + float(C.charge_time)])
 		if P != null:
 			PixelBolt.sparks(P, Vector2(z.p) / _pscale(), 10)
 	if n > 0:
 		_pools_call("electrify", [at, maxf(r, 24.0)])
+		_reacted("charge", at, maxf(r, 24.0), owner)
 	return n
 
 
@@ -508,6 +561,9 @@ func _step_charges(dt: float) -> void:
 		for m: Dictionary in g.mobs:
 			if not _stands_in(z, m):
 				continue
+			# the hero's charge: whoever it zaps counts as caught by his reaction (exp_mul)
+			if int(z.get("charge_owner", 0)) > 0:
+				m.react_t = float(g.state.t)
 			hurt_mob(m, float(C.charge_hits), "lightning", Vector2(m.p), float(C.boss_share))
 			stun_mob(m, float(C.charge_stun), float(C.boss_share))
 			m.zap_t = float(g.state.t)
@@ -707,3 +763,237 @@ func _particles() -> RefCounted:
 
 func _pscale() -> float:
 	return float(g.feel.scale) if g.get("feel") != null else 1.0
+
+
+# ---------- readable and rewarded reactions (proposal D3) ----------
+
+## The reactions lexicon (assets/data/reactions_lexicon.json), read once.
+static func lexicon() -> Dictionary:
+	if _lexicon.is_empty():
+		var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(LEXICON_PATH)) if FileAccess.file_exists(LEXICON_PATH) else null
+		_lexicon = data if data is Dictionary else {"reactions": {}, "order": []}
+	return _lexicon
+
+
+## A reaction happened: `id` (one of REACTIONS) at `at` reaching `r` (world
+## px), caused by `owner` (a hero's id; 0 for the monsters and the world).
+## Its sign and name show there for a moment when `show` (draw_hud). One the
+## hero caused is entered as discovered (a first one says so in a toast) and
+## marks the monsters in its reach for his reward (exp_mul).
+func _reacted(id: String, at: Vector2, r: float, owner := 0, show := true) -> void:
+	var hero := owner > 0
+	var fresh := false
+	if hero:
+		fresh = _discover(id)
+		_mark(at, r)
+	if show:
+		_popup({"id": id, "p": at, "hero": hero, "fresh": fresh, "kind": ""})
+	if fresh and g.has_method("_toast"):
+		var name := str(lexicon().get("reactions", {}).get(id, {}).get("name", id))
+		g._toast(str(lexicon().get("popup", {}).get("toast", "%s")) % name)
+
+
+## Enters reaction `id` as discovered in the world's profile (its "reactions"
+## list, kept by src/progress/profile.gd); true when it is new. The talents
+## write the profile with their next save (hell_talents.gd note_progress).
+func _discover(id: String) -> bool:
+	var prof: Variant = g.get("profile")
+	if not (prof is Dictionary) or (prof as Dictionary).is_empty():
+		return false
+	var seen: Variant = prof.get("reactions")
+	if not (seen is Array):
+		seen = []
+		prof["reactions"] = seen
+	if id in seen:
+		return false
+	(seen as Array).append(id)
+	var talents: Variant = g.get("talents")
+	if talents != null and talents.has_method("note_progress"):
+		talents.note_progress()
+	return true
+
+
+## The reaction ids discovered in this profile (the pause's Elemente page).
+func discovered() -> Array:
+	var prof: Variant = g.get("profile")
+	if not (prof is Dictionary) or not (prof.get("reactions") is Array):
+		return []
+	return (prof.reactions as Array).duplicate()
+
+
+## Marks the monsters within `r` (+ reward.reach_pad, world px) of `at` as
+## caught by a reaction of the hero now (m.react_t, read by exp_mul); the ones
+## it fells this very moment too.
+func _mark(at: Vector2, r: float) -> void:
+	var pad := float(lexicon().get("reward", {}).get("reach_pad", 30.0))
+	var now := float(g.state.t)
+	for m: Dictionary in g.mobs:
+		if Vector2(m.p).distance_to(at) <= r + pad + float(m.get("r", 0.0)):
+			m.react_t = now
+
+
+## The EXP factor of monster `m`'s kill: reward.hero_exp_mul when a reaction
+## of the hero caught it within the last reward.window s, else 1.
+func exp_mul(m: Dictionary) -> float:
+	if not m.has("react_t"):
+		return 1.0
+	var R: Dictionary = lexicon().get("reward", {})
+	if float(g.state.t) - float(m.react_t) > float(R.get("window", 3.0)):
+		return 1.0
+	return float(R.get("hero_exp_mul", 1.25))
+
+
+## The reward of a kill a hero's reaction caught: "+N % EP" rising from `at`
+## (world px) for a moment.
+func exp_bonus(at: Vector2, pct: int) -> void:
+	var P: Dictionary = lexicon().get("popup", {})
+	popups.append({"id": "", "kind": "exp", "p": at, "t0": float(g.state.t), "text": str(P.get("exp_text", "+%d %% EP")) % pct, "hero": true, "fresh": false, "n": 1, "row": 0})
+	while popups.size() > int(P.get("max", 5)) + 3:
+		popups.pop_front()
+
+
+## Adds a sign at its point: the same reaction near one still showing renews
+## it (counted x2, x3, not stacked); another one near it sits a row higher;
+## the oldest goes when there are more than popup.max.
+func _popup(entry: Dictionary) -> void:
+	var P: Dictionary = lexicon().get("popup", {})
+	var now := float(g.state.t)
+	entry.t0 = now
+	entry.n = 1
+	entry.row = 0
+	var reach := float(P.get("merge_reach", 140.0))
+	for q: Dictionary in popups:
+		if str(q.get("kind", "")) == "exp" or Vector2(q.p).distance_to(entry.p) > reach:
+			continue
+		if str(q.id) == str(entry.id) and now - float(q.t0) <= float(P.get("merge_time", 0.9)):
+			q.n = int(q.n) + 1
+			q.hero = bool(q.hero) or bool(entry.hero)
+			q.fresh = bool(q.fresh) or bool(entry.fresh)
+			# it lives on from now, past its pop (it does not jump again)
+			q.t0 = maxf(float(q.t0), now - float(P.get("pop", 0.14)))
+			return
+		entry.row = maxi(int(entry.row), int(q.row) + 1)
+	popups.append(entry)
+	while popups.size() > int(P.get("max", 5)):
+		popups.pop_front()
+
+
+## Draws the reaction signs on the HUD canvas `h` (screen `size`, `font` the
+## HUD's pixel font): the pixel sign and the name over the reaction point,
+## the hero's own popping in and in gold (NEU ENTDECKT under a first one),
+## the monsters' quieter; each rises, settles and fades (lexicon popup).
+## Signs that ran out are dropped here; they never take input.
+func draw_hud(h: CanvasItem, size: Vector2, font: Font) -> void:
+	if popups.is_empty():
+		return
+	var P: Dictionary = lexicon().get("popup", {})
+	var now := float(g.state.t)
+	var keep: Array = []
+	for q: Dictionary in popups:
+		var life := _life(q, P)
+		var age := now - float(q.t0)
+		if age < 0.0 or age > life:
+			continue
+		keep.append(q)
+		_draw_popup(h, size, font, q, age, life, P)
+	popups = keep
+
+
+## How long sign `q` shows (s).
+func _life(q: Dictionary, P: Dictionary) -> float:
+	if str(q.get("kind", "")) == "exp":
+		return float(P.get("exp_time", 1.0))
+	return float(P.get("new_time" if bool(q.get("fresh", false)) else "time", 1.5))
+
+
+func _draw_popup(h: CanvasItem, size: Vector2, font: Font, q: Dictionary, age: float, life: float, P: Dictionary) -> void:
+	var k := clampf(age / maxf(0.01, life), 0.0, 1.0)
+	var at: Vector2 = g._to_screen(Vector2(q.p), size)
+	# it rises fast and settles (ease out), a row over its neighbours
+	var settle := 1.0 - pow(1.0 - minf(1.0, k * 2.5), 2.0)
+	at.y -= float(P.get("lift", 64.0)) + float(P.get("rise", 22.0)) * settle + float(q.get("row", 0)) * float(P.get("stack", 26.0))
+	if not Rect2(Vector2.ZERO, size).grow(40.0).has_point(at):
+		return
+	var fade_from := 1.0 - float(P.get("fade", 0.35))
+	var alpha := 1.0 if k < fade_from else clampf(1.0 - (k - fade_from) / maxf(0.01, 1.0 - fade_from), 0.0, 1.0)
+	var hero := bool(q.get("hero", false))
+	if not hero:
+		alpha *= float(P.get("other_alpha", 0.7))
+	var fs := int(P.get("font", 16))
+	var ink := Color(str(lexicon().get("ink", "1a1012")), alpha)
+	var ascent := font.get_ascent(fs)
+	var descent := font.get_descent(fs)
+	if str(q.get("kind", "")) == "exp":
+		var text := str(q.get("text", ""))
+		var tw := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+		_label(h, font, Vector2(at.x - tw * 0.5, at.y + (ascent - descent) * 0.5).round(), text, fs, Color(str(P.get("exp_col", "ffd36a")), alpha), ink)
+		return
+	var id := str(q.id)
+	var info: Dictionary = lexicon().get("reactions", {}).get(id, {})
+	var name := str(info.get("name", id))
+	if int(q.get("n", 1)) > 1:
+		name += " x%d" % int(q.n)
+	var cell := float(P.get("cell", 3))
+	# the hero's sign pops in a pixel larger, then settles (whole px, no blur)
+	if hero and age < float(P.get("pop", 0.14)):
+		cell += float(P.get("pop_cell", 1))
+	var rows: Array = info.get("icon", [])
+	var cols := 0
+	for row: Variant in rows:
+		cols = maxi(cols, str(row).length())
+	var icon := Vector2(cols + 2, rows.size() + 2) * cell
+	var gap := float(P.get("gap", 6))
+	var tw := font.get_string_size(name, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
+	var left := at.x - (icon.x + gap + tw) * 0.5
+	draw_icon(h, id, Vector2(left, at.y - icon.y * 0.5).round(), cell, alpha)
+	var base := Vector2(left + icon.x + gap, at.y + (ascent - descent) * 0.5).round()
+	var col := Color(str(P.get("hero_col" if hero else "name_col", "f3e2b0")), alpha)
+	_label(h, font, base, name, fs, col, ink)
+	if bool(q.get("fresh", false)):
+		_label(h, font, base + Vector2(0, fs + 2), str(P.get("new_text", "NEU")), fs, Color(str(P.get("new_col", "ffd36a")), alpha), ink)
+
+
+## Text with a pixel rim of `ink` (2 px each way) so it reads on any floor.
+func _label(h: CanvasItem, font: Font, pos: Vector2, text: String, fs: int, col: Color, ink: Color) -> void:
+	for d: Vector2 in [Vector2(-2, 0), Vector2(2, 0), Vector2(0, -2), Vector2(0, 2)]:
+		h.draw_string(font, pos + d, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, ink)
+	h.draw_string(font, pos, text, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, col)
+
+
+## Draws the pixel sign of reaction `id` (lexicon icon rows and pal) with its
+## top left at `at`, `cell` px per pixel, an ink rim one pixel round it;
+## `alpha` fades it, `dim` greys it (not discovered yet). Returns its size
+## (rim included).
+static func draw_icon(canvas: CanvasItem, id: String, at: Vector2, cell: float, alpha := 1.0, dim := false) -> Vector2:
+	var L := lexicon()
+	var info: Dictionary = L.get("reactions", {}).get(id, {})
+	var rows: Array = info.get("icon", [])
+	var pal: Dictionary = info.get("pal", {})
+	var cells := {}
+	var cols := 0
+	for y in range(rows.size()):
+		var row := str(rows[y])
+		cols = maxi(cols, row.length())
+		for x in range(row.length()):
+			var ch := row[x]
+			if ch == "." or ch == " ":
+				continue
+			var c := Color(str(pal.get(ch, "ffffff")))
+			if dim:
+				var grey := c.get_luminance() * 0.7
+				c = Color(grey, grey, grey)
+			c.a = alpha
+			cells[Vector2i(x + 1, y + 1)] = c
+	var ink := Color(str(L.get("ink", "1a1012")), alpha)
+	var size := Vector2(cell, cell)
+	# the rim once per cell (a faded sign must not darken where rims meet)
+	var rim := {}
+	for q: Vector2i in cells:
+		for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			if not cells.has(q + d):
+				rim[q + d] = true
+	for q: Vector2i in rim:
+		canvas.draw_rect(Rect2(at + Vector2(q) * cell, size), ink)
+	for q: Vector2i in cells:
+		canvas.draw_rect(Rect2(at + Vector2(q) * cell, size), cells[q])
+	return Vector2(cols + 2, rows.size() + 2) * cell

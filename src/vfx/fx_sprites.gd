@@ -19,8 +19,6 @@ const DATA_PATH := "res://assets/data/vfx_sprites.json"
 const PIXEL := 2.0
 const MAX_LIVE := 220
 const RAYS := 28
-## 4x4 ordered dither thresholds (0..15), the art grid's (src/vfx/pixel_paint.gd).
-const BAYER := [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
 ## Coverage of the dithered copies of a sheet, densest first.
 const DITHER_LEVELS := [0.75, 0.5, 0.25]
 ## Magic effects: long ease-out, a lingering last frame and a soft glow.
@@ -330,7 +328,7 @@ static func _mask(w: int, h: int, k: float) -> Image:
 	var mask := Image.create(w, h, false, Image.FORMAT_RGBA8)
 	for y in range(mini(4, h)):
 		for x in range(mini(4, w)):
-			if float(BAYER[y * 4 + x]) < k * 16.0: mask.set_pixel(x, y, Color.WHITE)
+			if MatterKit.bayer_xy(x, y) < k * 16.0: mask.set_pixel(x, y, Color.WHITE)
 	var filled := 4
 	while filled < w:
 		mask.blit_rect(mask.get_region(Rect2i(0, 0, filled, mini(4, h))), Rect2i(0, 0, filled, mini(4, h)), Vector2i(filled, 0))

@@ -4,7 +4,8 @@ extends RefCounted
 ## game towards src/combat/talent_combat.gd (players, enemies, damage,
 ## statuses, movement, projectiles) and translates to the hell runtime: the
 ## hero (player.x/y, state.hp, state.dmg), the mobs (m.p, m.r, m.hp), the
-## hell's status helpers (HeroKit.slow_mob / burn_mob, SubKit.freeze), its
+## hell's status helpers (HeroKit.slow_mob / burn_mob / poison_mob / bleed_mob,
+## SubKit.freeze), its
 ## walls (box_blocked) and its HUD. It also brings EXP, gold, level-ups and
 ## the difficulty of the shared profile into these maps.
 ## The Leerenmagier's Arkanes Gefüge works here too: the world's void
@@ -24,6 +25,17 @@ const Rules = preload("res://src/progress/talent_rules.gd")
 const HeroKit = preload("res://src/hell/hero_kit.gd")
 const SubKit = preload("res://src/hell/sub_kit.gd")
 const BossKit = preload("res://src/hell/boss_kit.gd")
+## The hero's slowing conditions (src/hell/hero_fx.gd state.effects) a cleanse
+## takes off: "slow" (curses, boss moves, frost pools' and gases' status).
+const SLOW_CONDITIONS: Array[String] = ["slow"]
+## The hero's slowing timers on g.state a cleanse ends: "chill" (the frost
+## chill, theme chill_speed: chilling shots, defs and fields) and "slow" (half
+## speed: hell_monsters.gd scream cones, the Archivar's Bannfluch).
+const SLOW_TIMERS: Array[String] = ["chill", "slow"]
+## The per-frame slows of what he stands in and breathes (hell_game.gd
+## hero_medium, hero_gas: their "slow"), worked out again every frame where he
+## stands: a cleanse drops them for the frame it happens in.
+const SLOW_MEDIA: Array[String] = ["hero_medium", "hero_gas"]
 
 var g: Node
 ## The world's element reactions for the talents' fire and frost
@@ -98,6 +110,23 @@ func _sync_hero() -> void:
 	hero.face = float(g.player.get("face", 1.0))
 	hero.class_id = class_id
 	players[1] = hero
+	_sync_gear_mana()
+
+
+## Worn gear with mana (the Seelenmantel) widens the mana pool; a new talent build
+## (set_build) sets a fresh base, which is noticed because res_max moved.
+func _sync_gear_mana() -> void:
+	var rt := tc.runtime(1)
+	if rt.is_empty() or str(rt.get("res_kind", "")) != "mana": return
+	var items: Object = g.get("story_items")
+	var bonus: float = items.powers.mana_bonus() if items != null and items.get("powers") != null else 0.0
+	if not is_equal_approx(float(rt.res_max), float(rt.get("res_max_applied", -1.0))):
+		rt.res_max_base = float(rt.res_max)
+	var want := float(rt.get("res_max_base", rt.res_max)) * (1.0 + bonus)
+	if not is_equal_approx(want, float(rt.res_max)):
+		rt.res_max = want
+		rt.res = minf(float(rt.res), want)
+	rt.res_max_applied = float(rt.res_max)
 
 
 func _write_hero(before: Vector2, hp_before: int) -> void:
@@ -259,7 +288,10 @@ func interval_scale() -> float:
 	return tc.interval_scale(players.get(1, {}), 1)
 
 
-## A mob fell: Blutdurst, EXP and gold into the profile (its gold shown rising over it).
+## A mob fell: Blutdurst, EXP and gold into the profile (its gold shown rising over it). A mob a reaction of
+## the hero caught pays more EXP (src/hell/story_elements.gd exp_mul,
+## assets/data/reactions_lexicon.json reward): the talents' EXP here and the
+## run level's on top of what the world already gave (_reaction_bonus).
 func killed(m: Dictionary) -> void:
 	_sync_hero()
 	tc.enemy_killed(m, 1)
@@ -272,9 +304,32 @@ func killed(m: Dictionary) -> void:
 	# seen, never hidden: a small golden '+N' with a coin rises where it fell (src/hell/gold_loot.gd)
 	if g.get("gold_loot") != null and m.has("p"):
 		g.gold_loot.kill_popup(Vector2(m.p), gold)
-	var gained := Rules.add_exp(data, state, int(data.exp[kind]))
+	var mul: float = float(elements.exp_mul(m)) if elements != null and elements.has_method("exp_mul") else 1.0
+	var gained := Rules.add_exp(data, state, roundi(float(data.exp[kind]) * mul))
+	if mul > 1.0: _reaction_bonus(m, mul)
 	if gained > 0: bar.show_reward({"kind": "level", "level": int(state.level), "points": Rules.free_points(data, state)})
 	_dirty = true
+
+
+## The reaction reward of a kill: the run level's EXP share of `mul` (the
+## world gave the plain EXP before calling killed) and "+N % EP" rising from it.
+func _reaction_bonus(m: Dictionary, mul: float) -> void:
+	var extra := roundi(float(HeroKit.exp_for(g, m)) * (mul - 1.0))
+	if extra > 0: HeroKit.gain(g, extra)
+	if elements != null and elements.has_method("exp_bonus"):
+		elements.exp_bonus(Vector2(m.p) - Vector2(0, float(m.get("cy", 30.0))), roundi((mul - 1.0) * 100.0))
+
+
+## Something lasting in the profile changed outside the talents (a reaction
+## discovered, src/hell/story_elements.gd): written with the next save.
+func note_progress() -> void:
+	_dirty = true
+
+
+## The hero's unspent talent points (Heldenstufe), for the HUD's talent chip.
+func free_points() -> int:
+	if profile.is_empty(): return 0
+	return Rules.free_points(data, Profile.class_state(profile, class_id))
 
 
 ## Enemy HP factor of the profile's difficulty (applied when mobs spawn).
@@ -362,6 +417,28 @@ func talent_world_scale() -> float:
 	return float(g.PIXEL_WORLD) / 2.0
 
 
+## A talent that frees the hero (talents.json "cleanse": Raumsprung, called by
+## src/combat/talent_combat.gd blink): every slow on him ends now, the
+## conditions (SLOW_CONDITIONS), the timers (SLOW_TIMERS) and this frame's
+## pool and gas slow (SLOW_MEDIA). A pool or gas he still stands in slows him
+## again from the next frame; the story worlds have no webs. `_id`: the hero
+## (the only one here).
+func cleanse_slows(_id: int) -> void:
+	if g == null or g.state.is_empty(): return
+	var effects: Variant = g.state.get("effects")
+	if effects is Dictionary:
+		for kind: String in SLOW_CONDITIONS: (effects as Dictionary).erase(kind)
+	for key: String in SLOW_TIMERS:
+		if g.state.has(key): g.state[key] = 0.0
+	for field: String in SLOW_MEDIA:
+		var medium: Variant = g.get(field)
+		if medium is Dictionary and (medium as Dictionary).has("slow"):
+			# a copy: hero_gas may be the shared rule of element_rules.json itself
+			var freed: Dictionary = (medium as Dictionary).duplicate()
+			freed.erase("slow")
+			g.set(field, freed)
+
+
 func talent_move(from: Vector2, step: Vector2, radius: float) -> Vector2:
 	var pos := from
 	var steps := maxi(1, ceili(step.length() / 8.0))
@@ -421,14 +498,27 @@ func _status(m: Dictionary, key: String, power: float, duration: float, _owner: 
 	statuses[key] = {"power": maxf(power, float(old.get("power", 0.0))), "time": maxf(duration, float(old.get("time", 0.0)))}
 	m.statuses = statuses
 	match key:
-		"burn", "poison", "bleed":
-			HeroKit.burn_mob(m, power, duration)
+		# each its own damage over time (HeroKit.tick_mob), the hero's damage counted once (_story_dps)
+		"burn":
+			HeroKit.burn_mob(m, _story_dps(power), duration)
 			# on fire for the element physics (a burning monster sets poison off; water puts it out)
-			if key == "burn" and float(m.get("wet_t", 0.0)) <= 0.0: m.fire_t = maxf(float(m.get("fire_t", 0.0)), duration)
+			if float(m.get("wet_t", 0.0)) <= 0.0: m.fire_t = maxf(float(m.get("fire_t", 0.0)), duration)
+		"poison": HeroKit.poison_mob(m, _story_dps(power), duration)
+		"bleed": HeroKit.bleed_mob(m, _story_dps(power), duration)
 		"freeze": SubKit.freeze(g, m, duration)
 		"slow":
 			if power >= 1.0: SubKit.freeze(g, m, duration, true)
 			else: HeroKit.slow_mob(g, m, power, duration)
+
+
+## A talent's damage over time in the story's unit. talent_combat.gd hands an
+## absolute dps (the hero's damage x the status pct of talents.json
+## "statuses", plus its bonuses); the story's monster ticks (HeroKit.tick_mob)
+## count in hero hits per second and multiply by state.dmg themselves. So the
+## dps is divided by state.dmg here, and the hero's damage counts once.
+func _story_dps(power: float) -> float:
+	var hit := float(g.state.get("dmg", 1.0))
+	return power / hit if hit > 0.0 else 0.0
 
 
 func _step_statuses(dt: float) -> void:
@@ -447,7 +537,7 @@ func _step_bullets(dt: float) -> void:
 		b.life = float(b.life) - dt
 		# a fire shot through poison gas sets it off (src/hell/story_elements.gd)
 		if elements != null and str(b.get("style", "")).begins_with("fire"):
-			elements.fire_passes(b.pos)
+			elements.fire_passes(b.pos, int(b.get("owner", 1)))
 		var gone: bool = float(b.life) <= 0.0 or talent_blocked(from, b.pos, 3.0)
 		if not gone:
 			for m: Dictionary in enemies:

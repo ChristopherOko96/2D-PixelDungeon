@@ -4,9 +4,9 @@
   "max_level": 30,
   "first_point_level": 2,
   "levels": {
-    "base": 50,
+    "base": 65,
     "exponent": 1.0,
-    "_note": "EXP to the next level = base x level, the same rule for every level. Level 30 needs 21750 EXP: about three full runs of 10 floors (one floor about 60 kills x 10 EXP + 100 = 700 EXP). User decision 29.10.2026: talents much harder to earn, max level only after several runs (was 2.5, about 1.5 floors)."
+    "_note": "EXP to the next level = base x level, the same rule for every level. Level 30 needs 28275 EXP: about three full runs of 10 floors (a run in the story worlds about 600 kills x 10 EXP + 10 guardians x 400 EXP = 10000 EXP, so level 30 after about 2.8 runs; balance package C8 2026-11-01, base 50 -> 65, was 2.2 runs). User decision 29.10.2026: talents much harder to earn, max level only after several runs (was 2.5, about 1.5 floors)."
   },
   "tiers": {
     "1": {
@@ -127,7 +127,7 @@
       "bear": {
         "name": "Bär",
         "hp": 1.7,
-        "dmg": 1.3,
+        "dmg": 1.4,
         "every": 1.35,
         "speed": 0.75,
         "abilities": [
@@ -142,7 +142,7 @@
         "name": "Falke",
         "hp": 0.7,
         "dmg": 1.15,
-        "every": 0.8,
+        "every": 0.95,
         "speed": 1.5,
         "flying": true,
         "abilities": [
@@ -1752,13 +1752,13 @@
       "name": "Gezielter Schuss",
       "kind": "active",
       "icon": "arrow",
-      "text": "150/175/200 % Schaden.",
+      "text": "260/300/340 % Schaden.",
       "ranks": 3,
       "type": "projectile",
       "dmg": [
-        1.5,
-        1.75,
-        2.0
+        2.6,
+        3.0,
+        3.4
       ],
       "style": "arrow",
       "cost": 20,
@@ -1791,13 +1791,13 @@
       "name": "Durchschuss",
       "kind": "active",
       "icon": "pierce",
-      "text": "Pfeil durchbohrt bis zu 3 Gegner, 115/135/155 % Schaden pro Gegner.",
+      "text": "Pfeil durchbohrt bis zu 3 Gegner, 180/210/240 % Schaden pro Gegner.",
       "ranks": 3,
       "type": "projectile",
       "dmg": [
-        1.15,
-        1.35,
-        1.55
+        1.8,
+        2.1,
+        2.4
       ],
       "pierce": 3,
       "style": "arrow",
@@ -4648,6 +4648,7 @@
   "ultimate_cd": 60,
   "_ultimate_note": "The 12 signature ultimates (user decision 30.10.2026): one minute to reload, stages 2 and 3 for 2 and 3 soul shards change them. Bosses never freeze, are never held, pulled or executed: they slow instead.",
   "_defense_note": "Shift (user decision 30.10.2026): every class has one defense. dodge: a quick roll in the move direction, briefly untouchable, `charges` that refill one every `recharge` s. block: held, it stops whole hits; its life is `hits` hits, it regains one every `regen` s while lowered, and breaks for `broken` s when the last one is used.",
+  "_perfect_note": "Perfect timing in the story worlds (balance package B3, src/hell/hero_kit.gd perfect_defense): `perfect.window` s. A block raised (Shift pressed) at most window s before a hit lands is perfect: the hit costs no block charge, the attacker (when the blow names one) reels `stagger` s (a boss `stagger_boss` s, a kit boss stands firm), is pushed back at `push` px/s and starts no attack; the picture holds `hitstop` s, the view shakes `shake` px, `sound` plays. A press within `rearm` s of the previous one is a plain block (no mashing). A projectile, beam or thrown blow met by a perfect block or roll breaks (no damage, the PERFEKT feedback); its shooter reels only while it stands within `reel_reach` world px of the hero (past its own radius), so only blows within melee reach make it reel. A roll started at most window s before a hit is a perfect roll: the next shot within `counter_time` s deals `counter_mul` times its damage (`counter_sound` on release).",
   "defense": {
     "archer": {
       "type": "dodge",
@@ -4657,7 +4658,8 @@
       "recharge": 4,
       "dist_m": 3,
       "iframes": 0.4,
-      "text": "Shift: eine schnelle Rolle in Laufrichtung, 0,4 s lang unverwundbar. 2 Ladungen, eine kommt alle 4 s zurück."
+      "perfect": { "window": 0.15, "counter_time": 1.5, "counter_mul": 1.5, "hitstop": 0.05, "shake": 2, "sound": "bow_draw", "counter_sound": "tal_mark" },
+      "text": "Shift: eine schnelle Rolle in Laufrichtung, 0,4 s lang unverwundbar. 2 Ladungen, eine kommt alle 4 s zurück. Rollst du im letzten Moment (0,15 s vor dem Treffer), trifft dein nächster Schuss binnen 1,5 s mit 50 % mehr Schaden."
     },
     "mage": {
       "type": "block",
@@ -4667,7 +4669,8 @@
       "regen": 3,
       "broken": 8,
       "look": "mana_bubble",
-      "text": "Shift halten: ein magisches Schild fängt ganze Treffer ab. Es hält 2 Treffer, dann zerbricht es für 8 s. Gesenkt kommt alle 3 s ein Treffer zurück."
+      "perfect": { "window": 0.15, "stagger": 1.0, "stagger_boss": 0.35, "push": 260, "reel_reach": 150, "hitstop": 0.07, "shake": 4, "rearm": 0.4, "sound": "tal_counter" },
+      "text": "Shift halten: ein magisches Schild fängt ganze Treffer ab. Es hält 2 Treffer, dann zerbricht es für 8 s. Gesenkt kommt alle 3 s ein Treffer zurück. Im letzten Moment gedrückt (0,15 s vor dem Treffer) blockst du perfekt: der Schild hält ohne Verlust und der Angreifer taumelt 1 s."
     },
     "swordsman": {
       "type": "block",
@@ -4677,7 +4680,8 @@
       "regen": 3,
       "broken": 8,
       "look": "gold_bubble",
-      "text": "Shift halten: du hebst den Schild und fängst ganze Treffer ab. Er hält 2 Treffer, dann ist er 8 s lang offen. Gesenkt kommt alle 3 s ein Treffer zurück."
+      "perfect": { "window": 0.15, "stagger": 1.0, "stagger_boss": 0.35, "push": 260, "reel_reach": 150, "hitstop": 0.07, "shake": 4, "rearm": 0.4, "sound": "tal_counter" },
+      "text": "Shift halten: du hebst den Schild und fängst ganze Treffer ab. Er hält 2 Treffer, dann ist er 8 s lang offen. Gesenkt kommt alle 3 s ein Treffer zurück. Im letzten Moment gehoben (0,15 s vor dem Treffer) blockst du perfekt: der Schild hält ohne Verlust und der Angreifer taumelt 1 s."
     },
     "necromancer": {
       "type": "block",
@@ -4687,7 +4691,8 @@
       "regen": 3,
       "broken": 8,
       "look": "soul_bubble",
-      "text": "Shift halten: kreisende Knochen fangen ganze Treffer ab. Sie halten 2 Treffer, dann zerfallen sie für 8 s. Gesenkt kommt alle 3 s ein Treffer zurück."
+      "perfect": { "window": 0.15, "stagger": 1.0, "stagger_boss": 0.35, "push": 260, "reel_reach": 150, "hitstop": 0.07, "shake": 4, "rearm": 0.4, "sound": "tal_counter" },
+      "text": "Shift halten: kreisende Knochen fangen ganze Treffer ab. Sie halten 2 Treffer, dann zerfallen sie für 8 s. Gesenkt kommt alle 3 s ein Treffer zurück. Im letzten Moment gedrückt (0,15 s vor dem Treffer) blockst du perfekt: die Knochen halten ohne Verlust und der Angreifer taumelt 1 s."
     }
   }
 }

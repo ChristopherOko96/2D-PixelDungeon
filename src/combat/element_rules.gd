@@ -12,8 +12,11 @@ extends RefCounted
 ##   view: inside it only the cloud itself stays visible (vision);
 ## - only a creature of that element is spared: its tags (undead, poison,
 ##   frost, void, fire, hell) come from the words of its id and its def.
-## Pure rules: no node, no drawing. The runtimes ask medium() / gas() and
-## apply what they say with their own hurt, status and movement code.
+## Pure rules: no node, no drawing. What a pool or gas does to a creature is
+## applied by ElementExposure (src/physics_kit/element_exposure.gd) in the
+## story worlds and by src/combat/elements.gd / boss_moves.gd in the crypt.
+## The void's madness and the Leerenmagier's data are not physics: they live
+## in src/combat/madness_rules.gd (the forwarders at the end keep the old names).
 
 const PATH := "res://assets/data/element_rules.json"
 
@@ -105,124 +108,63 @@ static func tags(id: String, shot := "", material_name := "", extra: Array = [])
 
 ## Movement on slippery ground: the old velocity gives way to the wanted one
 ## slowly; `grip` = share of the momentum left after one second (0.015 glaze
-## ice, 0.35 blood, 1 firm ground: the wanted velocity at once).
+## ice, 0.35 blood, 1 firm ground: the wanted velocity at once). The motion
+## lives in MotionKit (src/physics_kit/motion_kit.gd); this forwards to it.
 static func slide(velocity: Vector2, wanted: Vector2, grip: float, dt: float) -> Vector2:
-	if grip >= 1.0:
-		return wanted
-	return velocity.lerp(wanted, 1.0 - pow(maxf(grip, 0.0001), dt))
+	return MotionKit.slide(velocity, wanted, grip, dt)
 
 
-## The pull of a medium towards `centre` on something at `at` (px/s; 0 without).
+## The pull of a medium towards `centre` on something at `at` (px/s; 0 without):
+## the rule's "pull" strength through MotionKit.pull.
 static func pull(rule: Dictionary, at: Vector2, centre: Vector2) -> Vector2:
-	var strength := float(rule.get("pull", 0.0))
-	if strength <= 0.0 or at.distance_squared_to(centre) < 1.0:
-		return Vector2.ZERO
-	return (centre - at).normalized() * strength
+	return MotionKit.pull(float(rule.get("pull", 0.0)), at, centre)
 
 
-# ---------- WAHN: the void drives minds mad (element_rules.json "madness") ----------
+# ---------- WAHN and the Leerenmagier: forwarders to MadnessRules ----------
+# The void's mind is no physics: it lives in src/combat/madness_rules.gd
+# (assets/data/madness_rules.json, BAUPLAN M1c). These keep the old names
+# working for their callers.
 
-## The madness values (aim_scatter, turn_chance, wobble, hero_delay, ...).
+## The madness values (MadnessRules.madness).
 static func madness() -> Dictionary:
-	return data().get("madness", {})
+	return MadnessRules.madness()
 
 
-## A status rule that drives a creature mad for `seconds` (for void spells:
-## crypt `game.elements._status_enemy(enemy, ElementRules.mad_rule(2.0), owner)`).
+## A status rule that drives a creature mad for `seconds` (MadnessRules.mad_rule).
 static func mad_rule(seconds: float) -> Dictionary:
-	return {"status": {"mad": [1.0, seconds]}}
+	return MadnessRules.mad_rule(seconds)
 
 
-## True when a creature with `tags` cannot go mad (madness.immune_tags: the void's own).
+## True when a creature with `tags` cannot go mad (MadnessRules.mad_immune).
 static func mad_immune(tags: Array) -> bool:
-	for tag: Variant in madness().get("immune_tags", ["void"]):
-		if str(tag) in tags:
-			return true
-	return false
+	return MadnessRules.mad_immune(tags)
 
 
-## Story worlds: drives monster `m` mad for `seconds` (its `mad_t` field) unless
-## its `tags` are immune; true when it took. The crypt keeps it as the enemy
-## status "mad" (src/combat/elements.gd _status_enemy).
+## Drives story monster `m` mad for `seconds` unless `tags` are immune (MadnessRules.madden).
 static func madden(m: Dictionary, seconds: float, tags: Array) -> bool:
-	if seconds <= 0.0 or mad_immune(tags):
-		return false
-	m.mad_t = maxf(float(m.get("mad_t", 0.0)), seconds)
-	return true
+	return MadnessRules.madden(m, seconds, tags)
 
 
-## A mad creature's aim: `dir` turned by a random share of madness.aim_scatter
-## (bosses and minibosses by boss_scale of it). `roll` is a random 0..1.
+## A mad creature's scattered aim (MadnessRules.scatter).
 static func scatter(dir: Vector2, big: bool, roll: float) -> Vector2:
-	var M := madness()
-	var spread := float(M.get("aim_scatter", 0.55)) * (float(M.get("boss_scale", 0.5)) if big else 1.0)
-	return dir.rotated((roll * 2.0 - 1.0) * spread)
+	return MadnessRules.scatter(dir, big, roll)
 
 
-## A mad creature's stagger (px/s, crypt px; the story worlds scale it by their
-## art px): a sidestep across `forward`, a new random one every
-## madness.wobble_step s. Keeps its state on `actor` (mad_side, mad_side_t).
+## A mad creature's stagger, px/s crypt px (MadnessRules.wobble).
 static func wobble(actor: Dictionary, forward: Vector2, dt: float, roll: float) -> Vector2:
-	var M := madness()
-	actor.mad_side_t = float(actor.get("mad_side_t", 0.0)) - dt
-	if float(actor.mad_side_t) <= 0.0:
-		actor.mad_side_t = float(M.get("wobble_step", 0.35)) * (0.6 + roll * 0.8)
-		actor.mad_side = roll * 2.0 - 1.0
-	var across := forward.orthogonal().normalized() if forward.length_squared() > 0.0001 else Vector2.RIGHT
-	return across * float(actor.get("mad_side", 0.0)) * float(M.get("wobble", 46.0))
+	return MadnessRules.wobble(actor, forward, dt, roll)
 
 
-## The nearest other living creature to `actor` within madness.turn_reach px
-## ({} for none). `others` are dictionaries, `pos_key` their position field
-## ("pos" crypt, "p" story), `alive` a Callable(other) -> bool.
+## The nearest other living creature to `actor` ({} for none; MadnessRules.nearest_other).
 static func nearest_other(actor: Dictionary, others: Array, pos_key: String, alive: Callable, reach_scale := 1.0) -> Dictionary:
-	var best: Dictionary = {}
-	var best_d := pow(float(madness().get("turn_reach", 420.0)) * reach_scale, 2.0)
-	var at: Vector2 = actor[pos_key]
-	for other: Dictionary in others:
-		if is_same(other, actor) or not alive.call(other):
-			continue
-		var d := at.distance_squared_to(other[pos_key])
-		if d < best_d:
-			best_d = d
-			best = other
-	return best
+	return MadnessRules.nearest_other(actor, others, pos_key, alive, reach_scale)
 
 
-## The hero's madness clock on `holder` (a crypt player or the story state):
-## `inside` = he stands in a maddening void pool this frame. mad_in counts the
-## time inside (it ebbs twice as fast outside, so a pool's ragged rim does not
-## restart it); mad_warn = 0..1 over madness.hero_delay; mad = s of inverted
-## controls left (held at hero_after inside, counting down after leaving).
+## The hero's madness clock on `holder` (MadnessRules.hero_mad_step).
 static func hero_mad_step(holder: Dictionary, inside: bool, dt: float) -> void:
-	var M := madness()
-	var delay := maxf(0.01, float(M.get("hero_delay", 1.0)))
-	var mad_in := float(holder.get("mad_in", 0.0))
-	holder.mad = float(holder.get("mad", 0.0))
-	mad_in = mad_in + dt if inside else maxf(0.0, mad_in - dt * 2.0)
-	holder.mad_in = mad_in
-	holder.mad_warn = clampf(mad_in / delay, 0.0, 1.0) if inside or float(holder.get("mad", 0.0)) <= 0.0 else 1.0
-	if inside and mad_in >= delay:
-		holder.mad = float(M.get("hero_after", 0.5))
-	elif not inside:
-		holder.mad = maxf(0.0, float(holder.get("mad", 0.0)) - dt)
-	if not inside and float(holder.mad) <= 0.0 and mad_in <= 0.0:
-		holder.mad_warn = 0.0
+	MadnessRules.hero_mad_step(holder, inside, dt)
 
 
-## True when a hero of `class_id` whose main specialisation is `spec` (or
-## whose bar `talents` hold one of that spec, `spec_of` a Callable(talent) ->
-## String) is the Leerenmagier: madness.immune_class + immune_spec.
+## True for the Leerenmagier (MadnessRules.void_mind).
 static func void_mind(class_id: String, spec: String, talents: Array = [], spec_of: Callable = Callable()) -> bool:
-	var M := madness()
-	if class_id != str(M.get("immune_class", "mage")):
-		return false
-	var want := str(M.get("immune_spec", "arcane"))
-	if spec == want:
-		return true
-	if spec.is_empty():
-		for talent: Variant in talents:
-			var own := str(spec_of.call(str(talent))) if spec_of.is_valid() else ""
-			if own == want or str(talent).begins_with(want + "_"):
-				return true
-	return false
+	return MadnessRules.void_mind(class_id, spec, talents, spec_of)

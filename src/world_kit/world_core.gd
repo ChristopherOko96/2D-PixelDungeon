@@ -137,8 +137,14 @@ static func theme_for(n: int, P: Dictionary) -> Dictionary:
 	return {"dark": 0.6 + t * 0.2, "grade": t * 0.16, "vignette": 0.25 + t * 0.45, "embers": 2 + jround(t * 5), "hot": 0.18 + t * 0.4, "wallGlow": t, "circle": int(P.circle)}
 
 
-static func difficulty_for(n: int, P: Dictionary) -> Dictionary:
-	return {"hp": 1 + (n - 1) * 0.16, "speed": 1 + (n - 1) * 0.04, "extra": int(floor((n - 1) / 3.0)), "shooters": bool(P.get("shooters", false))}
+## Enemy toughness on floor n: hp and speed factors, extra enemies per fight room, shooters.
+## D is the world's curve (pack key "diff": hp_step, speed_step, extra_every; Krypta gentle,
+## Frostgruft medium, hell steep); a pack without one keeps the old shared curve.
+static func difficulty_for(n: int, P: Dictionary, D: Dictionary = {}) -> Dictionary:
+	var hp_step := float(D.get("hp_step", 0.16))
+	var speed_step := float(D.get("speed_step", 0.04))
+	var every := maxf(1.0, float(D.get("extra_every", 3)))
+	return {"hp": 1 + (n - 1) * hp_step, "speed": 1 + (n - 1) * speed_step, "extra": int(floor((n - 1) / every)), "shooters": bool(P.get("shooters", false))}
 
 
 # ---------- slot layout ----------
@@ -640,7 +646,7 @@ static func _info_for(g: Dictionary) -> String:
 # ---------- the floor ----------
 
 ## Builds floor n of a world. opts: floors (index = floor number, [0] unused), circles, names,
-## suffixes. sizes: sprite name -> [w, h] (lights sit at a share of the sprite height).
+## suffixes, diff (the world's difficulty curve, see difficulty_for). sizes: sprite name -> [w, h] (lights sit at a share of the sprite height).
 static func build_floor(n: int, sizes: Dictionary, opts: Dictionary) -> Dictionary:
 	var P: Dictionary = opts.floors[n]
 	var theme := theme_for(n, P)
@@ -660,7 +666,7 @@ static func build_floor(n: int, sizes: Dictionary, opts: Dictionary) -> Dictiona
 	var tile_at: Array = []
 	tile_at.resize(count)
 	var W := {"n": n, "seed": int(P.seed) if int(P.seed) != 0 else 1, "title": P.title, "circle": opts.circles[int(P.circle)], "theme": theme, "boss": P.boss,
-		"diff": difficulty_for(n, P), "final": bool(P.get("final", false)), "COLS": COLS, "ROWS": ROWS,
+		"diff": difficulty_for(n, P, opts.get("diff", {}) if opts.get("diff") is Dictionary else {}), "final": bool(P.get("final", false)), "COLS": COLS, "ROWS": ROWS,
 		"grid": grid, "roomAt": room_at, "holeAt": hole_at, "tileAt": tile_at,
 		"rooms": plan.rooms, "doors": [], "props": [], "decals": [], "wallDecor": [], "ents": [], "lights": [], "groups": plan.groups, "occupied": {}, "reserved": {}, "sizes": sizes}
 	var by_id := {}

@@ -76,11 +76,19 @@ func _test_catalog() -> void:
 	var slots := {}
 	var rarities := {}
 	var missing: Array[String] = []
+	# the class armours with an ability (user request 2026-11-01, src/hero/armor_powers.gd:
+	# items.json gear with "class" and "power") come on top of the five plain armours
+	var powered := 0
 	for entry: Dictionary in gear:
+		if not str(entry.get("power", "")).is_empty():
+			powered += 1
+			if not ResourceLoader.exists("res://assets/sprites/" + str(entry.sprite) + ".png"): missing.append(str(entry.id))
+			continue
 		slots[str(entry.slot)] = int(slots.get(str(entry.slot), 0)) + 1
 		rarities[str(entry.rarity)] = true
 		if not ResourceLoader.exists("res://assets/sprites/" + str(entry.sprite) + ".png"): missing.append(str(entry.id))
-	check(int(slots.get("armor", 0)) == 5 and int(slots.get("ring", 0)) == 5 and int(slots.get("amulet", 0)) == 5, "five armours, rings and amulets")
+	check(int(slots.get("armor", 0)) == 5 and int(slots.get("ring", 0)) == 5 and int(slots.get("amulet", 0)) == 5 and powered > 0,
+		"five armours, rings and amulets, plus the class armours with an ability (%d)" % powered)
 	check(rarities.size() == 5, "gear in all five rarities")
 	check(missing.is_empty(), "every piece has its own sprite (%s)" % str(missing))
 	for kind: String in ["clone_seal", "upgrade_stone", "dice_stone", "mirror_crystal"]:
@@ -218,10 +226,18 @@ func _test_seal_and_mirror() -> void:
 
 
 func _test_fixed_finds() -> void:
-	var one: Array = inv.floor_finds(1)
-	var two: Array = inv.floor_finds(2)
-	check(one.size() == 1 and str(one[0].type) == "crystal", "every floor has a crystal")
-	check(two.size() == 2 and two.any(func(i: Dictionary) -> bool: return str(i.type) == "stone"), "every second floor adds a curse-breaker stone")
+	# the gameplay review 2026-11 (production/qa/evidence/gameplay-review/BEWERTUNG.md, items.json
+	# per_floor): the stone comes on the floors of stone_floors [1, 3, 5, 7, 9] (was every second
+	# floor), and the floors of potion_floors [1, 2, 3] add a potion
+	var rules: Dictionary = inv.data.get("per_floor", {})
+	var types_of := func(finds: Array) -> Array: return finds.map(func(i: Dictionary) -> String: return str(i.type))
+	for floor_number: int in [1, 2, 4]:
+		var found: Array = types_of.call(inv.floor_finds(floor_number))
+		# JSON numbers are floats: compare them as whole floors
+		var stone: bool = (rules.get("stone_floors", []) as Array).any(func(v: Variant) -> bool: return int(v) == floor_number)
+		var potion: bool = (rules.get("potion_floors", []) as Array).any(func(v: Variant) -> bool: return int(v) == floor_number)
+		check(found.count("crystal") == 1 and found.has("stone") == stone and found.has("potion") == potion and found.size() == 1 + int(stone) + int(potion),
+			"floor %d: a crystal%s%s (%s)" % [floor_number, ", a curse-breaker stone" if stone else "", ", a potion" if potion else "", str(found)])
 	var rare := 0
 	for index in range(30):
 		var drop: Dictionary = inv.guardian_drop(3, "mage")

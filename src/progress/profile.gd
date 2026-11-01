@@ -3,7 +3,8 @@ extends RefCounted
 ## build, plus gold, soul shards, the bosses already beaten on Albtraum and the boss completions already rewarded
 ## (docs/TALENTE-SEELENSPLITTER.de.md). Pure functions on a plain Dictionary,
 ##   {version, gold, shards: {have, earned, spent}, nightmare_firsts: [],
-##    rewarded: [], difficulty, classes: {class_id: {level, exp, ranks: {talent: rank},
+##    rewarded: [], reactions: [element reaction ids the hero set off himself,
+##    src/hell/story_elements.gd], difficulty, classes: {class_id: {level, exp, ranks: {talent: rank},
 ##    ultimate, soul_tier, soul_paid, bar: [talent ids]}}}
 ## so the rules test without files; load / save keep it in user://profile.json.
 ## Saving writes a temporary file first and then replaces the old one, so a
@@ -52,11 +53,19 @@ static func set_debug(on: bool, d: Dictionary) -> void:
 	if flag != null: flag.store_string("talent test profile on")
 
 
-## The talent data (assets/data/talents.json); empty when missing or broken.
+## The talent data (assets/data/talents.json) as a private copy the caller may
+## change; empty when missing or broken. The file is parsed once and kept
+## (src/core/data_cache.gd, F3); each call costs a deep copy, so per-frame reads
+## use data_view().
 static func data(path: String = DATA_PATH) -> Dictionary:
-	if not FileAccess.file_exists(path): return {}
-	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
-	return parsed if parsed is Dictionary else {}
+	return DataCache.load_dict_copy(path)
+
+
+## The talent data shared and read-only (src/core/data_cache.gd): for reads every
+## frame, such as the HUD's skill bar; writing into it is an error. Empty when
+## missing or broken.
+static func data_view(path: String = DATA_PATH) -> Dictionary:
+	return DataCache.load_dict(path)
 
 
 ## A fresh profile: level 1 in every class, nothing learned, no shards.
@@ -65,7 +74,7 @@ static func fresh(d: Dictionary) -> Dictionary:
 	for id: String in d.get("classes", {}):
 		classes[id] = fresh_class()
 	return {"version": VERSION, "gold": 0, "shards": {"have": 0, "earned": 0, "spent": 0},
-		"nightmare_firsts": [], "rewarded": [], "difficulty": "normal", "classes": classes, "debug_free": false}
+		"nightmare_firsts": [], "rewarded": [], "reactions": [], "difficulty": "normal", "classes": classes, "debug_free": false}
 
 
 static func fresh_class() -> Dictionary:
@@ -89,7 +98,7 @@ static func sanitize(raw: Variant, d: Dictionary) -> Dictionary:
 	var earned := maxi(0, int(shards.get("earned", 0)))
 	var spent := clampi(int(shards.get("spent", 0)), 0, earned)
 	profile.shards = {"have": earned - spent, "earned": earned, "spent": spent}
-	for key: String in ["nightmare_firsts", "rewarded"]:
+	for key: String in ["nightmare_firsts", "rewarded", "reactions"]:
 		var list: Variant = raw.get(key, [])
 		if list is Array: profile[key] = list.filter(func(v: Variant) -> bool: return v is String).slice(-int(d.get("soul_shards", {}).get("reward_memory", 200)) if key == "rewarded" else 0)
 	var difficulty := str(raw.get("difficulty", "normal"))

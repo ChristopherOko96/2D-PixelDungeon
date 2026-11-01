@@ -23,16 +23,15 @@ extends RefCounted
 const PX := 3.0
 ## The pixel animation's frame rate (crawling rims, glints, sparkles).
 const FPS := 12.0
-## 4x4 ordered dither (fading without transparency).
-const BAYER := [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
 ## The ice ramp (theme.vfx.ice overrides each role).
 const ICE_DEFAULT := {"spec": "ffffff", "hi": "e6fbff", "lite": "a6e3f7", "body": "6fbde8", "shade": "3b84c4", "deep": "23599a", "outline": "0d1a38"}
 ## Snow and rime dust kicked off the floor.
 const SNOW := [Color("eef7ff"), Color("c4dcf0"), Color("93b3d3")]
-## No knockback step is longer than this (world px), so nothing tunnels.
-const KNOCK_STEP := 24.0
+const StoryMotionHost = preload("res://src/hell/story_motion_host.gd")
 
 var g: Node
+## The motion kit of this world (_mover; src/physics_kit/motion_kit.gd).
+var _motion: MotionKit = null
 ## theme.vfx: feel tiers, knock speeds, ice ramp, floor ice, rime.
 var cfg: Dictionary = {}
 ## The ice ramp by role (spec, hi, lite, body, shade, deep, outline).
@@ -117,16 +116,18 @@ func impact(p: Vector2, tier: String, boss := true) -> void:
 
 
 ## Pushes the hero away from `from` when a blow of `kind` (theme.vfx.knock)
-## lands; eased out over knock.time in update. A mob pushes less.
+## lands; eased out over knock.time in update. A mob pushes less
+## (MotionKit.knock_hero, src/physics_kit/motion_kit.gd).
 func knock(from: Vector2, kind: String, boss := true) -> void:
-	var spec: Dictionary = cfg.get("knock", {})
-	var speed := float(spec.get(kind, 0.0)) * (1.0 if boss else float(spec.get("mob_scale", 0.7)))
-	if speed <= 0.0:
-		return
-	var away := Vector2(g.player.x, g.player.y) - from
-	if away.length() < 1.0:
-		away = Vector2.RIGHT.rotated(randf() * TAU)
-	g.state.knock = {"v": away.normalized() * Vector2(1.0, 0.75) * speed, "t": 0.0, "T": float(spec.get("time", 0.22))}
+	_mover().knock_hero(from, kind, cfg.get("knock", {}), not boss)
+
+
+## This world's motion kit (src/physics_kit/motion_kit.gd) on its host
+## (src/hell/story_motion_host.gd), made on first use.
+func _mover() -> MotionKit:
+	if _motion == null:
+		_motion = MotionKit.new(StoryMotionHost.new(g))
+	return _motion
 
 
 ## A blow of `kind` from `from` landed on the hero: pushed back, felt at its tier.
@@ -146,20 +147,8 @@ func update(dt: float) -> void:
 		w.t = float(w.t) + dt
 		_wave_front(w, dt)
 	waves = waves.filter(func(w: Dictionary) -> bool: return float(w.t) < float(w.T))
-	var K: Variant = g.state.get("knock")
-	if K is Dictionary:
-		K.t = float(K.t) + dt
-		var k := float(K.t) / maxf(0.01, float(K.T))
-		if k >= 1.0:
-			g.state.knock = null
-		else:
-			var mv: Vector2 = (K.v as Vector2) * pow(1.0 - k, 2.0) * dt
-			if mv.length() > KNOCK_STEP:
-				mv = mv.normalized() * KNOCK_STEP
-			if not g.box_blocked(g._player_box(g.player.x + mv.x, g.player.y)):
-				g.player.x += mv.x
-			if not g.box_blocked(g._player_box(g.player.x, g.player.y + mv.y)):
-				g.player.y += mv.y
+	# his knockback eases out, never through a wall (MotionKit.step_knock)
+	_mover().step_knock(dt)
 	_ice_update()
 
 
@@ -331,7 +320,7 @@ func _ice_add(c: Vector2, r: float, until: float, edge: float) -> void:
 			var y := (q.y - c.y) / ry
 			var d := 0.7 * Vector2(x, y).length() + 0.3 * maxf(absf(x), absf(y))
 			var sector := int(floor((atan2(y, x) + PI) / TAU * 9.0))
-			if d <= 1.0 + (float(_h(sector, seed, 5) % 3) - 1.0) * PX / r:
+			if d <= 1.0 + (float(MatterKit.hash3(sector, seed, 5) % 3) - 1.0) * PX / r:
 				# the ice lies on the floor only: it stops at the walls
 				if not g._walkable(g._cell(int(floor(q.x / g.C)), int(floor(q.y / g.C)))):
 					continue
@@ -391,16 +380,16 @@ func _ice_bake() -> void:
 			col = C.shade
 		_ice_col[q] = col
 	for q: Vector2i in _ice:
-		if _h(q.x, q.y, 11) >= 3:
+		if MatterKit.hash3(q.x, q.y, 11) >= 3:
 			continue
 		var p := q
-		for i in range(3 + _h(q.x, q.y, 12) % 3):
+		for i in range(3 + MatterKit.hash3(q.x, q.y, 12) % 3):
 			if not (_ice.has(p + Vector2i(0, 2)) and _ice.has(p + Vector2i(0, -2)) and _ice.has(p + Vector2i(2, 0)) and _ice.has(p + Vector2i(-2, 0))):
 				break
 			_ice_col[p] = C.deep
 			if _ice_col.get(p + Vector2i(1, 1), C.body) != C.deep:
 				_ice_col[p + Vector2i(1, 1)] = C.hi
-			p += Vector2i(1, (_h(p.x, p.y, 13) % 3) - 1)
+			p += Vector2i(1, (MatterKit.hash3(p.x, p.y, 13) % 3) - 1)
 	for e: Array in _ice_streaks:
 		var at: Vector2i = e[0]
 		for line: Array in [[at, 5], [at + Vector2i(2, 0), 3]]:
@@ -494,15 +483,6 @@ func _pop(l: CanvasItem, q: Vector2i, frame: int) -> void:
 
 
 # ---------- drawing ----------
-
-func _h(x: int, y: int, s := 0) -> int:
-	return absi((x * 73856093) ^ (y * 19349663) ^ (s * 83492791)) % 1000
-
-
-## True when art cell `q` shows at coverage `k` (0..1) of the ordered dither.
-func _shown(q: Vector2i, k: float) -> bool:
-	return float(BAYER[posmod(q.y, 4) * 4 + posmod(q.x, 4)]) < k * 16.0
-
 
 func _cell(l: CanvasItem, q: Vector2i, col: Color) -> void:
 	l.draw_rect(Rect2(Vector2(q) * PX, Vector2(PX, PX)), col)
@@ -652,7 +632,7 @@ func hailstone(l: CanvasItem, to: Vector2, h: float, size: int, k: float) -> voi
 		for gx in range(-n - 1, n + 2):
 			if Vector2(float(gx) / (float(n) + 1.0), float(gy) / (float(n) * 0.45 + 0.5)).length() <= 0.6 + 0.4 * k:
 				var q := base + Vector2i(gx, gy)
-				if _shown(q, cover):
+				if MatterKit.shown(q, cover):
 					_cell(l, q, C.outline)
 	var c := Vector2i(((to - Vector2(0, h)) / PX).floor())
 	var m := {}
@@ -732,5 +712,5 @@ func draw_flashes(l: CanvasItem) -> void:
 			for gx in range(int(floor((c.x - r) / PX)), int(ceil((c.x + r) / PX)) + 1):
 				var q := Vector2(gx, gy) * PX
 				var d := Vector2((q.x - c.x) / r, (q.y - c.y) / ry).length()
-				if d <= 1.0 and _shown(Vector2i(gx, gy), (1.0 - k) * (1.0 - d * 0.6)):
+				if d <= 1.0 and MatterKit.shown(Vector2i(gx, gy), (1.0 - k) * (1.0 - d * 0.6)):
 					l.draw_rect(Rect2(q, Vector2.ONE * PX), C.spec if d < 0.5 else C.hi)

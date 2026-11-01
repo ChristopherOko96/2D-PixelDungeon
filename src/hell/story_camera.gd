@@ -3,13 +3,18 @@ extends RefCounted
 ## It follows the hero with a light lead in his run and aim direction, leans a
 ## little toward the fight he is in, breathes its zoom (wider for crowds and
 ## bosses, a touch closer at rest), punches in on ultimates and kicks along big
-## impacts. Pure logic: feed one frame to step(), then read position, zoom and
-## offset. Values: assets/data/story_camera.json. The option "Kamerabewegung
+## impacts. The skill bar covers the bottom of the screen ("hud_bottom", a share
+## of the view height): the view sits that much lower (view_shift), so the hero
+## and his fight stay in the free part above it and a room's bottom wall stops
+## right above the bar. Pure logic: feed one frame to step(), then read position,
+## zoom, offset and view_shift. Values: assets/data/story_camera.json. The option "Kamerabewegung
 ## reduzieren" (calm) keeps only the follow, the room bounds and a softer shake;
 ## "Bildschirmwackeln" off (shake_on false) drops shake and kicks.
 
 const DATA_PATH := "res://assets/data/story_camera.json"
-const SETTINGS_PATH := "user://settings.cfg"
+const GraphicsSettings = preload("res://src/core/graphics_settings.gd")
+## The one options file of the game (src/core/graphics_settings.gd SETTINGS_PATH).
+const SETTINGS_PATH: String = GraphicsSettings.SETTINGS_PATH
 
 ## Tuning values (the json); tests may pass their own.
 var cfg: Dictionary = {}
@@ -22,6 +27,9 @@ var shake_on := true
 var position := Vector2.ZERO
 var zoom := 1.0
 var offset := Vector2.ZERO
+## How far the view sits below `position` (world px) so the bottom HUD strip
+## covers no part of the fight; the game adds it to the camera's offset.
+var view_shift := Vector2.ZERO
 
 var _started := false
 var _last_hero := Vector2.ZERO
@@ -121,7 +129,16 @@ func step(dt: float, frame: Dictionary) -> void:
 	if lean.length() > most:
 		lean = lean.normalized() * most
 	lean.y *= float(cfg.get("vertical_scale", 0.75))
-	var target := _clamp(hero + lean, frame.get("bounds", Rect2()), view / zoom)
+	# the bottom HUD strip: the view sits half its height lower; the bounds grow by
+	# that on both ends, so the shifted view still stops at the room's top wall
+	# and its bottom wall can rise above the strip
+	var visible := view / zoom
+	var lift := visible.y * clampf(float(cfg.get("hud_bottom", 0.0)), 0.0, 0.4) * 0.5
+	view_shift = Vector2(0.0, lift)
+	var bounds: Rect2 = frame.get("bounds", Rect2())
+	if bounds.size != Vector2.ZERO and lift > 0.0:
+		bounds = bounds.grow_individual(0.0, lift, 0.0, lift)
+	var target := _clamp(hero + lean, bounds, visible)
 	position = position.lerp(target, _ease(float(cfg.get("follow_rate", 6.5)), dt))
 	offset = _shake(float(frame.get("shake", 0.0)), float(frame.get("t", 0.0))) + _kick
 
@@ -176,7 +193,9 @@ func _step_zoom(dt: float, hero: Vector2, foes: Array, boss: bool, view: Vector2
 		for p: Vector2 in foes:
 			reach = Vector2(maxf(reach.x, absf(p.x - hero.x)), maxf(reach.y, absf(p.y - hero.y)))
 		reach += Vector2.ONE * float(z.get("fit_margin", 140.0))
-		want = minf(want, minf(view.x * 0.5 / reach.x, view.y * 0.5 / reach.y))
+		# only the part above the bottom HUD strip counts vertically
+		var free_y := view.y * (1.0 - clampf(float(cfg.get("hud_bottom", 0.0)), 0.0, 0.4))
+		want = minf(want, minf(view.x * 0.5 / reach.x, free_y * 0.5 / reach.y))
 		want = maxf(want, float(z.get("min", 0.82)))
 	elif _rest > float(z.get("rest_delay", 2.5)):
 		want = float(z.get("rest", 1.05))
