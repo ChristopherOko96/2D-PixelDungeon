@@ -32,6 +32,7 @@ func _run() -> void:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.progress.save_path))
 	game.queue_free()
 	test_fire_moves_only_its_flame()
+	test_flame_shape_moves_from_a_still_base()
 	test_water_moves_only_its_water()
 	test_fires_do_not_flicker_in_step()
 	print("FOUNTAIN_FIRE checked=%d failures=%d" % [checked, failures.size()])
@@ -125,6 +126,50 @@ func test_fire_moves_only_its_flame() -> void:
 	check(flame_moves, "the flame burns: its pixels change")
 	check(still, "the stone and the snow on the rim stay as drawn")
 	check(FireAnim.fire_frames(Image.create(8, 8, false, Image.FORMAT_RGBA8), spec, 8).is_empty(), "a sprite without a flame gets no pictures")
+
+
+func test_flame_shape_moves_from_a_still_base() -> void:
+	# Arrange: the bowl's flame fills rows 2..9 (8 rows), its lowest static_share stays
+	var spec: Dictionary = FireAnim.new().cfg.fire
+	var im := _bowl()
+	var still_rows := int(ceil(float(spec.static_share) * 8.0))
+	# Act
+	var pics := FireAnim.fire_frames(im, spec, 8)
+	var regions := FireAnim.flame_regions(FireAnim.flame_mask(im, spec), 12, 16, spec, 1, im)
+	# Assert
+	var reshaped := false
+	var base_still := true
+	for pic: Image in pics:
+		for y in range(16):
+			for x in range(12):
+				# there at all (the licking edge only fades a pixel, to 0.15 at the least)
+				var was := im.get_pixel(x, y).a > 0.1
+				var now := pic.get_pixel(x, y).a > 0.1
+				if y <= 9 - still_rows and was != now:
+					reshaped = true
+				if y > 9 - still_rows and y <= 9 and was != now:
+					base_still = false
+	check(regions.size() == 1, "the bowl has one flame whose shape moves")
+	check(reshaped, "the flame's shape moves: it curls and grows, pixels come and go above its base")
+	check(base_still, "the flame's base stays in its bowl")
+	# a flame painted into a solid stone niche (no air around it): its moves never punch a hole
+	var niche := Image.create(24, 24, false, Image.FORMAT_RGBA8)
+	niche.fill(Color(0.35, 0.33, 0.38))
+	for y in range(6, 18):
+		for x in range(8, 16):
+			niche.set_pixel(x, y, Color(1.0, 0.5, 0.1))
+	var holes := 0
+	var stone_hit := 0
+	for pic: Image in FireAnim.fire_frames(niche, spec, 8):
+		for y in range(24):
+			for x in range(24):
+				if pic.get_pixel(x, y).a < 0.1:
+					holes += 1
+				var was_stone := not (x >= 8 and x < 16 and y >= 6 and y < 18)
+				if was_stone and not pic.get_pixel(x, y).is_equal_approx(niche.get_pixel(x, y)):
+					stone_hit += 1
+	check(holes == 0, "a flame in a solid niche never opens a hole into the sprite (%d holes)" % holes)
+	check(stone_hit == 0, "and the moved flame never paints over the stone around it (%d px)" % stone_hit)
 
 
 func test_water_moves_only_its_water() -> void:
