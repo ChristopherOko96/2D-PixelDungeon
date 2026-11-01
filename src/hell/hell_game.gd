@@ -47,6 +47,7 @@ const StoryHero = preload("res://src/hero/story_hero.gd")
 const StoryGlow = preload("res://src/hero/story_glow.gd")
 const Darkness = preload("res://src/vfx/darkness.gd")
 const Snowstorm = preload("res://src/vfx/snowstorm.gd")
+const FireAnim = preload("res://src/vfx/fire_anim.gd")
 const FrostSnow = preload("res://src/hero/frost_snow.gd")
 const StorySave = preload("res://src/save/story_save.gd")
 ## The crypt's pause menu, in its story mode (overview, quest, map, controls, display, save).
@@ -264,6 +265,8 @@ var actors: Layer
 var dark: Node2D
 ## The light snowstorm over the whole screen of a world with theme "snowstorm" (src/vfx/snowstorm.gd); null elsewhere.
 var snowstorm: Node2D
+## The burning fires and the flowing fountain water of the loaded set (src/vfx/fire_anim.gd).
+var fire_anim := FireAnim.new()
 ## Footprints in the snow and sliding on glaze ice in a world with theme "snow" (src/hero/frost_snow.gd); null elsewhere.
 var frost_snow: RefCounted
 ## The crypt's bloom over the darkness and the darkness's lights (src/hero/story_glow.gd).
@@ -671,6 +674,8 @@ func _load_textures() -> void:
 	for n: String in extra.get("names", []):
 		if not tex.has(n):
 			tex[n] = load(str(extra.dir) + n + ".png")
+	# the set's fires and fountains get their moving pictures (a pixel set keeps its 3 px grid)
+	fire_anim.build(tex, 3 if bool(theme.get("pixel", false)) else 1)
 
 
 ## Switches to the Pixel or HD set at once (pause menu, main menu option) and
@@ -1450,7 +1455,9 @@ func _interactables() -> Array:
 					out.append({"e": e, "label": "Erst die Gegner besiegen" if W.rooms[e.room].fight else "Feuerschale entzünden", "p": Vector2(e.x, e.y - 30), "r": 115.0})
 			# the world kit's key room, hidden stairs and their trigger
 			"well":
-				out.append({"e": e, "label": "Manabrunnen: versiegt" if e.get("used", false) else "Manabrunnen: Kräfte ganz auffüllen (einmal)", "p": Vector2(e.x, e.y - 30), "r": 150.0})
+				var fills: String = talents.resource_name() if talents != null else ""
+				fills = ("%s und Abklingzeiten" % fills) if fills != "" else "Kräfte"
+				out.append({"e": e, "label": "Brunnen: versiegt" if e.get("used", false) else "Brunnen: %s ganz auffüllen (einmal)" % fills, "p": Vector2(e.x, e.y - 30), "r": 150.0})
 			"shop":
 				out.append({"e": e, "label": "Händler: der Laden öffnet später", "p": Vector2(e.x, e.y - 30), "r": 150.0})
 			"stairs":
@@ -1657,15 +1664,19 @@ func act() -> void:
 				else:
 					_toast("Feuerschale %d von %d entzündet." % [prog.x, prog.y])
 			"well":
-				# the mana fountain, once: until mana comes to the story worlds it refills the skills
+				# the mana fountain, once: the class's resource full (Mana, Ausdauer, Zorn) and every
+				# cooldown reset, the skills' and the talents' (src/hell/hell_talents.gd refill)
 				if e.get("used", false):
 					_toast("Der Brunnen ist versiegt.")
 					return
 				e.used = true
 				state.skill_cd = {}
+				var res_name := ""
+				if talents != null and talents.refill():
+					res_name = talents.resource_name()
 				_burst(Vector2(e.x, e.y - 70), 36)
 				_sound("relic")
-				_toast("Kräfte vollständig aufgefüllt. Der Brunnen versiegt.")
+				_toast(("%s vollständig aufgefüllt, alle Abklingzeiten zurückgesetzt. Der Brunnen versiegt." % res_name) if res_name != "" else "Kräfte vollständig aufgefüllt. Der Brunnen versiegt.")
 			"shop":
 				_toast("Der Händler nickt. Sein Laden öffnet bald.")
 			"stairs":
@@ -3395,7 +3406,8 @@ func draw_layer(l: Layer) -> void:
 
 
 func _tex(ci: CanvasItem, name: String, pos: Vector2, flip := false, tint := Color.WHITE, scale := 1.0) -> void:
-	var t: Texture2D = tex.get(name)
+	# a fire or a fountain: its picture of the moment (src/vfx/fire_anim.gd)
+	var t: Texture2D = fire_anim.frame(name, pos, float(state.get("t", 0.0))) if fire_anim.has(name) else tex.get(name)
 	if t == null:
 		return
 	var size := t.get_size() * scale
@@ -3544,7 +3556,17 @@ func _draw_back(l: Layer) -> void:
 		if a.has_point(c):
 			l.draw_texture(tex.corner_cap, c - Vector2(38, 38))
 	for w: Dictionary in W.wall_decor:
-		if a.has_point(Vector2(w.x, w.y + 74)):
+		# burning wall decor moves: drawn every frame with the actors (_draw_wall_fires)
+		if a.has_point(Vector2(w.x, w.y + 74)) and not fire_anim.has(w.name):
+			var t: Texture2D = tex[w.name]
+			_tex(l, w.name, Vector2(w.x - t.get_width() / 2.0, w.y), w.flip)
+
+
+## The burning wall decor (torches, wall braziers) in `view`, every frame and behind everyone
+## standing in the room, so their flames move (src/vfx/fire_anim.gd).
+func _draw_wall_fires(l: CanvasItem, view: Rect2) -> void:
+	for w: Dictionary in W.wall_decor:
+		if fire_anim.has(w.name) and view.has_point(Vector2(w.x, w.y + 74)):
 			var t: Texture2D = tex[w.name]
 			_tex(l, w.name, Vector2(w.x - t.get_width() / 2.0, w.y), w.flip)
 
@@ -3566,6 +3588,7 @@ func _draw_actors(l: Layer) -> void:
 	FrostCombat.draw_under(self, l, t)
 	# the lava floor bubbling (under everything standing on the floor)
 	_draw_lava_bubbles(l)
+	_draw_wall_fires(l, view)
 	# footprints in the snow and skid marks on the ice, under everyone (src/hero/frost_snow.gd)
 	if frost_snow != null:
 		frost_snow.draw_ground(l, view)
@@ -3905,7 +3928,12 @@ func _draw_ent(l: Layer, e: Dictionary, t: float) -> void:
 				l.draw_texture_rect(im, Rect2(Vector2(e.x - size.x / 2.0, e.y - size.y), size), false, Color(1.6, 1.4, 0.8, 0.22 + 0.16 * sin(t * 4.0)))
 		"well":
 			var im: Texture2D = tex.fountain
-			l.draw_texture(im, Vector2(e.x - im.get_width() / 2.0, e.y - im.get_height()), Color(0.45, 0.45, 0.5) if e.get("used", false) else Color.WHITE)
+			# its water flows while it holds its power (src/vfx/fire_anim.gd), a dried-up one stands still
+			var at := Vector2(e.x - im.get_width() / 2.0, e.y - im.get_height())
+			if e.get("used", false):
+				l.draw_texture(im, at, Color(0.45, 0.45, 0.5))
+			else:
+				_tex(l, "fountain", at)
 			if not e.get("used", false):
 				l.draw_texture(im, Vector2(e.x - im.get_width() / 2.0, e.y - im.get_height()), Color(1.2, 1.4, 1.8, 0.12 + 0.1 * sin(t * 3.0)))
 		"npc":
@@ -3926,7 +3954,7 @@ func _draw_ent(l: Layer, e: Dictionary, t: float) -> void:
 		"brazier":
 			var im: Texture2D = tex.brazier_bowl
 			if e.get("lit", false):
-				l.draw_texture(im, Vector2(e.x - im.get_width() / 2.0, e.y - im.get_height()))
+				_tex(l, "brazier_bowl", Vector2(e.x - im.get_width() / 2.0, e.y - im.get_height()))
 			else:
 				var cut := 46.0
 				l.draw_texture_rect_region(im, Rect2(e.x - im.get_width() / 2.0, e.y - im.get_height() + cut, im.get_width(), im.get_height() - cut), Rect2(0, cut, im.get_width(), im.get_height() - cut))

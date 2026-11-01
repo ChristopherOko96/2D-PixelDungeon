@@ -157,6 +157,21 @@ func press(slot: int) -> bool:
 	return fired
 
 
+## The mana fountain: the hero's Mana, Ausdauer or Zorn full and every talent,
+## companion and defense cooldown reset (src/combat/talent_combat.gd refill).
+## False without a talent build.
+func refill() -> bool:
+	var done := false
+	_with_sync(func(): done = tc.refill(1))
+	return done
+
+
+## The hero's resource name (Mana, Ausdauer, Zorn); "" without a talent build.
+func resource_name() -> String:
+	var rt := tc.runtime(1)
+	return "" if rt.is_empty() else str(tc.data.resources[rt["class"]].name)
+
+
 ## Keys 5 and 6 (`slot` 0-1): the permanent companion's ability.
 func press_pet(slot: int) -> void:
 	_with_sync(func(): tc.pet_cast(1, slot, true))

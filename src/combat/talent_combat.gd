@@ -2109,6 +2109,26 @@ func cost_of(rt: Dictionary, talent: String) -> float:
 	return float(info.get("cost", 0.0)) * maxf(0.5, 1.0 - _sum(rt, "cost_pct", "pct") / 100.0)
 
 
+## Fills a hero's resource (Mana, Ausdauer or Zorn) to the top and resets every
+## cooldown it has: its talents, the global cooldown, its companion's abilities,
+## the companion guard and the Shift defense (charges back, no longer broken).
+## The mana fountain of the story worlds. Returns true when the hero has a runtime.
+func refill(id: int) -> bool:
+	var rt := runtime(id)
+	if rt.is_empty(): return false
+	rt.res = float(rt.res_max)
+	rt.cds = {}
+	rt.gcd = 0.0
+	rt.pet_cds = {}
+	rt.guard_cd = 0.0
+	var guard: Dictionary = rt.get("defense", {})
+	if not guard.is_empty():
+		guard.left = float(guard.max)
+		guard.broken = 0.0
+		guard.timer = 0.0
+	return true
+
+
 ## Refills `share` (0..1) of a hero's mana; heroes with Ausdauer or Zorn are
 ## not refilled. Returns true when it took effect.
 func restore_mana(id: int, share: float) -> bool:
