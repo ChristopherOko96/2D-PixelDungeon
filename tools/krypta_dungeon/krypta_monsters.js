@@ -120,7 +120,7 @@
     draw(P, a, f) { figure(P, a, f, { base: 'skelet_idle_anim_f', run: 'skelet_run_anim_f', frames: 4, weapon: 'rusty_sword', hand: [12, 11] }); },
   };
   DEFS.skelettschuetze = {
-    name: 'Skelettschütze', w: 26, h: 26, scale: 5, kind: 'mob', material: 'bone', rig: 'skel_archer', role: 'Fernkämpfer', shot: 'bone',
+    name: 'Skelettschütze', w: 26, h: 26, scale: 5, kind: 'mob', material: 'bone', rig: 'skel_archer_short', role: 'Fernkämpfer', shot: 'bone',
     desc: 'Hält Abstand und schießt Knochenpfeile, ab und zu eine Salve aus drei Pfeilen.',
     anims: { idle: 4, run: 4, attack: 4 },
     draw(P, a, f) { figure(P, a, f, { base: 'skelet_idle_anim_f', run: 'skelet_run_anim_f', frames: 4, weapon: 'bow', hand: [12, 10], grip: .15, swing: [1.2, 1.4, 1.57, 1.57], wmap: { '#8f4029': '#5f2d56' } }); },
@@ -157,7 +157,7 @@
     },
   };
   DEFS.leerenbomber = {
-    name: 'Leerenbomber', w: 22, h: 24, scale: 4.4, kind: 'mob', material: 'void', rig: 'bomber', role: 'Springer', shot: 'void',
+    name: 'Leerenbomber', w: 22, h: 24, scale: 4.4, kind: 'mob', material: 'void', rig: 'krypta_leerenbomber', role: 'Springer', shot: 'void',
     desc: 'Springt durch die Leere neben dich und platzt in einer violetten Welle.',
     anims: { idle: 4, run: 4, attack: 4, cast: 4 },
     draw(P, a, f) {
@@ -167,7 +167,7 @@
     },
   };
   DEFS.mimik = {
-    name: 'Mimik', w: 20, h: 20, scale: 4.6, kind: 'mob', material: 'flesh', rig: 'mimic', role: 'Lauerer', shot: 'gold',
+    name: 'Mimik', w: 20, h: 20, scale: 4.6, kind: 'mob', material: 'flesh', rig: 'krypta_mimik', role: 'Lauerer', shot: 'gold',
     desc: 'Sieht aus wie eine Truhe. Hüpft heran, beißt zu und spuckt Münzen im Kreis.',
     anims: { idle: 4, run: 4, attack: 4 },
     draw(P, a, f) {
@@ -244,13 +244,13 @@
     },
   };
   DEFS.knochenkoloss = {
-    name: 'Knochenkoloss', w: 44, h: 42, scale: 4.8, kind: 'boss', material: 'bone', rig: 'bone_colossus', floor: 9, role: 'Zwischenboss · Etage 9', shot: 'bone',
+    name: 'Knochenkoloss', w: 44, h: 42, scale: 4.8, kind: 'boss', material: 'bone', rig: 'krypta_knochenkoloss', floor: 9, role: 'Zwischenboss · Etage 9', shot: 'bone',
     desc: 'Aus tausend Knochen getürmt. Knochenspeere, Spitzenlinien, Wirbel, Schädelhagel und die Legion.',
     anims: { idle: 4, run: 4, attack: 4, cast: 4 },
     draw(P, a, f) { figure(P, a, f, { base: 'big_zombie_idle_anim_f0', bob: true, map: BONEMAP, weapon: 'big_hammer', hand: [26, 20], cast: VOIDFIRE, eyes: [[19, 9], [22, 9]], eyeC: VIO }); },
   };
   DEFS.leerenrufer = {
-    name: 'Leerenrufer', w: 48, h: 50, scale: 5, kind: 'boss', material: 'void', rig: 'void', floor: 10, role: 'Endboss · Etage 10', shot: 'void',
+    name: 'Leerenrufer', w: 48, h: 50, scale: 5, kind: 'boss', material: 'void', rig: 'krypta_leerenrufer', floor: 10, role: 'Endboss · Etage 10', shot: 'void',
     desc: 'Der Herr der Krypta. Leerenrisse, Seelenfessel, Schattenschritt, Spiralen, Knochenkreise und der Doppelstrahl.',
     anims: { idle: 4, run: 4, attack: 4, cast: 4 },
     draw(P, a, f) {
@@ -265,12 +265,12 @@
   // crypt's own moves (docs/BOSS-FAEHIGKEITEN.de.md) where the hell runtime has a matching kind.
   const A = (id, name, kind, every, o) => Object.assign({ id, name, kind, every }, o || {});
   const STATS = {
-    skelett: { hp: 5, speed: 140, r: 26, ai: 'chase', attacks: [A('hieb', 'Schwerthieb', 'swing', 1.8, { range: 140, radius: 140, arc: 2.0, desc: 'Weiter Hieb vor sich.' }), A('sprung', 'Ausfallsprung', 'dash', 4.2, { range: 380, speed: 760, desc: 'Springt mit erhobenem Schwert auf dich zu.' })] },
+    skelett: { hp: 5, speed: 175, r: 26, ai: 'chase', attacks: [A('hieb', 'Schwerthieb', 'swing', 1.8, { range: 140, radius: 140, arc: 2.0, desc: 'Weiter Hieb vor sich.' }), A('sprung', 'Ausfallsprung', 'dash', 4.2, { range: 380, speed: 760, desc: 'Springt mit erhobenem Schwert auf dich zu.' })] },
     skelettschuetze: { hp: 3, speed: 120, r: 24, ai: 'keep', keep: 420, attacks: [A('pfeil', 'Knochenpfeil', 'bolt', 2.2, { range: 800, speed: 700, count: 1, desc: 'Ein schneller Pfeil.' }), A('salve', 'Pfeilsalve', 'bolt', 6, { range: 800, speed: 640, count: 3, spread: .3, desc: 'Drei Pfeile im Fächer.' })] },
-    skelettwache: { hp: 9, speed: 95, r: 30, ai: 'chase', attacks: [A('schild', 'Schildstoß', 'dash', 3.4, { range: 300, speed: 700, desc: 'Rammt dich mit dem Schild.' }), A('wurf', 'Knochenwurf', 'lob', 3.6, { range: 600, radius: 60, desc: 'Wirft einen Knochen im Bogen.' })] },
+    skelettwache: { hp: 12, speed: 95, r: 30, ai: 'chase', attacks: [A('schild', 'Schildstoß', 'dash', 3.4, { range: 300, speed: 700, desc: 'Rammt dich mit dem Schild.' }), A('wurf', 'Knochenwurf', 'lob', 3.6, { range: 600, radius: 60, desc: 'Wirft einen Knochen im Bogen.' })] },
     nekromant: { hp: 6, speed: 95, r: 26, ai: 'keep', keep: 460, attacks: [A('fluch', 'Seelenfluch', 'homing', 3.2, { range: 800, speed: 240, desc: 'Eine grüne Seele, die dir folgt.' }), A('ruf', 'Knochenruf', 'summon', 9, { mobs: ['skelett', 'skelett'], max: 3, desc: 'Ruft zwei Skelette aus dem Boden.' })] },
-    zombie: { hp: 4, speed: 150, r: 24, ai: 'hop', attacks: [A('sprung', 'Anspringen', 'dash', 2.8, { range: 360, speed: 820, desc: 'Springt dich an.' }), A('spucke', 'Moderspucke', 'lob', 4, { range: 520, radius: 56, desc: 'Spuckt Moder; wo er landet, bleibt eine Giftlache.' })] },
-    eiszombie: { hp: 7, speed: 110, r: 26, ai: 'chase', attacks: [A('atem', 'Frostatem', 'breath', 4.5, { range: 240, count: 7, desc: 'Kurzer Froststoß aus dem Maul.' })] },
+    zombie: { hp: 4, speed: 180, r: 24, ai: 'hop', attacks: [A('sprung', 'Anspringen', 'dash', 2.8, { range: 360, speed: 820, desc: 'Springt dich an.' }), A('spucke', 'Moderspucke', 'lob', 4, { range: 520, radius: 56, desc: 'Spuckt Moder; wo er landet, bleibt eine Giftlache.' })] },
+    eiszombie: { hp: 7, speed: 140, r: 26, ai: 'chase', attacks: [A('atem', 'Frostatem', 'breath', 4.5, { range: 240, count: 7, desc: 'Kurzer Froststoß aus dem Maul.' })] },
     // platzen: range <= radius + 40 (the wave's hit band), else a hero 160-200 px away is never hit (BEFUND gegner-bugs)
     leerenbomber: { hp: 3, speed: 190, r: 24, ai: 'skirmish', attacks: [A('sprung', 'Leerensprung', 'teleport', 4, { range: 800, desc: 'Verschwindet und taucht neben dir auf.' }), A('platzen', 'Leerenwelle', 'slam', 3, { range: 150, radius: 120, desc: 'Platzt in einer violetten Welle.' })] },
     mimik: { hp: 8, speed: 130, r: 26, ai: 'hop', attacks: [A('biss', 'Truhenbiss', 'dash', 2.4, { range: 300, speed: 900, desc: 'Schnappt blitzschnell zu.' }), A('muenzen', 'Münzspucke', 'ring', 8, { count: 8, speed: 260, desc: 'Spuckt einen Kreis aus Münzen.' })] },

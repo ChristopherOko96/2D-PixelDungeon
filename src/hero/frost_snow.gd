@@ -26,9 +26,11 @@ const FrostWallSnow = preload("res://src/hero/frost_wall_snow.gd")
 ## print stays, max = prints kept at once, color = the prints' colour, skid_speed = px/s from which
 ## a slide scratches the ice, lean = rad the hero leans at full slide speed.
 ## wake = px from a snowman at which it wakes, thaw_time = s a lit fire bowl takes to melt its
-## patch, thaw_size = px across that patch.
+## patch, thaw_size = px across that patch. floor_grade = colour of a veil over every floor cell
+## under the actors, floor_alpha = its opacity (0: none), so the bright snow does not outshine
+## the pale figures standing on it.
 const DEFAULTS := {"stride": 28.0, "life": 9.0, "max": 520, "color": "#4a6a9c", "skid_speed": 90.0, "lean": 0.22, "wake": 120.0,
-	"thaw_time": 2.6, "thaw_size": 220.0}
+	"thaw_time": 2.6, "thaw_size": 220.0, "floor_grade": "#1d2f5c", "floor_alpha": 0.0}
 ## Floor decals with a raised frame receive a narrow inset seam.
 const FRAMED := ["rune_big", "rune_plate", "rune_small", "fire_plate", "demon_plate", "grate", "pit"]
 const BAKED_FOOT := ["rune_pillar_a", "rune_pillar_b", "rune_pillar_c", "rune_pillar_d", "obelisk", "skull_obelisk",
@@ -320,6 +322,38 @@ func draw_ground(l: CanvasItem, view: Rect2) -> void:
 	for f: Array in frame_insets:
 		if area.has_point(f[0]):
 			_draw_inset_frame(l, f[0], f[1])
+
+
+## The floor's grade: a cold veil (floor_grade at floor_alpha) over every floor cell in `view`,
+## drawn as one strip per run of floor cells in a row. hell_game.gd draws it in each chunk's
+## "snow_ao" layer: over the floor tiles and decals, under the wall snow, prints, props and
+## figures, which stay bright. Walls stay as they are. Returns the strips drawn.
+func draw_grade(l: CanvasItem, view: Rect2) -> int:
+	var alpha := float(cfg.floor_alpha)
+	if alpha <= 0.0 or not Color.html_is_valid(str(cfg.floor_grade)):
+		return 0
+	var veil := Color(Color.html(str(cfg.floor_grade)), alpha)
+	var C: float = g.C
+	var cols: int = g.W.cols
+	var rows: int = g.W.rows
+	var area := view
+	var x0 := clampi(int(floor(area.position.x / C)), 0, cols)
+	var x1 := clampi(int(ceil(area.end.x / C)), 0, cols)
+	var y0 := clampi(int(floor(area.position.y / C)), 0, rows)
+	var y1 := clampi(int(ceil(area.end.y / C)), 0, rows)
+	var strips := 0
+	for y in range(y0, y1):
+		var run := -1
+		for x in range(x0, x1 + 1):
+			# floor, ice and water cells (hell_walls.gd _walkable); walls stand in their own cells
+			var floor_cell := x < x1 and int(g.W.grid[y * cols + x]) in [1, 2, 3]
+			if floor_cell and run < 0:
+				run = x
+			elif not floor_cell and run >= 0:
+				l.draw_rect(Rect2(run * C, y * C, (x - run) * C, C), veil)
+				strips += 1
+				run = -1
+	return strips
 
 
 func _draw_inset_frame(l: CanvasItem, c: Vector2, half: Vector2) -> void:

@@ -43,7 +43,8 @@ static func floor_seed(run: int, n: int) -> int:
 	return v if v != 0 else 1
 
 
-## The generator options of a run: the pack's floors with their run seeds.
+## The generator options of a run: the pack's floors with their run seeds and the world's
+## difficulty curve (pack key diff, world_core.gd difficulty_for).
 func for_run(run: int) -> Dictionary:
 	var floors: Array = []
 	for P: Variant in pack.floors:
@@ -54,7 +55,7 @@ func for_run(run: int) -> Dictionary:
 		f.n = int(f.n)
 		f.seed = floor_seed(run, int(f.n))
 		floors.append(f)
-	return {"floors": floors, "circles": pack.circles, "names": pack.names, "suffixes": pack.suffixes}
+	return {"floors": floors, "circles": pack.circles, "names": pack.names, "suffixes": pack.suffixes, "diff": pack.get("diff", {})}
 
 
 ## Floor n of a run, dressed, in the runtime schema (src/hell/hell_floor_data.gd).
