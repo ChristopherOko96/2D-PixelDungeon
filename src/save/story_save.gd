@@ -1,11 +1,11 @@
 extends RefCounted
 ## Story world save data (src/hell/hell_game.gd: Hell-Dungeon and Frostgruft):
 ## the floor number and everything the portal carries to the next floor
-## (hearts, runestones, blessings, level, skills, relic, cards, talent bonus).
+## (hearts, the character's gold, blessings, level, skills, relic, cards, talent bonus).
 ## Loading opens the same scene on that floor with these values.
 
 ## The state keys hell_game.load_floor carries from floor to floor.
-const CARRIED := ["hp", "max_hp", "gems", "dmg", "rate", "speed_mul", "range", "buffs", "skill", "level", "exp", "relic", "relic_on",
+const CARRIED := ["hp", "max_hp", "gems", "gold", "dmg", "rate", "speed_mul", "range", "buffs", "skill", "level", "exp", "relic", "relic_on",
 	"upgrades", "offer", "cards_due", "relic_floor", "relic_item", "talent", "crystals_run", "run_id", "items", "world_run"]
 
 

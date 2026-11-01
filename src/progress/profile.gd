@@ -1,13 +1,13 @@
 extends RefCounted
-## The lasting player profile: per class the character level, EXP, talent
-## build and its gold (character gold: lost when the character dies), plus the
-## account's rune stones (they pay the talent reset) and soul shards, the bosses
+## The lasting player profile: per class the character level, EXP and talent
+## build, plus the account's rune stones (they pay the talent reset) and soul
+## shards (the character's gold is the run's own: src/hell/hell_game.gd), the bosses
 ## already beaten on Albtraum and the boss completions already rewarded
 ## (docs/TALENTE-SEELENSPLITTER.de.md). Pure functions on a plain Dictionary,
 ##   {version, runes, shards: {have, earned, spent}, nightmare_firsts: [],
 ##    rewarded: [], reactions: [element reaction ids the hero set off himself,
 ##    src/hell/story_elements.gd], difficulty, classes: {class_id: {level, exp, ranks: {talent: rank},
-##    ultimate, soul_tier, soul_paid, bar: [talent ids], gold}}}
+##    ultimate, soul_tier, soul_paid, bar: [talent ids]}}}
 ## so the rules test without files; load / save keep it in user://profile.json.
 ## Saving writes a temporary file first and then replaces the old one, so a
 ## crash mid-write never leaves a broken profile.
@@ -15,7 +15,7 @@ extends RefCounted
 const DATA_PATH := "res://assets/data/talents.json"
 const SAVE_PATH := "user://profile.json"
 ## The talent test profile of debug builds (main menu TALENT-TEST): level 30
-## in every class, many shards, rune stones and gold (talents cost mana as usual); the player's
+## in every class, many shards and rune stones (talents cost mana as usual); the player's
 ## own profile stays untouched while it is on.
 const DEBUG_PATH := "user://profile_debug.json"
 const DEBUG_FLAG := "user://talent_debug.flag"
@@ -41,7 +41,7 @@ static func debug_enabled() -> bool:
 
 
 ## Turns the talent test profile on (written fresh: level 30 everywhere, 99
-## shards, DEBUG_RUNES rune stones, 9999 gold per character; casts cost mana as usual) or off. Debug builds only.
+## shards, DEBUG_RUNES rune stones; casts cost mana as usual) or off. Debug builds only.
 static func set_debug(on: bool, d: Dictionary) -> void:
 	if not OS.is_debug_build(): return
 	if not on:
@@ -51,9 +51,7 @@ static func set_debug(on: bool, d: Dictionary) -> void:
 	profile.runes = DEBUG_RUNES
 	profile.shards = {"have": 99, "earned": 99, "spent": 0}
 	profile.debug_free = true
-	for id: String in profile.classes:
-		profile.classes[id].level = int(d.get("max_level", 30))
-		profile.classes[id].gold = 9999
+	for id: String in profile.classes: profile.classes[id].level = int(d.get("max_level", 30))
 	save_profile(profile, DEBUG_PATH)
 	var flag := FileAccess.open(DEBUG_FLAG, FileAccess.WRITE)
 	if flag != null: flag.store_string("talent test profile on")
@@ -84,26 +82,7 @@ static func fresh(d: Dictionary) -> Dictionary:
 
 
 static func fresh_class() -> Dictionary:
-	return {"level": 1, "exp": 0, "ranks": {}, "ultimate": "", "soul_tier": 0, "soul_paid": 0, "bar": [], "companion": "wolf", "gold": 0}
-
-
-## The gold of the character `class_id` (it starts at 0 and is lost when the character dies).
-static func gold(profile: Dictionary, class_id: String) -> int:
-	return int(class_state(profile, class_id).get("gold", 0))
-
-
-## Adds `n` gold to the character `class_id` (never below 0).
-static func add_gold(profile: Dictionary, class_id: String, n: int) -> void:
-	var state := class_state(profile, class_id)
-	state.gold = maxi(0, int(state.get("gold", 0)) + n)
-
-
-## The character `class_id` died: its gold is gone. Returns what it had.
-static func lose_gold(profile: Dictionary, class_id: String) -> int:
-	var state := class_state(profile, class_id)
-	var had := int(state.get("gold", 0))
-	state.gold = 0
-	return had
+	return {"level": 1, "exp": 0, "ranks": {}, "ultimate": "", "soul_tier": 0, "soul_paid": 0, "bar": [], "companion": "wolf"}
 
 
 ## Adds `n` rune stones to the account (never below 0).
@@ -122,8 +101,8 @@ static func class_state(profile: Dictionary, class_id: String) -> Dictionary:
 static func sanitize(raw: Variant, d: Dictionary) -> Dictionary:
 	var profile := fresh(d)
 	if not raw is Dictionary: return profile
-	# the account's rune stones; an old account-wide "gold" is not carried over (gold is the
-	# characters' now, rune stones pay the reset)
+	# the account's rune stones; an old account-wide or class "gold" is not carried over (gold is
+	# the running character's now, rune stones pay the reset)
 	profile.runes = maxi(0, int(raw.get("runes", 0)))
 	profile.debug_free = bool(raw.get("debug_free", false)) and OS.is_debug_build()
 	var shards: Dictionary = raw.get("shards", {}) if raw.get("shards", {}) is Dictionary else {}
@@ -144,7 +123,6 @@ static func sanitize(raw: Variant, d: Dictionary) -> Dictionary:
 			var state: Dictionary = profile.classes[id]
 			state.level = clampi(int(entry.get("level", 1)), 1, int(d.get("max_level", 30)))
 			state.exp = maxi(0, int(entry.get("exp", 0)))
-			state.gold = maxi(0, int(entry.get("gold", 0)))
 			var ranks: Variant = entry.get("ranks", {})
 			if ranks is Dictionary:
 				for talent: Variant in ranks:

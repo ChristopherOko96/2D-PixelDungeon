@@ -124,10 +124,10 @@ func test_mage_in_the_frostgruft() -> void:
 	_key(game, KEY_3, false)
 	check(absf(float(game.player.x) - x0) > 20.0, "Phönixschritt moves the hero")
 	# Kills: EXP and gold into the shared profile.
-	var gold: int = Profile.gold(game.profile, game.class_id)
+	var gold: int = game.gold_count()
 	near.hp = 0.0
 	game.talents.killed(near)
-	check(Profile.gold(game.profile, game.class_id) > gold, "a kill brings gold to the character")
+	check(game.gold_count() > gold, "a kill brings gold to the character")
 	await _free(game)
 
 

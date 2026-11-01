@@ -137,7 +137,6 @@ func apply_local(event: Dictionary, class_id: String) -> void:
 	var state := Profile.class_state(profile, class_id)
 	match str(event.get("kind", "")):
 		"exp":
-			Profile.add_gold(profile, class_id, maxi(0, int(event.get("gold", 0))))
 			var gained := Rules.add_exp(data, state, maxi(0, int(event.get("exp", 0))))
 			if gained > 0: local_event.emit({"kind": "level", "level": int(state.level), "points": Rules.free_points(data, state)})
 		"boss":

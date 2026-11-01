@@ -125,6 +125,24 @@ func place(at: Vector2, amount: int) -> void:
 			"bag": bag, "wait": 0.0, "bounced": true, "landed": 9.0, "fly": false, "phase": _rng.randf() * 10.0})
 
 
+## The floor is left through its portal: the gold and rune stones still lying there go to the
+## hero, not lost with the floor. Returns [gold, rune stones] taken.
+func collect_all() -> Vector2i:
+	var gold := 0
+	var stones := 0
+	for piece: Dictionary in pieces:
+		if bool(piece.get("rune", false)):
+			stones += int(piece.value)
+		else:
+			gold += int(piece.value)
+	pieces = []
+	if gold > 0 and g.has_method("add_gold"):
+		g.add_gold(gold)
+	if stones > 0 and g.has_method("add_runes"):
+		g.add_runes(stones)
+	return Vector2i(gold, stones)
+
+
 ## A slain enemy's gold: a small '+amount' with a coin rising where it fell.
 func kill_popup(at: Vector2, amount: int) -> void:
 	if amount > 0:

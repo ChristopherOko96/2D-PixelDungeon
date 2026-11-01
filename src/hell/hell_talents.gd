@@ -300,7 +300,7 @@ func killed(m: Dictionary) -> void:
 	var kind := "boss" if str(m.get("kind", "")) == "boss" or bool(m.get("boss", false)) else "kill"
 	var state := Profile.class_state(profile, class_id)
 	var gold := int(data.gold.per_boss if kind == "boss" else data.gold.per_kill)
-	Profile.add_gold(profile, class_id, gold)
+	g.add_gold(gold)
 	# seen, never hidden: a small golden '+N' with a coin rises where it fell, and now and then
 	# a rune stone drops there (src/hell/gold_loot.gd)
 	if g.get("gold_loot") != null and m.has("p"):

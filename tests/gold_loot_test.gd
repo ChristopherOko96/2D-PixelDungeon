@@ -2,16 +2,20 @@ extends SceneTree
 ## The loot of the story worlds (src/hell/gold_loot.gd, assets/data/loot_gold.json,
 ## assets/data/loot_runes.json), always seen. Gold: amounts below a bag fall as coins, from a bag on
 ## as bags plus coins; thrown gold lands, flies to the hero and is his in full; a slain enemy's gold
-## rises as a '+N' shortly after its fall. Gold is the character's: each class its own, gone when it
-## dies. Rune stones are the account's: from a slain enemy at once with a rising '+N', from a chest
-## thrown out and picked up; their drop rates sit between rare and common and pay a reset or two a
-## run. In a real floor no old rune stone finds are left, a chest throws its gold out, a death
-## takes the character's gold and keeps the rune stones.
+## rises as a '+N' shortly after its fall. Gold is the running character's: a new one starts with
+## 0, it goes from floor to floor and into the saved games; a death takes it but keeps the saved
+## games (load one: the gold it had then), a character left unsaved is gone with its gold. Rune
+## stones are the account's: from a slain enemy at once with a rising '+N', from a chest thrown out
+## and picked up, saved at once; their drop rates sit between rare and common and pay a reset or
+## two a run. In a real floor no old rune stone finds are left and a chest throws its gold out.
 
 const GoldLoot = preload("res://src/hell/gold_loot.gd")
 const FrostScene = preload("res://src/hell/frost_dungeon.tscn")
 const Profile = preload("res://src/progress/profile.gd")
 const TalentRulesRef = preload("res://src/progress/talent_rules.gd")
+const SaveStore = preload("res://src/save/save_store.gd")
+const StorySave = preload("res://src/save/story_save.gd")
+const TEST_SAVES := "user://gold_loot_test_saves/"
 var checked := 0
 var failures: Array[String] = []
 
@@ -47,12 +51,14 @@ func _run() -> void:
 	test_split_bags_from_ten_coins_below()
 	test_thrown_gold_reaches_the_hero_in_full()
 	test_kill_popup_shows_after_a_short_delay()
-	test_character_gold_is_its_own_and_lost_on_death()
+	test_old_profile_gold_becomes_nothing()
 	test_rune_from_a_slain_enemy_is_taken_at_once_with_a_rising_plus_one()
 	test_rune_from_a_chest_is_thrown_out_and_picked_up()
 	test_rune_rates_between_rare_and_common_pay_a_reset()
 	test_talent_test_profile_has_rune_stones_enough()
+	test_loot_left_lying_goes_with_the_hero_through_the_portal()
 	await test_a_floor_has_gold_instead_of_rune_stones()
+	await test_character_gold_lives_and_dies_with_the_run()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(Profile.default_path()))
 	print("GOLD_LOOT checked=%d failures=%d" % [checked, failures.size()])
 	quit(0 if failures.is_empty() else 1)
@@ -111,23 +117,14 @@ func test_kill_popup_shows_after_a_short_delay() -> void:
 	game.free()
 
 
-func test_character_gold_is_its_own_and_lost_on_death() -> void:
-	# Arrange
+func test_old_profile_gold_becomes_nothing() -> void:
+	# Arrange: a profile of before, with account gold and class gold
 	var d := Profile.data()
-	var profile := Profile.fresh(d)
 	# Act
-	Profile.add_gold(profile, "mage", 30)
-	Profile.add_gold(profile, "archer", 5)
-	Profile.add_runes(profile, 4)
-	var lost := Profile.lose_gold(profile, "mage")
+	var loaded := Profile.sanitize({"gold": 500, "runes": 4, "classes": {"mage": {"level": 3, "gold": 80}}}, d)
 	# Assert
-	check(Profile.gold(profile, "swordsman") == 0, "a new character starts with 0 gold")
-	check(lost == 30 and Profile.gold(profile, "mage") == 0, "the mage's death takes all its 30 gold")
-	check(Profile.gold(profile, "archer") == 5, "the archer keeps its own gold")
-	check(int(profile.runes) == 4, "the rune stones are the account's and stay")
-	var saved := Profile.sanitize(profile, d)
-	check(Profile.gold(saved, "archer") == 5 and int(saved.runes) == 4, "character gold and rune stones survive saving")
-	check(not saved.has("gold") or int(Profile.sanitize({"gold": 500}, d).get("runes", 0)) == 0, "an old account gold becomes no rune stones")
+	check(not loaded.has("gold") and not Profile.class_state(loaded, "mage").has("gold"), "no gold is kept in the profile any more")
+	check(int(loaded.runes) == 4, "the rune stones are the account's and stay")
 
 
 func test_rune_from_a_slain_enemy_is_taken_at_once_with_a_rising_plus_one() -> void:
@@ -208,6 +205,20 @@ func test_talent_test_profile_has_rune_stones_enough() -> void:
 	check(int(loaded_own.runes) == 2, "a player's own profile keeps its rune stones")
 
 
+func test_loot_left_lying_goes_with_the_hero_through_the_portal() -> void:
+	# Arrange: 12 gold and a rune stone lying far from the hero
+	var game := FakeGame.new()
+	var loot := GoldLoot.new(game)
+	loot.place(Vector2(900, 900), 12)
+	loot.spew_runes(Vector2(900, 900), 1)
+	# Act: the portal
+	var taken := loot.collect_all()
+	# Assert
+	check(taken == Vector2i(12, 1) and game.taken == 12 and game.runes == 1, "the floor's lying loot goes with the hero")
+	check(loot.pieces.is_empty(), "nothing is left lying")
+	game.free()
+
+
 func test_a_floor_has_gold_instead_of_rune_stones() -> void:
 	# Arrange: a real Frostgruft floor
 	var game: Node = FrostScene.instantiate()
@@ -235,13 +246,60 @@ func test_a_floor_has_gold_instead_of_rune_stones() -> void:
 	# Assert
 	check(game.gold_loot.pieces.size() - before == 7, "the chest throws its 7 gold out as coins")
 	check(str(chest.get("state", "")) == "empty", "a chest without a heart is empty at once")
-	check(game.gold_count() == Profile.gold(game.profile, "swordsman"), "the HUD's gold is the character's gold")
-	# a death: the character's gold is gone, the account's rune stones stay
-	Profile.add_gold(game.profile, "swordsman", 12)
-	Profile.add_runes(game.profile, 3)
-	var runes_before: int = game.rune_count()
-	game._gold_lost()
-	check(game.gold_count() == 0 and int(game.state.gold_lost) >= 12, "the hero's death takes the character's gold")
-	check(game.rune_count() == runes_before, "the hero's death keeps the rune stones")
+	check(game.gold_count() == int(game.state.get("gold", 0)), "the HUD's gold is the running character's gold")
 	game.queue_free()
 	await process_frame
+
+
+## A Frostgruft game on floor 1 of a fixed world, with its saves in the test's own folder.
+func _story_game() -> Node:
+	var game: Node = FrostScene.instantiate()
+	game.class_id = "swordsman"
+	game.saves = SaveStore.new(TEST_SAVES)
+	root.add_child(game)
+	for k in range(5):
+		await process_frame
+	game.state.world_run = 4242
+	game.load_floor(1, true)
+	await process_frame
+	return game
+
+
+func test_character_gold_lives_and_dies_with_the_run() -> void:
+	# Arrange: a new character
+	var game: Node = await _story_game()
+	var mode := StorySave.mode(game)
+	check(game.gold_count() == 0, "a new character starts with 0 gold")
+	# Act: gold found, the next floor reached, the game saved in slot 2
+	game.add_gold(25)
+	game.load_floor(2, true)
+	await process_frame
+	check(game.gold_count() == 25, "the gold goes with the character to the next floor")
+	check(int(game.floor_save.keep.get("gold", -1)) == 25, "the floor's save record holds the gold")
+	game.saves.write(mode, 2, game.floor_save)
+	# more gold, then the character dies
+	game.add_gold(40)
+	Profile.add_runes(game.profile, 3)
+	var runes_before: int = game.rune_count()
+	game.state.hp = 0
+	game._gold_lost()
+	game.end_run(false)
+	# Assert: gone with the death, the saved game stays and still holds what it had
+	check(game.gold_count() == 0 and int(game.state.gold_lost) == 65, "the hero's death takes all the character's 65 gold")
+	check(game.rune_count() == runes_before, "the hero's death keeps the account's rune stones")
+	var kept: Dictionary = game.saves.read(mode, 2)
+	check(not kept.is_empty() and int((kept.get("keep", {}) as Dictionary).get("gold", -1)) == 25, "the saved game stays after the death, with the 25 gold it had")
+	game.queue_free()
+	await process_frame
+	# a new character of the same class after the death: 0 gold
+	var fresh: Node = await _story_game()
+	check(fresh.gold_count() == 0, "a new character of the same class starts with 0 gold again")
+	# it finds gold and goes back to the menu without saving: that character is gone with its gold
+	fresh.add_gold(30)
+	fresh.queue_free()
+	await process_frame
+	var next: Node = await _story_game()
+	check(next.gold_count() == 0, "gold of a character left for the menu unsaved does not reach the next one")
+	next.queue_free()
+	await process_frame
+	SaveStore.new(TEST_SAVES).erase(mode, 2)

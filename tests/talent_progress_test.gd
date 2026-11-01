@@ -231,7 +231,7 @@ func _test_profile_save_and_sanitize() -> void:
 	check(loaded.shards.have == 4 and loaded.nightmare_firsts == ["rot_king"], "currencies and first kills survive a restart")
 	check(Profile.class_state(loaded, "archer").level == 25 and Profile.class_state(loaded, "archer").ranks.get("sniper_1", 0) == 3, "level and talents survive a restart")
 	var forged := Profile.sanitize({"runes": -50, "shards": {"have": 99, "earned": 2, "spent": 5}, "classes": {"mage": {"level": 99, "gold": -7, "ranks": {"fire_1": 9, "nope": 1}}}}, d)
-	check(forged.runes == 0 and Profile.gold(forged, "mage") == 0 and forged.shards.have == 0 and forged.shards.spent == 2, "negative or inconsistent currencies are repaired")
+	check(forged.runes == 0 and not Profile.class_state(forged, "mage").has("gold") and forged.shards.have == 0 and forged.shards.spent == 2, "negative or inconsistent currencies are repaired")
 	check(Profile.class_state(forged, "mage").level == 30 and Profile.class_state(forged, "mage").ranks == {"fire_1": 3}, "levels and ranks are clamped, unknown talents dropped")
 
 

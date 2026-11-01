@@ -610,10 +610,12 @@ func as_source(who: String, action: Callable) -> Variant:
 ## shard roll when a real floor boss fell (mini-bosses never drop shards).
 ## Solo game, so this machine rolls; the rules are the same as in the crypt.
 func _bank_crystals() -> void:
+	# loot still lying on the floor goes with the hero, not lost with the floor
+	gold_loot.collect_all()
 	if profile.is_empty(): return
 	var state_class := Profile.class_state(profile, class_id)
 	var gained := TalentRules.add_exp(profile_data, state_class, int(profile_data.exp.floor) + (int(profile_data.exp.boss) if W.final else int(profile_data.exp.miniboss)))
-	Profile.add_gold(profile, class_id, int(profile_data.gold.per_floor) + (int(profile_data.gold.per_boss) if W.final else 0))
+	add_gold(int(profile_data.gold.per_floor) + (int(profile_data.gold.per_boss) if W.final else 0))
 	_floor_reward = "+%d Gold" % (int(profile_data.gold.per_floor) + (int(profile_data.gold.per_boss) if W.final else 0))
 	if gained > 0: _floor_reward += "  ·  Heldenstufe %d, neuer Talentpunkt" % int(state_class.level)
 	if W.final:
@@ -782,13 +784,13 @@ func load_floor(n: int, carry: bool) -> void:
 	if not carry or state.is_empty() or _resuming:
 		SubKit.apply(self, talent)
 	var start_hp := int(hero.get("hp", balance.player.hp)) + int(talent.get("hearts", 0))
-	var keep := {"hp": start_hp, "max_hp": start_hp, "gems": 0, "dmg": float(weapon.get("damage", 1.0)),
+	var keep := {"hp": start_hp, "max_hp": start_hp, "gems": 0, "gold": 0, "dmg": float(weapon.get("damage", 1.0)),
 		"rate": float(weapon.get("cooldown", balance.shot.cooldown)), "speed_mul": 1.0, "range": float(weapon.get("life", balance.shot.life)), "buffs": [],
 		"skill": {"owned": false, "active": false, "left": float(balance.clone.duration)},
 		"level": 1, "exp": 0, "skill_cd": {}, "relic": "", "relic_on": false, "upgrades": {}, "offer": [], "cards_due": 0,
 		"relic_floor": 0, "relic_item": "", "talent": talent, "crystals_run": 0, "run_id": _new_run_id(), "world_run": world_run}
 	if carry and not state.is_empty():
-		keep = {"hp": state.hp, "max_hp": state.max_hp, "gems": state.gems, "dmg": state.dmg, "rate": state.rate,
+		keep = {"hp": state.hp, "max_hp": state.max_hp, "gems": state.gems, "gold": int(state.get("gold", 0)), "dmg": state.dmg, "rate": state.rate,
 			"speed_mul": state.speed_mul, "range": state.range, "buffs": state.buffs, "skill": state.skill,
 			"level": state.level, "exp": state.exp, "skill_cd": {}, "relic": state.relic, "relic_on": state.relic_on, "upgrades": state.upgrades,
 			"offer": state.offer, "cards_due": state.cards_due, "relic_floor": state.relic_floor, "relic_item": state.relic_item,
@@ -1606,7 +1608,10 @@ func _new_run_id() -> String:
 func end_run(won: bool) -> void:
 	if not (state.get("over", {}) as Dictionary).is_empty():
 		return
-	saves.erase_run(StorySave.mode(self), str(state.get("run_id", "")))
+	# a won run's saves are done with; a lost run keeps them: the character dies with its gold,
+	# but a game saved earlier can be loaded again with the gold it had then
+	if won:
+		saves.erase_run(StorySave.mode(self), str(state.get("run_id", "")))
 	run_slot = 0
 	state.over = {"won": won, "why": str(state.get("death_why", "")), "floor": int(state.floor), "title": str(W.get("title", "")),
 		"level": int(state.get("level", 1)), "crystals": int(state.get("crystals_run", 0))}
@@ -2135,10 +2140,11 @@ func _drop(kind: String, room: int, at: Vector2, extra := {}) -> void:
 	W.ents.append(e)
 
 
-## The character's gold (src/progress/profile.gd: each class its own, kept from run to run
-## while the character lives, gone when it dies; the round shop will take it).
+## The character's gold: the run's own (a new character starts with 0), carried from floor to
+## floor and kept in its saved games (src/save/story_save.gd CARRIED); gone when it dies or is
+## left unsaved. The round shop will take it.
 func gold_count() -> int:
-	return 0 if profile.is_empty() else Profile.gold(profile, class_id)
+	return int(state.get("gold", 0))
 
 
 ## The account's rune stones (they pay the talent reset; every character shares them).
@@ -2146,32 +2152,37 @@ func rune_count() -> int:
 	return int(profile.get("runes", 0))
 
 
-## Gold taken (src/hell/gold_loot.gd): to the character, saved soon.
+## Gold taken (src/hell/gold_loot.gd, a kill, a floor): to the character.
 func add_gold(n: int) -> void:
-	if profile.is_empty():
-		return
-	Profile.add_gold(profile, class_id, n)
-	if talents != null:
-		talents.request_save()
+	state.gold = maxi(0, int(state.get("gold", 0)) + n)
 
 
-## A rune stone taken (src/hell/gold_loot.gd): to the account, saved soon.
+## A rune stone taken (src/hell/gold_loot.gd): to the account, saved at once (they are rare,
+## and leaving for the menu right after must not lose them).
 func add_runes(n: int) -> void:
 	if profile.is_empty():
 		return
 	Profile.add_runes(profile, n)
-	if talents != null:
-		talents.request_save()
-
-
-## The hero fell: the character's gold is gone at once (saved now, so quitting cannot keep it),
-## and so is the gold still lying on the floor.
-func _gold_lost() -> void:
-	if profile.is_empty():
-		return
-	state.gold_lost = Profile.lose_gold(profile, class_id)
-	gold_loot.reset()
 	Profile.save_profile(profile, profile_path)
+
+
+## The hero fell: the character's gold is gone at once, and so is the gold still lying on the
+## floor (its saved games keep the gold they had). The profile is saved now (rune stones, EXP).
+func _gold_lost() -> void:
+	state.gold_lost = int(state.get("gold", 0))
+	state.gold = 0
+	gold_loot.reset()
+	if not profile.is_empty():
+		Profile.save_profile(profile, profile_path)
+
+
+## Leaving the world (the menu, a closed window): the profile's last seconds (EXP, rune stones,
+## talents) are saved, not lost with the scene.
+func _exit_tree() -> void:
+	if talents != null:
+		talents.save()
+	elif not profile.is_empty():
+		Profile.save_profile(profile, profile_path)
 
 
 func _enemy_shot(from: Vector2, dir: Vector2, speed: float, by: Dictionary = {}) -> void:
