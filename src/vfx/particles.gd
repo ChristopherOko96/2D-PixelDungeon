@@ -54,6 +54,13 @@ extends RefCounted
 ## its skull rolls away (a 3x3 skull turning a quarter every few px, lying
 ## where it stops); the void throws motes; gold coins bounce and glint.
 ##
+## The Leerenmagier's Gefüge fuses (fuse_feed, user 2026-11-01): blobs of its elements float in
+## the Singularität's well and swirl in with the rest, but the core keeps them; two that touch
+## fuse into one heavier blob holding both their elements (lumps of each, flickering fire, glinting
+## ice), and where their elements react they do it in matter (steam, sparks, splinters). Each
+## blob throws off bits of its own elements (flames, drops, slivers) that the well swirls in again;
+## at the collapse the host takes the fused matter out (fuse_take) and throws it as comets.
+##
 ## Matter, not paint (review 2026-10-31, BEFUND.md 5/7): the talents' flying
 ## bits live here. Snow flakes (snow; modes.flake) float down nearly
 ## weightless, flutter on the beat, lie as frost and melt. Lying ice shards
@@ -921,15 +928,25 @@ func _step_wells(delta: float) -> void:
 		# everything in reach swirls in, faster the closer it gets; the core swallows it
 		for index in range(_particles.size() - 1, -1, -1):
 			var particle: Dictionary = _particles[index]
+			# Gefüge matter (fuse_feed) answers only its own well
+			var own := particle.has("fuse")
+			if own and str(particle.fuse) != key: continue
 			var off: Vector2 = p - Vector2(particle.pos)
 			var d := off.length()
 			if d >= r: continue
+			if own and d <= core + float(particle.size) * 0.5:
+				# the core keeps Gefüge matter: it sinks into it and stays there, nearly still
+				particle.vel = (Vector2(particle.vel) + off * _fuse("center", 6.0) * delta) * maxf(0.0, 1.0 - _fuse("hold", 8.0) * delta)
+				continue
 			if d <= core:
 				_particles.remove_at(index)
 				continue
 			var inward := off / d
 			var near := clampf(r / (d + 12.0), 0.0, 6.0)
-			particle.vel = Vector2(particle.vel) + (inward * float(w.pull) + inward.orthogonal() * float(w.spin)) * near * delta
+			var scale := _fuse("pull_scale", 0.4) if own else 1.0
+			# heavier Gefüge matter is turned less by the swirl (fuse_feed): it sinks in
+			var swirl := float(w.spin) / maxf(1.0, float(particle.n)) if own else float(w.spin)
+			particle.vel = Vector2(particle.vel) + (inward * float(w.pull) + inward.orthogonal() * swirl) * near * delta * scale
 			if float(particle.gravity) > 0.0 and float(particle.z) <= 1.0:
 				particle.vz = maxf(float(particle.vz), 30.0 * near)
 		# motes circle in as streaks
@@ -945,6 +962,309 @@ func _step_wells(delta: float) -> void:
 		if float(w.suck) <= 0.0 and bool(w.get("floor", true)):
 			w.suck = 0.25
 			_suck(p, r * 0.8)
+
+
+func _fuse(key: String, fallback: float) -> float:
+	return float(_data.get("fuse", {}).get(key, fallback))
+
+
+## Gefüge matter (the Leerenmagier's Singularität, user 2026-11-01: its particles fuse in the
+## whirl, everything simulated): a blob of element `el` (`cols` spec, lite, body, shade, deep)
+## seen at `point`, its floor point fuse.height px under it, thrown in with `velocity` and held by
+## the well `key`: it swirls in with the rest (fuse.pull_scale of the pull, the swirl divided by
+## its units: heavy matter sinks in) but the core does not swallow it, it sinks into it and stays
+## (fuse.center, hold), it lives while the well does, throws off bits of its own matter (_blob_matter) and
+## fuses with the others of its well it touches (_step_fusion).
+func fuse_feed(key: String, point: Vector2, velocity: Vector2, el: String, cols: Array) -> void:
+	if cols.size() < 5: return
+	var height := _fuse("height", 8.0)
+	var blob := emit(point, velocity, cols[2], 1.0, "fuse", PIXEL * 2.0, height, 0.0, _fuse("drag", 0.4))
+	blob.gravity = 0.0
+	blob.vz = 0.0
+	blob.z_to = height
+	blob.free = false
+	blob.settle = false
+	blob.fade = false
+	blob.glow = false
+	blob.fuse = key
+	blob.parts = {el: 1.0}
+	blob.ramps = {el: cols}
+	blob.n = 1.0
+	blob.size = _fuse_size(1.0)
+	blob.spin = _rng.randf() * TAU
+	blob.bits = _rng.randf() * _fuse("bits_every", 0.2)
+	blob.flash = 0.0
+	blob.mix_seed = _rng.randi() % 100000
+
+
+## Takes the Gefüge matter of the well `key` out of the air (the Singularität collapsing):
+## {pos: the middle of its blobs (weighted by their units), z, parts: {el: units}, ramps, n};
+## empty when there is none.
+func fuse_take(key: String) -> Dictionary:
+	var sum := 0.0
+	var at := Vector2.ZERO
+	var z := 0.0
+	var parts := {}
+	var ramps := {}
+	for index in range(_particles.size() - 1, -1, -1):
+		var blob: Dictionary = _particles[index]
+		if not blob.has("fuse") or str(blob.fuse) != key: continue
+		var n := float(blob.n)
+		sum += n
+		at += Vector2(blob.pos) * n
+		z = maxf(z, float(blob.z))
+		for el: String in blob.parts:
+			parts[el] = float(parts.get(el, 0.0)) + float(blob.parts[el])
+			ramps[el] = blob.ramps[el]
+		_particles.remove_at(index)
+	if sum <= 0.0: return {}
+	return {"pos": at / sum, "z": z, "parts": parts, "ramps": ramps, "n": sum}
+
+
+## How many blobs of Gefüge matter the well `key` holds in the air (x) and how many units (y).
+func fuse_blobs(key: String) -> Vector2i:
+	var out := Vector2i.ZERO
+	for blob: Dictionary in _particles:
+		if blob.has("fuse") and str(blob.fuse) == key:
+			out.x += 1
+			out.y += roundi(float(blob.n))
+	return out
+
+
+## A blob of `n` units is PIXEL x (fuse.size + fuse.grow x sqrt(n)) px across, at most size_max.
+func _fuse_size(n: float) -> float:
+	return clampf(PIXEL * (_fuse("size", 1.5) + _fuse("grow", 2.2) * sqrt(maxf(1.0, n))), PIXEL * 2.0, _fuse("size_max", 30.0))
+
+
+## Gefüge matter (fuse_feed) each frame: kept alive while its well lasts, turning (fuse.spin
+## rad/s), throwing off bits of its own matter (_blob_matter); it holds together: the smaller
+## blobs of a well are drawn to its heaviest one (fuse.cohesion px/s^2, stronger with the units
+## it holds); two blobs of one well that touch (closer than fuse.reach x their radii summed)
+## fuse into one (_fuse_pair).
+func _step_fusion(delta: float) -> void:
+	var groups := {}
+	for particle: Dictionary in _particles:
+		if not particle.has("fuse"): continue
+		var key := str(particle.fuse)
+		if not groups.has(key): groups[key] = []
+		(groups[key] as Array).append(particle)
+	if groups.is_empty(): return
+	var reach := _fuse("reach", 1.0)
+	var fused := false
+	for key: String in groups:
+		var blobs: Array = groups[key]
+		var held := _wells.has(key)
+		var heavy: Dictionary = blobs[0]
+		for blob: Dictionary in blobs:
+			if held: blob.life = 1.0
+			blob.spin = float(blob.spin) + delta * _fuse("spin", 2.5)
+			blob.flash = maxf(0.0, float(blob.flash) - delta)
+			_blob_matter(blob, delta)
+			if float(blob.n) > float(heavy.n): heavy = blob
+		var cling := _fuse("cohesion", 260.0) * sqrt(float(heavy.n))
+		for blob: Dictionary in blobs:
+			if blob == heavy: continue
+			var to: Vector2 = Vector2(heavy.pos) - Vector2(blob.pos)
+			if to.length() > 0.5: blob.vel = Vector2(blob.vel) + to.normalized() * cling * delta
+		for i in range(blobs.size()):
+			var a: Dictionary = blobs[i]
+			if a.has("dead"): continue
+			for j in range(i + 1, blobs.size()):
+				var b: Dictionary = blobs[j]
+				if b.has("dead"): continue
+				if Vector2(a.pos).distance_to(b.pos) > (float(a.size) + float(b.size)) * 0.5 * reach: continue
+				_fuse_pair(a, b)
+				b.dead = true
+				fused = true
+	if not fused: return
+	for index in range(_particles.size() - 1, -1, -1):
+		if (_particles[index] as Dictionary).has("dead"): _particles.remove_at(index)
+
+
+## Blob `b` fuses into blob `a`: one blob where they met (weighted by their units), holding the
+## units and elements of both, as big as its units make it (_fuse_size), its rim flashing for
+## fuse.flash s; where elements meet that react, they do it in matter (_fuse_reaction: steam
+## rising, sparks flying, ice splintering), and a few motes of the void fly off.
+func _fuse_pair(a: Dictionary, b: Dictionary) -> void:
+	var na := float(a.n)
+	var nb := float(b.n)
+	var sum := na + nb
+	var at := (Vector2(a.pos) * na + Vector2(b.pos) * nb) / sum
+	var what := _fuse_reaction(a.parts, b.parts)
+	a.pos = at
+	a.vel = (Vector2(a.vel) * na + Vector2(b.vel) * nb) / sum
+	var parts: Dictionary = a.parts
+	var ramps: Dictionary = a.ramps
+	for el: String in b.parts:
+		parts[el] = float(parts.get(el, 0.0)) + float(b.parts[el])
+		ramps[el] = b.ramps[el]
+	a.n = sum
+	a.size = _fuse_size(sum)
+	a.flash = _fuse("flash", 0.12)
+	_sound("fuse", at, 1)
+	var z := float(a.z)
+	match what:
+		"steam": steam(at, 2 + mini(int(sum / 4.0), 3), float(a.size) * 0.4)
+		"spark": sparks(at - Vector2(0.0, z), Vector2.UP, 4 + mini(int(sum / 3.0), 4))
+		"frost":
+			var ice: Variant = ramps.get("ice", [])
+			shatter(at, 2, Vector2.ZERO, 50.0, ice if ice is Array else [], 1, z)
+	var cols := _void_ramp()
+	motes(at, 2, [cols[0], cols[1], cols[2]], 6.0, z)
+
+
+## How the matter of two blobs reacts where they fuse (`pa`, `pb`: their {el: units}): "spark"
+## when fire or lava meets poison (it goes off), "steam" when it meets water, ice or blood,
+## "frost" when ice meets water, "" for none (the strongest of their pairs).
+static func _fuse_reaction(pa: Dictionary, pb: Dictionary) -> String:
+	var best := ""
+	for x: String in pa:
+		for y: String in pb:
+			var what := _pair_reaction(x, y)
+			if what == "spark": return what
+			if what == "steam" or (what == "frost" and best.is_empty()): best = what
+	return best
+
+
+static func _pair_reaction(x: String, y: String) -> String:
+	var hot := ["fire", "lava"]
+	if hot.has(x) != hot.has(y):
+		var other := y if hot.has(x) else x
+		if other == "poison": return "spark"
+		if other in ["water", "ice", "blood"]: return "steam"
+	if (x == "ice" and y == "water") or (x == "water" and y == "ice"): return "frost"
+	return ""
+
+
+## A blob of Gefüge matter throws off a bit of its own elements now and then (every
+## fuse.bits_every s, more often the bigger it is), picked by their shares and by what it is:
+## fire and lava a flame rising off it, water, poison and blood a drop that falls, ice a sliver,
+## bone and gold a chip, the rest a mote; its well swirls them in again.
+func _blob_matter(blob: Dictionary, delta: float) -> void:
+	blob.bits = float(blob.bits) - delta
+	if float(blob.bits) > 0.0: return
+	blob.bits = _fuse("bits_every", 0.2) / sqrt(maxf(1.0, float(blob.n)))
+	if room(1) == 0: return
+	var parts: Dictionary = blob.parts
+	var pick := _rng.randf() * float(blob.n)
+	var el := ""
+	for name: String in parts:
+		el = name
+		pick -= float(parts[name])
+		if pick <= 0.0: break
+	if el.is_empty(): return
+	var cols: Array = blob.ramps[el]
+	var r := float(blob.size) * 0.5
+	var out := Vector2.from_angle(_rng.randf() * TAU)
+	var spot := Vector2(blob.pos) + out * r * 0.5 * Vector2(1.0, 0.6)
+	var z := float(blob.z)
+	match el:
+		"fire", "lava":
+			flames(spot, 1, cols, r * 0.3, z + r * 0.3)
+		"water", "poison", "blood":
+			emit(spot, out * _rng.randf_range(30.0, 70.0), cols[1 + _rng.randi() % 2], _rng.randf_range(1.2, 2.0), "drop", PIXEL, z, _rng.randf_range(30.0, 70.0), 1.5)
+		"ice":
+			shatter(spot, 1, out, 50.0, cols, 1, z)
+		"bone", "gold":
+			chips(spot, 1, out, [cols[1], cols[2]])
+		_:
+			motes(spot, 1, [cols[0], cols[1]], 8.0, z)
+
+
+## A blob of fused Gefüge matter (fuse_feed): its units as lumps of their own elements packed
+## into one (a sunflower of up to fuse.lumps lumps turning with it, each its element's colours,
+## lit at its top left and dark at its foot: fire flickering on the beat, ice with a glinting
+## facet, water with a shine, poison bubbling; a dark seam where two elements meet), an ink rim
+## round it (white the moment it fused) and its shadow on the floor under it.
+func _draw_fused(canvas: CanvasItem, blob: Dictionary) -> void:
+	var size := float(blob.size)
+	var ground: Vector2 = blob.pos
+	var mid := (ground - Vector2(0.0, float(blob.z))) / PIXEL
+	var r := size * 0.5 / PIXEL
+	canvas.draw_rect(Rect2(_snap(ground - Vector2(size * 0.5, 0.0)), Vector2(size, PIXEL)), Color(0, 0, 0, 0.22))
+	var parts: Dictionary = blob.parts
+	var ramps: Dictionary = blob.ramps
+	var names: Array = parts.keys()
+	if names.is_empty(): return
+	var total := maxf(0.001, float(blob.n))
+	var count := clampi(roundi(total), 1, int(_fuse("lumps", 14)))
+	var spin := float(blob.spin)
+	# its lumps' elements by their shares, shuffled by the blob's own seed (the same every frame):
+	# the elements lie mixed all through it, never in rings or wedges
+	var order: Array = []
+	var acc := 0.0
+	for name: Variant in names:
+		acc += float(parts[name])
+		while order.size() < mini(count, roundi(acc / total * float(count))): order.append(str(name))
+	while order.size() < count: order.append(str(names[-1]))
+	var h := int(blob.get("mix_seed", 7)) + count * 7919
+	for j in range(order.size() - 1, 0, -1):
+		h = (h * 1103515245 + 12345) & 0x7fffffff
+		var k := h % (j + 1)
+		var keep: Variant = order[j]
+		order[j] = order[k]
+		order[k] = keep
+	var lumps: Array = []
+	for j in range(count):
+		var rr := r * 0.62 * sqrt((float(j) + 0.5) / float(count))
+		var a := float(j) * 2.39996 + spin
+		lumps.append([mid + Vector2(cos(a), sin(a) * 0.85) * rr, str(order[j])])
+	var lr := maxf(1.0, r * 0.75 / sqrt(float(count)))
+	var beat := int(_time * 12.0)
+	var flash := float(blob.flash) > 0.0
+	var ink := Color("1a1414")
+	var ext := int(ceil(r)) + 2
+	var c := Vector2i(mid.floor())
+	for y in range(-ext, ext + 1):
+		for x in range(-ext, ext + 1):
+			var q := c + Vector2i(x, y)
+			var pt := Vector2(q) + Vector2(0.5, 0.5)
+			var off := pt - mid
+			var dd := off.length()
+			var edge := r * (1.0 + 0.08 * sin(off.angle() * 5.0 + _time * 3.0 + total))
+			if dd > edge + 1.0: continue
+			if dd > edge:
+				canvas.draw_rect(Rect2(Vector2(q) * PIXEL, Vector2(PIXEL, PIXEL)), Color.WHITE if flash else ink)
+				continue
+			var best := 0
+			var d1 := INF
+			for k in range(lumps.size()):
+				var dk := pt.distance_to(lumps[k][0])
+				if dk < d1:
+					d1 = dk
+					best = k
+			var el := str(lumps[best][1])
+			var d2 := INF
+			for k in range(lumps.size()):
+				if str(lumps[k][1]) != el: d2 = minf(d2, pt.distance_to(lumps[k][0]))
+			var cols: Array = ramps.get(el, [])
+			if cols.size() < 5: continue
+			var col: Color = cols[4] if d2 - d1 < 0.7 else _lump_colour(el, cols, pt - (lumps[best][0] as Vector2), lr, q, beat)
+			canvas.draw_rect(Rect2(Vector2(q) * PIXEL, Vector2(PIXEL, PIXEL)), col)
+
+
+## The colour of art pixel `q` in a lump of element `el` (`cols` spec..deep), `local` from the
+## lump's middle, `lr` its radius, on the 12 fps `beat` (_draw_fused).
+static func _lump_colour(el: String, cols: Array, local: Vector2, lr: float, q: Vector2i, beat: int) -> Color:
+	var lit := local.x + local.y < -lr * 0.5
+	var foot := local.y > lr * 0.45
+	var idx := 3 if foot else (1 if lit else 2)
+	match el:
+		"fire", "lava":
+			# hot: white-yellow at its heart, yellow, orange at its foot, flickering on the beat
+			idx = 2 if foot else (0 if local.length() < lr * 0.45 else 1)
+			if posmod(beat + q.x * 3 + q.y * 5, 5) == 0: idx = maxi(0, idx - 1)
+		"ice":
+			# pale and hard: spec and lite in facets, a glint now and then
+			idx = 2 if foot else (0 if local.x - local.y < 0.0 else 1)
+			if lit and posmod(beat + q.x + q.y, 9) == 0: idx = 0
+		"water":
+			# deep: body and shade, a shine at its top left
+			idx = 4 if foot else (2 if lit else 3)
+			if (local - Vector2(-lr * 0.4, -lr * 0.4)).length() < 0.8: idx = 0
+		"poison":
+			if posmod(beat / 2 + q.x * 7 + q.y * 3, 11) == 0: idx = 1
+	return cols[idx]
 
 
 ## Lifts loose floor pixels and glowing embers within `radius` of `point` so
@@ -1489,6 +1809,7 @@ func update(delta: float) -> void:
 	_time += delta
 	_grow_rime(delta)
 	_step_wells(delta)
+	_step_fusion(delta)
 	_step_implosions()
 	_spread_pools(delta)
 	_fade_marks()
@@ -1619,10 +1940,16 @@ func _move(particle: Dictionary, delta: float) -> void:
 	particle.vel = velocity * maxf(0.0, 1.0 - drag * delta)
 
 
-## The oldest particle makes room: debris lands where it is, the rest vanishes.
+## The oldest particle makes room: debris lands where it is, the rest vanishes. Gefüge matter
+## (fuse_feed) is never the one: the units it carries must reach the collapse.
 func _evict() -> void:
-	var oldest: Dictionary = _particles.pop_front()
-	if bool(oldest.settle): _settle(oldest)
+	for index in range(_particles.size()):
+		var oldest: Dictionary = _particles[index]
+		if oldest.has("fuse"): continue
+		_particles.remove_at(index)
+		if bool(oldest.settle): _settle(oldest)
+		return
+	_particles.pop_front()
 
 
 ## A resting debris particle becomes loose floor pixels (only on the floor);
@@ -1770,6 +2097,9 @@ func draw_particles(canvas: CanvasItem) -> void:
 		# Airborne chunks cast a pixel shadow on the floor under them.
 		if size >= 4.0 and height > 3.0 and bool(particle.settle):
 			canvas.draw_rect(Rect2(_snap(ground - Vector2(size * 0.5, 0.0)), Vector2(size, PIXEL)), Color(0, 0, 0, 0.22))
+		if particle.has("parts"):
+			_draw_fused(canvas, particle)
+			continue
 		if particle.has("skull"):
 			# a skull rolling: its 3x3 cells turned a quarter for every 6 px it rolls
 			var middle := Vector2i(((ground - Vector2(0.0, height)) / PIXEL).floor())

@@ -99,7 +99,7 @@
     "passby_px": 150, "listener_lift_px": 40
   },
   "particles": {
-    "events": {"burst_debris": "burst_debris", "burst_drop": "burst_drops", "burst_dust": "burst_dust", "burst_spark": "sparks", "burst_chip": "chips"},
+    "events": {"fuse": "tal_impact_void", "burst_debris": "burst_debris", "burst_drop": "burst_drops", "burst_dust": "burst_dust", "burst_spark": "sparks", "burst_chip": "chips"},
     "cluster_px": 60, "cluster_s": 0.06, "base_count": 8, "db_per_doubling": 4.0, "min_db": -6.0, "max_db": 3.0,
     "settle": {
       "chance": {"bone": 0.2, "stone": 0.2, "ice": 0.2, "liquid": 0.15}, "chance_default": 0.2,
@@ -126,7 +126,7 @@
       "leap_slam": "dash_land", "soul": "tal_harvest", "mark": "tal_mark", "summon": "tal_summon", "leap": "pet_ability_1", "dive": "pet_ability_1", "echo": "tal_echo",
       "block_hit": "block_hit", "block_break": "block_break", "guard": "block_hit", "parry": "tal_counter", "shield": "tal_shield_hit", "dome_hit": "tal_shield_hit",
       "explosion": "tal_impact", "pet_lance": "pet_ability_1", "pet_cleave": "pet_ability_1", "pet_strike": "pet_attack", "pet_bolt": "pet_attack", "pet_fell": "pet_death",
-      "trap": "tal_trap_snap", "arrow_finale": "tal_zone_end", "catch": "catch_shot", "land": "lance_drops", "eject": "ult_singularity_release",
+      "trap": "tal_trap_snap", "arrow_finale": "tal_zone_end", "catch": "catch_shot", "land": "lance_drops", "eject": "ult_singularity_release", "spit": "ult_singularity_release", "mix_land": "tal_impact", "churn": "react_boil",
       "wall_slam": "wall_slam", "splat": "splat", "mana": "mana_orb", "no_res": "no_mana",
       "heal": "heal", "gefuege_spend": "gefuege_spend", "pet_spawn": "pet_spawn", "pet_hurt": "pet_hurt", "tal_impact": "tal_impact",
       "crit": "", "dodged": "", "drawn": ""

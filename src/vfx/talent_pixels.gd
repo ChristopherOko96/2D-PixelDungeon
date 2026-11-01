@@ -2260,3 +2260,513 @@ static func tether(canvas: CanvasItem, from: Vector2, to: Vector2, k: float, ess
 		if not motes.has(q + Vector2i(0, 1)) and not line.has(q + Vector2i(0, 1)):
 			PixelPaint.cell(canvas, q + Vector2i(0, 1), Pal.INK, art)
 	PixelPaint.paint(canvas, motes, art)
+
+
+## The Arkanes Gefüge fusing in the Singularität's whirl, painted where there are no particles
+## (with particles the blobs are matter: particles.gd fuse_feed; src/vfx/talent_fx.gd, zone.mix;
+## user 2026-11-01: a mixture of all the elements, each still its own matter, and the particles in
+## the whirl fuse): up to spec particles particles of its elements, each a chunk of its own matter
+## (_matter: a flame, a drop, a shard, goo ...), circle the core; two by two they fuse, then the
+## pairs, then those (a fusion tree, each step within merge_w of its share of the whirl's life,
+## all done by fuse_end of it), each fusion flashing and reacting (_fuse_flash: sparks, steam,
+## frost), the fused ones drawn in closer, until all of them are one big clump on the core whose
+## parts keep tumbling round each other (pack_spin) and reacting where they touch (_seams).
+## `blend` = 0..1 of the whirl's life. `spec` = vfx_talents.json void.mix.
+## [codeblock]
+## TalentPixels.mixing(canvas, at, r, ["fire", "poison", "water"], 0.5, 1.0, 3.0, clock, 7)
+## [/codeblock]
+static func mixing(canvas: CanvasItem, at: Vector2, r: float, units: Array, blend: float, k: float, art: float, clock: float, seed: int, spec: Dictionary = {}) -> void:
+	if not paint_matter:
+		return
+	if units.is_empty() or k <= 0.0 or r < art * 4.0:
+		return
+	var c := Vector2(PixelPaint.at(at, art))
+	var n := mini(units.size(), int(spec.get("particles", 16)))
+	var levels := 0
+	while (1 << levels) < n:
+		levels += 1
+	var lam := float(levels) * clampf(blend / maxf(0.05, float(spec.get("fuse_end", 0.85))), 0.0, 1.0)
+	var l0 := mini(int(floor(lam)), levels)
+	var frac := lam - float(l0)
+	var w := clampf(float(spec.get("merge_w", 0.4)), 0.05, 1.0)
+	var t := clampf((frac - (1.0 - w)) / w, 0.0, 1.0) if l0 < levels else 0.0
+	var ease := t * t * (3.0 - 2.0 * t)
+	var s0 := clampf(r / art * float(spec.get("chunk", 0.06)), 1.6, float(spec.get("chunk_max", 5.0)))
+	var reach := r / art * float(spec.get("reach", 0.42))
+	var turn := clock * float(spec.get("spin", 2.4)) + _rnd(seed, 1) * TAU
+	var pack := clock * float(spec.get("pack_spin", 3.0))
+	var drawn: Array = []
+	for i in range(n):
+		var at_now := _fused_at(i, n, l0, levels, c, reach, s0, turn, pack)
+		if ease > 0.0:
+			at_now = at_now.lerp(_fused_at(i, n, l0 + 1, levels, c, reach, s0, turn, pack), ease)
+		drawn.append({"at": at_now, "el": str(units[i]), "i": i})
+	drawn.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return (a.at as Vector2).y < (b.at as Vector2).y)
+	var cells := {}
+	var over := {}
+	for d: Dictionary in drawn:
+		_matter(cells, over, d.at, s0, str(d.el), clock, seed + int(d.i) * 37, 0.0, k, 0.9)
+	_seams(over, drawn, s0, clock, seed, k, int(spec.get("react_max", 6)))
+	# the flash where two have just fused (the start of a step of the tree)
+	var flash := float(spec.get("flash", 0.18))
+	if l0 > 0 and frac < flash:
+		var size := 1 << l0
+		var count := ceili(float(n) / float(size))
+		for g in range(count):
+			var first := g * size
+			var half := first + size / 2
+			if half >= n:
+				continue
+			var gc := _group_at(g, count, l0, levels, c, reach, turn)
+			_fuse_flash(over, gc, frac / flash, s0 * sqrt(float(mini(size, n - first))), _reaction(str(units[first]), str(units[half])), clock, seed + g * 5 + l0, k)
+	_flush(canvas, cells, art)
+	PixelPaint.paint(canvas, over, art)
+
+
+## Where particle `i` of `n` is at step `l` of the fusion tree (levels steps in all): its group
+## (the 2^l particles it has fused with) circling the core (_group_at), the group's parts packed
+## round its middle on a sunflower spiral and turning round it (`pack` rad, alternate groups the
+## other way).
+static func _fused_at(i: int, n: int, l: int, levels: int, c: Vector2, reach: float, s0: float, turn: float, pack: float) -> Vector2:
+	var step := mini(l, levels)
+	var size := 1 << step
+	var g := i / size
+	var count := ceili(float(n) / float(size))
+	var at := _group_at(g, count, step, levels, c, reach, turn)
+	var m := mini(size, n - g * size)
+	if m <= 1:
+		return at
+	var j := i - g * size
+	var rr := s0 * 0.9 * sqrt(float(m)) * sqrt((float(j) + 0.5) / float(m))
+	var ang := float(j) * 2.39996 + pack * (1.0 if g % 2 == 0 else -1.0)
+	return at + Vector2(cos(ang), sin(ang) * 0.8) * rr
+
+
+## The middle of group `g` of `count` at step `l` of `levels`: on a ring round the core (flattened
+## like the whirl), the groups evenly round it turning with `turn`, the ring drawn in to the core
+## as they fuse (at the last step one group on the core). A fused group's angle is the middle of
+## its two halves'.
+static func _group_at(g: int, count: int, l: int, levels: int, c: Vector2, reach: float, turn: float) -> Vector2:
+	var ring := reach * pow(1.0 - float(l) / float(maxi(1, levels)), 0.8)
+	var a := TAU * (float(g) + 0.5) / float(maxi(1, count)) + turn
+	return c + Vector2(cos(a), sin(a) * 0.6) * ring
+
+
+## The flash of a fusion at art point `m` into `over`, `f` 0..1 of it: a ring of light growing out
+## from `size` cells and thinning out, and the two elements' reaction (_react_cells) in it.
+static func _fuse_flash(over: Dictionary, m: Vector2, f: float, size: float, reaction: String, clock: float, seed: int, k: float) -> void:
+	var vr: Array = Pal.ramp("void")
+	var ring := size * (0.7 + 0.8 * f)
+	var steps := maxi(8, int(ring * 4.0))
+	for j in range(steps):
+		var a := TAU * float(j) / float(steps)
+		var q := Vector2i((m + Vector2(cos(a), sin(a) * 0.8) * ring).round())
+		if PixelPaint.shown(q, k * (1.0 - f)):
+			over[q] = Color.WHITE if f < 0.35 else vr[4]
+	if not reaction.is_empty():
+		_react_cells(over, m, reaction, clock, seed, k)
+
+
+## Where two neighbouring particles of different elements touch (closer than 1.8 x `s0` cells),
+## they react (_reaction, _react_cells), at most `most` of them.
+static func _seams(over: Dictionary, drawn: Array, s0: float, clock: float, seed: int, k: float, most: int) -> void:
+	var left := most
+	for i in range(drawn.size()):
+		for j in range(i + 1, drawn.size()):
+			if left <= 0:
+				return
+			var x: Dictionary = drawn[i]
+			var y: Dictionary = drawn[j]
+			var what := _reaction(str(x.el), str(y.el))
+			if what.is_empty() or (x.at as Vector2).distance_to(y.at) > s0 * 1.8:
+				continue
+			_react_cells(over, ((x.at as Vector2) + (y.at as Vector2)) * 0.5, what, clock, seed + int(x.get("i", i)) * 7 + int(y.get("i", j)) * 13, k)
+			left -= 1
+
+
+## Particles of `units`' elements fused into one clump round art point `c` into `cells`/`over`:
+## `count` of them, each a chunk of its own matter `s0` cells big (_matter), packed on a sunflower
+## spiral out to `pack_r` cells and turning by `rot` rad, squashed to `flat`; reacting where they
+## touch (_seams, at most `most`). Dithered to `k`.
+static func _cluster(cells: Dictionary, over: Dictionary, c: Vector2, units: Array, count: int, s0: float, pack_r: float, rot: float, flat: float, clock: float, seed: int, k: float, most: int) -> void:
+	if units.is_empty() or count <= 0:
+		return
+	var drawn: Array = []
+	for j in range(count):
+		var rr := pack_r * sqrt((float(j) + 0.5) / float(count))
+		var ang := float(j) * 2.39996 + rot
+		drawn.append({"at": c + Vector2(cos(ang), sin(ang) * flat) * rr, "el": str(units[j % units.size()]), "i": j})
+	drawn.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return (a.at as Vector2).y < (b.at as Vector2).y)
+	for d: Dictionary in drawn:
+		_matter(cells, over, d.at, s0, str(d.el), clock, seed + int(d.i) * 37, 0.0, k, flat)
+	_seams(over, drawn, s0, clock, seed, k, most)
+
+
+## What stays of the Singularität's mixture in its explosion zone (event churn, user 2026-11-01):
+## the fused clump of all its elements on the core (_cluster), `p` 0..1 of its life, loosening out
+## over the field of radius `r` (start..spread of it within grow_t of its life) and settling
+## flatter into it (flat), its parts still turning round each other (spin) and reacting; bits of
+## their matter jump out of it and land in the field round it (drops, hop_s, hop_arc cells); it
+## fades out from fade_from. `spec` = vfx_talents.json void.churn.
+## [codeblock]
+## TalentPixels.churn(canvas, core, 60.0, ["fire", "poison", "water"], 0.3, 3.0, clock, 9)
+## [/codeblock]
+static func churn(canvas: CanvasItem, at: Vector2, r: float, units: Array, p: float, art: float, clock: float, seed: int, spec: Dictionary = {}) -> void:
+	if not paint_matter:
+		return
+	if units.is_empty() or p >= 1.0 or r < art * 2.0:
+		return
+	var c := Vector2(PixelPaint.at(at, art))
+	var big := r / art
+	var grow := _out(p / maxf(0.05, float(spec.get("grow_t", 0.35))))
+	var pack_r := big * lerpf(float(spec.get("start", 0.3)), float(spec.get("spread", 0.75)), grow)
+	var flat := lerpf(0.85, float(spec.get("flat", 0.55)), smoothstep(0.25, 1.0, p))
+	var k := 1.0 - smoothstep(float(spec.get("fade_from", 0.7)), 1.0, p)
+	var s0 := clampf(big * float(spec.get("chunk", 0.12)), 1.6, float(spec.get("chunk_max", 5.0)))
+	var cells := {}
+	var over := {}
+	_cluster(cells, over, c, units, mini(units.size(), int(spec.get("particles", 16))), s0, pack_r, clock * float(spec.get("spin", 1.2)), flat, clock, seed, k, int(spec.get("react_max", 8)))
+	_flush(canvas, cells, art)
+	PixelPaint.paint(canvas, over, art)
+	# bits of its elements' matter jumping out of it and landing in the field round it
+	var kinds := _kinds(units)
+	var hops := {}
+	var hop_over := {}
+	for i in range(int(spec.get("drops", 10))):
+		var period := float(spec.get("hop_s", 0.7)) * (0.75 + 0.5 * _rnd(seed, i + 80))
+		var tt := clock / period + _rnd(seed, i + 90)
+		var ph := fposmod(tt, 1.0)
+		var cycle := floori(tt)
+		if ph >= 0.85 or not PixelPaint.shown(Vector2i(i, cycle), k):
+			continue
+		var a0 := _rnd(seed + cycle, i + 100) * TAU
+		var a1 := a0 + (_rnd(seed + cycle, i + 110) - 0.5) * 1.2
+		var from := c + Vector2(cos(a0), sin(a0) * flat) * pack_r * 0.6
+		var to := c + Vector2(cos(a1), sin(a1) * flat) * lerpf(pack_r + s0, big * 0.95, _rnd(seed + cycle, i + 120))
+		var f := ph / 0.85
+		var q := from.lerp(to, f) - Vector2(0.0, sin(f * PI) * float(spec.get("hop_arc", 8)))
+		_matter(hops, hop_over, q, 1.6, str(kinds[i % kinds.size()]), clock, seed + i * 31, 0.0, 1.0, 1.0)
+	_flush(canvas, hops, art)
+	PixelPaint.paint(canvas, hop_over, art)
+
+
+## The Singularität's mixture spat out (event spit): one glob of the mixture flying from `from` to
+## `to` in an arc, `f` 0..1 of its flight (fast out, settling in): a few particles of all its
+## elements fused into one (_cluster: chunks of chunk_cells cells packed out to size + size_per x
+## sqrt(units) cells, up to size_max, tumbling at spin rad/s), bits of each element trailing
+## behind it (tail cells). `spec` = vfx_talents.json void.spit.
+## [codeblock]
+## TalentPixels.glob(canvas, core, spot, ["fire", "poison"], 0.4, 3.0, clock, 9)
+## [/codeblock]
+static func glob(canvas: CanvasItem, from: Vector2, to: Vector2, units: Array, f: float, art: float, clock: float, seed: int, spec: Dictionary = {}) -> void:
+	if not paint_matter:
+		return
+	if units.is_empty() or f < 0.0 or f >= 1.0:
+		return
+	var a := Vector2(PixelPaint.at(from, art))
+	var b := Vector2(PixelPaint.at(to, art))
+	var e := _out(f)
+	var c := a.lerp(b, e) - Vector2(0.0, sin(f * PI) * float(spec.get("arc", 8)))
+	var size := clampf(float(spec.get("size", 3.0)) + sqrt(float(units.size())) * float(spec.get("size_per", 1.0)), 2.0, float(spec.get("size_max", 8.0)))
+	var n := units.size()
+	# the trail: bits of its elements behind it, thinning out
+	var way := (b - a).normalized() if b != a else Vector2.RIGHT
+	var trail := {}
+	for s in range(1, int(spec.get("tail", 4)) + 1):
+		var ramp: Array = Pal.ramp(str(units[(s * 3 + seed) % n]))
+		for side in [-1, 0, 1]:
+			var q := Vector2i((c - way * (size + float(s) * 1.6) + way.orthogonal() * float(side) * maxf(0.0, size * 0.5 - float(s) * 0.5)).round())
+			if not trail.has(q) and PixelPaint.shown(q, 1.0 - float(s) * 0.2):
+				trail[q] = ramp[3] if s < 3 else ramp[2]
+	PixelPaint.paint(canvas, trail, art)
+	var cells := {}
+	var over := {}
+	_cluster(cells, over, c, units, mini(n, int(spec.get("chunks", 6))), float(spec.get("chunk_cells", 2.2)), size * 0.6, clock * float(spec.get("spin", 6.0)), 0.9, clock, seed, 1.0, int(spec.get("react_max", 2)))
+	_flush(canvas, cells, art)
+	PixelPaint.paint(canvas, over, art)
+
+
+## The mixture landing (event mix_land), `p` 0..1 of it: bits of every element's own matter
+## (_matter) thrown out of the spot of radius `r` all round at once, rising and falling back
+## (`per` bits per element), shrinking as they go. `kinds` = its elements.
+## [codeblock]
+## TalentPixels.splash_mix(canvas, spot, 40.0, ["fire", "water"], 0.3, 3.0, clock, 9)
+## [/codeblock]
+static func splash_mix(canvas: CanvasItem, at: Vector2, r: float, kinds: Array, p: float, art: float, clock: float, seed: int, per: int = 4) -> void:
+	if not paint_matter:
+		return
+	if kinds.is_empty() or p >= 1.0:
+		return
+	var c := Vector2(PixelPaint.at(at, art))
+	var reach := maxf(4.0, r / art * 0.8) * _out(p)
+	var k := 1.0 - p * p
+	var cells := {}
+	var over := {}
+	var count := kinds.size() * maxi(1, per)
+	for j in range(count):
+		var a := TAU * (float(j) + _rnd(seed, j) * 0.6) / float(count)
+		var q := c + Vector2(cos(a), sin(a) * 0.7) * reach * (0.6 + 0.4 * _rnd(seed, j + 20)) - Vector2(0.0, sin(p * PI) * 6.0)
+		_matter(cells, over, q, maxf(1.0, 2.2 * (1.0 - p * 0.6)), str(kinds[j % kinds.size()]), clock, seed + j * 29, 0.0, k, 1.0)
+	_flush(canvas, cells, art)
+	PixelPaint.paint(canvas, over, art)
+
+
+## How two elements react where their matter touches: "steam" (fire or lava on water, ice or
+## blood), "spark" (fire or lava on poison), "frost" (ice on water), "" for none.
+static func _reaction(a: String, b: String) -> String:
+	var hot := ["fire", "lava"]
+	var pair := [a, b]
+	pair.sort()
+	if hot.has(a) != hot.has(b):
+		var other := b if hot.has(a) else a
+		if other in ["water", "ice", "blood"]:
+			return "steam"
+		if other == "poison":
+			return "spark"
+	if pair == ["ice", "water"]:
+		return "frost"
+	return ""
+
+
+## The cells of a reaction at art point `m` into `over`: steam puffing up, a spark flashing, frost
+## crusting.
+static func _react_cells(over: Dictionary, m: Vector2, what: String, clock: float, seed: int, k: float) -> void:
+	var q := Vector2i(m.round())
+	var frame := _frame(clock)
+	match what:
+		"steam":
+			for j in range(3):
+				var rise := fposmod(clock * 5.0 + _rnd(seed, j) * 5.0, 5.0)
+				var sq := q + Vector2i(j - 1, -int(rise))
+				if PixelPaint.shown(sq, k * (1.0 - rise / 5.0)):
+					over[sq] = STEAM[0] if rise < 2.0 else STEAM[1]
+		"spark":
+			var fire: Array = Pal.ramp("fire")
+			if posmod(frame + seed, 5) < 2:
+				over[q] = Color.WHITE
+				for o: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+					over[q + o] = fire[4]
+			elif PixelPaint.shown(q, k):
+				over[q] = fire[3]
+		"frost":
+			var ice: Array = Pal.ramp("ice")
+			over[q] = ice[4]
+			over[q + Vector2i(1, 0)] = ice[3]
+
+
+## The light and the dark grey of steam (_react_cells).
+const STEAM := [Color("e2e8ec"), Color("a9b3bb")]
+
+
+## One element's own matter as a chunk of art cells into `cells` round art point `p`, `s` cells
+## big (`over`: what rises or flies off it): fire a flickering flame throwing embers, lava a dark
+## crust with glowing veins, water a wobbling blob throwing drops, ice a tumbling shard with a
+## glint, poison bubbling goo letting off gas, blood a drop dripping, bone a tumbling chip, gold a
+## spinning coin, soul a thin wisp, anything else a blob of its colours. `depth` < 0 lies behind
+## (darker); `flat` squashes the round ones; dithered to `k`.
+static func _matter(cells: Dictionary, over: Dictionary, p: Vector2, s: float, el: String, clock: float, seed: int, depth: float, k: float, flat: float = 1.0) -> void:
+	var kind := "lava" if el == "lava" else Pal.resolve(el)
+	var ramp: Array = Pal.ramp(el)
+	var dark := 1 if depth < -0.25 else 0
+	var ic := Vector2i(p.round())
+	var e := int(ceil(s))
+	var frame := _frame(clock)
+	var squash := clampf(flat, 0.5, 1.0)
+	match kind:
+		"fire":
+			var top := int(ceil(s * 1.7))
+			for y in range(-top, e + 1):
+				for x in range(-e - 1, e + 2):
+					var fy := float(y)
+					var fx := float(x) - sin(clock * 14.0 + float(seed) + fy * 0.8) * 0.6 * maxf(0.0, -fy / s)
+					var heat := 0.0
+					if fy >= 0.0:
+						heat = Vector2(fx, fy * 1.2).length() / s
+					else:
+						var half := s * (1.0 + fy / (s * 1.7))
+						if half <= 0.0:
+							continue
+						heat = maxf(absf(fx) / half, -fy / (s * 1.7))
+					if heat > 1.0:
+						continue
+					var q := ic + Vector2i(x, y)
+					if not PixelPaint.shown(q, k):
+						continue
+					var idx := 4 if heat < 0.4 else (3 if heat < 0.7 else 2)
+					if fy < -s * 1.1:
+						idx = 1
+					cells[q] = ramp[maxi(1, idx - dark)]
+			# embers rising off it
+			for j in range(2):
+				var rise := fposmod(clock * 9.0 + _rnd(seed, j) * 7.0, 7.0)
+				var eq := ic + Vector2i(roundi(sin(clock * 3.0 + float(j * 2 + seed)) * s * 0.6), -top - int(rise))
+				if PixelPaint.shown(eq, k * (1.0 - rise / 7.0)):
+					over[eq] = ramp[4] if j == 0 else ramp[3]
+		"lava":
+			var pulse := 4 if sin(clock * 4.0 + float(seed)) > 0.6 else 3
+			for y in range(-e, e + 1):
+				for x in range(-e, e + 1):
+					var dd := Vector2(float(x), float(y) / (0.9 * squash)).length()
+					if dd > s:
+						continue
+					var q := ic + Vector2i(x, y)
+					if not PixelPaint.shown(q, k):
+						continue
+					var vein := absf(sin(float(x) * 1.7 + float(y) * 2.3 + float(seed) * 0.3 + clock * 0.5)) < 0.3
+					if dd > s - 1.0:
+						cells[q] = ramp[0].darkened(0.35)
+					elif vein:
+						cells[q] = ramp[pulse - dark]
+					else:
+						cells[q] = ramp[0] if (x + y) % 3 != 0 else ramp[1]
+		"water":
+			for y in range(-e, e + 1):
+				for x in range(-e - 1, e + 2):
+					var v := Vector2(float(x), float(y) / (0.85 * squash))
+					var edge := s * (1.0 + 0.12 * sin(v.angle() * 3.0 + clock * 5.0 + float(seed)))
+					if v.length() > edge:
+						continue
+					var q := ic + Vector2i(x, y)
+					if not PixelPaint.shown(q, k):
+						continue
+					var idx := 1
+					if float(y) > s * 0.4:
+						idx = 0
+					elif float(x + y) < -s * 0.5:
+						idx = 2
+					cells[q] = ramp[maxi(0, idx - dark)]
+			var shine := ic + Vector2i(roundi(-s * 0.4), roundi(-s * 0.45))
+			if cells.has(shine):
+				cells[shine] = ramp[4 - dark]
+			# a drop thrown off it
+			var ph := fposmod(clock * 1.6 + _rnd(seed, 1), 1.0)
+			var side := 1.0 if _rnd(seed, 2) > 0.5 else -1.0
+			var dq := ic + Vector2i(roundi(side * (s + ph * s * 1.2)), roundi(-sin(ph * PI) * s * 1.2))
+			if PixelPaint.shown(dq, k):
+				over[dq] = ramp[3]
+		"ice":
+			# a shard tumbling: tall, wide and square in turn
+			var turn := posmod(frame / 4 + seed, 3)
+			var wx := 1.0 if turn == 0 else (0.6 if turn == 1 else 0.9)
+			var wy := 0.6 if turn == 0 else (1.0 if turn == 1 else 0.9)
+			for y in range(-e - 1, e + 2):
+				for x in range(-e - 1, e + 2):
+					var val := absf(float(x)) * wx + absf(float(y)) * wy
+					if val > s:
+						continue
+					var q := ic + Vector2i(x, y)
+					if not PixelPaint.shown(q, k):
+						continue
+					var idx := 2
+					if val > s - 1.0:
+						idx = 1
+					elif float(x + y) < -s * 0.5:
+						idx = 4
+					elif x + y < 0:
+						idx = 3
+					cells[q] = ramp[maxi(1, idx - dark)]
+			if posmod(frame + seed, 9) == 0:
+				var g := ic + Vector2i(roundi(-s * 0.4), roundi(-s * 0.4))
+				for o: Vector2i in [Vector2i.ZERO, Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+					over[g + o] = ramp[4]
+		"poison":
+			for y in range(-e - 1, e + 2):
+				for x in range(-e - 1, e + 2):
+					var v := Vector2(float(x), float(y) / (0.9 * squash))
+					var edge := s * (1.0 + 0.18 * sin(v.angle() * 3.0 - clock * 3.0 + float(seed)))
+					if v.length() > edge:
+						continue
+					var q := ic + Vector2i(x, y)
+					if not PixelPaint.shown(q, k):
+						continue
+					var idx := 2
+					if float(y) > s * 0.35:
+						idx = 1
+					elif float(x + y) < -s * 0.6:
+						idx = 3
+					cells[q] = ramp[maxi(1, idx - dark)]
+			# bubbles popping in it and a puff of its gas going up
+			for j in range(2):
+				var ph := fposmod(clock * 2.0 + _rnd(seed, j + 5), 1.0)
+				var bq := ic + Vector2i(roundi((_rnd(seed + int(clock * 2.0), j) - 0.5) * s), roundi((_rnd(seed + int(clock * 2.0), j + 9) - 0.5) * s * 0.8))
+				if cells.has(bq):
+					cells[bq] = ramp[4] if ph > 0.7 else ramp[3]
+			var rise := fposmod(clock * 4.0 + _rnd(seed, 3) * 4.0, 5.0)
+			var gq := ic + Vector2i(roundi(sin(clock * 2.0 + float(seed)) * s * 0.5), -e - 1 - int(rise))
+			if PixelPaint.shown(gq, k * (1.0 - rise / 5.0)):
+				over[gq] = (ramp[3] as Color).lerp(STEAM[1], 0.45)
+		"blood":
+			for y in range(-e, e + 1):
+				for x in range(-e, e + 1):
+					var dd := Vector2(float(x), float(y) / (0.9 * squash)).length()
+					if dd > s:
+						continue
+					var q := ic + Vector2i(x, y)
+					if not PixelPaint.shown(q, k):
+						continue
+					cells[q] = ramp[maxi(0, (1 if float(y) > s * 0.3 else 2) - dark)]
+			var sp := ic + Vector2i(roundi(-s * 0.4), roundi(-s * 0.4))
+			if cells.has(sp):
+				cells[sp] = ramp[4 - dark]
+			var fall := fposmod(clock * 3.0 + _rnd(seed, 4) * 3.0, 3.0)
+			var dq := ic + Vector2i(0, e + 1 + int(fall))
+			if PixelPaint.shown(dq, k * (1.0 - fall / 3.0)):
+				over[dq] = ramp[2]
+		"bone":
+			var lie := posmod(frame / 5 + seed, 2) == 0
+			var hx := s if lie else s * 0.45
+			var hy := s * 0.45 if lie else s
+			for y in range(-e, e + 1):
+				for x in range(-e, e + 1):
+					if absf(float(x)) > hx or absf(float(y)) > hy:
+						continue
+					var q := ic + Vector2i(x, y)
+					if not PixelPaint.shown(q, k):
+						continue
+					var rim := absf(float(x)) > hx - 1.0 or absf(float(y)) > hy - 1.0
+					cells[q] = ramp[maxi(1, (2 if rim else 3) - dark)]
+			cells[ic + Vector2i(roundi(-hx * 0.5), roundi(-hy * 0.5))] = ramp[4 - dark]
+		"gold":
+			var w := s * absf(cos(clock * 5.0 + float(seed))) + 0.6
+			for y in range(-e, e + 1):
+				for x in range(-e, e + 1):
+					if Vector2(float(x) / w, float(y) / s).length() > 1.0:
+						continue
+					var q := ic + Vector2i(x, y)
+					if not PixelPaint.shown(q, k):
+						continue
+					var rim := Vector2(float(x) / maxf(0.5, w - 1.0), float(y) / maxf(0.5, s - 1.0)).length() > 1.0
+					cells[q] = ramp[maxi(1, (1 if rim else 3) - dark)]
+			if posmod(frame + seed, 7) == 0:
+				over[ic + Vector2i(0, -e - 1)] = ramp[4]
+		"soul":
+			for y in range(-e, e + 1):
+				for x in range(-e, e + 1):
+					var dd := Vector2(float(x), float(y)).length()
+					var q := ic + Vector2i(x, y)
+					if dd > s or not PixelPaint.shown(q, k * 0.8):
+						continue
+					cells[q] = ramp[maxi(1, (3 if dd < s * 0.5 else 2) - dark)]
+			for j in range(3):
+				var tq := ic + Vector2i(roundi(sin(clock * 3.0 + float(j + seed)) * 1.2), -e - 1 - j)
+				if PixelPaint.shown(tq, k * (1.0 - float(j) * 0.3)):
+					over[tq] = ramp[3 - mini(j, 2)]
+		_:
+			for y in range(-e, e + 1):
+				for x in range(-e, e + 1):
+					var dd := Vector2(float(x), float(y) / squash).length()
+					if dd > s:
+						continue
+					var q := ic + Vector2i(x, y)
+					if not PixelPaint.shown(q, k):
+						continue
+					cells[q] = ramp[maxi(1, (1 if dd > s - 1.0 else (3 if float(x + y) < -s * 0.5 else 2)) - dark)]
+
+
+## The element kinds among `units`, in their first order.
+static func _kinds(units: Array) -> Array[String]:
+	var out: Array[String] = []
+	for el: Variant in units:
+		if not out.has(str(el)):
+			out.append(str(el))
+	return out

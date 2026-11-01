@@ -1723,7 +1723,7 @@
         "dmg": 1.8,
         "radius_m": 5
       },
-      "text": "Ein Wirbel an der Zielstelle zieht 4 s lang Gegner in 5 m zu sich (Bosse nicht), verschlingt Pfützen und Gas in dein Gefüge und trifft jede halbe Sekunde mit 30 %. Wer in seinen Kern (1,5 m) gerät, ist gefangen und kreist um ihn (Minibosse werden nur gezogen); jeder Gefangene gibt seine Essenz ins Gefüge. Am Ende fällt er zusammen: 180 %, dein ganzes Gefüge bricht chaotisch heraus (bis zu 24 Elementgeschosse, 6–8 m weit, jedes landet als sein Element) und die Gefangenen werden nach außen geschleudert: wer gegen eine Wand prallt, nimmt 200 %.",
+      "text": "Ein Wirbel an der Zielstelle zieht 4 s lang Gegner in 5 m zu sich (Bosse nicht), verschlingt Pfützen und Gas in dein Gefüge und trifft jede halbe Sekunde mit 30 %. Wer in seinen Kern (1,5 m) gerät, ist gefangen und kreist um ihn (Minibosse werden nur gezogen); jeder Gefangene gibt seine Essenz ins Gefüge. Am Ende fällt er zusammen: 180 %, die Elemente deines Gefüges vermischen sich in seinem Kern zu einem großen Klumpen: 40 % davon bleiben als breites Mischfeld in der Explosionszone und mischen sich dort weiter, der Rest fliegt als 3 bis 6 Klumpen 6 bis 8 m weit in alle Ecken. Jeder Klumpen ist das ganze Gemisch, alle Elemente landen zugleich und reagieren miteinander, +10 % Wirkung je weitere Element-Sorte, und die Gefangenen werden nach außen geschleudert: wer gegen eine Wand prallt, nimmt 200 %.",
       "stages": [
         {
           "name": "Ereignishorizont",

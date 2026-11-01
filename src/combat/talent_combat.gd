@@ -1100,8 +1100,8 @@ func snapshot() -> Dictionary:
 		"bx": Vector2(zone.wall.b).x if zone.has("wall") else 0.0, "by": Vector2(zone.wall.b).y if zone.has("wall") else 0.0,
 		"path": (zone.path as Array).map(func(p: Vector2) -> Array: return [p.x, p.y]) if zone.has("path") else [], "w": float(zone.get("w", 0.0)),
 		"talent": str(zone.get("talent", "")), "total": float(zone.get("total", zone.time)), "every": float(zone.get("every", 1.0)), "stage": int(zone.get("stage", 0)), "ground": bool(zone.get("ground", false)),
-		# the Singularität: the ids caught in its core and the core's radius
-		"caught": Array(zone.get("caught", [])).duplicate(), "core": float(zone.get("core", 0.0))})
+		# the Singularität: the ids caught in its core, the core's radius and the Gefüge it mixes
+		"caught": Array(zone.get("caught", [])).duplicate(), "core": float(zone.get("core", 0.0)), "mix": Array(zone.get("mix", [])).duplicate(true)})
 	out.auras = auras()
 	# enemies the Singularität's collapse is flinging: where they are and where they fly
 	out.flung = flung.map(func(f: Dictionary) -> Dictionary: return {"x": Vector2(f.enemy.pos).x, "y": Vector2(f.enemy.pos).y, "dx": Vector2(f.dir).x, "dy": Vector2(f.dir).y})
@@ -1871,7 +1871,9 @@ func _step_drops(delta: float) -> void:
 		drop.time = float(drop.time) - delta
 		if float(drop.time) > 0.0: continue
 		drops.remove_at(i)
-		_land(drop)
+		# the Singularität's spat-out mixture lands as all its elements at once
+		if drop.has("mix"): _land_mix(drop)
+		else: _land(drop)
 
 
 ## A Gefüge element lands (gefuege.land[el]): it hurts the enemies round it
@@ -1880,18 +1882,21 @@ func _step_drops(delta: float) -> void:
 ## poison goes off, water boils or freezes; the chains stay capped by
 ## element_rules.json reactions); bone, soul and gold are shards that only
 ## hurt. A bundle of n units hits harder (bundle_scale); Entfesselte Leere
-## (eject_pct) makes every landing stronger. Event "land" {el, n, owner, eject}.
-func _land(drop: Dictionary) -> void:
+## (eject_pct) makes every landing stronger; drop.grow spreads it wider (the spat-out mixture).
+## Event "land" {el, n, owner, eject}. Returns its radius (0 when it does not land).
+func _land(drop: Dictionary) -> float:
 	var owner := int(drop.owner)
 	var rt := runtime(owner)
 	var cfg := _gf_cfg()
 	var lands: Dictionary = cfg.get("land", {})
 	var land: Dictionary = lands.get(str(drop.el), {})
-	if land.is_empty() or rt.is_empty(): return
+	if land.is_empty() or rt.is_empty(): return 0.0
 	var at: Vector2 = drop.pos
-	var size := 1.0 + float(int(drop.n) - 1) * float(cfg.get("bundle_scale", 0.5))
+	# a share below one unit lands in proportion to it, a bundle of more grows by bundle_scale per unit
+	var units := float(drop.n)
+	var size := units if units < 1.0 else 1.0 + (units - 1.0) * float(cfg.get("bundle_scale", 0.5))
 	var power := size * (1.0 + _sum(rt, "eject_pct", "pct") / 100.0)
-	var radius := float(land.get("radius_m", 0.8)) * float(data.meter_px) * minf(sqrt(size), 2.0)
+	var radius := float(land.get("radius_m", 0.8)) * float(data.meter_px) * minf(sqrt(size), 2.0) * float(drop.get("grow", 1.0))
 	var base := float(drop.get("base", 1.0))
 	var status := str(land.get("status", ""))
 	if float(land.get("dmg", 0.0)) > 0.0:
@@ -1904,7 +1909,8 @@ func _land(drop: Dictionary) -> void:
 	if not pool.is_empty(): _pool_at(owner, pool, at, radius, float(land.get("time", 5.0)), float(land.get("dps", 0.0)) * base * power, status)
 	var react := str(land.get("react", ""))
 	if not react.is_empty(): _react(react, at, radius, owner)
-	_event("land", at, radius, {"el": str(drop.el), "n": int(drop.n), "owner": owner, "eject": bool(drop.get("eject", false)), "life": 0.6})
+	_event("land", at, radius, {"el": str(drop.el), "n": float(drop.n), "owner": owner, "eject": bool(drop.get("eject", false)), "life": 0.6})
+	return radius
 
 
 ## A pool of `style` the hero owns at `at`: the host's (the story worlds'
@@ -1955,57 +1961,108 @@ func _catch_step(zone: Dictionary, delta: float) -> void:
 		var angle := float(zone.spin) + TAU * float(k) / float(held.size())
 		_shove(enemy, Vector2(zone.pos) + Vector2.from_angle(angle) * float(zone.core) * float(cfg.get("orbit_r", 0.6)))
 		_hold_enemy(enemy, float(cfg.get("hold_s", 0.25)))
+	# what the Gefüge holds, for the whirl's look: its elements swirl inside the core and blend into
+	# one mixture until the collapse spits it out (src/vfx/talent_fx.gd, TalentPixels.mixing)
+	zone.mix = Array(gefuege_state(runtime(int(zone.owner))).get("units", []))
 
 
-## The Singularität collapses: the whole Gefüge breaks out chaotically (at
-## most gefuege.eject_max bolts, a golden-angle spiral to spots eject_m away,
-## each landing as its element: _land), event "eject" {els: [{el, n, tx, ty,
-## t}], owner}; the caught enemies (and minibosses pulled into the core) fly
-## radially outward (_step_flung).
+## The Singularität collapses (user, 2026-11-01): the elements were mixed inside the Gefüge into
+## one clump, and only that mixture comes out. gefuege.spit stay of every element stays in the
+## explosion zone: it lands on the core at once as one wide mixed field (stay_scale wider), where
+## its elements go on mixing (event "churn" {els, owner} for churn_s s); the rest flies out into
+## every corner as min_count..count globs (about per_glob units each), every glob the same
+## mixture, an equal share of every element (_mix_globs), spread evenly round the core (turned by
+## up to jitter of a step) to spots spit.m [min, max] metres away (walls permitting, spit.speed
+## px/s, spit.delay s apart); each lands as all its elements at once (_land_mix). Event "spit"
+## {globs: [{els: [{el, n}] in landing order, n, tx, ty, d launch s, t landing s}], els (the
+## whole mixture), stay, zone (the whirl's id), owner}; the caught enemies (and minibosses pulled
+## into the core) were flung outward before (_fling_caught).
 func _collapse(zone: Dictionary) -> void:
 	var owner := int(zone.owner)
 	var rt := runtime(owner)
-	var cfg := _gf_cfg()
+	var spit: Dictionary = _gf_cfg().get("spit", {})
 	var meter := float(data.meter_px)
 	var center: Vector2 = zone.pos
 	var book := _gf_log(rt)
 	var els := spend(owner, gefuege_units(rt))
-	var bolts := _bundle(els, int(cfg.get("eject_max", 24)))
-	var span: Array = cfg.get("eject_m", [6, 8])
+	book.eject_units = els.size()
+	book.ejected = 0
+	if els.is_empty(): return
+	var whole := _mixture(els)
+	var stay := clampf(float(spit.get("stay", 0.4)), 0.0, 1.0)
+	var flying := float(els.size()) * (1.0 - stay)
+	var count := 0
+	if flying > 0.0:
+		count = clampi(ceili(flying / maxf(1.0, float(spit.get("per_glob", 4)))), maxi(1, int(spit.get("min_count", 3))), maxi(1, int(spit.get("count", 6))))
+	var globs := _mix_globs(whole, 1.0 - stay, count)
+	var span: Array = spit.get("m", [6, 8])
 	var start := _rng.randf() * TAU
+	var step := TAU / float(maxi(1, globs.size()))
 	var out: Array = []
 	var longest := 0.0
-	for k in range(bolts.size()):
-		var bolt: Dictionary = bolts[k]
-		var away := Vector2.from_angle(start + float(k) * 2.399963)
+	for k in range(globs.size()):
+		var mix: Array = globs[k]
+		var units := 0.0
+		for part: Dictionary in mix: units += float(part.n)
+		var away := Vector2.from_angle(start + step * (float(k) + (_rng.randf() - 0.5) * float(spit.get("jitter", 0.3))))
 		var at := _move(center, away * lerpf(float(span[0]), float(span[1]), _rng.randf()) * meter, 6.0, game.current_layout)
-		var delay := float(cfg.get("eject_delay", 0.04)) * float(k) + center.distance_to(at) / maxf(1.0, float(cfg.get("eject_speed", 520)))
+		var launch := float(spit.get("delay", 0.04)) * float(k)
+		var delay := launch + maxf(0.05, center.distance_to(at) / maxf(1.0, float(spit.get("speed", 420.0))))
 		longest = maxf(longest, delay)
-		drops.append({"time": delay, "el": str(bolt.el), "n": int(bolt.n), "pos": at, "owner": owner, "talent": str(zone.talent), "base": float(zone.get("base", 1.0)), "eject": true})
-		out.append({"el": str(bolt.el), "n": int(bolt.n), "tx": at.x, "ty": at.y, "t": delay})
+		drops.append({"time": delay, "mix": mix, "n": units, "pos": at, "owner": owner, "talent": str(zone.talent), "base": float(zone.get("base", 1.0)), "eject": true})
+		out.append({"els": mix, "n": units, "tx": at.x, "ty": at.y, "d": launch, "t": delay})
 	book.ejected = out.size()
-	book.eject_units = els.size()
-	if not out.is_empty(): _event("eject", center, float(zone.r), {"els": out, "owner": owner, "life": longest + 0.4})
-	# the caught were flung out before the blast (_fling_caught)
+	_event("spit", center, float(zone.r), {"globs": out, "els": whole, "stay": stay, "zone": int(zone.id), "owner": owner, "life": longest + 0.4})
+	if stay <= 0.0: return
+	# what stays: one wide mixed field on the core, its elements going on mixing there
+	var kept: Array = _mix_globs(whole, stay, 1)[0]
+	var wide := _land_mix({"mix": kept, "n": float(els.size()) * stay, "pos": center, "owner": owner, "talent": str(zone.talent),
+		"base": float(zone.get("base", 1.0)), "grow": float(spit.get("stay_scale", 1.6)), "stay": true})
+	_event("churn", center, wide, {"els": kept, "owner": owner, "life": maxf(0.1, float(spit.get("churn_s", 2.5)))})
 
 
-## Bundles element units (oldest first) into at most `most` bolts: runs of
-## one element stay together; with too many, the smallest joins a neighbour.
-func _bundle(els: Array, most: int) -> Array:
-	var bolts: Array = []
-	if els.is_empty() or most <= 0: return bolts
-	var per := ceili(float(els.size()) / float(most))
-	for el: Variant in els:
-		if not bolts.is_empty() and str(bolts[-1].el) == str(el) and int(bolts[-1].n) < per: bolts[-1].n = int(bolts[-1].n) + 1
-		else: bolts.append({"el": str(el), "n": 1})
-	while bolts.size() > most:
-		var small := 0
-		for k in range(bolts.size()):
-			if int(bolts[k].n) < int(bolts[small].n): small = k
-		var into := small - 1 if small > 0 else 1
-		bolts[into].n = int(bolts[into].n) + int(bolts[small].n)
-		bolts.remove_at(small)
-	return bolts
+## `share` (0..1) of a mixture split into `count` globs that are all the same mixture: each holds
+## every element, an equal part of its share (n may be a fraction: _land scales by it). Each glob:
+## [{el, n}] in the mixture's (landing) order; none for count 0.
+func _mix_globs(whole: Array, share: float, count: int) -> Array:
+	var globs: Array = []
+	for k in range(maxi(0, count)):
+		var glob: Array = []
+		for part: Dictionary in whole: glob.append({"el": str(part.el), "n": float(part.n) * share / float(count)})
+		globs.append(glob)
+	return globs
+
+
+## Element units as a mixture: [{el, n}] per element, in gefuege.spit.order (the liquids first,
+## fire last, so on landing the fire sets off the poison and boils the water), any element not
+## named there before the fire.
+func _mixture(els: Array) -> Array:
+	var counts := {}
+	for el: Variant in els: counts[str(el)] = int(counts.get(str(el), 0)) + 1
+	var order: Array = (_gf_cfg().get("spit", {}) as Dictionary).get("order", [])
+	var out: Array = []
+	for el: String in counts:
+		if not order.has(el): out.append({"el": el, "n": int(counts[el])})
+	for el: Variant in order:
+		if counts.has(str(el)): out.append({"el": str(el), "n": int(counts[str(el)])})
+	return out
+
+
+## The spat-out mixture lands: every element of it at once on its spot (_land, in the mixture's
+## order), each spread wider (drop.grow, else spit.radius_scale) and stronger by spit.mix_bonus
+## for every kind beyond the first; then event "mix_land" {els, n, stay, owner} for its splash.
+## Returns the widest radius it landed with.
+func _land_mix(drop: Dictionary) -> float:
+	var spit: Dictionary = _gf_cfg().get("spit", {})
+	var mix: Array = drop.mix
+	var bonus := 1.0 + float(spit.get("mix_bonus", 0.1)) * float(maxi(0, mix.size() - 1))
+	var widest := 0.0
+	for part: Dictionary in mix:
+		var radius := _land({"el": str(part.el), "n": float(part.n), "pos": drop.pos, "owner": int(drop.owner), "talent": str(drop.talent),
+			"base": float(drop.get("base", 1.0)) * bonus, "eject": true, "grow": float(drop.get("grow", spit.get("radius_scale", 1.2)))})
+		widest = maxf(widest, radius)
+	_event("mix_land", drop.pos, widest, {"els": mix, "n": float(drop.get("n", 0)), "stay": bool(drop.get("stay", false)), "talent": str(drop.talent), "owner": int(drop.owner), "life": 0.9})
+	return widest
 
 
 ## Flung enemies fly on outward (gefuege.fling_speed px/s) until fling_m is

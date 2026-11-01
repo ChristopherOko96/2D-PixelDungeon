@@ -221,6 +221,8 @@ var _ticked: Dictionary = {}
 ## strikes, Gletschergrab's slivers as each spire breaks through, the
 ## Urknall's comets in their launch order: {t, kind, ...} (_run_deferred).
 var _deferred: Array = []
+## Gefüge blobs thrown into each Singularität's well so far (zone id -> count; _feed_gefuege).
+var _fed: Dictionary = {}
 ## Keys done once (a Gletschergrab block's spires thrown): key -> when.
 var _once: Dictionary = {}
 
@@ -355,6 +357,7 @@ func draw_ground(canvas: CanvasItem, state: Dictionary, clock: float) -> void:
 	for drawing: Dictionary in state.get("drawings", []):
 		_draw_line_preview(canvas, drawing, clock)
 	_draw_looks(canvas, zones, clock)
+	_draw_churns(canvas, state, clock)
 	for zone: Dictionary in zones:
 		if _own_look(zone): continue
 		var at := Vector2(float(zone.x), float(zone.y))
@@ -496,6 +499,32 @@ func _zone_matter(zone: Dictionary, clock: float) -> void:
 		var sg: Dictionary = cfg.get("void", {}).get("singularity", {})
 		particles.well("talent_sing:%d" % id, at * s, r * s * float(sg.get("reach", 1.2)), float(sg.get("pull", 260)), float(sg.get("swirl", 180)),
 			r * s * float(sg.get("core", 0.12)), 0.2, float(sg.get("mote_rate", 30)), [])
+		_feed_gefuege(zone, id, at, r, clock)
+
+
+## The Singularität's Gefüge as matter (user 2026-11-01: everything simulated, its particles fuse
+## in the whirl): the units it holds (zone.mix, at most void.fuse feed_max) are thrown into its
+## well from feed_rim of its radius, a blob each, over feed_share of the whirl's life, along the
+## swirl at feed_throw px/s; there they circle in and fuse (particles.gd fuse_feed, _step_fusion).
+## Units it swallows later are thrown in as they come.
+func _feed_gefuege(zone: Dictionary, id: int, at: Vector2, r: float, clock: float) -> void:
+	var held := _mix_counts(zone.get("mix", []))
+	if held.is_empty(): return
+	var fz: Dictionary = cfg.get("void", {}).get("fuse", {})
+	var units := _unit_list(held, 1, int(fz.get("feed_max", 24)))
+	var life := _zone_life(zone, clock)
+	var due := mini(units.size(), ceili(float(units.size()) * clampf(life.x / maxf(0.1, life.y * float(fz.get("feed_share", 0.45))), 0.0, 1.0)))
+	var fed := int(_fed.get(id, 0))
+	if fed >= due: return
+	if _fed.size() > 32: _fed.clear()
+	var s := to_particles
+	while fed < due:
+		var el := str(units[fed])
+		var out := Vector2.from_angle(_h(id * 13 + fed * 7) * TAU)
+		var rim := at + out * r * float(fz.get("feed_rim", 0.85)) * Vector2(1.0, 0.75)
+		particles.fuse_feed("talent_sing:%d" % id, rim * s - Vector2(0.0, 8.0), (-out).orthogonal() * float(fz.get("feed_throw", 60.0)) * s, el, Pal.ramp_hot(el))
+		fed += 1
+	_fed[id] = fed
 
 
 ## The Blizzard's snow: flakes fall all over it (frost.blizzard flake_rate per
@@ -1063,6 +1092,24 @@ func draw_events(canvas: CanvasItem, state: Dictionary, clock: float = -1.0) -> 
 				# the Urknall empties the pocket: comet pixels on a spiral
 				var ej: Dictionary = cfg.get("void", {}).get("eject", {})
 				TalentPixels.comets(canvas, at, maxf(r, _u(30.0)), _unit_list(event.get("els", []), int(ej.get("per_unit", 1)), int(ej.get("cap", 40))), p, art, id, ej)
+			"spit":
+				# the Singularität spits the mixture from its core into every corner: globs that
+				# are all the same mixture, each leaving at its own launch time (talent_combat.gd
+				# _collapse)
+				var sp: Dictionary = cfg.get("void", {}).get("spit", {})
+				var now := p * span
+				var g := 0
+				for glob: Variant in event.get("globs", []):
+					if not glob is Dictionary: continue
+					var launch := float(glob.get("d", 0.0))
+					var land := maxf(launch + 0.05, float(glob.get("t", 0.4)))
+					var spot := Vector2(float(glob.get("tx", at.x)), float(glob.get("ty", at.y)))
+					TalentPixels.glob(canvas, at, spot, _mix_units(glob.get("els", []), float(sp.get("per_unit", 2.0)), int(sp.get("cap", 24))), (now - launch) / (land - launch), art, _clock, id + g * 31, sp)
+					g += 1
+			"mix_land":
+				# the mixture bursts where it lands: bits of every element's own matter thrown out
+				# all round at once
+				TalentPixels.splash_mix(canvas, at, r, _mix_counts(event.get("els", [])).keys(), p, art, _clock, id, int(cfg.get("void", {}).get("spit", {}).get("burst", 4)))
 			"splat":
 				# an enemy flung against a wall: the smack of its matter where it struck
 				TalentPixels.burst(canvas, at, int(cfg.get("void", {}).get("splat", {}).get("smack", 9)), clampf(p * 2.0, 0.0, 1.0), _splat_element(str(event.get("material", "flesh"))), art, id)
@@ -1338,7 +1385,8 @@ func _observe(state: Dictionary, clock: float) -> void:
 		var at := Vector2(float(event.x), float(event.y))
 		var r := float(event.get("r", 0.0))
 		var kind := str(event.get("kind", ""))
-		if kind == "swallow" or kind == "eject": element = "void"
+		if kind == "swallow" or kind == "eject" or kind == "spit": element = "void"
+		elif kind == "mix_land" and not _mix_counts(event.get("els", [])).is_empty(): element = str(_mix_counts(event.get("els", [])).keys()[-1])
 		elif kind == "splat": element = _splat_element(str(event.get("material", "flesh")))
 		if tier != "":
 			var spec: Dictionary = cfg.get("tiers", {}).get(tier, {})
@@ -1448,6 +1496,10 @@ func _observe(state: Dictionary, clock: float) -> void:
 				_swallow_physics(event, at, r)
 			"eject":
 				_eject_physics(event, at, clock)
+			"spit":
+				_spit_physics(event, at, clock)
+			"churn":
+				_churn_physics(event, at, r, clock)
 			"splat":
 				_splat_physics(event, at, r)
 	_seen = now
@@ -1594,6 +1646,18 @@ func take_feel(state: Dictionary) -> Array:
 	_felt = now
 	return out
 
+## What stays of the Singularität's mixture in its explosion zone (events "churn",
+## talent_combat.gd _collapse): its clump churning on the ground over its field, under the heroes
+## and enemies, drops of it jumping out (TalentPixels.churn, void.churn).
+func _draw_churns(canvas: CanvasItem, state: Dictionary, clock: float) -> void:
+	var ch: Dictionary = cfg.get("void", {}).get("churn", {})
+	for event: Dictionary in state.get("events", []):
+		if str(event.get("kind", "")) != "churn": continue
+		var span := maxf(0.05, float(event.get("span", 0.5)))
+		var p := 1.0 - clampf(float(event.get("life", 0.0)) / span, 0.0, 1.0)
+		TalentPixels.churn(canvas, Vector2(float(event.x), float(event.y)), float(event.get("r", 0.0)), _mix_units(event.get("els", []), float(ch.get("per_unit", 2.0)), int(ch.get("cap", 30))), p, art, clock, int(event.get("id", 0)), ch)
+
+
 ## A zone with a look of its own (drawn by _draw_looks, not as a pool or gas).
 func _own_look(zone: Dictionary) -> bool:
 	return str(zone.get("look", "")) in LOOKS or not (zone.get("path", []) as Array).is_empty()
@@ -1638,6 +1702,11 @@ func _draw_looks(canvas: CanvasItem, zones: Array, clock: float) -> void:
 				var k := clampf(life.x / 0.4, 0.0, 1.0) * clampf((life.y - life.x) / 0.3, 0.0, 1.0)
 				TalentPixels.singularity(canvas, at, r, k, art, clock, int(zone.get("id", 0)), int(_stages.get(str(zone.get("talent", "")), int(zone.get("stage", 0)))), cfg.get("void", {}).get("singularity", {}))
 				_draw_caught(canvas, zone, at, k, clock)
+				# the Gefüge's elements swirl round the core and run together into one mixture (zone.mix)
+				var held := _mix_counts(zone.get("mix", []))
+				if not held.is_empty():
+					var mx: Dictionary = cfg.get("void", {}).get("mix", {})
+					TalentPixels.mixing(canvas, at, r, _unit_list(held, 1, int(mx.get("cap", 30))), life.x / life.y, k, art, clock, int(zone.get("id", 0)), mx)
 			"snow":
 				# Blizzard: snow and slivers driven in a swirl over its frost pools (draw_ground)
 				var life := _zone_life(zone, clock)
@@ -2054,6 +2123,103 @@ func _eject_physics(event: Dictionary, at: Vector2, clock: float) -> void:
 		_defer(clock + t - fly, {"kind": "comet", "from": at, "to": Vector2(float(bolt.tx), float(bolt.ty)), "fly": fly, "el": Pal.resolve(str(bolt.get("el", "void"))), "n": int(bolt.get("n", 1))})
 
 
+## SPIT's physics (the Singularität's mixture): for every glob, one comet per element of the
+## mixture (particles.comet), leaving at the glob's launch time on its path, a little apart
+## (void.spit.spread crypt px), so each glob flies as one mass; each lands as its element into
+## the pool layer (void.eject kind and pool_mat), where the host's pools then react.
+func _spit_physics(event: Dictionary, at: Vector2, clock: float) -> void:
+	if particles == null: return
+	# the fused Gefüge leaves the air: its matter flies from where the clump floats
+	var zone := int(event.get("zone", -1))
+	var held: Dictionary = particles.fuse_take("talent_sing:%d" % zone) if zone >= 0 else {}
+	_fed.erase(zone)
+	var from := at
+	if not held.is_empty(): from = Vector2(held.pos) / to_particles
+	var spread := _u(float(cfg.get("void", {}).get("spit", {}).get("spread", 6)))
+	for glob: Variant in event.get("globs", []):
+		if not glob is Dictionary: continue
+		var launch := float(glob.get("d", 0.0))
+		var fly := maxf(0.05, float(glob.get("t", 0.4)) - launch)
+		var to := Vector2(float(glob.get("tx", at.x)), float(glob.get("ty", at.y)))
+		var parts := _mix_counts(glob.get("els", []))
+		var j := 0
+		for part: String in parts:
+			var off := Vector2.from_angle(TAU * float(j) / float(maxi(1, parts.size()))) * spread
+			_defer(clock + launch, {"kind": "comet", "from": from, "to": to + off, "fly": fly, "el": Pal.resolve(part), "n": maxi(1, ceili(float(parts[part])))})
+			j += 1
+
+
+## CHURN's physics (what stays of the Singularität's mixture in its explosion zone): it drops onto
+## the core at once (a comet per element, void.churn drop_fly s, each landing by what it is); over
+## comet_share of its life its matter bubbles up in the field every bits_every s (_bits) and
+## comets drops of its elements (particles.comet) hop out of the core into its field (comet_reach
+## share of its radius, comet_fly s each), each landing as its element into the pool layer, where
+## the host's pools then react.
+func _churn_physics(event: Dictionary, at: Vector2, r: float, clock: float) -> void:
+	if particles == null: return
+	var ch: Dictionary = cfg.get("void", {}).get("churn", {})
+	var shares := _mix_counts(event.get("els", []))
+	var kinds := shares.keys()
+	if kinds.is_empty(): return
+	var id := int(event.get("id", 0))
+	# what stays drops onto the core at once, each element landing by what it is
+	for k in range(kinds.size()):
+		var spot := at + Vector2.from_angle(TalentPixels._rnd(id, k + 60) * TAU) * r * 0.25 * TalentPixels._rnd(id, k + 70)
+		_defer(clock, {"kind": "comet", "from": at, "to": spot, "fly": float(ch.get("drop_fly", 0.15)), "el": Pal.resolve(str(kinds[k])), "n": maxi(1, ceili(float(shares[kinds[k]])))})
+	# and its matter goes on bubbling up in the field: flames, drops, slivers by its elements
+	var every := float(ch.get("bits_every", 0.3))
+	var steps := int(float(event.get("life", 2.5)) * float(ch.get("comet_share", 0.6)) / maxf(0.05, every))
+	for k in range(steps):
+		var spot := at + Vector2.from_angle(TalentPixels._rnd(id, k + 300) * TAU) * r * 0.7 * sqrt(TalentPixels._rnd(id, k + 310))
+		_defer(clock + every * float(k + 1), {"kind": "bits", "at": spot, "el": str(kinds[k % kinds.size()])})
+	var count := int(ch.get("comets", 8))
+	var window := float(event.get("life", 2.5)) * float(ch.get("comet_share", 0.6))
+	var reach: Array = ch.get("comet_reach", [0.45, 0.95])
+	for i in range(count):
+		var away := Vector2.from_angle(TAU * float(i) / float(maxi(1, count)) + TalentPixels._rnd(id, i) * 1.4)
+		var to := at + away * r * lerpf(float(reach[0]), float(reach[1]), TalentPixels._rnd(id, i + 30))
+		_defer(clock + window * float(i) / float(maxi(1, count)), {"kind": "comet", "from": at, "to": to, "fly": float(ch.get("comet_fly", 0.35)), "el": Pal.resolve(str(kinds[i % kinds.size()])), "n": 2})
+
+
+## Bits of an element's own matter thrown up at entry.at (a deferred "bits", the churn): fire
+## flames, water, poison and blood drops, ice slivers, bone and gold chips, the rest motes.
+func _bits(entry: Dictionary) -> void:
+	var el := str(entry.el)
+	var at := Vector2(entry.at) * to_particles
+	var cols := Pal.ramp_hot(el)
+	match el:
+		"fire", "lava": particles.flames(at, 2, cols, 3.0, 0.0)
+		"water", "poison", "blood": particles.drops(at, 2, Vector2.ZERO, [cols[1], cols[2]])
+		"ice": particles.shatter(at, 2, Vector2.ZERO, 60.0, cols, 1)
+		"bone", "gold": particles.chips(at, 2, Vector2.ZERO, [cols[1], cols[2]])
+		_: particles.motes(at, 2, [cols[0], cols[1]])
+
+
+## A mixture as {element: units}: from [{el, n}] (talent_combat.gd _mixture, gefuege_state units;
+## a spat glob's n is a share and may be a fraction), a {el: n} dictionary or a plain list of
+## element names.
+static func _mix_counts(mix: Variant) -> Dictionary:
+	if mix is Dictionary:
+		return mix
+	var out := {}
+	if mix is Array:
+		for part: Variant in mix:
+			var el := str(part.get("el", "")) if part is Dictionary else str(part)
+			if el.is_empty():
+				continue
+			out[el] = float(out.get(el, 0.0)) + (float(part.get("n", 1)) if part is Dictionary else 1.0)
+	return out
+
+
+## A spat glob's mixture as drawn units: every element at least once, `per` per unit of its share,
+## interleaved, at most `cap` (void.spit per_unit and cap).
+static func _mix_units(mix: Variant, per: float, cap: int) -> Array:
+	var counts := {}
+	var parts := _mix_counts(mix)
+	for el: String in parts: counts[el] = maxi(1, ceili(float(parts[el]) * per))
+	return _unit_list(counts, 1, cap)
+
+
 ## One Gefuege comet leaving the core now (_eject_physics).
 func _comet(entry: Dictionary) -> void:
 	var ej: Dictionary = cfg.get("void", {}).get("eject", {})
@@ -2093,6 +2259,7 @@ func _run_deferred(clock: float) -> void:
 			"rim": _rim(entry.at, float(entry.r), str(entry.element), bool(entry.heavy))
 			"link": _link_hit(entry, clock)
 			"comet": _comet(entry)
+			"bits": _bits(entry)
 			"spire":
 				var gl: Dictionary = cfg.get("frost", {}).get("glacier", {})
 				var s := to_particles

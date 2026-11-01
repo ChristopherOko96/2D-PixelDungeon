@@ -154,6 +154,16 @@
       "fade": false,
       "glow_alpha": 0.1
     },
+    "fuse": {
+      "gravity": 0.0,
+      "lift": [
+        0,
+        0
+      ],
+      "settle": false,
+      "glow": false,
+      "fade": false
+    },
     "flake": {
       "gravity": 0.08,
       "lift": [
@@ -389,5 +399,22 @@
     "cells_max": 18,
     "spread": 0.8,
     "pop": 4
+  },
+  "fuse": {
+    "_note": "The Leerenmagier's Gefüge as matter in the Singularität's well (particles.gd fuse_feed, _step_fusion, _fuse_pair, _blob_matter, _draw_fused; user 2026-11-01: its particles fuse, everything simulated). A blob floats height px over the floor, slowed by drag per s, pulled by pull_scale of its well's pull and swirl (the swirl divided by its units: heavy matter sinks in); the core keeps it: within the core plus its own radius it is drawn to the middle at center per s and its speed falls by hold per s. The smaller blobs of a well are drawn to its heaviest one at cohesion x sqrt(its units) px/s^2; two blobs of one well fuse when closer than reach x their radii summed; a blob of n units is PIXEL x (size + grow x sqrt(n)) px across, at most size_max; it turns at spin rad/s, its rim flashes for flash s when it fuses, it is drawn as up to lumps lumps of its elements (shuffled by its own seed, so they lie mixed all through it), and it throws off a bit of its own matter every bits_every / sqrt(n) s.",
+    "height": 8,
+    "drag": 3.0,
+    "pull_scale": 0.8,
+    "hold": 8.0,
+    "center": 6.0,
+    "reach": 1.4,
+    "cohesion": 400,
+    "size": 3.0,
+    "grow": 3.0,
+    "size_max": 40,
+    "spin": 2.5,
+    "flash": 0.12,
+    "lumps": 24,
+    "bits_every": 0.2
   }
 }
