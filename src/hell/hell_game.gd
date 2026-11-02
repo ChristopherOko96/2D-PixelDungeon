@@ -258,6 +258,16 @@ var sfx: Node
 var music: Node
 var _music_state := ""
 var breakables: Array = []
+## The breakables by the cells (C px) their boxes touch, Vector2i cell -> [breakable, ...]
+## (_index_breakables, made in load_floor): box_blocked tests only the ones there. Only
+## read afterwards (worker threads shaping pools ask box_blocked too).
+var _breakable_grid: Dictionary = {}
+## The breakables list the grid was made from and its size then: for another list, or one
+## grown since (a test adds a crate), box_blocked looks through all of them as before.
+var _breakable_grid_of: Array = []
+var _breakable_grid_n := -1
+## Nothing in a cell (the grids' default; read only).
+const _NOTHING: Array = []
 ## Light destruction: wall wear and smashable props (src/hell/story_wreck.gd); with the feel only.
 var wreck: RefCounted
 var pits: Array = []
@@ -848,6 +858,7 @@ func load_floor(n: int, carry: bool) -> void:
 	embers = []
 	clone = {}
 	breakables = W.ents.filter(func(e: Dictionary) -> bool: return e.type == "seal" or e.type == "skullheap" or e.type == "crate")
+	_index_breakables()
 	pits = W.ents.filter(func(e: Dictionary) -> bool: return e.type == "pit")
 	for e: Dictionary in breakables:
 		e.max_hp = int(e.hp)
@@ -1051,13 +1062,48 @@ func box_blocked(box: Rect2, avoid_lava := false) -> bool:
 		for cx in range(int(floor(box.position.x / C)), int(floor((box.end.x - 1.0) / C)) + 1):
 			if _cell_blocked(cx, cy, avoid_lava):
 				return true
-			for s: Rect2 in solid_grid.get(cy * int(W.cols) + cx, []):
+			for s: Rect2 in solid_grid.get(cy * int(W.cols) + cx, _NOTHING):
 				if s.intersects(box):
 					return true
+	# the breakables: only those filed under a cell the box touches (each one the box
+	# overlaps shares a point with it, and that point's cell lists it); the same test
+	var filed := (_breakable_grid_n == breakables.size() and is_same(_breakable_grid_of, breakables)
+			and box.size.x >= 0.0 and box.size.y >= 0.0 and is_finite(box.position.x) and is_finite(box.position.y)
+			and is_finite(box.size.x) and is_finite(box.size.y))
+	if filed:
+		var x0 := int(floor(box.position.x / C))
+		var x1 := int(floor(box.end.x / C))
+		var y0 := int(floor(box.position.y / C))
+		var y1 := int(floor(box.end.y / C))
+		if (x1 - x0 + 1) * (y1 - y0 + 1) <= 16:
+			for cy in range(y0, y1 + 1):
+				for cx in range(x0, x1 + 1):
+					for e: Dictionary in _breakable_grid.get(Vector2i(cx, cy), _NOTHING):
+						if not e.get("broken", false) and _breakable_box(e).intersects(box):
+							return true
+			return false
 	for e: Dictionary in breakables:
 		if not e.get("broken", false) and _breakable_box(e).intersects(box):
 			return true
 	return false
+
+
+## Files every breakable under each cell (C px) its box touches, edges included
+## (box_blocked asks this grid). The breakables do not move; one that breaks stays
+## filed (box_blocked skips it as before).
+func _index_breakables() -> void:
+	var grid := {}
+	for e: Dictionary in breakables:
+		var b := _breakable_box(e)
+		for cy in range(int(floor(b.position.y / C)), int(floor(b.end.y / C)) + 1):
+			for cx in range(int(floor(b.position.x / C)), int(floor(b.end.x / C)) + 1):
+				var cell := Vector2i(cx, cy)
+				if not grid.has(cell):
+					grid[cell] = []
+				grid[cell].append(e)
+	_breakable_grid = grid
+	_breakable_grid_of = breakables
+	_breakable_grid_n = breakables.size()
 
 
 func _breakable_box(e: Dictionary) -> Rect2:

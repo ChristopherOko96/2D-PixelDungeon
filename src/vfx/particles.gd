@@ -267,7 +267,12 @@ func emit(origin: Vector2, velocity: Vector2, color: Color, life: float, mode: S
 
 
 func _mode(mode: String) -> Dictionary:
-	return _data.get("modes", {}).get(mode, {"gravity": 1.0, "lift": [40, 150], "settle": true, "glow": false, "fade": false})
+	# the fallback is made only when it is needed (a .get default would be built on every
+	# call, and _move asks for every particle every frame); the same dictionary comes back
+	var modes: Variant = _data.get("modes")
+	if modes is Dictionary and (modes as Dictionary).has(mode):
+		return modes[mode]
+	return {"gravity": 1.0, "lift": [40, 150], "settle": true, "glow": false, "fade": false}
 
 
 ## How many of `count` cosmetic particles may still be thrown: all of them
@@ -619,7 +624,8 @@ func ember_sparks(point: Vector2, count: int, dir: Vector2 = Vector2.ZERO, scale
 
 
 func _ice(key: String, fallback: float) -> float:
-	return float(_data.get("ice", {}).get(key, fallback))
+	var ice: Variant = _data.get("ice")
+	return float((ice as Dictionary).get(key, fallback)) if ice is Dictionary else fallback
 
 
 func _ice_ramp() -> Array:
