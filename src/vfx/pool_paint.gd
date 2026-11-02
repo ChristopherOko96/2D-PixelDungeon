@@ -369,6 +369,16 @@ func covers(point: Vector2, style := "") -> bool:
 	return pool_field.covers(point, style)
 
 
+## True when pool `key` lies in the field (PoolField.has_pool).
+func has_pool(key: String) -> bool:
+	return pool_field.has_pool(key)
+
+
+## True when pool `key`'s own liquid lies at `point` now (PoolField.pool_covers).
+func pool_covers(key: String, point: Vector2) -> bool:
+	return pool_field.pool_covers(key, point)
+
+
 ## The materials of everything lying under `point` (world px), for the game's
 ## rules (src/combat/element_rules.gd top() picks the one that counts); empty
 ## on firm floor: asked of the field (PoolField.materials_at: a pool's own

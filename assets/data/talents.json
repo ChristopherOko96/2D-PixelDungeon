@@ -4126,7 +4126,7 @@
       "kind": "active",
       "icon": "flask",
       "type": "zone",
-      "text": "Seuche am Zielort, 3 m Radius, 6 s: jede Sekunde 25/30/35 % Schaden und Gift.",
+      "text": "Eine Seuchenpfütze am Zielort, 3 m Radius, 6 s: wer darin steht, nimmt jede Sekunde 25/30/35 % Schaden und Gift. Sie endet an Wänden und verschont dich.",
       "radius_m": 3,
       "time": 6,
       "every": 1,
@@ -4136,6 +4136,7 @@
         0.35
       ],
       "status": "poison",
+      "pool": "plague",
       "cost": 28,
       "cd": 16,
       "id": "curse_7",

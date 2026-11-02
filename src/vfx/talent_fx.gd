@@ -1627,6 +1627,8 @@ func _zone_residue(zones: Array, clock: float) -> void:
 		if str(zone.get("look", "")) == "ice":
 			# Gletschergrab's spires break as the block goes
 			_shatter_at(Vector2(float(zone.x), float(zone.y)), Vector2.ZERO, int(cfg.get("frost", {}).get("glacier", {}).get("end_size", 14)), clock, 1.0)
+		# a zone lying as a pool of its own leaves none: its pool goes rim first by itself
+		if str(zone.get("pool", "")) != "": continue
 		var element := _zone_element(zone)
 		if element == "": continue
 		var key := _residue_key(str(zone.get("talent", "")), element)
@@ -1784,8 +1786,10 @@ func _draw_looks(canvas: CanvasItem, zones: Array, clock: float) -> void:
 					var spot := at + Vector2.from_angle(TAU * i / 8.0 + clock * 1.6) * r * (0.45 + 0.35 * sin(clock + i))
 					sprites.draw_loop(canvas, "soul_wisp", spot, 0.0, 1.1, clock + i * 0.2)
 			"plague":
-				# Seuchengrube: sickly green-violet clouds over bubbling ground
-				canvas.draw_circle(at, r, Color(0.35, 0.6, 0.2, 0.16))
+				# Seuchengrube: sickly green-violet clouds over bubbling ground; the Seuchenfeld lies as
+				# its own plague pool (the pool layer draws it), so no painted ground there
+				if str(zone.get("pool", "")) == "" or pools == null:
+					canvas.draw_circle(at, r, Color(0.35, 0.6, 0.2, 0.16))
 				if sprites.has("poison_cloud"):
 					for i in range(7):
 						var spot := at + Vector2.from_angle(TAU * i / 7.0 + clock * 0.1) * r * (0.2 + 0.5 * float(i % 3) / 2.0)

@@ -595,7 +595,7 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 			zones.append({"id": _take_id(), "owner": id, "talent": talent, "pos": spot, "r": float(info.radius_m) * meter, "time": float(info.time),
 				"every": maxf(0.25, float(info.every)), "tick": 0.0, "dmg": dmg, "status": str(info.get("status", "")), "info": info,
 				"weaken": float(info.get("weaken", 0.0)), "raise": info.get("raise", {}), "look": str(info.get("look", "")),
-				"total": float(info.time), "stage": maxi(0, _ult_stage)})
+				"total": float(info.time), "stage": maxi(0, _ult_stage), "pool": str(info.get("pool", ""))})
 		"summon":
 			if bool(info.get("permanent", false)):
 				# a permanent companion: called anew only after it fell (cast_blocker)
@@ -1104,7 +1104,7 @@ func snapshot() -> Dictionary:
 		"ax": Vector2(zone.wall.a).x if zone.has("wall") else 0.0, "ay": Vector2(zone.wall.a).y if zone.has("wall") else 0.0,
 		"bx": Vector2(zone.wall.b).x if zone.has("wall") else 0.0, "by": Vector2(zone.wall.b).y if zone.has("wall") else 0.0,
 		"path": (zone.path as Array).map(func(p: Vector2) -> Array: return [p.x, p.y]) if zone.has("path") else [], "w": float(zone.get("w", 0.0)),
-		"talent": str(zone.get("talent", "")), "total": float(zone.get("total", zone.time)), "every": float(zone.get("every", 1.0)), "stage": int(zone.get("stage", 0)), "ground": bool(zone.get("ground", false)),
+		"talent": str(zone.get("talent", "")), "total": float(zone.get("total", zone.time)), "every": float(zone.get("every", 1.0)), "stage": int(zone.get("stage", 0)), "ground": bool(zone.get("ground", false)), "pool": str(zone.get("pool", "")),
 		# the Singularität: the ids caught in its core, the core's radius and the Gefüge it mixes
 		"caught": Array(zone.get("caught", [])).duplicate(), "core": float(zone.get("core", 0.0)), "mix": Array(zone.get("mix", [])).duplicate(true)})
 	out.auras = auras()
@@ -1577,7 +1577,7 @@ func _step_zones(delta: float) -> void:
 			var rt := runtime(int(zone.owner))
 			_talent_hit = true
 			for enemy: Dictionary in _living():
-				if _in_zone(zone, enemy):
+				if _zone_reach(zone, enemy):
 					_hit(int(zone.owner), enemy, float(zone.dmg), zone.get("info", data.talents[str(zone.talent)]), rt, str(zone.talent))
 					if float(zone.get("weaken", 0.0)) > 0.0: enemy.talent_weak = {"pct": float(zone.weaken), "time": float(zone.every) + 0.5}
 			_talent_hit = false
@@ -2302,6 +2302,30 @@ func _in_zone(zone: Dictionary, enemy: Dictionary) -> bool:
 		var wall: Dictionary = zone.wall
 		return Geometry2D.get_closest_point_to_segment(enemy.pos, wall.a, wall.b).distance_to(enemy.pos) <= float(wall.w) + float(enemy.radius)
 	return Vector2(enemy.pos).distance_to(zone.pos) <= float(zone.r) + float(enemy.radius)
+
+
+## Whether a zone's tick reaches `enemy`: a zone lying as a pool of its own (talents.json "pool":
+## the Seuchenfeld's plague) reaches whoever stands in that pool, so it stops at the walls like the
+## pool does (the host's talent_ground_covers; physics plan R14); until its pool lies, and in a
+## world without a pool layer, its circle (_in_zone). The caster and his side are never enemies.
+func _zone_reach(zone: Dictionary, enemy: Dictionary) -> bool:
+	if str(zone.get("pool", "")) != "" and game != null and game.has_method("talent_ground_covers"):
+		var inside := int(game.talent_ground_covers(int(zone.id), Vector2(enemy.pos), float(enemy.radius)))
+		if inside >= 0: return inside == 1
+	return _in_zone(zone, enemy)
+
+
+## The zones lying as pools of their own (talents.json "pool"), as pool-layer entries ({id, k
+## "pool", st, x, y, r, p 0..1 of their time gone, L, owner}) for the host to lay on its clock
+## (source "talent_ground", src/hell/hell_talents.gd update).
+func ground_pools() -> Array:
+	var out: Array = []
+	for zone: Dictionary in zones:
+		if str(zone.get("pool", "")) == "": continue
+		var total := maxf(0.01, float(zone.get("total", zone.time)))
+		out.append({"id": int(zone.id), "k": "pool", "st": str(zone.pool), "x": Vector2(zone.pos).x, "y": Vector2(zone.pos).y, "r": float(zone.r),
+			"p": clampf(1.0 - float(zone.time) / total, 0.0, 1.0), "L": total, "owner": int(zone.owner)})
+	return out
 
 
 ## Where a targeted ultimate lands: the mouse point, at most reach_m away.

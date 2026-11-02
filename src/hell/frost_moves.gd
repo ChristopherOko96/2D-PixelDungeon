@@ -433,8 +433,15 @@ static func _bullet(g: Node, from: Vector2, a: float, spec: Dictionary, m: Dicti
 		"end_pool": spec.get("end_pool", {}), "boss": _boss(m), "seed": randf() * 9.0, "by": m})
 
 
+## The pool layer's source of the moves' pools, and their serial (never reset, so a key never
+## meets an old one of an earlier floor; physics plan R26).
+const POOL_SOURCE := "frost_moves"
+static var _pool_serial := 0
+
+
 static func _pool(g: Node, p: Vector2, spec: Dictionary) -> Dictionary:
-	return {"kind": "pool", "p": p, "r": float(spec.get("radius", 40)) * _k(g), "t": float(spec.get("time", 4.0)), "max": float(spec.get("time", 4.0)),
+	_pool_serial += 1
+	return {"kind": "pool", "id": _pool_serial, "p": p, "r": float(spec.get("radius", 40)) * _k(g), "t": float(spec.get("time", 4.0)), "max": float(spec.get("time", 4.0)),
 		"dps": float(spec.get("dps", 0.0)), "slip": bool(spec.get("slip", false)), "style": str(spec.get("style", "ice")), "tick": 0.0}
 
 
@@ -511,9 +518,42 @@ static func _update_zones(g: Node, dt: float) -> void:
 				if me.distance_to(z.p) < float(z.r):
 					if z.slip:
 						HeroFx.apply(g, "slip", 0.4, 1.0)
-					if float(z.dps) > 0.0:
+					# a pool lying in the pool layer acts through the pool rule on everyone standing in it
+					# (_sync_pools); this is the old way, on the hero only, without a layer
+					if float(z.dps) > 0.0 and not _layered(g, z):
 						HeroFx.apply(g, "poison" if str(z.style) == "poison" else ("burn" if str(z.style) == "fire" else "slow"), 1.2, float(z.dps) if str(z.style) in ["poison", "fire"] else 0.6)
 	g.state.mzones = _zones(g).filter(func(z: Dictionary) -> bool: return float(z.t) > 0.0)
+	_sync_pools(g)
+
+
+## The world's pool layer (hell_game.gd _pool_layer: the Frostgruft's is the talents'), null without one.
+static func _layer(g: Node) -> RefCounted:
+	return g._pool_layer() if g.has_method("_pool_layer") else null
+
+
+## True when move pool `z` lies in the pool layer as a real pool: poison, fire and void (decision
+## R26, user 2026-11-02: "über die Pfützenregel"). Ice stays the floor's slab (frost_fx.gd) with
+## the hero's slip condition and ice_under for the monsters.
+static func _layered(g: Node, z: Dictionary) -> bool:
+	if str(z.get("kind", "")) != "pool" or str(z.get("style", "")) in ["ice", "frost"] or not z.has("id"):
+		return false
+	var layer := _layer(g)
+	return layer != null and layer.get("pool_field") != null and layer.pool_field.handles(str(z.style))
+
+
+## Lays the move pools into the pool layer on the game clock, every frame (its pools that are gone
+## from the list go rim first): there they act through the pool rule (element_exposure.gd) on the
+## hero and the monsters alike, each spared only by its own element (physics plan R26).
+static func _sync_pools(g: Node) -> void:
+	var layer := _layer(g)
+	if layer == null:
+		return
+	var entries: Array = []
+	for z: Dictionary in _zones(g):
+		if _layered(g, z):
+			entries.append({"id": int(z.id), "k": "pool", "st": str(z.style), "x": (z.p as Vector2).x, "y": (z.p as Vector2).y, "r": float(z.r),
+				"p": clampf(1.0 - float(z.t) / maxf(0.01, float(z.max)), 0.0, 1.0), "L": float(z.max), "owner": 0})
+	layer.sync(entries, float(g.state.t), POOL_SOURCE)
 
 
 ## Damage factor on an enemy (ice armour).
@@ -596,7 +636,8 @@ static func _draw_px(g: Node, l: CanvasItem, t: float) -> void:
 					fx.ring(l, z.p, float(z.r), k, c, t)
 			"pool":
 				# ice pools are one slab on the floor's own layer (frost_fx.gd draw_floor)
-				if not str(z.style) in ["ice", "frost"]:
+				# (and pools lying in the pool layer are drawn there as liquid: _layered)
+				if not str(z.style) in ["ice", "frost"] and not _layered(g, z):
 					var fade := clampf(float(z.t), 0.0, 1.0) * clampf((float(z.max) - float(z.t)) / 0.3, 0.0, 1.0)
 					fx.ring(l, z.p, float(z.r), 0.0, Color(c, fade), t)
 			"lane":

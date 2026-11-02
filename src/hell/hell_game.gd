@@ -3436,6 +3436,9 @@ func _pool_centre(at: Vector2, style: String) -> Vector2:
 			if d < best_d:
 				best_d = d
 				best = z.p
+	elif _pool_layer() != null and _pool_layer().get("pool_field") != null:
+		# no monster runtime (the Frostgruft): its pools lie in the talents' layer (physics plan R26)
+		return _pool_layer().pool_field.centre(at, style)
 	return best
 
 

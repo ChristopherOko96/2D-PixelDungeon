@@ -373,6 +373,19 @@ func has_pool(key: String) -> bool:
 	return _pools.has(key)
 
 
+## True when pool `key`'s own liquid lies at `point` (world px) now (a talent zone lying as a pool
+## asks who stands in it: talent_combat.gd _zone_reach, physics plan R14).
+func pool_covers(key: String, point: Vector2) -> bool:
+	var pool: Dictionary = _pools.get(key, {})
+	if pool.is_empty():
+		return false
+	var q := Vector2i((point / art).floor())
+	if not (pool.shape as Dictionary).has(q):
+		return false
+	var c: Variant = (_cells.get(str(pool.mat), {}) as Dictionary).get(q)
+	return c != null and float(c[0]) <= _now and _now < float(c[1])
+
+
 ## Pool `key`'s record ({} when it does not lie here); read only.
 func pool(key: String) -> Dictionary:
 	return _pools.get(key, {})

@@ -231,6 +231,10 @@ func update(dt: float) -> void:
 		_step_bullets(dt)
 		_step_statuses(dt))
 	_wreck_blasts()
+	# the talents' zones lying as pools of their own (the Seuchenfeld's plague) on the game clock in
+	# the world's pool layer: the rules' truth of where they reach (physics plan R14, decision D1)
+	var layer: RefCounted = g._pool_layer() if g.has_method("_pool_layer") else null
+	if layer != null: layer.sync(tc.ground_pools(), float(g.state.t), "talent_ground")
 	bar.step(dt)
 	# the talents' weight on the view by importance (src/vfx/talent_fx.gd take_feel)
 	for hit: Dictionary in fx.take_feel(tc.snapshot()):
@@ -418,6 +422,20 @@ func talent_pool(style: String, at: Vector2, r: float, time: float, owner: int) 
 ## story's sound router (src/hero/story_sound.gd talent).
 func talent_sound(kind: String, at: Vector2, extra: Dictionary) -> void:
 	if g != null and g.get("sound") != null: g.sound.talent(kind, at, extra, tc)
+
+
+## Whether talent zone `id` lying as a pool of its own (src/combat/talent_combat.gd _zone_reach)
+## covers a body of `radius` standing at `at` (its middle and four points round it): 1 yes, 0 no,
+## -1 not known (no pool layer yet, or its pool is still being shaped).
+func talent_ground_covers(id: int, at: Vector2, radius: float) -> int:
+	var layer: RefCounted = g._pool_layer() if g.has_method("_pool_layer") else null
+	if layer == null or not layer.has_method("pool_covers"): return -1
+	var key := "talent_ground:%d" % id
+	if not layer.has_pool(key): return -1
+	var reach := radius * 0.6
+	for off: Vector2 in [Vector2.ZERO, Vector2(reach, 0.0), Vector2(-reach, 0.0), Vector2(0.0, reach * 0.6), Vector2(0.0, -reach * 0.6)]:
+		if layer.pool_covers(key, at + off): return 1
+	return 0
 
 
 ## Story world px per crypt px (the hell runtime draws on a 3 px art grid, the
