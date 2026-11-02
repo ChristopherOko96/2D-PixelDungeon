@@ -96,13 +96,13 @@ func wet_at(point: Vector2) -> bool:
 
 
 ## GasField.part: someone standing at `at`, `radius` wide, parts the gas.
-func part(at: Vector2, radius: float) -> void:
-	gas_field.part(at, radius)
+func part(at: Vector2, radius: float, dt: float = 1.0 / 60.0) -> void:
+	gas_field.part(at, radius, dt)
 
 
 ## GasField.cut: a shot cuts a lane through the gas.
-func cut(at: Vector2, dir: Vector2, width: float) -> void:
-	gas_field.cut(at, dir, width)
+func cut(at: Vector2, dir: Vector2, width: float, dt: float = 1.0 / 60.0) -> void:
+	gas_field.cut(at, dir, width, dt)
 
 
 ## GasField.at: the thickest material at `point` and its thickness.
@@ -123,6 +123,26 @@ func clouds_of(mat: String, now := -INF) -> Array:
 ## GasField.end_cloud: cloud `key` thins out from now.
 func end_cloud(key: String, now: float) -> void:
 	gas_field.end_cloud(key, now)
+
+
+## GasField.touching: the clouds of `mat` whose puffs reach `at`.
+func touching(mat: String, at: Vector2, r: float, now := -INF) -> Array:
+	return gas_field.touching(mat, at, r, now)
+
+
+## GasField.touching_where: the clouds of `mat` with a puff where `here` holds.
+func touching_where(mat: String, here: Callable, now := -INF) -> Array:
+	return gas_field.touching_where(mat, here, now)
+
+
+## GasField.ignite: a flame front runs through cloud `key` from `from`.
+func ignite(key: String, from: Vector2, now: float, speed: float) -> void:
+	gas_field.ignite(key, from, now, speed)
+
+
+## GasField.take_burnt: the puffs that went up since the last call.
+func take_burnt() -> Array:
+	return gas_field.take_burnt()
 
 
 ## GasField.thickness: the thickness of `mat` alone at `point`.

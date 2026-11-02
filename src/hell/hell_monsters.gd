@@ -541,6 +541,7 @@ func update(dt: float) -> void:
 		v = step.v
 		m.sv = step.vel
 		m.k = step.push
+		m.k_in = step.push_in
 		m.p = step.p
 		# a body thrown by Rage slams into the wall it meets (src/hero/story_hero.gd)
 		if g.story_hero != null and m.has("slam"):
@@ -572,7 +573,12 @@ func update(dt: float) -> void:
 		if m.dying != null or (m.trans == null and not m.has("echo")):
 			# uid: Ignaroth's rig keeps falling apart in the corpse (src/hell/drake_rig_host.gd)
 			# kill, tumble: how the blow threw it, for its rig's ragdoll (src/rig/rig_renderer.gd); the parts bounce off this floor's walls
-			corpses.append({"id": m.id, "p": m.p, "s": m.s, "face": m.face, "t": 0.0, "uid": m.get("uid", -1), "kill": _kill_fx(m), "tumble": float(m.get("tumble", 0.0))})
+			# v: the felled body keeps the blow's momentum (its push, else a small throw along the blow;
+			# physics plan R24/F36) and slides on until friction and the walls stop it
+			var kill := _kill_fx(m)
+			var v: Vector2 = m.get("k") if m.get("k") is Vector2 else Vector2.ZERO
+			if v.length() < 20.0: v = Vector2(float(kill.get("dx", 0.0)), float(kill.get("dy", 0.0))) * 90.0
+			corpses.append({"id": m.id, "p": m.p, "s": m.s, "face": m.face, "t": 0.0, "uid": m.get("uid", -1), "kill": kill, "tumble": float(m.get("tumble", 0.0)), "v": v, "r": float(m.get("r", 20.0))})
 			if rig_host != null and rig_host.has_method("bind_world"):
 				rig_host.bind_world(func(p: Vector2) -> bool: return g.box_blocked(Rect2(p - Vector2(2, 2), Vector2(4, 4))))
 		if m.trans == null and not m.get("quiet", false):
@@ -1595,6 +1601,9 @@ func _update_zones(dt: float) -> void:
 				# and it shoves what it passes: flying pixels, embers, rubble, lava sloshing over
 				var front := float(z.r) * minf(1.0, z.t / z.T)
 				_blow_front(z, float(z.get("blown", 0.0)), front, 0.0, TAU, 0.62, 1.0)
+				# the front shoves the creatures it passes too, each once, half as hard as a hero is
+				# shoved, and blows the gas along (physics plan R23/F40)
+				_shove_front(z, float(z.get("blown", 0.0)), front)
 				z.blown = front
 				if z.dmg > 0 and absf(d - z.r * minf(1.0, z.t / z.T)) < 40.0:
 					hit = true
@@ -1693,7 +1702,43 @@ func _update_zones(dt: float) -> void:
 	lobs = lobs.filter(func(L: Dictionary) -> bool: return not L.done)
 	for c: Dictionary in corpses:
 		c.t += dt
+		# the body slides on with the blow, slowing, and stops at walls axis by axis
+		var v: Vector2 = c.get("v", Vector2.ZERO)
+		if v.length_squared() > 1.0:
+			var at: Vector2 = c.p
+			var rr := minf(float(c.get("r", 20.0)) * 0.6, 30.0)
+			var next := at + v * dt
+			if g.box_blocked(Rect2(Vector2(next.x, at.y) - Vector2(rr, rr * 0.5), Vector2(rr * 2.0, rr))):
+				next.x = at.x
+				v.x = -v.x * 0.2
+			if g.box_blocked(Rect2(next - Vector2(rr, rr * 0.5), Vector2(rr * 2.0, rr))):
+				next.y = at.y
+				v.y = -v.y * 0.2
+			c.p = next
+			c.v = v * exp(-8.0 * dt)
+		# it tips over the way the blow throws it and settles flat as it stops (R24)
+		c.lean = lerpf(float(c.get("lean", 0.0)), clampf(v.x / 500.0, -0.7, 0.7), 1.0 - exp(-10.0 * dt))
 	corpses = corpses.filter(func(c: Dictionary) -> bool: return c.t < 0.75)
+
+
+## A boss's wave front between `r0` and `r1` round z.p shoves every non-boss creature it passes
+## outward once (z.shoved), wave_push px/s (monsters.feel.wave_push, else 280) added to its push,
+## and pushes the gas the first time it passes half its radius (physics plan F40).
+func _shove_front(z: Dictionary, r0: float, r1: float) -> void:
+	var shoved: Dictionary = z.get("shoved", {})
+	var push := float((g.balance.monsters.get("feel", {}) as Dictionary).get("wave_push", 280.0)) if g.balance.has("monsters") else 280.0
+	for m: Dictionary in g.mobs:
+		if is_same(m, z.get("m")) or bool(m.get("boss", false)) or m.has("kit") or shoved.has(m.id) or float(m.hp) <= 0.0: continue
+		var d := Vector2(m.p).distance_to(z.p)
+		if d < r0 or d > r1 + float(m.get("r", 20.0)): continue
+		shoved[m.id] = true
+		var away := (Vector2(m.p) - Vector2(z.p)).normalized() if d > 1.0 else Vector2.RIGHT
+		var now: Vector2 = m.get("k") if m.get("k") is Vector2 else Vector2.ZERO
+		m.k = (now + away * push).limit_length(1000.0)
+	z.shoved = shoved
+	var gas: RefCounted = g.get("gas")
+	if gas != null and gas.has_method("impulse") and r0 < float(z.r) * 0.5 and r1 >= float(z.r) * 0.5:
+		gas.impulse(z.p, r1, 0.3)
 
 
 ## Moves enemy shots (homing ones turn toward the hero), stops them at walls,
@@ -1983,7 +2028,8 @@ func draw_corpse(l: CanvasItem, c: Dictionary) -> void:
 	var n := int(def.anims.death.frames)
 	var fr := Vector2i(mini(n - 1, int(c.t / 0.75 * n)), int(def.anims.death.row))
 	_mark(c, c.p + Vector2(0, 4), c.s, 0.0, Color.WHITE, {})
-	_sprite(l, c.id, fr, c.p + Vector2(0, 4), c.s, c.face, Color.WHITE)
+	# tipped over by the blow, turned about its feet (the sprite's pose lean; physics plan R24)
+	_sprite(l, c.id, fr, c.p + Vector2(0, 4), c.s, c.face, Color.WHITE, 0.0, {"lean": float(c.get("lean", 0.0))})
 
 
 ## Floor warnings: where an attack will land, drawn under the actors.

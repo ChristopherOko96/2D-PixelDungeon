@@ -100,6 +100,7 @@
   ]
  },
  "liquid": {
+  "material": "moder",
   "hurt": true,
   "slow": -1,
   "slide": false,

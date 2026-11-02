@@ -51,6 +51,8 @@ var g: Node
 ## The reaction signs showing now: {id, p (world px), t0, hero, fresh, n, row, kind ("" or "exp")}.
 var popups: Array = []
 var _contact := 0.0
+## Seconds until the next check of poison gas lying over heat (_gas_meets_heat).
+var _heat_t := 0.0
 var _steam_serial := 0
 var _gulp := 0.0
 var _mote_acc := 0.0
@@ -103,16 +105,26 @@ func _fire_at(at: Vector2, r: float, depth: int, owner := 0) -> void:
 					z.frozen = false
 					if g.sound != null: g.sound.at("react_thaw", Vector2(z.p))
 					_pools_call("thaw_near", [z.p, float(z.r) * 1.2])
-					g.monsters._burst_in(z.p - Vector2(0, 10), 8, "frost")
+					_react_matter("thaw", Vector2(z.p), float(z.r))
 					_reacted("thaw", Vector2(z.p), float(z.r), owner)
 				else:
 					_boil(z, owner)
+			"ice":
+				# fire on a monster's frost pool melts it to water with a hiss of steam (physics plan
+				# F18, decision D2): the ice is gone, melt water lies there a while
+				_end(z)
+				if g.sound != null: g.sound.at("react_thaw", Vector2(z.p))
+				g.monsters._zone({"kind": "puddle", "p": z.p, "r": float(z.r) * 0.8, "T": float(R.get("melt_time", 6.0)), "dmg": 0, "m": {"id": "melt", "def": {"name": "Schmelzwasser"}, "boss": false}, "st": "water"})
+				_react_matter("thaw", Vector2(z.p), float(z.r))
+				_reacted("thaw", Vector2(z.p), float(z.r), owner)
+	# fire melts the Frostgruft's snow where it lands (D12, F57)
+	if g.get("frost_snow") != null: g.frost_snow.melt(at, r, false)
 	var gas: RefCounted = g.get("gas")
 	if gas != null:
-		for c: Dictionary in gas.clouds_of("poison", float(g.state.t)):
-			if Vector2(c.at).distance_to(at) <= float(c.r) + r:
-				gas.end_cloud(str(c.key), float(g.state.t))
-				_explode(c.at, float(c.r), depth, owner)
+		# poison gas the fire really touches (its puffs, not its middle) goes off where it is
+		# touched and burns through as a front (physics plan F14)
+		for c: Dictionary in _touching(gas, at, r):
+			_ignite(gas, c, depth, owner, "explode")
 	if R.is_empty():
 		push_warning("element_rules.json has no reactions")
 
@@ -124,11 +136,91 @@ func fire_passes(p: Vector2, owner := 0) -> void:
 	var gas: RefCounted = g.get("gas")
 	if gas == null:
 		return
-	for c: Dictionary in gas.clouds_of("poison", float(g.state.t)):
-		if Vector2(c.at).distance_to(p) <= float(c.r) * 0.85:
-			gas.end_cloud(str(c.key), float(g.state.t))
-			if g.sound != null: g.sound.at("react_ignite", Vector2(c.at))
-			_explode(c.at, float(c.r), 0, owner, "ignite")
+	for c: Dictionary in _touching(gas, p, 0.0):
+		if g.sound != null: g.sound.at("react_ignite", Vector2(c.at))
+		_ignite(gas, c, 0, owner, "ignite")
+
+
+## Poison gas drifting over heat goes off by itself (decision D2, physics plan R13): every 0.2 s
+## each poison cloud with a puff over lava or a burning or lava puddle ignites there (no owner).
+func _gas_meets_heat(dt: float) -> void:
+	_heat_t -= dt
+	if _heat_t > 0.0: return
+	_heat_t = 0.2
+	_pools_meet()
+	var gas: RefCounted = g.get("gas")
+	if gas == null or not gas.has_method("touching_where"): return
+	for c: Dictionary in gas.touching_where("poison", Callable(self, "_hot_at"), float(g.state.t)):
+		if g.sound != null: g.sound.at("react_ignite", Vector2(c.at))
+		_ignite(gas, c, 0, 0, "ignite")
+
+
+## Puddles that touch react with each other (decision D2, physics plan R13/F15), checked with the
+## gas every 0.2 s: water running into a burning puddle puts it out with a hiss of steam, poison
+## running into fire or lava goes off where they meet. The hero's own puddles count as his.
+func _pools_meet() -> void:
+	if g.monsters == null: return
+	var fires: Array = []
+	for z: Dictionary in g.monsters.zones:
+		if str(z.kind) == "puddle" and float(z.t) < float(z.T) and ElementRules.material(str(z.get("st", ""))) in ["fire", "lava"] and float(z.get("crust", 0.0)) <= 0.0:
+			fires.append(z)
+	if fires.is_empty(): return
+	for z: Dictionary in g.monsters.zones.duplicate():
+		if str(z.kind) != "puddle" or float(z.t) >= float(z.T) or bool(z.get("frozen", false)): continue
+		var mat := ElementRules.material(str(z.get("st", "")))
+		if not mat in ["water", "poison"]: continue
+		for f: Dictionary in fires:
+			if float(f.t) >= float(f.T) or Vector2(z.p).distance_to(f.p) > float(z.r) + float(f.r) * 0.6: continue
+			var meet := (Vector2(z.p) + Vector2(f.p)) * 0.5
+			if mat == "water":
+				if ElementRules.material(str(f.get("st", ""))) == "fire":
+					_end(f)
+					if g.sound != null: g.sound.at("react_douse", meet)
+					_react_matter("steam", meet, float(f.r) * 0.6)
+					_reacted("douse", meet, float(f.r), int(z.get("owner", 0)))
+			else:
+				_end(z)
+				_explode(meet, float(z.r), 0, int(z.get("owner", 0)))
+				break
+
+
+## True where heat lies at `at`: the lava floor, or a fire or lava puddle.
+func _hot_at(at: Vector2) -> bool:
+	if g.has_method("_floor_mat") and g._floor_mat() == "lava":
+		var t: int = g._cell(int(floor(at.x / g.C)), int(floor(at.y / g.C)))
+		if t == 2 or t == 3: return true
+	for z: Dictionary in _puddles(at, 0.0):
+		if ElementRules.material(str(z.get("st", ""))) in ["fire", "lava"] and float(z.get("crust", 0.0)) <= 0.0: return true
+	return false
+
+
+## The puffs of burning poison gas that went up this frame flare as fire and leave smoke, where
+## each puff was (gas.take_burnt; physics plan F14), in all three worlds.
+func _burn_puffs() -> void:
+	var gas: RefCounted = g.get("gas")
+	if gas == null or not gas.has_method("take_burnt"): return
+	var P := _particles()
+	var s := _pscale()
+	for b: Dictionary in gas.take_burnt():
+		if P == null: continue
+		P.fire_burst(Vector2(b.at) / s, float(b.r) / s)
+		P.smoke(Vector2(b.at) / s, 2, float(b.r) * 0.5 / s)
+
+
+## The poison clouds within `r` of `at` by their puffs (gas.touching), else by their middle (an
+## older gas layer without puffs).
+func _touching(gas: RefCounted, at: Vector2, r: float) -> Array:
+	if gas.has_method("touching"): return gas.touching("poison", at, r, float(g.state.t))
+	return gas.clouds_of("poison", float(g.state.t)).filter(func(c: Dictionary) -> bool: return Vector2(c.at).distance_to(at) <= float(c.r) + r)
+
+
+## Poison cloud `c` goes off where the fire touched it: the blast there (its damage once), then a
+## flame front burns through the rest of it (rules ignite_speed px/s; its puffs flare up as they
+## burn, update) and the burnt gas is gone for good.
+func _ignite(gas: RefCounted, c: Dictionary, depth: int, owner: int, id: String) -> void:
+	_explode(c.at, float(c.r), depth, owner, id)
+	if gas.has_method("ignite"): gas.ignite(str(c.key), Vector2(c.at), float(g.state.t), float(rules().get("ignite_speed", 260.0)))
+	else: gas.end_cloud(str(c.key), float(g.state.t))
 
 
 ## Frost at `at` reaching `r`: the water lying there freezes to Glatteis
@@ -138,6 +230,8 @@ func frost_at(at: Vector2, r: float, owner := 0) -> void:
 	for z: Dictionary in _puddles(at, r):
 		if ElementRules.material(str(z.get("st", "lava"))) == "water" and not bool(z.get("frozen", false)):
 			z.frozen = true
+			# Glatteis melts by itself after ice_time s (decision D4; update)
+			z.ice_left = float(rules().get("ice_time", 8.0))
 			froze = true
 			if g.sound != null: g.sound.at("react_freeze", Vector2(z.p))
 			# the water snaps shut: a crack of ice, rime thrown up, a short jolt
@@ -152,7 +246,7 @@ func frost_at(at: Vector2, r: float, owner := 0) -> void:
 			if Vector2(c.at).distance_to(at) <= float(c.r) + r:
 				gas.end_cloud(str(c.key), float(g.state.t))
 				g.monsters._zone({"kind": "puddle", "p": c.at, "r": float(c.r) * float(R.get("rain_scale", 0.7)), "T": 8.0, "dmg": 0, "m": {"id": "regen", "def": {"name": "Regen"}, "boss": false}, "st": "water"})
-				g.monsters._burst_in(c.at - Vector2(0, 20), 12, "frost")
+				_react_matter("rain", Vector2(c.at), float(c.r))
 				_reacted("rain", Vector2(c.at), float(c.r), owner)
 	if froze:
 		_pools_call("freeze_near", [at, r])
@@ -176,6 +270,8 @@ func water_at(at: Vector2, r: float, owner := 0) -> void:
 
 ## Once a frame: crusts run down, lava and water meet.
 func update(dt: float) -> void:
+	_burn_puffs()
+	_gas_meets_heat(dt)
 	# the Frostgruft has no monster runtime (its mobs are the theme's): only the
 	# void's pull on the gas works there, the puddle zones are the hell monsters'
 	_void_swallows(dt)
@@ -184,6 +280,15 @@ func update(dt: float) -> void:
 	for z: Dictionary in g.monsters.zones:
 		if str(z.kind) == "puddle" and float(z.get("crust", 0.0)) > 0.0:
 			z.crust = float(z.crust) - dt
+		# Glatteis melts by itself (decision D4): ice_time s, three times faster on lava
+		if str(z.kind) == "puddle" and bool(z.get("frozen", false)) and z.has("ice_left"):
+			z.ice_left = float(z.ice_left) - dt * (3.0 if _hot_at(Vector2(z.p)) else 1.0)
+			if float(z.ice_left) <= 0.0:
+				z.erase("ice_left")
+				z.frozen = false
+				if g.sound != null: g.sound.at("react_thaw", Vector2(z.p))
+				_pools_call("thaw_near", [z.p, float(z.r) * 1.2])
+				_react_matter("thaw", Vector2(z.p), float(z.r))
 	_step_charges(dt)
 	_contact -= dt
 	if _contact <= 0.0:
@@ -348,8 +453,11 @@ func _feed(owner: int, ate: Dictionary, at: Vector2) -> void:
 ## water on ice freezes.
 func _floor_meets_puddles() -> void:
 	var liquid: Dictionary = g.theme.get("liquid", {})
-	var hot := bool(liquid.get("hurt", false))
-	var icy := bool(liquid.get("slide", false))
+	# the floor's material (decision D3): lava sets poison off and boils water, ice freezes water;
+	# the Krypta's Moder is cold sludge where nothing reacts
+	var mat := str(liquid.get("material", "lava" if bool(liquid.get("hurt", false)) else ("ice" if bool(liquid.get("slide", false)) else "")))
+	var hot := mat == "lava"
+	var icy := mat == "ice"
 	if not hot and not icy:
 		return
 	for z: Dictionary in g.monsters.zones.duplicate():
@@ -407,8 +515,8 @@ func _explode(at: Vector2, r: float, depth: int, owner := 0, id := "explode") ->
 		m.k = (m.p - at).normalized() * 160.0
 		if g.get("feel") != null:
 			g.feel.on_hit(m, m.p - at, false)
+	_react_matter("explode", at, reach)
 	if g.monsters != null:
-		g.monsters._burst_in(at - Vector2(0, 10), 44, "poison")
 		g.monsters._crack_floor(at, reach * 0.6, 4, true)
 		g.monsters._impact(at, "large")
 	elif g.get("frost_fx") != null:
@@ -432,8 +540,8 @@ func _boil(z: Dictionary, owner := 0) -> void:
 	if gas != null:
 		_steam_serial += 1
 		gas.emit("steam:%d" % _steam_serial, "steam", z.p, float(z.r) * float(R.get("steam_scale", 1.3)), float(R.get("steam_time", 5.0)), float(g.state.t))
-	g.monsters._burst_in(z.p - Vector2(0, 10), 10, "frost")
-	g.monsters._impact(z.p, "small")
+	_react_matter("steam", Vector2(z.p), float(z.r))
+	if g.monsters != null: g.monsters._impact(z.p, "small")
 	_reacted("steam", Vector2(z.p), float(z.r) * float(R.get("steam_scale", 1.3)), owner)
 
 
@@ -753,6 +861,33 @@ func _kick(at: Vector2, r: float, strength: float) -> void:
 	var P := _particles()
 	if P != null:
 		P.kick(at / _pscale(), r / _pscale(), strength)
+
+
+## Each reaction throws its own matter in the particles, in all three worlds (physics plan F13,
+## docs/PHYSIK-PLAN.md): an explosion a fireball, embers, a scorch star and smoke (not green
+## sparks); boiling a burst of steam; a thaw steam and drops; condensing rain drops falling
+## from the cloud's height onto the floor.
+func _react_matter(kind: String, at: Vector2, r: float) -> void:
+	var P := _particles()
+	if P == null: return
+	var s := _pscale()
+	var p := at / s
+	var water := [Color("8fd8e6"), Color("4fa0c8"), Color("2a6a9e")]
+	match kind:
+		"explode":
+			P.fire_burst(p, r / s)
+			P.embers(p, r * 0.6 / s, 10)
+			P.scorch_star(p + Vector2(0, 6), r * 0.4 / s)
+			P.smoke(p, 6, r * 0.5 / s)
+		"steam":
+			P.steam(p, 16, r * 0.6 / s)
+		"thaw":
+			P.steam(p, 6, r * 0.4 / s)
+			P.drops(p, 4, Vector2.ZERO, water)
+		"rain":
+			for i in range(clampi(int(r / 6.0), 6, 24)):
+				var spot := p + Vector2.from_angle(randf() * TAU) * (r / s) * sqrt(randf()) * Vector2(1.0, 0.6)
+				P.emit(spot, Vector2(randf_range(-8.0, 8.0), 0.0), water[randi() % 3], 2.0, "drop", 2.0, randf_range(40.0, 70.0), 0.0, 0.5)
 
 
 ## The crypt particles of the feel (src/vfx/particles.gd: their px are world

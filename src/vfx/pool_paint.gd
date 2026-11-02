@@ -68,6 +68,7 @@ extends RefCounted
 
 const SplatShape = preload("res://src/vfx/splat_shape.gd")
 const Glow = preload("res://src/vfx/glow.gd")
+const ElementRules = preload("res://src/combat/element_rules.gd")
 const DATA_PATH := "res://assets/data/vfx_pools.json"
 const FPS := 12.0
 
@@ -386,6 +387,28 @@ func _field(mat: String) -> Dictionary:
 
 ## Shades what changed and draws every field with its living overlay, in world px.
 ## Drawn once a frame: when several sources share this layer, the first draws it.
+## The materials of `_fields` in drawing order: least important first, the one the rules count
+## where pools overlap (ElementRules priority) last; cached while the materials stay the same.
+var _order_key := ""
+var _order: Array = []
+
+
+func _draw_order() -> Array:
+	var key := ",".join(PackedStringArray(_fields.keys()))
+	if key == _order_key: return _order
+	var prio: Array = ElementRules.data().get("priority", [])
+	var mats: Array = _fields.keys()
+	mats.sort_custom(func(a: String, b: String) -> bool:
+		var ia := prio.find(ElementRules.material(a))
+		var ib := prio.find(ElementRules.material(b))
+		ia = prio.size() if ia < 0 else ia
+		ib = prio.size() if ib < 0 else ib
+		return ia > ib)
+	_order_key = key
+	_order = mats
+	return _order
+
+
 func draw(canvas: CanvasItem, now: float) -> void:
 	var frame_now := Engine.get_process_frames()
 	if frame_now == _drawn_frame:
@@ -443,7 +466,9 @@ func draw(canvas: CanvasItem, now: float) -> void:
 		if field.has("work"):
 			_bake_step(field, until)
 	var after_bake := Time.get_ticks_usec()
-	for mat: String in _fields:
+	# the pool that counts where pools overlap is drawn last, on top (the rules' priority, physics
+	# plan F21): lava and fire over water over blood, not by the order they were laid
+	for mat: String in _draw_order():
 		var field: Dictionary = _fields[mat]
 		var style := _look(mat)
 		if field.tex != null:
@@ -1376,8 +1401,10 @@ func freeze_near(at: Vector2, radius: float) -> void:
 	var reach := radius / art
 	var span := float(_phys("freeze_time", 0.45))
 	var ice: Dictionary = _field("ice")
+	# the picture freezes what the field freezes: only the liquids that freeze (D4)
+	var freezes: Array = cfg.get("freezes", ["water"])
 	for mat: String in _fields.keys():
-		if _style(mat) != "liquid":
+		if _style(mat) != "liquid" or not freezes.has(mat):
 			continue
 		var field: Dictionary = _fields[mat]
 		for q: Vector2i in field.cells:
@@ -1646,6 +1673,9 @@ func _react_pair(a: String, b: String, rule: Dictionary, now: float) -> void:
 		return
 	var both := box_a.intersection(box_b)
 	var count := 0
+	# poison meeting fire or lava goes up in flame where they meet instead of hissing (physics plan
+	# R9/F12, as the rules make it explode)
+	var flare := ElementRules.material(a) == "poison" and ElementRules.material(b) in ["fire", "lava"]
 	for q: Vector2i in fa.cells:
 		if not both.has_point(q) or not _live(fa, q, now) or not _live(fb, q, now):
 			continue
@@ -1654,7 +1684,9 @@ func _react_pair(a: String, b: String, rule: Dictionary, now: float) -> void:
 		_turn(str(rule.get("a_to", "")), fa, q, fa.cells[q], now)
 		_turn(str(rule.get("b_to", "")), fb, q, fb.cells[q], now)
 		if bool(rule.get("steam", false)) and count % int(cfg.reactions.get("steam_every", 5)) == 0:
-			_hiss((Vector2(q) + Vector2(0.5, 0.5)) * art, 2)
+			var at := (Vector2(q) + Vector2(0.5, 0.5)) * art
+			if flare and particles != null: particles.fire_burst(at * to_particles, 4.0)
+			else: _hiss(at, 2)
 		count += 1
 
 

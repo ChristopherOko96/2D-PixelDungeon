@@ -217,6 +217,12 @@ func pet_slot_at(_screen: Vector2, point: Vector2) -> int:
 	return HudKit.pet_slot_at(point)
 
 
+## The last talent shot's id (each flying shot sheds its matter by it: talent_fx _shed_flight).
+var _bullet_serial := 0
+## Talent events already put to the walls and props (id -> true; _wreck_blasts).
+var _wrecked := {}
+
+
 func update(dt: float) -> void:
 	_with_sync(func():
 		_hold()
@@ -224,6 +230,7 @@ func update(dt: float) -> void:
 		tc.step(dt)
 		_step_bullets(dt)
 		_step_statuses(dt))
+	_wreck_blasts()
 	bar.step(dt)
 	# the talents' weight on the view by importance (src/vfx/talent_fx.gd take_feel)
 	for hit: Dictionary in fx.take_feel(tc.snapshot()):
@@ -461,6 +468,65 @@ func talent_blocked(from: Vector2, to: Vector2, _radius: float) -> bool:
 	return false
 
 
+## Where a talent shot flying from `from` to `to` first meets a wall (physics plan R1/F23,
+## docs/PHYSIK-PLAN.md): samples every 6 px or less up to and with the end point (talent_blocked
+## leaves the end out, so at 60 fps a shot never met a wall and flew on through it), then halves
+## the last free stretch six times to the contact. Vector2.INF when nothing is in the way.
+func _shot_contact(from: Vector2, to: Vector2) -> Vector2:
+	var steps := maxi(1, ceili(from.distance_to(to) / 6.0))
+	var free := from
+	for i in range(1, steps + 1):
+		var at := from.lerp(to, float(i) / float(steps))
+		if _shot_wall(at):
+			var hit := at
+			for k in range(6):
+				var mid := (free + hit) * 0.5
+				if _shot_wall(mid): hit = mid
+				else: free = mid
+			return free
+		free = at
+	return Vector2.INF
+
+
+## Talent explosions, novas and impacts bite the walls and break props, crates and urns the way
+## the hero's own blasts do (story_wreck.gd blast; physics plan R5/F47), each event once; the pyro
+## shot's explosions are skipped ("wrecked": hell_game blasted there already).
+func _wreck_blasts() -> void:
+	if g.get("wreck") == null: return
+	var now := {}
+	for event: Dictionary in tc.events:
+		var id := int(event.get("id", 0))
+		now[id] = true
+		if _wrecked.has(id): continue
+		if not str(event.get("kind", "")) in ["explosion", "nova", "impact"] or bool(event.get("wrecked", false)): continue
+		var r := float(event.get("r", 0.0))
+		if r < 24.0: continue
+		g.wreck.blast(Vector2(float(event.x), float(event.y)), r, "blast", int(event.get("owner", 1)) > 0)
+	_wrecked = now
+
+
+func _shot_wall(p: Vector2) -> bool:
+	return g.box_blocked(Rect2(p - Vector2(3, 3), Vector2(6, 6)))
+
+
+## A talent's melee blow (talent_combat.gd "melee") meeting a wall or a prop in front: it clangs and
+## chips there like the hero's own swing (story_feel.swing_wall) and breaks a smashable prop in its
+## arc (story_wreck.swing; physics plan R3).
+func talent_swing_wall(from: Vector2, aim: Vector2, reach: float, half: float) -> void:
+	var at := from - Vector2(0, 40)
+	if g.feel != null: g.feel.swing_wall(at, aim, reach)
+	if g.get("wreck") != null: g.wreck.swing(at, aim, reach, half)
+
+
+## The wall-wear style of a talent shot (story_wreck.gd wall_hit).
+static func _wall_style(style: String) -> String:
+	if style.begins_with("fire") or style.begins_with("inferno"): return "fire"
+	if style.begins_with("frost"): return "frost"
+	if style == "arcane": return "void"
+	if style == "arrow": return "arrow"
+	return "metal"
+
+
 func _solid(p: Vector2, radius: float) -> bool:
 	return g.box_blocked(Rect2(p.x - radius, p.y - radius * 0.6, radius * 2.0, radius * 0.6))
 
@@ -474,9 +540,20 @@ func _damage_enemy(m: Dictionary, damage: float, direction: Vector2 = Vector2.ZE
 	m.hp = float(m.hp) - damage
 	if feedback:
 		m.hit = 0.12
-		if not m.has("kit"): m.k = direction * (12.0 if str(m.get("kind", "")) == "boss" else 60.0)
+		# the talent's push adds to what already pushes it, away from the blast that struck, less on
+		# a heavier body, summed at most push.max (physics plan R23, decision D5)
+		if not m.has("kit"):
+			var pcfg: Dictionary = (g.motion_kit().cfg.get("push", {}) as Dictionary) if g.has_method("motion_kit") else {}
+			var heavy: Array = pcfg.get("mass", [0.4, 4.0])
+			var mass := clampf(pow(float(m.get("r", 28.0)) / maxf(1.0, float(pcfg.get("mass_ref_r", 28.0))), 2.0), float(heavy[0]), float(heavy[1]))
+			var push := float(pcfg.get("boss_talent", 12.0)) if str(m.get("kind", "")) == "boss" else float(pcfg.get("talent", 60.0))
+			var now: Vector2 = m.get("k") if m.get("k") is Vector2 else Vector2.ZERO
+			m.k = (now + direction.normalized() * push / mass).limit_length(float(pcfg.get("max", 1000.0)))
+		# the creature's own matter flies from the talent hit (blood, chips, slime; physics plan
+		# F25); the feel plays its material's hit sound itself
+		if g.feel != null: g.feel.on_hit(m, direction, false)
 		# sound hook: the talent hit in the monster's material at the monster, with its voice and coat
-		if g.get("sound") != null: g.sound.mob_hit(m)
+		elif g.get("sound") != null: g.sound.mob_hit(m)
 		else: g._sound("hit_" + str(m.get("def", {}).get("material", "void")))
 	tc.dealt(owner, m, damage, feedback)
 	return damage
@@ -487,7 +564,8 @@ func _damage_player(_id: int, n: int, _direction: Vector2 = Vector2.ZERO) -> voi
 
 
 func _add_bullet(pos: Vector2, velocity: Vector2, owner: int, damage: float, meta: Dictionary = {}) -> Dictionary:
-	var bullet := {"pos": pos, "velocity": velocity, "owner": owner, "damage": damage, "life": 1.6, "hit_ids": [], "pierce": 0}
+	_bullet_serial += 1
+	var bullet := {"pos": pos, "velocity": velocity, "owner": owner, "damage": damage, "life": 1.6, "hit_ids": [], "pierce": 0, "id": _bullet_serial}
 	bullet.merge(meta, true)
 	bullets.append(bullet)
 	return bullet
@@ -540,7 +618,11 @@ func _step_bullets(dt: float) -> void:
 		# a fire shot through poison gas sets it off (src/hell/story_elements.gd)
 		if elements != null and str(b.get("style", "")).begins_with("fire"):
 			elements.fire_passes(b.pos, int(b.get("owner", 1)))
-		var gone: bool = float(b.life) <= 0.0 or talent_blocked(from, b.pos, 3.0)
+		# it stops at the wall it meets, there (R1): the burst and the wear are on the wall face
+		var contact := _shot_contact(from, b.pos)
+		var walled := contact != Vector2.INF
+		if walled: b.pos = contact
+		var gone: bool = float(b.life) <= 0.0 or walled
 		if not gone:
 			for m: Dictionary in enemies:
 				if float(m.hp) <= 0.0 or b.hit_ids.has(int(m.id)) or not g._hittable(m): continue
@@ -551,6 +633,11 @@ func _step_bullets(dt: float) -> void:
 					gone = true
 					break
 				b.pierce = int(b.pierce) - 1
+		if walled and g.get("wreck") != null:
+			g.wreck.hit_line(from, contact + Vector2(b.velocity).normalized() * 16.0, _wall_style(str(b.get("style", ""))), int(b.get("owner", 1)))
+		# a fire shot that strikes an unlit fire bowl lights it (decision D7)
+		if walled and _wall_style(str(b.get("style", ""))) == "fire" and g.has_method("fire_hits_brazier"):
+			g.fire_hits_brazier(contact + Vector2(b.velocity).normalized() * 8.0)
 		if gone: bullets.remove_at(i)
 
 
@@ -587,7 +674,7 @@ func draw_world(canvas: CanvasItem, clock: float) -> void:
 		var at := Vector2(b.pos) - Vector2(0, 30)
 		var colour: Color = {"fireball": Color("ff7a2a"), "frost_lance": Color("8fd8e6"), "arcane": Color("b07bff")}.get(str(b.get("style", "")), Color("f3e2b0"))
 		var shot := {"x": at.x, "y": at.y, "vx": Vector2(b.velocity).x, "vy": Vector2(b.velocity).y, "style": str(b.get("style", "")),
-			"talent": str(b.get("talent", "")), "stage": int(b.get("stage", 0))}
+			"talent": str(b.get("talent", "")), "stage": int(b.get("stage", 0)), "id": int(b.get("id", 0))}
 		if fx.draw_bullet(canvas, shot, clock): continue
 		if str(b.get("style", "")) == "arrow":
 			# a shaft of pixels with a white tip and a dark outline

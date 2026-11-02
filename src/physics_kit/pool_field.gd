@@ -230,9 +230,13 @@ func add(id: int, style: String, at: Vector2, dir: Vector2, radius: float, start
 		var edge := _edge_of(start, end)
 		job.out = out
 		job.commit = _now + commit_delay(count)
+		# a big pool spreads from the moment it is laid, not from its zone's start (it would pop in
+		# already spread; physics plan R12/F19). commit depends only on the cell count: the same
+		# on every machine
+		var born := maxf(start, float(job.commit))
 		job.task = WorkerThreadPool.add_task(func() -> void:
 			var cells := shape(at, dir, radius, mat, cell_px, floor_open, id)
-			out.timed = timings(cells, start, end, spread, edge)
+			out.timed = timings(cells, born, end, spread, edge)
 			out.cells = cells)
 		_shaping[key] = job
 		return
@@ -398,8 +402,11 @@ func freeze_near(at: Vector2, radius: float) -> int:
 	var span := float((cfg.get("physics", {}) as Dictionary).get("freeze_time", 0.45))
 	var ice := _material("ice")
 	var frozen: Array = []
+	# only the liquids that freeze (cfg "freezes", water when absent; decision D4): frost no
+	# longer turns poison or blood into Glatteis
+	var freezes: Array = cfg.get("freezes", ["water"])
 	for mat: String in _cells.keys():
-		if style_of(mat) != "liquid":
+		if style_of(mat) != "liquid" or not freezes.has(mat):
 			continue
 		var into: Dictionary = _cells[mat]
 		for q: Vector2i in into:

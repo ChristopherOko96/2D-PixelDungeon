@@ -79,6 +79,18 @@ var _tracks: Dictionary = {}
 var _flashes: Array[Dictionary] = []
 var _clock := 0.0
 var _rng := RandomNumberGenerator.new()
+## Trail emits per second, not per draw (physics plan F10: a 144 Hz screen drew 2.4x the trail of
+## a 60 Hz one): how many of `rate` per s are due for `key` since its last draw at `clock`.
+var _trail_due: Dictionary = {}
+
+
+func _due(key: int, clock: float, rate: float) -> int:
+	var last: Vector2 = _trail_due.get(key, Vector2(clock, 0.0))
+	var carry := last.y + maxf(0.0, minf(clock - last.x, 0.1)) * rate
+	var n := int(carry)
+	_trail_due[key] = Vector2(clock, carry - float(n))
+	if _trail_due.size() > 256: _trail_due.clear()
+	return n
 ## Dice of the shared static drawers.
 static var _dice := RandomNumberGenerator.new()
 
@@ -363,10 +375,12 @@ func draw_arrow(canvas: CanvasItem, bullet: Dictionary, point: Vector2, clock: f
 		for r in range(1, 4):
 			for d: Vector2i in ([Vector2i(1, 1), Vector2i(-1, -1), Vector2i(1, -1), Vector2i(-1, 1)] if diag else [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]):
 				PixelPaint.cell(canvas, head + d * r, CRIT_TINT if r < 3 else CRIT_TINT.darkened(0.2), ART)
-	if particles != null and _rng.randf() < 0.35:
-		var side := aim.orthogonal()
-		var drift := -aim * _rng.randf_range(20.0, 60.0) + side * _rng.randf_range(-25.0, 25.0)
-		particles.emit(point - aim * 10.0, drift, tint.lightened(0.35), _rng.randf_range(0.18, 0.32), "spark", 1.5, 12.0)
+	if particles != null:
+		# sparks shed per second, not per draw (F10)
+		for k in range(_due(int(bullet.get("id", 0)), clock, 21.0)):
+			var side := aim.orthogonal()
+			var drift := -aim * _rng.randf_range(20.0, 60.0) + side * _rng.randf_range(-25.0, 25.0)
+			particles.emit(point - aim * 10.0, drift, tint.lightened(0.35), _rng.randf_range(0.18, 0.32), "spark", 1.5, 12.0)
 
 
 ## A streak along `trail` (head first): pixels of the ramp from near-white at

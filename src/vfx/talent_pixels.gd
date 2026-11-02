@@ -911,8 +911,9 @@ static func shot(canvas: CanvasItem, at: Vector2, dir: Vector2, element: String,
 				if not tcells.has(q + Vector2i(0, 1)):
 					PixelPaint.cell(canvas, q + Vector2i(0, 1), Pal.INK, art)
 			PixelPaint.paint(canvas, tcells, art)
-		# embers peel off behind the ball, tumble and fall as they cool
-		for k in range(3 + r * 2 + tail / 2):
+		# embers peel off behind the ball, tumble and fall as they cool (with particles they are
+		# real embers shed along the flight: talent_fx _shed_flight; physics plan F30)
+		for k in range(3 + r * 2 + tail / 2 if paint_matter else 0):
 			var age := fmod(clock * 2.4 + _rnd(seed, k), 1.0)
 			var spot := at - d * (float(r) * art + age * (6.0 + float(trail)) * art) + side * sin(float(k) * 2.3 + clock * 7.0) * (1.0 + age * 3.0) * art + Vector2(0, age * age * (5.0 + float(tail)) * art)
 			var q := PixelPaint.at(spot, art)
@@ -1293,6 +1294,7 @@ static func impact(canvas: CanvasItem, at: Vector2, dir: Vector2, p: float, elem
 	var fade := 1.0 - smoothstep(0.4, 1.0, p)
 	match kind:
 		"mote":
+			if not paint_matter: return
 			var c := PixelPaint.at(at, art)
 			var cells := {}
 			var n := 6 + size
@@ -1309,6 +1311,7 @@ static func impact(canvas: CanvasItem, at: Vector2, dir: Vector2, p: float, elem
 				PixelPaint.ellipse(canvas, at, rr + art, rr * 0.8 + art, cols[3], art, 2, int(p * 30.0))
 			_flush(canvas, cells, art)
 		"drop":
+			if not paint_matter: return
 			var rad := float(size) * art * _out(p / 0.5)
 			var cover := 1.0 - smoothstep(0.3, 1.0, p)
 			var cells := {}

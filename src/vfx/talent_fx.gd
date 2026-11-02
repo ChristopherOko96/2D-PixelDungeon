@@ -98,6 +98,7 @@ const Pal = preload("res://src/vfx/talent_palette.gd")
 const TalentPixels = preload("res://src/vfx/talent_pixels.gd")
 const TalentUlts = preload("res://src/vfx/talent_ults.gd")
 const TalentDome = preload("res://src/vfx/talent_dome.gd")
+const PoolPaint = preload("res://src/vfx/pool_paint.gd")
 const CompanionRigs = preload("res://src/vfx/companion_rigs.gd")
 const DATA_PATH := "res://assets/data/vfx_talents.json"
 const TALENTS_PATH := "res://assets/data/talents.json"
@@ -142,6 +143,10 @@ var enemy_at: Callable = Callable()
 var pools: RefCounted = null
 ## False when the pools are a world layer its host draws (the Hell's).
 var draw_pools := true
+## The talents' residue as a picture only (physics plan R4, decision D1): its own pool layer
+## beside `pools`, so residue made by the drawing code never hurts, trips or freezes anyone
+## (the gameplay pool layer stays deterministic).
+var _residue_layer: RefCounted = null
 ## The host's particles (src/vfx/particles.gd) the impacts burst into, null without;
 ## their units are this canvas's world px times to_particles (story worlds 1 / 1.5).
 var particles: RefCounted = null
@@ -339,9 +344,14 @@ func draw_ground(canvas: CanvasItem, state: Dictionary, clock: float) -> void:
 			if float(_ult_pools[id].until) < clock: _ult_pools.erase(id)
 			else: entries.append(_ult_pools[id].entry)
 		pools.sync(entries, clock, "talent")
-		pools.sync(_residue_entries(clock), clock, "talent_residue")
+		if _residue_layer == null and pools.get("open") is Callable:
+			_residue_layer = PoolPaint.new(float(pools.art), pools.open)
+			_residue_layer.particles = pools.get("particles")
+			_residue_layer.to_particles = float(pools.get("to_particles"))
+		(_residue_layer if _residue_layer != null else pools).sync(_residue_entries(clock), clock, "talent_residue")
 		PerfMarks.add("tg.pools_sync")
 		if draw_pools: pools.draw(canvas, clock)
+		if _residue_layer != null: _residue_layer.draw(canvas, clock)
 	if gas != null:
 		# the poison zones' clouds: they spread, gather in corners, part round heroes
 		var clouds: Array = []
@@ -471,13 +481,29 @@ func _tick(key: String, every: float, clock: float) -> bool:
 ## are swallowed; the puddles and the gas are the host's).
 func _zone_matter(zone: Dictionary, clock: float) -> void:
 	var look := str(zone.get("look", ""))
-	if not look in ["snow", "arcane", "crater", "ice"]: return
+	if not look in ["snow", "arcane", "crater", "ice", "souls", "plague"]: return
 	var id := int(zone.get("id", 0))
 	var at := Vector2(float(zone.x), float(zone.y))
 	var r := float(zone.r)
 	var s := to_particles
 	if look == "crater":
 		_crater_matter(zone, id, at, r, clock)
+		return
+	if look == "plague":
+		# Seuchenfeld: poison fumes well up all over it and drift (motes and smoke as matter, R14;
+		# no gameplay gas, so its caster is not poisoned by it)
+		if particles != null and _tick("plague:%d" % id, 0.08, clock):
+			var n := int(clock / 0.08)
+			var spot := at + Vector2.from_angle(_h(id * 29 + n) * TAU) * r * 0.85 * sqrt(_h(id * 31 + n * 7)) * Vector2(1.0, 0.75)
+			var cols := Pal.ramp_hot("poison")
+			particles.motes(spot * s, 1, [cols[1], cols[2]], 18.0, 2.0, 0.5)
+			if n % 3 == 0: particles.smoke(spot * s, 1, 4.0)
+		return
+	if look == "souls":
+		# Seelensturm: a storm of souls, motes swirled round on a well that leaves the floor alone
+		# (physics plan R14; its sprite loop stays as the shape)
+		if particles != null:
+			particles.well("souls:%d" % id, at * s, r * s, 40.0, 220.0, 1.0, 0.2, 26.0, Pal.ramp_hot("soul"), false)
 		return
 	if look == "ice":
 		_glacier_matter(zone, id, at, r, clock)
@@ -698,6 +724,7 @@ func draw_bullet(canvas: CanvasItem, bullet: Dictionary, clock: float) -> bool:
 	var talent := str(bullet.get("talent", ""))
 	var style := str(bullet.get("style", ""))
 	var element := Pal.element_of(talent, str(SHOT_STYLES.get(style, "steel")))
+	_shed_flight(bullet, at, aim, element, clock)
 	var tier_name := _shot_tier_name(talent)
 	var tier := _shot_tier(tier_name)
 	if not talent.is_empty(): _track_shot(at, flight, talent, element, tier_name, float(tier.get("glow", 7)), clock)
@@ -778,7 +805,7 @@ func _settle_shots(clock: float, state: Dictionary = {}) -> void:
 				var carried := false
 				for boom: Vector2 in booms:
 					if boom.distance_to(at) < tol * 3.0: carried = true
-				if not carried: _impact(at, v, str(old.element), str(old.tier), clock, str(old.talent))
+				if not carried: _impact(at, _off_wall(at, v), str(old.element), str(old.tier), clock, str(old.talent))
 	_shots_live = _shots_pass
 	_live_clock = _pass_clock
 	_shots_pass = []
@@ -787,6 +814,22 @@ func _settle_shots(clock: float, state: Dictionary = {}) -> void:
 ## IMPACT of a shot of `tier` at `at` (its floor point) flying along `v`: the
 ## painted burst, the element's matter in the particles with a crack or
 ## scorch, its residue and its weight (shake and a bloom flash by tier).
+## A shot that ended on a wall bursts off the wall's face (physics plan R1): its flight `v`
+## mirrored on the wall's normal (found by probing the floor cells ahead of it on each axis), so
+## its chips, sparks and embers fly back into the room, not into the stone; `v` unchanged in the
+## open or without particles.
+func _off_wall(at: Vector2, v: Vector2) -> Vector2:
+	if particles == null or v.length() < 0.1: return v
+	var s := to_particles
+	var ahead := v.normalized() * _u(10.0)
+	if not particles.solid((at + ahead) * s): return v
+	var n := Vector2.ZERO
+	if absf(ahead.x) > 0.01 and particles.solid((at + Vector2(ahead.x, 0.0)) * s): n.x = -signf(ahead.x)
+	if absf(ahead.y) > 0.01 and particles.solid((at + Vector2(0.0, ahead.y)) * s): n.y = -signf(ahead.y)
+	if n == Vector2.ZERO: n = -v.normalized()
+	return v.bounce(n.normalized())
+
+
 func _impact(at: Vector2, v: Vector2, element: String, tier_name: String, clock: float, talent := "") -> void:
 	var tier := _shot_tier(tier_name)
 	var dir := v.normalized() if v.length() > 0.1 else Vector2.RIGHT
@@ -1259,7 +1302,9 @@ func _draw_domes(canvas: CanvasItem, auras: Array, clock: float, where: Callable
 			var dome: RefCounted = _dome(owner)
 			dome.size = int(spec[1])
 			dome.step(clock)
-			var element := str(_shield_el.get(owner, spec[2])) if str(spec[0]) == "shield" else str(spec[2])
+			# a shield dome is its own talent's element (Schildwall stone, Seelenschild soul); the mage's
+			# two shields are remembered at their cast (physics plan F27)
+			var element := str(_shield_el.get(owner, Pal.element_of(str(aura.get("talent", "")), str(spec[2])))) if str(spec[0]) == "shield" else str(spec[2])
 			_dome_last[owner] = {"at": _snap(at), "element": element}
 			dome.draw(canvas, _snap(at) + feet, clampf((total - left) / 0.3, 0.0, 1.0), clampf(left / 0.6, 0.0, 1.0), element, art, clock)
 	for owner: int in _domes.keys():
@@ -1999,7 +2044,8 @@ func _extra_event(canvas: CanvasItem, event: Dictionary, at: Vector2, p: float, 
 			var element := str(LOOK_ELEMENT.get(str(event.get("look", "mana_bubble")), "ice"))
 			TalentPixels.burst(canvas, at - Vector2(0, 16), 8, p, element, art, id)
 			var cols := Pal.ramp(element)
-			for i in range(8):
+			# with particles its shards are theirs (_matter; physics plan R17/F31)
+			for i in range(8 if particles == null else 0):
 				var dir := Vector2.from_angle(TAU * i / 8.0 + 0.3)
 				var q := PixelPaint.at(at - Vector2(0, 16) + dir * r * (0.8 + p * 1.2) + Vector2(0, 30.0 * p * p), art)
 				if PixelPaint.shown(q, fade):
@@ -2016,7 +2062,7 @@ func _extra_event(canvas: CanvasItem, event: Dictionary, at: Vector2, p: float, 
 			elif wound == "blood":
 				TalentPixels.burst(canvas, at - Vector2(0, 12), 7, p, "blood", art, id)
 				var blood := Pal.ramp("blood")
-				for i in range(5):
+				for i in range(5 if particles == null else 0):
 					var q := PixelPaint.at(at - Vector2(0, 14) + Vector2.from_angle(PI * (1.1 + i * 0.2)) * 18.0 * p + Vector2(0, 30.0 * p * p), art)
 					if PixelPaint.shown(q, fade): PixelPaint.cell(canvas, q, blood[2], art)
 			else:
@@ -2195,6 +2241,32 @@ func _bits(entry: Dictionary) -> void:
 		_: particles.motes(at, 2, [cols[0], cols[1]])
 
 
+## Matter a flying talent shot sheds into the particles along its flight, per second (physics
+## plan F30): a fire shot embers that tumble down and lie, a frost shot rime sparks that settle
+## as frost, a void or soul shot motes; the shot's painted look keeps only its shape.
+var _shed_due: Dictionary = {}
+
+
+func _shed_flight(bullet: Dictionary, at: Vector2, aim: Vector2, element: String, clock: float) -> void:
+	if particles == null: return
+	var key := int(bullet.get("id", hash(Vector2i(int(at.x) / 64, int(at.y) / 64))))
+	var last: Vector2 = _shed_due.get(key, Vector2(clock, 0.0))
+	var carry := last.y + clampf(clock - last.x, 0.0, 0.1) * 24.0
+	var n := int(carry)
+	_shed_due[key] = Vector2(clock, carry - float(n))
+	if _shed_due.size() > 128: _shed_due.clear()
+	var s := to_particles
+	var back := (at - aim * _u(8.0)) * s
+	var cols := Pal.ramp_hot(element)
+	for k in range(n):
+		match Pal.resolve(element):
+			"fire": particles.emit(back, -aim.rotated(randf_range(-0.6, 0.6)) * randf_range(20.0, 60.0), cols[1 + k % 2], randf_range(0.4, 0.8), "ember", 2.0, 10.0, randf_range(10.0, 40.0), 2.0)
+			"ice": particles.emit(back, -aim.rotated(randf_range(-0.8, 0.8)) * randf_range(10.0, 40.0), cols[k % 2], randf_range(0.3, 0.6), "frost", 2.0, 10.0, 0.0, 2.0)
+			"void", "soul", "spirit":
+				var mote: Dictionary = particles.emit(back, -aim.rotated(randf_range(-1.0, 1.0)) * randf_range(10.0, 40.0), cols[k % 2], randf_range(0.3, 0.6), "mote", 2.0, 10.0, 0.0, 1.0)
+				mote.streak = true
+
+
 ## A mixture as {element: units}: from [{el, n}] (talent_combat.gd _mixture, gefuege_state units;
 ## a spat glob's n is a share and may be a fraction), a {el: n} dictionary or a plain list of
 ## element names.
@@ -2365,7 +2437,7 @@ func _shield_cast_physics(at: Vector2, element: String) -> void:
 func _dome_hit_physics(event: Dictionary, at: Vector2) -> void:
 	if particles == null: return
 	var owner := int(event.get("owner", 1))
-	var element := Pal.resolve(str(_shield_el.get(owner, "ice")))
+	var element := Pal.resolve(str((_dome_last.get(owner, {}) as Dictionary).get("element", _shield_el.get(owner, "ice"))))
 	var d := Vector2(float(event.get("dx", 0.0)), float(event.get("dy", 1.0)))
 	d = d.normalized() if d.length() > 0.01 else Vector2.UP
 	var s := to_particles

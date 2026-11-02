@@ -649,7 +649,8 @@ func draw_layer(canvas: CanvasItem, mode: String) -> void:
 			# the talents' art finds the Singularitaet's caught monsters by their talent id (src/vfx/talent_fx.gd enemy_at)
 			var adapter: Variant = g.get("talents")
 			if adapter != null and adapter.get("fx") != null and not (adapter.fx.get("enemy_at") as Callable).is_valid(): adapter.fx.enemy_at = mob_at
-			feedback.particles.draw_particles(canvas)
+			# with depth bands (the host draws low matter between its actors) only high matter here
+			feedback.particles.draw_particles(canvas, [], 2 if bool(g.get("depth_bands")) else 0)
 		"glow":
 			var kit: RefCounted = g.story_hero.skill_fx if g.story_hero != null else null
 			feedback.particles.draw_glow(canvas, kit.glow.level("particles") if kit != null else 1.0)

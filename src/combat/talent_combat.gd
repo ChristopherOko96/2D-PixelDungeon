@@ -71,6 +71,8 @@ var _pet_source := -1
 var drops: Array = []
 ## Enemies the collapsing Singularität flings outward: {enemy, dir, left, owner, talent, base, fling}.
 var flung: Array = []
+## Bodies rolling back upright after a flight ({enemy, from, to, t}; _step_rolling).
+var rolling: Array = []
 ## True while Gefüge drops deal damage (their kills give no essence).
 var _dropping := false
 ## True while an echo (Nachhall) runs; the Gefüge element it carries ("" none).
@@ -426,6 +428,8 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 				_hit(id, enemy, dmg, info, rt, talent)
 				if info.has("taunt"): _taunt(enemy, id, float(info.taunt))
 			_event("swing", player.pos, reach, {"angle": aim.angle(), "arc": float(info.arc), "talent": talent})
+			# the blow meets a wall or a prop in front: it clangs and chips there (host hook; R3)
+			if game.has_method("talent_swing_wall"): game.talent_swing_wall(Vector2(player.pos), aim, reach, float(info.arc) * 0.5)
 		"shield":
 			rt.shield = _value(info, "base_pct", rt, talent) / 100.0 * float(player.get("damage", 1.0))
 			rt.shield_time = float(info.time)
@@ -704,6 +708,7 @@ func step(delta: float) -> void:
 	_step_orbs(delta)
 	_step_drops(delta)
 	_step_flung(delta)
+	_step_rolling(delta)
 	for enemy: Dictionary in game.enemies:
 		for key: String in ["talent_mark", "pet_taunt", "talent_taunt", "talent_weak"]:
 			if enemy.has(key):
@@ -1198,7 +1203,8 @@ func _hit(id: int, enemy: Dictionary, dmg: float, info: Dictionary, rt: Dictiona
 	# the look of the blow for its ragdoll if it fells it: away from an area's burst, else from the hero
 	var away: Vector2 = (Vector2(enemy.pos) - _blast_at) if _blast_at.is_finite() and Vector2(enemy.pos).distance_to(_blast_at) > 0.5 else direction
 	_stamp(enemy, away, talent, not talent.is_empty() and talent == str(rt.get("ultimate", "")))
-	if dmg > 0.0: game._damage_enemy(enemy, dmg, direction, id, true)
+	# the push goes away from the blast that struck it (an area's burst), else away from the hero (D5)
+	if dmg > 0.0: game._damage_enemy(enemy, dmg, away.normalized() if away.length() > 0.01 else direction, id, true)
 	# a kill by the void mage's own talent is a void kill: its essence (enemy_killed)
 	if float(enemy.hp) <= 0.0 and not _dropping and _void_talent(talent): enemy.void_kill = id
 	_cur_talent = ""
@@ -2085,6 +2091,17 @@ func _step_flung(delta: float) -> void:
 		_hold_enemy(enemy, float(cfg.get("hold_s", 0.25)))
 		# it turns over as it flies (the rig draws enemy.tumble, src/rig/rig_renderer.gd)
 		enemy.tumble = float(enemy.get("tumble", 0.0)) + float(cfg.get("fling_spin", 12.0)) * float(fly.get("turn", 1.0)) * delta
+		# a body flying through others knocks them aside, each once (physics plan R23: momentum
+		# passes on): gefuege.bump_m along its flight and half across, never a boss
+		var bumped: Dictionary = fly.get("bumped", {})
+		for other: Dictionary in _living():
+			if is_same(other, enemy) or _boss(other) or bumped.has(other.id): continue
+			if Vector2(other.pos).distance_to(to) > float(other.radius) + float(enemy.radius): continue
+			bumped[other.id] = true
+			var side := (Vector2(other.pos) - to).normalized() if Vector2(other.pos).distance_to(to) > 0.5 else dir.orthogonal()
+			_shove(other, _move(Vector2(other.pos), (dir + side * 0.5).normalized() * float(cfg.get("bump_m", 0.8)) * float(data.meter_px), float(other.radius), game.current_layout))
+			_hold_enemy(other, float(cfg.get("hold_s", 0.25)))
+		fly.bumped = bumped
 		fly.left = float(fly.left) - step
 		if step > 1.0 and (to - from).dot(dir) < step * 0.5:
 			flung.remove_at(i)
@@ -2545,7 +2562,10 @@ func _fling_caught(zone: Dictionary) -> void:
 func _flight_over(fly: Dictionary, enemy: Dictionary) -> void:
 	enemy.erase("flung_out")
 	if float(enemy.hp) <= 0.0: return
-	enemy.erase("tumble")
+	# it rolls on to its feet (the nearest full turn) instead of snapping upright (physics plan F41)
+	var spin := float(enemy.get("tumble", 0.0))
+	if absf(spin) > 0.01: rolling.append({"enemy": enemy, "from": spin, "to": round(spin / TAU) * TAU, "t": 0.0})
+	else: enemy.erase("tumble")
 	var late := float(fly.get("late", 0.0))
 	if late <= 0.0: return
 	var dir: Vector2 = fly.dir
@@ -2556,6 +2576,20 @@ func _flight_over(fly: Dictionary, enemy: Dictionary) -> void:
 	if float(enemy.hp) <= 0.0 and _void_talent(str(fly.talent)): enemy.void_kill = int(fly.owner)
 	_cur_talent = ""
 	_talent_hit = false
+
+
+## Flung bodies that landed roll on to their feet over gefuege.roll_s (0.25 s), easing out.
+func _step_rolling(delta: float) -> void:
+	var span := maxf(0.05, float(_gf_cfg().get("roll_s", 0.25)))
+	for i in range(rolling.size() - 1, -1, -1):
+		var roll: Dictionary = rolling[i]
+		var enemy: Dictionary = roll.enemy
+		roll.t = float(roll.t) + delta
+		var k := clampf(float(roll.t) / span, 0.0, 1.0)
+		enemy.tumble = lerpf(float(roll.from), float(roll.to), 1.0 - pow(1.0 - k, 3.0))
+		if k >= 1.0 or float(enemy.get("hp", 0.0)) <= 0.0 or enemy.has("flung_out"):
+			if k >= 1.0: enemy.erase("tumble")
+			rolling.remove_at(i)
 
 
 ## The Gletschergrab lands (its first tick): enemies at its heart freeze, bosses only slow.

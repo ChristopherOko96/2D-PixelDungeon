@@ -173,8 +173,20 @@ func update(dt: float) -> void:
 			piece.wait = float(piece.wait) - dt
 			continue
 		if not bool(piece.fly) and float(piece.landed) < 0.0:
-			# in the air: out along its throw, falling, one small bounce
-			piece.p += piece.v * dt
+			# in the air: out along its throw, falling, one small bounce; walls, gates and props
+			# turn it back on that axis (physics plan F52)
+			var at: Vector2 = piece.p
+			var fly: Vector2 = piece.v
+			var next := at + fly * dt
+			var walls: bool = g.has_method("box_blocked")
+			if walls and g.box_blocked(Rect2(Vector2(next.x, at.y) - Vector2(3, 3), Vector2(6, 6))):
+				fly.x = -fly.x * 0.4
+				next.x = at.x
+			if walls and g.box_blocked(Rect2(next - Vector2(3, 3), Vector2(6, 6))):
+				fly.y = -fly.y * 0.4
+				next.y = at.y
+			piece.v = fly
+			piece.p = next
 			piece.vh = float(piece.vh) - gravity * dt
 			piece.h = float(piece.h) + float(piece.vh) * dt
 			if float(piece.h) <= 0.0 and float(piece.vh) < 0.0:
@@ -187,6 +199,12 @@ func update(dt: float) -> void:
 				else:
 					piece.landed = 0.0
 					piece.v = Vector2.ZERO
+					# gold landing in lava, the Moder or a pit is credited at once with a hiss
+					# (decision D10), not left lying in the liquid
+					if _sinks(piece.p):
+						_take(piece)
+						pieces.remove_at(i)
+						if g.get("feel") != null: g.feel.feedback.particles.steam(Vector2(piece.p) / float(g.feel.scale), 2, 4.0)
 			continue
 		piece.landed = float(piece.landed) + dt
 		var d: float = (piece.p as Vector2).distance_to(hero)
@@ -209,6 +227,14 @@ func update(dt: float) -> void:
 
 ## The loot reaches the hero: gold to the character, a rune stone to the account, its sound, and a
 ## '+N' over him (quick pickups of the same kind add up).
+## True where the floor swallows what lands on it (lava, the Moder: tiles 2 and 3).
+func _sinks(p: Vector2) -> bool:
+	if not g.has_method("_cell") or g.get("C") == null: return false
+	if g.has_method("_floor_mat") and not str(g._floor_mat()) in ["lava", "moder"]: return false
+	var t: int = g._cell(int(floor(p.x / float(g.C))), int(floor(p.y / float(g.C))))
+	return t == 2 or t == 3
+
+
 func _take(piece: Dictionary) -> void:
 	var value := int(piece.value)
 	if bool(piece.get("rune", false)):

@@ -50,6 +50,11 @@ var cfg: Dictionary = DEFAULTS.duplicate(true)
 var snow: Dictionary = {}
 ## Prints and skid marks: {p, ang, side, t, kind ("boot", "paw", "skid"), size}.
 var prints: Array = []
+## Snow melted by fire or blown off by a blast (melt): {x, y (the patch's middle + 24, as a
+## brazier's), lit_at, size} drawn as the hand-made thaw patch.
+var melts: Array = []
+## World px slid on glaze since the last ice chip (one chip per chip_every px, at any frame rate).
+var _slid := 0.0
 ## Ice chips in the air: {p, v, t}.
 var chips: Array = []
 ## Foot of each sprite: [left, right] px from its centre where it touches the ground (cached).
@@ -126,6 +131,41 @@ func _hash(p: Vector2) -> float:
 	return float((v ^ (v >> 16)) & 0xFFFF) / 65535.0
 
 
+## Fire or a blast at `at` reaching `r` (world px; physics plan F57, decision D12, added for
+## saidPC's review): the snow there goes, melted by fire into the hand-made thaw patch (thaw_a,
+## as under a lit brazier) with steam rising, or blown off by a blast as flakes thrown up that
+## settle as frost. Footprints no longer form there.
+func melt(at: Vector2, r: float, blast := false) -> void:
+	if snow.is_empty() or r <= 0.0:
+		return
+	var C: float = g.C
+	var cols := int(g.W.cols)
+	var gone := 0
+	var reach := int(ceil(r / C))
+	var mid := Vector2i(int(floor(at.x / C)), int(floor(at.y / C)))
+	for y in range(mid.y - reach, mid.y + reach + 1):
+		for x in range(mid.x - reach, mid.x + reach + 1):
+			var key := y * cols + x
+			if snow.has(key) and Vector2((x + 0.5) * C, (y + 0.5) * C).distance_to(at) <= r:
+				snow.erase(key)
+				gone += 1
+	if gone == 0:
+		return
+	_walls_dirty = true
+	melts.append({"x": at.x, "y": at.y + 24.0, "lit_at": float(g.state.get("t", 0.0)), "size": minf(r * 2.2, float(cfg.thaw_size) * 1.6)})
+	if melts.size() > 24:
+		melts.pop_front()
+	var feel: Variant = g.get("feel")
+	if feel == null:
+		return
+	var P: RefCounted = feel.feedback.particles
+	var s := float(feel.scale)
+	if blast:
+		P.snow(at / s, r / s, mini(10 + gone * 2, 40), 30.0)
+	else:
+		P.steam(at / s, mini(4 + gone, 14), r * 0.5 / s)
+
+
 ## True when world point p lies on a snow field.
 func on_snow(p: Vector2) -> bool:
 	var C: float = g.C
@@ -172,8 +212,16 @@ func update(dt: float) -> void:
 		var v: Vector2 = g.player.vel
 		if v.length() > float(cfg.skid_speed):
 			_add({"p": hero, "ang": v.angle(), "side": 0.0, "t": 0.0, "kind": "skid", "size": 1.0})
-			if randf() < 0.6:
-				chips.append({"p": hero + Vector2(randf_range(-10, 10), -4), "v": -v.normalized() * randf_range(40, 120) + Vector2(randf_range(-40, 40), randf_range(-200, -90)), "t": 0.0})
+			# ice chips by the distance slid, as matter that lands and lies as frost (F57)
+			_slid += v.length() * dt
+			var every := float(cfg.get("chip_every", 14.0))
+			while _slid >= every:
+				_slid -= every
+				var feel: Variant = g.get("feel")
+				if feel != null:
+					feel.feedback.particles.shatter((hero + Vector2(randf_range(-10, 10), -4)) / float(feel.scale), 1, -v.normalized(), 90.0, [], 1, 4.0)
+				else:
+					chips.append({"p": hero + Vector2(randf_range(-10, 10), -4), "v": -v.normalized() * randf_range(40, 120) + Vector2(randf_range(-40, 40), randf_range(-200, -90)), "t": 0.0})
 		_hero_last = hero
 	elif _hero_last == Vector2.INF or hero.distance_to(_hero_last) > 200.0:
 		_hero_last = hero
@@ -317,6 +365,9 @@ func draw_ground(l: CanvasItem, view: Rect2) -> void:
 	for e: Dictionary in g.W.ents:
 		if e.type == "brazier" and e.get("lit", false) and view.grow(200).has_point(Vector2(e.x, e.y)):
 			_draw_thaw(l, e, t)
+	for e: Dictionary in melts:
+		if view.grow(200).has_point(Vector2(e.x, e.y)):
+			_draw_thaw(l, e, t)
 	if baked(): return
 	var area := view.grow(60)
 	for f: Array in frame_insets:
@@ -381,11 +432,11 @@ func _draw_thaw(l: CanvasItem, e: Dictionary, t: float) -> void:
 		return
 	var k := clampf((t - float(e.get("lit_at", t - 99.0))) / float(cfg.thaw_time), 0.0, 1.0)
 	var grow := 1.0 - pow(1.0 - k, 3.0)
-	var size := Vector2.ONE * float(cfg.thaw_size) * grow
+	var size := Vector2.ONE * float(e.get("size", cfg.thaw_size)) * grow
 	l.draw_texture_rect(tx, Rect2(Vector2(e.x, e.y - 24.0) - size / 2.0, size), false, Color(1, 1, 1, clampf(k * 3.0, 0.0, 1.0)))
 	# thaw_a already has a hand-shaped slushy transition. Do not surround it with generic snowballs:
 	# that was the conspicuous white ring around every fire bowl in the rejected implementation.
-	if k >= 1.0 and not e.get("thawed", false):
+	if k >= 1.0 and not e.get("thawed", false) and not e.has("size"):
 		e.thawed = true
 		var C: float = g.C
 		var r := float(cfg.thaw_size) * 0.34

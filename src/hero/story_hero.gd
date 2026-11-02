@@ -146,6 +146,8 @@ func _init(game: Node) -> void:
 		for k: String in theme_outline:
 			if OUTLINE.has(k): outline[k] = theme_outline[k]
 	skill_fx = StorySkillFx.new(g, scale)
+	# one particle world (physics plan R2): the hero's skills and attacks throw into the world's
+	if g.get("feel") != null and absf(float(g.feel.scale) - scale) < 0.001: skill_fx.share(g.feel.feedback.particles)
 	rigs = RigRenderer.new(RigLibrary.shared())
 	if not rigs.is_ready(): rigs = null
 	weapon_host = StoryWeaponHost.new(look)
@@ -219,7 +221,8 @@ func rage_throw(m: Dictionary, dir: Vector2) -> void:
 func check_slam(m: Dictionary, before: Vector2, dt: float) -> void:
 	if not m.has("slam"): return
 	m.slam = float(m.slam) - dt
-	var push: Vector2 = m.k / 0.86
+	# the push it moved with this frame (MotionKit.step_body push_in; the decay is per 60th s)
+	var push: Vector2 = m.get("k_in", m.k)
 	if float(m.slam) <= 0.0 or float(m.hp) <= 0.0:
 		m.erase("slam")
 		return

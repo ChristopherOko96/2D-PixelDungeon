@@ -40,6 +40,8 @@ func _init(game: Node, rigs: Dictionary) -> void:
 	g = game
 	library = RigLibrary.shared()
 	renderer = RigRenderer.new(library)
+	# ragdoll parts stop at the walls, gates and props (physics plan F38)
+	renderer.solid = func(at: Vector2) -> bool: return g.box_blocked(Rect2(at - Vector2(2, 2), Vector2(4, 4)))
 	map = rigs
 	var look: Dictionary = game.theme.get("outline", {}) if game.get("theme") is Dictionary else {}
 	if Color.html_is_valid(str(look.get("enemies", ""))):
@@ -145,8 +147,29 @@ func _entry(m: Dictionary, dt: float) -> Dictionary:
 	var dying := float((m.get("feel_e", {}) as Dictionary).get("dying_p", -1.0))
 	if dying >= 0.0:
 		e.dying_p = dying
+		# a felled body flies away from the blow that felled it, in its element (as in Krypta and
+		# Hölle, hell_monsters.gd _kill_fx; physics plan F38)
+		e.kill = _kill_fx(m)
+	if m.has("tumble"): e.tumble = float(m.tumble)
 	m.rig_e = e
 	return e
+
+
+## How a felled body flies (src/rig/rig_renderer.gd snapshot "kill"): a fresh talent hit's look
+## (m.hit_fx, at most 600 ms old), else away from its push or from the hero, in the element of
+## its statuses.
+func _kill_fx(m: Dictionary) -> Dictionary:
+	var fx: Variant = m.get("hit_fx", {})
+	if fx is Dictionary and not (fx as Dictionary).is_empty() and Time.get_ticks_msec() - int(fx.get("ms", 0)) <= 600: return fx
+	var away: Vector2 = m.get("k") if m.get("k") is Vector2 else Vector2.ZERO
+	if away.length() < 1.0: away = m.get("feel_dir") if m.get("feel_dir") is Vector2 else Vector2(m.p) - Vector2(float(g.player.x), float(g.player.y))
+	away = away.normalized() if away.length() > 0.01 else Vector2.ZERO
+	var statuses: Dictionary = m.get("statuses", {}) if m.get("statuses") is Dictionary else {}
+	var el := ""
+	if float(m.get("fire_t", 0.0)) > 0.0 or statuses.has("burn"): el = "fire"
+	elif statuses.has("poison"): el = "poison"
+	elif statuses.has("freeze"): el = "ice"
+	return {"dx": away.x, "dy": away.y, "tier": "small", "el": el}
 
 
 ## What `m` is doing as an attack clip: {phase windup|active|recovery, kind, p 0..1}, {} when nothing.

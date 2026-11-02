@@ -94,6 +94,10 @@ static var _gore: Dictionary = {}
 ## Room key of the floor cells in use (the view sets the layout when it changes).
 var layout_key := ""
 var _particles: Array[Dictionary] = []
+## The world's wind (particle px/s; the Frostgruft's snowstorm, physics plan F58/D12): light
+## matter drifts towards it by its mode's "wind" share (vfx_particles.json modes), heavy matter
+## not at all.
+var wind := Vector2.ZERO
 ## Floor-mark textures: Vector2i chunk -> {image, texture, dirty}.
 var _chunks: Dictionary = {}
 var _marks := 0
@@ -173,6 +177,35 @@ func set_walkable(cells: Dictionary, key: String) -> void:
 	layout_key = key
 
 
+## True when nothing solid lies on the straight line from `from` to `to` (world px): a walk over
+## the 32 px floor cells (DDA) that stops at the first wall cell. Blasts, pushes and wells act
+## only on what they can reach (physics plan R16/F5). `seen` caches cell -> answer for one call.
+func sees(from: Vector2, to: Vector2, seen: Dictionary = {}) -> bool:
+	if _walkable.is_empty(): return true
+	var goal := Vector2i(floori(to.x / 32.0), floori(to.y / 32.0))
+	if seen.has(goal): return bool(seen[goal])
+	var cell := Vector2i(floori(from.x / 32.0), floori(from.y / 32.0))
+	var d := to - from
+	var step := Vector2i(1 if d.x > 0.0 else -1, 1 if d.y > 0.0 else -1)
+	var next := Vector2((float(cell.x) + (1.0 if d.x > 0.0 else 0.0)) * 32.0, (float(cell.y) + (1.0 if d.y > 0.0 else 0.0)) * 32.0)
+	var t_max := Vector2((next.x - from.x) / d.x if absf(d.x) > 0.0001 else INF, (next.y - from.y) / d.y if absf(d.y) > 0.0001 else INF)
+	var t_delta := Vector2(32.0 / absf(d.x) if absf(d.x) > 0.0001 else INF, 32.0 / absf(d.y) if absf(d.y) > 0.0001 else INF)
+	var ok := true
+	for i in range(64):
+		if cell == goal: break
+		if t_max.x < t_max.y:
+			cell.x += step.x
+			t_max.x += t_delta.x
+		else:
+			cell.y += step.y
+			t_max.y += t_delta.y
+		if not _walkable.has(cell):
+			ok = false
+			break
+	seen[goal] = ok
+	return ok
+
+
 ## True when `point` (world px) is inside a wall. Without a room every point is open.
 func solid(point: Vector2) -> bool:
 	if _walkable.is_empty(): return false
@@ -247,6 +280,8 @@ func room(count: int, weight := 0) -> int:
 
 ## Leaves a splat of a few overlapping rectangles on the floor.
 func stain(origin: Vector2, color: Color, radius: float) -> void:
+	# a liquid that swallows what lands in it (lava, a pit) takes no mark (physics plan R2)
+	if sinks(origin): return
 	_marks += 1
 	var tint := Color(color.darkened(0.35), 0.55)
 	for i in range(5):
@@ -371,6 +406,7 @@ func crack(origin: Vector2, normal: Vector2) -> void:
 ## each a little fainter or stronger: frost crystals and soot under the
 ## Photoneneis. Repeated scatters build up like settling dust.
 func scatter(point: Vector2, color: Color, radius: float, count: int) -> void:
+	if sinks(point): return
 	_marks += 1
 	for i in range(count):
 		var offset := Vector2.from_angle(_rng.randf() * TAU) * radius * sqrt(_rng.randf())
@@ -381,6 +417,7 @@ func scatter(point: Vector2, color: Color, radius: float, count: int) -> void:
 ## Frost crystals: `count` floor pixels of `color` within `radius` of `point`
 ## that melt to water after a while (vfx_particles.json "frost").
 func frost(point: Vector2, radius: float, count: int, color: Color) -> void:
+	if sinks(point): return
 	_marks += 1
 	for i in range(count):
 		var offset := Vector2.from_angle(_rng.randf() * TAU) * radius * sqrt(_rng.randf())
@@ -491,6 +528,10 @@ func frost_sample(n: int) -> Array[Vector2i]:
 ## Glowing embers left by fire: `count` floor pixels within `radius` of `point`
 ## that flicker, cool from yellow to dark red, give off smoke and leave soot.
 func embers(point: Vector2, radius: float, count: int) -> void:
+	# embers over lava or a pit hiss out instead of lying on it
+	if sinks(point):
+		steam(point, 1, radius)
+		return
 	_sound("embers", point, count)
 	var settings_for_embers: Dictionary = _data.get("ember", {})
 	var life: Array = settings_for_embers.get("life", [1.5, 4.0])
@@ -925,6 +966,7 @@ func _step_wells(delta: float) -> void:
 		var p: Vector2 = w.p
 		var r := float(w.r)
 		var core := float(w.core)
+		var seen_cells := {}
 		# everything in reach swirls in, faster the closer it gets; the core swallows it
 		for index in range(_particles.size() - 1, -1, -1):
 			var particle: Dictionary = _particles[index]
@@ -934,11 +976,16 @@ func _step_wells(delta: float) -> void:
 			var off: Vector2 = p - Vector2(particle.pos)
 			var d := off.length()
 			if d >= r: continue
+			# the well pulls only what it reaches, not what lies behind a wall (F5)
+			if not sees(p, Vector2(particle.pos), seen_cells): continue
 			if own and d <= core + float(particle.size) * 0.5:
 				# the core keeps Gefüge matter: it sinks into it and stays there, nearly still
 				particle.vel = (Vector2(particle.vel) + off * _fuse("center", 6.0) * delta) * maxf(0.0, 1.0 - _fuse("hold", 8.0) * delta)
 				continue
-			if d <= core:
+			# the core swallows what reaches it, also what would fly across it within this step
+			# (physics plan F4: fast matter no longer slingshots through it)
+			var ahead := Vector2(particle.pos) + Vector2(particle.vel) * delta
+			if d <= core or Geometry2D.get_closest_point_to_segment(p, Vector2(particle.pos), ahead).distance_to(p) <= core:
 				_particles.remove_at(index)
 				continue
 			var inward := off / d
@@ -1618,12 +1665,15 @@ func kick(point: Vector2, radius: float, strength: float = 1.0) -> void:
 	var middle := _art(point)
 	var reach := maxi(1, int(radius / PIXEL))
 	var thrown := 0
+	var seen_cells := {}
 	for y in range(maxi(0, middle.y - reach), middle.y + reach + 1):
 		for x in range(maxi(0, middle.x - reach), middle.x + reach + 1):
 			var art := Vector2i(x, y)
 			var offset := Vector2(art - middle)
 			var distance := offset.length()
 			if distance > float(reach): continue
+			# a blast lifts only what it reaches, not what lies behind a wall (F5)
+			if not sees(point, _world(art), seen_cells): continue
 			var key := Vector2i(x / CHUNK, y / CHUNK)
 			if not _chunks.has(key): continue
 			var local := art - key * CHUNK
@@ -1664,10 +1714,12 @@ func blow(origin: Vector2, r0: float, r1: float, angle: float, arc: float, speed
 	var hop: Array = settings_for_blow.get("hop", [30, 90])
 	var cap: int = limit if limit >= 0 else int(settings_for_blow.get("max_lift", 60))
 	var moved := 0
-	# what flies already is shoved along, what lies on the floor hops
+	var seen_cells := {}
+	# what flies already is shoved along, what lies on the floor hops; not behind a wall (F5)
 	for particle: Dictionary in _particles:
 		var out := _front_dir(Vector2(particle.pos), origin, r0, r1, angle, arc, squash)
 		if out == Vector2.ZERO: continue
+		if not sees(origin, Vector2(particle.pos), seen_cells): continue
 		particle.vel = Vector2(particle.vel) * 0.35 + out * speed * _rng.randf_range(0.7, 1.1)
 		if float(particle.gravity) > 0.0 and float(particle.z) <= 1.0:
 			particle.vz = maxf(float(particle.vz), _rng.randf_range(float(hop[0]), float(hop[1])))
@@ -1861,24 +1913,33 @@ func update(delta: float) -> void:
 func _move(particle: Dictionary, delta: float) -> void:
 	var position: Vector2 = particle.pos
 	var velocity: Vector2 = particle.vel
+	if wind != Vector2.ZERO and float(particle.z) > 0.5:
+		var share := float(_mode(str(particle.get("mode", ""))).get("wind", 0.0))
+		if share > 0.0:
+			velocity += (wind * share - velocity) * minf(1.0, float(_data.get("wind_air", 1.5)) * delta)
 	var next := position + velocity * delta
+	# a comet's blob flying high passes over the walls on its arc (it lands on the gameplay spot)
+	var over_walls := particle.has("splash") and float(particle.z) > 24.0
 	if bool(particle.free):
 		# Born inside a wall: it may leave, and walls count from then on.
 		if not solid(next): particle.free = false
-	elif solid(next):
+	elif not over_walls and solid(next):
 		# a shard hitting a wall hard breaks; a slow one clinks off it
 		if particle.has("shard") and velocity.length() > _ice("shatter_speed", 150.0) and int(particle.len) > 1:
 			particle.burst = true
 		var keep := float(_data.get("wall_bounce", 0.4))
+		# flame, smoke and motes slide along a wall instead of bouncing off it (modes wall "slide",
+		# physics plan F1): the part into the wall is gone, the part along it stays
+		var slide := str(_mode(str(particle.get("mode", ""))).get("wall", "bounce")) == "slide"
 		if not solid(Vector2(next.x, position.y)):
 			next = Vector2(next.x, position.y)
-			velocity.y = -velocity.y * keep
+			velocity.y = 0.0 if slide else -velocity.y * keep
 		elif not solid(Vector2(position.x, next.y)):
 			next = Vector2(position.x, next.y)
-			velocity.x = -velocity.x * keep
+			velocity.x = 0.0 if slide else -velocity.x * keep
 		else:
 			next = position
-			velocity = -velocity * keep
+			velocity = Vector2.ZERO if slide else -velocity * keep
 	particle.pos = next
 	if particle.has("shard"):
 		if float(particle.z) > 0.5:
@@ -1902,16 +1963,32 @@ func _move(particle: Dictionary, delta: float) -> void:
 					_scratch(next, particle)
 	var gravity := float(particle.gravity)
 	if gravity != 0.0:
-		particle.vz = float(particle.vz) - gravity * delta
-		particle.z = float(particle.z) + float(particle.vz) * delta
+		# the height on its exact arc (z += vz dt - g dt^2 / 2): comets land where they were aimed,
+		# not early and short (physics plan F9)
+		var air := float(_mode(str(particle.get("mode", ""))).get("air", 0.0))
+		if air > 0.0 and not particle.has("splash"):
+			# light matter meets the air (modes air 1/s, physics plan F2): it falls or rises no
+			# faster than gravity / air, smoke and embers no longer shoot up for ever
+			particle.vz = (float(particle.vz) - gravity * delta) * exp(-air * delta)
+			particle.z = float(particle.z) + float(particle.vz) * delta
+		else:
+			particle.z = float(particle.z) + float(particle.vz) * delta - 0.5 * gravity * delta * delta
+			particle.vz = float(particle.vz) - gravity * delta
 		if gravity > 0.0 and float(particle.z) <= 0.0:
-			particle.z = 0.0
-			# a comet's blob does not bounce: it splashes (update, _land_splash)
+			# a comet's blob does not bounce: it splashes (update, _land_splash), where it touched down
 			if particle.has("splash"):
+				if float(particle.vz) < -0.01: particle.pos = Vector2(particle.pos) - velocity * (float(particle.z) / float(particle.vz))
+				particle.z = 0.0
 				particle.landed = true
 				particle.vel = velocity
 				return
-			if float(particle.vz) < -float(_data.get("bounce_min", 70)):
+			particle.z = 0.0
+			# a drop splats where it lands instead of bouncing (modes floor "splat", F1): it stays
+			# down, slows hard and lies as a floor pixel
+			if str(_mode(str(particle.get("mode", ""))).get("floor", "bounce")) == "splat":
+				particle.vz = 0.0
+				velocity *= 0.15
+			elif float(particle.vz) < -float(_data.get("bounce_min", 70)):
 				# ice hardly bounces and keeps sliding
 				var shard := particle.has("shard")
 				particle.vz = -float(particle.vz) * (_ice("bounce", 0.15) if shard else float(_data.get("bounce", 0.35)))
@@ -1940,14 +2017,25 @@ func _move(particle: Dictionary, delta: float) -> void:
 	particle.vel = velocity * maxf(0.0, 1.0 - drag * delta)
 
 
-## The oldest particle makes room: debris lands where it is, the rest vanishes. Gefüge matter
-## (fuse_feed) is never the one: the units it carries must reach the collapse.
+## A particle makes room at the cap (physics plan R19/F6): the oldest cosmetic one that is not
+## landing matter goes first (a spark, a mote, smoke), then the oldest that lies or flies low;
+## never Gefüge matter (fuse_feed), a comet's blob (splash, land_ref: it must land where gameplay
+## put it) or debris in mid-air (it would teleport to the floor). Debris that goes lands where it is.
 func _evict() -> void:
-	for index in range(_particles.size()):
-		var oldest: Dictionary = _particles[index]
-		if oldest.has("fuse"): continue
+	var fallback := -1
+	for index in range(mini(_particles.size(), 96)):
+		var p: Dictionary = _particles[index]
+		if p.has("fuse") or p.has("splash") or p.has("land_ref"): continue
+		if bool(p.settle):
+			if float(p.z) > 1.0: continue
+			if fallback < 0: fallback = index
+			continue
 		_particles.remove_at(index)
-		if bool(oldest.settle): _settle(oldest)
+		return
+	if fallback >= 0:
+		var oldest: Dictionary = _particles[fallback]
+		_particles.remove_at(fallback)
+		_settle(oldest)
 		return
 	_particles.pop_front()
 
@@ -2075,11 +2163,41 @@ func draw_stains(canvas: CanvasItem) -> void:
 				canvas.draw_rect(Rect2(Vector2(glint[0] as Vector2i) * PIXEL, Vector2(PIXEL, PIXEL)), spec_colour)
 
 
-func draw_particles(canvas: CanvasItem) -> void:
-	draw_rime_tips(canvas)
-	_draw_implosions(canvas)
+## Depth bands (physics plan R22, decision D11): matter low over the floor is drawn by the host
+## between its y-sorted actors (begin_bands, draw_band), so a monster, a pillar or the hero hides
+## what lies behind it; only matter higher than depth_high px (and the rime tips and implosions)
+## stays in the layer over them (draw_particles part 2). `_low` holds this frame's low matter by y.
+var _low: Array = []
+var _low_i := 0
+
+
+## Collects this frame's low matter, sorted by its floor point's y, for draw_band.
+func begin_bands() -> void:
+	var high := float(_data.get("depth_high", 26.0))
+	_low = _particles.filter(func(p: Dictionary) -> bool: return float(p.z) <= high)
+	_low.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float((a.pos as Vector2).y) < float((b.pos as Vector2).y))
+	_low_i = 0
+
+
+## Draws the low matter whose floor point lies above `to_y` (particle px) and not drawn yet.
+func draw_band(canvas: CanvasItem, to_y: float) -> void:
+	var start := _low_i
+	while _low_i < _low.size() and float((_low[_low_i].pos as Vector2).y) < to_y:
+		_low_i += 1
+	if _low_i > start: draw_particles(canvas, _low.slice(start, _low_i), 1)
+
+
+## The particles over the actors. `part` 0: all of them; 1: only `only` (a depth band, without the
+## rime tips and implosions); 2: only matter higher than depth_high (the rest is in the bands).
+func draw_particles(canvas: CanvasItem, only: Array = [], part := 0) -> void:
+	if part != 1:
+		draw_rime_tips(canvas)
+		_draw_implosions(canvas)
 	var beat := int(_time * 12.0)
-	for particle: Dictionary in _particles:
+	var high := float(_data.get("depth_high", 26.0))
+	var src: Array = only if part == 1 else _particles
+	for particle: Dictionary in src:
+		if part == 2 and float(particle.z) <= high: continue
 		var alpha := 1.0
 		if bool(particle.fade): alpha = clampf(float(particle.life) / (float(particle.max_life) * 0.5), 0.0, 1.0)
 		var size: float = particle.size
@@ -2397,7 +2515,8 @@ func _cool(ember: Dictionary) -> void:
 ## in a 4x4 ordered dither so a clump thins out in a pattern, not at once.
 func _freeze(art: Vector2i, vapor := false, due := -1.0, spread := 1.0) -> void:
 	var settings_for_frost: Dictionary = _data.get("frost", {})
-	if _frost.size() - _frost_head >= int(settings_for_frost.get("max", 4000)): _frost_head += 1
+	# at the cap the oldest frost melts now instead of staying frozen forever (physics plan F6)
+	if _frost.size() - _frost_head >= int(settings_for_frost.get("max", 4000)): _frost[_frost_head][1] = minf(float(_frost[_frost_head][1]), _time)
 	var melt: Array = settings_for_frost.get("melt_after", [6.0, 10.0])
 	if due < 0.0: due = _time + _rng.randf_range(float(melt[0]), float(melt[1]))
 	_frozen[art] = _pixel(art)

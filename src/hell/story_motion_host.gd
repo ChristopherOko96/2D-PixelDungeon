@@ -43,6 +43,12 @@ func set_hero_velocity(velocity: Vector2) -> void:
 	g.player.vel = velocity
 
 
+## The grip of the floor under the hero (MotionKit.FIRM unless he stands on something that slides).
+func hero_grip() -> float:
+	var medium: Dictionary = g.get("hero_medium") if g.get("hero_medium") is Dictionary else {}
+	return float(medium.get("grip", 1.0)) if bool(medium.get("slide", false)) else 1.0
+
+
 func knock_state() -> Dictionary:
 	var knock: Variant = g.state.get("knock")
 	return knock if knock is Dictionary else {}

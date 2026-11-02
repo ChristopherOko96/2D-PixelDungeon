@@ -404,8 +404,9 @@ func _ready() -> void:
 		if feel != null:
 			pools.particles = feel.feedback.particles
 			pools.to_particles = 1.0 / feel.scale
-			# the lava tiles are hot floor: liquid on them hisses and crusts (drawing only)
-			pools.hot = func(p: Vector2) -> bool: return feel.feedback.particles.sinks(p / feel.scale)
+			# the lava tiles are hot floor: liquid on them hisses and crusts (drawing only); the
+			# Krypta's Moder is cold (D3)
+			pools.hot = func(p: Vector2) -> bool: return _floor_mat() == "lava" and feel.feedback.particles.sinks(p / feel.scale)
 		# Ignaroth's part rig: tuning from balance.monsters.rigs (DrakeRigHost.DEFAULTS fill gaps)
 		drake_rig = DrakeRigHost.new(balance.monsters, RigLibrary.shared())
 		# figures that wear the crypt's part rigs (Story 1: krypta_monsters.json "rig")
@@ -1767,17 +1768,7 @@ func act() -> void:
 				if W.rooms[e.room].fight:
 					_toast("Erst alle Gegner im Raum besiegen.")
 					return
-				e.lit = true
-				e.lit_at = float(state.t)
-				W.lights.append({"x": e.x, "y": e.y - 70, "r": 280, "c": "255,140,60"})
-				# glow hook: the bowl catches fire in a crypt burst (its bloom and light: src/hero/story_glow.gd)
-				if feel != null:
-					feel.spawn("frost_burst" if bool(W.theme.get("frost", false)) else "fire_burst", Vector2(e.x, e.y - 70), 0.8)
-				var prog := Rules.group_progress(W.ents, e.group)
-				if prog.x == prog.y:
-					_solve_group(e.group)
-				else:
-					_toast("Feuerschale %d von %d entzündet." % [prog.x, prog.y])
+				_light_brazier(e)
 			"well":
 				# the mana fountain, once: the class's resource full (Mana, Ausdauer, Zorn) and every
 				# cooldown reset, the skills' and the talents' (src/hell/hell_talents.gd refill)
@@ -1981,7 +1972,16 @@ func _damage_mob(m: Dictionary, push: Vector2, mult := 1.0) -> bool:
 		_sound("hit_" + str(def.get("material", "void")))
 	m.hit = 0.12
 	# kit bosses stand firm: no knockback
-	m.k = Vector2.ZERO if m.has("kit") else push * (0.05 if m.kind == "boss" else 0.25)
+	# the blow's push adds to what pushes it already, less on a heavier body (its radius over
+	# push.mass_ref_r, squared; physics plan R23/F44, decision D5), at most push.max px/s
+	if m.has("kit"):
+		m.k = Vector2.ZERO
+	else:
+		var pcfg: Dictionary = motion_kit().cfg.get("push", {})
+		var heavy: Array = pcfg.get("mass", [0.4, 4.0])
+		var mass := clampf(pow(float(m.get("r", 28.0)) / maxf(1.0, float(pcfg.get("mass_ref_r", 28.0))), 2.0), float(heavy[0]), float(heavy[1]))
+		var now: Vector2 = m.get("k") if m.get("k") is Vector2 else Vector2.ZERO
+		m.k = (now + push * (0.05 if m.kind == "boss" else 0.25) / mass).limit_length(float(pcfg.get("max", 1000.0)))
 	FrostCombat.after_hit(self, m, push, crit > 1.0)
 	if sound != null: sound.mob_hurt(m)
 	if feel != null:
@@ -2206,6 +2206,34 @@ func _burst(at: Vector2, n: int, gold := false) -> void:
 
 
 # ---------- seals, skull heaps, pits and the clone ----------
+
+## A fire bowl `e` catches fire: its light, its burst, the puzzle's progress (by hand with E, or
+## by a fire shot that hits it directly: fire_hits_brazier).
+func _light_brazier(e: Dictionary) -> void:
+	e.lit = true
+	e.lit_at = float(state.t)
+	W.lights.append({"x": e.x, "y": e.y - 70, "r": 280, "c": "255,140,60"})
+	# glow hook: the bowl catches fire in a crypt burst (its bloom and light: src/hero/story_glow.gd)
+	if feel != null:
+		feel.spawn("frost_burst" if bool(W.theme.get("frost", false)) else "fire_burst", Vector2(e.x, e.y - 70), 0.8)
+	var prog := Rules.group_progress(W.ents, e.group)
+	if prog.x == prog.y:
+		_solve_group(e.group)
+	else:
+		_toast("Feuerschale %d von %d entzündet." % [prog.x, prog.y])
+
+
+## A fire shot struck `at` (physics plan R21, decision D7): an unlit fire bowl it hit directly
+## catches fire as if lit by hand, never in a fight, and only the one it hit (one blast never
+## lights a whole puzzle out of order).
+func fire_hits_brazier(at: Vector2) -> void:
+	for e: Dictionary in W.ents:
+		if e.type != "brazier" or e.get("lit", false): continue
+		if not Rect2(e.x - 36, e.y - 44, 72, 54).has_point(at): continue
+		if W.rooms[e.room].fight: return
+		_light_brazier(e)
+		return
+
 
 func _hit_breakable(e: Dictionary, at: Vector2) -> void:
 	if sound != null and str(e.get("type", "")) != "skullheap": sound.at("breakable_hit", at)
@@ -2541,6 +2569,14 @@ func _update(dt: float) -> void:
 		# the crypt keeps reacting while the hero falls: the killing blow, the defeat sting, the menu music
 		if feel != null:
 			feel.update(dt)
+		# and the world goes on moving with nothing hurting anyone any more (decision D8): the gas
+		# drifts, the frost world's waves and knocks age, bodies and their debris fall and settle
+		_step_gas(dt)
+		# the enemies' shots fly on and break on the walls (_hurt spares the fallen hero)
+		if monsters != null: monsters.update_shots(dt)
+		if frost_fx != null: frost_fx.update(dt)
+		if frost_rigs != null: frost_rigs.frame(dt)
+		if drake_rig != null and monsters != null: drake_rig.frame(mobs, monsters.corpses, dt)
 		_update_music()
 		state.dead -= dt
 		if state.dead <= 0.0:
@@ -2554,6 +2590,12 @@ func _update(dt: float) -> void:
 	# the kits' direct sounds by who acts (src/hero/story_sound.gd): the hero's skills, relics and allies, the enemy moves
 	as_source("hero", _update_hero_kits.bind(dt))
 	as_source("moves", func() -> void: FrostCombat.update(self, dt))
+	# the snowstorm's wind is the world's (D12, F58): screen px/s over the camera zoom are world
+	# px/s; light particles and the gas drift with it
+	if snowstorm != null and feel != null:
+		var w: Vector2 = snowstorm.wind() / maxf(0.1, camera.zoom.x)
+		feel.feedback.particles.wind = w / float(feel.scale)
+		if gas != null and gas.get("gas_field") != null: gas.gas_field.wind = w
 	if feel != null:
 		feel.update(dt)
 	if not (state.get("offer", []) as Array).is_empty():
@@ -2722,6 +2764,13 @@ func _update_shots(dt: float) -> void:
 				wreck.hit_dir = s.v
 			_hit_breakable(struck, s.p)
 			continue
+		# the hero's fire shot that strikes an unlit fire bowl lights it (decision D7)
+		if str(s.get("kind", "")) in ["pyro", "fireball"]:
+			for e: Dictionary in W.ents:
+				if e.type == "brazier" and not e.get("lit", false) and Rect2(e.x - 36, e.y - 44, 72, 54).has_point(s.p):
+					s.t = 0.0
+					fire_hits_brazier(s.p)
+					break
 		# a smashable prop in the shot's way shatters (src/hell/story_wreck.gd)
 		if wreck != null and wreck.shot(s):
 			continue
@@ -2738,7 +2787,7 @@ func _update_shots(dt: float) -> void:
 			else:
 				_burst(s.p, 5)
 			# owner 1: the hero's own fire, so its element reactions are his (story_elements.gd _reacted)
-			if s.get("kind", "") == "pyro" and talents != null: talents.tc.show_effect("explosion", s.p, 34.0, {"fx": "fire", "life": 0.5, "owner": 1})
+			if s.get("kind", "") == "pyro" and talents != null: talents.tc.show_effect("explosion", s.p, 34.0, {"fx": "fire", "life": 0.5, "owner": 1, "wrecked": true})
 			MageBolt.burst(self, s, {})
 			continue
 		MageBolt.fly(self, s, dt)
@@ -2836,6 +2885,13 @@ func _update_shots(dt: float) -> void:
 	eshots = eshots.filter(func(s: Dictionary) -> bool: return s.t > 0.0)
 
 
+## Particles low over the floor are drawn between the y-sorted actors (decision D11; story_feel's
+## over layer then draws only the high ones).
+var depth_bands := true
+## Wading keys handed to the Frostgruft's figures (m.wk; _update_mobs).
+var _wade_serial := 0
+
+
 func _update_mobs(dt: float) -> void:
 	if monsters != null:
 		monsters.update(dt)
@@ -2847,6 +2903,16 @@ func _update_mobs(dt: float) -> void:
 				# a monster's steps show by its moving point (wade sees it move)
 				if m.has("id"): pools.wade("m" + str(m.id), Vector2(m.p), false, float(state.t))
 		return
+	# the Frostgruft wades too: the hero and its figures through the talents' pools (physics plan
+	# R26/F55; its figures get a stable wading key at their first step)
+	var layer := _pool_layer()
+	if layer != null and layer.has_method("wade"):
+		layer.wade("hero", Vector2(float(player.x), float(player.y)), bool(player.get("moving", false)), float(state.t))
+		for m: Dictionary in mobs:
+			if not m.has("wk"):
+				_wade_serial += 1
+				m.wk = _wade_serial
+			layer.wade("m%d" % int(m.wk), Vector2(m.p), false, float(state.t))
 	var me := Vector2(player.x, player.y)
 	var hidden := float(state.get("stealth", 0.0)) > 0.0
 	for m: Dictionary in mobs:
@@ -2933,13 +2999,21 @@ func _update_mobs(dt: float) -> void:
 		v = step.v
 		m.sv = step.vel
 		m.k = step.push
+		m.k_in = step.push_in
 		m.p = step.p
 		if m.has("slam"):
 			as_source("hero", func() -> void: story_hero.check_slam(m, moved_from, dt))
 		# reeling from a perfect block (HeroKit.stagger) its touch hurts nobody
 		if d < m.r + 22.0 and goal == me and float(m.get("reel", 0.0)) <= 0.0:
 			var who: String = ("von %s erwischt" % def.name) if def.has("name") else "von Glutlingen verbrannt"
+			var was_inv := float(state.inv)
 			_hurt("von %s erschlagen" % W.boss.name if m.kind == "boss" else who, 1, m.p, m)
+			# a touch that landed shoves the hero back here too: a dasher's or the Golem's charge
+			# harder (frost_theme.json vfx.knock; physics plan F39)
+			if frost_fx != null and float(state.inv) > was_inv and not HeroKit.perfect_now(self):
+				var busy: Variant = m.get("busy", {})
+				var charging := float(m.get("dash", 0.0)) > 0.0 or (busy is Dictionary and str((busy as Dictionary).get("do", "")) == "charge")
+				frost_fx.hit_hero(m.p, "dash" if charging else "contact", "small", m.kind == "boss")
 			if def.has("chill") and not HeroKit.perfect_now(self):
 				state.chill = float(def.chill)
 		if not prey.is_empty() and d < m.r + float(prey.r) * 0.5 + 22.0:
@@ -3066,7 +3140,7 @@ func _explode(s: Dictionary, first: Dictionary) -> void:
 		feel.perk("blast", s.p)
 		return
 	fx.append({"kind": "blast", "p": s.p, "r": radius, "t": 0.3, "max": 0.3, "gravity": s.get("kind", "") in ["gravity", "rock"], "shot": s.get("kind", "")})
-	if s.get("kind", "") == "pyro" and talents != null: talents.tc.show_effect("explosion", s.p, radius * 0.45, {"fx": "fire", "life": 0.55, "owner": 1})
+	if s.get("kind", "") == "pyro" and talents != null: talents.tc.show_effect("explosion", s.p, radius * 0.45, {"fx": "fire", "life": 0.55, "owner": 1, "wrecked": true})
 	if int(s.get("split", 0)) > 0:
 		RelicKit.split_rock(self, s)
 	_burst(s.p, 18)
@@ -3088,14 +3162,25 @@ func _update_hazards(dt: float) -> void:
 		match e.type:
 			"spikes":
 				e.up = int(state.t / float(hz.spike_period)) % 2 == int(e.phase)
+				# the spikes shoot up and sink back over 0.08 s instead of popping (physics plan R21);
+				# shooting up they puff dust off the plate
+				var rise := move_toward(float(e.get("rise", 1.0 if e.up else 0.0)), 1.0 if e.up else 0.0, dt / 0.08)
+				if rise >= 1.0 and float(e.get("rise", 1.0)) < 1.0 and feel != null:
+					feel.feedback.particles.dust_flat(Vector2(e.x, e.y) / float(feel.scale), 10.0, 6)
+				e.rise = rise
 				if e.up and absf(me.x - e.x) < 42 and absf(me.y - 12 - e.y) < 40:
 					_hurt("von Stacheln getroffen")
 			"vent":
 				e.burst = fmod(state.t + float(e.offset), float(hz.vent_period)) < float(hz.vent_burst)
 				if e.burst and me.distance_to(Vector2(e.x, e.y)) < float(hz.vent_radius):
 					_hurt("vom Glutschlot verbrannt")
-				if e.burst and randf() < 0.6:
-					embers.append({"p": Vector2(e.x + randf_range(-20, 20), e.y - 10), "v": Vector2(randf_range(-20, 20), randf_range(-280, -160)), "t": 0.8, "big": true, "gold": false})
+				# its matter, per second, not per frame (physics plan R21/F53): the Hölle's vent throws
+				# real flames that rise and smoke, the Krypta's Moder vent breathes green fumes
+				if e.burst:
+					e.vent_due = float(e.get("vent_due", 0.0)) + dt * 36.0
+					while float(e.vent_due) >= 1.0:
+						e.vent_due = float(e.vent_due) - 1.0
+						_vent_matter(e)
 			"plate":
 				if e.get("on", false) or absf(me.x - e.x) > 44 or absf(me.y - 10 - e.y) > 44:
 					continue
@@ -3303,7 +3388,7 @@ func _ease_vision(dt: float) -> void:
 ## of lava as glowing pixels that lie there as embers and cool to soot
 ## (hell_monsters.gd lava_splash). Only where a lava cell borders the floor.
 func _slosh_lava(dt: float) -> void:
-	if monsters == null or not theme.liquid.get("hurt", false):
+	if monsters == null or not theme.liquid.get("hurt", false) or _floor_mat() != "lava":
 		return
 	var spec: Dictionary = (balance.monsters.get("feel", {}) as Dictionary).get("lava", {})
 	lava_slosh += float(spec.get("slosh_rate", 0.0)) * dt
@@ -3339,29 +3424,58 @@ func _step_gas(dt: float) -> void:
 		else:
 			return
 	gas.step(dt, float(state.t))
-	gas.part(Vector2(float(player.x), float(player.y)), 22.0)
+	gas.part(Vector2(float(player.x), float(player.y)), 22.0, dt)
 	for m: Dictionary in mobs:
-		gas.part(Vector2(m.p), 18.0)
+		gas.part(Vector2(m.p), 18.0, dt)
 
 
 ## Bubbles on the lava floor in view (hell_balance.json monsters.feel.lava
 ## "bubble_rate" per second, at most "bubbles" at once): each swells for a
 ## moment, bursts and spits a few glowing drops in arcs (the feel's particles,
 ## "glut": they lie down as embers and cool to soot, or sink into the lava).
+## What the world's liquid floor (tiles 2 and 3) is made of: theme.liquid.material, else lava
+## where it hurts and ice where it slides (physics plan R10, decision D3: the Krypta's Moder is
+## cold poison sludge, not lava).
+func _floor_mat() -> String:
+	var liquid: Dictionary = theme.get("liquid", {})
+	return str(liquid.get("material", "lava" if bool(liquid.get("hurt", false)) else ("ice" if bool(liquid.get("slide", false)) else "")))
+
+
+## One bit of a bursting vent's matter: flames rising off a lava vent (fire), green fumes and
+## smoke off the Krypta's Moder vent, the old ember squares without the particles.
+func _vent_matter(e: Dictionary) -> void:
+	if feel == null:
+		embers.append({"p": Vector2(e.x + randf_range(-20, 20), e.y - 10), "v": Vector2(randf_range(-20, 20), randf_range(-280, -160)), "t": 0.8, "big": true, "gold": false})
+		return
+	var P: RefCounted = feel.feedback.particles
+	var at := Vector2(e.x + randf_range(-16, 16), e.y - 10) / float(feel.scale)
+	if _floor_mat() == "moder":
+		var green: Array = PoolPaint.settings().get("materials", {}).get("poison", {}).get("ramp", {}).values()
+		var cols: Array = []
+		for hex: Variant in green.slice(0, 3): cols.append(Color(str(hex)))
+		P.motes(at, 1, cols, 30.0, 4.0)
+		if randf() < 0.25: P.smoke(at, 1, 4.0)
+	else:
+		P.flames(at, 1, [], 3.0, 2.0, Vector2(randf_range(-10, 10), -30))
+
+
 func _bubble_lava(dt: float) -> void:
 	if not bool((theme.get("liquid", {}) as Dictionary).get("hurt", false)):
 		return
+	# lava bubbles glow and spit glowing drops; the Moder bubbles olive and spits sludge drops
+	var hot := _floor_mat() == "lava"
 	var spec: Dictionary = (balance.monsters.get("feel", {}) as Dictionary).get("lava", {}) if balance.has("monsters") else {}
 	for b: Dictionary in lava_bubbles:
 		var before := float(b.t)
 		b.t = before + dt
 		if before < float(b.T) * 0.7 and float(b.t) >= float(b.T) * 0.7 and feel != null:
-			var ramp: Dictionary = PoolPaint.settings().get("materials", {}).get("lava", {}).get("ramp", {})
+			var ramp: Dictionary = PoolPaint.settings().get("materials", {}).get("lava" if hot else "poison", {}).get("ramp", {})
 			for i in range(1 + int(b.big)):
 				var drop: Dictionary = feel.feedback.particles.emit(Vector2(b.p) / feel.scale, Vector2.from_angle(randf() * TAU) * randf_range(15.0, 45.0), Color(str(ramp.get("hi", "facb3e"))),
-					1.5, "glut", 2.0, 2.0, randf_range(60.0, 110.0), 1.5)
-				drop.ember_life = randf_range(0.8, 1.4)
-				drop.soot = 0.5
+					1.5, "glut" if hot else "drop", 2.0, 2.0, randf_range(60.0, 110.0), 1.5)
+				if hot:
+					drop.ember_life = randf_range(0.8, 1.4)
+					drop.soot = 0.5
 	lava_bubbles = lava_bubbles.filter(func(b: Dictionary) -> bool: return float(b.t) < float(b.T))
 	lava_bubble_due += float(spec.get("bubble_rate", 9.0)) * dt
 	while lava_bubble_due >= 1.0:
@@ -3382,7 +3496,7 @@ func _bubble_lava(dt: float) -> void:
 func _draw_lava_bubbles(l: CanvasItem) -> void:
 	if lava_bubbles.is_empty():
 		return
-	var ramp: Dictionary = PoolPaint.settings().get("materials", {}).get("lava", {}).get("ramp", {})
+	var ramp: Dictionary = PoolPaint.settings().get("materials", {}).get("lava" if _floor_mat() == "lava" else "poison", {}).get("ramp", {})
 	var spec := Color(str(ramp.get("spec", "fdf7ed")))
 	var hi := Color(str(ramp.get("hi", "facb3e")))
 	var lite := Color(str(ramp.get("lite", "ee8e2e")))
@@ -3722,8 +3836,9 @@ func _draw_actors(l: Layer) -> void:
 					_draw_ice_trap(l, e, up)
 					continue
 				var im: Texture2D = tex.spike_trap
-				var size := im.get_size() - Vector2(0, 0 if up else 16)
-				l.draw_texture_rect(im, Rect2(Vector2(e.x, e.y + (0 if up else 8)) - im.get_size() / 2.0, size), false, Color(1, 1, 1, 1.0 if up else 0.3))
+				var rise := float(e.get("rise", 1.0 if up else 0.0))
+				var size := im.get_size() - Vector2(0, roundf(16.0 * (1.0 - rise)))
+				l.draw_texture_rect(im, Rect2(Vector2(e.x, e.y + roundf(8.0 * (1.0 - rise))) - im.get_size() / 2.0, size), false, Color(1, 1, 1, lerpf(0.3, 1.0, rise)))
 			"vent":
 				if tex.has("ice_crack"):
 					# the Frostgruft's ice geyser: a small crack in the snow that erupts in an ice avalanche
@@ -3771,7 +3886,15 @@ func _draw_actors(l: Layer) -> void:
 				list.append([c.p.y, "corpse", c])
 	list.append([player.y, "hero", player])
 	list.sort_custom(func(x: Array, y: Array) -> bool: return x[0] < y[0])
+	# depth bands (decision D11): the particles low over the floor are drawn between the actors by
+	# their floor point, so what lies behind a monster, a pillar or the hero is hidden by it
+	var bands: RefCounted = feel.feedback.particles if feel != null and depth_bands else null
+	if bands != null: bands.begin_bands()
 	for item: Array in list:
+		if bands != null:
+			l.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * float(feel.scale))
+			bands.draw_band(l, float(item[0]) / float(feel.scale))
+			l.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		# The shallow depression belongs behind the object. Foreground snow is fitted to the real
 		# lower silhouette (baked into substantial props, drawn here only for tiny loose items).
 		if frost_snow != null and item[1] in ["prop", "ent", "breakable"]:
@@ -3798,6 +3921,10 @@ func _draw_actors(l: Layer) -> void:
 		# Tiny loose items alone need a runtime foreground accent.
 		if frost_snow != null and item[1] in ["prop", "ent", "breakable"]:
 			frost_snow.draw_foot_over(l, item[1], item[2])
+	if bands != null:
+		l.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * float(feel.scale))
+		bands.draw_band(l, INF)
+		l.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 	# a hero covered by an enemy in front of him keeps a thin light and dark ring (src/hero/story_hero.gd)
 	if story_hero != null:
 		story_hero.draw_cover(l)

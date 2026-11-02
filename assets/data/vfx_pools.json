@@ -61,7 +61,7 @@
     "crust_time": 4,
     "steam_every": 9,
     "liquid+lava": {"a_to": "gone", "b_to": "crust", "steam": true},
-    "liquid+fire": {"b_to": "gone", "steam": true},
+    "liquid+fire": {"a_to": "gone", "steam": true},
     "liquid+ice": {"a_to": "ice"},
     "ice+fire": {"a_to": "water", "b_to": "gone", "steam": true},
     "ice+lava": {"a_to": "gone", "b_to": "crust", "steam": true}

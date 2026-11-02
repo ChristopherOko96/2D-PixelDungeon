@@ -225,12 +225,28 @@ func swing(from: Vector2, dir: Vector2, reach: float, half: float) -> void:
 ## on_blast): props in reach shatter away from it, the nearest wall faces take bites.
 func blast(at: Vector2, radius: float, style := "blast", hero := true) -> void:
 	var b := _sect("blast")
+	# a blast blows the Frostgruft's snow off (D12, F57)
+	if g.get("frost_snow") != null: g.frost_snow.melt(at, radius, true)
 	var power := _power(style, 1 if hero else 0)
 	var reach := maxf(radius, float(b.get("prop_reach", 30.0)))
 	for p: Dictionary in _props_near(at, reach + 60.0):
 		var c := _prop_centre(p)
 		if c.distance_to(at) < reach + 24.0:
 			_hit_prop(p, (c - at).normalized() if c.distance_to(at) > 1.0 else Vector2.UP, power, c)
+	# the world's breakables (crates, urns, barrels, seals, skull heaps; physics plan R5/F49): a
+	# hero's blast breaks them along the blast, any other only shakes and chips them (decision D6)
+	var ents: Variant = g.get("breakables")
+	if ents is Array and g.has_method("_hit_breakable"):
+		for e: Dictionary in ents:
+			if bool(e.get("broken", false)): continue
+			var c := Vector2(float(e.x), float(e.y) - 40.0)
+			if c.distance_to(at) >= reach + 30.0: continue
+			if hero:
+				hit_dir = (c - at).normalized() if c.distance_to(at) > 1.0 else Vector2.UP
+				g._hit_breakable(e, c)
+			else:
+				e.hit = 0.15
+				if g.get("feel") != null: g.feel.spawn("stone_burst", c, 0.6)
 	if radius < float(b.get("min_radius", 24.0)):
 		return
 	var hits: Array = []
@@ -755,7 +771,8 @@ func _step(q: Dictionary, dt: float) -> bool:
 		_sound(str(m.get("tick", "")), _at(q), 0.07)
 	if _lava(_at(q)):
 		q.sink = float(_sect("debris").get("lava_sink", 0.7))
-		q.heat = 1.0
+		# lava makes it glow as it sinks; the Moder swallows it cold (D3)
+		q.heat = 1.0 if _floor_mat() == "lava" else 0.0
 		q.z = 0.0
 		return true
 	if got == RigDebris.Step.REST:
@@ -915,10 +932,17 @@ func _blocked(p: Vector2) -> bool:
 	return g._cell_blocked(int(floor(p.x / C)), int(floor(p.y / C)), false)
 
 
+## True on a liquid floor that swallows debris (lava, the Krypta's Moder); the Frostgruft's
+## glaze ice holds it.
 func _lava(p: Vector2) -> bool:
+	if not _floor_mat() in ["lava", "moder"]: return false
 	var C: float = g.C
 	var t: int = g._cell(int(floor(p.x / C)), int(floor(p.y / C)))
 	return t == 2 or t == 3
+
+
+func _floor_mat() -> String:
+	return str(g._floor_mat()) if g.has_method("_floor_mat") else "lava"
 
 
 ## True when the contact at `at` (normal back to the floor) lies on a real wall cell: not a

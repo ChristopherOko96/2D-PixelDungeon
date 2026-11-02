@@ -80,7 +80,7 @@
   "spit": {"stay": 0.4, "stay_scale": 1.6, "churn_s": 2.5, "min_count": 3, "count": 6, "per_glob": 4, "jitter": 0.3, "m": [6, 8], "speed": 420, "delay": 0.04, "order": ["ice", "water", "blood", "poison", "bone", "gold", "soul", "lava", "fire"], "radius_scale": 1.2, "mix_bonus": 0.1},
   "bundle_scale": 0.5,
   "fling_speed": 760,
-  "fling_m": 16,
+  "fling_m": 16, "bump_m": 0.8, "roll_s": 0.25,
   "land": {
    "fire": {"pool": "fire", "react": "fire", "radius_m": 0.9, "time": 5, "dmg": 0.35, "dps": 0.25, "status": "burn"},
    "lava": {"pool": "lava", "react": "fire", "radius_m": 0.9, "time": 5, "dmg": 0.4, "dps": 0.3, "status": "burn"},

@@ -49,6 +49,13 @@ var host: RefCounted
 var cfg: Dictionary = {}
 ## "source:id" -> {mat, puffs: Array[{p, v, r, d, g, s}], end, at, av, r, source, dense}
 var _clouds: Dictionary = {}
+## Clouds burnt or eaten (end_cloud) while their zone still lists them: a sync must not bring
+## them back whole (physics plan F26); forgotten when their zone is gone.
+var _spent: Dictionary = {}
+## The world's wind (world px/s): the puffs drift with wind_share of it (physics plan F58).
+var wind := Vector2.ZERO
+## Puffs of burning clouds that just went up ({at, r, mat}; ignite, take_burnt).
+var _burnt: Array = []
 var _rng := RandomNumberGenerator.new()
 static var _data: Dictionary = {}
 
@@ -103,6 +110,8 @@ func sync(zones: Array, now: float, source := "") -> void:
 			continue
 		var key := "%s:%d" % [source, int(zone.get("id", -1))]
 		seen[key] = true
+		if _spent.has(key):
+			continue
 		var at := Vector2(float(zone.x), float(zone.y))
 		if _clouds.has(key):
 			_clouds[key].at = at
@@ -110,6 +119,9 @@ func sync(zones: Array, now: float, source := "") -> void:
 		var length := float(zone.get("L", 4.0))
 		var start := now - float(zone.get("p", 0.0)) * length
 		_add(key, mat, at, float(zone.r), start + length, source, float(zone.get("d", 1.0)), Vector2(float(zone.get("dx", 0.0)), float(zone.get("dy", 0.0))), now - start < 0.3)
+	for key: String in _spent.keys():
+		if key.begins_with(source + ":") and not seen.has(key):
+			_spent.erase(key)
 	for key: String in _clouds.keys():
 		var cloud: Dictionary = _clouds[key]
 		if str(cloud.source) == source and not seen.has(key) and float(cloud.end) > now:
@@ -150,6 +162,7 @@ func _add(key: String, mat: String, at: Vector2, r: float, end: float, source: S
 
 ## Ends cloud `key` at `now`: it thins out from its rim (a reaction used it up).
 func end_cloud(key: String, now: float) -> void:
+	_spent[key] = true
 	if _clouds.has(key):
 		_clouds[key].end = minf(float(_clouds[key].end), now)
 
@@ -157,6 +170,7 @@ func end_cloud(key: String, now: float) -> void:
 ## Forgets every cloud (a new room, the end of a world).
 func clear() -> void:
 	_clouds.clear()
+	_spent.clear()
 
 
 # ---------- what moves it ----------
@@ -223,8 +237,9 @@ func wet_at(_point: Vector2) -> bool:
 	return false
 
 
-## Someone standing at `at` (world px), `radius` wide, parts the gas round them.
-func part(at: Vector2, radius: float) -> void:
+## Someone standing at `at` (world px), `radius` wide, parts the gas round them over `dt` s
+## (per second, so the parting and the dose do not change with the frame rate; F22).
+func part(at: Vector2, radius: float, dt: float = 1.0 / 60.0) -> void:
 	var speed := _u(_f("part_speed", 70.0))
 	for key: String in _clouds:
 		for puff: Dictionary in _clouds[key].puffs:
@@ -234,13 +249,13 @@ func part(at: Vector2, radius: float) -> void:
 			if dist >= reach or dist < 0.01:
 				continue
 			var k := 1.0 - dist / reach
-			puff.v = Vector2(puff.v) + off / dist * speed * k * 0.2
-			puff.p = Vector2(puff.p) + off / dist * k * 0.6
+			puff.v = Vector2(puff.v) + off / dist * speed * k * 12.0 * dt
+			puff.p = Vector2(puff.p) + off / dist * k * 36.0 * dt
 
 
 ## A shot at `at` flying along `dir` cuts a lane `width` wide through the gas:
-## the puffs it passes are pushed aside (the lane closes again by itself).
-func cut(at: Vector2, dir: Vector2, width: float) -> void:
+## the puffs it passes are pushed aside (the lane closes again by itself), over `dt` s.
+func cut(at: Vector2, dir: Vector2, width: float, dt: float = 1.0 / 60.0) -> void:
 	if dir.length() < 0.01:
 		return
 	var along := dir.normalized()
@@ -255,7 +270,7 @@ func cut(at: Vector2, dir: Vector2, width: float) -> void:
 			var reach := float(puff.r) * 0.7 + width
 			if absf(across) >= reach:
 				continue
-			puff.v = Vector2(puff.v) + side * signf(across if absf(across) > 0.01 else 1.0) * speed * (1.0 - absf(across) / reach) * 0.25
+			puff.v = Vector2(puff.v) + side * signf(across if absf(across) > 0.01 else 1.0) * speed * (1.0 - absf(across) / reach) * 15.0 * dt
 
 
 ## Runs the gas `dt` seconds on (the host's clock `now`): puffs spread, roll,
@@ -279,6 +294,17 @@ func step(dt: float, now: float) -> void:
 	for key: String in _clouds.keys():
 		var cloud: Dictionary = _clouds[key]
 		var puffs: Array = cloud.puffs
+		# each gas moves like its material (vfx_gas.json materials.<mat>.physics; physics plan
+		# R11/F16): steam light and quickly gone, smoke drifting, poison heavy and slow, frost mist
+		# spreading flat; a missing factor is 1
+		var phys: Dictionary = ((cfg.get("materials", {}) as Dictionary).get(str(cloud.mat), {}) as Dictionary).get("physics", {})
+		var c_hold := hold * float(phys.get("hold_k", 1.0))
+		var c_drift := drift * float(phys.get("drift_k", 1.0))
+		var c_damp := damping * float(phys.get("damping_k", 1.0))
+		var c_wind := _f("wind_share", 0.5) * float(phys.get("wind_k", 1.0))
+		if not cloud.has("born"):
+			cloud.born = now
+			if phys.has("life"): cloud.end = minf(float(cloud.end), now + float(phys.life))
 		var at: Vector2 = cloud.at
 		# a thrown cloud's middle travels on, slows, and stops at a wall (sliding along it)
 		var av: Vector2 = cloud.get("av", Vector2.ZERO)
@@ -315,6 +341,11 @@ func step(dt: float, now: float) -> void:
 				b.v = Vector2(b.v) + push * 8.0
 		for index in range(puffs.size() - 1, -1, -1):
 			var puff: Dictionary = puffs[index]
+			# a burning cloud: the flame front reaches this puff and it goes up (ignite)
+			if puff.has("burn_at") and float(puff.burn_at) <= now:
+				_burnt.append({"at": Vector2(puff.p), "r": float(puff.r) * float(puff.get("g", 1.0)), "mat": str(cloud.mat)})
+				puffs.remove_at(index)
+				continue
 			puff.g = minf(1.0, float(puff.get("g", 1.0)) + grow)
 			var p: Vector2 = puff.p
 			var v: Vector2 = puff.v
@@ -322,10 +353,11 @@ func step(dt: float, now: float) -> void:
 			var dist := Vector2(off.x, off.y / 0.75).length()
 			# held softly in its zone, rolling slowly
 			if not fading and dist > r * hold_from:
-				v -= off.normalized() * (dist - r * hold_from) * hold * dt * 4.0
+				v -= off.normalized() * (dist - r * hold_from) * c_hold * dt * 4.0
 			var s := float(puff.s)
-			v += Vector2(sin(now * 0.7 + s), cos(now * 0.53 + s * 1.3) * 0.6) * drift * dt * 2.0
-			v *= maxf(0.0, 1.0 - damping * dt)
+			v += Vector2(sin(now * 0.7 + s), cos(now * 0.53 + s * 1.3) * 0.6) * c_drift * dt * 2.0
+			v += wind * c_wind * c_damp * dt
+			v *= maxf(0.0, 1.0 - c_damp * dt)
 			# walls stop it: what runs into a wall fans out along it (the way it already
 			# leans, else to its own side) and only a little bounces back
 			var next := p + v * dt
@@ -392,6 +424,61 @@ func around(point: Vector2, radius: float, samples := 8) -> Dictionary:
 ## The clouds of `mat` alive at `now` (for the reactions: fire sets poison gas
 ## off): {key, at, r} each, `at` the middle of its puffs now. A cloud already
 ## ended (used up by a reaction) only thins out: it is gone for the rules.
+## The clouds of `mat` whose puffs (where the gas really is, not its middle) reach within `r` of
+## `at`: [{key, at: the nearest puff, r}] (physics plan F14).
+func touching(mat: String, at: Vector2, r: float, now := -INF) -> Array:
+	var out: Array = []
+	for key: String in _clouds:
+		var cloud: Dictionary = _clouds[key]
+		if str(cloud.mat) != mat or float(cloud.end) <= now or bool(cloud.get("burning", false)):
+			continue
+		var best := INF
+		var near := Vector2.ZERO
+		for puff: Dictionary in cloud.puffs:
+			var d := Vector2(puff.p).distance_to(at) - float(puff.r) * float(puff.get("g", 1.0))
+			if d < best:
+				best = d
+				near = puff.p
+		if best <= r:
+			out.append({"key": key, "at": near, "r": float(cloud.r)})
+	return out
+
+
+## The clouds of `mat` with a puff where `here` (Callable(at) -> bool) holds: [{key, at: that
+## puff, r}] (gas drifting over heat; physics plan R13).
+func touching_where(mat: String, here: Callable, now := -INF) -> Array:
+	var out: Array = []
+	for key: String in _clouds:
+		var cloud: Dictionary = _clouds[key]
+		if str(cloud.mat) != mat or float(cloud.end) <= now or bool(cloud.get("burning", false)):
+			continue
+		for puff: Dictionary in cloud.puffs:
+			if here.call(Vector2(puff.p)):
+				out.append({"key": key, "at": Vector2(puff.p), "r": float(cloud.r)})
+				break
+	return out
+
+
+## Sets cloud `key` burning from `from` (physics plan F14): a flame front runs through its puffs
+## at `speed` px/s (each goes up at its distance from `from`, on the host clock), every puff that
+## burns leaves the cloud as {at, r, mat} for take_burnt; burnt gas never comes back (_spent).
+func ignite(key: String, from: Vector2, now: float, speed: float) -> void:
+	if not _clouds.has(key):
+		return
+	_spent[key] = true
+	var cloud: Dictionary = _clouds[key]
+	cloud.burning = true
+	for puff: Dictionary in cloud.puffs:
+		puff.burn_at = now + Vector2(puff.p).distance_to(from) / maxf(1.0, speed)
+
+
+## The puffs that went up since the last call ({at, r, mat}).
+func take_burnt() -> Array:
+	var out := _burnt
+	_burnt = []
+	return out
+
+
 func clouds_of(mat: String, now := -INF) -> Array:
 	var out: Array = []
 	for key: String in _clouds:

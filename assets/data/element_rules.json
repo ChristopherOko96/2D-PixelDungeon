@@ -224,6 +224,7 @@
  "reactions": {
   "explode_damage": 8,
   "explode_reach": 20,
+  "ignite_speed": 260,
   "explode_chain": 6,
   "ice_time": 8,
   "ice_slow": 0.4,

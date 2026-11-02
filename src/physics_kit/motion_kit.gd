@@ -59,6 +59,12 @@ func knock_hero(from: Vector2, kind: String, table: Dictionary, weaker: bool) ->
 	var knock := knock_start(Vector2(host.hero_x(), host.hero_y()), from, kind, table, weaker)
 	if knock.is_empty():
 		return false
+	# on ice the blow sends him gliding (decision D9): knock.ice_glide of it goes into his own
+	# sliding speed, which the ice keeps; the rest eases out as on stone
+	if host.has_method("hero_grip") and float(host.hero_grip()) < FIRM:
+		var glide := float((cfg.get("knock", {}) as Dictionary).get("ice_glide", 0.6))
+		host.set_hero_velocity(host.hero_velocity() + (knock.v as Vector2) * glide)
+		knock.v = (knock.v as Vector2) * (1.0 - glide)
 	host.set_knock_state(knock)
 	return true
 
@@ -151,7 +157,8 @@ func step_hero(want: Vector2, grip: float, pull: Vector2, dt: float) -> void:
 ## moves axis by axis against `solid` (Callable(x, y) -> bool, true when it may
 ## not stand there). Gives {"p": its new place, "v": the velocity it moved
 ## with (px/s, walls not counted), "vel": the sliding velocity to keep, "push":
-## the push left for the next frame (push.decay of it)}.
+## the push left for the next frame: push.decay of it per 60th of a second, so a throw carries
+## as far at any frame rate (physics plan F35), "push_in": the push it moved with}.
 func step_body(p: Vector2, vel: Vector2, want: Vector2, grip: float, pull: Vector2, push: Vector2, dt: float, solid: Callable) -> Dictionary:
 	var v := want
 	var kept := want
@@ -160,7 +167,12 @@ func step_body(p: Vector2, vel: Vector2, want: Vector2, grip: float, pull: Vecto
 		v = kept
 	v += pull
 	v += push
-	return {"p": integrate(p, v, dt, solid), "v": v, "vel": kept, "push": push * float((cfg.get("push", {}) as Dictionary).get("decay", 0.86))}
+	var spec: Dictionary = cfg.get("push", {})
+	var left := push * pow(float(spec.get("decay", 0.86)), dt * 60.0)
+	# on ice a push glides on: it fades by the floor's grip (at least push.ice_floor), not at the
+	# stone's rate (decision D9; frost creatures are passed FIRM and keep stopping)
+	if grip < FIRM: left = push * pow(maxf(grip, float(spec.get("ice_floor", 0.12))), dt)
+	return {"p": integrate(p, v, dt, solid), "v": v, "vel": kept, "push": left, "push_in": push}
 
 
 ## A grip from physics_motion.json grip ("slip", "medium", "glaze").
