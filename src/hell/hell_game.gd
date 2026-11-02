@@ -1939,16 +1939,19 @@ func _solve_group(group: String) -> void:
 		_toast("Alle Runen leuchten. Das Tor öffnet sich.")
 
 
-func _fire(dir: Vector2) -> void:
+## Fires the class weapon towards `dir`; `to_cursor`: `dir` reaches from the staff to the
+## point the mouse shows, where the mage's shot bursts (MageBolt.aim).
+func _fire(dir: Vector2, to_cursor := false) -> void:
 	if state.cool > 0.0 or dir == Vector2.ZERO or not hold.is_empty() or not FrostCombat.can_attack(self):
 		return
-	_attack(dir)
+	_attack(dir, dir.length() if to_cursor else -1.0)
 	if state.cool > 0.0:
 		state.cool *= FrostCombat.rate(self) * (talents.interval_scale() if talents != null else 1.0)
 
 
-## One attack of the class weapon (or the relic) towards `dir`.
-func _attack(dir: Vector2) -> void:
+## One attack of the class weapon (or the relic) towards `dir`. The mage's shot bursts
+## `reach` px out (the mouse's distance; -1: at the end of its flight).
+func _attack(dir: Vector2, reach := -1.0) -> void:
 	state.cool = float(state.rate) * HeroKit.rate_scale(self) * CardKit.rate_mult(self)
 	player.aim = dir.normalized()
 	if absf(dir.x) > 0.01:
@@ -1970,6 +1973,11 @@ func _attack(dir: Vector2) -> void:
 		MageBolt.arm(self, bolt)
 	# a perfect roll's counter (src/hell/hero_kit.gd arm_counter): this shot hits harder
 	HeroKit.arm_counter(self, bolt)
+	# the mage's shot bursts on the floor where the mouse points, within its flight (user wish
+	# 02.11.2026): unless an enemy or a wall stops it first
+	if class_id == "mage" and str(weapon.get("shot", "")) == "magic":
+		var flight := (bolt.v as Vector2).length() * float(bolt.t)
+		MageBolt.aim(bolt, MageBolt.land_reach(reach if reach >= 0.0 else flight, flight))
 	shots.append(bolt)
 	story_hero.on_shot()
 	if feel == null:
@@ -2847,7 +2855,7 @@ func _update_player(dt: float) -> void:
 	if aim != Vector2.ZERO:
 		_fire(aim)
 	elif Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and not mouse_taken and not state.get("tree_open", false) and throw_slot < 0 and (inventory_panel == null or not inventory_panel.open):
-		_fire((get_global_mouse_position() - Vector2(player.x, player.y - 40)) * mirror)
+		_fire((HeroKit.target(self) - Vector2(player.x, player.y - 40)) * mirror, true)
 	# a drunk fire or ice potion's after-effect keeps the lava off (story_items.gd immune)
 	if here == 2 and liquid.hurt and not (story_items != null and story_items.immune("lava")):
 		_hurt("in der Lava verbrannt")
@@ -2861,6 +2869,15 @@ func _update_shots(dt: float) -> void:
 	for s: Dictionary in shots:
 		s.p += s.v * dt
 		s.t -= dt
+		# the mage's shot reaches the point the mouse showed (MageBolt.aim): it stops there; still
+		# alive (t > 0) after the checks below, nothing struck it, and it bursts on the floor
+		var landed := false
+		if s.has("left"):
+			s.left = float(s.left) - (s.v as Vector2).length() * dt
+			if float(s.left) <= 0.0 or float(s.t) <= 0.0:
+				s.p = s.land
+				s.t = maxf(float(s.t), 0.001)
+				landed = true
 		var struck: Dictionary = {}
 		for e: Dictionary in breakables:
 			if not e.get("broken", false) and absf(s.p.x - e.x) < 50.0 and s.p.y > e.y - 90.0 and s.p.y < e.y + 10.0:
@@ -2936,6 +2953,8 @@ func _update_shots(dt: float) -> void:
 					break
 				_explode(s, m)
 				break
+		if landed and s.t > 0.0:
+			_land_shot(s)
 		if s.t <= 0.0 and s.has("burst") and not s.get("done", false):
 			_explode(s, {})
 	shots = shots.filter(func(s: Dictionary) -> bool: return s.t > 0.0)
@@ -3297,6 +3316,33 @@ func _explode(s: Dictionary, first: Dictionary) -> void:
 		RelicKit.split_rock(self, s)
 	_burst(s.p, 18)
 	_sound("blast")
+
+
+## The mage's shot `s` reached the point the mouse showed (MageBolt.aim) and struck nothing on
+## the way: it bursts there on the floor as on an enemy. The fireball and the arcane bolt in
+## their splash (the fire's explosion sets off what lies there, story_elements.gd), the icicle
+## and the void orb in their own burst, their frost and void touching the floor (MageBolt.touch).
+func _land_shot(s: Dictionary) -> void:
+	s.t = 0.0
+	if float(s.get("splash", 0.0)) > 0.0 or s.has("burst"):
+		_explode(s, {})
+	MageBolt.burst(self, s, {}, true)
+	MageBolt.touch(self, s)
+
+
+## Where the mage's left-click would burst now: the mouse (mirrored while he is mad), held
+## within the shot's flight (MageBolt.land_reach); INF when no mark shows (another class,
+## a window open, a potion being thrown, the hero down).
+func mage_mark() -> Vector2:
+	if class_id != "mage" or str(weapon.get("shot", "")) != "magic" or int(state.get("hp", 0)) <= 0 or throw_slot >= 0 \
+			or state.get("tree_open", false) or _window_open():
+		return Vector2.INF
+	var from := Vector2(player.x, player.y - 40)
+	var to: Vector2 = (HeroKit.target(self) - from) * (-1.0 if FrostCombat.HeroFx.inverted(self) else 1.0)
+	if to.length() < 1.0:
+		return Vector2.INF
+	var flight := float(weapon.get("speed", balance.shot.speed)) * float(MageBolt.spec(MageBolt.element(self)).get("speed_mult", 1.0)) * float(state.range)
+	return from + to.normalized() * MageBolt.land_reach(to.length(), flight)
 
 
 func _update_hazards(dt: float) -> void:
@@ -4174,6 +4220,10 @@ func _draw_actors(l: Layer) -> void:
 	# the frost world's ice shards, hail, armour and impact flashes on the pixel grid (src/hell/frost_fx.gd)
 	elif frost_fx != null:
 		FrostCombat.FrostMoves.draw_over(self, l, t)
+	# the mage's mark where his shot will burst (user wish 02.11.2026; src/vfx/mage_bolt.gd)
+	var mark := mage_mark()
+	if mark.is_finite():
+		MageBolt.draw_mark(l, mark, MageBolt.element(self), t)
 	for s: Dictionary in shots:
 		if SubKit.draw_shot(self, l, s, t):
 			continue

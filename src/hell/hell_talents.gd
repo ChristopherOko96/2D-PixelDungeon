@@ -219,6 +219,9 @@ func pet_slot_at(_screen: Vector2, point: Vector2) -> int:
 
 ## The last talent shot's id (each flying shot sheds its matter by it: talent_fx _shed_flight).
 var _bullet_serial := 0
+## The mage's projectile talents stop and burst where the mouse pointed (talent_combat.gd
+## _land_reach reads it; _step_bullets counts their `left` down and lands them).
+var shots_land := true
 ## Talent events already put to the walls and props (id -> true; _wreck_blasts).
 var _wrecked := {}
 
@@ -657,6 +660,14 @@ func _step_bullets(dt: float) -> void:
 		var from: Vector2 = b.pos
 		b.pos = from + Vector2(b.velocity) * dt
 		b.life = float(b.life) - dt
+		# a mage's spell stops at the point the mouse showed (talent_combat _land_reach); if
+		# neither a wall nor an enemy stops it on the way there, it bursts on the floor
+		var landed := false
+		if b.has("left"):
+			b.left = float(b.left) - Vector2(b.velocity).length() * dt
+			if float(b.left) <= 0.0 or float(b.life) <= 0.0:
+				b.pos = b.land
+				landed = true
 		# a fire shot through poison gas sets it off (src/hell/story_elements.gd)
 		if elements != null and str(b.get("style", "")).begins_with("fire"):
 			elements.fire_passes(b.pos, int(b.get("owner", 1)))
@@ -664,7 +675,7 @@ func _step_bullets(dt: float) -> void:
 		var contact := _shot_contact(from, b.pos)
 		var walled := contact != Vector2.INF
 		if walled: b.pos = contact
-		var gone: bool = float(b.life) <= 0.0 or walled
+		var gone: bool = (float(b.life) <= 0.0 and not landed) or walled
 		if not gone:
 			for m: Dictionary in enemies:
 				if float(m.hp) <= 0.0 or b.hit_ids.has(int(m.id)) or not g._hittable(m): continue
@@ -675,6 +686,9 @@ func _step_bullets(dt: float) -> void:
 					gone = true
 					break
 				b.pierce = int(b.pierce) - 1
+		if landed and not gone:
+			tc.bullet_land(b)
+			gone = true
 		if walled and g.get("wreck") != null:
 			g.wreck.hit_line(from, contact + Vector2(b.velocity).normalized() * 16.0, _wall_style(str(b.get("style", ""))), int(b.get("owner", 1)))
 		# a fire shot that strikes an unlit fire bowl lights it (decision D7)

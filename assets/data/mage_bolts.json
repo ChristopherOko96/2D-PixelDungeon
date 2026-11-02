@@ -1,18 +1,20 @@
 {
-  "_note": "The mage's left-click per element (src/vfx/mage_bolt.gd, wired in hell_game._attack). His element: the leading talent spec (hero_skins.json spec_elements: fire -> fire, frost -> ice, arcane -> void); none before any talent. kind: the shot kind (pyro: the small fireball that bursts where it strikes, user wish 30.10.2026; magic: the plain arcane bolt in the crypt look; icicle and void_orb are drawn and burst by mage_bolt.gd). speed_mult on the weapon's shot speed; splash_mult on the weapon's splash (0: a single-target bolt; the icicle brings its slow, the orb its pull instead). slow, slow_time: share and seconds the icicle's chill slows what it strikes. pull: world px/s the orb draws small enemies in by, fading to 0 at pull_radius (never bosses). len (icicle) and r (orb) in 3 px grid cells. splinters, patch_r, patch_n: the icicle's shards and its frost patch; implode_n, implode_r, traces: the orb's matter rushing in and the traces it leaves. cast_sfx, hit_sfx, wall_sfx: audio_sfx.json events. colors lit to shade (hex); glow [colour, alpha] on the world's glow layer.",
+  "_note": "The mage's left-click per element (src/vfx/mage_bolt.gd, wired in hell_game._attack). His element: the leading talent spec (hero_skins.json spec_elements: fire -> fire, frost -> ice, arcane -> void); none before any talent. kind: the shot kind (pyro: the small fireball that bursts where it strikes, user wish 30.10.2026; magic: the plain arcane bolt in the crypt look; icicle and void_orb are drawn and burst by mage_bolt.gd). speed_mult on the weapon's shot speed; splash_mult on the weapon's splash (0: a single-target bolt; the icicle brings its slow, the orb its pull instead). slow, slow_time: share and seconds the icicle's chill slows what it strikes. pull: world px/s the orb draws small enemies in by, fading to 0 at pull_radius (never bosses). len (icicle) and r (orb) in 3 px grid cells. splinters, patch_r, patch_n: the icicle's shards and its frost patch; implode_n, implode_r, traces: the orb's matter rushing in and the traces it leaves. cast_sfx, hit_sfx, wall_sfx: audio_sfx.json events. colors lit to shade (hex); glow [colour, alpha] on the world's glow layer. touch_r: world px the icicle's frost or the orb's void touches the floor where it bursts at the mouse (story_elements.gd). land (user wish 02.11.2026): the mage's shot bursts on the floor where the mouse points, held within its flight; min_px the nearest burst from the staff. mark: the small cross at that point (hell_game mage_mark): arm and gap in 3 px grid cells, alpha [low, high] breathing over period s; mark_colors per bolt (else its colors), bright to dark.",
+  "land": {"min_px": 24},
+  "mark": {"arm": 2, "gap": 1, "alpha": [0.55, 0.9], "period": 1.4},
   "bolts": {
-    "fire": {"kind": "pyro"},
+    "fire": {"kind": "pyro", "mark_colors": ["ffe9a8", "ff8a2a"]},
     "none": {"kind": "magic"},
     "ice": {
-      "kind": "icicle", "speed_mult": 1.15, "splash_mult": 0.0, "slow": 0.25, "slow_time": 0.8, "len": 6,
+      "kind": "icicle", "mark_colors": ["ffffff", "6fbde8"], "speed_mult": 1.15, "splash_mult": 0.0, "slow": 0.25, "slow_time": 0.8, "len": 6,
       "cast_sfx": "shoot_magic_ice", "hit_sfx": "tal_impact_ice", "wall_sfx": "wall_hit_ice",
-      "splinters": 7, "patch_r": 20, "patch_n": 6,
+      "splinters": 7, "patch_r": 20, "patch_n": 6, "touch_r": 20,
       "colors": ["ffffff", "e6fbff", "a6e3f7", "6fbde8"], "glow": ["a6e3f7", 0.28]
     },
     "void": {
       "kind": "void_orb", "speed_mult": 0.9, "splash_mult": 0.0, "pull": 120, "pull_radius": 110, "r": 3,
       "cast_sfx": "shoot_magic_void", "hit_sfx": "tal_impact_void", "wall_sfx": "wall_hit_void",
-      "implode_n": 12, "implode_r": 42, "traces": 4,
+      "implode_n": 12, "implode_r": 42, "traces": 4, "touch_r": 28,
       "colors": ["e3ccff", "a46be8", "5b2a9e", "1a0826"], "glow": ["7b3fd1", 0.3]
     }
   }

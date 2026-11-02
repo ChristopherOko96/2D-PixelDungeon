@@ -81,6 +81,20 @@ static func arm(g: Node, s: Dictionary) -> void:
 	_cue(g, str(b.get("cast_sfx", "")), s.p)
 
 
+## How far the mage's shot flies before it bursts on the floor (user wish 02.11.2026):
+## `wanted` (to the mouse) held between land.min_px and `flight` (its whole flight).
+static func land_reach(wanted: float, flight: float) -> float:
+	var near := float(data().get("land", {}).get("min_px", 24.0))
+	return clampf(wanted, minf(near, flight), flight)
+
+
+## Shot `s` bursts `dist` px along its flight, on the floor there (hell_game _update_shots
+## counts `left` down and stops it at `land`), unless an enemy or a wall stops it first.
+static func aim(s: Dictionary, dist: float) -> void:
+	s.left = dist
+	s.land = (s.p as Vector2) + (s.v as Vector2).normalized() * dist
+
+
 ## While shot `s` flies: the orb draws the small enemies near it in a little
 ## (never a boss) and sheds violet motes spiralling back into it; the icicle
 ## sheds frost glints.
@@ -119,29 +133,31 @@ static func fly(g: Node, s: Dictionary, dt: float) -> void:
 		P.p.emit((s.p as Vector2) / sc, (back * 40.0 + Vector2(randf_range(-15.0, 15.0), randf_range(-10.0, 10.0))) / sc, cols[randi() % 2], 0.35, "spark", 2.0, 6.0, 5.0 / sc, 3.0)
 
 
-## Shot `s` ended on enemy `m` ({}: on a wall). The icicle's chill slows `m` a
-## little; it shatters into ice splinters (flying on through an enemy, back off
-## a wall) and a small frost patch settles below. The orb implodes: violet
-## matter rushes in from a ring into one dark speck, traces settle on the floor.
-## Any other shot: nothing.
-static func burst(g: Node, s: Dictionary, m: Dictionary) -> void:
+## Shot `s` ended on enemy `m` ({}: on a wall, or on the floor at the mouse's
+## point when `on_floor`). The icicle's chill slows `m` a little; it shatters into
+## ice splinters (flying on through an enemy and over the floor, back off a wall)
+## and a small frost patch settles below. The orb implodes: violet matter rushes
+## in from a ring into one dark speck, traces settle on the floor. Any other
+## shot: nothing.
+static func burst(g: Node, s: Dictionary, m: Dictionary, on_floor := false) -> void:
 	var kind := str(s.get("kind", ""))
 	if not kind in KINDS:
 		return
 	var b := spec(str(s.get("element", "")))
 	if not m.is_empty() and s.has("slow") and float(m.get("hp", 0.0)) > 0.0:
 		HeroKit.slow_mob(g, m, float(s.slow), float(s.get("slow_time", 0.8)))
-	_cue(g, str(b.get("wall_sfx" if m.is_empty() else "hit_sfx", "")), s.p)
+	_cue(g, str(b.get("wall_sfx" if m.is_empty() and not on_floor else "hit_sfx", "")), s.p)
 	var at: Vector2 = s.p
 	var dir := (s.v as Vector2).normalized()
-	var out_dir := dir if not m.is_empty() else -dir
+	var out_dir := dir if not m.is_empty() or on_floor else -dir
 	if kind == "icicle" and g.get("frost_fx") != null:
 		g.frost_fx.shatter(at, 4, 8.0, out_dir, 110.0)
 	var P := _particles(g)
 	if P.is_empty():
 		return
 	var sc: float = P.scale
-	var ground := at + Vector2(0, 34)
+	# the mouse's point is a floor point: the patch and traces settle right there
+	var ground := at if on_floor else at + Vector2(0, 34)
 	var cols := _cols(b)
 	if kind == "icicle":
 		for k in range(int(b.get("splinters", 7))):
@@ -161,6 +177,44 @@ static func burst(g: Node, s: Dictionary, m: Dictionary) -> void:
 	P.p.scatter(ground / sc, Color((cols[3] as Color).lightened(0.15), 0.55), 14.0 / sc, int(b.get("traces", 4)))
 	for k in range(2):
 		P.p.emit((ground + Vector2(randf_range(-10.0, 10.0), 0.0)) / sc, Vector2(randf_range(-8.0, 8.0), randf_range(-6.0, 6.0)) / sc, cols[1 + randi() % 2], randf_range(0.8, 1.4), "ember", 2.0, 2.0, randf_range(10.0, 30.0) / sc, 1.0)
+
+
+## The icicle or orb `s` burst on the floor: its frost or void touches what lies
+## within its touch_r (src/hell/story_elements.gd: water freezes, steam falls, the
+## void eats puddles and gas). The fireball's fire does it in its explosion.
+static func touch(g: Node, s: Dictionary) -> void:
+	var kind := str(s.get("kind", ""))
+	if not kind in KINDS:
+		return
+	var talents: Variant = g.get("talents")
+	var reactions: Variant = talents.get("elements") if talents != null else null
+	if reactions == null:
+		return
+	var r := float(spec(str(s.get("element", ""))).get("touch_r", 20.0))
+	if kind == "icicle":
+		reactions.frost_at(s.p, r, 1)
+	elif reactions.has_method("void_at"):
+		reactions.void_at(s.p, r, 1)
+
+
+## The small mark where the mage's shot will burst (user wish 02.11.2026): four
+## short arms on the 3 px grid round an open centre (the exact point stays
+## visible), outlined, in his element's colours (mark_colors, else the bolt's);
+## it breathes softly in alpha on an eased cosine, never blinking.
+static func draw_mark(l: CanvasItem, at: Vector2, el: String, t: float) -> void:
+	var m: Dictionary = data().get("mark", {})
+	var b := spec(el)
+	var cols := _cols({"colors": b.get("mark_colors", b.get("colors", ["ffffff", "d0c4ff", "8f6bd8", "3a2470"]))})
+	var arm := int(m.get("arm", 2))
+	var gap := int(m.get("gap", 1))
+	var a: Array = m.get("alpha", [0.55, 0.9])
+	var breath := 0.5 - 0.5 * cos(t * TAU / maxf(0.1, float(m.get("period", 1.4))))
+	var c := Vector2i((at / PX).floor())
+	var cells := {}
+	for d: Vector2i in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+		for k in range(gap, gap + arm):
+			cells[c + d * k] = cols[0] if k == gap else cols[1]
+	_flush(l, cells, lerpf(float(a[0]), float(a[1]), breath))
 
 
 ## Draws the mage's icicle or orb `s` on the 3 px grid (true); false for other shots.
@@ -239,14 +293,16 @@ static func _draw_orb(l: CanvasItem, s: Dictionary, t: float) -> void:
 		l.draw_rect(Rect2(Vector2(q) * PX, Vector2.ONE * PX), cols[1 if k == 0 else 2])
 
 
-## Grid cells (Vector2i -> Color) drawn opaque with the outline round them.
-static func _flush(l: CanvasItem, cells: Dictionary) -> void:
+## Grid cells (Vector2i -> Color) drawn with the outline round them, opaque
+## unless `alpha` says otherwise.
+static func _flush(l: CanvasItem, cells: Dictionary, alpha := 1.0) -> void:
+	var line := Color(OUTLINE, alpha)
 	for q: Vector2i in cells:
 		for d: Vector2i in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
 			if not cells.has(q + d):
-				l.draw_rect(Rect2(Vector2(q + d) * PX, Vector2.ONE * PX), OUTLINE)
+				l.draw_rect(Rect2(Vector2(q + d) * PX, Vector2.ONE * PX), line)
 	for q: Vector2i in cells:
-		l.draw_rect(Rect2(Vector2(q) * PX, Vector2.ONE * PX), cells[q])
+		l.draw_rect(Rect2(Vector2(q) * PX, Vector2.ONE * PX), Color(cells[q] as Color, alpha))
 
 
 ## The bolt's colours lit to shade.

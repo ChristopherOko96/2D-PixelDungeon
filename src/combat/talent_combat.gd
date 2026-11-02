@@ -366,6 +366,9 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 		"projectile":
 			var style := str(info.get("style", "arcane"))
 			var speed := 560.0 if style == "arrow" else 440.0
+			# the mage's spells burst on the floor where the mouse points, within their flight
+			# (user wish 02.11.2026, talents.json land; the host counts `left` down): -1 flies to the wall
+			var land := _land_reach(rt, Vector2(player.pos), target, speed * 1.6)
 			# an ultimate stage may fan the shot out (Pfeilsturm)
 			var fan: Dictionary = info.get("fan", {})
 			var count := maxi(1, int(fan.get("count", 1)))
@@ -377,8 +380,11 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 					shot.always_crit = bool(info.get("always_crit", false))
 					# Nachhall's carried element rides on the echoed shot (bullet_hit lets it land)
 					if not _echo_el.is_empty() and k == 0: shot.gefuege_el = _echo_el
+					if land > 0.0:
+						shot.left = maxf(0.0, land - 16.0)
+						shot.land = Vector2(player.pos) + dir * land
 			# Leerenlanze: it carries Gefüge units out and drops them along its flight (not its echo)
-			if info.has("spend") and not _in_echo: _lance_drops(id, rt, talent, info, Vector2(player.pos), aim, speed, base)
+			if info.has("spend") and not _in_echo: _lance_drops(id, rt, talent, info, Vector2(player.pos), aim, speed, base, land)
 		"nova":
 			var radius := float(info.radius_m) * meter
 			# Leerenriss: the rift drags the enemies in first (never bosses)
@@ -1264,32 +1270,65 @@ func bullet_hit(bullet: Dictionary, enemy: Dictionary) -> void:
 	_hit(id, enemy, float(bullet.damage), info, rt, talent)
 	_sound("tal_impact", Vector2(enemy.pos), {"talent": talent, "style": str(bullet.get("style", ""))})
 	rt.force_crit = false
+	_bullet_lands(bullet, Vector2(enemy.pos), enemy, info, rt, talent)
+	_talent_hit = false
+	_spell_hit = false
+
+
+## A mage's projectile talent reached the floor point the mouse showed without striking
+## anyone (talents.json land; the host calls it): it lands there as it would on an enemy,
+## its splash share on those round it, its element on what lies there.
+func bullet_land(bullet: Dictionary) -> void:
+	var id := int(bullet.owner)
+	var rt := runtime(id)
+	var talent := str(bullet.get("talent", ""))
+	if rt.is_empty() or not data.talents.has(talent): return
+	_talent_hit = true
+	_spell_hit = str(rt["class"]) == "mage"
+	_sound("tal_impact", Vector2(bullet.pos), {"talent": talent, "style": str(bullet.get("style", ""))})
+	_bullet_lands(bullet, Vector2(bullet.pos), {}, data.talents[talent], rt, talent)
+	_talent_hit = false
+	_spell_hit = false
+
+
+## What a projectile talent leaves where it lands at `at` (on `enemy`, or {} on the floor):
+## the splash and its explosion, else its element there, the stain, Nachhall's carried element.
+func _bullet_lands(bullet: Dictionary, at: Vector2, enemy: Dictionary, info: Dictionary, rt: Dictionary, talent: String) -> void:
+	var id := int(bullet.owner)
 	if info.has("splash_m"):
 		var reach := float(info.splash_m) * float(data.meter_px)
 		for other: Dictionary in _living():
-			if other != enemy and Vector2(other.pos).distance_to(enemy.pos) <= reach + float(other.radius):
+			if other != enemy and Vector2(other.pos).distance_to(at) <= reach + float(other.radius):
 				_hit(id, other, float(bullet.damage) * float(info.splash), info, rt, talent)
-		_event("explosion", enemy.pos, reach, {"fx": "fire", "life": 0.6})
+		_event("explosion", at, reach, {"fx": "fire", "life": 0.6})
 	elif str(bullet.get("style", "")) in ["fireball", "infernospear"]:
 		# a fire shot without a splash (Infernospeer) still lands as fire where it struck
-		_element("fire", Vector2(enemy.pos), 20.0, id)
+		_element("fire", at, 20.0, id)
 	elif str(bullet.get("style", "")) == "frost_lance":
 		# Frostlanze, Splittersalve: frost where it struck (water freezes, steam falls as rain)
-		_element("ice", Vector2(enemy.pos), 20.0, id)
+		_element("ice", at, 20.0, id)
 	elif str(bullet.get("style", "")) == "arcane" and talent.begins_with("arcane_"):
 		# Leerengeschoss, Leerenlanze: the void eats the puddles and gas where it struck (into the Gefüge)
-		_element("void", Vector2(enemy.pos), 28.0, id)
+		_element("void", at, 28.0, id)
 		# Leerengeschoss leaves its stain: a small void pool of the hero's that eats what lies near it
 		var stain: Dictionary = info.get("stain", {})
 		if not stain.is_empty():
-			_pool_at(id, "void", Vector2(enemy.pos), float(stain.radius_m) * float(data.meter_px), float(stain.time),
+			_pool_at(id, "void", at, float(stain.radius_m) * float(data.meter_px), float(stain.time),
 				float(stain.get("dps", 0.0)) * float(game.players.get(id, {}).get("damage", 1.0)), str(stain.get("status", "")))
 	# Nachhall: the element the echoed shot carries lands where it struck
 	if bullet.has("gefuege_el"):
-		_drop_now(id, str(bullet.gefuege_el), Vector2(enemy.pos), talent, float(game.players.get(id, {}).get("damage", 1.0)))
+		_drop_now(id, str(bullet.gefuege_el), at, talent, float(game.players.get(id, {}).get("damage", 1.0)))
 		bullet.erase("gefuege_el")
-	_talent_hit = false
-	_spell_hit = false
+
+
+## How far a projectile talent of `rt` flies from `from` before it bursts on the floor: to
+## `target`, held between land.min_px and `flight`; -1 for the classes whose shots fly on to
+## the wall (talents.json land: user wish 02.11.2026, the mage places his elements), and in
+## hosts that do not stop shots there (only the story's hell_talents.gd sets shots_land).
+func _land_reach(rt: Dictionary, from: Vector2, target: Vector2, flight: float) -> float:
+	var land: Dictionary = data.get("land", {})
+	if game == null or game.get("shots_land") != true or not str(rt["class"]) in land.get("classes", []) or not target.is_finite(): return -1.0
+	return clampf(from.distance_to(target), minf(float(land.get("min_px", 40.0)), flight), flight)
 
 
 ## The companion kind of a build ("wolf", "bear"; talents.json "pet.kinds"), the default when unknown.
@@ -1854,12 +1893,13 @@ func _echo_point(player: Dictionary, info: Dictionary, target: Vector2) -> Vecto
 
 ## Leerenlanze: spends its units (oldest first) and drops them evenly along
 ## the lance's flight (up to a wall), each when the lance passes there.
-func _lance_drops(id: int, rt: Dictionary, talent: String, info: Dictionary, from: Vector2, aim: Vector2, speed: float, base: float) -> void:
+func _lance_drops(id: int, rt: Dictionary, talent: String, info: Dictionary, from: Vector2, aim: Vector2, speed: float, base: float, reach := -1.0) -> void:
 	var els := spend(id, int(_value(info, "spend", rt, talent)))
 	var book := _gf_log(rt)
 	book.lance = els.size()
 	if els.is_empty(): return
-	var end := _move(from, aim * speed * 1.6, 4.0, game.current_layout)
+	# the lance ends where the mouse pointed (`reach`, _land_reach) or at the wall
+	var end := _move(from, aim * (reach if reach > 0.0 else speed * 1.6), 4.0, game.current_layout)
 	for k in range(els.size()):
 		var at := from.lerp(end, float(k + 1) / float(els.size() + 1))
 		drops.append({"time": from.distance_to(at) / maxf(1.0, speed), "el": str(els[k]), "n": 1, "pos": at, "owner": id, "talent": talent, "base": base})

@@ -1,6 +1,7 @@
 {
   "_note": "Talent trees and soul shards (master prompt 29.10.2026; planner artifact Klassen und Talentbaeume). Rank arrays: index = rank - 1. 1 m = meter_px world pixels. Percent values are whole numbers.",
   "meter_px": 32,
+  "land": {"_note": "User wish 02.11.2026: these classes' projectile talents fly to the point the mouse shows and burst there on the floor (splash, element, stain, Nachhall as on an enemy: talent_combat.gd _land_reach, bullet_land), unless an enemy or a wall stops them first; held between min_px and their flight. Only hosts that set shots_land (the story worlds' hell_talents.gd) stop them.", "classes": ["mage"], "min_px": 40},
   "max_level": 30,
   "first_point_level": 2,
   "levels": {
