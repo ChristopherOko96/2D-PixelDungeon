@@ -98,6 +98,9 @@ var _particles: Array[Dictionary] = []
 ## matter drifts towards it by its mode's "wind" share (vfx_particles.json modes), heavy matter
 ## not at all.
 var wind := Vector2.ZERO
+## Floor cells (32 px) where something solid stands: closed gates, solid props, unbroken crates and
+## urns (set by the host when they change; physics plan R16): matter stops there like at a wall.
+var blocked_cells: Dictionary = {}
 ## Floor-mark textures: Vector2i chunk -> {image, texture, dirty}.
 var _chunks: Dictionary = {}
 var _marks := 0
@@ -120,6 +123,9 @@ var _frost: Array = []
 ## Frost that goes without water (vapor): [art, due time], checked every frame
 ## so it leaves in its dither order.
 var _vapor: Array = []
+## The earliest due time in _vapor (INF when empty): the list is scanned only once it comes
+## (physics plan R19).
+var _vapor_next := INF
 var _frost_head := 0
 var _water: Array = []
 var _water_head := 0
@@ -209,7 +215,8 @@ func sees(from: Vector2, to: Vector2, seen: Dictionary = {}) -> bool:
 ## True when `point` (world px) is inside a wall. Without a room every point is open.
 func solid(point: Vector2) -> bool:
 	if _walkable.is_empty(): return false
-	return not _walkable.has(Vector2i(floori(point.x / 32.0), floori(point.y / 32.0)))
+	var cell := Vector2i(floori(point.x / 32.0), floori(point.y / 32.0))
+	return not _walkable.has(cell) or blocked_cells.has(cell)
 
 
 ## Throws `count` square particles from `origin` (where they are seen, `height`
@@ -1233,6 +1240,17 @@ func _draw_fused(canvas: CanvasItem, blob: Dictionary) -> void:
 	var ramps: Dictionary = blob.ramps
 	var names: Array = parts.keys()
 	if names.is_empty(): return
+	var beat_now := int(_time * 12.0)
+	var ext_now := int(ceil(r)) + 2
+	var c_now := Vector2i(mid.floor())
+	# baked into a picture on the 12 fps beat (or when it fuses or flashes), only moved between
+	# (physics plan F7: the per-pixel lumps every frame were the cost)
+	var key := "%d:%d:%d:%d" % [beat_now, roundi(float(blob.n) * 10.0), 1 if float(blob.flash) > 0.0 else 0, ext_now]
+	if str(blob.get("bake_key", "")) == key and blob.has("bake_tex"):
+		var tex: Texture2D = blob.bake_tex
+		canvas.draw_texture_rect(tex, Rect2(Vector2(c_now - Vector2i(ext_now, ext_now)) * PIXEL, Vector2(tex.get_size()) * PIXEL), false)
+		return
+	var img := Image.create_empty(ext_now * 2 + 1, ext_now * 2 + 1, false, Image.FORMAT_RGBA8)
 	var total := maxf(0.001, float(blob.n))
 	var count := clampi(roundi(total), 1, int(_fuse("lumps", 14)))
 	var spin := float(blob.spin)
@@ -1271,7 +1289,7 @@ func _draw_fused(canvas: CanvasItem, blob: Dictionary) -> void:
 			var edge := r * (1.0 + 0.08 * sin(off.angle() * 5.0 + _time * 3.0 + total))
 			if dd > edge + 1.0: continue
 			if dd > edge:
-				canvas.draw_rect(Rect2(Vector2(q) * PIXEL, Vector2(PIXEL, PIXEL)), Color.WHITE if flash else ink)
+				img.set_pixel(x + ext, y + ext, Color.WHITE if flash else ink)
 				continue
 			var best := 0
 			var d1 := INF
@@ -1287,7 +1305,11 @@ func _draw_fused(canvas: CanvasItem, blob: Dictionary) -> void:
 			var cols: Array = ramps.get(el, [])
 			if cols.size() < 5: continue
 			var col: Color = cols[4] if d2 - d1 < 0.7 else _lump_colour(el, cols, pt - (lumps[best][0] as Vector2), lr, q, beat)
-			canvas.draw_rect(Rect2(Vector2(q) * PIXEL, Vector2(PIXEL, PIXEL)), col)
+			img.set_pixel(x + ext, y + ext, col)
+	var baked := ImageTexture.create_from_image(img)
+	blob.bake_tex = baked
+	blob.bake_key = key
+	canvas.draw_texture_rect(baked, Rect2(Vector2(c - Vector2i(ext, ext)) * PIXEL, Vector2(baked.get_size()) * PIXEL), false)
 
 
 ## The colour of art pixel `q` in a lump of element `el` (`cols` spec..deep), `local` from the
@@ -1474,6 +1496,8 @@ func scorch_star(point: Vector2, size: float) -> void:
 ## heavy, one low bounce, they stop hard and lie as loose pixels.
 func rubble(point: Vector2, count: int, dir: Vector2 = Vector2.ZERO, speed: float = 140.0) -> void:
 	_sound("rubble", point, count)
+	# cosmetic: it asks for room under the cap like the other emitters (physics plan R19)
+	count = room(count)
 	var cols := _el("stone")
 	var lift: Array = _mode("rock").get("lift", [40, 110])
 	for i in range(count):
@@ -1587,6 +1611,9 @@ func shadow(point: Vector2, branches: int, reach: float) -> void:
 func freeze_liquids(point: Vector2, radius: float) -> void:
 	_sound("liquid_freeze", point, int(radius))
 	for link: Array in _liquids:
+		# a layer the rules read freezes only through the rules (story_elements.gd frost_at;
+		# physics plan F17): the drawing never makes Glatteis there
+		if link.size() > 2 and bool(link[2]): continue
 		var layer: Object = (link[0] as WeakRef).get_ref()
 		if layer != null and layer.has_method("freeze_near"): layer.freeze_near(point * float(link[1]), radius * float(link[1]))
 
@@ -1595,6 +1622,7 @@ func freeze_liquids(point: Vector2, radius: float) -> void:
 func thaw_liquids(point: Vector2, radius: float) -> void:
 	_sound("liquid_thaw", point, int(radius))
 	for link: Array in _liquids:
+		if link.size() > 2 and bool(link[2]): continue
 		var layer: Object = (link[0] as WeakRef).get_ref()
 		if layer != null and layer.has_method("thaw_near"): layer.thaw_near(point * float(link[1]), radius * float(link[1]))
 
@@ -1603,6 +1631,7 @@ func thaw_liquids(point: Vector2, radius: float) -> void:
 ## ice melting, an ember put out): light, quick, thinning by the dither.
 func steam(point: Vector2, count: int, radius: float = 4.0) -> void:
 	_sound("steam", point, count)
+	count = room(count)
 	var color := Color(str(_data.get("steam_color", "d8dce6")))
 	for i in range(count):
 		var spot := point + Vector2(_rng.randf_range(-radius, radius), _rng.randf_range(-radius, radius) * 0.6)
@@ -1620,6 +1649,7 @@ func _in_liquid(point: Vector2) -> bool:
 ## `count` puffs of smoke rising from `point` (spread `radius` px).
 func smoke(point: Vector2, count: int, radius: float = 6.0) -> void:
 	_sound("smoke", point, count)
+	count = room(count)
 	var color := Color(str(_data.get("smoke_color", "2e2a2c")), 0.55)
 	var lift: Array = _mode("smoke").get("lift", [10, 30])
 	for i in range(count):
@@ -1633,11 +1663,12 @@ func add_liquid(layer: Object, scale: float) -> void:
 	if layer != null: _liquids.append([weakref(layer), scale])
 
 
-## Sets the layers anew (see add_liquid).
+## Sets the layers anew (see add_liquid); a third entry true marks a layer the
+## game's rules read (frost and fire change it only through the rules).
 func set_liquids(layers: Array) -> void:
 	_liquids = []
 	for link: Array in layers:
-		if link[0] != null: _liquids.append([weakref(link[0]), float(link[1])])
+		if link[0] != null: _liquids.append([weakref(link[0]), float(link[1]), link.size() > 2 and bool(link[2])])
 
 
 ## A wet step or dot of `color` at `point` that dries away after `dry_after` s
@@ -1659,7 +1690,8 @@ func kick(point: Vector2, radius: float, strength: float = 1.0) -> void:
 		if layer != null: layer.ripple_near(point * float(link[1]), radius * float(link[1]), strength)
 	var settings_for_kick: Dictionary = _data.get("kick", {})
 	var share := float(settings_for_kick.get("stain_share", 0.25))
-	var limit := int(settings_for_kick.get("max_particles", 140))
+	# what it may lift asks for room under the cap (the rest stays lying; physics plan R19)
+	var limit := room(int(settings_for_kick.get("max_particles", 140)))
 	var lift: Array = settings_for_kick.get("lift", [60, 200])
 	var speed := float(settings_for_kick.get("speed", 260)) * strength
 	var middle := _art(point)
@@ -1812,6 +1844,7 @@ func clear() -> void:
 	_frost.clear()
 	_frost_head = 0
 	_vapor.clear()
+	_vapor_next = INF
 	_water.clear()
 	_water_head = 0
 	_frozen.clear()
@@ -2521,10 +2554,23 @@ func _freeze(art: Vector2i, vapor := false, due := -1.0, spread := 1.0) -> void:
 	if due < 0.0: due = _time + _rng.randf_range(float(melt[0]), float(melt[1]))
 	_frozen[art] = _pixel(art)
 	if vapor:
-		if _vapor.size() >= int(settings_for_frost.get("max", 4000)): _vapor.pop_front()
-		_vapor.append([art, due + MatterKit.bayer(art) / 16.0 * float(settings_for_frost.get("vapor_spread", 1.2)) * spread])
+		# at the cap the oldest vapor frost goes now instead of staying frozen forever (physics plan R19)
+		if _vapor.size() >= int(settings_for_frost.get("max", 4000)): _vapor_go(_vapor.pop_front()[0])
+		var when := due + MatterKit.bayer(art) / 16.0 * float(settings_for_frost.get("vapor_spread", 1.2)) * spread
+		_vapor.append([art, when])
+		_vapor_next = minf(_vapor_next, when)
 		return
 	_frost.append([art, due])
+
+
+## A vapor frost pixel goes (unless something was painted over it meanwhile).
+func _vapor_go(spot: Vector2i) -> void:
+	if not _frozen.has(spot): return
+	var same: bool = _pixel(spot) == _frozen[spot]
+	_frozen.erase(spot)
+	if same:
+		_put(spot, Color(0, 0, 0, 0))
+		_loose.erase(spot)
 
 
 ## Frost that is due melts to water; water that is due dries away. A frost
@@ -2551,22 +2597,19 @@ func _melt() -> void:
 		_wet.erase(art)
 		var here := _pixel(art)
 		if absf(here.r - water.r) + absf(here.g - water.g) + absf(here.b - water.b) < 0.04: _put(art, Color(0, 0, 0, 0))
-	# vapor frost: every due pixel goes, the rest keep their order
-	if not _vapor.is_empty():
+	# vapor frost: every due pixel goes, the rest keep their order (scanned only once the
+	# earliest is due)
+	if not _vapor.is_empty() and _time >= _vapor_next:
 		var keep := 0
+		_vapor_next = INF
 		for index in range(_vapor.size()):
 			var entry: Array = _vapor[index]
 			if float(entry[1]) > _time:
 				_vapor[keep] = entry
 				keep += 1
+				_vapor_next = minf(_vapor_next, float(entry[1]))
 				continue
-			var spot: Vector2i = entry[0]
-			if not _frozen.has(spot): continue
-			var same: bool = _pixel(spot) == _frozen[spot]
-			_frozen.erase(spot)
-			if same:
-				_put(spot, Color(0, 0, 0, 0))
-				_loose.erase(spot)
+			_vapor_go(entry[0])
 		_vapor.resize(keep)
 	# wet steps and dots dry away in the order they were left
 	while _damp_head < _damp.size() and float(_damp[_damp_head][1]) <= _time:

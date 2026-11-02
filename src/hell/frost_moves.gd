@@ -67,6 +67,19 @@ static func _dmg(g: Node, d: Variant) -> int:
 	return 0 if float(d) <= 0.0 else maxi(1, int(round(float(d) * float(_cfg(g).get("damage_scale", 0.5)))))
 
 
+## True when `p` lies on the ice of a move's pool (frost_patch, ice_slide's
+## lane; drawn by frost_fx.gd as the floor's slab): Glatteis for every body
+## that is not of frost, the monsters too (physics plan R26).
+static func ice_under(g: Node, p: Vector2) -> bool:
+	for z: Dictionary in g.state.get("mzones", []):
+		if str(z.get("kind", "")) == "pool" and str(z.get("style", "")) in ["ice", "frost"] and float(z.get("t", 0.0)) > 0.0:
+			var d: Vector2 = p - (z.p as Vector2)
+			# the slab lies squashed to the floor (frost_fx.gd _ice_add: 0.62)
+			if Vector2(d.x, d.y / 0.62).length() < float(z.r):
+				return true
+	return false
+
+
 static func _zones(g: Node) -> Array:
 	if not g.state.has("mzones"):
 		g.state.mzones = []
@@ -487,6 +500,9 @@ static func _update_zones(g: Node, dt: float) -> void:
 							z.get("by", {}), {} if bool(z.get("self", false)) else {"p": z.p})
 					if not (z.pool as Dictionary).is_empty():
 						_zones(g).append(_pool(g, z.p, z.pool))
+					# the rules' frost: the water lying there freezes (story_elements.gd frost_at; physics plan F17)
+					if str(z.style) in ["ice", "frost"] and float(z.r) > 0.0 and g.get("story_elements") != null:
+						g.story_elements.frost_at(z.p, float(z.r))
 					if _fx(g) != null and float(z.r) > 0.0:
 						_strike_fx(g, z, big)
 					elif g.feel != null and float(z.r) > 0.0:

@@ -193,6 +193,10 @@ func on_blast(p: Vector2, radius: float, style := "magic") -> void:
 	if g.get("wreck") != null:
 		g.wreck.blast(p, radius, "enemy_blast", false)
 	var crypt_style := str(BLAST_STYLES.get(style, "void"))
+	# the rules' frost: an enemy's ice blast freezes the water lying there, whatever is drawn
+	# (src/hell/story_elements.gd frost_at; physics plan F17: not only through the particles)
+	if crypt_style in ["ice", "frost"] and g.get("story_elements") != null:
+		g.story_elements.frost_at(p, radius)
 	_event("zone_burst", p, {"style": crypt_style, "r": radius / scale})
 	_spawn(str(BLAST_SHEETS.get(crypt_style, "magic_burst")), p, clampf(radius / 130.0, 0.5, 2.0))
 
@@ -637,7 +641,9 @@ func draw_layer(canvas: CanvasItem, mode: String) -> void:
 					boss_fx.pools.particles = feedback.particles
 					boss_fx.particles = feedback.particles
 					var layers: Array = [[boss_fx.pools, 1.0]]
-					if g.get("pools") != null: layers.append([g.get("pools"), scale])
+					# the world's puddles are the rules' (true): frost and fire change them only through
+					# src/hell/story_elements.gd (physics plan F17)
+					if g.get("pools") != null: layers.append([g.get("pools"), scale, true])
 					if g.get("gas") != null: layers.append([g.get("gas"), scale])
 					feedback.particles.set_liquids(layers)
 			boss_fx.draw_ground(canvas, conditions, _clock)

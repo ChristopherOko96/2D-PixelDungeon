@@ -1462,31 +1462,11 @@ func _crust_pool(key: String, until: float) -> void:
 ## and from the picture) and the liquid under it shows again.
 func thaw_near(at: Vector2, radius: float) -> void:
 	_take_field_events()
+	# the field thaws from the fire's side, the nearest cells now, the rest on their time
+	# (PoolField.thaw_near, physics plan R25); the picture follows its "thawed" changes
+	# (_show_thawed), now and in advance
 	pool_field.thaw_near(at, radius)
-	# (the picture thaws below, its own drawn ice included)
-	pool_field.take_events()
-	if not _fields.has("ice"):
-		return
-	var middle := Vector2i((at / art).floor())
-	var reach := radius / art
-	var ice: Dictionary = _fields.ice
-	var gone: Array = []
-	for q: Vector2i in ice.cells:
-		var c: Array = ice.cells[q]
-		if c.size() > 3 and bool(c[3]) and Vector2(q - middle).length() <= reach:
-			gone.append(q)
-	if gone.is_empty():
-		return
-	for q: Vector2i in gone: ice.cells.erase(q)
-	ice.dirty = true
-	ice.next = minf(float(ice.next), _now)
-	_freezing = _freezing.filter(func(entry: Array) -> bool: return not gone.has(entry[1]))
-	for mat: String in _fields:
-		if _style(mat) != "liquid": continue
-		var field: Dictionary = _fields[mat]
-		for q: Vector2i in gone: field.hide.erase(q)
-		field.dirty = true
-		field.next = minf(float(field.next), _now)
+	_take_field_events()
 
 
 ## A pool the game charged (boss_moves.electrify, the snapshot's "ch"): its
@@ -1649,7 +1629,8 @@ func _react(now: float) -> void:
 	for a: String in mats:
 		for b: String in mats:
 			if a != b:
-				var rule: Dictionary = rules.get(_style(a) + "+" + _style(b), {})
+				# two materials by name first (water+blood mixes; physics plan F21), else their styles
+				var rule: Dictionary = rules.get(a + "+" + b, rules.get(_style(a) + "+" + _style(b), {}))
 				if not rule.is_empty():
 					_react_pair(a, b, rule, now)
 		if hot.is_valid():

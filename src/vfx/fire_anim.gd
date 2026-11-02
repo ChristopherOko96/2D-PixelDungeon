@@ -19,6 +19,9 @@ var cfg: Dictionary = {}
 ## Sprite name -> its pictures (Array of Texture2D), fps.
 var _frames: Dictionary = {}
 var _fps: Dictionary = {}
+## name -> the flame tips of a fire sprite (Vector2, texture px): where embers and smoke leave it
+## (physics plan R21, D12: added for saidPC's review).
+var _tips: Dictionary = {}
 
 
 func _init(data: Dictionary = {}) -> void:
@@ -32,6 +35,7 @@ func _init(data: Dictionary = {}) -> void:
 func build(tex: Dictionary, block := 1) -> void:
 	_frames = {}
 	_fps = {}
+	_tips = {}
 	var n := int(cfg.get("frames", 8))
 	for kind: String in ["fire", "water"]:
 		var spec: Dictionary = cfg.get(kind, {})
@@ -53,11 +57,24 @@ func build(tex: Dictionary, block := 1) -> void:
 				textures.append(ImageTexture.create_from_image(pic))
 			_frames[str(name)] = textures
 			_fps[str(name)] = float(spec.get("fps", cfg.get("fps", 9)))
+			if kind == "fire":
+				# each flame's tip: the middle of its top art row
+				var b := maxi(1, block)
+				var grid := art_grid(image, b)
+				var tips: Array = []
+				for region: Dictionary in flame_regions(flame_mask(image, spec), image.get_width(), image.get_height(), spec, b, image):
+					tips.append(Vector2((float(region.x0) + float(region.x1)) * 0.5, float(grid.y + int(region.top_c) * b)))
+				_tips[str(name)] = tips
 
 
 ## True when `name` moves.
 func has(name: String) -> bool:
 	return _frames.has(name)
+
+
+## The flame tips of fire sprite `name` (Vector2, px of its texture, unflipped); [] for none.
+func tips(name: String) -> Array:
+	return _tips.get(name, [])
 
 
 ## The picture of `name` for an instance at `at` (world px) at time `t` (s); null when it does not move.

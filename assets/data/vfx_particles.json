@@ -419,6 +419,14 @@
     "spread": 0.8,
     "pop": 4
   },
+  "wall_fire": {
+    "_note": "The lit wall fires (torches, wall braziers) throw real embers and a wisp of smoke from each flame tip (src/vfx/fire_anim.gd tips; hell_game.gd _wall_fire_matter; physics plan R21): per second per tip, colours hot to dim, smoke colour.",
+    "embers_per_s": 1.4,
+    "smoke_per_s": 0.7,
+    "colors": ["#ffe08a", "#ffb04a", "#f0702e"],
+    "smoke": "#3a3438",
+    "base": 74
+  },
   "fuse": {
     "_note": "The Leerenmagier's Gefüge as matter in the Singularität's well (particles.gd fuse_feed, _step_fusion, _fuse_pair, _blob_matter, _draw_fused; user 2026-11-01: its particles fuse, everything simulated). A blob floats height px over the floor, slowed by drag per s, pulled by pull_scale of its well's pull and swirl (the swirl divided by its units: heavy matter sinks in); the core keeps it: within the core plus its own radius it is drawn to the middle at center per s and its speed falls by hold per s. The smaller blobs of a well are drawn to its heaviest one at cohesion x sqrt(its units) px/s^2; two blobs of one well fuse when closer than reach x their radii summed; a blob of n units is PIXEL x (size + grow x sqrt(n)) px across, at most size_max; it turns at spin rad/s, its rim flashes for flash s when it fuses, it is drawn as up to lumps lumps of its elements (shuffled by its own seed, so they lie mixed all through it), and it throws off a bit of its own matter every bits_every / sqrt(n) s.",
     "height": 8,

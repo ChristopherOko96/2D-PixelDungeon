@@ -140,6 +140,10 @@ func _test_freeze_and_thaw() -> void:
 	var thawed := field.thaw_near(at, 60.0)
 	check(thawed > 0 and not field.materials_at(at).has("ice"), "thaw: fire takes the ice again (%d cells)" % thawed)
 	check(field.materials_at(at) == ["water"], "thaw: the water is there again")
+	# from the fire's side: the ice farther away goes on its time (physics plan R25)
+	check(field.materials_at(at + Vector2(16, 0)).has("ice"), "thaw: the ice farther from the fire is still there for a moment")
+	field.advance(1.0 + float(field.cfg.physics.freeze_time) + 0.02 + float(field.cfg.physics.get("thaw_time", 0.35)))
+	check(not field.materials_at(at + Vector2(16, 0)).has("ice"), "thaw: after thaw_time all of it has thawed")
 	# poison freezes the same way; lava and fire are no liquid
 	var hot := _field()
 	hot.sync([_zone(1, "lava", at, 50.0, 8.0)], 0.0)

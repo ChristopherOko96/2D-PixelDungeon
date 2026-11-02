@@ -239,6 +239,14 @@ func update(dt: float) -> void:
 			m.fp = p
 			continue
 		var r := float(m.get("r", 24.0))
+		# sliding on ice it scratches skid marks along its slide instead of steps (physics plan
+		# R26/R30, D12: added for saidPC's review)
+		var sv: Vector2 = m.get("sv") if m.get("sv") is Vector2 else Vector2.ZERO
+		if bool(m.get("slid", false)) and sv.length() > float(cfg.skid_speed):
+			if p.distance_to(last) >= 8.0:
+				_add({"p": p, "ang": sv.angle(), "side": 0.0, "t": 0.0, "kind": "skid", "size": clampf(r / 26.0, 0.7, 1.8)})
+				m.fp = p
+			continue
 		if p.distance_to(last) >= maxf(18.0, r * 0.9):
 			if on_snow(p):
 				m.fp_side = -float(m.get("fp_side", 1.0))
@@ -460,9 +468,11 @@ func draw_floor(l: CanvasItem, view: Rect2) -> void:
 		var across := Vector2.from_angle(ang + PI / 2.0)
 		match str(f.kind):
 			"skid":
+				# a bigger body scratches a wider mark (size: 1 for the hero)
+				var w := float(f.get("size", 1.0))
 				l.draw_set_transform(p, ang)
-				l.draw_rect(Rect2(-9, -2, 18, 2), Color(0.92, 0.97, 1.0, 0.5 * fade))
-				l.draw_rect(Rect2(-7, 1, 14, 1), Color(0.55, 0.72, 0.95, 0.35 * fade))
+				l.draw_rect(Rect2(-9, -2 * w, 18, 2 * w), Color(0.92, 0.97, 1.0, 0.5 * fade))
+				l.draw_rect(Rect2(-7, w, 14, 1), Color(0.55, 0.72, 0.95, 0.35 * fade))
 			"boot":
 				l.draw_set_transform(p + across * 7.0 * float(f.side) + Vector2(0, -2), ang)
 				_oval(l, Vector2(3, 0), Vector2(9, 5), Color(base, 0.7 * fade))

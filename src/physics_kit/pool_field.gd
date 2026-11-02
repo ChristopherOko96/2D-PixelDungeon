@@ -61,6 +61,8 @@ var track_events := false
 
 ## The field's clock: the host's time of the last sync / advance (s).
 var _now := 0.0
+## Ice cells the fire reached, thawing on their time: [when, cell] (thaw_near; physics plan R25).
+var _thawing: Array = []
 ## material -> {Vector2i art cell: [born, until, rank 0..1]} for a pool's cells,
 ## [born, until, rank, true] for ice frozen out of a liquid (freeze_near).
 var _cells: Dictionary = {}
@@ -159,6 +161,8 @@ func advance(now: float) -> void:
 	_now = now
 	if not _shaping.is_empty():
 		_commit(false)
+	if not _thawing.is_empty():
+		_thaw_due()
 	if now >= _next_purge or now < _next_purge - float(cfg.get("purge_every_s", 1.0)) * 2.0:
 		_purge(now)
 
@@ -189,6 +193,13 @@ func sync_zone(zone: Dictionary, now: float, source := "") -> String:
 		var window := float((cfg.get("physics", {}) as Dictionary).get("splash_window", 0.25))
 		add(id, str(zone.st), Vector2(float(zone.x), float(zone.y)), Vector2(float(zone.get("dx", 0.0)), float(zone.get("dy", 0.0))),
 			float(zone.r), start, start + length, source, now - start <= window, int(zone.get("owner", 0)))
+	elif _pools.has(key):
+		# a pool whose zone ends sooner than it was laid for (the void drained it, a reaction used it
+		# up) goes rim first by then instead of lying full and vanishing at once (physics plan R12)
+		var length := float(zone.get("L", 4.0))
+		var end := now - float(zone.get("p", 0.0)) * length + length
+		if end < float(_pools[key].end) - 0.05:
+			finish(key, maxf(now, end - float(cfg.get("edge_time", 0.7)) * 0.5))
 	return key
 
 
@@ -422,23 +433,52 @@ func freeze_near(at: Vector2, radius: float) -> int:
 
 
 ## Fire at `at` (world px) reaching `radius` takes the ice frozen out of a
-## liquid there (the liquid under it is there again). Returns how many cells thawed.
+## liquid there (the liquid under it is there again): from the fire's side,
+## the nearest cells at once, the farthest physics.thaw_time s later (physics
+## plan R25). Returns how many cells thaw (now or on their time).
 func thaw_near(at: Vector2, radius: float) -> int:
 	var ice: Dictionary = _cells.get("ice", {})
 	if ice.is_empty():
 		return 0
 	var middle := Vector2i((at / art).floor())
-	var reach := radius / art
+	var reach := maxf(0.001, radius / art)
+	var span := float((cfg.get("physics", {}) as Dictionary).get("thaw_time", 0.35))
 	var gone: Array = []
+	var count := 0
 	for q: Vector2i in ice:
 		var c: Array = ice[q]
-		if c.size() > 3 and bool(c[3]) and Vector2(q - middle).length() <= reach:
-			gone.append(q)
+		var d := Vector2(q - middle).length()
+		if c.size() > 3 and bool(c[3]) and d <= reach:
+			count += 1
+			var when := _now + d / reach * span
+			if when <= _now + 0.001:
+				gone.append(q)
+			else:
+				_thawing.append([when, q])
 	for q: Vector2i in gone:
 		ice.erase(q)
 	if not gone.is_empty():
 		_note({"kind": "thawed", "cells": gone})
-	return gone.size()
+	return count
+
+
+## The ice cells whose thaw time has come go (thaw_near), as one "thawed" change.
+func _thaw_due() -> void:
+	var ice: Dictionary = _cells.get("ice", {})
+	var gone: Array = []
+	var later: Array = []
+	for entry: Array in _thawing:
+		if float(entry[0]) > _now:
+			later.append(entry)
+			continue
+		var q: Vector2i = entry[1]
+		var c: Variant = ice.get(q)
+		if c != null and (c as Array).size() > 3 and bool(c[3]):
+			ice.erase(q)
+			gone.append(q)
+	_thawing = later
+	if not gone.is_empty():
+		_note({"kind": "thawed", "cells": gone})
 
 
 ## A reaction uses the pools up that lie within `radius` of `at` (world px):
@@ -484,6 +524,7 @@ func clear() -> void:
 	_pools.clear()
 	_cells.clear()
 	_events.clear()
+	_thawing.clear()
 
 
 # ---------- inside ----------

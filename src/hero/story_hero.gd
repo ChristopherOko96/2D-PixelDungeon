@@ -530,6 +530,21 @@ func perfect(kind: String, at: Vector2, toward: Vector2, look_id := "") -> void:
 ## `kind`): fall, skip off the floor and the walls, drift or rest, then fade.
 func matter(element: String, at: Vector2, dir: Vector2, count: int, spread := 0.9, kind := "", lift := 40.0) -> void:
 	var key: String = kind if MATTER.has(kind) else str(Pal.KIND.get(Pal.resolve(element), "spark"))
+	# with the world's particles the matter is theirs (physics plan R18): it falls with the world's
+	# gravity, lands and lies, sinks in lava, sounds, and blasts and wells move it
+	var feel: Variant = g.get("feel")
+	if feel != null:
+		var P: RefCounted = feel.feedback.particles
+		var s := float(feel.scale)
+		var at_p := at / s
+		var cols := Pal.ramp_hot(element)
+		match key:
+			"spark": P.sparks(at_p, dir, count, [cols[0], cols[1], cols[2]])
+			"shard": P.shatter(at_p, count, dir, 180.0, cols, 2, lift / s)
+			"chip": P.chips(at_p, count, dir, [cols[1], cols[2], cols[3]])
+			"drop": P.drops(at_p, count, dir, [cols[1], cols[2]])
+			_: P.motes(at_p, count, [cols[0], cols[1]], 12.0, lift / s)
+		return
 	var spec: Dictionary = MATTER[key]
 	var base := dir.angle() if dir.length() > 0.01 else 0.0
 	for i in range(count):

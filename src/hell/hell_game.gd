@@ -367,6 +367,9 @@ func _ready() -> void:
 	skills = HeroKit.load_skills(self, class_id)
 	if theme.has("feel"):
 		feel = StoryFeel.new(self, theme.feel)
+		# the rigs' falling chips and dust land in the world's particles (physics plan R18)
+		RigFx.world_ref = weakref(feel.feedback.particles)
+		RigFx.world_scale = float(feel.scale)
 		sound = StorySound.new(self)
 		wreck = StoryWreck.new(self)
 	for k in ["full", "half", "empty"]:
@@ -1978,8 +1981,7 @@ func _damage_mob(m: Dictionary, push: Vector2, mult := 1.0) -> bool:
 		m.k = Vector2.ZERO
 	else:
 		var pcfg: Dictionary = motion_kit().cfg.get("push", {})
-		var heavy: Array = pcfg.get("mass", [0.4, 4.0])
-		var mass := clampf(pow(float(m.get("r", 28.0)) / maxf(1.0, float(pcfg.get("mass_ref_r", 28.0))), 2.0), float(heavy[0]), float(heavy[1]))
+		var mass := body_mass(m)
 		var now: Vector2 = m.get("k") if m.get("k") is Vector2 else Vector2.ZERO
 		m.k = (now + push * (0.05 if m.kind == "boss" else 0.25) / mass).limit_length(float(pcfg.get("max", 1000.0)))
 	FrostCombat.after_hit(self, m, push, crit > 1.0)
@@ -2590,8 +2592,11 @@ func _update(dt: float) -> void:
 	# the kits' direct sounds by who acts (src/hero/story_sound.gd): the hero's skills, relics and allies, the enemy moves
 	as_source("hero", _update_hero_kits.bind(dt))
 	as_source("moves", func() -> void: FrostCombat.update(self, dt))
+	_update_matter_blockers()
+	_wall_fire_matter()
 	# the snowstorm's wind is the world's (D12, F58): screen px/s over the camera zoom are world
 	# px/s; light particles and the gas drift with it
+	if snowstorm != null and snowstorm.has_method("follow"): snowstorm.follow(camera.position, camera.zoom.x)
 	if snowstorm != null and feel != null:
 		var w: Vector2 = snowstorm.wind() / maxf(0.1, camera.zoom.x)
 		feel.feedback.particles.wind = w / float(feel.scale)
@@ -2690,6 +2695,27 @@ func motion_kit() -> MotionKit:
 	if _motion == null:
 		_motion = MotionKit.new(StoryMotionHost.new(self))
 	return _motion
+
+
+## A body's mass for pushes (physics plan R23/F44, decision D5): its radius
+## over the median radius of this world's monsters (bosses and kit bosses left
+## out), squared, within physics_motion.json push.mass [min, max];
+## push.mass_ref_r while there is none to measure. Measured again when the
+## number of monsters changes.
+var _mass_ref := Vector2(-1.0, 28.0)
+
+
+func body_mass(m: Dictionary) -> float:
+	var pcfg: Dictionary = motion_kit().cfg.get("push", {})
+	var heavy: Array = pcfg.get("mass", [0.4, 4.0])
+	if int(_mass_ref.x) != mobs.size():
+		var radii: Array = []
+		for o: Dictionary in mobs:
+			if str(o.get("kind", "")) != "boss" and not o.has("kit") and not bool(o.get("boss", false)):
+				radii.append(float(o.get("r", 28.0)))
+		radii.sort()
+		_mass_ref = Vector2(float(mobs.size()), float(radii[radii.size() / 2]) if not radii.is_empty() else float(pcfg.get("mass_ref_r", 28.0)))
+	return clampf(pow(float(m.get("r", 28.0)) / maxf(1.0, _mass_ref.y), 2.0), float(heavy[0]), float(heavy[1]))
 
 
 ## The element exposure of this world (src/physics_kit/element_exposure.gd on
@@ -2888,6 +2914,46 @@ func _update_shots(dt: float) -> void:
 ## Particles low over the floor are drawn between the y-sorted actors (decision D11; story_feel's
 ## over layer then draws only the high ones).
 var depth_bands := true
+## What stood solid when the particles' blockers were last made (gates closed, crates whole).
+var _blocker_sig := ""
+
+
+## Closed gates, solid props and whole crates and urns stop the particles too (physics plan R16):
+## their 32 px particle cells, made anew only when a gate opens or closes, a prop is added or a
+## crate breaks (a cheap signature each frame).
+func _update_matter_blockers() -> void:
+	if feel == null or W.is_empty(): return
+	var whole := 0
+	for e: Dictionary in breakables:
+		if not e.get("broken", false): whole += 1
+	var shut := 0
+	for k: int in door_at:
+		if _door_closed(W.doors[door_at[k]]): shut += 1
+	var sig := "%d:%d:%d:%s" % [whole, shut, solid_grid.size(), str(W.get("index", 0))]
+	if sig == _blocker_sig: return
+	_blocker_sig = sig
+	var s := float(feel.scale)
+	var cells := {}
+	var mark := func(r: Rect2) -> void:
+		var mid := r.get_center() / s
+		cells[Vector2i(floori(mid.x / 32.0), floori(mid.y / 32.0))] = true
+	for key: int in solid_grid:
+		for r: Rect2 in solid_grid[key]: mark.call(r)
+	for e: Dictionary in breakables:
+		if not e.get("broken", false): mark.call(_breakable_box(e))
+	for k: int in door_at:
+		if not _door_closed(W.doors[door_at[k]]): continue
+		var cx := k % int(W.cols)
+		var cy := k / int(W.cols)
+		var gate := Rect2(cx * C, cy * C, C, C)
+		var a := (gate.position / s / 32.0).floor()
+		var b := (gate.end / s / 32.0).ceil()
+		for y in range(int(a.y), int(b.y)):
+			for x in range(int(a.x), int(b.x)):
+				cells[Vector2i(x, y)] = true
+	feel.feedback.particles.blocked_cells = cells
+
+
 ## Wading keys handed to the Frostgruft's figures (m.wk; _update_mobs).
 var _wade_serial := 0
 
@@ -2990,6 +3056,11 @@ func _update_mobs(dt: float) -> void:
 			grip = float(theme.liquid.get("grip", mover.grip("glaze")))
 		elif bool(env.get("slide", false)):
 			grip = float(env.get("grip", mover.grip("medium")))
+		elif not "frost" in m.tags and float(m.get("alt", 0.0)) <= 0.0 and FrostCombat.FrostMoves.ice_under(self, m.p):
+			# a move's ice patch is Glatteis under the monsters too (its rule: element_rules.json mediums.ice; physics plan R26)
+			grip = float(ElementRules.medium("ice").get("grip", mover.grip("medium")))
+		# sliding (no firm footing): the snow layer scratches skid marks for it (src/hero/frost_snow.gd)
+		m.slid = grip < MotionKit.FIRM
 		var pull := ElementRules.pull(env, m.p, env.get("centre", m.p)) if env.has("pull") else Vector2.ZERO
 		var moved_from: Vector2 = m.p
 		var rr: float = m.r * 0.7
@@ -3166,7 +3237,14 @@ func _update_hazards(dt: float) -> void:
 				# shooting up they puff dust off the plate
 				var rise := move_toward(float(e.get("rise", 1.0 if e.up else 0.0)), 1.0 if e.up else 0.0, dt / 0.08)
 				if rise >= 1.0 and float(e.get("rise", 1.0)) < 1.0 and feel != null:
-					feel.feedback.particles.dust_flat(Vector2(e.x, e.y) / float(feel.scale), 10.0, 6)
+					if tex.has("ice_crack"):
+						# the Frostgruft's ice trap: shards and snow burst off as the ice breaks through
+						feel.feedback.particles.shatter(Vector2(e.x, e.y - 6.0) / float(feel.scale), 6, Vector2.ZERO, 90.0)
+					else:
+						feel.feedback.particles.dust_flat(Vector2(e.x, e.y) / float(feel.scale), 10.0, 6)
+				elif rise < 1.0 and float(e.get("rise", 0.0)) >= 1.0 and feel != null and tex.has("ice_crack"):
+					# sinking back it crumbles: a few chips fall off
+					feel.feedback.particles.shatter(Vector2(e.x, e.y - 6.0) / float(feel.scale), 3, Vector2.ZERO, 50.0)
 				e.rise = rise
 				if e.up and absf(me.x - e.x) < 42 and absf(me.y - 12 - e.y) < 40:
 					_hurt("von Stacheln getroffen")
@@ -3782,6 +3860,50 @@ func _draw_back(l: Layer) -> void:
 			_tex(l, w.name, Vector2(w.x - t.get_width() / 2.0, w.y), w.flip)
 
 
+## The lit wall fires (torches, wall braziers) near the view throw real embers and a wisp of
+## smoke from their flame tips (src/vfx/fire_anim.gd tips; vfx_particles.json wall_fire;
+## physics plan R21): they rise, drift with the wind and the embers sink and go out on the floor.
+var _wall_fire_due: Dictionary = {}
+
+
+func _wall_fire_matter() -> void:
+	if feel == null or fire_anim == null or not fire_anim.has_method("tips"):
+		return
+	var P = feel.feedback.particles
+	var spec: Dictionary = P._data.get("wall_fire", {})
+	if spec.is_empty():
+		return
+	var now := float(state.t)
+	var view := _view_rect().grow(40)
+	var s := 1.0 / float(feel.scale)
+	var cols: Array = spec.get("colors", ["#ffb04a"])
+	var smoke := Color(str(spec.get("smoke", "#3a3438")))
+	var base := float(spec.get("base", 74))
+	var i := 0
+	for w: Dictionary in W.wall_decor:
+		i += 1
+		if not fire_anim.has(w.name) or not view.has_point(Vector2(w.x, w.y + base)):
+			continue
+		var t: Texture2D = tex.get(w.name)
+		if t == null:
+			continue
+		var j := 0
+		for tip: Vector2 in fire_anim.tips(w.name):
+			j += 1
+			var q := Vector2(w.x - t.get_width() / 2.0 + (t.get_width() - tip.x if bool(w.get("flip", false)) else tip.x), w.y + tip.y)
+			var key := i * 16 + j
+			var last: Vector3 = _wall_fire_due.get(key, Vector3(now, 0.0, 0.0))
+			var step := clampf(now - last.x, 0.0, 0.1)
+			var embers := last.y + step * float(spec.get("embers_per_s", 1.4))
+			var smokes := last.z + step * float(spec.get("smoke_per_s", 0.7))
+			var high := maxf(0.0, w.y + base - q.y) * s
+			for k in range(P.room(int(embers))):
+				P.emit(q * s, Vector2(randf_range(-10.0, 10.0), 0.0) * s, Color(str(cols[randi() % cols.size()])), randf_range(0.6, 1.3), "ember", 2.0, high, randf_range(25.0, 50.0) * s, 2.0)
+			for k in range(P.room(int(smokes))):
+				P.emit((q - Vector2(0, 4)) * s, Vector2(randf_range(-4.0, 4.0), 0.0) * s, Color(smoke, 0.55), randf_range(1.0, 1.8), "smoke", 3.0, high + 4.0 * s, randf_range(12.0, 22.0) * s, 2.0)
+			_wall_fire_due[key] = Vector3(now, embers - floorf(embers), smokes - floorf(smokes))
+
+
 ## The burning wall decor (torches, wall braziers) in `view`, every frame and behind everyone
 ## standing in the room, so their flames move (src/vfx/fire_anim.gd).
 func _draw_wall_fires(l: CanvasItem, view: Rect2) -> void:
@@ -3870,7 +3992,17 @@ func _draw_actors(l: Layer) -> void:
 	if not clone.is_empty():
 		list.append([clone.p.y, "clone", clone])
 	for d: Dictionary in W.doors:
-		if d.kind != "secret" and view.has_point(Vector2(d.cx, d.cy)) and _door_closed(d):
+		# a portcullis falls shut in gate_fall s and is drawn up again in gate_rise s (physics plan
+		# R21): it is drawn while it moves too; gameplay blocks at once as before
+		var shut := _door_closed(d)
+		var was := float(d.get("drop", 1.0 if shut else 0.0))
+		var drop := move_toward(was, 1.0 if shut else 0.0, get_process_delta_time() / (0.18 if shut else 0.35))
+		if drop >= 1.0 and was < 1.0 and feel != null and view.has_point(Vector2(d.cx, d.cy)):
+			# it slams down: dust and grit off the floor, a jolt
+			feel.feedback.particles.dust_flat(Vector2(d.cx, d.cy + 40.0) / float(feel.scale), 24.0, 14)
+			feel.feedback.particles.chips(Vector2(d.cx, d.cy + 40.0) / float(feel.scale), 5, Vector2.UP, [Color("6a5e4c"), Color("3a3328")])
+		d.drop = drop
+		if d.kind != "secret" and view.has_point(Vector2(d.cx, d.cy)) and drop > 0.0:
 			list.append([d.cy + 60.0, "gate", d])
 	for m: Dictionary in mobs:
 		if view.grow(300 if monsters != null else 0).has_point(m.p):
@@ -4237,7 +4369,14 @@ func _draw_gate(l: Layer, d: Dictionary, t: float) -> void:
 	var tint := Color.WHITE
 	if fight or d.kind == "boss":
 		tint = Color(1.0 + 0.4 * (0.5 + 0.5 * sin(t * 5.0)), 0.75, 0.7)
-	l.draw_texture(im, -im.get_size() / 2.0, tint)
+	# only the part that has come down shows (it falls from the top: drop 0..1, eased in)
+	var drop := float(d.get("drop", 1.0))
+	if drop >= 1.0:
+		l.draw_texture(im, -im.get_size() / 2.0, tint)
+	else:
+		var size := im.get_size()
+		var shown := roundf(size.y * drop * drop)
+		l.draw_texture_rect_region(im, Rect2(Vector2(-size.x / 2.0, -size.y / 2.0), Vector2(size.x, shown)), Rect2(Vector2(0.0, size.y - shown), Vector2(size.x, shown)), tint)
 	l.draw_set_transform(Vector2.ZERO)
 	if not fight and d.kind == "lock":
 		l.draw_texture_rect(tex[key_sprite[d.key]], Rect2(d.cx - 15, d.cy - 30, 30, 56), false, key_tint[d.key])
@@ -4495,18 +4634,20 @@ func wake_snowman(p: Dictionary) -> void:
 ## an ice burst shoots up out of it (quick rise, then it stands and shimmers until it sinks back).
 func _draw_ice_trap(l: Layer, e: Dictionary, up: bool) -> void:
 	var period := float(balance.hazards.spike_period)
-	_draw_ice_burst(l, Vector2(e.x, e.y), fmod(float(state.t), period) if up else -1.0, 0.55)
+	# down it sinks back into its crack over 0.08 s (e.rise) instead of vanishing (physics plan R21)
+	_draw_ice_burst(l, Vector2(e.x, e.y), fmod(float(state.t), period) if up else -1.0, 0.55, float(e.get("rise", 0.0)))
 
 
 ## A crack in the snow (tex ice_crack) and, `since` s after it broke open (negative: closed), the
 ## ice bursting up out of it (tex ice_burst): a quick rise, then it stands and shimmers. `scale`
 ## sizes it (the ice geysers erupt bigger than the spike traps).
-func _draw_ice_burst(l: Layer, at: Vector2, since: float, scale: float) -> void:
+func _draw_ice_burst(l: Layer, at: Vector2, since: float, scale: float, sink := 0.0) -> void:
 	var crack: Texture2D = tex.ice_crack
 	l.draw_texture_rect(crack, Rect2(at - crack.get_size() * scale / 2.0, crack.get_size() * scale), false)
-	if since < 0.0:
+	# closed: what still stands of it while it sinks (`sink` 1..0), else nothing
+	var rise := clampf(since / 0.12, 0.0, 1.0) if since >= 0.0 else clampf(sink, 0.0, 1.0)
+	if rise <= 0.0:
 		return
-	var rise := clampf(since / 0.12, 0.0, 1.0)
 	var burst: Texture2D = tex.ice_burst
 	var size := burst.get_size() * scale * Vector2(1.0, rise)
 	var shimmer := 0.85 + 0.15 * sin(float(state.t) * 18.0 + at.x)

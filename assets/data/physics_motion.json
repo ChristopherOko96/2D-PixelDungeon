@@ -22,7 +22,7 @@
     "every": 0.09
   },
   "push": {
-    "_note": "A monster's push velocity (px/s, set by blows, blasts and waves) is added to its movement and keeps decay of it per 60th of a second (MotionKit.step_body, so the same at any frame rate). Talent hits add their push (talent px/s, boss_talent for bosses) away from the blast that struck, divided by the body's mass (its radius over mass_ref_r, squared, within mass [min, max]); the summed push is at most max px/s (physics plan R23, decision D5).",
+    "_note": "A monster's push velocity (px/s, set by blows, blasts and waves) is added to its movement and keeps decay of it per 60th of a second (MotionKit.step_body, so the same at any frame rate). Talent hits add their push (talent px/s, boss_talent for bosses) away from the blast that struck, divided by the body's mass (its radius over the median radius of the world's monsters, squared, within mass [min, max]; mass_ref_r while there are none: hell_game.gd body_mass); the summed push is at most max px/s (physics plan R23, decision D5).",
     "decay": 0.86,
     "talent": 60,
     "boss_talent": 12,

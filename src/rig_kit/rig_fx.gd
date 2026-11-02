@@ -35,6 +35,11 @@ const BEAM_LIGHT_STEP := 40.0
 
 ## Square particles {x, y, vx, vy, life, max, color, grav}: drawn 2 px, fading.
 var particles: Array[Dictionary] = []
+## The world's particles (src/vfx/particles.gd) falling matter is handed to, where a story world set
+## them (physics plan R18): there the chips and dust of the rigs land, lie, sink in lava and meet
+## the walls; world_scale = world px per particle px. Weak: a freed world falls back to ours.
+static var world_ref: WeakRef = null
+static var world_scale := 1.0
 ## Summoning pools {x, y, r, life, max} on the floor.
 var pools: Array[Dictionary] = []
 ## Flashes {x, y, r, life, max, color, kind ("ring" or "")}: rings are drawn,
@@ -63,6 +68,8 @@ func reset() -> void:
 ## Moves particles (velocity, gravity "grav"), ages pools and flashes and drops
 ## the finished ones; above MAX_PARTICLES the oldest particles go.
 func step(delta: float) -> void:
+	var world: Object = world_ref.get_ref() if world_ref != null else null
+	if world != null: _hand_over(world)
 	for p: Dictionary in particles:
 		p.life = float(p.life) + delta
 		p.x = float(p.x) + float(p.vx) * delta
@@ -74,6 +81,19 @@ func step(delta: float) -> void:
 	pools = pools.filter(func(p: Dictionary) -> bool: return float(p.life) < float(p.max))
 	for f: Dictionary in flashes: f.life = float(f.life) + delta
 	flashes = flashes.filter(func(f: Dictionary) -> bool: return float(f.life) < float(f.max))
+
+
+## Fresh falling particles (gravity > 0) go to the world's particles: seen at their point, moving
+## along the floor by their x speed, thrown up by their upward speed; beams and sparks stay here.
+func _hand_over(world: Object) -> void:
+	var keep: Array[Dictionary] = []
+	var s := maxf(0.01, world_scale)
+	for p: Dictionary in particles:
+		if float(p.get("grav", 0.0)) > 0.0 and float(p.life) <= 0.0:
+			world.emit(Vector2(float(p.x), float(p.y)) / s, Vector2(float(p.vx), 0.0) / s, p.color, float(p.max) + 1.5, "debris", 2.0, 4.0, maxf(0.0, -float(p.vy)) / s, 1.0)
+		else:
+			keep.append(p)
+	particles = keep
 
 
 ## Adds one particle (see `particles` for its keys).

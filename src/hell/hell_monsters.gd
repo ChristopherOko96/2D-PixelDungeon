@@ -1702,6 +1702,12 @@ func _update_zones(dt: float) -> void:
 	lobs = lobs.filter(func(L: Dictionary) -> bool: return not L.done)
 	for c: Dictionary in corpses:
 		c.t += dt
+		# as it dissolves its matter crumbles to dust and ash that drift off (physics plan R24)
+		if float(c.t) >= 0.45 and float(c.t) - dt < 0.45 and g.get("feel") != null:
+			var P: RefCounted = g.feel.feedback.particles
+			var at := Vector2(c.p) / float(g.feel.scale)
+			P.dust_flat(at, 10.0, 8)
+			P.motes(at, 5, [Color("8a8078"), Color("5e5650"), Color("b0a69c")], 14.0, 6.0, 0.6)
 		# the body slides on with the blow, slowing, and stops at walls axis by axis
 		var v: Vector2 = c.get("v", Vector2.ZERO)
 		if v.length_squared() > 1.0:

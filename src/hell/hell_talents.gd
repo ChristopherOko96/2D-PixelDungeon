@@ -545,7 +545,7 @@ func _damage_enemy(m: Dictionary, damage: float, direction: Vector2 = Vector2.ZE
 		if not m.has("kit"):
 			var pcfg: Dictionary = (g.motion_kit().cfg.get("push", {}) as Dictionary) if g.has_method("motion_kit") else {}
 			var heavy: Array = pcfg.get("mass", [0.4, 4.0])
-			var mass := clampf(pow(float(m.get("r", 28.0)) / maxf(1.0, float(pcfg.get("mass_ref_r", 28.0))), 2.0), float(heavy[0]), float(heavy[1]))
+			var mass := float(g.body_mass(m)) if g.has_method("body_mass") else clampf(pow(float(m.get("r", 28.0)) / maxf(1.0, float(pcfg.get("mass_ref_r", 28.0))), 2.0), float(heavy[0]), float(heavy[1]))
 			var push := float(pcfg.get("boss_talent", 12.0)) if str(m.get("kind", "")) == "boss" else float(pcfg.get("talent", 60.0))
 			var now: Vector2 = m.get("k") if m.get("k") is Vector2 else Vector2.ZERO
 			m.k = (now + direction.normalized() * push / mass).limit_length(float(pcfg.get("max", 1000.0)))

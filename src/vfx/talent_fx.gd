@@ -1099,7 +1099,7 @@ func draw_events(canvas: CanvasItem, state: Dictionary, clock: float = -1.0) -> 
 				match kind:
 					"blink":
 						TalentPixels.burst(canvas, at + body, 7, p, element, art, id)
-						if talent == "fire_5": _phoenix(canvas, at, to, p, 1.0 - p)
+						if talent == "fire_5": _phoenix(canvas, at, to, p, 1.0 - p, id)
 						else: TalentPixels.burst(canvas, to + body, 9, p, element, art, id + 1)
 					"dash":
 						if talent == "beast_11": sprites.draw_at(canvas, "claw", to + body * 0.85, 0.0, 1.0, p, Color.WHITE, true, fade)
@@ -1867,15 +1867,23 @@ func _draw_guard(canvas: CanvasItem, guard: Dictionary) -> void:
 
 ## Phönixschritt: a bird of flame flies the way, a trail of embers behind it,
 ## fire bursting where it left and where it lands.
-func _phoenix(canvas: CanvasItem, at: Vector2, to: Vector2, p: float, fade: float) -> void:
+func _phoenix(canvas: CanvasItem, at: Vector2, to: Vector2, p: float, fade: float, id := 0) -> void:
 	var flight := minf(1.0, p * 1.3)
 	var bird := at.lerp(to, flight) - Vector2(0, 22)
 	var fire := Pal.ramp("fire")
-	for k in range(6):
-		var ember := at.lerp(to, maxf(0.0, flight - k * 0.06)) - Vector2(0, 22 - k * 2)
-		var q := PixelPaint.at(ember, art)
-		if PixelPaint.shown(q, fade * (1.0 - k / 6.0)):
-			PixelPaint.cell(canvas, q, fire[3] if k < 2 else fire[2], art)
+	if particles != null and flight < 1.0:
+		# real embers off the bird, per second, falling from its height (physics plan R17)
+		var hot := Pal.ramp_hot("fire")
+		var back := (at - to).normalized() if to != at else Vector2.ZERO
+		for k in range(_shed_count(910000 + id, 50.0)):
+			particles.emit((bird + back * 6.0) * to_particles, (back * randf_range(10.0, 40.0) + Vector2(randf_range(-12.0, 12.0), 0.0)) * to_particles,
+				hot[1 + k % 2], randf_range(0.4, 0.8), "ember", 2.0, 22.0 * to_particles, randf_range(4.0, 14.0), 2.0)
+	elif particles == null:
+		for k in range(6):
+			var ember := at.lerp(to, maxf(0.0, flight - k * 0.06)) - Vector2(0, 22 - k * 2)
+			var q := PixelPaint.at(ember, art)
+			if PixelPaint.shown(q, fade * (1.0 - k / 6.0)):
+				PixelPaint.cell(canvas, q, fire[3] if k < 2 else fire[2], art)
 	if flight < 1.0: sprites.draw_loop(canvas, "phoenix", bird, (to - at).angle(), 1.8, p * 2.0)
 	# ember wings where he left and where he lands
 	var span := int(cfg.get("fire", {}).get("phoenix", {}).get("wings", 9))
@@ -1967,10 +1975,21 @@ func _extra_event(canvas: CanvasItem, event: Dictionary, at: Vector2, p: float, 
 			var big := bool(event.get("big", false)) and sprites.has("meteor_big")
 			var fall := Vector2(150, -320) if big else Vector2(110, -260)
 			var rock := at + fall * (1.0 - p)
-			# embers streaming off the rock
-			for k in range(8):
-				var q := PixelPaint.at(rock + fall.normalized() * (8.0 + float(k) * 7.0) * art * 0.5 + Vector2(sin(float(k) * 2.0 + _clock * 9.0) * 2.0 * art, 0.0), art)
-				if PixelPaint.shown(q, 1.0 - float(k) / 8.0): PixelPaint.cell(canvas, q, fire[4] if k < 2 else (fire[3] if k < 5 else fire[2]), art)
+			# embers streaming off the rock: real embers shed per second where there are particles
+			# (physics plan R17), else painted
+			if particles != null:
+				var key := 900000 + id
+				var last: Vector2 = _shed_due.get(key, Vector2(_clock, 0.0))
+				var carry := last.y + clampf(_clock - last.x, 0.0, 0.1) * 40.0
+				var n := int(carry)
+				_shed_due[key] = Vector2(_clock, carry - float(n))
+				var hot := Pal.ramp_hot("fire")
+				for k in range(n):
+					particles.emit((rock + fall.normalized() * 10.0) * to_particles, fall.normalized().rotated(randf_range(-0.5, 0.5)) * randf_range(20.0, 60.0) * to_particles, hot[1 + k % 2], randf_range(0.4, 0.8), "ember", 2.0, 0.0, randf_range(10.0, 30.0), 2.0)
+			else:
+				for k in range(8):
+					var q := PixelPaint.at(rock + fall.normalized() * (8.0 + float(k) * 7.0) * art * 0.5 + Vector2(sin(float(k) * 2.0 + _clock * 9.0) * 2.0 * art, 0.0), art)
+					if PixelPaint.shown(q, 1.0 - float(k) / 8.0): PixelPaint.cell(canvas, q, fire[4] if k < 2 else (fire[3] if k < 5 else fire[2]), art)
 			if big: sprites.draw_loop(canvas, "meteor_big", rock, 0.0, 1.3, p * 2.0)
 			else: sprites.draw_loop(canvas, "meteor", rock, 0.0, 0.9, p * 2.0)
 		"spear":
@@ -2015,12 +2034,25 @@ func _extra_event(canvas: CanvasItem, event: Dictionary, at: Vector2, p: float, 
 			var to := Vector2(float(event.get("tx", at.x)), float(event.get("ty", at.y)))
 			var high := at - Vector2(0, 70)
 			var beast := Pal.ramp("beast")
-			for i in range(9):
-				var k := i / 8.0
-				var q := PixelPaint.at(high.lerp(to - Vector2(0, 10), k), art)
-				if PixelPaint.shown(q, fade * (0.2 + k * 0.7)):
-					PixelPaint.cell(canvas, q, beast[3], art)
-					PixelPaint.cell(canvas, q + Vector2i(-1, -1), beast[2], art)
+			if particles != null:
+				# real feathers in its wake that flutter down (flake: air drag, wind) and a puff where it
+				# strikes (physics plan R17)
+				var dive := clampf(p * 2.0, 0.0, 1.0)
+				var head := high.lerp(to - Vector2(0, 10), dive)
+				var n := _shed_count(930000 + id, 26.0) if dive < 1.0 else (0 if _puffed.has(id) else 7)
+				if dive >= 1.0: _puffed[id] = true
+				if _puffed.size() > 64: _puffed.clear()
+				for k in range(n):
+					var lift := maxf(0.0, to.y - head.y)
+					particles.emit(head * to_particles, Vector2(randf_range(-40.0, 40.0), randf_range(-30.0, 10.0)) * to_particles,
+						beast[2 + k % 2], randf_range(1.2, 2.2), "flake", 2.0, lift * to_particles, 0.0, float(_mode_drag("flake")))
+			else:
+				for i in range(9):
+					var k := i / 8.0
+					var q := PixelPaint.at(high.lerp(to - Vector2(0, 10), k), art)
+					if PixelPaint.shown(q, fade * (0.2 + k * 0.7)):
+						PixelPaint.cell(canvas, q, beast[3], art)
+						PixelPaint.cell(canvas, q + Vector2i(-1, -1), beast[2], art)
 			sprites.draw_at(canvas, "claw", to + Vector2(0, -12), 0.0, 1.0, p)
 		"dodge":
 			# Ausweichen: afterimages along the roll, dust where it starts
@@ -2245,6 +2277,22 @@ func _bits(entry: Dictionary) -> void:
 ## plan F30): a fire shot embers that tumble down and lie, a frost shot rime sparks that settle
 ## as frost, a void or soul shot motes; the shot's painted look keeps only its shape.
 var _shed_due: Dictionary = {}
+var _puffed: Dictionary = {}
+
+
+## How many pieces source `key` sheds this frame at `rate` per second (the fraction carried).
+func _shed_count(key: int, rate: float) -> int:
+	var last: Vector2 = _shed_due.get(key, Vector2(_clock, 0.0))
+	var carry := last.y + clampf(_clock - last.x, 0.0, 0.1) * rate
+	var n := int(carry)
+	_shed_due[key] = Vector2(_clock, carry - float(n))
+	if _shed_due.size() > 128: _shed_due.clear()
+	return n
+
+
+## The air drag of a particle mode (vfx_particles.json), for matter thrown in by hand.
+func _mode_drag(mode: String) -> float:
+	return float(particles._mode(mode).get("drag", 1.2)) if particles != null else 1.2
 
 
 func _shed_flight(bullet: Dictionary, at: Vector2, aim: Vector2, element: String, clock: float) -> void:
