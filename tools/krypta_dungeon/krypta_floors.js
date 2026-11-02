@@ -51,8 +51,9 @@
   const MIMIC_FIGHT = .6, MIMIC_TREASURE = .15;
   // the soul bowls are the crypt's blue fire bowls
   const BLUE_PROPS = ['brazier_bowl', 'brazier_blue', 'bowl_blue'];
-  // a touch lighter than the hell
-  const LIGHT = { dark: .86, vignette: .85 };
+  // a touch lighter than the hell, and a little lighter than it once was (dark .86, vignette .85):
+  // the hero's wider light (krypta_balance.json view.player_light) clears more round him, the edge stays dark
+  const LIGHT = { dark: .65, vignette: .7 };
   // difficulty per floor n (world_core difficultyFor): enemy hp x (1 + (n-1) hp_step), speed x (1 + (n-1) speed_step),
   // one extra enemy per fight room every extra_every floors. The crypt is the gentle entry world.
   const DIFF = { hp_step: .22, speed_step: .03, extra_every: 3 };

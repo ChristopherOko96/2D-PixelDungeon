@@ -108,7 +108,7 @@
  "view": {
   "width": 1800,
   "base_width": 1280,
-  "player_light": 460,
+  "player_light": 700,
   "max_lights": 48,
   "light_bands": 6
  },

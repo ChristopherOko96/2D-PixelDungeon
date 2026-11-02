@@ -407,8 +407,8 @@
  ],
  "theme_flag": "crypt",
  "light": {
-  "dark": 0.86,
-  "vignette": 0.85
+  "dark": 0.65,
+  "vignette": 0.7
  },
  "gate_banner": {
   "1": "blue",

@@ -376,7 +376,10 @@
   ]
  ],
  "theme_flag": null,
- "light": null,
+ "light": {
+  "dark": 0.75,
+  "vignette": 0.8
+ },
  "gate_banner": {
   "1": "blue",
   "2": "green",

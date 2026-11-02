@@ -55,7 +55,10 @@
   // difficulty per floor n (world_core difficultyFor): enemy hp x (1 + (n-1) hp_step), speed x (1 + (n-1) speed_step),
   // one extra enemy per fight room every extra_every floors. The hell is the steep last world.
   const DIFF = { hp_step: .38, speed_step: .05, extra_every: 3 };
+  // a little lighter than the floors' own dark and red rim (x these shares); the hero's wider light
+  // (hell_balance.json view.player_light) clears more round him, the edge stays dark
+  const LIGHT = { dark: .75, vignette: .8 };
   // the pack as plain data (the Godot port reads it from assets/data/hell_world.json, see export_world.js)
-  const PACK = { floors: FLOORS, circles: CIRCLES, names: NAMES, suffixes: SUFFIXES, words: WORDS, theme_flag: null, light: null, gate_banner: GATE_BANNER, blue: BLUE, blue_props: BLUE_PROPS, foot: FOOT, wall_set: WALL_SET, break_set: BREAK_SET, mimic_fight: MIMIC_FIGHT, mimic_treasure: MIMIC_TREASURE, diff: DIFF };
+  const PACK = { floors: FLOORS, circles: CIRCLES, names: NAMES, suffixes: SUFFIXES, words: WORDS, theme_flag: null, light: LIGHT, gate_banner: GATE_BANNER, blue: BLUE, blue_props: BLUE_PROPS, foot: FOOT, wall_set: WALL_SET, break_set: BREAK_SET, mimic_fight: MIMIC_FIGHT, mimic_treasure: MIMIC_TREASURE, diff: DIFF };
   return WorldPack.make(PACK);
 });
