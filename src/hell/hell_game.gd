@@ -315,6 +315,11 @@ var _vignette: GradientTexture2D
 
 
 ## One drawing layer of the world; the game draws into it by kind.
+## Named time totals for the story bench (scripts/bench_story.gd): two clock reads per part,
+## nothing in the game reads them.
+const PerfMarks = preload("res://src/debug/perf_marks.gd")
+
+
 class Layer extends Node2D:
 	var game: Node
 	var kind := ""
@@ -1102,8 +1107,23 @@ func _talent_points() -> Vector2i:
 	var hero_points: int = talents.free_points() if talents != null else 0
 	var run_points := 0
 	if heroic():
-		run_points = RunTree.points_left(CardKit.tree(self), CardKit.ranks(self), int(state.level))
+		run_points = _run_points_left()
 	return Vector2i(hero_points, run_points)
+
+
+## The run talent points still to spend; within one HUD drawing worked out once (draw_hud).
+var _hud_open := false
+var _hud_run_points := -1
+
+
+func _run_points_left() -> int:
+	var drawing := _hud_open
+	if drawing and _hud_run_points >= 0:
+		return _hud_run_points
+	var n: int = RunTree.points_left(CardKit.tree(self), CardKit.ranks(self), int(state.level))
+	if drawing:
+		_hud_run_points = n
+	return n
 
 
 ## K (or the pause's Talente) opens the talent window; B opens it on the LAUF tab.
@@ -2536,11 +2556,14 @@ func _process(delta: float) -> void:
 	actors.queue_redraw()
 	glow.queue_redraw()
 	# the darkness's lights and the bloom, after the actors (their glowing parts follow the drawn bodies)
+	PerfMarks.begin()
 	story_glow.frame()
+	PerfMarks.add("glow.frame")
 	hud.queue_redraw()
 
 
 func _update(dt: float) -> void:
+	PerfMarks.begin()
 	state.t += dt
 	story_hero.update(dt)
 	if story_items != null:
@@ -2588,12 +2611,16 @@ func _update(dt: float) -> void:
 			state.room = _room_of_type("start").index
 		return
 	swing.t = maxf(0.0, swing.t - dt)
+	PerfMarks.add("u.hero+items")
 	if talents != null: talents.update(dt)
+	PerfMarks.add("u.talents")
 	# the kits' direct sounds by who acts (src/hero/story_sound.gd): the hero's skills, relics and allies, the enemy moves
 	as_source("hero", _update_hero_kits.bind(dt))
 	as_source("moves", func() -> void: FrostCombat.update(self, dt))
+	PerfMarks.add("u.kits+moves")
 	_update_matter_blockers()
 	_wall_fire_matter()
+	PerfMarks.add("u.blockers+torches")
 	# the snowstorm's wind is the world's (D12, F58): screen px/s over the camera zoom are world
 	# px/s; light particles and the gas drift with it
 	if snowstorm != null and snowstorm.has_method("follow"): snowstorm.follow(camera.position, camera.zoom.x)
@@ -2603,18 +2630,22 @@ func _update(dt: float) -> void:
 		if gas != null and gas.get("gas_field") != null: gas.gas_field.wind = w
 	if feel != null:
 		feel.update(dt)
+	PerfMarks.add("u.feel")
 	if not (state.get("offer", []) as Array).is_empty():
 		state.offer_t = float(state.get("offer_t", 0.0)) + dt
 	_update_music()
 	_update_player(dt)
+	PerfMarks.add("u.player")
 	if state.dead > 0.0:
 		return
 	_update_clone(dt)
 	_update_shots(dt)
+	PerfMarks.add("u.shots")
 	# effect hook: Rage-thrown bodies that slam into a wall (story_hero.check_slam, here and in
 	# hell_monsters.gd) leave the crypt's wall slam instead of the relics' violet quake ring
 	var slams := _slams_before()
 	_update_mobs(dt)
+	PerfMarks.add("u.mobs")
 	# the Frostgruft's figures: what each one does now goes to its rig
 	if frost_rigs != null:
 		frost_rigs.frame(dt)
@@ -2626,16 +2657,20 @@ func _update(dt: float) -> void:
 		drake_rig.frame(mobs, monsters.corpses, dt)
 		_route_rig_events()
 	_slams_after(slams)
+	PerfMarks.add("u.rigs")
 	_update_zones(dt)
 	_update_hazards(dt)
 	if frost_snow != null:
 		frost_snow.update(dt)
 	gold_loot.update(dt)
 	_update_rooms()
+	PerfMarks.add("u.zones+world")
 	_update_embers(dt)
+	PerfMarks.add("u.embers+elements")
 	if wreck != null:
 		wreck.update(dt)
 	_update_camera(dt)
+	PerfMarks.add("u.wreck+camera")
 
 
 ## The hero's skills, relic and subclass per frame (their allies and timed blows).
@@ -3673,6 +3708,12 @@ func camera_kick(dir: Vector2, px: Variant = "hero_hit") -> void:
 ## Draws one layer: static chunks (back/front), live actors, or the monsters' attack
 ## shapes (the darkness and the bloom over it: src/hero/story_glow.gd).
 func draw_layer(l: Layer) -> void:
+	PerfMarks.begin()
+	_draw_layer_kind(l)
+	PerfMarks.add("d." + (l.kind if not l.kind in ["back", "front"] else "chunks"))
+
+
+func _draw_layer_kind(l: Layer) -> void:
 	match l.kind:
 		"back": _draw_back(l)
 		"front": _draw_front(l)
@@ -3936,6 +3977,7 @@ func _draw_actors(l: Layer) -> void:
 	_draw_wall_fires(l, view)
 	# the gold on the floor and in the air, under everyone standing
 	gold_loot.draw(l, view)
+	PerfMarks.add("da.under")
 	# footprints in the snow and skid marks on the ice, under everyone (src/hero/frost_snow.gd)
 	if frost_snow != null:
 		frost_snow.draw_ground(l, view)
@@ -4739,6 +4781,19 @@ func _draw_weapon(l: Layer, hero_size: Vector2) -> void:
 
 ## Draws the HUD into the screen-space control.
 func draw_hud(h: Control) -> void:
+	# what several panels read is worked out once in this drawing (talents hud_state, run points),
+	# only while it draws
+	_hud_open = true
+	_hud_run_points = -1
+	if talents != null:
+		talents.hud_begin()
+	_draw_hud(h)
+	_hud_open = false
+	if talents != null:
+		talents.hud_end()
+
+
+func _draw_hud(h: Control) -> void:
 	var size := h.size
 	var th: Dictionary = W.theme
 	if float(th.grade) > 0.0:
@@ -4851,7 +4906,7 @@ func _draw_hero_strip(h: Control) -> float:
 	var margin := HudStyle.size("margin")
 	var hero_rect := HudKit.hero_panel(h, FONT, Vector2(margin, margin), {"title": str(hero.get("name", class_id)).to_upper(),
 		"level_label": "LAUFSTUFE", "hp_unit": "LP", "fixed_rows": true,
-		"points": RunTree.points_left(CardKit.tree(self), CardKit.ranks(self), int(state.level)) if leveled else 0,
+		"points": _run_points_left() if leveled else 0,
 		"hp": int(state.hp), "hp_f": float(state.hp_f), "max_hp": int(state.max_hp), "hearts": hearts, "level": int(state.level) if leveled else -1,
 		"exp": float(state.exp) / need if leveled else -1.0, "resources": resources, "resource_alpha": res_alpha, "status": status,
 		"low": int(state.hp) <= 2 and int(state.hp) > 0, "clock": float(state.t)})

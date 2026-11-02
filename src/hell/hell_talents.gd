@@ -257,12 +257,36 @@ func _hold() -> void:
 	tc.hold(1, draw_held, alive and Input.is_physical_key_pressed(KEY_SHIFT), HeroKit.target(g), move)
 
 
-## The hero's talent state for the HUD (same shape as the crypt's snapshot).
+## While the HUD draws (hud_begin .. hud_end) its talent state is worked out once and read by
+## the skill bar, the resource line and the companion panel (they only read it).
+var _hud_open := false
+var _hud_state: Dictionary = {}
+
+
+## The HUD starts drawing (hell_game.gd draw_hud): hud_state() is worked out anew once.
+func hud_begin() -> void:
+	_hud_open = true
+	_hud_state = {}
+
+
+## The HUD has drawn: hud_state() is worked out on every call again.
+func hud_end() -> void:
+	_hud_open = false
+	_hud_state = {}
+
+
+## The hero's talent state for the HUD (same shape as the crypt's snapshot); within one HUD
+## drawing the same dictionary (read only).
 func hud_state() -> Dictionary:
+	var drawing := _hud_open
+	if drawing and not _hud_state.is_empty():
+		return _hud_state
 	var snapshot: Dictionary = tc.player_state(1)
 	# the Arkanes Gefüge belongs to the void path (Leere) only; every other hero gets no orb
 	if snapshot.has("gefuege") and not tc.feeds(1):
 		snapshot.erase("gefuege")
+	if drawing:
+		_hud_state = snapshot
 	return snapshot
 
 
