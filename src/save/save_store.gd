@@ -2,7 +2,9 @@ extends RefCounted
 ## Local save slots: three per mode ("krypta" = Story 1, "hell", "frost", "crypt" = the endless crypt run), each one file in
 ## user://saves/. A save holds the state at the start of a floor; loading starts
 ## that floor again. Files are written with store_var without objects, so a
-## save can only ever hold plain data.
+## save can only ever hold plain data. A save is written whole to a side file
+## (.tmp) and read back before it replaces the slot; the slot's previous save
+## stays beside it (.bak) and shows when the slot's own file is broken.
 
 const DIR := "user://saves/"
 const SLOTS := 3
@@ -34,18 +36,44 @@ func write(mode: String, slot: int, data: Dictionary) -> bool:
 	record.mode = mode
 	record.version = VERSION
 	record.saved_at = int(Time.get_unix_time_from_system())
-	var file := FileAccess.open(path(mode, slot), FileAccess.WRITE)
+	var final := ProjectSettings.globalize_path(path(mode, slot))
+	var temp := final + ".tmp"
+	# written whole to the side file first: a crash while writing leaves the slot as it was
+	var file := FileAccess.open(temp, FileAccess.WRITE)
 	if file == null:
 		return false
-	file.store_buffer(MAGIC.to_ascii_buffer())
-	file.store_var(record, false)
+	var ok := file.store_buffer(MAGIC.to_ascii_buffer()) and file.store_var(record, false)
 	file.close()
-	return true
+	# it must read back as this save before it takes the slot
+	if not ok or _load(temp, mode).is_empty():
+		DirAccess.remove_absolute(temp)
+		return false
+	# the slot's save so far becomes its backup, then the new one takes its place; if
+	# that last step fails, read() shows the backup
+	var backup := final + ".bak"
+	if FileAccess.file_exists(final):
+		if FileAccess.file_exists(backup):
+			DirAccess.remove_absolute(backup)
+		if DirAccess.rename_absolute(final, backup) != OK:
+			DirAccess.remove_absolute(temp)
+			return false
+	return DirAccess.rename_absolute(temp, final) == OK
 
 
-## The slot's data, or {} when it is empty, unreadable or from another mode.
+## The slot's previous save, kept beside it while a newer one holds the slot.
+func backup_path(mode: String, slot: int) -> String:
+	return path(mode, slot) + ".bak"
+
+
+## The slot's data, or {} when it is empty, unreadable or from another mode. A
+## broken slot file shows the slot's previous save (backup_path) instead.
 func read(mode: String, slot: int) -> Dictionary:
-	var p := path(mode, slot)
+	var data := _load(path(mode, slot), mode)
+	return data if not data.is_empty() else _load(backup_path(mode, slot), mode)
+
+
+## The save in file `p` if it is one of `mode`, else {}.
+func _load(p: String, mode: String) -> Dictionary:
 	if not FileAccess.file_exists(p):
 		return {}
 	var file := FileAccess.open(p, FileAccess.READ)
@@ -61,9 +89,14 @@ func read(mode: String, slot: int) -> Dictionary:
 	return value
 
 
+## Empties the slot: its save, its backup and any side file left over. True when
+## something was there and is gone.
 func erase(mode: String, slot: int) -> bool:
-	var p := path(mode, slot)
-	return FileAccess.file_exists(p) and DirAccess.remove_absolute(ProjectSettings.globalize_path(p)) == OK
+	var gone := false
+	for p: String in [path(mode, slot), backup_path(mode, slot), path(mode, slot) + ".tmp"]:
+		if FileAccess.file_exists(p) and DirAccess.remove_absolute(ProjectSettings.globalize_path(p)) == OK:
+			gone = true
+	return gone
 
 
 ## Deletes every slot of `mode` that holds the run `run_id` (a run ends: death or
@@ -75,6 +108,9 @@ func erase_run(mode: String, run_id: String) -> int:
 	for slot in range(1, SLOTS + 1):
 		if str(read(mode, slot).get("run_id", "")) == run_id and erase(mode, slot):
 			gone += 1
+		# the ended run's older save, left as the backup of another run's save, goes too
+		elif str(_load(backup_path(mode, slot), mode).get("run_id", "")) == run_id:
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(backup_path(mode, slot)))
 	return gone
 
 
