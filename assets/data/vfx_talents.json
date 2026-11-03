@@ -1,5 +1,25 @@
 {
 	"_note": "Weight of the talent effects on the view (src/vfx/talent_fx.gd take_feel), by importance: per tier the crypt's shake trauma (0..1, src/vfx/feedback.gd), the story worlds' shake in px (hell_game state.shake), a hold of the picture (hitstop, s) for the hero's own casts only, and a bloom flash in the element's colour (flash s, flash_r art cells). Events pick a tier; an ultimate's cast and its waves weigh most, each bought stage a bit more (stage_bonus). Client-side pools of the ultimates (pools): material, radius as a share of the hit radius (or art cells), length in s (0 = as long as the ultimate's buff). aura_glow: bloom strength of a lasting buff on the hero. Game feel review 2026-10-30 (production/qa/evidence/talent-vfx-review). The Elementsprache (docs/ZAUBER-SPRACHE.de.md, 2026-10-31): shots (flight language per tier, impact size, the tier of each shot talent, the feel tier of an impact), cast (the CAST beat: element pixels gathering at the hand), residue (what an element leaves on the floor after an impact or a zone's end: a pool material with its radius in art cells per shot tier [small, huge] or as a share of a zone's radius, and how long it lies [min, max] s; elements without a pool leave settled chips only) and traps (the pixel traps' sizes). Fire overhaul (user feedback 2026-10-31: the fire mage's attacks looked weak, no pixel animation, the Flammenmeer drawn as lines): the fire section below carries the Feuermagier's own language (a white-hot heart, an ember tail, the fat explosion in pushes, the Flammenmeer's tongues and smoke, the spear's shimmer and lava, the chain's burning, the meteor's crater, the phoenix's fire trail); shots.talent_feel and residue.talent_residue let a talent override its tier's feel and its element's residue material. Frost and void overhaul (2026-10-31): the frost and void sections carry the Frostmagier's and the Leerenmagier's languages (lance, shatter, blizzard, Frostsprung, Kristallschild, Gletschergrab; implosion, Leerenriss, Raumsprung, Echo, Manaschild, Singularitaet). Matter, not paint (review 2026-10-31, BEFUND.md 5/7/9/10): glow caps the bloom so it never washes out the pixels: a flash lasts at most flash_s s of its tier, reaches flash_r art cells at flash_alpha; an impact's light (boom, shatter, implode, impact = the rest) lives s seconds (about 2 frames) at r x its size and alpha; a shot glows shot.r x its tier glow cells at shot.alpha. talent_events: a talent's own feel tier for one of its events ('talent:kind'; the small mage talents). matter.rim: a ring's matter on its rim when its front gets there (front share of the event's span): one particle every 'every' art cells, at least min, at most max (max_heavy for an ultimate), fire sparks at fire_speed x their speed, shards at shard_speed px/s.",
+	"soul_motion": {
+		"_note": "31.10.2026: cosmetic rig spirits, rising field motes and bone-attached fragment tails. Counts bounded; cycle seconds; travel/spread native rig pixels; field rise/radius ratios. See docs/NEKROMANT-SEELENPARTIKEL.de.md. Host stun/cooldown unchanged.",
+		"grasp_turns": 0.55,
+		"field_playback": 0.7,
+		"aura_count": 24,
+		"aura_radius": 23,
+		"aura_height": 48,
+		"aura_cycle": 3.2,
+		"aura_opacity": 0.46,
+		"field_ghost_count": 5,
+		"field_ghost_cycle": 3.4,
+		"field_ghost_rise": 0.32,
+		"field_ghost_scale": 1.35,
+		"field_mote_count": 42,
+		"field_mote_cycle": 2.6,
+		"field_mote_rise": 0.42,
+		"fragment_cycle": 1.8,
+		"fragment_spread": 4.0,
+		"fragment_travel": 8.0
+	},
 	"tiers": {
 		"small": {
 			"trauma": 0.1,

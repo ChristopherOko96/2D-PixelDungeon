@@ -5,13 +5,14 @@ extends Control
 ## sets it there instead of an attack: pools, gas, ice, void, lightning, fire,
 ## a blast, stone, holy light, shadow); enemies and bosses fetched from a list;
 ## the hero's class (the room starts again with it); a whole specialisation
-## with every talent at full rank and its ultimate's stage; the debug cheats;
+## with a valid full-level build and its ultimate's stage; the debug cheats;
 ## and the live frame time (above the bar, also while F1 hides the bar).
 ## Presets: assets/data/debug_test_arena.json. It only calls the game's own
 ## moves and effects; the game decides what they do.
 
 const DATA := "res://assets/data/debug_test_arena.json"
 const TALENTS := "res://assets/data/talents.json"
+const TalentRules = preload("res://src/progress/talent_rules.gd")
 ## Where the bar and the frame line sit on the 1280 x 720 screen (under the
 ## map and its ESC line, above the inventory line).
 const BAR := Rect2(924, 240, 340, 428)
@@ -244,27 +245,37 @@ func _clear_enemies() -> void:
 	_note.text = "Alle Gegner und Boss-Felder entfernt."
 
 
-## Gives the hero the picked specialisation whole: every talent at full rank,
-## its actives on the bar, its ultimate at the picked stage, free casts.
+## A legal max-level preview with every talent learned, remaining points in
+## lower rows, and its ultimate retained. Never bypass host build validation.
 func apply_spec() -> void:
 	if _specs.is_empty() or not game.players.has(1):
 		return
 	var spec: Dictionary = _specs[clampi(_spec_pick.selected, 0, _specs.size() - 1)]
-	var talents: Dictionary = _load(TALENTS).get("talents", {})
+	var talent_data := _load(TALENTS)
+	var talents: Dictionary = talent_data.get("talents", {})
 	var ranks := {}
 	var bar: Array = []
 	var ultimate := ""
 	for id: String in spec.get("talents", []):
 		var talent: Dictionary = talents.get(id, {})
-		ranks[id] = int(talent.get("ranks", 3)) if str(talent.get("kind", "")) != "ultimate" else 1
+		ranks[id] = 1
 		if str(talent.get("kind", "")) == "active" and bar.size() < 4:
 			bar.append(id)
 		elif str(talent.get("kind", "")) == "ultimate":
 			ultimate = id
-	var build := {"class": _class_id(), "level": 30, "ranks": ranks, "ultimate": ultimate, "soul_tier": _stage_pick.selected,
+	var level := int(talent_data.max_level)
+	var remaining := maxi(0, TalentRules.points_total(talent_data, level) - ranks.size())
+	for id: String in spec.get("talents", []):
+		var extra := mini(remaining, int(talents[id].get("ranks", 1)) - 1)
+		ranks[id] = int(ranks[id]) + extra
+		remaining -= extra
+	if str(spec.get("id", "")) == "soul": bar = ["soul_1", "soul_3", "soul_7", "soul_11"]
+	if str(spec.get("id", "")) == "minion": bar = ["minion_1", "minion_9", "minion_5", "minion_7"]
+	if str(spec.get("id", "")) == "curse": bar = ["curse_1", "curse_3", "curse_7", "curse_9"]
+	var build := {"class": _class_id(), "level": level, "ranks": ranks, "ultimate": ultimate, "soul_tier": _stage_pick.selected,
 		"bar": bar, "companion": "wolf", "free": true, "difficulty": str(game.progress.profile.get("difficulty", "normal")), "nightmare_firsts": []}
 	game.talent_combat.set_build(1, build)
-	_note.text = "%s: alle Talente, Ultimate Stufe %d." % [str(spec.get("name", "")), _stage_pick.selected + 1]
+	_note.text = "%s: gültiger Level-%d-Build, Ultimate Stufe %d." % [str(spec.get("name", "")), level, _stage_pick.selected + 1]
 
 
 func _process(delta: float) -> void:

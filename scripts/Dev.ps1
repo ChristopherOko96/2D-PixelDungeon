@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('Doctor', 'Open', 'Run', 'Host', 'Join', 'Check', 'Tests', 'DungeonEditor', 'AnimationStudio', 'HellDungeon')]
+    [ValidateSet('Doctor', 'Open', 'Run', 'Host', 'Join', 'Check', 'Tests', 'DungeonEditor', 'AnimationStudio', 'HellDungeon', 'NecroLab', 'ForestLab')]
     [string]$Action = 'Doctor',
     [string]$GodotPath,
     [ValidatePattern('^[A-Za-z0-9_.:\-\[\]]+$')]
@@ -375,6 +375,16 @@ switch ($Action) {
     'HellDungeon' {
         $arguments = @('--path', $repositoryRoot, '--windowed', 'res://src/hell/hell_dungeon.tscn')
         # Single-player hell floors, also used by Hell-Dungeon.cmd.
+        Start-Process -FilePath $editorPath -ArgumentList (ConvertTo-ProcessArguments $arguments) `
+            -WorkingDirectory $repositoryRoot -WindowStyle Normal | Out-Null
+    }
+    'NecroLab' {
+        $arguments = @('--path', $repositoryRoot, '--windowed', '--script', 'res://scripts/run_necro_lab.gd')
+        Start-Process -FilePath $editorPath -ArgumentList (ConvertTo-ProcessArguments $arguments) `
+            -WorkingDirectory $repositoryRoot -WindowStyle Normal | Out-Null
+    }
+    'ForestLab' {
+        $arguments = @('--path', $repositoryRoot, '--windowed', '--script', 'res://scripts/run_forest_lab.gd')
         Start-Process -FilePath $editorPath -ArgumentList (ConvertTo-ProcessArguments $arguments) `
             -WorkingDirectory $repositoryRoot -WindowStyle Normal | Out-Null
     }

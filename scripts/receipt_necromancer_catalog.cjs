@@ -1,0 +1,9 @@
+const fs=require('fs'),path=require('path'),crypto=require('crypto');
+const root=path.resolve(__dirname,'..'),folder=path.join(root,'production/qa/evidence/necromancer-catalog');
+fs.copyFileSync(path.join(root,'Logs/necro-blood/20261101-220258-a6a51651/summary.json'),path.join(folder,'network-summary.json'));
+const files=['assets/data/talents.json','assets/data/necromancer_rules.json','assets/data/curse_spirit_rig.json','assets/data/necro_spell_rigs.json','src/combat/necromancer_branches.gd','src/combat/talent_combat.gd','src/combat/soul_projectiles.gd','src/rig/curse_spirit_rig.gd','src/rig/necro_spell_rig.gd','src/vfx/necro_art.gd','src/vfx/talent_fx.gd','src/vfx/companion_rigs.gd','src/session_protocol.gd','scripts/capture_necromancer_catalog.gd','scripts/import_curse_spirit_rig.gd','scripts/encode_necromancer_catalog.cjs','scripts/build_necromancer_artifact.cjs','tests/curse_rework_test.gd','tests/curse_spirit_rig_test.gd','tests/necro_branches_story_test.gd','tests/necro_blood_network_peer.gd','output/necromancer-catalog/catalog.webm','output/necromancer-catalog/video-timing.json','output/necromancer-catalog/browser-review.json','output/necromancer-catalog/nekromant-angriffe.template.html','production/qa/evidence/necromancer-catalog/catalog.json'];
+for(const file of fs.readdirSync(path.join(root,'assets/vfx/curse_spirit/rig')).filter(f=>f.endsWith('.png')))files.push('assets/vfx/curse_spirit/rig/'+file);
+files.push('scripts/necro_catalog_stills.cjs','scripts/check_necromancer_artifact.cjs');
+const hashes=files.map(file=>({file,sha256:crypto.createHash('sha256').update(fs.readFileSync(path.join(root,file))).digest('hex')}));
+fs.writeFileSync(path.join(folder,'source-hashes.json'),JSON.stringify({scope:'Controlled native game recordings and focused tests, not a played campaign or LAN/FPS acceptance.',files:hashes},null,2));
+console.log('NECRO_RECEIPT files='+hashes.length);

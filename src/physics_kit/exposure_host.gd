@@ -107,6 +107,16 @@ func exempt(_actor: Variant, _material: String) -> bool:
 	return false
 
 
+## Pool-specific ownership protection; ordinary wards remain shared by default.
+func pool_exempt(actor: Variant, material: String) -> bool:
+	return exempt(actor,material)
+
+
+## Gas protection is independent: friendly liquid never hides a hostile cloud.
+func gas_exempt(actor: Variant, material: String) -> bool:
+	return exempt(actor,material)
+
+
 ## True when nothing of `what` (a pool style, a gas material or a condition
 ## kind) hurts the actor or puts its condition on, though its footing still
 ## acts (a drunk potion's after-effect).

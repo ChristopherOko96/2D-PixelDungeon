@@ -27,6 +27,8 @@ var _rng := RandomNumberGenerator.new()
 ## The floor cells of the current room (FxSprites.walkable_cells), for the pools' shapes.
 var _walk: Dictionary = {}
 var _walk_of: Dictionary = {}
+var _walk_bounds := Rect2()
+var _walk_walls: Dictionary = {}
 
 
 func bind(owner: Node, path: String = DATA_PATH) -> void:
@@ -731,6 +733,11 @@ func _pool_tick(zone: Dictionary, delta: float) -> void:
 			wait = 1.0
 			for enemy: Dictionary in game.enemies.duplicate():
 				if float(enemy.hp) <= 0 or not _in_pool(zone, Vector2(enemy.pos), float(enemy.radius)): continue
+				# Necromancer fields retain real biological poison beside their separate
+				# magical decay. Existing undead/poison immunity and party safety remain.
+				if zone.has("necro_owner") and str(zone.style) == "poison" and not ElementRules.immune(game.elements.enemy_tags(enemy), rule):
+					if rule.has("enemy_hurt"): game._damage_enemy(enemy, float(rule.enemy_hurt), Vector2.ZERO, int(zone.hostile), true, false)
+					if float(enemy.hp) > 0: game.elements._status_enemy(enemy, rule, int(zone.hostile))
 				game._damage_enemy(enemy, float(zone.hero_dps), Vector2.ZERO, int(zone.hostile), true, false)
 				if not str(zone.get("status", "")).is_empty(): game.perk_combat._status(enemy, str(zone.status), float(zone.hero_dps), 2.0, int(zone.hostile))
 		zone.hero_tick = wait
@@ -777,6 +784,14 @@ func _open_floor(point: Vector2) -> bool:
 	if not is_same(layout, _walk_of):
 		_walk_of = layout
 		_walk = FxSprites.walkable_cells(layout)
+		_walk_bounds=Rect2()
+		_walk_walls.clear()
+		var area: Array = layout.get("play_bounds",[])
+		if area.size()==4: _walk_bounds=Rect2(float(area[0]),float(area[1]),float(area[2]),float(area[3]))
+		_walk_walls=FxSprites.wall_rects_by_cell(layout)
+	if _walk_bounds.has_area() and not _walk_bounds.has_point(point): return false
+	for wall: Rect2 in _walk_walls.get(Vector2i((point/32).floor()),[]):
+		if wall.has_point(point): return false
 	return _walk.is_empty() or _walk.has(Vector2i(floori(point.x / 32.0), floori(point.y / 32.0)))
 
 

@@ -58,6 +58,55 @@ var _gulp := 0.0
 var _mote_acc := 0.0
 ## Gas cloud keys a hero's void already counted into his Gefüge (each cloud once).
 var _eaten_gas := {}
+var owned_puddles: Array = []
+var _pool_serial := 0
+
+## A new floor/run discards the fallback's authoritative media as monster.reset does.
+func reset() -> void:
+	owned_puddles.clear()
+	_eaten_gas.clear()
+	var layer: RefCounted = g._pool_layer()
+	if layer != null: layer.sync([], float(g.state.get("t", 0)), "story_media")
+
+## Frost has no monster-zone runtime; real media share the ordinary zone schema.
+func media() -> Array:
+	return g.monsters.zones if g.monsters != null else owned_puddles
+
+## Creates real material with existing pool rendering and reactions in every theme.
+func add_pool(spec: Dictionary) -> void:
+	if g.monsters != null:
+		g.monsters._zone(spec)
+		return
+	_pool_serial += 1
+	var z := {"id": _pool_serial, "t": 0.0, "tele": 0.0, "done": false, "kind": "puddle", "dmg": 0}
+	z.merge(spec, true)
+	owned_puddles.append(z)
+
+## Own friendly liquid is safe; an overlapping hostile pool still takes precedence.
+func safe_medium(at: Vector2, material: String) -> bool:
+	var friendly := false
+	for z: Dictionary in media():
+		if str(z.get("kind", "")) != "puddle" or float(z.t) >= float(z.T) or ElementRules.material(str(z.get("st", ""))) != ElementRules.material(material) or Vector2(z.p).distance_to(at) > float(z.r): continue
+		if not bool(z.get("friend", false)): return false
+		friendly = true
+	return friendly
+
+## Friendly talent clouds never hide a hostile cloud of the same material.
+func safe_gas(at: Vector2, mat: String) -> bool:
+	if g.gas == null: return false
+	var friendly := false
+	for cloud: Dictionary in g.gas.clouds_of(mat, float(g.state.t)):
+		if Vector2(cloud.at).distance_to(at) > float(cloud.r): continue
+		if not str(cloud.key).begins_with("fx:necro:"): return false
+		friendly = true
+	return friendly
+
+func _burst(at: Vector2, count: int, element: String) -> void:
+	if g.monsters != null: g.monsters._burst_in(at, count, element)
+	elif g.has_method("_burst"): g._burst(at, count, true)
+
+func _impact(at: Vector2, size: String) -> void:
+	if g.monsters != null: g.monsters._impact(at, size)
 
 
 func _init(game: Node) -> void:
@@ -67,6 +116,14 @@ func _init(game: Node) -> void:
 ## The reaction values (the world's balance "element" over element_rules.json).
 func rules() -> Dictionary:
 	return ElementRules.reactions(g.balance.get("element", {}))
+
+
+## Shared talent gas hook; existing gas renderer/physics owns the cloud.
+func add_gas(mat: String, at: Vector2, radius: float, time: float, _owner := 0) -> Dictionary:
+	if g.gas == null: return {}
+	_steam_serial += 1
+	g.gas.emit("necro:%d" % _steam_serial, mat, at, radius, time, float(g.state.t))
+	return {"mat": mat, "pos": at, "radius": radius}
 
 
 ## An attack of `element` landing at `at` reaching `r` (world px): fire and
@@ -235,8 +292,8 @@ func frost_at(at: Vector2, r: float, owner := 0) -> void:
 			froze = true
 			if g.sound != null: g.sound.at("react_freeze", Vector2(z.p))
 			# the water snaps shut: a crack of ice, rime thrown up, a short jolt
-			g.monsters._burst_in(z.p - Vector2(0, 8), 14, "frost")
-			g.monsters._impact(z.p, "small")
+			_burst(z.p - Vector2(0, 8), 14, "frost")
+			_impact(z.p, "small")
 			_reacted("freeze", Vector2(z.p), float(z.r), owner)
 	# steam in the frost condenses: it falls as water where the cloud hung
 	var gas: RefCounted = g.get("gas")
@@ -245,7 +302,7 @@ func frost_at(at: Vector2, r: float, owner := 0) -> void:
 		for c: Dictionary in gas.clouds_of("steam", float(g.state.t)):
 			if Vector2(c.at).distance_to(at) <= float(c.r) + r:
 				gas.end_cloud(str(c.key), float(g.state.t))
-				g.monsters._zone({"kind": "puddle", "p": c.at, "r": float(c.r) * float(R.get("rain_scale", 0.7)), "T": 8.0, "dmg": 0, "m": {"id": "regen", "def": {"name": "Regen"}, "boss": false}, "st": "water"})
+				add_pool({"kind": "puddle", "p": c.at, "r": float(c.r) * float(R.get("rain_scale", 0.7)), "T": 8.0, "dmg": 0, "m": {"id": "regen", "def": {"name": "Regen"}, "boss": false}, "st": "water"})
 				_react_matter("rain", Vector2(c.at), float(c.r))
 				_reacted("rain", Vector2(c.at), float(c.r), owner)
 	if froze:
@@ -276,8 +333,15 @@ func update(dt: float) -> void:
 	# void's pull on the gas works there, the puddle zones are the hell monsters'
 	_void_swallows(dt)
 	if g.monsters == null:
-		return
-	for z: Dictionary in g.monsters.zones:
+		for z: Dictionary in owned_puddles: z.t = float(z.t) + dt
+		owned_puddles = owned_puddles.filter(func(z: Dictionary) -> bool: return float(z.t) < float(z.T))
+		var entries: Array = []
+		for z: Dictionary in owned_puddles:
+			entries.append({"id": int(z.id), "k": "pool", "st": str(z.get("st", "blood")), "x": z.p.x, "y": z.p.y, "r": float(z.r), "p": float(z.t) / maxf(0.01, float(z.T)), "L": float(z.T)})
+		var layer: RefCounted = g._pool_layer()
+		if layer != null: layer.sync(entries, float(g.state.t), "story_media")
+	# Frost uses owned_puddles; Hell uses the existing monster-zone lifetime loop.
+	for z: Dictionary in media():
 		if str(z.kind) == "puddle" and float(z.get("crust", 0.0)) > 0.0:
 			z.crust = float(z.crust) - dt
 		# Glatteis melts by itself (decision D4): ice_time s, three times faster on lava
@@ -309,8 +373,13 @@ func void_at(at: Vector2, r: float, owner := 0) -> Dictionary:
 	var drain := float(S.get("time", 0.7))
 	var ate := {}
 	var hit := false
+	if g.monsters == null:
+		for z: Dictionary in _puddles(at, reach):
+			if str(z.get("st", "")) == "void" or (owner > 0 and int(z.get("fed_by", 0)) == owner): continue
+			z.T = minf(float(z.T), float(z.t) + drain)
+			_eat(ate, z, str(z.get("st", "")), float(z.r), owner)
 	if g.monsters != null:
-		for z: Dictionary in g.monsters.zones:
+		for z: Dictionary in media():
 			if str(z.kind) != "puddle" or float(z.t) >= float(z.T): continue
 			var mat := ElementRules.material(str(z.get("st", "lava")))
 			if mat == "void" or Vector2(z.p).distance_to(at) > reach + float(z.r): continue
@@ -346,7 +415,7 @@ func _void_swallows(dt: float) -> void:
 	var S: Dictionary = ElementRules.data().get("swallow", {})
 	if S.is_empty():
 		return
-	var zones: Array = g.monsters.zones if g.monsters != null else []
+	var zones: Array = media()
 	var mouths: Array = []
 	for z: Dictionary in zones:
 		if str(z.kind) == "puddle" and float(z.t) < float(z.T) and ElementRules.material(str(z.get("st", "lava"))) == "void":
@@ -383,6 +452,7 @@ func _void_swallows(dt: float) -> void:
 				z.T = float(z.t) + drain
 			fed = true
 			_eat(ate, z, "ice" if bool(z.get("frozen", false)) else mat, float(z.r), owner)
+			if g.monsters == null: continue
 			_mote_acc += motes * dt
 			var cols: Array = g.monsters.PX_COL.get("frost" if mat == "ice" else mat, g.monsters.PX_COL.void)
 			while _mote_acc >= 1.0:
@@ -460,7 +530,7 @@ func _floor_meets_puddles() -> void:
 	var icy := mat == "ice"
 	if not hot and not icy:
 		return
-	for z: Dictionary in g.monsters.zones.duplicate():
+	for z: Dictionary in media().duplicate():
 		if str(z.kind) != "puddle" or float(z.t) >= float(z.T):
 			continue
 		if g._cell(int(floor(float(z.p.x) / g.C)), int(floor(float(z.p.y) / g.C))) != 2:
@@ -485,9 +555,7 @@ func _floor_meets_puddles() -> void:
 ## True when the lava at `at` is crusted over (harmless): a crusted lava
 ## puddle lies there.
 func crusted(at: Vector2) -> bool:
-	if g.monsters == null:
-		return false
-	for z: Dictionary in g.monsters.zones:
+	for z: Dictionary in media():
 		if str(z.kind) == "puddle" and float(z.get("crust", 0.0)) > 0.0 and ElementRules.material(str(z.get("st", "lava"))) == "lava" and at.distance_to(z.p) <= float(z.r) * 1.3:
 			return true
 	return false
@@ -541,7 +609,7 @@ func _boil(z: Dictionary, owner := 0) -> void:
 		_steam_serial += 1
 		gas.emit("steam:%d" % _steam_serial, "steam", z.p, float(z.r) * float(R.get("steam_scale", 1.3)), float(R.get("steam_time", 5.0)), float(g.state.t))
 	_react_matter("steam", Vector2(z.p), float(z.r))
-	if g.monsters != null: g.monsters._impact(z.p, "small")
+	_impact(z.p, "small")
 	_reacted("steam", Vector2(z.p), float(z.r) * float(R.get("steam_scale", 1.3)), owner)
 
 
@@ -550,7 +618,7 @@ func _lava_meets_water() -> void:
 	var R := rules()
 	var lavas: Array = []
 	var waters: Array = []
-	for z: Dictionary in g.monsters.zones:
+	for z: Dictionary in media():
 		if str(z.kind) != "puddle" or float(z.t) >= float(z.T):
 			continue
 		match ElementRules.material(str(z.get("st", "lava"))):
@@ -574,9 +642,7 @@ func _lava_meets_water() -> void:
 ## The live puddle zones a circle at `at` of `r` reaches.
 func _puddles(at: Vector2, r: float) -> Array:
 	var out: Array = []
-	if g.monsters == null:
-		return out
-	for z: Dictionary in g.monsters.zones:
+	for z: Dictionary in media():
 		if str(z.kind) == "puddle" and float(z.t) < float(z.T) and at.distance_to(z.p) <= float(z.r) + r:
 			out.append(z)
 	return out
@@ -618,8 +684,6 @@ func _charge_rules(spec: Dictionary) -> Dictionary:
 ## monsters for his reward). Returns how many puddles it charged.
 func lightning_at(at: Vector2, r: float, spec: Dictionary = {}) -> int:
 	if g.sound != null: g.sound.at("react_charge", at)
-	if g.monsters == null:
-		return 0
 	var C := _charge_rules(spec)
 	var conducts: Array = C.conducts
 	var owner := int(spec.get("owner", 0))
@@ -650,7 +714,7 @@ func lightning_at(at: Vector2, r: float, spec: Dictionary = {}) -> int:
 ## (bosses boss_share), sparks jumping off it (m.zap_t: when it was struck);
 ## the hero is spared. Frost on the water ends the charge.
 func _step_charges(dt: float) -> void:
-	for z: Dictionary in g.monsters.zones:
+	for z: Dictionary in media():
 		if str(z.kind) != "puddle" or float(z.get("charge", 0.0)) <= 0.0:
 			continue
 		if float(z.t) >= float(z.T) or bool(z.get("frozen", false)):
@@ -759,7 +823,7 @@ func wave_at(at: Vector2, r: float, spec: Dictionary = {}) -> int:
 			m.k = (off / d if d > 1.0 else Vector2.RIGHT) * float(spec.get("push", 520.0)) * fall * (share if boss else 1.0)
 		n += 1
 	if g.monsters != null:
-		g.monsters._impact(at, "small")
+		_impact(at, "small")
 	return n
 
 
@@ -774,7 +838,7 @@ func quake_at(at: Vector2, r: float, spec: Dictionary = {}) -> int:
 	if g.monsters != null:
 		g.monsters._crack_floor(at, r * 0.6, int(spec.get("cracks", 6)), true)
 		g.monsters._pixel_burst(at, debris, g.monsters.CHUNK_COL, float(spec.get("debris_speed", 90.0)), float(spec.get("debris_up", 230.0)), 1.1, 2)
-		g.monsters._impact(at, "large")
+		_impact(at, "large")
 	var P := _particles()
 	if P != null:
 		var s := _pscale()

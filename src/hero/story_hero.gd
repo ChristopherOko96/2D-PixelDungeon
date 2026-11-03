@@ -1,4 +1,5 @@
 extends RefCounted
+const CutoutMotion=preload("res://src/rig/cutout_motion.gd")
 ## The crypt's polished heroes in the story worlds (src/hell/hell_game.gd:
 ## Hell-Dungeon and Frostgruft). Shares the crypt's look and feel:
 ## - the hero and its weapon through hero_look.gd (lean into swings, crescent,
@@ -275,7 +276,7 @@ func update(dt: float) -> void:
 		var v: Vector2 = s.v
 		bullets.append({"id": int(s.look_id), "x": (s.p as Vector2).x / scale, "y": (s.p as Vector2).y / scale, "vx": v.x, "vy": v.y, "owner": 1,
 			"style": SHOT_STYLES[str(s.kind)], "critical": float(s.get("big", 1.0)) > 1.5 or bool(s.get("counter", false))})
-	_snapshot = {"bullets": bullets, "players": {1: {"glow": str(g.state.get("glow", ""))}}}
+	_snapshot = {"bullets": bullets, "players": {1: {"glow": str(g.state.get("glow", "")), "class_id": str(g.class_id)}}}
 	attack.observe(_snapshot, float(g.state.t))
 	skill_fx.update(dt, float(g.state.t))
 	_step_matter(dt)
@@ -311,6 +312,9 @@ func handles_hold(id: String) -> bool:
 func view_state() -> Dictionary:
 	var weapon: Dictionary = g.weapon
 	var skills := {}
+	if g.talents!=null:
+		var charge: Dictionary=g.talents.tc.player_state(1).get("charge",{})
+		if str(charge.get("talent",""))=="sniper_14": skills.charge=float(charge.power)
 	if rage_on(): skills.rage = float(g.state.rage)
 	for f: Dictionary in g.fx:
 		if str(f.get("kind", "")) == "whirl" and Vector2(f.p).distance_to(Vector2(g.player.x, g.player.y - 40)) < 120.0: skills.whirl_time = float(f.t)
@@ -320,7 +324,7 @@ func view_state() -> Dictionary:
 		skills.charge = clampf(float(g.hold.get("t", 0.0)) / maxf(0.1, charge_time), 0.0, 1.0)
 	return {"class_id": str(g.class_id), "melee": str(weapon.get("type", "")) == "melee", "reach": float(weapon.get("reach", 120.0)),
 		"swings": swings, "swing_angle": float(g.swing.a), "swing_arc": float(weapon.get("arc", 2.0)), "swing_dir": swing_dir,
-		"shots": shots, "shot_interval": float(g.state.rate), "skills": skills}
+		"shots": shots, "shot_interval": float(g.state.rate), "skills": skills, "leap": g.talents.tc.SoulLeap.snapshot(g.talents.tc.runtime(1)) if g.talents != null else {}}
 
 
 ## Draws the hero through the shared look. `draw_body(feet, alpha)` draws the
@@ -329,6 +333,7 @@ func view_state() -> Dictionary:
 ## as the crypt's part rig; a changed figure (the ogre form) keeps `draw_body`.
 func draw_hero(canvas: CanvasItem, t: float, lift: float, draw_body: Callable, hero_look: Dictionary = {}) -> void:
 	var view := view_state()
+	look.observe_fireball(KEY, 1, g.talents.tc.events if g.talents != null else [], t, float(g.state.get("hp", 0)) > 0.0)
 	var rig := rig_name(hero_look)
 	_rig_shown = not rig.is_empty()
 	# the weapon in the figure's hand: its rig's held weapon item (src/rig_kit/rig_held.gd),
@@ -342,6 +347,7 @@ func draw_hero(canvas: CanvasItem, t: float, lift: float, draw_body: Callable, h
 		var pace := maxf(60.0, (g.player.get("vel", Vector2.ZERO) as Vector2).length())
 		# the element goes with the view: the rig draws the mage's parts in its colours
 		var body_view := {"moving": bool(g.player.get("moving", false)), "hp": float(g.state.get("hp", 1)), "hurts": hurts, "step_time": 32.0 * scale / pace, "element": element}
+		body_view.leap = view.get("leap", {})
 		# the world's rim round the hero (theme "outline": the Frostgruft's dark rim on the snow)
 		if Color.html_is_valid(str(outline.hero)):
 			body_view.outline = Color(Color.html(str(outline.hero)), float(outline.alpha))
@@ -352,9 +358,17 @@ func draw_hero(canvas: CanvasItem, t: float, lift: float, draw_body: Callable, h
 		draw_body = func(feet: Vector2, alpha: float) -> void:
 			var key := KEY if alpha >= 1.0 else "ghost"
 			rigs.draw_hero(canvas, key, body_view, feet - up, rig, facing, tint.a * alpha, size, Color(tint.r, tint.g, tint.b), weapon_host if alpha >= 1.0 and held else null)
+	elif hero_look.get("frames") is Dictionary:
+		var frames: Array=hero_look.frames.get("idle",[])
+		if not frames.is_empty():
+			var bind: Texture2D=frames[0]
+			var size:=float(g.theme.get("hero_scale",3))*float(hero_look.get("scale",1))
+			var tint: Color=hero_look.get("tint",Color.WHITE)
+			draw_body=func(feet:Vector2,alpha:float)->void:
+				CutoutMotion.draw(canvas,CutoutMotion.actor(bind,"hero_form",feet,size,face(t),t,view,Color(tint,tint.a*alpha)))
 	var feet := Vector2(g.player.x, g.player.y)
 	var chest := feet - Vector2(0, lift)
-	var aim: Vector2 = g.HeroKit._aim(g)
+	var aim: Vector2 = look.casting_aim(KEY, g.HeroKit._aim(g), t)
 	var fallen := float(g.state.get("hp", 1)) <= 0.0
 	var armed: bool = g.weapon_tex != null and not g.relic_on()
 	var glow := AttackFx.tint_for({"style": "arrow"}, {"glow": str(g.state.get("glow", ""))})
@@ -470,7 +484,7 @@ func rig_name(hero_look: Dictionary) -> String:
 
 ## The way the hero faces: the aim, or turning with a whirling blade.
 func face(t: float) -> float:
-	return look.face(view_state(), g.HeroKit._aim(g), t)
+	return look.face(view_state(), look.casting_aim(KEY, g.HeroKit._aim(g), t), t)
 
 
 func draw_layer(canvas: CanvasItem, glow: bool) -> void:

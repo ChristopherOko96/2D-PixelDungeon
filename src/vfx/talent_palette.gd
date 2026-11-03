@@ -11,6 +11,7 @@ extends RefCounted
 ## The dark outline under every effect (the 0x72 ink).
 const INK := Color("1a1414")
 const RAMPS := {
+	"soul": [Color("20172f"), Color("29384e"), Color("326d79"), Color("70bdb9"), Color("c5ede3")],
 	"fire": [Color("5a1a0a"), Color("b8321a"), Color("ff7a2a"), Color("ffc24a"), Color("ffe9a0")],
 	"ice": [Color("1e3a52"), Color("2a5a7a"), Color("4fa0c8"), Color("8fd8e6"), Color("e8fbff")],
 	# the void: the void pool's colours (assets/data/vfx_pools.json materials.void)
@@ -27,8 +28,6 @@ const RAMPS := {
 	"bone": [Color("3a3328"), Color("6a5e4c"), Color("b8aa90"), Color("e6dcc4"), Color("fff8ec")],
 	# dark red-violet curse
 	"curse": [Color("2a0a22"), Color("4a1440"), Color("7a2a6a"), Color("b04a9a"), Color("e68ad0")],
-	# pale blue-violet soul
-	"soul": [Color("1e1e3e"), Color("3a3a74"), Color("6a6ab8"), Color("9a9ee6"), Color("dcdcff")],
 	# water (the wet residue; vfx_pools.json materials.water)
 	"water": [Color("173a5e"), Color("2a6a9e"), Color("4fa0c8"), Color("8fd8e6"), Color("e8fbff")],
 }

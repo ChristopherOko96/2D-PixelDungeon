@@ -1,7 +1,6 @@
 extends SceneTree
 ## The user's third wish list (30.10.2026): every class defends on Shift
-## (talents.json "defense": the archer rolls away, mage, warrior and
-## necromancer hold up a block that lasts two hits, then breaks), companions
+## (talents.json "defense": all four classes now share a cooldown dash), companions
 ## go for what their hero attacks or what attacks it and stay in the fight,
 ## the fire mage's Pyro-Monster, the skill bar's description cards, and keys
 ## 5 and 6 no longer firing keys 1-4 and R in the crypt.
@@ -30,7 +29,7 @@ func _initialize() -> void:
 func _run() -> void:
 	await _start()
 	test_archer_rolls_away_and_is_untouchable()
-	test_block_lasts_two_hits_then_breaks_and_mends()
+	test_mage_dash_uses_charge_then_recharges()
 	test_every_class_has_a_defense_on_shift()
 	test_companion_attacks_what_its_hero_attacks_and_stays()
 	test_companion_answers_an_enemy_going_for_its_hero()
@@ -102,7 +101,7 @@ func test_archer_rolls_away_and_is_untouchable() -> void:
 	# Assert
 	check(Vector2(game.players[1].pos).distance_to(start) > 60.0, "Ausweichen rolls the archer about 3 m")
 	check(tc.incoming(1, 10, Vector2.ZERO) == 0, "during the roll a hit misses")
-	check(int(rt.defense.left) == 1, "a roll uses one of two charges")
+	check(int(rt.defense.left) == 0, "the standard dash spends its single charge")
 	tc.hold(1, false, false, Vector2.INF, Vector2.RIGHT)
 	tc.hold(1, false, true, Vector2.INF, Vector2.RIGHT)
 	tc.hold(1, false, false, Vector2.INF, Vector2.RIGHT)
@@ -115,36 +114,44 @@ func test_archer_rolls_away_and_is_untouchable() -> void:
 	check(int(rt.defense.left) >= 1, "a charge comes back after 4 s")
 
 
-func test_block_lasts_two_hits_then_breaks_and_mends() -> void:
+func test_mage_dash_uses_charge_then_recharges() -> void:
 	# Arrange
 	var rt := _hero("mage")
 	# Act / Assert
 	tc.hold(1, false, true, Vector2.INF, Vector2.ZERO)
-	check(bool(rt.defense.up), "holding Shift raises the magic block")
-	check(tc.incoming(1, 10, Vector2.ZERO) == 0 and int(rt.defense.left) == 1, "the first hit is stopped, one is left")
-	check(tc.incoming(1, 10, Vector2.ZERO) == 0 and float(rt.defense.broken) > 0.0, "the second hit is stopped and breaks the block")
-	tc.hold(1, false, true, Vector2.INF, Vector2.ZERO)
-	check(tc.incoming(1, 10, Vector2.ZERO) > 0, "a broken block stops nothing, however long Shift is held")
+	check(not bool(rt.defense.up) and int(rt.defense.left)==0, "Shift now spends mage dash charge")
+	check(tc.incoming(1,10,Vector2.ZERO)==0,"short dash immunity")
+	_tick(0.4)
+	check(tc.incoming(1,10,Vector2.ZERO)>0,"immunity ends rather than acting as held block")
 	tc.hold(1, false, false, Vector2.INF, Vector2.ZERO)
-	_tick(8.2)
-	check(int(rt.defense.left) == 2, "after 8 s the block is whole again")
-	tc.hold(1, false, true, Vector2.INF, Vector2.ZERO)
-	tc.incoming(1, 10, Vector2.ZERO)
-	tc.hold(1, false, false, Vector2.INF, Vector2.ZERO)
-	_tick(3.2)
-	check(int(rt.defense.left) == 2, "lowered, a used block regains a hit after 3 s")
+	_tick(4.2)
+	check(int(rt.defense.left)==1,"mage dash returns after four seconds")
 
 
 func test_every_class_has_a_defense_on_shift() -> void:
 	for class_id: String in d.resources:
 		var rt := _hero(class_id)
+		game.current_layout={"tile_size":32,"world_size":[1408,704],"play_bounds":[0,0,1408,704],"obstacles":[]}
 		check(not Dictionary(rt.get("defense", {})).is_empty(), "%s has a defense on Shift" % class_id)
 		check(not Dictionary(tc.player_state(1).get("defense", {})).is_empty(), "%s: the HUD shows it" % class_id)
+		var start: Vector2=game.players[1].pos
+		tc.handle_input(1,game.players[1],{"skills":1<<tc.DEFEND_BIT,"move":Vector2.RIGHT})
+		check(Vector2(game.players[1].pos).distance_to(start)>60 and int(rt.defense.left)==0,"%s Shift input actually moves and spends its only dash"%class_id)
+		var end: Vector2=game.players[1].pos
+		tc.handle_input(1,game.players[1],{"skills":1<<tc.DEFEND_BIT,"move":Vector2.RIGHT})
+		check(Vector2(game.players[1].pos)==end,"%s holding Shift never repeats dash"%class_id)
+		tc.handle_input(1,game.players[1],{"skills":0})
+		_tick(4.1)
+		game.current_layout.obstacles=[[int(end.x)+40,0,32,704]]
+		tc.handle_input(1,game.players[1],{"skills":1<<tc.DEFEND_BIT,"move":Vector2.RIGHT})
+		check(Vector2(game.players[1].pos).x<end.x+40,"%s recharged dash respects a wall"%class_id)
+	game.current_layout.obstacles=[]
 
 
 func test_companion_attacks_what_its_hero_attacks_and_stays() -> void:
 	# Arrange: a wolf, an enemy the hero shoots far across the room
 	_hero("archer", {"beast_1": 1}, "wolf")
+	game.current_layout = {"tile_size":32,"world_size":[1408,704],"play_bounds":[0,0,1408,704],"obstacles":[]}
 	var near := _foe(Vector2(330, 240))
 	near.aggro = false
 	var prey := _foe(Vector2(420, 250))
@@ -173,7 +180,7 @@ func test_companion_answers_an_enemy_going_for_its_hero() -> void:
 	# Act
 	_tick(0.1)
 	# Assert
-	check(int(tc.permanent_pet(1).target) == int(attacker.id), "an enemy going for the hero is the companion's target")
+	check(int(tc.permanent_pet(1).target) == int(idle.id), "an idle nearby enemy is immediately acquired")
 
 
 func test_pyro_monster_fights_for_the_fire_mage() -> void:

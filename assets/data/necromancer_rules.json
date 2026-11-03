@@ -1,0 +1,95 @@
+{
+ "schema_version": 7,
+ "blood": {
+  "capacity": 100,
+  "pool_units": 25,
+  "units_per_second": 14,
+  "absorb_radius_m": 0.35,
+  "form_time": 20,
+  "form_rise": 1.1,
+  "form_damage": 1.75,
+  "form_hp": 1.5,
+  "form_cleave_m": 1.8,
+  "min_activation": 50,
+  "seek_radius_m": 7,
+  "form_before_pull_s": 0.65,
+  "pull_radius_m": 3
+ },
+ "corpses": {
+  "time": 8,
+  "max_per_owner": 6,
+  "blood_radius_m": 1.35,
+  "blood_time": 10,
+  "fallback_damage": 0.5
+ },
+ "curse": {
+  "small_pool_radius_m": 0.85,
+  "small_pool_time": 4,
+  "small_pool_max": 3,
+  "drain_cap_hp_pct": 2,
+  "decay_tick": 0.5,
+  "propagate_max": 3,
+  "propagate_radius_m": 3,
+  "harvest_pool_max": 3,
+  "harvest_bonus_per_pool": 0.2,
+  "harvest_bonus_per_mark": 0.5,
+  "harvest_bonus_cap": 1.25,
+  "ritual_pool_bonus": 0.15,
+  "pact_range_m": 8,
+  "beam": {
+   "time": 3,
+   "every": 0.25,
+   "initial_share": 0.35,
+   "reach_m": 7,
+   "break_slack_m": 0.5,
+   "width_m": 0.28,
+   "max_targets": 4
+  },
+  "runners": {
+   "max_per_owner": 6,
+   "time": 8,
+   "hp": 6,
+   "speed": 1.25,
+   "contact_m": 0.85,
+   "fuse_s": 0.35,
+   "damage": 0.8,
+   "radius_m": 2
+  },
+  "flight": {
+   "max_per_owner": 8,
+   "range_m": 5,
+   "speed": 280,
+   "time": 2.5,
+   "damage": 0.35,
+   "mark_time": 4,
+   "mark_pct": 10
+  },
+  "ultimate_monster": {
+   "time": 12,
+   "hp": 40,
+   "damage": 0.9,
+   "every": 1.4,
+   "cleave_m": 2,
+   "speed": 0.9,
+   "art_scale": 1.5,
+   "brood": {
+    "time": 8,
+    "hp": 12,
+    "damage": 0.4,
+    "every": 1.1,
+    "speed": 1.2,
+    "art_scale": 0.5,
+    "max_per_owner": 3
+   },
+   "on_hit_curse": {
+    "time": 6,
+    "pct": 15
+   }
+  }
+ },
+ "blood_mark": {
+  "pool_radius_m": 2.5,
+  "pool_time": 12,
+  "max_pools_per_owner": 6
+ }
+}

@@ -537,6 +537,10 @@ func draw_enemy(canvas: CanvasItem, enemy: Dictionary, point: Vector2) -> float:
 	var a := _actor(_key(enemy), enemy)
 	a.rig = rig_name
 	a.moving = bool(enemy.get("moving", false))
+	a.blood_morph = float(enemy.get("blood_morph", 0.0))
+	a.curse_command = str(enemy.get("curse_command",""))
+	a.curse_left = float(enemy.get("curse_left",0))
+	a.bone_whirl = enemy.get("bone_whirl",{})
 	a.flying = bool(enemy.get("flying", false))
 	a.tint = _color_of(enemy.get("tint", Color.WHITE))
 	a.alpha_mul = float(enemy.get("alpha", 1.0))
@@ -599,6 +603,7 @@ func draw_hero(canvas: CanvasItem, key: String, player: Dictionary, point: Vecto
 	a.alpha_mul = alpha
 	a.size_mul = size
 	a.tint = tint
+	a.soul_leap = player.get("leap", player.get("talents", {}).get("leap", {}))
 	a.held = held
 	# the element skin (src/hero/element_skin.gd): the mage's parts in his main spec's colours;
 	# the story worlds give the element with the player, the crypt's comes from its talents
@@ -705,6 +710,9 @@ func _attack_mapping(rig: Dictionary, kind: String) -> Array:
 	if not registered.is_empty() and (registered.attacks as Callable).is_valid():
 		var mapped: Variant = registered.attacks.call(rig, kind)
 		if mapped is Array and (mapped as Array).size() >= 3: return mapped
+	if str(rig.family)=="skeleton":
+		if kind=="bone_stomp": return ["stomp",0.45,0.6]
+		if kind=="bone_whirl": return ["bonecast",0.35,0.5]
 	var spec: Variant = family_value(str(rig.family), "attacks", {})
 	var attacks: Dictionary = spec if spec is Dictionary else {}
 	var variants: Variant = attacks.get("variants", {})
@@ -1187,6 +1195,23 @@ func _hold(rig: Dictionary, a: Dictionary, host: RigHeldHost, feet: Vector2, fac
 
 func _draw_rig(canvas: CanvasItem, a: Dictionary, rig: Dictionary, point: Vector2, face: float, flash: float, with_items: bool, shadow_alpha: float) -> float:
 	var pose: Dictionary = _pose(rig, a)
+	var leap: Dictionary = a.get("soul_leap", {})
+	var shadow_drop := 0.0
+	if not leap.is_empty():
+		var p := clampf(float(leap.age) / float(leap.duration), 0.0, 1.0)
+		var tuck := sin(p * PI)
+		RigPoses.P(pose, "robe").rot += tuck * 0.2
+		RigPoses.P(pose, "robe").sx *= 1.0 + tuck * 0.1
+		RigPoses.P(pose, "robe").sy *= 1.0 - tuck * 0.12
+		RigPoses.P(pose, "hood").rot -= tuck * 0.12
+		RigPoses.P(pose, "hood").dy -= tuck
+		RigPoses.P(pose, "torso").rot += tuck * 0.12
+		RigPoses.P(pose, "head").rot -= tuck * 0.09
+		RigPoses.P(pose, "arm_l").rot -= tuck * 0.5
+		RigPoses.P(pose, "arm_r").rot += tuck * 0.45
+		RigPoses.P(pose, "leg_l").rot += tuck * 0.65
+		RigPoses.P(pose, "leg_r").rot -= tuck * 0.55
+		shadow_drop = preload("res://src/combat/soul_leap.gd").lift(leap)
 	var S: float = _actor_scale(rig, a)
 	var feet := point + Vector2(0, (float(rig.ground.y) - float(rig.center.y)) * S)
 	a.feet = feet
@@ -1206,7 +1231,7 @@ func _draw_rig(canvas: CanvasItem, a: Dictionary, rig: Dictionary, point: Vector
 		# A flying dragon's shadow shrinks below it (rig_families.json "flight_shadow").
 		var lift: Variant = family_value(family, "flight_shadow", null)
 		if lift is Array and (lift as Array).size() >= 2: shadow *= 1.0 - clampf(-float(pose.whole.dy) / float(lift[0]), 0.0, float(lift[1]))
-		_rect(canvas, Rect2(feet.x - shadow * 0.5, feet.y - S, shadow, 3.0 * S), Color(SHADOW, SHADOW.a * shadow_alpha), "shadow", "")
+		_rect(canvas, Rect2(feet.x - shadow * 0.5, feet.y - S + shadow_drop, shadow, 3.0 * S), Color(SHADOW, SHADOW.a * shadow_alpha), "shadow", "")
 	var layers: Array = []
 	for part: Dictionary in rig.parts:
 		if not world.has(part.id): continue
@@ -1612,7 +1637,13 @@ func _draw_bow_string(canvas: CanvasItem, pose: Dictionary) -> void:
 		canvas.draw_line(middle + Vector2(11, 1), middle + Vector2(13, 0), Color("eee0b9"), 0.5)
 
 
-func _solve(rig: Dictionary, a: Dictionary, pose: Dictionary, feet: Vector2, face: float, with_items: bool) -> Dictionary:
+## Shared hierarchy solver for local effect rigs. They have no severable game
+## parts and use continuous flight coordinates; ordinary actors keep snapping.
+func solve_pose(rig: Dictionary, pose: Dictionary, feet: Vector2, face: float, world_scale: float) -> Dictionary:
+	return _solve(rig, {"lost": {}, "size_mul": world_scale / _scale(rig)}, pose, feet, face, false, false)
+
+
+func _solve(rig: Dictionary, a: Dictionary, pose: Dictionary, feet: Vector2, face: float, with_items: bool, snap_origin: bool = true) -> Dictionary:
 	var S: float = _actor_scale(rig, a)
 	var whole: Dictionary = pose.whole
 	var ground: Vector2 = rig.ground
@@ -1621,7 +1652,7 @@ func _solve(rig: Dictionary, a: Dictionary, pose: Dictionary, feet: Vector2, fac
 	# axis, 1 -> -1 -> 1, mirrored about the feet.
 	var turn := float(whole.get("turn", 1.0))
 	var base := _t(feet + Vector2(float(whole.dx) * face * S, float(whole.dy) * S)) * _s(Vector2(face * turn * S, S)) * _t(-ground) * _tumble(rig, a) * _t(pivot) * Transform2D(float(whole.rot), Vector2.ZERO) * _s(Vector2(float(whole.sx), float(whole.sy))) * _t(-pivot)
-	base.origin = base.origin.round()
+	if snap_origin: base.origin = base.origin.round()
 	var world: Dictionary = {"base": base}
 	for part: Dictionary in rig.parts: _part_world(rig, a, pose, world, part.id)
 	if with_items:
@@ -1644,6 +1675,9 @@ func _part_world(rig: Dictionary, a: Dictionary, pose: Dictionary, world: Dictio
 	var parent_world: Transform2D = _part_world(rig, a, pose, world, parent) if not parent.is_empty() and rig.by_id.has(parent) and not a.lost.has(parent) else world.base
 	var pivot: Vector2 = part.pivot
 	var local := _t(pivot + Vector2(float(p.dx), float(p.dy))) * Transform2D(float(p.rot), Vector2.ZERO) * _s(Vector2(float(p.get("sx", 1.0)), float(p.get("sy", 1.0)))) * _t(-pivot)
+	# Continuous VFX skinning may need shear to meet two moving endpoints exactly.
+	# It is still solved through this parent hierarchy; ordinary actor poses keep TRS.
+	if p.get("local_transform") is Transform2D: local = p.local_transform
 	world[id] = parent_world * local
 	return world[id]
 

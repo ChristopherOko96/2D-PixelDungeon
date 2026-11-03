@@ -95,17 +95,27 @@ static func pet_panel(canvas: CanvasItem, font: Font, origin: Vector2, width: fl
 	var top := rect.position.y + floorf((rect.size.y - (small + 4.0 + bar_h)) * 0.5)
 	var baseline := top + small
 	var bar := Rect2(Vector2(x, top + small + 4.0), Vector2(column_w, bar_h))
-	HudStyle.text(canvas, font, Vector2(x, baseline), name, small, HudStyle.color("text") if alive else HudStyle.color("text_muted"))
+	if pet.has("blood"):
+		bar.size.y = maxf(3.0, bar.size.y - 5.0)
+		var blood_bar := Rect2(Vector2(x, bar.end.y + 2.0), Vector2(column_w, 3.0))
+		canvas.draw_rect(blood_bar, HudStyle.color("track"))
+		canvas.draw_rect(Rect2(blood_bar.position, Vector2(column_w * clampf(float(pet.blood) / 100.0, 0, 1), 3.0)), Color("e65c63"))
+	var blood_number := "%d%%" % roundi(float(pet.get("blood", 0))) if pet.has("blood") else ""
+	var name_room := column_w - (HudStyle.width(font, blood_number, small) + 8.0 if not blood_number.is_empty() else 0.0)
+	HudStyle.text(canvas, font, Vector2(x, baseline), ellipsis(font, name, small, name_room), small, HudStyle.color("text") if alive else HudStyle.color("text_muted"))
+	if not blood_number.is_empty(): HudStyle.text(canvas, font, Vector2(right, baseline), blood_number, small, Color("f4917a"), 2)
 	if alive:
 		var hp_max := maxf(1.0, float(pet.get("hp_max", 1.0)))
 		var hp := clampf(float(pet.get("hp", 0.0)), 0.0, hp_max)
 		var share := hp / hp_max
 		# the fill: green while hale, red when the share runs low
 		var tint := HudStyle.color("ok").lerp(HudStyle.color("danger"), clampf((0.7 - share) / 0.45, 0.0, 1.0))
+		if bool(pet.get("duration", false)): tint = Color("83d1ca")
 		life_bar(canvas, bar, hp, ceili(hp_max), "pet:" + kind, clock, false, tint)
 		# the numbers only where they fit beside the name (the crypt's strip is narrow)
 		var numbers := "%d / %d" % [ceili(hp - 0.001) if hp > 0.0 else 0, ceili(hp_max)]
-		if HudStyle.width(font, name, small) + HudStyle.width(font, numbers, small) + 12.0 <= column_w:
+		if bool(pet.get("duration", false)): numbers = "%d s" % ceili(hp)
+		if not pet.has("blood") and HudStyle.width(font, name, small) + HudStyle.width(font, numbers, small) + 12.0 <= column_w:
 			HudStyle.text(canvas, font, Vector2(right, baseline), numbers, small, HudStyle.color("text_dim"), 2)
 	else:
 		# fallen: no bar, the countdown in its place
@@ -187,6 +197,9 @@ static func _pet_ability(canvas: CanvasItem, font: Font, slot: Rect2, ability: D
 ## path for the kind or the file is missing.
 static func _portrait(kind: String) -> Dictionary:
 	if _portraits.has(kind): return _portraits[kind]
+	if kind == "soul_guardian":
+		_portraits[kind] = {"texture": load("res://assets/vfx/soul_guardian/rig/bind.png"), "region": Rect2(43, 7, 22, 23)}
+		return _portraits[kind]
 	var entry: Dictionary = {}
 	var path := str(HudStyle.table("pet_portraits").get(kind, ""))
 	if not path.is_empty() and ResourceLoader.exists(path):

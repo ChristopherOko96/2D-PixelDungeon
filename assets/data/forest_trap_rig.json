@@ -1,0 +1,5 @@
+{
+ "_note":"Existing 0x72 arrow cutout, used as eight articulated wood/metal jaws, drawn by the shared parent-joint solver. No new source art.",
+ "images":{"tooth":"res://assets/sprites/0x72/weapon_arrow.png"},
+ "rigs":{"forest_tooth":{"img":"tooth","family":"forest_trap","ground":[8,8],"width":16,"parts":[{"id":"tooth","rects":[[0,0,31,31]],"pivot":[8,8],"parent":null,"z":1,"hp":1}],"items":[]}}
+}

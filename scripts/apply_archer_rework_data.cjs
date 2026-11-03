@@ -1,0 +1,11 @@
+const fs=require('fs');
+const p='assets/data/talents.json',d=JSON.parse(fs.readFileSync(p,'utf8'));
+Object.assign(d.talents.sniper_5,{name:'Jägermal',type:'marksman',radius_m:8,pct:[40,60,80],text:'Markiert alle sichtbaren Gegner in 8 m für 8/10/12 s. Dein nächster Pfeil gegen jedes markierte Ziel verursacht einmalig +40/60/80 % Schaden und verbraucht sein Mal. Begleiter und Schaden über Zeit verbrauchen es nicht.'});
+Object.assign(d.talents.sniper_14,{text:'R halten: Himmelsspeer bis 1,5 s aufladen, loslassen: durchbohrt alle sichtbaren Ziele auf einer 14-m-Linie. 350 bis 700 % Schaden, garantiert kritisch. Normale Gegner werden mitgerissen und 1 bis 2 s angepinnt. Bosse erhalten nur Schaden. 50 Ausdauer plus bis zu 25 fürs Laden.',charge:{time:1.5,extra_cost:25,damage_mult:2,radius:10},pin:{push_m:4,push_time:0.25,time_min:1,time:2}});
+for(const [id,radius,spread,trigger] of [['trapper_3',2,2,1.2],['trapper_5',4,2.4,1.3],['trapper_9',3,2.2,1.2]]) Object.assign(d.talents[id],{radius_m:radius,visual_spread:spread,trigger_m:trigger,charges:3,arm_s:0.5});
+d.talents.trapper_3.text='Große Dornenfalle: 90/110/130 % Schaden in 2 m, Fessel 1/1,5/2 s. Drei Ladungen, eine lädt in 12 s nach. Höchstens sechs Fallen; nach 0,5 s scharf.';
+d.talents.trapper_5.text='Große Explosionsfalle: 140/165/190 % Schaden in 4 m. Drei Ladungen, eine lädt in 18 s nach. Höchstens sechs Fallen; nach 0,5 s scharf.';
+d.talents.trapper_9.text='Große Netzfalle: 30 % Schaden in 3 m, Fessel 2/2,5/3 s. Drei Ladungen, eine lädt in 14 s nach. Höchstens sechs Fallen; nach 0,5 s scharf.';
+d.trap_limits={trapper:6};
+for(const cls of Object.keys(d.defense)) d.defense[cls]={type:'dodge',name:'Ausweichschritt',icon:'dash',charges:1,recharge:4,dist_m:3,iframes:0.25,text:'Shift: 3 m in Laufrichtung ausweichen, 0,25 s unverwundbar. Eine Ladung, 4 s Abklingzeit. Wände stoppen den Dash.'};
+fs.writeFileSync(p,JSON.stringify(d,null,1)+'\n');

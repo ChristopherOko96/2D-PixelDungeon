@@ -270,6 +270,12 @@ func _recolor(image: Image, mapping: Dictionary) -> void:
 func _build_rig(name: String, def: Dictionary, images: Dictionary, art: Dictionary) -> Dictionary:
 	var source := _source(str(def.img), images, art)
 	if source == null: return {}
+	return cutout_frame(name,source,def,images,art)
+
+
+## Native atlas frames use the same masks, pivots and hierarchy as file-backed rigs.
+## The caller caches the result; no image work belongs in the per-frame pose solver.
+func cutout_frame(name: String, source: Image, def: Dictionary, images: Dictionary = {}, art: Dictionary = {}) -> Dictionary:
 	if def.get("recolor") is Dictionary: _recolor(source, def.recolor)
 	var w := source.get_width()
 	var h := source.get_height()

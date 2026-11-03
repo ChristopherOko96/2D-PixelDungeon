@@ -1,0 +1,114 @@
+[
+  {
+    "path": "assets/data/talents.json",
+    "sha256": "2038A1B198E1192DB7B9D2FA90A83697BF6988E6DB37DC18262BBF917563DB4E"
+  },
+  {
+    "path": "assets/data/necromancer_rules.json",
+    "sha256": "2E77F401DFAAAFCE9A32DE0F16C40B3A1A38F2D3A4AECF42A161547B5B52B29B"
+  },
+  {
+    "path": "assets/data/companion_rigs.json",
+    "sha256": "BFC06AACD3EBE376E5603651FED01B714DB5A85B3722CBC2B490A66B9A47EBE0"
+  },
+  {
+    "path": "assets/data/krypta_boss_rigs.json",
+    "sha256": "77C140C9A7B480F32A8C25A3BB32C03B567201B42FF6087C14EDE69F6B28C3F4"
+  },
+  {
+    "path": "src/combat/necromancer_branches.gd",
+    "sha256": "33CC7EA039A4A290ADD5993DC34882AA19DE842E9C0D30AAAB2D464B091E7B1B"
+  },
+  {
+    "path": "src/combat/talent_combat.gd",
+    "sha256": "B1E3EEF8246B6F225902978D95C5FFF71B90BBBE712E99BD608194491F9AE2FF"
+  },
+  {
+    "path": "src/combat/boss_moves.gd",
+    "sha256": "540201281BB4DC374CB87AAAED63F3571177A87A934EF369F56DCFB2C265B3D8"
+  },
+  {
+    "path": "src/game.gd",
+    "sha256": "3769315B4A4773583B06B9899933B4B0694EB9958E491789950813E05CEB1AF0"
+  },
+  {
+    "path": "src/session_protocol.gd",
+    "sha256": "1C1116E3379ED8C771B34F87C33D2B1445BBAE2E15F9EDA3211072C05BF15D8E"
+  },
+  {
+    "path": "src/hell/hell_game.gd",
+    "sha256": "44CAA5899F3A0621A1100A6371ADFD0CE5F3E52329109F44FF907DD8662079DD"
+  },
+  {
+    "path": "src/hell/hell_talents.gd",
+    "sha256": "26A9E0F7EC40FDA80E754A5857B1085BAD990FBAD5C971E21F6F1148BCAA4D92"
+  },
+  {
+    "path": "src/hell/story_elements.gd",
+    "sha256": "E1B598CDD35AAE126F671EF4EA7E6BF96702D6C5EE25E9C4A8BB8CA21CBA2590"
+  },
+  {
+    "path": "src/debug/test_arena.gd",
+    "sha256": "85695B23EE6C1CEBAE81025873F16265339C846E16527704A5F608105A1F1A0C"
+  },
+  {
+    "path": "src/debug/story_testraum.gd",
+    "sha256": "20DE1550D00A1B92CA425C4FE2E0E5CE26A904AAECDBDFA34758DE26EBF47E99"
+  },
+  {
+    "path": "src/rig/rig_poses.gd",
+    "sha256": "D5FF441E4EE0F5CF50B59E36DD527EFF24E323CDB1809E1EEB6579404DBFE48B"
+  },
+  {
+    "path": "src/rig/rig_renderer.gd",
+    "sha256": "4D3C18353EAEC79FF676A6204D85F5A0E44BEEEA48311D21A2E559FCC300E523"
+  },
+  {
+    "path": "src/vfx/necro_art.gd",
+    "sha256": "9DFD8D569B8475D0013235297057ED58AE6C6905F5CE69ADEFDD6AA5D8F1D66F"
+  },
+  {
+    "path": "src/vfx/talent_fx.gd",
+    "sha256": "4E128025CDFA8F68FDBACD9D69DB9A9AAC42A90B11473560A35BD8CB1F50BCC0"
+  },
+  {
+    "path": "src/vfx/companion_rigs.gd",
+    "sha256": "AC8730A6B128A3E15F00DE6737619CE13EA8A4A6EF50F84A8BB2A0B901481426"
+  },
+  {
+    "path": "src/vfx/pool_paint.gd",
+    "sha256": "3E02022208AD60D5092F54707BDAC9D9C2E06339EE7FE4EEE6F692524EF448CB"
+  },
+  {
+    "path": "src/ui/hud_kit.gd",
+    "sha256": "BA5576BC86D50104A884E4FCB5B8CAB5DCF8424C9AA305254F171F37774AFF35"
+  },
+  {
+    "path": "scripts/capture_necro_branches.gd",
+    "sha256": "8A422BD02186D17F9F169ED148B399BD1EBB66847B53D81C14CD2943BB1640C7"
+  },
+  {
+    "path": "tests/necro_blood_curse_test.gd",
+    "sha256": "9D2F53B68613119287BB296AC8205A515599785E0B6782F3BD3872C0AD23DA56"
+  },
+  {
+    "path": "tests/necro_branches_story_test.gd",
+    "sha256": "B6B9894B5850A9FD9E7B014470D501281F51AA9F636DF49EBBB1A1F112272F5F"
+  },
+  {
+    "path": "tests/necro_blood_network_peer.gd",
+    "sha256": "423BE3BF204E07A4F7D4E81373DB662080F39FAF4F6F5D8DBEEE7E83C81D569C"
+  },
+  {
+    "path": "tests/necro_blood_network_smoke.ps1",
+    "sha256": "08598B89ABB9521D47B5C2996C2B254DE7F097AB5EE0A72DCDC48B82389A2F5E"
+  },
+  {
+    "path": "tests/pool_consumption_overlap_test.gd",
+    "sha256": "8251871A677706894BB885B61C91D0D607E5C265E97FFFB8B29524AFEBF676D3"
+  },
+  {
+    "path": "tests/talent_combat_test.gd",
+    "sha256": "71C3541B392BB8C78FF2C4E7147C09A152F1C58D801B3F2B475854B487E70C38"
+  }
+]

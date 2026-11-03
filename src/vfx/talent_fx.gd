@@ -1,4 +1,7 @@
 extends RefCounted
+const NecroArt = preload("res://src/vfx/necro_art.gd")
+const ForestTrapRig = preload("res://src/rig/forest_trap_rig.gd")
+const MarksmanArt=preload("res://src/vfx/marksman_art.gd")
 ## Client art of the talents (snapshot "talents", src/combat/talent_combat.gd)
 ## on the art grid of the world it is drawn in (`art` world px per art pixel:
 ## the crypt 2, the story worlds 3): zones as physics pools with gas or flames
@@ -100,8 +103,16 @@ const TalentUlts = preload("res://src/vfx/talent_ults.gd")
 const TalentDome = preload("res://src/vfx/talent_dome.gd")
 const PoolPaint = preload("res://src/vfx/pool_paint.gd")
 const CompanionRigs = preload("res://src/vfx/companion_rigs.gd")
+const CutoutMotion = preload("res://src/rig/cutout_motion.gd")
+const MageFireball = preload("res://src/vfx/mage_fireball.gd")
+const SoulField = preload("res://src/vfx/soul_field.gd")
+const SoulPatterns = preload("res://src/vfx/soul_patterns.gd")
+const SoulGuardianArt = preload("res://src/vfx/soul_guardian_art.gd")
+const SoulRing = preload("res://src/vfx/soul_ring.gd")
 const DATA_PATH := "res://assets/data/vfx_talents.json"
 const TALENTS_PATH := "res://assets/data/talents.json"
+const SoulProjectileArt = preload("res://src/vfx/soul_projectile_art.gd")
+const SoulTrail = preload("res://src/vfx/soul_trail.gd")
 ## Shot styles drawn here as element matter (talents.json "style"); arrows are the host's.
 const SHOT_STYLES := {"frost_lance": "ice", "arcane": "void", "fireball": "fire", "infernospear": "fire", "blade": "steel"}
 ## Shots that keep a sheet because its shape reads (a knife, a dart): sheet and scale.
@@ -117,7 +128,7 @@ const LOOK_ELEMENT := {"mana_bubble": "void", "gold_bubble": "gold", "soul_bubbl
 const TIER_K := {"small": 0.0, "medium": 0.34, "large": 0.67, "huge": 1.0}
 const INK := Color("1a1414")
 ## Zone looks drawn here as their own art (not as a pool or gas).
-const LOOKS := ["flames", "firewall", "lava", "ice", "arcane", "snow", "arrows", "crater", "souls", "plague"]
+const LOOKS := ["flames", "firewall", "lava", "ice", "arcane", "snow", "arrows", "crater", "souls", "souls_ring", "souls_trail", "plague", "external_pool"]
 ## How long a shot's painted impact plays (s).
 const IMPACT_TIME := 0.45
 ## "KRIT" over a critical hit (vfx_talents.json "crit_text" overrides): at least
@@ -132,6 +143,52 @@ var sprites := FxSprites.new()
 ## The companions as part rigs (src/vfx/companion_rigs.gd); `rigs` is the view's rig renderer (debris, clocks), set by the host.
 var companion_rigs := CompanionRigs.new()
 var rigs: RefCounted = null
+var necro_staff := Callable()
+var necro_staff_key := ""
+var _necro_actors: Dictionary = {}
+var _blood_ripple_tick := -1
+
+## Current rendered positions, so links follow interpolation rather than old cast coordinates.
+func set_necro_actors(players: Dictionary, enemies: Array) -> void:
+	_necro_actors.clear()
+	for id: Variant in players:
+		var p: Dictionary = players[id]
+		_necro_actors["p%d" % int(id)] = {"at":Vector2(p.get("x",0),p.get("y",0)),"rig":"necro"}
+	for e: Dictionary in enemies:
+		var id := int(e.get("tid",e.get("id",-1)))
+		_necro_actors["e%d" % id] = {"at":Vector2(e.get("x",e.get("p",Vector2.ZERO).x),e.get("y",e.get("p",Vector2.ZERO).y)),"rig":str(e.get("rig",""))}
+
+func _necro_socket(key: String, fallback: Vector2) -> Vector2:
+	var actor: Dictionary = _necro_actors.get(key,{})
+	if actor.is_empty(): return fallback
+	var at: Vector2 = actor.at
+	if rigs != null and key.begins_with("e"):
+		var rig: Dictionary = rigs.library.rig(str(actor.rig))
+		for part_id: String in ["torso","body","robe","head","skull"]:
+			if not rig.get("by_id",{}).has(part_id): continue
+			var point: Vector2 = rigs.world_point(key,part_id,Vector2(rig.by_id[part_id].center))
+			if point != Vector2.ZERO: return point
+			break
+	return at
+
+func _draw_necro_links(canvas: CanvasItem, state: Dictionary, clock: float) -> void:
+	for l: Dictionary in state.get("blood_links",[]):
+		var from := _necro_socket("p%d" % int(l.owner),Vector2(l.x,l.y))-Vector2(0,12*art)
+		if necro_staff.is_valid(): from = necro_staff.call(necro_staff_key if not necro_staff_key.is_empty() else "p%d" % int(l.owner),from,clock)
+		var to := _necro_socket("e%d" % int(l.target_id),Vector2(l.tx,l.ty))
+		if l.has("pet_id"):
+			for pet: Dictionary in state.get("pets",[]):
+				if int(pet.id) == int(l.pet_id): to = Vector2(pet.x,pet.y)-Vector2(0,6*art)
+		var fade := clampf(float(l.left)*4.0,0,1)
+		NecroArt.stream(canvas,from,to,clock,art,int(l.id),-1,sprites)
+		if str(l.kind) == "blood": sprites.draw_external_rig(canvas,NecroArt.Bank.parts("necro_blood",to,Vector2.RIGHT,clock,art*0.7,fade),to)
+	for mark: Dictionary in state.get("necro_marks",[]):
+		var point := _necro_socket("e%d" % int(mark.target_id),Vector2(mark.x,mark.y))-Vector2(0,10*art)
+		if not bool(mark.get("blood",false)) and not bool(mark.get("command",false)):
+			NecroArt.curse_mark(canvas,point,clock,art,int(mark.target_id),clampf(float(mark.left),0,1),sprites)
+			continue
+		var motif := "necro_blood" if bool(mark.get("blood",false)) else ("necro_blade" if bool(mark.get("command",false)) else "necro_curse")
+		sprites.draw_external_rig(canvas,NecroArt.Bank.parts(motif,point,Vector2.RIGHT,clock,art*0.8,clampf(float(mark.left),0,1)),point)
 ## The host's lookup of an enemy by id (the Singularität's caught list): a
 ## Dictionary with x, y (and kind) or a Vector2; unset, an entry's own x and
 ## y, the zone's caught_at or the view's rigs stand in.
@@ -167,6 +224,16 @@ var shot_lift := Vector2.ZERO
 var cfg: Dictionary = {}
 
 var _clock := 0.0
+var _soul_age: Dictionary = {}
+
+## Extrapolate a short presentation interval between host snapshots, never combat.
+func _smooth_soul_age(key: String, remaining: float, total: float) -> float:
+	if _soul_age.size() > 96: _soul_age.clear()
+	var previous: Dictionary = _soul_age.get(key, {})
+	if previous.is_empty() or not is_equal_approx(float(previous.left), remaining):
+		previous = {"left": remaining, "clock": _clock}
+		_soul_age[key] = previous
+	return maxf(0.0, total - remaining) + clampf(_clock - float(previous.clock), 0.0, 0.1)
 ## Event ids already seen by the drawing (pools, flashes) and by take_feel.
 var _seen: Dictionary = {}
 var _felt: Dictionary = {}
@@ -233,6 +300,8 @@ var _once: Dictionary = {}
 
 
 func _init() -> void:
+	SoulField.prepare()
+	SoulGuardianArt.prepare()
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(DATA_PATH)) if FileAccess.file_exists(DATA_PATH) else null
 	cfg = parsed if parsed is Dictionary else {}
 	TalentUlts.cfg = cfg
@@ -318,6 +387,13 @@ func draw_ground(canvas: CanvasItem, state: Dictionary, clock: float) -> void:
 	_clock = clock
 	# with particles the painters keep the shapes, the matter flies here
 	TalentPixels.paint_matter = particles == null
+	var age_keys := {}
+	for zone: Dictionary in state.get("zones", []): age_keys["zone:%d" % int(zone.get("id", 0))] = true
+	for event: Dictionary in state.get("events", []): age_keys["grasp:%d" % int(event.get("id", 0))] = true
+	for guardian: Dictionary in state.get("guardians", []): age_keys["guardian:%d:%d" % [int(guardian.id), int(guardian.phase_seq)]] = true
+	for guardian: Dictionary in state.get("guardians", []): age_keys["guardian_life:%d" % int(guardian.id)] = true
+	for key: String in _soul_age.keys():
+		if not age_keys.has(key): _soul_age.erase(key)
 	PerfMarks.begin()
 	_settle_shots(clock, state)
 	_observe(state, clock)
@@ -334,11 +410,11 @@ func draw_ground(canvas: CanvasItem, state: Dictionary, clock: float) -> void:
 		for zone: Dictionary in zones:
 			var length := maxf(0.3, float(zone.get("total", zone.get("time", 1.0))))
 			var p := clampf(1.0 - float(zone.get("time", length)) / length, 0.0, 1.0)
-			if _own_look(zone):
+			if _own_look(zone) and not str(zone.get("look", "")) in ["souls", "souls_ring", "souls_trail"]:
 				_fire_look_pools(entries, zone, p, length, clock)
 				_mage_look_pools(entries, zone, clock)
 				continue
-			entries.append({"id": int(zone.get("id", 0)), "k": "pool", "st": "fire" if str(zone.get("status", "")) == "burn" else "poison",
+			entries.append({"id": int(zone.get("id", 0)), "k": "pool", "path": zone.get("path", []), "w": float(zone.get("w", 0.0)), "inner_r": float(zone.get("inner_r", 0.0)), "st": "soul" if str(zone.get("look", "")) in ["souls", "souls_ring", "souls_trail"] else "fire" if str(zone.get("status", "")) == "burn" else "poison",
 				"x": float(zone.x), "y": float(zone.y), "r": float(zone.r), "p": p, "L": length})
 		for id: int in _ult_pools.keys():
 			if float(_ult_pools[id].until) < clock: _ult_pools.erase(id)
@@ -397,8 +473,10 @@ func draw_ground(canvas: CanvasItem, state: Dictionary, clock: float) -> void:
 	_draw_orbs(canvas, state, clock)
 	var traps: Dictionary = cfg.get("traps", {})
 	for trap: Dictionary in state.get("traps", []):
+		var trap_at := Vector2(float(trap.x),float(trap.y))
+		sprites.draw_external_rig(canvas,ForestTrapRig.parts(trap_at,art,clock,int(trap.get("id",0)),-1,float(trap.get("vs",1))),trap_at)
 		var kind := _trap_kind(trap)
-		TalentPixels.trap(canvas, Vector2(float(trap.x), float(trap.y)), kind, float(traps.get("radius", {}).get(kind, 7)),
+		TalentPixels.trap(canvas, Vector2(float(trap.x), float(trap.y)), kind, float(traps.get("radius", {}).get(kind, 7))*float(trap.get("vs",1)),
 			float(traps.get("pulse", {}).get(kind, 1.0)), art, clock, int(trap.get("id", 0)))
 	PerfMarks.add("tg.traps")
 
@@ -649,9 +727,36 @@ func _trap_kind(trap: Dictionary) -> String:
 ## moving, idle otherwise. The pack summoned by the ultimate shows as pale
 ## spirits with wisps rising round them (opaque, never see-through).
 func draw_pets(canvas: CanvasItem, state: Dictionary, clock: float) -> void:
+	NecroArt.Bank.prepare()
+	var ripple_tick := floori(clock*float(NecroArt.Bank.data.motion.absorption.ripple_hz))
+	var ripple_blood := ripple_tick != _blood_ripple_tick
+	_blood_ripple_tick = ripple_tick
+	_clock = clock
+	NecroArt.corpses(canvas, state, art, sprites)
+	for charge: Dictionary in state.get("charges", []):
+		if str(charge.get("talent",""))!="sniper_14": SoulProjectileArt.charge(canvas, charge, clock, art, sprites)
+	for seal: Dictionary in state.get("claims", []):
+		SoulGuardianArt.seal(canvas, Vector2(seal.x, seal.y), clock, art, false, clampf(float(seal.time), 0.0, 1.0))
+	for guardian: Dictionary in state.get("guardians", []):
+		var key := "guardian:%d:%d" % [int(guardian.id), int(guardian.phase_seq)]
+		var age := _smooth_soul_age(key, float(guardian.duration) - float(guardian.age), float(guardian.duration))
+		var lifetime := _smooth_soul_age("guardian_life:%d" % int(guardian.id), float(guardian.left), float(guardian.total))
+		if bool(guardian.get("beam_attached",false)):
+			guardian = guardian.duplicate()
+			var fallback := Vector2(guardian.beam_tx,guardian.beam_ty)-Vector2(0,12*art)
+			var socket := _necro_socket("e%d" % int(guardian.beam_target_id),fallback)
+			guardian.beam_socket_x = socket.x
+			guardian.beam_socket_y = socket.y
+		SoulGuardianArt.draw(canvas, guardian, age, art, sprites, lifetime, cfg.get("soul_motion", {}))
 	for pet: Dictionary in state.get("pets", []):
 		var at := _snap(Vector2(float(pet.x), float(pet.y)))
+		if not pet.get("whirl",{}).is_empty():
+			pet = pet.duplicate()
+			pet.whirl = pet.whirl.duplicate()
+			pet.whirl.age = minf(float(pet.whirl.time),_smooth_soul_age("whirl:%d" % int(pet.id),float(pet.whirl.time)-float(pet.whirl.age),float(pet.whirl.time)))
+		NecroArt.storm(canvas,pet,clock,art,sprites,false)
 		var face := -1.0 if float(pet.get("face", 1.0)) < 0.0 else 1.0
+		if bool(pet.get("converted", false)): SoulGuardianArt.seal(canvas, at, clock, art, true, clampf(float(pet.get("life", 1.0)), 0.0, 1.0))
 		var kind := str(pet.get("kind", "wolf"))
 		var moving := bool(pet.get("moving", false))
 		var frame := _companion_frame(kind, "walk" if moving else "idle", int(clock * (10.0 if moving else 6.0)) % 4)
@@ -666,7 +771,7 @@ func draw_pets(canvas: CanvasItem, state: Dictionary, clock: float) -> void:
 		if awake: TalentPixels.flames(canvas, at, Vector2(0, -12.0 * art / 2.0), 0.6, "beast", art, clock, id)
 		var lunge := 3.0 * art if float(pet.get("bite", 0.0)) > 0.0 and kind != "water_elemental" else 0.0
 		# a spirit of the pack: brightened to pale blue-white (opaque, not see-through)
-		var spirit := bool(pet.get("pack", false))
+		var spirit := bool(pet.get("pack", false)) and kind != "bone_archer"
 		var tint := Color(1.45, 1.75, 2.1) if spirit else Color.WHITE
 		if float(pet.get("hurt", 0.0)) > 0.0: tint = Color(1.0, 0.55, 0.5)
 		var casting := float(pet.get("cast", 0.0))
@@ -685,22 +790,31 @@ func draw_pets(canvas: CanvasItem, state: Dictionary, clock: float) -> void:
 		if kind == "water_elemental":
 			# a wet shimmer on the floor under the gliding whirl
 			PixelPaint.disc(canvas, at + Vector2(0, -1), _u(10.0 + sin(clock * 5.0)), _u(4.0), Pal.ramp("water")[2], art, 0.3)
+		var rig_top := NAN
 		if CompanionRigs.draws(kind):
 			# a rigged companion: its parts, poses and lost pieces (src/vfx/companion_rigs.gd)
-			companion_rigs.draw(canvas, pet, at + lift + Vector2(lunge * face, 0), face, art * (1.5 if awake else 1.0), clock, rigs)
+			rig_top = companion_rigs.draw(canvas, pet, at + lift + Vector2(lunge * face, 0), face, art * (1.5 if awake else 1.0), clock, rigs)
 		elif frame != null:
-			# feet on the point whatever the frame size (32 px forest beasts, 16 px skeletons)
-			var frame_size := frame.get_size()
-			canvas.draw_set_transform(at + lift + Vector2(lunge * face, 0), 0.0, Vector2(grow * face, grow))
-			canvas.draw_texture(frame, Vector2(-frame_size.x * 0.5, 1.0 - frame_size.y), tint)
-			canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+			CutoutMotion.draw(canvas,CutoutMotion.actor(frame,kind,at+lift+Vector2(lunge*face,1),grow,face,clock,pet,tint))
 		if spirit: TalentUlts.spirit(canvas, at, art, clock, id)
 		if lunge > 0.0 and sprites.has("claw"):
 			sprites.draw_loop(canvas, "claw", at + Vector2(_u(22.0) * face, _u(-20.0)), 0.0, 1.0, clock, Color.WHITE, true)
-		if bool(pet.get("permanent", false)) and frame != null:
-			var bar := Rect2(at + lift + Vector2(-14, -frame.get_size().y * grow - 8.0), Vector2(28, 4))
+		if bool(pet.get("permanent", false)) and (frame != null or not is_nan(rig_top)):
+			var top := rig_top if not is_nan(rig_top) else at.y + lift.y - frame.get_size().y * grow
+			var into := at-Vector2(0,12*art)
+			var body_rigs: RefCounted = rigs if rigs != null else companion_rigs.renderer
+			if body_rigs != null:
+				var body: Dictionary = body_rigs.library.rig(str(pet.get("rig","")))
+				if body.get("by_id",{}).has("torso"):
+					var socket: Vector2 = body_rigs.world_point("pet:%d" % int(pet.id),"torso",Vector2(body.by_id.torso.center))
+					if socket != Vector2.ZERO: into = socket
+			if ripple_blood and pools != null and float(pet.get("blood_pending",0))>0 and float(pet.get("blood_wait",0))<=0:
+				pools.ripple(Vector2(pet.blood_x,pet.blood_y),0.18,clock)
+			NecroArt.blood(canvas, pet, top, at, clock, art,sprites,into,pools)
+			var bar := Rect2(Vector2(at.x - 14, top - 5.0 * art), Vector2(28, 4))
 			canvas.draw_rect(bar.grow(1), INK)
 			canvas.draw_rect(Rect2(bar.position, Vector2(roundf(bar.size.x * clampf(float(pet.get("hp", 1.0)), 0.0, 1.0)), bar.size.y)), Color("8fd6a5") if float(pet.get("hp", 1.0)) > 0.35 else Color("e2584a"))
+		NecroArt.storm(canvas,pet,clock,art,sprites,true)
 
 func _companion_frame(kind: String, motion: String, index: int) -> Texture2D:
 	var path := "res://assets/sprites/forest_0x72/%s_%s_f%d.png" % [kind, motion, index]
@@ -723,15 +837,22 @@ func draw_bullet(canvas: CanvasItem, bullet: Dictionary, clock: float) -> bool:
 	var at := _snap(Vector2(float(bullet.x), float(bullet.y)))
 	var talent := str(bullet.get("talent", ""))
 	var style := str(bullet.get("style", ""))
+	if NecroArt.projectile(canvas,bullet,clock,art,sprites): return true
+	if talent in ["soul_1", "soul_9"]:
+		SoulProjectileArt.flight(canvas, bullet, clock, art, shot_lift, sprites)
+		return true
 	var element := Pal.element_of(talent, str(SHOT_STYLES.get(style, "steel")))
 	_shed_flight(bullet, at, aim, element, clock)
 	var tier_name := _shot_tier_name(talent)
 	var tier := _shot_tier(tier_name)
 	if not talent.is_empty(): _track_shot(at, flight, talent, element, tier_name, float(tier.get("glow", 7)), clock)
+	if talent == "fire_1":
+		MageFireball.draw(canvas, at, aim, art, clock)
+		return true
 	var own: Array = TALENT_SHOTS.get(talent, [])
 	if not own.is_empty() and sprites.has(str(own[0])):
 		TalentPixels.shot_trail(canvas, at, aim, element, art, int(tier.get("trail", 5)), clock)
-		sprites.draw_loop(canvas, str(own[0]), at, aim.angle(), float(own[1]), clock, Color.WHITE, true)
+		sprites.draw_loop(canvas, str(own[0]), at, aim.angle(), float(own[1]), clock, Pal.ramp("soul")[3] if talent.begins_with("soul_") else Color.WHITE, true)
 		return true
 	if talent in ["sniper_6", "sniper_14"] and style != "arrow":
 		TalentUlts.arrow(canvas, at, aim, int(bullet.get("stage", 0)), art, clock)
@@ -1039,7 +1160,16 @@ func _crit_word(canvas: CanvasItem, at: Vector2, p: float, span: float, fade: fl
 ## Effect layer: short events over everything, each played over its life
 ## (span), and the shots' impacts. `clock` defaults to the one of the last draw_ground.
 func draw_events(canvas: CanvasItem, state: Dictionary, clock: float = -1.0) -> void:
+	MarksmanArt.statuses(canvas,state,clock,art,sprites)
+	for charge: Dictionary in state.get("charges",[]):
+		if str(charge.get("talent",""))=="sniper_14": MarksmanArt.charge(canvas,charge,clock,art,sprites)
+	# Foreground charge uses this frame's staff socket, after the hero was drawn.
+	for charge: Dictionary in state.get("bone_charges", []):
+		var at := Vector2(charge.x,charge.y)-Vector2(0,12*art)+Vector2(charge.ax,charge.ay)*8*art
+		if necro_staff.is_valid(): at = necro_staff.call(necro_staff_key if not necro_staff_key.is_empty() else "p%d"%int(charge.owner),at,clock)
+		NecroArt.bone_charge(canvas,charge,at,clock,art,sprites)
 	if clock >= 0.0: _clock = clock
+	_draw_necro_links(canvas,state,_clock)
 	TalentPixels.paint_matter = particles == null
 	PerfMarks.begin()
 	for guard: Dictionary in state.get("guards", []):
@@ -1075,8 +1205,44 @@ func draw_events(canvas: CanvasItem, state: Dictionary, clock: float = -1.0) -> 
 		var ult := bool(event.get("ult", false))
 		var stage := int(event.get("stage", 0))
 		var r := float(event.get("r", 0.0))
+		if str(event.kind) == "cast" and NecroArt.cast(canvas,event,at,p,clock,art,sprites): continue
+		if str(event.kind)=="spear" and str(event.get("talent",""))=="sniper_14":
+			MarksmanArt.spear(canvas,event,p,clock,art,sprites)
+			continue
+		if str(event.kind) == "necro_drain":
+			if state.get("blood_links",[]).any(func(l: Dictionary)->bool:return int(l.owner)==int(event.get("owner",-1)) and int(l.target_id)==int(event.get("target_id",-2))): continue
+			var source := _necro_socket("e%d" % int(event.get("target_id",-1)),at)
+			var dest := _necro_socket("p%d" % int(event.get("owner",-1)),Vector2(event.tx,event.ty))-Vector2(0,12*art)
+			NecroArt.stream(canvas,source,dest,clock,art,id,p,sprites)
+			continue
+		if str(event.kind).begins_with("necro_") or str(event.kind)=="forest_spit":
+			NecroArt.event(canvas, event, p, clock, art, sprites)
+			continue
 		match str(event.kind):
+			"soul_impact":
+				var impact_age := _smooth_soul_age("soul_impact:%d" % id, float(event.life), span)
+				SoulProjectileArt.impact(canvas, event, impact_age / span, clock, art, sprites)
+			"soul_takeoff", "soul_landing":
+				SoulGuardianArt.seal(canvas, at, clock, art, true, 1.0 - p)
+			"souls":
+				var to := Vector2(float(event.tx), float(event.ty))
+				for mote in range(5):
+					var q := clampf(p * 1.4 - mote * 0.08, 0.0, 1.0)
+					var point := at.lerp(to, q * q) + Vector2(sin(q * PI) * (mote - 2) * art, -sin(q * PI) * 12.0 * art)
+					canvas.draw_rect(Rect2(point.round(), Vector2.ONE * art), Color(Pal.ramp("soul")[3], sin(q * PI)))
+			"guardian_wave":
+				SoulGuardianArt.wave(canvas, at, r, float(event.angle), float(event.arc), p, art, sprites)
+			"soul_grasp":
+				var age := _smooth_soul_age("grasp:%d" % id, float(event.life), span)
+				SoulPatterns.grasp(canvas, at, Vector2(float(event.from_x), float(event.from_y)), r, age / span, art, float(cfg.get("soul_motion", {}).get("grasp_turns", 0.55)), sprites, cfg.get("soul_motion", {}))
 			"nova":
+				if talent == "soul_3":
+					var ring_age := _smooth_soul_age("grasp:%d" % id, float(event.life), span)
+					SoulRing.draw_cast(canvas, at, r, clampf(ring_age / span, 0.0, 1.0), ring_age, art, sprites, cfg.get("soul_motion", {}))
+					continue
+				if talent.begins_with("soul_"):
+					SoulPatterns.wave(canvas, at, r, p, art, sprites, ult)
+					continue
 				# the exact hit radius as a shock ring; an ultimate's is heavier;
 				# the Leerenriss tears the floor open and ends in its pressure ring
 				if talent == "arcane_7": TalentPixels.rift(canvas, at, r, p, art, id, cfg.get("void", {}).get("rift", {}))
@@ -1100,6 +1266,9 @@ func draw_events(canvas: CanvasItem, state: Dictionary, clock: float = -1.0) -> 
 					"blink":
 						TalentPixels.burst(canvas, at + body, 7, p, element, art, id)
 						if talent == "fire_5": _phoenix(canvas, at, to, p, 1.0 - p, id)
+						elif talent == "soul_7":
+							SoulPatterns.wave(canvas, at, _u(36.0), p, art, sprites)
+							SoulPatterns.wave(canvas, to, _u(36.0), p, art, sprites)
 						else: TalentPixels.burst(canvas, to + body, 9, p, element, art, id + 1)
 					"dash":
 						if talent == "beast_11": sprites.draw_at(canvas, "claw", to + body * 0.85, 0.0, 1.0, p, Color.WHITE, true, fade)
@@ -1124,6 +1293,7 @@ func draw_events(canvas: CanvasItem, state: Dictionary, clock: float = -1.0) -> 
 				TalentPixels.reticle(canvas, at + body * 1.6, p, 1.0 - smoothstep(0.85, 1.0, p), art, _clock)
 			"trap":
 				_sprung_trap(canvas, event, at, r, p, id)
+				sprites.draw_external_rig(canvas,ForestTrapRig.parts(at,art,clock,id,p),at)
 			"echo":
 				_echo(canvas, at, r, p, id)
 			"swallow":
@@ -1167,7 +1337,10 @@ func draw_events(canvas: CanvasItem, state: Dictionary, clock: float = -1.0) -> 
 					# Kristallschild: the lasting dome is its aura; here the frost it forms from
 					# (with particles: chips crystallising out of the air, _shield_cast_physics)
 					TalentPixels.burst(canvas, at + body, 8, p, "ice", art, id)
-				_gather(canvas, at, float(event.get("angle", 0.0)), p, span, element, tier, id)
+				elif talent == "soul_5":
+					SoulPatterns.wave(canvas, at + feet, _u(30.0), p, art, sprites)
+				if talent != "fire_1":
+					_gather(canvas, at, float(event.get("angle", 0.0)), p, span, element, tier, id)
 			_:
 				_extra_event(canvas, event, at, p, 1.0 - p)
 		PerfMarks.add("te." + str(event.kind) + ("-ult" if ult else ""))
@@ -1304,7 +1477,7 @@ func _draw_domes(canvas: CanvasItem, auras: Array, clock: float, where: Callable
 			dome.step(clock)
 			# a shield dome is its own talent's element (Schildwall stone, Seelenschild soul); the mage's
 			# two shields are remembered at their cast (physics plan F27)
-			var element := str(_shield_el.get(owner, Pal.element_of(str(aura.get("talent", "")), str(spec[2])))) if str(spec[0]) == "shield" else str(spec[2])
+			var element := "soul" if str(aura.get("talent", "")).begins_with("soul_") else str(_shield_el.get(owner, Pal.element_of(str(aura.get("talent", "")), str(spec[2])))) if str(spec[0]) == "shield" else str(spec[2])
 			_dome_last[owner] = {"at": _snap(at), "element": element}
 			dome.draw(canvas, _snap(at) + feet, clampf((total - left) / 0.3, 0.0, 1.0), clampf(left / 0.6, 0.0, 1.0), element, art, clock)
 	for owner: int in _domes.keys():
@@ -1604,6 +1777,7 @@ func _blink_physics(at: Vector2, to: Vector2, element: String, talent: String, c
 ## element (ice and snow, the void, lava and flames, the plague's poison, the
 ## souls), a plain zone poison; "" for none (Pfeilhagel).
 func _zone_element(zone: Dictionary) -> String:
+	if str(zone.get("look", "")) == "external_pool": return ""
 	if str(zone.get("status", "")) == "burn": return "fire"
 	var look := str(zone.get("look", ""))
 	if look == "arrows": return ""
@@ -1720,6 +1894,8 @@ func _draw_looks(canvas: CanvasItem, zones: Array, clock: float) -> void:
 		var at := Vector2(float(zone.x), float(zone.y))
 		var r := float(zone.r)
 		match str(zone.get("look", "")):
+			"external_pool":
+				if str(zone.get("talent","")) in ["curse_7","curse_14"]: NecroArt.field(canvas,zone,clock,art,sprites)
 			"flames":
 				# Flammenmeer: real fire pools along the stroke (draw_ground), an ember
 				# core with pixel tongues over them, burning down to ash at the end
@@ -1779,12 +1955,18 @@ func _draw_looks(canvas: CanvasItem, zones: Array, clock: float) -> void:
 				var left := float(zone.get("time", 1.0))
 				var total := maxf(0.3, float(zone.get("total", left)))
 				TalentPixels.crater(canvas, at, r, clampf(left / 1.0, 0.0, 1.0) * clampf((total - left) / 0.2, 0.0, 1.0), art, clock, int(zone.get("id", 0)))
-			"souls":
-				# Seelensturm: souls circle the field
-				canvas.draw_circle(at, r, Color(0.45, 0.2, 0.7, 0.14))
-				for i in range(8):
-					var spot := at + Vector2.from_angle(TAU * i / 8.0 + clock * 1.6) * r * (0.45 + 0.35 * sin(clock + i))
-					sprites.draw_loop(canvas, "soul_wisp", spot, 0.0, 1.1, clock + i * 0.2)
+			"souls_trail":
+				var trail_age := _smooth_soul_age("zone:%d" % int(zone.id), float(zone.time), float(zone.total))
+				SoulTrail.draw(canvas, zone, trail_age, art, sprites)
+			"souls", "souls_ring":
+				var total := float(zone.get("total", 4.0))
+				var left := float(zone.get("time", 4.0))
+				var age := _smooth_soul_age("zone:%d" % int(zone.get("id", 0)), left, total)
+				var fade := smoothstep(0.0, 0.5, maxf(0.0, total - age)) * smoothstep(0.0, 0.15, age)
+				if str(zone.get("look", "")) == "souls_ring":
+					SoulRing.draw_field(canvas, at, r, float(zone.inner_r), age, fade, art, sprites, cfg.get("soul_motion", {}))
+				else:
+					SoulField.draw(canvas, at, r, age * float(cfg.get("soul_motion", {}).get("field_playback", 0.7)), sprites, "soul_field_%d" % int(zone.get("id", 0)), pools != null, fade, cfg.get("soul_motion", {}))
 			"plague":
 				# Seuchengrube: sickly green-violet clouds over bubbling ground; the Seuchenfeld lies as
 				# its own plague pool (the pool layer draws it), so no painted ground there
@@ -1836,7 +2018,7 @@ func _draw_line_preview(canvas: CanvasItem, drawing: Dictionary, clock: float) -
 func draw_basic_fireball(canvas: CanvasItem, at: Vector2, velocity: Vector2, clock: float) -> void:
 	var aim := velocity.normalized() if velocity.length() > 0.1 else Vector2.RIGHT
 	var tier := _shot_tier("small")
-	TalentPixels.shot(canvas, _snap(at), aim, "fire", art, int(tier.get("core", 1)), int(tier.get("trail", 5)), clock, 7)
+	TalentPixels.shot(canvas, _snap(at), aim, "spirit", art, int(tier.get("core", 1)), int(tier.get("trail", 5)), clock, 7)
 
 
 func _flask() -> Texture2D:
@@ -1954,6 +2136,9 @@ func _extra_event(canvas: CanvasItem, event: Dictionary, at: Vector2, p: float, 
 			canvas.draw_string_outline(font, spot, label, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, 4, Color(0, 0, 0, fade))
 			canvas.draw_string(font, spot, label, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(tint, fade))
 		"explosion":
+			if str(event.get("talent", "")) == "fire_1":
+				MageFireball.draw(canvas, at, Vector2.RIGHT, art * maxf(1.0, float(event.r) / (8.0 * art)), _clock, true, p)
+				return
 			# the Feuerball's impact: the hit ring; the fat explosion itself plays from _impacts (first sight)
 			TalentPixels.nova(canvas, at, r, p, "fire", art, id)
 		"chain":

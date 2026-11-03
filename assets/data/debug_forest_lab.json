@@ -1,0 +1,144 @@
+{
+ "schema_version": 1,
+ "title": "WALDMEISTER · KAMPFLABOR",
+ "short_title": "LAB",
+ "camera_zoom": 1,
+ "profile_path": "user://forest_lab_profile.json",
+ "world_size": [
+  1600,
+  960
+ ],
+ "spawn": [
+  640,
+  480
+ ],
+ "obstacles": [
+  [
+   1120,
+   256,
+   32,
+   160
+  ],
+  [
+   1120,
+   608,
+   32,
+   160
+  ]
+ ],
+ "auto_range_m": 8,
+ "enemy_cap": 12,
+ "group_count": 6,
+ "group_radius": 72,
+ "group_distance": 210,
+ "enemy_hp": 32,
+ "dummy_hp": 10000,
+ "default_spec": "beast",
+ "specs": {
+  "beast": {
+   "name": "WALD",
+   "color": "7cc23a",
+   "ultimate": "beast_14",
+   "kits": [
+    {
+     "name": "Begleiter & Fallen",
+     "bar": [
+      "beast_1",
+      "beast_3",
+      "beast_6",
+      "beast_7"
+     ]
+    },
+    {
+     "name": "Jagdgebiet",
+     "bar": [
+      "beast_1",
+      "beast_6",
+      "beast_7",
+      "beast_11"
+     ]
+    }
+   ]
+  },
+  "trapper": {
+   "name": "FALLEN",
+   "color": "7cc23a",
+   "ultimate": "trapper_14",
+   "kits": [
+    {
+     "name": "Gift & Dornen",
+     "bar": [
+      "trapper_1",
+      "trapper_3",
+      "trapper_5",
+      "trapper_7"
+     ]
+    },
+    {
+     "name": "Netz & Rückzug",
+     "bar": [
+      "trapper_1",
+      "trapper_9",
+      "trapper_11",
+      "trapper_5"
+     ]
+    }
+   ]
+  },
+  "sniper": {
+   "name": "FERN",
+   "color": "d6a536",
+   "ultimate": "sniper_14",
+   "kits": [
+    {
+     "name": "Präzision",
+     "bar": [
+      "sniper_1",
+      "sniper_3",
+      "sniper_5",
+      "sniper_7"
+     ]
+    },
+    {
+     "name": "Fernkampf",
+     "bar": [
+      "sniper_1",
+      "sniper_5",
+      "sniper_9",
+      "sniper_11"
+     ]
+    }
+   ]
+  }
+ },
+ "labels": {
+  "group": "Gegner +6",
+  "dummy": "Zielpuppe",
+  "clear": "Leeren",
+  "reset": "Reset",
+  "souls": "Ausdauer +",
+  "blood": "Blut +4",
+  "auto": "Auto",
+  "god": "Üben",
+  "rings": "Ringe",
+  "hint": "WASD bewegen · 1–4 Fähigkeiten · R Ulti · 5/6 Begleiter · Shift Dash\nRechts halten: zielen · loslassen: gewählte Fähigkeit wirken",
+  "preset": "Zielvorschau",
+  "ready": "Bereit",
+  "full": "Gegnerlimit erreicht",
+  "reset_done": "Kampffläche zurückgesetzt"
+ },
+ "sources": [
+  "https://www.youtube.com/watch?v=ADPKIacCenk",
+  "https://www.youtube.com/watch?v=PQhFthfMzdA",
+  "https://www.youtube.com/watch?v=SpVhPCla38k",
+  "https://www.youtube.com/watch?v=_iryXMIMcGA"
+ ],
+ "class_id": "archer",
+ "actions": [
+  "group",
+  "dummy",
+  "clear",
+  "souls",
+  "reset"
+ ]
+}

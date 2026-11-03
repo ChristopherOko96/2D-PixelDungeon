@@ -47,6 +47,7 @@ const STRING_COLOR := Color("#d3bfa9")
 const SMEAR := Color("#eaf8ff")
 const SMEAR_RAGE := Color("#ff6a4a")
 const ItemArt = preload("res://src/item_art.gd")
+const MageFireball = preload("res://src/vfx/mage_fireball.gd")
 ## How many motes a held weapon of an element sheds at a time (src/item_art.gd).
 const WEAPON_MOTES := 3
 ## A fallen hero's weapon (drop_weapon) falls by the shared debris physics
@@ -77,6 +78,29 @@ var _held: Dictionary = {}
 ## A fallen hero's weapon on its own path: key -> {t0, texture, rect, debris
 ## (a RigDebris with the one piece), steps (fixed steps done)} (drop_weapon).
 var _dropped: Dictionary = {}
+var _fireballs: Dictionary = {}
+var _staff_sockets: Dictionary = {}
+
+## Track host cast age once; late snapshots never restart the charge.
+func observe_fireball(key: String, owner: int, events: Array, clock: float, alive: bool = true) -> void:
+	_fireballs.erase(key)
+	if not alive: return
+	for event: Dictionary in events:
+		if str(event.get("kind",""))!="cast" or str(event.get("talent",""))!="fire_1" or int(event.get("owner",-1))!=owner: continue
+		var age:=float(event.get("span",0.5))-float(event.get("life",0))
+		var windup:=float(event.get("windup",0))
+		if age<0 or age>=windup+0.28: continue
+		_fireballs[key]={"start":clock-age,"windup":windup,"aim":Vector2.from_angle(float(event.get("angle",0)))}
+
+## Casts retain their actual aim while the staff follows its parent rig joint.
+func casting_aim(key: String, fallback: Vector2, clock: float) -> Vector2:
+	var cast: Dictionary=_fireballs.get(key,{})
+	return Vector2(cast.aim) if not cast.is_empty() and clock-float(cast.start)<float(cast.windup)+0.28 else fallback
+
+## Current drawn orb socket; stale or missing frames fall back to the caller's hand.
+func staff_socket(key: String, fallback: Vector2, clock: float) -> Vector2:
+	var socket: Dictionary=_staff_sockets.get(key,{})
+	return Vector2(socket.at) if not socket.is_empty() and absf(clock-float(socket.clock))<0.05 else fallback
 
 
 func _init(pixel: float = 2.0, sword: Texture2D = null, arrow: Texture2D = null) -> void:
@@ -221,6 +245,10 @@ func hold(key: String, player: Dictionary, point: Vector2, aim: Vector2, clock: 
 	var none: Array[Dictionary] = []
 	if texture == null: return none
 	var skills: Dictionary = player.get("skills", {})
+	var charge: Dictionary=player.get("talents",{}).get("charge",{})
+	if str(charge.get("talent",""))=="sniper_14":
+		skills=skills.duplicate()
+		skills.charge=float(charge.power)
 	if element.is_empty():
 		var carried: Dictionary = (player.get("inventory", {}) as Dictionary).get("weapon", {})
 		element = str(carried.get("element", ""))
@@ -237,6 +265,8 @@ func hold(key: String, player: Dictionary, point: Vector2, aim: Vector2, clock: 
 func held_at(key: String, piece: Dictionary) -> void:
 	if piece.get("texture") is Texture2D:
 		_hold(key, piece.texture, Vector2(piece.get("hand", Vector2.ZERO)), float(piece.get("angle", 0.0)), Rect2(piece.get("rect", Rect2())))
+		if piece.has("staff_tip"):
+			_staff_sockets[key]={"at":art_point(piece,piece.staff_tip),"clock":float(piece.staff_clock)}
 
 
 ## The world point of a piece at `share` of its art (0..1 of its rect).
@@ -504,8 +534,16 @@ func _staff(key: String, point: Vector2, aim: Vector2, clock: float, texture: Te
 	var tilt := clampf(toward, -STAFF_LEAN, STAFF_LEAN) * 0.4 + clampf(toward, -STAFF_CAST_LEAN, STAFF_CAST_LEAN) * 0.6 * cast + float(spec.get("rest", 0.0))
 	var grip: Vector2 = spec.get("grip", Vector2(0.5, STAFF_GRIP))
 	var rect := Rect2(-size * grip, size)
+	var fireball: Dictionary=_fireballs.get(key,{})
+	if not fireball.is_empty() and clock-float(fireball.start)<float(fireball.windup)+0.28:
+		var pose:=MageFireball.pose(clock-float(fireball.start),float(fireball.windup),fireball.aim)
+		hand=point+(at*Vector2(float(pose.side),1)+Vector2(pose.hand)-Vector2(5*float(pose.side),0))*hero_px
+		tilt=float(pose.tilt)+float(spec.get("rest",0))
 	_hold(key, texture, hand, tilt, rect)
 	var staff := {"texture": texture, "hand": hand, "angle": tilt, "rect": rect, "main": true}
+	staff.staff_tip=spec.get("tip",Vector2(0.5,STAFF_ORB/tall))
+	staff.staff_clock=clock
+	_staff_sockets[key]={"at":art_point(staff,staff.staff_tip),"clock":clock}
 	if not element.is_empty():
 		# the element at the orb: its glow on the orb, its motes rising from it
 		var orb := art_point(staff, spec.get("tip", Vector2(0.5, STAFF_ORB / tall)))

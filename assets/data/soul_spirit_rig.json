@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "_note": "Presentation-only cutout of the approved field spirit. Same RigLibrary layer schema as soul_guardian_rig. Rects are inclusive ownership masks; same-pixel joint underlap is 2 native pixels. Units documented in docs/NEKROMANT-SEELENPARTIKEL.de.md.",
+  "rigs": {
+    "soul_spirit": {
+      "family": "soul_spirit",
+      "size": [21, 43],
+      "ground": [10, 40],
+      "width": 18,
+      "parts": [
+        {"id": "head", "parent": "body", "pivot": [11, 18], "z": 3, "cut_rects": [[0, 0, 20, 18]], "img": "res://assets/vfx/soul_field/rig/head.png"},
+        {"id": "tail_tip", "parent": "tail_mid", "pivot": [7, 33], "z": 0, "cut_rects": [[0, 33, 20, 42]], "img": "res://assets/vfx/soul_field/rig/tail_tip.png"},
+        {"id": "tail_mid", "parent": "body", "pivot": [9, 27], "z": 1, "cut_rects": [[0, 27, 20, 42]], "img": "res://assets/vfx/soul_field/rig/tail_mid.png"},
+        {"id": "body", "parent": "", "pivot": [11, 24], "z": 2, "cut_rects": [[0, 0, 20, 42]], "img": "res://assets/vfx/soul_field/rig/body.png"}
+      ]
+    }
+  }
+}

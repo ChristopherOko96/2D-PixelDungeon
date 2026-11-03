@@ -1,0 +1,117 @@
+{
+  "scope": "Host rules, real rigs, H/F integration, two local ENet peers and original GPU captures. No LAN/campaign/performance acceptance.",
+  "files": [
+    {
+      "file": "assets/data/talents.json",
+      "sha256": "fb7b4124790a16aa4ea52a73b6fcc59dd76e8e1868ec28147ec5bd60bfc68ce5"
+    },
+    {
+      "file": "assets/data/necromancer_rules.json",
+      "sha256": "936d93bc4e56c81a2f7cd1cd0e6179e0fa2b6dcb4c2e025226b684c060b1c492"
+    },
+    {
+      "file": "src/combat/curse_monster_host.gd",
+      "sha256": "791a5ec3b89583d1d5ecb4a20fdc5108f425cc55f0843db9dda92ff696b4e0ee"
+    },
+    {
+      "file": "src/combat/necromancer_branches.gd",
+      "sha256": "544cc287fa052dff9419ac8d33cfd05090661ba076121d5ea7a9bb7587827c99"
+    },
+    {
+      "file": "src/combat/talent_combat.gd",
+      "sha256": "d2add48e2d62416abe84677779d2152a20dc41bc9a84472cd38f982b84d8a5e8"
+    },
+    {
+      "file": "src/combat/soul_projectiles.gd",
+      "sha256": "77aeae0f1d9d8564f97da8913cac2c1aa56c059a2ad35093c6782380810a9732"
+    },
+    {
+      "file": "src/rig/curse_monster_rig.gd",
+      "sha256": "f192d30e146c14c812039ecd903577ccedc2bc25633c3a5ec8db922c4ecbdc2c"
+    },
+    {
+      "file": "src/rig/bone_ball_rig.gd",
+      "sha256": "c9c18853042ac0d3932ceed7d65d56ee93e59003b34b07f2ec326cabfeebcc33"
+    },
+    {
+      "file": "src/rig/rig_renderer.gd",
+      "sha256": "d44d27ad0779318de2ab865e4b4342acd205a1ef3610d656ff27eeae9b12bfdc"
+    },
+    {
+      "file": "src/vfx/companion_rigs.gd",
+      "sha256": "580402bd815bcd30c02309ad7a545a011d409c6261ce17d2255463227e4b9c6d"
+    },
+    {
+      "file": "src/vfx/necro_art.gd",
+      "sha256": "f3a4cd3082c7a6564423dee0ef85c04b28c72b5f7413684e55bb4b539b8e50d2"
+    },
+    {
+      "file": "src/vfx/talent_fx.gd",
+      "sha256": "e2e9cfaa839af919ba11b45671581af5ff8c71cc05fee5e9bb76dc6db28c73ac"
+    },
+    {
+      "file": "src/session_protocol.gd",
+      "sha256": "4c5467aaea5aaad5e260be8467d5774d008e893f546ef16f7a6f42dd12e12d9b"
+    },
+    {
+      "file": "tests/curse_monster_evolution_test.gd",
+      "sha256": "f9e3d1deb61ad63dcc93f3de8895c4511d44ce59af5242b965d3b0c77e42609f"
+    },
+    {
+      "file": "tests/curse_monster_rig_test.gd",
+      "sha256": "f8c215ba56ccc7a304f2403e44c5aae37e8db6930ebe14e6896e2378ee78fa40"
+    },
+    {
+      "file": "tests/necro_branches_story_test.gd",
+      "sha256": "e0b4b1a8ba3af9297babc0a1656c51bec37802af0492030e6d98140cccb70584"
+    },
+    {
+      "file": "tests/necro_blood_network_peer.gd",
+      "sha256": "0b1407ece95378692e5fa415dac7f292af7b11192022cf2b96213dc4283253f8"
+    },
+    {
+      "file": "tests/talent_combat_test.gd",
+      "sha256": "e4c5b5223fe778fd66321f16aea3ecef69a14789e1d51848ba41b65bc6f95e6d"
+    },
+    {
+      "file": "scripts/capture_necromancer_catalog.gd",
+      "sha256": "9293ce64efdbfa8f60dc5d0113a6360932f0c32b26704add695ae73bceee74e2"
+    },
+    {
+      "file": "scripts/build_necromancer_original.cjs",
+      "sha256": "69eedecbeddec14ae92c02791f9873f2132359515b0cb19cc6c886fb3310e3e1"
+    },
+    {
+      "file": "output/necromancer-catalog/original-browser-review.json",
+      "sha256": "f9510736065e28e4aeb0f2052e0b4717201d477b8fac8c929bf7a34a1b64a938"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/catalog.json",
+      "sha256": "d1953a8ed01bc07423d389f62845dd668d8a372d9eea5cafb2153f3ebe7f83ce"
+    },
+    {
+      "file": "production/qa/evidence/curse-evolution/knochenball.png",
+      "sha256": "912b4c432148a4361ca1b7a0ceda5be0c7a99b33832f25780546ffa99afe1d77"
+    },
+    {
+      "file": "output/necromancer-catalog/knochenball-original.png",
+      "sha256": "9f7663e33c43e5396696e428ce1c3d7e2932aaa590b75c09fcdfafb452bbf13f"
+    },
+    {
+      "file": "production/qa/evidence/curse-evolution/fluchwelle.png",
+      "sha256": "d6bf173f287feead0c8181ad44fb94c397525fe164b0af1c4da78b0ed0ace6da"
+    },
+    {
+      "file": "output/necromancer-catalog/fluchwelle-original.png",
+      "sha256": "3c480a961f4b904d4d6ef914435523346b377b6af25467cadc02e1ccba40e837"
+    },
+    {
+      "file": "production/qa/evidence/curse-evolution/fluchbrut.png",
+      "sha256": "0c5edff5c72becd80eb5d1aa42b6b3296423bf1a8f94a48ac6ff8ee5819e5182"
+    },
+    {
+      "file": "output/necromancer-catalog/fluchbrut-original.png",
+      "sha256": "c412add184bb98bf6b73557797f80448d2376ae72f0ba37206ff9ae23224dc4c"
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "scope": "Targeted host/rig/world tests, two local peers and native controlled GPU footage; no LAN/campaign/performance acceptance.",
+  "files": [
+    {
+      "file": "src/combat/soul_guardian.gd",
+      "sha256": "125ae389a6db722b400879689a8493a8f89c6ca693fe8ae86a0e3506bf5ce939"
+    },
+    {
+      "file": "src/rig/soul_guardian_rig.gd",
+      "sha256": "21585186024880a92f6bee8082080747f7a3a2bff220073bc960211f3f4d664e"
+    },
+    {
+      "file": "src/rig/soul_beam_rig.gd",
+      "sha256": "5d93b46bf825251c9fc035c22bbad1647cdff994faca718de4cec1717fc7ac8c"
+    },
+    {
+      "file": "src/vfx/soul_beam.gd",
+      "sha256": "ecfd741ab25033943d23d46c09081a75e37211ebb7f47b7f979913c42d169205"
+    },
+    {
+      "file": "src/vfx/talent_fx.gd",
+      "sha256": "590eb0d7decfc299d162eb93cbd08e632f77dfe0da8e89522169eec340bb977f"
+    },
+    {
+      "file": "src/session_protocol.gd",
+      "sha256": "7f03ff9f90edb432975f1349f1f97b2be5ff995ddcedf1b4bae171866aefc48e"
+    },
+    {
+      "file": "assets/data/soul_beam_rig.json",
+      "sha256": "dde336b749f9fb022cb8062bdf191771fce949b9f192279eb81c861791a25cdc"
+    },
+    {
+      "file": "assets/data/talents.json",
+      "sha256": "1212bfdee6ecffc9fd08e861f87576c8f80b39f1736a07a6bce019c6e5627521"
+    },
+    {
+      "file": "tests/guardian_beam_adhesion_test.gd",
+      "sha256": "669a61dc2bc10f2b9f3eb7c9e268c92ec1abaade09524e6fcacf91e87b65a28a"
+    },
+    {
+      "file": "tests/guardian_beam_rig_test.gd",
+      "sha256": "2cffc428d23decbdc8c1fa59fc590f629cc4cbee72abf0185eb55c931383d01d"
+    },
+    {
+      "file": "tests/guardian_commands_network_peer.gd",
+      "sha256": "31115d197c4d0346a2f7dfcc9ad515d8156326180032f3cf8b5e01a908d61c4a"
+    },
+    {
+      "file": "tests/necro_story_attacks_test.gd",
+      "sha256": "f3ab3d93cf0879ba4b9642d6d9b0d37632ddc1f1cd2379b6e1b3ec051d9e8119"
+    },
+    {
+      "file": "scripts/capture_necromancer_catalog.gd",
+      "sha256": "0ecdc445f95e71210706a695132b1ce548c6de4efeb969d419d18dc5c803007e"
+    },
+    {
+      "file": "scripts/build_necromancer_original.cjs",
+      "sha256": "ebd4804abddbbeb857f87a0e1421a27bf1e3acdb58bd1fbb230d4d0e4c5eda7e"
+    },
+    {
+      "file": "output/necromancer-catalog/waechterstrahl-original.png",
+      "sha256": "bf356627ed05f8701bf3e35cb9e7e492146230f50f9d600f53ba597ae6358169"
+    },
+    {
+      "file": "output/necromancer-catalog/original-browser-review.json",
+      "sha256": "9c3ef4f6b69f8bde8a4f51b3e8a6db14f7c9e4216892454f6152782a2665fbc9"
+    }
+  ]
+}

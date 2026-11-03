@@ -109,7 +109,7 @@ func step(actor: Variant, dt: float) -> Dictionary:
 		# crusted lava (water met it) is cool stone for a while: nothing there
 		if mat == "lava" and host.lava_crusted(at):
 			out.style = ""
-		elif not rule.is_empty() and not host.exempt(actor, mat) and not ElementRules.immune(tags, rule):
+		elif not rule.is_empty() and not host.pool_exempt(actor, mat) and not ElementRules.immune(tags, rule):
 			var medium: Dictionary = rule.duplicate()
 			# the void pulls towards the middle of its pool
 			if rule.has("pull"):
@@ -126,7 +126,7 @@ func step(actor: Variant, dt: float) -> Dictionary:
 			return out
 		out.gas_mat = mat
 		var rule := ElementRules.gas(mat)
-		if not rule.is_empty() and not host.exempt(actor, mat) and not ElementRules.immune(tags, rule):
+		if not rule.is_empty() and not host.gas_exempt(actor, mat) and not ElementRules.immune(tags, rule):
 			out.gas = rule
 			out.blind = float(rule.get("blind_shots", 0.0))
 			out.vision = float(rule.get("vision", 0.0))

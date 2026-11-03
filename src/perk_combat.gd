@@ -256,7 +256,10 @@ func hit(bullet: Dictionary, enemy: Dictionary) -> void:
 	# Follow-up bonuses inspect pre-existing statuses; this hit then applies its own.
 	if bool(bullet.get("primary",true)): _apply_elements(player,enemy,owner)
 	var previous_hp: float = float(enemy.hp)
+	var talents: Variant=_game.talent_combat if "talent_combat" in _game else null
+	var scope: Dictionary=talents.marksman.begin(owner,enemy) if talents!=null and str(player.get("class_id",""))=="archer" and bool(bullet.get("primary",true)) and str(bullet.get("style","arrow"))=="arrow" else {}
 	var resolved_damage: float = _game._damage_enemy(enemy,damage,Vector2(bullet.velocity).normalized(),owner,true)
+	if talents!=null: talents.marksman.end(scope)
 	runtime.hits = int(runtime.hits)+1
 	if _b(player,"leech") > 0 and int(runtime.hits)%maxi(1,int(_b(player,"leech"))) == 0: _heal(player,1)
 	if bool(bullet.get("critical",false)): _event("crit",enemy.pos,enemy.pos)
@@ -334,9 +337,10 @@ func step_statuses(delta: float) -> void:
 					status.tick = 0.0
 			if float(status.time) <= 0: statuses.erase(key)
 
-## Freezing pauses attacks too; boss duration is shorter and has a re-freeze gap.
+## Hard control pauses movement and attacks. Soul binds are a separate non-frost
+## status; the talent host applies their boss immunity and shared lockout.
 func frozen(enemy: Dictionary) -> bool:
-	return enemy.get("statuses",{}).has("freeze")
+	return enemy.get("statuses",{}).has("freeze") or enemy.get("statuses",{}).has("soul_bind")
 
 ## Slow modifies only this step's movement; authored base speed stays intact.
 func speed_scale(enemy: Dictionary) -> float:

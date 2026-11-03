@@ -1290,6 +1290,356 @@
      ]
     }
    }
+  },
+  "curse_colossus": {
+   "family": "curse_monster",
+   "ground": [
+    16,
+    40
+   ],
+   "parts": [
+    {
+     "cut_rects": [
+      [
+       9,
+       1,
+       22,
+       15
+      ]
+     ],
+     "id": "head",
+     "img": "res://assets/vfx/curse_spirit/rig/head.png",
+     "parent": "core",
+     "pivot": [
+      16,
+      15
+     ],
+     "z": 4,
+     "vital": true,
+     "hp": 1
+    },
+    {
+     "cut_rects": [
+      [
+       11,
+       12,
+       20,
+       19
+      ]
+     ],
+     "id": "jaw",
+     "img": "res://assets/vfx/curse_spirit/rig/jaw.png",
+     "parent": "head",
+     "pivot": [
+      16,
+      13
+     ],
+     "z": 5,
+     "vital": false,
+     "hp": 1
+    },
+    {
+     "cut_rects": [
+      [
+       10,
+       14,
+       22,
+       27
+      ]
+     ],
+     "id": "core",
+     "img": "res://assets/vfx/curse_spirit/rig/core.png",
+     "parent": "",
+     "pivot": [
+      16,
+      23
+     ],
+     "z": 2,
+     "vital": true,
+     "hp": 3
+    },
+    {
+     "cut_rects": [
+      [
+       1,
+       15,
+       11,
+       25
+      ]
+     ],
+     "id": "claw_l",
+     "img": "res://assets/vfx/curse_spirit/rig/claw_l.png",
+     "parent": "core",
+     "pivot": [
+      11,
+      17
+     ],
+     "z": 3,
+     "vital": false,
+     "hp": 1
+    },
+    {
+     "cut_rects": [
+      [
+       20,
+       15,
+       30,
+       25
+      ]
+     ],
+     "id": "claw_r",
+     "img": "res://assets/vfx/curse_spirit/rig/claw_r.png",
+     "parent": "core",
+     "pivot": [
+      21,
+      17
+     ],
+     "z": 3,
+     "vital": false,
+     "hp": 1
+    },
+    {
+     "cut_rects": [
+      [
+       12,
+       25,
+       21,
+       32
+      ]
+     ],
+     "id": "tail_root",
+     "img": "res://assets/vfx/curse_spirit/rig/tail_root.png",
+     "parent": "core",
+     "pivot": [
+      16,
+      26
+     ],
+     "z": 1,
+     "vital": false,
+     "hp": 1
+    },
+    {
+     "cut_rects": [
+      [
+       14,
+       30,
+       23,
+       37
+      ]
+     ],
+     "id": "tail_mid",
+     "img": "res://assets/vfx/curse_spirit/rig/tail_mid.png",
+     "parent": "tail_root",
+     "pivot": [
+      17,
+      31
+     ],
+     "z": 0,
+     "vital": false,
+     "hp": 1
+    },
+    {
+     "cut_rects": [
+      [
+       13,
+       35,
+       21,
+       42
+      ]
+     ],
+     "id": "tail_tip",
+     "img": "res://assets/vfx/curse_spirit/rig/tail_tip.png",
+     "parent": "tail_mid",
+     "pivot": [
+      18,
+      36
+     ],
+     "z": 0,
+     "vital": false,
+     "hp": 1
+    }
+   ],
+   "size": [
+    32,
+    40
+   ],
+   "width": 32,
+   "scale": 3
+  },
+  "curse_spawn": {
+   "family": "curse_monster",
+   "ground": [
+    16,
+    40
+   ],
+   "parts": [
+    {
+     "cut_rects": [
+      [
+       9,
+       1,
+       22,
+       15
+      ]
+     ],
+     "id": "head",
+     "img": "res://assets/vfx/curse_spirit/rig/head.png",
+     "parent": "core",
+     "pivot": [
+      16,
+      15
+     ],
+     "z": 4,
+     "vital": true,
+     "hp": 1
+    },
+    {
+     "cut_rects": [
+      [
+       11,
+       12,
+       20,
+       19
+      ]
+     ],
+     "id": "jaw",
+     "img": "res://assets/vfx/curse_spirit/rig/jaw.png",
+     "parent": "head",
+     "pivot": [
+      16,
+      13
+     ],
+     "z": 5,
+     "vital": false,
+     "hp": 1
+    },
+    {
+     "cut_rects": [
+      [
+       10,
+       14,
+       22,
+       27
+      ]
+     ],
+     "id": "core",
+     "img": "res://assets/vfx/curse_spirit/rig/core.png",
+     "parent": "",
+     "pivot": [
+      16,
+      23
+     ],
+     "z": 2,
+     "vital": true,
+     "hp": 3
+    },
+    {
+     "cut_rects": [
+      [
+       1,
+       15,
+       11,
+       25
+      ]
+     ],
+     "id": "claw_l",
+     "img": "res://assets/vfx/curse_spirit/rig/claw_l.png",
+     "parent": "core",
+     "pivot": [
+      11,
+      17
+     ],
+     "z": 3,
+     "vital": false,
+     "hp": 1
+    },
+    {
+     "cut_rects": [
+      [
+       20,
+       15,
+       30,
+       25
+      ]
+     ],
+     "id": "claw_r",
+     "img": "res://assets/vfx/curse_spirit/rig/claw_r.png",
+     "parent": "core",
+     "pivot": [
+      21,
+      17
+     ],
+     "z": 3,
+     "vital": false,
+     "hp": 1
+    },
+    {
+     "cut_rects": [
+      [
+       12,
+       25,
+       21,
+       32
+      ]
+     ],
+     "id": "tail_root",
+     "img": "res://assets/vfx/curse_spirit/rig/tail_root.png",
+     "parent": "core",
+     "pivot": [
+      16,
+      26
+     ],
+     "z": 1,
+     "vital": false,
+     "hp": 1
+    },
+    {
+     "cut_rects": [
+      [
+       14,
+       30,
+       23,
+       37
+      ]
+     ],
+     "id": "tail_mid",
+     "img": "res://assets/vfx/curse_spirit/rig/tail_mid.png",
+     "parent": "tail_root",
+     "pivot": [
+      17,
+      31
+     ],
+     "z": 0,
+     "vital": false,
+     "hp": 1
+    },
+    {
+     "cut_rects": [
+      [
+       13,
+       35,
+       21,
+       42
+      ]
+     ],
+     "id": "tail_tip",
+     "img": "res://assets/vfx/curse_spirit/rig/tail_tip.png",
+     "parent": "tail_mid",
+     "pivot": [
+      18,
+      36
+     ],
+     "z": 0,
+     "vital": false,
+     "hp": 1
+    }
+   ],
+   "size": [
+    32,
+    40
+   ],
+   "width": 32,
+   "scale": 1
   }
  }
 }

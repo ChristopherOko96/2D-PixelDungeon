@@ -18,6 +18,7 @@ extends RefCounted
 const RigLibrary = preload("res://src/rig/rig_library.gd")
 const RigRenderer = preload("res://src/rig/rig_renderer.gd")
 const RigPoses = preload("res://src/rig/rig_poses.gd")
+const CurseMonster = preload("res://src/rig/curse_monster_rig.gd")
 const TALENTS_PATH := "res://assets/data/talents.json"
 ## The pack's spirits: brightened to pale blue-white, like talent_fx draws them.
 const SPIRIT_TINT := Color(1.45, 1.75, 2.1)
@@ -69,6 +70,7 @@ static func rig_of(kind: String) -> String:
 
 ## True when `kind` is drawn as a part rig here (it names a rig the library built).
 static func draws(kind: String) -> bool:
+	if kind in ["curse_colossus","curse_spawn"]: CurseMonster.prepare(RigLibrary.shared())
 	var name := rig_of(kind)
 	return not name.is_empty() and not RigLibrary.shared().rig(name).is_empty()
 
@@ -103,6 +105,7 @@ static func tempo_of(rig_name: String) -> float:
 ## The renderer clip a companion ability shows: "roar" for a shout or burst,
 ## "cast" for a lance, "bite" for a strike (talents.json pet.abilities[].type).
 static func cast_kind(kind: String, slot: int) -> String:
+	if kind == "blood_colossus": return "bone_stomp" if slot == 0 else "bone_whirl"
 	var cfg := pet_config()
 	var names: Array = cfg.get("kinds", {}).get(kind, {}).get("abilities", [])
 	if slot < 0 or slot >= names.size(): return "bite"
@@ -118,7 +121,10 @@ static func cast_kind(kind: String, slot: int) -> String:
 func register(rig_renderer: RefCounted) -> void:
 	if rig_renderer == null or _registered.has(rig_renderer.get_instance_id()): return
 	_registered[rig_renderer.get_instance_id()] = true
+	CurseMonster.prepare(rig_renderer.library)
+	rig_renderer.register_family("curse_monster",Callable(self,"curse_monster"),Callable(self,"attacks"))
 	rig_renderer.register_family("beast", Callable(self, "beast"), Callable(self, "attacks"))
+	rig_renderer.register_family("forest_worm",Callable(self,"forest_worm"),Callable(self,"attacks"))
 	rig_renderer.register_family("bird", Callable(self, "bird"), Callable(self, "attacks"))
 	rig_renderer.register_family("elemental", Callable(self, "elemental"), Callable(self, "attacks"))
 	rig_renderer.register_family("demon", Callable(self, "demon"), Callable(self, "attacks"))
@@ -138,7 +144,10 @@ func draw(canvas: CanvasItem, pet: Dictionary, at: Vector2, face: float, art: fl
 	if rig_name.is_empty(): rig_name = rig_of(kind)
 	var rig: Dictionary = r.library.rig(rig_name)
 	if rig.is_empty(): return NAN
-	var key := "p%d" % int(pet.get("id", 0))
+	var key := "pet:%d" % int(pet.get("id", 0))
+	# A new body has different sockets/textures: discard the previous body's cached pose.
+	if str(_seen.get(key + ":rig", rig_name)) != rig_name: r.forget(key)
+	_seen[key + ":rig"] = rig_name
 	var enemy := snapshot_enemy(pet, rig_name, at, face, art, key)
 	r.observe_one(enemy)
 	var scale := float(rig.get("scale", RigLibrary.PIXEL_SCALE)) * float(enemy.size)
@@ -147,9 +156,11 @@ func draw(canvas: CanvasItem, pet: Dictionary, at: Vector2, face: float, art: fl
 	var top: float = r.draw_enemy(canvas, enemy, point)
 	_seen[key] = clock
 	for seen_key: String in _seen.keys():
+		if seen_key.ends_with(":rig"): continue
 		if clock - float(_seen[seen_key]) > FORGET_AFTER:
 			r.forget(seen_key)
 			_seen.erase(seen_key)
+			_seen.erase(seen_key + ":rig")
 	return top
 
 
@@ -160,12 +171,17 @@ static func snapshot_enemy(pet: Dictionary, rig_name: String, at: Vector2, face:
 	var cfg: Dictionary = pet_config().get("rig", {})
 	var hurt_s := maxf(0.01, float(cfg.get("hurt_s", 0.2)))
 	var enemy := {"actor_key": key, "uid": int(pet.get("id", 0)), "rig": rig_name, "x": at.x, "y": at.y, "face": face,
+		"curse_command":str(pet.get("curse_command","")),"curse_left":float(pet.get("curse_left",0)),
+		"blood_morph": float(pet.get("morph", 0.0)),
+		"bone_whirl": pet.get("whirl",{}),
 		"moving": bool(pet.get("moving", false)), "lost": pet.get("parts_lost", []), "hits": int(pet.get("hits", 0)),
 		"dying_p": float(pet.get("dying_p", -1.0)), "size": art / RigLibrary.PIXEL_SCALE,
 		"hit_flash": clampf(float(pet.get("hurt", 0.0)) / hurt_s, 0.0, 1.0) * FLASH_TIME,
 		# raised skeletons rise out of the floor (the skeleton family's rise clip)
-		"summoned": bool(pet.get("pack", false)) and str(pet.get("kind", "")) == "skeleton"}
-	if bool(pet.get("pack", false)): enemy.tint = SPIRIT_TINT
+		"summoned": bool(pet.get("pack", false)) and str(pet.get("kind", "")) in ["skeleton", "bone_archer"]}
+	if bool(pet.get("pack", false)) and str(pet.get("kind", "")) != "bone_archer": enemy.tint = SPIRIT_TINT
+	if bool(pet.get("converted", false)): enemy.tint = Color(0.8, 1.18, 1.08, clampf(float(pet.get("life", 1.0)) / 0.6, 0.0, 1.0))
+	if bool(pet.get("plague_runner",false)): enemy.tint = Color(0.85,1.12,0.72)
 	var bite := float(pet.get("bite", 0.0))
 	var cast := float(pet.get("cast", 0.0))
 	var wind := float(pet.get("wind", 0.0))
@@ -216,6 +232,26 @@ func attacks(_rig: Dictionary, kind: String) -> Array:
 		"roar": return ["roar", 0.4, 0.6]
 		"cast": return ["cast", 0.45, 0.6]
 	return ["attack", 0.45, 0.6]
+
+## Approved curse mask, jaw, independent claws and a delayed three-joint tail.
+func curse_monster(rig: Dictionary, actor: Dictionary) -> Dictionary:
+	return CurseMonster.pose(rig,actor)
+
+## Delayed joint wave through four overlapping segments; jaw recoils on spit.
+func forest_worm(_rig: Dictionary, actor: Dictionary) -> Dictionary:
+	var pose := RigPoses.blank()
+	var t := float(actor.get("t",0))*2.2
+	var moving := bool(actor.get("moving",false))
+	var phase := float(actor.get("u",0))
+	var spit := sin(clampf(phase,0,1)*PI) if str(actor.get("clip","")) in ["attack","cast"] else 0.0
+	RigPoses.P(pose,"body").dy = sin(t)*(0.65 if moving else 0.3)
+	RigPoses.P(pose,"head").rot = sin(t+0.4)*0.035-spit*0.2
+	RigPoses.P(pose,"jaw").rot = 0.03+spit*0.38
+	RigPoses.P(pose,"jaw").dy = spit*0.7
+	for n in range(4):
+		RigPoses.P(pose,"segment_%d"%(n+1)).rot = sin(t-n*0.55)*(0.045 if moving else 0.018)
+	RigPoses.P(pose,"tail").rot = sin(t-2.6)*0.14
+	return pose
 
 
 static func _part(pose: Dictionary, id: String) -> Dictionary:

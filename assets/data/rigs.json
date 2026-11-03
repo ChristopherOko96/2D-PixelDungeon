@@ -1783,6 +1783,25 @@
    },
    "parts": [
     {
+     "id": "jaw",
+     "rects": [
+      [
+       3,
+       8,
+       12,
+       10
+      ]
+     ],
+     "pivot": [
+      8,
+      8
+     ],
+     "parent": "skull",
+     "z": 4,
+     "hp": 1,
+     "label": "Kiefer"
+    },
+    {
      "id": "skull",
      "rects": [
       [

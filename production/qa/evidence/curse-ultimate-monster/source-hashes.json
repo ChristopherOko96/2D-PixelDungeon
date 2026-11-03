@@ -1,0 +1,69 @@
+{
+  "scope": "Real host death logic, rig and story tests, two local ENet peers, controlled original GPU recordings; no LAN/performance/campaign acceptance.",
+  "files": [
+    {
+      "file": "assets/data/talents.json",
+      "sha256": "7e9415c7e31eb4b4b584f10b9cbbf4bd6ad6c85304f7aa994dad17144f728b30"
+    },
+    {
+      "file": "assets/data/necromancer_rules.json",
+      "sha256": "130151dc9f4b06aa1939d19d6dff130aad126745214266ecb1790c64aa78eac8"
+    },
+    {
+      "file": "src/combat/necromancer_branches.gd",
+      "sha256": "bcf25fff7fde7058f5b574fc66479dc2c860ecf349ca651ff2ccef6acfeca11c"
+    },
+    {
+      "file": "src/combat/talent_combat.gd",
+      "sha256": "c4856c4cf9f3fc9cd1ee158c6ada0c6b3b85e302b40faa379d077bb978eab50c"
+    },
+    {
+      "file": "src/rig/curse_monster_rig.gd",
+      "sha256": "0bbd076f200b76b1f5c43b01bdd1b20030587ca35747d247443026380100eab3"
+    },
+    {
+      "file": "src/vfx/companion_rigs.gd",
+      "sha256": "7573051e3d002d0e0bc91789b144c62989584005eabf651a2f8895924ba5fdc0"
+    },
+    {
+      "file": "src/session_protocol.gd",
+      "sha256": "8e4e2f3fbf065ee7cebb73f7c2002a8f7db982535481c3b35b868b7110d4dfb4"
+    },
+    {
+      "file": "tests/curse_ultimate_monster_test.gd",
+      "sha256": "17cc6b30c6444d0e33e2e5f5171b4eb9490a60be5e01c0df923498cdfb277062"
+    },
+    {
+      "file": "tests/curse_monster_rig_test.gd",
+      "sha256": "84c3d41ff7f4ed2ee938e3061f685c961c07b62fa6f22effa157ca8af72cef57"
+    },
+    {
+      "file": "tests/necro_branches_story_test.gd",
+      "sha256": "9ddb494abbdfca1d416334ed78684b9a24d727d791179abc35bf4ef2c9e33137"
+    },
+    {
+      "file": "tests/necro_blood_network_peer.gd",
+      "sha256": "1d6aebfc7bc997ef3f7666bb6661d4557bc8d24b94d8a3948d0b55098995109b"
+    },
+    {
+      "file": "scripts/capture_necromancer_catalog.gd",
+      "sha256": "45ddc6bcd973b89dc8dbd73a680044500243f0d6540ead983f741fd920ae2dc2"
+    },
+    {
+      "file": "scripts/build_necromancer_original.cjs",
+      "sha256": "ee26fdb104adafde1651ac455fd2cb60c0847be44d1e7a65e92a6180200ecc63"
+    },
+    {
+      "file": "output/necromancer-catalog/fluchkoloss-original.png",
+      "sha256": "98176f6cc81c5b9536389e5a393c467a76af2bb06ac7f269fc303f89f0f9c2db"
+    },
+    {
+      "file": "output/necromancer-catalog/original-browser-review.json",
+      "sha256": "9c3ef4f6b69f8bde8a4f51b3e8a6db14f7c9e4216892454f6152782a2665fbc9"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/catalog.json",
+      "sha256": "c04214e4c2a3e9ccbefc7f776f7341f8d65cb272d3aeb12984b42a0f28a986cf"
+    }
+  ]
+}

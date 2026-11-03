@@ -1,0 +1,153 @@
+{
+  "scope": "Controlled native game recordings and focused tests, not a played campaign or LAN/FPS acceptance.",
+  "files": [
+    {
+      "file": "assets/data/talents.json",
+      "sha256": "0fe72856ecfcabd5a393cdb1768933ff1515f9d3be9830cd85ea9ea7013f3fd5"
+    },
+    {
+      "file": "assets/data/necromancer_rules.json",
+      "sha256": "a62ec45bafb6275bc3127785565dee96efeba215ad38b3d8651d65bbbdc670be"
+    },
+    {
+      "file": "assets/data/curse_spirit_rig.json",
+      "sha256": "c0b67fe451841793cc159850f918e2a976e15f1a9812a3d54c6f178324a01e5e"
+    },
+    {
+      "file": "assets/data/necro_spell_rigs.json",
+      "sha256": "07f8b176e14953198c38296f1a3087e7b18b97ae2f36b81d95d9a4ff2fd0f762"
+    },
+    {
+      "file": "src/combat/necromancer_branches.gd",
+      "sha256": "f3cddb13ea41ed6bba8f40fd5acdbe605d918c149542d7c415f41b90dc99d3ec"
+    },
+    {
+      "file": "src/combat/talent_combat.gd",
+      "sha256": "1211d647491de961fc2e1319ae6c6343f84df3e7440a6ef7ce62de2f13c4edbe"
+    },
+    {
+      "file": "src/combat/soul_projectiles.gd",
+      "sha256": "9c4d097218c70e538a5b06abe85742e083ea9fb19b41b515dfc086e85eae82b8"
+    },
+    {
+      "file": "src/rig/curse_spirit_rig.gd",
+      "sha256": "edbb06d754de6f944a8b4c51f9924162f35714be070c7a05fac8de004b7a8359"
+    },
+    {
+      "file": "src/rig/necro_spell_rig.gd",
+      "sha256": "ac7b87828cb3bae1f44126c367fdaca5f0474aa22b18f4641445a9604c1cf360"
+    },
+    {
+      "file": "src/vfx/necro_art.gd",
+      "sha256": "cf769f7ea4e4e8cff8fca47c6b2ddd731a3e9174514fba402897ff43f7c95493"
+    },
+    {
+      "file": "src/vfx/talent_fx.gd",
+      "sha256": "3272cbe659dd4d7d139723fa259824daaa7ab99687a94631a50b16be523e9b2c"
+    },
+    {
+      "file": "src/vfx/companion_rigs.gd",
+      "sha256": "1363bef4247bfdf21c3898f509eb84cc99fe2a12a5dc8c53d1218c4643ed6861"
+    },
+    {
+      "file": "src/session_protocol.gd",
+      "sha256": "47c2e6dc065938ce0c3d5ba44aeab0e5144e75bbaee041511194743dec70b877"
+    },
+    {
+      "file": "scripts/capture_necromancer_catalog.gd",
+      "sha256": "a17dc631f59837827e81aa6d71ede8f5d8674233531d09e55f551cd81c0c2d06"
+    },
+    {
+      "file": "scripts/import_curse_spirit_rig.gd",
+      "sha256": "ec64a3b75dc56f0b7ef0616ae39f3363cf18ca2717244f490b8e01351beb6e6d"
+    },
+    {
+      "file": "scripts/encode_necromancer_catalog.cjs",
+      "sha256": "5369432411dd46b600b55025e0713bcf09b139ba116b7840804a0d2b9d58da40"
+    },
+    {
+      "file": "scripts/build_necromancer_artifact.cjs",
+      "sha256": "f83a7d144b627044fa03e7d4bd46b7dee0040dcef891c5200fcadf430d479f6f"
+    },
+    {
+      "file": "tests/curse_rework_test.gd",
+      "sha256": "eee7d91da4d3ed54c28d101905452af377cc4a3289c841d529d984b43760e597"
+    },
+    {
+      "file": "tests/curse_spirit_rig_test.gd",
+      "sha256": "c7e3c91e6a5f8bddb6e449594a97100e360e764f8d4f9181f33eb7d9069150f6"
+    },
+    {
+      "file": "tests/necro_branches_story_test.gd",
+      "sha256": "6fab73dda988dc71a698888a33f4f331966ad7910e4ed02dd9d092b4c65ea7a4"
+    },
+    {
+      "file": "tests/necro_blood_network_peer.gd",
+      "sha256": "2e9d3389bf313ea935286e6efe6376ef8f6230e3822c46b2bf7bd7cd6dd3ae13"
+    },
+    {
+      "file": "output/necromancer-catalog/catalog.webm",
+      "sha256": "bacfa967c506144ddc3b7c68e7d1d6f0d1b49ba425e3a6876c51a781464f7f2f"
+    },
+    {
+      "file": "output/necromancer-catalog/video-timing.json",
+      "sha256": "634da129668e22cb079979b41a6382bbc4120e113f7c308d21afe2fcf5bfdd7c"
+    },
+    {
+      "file": "output/necromancer-catalog/browser-review.json",
+      "sha256": "b6a1244271ab8a86fbd77c55de36a33fd88fab4b84d21070e25c45eddffa1cc6"
+    },
+    {
+      "file": "output/necromancer-catalog/nekromant-angriffe.template.html",
+      "sha256": "c0e407f7a169d3717cf4528ff1383879c2e1f90985781ed4afe678162f8a10f7"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog/catalog.json",
+      "sha256": "ebbc7bd5793c957fae4e998a4c3c668f36342e90d3dd26d958cec9c674501f2f"
+    },
+    {
+      "file": "assets/vfx/curse_spirit/rig/bind.png",
+      "sha256": "42d1a5591c4d9e50d9d1c5e3534c7564072317ae4e12088f5bcbd9bf47e03a87"
+    },
+    {
+      "file": "assets/vfx/curse_spirit/rig/claw_l.png",
+      "sha256": "6a8ff162d717daa79b0fa549d4ecb1cf7cc29ff8193cdbe657ee2c1da6d8d087"
+    },
+    {
+      "file": "assets/vfx/curse_spirit/rig/claw_r.png",
+      "sha256": "8fe257e3b974034535e26ba964eafea02a6e39632b4daaf5c0a91e4daa999789"
+    },
+    {
+      "file": "assets/vfx/curse_spirit/rig/core.png",
+      "sha256": "34ec8363c3467fe6cc48aa461079fb3326129493592af5bae014afd232a88a8f"
+    },
+    {
+      "file": "assets/vfx/curse_spirit/rig/head.png",
+      "sha256": "26b295b68e483c3e2c2770e4330f787ec0c2fa2bde4bc7565306d591c42d48c7"
+    },
+    {
+      "file": "assets/vfx/curse_spirit/rig/jaw.png",
+      "sha256": "56f9596d59c69fd14cbe2d20323d1074cf6e2e9bb8636753288d5d2437570a53"
+    },
+    {
+      "file": "assets/vfx/curse_spirit/rig/tail_mid.png",
+      "sha256": "7758a2988bd9dd1838233d073d165332d5695bd0f7e4d357260ea609e3cf1487"
+    },
+    {
+      "file": "assets/vfx/curse_spirit/rig/tail_root.png",
+      "sha256": "1dd561ede27256c2e348f14c1bcd2165fd66415e0a499300ace0b41408fa0ad5"
+    },
+    {
+      "file": "assets/vfx/curse_spirit/rig/tail_tip.png",
+      "sha256": "e624e9520d29920c5676713b8a7942aca81b18525c46fdbe97c04674f1e3239e"
+    },
+    {
+      "file": "scripts/necro_catalog_stills.cjs",
+      "sha256": "3d8ddfd446223ff93abe165e1424af8770454eef8efb69b3bc0fc42a3e019750"
+    },
+    {
+      "file": "scripts/check_necromancer_artifact.cjs",
+      "sha256": "27b9aff2444471ba2c58e2d260a18ae069159ae1cd3d33d3cdbab046d5da81f7"
+    }
+  ]
+}

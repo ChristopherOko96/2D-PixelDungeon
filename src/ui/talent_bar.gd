@@ -25,6 +25,7 @@ const GAUGE_DEFAULTS := {"radius": 17, "cell": 2, "gap": 6, "lift": -4, "glow": 
 	"burst_speed": 60, "orbit_speed": 1.4, "squash": 0.82, "core": 2, "tone": {}}
 ## The void's black heart (the orb's inside).
 const VOID_BLACK := Color("0a0612")
+const SkillBar = preload("res://src/ui/skill_bar.gd")
 
 var _font: Font = PixelStyle.create_font()
 var _specs: Dictionary = {}
@@ -77,6 +78,9 @@ func skill_slots(talents: Dictionary) -> Array:
 				"icon": TalentIcons.make(_specs.get(str(slot.get("spec", "")), {}), str(slot.get("icon", "burst")), true, false),
 				"locked": false, "short": not bool(slot.get("ready", false)) and float(slot.get("cd", 0.0)) <= 0.0,
 				"text": str(slot.get("text", "")), "meta": _meta(slot)})
+			if int(slot.get("charges_max",0))>0:
+				out[-1].pips=[int(slot.charges_left),int(slot.charges_max)]
+				out[-1].charge=1-float(slot.get("charge_next",0))/maxf(0.1,float(slot.cd_max)) if int(slot.charges_left)<int(slot.charges_max) else -1.0
 		else:
 			out.append({"key": str(index + 1), "name": "Frei: lerne ein aktives Talent", "locked": true, "empty": true, "lock": true})
 	var ult: Dictionary = talents.get("ult", {})
@@ -142,6 +146,7 @@ static func _meta(slot: Dictionary) -> String:
 	var parts: Array = []
 	if float(slot.get("cost", 0.0)) > 0.0: parts.append("%d %s" % [roundi(float(slot.cost)), str(slot.get("res_name", ""))])
 	if float(slot.get("cd_max", 0.0)) > 0.0: parts.append("Abklingzeit %s s" % _number(float(slot.cd_max)))
+	if int(slot.get("charges_max",0))>0: parts.append("%d/%d Ladungen"%[int(slot.charges_left),int(slot.charges_max)])
 	return " · ".join(parts)
 
 
@@ -162,16 +167,16 @@ static func pet_slot(slots: Array, index: int) -> int:
 
 ## The resource line above the skill bar, `width` px wide, centred on
 ## `centre_x`, its top at `y`: mana, Ausdauer or Zorn with the number.
-func draw_resource(canvas: CanvasItem, talents: Dictionary, centre_x: float, y: float, width: float = 236.0) -> void:
+func draw_resource(canvas: CanvasItem, talents: Dictionary, centre_x: float, y: float, width: float = 236.0, mouse: Vector2 = Vector2.INF, screen: Vector2 = Vector2(1280, 720)) -> void:
 	if talents.is_empty(): return
 	var kind := str(talents.get("res_kind", "mana"))
-	var colour: Color = {"mana": Color("5b8ff0"), "stamina": Color("7fcf5a"), "rage": CryptUI.BLOOD}.get(kind, CryptUI.GOLD)
+	var colour: Color = {"mana": Color("5b8ff0"), "souls": Color("72d7d0"), "stamina": Color("7fcf5a"), "rage": CryptUI.BLOOD}.get(kind, CryptUI.GOLD)
 	var bar := Rect2(floorf(centre_x - width * 0.5), y, width, 8)
 	var share := clampf(float(talents.get("res", 0)) / maxf(1.0, float(talents.get("res_max", 100))), 0.0, 1.0)
 	canvas.draw_rect(bar, CryptUI.INK)
 	canvas.draw_rect(Rect2(bar.position + Vector2(1, 1), Vector2((bar.size.x - 2) * share, 6)), colour)
 	if float(talents.get("shield", 0.0)) > 0.0: canvas.draw_rect(bar.grow(2), Color(CryptUI.FROST, 0.8), false, 2.0)
-	var name: String = {"mana": "MANA", "stamina": "AUSDAUER", "rage": "ZORN"}.get(kind, "")
+	var name: String = {"mana": "MANA", "souls": "SEELEN", "stamina": "AUSDAUER", "rage": "ZORN"}.get(kind, "")
 	# the name left of the bar; the numbers over it only under the mouse or when
 	# the resource runs low (ui_hud_style.json "rules")
 	var label_px := int(HudKit.rule("resource_label_size", 16.0))
@@ -180,11 +185,15 @@ func draw_resource(canvas: CanvasItem, talents: Dictionary, centre_x: float, y: 
 	HudStyle.text(canvas, _font, Vector2(bar.position.x - 8.0, bar.get_center().y + 6.0), name, label_px, tint, 2)
 	var near := Rect2(bar.position - Vector2(name_w + 12.0, 16.0), bar.size + Vector2(name_w + 12.0, 24.0)).has_point(canvas.get_local_mouse_position())
 	# rage starts empty and builds up: its numbers only under the mouse
-	if near or (kind != "rage" and share < HudKit.rule("resource_low_share", 0.25)):
+	if kind == "souls" or near or (kind != "rage" and share < HudKit.rule("resource_low_share", 0.25)):
 		HudStyle.text(canvas, _font, Vector2(bar.get_center().x, bar.position.y - 4.0), "%d / %d" % [int(float(talents.get("res", 0))), int(float(talents.get("res_max", 100)))], label_px, tint, 1)
+	if kind == "souls":
+		HudStyle.text(canvas, _font, Vector2(bar.end.x + 8.0, bar.get_center().y + 4.0), str(talents.get("resource_passive_name", "Seelensog")).to_upper(), 8, tint)
+		if bar.grow(8).has_point(mouse):
+			SkillBar._card(canvas, _font, Vector2(bar.get_center().x, bar.position.y - 18), {"name": str(talents.get("resource_passive_name", "Seelensog")), "text": str(talents.get("resource_passive", ""))}, screen)
 	# the Leerenmagier's Arkanes Gefüge right of his mana (only a snapshot that carries one)
 	var gefuege: Variant = talents.get("gefuege", null)
-	if gefuege is Dictionary:
+	if gefuege is Dictionary and not gefuege.is_empty():
 		var style := gauge_style()
 		var radius := float(style.radius)
 		draw_gefuege(canvas, gefuege, Vector2(bar.end.x + float(style.gap) + radius, bar.position.y + float(style.lift)))
@@ -348,7 +357,7 @@ func draw_bar(canvas: CanvasItem, talents: Dictionary, centre_x: float, y: float
 	var width := maxf(260.0, count * size_px + maxi(0, count - 1) * gap)
 	var x := floorf(centre_x - width * 0.5)
 	var kind := str(talents.get("res_kind", "mana"))
-	var colour: Color = {"mana": Color("5b8ff0"), "stamina": Color("7fcf5a"), "rage": CryptUI.BLOOD}.get(kind, CryptUI.GOLD)
+	var colour: Color = {"mana": Color("5b8ff0"), "souls": Color("72d7d0"), "stamina": Color("7fcf5a"), "rage": CryptUI.BLOOD}.get(kind, CryptUI.GOLD)
 	var bar := Rect2(x, y - 14, width, 8)
 	# framed like the slots: a dark frame, the fill with a lighter top row
 	canvas.draw_rect(bar.grow(1), CryptUI.INK)

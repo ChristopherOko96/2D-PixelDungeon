@@ -1,0 +1,59 @@
+{
+ "_note": "Presentation only. Existing native source pixels cut once; RigLibrary/RigRenderer solve continuous joints. Actor fractions are relative to the opaque silhouette. No new actor art, combat geometry or damage rules.",
+ "projectiles": [
+  "arcane_lance",
+  "arrow_rain",
+  "blade_wave",
+  "bone_spear",
+  "fire_spear",
+  "hail_arrow",
+  "ice_lance",
+  "ice_shard",
+  "knife",
+  "poison_dart",
+  "sky_spear",
+  "soul_lance"
+ ],
+ "winged_effects": [
+  "phoenix"
+ ],
+ "rigid_effects": [
+  "meteor",
+  "meteor_big",
+  "ice_block",
+  "reticle",
+  "rune_circle",
+  "lava_pool",
+  "net",
+  "spike_trap"
+ ],
+ "winged_actors": [
+  "angel",
+  "seraph",
+  "winged_chort",
+  "golden_angel"
+ ],
+ "actor": {
+  "head_end": 0.35,
+  "arm_width": 0.28,
+  "leg_start": 0.76,
+  "walk_speed": 8,
+  "idle_speed": 2.4,
+  "leg_swing": 0.15,
+  "arm_swing": 0.11,
+  "head_sway": 0.025,
+  "wing_swing": 0.22,
+  "attack_swing": 0.65
+ },
+ "effect": {
+  "speed": 8,
+  "joint_swing": 0.035,
+  "wing_swing": 0.16,
+  "tail_swing": 0.065
+ },
+ "skulls": [
+  "curse_skull",
+  "skull",
+  "void_skull"
+ ]
+}

@@ -15,6 +15,7 @@ extends RefCounted
 ## showing through. Presentation only.
 
 const Glow = preload("res://src/vfx/glow.gd")
+const Cutouts = preload("res://src/rig/cutout_motion.gd")
 const DATA_PATH := "res://assets/data/vfx_sprites.json"
 const PIXEL := 2.0
 const MAX_LIVE := 220
@@ -51,7 +52,7 @@ func _init() -> void:
 	for name: String in parsed.get("sheets", {}):
 		var entry: Dictionary = parsed.sheets[name]
 		if not ResourceLoader.exists(str(entry.file)): continue
-		_sheets[name] = {"texture": load(str(entry.file)), "size": Vector2(float(entry.size[0]), float(entry.size[1])),
+		_sheets[name] = {"name":name,"texture": load(str(entry.file)), "size": Vector2(float(entry.size[0]), float(entry.size[1])),
 			"frames": int(entry.frames), "fps": float(entry.fps), "anchor": Vector2(float(entry.anchor[0]), float(entry.anchor[1])),
 			"fade": 0.4 if MAGIC.has(name) else 0.7, "linger": 0.28 if MAGIC.has(name) else 0.06}
 
@@ -82,6 +83,23 @@ static func walkable_cells(layout: Dictionary) -> Dictionary:
 	for entry: Dictionary in layout.get("painted_tiles", []):
 		if bool(entry.get("solid", false)): walkable.erase(Vector2i(int(entry.get("x", 0)), int(entry.get("y", 0))))
 	return walkable
+
+## Static exact obstacle lookup, bucketed by the existing 32px world grid.
+## Built once per room; particle/pool queries only visit their own cell.
+static func wall_rects_by_cell(layout: Dictionary) -> Dictionary:
+	var result := {}
+	for wall: Array in layout.get("obstacles",[]):
+		if wall.size()!=4: continue
+		var box := Rect2(float(wall[0]),float(wall[1]),float(wall[2]),float(wall[3]))
+		var low := Vector2i((box.position/32).floor())
+		var high := Vector2i((box.end/32).ceil())
+		for y in range(low.y,high.y):
+			for x in range(low.x,high.x):
+				var key := Vector2i(x,y)
+				var rectangles: Array = result.get(key,[])
+				rectangles.append(box)
+				result[key]=rectangles
+	return result
 
 
 ## True when `point` lies on the room's floor (always true without a floor map).
@@ -160,7 +178,7 @@ func draw_at(canvas: CanvasItem, name: String, point: Vector2, rotation: float, 
 	var poly := PackedVector2Array()
 	if clip and _can_clip(): poly = _cached_poly(name, sheet, point, rotation, scale)
 	tint.a *= fade
-	_frame(canvas, sheet, frame, point, rotation, scale, tint, poly)
+	_frame(canvas, sheet, frame, point, rotation, scale, tint, poly,progress*float(sheet.frames)/float(sheet.fps))
 
 
 ## The clip polygon of a sheet at a place, kept while the effect stays there.
@@ -170,6 +188,92 @@ func _cached_poly(name: String, sheet: Dictionary, point: Vector2, rotation: flo
 		if _polys.size() > 160: _polys.clear()
 		_polys[key] = _clip_polygon(sheet, point, rotation, scale)
 	return _polys[key]
+
+
+## A preprepared external frame using the same cached wall clipping as effect sheets.
+func draw_external_frame(canvas: CanvasItem, key: String, texture: Texture2D, point: Vector2, anchor: Vector2, world_scale: float, tint: Color = Color.WHITE) -> void:
+	if _can_clip() and not open(point): return
+	var sheet := {"texture": texture, "size": texture.get_size(), "anchor": anchor, "smooth_alpha": true}
+	var scale := world_scale / pixel
+	var poly := _cached_poly(key, sheet, point, 0.0, scale) if _can_clip() else PackedVector2Array()
+	_frame(canvas, sheet, 0, point, 0.0, scale, tint, poly)
+
+
+## Articulated effect parts, with one ground visibility boundary for the whole
+## rig. UVs are solved through each bone's full affine transform (also mirrored
+## and stretched limbs). Never reuse a rounded flipbook clipping cache here.
+func draw_external_rig(canvas: CanvasItem, parts: Array, point: Vector2) -> void:
+	if parts.is_empty() or (_can_clip() and not open(point)): return
+	var clip := external_rig_clip(parts, point)
+	if not clip.is_empty() and clip.size() < 3: return
+	for part: Dictionary in parts:
+		var tint: Color = part.tint
+		if tint.a <= 0.001: continue
+		var xform: Transform2D = part.transform
+		var texture: Texture2D = part.texture
+		if clip.is_empty():
+			canvas.draw_set_transform_matrix(xform)
+			canvas.draw_texture(texture, Vector2.ZERO, tint)
+			canvas.draw_set_transform_matrix(Transform2D.IDENTITY)
+			continue
+		var quad := _rig_quad(part)
+		# Negative determinants reverse winding; Geometry2D treats clockwise
+		# contours as holes, so keep the mirrored silhouette counter-clockwise.
+		if Geometry2D.is_polygon_clockwise(quad): quad.reverse()
+		for intersected: PackedVector2Array in Geometry2D.intersect_polygons(quad, clip):
+			var polygon := clean_rig_polygon(intersected)
+			if polygon.size() < 3 or Geometry2D.triangulate_polygon(polygon).is_empty(): continue
+			var uvs := PackedVector2Array()
+			var colors := PackedColorArray()
+			var inverse := xform.affine_inverse()
+			for vertex: Vector2 in polygon:
+				uvs.append((inverse * vertex) / texture.get_size())
+				colors.append(tint)
+			canvas.draw_polygon(polygon, colors, uvs, texture)
+
+
+## Empty = no clipping; one point = fully collapsed/invisible clip.
+func external_rig_clip(parts: Array, point: Vector2) -> PackedVector2Array:
+	if not _can_clip() or parts.is_empty(): return PackedVector2Array()
+	var bounds := Rect2(point, Vector2.ZERO)
+	for part: Dictionary in parts:
+		for vertex: Vector2 in _rig_quad(part): bounds = bounds.expand(vertex)
+	var extent := maxf(point.distance_to(bounds.position), point.distance_to(bounds.end))
+	if not _near_wall(point, extent): return PackedVector2Array()
+	var sheet := {"size": bounds.size, "anchor": point - bounds.position}
+	var local := _clip_polygon(sheet, point, 0.0, 1.0 / pixel)
+	if local.is_empty(): return local
+	for index in range(local.size()): local[index] += bounds.position
+	var cleaned := clean_rig_polygon(local)
+	# A collapsed clipped shape is invisible; empty means *unclipped* above.
+	return cleaned if not cleaned.is_empty() else PackedVector2Array([point])
+
+
+## Ground-anchored upward sprites can produce many identical zero-length rays.
+## Remove repeated/straight vertices before clipping and triangulation.
+static func clean_rig_polygon(source: PackedVector2Array) -> PackedVector2Array:
+	var result := PackedVector2Array()
+	for p: Vector2 in source:
+		if result.is_empty() or result[result.size() - 1].distance_squared_to(p) > 0.000001: result.append(p)
+	if result.size() > 1 and result[0].distance_squared_to(result[result.size() - 1]) <= 0.000001: result.remove_at(result.size() - 1)
+	var changed := true
+	while changed and result.size() >= 3:
+		changed = false
+		for i in range(result.size()):
+			var a := result[(i + result.size() - 1) % result.size()]
+			var b := result[i]
+			var c := result[(i + 1) % result.size()]
+			if absf((b - a).cross(c - b)) < 0.00001:
+				result.remove_at(i)
+				changed = true
+				break
+	return result if result.size() >= 3 else PackedVector2Array()
+
+
+static func _rig_quad(part: Dictionary) -> PackedVector2Array:
+	var bounds: Rect2 = part.bounds
+	var xform: Transform2D = part.transform
+	return PackedVector2Array([xform * bounds.position, xform * Vector2(bounds.end.x, bounds.position.y), xform * bounds.end, xform * Vector2(bounds.position.x, bounds.end.y)])
 
 
 ## Starts a one-shot animation. `scale` multiplies the sprite's pixel size; `clip`
@@ -213,7 +317,7 @@ func draw(canvas: CanvasItem) -> void:
 		var alpha := 1.0 - smoothstep(float(sheet.fade), 1.0, progress)
 		var tint: Color = item.tint
 		tint.a *= alpha
-		_frame(canvas, sheet, frame, item.pos, float(item.rot), float(item.scale), tint, item.get("poly", PackedVector2Array()))
+		_frame(canvas, sheet, frame, item.pos, float(item.rot), float(item.scale), tint, item.get("poly", PackedVector2Array()),float(item.time))
 
 
 ## Bloom for magic effects and sparks: a soft light that swells and fades with
@@ -274,15 +378,20 @@ func _near_wall(point: Vector2, radius: float) -> bool:
 	return false
 
 
-func _frame(canvas: CanvasItem, sheet: Dictionary, frame: int, point: Vector2, rotation: float, scale: float, tint: Color, poly: PackedVector2Array) -> void:
+func _frame(canvas: CanvasItem, sheet: Dictionary, frame: int, point: Vector2, rotation: float, scale: float, tint: Color, poly: PackedVector2Array, age := 0.0) -> void:
 	# a faded frame drops whole sprite pixels by the dither instead of turning see-through
 	var texture: Texture2D = sheet.texture
-	if tint.a < 0.999:
+	if tint.a < 0.999 and not bool(sheet.get("smooth_alpha", false)):
 		texture = _dithered(sheet, tint.a)
 		if texture == null: return
 		tint.a = 1.0
 	var size: Vector2 = sheet.size
 	var anchor: Vector2 = sheet.anchor
+	if sheet.has("name"):
+		var parts:=Cutouts.effect(texture,str(sheet.name),Vector2i(size),frame,anchor,point,rotation,pixel*scale,age,tint)
+		if not parts.is_empty():
+			draw_external_rig(canvas,parts,point)
+			return
 	if poly.is_empty():
 		canvas.draw_set_transform(point, rotation, Vector2(pixel * scale, pixel * scale))
 		canvas.draw_texture_rect_region(texture, Rect2(-anchor, size), Rect2(Vector2(frame * size.x, 0), size), tint)

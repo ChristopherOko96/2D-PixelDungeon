@@ -200,6 +200,18 @@ func advance(now: float) -> void:
 	_take_field_events()
 
 
+## Hollow field, delegated to the same gameplay field as ordinary liquid.
+func add_ring(id: int, style: String, at: Vector2, outer: float, inner: float, start: float, end: float, source := "") -> void:
+	pool_field.add(id,style,at,Vector2.ZERO,outer,start,end,source,false,0,{"inner_r":inner})
+	_take_field_events()
+
+
+## Narrow floor trail; its capsule never fills the enclosing bounding disc.
+func add_strip(id: int, style: String, from: Vector2, to: Vector2, half: float, start: float, end: float, source: String) -> void:
+	pool_field.add(id,style,(from+to)*0.5,Vector2.ZERO,from.distance_to(to)*0.5+half,start,end,source,false,0,{"path":[[from.x,from.y],[to.x,to.y]],"w":half})
+	_take_field_events()
+
+
 ## Puts what changed in the field into the picture, in order: pools laid
 ## (they splash when they just landed), pools ended early, the rules' ice
 ## frozen or thawed by someone else's call.

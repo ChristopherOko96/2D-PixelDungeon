@@ -1,0 +1,70 @@
+[
+  {
+    "path": "src/combat/talent_combat.gd",
+    "sha256": "C196742F2BA0B1C31FDDCA7C7C257B243D92F05BDDA79CB623DADA807CA83984"
+  },
+  {
+    "path": "src/combat/soul_ring_shape.gd",
+    "sha256": "2DBA03FC12DD8A9A3D9C196148F33BB9CB2AD95171611C1AFE4D88112899805E"
+  },
+  {
+    "path": "src/combat/companion_targets.gd",
+    "sha256": "86A9E1AC3052C2D65F6E82E45F95C479C05F1800B67257B4C896385F599B1FEB"
+  },
+  {
+    "path": "src/vfx/pool_paint.gd",
+    "sha256": "A42B8F0543A3DDA81DD0629022440C52F2BCE75BEF77A3828C929D09726D44CC"
+  },
+  {
+    "path": "src/vfx/talent_fx.gd",
+    "sha256": "6478FB18CB148EBA48C5074C07C9FF0F70E0E14FF260000A0A692C7DED5345B1"
+  },
+  {
+    "path": "src/vfx/attack_fx.gd",
+    "sha256": "8D8362A19B17B73357EAA20CD69F06D59A49F229440D2E125596835F2667A1CD"
+  },
+  {
+    "path": "src/vfx/feedback.gd",
+    "sha256": "A4DB4ADC9911FDE1A731DC9FA81B50069257CF1D8A5F168686945DC48926D359"
+  },
+  {
+    "path": "src/vfx/fx_sprites.gd",
+    "sha256": "1FC81A6061CBE45CBBE4AC4315255B0C31A221672C1297A42FA0D8861FCBD297"
+  },
+  {
+    "path": "src/vfx/soul_ring.gd",
+    "sha256": "130839E066869822E44FB123D770D294D97354E0FC078EA6921F9EAF26085509"
+  },
+  {
+    "path": "src/ui/talent_bar.gd",
+    "sha256": "D872F23232FFB64E91E5B7E65ED8CCA36EC4869FE9347461F74D6A80D2278F6B"
+  },
+  {
+    "path": "src/hero/hero_look.gd",
+    "sha256": "FA4FEA395BF7432E4E503D7B89C16122310E704797C32C63E786813F50B6B5ED"
+  },
+  {
+    "path": "src/rig/rig_renderer.gd",
+    "sha256": "653AD69172E1D70271F66AC31BF56AA14F53EA31536080AB561B7394C708B02E"
+  },
+  {
+    "path": "src/debug/test_arena.gd",
+    "sha256": "F332165775B6664F9BB1E3BC1899CFC0336383568112B970C233FFC07F100006"
+  },
+  {
+    "path": "src/session_protocol.gd",
+    "sha256": "FC493233908693CC1FB071BA8D8FC6E4B77CC8739CE29576A9172CD2F7BE771E"
+  },
+  {
+    "path": "assets/data/talents.json",
+    "sha256": "DF8860B68E7AEC4C2A39A425D89FCB0D263CD3341C92B30D3D607012410EAA0F"
+  },
+  {
+    "path": "assets/data/vfx_talents.json",
+    "sha256": "CFE7AA9F3CE96E159E84F2D26968BC2BB0FFFF99A4F0A7ECDB439B4044E37F9A"
+  },
+  {
+    "path": "scripts/capture_soul_ring_wide.gd",
+    "sha256": "BC2AF0E917331FD666A5CC8CC4DB4DBE3F46703BEFDF11A5432276A6D2E9A399"
+  }
+]

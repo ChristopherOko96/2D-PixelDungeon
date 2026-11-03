@@ -14,6 +14,7 @@ extends RefCounted
 ## when mad, ripples and flickers inverted (_draw_madness).
 
 const SKULL := preload("res://assets/sprites/0x72/skull.png")
+const Cutouts=preload("res://src/rig/cutout_motion.gd")
 const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
 const PoolPaint = preload("res://src/vfx/pool_paint.gd")
 const Pal = preload("res://src/vfx/talent_palette.gd")
@@ -214,7 +215,7 @@ func draw_ground(canvas: CanvasItem, snapshot: Dictionary, clock: float) -> void
 				var shrink := 1.0 - progress * 0.5
 				PixelPaint.ellipse(canvas, at + Vector2(0, ART), radius * shrink, radius * shrink, INK, ART, 2, int(floorf(clock * PixelPaint.FPS)))
 				PixelPaint.ellipse(canvas, at, radius * shrink, radius * shrink, color, ART, 2, int(floorf(clock * PixelPaint.FPS)))
-				canvas.draw_texture_rect(SKULL, Rect2((at - Vector2(16, 24) - Vector2(0, float(pulse) * ART)).snapped(Vector2(ART, ART)), Vector2(32, 32)), false, Color(1.0, 1.0 - 0.4 * pulse, 1.0 - 0.4 * pulse))
+				Cutouts.sprite(canvas,SKULL,"skull",Rect2((at-Vector2(16,24)-Vector2(0,float(pulse)*ART)).snapped(Vector2(ART,ART)),Vector2(32,32)),clock,Color(1,1-0.4*pulse,1-0.4*pulse))
 
 
 func _draw_strike(canvas: CanvasItem, zone: Dictionary, at: Vector2, radius: float, progress: float, color: Color, clock: float) -> void:
@@ -277,10 +278,8 @@ func draw_bullet(canvas: CanvasItem, bullet: Dictionary, point: Vector2, clock: 
 		"bone_spear":
 			_shot(canvas, point + aim * 8.0, aim, 13, [Color("fdf7ed"), Color("fdf7ed"), COLORS.bone, COLORS.bone, Color("b8ab92")])
 		"skull":
-			# turns in quarter steps, drawn at a whole scale
-			canvas.draw_set_transform(point.snapped(Vector2(ART, ART)), floorf(clock * 6.0) * PI * 0.5, Vector2(2, 2))
-			canvas.draw_texture(SKULL, -Vector2(8, 10))
-			canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+			# A continuous turn and independent jaw replace the old quarter-step flip.
+			Cutouts.sprite(canvas,SKULL,"skull",Rect2(point-Vector2(16,20),SKULL.get_size()*2),clock,Color.WHITE,clock*3,point)
 		"ice":
 			_shot(canvas, point, aim, 7, [Color("ffffff"), Color("e6fbff"), Color("a6e3f7"), Color("6fbde8"), Color("3b84c4")])
 		"fire_arrow":

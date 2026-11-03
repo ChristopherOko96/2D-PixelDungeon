@@ -6,6 +6,7 @@ var failures: Array[String] = []
 
 func _initialize() -> void:
 	test_midpoint_smooths_positions_without_delaying_authoritative_values()
+	test_guardian_smooths_position_and_keeps_phase_and_removal_authoritative()
 	test_geometry_and_inputs_remain_immutable_and_shared()
 	test_jitter_and_stale_packets_do_not_rewind_presentation()
 	test_removed_dead_revived_and_new_entities_do_not_ghost()
@@ -69,6 +70,24 @@ func test_geometry_and_inputs_remain_immutable_and_shared() -> void:
 	check(is_same(render.room_layout,newest.room_layout),"the full immutable room geometry stays shared")
 	check(not is_same(render.players[1],newest.players[1]),"interpolated actor positions use a distinct small dictionary")
 	check(render.players[1].get("max_hp") == newest.players[1].get("max_hp"),"non-position metadata remains unchanged")
+
+func test_guardian_smooths_position_and_keeps_phase_and_removal_authoritative() -> void:
+	var buffer := new_buffer()
+	var first := state(1, 10.0, 0.0)
+	first.talents = {"guardians": [{"id": 51, "owner": 1, "x": 10.0, "y": 40.0, "motion": "hover", "age": 0.2}]}
+	buffer.push(first)
+	buffer.advance(0.05)
+	var newest := state(2, 10.05, 10.0)
+	newest.talents = {"guardians": [{"id": 51, "owner": 1, "x": 20.0, "y": 40.0, "motion": "grasp", "age": 0.05}]}
+	buffer.push(newest)
+	buffer.advance(0.025)
+	var render := buffer.sample(newest)
+	check(is_equal_approx(float(render.talents.guardians[0].x), 15.0), "guardian moves smoothly between host samples")
+	check(str(render.talents.guardians[0].motion) == "grasp" and is_equal_approx(float(render.talents.guardians[0].age), 0.05), "guardian attack phase stays current and authoritative")
+	check(is_equal_approx(float(newest.talents.guardians[0].x), 20.0), "guardian smoothing does not mutate host snapshot")
+	newest.talents.guardians = []
+	buffer.advance(0.01)
+	check(buffer.sample(newest).talents.guardians.is_empty(), "expired guardian is never replayed from interpolation history")
 
 func test_jitter_and_stale_packets_do_not_rewind_presentation() -> void:
 	var buffer: Buffer = new_buffer()

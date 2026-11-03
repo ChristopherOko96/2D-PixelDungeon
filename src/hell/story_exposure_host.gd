@@ -47,6 +47,16 @@ func pools_under(at: Vector2) -> Array:
 	return layer.materials_at(at) if layer != null else []
 
 
+## Existing friendly Necromancer fields spare their owner; hostile overlaps win.
+func pool_exempt(actor: Variant, material: String) -> bool:
+	return exempt(actor,material) or (is_hero(actor) and g.story_elements!=null and g.story_elements.safe_medium(actor_at(actor),material))
+
+
+## Friendly talent gas is safe independently of any liquid under the hero.
+func gas_exempt(actor: Variant, material: String) -> bool:
+	return exempt(actor,material) or (is_hero(actor) and g.story_elements!=null and g.story_elements.safe_gas(actor_at(actor),material))
+
+
 func gas_around(at: Vector2, radius: float, samples: int) -> Dictionary:
 	var gas: RefCounted = g.get("gas")
 	return gas.around(at, radius, samples) if gas != null else {"mat": "", "d": 0.0}

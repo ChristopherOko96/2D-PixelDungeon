@@ -261,6 +261,7 @@ func test_hud_shows_companion_slots_and_life() -> void:
 	# HUD): the skill bar holds 1-4, R and Shift only; the companion's two abilities (keys 5
 	# and 6) sit on the companion bar under the hero strip (HudKit.pet_panel). Until then
 	# they were slots 7 and 8 of the skill bar, which this test still expected.
+	check(slots.size()==6 and str(slots[4].key)=="R","main bar retains six hero slots")
 	var abilities: Array = state.pet.get("abilities", [])
 	var on_bar := slots.filter(func(slot: Dictionary) -> bool: return bool(slot.get("pet", false)))
 	check(on_bar.is_empty() and abilities.size() == 2 and str(abilities[0].get("key", "")) == "5" and str(abilities[1].get("key", "")) == "6",
@@ -290,6 +291,7 @@ func test_hud_shows_companion_slots_and_life() -> void:
 func test_bone_warrior_and_wolf_have_their_abilities() -> void:
 	# Arrange / Act
 	_hero("necromancer", {"minion_1": 1})
+	check(tc.cast(1,"minion_1",{"aim":Vector2.RIGHT}),"bone warrior is explicitly summoned")
 	var warrior: Dictionary = tc.permanent_pet(1)
 	_hero("archer", {"beast_1": 1}, "bear")
 	var bear: Dictionary = tc.permanent_pet(1)
@@ -301,6 +303,10 @@ func test_bone_warrior_and_wolf_have_their_abilities() -> void:
 
 func test_falcon_dives_bleeds_and_blinds() -> void:
 	# Arrange (user wish 30.10.2026: a falcon beside wolf and bear)
+	var saved_layout: Dictionary = game.current_layout
+	# This is an ability-range fixture. The old target was inside the narrow
+	# campaign room's void; it must not rely on attacking through that wall.
+	game.current_layout = {"world_size": [896, 480], "play_bounds": [32, 32, 832, 416], "obstacles": [], "exits": []}
 	check(d.pet.kinds.has("falcon") and not bool(d.pet.kinds.falcon.get("summon_only", false)), "the beast master can choose a falcon")
 	_hero("archer", {"beast_1": 1}, "falcon")
 	var falcon: Dictionary = tc.permanent_pet(1)
@@ -316,6 +322,7 @@ func test_falcon_dives_bleeds_and_blinds() -> void:
 	check(tc.events.any(func(e: Dictionary) -> bool: return str(e.kind) == "pet_strike" and str(e.wound) == "blood"), "the wound shows blood")
 	var blind: bool = tc.pet_cast(1, 1, true)
 	check(blind and Dictionary(prey.get("statuses", {})).has("freeze"), "Augenhacker blinds: the enemy stands still")
+	game.current_layout = saved_layout
 
 
 func test_wolf_and_bear_wounds_bleed() -> void:

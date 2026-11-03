@@ -1,0 +1,84 @@
+<div id="necro-original-20261101">
+  <style>
+    #necro-original-20261101 {display:grid;grid-template-columns:minmax(0,1fr);gap:calc(var(--font-size-base)*.75);color:var(--foreground)}
+    #necro-original-20261101 [hidden] {display:none!important}
+    #necro-original-20261101 .necro-original-heading {padding-right:90px}
+    #necro-original-20261101 .necro-original-picture {display:block;width:100%;max-width:640px;height:auto;image-rendering:pixelated}
+    #necro-original-20261101 .necro-original-detail {display:grid;grid-template-columns:minmax(0,1fr);gap:calc(var(--font-size-base)*.5)}
+    #necro-original-20261101 .necro-original-passives {display:grid;gap:calc(var(--font-size-base)*.75);margin-top:calc(var(--font-size-base)*.5)}
+    #necro-original-20261101 .necro-original-player {display:grid;gap:calc(var(--font-size-base)*.5)}
+    #necro-original-20261101 canvas {display:block;width:100%;height:auto;image-rendering:pixelated}
+    @media(max-width:480px){#necro-original-20261101 .necro-original-heading{padding-right:0}}
+  </style>
+  <div class="necro-original-heading"><h2>Nekromant · Originalaufnahmen</h2><p class="text-small" id="necro-original-caption">40 Fähigkeiten und Varianten · Originalpixel</p></div>
+  <div class="nav nav-pills" role="tablist" aria-label="Talentzweig">
+    <button class="nav-link" id="necro-original-minion" role="tab" aria-controls="necro-original-panel" aria-selected="false" type="button" data-spec="minion">Diener</button>
+    <button class="nav-link" id="necro-original-curse" role="tab" aria-controls="necro-original-panel" aria-selected="false" type="button" data-spec="curse">Fluch</button>
+    <button class="nav-link active" id="necro-original-soul" role="tab" aria-controls="necro-original-panel" aria-selected="true" type="button" data-spec="soul">Seele</button>
+  </div>
+  <div class="necro-original-detail" id="necro-original-panel" role="tabpanel" aria-labelledby="necro-original-soul">
+    <label class="form-label" for="necro-original-select">Fähigkeit</label>
+    <select class="form-select" id="necro-original-select"></select>
+    <img class="necro-original-picture" id="necro-original-still" alt="Unverkleinertes Spielbild">
+    <div class="necro-original-player" id="necro-original-player" hidden>
+      <canvas id="necro-original-canvas" width="640" height="360" aria-label="Verlustfreie Animation der gewählten Fähigkeit"></canvas>
+      <div class="viz-controls">
+        <button class="btn btn-primary" id="necro-original-play" type="button">Abspielen</button>
+        <button class="btn" id="necro-original-prev" type="button">Ein Bild zurück</button>
+        <button class="btn" id="necro-original-next" type="button">Ein Bild weiter</button>
+        <button class="btn" id="necro-original-fullscreen" type="button">Vollbild</button>
+      </div>
+      <label class="form-label" for="necro-original-time">Zeit · <span class="tabular-nums" id="necro-original-clock">0,00 s</span></label>
+      <input class="form-range" id="necro-original-time" type="range" min="0" max="1" step="1" value="0" aria-label="Animationsbild">
+      <span class="text-small" id="necro-original-loading" role="status">Originalbilder laden</span>
+    </div>
+    <div class="necro-original-detail" aria-live="polite"><h3 id="necro-original-name">Seelenblitz</h3><p class="text-small" id="necro-original-stats"></p><p id="necro-original-description"></p></div>
+    <details><summary>Passive Talente</summary><div class="necro-original-passives" id="necro-original-passives"></div></details>
+  </div>
+  <p class="text-small" id="necro-original-note">Verlustfreies Spielbild · 640 × 360 Originalpixel · keine Videokompression</p>
+  <script type="application/json" id="necro-original-data">__DATA__</script>
+  <script>
+  (()=>{
+    const root=document.getElementById('necro-original-20261101'),data=JSON.parse(root.querySelector('#necro-original-data').textContent);
+    const select=root.querySelector('select'),still=root.querySelector('#necro-original-still'),tabs=[...root.querySelectorAll('[data-spec]')];
+    const canvas=root.querySelector('canvas'),ctx=canvas.getContext('2d'),play=root.querySelector('#necro-original-play'),slider=root.querySelector('input'),clock=root.querySelector('#necro-original-clock'),loading=root.querySelector('#necro-original-loading');
+    ctx.imageSmoothingEnabled=false;
+    let spec='soul',selected='soul_1',clip=null,frames=[],token=0,frame=0,playing=false,started=0,firstLoad=true;
+    const snapshot=window.openai?.widgetState,state=snapshot?.modelContent||snapshot;
+    if(data.specs.some(s=>s.id===state?.spec))spec=state.spec;
+    if(data.clips.some(c=>c.id===state?.attack))selected=state.attack;
+    if(location.hash==='#guardian_beam'){spec='soul';selected='guardian_beam';}
+    if(location.hash==='#curse_brood'){spec='curse';selected='curse_brood';}
+    const save=()=>{try{window.openai?.setWidgetState?.({modelContent:{spec,attack:selected},privateContent:null})?.catch(()=>{});}catch{}};
+    function draw(){if(frames[frame])ctx.drawImage(frames[frame],0,0);slider.value=frame;clock.textContent=(frame/30).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' s / '+((clip?.frames||0)/30).toLocaleString('de-DE',{maximumFractionDigits:2})+' s';}
+    function pause(){playing=false;play.textContent='Abspielen';}
+    async function loadFrames(current){
+      const generation=++token;pause();for(const image of frames)image.src='';frames=[];frame=0;canvas.hidden=true;still.hidden=false;play.disabled=true;slider.disabled=true;loading.textContent='Originalbilder laden …';let complete=0;
+      const images=new Array(current.frames);let next=0;
+      try{
+        await Promise.all(Array.from({length:8},async()=>{while(next<images.length){const n=next++,image=new Image();image.src=data.frameRoot+current.id+'/frame-'+String(n).padStart(3,'0')+'.png';await image.decode();if(generation!==token)return;images[n]=image;complete++;loading.textContent=complete+' / '+images.length+' Originalbilder';}}));
+        if(generation!==token)return;frames=images;frame=Math.min(current.posterFrame||30,images.length-1);slider.max=images.length-1;slider.disabled=false;play.disabled=false;loading.textContent='30 Bilder/s · '+images.length+' verlustfreie Originalbilder';still.hidden=true;canvas.hidden=false;draw();
+        if(firstLoad&&['#play','#guardian_beam'].includes(location.hash)&&!matchMedia('(prefers-reduced-motion: reduce)').matches){playing=true;started=performance.now()-frame/30*1000;play.textContent='Pause';}firstLoad=false;
+      }catch(error){if(generation===token)loading.textContent='Aufnahme konnte nicht geladen werden: '+error.message;}
+    }
+    function show(id){clip=data.clips.find(c=>c.id===id);selected=id;select.value=id;root.querySelector('#necro-original-name').textContent=clip.name;root.querySelector('#necro-original-stats').textContent=clip.stats;root.querySelector('#necro-original-description').textContent=clip.text;still.src=clip.still;still.alt='Original-Spielbild: '+clip.name;if(data.frameRoot)loadFrames(clip);}
+    function branch(value,keep){
+      spec=value;tabs.forEach(t=>{const on=t.dataset.spec===spec;t.classList.toggle('active',on);t.setAttribute('aria-selected',String(on));});root.querySelector('#necro-original-panel').hidden=false;root.querySelector('#necro-original-panel').setAttribute('aria-labelledby','necro-original-'+spec);select.replaceChildren();
+      for(const [label,test]of [['Aktive Fähigkeiten',c=>!c.extra&&!c.variant&&!c.common],['Ultimate-Aufwertungen',c=>c.variant&&c.id.includes('stage')],['Begleiter & Auslöser',c=>c.extra],['Weitere Angriffe',c=>c.variant&&!c.id.includes('stage')],['Grundangriff & Verteidigung',c=>c.common]]){
+        const items=data.clips.filter(c=>(c.spec===spec||c.common)&&test(c));if(!items.length)continue;const group=document.createElement('optgroup');group.label=label;items.forEach(c=>{const o=document.createElement('option');o.value=c.id;o.textContent=c.name;group.append(o);});select.append(group);
+      }
+      const passives=root.querySelector('#necro-original-passives');passives.replaceChildren();data.passives.filter(p=>p.spec===spec).forEach(p=>{const item=document.createElement('div'),name=document.createElement('strong'),text=document.createElement('p');name.textContent=p.name;text.textContent=p.text;item.append(name,text);passives.append(item);});
+      show(keep&&[...select.options].some(o=>o.value===keep)?keep:data.clips.find(c=>c.spec===spec&&!c.extra&&!c.variant&&!c.common).id);
+    }
+    tabs.forEach(t=>t.addEventListener('click',()=>{branch(t.dataset.spec);save();}));select.addEventListener('change',()=>{show(select.value);save();});
+    play.addEventListener('click',()=>{if(playing)pause();else if(frames.length){playing=true;started=performance.now()-frame/30*1000;play.textContent='Pause';}});
+    for(const [id,delta]of [['prev',-1],['next',1]])root.querySelector('#necro-original-'+id).addEventListener('click',()=>{pause();if(!frames.length)return;frame=(frame+delta+frames.length)%frames.length;draw();});
+    slider.addEventListener('input',()=>{pause();frame=Number(slider.value);draw();});
+    root.querySelector('#necro-original-fullscreen').addEventListener('click',()=>{canvas.requestFullscreen?.().catch(()=>{});});
+    function tick(now){if(playing&&frames.length){const n=Math.floor((now-started)*30/1000)%frames.length;if(n!==frame){frame=n;draw();}}requestAnimationFrame(tick);}
+    if(data.frameRoot){still.hidden=true;root.querySelector('#necro-original-player').hidden=false;root.querySelector('#necro-original-note').textContent='640 × 360 Originalpixel · 30 Bilder/s · verlustfreie PNG-Einzelbilder';requestAnimationFrame(tick);}
+    window.addEventListener('openai:set_globals',event=>{const s=event.detail?.globals?.widgetState,v=s?.modelContent||s;if(data.specs.some(s=>s.id===v?.spec))branch(v.spec,v.attack);});
+    branch(spec,selected);
+  })();
+  </script>
+</div>

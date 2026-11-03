@@ -1,4 +1,5 @@
 extends Node2D
+const CutoutMotion=preload("res://src/rig/cutout_motion.gd")
 ## Hell-Dungeon mode (single player): plays the ten baked hell floors from
 ## assets/data/hell_floors.json. Combat rooms lock until every enemy is down,
 ## colour keys open their own gates, spread fire braziers open the vault,
@@ -951,6 +952,7 @@ func load_floor(n: int, carry: bool) -> void:
 	shots = []
 	eshots = []
 	zones = []
+	if story_elements != null: story_elements.reset()
 	if monsters != null:
 		monsters.reset()
 		drake_rig.reset()
@@ -2119,6 +2121,7 @@ func _fire(dir: Vector2, to_cursor := false) -> void:
 ## One attack of the class weapon (or the relic) towards `dir`. The mage's shot bursts
 ## `reach` px out (the mouse's distance; -1: at the end of its flight).
 func _attack(dir: Vector2, reach := -1.0) -> void:
+	if talents != null and (talents.tc.runtime(1).has("soul_charge") or talents.tc.runtime(1).has("soul_leap")): return
 	state.cool = float(state.rate) * HeroKit.rate_scale(self) * CardKit.rate_mult(self)
 	player.aim = dir.normalized()
 	if absf(dir.x) > 0.01:
@@ -2137,7 +2140,8 @@ func _attack(dir: Vector2, reach := -1.0) -> void:
 	# fireball that bursts where it strikes (user wish 30.10.2026), frost an icicle, void a void orb,
 	# before any talent a plain arcane bolt
 	if class_id == "mage" and str(weapon.get("shot", "")) == "magic":
-		MageBolt.arm(self, bolt)
+		# The user's standard auto-hit stays neutral; fireball is a learned talent.
+		MageBolt.arm(self, bolt, "")
 	# a perfect roll's counter (src/hell/hero_kit.gd arm_counter): this shot hits harder
 	HeroKit.arm_counter(self, bolt)
 	# the mage's shot bursts on the floor where the mouse points, within its flight (user wish
@@ -2641,6 +2645,7 @@ func _fall_into_pit() -> void:
 	eshots = []
 	zones = []
 	state.storm = false
+	if story_elements != null: story_elements.reset()
 	if monsters != null:
 		monsters.reset()
 		drake_rig.reset()
@@ -2774,6 +2779,7 @@ func _process(delta: float) -> void:
 	if _simulation_paused():
 		_simulation_clock.reset()
 		_skip_simulation_delta = true
+		if talents != null: talents.tc.runtime(1).erase("soul_charge")
 		hud.queue_redraw()
 		return
 	# Several gameplay ticks may be due after a slow picture. Keep all elapsed
@@ -4448,9 +4454,7 @@ func _draw_actors(l: Layer) -> void:
 			continue
 		if s.get("kind", "") == "rock":
 			var rock: Texture2D = tex.rock_throw
-			l.draw_set_transform(s.p, t * 8.0)
-			l.draw_texture_rect(rock, Rect2(-rock.get_size(), rock.get_size() * 2.0), false)
-			l.draw_set_transform(Vector2.ZERO)
+			CutoutMotion.sprite(l,rock,"meteor",Rect2(Vector2(s.p)-rock.get_size(),rock.get_size()*2),t,Color.WHITE,t*8,Vector2(s.p))
 			continue
 		if s.get("kind", "") == "shard":
 			l.draw_circle(s.p, 9.0, Color(0.75, 0.6, 1.0, 0.8))
@@ -4466,9 +4470,7 @@ func _draw_actors(l: Layer) -> void:
 		if s.get("kind", "") == "arrow" and arrow_tex != null:
 			var asz := arrow_tex.get_size() * float(theme.get("weapon_scale", theme.hero_scale))
 			asz *= float(s.get("big", 1.0))
-			l.draw_set_transform(s.p, (s.v as Vector2).angle() + PI / 2.0)
-			l.draw_texture_rect(arrow_tex, Rect2(-asz / 2.0, asz), false)
-			l.draw_set_transform(Vector2.ZERO)
+			CutoutMotion.sprite(l,arrow_tex,"hail_arrow",Rect2(Vector2(s.p)-asz*0.5,asz),t,Color.WHITE,(s.v as Vector2).angle()+PI/2,Vector2(s.p))
 			continue
 		if MageBolt.glow(l, s):
 			continue

@@ -1,0 +1,15 @@
+{
+  "date": "2026-11-01",
+  "kind": "art concept candidate, not integrated",
+  "tool": "built-in imagegen",
+  "model_generated_image": "exec-4aa4ac8a-96e7-4c8f-8cb5-182e81a89c41.png",
+  "references": [
+    "production/qa/evidence/necro-rig-upgrade/curse-180.png",
+    "assets/sprites/fx/curse_skull.png",
+    "assets/sprites/fx/poison_cloud.png"
+  ],
+  "hashes": {
+    "fluchgeist-konzept-v1.png": "5e4d7de751f29a6889a00942bce5a9afbeee491d570a61af82334c790467febf",
+    "prompt.txt": "b07b16ad41b19c839e66ec3e375270325087fa743d56cc6f2fc4f8d114473d38"
+  }
+}

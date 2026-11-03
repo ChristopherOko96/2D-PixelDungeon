@@ -1,0 +1,445 @@
+{
+ "_note": "Existing source pixels only. Each rect is inclusive; first-frame opaque pixels are assigned once by RigLibrary. Continuous poses use the skeleton RigRenderer.solve_pose. No whole-sheet frame cycling. Beam chains reuse cached core cutouts.",
+ "images": {
+  "curse": "res://assets/sprites/fx/curse_skull.png",
+  "blood": "res://assets/sprites/fx/blood_orb.png",
+  "spear": "res://assets/sprites/fx/bone_spear.png",
+  "blade": "res://assets/sprites/0x72/weapon_rusty_sword.png",
+  "forest_orb": "res://assets/sprites/fx/spell_orb.png"
+ },
+ "rigs": {
+  "necro_curse": {
+   "img": "curse",
+   "family": "necro_spell",
+   "ground": [
+    12,
+    9
+   ],
+   "width": 18,
+   "parts": [
+    {
+     "id": "jaw",
+     "rects": [
+      [
+       8,
+       10,
+       17,
+       17
+      ]
+     ],
+     "pivot": [
+      12,
+      10
+     ],
+     "parent": "head",
+     "z": 3,
+     "hp": 1,
+     "label": "jaw"
+    },
+    {
+     "id": "head",
+     "rects": [
+      [
+       8,
+       0,
+       17,
+       9
+      ]
+     ],
+     "pivot": [
+      11,
+      8
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 1,
+     "label": "head"
+    },
+    {
+     "id": "tail_root",
+     "rects": [
+      [
+       4,
+       0,
+       7,
+       17
+      ]
+     ],
+     "pivot": [
+      7,
+      9
+     ],
+     "parent": "head",
+     "z": 1,
+     "hp": 1,
+     "label": "tail_root"
+    },
+    {
+     "id": "tail_tip",
+     "rects": [
+      [
+       0,
+       0,
+       3,
+       17
+      ]
+     ],
+     "pivot": [
+      3,
+      9
+     ],
+     "parent": "tail_root",
+     "z": 0,
+     "hp": 1,
+     "label": "tail_tip"
+    }
+   ],
+   "items": []
+  },
+  "necro_blood": {
+   "img": "blood",
+   "family": "necro_spell",
+   "ground": [
+    7,
+    7
+   ],
+   "width": 14,
+   "parts": [
+    {
+     "id": "core",
+     "rects": [
+      [
+       4,
+       0,
+       9,
+       13
+      ]
+     ],
+     "pivot": [
+      7,
+      7
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 1,
+     "label": "core"
+    },
+    {
+     "id": "root",
+     "rects": [
+      [
+       0,
+       0,
+       3,
+       13
+      ]
+     ],
+     "pivot": [
+      4,
+      7
+     ],
+     "parent": "core",
+     "z": 1,
+     "hp": 1,
+     "label": "root"
+    },
+    {
+     "id": "tip",
+     "rects": [
+      [
+       10,
+       0,
+       13,
+       13
+      ]
+     ],
+     "pivot": [
+      10,
+      7
+     ],
+     "parent": "core",
+     "z": 3,
+     "hp": 1,
+     "label": "tip"
+    }
+   ],
+   "items": []
+  },
+  "necro_spear": {
+   "img": "spear",
+   "family": "necro_spell",
+   "ground": [
+    24,
+    5
+   ],
+   "width": 32,
+   "parts": [
+    {
+     "id": "tip",
+     "rects": [
+      [
+       24,
+       0,
+       31,
+       9
+      ]
+     ],
+     "pivot": [
+      24,
+      5
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 1,
+     "label": "tip"
+    },
+    {
+     "id": "shaft",
+     "rects": [
+      [
+       6,
+       0,
+       23,
+       9
+      ]
+     ],
+     "pivot": [
+      23,
+      5
+     ],
+     "parent": "tip",
+     "z": 1,
+     "hp": 1,
+     "label": "shaft"
+    },
+    {
+     "id": "tail",
+     "rects": [
+      [
+       0,
+       0,
+       5,
+       9
+      ]
+     ],
+     "pivot": [
+      5,
+      5
+     ],
+     "parent": "shaft",
+     "z": 0,
+     "hp": 1,
+     "label": "tail"
+    }
+   ],
+   "items": []
+  },
+  "necro_blade": {
+   "img": "blade",
+   "family": "necro_spell",
+   "ground": [
+    4.5,
+    18
+   ],
+   "width": 10,
+   "parts": [
+    {
+     "id": "blade",
+     "rects": [
+      [
+       0,
+       0,
+       9,
+       13
+      ]
+     ],
+     "pivot": [
+      4.5,
+      14
+     ],
+     "parent": "hilt",
+     "z": 2,
+     "hp": 1,
+     "label": "blade"
+    },
+    {
+     "id": "hilt",
+     "rects": [
+      [
+       0,
+       14,
+       9,
+       18
+      ]
+     ],
+     "pivot": [
+      4.5,
+      18
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 1,
+     "label": "hilt"
+    },
+    {
+     "id": "pommel",
+     "rects": [
+      [
+       0,
+       19,
+       9,
+       20
+      ]
+     ],
+     "pivot": [
+      4.5,
+      19
+     ],
+     "parent": "hilt",
+     "z": 0,
+     "hp": 1,
+     "label": "pommel"
+    }
+   ],
+   "items": []
+  },
+  "forest_spit": {
+   "img": "forest_orb",
+   "family": "necro_spell",
+   "ground": [
+    8,
+    8
+   ],
+   "width": 16,
+   "parts": [
+    {
+     "id": "core",
+     "rects": [
+      [
+       0,
+       0,
+       15,
+       15
+      ]
+     ],
+     "pivot": [
+      8,
+      8
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 1
+    }
+   ],
+   "items": []
+  }
+ },
+ "skills": {
+  "minion_1": {
+   "rig": "necro_blade",
+   "mode": "summon"
+  },
+  "minion_3": {
+   "rig": "necro_spear",
+   "mode": "spear"
+  },
+  "minion_5": {
+   "rig": "necro_blood",
+   "mode": "mark"
+  },
+  "minion_7": {
+   "rig": "necro_blade",
+   "mode": "burst"
+  },
+  "minion_9": {
+   "rig": "necro_blade",
+   "mode": "summon"
+  },
+  "minion_11": {
+   "rig": "necro_blood",
+   "mode": "pact"
+  },
+  "minion_14": {
+   "rig": "necro_blade",
+   "mode": "ascension"
+  },
+  "curse_1": {
+   "rig": "curse_spirit",
+   "mode": "curse"
+  },
+  "curse_3": {
+   "rig": "curse_spirit",
+   "mode": "mark"
+  },
+  "curse_5": {
+   "rig": "necro_blood",
+   "mode": "tether"
+  },
+  "curse_7": {
+   "rig": "curse_spirit",
+   "mode": "field"
+  },
+  "curse_9": {
+   "rig": "necro_blood",
+   "mode": "beam"
+  },
+  "curse_11": {
+   "rig": "curse_spirit",
+   "mode": "harvest"
+  },
+  "curse_14": {
+   "rig": "curse_spirit",
+   "mode": "ritual"
+  },
+  "shield_bash": {
+   "rig": "necro_blade",
+   "mode": "shield"
+  },
+  "bone_shout": {
+   "rig": "necro_blade",
+   "mode": "shout"
+  },
+  "bone_stomp": {
+   "rig": "necro_blade",
+   "mode": "stomp"
+  },
+  "bone_whirl": {
+   "rig": "necro_blade",
+   "mode": "whirl"
+  }
+ },
+ "motion": {
+  "cycle": 2.2,
+  "head_turn": 0.06,
+  "jaw_open": 0.12,
+  "tail_root": 0.16,
+  "tail_tip": 0.26,
+  "beam_segments": 16,
+  "beam_wave": 3.2,
+  "beam_amplitude_px": 2.4,
+  "absorption": {
+   "particles": 14,
+   "cycle_s": 1.05,
+   "lift_px": 14,
+   "spread": 0.65,
+   "size": 0.32,
+   "ripple_hz": 3
+  },
+  "curse_spirit": {
+   "count": 3,
+   "rise_s": 2.6,
+   "rise_px": 42,
+   "spread_px": 22,
+   "sway_px": 2.5,
+   "scale": 0.36
+  },
+  "bone_ball": {
+   "charge_particles": 12,
+   "core_scale": 1.2,
+   "trail_count": 8,
+   "trail_spacing": 6,
+   "burst_count": 18,
+   "burst_reach": 2.1
+  }
+ }
+}

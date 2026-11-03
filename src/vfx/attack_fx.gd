@@ -31,6 +31,8 @@ const Pal = preload("res://src/vfx/talent_palette.gd")
 const ART := 2.0
 const INK := Color("1a1414")
 const ARROW := preload("res://assets/sprites/0x72/weapon_arrow.png")
+const MarksmanArt = preload("res://src/vfx/marksman_art.gd")
+const Cutouts = preload("res://src/rig/cutout_motion.gd")
 const ELEMENT_TINTS := {"cinder": Color("f7b46b"), "venom": Color("b8d878"), "frost": Color("9bdde6"), "storm": Color("baabe9")}
 ## The build's shot element (bullet "element") -> palette element.
 const BUILD_ELEMENTS := {"cinder": "fire", "venom": "poison", "frost": "ice", "storm": "arcane"}
@@ -114,8 +116,6 @@ static func watches(bullet: Dictionary) -> bool:
 static func tint_for(bullet: Dictionary, player: Dictionary) -> Color:
 	var glow := str(player.get("glow", ""))
 	if not glow.is_empty(): return Color(glow)
-	# the mage's shots are fireballs (user wish 30.10.2026): their light and trail burn orange
-	if str(player.get("class_id", "")) == "mage" and str(bullet.get("style", "")) == "magic": return Color("ff8a2a")
 	var element := str(bullet.get("element", ""))
 	if ELEMENT_TINTS.has(element): return ELEMENT_TINTS[element]
 	return ORB_TINT if str(bullet.get("style", "")) == "magic" else ARROW_TINT
@@ -128,7 +128,6 @@ static func element_for(bullet: Dictionary, player: Dictionary) -> String:
 	var style := str(bullet.get("style", ""))
 	if int(bullet.get("owner", 0)) <= 0: return str(ENEMY_ELEMENTS.get(style, "magic"))
 	if style == "arrow": return "steel"
-	if str(player.get("class_id", "")) == "mage": return "fire"
 	return str(BUILD_ELEMENTS.get(str(bullet.get("element", "")), "magic"))
 
 
@@ -363,10 +362,7 @@ func draw_arrow(canvas: CanvasItem, bullet: Dictionary, point: Vector2, clock: f
 	if aim.is_zero_approx(): aim = Vector2.RIGHT
 	var trail := _trail(id, point, CRIT_STREAK if crit else STREAK)
 	_streak(canvas, trail, tint, 2 if crit else 1)
-	var size := Vector2(ARROW.get_width(), ARROW.get_height()) * 2.0
-	canvas.draw_set_transform(point.snapped(Vector2(ART, ART)), aim.angle() + PI * 0.5, Vector2.ONE)
-	canvas.draw_texture_rect(ARROW, Rect2(-size * 0.5, size), false)
-	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	Cutouts.draw(canvas,MarksmanArt.parts(point.snapped(Vector2(ART,ART)),aim,clock,ART))
 	PixelPaint.cell(canvas, PixelPaint.at(point + aim * 9.0, ART), Color(1, 1, 1), ART)
 	if crit:
 		# a four-point star at its head, turning in steps: plus, then cross

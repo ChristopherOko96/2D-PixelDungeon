@@ -1,4 +1,6 @@
 extends RefCounted
+const Cutouts=preload("res://src/rig/cutout_motion.gd")
+const CompanionTargets = preload("res://src/combat/companion_targets.gd")
 ## The six further subclasses of the Frostgruft (assets/data/frost_talents.json):
 ## Frostmagier, Nekromant, Tankkrieger, Axtkrieger, Schattenläufer and
 ## Tierbändiger. Each brings its own attack (shot or melee), four skills on keys
@@ -674,26 +676,15 @@ static func _update_allies(g: Node, dt: float) -> void:
 				a.heal_t = 4.0
 				heal(g, int(s.get("heal", 0)))
 			continue
-		var best: Dictionary = {}
-		var bd := 900.0
-		for m: Dictionary in g.mobs:
-			if m.spawn <= 0.0 and (a.p as Vector2).distance_to(m.p) < bd:
-				bd = (a.p as Vector2).distance_to(m.p)
-				best = m
+		var best := CompanionTargets.story_pick(g, a)
 		var goal: Vector2 = best.p if not best.is_empty() else hero + Vector2(-float(g.player.face) * 90.0, 30.0)
 		var to: Vector2 = goal - a.p
 		var want := float(s.reach) * (0.7 if bool(s.get("ranged", false)) else 0.8) if not best.is_empty() else 100.0
-		if to.length() > want and speed > 0.0:
-			var step: Vector2 = to.normalized() * speed * dt
-			if not g.box_blocked(Rect2(a.p.x + step.x - 20, a.p.y + step.y - 16, 40, 16), true):
-				a.p += step
-			elif not g.box_blocked(Rect2(a.p.x + step.x - 20, a.p.y - 16, 40, 16), true):
-				a.p += Vector2(step.x, 0)
-			elif not g.box_blocked(Rect2(a.p.x - 20, a.p.y + step.y - 16, 40, 16), true):
-				a.p += Vector2(0, step.y)
+		if (to.length() > want or (not best.is_empty() and not CompanionTargets.story_visible(g, a.p, best.p))) and speed > 0.0:
+			CompanionTargets.story_follow(g, a, goal, speed, dt, 16.0)
 		if absf(to.x) > 1.0:
 			a.face = signf(to.x)
-		if best.is_empty() or to.length() > float(s.reach) + float(best.r) or float(a.cool) > 0.0:
+		if best.is_empty() or to.length() > float(s.reach) + float(best.r) or float(a.cool) > 0.0 or not CompanionTargets.story_visible(g, a.p, best.p):
 			continue
 		a.cool = float(s.every)
 		a.slam = 0.3
@@ -735,16 +726,12 @@ static func draw_shot(g: Node, l: Node2D, s: Dictionary, t: float) -> bool:
 			if im == null:
 				return false
 			var size := im.get_size() * 2.4
-			l.draw_set_transform(s.p, t * 14.0 if s.kind == "sub_axe" else a + PI / 2.0)
-			l.draw_texture_rect(im, Rect2(-size / 2.0, size), false)
-			l.draw_set_transform(Vector2.ZERO)
+			Cutouts.sprite(l,im,"knife",Rect2(Vector2(s.p)-size*0.5,size),t,Color.WHITE,t*14 if s.kind=="sub_axe" else a+PI/2,Vector2(s.p))
 		"sub_hawk":
 			l.draw_circle(s.p, 20.0, Color(1.0, 0.8, 0.35, 0.3))
 			if g.arrow_tex != null:
 				var asz: Vector2 = g.arrow_tex.get_size() * 3.6
-				l.draw_set_transform(s.p, a + PI / 2.0)
-				l.draw_texture_rect(g.arrow_tex, Rect2(-asz / 2.0, asz), false, Color(1.0, 0.85, 0.4))
-				l.draw_set_transform(Vector2.ZERO)
+				Cutouts.sprite(l,g.arrow_tex,"hail_arrow",Rect2(Vector2(s.p)-asz*0.5,asz),t,Color(1,0.85,0.4),a+PI/2,Vector2(s.p))
 		_:
 			return false
 	return true
@@ -770,7 +757,7 @@ static func draw(g: Node, l: Node2D, t: float) -> void:
 			"sub_trap":
 				var trap: Texture2D = g.tex.get("spike_trap")
 				if trap != null:
-					l.draw_texture_rect(trap, Rect2(z.p - trap.get_size() / 2.0, trap.get_size()), false, Color(1, 1, 1, 0.9))
+					Cutouts.sprite(l,trap,"spike_trap",Rect2(z.p-trap.get_size()*0.5,trap.get_size()),t,Color(1,1,1,0.9))
 				l.draw_arc(z.p, float(z.r), 0.0, TAU, 24, Color(0.9, 0.8, 0.5, 0.35), 2.0)
 	for c: Dictionary in g.state.get("corpses", []):
 		l.draw_circle(c.p, 16.0, Color(0.15, 0.08, 0.2, 0.45))
@@ -848,12 +835,7 @@ static func _draw_ally(g: Node, l: Node2D, a: Dictionary, t: float, rallied: boo
 		l.draw_arc(a.p, size.x * 0.45, 0.0, TAU, 24, Color(1.0, 0.65, 0.3, 0.8), 4.0)
 	if float(a.slam) > 0.0:
 		pos.y -= 8.0 * sin(float(a.slam) / 0.3 * PI)
-	if float(a.face) < 0.0:
-		l.draw_set_transform(pos + Vector2(size.x, 0), 0.0, Vector2(-1, 1))
-		l.draw_texture_rect(im, Rect2(Vector2.ZERO, size), false, tint)
-		l.draw_set_transform(Vector2.ZERO)
-	else:
-		l.draw_texture_rect(im, Rect2(pos, size), false, tint)
+	Cutouts.draw(l,Cutouts.actor(im,str(s.sprite),pos+Vector2(size.x*0.5,size.y),size.x/im.get_width(),float(a.face),t,{"moving":true,"id":int(a.seed)},tint))
 	var top: Vector2 = (a.p as Vector2) - Vector2(30, size.y + hover + 12)
 	l.draw_rect(Rect2(top, Vector2(60, 5)), Color(0.05, 0.03, 0.1, 0.8))
 	l.draw_rect(Rect2(top, Vector2(60.0 * clampf(float(a.t) / float(a.max), 0.0, 1.0), 5)), Color(0.6, 0.9, 1.0))

@@ -1,0 +1,54 @@
+[
+  {
+    "sha256": "CFCBCF3AF6E908B9FE4AB5ADA93A712F629D4056F35D434D3A0EAC9A13F980D6",
+    "path": "src/combat/talent_combat.gd"
+  },
+  {
+    "sha256": "2DBA03FC12DD8A9A3D9C196148F33BB9CB2AD95171611C1AFE4D88112899805E",
+    "path": "src/combat/soul_ring_shape.gd"
+  },
+  {
+    "sha256": "86A9E1AC3052C2D65F6E82E45F95C479C05F1800B67257B4C896385F599B1FEB",
+    "path": "src/combat/companion_targets.gd"
+  },
+  {
+    "sha256": "8440131D017BD0F46D3F7116F5AC5815BF710D53C5B001297F984BED5368EA32",
+    "path": "src/vfx/pool_paint.gd"
+  },
+  {
+    "sha256": "61CF07EB28C4EDCE37142DF8056135067AAE555D8AF4EA99A69828BD0CAACDFF",
+    "path": "src/vfx/talent_fx.gd"
+  },
+  {
+    "sha256": "1FC81A6061CBE45CBBE4AC4315255B0C31A221672C1297A42FA0D8861FCBD297",
+    "path": "src/vfx/fx_sprites.gd"
+  },
+  {
+    "sha256": "130839E066869822E44FB123D770D294D97354E0FC078EA6921F9EAF26085509",
+    "path": "src/vfx/soul_ring.gd"
+  },
+  {
+    "sha256": "DDC745F2F3CBD49C632CBBCEF423DFEFE28B7379D84BCE56212643D02C91F8D9",
+    "path": "src/debug/test_arena.gd"
+  },
+  {
+    "sha256": "FDFED0537F69BC5B4792265B7F19D2494B26F470553E7F4B3BA99ADB68F2642E",
+    "path": "src/session_protocol.gd"
+  },
+  {
+    "sha256": "E6C77E8A769C68784401865EFFC4245685F1514DCD0B8F431CCFA79AB5F6720E",
+    "path": "assets/data/talents.json"
+  },
+  {
+    "sha256": "C2CCE7224D2936875AD34144DE1BF014D0AC58032677AE0093C00BCB41EE0F39",
+    "path": "scripts/capture_soul_ring.gd"
+  },
+  {
+    "sha256": "D68854C87035E541034509151FBE20195C867F59CBDA288F00E9F7C7F3772F5C",
+    "path": "tests/soul_ring_test.gd"
+  },
+  {
+    "sha256": "CBD7BEEE6A1AA5A554B13C746500E5925BD0A8AD99001E8F6EE3AAE792DE93DC",
+    "path": "tests/soul_ring_shape_test.gd"
+  }
+]

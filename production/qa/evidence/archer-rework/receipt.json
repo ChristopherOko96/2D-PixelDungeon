@@ -1,0 +1,271 @@
+{
+  "date": "2026-11-03",
+  "branch": "codex/port-0x72-onto-main",
+  "rules": 25,
+  "protocol": 4,
+  "total_checks": 603,
+  "checks": [
+    {
+      "path": "Logs/archer-rework-final.log",
+      "bytes": 109,
+      "sha256": "ce186177b65c89c9641b91285515075a5bb8929b77febf46eaeca581dea1e9e1",
+      "checks": 37,
+      "failures": 0
+    },
+    {
+      "path": "Logs/archer-all-talents.log",
+      "bytes": 332,
+      "sha256": "31e81c0d862c6e19b94c99221dcd10b1f3ed4d0c56458989faf3c99b25a74635",
+      "checks": 360,
+      "failures": 0
+    },
+    {
+      "path": "Logs/archer-talent_defense_test.log",
+      "bytes": 332,
+      "sha256": "69e5b5b52d3927f33f7bc77c1389b44afb38378fdd9550e8010b4ccaf0ef7dd6",
+      "checks": 40,
+      "failures": 0
+    },
+    {
+      "path": "Logs/archer-necro_soul_attacks_test.log",
+      "bytes": 114,
+      "sha256": "0e94e092c9ee70b409506be454136ad3769f8624dd65e698d493fe4063529ab2",
+      "checks": 57,
+      "failures": 0
+    },
+    {
+      "path": "Logs/archer-perk_combat_test.log",
+      "bytes": 3996,
+      "sha256": "9ccce42ceefdc1f47e0ca1d4a477d998a621ef53dea33921c02ced4b2eb63a80",
+      "checks": 100,
+      "failures": 0
+    },
+    {
+      "path": "Logs/archer-marksman_rig_test.log",
+      "bytes": 467,
+      "sha256": "bbf7f263bbd413d6a77fe1afdaf14576b39d56ecfd4c65d3df3c0c77f2a6dffd",
+      "checks": 9,
+      "failures": 0
+    }
+  ],
+  "network": {
+    "path": "Logs/archer-rework/20261103-135355-360eaf95/summary.json",
+    "bytes": 906,
+    "sha256": "a993876317d9f8938178f409ea2a5bede6c626f6d531f6bc563245c7d49d5389",
+    "result": {
+      "passed": true,
+      "scope": "local loopback, not LAN/WAN/performance",
+      "results": [
+        {
+          "boss_safe": true,
+          "charge": true,
+          "charge_counts": {
+            "0": true,
+            "1": true,
+            "2": true,
+            "3": true
+          },
+          "failures": [],
+          "marks": true,
+          "passed": true,
+          "pins": true,
+          "role": "host",
+          "scope": "two real local ENet processes, controlled fixture; not LAN/performance",
+          "traps": true
+        },
+        {
+          "boss_safe": true,
+          "charge": true,
+          "charge_counts": {
+            "0": true,
+            "1": true,
+            "2": true,
+            "3": true
+          },
+          "failures": [],
+          "marks": true,
+          "passed": true,
+          "pins": true,
+          "role": "client",
+          "scope": "two real local ENet processes, controlled fixture; not LAN/performance",
+          "traps": true
+        }
+      ]
+    }
+  },
+  "gpu_log": {
+    "path": "Logs/archer-capture.log",
+    "bytes": 567,
+    "sha256": "40857015d2adc9b5fc850404082cd201958eba880b6307bf5f0cff77432dd6cc"
+  },
+  "images": [
+    {
+      "path": "production/qa/evidence/archer-rework/01-jaegermal.png",
+      "bytes": 42106,
+      "sha256": "fa7194294c004f3b0780c2c222c7869e12806a1fb5577beca6e192de7d42f727"
+    },
+    {
+      "path": "production/qa/evidence/archer-rework/02-himmelsspeer-laden.png",
+      "bytes": 42911,
+      "sha256": "ac8a2568267f44238af55c79f4c06a7873a742cfdd0e51980f5f92395851bce3"
+    },
+    {
+      "path": "production/qa/evidence/archer-rework/03-himmelsspeer-anpinnen.png",
+      "bytes": 46418,
+      "sha256": "ce1034f858f25561d367d974a8a164c2c3c4474c3a4461a0a1718a417db413e4"
+    },
+    {
+      "path": "production/qa/evidence/archer-rework/04-scharfschuetzen-baum.png",
+      "bytes": 153583,
+      "sha256": "fd6597ee1777d5acb02792220014dff09c077c08f4626e36b178ef42b58547f2"
+    },
+    {
+      "path": "production/qa/evidence/archer-rework/05-sechs-grosse-fallen.png",
+      "bytes": 48890,
+      "sha256": "70feae6c78aa1c9d17a69726ad86a965e8d9bf1d4763e92b6ac4ae1ec82fd715"
+    },
+    {
+      "path": "production/qa/evidence/archer-rework/06-fallensteller-baum.png",
+      "bytes": 134700,
+      "sha256": "fa946667b1e10287380544cb4fb5129db461cac45a35917f50b3a5f318b8b67d"
+    }
+  ],
+  "sources": [
+    {
+      "path": "assets/data/talents.json",
+      "bytes": 105630,
+      "sha256": "64a22af570113c7f6c1db166a0efbb61bbcb87a782afe2792369f20c34f29aa3"
+    },
+    {
+      "path": "assets/data/marksman_rig.json",
+      "bytes": 718,
+      "sha256": "02e9fb4dda5672e9f08404964b590b3e60bcf7330246379884e06e00e76f4de6"
+    },
+    {
+      "path": "assets/sprites/0x72/weapon_arrow.png",
+      "bytes": 218,
+      "sha256": "17d3833f0477ebe13af7aaf218fa22fb43b1e75515c6eec3561d8798a9b8cef5"
+    },
+    {
+      "path": "src/combat/marksman_combat.gd",
+      "bytes": 3884,
+      "sha256": "68b1c66507fafc9a20244c927ab50290a3aabae3bcbcd35c7ee389e5a6d7dd09"
+    },
+    {
+      "path": "src/combat/talent_charges.gd",
+      "bytes": 1541,
+      "sha256": "a8968e0509d4d46207464fadca3be41a1cbcd431211bb722ca8a37e5b3e26b9e"
+    },
+    {
+      "path": "src/combat/soul_charge.gd",
+      "bytes": 4204,
+      "sha256": "3ffeac0a1a0475e065a09b2085469b72b88d02a686c0cd2534d315f1e99db63e"
+    },
+    {
+      "path": "src/combat/talent_combat.gd",
+      "bytes": 156376,
+      "sha256": "b45705340a99bbd05d5407583ddb2c0cb3cafb0e6177ac62aaf95a1852e8c9ff"
+    },
+    {
+      "path": "src/perk_combat.gd",
+      "bytes": 27054,
+      "sha256": "58564ec49115004898ff51f7da7dca8122058e16ad0dbfd8c34f4ccc03a54bf2"
+    },
+    {
+      "path": "src/vfx/marksman_art.gd",
+      "bytes": 3336,
+      "sha256": "7060812bb6760d0a6b291d6c9b2113e5d359c43cde98ae7fcadb6b426e3d83fb"
+    },
+    {
+      "path": "src/vfx/talent_fx.gd",
+      "bytes": 143179,
+      "sha256": "e1ef7aa4bceb65584d0c004781bec277f26ac94e8fa8284f618a5be598b739f8"
+    },
+    {
+      "path": "src/rig/forest_trap_rig.gd",
+      "bytes": 2037,
+      "sha256": "25973c929854366730b304a49bf4ae6dd45a1897b42a16572871d012c2f7a674"
+    },
+    {
+      "path": "src/hero/hero_look.gd",
+      "bytes": 21260,
+      "sha256": "f677cfe6cd6c5d9d2ae0cafe5bf43185204ffee8cbf9f249c1f4b2d950fdbdaf"
+    },
+    {
+      "path": "src/ui/talent_bar.gd",
+      "bytes": 21369,
+      "sha256": "30aeaf3c27f605efa6c1e1707e9c77e5a632a1c46dedf7058df36ca062b9e0c2"
+    },
+    {
+      "path": "src/session_protocol.gd",
+      "bytes": 5023,
+      "sha256": "6c3b786303638dbeb8687cd33b2e988839ac6216e6b62f1fbf12f8874a70c1ed"
+    },
+    {
+      "path": "tests/archer_rework_test.gd",
+      "bytes": 7396,
+      "sha256": "3ac5287b85683f7852684a4507b314c1c49af6d3dd489ad00ce13664331c4ebf"
+    },
+    {
+      "path": "tests/marksman_rig_test.gd",
+      "bytes": 1346,
+      "sha256": "9aa22fb66e4764f0c6f79fea71d1138c741f1283a14b6711dc246ae8ce3a2a96"
+    },
+    {
+      "path": "tests/archer_network_peer.gd",
+      "bytes": 4748,
+      "sha256": "a83902b31f8a00e78cc4de50613cc0edc8d92f28f5c020237d4b2315858fdd31"
+    },
+    {
+      "path": "tests/archer_network_smoke.ps1",
+      "bytes": 3790,
+      "sha256": "cd5ec58f4f722e7ea274a59fee8b9411e3c822f5e9608c284230e169bf2fc0be"
+    },
+    {
+      "path": "tests/talent_combat_test.gd",
+      "bytes": 41766,
+      "sha256": "7ed612bba52d09c62f60dd575eb9fb4036f4fde07877c5f7d904b33851886a3e"
+    },
+    {
+      "path": "tests/talent_defense_test.gd",
+      "bytes": 8622,
+      "sha256": "37b77cfb316980406cf09716858980b5718c835612b94385dc74962695bafa24"
+    },
+    {
+      "path": "tests/necro_soul_attacks_test.gd",
+      "bytes": 7951,
+      "sha256": "42a68fe9964430155899c01be73b42901f712a567b457739f1c1c6c5ed88c299"
+    },
+    {
+      "path": "scripts/apply_archer_rework_data.cjs",
+      "bytes": 1939,
+      "sha256": "c35d71a7989c85e9ff087e56218c7c68d710a7bca6209329a1e741b8eef8eeea"
+    },
+    {
+      "path": "scripts/capture_archer_rework.gd",
+      "bytes": 2925,
+      "sha256": "4d993e11606efdd6b0abcfdc1a5bcd812a7224df7c2874c13109e3fdee7e41a8"
+    },
+    {
+      "path": "scripts/receipt_archer_rework.cjs",
+      "bytes": 2919,
+      "sha256": "55afa9e0351fcbb8e625e680671f373015b94c1feb423a201fc88601496b0c30"
+    },
+    {
+      "path": "docs/SCHUETZE-FALLEN-REWORK.de.md",
+      "bytes": 4919,
+      "sha256": "52311e94aa4486b4da74e276680c9d2100866e4b51a3835db9b4a64b1fafb2bb"
+    },
+    {
+      "path": "docs/KRIEGER-KONZEPT.de.md",
+      "bytes": 6795,
+      "sha256": "ead6615bc26130b80530a81515c7161ca9285d67db619eec4241f9a42450c664"
+    },
+    {
+      "path": "production/qa/evidence/archer-rework/README.md",
+      "bytes": 4016,
+      "sha256": "8f731750be9275352d1da573ba085945ede35a7d4154dedfdfec60c6c80f19e2"
+    }
+  ],
+  "scope": "Focused host tests, controlled native GPU fixtures and two real local ENet processes. Warrior is concept only. No LAN/WAN/performance/campaign or art acceptance."
+}

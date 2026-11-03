@@ -1,0 +1,46 @@
+{
+  "passed": true,
+  "scope": "local loopback, not LAN/WAN/performance",
+  "results": [
+    {
+      "damage": true,
+      "expired": true,
+      "failures": [],
+      "max_guardians": 2,
+      "motions": [
+        "spawn",
+        "grasp",
+        "hover",
+        "dissolve"
+      ],
+      "owners": [
+        "1",
+        "430139092"
+      ],
+      "passed": true,
+      "role": "host",
+      "scope": "two real local ENet processes, synthetic encounter, validated R input",
+      "wave": true
+    },
+    {
+      "damage": true,
+      "expired": true,
+      "failures": [],
+      "max_guardians": 2,
+      "motions": [
+        "spawn",
+        "grasp",
+        "hover",
+        "dissolve"
+      ],
+      "owners": [
+        "1",
+        "430139092"
+      ],
+      "passed": true,
+      "role": "client",
+      "scope": "two real local ENet processes, synthetic encounter, validated R input",
+      "wave": true
+    }
+  ]
+}

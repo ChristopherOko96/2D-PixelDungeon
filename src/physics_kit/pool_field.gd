@@ -47,6 +47,8 @@ extends RefCounted
 const Host := preload("res://src/physics_kit/field_host.gd")
 const CallableHost := preload("res://src/physics_kit/callable_field_host.gd")
 const SplatShape := preload("res://src/vfx/splat_shape.gd")
+const RingShape = preload("res://src/combat/soul_ring_shape.gd")
+const TrailShape = preload("res://src/vfx/soul_trail.gd")
 const ElementRules := preload("res://src/combat/element_rules.gd")
 const DATA_PATH := "res://assets/data/vfx_pools.json"
 
@@ -192,7 +194,7 @@ func sync_zone(zone: Dictionary, now: float, source := "") -> String:
 		var start := now - float(zone.get("p", 0.0)) * length
 		var window := float((cfg.get("physics", {}) as Dictionary).get("splash_window", 0.25))
 		add(id, str(zone.st), Vector2(float(zone.x), float(zone.y)), Vector2(float(zone.get("dx", 0.0)), float(zone.get("dy", 0.0))),
-			float(zone.r), start, start + length, source, now - start <= window, int(zone.get("owner", 0)))
+			float(zone.r), start, start + length, source, now - start <= window, int(zone.get("owner", 0)), {"inner_r":float(zone.get("inner_r",0)),"path":zone.get("path",[]),"w":float(zone.get("w",0))})
 	elif _pools.has(key):
 		# a pool whose zone ends sooner than it was laid for (the void drained it, a reaction used it
 		# up) goes rim first by then instead of lying full and vanishing at once (physics plan R12)
@@ -221,7 +223,7 @@ func end_missing(seen: Dictionary, now: float, source := "") -> void:
 ## none). A known pool is kept. A small one lies at once; one of thread_cells
 ## cells or more is shaped on a worker thread and counts from commit_delay s
 ## after now.
-func add(id: int, style: String, at: Vector2, dir: Vector2, radius: float, start: float, end: float, source := "", splash := false, owner := 0) -> void:
+func add(id: int, style: String, at: Vector2, dir: Vector2, radius: float, start: float, end: float, source := "", splash := false, owner := 0, geometry: Dictionary = {}) -> void:
 	var key := key_of(source, id)
 	if _pools.has(key) or _shaping.has(key):
 		return
@@ -241,17 +243,31 @@ func add(id: int, style: String, at: Vector2, dir: Vector2, radius: float, start
 		var edge := _edge_of(start, end)
 		job.out = out
 		job.commit = _now + commit_delay(count)
+		# These authored footprints replace the previously immediate ring/trail path.
+		# They keep its short arrival instead of inheriting a bounding-disc delay.
+		if float(geometry.get("inner_r",0))>0 or geometry.get("path",[]).size()>=2:
+			job.commit=_now+minf(commit_delay(count),float(cfg.get("shape_custom_commit_s",0.1)))
 		# a big pool spreads from the moment it is laid, not from its zone's start (it would pop in
 		# already spread; physics plan R12/F19). commit depends only on the cell count: the same
 		# on every machine
 		var born := maxf(start, float(job.commit))
 		job.task = WorkerThreadPool.add_task(func() -> void:
-			var cells := shape(at, dir, radius, mat, cell_px, floor_open, id)
+			var cells := shaped(at, dir, radius, mat, cell_px, floor_open, id, geometry)
 			out.timed = timings(cells, born, end, spread, edge)
 			out.cells = cells)
 		_shaping[key] = job
 		return
-	_lay(job, shape(at, dir, radius, mat, art, Callable(host, "is_open"), id), {})
+	_lay(job, shaped(at, dir, radius, mat, art, Callable(host, "is_open"), id, geometry), {})
+
+
+## Exact authored footprints share the normal pool timing, ownership and material rules.
+static func shaped(at: Vector2, dir: Vector2, radius: float, mat: String, cell_px: float, floor_open: Callable, seed: int, geometry: Dictionary) -> Dictionary:
+	var path: Array=geometry.get("path",[])
+	if path.size()>=2:
+		return TrailShape.cells(Vector2(path[0][0],path[0][1]),Vector2(path[-1][0],path[-1][1]),float(geometry.w),cell_px,floor_open)
+	if float(geometry.get("inner_r",0))>0:
+		return RingShape.cells(at,radius,float(geometry.inner_r),cell_px,floor_open)
+	return shape(at,dir,radius,mat,cell_px,floor_open,seed)
 
 
 ## How long after the field first sees it a pool of `cells` cells shaped on a
@@ -274,12 +290,25 @@ func finish(key: String, now: float) -> void:
 		return
 	var into: Dictionary = _cells.get(str(pool.mat), {})
 	var edge := float(cfg.get("edge_time", 0.7)) * 0.5
+	pool.end=now
 	for q: Vector2i in pool.cells:
 		var have: Variant = into.get(q)
 		if have != null and (have as Array).size() == 3:
 			have[1] = minf(float(have[1]), now + edge * (1.0 - float(have[2])))
-	pool.end = now
+			have[1] = maxf(float(have[1]),_other_until(key,q,now))
 	_note({"kind": "finished", "key": key, "mat": str(pool.mat), "now": now})
+
+
+## Consuming a source cannot erase overlapping liquid from another living source.
+func _other_until(exclude: String, cell: Vector2i, now: float) -> float:
+	var until:=now
+	var mat:=str(_pools[exclude].mat)
+	for key: String in _pools:
+		var pool: Dictionary=_pools[key]
+		if key==exclude or str(pool.mat)!=mat or float(pool.end)<=now: continue
+		var own: Array=pool.get("timed",{}).get(cell,[])
+		if own.size()>=2 and float(own[0])<=now: until=maxf(until,float(own[1]))
+	return until
 
 
 ## Same as finish: pool `key` goes rim first from `now`.
@@ -592,6 +621,7 @@ func _lay(job: Dictionary, cells: Dictionary, timed: Dictionary) -> void:
 	if timed.is_empty():
 		timed = timings(cells, float(job.start), float(job.end), _spread_of(mat), _edge_of(float(job.start), float(job.end)))
 	var keys := timed.keys()
+	var own_timing:=timed.duplicate(true)
 	for q: Vector2i in keys:
 		var fresh: Array = timed[q]
 		var have: Variant = into.get(q)
@@ -602,7 +632,7 @@ func _lay(job: Dictionary, cells: Dictionary, timed: Dictionary) -> void:
 		into[q] = fresh
 	var pool := {"key": key, "id": int(job.id), "source": str(job.source), "style": str(job.style), "mat": mat, "at": job.at, "dir": job.dir,
 		"r": float(job.r), "start": float(job.start), "end": float(job.end), "owner": int(job.owner), "splash": bool(job.splash),
-		"cells": keys, "shape": cells}
+		"cells": keys, "shape": cells,"timed":own_timing}
 	_pools[key] = pool
 	_note({"kind": "laid", "key": key})
 

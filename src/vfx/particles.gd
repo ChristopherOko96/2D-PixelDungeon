@@ -105,6 +105,8 @@ var blocked_cells: Dictionary = {}
 var _chunks: Dictionary = {}
 var _marks := 0
 var _walkable: Dictionary = {}
+var _floor_bounds := Rect2()
+var _floor_walls: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
 var _data: Dictionary = {}
 static var _cached: Dictionary = {}
@@ -173,6 +175,11 @@ static func settings() -> Dictionary:
 ## (a broken wall changes the cells, not the room).
 func set_layout(layout: Dictionary, key: String) -> void:
 	_walkable = FxSprites.walkable_cells(layout)
+	_floor_bounds = Rect2()
+	_floor_walls.clear()
+	var area: Array = layout.get("play_bounds",[])
+	if area.size()==4: _floor_bounds=Rect2(float(area[0]),float(area[1]),float(area[2]),float(area[3]))
+	_floor_walls=FxSprites.wall_rects_by_cell(layout)
 	layout_key = key
 
 
@@ -180,6 +187,8 @@ func set_layout(layout: Dictionary, key: String) -> void:
 ## crypt room layout (the story worlds, src/hero/story_skill_fx.gd).
 func set_walkable(cells: Dictionary, key: String) -> void:
 	_walkable = cells
+	_floor_bounds=Rect2()
+	_floor_walls.clear()
 	layout_key = key
 
 
@@ -214,9 +223,24 @@ func sees(from: Vector2, to: Vector2, seen: Dictionary = {}) -> bool:
 
 ## True when `point` (world px) is inside a wall. Without a room every point is open.
 func solid(point: Vector2) -> bool:
+	if _floor_bounds.has_area() and not _floor_bounds.has_point(point): return true
+	for wall: Rect2 in _floor_walls.get(Vector2i((point/32).floor()),[]):
+		if wall.has_point(point): return true
 	if _walkable.is_empty(): return false
 	var cell := Vector2i(floori(point.x / 32.0), floori(point.y / 32.0))
 	return not _walkable.has(cell) or blocked_cells.has(cell)
+
+## Immutable floor lookup for worker shapes, independent of the owning view.
+## Resetting a scene may replace its particles while an old shape still runs.
+func open_floor_test() -> Callable:
+	var cells := _walkable.duplicate()
+	var bounds := _floor_bounds
+	var walls: Dictionary = _floor_walls.duplicate(true)
+	return func(point: Vector2) -> bool:
+		if bounds.has_area() and not bounds.has_point(point): return false
+		for wall: Rect2 in walls.get(Vector2i((point/32).floor()),[]):
+			if wall.has_point(point): return false
+		return cells.is_empty() or cells.has(Vector2i(floori(point.x/32.0),floori(point.y/32.0)))
 
 
 ## Throws `count` square particles from `origin` (where they are seen, `height`

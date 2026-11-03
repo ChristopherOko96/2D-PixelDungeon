@@ -1,0 +1,7 @@
+const fs=require('fs'),path=require('path'),crypto=require('crypto');
+const root=path.resolve(__dirname,'..'),folder=path.join(root,'production/qa/evidence/curse-ultimate-monster');
+fs.copyFileSync(path.join(root,'Logs/necro-blood/20261101-230816-cd4fb3bc/summary.json'),path.join(folder,'network-summary.json'));
+fs.copyFileSync(path.join(root,'production/qa/evidence/necromancer-catalog-hq/curse_14/frame-090.png'),path.join(folder,'fluchkoloss-original.png'));
+const files=['assets/data/talents.json','assets/data/necromancer_rules.json','src/combat/necromancer_branches.gd','src/combat/talent_combat.gd','src/rig/curse_monster_rig.gd','src/vfx/companion_rigs.gd','src/session_protocol.gd','tests/curse_ultimate_monster_test.gd','tests/curse_monster_rig_test.gd','tests/necro_branches_story_test.gd','tests/necro_blood_network_peer.gd','scripts/capture_necromancer_catalog.gd','scripts/build_necromancer_original.cjs','output/necromancer-catalog/fluchkoloss-original.png','output/necromancer-catalog/original-browser-review.json','production/qa/evidence/necromancer-catalog-hq/catalog.json'];
+fs.writeFileSync(path.join(folder,'source-hashes.json'),JSON.stringify({scope:'Real host death logic, rig and story tests, two local ENet peers, controlled original GPU recordings; no LAN/performance/campaign acceptance.',files:files.map(file=>({file,sha256:crypto.createHash('sha256').update(fs.readFileSync(path.join(root,file))).digest('hex')}))},null,2));
+console.log('CURSE_MONSTER_RECEIPT files='+files.length);

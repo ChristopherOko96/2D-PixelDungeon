@@ -1,0 +1,534 @@
+{
+  "scope": "Presentation correction; controlled Godot recordings, not a campaign or performance result.",
+  "cases": 40,
+  "frames": 5150,
+  "width": 640,
+  "height": 360,
+  "fps": 30,
+  "files": [
+    {
+      "file": "scripts/capture_necromancer_catalog.gd",
+      "sha256": "9293ce64efdbfa8f60dc5d0113a6360932f0c32b26704add695ae73bceee74e2"
+    },
+    {
+      "file": "scripts/build_necromancer_original.cjs",
+      "sha256": "69eedecbeddec14ae92c02791f9873f2132359515b0cb19cc6c886fb3310e3e1"
+    },
+    {
+      "file": "scripts/check_necromancer_original.cjs",
+      "sha256": "711fffccc2e8eee173288825be1974215e182a1d028b5bfd1d6d3d345bb94d3a"
+    },
+    {
+      "file": "scripts/necro_original_apng.cjs",
+      "sha256": "b0e28e4ec324bf50fa4e0ca21ae1c0c0d5ada026eab398355f7e453b4652d47a"
+    },
+    {
+      "file": "Nekromant-Angriffe.cmd",
+      "sha256": "db174339e0b5f04d3c6796785d36405822ad26b1d96f946db4718b585d7bc61d"
+    },
+    {
+      "file": "output/necromancer-catalog/nekromant-original.template.html",
+      "sha256": "df04d6844b11af0f93ca86557a9dd2eaf09a80cef7f91d078992a40ef7aafff9"
+    },
+    {
+      "file": "output/necromancer-catalog/original-wrapper.html",
+      "sha256": "2874240b5365207f10cfd5edef179283d95ed2920508977654535bca6b0d0ba8"
+    },
+    {
+      "file": "output/necromancer-catalog/nekromant-original.html",
+      "sha256": "03168b4da1ede60391478af37dbf5cc520d3db93c5b4f4781c25dc591e7e4377"
+    },
+    {
+      "file": "output/necromancer-catalog/seelenblitz-original.png",
+      "sha256": "3e561272cc3b49d798ae9b4f02c867a3973cdf4ce8eb1f93a95e01476e967b16"
+    },
+    {
+      "file": "output/necromancer-catalog/original-browser-review.json",
+      "sha256": "f9510736065e28e4aeb0f2052e0b4717201d477b8fac8c929bf7a34a1b64a938"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/catalog.json",
+      "sha256": "d1953a8ed01bc07423d389f62845dd668d8a372d9eea5cafb2153f3ebe7f83ce"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/minion_1.png",
+      "sha256": "02cb73100354b275aa3357878284614f1981b3d060cc65579241d3d0f2385463"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/minion_1/frame-000.png",
+      "sha256": "b423c53e62298c2e85fa0e73a04b0919eb6fcd3c174c779f15730157d18e5dc4"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/minion_1/frame-121.png",
+      "sha256": "9d0b71c97e6822b1f62b5d036f30020c7dbad120793acb05dd05ef7acce00ef2"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/minion_3.png",
+      "sha256": "ab81822a02d8391af91a016f1e26f00b12f953b3d0efe61f1e199d301debbaf3"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/minion_3/frame-000.png",
+      "sha256": "7f28e13fda3962d6a04ca8467d970be0ffc7ba4ad48b221e6466da2a14fcc7d0"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/minion_3/frame-091.png",
+      "sha256": "86811927e36830c6590c4ea7bb87fd7641e8b47fb44dddc304f1a84d83cd80eb"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/minion_5.png",
+      "sha256": "fd4dac883438a3afe2f214d99c42e01909fccb0c8154036b6ebf60780c672c74"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/minion_5/frame-000.png",
+      "sha256": "2164c8934a63076c8e1c75174c8de20544b2a177c2352f02b6e757da93ef7fa9"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/minion_5/frame-181.png",
+      "sha256": "54016f6cf3c0a1a6d13c150e4895ebbb9b08b464c6b3c49eff995ed8b6fcb6d0"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/minion_7.png",
+      "sha256": "77fbce6755c81ab3e1d7a38ab00a7b65fd4d880be7366bf54d24bf8ed9ec91d7"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/minion_7/frame-000.png",
+      "sha256": "fa4c1154b61bbf5985fbaa06ceea3df05643922d5dee83e0f6b6a148da1aa7bb"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/minion_7/frame-091.png",
+      "sha256": "0c5ec9d066b224df716e7d5905221c7aa938a37d60dddf9c0dc70a991033ab48"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/minion_9.png",
+      "sha256": "4875a71c43aa3f0c376f0764cf3145cc4e237d8b9500ceaca41f232af3eacd58"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/minion_9/frame-000.png",
+      "sha256": "91006e6095d7bfaf838486ccf687098a5c8120a281b10e41b89ecffac25bb5e4"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/minion_9/frame-121.png",
+      "sha256": "b4cbf6df8e198ae426bae9e3538b8fcbfbeece0c1f93a0f14644df229c3ca4e8"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/minion_11.png",
+      "sha256": "71df2d018bb099833bf3067b28e1bc1d7a53e1c12be3f1c1fce714a14bf6a0fd"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/minion_11/frame-000.png",
+      "sha256": "8fce2385fde6e2a2c829f9f297c396c948100606ddff25d0c389879988bf196d"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/minion_11/frame-091.png",
+      "sha256": "8ccd948c87141c21bc1d99141934545885a3b166d51213172cb27def0b38ef7a"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/minion_14.png",
+      "sha256": "f0b7d01c5bd96dc4dd9eee232ddfe519853bfafbb269590db0687e88808b4aea"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/minion_14/frame-000.png",
+      "sha256": "2a39f83f925137c27dc067f98c7312f086481609734789d299de6f2e6d20a63d"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/minion_14/frame-121.png",
+      "sha256": "0dc3e1f4a5d97e42a7b383470d14559e00dad8c6aa5a49e0d5018dd13c3667a4"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/curse_3.png",
+      "sha256": "bbeebf1b7794334203532834ce8b519954c2d9c3e252655520db3a256ad92c72"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/curse_3/frame-000.png",
+      "sha256": "ee1e0f1d6b778bea20ce7aefd94e2f0ff545c745014ac9c3ff245b5e6fbc462b"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/curse_3/frame-121.png",
+      "sha256": "89d39125c7bbed25fcfc796de6a25c7f49f5653275f90a9a10a271996fc28f32"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/curse_5.png",
+      "sha256": "1852c5b8559b70291e969f42c20b34cb9d07e52490c6fd5b50e8af2eaf9dff6c"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/curse_5/frame-000.png",
+      "sha256": "fe2dcd9bbbe6fce84ae59cce2e8d5db41bd9d91afcfe168575dea1c8c1cc3b78"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/curse_5/frame-091.png",
+      "sha256": "5013c48b92bce150ca1e25cf9c32014bd7d2dec445830ec53688182b755d0a96"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/curse_7.png",
+      "sha256": "149c94b21bed5cc0ee8834ae813ee8e52f30b0cd15288c81ef8b42de6b817850"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/curse_7/frame-000.png",
+      "sha256": "ed3064c9d0cedd5cf30b89cb4ef6610e0cae24cfb4a6d1c332e8208ba387ca6f"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/curse_7/frame-181.png",
+      "sha256": "1e1add4119447034e4f64bf5d600a6cf1688c2bb0b0f5be4427a2f64a3a63f07"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/curse_9.png",
+      "sha256": "25fb5dd3b3436c2b140e7d4432b8cbc3211cc88bd7950892c954b965d4b0d6dc"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/curse_9/frame-000.png",
+      "sha256": "bcb8d80ffb5cf6a56c168238a39b09afb2b543e646f5d3d0d5454b1cde4b46c9"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/curse_9/frame-121.png",
+      "sha256": "b6dd50968cbf15b929d9d4b20db0d72484225625f9e9fba970d3fb3f6665a579"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/curse_11.png",
+      "sha256": "df925c2195ff0cb105cf4649d923c9b4de79d64e2ac0d295220c739a71d08851"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/curse_11/frame-000.png",
+      "sha256": "74c67a5d9e6990bca7ec16c856e551755bb83aebcefed77565f8baa51875fef4"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/curse_11/frame-091.png",
+      "sha256": "7132a30fc4a59f951084b1461334d981643fcd4ed4ac297734e27934bf6fc044"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/soul_1.png",
+      "sha256": "7d99c2867f79cbd8abc8a0c19c9473396e27cafaf2d142b5295a6036d3ad2d2f"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/soul_1/frame-000.png",
+      "sha256": "f26a48bfb892395549cde49ef323aa0df831f2ab973ba08242913c2a2c7fc4f3"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/soul_1/frame-091.png",
+      "sha256": "b9db7c785f20b0c0dc716cbf669a163f74fe6ee1608074a6ac94673bfe75e184"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/soul_3.png",
+      "sha256": "ad53093b4ce3a83ed69a9918904ed1af6654eed31ebbada45cc2cc237e712177"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/soul_3/frame-000.png",
+      "sha256": "f67fba95305a2d948c5c44d555def4fc929a6895b225ef07f666cf111704a9fc"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/soul_3/frame-181.png",
+      "sha256": "806a66e92818d95e3dcfafa1344abc3deccb390fc072a51fe94f27bb870ff2bf"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/soul_5.png",
+      "sha256": "069f3ae2d81129cfa0c999e3872f3a5381c89937a6977cf1b4a81dad66adfe20"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/soul_5/frame-000.png",
+      "sha256": "611fb1e1d812f446f89813353ed46c34370260690c19aa20045cc39044324419"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/soul_5/frame-091.png",
+      "sha256": "4758f2e66d62e35f9de7ef3e99ad6402808d6ad4073d193b1ae089474443675a"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/soul_7.png",
+      "sha256": "3cf0f61f2b07744fe0b4ce6c56e8eddc10c0eb9a1a787e8dd0f378434497f507"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/soul_7/frame-000.png",
+      "sha256": "c8b89156b3c45ae9d1a93f366f89939f469de423e7e69fa91f3df258e5f74b8a"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/soul_7/frame-181.png",
+      "sha256": "c988bc50caf0474079e47cbaf26d45a067fd3d53ec47d3643ae2467dc011cd4e"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/soul_9.png",
+      "sha256": "630b1b2681cca51132a7c025427c891c2876889dd7752eb458c49af5db1d5e5b"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/soul_9/frame-000.png",
+      "sha256": "ef9cb841c01cfac856bfdf0d01a4e2183c8ac15a2ac053e070e501503b34bae2"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/soul_9/frame-091.png",
+      "sha256": "5eca634ed6b8fb3002d31c299613e3d5ea95e6e7d7ec0ebea7869a2da2ed3939"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/soul_11.png",
+      "sha256": "d83fe97860efd03595aaf070fb55cda6cddf1d3e9fabd1aa5e9d7b4536179804"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/soul_11/frame-000.png",
+      "sha256": "7f3829958849b1801f954e86557efe1e4c6c7ff4fd0b26e8376785744c8a68b8"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/soul_11/frame-181.png",
+      "sha256": "18780bd6df0eea6f0e79e331dfd5d044dd417057c18e8b4be55bdc04e170194a"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/soul_14.png",
+      "sha256": "b8cdaf8fde20d86e4c7502c5ed34d631bfb1422ed04929de4e904dea3b0c4d6a"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/soul_14/frame-000.png",
+      "sha256": "6629dd5aa6271062f9da4654e49865277aad877d728623a04b5fb4a3ee7b1fed"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/soul_14/frame-181.png",
+      "sha256": "72ce6b8a6982153a2711b31f6b3982176896e462b40a38be1a902988254f4560"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/basic.png",
+      "sha256": "ab5b788419a1741c0570c5f2f07c4e27cbdf500398cbd51fe98288bd1a5b3273"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/basic/frame-000.png",
+      "sha256": "19091ebee9c45714c5e57f0014618dfe84cff3a17700a13db2b7256445deabe8"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/basic/frame-091.png",
+      "sha256": "fc6300c250653b21e00931f2471ab85ceb3d2b029e95337f7f4a1612ab6bf9f5"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/defense.png",
+      "sha256": "b40c64da52df163e2fb2af11e3c129789639e633ba5eee1118b463004dc3cccd"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/defense/frame-000.png",
+      "sha256": "d9227163a33fd443b50ae15f6e317ba0063a2836dab40de819cbae9cc30a0e53"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/defense/frame-091.png",
+      "sha256": "c3c8614040f4c881b25c6446ab3d7479e34e44504ba406b855d08e51451a4882"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/shield_bash.png",
+      "sha256": "a1b4faa2556e7a8f38c980e2ba3cdf43b3ba06196c7e4dd707dc0d8bd5a9a3dd"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/shield_bash/frame-000.png",
+      "sha256": "83fc9e6eac2b2e33c1055043f1c73dca34bbd2d2052d519c422d2e0cee8a6438"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/shield_bash/frame-091.png",
+      "sha256": "f63a079ae937e808506916c6560910b1bfccd6432c5df94996e62a2a9ec96b13"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/bone_shout.png",
+      "sha256": "161ed478486264d9c520459c1e5f59b84ab4ded6ce4e4263ff399c4d5ceed32c"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/bone_shout/frame-000.png",
+      "sha256": "5d945c27b5336bf2134b031b8cc6484a352f81c479f3ae0f073420434b609550"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/bone_shout/frame-091.png",
+      "sha256": "3fe3fed30dff31c004c7e60a190bafe1803d83969b87c33a5d8a62bae097efa2"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/bone_stomp.png",
+      "sha256": "b829c76c232951b7ccdaa840986bf2566db060f4854db596d904325e979771cc"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/bone_stomp/frame-000.png",
+      "sha256": "4a7fd3bbdd128e6e8bf171acdd7b2bf69ae198f9274f5bf9be2636723dabd818"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/bone_stomp/frame-091.png",
+      "sha256": "f42ea9848cc27902d70280d9ffc51dd659961af348502adcb1f397f9abd34037"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/bone_whirl.png",
+      "sha256": "a514010da7542c084a656350c973a9136af34a0b60b2211c169228dc3ae73ae0"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/bone_whirl/frame-000.png",
+      "sha256": "79f00769e6ebf4b492097b59bcb6889d0ce26efa9b3a4baa2492fddde4cc8399"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/bone_whirl/frame-091.png",
+      "sha256": "ab04d0abe8701c2d7ef2ba020b5d28e96e2a52c95843a7d95942e954104bfa4b"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/guardian_wave.png",
+      "sha256": "9766570318069a2219414cfaefd0db4b27975212f273f3aa22e35fac3ded103c"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/guardian_wave/frame-000.png",
+      "sha256": "6233e02f29536d902020dcc02d84b175f25fa1cd6663d5c1b0f17e51799272a8"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/guardian_wave/frame-121.png",
+      "sha256": "c2411edcf5f867ab17c2dd1136c91bcce32cdd77ea683a4e164fb92a7daa9e4a"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/archer_death.png",
+      "sha256": "1f0ead522e0cce9a4f1ebb6f6b72b0e0ee1c56a056e8c0cb43607b8244b03a16"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/archer_death/frame-000.png",
+      "sha256": "08becdf4e7d78b0415eb1391b5241c8a3177f1b3fe211722ae56ae2336eddec0"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/archer_death/frame-091.png",
+      "sha256": "c72484c90549ff55f408cd7d8511045e8137d141aebdbdf2220825cb6a75b877"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/curse_death.png",
+      "sha256": "0e31db526e04b251ad1d78ecc55013544aff61cc0393612a9e97a1b9ebea74bd"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/curse_death/frame-000.png",
+      "sha256": "59c54a4463529b7a9f366c230be9d52cb92aca9c12b536032a9afad9f2611b07"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/curse_death/frame-121.png",
+      "sha256": "70706dddc9f231c31daaea83794a8c24053be8f0676163da4866ec1568a54fdd"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/minion_14_stage_2.png",
+      "sha256": "8670f43135d2c11f78f88fb0d8a45255530bb5e8c523a7133a7c8a4b9b5732b5"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/minion_14_stage_2/frame-000.png",
+      "sha256": "adc65586c02d664e0fe0dacbb1ff4032710d23b0eb3bda9e5d0a14ec72b6c358"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/minion_14_stage_2/frame-121.png",
+      "sha256": "abf5812d4e8e35d8b8816582069bcd4f28d533cdf19fdda7d255ab5d98901c82"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/minion_14_stage_3.png",
+      "sha256": "8e492d87736fe7cda4e0befdef924e0601054fc8347ede214ae898547195ec09"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/minion_14_stage_3/frame-000.png",
+      "sha256": "d62f9d34f7fd0fbcffee1b03ff001a12b16f2dc71806a8d114d87666d9878a1d"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/minion_14_stage_3/frame-121.png",
+      "sha256": "1151c5023007b22540e9528bd2eceba0bea1b2eafcc509de228297878239e594"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/soul_14_stage_2.png",
+      "sha256": "41d2df3eea211f3b2e8d3721ab070eeaada7c92a5ec3e1d99d48f9992d36bce1"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/soul_14_stage_2/frame-000.png",
+      "sha256": "fb8bffcf7e6a14c6e409163bd97c3fc0b8747b38c0773d8ecca9e405963832eb"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/soul_14_stage_2/frame-181.png",
+      "sha256": "d1c51ac073e9e20350f0d23b63bddf16eefd848351d319ed16f5557ab7da408f"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/soul_14_stage_3.png",
+      "sha256": "47638582cac8a1cf44dff35803db071b8062eb1937e40f72c4a9d94e7f230110"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/soul_14_stage_3/frame-000.png",
+      "sha256": "b01f5de709b82d2f110d7d412bcfb32565ff4f64f181871e6aec3bd67dc18263"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/soul_14_stage_3/frame-181.png",
+      "sha256": "4ce6a59a679ce28d5bf895ecb7d030451dfd171bbfdba224c162d80e244bd2c0"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/soul_9_tap.png",
+      "sha256": "aab4608c5c99382994177d5c01539f3635de9b259d0a1042d682241b50f95ba9"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/soul_9_tap/frame-000.png",
+      "sha256": "03a7ff085ca16b6e1ac889c5786702371d7354fdf504c8cfa5355834dc30d320"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/soul_9_tap/frame-091.png",
+      "sha256": "666b708c8ccafc3af1e9358d433ab0f9beef7450e64c0b47b52ff5706e29b4b8"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/guardian_beam.png",
+      "sha256": "5ff339631f49e0fea836b990963ea754fd142c009d9d322cfee8290ff9e7b4d6"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/guardian_beam/frame-000.png",
+      "sha256": "495e2a397a48d4e26f5f98b17e7fa486874b2bbfd57fb4b421dfc1dc9d43ac11"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/guardian_beam/frame-121.png",
+      "sha256": "b161514eaebd9a5ff8ad59fae3e9bf068bb5a920afafdbde4634e753d1bd16e1"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/curse_14.png",
+      "sha256": "7d14c6f77d6459785ef034efa67ad0601d467720b3ba27198712ef090505cee8"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/curse_14/frame-000.png",
+      "sha256": "372ae18f76fdaa3f5929d74058049b374b0079022747506ceb8d16cac9b473fa"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/curse_14/frame-181.png",
+      "sha256": "f132c6dbcbf17047ec24717ce3e4f87adcfcf0730de5cd97d00d6f1c871535a0"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/curse_14_stage_2.png",
+      "sha256": "c0eb017c5b20faea421779039b061427912f31b94552ee1414d92a4019715cc4"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/curse_14_stage_2/frame-000.png",
+      "sha256": "d4874f9138a3f06a03f127abc6ac2879bdb4fce9b2462d2268081c1fa21bb71f"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/curse_14_stage_2/frame-181.png",
+      "sha256": "fec2ad52c81a8db9437463d928bb92f6a02735417195f70804db9dc5579b798f"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/curse_14_stage_3.png",
+      "sha256": "09f12b04fcec648cf12080f71891f5c7a92e0a0874d69e7d483a5cb30fe774ea"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/curse_14_stage_3/frame-000.png",
+      "sha256": "f6c5ed5a9c044fbfa6b81694645ccb5dc61f1718199a7a0ae8f0b594981397a2"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/curse_14_stage_3/frame-181.png",
+      "sha256": "f0ed6ee431544bbcdc766064df2d5c9bb1e349cd355d5a4c5357163b9a07e3c0"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/curse_wave.png",
+      "sha256": "d6bf173f287feead0c8181ad44fb94c397525fe164b0af1c4da78b0ed0ace6da"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/curse_wave/frame-000.png",
+      "sha256": "cdde828fe08c8343686476a1f085db6e847dd362f06b0b8c5b052602a820c2cd"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/curse_wave/frame-181.png",
+      "sha256": "06a439aa35ba46f4bfaaa31eec606a2aabb2200102487481b4533afd1a083ac1"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/curse_brood.png",
+      "sha256": "18a9260ead72b68ea93a5e6d26561c0510372d4efc9a8518bc527e5c3191465e"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/curse_brood/frame-000.png",
+      "sha256": "5c3ef6eb495f17f4b17eaf79f788ffe44304364e5604199c6dc61fde4844ac15"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/curse_brood/frame-181.png",
+      "sha256": "b561a431db9983e4bdb40541c10975bf375ce6a7bfcafef8059926dceb5cdc0c"
+    },
+    {
+      "file": "output/necromancer-catalog/original-stills/curse_1.png",
+      "sha256": "1a4cf37432a0472347e95b0c444b855a0a62ea8f79edeb94764ffc2deac95048"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/curse_1/frame-000.png",
+      "sha256": "eb6079ec897e77ac14d8cde88fe58267904fad7e96c567fd69724c3dcc8de923"
+    },
+    {
+      "file": "production/qa/evidence/necromancer-catalog-hq/curse_1/frame-091.png",
+      "sha256": "1ac113b0f7480c5e0aa14e351edf46d69a40550ec3f2a9db5e7eab8ccfad2fcc"
+    }
+  ]
+}

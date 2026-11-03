@@ -1,0 +1,271 @@
+{
+  "initial": {
+    "duration": 159.533333,
+    "ready": 4,
+    "selected": "curse_9",
+    "options": 12,
+    "stillWidth": 320
+  },
+  "selectableClips": 38,
+  "checks": [
+    {
+      "id": "curse_1",
+      "time": 27.491666,
+      "seek": false,
+      "name": "Fluchgeschoss"
+    },
+    {
+      "id": "curse_3",
+      "time": 30.558333,
+      "seek": false,
+      "name": "Fluch der Schwäche"
+    },
+    {
+      "id": "curse_5",
+      "time": 34.625,
+      "seek": false,
+      "name": "Aderfessel"
+    },
+    {
+      "id": "curse_7",
+      "time": 37.691666,
+      "seek": false,
+      "name": "Seuchenfeld"
+    },
+    {
+      "id": "curse_9",
+      "time": 43.758333,
+      "seek": false,
+      "name": "Blutstrahl"
+    },
+    {
+      "id": "curse_11",
+      "time": 47.824999,
+      "seek": false,
+      "name": "Fluchernte"
+    },
+    {
+      "id": "curse_14",
+      "time": 50.891666,
+      "seek": false,
+      "name": "Seuchengrube"
+    },
+    {
+      "id": "curse_14_stage_2",
+      "time": 129.158333,
+      "seek": false,
+      "name": "Seuchengrube · Stufe 2 (Blutgericht)"
+    },
+    {
+      "id": "curse_14_stage_3",
+      "time": 135.225,
+      "seek": false,
+      "name": "Seuchengrube · Stufe 3 (Pestland)"
+    },
+    {
+      "id": "curse_death",
+      "time": 113.891666,
+      "seek": false,
+      "name": "Todesfluch · Weiterflug"
+    },
+    {
+      "id": "basic",
+      "time": 87.358333,
+      "seek": false,
+      "name": "Standardangriff · Stabgeschoss"
+    },
+    {
+      "id": "defense",
+      "time": 90.425,
+      "seek": false,
+      "name": "Knochenschild"
+    },
+    {
+      "id": "minion_1",
+      "time": 0.025,
+      "seek": false,
+      "name": "Knochenkrieger"
+    },
+    {
+      "id": "minion_3",
+      "time": 4.091666,
+      "seek": false,
+      "name": "Knochenspeer"
+    },
+    {
+      "id": "minion_5",
+      "time": 7.158333,
+      "seek": false,
+      "name": "Blutmal"
+    },
+    {
+      "id": "minion_7",
+      "time": 13.225,
+      "seek": false,
+      "name": "Leichenexplosion"
+    },
+    {
+      "id": "minion_9",
+      "time": 16.291666,
+      "seek": false,
+      "name": "Knochenschützen"
+    },
+    {
+      "id": "minion_11",
+      "time": 20.358333,
+      "seek": false,
+      "name": "Totenpakt"
+    },
+    {
+      "id": "minion_14",
+      "time": 23.424999,
+      "seek": false,
+      "name": "Knochenkoloss"
+    },
+    {
+      "id": "minion_14_stage_2",
+      "time": 121.025,
+      "seek": false,
+      "name": "Knochenkoloss · Stufe 2 (Grabeskoloss)"
+    },
+    {
+      "id": "minion_14_stage_3",
+      "time": 125.091666,
+      "seek": false,
+      "name": "Knochenkoloss · Stufe 3 (Knochensplitter)"
+    },
+    {
+      "id": "bone_shout",
+      "time": 93.491666,
+      "seek": false,
+      "name": "Knochenschrei"
+    },
+    {
+      "id": "bone_stomp",
+      "time": 96.558333,
+      "seek": false,
+      "name": "Stampfen"
+    },
+    {
+      "id": "bone_whirl",
+      "time": 99.625,
+      "seek": false,
+      "name": "Klingensturm"
+    },
+    {
+      "id": "archer_death",
+      "time": 110.825,
+      "seek": false,
+      "name": "Knochenschützen · Leichenexplosion"
+    },
+    {
+      "id": "shield_bash",
+      "time": 117.958333,
+      "seek": false,
+      "name": "Schildschlag"
+    },
+    {
+      "id": "basic",
+      "time": 87.358333,
+      "seek": false,
+      "name": "Standardangriff · Stabgeschoss"
+    },
+    {
+      "id": "defense",
+      "time": 90.425,
+      "seek": false,
+      "name": "Knochenschild"
+    },
+    {
+      "id": "soul_1",
+      "time": 56.958333,
+      "seek": false,
+      "name": "Seelenblitz"
+    },
+    {
+      "id": "soul_3",
+      "time": 60.025,
+      "seek": false,
+      "name": "Seelenring"
+    },
+    {
+      "id": "soul_5",
+      "time": 66.091666,
+      "seek": false,
+      "name": "Seelenschild"
+    },
+    {
+      "id": "soul_7",
+      "time": 69.158333,
+      "seek": false,
+      "name": "Schattensprung"
+    },
+    {
+      "id": "soul_11",
+      "time": 75.225,
+      "seek": false,
+      "name": "Seelensturm"
+    },
+    {
+      "id": "soul_14",
+      "time": 81.291666,
+      "seek": false,
+      "name": "Ruf des Seelenwächters"
+    },
+    {
+      "id": "soul_9",
+      "time": 156.491666,
+      "seek": false,
+      "name": "Seelenlanze · voll geladen"
+    },
+    {
+      "id": "soul_14_stage_2",
+      "time": 141.291666,
+      "seek": false,
+      "name": "Ruf des Seelenwächters · Stufe 2 (Langer Dienst)"
+    },
+    {
+      "id": "soul_14_stage_3",
+      "time": 147.358333,
+      "seek": false,
+      "name": "Ruf des Seelenwächters · Stufe 3 (Seelenchor)"
+    },
+    {
+      "id": "guardian_beam",
+      "time": 102.691666,
+      "seek": false,
+      "name": "Seelenstrahl"
+    },
+    {
+      "id": "guardian_wave",
+      "time": 106.758333,
+      "seek": false,
+      "name": "Seelenwelle"
+    },
+    {
+      "id": "soul_9_tap",
+      "time": 153.425,
+      "seek": false,
+      "name": "Seelenlanze · kurz geladen"
+    },
+    {
+      "id": "basic",
+      "time": 87.358333,
+      "seek": false,
+      "name": "Standardangriff · Stabgeschoss"
+    },
+    {
+      "id": "defense",
+      "time": 90.425,
+      "seek": false,
+      "name": "Knochenschild"
+    }
+  ],
+  "playing": {
+    "paused": false,
+    "time": 44.9565,
+    "label": "Pause"
+  },
+  "pause": true,
+  "errors": []
+}

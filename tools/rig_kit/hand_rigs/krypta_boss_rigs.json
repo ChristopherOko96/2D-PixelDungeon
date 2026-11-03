@@ -510,6 +510,181 @@
  },
  "scales": {},
  "rigs": {
+  "blood_colossus": {
+   "img": "kb_knochenwaechter",
+   "family": "skeleton",
+   "variant": "sword",
+   "ground": [
+    24,
+    45
+   ],
+   "width": 18,
+   "parts": [
+    {
+     "id": "skull",
+     "rects": [
+      [
+       15,
+       12,
+       33,
+       34
+      ]
+     ],
+     "pivot": [
+      24,
+      34
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 12,
+     "label": "Schädel",
+     "vital": true
+    },
+    {
+     "id": "arm_l",
+     "rects": [
+      [
+       17,
+       39,
+       21,
+       41
+      ]
+     ],
+     "pivot": [
+      21,
+      39
+     ],
+     "parent": "torso",
+     "z": 1,
+     "hp": 1,
+     "label": "Linker Arm"
+    },
+    {
+     "id": "arm_r",
+     "rects": [
+      [
+       26,
+       39,
+       30,
+       41
+      ]
+     ],
+     "pivot": [
+      26,
+      39
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 1,
+     "label": "Rechter Arm"
+    },
+    {
+     "id": "torso",
+     "rects": [
+      [
+       16,
+       35,
+       31,
+       41
+      ]
+     ],
+     "pivot": [
+      24,
+      41
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 4,
+     "label": "Brustkorb",
+     "alsoDetach": [
+      "leg_l",
+      "leg_r"
+     ]
+    },
+    {
+     "id": "leg_l",
+     "rects": [
+      [
+       16,
+       42,
+       23,
+       45
+      ]
+     ],
+     "pivot": [
+      20,
+      42
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Linkes Bein"
+    },
+    {
+     "id": "leg_r",
+     "rects": [
+      [
+       24,
+       42,
+       31,
+       45
+      ]
+     ],
+     "pivot": [
+      28,
+      42
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Rechtes Bein"
+    }
+   ],
+   "items": [
+    {
+     "id": "weapon",
+     "img": "kb_knochenwaechter_item",
+     "grip": [
+      11,
+      53
+     ],
+     "hand": [
+      29,
+      40
+     ],
+     "parent": "arm_r",
+     "rest": 0.35,
+     "z": 4,
+     "tip": [
+      11,
+      2
+     ],
+     "hp": 3,
+     "label": "Riesenschwert",
+     "disables": [
+      "attack",
+      "stampfer"
+     ]
+    }
+   ],
+   "points": {
+    "mouth": {
+     "part": "arm_r",
+     "at": [
+      29,
+      40
+     ]
+    },
+    "core": {
+     "part": "skull",
+     "at": [
+      24,
+      27
+     ]
+    }
+   },
+   "material": "bone"
+  },
   "krypta_knochenwaechter": {
    "img": "kb_knochenwaechter",
    "family": "skeleton",

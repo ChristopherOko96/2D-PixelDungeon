@@ -67,8 +67,8 @@ static func element(g: Node) -> String:
 
 ## Gives the mage's shot `s` (hell_game._attack builds it from his weapon) his
 ## element's bolt: its kind, speed, splash and the bolt's own rules; sounds its cast.
-static func arm(g: Node, s: Dictionary) -> void:
-	var el := element(g)
+static func arm(g: Node, s: Dictionary, element_override: Variant = null) -> void:
+	var el: String=element(g) if element_override==null else str(element_override)
 	var b := spec(el)
 	s.kind = str(b.get("kind", "magic"))
 	s.element = el

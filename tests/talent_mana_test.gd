@@ -3,7 +3,7 @@ extends SceneTree
 ## fallen enemy may leave a mana orb, a boss or mini-boss always a mana potion;
 ## a hero with mana walks over it and refills, heroes with Ausdauer or Zorn
 ## leave it lying; orbs fade. Also: keys 1-4 cast the talent bar without Shift,
-## and the necromancer plays with mana.
+## and the necromancer uses souls, leaving mana to the mage.
 
 const Game = preload("res://src/game.gd")
 const TalentCombat = preload("res://src/combat/talent_combat.gd")
@@ -30,7 +30,7 @@ func _run() -> void:
 	test_boss_leaves_a_potion_and_mage_drinks_it()
 	test_orbs_drop_by_chance_and_fade()
 	test_stamina_heroes_leave_mana_lying()
-	test_necromancer_plays_with_mana()
+	test_necromancer_plays_with_souls()
 	test_key_one_casts_the_first_slot()
 	test_no_mana_says_so_and_a_new_build_keeps_mana()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.progress.save_path))
@@ -110,12 +110,13 @@ func test_stamina_heroes_leave_mana_lying() -> void:
 	check(not tc.restore_mana(1, 0.5), "mana does not refill Ausdauer")
 
 
-func test_necromancer_plays_with_mana() -> void:
+func test_necromancer_plays_with_souls() -> void:
 	var rt := _hero("necromancer", {"minion_1": 3}, ["minion_1"])
-	check(str(rt.res_kind) == "mana" and float(rt.res_max) == float(d.resources.necromancer.max), "the necromancer has mana")
+	check(str(rt.res_kind) == "souls" and float(rt.res_max) == float(d.resources.necromancer.max), "the necromancer has souls")
 	tc.pets.clear() # the bone warrior came with the build; it fell
 	check(tc.cast(1, "minion_1", {"aim": Vector2.RIGHT}) and str(tc.pets[0].kind) == "bone_warrior", "the necromancer raises his bone warrior again")
-	check(float(rt.res) < float(rt.res_max), "raising the dead costs mana")
+	check(float(rt.res) < float(d.resources.necromancer.start), "raising the dead costs souls")
+	check(not tc.restore_mana(1, 1.0), "necromancer leaves mana potions to mana users")
 
 
 func test_key_one_casts_the_first_slot() -> void:

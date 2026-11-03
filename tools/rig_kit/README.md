@@ -30,7 +30,7 @@ Der Godot-Test ist `tests/rig_manifest_test.gd`.
 | `companion_rigs.json` | `hand_rigs/companion_rigs.json`, Byte für Byte kopiert |
 | `krypta_boss_rigs.json` | `hand_rigs/krypta_boss_rigs.json`, Byte für Byte kopiert |
 | `story_rigs.json` | `tools/krypta_dungeon/export_story_rigs.js`, liest das eben gebaute `rigs.json` |
-| `hell_rigs.json` | 1. `tools/hell_dungeon/export_rigs.js` (drache1 bis drache4, schreibt ihre PNGs) · 2. `hand_rigs/hell_layered.json` (blutfledermaus) |
+| `hell_rigs.json` | 1. `tools/hell_dungeon/export_rigs.js` (drache1 bis drache4, schreibt ihre PNGs) · 2. `hand_rigs/hell_layered.json` (blutfledermaus) · 3. `curse_companions.js` (Fluchkoloss und kleine Fluchmonster aus den freigegebenen Fluchgeist-Teilen) |
 | `rig_actions.json` | keine Schritte, wird von Hand gepflegt |
 
 **Regel:** Eine Datei mit Schritten nie direkt bearbeiten. Ändere stattdessen den
