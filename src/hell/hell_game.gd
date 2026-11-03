@@ -51,6 +51,7 @@ const Darkness = preload("res://src/vfx/darkness.gd")
 const Snowstorm = preload("res://src/vfx/snowstorm.gd")
 const FireAnim = preload("res://src/vfx/fire_anim.gd")
 const GoldLoot = preload("res://src/hell/gold_loot.gd")
+const LoadingScreen = preload("res://src/ui/loading_screen.gd")
 const FrostSnow = preload("res://src/hero/frost_snow.gd")
 const StorySave = preload("res://src/save/story_save.gd")
 ## The crypt's pause menu, in its story mode (overview, quest, map, controls, display, save).
@@ -307,6 +308,17 @@ var snowstorm: Node2D
 var fire_anim := FireAnim.new()
 ## The gold in the world: thrown coins and bags, the magnet, the rising '+N' (src/hell/gold_loot.gd).
 var gold_loot: GoldLoot
+## The loading screen in front of the world while one shows (src/ui/loading_screen.gd); the world
+## waits behind it. Off in test runs and debug jumps unless loading_forced says otherwise.
+var loading_screen: LoadingScreen
+## True: loading screens also in a script run (their own test and captures).
+var loading_forced := false
+## The variant of the next screens (captures); empty: rolled.
+var loading_variant := ""
+## The hints shown so far in this game, so none comes twice before its pool has been through.
+var _hints_seen: Array = []
+var _no_loading_once := false
+var _leaving := false
 ## Footprints in the snow and sliding on glaze ice in a world with theme "snow" (src/hero/frost_snow.gd); null elsewhere.
 var frost_snow: RefCounted
 ## The crypt's bloom over the darkness and the darkness's lights (src/hero/story_glow.gd).
@@ -597,7 +609,20 @@ func _return_to_menu(error: String = "") -> void:
 		get_tree().set_meta("custom_story_return", {"story_id": str(custom_story.get("id", "")),
 			"edit": custom_return_to_editor or not custom_preview_room.is_empty() or not error.is_empty(), "room_id": custom_preview_room,
 			"story": custom_story.duplicate(true), "error": error})
-	get_tree().change_scene_to_file(MENU_SCENE)
+	if _leaving:
+		return
+	_leaving = true
+	if loading_screen != null:
+		loading_screen.queue_free()
+	# the parade on the way back (src/ui/loading_screen.gd), while the menu loads in the background
+	loading_screen = LoadingScreen.new()
+	loading_screen.finished.connect(func(scene: PackedScene) -> void:
+		if scene != null:
+			get_tree().change_scene_to_packed(scene)
+		else:
+			get_tree().change_scene_to_file(MENU_SCENE))
+	add_child(loading_screen)
+	loading_screen.start_menu(MENU_SCENE)
 
 
 ## Item system 2 for a class hero (src/hero/story_items.gd): the bag and its window (I).
@@ -959,6 +984,51 @@ func load_floor(n: int, carry: bool) -> void:
 			talents.release()
 		talents = HellTalents.new()
 		talents.bind(self, profile, profile_path, class_id)
+	_show_loading()
+
+
+## The way to floor n on foot: its screen first, so the wait for the floor (about a second for a
+## generated one) already happens behind it. The screen's clock counts that wait as well.
+func _enter_floor(n: int, carry: bool) -> void:
+	if _loading_allowed():
+		_open_loading(n)
+		# two frames: the first is the one in which the screen gets drawn
+		await get_tree().process_frame
+		await get_tree().process_frame
+	load_floor(n, carry)
+
+
+## Screens come in the game, not in tests, the test room, a custom room preview or a debug start at
+## the boss.
+func _loading_allowed() -> bool:
+	if _leaving or start_at_boss or not testraum.is_empty() or not custom_preview_room.is_empty():
+		return false
+	return loading_forced or Engine.get_main_loop().get_script() == null
+
+
+## The end of load_floor: the screen, or the floor's name on the one already open.
+func _show_loading() -> void:
+	var skip := _no_loading_once
+	_no_loading_once = false
+	if skip or not _loading_allowed():
+		return
+	if loading_screen == null:
+		_open_loading(int(state.floor))
+	var floor_title := str(W.get("title", ""))
+	if floor_title != "":
+		loading_screen.floor_line = "Etage %d · %s" % [int(state.floor), floor_title]
+
+
+## A screen of floor n, in its world's look, with its title and the hero being played.
+func _open_loading(n: int) -> void:
+	if loading_screen != null:
+		loading_screen.queue_free()
+	loading_screen = LoadingScreen.new()
+	loading_screen.finished.connect(func(_scene: PackedScene) -> void: loading_screen = null)
+	add_child(loading_screen)
+	loading_screen.start_story({"world": StorySave.mode(self), "title": str(custom_story.get("title", "")).to_upper() if not custom_story.is_empty() else "",
+		"floor_line": "Etage %d" % n,
+		"hero": str(hero.get("sprite", "knight_m")), "class_id": class_id, "tile": tex.get("floor_01"), "wall": tex.get("wall_h"), "seen": _hints_seen, "variant": loading_variant})
 
 
 ## The talents refer back to themselves (src/hell/hell_talents.gd release):
@@ -1539,8 +1609,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			var k: int = event.keycode
 			if heroic() and k >= KEY_F1 and k <= KEY_F10:
 				# debug floor jumps keep the hero's progress where 1-4 are skills
+				_no_loading_once = true
 				load_floor(k - KEY_F1 + 1, true)
 			elif not heroic() and k >= KEY_0 and k <= KEY_9:
+				_no_loading_once = true
 				load_floor(10 if k == KEY_0 else k - KEY_0, false)
 
 
@@ -1833,7 +1905,7 @@ func act() -> void:
 	if state.dead > 0.0:
 		return
 	if state.won:
-		load_floor(state.floor + 1, true)
+		_enter_floor(state.floor + 1, true)
 		return
 	var n := _nearest()
 	if n.is_empty():
@@ -2541,7 +2613,7 @@ func choose_stairs(n: int) -> void:
 		return
 	stairs_pick = {}
 	state.world_run = WorldPack.new_run()
-	load_floor(n, true)
+	await _enter_floor(n, true)
 	_toast("Eine neue Welt: zurück auf Etage %d." % n)
 
 
@@ -2735,7 +2807,7 @@ func _process(delta: float) -> void:
 ## Menus that intentionally suspend gameplay also suspend the clock (no debt on resume).
 func _simulation_paused() -> bool:
 	return (pause_menu != null and pause_menu.visible) or (run_talents != null and run_talents.visible) \
-		or bool(state.get("tree_open", false)) or CardKit.seal_open(self)
+		or bool(state.get("tree_open", false)) or CardKit.seal_open(self) or loading_screen != null or _leaving
 
 
 ## A hitstop consumes scheduled time without advancing the combat simulation.

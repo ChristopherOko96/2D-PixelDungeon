@@ -1,0 +1,146 @@
+{
+  "_note": "The loading screens of the story worlds (src/ui/loading_screen.gd). variants: A = the big hero with a hint, B = the chase without a hint, C = a hint and the chase; weights = how often each is rolled (out of their sum), so hints come very often and now and then none. seconds: how long a screen stays at least, by whether it shows a hint; skip_after = s before E, Space, Enter or a click may end it; fade = s of its fade-out. menu_seconds: the way back to the main menu stays at least this long. world_share = share of hints taken from the world itself, class_share = from the played class, the rest are general. worlds: title on the screen, status line, colours, and the monsters of the chase (path with %d for the frame, frames, h = drawn height in px). A custom story shows its own title in its world's look. Hints: t = heading, x = text (short: they must fit the plate). Every hint states what the game really does; change it when the rule changes.",
+  "weights": { "A": 42, "B": 12, "C": 46 },
+  "seconds": { "hint": 4.5, "plain": 2.5 },
+  "skip_after": 0.6,
+  "skip_label": "E · WEITER",
+  "fade": 0.25,
+  "menu_seconds": 1.4,
+  "world_share": 0.5,
+  "class_share": 0.15,
+  "menu": { "title": "DELVE DISASTER", "status": "Zurück ins Hauptmenü", "heroes": ["necromancer", "wizzard_m", "elf_f", "knight_m"] },
+  "worlds": {
+    "krypta": {
+      "title": "KRYPTA", "status": "Die Toten regen sich", "particles": "",
+      "deep": "#17130f", "text": "#efe4cf", "soft": "#cdbfa8", "accent": "#8f9a5e", "track": "#2d2620",
+      "mobs": [
+        { "path": "res://assets/sprites/0x72/skelet_run_anim_f%d.png", "frames": 4, "h": 112 },
+        { "path": "res://assets/sprites/0x72/tiny_zombie_run_anim_f%d.png", "frames": 4, "h": 112 },
+        { "path": "res://assets/sprites/0x72/skelet_run_anim_f%d.png", "frames": 4, "h": 112 }
+      ]
+    },
+    "hell": {
+      "title": "HÖLLE", "status": "Die Glut wird angefacht", "particles": "ember",
+      "deep": "#170c0c", "text": "#f6e3cf", "soft": "#dcc1aa", "accent": "#e8562a", "track": "#2e1512",
+      "mobs": [
+        { "path": "res://assets/sprites/0x72/big_demon_run_anim_f%d.png", "frames": 4, "h": 190 },
+        { "path": "res://assets/sprites/0x72/chort_run_anim_f%d.png", "frames": 4, "h": 130 }
+      ]
+    },
+    "frost": {
+      "title": "FROSTGRUFT", "status": "Der Schnee fällt", "particles": "flake",
+      "deep": "#101827", "text": "#eef4ff", "soft": "#c4d6ee", "accent": "#8cc8f2", "track": "#1c2840",
+      "mobs": [
+        { "path": "res://assets/sprites/frost_hd/mob_ice_knight_f%d.png", "frames": 4, "h": 190 },
+        { "path": "res://assets/sprites/frost_hd/mob_frost_skeleton_f%d.png", "frames": 4, "h": 100 }
+      ]
+    }
+  },
+  "hints": {
+    "general": [
+      { "t": "Gold", "x": "Gold gehört deinem Charakter. Stirbst du, ist es weg. Ein gespeicherter Stand hat das Gold von damals." },
+      { "t": "Runensteine", "x": "Runensteine behältst du immer, für alle Helden. Mit ihnen setzt du den Talentbaum zurück." },
+      { "t": "Talente zurücksetzen", "x": "Ein Reset kostet mehr Runensteine, je höher die Heldenstufe ist. Überlege gut, für welchen Helden." },
+      { "t": "Seelensplitter", "x": "Seelensplitter schalten die Ultimates im Talentbaum frei. Ein Reset gibt sie vollständig zurück." },
+      { "t": "Speichern", "x": "Ohne Speichern ist dein Charakter beim Verlassen weg. Mit einem Spielstand kannst du sogar nach dem Tod zurück." },
+      { "t": "Geldbeutel", "x": "Ein Geldbeutel ist zehn Goldmünzen wert. Gold fliegt von selbst zu dir, sobald du nah genug bist." },
+      { "t": "Brunnen", "x": "Der Brunnen füllt Mana, Ausdauer oder Zorn ganz auf und setzt alle Abklingzeiten zurück. Aber nur einmal." },
+      { "t": "Schlüsselkammer", "x": "Das Bosstor öffnet nur mit dem Schlüssel aus der Schlüsselkammer. Dort warten auch Brunnen und Händler." },
+      { "t": "Kampfräume", "x": "Betrittst du einen Kampfraum, schließen sich die Türen. Sie öffnen sich erst wieder, wenn alle Gegner besiegt sind." },
+      { "t": "Warnungen", "x": "Viele Angriffe zeigen sich vorher am Boden. Geh aus der Markierung, bevor es einschlägt." },
+      { "t": "Abwehr", "x": "Shift ist deine Abwehr. Im letzten Moment gedrückt wird sie perfekt und bringt dir einen Vorteil." },
+      { "t": "Benutzen", "x": "E, Leertaste oder Enter benutzt, was neben dir steht: Truhen, Türen, Feuerschalen und Brunnen." },
+      { "t": "Status", "x": "C oder Tab zeigt deine Werte. M öffnet die Karte, I das Inventar, K die Talente." },
+      { "t": "Laufbaum", "x": "Jede Laufstufe gibt dir einen Punkt im Laufbaum. Du öffnest ihn mit B. Er gilt nur für diesen Lauf." },
+      { "t": "Heldenstufe", "x": "Die Heldenstufe bleibt für immer, die Laufstufe endet mit dem Lauf. Jede Heldenstufe bringt neue Talentpunkte." },
+      { "t": "Schnelltrank", "x": "H trinkt deinen Schnelltrank, G wirft ihn dorthin, wo die Maus zeigt." },
+      { "t": "Unbekannte Tränke", "x": "Tränke heißen nur nach ihrer Farbe, und die Farben werden jeden Lauf neu gemischt. Probieren kann teuer werden." },
+      { "t": "Werfen statt trinken", "x": "Feuer-, Eis- und Gifttränke schaden dir beim Trinken. Geworfen treffen sie deine Gegner." },
+      { "t": "Identifizierungskristall", "x": "Ein Identifizierungskristall zeigt dir Name, Werte und Fluch einer Waffe oder den Namen eines Tranks." },
+      { "t": "Flüche", "x": "Gefundene Waffen sind oft verflucht und bleiben an der Hand. Ein Fluchbrecherstein macht den Fluch zum Segen." },
+      { "t": "Seltene Funde", "x": "Je tiefer die Etage, desto öfter findest du Seltenes. Epische und legendäre Funde strahlen am Boden." },
+      { "t": "Rüstung", "x": "Manche Rüstungen haben eine eigene Fähigkeit. Du löst sie mit F aus, gezielt mit der Maus." },
+      { "t": "Begleiter", "x": "Dein Begleiter hat zwei Fähigkeiten auf 5 und 6. Rechtsklick auf sein Symbol schaltet das Selbstwirken um." },
+      { "t": "Ultimate", "x": "Taste R löst dein Ultimate aus, sobald du es im Talentbaum freigeschaltet hast." },
+      { "t": "Druckplatten", "x": "Vier bis sechs Druckplatten wollen in einer festen Reihenfolge betreten werden. Ein falscher Schritt löscht alle." },
+      { "t": "Riesentresor", "x": "Der Riesentresor gibt Herzcontainer, volle Gesundheit und viel Gold. Mehr Platten bedeuten mehr Belohnung." },
+      { "t": "Zerbrechliches", "x": "Vasen, Fässer und Kisten zerbrechen bei deinem Angriff. Drin liegt nichts, Gold oder ein Herz, und selten ein Runenstein." },
+      { "t": "Vorsicht, Kisten", "x": "Aus Kisten können auch Untote steigen. Dann schließt sich der Raum." },
+      { "t": "Vergessene Stiege", "x": "Eine einzelne erloschene Fackel verrät eine Geheimtreppe. Zünde sie an: Die Stiege führt in eine frühere Etage." },
+      { "t": "Neue Welt", "x": "Die Vergessene Stiege würfelt die Welt neu. Herzen, Laufstufe und Gegenstände nimmst du mit." },
+      { "t": "Geheimräume", "x": "Ein großer Schädelhaufen steht vor einer geheimen Wand. Schlag ihn, bis er zerfällt." },
+      { "t": "Feuerschalen", "x": "Entzünde alle Feuerschalen einer Etage, dann hebt sich das Gittertor zur Belohnung." },
+      { "t": "Gruben", "x": "Eine Grube kostet dich ein Herz und wirft dich zurück. Lauf lieber außen herum." },
+      { "t": "Erkunden", "x": "Der kürzeste Weg führt nie durch alle Räume. Wer erkundet, findet mehr Gold, Herzen und Ausrüstung." },
+      { "t": "Stufenaufstieg", "x": "Ein Stufenaufstieg heilt dich ein Stück. Heb ihn dir nicht auf, aber rechne im Kampf damit." },
+      { "t": "Jeder Lauf ist neu", "x": "Die Karte entsteht bei jedem Lauf neu. Auswendig lernen hilft nicht, Aufpassen schon." }
+    ],
+    "krypta": [
+      { "t": "Moder", "x": "Der Moder am Boden verletzt dich. Lauf außen herum oder such dir eine Brücke." },
+      { "t": "Mimiks", "x": "Nicht jede Truhe ist echt. Mimiks stehen als Truhe im Raum und greifen erst beim Öffnen an." },
+      { "t": "Mimik", "x": "Eine Mimik beißt zu und spuckt Münzen nach dir. Halte Abstand, sobald sie sich zeigt." },
+      { "t": "Skelettschütze", "x": "Skelettschützen schießen Pfeile und Salven aus der Ferne. Geh nah heran oder bleib in Bewegung." },
+      { "t": "Skelettwache", "x": "Die Skelettwache stößt mit dem Schild zu und wirft Knochen. Bleib nicht direkt vor ihr stehen." },
+      { "t": "Nekromant", "x": "Der Nekromant ruft neue Knochen aus dem Boden. Erledige ihn zuerst, sonst endet der Kampf nie." },
+      { "t": "Kleiner Zombie", "x": "Kleine Zombies springen dich an und spucken Moder. Unterschätze sie nicht, wenn sie in Gruppen kommen." },
+      { "t": "Eiszombie", "x": "Der Eiszombie haucht Frost. Geh ihm aus der Atemrichtung." },
+      { "t": "Leerenbomber", "x": "Der Leerenbomber springt heran und löst eine Leerenwelle aus. Halte Abstand." },
+      { "t": "Knochenwächter", "x": "Der Knochenwächter stampft, wirft Knochen und ruft seine Legion. Räum die Helfer ab, bevor sie dich umzingeln." },
+      { "t": "Grabmutter", "x": "Die Grabmutter springt dir nach und spuckt Moder. Der Boden wird dabei schnell eng." },
+      { "t": "Die Krypta", "x": "Unter den Gräbern ruht nichts mehr. Knochengalerien, Sarkophaghöfe und Archive warten auf dich." },
+      { "t": "Grabsiegel", "x": "Ein gebrochenes Grabsiegel bietet dir zwei Segen zur Wahl. Einer kostet Herzen, und du darfst auch ablehnen." }
+    ],
+    "hell": [
+      { "t": "Lava", "x": "Lava verletzt dich. Nimm die Brücken und bleib nicht am Rand stehen." },
+      { "t": "Ignaroth", "x": "Ignaroth flieht auf den Etagen 3, 6 und 9 und kommt stärker wieder. Erst auf Etage 10 stirbt er." },
+      { "t": "Ignaroth in der Luft", "x": "Solange Ignaroth fliegt, eingegraben ist oder sich verwandelt, trifft ihn nichts. Spare dir deine Fähigkeiten." },
+      { "t": "Dämonensiegel", "x": "Ein gebrochenes Dämonensiegel bietet dir zwei Segen zur Wahl. Einer kostet Herzen, und du darfst auch ablehnen." },
+      { "t": "Mimiks", "x": "Auch in der Hölle ist nicht jede Truhe echt. Mimiks greifen erst beim Öffnen an." },
+      { "t": "Glutschädel", "x": "Glutschädel stürzen sich im Sturzbiss auf dich. Weiche seitlich aus." },
+      { "t": "Höllenhund", "x": "Höllenhunde hetzen dich mit einem Sprung und speien Glut. Vor ihnen wegzulaufen hilft kaum." },
+      { "t": "Glutimp", "x": "Glutimps werfen Feuerbälle aus der Ferne. Lass dich nicht von ihnen festnageln." },
+      { "t": "Blutfledermaus", "x": "Blutfledermäuse feuern einen Laser. Bleib aus ihrer Linie." },
+      { "t": "Aschenpriester", "x": "Der Aschenpriester ruft Schädel und schleudert Seelenflammen. Er gehört als Erster besiegt." },
+      { "t": "Kettenschinder", "x": "Der Kettenschinder wirft seine Kette und lässt Kugeln kreisen. Abstand allein rettet dich nicht." },
+      { "t": "Peingeist", "x": "Der Peingeist springt durch die Leere und feuert Blitze. Rechne damit, dass er plötzlich neben dir steht." },
+      { "t": "Glutwächter", "x": "Der Glutwächter stampft und wirft Glutbrocken. Bleib in Bewegung." },
+      { "t": "Die Hölle", "x": "Je tiefer du kommst, desto mehr Lava, Stacheln und Schlote. Und zähere Gegner." }
+    ],
+    "frost": [
+      { "t": "Glatteis", "x": "Auf dem Eis rutschst du weiter. Plane deinen Weg, bevor du losläufst." },
+      { "t": "Schneemänner", "x": "Schneemänner stehen nicht zur Zierde. Kommst du zu nah, erwachen sie als Schneemonster, und der Raum schließt sich." },
+      { "t": "Feuerschalen", "x": "Eine entzündete Feuerschale taut den Schnee um sich herum weg." },
+      { "t": "Eis-Zombie", "x": "Der Eis-Zombie macht dich bei Berührung langsam. Lass ihn nicht an dich heran." },
+      { "t": "Eisschleim", "x": "Eisschleime teilen sich, wenn sie fallen. Rechne mit mehr, als du gerade siehst." },
+      { "t": "Eisritter", "x": "Der Eisritter blockt alles, was von vorn kommt. Greif ihn von der Seite oder von hinten an." },
+      { "t": "Frostwirbel", "x": "Der Frostwirbel zieht dich zu sich heran. Lauf dagegen an, bevor er dich hat." },
+      { "t": "Eiskristall", "x": "Der Eiskristall bleibt stehen und schießt Fächer aus Eis. Such dir die Lücken." },
+      { "t": "Frost-Skelett", "x": "Frost-Skelette halten Abstand und schießen. Treib sie in eine Ecke." },
+      { "t": "Frostkobold", "x": "Frostkobolde stürmen plötzlich auf dich zu. Weiche im richtigen Moment zur Seite aus." },
+      { "t": "Eisgeysir", "x": "Aus kleinen Spalten im Schnee schießt beim Ausbruch eine Eislawine. Achte auf den Boden." },
+      { "t": "Schneesturm", "x": "Ab und zu zieht ein Schneesturm auf. Er nimmt dir nur die Sicht, sonst nichts." },
+      { "t": "Keine Mimiks", "x": "In der Frostgruft sind alle Truhen echt. Dafür solltest du den Schneemännern nicht trauen." },
+      { "t": "Hrimgar", "x": "Hrimgar wartet auf der letzten Etage. Sein Panzer bricht, und dann ruft er den Schneesturm." }
+    ],
+    "swordsman": [
+      { "t": "Zorn", "x": "Zorn wächst nur im Kampf: durch deine Treffer und wenn du getroffen wirst. Er füllt sich nicht von selbst." },
+      { "t": "Schildblock", "x": "Shift hebt den Schild. Er hält zwei Treffer, dann ist er acht Sekunden offen. Senke ihn rechtzeitig." },
+      { "t": "Perfekter Block", "x": "Hebst du den Schild im letzten Moment, kostet der Block nichts, und der Angreifer taumelt." }
+    ],
+    "archer": [
+      { "t": "Ausdauer", "x": "Deine Ausdauer kommt von selbst zurück. Bleib in Bewegung, während sie sich füllt." },
+      { "t": "Ausweichen", "x": "Shift ist eine Rolle in Laufrichtung, kurz unverwundbar. Du hast zwei Ladungen, eine kommt alle vier Sekunden zurück." },
+      { "t": "Perfekte Rolle", "x": "Rollst du im letzten Moment, trifft dein nächster Schuss mit 50 % mehr Schaden." }
+    ],
+    "mage": [
+      { "t": "Mana", "x": "Mana kommt nur langsam zurück. Sammle die Manakugeln, die gefallene Gegner hinterlassen." },
+      { "t": "Magischer Block", "x": "Shift hält ein Schild, das zwei Treffer fängt. Danach ist es acht Sekunden zerbrochen." },
+      { "t": "Manatrank", "x": "Bosse lassen einen Manatrank fallen. Er füllt dein Mana ganz auf." }
+    ],
+    "necromancer": [
+      { "t": "Mana", "x": "Mana kommt nur langsam zurück. Sammle die Manakugeln, die gefallene Gegner hinterlassen." },
+      { "t": "Knochenschild", "x": "Shift lässt Knochen um dich kreisen, die zwei Treffer fangen. Danach zerfallen sie für acht Sekunden." },
+      { "t": "Perfekter Schild", "x": "Drückst du im letzten Moment, halten die Knochen ohne Verlust, und der Angreifer taumelt." }
+    ]
+  }
+}
