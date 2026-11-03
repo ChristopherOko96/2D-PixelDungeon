@@ -1824,7 +1824,7 @@ static func to_raw(W: Dictionary) -> Dictionary:
 	for r: Dictionary in W.rooms:
 		rooms.append({"index": r.index, "id": r.id, "name": r.name, "kind": r.kind, "type": r.type, "gtype": r.gtype, "icon": r.get("icon", ""), "icon_key": r.get("iconKey", ""),
 			"bx": r.bx, "by": r.by, "bw": r.bw, "bh": r.bh, "mobs": r.get("mobs", 0), "drop": r.get("drop", ""), "reward": r.get("reward"),
-			"spawn": r.get("spawn"), "cleared": r.cleared, "info": r.get("info", ""), "on_path": r.get("onPath", false), "seq": r.get("seq", false), "tidy": r.get("tidy", false)})
+			"spawn": r.get("spawn"), "cleared": r.cleared, "info": r.get("info", ""), "on_path": r.get("onPath", false), "seq": r.get("seq", false), "tidy": r.get("tidy", false), "ice": r.get("ice", false)})
 	var doors: Array = []
 	for d: Dictionary in W.doors:
 		doors.append({"a": int(d.a.index), "b": int(d.b.index), "kind": d.kind, "key": d.get("key", ""), "group": d.get("group", ""), "hidden": d.get("hidden", false), "dir": d.dir,

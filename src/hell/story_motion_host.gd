@@ -45,6 +45,8 @@ func set_hero_velocity(velocity: Vector2) -> void:
 
 ## The grip of the floor under the hero (MotionKit.FIRM unless he stands on something that slides).
 func hero_grip() -> float:
+	if g.has_method("ice_room_at") and g.ice_room_at(Vector2(g.player.x, g.player.y - 6.0)):
+		return float(g.theme.ice_room.grip)
 	var medium: Dictionary = g.get("hero_medium") if g.get("hero_medium") is Dictionary else {}
 	return float(medium.get("grip", 1.0)) if bool(medium.get("slide", false)) else 1.0
 

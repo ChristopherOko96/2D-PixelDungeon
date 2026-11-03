@@ -94,6 +94,8 @@ func dress(W: Dictionary) -> Dictionary:
 	_decorate(W)
 	if pack.get("winter") != null:
 		_winter(W)
+	if pack.get("ice_rooms") != null:
+		_ice_rooms(W)
 	_tidy(W)
 	_blue_light(W)
 	# last: mire, pits, furniture and fountain never block a way (world kit rule)
@@ -364,6 +366,30 @@ func _winter(W: Dictionary) -> void:
 			var py: float = (c[1] + 0.92) * C
 			W.props.append({"name": name, "x": px, "y": py, "flip": rnd.next() < 0.5, "layer": "obj", "solid": [px - float(f[0]) / 2, py - float(f[1]), px + float(f[0]) / 2, py]})
 			W.occupied[c[1] * cols + c[0]] = true
+
+
+## Whole rooms of nothing but ice (pack.ice_rooms): each eligible room by chance, at least min and at
+## most max on a floor. The grid stays floor, so ways, spawns and props stand as they do anywhere; the
+## room's flag `ice` makes it ice (hell_game.gd ice_room_at). No melted patch or ground decal on it.
+func _ice_rooms(W: Dictionary) -> void:
+	var P: Dictionary = pack.ice_rooms
+	var rnd := Core.Rng.new(Core.f32(float(W.seed) * 13 + 29))
+	var fits: Array = W.rooms.filter(func(r: Dictionary) -> bool:
+		return str(r.type) in P.types and (r.cells as Array).size() >= int(P.min_cells))
+	Core.shuffle(fits, rnd)
+	var picked: Array = []
+	for r: Dictionary in fits:
+		if picked.size() < int(P.max) and (picked.size() < int(P.min) or rnd.next() < float(P.share)):
+			picked.append(r)
+	for r: Dictionary in picked:
+		r.ice = true
+		r.kind = str(P.kind)
+	W.decals = W.decals.filter(func(d: Dictionary) -> bool:
+		var at := int(floor(float(d.y) / C)) * int(W.COLS) + int(floor(float(d.x) / C))
+		if at < 0 or at >= W.grid.size():
+			return true
+		var room := Core._room_at(W, at)
+		return room < 0 or not bool(W.rooms[room].get("ice", false)))
 
 
 ## Every blue fire bowl of the world (pack.blue_props) gives the same faint blue.

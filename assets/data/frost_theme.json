@@ -612,6 +612,11 @@
     "ring": 18,
     "ring_speed": 420
   },
+  "ice_room": {
+    "_note": "How a room of nothing but ice plays (where they stand: frost_world.json ice_rooms; src/hell/hell_game.gd ice_room_at). grip = share of the speed left after one second, so higher slides longer: at 0.45 the hero needs about 1.25 s to change his speed, and from a full run he glides about 4 cells to a stop. mob_grip = the same for every monster on its feet, also the creatures of frost, who stand firm on the small glaze patches; a flying one does not slide.",
+    "grip": 0.45,
+    "mob_grip": 0.5
+  },
   "liquid": {
     "hurt": false,
     "slow": 1.0,

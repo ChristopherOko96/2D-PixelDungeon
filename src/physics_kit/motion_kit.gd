@@ -172,7 +172,14 @@ func step_body(p: Vector2, vel: Vector2, want: Vector2, grip: float, pull: Vecto
 	# on ice a push glides on: it fades by the floor's grip (at least push.ice_floor), not at the
 	# stone's rate (decision D9; frost creatures are passed FIRM and keep stopping)
 	if grip < FIRM: left = push * pow(maxf(grip, float(spec.get("ice_floor", 0.12))), dt)
-	return {"p": integrate(p, v, dt, solid), "v": v, "vel": kept, "push": left, "push_in": push}
+	var to := integrate(p, v, dt, solid)
+	# sliding into a wall ends that axis' slide, as for the hero (step_hero)
+	if grip < FIRM:
+		if to.x == p.x:
+			kept.x = 0.0
+		if to.y == p.y:
+			kept.y = 0.0
+	return {"p": to, "v": v, "vel": kept, "push": left, "push_in": push}
 
 
 ## A grip from physics_motion.json grip ("slip", "medium", "glaze").

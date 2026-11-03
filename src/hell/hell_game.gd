@@ -1165,6 +1165,12 @@ func _cell(x: int, y: int) -> int:
 	return W.grid[y * W.cols + x]
 
 
+## True at world place `p` in a room of nothing but ice (frost_world.json ice_rooms, theme ice_room).
+func ice_room_at(p: Vector2) -> bool:
+	var room := _room_at_world(p.x, p.y)
+	return room >= 0 and room < (W.rooms as Array).size() and bool(W.rooms[room].get("ice", false))
+
+
 ## World px per art pixel (the floor tiles' 16 px art drawn x3 at 48 px).
 const PIXEL_WORLD := 3.0
 ## WAHN (madness_rules.json madness) on a themed world's enemies: the mad one
@@ -3052,7 +3058,9 @@ func _update_player(dt: float) -> void:
 	# (grips: physics_motion.json grip; the walk itself: MotionKit.step_hero, src/physics_kit/motion_kit.gd)
 	var mover := motion_kit()
 	var grip := MotionKit.FIRM
-	if here == 2 and liquid.slide:
+	if ice_room_at(Vector2(player.x, player.y - 6.0)):
+		grip = float(theme.ice_room.grip)
+	elif here == 2 and liquid.slide:
 		grip = float(liquid.grip)
 	elif bool(hero_medium.get("slide", false)):
 		grip = float(hero_medium.get("grip", mover.grip("medium")))
@@ -3365,7 +3373,10 @@ func _update_mobs(dt: float) -> void:
 		var env := _step_mob_medium(m, dt)
 		var mover := motion_kit()
 		var grip := MotionKit.FIRM
-		if bool(theme.liquid.get("slide", false)) and _cell(int(floor(m.p.x / C)), int(floor((m.p.y - 6.0) / C))) == 2 and not "frost" in m.tags:
+		# a room of nothing but ice takes everybody's footing, the creatures of frost too; not the flyers'
+		if float(m.get("alt", 0.0)) <= 0.0 and ice_room_at(m.p - Vector2(0.0, 6.0)):
+			grip = float(theme.ice_room.mob_grip)
+		elif bool(theme.liquid.get("slide", false)) and _cell(int(floor(m.p.x / C)), int(floor((m.p.y - 6.0) / C))) == 2 and not "frost" in m.tags:
 			grip = float(theme.liquid.get("grip", mover.grip("glaze")))
 		elif bool(env.get("slide", false)):
 			grip = float(env.get("grip", mover.grip("medium")))
@@ -3738,7 +3749,7 @@ func _step_elements(dt: float) -> void:
 	# sliding fast over ice the boots scratch it: ice chips spray behind (the Frostgruft's
 	# snow layer does this on its tiles; this is the pools' ice in every world)
 	# (how fast and how often: physics_motion.json skid, MotionKit.skid)
-	if bool(hero_medium.get("slide", false)) and monsters != null and motion_kit().skid((player.vel as Vector2).length(), dt):
+	if (bool(hero_medium.get("slide", false)) or ice_room_at(Vector2(player.x, player.y - 6.0))) and monsters != null and motion_kit().skid((player.vel as Vector2).length(), dt):
 		var back: Vector2 = -(player.vel as Vector2).normalized()
 		monsters._pixel_burst(Vector2(player.x, player.y) + back * 10.0, 2, monsters.PX_COL.frost, 90.0, 160.0, 0.5)
 	# WAHN (madness_rules.json madness): a void pool drives him mad after madness.hero_delay s, his
@@ -4123,7 +4134,8 @@ func _draw_back(l: Layer) -> void:
 					else:
 						l.draw_texture_rect(tex.wall_v, r, true, hole_tint)
 				continue
-			if t == 2 or t == 3:
+			# a room of nothing but ice is floored with the world's ice tile
+			if t == 2 or t == 3 or (t == 1 and W.room_at[i] >= 0 and bool(W.rooms[W.room_at[i]].get("ice", false))):
 				var lt: Texture2D = tex.lava_01 if (x * 7 + y * 13) % 10 > 6 else lava
 				if tiles_1to1:
 					l.draw_texture(lt, r.position)

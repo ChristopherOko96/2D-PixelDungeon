@@ -90,7 +90,7 @@ func reset() -> void:
 		if str(d.name).begins_with("thaw_"):
 			thaws.append([Vector2(float(d.x), float(d.y)), float(d.w) * 0.34])
 	for i in range(g.W.grid.size()):
-		if int(g.W.grid[i]) != 1 or int(g.W.room_at[i]) < 0:
+		if int(g.W.grid[i]) != 1 or int(g.W.room_at[i]) < 0 or bool(g.W.rooms[int(g.W.room_at[i])].get("ice", false)):
 			continue
 		var at := Vector2((i % cols + 0.5) * C, (i / cols + 0.5) * C)
 		if thaws.all(func(t: Array) -> bool: return at.distance_to(t[0]) > t[1]):
@@ -177,7 +177,8 @@ func sliding() -> bool:
 	if not bool(g.theme.liquid.get("slide", false)) or g.state.is_empty():
 		return false
 	var p := Vector2(g.player.x, g.player.y)
-	return g._cell(int(floor(p.x / g.C)), int(floor((p.y - 10.0) / g.C))) == 2 and (g.player.vel as Vector2).length() > 30.0
+	var on_ice: bool = g._cell(int(floor(p.x / g.C)), int(floor((p.y - 10.0) / g.C))) == 2 or g.ice_room_at(p - Vector2(0.0, 10.0))
+	return on_ice and (g.player.vel as Vector2).length() > 30.0
 
 
 ## The hero's lean while sliding (rad, into the slide), 0 otherwise.

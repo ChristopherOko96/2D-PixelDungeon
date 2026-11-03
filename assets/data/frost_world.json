@@ -528,6 +528,17 @@
   "speed_step": 0.04,
   "extra_every": 3
  },
+ "ice_rooms": {
+  "_note": "Ice rooms (src/world_kit/world_pack.gd _ice_rooms): whole rooms whose floor is nothing but ice, how they play: frost_theme.json ice_room. share = chance of each eligible room (r.type in types, at least min_cells cells); min and max = rooms per floor (min is filled up if the roll falls short); kind = the room's label.",
+  "share": 0.25,
+  "min": 1,
+  "max": 2,
+  "types": [
+   "combat"
+  ],
+  "min_cells": 24,
+  "kind": "Eisfläche"
+ },
  "winter": {
   "thin_decals": {
    "keep": 0,

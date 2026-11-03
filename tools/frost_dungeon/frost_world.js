@@ -61,6 +61,8 @@
     thaw_props: ['brazier_bowl', 'brazier_pillar', 'brazier_rune', 'brazier_low', 'brazier_low_b', 'brazier_floor', 'brazier_demon', 'brazier_blue', 'torch_pillar', 'altar'],
     snowman: .35, glacier: .45, glaciers: ['glacier_a', 'glacier_b'],
   };
+  // Whole rooms of nothing but ice (world_pack.gd _ice_rooms; how they play: frost_theme.json ice_room).
+  const ICE_ROOMS = { _note: "Ice rooms (src/world_kit/world_pack.gd _ice_rooms): whole rooms whose floor is nothing but ice, how they play: frost_theme.json ice_room. share = chance of each eligible room (r.type in types, at least min_cells cells); min and max = rooms per floor (min is filled up if the roll falls short); kind = the room's label.", share: .25, min: 1, max: 2, types: ['combat'], min_cells: 24, kind: 'Eisfläche' };
   const WALL_SET = ['table_a', 'table_b', 'table_c', 'candelabra', 'crate_pile', 'moss_ruin', 'sacks_b', 'candelabra', 'moss_rubble_a', 'moss_rubble_b'];
   const BREAK_SET = ['barrel_a', 'barrel_b', 'barrel_c', 'urn_a', 'urn_b', 'urn_c', 'urn_d', 'urn_e', 'crate_a', 'crate_b', 'crate_c'];
   // no mimics in the Frostgruft
@@ -69,6 +71,6 @@
   // one extra enemy per fight room every extra_every floors. The Frostgruft is the middle curve.
   const DIFF = { hp_step: .30, speed_step: .04, extra_every: 3 };
   // the pack as plain data (the Godot port reads it from assets/data/frost_world.json, see export_world.js)
-  const PACK = { floors: FLOORS, circles: CIRCLES, names: NAMES, suffixes: SUFFIXES, words: WORDS, theme_flag: 'frost', light: null, gate_banner: GATE_BANNER, blue: BLUE, blue_props: BLUE_PROPS, foot: FOOT, wall_set: WALL_SET, break_set: BREAK_SET, mimic_fight: MIMIC_FIGHT, mimic_treasure: MIMIC_TREASURE, diff: DIFF, winter: WINTER };
+  const PACK = { floors: FLOORS, circles: CIRCLES, names: NAMES, suffixes: SUFFIXES, words: WORDS, theme_flag: 'frost', light: null, gate_banner: GATE_BANNER, blue: BLUE, blue_props: BLUE_PROPS, foot: FOOT, wall_set: WALL_SET, break_set: BREAK_SET, mimic_fight: MIMIC_FIGHT, mimic_treasure: MIMIC_TREASURE, diff: DIFF, ice_rooms: ICE_ROOMS, winter: WINTER };
   return WorldPack.make(PACK);
 });

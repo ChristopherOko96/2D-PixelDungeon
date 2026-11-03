@@ -107,6 +107,7 @@
       { "t": "Die Hölle", "x": "Je tiefer du kommst, desto mehr Lava, Stacheln und Schlote. Und zähere Gegner." }
     ],
     "frost": [
+      {"t": "Eisflächen", "x": "Manche Räume sind ganz aus Eis. Dort rutschst du weit, die Monster aber auch. Lass sie in die Wand schlittern."},
       { "t": "Glatteis", "x": "Auf dem Eis rutschst du weiter. Plane deinen Weg, bevor du losläufst." },
       { "t": "Schneemänner", "x": "Schneemänner stehen nicht zur Zierde. Kommst du zu nah, erwachen sie als Schneemonster, und der Raum schließt sich." },
       { "t": "Feuerschalen", "x": "Eine entzündete Feuerschale taut den Schnee um sich herum weg." },
