@@ -10,6 +10,7 @@ const SPRITE_ROOT := "res://assets/sprites/0x72/"
 const GOLEM_ROOT := "res://assets/sprites/golem/"
 const INFERNAL_ROOT := "res://assets/sprites/infernal/"
 const ARROW_TEXTURE := preload("res://assets/sprites/0x72/weapon_arrow.png")
+const Cutouts = preload("res://src/rig/cutout_motion.gd")
 ## Mobs drawn from 0x72 idle/run frames (kind -> 0x72 sprite name).
 const MOB_SPRITES := {"chaser": "goblin", "imp": "imp", "skelet": "skelet", "chort": "chort", "wogol": "wogol",
 	"doc": "doc", "pumpkin_dude": "pumpkin_dude", "big_zombie": "big_zombie", "angel": "angel"}
@@ -128,7 +129,13 @@ func draw_enemy(view: CanvasItem, enemy: Dictionary, clock: float) -> void:
 		view._box(point.x - 10 + roundf(sin(clock * 30.0 + id) * 8.0), point.y + 10, 3, 3, Color("#ffd76a"))
 	var pixel_scale: float = float(_scales.get(kind, 2.0))
 	var feet: float = radius * 0.6 + 6.0
-	view._draw_sprite(texture, point, float(enemy.get("face", -1.0)), feet, pose, pixel_scale)
+	# Bind art stays native: idle/walk/attack/death now pose its actual cutout joints.
+	var bind: Texture2D=sets.idle[0]
+	var tint: Color=Color.WHITE
+	tint.a=float(pose.get("alpha",1))
+	var parts:=Cutouts.actor(bind,kind,point+Vector2(0,feet),pixel_scale,float(enemy.get("face",-1)),clock,enemy,tint,pose)
+	if not parts.is_empty(): Cutouts.draw(view,parts)
+	else: view._draw_sprite(texture, point, float(enemy.get("face", -1.0)), feet, pose, pixel_scale)
 	var hp: float = float(enemy.get("hp", 1.0))
 	var max_hp: float = maxf(float(enemy.get("max_hp", hp)), 1.0)
 	# Bosses and mini-bosses show their health in the run HUD's top bar.
@@ -209,25 +216,21 @@ func draw_hazards(view: CanvasItem, hazards: Array, over: bool, clock: float) ->
 				var size := Vector2(texture.get_width(), texture.get_height()) * float(spec[2])
 				# Bursts rise out of the floor: a quick grow, then fade.
 				size *= Vector2(1.0, 0.6 + 0.4 * smoothstep(0.0, 0.25, p))
-				view.draw_texture_rect(texture, Rect2(point - Vector2(size.x * 0.5, size.y * (0.5 if kind == "blast" else 0.85)), size), false, Color(1, 1, 1, 1.0 - smoothstep(0.6, 1.0, p)))
+				Cutouts.sprite(view,texture,kind,Rect2(point-Vector2(size.x*0.5,size.y*(0.5 if kind=="blast" else 0.85)),size),clock,Color(1,1,1,1-smoothstep(0.6,1,p)))
 			"fly":
 				var lift: float = sin(PI * p) * 70.0
 				var frames: Array = _golem.get("boulder", [])
 				if frames.is_empty(): continue
 				var texture: Texture2D = frames[mini(int(p * frames.size()), frames.size() - 1)]
 				var size := Vector2(texture.get_width(), texture.get_height()) * 0.8
-				view.draw_set_transform(point - Vector2(0, lift), clock * 8.0, Vector2.ONE)
-				view.draw_texture_rect(texture, Rect2(-size * 0.5, size), false)
-				view.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+				Cutouts.sprite(view,texture,"meteor",Rect2(point-Vector2(0,lift)-size*0.5,size),clock,Color.WHITE,clock*8,point-Vector2(0,lift))
 			"out", "back":
 				var spin: Array = _golem.get("axe_spin", [])
 				if spin.is_empty(): continue
 				var texture: Texture2D = spin[0]
 				var size := Vector2(texture.get_width(), texture.get_height()) * 0.7
 				view.draw_circle(point, 20.0, Color("#7fe8e0", 0.15))
-				view.draw_set_transform(point, clock * 18.0, Vector2.ONE)
-				view.draw_texture_rect(texture, Rect2(-size * 0.5, size), false)
-				view.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+				Cutouts.sprite(view,texture,"knife",Rect2(point-size*0.5,size),clock,Color.WHITE,clock*18,point)
 
 
 ## Draws an enemy projectile of one of SHOT_STYLES; false for other styles.
@@ -282,17 +285,12 @@ func draw_bullet(view: CanvasItem, bullet: Dictionary, point: Vector2, clock: fl
 		var texture: Texture2D = _infernal[sprite[0]][sprite[1]][0]
 		var size := Vector2(texture.get_width(), texture.get_height()) * float(sprite[2])
 		# The art flies to the right with its tail behind; turn it along the flight.
-		view.draw_set_transform(point, angle, Vector2.ONE)
-		view.draw_texture_rect(texture, Rect2(Vector2(-size.x * 0.8, -size.y * 0.5), size), false)
-		view.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		Cutouts.draw(view,Cutouts.effect(texture,kind,Vector2i(texture.get_size()),0,Vector2(texture.get_width()*0.8,texture.get_height()*0.5),point,angle,float(sprite[2]),clock,Color.WHITE))
 		return true
 	var frames: Array = _golem.get("slash" if kind == "slash" else "spike", [])
 	if kind in ["slash", "rock"] and not frames.is_empty():
 		var texture: Texture2D = frames[0]
-		var size := Vector2(texture.get_width(), texture.get_height()) * (0.55 if kind == "slash" else 0.45)
-		view.draw_set_transform(point, angle if kind == "slash" else clock * 10.0, Vector2.ONE)
-		view.draw_texture_rect(texture, Rect2(-size * 0.5, size), false)
-		view.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		Cutouts.draw(view,Cutouts.effect(texture,kind,Vector2i(texture.get_size()),0,texture.get_size()*0.5,point,angle if kind=="slash" else clock*10,0.55 if kind=="slash" else 0.45,clock,Color.WHITE))
 		return true
 	view._box(point.x - 3, point.y - 3, 6, 6, Color("#f19791"))
 	return true

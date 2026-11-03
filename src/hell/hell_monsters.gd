@@ -10,7 +10,13 @@ const Rules = preload("res://src/hell/hell_monster_rules.gd")
 const HeroKit = preload("res://src/hell/hero_kit.gd")
 const FrostCombat = preload("res://src/hell/frost_combat.gd")
 const StoryFeel = preload("res://src/hero/story_feel.gd")
+const StoryMotionHost = preload("res://src/hell/story_motion_host.gd")
 const ElementRules = preload("res://src/combat/element_rules.gd")
+const ShotLooks = preload("res://src/vfx/shot_looks.gd")
+## The shared fair-combat rules (windups, aim lock, attack tokens, white hit flash,
+## a boss's area warning: assets/data/combat_tells.json).
+const FrostMoves = preload("res://src/hell/frost_moves.gd")
+const MIMIC_PATH := "res://assets/data/mimic_bite.json"
 const DATA_PATH := "res://assets/data/hell_monsters.json"
 const SPRITE_DIR := "res://assets/sprites/hell/monsters/"
 ## Shot colours: core, middle, rim.
@@ -33,8 +39,6 @@ const LASER_PX := 3.0
 const PX_GROW := 4.0 / 3.0
 ## The dark outline round fire, lava and shots.
 const OUTLINE := Color("1c1117")
-## 4x4 ordered dither (fading without transparency).
-const BAYER := [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
 const LASER_COL := [Color("fdf7ed"), Color("facb3e"), Color("da4e38"), Color("9f294e"), Color("5f2d56")]
 const LASER_FPS := 12.0
 ## A void beam (a beam without "style": "laser") as a wide pixel laser of
@@ -76,6 +80,8 @@ const CRACK_COL := [Color("facb3e"), Color("ee8e2e"), Color("da4e38"), Color("5f
 const CRACK_TIME := 2.6
 ## Cracks of a slam that is no fire (an element of the crypt): cold stone, no glow.
 const CRACK_COLD := [Color("4a3e44"), Color("1c1117")]
+## The lit lower lip of a cold crack, so it reads on the crypt's dark stone.
+const CRACK_LIT := Color("8e8496")
 ## Lava running over a pool's rim, white-hot where it wells over to its cooling edge.
 const SPILL_COL := [Color("ffe08a"), Color("facb3e"), Color("ee8e2e"), Color("b8401e")]
 ## Floor dust and grit a shockwave kicks up (it settles as rubble).
@@ -90,8 +96,6 @@ const ASH_COL := [Color("5a5555"), Color("3a3535"), Color("7a7070")]
 ## A grave hand rising out of the floor, open then closed (o edge, b body, h light, w white knuckles), 7 x 9.
 const HAND_OPEN := [".o.o.o.", "ohohoho", "ohohoho", "ohbhbho", "obbbbbo", "obbwbbo", ".obbbo.", ".obbbo.", "..obo.."]
 const HAND_FIST := [".......", ".ooooo.", "ohwhwho", "obbbbbo", "obbbbbo", "obbbbbo", ".obbbo.", ".obbbo.", "..obo.."]
-## Longest step of a knockback per frame (world px; well under a 96 px cell).
-const KNOCK_STEP := 24.0
 ## The crypt's wall-hit style of an enemy shot by its colour (feedback.gd WALL_STYLES).
 const SHOT_WALL := {"fire": "fire", "lava": "fire", "void": "void", "soul": "magic", "bone": "bone", "poison": "poison", "frost": "frost", "gold": "gold"}
 ## The crypt's elements (Story 1, krypta_monsters.json "shot"): a figure that
@@ -131,12 +135,22 @@ var firewalls: Array = []
 var spills: Array = []
 ## Ignaroth's part rig (src/hell/drake_rig_host.gd), set by hell_game.gd; null keeps the atlas sprites.
 var rig_host: RefCounted = null
-## WAHN (element_rules.json madness): the mad monster whose turn runs now and
+## WAHN (madness_rules.json madness): the mad monster whose turn runs now and
 ## the monster it turned on ({} for none). While _mad_on is set, _me() is the
 ## victim's feet, _hurt_by lands on the victim and _shot / _zone / lobs are
 ## marked mad, so every attack of the monster really goes at the victim.
 var _mad_from: Dictionary = {}
 var _mad_on: Dictionary = {}
+## The companion the monster whose turn runs now was drawn to (INF for none, _aim_goal).
+var _taunt_at := Vector2.INF
+## The look rule of the shots the act running now fires (src/vfx/shot_looks.gd: bone arrows).
+var _look: Dictionary = {}
+## The monster whose act runs now: the shots it fires carry it as "by" (B3).
+var _shooter: Dictionary = {}
+## The motion kit of this runtime (_mover; src/physics_kit/motion_kit.gd).
+var _motion: MotionKit = null
+## The mimic's bite and reveal (assets/data/mimic_bite.json), read once.
+static var _mimic: Dictionary = {}
 
 
 ## game: the hell game node; cfg: the "monsters" block of the world's balance file. A world with
@@ -271,56 +285,56 @@ func _me() -> Vector2:
 	return Vector2(g.player.x, g.player.y)
 
 
+## Where the monster whose turn runs now walks and aims: a companion that drew
+## it (talents: Brüllen, Heulen, Fass!; hell_talents.gd chase_goal, set in
+## update as _taunt_at) wins over _me(). Hits still land on the hero (_me()).
+func _aim_goal() -> Vector2:
+	return _taunt_at if _taunt_at.is_finite() else _me()
+
+
 ## Hurts the hero by `m`; when the hit lands (he was not invulnerable), it
 ## pushes him away from `from` with the knock of kind `push`
-## (hell_balance.json monsters.feel.knock; "" pushes nothing).
-func _hurt_by(m: Dictionary, n: int, how: String, from := Vector2.INF, push := "") -> void:
+## (hell_balance.json monsters.feel.knock; "" pushes nothing). `shot`: the
+## projectile or thrown blow it came as ({} for a blow at arm's length): a
+## perfect block lets `m` reel only in melee reach (HeroKit.perfect_defense).
+func _hurt_by(m: Dictionary, n: int, how: String, from := Vector2.INF, push := "", shot: Dictionary = {}) -> void:
 	# WAHN: a monster turned on another one strikes that one, not the hero
 	if not _mad_on.is_empty() and is_same(m, _mad_from):
 		_mad_strike(m, _mad_on, n)
 		return
+	# reeling from a perfect block (HeroKit.stagger) it strikes nothing
+	if float(m.get("reel", 0.0)) > 0.0:
+		return
 	var open := float(g.state.inv) <= 0.0 and float(g.state.dead) <= 0.0
-	g._hurt("von %s %s" % [m.def.name, how], n, from if from.is_finite() else Vector2(m.p))
-	if open and push != "" and from.is_finite() and float(g.state.inv) > 0.0:
+	g._hurt("von %s %s" % [m.def.name, how], n, from if from.is_finite() else Vector2(m.p), m, shot)
+	# a perfect block (HeroKit.perfect_defense) stands its ground: no knock
+	if open and push != "" and from.is_finite() and float(g.state.inv) > 0.0 and not HeroKit.perfect_now(g):
 		_knock(from, push, m)
 
 
 ## Starts the hero's knockback away from `from` (game feel + physics tuning):
 ## a speed by kind from hell_balance.json monsters.feel.knock (a mob's a share
 ## lower), squashed on the floor's depth like everything in this view; it eases
-## out over knock.time in update_shots and never carries him through a wall.
+## out over knock.time in update_shots and never carries him through a wall
+## (MotionKit.knock_hero, src/physics_kit/motion_kit.gd).
 func _knock(from: Vector2, kind: String, m: Dictionary = {}) -> void:
 	var knock: Dictionary = (cfg.get("feel", {}) as Dictionary).get("knock", {}) if cfg.get("feel") is Dictionary else {}
-	var speed := float(knock.get(kind, 0.0))
-	if speed <= 0.0:
-		return
-	if not m.is_empty() and not bool(m.get("boss", false)):
-		speed *= float(knock.get("mob_scale", 0.7))
-	var away := Vector2(g.player.x, g.player.y) - from
-	if away.length() < 1.0:
-		away = Vector2.RIGHT.rotated(randf() * TAU)
-	g.state.knock = {"v": away.normalized() * Vector2(1.0, 0.75) * speed, "t": 0.0, "T": float(knock.get("time", 0.22))}
+	_mover().knock_hero(from, kind, knock, not m.is_empty() and not bool(m.get("boss", false)))
 
 
-## Moves the hero along his knockback: its speed eases out (quadratically)
-## over its time, axis by axis so a wall stops one axis and he slides along
-## it; no step is longer than KNOCK_STEP, so nothing tunnels.
+## Moves the hero along his knockback (MotionKit.step_knock): its speed eases
+## out over its time, axis by axis so a wall stops one axis and he slides along
+## it; no step is longer than physics_motion.json knock.step_max, so nothing tunnels.
 func _update_knock(dt: float) -> void:
-	var K: Variant = g.state.get("knock")
-	if not K is Dictionary:
-		return
-	K.t = float(K.t) + dt
-	var k := float(K.t) / maxf(0.01, float(K.T))
-	if k >= 1.0:
-		g.state.knock = null
-		return
-	var mv: Vector2 = (K.v as Vector2) * pow(1.0 - k, 2.0) * dt
-	if mv.length() > KNOCK_STEP:
-		mv = mv.normalized() * KNOCK_STEP
-	if not g.box_blocked(g._player_box(g.player.x + mv.x, g.player.y)):
-		g.player.x += mv.x
-	if not g.box_blocked(g._player_box(g.player.x, g.player.y + mv.y)):
-		g.player.y += mv.y
+	_mover().step_knock(dt)
+
+
+## This runtime's motion kit (src/physics_kit/motion_kit.gd) on the world's
+## host (src/hell/story_motion_host.gd), made on first use.
+func _mover() -> MotionKit:
+	if _motion == null:
+		_motion = MotionKit.new(StoryMotionHost.new(g))
+	return _motion
 
 
 func _shake(n: float) -> void:
@@ -333,6 +347,10 @@ func _shot(from: Vector2, dir: Vector2, speed: float, extra := {}) -> void:
 		dir = ElementRules.scatter(dir.normalized(), bool(_mad_from.boss), randf())
 	var s := {"p": from, "v": dir.normalized() * speed, "t": 2.6, "c": "fire"}
 	s.merge(extra, true)
+	# its shooter (the monster whose act fires it): a perfect block lets it reel in melee reach (B3)
+	if not _shooter.is_empty() and not s.has("by"):
+		s.by = _shooter
+	ShotLooks.apply(s, _look)
 	if not _mad_on.is_empty():
 		s.mad = _mad_from
 		s.mad_to = _mad_on
@@ -394,97 +412,18 @@ static func mob_tags(m: Dictionary) -> Array:
 	return m.tags
 
 
-## The element physics on a monster (src/combat/element_rules.gd,
-## assets/data/element_rules.json): the pool it stands in hurts it on its tick
-## (hero hits per second, unless it is of that element), burns, poisons or
-## slows it, douses its burning (water), takes its footing (ice, blood: the
-## movement in update slides it) or pulls it (void); a gas cloud thick enough
-## does the same and blinds its shots (steam, smoke). m.env carries the rule
-## the movement reads.
+## The element physics on a monster: the world's ElementExposure
+## (src/physics_kit/element_exposure.gd through src/hell/story_exposure_host.gd,
+## hell_game.gd exposure()) lets the pool it stands in and the gas it breathes
+## act on it: hurt on the tick, burn, poison, slow, douse, combos. m.env keeps
+## the pool's rule the movement in update reads (slide, grip, pull), m.blind
+## the s its shots are blind (steam, smoke).
 func _step_medium(m: Dictionary, dt: float) -> void:
-	m.env = {}
 	m.blind = maxf(0.0, float(m.get("blind", 0.0)) - dt)
-	if m.hp <= 0.0 or m.get("burrowed", false) or float(m.get("alt", 0.0)) > 20.0:
-		return
-	var layer: RefCounted = g._pool_layer() if g.has_method("_pool_layer") else g.get("pools")
-	var tags := mob_tags(m)
-	if layer != null:
-		var under: Array = layer.materials_at(m.p)
-		if not under.is_empty():
-			var style := ElementRules.top(under)
-			var rule := ElementRules.medium(style)
-			# a burning monster sets the poison it stands in off, whatever its own element
-			if _combo(m, ElementRules.material(style)):
-				return
-			# crusted lava (water met it: src/hell/story_elements.gd) is cool stone for a while
-			var crusted: bool = ElementRules.material(style) == "lava" and g.get("story_elements") != null and g.story_elements.crusted(m.p)
-			if not rule.is_empty() and not crusted and not ElementRules.immune(tags, rule):
-				m.env = rule.duplicate()
-				if rule.has("pull"):
-					m.env.centre = g._pool_centre(m.p, style) if g.has_method("_pool_centre") else m.p
-				_medium_on_mob(m, rule, "env_tick", dt)
-	var gas: RefCounted = g.get("gas")
-	if gas != null:
-		# it parts the gas round itself (hell_game.gd _step_gas): what it breathes is the cloud at arm's length
-		var cloud: Dictionary = gas.around(m.p, 18.0 + 24.0, 4)
-		if float(cloud.d) >= ElementRules.dense_from():
-			if _combo(m, str(cloud.mat)):
-				return
-			var rule := ElementRules.gas(str(cloud.mat))
-			if not rule.is_empty() and not ElementRules.immune(tags, rule):
-				_medium_on_mob(m, rule, "gas_tick", dt)
-				if rule.has("blind_shots"):
-					m.blind = maxf(float(m.blind), float(rule.blind_shots))
-
-
-## What a monster's own condition does with the material it stands in
-## (element_rules.json combos): burning, it sets poison off (true: the pool or
-## cloud is gone); wet, frost freezes it solid for a moment.
-func _combo(m: Dictionary, mat: String) -> bool:
-	var combos: Dictionary = ElementRules.data().get("combos", {})
-	# on fire (fire_t: lava, fire, a burn), not merely poisoned (burn_t is every damage over time)
-	var burning := float(m.get("fire_t", 0.0)) > 0.0
-	var wet := float(m.get("wet_t", 0.0)) > 0.0
-	if burning and mat == "poison" and bool(combos.get("burn_ignites_poison", true)) and g.get("story_elements") != null:
-		g.story_elements.fire_at(m.p, float(combos.get("explode_r", 30.0)) * g.PIXEL_WORLD / 2.0)
-		return true
-	if wet and mat in ["frost", "ice"] and float(combos.get("freeze_wet", 0.0)) > 0.0 and not m.boss and float(m.get("stun", 0.0)) <= 0.0:
-		m.stun = float(combos.get("freeze_wet", 0.7))
-		m.wet_t = 0.0
-		_burst_in(m.p - Vector2(0, m.cy), 10, "frost")
-	return false
-
-
-## What a medium or gas rule does to a monster: its hurt on the tick (enemy_hurt
-## hero hits per second, bosses half), its conditions, its dousing.
-func _medium_on_mob(m: Dictionary, rule: Dictionary, tick_key: String, dt: float) -> void:
-	if rule.has("enemy_hurt"):
-		m[tick_key] = float(m.get(tick_key, 0.0)) - dt
-		if float(m[tick_key]) <= 0.0:
-			var tick := float(rule.get("tick", 1.0))
-			m[tick_key] = tick
-			var hits := float(rule.enemy_hurt) * tick * (0.5 if m.boss else 1.0)
-			m.hp -= hits * float(g.state.dmg)
-			m.hit = 0.12
-			if g.get("feel") != null:
-				g.feel.on_hit(m, Vector2.ZERO, false)
-	var status: Dictionary = rule.get("status", {})
-	for kind: String in status:
-		var spec: Array = status[kind]
-		match kind:
-			"burn", "poison":
-				HeroKit.burn_mob(m, float(spec[0]) * 0.5, float(spec[1]))
-				if kind == "burn" and float(m.get("wet_t", 0.0)) <= 0.0:
-					m.fire_t = maxf(float(m.get("fire_t", 0.0)), float(spec[1]))
-			"slow":
-				HeroKit.slow_mob(g, m, 1.0 - float(spec[0]), float(spec[1]))
-			"wet":
-				m.wet_t = maxf(float(m.get("wet_t", 0.0)), float(spec[1]))
-			"mad":
-				ElementRules.madden(m, float(spec[1]), mob_tags(m))
-	if bool(rule.get("douse", false)):
-		m.burn_t = 0.0
-		m.fire_t = 0.0
+	var met: Dictionary = g.exposure().step(m, dt)
+	m.env = met.medium
+	if float(met.blind) > 0.0:
+		m.blind = maxf(float(m.blind), float(met.blind))
 
 
 ## Moves, aims and attacks every monster, ends Ignaroth's phases, removes the dead
@@ -494,6 +433,10 @@ func update(dt: float) -> void:
 	for m: Dictionary in g.mobs:
 		_mad_from = {}
 		_mad_on = {}
+		_taunt_at = Vector2.INF
+		# only a running teleport fades a figure: cut short (a part falls, the Testraum's dummy
+		# switch, a stun) it comes back; it never stays see-through and unhittable
+		settle_alpha(m, dt, float(cfg.get("fade_back", 0.15)))
 		if m.spawn > 0.0:
 			m.spawn -= dt
 			continue
@@ -521,7 +464,7 @@ func update(dt: float) -> void:
 			continue
 		for i in range(m.cds.size()):
 			m.cds[i] -= dt
-		# WAHN (element_rules.json madness): a mad monster staggers, scatters its shots and may turn on another
+		# WAHN (madness_rules.json madness): a mad monster staggers, scatters its shots and may turn on another
 		m.mad_t = maxf(0.0, float(m.get("mad_t", 0.0)) - dt)
 		m.mad_cd = maxf(0.0, float(m.get("mad_cd", 0.0)) - dt)
 		if float(m.mad_t) > 0.0:
@@ -531,14 +474,25 @@ func update(dt: float) -> void:
 		var pace := HeroKit.tick_mob(g, m, dt)
 		# a dragon reeling from a severed part (src/hell/drake_rig_host.gd) stands and starts no attack
 		var held: bool = pace <= 0.0 or m.get("hold", false) or (rig_host != null and rig_host.staggered(m))
-		var to: Vector2 = (_me() if not _mad_on.is_empty() else me) - m.p
+		# a companion's taunt (Brüllen, Heulen, Fass!) draws it from the hero, as in the Frostgruft
+		if _mad_on.is_empty() and g.talents != null and not m.boss:
+			var drawn: Vector2 = g.talents.chase_goal(m, me)
+			if drawn != me:
+				_taunt_at = drawn
+		var to: Vector2 = _aim_goal() - m.p
 		var d := maxf(to.length(), 1.0)
 		var v := Vector2.ZERO
 		if bool(m.get("ai_off", false)):
 			# a training dummy of the debug Testraum (src/debug/story_testraum_tools.gd): no act, no walking
 			m.act = null
 		elif m.act != null:
+			m.erase("wait")
+			# the look of the shots this act fires (a bone arrow: src/vfx/shot_looks.gd, shot_looks.json)
+			_look = ShotLooks.look_for(str(m.id), str((m.act.get("a", {}) as Dictionary).get("id", "")))
+			_shooter = m
 			_run_act(m, dt)
+			_shooter = {}
+			_look = {}
 			if m.act != null:
 				v = m.act.get("v", Vector2.ZERO)
 		else:
@@ -546,12 +500,23 @@ func update(dt: float) -> void:
 			# in steam or smoke it cannot see to shoot: only a blow at arm's length goes (element_rules.json blind_shots)
 			if i >= 0 and float(m.get("blind", 0.0)) > 0.0 and not str(m.st.attacks[i].kind) in BLIND_ATTACKS:
 				i = -1
-			if i >= 0:
+			# attack tokens (combat_tells.json tokens): without a free one it waits its turn, moving;
+			# the wait (m.wait) holds until its lane frees, so a melee one keeps circling at keep
+			var kind := str(m.st.attacks[i].kind) if i >= 0 else ""
+			if i >= 0 and not FrostMoves.token_free(g, m, kind):
+				m.cds[i] = maxf(float(m.cds[i]), float(FrostMoves.token_cfg().get("retry", 0.2)))
+				m.wait = {"kind": kind, "lane": FrostMoves.lane_of(kind)}
+				v = _wait_move(m, dt, to, d, str(m.wait.lane))
+			elif i >= 0:
+				m.erase("wait")
 				_start_act(m, i, to, d)
+			elif m.has("wait") and not FrostMoves.token_free(g, m, str(m.wait.kind)):
+				v = _wait_move(m, dt, to, d, str(m.wait.lane))
 			else:
+				m.erase("wait")
 				v = _move(m, dt, to, d)
 		var act = m.act
-		var locked: bool = act != null and ((act.kind == "dash" and not act.get("warn", false)) or act.kind == "sweep")
+		var locked: bool = act != null and ((act.kind == "dash" and not act.get("warn", false)) or act.kind == "sweep" or act.kind == "mimic_bite")
 		if not locked and absf(to.x) > (float(cfg.lord_face_deadzone) if lord else 10.0):
 			m.face = signf(to.x)
 		for o: Dictionary in g.mobs:
@@ -563,33 +528,32 @@ func update(dt: float) -> void:
 		if float(m.mad_t) > 0.0 and not m.boss:
 			v += ElementRules.wobble(m, to / d, dt, randf()) * g.PIXEL_WORLD / 2.0
 		v *= 0.0 if held else pace
-		# on ice or blood it keeps its momentum (element_rules.gd slide), the void pulls it in
+		# on ice or blood it keeps its momentum, the void pulls it in, its push (m.k) decays, and it
+		# moves axis by axis against the walls (MotionKit.step_body, src/physics_kit/motion_kit.gd)
 		var env: Dictionary = m.get("env", {})
-		if bool(env.get("slide", false)):
-			m.sv = ElementRules.slide(m.get("sv", v), v, float(env.get("grip", 0.1)), dt)
-			v = m.sv
-		else:
-			m.sv = v
-		if env.has("pull"):
-			v += ElementRules.pull(env, m.p, env.get("centre", m.p))
-		v += m.k
-		m.k *= 0.86
+		var mover := _mover()
+		var grip := float(env.get("grip", mover.grip("medium"))) if bool(env.get("slide", false)) else MotionKit.FIRM
+		var pull := ElementRules.pull(env, m.p, env.get("centre", m.p)) if env.has("pull") else Vector2.ZERO
 		var moved_from: Vector2 = m.p
 		var rr := minf(m.r * 0.7, 40.0)
 		var avoid: bool = not m.boss and m.st.ai != "hover" and m.st.ai != "drift"
-		var nx: float = m.p.x + v.x * dt
-		if not g.box_blocked(Rect2(nx - rr, m.p.y - rr, rr * 2.0, rr), avoid) and not HeroKit.wall_blocks(g, Vector2(nx, m.p.y), rr):
-			m.p = Vector2(nx, m.p.y)
-		var ny: float = m.p.y + v.y * dt
-		if not g.box_blocked(Rect2(m.p.x - rr, ny - rr, rr * 2.0, rr), avoid) and not HeroKit.wall_blocks(g, Vector2(m.p.x, ny), rr):
-			m.p = Vector2(m.p.x, ny)
+		var step: Dictionary = mover.step_body(m.p, m.get("sv", v), v, grip, pull, m.k, dt, mover.host.mob_solid(rr, avoid))
+		v = step.v
+		m.sv = step.vel
+		m.k = step.push
+		m.k_in = step.push_in
+		m.p = step.p
 		# a body thrown by Rage slams into the wall it meets (src/hero/story_hero.gd)
 		if g.story_hero != null and m.has("slam"):
 			# sound hook: the slam is the hero's (src/hero/story_sound.gd source "hero")
 			g.as_source("hero", func() -> void: g.story_hero.check_slam(m, moved_from, dt))
 		act = m.act
 		var airborne: bool = act != null and float(act.get("air", 0.0)) > 20.0
-		if d < m.r + float(cfg.contact_reach) and m.alpha > 0.6 and not immune(m) and not airborne:
+		# a mimic hurts only by its bite (its windup first: _run_mimic_bite), never by a touch;
+		# one waiting for a melee token (m.wait) has no turn to strike, not even by a touch
+		var waiting: bool = m.has("wait") and str(m.wait.lane) == "melee"
+		var touch: float = d if not _taunt_at.is_finite() else (_me() - m.p).length()
+		if touch < m.r + float(cfg.contact_reach) and m.alpha > 0.6 and not immune(m) and not airborne and not is_mimic(m) and not waiting:
 			# a body blow pushes him off; a dashing beast runs him over harder
 			_hurt_by(m, 1, "erschlagen" if m.boss else "erwischt", m.p, "dash" if act != null and str(act.kind) == "dash" else "contact")
 		if not _mad_on.is_empty() and m.act != null and not bool(m.get("mad_acted", false)):
@@ -601,6 +565,7 @@ func update(dt: float) -> void:
 			m.at = 0.0
 	_mad_from = {}
 	_mad_on = {}
+	_taunt_at = Vector2.INF
 	for m: Dictionary in g.mobs.duplicate():
 		var lord_boss: bool = Rules.is_lord(m.def) and m.boss
 		if not ((m.hp <= 0.0 and not lord_boss) or m.get("remove", false)):
@@ -608,7 +573,12 @@ func update(dt: float) -> void:
 		if m.dying != null or (m.trans == null and not m.has("echo")):
 			# uid: Ignaroth's rig keeps falling apart in the corpse (src/hell/drake_rig_host.gd)
 			# kill, tumble: how the blow threw it, for its rig's ragdoll (src/rig/rig_renderer.gd); the parts bounce off this floor's walls
-			corpses.append({"id": m.id, "p": m.p, "s": m.s, "face": m.face, "t": 0.0, "uid": m.get("uid", -1), "kill": _kill_fx(m), "tumble": float(m.get("tumble", 0.0))})
+			# v: the felled body keeps the blow's momentum (its push, else a small throw along the blow;
+			# physics plan R24/F36) and slides on until friction and the walls stop it
+			var kill := _kill_fx(m)
+			var v: Vector2 = m.get("k") if m.get("k") is Vector2 else Vector2.ZERO
+			if v.length() < 20.0: v = Vector2(float(kill.get("dx", 0.0)), float(kill.get("dy", 0.0))) * 90.0
+			corpses.append({"id": m.id, "p": m.p, "s": m.s, "face": m.face, "t": 0.0, "uid": m.get("uid", -1), "kill": kill, "tumble": float(m.get("tumble", 0.0)), "v": v, "r": float(m.get("r", 20.0))})
 			if rig_host != null and rig_host.has_method("bind_world"):
 				rig_host.bind_world(func(p: Vector2) -> bool: return g.box_blocked(Rect2(p - Vector2(2, 2), Vector2(4, 4))))
 		if m.trans == null and not m.get("quiet", false):
@@ -647,7 +617,7 @@ func _move(m: Dictionary, dt: float, to: Vector2, d: float) -> Vector2:
 	match String(m.st.ai):
 		"hover":
 			var a: float = t * 1.6 + m.seed
-			var aim: Vector2 = _me() + Vector2(cos(a) * 190.0, -40.0 + sin(a) * 140.0) - m.p
+			var aim: Vector2 = _aim_goal() + Vector2(cos(a) * 190.0, -40.0 + sin(a) * 140.0) - m.p
 			v = aim.normalized() * m.sp
 		"keep":
 			var k := float(m.st.get("keep", 380.0))
@@ -683,6 +653,42 @@ func _move(m: Dictionary, dt: float, to: Vector2, d: float) -> Vector2:
 	return v
 
 
+## How a monster waiting for an attack token moves (combat_tells.json tokens): one
+## waiting for a melee token circles the hero at keep px (plus its radius), backing
+## off when closer, so a crowd stays readable and nobody stands frozen; flyers,
+## keepers and ranged ones keep their own movement.
+func _wait_move(m: Dictionary, dt: float, to: Vector2, d: float, lane: String) -> Vector2:
+	if lane != "melee" or str(m.st.ai) in ["hover", "keep", "drift"]:
+		return _move(m, dt, to, d)
+	var T := FrostMoves.token_cfg()
+	var n := to / d
+	if not m.has("wait_dir"):
+		m.wait_dir = 1.0 if fmod(float(m.seed), 2.0) < 1.0 else -1.0
+	var keep := float(T.get("keep", 170.0)) + float(m.r)
+	var radial := -1.0 if d < keep * 0.85 else (0.7 if d > keep * 1.25 else 0.0)
+	var side := Vector2(-n.y, n.x) * float(m.wait_dir)
+	return (n * radial + side).normalized() * m.sp * float(T.get("pace", 0.7))
+
+
+## The windup (s) of attack `a` of `m` run as `kind`: the attack's own "tell", else
+## combat_tells.json (a boss's own value first). "leap" times a leaping slam.
+func _wind(m: Dictionary, a: Dictionary, kind: String) -> float:
+	if a.has("tell"):
+		return float(a.tell)
+	return FrostMoves.tell_time(kind, bool(m.boss), 0.5)
+
+
+## Where an act winding up aims: at `me` (the hero, or a WAHN victim) until
+## aim_lock of its windup `wind` has run, from then on at the point he stood on
+## then (A.lock), so a step aside at the last moment is a real dodge.
+func _aim_at(A: Dictionary, wind: float, me: Vector2) -> Vector2:
+	if A.has("lock"):
+		return A.lock
+	if float(A.t) >= wind * FrostMoves.aim_lock():
+		A.lock = me
+	return me
+
+
 func _start_act(m: Dictionary, i: int, to: Vector2, d: float) -> void:
 	var a: Dictionary = m.st.attacks[i]
 	m.cds[i] = Rules.next_cooldown(a, m.boss, randf())
@@ -693,8 +699,17 @@ func _start_act(m: Dictionary, i: int, to: Vector2, d: float) -> void:
 		if a.is_empty():
 			return
 	var act := {"a": a, "kind": a.kind, "t": 0.0, "dir": to / d, "n": 0, "anim": Rules.act_anim(a.kind, m.def), "v": Vector2.ZERO}
+	# a mimic's bite: a readable windup, then a snap that must find the hero in front (mimic_bite.json);
+	# it starts only up close, else the mimic hops on and tries again soon
+	if is_mimic(m) and str(a.get("id", "")) in Array(mimic_cfg().get("bite_attacks", ["biss"])):
+		if d > float(mimic_cfg().get("start_range", 120.0)):
+			m.cds[i] = float(mimic_cfg().get("retry", 0.2))
+			return
+		act.kind = "mimic_bite"
 	if a.kind == "slam" and a.get("leap", false):
-		act.leap = {"from": m.p, "to": _me()}
+		act.leap = {"from": m.p, "to": _aim_goal()}
+	# its windup from the data (combat_tells.json tells; a leap's flight is its windup)
+	act.wind = _wind(m, a, "leap" if act.has("leap") else str(a.kind))
 	if a.kind == "beam":
 		# a single laser aims from its drawn origin at the hero's body
 		var b0 := _beam_aim(m) if int(a.beams) == 1 else to.angle()
@@ -712,18 +727,181 @@ func _beam_head(m: Dictionary) -> Vector2:
 
 ## Angle from a beam's origin to the hero's body: a single laser aims there.
 func _beam_aim(m: Dictionary) -> float:
-	return (_me() - Vector2(0, 30) - _beam_head(m)).angle()
+	return (_aim_goal() - Vector2(0, 30) - _beam_head(m)).angle()
 
 
-## Distance from a point along a direction until a wall, at most max_len.
+## Distance from a point along a direction until a wall or a closed gate, at
+## most max_len (A13: beams stop where the hero would): the exact cell edge,
+## walked cell by cell over the grid. The cell it starts in never stops it (a
+## figure's core may be drawn over a wall's face behind it).
 func _wall_len(from: Vector2, ang: float, max_len: float) -> float:
-	var l := 0.0
+	var C := float(g.C)
+	var dir := Vector2.from_angle(ang)
+	var cell := Vector2i(int(floor(from.x / C)), int(floor(from.y / C)))
+	var step := Vector2i(1 if dir.x > 0.0 else -1, 1 if dir.y > 0.0 else -1)
+	# distance along the ray to the next vertical / horizontal cell edge, and per whole cell
+	var next := Vector2(INF, INF)
+	var per := Vector2(INF, INF)
+	if absf(dir.x) > 1e-6:
+		next.x = ((float(cell.x) + (1.0 if step.x > 0 else 0.0)) * C - from.x) / dir.x
+		per.x = C / absf(dir.x)
+	if absf(dir.y) > 1e-6:
+		next.y = ((float(cell.y) + (1.0 if step.y > 0 else 0.0)) * C - from.y) / dir.y
+		per.y = C / absf(dir.y)
+	var l := minf(next.x, next.y)
 	while l < max_len:
-		var p := from + Vector2.from_angle(ang) * l
-		if not g._walkable(g._cell(int(floor(p.x / g.C)), int(floor(p.y / g.C)))):
-			return l
-		l += 24.0
+		if next.x < next.y:
+			cell.x += step.x
+			next.x += per.x
+		else:
+			cell.y += step.y
+			next.y += per.y
+		if g._cell_blocked(cell.x, cell.y, false):
+			return maxf(0.0, l)
+		l = minf(next.x, next.y)
 	return max_len
+
+
+## Lets a figure's fade end: a teleport (its act running) fades it out and in;
+## at any other time a figure below full alpha comes back over `back` s. So a
+## teleport cut short (a part falling, the Testraum's dummy switch, a stun, a
+## new act) never leaves a living figure see-through and unhittable
+## (hell_game._hittable wants alpha > 0.5, the contact blow alpha > 0.6).
+static func settle_alpha(m: Dictionary, dt: float, back: float) -> void:
+	var act: Variant = m.get("act")
+	if act is Dictionary and str((act as Dictionary).get("kind", "")) == "teleport":
+		return
+	if float(m.get("alpha", 1.0)) < 1.0:
+		m.alpha = minf(1.0, float(m.alpha) + dt / maxf(back, 0.01))
+
+
+## The mimic's bite and reveal (assets/data/mimic_bite.json).
+static func mimic_cfg() -> Dictionary:
+	if _mimic.is_empty():
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(MIMIC_PATH)) if FileAccess.file_exists(MIMIC_PATH) else null
+		_mimic = parsed if parsed is Dictionary else {"kinds": ["mimik"], "bite_attacks": ["biss"]}
+	return _mimic
+
+
+## True for a mimic (mimic_bite.json kinds): it hurts only by its bite.
+static func is_mimic(m: Dictionary) -> bool:
+	return str(m.get("id", "")) in Array(mimic_cfg().get("kinds", []))
+
+
+## True when a bite from `from` along `dir` finds `hero`: within `reach` and
+## inside `arc` (radians) round `dir`.
+static func bite_lands(from: Vector2, dir: Vector2, hero: Vector2, reach: float, arc: float) -> bool:
+	var to := hero - from
+	if to.length() > reach:
+		return false
+	return to.length() < 1.0 or absf(angle_difference(dir.angle(), to.angle())) <= arc / 2.0
+
+
+## A woken chest mimic (hell_game._wake_mimic) only shows itself: a jump, dust
+## where it lands, no damage; its first bite comes no sooner than first_bite s,
+## and then with its windup.
+func reveal_mimic(m: Dictionary) -> void:
+	var B := mimic_cfg()
+	m.act = {"a": {}, "kind": "mimic_wake", "t": 0.0, "n": 0, "anim": "idle", "v": Vector2.ZERO, "dir": Vector2(float(m.face), 0.0)}
+	for i in range(m.cds.size()):
+		m.cds[i] = maxf(float(m.cds[i]), float(B.get("first_bite", 1.2)))
+
+
+func _run_mimic_wake(m: Dictionary, A: Dictionary) -> void:
+	var k := clampf(float(A.t) / maxf(0.05, float(mimic_cfg().get("wake_time", 0.7))), 0.0, 1.0)
+	A.v = Vector2.ZERO
+	A.air = sin(k * PI) * float(mimic_cfg().get("wake_hop", 48.0))
+	if k >= 1.0:
+		# it lands: grit flies and settles
+		_pixel_burst(m.p - Vector2(0, 4), 8, WAVE_DUST, 180.0, 140.0, 0.9, 2)
+		m.act = null
+
+
+## The mimic's bite (mimic_bite.json): it stands, rattles, lifts its lid and
+## flashes its teeth (the windup, with its sound; the bite zone, locked toward
+## the hero when it starts, warns on the floor), snaps forward, and the bite
+## lands only on a hero still in that zone; then it settles.
+func _run_mimic_bite(m: Dictionary, A: Dictionary) -> void:
+	var B := mimic_cfg()
+	var t := float(A.t)
+	var windup := float(B.get("windup", 0.5))
+	var lunge := float(B.get("lunge", 0.12))
+	if int(A.n) == 0:
+		A.v = Vector2.ZERO
+		if not A.get("cued", false):
+			A.cued = true
+			if g.sound != null: g.sound.at(str(B.get("sfx_windup", "windup_bite")), m.p)
+		if t >= windup:
+			A.n = 1
+			_released(m)
+		return
+	if int(A.n) == 1:
+		A.v = (A.dir as Vector2) * float(B.get("lunge_speed", 480.0))
+		if t >= windup + lunge:
+			A.n = 2
+			A.v = Vector2.ZERO
+			if g.sound != null: g.sound.at(str(B.get("sfx_bite", "attack_bite")), m.p)
+			var mouth: Vector2 = m.p + (A.dir as Vector2) * m.r - Vector2(0, m.cy * 0.5)
+			if bite_lands(m.p, A.dir, _me(), m.r + float(B.get("reach", 56.0)), float(B.get("arc", 1.6))):
+				_hurt_by(m, int(B.get("damage", 1)), "gebissen", m.p, "contact")
+			else:
+				# it snaps at the air: chips of enamel fly
+				_pixel_burst(mouth, 4, PX_COL.bone, 120.0, 90.0, 0.4)
+		return
+	if t >= windup + lunge + float(B.get("recover", 0.45)):
+		m.act = null
+
+
+## The windup look of a mimic's bite now ({} when none runs): progress k, the
+## rattle and lid lift as an offset of its feet, whether its teeth flash this
+## beat, the locked bite direction.
+func _mimic_tell(m: Dictionary) -> Dictionary:
+	var A: Variant = m.get("act")
+	if not A is Dictionary or str(A.kind) != "mimic_bite" or int(A.n) != 0:
+		return {}
+	var B := mimic_cfg()
+	var k := clampf(float(A.t) / maxf(0.05, float(B.get("windup", 0.5))), 0.0, 1.0)
+	var beat := int(floorf(float(A.t) * LASER_FPS * 2.0))
+	var shake := float(B.get("rattle_px", 3.0)) * (1.0 if beat % 2 == 0 else -1.0)
+	var lift := roundf(k * float(B.get("lift_px", 6.0)) / LASER_PX) * LASER_PX
+	return {"k": k, "offset": Vector2(shake, -lift), "flash": beat % 3 != 0 and k > 0.2, "dir": A.dir}
+
+
+## The bite zone of a winding-up mimic on the floor: a ring of warning pixels
+## in front of it, closing in and brightening as the bite comes.
+func _draw_bite_warn(l: CanvasItem, m: Dictionary, tell: Dictionary) -> void:
+	var B := mimic_cfg()
+	var reach := float(B.get("reach", 56.0))
+	var k := float(tell.k)
+	var at: Vector2 = m.p + (tell.dir as Vector2) * (m.r + reach * 0.5)
+	var col := Color(Color(str(B.get("warn_color", "ff4a3d"))), 0.35 + 0.5 * k)
+	_px_ellipse(l, at, reach * (1.1 - 0.4 * k), reach * (0.55 - 0.2 * k), col, 2, int(floorf(float(m.act.t) * LASER_FPS)))
+	_px_ellipse(l, at, reach * 0.25, reach * 0.12, col, 1)
+
+
+## The mimic's teeth flashing along its lid's edge as it winds up, the mouth
+## opening under the lifting lid.
+func _draw_teeth(l: CanvasItem, m: Dictionary, feet: Vector2, tell: Dictionary) -> void:
+	var B := mimic_cfg()
+	var teeth: Array = B.get("teeth", ["fdf7ed", "c9b49a"])
+	var bright := Color(str(teeth[0])) if bool(tell.flash) else Color(str(teeth[1]))
+	var mouth := Color(str(B.get("mouth", "5a0f16")))
+	var half := maxf(float(m.r) * 0.9, LASER_PX * 3.0)
+	var lip := feet - Vector2(0, float(m.cy) * 1.05)
+	var gap := int(round(float(tell.k) * 2.0))
+	var x := -half
+	var i := 0
+	while x <= half:
+		_px(l, lip + Vector2(x, 0), mouth)
+		for y in range(gap):
+			_px(l, lip + Vector2(x, LASER_PX * float(y + 1)), mouth)
+		# upper teeth hang from the lid, lower ones stand on the rim, in turn
+		if i % 2 == 0:
+			_px(l, lip + Vector2(x, -LASER_PX), bright)
+		else:
+			_px(l, lip + Vector2(x, LASER_PX * float(gap + 1)), bright)
+		x += LASER_PX
+		i += 1
 
 
 func _run_act(m: Dictionary, dt: float) -> void:
@@ -743,19 +921,30 @@ func _run_act(m: Dictionary, dt: float) -> void:
 		var src: Variant = a.get("from")
 		if src is Array and (src as Array).size() >= 3 and not str(src[0]) in Array(m.get("parts_lost", [])):
 			head = rig_host.part_point(m, str(src[0]), Vector2(float(src[1]), float(src[2])), head)
-	var me := _me()
+	# what it aims at (a taunting companion first); the warnings drawn follow it (A.goal)
+	var me := _aim_goal()
+	A.goal = me
 	var dmg := int(cfg.hit_boss) if m.boss else int(cfg.hit_mob)
 	# the crypt's figures attack in their own element, the hell's in fire (an echo is void)
 	var own := own_element(m)
 	var color := own if own != "" and not m.has("echo") else Rules.shot_color(m.id, m.has("echo"))
 	var hot := own if own != "" else "fire"
+	# its windup (combat_tells.json tells, set by _start_act); what follows the release keeps its own times
+	var wind := float(A.get("wind", _wind(m, a, String(A.kind))))
+	if String(A.kind) == "mimic_bite":
+		_run_mimic_bite(m, A)
+		return
+	if String(A.kind) == "mimic_wake":
+		_run_mimic_wake(m, A)
+		return
 	if A.kind in Rules.DRAGON_KINDS:
 		_run_dragon_act(m, dt)
 		return
 	match String(A.kind):
 		"dash":
-			if t < 0.5:
-				var aim: Vector2 = me - m.p
+			if t < wind:
+				# its lane follows the hero, then stays put for the rest of the windup
+				var aim: Vector2 = _aim_at(A, wind, me) - m.p
 				if aim.length() > 0.0:
 					A.dir = aim.normalized()
 				A.v = Vector2.ZERO
@@ -767,30 +956,33 @@ func _run_act(m: Dictionary, dt: float) -> void:
 			A.warn = false
 			A.v = A.dir * float(a.speed)
 			_dash_fx(m, A, dt)
-			if t > 0.5 + minf(0.55, float(a.get("range", 500.0)) / float(a.speed)):
+			if t > wind + minf(0.55, float(a.get("range", 500.0)) / float(a.speed)):
 				# it skids to a halt: grit flies and the rubble around lifts
 				_pixel_burst(m.p - Vector2(0, 4), 12 if m.boss else 5, WAVE_DUST, 220.0, 220.0, 1.0, 2)
 				_phys_blast(m.p, 70.0, 4, 0.5)
 				_impact(m.p, "small", m)
 				if int(A.get("rep", 1)) < int(a.get("repeat", 1)):
+					# the next run winds up shorter and aims anew
 					A.rep = int(A.get("rep", 1)) + 1
-					A.t = 0.3
+					A.t = maxf(0.0, wind - 0.2)
+					A.erase("lock")
 				else:
 					m.act = null
 			return
 		"lob":
-			if t >= 0.45 and A.n == 0:
+			if t >= wind and A.n == 0:
 				A.n = 1
 				_released(m)
 				for k in range(int(a.get("count", 1))):
 					var aim := me + (Vector2(randf_range(-130, 130), randf_range(-100, 100)) if k > 0 else Vector2.ZERO)
 					lobs.append({"from": head, "to": aim, "t": 0.0, "T": 0.8 + k * 0.12, "r": float(a.get("radius", 70.0)),
 						"dmg": dmg, "m": m, "c": "lava" if m.id in LAVA_LOBBERS else hot, "done": false, "mad": not _mad_on.is_empty(), "look": str(a.get("look", "")), "pool": bool(m.def.get("pool", false))})
-			if t > 0.7:
+			if t > wind + 0.25:
 				m.act = null
 			return
 		"bolt", "breath", "homing":
-			var wind := 0.3 if A.kind == "breath" else 0.35
+			# the shots go where the hero stood once aim_lock of the windup had run
+			var at := _aim_at(A, wind, me)
 			# a breath leaves every mouth it still has (a many-headed beast: its drawn mouths)
 			var mouths: Array = _mouths(m, a, head) if A.kind == "breath" else []
 			if A.kind == "breath":
@@ -801,9 +993,9 @@ func _run_act(m: Dictionary, dt: float) -> void:
 			if t >= wind and A.n == 0:
 				A.n = 1
 				_released(m)
-				A.jet_to = me - Vector2(0, 30)
+				A.jet_to = at - Vector2(0, 30)
 				_impact(mouths[0] if not mouths.is_empty() else head, "small", m)
-				var base := (me - Vector2(0, 30) - head).angle()
+				var base := (at - Vector2(0, 30) - head).angle()
 				var heads := int(a.get("heads", 1))
 				var count := int(a.get("count", 1))
 				var spread := 0.7 if A.kind == "breath" else float(a.get("spread", 0.3))
@@ -812,7 +1004,7 @@ func _run_act(m: Dictionary, dt: float) -> void:
 						var ang := base + ((h - 1) * 0.45 if heads > 1 else 0.0) + ((float(k) / (count - 1) - 0.5) * spread if count > 1 else 0.0)
 						if A.kind == "breath":
 							var mouth: Vector2 = mouths[h % mouths.size()]
-							ang = (me - Vector2(0, 30) - mouth).angle() + (float(h) - float(mini(heads, mouths.size()) - 1) / 2.0) * 0.25 \
+							ang = (at - Vector2(0, 30) - mouth).angle() + (float(h) - float(mini(heads, mouths.size()) - 1) / 2.0) * 0.25 \
 								+ ((float(k) / (count - 1) - 0.5) * spread if count > 1 else 0.0) + randf_range(-0.075, 0.075)
 							_shot(mouth, Vector2.from_angle(ang), 380.0 + randf() * 140.0,
 								{"t": float(a.get("range", 260.0)) / 450.0, "small": true, "c": hot, "breath": true})
@@ -831,9 +1023,9 @@ func _run_act(m: Dictionary, dt: float) -> void:
 		"ring":
 			var waves := int(a.get("waves", 1))
 			# it gathers first: pixels rise and pop where it will burst (lava boils over the rim)
-			if A.n == 0 and t < 0.45:
+			if A.n == 0 and t < wind:
 				_charge_fx(m, A, head, "void" if a.get("void", false) else ("lava" if m.id in LAVA_LOBBERS else color), dt)
-			if t >= 0.45 + A.n * 0.35 and A.n < waves:
+			if t >= wind + A.n * 0.35 and A.n < waves:
 				if A.n == 0:
 					_released(m)
 					# the core bursts: sparks out of it, a low shockwave over the floor (no harm)
@@ -851,7 +1043,7 @@ func _run_act(m: Dictionary, dt: float) -> void:
 					_shot(head + out * float(m.r) * 0.95, out, float(a.get("speed", 280.0)),
 						{"c": "void" if a.get("void", false) else ("lava" if m.id in LAVA_LOBBERS else color), "look": str(a.get("look", ""))})
 				A.n += 1
-			if t > 0.55 + waves * 0.35:
+			if t > wind + 0.1 + waves * 0.35:
 				m.act = null
 			return
 		"spiral":
@@ -859,24 +1051,24 @@ func _run_act(m: Dictionary, dt: float) -> void:
 			A.acc = float(A.get("acc", 0.0)) + dt
 			var arms := int(a.arms)
 			# souls gather in the staff, then stream out in turning arms
-			if t <= 0.4:
+			if t <= wind:
 				_charge_fx(m, A, head, color, dt)
-			if t > 0.4 and t - dt <= 0.4:
+			if t > wind and t - dt <= wind:
 				_released(m)
 				_impact(head, "small", m)
-			while A.acc > float(a.rate) and t > 0.4:
+			while A.acc > float(a.rate) and t > wind:
 				A.acc -= float(a.rate)
 				for k in range(arms):
 					var turn := (-1.0 if k % 2 == 1 else 1.0) * (-1.0 if arms > 2 and k >= 2 else 1.0)
 					_shot(head, Vector2.from_angle(turn * A.spin + float(k) / arms * TAU), float(a.get("speed", 280.0)), {"c": color, "look": str(a.get("look", ""))})
-			if t > 0.4 + float(a.duration):
+			if t > wind + float(a.duration):
 				m.act = null
 			return
 		"slam":
 			var leap: bool = A.has("leap")
 			if leap:
 				var L: Dictionary = A.leap
-				var k := minf(1.0, t / 0.7)
+				var k := minf(1.0, t / wind)
 				if k < 1.0:
 					A.air = sin(k * PI) * 120.0
 					var np: Vector2 = L.from.lerp(L.to, k)
@@ -885,18 +1077,25 @@ func _run_act(m: Dictionary, dt: float) -> void:
 					A.warn_at = L.to
 					return
 				A.air = 0.0
-			if A.n == 0 and t >= (0.7 if leap else 0.75):
+			# a cleave's strip follows the hero while the blade is raised, then stays (aim lock)
+			var at := _aim_at(A, wind, me) if a.get("line", false) and not leap else me
+			if A.n == 0 and t >= wind:
 				A.n = 1
 				_released(m)
 				if a.get("line", false):
-					_zone({"kind": "line", "p": m.p, "ang": (me - m.p).angle(), "len": float(a.radius) * 2.6, "w": 70.0, "tele": 0.45, "T": 0.8, "dmg": dmg, "m": m, "c": hot})
+					_zone({"kind": "line", "p": m.p, "ang": (at - m.p).angle(), "len": float(a.radius) * 2.6, "w": 70.0, "tele": 0.45, "T": 0.8, "dmg": dmg, "m": m, "c": hot})
 				else:
 					_zone({"kind": "wave", "p": m.p, "r": float(a.radius), "T": 0.5, "dmg": dmg, "m": m, "c": hot})
 				_burst_in(m.p - Vector2(0, 10), 50 if m.boss else 16, hot)
 				_react(hot, m.p, float(a.radius) * 0.5)
 				# the floor breaks: glowing cracks, rock chunks and sparks thrown up
 				if not a.get("line", false):
-					_crack_floor(m.p, float(a.radius), 9 if m.boss else 5, own != "")
+					# a boss's stomp breaks the floor hard (A10, _boss_scar): thick glowing cracks running
+					# out, a floor flash, dust puffs that settle as rubble, chips bouncing, a lasting dent
+					if m.boss:
+						_boss_scar(m.p, float(a.radius), own)
+					else:
+						_crack_floor(m.p, float(a.radius), 5, own != "")
 				_pixel_burst(m.p - Vector2(0, 4), 24 if m.boss else 8, CHUNK_COL, 300.0, 420.0, 1.1, 2)
 				_pixel_burst(m.p - Vector2(0, 8), 30 if m.boss else 10, PX_COL.lava if own == "" else PX_COL[own], 420.0, 520.0, 0.7)
 				_phys_blast(m.p, float(a.radius), (18 if m.boss else 6) if own == "" else 0, 1.2)
@@ -908,7 +1107,7 @@ func _run_act(m: Dictionary, dt: float) -> void:
 					_zone({"kind": "puddle", "p": m.p, "r": 120.0 if m.boss else 52.0, "T": 2.6, "dmg": 1, "m": m, "st": "lava" if own == "" else own})
 			if A.n == 0 and not leap:
 				A.warn_at = m.p
-			if t > (1.1 if leap else 1.05):
+			if t > wind + (0.4 if leap else 0.3):
 				if leap and int(A.get("rep", 1)) < int(a.get("repeat", 1)):
 					A.rep = int(A.get("rep", 1)) + 1
 					A.t = 0.0
@@ -918,21 +1117,23 @@ func _run_act(m: Dictionary, dt: float) -> void:
 					m.act = null
 			return
 		"swing":
-			if t >= 0.35 and A.n == 0:
+			# the blade comes where the hero stood once aim_lock of the windup had run
+			var at := _aim_at(A, wind, me)
+			if t >= wind and A.n == 0:
 				A.n = 1
 				_released(m)
-				_zone({"kind": "arc", "p": m.p - Vector2(0, m.cy * 0.5), "r": float(a.radius), "ang": (me - m.p).angle(), "arc": float(a.arc), "T": 0.25, "dmg": dmg, "m": m})
+				_zone({"kind": "arc", "p": m.p - Vector2(0, m.cy * 0.5), "r": float(a.radius), "ang": (at - m.p).angle(), "arc": float(a.arc), "T": 0.25, "dmg": dmg, "m": m})
 				# a burning blade leaves its element where it struck the floor in front
 				if str(a.get("element", "")) != "":
-					_residue(m.p + Vector2.from_angle((me - m.p).angle()) * float(a.radius) * 0.45, str(a.element), 4, 26.0)
-			if t > 0.6:
+					_residue(m.p + Vector2.from_angle((at - m.p).angle()) * float(a.radius) * 0.45, str(a.element), 4, 26.0)
+			if t > wind + 0.25:
 				m.act = null
 			return
 		"summon":
 			# a caller with a staff ("from") draws its power in first
-			if a.has("from") and A.n == 0 and t < 0.6:
+			if a.has("from") and A.n == 0 and t < wind:
 				_charge_fx(m, A, head, color, dt)
-			if t >= 0.6 and A.n == 0:
+			if t >= wind and A.n == 0:
 				A.n = 1
 				_released(m)
 				var here: int = g.mobs.filter(func(o: Dictionary) -> bool: return o.room == m.room and not o.boss).size()
@@ -947,31 +1148,31 @@ func _run_act(m: Dictionary, dt: float) -> void:
 							_lava_arc(m.p, m.p.y - head.y, p, 12)
 						_rift(p, "lava" if str(a.get("hatch", "")) == "lava" else color)
 						_impact(p, "small", m)
-			if t > 0.9:
+			if t > wind + 0.3:
 				m.act = null
 			return
 		"teleport":
-			if t < 0.35:
-				m.alpha = 1.0 - t / 0.35
+			if t < wind:
+				m.alpha = 1.0 - t / maxf(0.01, wind)
 				return
 			if A.n == 0:
 				A.n = 1
 				_released(m)
 				_burst_in(head, 18, color)
 				m.p = free_spot(m.room, me, 170, 260)
-			m.alpha = minf(1.0, (t - 0.35) / 0.3)
-			if t > 0.7:
+			m.alpha = minf(1.0, (t - wind) / 0.3)
+			if t > wind + 0.35:
 				m.alpha = 1.0
 				m.act = null
 			return
 		"meteors", "hands":
 			var slag := str(a.get("look", "")) == "slag"
 			# boiling over: the lava boils up in the cauldron, then shoots up as a fountain
-			if slag and A.n == 0 and t < 0.5:
+			if slag and A.n == 0 and t < wind:
 				_charge_fx(m, A, head, "lava", dt)
-			if slag and A.n == 1 and t < 0.9:
+			if slag and A.n == 1 and t < wind + 0.4:
 				_fountain(m, A, head, dt)
-			if t >= 0.5 and A.n == 0:
+			if t >= wind and A.n == 0:
 				A.n = 1
 				_released(m)
 				var meteor: bool = A.kind == "meteors"
@@ -984,32 +1185,34 @@ func _run_act(m: Dictionary, dt: float) -> void:
 					var p := me if k == 0 else me + Vector2(randf_range(-260, 260), randf_range(-190, 190))
 					_zone({"kind": "meteor" if meteor else "hand", "p": p, "r": float(a.radius), "t": -k * fall - float(a.get("delay", 0.0)),
 						"tele": 1.0 if meteor else 0.85, "T": 1.35 if meteor else 1.25, "dmg": dmg, "m": m, "look": str(a.get("look", "")), "c": own})
-			if t > (0.9 if slag else 0.8):
+			if t > wind + (0.4 if slag else 0.3):
 				m.act = null
 			return
 		"chain":
-			if t >= 0.35 and A.n == 0:
+			# the hook flies at where the hero stood once aim_lock of the windup had run
+			var at := _aim_at(A, wind, me)
+			if t >= wind and A.n == 0:
 				A.n = 1
 				_released(m)
 				var sp := float(a.get("speed", 700.0))
-				_shot(head, me - Vector2(0, 30) - head, sp, {"chain": m, "c": "chain", "t": float(a.get("range", 600.0)) / sp})
+				_shot(head, at - Vector2(0, 30) - head, sp, {"chain": m, "c": "chain", "t": float(a.get("range", 600.0)) / sp})
 				# the hook is flung: a rattle of sparks off the chain
 				_pixel_burst(head, 8, PX_COL.chain, 220.0, 160.0, 0.4)
 				_impact(head, "tiny", m)
-			if t > 0.7:
+			if t > wind + 0.35:
 				m.act = null
 			return
 		"scream":
-			if A.n == 0 and t > 0.1:
+			if A.n == 0 and t > wind:
 				A.n = 1
 				_released(m)
 				_zone({"kind": "cone", "p": head + Vector2(0, 20), "ang": (me - head).angle(), "r": float(a.range), "arc": float(a.arc),
 					"tele": 0.55, "T": 0.9, "dmg": 1, "slow": 2.0, "m": m, "push": "scream"})
-			if t > 1.0:
+			if t > wind + 0.9:
 				m.act = null
 			return
 		"beam":
-			if t < 0.8:
+			if t < wind:
 				A.warn = true
 				# a single laser follows the hero while it aims ("track" seconds), then locks
 				if A.beams.size() == 1 and t < float(a.get("track", 0.0)):
@@ -1024,7 +1227,7 @@ func _run_act(m: Dictionary, dt: float) -> void:
 			A.warn = false
 			for k in range(A.beams.size()):
 				A.beams[k] += float(a.turn) * dt
-			var rel: Vector2 = me - Vector2(0, 30) - head
+			var rel: Vector2 = _me() - Vector2(0, 30) - head
 			var laser := str(a.get("style", "")) == "laser"
 			var reach := float(a.get("range", 1100.0))
 			for b: float in A.beams:
@@ -1032,20 +1235,21 @@ func _run_act(m: Dictionary, dt: float) -> void:
 				var along := rel.dot(dir)
 				var len := _beam_reach(head, b, reach) if laser else _wall_len(head, b, reach)
 				if along > 0.0 and along < len and absf(dir.cross(rel)) < float(a.get("hit_width", 36.0)):
-					_hurt_by(m, 1, "verbrannt", head, "laser" if laser else "")
+					# a beam comes from afar: its caster reels on a perfect block only in melee reach (B3)
+					_hurt_by(m, 1, "verbrannt", head, "laser" if laser else "", {"p": head + rel})
 				# a laser burns into the wall it meets: pixel fire that glows on, and the crypt's fire wall hit
 				if laser and len < reach:
 					var contact := head + dir * len
 					if not A.has("scorched"):
 						A.scorched = true
-						_scorch(contact, maxf(0.0, 0.8 + float(a.duration) - t))
+						_scorch(contact, maxf(0.0, wind + float(a.duration) - t))
 					# embers fall at the foot of the wall it burns into
 					_residue(contact + Vector2(0, 24), "fire", 6, 22.0)
 					A.spark = float(A.get("spark", 0.0)) - dt
 					if float(A.spark) <= 0.0 and g.get("feel") != null:
 						A.spark = SCORCH_SPARK
 						g.feel.wall_hit(contact - dir * 16.0, contact + dir * 16.0, "fire")
-			if t > 0.8 + float(a.duration):
+			if t > wind + float(a.duration):
 				m.act = null
 			return
 	m.act = null
@@ -1397,6 +1601,9 @@ func _update_zones(dt: float) -> void:
 				# and it shoves what it passes: flying pixels, embers, rubble, lava sloshing over
 				var front := float(z.r) * minf(1.0, z.t / z.T)
 				_blow_front(z, float(z.get("blown", 0.0)), front, 0.0, TAU, 0.62, 1.0)
+				# the front shoves the creatures it passes too, each once, half as hard as a hero is
+				# shoved, and blows the gas along (physics plan R23/F40)
+				_shove_front(z, float(z.get("blown", 0.0)), front)
 				z.blown = front
 				if z.dmg > 0 and absf(d - z.r * minf(1.0, z.t / z.T)) < 40.0:
 					hit = true
@@ -1428,6 +1635,15 @@ func _update_zones(dt: float) -> void:
 					_burst_in(z.p + dir * k, 4, str(z.get("c", "")))
 					k += 60.0
 				_fissure(z)
+				# a boss's cleave raises dust all along the split floor (A10)
+				var P := _phys()
+				if P != null and _by_boss(z.get("m")):
+					var every := maxf(30.0, float((FrostMoves.tells().get("boss_impact", {}) as Dictionary).get("line_dust_every", 90.0)))
+					var s := _phys_scale()
+					var u := every * 0.5
+					while u < float(z.len):
+						P.dust_flat((z.p + dir * u) / s, 24.0 / s, 4)
+						u += every
 				z.done = true
 			_:
 				hit = d < z.r
@@ -1453,7 +1669,10 @@ func _update_zones(dt: float) -> void:
 		if hit and g.state.dead <= 0.0:
 			# the blow pushes him away from where it struck (a scream and a puddle do not)
 			var push: String = str(z.get("push", {"wave": "wave", "arc": "arc", "line": "slam", "erupt": "slam", "land": "slam", "meteor": "lob", "hand": "lob"}.get(String(z.kind), "")))
-			_hurt_by(z.m, int(z.dmg), "niedergeschrien" if z.kind == "cone" else "getroffen", z.p, push)
+			# a thrown blow (a lob landing, a meteor, a grave hand) or a scream comes from afar:
+			# met by a perfect block its thrower reels only in melee reach (B3)
+			var thrown: Dictionary = {"p": z.p} if push == "lob" or z.kind == "cone" else {}
+			_hurt_by(z.m, int(z.dmg), "niedergeschrien" if z.kind == "cone" else "getroffen", z.p, push, thrown)
 	# a lava pool that goes out leaves its crust glowing: embers that sizzle and cool to soot
 	for z: Dictionary in zones:
 		if z.kind == "puddle" and z.t >= z.T:
@@ -1483,7 +1702,49 @@ func _update_zones(dt: float) -> void:
 	lobs = lobs.filter(func(L: Dictionary) -> bool: return not L.done)
 	for c: Dictionary in corpses:
 		c.t += dt
+		# as it dissolves its matter crumbles to dust and ash that drift off (physics plan R24)
+		if float(c.t) >= 0.45 and float(c.t) - dt < 0.45 and g.get("feel") != null:
+			var P: RefCounted = g.feel.feedback.particles
+			var at := Vector2(c.p) / float(g.feel.scale)
+			P.dust_flat(at, 10.0, 8)
+			P.motes(at, 5, [Color("8a8078"), Color("5e5650"), Color("b0a69c")], 14.0, 6.0, 0.6)
+		# the body slides on with the blow, slowing, and stops at walls axis by axis
+		var v: Vector2 = c.get("v", Vector2.ZERO)
+		if v.length_squared() > 1.0:
+			var at: Vector2 = c.p
+			var rr := minf(float(c.get("r", 20.0)) * 0.6, 30.0)
+			var next := at + v * dt
+			if g.box_blocked(Rect2(Vector2(next.x, at.y) - Vector2(rr, rr * 0.5), Vector2(rr * 2.0, rr))):
+				next.x = at.x
+				v.x = -v.x * 0.2
+			if g.box_blocked(Rect2(next - Vector2(rr, rr * 0.5), Vector2(rr * 2.0, rr))):
+				next.y = at.y
+				v.y = -v.y * 0.2
+			c.p = next
+			c.v = v * exp(-8.0 * dt)
+		# it tips over the way the blow throws it and settles flat as it stops (R24)
+		c.lean = lerpf(float(c.get("lean", 0.0)), clampf(v.x / 500.0, -0.7, 0.7), 1.0 - exp(-10.0 * dt))
 	corpses = corpses.filter(func(c: Dictionary) -> bool: return c.t < 0.75)
+
+
+## A boss's wave front between `r0` and `r1` round z.p shoves every non-boss creature it passes
+## outward once (z.shoved), wave_push px/s (monsters.feel.wave_push, else 280) added to its push,
+## and pushes the gas the first time it passes half its radius (physics plan F40).
+func _shove_front(z: Dictionary, r0: float, r1: float) -> void:
+	var shoved: Dictionary = z.get("shoved", {})
+	var push := float((g.balance.monsters.get("feel", {}) as Dictionary).get("wave_push", 280.0)) if g.balance.has("monsters") else 280.0
+	for m: Dictionary in g.mobs:
+		if is_same(m, z.get("m")) or bool(m.get("boss", false)) or m.has("kit") or shoved.has(m.id) or float(m.hp) <= 0.0: continue
+		var d := Vector2(m.p).distance_to(z.p)
+		if d < r0 or d > r1 + float(m.get("r", 20.0)): continue
+		shoved[m.id] = true
+		var away := (Vector2(m.p) - Vector2(z.p)).normalized() if d > 1.0 else Vector2.RIGHT
+		var now: Vector2 = m.get("k") if m.get("k") is Vector2 else Vector2.ZERO
+		m.k = (now + away * push).limit_length(1000.0)
+	z.shoved = shoved
+	var gas: RefCounted = g.get("gas")
+	if gas != null and gas.has_method("impulse") and r0 < float(z.r) * 0.5 and r1 >= float(z.r) * 0.5:
+		gas.impulse(z.p, r1, 0.3)
 
 
 ## Moves enemy shots (homing ones turn toward the hero), stops them at walls,
@@ -1518,7 +1779,7 @@ func update_shots(dt: float) -> void:
 			s.hist = hist
 		if g._cell_blocked(int(floor(s.p.x / g.C)), int(floor(s.p.y / g.C)), false):
 			s.t = 0.0
-			_shot_impact(s.p, str(s.get("c", "fire")), bool(s.get("small", false)))
+			_shot_impact(s.p, str(s.get("c", "fire")), bool(s.get("small", false)), s)
 			# it splashes on the wall like the crypt's shots: sparks, a splat and a crack there
 			if g.get("feel") != null and not s.has("chain"):
 				var dir: Vector2 = (s.v as Vector2).normalized()
@@ -1526,22 +1787,25 @@ func update_shots(dt: float) -> void:
 		elif s.p.distance_to(me) < (26.0 if s.get("small", false) else float(g.balance.enemy_shot.hit_radius)):
 			s.t = 0.0
 			if s.has("chain"):
-				g.state.pull = {"m": s.chain, "t": 0.6}
-				g._hurt("von der Kette gepackt")
+				# a hook met by a perfect block or roll (B3) breaks off and pulls nobody
+				g._hurt("von der Kette gepackt", 1, Vector2.ZERO, s.chain, s)
+				if not HeroKit.perfect_now(g):
+					g.state.pull = {"m": s.chain, "t": 0.6}
 				# the hook bites: sparks and a jolt
 				_pixel_burst(s.p, 10, PX_COL.chain, 240.0, 180.0, 0.45)
 				_impact(s.p, "small", s.chain)
 			else:
 				var open := float(g.state.inv) <= 0.0 and float(g.state.dead) <= 0.0
-				g._hurt(HURT_BY.get(s.get("c", ""), "von Feuer getroffen"))
-				_shot_impact(s.p, str(s.get("c", "fire")), bool(s.get("small", false)))
-				# a landed shot nudges him along its flight
-				if open and float(g.state.inv) > 0.0:
+				# its shooter goes with it (B3: a perfect block breaks the shot, the shooter reels in melee reach)
+				g._hurt(HURT_BY.get(s.get("c", ""), "von Feuer getroffen"), 1, Vector2.ZERO, s.get("by", {}), s)
+				_shot_impact(s.p, str(s.get("c", "fire")), bool(s.get("small", false)), s)
+				# a landed shot nudges him along its flight (not one met by a perfect block)
+				if open and float(g.state.inv) > 0.0 and not HeroKit.perfect_now(g):
 					_knock((s.p as Vector2) - (s.v as Vector2).normalized() * 40.0, "shot")
 	# a shot that is over (burnt out in the air, against a wall or on him) leaves its element on the floor below it
 	for s: Dictionary in g.eshots:
 		if float(s.t) <= 0.0 and not s.has("chain"):
-			_residue((s.p as Vector2) + Vector2(0, 30), str(s.get("c", "fire")), 2 if s.get("small", false) else 5, 18.0)
+			_residue((s.p as Vector2) + Vector2(0, 30), str(s.get("c", "fire")), 2 if s.get("small", false) or ShotLooks.is_arrow(s) else 5, 18.0)
 	g.eshots = g.eshots.filter(func(s: Dictionary) -> bool: return s.t > 0.0)
 	_update_knock(dt)
 	var P = g.state.get("pull")
@@ -1551,10 +1815,8 @@ func update_shots(dt: float) -> void:
 		var step := minf(dl - P.m.r - 30.0, 1100.0 * dt)
 		if step > 0.0:
 			var mv := to / dl * step
-			if not g.box_blocked(g._player_box(g.player.x + mv.x, g.player.y)):
-				g.player.x += mv.x
-			if not g.box_blocked(g._player_box(g.player.x, g.player.y + mv.y)):
-				g.player.y += mv.y
+			# axis by axis against the walls (MotionKit.move_hero)
+			_mover().move_hero(mv)
 			# dragged over the floor: his heels kick up dust and grit behind him
 			var Ph := _phys()
 			if Ph != null and randf() < 0.8:
@@ -1652,11 +1914,12 @@ func _sprite(l: CanvasItem, id: String, fr: Vector2i, foot: Vector2, sc: float, 
 	l.draw_set_transform(Vector2.ZERO)
 
 
-## The crypt's pose of monster `m` and its tint (a white tint on a hit without the feel).
+## The crypt's pose of monster `m` and its tint (a white tint on a hit without the feel);
+## the first frames after a hit flash the whole figure white (A12, FrostMoves.white_hit).
 func _pose(m: Dictionary, tint: Color) -> Array:
 	if g.feel == null:
 		return [{}, Color(2.6, 2.6, 2.6, tint.a) if m.hit > 0.0 else tint]
-	var pose: Dictionary = g.feel.pose(m)
+	var pose: Dictionary = FrostMoves.white_hit(m, g.feel.pose(m))
 	return [pose, Color(tint, tint.a * float(pose.get("alpha", 1.0)))]
 
 
@@ -1673,13 +1936,21 @@ func draw_mob(l: CanvasItem, m: Dictionary) -> void:
 	_ellipse(l, m.p, w * 0.34, w * 0.1 + 4.0, Color(0, 0, 0, 0.45))
 	var hov := -10.0 + sin(g.state.t * 4.0 + m.seed) * 5.0 if m.st.ai in ["hover", "drift"] else 0.0
 	var look := _pose(m, Color(1, 1, 1, m.alpha))
+	var feet: Vector2 = m.p + Vector2(0, 4.0 + hov - air)
+	# a mimic winding up its bite: the bite zone warns on the floor, it rattles and its lid lifts
+	var tell := _mimic_tell(m)
+	if not tell.is_empty():
+		_draw_bite_warn(l, m, tell)
+		feet += tell.offset
 	# a mob with a part rig (assets/data/hell_rigs.json) moves part by part like the crypt's skeletons
 	# and falls apart when it dies (src/hell/drake_rig_host.gd); the atlas otherwise
 	if rig_host != null and rig_host.draws(m):
-		rig_host.draw(l, m, m.p + Vector2(0, 4.0 + hov - air), sc / m.s, look[1], 0.0, look[0])
-		return
-	_mark(m, m.p + Vector2(0, 4.0 + hov - air), sc, 0.0, look[1], look[0])
-	_sprite(l, m.id, Rules.frame_of(m.def, m.anim, m.at), m.p + Vector2(0, 4.0 + hov - air), sc, m.face, look[1], 0.0, look[0])
+		rig_host.draw(l, m, feet, sc / m.s, look[1], 0.0, look[0])
+	else:
+		_mark(m, feet, sc, 0.0, look[1], look[0])
+		_sprite(l, m.id, Rules.frame_of(m.def, m.anim, m.at), feet, sc, m.face, look[1], 0.0, look[0])
+	if not tell.is_empty():
+		_draw_teeth(l, m, feet, tell)
 
 
 func _draw_lord(l: CanvasItem, m: Dictionary) -> void:
@@ -1763,7 +2034,8 @@ func draw_corpse(l: CanvasItem, c: Dictionary) -> void:
 	var n := int(def.anims.death.frames)
 	var fr := Vector2i(mini(n - 1, int(c.t / 0.75 * n)), int(def.anims.death.row))
 	_mark(c, c.p + Vector2(0, 4), c.s, 0.0, Color.WHITE, {})
-	_sprite(l, c.id, fr, c.p + Vector2(0, 4), c.s, c.face, Color.WHITE)
+	# tipped over by the blow, turned about its feet (the sprite's pose lean; physics plan R24)
+	_sprite(l, c.id, fr, c.p + Vector2(0, 4), c.s, c.face, Color.WHITE, 0.0, {"lean": float(c.get("lean", 0.0))})
 
 
 ## Floor warnings: where an attack will land, drawn under the actors.
@@ -1773,25 +2045,31 @@ func draw_warnings(l: CanvasItem) -> void:
 		match String(z.kind):
 			"meteor", "hand":
 				if z.t >= 0.0 and z.t < z.tele:
-					_ring(l, z.p, z.r, k, Color8(170, 80, 255) if z.kind == "hand" or z.get("void", false) else _warn_col(str(z.get("c", "")), Color8(255, 90, 30)))
+					_warn_ring(l, z.p, z.r, k, Color8(170, 80, 255) if z.kind == "hand" or z.get("void", false) else _warn_col(str(z.get("c", "")), Color8(255, 90, 30)), _by_boss(z.get("m")))
 			"erupt", "land":
 				if z.t < z.tele:
-					_ring(l, z.p, z.r, k, Color8(255, 60, 30) if z.kind == "land" else Color8(255, 140, 40))
+					_warn_ring(l, z.p, z.r, k, Color8(255, 60, 30) if z.kind == "land" else Color8(255, 140, 40), _by_boss(z.get("m")))
 			"puddle":
 				# a physics pool on the floor layer (hell_game.pools) when there is one
 				if g.get("pools") == null and str(z.get("st", "lava")) == "lava":
 					_px_pool(l, z.p, z.r, z.r * 0.55, minf(1.0, (z.T - z.t) * 1.5), float(g.state.t))
 			"line":
 				if z.t < z.tele:
-					_px_strip(l, z.p, Vector2.from_angle(float(z.ang)), float(z.len), float(z.w) / 2.0, k, _warn_col(str(z.get("c", "")), Color8(255, 70, 30)))
+					if _by_boss(z.get("m")):
+						FrostMoves.danger_strip(l, z.p, Vector2.from_angle(float(z.ang)), float(z.len), float(z.w) / 2.0, k, float(g.state.t), _warn_col(str(z.get("c", "")), Color8(255, 140, 40)))
+					else:
+						_px_strip(l, z.p, Vector2.from_angle(float(z.ang)), float(z.len), float(z.w) / 2.0, k, _warn_col(str(z.get("c", "")), Color8(255, 70, 30)))
 			"cone":
 				if z.t < z.tele:
 					_px_cone(l, z.p, float(z.r), float(z.ang), float(z.arc), k, Color8(194, 120, 208))
 	_draw_cracks(l)
+	for f: Dictionary in flashes:
+		if bool(f.get("floor", false)):
+			_draw_floor_flash(l, f)
 	_draw_spills(l, float(g.state.t))
 	for L: Dictionary in lobs:
 		var k: float = L.t / L.T
-		_ring(l, L.to, L.r, k, _warn_col(str(L.c), Color8(255, 140, 40)))
+		_warn_ring(l, L.to, L.r, k, _warn_col(str(L.c), Color8(255, 140, 40)), _by_boss(L.get("m")))
 		# its shadow on the floor, growing as it falls
 		var under: Vector2 = (L.from as Vector2).lerp(L.to, k)
 		var sh := 1.0 + 2.0 * (1.0 - sin(k * PI))
@@ -1800,23 +2078,33 @@ func draw_warnings(l: CanvasItem) -> void:
 		var A = m.act
 		if A == null:
 			continue
+		var wind := maxf(0.01, float(A.get("wind", 0.75)))
 		if A.kind == "dash" and A.get("warn", false):
 			_pixel_lane(l, m.p - Vector2(0, 10), A.dir, float(A.a.get("range", 500.0)), float(m.r) * 0.8, float(A.t))
+		if A.kind == "swing" and A.n == 0:
+			_swing_warn(l, m, A)
 		if A.kind == "slam" and A.n == 0 and A.has("warn_at"):
+			var charge := minf(1.0, float(A.t) / wind)
 			if A.a.get("line", false):
-				# a cleave: its strip points at the hero while it is raised
-				var aim: Vector2 = (_me() - (m.p as Vector2)).normalized()
-				_px_strip(l, m.p, aim, float(A.a.radius) * 2.6, 35.0, minf(1.0, A.t / 0.75), _warn_col(own_element(m), Color8(255, 70, 30)))
-			else:
-				_ring(l, A.warn_at, float(A.a.radius), minf(1.0, A.t / 0.75), _warn_col(own_element(m), Color8(255, 70, 30)))
-		if A.kind == "beam" and A.get("warn", false):
-			# from the drawn core, like their damage (src/hell/drake_rig_host.gd)
-			var head := _beam_head(m)
-			for b: float in A.beams:
-				if str(A.a.get("style", "")) == "laser":
-					_pixel_aim(l, head, b, _wall_len(head, b, float(A.a.get("range", 1100.0))), float(A.t), float(A.t) >= float(A.a.get("track", 0.0)))
+				# a cleave: its strip points at the hero while it is raised, then stays (aim lock)
+				var aim: Vector2 = ((A.get("lock", A.get("goal", _me())) as Vector2) - (m.p as Vector2)).normalized()
+				if m.boss:
+					FrostMoves.danger_strip(l, m.p, aim, float(A.a.radius) * 2.6, 35.0, charge, float(g.state.t), _warn_col(own_element(m), Color8(255, 140, 40)))
 				else:
-					l.draw_dashed_line(head, head + Vector2.from_angle(b) * 1000.0, Color(0.78, 0.47, 1, 0.55), 4.0, 10.0)
+					_px_strip(l, m.p, aim, float(A.a.radius) * 2.6, 35.0, charge, _warn_col(own_element(m), Color8(255, 70, 30)))
+			else:
+				_warn_ring(l, A.warn_at, float(A.a.radius), charge, _warn_col(own_element(m), Color8(255, 140, 40) if m.boss else Color8(255, 70, 30)), m.boss)
+		if A.kind == "beam" and A.get("warn", false):
+			# from the drawn core, like their damage (src/hell/drake_rig_host.gd); on the pixel grid, up to the wall
+			var head := _beam_head(m)
+			var laser := str(A.a.get("style", "")) == "laser"
+			for b: float in A.beams:
+				var reach := _wall_len(head, b, float(A.a.get("range", 1100.0)))
+				if laser:
+					_pixel_aim(l, head, b, reach, float(A.t), float(A.t) >= float(A.a.get("track", 0.0)))
+				else:
+					# a void beam's aim blinks faster once the last part of its windup runs
+					_pixel_aim(l, head, b, reach, float(A.t), float(A.t) >= wind * FrostMoves.aim_lock(), [VOID_BEAM_COL[0], VOID_BEAM_COL[2]])
 
 
 ## The fired pixel lasers ("style": "laser" beams) in their own colours, drawn
@@ -1846,6 +2134,9 @@ func draw_lasers(l: CanvasItem) -> void:
 				_px(l, from + span * float(i) / float(maxi(1, links)), PX_COL.chain[2 if i % 2 == 0 else 1])
 		if str(s.get("look", "")) in ["wisp", "tear"]:
 			_px_wisp(l, s.p, PX_COL.get(c, PX_COL.soul), s.get("hist", []), t, float(hash(s.get("v", Vector2.ZERO)) % 17), str(s.get("look", "")) == "wisp")
+		elif ShotLooks.is_arrow(s):
+			# a bone arrow (shot_looks.json): shaft, iron head and fletching along its flight
+			ShotLooks.draw_arrow(l, s.p, s.get("v", Vector2.ZERO), t, LASER_PX, str(s.get("tint", "")) == "frost")
 		else:
 			_px_missile(l, s.p, 2 if s.get("small", false) else 3, c, s.get("v", Vector2.ZERO), t, float(hash(s.get("v", Vector2.ZERO)) % 17))
 	# the swings' pixel slashes; slag raining down as pixel blobs with a dripping trail
@@ -1865,9 +2156,10 @@ func draw_lasers(l: CanvasItem) -> void:
 			_px_sound(l, z, t)
 		elif str(z.kind) == "hand" and float(z.t) >= float(z.tele):
 			_px_hand(l, z, t)
-	# the impacts' white-hot flashes
+	# the impacts' white-hot flashes (a stomp's floor flash lies under the actors: draw_warnings)
 	for f: Dictionary in flashes:
-		_draw_flash(l, f)
+		if not bool(f.get("floor", false)):
+			_draw_flash(l, f)
 	# chunks and sparks in the air
 	for f: Dictionary in pfx:
 		var a := 1.0 - clampf((float(f.t) / float(f.T) - 0.7) / 0.3, 0.0, 1.0)
@@ -1878,7 +2170,7 @@ func draw_lasers(l: CanvasItem) -> void:
 		if A == null or A.kind != "beam" or A.get("warn", false):
 			continue
 		var head := _beam_head(m)
-		var life := (float(A.t) - 0.8) / maxf(0.05, float(A.a.get("duration", 1.0)))
+		var life := (float(A.t) - float(A.get("wind", 0.8))) / maxf(0.05, float(A.a.get("duration", 1.0)))
 		var laser := str(A.a.get("style", "")) == "laser"
 		for b: float in A.beams:
 			if laser:
@@ -1888,9 +2180,10 @@ func draw_lasers(l: CanvasItem) -> void:
 				_pixel_laser(l, head, b, _wall_len(head, b, float(A.a.get("range", 1100.0))), t, life, VOID_BEAM_COL, 3, true)
 
 
-## A laser's aim on the pixel grid: every fourth laser pixel lit, crawling
-## outward from the shooter and blinking, faster once the aim is locked.
-func _pixel_aim(l: CanvasItem, from: Vector2, ang: float, length: float, t: float, locked: bool) -> void:
+## A beam's aim on the pixel grid: every fourth laser pixel lit, crawling
+## outward from the shooter and blinking, faster once the aim is locked;
+## `cols` [aiming, locked] (a laser's red and yellow, a void beam's violets).
+func _pixel_aim(l: CanvasItem, from: Vector2, ang: float, length: float, t: float, locked: bool, cols: Array = [LASER_COL[2], LASER_COL[1]]) -> void:
 	if fmod(t * (9.0 if locked else 4.0), 1.0) > 0.65:
 		return
 	var dir := Vector2.from_angle(ang)
@@ -1899,7 +2192,53 @@ func _pixel_aim(l: CanvasItem, from: Vector2, ang: float, length: float, t: floa
 		if posmod(i - crawl, 4) != 0:
 			continue
 		var c := ((from + dir * float(i) * LASER_PX) / LASER_PX).floor() * LASER_PX
-		l.draw_rect(Rect2(c, Vector2(LASER_PX, LASER_PX)), Color(LASER_COL[1] if locked else LASER_COL[2], 0.9))
+		l.draw_rect(Rect2(c, Vector2(LASER_PX, LASER_PX)), Color(cols[1] if locked else cols[0], 0.9))
+
+
+## True when `who` (the monster of a zone, lob or act) is a boss: its warnings
+## read as danger first (A10, FrostMoves.danger_ring).
+static func _by_boss(who: Variant) -> bool:
+	return who is Dictionary and bool((who as Dictionary).get("boss", false))
+
+
+## An area warning at `c`: a boss's as the red area charging up to its rim
+## (FrostMoves.danger_ring, its front in `col`), anyone else's as the dot ring (_ring).
+func _warn_ring(l: CanvasItem, c: Vector2, r: float, k: float, col: Color, boss: bool) -> void:
+	if boss:
+		FrostMoves.danger_ring(l, c, r, k, float(g.state.t), col)
+	else:
+		_ring(l, c, r, k, col)
+
+
+## A swing winding up (B1) on the floor in front of `m`: its reach as an arc of
+## blocks (dashed while it still follows the hero, solid and brighter once the
+## aim is locked), its edges, and a second arc growing out to the reach as the
+## windup runs, so the blow's place and moment both read.
+func _swing_warn(l: CanvasItem, m: Dictionary, A: Dictionary) -> void:
+	var a: Dictionary = A.a
+	var k := clampf(float(A.t) / maxf(0.01, float(A.get("wind", 0.5))), 0.0, 1.0)
+	var locked := A.has("lock")
+	var at: Vector2 = A.get("lock", A.get("goal", _me()))
+	var ang := ((at - (m.p as Vector2))).angle()
+	var arc := minf(float(a.get("arc", 1.6)), TAU)
+	var r := float(a.get("radius", 100.0))
+	var col := _warn_col(own_element(m), Color8(255, 90, 30))
+	if locked:
+		col = col.lightened(0.35)
+	var n := maxi(6, int(arc * r / LASER_PX))
+	for i in range(n + 1):
+		var e := ang - arc / 2.0 + arc * float(i) / float(n)
+		var dir := Vector2(cos(e), sin(e) * 0.62)
+		if locked or posmod(i, 2) == 0:
+			_px(l, (m.p as Vector2) + dir * r, Color(col, 0.85))
+		if k > 0.1:
+			_px(l, (m.p as Vector2) + dir * r * k, Color(col, 0.5))
+	if arc < TAU - 0.05:
+		for e: float in [ang - arc / 2.0, ang + arc / 2.0]:
+			var dir := Vector2(cos(e), sin(e) * 0.62)
+			for j in range(int(r / LASER_PX)):
+				if posmod(j, 2) == 0:
+					_px(l, (m.p as Vector2) + dir * float(j) * LASER_PX, Color(col, 0.45))
 
 
 ## A fired laser on the pixel grid, three laser pixels wide: square blocks
@@ -1996,7 +2335,7 @@ func _px_burst(l: CanvasItem, c: Vector2, r: float, k: float, cols: Array, seed:
 			for x in range(-int(sr) - 1, int(sr) + 2):
 				if Vector2(x, y).length() <= sr * (1.0 + 0.25 * (_px_noise(x, y, 30 + i) - 0.5)):
 					var q := sc + Vector2i(x, y)
-					if not m.has(q) and float(BAYER[posmod(q.y, 4) * 4 + posmod(q.x, 4)]) < (1.0 - k * 0.6) * 16.0:
+					if not m.has(q) and MatterKit.bayer(q) < (1.0 - k * 0.6) * 16.0:
 						smoke[q] = y < -int(sr * 0.3)
 	for q: Vector2i in smoke:
 		l.draw_rect(Rect2(Vector2(q) * LASER_PX, Vector2.ONE * LASER_PX), Color("5a4656") if smoke[q] else Color("3b2a35"))
@@ -2014,18 +2353,9 @@ func _px_burst(l: CanvasItem, c: Vector2, r: float, k: float, cols: Array, seed:
 		l.draw_rect(Rect2(Vector2(e) * LASER_PX, Vector2.ONE * LASER_PX), cols[1] if i % 2 == 0 else cols[2])
 
 
-## Smooth value noise 0..1 over cells of 2 pixels.
+## Smooth value noise 0..1 over cells of 2 pixels (MatterKit.value_noise).
 func _px_noise(x: int, y: int, s: int) -> float:
-	var fx := float(x) / 2.0
-	var fy := float(y) / 2.0
-	var gx := floori(fx)
-	var gy := floori(fy)
-	var u := fx - float(gx)
-	var v := fy - float(gy)
-	u = u * u * (3.0 - 2.0 * u)
-	v = v * v * (3.0 - 2.0 * v)
-	var h := func(a: int, b: int) -> float: return float(absi((a * 73856093) ^ (b * 19349663) ^ (s * 83492791)) % 1000) / 1000.0
-	return lerpf(lerpf(h.call(gx, gy), h.call(gx + 1, gy), u), lerpf(h.call(gx, gy + 1), h.call(gx + 1, gy + 1), u), v)
+	return MatterKit.value_noise(x, y, 2, s)
 
 
 ## A shot or lob on the pixel grid: a ball of `r` pixels (of the old 4 px
@@ -2112,8 +2442,14 @@ func _burst_in(at: Vector2, n: int, c: String) -> void:
 ## frame, a burst of its element's pixels that fly, fall and settle, and the
 ## small impact feel; its residue on the floor below follows in update_shots.
 ## No sheet animation: the fireball ends as matter (user decision 2026-10-31).
-func _shot_impact(at: Vector2, c: String, small: bool) -> void:
+func _shot_impact(at: Vector2, c: String, small: bool, s: Dictionary = {}) -> void:
 	if g.sound != null: g.sound.at("eshot_impact", at, {"set": c})
+	# a bone arrow ends as bone: splinters off its head, a puff of dust, the iron tip's spark (shot_looks.gd);
+	# a light hit, no shake of its own
+	if ShotLooks.is_arrow(s):
+		flashes.append({"p": at, "t": 0.0, "T": 0.06, "r": 8.0, "c": c if c in CRYPT_ELEMENTS else "fire"})
+		ShotLooks.impact(g, s, g._cell_blocked(int(floor(at.x / g.C)), int(floor(at.y / g.C)), false), false)
+		return
 	var cols: Array = PX_COL.get(c, PX_COL.fire)
 	flashes.append({"p": at, "t": 0.0, "T": 0.1, "r": 14.0 if small else 22.0, "c": c if c in CRYPT_ELEMENTS else "fire"})
 	_pixel_burst(at, 6 if small else 12, cols, 200.0, 260.0, 0.75)
@@ -2380,6 +2716,9 @@ func _impact(p: Vector2, tier: String, m: Dictionary = {}) -> void:
 		# white-hot for the hell's fire; the crypt's own elements flash in theirs
 		var element := own_element(m) if not m.is_empty() else ""
 		flashes.append({"p": p, "t": 0.0, "T": float(spec.flash), "r": float(spec.get("flash_r", 30.0)), "c": element if element in CRYPT_ELEMENTS else "fire"})
+	# a boss's heavy blow bites the walls and smashes props around it (src/hell/story_wreck.gd)
+	if at >= 2 and not m.is_empty() and bool(m.get("boss", false)) and g.get("wreck") != null:
+		g.wreck.blast(p, 140.0 if at == 2 else 220.0, "boss", false)
 	var hold := float(spec.get("hitstop", 0.0))
 	var feel: Variant = g.get("feel")
 	if hold > 0.0 and feel != null and feel.get("feedback") != null:
@@ -3085,7 +3424,7 @@ func _ash_line(w: Dictionary) -> void:
 ## colour that drift up a little and fade (the chain leaves none).
 func _shot_trail(s: Dictionary, dt: float) -> void:
 	var P := _phys()
-	if P == null or s.has("chain"):
+	if P == null or s.has("chain") or ShotLooks.is_arrow(s):
 		return
 	s.trail_t = float(s.get("trail_t", 0.0)) + dt
 	# a soul sheds only a wisp now and then: its gas tail is drawn whole
@@ -3181,6 +3520,218 @@ func _crack_floor(p: Vector2, r: float, n: int, cold := false) -> void:
 	cracks.append({"p": p, "t": 0.0, "T": CRACK_TIME, "cells": cells, "cold": cold})
 
 
+## A boss's stomp at `p` (radius `r`, the boss's own element `element`, "" for
+## fire) breaks the floor (A10, combat_tells.json boss_impact; skill
+## gamedev:game-feel, layered by importance): thick branching cracks that run
+## out from the impact glowing in the element's light and cool (glow_cracks),
+## a short flash over the floor (floor_flash), chunky dust puffs that billow
+## out and settle as grit (puffs), stone chips thrown up that bounce and lie
+## (chips), and the crypt's lasting dent with dark cracks, flat dust and
+## rubble, all through the crypt's pixel physics; without it, grit flies as
+## pfx. The camera's "slam" kick comes with the large impact's shake.
+func _boss_scar(p: Vector2, r: float, element := "") -> void:
+	var B: Dictionary = FrostMoves.tells().get("boss_impact", {})
+	_glow_cracks(p, r, element, B.get("glow_cracks", {}))
+	_floor_flash(p, r, element, B.get("floor_flash", {}))
+	var P := _phys()
+	if P == null:
+		_pixel_burst(p - Vector2(0, 4), int(B.get("dust", 26)), WAVE_DUST, 260.0, 120.0, 1.4, 2)
+		return
+	var s := _phys_scale()
+	P.floor_crack(p / s, r * float(B.get("crack_reach", 0.5)) / s, int(B.get("crack_branches", 7)))
+	P.dust_flat(p / s, r * float(B.get("dust_reach", 0.8)) / s, int(B.get("dust", 26)))
+	P.rubble(p / s, int(B.get("rubble", 6)), Vector2.ZERO, 180.0 / s)
+	_dust_puffs(P, s, p, r, B.get("puffs", {}))
+	_stone_chips(P, s, p, B.get("chips", {}))
+
+
+## A [lo, hi] pair of `spec` key `key` as a Vector2 (`fallback` when missing).
+static func _pair(spec: Dictionary, key: String, fallback: Vector2) -> Vector2:
+	var v: Variant = spec.get(key)
+	return Vector2(float(v[0]), float(v[1])) if v is Array and (v as Array).size() >= 2 else fallback
+
+
+## A boss stomp's thick glowing cracks (boss_impact.glow_cracks): `branches`
+## jagged lines on the 3 px grid run out from `p` to `reach` x `r`: each runs
+## in straight pieces of `segment` cells, every piece kinked up to `jag` rad
+## off its heading, the heading itself drifting up to `turn` rad a piece;
+## they fork (`fork` chance per cell, `fork_turn` rad aside, at most `depth`
+## forks deep); 3 cells wide near the impact (u below wide[0]), 2 further out
+## (below wide[1]), 1 at the tips, a fork one narrower; they stop at walls. The
+## core line glows hottest (`core` heat over its sides). Drawn by _draw_glow_crack.
+func _glow_cracks(p: Vector2, r: float, element: String, spec: Dictionary) -> void:
+	if g.sound != null: g.sound.at("crack_floor", p, {"set": "ice" if element != "" else ""})
+	if spec.is_empty():
+		return
+	var reach := r * float(spec.get("reach", 0.75))
+	var branches := int(spec.get("branches", 7))
+	var jitter := float(spec.get("jitter", 0.35))
+	var turn := float(spec.get("turn", 0.12))
+	var jag := float(spec.get("jag", 0.45))
+	var segment := _pair(spec, "segment", Vector2(3.0, 6.0))
+	var fork := float(spec.get("fork", 0.04))
+	var fork_turn := _pair(spec, "fork_turn", Vector2(0.5, 1.0))
+	var depth_max := int(spec.get("depth", 2))
+	var wide := _pair(spec, "wide", Vector2(0.3, 0.65))
+	var core := float(spec.get("core", 0.25))
+	# a cell's heat at the start: heat[0] at the impact, heat[1] less at a tip
+	var hot := _pair(spec, "heat", Vector2(1.0, 0.6))
+	var origin := ((p / LASER_PX).floor() + Vector2(0.5, 0.5)) * LASER_PX
+	# grid cell -> [u (0 at the impact .. 1 at a tip), heat at the start]
+	var cells: Dictionary = {}
+	var paths: Array = []
+	for k in range(branches):
+		paths.append([Vector2.ZERO, float(k) / float(branches) * TAU + randf_range(-jitter, jitter), reach * randf_range(0.7, 1.0), 0.0, 0])
+	while not paths.is_empty():
+		var path: Array = paths.pop_back()
+		var pos: Vector2 = path[0]
+		var heading := float(path[1])
+		var ang := heading
+		var piece := 0
+		var u0 := float(path[3])
+		var depth := int(path[4])
+		var steps := maxi(2, int(float(path[2]) / LASER_PX))
+		for i in range(steps):
+			# a new straight piece: the heading drifts, the piece kinks off it
+			if piece <= 0:
+				piece = int(randf_range(segment.x, segment.y + 1.0))
+				heading += randf_range(-turn, turn)
+				ang = heading + randf_range(-jag, jag)
+			piece -= 1
+			pos += Vector2(cos(ang), sin(ang) * 0.62)
+			var world := origin + pos * LASER_PX
+			if g._cell(int(floor(world.x / g.C)), int(floor(world.y / g.C))) != 1:
+				break
+			var u := u0 + (1.0 - u0) * float(i + 1) / float(steps)
+			var w := maxi(1, (3 if u < wide.x else 2 if u < wide.y else 1) - depth)
+			var at := Vector2i(pos.round())
+			var lo := -((w - 1) / 2)
+			for dy in range(lo, lo + w):
+				for dx in range(lo, lo + w):
+					var q := at + Vector2i(dx, dy)
+					var heat := hot.x - u * hot.y + (core if dx == 0 and dy == 0 else -core * 0.5)
+					var was: Array = cells.get(q, [])
+					if was.is_empty() or float(was[1]) < heat:
+						cells[q] = [minf(u, float(was[0])) if not was.is_empty() else u, heat]
+			if depth < depth_max and i > 2 and i < steps - 3 and randf() < fork:
+				paths.append([pos, ang + (fork_turn.x + randf() * (fork_turn.y - fork_turn.x)) * (1.0 if randf() < 0.5 else -1.0), float(steps - i) * LASER_PX * 0.6, u, depth + 1])
+	if cells.is_empty():
+		return
+	# the dark lip round every crack cell
+	var edges: Dictionary = {}
+	for q: Vector2i in cells:
+		for step: Vector2i in [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]:
+			var n := q + step
+			if not cells.has(n) and (not edges.has(n) or float(edges[n]) > float(cells[q][0])):
+				edges[n] = float(cells[q][0])
+	var ramps: Dictionary = spec.get("ramp", {})
+	var hexes: Array = ramps.get(element, ramps.get("default", [])) if ramps is Dictionary else []
+	var ramp: Array = []
+	for hex: Variant in hexes:
+		ramp.append(Color(str(hex)))
+	if ramp.is_empty():
+		ramp = CRACK_COL.duplicate()
+	var list: Array = []
+	for q: Vector2i in cells:
+		list.append([Vector2(q), float(cells[q][0]), float(cells[q][1])])
+	var edge_list: Array = []
+	for q: Vector2i in edges:
+		edge_list.append([Vector2(q), float(edges[q])])
+	cracks.append({"p": origin, "t": 0.0, "T": float(spec.get("time", 2.4)), "cells": list, "edges": edge_list, "ramp": ramp,
+		"edge": Color(str(spec.get("edge", "#1c1117")), float(spec.get("edge_alpha", 0.9))), "run": float(spec.get("run", 0.14)),
+		"cool": maxf(0.05, float(spec.get("cool", 1.2)))})
+
+
+## A boss stomp's flash over the floor (boss_impact.floor_flash): `reach` x `r`
+## round `p`, squashed like the floor, `time` s, at `alpha`; in the element's
+## light (fire's white-hot for none). Kept with the impacts' flashes (it also
+## lights the room for that moment, src/hero/story_glow.gd) but drawn on the
+## floor under the actors (_draw_floor_flash).
+func _floor_flash(p: Vector2, r: float, element: String, spec: Dictionary) -> void:
+	if spec.is_empty():
+		return
+	flashes.append({"p": p, "t": 0.0, "T": maxf(0.02, float(spec.get("time", 0.12))), "r": r * float(spec.get("reach", 0.55)),
+		"c": element if PX_COL.has(element) else "fire", "floor": true, "alpha": float(spec.get("alpha", 0.8)), "squash": float(spec.get("squash", 0.62))})
+
+
+## A floor flash on the 3 px grid: an ellipse that opens out a little as it
+## fades, white at its middle through the element's light to its rim, the rim
+## dithered (Bayer 4x4) so it ends in loose pixels, not a soft edge.
+func _draw_floor_flash(l: CanvasItem, f: Dictionary) -> void:
+	var k := clampf(float(f.t) / maxf(0.01, float(f.T)), 0.0, 1.0)
+	var cols: Array = PX_COL.get(str(f.get("c", "fire")), PX_COL.fire)
+	var r := float(f.r) * (0.75 + 0.25 * (1.0 - pow(1.0 - k, 2.0)))
+	var squash := float(f.get("squash", 0.62))
+	var alpha := float(f.get("alpha", 0.8)) * (1.0 - k)
+	var base := ((f.p as Vector2) / LASER_PX).floor() * LASER_PX
+	var nx := int(ceil(r / LASER_PX))
+	var ny := int(ceil(r * squash / LASER_PX))
+	for y in range(-ny, ny + 1):
+		for x in range(-nx, nx + 1):
+			var d := Vector2(float(x), float(y) / squash).length() * LASER_PX / maxf(1.0, r)
+			if d > 1.0:
+				continue
+			# the rim breaks up into loose pixels
+			if d > 0.7 and MatterKit.bayer_xy(x, y) / 16.0 < (d - 0.7) / 0.3:
+				continue
+			var col: Color = cols[0] if d < 0.35 else cols[1] if d < 0.7 else cols[2]
+			l.draw_rect(Rect2(base + Vector2(x, y) * LASER_PX, Vector2.ONE * LASER_PX), Color(col, alpha * (1.0 - d * 0.5)))
+
+
+## A boss stomp's dust puffs (boss_impact.puffs): `count` puffs round `p` on a
+## ring of `ring` x `r`, each a cluster of `bits` chunky dust blocks (`size`
+## crypt px) thrown out at `speed` world px/s, each block up to `spread` px off
+## the puff's middle and `spread` px/s off its speed so the cluster swells,
+## slowed by `drag` so the puff billows out and stops, fading over `life` s;
+## `grit` bits of each puff fly the same way, fall and settle as grit on the
+## floor (the crypt's pixel physics `particles`, crypt px = world px / `s`).
+func _dust_puffs(particles: RefCounted, s: float, p: Vector2, r: float, spec: Dictionary) -> void:
+	if spec.is_empty():
+		return
+	var count := int(particles.room(int(spec.get("count", 10))))
+	var ring := _pair(spec, "ring", Vector2(0.12, 0.45))
+	var speed := _pair(spec, "speed", Vector2(70.0, 150.0))
+	var size := _pair(spec, "size", Vector2(4.0, 6.0))
+	var life := _pair(spec, "life", Vector2(0.9, 1.6))
+	var spread := float(spec.get("spread", 30.0))
+	var drag := float(spec.get("drag", 2.2))
+	var cols: Array = []
+	for hex: Variant in spec.get("colors", ["c9b9a0", "a8957c", "8a7866"]):
+		cols.append(Color(str(hex)))
+	var grit_cols: Array = CHUNK_COL
+	for k in range(count):
+		var dir := Vector2.from_angle(float(k) / float(maxi(1, count)) * TAU + randf_range(-0.3, 0.3))
+		var at := p + dir * r * randf_range(ring.x, ring.y) * Vector2(1.0, 0.62)
+		var out := dir * Vector2(1.0, 0.62) * randf_range(speed.x, speed.y)
+		for b in range(int(spec.get("bits", 5))):
+			var jitter := Vector2(randf_range(-1.0, 1.0), randf_range(-0.6, 0.6)) * spread
+			var bit_size := roundf(randf_range(size.x, size.y) / 2.0) * 2.0
+			particles.emit((at + jitter) / s, (out * randf_range(0.85, 1.15) + jitter) / s, cols[randi() % cols.size()], randf_range(life.x, life.y), "dust", bit_size, randf_range(0.0, 6.0), 0.0, drag)
+		for b in range(int(spec.get("grit", 2))):
+			particles.emit(at / s, out * randf_range(0.4, 0.8) / s, grit_cols[randi() % grit_cols.size()], 3.0, "debris", 2.0, 4.0, randf_range(40.0, 90.0), drag)
+
+
+## A boss stomp's stone chips (boss_impact.chips): `count` chips of `colors`
+## (`size` crypt px) thrown out of the impact at `speed` world px/s (slowed by `drag`) and up at
+## `lift`, arcing, bouncing off the floor and walls and lying as grit after
+## `life` s (the crypt's pixel physics, "debris" mode).
+func _stone_chips(particles: RefCounted, s: float, p: Vector2, spec: Dictionary) -> void:
+	if spec.is_empty():
+		return
+	var count := int(particles.room(int(spec.get("count", 14))))
+	var speed := _pair(spec, "speed", Vector2(140.0, 300.0))
+	var lift := _pair(spec, "lift", Vector2(140.0, 260.0))
+	var size := _pair(spec, "size", Vector2(2.0, 4.0))
+	var life := _pair(spec, "life", Vector2(2.5, 4.0))
+	var cols: Array = []
+	for hex: Variant in spec.get("colors", ["b8a890", "7a6a58", "3e342c"]):
+		cols.append(Color(str(hex)))
+	for k in range(count):
+		var out := Vector2.from_angle(randf() * TAU) * Vector2(1.0, 0.62) * randf_range(speed.x, speed.y)
+		var chip := roundf(randf_range(size.x, size.y) / 2.0) * 2.0
+		particles.emit(p / s, out / s, cols[randi() % cols.size()], randf_range(life.x, life.y), "debris", chip, 6.0, randf_range(lift.x, lift.y) / s, float(spec.get("drag", 1.2)))
+
+
 ## Ages the flying pixels (gravity, bounce, rest) and the floor cracks.
 func _update_pixel_fx(dt: float) -> void:
 	for f: Dictionary in pfx:
@@ -3264,20 +3815,48 @@ func _draw_spills(l: CanvasItem, t: float) -> void:
 			u += LASER_PX * 0.75
 
 
+## A boss stomp's glowing crack (_glow_cracks): a cell shows once the crack
+## has run out to it (its u x `run` s), its dark lip with it; the cell's heat
+## falls by 1 every `cool` s from its start (hottest on the core line near the
+## impact) and picks its colour from `ramp`, hot end first (1 and more) to the
+## dark end (0 and less); all of it fades in the last quarter of its time.
+func _draw_glow_crack(l: CanvasItem, c: Dictionary) -> void:
+	var age := float(c.t)
+	var fade := 1.0 - clampf((age / float(c.T) - 0.75) / 0.25, 0.0, 1.0)
+	var base: Vector2 = (c.p as Vector2) - Vector2.ONE * LASER_PX * 0.5
+	var run := float(c.run)
+	var edge: Color = c.edge
+	for cell: Array in c.edges:
+		if age >= float(cell[1]) * run:
+			l.draw_rect(Rect2(base + (cell[0] as Vector2) * LASER_PX, Vector2.ONE * LASER_PX), Color(edge, edge.a * fade))
+	var ramp: Array = c.ramp
+	var last := ramp.size() - 1
+	for cell: Array in c.cells:
+		if age < float(cell[1]) * run:
+			continue
+		var heat := clampf(float(cell[2]) - age / float(c.cool), 0.0, 1.0)
+		l.draw_rect(Rect2(base + (cell[0] as Vector2) * LASER_PX, Vector2.ONE * LASER_PX), Color(ramp[clampi(roundi((1.0 - heat) * last), 0, last)], fade))
+
+
 ## The floor cracks: each cell's heat falls with its distance from the impact and
 ## with time, from yellow through red to a dark crack that fades at the end.
 func _draw_cracks(l: CanvasItem) -> void:
 	for c: Dictionary in cracks:
+		if c.has("edges"):
+			_draw_glow_crack(l, c)
+			continue
 		var age := float(c.t) / float(c.T)
 		var fade := 1.0 - clampf((age - 0.75) / 0.25, 0.0, 1.0)
 		var base := ((c.p as Vector2) / LASER_PX).floor() * LASER_PX
 		for cell: Array in c.cells:
 			var heat := float(cell[1]) * 1.2 - age * 1.5
 			var col: Color = CRACK_COL[0 if heat > 0.7 else 1 if heat > 0.4 else 2 if heat > 0.15 else 3 if heat > -0.2 else 4]
-			if bool(c.get("cold", false)):
-				col = CRACK_COLD[0 if heat > -0.2 else 1]
 			# two pixels wide near the impact, one at the tips
 			var wide := 2.0 if float(cell[1]) > 0.45 else 1.0
+			if bool(c.get("cold", false)):
+				col = CRACK_COLD[0 if heat > -0.2 else 1]
+				# a cold crack reads on dark stone by its lower lip catching the light
+				l.draw_rect(Rect2(base + ((cell[0] as Vector2) + Vector2(0, 1)) * LASER_PX, Vector2(wide, 1.0) * LASER_PX), Color(CRACK_LIT, fade * 0.7))
 			l.draw_rect(Rect2(base + (cell[0] as Vector2) * LASER_PX, Vector2(wide, 1.0) * LASER_PX), Color(col, fade))
 
 
@@ -3300,22 +3879,10 @@ func _px_pool(l: CanvasItem, c: Vector2, rx: float, ry: float, fade: float, t: f
 			l.draw_rect(Rect2(Vector2(gx, gy) * LASER_PX, Vector2.ONE * LASER_PX), Color(col, 0.85 * fade))
 
 
-## Where a beam from `from` at `ang` stops: at the wall it meets (to a few px,
-## by bisection after _wall_len's 24 px steps), else at `max_len`.
+## Where a beam from `from` at `ang` stops: at the edge of the wall or closed
+## gate it meets (_wall_len walks the grid exactly), else at `max_len`.
 func _beam_reach(from: Vector2, ang: float, max_len: float) -> float:
-	var hit := _wall_len(from, ang, max_len)
-	if hit >= max_len:
-		return max_len
-	var lo := maxf(0.0, hit - 24.0)
-	var hi := hit
-	for k in range(6):
-		var mid := (lo + hi) * 0.5
-		var p := from + Vector2.from_angle(ang) * mid
-		if g._walkable(g._cell(int(floor(p.x / g.C)), int(floor(p.y / g.C)))):
-			lo = mid
-		else:
-			hi = mid
-	return lo
+	return _wall_len(from, ang, max_len)
 
 
 ## A laser burning into a wall at `p`: pixel flames there while it fires
@@ -3434,7 +4001,7 @@ func draw_fx(l: CanvasItem) -> void:
 	# the enemy shots are pixel fireballs over the actors (draw_lasers); their soft glow is the bloom
 
 
-# ---------- WAHN (element_rules.json madness) ----------
+# ---------- WAHN (madness_rules.json madness) ----------
 
 ## The monster mad `m` has turned on ({} for none). At each attack decision
 ## (no act running, an attack's cooldown run out) it rolls madness.turn_chance
@@ -3533,7 +4100,7 @@ func _mad_shot_hits(s: Dictionary) -> bool:
 		if (s.p as Vector2).distance_to(Vector2(o.p) - Vector2(0, float(o.cy))) < float(o.r) * 0.6 + (14.0 if s.get("small", false) else 22.0):
 			s.t = 0.0
 			_mad_strike(shooter, o, 1, false)
-			_shot_impact(s.p, str(s.get("c", "fire")), bool(s.get("small", false)))
+			_shot_impact(s.p, str(s.get("c", "fire")), bool(s.get("small", false)), s)
 			return true
 	return false
 

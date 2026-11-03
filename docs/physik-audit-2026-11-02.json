@@ -1,0 +1,2015 @@
+{
+ "plan": {
+  "themes": [
+   "T1 Spells do not meet the world: talent shots skip the end of their step and pass through walls at 37 fps or more (hell_talents.gd:459, checked: range(1, steps) never tests the end point). Talent explosions ignore props and breakables, impacts land at a guessed point, and talent hits get no hit reaction (F23, F47, F49, F34, F25).",
+   "T2 Two matter worlds plus painted copies: the hero kit and attacks run their own Particles instance. hell_game.embers, StoryHero._bits, RigFx, gold coins and wreck shards each have their own, simpler physics. Ultimates and talent pixels paint drops, shards and embers next to their particle versions (F0/F32, F11, F51, F52, F54, F29, F30, F31).",
+   "T3 Drawing code changes gameplay, which breaks the deterministic-footprint rule: residue pools placed by talent_fx with a random length hurt and trip the caster, and particles.freeze_liquids turns gameplay poison and blood into Glatteis (F24, F17; F15 and F28 caution).",
+   "T4 The picture contradicts the rules: pool reactions are drawn against ElementRules.top (hidden fire still burns, a 'safe' crust still burns, poison hisses instead of exploding). Overlapping pools are drawn by spawn order. Reactions throw the wrong matter, poison gas burns from its centroid and comes back whole, and the Krypta's Moder runs the lava code (F12, F21, F13, F14, F26, F48).",
+   "T5 Contact physics between materials is missing: gas over lava or fire, poison on lava and residue never react. Ice never thaws on its own, every gas moves the same way, and the necromancer's poison is a painted circle (F15, F18, F16, F28, F19).",
+   "T6 One rule for all particle physics: every material bounces like rubber. There is no air drag or buoyancy, comet arcs are integrated with Euler, the wells miss their core, walls, gates and props are not solid to matter, blasts and wells act through walls, hitting the cap pops or teleports matter, and particles ignore the depth order (F1, F2, F9, F4, F8, F50, F5, F6, F7, F3).",
+   "T7 Frame-rate dependence: knockback decays per frame, gas parting is applied per call, trails emit per draw, ambient embers and vents spawn per frame, and wall gaps and core misses grow with v·dt (F35, F22, F10, F51, F53, F8, F9, F4, F57).",
+   "T8 Bodies: pushes are assigned instead of added and point away from the hero instead of the blast. They ignore mass, keep velocity into walls and stop dead on ice the same as on stone. Corpses freeze and vanish, and flights stop dead and snap upright (F37, F44, F46, F40, F36, F41, F45).",
+   "T9 The Frostgruft lags behind Krypta and Hölle because it has no monster runtime: no pool reactions, ragdolls fly in random directions through walls, contact does not knock the hero, boss pushes teleport him, there is no wading, and freezing only happens in the other worlds (F20, F38, F39, F43, F55, F17).",
+   "T10 Static world objects: traps and gates switch by swapping sprites, torches are sealed animation loops, and settled debris never moves again. On hero death everything freezes except the particles (F53, F56, F54, F42).",
+   "T11 Owned by the brother (saidPC), needs his OK: snow does not melt from fire or blasts, the wind exists only in the screen overlay, there is no skid entry point for monsters, and the flame tip is not exposed (F57, F58, plus the brother's parts of F16, F55 and F56).",
+   "Phase 1 picture: Hölle. A Feuerball talent hits a wall beside lava, with a barrel and an imp in reach. The burst sits on the wall face, chips fly off the wall normal, the hero's embers hiss out in the lava instead of lying on it, the barrel shatters along the blast, the imp bleeds from the talent hit, and no fire puddle is left under the mage.",
+   "Phase 2 picture: Krypta room with Moder. A fire talent ignites a Giftwolke. A flame front runs through it puff by puff and leaves a fireball, embers, a scorch star and rising smoke, with no green veil. The Moder bubbles olive with miasma. A water puddle over burning ground still shows the fire.",
+   "Phase 3 picture: Hölle. A blast next to a closed portcullis and a pillar. Drops splat with crowns and stick to the gate bars, smoke rises and widens, debris strikes the wall face, matter behind the pillar is hidden by it, gold bounces off the wall, a shard sinks into the lava with a plop, and the talent's matter is particles only.",
+   "Phase 4 picture: Frostgruft. A Rage or Urknall throw across Glatteis. Bodies glide, then roll back upright. Ragdoll parts fly away from the blow and bounce off walls. Fire melts a snowman's frost pool rim first, with steam, into water that monsters slide and wade through."
+  ],
+  "backlog": [
+   {
+    "rank": 1,
+    "title": "Talent shots stop at the first wall and burst at the contact point",
+    "what_player_sees_now": "At 60 fps a talent shot never meets a wall: talent_blocked tests only interior samples, and none when the step is under 12 px. The shot turns invisible inside the wall, comes out in the next room and hits monsters behind the wall. talent_fx guesses the impact from the shot vanishing (talent_fx.gd:777), so the boom, shatter and residue appear where its 1.6 s life ends, often in mid-air about 700 px away. At low fps the shot just vanishes at the stone with no chips. MageBolt bursts inside the wall cell (mage_bolt.gd:146).",
+    "after": "_step_bullets gets its own sweep: samples every 6 px or less including the end point, then a bisection to the contact point and a normal from story_feel's side probes. The shot ends there. A shot_ends {at, normal, talent, style} list in the snapshot replaces talent_fx's guess, so the burst, sparks and shards fly off the wall normal from the wall face. The wall is worn through wreck.hit_line, which also breaks a smashable prop in the way; an unbroken breakable calls _hit_breakable. There is no extra feel.wall_hit (it would double the matter). In hell_game the MageBolt position is set to the contact before burst(). talent_blocked stays unchanged for the melee line-of-sight check.",
+    "files": [
+     "src/hell/hell_talents.gd",
+     "src/combat/talent_combat.gd",
+     "src/vfx/talent_fx.gd",
+     "src/hell/story_wreck.gd",
+     "src/hell/hell_game.gd",
+     "src/vfx/mage_bolt.gd",
+     "src/hero/story_feel.gd"
+    ],
+    "effort": "M (the sweep alone is S)",
+    "risk": "low",
+    "owner": "ours",
+    "phase": 1,
+    "from_findings": [
+     "F23",
+     "F47",
+     "F34"
+    ]
+   },
+   {
+    "rank": 2,
+    "title": "One particle world for hero attacks, the kit and talents",
+    "what_player_sees_now": "Hero fireballs, fist bursts and shot impacts use a second Particles instance (story_skill_fx.gd:46, story_hero.gd:156). It has no sink, no liquids and no sound. Embers, soot and frost lie on top of Hölle lava, and the hero's floor marks are drawn over lava pools, gas, the ice slab and his own shadow. Blasts and the Singularität move the world's debris but not the hero's debris next to it. Hero matter makes no landing sound. Trails spawn once per draw call, so a 144 Hz screen shows 2.4× the trail of a 60 Hz one (skill_fx.gd:220, attack_fx.gd:366).",
+    "after": "skill_fx.particles, skill_fx.skill.particles and attack.particles point to g.feel.feedback.particles. A `shared` flag skips the second update, draw and clear calls. embers(), frost(), stain() and scatter() check sinks(), so the hero's embers hiss out in lava and his marks lie under the liquid surfaces. Every blast and well moves all matter, landings make sounds, and there is one budget (max_particles raised to about 900). Trails are emitted from update time per distance flown, so they look the same at any refresh rate.",
+    "files": [
+     "src/hero/story_skill_fx.gd",
+     "src/hero/story_hero.gd",
+     "src/vfx/skill_fx.gd",
+     "src/vfx/attack_fx.gd",
+     "src/vfx/particles.gd",
+     "src/hero/story_feel.gd",
+     "src/hell/hell_game.gd"
+    ],
+    "effort": "M",
+    "risk": "medium",
+    "owner": "ours",
+    "phase": 1,
+    "from_findings": [
+     "F0",
+     "F32",
+     "F10"
+    ]
+   },
+   {
+    "rank": 3,
+    "title": "Talent hits throw the target's own matter; talent swings clang on walls",
+    "what_player_sees_now": "_damage_enemy never calls g.feel.on_hit (hell_talents.gd:475). Wutschlag, Schildstoß, Schnittwunde, Fächerschnitt, Erdspalter, the dashes, every nova and Durchschuss show only the slash sheet and a white flash: no blood, bone chips, slime or spark from the target. Dash matter appears at the dash start in the class colour. Talent swings into walls are silent.",
+    "after": "Each talent hit runs story_feel.on_hit with the material's sound only once (the feedback path plays it). Blood drops splat, bone chips settle, slime splashes and the target squashes. A talent_swing_wall hook in talent_combat's melee branch and channel swing (:692) clangs on walls and props. Dashes raise dust along their path, and shot hits throw less matter.",
+    "files": [
+     "src/hell/hell_talents.gd",
+     "src/combat/talent_combat.gd",
+     "src/vfx/talent_fx.gd",
+     "src/hero/story_feel.gd"
+    ],
+    "effort": "S",
+    "risk": "low",
+    "owner": "ours",
+    "phase": 1,
+    "from_findings": [
+     "F25"
+    ]
+   },
+   {
+    "rank": 4,
+    "title": "Drawing code stops changing gameplay: residue pools and rime freeze become looks only",
+    "what_player_sees_now": "A Feuerball into a nearby wall leaves fire that burns the Feuermagier himself ('im Feuer verbrannt'). Every Wirbelsturm or Blutiger Schrei leaves a blood slick under the berserker, even with no hit. A Frostlanze on a wall leaves Glatteis, and a fizzled void shot leaves a pool that hurts and silences. These pools come from draw passes with a random length (talent_fx.gd:342/959). The Blizzard's rime (particles.freeze_liquids → pool_field.freeze_near) silently turns a monster's poison puddle into slippery ice that no longer poisons, but only in Krypta and Hölle.",
+    "after": "Talent residue lives in its own visual-only PoolPaint: it shows, rings and wets soles, but never hurts or trips anyone. particles.freeze_liquids calls a new pool_paint.freeze_look that adds drawing-only ice and never writes pool_field. Gameplay ice comes only from story_elements.frost_at. Residue that should act in gameplay is decided under D1 and laid later from talent_combat events, sparing the caster.",
+    "files": [
+     "src/vfx/talent_fx.gd",
+     "src/vfx/pool_paint.gd",
+     "src/physics_kit/pool_field.gd",
+     "src/vfx/particles.gd",
+     "src/hell/story_exposure_host.gd"
+    ],
+    "effort": "S for visual-only; M if residue becomes gameplay (D1)",
+    "risk": "medium (removes damage and slips that players currently get)",
+    "owner": "ours",
+    "phase": 1,
+    "from_findings": [
+     "F24",
+     "F17"
+    ]
+   },
+   {
+    "rank": 5,
+    "title": "Talent blasts bite walls and break props, crates and urns",
+    "what_player_sees_now": "Meteor, Nova and talent explosions call only _element and never wreck.blast (talent_combat.gd:2499), so candles, bones and urns beside a Meteor stay whole. Crates, urns and barrels break only from the hero's swing and shots. A fireball or boss slam blows the candle beside a barrel to shards while the barrel does not even shake (story_wreck.gd:226).",
+    "after": "hell_talents walks the snapshot events once per id. Explosion, nova and impact events with r >= blast.min_radius call wreck.blast and the breakables hook. Pyro-shot events that _explode already blasted are tagged and skipped. Breakables in reach shake and chip, and those in the core shatter along hit_dir. Enemy blasts and owner-0 poison explosions only shake and chip them (D6).",
+    "files": [
+     "src/hell/hell_talents.gd",
+     "src/combat/talent_combat.gd",
+     "src/hell/story_wreck.gd",
+     "src/hell/hell_game.gd",
+     "src/hero/story_feel.gd",
+     "src/hell/story_elements.gd"
+    ],
+    "effort": "M",
+    "risk": "medium (seals and skull heaps take blast hits)",
+    "owner": "ours",
+    "phase": 1,
+    "from_findings": [
+     "F47",
+     "F49"
+    ]
+   },
+   {
+    "rank": 6,
+    "title": "Knockback distance and the Rage slam window no longer depend on the frame rate",
+    "what_player_sees_now": "The push decays by 0.86 per frame (motion_kit.gd:163). A Rage throw flies about 111 px at 60 Hz, 46 px at 144 Hz and 223 px at 30 Hz. The slam only counts within about 72 px of a wall at 60 Hz, but 30 px at 144 Hz. A sword knock moves an enemy 18 px at 60 Hz and 7 px at 144 Hz.",
+    "after": "step_body uses push*pow(decay, dt*60), which keeps today's 60 Hz tuning exactly. It returns push_in and hit, so check_slam (story_hero.gd:222) stops hardcoding /0.86. Throws and slam windows are the same on every machine. R23 and R27 build on this.",
+    "files": [
+     "src/physics_kit/motion_kit.gd",
+     "assets/data/physics_motion.json",
+     "src/hero/story_hero.gd",
+     "src/hell/hell_monsters.gd",
+     "src/hell/hell_game.gd"
+    ],
+    "effort": "S",
+    "risk": "low",
+    "owner": "ours",
+    "phase": 1,
+    "from_findings": [
+     "F35"
+    ]
+   },
+   {
+    "rank": 7,
+    "title": "Reactions throw their own matter: explosion, boiling, rain and thaw",
+    "what_player_sees_now": "A poison explosion is 22 green sparks bouncing on the floor plus a flash disc (story_elements.gd:411). In the Frostgruft it is only a shake and a flash. Boiling throws 5 frost-blue sparks. Condensing steam throws frost sparks upward before a puddle spreads from its middle. A thaw is 4 frost sparks.",
+    "after": "One helper that needs only _particles()/_pscale(), so it works in all three worlds. An explosion is fire_burst, tumbling embers, a scorch_star and a smoke cloud left behind (the old crypt pattern). Boiling is dense steam puffs rising for about 1 s. Rain is drops falling from the cloud's height over its area, building the puddle as they land through drop_landed. A thaw hisses and drips. The four frost _burst_in calls go away.",
+    "files": [
+     "src/hell/story_elements.gd",
+     "src/vfx/particles.gd",
+     "src/vfx/pool_paint.gd",
+     "src/physics_kit/gas_field.gd"
+    ],
+    "effort": "M",
+    "risk": "low",
+    "owner": "ours",
+    "phase": 2,
+    "from_findings": [
+     "F13"
+    ]
+   },
+   {
+    "rank": 8,
+    "title": "Ignited poison gas burns as a front, and burnt gas stays gone",
+    "what_player_sees_now": "Fire tests a cloud by its spawn centroid and radius (gas_field.gd:395-407). A cloud spread down a corridor goes off in its middle, and fire at its visible tail can miss. The green veil fades for 1.4 s and is blown outward by its own blast. A burnt or swallowed Giftwolke comes back whole on the next frame through GasField.sync (gas_field.gd:107), can explode again and keeps poisoning.",
+    "after": "GasField.ignite gives each puff burn_at = now + distance/speed on the host clock. Each puff flashes to flame (fire_burst) and becomes dark smoke, and damage applies once per cloud. Ignition tests real thickness (gas.thickness >= dense_from). end_cloud records the key as spent so sync never re-adds it, and the talent zone ends with the gas (tc end_zone).",
+    "files": [
+     "src/physics_kit/gas_field.gd",
+     "src/hell/story_elements.gd",
+     "src/vfx/talent_fx.gd",
+     "src/combat/talent_combat.gd",
+     "src/vfx/gas.gd"
+    ],
+    "effort": "M",
+    "risk": "medium (the explosion moves to where the gas really is)",
+    "owner": "ours",
+    "phase": 2,
+    "from_findings": [
+     "F14",
+     "F26"
+    ]
+   },
+   {
+    "rank": 9,
+    "title": "The pool picture shows what the rules do",
+    "what_player_sees_now": "Blood or water over burning ground hides the fire while the hero keeps burning, and the fire stays invisible after the blood dries. Poison touching fire hisses like steam. Blood, poison or water on lava paints a dark crust that reads as safe but still burns (pool_paint.gd:1605-1661). Overlapping pools are drawn in spawn order (pool_paint.gd:446): clean water is drawn over the poison that is poisoning you, and blood in water is a hard red sheet.",
+    "after": "The draw loop and liquid_at are sorted by ElementRules priority, so the material that acts is drawn on top. A liquid over fire is hidden and hisses at the rim instead of hiding the fire. Liquids on lava hiss away without crust, and crust is drawn only where story_elements.crusted() is true. Poison meeting fire or lava flares as flame. Drawing-only mixes (bloodwater, toxicwater) in vfx_pools.json tint water.",
+    "files": [
+     "src/vfx/pool_paint.gd",
+     "assets/data/vfx_pools.json",
+     "src/hell/story_elements.gd",
+     "src/combat/element_rules.gd"
+    ],
+    "effort": "M",
+    "risk": "medium",
+    "owner": "ours",
+    "phase": 2,
+    "from_findings": [
+     "F12",
+     "F21"
+    ]
+   },
+   {
+    "rank": 10,
+    "title": "The Krypta's Moder is cold sludge, not lava",
+    "what_player_sees_now": "The green Moder bubbles orange-white lava domes at 9/s (hell_game.gd:3352-3385). They burst into orange glut drops that lie as embers and cool to soot. Liquids on it hiss and crust (story_feel.gd:786). Shockwaves throw orange lava tongues (hell_monsters.gd:3150). A poison puddle on Moder explodes and water boils (story_elements.gd:351). Krypta and Frostgruft debris sinks into tiles 2/3 with a heat glow, so even glaze ice swallows debris (story_wreck.gd:918).",
+    "after": "theme.liquid.material plus a hell_game._floor_mat() helper. Moder shows slow olive bubbles that pop into miasma wisps, green drops that lie as wet poison pixels, ripples and a sluggish slosh, with no embers, soot, steam or crust. Debris sinks into Moder without glow, and glaze ice never swallows debris. Puddle gameplay on Moder follows D3.",
+    "files": [
+     "src/hell/hell_game.gd",
+     "src/hero/story_feel.gd",
+     "src/hell/hell_monsters.gd",
+     "src/hell/story_elements.gd",
+     "src/hell/story_wreck.gd",
+     "assets/data/krypta_balance.json"
+    ],
+    "effort": "M",
+    "risk": "medium (the gameplay part needs D3)",
+    "owner": "ours",
+    "phase": 2,
+    "from_findings": [
+     "F48"
+    ]
+   },
+   {
+    "rank": 11,
+    "title": "Each gas moves like its material, parting is per second, and shots cut lanes",
+    "what_player_sees_now": "All five gases share one set of constants (gas_field.gd:264). Boiling steam lies on the floor for about 6 s like poison, frost mist does not sink, and smoke behaves like poison. part() runs once per frame with no dt (gas_field.gd:227), so the hero parts gas 2.4× harder at 144 fps, and his poison dose and view range depend on the fps. cut() is only used by the old dungeon, so arrows, fireballs and monster shots fly through clouds without leaving a lane.",
+    "after": "vfx_gas.json gets per-material physics (swell, thin, spread, drift, hold). Steam swells and is gone in about 1.5 s with a drawn rise, smoke swells and lingers, poison creeps low into corners, and frost mist spreads wide and flat. part() and cut() take dt. Every eshot and talent bullet inside a cloud cuts a lane that closes behind it, and the monsters' part radius scales with m.r.",
+    "files": [
+     "src/physics_kit/gas_field.gd",
+     "assets/data/vfx_gas.json",
+     "src/vfx/gas.gd",
+     "src/hell/hell_game.gd"
+    ],
+    "effort": "M",
+    "risk": "medium (poison dose at high fps changes)",
+    "owner": "ours",
+    "phase": 2,
+    "from_findings": [
+     "F16",
+     "F22"
+    ]
+   },
+   {
+    "rank": 12,
+    "title": "Pools land at impact and shrink while they drain",
+    "what_player_sees_now": "A thrown poison potion shatters, nothing lies there for about 0.33 s, then the full 5000-cell pool appears in one frame together with its splash (pool_field.gd:181, timings from the zone start). A pool drained by a void mouth stays full while its motes stream away, then vanishes rim first in 0.35 s.",
+    "after": "Threaded pools count their cell births from max(start, commit). That is still deterministic, so the pool spreads after it shows, and the crown and drops play at impact. PoolField.retime(key, now, new_end, toward) shrinks a drained pool toward the mouth, far rim first.",
+    "files": [
+     "src/physics_kit/pool_field.gd",
+     "src/vfx/pool_paint.gd",
+     "src/hell/story_elements.gd"
+    ],
+    "effort": "S",
+    "risk": "medium (timing of damage cells)",
+    "owner": "ours",
+    "phase": 2,
+    "from_findings": [
+     "F19"
+    ]
+   },
+   {
+    "rank": 13,
+    "title": "Contact reactions for any matter, whatever made it (after D2)",
+    "what_player_sees_now": "Between attacks only two checks run: water against lava circles, and puddle centres on a tile-2 floor (story_elements.gd:178/349/441). Poison gas drifting over Hölle lava or a fire puddle never ignites. A poison puddle on lava does nothing. Steam over Frostgruft ice never condenses, and frost mist over water never freezes.",
+    "after": "A 0.2 s contact pass checks a few gas puffs per cloud against materials_at and the hot floor, and calls fire_at, frost_at or condense. PoolField.pools_near returns both zones and field pools, so the same meeting always reacts the same way. Residue stays out per D1. Depends on R4 and R8.",
+    "files": [
+     "src/hell/story_elements.gd",
+     "src/physics_kit/pool_field.gd",
+     "src/physics_kit/gas_field.gd"
+    ],
+    "effort": "M",
+    "risk": "medium (gameplay change, reverses the 2026-10-30 'visible only' decision)",
+    "owner": "ours",
+    "phase": 2,
+    "from_findings": [
+     "F15",
+     "F12"
+    ]
+   },
+   {
+    "rank": 14,
+    "title": "Seuchenfeld becomes real poison gas over a pool, Seelensturm a soul well",
+    "what_player_sees_now": "The necromancer's plague is a see-through circle (alpha 0.16) with a looping poison sheet (talent_fx.gd:1741). It never spreads, is never blown away, never explodes and lays no pool, yet it poisons everything in r every second. Seelensturm is a sprite loop.",
+    "after": "Plague is spreading poison gas over a poison pool of about 0.8 r. It parts around bodies, is blown by blasts and burns as a front (R8). It spares its owner through an owner field in the cloud and pool records that StoryExposureHost filters on. Seelensturm swirls soul motes on a particles.well with suck=false. The sprite stays only when gas is null. Depends on R4 and R8.",
+    "files": [
+     "src/vfx/talent_fx.gd",
+     "src/hell/story_exposure_host.gd",
+     "src/physics_kit/gas_field.gd",
+     "src/physics_kit/pool_field.gd"
+    ],
+    "effort": "M",
+    "risk": "medium",
+    "owner": "ours",
+    "phase": 2,
+    "from_findings": [
+     "F28"
+    ]
+   },
+   {
+    "rank": 15,
+    "title": "Each material lands its own way; buoyancy and air drag",
+    "what_player_sees_now": "Every particle mode shares one contact rule (particles.gd:1872). Drops hop and roll 5-10 px like beads. Flames and smoke bounce off walls. Ice shards, rubble and skulls skate across lava and only vanish where they come to rest. Water drops vanish in lava silently, kicked wet pixels just disappear, and pool pixels fly off as hard chips. There is no drag on vz (particles.gd:1905): flakes speed up while falling, smoke, steam and embers accelerate upward forever as rigid columns, and motes 'rise' by sliding north into walls (particles.gd:1394/1497). A flame's glow stays white-yellow at full strength, then pops off (particles.gd:2214).",
+    "after": "Per-mode contact data in vfx_particles.json (wall: bounce, slide or stick; floor: bounce or splat) with a separate `stuck` flag, not `landed`. Drops splat on first contact with a short streak and a 1-2 px crown, ring into pools and paint wall faces. Flames and smoke creep along walls. Matter that touches lava at z<=0 sinks at once with a hiss or a plop (the skull branch too). vz gets air drag with a terminal speed: flakes drift down, smoke widens, embers rise then fall as they cool, and motes rise in height. Flame glow cools along the ramp. Comet modes keep air 0.",
+    "files": [
+     "src/vfx/particles.gd",
+     "assets/data/vfx_particles.json"
+    ],
+    "effort": "M",
+    "risk": "low",
+    "owner": "ours",
+    "phase": 3,
+    "from_findings": [
+     "F1",
+     "F2"
+    ]
+   },
+   {
+    "rank": 16,
+    "title": "Walls, gates and props stop matter; blasts and wells cannot act through walls",
+    "what_player_sees_now": "Blood drops, chips, shards and rubble sail through closed portcullises, pillars, braziers, chests and crates and settle under or behind them (particles.gd:177, story_feel.gd:791). Gas does stop there. Debris turns away before the wall: 4 crypt px short at 60 fps, up to 13 at the dt clamp. It slips through corners, and matter born inside a wall passes through it. A blast or the Singularität makes debris in the next room jump, or drags pixels from behind a wall (particles.gd:1609-1727, 930-950, 1272-1292).",
+    "after": "Closed doors, solid prop footprints and unbroken breakables are erased from the particles' walkable cells and restored when a door opens or a crate breaks. Drops splat on the gate bars and debris bounces off pillars. Wall hits clamp to the crossed cell face at any fps, corners reflect on the smaller penetration, and matter born in a wall leaves on the open side. kick, blow, _suck and the wells use a cached DDA _sees(), so matter behind a wall stays put.",
+    "files": [
+     "src/vfx/particles.gd",
+     "src/hero/story_feel.gd",
+     "src/hell/hell_game.gd"
+    ],
+    "effort": "M",
+    "risk": "low",
+    "owner": "ours",
+    "phase": 3,
+    "from_findings": [
+     "F50",
+     "F8",
+     "F5"
+    ]
+   },
+   {
+    "rank": 17,
+    "title": "Talent looks become particles: only shapes stay painted",
+    "what_player_sees_now": "Erdspalter's slam plays the old Blutrausch blood fountain (talent_ults.gd:78/529). Eissturz, Blutwelle, Feuersturm, the Meteor call, the flask and the Klingensturm finale paint drops, shards and embers on top of their particles or instead of them. A talent shot's embers travel with the ball and never fall behind (talent_pixels.gd:915). Impact drops and motes are painted next to their particle versions, and the Glutkette's flames hang where the target was. Schildwall and Seelenschild shatter into ice, and stone domes chip ice (talent_fx.gd:1262/2368). Pfeilhagel lands on its own clock with no matter (talent_fx.gd:1722). Archer arrows throw gold, coin-like chips (talent_fx.gd:890).",
+    "after": "Painted matter is gated by paint_matter. Shots shed world-space embers, frost and motes per second from _step_bullets. Erdspalter kicks dust at take-off and throws rubble at landing. A burning target carries its fire. Domes chip and fall in their own element (stone plates and dust, soul motes, ice). Pfeilhagel volleys land on the damage ticks with chips, dust and a quivering shaft. Arrows splinter back off the surface with one tip spark.",
+    "files": [
+     "src/vfx/talent_ults.gd",
+     "src/vfx/talent_pixels.gd",
+     "src/vfx/talent_fx.gd",
+     "src/hell/hell_talents.gd"
+    ],
+    "effort": "M",
+    "risk": "low",
+    "owner": "ours",
+    "phase": 3,
+    "from_findings": [
+     "F29",
+     "F30",
+     "F31",
+     "F27",
+     "F33",
+     "F34"
+    ]
+   },
+   {
+    "rank": 18,
+    "title": "Every flying thing uses the one particle world: world embers, hero side matter, rig chips, gold, wreck piles",
+    "what_player_sees_now": "hell_game.embers and _burst (every hero blast, boss phase and death, well and level-up) are straight-line squares with no gravity that fly through walls (hell_game.gd:2198/3174). They spawn per frame, so 144 Hz shows 2.4× as many, and the 360 cap slices them off at full alpha. Block, counter and blood-price matter uses its own gravity and never lands (story_hero.gd:552). Rig chips fly through walls. Gold coins fly into walls and lie glinting on lava (gold_loot.gd:177). Settled wreck shards never move again, ice chips never melt, and shards lie on top of pits (story_wreck.gd:772).",
+    "after": "_burst and the ambient embers go to the feel particles at a rate per second through room(). Sparks fall, bounce, lie as embers and turn to soot, ambient lava embers rise buoyantly, and the Krypta gets miasma instead of embers. Blood-price drops stain. Rig chips with a known floor point land. Coins bounce off wall faces, sink into lava with a hiss (D11) and are relaunched by blasts. Wreck piles are relaunched by blasts and fronts, ice chips melt, and pieces over pits fall in.",
+    "files": [
+     "src/hell/hell_game.gd",
+     "src/hell/hell_monsters.gd",
+     "src/hell/boss_kit.gd",
+     "src/hero/story_hero.gd",
+     "src/hell/card_kit.gd",
+     "src/rig/rig_renderer.gd",
+     "src/rig_kit/rig_fx.gd",
+     "src/hell/gold_loot.gd",
+     "src/hell/story_wreck.gd"
+    ],
+    "effort": "L",
+    "risk": "medium",
+    "owner": "ours",
+    "phase": 3,
+    "from_findings": [
+     "F51",
+     "F11",
+     "F52",
+     "F54"
+    ]
+   },
+   {
+    "rank": 19,
+    "title": "No popping at the particle cap, frost always melts, cheap Gefüge blob",
+    "what_player_sees_now": "At the cap the oldest particle is removed (particles.gd:1945). Mid-air chunks and drops snap to the floor, smoke vanishes in one frame, and a comet can lay its puddle mid-flight. At the frost cap the dropped melt entries stay frozen forever (particles.gd:2400). The whole _vapor list, up to 4000 entries, is rescanned every frame. The fused Gefüge blob costs about 30k distance operations and 625 draw_rect calls per frame (particles.gd:1231).",
+    "after": "One scan per frame picks unprotected, nearly dead cosmetic matter, which dithers out, with a hard cap at 1.05×. Airborne matter never teleports and comets always land. smoke, steam, kick and rubble go through room(). Frost always melts, and _vapor uses due-time buckets. The Gefüge blob is baked to a texture on the 12 fps beat, with one-pass nearest-lump lookups and no str().",
+    "files": [
+     "src/vfx/particles.gd"
+    ],
+    "effort": "S",
+    "risk": "low",
+    "owner": "ours",
+    "phase": 3,
+    "from_findings": [
+     "F6",
+     "F7"
+    ]
+   },
+   {
+    "rank": 20,
+    "title": "Comets land on the gameplay spot; wells swallow along the path",
+    "what_player_sees_now": "Comets (gore and pool splashes) land about one frame early and 6-18 crypt px short of where gameplay hits, and clink off pillars (particles.gd:656/1905). Matter near the Singularität crosses its core and slingshots back and forth, worse at low fps (particles.gd:941). A rubble block swirls like a mote.",
+    "after": "Exact ballistic height (z += vz·dt - ½g·dt²) with a touchdown back-off, so comets land at the gameplay spot at any fps. Splash particles skip wall collision while high. A swept closest-approach test swallows matter whose path crosses the core (fuse particles skipped), the speed change per step is capped, and the well force is divided by mass: dust streams in first and rubble drags.",
+    "files": [
+     "src/vfx/particles.gd",
+     "assets/data/vfx_particles.json"
+    ],
+    "effort": "S",
+    "risk": "low",
+    "owner": "ours",
+    "phase": 3,
+    "from_findings": [
+     "F9",
+     "F4"
+    ]
+   },
+   {
+    "rank": 21,
+    "title": "Traps, gates, vents and torches move and shed matter (fire_anim flame-tip hook needs the brother)",
+    "what_player_sees_now": "Spikes flip between sprites (hell_game.gd:3719). Ice traps vanish in one frame (:4377). Hölle vents and the Krypta's grave-gas vent spit straight ember squares (:3097). Portcullises pop in although the toast says 'Die Gitter fallen' (:4113). Torches and braziers are sealed loops (:3673): no sparks, no smoke, no lean from a blast, no dimming from frost or water.",
+    "after": "Presentation edge timers sit on the gameplay booleans. Spikes shoot up with overshoot and grit, ice spikes burst with chips and break into frost shards, vents roar buoyant flames and smoke, and the grave vent breathes green gas. Gates drop in 0.15-0.2 s with dust and a camera kick. Torches shed embers and a thread of smoke, lean and flare or gutter from pressure fronts, and hiss and dim near frost or water, all with per-second accumulators and only in view. Lighting bowls with fire follows D7.",
+    "files": [
+     "src/hell/hell_game.gd",
+     "src/vfx/particles.gd",
+     "src/vfx/fire_anim.gd"
+    ],
+    "effort": "M",
+    "risk": "low",
+    "owner": "ours",
+    "phase": 3,
+    "from_findings": [
+     "F53",
+     "F56"
+    ]
+   },
+   {
+    "rank": 22,
+    "title": "Particles are hidden by actors and props by depth",
+    "what_player_sees_now": "All flying matter is drawn at z 12, above the y-sorted actors at z 10 (story_feel.gd:147/652, hell_game.gd:418). Chunks, skulls, shards and drops behind a monster, Ignaroth, a pillar, a brazier, a chest or the hero are painted over them.",
+    "after": "Particles are band-drawn inside _draw_actors by floor y. Matter north of a foot is covered, matter south of it covers. High matter and the glow pass stay on top. Depends on R2, so only one instance needs banding.",
+    "files": [
+     "src/hero/story_feel.gd",
+     "src/hero/story_hero.gd",
+     "src/hell/hell_game.gd",
+     "src/vfx/particles.gd"
+    ],
+    "effort": "L",
+    "risk": "medium",
+    "owner": "ours",
+    "phase": 3,
+    "from_findings": [
+     "F3"
+    ]
+   },
+   {
+    "rank": 23,
+    "title": "Pushes add up, point away from the blast, scale with mass and respect walls",
+    "what_player_sees_now": "Talent hits set m.k to 60 px/s away from the hero, even for blasts (hell_talents.gd:477). Meteor, Nova and Urknall move living enemies about 7 px, and an enemy between the hero and the impact is pulled into it. Every zone tick resets a running shove, and photon beam ticks stop bodies dead mid-flight (hell_game.gd:1984). A sword pushes a Glutimp and a Kettenschinder the same. Thrown bodies pass through packs. On ice, monsters keep pressing into walls, stay stuck inside newly spawned ice or gravity walls, and leap slams hop through wall cells (motion_kit.gd:155). Boss shockwaves never shove adds or gas.",
+    "after": "Impulses are added and clamped at about 1000 px/s, point away from the blast centre, scale by tier (D5) and by mass ((r/r_ref)², kit bosses immovable). Ticks and beams never cancel a flight. Flung or slammed bodies knock others like bowling pins (restitution 0.4). The velocity into a blocked axis is lost, bodies are pushed out of new solids, leap paths are marched in 8 px samples, and wave fronts shove non-kit monsters once per front. Depends on R6.",
+    "files": [
+     "src/hell/hell_talents.gd",
+     "src/combat/talent_combat.gd",
+     "src/hell/hell_game.gd",
+     "src/hell/hero_kit.gd",
+     "src/physics_kit/motion_kit.gd",
+     "src/hell/hell_monsters.gd",
+     "src/hell/story_elements.gd",
+     "src/hell/sub_kit.gd",
+     "assets/data/physics_motion.json"
+    ],
+    "effort": "L",
+    "risk": "medium (balance)",
+    "owner": "ours",
+    "phase": 4,
+    "from_findings": [
+     "F37",
+     "F44",
+     "F46",
+     "F40"
+    ]
+   },
+   {
+    "rank": 24,
+    "title": "Felled bodies keep the blow; flights skid, land and roll upright",
+    "what_player_sees_now": "13 of the 18 Hölle monsters freeze where they die, play one death row and vanish after 0.75 s (hell_monsters.gd:575/1696). The blow's momentum and the Urknall tumble are dropped. Urknall flights stop dead from 760 px/s and snap upright (talent_combat.gd:2548). Rage slam kills fly into the wall. Frostgruft dash and Golem charge wall hits are silent.",
+    "after": "Corpses slide with the blow, with friction, stop at walls and turn with their tumble, then dissolve as now, with ash or ember particles carrying the velocity. Flights slow down (speed·sqrt(left/total), floor 0.25) and roll back upright to the nearest TAU. Slam kills splat on the wall and come apart away from it. Dash and charge wall hits crunch with dust, a shake and a small recoil.",
+    "files": [
+     "src/hell/hell_monsters.gd",
+     "src/combat/talent_combat.gd",
+     "src/hero/story_hero.gd",
+     "src/vfx/talent_fx.gd",
+     "src/hell/frost_moves.gd",
+     "src/hell/boss_kit.gd",
+     "src/physics_kit/motion_kit.gd"
+    ],
+    "effort": "M",
+    "risk": "medium",
+    "owner": "ours",
+    "phase": 4,
+    "from_findings": [
+     "F36",
+     "F41"
+    ]
+   },
+   {
+    "rank": 25,
+    "title": "One freeze rule on the game clock; ice thaws rim first and on a timer",
+    "what_player_sees_now": "Frozen zones are never marked frozen, so lightning still charges them and fire still boils them. The Frostgruft talents freeze nothing (story_feel.gd:638-642). Glatteis lasts the puddle's whole life, even beside lava (story_elements.gd:140/371). Fire pops it back to water in one frame with 4 frost sparks. Fire on a monster's frost pool does nothing in the rules.",
+    "after": "story_elements.frost_at freezes its zones through a keys filter in pool_field.freeze_near, the same in all three worlds; the Frostgruft talent layer is added to set_liquids. Ice melts rim first from the fire's side over 0.5-1 s with steam and drips (per-cell thaw times, 'thawed' events in batches). It melts by itself after ice_time, faster near heat (D4). Fire on an ice pool lays melt water.",
+    "files": [
+     "src/vfx/pool_paint.gd",
+     "src/physics_kit/pool_field.gd",
+     "src/hell/story_elements.gd",
+     "src/hero/story_feel.gd",
+     "assets/data/element_rules.json"
+    ],
+    "effort": "M",
+    "risk": "medium (gameplay ice duration)",
+    "owner": "ours",
+    "phase": 4,
+    "from_findings": [
+     "F17",
+     "F18"
+    ]
+   },
+   {
+    "rank": 26,
+    "title": "The Frostgruft joins the element and body physics: pools, wading, ragdolls, contact knock, boss pushes",
+    "what_player_sees_now": "Frostgruft: no pool reactions, and potions are plain circles. Snowmen's frost patches slip only the hero, inside a circle, and vanish with no melt water (frost_moves.gd:494). Nobody wades (hell_game.gd:2842), and lava and Moder tiles have no wading in any world. Ragdolls scatter in random directions and fly through walls, and Urknall figures stay upright (frost_rigs.gd:137). Body contact, dashers and the Golem's charge never knock the hero (hell_game.gd:2942). Boss phase pushes teleport him 160 px (boss_kit.gd:89), the vortex sticks him at walls, and Unbezwingbar's knockback immunity does nothing.",
+    "after": "The Frostgruft's pool layer becomes the rules' truth: frost_moves and hero pools sync into it, monsters slide on them, and pool_paint draws cracks and melt water. Everyone wades with rings and wet soles (stable m.wk keys), and lava and Moder steps work everywhere. Ragdolls fly away from the blow with the kill stamp and tumble, and bounce off walls (renderer.solid). Contact, dashes and charges knock the hero. Boss pushes are eased knocks with distance falloff, pulls slide along walls, and cc_immune stops every forced move. Monster skid marks are in R30 (brother).",
+    "files": [
+     "src/hell/story_elements.gd",
+     "src/hell/frost_moves.gd",
+     "src/hell/frost_fx.gd",
+     "src/hell/hell_talents.gd",
+     "src/hero/story_items.gd",
+     "src/hell/hell_game.gd",
+     "src/hell/frost_rigs.gd",
+     "src/hell/drake_rig_host.gd",
+     "src/hell/boss_kit.gd",
+     "src/combat/talent_combat.gd",
+     "assets/data/frost_theme.json"
+    ],
+    "effort": "L",
+    "risk": "medium",
+    "owner": "ours",
+    "phase": 4,
+    "from_findings": [
+     "F20",
+     "F55",
+     "F38",
+     "F39",
+     "F43"
+    ]
+   },
+   {
+    "rank": 27,
+    "title": "A knock on ice sends bodies gliding",
+    "what_player_sees_now": "On Glatteis (grip 0.015) a frost wave stops the hero as dead as on stone, because the eased knock never touches player.vel (motion_kit.gd:100). There are no skid marks and no lean. Monster pushes decay the same on ice as on stone.",
+    "after": "A knock on ground with low grip hands about 60 % of its speed to player.vel (D10). The hero glides, and the brother's existing frost_snow skid and lean logic follows without any edit to his file. Monster pushes decay with a softened grip (at least 0.12), so a Rage throw glides further but not across the room. Depends on R6.",
+    "files": [
+     "src/physics_kit/motion_kit.gd",
+     "assets/data/physics_motion.json"
+    ],
+    "effort": "M",
+    "risk": "medium",
+    "owner": "ours",
+    "phase": 4,
+    "from_findings": [
+     "F45"
+    ]
+   },
+   {
+    "rank": 28,
+    "title": "The world keeps moving during the hero's death beat",
+    "what_player_sees_now": "For 1.8 s after death (hell_game.gd:2540) enemy bolts hang in the air, ragdoll pieces stop mid-flight, and pools and gas freeze, while blood, dust and embers keep flying around them.",
+    "after": "Everything steps passively with damage off: shots fly and hit walls harmlessly, and rigs, corpses, gas and pools continue. Or, per D8, a uniform slow motion applies to everything.",
+    "files": [
+     "src/hell/hell_game.gd"
+    ],
+    "effort": "M",
+    "risk": "medium",
+    "owner": "ours",
+    "phase": 4,
+    "from_findings": [
+     "F42"
+    ]
+   },
+   {
+    "rank": 29,
+    "title": "[Brother] Fire and blasts melt and throw snow",
+    "what_player_sees_now": "In the Frostgruft a Feuerball, Meteor or Flammenmeer leaves pristine snow under the embers and soot, and footprints still form in scorched spots. Slide chips are flat rects falling in screen y with no floor; they vanish in mid-air and spawn per frame (frost_snow.gd:157-175).",
+    "after": "Fire melts snow into a dark wet patch with the hand-made thaw_a slush edge and steam, which slowly refreezes. Blasts dig a crater and throw clods that land. Chips are emitted per N px slid as feel particles and lie as frost.",
+    "files": [
+     "src/hero/frost_snow.gd",
+     "src/hell/hell_game.gd"
+    ],
+    "effort": "M",
+    "risk": "low",
+    "owner": "brother",
+    "phase": 4,
+    "from_findings": [
+     "F57"
+    ]
+   },
+   {
+    "rank": 30,
+    "title": "[Brother] Wind is a world force, plus entry points for monster skids and the flame tip",
+    "what_player_sees_now": "The snowstorm's flakes are glued to the camera with no parallax (snowstorm.gd:137). Nothing in the world feels the wind: gas, smoke, flames, motes and the talents' snow drift as in still air. Frostgruft monsters sliding on glaze leave no skid marks.",
+    "after": "Flakes are world matter at three depths with parallax. The brother exposes one wind vector (screen px/s ÷ zoom ÷ feel.scale) that we apply to the light particle modes (weighted by drag), to the gas drawing drift and to torch lean. frost_snow gets a slide entry point for monsters, and fire_anim exposes the flame tip for R21.",
+    "files": [
+     "src/vfx/snowstorm.gd",
+     "src/hero/frost_snow.gd",
+     "src/vfx/fire_anim.gd",
+     "src/vfx/particles.gd",
+     "src/vfx/gas.gd"
+    ],
+    "effort": "M",
+    "risk": "low",
+    "owner": "brother",
+    "phase": 4,
+    "from_findings": [
+     "F58",
+     "F16",
+     "F55",
+     "F56"
+    ]
+   }
+  ],
+  "decisions": [
+   {
+    "question": "Should the talents' leftover pools (fire, Glatteis, blood, void after shots, novas and blinks) affect gameplay? (F24, F15, F28)",
+    "options": [
+     "Look only: they show, ring and wet soles, but never hurt or trip anyone",
+     "Gameplay for a named short list only (Feuerball blast fire, lava, Phönix trail, Frostsprung), laid by talent_combat on the host clock and sparing the caster",
+     "Keep as now (random length, hurts the caster, comes from drawing code)"
+    ],
+    "recommendation": "Look only in Phase 1, because it fixes the self-burn bug and keeps footprints deterministic. Then add the short gameplay list as its own step, where a talent's text promises a ground effect."
+   },
+   {
+    "question": "Should matter meeting matter change gameplay? This reverses the 2026-10-30 'visible only' decision (F12, F15).",
+    "options": [
+     "Yes, on the host clock with residue excluded: water on fire puts it out, poison gas over lava or fire ignites, poison on lava explodes, steam over ice condenses",
+     "No: only fix the picture so it never contradicts the rules (fire stays visible, crust only where it is really crusted)",
+     "Partly: only fire plus poison becomes real; water on fire stays visual"
+    ],
+    "recommendation": "Do the picture fix first (R9, no rule change). Then option 1, because it is what 'every effect is the physics of its element' means. It needs one balance check in Krypta and Hölle."
+   },
+   {
+    "question": "How should the Krypta's Moder behave in gameplay? (F48)",
+    "options": [
+     "Cold poison sludge: poison on it does nothing, water only ripples, debris sinks without glow",
+     "Keep the lava rules (poison explodes, water boils) under the green look",
+     "Sludge whose miasma a fire spell ignites into a flash"
+    ],
+    "recommendation": "Option 1. Today a poison puddle exploding on green sludge contradicts what the player sees."
+   },
+   {
+    "question": "How long should Glatteis last in the story worlds, and which liquids can frost freeze? (F17, F18)",
+    "options": [
+     "Melts by itself after ice_time 8 s (faster near lava or fire); only water freezes, blood and poison get a rime look only",
+     "Lasts the pool's whole life as now; frost freezes water, blood and poison",
+     "Melts only when fire touches it"
+    ],
+    "recommendation": "Option 1. It uses the existing element_rules.json ice_time, and monster poison is no longer silently removed by ice."
+   },
+   {
+    "question": "How hard should talent blasts and shockwaves push living enemies? (F37, F44, F40)",
+    "options": [
+     "Fix direction and make pushes add up now; ultimate-sized pushes only on the final blow; mass by body size normalized to the median mob so typical mobs are unchanged",
+     "Full pushes by tier on every hit (enemies get thrown out of the Meteor crater and Singularität fields)",
+     "Fix the direction only and keep 60 px/s"
+    ],
+    "recommendation": "Option 1. It is visibly physical without pushing enemies out of the hero's own lingering zones."
+   },
+   {
+    "question": "Should enemy blasts and boss slams break crates, urns, seals and skull heaps? (F49)",
+    "options": [
+     "No: they only shake and chip them; only hero blasts break them",
+     "Yes: everything breaks by distance, so bosses can release undead crates or open secrets"
+    ],
+    "recommendation": "Option 1."
+   },
+   {
+    "question": "Should a fire spell light an unlit puzzle fire bowl? (F56)",
+    "options": [
+     "Yes, but only the bowl a fire shot hits directly, the same as pressing E",
+     "No: the puzzles stay E-only; fire only makes the flame flare"
+    ],
+    "recommendation": "Yes, direct hit only, so a single blast cannot light a whole puzzle out of order."
+   },
+   {
+    "question": "What should the world do during the 1.8 s after the hero dies? (F42)",
+    "options": [
+     "Everything keeps moving with damage off",
+     "A uniform slow motion for everything, particles included",
+     "Everything freezes, particles included"
+    ],
+    "recommendation": "Option 1. Slow motion is the cheaper fallback."
+   },
+   {
+    "question": "Should a knockback on Glatteis send the hero gliding? It can carry him into hazards. (F45)",
+    "options": [
+     "Yes, with about 60 % of the knock as glide",
+     "A short glide (about 30 %)",
+     "No: the knock stops as on stone"
+    ],
+    "recommendation": "60 %. It matches how his own walking already slides on ice."
+   },
+   {
+    "question": "What happens to gold that lands in lava, Moder or a pit? (F52)",
+    "options": [
+     "Credited at once, with a hiss or a plop",
+     "Spat back onto the rim",
+     "Lost"
+    ],
+    "recommendation": "Credited at once, because the player keeps the gold and still sees the physics."
+   },
+   {
+    "question": "Is the large depth-sorting job worth it (particles hidden behind monsters, pillars and the hero)? (F3)",
+    "options": [
+     "Yes, after the one particle world (R2)",
+     "Only for low or settled matter",
+     "No"
+    ],
+    "recommendation": "Yes, after R2, which halves the work."
+   },
+   {
+    "question": "How should the brother's snow, wind and flame-tip parts be handled? (F57, F58, and the brother's parts of F16, F55, F56)",
+    "options": [
+     "He implements F57 and F58 and exposes a wind vector, a monster slide entry point and the flame tip; we use them",
+     "We add small entry points in his files with his OK",
+     "Leave snow and wind as they are for now"
+    ],
+    "recommendation": "Option 1. Ask him before Phase 4. Our phases 1-3 need nothing from his files except the optional flame tip in R21."
+   }
+  ],
+  "quick_wins": [
+   "F23 hell_talents.gd:543: give _step_bullets its own sweep that also tests the end point and leave talent_blocked unchanged (verified: range(1, steps) at :459 skips the end, so at 60 fps no talent shot ever meets a wall).",
+   "F35 motion_kit.gd:163: use push*pow(decay, dt*60), which keeps 60 Hz tuning, and return push_in so story_hero.gd:222 stops dividing by 0.86. Throws and the Rage slam become the same at any fps.",
+   "F25 hell_talents.gd:475: call g.feel.on_hit(m, direction, false) in _damage_enemy's feedback block, and the old sound only when there is no feel. Every talent hit throws blood, chips or slime.",
+   "F26 gas_field.gd end_cloud plus sync (:107): record spent keys so a burnt or eaten Giftwolke never comes back whole the next frame.",
+   "F22 gas_field.gd:227/243: add dt to part() and cut() (speed*k*12*dt), so gas parting and the poison dose no longer depend on the fps.",
+   "F29 talent_ults.gd:78: stop mapping berserk_14 (now Erdspalter) to the old Blutrausch blood fountain.",
+   "F27 talent_fx.gd:1262/2368: set _shield_el from Pal.element_of for every shield talent and read the dome's own element in _dome_hit_physics. Schildwall stops shattering into ice.",
+   "F13 story_elements.gd:411: build _explode from particles.fire_burst, embers and scorch_star plus a smoke cloud, like the old crypt's feedback.gd:191-197, instead of 22 green sparks.",
+   "F19 pool_field.gd:181: count threaded pool births from max(start, commit), so a potion pool spreads after it appears instead of popping in already spread.",
+   "F39 hell_game.gd:2942 plus frost_theme.json: after a landed Frostgruft contact hit, call frost_fx.hit_hero with 'contact' or 'dash' and add knock.contact 300. The Golem's charge finally shoves the hero.",
+   "F38 frost_rigs.gd:137: add e.kill (from hit_fx or m.k), e.tumble and renderer.solid = box_blocked. Frostgruft ragdolls then fly away from the blow and stop at walls.",
+   "F9 particles.gd:1905: integrate comet height exactly (z += vz·dt - ½g·dt²), so splashes land where gameplay hits.",
+   "F4 particles.gd:941: add a swept closest-approach core test in _step_wells (skip fuse particles), so no more slingshot through the Singularität.",
+   "F6 particles.gd:2400/2405: at the frost cap, melt the dropped entry immediately instead of leaving it frozen forever.",
+   "F52 gold_loot.gd:177: per-axis g.box_blocked bounce with v *= -0.4, so coins stop flying into walls."
+  ]
+ },
+ "findings": [
+  {
+   "title": "Hero skills/attacks run a second, disconnected particle world: embers and frost lie on top of Hölle lava, gas and the ice slab",
+   "file": "src/hero/story_skill_fx.gd",
+   "line": 46,
+   "kind": "inconsistent",
+   "element": "fire, ice, lava, all",
+   "worlds": [
+    "Hölle",
+    "Frostgruft",
+    "Krypta"
+   ],
+   "now": "The story worlds run two separate Particles instances. One is story_skill_fx.particles, which attack_fx also uses (story_hero.gd:156): hero shot impacts, fireball/fist bursts, Photoneneis. The other is feel.feedback.particles: talents, monsters, element reactions and boss pools. Only the feel instance gets set_sink (story_feel.gd:799), set_liquids (:642) and the sound sink (story_sound.gd:709). What the player sees: a hero fireball or fire-mage hit over lava leaves glowing embers, a soot stain and smoke ON the lava, because embers() has no sink check and the kit has no sink cells. Frost fist frost and rime grow over lava. The kit's ground layer is z 5 like the feel's but is created later (hell_game.gd:369 vs :423/:714), so its floor marks are drawn over the lava pools, the gas clouds, the Frostgruft ice slab and the hero shadow. A monster blow/kick or the Singularität well moves the world's debris while the hero's own debris and embers next to it lie still. The hero's matter makes no landing sounds. Each instance has its own 600-particle budget.",
+   "should": "One matter world: hero embers that land in lava hiss out, the hero's marks lie under the liquid surfaces, every blast lifts every loose pixel, wells swallow all matter, one budget and one sound path.",
+   "proposal": "As proposed: point skill_fx.particles, skill_fx.skill.particles and attack.particles at g.feel.feedback.particles when g.feel != null. Add a `shared` flag to StorySkillFx. With it set, skip particles.update, the draw_stains/draw_particles/particles.draw_glow calls, and particles.clear()/set_walkable in _set_floor, but keep fx.clear()/fx.set_walkable. Two 600 budgets become one, so raise max_particles (e.g. 900) or give hero effects room(weight). Without a feel, copy the sink cells and liquids into the kit instance. Add sinks() skips to embers(), frost(), stain() and scatter().",
+   "impact": 5,
+   "effort": "M",
+   "risk": "medium",
+   "owner": "ours",
+   "area": "core",
+   "check": "Confirmed. StorySkillFx creates its own `Particles.new()` (story_skill_fx.gd:47), and StoryHero points attack.particles at it (story_hero.gd:156). Only feel.feedback.particles gets set_sink (story_feel.gd:799), set_liquids (:642) and the sound sink (story_sound.gd:709). So kit kicks do not ripple the pools either, because their _liquids is empty. embers() (particles.gd:493), frost(), stain() and scatter() have no sinks() check. The kit has no sink cells at all, so its rime_grow and glut also land on lava. The kit's ground layer (z5) is added after the feel's (hell_game.gd:369 vs :423/:714), so its draw_stains draws over the feel's pools, gas, ice slab and hero shadow. Wells, kick and blow on one instance never touch the other. All three themes have a feel, so this happens in every story world. The feel already shares the kit's FxSprites (story_feel.gd:479 feedback.fx = kit.fx), so sharing the particles the other way is consistent and feasible. Units match: both scales are hero_scale/2 with 32 px cells."
+  },
+  {
+   "title": "All matter makes contact like a rubber ball: drops bounce and slide, fire and smoke bounce off walls, shards skate across lava",
+   "file": "src/vfx/particles.gd",
+   "line": 1872,
+   "kind": "missing-physics",
+   "element": "water/blood/poison, fire, smoke, ice, lava",
+   "worlds": [
+    "Hölle",
+    "Frostgruft",
+    "Krypta"
+   ],
+   "now": "_move has one contact rule for every mode. A wall hit keeps 40 % of the speed reflected (wall_bounce) and all of the tangential speed. A floor hit faster than 70 px/s bounces at 0.35 and keeps 60 % sliding under ground friction. So liquid drops (drop mode from drops(), splat_burst blood, Gefüge water/poison bits) hop and roll 5-10 px like beads before they lie down. Flames pushed by fire_burst (up to 2.4×radius px/s) and smoke bounce back off walls. Sinking is only tested once a particle is at rest (_settle :1971/:1995), so ice shards, rubble, rolling skulls and glowing glut pixels bounce and skate across Hölle lava and only vanish where they stop. Water or blood drops falling into lava vanish without a hiss (only frost steams there). kick() erases wet pixels with no spray (:1639) and throws pool/stain pixels as hard 'debris' chips (:1648).",
+   "should": "Each material makes contact in its own way. A drop splats on first contact: a short streak along its flight, a 1-2 px crown when fast, a ripple and no paint if it lands in a pool. On a wall a drop paints the wall face or runs to its foot. Flames and smoke lose their speed into the wall and creep along it. Ice clinks and rubble thuds. Touching lava at z<=0 sinks the matter at once: a hiss for water, ice and frost, a small plop for heavy debris.",
+   "proposal": "As proposed, with one change: do not reuse `particle.landed` for drops or wall sticks. update() sends landed particles to _land_splash, which spawns a comet crown and reads splash/land_ref. Use a separate flag (e.g. `stuck`) that update() handles by calling the new _land_drop() or wall_splat() and then removing the particle. Add the sinks() check (plop/steam) to the skull branch of _settle. Per-mode contact data (wall: bounce|slide|stick, floor: bounce|splat) in vfx_particles.json is a sound way to do it. Give flame/smoke/mote wall 'slide' with a low wall_keep.",
+   "impact": 4,
+   "effort": "M",
+   "risk": "low",
+   "owner": "ours",
+   "area": "core",
+   "check": "Confirmed in _move (particles.gd:1869-1881, 1909-1928). Every non-free particle reflects off walls at wall_bounce 0.4 on one axis and keeps the other axis. That includes flames, smoke and motes, since settle does not matter there. A floor hit below -70 px/s bounces at 0.35 with velocity×0.6. Drops (drop mode, gravity 1, lift 50-140, speed 60-160, drag 2) hop and then slide about v/11 s ≈ 5 px before settling. sinks() is only tested in _settle (:1971, :1995), and only frost steams there. Also missed: the skull branch of _settle (:1961-1969) returns before any sinks() check, so rolling skulls lie on Hölle lava for good. kick() drops _wet pixels silently (:1639) and throws pool/stain pixels as 'debris' (:1648)."
+  },
+  {
+   "title": "No air drag on height and weightless matter cannot rise: flakes speed up, smoke and embers shoot up forever, motes 'rise' across the floor",
+   "file": "src/vfx/particles.gd",
+   "line": 1905,
+   "kind": "missing-physics",
+   "element": "smoke, steam, fire, snow, soul/holy motes",
+   "worlds": [
+    "Hölle",
+    "Frostgruft",
+    "Krypta"
+   ],
+   "now": "Drag only acts on the floor-plane velocity (:1940). vz has gravity but no air resistance, and weightless modes cannot move vertically at all: emit sets vz=0 when gravity==0 (:217), and _move integrates z only when gravity != 0. Result: snow flakes (flake, gravity 0.08) speed up all the way down (0 to about 60 px/s) instead of drifting at a steady rate. Smoke, steam (-0.06) and embers (-0.12) accelerate upwards for their whole life as rigid, constant-size columns of about 90-100 crypt px, and cooled embers never sink. Motes 'rise' by moving their floor point north: motes() :1394 Vector2(0,-rise), holy() :1497 -10..-24 px/s, a -y bias in smoke/steam. So they bounce off the foot of north walls at 40 % and drift into other cells. A flame's bloom also stays its first white-yellow at full strength while its pixel cools down the ramp (draw_glow :2214 uses particle.color, fade=false), then pops off.",
+   "should": "Buoyant matter reaches a terminal rise speed while it slows and widens: smoke spreads, steam thins. Embers rise, then drift down as they cool. Flakes fall slowly at a steady speed. Motes rise in height, not across the floor. A flame's glow cools and fades with the flame.",
+   "proposal": "As proposed (vz = (vz - g·dt)·exp(-air·dt), terminal speed g/air), with these corrections. steam() emits mode 'smoke', so 'steam air 2' needs a new 'steam' mode or a per-particle air override set in steam(). Keep air 0 for every mode comet() uses (drop, glut, shard, debris, mote), because comet() solves lift for a drag-free arc. Embers mode is not settle, so after the gravity flip a cooled ember should fall and fade (or call _cool for a soot pixel at z<=0). In draw_glow, use the ramp colour by age and alpha×(1-age) for ramp particles.",
+   "impact": 4,
+   "effort": "S",
+   "risk": "low",
+   "owner": "ours",
+   "area": "core",
+   "check": "Confirmed. Drag only scales vel (particles.gd:1940). vz has no air term. emit sets vz=0 when gravity==0 (:217), and z is only integrated when gravity != 0 (:1904). Flakes: g = 0.08×620 = 49.6 px/s² from flake_height 14-40 px, so they reach 37-63 px/s at landing. Smoke (and steam, which emits mode 'smoke') rises at -0.06×620 and embers at -0.12×620, accelerating for their whole life. Smoke size is a constant 4 px. motes() (:1394) and holy() (:1497) move the floor point north (-y). draw_glow (:2214) uses particle.color with fade=false for flames (mode flame fade false), so the bloom stays the ramp's first colour at full alpha while draw_particles cools the flame."
+  },
+  {
+   "title": "Particles are never hidden by actors or props: debris behind a monster, pillar or hero is drawn in front of it",
+   "file": "src/hero/story_feel.gd",
+   "line": 652,
+   "kind": "inconsistent",
+   "element": "all",
+   "worlds": [
+    "Hölle",
+    "Frostgruft",
+    "Krypta"
+   ],
+   "now": "All flying particles of both instances are drawn in one pass, on layers at z 12 (story_feel.gd:147 'over', story_hero.gd:166). That is above the y-sorted actors/props layer (hell_game.gd:418 z 10, sorted at :3773). Chunks, skulls, shards, sparks and blood drops that fly or roll behind a monster, Ignaroth, a pillar, a brazier, a chest or the hero (north of its feet) are painted over it, so the 2.5D depth is lost.",
+   "should": "A particle whose floor point lies north of an actor's foot is covered by the actor; one south of the foot covers the actor.",
+   "proposal": "As proposed. Sort by pos.y (floor point, ×scale for world y), and band-draw inside _draw_actors with draw_set_transform(Vector2.ZERO, 0, Vector2.ONE*feel.scale). Keep z>~40 px matter and the glow pass in the over/glow layers. If #0 is not done, both instances need banding.",
+   "impact": 3,
+   "effort": "L",
+   "risk": "medium",
+   "owner": "ours",
+   "area": "core",
+   "check": "Confirmed. Both particle passes draw on layers at z12 (story_feel.gd:147 'over', story_hero.gd:166). The y-sorted actors/props/mobs/hero layer is z10 (hell_game.gd:418, sort :3773). So every flying chunk, skull, shard or drop is painted over any monster, prop or hero, whatever its floor y. The proposal is feasible: _draw_actors already iterates a y-sorted list, particles carry a floor point (pos, crypt units ×scale = world y), and draw_set_transform with the feel scale is already used in story_feel. Sorting ≤600 indices per frame is cheap."
+  },
+  {
+   "title": "Void wells miss their own core: fast matter jumps across it and slingshots back and forth, worse at low fps",
+   "file": "src/vfx/particles.gd",
+   "line": 941,
+   "kind": "tunneling",
+   "element": "void",
+   "worlds": [
+    "Hölle",
+    "Frostgruft",
+    "Krypta"
+   ],
+   "now": "_step_wells only swallows a particle whose current position is inside the core (d <= core), then adds acceleration (pull+swirl)×near, with near up to 6, by explicit Euler. The move happens later in _move. Near the Singularität (core = 0.12 r, about 7 crypt px; pull 260 / swirl 180, so 600-1900 px/s²) matter reaches 250-600 px/s. That is 5-10 px per frame at 60 fps and 12-30 px at the 0.05 dt clamp (hell_game.gd:2490). So particles cross the core without being taken, get pulled back and ping-pong through the middle. All matter is pulled equally: a 6 px rubble block or a skull swirls like a mote; only Gefüge divides by its units.",
+   "should": "Like a drain: matter spirals in, turning faster as it nears, and vanishes the moment its path crosses the core. Light dust and motes stream in first; heavy rubble drags along the floor.",
+   "proposal": "Add the swept closest-approach core test, but skip `fuse` particles. The core holds Gefüge matter (the `own` branch) and must never swallow it. Add modes.*.mass and divide the well force by it. Prefer keeping the acceleration model with a per-step cap on the speed change, rather than a velocity-target rewrite of every well. A velocity target also changes the boss vortex, the pool void wells, swallow, rift and the Blizzard wind (core 1, suck=false), so if you adopt it, tune it per well.",
+   "impact": 3,
+   "effort": "S",
+   "risk": "low",
+   "owner": "ours",
+   "area": "core",
+   "check": "Confirmed. _step_wells (particles.gd:919-950) removes a particle only if its current position is within the core, before _move advances it. It adds (pull·inward + swirl·tangent)·near·dt with near up to 6, and nothing tests the swept path. The Singularität uses pull 260, swirl 180 and core = 0.12·r·s (talent_fx.gd:500). Light-drag motes can reach several hundred px/s, so at the 0.05 dt clamp (hell_game.gd:2490) a step is longer than the core's diameter. At a steady 60 fps the core catches most radial passes, so the effect is mainly at low fps. Mass: only Gefüge divides by n. Rock, skull and debris get the same acceleration as motes."
+  },
+  {
+   "title": "Blasts and wells act through walls: kick, blow, the wells' pull and _suck have no occlusion",
+   "file": "src/vfx/particles.gd",
+   "line": 1609,
+   "kind": "inconsistent",
+   "element": "fire blasts, shockwaves, void, frost nova",
+   "worlds": [
+    "Hölle",
+    "Frostgruft",
+    "Krypta"
+   ],
+   "now": "kick() lifts every loose or stain pixel in its reach square; only the pixel's own cell is tested (:1645). blow() pushes every particle and floor pixel in its band (:1673-1727). _step_wells pulls every particle within r (:930-950), and _suck lifts floor pixels within 0.8 r (:1272-1292). None of them checks walls in between. A fireball or shockwave against a corridor wall makes debris and embers in the next room jump outward on their own. A Singularität next to a wall drags loose pixels from behind the wall to its foot, where they pile up. Frost novas (frost_fx.gd:233) and hell_monsters blows (:3126) shove matter in the neighbouring corridor. Gas is stopped by walls, so the elements disagree.",
+   "should": "A blast's pressure and a well's pull only reach matter they can see; matter behind a wall stays put.",
+   "proposal": "Add _sees(origin, point), a DDA over the 32 px _walkable grid that stops at the first solid cell. In kick, blow and _suck, cache cell -> visible per call (at most about (2r/32)² cells) and skip pixels and particles in hidden cells. In _step_wells, cache visibility per well for 0.1 s. Apply the same filter before calling pool_paint ripple_near in kick's _liquids loop.",
+   "impact": 3,
+   "effort": "M",
+   "risk": "low",
+   "owner": "ours",
+   "area": "core",
+   "check": "Confirmed. kick() only tests solid() of each pixel's own cell (particles.gd:1645). blow() pushes every particle, ember and loose pixel in the band (:1673-1727). _step_wells (:930-950) and _suck (:1272-1292) have no line-of-sight test either. Callers include frost_fx.gd:233 P.blow and hell_monsters.gd:3126 P.blow. Story cells are 96 world px = 64 crypt px, so a one-tile wall is thinner than typical kick and blow radii, and matter in the next corridor visibly jumps. The DDA over the 32 px _walkable grid, cached per cell per call, is cheap and feasible."
+  },
+  {
+   "title": "Eviction at the cap teleports airborne debris to the floor and pops cosmetics; most emitters bypass room(); frost at its cap never melts",
+   "file": "src/vfx/particles.gd",
+   "line": 1945,
+   "kind": "bug",
+   "element": "all",
+   "worlds": [
+    "Hölle",
+    "Frostgruft",
+    "Krypta"
+   ],
+   "now": "At max_particles every emit() calls _evict(). It removes the oldest particle and, if that is debris, settles it at its floor point: mid-air chunks, drops and shards snap onto the floor under them, and smoke and motes vanish in one frame. Only Gefüge is protected. Comets, documented as 'never skipped', are not: an evicted comet with land_ref lays its puddle at its mid-flight floor point (:1990). The cap is easy to hit because most emitters skip room(): smoke() (:1574) fed by every floor ember (_burn_embers :2384, up to 500 embers), steam(), kick() (up to 140 per blast), rubble(), holy(), shadow(), _suck, plus 40 direct emit/burst calls in feedback.gd and 32 in hell_monsters.gd. Frost has the same pattern: at frost.max, _freeze drops the oldest melt/vapor entry (:2400, :2405), and those pixels stay frozen forever. The whole _vapor list (up to 4000 entries) is rescanned every frame (:2438).",
+   "should": "At the cap, nearly dead cosmetic matter fades out by the dither instead of popping. Airborne matter never teleports, comets always land, and frost always melts.",
+   "proposal": "As proposed for which particles to protect: fuse, splash, land_ref and airborne settle particles (z>1). Do not run a full least-life scan inside every emit at the cap. kick() alone can call emit 140 times in one frame, which would make that O(n²). Instead, find candidates once per frame in update(), or scan from the oldest for the first unprotected non-settle particle. Set its life to min(life, 0.1), tag it 'evicting' so later calls skip it, and pop only above a 1.05× hard cap. Route smoke, steam, kick and rubble through room(). At the frost cap, melt the dropped entry at once. Put _vapor into due-time buckets.",
+   "impact": 3,
+   "effort": "S",
+   "risk": "low",
+   "owner": "ours",
+   "area": "core",
+   "check": "Confirmed. _evict (particles.gd:1945) removes the oldest non-fuse particle and _settle()s it when it is settle. _settle ignores z, so airborne debris, drops and shards are painted at their floor point. A comet with land_ref calls drop_landed at its mid-flight point (:1989). Cosmetic particles pop. smoke(), steam(), kick() (own limit 140), rubble(), holy(), shadow() and _suck skip room(). _burn_embers spawns smoke per ember (:2384, up to 500 embers). Direct emit/burst calls: about 35 in feedback.gd and 30 in hell_monsters.gd. Frost at its cap: _freeze advances _frost_head or pop_front()s _vapor (:2400, :2405) without melting, and the pixel stays in _frozen for good. _melt rescans the whole _vapor array every frame (:2436-2450)."
+  },
+  {
+   "title": "Gefüge blob drawing is an O(pixels × lumps × 2) GDScript loop every frame",
+   "file": "src/vfx/particles.gd",
+   "line": 1231,
+   "kind": "performance",
+   "element": "void (Gefüge)",
+   "worlds": [
+    "Hölle",
+    "Frostgruft",
+    "Krypta"
+   ],
+   "now": "_draw_fused redraws every blob pixel by pixel each frame. For each of up to (2·ceil(r)+5)² art pixels (625 for a full 40 px blob) it loops over all lumps (fuse.lumps 24) to find the nearest one. It loops again for the nearest lump of another element, calling str() on every lump, and calls off.angle() and sin() per pixel. That is about 30k distance ops and 625 draw_rect calls per big blob per frame, likely several ms while the Singularität holds the fused clump.",
+   "should": "The same look, re-computed only when it visibly changes.",
+   "proposal": "As proposed: bake into an Image/ImageTexture and re-bake only on a quantised spin step, the 12 fps beat, or a change of n or flash. Make the edge wobble use the beat clock so it does not force a re-bake every frame. Find the nearest lump and the nearest other-element lump in one pass. Lumps only hold a few elements, so track the minimum per element. Drop str().",
+   "impact": 3,
+   "effort": "S",
+   "risk": "low",
+   "owner": "ours",
+   "area": "core",
+   "check": "Confirmed. _draw_fused (particles.gd:1179-1245) loops (2·(ceil(r)+2)+1)² pixels, 625 for size_max 40 at PIXEL 2. About 380 of them fall inside the edge, and each of those loops all lumps (fuse.lumps 24) twice, the second time with str() per lump, plus off.angle() and sin(). That is about 18-30k distance ops and up to about 380 draw_rect calls per big blob per frame in GDScript, every frame while the Singularität holds it."
+  },
+  {
+   "title": "Wall hits bounce off empty air up to v·dt short of the wall; corners are cut; matter born in a wall passes through it",
+   "file": "src/vfx/particles.gd",
+   "line": 1873,
+   "kind": "tunneling",
+   "element": "all",
+   "worlds": [
+    "Hölle",
+    "Frostgruft",
+    "Krypta"
+   ],
+   "now": "_move only tests the end point of each step. On a hit it puts the particle back at its previous x or y, so debris turns away before the wall: 260 px/s kick debris stops up to 4 crypt px (6 world px) short at 60 fps and up to 13 crypt px at the 0.05 dt clamp, so the gap depends on frame rate. A diagonal step between two wall cells that touch at a corner passes, since only `next` is tested. A particle spawned inside a wall (free, :1865) flies through it until it leaves, possibly on the far side.",
+   "should": "Matter strikes the wall face and bounces from there at any frame rate. It never slips through corners, and matter spawned in a wall leaves on the open side.",
+   "proposal": "On solid(next), compute the crossed cell boundary per axis (floor(next/32)*32 or +32), clamp to the boundary minus 0.5 px, then reflect. If next is solid but both single-axis moves are open (a corner), reflect on the axis with the smaller penetration. Sub-step moves longer than 16 px (wells, comets). For free particles, reflect toward the open neighbour of the spawn cell, or kill them after 2 frames inside the wall.",
+   "impact": 2,
+   "effort": "S",
+   "risk": "low",
+   "owner": "ours",
+   "area": "core",
+   "check": "Confirmed in _move (particles.gd:1863-1881). Only `next` is tested. On a hit the particle keeps its previous coordinate on the blocked axis, so it turns up to v·dt short of the wall face: about 4 crypt px at 60 fps for 260 px/s kick debris, and 13 px at the 0.05 clamp. A diagonal step into an open cell between two corner-touching solid cells is never tested. A free particle born in a wall travels inside it until `next` is open, which can be the far side. Visible impact is small at 60 fps but grows at low fps, and the fix is cheap."
+  },
+  {
+   "title": "Comets land early and short by about v·dt (Euler vs analytic arc) and clink off walls away from the gameplay spot",
+   "file": "src/vfx/particles.gd",
+   "line": 656,
+   "kind": "frame-rate",
+   "element": "all (Gefüge/ultimate comets)",
+   "worlds": [
+    "Hölle",
+    "Frostgruft",
+    "Krypta"
+   ],
+   "now": "comet() solves lift with the continuous formula (0.5 g t² - h)/t. _move integrates height with semi-implicit Euler (vz -= g·dt, then z += vz·dt, :1905-1906), which loses 0.5·g·t·dt of height. The blob touches down about 0.9 frame early and about v·dt short: for a 400 px/s comet that is 6 crypt px (9 world px) at 60 fps and 18 crypt px at the clamp, so the splash misses the spot where gameplay hits. Its floor path also collides with walls (p.free=false, :663): a comet whose straight line clips a pillar or wall cell bounces off at 40 % and splashes somewhere else.",
+   "should": "A ballistic arc lands exactly where and when the gameplay resolves, at any frame rate.",
+   "proposal": "As proposed: z += vz·dt - 0.5·g·dt²; vz -= g·dt, with the touchdown back-off pos -= vel·(z/vz). This is exact only with no air drag, so if #2 adds `air`, it must stay 0 for the comet modes, or comets need their own drag-free branch. For particles with `splash`, skip wall collision while z > ~24 px.",
+   "impact": 2,
+   "effort": "S",
+   "risk": "low",
+   "owner": "ours",
+   "area": "core",
+   "check": "Confirmed. comet() solves lift = (0.5·g·t² - h)/t (particles.gd:656). _move uses semi-implicit Euler (vz -= g·dt; z += vz·dt, :1905-1906), which loses 0.5·g·T·dt of height. For T=0.5 s, h=10 that is 2.6 px at 60 fps, so the comet lands about 0.9 frame early and about 0.9·v·dt short: about 6 crypt px for 400 px/s, and about 18 px at the 0.05 clamp. Comets get p.free=false (:663), so their floor path reflects off any wall or pillar cell under the arc at 40 % and splashes elsewhere."
+  },
+  {
+   "title": "Trail particles are emitted inside draw calls, so their density scales with the refresh rate",
+   "file": "src/vfx/skill_fx.gd",
+   "line": 220,
+   "kind": "frame-rate",
+   "element": "fire, arrows",
+   "worlds": [
+    "Hölle",
+    "Frostgruft",
+    "Krypta"
+   ],
+   "now": "The hero fireball's trail spawns one flame, and an ember at 50 % chance, every time _draw_fireball runs (skill_fx.gd:220-222). Arrow sparks spawn at 35 % per draw in attack_fx.draw_arrow (attack_fx.gd:366). A 144 Hz display shows 2.4× the trail of a 60 Hz one (and fills the budget faster), a 30 fps hitch thins it, and simulation state changes inside a draw call.",
+   "should": "Trail density depends on distance flown or time, and looks the same at any refresh rate.",
+   "proposal": "Emit in update time: in StorySkillFx._read_shots/update keep a per-shot trail_carry += speed*dt/spacing (for example one flame per 6 crypt px) and emit there. In attack_fx use the same accumulator as draw_orb's track.shed. Draw functions only draw.",
+   "impact": 2,
+   "effort": "S",
+   "risk": "low",
+   "owner": "ours",
+   "area": "core",
+   "check": "Confirmed. skill_fx._draw_fireball emits one flame and, at 50 % chance, an ember each time it draws (skill_fx.gd:220-222). attack_fx.draw_arrow emits a spark at 35 % per draw (attack_fx.gd:366-369). StoryHero calls queue_redraw on its layers every update (story_hero.gd:279-281), so trail density scales with refresh rate, and simulation state changes inside _draw. draw_orb already uses a distance accumulator (track.shed, attack_fx.gd:163), so the proposal follows an existing pattern."
+  },
+  {
+   "title": "Hand-rolled side physics (StoryHero._bits, RigFx) with other gravity, no floor and no residue",
+   "file": "src/hero/story_hero.gd",
+   "line": 552,
+   "kind": "inconsistent",
+   "element": "blood, gold, ice, steel",
+   "worlds": [
+    "Hölle",
+    "Frostgruft",
+    "Krypta"
+   ],
+   "now": "StoryHero keeps its own matter (_bits, MATTER :114-121, _step_matter :552-570) for perfect block/counter and the seal's blood price (card_kit.gd:249). It uses gravity 900-1100 px/s² where particles.gd uses 620, a 3 px grid instead of 2, a wall hit reverses the whole velocity, and nothing lands: blood 'drops' fade after 0.6-0.9 s instead of staining, chips and shards vanish. RigFx (src/rig_kit/rig_fx.gd:62-70) is screen-space x/y with gravity on screen y and no height, floor or walls. Rig chips and bursts (rig_renderer.gd:787, :1020) fly through walls and never land.",
+   "should": "One matter physics: a blood price leaves drops that dry like all blood, block chips clatter and lie, rig chips land on the floor.",
+   "proposal": "Drop the gravity and grid mismatch argument. Route StoryHero.matter() into g.feel.feedback.particles: convert the point, speeds and lift by /feel.scale, map kinds to drops/chips/shatter/motes/sparks with Pal ramps, and keep _rims and _words. Then blood drops stain and chips settle like all other matter. Give rig_renderer an optional `particles` reference; it also serves the obsolete crypt, which must keep loading without it. Route only effects whose floor point the renderer knows (feet-based death bursts, corpse matter, shatter chips) into it. Keep RigFx for flashes, rings and beams.",
+   "impact": 2,
+   "effort": "M",
+   "risk": "medium",
+   "owner": "ours",
+   "area": "core",
+   "check": "Main point confirmed: StoryHero._bits (story_hero.gd:114-121, 552-570) has its own integrator. A wall hit reverses the whole velocity (v = -v·bounce), and nothing lands: the blood-price drops (src/hell/card_kit.gd:249) fade after 0.6-0.9 s with no stain, and chips and shards vanish. RigFx.step (rig_kit/rig_fx.gd:62-70) is screen-space x/y with optional grav on y and no floor or walls. Rig bursts (rig_renderer.gd:787, :1020) have no grav, so they fly radially through walls and fade. However, the gravity and grid sub-claims are wrong. StoryHero works in world px, and particles' 620 crypt px/s² equals 930 world px/s² at scale 1.5 (1116 at the HD 1.8), which matches the 900-1100 here. Its 3 world px ART grid equals particles' 2 crypt px PIXEL ×1.5."
+  },
+  {
+   "title": "Pool reactions are only drawn and contradict the rules: fire that looks put out keeps burning, crust that looks safe still burns, poison hisses instead of exploding",
+   "file": "src/vfx/pool_paint.gd",
+   "line": 1605,
+   "kind": "inconsistent",
+   "element": "fire, lava, water, blood, poison, ice",
+   "worlds": [
+    "Krypta",
+    "Hölle",
+    "Frostgruft"
+   ],
+   "now": "_react/_react_pair (1639) and _react_hot (1661) apply the vfx_pools.json reactions by style. poison, blood and water are all style 'liquid'. So 'liquid+fire' hides the fire cells (field.hide) and puffs steam. 'liquid+lava', 'ice+lava' and the hot lava tiles get a dark crust painted on. All of this is drawing only. The rules read PoolField.materials_at plus ElementRules.top (lava > fire > ice > poison > void > water > blood). So a blood or water pool over burning ground shows bare blood while the hero keeps burning. The fire also stays invisible after the blood dries, because hide is only cleared when the fire's own cells end. A poison pool touching fire shows a steam hiss (poison 'putting out' fire), yet the rules would make it explode; fire_at only runs when a fire attack lands, never when pools meet. Blood, poison, ice or residue water on a lava puddle or on the Hölle lava tiles paints a crust that reads as 'cooled, harmless'. But story_elements.crusted() only knows lava zones crusted by water, so the lava still burns.",
+   "should": "The floor shows what the rules do. Water on fire really puts it out and the fire ends. Poison meeting fire or lava goes off as a fireball and is used up. Crust appears only where the lava is really harmless. Blood on lava sizzles away but leaves no safe crust.",
+   "proposal": "Do the drawing fix first; it changes no rules. (1) In _react_pair and _react_hot, never hide or crust the cell of the material that ElementRules.top() picks for that cell. For 'liquid+fire', hide the liquid instead (a_to 'gone') and hiss at the rim, so the fire you see is the fire that burns. For 'liquid+lava' and hot tiles, let blood, poison and water hiss away (a_to 'gone', steam) but drop b_to 'crust'. Draw crust only where story_elements.crusted(at) is true: pass a Callable in like `hot`, or let the snapshot's 'cr' (_crust_pool) be the only source. (2) Draw poison meeting fire or lava as a flame flare (particles.fire_burst at the contact) instead of steam. (3) Real contact rules (water puts out fire, poison next to fire explodes) belong in story_elements' 0.2 s contact pass (see finding #3), using zones/field records. Ask the user before doing this, because it reverses the 2026-10-30 'visible only' decision. Keep PoolField free of story-specific rules; it can expose a cell-overlap query and story_elements decides.",
+   "impact": 5,
+   "effort": "M",
+   "risk": "medium",
+   "owner": "ours",
+   "area": "fluids",
+   "check": "Confirmed. pool_paint._react keys rules by style, and water, blood and poison are all style 'liquid' (vfx_pools.json). 'liquid+fire' sets b_to 'gone', which hides the fire cells and plays a steam hiss. Gameplay reads pool_field.materials_at plus ElementRules.top, priority [lava, fire, ice, poison, void, water, blood], so the fire still burns. The hide is only erased in _show_thawed/thaw_near, so a fire cell stays hidden after the liquid over it ends. 'liquid+lava', 'ice+lava' and _react_hot (the tile-2 floor) paint crust on lava. Gameplay crust exists only in story_elements.crusted(), which reads lava zones crusted by water, and hell_game.gd:2703 burns the hero on tile 2 with no crust check at all. hell_game.gd:407 even calls this crust 'drawing only'. No update-time contact makes poison and fire explode. vfx_pools.json records 'User decision 2026-10-30: reactions visible only', so the gameplay half of the proposal needs the user's OK."
+  },
+  {
+   "title": "Reactions throw the wrong matter: boiling flings frost sparks, a poison explosion is green sparks, condensing rain is thrown upward",
+   "file": "src/hell/story_elements.gd",
+   "line": 411,
+   "kind": "painted-not-simulated",
+   "element": "poison, fire, water, steam, ice",
+   "worlds": [
+    "Krypta",
+    "Hölle",
+    "Frostgruft"
+   ],
+   "now": "_explode (392) shows _burst_in(...,44,'poison'): 22 green 'spark' pixels at 260 px/s that fall and bounce, plus a flash disc and floor cracks. No flame rises and no smoke is left. In the Frostgruft (no monster runtime) the explosion is only frost_fx.impact (shake and flash, line 416), with no particles at all. _boil (435) throws 5 frost-blue sparks out and down. The steam turning to rain (155) throws 6 frost sparks *up* from 20 px above the cloud, then a water puddle spreads from its middle. The thaw (106) is 4 frost sparks. The old crypt's explode (src/vfx/feedback.gd 191-197) already uses particles.fire_burst + embers + kick + scorch_star.",
+   "should": "An explosion is a buoyant fireball with tumbling embers, a scorch mark and smoke left behind. Boiling is dense steam puffs rising for about a second while the water shrinks. Rain is drops falling from the cloud's height over its whole area, each ringing or joining the new puddle as it lands. A thaw hisses and drips.",
+   "proposal": "Add one helper in story_elements that only needs _particles()/_pscale(), so it works in all three worlds. Explode: P.fire_burst(at/s, reach/s), P.embers(at/s, reach*0.6/s, 10), P.scorch_star(at/s+Vector2(0,6), reach*0.4/s), plus gas.emit('smoke:boom:%d','smoke', at, reach*0.8, 2.5, t, ZERO, 0.6). Keep _crack_floor/_impact. Boil: P.steam(z.p/s, 16, z.r*0.6/s) plus 2-3 more puffs over 0.6 s. Rain: emit r/6 'drop' particles at height 40-70 over random points of the cloud, with land_ref=weakref(g._pool_layer()) and land_mat='water'. Start the 'regen' puddle zone after the fall time so the landing drops build it (PoolPaint.drop_landed already joins drops). Thaw: P.steam + P.drops. Remove the four 'frost' _burst_in calls at 106/144(keep rime)/155/435 and the poison burst at 411.",
+   "impact": 5,
+   "effort": "M",
+   "risk": "low",
+   "owner": "ours",
+   "area": "fluids",
+   "check": "Confirmed. _explode at story_elements.gd:411 calls g.monsters._burst_in(at-(0,10), 44, 'poison'). 'poison' is in CRYPT_ELEMENTS, so this becomes _pixel_burst with 22 green 'spark' pixels at 260/340 px/s, plus _crack_floor and _impact. There is no fire_burst, no embers, no scorch and no smoke; no story file calls particles.fire_burst. With no monster runtime (the Frostgruft) the only branch is frost_fx.impact, plus the kick. _boil (435), the rain (155: 6 pixels thrown up from 20 px above the cloud) and the thaw (106) all use 'frost' _pixel_burst sparks. feedback.gd 191-197 shows the crypt's explode really does use fire_burst, embers, kick and scorch_star. All the particle helpers the proposal names exist: fire_burst 536, embers 493, scorch_star 1417, steam 1557, drops 1370, plus land_ref/land_mat and pool_paint.drop_landed. _particles()/_pscale() only need g.feel, which exists in all three worlds. The proposal is feasible."
+  },
+  {
+   "title": "Ignited poison gas does not burn: it fades green from its centroid and gets blown outward by its own blast",
+   "file": "src/hell/story_elements.gd",
+   "line": 112,
+   "kind": "missing-physics",
+   "element": "poison gas, fire",
+   "worlds": [
+    "Krypta",
+    "Hölle",
+    "Frostgruft"
+   ],
+   "now": "fire_at (112-115) and fire_passes (127-131) test each poison cloud with clouds_of (gas_field.gd 395-407). That uses 'at' = the mean of its puffs and 'r' = the radius it spawned with, not where the gas actually is. A hit then calls end_cloud and one _explode at the centroid. end_cloud thins the cloud rim first over fade 1.4 s, still green. A cloud that has spread down a corridor or been blown into a corner goes off at its middle. Fire touching its visible tail can miss, and fire far from any visible gas can hit. The green veil outlives its own explosion for 1.4 s and is pushed outward by the kick impulse, so it reads as gas blown away rather than burnt.",
+   "should": "A flame front runs through the cloud puff by puff, starting where the fire touched it (about 250-400 px/s). Each puff flashes to flame and leaves dark smoke, and the poison is gone wherever the front has passed.",
+   "proposal": "Add GasField.ignite(key, from, now, speed) that gives each puff burn_at = now + from.distance_to(puff.p)/speed (deterministic, host clock). In step(): when now >= burn_at, move the puff into a new 'smoke' cloud (same p, r*1.2, d*0.5, short end) and append {at, r} to an events list. story_elements.update drains the events: P.fire_burst/flames at each puff (drawing), and _explode damage once per cloud when its first puff burns. For the ignition test, replace the centroid circle with gas.thickness(point,'poison') >= ElementRules.dense_from() along the fire's reach, or with any puff inside r + puff.r.",
+   "impact": 4,
+   "effort": "M",
+   "risk": "low",
+   "owner": "ours",
+   "area": "fluids",
+   "check": "Confirmed. clouds_of (gas_field.gd 395-407) returns the mean of the puffs and the spawn radius r. fire_passes needs the shot within 0.85 r of that centroid. The puffs are held from hold_from 0.7 r and can be up to 0.4 r across (vfx_gas.json), so the drawn veil reaches about 1.1 r and a shot through its visible rim misses. end_cloud only sets end. In step(), the fading puffs keep their poison ramp and thin over fade 1.4 s, rim first. _explode then calls particles.kick, which reaches the gas through _liquids (ripple_near, i.e. impulse at 1.4 r) and blows the dying green veil outward. Nothing turns the gas into flame or smoke. The ignite and burn-front proposal fits GasField's deterministic step(dt, now) model."
+  },
+  {
+   "title": "Contact reactions barely exist: poison gas over lava or fire never ignites, poison onto lava does nothing, residue pools never react",
+   "file": "src/hell/story_elements.gd",
+   "line": 178,
+   "kind": "missing-physics",
+   "element": "poison, lava, fire, water, steam, frost",
+   "worlds": [
+    "Krypta",
+    "Hölle",
+    "Frostgruft"
+   ],
+   "now": "Between attacks, update() checks only two contacts every 0.2 s. One is water vs lava puddles by centre-distance circles (_lava_meets_water 441, using z.r, while pool_entries draws them at 0.8 r and splat_shape stretches them along walls). The other is a puddle whose centre cell is a tile-2 floor (_floor_meets_puddles 349). So a poison cloud drifting over the Hölle lava floor or a lava or fire puddle never goes off. A poison puddle landing on a lava puddle does nothing, because touch() has no 'poison' case. A steam cloud over the Frostgruft ice floor or a frost pool never condenses, and frost mist over water never freezes. Talent residue pools (talent_fx.gd _leave 959, synced into the gameplay field at 341-342: fire, lava, poison, water, ice, void) do hurt via materials_at, but _puddles (467) scans only g.monsters.zones. So the hero's fire never sets off his own poison residue, and his lava residue never crusts on water.",
+   "should": "Any matter that meets another reacts the same way, whatever made it: zone, residue, potion, floor tile or gas.",
+   "proposal": "As proposed: a gas-puff contact pass in story_elements.update (a few puffs per cloud per 0.2 s) checks layer.materials_at(puff.p) and the tile-2 hot floor, and calls fire_at for poison over fire or lava. A new PoolField.pools_near returns zones and field pools alike. One caution: talent residue pools are laid from drawing code (talent_fx._leave, with _local_id/_h on the draw clock). Making the rules react to them ties gameplay to presentation, which breaks the deterministic-footprint rule. Before making residue reactive, either lay residue from the gameplay side (talent_combat on the host clock), or leave residue out of reactions and out of materials_at. Do not widen the coupling that already exists.",
+   "impact": 4,
+   "effort": "M",
+   "risk": "medium",
+   "owner": "ours",
+   "area": "fluids",
+   "check": "Confirmed. update() runs only _lava_meets_water (zone circles at z.r, while pool_entries draws at 0.8 r) and _floor_meets_puddles (zone centre cell == 2) every 0.2 s. Nothing tests gas puffs against lava or fire pools or hot tiles. touch() has no poison case, and _puddles scans only g.monsters.zones, so talent residue pools synced as 'talent_residue' (talent_fx 341-342, _leave 959) never react, although materials_at lets them hurt. One small overstatement: steam only comes from _boil, which needs the monster runtime, so a steam cloud never exists in the Frostgruft. The proposal is feasible, with one risk below."
+  },
+  {
+   "title": "All five gases move the same: steam lies on the floor like poison, frost mist doesn't sink, no gas feels the Frostgruft wind",
+   "file": "src/physics_kit/gas_field.gd",
+   "line": 264,
+   "kind": "missing-physics",
+   "element": "steam, smoke, poison, frost, void gas",
+   "worlds": [
+    "Krypta",
+    "Hölle",
+    "Frostgruft"
+   ],
+   "now": "step() uses one set of constants for every material; vfx_gas.json gives each material only a colour ramp. Steam from boiling (emitted with zero push, steam_time 5 s + fade 1.4 s) spreads, rolls at 7 px/s and sits on the floor exactly like a poison cloud. Smoke and frost mist behave the same way. In the Frostgruft, src/vfx/snowstorm.gd (brother's) blows flakes and wind lines sideways at up to several hundred px/s in gusts and storms, while every cloud and every smoke or steam particle stands still.",
+   "should": "Steam billows up fast: it swells, drifts screen-up and is gone in about 1.5 s. Smoke rises slowly, swells and lingers. Poison is heavy: it creeps low, fills corners and barely drifts. Frost mist sinks and spreads wide and flat, thinning slowly. In a storm, gas leans and streams with the wind and piles up on the lee walls.",
+   "proposal": "Add vfx_gas.json materials.<mat>.physics {swell, swell_max, thin, spread_k, drift_k, damping_k, hold_k} and read it per cloud in step(). Steam: fast swell, strong thinning (gone in about 1.5 s), weak hold. Smoke: slow swell, light thinning. Poison: heavy (low drift_k, high hold_k). Frost: wide spread_k, low damping, slow thinning. Show 'rising' only in the drawing: give gas.gd _build_layer a per-material lift offset (puff drawn higher as it ages and thins), and let the particles' steam/smoke modes carry the visible buoyancy. Leave the floor position alone. For wind, apply drawing-only shear in gas.gd and push the particles' smoke and steam, until a deterministic wind schedule on the game clock exists (that needs the brother's snowstorm.gd, owner=brother).",
+   "impact": 4,
+   "effort": "M",
+   "risk": "low",
+   "owner": "ours",
+   "area": "fluids",
+   "check": "Confirmed. GasField.step uses one set of global constants (spread, hold, drift, damping, fade) for every material. vfx_gas.json gives each material only a 'ramp'. Steam from _boil is emitted with push ZERO and steam_time 5 and behaves exactly like poison. No gas or particle code reads any wind. snowstorm.gd (the brother's file) is screen-space presentation with its own clock and RNG. The proposed 'rise along -y' is wrong for this top-down game, though. Steam is gameplay gas (it blinds monsters: hell_monsters BLIND_ATTACKS, and vision uses extent()), so moving its floor position north would drag the gameplay cloud across the room and into walls."
+  },
+  {
+   "title": "Frost from the drawing code freezes gameplay pools, poison and blood included, but only in Krypta and Hölle",
+   "file": "src/vfx/particles.gd",
+   "line": 1540,
+   "kind": "bug",
+   "element": "ice, water, poison, blood",
+   "worlds": [
+    "Krypta",
+    "Hölle",
+    "Frostgruft"
+   ],
+   "now": "particles.freeze_liquids is called from drawing code: talent_fx.gd 494 (the Blizzard's rime ticks in _zone_matter), 862 (_shatter_at), 936 (_burst_physics), 1531 (frost leap), and feedback.gd 199/217. It forwards to pool_paint.freeze_near (1368), which calls pool_field.freeze_near (pool_field.gd 393), and that turns every style-'liquid' cell (water, poison and blood) into the rules' Glatteis. So the Blizzard's rime silently freezes a monster's poison puddle: it stops poisoning (ice beats poison in priority) and everyone slides. The zone is never marked frozen, so lightning_at still charges it and fire_at still 'boils' it while it is drawn as ice. In the Frostgruft the talents' pool layer (hell_talents.gd 574) is never in particles._liquids (story_feel.gd 638-642 adds only g.pools and the gas), so the same talents freeze nothing there.",
+   "should": "One freeze rule on the game clock in every world: frost freezes water (and, if wanted, blood or poison with their own frozen look). The drawing only shows that result.",
+   "proposal": "Split pool_paint.freeze_near in two. freeze_look adds drawing-only ice cells, like drop puddles, and never touches pool_field; particles.freeze_liquids calls only that. The rules' freeze runs only through story_elements.frost_at, which passes the keys of the zones it froze. pool_field.freeze_near gets a keys/mats filter so it freezes only those pools' cells (and talent residue water through the field). In story_feel.gd, when g.pools is null, add g._pool_layer() to set_liquids (the Frostgruft's talents.fx.pools at feel.scale), so blasts ring it and drops join it there too.",
+   "impact": 4,
+   "effort": "S",
+   "risk": "medium",
+   "owner": "ours",
+   "area": "fluids",
+   "check": "Confirmed. particles.freeze_liquids (1540) forwards to every layer in _liquids. In Krypta and Hölle that list includes g.pools (story_feel 638-642). pool_paint.freeze_near (1368) calls pool_field.freeze_near (393), which turns every style-'liquid' cell into ice: water, poison and blood. The callers are drawing code: talent_fx 494 (Blizzard rime in _zone_matter), 862, 936, 1531. Ice outranks poison in priority, so the poison stops working, and the zone is not marked frozen, so fire_at still boils it. In the Frostgruft, g._pool_layer() is talents.fx.pools, created in hell_talents.draw_world, and it is never added to the particles' liquids. Only boss_fx.pools and the gas are there (hell_game 3338 adds only the gas), so the same talent freezes nothing. One more detail: the rules' own frost_at → _pools_call('freeze_near') also freezes poison and blood cells inside its radius. The proposal's keys/mats filter covers this."
+  },
+  {
+   "title": "Glatteis never thaws on its own, pops back to water in one frame when fire thaws it, and fire cannot melt a monster's frost pool",
+   "file": "src/hell/story_elements.gd",
+   "line": 140,
+   "kind": "missing-physics",
+   "element": "ice, water, fire",
+   "worlds": [
+    "Krypta",
+    "Hölle",
+    "Frostgruft"
+   ],
+   "now": "The story worlds set z.frozen = true (140, 371) with no timer. element_rules.json reactions.ice_time (8 s) is used only by the old crypt (src/combat/elements.gd 94/161). So ice lasts the puddle's whole life, even next to Hölle lava. Thawing (fire_at 101-108) calls pool_field.thaw_near (pool_field.gd 419-437), which erases the ice cells, and pool_paint._show_thawed / thaw_near (1436) un-hide the water in the same frame. The sheet pops to water with 4 frost sparks. _fire_at only matches 'poison' and 'water'. A monster's frost puddle is material 'ice' (alias frost → ice), so fire landing on it does nothing in the rules; only the drawing-only 'ice+fire' look turns overlapping cells into water.",
+   "should": "Ice melts rim first over about 0.5-1 s, starting on the fire's side when fire caused it, with steam hissing and drips, and leaves water. It melts by itself after ice_time, faster near lava or fire. Fire on an ice pool melts it to water.",
+   "proposal": "Keep z.frozen a bool and add z.ice_left = rules.ice_time when freezing. Count it down in update(): faster when a lava/fire zone or a tile-2 hot cell is within reach, and at <= 0 set frozen = false and run the thaw. Give PoolField.thaw_near(at, r, span, from) per-cell end times: until = now + span * clamp(dist_from_fire / r). Erase each ice cell in advance() when its time comes, and emit 'thawed' events in batches, so PoolPaint un-hides the water cell by cell and hisses every few cells. Add an 'ice' case to _fire_at: end the ice zone, lay a water puddle zone (melt water) at about 0.8 r, and puff P.steam.",
+   "impact": 4,
+   "effort": "M",
+   "risk": "low",
+   "owner": "ours",
+   "area": "fluids",
+   "check": "Confirmed. z.frozen = true at 140 and 371 with no timer. ice_time is read only by src/combat/elements.gd. Thawing calls pool_field.thaw_near, which erases the ice cells at once, and pool_paint.thaw_near erases the liquid's hide in the same call, with 4 'frost' sparks. _fire_at matches only 'poison' and 'water'. Monster frost puddles (POOL_ELEMENTS includes frost, alias frost→ice) get no case, so fire does nothing to them in the rules. The countdown proposal has one flaw: the code checks bool(z.get('frozen', false)) everywhere, and a float counting below 0 stays truthy."
+  },
+  {
+   "title": "Big pools pop in late and already spread; pools drained by the void stay full, then collapse",
+   "file": "src/physics_kit/pool_field.gd",
+   "line": 181,
+   "kind": "bug",
+   "element": "all liquids",
+   "worlds": [
+    "Krypta",
+    "Hölle",
+    "Frostgruft"
+   ],
+   "now": "A pool of thread_cells (600) cells or more is shaped on a worker and counts only after commit_delay (0.066 s per 1000 cells, about 0.33 s for the 5003-cell poison potion). But timings() (116-122) counts its cells' births from the zone's start, with spread_time 0.35 s. So by the time it is laid, about 90% of the cells are already born. The potion shatters, nothing lies there for a third of a second, then the full pool appears in one frame, and the splash and crown (_show_pool 249) only fire at that moment. The other direction: when a void mouth shortens a puddle (story_elements 213-215 / 277-279 set z.T = t + drain), sync_zone ignores the new length of a known pool. The pool stays full while its motes stream away, then vanishes rim first in 0.35 s once the zone drops (end_missing → finish).",
+   "should": "Matter lands and runs out from the moment of impact. A drained pool shrinks toward the mouth while it drains.",
+   "proposal": "For a threaded job, pass start' = max(start, job.commit) into timings() inside add(). commit is a pure function of the cell count, so every machine still gets the same result, and the pool spreads after it shows instead of popping in. In PoolPaint.sync, when sync_zone returns a key that is still in pool_field._shaping and the zone is fresh, play the crown and drops at once from the zone's x, y, dx, dy and r. In sync_zone, for a known key compare start+L with pool.end. If it is shorter, call a new PoolField.retime(key, now, new_end, toward) that sets each cell's until between now and new_end by its distance from `toward` (the mouth, which void_at passes), so the far rim goes first.",
+   "impact": 4,
+   "effort": "S",
+   "risk": "low",
+   "owner": "ours",
+   "area": "fluids",
+   "check": "Confirmed. add() starts a WorkerThreadPool job for >= thread_cells (600) cells with commit = _now + commit_delay. The worker computes timings(cells, start, end, ...) with the zone's original start and spread_time 0.35 s. _show_pool fires (and splashes) only on 'laid' at commit, and the cells born before then all show at once. A poison potion is radius 72 × leveling scale 2.4 at art 3, roughly 7,800 cells by cells_for, so commit is about 0.5 s. That is longer than the whole spread, so the full pool pops in, even worse than the finding says. sync_zone returns early for a known key, so the shorter z.T a void drain sets is ignored until the zone drops and end_missing → finish runs it off rim first in 0.35 s. hell_monsters pool_entries passes L = z.T. The proposal is feasible and deterministic, because commit depends only on the field clock and the cell count. Capture start' before creating the task."
+  },
+  {
+   "title": "Frostgruft pools sit outside the element physics: no reactions, monsters never slide on move ice, potions are plain circles",
+   "file": "src/hell/story_elements.gd",
+   "line": 183,
+   "kind": "inconsistent",
+   "element": "ice, water, fire, poison",
+   "worlds": [
+    "Frostgruft"
+   ],
+   "now": "The Frostgruft has no monster runtime. update() returns before contacts and charges (183-185), _puddles finds nothing, talent_pool makes no pool (hell_talents.gd 402-403), and thrown potions stay story_items circles (story_items.gd 720 only zones them when monsters exist). The snowmen's frost_patch ice pools (frost_moves.gd 494-500) slip only the hero, inside a circle, and are drawn as frost_fx's slab (frost_fx.gd 285-330). Monsters never slide on them, the hero's fire does not melt them, and they vanish cell by cell with no melt water. In Krypta and Hölle the same ice is a PoolField pool: everyone slides, it cracks and it leaves melt water.",
+   "should": "The same matter has the same physics in all three worlds.",
+   "proposal": "Make the Frostgruft's pool layer (g._pool_layer() = talents.fx.pools) the rules' truth there too. frost_moves._pool also syncs its zone into that layer as {k:'pool', st:'ice', source:'frost_moves'}. ElementExposure (already used by _step_mob_medium) then makes monsters slide, and pool_paint draws it with cracks and melt water. Drop frost_fx's slab for move pools and keep it for the ice floor tiles. Route hero_pool into the same layer when monsters is null. With reactions working on field pools (see the contact-reaction finding), story_elements no longer needs g.monsters for pools.",
+   "impact": 4,
+   "effort": "L",
+   "risk": "medium",
+   "owner": "ours",
+   "area": "fluids",
+   "check": "Confirmed. In story_elements.update, `if g.monsters == null: return` skips contacts and charges. hell_talents.talent_pool and story_items.hero_pool create zones only when monsters exist. frost_moves._pool zones are circles that only call HeroFx.apply(g,'slip') on the hero (frost_moves 494-497). frost_fx's slab draws them, and fire never reaches them. Frostgruft mobs do run exposure().step through _step_mob_medium (hell_game 2920), and g._pool_layer() resolves to talents.fx.pools there. So syncing the move pools into that layer as PoolField 'ice' pools would let monsters slide. The proposal is feasible, if large. frost_moves.gd and frost_fx.gd are not on the brother's list."
+  },
+  {
+   "title": "Overlapping pools hide each other by spawn order, not by which one acts, and liquids never mix",
+   "file": "src/vfx/pool_paint.gd",
+   "line": 446,
+   "kind": "inconsistent",
+   "element": "water, blood, poison, lava, ice",
+   "worlds": [
+    "Krypta",
+    "Hölle",
+    "Frostgruft"
+   ],
+   "now": "draw() paints each material's texture in _fields insertion order: the material that first appeared in the room is at the bottom. Water and blood are opaque, so whichever came later covers the other completely, outline included. The rules pick by priority (ElementRules.top). A water puddle laid over poison shows clean water while the hero is being poisoned. Blood dropped into water shows a red sheet with a hard outline on blue instead of colouring the water. liquid_at and wet_at (1765) also answer by insertion order.",
+   "should": "The material that acts is the one you see. Miscible liquids tint each other: blood clouds into water, poison turns it green and fuming. Immiscible ones (lava, ice) clearly sit over or under.",
+   "proposal": "Sort the draw loop and liquid_at by ElementRules priority, reversed, so the material that counts is drawn last (lava and fire on top, blood at the bottom); cache the order when _fields' keys change. Add drawing-only mix rules to vfx_pools.json reactions, keyed by material: 'water+blood' → a_to 'bloodwater', 'water+poison' → a_to 'toxicwater'. Give them their own ramps: bloodwater is the water ramp lerped 40% toward blood; toxicwater keeps the miasma veil and fumes. _react_pair already turns overlap cells into a drawing-only material.",
+   "impact": 3,
+   "effort": "M",
+   "risk": "low",
+   "owner": "ours",
+   "area": "fluids",
+   "check": "Confirmed. PoolPaint.draw loops `for mat in _fields` in insertion order. _fields entries are created on first use by _field() and erased when they empty, so the order depends on spawn history. Water and blood are opaque (comment at pool_paint 860; only poison has the miasma veil). liquid_at (1765) also returns the first material in insertion order. Rules priority is lava > fire > ice > poison > void > water > blood, so water drawn over poison hides the material that is acting. Same-style pairs have no reaction key: the lookup is _style(a)+'+'+_style(b), and 'liquid+liquid' does not exist, so liquids never mix. Sorting the draw order by reversed priority is cheap. The mix rules need _react to also look up material-keyed rules, which is feasible."
+  },
+  {
+   "title": "Gas parting depends on the frame rate, and shots never cut through gas in the story worlds",
+   "file": "src/physics_kit/gas_field.gd",
+   "line": 227,
+   "kind": "frame-rate",
+   "element": "all gases",
+   "worlds": [
+    "Krypta",
+    "Hölle",
+    "Frostgruft"
+   ],
+   "now": "part() adds a velocity kick (speed*k*0.2) and moves each puff k*0.6 px per call, with no dt. hell_game._step_gas (3342-3344) calls it once per frame for the hero and for every monster. At 144 fps the hero parts gas 2.4x harder than at 60 fps. ElementExposure breathes the ring around his feet (gas_around, 57 px) and the vision reads extent(), so his poison dose and his view range depend on the frame rate. cut() (243, also per call with no dt) is only called by the old dungeon_view.gd (855). Arrows, fireballs and monster shots fly through clouds in all three story worlds without leaving a lane.",
+   "should": "Parting is a force per second, the same at any frame rate. Every shot cuts a lane through the gas that closes again behind it.",
+   "proposal": "Change the signatures to part(at, radius, dt) and cut(at, dir, width, dt), and scale both the velocity term and the position nudge by dt*60 (or rewrite them as speed*k*12*dt). In hell_game._step_gas, call gas.cut(s.p, s.v, 6*PIXEL_WORLD/2, dt) for each eshot and each talents.bullets entry (b.pos, b.velocity) that lies inside a cloud's bounds. Scale the monsters' part radius with m.r instead of the flat 18.",
+   "impact": 3,
+   "effort": "S",
+   "risk": "low",
+   "owner": "ours",
+   "area": "fluids",
+   "check": "Confirmed. GasField.part adds speed*k*0.2 to velocity and k*0.6 px to position per call, with no dt. hell_game._process → _update → _update_embers → _step_gas calls it once per rendered frame for the hero and every monster, with variable dt and no fixed-step accumulator. Nothing in project.godot caps the frame rate. So at 144 fps the parting is about 2.4x stronger, which changes what ElementExposure.gas_around reads (the hero's dose) and the vision extent. gas.cut is called only by the obsolete dungeon_view.gd 855. The story worlds' eshots ({p, v}) and hell_talents bullets ({pos, velocity}) never cut lanes. The proposal (dt-scaled part and cut, cut calls in _step_gas, part radius from m.r) fits the existing data shapes."
+  },
+  {
+   "title": "Talent projectiles never check the end of their step, so at 60 fps they fly through every wall",
+   "file": "src/hell/hell_talents.gd",
+   "line": 459,
+   "kind": "tunneling",
+   "element": "all talent projectiles (Feuerball, Infernospeer, Frostlanze, Splittersalve, Leerengeschoss/-lanze, all archer arrows, Wurfmesser, necro bolts)",
+   "worlds": [
+    "Krypta",
+    "Frostgruft",
+    "Hölle"
+   ],
+   "now": "_step_bullets (line 543) relies only on talent_blocked(from, b.pos, 3.0). talent_blocked samples i in range(1, steps) with steps = max(1, ceil(dist/12)), so it never tests the end point. When a frame's step is under 12 px the loop does not run at all: at 440 px/s that is any frame rate of 37 fps or more, at 560 px/s for arrows 47 fps or more. At 60 fps a talent shot never meets a wall. It turns invisible inside the wall (PixelPaint.clip), comes out in the next room and hits monsters behind the wall. talent_fx._settle_shots works out the 'impact' from the shot vanishing, so the boom/shatter and the residue happen wherever its 1.6 s life ends, about 700 px away, often in mid-air.",
+   "should": "A shot stops at the first wall on the segment it sweeps. It bursts at the contact point on the wall face, and its sparks/shards bounce off the wall normal.",
+   "proposal": "Keep talent_blocked unchanged for the melee line-of-sight check. Give _step_bullets its own sweep: sample range(1, steps+1) every 6 px or less, including the end point. On the first blocked sample, bisect about 6 times to get the contact point, and take the normal with the same side probes story_feel.wall_hit uses (story_feel.gd:258-290). For the blocked test use story_feel.blocked (cell plus solid_grid grown 50 px), the same test basic shots use, or g.box_blocked; pick one and use it everywhere. Put the shot at the contact point and call g.feel.wall_hit(from, b.pos, style, 1) with the existing wall-style names: {fireball/infernospear:'fire', frost_lance:'frost', arcane:'void', arrow:'arrow', blade:'metal'}. 'ice' is not a valid wall style (SHOT_WALL_STYLES/ENEMY_WALL_STYLES use 'frost'). Expose {at, normal, talent, style} through a shot_ends list in tc.snapshot so talent_fx._impact uses the real contact instead of the guess at talent_fx.gd:777.",
+   "impact": 5,
+   "effort": "S",
+   "risk": "low",
+   "owner": "ours",
+   "area": "abilities",
+   "check": "Confirmed. talent_blocked (hell_talents.gd:457-461) samples range(1, steps) with steps=max(1,ceil(d/12)), so the end point is never tested and nothing is tested when the step is under 12 px. Shot speeds are 440 px/s, and 560 px/s for arrows (talent_combat.gd:366). hell_game._process passes a variable dt (min(delta, 0.05)), so at 60 fps a step is 7-9 px and is never checked. The enemy loop in _step_bullets has no line-of-sight check, so shots hit monsters behind walls. _settle_shots/_impact fire wherever the 1.6 s life runs out (about 704 px away), and the residue is left there too."
+  },
+  {
+   "title": "Residue pools are made by the drawing code, yet they hurt and trip the hero and monsters",
+   "file": "src/vfx/talent_fx.gd",
+   "line": 342,
+   "kind": "bug",
+   "element": "fire, ice, poison, blood, void, lava residue",
+   "worlds": [
+    "Krypta",
+    "Frostgruft",
+    "Hölle"
+   ],
+   "now": "_leave (959) creates residue pools on the client only. They come from shots _settle_shots guesses have vanished (also on walls and at expiry, where bullet_hit put no element), from every nova's _burst_physics and from blinks, and each gets a random length from _h(_local_id()). They are synced as source 'talent_residue' into the same pool layer whose materials_at (pool_field.gd:298, no source filter) feeds ElementExposure for the hero and the monsters (story_exposure_host.gd:45; the hero has no tags and is exempt only from the void). Results: a Feuerball into a nearby wall leaves fire that burns the Feuermagier ('im Feuer verbrannt'). Every Wirbelsturm/Blutiger Schrei (berserk element = blood) leaves a blood slick under the berserker's feet even with no hit (slide, grip 0.35, slip). A Frostlanze on a wall leaves Glatteis (grip 0.015). A void shot that fizzles leaves a pool that hurts, pulls and silences. Damage depends on draw passes and a local counter.",
+   "should": "Pools that hurt are placed deterministically by gameplay, where gameplay put the element, and spare the caster like his other talent puddles. The picture only follows them.",
+   "proposal": "(a) does not work as described. PoolField merges the cells of one material from all pools into a single _cells[mat] map (_lay, pool_field.gd:525-545), and cells carry no source, so materials_at cannot skip a source. Either keep drawn residue out of the gameplay layer (give talent_fx its own visual-only PoolPaint for 'talent_residue'), or tag cells from visual sources so _lay never merges them with gameplay cells and have materials_at/covers/liquid_at skip the tagged cells. (b) The claim that talent_pool spares the hero is wrong. Its friend flag only skips the hell_monsters puddle zone hit (hell_monsters.gd:1606). The pool still acts on the hero through ElementExposure (pools_under), and talent_pool does nothing in the Frostgruft (g.monsters == null). To spare the caster, pass the owner into pool_entries, make StoryExposureHost.pools_under build the hero's list from pool_field.pools_at(at) without the hero's own or friend pools, and lay Frostgruft talent pools into the fallback layer with owner set. Then create residue that should act (Feuerball explosion, lava, Phönix trail, Frostsprung) from talent_combat events, with times from talents.json.",
+   "impact": 5,
+   "effort": "M",
+   "risk": "medium",
+   "owner": "ours",
+   "area": "abilities",
+   "check": "Confirmed. _leave (talent_fx.gd:959) creates residue from the drawing code with times from _h(_local_id()). draw_ground syncs it as 'talent_residue' (line 342) into fx.pools, which is g.pools in Krypta and Hölle and the fallback layer that _pool_layer returns in the Frostgruft. StoryExposureHost.pools_under → materials_at has no source or owner filter, so ElementExposure.step acts on the hero: the fire medium hurts and burns him ('im Feuer verbrannt'), ice gives grip 0.015, blood slips. These cases are all real: berserk novas (element blood) leave a blood pool at the hero's own position through _burst_physics, the Phönixschritt trail lays fire pools all the way to his landing spot, and a Frostsprung lands him on ice. One detail: the 'Feuerball into a nearby wall' example cannot happen at 60 fps today because of #0. It becomes real once #0 is fixed."
+  },
+  {
+   "title": "Talent hits get no hit reaction from the creature, and talent swings throw no matter",
+   "file": "src/hell/hell_talents.gd",
+   "line": 475,
+   "kind": "missing-physics",
+   "element": "steel/blood/stone melee, dashes, novas, piercing arrows",
+   "worlds": [
+    "Krypta",
+    "Frostgruft",
+    "Hölle"
+   ],
+   "now": "_damage_enemy's feedback block sets m.hit and m.k (60 px knockback) and plays a sound, but never calls g.feel.on_hit. Basic attacks do (FrostCombat.after_hit → story_feel.on_hit → feedback.gd:476-489: material drops, sparks, hit_spark, splat, squash). talent_fx._observe (1376+) has no case for the 'swing' event, and dash matter is thrown at the dash START, in the class colour, where nothing was hit. So Wutschlag, Schildstoß, Schnittwunde, Fächerschnitt, Erdspalter (melee), the Ansturm/Vorstoß/Klingensturm dashes, every nova and Durchschuss passing through 3 enemies give no blood, bone chips, slime or spark from the target. The player sees only the slash sheet and the white flash. Talent swings into walls do not clang (feel.swing_wall runs for basic swings only).",
+   "should": "Every talent hit throws the target's own material along the blow (blood drops that splat, bone chips, slime), and blades spark on walls.",
+   "proposal": "As proposed, but avoid a double hit sound. The feedback hit branch plays hit_<material> through feedback.sfx (the world's sfx) itself, and hell_game._damage_mob skips its own sound when feel exists. In _damage_enemy under `if feedback:` write `if g.feel != null: g.feel.on_hit(m, direction, false) else: <the current mob_hit/_sound lines>`. Add the talent_swing_wall host hook (forward to g.feel.swing_wall, and also to g.wreck.swing for props) in the talent_combat 'melee' branch and in the channel swing at talent_combat.gd:692. Replace the dash-start _matter with dust along the path, and lower the shot _matter count on enemy hits.",
+   "impact": 5,
+   "effort": "S",
+   "risk": "low",
+   "owner": "ours",
+   "area": "abilities",
+   "check": "Confirmed. _damage_enemy (hell_talents.gd:468-482) sets m.hit and m.k and plays g.sound.mob_hit but never calls g.feel.on_hit. Basic hits go through FrostCombat.after_hit → story_feel.on_hit (feel_hits), and feedback.gd:476-489 then throws material drops, sparks, hit_spark and a splat. All talent damage goes through _hit → game._damage_enemy. talent_fx._observe has no 'swing' case. The 'dash' case throws class-element _matter at the dash start (the event is at `from`, talent_combat.gd:419). feel.swing_wall and wreck.swing run only in hell_game._swing."
+  },
+  {
+   "title": "Giftwolke gas comes back whole right after it explodes or is swallowed, and can be set off again",
+   "file": "src/vfx/talent_fx.gd",
+   "line": 353,
+   "kind": "bug",
+   "element": "poison gas (trapper_7 Giftwolke, Giftköder trap clouds)",
+   "worlds": [
+    "Krypta",
+    "Hölle",
+    "Frostgruft"
+   ],
+   "now": "Talent poison zones are synced into the gas layer every frame. When fire ignites the cloud (story_elements.gd:112-129, fire_at/fire_passes → gas.end_cloud) or the void eats it, the cloud thins out and is erased (gas_field.gd:357-358). On the next frame GasField.sync (gas_field.gd:107) finds the zone's key missing and _add's it again as a fully spread, full-density cloud (p > 0.3, so not 'fresh'). The gas pops back in just after its explosion, the next fire shot blows it up again (another _explode with damage), and the gameplay zone keeps poisoning. After the Singularität eats it, it reappears visibly (only _eaten_gas stops it being eaten twice).",
+   "should": "Burnt or eaten gas is gone. The zone is spent, or at most refills slowly from its source.",
+   "proposal": "In GasField.end_cloud, record _spent[key] = now for zone sources. In sync, skip spent keys while the source still lists them, and forget them once it stops listing them. For gameplay, when story_elements ignites or eats a 'talent:<id>' cloud, call talents.tc end_zone(id) (set time to 0) so the poison ticks stop together with the gas.",
+   "impact": 4,
+   "effort": "S",
+   "risk": "low",
+   "owner": "ours",
+   "area": "abilities",
+   "check": "Confirmed. story_elements fire_at/fire_passes call gas.end_cloud on poison clouds (story_elements.gd:113-129). The cloud fades and is erased once its puffs are empty (gas_field.gd:357-358). On the next sync GasField.sync (line 107) finds the key 'talent:<id>' missing and _add's it again at full density, already spread (not fresh). clouds_of then returns it again because its end > now, so the next fire shot explodes it again. The talent zone in talent_combat keeps ticking poison either way. The proposal is feasible: track spent keys in GasField and add an end-zone call on tc."
+  },
+  {
+   "title": "Schildwall and Seelenschild look like Kristallschild and shatter into ice; stone domes chip ice",
+   "file": "src/vfx/talent_fx.gd",
+   "line": 1262,
+   "kind": "inconsistent",
+   "element": "stone (guard), soul (necro) shields",
+   "worlds": [
+    "Krypta",
+    "Frostgruft",
+    "Hölle"
+   ],
+   "now": "Aura kind 'shield' maps to DOMES ['shield',1,'ice'], and its element is _shield_el.get(owner,'ice'), which only frost_5/arcane_11 casts set. So guard_9 Schildwall and soul_5 Seelenschild are drawn as cracking ice-crystal domes, and at their end they shatter into ice shards and frost (_dome_end 1274). _dome_hit_physics (2368) also falls back to 'ice' for every dome, so the stone domes of Schutzwall, Wächtereid and Bollwerk throw ice shards where an arrow dents them. _dome_end has no stone case, so stone domes end with no matter at all.",
+   "should": "A guard's dome gives stone/steel chips and dust where it is struck and drops plates and rubble when it goes. Seelenschild gives soul motes.",
+   "proposal": "Set _shield_el on cast from Pal.element_of(talent) for every 'shield' talent (guard_9 → stone, soul_5 → soul). In _dome_hit_physics take the element from _dome_last[owner].element. Add a 'stone' branch (particles.chips + dust_flat at the dent; at the end particles.rubble plus a dust_flat ring) and a 'soul' branch (particles.motes) to both functions.",
+   "impact": 4,
+   "effort": "S",
+   "risk": "low",
+   "owner": "ours",
+   "area": "abilities",
+   "check": "Confirmed. The aura kind 'shield' carries no talent (talent_combat.gd:1121), and _shield_el is set only for frost_5 and arcane_11 (talent_fx.gd _observe cast). So guard_9 and soul_5 domes are drawn with element 'ice', TalentDome draws ice cracks, and _dome_end shatters them into ice. _dome_hit_physics falls back to _shield_el.get(owner,'ice') for every dome, so stone domes (unbreakable/bulwark/oath) throw ice shards when struck. _dome_end only matches ice and void, so stone domes end with no matter. TalentDome.draw uses Pal.ramp(element), and stone and soul ramps exist, so the fix is feasible."
+  },
+  {
+   "title": "The necromancer's poison and soul zones are see-through circles and sprite sheets, not gas or pools",
+   "file": "src/vfx/talent_fx.gd",
+   "line": 1741,
+   "kind": "inconsistent",
+   "element": "poison (curse_7 Seuchenfeld, curse_14 Seuchengrube), soul (soul_11 Seelensturm)",
+   "worlds": [
+    "Krypta",
+    "Frostgruft",
+    "Hölle"
+   ],
+   "now": "'plague' and 'souls' are in LOOKS (119), so draw_ground skips them for gas.sync (349) and for pools (neither _fire_look_pools nor _mage_look_pools handles them). _draw_looks paints a draw_circle at alpha 0.16/0.14 and loops the 'poison_cloud' / 'soul_wisp' sheets. The trapper's Giftwolke is real gas: it spreads, gathers in corners, parts round heroes, is blown by blasts and explodes on fire. The necromancer's poison never explodes, is never blown or swallowed and is no pool, though gameplay poisons everything in r every second.",
+   "should": "Same element, same physics: plague is poison gas over a poison pool, and Seelensturm is matter swirling in a well.",
+   "proposal": "Turning plague into real gas and a pool also makes it act in gameplay. GasField and PoolField clouds and pools feed ElementExposure with no owner filter, so the necromancer standing in his own Seuchenfeld would breathe its poison gas and stand in its poison pool, and fire from monsters or burning monsters would explode it (_explode). So: (1) fix #3 first, or every ignition will bring the cloud back; (2) make talent-sourced gas and pools spare their owner in StoryExposureHost (gas_around/pools_under for the hero leave out clouds and pools whose owner is the hero, which means passing an owner into the cloud and pool records); (3) then add plague zones to `clouds` and a poison pool entry of about r*0.8. Keep the sprite and circle only when gas == null. For Seelensturm, use _tick('souls:%d') to emit particles.motes on a particles.well with suck=false.",
+   "impact": 4,
+   "effort": "S",
+   "risk": "low",
+   "owner": "ours",
+   "area": "abilities",
+   "check": "Confirmed. 'plague' and 'souls' are in LOOKS, so _own_look skips them for the pool entries and the gas clouds in draw_ground, and neither look-pool helper handles them. _draw_looks paints a draw_circle at alpha 0.16 (plague) or 0.14 (souls) plus looping poison_cloud and soul_wisp sprites. curse_7 Seuchenfeld and curse_14 Seuchengrube both have look 'plague' with status poison. soul_11 Seelensturm has look 'souls'."
+  },
+  {
+   "title": "Ultimate painters ignore paint_matter; Erdspalter still plays the old Blutrausch blood fountain",
+   "file": "src/vfx/talent_ults.gd",
+   "line": 529,
+   "kind": "painted-not-simulated",
+   "element": "blood, ice, fire, poison (ultimates)",
+   "worlds": [
+    "Krypta",
+    "Frostgruft",
+    "Hölle"
+   ],
+   "now": "TalentUlts.cast maps berserk_14 to _blood_burst (line 78). berserk_14 is now Erdspalter, a leap, and its cast event fires at the landing spot, so the slam shows a blood fountain: 24-40 painted drops on fixed arcs (529-548) land as painted splats and dither out after 1 s, with no stain and no pool (_ult_pool reads the legacy, empty 'pools' table). Other painters ignore TalentPixels.paint_matter too. Eissturz (_shatter 829/845) paints 22 tumbling shards and 30 chips over the particle shards that TalentPixels.shatter/_burst_physics already throw. Blutwelle (_blood_crown 908) paints 22 drops and a pool next to the real residue. Feuersturm embers (_firestorm 812) rise in straight lines. The Meteor call's ember rain (_sky_stream 140), the Jagdgrund/Todeszone flask's glass and poison (_flask 380) and the Klingensturm finale's drips (_finale) are all painted.",
+   "should": "Shapes stay painted; flying matter lives in the particles: drops that splat and stay, shards that skid, embers that drift up and die.",
+   "proposal": "Gate the matter loops with TalentPixels.paint_matter as proposed, with two corrections. (1) berserk_14's cast event is already at the landing spot, so a 'take-off kick' does not belong there. Drop _blood_burst at the cast and put particles.kick + dust_flat at the leap_slam event's `at` (the take-off point). leap_slam already throws stone rubble at tx/ty. (2) The berserk_14 wave is a nova event, and _observe's 'nova' case already calls _burst_physics with blood, which throws particles.drops. Adding another drops ring would double it, so only gate _blood_crown's drops and pool. A particles.splat stain at most. The fire_14 call column embers and the trapper_14 flask glass and poison drops still need new particle emits as proposed.",
+   "impact": 4,
+   "effort": "M",
+   "risk": "low",
+   "owner": "ours",
+   "area": "abilities",
+   "check": "Confirmed. TalentUlts.cast maps berserk_14 to _blood_burst. In talent_combat.cast, _run (the leap) runs before _event('cast', player.pos), so the cast event sits at the landing spot. _blood_burst paints 24+8*stage drops on fixed arcs that land as painted splats and dither out. The 'pools' table in vfx_talents.json is a legacy note only, so _ult_pool does nothing. talent_ults only checks paint_matter at line 1562. _shatter (22 shards and 30 chips), _blood_crown (22 drops and a pool), the _firestorm embers (fixed spots rising straight up), the _sky_stream ember rain, the _flask bits and the _finale drips are all painted without that gate."
+  },
+  {
+   "title": "Talent shots paint their flight matter, while the left-click bolts shed real particles",
+   "file": "src/vfx/talent_pixels.gd",
+   "line": 915,
+   "kind": "painted-not-simulated",
+   "element": "fire (Feuerball, Infernospeer, pyro basic), ice (Frostlanze mist), void (core motes)",
+   "worlds": [
+    "Krypta",
+    "Frostgruft",
+    "Hölle"
+   ],
+   "now": "The fire shot's peeling embers (915-923) are worked out from fmod(clock*2.4) relative to the ball's current position and are not gated by paint_matter. They travel with the ball, never fall behind it or land, and the ember tail sags downward like a liquid (900). The Frostlanze's mist (_lance) and the void core's motes are painted the same way. No talent shot puts anything into the particles while it flies: no embers left along a Feuerball's path, no frost settling under a Frostlanze. The left-click icicle and void orb do shed real particles (mage_bolt.gd:116-128).",
+   "should": "Fire: flame licks rise off the ball, and embers left in world space float up, cool and die on the floor. Ice: cold mist sinks and a few frost flecks settle. Void: motes are pulled in towards the core.",
+   "proposal": "Emit per bullet in hell_talents._step_bullets (it has dt): b.shed += dt; while b.shed >= 1/rate, emit into g.feel.feedback.particles (respecting particles.room()). Fire: emit(pos, -v*0.15 + up, ember colour, 0.6, 'ember', lift), plus particles.flames(pos, 1) every 4th time. Ice: particles.frost(pos, small r, 1). Void: motes with a short well. Gate the painted embers and mist with paint_matter, and make the flame licks rise; keep the sag only for the embers.",
+   "impact": 4,
+   "effort": "M",
+   "risk": "low",
+   "owner": "ours",
+   "area": "abilities",
+   "check": "Confirmed. In TalentPixels.shot (talent_pixels.gd:915-923) the fire embers are placed at `at - d*(...)` from fmod(clock*2.4), so they move with the ball. They are not gated by paint_matter. The ember tail has an explicit downward sag (line 900). Neither draw_bullet nor _step_bullets emits particles while a talent shot flies. mage_bolt.gd:116-128 does emit for the basic icicle and void orb. particles.emit/flames/frost/motes/room all exist, and _step_bullets has dt and g.feel.feedback.particles is available."
+  },
+  {
+   "title": "Impact drops, motes, shards, feathers and the Glutkette's flames are painted next to their particle twins",
+   "file": "src/vfx/talent_pixels.gd",
+   "line": 1319,
+   "kind": "painted-not-simulated",
+   "element": "poison, blood, curse/soul motes, block shards, fire",
+   "worlds": [
+    "Krypta",
+    "Frostgruft",
+    "Hölle"
+   ],
+   "now": "TalentPixels.impact 'drop' (1311-1327) and 'mote' (1295-1309) are not gated by paint_matter, although _impact/_observe also throw particles.drops/motes for the same hit. Giftpfeil, Dornenfalle, the curse/soul bolts and companion bleeds show two sets: painted ones that vanish mid-arc and real ones that splat. In _extra_event: block_break paints 8 falling shards on top of _matter's 8 (1997), pet_strike paints 5 blood drops on top of _matter's 6 (2011), meteor_fall paints an ember streak only (1925), dive paints feather cells only (1968), and the phoenix's ember dots are painted (1829). The Glutkette's burn is the hero rage-aura painter (TalentPixels.flames, 1022) placed at the fixed hit point (_burning at `hit`, 2317), while _damage_enemy knocks the target 60 px away, so the flames hang where it was.",
+   "should": "One set of matter, living in the particles; a burning target carries its fire with it.",
+   "proposal": "Gate those loops with TalentPixels.paint_matter. meteor_fall: _defer ember emits along the rock's path (same formula as 1924) every 0.05 s. dive: particles.emit 'debris' feathers with high drag and low gravity. Glutkette: drop the painted _burning while particles exist; instead emit particles.flames at the target every 0.08 s for chain.burn s (put enemy ids into the chain points and resolve them via enemy_at), or rely on the monster's own fire_t look.",
+   "impact": 3,
+   "effort": "S",
+   "risk": "low",
+   "owner": "ours",
+   "area": "abilities",
+   "check": "Confirmed. TalentPixels.impact's 'mote' and 'drop' branches have no paint_matter gate, while _impact/_matter throw particles.drops/motes for the same hit. block_break paints 8 shards on top of _matter's 8, and pet_strike paints 5 drops on top of _matter's 6. meteor_fall (an 8-cell ember streak), dive (beast cells) and the phoenix ember dots are painted only. The Glutkette's _burning draws TalentPixels.flames (the rage-aura painter, not gated) at the fixed `hit` point. One detail is overstated: m.k = dir*60 is a decaying push velocity, not a 60 px shove, so the knockback alone moves the target only about 10-20 px. The painted flames still drift off the target because it keeps walking during the 0.6 s burn."
+  },
+  {
+   "title": "The hero kit and attacks use a second particle world that wells, blasts, pools and gas never touch",
+   "file": "src/hero/story_skill_fx.gd",
+   "line": 46,
+   "kind": "inconsistent",
+   "element": "hero kit skills and basic-attack element bursts",
+   "worlds": [
+    "Krypta",
+    "Frostgruft",
+    "Hölle"
+   ],
+   "now": "StorySkillFx creates its own Particles.new(), and story_hero.gd:156 points attack_fx at it. Talents, gore, pools, mage bolts and enemy blasts use g.feel.feedback.particles (hell_talents.gd:83, hell_monsters._blow_front). The crypt shares one instance (dungeon_view.gd:418). In the story worlds, whirl dust, chain-lightning sparks, kit fireball embers, frost shards and the attacks' element bursts are not pulled by the Singularität or void-pool wells, not shoved by Raumsprung or enemy blasts (P.blow), and do not land in pools or touch gas (set_liquids is set only on the feedback particles, story_feel.gd:640-643). They also have their own cap and draw order.",
+   "should": "All matter lives in one physical world.",
+   "proposal": "In story_hero.gd, when g.feel exists, set skill_fx.particles, skill_fx.skill.particles and attack.particles to g.feel.feedback.particles. Add an owns_particles flag to StorySkillFx so that update, _set_floor, draw_ground, draw_over and draw_glow skip particles.update/clear/set_walkable/draw_* when the instance is shared (feedback already steps and draws it).",
+   "impact": 3,
+   "effort": "M",
+   "risk": "medium",
+   "owner": "ours",
+   "area": "abilities",
+   "check": "Confirmed. StorySkillFx has its own `var particles := Particles.new()`, steps, clears and draws it itself (story_skill_fx.gd:140,244-274), and story_hero.gd:156 sets attack.particles to it. Talents (hell_talents.gd:83), pools, boss_fx and set_liquids (story_feel.gd:637-642) use feel.feedback.particles. So kit and attack matter never sees those wells, blows or liquids. Both instances use the same crypt scale (theme.hero_scale/2 in story_hero and story_feel), so sharing one instance is feasible with the owns_particles guard as proposed."
+  },
+  {
+   "title": "Pfeilhagel: arrows fall on a free-running clock, not the damage ticks, and leave no matter",
+   "file": "src/vfx/talent_fx.gd",
+   "line": 1722,
+   "kind": "painted-not-simulated",
+   "element": "steel/stone (sniper_11)",
+   "worlds": [
+    "Krypta",
+    "Frostgruft",
+    "Hölle"
+   ],
+   "now": "Arrows land on `clock*1.6 + i/count*3`: each lands every 0.625 s, evenly spread, with no link to the zone's 0.5 s damage ticks (zone.every is in the snapshot). Each strike is only the 'arrow_impact' sprite sheet: no chips, no dust, no shaft left in the floor. A see-through draw_circle (1718) covers the field.",
+   "should": "Volleys land in waves exactly on the ticks. Each arrow kicks up dust and stone chips and leaves a quivering shaft that stands briefly, then breaks.",
+   "proposal": "Take the volley index k = floor((total-left)/every) from the zone and the spots from _h(id*131 + k*17 + i), so arrows arrive on the tick. On each new k (_tick 'hail:%d'), per arrow: particles.chips + dust_flat, a small particles.floor_crack on one in four, and a splinter emit. Draw the stuck shaft cells for about 0.4 s. Replace the alpha circle with a PixelPaint.disc dither.",
+   "impact": 3,
+   "effort": "M",
+   "risk": "low",
+   "owner": "ours",
+   "area": "abilities",
+   "check": "Confirmed. The 'arrows' look lands each arrow on clock*1.6 + i/count*3, which is not tied to the zone's every (0.5 s for sniper_11 in talents.json). The snapshot zone carries time, total and every, so the volley index can come from the zone. Each strike is only the 'arrow_impact' sprite. _zone_matter skips the arrows look entirely, and _zone_element returns '' for it. The draw_circle at alpha 0.18 is there. The code comment promises 'dust, splinters and a quivering shaft', but none of it is implemented."
+  },
+  {
+   "title": "Arrow and bolt impacts are gold sparks and coin-like chips at a guessed point, never splinters off the surface",
+   "file": "src/vfx/talent_fx.gd",
+   "line": 890,
+   "kind": "missing-physics",
+   "element": "arrows (sniper gold, beast), mage bolts at walls",
+   "worlds": [
+    "Krypta",
+    "Frostgruft",
+    "Hölle"
+   ],
+   "now": "Archer talent arrows (sniper_1/3/7, beast_6) land through Pal.kind('gold'/'beast'): particles.sparks + chips in gold (gold chips that settle on the floor like coins), whatever they hit, wall or flesh. There are no splinters, no tip spark and no dust, while the enemies' bone arrows do splinter (shot_looks.gd:150-176). The impact point is guessed (777) and the matter goes along -flight instead of bouncing off the wall face. MageBolt.burst (mage_bolt.gd:146) uses s.p, which is already inside the blocked wall cell, so the icicle's splinters and the orb's implosion ring spawn inside the wall.",
+   "should": "Arrows break as wood and iron: splinters thrown back off the surface, one spark from the tip, a puff of dust; gold only for the glint. Bolts burst at the wall face.",
+   "proposal": "As proposed. For MageBolt, the simplest fix is in hell_game.gd at the wall branch: compute the contact point once (the same bisection wall_hit does between s.p - s.v*dt and s.p, or have story_feel.wall_hit return the contact and normal) and set s.p to it before calling MageBolt.burst, so the burst needs no dt or blocked lookup of its own. Pass the normal for out_dir.",
+   "impact": 3,
+   "effort": "S",
+   "risk": "low",
+   "owner": "ours",
+   "area": "abilities",
+   "check": "Confirmed. Talent arrows are tracked in draw_bullet before the style check, and element_of(sniper_*) is gold. So _impact paints a burst and _matter throws particles.sparks plus gold chips, whatever they hit. beast_6 gets beast chips plus dust instead, so 'gold' applies only to sniper. The point is guessed (talent_fx.gd:777) and the matter goes along -dir rather than a reflected wall normal. Enemy bone arrows do splinter (ShotLooks.impact). MageBolt.burst uses s.p, which hell_game.gd:2732-2742 has just found inside a blocked cell, and only feel.wall_hit bisects to the contact, so the icicle splinters and the orb ring spawn inside the wall."
+  },
+  {
+   "title": "Monster knockback decays per frame, so throw distance and the Rage slam window change with the frame rate",
+   "file": "src/physics_kit/motion_kit.gd",
+   "line": 163,
+   "kind": "frame-rate",
+   "worlds": [
+    "Krypta",
+    "Frostgruft",
+    "Hölle"
+   ],
+   "element": "bodies/knockback",
+   "now": "step_body multiplies the push m.k by push.decay 0.86 once per frame, whatever dt is (physics_motion.json:25 even says so). Total travel is about push*dt/0.14. A Rage throw (story_hero.gd:213, 520*1.5*1.2 = 936 px/s) flies about 111 px at 60 Hz, 46 px at 144 Hz and 223 px at 30 Hz. The slam check (push > 330 px/s) lasts 7 frames, so a wall only counts if it is within about 72 px (60 Hz) or 30 px (144 Hz). A sword knock (600*0.25 = 150 px/s) moves an enemy 18 px at 60 Hz but 7 px at 144 Hz. check_slam also hardcodes the decay as m.k / 0.86 (story_hero.gd:222).",
+   "should": "The same blow should push a body the same distance over the same time at any refresh rate. The Rage slam should trigger at the same wall distance on every machine.",
+   "proposal": "In step_body use push * pow(decay, dt * 60.0). That keeps today's 60 Hz tuning exactly. Better: a new physics_motion.json push.half_life_s of 0.077 and push * exp2(-dt / half_life). Return the pre-decay push as \"push_in\" in the result. Let story_hero.check_slam read that value instead of m.k / 0.86, so retuning decay never breaks the slam. Callers to check: hell_monsters.gd:536-543 and hell_game.gd:2930-2935.",
+   "impact": 5,
+   "effort": "S",
+   "risk": "low",
+   "owner": "ours",
+   "area": "bodies",
+   "check": "Confirmed. motion_kit.gd:163 returns push * decay (0.86) once per step, with no dt in it, and physics_motion.json push._note says so in plain words. hell_game._process only caps dt at 0.05. project.godot sets no max_fps and no physics tick, so the game runs once per vsync frame. Travel works out to push*dt/(1-0.86): about 111 px at 60 Hz and 46 px at 144 Hz for the 936 px/s Rage throw. check_slam (story_hero.gd:222) hardcodes m.k / 0.86. Both callers write m.k = step.push: hell_monsters.gd:543 and hell_game.gd:2935. The proposal is right: pow(decay, dt*60) keeps the 60 Hz tuning, and returning push_in for check_slam removes the hardcoded 0.86."
+  },
+  {
+   "title": "Hölle bodies freeze where they died, play one death row and vanish after 0.75 s",
+   "file": "src/hell/hell_monsters.gd",
+   "line": 1696,
+   "kind": "missing-physics",
+   "worlds": [
+    "Hölle",
+    "Frostgruft"
+   ],
+   "element": "death/corpses",
+   "now": "13 of the 18 Hölle monster defs have no part rig (hell_rigs.json only has the drakes and blutfledermaus). Their corpse (line 575) is pinned to m.p. It plays the death row once (draw_corpse 1978-1986) and is filtered out at c.t >= 0.75, so the body just disappears and only the blood stain stays. The killing blow's momentum m.k is dropped, and so is enemy.tumble from the Urknall: _sprite only applies pose.lean, never a rotation. The Frostgruft fallback for unrigged looks (story_feel.gd FALL_TIME 0.45) flattens, tips 0.35 rad and fades. Krypta rigs, by contrast, ragdoll and leave pieces lying (cap 60).",
+   "should": "A felled body should keep moving with the blow: slide or skid with friction, stop at walls, turn over if it was spinning. It should end up lying on the floor and fade slowly, as the Krypta ragdoll pieces do.",
+   "proposal": "Keep the dissolve and its 0.75 s life. At line 575 store v = m.k and spin = the tumble rate in the corpse dict. Note that after a Rage slam or a photon kill m.k is 0, so fall back to the direction from _kill_fx(m) times a small speed by tier. In the corpse loop (1694), move c.p with MotionKit.integrate against a box_blocked solid and friction v *= exp(-8*dt). Then c.p carries the momentum and stops at walls. Draw with an angle: pass {lean: c.ang} as the pose in draw_corpse, easing the angle from the tumble toward 0. Optionally emit the dissolving pixels as embers or ash particles through _phys().emit with the corpse velocity, so the matter drifts on with the blow. Do not hold or extend the last frame.",
+   "impact": 4,
+   "effort": "M",
+   "risk": "low",
+   "owner": "ours",
+   "area": "bodies",
+   "check": "The code matches the claim. hell_rigs.json has only drache1-4 and blutfledermaus, and no hell_monsters.json def has a 'rig' key. Corpses are pinned at m.p (hell_monsters.gd:575) and filtered at c.t < 0.75 (line 1696). draw_corpse plays the death row over 0.75 s, and _sprite applies only pose.lean, so m.k and m.tumble are dropped. But the atlas (kettenschinder.png row 3) is a deliberate disintegration into red and ember pixels. The body is meant to dissolve, not lie down. 'Hold the last frame 6 s and end up lying like Krypta pieces' would go against the art. The real defect is smaller: the dissolve stays exactly where the body died and ignores the momentum and spin of the killing blow."
+  },
+  {
+   "title": "Talent hits replace the knockback with 60 px/s away from the hero, ignoring where the blast was",
+   "file": "src/hell/hell_talents.gd",
+   "line": 477,
+   "kind": "bug",
+   "worlds": [
+    "Krypta",
+    "Frostgruft",
+    "Hölle"
+   ],
+   "element": "talent impacts",
+   "now": "_damage_enemy assigns m.k = direction * 60, and direction is hero→enemy (talent_combat.gd:1196 and 1201). That holds even for area blasts, where `away` from _blast_at is computed one line later but only goes into the ragdoll stamp. Meteor, Nova and the Urknall collapse therefore move living enemies about 7 px. An enemy standing between the hero and the impact is pushed toward the blast centre. Because the push is assigned rather than added, every talent zone tick resets a running push (for example a 520 px/s wave_at shove) to 60 px/s. Every photon beam tick goes through _damage_mob(m, Vector2.ZERO) (hero_kit.gd:575) and sets m.k = 0 (hell_game.gd:1984), stopping the body dead in mid-flight. The Rage slam damage does the same (story_hero.gd:229).",
+   "should": "Explosions should push bodies outward from their own centre, with force scaled to the blast (an ultimate throws, a tick does not). Impulses should add up, and a damage-over-time tick or a beam should never cancel a flight that is already running.",
+   "proposal": "As proposed: pass `away` and an impulse by tier into _damage_enemy, add instead of assign, and skip the push for zone and DoT ticks and when push == ZERO in hell_game._damage_mob. Two additions. (1) Clamp the summed push, for example m.k = (m.k + J).limit_length(push_max), with push_max of about 1000 px/s in physics_motion.json, so stacked multi-hits never fling bodies across rooms. (2) Treat larger ultimate pushes (320/520 px/s) as a balance change: they push enemies out of their own lingering zones, such as the meteor crater and Singularity fields. Tune them low first, or apply them only to the tier's kill or final blow. Leave the Rage slam's own m.k = 0 (story_hero.gd:231) as it is: stopping at the wall is intended.",
+   "impact": 4,
+   "effort": "M",
+   "risk": "medium",
+   "owner": "ours",
+   "area": "bodies",
+   "check": "Confirmed. hell_talents.gd:477 assigns m.k = direction * 60 (12 for a boss). Here direction is hero→enemy (talent_combat.gd:1196 and 1201), while 'away' from _blast_at goes only into _stamp. Zone ticks call _hit and then _damage_enemy with feedback=true (talent_combat.gd:1575), so every tick resets m.k. The photon beam calls g._damage_mob(m, ZERO), which sets m.k = ZERO*0.25 = 0 (hero_kit.gd:575, hell_game.gd:1984). One correction: wave_at is called only from the debug Testraum, so the '520 px/s wave_at shove' example is not reached in normal play. Real flights such as the Rage throw (936 px/s) and the explosion push (story_elements.gd:407) are still reset."
+  },
+  {
+   "title": "Frostgruft ragdolls scatter randomly, fly through walls and never tumble",
+   "file": "src/hell/frost_rigs.gd",
+   "line": 137,
+   "kind": "inconsistent",
+   "worlds": [
+    "Frostgruft",
+    "Krypta"
+   ],
+   "element": "death ragdoll / debris",
+   "now": "FrostRigs._entry builds the renderer entry without \"kill\" (direction, tier, element) and without \"tumble\". RigRenderer._kill_of therefore gets a zero direction, and _detach launches every part in a random direction at tier small: a sword kill blows parts toward the hero just as often as away. The Frostgruft renderer never gets `solid`. Only drake_rig_host.bind_world sets it, called from hell_monsters.gd:576. RigDebris.solid is therefore 'never', and severed parts and ragdoll pieces fly through walls. Urknall-flung figures stay upright because rig_renderer.gd:555 reads enemy.tumble. In Krypta and Hölle the walls are only bound at the first corpse, so parts cut off a living figure before any kill also pass through walls.",
+   "should": "Parts should fly away from the killing blow with the blow's force and element, bounce off walls, and flung figures should turn over, as they do in Krypta.",
+   "proposal": "In _entry add e.kill: m.hit_fx when it is less than 600 ms old (the talent stamp), else {dx, dy} from m.k or m.feel_dir (story_feel.on_hit sets it), with tier \"small\" and element from statuses (copy hell_monsters._kill_fx). Add e.tumble = m.tumble. In FrostRigs._init, set renderer.solid = func(p): return g.box_blocked(Rect2(p - Vector2(2, 2), Vector2(4, 4))). In the hell world, call drake_rig.bind_world once in load_floor instead of at the first corpse.",
+   "impact": 4,
+   "effort": "S",
+   "risk": "low",
+   "owner": "ours",
+   "area": "bodies",
+   "check": "Confirmed. FrostRigs._entry (frost_rigs.gd:137-160) writes no 'kill' and no 'tumble'. RigRenderer._kill_of then gets a zero dir and tier 'small', and RigDebris.launch with dir ZERO scatters at random (rig_debris.gd:284-286). renderer.solid is set only by drake_rig_host.bind_world (called at hell_monsters.gd:576 on the first corpse) and never for FrostRigs, so DebrisLook.solid is always false and Frostgruft debris ignores walls. rig_renderer.gd:555 reads enemy.tumble, which the frost entry lacks. The proposal is feasible: FrostRigs draws in world px, the same space as box_blocked."
+  },
+  {
+   "title": "Frostgruft body contact, dashers and the Golem's charge never knock the hero back",
+   "file": "src/hell/hell_game.gd",
+   "line": 2942,
+   "kind": "inconsistent",
+   "worlds": [
+    "Frostgruft"
+   ],
+   "element": "hero knockback",
+   "now": "In the Frostgruft mob path, touch damage calls _hurt(..., m.p, m) and never calls frost_fx.knock. The dasher's dash (2876) and the kit boss charge (boss_kit.gd:229-238) hurt only through this path. A charging Frost Golem runs over the hero without moving him. In Krypta and Hölle, the same touch goes through _hurt_by(..., \"contact\"/\"dash\") and pushes him at 300/560 px/s * 0.7. frost_theme.json vfx.knock also has no \"contact\" entry.",
+   "should": "A body blow should shove the hero away from the attacker in every world, and harder for a dash or charge.",
+   "proposal": "After the _hurt call, check whether it landed (state.inv rose and perfect_now() is false). If so, call frost_fx.hit_hero(m.p, \"dash\" if m.dash > 0 or m.busy.do == \"charge\" else \"contact\", \"small\", m.kind == \"boss\"). Add \"contact\": 300 to frost_theme.json vfx.knock.",
+   "impact": 4,
+   "effort": "S",
+   "risk": "low",
+   "owner": "ours",
+   "area": "bodies",
+   "check": "Confirmed. In the Frostgruft mob loop (hell_game.gd:2942-2946), touch damage calls _hurt(..., m.p, m). _hurt (1446) and _lose_hp have no knock, and the only frost knocks are frost_fx.hit_hero calls in frost_moves._hit_hero and the eshot path (2828). The basic 'dasher' behaviour (2876) and the BossKit 'charge' (boss_kit.gd:229-236) deal damage only through this contact path. frost_theme.json vfx.knock has a 'dash' entry (560) but no 'contact'. The proposal is feasible. To detect a landed hit, compare state.hp before and after, as frost_moves._hit_hero does; checking inv also fires when a shield charge is used up."
+  },
+  {
+   "title": "Boss shockwaves push the hero only when they damage him, and never push monsters or gas",
+   "file": "src/hell/hell_monsters.gd",
+   "line": 1599,
+   "kind": "missing-physics",
+   "worlds": [
+    "Krypta",
+    "Hölle",
+    "Frostgruft"
+   ],
+   "element": "boss shockwave / slam",
+   "now": "A wave only counts as a hit when z.dmg > 0, and the knock happens only inside _hurt_by when the damage actually lands (line 311: open and inv rose). During the 0.9 s of invulnerability after any hit, which is common in boss fights, a stomp ring passes through the hero without moving him. frost_moves._hit_hero has the same gate (`if hp >= before: return`). The wave front shoves pixels, embers and lava (_blow_front 3117) but never g.gas: hell_monsters has no gas.impulse call at all. It also never shoves the boss's adds or corpses. The hero's own wave reaction (story_elements.wave_at 631-660) does blow gas away and pushes monsters.",
+   "should": "A pressure front should shove everything it crosses, whatever the damage rules say: the hero (damage stays gated), non-kit monsters by mass, and gas clouds.",
+   "proposal": "Leave the hero knock gated on damage (i-frame knock immunity is intended), and do not add new gas impulses at blast origins, since kick already covers them. In the 'wave' case, each frame, give every non-kit, non-boss monster (skip z.m) whose distance lies in the band [z.blown, front] a push: m.k += away * blow.push * share * fall. Set a per-zone 'shoved' id set so each body is pushed once per front. Optionally, to make the gas follow the moving front, call g.gas.impulse(z.p, front, 0.3) once when the front passes half its radius. Treat shoving the boss's own adds as a gameplay change and keep the push small, for example 0.5 of blow.push.",
+   "impact": 4,
+   "effort": "M",
+   "risk": "medium",
+   "owner": "ours",
+   "area": "bodies",
+   "check": "Partly confirmed. The hero knock is gated on landed damage (hell_monsters.gd:311, frost_moves.gd:438-440), but that is deliberate: knockback immunity during i-frames is a standard anti-juggle rule. The claim that waves never move gas is mostly wrong. gas is registered as a particle 'liquid' layer (story_feel.gd:641, hell_game.gd:3338), so every particles.kick, including _phys_blast at hell_monsters.gd:1030, 1095, 1651, 1657 and 1684 and the feedback impacts, calls gas.ripple_near and then gas_field.impulse(radius*1.4). Only the front's _blow_front uses P.blow and moves no gas. What is really missing is that wave, erupt and land fronts never push other monsters or corpses."
+  },
+  {
+   "title": "Thrown bodies end badly: Urknall flights stop dead and snap upright, Rage slam kills rebound the wrong way, dash and charge wall hits are silent",
+   "file": "src/combat/talent_combat.gd",
+   "line": 2548,
+   "kind": "feel",
+   "worlds": [
+    "Krypta",
+    "Frostgruft",
+    "Hölle"
+   ],
+   "element": "fling / wall slam",
+   "now": "(1) _step_flung moves flung enemies at a constant 760 px/s until fling_m is used up. _flight_over then erases tumble, so the body stops from full speed in one frame and snaps upright. (2) The Rage slam calls _damage_mob(m, Vector2.ZERO) and then sets m.k = 0 (story_hero.gd:229-231). A kill there has no hit_fx, so _kill_fx (hell_monsters.gd:4072) falls back to the hero→body direction, which points into the wall, at tier small with no wall flag. Parts fly into the wall instead of off it, and nothing calls particles.wall_splat or splat_burst; only Urknall wall kills do (talent_fx.gd:2411). (3) A Frostgruft dash that hits a wall (frost_moves.gd:357-362) and the Golem's charge (boss_kit.gd:234-235) just stop, with no dust, shake or recoil.",
+   "should": "Flights should slow down, skid and land, with the spin easing into a lying pose. A body slammed into a wall should splat on it and rebound or come apart away from it. A charging body that hits a wall should crunch and recoil.",
+   "proposal": "Fling and Rage-slam proposals as given, with one fix to the landing. A flung enemy that survives keeps walking, so do not ease tumble to the nearest multiple of PI: one landing upside down would walk on upside down. Ease it to the nearest multiple of TAU over about 0.25 s, so it rolls back upright, then erase it. The landing hop can be a short visual z-offset only. For the speed falloff, store fly.total at _fling_caught and use speed * sqrt(left/total), with a floor of about 0.25. The thrown distance stays the same, so the wall-kill gameplay does not change. Dash and charge wall hit: fx, a small recoil and keeping stun_on_wall are fine.",
+   "impact": 3,
+   "effort": "M",
+   "risk": "low",
+   "owner": "ours",
+   "area": "bodies",
+   "check": "Confirmed on all three points. (1) _step_flung moves at a constant fling_speed until fly.left is used up, and _flight_over erases tumble (talent_combat.gd:2548), so the body stops dead and snaps upright. (2) check_slam calls _damage_mob(m, ZERO) and sets m.k = 0. On a kill, _kill_fx finds no fresh hit_fx and falls back to m.p - hero, which points into the wall, at tier small with no wall flag. Nothing calls splat_burst or wall_splat; only the Urknall's _splat_physics does. (3) The frost_moves dash wall hit (357-362) and the BossKit charge (234-235) just stop, with no fx. wall_splat and splat_burst exist in particles.gd, and vfx_gore ragdoll.tiers has 'splat'."
+  },
+  {
+   "title": "Hero death freezes shots, rigs and debris in mid-air while particles keep moving",
+   "file": "src/hell/hell_game.gd",
+   "line": 2540,
+   "kind": "inconsistent",
+   "worlds": [
+    "Krypta",
+    "Frostgruft",
+    "Hölle"
+   ],
+   "element": "death beat",
+   "now": "While state.dead > 0 (1.8 s), _update returns before _update_shots, _update_mobs, frost_rigs.frame, drake_rig.frame, _update_zones and _step_elements. feel.update still runs, so feedback.particles keeps stepping. For the whole death beat, enemy bolts hang in the air, ragdoll pieces and severed parts stop mid-flight, and pools and gas stop. Meanwhile blood, dust and embers keep flying and settling around them.",
+   "should": "Either everything moves on and only AI and damage stop, or everything slows down together in a uniform slow motion. Some matter frozen while other matter moves reads as a bug.",
+   "proposal": "Prefer the passive step, with damage strictly off. Move the eshots and the hero shots and run their wall impacts without hurt or mob damage, so nothing grants exp after death. Run frost_rigs.frame and drake_rig.frame (debris only), corpse aging (the corpse loop in monsters.update only, no AI), _step_gas, pools.sync and the frost_fx and knock aging. If that is too intrusive, the cheap alternative is one global slow-motion factor applied to everything, particles included, through feel.update's dt.",
+   "impact": 3,
+   "effort": "M",
+   "risk": "medium",
+   "owner": "ours",
+   "area": "bodies",
+   "check": "Confirmed. hell_game._update returns in the state.dead branch (2540-2550) after only feel.update and the music, so _update_shots, _update_mobs (with monster corpses and debris), frost_rigs.frame, drake_rig.frame, _update_zones, frost_fx.update and the gas step all stop for 1.8 s. The feel's particles keep stepping, so mixed frozen and moving matter is visible during the death beat."
+  },
+  {
+   "title": "Frostgruft boss pushes teleport the hero, the vortex pull sticks at walls, and Unbezwingbar's knockback immunity is never applied",
+   "file": "src/hell/boss_kit.gd",
+   "line": 89,
+   "kind": "bug",
+   "worlds": [
+    "Frostgruft",
+    "Krypta",
+    "Hölle"
+   ],
+   "element": "hero displacement",
+   "now": "_push_hero moves the hero int(dist/16) steps of 16 px within a single frame, so he jumps 160 px instantly. It runs at every phase break (line 80) wherever he stands in the room, with no range check and no falloff, and at teleport_center (244). The vortex pull (frost_moves.gd:383-389) applies the full vector or nothing, so on a diagonal pull the hero gets stuck at walls and corners instead of sliding along them. The chain pull uses MotionKit.move_hero axis by axis. talent_combat.cc_immune (885; Unbezwingbar promises 'no knockback') is read nowhere. MotionKit.knock_hero, the chain pull (hell_monsters.gd:1765), the vortex and _push_hero all still move him.",
+   "should": "Boss pushes should be eased knockbacks that weaken with distance and slide along walls. Pulls should slide along walls. An active knockback immunity should stop every forced move.",
+   "proposal": "Replace _push_hero with an eased knock, but keep the distance. The 'wave' entry in frost_theme (600 px/s, 0.22 s) covers only about 44 px, against today's 160. Build a table per call: {'push': 3*dist*falloff/T, 'time': T} with T of about 0.35. At dist 160 that is about 1370 px/s, under knock.step_max*60. Use falloff = clamp(1 - d/r, 0.3, 1), skip beyond r, and call _mover().knock_hero(from, 'push', table, false). Move the vortex with motion_kit().move_hero(pull). Add hero_immovable() to StoryMotionHost (g.talents != null and g.talents.tc.cc_immune(1)). Gate knock_hero, the vortex and chain pulls, and _push_hero on it, but not the hero's own step_hero walking.",
+   "impact": 3,
+   "effort": "S",
+   "risk": "low",
+   "owner": "ours",
+   "area": "bodies",
+   "check": "Confirmed. boss_kit._push_hero moves the hero int(dist/16) steps of 16 px inside one call, for example 160 px in a single frame. It runs at every phase break with no range check or falloff (line 80), and at teleport_center (with a 160 px check). The frost_moves vortex (383-389) applies the full pull vector or nothing, with no per-axis slide. talent_combat.cc_immune is read only in the old src/game.gd. The Bollwerk text in talents.json promises immunity to stun and knockback ('immun gegen Betäubung und Rückstoß'), yet nothing in the story worlds checks it."
+  },
+  {
+   "title": "Knockback ignores body size, and thrown bodies pass through crowds without transferring momentum",
+   "file": "src/hell/hell_game.gd",
+   "line": 1984,
+   "kind": "missing-physics",
+   "worlds": [
+    "Krypta",
+    "Frostgruft",
+    "Hölle"
+   ],
+   "element": "mass / collisions",
+   "now": "Push factors know only boss or not boss. The sword pushes every mob at 0.25*600 = 150 px/s whether it is a Glutimp (r 24) or a Kettenschinder (r 38). The wave reaction pushes bosses at half of 520 px/s (story_elements.gd:651), so a Drache4 (r 190) slides about 31 px from a wave but 3.6 px from a sword. holy_at (713) pushes bosses at full strength with no share. Mob separation (hell_monsters.gd:527, hell_game.gd:2909) is a constant soft 120 px/s, so a body thrown at 936 px/s (Rage) or 760 px/s (Urknall) passes straight through a pack without hitting anyone.",
+   "should": "The same impulse should move a light body far and a heavy one little, consistently for every source. A fast body that hits another should hand over part of its momentum, like bowling pins, and Rage throws into a crowd should knock others down.",
+   "proposal": "Add MotionKit.impulse(m, J) with a mass normalized to the typical mob. Use mass = clamp((r / r_ref)^2, 0.4, 4), where r_ref is the median of the current non-boss st.r values, so mid-size mobs keep today's pushes and balance shifts only at the extremes. Kit bosses stay immovable. Route _damage_mob, hell_talents, story_elements explode (407) and sub_kit:643 through it. Leave the Rage throw as a fixed throw speed that is already restricted to non-bosses. Do momentum transfer only for bodies that carry m.slam or are in talent_combat.flung, inside the existing O(n²) separation loop: on overlap, along the normal, with restitution about 0.4 and split by mass. This keeps the cost and the behaviour change local.",
+   "impact": 3,
+   "effort": "M",
+   "risk": "medium",
+   "owner": "ours",
+   "area": "bodies",
+   "check": "Confirmed for gameplay paths. hell_game.gd:1984 pushes 0.25*push for every non-boss whatever its size, hell_talents pushes a flat 60 (12 for a boss), and the separation loops add a flat 120 px/s soft push (hell_monsters.gd:527, hell_game.gd:2909), with no momentum transfer. Thrown bodies (Rage, story_hero.gd:213; the Urknall moves through _move/_shove) pass through packs. One correction: wave_at and holy_at are called only from the debug Testraum (story_testraum_tools.gd:308-314), so the wave and holy examples do not apply in normal play."
+  },
+  {
+   "title": "On ice a knockback stops as fast as on stone",
+   "file": "src/physics_kit/motion_kit.gd",
+   "line": 100,
+   "kind": "inconsistent",
+   "worlds": [
+    "Frostgruft"
+   ],
+   "element": "ice / knockback",
+   "now": "The hero's knock is a separate eased displacement (knock_step) that ends after 0.22 s on any floor. It never touches player.vel, so on glaze ice (grip 0.015) a frost wave stops him as dead as on stone, even though his own walking keeps sliding for seconds. frost_snow.sliding() and slide_lean() (brother's file) key on player.vel, so a knock across ice leaves no skid marks and no lean. Monsters work the same way: push decays at 0.86 per frame whatever their grip (line 163), and only their walking slides.",
+   "should": "A blow on slippery ground should send a body gliding away with its momentum, then the grip slows it down, and the boots should skid and lean.",
+   "proposal": "Hero: as proposed. When the grip under him at knock start is below FIRM, add knock.v times about 0.6 to player.vel once and clear the eased knock. step_hero's slide and the brother's skid marks then follow without touching frost_snow.gd. Monsters: do not decay push with pow(grip, dt) on glaze. At grip 0.015 a Rage throw would glide over 200 px. Use a softened grip for the push, for example pow(max(grip, push.ice_floor 0.12), dt), together with the frame-rate-independent decay from finding #0. Keep frost-tagged creatures FIRM as now.",
+   "impact": 3,
+   "effort": "M",
+   "risk": "medium",
+   "owner": "ours",
+   "area": "bodies",
+   "check": "Confirmed. step_knock and knock_step (motion_kit.gd:86-124) move the hero by an eased displacement that ends at knock.T and never touch host.hero_velocity, so on glaze or ice the knock stops as on stone. frost_snow.sliding() and slide_lean() (src/hero/frost_snow.gd:136-148, brother's file, unchanged by the fix) key on player.vel only. For monsters, step_body decays push by a fixed factor regardless of grip."
+  },
+  {
+   "title": "Monster wall collision: velocity into a wall is kept, bodies get stuck inside solids, and large steps can pass through thin props",
+   "file": "src/physics_kit/motion_kit.gd",
+   "line": 155,
+   "kind": "tunneling",
+   "worlds": [
+    "Krypta",
+    "Frostgruft",
+    "Hölle"
+   ],
+   "element": "body vs wall",
+   "now": "step_body returns vel: kept and push even when integrate blocked an axis, while the hero's step_hero zeroes it. On ice, a monster that slid into a wall keeps pressing into it for up to about 1 s, running in place. integrate cannot leave a solid it starts in, because both axis tests fail. That happens when the Singularity orbit `_shove`s enemies to core positions without a collision check (talent_combat.gd:1962), or when a gravity or ice wall is spawned over them (hero_kit.gd:710, sub_kit.gd:293, via mob_solid → wall_blocks). Those enemies stay embedded until the wall expires, or for good when parked inside a wall cell. There is no step cap for monsters: 936 px/s at the 0.05 s dt cap is a 47 px step, larger than a 30 px crate or brazier plus a small mob box (rr 14). The chain pull moves the hero at 1100 px/s, 55 px per frame (hell_monsters.gd:1765), bypassing knock.step_max = 24. The leap slam lerps its position and tests only the sampled points (hell_monsters.gd:1069-1071), so it can hop through wall cells.",
+   "should": "A body that hits a wall should lose the velocity component into it (or bounce), get pushed out when something solid appears around it, and never skip a solid in one step.",
+   "proposal": "Have integrate report hit_x and hit_y. Important: zeroing the push on a blocked axis would break the Rage slam, because check_slam detects the wall hit from m.k / 0.86 being still large while the body did not move. So first add 'push_in' and 'hit' to the step_body result (see finding #0) and let check_slam use them. After that, zero kept on the blocked axis, and push too, or reflect it by about 0.2. Add depenetration: if solid(p) holds at the start, try the 8 directions at rr and 2*rr and move to the first free one. Use talent_move instead of a raw _shove in _catch_step. March the leap path in roughly 8 px samples from the last position and stop at the first blocked sample. Substepping integrate and the chain pull above step_max is cheap insurance but low priority, since it matters only at 20 fps or less.",
+   "impact": 3,
+   "effort": "M",
+   "risk": "medium",
+   "owner": "ours",
+   "area": "bodies",
+   "check": "Partly confirmed. step_body returns vel: kept and the push unchanged even when integrate blocked an axis, whereas step_hero zeroes the blocked axis. integrate cannot depenetrate. talent_combat._catch_step _shoves enemies onto orbit points with no collision test (1962). Gravity and ice walls (hero_kit.gd:710, sub_kit.gd:293) are tested through wall_blocks in mob_solid, so a body under a new wall stays stuck. The leap lerp (hell_monsters.gd:1066-1069) can hop a wall cell, since L.to is the hero's position. The tunnelling claim is overstated. The mob box is 2*rr wide, so passing through a 30 px prop on x needs a step of at least 58 px, more than the 47 px maximum at the 0.05 dt cap. Only y at 20 fps or less, and the chain pull at 20 fps or less (55 px), can skip. These are low-fps edge cases."
+  },
+  {
+   "title": "Talent spells never touch walls, props or crates",
+   "file": "src/hell/hell_talents.gd",
+   "line": 543,
+   "kind": "missing-physics",
+   "worlds": [
+    "Krypta",
+    "Frostgruft",
+    "Hölle"
+   ],
+   "now": "Since 29.10 keys 1-4 cast talents, and talents are the main spells. A talent bolt (fire bolt, ice lance, arrow) that reaches a wall is dropped in _step_bullets (talent_blocked → bullets.remove_at) with no wall_hit: no bite, no chips, no dust, no sparks. It simply vanishes at the stone. Talent explosions, novas and meteor craters (talent_combat.gd:2499 _event) call only _element. They never call wreck.blast, so candles, bones and urn props right beside a Meteor stay whole and the walls show no wear. A legacy fireball shot (_explode → wreck.blast) or an enemy slam (story_feel.on_blast) does bite walls and shatter props.",
+   "should": "Every spell is matter hitting the world. A bolt hitting stone chips it in its element: fire scorches and leaves embers, ice shatters into shards that lie as frost, void throws motes. Explosions bite the nearest wall faces and blow props apart, scaled by radius, the same way as every other blast source.",
+   "proposal": "Bolts: do NOT call g.feel.wall_hit. It raises a second crypt wall_hit burst on top of talent_fx's inferred impact, which doubles the matter. When talent_blocked ended the bolt, wear the wall only: g.wreck.hit_line(from, b.pos + v.normalized()*16, style, owner). hit_line already bisects to the contact and goes through wreck.wall_hit, so a hero bolt hitting a smashable prop also breaks it. If the blocking box is an unbroken breakable (test _breakable_box(e).intersects), call g._hit_breakable(e, b.pos) with wreck.hit_dir = v. Style map as proposed. Explosions: in hell_talents.update, walk tc.snapshot().events with a seen-id set. For kind in [explosion, nova, impact] with r >= blast.min_radius, call g.wreck.blast(at, r, 'blast', owner > 0) plus the breakables hook from #2. Skip events that hell_game raises through tc.show_effect for the pyro shot (hell_game:2741/3069), because _explode already blasted there. Tag them with extra {'wrecked': true} and skip that tag.",
+   "impact": 5,
+   "effort": "M",
+   "risk": "low",
+   "owner": "ours",
+   "area": "world",
+   "check": "Partly true. The core claim holds. hell_talents._step_bullets:543-554 drops a bolt that hits a wall (talent_blocked uses g.box_blocked, which also covers solids and unbroken breakables) and calls nothing on the wreck. talent_combat._event:2489 sends nova/explosion/impact only to _element, so props, walls and crates are never hit. wreck.blast is called only from hell_game:3062, hell_monsters:2669 and story_feel:194. A bolt stopped by a crate also never hits it. The 'simply vanishes, no chips, no sparks' part is wrong. talent_fx.draw_bullet records every talent shot (_track_shot), and _settle_shots:753 turns a shot that vanishes into _impact. That spawns ember_sparks plus a scorch for fire, shatter plus rime for ice, an implosion for void, element matter and residue. What is missing at the wall is the wear (bite, crack, chips from story_wreck), not the burst."
+  },
+  {
+   "title": "Krypta's green Moder runs the Hölle's lava physics",
+   "file": "src/hell/hell_game.gd",
+   "line": 3352,
+   "kind": "inconsistent",
+   "worlds": [
+    "Krypta"
+   ],
+   "now": "All lava-tile code checks theme.liquid.hurt or tile 2/3, never the material. The Krypta's liquid tiles are green Moder (krypta_pixel/lava_00.png; words 'Lava'→'Moder'), and liquid.hurt is true there. The results: (1) _bubble_lava runs at the default bubble_rate of 9/s (line 3366; krypta_balance has no monsters.feel.lava). It draws orange-white domes from materials.lava.ramp (3359/3385) that burst into orange 'glut' drops, which lie on the crypt floor as embers and cool to soot. (2) story_feel._set_floor:786 marks Moder as a hot sink, so pools.hot (hell_game:408) makes any liquid on it hiss and crust. (3) hell_monsters._blow_front:3150 throws orange lava tongues and spills over Moder when a Krypta shockwave crosses it. (4) story_elements._floor_meets_puddles:351 makes a poison puddle on Moder EXPLODE and water on it BOIL into scalding steam.",
+   "should": "Moder is cold, viscous toxic sludge. It should show slow olive bubbles that pop into miasma wisps and green drops that lie as wet poison pixels, plus ripples and a sluggish slosh. No embers, no soot, no steam. Water on it just ripples, and poison on poison does nothing.",
+   "proposal": "As proposed: theme.liquid.material plus one helper, hell_game._floor_mat(). Apply it in _bubble_lava/_draw_lava_bubbles (poison ramp, P.drops instead of glut for Moder), pools.hot (lava only), _blow_front (lava_splash only for lava, ripple_near plus green drops otherwise) and _floor_meets_puddles. The last one changes deterministic gameplay; flag it to the user. Also route story_wreck._lava:918 through the same helper. It treats tiles 2/3 as lava in every world, so Krypta debris and Frostgruft debris (where tile 2 is glaze ice) sink into the tile with heat=1 glow. Moder should keep sinking without glow, and glaze ice should not swallow debris at all.",
+   "impact": 5,
+   "effort": "M",
+   "risk": "medium",
+   "owner": "ours",
+   "area": "world",
+   "check": "Confirmed. krypta_theme.json liquid.hurt=true, and the words map 'Lava'→'Moder'. krypta_pixel/lava_00.png is green sludge. krypta_balance has no monsters.feel.lava, and bubble_rate exists nowhere in the data, so the default 9/s applies. _bubble_lava:3351 gates only on hurt and uses materials.lava.ramp for glut drops with ember_life/soot. _draw_lava_bubbles also uses the lava ramp. story_feel._set_floor:786-797 marks tiles 2/3 as sink when hurt, and pools.hot (hell_game:408) is that sink. hell_monsters._blow_front:3141-3165 calls lava_splash on tiles 2/3 with no material check. story_elements._floor_meets_puddles:351 explodes poison and boils water on any hurt tile 2."
+  },
+  {
+   "title": "Crates, urns and barrels shrug off every blast",
+   "file": "src/hell/hell_game.gd",
+   "line": 3047,
+   "kind": "inconsistent",
+   "worlds": [
+    "Krypta",
+    "Frostgruft",
+    "Hölle"
+   ],
+   "now": "The world's breakables only break through _hit_breakable, which only the hero's swing (1940), his shots (2723), relic melee and subclass melee call. Hero bursts (_explode), talent explosions, enemy blasts and boss slams (story_feel.on_blast → wreck.blast) and poison explosions (story_elements._explode) loop only over mobs and over W.props (story_wreck.blast:226 → _props_near). So a fireball or boss slam next to a barrel blows the candle and bones beside it into shards, and the barrel stands untouched, not even shaking.",
+   "should": "A blast's pressure acts on every loose object by distance. Urns and crates in reach take a hit (shake and chips), and those in the core shatter along the blast direction. story_wreck already shatters crates from their own sprite along hit_dir.",
+   "proposal": "As proposed, with two guards. Seals (hp 8) and skull heaps taking one hit per hero blast is fine, but never let an enemy blast (story_feel.on_blast) or a poison explosion with owner 0 call _hit_breakable: only shake them (e.hit = 0.15) and show stone_burst chips. Otherwise a boss would release undead crates or open secrets. Set wreck.hit_dir before _hit_breakable so smash_ent shatters along the blast.",
+   "impact": 4,
+   "effort": "S",
+   "risk": "medium",
+   "owner": "ours",
+   "area": "world",
+   "check": "Confirmed. breakables (seal/skullheap/crate, hell_game:841) are hit only through _hit_breakable, at 1940 (swing), 2723 (shots) and the relic/subclass paths. _explode:3047 loops over mobs and then wreck.blast. story_wreck.blast:226 iterates _props_near, which reads _prop_cells built from W.props, not ents. story_elements._explode has no wreck or breakable call. Crates have hp 1-2 (world_pack:462) and seals hp 8 (world_core:1362), so one hit per blast is reasonable."
+  },
+  {
+   "title": "Pixel particles fly through closed gates, pillars and crates",
+   "file": "src/vfx/particles.gd",
+   "line": 177,
+   "kind": "tunneling",
+   "worlds": [
+    "Krypta",
+    "Frostgruft",
+    "Hölle"
+   ],
+   "now": "particles.solid() only knows the walkable cells that story_feel._set_floor:791 hands it (every cell where _walkable(t) is true). Door cells and cells under solid props count as open floor. Blood drops, chips, ice shards, glut, rubble and kicked floor pixels sail through a closed portcullis into the corridor behind it, and through pillars, braziers, chests, statues and the breakables, settling as floor pixels under or behind them. The same world's gas (Gas.new(..., _floor_open)), the pools and the wreck debris (story_wreck._blocked → _cell_blocked, which includes doors) do stop there. Gas is held by the gate while blood passes through it.",
+   "should": "Anything solid to the hero and the shots is solid to matter. Drops splat against the gate bars, debris bounces off pillars, and nothing settles inside a prop's footprint.",
+   "proposal": "Prefer mutating the shared walkable dict over adding a second set. story_feel keeps _cells. Erase the 32 px particle cells under closed doors, solid_grid foot rects and unbroken breakables, and restore them when a door opens or a crate breaks. This adds no extra lookup in the hot loop. Rebuild from the door/solid change points listed (_start_fight, _clear_room, _solve_group, _open_secret, _hit_breakable on break). A separate blocked_cells dict as proposed also works. Whichever is chosen, use the same mask for the stain chunk masking.",
+   "impact": 4,
+   "effort": "S",
+   "risk": "low",
+   "owner": "ours",
+   "area": "world",
+   "check": "Confirmed. particles.solid():177 tests only _walkable. story_feel._set_floor:781-797 fills it from g._walkable(t) (tiles 1/2/3), with no door, solid_grid or breakable check. hell_game._floor_open:1017 (used by Gas and PoolPaint) adds box_blocked, which covers closed doors (_cell_blocked:1031), solid_grid rects and unbroken breakables. So gas and pools stop at a closed gate and props, but particle debris passes through them. _set_floor runs only when the world changes (story_feel.update:483), so door state is never reflected."
+  },
+  {
+   "title": "World embers and _burst are straight-line squares spawned per frame",
+   "file": "src/hell/hell_game.gd",
+   "line": 3174,
+   "kind": "painted-not-simulated",
+   "worlds": [
+    "Krypta",
+    "Frostgruft",
+    "Hölle"
+   ],
+   "now": "hell_game.embers is a second particle system without physics: p += v*dt, with no gravity, floor, walls or buoyancy. _burst (2198) throws n of them with v in [-150..150]x[-210..90]. They fly in straight lines (some downward, some through walls) and vanish after 0.35-0.85 s. _burst is used everywhere: every hero blast (_explode:3073, 18 squares), icicle impacts (3036), wells, mimics, level-ups, boss phases (boss_kit 81/242/255), boss deaths (hell_monsters:1570, 160 gold squares, plus 1563 randf()<0.5 per frame for 14 more). Ambient lava embers spawn int(W.theme.embers) samples (2..7) per FRAME (3176) and rise at constant speed. At 144 Hz that is 2.4x the 60 Hz density, and the 360 cap (3189) slices off the oldest at full alpha, so embers blink out mid-rise. Vents (3097, randf()<0.6) and the vault (4049, emitted inside _draw_ent, which keeps running during hitstop) are per-frame chances too.",
+   "should": "Embers are buoyant hot matter: they accelerate upward while cooling and sway. Burst sparks follow gravity, bounce off the floor, lie as embers, turn to soot and are stopped by walls. The feel's particles already do all of this (ember_sparks, glut, chips). Emission is a rate per second.",
+   "proposal": "As proposed. When routing _burst into particles, convert units (at / feel.scale) and cap with P.room(n). Keep _burst's early-return for the feel level-up. Krypta/Frostgruft tints come from col('ember'/'ember_big'), which are green and blue in the themes. For the Krypta's ambient Moder 'embers', follow #1 and emit miasma motes/drops instead of buoyant embers.",
+   "impact": 4,
+   "effort": "M",
+   "risk": "low",
+   "owner": "ours",
+   "area": "world",
+   "check": "Confirmed. _update_embers:3174 appends int(W.theme.embers) (2..7 from world_core:137) per frame, with no dt scaling. Its step is p += v*dt plus push, with no gravity, floor or wall. The 360 cap slices off the oldest (alpha = min(1, t*2), so they are still opaque). _burst:2198 throws v in [-150,150]x[-210,90] squares with no physics and is called from about 40 sites, including the boss death at hell_monsters:1563 (randf()<0.5 per frame) and :1570 (160). Vent embers at 3097 and the vault at 4049 are per-frame randf chances, and the vault one is emitted inside a draw function. Drawn as squares at 3881."
+  },
+  {
+   "title": "Gold coins fly through walls and lie on lava",
+   "file": "src/hell/gold_loot.gd",
+   "line": 177,
+   "kind": "tunneling",
+   "worlds": [
+    "Krypta",
+    "Frostgruft",
+    "Hölle"
+   ],
+   "now": "A spilled coin, bag or rune stone moves by piece.p += piece.v*dt (70-190 px/s for ~0.7 s of air) with no collision at all. Crates and chests stand at walls, so part of every spill lands on the wall top or inside the wall face. Coins that land on lava, Moder or pit cells lie glinting on the molten surface. They hang there until the hero comes within magnet range. Blasts and shockwaves never scatter lying gold.",
+   "should": "Coins bounce off wall faces, losing speed, roll a little and stop. A coin landing in lava sinks with a hiss (or is spat back onto the rim), and one landing in a pit drops in. A nearby blast flips lying coins up again.",
+   "proposal": "As proposed. Collide per axis against g.box_blocked(Rect2(p-3,p-3,6,6)), which already covers walls, gates, solids and breakables, with v *= -0.4 on that axis. On landing on tile 2/3 or a pit: credit at once via _take (keeps the gold) and show P.steam plus one glut spark, using the Moder look in the Krypta per #1. blast(at, r) relaunches lying pieces. Call it next to the wreck.blast sites.",
+   "impact": 4,
+   "effort": "S",
+   "risk": "low",
+   "owner": "ours",
+   "area": "world",
+   "check": "Confirmed. gold_loot.update:177-192: the air branch does p += v*dt with no wall, solid or tile test. spill speed is 70-190 px/s with up 240-380 at gravity 980 (loot_gold.json), so about 0.6-0.8 s of flight covers about 50-150 px from a crate or chest that usually stands at a wall. Landed pieces never check tiles 2/3 or pits, and nothing moves lying pieces except the magnet. Pickup still works through the magnet, so this is visible but not a loss of gameplay."
+  },
+  {
+   "title": "Traps and gates switch by sprite pop, not motion",
+   "file": "src/hell/hell_game.gd",
+   "line": 3719,
+   "kind": "painted-not-simulated",
+   "worlds": [
+    "Krypta",
+    "Frostgruft",
+    "Hölle"
+   ],
+   "now": "Spikes (rule 3089, draw 3719) flip between the full sprite and a 30%-alpha cropped copy on the frame the period turns. Frostgruft ice traps and geysers (_draw_ice_burst, 4377) stretch a sprite up over 0.12 s, stand shimmering and vanish in one frame, with no shards, frost or snow. Hell vents spit linear ember squares (3097) instead of flames. The Krypta's 'Grabgasschlot' spits (green) embers too, instead of gas. Portcullises (4113) appear and disappear on the frame a fight starts or ends, although the toast says 'Die Gitter fallen': no fall, no impact dust, no rattle.",
+   "should": "A spike shoots up with overshoot, kicks dust or bone grit off its plate, and retracts more slowly. An ice spike bursts out of its crack throwing chips and rime, and on retracting breaks into shards that lie as frost and melt. A fire vent roars buoyant flames and smoke. A grave-gas vent breathes a green plume that drifts and is blown by blasts. A portcullis drops from its lintel under gravity, lands with dust and a camera kick, and rises when the room is cleared.",
+   "proposal": "As proposed. Keep the gameplay booleans and add presentation edge timers. Keep the gate drop short (about 0.15-0.2 s): gameplay blocks at once, so a slow fall would show an open gap the hero cannot pass. Emit vent matter with a per-second accumulator, not a per-frame chance.",
+   "impact": 3,
+   "effort": "M",
+   "risk": "low",
+   "owner": "ours",
+   "area": "world",
+   "check": "Confirmed. Spike rule at 3089-3092 (e.up flips by period). The draw at 3719-3726 swaps the full sprite for a cropped 30%-alpha one. _draw_ice_burst:4377 rises over 0.12 s, shimmers, and disappears when since<0. Vent bursts append ember squares at 3097 (randf()<0.6 per frame). The Krypta's 'Grabgasschlot' (krypta_theme words) uses the same code, with col ember_big #8fc46a. The portcullis at 4107-4114 is drawn static whenever closed, while toasts say 'Die Gitter fallen' (2071/2274/2306/4364). No edge events exist."
+  },
+  {
+   "title": "Settled shards and chips never move again",
+   "file": "src/hell/story_wreck.gd",
+   "line": 772,
+   "kind": "missing-physics",
+   "worlds": [
+    "Krypta",
+    "Frostgruft",
+    "Hölle"
+   ],
+   "now": "Once a wreck piece (crate shard, wall chip, prop splinter) comes to rest, _settle moves it to `rest`, bakes it into the cached rest layer and never steps it again. Nothing moves the pile afterwards: not a later blast on the same spot (blast:226), not a shockwave front (particles.blow from hell_monsters._blow_front:3126, frost_fx._wave_front:233, talent_fx:1542), not the hero dashing through, not a body thrown over it. The particle layer's loose pixels right beside the pile do jump and fly. Frostgruft ice-wall chips (material ice) never melt, unlike the particles' ice shards, which lie as frost and melt to water. Shards also settle on top of pit holes.",
+   "should": "Debris is loose matter. A blast or pressure front relaunches the pieces in reach away from its centre (heavy shards hop less), feet and sliding bodies nudge them, ice chips melt away over time, and pieces over a pit fall in.",
+   "proposal": "As proposed. push() must re-add pieces through _add_piece (air_cap 260), so cap how many leave rest per call, and set _dirty. Fold the pit sink into the same branch as _lava (reuse q.sink). Base the ice melt on the material key so only ice chips fade.",
+   "impact": 3,
+   "effort": "M",
+   "risk": "low",
+   "owner": "ours",
+   "area": "world",
+   "check": "Confirmed. story_wreck._step:742 returns false on REST, and _settle:772 moves the piece to rest, where it is only drawn (cached layer) or crumbled by the rest_cap. No code moves rest pieces back to pieces. blast:226 touches only props and wall rays. _lava:918 is the only floor test in _step, with no pit check. The ice material in story_wreck.json:174 has no melt key, and the update code has none."
+  },
+  {
+   "title": "No wading in the Frostgruft, and none in lava or Moder tiles anywhere",
+   "file": "src/hell/hell_game.gd",
+   "line": 2842,
+   "kind": "inconsistent",
+   "worlds": [
+    "Frostgruft",
+    "Hölle",
+    "Krypta"
+   ],
+   "now": "pools.wade (rings every wade_every s, wet soles through particles.wet) is called only in _update_mobs' hell-monster branch (monsters != null and pools != null). The Frostgruft has no `monsters`, and its talent pools are talents.fx.pools (_pool_layer). So there the hero and the theme mobs walk through the Blizzard's water, blood and poison pools without a ripple or a wet step, while the same talent pools ripple in Hölle and Krypta. The worlds' own liquid tiles (cell 2/3: Hölle lava, Krypta Moder) have no wading in any world. The hero walks through lava with no splash, glow or sizzle; only the damage shows. Frostgruft mobs sliding on glaze tiles leave no skid marks (frost_snow.sliding covers the hero only).",
+   "should": "Every body moving through liquid disturbs it the same way in every world: rings and splash drops in pools, glowing drops, a hiss and smoke in lava, sluggish green ripples and drops in Moder, and skid scratches for anything sliding on ice.",
+   "proposal": "Move the wade calls out of the monsters branch through _pool_layer() (it may be null until hell_talents.draw_world lazily creates fx.pools; guard it). Theme mobs (the Frostgruft) have neither 'id' nor 'uid' (spawn at hell_game:2023; uid comes only from drake_rig adopt), so give each mob a stable key at spawn (e.g. m.wk = next counter) and use 'm%d' % m.wk. Lava/Moder steps: a 0.2 s accumulator, with the material from #1's helper. Mob skids go through a frost_snow entry point (brother's file, owner=brother).",
+   "impact": 3,
+   "effort": "S",
+   "risk": "low",
+   "owner": "ours",
+   "area": "world",
+   "check": "Confirmed. pools.wade is called only inside `if monsters != null: ... if pools != null` (hell_game:2840-2848). The Frostgruft has theme.mobs, so monsters stays null (hell_game:399), and its pools are talents.fx.pools (_pool_layer:3200). Tiles 2/3 only slow or hurt the hero (2677/2703), with no splash, drops or smoke. The pools' ice skid at 3238 is also gated on monsters != null. frost_snow.sliding covers only the hero."
+  },
+  {
+   "title": "Torches and braziers are sealed animation loops",
+   "file": "src/hell/hell_game.gd",
+   "line": 3673,
+   "kind": "missing-physics",
+   "worlds": [
+    "Krypta",
+    "Frostgruft",
+    "Hölle"
+   ],
+   "now": "Wall torches, wall braziers, lit fire bowls and burning props play fire_anim's precomputed loop (fire_anim.gd:64 frame()). The flames lick nicely, but no matter leaves them (no sparks, no smoke) and nothing reaches them: a blast or shockwave next to a torch does not make it lean or gutter, a Frost Nova or water does not dim it, and the Frostgruft storm does not bend it. Fire bowls can only be lit by pressing E: a fire spell hitting an unlit puzzle bowl does nothing.",
+   "should": "Fire is buoyant hot gas. A torch sheds an ember now and then and a thin thread of smoke that rises and drifts. A pressure front makes the flame lean away and flare or gutter for a moment (the light dips). Frost or water nearby hisses into steam and dims it briefly.",
+   "proposal": "As proposed. Emit only for fires inside the view rect with per-fire accumulators. Expose the flame tip via fire_anim (brother's file) or a per-sprite offset in theme data. Lighting bowls with fire_at is a gameplay change for the brazier puzzles; ask the user first.",
+   "impact": 3,
+   "effort": "M",
+   "risk": "low",
+   "owner": "ours",
+   "area": "world",
+   "check": "Confirmed. _draw_wall_fires:3673 and _tex:3504 only pick a fire_anim.frame. No smoke or flames are emitted for torches or braziers anywhere in src/hell or src/hero (the only P.smoke/P.flames calls are in hell_monsters). story_glow gives only a sine flicker and has no lean or dim input. Neither story_elements nor elements.gd references braziers, so fire spells cannot light bowls. Lighting happens only through act() (hell_game:1766-1771)."
+  },
+  {
+   "title": "Snow melts only under fire bowls; fire and blasts leave it untouched",
+   "file": "src/hero/frost_snow.gd",
+   "line": 376,
+   "kind": "missing-physics",
+   "worlds": [
+    "Frostgruft"
+   ],
+   "now": "frost_snow.snow cells are removed only by a lit brazier's thaw (_draw_thaw). A Feuerball, Meteor or Flammenmeer in the Frostgruft leaves pristine snow (the particles paint embers and soot on top of it), explosions throw no snow, and footprints keep forming in scorched spots. Slide chips (lines 157-162) are flat 4x4 rects that fall in screen y at 520 px/s² with no floor and no walls and vanish mid-air after 0.5 s. They spawn with randf()<0.6 per frame (175), so their density depends on the frame rate. The snowman's wake burst (hell_game:4361) uses the same chips.",
+   "should": "Fire melts snow into a dark wet patch with a slush rim and steam, which slowly refreezes. Blasts dig a crater and throw snow clods and flakes that land and lie. Chips fall to the floor and lie as frost.",
+   "proposal": "As proposed, owner=brother for frost_snow. Reuse the thaw_a texture for melt patches so the hand-made slushy edge stays (the comment at 395 says generic rings were rejected). Emit chips per N px slid through feel particles (shatter/frost).",
+   "impact": 3,
+   "effort": "M",
+   "risk": "low",
+   "owner": "brother",
+   "area": "world",
+   "check": "Confirmed. frost_snow (src/hero/frost_snow.gd, brother's) erases snow cells only in _draw_thaw:378 when a lit bowl's thaw completes. Nothing calls frost_snow from story_elements, talents or blasts. Chips (157-162) are 4x4 rects with gravity 520 and no floor or walls, removed at t 0.5. They spawn with randf()<0.6 per frame while sliding (175). The snowman wake (hell_game:4360) appends 24 of them."
+  },
+  {
+   "title": "Wind blows only in the screen overlay",
+   "file": "src/vfx/snowstorm.gd",
+   "line": 137,
+   "kind": "missing-physics",
+   "worlds": [
+    "Frostgruft"
+   ],
+   "now": "The snowstorm's flakes, gusts (260 px/s) and storms (330 px/s) live in screen space on a CanvasLayer. When the camera follows the hero, the flakes do not move against the world, so the snow looks glued to the camera with no parallax. Nothing in the world feels the wind: gas clouds, smoke, torch flames, the world's rising motes, the talents' snow flakes (particles.snow) and dust puffs all drift as in still air, even at the storm's peak.",
+   "should": "Flakes behave like world matter at three depths: they stream past opposite to the camera's motion, with parallax by depth. The same wind vector pushes every light airborne thing in the world (smoke, flake, dust, ember and flame particles, gas drift, torch lean), harder in gusts.",
+   "proposal": "As proposed (follow(cam_pos, zoom) is in the brother's file). Convert units fully: screen px/s ÷ camera zoom = world px/s, then ÷ feel.scale for the particles' crypt units. Apply wind only to light modes, weighted by drag, and leave debris/glut alone. Gas drift and torch lean read the same vector.",
+   "impact": 3,
+   "effort": "M",
+   "risk": "low",
+   "owner": "brother",
+   "area": "world",
+   "check": "Confirmed. snowstorm.gd (src/vfx, saidPC's) moves flakes in screen space in _process:137-160, with no camera input, so the flakes do not parallax against the world. wind() is never read outside the file (hell_game only preloads and configures it at 460). particles.gd and gas.gd have no global wind term."
+  }
+ ],
+ "dropped": [
+  {
+   "area": "core",
+   "dropped": []
+  },
+  {
+   "area": "fluids",
+   "dropped": [
+    {
+     "title": "A shockwave blows the gas three times, and a quake meant to make it shudder blasts it harder than an explosion",
+     "file": "src/hell/story_elements.gd",
+     "line": 742,
+     "reason": "The code really does push three times: wave_at calls gas.impulse, then _ripple_ring calls gas.ripple_near (impulse at 1.4 r), then _kick → particles.kick → gas.ripple_near through _liquids. quake_at's _ripple_ring adds a 1.4-strength impulse at 1.4 r on top of its intended 0.4 at 0.6 r. But wave_at and quake_at are called only from the debug tools (src/debug/story_testraum_tools.gd 308/311). No talent, monster or world code in Krypta, Frostgruft or Hölle calls them, so a player never sees it. It is a latent bug, and it should be fixed before these reactions are wired to gameplay."
+    }
+   ]
+  },
+  {
+   "area": "abilities",
+   "dropped": []
+  },
+  {
+   "area": "bodies",
+   "dropped": []
+  },
+  {
+   "area": "world",
+   "dropped": []
+  }
+ ]
+}

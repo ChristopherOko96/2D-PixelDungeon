@@ -4,6 +4,13 @@ Story 1 „Krypta der Verdammten“, Story 2 „Die Frostgruft“ und Story 3 �
 dem Welt-Baukasten: Jede Etage wird beim Betreten aus einer Weltnummer gebaut. Ein neuer Lauf würfelt eine neue Weltnummer, also neue
 Grundrisse, Räume, Rätsel und Verstecke; Etagennamen, Bosse und Schwierigkeit bleiben fest.
 
+**Präzisierung vom 03.11.2026:** Ein eigener Custom-Story-Bereich soll den Editor
+und selbstgemachte Geschichten aufnehmen, mit prozeduralen Etagen aus eigenen
+Raumvorlagen und denselben Spielsystemen wie die Hauptstorys. Die Hauptstorys
+behalten ihre eigene Generierung. Dieser Bereich ist umgesetzt (`src/custom/`).
+Siehe [Custom-Story-Bereich und gemeinsame Spielsysteme](STORY-RAUMMODULE.de.md).
+Die folgenden Abschnitte beschreiben den bisherigen Welt-Baukasten.
+
 ## Aufbau
 
 | Teil | Datei |

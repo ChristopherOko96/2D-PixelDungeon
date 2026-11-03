@@ -1,0 +1,18 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+STORY_CLOCK_RATE world=krypta fps=15 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_RATE world=krypta fps=30 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_RATE world=krypta fps=60 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_RATE world=krypta fps=144 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_RATE world=krypta fps=240 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_RATE world=frost fps=15 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_RATE world=frost fps=30 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_RATE world=frost fps=60 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_RATE world=frost fps=144 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_RATE world=frost fps=240 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_RATE world=hell fps=15 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_RATE world=hell fps=30 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_RATE world=hell fps=60 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_RATE world=hell fps=144 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_RATE world=hell fps=240 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_INTEGRATION mode=fixed checked=63 failures=0

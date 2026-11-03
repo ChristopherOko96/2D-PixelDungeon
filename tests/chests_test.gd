@@ -151,6 +151,12 @@ func _run() -> void:
 	# Random Mimiks only from floor 2; the editor's mimic_spawns always hold one.
 	var saved_floor: int = game.floor_index
 	var counts := {"chest": 0, "mimic": 0}
+	# the room library may author Mimiks (mimic_spawns, chests.gd _place_authored_mimics:
+	# "always there", on floor 1 too); only the random ones wait for floor 2
+	var authored_spots := {}
+	for layout: Dictionary in game.floor_layouts:
+		for cell: Variant in layout.get("mimic_spawns", []):
+			if cell is Array and (cell as Array).size() == 2: authored_spots["%s|%s" % [str(layout.id), str(Vector2(float(cell[0]) * 32.0 + 16.0, float(cell[1]) * 32.0 + 16.0))]] = true
 	for floor_number: int in [1, 4]:
 		game.floor_index = floor_number
 		for seed_value in range(12):
@@ -158,6 +164,7 @@ func _run() -> void:
 			for room_id: String in game.chests.chests:
 				for item: Dictionary in game.chests.chests[room_id]:
 					var kind := str(item.kind)
+					if kind == "mimic" and authored_spots.has("%s|%s" % [room_id, str(Vector2(item.pos))]): continue
 					if kind != "crate": counts[kind if floor_number > 1 else "chest"] = int(counts.get(kind if floor_number > 1 else "chest", 0)) + 1
 					if floor_number == 1: check(kind != "mimic", "no random Mimik on floor 1")
 	check(int(counts.mimic) > 0 and int(counts.mimic) < int(counts.chest), "deeper floors hide a few Mimiks (%d of %d)" % [int(counts.mimic), int(counts.mimic) + int(counts.chest)])

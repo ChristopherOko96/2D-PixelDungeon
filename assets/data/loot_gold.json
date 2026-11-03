@@ -1,0 +1,17 @@
+{
+  "_note": "The gold of the story worlds (src/hell/gold_loot.gd): one currency, the profile's gold (the same gold the talent reset costs). Chests, vaults, broken crates, room rewards and loose finds throw it out as coins and money bags; a slain enemy's gold rises as a small '+N' with a coin over the body. bag_value = gold in one money bag: an amount below it falls as single coins, from it on as bags plus the rest in coins (23 = 2 bags, 3 coins). spill: the throw out of a chest: speed = ground px/s [min, max], up = px/s upwards [min, max], gravity px/s^2, bounce = share of the fall speed kept on the first bounce, stagger = s between two pieces leaving. magnet_px = from this distance to the hero the gold flies to him, magnet_speed px/s (it speeds up), pick_px = taken at this distance, settle = s after landing before the magnet pulls. fps = coin turn speed. glint_every = s [min, max] between two glints of the gold lying nearest the hero within hear_px. popup: life s, rise px, merge = s in which pickups add up into one '+N', delay = s after an enemy's fall before its '+N' shows, size = its font size (world px; the coin as tall). look: per graphics set the frames (prefix + _f0.._fN), the glint frames (pixel set) and the draw scale of coin and bag (world px per sprite px).",
+  "bag_value": 10,
+  "spill": { "speed": [70, 190], "up": [240, 380], "gravity": 980, "bounce": 0.35, "stagger": 0.035, "height": 34 },
+  "magnet_px": 150,
+  "magnet_speed": 260,
+  "pick_px": 30,
+  "settle": 0.35,
+  "fps": 8,
+  "glint_every": [2.5, 5.0],
+  "hear_px": 640,
+  "popup": { "life": 0.85, "rise": 46, "merge": 0.45, "delay": 0.12, "size": 26 },
+  "look": {
+    "hd": { "coin": "coin_hd", "frames": 4, "coin_scale": 0.9, "bag": "bag_hd", "bag_scale": 0.7, "glint": "" },
+    "pixel": { "coin": "coin_px", "frames": 4, "coin_scale": 3.0, "bag": "bag_px", "bag_scale": 3.0, "glint": "coin_px_glint" }
+  }
+}

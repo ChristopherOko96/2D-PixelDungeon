@@ -4,7 +4,8 @@ extends RefCounted
 ## game towards src/combat/talent_combat.gd (players, enemies, damage,
 ## statuses, movement, projectiles) and translates to the hell runtime: the
 ## hero (player.x/y, state.hp, state.dmg), the mobs (m.p, m.r, m.hp), the
-## hell's status helpers (HeroKit.slow_mob / burn_mob, SubKit.freeze), its
+## hell's status helpers (HeroKit.slow_mob / burn_mob / poison_mob / bleed_mob,
+## SubKit.freeze), its
 ## walls (box_blocked) and its HUD. It also brings EXP, gold, level-ups and
 ## the difficulty of the shared profile into these maps.
 ## The Leerenmagier's Arkanes Gefüge works here too: the world's void
@@ -24,6 +25,17 @@ const Rules = preload("res://src/progress/talent_rules.gd")
 const HeroKit = preload("res://src/hell/hero_kit.gd")
 const SubKit = preload("res://src/hell/sub_kit.gd")
 const BossKit = preload("res://src/hell/boss_kit.gd")
+## The hero's slowing conditions (src/hell/hero_fx.gd state.effects) a cleanse
+## takes off: "slow" (curses, boss moves, frost pools' and gases' status).
+const SLOW_CONDITIONS: Array[String] = ["slow"]
+## The hero's slowing timers on g.state a cleanse ends: "chill" (the frost
+## chill, theme chill_speed: chilling shots, defs and fields) and "slow" (half
+## speed: hell_monsters.gd scream cones, the Archivar's Bannfluch).
+const SLOW_TIMERS: Array[String] = ["chill", "slow"]
+## The per-frame slows of what he stands in and breathes (hell_game.gd
+## hero_medium, hero_gas: their "slow"), worked out again every frame where he
+## stands: a cleanse drops them for the frame it happens in.
+const SLOW_MEDIA: Array[String] = ["hero_medium", "hero_gas"]
 
 var g: Node
 ## The world's element reactions for the talents' fire and frost
@@ -100,6 +112,23 @@ func _sync_hero() -> void:
 	hero.face = float(g.player.get("face", 1.0))
 	hero.class_id = class_id
 	players[1] = hero
+	_sync_gear_mana()
+
+
+## Worn gear with mana (the Seelenmantel) widens the mana pool; a new talent build
+## (set_build) sets a fresh base, which is noticed because res_max moved.
+func _sync_gear_mana() -> void:
+	var rt := tc.runtime(1)
+	if rt.is_empty() or str(rt.get("res_kind", "")) != "mana": return
+	var items: Object = g.get("story_items")
+	var bonus: float = items.powers.mana_bonus() if items != null and items.get("powers") != null else 0.0
+	if not is_equal_approx(float(rt.res_max), float(rt.get("res_max_applied", -1.0))):
+		rt.res_max_base = float(rt.res_max)
+	var want := float(rt.get("res_max_base", rt.res_max)) * (1.0 + bonus)
+	if not is_equal_approx(want, float(rt.res_max)):
+		rt.res_max = want
+		rt.res = minf(float(rt.res), want)
+	rt.res_max_applied = float(rt.res_max)
 
 
 func _write_hero(before: Vector2, hp_before: int) -> void:
@@ -159,6 +188,21 @@ func press(slot: int) -> bool:
 	return fired
 
 
+## The mana fountain: the hero's Mana, Ausdauer or Zorn full and every talent,
+## companion and defense cooldown reset (src/combat/talent_combat.gd refill).
+## False without a talent build.
+func refill() -> bool:
+	var done := false
+	_with_sync(func(): done = tc.refill(1))
+	return done
+
+
+## The hero's resource name (Mana, Ausdauer, Zorn); "" without a talent build.
+func resource_name() -> String:
+	var rt := tc.runtime(1)
+	return "" if rt.is_empty() else str(tc.data.resources[rt["class"]].name)
+
+
 ## Keys 5 and 6 (`slot` 0-1): the permanent companion's ability.
 func press_pet(slot: int) -> void:
 	_with_sync(func(): tc.pet_cast(1, slot, true))
@@ -175,6 +219,15 @@ func pet_slot_at(_screen: Vector2, point: Vector2) -> int:
 	return HudKit.pet_slot_at(point)
 
 
+## The last talent shot's id (each flying shot sheds its matter by it: talent_fx _shed_flight).
+var _bullet_serial := 0
+## The mage's projectile talents stop and burst where the mouse pointed (talent_combat.gd
+## _land_reach reads it; _step_bullets counts their `left` down and lands them).
+var shots_land := true
+## Talent events already put to the walls and props (id -> true; _wreck_blasts).
+var _wrecked := {}
+
+
 func update(dt: float) -> void:
 	_with_sync(func():
 		_hold()
@@ -182,6 +235,11 @@ func update(dt: float) -> void:
 		tc.step(dt)
 		_step_bullets(dt)
 		_step_statuses(dt))
+	_wreck_blasts()
+	# the talents' zones lying as pools of their own (the Seuchenfeld's plague) on the game clock in
+	# the world's pool layer: the rules' truth of where they reach (physics plan R14, decision D1)
+	var layer: RefCounted = g._pool_layer() if g.has_method("_pool_layer") else null
+	if layer != null: layer.sync(tc.ground_pools(), float(g.state.t), "talent_ground")
 	bar.step(dt)
 	# the talents' weight on the view by importance (src/vfx/talent_fx.gd take_feel)
 	for hit: Dictionary in fx.take_feel(tc.snapshot()):
@@ -198,7 +256,8 @@ func _hold() -> void:
 	var rt := tc.runtime(1)
 	if rt.is_empty(): return
 	if rt.has("soul_charge"):
-		var charge_held := Input.is_physical_key_pressed(KEY_1 + int(rt.soul_charge.slot))
+		var charge_key: int=KEY_R if int(rt.soul_charge.get("bit",0))==tc.ULT_BIT else KEY_1+int(rt.soul_charge.slot)
+		var charge_held := Input.is_physical_key_pressed(charge_key)
 		var charge_aim := (HeroKit.target(g) - Vector2(g.player.x, g.player.y)).normalized()
 		TalentCombat.SoulCharge.hold(tc, 1, charge_held, charge_aim)
 	var drawing: Dictionary = rt.get("drawing", {})
@@ -208,12 +267,36 @@ func _hold() -> void:
 	tc.hold(1, draw_held, alive and Input.is_physical_key_pressed(KEY_SHIFT), HeroKit.target(g), move)
 
 
-## The hero's talent state for the HUD (same shape as the crypt's snapshot).
+## While the HUD draws (hud_begin .. hud_end) its talent state is worked out once and read by
+## the skill bar, the resource line and the companion panel (they only read it).
+var _hud_open := false
+var _hud_state: Dictionary = {}
+
+
+## The HUD starts drawing (hell_game.gd draw_hud): hud_state() is worked out anew once.
+func hud_begin() -> void:
+	_hud_open = true
+	_hud_state = {}
+
+
+## The HUD has drawn: hud_state() is worked out on every call again.
+func hud_end() -> void:
+	_hud_open = false
+	_hud_state = {}
+
+
+## The hero's talent state for the HUD (same shape as the crypt's snapshot); within one HUD
+## drawing the same dictionary (read only).
 func hud_state() -> Dictionary:
+	var drawing := _hud_open
+	if drawing and not _hud_state.is_empty():
+		return _hud_state
 	var snapshot: Dictionary = tc.player_state(1)
 	# the Arkanes Gefüge belongs to the void path (Leere) only; every other hero gets no orb
 	if snapshot.has("gefuege") and not tc.feeds(1):
 		snapshot.erase("gefuege")
+	if drawing:
+		_hud_state = snapshot
 	return snapshot
 
 
@@ -253,7 +336,10 @@ func interval_scale() -> float:
 	return tc.interval_scale(players.get(1, {}), 1)
 
 
-## A mob fell: Blutdurst, EXP and gold into the profile.
+## A mob fell: Blutdurst, EXP and gold into the profile (its gold shown rising over it). A mob a reaction of
+## the hero caught pays more EXP (src/hell/story_elements.gd exp_mul,
+## assets/data/reactions_lexicon.json reward): the talents' EXP here and the
+## run level's on top of what the world already gave (_reaction_bonus).
 func killed(m: Dictionary) -> void:
 	_sync_hero()
 	m.pos = Vector2(m.get("pos", m.get("p", Vector2.ZERO)))
@@ -262,10 +348,39 @@ func killed(m: Dictionary) -> void:
 	if bool(m.get("summoned", false)): return
 	var kind := "boss" if str(m.get("kind", "")) == "boss" or bool(m.get("boss", false)) else "kill"
 	var state := Profile.class_state(profile, class_id)
-	profile.gold = int(profile.gold) + int(data.gold.per_boss if kind == "boss" else data.gold.per_kill)
-	var gained := Rules.add_exp(data, state, int(data.exp[kind]))
+	var gold := int(data.gold.per_boss if kind == "boss" else data.gold.per_kill)
+	g.add_gold(gold)
+	# seen, never hidden: a small golden '+N' with a coin rises where it fell, and now and then
+	# a rune stone drops there (src/hell/gold_loot.gd)
+	if g.get("gold_loot") != null and m.has("p"):
+		g.gold_loot.kill_popup(Vector2(m.p), gold)
+		g.gold_loot.roll_rune(("final" if bool(g.W.get("final", false)) else "boss") if kind == "boss" else "mob", Vector2(m.p))
+	var mul: float = float(elements.exp_mul(m)) if elements != null and elements.has_method("exp_mul") else 1.0
+	var gained := Rules.add_exp(data, state, roundi(float(data.exp[kind]) * mul))
+	if mul > 1.0: _reaction_bonus(m, mul)
 	if gained > 0: bar.show_reward({"kind": "level", "level": int(state.level), "points": Rules.free_points(data, state)})
 	_dirty = true
+
+
+## The reaction reward of a kill: the run level's EXP share of `mul` (the
+## world gave the plain EXP before calling killed) and "+N % EP" rising from it.
+func _reaction_bonus(m: Dictionary, mul: float) -> void:
+	var extra := roundi(float(HeroKit.exp_for(g, m)) * (mul - 1.0))
+	if extra > 0: HeroKit.gain(g, extra)
+	if elements != null and elements.has_method("exp_bonus"):
+		elements.exp_bonus(Vector2(m.p) - Vector2(0, float(m.get("cy", 30.0))), roundi((mul - 1.0) * 100.0))
+
+
+## Something lasting in the profile changed outside the talents (a reaction
+## discovered, src/hell/story_elements.gd): written with the next save.
+func note_progress() -> void:
+	_dirty = true
+
+
+## The hero's unspent talent points (Heldenstufe), for the HUD's talent chip.
+func free_points() -> int:
+	if profile.is_empty(): return 0
+	return Rules.free_points(data, Profile.class_state(profile, class_id))
 
 
 ## Enemy HP factor of the profile's difficulty (applied when mobs spawn).
@@ -278,6 +393,11 @@ func chase_goal(m: Dictionary, goal: Vector2) -> Vector2:
 	_sync_mobs()
 	var forced := tc.forced_target(m)
 	return Vector2(forced.pos) if not forced.is_empty() and int(forced.id) < 0 else goal
+
+
+## The profile changed outside the talents (gold taken): saved with the next save tick.
+func request_save() -> void:
+	_dirty = true
 
 
 func save() -> void:
@@ -352,10 +472,46 @@ func talent_sound(kind: String, at: Vector2, extra: Dictionary) -> void:
 	if g != null and g.get("sound") != null: g.sound.talent(kind, at, extra, tc)
 
 
+## Whether talent zone `id` lying as a pool of its own (src/combat/talent_combat.gd _zone_reach)
+## covers a body of `radius` standing at `at` (its middle and four points round it): 1 yes, 0 no,
+## -1 not known (no pool layer yet, or its pool is still being shaped).
+func talent_ground_covers(id: int, at: Vector2, radius: float) -> int:
+	var layer: RefCounted = g._pool_layer() if g.has_method("_pool_layer") else null
+	if layer == null or not layer.has_method("pool_covers"): return -1
+	var key := "talent_ground:%d" % id
+	if not layer.has_pool(key): return -1
+	var reach := radius * 0.6
+	for off: Vector2 in [Vector2.ZERO, Vector2(reach, 0.0), Vector2(-reach, 0.0), Vector2(0.0, reach * 0.6), Vector2(0.0, -reach * 0.6)]:
+		if layer.pool_covers(key, at + off): return 1
+	return 0
+
+
 ## Story world px per crypt px (the hell runtime draws on a 3 px art grid, the
 ## crypt on 2): talent_combat scales the companions' follow distance and pace by it.
 func talent_world_scale() -> float:
 	return float(g.PIXEL_WORLD) / 2.0
+
+
+## A talent that frees the hero (talents.json "cleanse": Raumsprung, called by
+## src/combat/talent_combat.gd blink): every slow on him ends now, the
+## conditions (SLOW_CONDITIONS), the timers (SLOW_TIMERS) and this frame's
+## pool and gas slow (SLOW_MEDIA). A pool or gas he still stands in slows him
+## again from the next frame; the story worlds have no webs. `_id`: the hero
+## (the only one here).
+func cleanse_slows(_id: int) -> void:
+	if g == null or g.state.is_empty(): return
+	var effects: Variant = g.state.get("effects")
+	if effects is Dictionary:
+		for kind: String in SLOW_CONDITIONS: (effects as Dictionary).erase(kind)
+	for key: String in SLOW_TIMERS:
+		if g.state.has(key): g.state[key] = 0.0
+	for field: String in SLOW_MEDIA:
+		var medium: Variant = g.get(field)
+		if medium is Dictionary and (medium as Dictionary).has("slow"):
+			# a copy: hero_gas may be the shared rule of element_rules.json itself
+			var freed: Dictionary = (medium as Dictionary).duplicate()
+			freed.erase("slow")
+			g.set(field, freed)
 
 
 func talent_move(from: Vector2, step: Vector2, radius: float) -> Vector2:
@@ -404,6 +560,65 @@ func talent_hittable(enemy: Dictionary) -> bool:
 	return g._hittable(enemy)
 
 
+## Where a talent shot flying from `from` to `to` first meets a wall (physics plan R1/F23,
+## docs/PHYSIK-PLAN.md): samples every 6 px or less up to and with the end point (talent_blocked
+## leaves the end out, so at 60 fps a shot never met a wall and flew on through it), then halves
+## the last free stretch six times to the contact. Vector2.INF when nothing is in the way.
+func _shot_contact(from: Vector2, to: Vector2) -> Vector2:
+	var steps := maxi(1, ceili(from.distance_to(to) / 6.0))
+	var free := from
+	for i in range(1, steps + 1):
+		var at := from.lerp(to, float(i) / float(steps))
+		if _shot_wall(at):
+			var hit := at
+			for k in range(6):
+				var mid := (free + hit) * 0.5
+				if _shot_wall(mid): hit = mid
+				else: free = mid
+			return free
+		free = at
+	return Vector2.INF
+
+
+## Talent explosions, novas and impacts bite the walls and break props, crates and urns the way
+## the hero's own blasts do (story_wreck.gd blast; physics plan R5/F47), each event once; the pyro
+## shot's explosions are skipped ("wrecked": hell_game blasted there already).
+func _wreck_blasts() -> void:
+	if g.get("wreck") == null: return
+	var now := {}
+	for event: Dictionary in tc.events:
+		var id := int(event.get("id", 0))
+		now[id] = true
+		if _wrecked.has(id): continue
+		if not str(event.get("kind", "")) in ["explosion", "nova", "impact"] or bool(event.get("wrecked", false)): continue
+		var r := float(event.get("r", 0.0))
+		if r < 24.0: continue
+		g.wreck.blast(Vector2(float(event.x), float(event.y)), r, "blast", int(event.get("owner", 1)) > 0)
+	_wrecked = now
+
+
+func _shot_wall(p: Vector2) -> bool:
+	return g.box_blocked(Rect2(p - Vector2(3, 3), Vector2(6, 6)))
+
+
+## A talent's melee blow (talent_combat.gd "melee") meeting a wall or a prop in front: it clangs and
+## chips there like the hero's own swing (story_feel.swing_wall) and breaks a smashable prop in its
+## arc (story_wreck.swing; physics plan R3).
+func talent_swing_wall(from: Vector2, aim: Vector2, reach: float, half: float) -> void:
+	var at := from - Vector2(0, 40)
+	if g.feel != null: g.feel.swing_wall(at, aim, reach)
+	if g.get("wreck") != null: g.wreck.swing(at, aim, reach, half)
+
+
+## The wall-wear style of a talent shot (story_wreck.gd wall_hit).
+static func _wall_style(style: String) -> String:
+	if style.begins_with("fire") or style.begins_with("inferno"): return "fire"
+	if style.begins_with("frost"): return "frost"
+	if style == "arcane": return "void"
+	if style == "arrow": return "arrow"
+	return "metal"
+
+
 func _solid(p: Vector2, radius: float) -> bool:
 	return g.box_blocked(Rect2(p.x - radius, p.y - radius * 0.6, radius * 2.0, radius * 0.6))
 
@@ -418,9 +633,20 @@ func _damage_enemy(m: Dictionary, damage: float, direction: Vector2 = Vector2.ZE
 	m.hp = float(m.hp) - damage
 	if feedback:
 		m.hit = 0.12
-		if not m.has("kit"): m.k = direction * (12.0 if str(m.get("kind", "")) == "boss" else 60.0)
+		# the talent's push adds to what already pushes it, away from the blast that struck, less on
+		# a heavier body, summed at most push.max (physics plan R23, decision D5)
+		if not m.has("kit"):
+			var pcfg: Dictionary = (g.motion_kit().cfg.get("push", {}) as Dictionary) if g.has_method("motion_kit") else {}
+			var heavy: Array = pcfg.get("mass", [0.4, 4.0])
+			var mass := float(g.body_mass(m)) if g.has_method("body_mass") else clampf(pow(float(m.get("r", 28.0)) / maxf(1.0, float(pcfg.get("mass_ref_r", 28.0))), 2.0), float(heavy[0]), float(heavy[1]))
+			var push := float(pcfg.get("boss_talent", 12.0)) if str(m.get("kind", "")) == "boss" else float(pcfg.get("talent", 60.0))
+			var now: Vector2 = m.get("k") if m.get("k") is Vector2 else Vector2.ZERO
+			m.k = (now + direction.normalized() * push / mass).limit_length(float(pcfg.get("max", 1000.0)))
+		# the creature's own matter flies from the talent hit (blood, chips, slime; physics plan
+		# F25); the feel plays its material's hit sound itself
+		if g.feel != null: g.feel.on_hit(m, direction, false)
 		# sound hook: the talent hit in the monster's material at the monster, with its voice and coat
-		if g.get("sound") != null: g.sound.mob_hit(m)
+		elif g.get("sound") != null: g.sound.mob_hit(m)
 		else: g._sound("hit_" + str(m.get("def", {}).get("material", "void")))
 	tc.dealt(owner, m, damage, feedback, resolved_hp)
 	return damage
@@ -431,7 +657,8 @@ func _damage_player(_id: int, n: int, _direction: Vector2 = Vector2.ZERO) -> voi
 
 
 func _add_bullet(pos: Vector2, velocity: Vector2, owner: int, damage: float, meta: Dictionary = {}) -> Dictionary:
-	var bullet := {"pos": pos, "velocity": velocity, "owner": owner, "damage": damage, "life": 1.6, "hit_ids": [], "pierce": 0}
+	_bullet_serial += 1
+	var bullet := {"pos": pos, "velocity": velocity, "owner": owner, "damage": damage, "life": 1.6, "hit_ids": [], "pierce": 0, "id": _bullet_serial}
 	bullet.merge(meta, true)
 	bullets.append(bullet)
 	return bullet
@@ -447,14 +674,27 @@ func _status(m: Dictionary, key: String, power: float, duration: float, _owner: 
 		"soul_bind":
 			m.stun = maxf(float(m.get("stun", 0.0)), duration)
 			if m.has("act"): m.act = null
-		"burn", "poison", "bleed":
-			HeroKit.burn_mob(m, power, duration)
+		# each its own damage over time (HeroKit.tick_mob), the hero's damage counted once (_story_dps)
+		"burn":
+			HeroKit.burn_mob(m, _story_dps(power), duration)
 			# on fire for the element physics (a burning monster sets poison off; water puts it out)
-			if key == "burn" and float(m.get("wet_t", 0.0)) <= 0.0: m.fire_t = maxf(float(m.get("fire_t", 0.0)), duration)
+			if float(m.get("wet_t", 0.0)) <= 0.0: m.fire_t = maxf(float(m.get("fire_t", 0.0)), duration)
+		"poison": HeroKit.poison_mob(m, _story_dps(power), duration)
+		"bleed": HeroKit.bleed_mob(m, _story_dps(power), duration)
 		"freeze": SubKit.freeze(g, m, duration)
 		"slow":
 			if power >= 1.0: SubKit.freeze(g, m, duration, true)
 			else: HeroKit.slow_mob(g, m, power, duration)
+
+
+## A talent's damage over time in the story's unit. talent_combat.gd hands an
+## absolute dps (the hero's damage x the status pct of talents.json
+## "statuses", plus its bonuses); the story's monster ticks (HeroKit.tick_mob)
+## count in hero hits per second and multiply by state.dmg themselves. So the
+## dps is divided by state.dmg here, and the hero's damage counts once.
+func _story_dps(power: float) -> float:
+	var hit := float(g.state.get("dmg", 1.0))
+	return power / hit if hit > 0.0 else 0.0
 
 
 func _step_statuses(dt: float) -> void:
@@ -474,10 +714,22 @@ func _step_bullets(dt: float) -> void:
 		var from: Vector2 = b.pos
 		b.pos = from + Vector2(b.velocity) * dt
 		b.life = float(b.life) - dt
+		# a mage's spell stops at the point the mouse showed (talent_combat _land_reach); if
+		# neither a wall nor an enemy stops it on the way there, it bursts on the floor
+		var landed := false
+		if b.has("left"):
+			b.left = float(b.left) - Vector2(b.velocity).length() * dt
+			if float(b.left) <= 0.0 or float(b.life) <= 0.0:
+				b.pos = b.land
+				landed = true
 		# a fire shot through poison gas sets it off (src/hell/story_elements.gd)
 		if elements != null and str(b.get("style", "")).begins_with("fire"):
-			elements.fire_passes(b.pos)
-		var gone: bool = float(b.life) <= 0.0 or talent_blocked(from, b.pos, 3.0)
+			elements.fire_passes(b.pos, int(b.get("owner", 1)))
+		# it stops at the wall it meets, there (R1): the burst and the wear are on the wall face
+		var contact := _shot_contact(from, b.pos)
+		var walled := contact != Vector2.INF
+		if walled: b.pos = contact
+		var gone: bool = (float(b.life) <= 0.0 and not landed) or walled
 		if not gone:
 			for m: Dictionary in enemies:
 				if float(m.hp) <= 0.0 or b.hit_ids.has(tc._eid(m)) or not g._hittable(m): continue
@@ -488,6 +740,14 @@ func _step_bullets(dt: float) -> void:
 					gone = true
 					break
 				b.pierce = int(b.pierce) - 1
+		if landed and not gone:
+			tc.bullet_land(b)
+			gone = true
+		if walled and g.get("wreck") != null:
+			g.wreck.hit_line(from, contact + Vector2(b.velocity).normalized() * 16.0, _wall_style(str(b.get("style", ""))), int(b.get("owner", 1)))
+		# a fire shot that strikes an unlit fire bowl lights it (decision D7)
+		if walled and _wall_style(str(b.get("style", ""))) == "fire" and g.has_method("fire_hits_brazier"):
+			g.fire_hits_brazier(contact + Vector2(b.velocity).normalized() * 8.0)
 		if gone: bullets.remove_at(i)
 
 
@@ -524,7 +784,7 @@ func draw_world(canvas: CanvasItem, clock: float) -> void:
 		var at := Vector2(b.pos) - Vector2(0, 30)
 		var colour: Color = {"fireball": Color("ff7a2a"), "frost_lance": Color("8fd8e6"), "arcane": Color("b07bff")}.get(str(b.get("style", "")), Color("f3e2b0"))
 		var shot := {"x": at.x, "y": at.y, "vx": Vector2(b.velocity).x, "vy": Vector2(b.velocity).y, "style": str(b.get("style", "")),
-			"talent": str(b.get("talent", "")), "stage": int(b.get("stage", 0)), "charge": float(b.get("charge", 0.0)), "radius": float(b.get("radius", 6.0))}
+			"talent": str(b.get("talent", "")), "stage": int(b.get("stage", 0)), "charge": float(b.get("charge", 0.0)), "radius": float(b.get("radius", 6.0)), "id": int(b.get("id", 0))}
 		if fx.draw_bullet(canvas, shot, clock): continue
 		if str(b.get("style", "")) == "arrow":
 			# a shaft of pixels with a white tip and a dark outline

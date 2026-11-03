@@ -306,7 +306,10 @@ func _test_attach_uid_and_centre() -> void:
 	a.alt = 200.0
 	host.frame([a], [], 0.0)
 	check(is_equal_approx(Vector2(a.pos).y, centre.y - 200.0), "a flying dragon's centre rises with his altitude")
-	var plain := {"id": "glutimp", "hp": 10.0, "max": 10.0, "p": AT}
+	# glutimp wears a part rig since fcc797b4 (30.10.2026, rigs.json "glutimp"), and every
+	# def in hell_monsters.json has one now, so a made-up id stands for the rigless monster
+	var plain := {"id": "rigless_test_monster", "hp": 10.0, "max": 10.0, "p": AT}
+	check(library.rig("rigless_test_monster").is_empty(), "the stand-in really has no rig")
 	check(not host.attach(plain) and not host.has_rig(plain), "a monster without a rig keeps its sprite")
 	host.damage(plain, 3.0)
 	check(is_equal_approx(float(plain.hp), 7.0), "without a rig damage just lowers m.hp")

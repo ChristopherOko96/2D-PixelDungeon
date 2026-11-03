@@ -5,7 +5,7 @@ func _initialize() -> void:
 	var p := Pools.new(2.0, func(_at: Vector2) -> bool: return true)
 	p.add(1, "blood", Vector2(100,100), Vector2.ZERO, 10, 0, 10, "test")
 	p.add(2, "blood", Vector2(100,100), Vector2.ZERO, 10, 0, 20, "test")
-	p._now = 3.0
+	p.advance(3.0)
 	var before := p.covers(Vector2(100,100), "blood")
 	p.finish("test:1", 2.0)
 	var remains := p.covers(Vector2(100,100), "blood")

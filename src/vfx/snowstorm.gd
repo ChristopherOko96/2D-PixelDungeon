@@ -1,7 +1,7 @@
 extends Node2D
 ## A light, never-ending snowfall over the whole screen (the Frostgruft's theme "snowstorm"),
-## drawn in screen space on its own canvas layer above the world, the HUD and the menus, so the
-## cold is felt everywhere. Flakes fall in three depths (far: small, slow, faint; near: larger,
+## drawn in screen space on its own canvas layer above the world but under the HUD and every
+## window (hell_game.gd: storm layer 1, UI layer 2), so text stays clean. Flakes fall in three depths (far: small, slow, faint; near: larger,
 ## faster), are carried by a steady light wind from the right that swells into gusts now and then,
 ## and sway a little. Faint wind lines sweep across the screen from right to left all the time, so
 ## the wind can be seen; during a gust some flakes draw as short streaks.
@@ -39,6 +39,11 @@ var _storm_at := 0.0
 var _storm_t := -1.0
 var _storm_len := 20.0
 var _rng := RandomNumberGenerator.new()
+## Where the camera was last frame (world px; follow) and the shift since then (screen px): the
+## flakes stream past against the camera's motion, near ones more than far ones, so they hang in
+## the world with depth instead of sticking to the screen (physics plan R30, for saidPC's review).
+var _cam_last := Vector2.INF
+var _cam_shift := Vector2.ZERO
 
 
 func _ready() -> void:
@@ -100,6 +105,14 @@ func storm() -> float:
 	return k * k * (3.0 - 2.0 * k)
 
 
+## The camera at world point `cam_pos` with `zoom` this frame (hell_game calls it before the storm's
+## own step): its motion since last frame, in screen px, shifts the flakes by their depth.
+func follow(cam_pos: Vector2, zoom: float) -> void:
+	if _cam_last != Vector2.INF and cam_pos.distance_to(_cam_last) < 400.0:
+		_cam_shift += (cam_pos - _cam_last) * zoom
+	_cam_last = cam_pos
+
+
 ## The wind now: the base wind, a gust that swells and fades (sine shaped) and the storm's wind.
 func wind() -> Vector2:
 	var w := Vector2(float(cfg.wind[0]), float(cfg.wind[1]))
@@ -132,7 +145,7 @@ func _process(dt: float) -> void:
 		var d: float = f.d
 		var fall := lerpf(float(cfg.fall[0]), float(cfg.fall[1]), d) * (1.0 - st * 0.35)
 		var sway := sin(_t * float(f.rate) + float(f.sway)) * 18.0 * (1.0 - st * 0.6)
-		f.p += Vector2(w.x * (0.5 + d * 0.7) + sway, fall + w.y) * dt
+		f.p += Vector2(w.x * (0.5 + d * 0.7) + sway, fall + w.y) * dt - _cam_shift * (0.35 + 0.65 * d)
 		# off one edge: back in at the opposite one
 		if f.p.y > s.y + 8.0:
 			f.p = Vector2(_rng.randf() * s.x, -6.0)
@@ -140,6 +153,9 @@ func _process(dt: float) -> void:
 			f.p.x += s.x + 20.0
 		elif f.p.x > s.x + 12.0:
 			f.p.x -= s.x + 20.0
+		if f.p.y < -12.0:
+			f.p.y += s.y + 14.0
+	_cam_shift = Vector2.ZERO
 	for l: Dictionary in _lines:
 		var d: float = l.d
 		l.p.x += w.x * float(cfg.line_speed) * (0.6 + d * 0.6) * dt

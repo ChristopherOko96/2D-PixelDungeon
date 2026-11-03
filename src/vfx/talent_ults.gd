@@ -75,7 +75,8 @@ static func cast(canvas: CanvasItem, talent: String, at: Vector2, body: Vector2,
 		"sniper_14": _aim(canvas, at, body, p, stage, angle, art, clock)
 		"trapper_14": _flask(canvas, at, body, p, angle, art, seed)
 		"beast_14": _howl(canvas, at, body, p, stage, art, clock, seed)
-		"berserk_14": _blood_burst(canvas, at, body, at + feet, p, stage, art, seed)
+		# Erdspalter: its rubble flies from the leap's landing (leap_slam); no old Blutrausch fountain
+		"berserk_14": pass
 		"guard_14": _plates_in(canvas, at + feet, p, stage, art, clock)
 		"blade_14":
 			# the blades fly out to their orbit and hand over to the aura (same spin, same radius)
@@ -826,7 +827,8 @@ static func _shatter(canvas: CanvasItem, at: Vector2, r: float, p: float, art: f
 	var u := _out(_span(p, 0.0, 0.75))
 	var cells := {}
 	var axes: Array[Vector2i] = [Vector2i(0, 1), Vector2i(1, 1), Vector2i(1, 0), Vector2i(1, -1)]
-	for i in range(22):
+	# with particles the shards and chips are theirs (TalentPixels.paint_matter; physics plan F29)
+	for i in range(22 if TalentPixels.paint_matter else 0):
 		var dir := Vector2.from_angle(TAU * (float(i) + 0.6 * _h(seed, i)) / 22.0)
 		var d := lerpf(r * 0.12, r * (0.45 + 0.55 * _h(seed, 30 + i)), u)
 		var z := 4.0 * (10.0 + 10.0 * _h(seed, 60 + i)) * u * (1.0 - u)
@@ -842,7 +844,7 @@ static func _shatter(canvas: CanvasItem, at: Vector2, r: float, p: float, art: f
 				cells[q + side] = ice[1] if j > 0 else ice[2]
 	_flush(canvas, cells, art, cover > 0.5)
 	var chips := {}
-	for i in range(30):
+	for i in range(30 if TalentPixels.paint_matter else 0):
 		var k := _span(p, 0.15 + 0.2 * _h(seed, 120 + i), 0.9)
 		if k <= 0.0:
 			continue
@@ -905,7 +907,7 @@ static func _blood_crown(canvas: CanvasItem, at: Vector2, r: float, p: float, ar
 		_flush(canvas, cells, art, cover > 0.5)
 	var drops := {}
 	var u := _span(p, 0.0, 0.65)
-	for i in range(22):
+	for i in range(22 if TalentPixels.paint_matter else 0):
 		var dir := Vector2.from_angle(TAU * _h(seed, 40 + i))
 		var d := r * (0.35 + 0.65 * _h(seed, 70 + i))
 		var z := 4.0 * 20.0 * (0.6 + 0.4 * _h(seed, 100 + i)) * u * (1.0 - u)

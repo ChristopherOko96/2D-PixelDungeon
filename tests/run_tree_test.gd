@@ -142,21 +142,29 @@ func _test_story(scene: PackedScene, world: String) -> void:
 	check(not CardKit.take_node(game, "long_breath"), "%s: the old skill cards are not offered any more" % world)
 	check(RunTree.state_of(CardKit.tree(game), CardKit.ranks(game), 20, "mg_haste") != "meta_locked", "%s: no node waits for a lasting talent (the talent profile replaces them)" % world)
 	check(int(RunTree.node(CardKit.tree(game), "mg_focus").max) == 3, "%s: the card's rank caps the node" % world)
-	# B opens the tree; a click inside spends a point and never fires
+	# B opens the tree; a click inside spends a point and never fires. Since the UX polish
+	# (b178a185: "the run talents are the LAUF tab of the talent screen") B opens the talent
+	# screen on its LAUF tab (hell_game.gd open_run_talents), which draws the run tree and
+	# owns the clicks (talent_screen.gd _gui_input, hell_game.gd _click_run_page).
 	var key := InputEventKey.new()
 	key.keycode = KEY_B
 	key.pressed = true
 	game._unhandled_input(key)
-	check(bool(game.state.get("tree_open", false)), "%s: B opens the run talent tree" % world)
-	var screen: Vector2 = game.get_viewport_rect().size
-	var spot: Rect2 = RunTreeView.layout(screen, CardKit.tree(game)).nodes.get("mg_focus", Rect2())
+	var talent_screen: Control = game.run_talents
+	check(talent_screen != null and talent_screen.visible and str(talent_screen._page) == "run", "%s: B opens the run talent tree (the talent screen's LAUF tab)" % world)
+	# the tab draws the tree once before it knows where its nodes are
+	await process_frame
+	await process_frame
+	var area: Rect2 = game._run_page_rect
+	var spot: Rect2 = RunTreeView.layout(area.size, CardKit.tree(game)).nodes.get("mg_focus", Rect2())
+	var before := CardKit.level(game, "mg_focus")
 	var shots := (game.shots as Array).size()
 	var click := InputEventMouseButton.new()
 	click.button_index = MOUSE_BUTTON_LEFT
 	click.pressed = true
-	click.position = spot.get_center()
-	game._unhandled_input(click)
-	check(CardKit.level(game, "mg_focus") >= 1, "%s: a click on a node spends a point" % world)
+	click.position = area.position + spot.get_center()
+	if talent_screen != null: talent_screen._gui_input(click)
+	check(area.size.x > 0.0 and CardKit.level(game, "mg_focus") == before + 1, "%s: a click on a node spends a point (%d -> %d)" % [world, before, CardKit.level(game, "mg_focus")])
 	check((game.shots as Array).size() == shots, "%s: the click does not fire" % world)
 	game.queue_free()
 	await process_frame

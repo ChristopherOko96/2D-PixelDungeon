@@ -39,7 +39,7 @@ static func goals(g: Node) -> Array:
 		out.append({"text": "Finde den %s" % g.key_name[k], "done": g.state.keys[k] or g.state.used[k] or gate.unlocked, "main": true})
 		out.append({"text": "Entriegle das Tor der Wächterhalle", "done": gate.unlocked, "main": true})
 	out.append({"text": "Besiege %s" % g.W.boss.name, "done": g.state.boss_dead, "main": true})
-	out.append({"text": "Verlasse die Frostgruft" if g.W.final else "Steig die Treppe hinab", "done": g.state.won, "main": true})
+	out.append({"text": "Verlasse die Frostgruft" if g.W.final else "Steige die Treppe hinab", "done": g.state.won, "main": true})
 	for key: String in g.W.groups:
 		var grp: Dictionary = g.W.groups[key]
 		if key == "relic":
@@ -158,12 +158,12 @@ static func status(g: Node, h: Control, size: Vector2) -> void:
 	var rows := [
 		["Klasse", str(g.hero.get("name", "-"))],
 		["Waffe", str(rel.get("name", g.weapon.get("name", "-")))],
-		["Stufe", "%d  (%d / %d EP)" % [int(g.state.level), int(g.state.exp), HeroKit.need(cfg, int(g.state.level))]],
+		["Laufstufe", "%d  (%d / %d EP)" % [int(g.state.level), int(g.state.exp), HeroKit.need(cfg, int(g.state.level))]],
 		["LP", "%d / %d" % [HudKit.life_shown(int(g.state.hp), hp_f), int(g.state.max_hp)]],
 		["Schaden", "%.1f je Treffer" % dmg],
 		["Angriffe", "%.1f pro Sekunde" % (1.0 / maxf(0.05, rate))],
 		["Lauftempo", "%d" % int(float(g.hero.get("speed", 300)) * CardKit.speed_mult(g) * float(g.state.speed_mul))],
-		[g.say("Runensteine"), str(int(g.state.gems))]]
+		["Gold", str(g.gold_count())], ["Runensteine", str(g.rune_count())]]
 	var cards := CardKit.offers_cards(g)
 	var row_h := 28.0
 	var r := Rect2(40, 200, 440, 70.0 + rows.size() * row_h + (40.0 + 6 * 22.0 if cards else 0.0) + 34.0)
@@ -207,7 +207,7 @@ static func _card_rects(g: Node, size: Vector2) -> Array:
 ## The three cards of a level-up: name, effect, its step, key 7/8/9 or a click.
 static func cards(g: Node, h: Control, size: Vector2) -> void:
 	var rects := _card_rects(g, size)
-	g._text(h, "STUFE %d · WÄHLE EINE VERBESSERUNG" % int(g.state.level), Vector2(0, size.y / 2.0 - 60), 20, HudStyle.color("accent"), size.x)
+	g._text(h, "LAUFSTUFE %d · WÄHLE EINE VERBESSERUNG" % int(g.state.level), Vector2(0, size.y / 2.0 - 60), 20, HudStyle.color("accent"), size.x)
 	var mouse := h.get_local_mouse_position()
 	for i in range(rects.size()):
 		var c: Dictionary = g.state.offer[i]
@@ -233,6 +233,124 @@ static func cards(g: Node, h: Control, size: Vector2) -> void:
 ## Which card lies under a screen point (-1 for none).
 static func card_at(g: Node, p: Vector2, size: Vector2) -> int:
 	var rects := _card_rects(g, size)
+	for i in range(rects.size()):
+		if (rects[i] as Rect2).has_point(p):
+			return i
+	return -1
+
+
+# ---------- the demon seal's choice (balance package D1) ----------
+
+## The seal's cards side by side in the middle, rising into place over 0.3 s
+## of real time (the world, and so its clock, waits while they are open).
+static func _seal_rects(g: Node, size: Vector2) -> Array:
+	var pick: Dictionary = g.state.get("seal_pick", {})
+	var n: int = (pick.get("ids", []) as Array).size()
+	var w := 250.0
+	var gap := 28.0
+	var x0 := size.x / 2.0 - (n * w + (n - 1) * gap) / 2.0
+	var age := float(Time.get_ticks_msec() - int(pick.get("ms", 0))) / 1000.0
+	var rise := (1.0 - clampf(age / 0.3, 0.0, 1.0)) * 40.0
+	var out: Array = []
+	for i in range(n):
+		out.append(Rect2(x0 + i * (w + gap), size.y / 2.0 - 70 + rise, w, 170))
+	return out
+
+
+## Draws `text` word-wrapped and centred in `r` from line `y` on; returns the next line.
+static func _wrap(g: Node, h: Control, text: String, r: Rect2, y: float, font_size: int, col: Color) -> float:
+	var line := ""
+	for wd: String in text.split(" "):
+		if FONT.get_string_size(line + " " + wd, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x > r.size.x - 24 and line != "":
+			g._text(h, line, Vector2(r.position.x, y), font_size, col, r.size.x)
+			y += font_size + 6.0
+			line = wd
+		else:
+			line = wd if line == "" else line + " " + wd
+	if line != "":
+		g._text(h, line, Vector2(r.position.x, y), font_size, col, r.size.x)
+		y += font_size + 6.0
+	return y
+
+
+## The text of the open seal's card `i`: what taking it really gives (CardKit.seal_offer's dry run).
+static func _seal_text(g: Node, i: int) -> String:
+	var pick: Dictionary = g.state.get("seal_pick", {})
+	var texts: Array = pick.get("texts", [])
+	if i < texts.size():
+		return str(texts[i])
+	var id := str((pick.get("ids", []) as Array)[i])
+	return str(Rules.BLESSING_TEXT.get(id, id))
+
+
+## A broken demon seal's choice: the frozen world dims, a card per blessing
+## shows its name, what it does and the price it costs (the same safe price on
+## each), keys 1 / 2 or a click take one, Esc leaves both for nothing. With too
+## little life the cards stay dull and say so.
+static func seal_cards(g: Node, h: Control, size: Vector2) -> void:
+	var pick: Dictionary = g.state.get("seal_pick", {})
+	if pick.is_empty():
+		return
+	var ids: Array = pick.get("ids", [])
+	var price := int(pick.get("price", 0))
+	var can := Rules.seal_affordable(g.state, price)
+	var rects := _seal_rects(g, size)
+	if rects.is_empty():
+		return
+	h.draw_rect(Rect2(Vector2.ZERO, size), Color(HudStyle.color("outline"), 0.5))
+	var top: float = (rects[0] as Rect2).position.y
+	# the world's own words for the seal breaking (frost_theme.json: the frozen chest springs open)
+	g._text(h, "%s · WÄHLE EINEN SEGEN" % g.say("Das Siegel bricht").to_upper(), Vector2(0, top - 46), 20, HudStyle.color("accent"), size.x)
+	g._text(h, "Jeder Segen kostet %s. Er bleibt für den ganzen Lauf." % Rules.price_text(price), Vector2(0, top - 16), 16, HudStyle.color("text"), size.x)
+	var mouse := h.get_local_mouse_position()
+	# no card lights up before the cards are armed (CardKit.seal_armed: the breaking blow picks nothing)
+	var armed := CardKit.seal_armed(g)
+	for i in range(rects.size()):
+		var r: Rect2 = rects[i]
+		var hot := can and armed and r.has_point(mouse)
+		var dim := 1.0 if can else 0.55
+		frame(h, r.grow(4.0 if hot else 0.0), hot, dim)
+		var text: String = g.say(_seal_text(g, i))
+		g._text(h, text.get_slice(":", 0).to_upper(), Vector2(r.position.x, r.position.y + 34), 16, Color(HudStyle.color("accent"), dim), r.size.x)
+		_wrap(g, h, text.get_slice(":", 1).strip_edges() if text.contains(":") else text, r, r.position.y + 64.0, 16, Color(HudStyle.color("text"), dim))
+		g._text(h, ("Preis: %s" % Rules.price_text(price)) if can else "Zu wenig Leben", Vector2(r.position.x, r.end.y - 34), 16, Color(HudStyle.color("danger"), 0.95), r.size.x)
+		g._text(h, "[%d]" % (i + 1), Vector2(r.position.x, r.end.y - 10), 16, Color(HudStyle.color("accent"), dim), r.size.x)
+	var hint := "%s · SEGEN NEHMEN    ESC · BEIDE LASSEN" % " / ".join(PackedStringArray(range(1, ids.size() + 1).map(func(k: int) -> String: return str(k))))
+	g._text(h, hint, Vector2(0, (rects[0] as Rect2).end.y + 36), 16, Color(HudStyle.color("text_dim"), 0.95), size.x)
+
+
+## Before the first blow: over a whole demon seal near the hero (within
+## `reach` world px) a small plate says what breaking it offers and costs.
+static func seal_hint(g: Node, h: Control, size: Vector2, reach := 300.0) -> void:
+	var hero := Vector2(float(g.player.x), float(g.player.y))
+	var best: Dictionary = {}
+	var bd := reach
+	for e: Dictionary in g.breakables:
+		if str(e.get("type", "")) != "seal" or bool(e.get("broken", false)):
+			continue
+		var dd := hero.distance_to(Vector2(float(e.x), float(e.y)))
+		if dd < bd:
+			bd = dd
+			best = e
+	if best.is_empty():
+		return
+	var cfg := CardKit.seal_cfg(g)
+	# neutral words: the Frostgruft's seal is a frozen chest (frost_theme.json words)
+	var lines := ["SEGEN ZUR WAHL", "Zerschlagen: %d Segen · je %s" % [int(cfg.get("offers", 2)), Rules.price_text(int(cfg.get("price_hp", 2)))]]
+	var w := 0.0
+	for line: String in lines:
+		w = maxf(w, FONT.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x)
+	w += 28.0
+	var at: Vector2 = g._to_screen(Vector2(float(best.x), float(best.y) - 120.0), size)
+	var r := Rect2(clampf(at.x - w / 2.0, 8.0, size.x - w - 8.0), clampf(at.y - 56.0, 8.0, size.y - 64.0), w, 56.0)
+	frame(h, r, false, 0.92)
+	g._text(h, str(lines[0]), Vector2(r.position.x, r.position.y + 22), 16, HudStyle.color("accent"), r.size.x)
+	g._text(h, str(lines[1]), Vector2(r.position.x, r.position.y + 46), 16, HudStyle.color("text"), r.size.x)
+
+
+## Which of the seal's cards lies under a screen point (-1 for none).
+static func seal_card_at(g: Node, p: Vector2, size: Vector2) -> int:
+	var rects := _seal_rects(g, size)
 	for i in range(rects.size()):
 		if (rects[i] as Rect2).has_point(p):
 			return i

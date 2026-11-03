@@ -1,0 +1,21 @@
+{
+  "_note": "Enemy shot looks beyond their element (src/vfx/shot_looks.gd). monsters: monster id (Krypta def id, or the Frostgruft theme mob kind) -> look; attacks: only shots of these attack ids (empty or absent: every shot); tint frost: the Frostgruft's rimed arrow. looks.arrow: the bone arrow on the 3 px art grid, lengths in grid cells along its flight (shaft_len bone shaft, head_len iron head, fletch_len vanes), colours lit to shade (hex); frost_shaft_tint [colour, share] tints the bone. impact: splinters thrown back off the head, their speed and up (world px/s), dust motes, rime cells and ice_chips of the rimed arrow, sfx_wall / sfx_hit (audio_sfx.json events, played only where the world sounds no impact of its own: the Frostgruft).",
+  "monsters": {
+    "skelettschuetze": {"look": "arrow", "attacks": ["pfeil", "salve"]},
+    "frost_skeleton": {"look": "arrow", "tint": "frost"}
+  },
+  "looks": {
+    "arrow": {
+      "shaft_len": 7,
+      "head_len": 2,
+      "fletch_len": 2,
+      "shaft": ["fdf7ed", "e8dcc8", "c9b49a", "8f7f70"],
+      "head": ["e9eef2", "9aa3ad", "5d6670"],
+      "fletch": ["c8443a", "8a2b25"],
+      "frost_shaft_tint": ["bfeaff", 0.3],
+      "frost_head": ["ffffff", "b9d7e6", "6f8fa6"],
+      "frost_fletch": ["e6fbff", "8fc9e6"],
+      "impact": {"splinters": 4, "speed": 150, "up": 140, "dust": 2, "rime": 4, "ice_chips": 3, "sfx_wall": "wall_hit_bone", "sfx_hit": "hit_bone"}
+    }
+  }
+}

@@ -44,11 +44,20 @@ func _test_buses_duck_and_limit() -> void:
 	# Assert
 	for name: String in ["Music", "Ambience", "SFX", "Focus", "UI"]:
 		check(AudioServer.get_bus_index(name) >= 0, "the %s bus exists" % name)
-	check(AudioServer.bus_count == 6, "calling it twice adds no extra buses (%d)" % AudioServer.bus_count)
+	# the bus tree of the sound pass (b178a185): every bus of audio_mix.json plus the Master
+	# (16 + 1 today, was 5 + 1), so the count follows the data
+	var wanted: int = 1 + (AudioMix.data().get("buses", []) as Array).size()
+	check(AudioServer.bus_count == wanted, "calling it twice adds no extra buses (%d, want %d)" % [AudioServer.bus_count, wanted])
 	check(str(AudioServer.get_bus_send(AudioServer.get_bus_index("Focus"))) == "SFX", "Focus is a part of the effects")
+	# the Music bus carries its muffle filter first now; the duck under Focus is one of its
+	# sidechain compressors (audio_mix.json ducks)
 	var music := AudioServer.get_bus_index("Music")
-	var ducking: AudioEffect = AudioServer.get_bus_effect(music, 0) if AudioServer.get_bus_effect_count(music) > 0 else null
-	check(ducking is AudioEffectCompressor and str(ducking.sidechain) == "Focus", "the music ducks under Focus")
+	var ducked := false
+	for index in range(AudioServer.get_bus_effect_count(music)):
+		var effect: AudioEffect = AudioServer.get_bus_effect(music, index)
+		if effect is AudioEffectCompressor and str((effect as AudioEffectCompressor).sidechain) == "Focus":
+			ducked = true
+	check(ducked, "the music ducks under Focus")
 	check(AudioServer.get_bus_effect_count(0) == 1 and AudioServer.get_bus_effect(0, 0) is AudioEffectHardLimiter, "a limiter guards the Master")
 
 

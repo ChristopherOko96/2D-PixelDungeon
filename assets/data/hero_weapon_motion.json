@@ -1,0 +1,9 @@
+{
+  "_note": "How the heroes move their weapons (src/hero/hero_look.gd). Presentation only: the hit itself happens when the attack is made; these values only shape how the blade looks before, during and after it.",
+  "sword": {
+    "_guard_note": "guard: the swordsman's resting hold (user 2026-11-01: like a swordsman, not a pointer at head height). hand = where the hand sits from the shoulder in hero art px, x toward the facing side, y down (about hip height in front of the body). tilt = radians the blade leans forward from upright. aim_lean = at most this many radians the blade follows the aim up or down. off_hand / off_tilt: the second blade in Rage, held on the other side and crossed further forward.",
+    "guard": {"hand": [2.5, 4.5], "tilt": 0.6, "aim_lean": 0.3, "off_hand": [-1.5, 4.0], "off_tilt": 1.0},
+    "_swing_note": "swing: one sword stroke, as shares of time (seconds). The blade always cuts from the end of the arc nearest its guard (a downward cut from the raised blade); Rage's mirrored second swing cuts back the other way. lift = share spent raising the blade from the guard to the start of the arc (the anticipation, kept short so the stroke follows the click at once). strike = share at which the cut has crossed the arc and overshoot radians past it (fast, eased out by strike_ease, Godot ease() curve: below 1 eases out). settle = share at which the follow-through ends and the blade starts back to the guard (eased in and out). reach = weapon art px from the shoulder to the hand while cutting. lean = hero art px the body leans into the cut.",
+    "swing": {"time": 0.34, "lift": 0.12, "strike": 0.45, "settle": 0.6, "overshoot": 0.35, "strike_ease": 0.35, "reach": 6.0, "lean": 3.0}
+  }
+}

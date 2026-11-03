@@ -1,0 +1,627 @@
+{
+  "date": "2026-11-03",
+  "branch": "codex/port-0x72-onto-main",
+  "publication": "origin/codex_v2",
+  "merged_upstream": "65a15a4a4f54ab16242dbee210d96b349ec4cbea",
+  "protocol": 4,
+  "rules": 26,
+  "total_checks": 2734,
+  "checked": [
+    {
+      "path": "Logs/rig-audit-talent_combat_test.log",
+      "bytes": 332,
+      "sha256": "9f45b7289378dee68180147b397ba368c5aa931e42f9b0a3291a5c71dfbbd24c",
+      "checks": 360,
+      "failures": 0
+    },
+    {
+      "path": "Logs/rig-audit-archer_rework_test.log",
+      "bytes": 109,
+      "sha256": "ce186177b65c89c9641b91285515075a5bb8929b77febf46eaeca581dea1e9e1",
+      "checks": 37,
+      "failures": 0
+    },
+    {
+      "path": "Logs/rig-audit-final-cutout_coverage_test.log",
+      "bytes": 147,
+      "sha256": "3c9077dcc9189d23c8994ba7efa0dd9b3dd32613ef38d96517d9cbd07a7d8ed4",
+      "checks": 1250,
+      "failures": 0
+    },
+    {
+      "path": "Logs/rig-audit-final-crypt_enemy_ai_test.log",
+      "bytes": 105,
+      "sha256": "a5a50dfdc158f864ba445f4f27afc24921a05db8b5e206f126c76a1d27ffa4d1",
+      "checks": 171,
+      "failures": 0
+    },
+    {
+      "path": "Logs/rig-audit-final-crypt_enemy_integration_test.log",
+      "bytes": 777,
+      "sha256": "9d5cd20d3687162722e9991ca6469ffda658eac78f10e7e7b226f2acb1c6e585",
+      "checks": 97,
+      "failures": 0
+    },
+    {
+      "path": "Logs/rig-audit-final-hero_weapon_rig_test.log",
+      "bytes": 111,
+      "sha256": "1d0b8bc77aad692df6307fb8f9bdde11967e5356fb580515804e7211c0bf6f05",
+      "checks": 54,
+      "failures": 0
+    },
+    {
+      "path": "Logs/rig-audit-final-rig_manifest_test.log",
+      "bytes": 527,
+      "sha256": "2415f964b3b22dd19efdaec790457fa36e62c5d24a59861f54276ea34390e95c",
+      "checks": 140,
+      "failures": 0
+    },
+    {
+      "path": "Logs/rig-audit-final-soul_ring_shape_test.log",
+      "bytes": 111,
+      "sha256": "f1015c852ccfcc4c4a811755a6f88170adb455dd13b86ee9bcc40075e0c9c6b7",
+      "checks": 19,
+      "failures": 0
+    },
+    {
+      "path": "Logs/rig-audit-final-element_exposure_test.log",
+      "bytes": 112,
+      "sha256": "973cedaa7d55d0f99285658c551079b37005b7897c7db7f77828172fd2274eba",
+      "checks": 49,
+      "failures": 0
+    },
+    {
+      "path": "Logs/rig-audit-final-talent_defense_test.log",
+      "bytes": 332,
+      "sha256": "92bb2c1ae5e8d57512e7d696958814d5ce2fa2329947609b63d1413ffb45a704",
+      "checks": 40,
+      "failures": 0
+    },
+    {
+      "path": "Logs/rig-audit-final-perk_combat_test.log",
+      "bytes": 3996,
+      "sha256": "9ccce42ceefdc1f47e0ca1d4a477d998a621ef53dea33921c02ced4b2eb63a80",
+      "checks": 100,
+      "failures": 0
+    },
+    {
+      "path": "Logs/rig-audit-final-rig_story_integration_test.log",
+      "bytes": 116,
+      "sha256": "5d3198a0e3cb7221c9ba272f486a743ebdc70daa323b6fe5f474e7bc0e2254e1",
+      "checks": 6,
+      "failures": 0
+    },
+    {
+      "path": "Logs/rig-audit-final-hell_talents_test.log",
+      "bytes": 108,
+      "sha256": "6012df382f4e780d9f4a59a37f7d04a90f2d1061d742e7fdfe16eb0b42193429",
+      "checks": 36,
+      "failures": 0
+    },
+    {
+      "path": "Logs/rig-audit-final-pool_field_test.log",
+      "bytes": 106,
+      "sha256": "0c1b0c7efbde2369bd4f1997340e275ab2e78a6d698eebbb1834352789e7c600",
+      "checks": 58,
+      "failures": 0
+    },
+    {
+      "path": "Logs/rig-audit-final-necro_soul_attacks_test.log",
+      "bytes": 114,
+      "sha256": "0e94e092c9ee70b409506be454136ad3769f8624dd65e698d493fe4063529ab2",
+      "checks": 57,
+      "failures": 0
+    },
+    {
+      "path": "Logs/rig-audit-final-forest_worms_test.log",
+      "bytes": 216,
+      "sha256": "edb5ba27e3dd773655c6cb60967c7a9e14869ebce0f367e6eab98f8dfeeda69c",
+      "checks": 13,
+      "failures": 0
+    },
+    {
+      "path": "Logs/rig-audit-final-necro_forest_rework_test.log",
+      "bytes": 108,
+      "sha256": "fec3c8f7d2b3396b4b93da87aabe2cde34a81f79c6b264f7c19edec4b9152ce2",
+      "checks": 29,
+      "failures": 0
+    },
+    {
+      "path": "Logs/rig-audit-final-curse_monster_evolution_test.log",
+      "bytes": 111,
+      "sha256": "83d493be8d6febbb998f69c4cc13a771583cb2fd21f48e464e22dfa6840407c6",
+      "checks": 57,
+      "failures": 0
+    },
+    {
+      "path": "Logs/rig-audit-final-guardian_beam_adhesion_test.log",
+      "bytes": 113,
+      "sha256": "4664831242460942ec2021312354178f04dbf0dd575efb053331b8199cd32e12",
+      "checks": 16,
+      "failures": 0
+    },
+    {
+      "path": "Logs/rig-audit-final-soul_guardian_commands_test.log",
+      "bytes": 113,
+      "sha256": "471628cb18c109a3dc1c34bb071c4b8ad8b3bf370e77433c093841cb53353ee7",
+      "checks": 27,
+      "failures": 0
+    },
+    {
+      "path": "Logs/rig-audit-final-attack_fx_test.log",
+      "bytes": 108,
+      "sha256": "3c75e69cc42029f8b15841ddb0d14346f906bc9adb024f5388377c24057c6718",
+      "checks": 23,
+      "failures": 0
+    },
+    {
+      "path": "Logs/rig-audit-necro_pool_absorption_test.log",
+      "bytes": 117,
+      "sha256": "296e9b2037ad23efc3c7c6226304fdfc7fff0163244a61eec196a6a60560b8a9",
+      "checks": 12,
+      "failures": 0
+    },
+    {
+      "path": "Logs/rig-audit-mage_neutral_feedback_test.log",
+      "bytes": 116,
+      "sha256": "1ff0e74029e416c6e0d878e54409660c9b8e3ba24ab826e3ebfeca24470a5ccb",
+      "checks": 2,
+      "failures": 0
+    },
+    {
+      "path": "Logs/rig-audit-story_clock_test.log",
+      "bytes": 107,
+      "sha256": "fe80e1f6fbd008201afd8fcc6eb3c064da197a185d0e2cf4641c185356abdb66",
+      "checks": 18,
+      "failures": 0
+    },
+    {
+      "path": "Logs/rig-audit-story_clock_integration_test.log",
+      "bytes": 1231,
+      "sha256": "03fc943f9fb4c2b3bcb096c56489162d1a4a55ce240e35fb637a118948c81af7",
+      "checks": 63,
+      "failures": 0
+    }
+  ],
+  "build": {
+    "path": "Logs/rig-audit-build-check.log",
+    "bytes": 2115,
+    "sha256": "6d2e62ee1d2a0a655c2609a8508650f316d8ff778f6f27890546cb56b4005356",
+    "checks": 2547,
+    "failures": 0,
+    "drift": 0
+  },
+  "overlap": {
+    "path": "Logs/rig-audit-final-pool_consumption_overlap_test.log",
+    "bytes": 144,
+    "sha256": "ed4e753d4f14fd360540d367c9c793d30eefe82953269372c350291bd90d704a"
+  },
+  "networks": [
+    {
+      "path": "Logs/archer-rework/20261103-161502-a2945bfd/summary.json",
+      "bytes": 906,
+      "sha256": "a993876317d9f8938178f409ea2a5bede6c626f6d531f6bc563245c7d49d5389",
+      "result": {
+        "passed": true,
+        "scope": "local loopback, not LAN/WAN/performance",
+        "results": [
+          {
+            "boss_safe": true,
+            "charge": true,
+            "charge_counts": {
+              "0": true,
+              "1": true,
+              "2": true,
+              "3": true
+            },
+            "failures": [],
+            "marks": true,
+            "passed": true,
+            "pins": true,
+            "role": "host",
+            "scope": "two real local ENet processes, controlled fixture; not LAN/performance",
+            "traps": true
+          },
+          {
+            "boss_safe": true,
+            "charge": true,
+            "charge_counts": {
+              "0": true,
+              "1": true,
+              "2": true,
+              "3": true
+            },
+            "failures": [],
+            "marks": true,
+            "passed": true,
+            "pins": true,
+            "role": "client",
+            "scope": "two real local ENet processes, controlled fixture; not LAN/performance",
+            "traps": true
+          }
+        ]
+      }
+    },
+    {
+      "path": "Logs/forest-worms/20261103-160125-f24eec28/summary.json",
+      "bytes": 882,
+      "sha256": "95330ef7bb1c3d64f484c316a4e5e097bc70137583e571572ee1f3e30f64bd1c",
+      "result": {
+        "passed": true,
+        "scope": "local loopback, not LAN/WAN/performance",
+        "results": [
+          {
+            "failures": [],
+            "flight": true,
+            "materials": {
+              "fire": true,
+              "poison": true
+            },
+            "own_r_input": true,
+            "passed": true,
+            "role": "host",
+            "scope": "two real local ENet processes, controlled fixture; not LAN/performance",
+            "species": {
+              "fire_worm": true,
+              "poison_worm": true
+            }
+          },
+          {
+            "failures": [],
+            "flight": true,
+            "materials": {
+              "fire": true,
+              "poison": true
+            },
+            "own_r_input": true,
+            "passed": true,
+            "role": "client",
+            "scope": "two real local ENet processes, controlled fixture; not LAN/performance",
+            "species": {
+              "fire_worm": true,
+              "poison_worm": true
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "captures": [
+    {
+      "path": "Logs/rig-audit-gpu.log",
+      "bytes": 230,
+      "sha256": "1ec3af89e4af17f42ed61234ec4aabd83f1190f99c2613e38a2472323f5b1e30"
+    },
+    {
+      "path": "Logs/rig-audit-live-necro.log",
+      "bytes": 1167,
+      "sha256": "a22963cb4291d56f285b89f23507dff5f62740c693d29cadaf346da9cb91efa7"
+    },
+    {
+      "path": "Logs/rig-audit-live-archer.log",
+      "bytes": 567,
+      "sha256": "40857015d2adc9b5fc850404082cd201958eba880b6307bf5f0cff77432dd6cc"
+    }
+  ],
+  "images": [
+    {
+      "path": "production/qa/evidence/rig-audit/effects-0-0.png",
+      "bytes": 29981,
+      "sha256": "e62cd48aca50997ff4acb728144a49a4862daa5fb9fc48f947055fbac2cd7b32"
+    },
+    {
+      "path": "production/qa/evidence/rig-audit/effects-0-1.png",
+      "bytes": 24702,
+      "sha256": "cfb3ce91a73c942e5ba7030fa2d5bafe026705c7dd20fb3670dd9a8c5ea09d48"
+    },
+    {
+      "path": "production/qa/evidence/rig-audit/effects-1-0.png",
+      "bytes": 36145,
+      "sha256": "24813c9e5d909cfabbb0eb4b61b12647c399d7b4136f94392a33704cd7984a0e"
+    },
+    {
+      "path": "production/qa/evidence/rig-audit/effects-1-1.png",
+      "bytes": 33390,
+      "sha256": "b35073fb3c9ab6ae42452958a53b028da38f3be485ae9cea970517eeb57e359b"
+    },
+    {
+      "path": "production/qa/evidence/rig-audit/effects-2-0.png",
+      "bytes": 31954,
+      "sha256": "b5939efde00e1fff36fdbc76a74bf8ca38373659d18cb95307d65014fd30a4b9"
+    },
+    {
+      "path": "production/qa/evidence/rig-audit/effects-2-1.png",
+      "bytes": 29642,
+      "sha256": "b76b4976487177ea781ac5baae877e0e4c44d33073264b430789d17f959d9b48"
+    },
+    {
+      "path": "production/qa/evidence/rig-audit/live-archer/01-jaegermal.png",
+      "bytes": 41520,
+      "sha256": "96e5ab2ed19e189e27b1a7535fa8505ab2913940f8acd4c1766a6bc74890ca8f"
+    },
+    {
+      "path": "production/qa/evidence/rig-audit/live-archer/02-himmelsspeer-laden.png",
+      "bytes": 42946,
+      "sha256": "36635e11c1f8ed62a6dfefcdd3a351040e156ec82d7d7fe6926af8142873ddff"
+    },
+    {
+      "path": "production/qa/evidence/rig-audit/live-archer/03-himmelsspeer-anpinnen.png",
+      "bytes": 46177,
+      "sha256": "1cc0f7a2458e20899bae7267cea37ce8a92df0d8058fe8032ba7617f907fb974"
+    },
+    {
+      "path": "production/qa/evidence/rig-audit/live-archer/04-scharfschuetzen-baum.png",
+      "bytes": 85003,
+      "sha256": "822e56fe9af961adc18e4a97b9a5682e779982fc5bbaa2353c368108783e3599"
+    },
+    {
+      "path": "production/qa/evidence/rig-audit/live-archer/05-sechs-grosse-fallen.png",
+      "bytes": 48907,
+      "sha256": "cb9381ec65a041c52267b8a990b53e4d1414d821b461d8ff4ceaafb55e2df8a0"
+    },
+    {
+      "path": "production/qa/evidence/rig-audit/live-archer/06-fallensteller-baum.png",
+      "bytes": 83535,
+      "sha256": "50698c9f4a73ec43c2b4ddde1066ed6c62318df9690ab9e92b75f71b51bdb225"
+    },
+    {
+      "path": "production/qa/evidence/rig-audit/live-necro/01-aufsteigende-flueche.png",
+      "bytes": 74775,
+      "sha256": "df83b17f2ca54de2b97e49fd835b0e0d038ccc9bee6a44335293b6a911b45ac6"
+    },
+    {
+      "path": "production/qa/evidence/rig-audit/live-necro/02-knochenkern.png",
+      "bytes": 49623,
+      "sha256": "5a2d78ca7483f1c2522e5c755373ec3fbc0ad48c42a956e25bcc6c534077c3a4"
+    },
+    {
+      "path": "production/qa/evidence/rig-audit/live-necro/03-knochenspur.png",
+      "bytes": 49167,
+      "sha256": "042c236155e911641648b6621eea4fdca16a3881a9aec8ebb5ab3030b5836589"
+    },
+    {
+      "path": "production/qa/evidence/rig-audit/live-necro/04-knochenburst.png",
+      "bytes": 55327,
+      "sha256": "c4b76b3470ea977776eb4eff4afe556309e861ff41df8e34054ae2ac406115e1"
+    },
+    {
+      "path": "production/qa/evidence/rig-audit/live-necro/05-knochenwelle.png",
+      "bytes": 137308,
+      "sha256": "1fdbe4ca2f898acee5e0bdc79168bfa09662228f95ed64d204643852b9848b5f"
+    },
+    {
+      "path": "production/qa/evidence/rig-audit/live-necro/06-seelenring.png",
+      "bytes": 59880,
+      "sha256": "2671568c03584ce7c3876c509119b4a747d8452132f7ad75a9ddf83c4deb7716"
+    },
+    {
+      "path": "production/qa/evidence/rig-audit/live-necro/07-wuermer-spucken.png",
+      "bytes": 61206,
+      "sha256": "798f42c5a6384ec825a5e584923de8852ac96b0b9013a87a790f414d868b628b"
+    },
+    {
+      "path": "production/qa/evidence/rig-audit/live-necro/08-wuermer-felder.png",
+      "bytes": 69141,
+      "sha256": "2f08849589a656b539fce19099437baac7658eb0f678b25469a316b78bbf4459"
+    },
+    {
+      "path": "production/qa/evidence/rig-audit/live-necro/09-geriggte-falle.png",
+      "bytes": 50871,
+      "sha256": "226afe25389ac9489e43389063c6087582cab334143ff7c944baa56dc54920d1"
+    },
+    {
+      "path": "production/qa/evidence/rig-audit/live-necro/10-waldmeister-baum.png",
+      "bytes": 83565,
+      "sha256": "1242a92bb2651607dd2430b80679b235c659a2a636e85bdf8b51e85bf9e6195a"
+    },
+    {
+      "path": "production/qa/evidence/rig-audit/monsters-0-0.png",
+      "bytes": 19901,
+      "sha256": "24ddf6d59cd7a35633fa826d36e432a900f6033272378c25e3e094c6536e29bf"
+    },
+    {
+      "path": "production/qa/evidence/rig-audit/monsters-0-1.png",
+      "bytes": 20580,
+      "sha256": "77ce4f4681a6c42d0565878bc29ac8f410d06b469a5f7d6eadfead6122765095"
+    },
+    {
+      "path": "production/qa/evidence/rig-audit/native-0-0.png",
+      "bytes": 9062,
+      "sha256": "af556cbf51faa77e91584b0fed27f4efeea15657ba5dab473e7035f539d4a405"
+    },
+    {
+      "path": "production/qa/evidence/rig-audit/native-0-1.png",
+      "bytes": 9090,
+      "sha256": "9c1aaf235a8b5a278b2cab5ad30dbe1d6c070f06a174d32998189be01dd7e913"
+    }
+  ],
+  "sources": [
+    {
+      "path": "assets/data/cutout_motion.json",
+      "bytes": 1078,
+      "sha256": "3e09f57c008b5b06fd0080e18c434bab36bd9a53df5ad8503b3bd0e2639009d4"
+    },
+    {
+      "path": "assets/data/rig_manifest.json",
+      "bytes": 7179,
+      "sha256": "8595ac5c2f76eb450cdaaf09d43c6f2416be59c7f539d5fc0b8454639cb9851d"
+    },
+    {
+      "path": "assets/data/rigs.json",
+      "bytes": 120418,
+      "sha256": "45345e5ea84e9a682fc98035f31c721644b7c340594b22e74ae57b7b56598fb5"
+    },
+    {
+      "path": "assets/data/hell_rigs.json",
+      "bytes": 30137,
+      "sha256": "e0c283a223cfad51e7879125401633c9ab71468dcf1e43fd7140ae4b233fb829"
+    },
+    {
+      "path": "assets/data/companion_rigs.json",
+      "bytes": 16387,
+      "sha256": "3b0f5b57c572ebb36e667a59066be7c0b87e20e540cfd0443cd195ba118b4081"
+    },
+    {
+      "path": "assets/data/krypta_boss_rigs.json",
+      "bytes": 29570,
+      "sha256": "77c140c9a7b480f32a8c25a3bb32c03b567201b42ff6087c14ede69f6b28c3f4"
+    },
+    {
+      "path": "assets/data/vfx_pools.json",
+      "bytes": 12625,
+      "sha256": "b579102def54b450f9b722791ca9bd54e6bb9bf3c757c1af7dabd7d9fc2056e8"
+    },
+    {
+      "path": "src/data/balance.json",
+      "bytes": 62428,
+      "sha256": "c52e4e4993fcc03cbf6fa63aa1445ba602f2d356619f7c2084d27f75453baad8"
+    },
+    {
+      "path": "src/rig/cutout_motion.gd",
+      "bytes": 8131,
+      "sha256": "6de2849a7091ab33a9fba064c2360244bfbb3e86f56a0f85f24466790eb688cd"
+    },
+    {
+      "path": "src/rig/rig_library.gd",
+      "bytes": 41900,
+      "sha256": "c8f57d8551a132e6e36b1c93638c7d24dd5cb0be7aa53f5f06166b51dfd12a9b"
+    },
+    {
+      "path": "src/rig/rig_poses.gd",
+      "bytes": 62881,
+      "sha256": "16eef51a2dcacbfa8a2150f6e23f42fbb902c4e233fea3af221bf072cec04458"
+    },
+    {
+      "path": "src/rig/rig_renderer.gd",
+      "bytes": 97752,
+      "sha256": "7598a0cefddce5553ca9a8ed9d9c12dec32ad7d7e756772794bd1fce6d8b5612"
+    },
+    {
+      "path": "src/vfx/sheet_art.gd",
+      "bytes": 17528,
+      "sha256": "0a7ecce4791047b7aed4d1a0f5f048a882bc001e420eff521ab9f07301091547"
+    },
+    {
+      "path": "src/vfx/fx_sprites.gd",
+      "bytes": 23720,
+      "sha256": "c983e4621c0d00b6f157cfea824ffb8a6bbfeeb8186684860d939981ff1795f1"
+    },
+    {
+      "path": "src/vfx/attack_fx.gd",
+      "bytes": 32996,
+      "sha256": "8e5224808a7864b280952f5881b5bcbcebce4232caced1931036557bd81a89f2"
+    },
+    {
+      "path": "src/vfx/boss_fx.gd",
+      "bytes": 31911,
+      "sha256": "d21767d2cdca3abc72897cb5994c0748a946411b06c061528184870fe4becbdb"
+    },
+    {
+      "path": "src/vfx/talent_fx.gd",
+      "bytes": 158485,
+      "sha256": "7392373c47e8e33a1348d614c330e15f0bb8cb967eac07de2d8fa87910e78499"
+    },
+    {
+      "path": "src/vfx/companion_rigs.gd",
+      "bytes": 23527,
+      "sha256": "ed332fb45345f487a5d4696be18f1d832789ed92ec10b01028765c509f56e1ab"
+    },
+    {
+      "path": "src/dungeon_view.gd",
+      "bytes": 67639,
+      "sha256": "bca62a508169abf3b6cf765bf181914c71ba1f36fa4b5d000eba17b62427f2d1"
+    },
+    {
+      "path": "src/physics_kit/pool_field.gd",
+      "bytes": 27090,
+      "sha256": "08fbf90e9c30a9df6f9a4433da6c6ccb029adc7d1da46787048f39e85203981e"
+    },
+    {
+      "path": "src/physics_kit/element_exposure.gd",
+      "bytes": 9090,
+      "sha256": "96013a11e8d9fa9704afed503287185610879cae86697c127a7237d694740271"
+    },
+    {
+      "path": "src/hell/story_exposure_host.gd",
+      "bytes": 7667,
+      "sha256": "c63ec78cb96e06a64a9cd07021c3ffd389253740aa28f3a901b3f59798326ab1"
+    },
+    {
+      "path": "src/hero/hero_look.gd",
+      "bytes": 32433,
+      "sha256": "cf51ea2a9d84f873db9f24d4c0ea8599023f3512d9154ec3182f3b8aebfccd81"
+    },
+    {
+      "path": "src/hero/story_hero.gd",
+      "bytes": 35707,
+      "sha256": "7c7d1c89bafb914d48249a0f5698c7a7d5e3ad44b7646b6f062dacc529394dda"
+    },
+    {
+      "path": "src/session_protocol.gd",
+      "bytes": 5035,
+      "sha256": "24e5b8e80431e4480721aaf7fc6122bc4a21c3dd9048016caec35481f5851e3c"
+    },
+    {
+      "path": "tools/rig_kit/curse_companions.js",
+      "bytes": 1003,
+      "sha256": "4dc9df83b884e9b6ff6ce01eb45d00eb72bdcf3e3addd98eed3b6079d2dea80e"
+    },
+    {
+      "path": "tools/rig_kit/hand_rigs/hell_0x72.json",
+      "bytes": 47373,
+      "sha256": "4c080e2b5385ce2dbf6daa1a5e3c36c4bc690b62e8cdac88ed203105d52fe0a2"
+    },
+    {
+      "path": "tools/rig_kit/hand_rigs/companion_rigs.json",
+      "bytes": 16387,
+      "sha256": "3b0f5b57c572ebb36e667a59066be7c0b87e20e540cfd0443cd195ba118b4081"
+    },
+    {
+      "path": "tools/rig_kit/hand_rigs/krypta_boss_rigs.json",
+      "bytes": 29570,
+      "sha256": "77c140c9a7b480f32a8c25a3bb32c03b567201b42ff6087c14ede69f6b28c3f4"
+    },
+    {
+      "path": "tests/cutout_coverage_test.gd",
+      "bytes": 4637,
+      "sha256": "97d8b826b1cedb64764dc00f03616ca96db1671c966bc138d251cc96375b4795"
+    },
+    {
+      "path": "tests/rig_story_integration_test.gd",
+      "bytes": 1091,
+      "sha256": "c4f8c32dc95ea2b85ccd86533347fbb39ba3f4c29bfbce3123ee8a715022e32a"
+    },
+    {
+      "path": "scripts/capture_rig_audit.gd",
+      "bytes": 3618,
+      "sha256": "fecb0774e14e2af895c27e695d74fa0258c7533cb73b5b823c960e0e836516c5"
+    },
+    {
+      "path": "scripts/capture_rig_game.gd",
+      "bytes": 571,
+      "sha256": "2db11a801a0b10271645bd1087264809af8bd5c244b2d16cd89894190300faf2"
+    },
+    {
+      "path": "scripts/capture_rig_archer.gd",
+      "bytes": 343,
+      "sha256": "0ae429049ad4c5c0af219008d8a0229c61aa5b226f9727d5aa487f9feb050dab"
+    },
+    {
+      "path": "scripts/receipt_rig_audit.cjs",
+      "bytes": 4959,
+      "sha256": "ac1e8873a18b664e96f7220f69747d692a676c9aba45850fa34c4ae03f9c2c1d"
+    },
+    {
+      "path": "docs/RIG-ANIMATIONEN-AUDIT.de.md",
+      "bytes": 5271,
+      "sha256": "6fa36841b8b798863bf98fbaf5e8fa4dabdda5039199e4a0e3dea01729fd689f"
+    },
+    {
+      "path": "production/qa/evidence/rig-audit/README.md",
+      "bytes": 945,
+      "sha256": "fd94e9aa6d1ace5d01612fa5fdccbd8dfbe1a6d78886c9df46d5bbe91d7dea65"
+    }
+  ],
+  "scope": "Focused rules/integration, real renderer fixtures, two real local ENet processes; no LAN/WAN/performance/campaign or art acceptance.",
+  "remaining": "Fixture exit diagnostics: ObjectDB/resources; multi-world fixtures also DummyTexture. Not memory-clean acceptance. Earlier cold-start timeouts retained in Logs."
+}

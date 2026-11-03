@@ -58,6 +58,7 @@
   "ice_slime": "flesh",
   "ice_slime_m": "flesh",
   "ice_slime_s": "flesh",
+  "snowman": "flesh",
   "frost_necromancer": "flesh",
   "frost_imp": "void",
   "frost_whirl": "void",
@@ -5318,6 +5319,90 @@
    "volume_db": -2,
    "spread": 0.04,
    "min_interval": 0.5
+  },
+  "rune_drop": {
+   "label": "Runenstein fällt",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/item_gem_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_gem_03.ogg"
+   ],
+   "pitch": 0.85,
+   "volume_db": -2,
+   "spread": 0.04,
+   "min_interval": 0.15
+  },
+  "rune_pickup": {
+   "label": "Runenstein aufgehoben",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/rubberduck_80_rpg/item_gem_01.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_gem_02.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_gem_03.ogg",
+    "res://assets/audio/library/rubberduck_80_rpg/item_gem_04.ogg"
+   ],
+   "pitch": 1.1,
+   "volume_db": -1,
+   "spread": 0.03,
+   "min_interval": 0.06
+  },
+  "gold_spill": {
+   "label": "Gold fliegt aus Truhe oder Tresor",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/lrsf_coins/coins_pouring_01.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_pouring_07.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_pouring_08.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_pouring_11.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_pouring_12.ogg"
+   ],
+   "volume_db": -3,
+   "spread": 0.05,
+   "min_interval": 0.15
+  },
+  "gold_land": {
+   "label": "Münze landet auf dem Boden",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/lrsf_coins/coins_single_06.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_single_07.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_single_09.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_single_11.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_single_13.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_single_14.ogg"
+   ],
+   "volume_db": -6,
+   "spread": 0.06,
+   "min_interval": 0.04
+  },
+  "gold_bag": {
+   "label": "Geldbeutel aufgehoben",
+   "category": "world",
+   "files": [
+    "res://assets/audio/library/lrsf_coins/coins_several_00.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_several_07.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_several_11.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_several_15.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_several_22.ogg"
+   ],
+   "volume_db": -2,
+   "spread": 0.04,
+   "min_interval": 0.08
+  },
+  "gold_glint": {
+   "label": "Liegendes Gold glitzert",
+   "category": "idle",
+   "files": [
+    "res://assets/audio/library/lrsf_coins/coins_single_17.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_single_26.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_single_38.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_single_39.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_single_43.ogg",
+    "res://assets/audio/library/lrsf_coins/coins_single_44.ogg"
+   ],
+   "volume_db": -17,
+   "spread": 0.05,
+   "min_interval": 1.5
   },
   "chest_coins": {
    "label": "Münzen in der Truhe",

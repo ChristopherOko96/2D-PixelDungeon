@@ -15,8 +15,22 @@ extends RefCounted
 ##   few of its motes now and then: embers, drips, rime glints, zaps.
 ## `px` is world pixels per weapon art pixel; `hero_px` per hero art pixel
 ## (crypt 2 / 2, story worlds 2 / 3).
+## The weapon is a list of pieces (hold): the art with its hand, angle and
+## rect, and the effects that go with it (crescent, string, arrow, glow). The
+## story worlds hand them to the hero's part rig as its held weapon item
+## (src/rig_kit/rig_held.gd, the rig data's "held" block: grip, tip, rest,
+## scale, shoulder), which carries them with his body; draw_weapon draws them
+## where they are (the crypt view, a hero without a rig figure).
 
 const SWING_TIME := 0.2
+## Where the hand holds a blade and where its point is, as shares of the art
+## (it points up): the rig data's held grip and tip replace them.
+const SWORD_GRIP := Vector2(0.5, 0.9)
+const SWORD_TIP := Vector2(0.5, 0.0)
+## Where the hand holds a bow (share of its art): its middle.
+const BOW_GRIP := Vector2(0.5, 0.5)
+## The orb sits this many hero art pixels below the staff's top.
+const STAFF_ORB := 2.0
 ## Staff length in hero art pixels (a 0x72 hero's figure is about 22 of its
 ## 28 rows tall): a bit shorter than the hero, so the orb sits near the hat.
 const STAFF_LENGTH := 18.0
@@ -33,9 +47,18 @@ const STRING_COLOR := Color("#d3bfa9")
 const SMEAR := Color("#eaf8ff")
 const SMEAR_RAGE := Color("#ff6a4a")
 const ItemArt = preload("res://src/item_art.gd")
+const MageFireball = preload("res://src/vfx/mage_fireball.gd")
 ## How many motes a held weapon of an element sheds at a time (src/item_art.gd).
 const WEAPON_MOTES := 3
-const MageFireball = preload("res://src/vfx/mage_fireball.gd")
+## A fallen hero's weapon (drop_weapon) falls by the shared debris physics
+## (src/rig_kit/rig_debris.gd) with assets/data/vfx_gore.json ragdoll.hero_weapon,
+## in weapon pixels (px) per second: thrown forward at `speed` and up at `lift`,
+## turning at `spin` rad/s, one bounce, then it lies still on its flat side.
+const GORE_PATH := "res://assets/data/vfx_gore.json"
+static var _drop_phys: Dictionary = {}
+## How the weapons move (the sword's guard and stroke): presentation only.
+const MOTION_PATH := "res://assets/data/hero_weapon_motion.json"
+static var _sword_motion: Variant = null
 
 var px := 2.0
 ## World pixels per hero art pixel (the staff is sized and placed by the body).
@@ -43,12 +66,6 @@ var hero_px := 2.0
 ## The staff hand relative to the hero's anchor point, in hero art pixels
 ## (x toward the facing side), about halfway up the figure.
 var staff_hand := Vector2(5, 0)
-var _staff_sockets: Dictionary = {}
-
-## Last drawn staff orb, bounded in age to avoid binding a beam to a stale pose.
-func staff_socket(key: String, fallback: Vector2, clock: float) -> Vector2:
-	var socket: Dictionary = _staff_sockets.get(key,{})
-	return Vector2(socket.at) if not socket.is_empty() and absf(clock-float(socket.clock)) < 0.12 else fallback
 ## Off-hand blade drawn in Rage (and by the second swing).
 var off_blade: Texture2D
 var nocked_arrow: Texture2D
@@ -56,24 +73,34 @@ var _swing: Dictionary = {}
 var _shot: Dictionary = {}
 var _trail: Dictionary = {}
 var _bows: Dictionary = {}
+## The weapon each hero last held: key -> {texture, hand, angle, rect} (draw_weapon).
+var _held: Dictionary = {}
+## A fallen hero's weapon on its own path: key -> {t0, texture, rect, debris
+## (a RigDebris with the one piece), steps (fixed steps done)} (drop_weapon).
+var _dropped: Dictionary = {}
 var _fireballs: Dictionary = {}
+var _staff_sockets: Dictionary = {}
 
-## Follows host event age (including late snapshots); never restarts a cast per draw.
+## Track host cast age once; late snapshots never restart the charge.
 func observe_fireball(key: String, owner: int, events: Array, clock: float, alive: bool = true) -> void:
 	_fireballs.erase(key)
 	if not alive: return
 	for event: Dictionary in events:
-		if str(event.get("kind", "")) != "cast" or str(event.get("talent", "")) != "fire_1" or int(event.get("owner", -1)) != owner: continue
-		var age := float(event.get("span", 0.5)) - float(event.get("life", 0.0))
-		var windup := float(event.get("windup", 0.0))
-		if age < 0.0 or age >= windup + 0.28: continue
-		_fireballs[key] = {"start": clock - age, "windup": windup, "aim": Vector2.from_angle(float(event.get("angle", 0.0)))}
+		if str(event.get("kind",""))!="cast" or str(event.get("talent",""))!="fire_1" or int(event.get("owner",-1))!=owner: continue
+		var age:=float(event.get("span",0.5))-float(event.get("life",0))
+		var windup:=float(event.get("windup",0))
+		if age<0 or age>=windup+0.28: continue
+		_fireballs[key]={"start":clock-age,"windup":windup,"aim":Vector2.from_angle(float(event.get("angle",0)))}
 
-## Locked casting direction; looking elsewhere never swaps the staff hand mid-cast.
+## Casts retain their actual aim while the staff follows its parent rig joint.
 func casting_aim(key: String, fallback: Vector2, clock: float) -> Vector2:
-	var cast: Dictionary = _fireballs.get(key, {})
-	if cast.is_empty() or clock - float(cast.start) >= float(cast.windup) + 0.28: return fallback
-	return cast.aim
+	var cast: Dictionary=_fireballs.get(key,{})
+	return Vector2(cast.aim) if not cast.is_empty() and clock-float(cast.start)<float(cast.windup)+0.28 else fallback
+
+## Current drawn orb socket; stale or missing frames fall back to the caller's hand.
+func staff_socket(key: String, fallback: Vector2, clock: float) -> Vector2:
+	var socket: Dictionary=_staff_sockets.get(key,{})
+	return Vector2(socket.at) if not socket.is_empty() and absf(clock-float(socket.clock))<0.05 else fallback
 
 
 func _init(pixel: float = 2.0, sword: Texture2D = null, arrow: Texture2D = null) -> void:
@@ -111,10 +138,40 @@ func observe(key: String, player: Dictionary, point: Vector2, clock: float) -> v
 	_trail[key] = trail
 
 
-## 0..1 progress of the running swing, or -1.
+## 0..1 progress of the running swing (its whole stroke: lift, cut, follow-through
+## and the way back to the guard, swing_time()), or -1.
+## [codeblock]
+## if look.swing_progress("hero", clock) >= 0.0: print("the blade is moving")
+## [/codeblock]
 func swing_progress(key: String, clock: float) -> float:
 	var elapsed := clock - float(_swing.get(key, {}).get("start", -INF))
-	return elapsed / SWING_TIME if elapsed >= 0.0 and elapsed < SWING_TIME else -1.0
+	var time := swing_time()
+	return elapsed / time if elapsed >= 0.0 and elapsed < time else -1.0
+
+
+## Seconds one sword stroke takes to look through (hero_weapon_motion.json
+## sword.swing.time; SWING_TIME without the file).
+static func swing_time() -> float:
+	return maxf(0.05, float((sword_motion().get("swing", {}) as Dictionary).get("time", SWING_TIME)))
+
+
+## The "sword" block of assets/data/hero_weapon_motion.json: its "guard" (the
+## resting hold) and "swing" (the stroke). {} without the file.
+## [codeblock]
+## var tilt := float(HeroLook.sword_motion().get("guard", {}).get("tilt", 0.6))
+## [/codeblock]
+static func sword_motion() -> Dictionary:
+	# read once (asked several times every frame); reload_motion() reads it again
+	if _sword_motion == null:
+		var sword: Variant = DataCache.load_dict(MOTION_PATH).get("sword", {})
+		_sword_motion = sword if sword is Dictionary else {}
+	return _sword_motion
+
+
+## Forgets the read motion data, so the next frame reads the file again.
+static func reload_motion() -> void:
+	DataCache.clear(MOTION_PATH)
+	_sword_motion = null
 
 
 ## Which way the hero faces (+1 right, -1 left): the aim, or turning with the blade while it whirls.
@@ -124,16 +181,14 @@ func face(player: Dictionary, aim: Vector2, clock: float) -> float:
 	return -1.0 if aim.x < -0.1 else 1.0
 
 
-## The hero sprite leans into a sword swing: forward with the blade, then back.
+## The hero sprite leans into a sword swing: forward with the cut, back by the
+## end of its follow-through (hero_weapon_motion.json sword.swing settle, lean).
 func body_offset(key: String, player: Dictionary, aim: Vector2, clock: float) -> Vector2:
-	var leap: Dictionary = player.get("leap", player.get("talents", {}).get("leap", {}))
-	if not leap.is_empty(): return Vector2(0, -preload("res://src/combat/soul_leap.gd").lift(leap))
-	var cast: Dictionary = _fireballs.get(key, {})
-	if not cast.is_empty() and clock - float(cast.start) < float(cast.windup) + 0.28:
-		return (Vector2(MageFireball.pose(clock - float(cast.start), float(cast.windup), cast.aim).body) * hero_px).round()
 	var p := swing_progress(key, clock)
 	if p < 0.0 or not bool(player.get("melee", false)): return Vector2.ZERO
-	return (aim * sin(p * PI) * 3.0 * px).round()
+	var cut: Dictionary = sword_motion().get("swing", {})
+	var settle := clampf(float(cut.get("settle", 0.6)), 0.05, 1.0)
+	return (aim * sin(clampf(p / settle, 0.0, 1.0) * PI) * float(cut.get("lean", 3.0)) * px).round()
 
 
 ## Afterimages of a dash, oldest faintest. `draw_hero(position, alpha)` draws the hero.
@@ -161,75 +216,169 @@ func draw_dash_lines(canvas: CanvasItem, key: String, player: Dictionary, point:
 		canvas.draw_line(point + offset + dir * 6.0 * px, point + offset + dir * length, tint, maxf(1.0, px * 0.5))
 
 
-## The weapon in hand. `texture` is the weapon art (pointing up); `glow` the shot
-## colour; `element` the weapon's element (items.json; "" takes the held weapon's
-## from the player's inventory view, none for an unknown or plain weapon).
+## The weapon in hand, drawn where hold() places it (nothing carries it after:
+## the crypt view, a hero drawn without his rig figure). The arguments are
+## hold()'s, without the rig's held block.
 func draw_weapon(canvas: CanvasItem, key: String, player: Dictionary, point: Vector2, aim: Vector2, clock: float, texture: Texture2D, glow: Color = Color(1, 0.95, 0.8), element: String = "") -> void:
-	if texture == null: return
-	var leap: Dictionary = player.get("leap", player.get("talents", {}).get("leap", {}))
-	if not leap.is_empty():
-		var tuck := sin(clampf(float(leap.age) / float(leap.duration), 0.0, 1.0) * PI)
-		point += Vector2(2.0, -1.0) * tuck * hero_px
-		aim = aim.rotated(-tuck * 0.3)
+	for piece: Dictionary in hold(key, player, point, aim, clock, texture, glow, element):
+		RigHeld.draw(canvas, piece, Transform2D.IDENTITY)
+
+
+## The style that moves the weapon of `player` (a hero view state): "sword"
+## for a melee weapon, "bow" for the archer's, "staff" for every other.
+static func style_of(player: Dictionary) -> String:
+	if bool(player.get("melee", false)): return "sword"
+	return "bow" if str(player.get("class_id", "")) == "archer" else "staff"
+
+
+## The weapon in hand as held pieces (src/rig_kit/rig_held_host.gd: texture,
+## hand, angle, rect, under/over effects; the hero's own weapon carries "main"),
+## placed for the hero standing still, `point` being his shoulder: the sword
+## swung round it, the bow drawn before it, the staff held at its side.
+## `texture` is the weapon art (pointing up); `glow` the shot colour; `element`
+## the weapon's element (items.json; "" takes the held weapon's from the
+## player's inventory view, none for an unknown or plain weapon). `held` is the
+## rig item's held block (RigHeld.spec): its grip, tip, rest and scale (the
+## staff's side and length too) replace the look's own when its style is the
+## weapon's (style_of). [] without a texture.
+func hold(key: String, player: Dictionary, point: Vector2, aim: Vector2, clock: float, texture: Texture2D, glow: Color = Color(1, 0.95, 0.8), element: String = "", held: Dictionary = {}) -> Array[Dictionary]:
+	var none: Array[Dictionary] = []
+	if texture == null: return none
 	var skills: Dictionary = player.get("skills", {})
 	var charge: Dictionary=player.get("talents",{}).get("charge",{})
 	if str(charge.get("talent",""))=="sniper_14":
 		skills=skills.duplicate()
 		skills.charge=float(charge.power)
 	if element.is_empty():
-		var held: Dictionary = (player.get("inventory", {}) as Dictionary).get("weapon", {})
-		element = str(held.get("element", ""))
-	if bool(player.get("melee", false)):
-		_draw_sword(canvas, key, player, point, aim, clock, texture, skills, glow, element)
-	elif str(player.get("class_id", "")) == "archer":
-		_draw_bow(canvas, key, player, point, aim, clock, texture, skills, glow, element)
-	else:
-		_draw_staff(canvas, key, point, aim, clock, texture, glow, element)
+		var carried: Dictionary = (player.get("inventory", {}) as Dictionary).get("weapon", {})
+		element = str(carried.get("element", ""))
+	var style := style_of(player)
+	var spec: Dictionary = held if str(held.get("style", "")) == style else {}
+	match style:
+		"sword": return _sword(key, player, point, aim, clock, texture, skills, glow, element, spec)
+		"bow": return _bow_held(key, player, point, aim, clock, texture, skills, glow, element, spec)
+	return _staff(key, point, aim, clock, texture, glow, element, spec)
+
+
+## Where the hero's weapon was really drawn (a piece of hold() as the rig placed
+## it, RigHeldHost.drawn): a fall throws it from there.
+func held_at(key: String, piece: Dictionary) -> void:
+	if piece.get("texture") is Texture2D:
+		_hold(key, piece.texture, Vector2(piece.get("hand", Vector2.ZERO)), float(piece.get("angle", 0.0)), Rect2(piece.get("rect", Rect2())))
+		if piece.has("staff_tip"):
+			_staff_sockets[key]={"at":art_point(piece,piece.staff_tip),"clock":float(piece.staff_clock)}
+
+
+## The world point of a piece at `share` of its art (0..1 of its rect).
+static func art_point(piece: Dictionary, share: Vector2) -> Vector2:
+	var rect: Rect2 = piece.rect
+	return Transform2D(float(piece.angle), Vector2(piece.hand)) * (rect.position + share * rect.size)
 
 
 # --- sword -------------------------------------------------------------------------
 
-func _draw_sword(canvas: CanvasItem, key: String, player: Dictionary, point: Vector2, aim: Vector2, clock: float, texture: Texture2D, skills: Dictionary, glow: Color = Color(1, 0.95, 0.8), element: String = "") -> void:
+func _sword(key: String, player: Dictionary, point: Vector2, aim: Vector2, clock: float, texture: Texture2D, skills: Dictionary, glow: Color, element: String, spec: Dictionary) -> Array[Dictionary]:
 	var rage := skills.has("rage")
 	var reach := float(player.get("reach", 32.0 * px))
-	var size := texture.get_size() * px
-	var hand := point + aim * 5.0 * px + Vector2(0, px)
-	var off_hand := point - aim * 2.0 * px + aim.orthogonal() * 5.0 * px * (1.0 if aim.x >= 0.0 else -1.0) + Vector2(0, px)
-	var p := swing_progress(key, clock)
+	var scale := float(spec.get("scale", 1.0))
+	var grip: Vector2 = spec.get("grip", SWORD_GRIP)
+	var turn := float(spec.get("rest", 0.0))
+	var size := texture.get_size() * px * scale
+	var rect := Rect2(-size * grip, size)
 	if skills.has("whirl_time"):
-		_draw_whirl(canvas, point, reach, clock, texture, rage)
-		return
-	var main_angle := aim.angle()
-	var off_angle := aim.angle() + (-0.9 if aim.x >= 0.0 else 0.9)
+		var whirl: Array[Dictionary] = [_whirl(point, reach, clock, texture, rage, rect, turn)]
+		return whirl
+	# the guard: held low before the body, the blade up and leaning forward, a little
+	# toward the aim (hero_weapon_motion.json sword.guard; not a pointer at the head)
+	var motion := sword_motion()
+	var guard: Dictionary = motion.get("guard", {})
+	var cut: Dictionary = motion.get("swing", {})
+	var facing := face(player, aim, clock)
+	var hand := point + _hero_offset(guard.get("hand", [2.5, 4.5]), facing)
+	var main_angle := -PI * 0.5 + facing * (float(guard.get("tilt", 0.6)) + aim.y * float(guard.get("aim_lean", 0.3)))
+	var off_hand := point + _hero_offset(guard.get("off_hand", [-1.5, 4.0]), facing)
+	var off_angle := -PI * 0.5 + facing * float(guard.get("off_tilt", 1.0))
+	var p := swing_progress(key, clock)
+	var crescent := Callable()
 	if p >= 0.0:
 		var swing: Dictionary = _swing[key]
-		var dir := int(swing.get("dir", 1))
+		var mirrored := int(swing.get("dir", 1)) < 0
 		var arc := float(swing.get("arc", 2.0))
-		var start := float(swing.angle) - arc * 0.5 * dir
-		var now := start + arc * dir * ease(p, 0.4)
-		_crescent(canvas, point + Vector2(0, -2.0 * px), reach * 0.85, start, now, 1.0 - p, SMEAR_RAGE if rage else SMEAR)
-		if dir > 0:
-			main_angle = now
-			hand = point + Vector2.RIGHT.rotated(now) * 6.0 * px + Vector2(0, px)
+		var mid := float(swing.angle)
+		var rest_hand := off_hand if mirrored else hand
+		var rest_angle := off_angle if mirrored else main_angle
+		# the cut starts at the end of the arc nearest the raised blade (a downward cut);
+		# Rage's mirrored second swing comes back the other way
+		var near := 1.0 if absf(angle_difference(main_angle, mid - arc * 0.5)) <= absf(angle_difference(main_angle, mid + arc * 0.5)) else -1.0
+		var dir := -near if mirrored else near
+		var start := mid - arc * 0.5 * dir
+		var past := mid + (arc * 0.5 + float(cut.get("overshoot", 0.35))) * dir
+		var radius := float(cut.get("reach", 6.0)) * px
+		var lift := clampf(float(cut.get("lift", 0.12)), 0.0, 0.5)
+		var strike := clampf(float(cut.get("strike", 0.45)), lift + 0.01, 1.0)
+		var settle := clampf(float(cut.get("settle", 0.6)), strike, 1.0)
+		var on_arc := func(angle: float) -> Vector2: return point + Vector2.RIGHT.rotated(angle) * radius + Vector2(0, px)
+		var now := start
+		var at: Vector2 = on_arc.call(start)
+		var cut_to := start
+		var life := 0.0
+		if p < lift:
+			# anticipation: the blade rises from the guard to the start of the cut
+			var k := ease(p / maxf(0.001, lift), 0.5)
+			now = lerp_angle(rest_angle, start, k)
+			at = rest_hand.lerp(at, k)
+		elif p < strike:
+			# the cut: fast, eased out, past the end of the arc
+			var k := ease((p - lift) / (strike - lift), float(cut.get("strike_ease", 0.35)))
+			now = lerpf(start, past, k)
+			at = on_arc.call(now)
+			cut_to = now
+			life = 1.0 - 0.3 * k
+		elif p < settle:
+			# follow-through: the blade hangs where the cut ended, the smear fades
+			now = past
+			at = on_arc.call(past)
+			cut_to = past
+			life = 0.7 * (1.0 - (p - strike) / maxf(0.001, settle - strike))
 		else:
+			# back to the guard, eased in and out
+			var k := smoothstep(0.0, 1.0, (p - settle) / maxf(0.001, 1.0 - settle))
+			now = lerp_angle(past, rest_angle, k)
+			at = (on_arc.call(past) as Vector2).lerp(rest_hand, k)
+		if life > 0.0:
+			var center := point + Vector2(0, -2.0 * px)
+			var smear := SMEAR_RAGE if rage else SMEAR
+			crescent = func(canvas: CanvasItem, _follow: Transform2D) -> void: _crescent(canvas, center, reach * 0.85, start, cut_to, life, smear)
+		if mirrored:
 			off_angle = now
-			off_hand = point + Vector2.RIGHT.rotated(now) * 6.0 * px + Vector2(0, px)
+			off_hand = at
+		else:
+			main_angle = now
+			hand = at
+	var out: Array[Dictionary] = []
 	if rage:
 		var blade := off_blade if off_blade != null else texture
-		_blade(canvas, blade, off_hand, off_angle, blade.get_size() * px, Color(1.0, 0.8, 0.75))
-	_blade(canvas, texture, hand, main_angle, size, Color.WHITE)
+		var blade_size := blade.get_size() * px * scale
+		out.append({"texture": blade, "hand": off_hand, "angle": off_angle + PI * 0.5 + turn, "rect": Rect2(-blade_size * grip, blade_size), "tint": Color(1.0, 0.8, 0.75), "under": crescent})
+		crescent = Callable()
+	var main := {"texture": texture, "hand": hand, "angle": main_angle + PI * 0.5 + turn, "rect": rect, "under": crescent, "main": true}
+	_hold(key, texture, hand, float(main.angle), rect)
 	if not element.is_empty():
 		# the element at the blade: its glow at the tip, its motes off the upper half
-		var along := Vector2.RIGHT.rotated(main_angle)
-		var tip := hand + along * size.y * 0.9
-		ItemArt.draw_tip_glow(canvas, tip - along * px, glow, clock, px)
-		ItemArt.draw_weapon_motes(canvas, tip, along, size.y * 0.5, element, clock, px, key.hash(), WEAPON_MOTES)
+		var along := Vector2.RIGHT.rotated(main_angle + turn)
+		var tip := art_point(main, spec.get("tip", SWORD_TIP))
+		main.over = func(canvas: CanvasItem, _follow: Transform2D) -> void:
+			ItemArt.draw_tip_glow(canvas, tip - along * px, glow, clock, px)
+			ItemArt.draw_weapon_motes(canvas, tip, along, size.y * 0.5, element, clock, px, key.hash(), WEAPON_MOTES)
+	out.append(main)
+	return out
 
 
-func _blade(canvas: CanvasItem, texture: Texture2D, hand: Vector2, angle: float, size: Vector2, tint: Color) -> void:
-	canvas.draw_set_transform(hand, angle + PI * 0.5, Vector2.ONE)
-	canvas.draw_texture_rect(texture, Rect2(Vector2(-size.x * 0.5, -size.y * 0.9), size), false, tint)
-	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+## An offset [x, y] in hero art px from the motion data as world px, x toward
+## the side the hero faces (`facing` +1 right, -1 left).
+func _hero_offset(at: Variant, facing: float) -> Vector2:
+	var pair: Array = at if at is Array and (at as Array).size() >= 2 else [0.0, 0.0]
+	return Vector2(facing * float(pair[0]), float(pair[1])) * hero_px
 
 
 ## A filled crescent from `from` to `to` (radians): bright at the blade, fading to the tail.
@@ -259,50 +408,58 @@ func _crescent(canvas: CanvasItem, center: Vector2, radius: float, from: float, 
 	canvas.draw_rect(Rect2(tip - Vector2(px, px), Vector2(2.0 * px, 2.0 * px)), Color(1, 1, 1, life))
 
 
-## Whirl: the blade circles the hero twice in the skill's time, inside a fading ring.
-func _draw_whirl(canvas: CanvasItem, point: Vector2, reach: float, clock: float, texture: Texture2D, rage: bool) -> void:
+## Whirl: the blade circles the hero twice in the skill's time, inside a fading
+## ring (the two crescents go under it). `rect` is the blade's in its hand, `turn`
+## the held block's rest. Not the hero's own held place: a fall keeps the last.
+func _whirl(point: Vector2, reach: float, clock: float, texture: Texture2D, rage: bool, rect: Rect2, turn: float) -> Dictionary:
 	var center := point + Vector2(0, -3.0 * px)
 	var angle := fmod(clock * TAU * 2.6, TAU)
 	var tint := SMEAR_RAGE if rage else SMEAR
-	_crescent(canvas, center, reach * 0.8, angle - 2.6, angle, 1.0, tint)
-	_crescent(canvas, center, reach * 0.8, angle - 2.6 + PI, angle + PI, 0.55, tint)
-	var size := texture.get_size() * px
-	_blade(canvas, texture, center + Vector2.RIGHT.rotated(angle) * 6.0 * px, angle, size, Color.WHITE)
+	var rings := func(canvas: CanvasItem, _follow: Transform2D) -> void:
+		_crescent(canvas, center, reach * 0.8, angle - 2.6, angle, 1.0, tint)
+		_crescent(canvas, center, reach * 0.8, angle - 2.6 + PI, angle + PI, 0.55, tint)
+	return {"texture": texture, "hand": center + Vector2.RIGHT.rotated(angle) * 6.0 * px, "angle": angle + PI * 0.5 + turn, "rect": rect, "under": rings}
 
 
 # --- bow ---------------------------------------------------------------------------
 
-## The bow drawn from the side: wood toward the target, string pulled toward the hero.
-func _draw_bow(canvas: CanvasItem, key: String, player: Dictionary, point: Vector2, aim: Vector2, clock: float, texture: Texture2D, skills: Dictionary, glow: Color, element: String = "") -> void:
+## The bow drawn from the side: wood toward the target, string pulled toward
+## the hero (string, nocked arrow and glow go over the bow, with its hand).
+func _bow_held(key: String, player: Dictionary, point: Vector2, aim: Vector2, clock: float, texture: Texture2D, skills: Dictionary, glow: Color, element: String, spec: Dictionary) -> Array[Dictionary]:
 	var bow: Dictionary = _bow(texture)
-	var angle := aim.angle()
+	var grip: Vector2 = spec.get("grip", BOW_GRIP)
+	var k := px * float(spec.get("scale", 1.0))
+	var angle := aim.angle() + float(spec.get("rest", 0.0))
 	var hand := point + aim * 4.0 * px + Vector2(0, -1.0 * px)
-	var size: Vector2 = bow.size * px
+	var size: Vector2 = bow.size * k
 	var draw := _draw_amount(key, player, clock, skills)
 	var snap := clock - float(_shot.get(key, {}).get("start", -INF))
 	var shake := sin(snap * 90.0) * px * clampf(1.0 - snap / 0.12, 0.0, 1.0) if snap >= 0.0 and snap < 0.12 else 0.0
 	var xf := Transform2D(angle, hand)
-	canvas.draw_set_transform(hand, angle, Vector2.ONE)
-	canvas.draw_texture_rect(bow.texture, Rect2(-size * 0.5, size), false)
-	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-	var top: Vector2 = xf * ((Vector2(bow.tip_a) - bow.size * 0.5) * px)
-	var bottom: Vector2 = xf * ((Vector2(bow.tip_b) - bow.size * 0.5) * px)
+	var rect := Rect2(-size * grip, size)
+	_hold(key, bow.texture, hand, angle, rect)
+	var top: Vector2 = xf * ((Vector2(bow.tip_a) - bow.size * grip) * k)
+	var bottom: Vector2 = xf * ((Vector2(bow.tip_b) - bow.size * grip) * k)
 	var nock := (top + bottom) * 0.5 - aim * (draw * 6.0 * px) + aim.orthogonal() * shake
-	canvas.draw_line(top, nock, STRING_COLOR, maxf(1.0, px * 0.5))
-	canvas.draw_line(nock, bottom, STRING_COLOR, maxf(1.0, px * 0.5))
-	if draw > 0.15 and nocked_arrow != null:
-		var length := nocked_arrow.get_size().y * px
-		var center := nock + aim * (length * 0.5 - px)
-		canvas.draw_set_transform(center, angle + PI * 0.5, Vector2.ONE)
-		var arrow_size := nocked_arrow.get_size() * px
-		canvas.draw_texture_rect(nocked_arrow, Rect2(-arrow_size * 0.5, arrow_size), false, Color(1, 1, 1, clampf(draw * 2.0, 0.0, 1.0)))
-		canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-		if draw >= 0.999:
-			canvas.draw_circle(nock + aim * length, 2.0 * px + sin(clock * 30.0) * px * 0.5, Color(glow, 0.7))
-	if not element.is_empty():
-		# the element along the bow: its glow at the grip, its motes between the limb tips
-		ItemArt.draw_tip_glow(canvas, hand + aim * px, glow, clock, px)
-		ItemArt.draw_weapon_motes(canvas, top, (top - bottom).normalized(), top.distance_to(bottom), element, clock, px, key.hash(), WEAPON_MOTES)
+	var arrow := nocked_arrow
+	var over := func(canvas: CanvasItem, follow: Transform2D) -> void:
+		canvas.draw_line(top, nock, STRING_COLOR, maxf(1.0, px * 0.5))
+		canvas.draw_line(nock, bottom, STRING_COLOR, maxf(1.0, px * 0.5))
+		if draw > 0.15 and arrow != null:
+			var length := arrow.get_size().y * px
+			var center := nock + aim * (length * 0.5 - px)
+			canvas.draw_set_transform_matrix(follow * Transform2D(angle + PI * 0.5, center))
+			var arrow_size := arrow.get_size() * px
+			canvas.draw_texture_rect(arrow, Rect2(-arrow_size * 0.5, arrow_size), false, Color(1, 1, 1, clampf(draw * 2.0, 0.0, 1.0)))
+			canvas.draw_set_transform_matrix(follow)
+			if draw >= 0.999:
+				canvas.draw_circle(nock + aim * length, 2.0 * px + sin(clock * 30.0) * px * 0.5, Color(glow, 0.7))
+		if not element.is_empty():
+			# the element along the bow: its glow at the grip, its motes between the limb tips
+			ItemArt.draw_tip_glow(canvas, hand + aim * px, glow, clock, px)
+			ItemArt.draw_weapon_motes(canvas, top, (top - bottom).normalized(), top.distance_to(bottom), element, clock, px, key.hash(), WEAPON_MOTES)
+	var out: Array[Dictionary] = [{"texture": bow.texture, "hand": hand, "angle": angle, "rect": rect, "over": over, "main": true}]
+	return out
 
 
 ## How far the string is pulled (0..1): rising between shots while the hero keeps
@@ -359,41 +516,109 @@ func _bow(texture: Texture2D) -> Dictionary:
 ## wanderer's staff: a little shorter than the hero, gripped below the orb,
 ## leaning slightly toward the aim. A spell lifts it and tips it at the target,
 ## then it settles back.
-func _draw_staff(canvas: CanvasItem, key: String, point: Vector2, aim: Vector2, clock: float, texture: Texture2D, glow: Color = Color(1, 0.95, 0.8), element: String = "") -> void:
-	var fireball: Dictionary = _fireballs.get(key, {})
-	if not fireball.is_empty() and clock - float(fireball.start) < float(fireball.windup) + 0.28:
-		var pose := MageFireball.pose(clock - float(fireball.start), float(fireball.windup), fireball.aim)
-		var length := STAFF_LENGTH * hero_px
-		var size := Vector2(texture.get_width() * length / texture.get_height(), length)
-		var hand := point + (staff_hand * Vector2(float(pose.side), 1.0) + Vector2(pose.hand) - Vector2(5.0 * float(pose.side), 0.0)) * hero_px
-		canvas.draw_set_transform(hand.round(), float(pose.tilt), Vector2.ONE)
-		canvas.draw_texture_rect(texture, Rect2(Vector2(-size.x * 0.5, -size.y * STAFF_GRIP), size), false)
-		canvas.draw_rect(Rect2(Vector2(-1, -1) * hero_px, Vector2(2, 2) * hero_px), Color("d9a66a"))
-		canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
-		var tip := hand + Vector2(0, -length * STAFF_GRIP).rotated(float(pose.tilt))
-		_staff_sockets[key] = {"at":tip,"clock":clock}
-		var power := maxf(float(pose.charge) * 0.6, float(pose.flash))
-		if power > 0.0:
-			var q := (tip / hero_px).round() * hero_px
-			canvas.draw_rect(Rect2(q - Vector2.ONE * 2.0 * hero_px, Vector2.ONE * 4.0 * hero_px), Color("f56819"))
-			canvas.draw_rect(Rect2(q - Vector2.ONE * hero_px, Vector2.ONE * 2.0 * hero_px), Color("fff2ad"))
-		return
+## `spec` (the rig's held block) may give the side (hero art px from the
+## shoulder `point` toward the facing side, else staff_hand), the length (hero
+## art px, else STAFF_LENGTH), grip, tip (the orb), rest and scale.
+func _staff(key: String, point: Vector2, aim: Vector2, clock: float, texture: Texture2D, glow: Color, element: String, spec: Dictionary) -> Array[Dictionary]:
 	var side := -1.0 if aim.x < -0.1 else 1.0
 	var since := clock - float(_shot.get(key, {}).get("start", -INF))
 	var cast := (1.0 - clampf(since / STAFF_CAST_TIME, 0.0, 1.0)) if since >= 0.0 else 0.0
-	var length := STAFF_LENGTH * hero_px
+	var tall := float(spec.get("length", STAFF_LENGTH))
+	var length := tall * hero_px * float(spec.get("scale", 1.0))
 	var size := Vector2(texture.get_width() * length / texture.get_height(), length)
-	var hand := point + Vector2(staff_hand.x * side, staff_hand.y) * hero_px
+	var at: Vector2 = spec.get("side", staff_hand)
+	var hand := point + Vector2(at.x * side, at.y) * hero_px
 	hand.y -= (STAFF_LIFT * cast + sin(clock * 2.2) * 0.4) * hero_px
 	# upright, leaning a little toward the aim; a cast tips it further at the target
 	var toward := wrapf(aim.angle() + PI * 0.5, -PI, PI)
-	var tilt := clampf(toward, -STAFF_LEAN, STAFF_LEAN) * 0.4 + clampf(toward, -STAFF_CAST_LEAN, STAFF_CAST_LEAN) * 0.6 * cast
-	_staff_sockets[key] = {"at":hand+Vector2(0,-size.y*STAFF_GRIP+2.0*hero_px).rotated(tilt),"clock":clock}
-	canvas.draw_set_transform(hand, tilt, Vector2.ONE)
-	canvas.draw_texture_rect(texture, Rect2(Vector2(-size.x * 0.5, -size.y * STAFF_GRIP), size), false)
-	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	var tilt := clampf(toward, -STAFF_LEAN, STAFF_LEAN) * 0.4 + clampf(toward, -STAFF_CAST_LEAN, STAFF_CAST_LEAN) * 0.6 * cast + float(spec.get("rest", 0.0))
+	var grip: Vector2 = spec.get("grip", Vector2(0.5, STAFF_GRIP))
+	var rect := Rect2(-size * grip, size)
+	var fireball: Dictionary=_fireballs.get(key,{})
+	if not fireball.is_empty() and clock-float(fireball.start)<float(fireball.windup)+0.28:
+		var pose:=MageFireball.pose(clock-float(fireball.start),float(fireball.windup),fireball.aim)
+		hand=point+(at*Vector2(float(pose.side),1)+Vector2(pose.hand)-Vector2(5*float(pose.side),0))*hero_px
+		tilt=float(pose.tilt)+float(spec.get("rest",0))
+	_hold(key, texture, hand, tilt, rect)
+	var staff := {"texture": texture, "hand": hand, "angle": tilt, "rect": rect, "main": true}
+	staff.staff_tip=spec.get("tip",Vector2(0.5,STAFF_ORB/tall))
+	staff.staff_clock=clock
+	_staff_sockets[key]={"at":art_point(staff,staff.staff_tip),"clock":clock}
 	if not element.is_empty():
 		# the element at the orb: its glow on the orb, its motes rising from it
-		var orb := hand + Vector2(0, -size.y * STAFF_GRIP + 2.0 * hero_px).rotated(tilt)
-		ItemArt.draw_tip_glow(canvas, orb, glow, clock, px)
-		ItemArt.draw_weapon_motes(canvas, orb + Vector2(0, -hero_px), Vector2.DOWN, 3.0 * hero_px, element, clock, px, key.hash(), WEAPON_MOTES)
+		var orb := art_point(staff, spec.get("tip", Vector2(0.5, STAFF_ORB / tall)))
+		staff.over = func(canvas: CanvasItem, _follow: Transform2D) -> void:
+			ItemArt.draw_tip_glow(canvas, orb, glow, clock, px)
+			ItemArt.draw_weapon_motes(canvas, orb + Vector2(0, -hero_px), Vector2.DOWN, 3.0 * hero_px, element, clock, px, key.hash(), WEAPON_MOTES)
+	var out: Array[Dictionary] = [staff]
+	return out
+
+
+# --- the fallen hero's weapon ------------------------------------------------------
+
+## Remembers where the weapon of `key` is drawn this frame (its transform and
+## texture rect), so a fall can throw it from there.
+func _hold(key: String, texture: Texture2D, hand: Vector2, angle: float, rect: Rect2) -> void:
+	_held[key] = {"texture": texture, "hand": hand, "angle": angle, "rect": rect}
+
+
+## Draws the weapon of a fallen hero instead of draw_weapon: on the first call it
+## leaves the hand where it was last drawn, flies forward (`face` +1 right, -1
+## left) and up, turning over, falls to `floor_y` (the hero's feet), bounces once
+## and comes to rest on its flat side, like an enemy's held item coming loose:
+## one piece of RigDebris (src/rig_kit/rig_debris.gd) on vfx_gore.json
+## ragdoll.hero_weapon. `clock` in seconds; the path runs in fixed steps
+## (steps_per_s) from its start up to `clock`, so it never depends on frame
+## times. Nothing is drawn for a hero who never held a weapon.
+func drop_weapon(canvas: CanvasItem, key: String, clock: float, floor_y: float, face: float) -> void:
+	if not _dropped.has(key):
+		if not _held.has(key): return
+		_dropped[key] = _throw(_held[key], clock, floor_y, face)
+	var d: Dictionary = _dropped[key]
+	var phys: Dictionary = (d.debris as RigDebris).phys
+	var step := 1.0 / maxf(1.0, float(phys.get("steps_per_s", 1.0)))
+	var due := int(clampf(clock - float(d.t0), 0.0, float(phys.get("settle", 0.0))) / step)
+	# a clock that ran back (a new fall at an earlier time) throws it anew
+	if due < int(d.steps):
+		d = _throw(d.held, float(d.t0), floor_y, d.face)
+		_dropped[key] = d
+	while int(d.steps) < due:
+		(d.debris as RigDebris).step(step)
+		d.steps = int(d.steps) + 1
+	var rect: Rect2 = d.rect
+	var state := drop_state(key)
+	var angle := float(state.angle)
+	canvas.draw_set_transform(Vector2(state.center) - rect.get_center().rotated(angle), angle, Vector2.ONE)
+	canvas.draw_texture_rect(d.texture, rect, false)
+	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## Where the fallen weapon of `key` is now: {center (world px), angle (rad)};
+## {} when it has not fallen (for tests and capture checks).
+func drop_state(key: String) -> Dictionary:
+	if not _dropped.has(key): return {}
+	var piece: Dictionary = (_dropped[key].debris as RigDebris).pieces[0]
+	return {"center": Vector2(float(piece.x), float(piece.y) - float(piece.z)), "angle": float(piece.ang)}
+
+
+## A weapon leaving the hand `held` ({texture, hand, angle, rect}) at `clock`:
+## one RigDebris piece on its floor line (`floor_y` less half its thickness),
+## its height above it, thrown along `face` with ragdoll.hero_weapon.
+func _throw(held: Dictionary, clock: float, floor_y: float, face: float) -> Dictionary:
+	if _drop_phys.is_empty():
+		var found: Variant = RigDebris.load_physics(GORE_PATH, "ragdoll").get("hero_weapon", {})
+		_drop_phys = found if found is Dictionary else {}
+	var rect: Rect2 = held.rect
+	var dir := 1.0 if face >= 0.0 else -1.0
+	var center: Vector2 = Vector2(held.hand) + rect.get_center().rotated(float(held.angle))
+	var rest_y := floor_y - minf(rect.size.x, rect.size.y) * 0.5
+	var debris := RigDebris.new(_drop_phys)
+	# k: gravity and the speeds are in weapon pixels, px world px each
+	debris.add({"x": center.x, "y": rest_y, "z": maxf(0.0, rest_y - center.y), "vx": dir * float(_drop_phys.get("speed", 0.0)) * px, "vy": 0.0,
+		"vz": float(_drop_phys.get("lift", 0.0)) * px, "ang": float(held.angle), "spin": dir * float(_drop_phys.get("spin", 0.0)), "k": px, "life": 0.0, "rest": false})
+	return {"t0": clock, "texture": held.texture, "rect": rect, "held": held, "face": face, "debris": debris, "steps": 0}
+
+
+## The hero of `key` stands again: his next fall throws the weapon anew.
+func forget_drop(key: String) -> void:
+	_dropped.erase(key)

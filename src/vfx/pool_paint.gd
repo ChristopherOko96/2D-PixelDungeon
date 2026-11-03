@@ -8,8 +8,18 @@ extends RefCounted
 ## pools never stack; living materials (fire, lava) are shaded again a few
 ## times a second. Each pool runs out from where it landed over spread_time and
 ## goes again rim first. Bubbles, flames and sparkles are drawn over it each
-## frame. Pure drawing: the host hands it its zones and draws it on the floor,
-## over the stains and under the props, actors and shadows.
+## frame. The host hands it its zones and draws it on the floor, over the
+## stains and under the props, actors and shadows.
+##
+## The truth and the picture (BAUPLAN M1d): what lies where is the gameplay
+## field src/physics_kit/pool_field.gd (PoolField, `pool_field`): the pools, their
+## cells and the ice the rules freeze, on the host's clock only. This painter
+## draws that field and adds what is drawing only: drop puddles, melt water,
+## the reactions' looks (a liquid hidden under lava's crust, a liquid turned
+## to ice by an ice pool), ripples, cracks, arcs, the void's wells. The old
+## gameplay API forwards to the field (sync, add, finish, covers,
+## materials_at, freeze_near, thaw_near, advance), so the hosts keep working;
+## liquid_at / wet_at / ripple / wade are the picture's own questions.
 ##
 ## The liquid lives (vfx_pools.json "physics"): a pool that lands throws drops
 ## of itself (chips of ice, sparks of fire) that fly in arcs through the
@@ -18,12 +28,12 @@ extends RefCounted
 ## and steps send rings over the surface (only where the liquid lies, so they
 ## break at its rim) with a crown jumping up for a strong one; whoever wades
 ## through leaves a wake and, out of it, a few wet steps. Drop puddles are
-## drawing only: covers() (the game's hit test) sees the thrown pools alone.
+## drawing only: the field (covers, materials_at) sees the thrown pools alone.
 ## One layer per world: every source (boss moves, hero skills, talents) syncs
 ## its own pools into it, so the same liquid from two sources is one pool.
 ##
 ## Materials react where they meet (vfx_pools.json "reactions"; drawing only,
-## covers() is untouched): a liquid on lava or on the hot floor (`hot`) hisses
+## the field is untouched): a liquid on lava or on the hot floor (`hot`) hisses
 ## away in steam and leaves a dark crust that glows up again, a liquid puts out
 ## fire, a liquid on ice freezes, ice on fire or lava melts to water. A drop on
 ## lava hisses the same way.
@@ -47,15 +57,20 @@ extends RefCounted
 ## light round it (the floor up to four cells beyond its rim darkens by the
 ## dither, the darkness creeping in towards it) and pulls loose things, embers
 ## and drops into it (a particles well per pool, materials.void_pull).
+##
+## Poison (look "miasma"; review A6 2026-11-01): a see-through sludge under
+## its own fumes, never an opaque sheet: a grain of its colours with alpha
+## and dither holes (the floor and whoever stands in it show through), thick
+## in its middle and fraying towards its rim with no outline, the grain
+## churning slowly; wisps of fume rise off it. It is still a liquid for the
+## rules and reactions (its style). The Hölle's lava floor gets a ragged
+## crust of pixels along its edge (lava_rim) instead of a straight frame.
 
 const SplatShape = preload("res://src/vfx/splat_shape.gd")
-const SoulRingShape = preload("res://src/combat/soul_ring_shape.gd")
-const SoulTrail = preload("res://src/vfx/soul_trail.gd")
 const Glow = preload("res://src/vfx/glow.gd")
+const ElementRules = preload("res://src/combat/element_rules.gd")
 const DATA_PATH := "res://assets/data/vfx_pools.json"
 const FPS := 12.0
-## 4x4 ordered dither thresholds (rings thin out by it).
-const BAYER := [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
 
 ## World px per art pixel of the canvas it draws on.
 var art := 2.0
@@ -82,6 +97,10 @@ var _void_cache: Dictionary = {}
 var _lava_sites: Dictionary = {}
 ## The burning ground's heat noise by drifted cell (it only moves over the field).
 var _fire_noise: Dictionary = {}
+## A miasma's churning noise by Vector3i(drifted cell, layer) (_miasma_grain).
+var _miasma_noise: Dictionary = {}
+## The miasma being shaded: its veil (cover cap, alpha thin, alpha thick; materials.<mat>.veil).
+var _veil := Vector3(0.92, 0.42, 0.8)
 ## The middle of the field being shaded (_bake -> _shade, the void's spiral).
 var _mid := Vector2.ZERO
 ## The hearts of the void pools being shaded, [middle in cells, radius in cells]
@@ -93,36 +112,40 @@ var bake_counts: Dictionary = {}
 var draw_us := 0
 var draw_parts: Dictionary = {}
 var draw_frames := 0
-## art cell -> open floor there (asked of `open` once, _open_cell), and since when (ms).
-var _open_memo: Dictionary = {}
-var _open_since := 0
+## The wall clip of `open` (MatterKit.Clip: asked once per art cell, remembered; _open_cell).
+var _clip: MatterKit.Clip = null
 ## art cell -> hot floor there (asked of `hot` once, _hot_cell).
 var _hot_memo: Dictionary = {}
 ## Melt water waiting to be laid (cells of ice that went this frame): [q, until].
 var _melts: Array = []
 ## Liquid cells that freeze (are hidden) when their ice is born: [mat, q, born].
 var _freezing: Array = []
-## "source:id" -> {mat, cells: Array[Vector2i], end, source}
-var _pools: Dictionary = {}
-## "source:id" -> a pool whose shape a worker thread is working out (add, _collect_shapes).
-var _shaping: Dictionary = {}
-## Pools still being laid into their fields, oldest first (_lay, _lay_steps):
-## {key, mat, timed, keys, i, finish?, finish_edge?}.
+## The gameplay truth this draws: the pools, their cells, the rules' ice
+## (src/physics_kit/pool_field.gd). Its pool records are the ones drawn here.
+var pool_field: PoolField
+## Pools of the field still being put into the picture, oldest first
+## (_show_pool, _lay_steps): {key, mat, keys, i, since}.
 var _laying: Array = []
-## material -> field {cells: {Vector2i: [born, until, rank 0..1, drawing only?]}, img, tex, box, col, list, rim, next, dirty, baked, ripples}
+## material -> the picture's field {cells: {Vector2i: [born, until, rank 0..1, drawing only?]}, img, tex, box, col, list, rim, next, dirty, baked, ripples}:
+## the PoolField's cells (the same arrays) and the drawing-only ones (a fourth entry).
 var _fields: Dictionary = {}
 ## Wading actors: key -> {mat, last, steps, at, side, seen}.
 var _waders: Dictionary = {}
 var _rng := RandomNumberGenerator.new()
 var _drawn_frame := -1
 var _ramps: Dictionary = {}
+## The picture's clock: the host's time of the last sync / advance / draw (drop
+## puddles, ripples and arcs start from it; the field keeps its own).
 var _now := 0.0
-static var _data: Dictionary = {}
 
 
+## A painter on a canvas of `art_px` world px per art pixel with its own pool
+## field; `open_floor` (Callable(world point) -> bool) is where pools may lie.
 func _init(art_px: float, open_floor: Callable) -> void:
 	art = art_px
 	open = open_floor
+	pool_field = PoolField.new(art_px, PoolField.CallableHost.new(open_floor))
+	pool_field.track_events = true
 	cfg = settings()
 	for mat: String in cfg.get("materials", {}):
 		var ramp := {}
@@ -132,180 +155,149 @@ func _init(art_px: float, open_floor: Callable) -> void:
 		_ramps[mat] = ramp
 
 
-## vfx_pools.json, cached.
+## vfx_pools.json, cached (PoolField.settings: the field and the painter read one copy).
 static func settings() -> Dictionary:
-	if _data.is_empty():
-		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(DATA_PATH)) if FileAccess.file_exists(DATA_PATH) else null
-		_data = parsed if parsed is Dictionary else {"materials": {}}
-	return _data
+	return PoolField.settings()
 
 
-## The material a zone style is drawn in ("" when it has none).
+## The material a zone style is drawn in ("" when it has none; PoolField.material_for).
 func material_for(style: String) -> String:
-	if cfg.get("materials", {}).has(style):
-		return style
-	return {"flesh": "blood", "curse": "void"}.get(style, "")
+	return pool_field.material_for(style)
 
 
 ## True when `style` is drawn as a pool here.
 func handles(style: String) -> bool:
-	return material_for(style) != ""
+	return pool_field.handles(style)
 
 
-## The cells a splat of `style` covers (rank 0..n-1), the same on server and clients.
+## The cells a splat of `style` covers (rank 0..n-1), the same on server and
+## clients (PoolField.shape).
 static func shape(at: Vector2, dir: Vector2, radius: float, style: String, art_px: float, open_floor: Callable, seed: int) -> Dictionary:
-	var c := settings()
-	var squash := float(c.get("squash", 0.75))
-	var mat: Dictionary = c.get("materials", {}).get(style, {})
-	var drops := int(mat.get("droplets", 0)) if dir.length() > 0.01 else 0
-	return SplatShape.flood(at, dir, SplatShape.cells_for(radius, art_px, squash), art_px, open_floor, seed, squash, float(c.get("momentum", 0.55)), drops)
+	return PoolField.shape(at, dir, radius, style, art_px, open_floor, seed)
 
 
 ## The key of pool `id` of a source (its ids are its own).
 static func _key(source: String, id: int) -> String:
-	return "%s:%d" % [source, id]
+	return PoolField.key_of(source, id)
 
 
 ## A pool `id` of `style` from `source` landing at `at` along `dir` (radius
-## as its volume), from `start` until `end` (seconds on the host's clock).
-## Known pools are kept. With `splash` it has just landed: it throws drops.
-## A pool of thread_cells cells or more gets its shape worked out on a worker
-## thread (it is the same shape, a few frames later; the game never waits).
+## as its volume), from `start` until `end` (seconds on the host's clock):
+## PoolField.add (a big pool is shaped on a worker thread and counts, and
+## shows, from the field's commit_delay on). With `splash` it has just
+## landed: it throws drops when it shows.
 func add(id: int, style: String, at: Vector2, dir: Vector2, radius: float, start: float, end: float, source := "", splash := false) -> void:
-	var key := _key(source, id)
-	if _pools.has(key) or _shaping.has(key):
-		return
-	var mat := material_for(style)
-	if mat == "":
-		return
-	var squash := float(cfg.get("squash", 0.75))
-	if SplatShape.cells_for(radius, art, squash) >= int(cfg.get("thread_cells", 600)):
-		# the worker also times its cells (_timings); the keys it fills are there already
-		var job := {"key": key, "id": id, "mat": mat, "at": at, "dir": dir, "radius": radius, "start": start, "end": end, "source": source, "splash": splash, "cells": {}, "timed": {}}
-		var feel := art
-		var floor_open := open
-		var spread := _spread_of(mat)
-		var edge := _edge_of(start, end)
-		job.task = WorkerThreadPool.add_task(func() -> void:
-			var cells := shape(at, dir, radius, mat, feel, floor_open, id)
-			job.timed = _timings(cells, start, end, spread, edge)
-			job.cells = cells)
-		_shaping[key] = job
-		return
-	_lay(key, id, mat, shape(at, dir, radius, mat, art, open, id), at, dir, radius, start, end, source, splash)
+	_take_field_events()
+	pool_field.add(id, style, at, dir, radius, start, end, source, splash)
+	_take_field_events()
 
 
-## A true hollow material field. Use the existing shading, merging and expiry,
-## but never flood liquid through its inner hole or splash from its empty center.
+## Moves the field's clock to the host's `now` (PoolField.advance: the pools a
+## worker shaped count from their moment on) and puts what changed into the picture.
+func advance(now: float) -> void:
+	_now = now
+	pool_field.advance(now)
+	_take_field_events()
+
+
+## Hollow field, delegated to the same gameplay field as ordinary liquid.
 func add_ring(id: int, style: String, at: Vector2, outer: float, inner: float, start: float, end: float, source := "") -> void:
-	var key := _key(source, id)
-	if _pools.has(key) or _shaping.has(key): return
-	var mat := material_for(style)
-	if mat.is_empty(): return
-	if int(PI * (outer * outer - inner * inner) / (art * art)) >= int(cfg.get("thread_cells", 600)):
-		var job := {"key": key, "id": id, "mat": mat, "at": at, "dir": Vector2.ZERO, "radius": outer, "start": start, "end": end, "source": source, "splash": false, "cells": {}, "timed": {}}
-		var feel := art
-		var floor_open := open
-		var spread := _spread_of(mat)
-		var edge := _edge_of(start, end)
-		job.task = WorkerThreadPool.add_task(func() -> void:
-			var cells := SoulRingShape.cells(at, outer, inner, feel, floor_open)
-			job.timed = _timings(cells, start, end, spread, edge)
-			job.cells = cells)
-		_shaping[key] = job
-		return
-	_lay(key, id, mat, SoulRingShape.cells(at, outer, inner, art, open), at, Vector2.ZERO, outer, start, end, source, false)
+	pool_field.add(id,style,at,Vector2.ZERO,outer,start,end,source,false,0,{"inner_r":inner})
+	_take_field_events()
 
 
-## Static narrow trail uses the same merged soul material and expiry as fields.
+## Narrow floor trail; its capsule never fills the enclosing bounding disc.
 func add_strip(id: int, style: String, from: Vector2, to: Vector2, half: float, start: float, end: float, source: String) -> void:
-	var key := _key(source, id)
-	if _pools.has(key) or _shaping.has(key): return
-	var mat := material_for(style)
-	if mat.is_empty(): return
-	var middle := (from + to) * 0.5
-	var job := {"key": key, "id": id, "mat": mat, "at": middle, "dir": Vector2.ZERO, "radius": from.distance_to(to) * 0.5 + half,
-		"start": start, "end": end, "source": source, "splash": false, "cells": {}, "timed": {}}
-	var feel := art
-	var floor_open := open
-	var spread := _spread_of(mat)
-	var edge := _edge_of(start, end)
-	job.task = WorkerThreadPool.add_task(func() -> void:
-		var cells := SoulTrail.cells(from, to, half, feel, floor_open)
-		job.timed = _timings(cells, start, end, spread, edge)
-		job.cells = cells)
-	_shaping[key] = job
-
-## Lays the pools whose shapes the worker threads have finished.
-func _collect_shapes() -> void:
-	for key: String in _shaping.keys():
-		var job: Dictionary = _shaping[key]
-		if not WorkerThreadPool.is_task_completed(int(job.task)):
-			continue
-		WorkerThreadPool.wait_for_task_completion(int(job.task))
-		_shaping.erase(key)
-		_lay(key, int(job.id), str(job.mat), job.cells, job.at, job.dir, float(job.radius), float(job.start), float(job.end), str(job.source), bool(job.splash), job.timed)
+	pool_field.add(id,style,(from+to)*0.5,Vector2.ZERO,from.distance_to(to)*0.5+half,start,end,source,false,0,{"path":[[from.x,from.y],[to.x,to.y]],"w":half})
+	_take_field_events()
 
 
-## How long material `mat` takes to spread out from its middle (s).
-func _spread_of(mat: String) -> float:
-	return float(cfg.get("spread_time", 0.35)) * float(cfg.materials[mat].get("spread_scale", 1.0))
+## Puts what changed in the field into the picture, in order: pools laid
+## (they splash when they just landed), pools ended early, the rules' ice
+## frozen or thawed by someone else's call.
+func _take_field_events() -> void:
+	for event: Dictionary in pool_field.take_events():
+		match str(event.kind):
+			"laid":
+				_show_pool(str(event.key))
+			"finished":
+				var into: Dictionary = _field(str(event.mat))
+				into.next = float(event.now)
+				into.dirty = true
+			"frozen":
+				_show_frozen(event.cells)
+			"thawed":
+				_show_thawed(event.cells)
 
 
-## How long before its end a pool lasting `start`..`end` begins to go, rim first (s).
-func _edge_of(start: float, end: float) -> float:
-	return minf(float(cfg.get("edge_time", 0.7)), maxf(0.1, (end - start) * 0.4))
-
-
-## When each cell of a pool's shape (`cells`: art cell -> rank) is born and
-## goes, with its share of the rank: {cell: [born, until, k]} in the shape's
-## order. Born spreading out from the middle over `spread` s, gone rim first
-## over the last `edge` s. Touches nothing else (a worker thread may ask it).
-static func _timings(cells: Dictionary, start: float, end: float, spread: float, edge: float) -> Dictionary:
-	var out := {}
-	var n := float(maxi(1, cells.size()))
-	for q: Vector2i in cells:
-		var k := float(cells[q]) / n
-		out[q] = [start + spread * pow(k, 0.7), end - edge * k, k]
-	return out
-
-
-## Waits for the shapes still being worked out and drops them (a new room).
-func _drop_shapes() -> void:
-	for key: String in _shaping:
-		WorkerThreadPool.wait_for_task_completion(int(_shaping[key].task))
-	_shaping.clear()
-
-
-## Puts pool `key` (its `cells`: art cell -> rank; `timed` their _timings when
-## a worker worked them out) into its material's field.
-func _lay(key: String, id: int, mat: String, cells: Dictionary, at: Vector2, dir: Vector2, radius: float, start: float, end: float, source: String, splash: bool, timed: Dictionary = {}) -> void:
-	if cells.is_empty() or _pools.has(key):
+## Puts pool `key` of the field into its material's picture field: its cells
+## are the field's own (the same arrays: what the field changes shows).
+func _show_pool(key: String) -> void:
+	var pool: Dictionary = pool_field.pool(key)
+	if pool.is_empty():
 		return
+	var mat := str(pool.mat)
 	var field: Dictionary = _field(mat)
-	if timed.is_empty():
-		timed = _timings(cells, start, end, _spread_of(mat), _edge_of(start, end))
-	var keys := timed.keys()
-	_pools[key] = {"mat": mat, "cells": keys, "timed": timed.duplicate(true), "end": end, "source": source, "at": at, "r": radius}
+	var keys: Array = pool.cells
 	if (field.cells as Dictionary).is_empty() and _laying.is_empty():
 		# nothing lies there: all of it at once
-		(field.cells as Dictionary).merge(timed)
+		var cells: Dictionary = field.cells
+		var source: Dictionary = pool_field.cells_of(mat)
+		for q: Vector2i in keys:
+			var entry: Variant = source.get(q)
+			if entry != null:
+				cells[q] = entry
 	else:
 		# it meets what lies there cell by cell (_lay_step), a big pool over a
 		# few frames from its middle out (far ahead of its spreading), after
 		# the pools still being laid
-		var job := {"key": key, "mat": mat, "timed": timed, "keys": keys, "i": 0, "since": Time.get_ticks_msec()}
+		var job := {"key": key, "mat": mat, "keys": keys, "i": 0, "since": Time.get_ticks_msec()}
 		if _laying.is_empty() and keys.size() <= int(cfg.get("lay_now_cells", 1500)):
 			_lay_step(job, 1 << 62)
 		else:
 			_laying.append(job)
-	field.next = minf(float(field.next), start)
+	field.next = minf(float(field.next), float(pool.start))
 	field.dirty = true
-	if splash:
-		_splash(mat, at, dir, radius, id)
+	if bool(pool.splash):
+		_splash(mat, pool.at, pool.dir, float(pool.r), int(pool.id))
 
 
-## Lays the pools waiting to be laid (_lay) until the clock passes `until` (usec).
+## The rules' ice frozen in the field by someone else (cells [liquid mat, cell,
+## born]): it shows, the liquid under it hides when its ice is born.
+func _show_frozen(cells: Array) -> void:
+	if cells.is_empty():
+		return
+	var ice: Dictionary = _field("ice")
+	var source: Dictionary = pool_field.cells_of("ice")
+	for entry: Array in cells:
+		var q: Vector2i = entry[1]
+		if not ice.cells.has(q) and source.has(q):
+			ice.cells[q] = source[q]
+		_freezing.append(entry)
+	ice.next = minf(float(ice.next), _now)
+	ice.dirty = true
+
+
+## The rules' ice thawed in the field by someone else (its cells): it goes
+## from the picture and the liquid under it shows again.
+func _show_thawed(cells: Array) -> void:
+	if cells.is_empty() or not _fields.has("ice"):
+		return
+	var ice: Dictionary = _fields.ice
+	for q: Vector2i in cells:
+		ice.cells.erase(q)
+	ice.dirty = true
+	ice.next = minf(float(ice.next), _now)
+	_freezing = _freezing.filter(func(entry: Array) -> bool: return not cells.has(entry[1]))
+	for mat: String in _fields:
+		if _style(mat) != "liquid": continue
+		var into: Dictionary = _fields[mat]
+		for q: Vector2i in cells: into.hide.erase(q)
+		into.dirty = true
+		into.next = minf(float(into.next), _now)
+
+
+## Lays the pools waiting to be laid (_show_pool) until the clock passes `until` (usec).
 func _lay_steps(until: int) -> void:
 	while not _laying.is_empty():
 		if not _lay_step(_laying[0], until):
@@ -313,32 +305,22 @@ func _lay_steps(until: int) -> void:
 		_laying.pop_front()
 
 
-## Lays the cells of a waiting pool `job` into its field, in its order, until
-## the clock passes `until` (usec); true when all are. Where the field has a
-## cell already, a drop puddle there (more than three entries) gives way, else
-## the earlier birth, the later end and the lower rank of both hold; a pool
-## that ended early meanwhile (finish) goes rim first from then (as if laid at once).
+## Puts the cells of a waiting pool `job` into its picture field, in its
+## order, until the clock passes `until` (usec); true when all are. Each cell
+## is the field's own (where pools met, the field made them one already; a
+## drop puddle there gives way).
 func _lay_step(job: Dictionary, until: int) -> bool:
 	var field: Dictionary = _field(str(job.mat))
 	var cells: Dictionary = field.cells
-	var timed: Dictionary = job.timed
+	var source: Dictionary = pool_field.cells_of(str(job.mat))
 	var keys: Array = job.keys
-	var ended := job.has("finish")
 	var i := int(job.i)
 	while i < keys.size():
 		var q: Vector2i = keys[i]
 		i += 1
-		# (the new pool's entries are its own: changed in place)
-		var fresh: Array = timed[q]
-		var have: Variant = cells.get(q)
-		if have != null and not (have as Array).is_empty() and (have as Array).size() <= 3:
-			fresh[0] = minf(float(have[0]), float(fresh[0]))
-			fresh[1] = maxf(float(have[1]), float(fresh[1]))
-			fresh[2] = minf(float(have[2]), float(fresh[2]))
-		if ended:
-			fresh[1] = minf(float(fresh[1]), float(job.finish) + float(job.finish_edge) * (1.0 - float(fresh[2])))
-			fresh[1] = maxf(float(fresh[1]), _other_pool_until(str(job.key), q, float(job.finish)))
-		cells[q] = fresh
+		var entry: Variant = source.get(q)
+		if entry != null:
+			cells[q] = entry
 		if i & 63 == 0 and Time.get_ticks_usec() >= until:
 			break
 	job.i = i
@@ -346,117 +328,75 @@ func _lay_step(job: Dictionary, until: int) -> bool:
 	return i >= keys.size()
 
 
-## A pool (its key) that ended early (its zone was removed): it goes rim first from now.
+## A pool (its key) that ended early (its zone was removed): it goes rim first
+## from now (PoolField.finish; the picture follows).
 func finish(key: String, now: float) -> void:
-	var pool: Dictionary = _pools.get(key, {})
-	if pool.is_empty() or float(pool.end) <= now:
-		return
-	var field: Dictionary = _field(str(pool.mat))
-	var edge := float(cfg.get("edge_time", 0.7)) * 0.5
-	pool.end = now
-	# its cells not laid yet go the same way when they are
-	for job: Dictionary in _laying:
-		if str(job.key) == key:
-			job.finish = minf(float(job.get("finish", INF)), now)
-			job.finish_edge = edge
-	for q: Vector2i in pool.cells:
-		var have: Array = field.cells.get(q, [])
-		if not have.is_empty():
-			have[1] = minf(float(have[1]), now + edge * (1.0 - float(have[2])))
-			have[1] = maxf(float(have[1]), _other_pool_until(key, q, now))
-	field.next = now
-	field.dirty = true
-
-
-## A shared material cell remains wet while another real source still owns it.
-## Evaluated only on early finish/lay, never by scanning all pools every draw.
-func _other_pool_until(key: String, cell: Vector2i, now: float) -> float:
-	var mat := str(_pools.get(key, {}).get("mat", ""))
-	var until := -INF
-	for other_key: String in _pools:
-		if other_key == key: continue
-		var other: Dictionary = _pools[other_key]
-		if str(other.mat) != mat or float(other.end) <= now: continue
-		var own: Array = other.get("timed", {}).get(cell, [])
-		if not own.is_empty(): until = maxf(until, minf(float(other.end), float(own[1])))
-	return until
+	_take_field_events()
+	pool_field.finish(key, now)
+	_take_field_events()
 
 
 ## Takes in a source's zones ({id, k "pool", st style, x, y, r, dx, dy, p 0..1,
-## L its length in s}) and lets that source's pools that left the list go. A
-## pool first seen within physics.splash_window of its landing splashes.
+## L its length in s; ch charged, cr crusted for that long}) at the host's
+## time `now`: the field lays the new ones and lets that source's pools that
+## left the list go (PoolField.sync); the picture follows. A pool first seen
+## within physics.splash_window of its landing splashes.
 func sync(zones: Array, now: float, source := "") -> void:
 	# the host's clock now: a splash, its crown and its drops start from it
 	_now = now
+	pool_field.advance(now)
+	_take_field_events()
 	var seen := {}
-	var window := float(cfg.get("physics", {}).get("splash_window", 0.25))
 	for zone: Dictionary in zones:
-		if str(zone.get("k", "")) != "pool" or not handles(str(zone.get("st", ""))):
+		var key := pool_field.sync_zone(zone, now, source)
+		if key == "":
 			continue
-		var id := int(zone.get("id", -1))
-		var key := _key(source, id)
 		seen[key] = true
-		if not _pools.has(key):
-			var length := float(zone.get("L", 4.0))
-			var start := now - float(zone.get("p", 0.0)) * length
-			if zone.get("path", []).size() >= 2:
-				var path: Array = zone.path
-				add_strip(id, str(zone.st), Vector2(path[0][0], path[0][1]), Vector2(path[-1][0], path[-1][1]), float(zone.w), start, start + length, source)
-			elif float(zone.get("inner_r", 0.0)) > 0.0:
-				add_ring(id, str(zone.st), Vector2(float(zone.x), float(zone.y)), float(zone.r), float(zone.inner_r), start, start + length, source)
-			else:
-				add(id, str(zone.st), Vector2(float(zone.x), float(zone.y)), Vector2(float(zone.get("dx", 0.0)), float(zone.get("dy", 0.0))), float(zone.r), start, start + length, source, now - start <= window)
+		_take_field_events()
 		if float(zone.get("ch", 0.0)) > 0.0:
 			_charge(key, now + float(zone.ch))
 		if float(zone.get("cr", 0.0)) > 0.0:
 			_crust_pool(key, now + float(zone.cr))
-	for key: String in _pools.keys():
-		if str(_pools[key].source) != source or seen.has(key):
-			continue
-		finish(key, now)
-		if float(_pools[key].end) + float(cfg.get("edge_time", 0.7)) < now:
-			_pools.erase(key)
+	pool_field.end_missing(seen, now, source)
+	_take_field_events()
 
 
+## Forgets every pool, the field's and the picture's (a new room, the end of
+## a world). The field waits for its worker threads first.
 func clear() -> void:
-	_drop_shapes()
+	pool_field.clear()
 	_laying.clear()
-	_pools.clear()
 	_fields.clear()
 	_waders.clear()
 	_hot_crust.clear()
-	_open_memo.clear()
+	if _clip != null:
+		_clip.forget()
 	_hot_memo.clear()
 
 
-## True when `point` (world px) lies in a pool of `style` (any when "").
+## True when `point` (world px) lies in a pool of `style` (any when ""): the
+## game's hit test, asked of the field (PoolField.covers). Drop puddles and the
+## reactions' looks are drawing only and never count.
 func covers(point: Vector2, style := "") -> bool:
-	var q := Vector2i((point / art).floor())
-	for mat: String in _fields:
-		if style != "" and mat != material_for(style):
-			continue
-		var have: Array = _fields[mat].cells.get(q, [])
-		# drop puddles are drawing only: the game's hit test never sees them
-		if have.size() == 3 and float(have[0]) <= _now and _now < float(have[1]):
-			return true
-	return false
+	return pool_field.covers(point, style)
 
 
-## The materials of every pool lying under `point` (world px), for the game's
+## True when pool `key` lies in the field (PoolField.has_pool).
+func has_pool(key: String) -> bool:
+	return pool_field.has_pool(key)
+
+
+## True when pool `key`'s own liquid lies at `point` now (PoolField.pool_covers).
+func pool_covers(key: String, point: Vector2) -> bool:
+	return pool_field.pool_covers(key, point)
+
+
+## The materials of everything lying under `point` (world px), for the game's
 ## rules (src/combat/element_rules.gd top() picks the one that counts); empty
-## on firm floor. Drop puddles are drawing only and never count.
+## on firm floor: asked of the field (PoolField.materials_at: a pool's own
+## cells and the ice the rules froze; nothing drawn only).
 func materials_at(point: Vector2) -> Array:
-	var q := Vector2i((point / art).floor())
-	var out: Array = []
-	for mat: String in _fields:
-		var have: Array = _fields[mat].cells.get(q, [])
-		if have.is_empty() or float(have[0]) > _now or _now >= float(have[1]):
-			continue
-		# a pool's own cells, and the ice frozen out of a liquid (freeze_near: its cells
-		# carry a fourth entry like drop puddles do, but the ice is ground one stands on)
-		if have.size() == 3 or mat == "ice":
-			out.append(mat)
-	return out
+	return pool_field.materials_at(point)
 
 
 func _field(mat: String) -> Dictionary:
@@ -469,13 +409,36 @@ func _field(mat: String) -> Dictionary:
 
 ## Shades what changed and draws every field with its living overlay, in world px.
 ## Drawn once a frame: when several sources share this layer, the first draws it.
+## The materials of `_fields` in drawing order: least important first, the one the rules count
+## where pools overlap (ElementRules priority) last; cached while the materials stay the same.
+var _order_key := ""
+var _order: Array = []
+
+
+func _draw_order() -> Array:
+	var key := ",".join(PackedStringArray(_fields.keys()))
+	if key == _order_key: return _order
+	var prio: Array = ElementRules.data().get("priority", [])
+	var mats: Array = _fields.keys()
+	mats.sort_custom(func(a: String, b: String) -> bool:
+		var ia := prio.find(ElementRules.material(a))
+		var ib := prio.find(ElementRules.material(b))
+		ia = prio.size() if ia < 0 else ia
+		ib = prio.size() if ib < 0 else ib
+		return ia > ib)
+	_order_key = key
+	_order = mats
+	return _order
+
+
 func draw(canvas: CanvasItem, now: float) -> void:
 	var frame_now := Engine.get_process_frames()
 	if frame_now == _drawn_frame:
 		return
 	_drawn_frame = frame_now
 	var started := Time.get_ticks_usec()
-	_collect_shapes()
+	# what the field did since (a pool a worker shaped that counts now, ice someone froze)
+	_take_field_events()
 	# a pool or picture that has been waiting longer than catch_up_after_ms gets
 	# catch_up_ms a frame instead (it does not lag far behind what happens)
 	var late := int(cfg.get("catch_up_after_ms", 100))
@@ -507,8 +470,10 @@ func draw(canvas: CanvasItem, now: float) -> void:
 		var field: Dictionary = _fields[mat]
 		if field.has("work"):
 			continue
-		var style := str(cfg.materials[mat].get("style", "liquid"))
+		var style := _look(mat)
 		var frame := int(floor(now * anim)) if style in ["fire", "lava", "void"] else 0
+		if style == "miasma":
+			frame = int(floor(now * float(cfg.materials[mat].get("churn_hz", 2.5))))
 		var due: bool = now >= float(field.next) or bool(field.dirty) or frame != int(field.frame)
 		if not due or now - float(field.baked) < rate:
 			continue
@@ -523,9 +488,11 @@ func draw(canvas: CanvasItem, now: float) -> void:
 		if field.has("work"):
 			_bake_step(field, until)
 	var after_bake := Time.get_ticks_usec()
-	for mat: String in _fields:
+	# the pool that counts where pools overlap is drawn last, on top (the rules' priority, physics
+	# plan F21): lava and fire over water over blood, not by the order they were laid
+	for mat: String in _draw_order():
 		var field: Dictionary = _fields[mat]
-		var style := str(cfg.materials[mat].get("style", "liquid"))
+		var style := _look(mat)
 		if field.tex != null:
 			var box: Rect2i = field.box
 			canvas.draw_texture_rect(field.tex, Rect2(Vector2(box.position) * art, Vector2(box.size) * art), false)
@@ -714,7 +681,8 @@ func _shape_step(field: Dictionary, until: int) -> void:
 			return
 		i = 0
 		match phase:
-			"grid": phase = "outline"
+			# a miasma has no outline nor lip: it frays out (_shade)
+			"grid": phase = "done" if str(work.style) == "miasma" else "outline"
 			"outline": phase = "lip"
 			"lip": phase = "halo" if str(work.style) == "void" else "done"
 			_: phase = "done"
@@ -774,8 +742,9 @@ func _shape_scanned(field: Dictionary, work: Dictionary) -> void:
 	_mid = Vector2(work.sum) / float(maxi(1, live.size()))
 	_hearts = []
 	if style == "void":
-		for key: String in _pools:
-			var pool: Dictionary = _pools[key]
+		var laid := pool_field.pools()
+		for key: String in laid:
+			var pool: Dictionary = laid[key]
 			if str(pool.mat) == mat:
 				_hearts.append([Vector2(pool.get("at", Vector2.ZERO)) / art, maxf(2.0, float(pool.get("r", 30.0)) / art)])
 		# the spiral's places stay while its cells and hearts stay
@@ -842,6 +811,9 @@ func _bake_step(field: Dictionary, until: int) -> void:
 	var frame := int(work.frame)
 	var R: Dictionary = _ramps[mat]
 	# what _shade reads of the field being shaded
+	if style == "miasma":
+		var veil: Array = cfg.materials[mat].get("veil", [0.92, 0.42, 0.8])
+		_veil = Vector3(float(veil[0]), float(veil[1]), float(veil[2]))
 	_mid = shape.mid
 	_hearts = shape.hearts
 	_void_cache = shape.void_cache
@@ -920,7 +892,7 @@ func _halo_image(field: Dictionary, col: Color, t: float) -> void:
 		var y := h.y - at.y
 		if x < 0 or y < 0 or x >= size.x or y >= size.y:
 			continue
-		if float(BAYER[posmod(h.y, 4) * 4 + posmod(h.x, 4)]) < float(keep[mini(4, int(halo[h]))]):
+		if MatterKit.bayer(h) < float(keep[mini(4, int(halo[h]))]):
 			_px(px, (y * size.x + x) * 4, col)
 	var image := Image.create_from_data(size.x, size.y, false, Image.FORMAT_RGBA8, px)
 	if field.get("halo_tex") != null and Vector2i(field.halo_size) == size:
@@ -931,28 +903,22 @@ func _halo_image(field: Dictionary, col: Color, t: float) -> void:
 	field.halo_size = size
 
 
-## Writes colour `c` opaque into the byte image `px` at byte `at`.
+## Writes colour `c` into the byte image `px` at byte `at` (the ramps are
+## opaque; a miasma's veil and holes carry their own alpha).
 static func _px(px: PackedByteArray, at: int, c: Color) -> void:
 	px[at] = c.r8
 	px[at + 1] = c.g8
 	px[at + 2] = c.b8
-	px[at + 3] = 255
+	px[at + 3] = c.a8
 
 
-## Whether art cell `q` is open floor (`open` at its middle), remembered: asked
-## once per cell, forgotten every few seconds (a broken wall opens cells) and
-## with clear().
+## Whether art cell `q` is open floor (`open` at its middle), remembered by
+## the clip (MatterKit.Clip): asked once per cell, forgotten every few seconds
+## (a broken wall opens cells; physics_matter.json clip) and with clear().
 func _open_cell(q: Vector2i) -> bool:
-	var now_ms := Time.get_ticks_msec()
-	if now_ms - _open_since > 3000 or _open_memo.size() > 200000:
-		_open_memo.clear()
-		_open_since = now_ms
-	var known: Variant = _open_memo.get(q)
-	if known != null:
-		return bool(known)
-	var free := bool(open.call((Vector2(q) + Vector2(0.5, 0.5)) * art))
-	_open_memo[q] = free
-	return free
+	if _clip == null or _clip.open != open:
+		_clip = MatterKit.clip_of(open)
+	return _clip.open_cell(q, art)
 
 
 ## One cell's colour: the north rim lit, the row under it lighter, the south
@@ -1018,7 +984,7 @@ func _shade(q: Vector2i, nb: int, rank: float, R: Dictionary, style: String, now
 			# burning ground: charred floor, embers glowing in it and slowly
 			# shifting; the flames are particles rising out of it
 			if not up:
-				return R.body if _h(q.x, q.y, 2) % 3 == 0 else R.shade
+				return R.body if MatterKit.hash3(q.x, q.y, 2) % 3 == 0 else R.shade
 			if not dn:
 				return R.deep
 			# the heat drifts over the field: the same noise cell by cell, worked out once
@@ -1027,7 +993,7 @@ func _shade(q: Vector2i, nb: int, rank: float, R: Dictionary, style: String, now
 			if known == null:
 				if _fire_noise.size() > 200000:
 					_fire_noise.clear()
-				known = _noise(spot.x, spot.y, 3, 9)
+				known = MatterKit.value_noise(spot.x, spot.y, 3, 9)
 				_fire_noise[spot] = known
 			var heat: float = known
 			if heat > 0.84:
@@ -1036,12 +1002,42 @@ func _shade(q: Vector2i, nb: int, rank: float, R: Dictionary, style: String, now
 				return R.lite
 			if heat > 0.69:
 				return R.body
-			return R.shade if _h(q.x, q.y, 4) % 5 != 0 else R.deep
+			return R.shade if MatterKit.hash3(q.x, q.y, 4) % 5 != 0 else R.deep
 		"lava":
 			# a crust where a liquid hissed on it: dark plates with glowing seams
 			if _crust.has(q):
 				return _crust_colour(q, float(_crust[q]) - now, R)
 			return _lava_colour(q, rank, up, inner, R, frame)
+		"miasma":
+			# a toxic sludge under its own fumes: a see-through grain (the floor and
+			# whoever stands in it show through), thick in its middle and fraying
+			# towards its rim; two noises drifting apart churn the grain slowly
+			# (frame); no outline holds it (_shape_step skips it)
+			var n := (_miasma_grain(q.x + frame, q.y - frame / 3, 0) + _miasma_grain(q.x - frame / 2, q.y + frame / 2, 1)) * 0.5
+			var thick := clampf((1.0 - rank) * 1.3 - 0.05 + (n - 0.5) * 1.1, 0.0, 1.0)
+			if rank >= 0.999:
+				# a drop puddle (no rank of its own): a small dense spot
+				thick = 0.45 + (n - 0.5) * 0.6
+			if not inner:
+				thick *= 0.55
+			var gate := (MatterKit.bayer(q) +float(MatterKit.hash3(q.x, q.y, 37) % 100) / 100.0) / 17.0
+			if gate >= thick * _veil.x:
+				return Color(0, 0, 0, 0)
+			var col: Color = R.shade
+			if not up:
+				col = R.hi if n > 0.45 else R.lite
+			elif not dn:
+				col = R.deep
+			elif n > 0.66:
+				col = R.lite
+			elif n > 0.44:
+				col = R.body
+			elif n < 0.26:
+				col = R.deep
+			# a fleck of froth on the sludge
+			if MatterKit.hash3(q.x, q.y, 41) % 47 == 0:
+				col = R.hi
+			return Color(col, lerpf(_veil.y, _veil.z, thick))
 		_:
 			# a liquid: one calm body, a lit north rim, a deeper band before the
 			# south lip, and short level glints of light lying on its surface
@@ -1055,7 +1051,7 @@ func _shade(q: Vector2i, nb: int, rank: float, R: Dictionary, style: String, now
 				return R.shade if posmod(q.x, 3) != 0 else R.body
 			var gx := floori(float(q.x) / 7.0)
 			var gy := floori(float(q.y) / 5.0)
-			var h := _h(gx, gy, 17)
+			var h := MatterKit.hash3(gx, gy, 17)
 			if h % 3 == 0:
 				var sx := gx * 7 + h % 4
 				var sy := gy * 5 + (h / 7) % 3
@@ -1086,8 +1082,8 @@ func _lava_colour(q: Vector2i, rank: float, up: bool, inner: bool, R: Dictionary
 			var key := Vector3i(c.x, c.y, int(size))
 			var site: Variant = _lava_sites.get(key)
 			if site == null:
-				var h := _h(c.x, c.y, 31)
-				site = [(Vector2(c) + Vector2(float(h % 10) / 10.0, float((h / 10) % 10) / 10.0)) * size, _h(c.x, c.y, 47) % 100]
+				var h := MatterKit.hash3(c.x, c.y, 31)
+				site = [(Vector2(c) + Vector2(float(h % 10) / 10.0, float((h / 10) % 10) / 10.0)) * size, MatterKit.hash3(c.x, c.y, 47) % 100]
 				_lava_sites[key] = site
 			var d := p.distance_to(site[0])
 			if d < d1:
@@ -1100,10 +1096,10 @@ func _lava_colour(q: Vector2i, rank: float, up: bool, inner: bool, R: Dictionary
 	if d2 - d1 < 1.0:
 		return R.hi if crust else R.lite
 	if crust:
-		return R.body if d2 - d1 < 1.8 else (R.deep if _h(q.x, q.y, 3) % 5 == 0 else R.shade)
+		return R.body if d2 - d1 < 1.8 else (R.deep if MatterKit.hash3(q.x, q.y, 3) % 5 == 0 else R.shade)
 	# the melt: mostly deep orange-red, hotter swirls running slowly through it
 	var heat := 0.5 + 0.5 * sin(float(q.x) * 0.3 - float(q.y) * 0.22 + float(frame) * 0.35)
-	if heat > 0.93 and _h(q.x, q.y, frame % 5) % 7 == 0:
+	if heat > 0.93 and MatterKit.hash3(q.x, q.y, frame % 5) % 7 == 0:
 		return R.spec
 	return R.hi if heat > 0.82 else R.lite if heat > 0.45 else R.body
 
@@ -1122,6 +1118,8 @@ func _overlay(canvas: CanvasItem, field: Dictionary, mat: String, style: String,
 	if style == "fire" and particles != null:
 		_burn(field, R, spec, now)
 		return
+	if style == "miasma":
+		_fumes(canvas, field, R, spec, now)
 	if style == "void":
 		# darkest at its rim, the darkness creeping in towards it in waves (worked
 		# out on the 12 fps beat into one texture, drawn every frame)
@@ -1218,8 +1216,9 @@ func _spit(at: Vector2, R: Dictionary, count: int) -> void:
 func draw_glow(canvas: CanvasItem, level: float, now: float) -> void:
 	if level <= 0.0:
 		return
-	for key: String in _pools:
-		var pool: Dictionary = _pools[key]
+	var laid := pool_field.pools()
+	for key: String in laid:
+		var pool: Dictionary = laid[key]
 		var mat := str(pool.mat)
 		var glow := float(cfg.materials[mat].get("glow", 0.0))
 		if glow <= 0.0 or now > float(pool.end) + 0.5:
@@ -1231,10 +1230,6 @@ func draw_glow(canvas: CanvasItem, level: float, now: float) -> void:
 
 func _cell(canvas: CanvasItem, q: Vector2i, col: Color) -> void:
 	canvas.draw_rect(Rect2(Vector2(q) * art, Vector2(art, art)), col)
-
-
-static func _shown(q: Vector2i, k: float) -> bool:
-	return float(BAYER[posmod(q.y, 4) * 4 + posmod(q.x, 4)]) < k * 16.0
 
 
 # ---------- the living liquid ----------
@@ -1396,15 +1391,15 @@ func _draw_cracks(canvas: CanvasItem, field: Dictionary, mat: String, now: float
 		var heal := clampf((life - age) / 0.6, 0.0, 1.0)
 		var grow := minf(1.0, age / 0.08)
 		for b in range(3 + int(amp * 2.0)):
-			var angle := TAU * float(b) / float(3 + int(amp * 2.0)) + float(_h(seed, b, 3) % 100) / 100.0
-			var length := int((4.0 + amp * 9.0) * grow * (0.6 + float(_h(seed, b, 5) % 40) / 100.0))
+			var angle := TAU * float(b) / float(3 + int(amp * 2.0)) + float(MatterKit.hash3(seed, b, 3) % 100) / 100.0
+			var length := int((4.0 + amp * 9.0) * grow * (0.6 + float(MatterKit.hash3(seed, b, 5) % 40) / 100.0))
 			var p := Vector2(crack.q) + Vector2(0.5, 0.5)
 			var d := Vector2.from_angle(angle)
 			for k in range(length):
-				d = d.rotated(float(_h(seed + k, b, 7) % 3 - 1) * 0.35)
+				d = d.rotated(float(MatterKit.hash3(seed + k, b, 7) % 3 - 1) * 0.35)
 				p += d
 				var cell := Vector2i(p.floor())
-				if not field.col.has(cell) or not _shown(cell, heal):
+				if not field.col.has(cell) or not MatterKit.shown(cell, heal):
 					continue
 				_cell(canvas, cell, R.deep)
 				if field.col.has(cell + Vector2i(0, -1)):
@@ -1413,17 +1408,25 @@ func _draw_cracks(canvas: CanvasItem, field: Dictionary, mat: String, now: float
 
 
 ## A frost burst at `at` (world px) reaching `radius` freezes the liquid lying
-## there (drawing only): each cell turns to ice, the pool's rim first, the
-## middle last (physics.freeze_time s).
+## there: each cell turns to ice, the pool's rim first, the middle last
+## (physics.freeze_time s). The field's liquid becomes ice one stands on
+## (PoolField.freeze_near: the rules' Glatteis); the picture's own liquid
+## (drop puddles, melt water) becomes ice that is only drawn.
 func freeze_near(at: Vector2, radius: float) -> void:
+	_take_field_events()
+	pool_field.freeze_near(at, radius)
+	# (the picture freezes below, cell by cell, its own way)
+	pool_field.take_events()
 	if not cfg.materials.has("ice"):
 		return
 	var middle := Vector2i((at / art).floor())
 	var reach := radius / art
 	var span := float(_phys("freeze_time", 0.45))
 	var ice: Dictionary = _field("ice")
+	# the picture freezes what the field freezes: only the liquids that freeze (D4)
+	var freezes: Array = cfg.get("freezes", ["water"])
 	for mat: String in _fields.keys():
-		if _style(mat) != "liquid":
+		if _style(mat) != "liquid" or not freezes.has(mat):
 			continue
 		var field: Dictionary = _fields[mat]
 		for q: Vector2i in field.cells:
@@ -1462,11 +1465,12 @@ func electrify(at: Vector2, radius: float) -> void:
 ## A lava pool the game crusted over (water met it, src/combat/elements.gd;
 ## the snapshot's "cr"): all its cells turn dark until `until`.
 func _crust_pool(key: String, until: float) -> void:
-	if not _pools.has(key) or not _fields.has(str(_pools[key].mat)):
+	var pool: Dictionary = pool_field.pool(key)
+	if pool.is_empty() or not _fields.has(str(pool.mat)):
 		return
-	var field: Dictionary = _fields[str(_pools[key].mat)]
+	var field: Dictionary = _fields[str(pool.mat)]
 	var changed := false
-	for q: Vector2i in _pools[key].cells:
+	for q: Vector2i in pool.cells:
 		if float(field.crust.get(q, 0.0)) < until - 0.2:
 			field.crust[q] = until
 			changed = true
@@ -1476,38 +1480,24 @@ func _crust_pool(key: String, until: float) -> void:
 
 
 ## Fire on Glatteis (src/combat/elements.gd thaw): the ice frozen out of a
-## liquid at `at` within `radius` goes and the liquid under it shows again.
+## liquid at `at` within `radius` goes (from the field, PoolField.thaw_near,
+## and from the picture) and the liquid under it shows again.
 func thaw_near(at: Vector2, radius: float) -> void:
-	if not _fields.has("ice"):
-		return
-	var middle := Vector2i((at / art).floor())
-	var reach := radius / art
-	var ice: Dictionary = _fields.ice
-	var gone: Array = []
-	for q: Vector2i in ice.cells:
-		var c: Array = ice.cells[q]
-		if c.size() > 3 and bool(c[3]) and Vector2(q - middle).length() <= reach:
-			gone.append(q)
-	if gone.is_empty():
-		return
-	for q: Vector2i in gone: ice.cells.erase(q)
-	ice.dirty = true
-	ice.next = minf(float(ice.next), _now)
-	_freezing = _freezing.filter(func(entry: Array) -> bool: return not gone.has(entry[1]))
-	for mat: String in _fields:
-		if _style(mat) != "liquid": continue
-		var field: Dictionary = _fields[mat]
-		for q: Vector2i in gone: field.hide.erase(q)
-		field.dirty = true
-		field.next = minf(float(field.next), _now)
+	_take_field_events()
+	# the field thaws from the fire's side, the nearest cells now, the rest on their time
+	# (PoolField.thaw_near, physics plan R25); the picture follows its "thawed" changes
+	# (_show_thawed), now and in advance
+	pool_field.thaw_near(at, radius)
+	_take_field_events()
 
 
 ## A pool the game charged (boss_moves.electrify, the snapshot's "ch"): its
 ## field crackles strongly until `until` (one lasting zap per pool).
 func _charge(key: String, until: float) -> void:
-	if not _pools.has(key) or not _fields.has(str(_pools[key].mat)):
+	var pool: Dictionary = pool_field.pool(key)
+	if pool.is_empty() or not _fields.has(str(pool.mat)):
 		return
-	var field: Dictionary = _fields[str(_pools[key].mat)]
+	var field: Dictionary = _fields[str(pool.mat)]
 	for zap: Dictionary in field.zaps:
 		if str(zap.get("pool", "")) == key:
 			zap.until = until
@@ -1550,14 +1540,14 @@ func _draw_zaps(canvas: CanvasItem, field: Dictionary, now: float) -> void:
 			steps = int(_phys("zap_charged_len", 7))
 			tones = _phys("zap_charged_cols", cols)
 		for a in range(arcs):
-			var h := _h(int(zap.seed), beat * 7 + a, 9)
+			var h := MatterKit.hash3(int(zap.seed), beat * 7 + a, 9)
 			var q: Vector2i = cells[h % cells.size()]
 			var p := Vector2(q)
 			for k in range(steps):
 				var cell := Vector2i(p.floor())
 				if field.col.has(cell):
 					_cell(canvas, cell, Color(str(tones[k % tones.size()])))
-				p += Vector2(float(_h(h, k, 3) % 3 - 1), float(_h(h, k, 5) % 3 - 1))
+				p += Vector2(float(MatterKit.hash3(h, k, 3) % 3 - 1), float(MatterKit.hash3(h, k, 5) % 3 - 1))
 	field.zaps = keep
 
 
@@ -1616,7 +1606,7 @@ func _draw_ripples(canvas: CanvasItem, field: Dictionary, mat: String, now: floa
 				if cell == last:
 					continue
 				last = cell
-				if not field.col.has(cell) or not _shown(cell, minf(1.0, fade * 2.0)):
+				if not field.col.has(cell) or not MatterKit.shown(cell, minf(1.0, fade * 2.0)):
 					continue
 				_cell(canvas, cell, (R.spec if amp >= 0.8 and fade > 0.6 else R.hi) if ring == 0 else R.lite)
 				if ring == 0:
@@ -1628,6 +1618,13 @@ func _draw_ripples(canvas: CanvasItem, field: Dictionary, mat: String, now: floa
 
 func _style(mat: String) -> String:
 	return str(cfg.materials.get(mat, {}).get("style", "liquid"))
+
+
+## How material `mat` is drawn: its "look" (vfx_pools.json; "miasma": the
+## poison's see-through fuming sludge) or else its style. The rules and
+## reactions keep asking _style.
+func _look(mat: String) -> String:
+	return str(cfg.materials.get(mat, {}).get("look", _style(mat)))
 
 
 ## Where two materials meet, they react (vfx_pools.json "reactions", keyed
@@ -1654,7 +1651,8 @@ func _react(now: float) -> void:
 	for a: String in mats:
 		for b: String in mats:
 			if a != b:
-				var rule: Dictionary = rules.get(_style(a) + "+" + _style(b), {})
+				# two materials by name first (water+blood mixes; physics plan F21), else their styles
+				var rule: Dictionary = rules.get(a + "+" + b, rules.get(_style(a) + "+" + _style(b), {}))
 				if not rule.is_empty():
 					_react_pair(a, b, rule, now)
 		if hot.is_valid():
@@ -1678,6 +1676,9 @@ func _react_pair(a: String, b: String, rule: Dictionary, now: float) -> void:
 		return
 	var both := box_a.intersection(box_b)
 	var count := 0
+	# poison meeting fire or lava goes up in flame where they meet instead of hissing (physics plan
+	# R9/F12, as the rules make it explode)
+	var flare := ElementRules.material(a) == "poison" and ElementRules.material(b) in ["fire", "lava"]
 	for q: Vector2i in fa.cells:
 		if not both.has_point(q) or not _live(fa, q, now) or not _live(fb, q, now):
 			continue
@@ -1686,7 +1687,9 @@ func _react_pair(a: String, b: String, rule: Dictionary, now: float) -> void:
 		_turn(str(rule.get("a_to", "")), fa, q, fa.cells[q], now)
 		_turn(str(rule.get("b_to", "")), fb, q, fb.cells[q], now)
 		if bool(rule.get("steam", false)) and count % int(cfg.reactions.get("steam_every", 5)) == 0:
-			_hiss((Vector2(q) + Vector2(0.5, 0.5)) * art, 2)
+			var at := (Vector2(q) + Vector2(0.5, 0.5)) * art
+			if flare and particles != null: particles.fire_burst(at * to_particles, 4.0)
+			else: _hiss(at, 2)
 		count += 1
 
 
@@ -1745,8 +1748,9 @@ func _turn(to: String, field: Dictionary, q: Vector2i, c: Array, now: float) -> 
 func _pull(now: float) -> void:
 	if particles == null or not particles.has_method("well"):
 		return
-	for key: String in _pools:
-		var pool: Dictionary = _pools[key]
+	var laid := pool_field.pools()
+	for key: String in laid:
+		var pool: Dictionary = laid[key]
 		var spec: Dictionary = cfg.materials.get(str(pool.mat), {})
 		var pull: Array = spec.get("void_pull", [])
 		if pull.size() < 2 or now > float(pool.end):
@@ -1785,7 +1789,7 @@ func wet_at(point: Vector2) -> bool:
 ## bright seams of the melt between them; in its last 0.8 s the seams widen
 ## and it melts back in.
 static func _crust_colour(q: Vector2i, left: float, R: Dictionary) -> Color:
-	var n := _noise(q.x, q.y, 3, 11)
+	var n := MatterKit.value_noise(q.x, q.y, 3, 11)
 	var seam := 0.05 + (0.12 * (1.0 - left / 0.8) if left < 0.8 else 0.0)
 	if absf(n - 0.5) < seam:
 		return R.lite if left < 0.8 else R.body
@@ -1836,22 +1840,171 @@ func wade(key: String, feet: Vector2, moving: bool, now: float) -> void:
 	_waders[key] = state
 
 
-static func _h(x: int, y: int, s := 0) -> int:
-	return absi((x * 73856093) ^ (y * 19349663) ^ (s * 83492791)) % 1000
+## The miasma's grain at drifted cell (`x`, `y`) of noise `layer` (0..1, two
+## octaves), worked out once per cell.
+func _miasma_grain(x: int, y: int, layer: int) -> float:
+	var key := Vector3i(x, y, layer)
+	var known: Variant = _miasma_noise.get(key)
+	if known == null:
+		if _miasma_noise.size() > 200000:
+			_miasma_noise.clear()
+		known = MatterKit.value_noise(x, y, 5, 23 + layer) * 0.65 + MatterKit.value_noise(x, y, 2, 29 + layer) * 0.35
+		_miasma_noise[key] = known
+	return float(known)
 
 
-## Smooth value noise 0..1 over cells of `size` art px.
-static func _noise(x: int, y: int, size: int, s: int) -> float:
-	var fx := float(x) / float(size)
-	var fy := float(y) / float(size)
-	var gx := floori(fx)
-	var gy := floori(fy)
-	var u := fx - float(gx)
-	var v := fy - float(gy)
-	u = u * u * (3.0 - 2.0 * u)
-	v = v * v * (3.0 - 2.0 * v)
-	var a := float(_h(gx, gy, s)) / 1000.0
-	var b := float(_h(gx + 1, gy, s)) / 1000.0
-	var c := float(_h(gx, gy + 1, s)) / 1000.0
-	var e := float(_h(gx + 1, gy + 1, s)) / 1000.0
-	return lerpf(lerpf(a, b, u), lerpf(c, e, u), v)
+## Fumes rising off a miasma field: small dithered wisps of its lit colours
+## drifting up and sideways from random cells of it, see-through, each gone
+## within its life (vfx_pools.json materials.<mat>.fumes: max wisps, one per
+## per_cells cells, life s, rise and sway in art cells, alpha); they stop at walls.
+func _fumes(canvas: CanvasItem, field: Dictionary, R: Dictionary, spec: Dictionary, now: float) -> void:
+	var list: Array = field.list
+	var f: Dictionary = spec.get("fumes", {})
+	var count := mini(int(f.get("max", 14)), 1 + list.size() / maxi(1, int(f.get("per_cells", 60))))
+	var life := maxf(0.2, float(f.get("life", 2.6)))
+	var rise := float(f.get("rise", 9.0))
+	var sway := float(f.get("sway", 2.0))
+	var alpha := float(f.get("alpha", 0.4))
+	for i in range(count):
+		var t := now / life + float(i) * 0.618
+		var slot := int(floor(t))
+		var k := t - float(slot)
+		var q: Vector2i = list[posmod(slot * 7919 + i * 104729, list.size())]
+		var c := Vector2(q) + Vector2(sin(k * PI + float(i) * 1.7) * sway, -k * rise)
+		var a := alpha * sin(k * PI)
+		# it swells as it rises and thins by the dither
+		var big := 1 + int(k > 0.4)
+		var base := Vector2i(roundi(c.x), roundi(c.y))
+		for dy in range(-1, 1):
+			for dx in range(-big, big + 1):
+				var cell := base + Vector2i(dx, dy)
+				if not MatterKit.shown(cell + Vector2i(slot, slot * 3), (1.0 - k * 0.55) * (1.0 - absf(float(dx)) / float(big + 1) * 0.6)):
+					continue
+				if not _open_cell(cell):
+					continue
+				_cell(canvas, cell, Color(R.lite if dy < 0 else R.body, a))
+
+
+# ---------- the lava floor's edge ----------
+
+## True when the world drawn with sprite set `sprites` has a lava floor whose
+## edge is a ragged crust (vfx_pools.json floor_crust.sprites; the Hölle).
+static func crusts(sprites: String) -> bool:
+	return (settings().get("floor_crust", {}).get("sprites", []) as Array).has(sprites)
+
+
+## The edge of a world's lava floor (cells of tile 2 or 3; `cell` (x, y) ->
+## tile) in the chunk of `cols` x `rows` cells from cell (`x0`, `y0`), cells
+## `cell_px` world px wide on an art grid of `art_px` world px, as a ragged
+## crust of single pixels instead of a straight stone frame (vfx_pools.json
+## floor_crust, colours of materials.lava): cooled rock reaching into the
+## melt a depth that wanders along the edge, a glowing seam where it meets
+## the melt, cracks glowing through it, and a little rock and a few cinders
+## spilt onto the floor. Drawing only: the cells stay what they are. {} when
+## the chunk has no lava edge, else {tex, rect (world px)}; built once.
+static func lava_rim(cell: Callable, x0: int, y0: int, cols: int, rows: int, cell_px: float, art_px: float) -> Dictionary:
+	var c := settings()
+	var spec: Dictionary = c.get("floor_crust", {})
+	var ramp: Dictionary = c.get("materials", {}).get("lava", {}).get("ramp", {})
+	var R := {}
+	for role: String in ramp:
+		R[role] = Color(str(ramp[role]))
+	if R.size() < 7:
+		return {}
+	var n := maxi(1, roundi(cell_px / art_px))
+	var depth: Array = spec.get("depth", [2, 7])
+	var spill := float(spec.get("spill", 2.5))
+	var cracks := float(spec.get("cracks", 0.8))
+	var cinders := float(spec.get("cinders", 0.06))
+	var corner_r := float(spec.get("round", 10.0))
+	var limits := [int(ceil(float(depth[1]))) + 2, int(ceil(spill)) + 3]
+	var px := {}
+	for cy in range(y0, y0 + rows):
+		for cx in range(x0, x0 + cols):
+			var t := int(cell.call(cx, cy))
+			var lava := t == 2 or t == 3
+			if t == 0 and not lava:
+				continue
+			# the neighbours of the other kind (floor or wall for lava, lava for floor)
+			var others: Array[Vector2i] = []
+			var sides := Vector4i.ZERO
+			for oy in range(-1, 2):
+				for ox in range(-1, 2):
+					if ox == 0 and oy == 0:
+						continue
+					var nt := int(cell.call(cx + ox, cy + oy))
+					if lava == (nt == 2 or nt == 3):
+						continue
+					others.append(Vector2i(ox, oy))
+					if ox < 0: sides.x = 1
+					if ox > 0: sides.y = 1
+					if oy < 0: sides.z = 1
+					if oy > 0: sides.w = 1
+			if others.is_empty():
+				continue
+			var limit: int = limits[0] if lava else limits[1]
+			# the lava's outer corners are rounded off by the crust (a quarter circle of floor_crust.round art px)
+			var corners: Array[Vector2i] = []
+			if lava:
+				for k: Vector2i in [Vector2i(-1, -1), Vector2i(1, -1), Vector2i(-1, 1), Vector2i(1, 1)]:
+					if others.has(Vector2i(k.x, 0)) and others.has(Vector2i(0, k.y)):
+						corners.append(k)
+			for ay in range(n):
+				var near_y := (sides.z == 1 and ay < limit) or (sides.w == 1 and ay >= n - limit)
+				for ax in range(n):
+					if not near_y and not ((sides.x == 1 and ax < limit) or (sides.y == 1 and ax >= n - limit)):
+						continue
+					# how far (art px) this pixel's middle lies from the nearest other-kind cell
+					var d := INF
+					for o: Vector2i in others:
+						var dx := 0.0
+						var dy := 0.0
+						if o.x < 0: dx = float(ax) + 0.5
+						elif o.x > 0: dx = float(n - ax) - 0.5
+						if o.y < 0: dy = float(ay) + 0.5
+						elif o.y > 0: dy = float(n - ay) - 0.5
+						d = minf(d, Vector2(dx, dy).length())
+					for k: Vector2i in corners:
+						var cx2 := (float(ax) + 0.5) if k.x < 0 else (float(n - ax) - 0.5)
+						var cy2 := (float(ay) + 0.5) if k.y < 0 else (float(n - ay) - 0.5)
+						if cx2 < corner_r and cy2 < corner_r:
+							d = minf(d, maxf(0.0, corner_r - Vector2(corner_r - cx2, corner_r - cy2).length()))
+					if d > float(limit):
+						continue
+					var g := Vector2i(cx * n + ax, cy * n + ay)
+					var wander := MatterKit.value_noise(g.x, g.y, 8, 61)
+					var jit := float(MatterKit.hash3(g.x, g.y, 67)) / 1000.0
+					if lava:
+						var reach := lerpf(float(depth[0]), float(depth[1]), wander) + (jit - 0.5) * 1.2
+						if d > reach:
+							continue
+						if reach - d < 1.0:
+							# the seam where the crust meets the melt glows
+							px[g] = R.hi if jit > 0.55 else R.lite
+						elif MatterKit.value_noise(g.x, g.y, 3, 71) > cracks and jit > 0.3:
+							px[g] = R.body
+						elif d < 1.0 and jit > 0.6:
+							# a lit rock here and there on its lip (never a drawn line)
+							px[g] = R.shade
+						else:
+							px[g] = R.deep if jit > 0.25 else R.outline
+					else:
+						var out := wander * spill + (jit - 0.5)
+						if d <= out:
+							px[g] = R.deep if jit > 0.4 else R.outline
+						elif d <= out + 2.0 and jit > 1.0 - cinders:
+							px[g] = R.shade
+	if px.is_empty():
+		return {}
+	var lo := Vector2i(1 << 30, 1 << 30)
+	var hi := Vector2i(-(1 << 30), -(1 << 30))
+	for g: Vector2i in px:
+		lo = Vector2i(mini(lo.x, g.x), mini(lo.y, g.y))
+		hi = Vector2i(maxi(hi.x, g.x), maxi(hi.y, g.y))
+	var size := hi - lo + Vector2i.ONE
+	var bytes := PackedByteArray()
+	bytes.resize(size.x * size.y * 4)
+	for g: Vector2i in px:
+		_px(bytes, ((g.y - lo.y) * size.x + g.x - lo.x) * 4, px[g])
+	var image := Image.create_from_data(size.x, size.y, false, Image.FORMAT_RGBA8, bytes)
+	return {"tex": ImageTexture.create_from_image(image), "rect": Rect2(Vector2(lo) * art_px, Vector2(size) * art_px)}

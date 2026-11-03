@@ -1,7 +1,9 @@
 extends SceneTree
 ## A dungeon crawler (docs/LAUF-DESIGN.de.md): death ends the run in every
 ## world. In the Hell-Dungeon and the Frostgruft the hero no longer stands up
-## on the floor; the run's saves are deleted (other runs' saves stay); the
+## on the floor; the run's saved games stay (user decision 01.11.2026: loading
+## one is the small advantage of having saved; the character's gold is gone with
+## the death, the save keeps the gold it had); the
 ## result panel waits for E, which starts a fresh run on floor 1; R no longer
 ## restarts a floor; a run in a slot keeps that slot at its newest floor start;
 ## the crypt deletes its run's saves when the team falls.
@@ -77,7 +79,7 @@ func _test_story(scene: PackedScene, world: String) -> void:
 	game._update(2.0)
 	check(not (game.state.get("over", {}) as Dictionary).is_empty(), "%s: death ends the run" % world)
 	check(int(game.state.hp) == 0, "%s: no full hearts on the same floor" % world)
-	check(game.saves.read(mode, 1).is_empty(), "%s: the run's save is deleted" % world)
+	check(not game.saves.read(mode, 1).is_empty(), "%s: the run's saved game stays after the death" % world)
 	check(not game.saves.read(mode, 3).is_empty(), "%s: another run's save stays" % world)
 	var result: Dictionary = game.run_result(game.state.over)
 	check(str(result.title) == "LAUF BEENDET" and str(result.hints).contains("NEUER LAUF"), "%s: the result panel offers a new run" % world)

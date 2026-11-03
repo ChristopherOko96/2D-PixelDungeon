@@ -7,6 +7,7 @@ extends SceneTree
 ## their last hit only, and the clone cannot be stopped once started.
 
 const Rules = preload("res://src/hell/hell_rules.gd")
+const PixelStyle = preload("res://src/pixel_style.gd")
 var checked := 0
 var failures: Array[String] = []
 
@@ -78,8 +79,42 @@ func _initialize() -> void:
 	Rules.apply_blessing(hero, "heart", cfg, 24)
 	check(hero.max_hp == 14 and hero.hp == 8, "a heart container raises the cap and heals one heart")
 	hero.max_hp = 24
-	Rules.apply_blessing(hero, "heart", cfg, 24)
-	check(hero.max_hp == 24, "heart containers stop at the cap")
+	var at_cap := Rules.apply_blessing(hero, "heart", cfg, 24)
+	check(hero.max_hp == 24 and not at_cap.begins_with("Herzcontainer"), "a heart at the cap gives the next open blessing (%s)" % at_cap)
+	check(not Rules.blessing_open(hero, "heart", cfg, 24) and Rules.blessing_open(hero, "heart", cfg), "a heart is not offered at the cap (open without a cap)")
+	# gear hearts (items.hp_bonus) sit on top of the cap, and a heart never lowers max life
+	var armoured := {"hp": 24, "max_hp": 24, "items": {"hp_bonus": 10}}
+	check(Rules.raised_max_hp(armoured, 2, 18) == 26 and Rules.heart_room(armoured, 18), "with 10 gear half hearts a heart still grows the base life 14 -> 16")
+	armoured.max_hp = 30
+	check(Rules.raised_max_hp(armoured, 2, 18) == 30 and not Rules.heart_room(armoured, 18), "above the cap a heart never lowers max life (base 20, cap 18)")
+	var plain := {"hp": 20, "max_hp": 20}
+	check(Rules.raised_max_hp(plain, 2, 18) == 20, "a max life above the cap stays as it is")
+	# the giant vault says the life it really added (nacharbeit L6)
+	var vault := {"hp": 16, "max_hp": 16}
+	var vault_gain := Rules.raised_max_hp(vault, 4, 18) - int(vault.max_hp)
+	check(vault_gain == 2 and Rules.vault_note(vault_gain, 9).contains("+1 Herzcontainer (+2 LP)"), "a vault of 2 hearts at 16 of 18 LP names the 1 container the cap let through (%s)" % Rules.vault_note(vault_gain, 9))
+	check(Rules.vault_note(0, 9).contains("schon am Höchstwert") and not Rules.vault_note(0, 9).contains("Herzcontainer"), "at the cap the vault names no container")
+	check(Rules.vault_note(1, 9).contains("+1 LP") and Rules.vault_note(4, 9).contains("+2 Herzcontainer (+4 LP)") and Rules.vault_note(4, 9).contains("9 Gold"), "half a heart reads in LP, whole ones as containers with their LP and the gold")
+	# the seal's price in words the pixel font can draw (it has no "½")
+	check(Rules.price_text(1) == "ein halbes Herz" and Rules.price_text(2) == "1 Herz" and Rules.price_text(3) == "1,5 Herzen" and Rules.price_text(4) == "2 Herzen", "prices read ein halbes Herz / 1 Herz / 1,5 Herzen / 2 Herzen")
+	var missing := ""
+	for p in range(1, 6):
+		for ch in Rules.price_text(p):
+			if not PixelStyle.FACE.has_char(ch.unicode_at(0)):
+				missing += ch
+	check(missing == "", "every character of a price is in the pixel font (missing: '%s')" % missing)
+	# blessing caps (balance package D5): speed and range stop at speed_max / range_max,
+	# a blessing at its cap gives the next open one in roll order
+	var caps := {"dmg": 1, "rate_mul": 0.85, "rate_min": 0.12, "speed_mul": 1.1, "speed_max": 1.3, "range_mul": 1.25, "range_max": 1.6, "heart": 2}
+	var runner := {"dmg": 1.0, "rate": 0.26, "speed_mul": 1.0, "range": 0.8, "hp": 6, "max_hp": 12, "buffs": []}
+	for i in range(3):
+		Rules.apply_blessing(runner, "speed", caps, 24)
+	check(is_equal_approx(runner.speed_mul, 1.3), "Glutläufer stops at x1.3 (%.3f)" % runner.speed_mul)
+	var given := Rules.apply_blessing(runner, "speed", caps, 24)
+	check(is_equal_approx(runner.speed_mul, 1.3) and given.begins_with("Weitschuss") and is_equal_approx(runner.range, 1.0), "a capped speed blessing gives the next open one (%s)" % given)
+	Rules.apply_blessing(runner, "range", caps, 24)
+	given = Rules.apply_blessing(runner, "range", caps, 24)
+	check(is_equal_approx(runner.range, 0.8 * 1.5625) and given.begins_with("Herzcontainer"), "range stays within x1.6, then the seal gives a heart (%.3f, %s)" % [runner.range, given])
 	for id: String in Rules.BLESSINGS:
 		check(Rules.BLESSING_TEXT.has(id), "blessing %s has a text" % id)
 

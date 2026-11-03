@@ -58,7 +58,10 @@ const CryptAtmosphere = preload("res://src/vfx/crypt_atmosphere.gd")
 ## Hero class -> part rig of its 0x72 figure (assets/data/rigs.json).
 ## The mage is the wizard rig again, its parts recoloured by his element
 ## (src/hero/element_skin.gd, hero_skins.json; user decision 31.10.2026).
-const CLASS_RIGS := {"swordsman":"knight","archer":"elf","mage":"wizard","necromancer":"necro"}
+const CLASS_RIGS := {"swordsman":"knight","archer":"elf","mage":"wizard","necromancer":"necro_hero"}
+const WeaponHost = preload("res://src/hero/story_weapon_host.gd")
+const CutoutMotion = preload("res://src/rig/cutout_motion.gd")
+var _weapon_hosts: Dictionary={}
 
 @export var style_profile: Resource = preload("res://assets/data/art_style_reference.tres")
 
@@ -803,6 +806,13 @@ func play_ui_sound(name: String) -> void:
 	if audio_enabled and _sfx != null and name in ["ui_click","ui_back"]: _sfx.play(name,0.0)
 
 
+func _exit_tree() -> void:
+	# Join field-shaping work before its floor callbacks and scene are destroyed.
+	if _talent_fx.pools!=null: _talent_fx.pools.clear()
+	if _talent_fx._residue_layer!=null: _talent_fx._residue_layer.clear()
+	if _feedback!=null: _feedback.particles.set_liquids([])
+
+
 ## Drops previous-run particles, springs, flash, hitstop and shake immediately.
 func reset_feedback() -> void:
 	_feedback = Feedback.new()
@@ -1006,6 +1016,7 @@ func _draw_class_hero(player: Dictionary, peer_id: int) -> void:
 	face = _hero_look.face(player, aim, _clock)
 	_hero_look.observe(look_key, player, point, _clock)
 	var rigged: bool = _rigs != null and _rigs.is_ready() and CLASS_RIGS.has(str(player.class_id))
+	var held: RefCounted=_class_weapon_host(player,peer_id,aim) if rigged else null
 	if rigged:
 		_hero_look.draw_dash_lines(self, look_key, player, point, _clock)
 		_hero_look.draw_afterimages(look_key, _clock, func(at: Vector2, alpha: float) -> void:
@@ -1013,7 +1024,7 @@ func _draw_class_hero(player: Dictionary, peer_id: int) -> void:
 	point += _hero_look.body_offset(look_key, player, aim, _clock)
 	if rigged:
 		# Part rig of the class figure: bob, walk, plume/hat sway, hit recoil.
-		_rigs.draw_hero(self, look_key, player, point, CLASS_RIGS[str(player.class_id)], face, (0.45 if fmod(_clock, 0.16) < 0.08 else 1.0) if hurt else 1.0)
+		_rigs.draw_hero(self, look_key, player, point, CLASS_RIGS[str(player.class_id)], face, (0.45 if fmod(_clock, 0.16) < 0.08 else 1.0) if hurt else 1.0,1.0,Color.WHITE,held)
 	else:
 		var texture: Texture2D = _frame(hero, bool(player.get("moving", false)), peer_id)
 		var pose: Dictionary = _feedback.pose("p%d" % peer_id, player, _clock)
@@ -1021,7 +1032,7 @@ func _draw_class_hero(player: Dictionary, peer_id: int) -> void:
 			if hero.hit != null and fmod(_clock, 0.24) < 0.12: texture = hero.hit
 			pose.alpha *= 0.45 if fmod(_clock, 0.16) < 0.08 else 1.0
 		_draw_sprite(texture, point, face, 16.0, pose)
-	_draw_class_weapon(player, peer_id, point, aim)
+	if held==null: _draw_class_weapon(player, peer_id, point, aim)
 	# the local mage's Irrwisch over him (src/hero/familiar.gd), on the crypt's 2 px art grid
 	if peer_id == _local_peer: Familiar.draw_for("crypt:p%d" % peer_id, self, point + Vector2(0, 16.0), _clock, 2.0, player)
 	if show_player_health: _draw_health(point + Vector2(0,-44), hp, float(player.get("max_hp", hp)), 32.0, color)
@@ -1037,6 +1048,20 @@ func _draw_class_weapon(player: Dictionary, peer_id: int, point: Vector2, aim: V
 	if not _weapon_textures.has(weapon_id): return
 	var glow: Color = AttackFx.tint_for({"style": "arrow"}, player)
 	_hero_look.draw_weapon(self, "p%d" % peer_id, player, point, aim, _clock, _weapon_textures[weapon_id], glow)
+
+
+## Main-game weapons follow the rig's real hand like their story-world counterparts.
+func _class_weapon_host(player: Dictionary, peer_id: int, aim: Vector2) -> RefCounted:
+	var rig: Dictionary=_rigs.library.rig(CLASS_RIGS[str(player.class_id)])
+	if not rig.items.any(func(item:Dictionary)->bool:return item.has("held")): return null
+	var weapons: Array=player.get("weapons",[])
+	var weapon_id:=str(weapons[0]) if not weapons.is_empty() else ""
+	if not _weapon_textures.has(weapon_id) and weapon_id.begins_with("res://") and ResourceLoader.exists(weapon_id): _weapon_textures[weapon_id]=load(weapon_id)
+	if not _weapon_textures.has(weapon_id): return null
+	if not _weapon_hosts.has(peer_id): _weapon_hosts[peer_id]=WeaponHost.new(_hero_look)
+	var host: RefCounted=_weapon_hosts[peer_id]
+	host.frame(player,aim,_clock,_weapon_textures[weapon_id],AttackFx.tint_for({"style":"arrow"},player),"",float(player.hp)>0)
+	return host
 
 
 func _draw_health(point: Vector2, hp: float, maximum: float, width: float, color: Color) -> void:
@@ -1193,11 +1218,7 @@ func _draw_bullet(bullet: Dictionary) -> void:
 	if _sheet_art.draw_bullet(self,bullet,point,_clock): return
 	if owner == 0 and _boss_fx.draw_bullet(self,bullet,point,_clock): return
 	if owner == 0 and style == "arrow":
-		var aim: Vector2 = Vector2(float(bullet.get("vx",1)),float(bullet.get("vy",0))).normalized()
-		draw_line((point-aim*8).round(),(point+aim*7).round(),INK,4,false)
-		draw_line((point-aim*7).round(),(point+aim*6).round(),Color("b89b73"),2,false)
-		draw_line((point+aim*7).round(),(point+aim*2+aim.orthogonal()*3).round(),Color("eee0b9"),2,false)
-		draw_line((point+aim*7).round(),(point+aim*2-aim.orthogonal()*3).round(),Color("eee0b9"),2,false)
+		_attack_fx.draw_arrow(self,bullet,point,_clock)
 		return
 	if owner == 0 and style == "soul":
 		_box(point.x-6,point.y-6,12,12,INK)
@@ -1210,9 +1231,8 @@ func _draw_bullet(bullet: Dictionary) -> void:
 		draw_circle(point,9.0+sin(_clock*20.0)*1.5,Color("c06bd8",0.3))
 		if skull != null:
 			var flip: float = -1.0 if float(bullet.get("vx",1)) < 0.0 else 1.0
-			draw_set_transform(point,0.0,Vector2(2.0*flip,2.0))
-			draw_texture(skull,-Vector2(skull.get_width(),skull.get_height())*0.5)
-			draw_set_transform(Vector2.ZERO,0.0,Vector2.ONE)
+			var size:=Vector2(skull.get_size())*Vector2(2.0*flip,2.0)
+			CutoutMotion.sprite(self,skull,"void_skull",Rect2(point-size*0.5,size),_clock)
 		return
 	if owner == 0 and style == "roar":
 		# Mini-boss shockwave: pale bone orbs.

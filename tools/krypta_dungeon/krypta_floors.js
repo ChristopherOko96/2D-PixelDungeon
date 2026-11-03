@@ -12,16 +12,16 @@
   // Floor titles are the crypt's ten floors from assets/data/dungeon_rooms.json.
   const FLOORS = [
     null,
-    { n: 1, title: 'Vorhalle der Verdammten', circle: 0, seed: 31101, gc: 7, gr: 6, path: 13, rooms: 22, lava: .12, spikes: .2, vents: .15, holes: .45, pits: .3, loops: .35, mainLock: true, fire: 3, seq: false, boss: { name: 'Knochenwächter', hp: 46, summon: 4, ring: 0 } },
-    { n: 2, title: 'Knochengalerien', circle: 0, seed: 31202, gc: 7, gr: 6, path: 13, rooms: 22, lava: .15, spikes: .25, vents: .2, holes: .45, pits: .35, loops: .35, mainLock: true, fire: 3, seq: true, boss: { name: 'Grabmutter', hp: 60, summon: 4, ring: 0 } },
-    { n: 3, title: 'Sarkophaghof', circle: 0, seed: 31303, gc: 7, gr: 6, path: 14, rooms: 23, lava: .25, spikes: .25, vents: .25, holes: .45, pits: .35, loops: .35, mainLock: true, fire: 0, seq: true, boss: { name: 'Moderkoloss', hp: 90, summon: 3.6, ring: 3.4, mini: true } },
-    { n: 4, title: 'Kapelle der verlorenen Seelen', circle: 1, seed: 31404, gc: 8, gr: 6, path: 15, rooms: 25, lava: .25, river: .2, spikes: .25, vents: .35, holes: .35, pits: .25, loops: .3, mainLock: true, fire: 4, seq: false, shooters: true, boss: { name: 'Nekromantenfürst', hp: 105, summon: 3.6, ring: 3.2 } },
-    { n: 5, title: 'Verschlungene Katakomben', circle: 1, seed: 31505, gc: 8, gr: 6, path: 16, rooms: 26, lava: .35, river: .3, spikes: .3, vents: .4, holes: .4, pits: .3, loops: .3, mainLock: true, fire: 3, seq: true, shooters: true, boss: { name: 'Truhenfresser', hp: 120, summon: 3.4, ring: 3.0 } },
-    { n: 6, title: 'Garten der Graburnen', circle: 1, seed: 31606, gc: 8, gr: 6, path: 16, rooms: 26, lava: .5, river: .45, spikes: .3, vents: .45, holes: .3, pits: .25, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, boss: { name: 'Frostleiche', hp: 160, summon: 3.2, ring: 2.6, mini: true } },
-    { n: 7, title: 'Reliquienarchiv', circle: 2, seed: 31707, gc: 8, gr: 7, path: 17, rooms: 28, lava: .3, river: .25, spikes: .45, vents: .4, holes: .5, pits: .4, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, boss: { name: 'Der Archivar', hp: 175, summon: 3.0, ring: 2.6 } },
-    { n: 8, title: 'Grab der Namenlosen', circle: 2, seed: 31808, gc: 8, gr: 7, path: 18, rooms: 29, lava: .4, river: .3, spikes: .5, vents: .45, holes: .5, pits: .5, loops: .3, mainLock: true, fire: 3, seq: true, shooters: true, boss: { name: 'Leerenbrut', hp: 190, summon: 2.8, ring: 2.4 } },
-    { n: 9, title: 'Trauerhallen', circle: 2, seed: 31909, gc: 8, gr: 7, path: 18, rooms: 30, lava: .45, river: .35, spikes: .55, vents: .5, holes: .5, pits: .5, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, boss: { name: 'Knochenkoloss', hp: 240, summon: 2.6, ring: 2.0, mini: true } },
-    { n: 10, title: 'Thron der Verdammten', circle: 3, seed: 32010, gc: 8, gr: 7, path: 18, rooms: 30, lava: .6, river: .5, spikes: .55, vents: .6, holes: .45, pits: .45, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, final: true, boss: { name: 'Leerenrufer', hp: 340, summon: 2.4, ring: 1.6, final: true } },
+    { n: 1, title: 'Vorhalle der Verdammten', circle: 0, seed: 31101, gc: 7, gr: 6, path: 13, rooms: 22, lava: .12, spikes: .2, vents: .15, holes: .45, pits: .3, loops: .35, mainLock: true, fire: 3, seq: false, boss: { name: 'Knochenwächter', hp: 115, summon: 4, ring: 0 } },
+    { n: 2, title: 'Knochengalerien', circle: 0, seed: 31202, gc: 7, gr: 6, path: 13, rooms: 22, lava: .15, spikes: .25, vents: .2, holes: .45, pits: .35, loops: .35, mainLock: true, fire: 3, seq: true, boss: { name: 'Grabmutter', hp: 150, summon: 4, ring: 0 } },
+    { n: 3, title: 'Sarkophaghof', circle: 0, seed: 31303, gc: 7, gr: 6, path: 14, rooms: 23, lava: .25, spikes: .25, vents: .25, holes: .45, pits: .35, loops: .35, mainLock: true, fire: 0, seq: true, boss: { name: 'Moderkoloss', hp: 225, summon: 3.6, ring: 3.4, mini: true } },
+    { n: 4, title: 'Kapelle der verlorenen Seelen', circle: 1, seed: 31404, gc: 8, gr: 6, path: 15, rooms: 25, lava: .25, river: .2, spikes: .25, vents: .35, holes: .35, pits: .25, loops: .3, mainLock: true, fire: 4, seq: false, shooters: true, boss: { name: 'Nekromantenfürst', hp: 260, summon: 3.6, ring: 3.2 } },
+    { n: 5, title: 'Verschlungene Katakomben', circle: 1, seed: 31505, gc: 8, gr: 6, path: 16, rooms: 26, lava: .35, river: .3, spikes: .3, vents: .4, holes: .4, pits: .3, loops: .3, mainLock: true, fire: 3, seq: true, shooters: true, boss: { name: 'Truhenfresser', hp: 300, summon: 3.4, ring: 3.0 } },
+    { n: 6, title: 'Garten der Graburnen', circle: 1, seed: 31606, gc: 8, gr: 6, path: 16, rooms: 26, lava: .5, river: .45, spikes: .3, vents: .45, holes: .3, pits: .25, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, boss: { name: 'Frostleiche', hp: 400, summon: 3.2, ring: 2.6, mini: true } },
+    { n: 7, title: 'Reliquienarchiv', circle: 2, seed: 31707, gc: 8, gr: 7, path: 17, rooms: 28, lava: .3, river: .25, spikes: .45, vents: .4, holes: .5, pits: .4, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, boss: { name: 'Der Archivar', hp: 440, summon: 3.0, ring: 2.6 } },
+    { n: 8, title: 'Grab der Namenlosen', circle: 2, seed: 31808, gc: 8, gr: 7, path: 18, rooms: 29, lava: .4, river: .3, spikes: .5, vents: .45, holes: .5, pits: .5, loops: .3, mainLock: true, fire: 3, seq: true, shooters: true, boss: { name: 'Leerenbrut', hp: 475, summon: 2.8, ring: 2.4 } },
+    { n: 9, title: 'Trauerhallen', circle: 2, seed: 31909, gc: 8, gr: 7, path: 18, rooms: 30, lava: .45, river: .35, spikes: .55, vents: .5, holes: .5, pits: .5, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, boss: { name: 'Knochenkoloss', hp: 600, summon: 2.6, ring: 2.0, mini: true } },
+    { n: 10, title: 'Thron der Verdammten', circle: 3, seed: 32010, gc: 8, gr: 7, path: 18, rooms: 30, lava: .6, river: .5, spikes: .55, vents: .6, holes: .45, pits: .45, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, final: true, boss: { name: 'Leerenrufer', hp: 1200, summon: 2.4, ring: 1.6, final: true } },
   ];
   const CIRCLES = ['Ring I · Obere Gruft', 'Ring II · Katakomben', 'Ring III · Tiefe Grablege', 'Ring IV · Thron der Leere'];
   const NAMES = [['Gebein', 'Staub', 'Grab', 'Gruft', 'Moder', 'Knochen', 'Schädel', 'Kerzen'], ['Urnen', 'Sarg', 'Kapellen', 'Moder', 'Seelen', 'Gebet', 'Asche', 'Weihe'],
@@ -51,10 +51,14 @@
   const MIMIC_FIGHT = .6, MIMIC_TREASURE = .15;
   // the soul bowls are the crypt's blue fire bowls
   const BLUE_PROPS = ['brazier_bowl', 'brazier_blue', 'bowl_blue'];
-  // a touch lighter than the hell
-  const LIGHT = { dark: .86, vignette: .85 };
+  // a touch lighter than the hell, and a little lighter than it once was (dark .86, vignette .85):
+  // the hero's wider light (krypta_balance.json view.player_light) clears more round him, the edge stays dark
+  const LIGHT = { dark: .65, vignette: .7 };
+  // difficulty per floor n (world_core difficultyFor): enemy hp x (1 + (n-1) hp_step), speed x (1 + (n-1) speed_step),
+  // one extra enemy per fight room every extra_every floors. The crypt is the gentle entry world.
+  const DIFF = { hp_step: .22, speed_step: .03, extra_every: 3 };
   // the pack as plain data (the Godot port reads it from assets/data/krypta_world.json, see export_world.js)
-  const PACK = { floors: FLOORS, circles: CIRCLES, names: NAMES, suffixes: SUFFIXES, words: WORDS, theme_flag: 'crypt', light: LIGHT, gate_banner: GATE_BANNER, blue: BLUE, blue_props: BLUE_PROPS, foot: FOOT, wall_set: WALL_SET, break_set: BREAK_SET, mimic_fight: MIMIC_FIGHT, mimic_treasure: MIMIC_TREASURE };
+  const PACK = { floors: FLOORS, circles: CIRCLES, names: NAMES, suffixes: SUFFIXES, words: WORDS, theme_flag: 'crypt', light: LIGHT, gate_banner: GATE_BANNER, blue: BLUE, blue_props: BLUE_PROPS, foot: FOOT, wall_set: WALL_SET, break_set: BREAK_SET, mimic_fight: MIMIC_FIGHT, mimic_treasure: MIMIC_TREASURE, diff: DIFF };
   const world = WorldPack.make(PACK);
   return Object.assign(world, { crypt: world.wording });
 });

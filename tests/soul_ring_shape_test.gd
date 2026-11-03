@@ -38,15 +38,16 @@ func _run() -> void:
 	check(safe and not clipped.is_empty(), "annulus stops at walls without spreading around them into another room")
 	var pool := Pools.new(2.0, open_floor)
 	pool.add_ring(1, "soul", center, 112, 88, 0, 4, "test")
+	check(float(pool.pool_field._shaping["test:1"].commit)<=0.1,"authored hollow field retains its short arrival instead of a bounding-disc delay")
 	var deadline := Time.get_ticks_msec() + 5000
-	while not pool._shaping.is_empty() and Time.get_ticks_msec() < deadline:
+	while pool.pool_field.pending()>0 and Time.get_ticks_msec() < deadline:
 		await process_frame
-		pool._collect_shapes()
-	pool._now = 2.0
+		pool.advance(2.0)
+	pool.advance(2.0)
 	check(not pool.covers(center, "soul") and pool.covers(center + Vector2(100, 0), "soul"), "real shared pool material has a hollow center and active rim")
-	var before: int = pool._pools.size()
+	var before: int = pool.pool_field.pools().size()
 	pool.add_ring(1, "soul", center, 112, 88, 0, 4, "test")
-	check(pool._pools.size() == before, "repeated snapshots reuse material geometry")
+	check(pool.pool_field.pools().size() == before, "repeated snapshots reuse material geometry")
 	var cfg := {"field_ghost_cycle": 3.4}
 	var ghosts: Array = Art.rim_samples(center, 112, 88, 1.5, cfg)
 	check(ghosts.size() == 6, "six rig spirits live around the rim")

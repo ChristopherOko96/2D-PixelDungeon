@@ -1,4 +1,5 @@
 extends Node2D
+const CutoutMotion=preload("res://src/rig/cutout_motion.gd")
 ## Hell-Dungeon mode (single player): plays the ten baked hell floors from
 ## assets/data/hell_floors.json. Combat rooms lock until every enemy is down,
 ## colour keys open their own gates, spread fire braziers open the vault,
@@ -43,10 +44,14 @@ const Music = preload("res://src/audio/music.gd")
 const SaveStore = preload("res://src/save/save_store.gd")
 const CryptUI = preload("res://src/ui/crypt_ui.gd")
 const StoryHero = preload("res://src/hero/story_hero.gd")
+const MageBolt = preload("res://src/vfx/mage_bolt.gd")
+const ShotLooks = preload("res://src/vfx/shot_looks.gd")
 ## The crypt's darkness and bloom in this world (src/hero/story_glow.gd).
 const StoryGlow = preload("res://src/hero/story_glow.gd")
 const Darkness = preload("res://src/vfx/darkness.gd")
 const Snowstorm = preload("res://src/vfx/snowstorm.gd")
+const FireAnim = preload("res://src/vfx/fire_anim.gd")
+const GoldLoot = preload("res://src/hell/gold_loot.gd")
 const FrostSnow = preload("res://src/hero/frost_snow.gd")
 const StorySave = preload("res://src/save/story_save.gd")
 ## The crypt's pause menu, in its story mode (overview, quest, map, controls, display, save).
@@ -54,7 +59,7 @@ const PauseMenu = preload("res://src/pause_menu.gd")
 ## The pause page's controls in groups: a blank line between groups, each
 ## group's header in capitals on its first line, then "Aktion: Taste" lines
 ## (story_controls adds the card line when the run hands out cards).
-const STORY_CONTROLS := "BEWEGEN\nLaufen: WASD\nAusweichen / Block: Shift\n\nKAMPF\nAngreifen: Linksklick oder Pfeiltasten\nFähigkeiten: 1 2 3 4 (mit Relikt: die des Relikts)\nUltimate: R\nBegleiter: 5 6 (Rechtsklick aufs Symbol: Auto an / aus)\nRelikt / Waffe wechseln: T\nKlon: Q\n\nWELT\nAktion (Tür, Truhe, Schale): E oder Leertaste\nLicht: L\n\nFENSTER\nMenü: Esc (schließt zuerst das oberste Fenster)\nInventar: I\nTalente: K · Lauf-Talente: B\nKarte: M\nStatus: C oder Tab\nNeuer Lauf nach dem Tod: E"
+const STORY_CONTROLS := "BEWEGEN\nLaufen: WASD\nAusweichen / Block: Shift\n\nKAMPF\nAngreifen: Linksklick / Pfeile\nFähigkeiten: 1 2 3 4\nUltimate: R\nBegleiter: 5 6\nAuto an / aus: Rechtsklick auf 5 6\nWaffe / Relikt: T\nKlon: Q\nSchnelltrank: H trinken · G werfen\nRüstungskraft: F\n\nWELT\nBenutzen: E / Leertaste\nLicht: L\n\nFENSTER\nMenü: Esc\nInventar: I\nTalente: K\nLauf-Talente: B\nKarte: M\nStatus: C oder Tab\nNeuer Lauf: E nach dem Tod"
 const DARKNESS_SHADER := preload("res://assets/shaders/canvas_vfx_darkness.gdshader")
 const FONT := preload("res://assets/fonts/pixel_operator8.ttf")
 const SkillBar = preload("res://src/ui/skill_bar.gd")
@@ -72,6 +77,12 @@ const StoryCamera = preload("res://src/hell/story_camera.gd")
 ## The world kit (src/world_kit): a world with theme.world_pack builds every floor live from the
 ## run number instead of reading baked floors (Story 1 the crypt, Story 3 the hell).
 const WorldPack = preload("res://src/world_kit/world_pack.gd")
+const StoryWreck = preload("res://src/hell/story_wreck.gd")
+const StoryMotionHost = preload("res://src/hell/story_motion_host.gd")
+const StoryExposureHost = preload("res://src/hell/story_exposure_host.gd")
+const FixedStepClock = preload("res://src/physics_kit/fixed_step_clock.gd")
+const CustomStoryData = preload("res://src/custom/custom_story_data.gd")
+const CustomStoryWorld = preload("res://src/custom/custom_story_world.gd")
 const BALANCE_PATH := "res://assets/data/hell_balance.json"
 const HERO := "res://assets/sprites/0x72/%s_%s_anim_f%d.png"
 const WEAPON := "res://assets/sprites/0x72/%s.png"
@@ -109,6 +120,20 @@ const THEME_DEFAULT := {
 @export var start_at_boss := false
 ## Theme JSON over THEME_DEFAULT; empty keeps the hell look.
 @export var theme_path := ""
+## A user-authored story uses this runtime and the selected current world's assets.
+@export var custom_story: Dictionary = {}
+## Nonempty tests this unsaved module directly; it has no normal save slots.
+@export var custom_preview_room: String = ""
+## A run started from an unsaved editor draft returns to that draft, not just its list.
+@export var custom_return_to_editor: bool = false
+## Tests may redirect all Custom files to their own disposable directory.
+var custom_storage_root: String = ""
+var _custom_load_failed: bool = false
+
+## Story gameplay advances in fixed ticks; drawing still follows display frames.
+var _simulation_clock: FixedStepClock = FixedStepClock.new()
+## A floor load or paused frame is deliberately excluded from the next time sample.
+var _skip_simulation_delta: bool = true
 ## Hero class from theme.classes (menu choice); empty takes theme.default_class.
 @export var class_id := ""
 ## A loaded save (src/save/story_save.gd): set before the node enters the tree to continue on its floor.
@@ -191,7 +216,10 @@ var hero_gas: Dictionary = {}
 var hero_gas_mat := ""
 var _medium_tick := 0.0
 var _gas_tick := 0.0
-var _skid := 0.0
+## The motion kit of this world (motion_kit(); src/physics_kit/motion_kit.gd).
+var _motion: MotionKit = null
+## The element exposure of this world (exposure(); src/physics_kit/element_exposure.gd).
+var _exposure: ElementExposure = null
 ## The view inside gas (element_rules.json vision; src/hero/story_glow.gd frame
 ## darkens the world outside it): k = how closed it is 0..1, r = world px it
 ## keeps open round the hero, goal = what the gas asks for, probe = s to the
@@ -248,6 +276,18 @@ var sfx: Node
 var music: Node
 var _music_state := ""
 var breakables: Array = []
+## The breakables by the cells (C px) their boxes touch, Vector2i cell -> [breakable, ...]
+## (_index_breakables, made in load_floor): box_blocked tests only the ones there. Only
+## read afterwards (worker threads shaping pools ask box_blocked too).
+var _breakable_grid: Dictionary = {}
+## The breakables list the grid was made from and its size then: for another list, or one
+## grown since (a test adds a crate), box_blocked looks through all of them as before.
+var _breakable_grid_of: Array = []
+var _breakable_grid_n := -1
+## Nothing in a cell (the grids' default; read only).
+const _NOTHING: Array = []
+## Light destruction: wall wear and smashable props (src/hell/story_wreck.gd); with the feel only.
+var wreck: RefCounted
 var pits: Array = []
 var clone: Dictionary = {}
 var solid_grid: Dictionary = {}
@@ -264,6 +304,10 @@ var actors: Layer
 var dark: Node2D
 ## The light snowstorm over the whole screen of a world with theme "snowstorm" (src/vfx/snowstorm.gd); null elsewhere.
 var snowstorm: Node2D
+## The burning fires and the flowing fountain water of the loaded set (src/vfx/fire_anim.gd).
+var fire_anim := FireAnim.new()
+## The gold in the world: thrown coins and bags, the magnet, the rising '+N' (src/hell/gold_loot.gd).
+var gold_loot: GoldLoot
 ## Footprints in the snow and sliding on glaze ice in a world with theme "snow" (src/hero/frost_snow.gd); null elsewhere.
 var frost_snow: RefCounted
 ## The crypt's bloom over the darkness and the darkness's lights (src/hero/story_glow.gd).
@@ -299,6 +343,11 @@ var _vignette: GradientTexture2D
 
 
 ## One drawing layer of the world; the game draws into it by kind.
+## Named time totals for the story bench (scripts/bench_story.gd): two clock reads per part,
+## nothing in the game reads them.
+const PerfMarks = preload("res://src/debug/perf_marks.gd")
+
+
 class Layer extends Node2D:
 	var game: Node
 	var kind := ""
@@ -315,13 +364,19 @@ class Hud extends Control:
 
 
 func _ready() -> void:
+	if not _configure_custom_story():
+		return
 	# the Testraum points the profile and soul-crystal files at its own before they load
 	if not testraum.is_empty():
 		var testraum_script: Variant = load(TESTRAUM_SCRIPT)
 		testraum_script.prepare(self)
 	_load_theme()
 	balance = JSON.parse_string(FileAccess.get_file_as_string(theme.balance))
-	if theme.has("world_pack"):
+	if not custom_story.is_empty():
+		world = CustomStoryWorld.new(custom_story, custom_preview_room)
+		floors_raw = []
+		floors_raw.resize(world.floor_count())
+	elif theme.has("world_pack"):
 		# a generated world: floors are built when entered (load_floor); only their number is known
 		# world_sizes: the sprite sizes the generator reads (lights over props); a world with two graphics
 		# sets names one, so both build the same floor from the same run number
@@ -338,7 +393,7 @@ func _ready() -> void:
 	weapon = hero.get("weapon", {})
 	if not weapon.is_empty():
 		# 0x72 weapons by name; drawn ones by their path under assets/sprites (the necromancer's sceptre)
-		weapon_tex = load(WEAPON % weapon.sprite) if not str(weapon.sprite).contains("/") else load("res://assets/sprites/%s.png" % weapon.sprite)
+		weapon_tex = SubKit.weapon_texture(str(weapon.sprite))
 		arrow_tex = load(WEAPON % "weapon_arrow")
 	for kind in ["idle", "run"]:
 		var frames: Array = []
@@ -351,7 +406,11 @@ func _ready() -> void:
 	skills = HeroKit.load_skills(self, class_id)
 	if theme.has("feel"):
 		feel = StoryFeel.new(self, theme.feel)
+		# the rigs' falling chips and dust land in the world's particles (physics plan R18)
+		RigFx.world_ref = weakref(feel.feedback.particles)
+		RigFx.world_scale = float(feel.scale)
 		sound = StorySound.new(self)
+		wreck = StoryWreck.new(self)
 	for k in ["full", "half", "empty"]:
 		hearts[k] = load(HEART % k)
 	# only the real game uses the player's lasting progress file; test and capture scripts
@@ -387,8 +446,9 @@ func _ready() -> void:
 		if feel != null:
 			pools.particles = feel.feedback.particles
 			pools.to_particles = 1.0 / feel.scale
-			# the lava tiles are hot floor: liquid on them hisses and crusts (drawing only)
-			pools.hot = func(p: Vector2) -> bool: return feel.feedback.particles.sinks(p / feel.scale)
+			# the lava tiles are hot floor: liquid on them hisses and crusts (drawing only); the
+			# Krypta's Moder is cold (D3)
+			pools.hot = func(p: Vector2) -> bool: return _floor_mat() == "lava" and feel.feedback.particles.sinks(p / feel.scale)
 		# Ignaroth's part rig: tuning from balance.monsters.rigs (DrakeRigHost.DEFAULTS fill gaps)
 		drake_rig = DrakeRigHost.new(balance.monsters, RigLibrary.shared())
 		# figures that wear the crypt's part rigs (Story 1: krypta_monsters.json "rig")
@@ -429,11 +489,14 @@ func _ready() -> void:
 	_vignette.width = 256
 	_vignette.height = 144
 	var ui := CanvasLayer.new()
+	# layer 2: the HUD and every window sit over the snowstorm (layer 1), which sits over the world
+	ui.layer = 2
 	add_child(ui)
-	# a world with a snowstorm (theme "snowstorm", the Frostgruft): light snow over everything, HUD and menus too
+	gold_loot = GoldLoot.new(self)
+	# a world with a snowstorm (theme "snowstorm", the Frostgruft): snow over the world, under HUD and menus
 	if theme.has("snowstorm"):
 		var storm_layer := CanvasLayer.new()
-		storm_layer.layer = 90
+		storm_layer.layer = 1
 		add_child(storm_layer)
 		snowstorm = Snowstorm.new()
 		storm_layer.add_child(snowstorm)
@@ -449,11 +512,11 @@ func _ready() -> void:
 	ui.add_child(pause_menu)
 	pause_menu.use_story_mode(story_controls(CardKit.offers_cards(self)))
 	pause_menu.save_rows = func() -> Array: return saves.summaries(StorySave.mode(self))
-	pause_menu.set_save_enabled(true)
+	pause_menu.set_save_enabled(custom_preview_room.is_empty())
 	pause_menu.story_map_draw = func(canvas: Control) -> void: _draw_map(canvas, canvas.size, true, true)
 	pause_menu.resume_pressed.connect(func() -> void: pause_menu.visible = false)
 	pause_menu.save_requested.connect(save_slot)
-	pause_menu.leave_pressed.connect(func() -> void: get_tree().change_scene_to_file(MENU_SCENE))
+	pause_menu.leave_pressed.connect(_return_to_menu)
 	pause_menu.display_mode_requested.connect(_toggle_fullscreen)
 	# the pause's Talente / Inventar pages open the run's own windows; its options reach the camera
 	pause_menu.talents_requested.connect(open_run_talents)
@@ -471,10 +534,14 @@ func _ready() -> void:
 		_resuming = true
 		load_floor(clampi(int(resume.get("floor", 1)), 1, floors_raw.size()), true)
 		_resuming = false
+		if _custom_load_failed: return
 		_start_items(ui)
 		return
 	load_floor(clampi(start_floor, 1, floors_raw.size()), false)
+	if _custom_load_failed: return
 	_start_items(ui)
+	if not custom_preview_room.is_empty():
+		_start_custom_preview()
 	if not testraum.is_empty():
 		# one test room without the story; its panel mounts in the HUD layer
 		var testraum_room: Variant = load(TESTRAUM_SCRIPT)
@@ -482,6 +549,56 @@ func _ready() -> void:
 		return
 	if start_at_boss:
 		enter_boss_room()
+
+
+## A selected combat module is playable immediately, after its start position exists.
+func _start_custom_preview() -> void:
+	if W.get("rooms", []).is_empty(): return
+	var selected: Dictionary = W.rooms[0]
+	var role := str(selected.get("preview_role", "start"))
+	if role not in ["combat", "boss"]: return
+	selected.type = role
+	selected.cleared = false
+	if role == "boss":
+		for ent: Dictionary in W.ents:
+			if ent.type == "portal": ent.active = false
+	_start_fight(selected)
+
+
+## Selects the real story theme and isolates user content, slots and progression.
+## Resumes use the embedded room revision, never a changed file with the same id.
+func _configure_custom_story() -> bool:
+	if resume.get("custom_story") is Dictionary and not (resume.custom_story as Dictionary).is_empty():
+		custom_story = (resume.custom_story as Dictionary).duplicate(true)
+		custom_preview_room = str(resume.get("custom_preview_room", ""))
+	if custom_story.is_empty(): return true
+	var problems: Array[String] = CustomStoryData.validate(custom_story, custom_preview_room.is_empty())
+	if not problems.is_empty():
+		_return_to_menu.call_deferred("Die eigene Geschichte ist noch nicht spielbar: " + problems[0])
+		return false
+	var themes := {"krypta": "res://assets/data/krypta_theme.json", "frost": "res://assets/data/frost_theme.json", "hell": "res://assets/data/hell_theme.json"}
+	theme_path = str(themes.get(str(custom_story.get("world", "krypta")), themes.krypta))
+	var preview := not custom_preview_room.is_empty()
+	saves = SaveStore.new(StorySave.custom_saves_dir(custom_story, preview, custom_storage_root))
+	var source_profile := profile_path
+	profile_path = StorySave.custom_profile_path(custom_story, preview, custom_storage_root)
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(profile_path.get_base_dir()))
+	# Familiar learned talents are copied once, then all Custom progress stays separate.
+	# A room preview gets a fresh copy each time and cannot earn into the main profile.
+	if preview or not FileAccess.file_exists(profile_path):
+		var copy := Profile.load_profile(Profile.data(), source_profile)
+		Profile.save_profile(copy, profile_path)
+	meta_path = profile_path.trim_suffix(".json") + ".meta.cfg"
+	return true
+
+
+## Returns to the Custom list/editor after a user run, or the usual title screen.
+func _return_to_menu(error: String = "") -> void:
+	if not custom_story.is_empty():
+		get_tree().set_meta("custom_story_return", {"story_id": str(custom_story.get("id", "")),
+			"edit": custom_return_to_editor or not custom_preview_room.is_empty() or not error.is_empty(), "room_id": custom_preview_room,
+			"story": custom_story.duplicate(true), "error": error})
+	get_tree().change_scene_to_file(MENU_SCENE)
 
 
 ## Item system 2 for a class hero (src/hero/story_items.gd): the bag and its window (I).
@@ -495,6 +612,7 @@ func _start_items(ui: CanvasLayer) -> void:
 	ui.add_child(inventory_panel)
 	inventory_panel.acted.connect(func(action: String, value: int) -> void: story_items.act(action, value))
 	inventory_panel.throw_armed.connect(func(slot: int) -> void: throw_slot = slot)
+	inventory_panel.quick_chosen.connect(func(slot: int) -> void: story_items.set_quick(slot))
 	# the bag's notes join the one message channel; its chip shows only when it matters
 	inventory_panel.noted.connect(_toast)
 	inventory_panel.auto_hide_chip = true
@@ -589,12 +707,14 @@ func as_source(who: String, action: Callable) -> Variant:
 ## shard roll when a real floor boss fell (mini-bosses never drop shards).
 ## Solo game, so this machine rolls; the rules are the same as in the crypt.
 func _bank_crystals() -> void:
+	# loot still lying on the floor goes with the hero, not lost with the floor
+	gold_loot.collect_all()
 	if profile.is_empty(): return
 	var state_class := Profile.class_state(profile, class_id)
 	var gained := TalentRules.add_exp(profile_data, state_class, int(profile_data.exp.floor) + (int(profile_data.exp.boss) if W.final else int(profile_data.exp.miniboss)))
-	profile.gold = int(profile.gold) + int(profile_data.gold.per_floor) + (int(profile_data.gold.per_boss) if W.final else 0)
+	add_gold(int(profile_data.gold.per_floor) + (int(profile_data.gold.per_boss) if W.final else 0))
 	_floor_reward = "+%d Gold" % (int(profile_data.gold.per_floor) + (int(profile_data.gold.per_boss) if W.final else 0))
-	if gained > 0: _floor_reward += "  ·  Level %d, neuer Talentpunkt" % int(state_class.level)
+	if gained > 0: _floor_reward += "  ·  Heldenstufe %d, neuer Talentpunkt" % int(state_class.level)
 	if W.final:
 		var difficulty := str(profile.get("difficulty", "normal"))
 		var fight := {"present": true, "seconds": float(state.get("floor_time", 60.0)), "damage_share": 1.0}
@@ -671,6 +791,8 @@ func _load_textures() -> void:
 	for n: String in extra.get("names", []):
 		if not tex.has(n):
 			tex[n] = load(str(extra.dir) + n + ".png")
+	# the set's fires and fountains get their moving pictures (a pixel set keeps its 3 px grid)
+	fire_anim.build(tex, 3 if bool(theme.get("pixel", false)) else 1)
 
 
 ## Switches to the Pixel or HD set at once (pause menu, main menu option) and
@@ -708,13 +830,24 @@ func _layer(kind: String, z: int, area := Rect2()) -> Layer:
 ## Builds floor n (1-10). With carry the hero keeps hearts, rune stones, seal
 ## blessings and the paused clone skill.
 func load_floor(n: int, carry: bool) -> void:
+	_custom_load_failed = false
+	# A generated floor can take much longer than a frame. Neither that loading time
+	# nor the old floor's remaining catch-up ticks belongs to the new floor.
+	_simulation_clock.reset()
+	_skip_simulation_delta = true
 	# a generated world keeps its run number from floor to floor (and in saves); a fresh run rolls one
 	var world_run := 0
 	if world != null:
 		world_run = int(state.get("world_run", 0)) if carry and not state.is_empty() else 0
 		if world_run == 0:
 			world_run = WorldPack.new_run()
-		W = FloorData.prepare(world.build_raw(n, world_run))
+		var raw: Dictionary = world.build_raw(n, world_run)
+		if raw.is_empty():
+			_custom_load_failed = true
+			var problem := str(world.get("error_message")) if not custom_story.is_empty() else "Keine gültige Etage erzeugt."
+			_return_to_menu.call_deferred(problem)
+			return
+		W = FloorData.prepare(raw)
 	else:
 		W = FloorData.prepare(floors_raw[n - 1])
 	stairs_pick = {}
@@ -729,6 +862,13 @@ func load_floor(n: int, carry: bool) -> void:
 	_index_solids()
 	if frost_snow != null:
 		frost_snow.reset()
+	# the floor's loose finds lie there as gold (the world's "gem" finds: one gold each)
+	if gold_loot != null:
+		gold_loot.reset()
+		for e: Dictionary in W.ents:
+			if e.type == "gem":
+				gold_loot.place(Vector2(e.x, e.y), 1)
+				e.taken = true
 	minimap = []
 	for r: Dictionary in W.rooms:
 		minimap.append(_minimap_shape(r))
@@ -752,13 +892,13 @@ func load_floor(n: int, carry: bool) -> void:
 	if not carry or state.is_empty() or _resuming:
 		SubKit.apply(self, talent)
 	var start_hp := int(hero.get("hp", balance.player.hp)) + int(talent.get("hearts", 0))
-	var keep := {"hp": start_hp, "max_hp": start_hp, "gems": 0, "dmg": float(weapon.get("damage", 1.0)),
+	var keep := {"hp": start_hp, "max_hp": start_hp, "gems": 0, "gold": 0, "dmg": float(weapon.get("damage", 1.0)),
 		"rate": float(weapon.get("cooldown", balance.shot.cooldown)), "speed_mul": 1.0, "range": float(weapon.get("life", balance.shot.life)), "buffs": [],
 		"skill": {"owned": false, "active": false, "left": float(balance.clone.duration)},
 		"level": 1, "exp": 0, "skill_cd": {}, "relic": "", "relic_on": false, "upgrades": {}, "offer": [], "cards_due": 0,
 		"relic_floor": 0, "relic_item": "", "talent": talent, "crystals_run": 0, "run_id": _new_run_id(), "world_run": world_run}
 	if carry and not state.is_empty():
-		keep = {"hp": state.hp, "max_hp": state.max_hp, "gems": state.gems, "dmg": state.dmg, "rate": state.rate,
+		keep = {"hp": state.hp, "max_hp": state.max_hp, "gems": state.gems, "gold": int(state.get("gold", 0)), "dmg": state.dmg, "rate": state.rate,
 			"speed_mul": state.speed_mul, "range": state.range, "buffs": state.buffs, "skill": state.skill,
 			"level": state.level, "exp": state.exp, "skill_cd": {}, "relic": state.relic, "relic_on": state.relic_on, "upgrades": state.upgrades,
 			"offer": state.offer, "cards_due": state.cards_due, "relic_floor": state.relic_floor, "relic_item": state.relic_item,
@@ -808,9 +948,12 @@ func load_floor(n: int, carry: bool) -> void:
 	embers = []
 	clone = {}
 	breakables = W.ents.filter(func(e: Dictionary) -> bool: return e.type == "seal" or e.type == "skullheap" or e.type == "crate")
+	_index_breakables()
 	pits = W.ents.filter(func(e: Dictionary) -> bool: return e.type == "pit")
 	for e: Dictionary in breakables:
 		e.max_hp = int(e.hp)
+	if wreck != null:
+		wreck.reset()
 	_respawn()
 	camera.position = Vector2(player.x, player.y)
 	if not profile.is_empty() and (talents == null or not carry):
@@ -821,9 +964,22 @@ func load_floor(n: int, carry: bool) -> void:
 
 
 ## The talents refer back to themselves (src/hell/hell_talents.gd release):
-## let them go with this game.
+## let them go with this game. Before that, the pools wait for the shapes their
+## worker threads still work out: those ask this game's floor (_floor_open), so
+## a world freed in the middle (back to the menu) would crash.
 func _notification(what: int) -> void:
-	if what == NOTIFICATION_PREDELETE and talents != null:
+	if what != NOTIFICATION_PREDELETE:
+		return
+	# every pool painter of this world: the floor's, the talents' and the boss/potion pools
+	var painters: Array = [pools]
+	if talents != null and talents.fx != null:
+		painters.append(talents.fx.pools)
+	if feel != null and feel.boss_fx != null:
+		painters.append(feel.boss_fx.pools)
+	for painter: Variant in painters:
+		if painter != null:
+			painter.clear()
+	if talents != null:
 		talents.release()
 
 
@@ -941,7 +1097,7 @@ func _cell(x: int, y: int) -> int:
 
 ## World px per art pixel (the floor tiles' 16 px art drawn x3 at 48 px).
 const PIXEL_WORLD := 3.0
-## WAHN (element_rules.json madness) on a themed world's enemies: the mad one
+## WAHN (madness_rules.json madness) on a themed world's enemies: the mad one
 ## whose turn runs now (its shots scatter: _enemy_shot) and the enemy it turned
 ## on ({} for none; its shots then hurt enemies: _themed_mad_shot).
 var _mad_mob: Dictionary = {}
@@ -996,13 +1152,48 @@ func box_blocked(box: Rect2, avoid_lava := false) -> bool:
 		for cx in range(int(floor(box.position.x / C)), int(floor((box.end.x - 1.0) / C)) + 1):
 			if _cell_blocked(cx, cy, avoid_lava):
 				return true
-			for s: Rect2 in solid_grid.get(cy * int(W.cols) + cx, []):
+			for s: Rect2 in solid_grid.get(cy * int(W.cols) + cx, _NOTHING):
 				if s.intersects(box):
 					return true
+	# the breakables: only those filed under a cell the box touches (each one the box
+	# overlaps shares a point with it, and that point's cell lists it); the same test
+	var filed := (_breakable_grid_n == breakables.size() and is_same(_breakable_grid_of, breakables)
+			and box.size.x >= 0.0 and box.size.y >= 0.0 and is_finite(box.position.x) and is_finite(box.position.y)
+			and is_finite(box.size.x) and is_finite(box.size.y))
+	if filed:
+		var x0 := int(floor(box.position.x / C))
+		var x1 := int(floor(box.end.x / C))
+		var y0 := int(floor(box.position.y / C))
+		var y1 := int(floor(box.end.y / C))
+		if (x1 - x0 + 1) * (y1 - y0 + 1) <= 16:
+			for cy in range(y0, y1 + 1):
+				for cx in range(x0, x1 + 1):
+					for e: Dictionary in _breakable_grid.get(Vector2i(cx, cy), _NOTHING):
+						if not e.get("broken", false) and _breakable_box(e).intersects(box):
+							return true
+			return false
 	for e: Dictionary in breakables:
 		if not e.get("broken", false) and _breakable_box(e).intersects(box):
 			return true
 	return false
+
+
+## Files every breakable under each cell (C px) its box touches, edges included
+## (box_blocked asks this grid). The breakables do not move; one that breaks stays
+## filed (box_blocked skips it as before).
+func _index_breakables() -> void:
+	var grid := {}
+	for e: Dictionary in breakables:
+		var b := _breakable_box(e)
+		for cy in range(int(floor(b.position.y / C)), int(floor(b.end.y / C)) + 1):
+			for cx in range(int(floor(b.position.x / C)), int(floor(b.end.x / C)) + 1):
+				var cell := Vector2i(cx, cy)
+				if not grid.has(cell):
+					grid[cell] = []
+				grid[cell].append(e)
+	_breakable_grid = grid
+	_breakable_grid_of = breakables
+	_breakable_grid_n = breakables.size()
 
 
 func _breakable_box(e: Dictionary) -> Rect2:
@@ -1047,6 +1238,30 @@ func _near_door(r: Dictionary, p: Vector2, dist: float) -> bool:
 
 
 ## K: the talent menu over the run; a changed build counts at once.
+## Free talent points: x the hero's (Heldenstufe, K), y the run's (Laufstufe, LAUF tab).
+func _talent_points() -> Vector2i:
+	var hero_points: int = talents.free_points() if talents != null else 0
+	var run_points := 0
+	if heroic():
+		run_points = _run_points_left()
+	return Vector2i(hero_points, run_points)
+
+
+## The run talent points still to spend; within one HUD drawing worked out once (draw_hud).
+var _hud_open := false
+var _hud_run_points := -1
+
+
+func _run_points_left() -> int:
+	var drawing := _hud_open
+	if drawing and _hud_run_points >= 0:
+		return _hud_run_points
+	var n: int = RunTree.points_left(CardKit.tree(self), CardKit.ranks(self), int(state.level))
+	if drawing:
+		_hud_run_points = n
+	return n
+
+
 ## K (or the pause's Talente) opens the talent window; B opens it on the LAUF tab.
 func open_run_talents(on_run_page := false) -> void:
 	if sound != null: sound.at("talent_open", Vector2.INF)
@@ -1102,8 +1317,8 @@ func _build_result_buttons(ui: CanvasLayer) -> void:
 	result_main = Button.new()
 	result_main.pressed.connect(act)
 	result_menu = Button.new()
-	result_menu.text = "HAUPTMENÜ"
-	result_menu.pressed.connect(func() -> void: get_tree().change_scene_to_file(MENU_SCENE))
+	result_menu.text = "ZUR WERKSTATT" if not custom_preview_room.is_empty() else ("CUSTOM-STORYS" if not custom_story.is_empty() else "HAUPTMENÜ")
+	result_menu.pressed.connect(_return_to_menu)
 	for button: Button in [result_main, result_menu]:
 		button.add_theme_font_size_override("font_size", int(HudStyle.size("font_body")))
 		result_ui.add_child(button)
@@ -1180,6 +1395,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	if pause_menu != null and pause_menu.visible and not (event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE):
 		return
 	if run_talents != null and run_talents.visible: return
+	# a broken seal's blessing cards (balance package D1): 1 / 2 or a click takes one, Esc leaves
+	# both; nothing else reaches the waiting world
+	if CardKit.seal_open(self) and not (pause_menu != null and pause_menu.visible):
+		var picked_seal := -1
+		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+			picked_seal = FrostHud.seal_card_at(self, event.position, get_viewport_rect().size)
+		CardKit.seal_input(self, event, picked_seal)
+		get_viewport().set_input_as_handled()
+		return
 	# K: the talent menu mid-run, in every world (user decision 30.10.2026)
 	if talents != null and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_K:
 		open_run_talents()
@@ -1188,6 +1412,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and pause_menu != null and not _window_open() \
 			and HudKit.menu_rect(get_viewport_rect().size).has_point(event.position):
 		open_pause()
+		get_viewport().set_input_as_handled()
+		return
+	# the talent chip under it: the talents, on the LAUF tab when only run points are free
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and talents != null and not _window_open() \
+			and HudKit.talent_rect(get_viewport_rect().size).has_point(event.position):
+		var points := _talent_points()
+		open_run_talents(points.x == 0 and points.y > 0)
 		get_viewport().set_input_as_handled()
 		return
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed and throw_slot >= 0 and story_items != null:
@@ -1266,6 +1497,17 @@ func _unhandled_input(event: InputEvent) -> void:
 			act()
 		KEY_Q:
 			use_skill()
+		KEY_F:
+			# F: the worn armour's ability (src/hero/armor_powers.gd), aimed at the mouse
+			if story_items != null and heroic() and not relic_on():
+				as_source("hero", func() -> void: story_items.press_power(get_global_mouse_position()))
+		KEY_H:
+			# H drinks the quick potion, G throws it at the mouse (src/hero/story_items.gd quick_slot)
+			if story_items != null and heroic() and not event.echo:
+				as_source("hero", func() -> void: story_items.drink_quick())
+		KEY_G:
+			if story_items != null and heroic() and not event.echo:
+				as_source("hero", func() -> void: story_items.throw_quick(get_global_mouse_position()))
 		KEY_M:
 			state.map = not state.map
 		KEY_L:
@@ -1328,15 +1570,28 @@ func _axis(neg: Key, pos: Key) -> float:
 
 ## The one message channel: one toast on screen at a time, the rest wait their
 ## turn (ui_hud_style.json "rules": toast_time each, toast_queue waiting); the
-## same text twice is not queued. The sound plays when a toast shows.
+## same text twice is not queued. The sound plays when a toast shows. Finds
+## close together join one toast ("3 Funde: ...", InventoryPanel.finds_line):
+## the last one in the queue while it waits or shows for under toast_merge s.
 func _toast(text: String) -> void:
 	var said := say(text)
 	var queue: Array = state.get("toasts", [])
+	var found := InventoryPanel.found_name(said)
+	if not found.is_empty() and not queue.is_empty():
+		var last: Dictionary = queue[queue.size() - 1]
+		if last.has("finds") and float(last.get("age", 0.0)) <= HudKit.rule("toast_merge", 0.6):
+			(last.finds as Array).append(found)
+			last.text = InventoryPanel.finds_line(last.finds)
+			last.t = maxf(float(last.t), HudKit.rule("toast_time", 2.0))
+			state.toasts = queue
+			return
 	for t: Dictionary in queue:
 		if str(t.text) == said:
 			return
 	if queue.is_empty() and sound != null: sound.at("toast", Vector2.INF)
-	queue.append({"text": said, "t": HudKit.rule("toast_time", 2.0)})
+	var entry := {"text": said, "t": HudKit.rule("toast_time", 2.0)}
+	if not found.is_empty(): entry.finds = [found]
+	queue.append(entry)
 	# too many waiting: the oldest waiting one goes, never the one on screen
 	while queue.size() > 1 + int(HudKit.rule("toast_queue", 3.0)):
 		queue.remove_at(1)
@@ -1344,13 +1599,20 @@ func _toast(text: String) -> void:
 
 
 ## Costs the hero n half hearts unless he is still invulnerable from the last hit
-## (`from`: where the blow came from, when known: the crypt's blood splats away from it).
-func _hurt(why: String, n := 1, from := Vector2.ZERO) -> void:
+## (`from`: where the blow came from, when known: the crypt's blood splats away from it;
+## `by`: the monster striking or shooting, when known: a perfect block lets it reel;
+## `shot`: the projectile that hit, when it was one: a perfect block or roll breaks it,
+## and its shooter reels only in melee reach).
+func _hurt(why: String, n := 1, from := Vector2.ZERO, by: Dictionary = {}, shot: Dictionary = {}) -> void:
 	if state.inv > 0.0 or state.dead > 0.0:
 		return
 	if SubKit.guard(self):
 		return
-	if story_items != null and story_items.consume_shield():
+	# Shift in time (balance package B3, src/hell/hero_kit.gd perfect_defense): the block holds
+	# without losing a charge and the attacker reels, or the roll readies the counter shot
+	if HeroKit.perfect_defense(self, from, by, shot):
+		return
+	if story_items != null and story_items.consume_shield(from):
 		state.inv = float(balance.player.invulnerable)
 		return
 	if story_items != null:
@@ -1426,6 +1688,7 @@ func _lose_hp(n: int, why: String, from := Vector2.ZERO, soft := false) -> void:
 		return
 	if state.hp == 0:
 		state.dead = 1.8
+		_gold_lost()
 		if sound != null: sound.hero("vo_death")
 		state.death_why = why
 		_toast("Gestorben: %s." % why)
@@ -1451,7 +1714,9 @@ func _interactables() -> Array:
 					out.append({"e": e, "label": "Erst die Gegner besiegen" if W.rooms[e.room].fight else "Feuerschale entzünden", "p": Vector2(e.x, e.y - 30), "r": 115.0})
 			# the world kit's key room, hidden stairs and their trigger
 			"well":
-				out.append({"e": e, "label": "Manabrunnen: versiegt" if e.get("used", false) else "Manabrunnen: Kräfte ganz auffüllen (einmal)", "p": Vector2(e.x, e.y - 30), "r": 150.0})
+				var fills: String = talents.resource_name() if talents != null else ""
+				fills = ("%s und Abklingzeiten" % fills) if fills != "" else "Kräfte"
+				out.append({"e": e, "label": "Brunnen: versiegt" if e.get("used", false) else "Brunnen: %s ganz auffüllen (einmal)" % fills, "p": Vector2(e.x, e.y - 30), "r": 150.0})
 			"shop":
 				out.append({"e": e, "label": "Händler: der Laden öffnet später", "p": Vector2(e.x, e.y - 30), "r": 150.0})
 			"stairs":
@@ -1503,7 +1768,10 @@ func _new_run_id() -> String:
 func end_run(won: bool) -> void:
 	if not (state.get("over", {}) as Dictionary).is_empty():
 		return
-	saves.erase_run(StorySave.mode(self), str(state.get("run_id", "")))
+	# a won run's saves are done with; a lost run keeps them: the character dies with its gold,
+	# but a game saved earlier can be loaded again with the gold it had then
+	if won:
+		saves.erase_run(StorySave.mode(self), str(state.get("run_id", "")))
 	run_slot = 0
 	state.over = {"won": won, "why": str(state.get("death_why", "")), "floor": int(state.floor), "title": str(W.get("title", "")),
 		"level": int(state.get("level", 1)), "crystals": int(state.get("crystals_run", 0))}
@@ -1521,13 +1789,20 @@ func end_run(won: bool) -> void:
 func run_result(over: Dictionary) -> Dictionary:
 	var won := bool(over.get("won", false))
 	var zone := str(theme.get("zone_name", "FROSTGRUFT" if StorySave.mode(self) == "frost" else "HÖLLE"))
-	var lines: Array = [["ZONE", zone], ["ERREICHT", "ETAGE %d · %s" % [int(over.floor), str(over.title).to_upper()]], ["STUFE", str(int(over.level))]]
+	# both levels side by side, each with what becomes of it: the Laufstufe ends
+	# with the run, the Heldenstufe (the profile's) stays
+	var lines: Array = [["ZONE", zone], ["ERREICHT", "ETAGE %d · %s" % [int(over.floor), str(over.title).to_upper()]],
+		["LAUFSTUFE", "%d · ENDET MIT DEM LAUF" % int(over.level)]]
+	if not profile.is_empty():
+		lines.append(["HELDENSTUFE", "%d · BLEIBT" % int(Profile.class_state(profile, class_id).level)])
 	if not won and str(over.why) != "":
 		lines.append(["URSACHE", str(over.why).to_upper()])
 	# the profile keeps level, gold and soul shards (docs/TALENTE-SEELENSPLITTER.de.md)
 	var note := ""
 	if not profile.is_empty():
-		note = "HELDENSTUFE %d · %d GOLD · %d SEELENSPLITTER" % [int(Profile.class_state(profile, class_id).level), int(profile.gold), int(profile.shards.have)]
+		# the character's gold stays with a win and is gone with a death; rune stones and shards stay
+		var gold_note := ("%d GOLD VERLOREN" % int(state.get("gold_lost", 0))) if not won else ("%d GOLD" % gold_count())
+		note = "%s · %d RUNENSTEINE · %d SEELENSPLITTER" % [gold_note, int(profile.get("runes", 0)), int(profile.shards.have)]
 	return {"title": say("Die Hölle ist bezwungen").to_upper() if won else "LAUF BEENDET", "tone": "win" if won else "loss",
 		"lines": lines, "note": note, "hints": "E · NEUER LAUF   ESC · MENÜ"}
 
@@ -1538,6 +1813,13 @@ func new_run() -> void:
 	scene.class_id = class_id
 	scene.graphics_path = graphics_path
 	scene.meta_path = meta_path
+	if not custom_story.is_empty():
+		scene.custom_story = custom_story.duplicate(true)
+		scene.custom_preview_room = custom_preview_room
+		scene.custom_return_to_editor = custom_return_to_editor
+		scene.custom_storage_root = custom_storage_root
+		scene.profile_path = profile_path
+		scene.settings_path = settings_path
 	var tree := get_tree()
 	tree.root.add_child(scene)
 	if tree.current_scene == self:
@@ -1595,15 +1877,17 @@ func act() -> void:
 						_burst(Vector2(e.x, e.y - 40), 30, true)
 					_toast("Truhe geöffnet: %s genommen!" % key_name[e.loot.key])
 				elif e.get("state", "") == "":
-					e.state = "open"
+					# the gold flies out at once; a heart stays inside to be taken
+					e.state = "open" if e.loot.get("heart", false) else "empty"
 					if feel != null:
 						feel.fx_event("chest_open", Vector2(e.x, e.y - 30))
-					_toast("Truhe geöffnet: %d Runensteine%s" % [e.loot.gems, " und ein Herz" if e.loot.get("heart", false) else ""])
+					gold_loot.spew(Vector2(e.x, e.y - 10), int(e.loot.gems))
+					gold_loot.roll_rune("chest", Vector2(e.x, e.y - 10))
+					_toast("Truhe geöffnet: %d Gold%s" % [e.loot.gems, " und ein Herz" if e.loot.get("heart", false) else ""])
 					if story_items != null:
 						story_items.loot("chest", Vector2(e.x, e.y + 40))
 				else:
 					e.state = "empty"
-					state.gems += int(e.loot.gems)
 					if feel != null:
 						feel.fx_event("loot_taken", Vector2(e.x, e.y - 30))
 					if e.loot.get("heart", false):
@@ -1616,16 +1900,20 @@ func act() -> void:
 				var tier := int(e.get("tier", 4))
 				var hearts := int(balance.vault.heart_containers) + (1 if tier >= 6 else 0)
 				var gems: int = roundi((int(balance.vault.gems_base) + state.floor * int(balance.vault.gems_per_floor)) * (1.0 + (tier - 4) * 0.5))
-				state.gems += gems
-				state.max_hp = mini(int(balance.player.max_hp_cap), state.max_hp + 2 * hearts)
+				gold_loot.spew(Vector2(e.x, e.y - 20), gems)
+				gold_loot.roll_rune("vault", Vector2(e.x, e.y - 20))
+				var max_before := int(state.max_hp)
+				state.max_hp = Rules.raised_max_hp(state, 2 * hearts, int(balance.player.max_hp_cap))
 				state.hp = state.max_hp
+				# the toast tells what the life cap let through, not what the vault held
+				var gained := int(state.max_hp) - max_before
 				# effect hook: with the feel the vault opens like the crypt's chests (chest_open)
 				if feel != null:
 					feel.fx_event("chest_open", Vector2(e.x, e.y - 60), {"r": 24.0})
 					feel.hero_perk("heal")
 				else:
 					_burst(Vector2(e.x, e.y - 60), 60 + maxi(0, tier - 4) * 10, true)
-				_toast("Riesentresor! +%d Herzcontainer, volle Gesundheit, +%d Runensteine" % [hearts, gems])
+				_toast(Rules.vault_note(gained, gems))
 				if story_items != null:
 					story_items.loot("gold_crate", Vector2(e.x, e.y + 60))
 			"portal":
@@ -1646,27 +1934,21 @@ func act() -> void:
 				if W.rooms[e.room].fight:
 					_toast("Erst alle Gegner im Raum besiegen.")
 					return
-				e.lit = true
-				e.lit_at = float(state.t)
-				W.lights.append({"x": e.x, "y": e.y - 70, "r": 280, "c": "255,140,60"})
-				# glow hook: the bowl catches fire in a crypt burst (its bloom and light: src/hero/story_glow.gd)
-				if feel != null:
-					feel.spawn("frost_burst" if bool(W.theme.get("frost", false)) else "fire_burst", Vector2(e.x, e.y - 70), 0.8)
-				var prog := Rules.group_progress(W.ents, e.group)
-				if prog.x == prog.y:
-					_solve_group(e.group)
-				else:
-					_toast("Feuerschale %d von %d entzündet." % [prog.x, prog.y])
+				_light_brazier(e)
 			"well":
-				# the mana fountain, once: until mana comes to the story worlds it refills the skills
+				# the mana fountain, once: the class's resource full (Mana, Ausdauer, Zorn) and every
+				# cooldown reset, the skills' and the talents' (src/hell/hell_talents.gd refill)
 				if e.get("used", false):
 					_toast("Der Brunnen ist versiegt.")
 					return
 				e.used = true
 				state.skill_cd = {}
+				var res_name := ""
+				if talents != null and talents.refill():
+					res_name = talents.resource_name()
 				_burst(Vector2(e.x, e.y - 70), 36)
 				_sound("relic")
-				_toast("Kräfte vollständig aufgefüllt. Der Brunnen versiegt.")
+				_toast(("%s vollständig aufgefüllt, alle Abklingzeiten zurückgesetzt. Der Brunnen versiegt." % res_name) if res_name != "" else "Kräfte vollständig aufgefüllt. Der Brunnen versiegt.")
 			"shop":
 				_toast("Der Händler nickt. Sein Laden öffnet bald.")
 			"stairs":
@@ -1754,16 +2036,19 @@ func _solve_group(group: String) -> void:
 		_toast("Alle Runen leuchten. Das Tor öffnet sich.")
 
 
-func _fire(dir: Vector2) -> void:
+## Fires the class weapon towards `dir`; `to_cursor`: `dir` reaches from the staff to the
+## point the mouse shows, where the mage's shot bursts (MageBolt.aim).
+func _fire(dir: Vector2, to_cursor := false) -> void:
 	if state.cool > 0.0 or dir == Vector2.ZERO or not hold.is_empty() or not FrostCombat.can_attack(self):
 		return
-	_attack(dir)
+	_attack(dir, dir.length() if to_cursor else -1.0)
 	if state.cool > 0.0:
 		state.cool *= FrostCombat.rate(self) * (talents.interval_scale() if talents != null else 1.0)
 
 
-## One attack of the class weapon (or the relic) towards `dir`.
-func _attack(dir: Vector2) -> void:
+## One attack of the class weapon (or the relic) towards `dir`. The mage's shot bursts
+## `reach` px out (the mouse's distance; -1: at the end of its flight).
+func _attack(dir: Vector2, reach := -1.0) -> void:
 	if talents != null and (talents.tc.runtime(1).has("soul_charge") or talents.tc.runtime(1).has("soul_leap")): return
 	state.cool = float(state.rate) * HeroKit.rate_scale(self) * CardKit.rate_mult(self)
 	player.aim = dir.normalized()
@@ -1778,9 +2063,21 @@ func _attack(dir: Vector2) -> void:
 			_sound("swing")
 		return
 	var v := dir.normalized() * float(weapon.get("speed", balance.shot.speed))
-	# Standard staff attacks are neutral magic; fireball belongs to the talent tree.
-	var shot_kind := str(weapon.get("shot", ""))
-	shots.append({"p": Vector2(player.x, player.y - 40), "v": v, "t": float(state.range), "kind": shot_kind, "splash": float(weapon.get("splash", 0.0)), "hits": []})
+	var bolt := {"p": Vector2(player.x, player.y - 40), "v": v, "t": float(state.range), "kind": str(weapon.get("shot", "")), "splash": float(weapon.get("splash", 0.0)), "hits": []}
+	# the mage's left-click follows his element (src/vfx/mage_bolt.gd, mage_bolts.json): fire the small
+	# fireball that bursts where it strikes (user wish 30.10.2026), frost an icicle, void a void orb,
+	# before any talent a plain arcane bolt
+	if class_id == "mage" and str(weapon.get("shot", "")) == "magic":
+		# The user's standard auto-hit stays neutral; fireball is a learned talent.
+		MageBolt.arm(self, bolt, "")
+	# a perfect roll's counter (src/hell/hero_kit.gd arm_counter): this shot hits harder
+	HeroKit.arm_counter(self, bolt)
+	# the mage's shot bursts on the floor where the mouse points, within its flight (user wish
+	# 02.11.2026): unless an enemy or a wall stops it first
+	if class_id == "mage" and str(weapon.get("shot", "")) == "magic":
+		var flight := (bolt.v as Vector2).length() * float(bolt.t)
+		MageBolt.aim(bolt, MageBolt.land_reach(reach if reach >= 0.0 else flight, flight))
+	shots.append(bolt)
 	story_hero.on_shot()
 	if feel == null:
 		_sound("shot_arrow" if weapon.get("shot", "") == "arrow" else "shot_magic")
@@ -1808,6 +2105,8 @@ func _swing(dir: Vector2, mirrored := false) -> void:
 		var to := Vector2(e.x, e.y - 40) - from
 		if not e.get("broken", false) and to.length() < reach + 40.0 and absf(angle_difference(dir.angle(), to.angle())) <= half:
 			_hit_breakable(e, Vector2(e.x, e.y - 40))
+	if wreck != null:
+		wreck.swing(from, dir, reach, half)
 
 
 ## Deals the hero's damage (times mult, e.g. a skill's multiple); a shield bearer
@@ -1849,7 +2148,15 @@ func _damage_mob(m: Dictionary, push: Vector2, mult := 1.0) -> bool:
 		_sound("hit_" + str(def.get("material", "void")))
 	m.hit = 0.12
 	# kit bosses stand firm: no knockback
-	m.k = Vector2.ZERO if m.has("kit") else push * (0.05 if m.kind == "boss" else 0.25)
+	# the blow's push adds to what pushes it already, less on a heavier body (its radius over
+	# push.mass_ref_r, squared; physics plan R23/F44, decision D5), at most push.max px/s
+	if m.has("kit"):
+		m.k = Vector2.ZERO
+	else:
+		var pcfg: Dictionary = motion_kit().cfg.get("push", {})
+		var mass := body_mass(m)
+		var now: Vector2 = m.get("k") if m.get("k") is Vector2 else Vector2.ZERO
+		m.k = (now + push * (0.05 if m.kind == "boss" else 0.25) / mass).limit_length(float(pcfg.get("max", 1000.0)))
 	FrostCombat.after_hit(self, m, push, crit > 1.0)
 	if sound != null: sound.mob_hurt(m)
 	if feel != null:
@@ -1912,6 +2219,17 @@ func _start_fight(r: Dictionary) -> void:
 		if W.grid[c.y * W.cols + c.x] == 1 and p.distance_to(me) > 4.5 * C and not _near_door(r, p, 2.0) and solid_grid.get(c.y * W.cols + c.x, []).is_empty():
 			cells.append(p)
 	cells.shuffle()
+	# Authored encounter markers lead; valid fallback cells still prevent empty encounters.
+	if r.has("spawn_cells"):
+		var authored: Array = []
+		for cell: Array in r.spawn_cells:
+			var point := Vector2((float(cell[0]) + 0.5) * C, (float(cell[1]) + 0.7) * C)
+			if _room_at_world(point.x, point.y) == int(r.index) and not box_blocked(Rect2(point - Vector2(28, 20), Vector2(56, 24)), true) \
+					and point.distance_to(me) > C * 1.5 and not _near_door(r, point, 1.0):
+				authored.append(point)
+		for point: Vector2 in cells:
+			if not authored.has(point): authored.append(point)
+		cells = authored
 	# with the feel every fight locks its doors and a guardian's arrival stings once (feedback.gd boss_intro), like the crypt
 	if monsters != null:
 		monsters.populate(r, cells)
@@ -1954,6 +2272,12 @@ func _clear_room(r: Dictionary, at: Vector2) -> void:
 			_sound("boss_dead")
 	elif feel == null:
 		_sound("room_clear")
+	# every mimic woken here pays once (rare+, items.json drops.mimic) where it fell; not gated on
+	# `again`: a chest opened after the room was cleared wakes its mimic in a rewarded room
+	if story_items != null:
+		for mimic: Dictionary in r.get("mimic_loot", []):
+			story_items.loot("mimic", mimic.get("p", at))
+	r.mimic_loot = []
 	if r.drop != "" and not again:
 		_drop("key", r.index, at, {"key": r.drop})
 		_toast("Raum gesäubert. %s gefallen!" % key_name[r.drop])
@@ -1984,8 +2308,7 @@ func _clear_room(r: Dictionary, at: Vector2) -> void:
 	if r.reward != null:
 		if r.reward.get("heart", false):
 			_drop("heart", r.index, at)
-		for k in range(int(r.reward.get("gems", 0))):
-			_drop("gem", r.index, at)
+		gold_loot.spew(at, int(r.reward.get("gems", 0)))
 	elif randf() < float(balance.drops.heart):
 		_drop("heart", r.index, at)
 	elif randf() < float(balance.drops.gem):
@@ -1993,17 +2316,67 @@ func _clear_room(r: Dictionary, at: Vector2) -> void:
 
 
 func _drop(kind: String, room: int, at: Vector2, extra := {}) -> void:
+	# gold is thrown out as coins (src/hell/gold_loot.gd), the rest lies as a pickup
+	if kind == "gem":
+		gold_loot.spew(at, 1)
+		return
 	if sound != null: sound.at("drop_" + kind, at)
 	var e := {"type": kind, "x": at.x + randf_range(-30, 30), "y": at.y + randf_range(-20, 20), "room": room}
 	e.merge(extra)
 	W.ents.append(e)
 
 
-func _enemy_shot(from: Vector2, dir: Vector2, speed: float) -> void:
+## The character's gold: the run's own (a new character starts with 0), carried from floor to
+## floor and kept in its saved games (src/save/story_save.gd CARRIED); gone when it dies or is
+## left unsaved. The round shop will take it.
+func gold_count() -> int:
+	return int(state.get("gold", 0))
+
+
+## The account's rune stones (they pay the talent reset; every character shares them).
+func rune_count() -> int:
+	return int(profile.get("runes", 0))
+
+
+## Gold taken (src/hell/gold_loot.gd, a kill, a floor): to the character.
+func add_gold(n: int) -> void:
+	state.gold = maxi(0, int(state.get("gold", 0)) + n)
+
+
+## A rune stone taken (src/hell/gold_loot.gd): to the account, saved at once (they are rare,
+## and leaving for the menu right after must not lose them).
+func add_runes(n: int) -> void:
+	if profile.is_empty():
+		return
+	Profile.add_runes(profile, n)
+	Profile.save_profile(profile, profile_path)
+
+
+## The hero fell: the character's gold is gone at once, and so is the gold still lying on the
+## floor (its saved games keep the gold they had). The profile is saved now (rune stones, EXP).
+func _gold_lost() -> void:
+	state.gold_lost = int(state.get("gold", 0))
+	state.gold = 0
+	gold_loot.reset()
+	if not profile.is_empty():
+		Profile.save_profile(profile, profile_path)
+
+
+## Leaving the world (the menu, a closed window): the profile's last seconds (EXP, rune stones,
+## talents) are saved, not lost with the scene.
+func _exit_tree() -> void:
+	if talents != null:
+		talents.save()
+	elif not profile.is_empty():
+		Profile.save_profile(profile, profile_path)
+
+
+func _enemy_shot(from: Vector2, dir: Vector2, speed: float, by: Dictionary = {}) -> void:
 	# WAHN: a mad enemy's shots scatter (a boss's less); a turned one's hurt the enemies they meet
 	if not _mad_mob.is_empty():
 		dir = ElementRules.scatter(dir.normalized(), _mad_mob.kind == "boss", randf())
-	eshots.append({"p": from, "v": dir.normalized() * speed, "t": float(balance.enemy_shot.life)})
+	# "by": its shooter (B3: a perfect block lets it reel only in melee reach)
+	eshots.append({"p": from, "v": dir.normalized() * speed, "t": float(balance.enemy_shot.life), "by": by})
 	if not _mad_prey.is_empty():
 		eshots[-1].mad = _mad_mob
 
@@ -2020,6 +2393,34 @@ func _burst(at: Vector2, n: int, gold := false) -> void:
 
 # ---------- seals, skull heaps, pits and the clone ----------
 
+## A fire bowl `e` catches fire: its light, its burst, the puzzle's progress (by hand with E, or
+## by a fire shot that hits it directly: fire_hits_brazier).
+func _light_brazier(e: Dictionary) -> void:
+	e.lit = true
+	e.lit_at = float(state.t)
+	W.lights.append({"x": e.x, "y": e.y - 70, "r": 280, "c": "255,140,60"})
+	# glow hook: the bowl catches fire in a crypt burst (its bloom and light: src/hero/story_glow.gd)
+	if feel != null:
+		feel.spawn("frost_burst" if bool(W.theme.get("frost", false)) else "fire_burst", Vector2(e.x, e.y - 70), 0.8)
+	var prog := Rules.group_progress(W.ents, e.group)
+	if prog.x == prog.y:
+		_solve_group(e.group)
+	else:
+		_toast("Feuerschale %d von %d entzündet." % [prog.x, prog.y])
+
+
+## A fire shot struck `at` (physics plan R21, decision D7): an unlit fire bowl it hit directly
+## catches fire as if lit by hand, never in a fight, and only the one it hit (one blast never
+## lights a whole puzzle out of order).
+func fire_hits_brazier(at: Vector2) -> void:
+	for e: Dictionary in W.ents:
+		if e.type != "brazier" or e.get("lit", false): continue
+		if not Rect2(e.x - 36, e.y - 44, 72, 54).has_point(at): continue
+		if W.rooms[e.room].fight: return
+		_light_brazier(e)
+		return
+
+
 func _hit_breakable(e: Dictionary, at: Vector2) -> void:
 	if sound != null and str(e.get("type", "")) != "skullheap": sound.at("breakable_hit", at)
 	e.hit = 0.15
@@ -2035,6 +2436,8 @@ func _hit_breakable(e: Dictionary, at: Vector2) -> void:
 		_play_sfx("hit_bone")
 	if not Rules.hit_breakable(e):
 		return
+	if wreck != null:
+		wreck.smash_ent(e, at)
 	# its fall: the crypt's stone burst where it stood (silent: the wall_break, blessing or demons sound)
 	if feel != null:
 		feel.spawn("stone_burst", Vector2(e.x, e.y - 30), 1.6)
@@ -2051,45 +2454,24 @@ func _hit_breakable(e: Dictionary, at: Vector2) -> void:
 			story_items.loot("crate", Vector2(e.x, e.y + 30))
 
 
-## A broken seal blesses the hero (bless_chance) or releases demons that lock the room again.
+## A broken seal is a real choice (balance package D1): two blessings on cards, one safe price
+## shown on them, no hidden roll (src/hell/card_kit.gd seal_offer, src/hell/frost_hud.gd
+## seal_cards); the world waits until one is taken or both are left (_process).
 func _break_seal(e: Dictionary) -> void:
 	if sound != null: sound.at("seal_break", Vector2(e.x, e.y))
-	var cfg: Dictionary = balance.seal
-	if randf() < float(cfg.bless_chance):
-		var id: String = Rules.BLESSINGS[randi() % Rules.BLESSINGS.size()]
-		var text := Rules.apply_blessing(state, id, balance.blessings, int(balance.player.max_hp_cap))
-		# effect hook: with the feel a blessing shines like the crypt's cleanse (golden burst, sheet, chime)
-		if feel != null:
-			feel.fx_event("cleanse", Vector2(e.x, e.y - 40))
-		else:
-			_burst(Vector2(e.x, e.y - 60), 50, true)
-		_toast("Das Siegel bricht: %s!" % text)
-		return
-	var r: Dictionary = W.rooms[e.room]
-	r.fight = true
-	r.cleared = false
-	# effect hook: released demons flare dark like the crypt's curse
-	if feel != null:
-		feel.fx_event("curse", Vector2(e.x, e.y - 40))
-	var n := int(cfg.demons)
-	for k in range(n):
-		var at := Vector2(e.x + (k - (n - 1) / 2.0) * 90.0, e.y + 60.0 + (50.0 if k == 1 else 0.0))
-		if monsters != null:
-			monsters.spawn(r.index, at, String(balance.monsters.seal_demon))
-		else:
-			_spawn_mob(r.index, at, String(cfg.demon_kind))
-	_toast("Das Siegel bricht: drei Dämonen springen heraus! Die Gitter fallen.")
+	CardKit.seal_offer(self, e)
 
 
-## A broken urn, barrel or crate (world kit): nothing, rune stones, a heart, or (crates only)
+## A broken urn, barrel or crate (world kit): nothing, gold, a heart, or (crates only)
 ## undead that lock the room.
 func _break_crate(e: Dictionary) -> void:
 	if sound == null or not sound.theme_event("crate_break"): _sound("hit_bone")
+	# now and then a rune stone was hidden inside (src/hell/gold_loot.gd)
+	gold_loot.roll_rune("breakable", Vector2(e.x, e.y - 10))
 	match str(e.get("drop", "none")):
 		"gem":
-			_drop("gem", e.room, Vector2(e.x - 14, e.y))
-			_drop("gem", e.room, Vector2(e.x + 16, e.y + 8))
-			_toast("Zerbrochen: Runensteine.")
+			gold_loot.spew(Vector2(e.x, e.y - 10), 2)
+			_toast("Zerbrochen: Gold.")
 		"heart":
 			_drop("heart", e.room, Vector2(e.x, e.y + 4))
 			_toast("Zerbrochen: ein Herz.")
@@ -2126,6 +2508,12 @@ func _wake_mimic(e: Dictionary) -> void:
 	if monsters != null and monsters.defs.has(kind):
 		var m: Dictionary = monsters.spawn(r.index, monsters.free_spot(r.index, Vector2(e.x, e.y), 0.0, 60.0), kind)
 		m.spawn = 0.0
+		# waking only reveals it (a jump, dust): its bite comes later and with its windup (mimic_bite.json)
+		monsters.reveal_mimic(m)
+		# a beaten mimic pays once (R2 of the gameplay review): _clear_room drops drops.mimic where it fell
+		var owed: Array = r.get("mimic_loot", [])
+		owed.append(m)
+		r.mimic_loot = owed
 	_burst(Vector2(e.x, e.y - 40), 30, true)
 	state.shake = 0.4
 	_sound("boss_intro")
@@ -2174,6 +2562,7 @@ func _fall_into_pit() -> void:
 		_burst(Vector2(player.x, player.y - 30), 24)
 	if state.hp == 0:
 		state.dead = 1.8
+		_gold_lost()
 		state.death_why = "in eine Grube gestürzt"
 		_toast("In die Grube gestürzt.")
 		return
@@ -2257,6 +2646,7 @@ func _update_clone(dt: float) -> void:
 
 ## Writes the floor-start state into save slot 1..3 of this world; true on success.
 func save_slot(slot: int) -> bool:
+	if not custom_preview_room.is_empty(): return false
 	if sound != null: sound.at("save_ok", Vector2.INF)
 	var ok := not floor_save.is_empty() and saves.write(StorySave.mode(self), slot, floor_save)
 	if ok:
@@ -2279,7 +2669,8 @@ func open_pause() -> void:
 	pause_menu.set_shards(int(profile.get("shards", {}).get("have", 0)) if not profile.is_empty() else 0)
 	pause_menu.select_section("overview")
 	pause_menu.visible = true
-	pause_menu.resume_button.grab_focus()
+	# the focus sits on the open section (Etage), not a second highlight on Weiterspielen
+	pause_menu.focus_section()
 
 
 ## The pause pages' text: where the hero is, how the run stands, the floor's goals.
@@ -2292,16 +2683,17 @@ func pause_info() -> Dictionary:
 	var blessings: Array = (state.buffs as Array).map(func(b: String) -> String: return b.get_slice(":", 0))
 	var lines: Array = [
 		"Etage %d · %s" % [state.floor, W.title], str(W.circle), "",
-		"%s · STUFE %d · %s" % [hero_name, int(state.get("level", 1)), held],
+		"%s · LAUFSTUFE %d · %s" % [hero_name, int(state.get("level", 1)), held],
 		"LP: %d / %d" % [HudKit.life_shown(int(state.hp), hp_f()), int(state.max_hp)],
-		"Runensteine: %d" % int(state.gems),
+		"Gold: %d · Runensteine: %d" % [gold_count(), rune_count()],
 		"Schlüssel: %s" % (", ".join(PackedStringArray(keys)) if not keys.is_empty() else "keiner"),
 		"Segen: %s" % (", ".join(PackedStringArray(blessings)) if not blessings.is_empty() else "keiner"),
 		"", "Räume besucht: %d von %d" % [state.visited.size(), W.rooms.size()],
 	]
 	if str(state.relic) != "":
 		lines.insert(5, "Relikt: %s" % theme[state.relic].name)
-	return {"overview": say("\n".join(PackedStringArray(lines))), "quests": FrostHud.goals(self), "quest_title": "ETAGE %d" % int(state.floor)}
+	return {"overview": say("\n".join(PackedStringArray(lines))), "quests": FrostHud.goals(self), "quest_title": "ETAGE %d" % int(state.floor),
+		"reactions": story_elements.discovered() if story_elements != null else []}
 
 
 func _toggle_fullscreen() -> void:
@@ -2311,13 +2703,54 @@ func _toggle_fullscreen() -> void:
 
 
 func _process(delta: float) -> void:
-	var dt := minf(delta, 0.05)
 	_sync_overlays()
-	# the world stands still while the pause menu, the talent menu (K) or the run talents (B) are open
-	if (pause_menu != null and pause_menu.visible) or (run_talents != null and run_talents.visible) or bool(state.get("tree_open", false)):
+	if _simulation_paused():
+		_simulation_clock.reset()
+		_skip_simulation_delta = true
 		if talents != null: talents.tc.runtime(1).erase("soul_charge")
 		hud.queue_redraw()
 		return
+	# Several gameplay ticks may be due after a slow picture. Keep all elapsed
+	# time, with a bounded amount of catch-up work per picture (no 50-ms clip).
+	_simulation_clock.begin_frame(0.0 if _skip_simulation_delta else delta)
+	_skip_simulation_delta = false
+	while _simulation_clock.take_step():
+		_step_simulation(_simulation_clock.step_seconds)
+		# A seal may open a blocking choice during a tick. Do not let later ticks
+		# attack through that modal. Floor loads reset the clock inside load_floor.
+		if _simulation_paused():
+			_simulation_clock.reset()
+			_skip_simulation_delta = true
+			break
+	# Presentation work only once per rendered frame, never once per catch-up tick.
+	if inventory_panel != null and story_items != null:
+		inventory_panel.set_view(story_items.view())
+		inventory_panel.quick = story_items.quick_slot()
+	if not _simulation_paused() and not _simulation_frozen() and not bool(state.get("won", false)) \
+			and float(state.get("dead", 0.0)) <= 0.0 and (state.get("over", {}) as Dictionary).is_empty():
+		_update_camera(delta)
+	actors.queue_redraw()
+	glow.queue_redraw()
+	# the darkness's lights and the bloom, after the actors (their glowing parts follow the drawn bodies)
+	PerfMarks.begin()
+	story_glow.frame()
+	PerfMarks.add("glow.frame")
+	hud.queue_redraw()
+
+
+## Menus that intentionally suspend gameplay also suspend the clock (no debt on resume).
+func _simulation_paused() -> bool:
+	return (pause_menu != null and pause_menu.visible) or (run_talents != null and run_talents.visible) \
+		or bool(state.get("tree_open", false)) or CardKit.seal_open(self)
+
+
+## A hitstop consumes scheduled time without advancing the combat simulation.
+func _simulation_frozen() -> bool:
+	return (feel != null and feel.frozen()) or (drake_rig != null and drake_rig.frozen())
+
+
+## One fixed tick, including intentional hitstop. Every world uses this same path.
+func _step_simulation(dt: float) -> void:
 	# a kill or a hurt holds the picture for a moment, as in the crypt (hitstop, src/hero/story_feel.gd)
 	if feel != null and feel.frozen():
 		feel.freeze(dt)
@@ -2326,20 +2759,14 @@ func _process(delta: float) -> void:
 		drake_rig.freeze(dt)
 	else:
 		_update(dt)
-	actors.queue_redraw()
-	glow.queue_redraw()
-	# the darkness's lights and the bloom, after the actors (their glowing parts follow the drawn bodies)
-	story_glow.frame()
-	hud.queue_redraw()
 
 
 func _update(dt: float) -> void:
+	PerfMarks.begin()
 	state.t += dt
 	story_hero.update(dt)
 	if story_items != null:
 		story_items.update(dt)
-		if inventory_panel != null:
-			inventory_panel.set_view(story_items.view())
 	for k in ["inv", "flash", "cool", "chill", "slow"]:
 		state[k] = maxf(0.0, state[k] - dt)
 	state.shake = maxf(0.0, state.shake - dt * 30.0)
@@ -2363,6 +2790,14 @@ func _update(dt: float) -> void:
 		# the crypt keeps reacting while the hero falls: the killing blow, the defeat sting, the menu music
 		if feel != null:
 			feel.update(dt)
+		# and the world goes on moving with nothing hurting anyone any more (decision D8): the gas
+		# drifts, the frost world's waves and knocks age, bodies and their debris fall and settle
+		_step_gas(dt)
+		# the enemies' shots fly on and break on the walls (_hurt spares the fallen hero)
+		if monsters != null: monsters.update_shots(dt)
+		if frost_fx != null: frost_fx.update(dt)
+		if frost_rigs != null: frost_rigs.frame(dt)
+		if drake_rig != null and monsters != null: drake_rig.frame(mobs, monsters.corpses, dt)
 		_update_music()
 		state.dead -= dt
 		if state.dead <= 0.0:
@@ -2372,24 +2807,41 @@ func _update(dt: float) -> void:
 			state.room = _room_of_type("start").index
 		return
 	swing.t = maxf(0.0, swing.t - dt)
+	PerfMarks.add("u.hero+items")
 	if talents != null: talents.update(dt)
+	PerfMarks.add("u.talents")
 	# the kits' direct sounds by who acts (src/hero/story_sound.gd): the hero's skills, relics and allies, the enemy moves
 	as_source("hero", _update_hero_kits.bind(dt))
 	as_source("moves", func() -> void: FrostCombat.update(self, dt))
+	PerfMarks.add("u.kits+moves")
+	_update_matter_blockers()
+	_wall_fire_matter()
+	PerfMarks.add("u.blockers+torches")
+	# the snowstorm's wind is the world's (D12, F58): screen px/s over the camera zoom are world
+	# px/s; light particles and the gas drift with it
+	if snowstorm != null and snowstorm.has_method("follow"): snowstorm.follow(camera.position, camera.zoom.x)
+	if snowstorm != null and feel != null:
+		var w: Vector2 = snowstorm.wind() / maxf(0.1, camera.zoom.x)
+		feel.feedback.particles.wind = w / float(feel.scale)
+		if gas != null and gas.get("gas_field") != null: gas.gas_field.wind = w
 	if feel != null:
 		feel.update(dt)
+	PerfMarks.add("u.feel")
 	if not (state.get("offer", []) as Array).is_empty():
 		state.offer_t = float(state.get("offer_t", 0.0)) + dt
 	_update_music()
 	_update_player(dt)
+	PerfMarks.add("u.player")
 	if state.dead > 0.0:
 		return
 	_update_clone(dt)
 	_update_shots(dt)
+	PerfMarks.add("u.shots")
 	# effect hook: Rage-thrown bodies that slam into a wall (story_hero.check_slam, here and in
 	# hell_monsters.gd) leave the crypt's wall slam instead of the relics' violet quake ring
 	var slams := _slams_before()
 	_update_mobs(dt)
+	PerfMarks.add("u.mobs")
 	# the Frostgruft's figures: what each one does now goes to its rig
 	if frost_rigs != null:
 		frost_rigs.frame(dt)
@@ -2401,13 +2853,19 @@ func _update(dt: float) -> void:
 		drake_rig.frame(mobs, monsters.corpses, dt)
 		_route_rig_events()
 	_slams_after(slams)
+	PerfMarks.add("u.rigs")
 	_update_zones(dt)
 	_update_hazards(dt)
 	if frost_snow != null:
 		frost_snow.update(dt)
+	gold_loot.update(dt)
 	_update_rooms()
+	PerfMarks.add("u.zones+world")
 	_update_embers(dt)
-	_update_camera(dt)
+	PerfMarks.add("u.embers+elements")
+	if wreck != null:
+		wreck.update(dt)
+	PerfMarks.add("u.wreck")
 
 
 ## The hero's skills, relic and subclass per frame (their allies and timed blows).
@@ -2443,6 +2901,8 @@ func _slams_after(slams: Dictionary) -> void:
 				fx.remove_at(i)
 				var push: Vector2 = pair[1]
 				story_hero.skill_fx.event("wall_slam", [story_hero.skill_fx.ground(m.p)], {"angle": push.angle(), "time": 0.4, "length": 0.4})
+				if wreck != null:
+					wreck.hit_line(m.p, m.p + push.normalized() * 110.0, "slam", 1)
 				break
 
 
@@ -2456,6 +2916,46 @@ func _update_music() -> void:
 	if want != _music_state:
 		_music_state = want
 		music.request(want)
+
+
+## This world's motion kit (src/physics_kit/motion_kit.gd) on its host
+## (src/hell/story_motion_host.gd), made on first use: the hero's walk, the
+## Frostgruft monsters' push and slide, the skid of his boots.
+func motion_kit() -> MotionKit:
+	if _motion == null:
+		_motion = MotionKit.new(StoryMotionHost.new(self))
+	return _motion
+
+
+## A body's mass for pushes (physics plan R23/F44, decision D5): its radius
+## over the median radius of this world's monsters (bosses and kit bosses left
+## out), squared, within physics_motion.json push.mass [min, max];
+## push.mass_ref_r while there is none to measure. Measured again when the
+## number of monsters changes.
+var _mass_ref := Vector2(-1.0, 28.0)
+
+
+func body_mass(m: Dictionary) -> float:
+	var pcfg: Dictionary = motion_kit().cfg.get("push", {})
+	var heavy: Array = pcfg.get("mass", [0.4, 4.0])
+	if int(_mass_ref.x) != mobs.size():
+		var radii: Array = []
+		for o: Dictionary in mobs:
+			if str(o.get("kind", "")) != "boss" and not o.has("kit") and not bool(o.get("boss", false)):
+				radii.append(float(o.get("r", 28.0)))
+		radii.sort()
+		_mass_ref = Vector2(float(mobs.size()), float(radii[radii.size() / 2]) if not radii.is_empty() else float(pcfg.get("mass_ref_r", 28.0)))
+	return clampf(pow(float(m.get("r", 28.0)) / maxf(1.0, _mass_ref.y), 2.0), float(heavy[0]), float(heavy[1]))
+
+
+## The element exposure of this world (src/physics_kit/element_exposure.gd on
+## its adapter src/hell/story_exposure_host.gd), made on first use: what pools
+## and gas do to the hero (_step_elements), the Frostgruft's enemies
+## (_step_mob_medium) and the hell monsters (hell_monsters.gd _step_medium).
+func exposure() -> ElementExposure:
+	if _exposure == null:
+		_exposure = ElementExposure.new(StoryExposureHost.new(self))
+	return _exposure
 
 
 func _update_player(dt: float) -> void:
@@ -2477,26 +2977,18 @@ func _update_player(dt: float) -> void:
 	var want := move.normalized() * speed if player.moving else Vector2.ZERO
 	# grip = share of the old speed left after one second: glaze ice tiles (theme liquid), a pool
 	# of ice or blood (its rule), the slip condition; firm floor takes the wanted speed at once
-	var grip := 1.0
+	# (grips: physics_motion.json grip; the walk itself: MotionKit.step_hero, src/physics_kit/motion_kit.gd)
+	var mover := motion_kit()
+	var grip := MotionKit.FIRM
 	if here == 2 and liquid.slide:
 		grip = float(liquid.grip)
 	elif bool(hero_medium.get("slide", false)):
-		grip = float(hero_medium.get("grip", 0.1))
+		grip = float(hero_medium.get("grip", mover.grip("medium")))
 	elif feel != null and FrostCombat.HeroFx.slip(self) > 0.0:
-		grip = 0.08
-	player.vel = ElementRules.slide(player.vel, want, grip, dt)
+		grip = mover.grip("slip")
 	# the void pulls towards its heart
 	var pull := ElementRules.pull(hero_medium, Vector2(player.x, player.y), Vector2(hero_medium.get("centre", Vector2(player.x, player.y))))
-	var v: Vector2 = (player.vel + pull) * dt
-	if v != Vector2.ZERO:
-		if not box_blocked(_player_box(player.x + v.x, player.y)):
-			player.x += v.x
-		else:
-			player.vel.x = 0.0
-		if not box_blocked(_player_box(player.x, player.y + v.y)):
-			player.y += v.y
-		else:
-			player.vel.y = 0.0
+	mover.step_hero(want, grip, pull, dt)
 	if absf(move.x) > 0.0:
 		player.face = signf(move.x)
 	player.anim += dt * (10.0 if player.moving else 5.0)
@@ -2504,8 +2996,9 @@ func _update_player(dt: float) -> void:
 	if aim != Vector2.ZERO:
 		_fire(aim)
 	elif Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and not mouse_taken and not state.get("tree_open", false) and throw_slot < 0 and (inventory_panel == null or not inventory_panel.open):
-		_fire((get_global_mouse_position() - Vector2(player.x, player.y - 40)) * mirror)
-	if here == 2 and liquid.hurt:
+		_fire((HeroKit.target(self) - Vector2(player.x, player.y - 40)) * mirror, true)
+	# a drunk fire or ice potion's after-effect keeps the lava off (story_items.gd immune)
+	if here == 2 and liquid.hurt and not (story_items != null and story_items.immune("lava")):
 		_hurt("in der Lava verbrannt")
 	for e: Dictionary in pits:
 		if absf(player.x - e.x) < float(balance.pit.reach_x) and absf(player.y - 8.0 - e.y) < float(balance.pit.reach_y):
@@ -2517,13 +3010,34 @@ func _update_shots(dt: float) -> void:
 	for s: Dictionary in shots:
 		s.p += s.v * dt
 		s.t -= dt
+		# the mage's shot reaches the point the mouse showed (MageBolt.aim): it stops there; still
+		# alive (t > 0) after the checks below, nothing struck it, and it bursts on the floor
+		var landed := false
+		if s.has("left"):
+			s.left = float(s.left) - (s.v as Vector2).length() * dt
+			if float(s.left) <= 0.0 or float(s.t) <= 0.0:
+				s.p = s.land
+				s.t = maxf(float(s.t), 0.001)
+				landed = true
 		var struck: Dictionary = {}
 		for e: Dictionary in breakables:
 			if not e.get("broken", false) and absf(s.p.x - e.x) < 50.0 and s.p.y > e.y - 90.0 and s.p.y < e.y + 10.0:
 				struck = e
 		if not struck.is_empty():
 			s.t = 0.0
+			if wreck != null:
+				wreck.hit_dir = s.v
 			_hit_breakable(struck, s.p)
+			continue
+		# the hero's fire shot that strikes an unlit fire bowl lights it (decision D7)
+		if str(s.get("kind", "")) in ["pyro", "fireball"]:
+			for e: Dictionary in W.ents:
+				if e.type == "brazier" and not e.get("lit", false) and Rect2(e.x - 36, e.y - 44, 72, 54).has_point(s.p):
+					s.t = 0.0
+					fire_hits_brazier(s.p)
+					break
+		# a smashable prop in the shot's way shatters (src/hell/story_wreck.gd)
+		if wreck != null and wreck.shot(s):
 			continue
 		var c := Vector2i(int(floor(s.p.x / C)), int(floor(s.p.y / C)))
 		var hit_solid := false
@@ -2537,7 +3051,11 @@ func _update_shots(dt: float) -> void:
 				feel.wall_hit((s.p as Vector2) - (s.v as Vector2) * dt, s.p, StoryFeel.shot_wall_style(s), 1)
 			else:
 				_burst(s.p, 5)
+			# owner 1: the hero's own fire, so its element reactions are his (story_elements.gd _reacted)
+			if s.get("kind", "") == "pyro" and talents != null: talents.tc.show_effect("explosion", s.p, 34.0, {"fx": "fire", "life": 0.5, "owner": 1, "wrecked": true})
+			MageBolt.burst(self, s, {})
 			continue
+		MageBolt.fly(self, s, dt)
 		if s.get("kind", "") == "gravity":
 			# the gravity ball drags enemies towards itself while it flies
 			var ball: Dictionary = RelicKit.wielded(self).get("ball", theme.gravity_staff.ball)
@@ -2556,6 +3074,8 @@ func _update_shots(dt: float) -> void:
 				if feel == null:
 					_burst(s.p, 6)
 				var mult := float(s.get("mult", 1.0))
+				# the mage's icicle shatters (its chill slows), his void orb implodes (src/vfx/mage_bolt.gd)
+				MageBolt.burst(self, s, m)
 				if s.get("pierce", false):
 					# piercing shots (blade wave, ballista, arrow fist) go on through everyone
 					s.hits.append(m)
@@ -2574,6 +3094,8 @@ func _update_shots(dt: float) -> void:
 					break
 				_explode(s, m)
 				break
+		if landed and s.t > 0.0:
+			_land_shot(s)
 		if s.t <= 0.0 and s.has("burst") and not s.get("done", false):
 			_explode(s, {})
 	shots = shots.filter(func(s: Dictionary) -> bool: return s.t > 0.0)
@@ -2595,8 +3117,13 @@ func _update_shots(dt: float) -> void:
 			continue
 		if not s.get("fist", false) and _cell_blocked(int(floor(s.p.x / C)), int(floor(s.p.y / C)), false):
 			s.t = 0.0
+			# a bone arrow splinters on the wall instead (src/vfx/shot_looks.gd)
+			if ShotLooks.impact(self, s, true):
+				pass
 			# the frost world's shard breaks on the wall into ice chips and rime (src/hell/frost_fx.gd)
-			if frost_fx != null and str(s.get("style", "ice")) in ["ice", "frost"]:
+			elif frost_fx != null and str(s.get("style", "ice")) in ["ice", "frost"]:
+				if wreck != null:
+					wreck.hit_line((s.p as Vector2) - (s.v as Vector2) * dt, s.p, "ice")
 				frost_fx.shatter((s.p as Vector2) - (s.v as Vector2) * dt, 8, 14.0, -(s.v as Vector2).normalized(), 160.0)
 			# effect hook: with the feel the crypt's wall hit in the shot's style
 			elif feel != null:
@@ -2611,14 +3138,65 @@ func _update_shots(dt: float) -> void:
 				FrostCombat.FrostMoves.shot_hit(self, s)
 			else:
 				var before := int(state.hp)
-				_hurt("von Feuer getroffen", 1, s.p)
+				_hurt("von Feuer getroffen", 1, s.p, s.get("by", {}), s)
 				# a guardian's plain shot pushes the hero back and bursts into ice on him
 				if frost_fx != null and int(state.hp) < before:
 					frost_fx.hit_hero((s.p as Vector2) - (s.v as Vector2).normalized() * 40.0, "fist" if s.get("fist", false) else "shot", "small" if s.get("fist", false) else "tiny")
-					frost_fx.shatter(s.p, 8, 14.0, (s.v as Vector2).normalized(), 120.0)
+					if not ShotLooks.impact(self, s, false):
+						frost_fx.shatter(s.p, 8, 14.0, (s.v as Vector2).normalized(), 120.0)
+				elif frost_fx != null and HeroKit.perfect_now(self):
+					# met by a perfect block or roll: the shot breaks off it, back the way it came
+					frost_fx.shatter(s.p, 8, 14.0, -(s.v as Vector2).normalized(), 120.0)
 		if s.t <= 0.0 and s.has("end_pool"):
 			FrostCombat.FrostMoves.shot_end(self, s)
 	eshots = eshots.filter(func(s: Dictionary) -> bool: return s.t > 0.0)
+
+
+## Particles low over the floor are drawn between the y-sorted actors (decision D11; story_feel's
+## over layer then draws only the high ones).
+var depth_bands := true
+## What stood solid when the particles' blockers were last made (gates closed, crates whole).
+var _blocker_sig := ""
+
+
+## Closed gates, solid props and whole crates and urns stop the particles too (physics plan R16):
+## their 32 px particle cells, made anew only when a gate opens or closes, a prop is added or a
+## crate breaks (a cheap signature each frame).
+func _update_matter_blockers() -> void:
+	if feel == null or W.is_empty(): return
+	var whole := 0
+	for e: Dictionary in breakables:
+		if not e.get("broken", false): whole += 1
+	var shut := 0
+	for k: int in door_at:
+		if _door_closed(W.doors[door_at[k]]): shut += 1
+	var sig := "%d:%d:%d:%s" % [whole, shut, solid_grid.size(), str(W.get("index", 0))]
+	if sig == _blocker_sig: return
+	_blocker_sig = sig
+	var s := float(feel.scale)
+	var cells := {}
+	var mark := func(r: Rect2) -> void:
+		var mid := r.get_center() / s
+		cells[Vector2i(floori(mid.x / 32.0), floori(mid.y / 32.0))] = true
+	for key: int in solid_grid:
+		for r: Rect2 in solid_grid[key]: mark.call(r)
+	for e: Dictionary in breakables:
+		if not e.get("broken", false): mark.call(_breakable_box(e))
+	for k: int in door_at:
+		if not _door_closed(W.doors[door_at[k]]): continue
+		var cx := k % int(W.cols)
+		var cy := k / int(W.cols)
+		var gate := Rect2(cx * C, cy * C, C, C)
+		var a := (gate.position / s / 32.0).floor()
+		var b := (gate.end / s / 32.0).ceil()
+		for y in range(int(a.y), int(b.y)):
+			for x in range(int(a.x), int(b.x)):
+				cells[Vector2i(x, y)] = true
+	feel.feedback.particles.blocked_cells = cells
+
+
+## Wading keys handed to the Frostgruft's figures (m.wk; _update_mobs).
+var _wade_serial := 0
 
 
 func _update_mobs(dt: float) -> void:
@@ -2632,6 +3210,16 @@ func _update_mobs(dt: float) -> void:
 				# a monster's steps show by its moving point (wade sees it move)
 				if m.has("id"): pools.wade("m" + str(m.id), Vector2(m.p), false, float(state.t))
 		return
+	# the Frostgruft wades too: the hero and its figures through the talents' pools (physics plan
+	# R26/F55; its figures get a stable wading key at their first step)
+	var layer := _pool_layer()
+	if layer != null and layer.has_method("wade"):
+		layer.wade("hero", Vector2(float(player.x), float(player.y)), bool(player.get("moving", false)), float(state.t))
+		for m: Dictionary in mobs:
+			if not m.has("wk"):
+				_wade_serial += 1
+				m.wk = _wade_serial
+			layer.wade("m%d" % int(m.wk), Vector2(m.p), false, float(state.t))
 	var me := Vector2(player.x, player.y)
 	var hidden := float(state.get("stealth", 0.0)) > 0.0
 	for m: Dictionary in mobs:
@@ -2646,7 +3234,7 @@ func _update_mobs(dt: float) -> void:
 		# taunting allies (bone colossus, great bear) draw enemies away from the hero
 		var goal := SubKit.chase(self, m, me)
 		if talents != null: goal = talents.chase_goal(m, goal)
-		# WAHN (element_rules.json madness): a mad one staggers, scatters its shots and may turn on another
+		# WAHN (madness_rules.json madness): a mad one staggers, scatters its shots and may turn on another
 		m.mad_t = maxf(0.0, float(m.get("mad_t", 0.0)) - dt)
 		m.mad_cd = maxf(0.0, float(m.get("mad_cd", 0.0)) - dt)
 		var prey := _themed_mad_victim(m, dt)
@@ -2668,24 +3256,24 @@ func _update_mobs(dt: float) -> void:
 			"turret":
 				v = Vector2.ZERO
 			"dasher":
-				# runs like the others, now and then a straight dash at the hero
+				# runs like the others, now and then a straight dash at the hero: it holds still for its
+				# windup first, its aim fixed once aim_lock of it has run (frost_moves.gd basic_tell, tokens)
 				m.dash_t -= dt
 				if m.dash > 0.0:
 					m.dash -= dt
 					v = m.dash_dir * float(def.dash_speed)
-				elif m.dash_t <= 0.0:
-					m.dash_t = float(def.dash_every)
-					m.dash = float(def.dash_time)
-					m.dash_dir = dir
-					if sound != null:
-						sound.on_attack(m, "dasher")
+				else:
+					var lunge: Vector2 = FrostCombat.FrostMoves.basic_tell(self, m, "dash", goal, dt, m.dash_t <= 0.0)
+					if lunge.is_finite():
+						m.dash_t = float(def.dash_every)
+						m.dash = float(def.dash_time)
+						m.dash_dir = (lunge - m.p).normalized() if lunge.distance_to(m.p) > 1.0 else dir
+						if sound != null:
+							sound.on_attack(m, "dasher")
 			"puller":
 				if d < float(def.pull_radius):
-					var pull: Vector2 = -dir * float(def.pull) * dt
-					if not box_blocked(_player_box(player.x + pull.x, player.y)):
-						player.x += pull.x
-					if not box_blocked(_player_box(player.x, player.y + pull.y)):
-						player.y += pull.y
+					# axis by axis against the walls (MotionKit.move_hero)
+					motion_kit().move_hero(-dir * float(def.pull) * dt)
 		for o: Dictionary in mobs:
 			if o != m:
 				var off: Vector2 = m.p - o.p
@@ -2694,7 +3282,7 @@ func _update_mobs(dt: float) -> void:
 					v += off / od * 120.0
 		if float(m.mad_t) > 0.0 and m.kind != "boss":
 			v += ElementRules.wobble(m, dir, dt, randf()) * PIXEL_WORLD / 2.0
-		if m.get("hold", false) or m.get("mv_hold", false):
+		if m.get("hold", false) or m.get("mv_hold", false) or m.has("tell"):
 			v = Vector2.ZERO
 		v *= HeroKit.tick_mob(self, m, dt)
 		# the element physics (src/combat/element_rules.gd): the pool or gas it stands in, and on the
@@ -2703,43 +3291,55 @@ func _update_mobs(dt: float) -> void:
 		if not m.has("tags"):
 			m.tags = ElementRules.tags(str(m.kind), str(def.get("shot", "")), str(def.get("material", "")), ["frost"] if def.has("chill") else [])
 		var env := _step_mob_medium(m, dt)
-		var grip := 1.0
+		var mover := motion_kit()
+		var grip := MotionKit.FIRM
 		if bool(theme.liquid.get("slide", false)) and _cell(int(floor(m.p.x / C)), int(floor((m.p.y - 6.0) / C))) == 2 and not "frost" in m.tags:
-			grip = float(theme.liquid.get("grip", 0.015))
+			grip = float(theme.liquid.get("grip", mover.grip("glaze")))
 		elif bool(env.get("slide", false)):
-			grip = float(env.get("grip", 0.1))
-		if grip < 1.0:
-			m.sv = ElementRules.slide(m.get("sv", v), v, grip, dt)
-			v = m.sv
-		else:
-			m.sv = v
-		if env.has("pull"):
-			v += ElementRules.pull(env, m.p, env.get("centre", m.p))
-		v += m.k
-		m.k *= 0.86
+			grip = float(env.get("grip", mover.grip("medium")))
+		elif not "frost" in m.tags and float(m.get("alt", 0.0)) <= 0.0 and FrostCombat.FrostMoves.ice_under(self, m.p):
+			# a move's ice patch is Glatteis under the monsters too (its rule: element_rules.json mediums.ice; physics plan R26)
+			grip = float(ElementRules.medium("ice").get("grip", mover.grip("medium")))
+		# sliding (no firm footing): the snow layer scratches skid marks for it (src/hero/frost_snow.gd)
+		m.slid = grip < MotionKit.FIRM
+		var pull := ElementRules.pull(env, m.p, env.get("centre", m.p)) if env.has("pull") else Vector2.ZERO
 		var moved_from: Vector2 = m.p
 		var rr: float = m.r * 0.7
 		var avoid: bool = m.kind != "boss"
-		var nx: Vector2 = m.p + Vector2(v.x * dt, 0)
-		if not box_blocked(Rect2(nx.x - rr, nx.y - rr, rr * 2, rr), avoid) and not HeroKit.wall_blocks(self, nx, rr):
-			m.p = nx
-		var ny: Vector2 = m.p + Vector2(0, v.y * dt)
-		if not box_blocked(Rect2(ny.x - rr, ny.y - rr, rr * 2, rr), avoid) and not HeroKit.wall_blocks(self, ny, rr):
-			m.p = ny
+		# slide, pull and the decaying push (m.k), axis by axis against the walls (MotionKit.step_body)
+		var step: Dictionary = mover.step_body(m.p, m.get("sv", v), v, grip, pull, m.k, dt, mover.host.mob_solid(rr, avoid))
+		v = step.v
+		m.sv = step.vel
+		m.k = step.push
+		m.k_in = step.push_in
+		m.p = step.p
 		if m.has("slam"):
 			as_source("hero", func() -> void: story_hero.check_slam(m, moved_from, dt))
-		if d < m.r + 22.0 and goal == me:
+		# reeling from a perfect block (HeroKit.stagger) its touch hurts nobody
+		if d < m.r + 22.0 and goal == me and float(m.get("reel", 0.0)) <= 0.0:
 			var who: String = ("von %s erwischt" % def.name) if def.has("name") else "von Glutlingen verbrannt"
-			_hurt("von %s erschlagen" % W.boss.name if m.kind == "boss" else who, 1, m.p)
-			if def.has("chill"):
+			var was_inv := float(state.inv)
+			_hurt("von %s erschlagen" % W.boss.name if m.kind == "boss" else who, 1, m.p, m)
+			# a touch that landed shoves the hero back here too: a dasher's or the Golem's charge
+			# harder (frost_theme.json vfx.knock; physics plan F39)
+			if frost_fx != null and float(state.inv) > was_inv and not HeroKit.perfect_now(self):
+				var busy: Variant = m.get("busy", {})
+				var charging := float(m.get("dash", 0.0)) > 0.0 or (busy is Dictionary and str((busy as Dictionary).get("do", "")) == "charge")
+				frost_fx.hit_hero(m.p, "dash" if charging else "contact", "small", m.kind == "boss")
+			if def.has("chill") and not HeroKit.perfect_now(self):
 				state.chill = float(def.chill)
 		if not prey.is_empty() and d < m.r + float(prey.r) * 0.5 + 22.0:
 			_themed_mad_strike(m, prey, true)
 		if m.kind == "spucker" or beh == "shooter":
 			m.shoot -= dt
-			if m.shoot <= 0.0:
+			# it winds up first and shoots where the hero stood once aim_lock of the windup had run
+			# (frost_moves.gd basic_tell, the attack tokens)
+			var shot_at: Vector2 = FrostCombat.FrostMoves.basic_tell(self, m, "bolt", goal, dt, m.shoot <= 0.0)
+			if shot_at.is_finite():
 				m.shoot = float(def.fire_every)
-				_enemy_shot(m.p - Vector2(0, 40), to - Vector2(0, 30), float(def.get("shot_speed", balance.enemy_shot.speed)))
+				_enemy_shot(m.p - Vector2(0, 40), shot_at - m.p - Vector2(0, 30), float(def.get("shot_speed", balance.enemy_shot.speed)), m)
+				# the Frost-Skelett shoots bone arrows (src/vfx/shot_looks.gd, shot_looks.json)
+				ShotLooks.tag(eshots[-1], str(m.kind))
 				# the crypt's attack sound of its kind (story_sound.gd), else the theme's
 				if sound != null:
 					sound.on_attack(m, "shooter")
@@ -2747,12 +3347,15 @@ func _update_mobs(dt: float) -> void:
 					_sound("enemy_shot")
 		elif beh == "turret":
 			m.shoot -= dt
-			if m.shoot <= 0.0:
+			# a fan winds up like a shot (frost_moves.gd basic_tell)
+			var fan_at: Vector2 = FrostCombat.FrostMoves.basic_tell(self, m, "bolt", goal, dt, m.shoot <= 0.0)
+			if fan_at.is_finite():
 				m.shoot = float(def.fire_every)
 				var fan := int(def.fan)
+				var base: float = (fan_at - m.p).angle() if fan_at.distance_to(m.p) > 1.0 else dir.angle()
 				for k in range(fan):
-					var a: float = dir.angle() + (float(k) / maxf(1.0, fan - 1.0) - 0.5) * float(def.spread)
-					_enemy_shot(m.p - Vector2(0, m.cy), Vector2(cos(a), sin(a)), float(def.shot_speed))
+					var a: float = base + (float(k) / maxf(1.0, fan - 1.0) - 0.5) * float(def.spread)
+					_enemy_shot(m.p - Vector2(0, m.cy), Vector2(cos(a), sin(a)), float(def.shot_speed), m)
 				if sound != null:
 					sound.on_attack(m, "turret", fan)
 		elif m.kind == "boss" and m.has("kit"):
@@ -2777,7 +3380,7 @@ func _update_mobs(dt: float) -> void:
 					var n := 16 if W.final else 10
 					for k in range(n):
 						var a: float = m.spin + float(k) / n * TAU
-						_enemy_shot(m.p - Vector2(0, 70), Vector2(cos(a), sin(a)), float(balance.enemy_shot.ring_speed))
+						_enemy_shot(m.p - Vector2(0, 70), Vector2(cos(a), sin(a)), float(balance.enemy_shot.ring_speed), m)
 	_mad_mob = {}
 	_mad_prey = {}
 	for m: Dictionary in mobs.duplicate():
@@ -2841,16 +3444,46 @@ func _explode(s: Dictionary, first: Dictionary) -> void:
 				HeroKit.burn_mob(o, float(s.burn), float(s.burn_time))
 			if s.has("slow"):
 				HeroKit.slow_mob(self, o, float(s.slow), float(s.slow_time))
+	if wreck != null:
+		wreck.blast(s.p, radius, "blast", true)
 	# effect hook: with the feel the mage's splash is the crypt's area perk (perk_events blast:
 	# feedback.gd's magic burst in the staff's glow, its sound, the gold ring), not the world's circle
 	if feel != null and str(s.get("kind", "")) == "magic":
 		feel.perk("blast", s.p)
 		return
 	fx.append({"kind": "blast", "p": s.p, "r": radius, "t": 0.3, "max": 0.3, "gravity": s.get("kind", "") in ["gravity", "rock"], "shot": s.get("kind", "")})
+	if s.get("kind", "") == "pyro" and talents != null: talents.tc.show_effect("explosion", s.p, radius * 0.45, {"fx": "fire", "life": 0.55, "owner": 1, "wrecked": true})
 	if int(s.get("split", 0)) > 0:
 		RelicKit.split_rock(self, s)
 	_burst(s.p, 18)
 	_sound("blast")
+
+
+## The mage's shot `s` reached the point the mouse showed (MageBolt.aim) and struck nothing on
+## the way: it bursts there on the floor as on an enemy. The fireball and the arcane bolt in
+## their splash (the fire's explosion sets off what lies there, story_elements.gd), the icicle
+## and the void orb in their own burst, their frost and void touching the floor (MageBolt.touch).
+func _land_shot(s: Dictionary) -> void:
+	s.t = 0.0
+	if float(s.get("splash", 0.0)) > 0.0 or s.has("burst"):
+		_explode(s, {})
+	MageBolt.burst(self, s, {}, true)
+	MageBolt.touch(self, s)
+
+
+## Where the mage's left-click would burst now: the mouse (mirrored while he is mad), held
+## within the shot's flight (MageBolt.land_reach); INF when no mark shows (another class,
+## a window open, a potion being thrown, the hero down).
+func mage_mark() -> Vector2:
+	if class_id != "mage" or str(weapon.get("shot", "")) != "magic" or int(state.get("hp", 0)) <= 0 or throw_slot >= 0 \
+			or state.get("tree_open", false) or _window_open():
+		return Vector2.INF
+	var from := Vector2(player.x, player.y - 40)
+	var to: Vector2 = (HeroKit.target(self) - from) * (-1.0 if FrostCombat.HeroFx.inverted(self) else 1.0)
+	if to.length() < 1.0:
+		return Vector2.INF
+	var flight := float(weapon.get("speed", balance.shot.speed)) * float(MageBolt.spec(MageBolt.element(self)).get("speed_mult", 1.0)) * float(state.range)
+	return from + to.normalized() * MageBolt.land_reach(to.length(), flight)
 
 
 func _update_hazards(dt: float) -> void:
@@ -2868,14 +3501,32 @@ func _update_hazards(dt: float) -> void:
 		match e.type:
 			"spikes":
 				e.up = int(state.t / float(hz.spike_period)) % 2 == int(e.phase)
+				# the spikes shoot up and sink back over 0.08 s instead of popping (physics plan R21);
+				# shooting up they puff dust off the plate
+				var rise := move_toward(float(e.get("rise", 1.0 if e.up else 0.0)), 1.0 if e.up else 0.0, dt / 0.08)
+				if rise >= 1.0 and float(e.get("rise", 1.0)) < 1.0 and feel != null:
+					if tex.has("ice_crack"):
+						# the Frostgruft's ice trap: shards and snow burst off as the ice breaks through
+						feel.feedback.particles.shatter(Vector2(e.x, e.y - 6.0) / float(feel.scale), 6, Vector2.ZERO, 90.0)
+					else:
+						feel.feedback.particles.dust_flat(Vector2(e.x, e.y) / float(feel.scale), 10.0, 6)
+				elif rise < 1.0 and float(e.get("rise", 0.0)) >= 1.0 and feel != null and tex.has("ice_crack"):
+					# sinking back it crumbles: a few chips fall off
+					feel.feedback.particles.shatter(Vector2(e.x, e.y - 6.0) / float(feel.scale), 3, Vector2.ZERO, 50.0)
+				e.rise = rise
 				if e.up and absf(me.x - e.x) < 42 and absf(me.y - 12 - e.y) < 40:
 					_hurt("von Stacheln getroffen")
 			"vent":
 				e.burst = fmod(state.t + float(e.offset), float(hz.vent_period)) < float(hz.vent_burst)
 				if e.burst and me.distance_to(Vector2(e.x, e.y)) < float(hz.vent_radius):
 					_hurt("vom Glutschlot verbrannt")
-				if e.burst and randf() < 0.6:
-					embers.append({"p": Vector2(e.x + randf_range(-20, 20), e.y - 10), "v": Vector2(randf_range(-20, 20), randf_range(-280, -160)), "t": 0.8, "big": true, "gold": false})
+				# its matter, per second, not per frame (physics plan R21/F53): the Hölle's vent throws
+				# real flames that rise and smoke, the Krypta's Moder vent breathes green fumes
+				if e.burst:
+					e.vent_due = float(e.get("vent_due", 0.0)) + dt * 36.0
+					while float(e.vent_due) >= 1.0:
+						e.vent_due = float(e.vent_due) - 1.0
+						_vent_matter(e)
 			"plate":
 				if e.get("on", false) or absf(me.x - e.x) > 44 or absf(me.y - 10 - e.y) > 44:
 					continue
@@ -2921,8 +3572,6 @@ func _update_hazards(dt: float) -> void:
 					if feel != null:
 						feel.hero_perk("heal")
 					_toast("+1 Herz")
-				else:
-					state.gems += 1
 				# the crypt's pickup: its loot_taken fx event (the pickup sheet and its chime through feedback.gd)
 				if feel != null:
 					feel.fx_event("loot_taken", Vector2(e.x, e.y))
@@ -2987,180 +3636,59 @@ func _pool_layer() -> RefCounted:
 	return null
 
 
-## The element physics on the hero (src/combat/element_rules.gd,
-## assets/data/element_rules.json): what he stands in and what he breathes.
-## A pool of lava, fire, poison or void hurts on its tick and puts its
-## condition on (burn, poison, silence), ice and blood take his footing
-## (_update_player), the void pulls, water puts out his burning; a gas cloud
-## thick enough hurts and conditions the same way and closes the view round
-## him (vision: src/hero/story_glow.gd). The lava and ice TILES of a world keep
-## their theme.liquid rule in _update_player; this is the pools' and clouds'.
+## The element physics on the hero: the world's ElementExposure (exposure(),
+## src/physics_kit/element_exposure.gd) lets the pool he stands in and the gas
+## he breathes act on him (half hearts drained per second, his conditions, a
+## douse, the combos; a drunk potion wards him, the Leerenmagier is exempt
+## from the void). Kept here for the rest of the world: hero_medium (his
+## footing and pull, _update_player), hero_gas, their style and material, the
+## view closing inside gas (vision: src/hero/story_glow.gd), his madness clock
+## and the ice chips his boots scratch up. The lava and ice TILES of a world
+## keep their theme.liquid rule in _update_player; this is the pools' and clouds'.
 func _step_elements(dt: float) -> void:
-	hero_medium = {}
-	hero_medium_style = ""
-	hero_gas = {}
-	hero_gas_mat = ""
 	vision.goal = 0.0
+	# the pools' gameplay field runs on this clock, never the drawing's (src/physics_kit/pool_field.gd
+	# via the layer's advance): a pool a worker shaped counts from its moment in every world
+	var layer: RefCounted = _pool_layer()
+	if layer != null and layer.has_method("advance"):
+		layer.advance(float(state.t))
 	if story_elements != null:
 		story_elements.update(dt)
-	if state.is_empty() or state.dead > 0.0:
+	var met: Dictionary = exposure().step(player, dt)
+	hero_medium = met.medium
+	hero_medium_style = met.style
+	hero_gas = met.gas
+	hero_gas_mat = met.gas_mat
+	# dead, or burning he set the poison he stepped in off: nothing else this frame
+	if met.skipped or met.ignited == "pool":
 		_ease_vision(dt)
 		return
-	var feet := Vector2(player.x, player.y)
-	var layer := _pool_layer()
-	if layer != null:
-		var under: Array = layer.materials_at(feet)
-		if story_elements != null: under = under.filter(func(mat: String) -> bool: return not story_elements.safe_medium(feet, mat))
-		if not under.is_empty():
-			hero_medium_style = ElementRules.top(under)
-			# burning, he sets the poison he steps in off (element_rules.json combos)
-			if _hero_combo(ElementRules.material(hero_medium_style)):
-				hero_medium_style = ""
-				_ease_vision(dt)
-				return
-			hero_medium = ElementRules.medium(hero_medium_style).duplicate()
-			# the Leerenmagier holds the void: his own medium neither hurts, silences, pulls nor maddens him
-			if ElementRules.material(hero_medium_style) == "void" and _void_mind():
-				hero_medium = {}
-			# crusted lava (water met it) is cool stone for a while
-			if ElementRules.material(hero_medium_style) == "lava" and story_elements != null and story_elements.crusted(feet):
-				hero_medium = {}
-				hero_medium_style = ""
-			# the void pulls towards the middle of its pool: the nearest puddle zone of that style
-			if hero_medium.has("pull"):
-				hero_medium.centre = _pool_centre(feet, hero_medium_style)
-	if not hero_medium.is_empty():
-		# it hurts continuously: half hearts per second, drained smoothly onto the life bar
-		if hero_medium.has("hurt"):
-			dot_hurt_f(float(hero_medium.hurt) * dt, str(hero_medium.get("why", "im %s" % hero_medium_style)))
-		_hero_conditions(hero_medium)
-		# sliding fast over ice the boots scratch it: ice chips spray behind (the Frostgruft's
-		# snow layer does this on its tiles; this is the pools' ice in every world)
-		if bool(hero_medium.get("slide", false)) and monsters != null and (player.vel as Vector2).length() > 140.0:
-			_skid -= dt
-			if _skid <= 0.0:
-				_skid = 0.09
-				var back: Vector2 = -(player.vel as Vector2).normalized()
-				monsters._pixel_burst(feet + back * 10.0, 2, monsters.PX_COL.frost, 90.0, 160.0, 0.5)
-	# WAHN (element_rules.json madness): a void pool drives him mad after madness.hero_delay s, his
+	# sliding fast over ice the boots scratch it: ice chips spray behind (the Frostgruft's
+	# snow layer does this on its tiles; this is the pools' ice in every world)
+	# (how fast and how often: physics_motion.json skid, MotionKit.skid)
+	if bool(hero_medium.get("slide", false)) and monsters != null and motion_kit().skid((player.vel as Vector2).length(), dt):
+		var back: Vector2 = -(player.vel as Vector2).normalized()
+		monsters._pixel_burst(Vector2(player.x, player.y) + back * 10.0, 2, monsters.PX_COL.frost, 90.0, 160.0, 0.5)
+	# WAHN (madness_rules.json madness): a void pool drives him mad after madness.hero_delay s, his
 	# controls invert until hero_after s after he left it (src/hell/hero_fx.gd mad_step: state.mad,
 	# state.mad_warn). The void pools he can step in that are his own are the Leerenmagier's: immune.
-	var maddening: bool = not hero_medium.is_empty() and (hero_medium.get("status", {}) as Dictionary).has("mad")
-	FrostCombat.HeroFx.mad_step(self, maddening and not _void_mind(), dt)
-	if gas != null:
-		# the hero parts the gas round him (_step_gas): what he breathes is the cloud at arm's length
-		var cloud: Dictionary = gas.around(feet, 22.0 * PIXEL_WORLD / 2.0 + 24.0)
-		if float(cloud.d) >= ElementRules.dense_from() and not _hero_combo(str(cloud.mat)):
-			hero_gas_mat = str(cloud.mat)
-			hero_gas = ElementRules.gas(hero_gas_mat)
-			if story_elements != null and story_elements.safe_gas(feet, hero_gas_mat): hero_gas = {}
-			if hero_gas_mat == "void" and _void_mind():
-				hero_gas = {}
+	FrostCombat.HeroFx.mad_step(self, bool(met.maddening) and not _void_mind(), dt)
 	if not hero_gas.is_empty():
-		if hero_gas.has("hurt"):
-			dot_hurt_f(float(hero_gas.hurt) * dt, str(hero_gas.get("why", "im %s" % hero_gas_mat)))
-		_hero_conditions(hero_gas)
-		vision.goal = float(hero_gas.get("vision", 0.0))
+		vision.goal = float(met.vision)
 		vision.mat = hero_gas_mat
 	_ease_vision(dt)
 
 
-## The element physics on a themed world's enemy (the Frostgruft's, theme.mobs;
-## the hell monsters have their own in hell_monsters.gd _step_medium): the
-## pool it stands in hurts it on its tick (enemy_hurt hero hits per second,
-## unless it is of that element), burns, poisons or slows it, douses its
-## burning; a gas cloud thick enough does the same. Returns the medium's rule
-## ({} on firm floor) for the movement (slide, pull).
+## The element physics on a themed world's enemy (the Frostgruft's, theme.mobs):
+## the same ElementExposure as the hero and the hell monsters (exposure();
+## hell_monsters.gd _step_medium), combos and the burrowed/airborne guard
+## included. A gas that blinds holds its shot back (m.shoot). Returns the
+## medium's rule ({} on firm floor) for the movement (slide, pull).
 func _step_mob_medium(m: Dictionary, dt: float) -> Dictionary:
-	var env := {}
-	if m.hp <= 0.0:
-		return env
-	var layer := _pool_layer()
-	if layer != null:
-		var under: Array = layer.materials_at(m.p)
-		if not under.is_empty():
-			var style := ElementRules.top(under)
-			var rule := ElementRules.medium(style)
-			if not rule.is_empty() and not ElementRules.immune(m.tags, rule) and not (ElementRules.material(style) == "lava" and story_elements != null and story_elements.crusted(m.p)):
-				env = rule.duplicate()
-				if rule.has("pull"):
-					env.centre = _pool_centre(m.p, style)
-				_medium_on_themed_mob(m, rule, "env_tick", dt)
-	if gas != null:
-		var cloud: Dictionary = gas.around(m.p, 42.0, 4)
-		if float(cloud.d) >= ElementRules.dense_from():
-			var rule := ElementRules.gas(str(cloud.mat))
-			if not rule.is_empty() and not ElementRules.immune(m.tags, rule):
-				_medium_on_themed_mob(m, rule, "gas_tick", dt)
-				if rule.has("blind_shots"):
-					m.shoot = maxf(float(m.get("shoot", 0.0)), float(rule.blind_shots))
-	return env
-
-
-func _medium_on_themed_mob(m: Dictionary, rule: Dictionary, tick_key: String, dt: float) -> void:
-	if rule.has("enemy_hurt"):
-		m[tick_key] = float(m.get(tick_key, 0.0)) - dt
-		if float(m[tick_key]) <= 0.0:
-			var tick := float(rule.get("tick", 1.0))
-			m[tick_key] = tick
-			m.hp -= float(rule.enemy_hurt) * tick * (0.5 if m.kind == "boss" else 1.0) * float(state.dmg)
-			m.hit = 0.12
-			if feel != null:
-				feel.on_hit(m, Vector2.ZERO, false)
-	var status: Dictionary = rule.get("status", {})
-	for kind: String in status:
-		var spec: Array = status[kind]
-		match kind:
-			"burn", "poison":
-				HeroKit.burn_mob(m, float(spec[0]) * 0.5, float(spec[1]))
-				if kind == "burn" and float(m.get("wet_t", 0.0)) <= 0.0:
-					m.fire_t = maxf(float(m.get("fire_t", 0.0)), float(spec[1]))
-			"slow":
-				HeroKit.slow_mob(self, m, 1.0 - float(spec[0]), float(spec[1]))
-			"wet":
-				m.wet_t = maxf(float(m.get("wet_t", 0.0)), float(spec[1]))
-			"mad":
-				ElementRules.madden(m, float(spec[1]), m.get("tags", []))
-	if bool(rule.get("douse", false)):
-		m.burn_t = 0.0
-		m.fire_t = 0.0
-
-
-## What the hero's own condition does with the material he meets
-## (element_rules.json combos): burning, he sets poison off (true: it is gone);
-## wet, frost mist freezes him solid for a moment.
-func _hero_combo(mat: String) -> bool:
-	if feel == null:
-		return false
-	var combos: Dictionary = ElementRules.data().get("combos", {})
-	var burning := FrostCombat.HeroFx.has(self, "burn")
-	var wet := FrostCombat.HeroFx.has(self, "wet")
-	if burning and mat == "poison" and bool(combos.get("burn_ignites_poison", true)) and story_elements != null:
-		story_elements.fire_at(Vector2(player.x, player.y), float(combos.get("explode_r", 30.0)) * PIXEL_WORLD / 2.0)
-		return true
-	if wet and mat == "frost" and float(combos.get("freeze_wet", 0.0)) > 0.0 and not FrostCombat.HeroFx.has(self, "freeze"):
-		FrostCombat.HeroFx.apply(self, "freeze", float(combos.get("freeze_wet", 0.7)), 1.0)
-		FrostCombat.HeroFx.clear(self, "wet")
-		if monsters != null:
-			monsters._burst_in(Vector2(player.x, player.y - 40), 12, "frost")
-	return false
-
-
-## The conditions a medium or gas rule puts on the hero (its status table), and
-## what it takes away (water douses his burning).
-func _hero_conditions(rule: Dictionary) -> void:
-	if feel == null:
-		return
-	var status: Dictionary = rule.get("status", {})
-	for kind: String in status:
-		var spec: Array = status[kind]
-		# WAHN is no plain condition: its clock runs in _step_elements (hero_fx.gd mad_step)
-		if kind == "mad":
-			continue
-		FrostCombat.HeroFx.apply(self, kind, float(spec[1]), float(spec[0]))
-	if bool(rule.get("douse", false)):
-		FrostCombat.HeroFx.clear(self, "burn")
-		state.burn = 0.0
+	var met: Dictionary = exposure().step(m, dt)
+	if float(met.blind) > 0.0:
+		m.shoot = maxf(float(m.get("shoot", 0.0)), float(met.blind))
+	return met.medium
 
 
 ## The middle of the nearest puddle zone of `style` round `at` (the hell's own
@@ -3176,6 +3704,9 @@ func _pool_centre(at: Vector2, style: String) -> Vector2:
 			if d < best_d:
 				best_d = d
 				best = z.p
+	elif _pool_layer() != null and _pool_layer().get("pool_field") != null:
+		# no monster runtime (the Frostgruft): its pools lie in the talents' layer (physics plan R26)
+		return _pool_layer().pool_field.centre(at, style)
 	return best
 
 
@@ -3206,7 +3737,7 @@ func _ease_vision(dt: float) -> void:
 ## of lava as glowing pixels that lie there as embers and cool to soot
 ## (hell_monsters.gd lava_splash). Only where a lava cell borders the floor.
 func _slosh_lava(dt: float) -> void:
-	if monsters == null or not theme.liquid.get("hurt", false):
+	if monsters == null or not theme.liquid.get("hurt", false) or _floor_mat() != "lava":
 		return
 	var spec: Dictionary = (balance.monsters.get("feel", {}) as Dictionary).get("lava", {})
 	lava_slosh += float(spec.get("slosh_rate", 0.0)) * dt
@@ -3242,29 +3773,58 @@ func _step_gas(dt: float) -> void:
 		else:
 			return
 	gas.step(dt, float(state.t))
-	gas.part(Vector2(float(player.x), float(player.y)), 22.0)
+	gas.part(Vector2(float(player.x), float(player.y)), 22.0, dt)
 	for m: Dictionary in mobs:
-		gas.part(Vector2(m.p), 18.0)
+		gas.part(Vector2(m.p), 18.0, dt)
 
 
 ## Bubbles on the lava floor in view (hell_balance.json monsters.feel.lava
 ## "bubble_rate" per second, at most "bubbles" at once): each swells for a
 ## moment, bursts and spits a few glowing drops in arcs (the feel's particles,
 ## "glut": they lie down as embers and cool to soot, or sink into the lava).
+## What the world's liquid floor (tiles 2 and 3) is made of: theme.liquid.material, else lava
+## where it hurts and ice where it slides (physics plan R10, decision D3: the Krypta's Moder is
+## cold poison sludge, not lava).
+func _floor_mat() -> String:
+	var liquid: Dictionary = theme.get("liquid", {})
+	return str(liquid.get("material", "lava" if bool(liquid.get("hurt", false)) else ("ice" if bool(liquid.get("slide", false)) else "")))
+
+
+## One bit of a bursting vent's matter: flames rising off a lava vent (fire), green fumes and
+## smoke off the Krypta's Moder vent, the old ember squares without the particles.
+func _vent_matter(e: Dictionary) -> void:
+	if feel == null:
+		embers.append({"p": Vector2(e.x + randf_range(-20, 20), e.y - 10), "v": Vector2(randf_range(-20, 20), randf_range(-280, -160)), "t": 0.8, "big": true, "gold": false})
+		return
+	var P: RefCounted = feel.feedback.particles
+	var at := Vector2(e.x + randf_range(-16, 16), e.y - 10) / float(feel.scale)
+	if _floor_mat() == "moder":
+		var green: Array = PoolPaint.settings().get("materials", {}).get("poison", {}).get("ramp", {}).values()
+		var cols: Array = []
+		for hex: Variant in green.slice(0, 3): cols.append(Color(str(hex)))
+		P.motes(at, 1, cols, 30.0, 4.0)
+		if randf() < 0.25: P.smoke(at, 1, 4.0)
+	else:
+		P.flames(at, 1, [], 3.0, 2.0, Vector2(randf_range(-10, 10), -30))
+
+
 func _bubble_lava(dt: float) -> void:
 	if not bool((theme.get("liquid", {}) as Dictionary).get("hurt", false)):
 		return
+	# lava bubbles glow and spit glowing drops; the Moder bubbles olive and spits sludge drops
+	var hot := _floor_mat() == "lava"
 	var spec: Dictionary = (balance.monsters.get("feel", {}) as Dictionary).get("lava", {}) if balance.has("monsters") else {}
 	for b: Dictionary in lava_bubbles:
 		var before := float(b.t)
 		b.t = before + dt
 		if before < float(b.T) * 0.7 and float(b.t) >= float(b.T) * 0.7 and feel != null:
-			var ramp: Dictionary = PoolPaint.settings().get("materials", {}).get("lava", {}).get("ramp", {})
+			var ramp: Dictionary = PoolPaint.settings().get("materials", {}).get("lava" if hot else "poison", {}).get("ramp", {})
 			for i in range(1 + int(b.big)):
 				var drop: Dictionary = feel.feedback.particles.emit(Vector2(b.p) / feel.scale, Vector2.from_angle(randf() * TAU) * randf_range(15.0, 45.0), Color(str(ramp.get("hi", "facb3e"))),
-					1.5, "glut", 2.0, 2.0, randf_range(60.0, 110.0), 1.5)
-				drop.ember_life = randf_range(0.8, 1.4)
-				drop.soot = 0.5
+					1.5, "glut" if hot else "drop", 2.0, 2.0, randf_range(60.0, 110.0), 1.5)
+				if hot:
+					drop.ember_life = randf_range(0.8, 1.4)
+					drop.soot = 0.5
 	lava_bubbles = lava_bubbles.filter(func(b: Dictionary) -> bool: return float(b.t) < float(b.T))
 	lava_bubble_due += float(spec.get("bubble_rate", 9.0)) * dt
 	while lava_bubble_due >= 1.0:
@@ -3285,7 +3845,7 @@ func _bubble_lava(dt: float) -> void:
 func _draw_lava_bubbles(l: CanvasItem) -> void:
 	if lava_bubbles.is_empty():
 		return
-	var ramp: Dictionary = PoolPaint.settings().get("materials", {}).get("lava", {}).get("ramp", {})
+	var ramp: Dictionary = PoolPaint.settings().get("materials", {}).get("lava" if _floor_mat() == "lava" else "poison", {}).get("ramp", {})
 	var spec := Color(str(ramp.get("spec", "fdf7ed")))
 	var hi := Color(str(ramp.get("hi", "facb3e")))
 	var lite := Color(str(ramp.get("lite", "ee8e2e")))
@@ -3340,7 +3900,8 @@ func _update_camera(dt: float) -> void:
 		"view": view, "shake": shake, "t": float(state.t)})
 	camera.position = cam_rig.position
 	camera.zoom = Vector2.ONE * float(balance.view.base_width) / float(balance.view.width) * float(cam_rig.zoom)
-	camera.offset = cam_rig.offset
+	# view_shift: the view sits lower so the skill bar covers none of the fight
+	camera.offset = cam_rig.offset + cam_rig.view_shift
 
 
 var _camera_boss := false
@@ -3380,11 +3941,20 @@ func camera_kick(dir: Vector2, px: Variant = "hero_hit") -> void:
 ## Draws one layer: static chunks (back/front), live actors, or the monsters' attack
 ## shapes (the darkness and the bloom over it: src/hero/story_glow.gd).
 func draw_layer(l: Layer) -> void:
+	PerfMarks.begin()
+	_draw_layer_kind(l)
+	PerfMarks.add("d." + (l.kind if not l.kind in ["back", "front"] else "chunks"))
+
+
+func _draw_layer_kind(l: Layer) -> void:
 	match l.kind:
 		"back": _draw_back(l)
 		"front": _draw_front(l)
 		# the wall snow layers; a set with snow in its drawings (theme baked_snow) needs none
 		"snow_ao", "snow_lip", "snow_front":
+			# the floor's cold grade under the wall snow (src/hero/frost_snow.gd draw_grade)
+			if l.kind == "snow_ao":
+				frost_snow.draw_grade(l, l.area)
 			if not frost_snow.baked():
 				frost_snow.walls.draw(l, l.area, l.kind.trim_prefix("snow_"))
 		"actors": _draw_actors(l)
@@ -3399,7 +3969,8 @@ func draw_layer(l: Layer) -> void:
 
 
 func _tex(ci: CanvasItem, name: String, pos: Vector2, flip := false, tint := Color.WHITE, scale := 1.0) -> void:
-	var t: Texture2D = tex.get(name)
+	# a fire or a fountain: its picture of the moment (src/vfx/fire_anim.gd)
+	var t: Texture2D = fire_anim.frame(name, pos, float(state.get("t", 0.0))) if fire_anim.has(name) else tex.get(name)
 	if t == null:
 		return
 	var size := t.get_size() * scale
@@ -3489,10 +4060,13 @@ func _draw_back(l: Layer) -> void:
 			else:
 				l.draw_texture(tex[W.tile_names[W.tiles[i]]], Vector2(x * C, y * C))
 	var rim: Texture2D = tex.lava_edge_top
+	# the Hölle's lava: a ragged crust of pixels along its edge instead of the
+	# straight stone frame (src/vfx/pool_paint.gd lava_rim; drawing only)
+	var crust := PoolPaint.crusts(str(theme.sprites))
 	for y in range(y0, mini(y0 + CHUNK.y, W.rows)):
 		for x in range(x0, mini(x0 + CHUNK.x, cols)):
 			var t := _cell(x, y)
-			if t != 2 and t != 3:
+			if (t != 2 and t != 3) or crust:
 				continue
 			for side: Array in [[Vector2i(0, -1), Vector2(x * C, y * C), 0.0], [Vector2i(0, 1), Vector2(x * C + C, y * C + C), PI], [Vector2i(-1, 0), Vector2(x * C, y * C + C), -PI / 2], [Vector2i(1, 0), Vector2(x * C + C, y * C), PI / 2]]:
 				var n := _cell(x + side[0].x, y + side[0].y)
@@ -3504,6 +4078,15 @@ func _draw_back(l: Layer) -> void:
 						l.draw_texture_rect_region(rim, Rect2(-2, -18, 50, 36), Rect2(0, 0, 48, 36))
 						l.draw_texture_rect_region(rim, Rect2(46, -18, 52, 36), Rect2(6, 0, 48, 36))
 					l.draw_set_transform(Vector2.ZERO)
+	if crust:
+		# built once per chunk and sprite set, kept on the chunk's layer
+		var made: Dictionary = l.get_meta("lava_crust", {})
+		if str(made.get("sprites", "")) != str(theme.sprites):
+			made = PoolPaint.lava_rim(_cell, x0, y0, CHUNK.x, CHUNK.y, C, PIXEL_WORLD)
+			made.sprites = str(theme.sprites)
+			l.set_meta("lava_crust", made)
+		if made.has("tex"):
+			l.draw_texture_rect(made.tex, made.rect, false)
 	for d: Dictionary in W.decals:
 		if not a.has_point(Vector2(d.x, d.y)):
 			continue
@@ -3548,7 +4131,61 @@ func _draw_back(l: Layer) -> void:
 		if a.has_point(c):
 			l.draw_texture(tex.corner_cap, c - Vector2(38, 38))
 	for w: Dictionary in W.wall_decor:
-		if a.has_point(Vector2(w.x, w.y + 74)):
+		# burning wall decor moves: drawn every frame with the actors (_draw_wall_fires)
+		if a.has_point(Vector2(w.x, w.y + 74)) and not fire_anim.has(w.name):
+			var t: Texture2D = tex[w.name]
+			_tex(l, w.name, Vector2(w.x - t.get_width() / 2.0, w.y), w.flip)
+
+
+## The lit wall fires (torches, wall braziers) near the view throw real embers and a wisp of
+## smoke from their flame tips (src/vfx/fire_anim.gd tips; vfx_particles.json wall_fire;
+## physics plan R21): they rise, drift with the wind and the embers sink and go out on the floor.
+var _wall_fire_due: Dictionary = {}
+
+
+func _wall_fire_matter() -> void:
+	if feel == null or fire_anim == null or not fire_anim.has_method("tips"):
+		return
+	var P = feel.feedback.particles
+	var spec: Dictionary = P._data.get("wall_fire", {})
+	if spec.is_empty():
+		return
+	var now := float(state.t)
+	var view := _view_rect().grow(40)
+	var s := 1.0 / float(feel.scale)
+	var cols: Array = spec.get("colors", ["#ffb04a"])
+	var smoke := Color(str(spec.get("smoke", "#3a3438")))
+	var base := float(spec.get("base", 74))
+	var i := 0
+	for w: Dictionary in W.wall_decor:
+		i += 1
+		if not fire_anim.has(w.name) or not view.has_point(Vector2(w.x, w.y + base)):
+			continue
+		var t: Texture2D = tex.get(w.name)
+		if t == null:
+			continue
+		var j := 0
+		for tip: Vector2 in fire_anim.tips(w.name):
+			j += 1
+			var q := Vector2(w.x - t.get_width() / 2.0 + (t.get_width() - tip.x if bool(w.get("flip", false)) else tip.x), w.y + tip.y)
+			var key := i * 16 + j
+			var last: Vector3 = _wall_fire_due.get(key, Vector3(now, 0.0, 0.0))
+			var step := clampf(now - last.x, 0.0, 0.1)
+			var embers := last.y + step * float(spec.get("embers_per_s", 1.4))
+			var smokes := last.z + step * float(spec.get("smoke_per_s", 0.7))
+			var high := maxf(0.0, w.y + base - q.y) * s
+			for k in range(P.room(int(embers))):
+				P.emit(q * s, Vector2(randf_range(-10.0, 10.0), 0.0) * s, Color(str(cols[randi() % cols.size()])), randf_range(0.6, 1.3), "ember", 2.0, high, randf_range(25.0, 50.0) * s, 2.0)
+			for k in range(P.room(int(smokes))):
+				P.emit((q - Vector2(0, 4)) * s, Vector2(randf_range(-4.0, 4.0), 0.0) * s, Color(smoke, 0.55), randf_range(1.0, 1.8), "smoke", 3.0, high + 4.0 * s, randf_range(12.0, 22.0) * s, 2.0)
+			_wall_fire_due[key] = Vector3(now, embers - floorf(embers), smokes - floorf(smokes))
+
+
+## The burning wall decor (torches, wall braziers) in `view`, every frame and behind everyone
+## standing in the room, so their flames move (src/vfx/fire_anim.gd).
+func _draw_wall_fires(l: CanvasItem, view: Rect2) -> void:
+	for w: Dictionary in W.wall_decor:
+		if fire_anim.has(w.name) and view.has_point(Vector2(w.x, w.y + 74)):
 			var t: Texture2D = tex[w.name]
 			_tex(l, w.name, Vector2(w.x - t.get_width() / 2.0, w.y), w.flip)
 
@@ -3570,12 +4207,19 @@ func _draw_actors(l: Layer) -> void:
 	FrostCombat.draw_under(self, l, t)
 	# the lava floor bubbling (under everything standing on the floor)
 	_draw_lava_bubbles(l)
+	_draw_wall_fires(l, view)
+	# the gold on the floor and in the air, under everyone standing
+	gold_loot.draw(l, view)
+	PerfMarks.add("da.under")
 	# footprints in the snow and skid marks on the ice, under everyone (src/hero/frost_snow.gd)
 	if frost_snow != null:
 		frost_snow.draw_ground(l, view)
 		frost_snow.draw_floor(l, view)
 		frost_snow.draw_chips(l)
 	if talents != null: talents.draw_world(l, t)
+	# enemy weapons over the hero from in front pass behind him (src/hero/story_hero.gd guard)
+	if story_hero != null:
+		story_hero.guard(l)
 	# Ignaroth's severed parts lie on the floor under everyone (src/hell/drake_rig_host.gd)
 	if drake_rig != null:
 		drake_rig.draw_under(l)
@@ -3592,8 +4236,9 @@ func _draw_actors(l: Layer) -> void:
 					_draw_ice_trap(l, e, up)
 					continue
 				var im: Texture2D = tex.spike_trap
-				var size := im.get_size() - Vector2(0, 0 if up else 16)
-				l.draw_texture_rect(im, Rect2(Vector2(e.x, e.y + (0 if up else 8)) - im.get_size() / 2.0, size), false, Color(1, 1, 1, 1.0 if up else 0.3))
+				var rise := float(e.get("rise", 1.0 if up else 0.0))
+				var size := im.get_size() - Vector2(0, roundf(16.0 * (1.0 - rise)))
+				l.draw_texture_rect(im, Rect2(Vector2(e.x, e.y + roundf(8.0 * (1.0 - rise))) - im.get_size() / 2.0, size), false, Color(1, 1, 1, lerpf(0.3, 1.0, rise)))
 			"vent":
 				if tex.has("ice_crack"):
 					# the Frostgruft's ice geyser: a small crack in the snow that erupts in an ice avalanche
@@ -3625,7 +4270,17 @@ func _draw_actors(l: Layer) -> void:
 	if not clone.is_empty():
 		list.append([clone.p.y, "clone", clone])
 	for d: Dictionary in W.doors:
-		if d.kind != "secret" and view.has_point(Vector2(d.cx, d.cy)) and _door_closed(d):
+		# a portcullis falls shut in gate_fall s and is drawn up again in gate_rise s (physics plan
+		# R21): it is drawn while it moves too; gameplay blocks at once as before
+		var shut := _door_closed(d)
+		var was := float(d.get("drop", 1.0 if shut else 0.0))
+		var drop := move_toward(was, 1.0 if shut else 0.0, get_process_delta_time() / (0.18 if shut else 0.35))
+		if drop >= 1.0 and was < 1.0 and feel != null and view.has_point(Vector2(d.cx, d.cy)):
+			# it slams down: dust and grit off the floor, a jolt
+			feel.feedback.particles.dust_flat(Vector2(d.cx, d.cy + 40.0) / float(feel.scale), 24.0, 14)
+			feel.feedback.particles.chips(Vector2(d.cx, d.cy + 40.0) / float(feel.scale), 5, Vector2.UP, [Color("6a5e4c"), Color("3a3328")])
+		d.drop = drop
+		if d.kind != "secret" and view.has_point(Vector2(d.cx, d.cy)) and drop > 0.0:
 			list.append([d.cy + 60.0, "gate", d])
 	for m: Dictionary in mobs:
 		if view.grow(300 if monsters != null else 0).has_point(m.p):
@@ -3641,7 +4296,15 @@ func _draw_actors(l: Layer) -> void:
 				list.append([c.p.y, "corpse", c])
 	list.append([player.y, "hero", player])
 	list.sort_custom(func(x: Array, y: Array) -> bool: return x[0] < y[0])
+	# depth bands (decision D11): the particles low over the floor are drawn between the actors by
+	# their floor point, so what lies behind a monster, a pillar or the hero is hidden by it
+	var bands: RefCounted = feel.feedback.particles if feel != null and depth_bands else null
+	if bands != null: bands.begin_bands()
 	for item: Array in list:
+		if bands != null:
+			l.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * float(feel.scale))
+			bands.draw_band(l, float(item[0]) / float(feel.scale))
+			l.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 		# The shallow depression belongs behind the object. Foreground snow is fitted to the real
 		# lower silhouette (baked into substantial props, drawn here only for tiny loose items).
 		if frost_snow != null and item[1] in ["prop", "ent", "breakable"]:
@@ -3668,6 +4331,13 @@ func _draw_actors(l: Layer) -> void:
 		# Tiny loose items alone need a runtime foreground accent.
 		if frost_snow != null and item[1] in ["prop", "ent", "breakable"]:
 			frost_snow.draw_foot_over(l, item[1], item[2])
+	if bands != null:
+		l.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * float(feel.scale))
+		bands.draw_band(l, INF)
+		l.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+	# a hero covered by an enemy in front of him keeps a thin light and dark ring (src/hero/story_hero.gd)
+	if story_hero != null:
+		story_hero.draw_cover(l)
 	# the cuts' chips, embers and flashes over the actors
 	if drake_rig != null:
 		drake_rig.draw_over(l)
@@ -3679,7 +4349,11 @@ func _draw_actors(l: Layer) -> void:
 	_draw_skill_fx(l, t)
 	# the talents' events and auras over the actors (src/hell/hell_talents.gd)
 	if talents != null: talents.draw_over(l, t)
+	# the rising '+N' of gold taken and of slain enemies (src/hell/gold_loot.gd)
+	gold_loot.draw_pops(l, FONT)
 	RelicKit.draw(self, l, t)
+	# what waits behind the doors into side rooms and the boss room (room_sign)
+	_draw_room_signs(l, t)
 	SubKit.draw(self, l, t)
 	# effect hook: with the feel the hero's conditions are the crypt's (boss_fx.gd on the feel's layer)
 	if feel == null:
@@ -3687,8 +4361,15 @@ func _draw_actors(l: Layer) -> void:
 	# the frost world's ice shards, hail, armour and impact flashes on the pixel grid (src/hell/frost_fx.gd)
 	elif frost_fx != null:
 		FrostCombat.FrostMoves.draw_over(self, l, t)
+	# the mage's mark where his shot will burst (user wish 02.11.2026; src/vfx/mage_bolt.gd)
+	var mark := mage_mark()
+	if mark.is_finite():
+		MageBolt.draw_mark(l, mark, MageBolt.element(self), t)
 	for s: Dictionary in shots:
 		if SubKit.draw_shot(self, l, s, t):
+			continue
+		# the mage's icicle and void orb on the pixel grid (src/vfx/mage_bolt.gd)
+		if MageBolt.draw(l, s, t):
 			continue
 		# the hero's arrows and spells: the crypt's look (src/hero/story_hero.gd)
 		if story_hero.handles_shot(s):
@@ -3701,9 +4382,7 @@ func _draw_actors(l: Layer) -> void:
 			continue
 		if s.get("kind", "") == "rock":
 			var rock: Texture2D = tex.rock_throw
-			l.draw_set_transform(s.p, t * 8.0)
-			l.draw_texture_rect(rock, Rect2(-rock.get_size(), rock.get_size() * 2.0), false)
-			l.draw_set_transform(Vector2.ZERO)
+			CutoutMotion.sprite(l,rock,"meteor",Rect2(Vector2(s.p)-rock.get_size(),rock.get_size()*2),t,Color.WHITE,t*8,Vector2(s.p))
 			continue
 		if s.get("kind", "") == "shard":
 			l.draw_circle(s.p, 9.0, Color(0.75, 0.6, 1.0, 0.8))
@@ -3719,9 +4398,12 @@ func _draw_actors(l: Layer) -> void:
 		if s.get("kind", "") == "arrow" and arrow_tex != null:
 			var asz := arrow_tex.get_size() * float(theme.get("weapon_scale", theme.hero_scale))
 			asz *= float(s.get("big", 1.0))
-			l.draw_set_transform(s.p, (s.v as Vector2).angle() + PI / 2.0)
-			l.draw_texture_rect(arrow_tex, Rect2(-asz / 2.0, asz), false)
-			l.draw_set_transform(Vector2.ZERO)
+			CutoutMotion.sprite(l,arrow_tex,"hail_arrow",Rect2(Vector2(s.p)-asz*0.5,asz),t,Color.WHITE,(s.v as Vector2).angle()+PI/2,Vector2(s.p))
+			continue
+		if MageBolt.glow(l, s):
+			continue
+		if s.get("kind", "") == "pyro":
+			l.draw_circle(s.p, 26.0, Color(1.0, 0.45, 0.12, 0.25))
 			continue
 		var big := (1.5 if s.get("kind", "") == "magic" else 1.0) * float(s.get("big", 1.0))
 		l.draw_circle(s.p, 16.0 * big, col("shot_glow"))
@@ -3831,7 +4513,9 @@ func _draw_skill_fx(l: Layer, t: float) -> void:
 			var w := 64.0
 			var at: Vector2 = m.p - Vector2(w / 2.0, m.cy * 2.0 + 18.0)
 			l.draw_rect(Rect2(at - Vector2(2, 2), Vector2(w + 4, 10)), Color(0.02, 0.03, 0.08, 0.85))
-			l.draw_rect(Rect2(at, Vector2(w * clampf(m.hp / m.max, 0.0, 1.0), 6)), Color("#ff5d73") if float(m.get("burn_t", 0.0)) <= 0.0 else Color("#ffaa55"))
+			# tinted by the damage over time that runs on it (ui_hud_style.json mob_bar_<burn|poison|bleed>)
+			var dot := HeroKit.dot_kind(m)
+			l.draw_rect(Rect2(at, Vector2(w * clampf(m.hp / m.max, 0.0, 1.0), 6)), HudStyle.color("mob_bar" if dot.is_empty() else "mob_bar_" + dot))
 	# with the feel the level-up is the crypt's (src/hero/story_feel.gd), not these rings
 	if not levelfx.is_empty() and feel == null:
 		var lt: float = levelfx.t
@@ -3906,7 +4590,12 @@ func _draw_ent(l: Layer, e: Dictionary, t: float) -> void:
 				l.draw_texture_rect(im, Rect2(Vector2(e.x - size.x / 2.0, e.y - size.y), size), false, Color(1.6, 1.4, 0.8, 0.22 + 0.16 * sin(t * 4.0)))
 		"well":
 			var im: Texture2D = tex.fountain
-			l.draw_texture(im, Vector2(e.x - im.get_width() / 2.0, e.y - im.get_height()), Color(0.45, 0.45, 0.5) if e.get("used", false) else Color.WHITE)
+			# its water flows while it holds its power (src/vfx/fire_anim.gd), a dried-up one stands still
+			var at := Vector2(e.x - im.get_width() / 2.0, e.y - im.get_height())
+			if e.get("used", false):
+				l.draw_texture(im, at, Color(0.45, 0.45, 0.5))
+			else:
+				_tex(l, "fountain", at)
 			if not e.get("used", false):
 				l.draw_texture(im, Vector2(e.x - im.get_width() / 2.0, e.y - im.get_height()), Color(1.2, 1.4, 1.8, 0.12 + 0.1 * sin(t * 3.0)))
 		"npc":
@@ -3927,7 +4616,7 @@ func _draw_ent(l: Layer, e: Dictionary, t: float) -> void:
 		"brazier":
 			var im: Texture2D = tex.brazier_bowl
 			if e.get("lit", false):
-				l.draw_texture(im, Vector2(e.x - im.get_width() / 2.0, e.y - im.get_height()))
+				_tex(l, "brazier_bowl", Vector2(e.x - im.get_width() / 2.0, e.y - im.get_height()))
 			else:
 				var cut := 46.0
 				l.draw_texture_rect_region(im, Rect2(e.x - im.get_width() / 2.0, e.y - im.get_height() + cut, im.get_width(), im.get_height() - cut), Rect2(0, cut, im.get_width(), im.get_height() - cut))
@@ -3958,13 +4647,139 @@ func _draw_gate(l: Layer, d: Dictionary, t: float) -> void:
 	var tint := Color.WHITE
 	if fight or d.kind == "boss":
 		tint = Color(1.0 + 0.4 * (0.5 + 0.5 * sin(t * 5.0)), 0.75, 0.7)
-	l.draw_texture(im, -im.get_size() / 2.0, tint)
+	# only the part that has come down shows (it falls from the top: drop 0..1, eased in)
+	var drop := float(d.get("drop", 1.0))
+	if drop >= 1.0:
+		l.draw_texture(im, -im.get_size() / 2.0, tint)
+	else:
+		var size := im.get_size()
+		var shown := roundf(size.y * drop * drop)
+		l.draw_texture_rect_region(im, Rect2(Vector2(-size.x / 2.0, -size.y / 2.0), Vector2(size.x, shown)), Rect2(Vector2(0.0, size.y - shown), Vector2(size.x, shown)), tint)
 	l.draw_set_transform(Vector2.ZERO)
 	if not fight and d.kind == "lock":
 		l.draw_texture_rect(tex[key_sprite[d.key]], Rect2(d.cx - 15, d.cy - 30, 30, 56), false, key_tint[d.key])
 	elif not fight and d.kind == "puzzle":
 		var icon: Texture2D = tex.brazier_bowl if W.groups[d.group].kind == "braziers" else tex.icon_scroll
 		l.draw_texture_rect(icon, Rect2(d.cx - 22, d.cy - 30, 44, 44 * icon.get_height() / icon.get_width()), false)
+
+
+## Room signs (proposal D2): assets/data/room_preview.json, read once (_room_signs).
+var _room_signs_cfg: Dictionary = {}
+
+
+## The room-sign settings (assets/data/room_preview.json).
+func _room_signs() -> Dictionary:
+	if _room_signs_cfg.is_empty():
+		var data: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://assets/data/room_preview.json"))
+		_room_signs_cfg = data if data is Dictionary else {"order": [], "icons": {}}
+	return _room_signs_cfg
+
+
+## What waits in room `r` (proposal D2): the texture of its sign, "" for
+## nothing; the first kind of room_preview.json order the room still holds:
+## the guardian not yet beaten, the shop, a found secret room not yet
+## entered, a chest or vault not emptied, a seal not broken, a fire bowl not
+## lit, a heart lying there or paid by its fight. Rooms behind a secret wall
+## not yet broken are never asked (known_rooms and _draw_room_signs skip them).
+func room_sign(r: Dictionary) -> String:
+	var cfg := _room_signs()
+	var room := int(r.index)
+	var held := {}
+	if str(r.get("type", "")) == "boss" and not bool(r.get("cleared", false)):
+		held.boss = true
+	if str(r.get("gtype", "")) == "key":
+		held.shop = true
+	if str(r.get("type", "")) == "secret" and not state.visited.has(room):
+		held.secret = true
+	var reward: Variant = r.get("reward")
+	if reward is Dictionary and bool(reward.get("heart", false)) and not bool(r.get("cleared", false)):
+		held.heart = true
+	for e: Dictionary in W.ents:
+		if int(e.get("room", -1)) != room or e.get("taken", false):
+			continue
+		match str(e.type):
+			"chest":
+				if str(e.get("state", "")) != "empty": held.chest = true
+			"vault":
+				if not e.get("opened", false): held.chest = true
+			"brazier":
+				if not e.get("lit", false): held.brazier = true
+			"heart":
+				held.heart = true
+	for e: Dictionary in breakables:
+		if int(e.get("room", -1)) == room and str(e.type) == "seal" and not e.get("broken", false):
+			held.seal = true
+	var icons: Dictionary = cfg.get("icons", {})
+	for kind: Variant in cfg.get("order", []):
+		var key := str(icons.get(kind, ""))
+		if held.has(str(kind)) and tex.has(key):
+			return key
+	return ""
+
+
+## The room door `d` leads into as the hero sees it: the far side from the
+## room he stands in, else the side not visited yet; -1 when both sides are
+## visited or both unknown.
+func _sign_side(d: Dictionary) -> int:
+	var a := int(d.a)
+	var b := int(d.b)
+	var here := int(state.room)
+	if here == a:
+		return b
+	if here == b:
+		return a
+	var seen_a: bool = state.visited.has(a)
+	var seen_b: bool = state.visited.has(b)
+	if seen_a == seen_b:
+		return -1
+	return b if seen_a else a
+
+
+## Over every door in view into a side room (off the shortest way) or the
+## boss room, seen from a room the hero stands in or has visited: a small
+## plate with the sign of what waits there (room_sign), bobbing by whole art
+## pixels; faint far from the hero, clear near him (room_preview.json door).
+## Secret walls not yet broken show none.
+func _draw_room_signs(l: Layer, t: float) -> void:
+	var cfg: Dictionary = _room_signs().get("door", {})
+	if cfg.is_empty():
+		return
+	var view := _view_rect().grow(120)
+	var me := Vector2(player.x, player.y)
+	var art := PIXEL_WORLD
+	for d: Dictionary in W.doors:
+		if (str(d.kind) == "secret" and not d.get("broken", false)) or not view.has_point(Vector2(d.cx, d.cy)):
+			continue
+		var far := _sign_side(d)
+		if far < 0:
+			continue
+		var r: Dictionary = W.rooms[far]
+		if str(r.get("type", "")) != "boss" and bool(r.get("on_path", false)):
+			continue
+		var key := room_sign(r)
+		if key == "":
+			continue
+		var im: Texture2D = tex[key]
+		var side := float(cfg.get("size", 33.0))
+		var sz := Vector2(side, side * im.get_height() / im.get_width()) if im.get_width() >= im.get_height() else Vector2(side * im.get_width() / im.get_height(), side)
+		var top := float(d.cy) - float(cfg.get("lift", 96.0))
+		if d.get("boss_gate", false) and tex.has("boss_gate"):
+			top = minf(top, (float(d.y1) + 1.0) * C + 8.0 - float(tex.boss_gate.get_height()) - float(cfg.get("gate_lift", 24.0)))
+		# whole art pixels: the plate bobs by the grid, never between pixels
+		var bob := roundf(sin(t * float(cfg.get("bob_rate", 2.2)) + float(d.cx) * 0.013) * float(cfg.get("bob", 3.0)) / art) * art
+		var mid := Vector2(float(d.cx), top + bob)
+		var near := clampf(1.0 - me.distance_to(Vector2(d.cx, d.cy)) / maxf(1.0, float(cfg.get("near", 700.0))), 0.0, 1.0)
+		var alpha := lerpf(float(cfg.get("alpha_far", 0.55)), float(cfg.get("alpha_near", 0.95)), near)
+		var half := ((Vector2(side, side) * 0.5 + Vector2.ONE * float(cfg.get("pad", 6.0))) / art).ceil() * art
+		var box := Rect2(((mid - half) / art).round() * art, half * 2.0)
+		# the plate: a dark fill and a thin rim with its corners cut, on the art grid, no overlaps
+		var rim := Color(str(cfg.get("rim", "9c8a7e")), alpha * 0.8)
+		l.draw_rect(box.grow(-art), Color(str(cfg.get("plate", "1a1012")), float(cfg.get("plate_alpha", 0.72)) * alpha))
+		l.draw_rect(Rect2(box.position.x + art, box.position.y, box.size.x - art * 2.0, art), rim)
+		l.draw_rect(Rect2(box.position.x + art, box.end.y - art, box.size.x - art * 2.0, art), rim)
+		l.draw_rect(Rect2(box.position.x, box.position.y + art, art, box.size.y - art * 2.0), rim)
+		l.draw_rect(Rect2(box.end.x - art, box.position.y + art, art, box.size.y - art * 2.0), rim)
+		l.draw_texture_rect(im, Rect2((box.get_center() - sz * 0.5).round(), sz), false, Color(1, 1, 1, alpha))
 
 
 func _draw_mob(l: Layer, m: Dictionary, t: float) -> void:
@@ -4001,7 +4816,7 @@ func _draw_mob_sprite(l: Layer, m: Dictionary, t: float) -> void:
 	if im == null:
 		return
 	# the crypt's pose (src/hero/story_feel.gd): squash, lean, hop, flash, the fall of a felled monster
-	var pose: Dictionary = feel.pose(m) if feel != null else {}
+	var pose: Dictionary = FrostCombat.FrostMoves.white_hit(m, feel.pose(m)) if feel != null else {}
 	var size := im.get_size() * float(m.ds) * grow * (pose.get("scale", Vector2.ONE) as Vector2)
 	var tint := Color(1.6, 1.8, 2.2) if m.dash > 0.0 else _color(m.get("tint", [1, 1, 1]))
 	if pose.is_empty():
@@ -4097,18 +4912,20 @@ func wake_snowman(p: Dictionary) -> void:
 ## an ice burst shoots up out of it (quick rise, then it stands and shimmers until it sinks back).
 func _draw_ice_trap(l: Layer, e: Dictionary, up: bool) -> void:
 	var period := float(balance.hazards.spike_period)
-	_draw_ice_burst(l, Vector2(e.x, e.y), fmod(float(state.t), period) if up else -1.0, 0.55)
+	# down it sinks back into its crack over 0.08 s (e.rise) instead of vanishing (physics plan R21)
+	_draw_ice_burst(l, Vector2(e.x, e.y), fmod(float(state.t), period) if up else -1.0, 0.55, float(e.get("rise", 0.0)))
 
 
 ## A crack in the snow (tex ice_crack) and, `since` s after it broke open (negative: closed), the
 ## ice bursting up out of it (tex ice_burst): a quick rise, then it stands and shimmers. `scale`
 ## sizes it (the ice geysers erupt bigger than the spike traps).
-func _draw_ice_burst(l: Layer, at: Vector2, since: float, scale: float) -> void:
+func _draw_ice_burst(l: Layer, at: Vector2, since: float, scale: float, sink := 0.0) -> void:
 	var crack: Texture2D = tex.ice_crack
 	l.draw_texture_rect(crack, Rect2(at - crack.get_size() * scale / 2.0, crack.get_size() * scale), false)
-	if since < 0.0:
+	# closed: what still stands of it while it sinks (`sink` 1..0), else nothing
+	var rise := clampf(since / 0.12, 0.0, 1.0) if since >= 0.0 else clampf(sink, 0.0, 1.0)
+	if rise <= 0.0:
 		return
-	var rise := clampf(since / 0.12, 0.0, 1.0)
 	var burst: Texture2D = tex.ice_burst
 	var size := burst.get_size() * scale * Vector2(1.0, rise)
 	var shimmer := 0.85 + 0.15 * sin(float(state.t) * 18.0 + at.x)
@@ -4197,6 +5014,19 @@ func _draw_weapon(l: Layer, hero_size: Vector2) -> void:
 
 ## Draws the HUD into the screen-space control.
 func draw_hud(h: Control) -> void:
+	# what several panels read is worked out once in this drawing (talents hud_state, run points),
+	# only while it draws
+	_hud_open = true
+	_hud_run_points = -1
+	if talents != null:
+		talents.hud_begin()
+	_draw_hud(h)
+	_hud_open = false
+	if talents != null:
+		talents.hud_end()
+
+
+func _draw_hud(h: Control) -> void:
 	var size := h.size
 	var th: Dictionary = W.theme
 	if float(th.grade) > 0.0:
@@ -4236,14 +5066,24 @@ func draw_hud(h: Control) -> void:
 	if not boss_mob.is_empty():
 		_draw_boss_bar(h, size, boss_mob, left_edge)
 	_draw_floor_panel(h, size, not boss_mob.is_empty())
+	# element reactions: their pixel sign and name over the reaction point (src/hell/story_elements.gd)
+	if story_elements != null and not _windows:
+		story_elements.draw_hud(h, size, FONT)
 	# chips, prompt and the toast only while no window and no result panel covers the HUD
-	var result_up: bool = state.won or not (state.get("over", {}) as Dictionary).is_empty() or not stairs_pick.is_empty()
+	var result_up: bool = state.won or not (state.get("over", {}) as Dictionary).is_empty() or not stairs_pick.is_empty() or CardKit.seal_open(self)
 	if not _windows and not result_up:
 		var chip_hot := HudKit.menu_rect(size).has_point(h.get_local_mouse_position())
 		HudKit.menu_chip(h, FONT, size, "ESC · MENÜ", 1.0 if chip_hot else HudKit.rule("menu_chip_alpha", 0.5), chip_hot)
+		if talents != null:
+			var points := _talent_points()
+			var talent_hot := HudKit.talent_rect(size).has_point(h.get_local_mouse_position())
+			HudKit.talent_chip(h, FONT, size, points.x + points.y, HudKit.rule("menu_chip_alpha", 0.5), talent_hot, float(state.t))
 		var n := _nearest()
 		if not n.is_empty() and state.dead <= 0.0 and not state.won:
 			HudKit.prompt(h, FONT, _to_screen(n.p, size) - Vector2(0, 70), "E", say(n.label), size)
+		elif state.dead <= 0.0:
+			# a demon seal near the hero says before the first blow what it offers and costs (D1)
+			FrostHud.seal_hint(self, h, size)
 		_draw_toast(h, size)
 	if theme.placeholder_note:
 		_text(h, "Figur: Platzhalter" if monsters != null else "Figur und Gegner: Platzhalter", Vector2(20, size.y - 14), 16, Color(ink, 0.45))
@@ -4257,6 +5097,8 @@ func draw_hud(h: Control) -> void:
 	# the run talent tree window (B), the same in every world; the world waits while it is open
 	if state.get("tree_open", false) and heroic():
 		RunTreeView.draw(h, FONT, size, CardKit.tree(self), CardKit.ranks(self), int(state.level), {"title": str(hero.get("name", class_id)), "mouse": h.get_local_mouse_position()})
+	# a broken seal's two blessings and their price; the world waits (balance package D1)
+	FrostHud.seal_cards(self, h, size)
 	_draw_result(h, size)
 
 
@@ -4271,17 +5113,18 @@ func _draw_hero_strip(h: Control) -> float:
 	for k in ["A", "B", "C"]:
 		if state.keys[k]:
 			resources.append({"icon": tex[key_sprite[k]], "tint": key_tint[k]})
-	resources.append({"icon": tex.rune_gem, "text": str(int(state.gems))})
 	var fire := Rules.group_progress(W.ents, "feuer")
 	if fire.y > 0:
 		resources.append({"icon": tex.brazier_bowl, "text": "%d/%d" % [fire.x, fire.y], "dim": fire.x >= fire.y})
-	var sig := "%s%s%s|%d|%d" % [state.keys["A"], state.keys["B"], state.keys["C"], int(state.gems), fire.x]
+	var sig := "%s%s%s|%d" % [state.keys["A"], state.keys["B"], state.keys["C"], fire.x]
 	if str(state.get("res_sig", "")) != sig:
 		state.res_sig = sig
 		state.res_t = float(state.t)
 	var quiet := float(state.t) - float(state.res_t) - HudKit.rule("resource_hold", 4.0)
 	var res_alpha := 1.0 - clampf(quiet / maxf(0.05, HudKit.rule("resource_fade", 0.5)), 0.0, 1.0)
-	var status: Array = []
+	# the hero's conditions (poison, slow, sealed skills ...) first, each in its colour: this row is
+	# the only place that names them, so they never give way (HudKit._status_row drops from the end)
+	var status: Array = FrostCombat.status_lines(self)
 	var sk: Dictionary = state.skill
 	if sk.owned:
 		var clock := "%d:%02d" % [int(sk.left) / 60, int(sk.left) % 60]
@@ -4289,25 +5132,53 @@ func _draw_hero_strip(h: Control) -> float:
 		status.append({"text": label, "color": HudStyle.color("accent") if sk.active else (HudStyle.color("text_dim") if sk.left > 0.0 else HudStyle.color("text_muted"))})
 	if not (state.buffs as Array).is_empty():
 		var names: Array = (state.buffs as Array).map(func(b: String) -> String: return b.get_slice(":", 0))
-		status.append({"text": "SEGEN · " + ", ".join(PackedStringArray(names)).to_upper(), "color": HudStyle.color("text_dim")})
-	# the Frostgruft's conditions on the hero (poison, slow ...), each in its colour
-	status.append_array(FrostCombat.status_lines(self))
+		# the blessings last, with a short form for a crowded row
+		status.append({"text": "SEGEN · " + ", ".join(PackedStringArray(names)).to_upper(), "short": "SEGEN ×%d" % names.size(), "color": HudStyle.color("text_dim")})
 	var leveled := heroic()
 	var need := maxf(1.0, float(HeroKit.need(theme.leveling, int(state.level)))) if leveled else 1.0
 	var margin := HudStyle.size("margin")
 	var hero_rect := HudKit.hero_panel(h, FONT, Vector2(margin, margin), {"title": str(hero.get("name", class_id)).to_upper(),
-		"level_label": "STUFE", "hp_unit": "LP",
-		"points": RunTree.points_left(CardKit.tree(self), CardKit.ranks(self), int(state.level)) if leveled else 0,
+		"level_label": "LAUFSTUFE", "hp_unit": "LP", "fixed_rows": true,
+		"points": _run_points_left() if leveled else 0,
 		"hp": int(state.hp), "hp_f": float(state.hp_f), "max_hp": int(state.max_hp), "hearts": hearts, "level": int(state.level) if leveled else -1,
 		"exp": float(state.exp) / need if leveled else -1.0, "resources": resources, "resource_alpha": res_alpha, "status": status,
 		"low": int(state.hp) <= 2 and int(state.hp) > 0, "clock": float(state.t)})
 	var edge := hero_rect.end.x
+	# the purse, always shown: the character's gold and the account's rune stones
+	var purse := _draw_purse(h, Vector2(hero_rect.position.x, hero_rect.end.y + 6.0), hero_rect.size.x)
+	var bottom := purse.end.y
 	if talents != null:
 		var pet: Dictionary = talents.hud_state().get("pet", {})
-		var pet_rect := HudKit.pet_panel(h, FONT, Vector2(hero_rect.position.x, hero_rect.end.y + 6.0), hero_rect.size.x, pet, float(state.t),
+		var pet_rect := HudKit.pet_panel(h, FONT, Vector2(hero_rect.position.x, purse.end.y + 6.0), hero_rect.size.x, pet, float(state.t),
 			HudKit.rule("pet_idle_alpha", 0.6) if _pet_idle(pet) else 1.0)
 		edge = maxf(edge, pet_rect.end.x)
+		bottom = maxf(bottom, pet_rect.end.y)
+	# the inventory window opens below this column, never over it (src/ui/inventory_panel.gd fit_below)
+	if inventory_panel != null:
+		inventory_panel.fit_below(bottom + HudStyle.size("inventory_gap"))
 	return edge
+
+
+## The purse under the hero panel, always shown in every world: the turning coin with the
+## character's gold (lost when it dies) and the rune stone with the account's stones (they pay
+## the talent reset). Returns its rect.
+func _draw_purse(h: Control, origin: Vector2, width: float) -> Rect2:
+	var pad := HudStyle.size("pad")
+	var body := int(HudStyle.size("font_body"))
+	var rect := Rect2(origin, Vector2(width, body + pad * 2.0))
+	HudStyle.panel(h, rect)
+	var y := rect.get_center().y
+	var x := rect.position.x + pad
+	for item: Array in [[gold_loot.coin(float(state.t)), str(gold_count()), Color(1.0, 0.84, 0.3)], [gold_loot.rune(), str(rune_count()), Color(0.62, 0.86, 1.0)]]:
+		var icon: Texture2D = item[0]
+		if icon != null:
+			var s := float(body + 2) / maxf(1.0, icon.get_size().y)
+			var size := icon.get_size() * s
+			h.draw_texture_rect(icon, Rect2(Vector2(x, y - size.y / 2.0), size), false)
+			x += size.x + 6.0
+		HudStyle.text(h, FONT, Vector2(x, y + floorf(body * 0.5) - 1.0), str(item[1]), body, item[2])
+		x += HudStyle.width(FONT, str(item[1]), body) + 22.0
+	return rect
 
 
 ## The guardian's bar, the same in every world (src/ui/hud_kit.gd), between the
@@ -4380,8 +5251,8 @@ func _draw_result(h: Control, size: Vector2) -> void:
 		_result_label = "NEUER LAUF  (E)"
 	elif state.won:
 		_result_rect = HudKit.result_panel(h, FONT, size, {"title": "ETAGE %d GESCHAFFT" % int(state.floor), "tone": "floor", "buttons": 2,
-			"lines": [["RÄUME ERKUNDET", "%d / %d" % [state.visited.size(), W.rooms.size()]], [say("RUNENSTEINE"), str(int(state.gems))],
-				["LP", "%d / %d" % [HudKit.life_shown(int(state.hp), float(state.hp_f)), int(state.max_hp)]], ["STUFE", str(int(state.level))]],
+			"lines": [["RÄUME ERKUNDET", "%d / %d" % [state.visited.size(), W.rooms.size()]], ["GOLD", str(gold_count())], ["RUNENSTEINE", str(rune_count())],
+				["LP", "%d / %d" % [HudKit.life_shown(int(state.hp), float(state.hp_f)), int(state.max_hp)]], ["LAUFSTUFE", str(int(state.level))]],
 			"note": _floor_reward})
 		_result_label = "WEITER  (E)"
 	elif not stairs_pick.is_empty():
@@ -4390,7 +5261,7 @@ func _draw_result(h: Control, size: Vector2) -> void:
 		for fn: int in stairs_pick.floors:
 			lines.append(["TASTE %d" % fn, "ETAGE %d · %s" % [fn, str(world.pack.floors[fn].title).to_upper() if world != null else ""]])
 		HudKit.result_panel(h, FONT, size, {"title": "VERGESSENE STIEGE", "tone": "floor", "lines": lines,
-			"note": "Die Welt wird neu gewürfelt. LP, Runensteine, Stufe und Gegenstände bleiben.", "hints": "1-%d · ETAGE WÄHLEN   E · BLEIBEN" % (stairs_pick.floors as Array).size()})
+			"note": "Die Welt wird neu gewürfelt. LP, Laufstufe und Gegenstände bleiben.", "hints": "1-%d · ETAGE WÄHLEN   E · BLEIBEN" % (stairs_pick.floors as Array).size()})
 
 
 ## The skill bar at the bottom: one slot per key with icon, key, cooldown shade
@@ -4411,6 +5282,9 @@ func _draw_skill_bar(h: Control, size: Vector2) -> void:
 				"locked": int(state.level) < int(s.unlock), "unlock": int(s.unlock), "icon": relic_tex})
 	elif talents != null:
 		slots = talents.skill_slots()
+		# F: the worn armour's ability, right of SH (src/hero/story_items.gd power_slots)
+		if story_items != null:
+			slots.append_array(story_items.power_slots())
 	else:
 		var held := str(hold.get("id", ""))
 		for s: Dictionary in skills:
@@ -4430,6 +5304,9 @@ func _draw_skill_bar(h: Control, size: Vector2) -> void:
 					mname = str(n.name)
 		slots.append({"key": "5", "name": mname, "cd": float(state.skill_cd.get("5", 0.0)), "max": float(theme.get("master_cooldown", 45.0)),
 			"icon": SkillIcons.for_id(class_id, master), "ultimate": true})
+	# H / G: the quick potion, its own group after the skills (src/hero/story_items.gd quick_slots)
+	if story_items != null and heroic():
+		slots.append_array(story_items.quick_slots())
 	# level and EXP sit with the hearts at the top (draw_hud), as in every world
 	SkillBar.draw(h, FONT, size, slots, float(state.t), {"mouse": h.get_local_mouse_position()})
 	# the resource line above the skill bar (talents on 1-4 and R), the same in every map
@@ -4445,7 +5322,8 @@ func _text(h: CanvasItem, text: String, pos: Vector2, font_size: int, color: Col
 
 
 func _to_screen(world: Vector2, screen: Vector2) -> Vector2:
-	return (world - camera.position) * camera.zoom + screen / 2.0
+	# the camera's offset (shake, kick, the skill bar's view shift) is in world px
+	return (world - camera.position - camera.offset) * camera.zoom + screen / 2.0
 
 
 func _door_color(d: Dictionary) -> Color:
@@ -4511,14 +5389,20 @@ func _draw_map(h: Control, screen: Vector2, big: bool, framed := false, area := 
 			for e: Dictionary in breakables:
 				if icon == "" and e.room == r.index and not e.get("broken", false):
 					icon = "demon_plate" if e.type == "seal" else "skull_heap"
-		if icon == "" or (not seen and r.type != "boss"):
+		# a known room not yet entered shows what waits in it (side rooms and the boss: room_sign)
+		if not seen:
+			icon = room_sign(r) if r.type == "boss" or not bool(r.get("on_path", false)) else ""
+		if icon == "":
 			continue
 		var im: Texture2D = tex[key_sprite[r.icon_key] if icon == "key" and key_sprite.has(r.icon_key) else icon]
 		var c := origin + Vector2(r.bx + r.bw / 2.0, r.by + r.bh / 2.0) * s
 		var sz := Vector2(isz, isz * im.get_height() / im.get_width())
-		h.draw_texture_rect(im, Rect2(c - sz / 2.0, sz), false, key_tint.get(r.icon_key, Color.WHITE))
+		var tint: Color = key_tint.get(r.icon_key, Color.WHITE) if icon == "key" else Color.WHITE
+		if not seen:
+			tint.a = float(_room_signs().get("map", {}).get("alpha", 0.8))
+		h.draw_texture_rect(im, Rect2(c - sz / 2.0, sz), false, tint)
 		var room_w: float = r.bw * s
-		if big and FONT.get_string_size(r.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x < room_w:
+		if big and (seen or r.type == "boss") and FONT.get_string_size(r.name, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x < room_w:
 			_text(h, r.name, Vector2(c.x - room_w / 2.0, c.y + isz * 0.9), 16, ink, room_w)
 	if big and not framed:
 		_text(h, "Heller Raum: besucht · Rote Tür: verriegelt · Farbige Tür: Schlüssel · Gelbe Tür: Rätsel · M / Esc schließt", Vector2(0, screen.y - 12), 16, Color("#b89c8e"), screen.x)
@@ -4550,7 +5434,7 @@ func _route_rig_events() -> void:
 				_burst(e.at, 8)
 
 
-# ---------- WAHN (element_rules.json madness) ----------
+# ---------- WAHN (madness_rules.json madness) ----------
 
 ## True when the story hero is the Leerenmagier (madness.immune_class with
 ## immune_spec as main specialisation): the spec with the most points in the

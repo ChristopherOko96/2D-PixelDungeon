@@ -233,7 +233,10 @@ static func _spec(id: String) -> Dictionary:
 ## [{text, color}], clock, key (names the bar's animation state; defaults to
 ## the title), level_label (the badge's word, default "LV"), hp_unit (after
 ## the life numbers, e.g. "LP"), resource_alpha (0..1: the resource row fades
-## as a whole; at 0 it takes no room). Returns the strip's rectangle.
+## as a whole; at 0 it takes no room), fixed_rows (the story worlds: the strip
+## keeps one height; resources and status share one row that is always there,
+## the resources left, the status lines right-aligned in one line, cut with
+## "+n" when they do not fit). Returns the strip's rectangle.
 static func hero_panel(canvas: CanvasItem, font: Font, origin: Vector2, data: Dictionary) -> Rect2:
 	var pad := HudStyle.size("pad")
 	var bar_w := HudStyle.size("bar_width")
@@ -263,7 +266,10 @@ static func hero_panel(canvas: CanvasItem, font: Font, origin: Vector2, data: Di
 	var points := int(data.get("points", 0))
 	var points_w := (HudStyle.width(font, "+%d" % points, body) + 10.0) if points > 0 and level >= 0 else 0.0
 	var inner_w := maxf(bar_w + (badge.x + 10.0 + points_w if level >= 0 else 0.0), maxf(HudStyle.width(font, title, small) + HudStyle.width(font, hp_text, small) + 24.0, resource_w))
+	var fixed := bool(data.get("fixed_rows", false))
 	var height := pad + small + 6.0 + row_h + (8.0 if experience >= 0.0 else 0.0) + (30.0 if not resources.is_empty() else 0.0) + status.size() * (small + 6.0) + pad
+	if fixed:
+		height = pad + small + 6.0 + row_h + (8.0 if experience >= 0.0 else 0.0) + 30.0 + pad
 	var rect := Rect2(origin, Vector2(inner_w + pad * 2.0, height))
 	HudStyle.panel(canvas, rect)
 	var x := rect.position.x + pad
@@ -288,8 +294,8 @@ static func hero_panel(canvas: CanvasItem, font: Font, origin: Vector2, data: Di
 	if experience >= 0.0:
 		HudStyle.bar(canvas, Rect2(x, y + 4, inner_w, 3), experience, HudStyle.color("exp"))
 		y += 8.0
+	var rx := x
 	if not resources.is_empty():
-		var rx := x
 		for r: Dictionary in resources:
 			var icon: Texture2D = r.get("icon", null)
 			var dim := bool(r.get("dim", false))
@@ -308,11 +314,58 @@ static func hero_panel(canvas: CanvasItem, font: Font, origin: Vector2, data: Di
 				HudStyle.text(canvas, font, Vector2(rx, y + 24), label, body, Color(ink, ink.a * resource_alpha))
 				rx += HudStyle.width(font, label, body)
 			rx += 14.0
-		y += 30.0
+		if not fixed: y += 30.0
+	if fixed:
+		_status_row(canvas, font, Rect2(rx if not resources.is_empty() else x, y, x + inner_w - (rx if not resources.is_empty() else x), 30.0), status, small)
+		return rect
 	for line: Dictionary in status:
 		HudStyle.text(canvas, font, Vector2(x, y + small + 4), str(line.get("text", "")), small, line.get("color", HudStyle.color("text_dim")))
 		y += small + 6.0
 	return rect
+
+
+# The status lines in one row, right-aligned in `area`, each in its colour,
+# a thin bar between them. When they do not fit, a line with a "short" form
+# takes it first, then lines go from the end and become "+n" at the left (so
+# the first lines, the hero's conditions, stay longest).
+static func _status_row(canvas: CanvasItem, font: Font, area: Rect2, status: Array, size: int) -> void:
+	if status.is_empty() or area.size.x <= 0.0:
+		return
+	var gap := 14.0
+	var texts: Array[String] = []
+	var widths: Array[float] = []
+	for line: Dictionary in status:
+		texts.append(str(line.get("text", "")))
+		widths.append(HudStyle.width(font, texts[-1], size))
+	# keep the first lines that fit (with room for "+n" when some must go)
+	var shown := status.size()
+	while shown > 0:
+		var total := 0.0
+		for i in range(shown): total += widths[i] + (gap if i > 0 else 0.0)
+		var rest := status.size() - shown
+		if rest > 0: total += gap + HudStyle.width(font, "+%d" % rest, size)
+		if total <= area.size.x: break
+		var shortened := false
+		for i in range(shown - 1, -1, -1):
+			var line: Dictionary = status[i]
+			if line.has("short") and texts[i] != str(line.short):
+				texts[i] = str(line.short)
+				widths[i] = HudStyle.width(font, texts[i], size)
+				shortened = true
+				break
+		if not shortened:
+			shown -= 1
+	var baseline := area.position.y + 24.0
+	var right := area.end.x
+	for i in range(shown - 1, -1, -1):
+		var line: Dictionary = status[i]
+		HudStyle.text(canvas, font, Vector2(right, baseline), texts[i], size, line.get("color", HudStyle.color("text_dim")), 2)
+		right -= widths[i]
+		if i > 0:
+			canvas.draw_rect(Rect2(right - gap * 0.5 - 1.0, baseline - size + 2.0, 2.0, size - 2.0), Color(HudStyle.color("panel_edge"), 0.8))
+			right -= gap
+	if shown < status.size():
+		HudStyle.text(canvas, font, Vector2(right - (gap if shown > 0 else 0.0), baseline), "+%d" % (status.size() - shown), size, HudStyle.color("text_dim"), 2)
 
 
 ## A blood-filled life bar in `rect` (its ink outline included): `hp_f` of
@@ -440,6 +493,8 @@ static func floor_panel(canvas: CanvasItem, font: Font, screen: Vector2, data: D
 	var alpha := float(data.get("alpha", 1.0))
 	var pad := HudStyle.size("pad")
 	var small := int(HudStyle.size("font_small"))
+	# an opaque base: world sprites and snow never show through the map as false icons
+	canvas.draw_rect(rect, Color(HudStyle.color("map_base"), alpha))
 	HudStyle.panel(canvas, rect, alpha)
 	var x := rect.position.x + pad
 	var y := rect.position.y + pad
@@ -475,6 +530,30 @@ static func floor_rect(screen: Vector2) -> Rect2:
 static func menu_rect(screen: Vector2) -> Rect2:
 	var panel := floor_rect(screen)
 	return Rect2(panel.position.x, panel.end.y + 6, panel.size.x, 28)
+
+
+## The talent chip under the ESC chip: "TALENTE · K", lit with "+n" while points are free.
+static func talent_rect(screen: Vector2) -> Rect2:
+	var above := menu_rect(screen)
+	return Rect2(above.position.x, above.end.y + 4, above.size.x, above.size.y)
+
+
+## Draws the talent chip; `free` above 0 lights it in the accent and shows "+free".
+static func talent_chip(canvas: CanvasItem, font: Font, screen: Vector2, free: int, alpha: float, hot: bool, clock: float) -> void:
+	var rect := talent_rect(screen)
+	var lit := free > 0
+	var shown := 1.0 if hot else (0.8 + 0.2 * sin(clock * 4.0) if lit else alpha)
+	HudStyle.panel(canvas, rect, shown)
+	if lit or hot: canvas.draw_rect(rect, Color(HudStyle.color("accent"), 0.8 * shown), false, 1.0)
+	var size := int(HudStyle.size("font_small"))
+	var label := "TALENTE · K"
+	var plus := ("  +%d" % free) if lit else ""
+	var width := HudStyle.width(font, label + plus, size)
+	var x := rect.get_center().x - width * 0.5
+	var y := rect.get_center().y + 5
+	HudStyle.text(canvas, font, Vector2(x, y), label, size, Color(HudStyle.color("text") if (hot or lit) else HudStyle.color("text_dim"), shown))
+	if lit:
+		HudStyle.text(canvas, font, Vector2(x + HudStyle.width(font, label, size), y), plus, size, Color(HudStyle.color("accent"), shown))
 
 
 static func menu_chip(canvas: CanvasItem, font: Font, screen: Vector2, label: String, alpha: float = 1.0, hot: bool = false) -> void:
@@ -521,7 +600,12 @@ static func boss_bar(canvas: CanvasItem, font: Font, screen: Vector2, data: Dict
 			canvas.draw_rect(Rect2(seg.position, Vector2(floorf(w * clampf(float(segments[i]), 0.0, 1.0)), seg.size.y)), fill)
 	var tag := str(data.get("tag", ""))
 	if not tag.is_empty():
-		HudStyle.text(canvas, font, Vector2(rect.get_center().x, rect.end.y + 18), tag, small, HudStyle.color("text_dim"), 1)
+		# the subtitle sits on its own small plate under the bar, readable on any wall
+		var tag_w := HudStyle.width(font, tag, small) + 24.0
+		var plate := Rect2(floorf(rect.get_center().x - tag_w * 0.5), rect.end.y + 2.0, tag_w, float(small) + 10.0)
+		canvas.draw_rect(plate, HudStyle.color("map_base"))
+		HudStyle.panel(canvas, plate)
+		HudStyle.text(canvas, font, Vector2(rect.get_center().x, plate.position.y + float(small) + 3.0), tag, small, HudStyle.color("text_dim"), 1)
 	return rect
 
 

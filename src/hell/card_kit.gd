@@ -13,6 +13,10 @@ const RunTree = preload("res://src/progress/run_tree.gd")
 const ClassPerks = preload("res://src/player/class_perks.gd")
 const SkillIcons = preload("res://src/ui/skill_icons.gd")
 const MetaStore = preload("res://src/hell/meta_store.gd")
+const Rules = preload("res://src/hell/hell_rules.gd")
+## The hell's seal values (balance package D1) for a world balance without them.
+const SEAL_DEFAULTS := "res://assets/data/hell_balance.json"
+static var _seal_defaults: Dictionary = {}
 
 
 ## How often a card was taken in this run. (Lasting talents no longer add
@@ -53,6 +57,9 @@ static func pool(g: Node) -> Array:
 		if level(g, str(c.id)) >= int(c.max):
 			continue
 		if c.has("skill") and not _skill_open(g, set, str(c.skill)):
+			continue
+		# a heart card at the life cap would give nothing
+		if c.has("hearts") and not Rules.heart_room(g.state, int(g.balance.player.max_hp_cap)):
 			continue
 		out.append(c)
 	return out
@@ -101,10 +108,16 @@ static func tree(g: Node) -> Dictionary:
 	return RunTree.build(branches)
 
 
+## A tree node for card `c`. A heart card at the life cap (take_node refuses it)
+## is closed with its reason (RunTree "closed": drawn locked, the reason shown).
 static func _node(c: Dictionary, g: Node) -> Dictionary:
 	var crypt := ClassPerks.find(str(g.class_id), str(c.id))
-	return {"id": str(c.id), "name": str(c.name), "text": str(c.get("desc", "")), "max": int(c.max),
+	var node := {"id": str(c.id), "name": str(c.name), "text": str(c.get("desc", "")), "max": int(c.max),
 		"icon": SkillIcons.card(crypt if not crypt.is_empty() else {"id": str(c.id)}, str(g.class_id))}
+	if c.has("hearts") and not Rules.heart_room(g.state, int(g.balance.player.max_hp_cap)):
+		node.closed = "Leben am Höchstwert, mehr Herzen gehen nicht"
+		node.closed_tag = "LEBEN VOLL"
+	return node
 
 
 ## Ranks of the run tree's nodes: the cards taken in this run.
@@ -120,6 +133,11 @@ static func take_node(g: Node, id: String) -> bool:
 		return false
 	for c: Dictionary in _all(g):
 		if str(c.id) == id:
+			# a heart card at the life cap would take the point for nothing
+			if c.has("hearts") and not Rules.heart_room(g.state, int(g.balance.player.max_hp_cap)):
+				g._sound("no_cooldown")
+				g._toast("Mehr Herzen gehen nicht: das Leben ist am Höchstwert.")
+				return false
 			take(g, c)
 			return true
 	return false
@@ -153,10 +171,121 @@ static func take(g: Node, c: Dictionary) -> void:
 	ups[str(c.id)] = level(g, str(c.id)) + 1
 	g.state.upgrades = ups
 	if c.has("hearts"):
-		g.state.max_hp = mini(int(g.balance.player.max_hp_cap), int(g.state.max_hp) + int(c.hearts))
+		g.state.max_hp = Rules.raised_max_hp(g.state, int(c.hearts), int(g.balance.player.max_hp_cap))
 		g.state.hp = mini(int(g.state.max_hp), int(g.state.hp) + int(c.hearts))
 	g._sound("level_up")
 	g._toast("%s (Stufe %d)" % [c.name, level(g, str(c.id))])
+
+
+# ---------- demon seals: two blessings, one safe price (balance package D1) ----------
+
+## The seal values of this world's balance ("seal": offers, price_hp, arm_s:
+## hell_balance.json and krypta_balance.json both name them); a world whose
+## balance does not takes the hell's.
+static func seal_cfg(g: Node) -> Dictionary:
+	var cfg: Dictionary = g.balance.get("seal", {})
+	if cfg.has("offers") and cfg.has("price_hp"):
+		return cfg
+	if _seal_defaults.is_empty():
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(SEAL_DEFAULTS)) if FileAccess.file_exists(SEAL_DEFAULTS) else null
+		_seal_defaults = (parsed as Dictionary).get("seal", {}) if parsed is Dictionary else {}
+	var out: Dictionary = _seal_defaults.duplicate()
+	for k: String in cfg:
+		if not out.has(k): out[k] = cfg[k]
+	return out
+
+
+## True while a broken seal's blessings wait for a choice (the world waits too).
+static func seal_open(g: Node) -> bool:
+	return not (g.state.get("seal_pick", {}) as Dictionary).is_empty()
+
+
+## Seal `e` broke: its blessings (Rules.seal_offer, drawn with `rng`, else from
+## the global seed) and the price wait on cards (src/hell/frost_hud.gd
+## seal_cards); hell_game.gd pauses the world until one is taken or both are left.
+static func seal_offer(g: Node, e: Dictionary, rng: RandomNumberGenerator = null) -> void:
+	var cfg := seal_cfg(g)
+	if rng == null:
+		rng = RandomNumberGenerator.new()
+		rng.seed = randi()
+	var ids := Rules.seal_offer(g.state, g.balance.blessings, int(cfg.get("offers", 2)), rng, int(g.balance.player.max_hp_cap))
+	if ids.is_empty():
+		return
+	# the cards say what taking each really gives: a dry run on a copy (a step shortened at its cap included)
+	var texts: Array = []
+	for id: Variant in ids:
+		texts.append(Rules.apply_blessing(g.state.duplicate(true), str(id), g.balance.blessings, int(g.balance.player.max_hp_cap)))
+	g.state.seal_pick = {"ids": ids, "texts": texts, "price": int(cfg.get("price_hp", 2)), "x": float(e.get("x", 0.0)), "y": float(e.get("y", 0.0)), "ms": Time.get_ticks_msec()}
+	# nothing covers the cards: the map, the status sheet and the bag close
+	g.state.map = false
+	g.state.status = false
+	var bag: Variant = g.get("inventory_panel")
+	if bag != null and bool(bag.get("open")):
+		bag.set_open(false)
+
+
+## Takes the blessing on card `i` of the open seal: pays the price, applies it
+## and lets it shine on the hero. False (a dull sound, a note) when he cannot pay.
+static func seal_choose(g: Node, i: int) -> bool:
+	var pick: Dictionary = g.state.get("seal_pick", {})
+	var ids: Array = pick.get("ids", [])
+	if i < 0 or i >= ids.size():
+		return false
+	var price := int(pick.get("price", 0))
+	if not Rules.seal_affordable(g.state, price):
+		g._sound("no_cooldown")
+		g._toast("Zu wenig Leben für den Preis des Siegels.")
+		return false
+	var hero_at := Vector2(float(g.player.x), float(g.player.y))
+	var text := Rules.take_seal_blessing(g.state, str(ids[i]), g.balance.blessings, int(g.balance.player.max_hp_cap), price)
+	g.state.seal_pick = {}
+	# the blessing shines on the hero like the crypt's cleanse (gold motes, sheet, chime);
+	# the price drips from him as a few drops of blood (src/hero/story_hero.gd matter)
+	if g.get("feel") != null:
+		g.feel.hero_event("cleanse")
+	else:
+		g._burst(hero_at - Vector2(0, 60), 50, true)
+	if price > 0 and g.get("story_hero") != null:
+		g.story_hero.matter("blood", hero_at - Vector2(0, 36), Vector2.DOWN, 4 + 2 * price)
+	g._toast("Segen: %s · Preis: %s" % [text, Rules.price_text(price)])
+	return true
+
+
+## Leaves the open seal: no blessing, no price.
+static func seal_leave(g: Node) -> void:
+	if not seal_open(g):
+		return
+	g.state.seal_pick = {}
+	g._toast("Die Segen bleiben ungenutzt.")
+
+
+## True once the open seal's cards have been up for seal.arm_s (real time): a
+## click or number key that was meant for the seal's last blow picks nothing.
+static func seal_armed(g: Node) -> bool:
+	var pick: Dictionary = g.state.get("seal_pick", {})
+	var arm_ms := float(seal_cfg(g).get("arm_s", 0.0)) * 1000.0
+	return float(Time.get_ticks_msec() - int(pick.get("ms", 0))) >= arm_ms
+
+
+## Input while a seal's cards are open: 1 / 2 (or `pick`, the card under a
+## click) takes that blessing once the cards are armed, Esc / E / Space leaves
+## both at any time.
+static func seal_input(g: Node, event: InputEvent, pick := -1) -> void:
+	if pick >= 0:
+		if seal_armed(g):
+			seal_choose(g, pick)
+		return
+	if not (event is InputEventKey) or not event.pressed or event.echo:
+		return
+	var key: int = event.keycode
+	if key in [KEY_ESCAPE, KEY_E, KEY_SPACE, KEY_BACKSPACE]:
+		seal_leave(g)
+	elif not seal_armed(g):
+		return
+	elif key >= KEY_1 and key <= KEY_9:
+		seal_choose(g, key - KEY_1)
+	elif key >= KEY_KP_1 and key <= KEY_KP_9:
+		seal_choose(g, key - KEY_KP_1)
 
 
 # ---------- stat factors from the shared and class cards ----------

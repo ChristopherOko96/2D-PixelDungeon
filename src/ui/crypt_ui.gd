@@ -63,6 +63,13 @@ static func create_theme() -> Theme:
 		theme.set_color("font_pressed_color", type, BONE)
 		theme.set_color("font_hover_pressed_color", type, CREAM)
 		theme.set_color("font_focus_color", type, CREAM)
+	# switches: a big pixel toggle, off clearly dark with the knob left, on gold with the knob right
+	for state: String in ["checked", "unchecked"]:
+		var on := state == "checked"
+		theme.set_icon(state, "CheckButton", switch_icon(on))
+		theme.set_icon(state + "_mirrored", "CheckButton", switch_icon(on))
+		theme.set_icon(state + "_disabled", "CheckButton", switch_icon(on, true))
+		theme.set_icon(state + "_disabled_mirrored", "CheckButton", switch_icon(on, true))
 	for type: String in ["Panel", "PanelContainer"]:
 		theme.set_stylebox("panel", type, box("panel"))
 	theme.set_stylebox("panel", "TooltipPanel", box("inset"))
@@ -113,6 +120,53 @@ static func box(kind: String) -> StyleBox:
 		_: style = StyleBoxEmpty.new()
 	_boxes[kind] = style
 	return style
+
+
+## The toggle of a CheckButton: 26x12 art pixels at PX. Off: a dark track, the
+## grey knob on the left and an "O" mark; on: a gold track, the light knob on
+## the right and an "I" mark. `disabled` greys it. Cached.
+static func switch_icon(on: bool, disabled: bool = false) -> Texture2D:
+	var key := "switch_%s_%s" % [on, disabled]
+	if _boxes.has(key):
+		return _boxes[key]
+	var w := 26
+	var h := 12
+	var image := Image.create_empty(w * PX, h * PX, false, Image.FORMAT_RGBA8)
+	image.fill(Color.TRANSPARENT)
+	var track := Color("c99a4e") if on else STONE_DARK
+	var track_shade := Color("a07433") if on else SHADOW
+	var knob := CREAM if on else MUTED
+	var knob_shade := SAND if on else STONE_LIGHT
+	var mark := Color("7a5220") if on else STONE_LIGHT
+	if disabled:
+		track = track.lerp(STONE_DARK, 0.6)
+		knob = knob.lerp(DISABLED, 0.6)
+		knob_shade = knob_shade.lerp(DISABLED, 0.6)
+		mark = mark.lerp(STONE_DARK, 0.6)
+	var cell := func(x: int, y: int, colour: Color) -> void: image.fill_rect(Rect2i(x * PX, y * PX, PX, PX), colour)
+	for y in range(h):
+		for x in range(w):
+			var edge := x == 0 or y == 0 or x == w - 1 or y == h - 1
+			# the corners stay open for a rounder pill
+			if edge and (x == 0 or x == w - 1) and (y == 0 or y == h - 1): continue
+			cell.call(x, y, INK if edge else (track_shade if y == 1 else track))
+	# the mark on the free side: "I" (on) left, "O" (off) right
+	if on:
+		for y in range(4, 8): cell.call(6, y, mark)
+	else:
+		for p: Vector2i in [Vector2i(18, 4), Vector2i(19, 4), Vector2i(17, 5), Vector2i(20, 5), Vector2i(17, 6), Vector2i(20, 6), Vector2i(18, 7), Vector2i(19, 7)]:
+			cell.call(p.x, p.y, mark)
+	# the knob: 10x10 with an ink rim, lit top-left, shaded bottom-right
+	var left := 14 if on else 2
+	for y in range(1, h - 1):
+		for x in range(left - 1, left + 11):
+			var rim := x == left - 1 or x == left + 10 or y == 1 or y == h - 2
+			var colour := INK if rim else (knob_shade if x >= left + 8 or y >= h - 4 else knob)
+			if not rim and (x == left or y == 2): colour = knob.lightened(0.25)
+			cell.call(x, y, colour)
+	var texture := ImageTexture.create_from_image(image)
+	_boxes[key] = texture
+	return texture
 
 
 ## A heading label (gold, 24 or 32 px) with a dark outline for busy backdrops.

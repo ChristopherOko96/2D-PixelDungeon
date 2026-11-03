@@ -105,7 +105,7 @@ func _run() -> void:
 				print("NECRO_CAPTURE phase=%d frame=%d" % [phase, frame])
 				if frame == 50:
 					var pools: RefCounted = game.view._boss_fx.pools
-					print("POOL_DEBUG zones=", game.boss_moves.snapshot(), " pools=", pools._pools.keys(), " shaping=", pools._shaping.size(), " fields=", pools._fields.keys(), " solid=", game.view._feedback.particles.solid(Vector2(366,250)))
+					print("POOL_DEBUG zones=", game.boss_moves.snapshot(), " pools=", pools.pool_field.pools().keys(), " shaping=", pools.pool_field.pending(), " fields=", pools._fields.keys(), " solid=", game.view._feedback.particles.solid(Vector2(366,250)))
 					for mat: String in pools._fields:
 						var field: Dictionary = pools._fields[mat]
 						print("POOL_FIELD ", mat, " cells=", field.cells.size(), " sample=", field.cells.values()[0] if not field.cells.is_empty() else [], " now=", pools._now, " box=", field.box, " image=", field.tex.get_image().get_used_rect() if field.tex != null else Rect2i())

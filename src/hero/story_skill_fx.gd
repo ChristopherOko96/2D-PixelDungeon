@@ -44,6 +44,8 @@ var scale := 1.5
 var skill := SkillFx.new()
 var fx := FxSprites.new()
 var particles := Particles.new()
+## True when `particles` is the world's own (share): the world steps, clears and draws them.
+var shared := false
 var glow := Glow.new()
 ## The crypt snapshot this frame: players, skill_fx zones and events.
 var snapshot: Dictionary = {"players": {}, "skill_fx": {"zones": [], "events": []}}
@@ -66,6 +68,15 @@ func _init(game: Node, world_scale: float) -> void:
 	# only its strengths (vfx_glow.json) are used; hidden, it goes with the world
 	glow.visible = false
 	g.add_child(glow)
+
+
+## One particle world (physics plan R2, docs/PHYSIK-PLAN.md): the skills and attacks throw into
+## the world's particles (`world`, the feel's), so lava sinks them, blasts and wells move them and
+## they sound; this kit then no longer steps, clears or draws particles of its own.
+func share(world: RefCounted) -> void:
+	particles = world
+	skill.particles = world
+	shared = true
 
 
 # --- coordinates ---------------------------------------------------------------------
@@ -137,7 +148,7 @@ func update(dt: float, clock: float) -> void:
 		zones.append({"id": int(z.crypt_id), "kind": "caltrops", "x": at.x, "y": at.y, "r": float(z.r) / scale, "t": float(z.t)})
 	snapshot = {"players": {1: _player()}, "skill_fx": {"zones": zones, "events": _events}}
 	fx.update(dt)
-	particles.update(dt)
+	if not shared: particles.update(dt)
 
 
 ## A crypt event (as hero_skills.gd sends it).
@@ -241,8 +252,9 @@ func _set_floor() -> void:
 					cells[Vector2i(cx * per + x, cy * per + y)] = true
 	fx.clear()
 	fx.set_walkable(cells)
-	particles.clear()
-	particles.set_walkable(cells, "story_%d" % _next_id)
+	if not shared:
+		particles.clear()
+		particles.set_walkable(cells, "story_%d" % _next_id)
 	_next_id += 1
 	_events.clear()
 	_shots.clear()
@@ -252,7 +264,7 @@ func _set_floor() -> void:
 
 ## Under the actors: floor marks, caltrops, the Rage aura.
 func draw_ground(canvas: CanvasItem) -> void:
-	particles.draw_stains(canvas)
+	if not shared: particles.draw_stains(canvas)
 	skill.draw_ground(canvas, snapshot, _clock)
 
 
@@ -262,7 +274,7 @@ func draw_over(canvas: CanvasItem) -> void:
 		skill.draw_bullet(canvas, b, _clock)
 	skill.draw_over(canvas, snapshot, _clock)
 	fx.draw(canvas)
-	particles.draw_particles(canvas)
+	if not shared: particles.draw_particles(canvas)
 
 
 ## Bloom of the skills (additive layer).
@@ -271,4 +283,4 @@ func draw_glow(canvas: CanvasItem) -> void:
 		skill.bullet_glow(canvas, b, Vector2(float(b.x), float(b.y)), _clock, glow.level("bullets"))
 	skill.draw_glow(canvas, snapshot, _clock, glow)
 	fx.draw_glow(canvas, glow.level("spells"))
-	particles.draw_glow(canvas, glow.level("particles"))
+	if not shared: particles.draw_glow(canvas, glow.level("particles"))

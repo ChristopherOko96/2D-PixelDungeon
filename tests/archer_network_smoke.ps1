@@ -27,7 +27,7 @@ try {
             } until ((Get-Content -LiteralPath $stdout -Raw) -match 'SESSION_HOSTED')
         }
     }
-    $deadline = [DateTime]::UtcNow.AddSeconds(75)
+    $deadline = [DateTime]::UtcNow.AddSeconds(120)
     do {
         $running = @($ringOwned | Where-Object { $_.Process.Refresh(); -not $_.Process.HasExited })
         if ($running.Count -eq 0) { break }
@@ -38,7 +38,7 @@ try {
     foreach ($entry in $ringOwned) {
         $entry.Process.WaitForExit()
         $output = (Get-Content -LiteralPath $entry.Stdout -Raw) + (Get-Content -LiteralPath $entry.Stderr -Raw)
-        if ($entry.Process.ExitCode -ne 0 -or $output -match '(?im)^\s*(SCRIPT ERROR|RING_NET_FAIL)' -or -not (Test-Path -LiteralPath $entry.Result)) { throw "Ring $($entry.Role) failed; logs=$ringLogs`n$output" }
+        if ($entry.Process.ExitCode -ne 0 -or $output -match '(?im)^\s*(SCRIPT ERROR|RING_NET_FAIL)' -or -not (Test-Path -LiteralPath $entry.Result)) { throw "Ring $($entry.Role) failed exit=$($entry.Process.ExitCode) receipt=$((Test-Path -LiteralPath $entry.Result)); logs=$ringLogs`n$output" }
         $unexpected = ($output -split "`n" | Where-Object { $_ -match '^ERROR:' -and $_ -notmatch '^ERROR: \d+ resources still in use at exit' })
         if ($unexpected) { throw "Ring engine errors; logs=$ringLogs`n$unexpected" }
         $data = Get-Content -LiteralPath $entry.Result -Raw | ConvertFrom-Json

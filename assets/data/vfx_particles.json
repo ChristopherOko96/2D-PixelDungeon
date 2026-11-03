@@ -1,7 +1,9 @@
 {
-  "_note": "Pixel particle physics and living floor pixels (src/vfx/particles.gd). Particles fly in the floor plane with a height above it. gravity: px/s^2 pulling the height down; bounce: share of the fall speed kept when a particle hits the floor (below bounce_min px/s it stops); wall_bounce: share of the speed kept when it hits a wall cell; ground_friction: extra drag per second while sliding on the floor; settle_speed: below this px/s a resting debris particle becomes a floor pixel for good; spawn_height: default height in px of a burst above the floor point under it. modes: gravity (factor of gravity, negative rises), lift ([min, max] upward px/s at the start), settle (lands and stays as a floor pixel), glow (lights up in the bloom layer, at glow_alpha strength, 0.32 when absent), fade (fades out over its life instead of staying solid). max_particles caps the live particles (the oldest settles or vanishes first). kick: blasts lift floor pixels again; every loose debris pixel in reach flies, a pool or stain pixel only with stain_share; speed px/s at the centre, lift [min, max] px/s, at most max_particles per blast. liquid: splats keep creeping outwards; spread_rate pixels per second per pool, budget_scale x the splat's pixel radius squared = pixels it may still try, reach_scale x radius = how far from its centre, dry_after s after it stops it dries darker by dry_darken; max_pools spread at once (the oldest dries first). ember: glowing floor pixels left by fire, life [min, max] s, smoke_rate puffs per second at full heat, colours hot to cool, soot left behind, at most max. frost: frost pixels melt to water after melt_after [min, max] s, water dries away after evaporate_after s (+-30 %), at most max waiting. smoke_color: colour of smoke puffs. Purely visual. soft_cap: share of max_particles above which the cosmetic emitters throw fewer (none at the limit; particles.gd room). z_ease: 1/s weightless matter (motes) eases to the height it is pulled to. glow: the bloom of a glowing particle is tight round its pixel, radius px + per_size x its size, alpha at most alpha_cap; embers ember_r [cold, hot] px at ember_alpha (review 2026-10-31: glow must not wash out the pixels). comet (the Urknall's Gefuege units, particles.gd comet): trail_max drops follow the lead, each trail_lag of its flight later and trail_gap px short; where a blob strikes it splashes: crown droplets (+1 per unit) thrown on along its flight, cells pool cells per unit (at most cells_max) spread spread x sqrt(cells) art px round the spot; a soul comet puffs pop motes. modes.flake: a snow flake (almost weightless, drag 1/s, it lies as frost that melts: melts).",
+  "_note": "Pixel particle physics and living floor pixels (src/vfx/particles.gd). depth_high: matter up to this height (px) is drawn between the y-sorted actors (depth bands), higher matter over them. floor \"splat\" (per mode): it lands and stays instead of bouncing; wall \"slide\": it slides along walls instead of bouncing; air: 1/s drag on its height speed (terminal speed gravity / air). wind (per mode): share of the world's wind (the Frostgruft snowstorm) light airborne matter drifts towards, at wind_air per s. Particles fly in the floor plane with a height above it. gravity: px/s^2 pulling the height down; bounce: share of the fall speed kept when a particle hits the floor (below bounce_min px/s it stops); wall_bounce: share of the speed kept when it hits a wall cell; ground_friction: extra drag per second while sliding on the floor; settle_speed: below this px/s a resting debris particle becomes a floor pixel for good; spawn_height: default height in px of a burst above the floor point under it. modes: gravity (factor of gravity, negative rises), lift ([min, max] upward px/s at the start), settle (lands and stays as a floor pixel), glow (lights up in the bloom layer, at glow_alpha strength, 0.32 when absent), fade (fades out over its life instead of staying solid). max_particles caps the live particles (the oldest settles or vanishes first). kick: blasts lift floor pixels again; every loose debris pixel in reach flies, a pool or stain pixel only with stain_share; speed px/s at the centre, lift [min, max] px/s, at most max_particles per blast. liquid: splats keep creeping outwards; spread_rate pixels per second per pool, budget_scale x the splat's pixel radius squared = pixels it may still try, reach_scale x radius = how far from its centre, dry_after s after it stops it dries darker by dry_darken; max_pools spread at once (the oldest dries first). ember: glowing floor pixels left by fire, life [min, max] s, smoke_rate puffs per second at full heat, colours hot to cool, soot left behind, at most max. frost: frost pixels melt to water after melt_after [min, max] s, water dries away after evaporate_after s (+-30 %), at most max waiting. smoke_color: colour of smoke puffs. Purely visual. soft_cap: share of max_particles above which the cosmetic emitters throw fewer (none at the limit; particles.gd room). z_ease: 1/s weightless matter (motes) eases to the height it is pulled to. glow: the bloom of a glowing particle is tight round its pixel, radius px + per_size x its size, alpha at most alpha_cap; embers ember_r [cold, hot] px at ember_alpha (review 2026-10-31: glow must not wash out the pixels). comet (the Urknall's Gefuege units, particles.gd comet): trail_max drops follow the lead, each trail_lag of its flight later and trail_gap px short; where a blob strikes it splashes: crown droplets (+1 per unit) thrown on along its flight, cells pool cells per unit (at most cells_max) spread spread x sqrt(cells) art px round the spot; a soul comet puffs pop motes. modes.flake: a snow flake (almost weightless, drag 1/s, it lies as frost that melts: melts).",
   "schema_version": 2,
-  "max_particles": 600,
+  "max_particles": 900,
+  "wind_air": 1.5,
+  "depth_high": 26,
   "gravity": 620,
   "bounce": 0.35,
   "bounce_min": 70,
@@ -21,6 +23,7 @@
       "fade": false
     },
     "spark": {
+      "wind": 0.2,
       "gravity": 0.45,
       "lift": [
         20,
@@ -31,6 +34,7 @@
       "fade": true
     },
     "dust": {
+      "wind": 0.9,
       "gravity": 0.0,
       "lift": [
         0,
@@ -41,6 +45,9 @@
       "fade": true
     },
     "ember": {
+      "wall": "slide",
+      "air": 1.5,
+      "wind": 0.6,
       "gravity": -0.12,
       "lift": [
         10,
@@ -51,6 +58,7 @@
       "fade": true
     },
     "frost": {
+      "wind": 0.3,
       "gravity": 0.6,
       "lift": [
         0,
@@ -61,6 +69,9 @@
       "fade": false
     },
     "smoke": {
+      "wall": "slide",
+      "air": 2.0,
+      "wind": 1.0,
       "gravity": -0.06,
       "lift": [
         10,
@@ -82,6 +93,7 @@
       "glow_alpha": 0.16
     },
     "drop": {
+      "floor": "splat",
       "gravity": 1.0,
       "lift": [
         50,
@@ -102,6 +114,8 @@
       "fade": false
     },
     "mote": {
+      "wall": "slide",
+      "wind": 0.7,
       "gravity": 0.0,
       "lift": [
         0,
@@ -144,6 +158,9 @@
       "fade": true
     },
     "flame": {
+      "wall": "slide",
+      "air": 1.0,
+      "wind": 0.4,
       "gravity": -0.32,
       "lift": [
         20,
@@ -154,7 +171,19 @@
       "fade": false,
       "glow_alpha": 0.1
     },
+    "fuse": {
+      "gravity": 0.0,
+      "lift": [
+        0,
+        0
+      ],
+      "settle": false,
+      "glow": false,
+      "fade": false
+    },
     "flake": {
+      "air": 3.0,
+      "wind": 1.2,
       "gravity": 0.08,
       "lift": [
         0,
@@ -229,7 +258,10 @@
     "glint_life": [
       2.0,
       4.5
-    ]
+    ],
+    "_crust_note": "frost_crust (a thrown ice potion, review A6): its rim frayed by crust_ragged, it goes after frost.melt_after x crust_melt s, rim first, thinning by the dither (vapor frost, no water sheet).",
+    "crust_ragged": 0.45,
+    "crust_melt": 1.5
   },
   "void": {
     "_note": "The void (particles.gd well, implode): ramp spec, lite, body, shade, deep; an implosion pulls with implode_pull px/s inwards and implode_spin round for implode_time s, then shows a frame of void and throws a pressure ring. Motes are streaks (modes.mote). User request 2026-10-30: void energy as physics.",
@@ -292,12 +324,24 @@
     "max_lift": 60
   },
   "liquid": {
+    "_note": "Splats as pixel matter (particles.gd splat, review A6 2026-11-01): the body is a grain of the colour's shades at alpha + core_alpha (its rim at alpha), its outline lobed and its rim frayed by ragged; blobs smaller bodies round it; drops [min, max] pixels or short streaks (single_drops of them one pixel) thrown along the hit, drops_per_px per px of radius. Dried marks fade after fade_after s (+-15 %) over fade_time s, rim first; fade_keep of their pixels stay as specks at residue_alpha of their opacity; at most max_fading marks fade at once (the oldest is done at once).",
     "spread_rate": 45,
     "budget_scale": 0.9,
     "reach_scale": 2.2,
     "dry_after": 5.0,
     "dry_darken": 0.35,
-    "max_pools": 48
+    "max_pools": 48,
+    "core_alpha": 0.25,
+    "ragged": 0.5,
+    "blobs": 3,
+    "drops": [4, 12],
+    "drops_per_px": 0.5,
+    "single_drops": 0.6,
+    "fade_after": 8.0,
+    "fade_time": 6.0,
+    "fade_keep": 0.12,
+    "residue_alpha": 0.55,
+    "max_fading": 240
   },
   "ember": {
     "life": [
@@ -374,5 +418,30 @@
     "cells_max": 18,
     "spread": 0.8,
     "pop": 4
+  },
+  "wall_fire": {
+    "_note": "The lit wall fires (torches, wall braziers) throw real embers and a wisp of smoke from each flame tip (src/vfx/fire_anim.gd tips; hell_game.gd _wall_fire_matter; physics plan R21): per second per tip, colours hot to dim, smoke colour.",
+    "embers_per_s": 1.4,
+    "smoke_per_s": 0.7,
+    "colors": ["#ffe08a", "#ffb04a", "#f0702e"],
+    "smoke": "#3a3438",
+    "base": 74
+  },
+  "fuse": {
+    "_note": "The Leerenmagier's Gefüge as matter in the Singularität's well (particles.gd fuse_feed, _step_fusion, _fuse_pair, _blob_matter, _draw_fused; user 2026-11-01: its particles fuse, everything simulated). A blob floats height px over the floor, slowed by drag per s, pulled by pull_scale of its well's pull and swirl (the swirl divided by its units: heavy matter sinks in); the core keeps it: within the core plus its own radius it is drawn to the middle at center per s and its speed falls by hold per s. The smaller blobs of a well are drawn to its heaviest one at cohesion x sqrt(its units) px/s^2; two blobs of one well fuse when closer than reach x their radii summed; a blob of n units is PIXEL x (size + grow x sqrt(n)) px across, at most size_max; it turns at spin rad/s, its rim flashes for flash s when it fuses, it is drawn as up to lumps lumps of its elements (shuffled by its own seed, so they lie mixed all through it), and it throws off a bit of its own matter every bits_every / sqrt(n) s.",
+    "height": 8,
+    "drag": 3.0,
+    "pull_scale": 0.8,
+    "hold": 8.0,
+    "center": 6.0,
+    "reach": 1.4,
+    "cohesion": 400,
+    "size": 3.0,
+    "grow": 3.0,
+    "size_max": 40,
+    "spin": 2.5,
+    "flash": 0.12,
+    "lumps": 24,
+    "bits_every": 0.2
   }
 }

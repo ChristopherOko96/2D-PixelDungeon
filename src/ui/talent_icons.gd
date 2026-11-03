@@ -674,7 +674,9 @@ static func make(spec: Dictionary, motif: String, on: bool, ultimate := false) -
 		# Approved native companion art, cached only once per icon state.
 		for index in range(2):
 			var name: String = ["poison","fire"][index]
-			var source := Image.load_from_file("res://assets/sprites/companions/forest_worms/"+name+".png")
+			var native: Texture2D=load("res://assets/sprites/companions/forest_worms/"+name+".png")
+			var source:=native.get_image()
+			if source.is_compressed(): source.decompress()
 			source.resize(20,25,Image.INTERPOLATE_NEAREST)
 			if not on:
 				for y in range(25):

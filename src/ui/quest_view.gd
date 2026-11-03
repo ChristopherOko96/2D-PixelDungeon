@@ -29,7 +29,7 @@ static func crypt_goals(snapshot: Dictionary) -> Array:
 			if boss.begins_with("Der "): boss = "den " + boss.substr(4)
 			out.append({"text": "Besiege %s" % boss, "done": victory or bool(room.get("cleared", false)), "main": true})
 			break
-	out.append({"text": "Steig die Treppe hinab zu Ebene %d" % (int(snapshot.get("floor_index", 1)) + 1), "done": victory, "main": true})
+	out.append({"text": "Steige die Treppe hinab zu Ebene %d" % (int(snapshot.get("floor_index", 1)) + 1), "done": victory, "main": true})
 	var horde: Dictionary = snapshot.get("horde", {})
 	if not horde.is_empty() and int(horde.get("total", 0)) > 0:
 		var beaten := int(horde.total) - int(horde.get("left", 0))

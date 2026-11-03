@@ -63,6 +63,8 @@
 		"chain": "small",
 		"swallow": "small",
 		"eject": "large",
+		"spit": "large",
+		"mix_land": "small",
 		"splat": "large"
 	},
 	"ult_cast": "huge",
@@ -655,6 +657,65 @@
 			"pool_mat": {
 				"ice": "frost"
 			}
+		},
+		"_mix_spit_note": "The Singularität: the particles of all the Gefüge's elements fuse in its whirl into one big clump, every element still its own matter (a flame, a drop, a shard, goo ..., never one blended colour); at its collapse part of it stays in the explosion zone and goes on mixing there, a few fused globs of the same mixture fly out into every corner (user 2026-11-01; src/vfx/talent_pixels.gd mixing/churn/glob/splash_mix, _matter, _reaction; talent_fx.gd _draw_churns, _spit_physics, _churn_physics). mix (zone.mix, while the whirl runs): cap units read, up to particles particles (chunk share of the whirl's radius in cells each, at most chunk_max), circling on a ring reach of its radius, spin rad/s; they fuse two by two, step by step (a fusion tree), each step within merge_w of its share of the whirl's life, all done by fuse_end of it; flash share of a step the fusion's flash lasts; a fused group's parts turn round each other at pack_spin rad/s; at most react_max reactions where two elements touch (steam, sparks, frost). churn (event churn, what stays in the explosion zone, under the heroes): per_unit drawn units per unit of an element's share, cap; up to particles fused particles (chunk share of the field's radius each, at most chunk_max cells) loosening from start to spread of the field's radius within grow_t of its life, settling to flat, turning at spin rad/s, at most react_max reactions, fading from fade_from; bits of its matter jump out (drops, every hop_s s, hop_arc cells high); with particles (all of it simulated, the painting off) it drops onto the core at once (a comet per element, drop_fly s), its matter bubbles up in the field every bits_every s, and comets drops of its elements hop out over comet_share of its life to comet_reach [min, max] of its radius, comet_fly s each. spit (event spit, the globs' flights; mix_land, each landing): cap units in a glob, per_unit drawn units per unit of an element's share (every element at least once), arc cells it rises, up to chunks fused particles of chunk_cells cells packed out to 0.6 x (size + size_per x sqrt(units)) cells (at most size_max), turning at spin rad/s, react_max reactions, tail cells of its elements behind it, spread crypt px between the comets of its elements (particles), burst bits of each element's matter thrown out where it lands.",
+		"mix": {
+			"cap": 30,
+			"particles": 16,
+			"fuse_end": 0.85,
+			"merge_w": 0.4,
+			"flash": 0.18,
+			"chunk": 0.06,
+			"chunk_max": 5.0,
+			"reach": 0.42,
+			"spin": 2.4,
+			"pack_spin": 3.0,
+			"react_max": 6
+		},
+		"fuse": {
+			"_note": "The Singularität's Gefüge thrown into its well as matter (talent_fx.gd _feed_gefuege; particles.gd fuse_feed, which fuse there; tuning in vfx_particles.json fuse): at most feed_max units, a blob each, thrown in over feed_share of the whirl's life from feed_rim of its radius along the swirl at feed_throw px/s.",
+			"feed_max": 24,
+			"feed_share": 0.45,
+			"feed_rim": 0.85,
+			"feed_throw": 40
+		},
+		"churn": {
+			"per_unit": 2.0,
+			"cap": 30,
+			"particles": 16,
+			"chunk": 0.12,
+			"chunk_max": 5.0,
+			"grow_t": 0.35,
+			"start": 0.3,
+			"spread": 0.75,
+			"flat": 0.55,
+			"fade_from": 0.7,
+			"spin": 1.2,
+			"react_max": 8,
+			"drops": 10,
+			"hop_s": 0.7,
+			"hop_arc": 8,
+			"comets": 8,
+			"comet_share": 0.6,
+			"comet_reach": [0.45, 0.95],
+			"comet_fly": 0.35,
+			"drop_fly": 0.15,
+			"bits_every": 0.3
+		},
+		"spit": {
+			"cap": 24,
+			"per_unit": 2.0,
+			"arc": 8,
+			"size": 3.0,
+			"size_per": 1.0,
+			"size_max": 8.0,
+			"tail": 4,
+			"chunks": 6,
+			"chunk_cells": 2.2,
+			"spin": 6.0,
+			"react_max": 2,
+			"spread": 6,
+			"burst": 4
 		},
 		"tether": {
 			"chest": 0.6,

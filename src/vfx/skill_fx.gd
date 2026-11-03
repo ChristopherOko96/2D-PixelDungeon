@@ -49,6 +49,18 @@ const STORM_EVERY := 0.42
 ## Sparks of lightning: white-hot, blue, deep blue (PixelBolt.STORM).
 const STORM_SPARKS := [Color("f4f6ff"), Color("8fa4ff"), Color("c8d4ff")]
 var _rng := RandomNumberGenerator.new()
+## Trail emits per second, not per draw (physics plan F10: a 144 Hz screen drew 2.4x the trail of
+## a 60 Hz one): how many of `rate` per s are due for `key` since its last draw at `clock`.
+var _trail_due: Dictionary = {}
+
+
+func _due(key: int, clock: float, rate: float) -> int:
+	var last: Vector2 = _trail_due.get(key, Vector2(clock, 0.0))
+	var carry := last.y + maxf(0.0, minf(clock - last.x, 0.1)) * rate
+	var n := int(carry)
+	_trail_due[key] = Vector2(clock, carry - float(n))
+	if _trail_due.size() > 256: _trail_due.clear()
+	return n
 ## The fireball's tail points (reused every frame).
 var _tail := PackedVector2Array()
 ## Photoneneis per hero: start, strength and its last ends (kept to fade out).
@@ -216,9 +228,11 @@ func _draw_fireball(canvas: CanvasItem, bullet: Dictionary, point: Vector2, aim:
 	AttackFx.fireball(canvas, point, _tail, AttackFx.ramp_for("fire"), clampi(roundi(radius * 0.45), 3, 4), int(floorf(clock * PixelPaint.FPS)), int(bullet.get("id", 0)), 2.0, true)
 	if own_clip: PixelPaint.clip = Callable()
 	if particles == null: return
-	# flames trail off the flying fireball and rise behind it, embers are shed
-	particles.flames(point - aim * 6.0, 1, [], 2.0, 8.0, -aim * 30.0)
-	if _rng.randf() < 0.5:
+	# flames trail off the flying fireball and rise behind it, embers are shed (per second)
+	var id := int(bullet.get("id", 0))
+	var flames := _due(id * 2, clock, 60.0)
+	if flames > 0: particles.flames(point - aim * 6.0, flames, [], 2.0, 8.0, -aim * 30.0)
+	for k in range(_due(id * 2 + 1, clock, 30.0)):
 		particles.emit(point - aim * 6.0, -aim.rotated(_rng.randf_range(-0.8, 0.8)) * _rng.randf_range(20.0, 80.0), PHOTON_FIRE if _rng.randf() < 0.5 else PHOTON_EMBER, _rng.randf_range(0.25, 0.5), "ember", 2.0, 8.0, _rng.randf_range(10.0, 50.0), 2.0)
 
 

@@ -136,6 +136,18 @@ func _frames(game: Node, n: int) -> void:
 		game.feel.update(DT)
 
 
+## Runs the Frostgruft's mobs (and the feel) until a new enemy shot flies, at most
+## the bolt windup (combat_tells.json tells.bolt) plus half a second.
+func _until_shot(game: Node) -> void:
+	var shots: int = game.eshots.size()
+	var limit := FrostMoves.tell_time("bolt", false, 0.45) + 0.5
+	var t := 0.0
+	while game.eshots.size() <= shots and t < limit:
+		game._update_mobs(DT)
+		game.feel.update(DT)
+		t += DT
+
+
 ## Starts hell monster `m`'s attack of `kind`; false when it has none.
 func _start(game: Node, m: Dictionary, kind: String) -> bool:
 	for k in range((m.st.attacks as Array).size()):
@@ -432,8 +444,12 @@ func test_hell_acts_wind_up_and_fire() -> void:
 		"hell: the ash priest's summon winds up and fires once (%s)" % str(played))
 	played = _act(game, _hell_mob(game, "peingeist", Vector2(300, 60)), "bolt")
 	regular.append_array(played)
-	check(played.count("attack_soul") == 1 and played.count("attack_salve") == 0 and played.filter(func(n: String) -> bool: return n.begins_with("windup")).is_empty(),
-		"hell: the torment ghost's triple bolt is one soul shot, not the void boss's salve (%s)" % str(played))
+	# every enemy act announces itself since the sound pass (docs/KLANG-KONZEPT.de.md D3-1
+	# "windup_<kind> für jede Art", docs/KLANG-EREIGNISSE.de.md Ansagen: windup_<roh>, then
+	# windup_<krypta-art>, then windup_generic); before it the bolt had no windup sound
+	var bolt_windups := played.filter(func(n: String) -> bool: return n.begins_with("windup"))
+	check(played.count("attack_soul") == 1 and played.count("attack_salve") == 0 and bolt_windups.size() == 1 and played.find(bolt_windups[0]) < played.find("attack_soul"),
+		"hell: the torment ghost's triple bolt winds up once and is one soul shot, not the void boss's salve (%s)" % str(played))
 	played = _act(game, _hell_mob(game, "brandskelett", Vector2(200, 0)), "swing")
 	regular.append_array(played)
 	check(played.count("attack_slash") == 1, "hell: the burning skeleton's swing slashes once (%s)" % str(played))
@@ -462,7 +478,9 @@ func test_hell_acts_wind_up_and_fire() -> void:
 	all.append_array(played)
 	check(played.count("attack_slam") == 1 and played.count("blast") >= 1 and played.find("attack_slam") <= played.find("blast"),
 		"hell: the ember guardian's slam stamps, then its wave lands with the crypt's blast (%s)" % str(played))
-	played = _act(game, _hell_mob(game, "kesselbrut", Vector2(300, 0), true), "ring")
+	# the Kesselbrut's Überkochen is a meteor rain since fcc797b4 (hell_monsters.json), so the
+	# Klagender Hüter's Tränen stand for a guardian's ring
+	played = _act(game, _hell_mob(game, "klagender_hueter", Vector2(300, 0), true), "ring")
 	all.append_array(played)
 	check(played.count("attack_salve") == 1, "hell: a guardian's ring is one crypt salve (%s)" % str(played))
 	played = _act(game, _hell_mob(game, "drache4", Vector2(400, 0), true), "beam")
@@ -495,7 +513,7 @@ func test_hell_acts_sound_when_they_release() -> void:
 	at = _release_frames(game, _hell_mob(game, "glutwaechter", Vector2(260, 0), true), "slam", "attack_slam", func() -> bool: return mons.zones.size() > zones)
 	check(at[0] >= 0 and at[0] == at[1], "hell: a slam sounds in the frame its wave starts (heard %d, wave %d)" % [at[0], at[1]])
 	shots = game.eshots.size()
-	at = _release_frames(game, _hell_mob(game, "kesselbrut", Vector2(300, 0), true), "ring", "attack_salve", func() -> bool: return game.eshots.size() > shots)
+	at = _release_frames(game, _hell_mob(game, "klagender_hueter", Vector2(300, 0), true), "ring", "attack_salve", func() -> bool: return game.eshots.size() > shots)
 	check(at[0] >= 0 and at[0] == at[1], "hell: a ring sounds in the frame its first wave flies (heard %d, wave %d)" % [at[0], at[1]])
 	var skull := _hell_mob(game, "glutschaedel", Vector2(300, 0))
 	at = _release_frames(game, skull, "dash", "attack_bite", func() -> bool: return skull.act != null and skull.act.has("warn") and not bool(skull.act.warn))
@@ -563,7 +581,11 @@ func test_hell_world_moments_are_crypt_fx_events() -> void:
 	game.W.ents.append({"type": "plate", "group": "sound_test", "order": 1, "x": me.x + 2000.0, "y": me.y})
 	fake.reset()
 	game._update_hazards(DT)
-	check(fake.played == ["ui_click"] and fake.cats == ["world"], "hell: a rune plate clicks once in the world group (%s %s)" % [str(fake.played), str(fake.cats)])
+	# the plate's message is a toast, and toasts have their own UI sound since the sound pass
+	# (docs/KLANG-EREIGNISSE.de.md Bedienung: toast); the click itself stays one, in the world group
+	var click := fake.played.find("ui_click")
+	check(fake.played.count("ui_click") == 1 and click >= 0 and fake.cats[click] == "world" and fake.played.filter(func(n: String) -> bool: return n != "ui_click" and n != "toast").is_empty(),
+		"hell: a rune plate clicks once in the world group (%s %s)" % [str(fake.played), str(fake.cats)])
 	game.W.groups.erase("sound_test")
 	game.W.ents = (game.W.ents as Array).filter(func(e: Dictionary) -> bool: return str(e.get("group", "")) != "sound_test")
 	_frames(game, 10)
@@ -714,8 +736,8 @@ func test_frost_enemies_moves_and_kits() -> void:
 	game.feel.update(DT)
 	fake.reset()
 	skeleton.shoot = 0.0001
-	game._update_mobs(DT)
-	game.feel.update(DT)
+	# it winds up first (combat_tells.json tells.bolt, frost_moves.gd basic_tell), then shoots
+	_until_shot(game)
 	check(fake.count("attack_arrow") == 1 and fake.count("enemy_shoot") == 0, "frost: a frost skeleton's shot sounds like the crypt's skeleton archer (%s)" % str(fake.played))
 	game.mobs.erase(skeleton)
 	# the ice crystal's five-shot fan: a soul shot at the enemies' level, not the void boss's salve
@@ -723,8 +745,7 @@ func test_frost_enemies_moves_and_kits() -> void:
 	game.feel.update(DT)
 	fake.reset()
 	crystal.shoot = 0.0001
-	game._update_mobs(DT)
-	game.feel.update(DT)
+	_until_shot(game)
 	check(fake.count("attack_soul") == 1 and fake.count("attack_salve") == 0, "frost: an ice crystal's fan is one soul shot, not the boss salve (%s)" % str(fake.played))
 	game.mobs.erase(crystal)
 	# moves of regular enemies: the windup stays quiet, the release sounds once at the enemies' level
@@ -801,7 +822,9 @@ func test_frost_enemies_moves_and_kits() -> void:
 	fake.reset()
 	boss.atk_t = 0.0
 	game.as_source("kit", func() -> void: BossKit.update(game, boss, DT))
-	check(fake.played.is_empty(), "frost: the kit's own attack sound gives way to the crypt routing (%s)" % str(fake.played))
+	# the adds it summons appear with their own enemy_spawn at their place (sound pass,
+	# docs/KLANG-EREIGNISSE.de.md "an der Position: enemy_spawn"); that is no attack sound
+	check(fake.played.filter(func(n: String) -> bool: return n != "enemy_spawn").is_empty(), "frost: the kit's own attack sound gives way to the crypt routing (%s)" % str(fake.played))
 	game.feel.update(DT)
 	check(fake.count("attack_summon") == 1, "frost: the guardian's summon sounds once (%s)" % str(fake.played))
 	fake.reset()
@@ -873,11 +896,27 @@ func test_frost_hero_skills_at_hero_level() -> void:
 	game.sfx = real
 	game.state.skill_cd = {}
 	game.skill_key("2", true)
-	var player: AudioStreamPlayer = real._players[(real._next - 1 + real._players.size()) % real._players.size()]
+	# Since the sound pass (b178a185) sfx.gd takes a voice slot per play (_take_slot) and a
+	# play can start layers right after it, so the last used player is not always the
+	# slash's: find the slot that plays attack_slash (2D or positional player).
+	var slot := -1
+	for i in range((real._slots as Array).size()):
+		var entry: Variant = real._slots[i]
+		if entry is Dictionary and str((entry as Dictionary).get("event", "")) == "attack_slash" and (slot < 0 or float(entry.start) >= float(real._slots[slot].start)):
+			slot = i
+	var level := -999.0
+	var bus := ""
+	if slot >= 0:
+		var node: Node = real._players_2d[slot] if bool(real._slots[slot].get("positional", false)) else real._players[slot]
+		level = float(node.get("volume_db"))
+		bus = str(real._slots[slot].bus)
 	var variant: Dictionary = real._files["attack_slash"][int(real._last_variant["attack_slash"])]
+	var spread_db := float(real._meta["attack_slash"].get("vol_spread_db", 0.0))
 	var want: float = AudioMix.base_db() + float(AudioMix.category("hero").get("volume_db", 0.0)) + float(real._meta["attack_slash"].volume_db) + float(variant.gain_db)
-	check(real.last_effect == "attack_slash" and real.last_bus == "SFX" and absf(player.volume_db - want) < 0.01,
-		"frost: the wave skill's slash plays at base + hero level (%.1f dB, want %.1f)" % [player.volume_db, want])
+	# and on the hero group's own bus (audio_mix.json categories.hero.bus "Hero", under Room
+	# and SFX since the bus tree of b178a185; before it every effect played on SFX)
+	check(slot >= 0 and bus == str(AudioMix.category("hero").get("bus", "SFX")) and absf(level - want) <= spread_db + 0.01,
+		"frost: the wave skill's slash plays at base + hero level (%.2f dB on %s, want %.2f)" % [level, bus, want])
 	game.sfx = fake
 	real.queue_free()
 	await _free(game)

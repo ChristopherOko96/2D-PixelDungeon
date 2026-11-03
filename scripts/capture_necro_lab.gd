@@ -53,7 +53,7 @@ func _photo(name: String) -> void:
 	for frame in range(90):
 		await process_frame
 		var pools: RefCounted = game.view._talent_fx.pools
-		var ready: bool = pools!=null and pools._shaping.is_empty() and pools._laying.is_empty()
+		var ready: bool = pools!=null and pools.pool_field.pending()==0 and pools._laying.is_empty()
 		if ready:
 			for field: Dictionary in pools._fields.values():
 				if field.has("work"): ready=false

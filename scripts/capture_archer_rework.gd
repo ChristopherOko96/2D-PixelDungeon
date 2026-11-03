@@ -1,6 +1,7 @@
 extends "res://scripts/capture_necro_forest.gd"
 ## Current renderer, controlled training states. No earned campaign claim.
 const OUT := "res://production/qa/evidence/archer-rework"
+var capture_out:=OUT
 func _start() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
 	await _make(true)
@@ -61,13 +62,13 @@ func _photo(name: String) -> void:
 	game.view.set_state(game.state,1)
 	game._update_camera(0.016)
 	game.lab_art.queue_redraw()
-	for frame in range(100):
+	for frame in range(600):
 		await process_frame
 		var pools: RefCounted=game.view._talent_fx.pools
-		var ready: bool=pools!=null and pools._shaping.is_empty() and pools._laying.is_empty()
+		var ready: bool=pools!=null and pools.pool_field.pending()==0 and pools._laying.is_empty()
 		if ready:
 			for field: Dictionary in pools._fields.values():
 				if field.has("work"): ready=false
 		if frame>25 and ready: break
 	await RenderingServer.frame_post_draw
-	root.get_texture().get_image().save_png(OUT.path_join(name+".png"))
+	root.get_texture().get_image().save_png(capture_out.path_join(name+".png"))

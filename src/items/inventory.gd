@@ -7,8 +7,17 @@ extends RefCounted
 ## consumables: Klonsiegel (a clone fights beside the hero for a while),
 ## Aufwertungsstein (+1 stage; may fail on cursed pieces), Würfelstein
 ## (rerolls a stage), Spiegelkristall (reveals the bag's potions). Every floor
-## also has fixed finds (a crystal, every second floor a stone) and mini
-## guardians drop a rare piece.
+## also has fixed finds (a crystal; a stone on per_floor.stone_floors, an extra
+## potion on potion_floors) and mini guardians drop a rare piece.
+## Gameplay review 2026-11 (production/qa/evidence/gameplay-review/BEWERTUNG.md
+## R1, R3, R5, R6, R7): potions drop by their weight; a hero whose class has no
+## weapon of a rarity finds gear instead; unknown pieces show their curse risk,
+## unknown potions how many kinds are left and how many of them hurt, and the
+## last unknown colour is learned by itself; drunk harmful potions keep their
+## harm and leave a small benefit (after: a while immune to their element;
+## blind: monsters lose the hero's track; explosion: it also hits the monsters
+## round the drinker); thrown strength, haste and shield work weaker on everyone
+## in the radius, thrown healing and regeneration also on companions.
 ## Items: weapons (class-bound, five rarities, found unidentified and often
 ## cursed), potions (known only by colour until identified; colours shuffled
 ## per run, knowledge shared by the team), identification crystals and
@@ -127,10 +136,23 @@ func _roll_kind(spec: Dictionary, depth: float, class_id: String) -> Dictionary:
 	match chosen:
 		"weapon": return _roll_weapon(depth, class_id, str(spec.get("min_rarity", "common")))
 		"gear": return _roll_gear(depth, str(spec.get("min_rarity", "common")))
-		"potion":
-			var potions: Array = data.get("potions", {}).keys()
-			return make_stack("potion", str(potions[_rng.randi_range(0, potions.size() - 1)]))
+		"potion": return make_stack("potion", _roll_potion())
 	return make_stack(chosen)
+
+
+## A potion kind by the potions' drop weights (items.json potions.*.weight, 1 when
+## unset): healing often, the run potions rarely (gameplay review R3).
+func _roll_potion() -> String:
+	var potions: Dictionary = data.get("potions", {})
+	var total := 0.0
+	for kind: String in potions: total += maxf(0.0, float(potions[kind].get("weight", 1.0)))
+	var roll := _rng.randf() * total
+	var chosen := ""
+	for kind: String in potions:
+		chosen = kind
+		roll -= maxf(0.0, float(potions[kind].get("weight", 1.0)))
+		if roll <= 0.0: break
+	return chosen
 
 
 func _roll_weapon(depth: float, class_id: String, minimum: String) -> Dictionary:
@@ -149,7 +171,9 @@ func _roll_weapon(depth: float, class_id: String, minimum: String) -> Dictionary
 			rarity = RARITIES[index]
 			break
 	var pool: Array = data.get("weapons", []).filter(func(entry: Dictionary) -> bool: return str(entry.rarity) == rarity and str(entry["class"]) == class_id and not bool(entry.get("start", false)))
-	if pool.is_empty(): pool = data.get("weapons", []).filter(func(entry: Dictionary) -> bool: return str(entry.rarity) == rarity)
+	# no weapon of the hero's class at this rarity (the necromancer has only his start staff):
+	# a piece of gear he can wear instead of another class's weapon (gameplay review R1)
+	if pool.is_empty(): return _roll_gear(depth, minimum)
 	var spec: Dictionary = pool[_rng.randi_range(0, pool.size() - 1)]
 	return make_weapon(str(spec.id), false, _roll_curse("weapon"))
 
@@ -189,15 +213,29 @@ func _roll_curse(slot: String) -> String:
 	return str(curses[_rng.randi_range(0, curses.size() - 1)])
 
 
-## The fixed finds of a floor: an identification crystal, every
-## `stone_every` floors a curse-breaker stone (docs/LAUF-DESIGN.de.md 3.5).
+## The fixed finds of a floor (docs/LAUF-DESIGN.de.md 3.5): an identification
+## crystal; a curse-breaker stone on the floors per_floor.stone_floors (the old
+## stone_every when that list is missing) and an extra potion on potion_floors, so
+## trying pieces and potions is cheap from floor 1 on (gameplay review R3, R6).
 func floor_finds(floor_number: int) -> Array:
 	var rules: Dictionary = data.get("per_floor", {})
 	var out: Array = []
 	if int(rules.get("crystal", 1)) > 0: out.append(make_stack("crystal", "", int(rules.get("crystal", 1))))
-	var every := int(rules.get("stone_every", 2))
-	if every > 0 and floor_number % every == 0: out.append(make_stack("stone"))
+	var stone := _listed(rules.get("stone_floors"), floor_number)
+	if not rules.has("stone_floors"):
+		var every := int(rules.get("stone_every", 2))
+		stone = every > 0 and floor_number % every == 0
+	if stone: out.append(make_stack("stone"))
+	if _listed(rules.get("potion_floors"), floor_number): out.append(make_stack("potion", _roll_potion()))
 	return out
+
+
+## True when the floor list `list` (JSON numbers) holds `floor_number`.
+func _listed(list: Variant, floor_number: int) -> bool:
+	if not (list is Array): return false
+	for entry: Variant in list:
+		if int(entry) == floor_number: return true
+	return false
 
 
 ## What a mini guardian drops: a piece of gear or a weapon, at least rare.
@@ -218,16 +256,23 @@ func add(player: Dictionary, item: Dictionary) -> bool:
 				note(player, "Gefunden: " + name_of(item))
 				return true
 	if bag.size() >= int(data.get("bag", 12)):
-		note(player, "Rucksack voll.")
+		note(player, "Inventar voll.")
 		return false
 	bag.append(item)
 	note(player, "Gefunden: " + name_of(item))
 	return true
 
 
+## A message for the hero (the last one, a running count, and the last few in
+## `item_note_log` so a burst of finds in one frame is seen whole; items.json
+## "note_log" sets how many, default 8).
 func note(player: Dictionary, text: String) -> void:
 	player.item_note = text
 	player.item_notes = int(player.get("item_notes", 0)) + 1
+	var recent: Array = player.get("item_note_log", [])
+	recent.append(text)
+	while recent.size() > maxi(1, int(data.get("note_log", 8))): recent.pop_front()
+	player.item_note_log = recent
 
 
 ## The name a hero sees: unknown weapons, gear and potions show only what they look like.
@@ -330,7 +375,7 @@ func _unequip(player: Dictionary, value: int) -> void:
 		note(player, "Verflucht! Das Stück lässt sich nicht ablegen. Ein Fluchbrecherstein hilft.")
 		return
 	if player.inventory.bag.size() >= int(data.get("bag", 12)):
-		note(player, "Rucksack voll.")
+		note(player, "Inventar voll.")
 		return
 	player.inventory.bag.append(item)
 	player.inventory[ItemRules.slot_of(item)] = {}
@@ -426,11 +471,11 @@ func _use(id: int, player: Dictionary, value: int) -> void:
 			for held: Dictionary in player.inventory.bag:
 				if str(held.type) == "potion" and not known.has(str(held.potion)) and not unknown.has(str(held.potion)): unknown.append(str(held.potion))
 			if unknown.is_empty():
-				note(player, "Kein unbekannter Trank im Rucksack.")
+				note(player, "Kein unbekannter Trank im Inventar.")
 				return
 			_take_one(player, value)
 			for kind: String in unknown: known[kind] = true
-			note(player, "Der Spiegel zeigt %d Tränke." % unknown.size())
+			note(player, ("Der Spiegel zeigt %d Tränke." % unknown.size()) + _learn_last())
 			game.add_fx("identify", Vector2(player.pos), 30.0)
 
 
@@ -461,7 +506,19 @@ func _learn(player: Dictionary, kind: String) -> void:
 	if known.has(kind): return
 	known[kind] = true
 	var colour: String = str(data.get("potion_colors", {}).get(str(colors.get(kind, "")), "TRANK"))
-	note(player, "%s ist ein %s." % [colour, str(data.potions[kind].get("name", ""))])
+	note(player, ("%s ist ein %s." % [colour, str(data.potions[kind].get("name", ""))]) + _learn_last())
+
+
+## When only one potion kind is still unknown it needs no test: it is learned too
+## (gameplay review R5). Returns the hint for the note ("" when nothing was learned).
+func _learn_last() -> String:
+	var left: Array = []
+	for kind: String in data.get("potions", {}):
+		if not known.has(kind): left.append(kind)
+	if left.size() != 1: return ""
+	var last := str(left[0])
+	known[last] = true
+	return " Damit bleibt eine Farbe: %s ist ein %s." % [str(data.get("potion_colors", {}).get(str(colors.get(last, "")), "TRANK")), str(data.potions[last].get("name", ""))]
 
 
 func _take_potion(player: Dictionary, value: int) -> Dictionary:
@@ -484,23 +541,30 @@ func _drink(id: int, player: Dictionary, value: int) -> void:
 		"healing": player.hp = mini(int(player.max_hp), int(player.hp) + int(spec.get("heal", 4)))
 		"strength": effects.apply(player, "strength", float(spec.get("time", 20)), float(spec.get("value", 1.4)))
 		"haste": effects.apply(player, "haste", float(spec.get("time", 15)), float(spec.get("value", 1.35)))
-		"shield":
-			var runtime: Dictionary = player.get("perk_runtime", {})
-			runtime.shield = int(runtime.get("shield", 0)) + int(spec.get("charges", 2))
-			player.perk_runtime = runtime
+		"shield": _add_shield(player, int(spec.get("charges", 2)), int(spec.get("max_charges", 99)))
 		"regeneration": effects.apply(player, "regen", float(spec.get("time", 18)), float(spec.get("every", 3)))
 		"aftershock", "chainlight":
 			for key: String in spec.get("effects", {}): player.augments[key] = float(player.augments.get(key, 0.0)) + float(spec.effects[key])
 			PerkRules.rebuild(player, game.balance)
 		"fire": effects.apply(player, "burn", float(spec.get("time", 4)), 1.0)
-		"ice":
-			effects.apply(player, "slow", float(spec.get("time", 6)), 0.6)
-			effects.apply(player, "weak", float(spec.get("time", 6)), 0.5)
-		"blind": effects.apply(player, "blind", float(spec.get("time", 10)), 1.0)
+		# slower for a while but no weaker blows (items.json ice.slow)
+		"ice": effects.apply(player, "slow", float(spec.get("time", 6)), float(spec.get("slow", 0.75)))
+		"blind":
+			effects.apply(player, "blind", float(spec.get("time", 10)), 1.0)
+			# monsters near the drinker lose his track (story worlds: story_items.gd lose_track)
+			if game.has_method("lose_track"): game.lose_track(player, spec)
 		"poison": effects.apply(player, "poison", float(spec.get("time", 5)), 1.0)
 		"explosion":
-			game.add_fx("potion_blast", Vector2(player.pos), 50.0)
+			game.add_fx("potion_blast", Vector2(player.pos), float(spec.get("radius", 92)))
 			game._damage_player(id, int(spec.get("self_damage", 3)), Vector2.RIGHT.rotated(_rng.randf() * TAU))
+			# an emergency nova: the blast also hits the monsters round the drinker (drink_damage)
+			if float(spec.get("drink_damage", 0)) > 0.0:
+				for enemy: Dictionary in _enemies_near(Vector2(player.pos), float(spec.get("radius", 92))):
+					game._damage_enemy(enemy, float(spec.drink_damage), (Vector2(enemy.pos) - Vector2(player.pos)).normalized(), id)
+	# a harmful potion's after-effect: a while immune to its elements once its own harm is
+	# over (items.json after / after_time / after_delay; worlds without immunity skip it)
+	if spec.has("after") and effects.has_method("immunity"):
+		effects.immunity(Array(spec.after), float(spec.get("after_time", 0)), float(spec.get("after_delay", 0)))
 	game.add_fx("drink", Vector2(player.pos), 20.0, {"color": str(colors.get(kind, "red"))})
 
 
@@ -526,11 +590,13 @@ func _throw(id: int, player: Dictionary, value: int, target: Vector2) -> void:
 	game.add_fx("potion_throw", point, float(spec.get("radius", 60)), {"fx": from.x, "fy": from.y, "color": str(colors.get(kind, "red")), "potion": kind})
 	var radius := float(spec.get("radius", 60))
 	match kind:
-		"healing", "regeneration":
+		"healing", "regeneration", "strength", "haste", "shield":
+			# heroes in the radius; strength, haste and shield weaker than drunk
 			for other: Dictionary in game.players.values():
 				if int(other.hp) <= 0 or Vector2(other.pos).distance_to(point) > radius: continue
-				if kind == "healing": other.hp = mini(int(other.max_hp), int(other.hp) + int(spec.get("throw_heal", 2)))
-				else: game.player_effects.apply(other, "regen", float(spec.get("time", 18)), float(spec.get("every", 3)))
+				_bless(other, kind, spec)
+			# the clone and the companions in the radius (story worlds: story_items.gd bless_allies)
+			if game.has_method("bless_allies"): game.bless_allies(kind, spec, point, radius)
 		"fire": game.boss_moves.hero_pool(point, {"style": "fire", "radius": radius, "time": float(spec.get("pool_time", 5)), "dps": float(spec.get("dps", 2)), "status": "burn"}, id)
 		"poison": game.boss_moves.hero_pool(point, {"style": "poison", "radius": radius, "time": float(spec.get("pool_time", 5)), "dps": float(spec.get("dps", 1.5)), "status": "poison"}, id)
 		"ice":
@@ -558,6 +624,28 @@ func _throw(id: int, player: Dictionary, value: int, target: Vector2) -> void:
 				game.perk_combat._event("storm", point, Vector2(enemy.pos))
 				hit += 1
 		_: note(player, "Der Trank zerplatzt wirkungslos.")
+
+
+## A thrown good potion on one hero in its radius (gameplay review R7): healing
+## throw_heal LP, regeneration as drunk, strength / haste throw_value for throw_time
+## s, shield throw_charges charges.
+func _bless(other: Dictionary, kind: String, spec: Dictionary) -> void:
+	var effects = game.player_effects
+	match kind:
+		"healing": other.hp = mini(int(other.max_hp), int(other.hp) + int(spec.get("throw_heal", 2)))
+		"regeneration": effects.apply(other, "regen", float(spec.get("time", 18)), float(spec.get("every", 3)))
+		"strength": effects.apply(other, "strength", float(spec.get("throw_time", 12)), float(spec.get("throw_value", 1.25)))
+		"haste": effects.apply(other, "haste", float(spec.get("throw_time", 10)), float(spec.get("throw_value", 1.25)))
+		"shield": _add_shield(other, int(spec.get("throw_charges", 1)), int(spec.get("max_charges", 99)))
+
+
+## Shield charges onto a hero, up to `cap` (items.json shield.max_charges: no
+## endless stacking); charges above the cap from elsewhere are not taken away.
+func _add_shield(player: Dictionary, charges: int, cap: int) -> void:
+	var runtime: Dictionary = player.get("perk_runtime", {})
+	var held := int(runtime.get("shield", 0))
+	runtime.shield = maxi(held, mini(cap, held + charges))
+	player.perk_runtime = runtime
 
 
 func _enemies_near(point: Vector2, radius: float) -> Array:
@@ -679,13 +767,15 @@ func view(item: Dictionary) -> Dictionary:
 					if bool(item.get("blessed", false)): lines.append("SEGEN: " + str(rules.blessing.get("text", "")))
 					else: lines.append("FLUCH: " + str(rules.get("text", "")))
 				else: lines.append("Kein Fluch.")
-			else: lines.append("Unbekannt: Wirkung und Fluch zeigt ein Kristall oder das Anlegen.")
+			else:
+				lines.append("Unbekannt: Wirkung und Fluch zeigt ein Kristall oder das Anlegen.")
+				lines.append(_risk_line("weapon"))
 			result.lines = lines
 		"potion":
 			var kind := str(item.potion)
 			result.merge({"sprite": "res://assets/sprites/items/potion_%s.png" % str(colors.get(kind, "red")), "rarity": "common", "color": "d3bfa9", "identified": known.has(kind),
 				"element": ItemRules.element_of(item) if known.has(kind) else ""})
-			result.lines = ["TRINKEN: " + str(data.potions[kind].get("drink", "")), "WERFEN: " + str(data.potions[kind].get("throw", ""))] if known.has(kind) else ["Unbekannter Trank. Ein Kristall verrät ihn, oder du probierst ihn."]
+			result.lines = ["TRINKEN: " + str(data.potions[kind].get("drink", "")), "WERFEN: " + str(data.potions[kind].get("throw", ""))] if known.has(kind) else ["Unbekannter Trank. Ein Kristall verrät ihn, oder du probierst ihn.", _unknown_line()]
 			if known.has(kind) and not _element_line(item).is_empty(): result.lines.append(_element_line(item))
 		"gear":
 			var spec := ItemRules.gear(str(item.id))
@@ -708,7 +798,9 @@ func view(item: Dictionary) -> Dictionary:
 					if bool(item.get("blessed", false)): lines.append("SEGEN: " + str(rules.blessing.get("text", "")))
 					else: lines.append("FLUCH: " + str(rules.get("text", "")))
 				else: lines.append("Kein Fluch.")
-			else: lines.append("Unbekannt: Stufe und Fluch zeigt ein Kristall oder das Anlegen.")
+			else:
+				lines.append("Unbekannt: Stufe und Fluch zeigt ein Kristall oder das Anlegen.")
+				lines.append(_risk_line(str(spec.slot)))
 			result.lines = lines
 		"crystal", "stone", "clone_seal", "upgrade_stone", "dice_stone", "mirror_crystal":
 			var spec: Dictionary = data.get(str(item.type), {})
@@ -725,10 +817,28 @@ func _percent(share: float) -> String:
 	return ("+%d %%" % value) if value >= 0 else ("-%d %%" % absi(value))
 
 
-## The stats of a piece in words ("SCHADEN +10 % · +1 HERZ"), scaled by its stage.
+## "FLUCHRISIKO 60 %": the chance a found piece of `slot` carries a curse
+## (items.json curse_by_slot; gameplay review R5).
+func _risk_line(slot: String) -> String:
+	return "FLUCHRISIKO %d %%" % roundi(float(data.get("curse_by_slot", {}).get(slot, data.get("curse_chance", 0.6))) * 100.0)
+
+
+## "NOCH UNBEKANNT: 7 SORTEN, 3 SCHADEN BEIM TRINKEN": the potion kinds not learned
+## yet and how many of them hurt their drinker (items.json potions.*.harmful).
+func _unknown_line() -> String:
+	var left := 0
+	var harmful := 0
+	for kind: String in data.get("potions", {}):
+		if known.has(kind): continue
+		left += 1
+		if bool(data.potions[kind].get("harmful", false)): harmful += 1
+	return "NOCH UNBEKANNT: %d SORTEN, %d SCHADEN BEIM TRINKEN" % [left, harmful]
+
+
+## The stats of a piece in words ("SCHADEN +10 % · +2 LP"), scaled by its stage.
 func _stats_text(stats: Dictionary, factor: float) -> String:
 	var parts: Array[String] = []
-	if stats.has("max_hp"): parts.append("+%s HERZ" % str(snappedf(float(stats.max_hp) * factor / 2.0, 0.5)))
+	if stats.has("max_hp"): parts.append("+%d LP" % roundi(float(stats.max_hp) * factor))
 	if stats.has("damage"): parts.append("SCHADEN " + _percent(float(stats.damage) * factor))
 	if stats.has("rate"): parts.append("ANGRIFFE " + _percent(float(stats.rate) * factor))
 	if stats.has("speed"): parts.append("TEMPO " + _percent(float(stats.speed) * factor))
@@ -755,5 +865,5 @@ func snapshot(player: Dictionary) -> Dictionary:
 	var bag: Array = []
 	for item: Dictionary in player.inventory.bag: bag.append(view(item))
 	return {"weapon": view(player.inventory.weapon), "armor": view(player.inventory.get("armor", {})), "ring": view(player.inventory.get("ring", {})), "amulet": view(player.inventory.get("amulet", {})),
-		"bag": bag, "size": int(data.get("bag", 12)), "note": str(player.get("item_note", "")), "notes": int(player.get("item_notes", 0)), "clone": float(player.get("clone", {}).get("time", 0.0)),
+		"bag": bag, "size": int(data.get("bag", 12)), "note": str(player.get("item_note", "")), "notes": int(player.get("item_notes", 0)), "note_log": (player.get("item_note_log", []) as Array).duplicate(), "clone": float(player.get("clone", {}).get("time", 0.0)),
 		"sealed": int(player.get("sealed_skill", -1)), "dim": bool(player.get("dim", false))}

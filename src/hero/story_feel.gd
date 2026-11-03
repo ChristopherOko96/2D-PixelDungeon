@@ -88,7 +88,7 @@ const PERK_BLUE := PerkMarks.BLUE
 ## Wall style of a hero shot kind, by the crypt's src/game.gd _shot_style (fireball
 ## fire, fist frost, the blade wave metal, magic magic, void shots void, rock
 ## stone, arrows arrow); the relic's gravity ball is void, its shards arcane.
-const SHOT_WALL_STYLES := {"arrow": "arrow", "magic": "magic", "fireball": "fire", "fist": "frost", "wave": "metal", "gravity": "void", "rock": "stone", "shard": "arcane"}
+const SHOT_WALL_STYLES := {"arrow": "arrow", "magic": "magic", "fireball": "fire", "pyro": "fire", "icicle": "frost", "void_orb": "void", "fist": "frost", "wave": "metal", "gravity": "void", "rock": "stone", "shard": "arcane"}
 ## Wall style of an enemy move's shot (frost_moves.gd styles) by the same rule.
 const ENEMY_WALL_STYLES := {"ice": "frost", "frost": "frost", "void": "void", "curse": "void", "fire": "fire", "poison": "poison", "spit": "poison"}
 ## Seconds a dead hero takes to fall (the crypt's fall of a felled actor, feedback.gd pose).
@@ -189,7 +189,14 @@ func on_hurt(from := Vector2.ZERO) -> void:
 
 ## A blast of an enemy move at world point `p`: the crypt's burst of its style.
 func on_blast(p: Vector2, radius: float, style := "magic") -> void:
+	# an enemy blast or slam bites the walls and smashes props around it (src/hell/story_wreck.gd)
+	if g.get("wreck") != null:
+		g.wreck.blast(p, radius, "enemy_blast", false)
 	var crypt_style := str(BLAST_STYLES.get(style, "void"))
+	# the rules' frost: an enemy's ice blast freezes the water lying there, whatever is drawn
+	# (src/hell/story_elements.gd frost_at; physics plan F17: not only through the particles)
+	if crypt_style in ["ice", "frost"] and g.get("story_elements") != null:
+		g.story_elements.frost_at(p, radius)
 	_event("zone_burst", p, {"style": crypt_style, "r": radius / scale})
 	_spawn(str(BLAST_SHEETS.get(crypt_style, "magic_burst")), p, clampf(radius / 130.0, 0.5, 2.0))
 
@@ -277,6 +284,9 @@ func wall_hit(from: Vector2, to: Vector2, style: String, owner := 0) -> bool:
 		normal = Vector2(-signf(travel.x), 0.0)
 	elif side_y and not side_x:
 		normal = Vector2(0.0, -signf(travel.y))
+	# the contact wears the wall (src/hell/story_wreck.gd: bites, cracks, chips, dust)
+	if g.get("wreck") != null:
+		g.wreck.wall_hit(contact, normal, style, owner)
 	var extra := {"style": style, "nx": normal.x, "ny": normal.y, "r": 8.0}
 	if owner > 0:
 		extra.o = owner
@@ -631,7 +641,9 @@ func draw_layer(canvas: CanvasItem, mode: String) -> void:
 					boss_fx.pools.particles = feedback.particles
 					boss_fx.particles = feedback.particles
 					var layers: Array = [[boss_fx.pools, 1.0]]
-					if g.get("pools") != null: layers.append([g.get("pools"), scale])
+					# the world's puddles are the rules' (true): frost and fire change them only through
+					# src/hell/story_elements.gd (physics plan F17)
+					if g.get("pools") != null: layers.append([g.get("pools"), scale, true])
 					if g.get("gas") != null: layers.append([g.get("gas"), scale])
 					feedback.particles.set_liquids(layers)
 			boss_fx.draw_ground(canvas, conditions, _clock)
@@ -643,7 +655,8 @@ func draw_layer(canvas: CanvasItem, mode: String) -> void:
 			# the talents' art finds the Singularitaet's caught monsters by their talent id (src/vfx/talent_fx.gd enemy_at)
 			var adapter: Variant = g.get("talents")
 			if adapter != null and adapter.get("fx") != null and not (adapter.fx.get("enemy_at") as Callable).is_valid(): adapter.fx.enemy_at = mob_at
-			feedback.particles.draw_particles(canvas)
+			# with depth bands (the host draws low matter between its actors) only high matter here
+			feedback.particles.draw_particles(canvas, [], 2 if bool(g.get("depth_bands")) else 0)
 		"glow":
 			var kit: RefCounted = g.story_hero.skill_fx if g.story_hero != null else null
 			feedback.particles.draw_glow(canvas, kit.glow.level("particles") if kit != null else 1.0)

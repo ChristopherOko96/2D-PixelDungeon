@@ -165,7 +165,7 @@ static func draw_hud(g: Node, h: CanvasItem, pos: Vector2, font: Font) -> void:
 		x += w + 6.0
 
 
-## WAHN (element_rules.json madness): the hero's madness clock; `inside` = he
+## WAHN (madness_rules.json madness): the hero's madness clock; `inside` = he
 ## stands in a maddening void pool not his own this frame. state.mad = s of
 ## inverted controls left, state.mad_warn = 0..1 while it creeps in (for the
 ## visuals); the condition chip "WAHN" shows while he is mad.

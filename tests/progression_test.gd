@@ -55,10 +55,14 @@ func _initialize() -> void:
 	root.add_child(hud)
 	hud.show_player({"hp": 8, "max_hp": 8, "level": 1, "exp": 0, "exp_next": 100, "stats": {"damage": 2.0}})
 	hud.show_player({"hp": 5, "max_hp": 8, "level": 1, "exp": 0, "exp_next": 100, "stats": {"damage": 3.0}})
-	check(hud._hurt.has(2) and hud._hurt.has(3) and not hud._hurt.has(1), "damage blinks exactly the hearts that lost health")
+	# Since 385d6c21 the HUD draws one life bar instead of hearts (src/ui/hud.gd, shared with
+	# the story worlds through HudKit.life_bar, which ghosts a hit and sweeps a heal on its
+	# own); the per-heart blink and sparkle (_hurt, _healed) are gone. The HUD's part is to
+	# hand the bar the new life.
+	check(int(hud._hp) == 5 and is_equal_approx(float(hud._hp_f), 5.0) and int(hud._max_hp) == 8, "a hit hands the life bar the life that is left")
 	check(hud._stat_changes.has("damage") and hud._stat_changes.damage.up, "a raised stat is highlighted as an increase")
 	hud.show_player({"hp": 7, "max_hp": 8, "level": 2, "exp": 4, "exp_next": 283, "stats": {"damage": 3.0}})
-	check(hud._healed.has(2) and hud._healed.has(3) and hud._level_flash > 0.0, "healing and level-ups start their effects")
+	check(int(hud._hp) == 7 and is_equal_approx(float(hud._hp_f), 7.0) and hud._level_flash > 0.0, "healing reaches the life bar and a level-up starts its flash")
 	hud.show_player({})
 	check(not hud.showing(), "an empty player hides the HUD")
 	hud.free()

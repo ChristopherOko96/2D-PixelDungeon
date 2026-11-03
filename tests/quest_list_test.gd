@@ -100,13 +100,17 @@ func test_story_menu(scene: PackedScene, story: String) -> void:
 	await process_frame
 	game.pause_menu.select_section("quest")
 	# Assert
-	check(game.pause_menu.visible and game.pause_menu.section == "quest" and game.pause_menu.quest_view.is_visible_in_tree(), "Esc opens the pause menu with the Auftrag page in the %s" % story)
+	# Since the UX polish (b178a185) the story pause has one Etage page with the goals and the
+	# map (pause_menu.gd MODE_SECTIONS.story); "quest" is an alias of it (STORY_ALIASES)
+	check(game.pause_menu.visible and game.pause_menu.section == "floor" and game.pause_menu.quest_view.is_visible_in_tree(), "Esc opens the pause menu with the Auftrag on its Etage page in the %s" % story)
 	var goals: Array = game.pause_menu.quest_view.goals
 	var mains := goals.filter(func(g: Dictionary): return g.main)
 	check(mains.size() >= 2 and mains.any(func(g: Dictionary): return str(g.text).begins_with("Besiege")), "the %s lists its main goals with the boss" % story)
 	check(game.pause_menu.quest_view.title == "ETAGE 1", "the %s's page names the floor" % story)
-	check(game.pause_menu.navigation.quest.visible and game.pause_menu.navigation.controls.visible and not game.pause_menu.navigation.party.visible, "the %s shows the story pages with Auftrag, without the crypt's party page" % story)
-	check(game.pause_menu.controls_label.text.contains("Talente: 1 2 3 4"), "the %s's Steuerung page names its keys" % story)
+	check(game.pause_menu.navigation.floor.visible and not game.pause_menu.navigation.quest.visible and game.pause_menu.navigation.controls.visible and not game.pause_menu.navigation.party.visible,
+		"the %s shows the story pages with the Etage page for the Auftrag, without the crypt's party page" % story)
+	# the story worlds' own key list (the host sets it): the talent keys are "Fähigkeiten" there
+	check(game.pause_menu.controls_label.text.contains("Fähigkeiten: 1 2 3 4") and game.pause_menu.controls_label.text.contains("Ultimate: R"), "the %s's Steuerung page names its keys" % story)
 	var t: float = game.state.t
 	var x: float = game.player.x
 	for i in range(10): await process_frame

@@ -12,8 +12,11 @@ extends RefCounted
 ## client runs its own, nothing is sent over the network.
 ##
 ## The floor lives on (Noita stage 1): blasts lift loose pixels again (kick),
-## liquid splats keep creeping outwards and then dry darker, fire leaves
-## glowing embers that smoke and turn to soot, frost melts to water that dries.
+## liquid splats are pixel matter (a grain of shades, ragged lobed rims, drops
+## and streaks along the throw) that keeps creeping outwards, dries darker and
+## then fades rim first to a few faint specks; fire leaves glowing embers that
+## smoke and turn to soot, frost melts to water that dries; a frost crust
+## (frost_crust) lies lit along its edges, glints and melts rim first.
 ##
 ## Fire rises: a flame particle is buoyant (it climbs faster and faster), runs
 ## down its colour ramp as it ages (white-yellow, orange, red), gets thinner,
@@ -51,6 +54,13 @@ extends RefCounted
 ## its skull rolls away (a 3x3 skull turning a quarter every few px, lying
 ## where it stops); the void throws motes; gold coins bounce and glint.
 ##
+## The Leerenmagier's Gefüge fuses (fuse_feed, user 2026-11-01): blobs of its elements float in
+## the Singularität's well and swirl in with the rest, but the core keeps them; two that touch
+## fuse into one heavier blob holding both their elements (lumps of each, flickering fire, glinting
+## ice), and where their elements react they do it in matter (steam, sparks, splinters). Each
+## blob throws off bits of its own elements (flames, drops, slivers) that the well swirls in again;
+## at the collapse the host takes the fused matter out (fuse_take) and throws it as comets.
+##
 ## Matter, not paint (review 2026-10-31, BEFUND.md 5/7): the talents' flying
 ## bits live here. Snow flakes (snow; modes.flake) float down nearly
 ## weightless, flutter on the beat, lie as frost and melt. Lying ice shards
@@ -84,6 +94,13 @@ static var _gore: Dictionary = {}
 ## Room key of the floor cells in use (the view sets the layout when it changes).
 var layout_key := ""
 var _particles: Array[Dictionary] = []
+## The world's wind (particle px/s; the Frostgruft's snowstorm, physics plan F58/D12): light
+## matter drifts towards it by its mode's "wind" share (vfx_particles.json modes), heavy matter
+## not at all.
+var wind := Vector2.ZERO
+## Floor cells (32 px) where something solid stands: closed gates, solid props, unbroken crates and
+## urns (set by the host when they change; physics plan R16): matter stops there like at a wall.
+var blocked_cells: Dictionary = {}
 ## Floor-mark textures: Vector2i chunk -> {image, texture, dirty}.
 var _chunks: Dictionary = {}
 var _marks := 0
@@ -97,8 +114,10 @@ static var _cached: Dictionary = {}
 var _time := 0.0
 ## Loose debris pixels on the floor (Vector2i art px -> true); blasts lift them.
 var _loose: Dictionary = {}
-## Creeping liquid pools: {center, color, frontier, budget, carry, dir, reach, scan, done}.
+## Creeping liquid pools: {center, color, ramp, px, frontier, budget, carry, dir, reach, scan, done}.
 var _pools: Array[Dictionary] = []
+## Dried marks fading rim first (_fade_later): {px, col, i, t0, t1, keep}.
+var _fading: Array[Dictionary] = []
 ## Glowing embers on the floor: {art, life, max, smoke}.
 var _embers: Array[Dictionary] = []
 ## Frost pixels waiting to melt and water pixels waiting to dry: [art, due time].
@@ -106,6 +125,9 @@ var _frost: Array = []
 ## Frost that goes without water (vapor): [art, due time], checked every frame
 ## so it leaves in its dither order.
 var _vapor: Array = []
+## The earliest due time in _vapor (INF when empty): the list is scanned only once it comes
+## (physics plan R19).
+var _vapor_next := INF
 var _frost_head := 0
 var _water: Array = []
 var _water_head := 0
@@ -134,8 +156,6 @@ var _liquids: Array = []
 ## landing ticks of _settle; null keeps the particles silent (tests, the crypt).
 var sound: Object = null
 const STEPS := [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]
-## 4x4 ordered dither (vapor frost leaves in this order).
-const BAYER := [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
 
 
 func _init() -> void:
@@ -172,13 +192,43 @@ func set_walkable(cells: Dictionary, key: String) -> void:
 	layout_key = key
 
 
+## True when nothing solid lies on the straight line from `from` to `to` (world px): a walk over
+## the 32 px floor cells (DDA) that stops at the first wall cell. Blasts, pushes and wells act
+## only on what they can reach (physics plan R16/F5). `seen` caches cell -> answer for one call.
+func sees(from: Vector2, to: Vector2, seen: Dictionary = {}) -> bool:
+	if _walkable.is_empty(): return true
+	var goal := Vector2i(floori(to.x / 32.0), floori(to.y / 32.0))
+	if seen.has(goal): return bool(seen[goal])
+	var cell := Vector2i(floori(from.x / 32.0), floori(from.y / 32.0))
+	var d := to - from
+	var step := Vector2i(1 if d.x > 0.0 else -1, 1 if d.y > 0.0 else -1)
+	var next := Vector2((float(cell.x) + (1.0 if d.x > 0.0 else 0.0)) * 32.0, (float(cell.y) + (1.0 if d.y > 0.0 else 0.0)) * 32.0)
+	var t_max := Vector2((next.x - from.x) / d.x if absf(d.x) > 0.0001 else INF, (next.y - from.y) / d.y if absf(d.y) > 0.0001 else INF)
+	var t_delta := Vector2(32.0 / absf(d.x) if absf(d.x) > 0.0001 else INF, 32.0 / absf(d.y) if absf(d.y) > 0.0001 else INF)
+	var ok := true
+	for i in range(64):
+		if cell == goal: break
+		if t_max.x < t_max.y:
+			cell.x += step.x
+			t_max.x += t_delta.x
+		else:
+			cell.y += step.y
+			t_max.y += t_delta.y
+		if not _walkable.has(cell):
+			ok = false
+			break
+	seen[goal] = ok
+	return ok
+
+
 ## True when `point` (world px) is inside a wall. Without a room every point is open.
 func solid(point: Vector2) -> bool:
 	if _floor_bounds.has_area() and not _floor_bounds.has_point(point): return true
 	for wall: Rect2 in _floor_walls.get(Vector2i((point/32).floor()),[]):
 		if wall.has_point(point): return true
 	if _walkable.is_empty(): return false
-	return not _walkable.has(Vector2i(floori(point.x / 32.0), floori(point.y / 32.0)))
+	var cell := Vector2i(floori(point.x / 32.0), floori(point.y / 32.0))
+	return not _walkable.has(cell) or blocked_cells.has(cell)
 
 ## Immutable floor lookup for worker shapes, independent of the owning view.
 ## Resetting a scene may replace its particles while an old shape still runs.
@@ -241,7 +291,12 @@ func emit(origin: Vector2, velocity: Vector2, color: Color, life: float, mode: S
 
 
 func _mode(mode: String) -> Dictionary:
-	return _data.get("modes", {}).get(mode, {"gravity": 1.0, "lift": [40, 150], "settle": true, "glow": false, "fade": false})
+	# the fallback is made only when it is needed (a .get default would be built on every
+	# call, and _move asks for every particle every frame); the same dictionary comes back
+	var modes: Variant = _data.get("modes")
+	if modes is Dictionary and (modes as Dictionary).has(mode):
+		return modes[mode]
+	return {"gravity": 1.0, "lift": [40, 150], "settle": true, "glow": false, "fade": false}
 
 
 ## How many of `count` cosmetic particles may still be thrown: all of them
@@ -261,6 +316,8 @@ func room(count: int, weight := 0) -> int:
 
 ## Leaves a splat of a few overlapping rectangles on the floor.
 func stain(origin: Vector2, color: Color, radius: float) -> void:
+	# a liquid that swallows what lands in it (lava, a pit) takes no mark (physics plan R2)
+	if sinks(origin): return
 	_marks += 1
 	var tint := Color(color.darkened(0.35), 0.55)
 	for i in range(5):
@@ -271,30 +328,99 @@ func stain(origin: Vector2, color: Color, radius: float) -> void:
 		for row in range(size.y): _span(corner.y + row, corner.x, corner.x + size.x - 1, tint, true)
 
 
-## A liquid splat on the floor: one pool, smaller blobs around it, and drops
-## thrown along `direction` (the hit's direction). `alpha` is the pool opacity.
+## A liquid splat on the floor as pixel matter (vfx_particles.json liquid): a
+## ragged, lobed body of single pixels in a grain of `color`'s shades (a wet
+## glint or two), its rim thinner; a few smaller blobs round it; drops and
+## short streaks thrown along `direction` (the hit's direction). `alpha` is
+## the rim's opacity, the body a little more (core_alpha). It creeps on,
+## dries darker and then fades rim first, leaving a few faint specks.
 func splat(origin: Vector2, color: Color, alpha: float, radius: float, direction: Vector2 = Vector2.ZERO) -> void:
 	_sound("splat", origin, int(radius))
 	if radius <= 0.0: return
 	_marks += 1
-	var tint := Color(color, alpha)
-	_disc(origin, radius * _rng.randf_range(0.7, 1.0), tint)
-	for i in range(3):
-		_disc(origin + Vector2(_rng.randf_range(-radius, radius), _rng.randf_range(-radius, radius) * 0.6), radius * _rng.randf_range(0.35, 0.6), tint)
+	var liquid: Dictionary = _data.get("liquid", {})
+	var ramp := _splat_ramp(color, alpha)
+	var painted: Array[Vector2i] = []
+	var seed := _rng.randi() % 9973
+	_blob(origin, radius * _rng.randf_range(0.75, 1.0), ramp, seed, painted)
+	for i in range(int(liquid.get("blobs", 3))):
+		_blob(origin + Vector2(_rng.randf_range(-radius, radius), _rng.randf_range(-radius, radius) * 0.6), radius * _rng.randf_range(0.3, 0.55), ramp, seed + 11 * (i + 1), painted)
 	var along: Vector2 = direction.normalized() if direction != Vector2.ZERO else Vector2.from_angle(_rng.randf() * TAU)
-	for i in range(5):
-		var spot := origin + along.rotated(_rng.randf_range(-0.5, 0.5)) * radius * _rng.randf_range(1.1, 2.6)
-		_disc(spot, maxf(PIXEL, radius * _rng.randf_range(0.12, 0.3)), tint)
-	_add_pool(origin, tint, radius, direction)
+	var span: Array = liquid.get("drops", [4, 12])
+	var count := clampi(int(radius * float(liquid.get("drops_per_px", 0.5))), int(span[0]), int(span[1]))
+	# a streak runs along the throw: its step in art px (one of 8 facings)
+	var step := Vector2i(int(signf(along.x)) if absf(along.x) > 0.38 else 0, int(signf(along.y)) if absf(along.y) > 0.38 else 0)
+	for i in range(count):
+		var spot := origin + along.rotated(_rng.randf_range(-0.6, 0.6)) * radius * _rng.randf_range(1.05, 2.8)
+		var head := _art(spot)
+		var length := 1 if _rng.randf() < float(liquid.get("single_drops", 0.6)) else _rng.randi_range(2, 3)
+		for j in range(length):
+			var q := head - step * j
+			if q.x < 0 or q.y < 0 or solid(_world(q)): break
+			_put(q, ramp[1] if j == 0 else ramp[0])
+			painted.append(q)
+	_add_pool(origin, ramp, radius, direction, painted)
 
 
-## One drop of a drip trail behind a wounded enemy.
+## One drop of a drip trail behind a wounded enemy: a pixel or three of its
+## liquid that dry and fade like a splat.
 func drip(origin: Vector2, color: Color, alpha: float, size: float) -> void:
 	_sound("drip", origin, 1)
 	_marks += 1
-	var tint := Color(color, alpha)
-	_disc(origin, maxf(PIXEL, size), tint)
-	_disc(origin + Vector2(_rng.randf_range(-3.0, 3.0), _rng.randf_range(-2.0, 2.0)), maxf(PIXEL * 0.5, size * 0.5), tint)
+	var ramp := _splat_ramp(color, alpha)
+	var painted: Array[Vector2i] = []
+	var middle := _art(origin)
+	var cells: Array[Vector2i] = [middle]
+	for i in range(clampi(int(size), 0, 2)):
+		cells.append(middle + STEPS[_rng.randi_range(0, 3)])
+	for k in range(cells.size()):
+		var q: Vector2i = cells[k]
+		if q.x < 0 or q.y < 0 or solid(_world(q)): continue
+		_put(q, ramp[1] if k == 0 else ramp[0])
+		painted.append(q)
+	_add_pool(origin, ramp, PIXEL, Vector2.ZERO, painted)
+
+
+## The shades a splat of `color` is made of: deep, body, lite, a wet glint
+## (all at the body's opacity: `alpha` + liquid.core_alpha) and its rim (`alpha`).
+func _splat_ramp(color: Color, alpha: float) -> Array:
+	var core := clampf(alpha + float(_data.get("liquid", {}).get("core_alpha", 0.25)), 0.0, 1.0)
+	return [Color(color.darkened(0.28), core), Color(color, core), Color(color.lightened(0.16), core), Color(color.lightened(0.45), core), Color(color, alpha)]
+
+
+## One ragged body of a splat: the pixels within `radius` of `centre` (floor
+## perspective: flatter than wide), its outline lobed and its rim frayed by
+## fixed noise (liquid.ragged), its grain from `ramp` (_splat_ramp); stops
+## at walls. The pixels it paints are added to `painted`.
+func _blob(centre: Vector2, radius: float, ramp: Array, seed: int, painted: Array[Vector2i]) -> void:
+	var middle := _art(centre)
+	var across := maxf(1.0, radius / PIXEL)
+	var rows := int(ceil(across * 0.75)) + 1
+	var cols := int(ceil(across)) + 1
+	var rag := float(_data.get("liquid", {}).get("ragged", 0.5))
+	var turn := float(seed % 628) / 100.0
+	for y in range(-rows, rows + 1):
+		for x in range(-cols, cols + 1):
+			var q := middle + Vector2i(x, y)
+			if q.x < 0 or q.y < 0:
+				continue
+			var d := Vector2(float(x), float(y) / 0.75).length() / across
+			var angle := atan2(float(y), float(x))
+			var lobes := sin(angle * 3.0 + turn) * 0.12 + sin(angle * 5.0 + turn * 1.7) * 0.07
+			if d + lobes + (MatterKit.cell_noise(q, seed) - 0.5) * rag > 1.0 or solid(_world(q)):
+				continue
+			var grain := MatterKit.cell_noise(q, seed + 7)
+			var col: Color = ramp[1]
+			if d > 0.78:
+				col = ramp[4] if grain > 0.3 else ramp[0]
+			elif grain < 0.2:
+				col = ramp[0]
+			elif grain > 0.97 and d < 0.6:
+				col = ramp[3]
+			elif grain > 0.8:
+				col = ramp[2]
+			_put(q, col)
+			painted.append(q)
 
 
 ## A small crack where something struck a wall: jagged dark lines spreading
@@ -316,6 +442,7 @@ func crack(origin: Vector2, normal: Vector2) -> void:
 ## each a little fainter or stronger: frost crystals and soot under the
 ## Photoneneis. Repeated scatters build up like settling dust.
 func scatter(point: Vector2, color: Color, radius: float, count: int) -> void:
+	if sinks(point): return
 	_marks += 1
 	for i in range(count):
 		var offset := Vector2.from_angle(_rng.randf() * TAU) * radius * sqrt(_rng.randf())
@@ -326,6 +453,7 @@ func scatter(point: Vector2, color: Color, radius: float, count: int) -> void:
 ## Frost crystals: `count` floor pixels of `color` within `radius` of `point`
 ## that melt to water after a while (vfx_particles.json "frost").
 func frost(point: Vector2, radius: float, count: int, color: Color) -> void:
+	if sinks(point): return
 	_marks += 1
 	for i in range(count):
 		var offset := Vector2.from_angle(_rng.randf() * TAU) * radius * sqrt(_rng.randf())
@@ -362,6 +490,66 @@ func frost_clumps(point: Vector2, radius: float, count: int, colors: Array, vapo
 			_freeze(art, vapor, due)
 
 
+## A crust of ice where frost struck the floor (a thrown ice potion;
+## vfx_particles.json ice.crust_*): a ragged, lobed patch of single pixels in
+## the ice ramp, lit along its north edges, dark on its south lip, cracks of
+## deep ice running through it, a few tips glinting; `splinters` shards fly
+## off it, slide and lie. It goes again rim first, thinning by the dither
+## (vapor frost: no flat sheet of water is left on the snow).
+func frost_crust(point: Vector2, radius: float, splinters := 6) -> void:
+	if radius <= 0.0: return
+	# (its sound is the splinters' shatter)
+	_marks += 1
+	var ramp := _ice_ramp()
+	var middle := _art(point)
+	var across := maxf(2.0, radius / PIXEL)
+	var rows := int(ceil(across * 0.75)) + 1
+	var cols := int(ceil(across)) + 1
+	var seed := _rng.randi() % 9973
+	var turn := float(seed % 628) / 100.0
+	var rag := _ice("crust_ragged", 0.45)
+	var melt: Array = _data.get("frost", {}).get("melt_after", [6.0, 10.0])
+	var lasts := _rng.randf_range(float(melt[0]), float(melt[1])) * _ice("crust_melt", 1.5)
+	var cells := {}
+	for y in range(-rows, rows + 1):
+		for x in range(-cols, cols + 1):
+			var q := middle + Vector2i(x, y)
+			if q.x < 0 or q.y < 0:
+				continue
+			var d := Vector2(float(x), float(y) / 0.75).length() / across
+			var angle := atan2(float(y), float(x))
+			var lobes := sin(angle * 3.0 + turn) * 0.12 + sin(angle * 5.0 + turn * 1.3) * 0.07
+			if d + lobes + (MatterKit.cell_noise(q, seed) - 0.5) * rag > 1.0 or solid(_world(q)) or sinks(_world(q)):
+				continue
+			cells[q] = d
+	var glint_life: Array = _data.get("ice", {}).get("glint_life", [2.0, 4.5])
+	for q: Vector2i in cells:
+		var d := float(cells[q])
+		var grain := MatterKit.cell_noise(q, seed + 3)
+		var col: Color = ramp[2]
+		if not cells.has(q + Vector2i.UP):
+			# its lit north edge, a spec pixel here and there
+			col = ramp[0] if grain > 0.7 else ramp[1]
+		elif not cells.has(q + Vector2i.DOWN):
+			col = ramp[3]
+		elif not cells.has(q + Vector2i.LEFT) or not cells.has(q + Vector2i.RIGHT):
+			col = ramp[1]
+		elif absi(posmod(q.x - q.y * 2 + seed, 11)) == 0 and grain > 0.35:
+			# a crack of deep ice through it
+			col = ramp[4]
+		elif grain > 0.86:
+			col = ramp[1]
+		elif grain < 0.12:
+			col = ramp[3]
+		_put(q, col)
+		# it goes rim first (its middle holds longest), thinning by the dither: no flat water sheet
+		_freeze(q, true, _time + lasts * (0.55 + 0.45 * (1.0 - d)))
+		if (col == ramp[0] or col == ramp[1]) and grain > 0.93 and _glints.size() < int(_ice("glint_max", 80)):
+			_glints.append([q, _time + _rng.randf_range(float(glint_life[0]), float(glint_life[1])) * 2.0, _rng.randi() % 97])
+	if splinters > 0:
+		shatter(point, splinters, Vector2.ZERO, 70.0 + radius, ramp, 2, 2.0)
+
+
 ## Up to `n` art pixels of vapor frost still lying (picked at random), for
 ## twinkles drawn over them.
 func frost_sample(n: int) -> Array[Vector2i]:
@@ -376,6 +564,10 @@ func frost_sample(n: int) -> Array[Vector2i]:
 ## Glowing embers left by fire: `count` floor pixels within `radius` of `point`
 ## that flicker, cool from yellow to dark red, give off smoke and leave soot.
 func embers(point: Vector2, radius: float, count: int) -> void:
+	# embers over lava or a pit hiss out instead of lying on it
+	if sinks(point):
+		steam(point, 1, radius)
+		return
 	_sound("embers", point, count)
 	var settings_for_embers: Dictionary = _data.get("ember", {})
 	var life: Array = settings_for_embers.get("life", [1.5, 4.0])
@@ -456,7 +648,8 @@ func ember_sparks(point: Vector2, count: int, dir: Vector2 = Vector2.ZERO, scale
 
 
 func _ice(key: String, fallback: float) -> float:
-	return float(_data.get("ice", {}).get(key, fallback))
+	var ice: Variant = _data.get("ice")
+	return float((ice as Dictionary).get(key, fallback)) if ice is Dictionary else fallback
 
 
 func _ice_ramp() -> Array:
@@ -662,13 +855,6 @@ func rime_grow(point: Vector2, branches: int, reach: float, color: Color = Color
 		_growth.append({"p": start + d * core * 0.6, "d": d, "left": left, "len": left, "carry": 0.0, "col": col, "lite": colours[1], "gen": 0, "lean": _ice("rime_axis", 0.06)})
 
 
-## A fixed 0..1 value per floor pixel (so a crust's crystals do not flicker).
-static func _cell_noise(q: Vector2i, seed: int) -> float:
-	var h := (q.x * 374761393 + q.y * 668265263 + seed * 1442695041) & 0x7fffffff
-	h = ((h ^ (h >> 13)) * 1274126177) & 0x7fffffff
-	return float((h ^ (h >> 16)) % 1024) / 1024.0
-
-
 ## The frost crust spreads one ring further: thick near the middle (its lightest
 ## crystals there), broken up towards its rim.
 func _grow_crust(patch: Dictionary, delta: float, rate: float) -> void:
@@ -684,7 +870,7 @@ func _grow_crust(patch: Dictionary, delta: float, rate: float) -> void:
 			if dist < from or dist >= to or q.x < 0 or q.y < 0:
 				continue
 			var keep := 1.0 - dist / big
-			var n := _cell_noise(q, int(patch.seed))
+			var n := MatterKit.cell_noise(q, int(patch.seed))
 			if n > keep * _ice("rime_fill", 1.1) + 0.1 or solid(_world(q)) or sinks(_world(q)):
 				continue
 			var col: Color = patch.spec if n < 0.025 else (patch.lite if n < keep * 0.4 else patch.col)
@@ -817,18 +1003,34 @@ func _step_wells(delta: float) -> void:
 		var p: Vector2 = w.p
 		var r := float(w.r)
 		var core := float(w.core)
+		var seen_cells := {}
 		# everything in reach swirls in, faster the closer it gets; the core swallows it
 		for index in range(_particles.size() - 1, -1, -1):
 			var particle: Dictionary = _particles[index]
+			# Gefüge matter (fuse_feed) answers only its own well
+			var own := particle.has("fuse")
+			if own and str(particle.fuse) != key: continue
 			var off: Vector2 = p - Vector2(particle.pos)
 			var d := off.length()
 			if d >= r: continue
-			if d <= core:
+			# the well pulls only what it reaches, not what lies behind a wall (F5)
+			if not sees(p, Vector2(particle.pos), seen_cells): continue
+			if own and d <= core + float(particle.size) * 0.5:
+				# the core keeps Gefüge matter: it sinks into it and stays there, nearly still
+				particle.vel = (Vector2(particle.vel) + off * _fuse("center", 6.0) * delta) * maxf(0.0, 1.0 - _fuse("hold", 8.0) * delta)
+				continue
+			# the core swallows what reaches it, also what would fly across it within this step
+			# (physics plan F4: fast matter no longer slingshots through it)
+			var ahead := Vector2(particle.pos) + Vector2(particle.vel) * delta
+			if d <= core or Geometry2D.get_closest_point_to_segment(p, Vector2(particle.pos), ahead).distance_to(p) <= core:
 				_particles.remove_at(index)
 				continue
 			var inward := off / d
 			var near := clampf(r / (d + 12.0), 0.0, 6.0)
-			particle.vel = Vector2(particle.vel) + (inward * float(w.pull) + inward.orthogonal() * float(w.spin)) * near * delta
+			var scale := _fuse("pull_scale", 0.4) if own else 1.0
+			# heavier Gefüge matter is turned less by the swirl (fuse_feed): it sinks in
+			var swirl := float(w.spin) / maxf(1.0, float(particle.n)) if own else float(w.spin)
+			particle.vel = Vector2(particle.vel) + (inward * float(w.pull) + inward.orthogonal() * swirl) * near * delta * scale
 			if float(particle.gravity) > 0.0 and float(particle.z) <= 1.0:
 				particle.vz = maxf(float(particle.vz), 30.0 * near)
 		# motes circle in as streaks
@@ -844,6 +1046,324 @@ func _step_wells(delta: float) -> void:
 		if float(w.suck) <= 0.0 and bool(w.get("floor", true)):
 			w.suck = 0.25
 			_suck(p, r * 0.8)
+
+
+func _fuse(key: String, fallback: float) -> float:
+	return float(_data.get("fuse", {}).get(key, fallback))
+
+
+## Gefüge matter (the Leerenmagier's Singularität, user 2026-11-01: its particles fuse in the
+## whirl, everything simulated): a blob of element `el` (`cols` spec, lite, body, shade, deep)
+## seen at `point`, its floor point fuse.height px under it, thrown in with `velocity` and held by
+## the well `key`: it swirls in with the rest (fuse.pull_scale of the pull, the swirl divided by
+## its units: heavy matter sinks in) but the core does not swallow it, it sinks into it and stays
+## (fuse.center, hold), it lives while the well does, throws off bits of its own matter (_blob_matter) and
+## fuses with the others of its well it touches (_step_fusion).
+func fuse_feed(key: String, point: Vector2, velocity: Vector2, el: String, cols: Array) -> void:
+	if cols.size() < 5: return
+	var height := _fuse("height", 8.0)
+	var blob := emit(point, velocity, cols[2], 1.0, "fuse", PIXEL * 2.0, height, 0.0, _fuse("drag", 0.4))
+	blob.gravity = 0.0
+	blob.vz = 0.0
+	blob.z_to = height
+	blob.free = false
+	blob.settle = false
+	blob.fade = false
+	blob.glow = false
+	blob.fuse = key
+	blob.parts = {el: 1.0}
+	blob.ramps = {el: cols}
+	blob.n = 1.0
+	blob.size = _fuse_size(1.0)
+	blob.spin = _rng.randf() * TAU
+	blob.bits = _rng.randf() * _fuse("bits_every", 0.2)
+	blob.flash = 0.0
+	blob.mix_seed = _rng.randi() % 100000
+
+
+## Takes the Gefüge matter of the well `key` out of the air (the Singularität collapsing):
+## {pos: the middle of its blobs (weighted by their units), z, parts: {el: units}, ramps, n};
+## empty when there is none.
+func fuse_take(key: String) -> Dictionary:
+	var sum := 0.0
+	var at := Vector2.ZERO
+	var z := 0.0
+	var parts := {}
+	var ramps := {}
+	for index in range(_particles.size() - 1, -1, -1):
+		var blob: Dictionary = _particles[index]
+		if not blob.has("fuse") or str(blob.fuse) != key: continue
+		var n := float(blob.n)
+		sum += n
+		at += Vector2(blob.pos) * n
+		z = maxf(z, float(blob.z))
+		for el: String in blob.parts:
+			parts[el] = float(parts.get(el, 0.0)) + float(blob.parts[el])
+			ramps[el] = blob.ramps[el]
+		_particles.remove_at(index)
+	if sum <= 0.0: return {}
+	return {"pos": at / sum, "z": z, "parts": parts, "ramps": ramps, "n": sum}
+
+
+## How many blobs of Gefüge matter the well `key` holds in the air (x) and how many units (y).
+func fuse_blobs(key: String) -> Vector2i:
+	var out := Vector2i.ZERO
+	for blob: Dictionary in _particles:
+		if blob.has("fuse") and str(blob.fuse) == key:
+			out.x += 1
+			out.y += roundi(float(blob.n))
+	return out
+
+
+## A blob of `n` units is PIXEL x (fuse.size + fuse.grow x sqrt(n)) px across, at most size_max.
+func _fuse_size(n: float) -> float:
+	return clampf(PIXEL * (_fuse("size", 1.5) + _fuse("grow", 2.2) * sqrt(maxf(1.0, n))), PIXEL * 2.0, _fuse("size_max", 30.0))
+
+
+## Gefüge matter (fuse_feed) each frame: kept alive while its well lasts, turning (fuse.spin
+## rad/s), throwing off bits of its own matter (_blob_matter); it holds together: the smaller
+## blobs of a well are drawn to its heaviest one (fuse.cohesion px/s^2, stronger with the units
+## it holds); two blobs of one well that touch (closer than fuse.reach x their radii summed)
+## fuse into one (_fuse_pair).
+func _step_fusion(delta: float) -> void:
+	var groups := {}
+	for particle: Dictionary in _particles:
+		if not particle.has("fuse"): continue
+		var key := str(particle.fuse)
+		if not groups.has(key): groups[key] = []
+		(groups[key] as Array).append(particle)
+	if groups.is_empty(): return
+	var reach := _fuse("reach", 1.0)
+	var fused := false
+	for key: String in groups:
+		var blobs: Array = groups[key]
+		var held := _wells.has(key)
+		var heavy: Dictionary = blobs[0]
+		for blob: Dictionary in blobs:
+			if held: blob.life = 1.0
+			blob.spin = float(blob.spin) + delta * _fuse("spin", 2.5)
+			blob.flash = maxf(0.0, float(blob.flash) - delta)
+			_blob_matter(blob, delta)
+			if float(blob.n) > float(heavy.n): heavy = blob
+		var cling := _fuse("cohesion", 260.0) * sqrt(float(heavy.n))
+		for blob: Dictionary in blobs:
+			if blob == heavy: continue
+			var to: Vector2 = Vector2(heavy.pos) - Vector2(blob.pos)
+			if to.length() > 0.5: blob.vel = Vector2(blob.vel) + to.normalized() * cling * delta
+		for i in range(blobs.size()):
+			var a: Dictionary = blobs[i]
+			if a.has("dead"): continue
+			for j in range(i + 1, blobs.size()):
+				var b: Dictionary = blobs[j]
+				if b.has("dead"): continue
+				if Vector2(a.pos).distance_to(b.pos) > (float(a.size) + float(b.size)) * 0.5 * reach: continue
+				_fuse_pair(a, b)
+				b.dead = true
+				fused = true
+	if not fused: return
+	for index in range(_particles.size() - 1, -1, -1):
+		if (_particles[index] as Dictionary).has("dead"): _particles.remove_at(index)
+
+
+## Blob `b` fuses into blob `a`: one blob where they met (weighted by their units), holding the
+## units and elements of both, as big as its units make it (_fuse_size), its rim flashing for
+## fuse.flash s; where elements meet that react, they do it in matter (_fuse_reaction: steam
+## rising, sparks flying, ice splintering), and a few motes of the void fly off.
+func _fuse_pair(a: Dictionary, b: Dictionary) -> void:
+	var na := float(a.n)
+	var nb := float(b.n)
+	var sum := na + nb
+	var at := (Vector2(a.pos) * na + Vector2(b.pos) * nb) / sum
+	var what := _fuse_reaction(a.parts, b.parts)
+	a.pos = at
+	a.vel = (Vector2(a.vel) * na + Vector2(b.vel) * nb) / sum
+	var parts: Dictionary = a.parts
+	var ramps: Dictionary = a.ramps
+	for el: String in b.parts:
+		parts[el] = float(parts.get(el, 0.0)) + float(b.parts[el])
+		ramps[el] = b.ramps[el]
+	a.n = sum
+	a.size = _fuse_size(sum)
+	a.flash = _fuse("flash", 0.12)
+	_sound("fuse", at, 1)
+	var z := float(a.z)
+	match what:
+		"steam": steam(at, 2 + mini(int(sum / 4.0), 3), float(a.size) * 0.4)
+		"spark": sparks(at - Vector2(0.0, z), Vector2.UP, 4 + mini(int(sum / 3.0), 4))
+		"frost":
+			var ice: Variant = ramps.get("ice", [])
+			shatter(at, 2, Vector2.ZERO, 50.0, ice if ice is Array else [], 1, z)
+	var cols := _void_ramp()
+	motes(at, 2, [cols[0], cols[1], cols[2]], 6.0, z)
+
+
+## How the matter of two blobs reacts where they fuse (`pa`, `pb`: their {el: units}): "spark"
+## when fire or lava meets poison (it goes off), "steam" when it meets water, ice or blood,
+## "frost" when ice meets water, "" for none (the strongest of their pairs).
+static func _fuse_reaction(pa: Dictionary, pb: Dictionary) -> String:
+	var best := ""
+	for x: String in pa:
+		for y: String in pb:
+			var what := _pair_reaction(x, y)
+			if what == "spark": return what
+			if what == "steam" or (what == "frost" and best.is_empty()): best = what
+	return best
+
+
+static func _pair_reaction(x: String, y: String) -> String:
+	var hot := ["fire", "lava"]
+	if hot.has(x) != hot.has(y):
+		var other := y if hot.has(x) else x
+		if other == "poison": return "spark"
+		if other in ["water", "ice", "blood"]: return "steam"
+	if (x == "ice" and y == "water") or (x == "water" and y == "ice"): return "frost"
+	return ""
+
+
+## A blob of Gefüge matter throws off a bit of its own elements now and then (every
+## fuse.bits_every s, more often the bigger it is), picked by their shares and by what it is:
+## fire and lava a flame rising off it, water, poison and blood a drop that falls, ice a sliver,
+## bone and gold a chip, the rest a mote; its well swirls them in again.
+func _blob_matter(blob: Dictionary, delta: float) -> void:
+	blob.bits = float(blob.bits) - delta
+	if float(blob.bits) > 0.0: return
+	blob.bits = _fuse("bits_every", 0.2) / sqrt(maxf(1.0, float(blob.n)))
+	if room(1) == 0: return
+	var parts: Dictionary = blob.parts
+	var pick := _rng.randf() * float(blob.n)
+	var el := ""
+	for name: String in parts:
+		el = name
+		pick -= float(parts[name])
+		if pick <= 0.0: break
+	if el.is_empty(): return
+	var cols: Array = blob.ramps[el]
+	var r := float(blob.size) * 0.5
+	var out := Vector2.from_angle(_rng.randf() * TAU)
+	var spot := Vector2(blob.pos) + out * r * 0.5 * Vector2(1.0, 0.6)
+	var z := float(blob.z)
+	match el:
+		"fire", "lava":
+			flames(spot, 1, cols, r * 0.3, z + r * 0.3)
+		"water", "poison", "blood":
+			emit(spot, out * _rng.randf_range(30.0, 70.0), cols[1 + _rng.randi() % 2], _rng.randf_range(1.2, 2.0), "drop", PIXEL, z, _rng.randf_range(30.0, 70.0), 1.5)
+		"ice":
+			shatter(spot, 1, out, 50.0, cols, 1, z)
+		"bone", "gold":
+			chips(spot, 1, out, [cols[1], cols[2]])
+		_:
+			motes(spot, 1, [cols[0], cols[1]], 8.0, z)
+
+
+## A blob of fused Gefüge matter (fuse_feed): its units as lumps of their own elements packed
+## into one (a sunflower of up to fuse.lumps lumps turning with it, each its element's colours,
+## lit at its top left and dark at its foot: fire flickering on the beat, ice with a glinting
+## facet, water with a shine, poison bubbling; a dark seam where two elements meet), an ink rim
+## round it (white the moment it fused) and its shadow on the floor under it.
+func _draw_fused(canvas: CanvasItem, blob: Dictionary) -> void:
+	var size := float(blob.size)
+	var ground: Vector2 = blob.pos
+	var mid := (ground - Vector2(0.0, float(blob.z))) / PIXEL
+	var r := size * 0.5 / PIXEL
+	canvas.draw_rect(Rect2(_snap(ground - Vector2(size * 0.5, 0.0)), Vector2(size, PIXEL)), Color(0, 0, 0, 0.22))
+	var parts: Dictionary = blob.parts
+	var ramps: Dictionary = blob.ramps
+	var names: Array = parts.keys()
+	if names.is_empty(): return
+	var beat_now := int(_time * 12.0)
+	var ext_now := int(ceil(r)) + 2
+	var c_now := Vector2i(mid.floor())
+	# baked into a picture on the 12 fps beat (or when it fuses or flashes), only moved between
+	# (physics plan F7: the per-pixel lumps every frame were the cost)
+	var key := "%d:%d:%d:%d" % [beat_now, roundi(float(blob.n) * 10.0), 1 if float(blob.flash) > 0.0 else 0, ext_now]
+	if str(blob.get("bake_key", "")) == key and blob.has("bake_tex"):
+		var tex: Texture2D = blob.bake_tex
+		canvas.draw_texture_rect(tex, Rect2(Vector2(c_now - Vector2i(ext_now, ext_now)) * PIXEL, Vector2(tex.get_size()) * PIXEL), false)
+		return
+	var img := Image.create_empty(ext_now * 2 + 1, ext_now * 2 + 1, false, Image.FORMAT_RGBA8)
+	var total := maxf(0.001, float(blob.n))
+	var count := clampi(roundi(total), 1, int(_fuse("lumps", 14)))
+	var spin := float(blob.spin)
+	# its lumps' elements by their shares, shuffled by the blob's own seed (the same every frame):
+	# the elements lie mixed all through it, never in rings or wedges
+	var order: Array = []
+	var acc := 0.0
+	for name: Variant in names:
+		acc += float(parts[name])
+		while order.size() < mini(count, roundi(acc / total * float(count))): order.append(str(name))
+	while order.size() < count: order.append(str(names[-1]))
+	var h := int(blob.get("mix_seed", 7)) + count * 7919
+	for j in range(order.size() - 1, 0, -1):
+		h = (h * 1103515245 + 12345) & 0x7fffffff
+		var k := h % (j + 1)
+		var keep: Variant = order[j]
+		order[j] = order[k]
+		order[k] = keep
+	var lumps: Array = []
+	for j in range(count):
+		var rr := r * 0.62 * sqrt((float(j) + 0.5) / float(count))
+		var a := float(j) * 2.39996 + spin
+		lumps.append([mid + Vector2(cos(a), sin(a) * 0.85) * rr, str(order[j])])
+	var lr := maxf(1.0, r * 0.75 / sqrt(float(count)))
+	var beat := int(_time * 12.0)
+	var flash := float(blob.flash) > 0.0
+	var ink := Color("1a1414")
+	var ext := int(ceil(r)) + 2
+	var c := Vector2i(mid.floor())
+	for y in range(-ext, ext + 1):
+		for x in range(-ext, ext + 1):
+			var q := c + Vector2i(x, y)
+			var pt := Vector2(q) + Vector2(0.5, 0.5)
+			var off := pt - mid
+			var dd := off.length()
+			var edge := r * (1.0 + 0.08 * sin(off.angle() * 5.0 + _time * 3.0 + total))
+			if dd > edge + 1.0: continue
+			if dd > edge:
+				img.set_pixel(x + ext, y + ext, Color.WHITE if flash else ink)
+				continue
+			var best := 0
+			var d1 := INF
+			for k in range(lumps.size()):
+				var dk := pt.distance_to(lumps[k][0])
+				if dk < d1:
+					d1 = dk
+					best = k
+			var el := str(lumps[best][1])
+			var d2 := INF
+			for k in range(lumps.size()):
+				if str(lumps[k][1]) != el: d2 = minf(d2, pt.distance_to(lumps[k][0]))
+			var cols: Array = ramps.get(el, [])
+			if cols.size() < 5: continue
+			var col: Color = cols[4] if d2 - d1 < 0.7 else _lump_colour(el, cols, pt - (lumps[best][0] as Vector2), lr, q, beat)
+			img.set_pixel(x + ext, y + ext, col)
+	var baked := ImageTexture.create_from_image(img)
+	blob.bake_tex = baked
+	blob.bake_key = key
+	canvas.draw_texture_rect(baked, Rect2(Vector2(c - Vector2i(ext, ext)) * PIXEL, Vector2(baked.get_size()) * PIXEL), false)
+
+
+## The colour of art pixel `q` in a lump of element `el` (`cols` spec..deep), `local` from the
+## lump's middle, `lr` its radius, on the 12 fps `beat` (_draw_fused).
+static func _lump_colour(el: String, cols: Array, local: Vector2, lr: float, q: Vector2i, beat: int) -> Color:
+	var lit := local.x + local.y < -lr * 0.5
+	var foot := local.y > lr * 0.45
+	var idx := 3 if foot else (1 if lit else 2)
+	match el:
+		"fire", "lava":
+			# hot: white-yellow at its heart, yellow, orange at its foot, flickering on the beat
+			idx = 2 if foot else (0 if local.length() < lr * 0.45 else 1)
+			if posmod(beat + q.x * 3 + q.y * 5, 5) == 0: idx = maxi(0, idx - 1)
+		"ice":
+			# pale and hard: spec and lite in facets, a glint now and then
+			idx = 2 if foot else (0 if local.x - local.y < 0.0 else 1)
+			if lit and posmod(beat + q.x + q.y, 9) == 0: idx = 0
+		"water":
+			# deep: body and shade, a shine at its top left
+			idx = 4 if foot else (2 if lit else 3)
+			if (local - Vector2(-lr * 0.4, -lr * 0.4)).length() < 0.8: idx = 0
+		"poison":
+			if posmod(beat / 2 + q.x * 7 + q.y * 3, 11) == 0: idx = 1
+	return cols[idx]
 
 
 ## Lifts loose floor pixels and glowing embers within `radius` of `point` so
@@ -915,7 +1435,7 @@ func _draw_implosions(canvas: CanvasItem) -> void:
 			var n := maxi(16, int(TAU * rr))
 			for i in range(n):
 				var q := Vector2i(c + Vector2(cos(TAU * i / n) * rr, sin(TAU * i / n) * rr * 0.75))
-				if float(BAYER[posmod(q.y, 4) * 4 + posmod(q.x, 4)]) >= (1.0 - k) * 16.0: continue
+				if MatterKit.bayer(q) >= (1.0 - k) * 16.0: continue
 				if solid(_world(q)): continue
 				canvas.draw_rect(Rect2(Vector2(q) * PIXEL, Vector2(PIXEL, PIXEL)), cols[1] if i % 3 else cols[0])
 
@@ -1006,6 +1526,8 @@ func scorch_star(point: Vector2, size: float) -> void:
 ## heavy, one low bounce, they stop hard and lie as loose pixels.
 func rubble(point: Vector2, count: int, dir: Vector2 = Vector2.ZERO, speed: float = 140.0) -> void:
 	_sound("rubble", point, count)
+	# cosmetic: it asks for room under the cap like the other emitters (physics plan R19)
+	count = room(count)
 	var cols := _el("stone")
 	var lift: Array = _mode("rock").get("lift", [40, 110])
 	for i in range(count):
@@ -1043,7 +1565,7 @@ func floor_crack(point: Vector2, length: float, branches: int) -> void:
 				continue
 			if e > 0.7 and y > 0:
 				_blend(q, lit, true)
-			elif e < 0.55 or float(BAYER[posmod(q.y, 4) * 4 + posmod(q.x, 4)]) < (1.0 - e) * 30.0:
+			elif e < 0.55 or MatterKit.bayer(q) < (1.0 - e) * 30.0:
 				_blend(q, dark, true)
 	for b in range(branches):
 		var p := point
@@ -1100,7 +1622,7 @@ func shadow(point: Vector2, branches: int, reach: float) -> void:
 			if e > 1.0 or q.x < 0 or q.y < 0 or solid(_world(q)):
 				continue
 			# a ragged edge
-			if e > 0.6 and float(BAYER[posmod(q.y, 4) * 4 + posmod(q.x, 4)]) >= (1.0 - e) * 40.0:
+			if e > 0.6 and MatterKit.bayer(q) >= (1.0 - e) * 40.0:
 				continue
 			_put(q, cols[1] if e > 0.65 and y < 0 else cols[0])
 			_freeze(q, true, gone + 0.6 * (1.0 - e), 0.15)
@@ -1119,6 +1641,9 @@ func shadow(point: Vector2, branches: int, reach: float) -> void:
 func freeze_liquids(point: Vector2, radius: float) -> void:
 	_sound("liquid_freeze", point, int(radius))
 	for link: Array in _liquids:
+		# a layer the rules read freezes only through the rules (story_elements.gd frost_at;
+		# physics plan F17): the drawing never makes Glatteis there
+		if link.size() > 2 and bool(link[2]): continue
 		var layer: Object = (link[0] as WeakRef).get_ref()
 		if layer != null and layer.has_method("freeze_near"): layer.freeze_near(point * float(link[1]), radius * float(link[1]))
 
@@ -1127,6 +1652,7 @@ func freeze_liquids(point: Vector2, radius: float) -> void:
 func thaw_liquids(point: Vector2, radius: float) -> void:
 	_sound("liquid_thaw", point, int(radius))
 	for link: Array in _liquids:
+		if link.size() > 2 and bool(link[2]): continue
 		var layer: Object = (link[0] as WeakRef).get_ref()
 		if layer != null and layer.has_method("thaw_near"): layer.thaw_near(point * float(link[1]), radius * float(link[1]))
 
@@ -1135,6 +1661,7 @@ func thaw_liquids(point: Vector2, radius: float) -> void:
 ## ice melting, an ember put out): light, quick, thinning by the dither.
 func steam(point: Vector2, count: int, radius: float = 4.0) -> void:
 	_sound("steam", point, count)
+	count = room(count)
 	var color := Color(str(_data.get("steam_color", "d8dce6")))
 	for i in range(count):
 		var spot := point + Vector2(_rng.randf_range(-radius, radius), _rng.randf_range(-radius, radius) * 0.6)
@@ -1152,6 +1679,7 @@ func _in_liquid(point: Vector2) -> bool:
 ## `count` puffs of smoke rising from `point` (spread `radius` px).
 func smoke(point: Vector2, count: int, radius: float = 6.0) -> void:
 	_sound("smoke", point, count)
+	count = room(count)
 	var color := Color(str(_data.get("smoke_color", "2e2a2c")), 0.55)
 	var lift: Array = _mode("smoke").get("lift", [10, 30])
 	for i in range(count):
@@ -1165,11 +1693,12 @@ func add_liquid(layer: Object, scale: float) -> void:
 	if layer != null: _liquids.append([weakref(layer), scale])
 
 
-## Sets the layers anew (see add_liquid).
+## Sets the layers anew (see add_liquid); a third entry true marks a layer the
+## game's rules read (frost and fire change it only through the rules).
 func set_liquids(layers: Array) -> void:
 	_liquids = []
 	for link: Array in layers:
-		if link[0] != null: _liquids.append([weakref(link[0]), float(link[1])])
+		if link[0] != null: _liquids.append([weakref(link[0]), float(link[1]), link.size() > 2 and bool(link[2])])
 
 
 ## A wet step or dot of `color` at `point` that dries away after `dry_after` s
@@ -1191,18 +1720,22 @@ func kick(point: Vector2, radius: float, strength: float = 1.0) -> void:
 		if layer != null: layer.ripple_near(point * float(link[1]), radius * float(link[1]), strength)
 	var settings_for_kick: Dictionary = _data.get("kick", {})
 	var share := float(settings_for_kick.get("stain_share", 0.25))
-	var limit := int(settings_for_kick.get("max_particles", 140))
+	# what it may lift asks for room under the cap (the rest stays lying; physics plan R19)
+	var limit := room(int(settings_for_kick.get("max_particles", 140)))
 	var lift: Array = settings_for_kick.get("lift", [60, 200])
 	var speed := float(settings_for_kick.get("speed", 260)) * strength
 	var middle := _art(point)
 	var reach := maxi(1, int(radius / PIXEL))
 	var thrown := 0
+	var seen_cells := {}
 	for y in range(maxi(0, middle.y - reach), middle.y + reach + 1):
 		for x in range(maxi(0, middle.x - reach), middle.x + reach + 1):
 			var art := Vector2i(x, y)
 			var offset := Vector2(art - middle)
 			var distance := offset.length()
 			if distance > float(reach): continue
+			# a blast lifts only what it reaches, not what lies behind a wall (F5)
+			if not sees(point, _world(art), seen_cells): continue
 			var key := Vector2i(x / CHUNK, y / CHUNK)
 			if not _chunks.has(key): continue
 			var local := art - key * CHUNK
@@ -1243,10 +1776,12 @@ func blow(origin: Vector2, r0: float, r1: float, angle: float, arc: float, speed
 	var hop: Array = settings_for_blow.get("hop", [30, 90])
 	var cap: int = limit if limit >= 0 else int(settings_for_blow.get("max_lift", 60))
 	var moved := 0
-	# what flies already is shoved along, what lies on the floor hops
+	var seen_cells := {}
+	# what flies already is shoved along, what lies on the floor hops; not behind a wall (F5)
 	for particle: Dictionary in _particles:
 		var out := _front_dir(Vector2(particle.pos), origin, r0, r1, angle, arc, squash)
 		if out == Vector2.ZERO: continue
+		if not sees(origin, Vector2(particle.pos), seen_cells): continue
 		particle.vel = Vector2(particle.vel) * 0.35 + out * speed * _rng.randf_range(0.7, 1.1)
 		if float(particle.gravity) > 0.0 and float(particle.z) <= 1.0:
 			particle.vz = maxf(float(particle.vz), _rng.randf_range(float(hop[0]), float(hop[1])))
@@ -1334,10 +1869,12 @@ func clear() -> void:
 	_time = 0.0
 	_loose.clear()
 	_pools.clear()
+	_fading.clear()
 	_embers.clear()
 	_frost.clear()
 	_frost_head = 0
 	_vapor.clear()
+	_vapor_next = INF
 	_water.clear()
 	_water_head = 0
 	_frozen.clear()
@@ -1387,8 +1924,10 @@ func update(delta: float) -> void:
 	_time += delta
 	_grow_rime(delta)
 	_step_wells(delta)
+	_step_fusion(delta)
 	_step_implosions()
 	_spread_pools(delta)
+	_fade_marks()
 	_burn_embers(delta)
 	_melt()
 	var settle_speed := float(_data.get("settle_speed", 12))
@@ -1437,24 +1976,33 @@ func update(delta: float) -> void:
 func _move(particle: Dictionary, delta: float) -> void:
 	var position: Vector2 = particle.pos
 	var velocity: Vector2 = particle.vel
+	if wind != Vector2.ZERO and float(particle.z) > 0.5:
+		var share := float(_mode(str(particle.get("mode", ""))).get("wind", 0.0))
+		if share > 0.0:
+			velocity += (wind * share - velocity) * minf(1.0, float(_data.get("wind_air", 1.5)) * delta)
 	var next := position + velocity * delta
+	# a comet's blob flying high passes over the walls on its arc (it lands on the gameplay spot)
+	var over_walls := particle.has("splash") and float(particle.z) > 24.0
 	if bool(particle.free):
 		# Born inside a wall: it may leave, and walls count from then on.
 		if not solid(next): particle.free = false
-	elif solid(next):
+	elif not over_walls and solid(next):
 		# a shard hitting a wall hard breaks; a slow one clinks off it
 		if particle.has("shard") and velocity.length() > _ice("shatter_speed", 150.0) and int(particle.len) > 1:
 			particle.burst = true
 		var keep := float(_data.get("wall_bounce", 0.4))
+		# flame, smoke and motes slide along a wall instead of bouncing off it (modes wall "slide",
+		# physics plan F1): the part into the wall is gone, the part along it stays
+		var slide := str(_mode(str(particle.get("mode", ""))).get("wall", "bounce")) == "slide"
 		if not solid(Vector2(next.x, position.y)):
 			next = Vector2(next.x, position.y)
-			velocity.y = -velocity.y * keep
+			velocity.y = 0.0 if slide else -velocity.y * keep
 		elif not solid(Vector2(position.x, next.y)):
 			next = Vector2(position.x, next.y)
-			velocity.x = -velocity.x * keep
+			velocity.x = 0.0 if slide else -velocity.x * keep
 		else:
 			next = position
-			velocity = -velocity * keep
+			velocity = Vector2.ZERO if slide else -velocity * keep
 	particle.pos = next
 	if particle.has("shard"):
 		if float(particle.z) > 0.5:
@@ -1478,16 +2026,32 @@ func _move(particle: Dictionary, delta: float) -> void:
 					_scratch(next, particle)
 	var gravity := float(particle.gravity)
 	if gravity != 0.0:
-		particle.vz = float(particle.vz) - gravity * delta
-		particle.z = float(particle.z) + float(particle.vz) * delta
+		# the height on its exact arc (z += vz dt - g dt^2 / 2): comets land where they were aimed,
+		# not early and short (physics plan F9)
+		var air := float(_mode(str(particle.get("mode", ""))).get("air", 0.0))
+		if air > 0.0 and not particle.has("splash"):
+			# light matter meets the air (modes air 1/s, physics plan F2): it falls or rises no
+			# faster than gravity / air, smoke and embers no longer shoot up for ever
+			particle.vz = (float(particle.vz) - gravity * delta) * exp(-air * delta)
+			particle.z = float(particle.z) + float(particle.vz) * delta
+		else:
+			particle.z = float(particle.z) + float(particle.vz) * delta - 0.5 * gravity * delta * delta
+			particle.vz = float(particle.vz) - gravity * delta
 		if gravity > 0.0 and float(particle.z) <= 0.0:
-			particle.z = 0.0
-			# a comet's blob does not bounce: it splashes (update, _land_splash)
+			# a comet's blob does not bounce: it splashes (update, _land_splash), where it touched down
 			if particle.has("splash"):
+				if float(particle.vz) < -0.01: particle.pos = Vector2(particle.pos) - velocity * (float(particle.z) / float(particle.vz))
+				particle.z = 0.0
 				particle.landed = true
 				particle.vel = velocity
 				return
-			if float(particle.vz) < -float(_data.get("bounce_min", 70)):
+			particle.z = 0.0
+			# a drop splats where it lands instead of bouncing (modes floor "splat", F1): it stays
+			# down, slows hard and lies as a floor pixel
+			if str(_mode(str(particle.get("mode", ""))).get("floor", "bounce")) == "splat":
+				particle.vz = 0.0
+				velocity *= 0.15
+			elif float(particle.vz) < -float(_data.get("bounce_min", 70)):
 				# ice hardly bounces and keeps sliding
 				var shard := particle.has("shard")
 				particle.vz = -float(particle.vz) * (_ice("bounce", 0.15) if shard else float(_data.get("bounce", 0.35)))
@@ -1516,10 +2080,27 @@ func _move(particle: Dictionary, delta: float) -> void:
 	particle.vel = velocity * maxf(0.0, 1.0 - drag * delta)
 
 
-## The oldest particle makes room: debris lands where it is, the rest vanishes.
+## A particle makes room at the cap (physics plan R19/F6): the oldest cosmetic one that is not
+## landing matter goes first (a spark, a mote, smoke), then the oldest that lies or flies low;
+## never Gefüge matter (fuse_feed), a comet's blob (splash, land_ref: it must land where gameplay
+## put it) or debris in mid-air (it would teleport to the floor). Debris that goes lands where it is.
 func _evict() -> void:
-	var oldest: Dictionary = _particles.pop_front()
-	if bool(oldest.settle): _settle(oldest)
+	var fallback := -1
+	for index in range(mini(_particles.size(), 96)):
+		var p: Dictionary = _particles[index]
+		if p.has("fuse") or p.has("splash") or p.has("land_ref"): continue
+		if bool(p.settle):
+			if float(p.z) > 1.0: continue
+			if fallback < 0: fallback = index
+			continue
+		_particles.remove_at(index)
+		return
+	if fallback >= 0:
+		var oldest: Dictionary = _particles[fallback]
+		_particles.remove_at(fallback)
+		_settle(oldest)
+		return
+	_particles.pop_front()
 
 
 ## A resting debris particle becomes loose floor pixels (only on the floor);
@@ -1586,12 +2167,20 @@ func _settle(particle: Dictionary) -> void:
 				_embers.append({"art": spot, "life": own, "max": maxf(own, float(particle.get("ember_max", own))), "smoke": _rng.randf(), "soot": float(particle.get("soot", 1.0))})
 		return
 	var color: Color = particle.color
-	# a drop of a liquid lands as a small splat (it joins the stain it falls into)
+	# a drop of a liquid lands as a few pixels of it (it joins the stain it falls
+	# into); they dry and fade like a splat
 	if str(particle.get("mode", "")) == "drop":
 		var wet := Color(color.darkened(0.2), 1.0)
-		_disc(Vector2(particle.pos), maxf(PIXEL, float(particle.size) * 0.6), wet)
-		if _rng.randf() < 0.5:
-			_disc(Vector2(particle.pos) + Vector2.from_angle(_rng.randf() * TAU) * float(particle.size), PIXEL * 0.6, wet)
+		var landed: Array[Vector2i] = []
+		var middle := _art(Vector2(particle.pos))
+		var cells: Array[Vector2i] = [middle]
+		for k in range(clampi(roundi(float(particle.size) / PIXEL) - 1 + _rng.randi_range(0, 1), 0, 3)):
+			cells.append(middle + STEPS[_rng.randi_range(0, 3)] * (1 + int(k >= 2)))
+		for q: Vector2i in cells:
+			if q.x < 0 or q.y < 0 or solid(_world(q)): continue
+			_put(q, wet if q == middle else Color(color.darkened(0.35), 1.0))
+			landed.append(q)
+		_fade_later(middle, landed)
 		return
 	var tint := Color(color.darkened(0.15), minf(0.95, color.a))
 	var cells := maxi(1, roundi(float(particle.size) / PIXEL))
@@ -1637,11 +2226,41 @@ func draw_stains(canvas: CanvasItem) -> void:
 				canvas.draw_rect(Rect2(Vector2(glint[0] as Vector2i) * PIXEL, Vector2(PIXEL, PIXEL)), spec_colour)
 
 
-func draw_particles(canvas: CanvasItem) -> void:
-	draw_rime_tips(canvas)
-	_draw_implosions(canvas)
+## Depth bands (physics plan R22, decision D11): matter low over the floor is drawn by the host
+## between its y-sorted actors (begin_bands, draw_band), so a monster, a pillar or the hero hides
+## what lies behind it; only matter higher than depth_high px (and the rime tips and implosions)
+## stays in the layer over them (draw_particles part 2). `_low` holds this frame's low matter by y.
+var _low: Array = []
+var _low_i := 0
+
+
+## Collects this frame's low matter, sorted by its floor point's y, for draw_band.
+func begin_bands() -> void:
+	var high := float(_data.get("depth_high", 26.0))
+	_low = _particles.filter(func(p: Dictionary) -> bool: return float(p.z) <= high)
+	_low.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float((a.pos as Vector2).y) < float((b.pos as Vector2).y))
+	_low_i = 0
+
+
+## Draws the low matter whose floor point lies above `to_y` (particle px) and not drawn yet.
+func draw_band(canvas: CanvasItem, to_y: float) -> void:
+	var start := _low_i
+	while _low_i < _low.size() and float((_low[_low_i].pos as Vector2).y) < to_y:
+		_low_i += 1
+	if _low_i > start: draw_particles(canvas, _low.slice(start, _low_i), 1)
+
+
+## The particles over the actors. `part` 0: all of them; 1: only `only` (a depth band, without the
+## rime tips and implosions); 2: only matter higher than depth_high (the rest is in the bands).
+func draw_particles(canvas: CanvasItem, only: Array = [], part := 0) -> void:
+	if part != 1:
+		draw_rime_tips(canvas)
+		_draw_implosions(canvas)
 	var beat := int(_time * 12.0)
-	for particle: Dictionary in _particles:
+	var high := float(_data.get("depth_high", 26.0))
+	var src: Array = only if part == 1 else _particles
+	for particle: Dictionary in src:
+		if part == 2 and float(particle.z) <= high: continue
 		var alpha := 1.0
 		if bool(particle.fade): alpha = clampf(float(particle.life) / (float(particle.max_life) * 0.5), 0.0, 1.0)
 		var size: float = particle.size
@@ -1659,6 +2278,9 @@ func draw_particles(canvas: CanvasItem) -> void:
 		# Airborne chunks cast a pixel shadow on the floor under them.
 		if size >= 4.0 and height > 3.0 and bool(particle.settle):
 			canvas.draw_rect(Rect2(_snap(ground - Vector2(size * 0.5, 0.0)), Vector2(size, PIXEL)), Color(0, 0, 0, 0.22))
+		if particle.has("parts"):
+			_draw_fused(canvas, particle)
+			continue
 		if particle.has("skull"):
 			# a skull rolling: its 3x3 cells turned a quarter for every 6 px it rolls
 			var middle := Vector2i(((ground - Vector2(0.0, height)) / PIXEL).floor())
@@ -1697,7 +2319,7 @@ func draw_particles(canvas: CanvasItem) -> void:
 			var shown := alpha
 			for k in range(3 if Vector2(particle.vel).length() > 60.0 else 2):
 				var q := head + step * k
-				if float(BAYER[posmod(q.y, 4) * 4 + posmod(q.x, 4)]) >= shown * 16.0: continue
+				if MatterKit.bayer(q) >= shown * 16.0: continue
 				canvas.draw_rect(Rect2(Vector2(q) * PIXEL, Vector2(PIXEL, PIXEL)), color if k == 0 else color.darkened(0.35 * float(k)))
 			continue
 		if particle.has("shard"):
@@ -1739,7 +2361,7 @@ func draw_particles(canvas: CanvasItem) -> void:
 		for y in range(cells):
 			for x in range(cells):
 				var q := corner + Vector2i(x, y)
-				if float(BAYER[posmod(q.y, 4) * 4 + posmod(q.x, 4)]) < alpha * 16.0:
+				if MatterKit.bayer(q) < alpha * 16.0:
 					canvas.draw_rect(Rect2(Vector2(q) * PIXEL, Vector2(PIXEL, PIXEL)), color)
 
 
@@ -1785,7 +2407,9 @@ func count() -> int:
 # --- The living floor ------------------------------------------------------------------
 
 ## A splat keeps creeping outwards from its rim (more along the hit direction).
-func _add_pool(origin: Vector2, color: Color, radius: float, direction: Vector2) -> void:
+## A splat's liquid (its shades `ramp`, _splat_ramp) creeping on from where
+## it landed; `painted` its pixels so far (they dry and fade with it).
+func _add_pool(origin: Vector2, ramp: Array, radius: float, direction: Vector2, painted: Array[Vector2i]) -> void:
 	var liquid: Dictionary = _data.get("liquid", {})
 	if _pools.size() >= int(liquid.get("max_pools", 48)): _dry(_pools.pop_front())
 	var middle := _art(origin)
@@ -1794,7 +2418,7 @@ func _add_pool(origin: Vector2, color: Color, radius: float, direction: Vector2)
 	for index in range(12):
 		var rim := Vector2.from_angle(TAU * float(index) / 12.0) * across * Vector2(1.0, 0.75)
 		frontier.append(middle + Vector2i(roundi(rim.x), roundi(rim.y)))
-	_pools.append({"center": middle, "color": color, "frontier": frontier, "budget": int(across * across * float(liquid.get("budget_scale", 0.9))),
+	_pools.append({"center": middle, "color": ramp[1], "ramp": ramp, "px": painted, "frontier": frontier, "budget": int(across * across * float(liquid.get("budget_scale", 0.9))),
 		"carry": 0.0, "dir": direction.normalized(), "reach": across * float(liquid.get("reach_scale", 2.2)), "scan": across * 2.8, "done": -1.0})
 
 
@@ -1829,26 +2453,100 @@ func _grow(pool: Dictionary) -> void:
 		step = Vector2i(int(signf(direction.x)), 0) if absf(direction.x) >= absf(direction.y) else Vector2i(0, int(signf(direction.y)))
 	var next := from + step
 	if next.x < 0 or next.y < 0 or Vector2(next - Vector2i(pool.center)).length() > float(pool.reach) or solid(_world(next)): return
-	if _pixel(next).a < 0.05: _put(next, pool.color)
+	if _pixel(next).a < 0.05:
+		# the creeping edge keeps the grain: now and then a deeper pixel
+		var ramp: Array = pool.get("ramp", [pool.color, pool.color])
+		_put(next, ramp[0] if _rng.randf() < 0.3 else pool.color)
+		(pool.px as Array).append(next)
 	frontier.append(next)
 	if frontier.size() > 48: frontier.remove_at(0)
 
 
-## A pool that stopped creeping dries: its pixels darken.
+## A pool that stopped creeping dries: its pixels (those still its own)
+## darken by liquid.dry_darken, then it fades (_fade_later).
 func _dry(pool: Dictionary) -> void:
-	var color: Color = pool.color
-	var dried := Color(color.darkened(float(_data.get("liquid", {}).get("dry_darken", 0.35))), color.a * 0.9)
-	var middle: Vector2i = pool.center
-	var reach := int(ceil(float(pool.scan)))
-	for y in range(maxi(0, middle.y - reach), middle.y + reach + 1):
-		for x in range(maxi(0, middle.x - reach), middle.x + reach + 1):
-			var key := Vector2i(x / CHUNK, y / CHUNK)
-			if not _chunks.has(key): continue
-			var local := Vector2i(x, y) - key * CHUNK
-			var here: Color = _chunks[key].image.get_pixelv(local)
-			if absf(here.r - color.r) + absf(here.g - color.g) + absf(here.b - color.b) < 0.04 and absf(here.a - color.a) < 0.03:
-				_chunks[key].image.set_pixelv(local, dried)
-				_chunks[key].dirty = true
+	var darken := float(_data.get("liquid", {}).get("dry_darken", 0.35))
+	var ramp: Array = pool.get("ramp", [pool.color])
+	var dried: Array = []
+	for c: Color in ramp:
+		dried.append(Color(c.darkened(darken), c.a * 0.9))
+	var kept: Array[Vector2i] = []
+	var seen := {}
+	for q: Vector2i in pool.get("px", []):
+		if seen.has(q): continue
+		seen[q] = true
+		var k := _shade_of(_pixel(q), ramp)
+		if k < 0: continue
+		_put(q, dried[k])
+		kept.append(q)
+	_fade_later(pool.center, kept)
+
+
+## Which of `ramp`'s colours `here` is (as the floor image keeps it), -1 for none.
+static func _shade_of(here: Color, ramp: Array) -> int:
+	for k in range(ramp.size()):
+		var c: Color = ramp[k]
+		if absf(here.r - c.r) + absf(here.g - c.g) + absf(here.b - c.b) < 0.03 and absf(here.a - c.a) < 0.02:
+			return k
+	return -1
+
+
+## Dried pixels `px` of a mark round `middle` (art px) fade after
+## liquid.fade_after s over fade_time s, its rim first; the last fade_keep of
+## them stay as faint specks (residue_alpha of their opacity).
+func _fade_later(middle: Vector2i, px: Array[Vector2i]) -> void:
+	if px.is_empty(): return
+	var liquid: Dictionary = _data.get("liquid", {})
+	var far := 1.0
+	for q: Vector2i in px:
+		far = maxf(far, Vector2(q - middle).length())
+	# rim first: ten buckets by the distance from the middle, shuffled a little
+	var buckets: Array = []
+	for i in range(10): buckets.append([])
+	for q: Vector2i in px:
+		var level := clampi(int((1.0 - Vector2(q - middle).length() / far) * 7.0 + MatterKit.cell_noise(q, 5) * 3.0), 0, 9)
+		(buckets[level] as Array).append(q)
+	var order: Array[Vector2i] = []
+	var cols: Array = []
+	for bucket: Array in buckets:
+		for q: Vector2i in bucket:
+			order.append(q)
+			cols.append(_pixel(q))
+	var start := _time + float(liquid.get("fade_after", 8.0)) * _rng.randf_range(0.85, 1.15)
+	_fading.append({"px": order, "col": cols, "i": 0, "t0": start, "t1": start + float(liquid.get("fade_time", 6.0)), "keep": int(float(order.size()) * float(liquid.get("fade_keep", 0.12)))})
+	if _fading.size() > int(liquid.get("max_fading", 96)):
+		var oldest: Dictionary = _fading.pop_front()
+		oldest.t1 = _time
+		_fade_mark(oldest)
+
+
+## Dried marks fading away (_fade_later), each step only the pixels now due.
+func _fade_marks() -> void:
+	for index in range(_fading.size() - 1, -1, -1):
+		var mark: Dictionary = _fading[index]
+		if _time < float(mark.t0): continue
+		if _fade_mark(mark): _fading.remove_at(index)
+
+
+## Takes the due pixels of one fading `mark` (those still its own); true when
+## it is done (its last specks then made faint).
+func _fade_mark(mark: Dictionary) -> bool:
+	var px: Array = mark.px
+	var cols: Array = mark.col
+	var share := clampf((_time - float(mark.t0)) / maxf(0.01, float(mark.t1) - float(mark.t0)), 0.0, 1.0)
+	var keep := int(mark.keep)
+	var upto := int(float(px.size() - keep) * share)
+	var i := int(mark.i)
+	while i < upto:
+		if _pixel(px[i]) == cols[i]: _put(px[i], Color(0, 0, 0, 0))
+		i += 1
+	mark.i = i
+	if share < 1.0: return false
+	var faint := float(_data.get("liquid", {}).get("residue_alpha", 0.55))
+	for k in range(px.size() - keep, px.size()):
+		var c: Color = cols[k]
+		if _pixel(px[k]) == c: _put(px[k], Color(c, c.a * faint))
+	return true
 
 
 func _burn_embers(delta: float) -> void:
@@ -1880,15 +2578,29 @@ func _cool(ember: Dictionary) -> void:
 ## in a 4x4 ordered dither so a clump thins out in a pattern, not at once.
 func _freeze(art: Vector2i, vapor := false, due := -1.0, spread := 1.0) -> void:
 	var settings_for_frost: Dictionary = _data.get("frost", {})
-	if _frost.size() - _frost_head >= int(settings_for_frost.get("max", 4000)): _frost_head += 1
+	# at the cap the oldest frost melts now instead of staying frozen forever (physics plan F6)
+	if _frost.size() - _frost_head >= int(settings_for_frost.get("max", 4000)): _frost[_frost_head][1] = minf(float(_frost[_frost_head][1]), _time)
 	var melt: Array = settings_for_frost.get("melt_after", [6.0, 10.0])
 	if due < 0.0: due = _time + _rng.randf_range(float(melt[0]), float(melt[1]))
 	_frozen[art] = _pixel(art)
 	if vapor:
-		if _vapor.size() >= int(settings_for_frost.get("max", 4000)): _vapor.pop_front()
-		_vapor.append([art, due + float(BAYER[posmod(art.y, 4) * 4 + posmod(art.x, 4)]) / 16.0 * float(settings_for_frost.get("vapor_spread", 1.2)) * spread])
+		# at the cap the oldest vapor frost goes now instead of staying frozen forever (physics plan R19)
+		if _vapor.size() >= int(settings_for_frost.get("max", 4000)): _vapor_go(_vapor.pop_front()[0])
+		var when := due + MatterKit.bayer(art) / 16.0 * float(settings_for_frost.get("vapor_spread", 1.2)) * spread
+		_vapor.append([art, when])
+		_vapor_next = minf(_vapor_next, when)
 		return
 	_frost.append([art, due])
+
+
+## A vapor frost pixel goes (unless something was painted over it meanwhile).
+func _vapor_go(spot: Vector2i) -> void:
+	if not _frozen.has(spot): return
+	var same: bool = _pixel(spot) == _frozen[spot]
+	_frozen.erase(spot)
+	if same:
+		_put(spot, Color(0, 0, 0, 0))
+		_loose.erase(spot)
 
 
 ## Frost that is due melts to water; water that is due dries away. A frost
@@ -1915,22 +2627,19 @@ func _melt() -> void:
 		_wet.erase(art)
 		var here := _pixel(art)
 		if absf(here.r - water.r) + absf(here.g - water.g) + absf(here.b - water.b) < 0.04: _put(art, Color(0, 0, 0, 0))
-	# vapor frost: every due pixel goes, the rest keep their order
-	if not _vapor.is_empty():
+	# vapor frost: every due pixel goes, the rest keep their order (scanned only once the
+	# earliest is due)
+	if not _vapor.is_empty() and _time >= _vapor_next:
 		var keep := 0
+		_vapor_next = INF
 		for index in range(_vapor.size()):
 			var entry: Array = _vapor[index]
 			if float(entry[1]) > _time:
 				_vapor[keep] = entry
 				keep += 1
+				_vapor_next = minf(_vapor_next, float(entry[1]))
 				continue
-			var spot: Vector2i = entry[0]
-			if not _frozen.has(spot): continue
-			var same: bool = _pixel(spot) == _frozen[spot]
-			_frozen.erase(spot)
-			if same:
-				_put(spot, Color(0, 0, 0, 0))
-				_loose.erase(spot)
+			_vapor_go(entry[0])
 		_vapor.resize(keep)
 	# wet steps and dots dry away in the order they were left
 	while _damp_head < _damp.size() and float(_damp[_damp_head][1]) <= _time:

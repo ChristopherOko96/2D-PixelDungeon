@@ -178,19 +178,21 @@ static func soul_up(d: Dictionary, profile: Dictionary, class_id: String) -> Str
 	return ""
 
 
-## Gold a reset of `class_id` costs now.
+## Rune stones a reset of `class_id` costs now: base plus one per per_levels
+## hero levels (talents.json "reset_runes").
 static func reset_cost(d: Dictionary, profile: Dictionary, class_id: String) -> int:
-	return int(Profile.class_state(profile, class_id).level) * int(d.get("reset_gold_per_level", 25))
+	var rule: Dictionary = d.get("reset_runes", {})
+	return int(rule.get("base", 2)) + int(Profile.class_state(profile, class_id).level) / maxi(1, int(rule.get("per_levels", 4)))
 
 
-## Resets every talent of the class for gold: points come back, spent soul
+## Resets every talent of the class for rune stones: points come back, spent soul
 ## shards come back in full, soul tiers end. "" on success.
 static func reset(d: Dictionary, profile: Dictionary, class_id: String) -> String:
 	var state := Profile.class_state(profile, class_id)
 	if state.ranks.is_empty(): return "Es sind keine Punkte verteilt."
 	var cost := reset_cost(d, profile, class_id)
-	if int(profile.gold) < cost: return "Zu wenig Gold: %d nötig." % cost
-	profile.gold = int(profile.gold) - cost
+	if int(profile.get("runes", 0)) < cost: return "Zu wenig Runensteine: %d nötig." % cost
+	profile.runes = int(profile.runes) - cost
 	_refund_ultimate(profile, state)
 	state.ranks = {}
 	state.bar = []

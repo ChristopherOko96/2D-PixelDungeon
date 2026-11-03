@@ -15,12 +15,11 @@ extends RefCounted
 ## showing through. Presentation only.
 
 const Glow = preload("res://src/vfx/glow.gd")
+const Cutouts = preload("res://src/rig/cutout_motion.gd")
 const DATA_PATH := "res://assets/data/vfx_sprites.json"
 const PIXEL := 2.0
 const MAX_LIVE := 220
 const RAYS := 28
-## 4x4 ordered dither thresholds (0..15), the art grid's (src/vfx/pixel_paint.gd).
-const BAYER := [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
 ## Coverage of the dithered copies of a sheet, densest first.
 const DITHER_LEVELS := [0.75, 0.5, 0.25]
 ## Magic effects: long ease-out, a lingering last frame and a soft glow.
@@ -53,7 +52,7 @@ func _init() -> void:
 	for name: String in parsed.get("sheets", {}):
 		var entry: Dictionary = parsed.sheets[name]
 		if not ResourceLoader.exists(str(entry.file)): continue
-		_sheets[name] = {"texture": load(str(entry.file)), "size": Vector2(float(entry.size[0]), float(entry.size[1])),
+		_sheets[name] = {"name":name,"texture": load(str(entry.file)), "size": Vector2(float(entry.size[0]), float(entry.size[1])),
 			"frames": int(entry.frames), "fps": float(entry.fps), "anchor": Vector2(float(entry.anchor[0]), float(entry.anchor[1])),
 			"fade": 0.4 if MAGIC.has(name) else 0.7, "linger": 0.28 if MAGIC.has(name) else 0.06}
 
@@ -179,7 +178,7 @@ func draw_at(canvas: CanvasItem, name: String, point: Vector2, rotation: float, 
 	var poly := PackedVector2Array()
 	if clip and _can_clip(): poly = _cached_poly(name, sheet, point, rotation, scale)
 	tint.a *= fade
-	_frame(canvas, sheet, frame, point, rotation, scale, tint, poly)
+	_frame(canvas, sheet, frame, point, rotation, scale, tint, poly,progress*float(sheet.frames)/float(sheet.fps))
 
 
 ## The clip polygon of a sheet at a place, kept while the effect stays there.
@@ -318,7 +317,7 @@ func draw(canvas: CanvasItem) -> void:
 		var alpha := 1.0 - smoothstep(float(sheet.fade), 1.0, progress)
 		var tint: Color = item.tint
 		tint.a *= alpha
-		_frame(canvas, sheet, frame, item.pos, float(item.rot), float(item.scale), tint, item.get("poly", PackedVector2Array()))
+		_frame(canvas, sheet, frame, item.pos, float(item.rot), float(item.scale), tint, item.get("poly", PackedVector2Array()),float(item.time))
 
 
 ## Bloom for magic effects and sparks: a soft light that swells and fades with
@@ -379,7 +378,7 @@ func _near_wall(point: Vector2, radius: float) -> bool:
 	return false
 
 
-func _frame(canvas: CanvasItem, sheet: Dictionary, frame: int, point: Vector2, rotation: float, scale: float, tint: Color, poly: PackedVector2Array) -> void:
+func _frame(canvas: CanvasItem, sheet: Dictionary, frame: int, point: Vector2, rotation: float, scale: float, tint: Color, poly: PackedVector2Array, age := 0.0) -> void:
 	# a faded frame drops whole sprite pixels by the dither instead of turning see-through
 	var texture: Texture2D = sheet.texture
 	if tint.a < 0.999 and not bool(sheet.get("smooth_alpha", false)):
@@ -388,6 +387,11 @@ func _frame(canvas: CanvasItem, sheet: Dictionary, frame: int, point: Vector2, r
 		tint.a = 1.0
 	var size: Vector2 = sheet.size
 	var anchor: Vector2 = sheet.anchor
+	if sheet.has("name"):
+		var parts:=Cutouts.effect(texture,str(sheet.name),Vector2i(size),frame,anchor,point,rotation,pixel*scale,age,tint)
+		if not parts.is_empty():
+			draw_external_rig(canvas,parts,point)
+			return
 	if poly.is_empty():
 		canvas.draw_set_transform(point, rotation, Vector2(pixel * scale, pixel * scale))
 		canvas.draw_texture_rect_region(texture, Rect2(-anchor, size), Rect2(Vector2(frame * size.x, 0), size), tint)
@@ -433,7 +437,7 @@ static func _mask(w: int, h: int, k: float) -> Image:
 	var mask := Image.create(w, h, false, Image.FORMAT_RGBA8)
 	for y in range(mini(4, h)):
 		for x in range(mini(4, w)):
-			if float(BAYER[y * 4 + x]) < k * 16.0: mask.set_pixel(x, y, Color.WHITE)
+			if MatterKit.bayer_xy(x, y) < k * 16.0: mask.set_pixel(x, y, Color.WHITE)
 	var filled := 4
 	while filled < w:
 		mask.blit_rect(mask.get_region(Rect2i(0, 0, filled, mini(4, h))), Rect2i(0, 0, filled, mini(4, h)), Vector2i(filled, 0))

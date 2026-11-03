@@ -1,4 +1,5 @@
 extends RefCounted
+const Cutouts=preload("res://src/rig/cutout_motion.gd")
 const CompanionTargets = preload("res://src/combat/companion_targets.gd")
 ## Class relics of themed runs (the Frostgruft): each run hides one relic for
 ## the hero's class (theme.relics.pools) in the secret room of a random floor,
@@ -128,7 +129,7 @@ static func press(g: Node, key: String) -> bool:
 	if s.is_empty():
 		return false
 	if int(g.state.level) < int(s.unlock):
-		g._toast("%s ab Level %d." % [s.name, int(s.unlock)])
+		g._toast("%s ab Laufstufe %d." % [s.name, int(s.unlock)])
 		return true
 	if float(g.state.skill_cd.get(str(s.id), 0.0)) > 0.0:
 		g._sound("no_cooldown")
@@ -379,7 +380,7 @@ static func draw(g: Node, l: Node2D, t: float) -> void:
 					var fall := fmod(t * 3.0 + i * 0.37, 1.0)
 					var q: Vector2 = z.p + Vector2(fmod(i * 97.0, 2.0 * float(z.r)) - float(z.r), fmod(i * 53.0, float(z.r)) - float(z.r) * 0.5)
 					if z.kind == "blades" and dagger != null:
-						l.draw_texture_rect(dagger, Rect2(q - Vector2(6, 200.0 * (1.0 - fall)), dagger.get_size() * 2.0), false, Color(0.85, 0.75, 1.0, 1.0 - fall * 0.4))
+						Cutouts.sprite(l,dagger,"knife",Rect2(q-Vector2(6,200*(1-fall)),dagger.get_size()*2),t,Color(0.85,0.75,1,1-fall*0.4))
 					else:
 						l.draw_line(q - Vector2(0, 220.0 * (1.0 - fall)), q - Vector2(0, 220.0 * (1.0 - fall) - 30.0), Color(0.9, 0.95, 1.0, 0.9), 3.0)
 	var bl: Dictionary = g.state.get("blades", {})
@@ -387,9 +388,7 @@ static func draw(g: Node, l: Node2D, t: float) -> void:
 		for i in range(4):
 			var a := t * 9.0 + i * TAU / 4.0
 			var q := Vector2(g.player.x, g.player.y - 30) + Vector2(cos(a), sin(a)) * float(bl.r) * 0.8
-			l.draw_set_transform(q, a + PI / 2.0)
-			l.draw_texture_rect(dagger, Rect2(-dagger.get_size(), dagger.get_size() * 2.0), false, Color(0.85, 0.75, 1.0))
-			l.draw_set_transform(Vector2.ZERO)
+			Cutouts.sprite(l,dagger,"knife",Rect2(q-dagger.get_size(),dagger.get_size()*2),t,Color(0.85,0.75,1),a+PI/2,q)
 	if float(g.state.get("phoenix_t", 0.0)) > 0.0:
 		var c := Vector2(g.player.x, g.player.y - 30)
 		for i in range(6):
@@ -406,7 +405,7 @@ static func draw(g: Node, l: Node2D, t: float) -> void:
 				var rock: Texture2D = g.tex.rock_throw
 				var c: Vector2 = f.p - Vector2(0, 90.0 * (1.0 - k))
 				l.draw_circle(f.p, 40.0 * (1.0 - k) + 10.0, Color(0.55, 0.4, 1.0, 0.3))
-				l.draw_texture_rect(rock, Rect2(c - rock.get_size(), rock.get_size() * 2.0), false, Color(1, 1, 1, 1.0 - k * 0.5))
+				Cutouts.sprite(l,rock,"meteor",Rect2(c-rock.get_size(),rock.get_size()*2),t,Color(1,1,1,1-k*0.5))
 			"smash":
 				var a0: float = float(f.a) - float(f.arc) / 2.0
 				l.draw_arc(f.p, float(f.r) * (1.0 - k * 0.3), a0, a0 + float(f.arc), 24, Color(0.75, 0.6, 1.0, k), 14.0)
@@ -416,7 +415,7 @@ static func draw(g: Node, l: Node2D, t: float) -> void:
 			"spike":
 				var sp: Texture2D = g.tex.rock_spike
 				var h := sp.get_size() * Vector2(1.0, 1.0 - absf(k - 0.5) * 2.0 + 0.4)
-				l.draw_texture_rect(sp, Rect2(f.p - Vector2(h.x / 2.0, h.y), h), false)
+				Cutouts.sprite(l,sp,"stone_spike",Rect2(f.p-Vector2(h.x*0.5,h.y),h),t)
 	for z: Dictionary in g.zones:
 		match z.kind:
 			"gfield":
@@ -430,7 +429,7 @@ static func draw(g: Node, l: Node2D, t: float) -> void:
 				l.draw_arc(z.p, float(z.r), 0.0, TAU, 40, Color(1.0, 0.6, 0.7, 0.9), 3.0)
 				var rock: Texture2D = g.tex.rock_throw
 				var c: Vector2 = z.p - Vector2(0, 600.0 * (1.0 - k))
-				l.draw_texture_rect(rock, Rect2(c - rock.get_size() * 1.5, rock.get_size() * 3.0), false)
+				Cutouts.sprite(l,rock,"meteor",Rect2(c-rock.get_size()*1.5,rock.get_size()*3),t)
 	for a: Dictionary in g.allies:
 		if a.has("sub"):
 			continue
@@ -444,12 +443,7 @@ static func draw(g: Node, l: Node2D, t: float) -> void:
 		var size := im.get_size() * float(a.s.scale) * 0.5 * (0.4 + 0.6 * grow)
 		var pos: Vector2 = a.p - Vector2(size.x / 2.0, size.y)
 		var alpha := clampf(float(a.t) / 1.0, 0.0, 1.0)
-		if float(a.face) < 0.0:
-			l.draw_set_transform(pos + Vector2(size.x, 0), 0.0, Vector2(-1, 1))
-			l.draw_texture_rect(im, Rect2(Vector2.ZERO, size), false, Color(1, 1, 1, alpha))
-			l.draw_set_transform(Vector2.ZERO)
-		else:
-			l.draw_texture_rect(im, Rect2(pos, size), false, Color(1, 1, 1, alpha))
+		Cutouts.draw(l,Cutouts.actor(im,"relic_golem",Vector2(a.p),size.x/im.get_width(),float(a.face),t,{"moving":walk,"id":1,"attack":"active" if not walk else ""},Color(1,1,1,alpha)))
 		# life left as a thin bar over the golem
 		l.draw_rect(Rect2(a.p - Vector2(40, size.y + 14), Vector2(80, 6)), Color(0.05, 0.03, 0.1, 0.8))
 		l.draw_rect(Rect2(a.p - Vector2(40, size.y + 14), Vector2(80.0 * float(a.t) / float(a.max), 6)), Color(0.75, 0.6, 1.0))

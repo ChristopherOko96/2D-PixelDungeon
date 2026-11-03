@@ -267,6 +267,9 @@ static func skeleton(rig: Dictionary, a: Dictionary) -> Dictionary:
 	var torso: bool = not lost.has("torso")
 	var variant: String = str(rig.variant)
 	P(pose, head).dy = -0.5 * sin(t * TAU / 1.1)
+	if rig.by_id.has("jaw"):
+		P(pose,"jaw").dy=(0.5+0.5*sin(t*3))*0.5
+		P(pose,"jaw").rot=sin(t*3)*0.07
 	if str(rig.name) not in ["bone_warrior", "bone_archer", "blood_colossus"] and sin(t * 0.9) > 0.985: P(pose, head).rot = 0.09 * sin(t * 70.0)
 	I(pose, "weapon").rot = 0.06 * sin(t * TAU / 1.1)
 	if not torso:

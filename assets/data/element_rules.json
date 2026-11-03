@@ -224,6 +224,7 @@
  "reactions": {
   "explode_damage": 8,
   "explode_reach": 20,
+  "ignite_speed": 260,
   "explode_chain": 6,
   "ice_time": 8,
   "ice_slow": 0.4,
@@ -287,6 +288,12 @@
    "frost"
   ],
   "crystal": [
+   "frost"
+  ],
+  "snow": [
+   "frost"
+  ],
+  "schnee": [
    "frost"
   ],
   "kristall": [
@@ -365,6 +372,13 @@
   "wet_blocks_burn": true,
   "freeze_wet": 0.7
  },
+ "_exposure_note": "How the element physics reaches a creature (src/physics_kit/element_exposure.gd, ElementExposure; the story worlds' adapter src/hell/story_exposure_host.gd): every frame it reads the pool under the creature's feet and the gas round it and applies that medium's or gas's rule (mediums, gases above) through the game's host. air_above = world px of altitude from which a creature counts as in the air (no pool or gas reaches it, nor one burrowed under the floor). One profile per kind of creature (the host names it): gas_body + gas_pad = how far round its feet it breathes the gas (it parts the gas round itself, src/vfx/gas.gd part; gas_body counts in crypt px x the world's scale when gas_body_crypt_px), gas_samples = points on that ring; ticked = its hurt lands every rule's tick s as hurt_key per second x tick (the monsters: enemy_hurt hero hits, boss_hurt of it on a boss), else it drains continuously per second (the hero: hurt half hearts); dot_kinds x dot_scale = the damage over time a condition puts on (status values are half hearts per s: 1 for the hero, 0.5 hero hits for a monster); freeze_on = materials whose frost freezes a wet one solid for combos.freeze_wet s (the hero only in frost gas: a frost pool is ice he slips on; a monster on ice too); own_clock = conditions the host keeps on a clock of its own instead (the hero's WAHN: src/hell/hero_fx.gd mad_step); why = what the hero reads when a rule without its own why hurts him (%s = the pool style or gas). story = the story adapter's feedback: hit_flash = s a monster flashes on a tick, freeze_burst = frost pixels when wet freezes solid, hero_chest = px above his feet they burst from.",
+ "exposure": {
+  "air_above": 20,
+  "hero": {"gas_body": 22, "gas_body_crypt_px": true, "gas_pad": 24, "gas_samples": 8, "ticked": false, "hurt_key": "hurt", "boss_hurt": 1.0, "dot_kinds": ["burn", "poison"], "dot_scale": 1.0, "freeze_on": ["frost"], "own_clock": ["mad"], "why": "im %s"},
+  "monster": {"gas_body": 18, "gas_body_crypt_px": false, "gas_pad": 24, "gas_samples": 4, "ticked": true, "hurt_key": "enemy_hurt", "boss_hurt": 0.5, "dot_kinds": ["burn", "poison"], "dot_scale": 0.5, "freeze_on": ["frost", "ice"], "own_clock": [], "why": "im %s"},
+  "story": {"hit_flash": 0.12, "freeze_burst": {"hero": 12, "monster": 10}, "hero_chest": 40}
+ },
  "_breath_gas_note": "The gas a breath or cone of an element leaves hanging (src/vfx/gas.gd materials): poison and frost their own, fire and lava smoke; none for bone, gold or souls. breath_r = share of the breath's reach the cloud is wide, breath_time = s it hangs.",
  "breath_gas": {
   "poison": "poison",
@@ -376,30 +390,9 @@
  },
  "breath_r": 0.3,
  "breath_time": 3.5,
- "madness": {
-  "_note": "WAHN (user decision 2026-10-31, the Old Gods): the void drives minds mad (src/combat/element_rules.gd madness helpers; the crypt in src/game.gd + src/crypt_enemy_ai.gd, the story worlds in src/hell/hell_monsters.gd + src/hell/hell_game.gd). A creature standing in a void pool or void gas (mediums.void / gases.void status mad [strength, s], refreshed while inside) or hit by a void spell is mad for that long: its shots scatter by up to aim_scatter rad, it staggers sideways (wobble px/s, a new step every wobble_step s), and at each attack decision it turns with turn_chance on the nearest other creature within turn_reach px and really attacks it, for at most turn_hold s (decide = s between rolls where an AI has no attack decision of its own). Its blow on another creature: enemy_damage damage points per half heart of the blow (crypt), story_hits hero hits per blow (story worlds); mad_cd = s between two body blows. Bosses and minibosses only scatter, by boss_scale of it; immune_tags feel nothing. The hero: after hero_delay s inside a void pool that is not his own his controls invert (movement and aim mirrored) until hero_after s after he left it; mad_warn rises 0..1 over the delay. The Leerenmagier (immune_class with immune_spec as main specialisation) is immune.",
-  "aim_scatter": 0.55,
-  "turn_chance": 0.3,
-  "turn_reach": 420,
-  "turn_hold": 3.0,
-  "decide": 1.0,
-  "wobble": 46,
-  "wobble_step": 0.35,
-  "enemy_damage": 3,
-  "story_hits": 1,
-  "mad_cd": 0.6,
-  "hero_delay": 1.0,
-  "hero_after": 0.5,
-  "boss_scale": 0.5,
-  "immune_tags": [
-   "void"
-  ],
-  "immune_class": "mage",
-  "immune_spec": "arcane"
- },
  "hurt_note": "hurt: half hearts per second for the hero, drained continuously onto the life bar (src/hell/hell_game.gd dot_hurt_f; the crypt accumulates whole points, src/combat/elements.gd dot_f); enemy_hurt: hero hits per second on a monster, landed every tick s. status values: burn/poison in half hearts per second, slow/wet/slip/silence as before.",
  "swallow": {
-  "_note": "The void swallows what lies near it (user decision 2026-10-31): a void puddle, a Singularität or a boss vortex pulls other puddles and gas clouds within reach x its radius into itself and eats them. time: s a swallowed puddle takes to drain; pull: px/s gas puffs stream inward; thin: gas density lost per second inside; motes: void motes per second streaming from a swallowed puddle to the centre; gulp: s between gulps of the centre (a small void burst). A mouth of the Leerenmagier (his void pool or puddle, his Singularität, his Raumsprung rift, his void spells) feeds what it eats into his Arkanes Gefüge (see gefuege; each pool or cloud once), a boss's or monster's void feeds nobody, and his own Gefüge drops are left alone by his own void.",
+  "_note": "The void swallows what lies near it (user decision 2026-10-31): a void puddle, a Singularität or a boss vortex pulls other puddles and gas clouds within reach x its radius into itself and eats them. time: s a swallowed puddle takes to drain; pull: px/s gas puffs stream inward; thin: gas density lost per second inside; motes: void motes per second streaming from a swallowed puddle to the centre; gulp: s between gulps of the centre (a small void burst). A mouth of the Leerenmagier (his void pool or puddle, his Singularität, his Raumsprung rift, his void spells) feeds what it eats into his Arkanes Gefüge (see madness_rules.json gefuege; each pool or cloud once), a boss's or monster's void feeds nobody, and his own Gefüge drops are left alone by his own void.",
   "reach": 1.6,
   "time": 0.7,
   "pull": 170,
@@ -407,80 +400,5 @@
   "motes": 9,
   "gulp": 0.35,
   "cloud_shrink": 28
- },
- "gefuege": {
-  "_note": "The Leerenmagier's Arkanes Gefüge (user design 2026-10-31; src/combat/talent_combat.gd, fed by src/combat/elements.gd and src/hell/story_elements.gd): FEED -> LOAD -> EJECT. spec = the talent spec whose hero has one; cap = units it holds before Fassungsvermögen (gefuege_cap); elements = what can be stored (void never); aliases = what a material or gas counts as ('' = nothing); a swallowed puddle gives puddle_units[0..1] by its radius over puddle_r (crypt px), a gas cloud gas_units, a caught shot shot_units (its element by shot_el, else its own), an essence 1 unit per element (essence: the first tag of tag_order, else material, else default); gas = the story gas materials a mouth counts. The Singularität: its core holds the caught (hold_s = s of stun refreshed, orbit_r = share of the core radius they circle at, orbit_speed = rad/s); its collapse ejects up to eject_max bolts to spots eject_m away (eject_speed px/s flight, eject_delay s between bolts, bundle_scale = extra strength per extra unit in a bolt) and flings the caught at fling_speed px/s for up to fling_m m; material_by_tag / material_default = what a wall-killed enemy bursts into ('splat'). land = what each element does where it lands: pool = pool style left (time s; dps x hero damage per s on enemies, crypt), react = the element reaction there, radius_m, dmg x hero damage on landing, status = the hero status it puts on.",
-  "spec": "arcane",
-  "cap": 30,
-  "elements": ["fire", "lava", "ice", "water", "poison", "blood", "bone", "soul", "gold"],
-  "aliases": {
-   "frost": "ice",
-   "flesh": "blood",
-   "magma": "lava",
-   "steam": "water",
-   "smoke": "",
-   "curse": "",
-   "void": ""
-  },
-  "puddle_units": [3, 8],
-  "puddle_r": [20, 70],
-  "gas_units": 4,
-  "gas": ["poison", "steam", "frost"],
-  "shot_units": 1,
-  "shot_el": {
-   "arrow": "bone",
-   "magic": "soul",
-   "metal": "",
-   "stone": "",
-   "void_skull": ""
-  },
-  "essence": {
-   "tag_order": ["void", "fire", "hell", "frost", "poison", "undead"],
-   "tags": {
-    "void": [],
-    "fire": ["fire"],
-    "hell": ["fire"],
-    "frost": ["ice"],
-    "poison": ["poison", "blood"],
-    "undead": ["bone"]
-   },
-   "material": {
-    "bone": ["bone"],
-    "flesh": ["blood"],
-    "gold": ["gold"],
-    "soul": ["soul"],
-    "void": [],
-    "stone": []
-   },
-   "default": ["blood"]
-  },
-  "material_by_tag": {
-   "undead": "bone",
-   "void": "void",
-   "stone": "stone",
-   "frost": "ice"
-  },
-  "material_default": "flesh",
-  "hold_s": 0.25,
-  "orbit_r": 0.6,
-  "orbit_speed": 4.5,
-  "eject_max": 10,
-  "eject_m": [6, 8],
-  "eject_speed": 520,
-  "eject_delay": 0.04,
-  "bundle_scale": 0.5,
-  "fling_speed": 760,
-  "fling_m": 16,
-  "land": {
-   "fire": {"pool": "fire", "react": "fire", "radius_m": 0.9, "time": 5, "dmg": 0.35, "dps": 0.25, "status": "burn"},
-   "lava": {"pool": "lava", "react": "fire", "radius_m": 0.9, "time": 5, "dmg": 0.4, "dps": 0.3, "status": "burn"},
-   "ice": {"pool": "frost", "react": "frost", "radius_m": 1.0, "time": 6, "dmg": 0.3},
-   "water": {"pool": "water", "react": "water", "radius_m": 1.1, "time": 7, "dmg": 0.2},
-   "poison": {"pool": "poison", "radius_m": 1.0, "time": 6, "dmg": 0.25, "dps": 0.25, "status": "poison"},
-   "blood": {"pool": "blood", "radius_m": 1.0, "time": 6, "dmg": 0.25, "status": "bleed"},
-   "bone": {"radius_m": 0.8, "dmg": 0.6},
-   "soul": {"radius_m": 0.8, "dmg": 0.6},
-   "gold": {"radius_m": 0.8, "dmg": 0.7}
-  }
  }
 }

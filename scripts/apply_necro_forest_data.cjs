@@ -1,6 +1,6 @@
 // Repeatable tuning migration; source values and units documented in the guide.
 const fs = require('fs');
-const edit = (name, fn) => { const p = `assets/data/${name}.json`; const d = JSON.parse(fs.readFileSync(p, 'utf8')); fn(d); fs.writeFileSync(p, JSON.stringify(d, null, 1)+'\n'); };
+const edit = (name, fn) => { const p = `assets/data/${name}.json`; const d = JSON.parse(fs.readFileSync(p, 'utf8')); fn(d); const text=JSON.stringify(d,null,1)+'\n'; fs.writeFileSync(p,text); if(name==='companion_rigs')fs.writeFileSync('tools/rig_kit/hand_rigs/companion_rigs.json',text); };
 edit('talents', d => {
  for (const cls of ['mage','swordsman','necromancer']) d.defense[cls] = {type:'dodge',name:'Ausweichschritt',icon:'dash',charges:1,recharge:4,dist_m:3,iframes:0.25,text:'Shift: 3 m in Laufrichtung ausweichen, 0,25 s unverwundbar. Eine Ladung, 4 s Abklingzeit. Wände stoppen den Dash.'};
  Object.assign(d.talents.curse_3,{type:'curse_aura',radius_m:6,text:'Verflucht alle sichtbaren Gegner in 6 m um dich für 8/10/12 s: +10/15/20 % Schaden von dir. Kleine Fluchgeister steigen an jedem Ziel auf; die Mausposition spielt keine Rolle.'});

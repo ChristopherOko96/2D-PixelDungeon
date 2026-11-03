@@ -28,6 +28,7 @@ func _run() -> void:
 	_clean()
 	_test_store_round_trip()
 	_test_store_refuses_bad_input()
+	_test_store_keeps_backup()
 	await _test_crypt_floor_saved_and_loaded()
 	await _test_hell_floor_saved_and_continued()
 	await _test_main_menu_loads_and_erases()
@@ -68,6 +69,33 @@ func _test_store_refuses_bad_input() -> void:
 	f.close()
 	check(store.read("frost", 1).is_empty(), "a broken file reads as an empty slot")
 	store.erase("frost", 1)
+
+
+## A save replaces the slot only once it is written whole: the previous save stays as
+## the slot's backup, a broken slot file shows that backup, deleting the slot takes both,
+## and an ended run's save left as a backup goes with the run.
+func _test_store_keeps_backup() -> void:
+	# Arrange
+	var store := SaveStore.new(DIR)
+	store.write("hell", 1, {"floor": 2, "run_id": "a"})
+	store.write("hell", 1, {"floor": 3, "run_id": "a"})
+	store.write("krypta", 2, {"floor": 4, "run_id": "dead"})
+	store.write("krypta", 2, {"floor": 5, "run_id": "alive"})
+	# Act: both slot files break (a crash in the middle of writing them); the dead run ends
+	store.erase_run("krypta", "dead")
+	for p: String in [store.path("hell", 1), store.path("krypta", 2)]:
+		var f := FileAccess.open(p, FileAccess.WRITE)
+		f.store_string("DELVESAVE1 halb")
+		f.close()
+	var back := store.read("hell", 1)
+	var ended := store.read("krypta", 2)
+	var erased := store.erase("hell", 1)
+	# Assert
+	check(int(back.get("floor", 0)) == 2, "a broken slot shows its previous save (floor %s)" % back.get("floor", "-"))
+	check(not FileAccess.file_exists(store.path("hell", 1) + ".tmp"), "no side file is left after saving")
+	check(erased and store.read("hell", 1).is_empty(), "deleting a slot takes its backup too")
+	check(ended.is_empty(), "an ended run's save does not come back as a backup")
+	store.erase("krypta", 2)
 
 
 func _new_game() -> Node:

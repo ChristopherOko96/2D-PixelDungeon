@@ -11,6 +11,10 @@ den Lauf spürbar stärker machen, und alles davon geht beim Tod verloren.
 
 Entscheidungen (29.10.2026):
 1. Beim Tod wird der Lauf-Stand gelöscht; Speichern dient nur zum Unterbrechen.
+   **Geändert 01.11.2026 (Nutzer):** In Hölle, Krypta und Frostgruft bleibt ein
+   gespeicherter Stand nach dem Tod erhalten und kann wieder geladen werden, als
+   kleiner Vorteil fürs Speichern. Das Gold des gestorbenen Charakters ist weg;
+   der Stand hat das Gold, das er beim Speichern hatte (Abschnitt 3.2).
 2. Nach dem Tod bleiben nur **Talente und Seelenkristalle** (Meta-Fortschritt),
    in allen drei Welten.
 3. Ein Level-Up gibt einen **Talentpunkt im Lauf-Baum** der Klasse; der Baum
@@ -49,9 +53,13 @@ Punkte sind Entscheidungen, keine Selbstläufer.
 ### 3.2 Speicherstände
 - Ein Lauf hat **einen** Stand je Platz (3 Plätze je Modus bleiben). Er wird am
   Etagenanfang und beim Verlassen ins Hauptmenü geschrieben.
-- **Beim Tod wird der Stand des Laufs gelöscht.** Ein geladener Stand ist
-  danach derselbe Lauf; stirbt man wieder, ist er weg.
-- Kein Laden eines älteren Stands desselben Laufs (keine Rückkehr vor einen Tod).
+- **Beim Tod bleibt der gespeicherte Stand des Laufs** (seit 01.11.2026; vorher
+  gelöscht). Er hält den Etagenanfang, an dem er zuletzt geschrieben wurde, mit
+  Herzen, Laufstufe, Gegenständen und dem Gold dieses Moments.
+- Gold ist das des laufenden Charakters (`state.gold`, `StorySave.CARRIED`): ein
+  neuer Charakter beginnt bei 0, beim Tod ist es weg, ein ungespeichert
+  verlassener Charakter ist mit seinem Gold weg. Runensteine (Talent-Reset) und
+  Seelensplitter gehören dem Account und bleiben immer.
 
 ### 3.3 Meta-Fortschritt (bleibt nach dem Tod)
 - Seelenkristalle aus jedem Lauf (Etagen, Wächter, Nebenziele; Werte wie jetzt
@@ -113,8 +121,8 @@ Lauf eingestellt (Etagen × Gegner × Erfahrung).
 Wie `docs/ITEM-SYSTEM-V2.de.md` Abschnitt 4.
 
 ## 5. Sonderfälle
-- Tod während ein Speicherstand geschrieben wird: erst löschen, dann den
-  Lauf-Ende-Bildschirm zeigen; ein halber Stand wird nie geladen.
+- Tod während ein Speicherstand geschrieben wird: der Stand bleibt, wie er
+  zuletzt vollständig geschrieben wurde; ein halber Stand wird nie geladen.
 - Krypta mit mehreren Spielern: der Lauf endet, wenn alle gefallen sind
   (wie jetzt); Punkte und Bäume je Held, Level geteilt (Team-Level wie jetzt).
 - Lauf gewonnen (Endboss besiegt): Stand wird gelöscht, Seelenkristalle plus
@@ -134,7 +142,8 @@ Stufe 2 im Ast, feste Fundquellen je Etage, Seelenkristall-Werte.
 
 ## 8. Abnahmekriterien
 - In allen drei Welten führt der Tod zum Lauf-Ende-Bildschirm und ein neuer
-  Lauf beginnt auf Etage 1; der Speicherstand des Laufs ist danach weg.
+  Lauf beginnt auf Etage 1; ein gespeicherter Stand des Laufs bleibt ladbar,
+  das Gold des gestorbenen Charakters ist weg.
 - Seelenkristalle und dauerhafte Talente bleiben nach dem Tod erhalten.
 - Jedes Level-Up gibt einen Punkt; der Lauf-Baum zeigt Äste, Stufen und
   gesperrte Fähigkeits-Äste; ausgegebene Punkte wirken sofort.
@@ -146,7 +155,8 @@ Stufe 2 im Ast, feste Fundquellen je Etage, Seelenkristall-Werte.
 - Hölle/Frostgruft: `end_run(won)` statt Wiederaufstehen; Taste R entfällt; der letzte
   Wächter beendet den Lauf als Sieg; E auf dem Ergebnis startet `new_run()` (frische Szene,
   gleiche Klasse, Etage 1). Jeder Lauf hat eine `run_id`; `run_slot` hält den Platz auf dem
-  neuesten Etagenanfang; `SaveStore.erase_run` löscht beim Lauf-Ende alle Plätze dieses Laufs.
+  neuesten Etagenanfang; `SaveStore.erase_run` löscht beim Sieg alle Plätze dieses Laufs (beim
+  Tod seit 01.11.2026 nicht mehr).
 - Krypta: Team gefallen → Plätze des Laufs (`crypt-<seed>`) gelöscht; E startet den neuen Lauf (Host).
 - Ergebnis-Kasten für alle Welten: `HudKit.result_panel` (Etage geschafft, Lauf beendet, Sieg).
 - Test: `tests/run_end_test.gd`. Belege: `production/qa/evidence/run-end` (`scripts/capture_run_end.gd`).

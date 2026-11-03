@@ -1,4 +1,5 @@
 extends SceneTree
+# test: window (it reads back a drawn frame; scripts/Dev.ps1 Tests runs it only with -Windowed)
 ## GPU regression: transparent atlas padding must not move the feet under recoil.
 class Probe extends "res://src/dungeon_view.gd":
 	var fixture: Texture2D

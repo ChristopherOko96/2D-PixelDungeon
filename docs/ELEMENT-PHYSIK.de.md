@@ -11,14 +11,20 @@ Wasser löscht.
 | Datei | Rolle |
 |---|---|
 | `assets/data/element_rules.json` | Die Tabelle: Medien, Gase, Sicht, Reaktionen, Kombinationen, Element-Tags. |
-| `src/combat/element_rules.gd` | Liest die Tabelle einmal; reine Regeln (`medium`, `gas`, `top`, `immune`, `tags`, `slide`, `pull`). |
+| `src/combat/element_rules.gd` | Liest die Tabelle einmal; reine Regeln (`medium`, `gas`, `top`, `immune`, `tags`, `slide`, `pull`). Für Wahn und Gefüge nur noch Weiterleitungen. |
+| `src/physics_kit/element_exposure.gd` | **`ElementExposure`**: was Pfütze und Gas mit einem Wesen machen, für Held und alle Gegner in allen drei Story-Welten (siehe unten). |
+| `src/physics_kit/exposure_host.gd` | Der Vertrag, über den `ElementExposure` mit einem Spiel spricht. |
+| `src/hell/story_exposure_host.gd` | Der Adapter der Story-Welten (Krypta, Hölle, Frostgruft) für diesen Vertrag. |
+| `src/combat/madness_rules.gd`, `assets/data/madness_rules.json` | `MadnessRules`: Wahn (`madness`), Leerenmagier (`void_mind`) und die Daten des Arkanen Gefüges (`gefuege`). Keine Physik, darum getrennt. |
 | `src/combat/elements.gd`, `src/combat/boss_moves.gd` | Hauptdungeon (Host): Gase und Pfützen auf Helden und Gegner, Reaktionen. |
 | `src/dungeon_view.gd` | Hauptdungeon (Client): die Sicht im Gas (`_step_vision`, `_update_darkness`). |
-| `src/hell/hell_game.gd` | Story-Welten: der Held (`_step_elements`), die Frostgruft-Gegner (`_step_mob_medium`), die Sicht (`vision`). |
-| `src/hell/hell_monsters.gd` | Story-Welten: die Höllen- und Krypta-Monster (`_step_medium`), Atemwolken, Reaktionen beim Aufschlag (`_react`). |
+| `src/hell/hell_game.gd` | Story-Welten: ruft `exposure().step` für den Helden (`_step_elements`) und die Frostgruft-Gegner (`_step_mob_medium`); die Sicht (`vision`), die Wahn-Uhr des Helden. |
+| `src/hell/hell_monsters.gd` | Story-Welten: ruft `g.exposure().step` für die Höllen- und Krypta-Monster (`_step_medium`); Atemwolken, Reaktionen beim Aufschlag (`_react`). |
 | `src/hell/story_elements.gd` | Story-Welten: die Reaktionen (Feuer, Frost, Wasser, Lava trifft Wasser). |
-| `src/vfx/gas.gd` | Gaswolken: `at`, `around`, `extent` (wie dicht, wie weit), `clouds_of`, `end_cloud`. |
-| `src/vfx/pool_paint.gd` | Pfützen: `materials_at` (was liegt unter einem Punkt, auch gefrorenes Eis). |
+| `src/physics_kit/gas_field.gd` | **`GasField`**: die Gaswolken als Spielregel (Puffs als Daten, ihre Physik): `at`, `around`, `extent` (wie dicht, wie weit), `clouds_of`, `end_cloud` (siehe unten). |
+| `src/physics_kit/pool_field.gd` | **`PoolField`**: die Pfützen als Spielregel: `materials_at` (was liegt unter einem Punkt, auch das Eis der Regeln), `covers`, `pools_at`, `centre`, `freeze_near`, `thaw_near`, `evaporate` (siehe unten). |
+| `src/physics_kit/field_host.gd`, `callable_field_host.gd` | Der Vertrag beider Felder (nur: wo ist offener Boden) und seine Fassung für eine Callable. |
+| `src/vfx/gas.gd`, `src/vfx/pool_paint.gd` | Die Zeichnung der beiden Felder. Ihre alten Aufrufe (`at`, `around`, `materials_at`, `covers`, `sync` …) leiten ans Feld weiter. |
 
 ## Medien (worin man steht)
 
@@ -98,7 +104,109 @@ Werte in `combos`.
 - **Brennend ins Gift**: Wer brennt (`fire_t` bei Monstern: Lava, Feuer, ein
   Brand; `burn` beim Helden) und Gift betritt oder atmet, zündet es.
 - **Nass**: Wer nass ist, kann nicht angezündet werden (`wet_blocks_burn`);
-  Frostnebel friert ihn kurz ein (`freeze_wet` 0.7 s, Bosse nie).
+  Frostnebel friert ihn kurz ein (`freeze_wet` 0.7 s, Bosse nie). Ein Monster
+  friert auch auf Eis ein, der Held nur im Frostnebel (auf Eis rutscht er):
+  `exposure.<profil>.freeze_on`.
+- Seit 2026-11-01 gelten beide Kombinationen auch für die Frostgruft-Gegner.
+
+## Das Modul `ElementExposure` (seit 2026-11-01)
+
+`src/physics_kit/element_exposure.gd` ist die eine Stelle, die Medien und Gase
+auf ein Wesen anwendet. Es greift nie selbst ins Spiel, sondern fragt seinen
+Host (`src/physics_kit/exposure_host.gd`). Ein Spiel baut einen Adapter, der
+diesen Vertrag erfüllt, und ruft jeden Frame für jedes Wesen `step`:
+
+```gdscript
+var exposure := ElementExposure.new(MyExposureHost.new(world))
+var met := exposure.step(monster, dt)
+monster.env = met.medium   # Halt und Sog für die Bewegung (slow, slide, grip, pull, centre)
+```
+
+- **Welt**: `pools_under`, `gas_around`, `pool_centre`, `lava_crusted`,
+  `ignite` (Feuer setzt Gift in Brand), `world_scale`.
+- **Wesen**: `profile` („hero“ oder „monster“), `actor_at`, `actor_alive`,
+  `actor_burrowed`, `actor_altitude`, `actor_boss`, `actor_tags`, `exempt`
+  (fühlt das Material gar nicht: der Leerenmagier in der Leere), `warded`
+  (kein Schaden, kein Zustand: ein Trank wirkt nach), `has_status`,
+  `set_status`, `clear_status`, `hurt`, `timer`/`set_timer`, `show_combo`.
+- **Werte**: `element_rules.json` `exposure`: `air_above` (ab dieser Höhe in
+  der Luft: nichts wirkt), je Profil die Gas-Abtastung (`gas_body`,
+  `gas_pad`, `gas_samples`: Held 22 × 1,5 + 24 px an 8 Punkten, Monster
+  18 + 24 px an 4), die Schadensart (`ticked`, `hurt_key`, `boss_hurt`),
+  `dot_scale`, `freeze_on`, `own_clock` (der Wahn des Helden läuft über seine
+  eigene Uhr), `why`.
+- **Ergebnis** von `step`: `medium`, `style`, `gas`, `gas_mat`, `blind`,
+  `vision`, `maddening`, `ignited` („pool“ oder „gas“), `skipped`.
+
+Die Story-Welten teilen sich einen Adapter (`src/hell/story_exposure_host.gd`)
+und eine Instanz je Welt (`hell_game.gd exposure()`). Seither bekommen die
+Frostgruft-Gegner dieselben Regeln wie die der Hölle und der Krypta: die
+Kombinationen (ein brennender Eis-Zombie im Gift löst die Giftexplosion aus),
+keine Wirkung eingegraben oder in der Luft, und eine Boss-Prüfung für alle.
+Offen: In der Frostgruft gehen nur die Giftschwaden einer Pfütze hoch, eine
+Pfütze ohne Schwaden nicht, weil `story_elements.gd` dort noch keine Pfützen
+kennt (BAUPLAN M1e). Test: `tests/element_exposure_test.gd` (unechter Host).
+
+## Spielfeld und Zeichnung: `PoolField` und `GasField` (seit 2026-11-01)
+
+Pfützen und Gas waren als Aussehen gebaut, wurden aber als Spielregel gelesen
+(BAUPLAN M1d). Jetzt ist jedes zweierlei:
+
+- **Das Feld ist die Wahrheit.** `PoolField` (`src/physics_kit/pool_field.gd`)
+  hält die Pfützen: Zellen auf dem Kunstraster mit Geburt, Ende und Rang, je
+  Pfütze Stil, Material, Landepunkt und Werfer (`owner`). `GasField`
+  (`src/physics_kit/gas_field.gd`) hält die Puffs jeder Wolke und ihre Physik.
+  Beide fragen das Spiel nur über `src/physics_kit/field_host.gd`, wo offener
+  Boden ist, und laufen nur auf der Uhr des Spiels (`sync`, `advance`, `step`),
+  nie auf den Bildern oder der Uhr des Rechners.
+- **Die Zeichnung liest das Feld.** `pool_paint.gd` zeichnet die Zellen des
+  Feldes (dieselben Arrays) und dazu, was nur Aussehen ist: Tropfenpfützen,
+  Schmelzwasser, die sichtbaren Reaktionen (eine Flüssigkeit unter Lavakruste
+  verschwindet, eine Flüssigkeit an einer Eispfütze wird zu Eis), Ringe, Risse,
+  Funken, die Strudel der Leere. `gas.gd` zeichnet die Puffs als Schleier.
+
+Was sich dadurch geändert hat (gewollt):
+
+- **Gezeichnetes Eis zählt nicht mehr als Glatteis.** Wo Gift oder Wasser an
+  einer Frost- oder Eispfütze liegt, wird es nur gezeichnet zu Eis
+  (`vfx_pools.json reactions liquid+ice`); früher zählte `materials_at` jede
+  Eiszelle, und der Boden wurde dort rutschig. Echtes Glatteis macht nur
+  `freeze_near` (der Frost der Regeln). Auch eine gefrorene Tropfenpfütze ist
+  nur Aussehen.
+- **Große Pfützen zählen zu einem festen Zeitpunkt.** Eine Pfütze ab
+  `thread_cells` Zellen wird weiter auf einem Hintergrund-Thread geformt, zählt
+  aber genau `max(shape_commit_s, shape_commit_per_1000_cells_s je 1000
+  Zellen)` Sekunden Spielzeit, nachdem das Feld sie sah (ein Gifttrank in der
+  Hölle mit 5003 Zellen nach 0,33 s), auf jedem Rechner gleich. Ist der Thread
+  dann nicht fertig, wartet das Feld. Früher erschien sie, sobald der Thread
+  fertig war und die Zeichnung sie abholte, also je nach Rechner und Bildrate.
+- **Die Uhr des Feldes stellt das Spiel.** `hell_game.gd _step_elements` ruft
+  `advance(state.t)` der Pfützenebene. Die Frostgruft, deren Pfützen bisher nur
+  beim Zeichnen ihre Uhr bekamen, zählt jetzt auf der Spieluhr.
+
+Unverändert: das Aussehen (Probe 2026-11-01: 13 Bilder aus Hölle, Frostgruft
+und Krypta vor und nach dem Umbau pixelgleich), die Formen, die Zeiten, die
+Antworten von `materials_at` und `covers` für jede geworfene Pfütze und jede
+Gaswolke (ein Raster von 2501 Punkten je Moment gleich, bis auf das gezeichnete
+Eis oben). Ein Feld ohne Zeichnung:
+
+```gdscript
+var field := PoolField.new(3.0, MyFloorHost.new())
+field.sync([{"id": 1, "k": "pool", "st": "poison", "x": 300.0, "y": 200.0, "r": 60.0, "p": 0.0, "L": 5.0}], now)
+var mats := field.materials_at(point)   # ["poison"]
+var gas := GasField.new(3.0, MyFloorHost.new())
+gas.emit("breath:1", "poison", at, 60.0, 4.0, now)
+gas.step(dt, now)
+var breathed := gas.around(feet, 24.0, 4)   # {"mat": "poison", "d": 0..1}
+```
+
+Werte: `vfx_pools.json` (`_field_note`, `shape_commit_s`,
+`shape_commit_per_1000_cells_s`, `purge_every_s`), `vfx_gas.json` (`seed`).
+Tests: `tests/pool_field_test.gd`, `tests/gas_field_test.gd` (unechter Boden).
+Offen: Die Talente syncen ihre Pfützen und Giftwolken noch beim Zeichnen
+(`talent_fx.gd draw_ground`), und die Frostgruft legt ihre Pfützenebene erst
+dort an; die Frostgruft-Monsterpfützen (`frost_moves.gd`) sind noch kein Teil
+des Feldes (beides BAUPLAN M1e).
 
 ## Element-Tags (wer verschont bleibt)
 

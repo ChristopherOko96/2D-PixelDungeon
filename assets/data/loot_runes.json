@@ -1,0 +1,9 @@
+{
+  "_note": "Rune stones of the story worlds (src/hell/gold_loot.gd): the account's currency for the talent reset (talents.json reset_runes), shared by every character, never lost. They drop at random, between rare and common: chance = probability per source (mob = a slain enemy, breakable = a broken vase, barrel or crate, chest = an opened chest, boss = a floor guardian, final = the world's last boss, vault = a giant vault), count = stones when it drops. Expected per 10-floor run: about 600 kills, 100 breakables, 40 chests, 9 guardians, 1 final boss, 1-2 vaults: 6 + 6 + 6 + 9 + 2 + 2 = about 30. look: per graphics set the stone's sprite (assets/sprites/loot) and its draw scale (world px per sprite px).",
+  "chance": { "mob": 0.01, "breakable": 0.06, "chest": 0.15, "boss": 1.0, "final": 1.0, "vault": 1.0 },
+  "count": { "mob": 1, "breakable": 1, "chest": 1, "boss": 1, "final": 2, "vault": 2 },
+  "look": {
+    "hd": { "rune": "rune_hd", "scale": 0.55 },
+    "pixel": { "rune": "rune_px", "scale": 1.4 }
+  }
+}

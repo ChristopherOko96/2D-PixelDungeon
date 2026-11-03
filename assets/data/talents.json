@@ -4,9 +4,9 @@
  "max_level": 30,
  "first_point_level": 2,
  "levels": {
-  "base": 50,
+  "base": 65,
   "exponent": 1,
-  "_note": "EXP to the next level = base x level, the same rule for every level. Level 30 needs 21750 EXP: about three full runs of 10 floors (one floor about 60 kills x 10 EXP + 100 = 700 EXP). User decision 29.10.2026: talents much harder to earn, max level only after several runs (was 2.5, about 1.5 floors)."
+  "_note": "EXP to the next level = base x level, the same rule for every level. Level 30 needs 28275 EXP: about three full runs of 10 floors (a run in the story worlds about 600 kills x 10 EXP + 10 guardians x 400 EXP = 10000 EXP, so level 30 after about 2.8 runs; balance package C8 2026-11-01, base 50 -> 65, was 2.2 runs). User decision 29.10.2026: talents much harder to earn, max level only after several runs (was 2.5, about 1.5 floors)."
  },
  "tiers": {
   "1": {
@@ -106,10 +106,6 @@
  "trap_life": 30,
  "pet": {
   "speed": 170,
-  "acquire_range_m": 10,
-  "route_every": 0.4,
-  "route_retarget": 32,
-  "route_near": 10,
   "leash_m": 3,
   "_follow_note": "How a companion follows its hero when it has no enemy (user wish 2026-10-31: not glued to the hero, a beat late): it rests follow_m metres behind the way the hero walks (that direction turns at most follow_turn rad/s), fanned out by follow_fan rad per companion; it sets off only when its spot is more than follow_slack_m away for follow_delay s, walks until within follow_arrive_m, and beyond leash_m hurries at follow_catchup times its speed.",
   "follow_m": 2.2,
@@ -140,7 +136,7 @@
    "bear": {
     "name": "Bär",
     "hp": 1.7,
-    "dmg": 1.3,
+    "dmg": 1.4,
     "every": 1.35,
     "speed": 0.75,
     "abilities": [
@@ -155,7 +151,7 @@
     "name": "Falke",
     "hp": 0.7,
     "dmg": 1.15,
-    "every": 0.8,
+    "every": 0.95,
     "speed": 1.5,
     "flying": true,
     "abilities": [
@@ -520,6 +516,10 @@
    }
   },
   "_behaviour_note": "Companions fight (user wish 30.10.2026): first the enemy their hero attacks, else an enemy going for the hero or for the companion itself. They stay on that enemy until it dies, however far the hero walks, and only come back to the hero when no enemy is left fighting.",
+  "acquire_range_m": 10,
+  "route_every": 0.4,
+  "route_retarget": 32,
+  "route_near": 10,
   "forest_worms": {
    "hp": 18,
    "every": 2.6,
@@ -577,8 +577,8 @@
   }
  },
  "boss_level_per_floor": 2,
- "reset_gold_per_level": 25,
  "gold": {
+  "_note": "Character gold (each class its own, lost when the character dies): per kill, per boss, per floor reached.",
   "per_kill": 1,
   "per_boss": 40,
   "per_floor": 15
@@ -1879,7 +1879,7 @@
     "dmg": 1.8,
     "radius_m": 5
    },
-   "text": "Ein Wirbel an der Zielstelle zieht 4 s lang Gegner in 5 m zu sich (Bosse nicht), verschlingt Pfützen und Gas in dein Gefüge und trifft jede halbe Sekunde mit 30 %. Wer in seinen Kern (1,5 m) gerät, ist gefangen und kreist um ihn (Minibosse werden nur gezogen); jeder Gefangene gibt seine Essenz ins Gefüge. Am Ende fällt er zusammen: 180 %, dein ganzes Gefüge bricht chaotisch heraus (bis zu 24 Elementgeschosse, 6–8 m weit, jedes landet als sein Element) und die Gefangenen werden nach außen geschleudert: wer gegen eine Wand prallt, nimmt 200 %.",
+   "text": "Ein Wirbel an der Zielstelle zieht 4 s lang Gegner in 5 m zu sich (Bosse nicht), verschlingt Pfützen und Gas in dein Gefüge und trifft jede halbe Sekunde mit 30 %. Wer in seinen Kern (1,5 m) gerät, ist gefangen und kreist um ihn (Minibosse werden nur gezogen); jeder Gefangene gibt seine Essenz ins Gefüge. Am Ende fällt er zusammen: 180 %, die Elemente deines Gefüges vermischen sich in seinem Kern zu einem großen Klumpen: 40 % davon bleiben als breites Mischfeld in der Explosionszone und mischen sich dort weiter, der Rest fliegt als 3 bis 6 Klumpen 6 bis 8 m weit in alle Ecken. Jeder Klumpen ist das ganze Gemisch, alle Elemente landen zugleich und reagieren miteinander, +10 % Wirkung je weitere Element-Sorte, und die Gefangenen werden nach außen geschleudert: wer gegen eine Wand prallt, nimmt 200 %.",
    "stages": [
     {
      "name": "Ereignishorizont",
@@ -1913,13 +1913,13 @@
    "name": "Gezielter Schuss",
    "kind": "active",
    "icon": "arrow",
-   "text": "150/175/200 % Schaden.",
+   "text": "260/300/340 % Schaden.",
    "ranks": 3,
    "type": "projectile",
    "dmg": [
-    1.5,
-    1.75,
-    2
+    2.6,
+    3,
+    3.4
    ],
    "style": "arrow",
    "cost": 20,
@@ -1952,13 +1952,13 @@
    "name": "Durchschuss",
    "kind": "active",
    "icon": "pierce",
-   "text": "Pfeil durchbohrt bis zu 3 Gegner, 115/135/155 % Schaden pro Gegner.",
+   "text": "Pfeil durchbohrt bis zu 3 Gegner, 180/210/240 % Schaden pro Gegner.",
    "ranks": 3,
    "type": "projectile",
    "dmg": [
-    1.15,
-    1.35,
-    1.55
+    1.8,
+    2.1,
+    2.4
    ],
    "pierce": 3,
    "style": "arrow",
@@ -4971,40 +4971,95 @@
    "recharge": 4,
    "dist_m": 3,
    "iframes": 0.25,
-   "text": "Shift: 3 m in Laufrichtung ausweichen, 0,25 s unverwundbar. Eine Ladung, 4 s Abklingzeit. Wände stoppen den Dash."
+   "text": "Shift: 3 m in Laufrichtung ausweichen, 0,25 s unverwundbar. Eine Ladung, 4 s Abklingzeit. Wände stoppen den Dash.",
+   "perfect": {
+    "window": 0.15,
+    "counter_time": 1.5,
+    "counter_mul": 1.5,
+    "hitstop": 0.05,
+    "shake": 2,
+    "sound": "bow_draw",
+    "counter_sound": "tal_mark"
+   }
   },
   "mage": {
    "type": "dodge",
    "name": "Ausweichschritt",
    "icon": "dash",
+   "text": "Shift: 3 m in Laufrichtung ausweichen, 0,25 s unverwundbar. Eine Ladung, 4 s Abklingzeit. Wände stoppen den Dash.",
    "charges": 1,
    "recharge": 4,
    "dist_m": 3,
    "iframes": 0.25,
-   "text": "Shift: 3 m in Laufrichtung ausweichen, 0,25 s unverwundbar. Eine Ladung, 4 s Abklingzeit. Wände stoppen den Dash."
+   "perfect": {
+    "window": 0.15,
+    "stagger": 1,
+    "stagger_boss": 0.35,
+    "push": 260,
+    "reel_reach": 150,
+    "hitstop": 0.07,
+    "shake": 4,
+    "rearm": 0.4,
+    "sound": "tal_counter"
+   }
   },
   "swordsman": {
    "type": "dodge",
    "name": "Ausweichschritt",
    "icon": "dash",
+   "text": "Shift: 3 m in Laufrichtung ausweichen, 0,25 s unverwundbar. Eine Ladung, 4 s Abklingzeit. Wände stoppen den Dash.",
    "charges": 1,
    "recharge": 4,
    "dist_m": 3,
    "iframes": 0.25,
-   "text": "Shift: 3 m in Laufrichtung ausweichen, 0,25 s unverwundbar. Eine Ladung, 4 s Abklingzeit. Wände stoppen den Dash."
+   "perfect": {
+    "window": 0.15,
+    "stagger": 1,
+    "stagger_boss": 0.35,
+    "push": 260,
+    "reel_reach": 150,
+    "hitstop": 0.07,
+    "shake": 4,
+    "rearm": 0.4,
+    "sound": "tal_counter"
+   }
   },
   "necromancer": {
    "type": "dodge",
    "name": "Ausweichschritt",
    "icon": "dash",
+   "text": "Shift: 3 m in Laufrichtung ausweichen, 0,25 s unverwundbar. Eine Ladung, 4 s Abklingzeit. Wände stoppen den Dash.",
    "charges": 1,
    "recharge": 4,
    "dist_m": 3,
    "iframes": 0.25,
-   "text": "Shift: 3 m in Laufrichtung ausweichen, 0,25 s unverwundbar. Eine Ladung, 4 s Abklingzeit. Wände stoppen den Dash."
+   "perfect": {
+    "window": 0.15,
+    "stagger": 1,
+    "stagger_boss": 0.35,
+    "push": 260,
+    "reel_reach": 150,
+    "hitstop": 0.07,
+    "shake": 4,
+    "rearm": 0.4,
+    "sound": "tal_counter"
+   }
   }
  },
  "trap_limits": {
   "trapper": 6
- }
+ },
+ "land": {
+  "_note": "User wish 02.11.2026: these classes' projectile talents fly to the point the mouse shows and burst there on the floor (splash, element, stain, Nachhall as on an enemy: talent_combat.gd _land_reach, bullet_land), unless an enemy or a wall stops them first; held between min_px and their flight. Only hosts that set shots_land (the story worlds' hell_talents.gd) stop them.",
+  "classes": [
+   "mage"
+  ],
+  "min_px": 40
+ },
+ "reset_runes": {
+  "_note": "A talent reset costs rune stones (account-wide, src/hell/gold_loot.gd drops them): base + one per per_levels hero levels (level 10: 4, 20: 7, 30: 9). A 10-floor story run finds about 25 (assets/data/loot_runes.json), so a reset is a choice.",
+  "base": 2,
+  "per_levels": 4
+ },
+ "_perfect_note": "Perfect timing in the story worlds (balance package B3, src/hell/hero_kit.gd perfect_defense): `perfect.window` s. A block raised (Shift pressed) at most window s before a hit lands is perfect: the hit costs no block charge, the attacker (when the blow names one) reels `stagger` s (a boss `stagger_boss` s, a kit boss stands firm), is pushed back at `push` px/s and starts no attack; the picture holds `hitstop` s, the view shakes `shake` px, `sound` plays. A press within `rearm` s of the previous one is a plain block (no mashing). A projectile, beam or thrown blow met by a perfect block or roll breaks (no damage, the PERFEKT feedback); its shooter reels only while it stands within `reel_reach` world px of the hero (past its own radius), so only blows within melee reach make it reel. A roll started at most window s before a hit is a perfect roll: the next shot within `counter_time` s deals `counter_mul` times its damage (`counter_sound` on release)."
 }

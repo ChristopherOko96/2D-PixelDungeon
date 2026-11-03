@@ -1,0 +1,180 @@
+{
+ "_note": "Every rig file the game loads, in load order, and how each one is built. src/rig/rig_library.gd load_data walks \"sources\" in this order (RigLibrary.rig_sources); node tools/rig_kit/build_rigs.js runs the \"steps\" of every file in the same order and writes it, --check builds in memory, writes nothing, validates and names every file that differs from its build. A file built by steps is output: change its generator or its hand source (tools/rig_kit/hand_rigs/), then run the build. Explained in German in tools/rig_kit/README.md.",
+ "_sources_note": "path: the file (res://). format: crypt (rigs.json's format: parts cut by rects from a PNG or pixel_art frame, held items; a later crypt file may name an earlier one's image keys and replaces a rig of the same name), layered (hell_rigs.json's format: one PNG or flipbook per part; never replaces a crypt rig) or actions (the attack needs table). slot: the RigLibrary.load_data parameter that may replace this file (a value other than its default) or skip it (\"\"). required: load_data fails without it. steps, in order: generator (a node module with rigKit(ctx), see the README) or hand (a JSON source merged in: its images, pixel_art, scales and rigs are added, a rig built twice is an error; copy: the source is the whole file, copied byte for byte). reads: earlier files a step builds from. writes: the folders a generator writes PNGs into. No steps: the file is its own source and edited by hand.",
+ "sources": [
+  {
+   "path": "res://assets/data/rigs.json",
+   "format": "crypt",
+   "slot": "path",
+   "required": true,
+   "steps": [
+    {
+     "generator": "production/art-proof/0x72-style/export_rigs.js",
+     "what": "the approved review page (full.template.html DEFS, void.json): heroes, skeletons, zombies and crypt bosses, then void, bomber and mimic"
+    },
+    {
+     "hand": "tools/rig_kit/hand_rigs/hell_0x72.json",
+     "what": "the Hölle's 13 rect-cut 0x72 figures, brandskelett ... klagender_hueter"
+    },
+    {
+     "generator": "tools/frost_dungeon/export_frost_rigs.js",
+     "what": "the Frostgruft's 15 figures: four crypt rigs in ice, Hrimgar from glutwaechter, cuts of the frost sprites",
+     "writes": [
+      "res://assets/sprites/frost/rigs/"
+     ]
+    }
+   ]
+  },
+  {
+   "path": "res://assets/data/companion_rigs.json",
+   "format": "crypt",
+   "slot": "companion_path",
+   "steps": [
+    {
+     "hand": "tools/rig_kit/hand_rigs/companion_rigs.json",
+     "copy": true,
+     "what": "the six companions (wolf, bear, falcon, water_elemental, pyro_demon, bone_warrior); tools/companions/build_pyro_demon.gd draws the pyro_demon frames (Godot, run by hand)"
+    }
+   ]
+  },
+  {
+   "path": "res://assets/data/krypta_boss_rigs.json",
+   "format": "crypt",
+   "slot": "boss_path",
+   "steps": [
+    {
+     "hand": "tools/rig_kit/hand_rigs/krypta_boss_rigs.json",
+     "copy": true,
+     "what": "the six Krypta bosses, their pixel_art painted once by tools/krypta_dungeon/krypta_monsters.js"
+    }
+   ]
+  },
+  {
+   "path": "res://assets/data/story_rigs.json",
+   "format": "crypt",
+   "slot": "story_path",
+   "steps": [
+    {
+     "generator": "tools/krypta_dungeon/export_story_rigs.js",
+     "reads": [
+      "res://assets/data/rigs.json"
+     ],
+     "what": "the story figures that drew as a flipbook or sprite, the necromancer hero, the Knochenkoloss and the short-bow archers"
+    }
+   ]
+  },
+  {
+   "path": "res://assets/data/hell_rigs.json",
+   "format": "layered",
+   "slot": "hell_path",
+   "steps": [
+    {
+     "generator": "tools/hell_dungeon/export_rigs.js",
+     "what": "Ignaroth's four forms drache1..4, from the drake_hybrid.js art",
+     "writes": [
+      "res://assets/sprites/hell/rigs/drache1/",
+      "res://assets/sprites/hell/rigs/drache2/",
+      "res://assets/sprites/hell/rigs/drache3/",
+      "res://assets/sprites/hell/rigs/drache4/"
+     ]
+    },
+    {
+     "hand": "tools/rig_kit/hand_rigs/hell_layered.json",
+     "what": "blutfledermaus"
+    },
+    {
+     "generator": "tools/rig_kit/curse_companions.js",
+     "what": "approved curse spirit cutouts for the large and small combat companions"
+    }
+   ]
+  },
+  {
+   "path": "res://assets/data/rig_actions.json",
+   "format": "actions",
+   "slot": "actions_path",
+   "steps": [],
+   "what": "what a monster attack needs from its body, edited by hand"
+  }
+ ],
+ "not_built": [
+  {
+   "generator": "tools/hell_dungeon/export_mob_rigs.js",
+   "why": "its only MOBS entry, brandskelett, is the rect-cut rig in rigs.json (hand_rigs/hell_0x72.json) the game draws; RigLibrary keeps a crypt rig over a layered one of the same name, so building it would only add a copy that is skipped with a warning"
+  }
+ ],
+ "check": {
+  "_note": "What node tools/rig_kit/build_rigs.js --check and tests/rig_manifest_test.gd hold the rigs against. legacy_actions: rig actions the old dungeon asks for (src/crypt_enemy_ai.gd, src/combat/body_parts.gd) besides the categories of rig_actions.json. references: the tables that name a rig; every key of `map` (a dot path) is one wearer, its rig is the field `rig`, the key itself (@key) or the value (@value); a wearer without that field draws its sprite. optional: a named rig that does not exist is only noted (the wearer draws its sprite). attacks: the dot path of the wearer's attack list ({id}); a part's disables and weakens must name one of its wearers' attacks or a rig action. code: a one-line const Dictionary in a script.",
+  "legacy_actions": [
+   "beam",
+   "summon"
+  ],
+  "known_empty_parts": {
+   "_note": "Parts whose rects hold no opaque pixel of their own today, noted by --check instead of failed: the glutwaechter's torso is listed first and its rects also cover the head and both shoulders, so the torso draws and takes those pixels (the frost golems are cut from it). Found by the rig build on 2026-11-01 and left as it is, because a new cut changes the look; take an entry out once its rects are fixed.",
+   "glutwaechter": [
+    "head",
+    "shoulder_l",
+    "shoulder_r"
+   ],
+   "frost_golem_p1": [
+    "head",
+    "shoulder_l",
+    "shoulder_r"
+   ],
+   "frost_golem_p2": [
+    "head",
+    "shoulder_l",
+    "shoulder_r"
+   ],
+   "frost_golem_p3": [
+    "head",
+    "shoulder_l",
+    "shoulder_r"
+   ]
+  },
+  "references": [
+   {
+    "file": "res://assets/data/krypta_monsters.json",
+    "map": "defs",
+    "rig": "rig",
+    "attacks": "stats.attacks",
+    "world": "Krypta"
+   },
+   {
+    "file": "res://assets/data/hell_monsters.json",
+    "map": "defs",
+    "rig": "@key",
+    "attacks": "stats.attacks",
+    "world": "Hölle",
+    "optional": true
+   },
+   {
+    "file": "res://assets/data/frost_theme.json",
+    "map": "rigs",
+    "rig": "@value",
+    "world": "Frostgruft"
+   },
+   {
+    "file": "res://assets/data/talents.json",
+    "map": "pet.kinds",
+    "rig": "rig",
+    "world": "Begleiter"
+   },
+   {
+    "file": "res://assets/data/hero_skins.json",
+    "map": "skins",
+    "rig": "rig",
+    "world": "Helden"
+   },
+   {
+    "code": "res://src/hero/story_hero.gd",
+    "const": "CLASS_RIGS",
+    "world": "Helden"
+   },
+   {
+    "code": "res://src/dungeon_view.gd",
+    "const": "CLASS_RIGS",
+    "world": "alter Dungeon"
+   }
+  ]
+ }
+}

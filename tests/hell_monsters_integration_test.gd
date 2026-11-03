@@ -41,12 +41,22 @@ func _boss(hell: Node) -> Dictionary:
 	return {}
 
 
-## Steps the game with the hero kept invulnerable; returns the attack ids the boss used.
+## Keeps the hero standing: invulnerable to hits, and his life topped up, because damage
+## over time (burn and poison, hell_game.gd dot_hurt: "lands through the short
+## invulnerability") passes state.inv by design. The fire guardians of floors 1 and 4
+## (Glutwächter, Kesselbrut: lava and burn since fcc797b4 and the element physics) burned
+## the hero to death mid-fight, the run ended and their rooms never cleared.
+func _keep_hero(hell: Node) -> void:
+	hell.state.inv = 5.0
+	hell.state.hp = int(hell.state.max_hp)
+
+
+## Steps the game with the hero kept standing; returns the attack ids the boss used.
 func _fight(hell: Node, seconds: float) -> Dictionary:
 	var used := {}
 	var hit_in_air := false
 	for i in range(int(seconds / DT)):
-		hell.state.inv = 5.0
+		_keep_hero(hell)
 		var b := _boss(hell)
 		if not b.is_empty():
 			b.hp = maxf(b.hp, b.max * 0.5)
@@ -70,7 +80,7 @@ func _finish(hell: Node, seconds: float) -> Array:
 		m.hp = 0.0
 	hell.state.pull = null
 	for i in range(int(seconds / DT)):
-		hell.state.inv = 5.0
+		_keep_hero(hell)
 		var now := _boss(hell)
 		if not now.is_empty() and not forms.has(now.id):
 			forms.append(now.id)

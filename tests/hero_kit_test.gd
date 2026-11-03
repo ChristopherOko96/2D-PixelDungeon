@@ -82,7 +82,7 @@ func test_kills_give_experience_and_level_ups_heal() -> void:
 	game.state.hp = 2
 	var ups := HeroKit.gain(game, 500)
 	check(ups >= 2 and int(game.state.level) == 1 + ups, "enough experience gives several levels at once (%d)" % ups)
-	check(int(game.state.hp) > 2 and not game.levelfx.is_empty() and str(game.state.banner.text).begins_with("LEVEL"), "a level-up heals, flashes and shows LEVEL")
+	check(int(game.state.hp) > 2 and not game.levelfx.is_empty() and str(game.state.banner.text).begins_with("LAUFSTUFE"), "a level-up heals, flashes and shows LAUFSTUFE")
 	await _free(game)
 
 
@@ -92,7 +92,7 @@ func test_skills_open_at_their_level() -> void:
 		check(game.skills.size() == 4 and [1, 3, 6, 10] == game.skills.map(func(s: Dictionary) -> int: return int(s.unlock)), "%s has four skills opening at 1, 3, 6 and 10" % id)
 		# Act: key 2 at level 1 is still locked
 		HeroKit.press(game, "2")
-		check(float(game.state.skill_cd.get("2", 0.0)) == 0.0 and str(game.state.toasts[-1].text).contains("ab Level 3"), "%s: a locked skill only says when it opens" % id)
+		check(float(game.state.skill_cd.get("2", 0.0)) == 0.0 and str(game.state.toasts[-1].text).contains("ab Laufstufe 3"), "%s: a locked skill only says when it opens" % id)
 		await _free(game)
 
 

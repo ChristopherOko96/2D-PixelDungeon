@@ -7,6 +7,9 @@ var failures: Array[String] = []
 func _initialize() -> void:
 	var game := Game.new()
 	game.balance = {"player":{"hp":8,"damage":2,"speed":190,"shot_interval":0.2}}
+	# a new member gets the item system's start kit (src/items/inventory.gd start_kit), which
+	# needs its game; _ready binds it in play, this fixture skips _ready, so bind it here
+	game.inventory.bind(game)
 	for id: int in [1,2,3,4]: game._add_player(id)
 	var original_host_color: Color = game.players[1].color
 	var old_second_color: Color = game.players[2].color

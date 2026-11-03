@@ -53,6 +53,11 @@ zerstörbaren Körperteilen. Erst nach der Freigabe wird etwas ins Spiel überno
   unzerstörbaren Boss-Teile (`bossParts`/`GAME_BOSSES` in der Vorlage, aus
   Commit 3a29399), der unzerstörbare Leerenkern und die Mimik. Mit
   `node export_rigs.js --check` wird verglichen, ohne zu schreiben.
+- **Ein Rig-Build (01.11.2026):** `rigs.json` enthält mehr als diese Seite
+  (die Hölle-Figuren, die Frostgruft). Deshalb starten `node export_rigs.js`
+  und `--check` jetzt den ganzen Rig-Build `node tools/rig_kit/build_rigs.js`.
+  Die Rigs dieser Seite kommen dort zuerst, nichts geht mehr verloren.
+  Anleitung: `tools/rig_kit/README.md`.
 - **0x72-Varianten (Kandidaten, 29.10.2026):** 21 Gegner und Bosse für Krypta,
   Frostgruft und Hölle, im Abschnitt `VARIANTS` und `VARIANT_ROSTER` der
   Vorlage. Neue Farben gibt es nur per Pipette (`recolor`, exakter

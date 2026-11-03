@@ -1,5 +1,23 @@
 # Basement Run — development notes
 
+- Story timing (2026-11-03): local fixed-step scheduler in hell_game.gd,
+  physics_kit/fixed_step_clock.gd and assets/data/physics_clock.json (60 Hz,
+  8 catch-up steps/frame; debt retained). Menus/floor loads reset the clock;
+  camera/UI render once per picture. Read docs/FESTER-SIMULATIONSTAKT.de.md.
+  User then explicitly authorized testing: clock 18/0, real-scene integration
+  63/0, headless realtime 6/0. Old cb145387 story script fails 21/60 expected
+  regression checks. Exit-time resource warnings are identical on old/new code;
+  no visual/performance/coop acceptance. Evidence: production/qa/evidence/story-clock/REPORT.de.md.
+  Not committed/pushed.
+- Latest user clarification (2026-11-03): provide a dedicated Custom Story
+  area for making and playing user-authored stories, with its editor there.
+  Reuse the main stories' characters, talents, inventory, enemies, sounds and
+  effects; custom stories may assemble authored room modules procedurally.
+  Separate content/menu area, shared gameplay runtime. Do NOT replace the main
+  stories' generation or inject personal rooms into them as part of this scope.
+  This does not reinstate the old fixed-sequence Custom Run proposal. Implemented
+  (src/custom/*): library with delete, room editor, floor preview,
+  generator, runs in hell_game. Read `docs/STORY-RAUMMODULE.de.md` first.
 - Work on a feature branch (`codex/…` by default); never edit `main` directly.
 - The user explicitly requested publication to `codex_v2` in the brother's
   `ChristopherOko96/2D-PixelDungeon` repository on 2026-10-25. Remote `origin`

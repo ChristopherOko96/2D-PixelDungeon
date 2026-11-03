@@ -8,7 +8,8 @@
 // wording] pairs, longest first); theme_flag (a theme key set true); light ({dark, vignette}
 // factors, null keeps the hell's); gate_banner (banner colour per floor, red when missing); blue
 // (rgb of the faint blue fire) and blue_props (props whose light turns that blue); foot, wall_set,
-// break_set (furniture and breakables); mimic_fight, mimic_treasure (share of chests that bite).
+// break_set (furniture and breakables); mimic_fight, mimic_treasure (share of chests that bite);
+// diff ({hp_step, speed_step, extra_every}: the world's difficulty curve, world_core difficultyFor).
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else root.WorldPack = factory();
@@ -244,11 +245,11 @@
     }
     function forRun(run) {
       const floors = PACK.floors.map(P => P && Object.assign({}, P, { seed: floorSeed(run, P.n) }));
-      return { floors, circles: PACK.circles, names: PACK.names, suffixes: PACK.suffixes };
+      return { floors, circles: PACK.circles, names: PACK.names, suffixes: PACK.suffixes, diff: PACK.diff };
     }
     const newRun = () => (Math.random() * 2147483646 + 1) >>> 0;
     return { FLOORS: PACK.floors, CIRCLES: PACK.circles, NAMES: PACK.names, SUFFIXES: PACK.suffixes, PACK, wording, dress, floorSeed, forRun, newRun,
-      opts: { floors: PACK.floors, circles: PACK.circles, names: PACK.names, suffixes: PACK.suffixes } };
+      opts: { floors: PACK.floors, circles: PACK.circles, names: PACK.names, suffixes: PACK.suffixes, diff: PACK.diff } };
   }
   return { make };
 });

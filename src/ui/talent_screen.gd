@@ -8,9 +8,10 @@ extends Control
 ## tier. States: locked (grey), available (glowing frame), learned (full
 ## colour), max rank (gold), ultimate (double frame), missing shards (cost).
 ## Rules: src/progress/talent_rules.gd; the profile is shared with the run.
-## Look: soft-edged cards with a branch-coloured header, icons at 3x (4x for
-## ultimates), rank pips, and Pixelify Sans for names and text so it reads
-## crisp; the pixel font stays for headings.
+## Look: soft-edged cards with a branch-coloured header, icons at 3x (4x in the
+## detail card), rank pips. All text is Pixel Operator 8 at 16 px or more (whole
+## multiples of its 8 px grid, so 5 and S, I and 1 stay apart); the detail card
+## scrolls (mouse wheel, Bild auf / Bild ab) when a long text does not fit.
 ##
 ## open(data, profile, path, class, from_run, run_page): `from_run` (K mid-run) hides
 ## the other classes' tabs; the difficulty belongs to the story start (main_menu.gd
@@ -29,6 +30,10 @@ const Rules = preload("res://src/progress/talent_rules.gd")
 const CryptUI = preload("res://src/ui/crypt_ui.gd")
 const PixelStyle = preload("res://src/pixel_style.gd")
 const TalentIcons = preload("res://src/ui/talent_icons.gd")
+## The rune stone of the story worlds' loot (assets/sprites/loot, src/hell/gold_loot.gd): the same
+## stone beside the reset's price and in the purse.
+const RUNE := preload("res://assets/sprites/loot/rune_hd.png")
+const RUNE_BLUE := Color("9edcff")
 
 ## Emitted after every change that was saved (the game resends builds in multiplayer).
 signal profile_changed
@@ -42,8 +47,11 @@ const CLASS_ORDER := ["swordsman", "archer", "mage", "necromancer"]
 ## The open header tab: gold text on a lit plate and a gold bar under it.
 const TAB_GOLD := Color("f2c66d")
 const TIER_NAMES := ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"]
-## Smooth, crisp text for names, values and descriptions.
-const TEXT_FACE: FontFile = preload("res://assets/fonts/pixelify_sans.ttf")
+## Text sizes: body and labels, the selected talent's name (when it fits).
+const TEXT := 16
+const TITLE := 24
+## Line step of 16 px text.
+const LINE := 20.0
 const BG := Color("0d0b10")
 const CARD := Color("17141c")
 const CARD_EDGE := Color(1, 1, 1, 0.10)
@@ -52,10 +60,10 @@ const WELL := Color("100e14")
 ## the row tablets on the left, the tree in the middle (actives left, passives
 ## right, joined by a glowing spine), the detail card on the right.
 # The badges and the tree end at y 668: the footer below holds the reset.
-const BADGES := Rect2(16, 118, 64, 550)
-const TREE := Rect2(92, 118, 772, 550)
+const BADGES := Rect2(16, 118, 72, 550)
+const TREE := Rect2(100, 118, 764, 550)
 const RIGHT := Rect2(876, 118, 388, 590)
-const BANNERS := Rect2(92, 52, 772, 58)
+const BANNERS := Rect2(100, 52, 764, 58)
 const INFO := Rect2(876, 52, 388, 58)
 ## The run page's area (badges, tree and detail card together).
 const CONTENT := Rect2(16, 118, 1248, 590)
@@ -70,9 +78,13 @@ var message := ""
 ## a character follows one branch, the first point picks it).
 var shown_spec := ""
 var _font: Font
-## Pixelify Sans, antialiased (names, values, descriptions).
-var _sans: FontFile
 var _clock := 0.0
+## The detail card's scroll (px from its top), how far it can scroll, its text
+## area, and the talent the scroll belongs to (a new pick starts at the top).
+var _detail_scroll := 0.0
+var _detail_room := 0.0
+var _detail_rect := Rect2()
+var _scroll_for := ""
 ## Talent id -> time left of the "point invested" pulse.
 var _pulses: Dictionary = {}
 ## Talent id -> clickable rect.
@@ -153,8 +165,6 @@ func _ready() -> void:
 	size = Vector2(1280, 720)
 	theme = CryptUI.create_theme()
 	_font = PixelStyle.create_font()
-	_sans = TEXT_FACE.duplicate()
-	_sans.antialiasing = TextServer.FONT_ANTIALIASING_GRAY
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	# header tabs: one per class (names from the class data), LAUF for the run page
 	var classes := story_classes()
@@ -175,13 +185,8 @@ func _ready() -> void:
 	_add_button("bar", "", Rect2(RIGHT.position.x + 16, 666, inner, 34), _cycle_bar)
 	_add_button("soul", "", Rect2(RIGHT.position.x + 16, 666, inner, 34), _soul_up)
 	for key: String in _buttons:
-		# Tabs keep the pixel heading face; the panel buttons read in Pixelify Sans
-		# on bronze plates like the concept sheet.
-		if key.begins_with("tab_") or key == "close":
-			_buttons[key].add_theme_font_size_override("font_size", 16)
-		else:
-			_buttons[key].add_theme_font_override("font", _sans)
-			_buttons[key].add_theme_font_size_override("font_size", 17 if key == "learn" else 16)
+		# one face and size everywhere; the panel buttons sit on bronze plates
+		_buttons[key].add_theme_font_size_override("font_size", TEXT)
 		if key in ["learn", "unlearn", "bar", "soul", "companion", "reset"]: _bronze(_buttons[key], key == "learn")
 
 
@@ -232,6 +237,11 @@ func _gui_input(event: InputEvent) -> void:
 				accept_event()
 				queue_redraw()
 		return
+	# the wheel over the detail card scrolls a text that does not fit
+	if event is InputEventMouseButton and event.pressed and event.button_index in [MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN]:
+		if RIGHT.has_point(event.position) and _scroll_detail(-1 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1):
+			accept_event()
+		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		for id: String in _hits:
 			if Rect2(_hits[id]).has_point(event.position):
@@ -257,6 +267,18 @@ func _unhandled_key_input(event: InputEvent) -> void:
 	if visible and event.is_pressed() and event is InputEventKey and event.keycode == KEY_ESCAPE:
 		close()
 		get_viewport().set_input_as_handled()
+	elif visible and _page == "class" and event.is_pressed() and event is InputEventKey and event.keycode in [KEY_PAGEUP, KEY_PAGEDOWN]:
+		if _scroll_detail(-4 if event.keycode == KEY_PAGEUP else 4):
+			get_viewport().set_input_as_handled()
+
+
+## Scrolls the detail card by `lines` text lines; false when it has nothing to scroll.
+func _scroll_detail(lines: int) -> bool:
+	if _detail_room <= 0.0:
+		return false
+	_detail_scroll = clampf(_detail_scroll + lines * LINE, 0.0, _detail_room)
+	queue_redraw()
+	return true
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -293,7 +315,7 @@ func _refresh() -> void:
 	var rank := Rules.rank(state, selected)
 	var why := Rules.check_rank_up(data, profile, class_id, selected)
 	var learn: Button = _buttons.learn
-	learn.text = "Freischalten · %d Seelensplitter" % int(data.soul_shards.ultimate_cost) if str(info.kind) == "ultimate" else ("Rang verbessern" if rank > 0 else "Punkt investieren")
+	learn.text = "Freischalten · %d Splitter" % int(data.soul_shards.ultimate_cost) if str(info.kind) == "ultimate" else ("Rang verbessern" if rank > 0 else "Punkt investieren")
 	learn.disabled = not why.is_empty()
 	learn.tooltip_text = why
 	_buttons.unlearn.disabled = not Rules.can_rank_down(data, profile, class_id, selected)
@@ -309,7 +331,7 @@ func _refresh() -> void:
 	var costs: Array = data.soul_shards.tier_costs
 	var top := tier >= costs.size()
 	var next_cost := int(costs[mini(tier, costs.size() - 1)])
-	soul.text = ("Stufe %d erreicht" % (costs.size() + 1) if top else "Stufe %d · %d Seelensplitter" % [tier + 2, next_cost]) if owned else "Erst freischalten"
+	soul.text = ("Stufe %d erreicht" % (costs.size() + 1) if top else "Stufe %d · %d Splitter" % [tier + 2, next_cost]) if owned else "Erst freischalten"
 	soul.disabled = not owned or top or int(profile.shards.have) < next_cost
 	# an owned ultimate needs no unlock button: the stage button moves up into
 	# the talent bar's place, so the three stages have room above
@@ -321,8 +343,12 @@ func _refresh() -> void:
 	companion.visible = str(info.spec) == "beast"
 	var kinds: Dictionary = data.get("pet", {}).get("kinds", {})
 	companion.text = "Begleiter: %s (wechseln)" % str(kinds.get(str(state.get("companion", "wolf")), {}).get("name", "Wolf"))
-	_buttons.reset.text = "Zurücksetzen · %d Gold" % Rules.reset_cost(data, profile, class_id)
-	_buttons.reset.disabled = state.ranks.is_empty() or int(profile.gold) < Rules.reset_cost(data, profile, class_id)
+	if _font != null and _font.get_string_size(companion.text, HORIZONTAL_ALIGNMENT_LEFT, -1, TEXT).x > companion.size.x - 12.0:
+		companion.text = "Begleiter: %s" % str(kinds.get(str(state.get("companion", "wolf")), {}).get("name", "Wolf"))
+	companion.tooltip_text = "Klick wechselt den Begleiter."
+	var cost := Rules.reset_cost(data, profile, class_id)
+	_buttons.reset.text = "Zurücksetzen · %d %s" % [cost, "Rune" if cost == 1 else "Runen"]
+	_buttons.reset.disabled = state.ranks.is_empty() or int(profile.get("runes", 0)) < Rules.reset_cost(data, profile, class_id)
 	_buttons.reset.visible = true
 	if _page == "run":
 		# the run page shows its own tree: no class talent buttons
@@ -443,7 +469,7 @@ func _draw() -> void:
 	var color := Color(str(spec.color))
 	var light := Color(str(spec.color2))
 	_draw_backdrop(color, light)
-	_text("TALENTE", Vector2(16, 34), 24, CryptUI.GOLD)
+	_text("TALENTE", Vector2(16, 34), TITLE, CryptUI.GOLD)
 	if _active_tab != null and _active_tab.visible:
 		# a gold bar under the open tab
 		draw_rect(Rect2(_active_tab.position + Vector2(6, _active_tab.size.y + 2), Vector2(_active_tab.size.x - 12, 3)), TAB_GOLD)
@@ -456,12 +482,17 @@ func _draw() -> void:
 	_frame(RIGHT, Color(0.04, 0.03, 0.04, 0.9), color)
 	_draw_tree()
 	_draw_right()
+	_draw_purse()
+	_draw_badge_hint()
 
 
-## The LAUF page: its title in the banner row, its tree drawn by run_page.draw in CONTENT.
+## The LAUF page: the tab names it, so the banner row explains the two levels
+## instead of repeating a title; run_page.draw paints the run tree in CONTENT.
 func _draw_run_page() -> void:
 	_card(BANNERS, Color(0.05, 0.04, 0.05, 0.9), Color(1, 1, 1, 0.1), 4, 4)
-	_text(str(_run_page.get("title", "LAUF")).to_upper(), BANNERS.position + Vector2(16, 36), 24, CryptUI.GOLD)
+	var room := BANNERS.size.x - 32
+	_text(_fit("Laufstufe: nur in diesem Lauf, verfällt beim Tod.", room), BANNERS.position + Vector2(16, 24), TEXT, CryptUI.CREAM)
+	_text(_fit("Heldenstufe: bleibt und gibt die Klassen-Talente.", room), BANNERS.position + Vector2(16, 46), TEXT, CryptUI.MUTED)
 	_frame(CONTENT, Color(0.03, 0.02, 0.03, 0.72), CryptUI.GOLD)
 	var painter: Variant = _run_page.get("draw")
 	if painter is Callable and (painter as Callable).is_valid():
@@ -485,7 +516,6 @@ func _draw_backdrop(color: Color, light: Color) -> void:
 		var fade := clampf(y / size.y, 0.0, 1.0)
 		draw_rect(Rect2(Vector2(x, y).round(), Vector2(2, 2)), Color(light, 0.55 * fade))
 	for i in range(8):
-		draw_rect(Rect2(0, 0, size.x, size.y), Color(0, 0, 0, 0.0), false, 0.0)
 		draw_rect(Rect2(i * 3, i * 3, size.x - i * 6, size.y - i * 6), Color(0, 0, 0, 0.09), false, 3.0)
 
 
@@ -503,38 +533,85 @@ func _diamond(at: Vector2, r: float, color: Color) -> void:
 	draw_polyline(PackedVector2Array([at + Vector2(0, -r), at + Vector2(r, 0), at + Vector2(0, r), at + Vector2(-r, 0), at + Vector2(0, -r)]), Color("1a1010"), 1.0)
 
 
-## Top right: Heldenstufe, free points, soul shards and gold of the class.
+## Top right: the class with its Heldenstufe and the free talent points
+## (singular for one). Rune stones and soul shards sit in the footer (_draw_purse).
 func _draw_info() -> void:
 	var state := _state()
 	_card(INFO, Color(0.05, 0.04, 0.05, 0.9), Color(1, 1, 1, 0.1), 4, 4)
 	var level := int(state.level)
 	var free := Rules.free_points(data, state)
-	# the profile level is the Heldenstufe; "Stufe" alone is the run's level
-	_say("%s · Heldenstufe %d" % [str(_class_names.get(class_id, class_id.to_upper())), level], INFO.position + Vector2(14, 22), 16, CryptUI.CREAM)
-	_say("%d Talentpunkte frei" % free, INFO.position + Vector2(14, 44), 16, CryptUI.GOLD if free > 0 else CryptUI.MUTED)
-	draw_crystal(self, INFO.position + Vector2(236, 30), 0.65, _clock)
-	_say(str(int(profile.shards.have)), INFO.position + Vector2(254, 38), 20, Color("e2d4ff"))
-	_say("Gold %d" % int(profile.gold), INFO.position + Vector2(300, 38), 16, CryptUI.GOLD)
+	var room := INFO.size.x - 28
+	# the profile level is the Heldenstufe (it stays); the run's level is the Laufstufe.
+	# A long class name gives way (the open tab names the class anyway), never the level.
+	var head := "%s · Heldenstufe %d" % [str(_class_names.get(class_id, class_id.to_upper())), level]
+	if _width(head) > room: head = "Heldenstufe %d" % level
+	_say(head, INFO.position + Vector2(14, 24), TEXT, CryptUI.CREAM)
+	_say("1 Talentpunkt frei" if free == 1 else "%d Talentpunkte frei" % free, INFO.position + Vector2(14, 47), TEXT, CryptUI.GOLD if free > 0 else CryptUI.MUTED)
 
 
-## The row tablets on the left: numeral, the level it opens at and the
-## points the branch needs; lit as far as the branch reaches.
+## The footer beside the reset (which costs rune stones): soul shards and rune stones (the stone and its count).
+func _draw_purse() -> void:
+	var y := 698.0
+	# the rune stones: the stone and its count, right-aligned
+	var runes := str(int(profile.get("runes", 0)))
+	var runes_x := TREE.end.x - 4.0 - _width(runes)
+	_say(runes, Vector2(runes_x, y), TEXT, RUNE_BLUE)
+	var icon := RUNE.get_size() * (20.0 / RUNE.get_size().y)
+	draw_texture_rect(RUNE, Rect2(Vector2(runes_x - icon.x - 6.0, y - 16.0), icon), false)
+	var have := int(profile.shards.have)
+	var shards := "1 Seelensplitter" if have == 1 else "%d Seelensplitter" % have
+	var shard_x := runes_x - icon.x - 34.0 - _width(shards)
+	_say(shards, Vector2(shard_x, y), TEXT, Color("e2d4ff"))
+	draw_crystal(self, Vector2(shard_x - 16.0, y - 7.0), 0.55, _clock)
+
+
+## The row tablet of tier `t` (1-8) in the left column.
+func _badge_rect(t: int) -> Rect2:
+	var row_h := BADGES.size.y / 8.0
+	return Rect2(BADGES.position.x, BADGES.position.y + row_h * (t - 1) + 4, BADGES.size.x, row_h - 8)
+
+
+## The row tablets on the left: numeral, the Heldenstufe the row opens at
+## ("ab 8") and the points the branch needs; lit as far as the branch reaches.
+## Hovering a tablet explains it (_draw_badge_hint).
 func _draw_badges(color: Color) -> void:
 	var state := _state()
 	var points := Rules.spec_points(data, state, shown_spec)
-	var row_h := BADGES.size.y / 8.0
 	for t in range(1, 9):
 		var tier: Dictionary = data.tiers[str(t)]
 		var open := points >= int(tier.points) and int(state.level) >= int(tier.level)
-		var badge := Rect2(BADGES.position.x, BADGES.position.y + row_h * (t - 1) + 4, BADGES.size.x, row_h - 8)
+		var badge := _badge_rect(t)
 		_card(badge, Color(0.07, 0.05, 0.05, 0.92), Color(color, 0.7) if open else Color(1, 1, 1, 0.12), 6, 4)
 		draw_rect(badge.grow(-3), Color(color, 0.15 if open else 0.04), false, 1.0)
-		_text_centered(TIER_NAMES[t - 1], badge.get_center() + Vector2(0, -6), 20, CryptUI.BONE if open else CryptUI.MUTED)
-		_say_centered("ST %d" % int(tier.level), badge.get_center() + Vector2(0, 12), 12, CryptUI.CREAM if open else CryptUI.MUTED)
-		if int(tier.points) > 0: _say_centered("%d P" % int(tier.points), badge.get_center() + Vector2(0, 26), 11, CryptUI.MUTED)
+		var c := badge.get_center()
+		_text_centered(TIER_NAMES[t - 1], Vector2(c.x, c.y - 10), TEXT, CryptUI.GOLD if open else CryptUI.MUTED)
+		_text_centered("ab %d" % int(tier.level), Vector2(c.x, c.y + 8), TEXT, CryptUI.CREAM if open else CryptUI.MUTED)
+		if int(tier.points) > 0: _text_centered("%d P" % int(tier.points), Vector2(c.x, c.y + 26), TEXT, CryptUI.MUTED)
 
 
-## One branch at a time under its banner (the chosen one "dein Zweig", the
+## The hovered row tablet in words: from which Heldenstufe and with how many
+## points in the branch the row opens. Drawn last, over the tree.
+func _draw_badge_hint() -> void:
+	var mouse := get_local_mouse_position()
+	if not BADGES.has_point(mouse):
+		return
+	for t in range(1, 9):
+		var badge := _badge_rect(t)
+		if not badge.has_point(mouse):
+			continue
+		var tier: Dictionary = data.tiers[str(t)]
+		var lines: Array[String] = ["Reihe %s" % TIER_NAMES[t - 1], "ab Heldenstufe %d" % int(tier.level)]
+		lines.append("%d Punkte im Zweig" % int(tier.points) if int(tier.points) > 0 else "ohne Punkte im Zweig")
+		var wide := 0.0
+		for line: String in lines: wide = maxf(wide, _width(line))
+		var card := Rect2(badge.end.x + 10, badge.position.y, wide + 28, lines.size() * LINE + 16)
+		_card(card, Color(0.06, 0.05, 0.06, 0.97), Color(CryptUI.GOLD, 0.7), 4, 6)
+		for n in range(lines.size()):
+			_say(lines[n], card.position + Vector2(14, 23 + n * LINE), TEXT, CryptUI.GOLD if n == 0 else CryptUI.CREAM)
+		return
+
+
+## One branch at a time under its banner (the chosen one "gewählt", the
 ## others locked once a point is spent). Rows I-VI: the active left, the
 ## passive right, a line through a diamond on the spine between them; row VII
 ## and the ultimate stand on the spine. The spine glows as deep as the branch
@@ -559,12 +636,14 @@ func _draw_tree() -> void:
 		if shown:
 			draw_rect(tab.grow(-3), Color(Color(str(spec.color2)), 0.5), false, 1.0)
 			for k in range(6): draw_circle(tab.get_center() + Vector2(0, 30), 60.0 - k * 9.0, Color(tint, 0.05))
-		var icon_rect := Rect2(tab.position + Vector2(14, 11), Vector2(36, 36))
+		var icon_rect := Rect2(tab.position + Vector2(6, 11), Vector2(36, 36))
 		draw_texture_rect(_icon(spec, _banner_motif(str(spec.id)), not locked or shown), icon_rect, false)
-		_text(str(spec.name).to_upper(), Vector2(icon_rect.end.x + 12, tab.position.y + 27), 16, CryptUI.CREAM if not locked else CryptUI.MUTED)
-		var note := "gesperrt" if locked else ("dein Zweig" if str(spec.id) == chosen_spec else "noch frei wählbar")
-		if str(spec.id) == chosen_spec and not chosen_spec.is_empty(): note = "dein Zweig · %d Punkte" % Rules.spec_points(data, state, str(spec.id))
-		_say(note, Vector2(icon_rect.end.x + 12, tab.position.y + 46), 12, Color(str(spec.color2)) if not locked else CryptUI.MUTED)
+		var name_x := icon_rect.end.x + 8
+		var room := tab.end.x - name_x - 6
+		_text(_fit(str(spec.name), room), Vector2(name_x, tab.position.y + 26), TEXT, CryptUI.CREAM if not locked else CryptUI.MUTED)
+		var note := "gesperrt" if locked else "frei wählbar"
+		if str(spec.id) == chosen_spec and not chosen_spec.is_empty(): note = "gewählt · %d P" % Rules.spec_points(data, state, str(spec.id))
+		_say(_fit(note, room), Vector2(name_x, tab.position.y + 47), TEXT, Color(str(spec.color2)) if not locked else CryptUI.MUTED)
 		_hits["spec:" + str(spec.id)] = tab
 	var spec: Dictionary = _spec(shown_spec)
 	var color := Color(str(spec.color))
@@ -572,8 +651,8 @@ func _draw_tree() -> void:
 	var area := TREE.grow(-8)
 	var row_h := area.size.y / 8.0
 	var spine_x := area.position.x + area.size.x * 0.5
-	var left_x := area.position.x + 150.0
-	var right_x := spine_x + 110.0
+	var left_x := area.position.x + 44.0
+	var right_x := spine_x + 64.0
 	var per_tier := {}
 	for id: String in spec.talents:
 		var tier := int(data.talents[id].tier)
@@ -605,7 +684,9 @@ func _draw_tree() -> void:
 		if ids.size() != 1 or t < 7: _diamond(Vector2(spine_x, y), 7.0, color if open else Color("3a3238"))
 		for k in range(ids.size()):
 			var x: float = spine_x if ids.size() == 1 else (left_x if k == 0 else right_x)
-			_draw_talent(str(ids[k]), Vector2(x, y), spec, color)
+			# the name runs to the spine (left talent) or to the tree's edge
+			var edge: float = spine_x - 16.0 if ids.size() > 1 and k == 0 else area.end.x - 4.0
+			_draw_talent(str(ids[k]), Vector2(x, y), spec, color, edge)
 
 
 ## The motif shown on a branch banner.
@@ -614,13 +695,17 @@ func _banner_motif(spec_id: String) -> String:
 		"guard": "shield", "blade": "sword", "minion": "skull", "curse": "flask", "soul": "burst"}.get(spec_id, "burst")
 
 
-func _draw_talent(id: String, center: Vector2, spec: Dictionary, color: Color) -> void:
+## One talent at `center`: framed icon (3x), name, rank dots and kind; the
+## text may run up to `edge` (x), longer names wrap or end in "…".
+func _draw_talent(id: String, center: Vector2, spec: Dictionary, color: Color, edge: float) -> void:
 	var info: Dictionary = data.talents[id]
 	var state := _state()
 	var ult: bool = str(info.kind) == "ultimate"
 	var look := talent_state(id)
-	var side := 62.0 if ult else 52.0
+	# the icon is 18 px art at 3x; an ultimate gets a wider frame around it
+	var side := 58.0 if ult else 54.0
 	var rect := Rect2((center - Vector2(side, side) * 0.5).round(), Vector2(side, side))
+	var icon_rect := Rect2((center - Vector2(27, 27)).round(), Vector2(54, 54))
 	var lit: bool = look in ["learned", "max", "available"]
 	var light := Color(str(spec.color2))
 	var pulse: float = float(_pulses.get(id, 0.0))
@@ -638,20 +723,20 @@ func _draw_talent(id: String, center: Vector2, spec: Dictionary, color: Color) -
 	draw_rect(rect.grow(2), Color(rim, 0.35), false, 1.0)
 	for corner: Vector2 in [rect.position - Vector2(3, 3), Vector2(rect.end.x + 3, rect.position.y - 3), rect.end + Vector2(3, 3), Vector2(rect.position.x - 3, rect.end.y + 3)]:
 		draw_rect(Rect2(corner - Vector2(2, 2), Vector2(4, 4)), rim)
-	draw_texture_rect(_icon(spec, str(info.icon), lit, ult), rect, false, Color(1, 1, 1, 0.45) if look == "locked" else Color.WHITE)
-	if look == "locked": draw_rect(rect, Color(0, 0, 0, 0.35))
+	draw_texture_rect(_icon(spec, str(info.icon), lit, ult), icon_rect, false, Color(1, 1, 1, 0.45) if look == "locked" else Color.WHITE)
+	if look == "locked": draw_rect(icon_rect, Color(0, 0, 0, 0.35))
 	# name above the row's line, rank dots and the kind below it
 	var ranks := int(info.ranks)
 	var rank := Rules.rank(state, id)
 	if ult:
 		ranks = (info.get("stages", []) as Array).size() + 1
 		rank = (int(state.soul_tier) + 1) if str(state.ultimate) == id else 0
-	var text_x := rect.end.x + 16
-	var name_lines := _wrap_lines(str(info.name), 150.0, 17)
+	var text_x := rect.end.x + 12
+	var name_lines := _wrap_lines(str(info.name), edge - text_x, TEXT)
 	var name_y := center.y - 6 - (name_lines.size() - 1) * 18
 	for n in range(name_lines.size()):
-		_say(name_lines[n], Vector2(text_x, name_y + n * 18), 17, CryptUI.CREAM if lit else CryptUI.MUTED)
-	var dot_y := center.y + 14
+		_say(name_lines[n], Vector2(text_x, name_y + n * 18), TEXT, CryptUI.CREAM if lit else CryptUI.MUTED)
+	var dot_y := center.y + 10
 	for k in range(ranks):
 		var on := k < rank
 		var at := Vector2(text_x + 6 + k * 16, dot_y)
@@ -659,31 +744,34 @@ func _draw_talent(id: String, center: Vector2, spec: Dictionary, color: Color) -
 		draw_circle(at, 4.5, (CryptUI.GOLD if look == "max" or ult else light) if on else Color(0.2, 0.18, 0.2))
 		if on: draw_circle(at + Vector2(-1, -1), 1.5, Color(1, 1, 1, 0.7))
 	var kind: String = {"active": "Aktiv", "passive": "Passiv", "ultimate": "Ultimate"}[str(info.kind)]
-	_say(kind, Vector2(text_x + 6 + ranks * 16 + 4, dot_y + 5), 13, (light if not ult else CryptUI.GOLD) if lit else CryptUI.MUTED)
+	_say(kind, Vector2(text_x + 4 + ranks * 16 + 6, dot_y + 6), TEXT, (light if not ult else CryptUI.GOLD) if lit else CryptUI.MUTED)
 	if look == "no_shards":
 		draw_crystal(self, rect.position + Vector2(-2, -4), 0.5, _clock)
-		_say("%d" % int(data.soul_shards.ultimate_cost), rect.position + Vector2(8, 6), 13, Color("e2d4ff"))
+		_say("%d" % int(data.soul_shards.ultimate_cost), rect.position + Vector2(8, 10), TEXT, Color("e2d4ff"))
 	var name_w := 0.0
-	for line: String in name_lines: name_w = maxf(name_w, _sans.get_string_size(line, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x)
+	for line: String in name_lines: name_w = maxf(name_w, _width(line))
 	_hits[id] = Rect2(rect.position - Vector2(6, 6), Vector2(side + 28 + maxf(name_w, 90.0), side + 12))
 
 
-func _wrap_lines(text: String, width: float, font_size: int) -> Array[String]:
+## `text` split into lines no wider than `width` at `font_size`; a single word
+## that is wider ends in "…".
+func _wrap_lines(text: String, width: float, font_size: int = TEXT) -> Array[String]:
 	var lines: Array[String] = []
 	var current := ""
 	for word: String in text.split(" "):
 		var trial := word if current.is_empty() else current + " " + word
-		if _sans.get_string_size(trial, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x > width and not current.is_empty():
-			lines.append(current)
+		if _width(trial, font_size) > width and not current.is_empty():
+			lines.append(_fit(current, width, font_size))
 			current = word
 		else: current = trial
-	if not current.is_empty(): lines.append(current)
+	if not current.is_empty(): lines.append(_fit(current, width, font_size))
 	return lines
 
 
-## The detail card: the big framed icon with row, kind, name and rank; the
-## text and its lore; a table of the numbers; the requirement; a red note
-## why a point cannot go in; the buttons sit at the bottom.
+## The detail card: the framed icon with row, kind, name and rank on top; below
+## it the text, the numbers, the requirement and (ultimates) the stages. They
+## scroll when they do not fit (wheel, Bild auf / Bild ab, a bar on the right
+## edge shows it); the note why a point cannot go in stays fixed above the buttons.
 func _draw_right() -> void:
 	var info: Dictionary = data.talents[selected]
 	var state := _state()
@@ -691,36 +779,60 @@ func _draw_right() -> void:
 	var spec_color := Color(str(spec.color))
 	var light := Color(str(spec.color2))
 	var x := RIGHT.position.x + 16
+	var width := RIGHT.size.x - 32
 	var ult: bool = str(info.kind) == "ultimate"
-	var icon_rect := Rect2(RIGHT.position + Vector2(16, 16), Vector2(96, 96))
-	draw_circle(icon_rect.get_center(), 64.0, Color(spec_color, 0.12))
+	var icon_rect := Rect2(RIGHT.position + Vector2(16, 16), Vector2(72, 72))
+	draw_circle(icon_rect.get_center(), 50.0, Color(spec_color, 0.12))
 	_card(icon_rect.grow(6), Color("0a0708"), CryptUI.GOLD, 4, 6)
 	draw_rect(icon_rect.grow(3), Color(CryptUI.GOLD, 0.4), false, 1.0)
 	draw_texture_rect(_icon(spec, str(info.icon), true, ult), icon_rect, false)
 	var kind: String = {"active": "Aktiv", "passive": "Passiv", "ultimate": "Ultimate"}[str(info.kind)]
-	var tx := icon_rect.end.x + 20
-	_say("Reihe %s · %s" % [TIER_NAMES[int(info.tier) - 1], kind], Vector2(tx, RIGHT.position.y + 34), 15, light)
-	var name_lines := _wrap_lines(str(info.name), RIGHT.end.x - tx - 12, 26)
-	for n in range(name_lines.size()):
-		_say(name_lines[n], Vector2(tx, RIGHT.position.y + 64 + n * 26), 26, CryptUI.CREAM)
+	var tx := icon_rect.end.x + 18
+	var room := RIGHT.end.x - 16 - tx
+	_say(_fit("Reihe %s · %s" % [TIER_NAMES[int(info.tier) - 1], kind], room), Vector2(tx, RIGHT.position.y + 30), TEXT, light)
+	# the name at 24 px when it fits beside the icon, else at 16 px
+	var name_size := TITLE if _width(str(info.name), TITLE) <= room else TEXT
+	_say(_fit(str(info.name), room, name_size), Vector2(tx, RIGHT.position.y + (58 if name_size == TITLE else 56)), name_size, CryptUI.CREAM)
 	var rank := Rules.rank(state, selected)
 	var stage_count: int = (info.get("stages", []) as Array).size() + 1
 	var stage_now: int = (int(state.soul_tier) + 1) if str(state.ultimate) == selected else 0
-	var name_bottom := RIGHT.position.y + 64 + (name_lines.size() - 1) * 26
-	_say(("Stufe %d / %d" % [stage_now, stage_count]) if ult else ("Rang %d / %d" % [rank, int(info.ranks)]), Vector2(tx, name_bottom + 26), 16, CryptUI.GOLD)
+	var rank_line := ("Stufe %d / %d" % [stage_now, stage_count]) if ult else ("Rang %d / %d" % [rank, int(info.ranks)])
+	_say(rank_line, Vector2(tx, RIGHT.position.y + 84), TEXT, CryptUI.GOLD)
 	var dots := stage_count if ult else int(info.ranks)
+	var dots_x := tx + _width(rank_line) + 16
 	for k in range(dots):
-		var at := Vector2(tx + 8 + k * 22, name_bottom + 44)
+		var at := Vector2(dots_x + k * 18, RIGHT.position.y + 78)
 		draw_circle(at, 7.0, Color(0, 0, 0, 0.7))
 		draw_circle(at, 6.0, CryptUI.GOLD if k < (stage_now if ult else rank) else Color(0.2, 0.18, 0.2))
-	var line := RIGHT.position.y + 136.0
-	_ornament(line, spec_color)
-	line += 26.0
-	line = _paragraph(_rank_text(str(info.text), rank if rank > 0 else 0), x, line, CryptUI.CREAM, 15)
-	# the next rank's numbers, else the lore line: both do not fit above the buttons
-	if rank > 0 and rank < int(info.ranks): line = _paragraph("Nächster Rang: " + _rank_text(str(info.text), rank + 1).get_slice(".", 0) + ".", x, line + 2, Color(light, 0.85), 13)
-	elif info.has("lore"): line = _paragraph(str(info.lore), x, line + 2, CryptUI.MUTED, 13)
-	line += 6.0
+	_ornament(RIGHT.position.y + 106, spec_color)
+	var top := RIGHT.position.y + 118.0
+	# the body ends above the first visible button
+	var bottom := RIGHT.end.y - 8.0
+	for key: String in ["companion", "learn", "unlearn", "bar", "soul"]:
+		var button: Button = _buttons[key]
+		if button.visible: bottom = minf(bottom, button.position.y - 10.0)
+	# the note (why not, or what just happened) is fixed at the body's foot
+	var why := Rules.check_rank_up(data, profile, class_id, selected)
+	if ult and str(state.ultimate) == selected: why = ""
+	var note := message if not message.is_empty() else why
+	if not note.is_empty():
+		var note_lines := _wrap_lines(note, width - 28)
+		var note_y := bottom - note_lines.size() * LINE - 14.0
+		_ornament(note_y, spec_color)
+		var warn := note == why and not why.is_empty()
+		var tint := Color("e2584a") if warn else CryptUI.GOLD
+		draw_arc(Vector2(x + 9, note_y + 17), 9.0, 0.0, TAU, 20, tint, 2.0)
+		_text_centered("i", Vector2(x + 10, note_y + 24), TEXT, tint)
+		for n in range(note_lines.size()):
+			_say(note_lines[n], Vector2(x + 28, note_y + 24 + n * LINE), TEXT, tint)
+		bottom = note_y - 6.0
+	# the body: lines {y, h, kind, ...} from its top, drawn with the scroll
+	var body: Array[Dictionary] = []
+	var y := _push_paragraph(body, _rank_text(str(info.text), rank if rank > 0 else 0), 0.0, x, width, CryptUI.CREAM)
+	# the next rank's numbers, else the lore line
+	if rank > 0 and rank < int(info.ranks): y = _push_paragraph(body, "Nächster Rang: " + _rank_text(str(info.text), rank + 1).get_slice(".", 0) + ".", y + 4, x, width, Color(light, 0.85))
+	elif info.has("lore"): y = _push_paragraph(body, str(info.lore), y + 4, x, width, CryptUI.MUTED)
+	y += 8.0
 	var rows: Array = []
 	if info.has("cost"): rows.append(["Kosten", "%d %s" % [int(info.cost), str(data.resources[class_id].name)]])
 	if info.has("cd"): rows.append(["Abklingzeit", "%d s" % int(info.cd)])
@@ -729,31 +841,58 @@ func _draw_right() -> void:
 	if info.has("radius_m"): rows.append(["Radius", "%s m" % str(_at_rank(info.radius_m, rank))])
 	if info.has("jumps"): rows.append(["Sprünge", str(int(info.jumps))])
 	for k in range(rows.size()):
-		var band := Rect2(x - 4, line + k * 26, RIGHT.size.x - 24, 24)
-		draw_rect(band, Color(1, 1, 1, 0.04 if k % 2 == 0 else 0.015))
-		_say(str(rows[k][0]), Vector2(x + 4, band.position.y + 17), 15, CryptUI.MUTED)
-		var value := str(rows[k][1])
-		_say(value, Vector2(band.end.x - 8 - _sans.get_string_size(value, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x, band.position.y + 17), 15, CryptUI.CREAM)
-	line += rows.size() * 26 + 18
+		body.append({"y": y, "h": 24.0, "kind": "row", "label": str(rows[k][0]), "value": str(rows[k][1]), "band": k})
+		y += 24.0
+	y += 10.0
 	var tier: Dictionary = data.tiers[str(int(info.tier))]
 	var requirement := "Heldenstufe %d" % int(tier.level)
 	if int(tier.points) > 0: requirement += ", %d Punkte im Zweig" % int(tier.points)
 	if ult: requirement += ", %d Seelensplitter" % int(data.soul_shards.ultimate_cost)
-	line = _paragraph("Voraussetzung: " + requirement, x, line, CryptUI.MUTED, 13)
-	if ult: line = _draw_stages(info, state, x, line + 4)
-	var why := Rules.check_rank_up(data, profile, class_id, selected)
-	if ult and str(state.ultimate) == selected: why = ""
-	var note := message if not message.is_empty() else why
-	if not note.is_empty():
-		var limit := 540.0 if str(info.spec) == "beast" else 576.0
-		var y := minf(line + 8, limit - 40)
-		_ornament(y - 10, spec_color)
-		var warn := note == why and not why.is_empty()
-		var tint := Color("e2584a") if warn else CryptUI.GOLD
-		draw_arc(Vector2(x + 9, y + 9), 9.0, 0.0, TAU, 20, tint, 2.0)
-		_say_centered("i", Vector2(x + 9, y + 14), 13, tint)
-		var keep := RIGHT.size.x
-		_paragraph_at(note, x + 28, y + 13, tint, 14, keep - 60)
+	y = _push_paragraph(body, "Voraussetzung: " + requirement, y, x, width, CryptUI.MUTED)
+	if ult: y = _push_stages(body, info, state, x, width, y + 8)
+	_draw_body(body, y, Rect2(x, top, width, bottom - top))
+
+
+## Draws the detail card's body lines in `area` with the scroll; lines cut by
+## the area's edges are left out, a bar on the right shows the scroll.
+func _draw_body(body: Array[Dictionary], total: float, area: Rect2) -> void:
+	if _scroll_for != selected:
+		_scroll_for = selected
+		_detail_scroll = 0.0
+	_detail_rect = area
+	_detail_room = maxf(0.0, total - area.size.y)
+	_detail_scroll = clampf(_detail_scroll, 0.0, _detail_room)
+	for line: Dictionary in body:
+		var y: float = area.position.y + float(line.y) - _detail_scroll
+		if y < area.position.y - 0.5 or y + float(line.h) > area.end.y + 0.5:
+			continue
+		if line.kind == "text":
+			_say(str(line.text), Vector2(float(line.x), y + 15), TEXT, line.color)
+		elif line.kind == "row":
+			var band := Rect2(area.position.x - 4, y, area.size.x + 8, 22)
+			draw_rect(band, Color(1, 1, 1, 0.04 if int(line.band) % 2 == 0 else 0.015))
+			_say(str(line.label), Vector2(area.position.x + 4, y + 16), TEXT, CryptUI.MUTED)
+			_say(str(line.value), Vector2(band.end.x - 8 - _width(str(line.value)), y + 16), TEXT, CryptUI.CREAM)
+		elif line.kind == "pair":
+			_say(str(line.text), Vector2(float(line.x), y + 15), TEXT, line.color)
+			_say(str(line.mark), Vector2(area.end.x - _width(str(line.mark)), y + 15), TEXT, line.mark_color)
+	if _detail_room <= 0.0:
+		return
+	# the scroll bar: a dark track, a gold thumb as long as the visible share
+	var track := Rect2(RIGHT.end.x - 9, area.position.y, 3, area.size.y)
+	draw_rect(track, Color(1, 1, 1, 0.08))
+	var share := area.size.y / total
+	var thumb_h := maxf(16.0, track.size.y * share)
+	var thumb_y := track.position.y + (track.size.y - thumb_h) * (_detail_scroll / _detail_room)
+	draw_rect(Rect2(track.position.x, thumb_y, 3, thumb_h), CryptUI.GOLD)
+
+
+## Wraps `text` into body lines from `y` (16 px, 20 px apart); returns the y below.
+func _push_paragraph(body: Array[Dictionary], text: String, y: float, x: float, width: float, color: Color) -> float:
+	for line: String in _wrap_lines(text, width):
+		body.append({"y": y, "h": LINE, "kind": "text", "text": line, "x": x, "color": color})
+		y += LINE
+	return y
 
 
 ## A value that may differ per rank ([r1, r2, r3]) at `rank` (the first for rank 0).
@@ -772,25 +911,10 @@ func _ornament(y: float, color: Color) -> void:
 	_diamond(b, 3.0, Color(color, 0.8))
 
 
-func _paragraph_at(text: String, x: float, y: float, color: Color, font_size: int, width: float) -> float:
-	var current := ""
-	for word: String in text.split(" "):
-		var trial := word if current.is_empty() else current + " " + word
-		if _sans.get_string_size(trial, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x > width and not current.is_empty():
-			_say(current, Vector2(x, y), font_size, color)
-			y += font_size + 4
-			current = word
-		else: current = trial
-	if not current.is_empty():
-		_say(current, Vector2(x, y), font_size, color)
-		y += font_size + 4
-	return y
-
-
-## The ultimate's stages 2 and 3: reached ones lit ("aktiv"), the next with
-## its shard cost, later ones dim. Stufe 1 is the unlock itself. Returns the
-## y below the list.
-func _draw_stages(info: Dictionary, state: Dictionary, x: float, y: float) -> float:
+## The ultimate's stages 2 and 3 as body lines: reached ones lit ("aktiv"),
+## the next with its shard cost, later ones dim. Stufe 1 is the unlock itself.
+## Returns the y below the list.
+func _push_stages(body: Array[Dictionary], info: Dictionary, state: Dictionary, x: float, width: float, y: float) -> float:
 	var stages: Array = info.get("stages", [])
 	if stages.is_empty(): return y
 	var owned: bool = str(state.ultimate) == selected
@@ -804,19 +928,17 @@ func _draw_stages(info: Dictionary, state: Dictionary, x: float, y: float) -> fl
 		var next := number == reached + 1 and owned
 		var mark := "aktiv" if lit else ("%d Splitter" % int(costs[k]) if k < costs.size() else "")
 		var tint := violet if lit else (CryptUI.CREAM if next else CryptUI.MUTED)
-		_say("Stufe %d · %s" % [number, str(stage.name)], Vector2(x, y), 13, tint)
-		_say(mark, Vector2(RIGHT.end.x - 16 - _sans.get_string_size(mark, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x, y), 13, violet if lit else CryptUI.GOLD if next else CryptUI.MUTED)
-		y = _paragraph(str(stage.text), x + 8, y + 16, Color(tint, 0.85 if lit or next else 0.6), 12) + 4
+		var mark_tint := violet if lit else CryptUI.GOLD if next else CryptUI.MUTED
+		var head := "Stufe %d · %s" % [number, str(stage.name)]
+		if _width(head) + 16 + _width(mark) <= width:
+			body.append({"y": y, "h": LINE, "kind": "pair", "text": head, "x": x, "color": tint, "mark": mark, "mark_color": mark_tint})
+			y += LINE
+		else:
+			y = _push_paragraph(body, head, y, x, width, tint)
+			body.append({"y": y, "h": LINE, "kind": "pair", "text": "", "x": x, "color": tint, "mark": mark, "mark_color": mark_tint})
+			y += LINE
+		y = _push_paragraph(body, str(stage.text), y, x + 8, width - 8, Color(tint, 0.85 if lit or next else 0.6)) + 6
 	return y
-
-
-## A stat row of the detail card: label left, value right.
-func _stat(label: String, value: String, y: float) -> void:
-	var x := RIGHT.position.x + 16
-	var right := RIGHT.end.x - 16
-	_say(label, Vector2(x, y), 15, CryptUI.MUTED)
-	_say(value, Vector2(right - _sans.get_string_size(value, HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x, y), 15, CryptUI.CREAM)
-	draw_line(Vector2(x, y + 7), Vector2(right, y + 7), Color(1, 1, 1, 0.05), 1.0)
 
 
 ## "125/145/165 %" -> the value of `rank` (1-3), or all values for rank 0.
@@ -828,24 +950,23 @@ func _rank_text(text: String, rank: int) -> String:
 	return out
 
 
-func _paragraph(text: String, x: float, y: float, color: Color, font_size: int = 15) -> float:
-	var width := RIGHT.size.x - 28
-	var current := ""
-	for word: String in text.split(" "):
-		var trial := word if current.is_empty() else current + " " + word
-		if _sans.get_string_size(trial, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x > width and not current.is_empty():
-			_say(current, Vector2(x, y), font_size, color)
-			y += font_size + 5
-			current = word
-		else: current = trial
-	if not current.is_empty():
-		_say(current, Vector2(x, y), font_size, color)
-		y += font_size + 5
-	return y
-
-
 func _icon(spec: Dictionary, motif: String, on: bool, ultimate := false) -> Texture2D:
 	return TalentIcons.make(spec, motif, on, ultimate)
+
+
+## Width of `text` in px at `font_size`.
+func _width(text: String, font_size: int = TEXT) -> float:
+	return _font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+
+
+## `text` shortened with "…" until it is no wider than `width`.
+func _fit(text: String, width: float, font_size: int = TEXT) -> String:
+	if _width(text, font_size) <= width:
+		return text
+	var cut := text
+	while cut.length() > 1 and _width(cut + "…", font_size) > width:
+		cut = cut.left(cut.length() - 1)
+	return cut.strip_edges() + "…"
 
 
 func _text(text: String, at: Vector2, font_size: int, color: Color) -> void:
@@ -854,17 +975,12 @@ func _text(text: String, at: Vector2, font_size: int, color: Color) -> void:
 
 func _text_centered(text: String, at: Vector2, font_size: int, color: Color) -> void:
 	var width := _font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
-	draw_string(_font, at - Vector2(width * 0.5, 0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
+	draw_string(_font, at - Vector2(floorf(width * 0.5), 0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
 
 
-## Pixelify Sans text (names, values, descriptions).
+## Body text (names, values, descriptions); the same face as the headings.
 func _say(text: String, at: Vector2, font_size: int, color: Color) -> void:
-	draw_string(_sans, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
-
-
-func _say_centered(text: String, at: Vector2, font_size: int, color: Color) -> void:
-	var width := _sans.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
-	draw_string(_sans, at - Vector2(width * 0.5, 0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
+	draw_string(_font, at, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
 
 
 ## A card: rounded, filled, a faint edge and a soft shadow below.

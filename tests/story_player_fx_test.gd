@@ -20,6 +20,7 @@ const HeroKit = preload("res://src/hell/hero_kit.gd")
 const HeroFx = preload("res://src/hell/hero_fx.gd")
 const StoryFeel = preload("res://src/hero/story_feel.gd")
 const BossFx = preload("res://src/vfx/boss_fx.gd")
+const CardKit = preload("res://src/hell/card_kit.gd")
 const DT := 1.0 / 60.0
 const SAVE := "user://story_player_fx_meta.cfg"
 const GRAPHICS := "user://story_player_fx_graphics.cfg"
@@ -179,9 +180,12 @@ func test_crypt_parity() -> void:
 		"the invulnerability blink and hit frame match dungeon_view.gd (0.45 every 0.08 of 0.16 s, the hit frame 0.12 of 0.24 s)")
 	check(view.contains("_box(point.x-half_width,point.y+12,half_width*2,8,Color(0.05,0.04,0.09,0.55))") and view.contains("_draw_shadow(_position(player), 14.0)")
 		and StoryFeel.SHADOW_COLOR == Color(0.05, 0.04, 0.09) and is_equal_approx(StoryFeel.SHADOW_HALF, 14.0), "the hero's shadow matches dungeon_view.gd _draw_shadow")
-	check(view.contains("Color(\"f6cf85\") if kind in [\"blast\",\"crit\"] else Color(\"a7ddaa\") if kind in [\"heal\",\"poison\"] else Color(\"a7cce8\")")
-		and view.contains("var radius: float = 16 if kind in [\"shield\",\"crit\"] else 28")
-		and StoryFeel.PERK_GOLD == Color("f6cf85") and StoryFeel.PERK_GREEN == Color("a7ddaa") and StoryFeel.PERK_BLUE == Color("a7cce8"), "the perk markers match dungeon_view.gd _draw_perk_events")
+	# since bc148b48 the crypt and the story worlds draw their perk markers with one shared
+	# module (src/vfx/perk_marks.gd), so the parity is the shared code, not a copied text
+	var marks := FileAccess.get_file_as_string("res://src/vfx/perk_marks.gd")
+	check(view.contains("PerkMarks.draw(") and marks.contains("GOLD if kind in [\"blast\", \"crit\"] else GREEN if kind in [\"heal\", \"poison\"] else BLUE")
+		and marks.contains("(16.0 if kind in [\"shield\", \"crit\"] else 28.0)")
+		and StoryFeel.PERK_GOLD == Color("f6cf85") and StoryFeel.PERK_GREEN == Color("a7ddaa") and StoryFeel.PERK_BLUE == Color("a7cce8"), "the perk markers match dungeon_view.gd _draw_perk_events (both through perk_marks.gd)")
 	var crypt := FileAccess.get_file_as_string("res://src/game.gd")
 	check(crypt.contains("if recent >= 8: return") and crypt.contains("\"life\":0.6") and StoryFeel.WALL_HITS == 8 and is_equal_approx(StoryFeel.EVENT_LIFE, 0.6),
 		"the wall-hit limit and the fx event life match game.gd (8 fresh, 0.6 s)")
@@ -282,7 +286,9 @@ func test_mage_splash(scene: PackedScene, world: String) -> void:
 	check((game.fx as Array).filter(func(f: Dictionary) -> bool: return str(f.kind) == "blast").is_empty() and game.embers.is_empty(), "%s: no world circle and no embers" % world)
 	(game.sfx as FakeSfx).reset()
 	_frames(game, 1)
-	check(game.story_hero.skill_fx.fx.count() > fx_before and (game.sfx as FakeSfx).count("blast") == 1, "%s: feedback.gd bursts it (magic burst) with one blast" % world)
+	# since the visual overhaul (385d6c21, feedback.gd perk_events): the splash is the shot's own
+	# pixel burst (attack_fx.gd _impact, element_burst); feedback.gd adds only the sound, no sheet
+	check(game.story_hero.skill_fx.fx.count() == fx_before and (game.sfx as FakeSfx).count("blast") == 1, "%s: feedback.gd sounds the splash with one blast and adds no magic-burst sheet" % world)
 	await _free(game)
 
 
@@ -298,7 +304,14 @@ func test_potions_and_pools(scene: PackedScene, world: String) -> void:
 	check((game.fx as Array).filter(func(f: Dictionary) -> bool: return str(f.kind) == "blast").is_empty() and _gold(game) == 0, "%s: no world circle, no gold embers" % world)
 	check(items.pools.size() == 1 and str(items.pools[0].get("style", "")) == "fire" and float(items.pools[0].get("max", 0.0)) > 0.0, "%s: the fire pool keeps its style and time" % world)
 	var zones: Array = game.feel.condition_snapshot().boss_zones
-	check(zones.size() == 1 and str(zones[0].k) == "pool" and str(zones[0].st) == "fire" and float(zones[0].p) >= 0.0 and float(zones[0].p) <= 1.0, "%s: the pool is the crypt's boss_fx pool" % world)
+	if game.get("monsters") != null:
+		# a world with the monster runtime (Krypta, Hölle) makes the pool a puddle zone of its
+		# element since 385d6c21 (story_items.gd hero_pool "zoned"): the puddle layer draws it
+		# and the feel's boss_fx pool steps back
+		var puddles: Array = (game.monsters.zones as Array).filter(func(z: Dictionary) -> bool: return str(z.kind) == "puddle" and str(z.get("st", "")) == "fire" and bool(z.get("friend", false)))
+		check(bool(items.pools[0].get("zoned", false)) and puddles.size() == 1 and zones.is_empty(), "%s: the pool is a fire puddle of the world, not a second boss_fx pool" % world)
+	else:
+		check(zones.size() == 1 and str(zones[0].k) == "pool" and str(zones[0].st) == "fire" and float(zones[0].p) >= 0.0 and float(zones[0].p) <= 1.0, "%s: the pool is the crypt's boss_fx pool" % world)
 	_frames(game, 1)
 	check(game.feel.feedback.particles.count() > 0, "%s: the potion bursts in the crypt's particles" % world)
 	items.give(items.inventory.make_stack("potion", "healing"), Vector2.ZERO)
@@ -521,9 +534,15 @@ func test_heaps_and_seals(scene: PackedScene, world: String) -> void:
 	check(not feel.feedback.particles.solid(inside) and not kit.particles.solid(inside), "%s: the opened cell is floor for the crypt's rubble" % world)
 	_frames(game, 1)
 	check(float(feel.feedback.shake) > 0.0, "%s: the wall break shakes the picture" % world)
-	# a seal: a blessing shines (cleanse), released demons flare (curse)
+	# a seal: since balance package D1 (production/qa/evidence/gameplay-review/VORSCHLAEGE.md D1,
+	# hell_balance.json seal: "No hidden roll, no demons") a broken seal is a real choice of two
+	# blessings on cards (card_kit.gd seal_offer); the one taken shines like the crypt's cleanse
 	var seal := {"type": "seal", "x": game.player.x - 150.0, "y": game.player.y, "hp": 1, "max_hp": 1, "room": int(game.state.room)}
 	game.breakables.append(seal)
 	game._hit_breakable(seal, Vector2(seal.x, seal.y - 40))
-	check(bool(seal.get("broken", false)) and _raised(game, "cleanse").size() + _raised(game, "curse").size() == 1 and _gold(game) == 0, "%s: a broken seal blesses or curses like the crypt's" % world)
+	var offered: Array = (game.state.get("seal_pick", {}) as Dictionary).get("ids", [])
+	check(bool(seal.get("broken", false)) and offered.size() == int(CardKit.seal_cfg(game).get("offers", 2)) and _raised(game, "cleanse").is_empty() and _raised(game, "curse").is_empty(),
+		"%s: a broken seal offers its blessings on cards, nothing is rolled at once (%d)" % [world, offered.size()])
+	game.state.hp = int(game.state.max_hp)
+	check(CardKit.seal_choose(game, 0) and _raised(game, "cleanse").size() == 1 and _raised(game, "curse").is_empty() and _gold(game) == 0, "%s: the blessing taken shines like the crypt's cleanse" % world)
 	await _free(game)

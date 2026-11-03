@@ -107,7 +107,7 @@ func test_staff_is_stronger_and_opens_with_level() -> void:
 	game.aim_at = Vector2(game.player.x + 300, game.player.y - 40)
 	check(RelicKit.press(game, "1") and game.gwalls.size() == 1, "the wall is open from level 1")
 	RelicKit.press(game, "3")
-	check(game.pending.is_empty() and str(game.state.toasts[-1].text).contains("ab Level 6"), "the rock throw waits for level 6")
+	check(game.pending.is_empty() and str(game.state.toasts[-1].text).contains("ab Laufstufe 6"), "the rock throw waits for run level 6")
 	await _free(game)
 
 
@@ -194,6 +194,24 @@ func test_cards() -> void:
 	game.state.offer = [CardKit._all(game).filter(func(c: Dictionary) -> bool: return c.id == "vigor")[0]]
 	CardKit.choose(game, 0)
 	check(int(game.state.max_hp) == hearts + 2 and game.state.offer.is_empty(), "EISERNE HAUT adds a heart and closes the choice")
+	# at the life cap (gear hearts, items.hp_bonus, sit on top) it is not offered and never lowers max life
+	var cap := int(game.balance.player.max_hp_cap)
+	var items: Dictionary = game.state.get("items", {})
+	var had_bonus := int(items.get("hp_bonus", 0))
+	items.hp_bonus = 6
+	game.state.items = items
+	game.state.max_hp = cap + 6
+	check(not CardKit.pool(game).any(func(c: Dictionary) -> bool: return c.id == "vigor"), "EISERNE HAUT is not offered at the life cap")
+	# the run tree draws it closed with the reason at the cap (nacharbeit L6), not open
+	var at_cap := CardKit.tree(game)
+	var closed_node := RunTree.node(at_cap, "vigor")
+	check(not closed_node.is_empty() and RunTree.state_of(at_cap, {}, 20, "vigor") == "closed" and not str(closed_node.get("closed", "")).is_empty(),
+		"the run tree shows EISERNE HAUT closed with its reason at the life cap (%s)" % RunTree.state_of(at_cap, {}, 20, "vigor"))
+	check(not RunTree.can_take(at_cap, {}, 20, "vigor"), "a closed node takes no point")
+	CardKit.take(game, CardKit._all(game).filter(func(c: Dictionary) -> bool: return c.id == "vigor")[0])
+	check(int(game.state.max_hp) == cap + 6, "a heart card at the cap never lowers max life (%d)" % int(game.state.max_hp))
+	items.hp_bonus = had_bonus
+	game.state.max_hp = hearts + 2
 	game.state.upgrades = {"mg_focus": 3}
 	check(is_equal_approx(CardKit.damage_mult(game), 1.45), "three FOKUS cards give +45 %, not more")
 	check(not CardKit.pool(game).any(func(c: Dictionary) -> bool: return c.id == "mg_focus"), "a card at its max is never offered again")

@@ -23,6 +23,7 @@ func _run() -> void:
 	var boss_safe:=true
 	var trap_charges:={}
 	var traps_seen:=false
+	var diagnosed:=false
 	var deadline:=Time.get_ticks_msec()+50000
 	while Time.get_ticks_msec()<deadline:
 		await process_frame
@@ -61,8 +62,15 @@ func _run() -> void:
 			started=true
 		var state: Dictionary=game.state
 		if str(state.get("room_layout",{}).get("id",""))!="archer-network": continue
-		if clock<0: clock=Time.get_ticks_msec()
+		if clock<0:
+			clock=Time.get_ticks_msec()
+			# Room generation and cold native-rig caches precede the input trial.
+			# Give the actual replicated combat trial its own bounded deadline.
+			deadline=clock+30000
 		var age:=Time.get_ticks_msec()-clock
+		if age>4500 and not diagnosed:
+			diagnosed=true
+			print("ARCHER_NET_DIAG role=",host," phase=",game.phase," pause=",game.pause_open," transition=",game.is_transitioning()," command=",game.commands.get(1,{})," build=",game.talent_combat.runtime(1))
 		game.scripted_target=Vector2(900,300) if host else Vector2(520,620)
 		if host:
 			game.scripted_skills=(1<<game.talent_combat.BAR_BIT) if age>300 and age<500 else ((1<<game.talent_combat.ULT_BIT) if age>1800 and age<2500 else 0)
@@ -81,7 +89,12 @@ func _run() -> void:
 		if host:
 			for enemy: Dictionary in game.enemies:
 				if bool(enemy.get("boss",false)): boss_safe=boss_safe and not enemy.has("marksman_pin")
-		if age>(6500 if host else 5800): break
+		if age>(6500 if host else 5800):
+			if not host: break
+			# Local harness lifetime only: keep the real host alive while a cold
+			# client finishes inspecting its snapshots and writes its receipt.
+			var result_path: String=args[args.find("--ring-result")+1]
+			if FileAccess.file_exists(result_path.get_base_dir().path_join("client.json")) or age>20000: break
 	check(marked,"per-owner one-use marks replicate")
 	check(charged,"host R hold produces a paid charge snapshot")
 	check(pinned,"normal line victims are carried and pinned in snapshots")

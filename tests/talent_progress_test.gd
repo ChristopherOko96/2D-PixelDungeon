@@ -117,7 +117,7 @@ func _test_soul_tiers_and_reset() -> void:
 	var profile := _profile(30)
 	_fill(profile, "swordsman", ["guard_1", "guard_2", "guard_3", "guard_4", "guard_5", "guard_6", "guard_7"])
 	profile.shards = {"have": 16, "earned": 16, "spent": 0}
-	profile.gold = 2000
+	profile.runes = 50
 	Rules.rank_up(d, profile, "swordsman", "guard_14")
 	check(profile.shards.have == 15, "the ultimate unlocks with one shard (Stufe 1)")
 	check(Rules.soul_up(d, profile, "swordsman").is_empty() and Rules.soul_up(d, profile, "swordsman").is_empty(), "Stufe 2 and Stufe 3 can be bought")
@@ -125,14 +125,15 @@ func _test_soul_tiers_and_reset() -> void:
 	check(not Rules.soul_up(d, profile, "swordsman").is_empty(), "there is no Stufe 4")
 	check(is_equal_approx(Rules.soul_scale(d, Profile.class_state(profile, "swordsman")), 1.2), "Stufe 3 replaces the lower bonus (+20 %)")
 	var cost := Rules.reset_cost(d, profile, "swordsman")
-	check(Rules.reset(d, profile, "swordsman").is_empty(), "the reset works with enough gold")
+	check(cost == 2 + 30 / 4, "a reset at Heldenstufe 30 costs 2 + 1 per 4 levels = 9 rune stones (got %d)" % cost)
+	check(Rules.reset(d, profile, "swordsman").is_empty(), "the reset works with enough rune stones")
 	var state := Profile.class_state(profile, "swordsman")
 	check(state.ranks.is_empty() and Rules.free_points(d, state) == 29, "the reset refunds every talent point")
 	check(profile.shards.have == 16 and profile.shards.spent == 0 and profile.shards.earned == 16, "the reset refunds every spent shard, no duplicates")
-	check(profile.gold == 2000 - cost and state.soul_tier == 0, "the reset costs gold and ends the soul tiers")
-	profile.gold = 0
+	check(profile.runes == 50 - cost and state.soul_tier == 0, "the reset costs rune stones and ends the soul tiers")
+	profile.runes = 0
 	_fill(profile, "swordsman", ["guard_1"])
-	check(not Rules.reset(d, profile, "swordsman").is_empty(), "a reset without enough gold is refused")
+	check(not Rules.reset(d, profile, "swordsman").is_empty(), "a reset without enough rune stones is refused")
 
 
 ## Every ultimate has two stages that change it (talents.json "stages");
@@ -166,7 +167,7 @@ func _test_one_branch_per_character() -> void:
 	check(Rules.chosen_spec(d, Profile.class_state(profile, "mage")) == "fire", "the first point makes a fire mage")
 	check(Rules.check_rank_up(d, profile, "mage", "frost_1").contains("Feuermagier"), "a fire mage cannot learn frost talents")
 	check(not Rules.valid_build(d, {"level": 10, "ranks": {"fire_1": 1, "frost_1": 1}}), "a build in two branches is invalid")
-	profile.gold = 1000
+	profile.runes = 100
 	Rules.reset(d, profile, "mage")
 	check(Rules.check_rank_up(d, profile, "mage", "frost_1").is_empty(), "after a reset another branch can be chosen")
 	var mixed := _profile(20, "mage")
@@ -209,10 +210,11 @@ func _test_exp_levels() -> void:
 	Rules.add_exp(d, state, 100000000)
 	check(state.level == 30 and state.exp == 0, "the level stops at 30")
 	# Max level only after several full runs (user decision 29.10.2026, was 1.5
-	# floors): one floor brings roughly 60 kills and the floor bonus, a run 10 floors.
+	# floors): one floor brings roughly 60 kills and its guardian (in the story
+	# worlds every guardian gives exp.boss, src/hell/hell_talents.gd killed), a run 10 floors.
 	var total := 0
 	for level in range(1, 30): total += Rules.exp_to_next(d, level)
-	var per_run: int = (60 * int(d.exp.kill) + int(d.exp.floor)) * 10
+	var per_run: int = (60 * int(d.exp.kill) + int(d.exp.boss)) * 10
 	check(float(total) / per_run >= 2.5 and float(total) / per_run <= 4.0, "level 30 takes several full runs (%.2f)" % (float(total) / per_run))
 	check(Rules.exp_to_next(d, 2) == 2 * Rules.exp_to_next(d, 1) and Rules.exp_to_next(d, 29) == 29 * Rules.exp_to_next(d, 1), "every level follows the same rule (base x level)")
 
@@ -228,8 +230,8 @@ func _test_profile_save_and_sanitize() -> void:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
 	check(loaded.shards.have == 4 and loaded.nightmare_firsts == ["rot_king"], "currencies and first kills survive a restart")
 	check(Profile.class_state(loaded, "archer").level == 25 and Profile.class_state(loaded, "archer").ranks.get("sniper_1", 0) == 3, "level and talents survive a restart")
-	var forged := Profile.sanitize({"gold": -50, "shards": {"have": 99, "earned": 2, "spent": 5}, "classes": {"mage": {"level": 99, "ranks": {"fire_1": 9, "nope": 1}}}}, d)
-	check(forged.gold == 0 and forged.shards.have == 0 and forged.shards.spent == 2, "negative or inconsistent currencies are repaired")
+	var forged := Profile.sanitize({"runes": -50, "shards": {"have": 99, "earned": 2, "spent": 5}, "classes": {"mage": {"level": 99, "gold": -7, "ranks": {"fire_1": 9, "nope": 1}}}}, d)
+	check(forged.runes == 0 and not Profile.class_state(forged, "mage").has("gold") and forged.shards.have == 0 and forged.shards.spent == 2, "negative or inconsistent currencies are repaired")
 	check(Profile.class_state(forged, "mage").level == 30 and Profile.class_state(forged, "mage").ranks == {"fire_1": 3}, "levels and ranks are clamped, unknown talents dropped")
 
 

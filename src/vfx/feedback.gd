@@ -160,7 +160,7 @@ func observe(snapshot: Dictionary, local_peer: int) -> void:
 			match fx_kind:
 				"potion_throw":
 					particles.burst(fx_point, tint, 22, 200.0, 0.6, Vector2.ZERO, PI, 3.0, 3.0)
-					particles.splat(fx_point + Vector2(0, 4), tint.darkened(0.3), 0.6, float(event.get("r", 50.0)) * 0.5)
+					_potion_residue(str(event.get("potion", "")), fx_point + Vector2(0, 4), float(event.get("r", 50.0)), tint)
 					_play_any(["potion_break", "crate_break", "break_bone"], 0.08)
 				"potion_blast":
 					particles.kick(fx_point, 30.0, 0.8)
@@ -358,6 +358,26 @@ func pose(key: String, entity: Dictionary, clock: float, authored_animation: boo
 
 ## Starts an effect animation when the view supplied the player; effects are
 ## cut at walls (they never show through to the other side).
+## What a thrown potion of `kind` leaves on the floor at `point` (radius `r`)
+## as matter of its element: ice a crust of frost with splinters, fire
+## embers, an explosion a scorch star with soot and embers, poison only
+## its own pool (src/vfx/pool_paint.gd); any other potion a splash of
+## droplets in its colour `tint` that dries and fades (particles.gd splat).
+func _potion_residue(kind: String, point: Vector2, r: float, tint: Color) -> void:
+	match kind:
+		"ice":
+			particles.frost_crust(point, r * 0.42, 6)
+		"fire":
+			particles.embers(point, r * 0.45, 10)
+		"explosion", "aftershock":
+			particles.scorch_star(point, r * 0.35)
+			particles.embers(point, r * 0.5, 8)
+		"poison":
+			particles.splat(point, Color("3b6b2a"), 0.55, r * 0.12)
+		_:
+			particles.splat(point, tint.darkened(0.3), 0.55, r * 0.3)
+
+
 func _fx_spawn(name: String, point: Vector2, rotation: float = 0.0, scale: float = 1.0, tint: Color = Color.WHITE, speed: float = 1.0) -> void:
 	if fx != null: fx.spawn(name, point, rotation, scale, tint, speed, true)
 

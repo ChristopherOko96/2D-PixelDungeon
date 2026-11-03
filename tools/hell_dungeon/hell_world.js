@@ -19,16 +19,16 @@
   const SIZE = { two: .8, twoSide: .8, trimLarge: 2 };
   const FLOORS = [
     null,
-    { n: 1, title: 'Aschenvorhof', circle: 0, seed: 7001, gc: 7, gr: 6, path: 13, rooms: 22, lava: .2, spikes: .2, vents: .25, holes: .45, pits: .3, loops: .35, mainLock: true, fire: 3, seq: false, boss: { name: 'Glutwächter', hp: 46, summon: 4, ring: 0 } },
-    { n: 2, title: 'Rußgalerien', circle: 0, seed: 7101, gc: 7, gr: 6, path: 13, rooms: 22, lava: .25, spikes: .2, vents: .25, holes: .45, pits: .3, loops: .35, mainLock: true, fire: 3, seq: false, boss: { name: 'Dreischlund', hp: 60, summon: 4, ring: 0 } },
-    { n: 3, title: 'Schwefelpforte', circle: 0, seed: 7303, gc: 7, gr: 6, path: 14, rooms: 23, lava: .3, spikes: .25, vents: .3, holes: .45, pits: .35, loops: .35, mainLock: true, fire: 0, seq: true, boss: { name: 'Ignaroth · Salamander', hp: 90, summon: 3.6, ring: 3.4, mini: true } },
-    { n: 4, title: 'Glutkessel', circle: 1, seed: 8404, gc: 8, gr: 6, path: 15, rooms: 25, lava: .55, river: .45, spikes: .25, vents: .45, holes: .35, pits: .2, loops: .3, mainLock: true, fire: 4, seq: false, shooters: true, boss: { name: 'Kesselbrut', hp: 105, summon: 3.6, ring: 3.2 } },
-    { n: 5, title: 'Schlackenstrom', circle: 1, seed: 8505, gc: 8, gr: 6, path: 16, rooms: 26, lava: .6, river: .55, spikes: .3, vents: .5, holes: .35, pits: .2, loops: .3, mainLock: true, fire: 3, seq: true, shooters: true, boss: { name: 'Seelenhirte', hp: 120, summon: 3.4, ring: 3.0 } },
-    { n: 6, title: 'Feuerschlund', circle: 1, seed: 8606, gc: 8, gr: 6, path: 16, rooms: 26, lava: .7, river: .6, spikes: .3, vents: .55, holes: .3, pits: .25, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, boss: { name: 'Ignaroth · Jungdrache', hp: 160, summon: 3.2, ring: 2.6, mini: true } },
-    { n: 7, title: 'Kettenzwinger', circle: 2, seed: 9707, gc: 8, gr: 7, path: 17, rooms: 28, lava: .4, river: .3, spikes: .5, vents: .4, holes: .5, pits: .45, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, boss: { name: 'Kerkermeister', hp: 175, summon: 3.0, ring: 2.6 } },
-    { n: 8, title: 'Klagegruben', circle: 2, seed: 9808, gc: 8, gr: 7, path: 18, rooms: 29, lava: .45, river: .35, spikes: .55, vents: .45, holes: .5, pits: .5, loops: .3, mainLock: true, fire: 3, seq: true, shooters: true, boss: { name: 'Klagender Hüter', hp: 190, summon: 2.8, ring: 2.4 } },
-    { n: 9, title: 'Blutrunen', circle: 2, seed: 9909, gc: 8, gr: 7, path: 18, rooms: 30, lava: .55, river: .4, spikes: .6, vents: .5, holes: .5, pits: .5, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, boss: { name: 'Ignaroth · Glutdrache', hp: 240, summon: 2.6, ring: 2.0, mini: true } },
-    { n: 10, title: 'Thron der Tiefe', circle: 3, seed: 11010, gc: 8, gr: 7, path: 18, rooms: 30, lava: .75, river: .6, spikes: .55, vents: .6, holes: .45, pits: .45, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, final: true, boss: { name: 'Ignaroth · Obsidianform', hp: 340, summon: 2.4, ring: 1.6, final: true } },
+    { n: 1, title: 'Aschenvorhof', circle: 0, seed: 7001, gc: 7, gr: 6, path: 13, rooms: 22, lava: .2, spikes: .2, vents: .25, holes: .45, pits: .3, loops: .35, mainLock: true, fire: 3, seq: false, boss: { name: 'Glutwächter', hp: 115, summon: 4, ring: 0 } },
+    { n: 2, title: 'Rußgalerien', circle: 0, seed: 7101, gc: 7, gr: 6, path: 13, rooms: 22, lava: .25, spikes: .2, vents: .25, holes: .45, pits: .3, loops: .35, mainLock: true, fire: 3, seq: false, boss: { name: 'Dreischlund', hp: 150, summon: 4, ring: 0 } },
+    { n: 3, title: 'Schwefelpforte', circle: 0, seed: 7303, gc: 7, gr: 6, path: 14, rooms: 23, lava: .3, spikes: .25, vents: .3, holes: .45, pits: .35, loops: .35, mainLock: true, fire: 0, seq: true, boss: { name: 'Ignaroth · Salamander', hp: 225, summon: 3.6, ring: 3.4, mini: true } },
+    { n: 4, title: 'Glutkessel', circle: 1, seed: 8404, gc: 8, gr: 6, path: 15, rooms: 25, lava: .55, river: .45, spikes: .25, vents: .45, holes: .35, pits: .2, loops: .3, mainLock: true, fire: 4, seq: false, shooters: true, boss: { name: 'Kesselbrut', hp: 260, summon: 3.6, ring: 3.2 } },
+    { n: 5, title: 'Schlackenstrom', circle: 1, seed: 8505, gc: 8, gr: 6, path: 16, rooms: 26, lava: .6, river: .55, spikes: .3, vents: .5, holes: .35, pits: .2, loops: .3, mainLock: true, fire: 3, seq: true, shooters: true, boss: { name: 'Seelenhirte', hp: 300, summon: 3.4, ring: 3.0 } },
+    { n: 6, title: 'Feuerschlund', circle: 1, seed: 8606, gc: 8, gr: 6, path: 16, rooms: 26, lava: .7, river: .6, spikes: .3, vents: .55, holes: .3, pits: .25, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, boss: { name: 'Ignaroth · Jungdrache', hp: 400, summon: 3.2, ring: 2.6, mini: true } },
+    { n: 7, title: 'Kettenzwinger', circle: 2, seed: 9707, gc: 8, gr: 7, path: 17, rooms: 28, lava: .4, river: .3, spikes: .5, vents: .4, holes: .5, pits: .45, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, boss: { name: 'Kerkermeister', hp: 440, summon: 3.0, ring: 2.6 } },
+    { n: 8, title: 'Klagegruben', circle: 2, seed: 9808, gc: 8, gr: 7, path: 18, rooms: 29, lava: .45, river: .35, spikes: .55, vents: .45, holes: .5, pits: .5, loops: .3, mainLock: true, fire: 3, seq: true, shooters: true, boss: { name: 'Klagender Hüter', hp: 475, summon: 2.8, ring: 2.4 } },
+    { n: 9, title: 'Blutrunen', circle: 2, seed: 9909, gc: 8, gr: 7, path: 18, rooms: 30, lava: .55, river: .4, spikes: .6, vents: .5, holes: .5, pits: .5, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, boss: { name: 'Ignaroth · Glutdrache', hp: 600, summon: 2.6, ring: 2.0, mini: true } },
+    { n: 10, title: 'Thron der Tiefe', circle: 3, seed: 11010, gc: 8, gr: 7, path: 18, rooms: 30, lava: .75, river: .6, spikes: .55, vents: .6, holes: .45, pits: .45, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, final: true, boss: { name: 'Ignaroth · Obsidianform', hp: 1200, summon: 2.4, ring: 1.6, final: true } },
   ].map(P => P && Object.assign({}, P, SIZE));
   const CIRCLES = ['Kreis I · Aschenvorhof', 'Kreis II · Lavaschlund', 'Kreis III · Kettenkerker', 'Kreis IV · Höllenthron'];
   const NAMES = [['Asche', 'Ruß', 'Schwefel', 'Glut', 'Brand', 'Knochen', 'Schädel', 'Rauch'], ['Schlacken', 'Lava', 'Glut', 'Feuer', 'Magma', 'Brand', 'Kessel', 'Funken'],
@@ -52,7 +52,13 @@
   const BREAK_SET = ['barrel_a', 'barrel_b', 'barrel_c', 'urn_a', 'urn_b', 'urn_c', 'urn_d', 'urn_e', 'crate_a', 'crate_b', 'crate_c'];
   // chests: in a fight room six in ten bite; a treasure chest bites rarely
   const MIMIC_FIGHT = .6, MIMIC_TREASURE = .15;
+  // difficulty per floor n (world_core difficultyFor): enemy hp x (1 + (n-1) hp_step), speed x (1 + (n-1) speed_step),
+  // one extra enemy per fight room every extra_every floors. The hell is the steep last world.
+  const DIFF = { hp_step: .38, speed_step: .05, extra_every: 3 };
+  // a little lighter than the floors' own dark and red rim (x these shares); the hero's wider light
+  // (hell_balance.json view.player_light) clears more round him, the edge stays dark
+  const LIGHT = { dark: .75, vignette: .8 };
   // the pack as plain data (the Godot port reads it from assets/data/hell_world.json, see export_world.js)
-  const PACK = { floors: FLOORS, circles: CIRCLES, names: NAMES, suffixes: SUFFIXES, words: WORDS, theme_flag: null, light: null, gate_banner: GATE_BANNER, blue: BLUE, blue_props: BLUE_PROPS, foot: FOOT, wall_set: WALL_SET, break_set: BREAK_SET, mimic_fight: MIMIC_FIGHT, mimic_treasure: MIMIC_TREASURE };
+  const PACK = { floors: FLOORS, circles: CIRCLES, names: NAMES, suffixes: SUFFIXES, words: WORDS, theme_flag: null, light: LIGHT, gate_banner: GATE_BANNER, blue: BLUE, blue_props: BLUE_PROPS, foot: FOOT, wall_set: WALL_SET, break_set: BREAK_SET, mimic_fight: MIMIC_FIGHT, mimic_treasure: MIMIC_TREASURE, diff: DIFF };
   return WorldPack.make(PACK);
 });

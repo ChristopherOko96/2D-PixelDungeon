@@ -89,6 +89,8 @@ var _pet_source := -1
 var drops: Array = []
 ## Enemies the collapsing Singularität flings outward: {enemy, dir, left, owner, talent, base, fling}.
 var flung: Array = []
+## Bodies rolling back upright after a flight ({enemy, from, to, t}; _step_rolling).
+var rolling: Array = []
 ## True while Gefüge drops deal damage (their kills give no essence).
 var _dropping := false
 ## True while an echo (Nachhall) runs; the Gefüge element it carries ("" none).
@@ -440,6 +442,9 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 				return
 			var style := str(info.get("style", "arcane"))
 			var speed := 560.0 if style == "arrow" else 440.0
+			# the mage's spells burst on the floor where the mouse points, within their flight
+			# (user wish 02.11.2026, talents.json land; the host counts `left` down): -1 flies to the wall
+			var land := _land_reach(rt, Vector2(player.pos), target, speed * 1.6)
 			# an ultimate stage may fan the shot out (Pfeilsturm)
 			var fan: Dictionary = info.get("fan", {})
 			var count := maxi(1, int(fan.get("count", 1)))
@@ -451,8 +456,11 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 					shot.always_crit = bool(info.get("always_crit", false))
 					# Nachhall's carried element rides on the echoed shot (bullet_hit lets it land)
 					if not _echo_el.is_empty() and k == 0: shot.gefuege_el = _echo_el
+					if land > 0.0:
+						shot.left = maxf(0.0, land - 16.0)
+						shot.land = Vector2(player.pos) + dir * land
 			# Leerenlanze: it carries Gefüge units out and drops them along its flight (not its echo)
-			if info.has("spend") and not _in_echo: _lance_drops(id, rt, talent, info, Vector2(player.pos), aim, speed, base)
+			if info.has("spend") and not _in_echo: _lance_drops(id, rt, talent, info, Vector2(player.pos), aim, speed, base, land)
 		"nova":
 			var radius := float(info.radius_m) * meter
 			# Leerenriss: the rift drags the enemies in first (never bosses)
@@ -517,6 +525,8 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 				_hit(id, enemy, dmg, info, rt, talent)
 				if info.has("taunt"): _taunt(enemy, id, float(info.taunt))
 			_event("swing", player.pos, reach, {"angle": aim.angle(), "arc": float(info.arc), "talent": talent})
+			# the blow meets a wall or a prop in front: it clangs and chips there (host hook; R3)
+			if game.has_method("talent_swing_wall"): game.talent_swing_wall(Vector2(player.pos), aim, reach, float(info.arc) * 0.5)
 		"shield":
 			rt.shield_talent = talent
 			rt.shield = _value(info, "base_pct", rt, talent) / 100.0 * float(player.get("damage", 1.0))
@@ -706,7 +716,7 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 			zones.append({"id": _take_id(), "owner": id, "talent": talent, "pos": spot, "r": float(info.radius_m) * meter, "time": float(info.time),
 				"every": maxf(0.25, float(info.every)), "tick": 0.0, "dmg": dmg, "status": str(info.get("status", "")), "info": info,
 				"weaken": float(info.get("weaken", 0.0)), "raise": info.get("raise", {}), "look": str(info.get("look", "")),
-				"total": float(info.time), "stage": maxi(0, _ult_stage)})
+				"total": float(info.time), "stage": maxi(0, _ult_stage), "pool": str(info.get("pool", ""))})
 			if talent in ["curse_7", "curse_14"]:
 				zones[-1].look = "external_pool"
 				var all: Array = necromancer.media(self)
@@ -857,6 +867,7 @@ func step(delta: float) -> void:
 	_step_orbs(delta)
 	_step_drops(delta)
 	_step_flung(delta)
+	_step_rolling(delta)
 	for enemy: Dictionary in game.enemies:
 		for key: String in ["talent_mark", "pet_taunt", "talent_taunt", "talent_weak"]:
 			if enemy.has(key):
@@ -1274,7 +1285,10 @@ func pet_cast(id: int, slot: int, manual: bool = false) -> bool:
 			_pet_strike(pet, prey, ability)
 			hit = true
 		"taunt":
-			var radius := float(ability.radius_m) * meter
+			# Heulen / Brüllen: every non-boss enemy within radius_m (metres of the host's
+			# world, so the story worlds' larger pixels keep the reach) goes for the
+			# companion for `taunt` s (forced_target, the hell's chase_goal).
+			var radius := float(ability.radius_m) * meter * _world_scale()
 			var drawn := 0
 			for enemy: Dictionary in _living():
 				if not _boss(enemy) and Vector2(enemy.pos).distance_to(pet.pos) <= radius and not _blocked(pet.pos, enemy.pos, 1.0):
@@ -1357,9 +1371,9 @@ func snapshot() -> Dictionary:
 		"ax": Vector2(zone.wall.a).x if zone.has("wall") else 0.0, "ay": Vector2(zone.wall.a).y if zone.has("wall") else 0.0,
 		"bx": Vector2(zone.wall.b).x if zone.has("wall") else 0.0, "by": Vector2(zone.wall.b).y if zone.has("wall") else 0.0,
 		"path": (zone.path as Array).map(func(p: Vector2) -> Array: return [p.x, p.y]) if zone.has("path") else [], "w": float(zone.get("w", 0.0)),
-		"talent": str(zone.get("talent", "")), "total": float(zone.get("total", zone.time)), "every": float(zone.get("every", 1.0)), "stage": int(zone.get("stage", 0)), "ground": bool(zone.get("ground", false)),
-		# the Singularität: the ids caught in its core and the core's radius
-		"caught": Array(zone.get("caught", [])).duplicate(), "core": float(zone.get("core", 0.0))})
+		"talent": str(zone.get("talent", "")), "total": float(zone.get("total", zone.time)), "every": float(zone.get("every", 1.0)), "stage": int(zone.get("stage", 0)), "ground": bool(zone.get("ground", false)), "pool": str(zone.get("pool", "")),
+		# the Singularität: the ids caught in its core, the core's radius and the Gefüge it mixes
+		"caught": Array(zone.get("caught", [])).duplicate(), "core": float(zone.get("core", 0.0)), "mix": Array(zone.get("mix", [])).duplicate(true)})
 	out.auras = auras()
 	# enemies the Singularität's collapse is flinging: where they are and where they fly
 	out.flung = flung.map(func(f: Dictionary) -> Dictionary: return {"x": Vector2(f.enemy.pos).x, "y": Vector2(f.enemy.pos).y, "dx": Vector2(f.dir).x, "dy": Vector2(f.dir).y})
@@ -1478,7 +1492,8 @@ func _hit(id: int, enemy: Dictionary, dmg: float, info: Dictionary, rt: Dictiona
 	# the look of the blow for its ragdoll if it fells it: away from an area's burst, else from the hero
 	var away: Vector2 = (Vector2(enemy.pos) - _blast_at) if _blast_at.is_finite() and Vector2(enemy.pos).distance_to(_blast_at) > 0.5 else direction
 	_stamp(enemy, away, talent, not talent.is_empty() and talent == str(rt.get("ultimate", "")))
-	if dmg > 0.0: game._damage_enemy(enemy, dmg, direction, id, true)
+	# the push goes away from the blast that struck it (an area's burst), else away from the hero (D5)
+	if dmg > 0.0: game._damage_enemy(enemy, dmg, away.normalized() if away.length() > 0.01 else direction, id, true)
 	# a kill by the void mage's own talent is a void kill: its essence (enemy_killed)
 	if float(enemy.hp) <= 0.0 and not _dropping and _void_talent(talent): enemy.void_kill = id
 	_cur_talent = ""
@@ -1546,32 +1561,65 @@ func bullet_hit(bullet: Dictionary, enemy: Dictionary) -> void:
 		necromancer.pool(self, id, "poison" if talent == "curse_1" else "blood", Vector2(enemy.pos), float(necromancer.cfg.curse.small_pool_radius_m) * float(data.meter_px), float(necromancer.cfg.curse.small_pool_time), true)
 	_sound("tal_impact", Vector2(enemy.pos), {"talent": talent, "style": str(bullet.get("style", ""))})
 	rt.force_crit = false
+	_bullet_lands(bullet, Vector2(enemy.pos), enemy, info, rt, talent)
+	_talent_hit = false
+	_spell_hit = false
+
+
+## A mage's projectile talent reached the floor point the mouse showed without striking
+## anyone (talents.json land; the host calls it): it lands there as it would on an enemy,
+## its splash share on those round it, its element on what lies there.
+func bullet_land(bullet: Dictionary) -> void:
+	var id := int(bullet.owner)
+	var rt := runtime(id)
+	var talent := str(bullet.get("talent", ""))
+	if rt.is_empty() or not data.talents.has(talent): return
+	_talent_hit = true
+	_spell_hit = str(rt["class"]) == "mage"
+	_sound("tal_impact", Vector2(bullet.pos), {"talent": talent, "style": str(bullet.get("style", ""))})
+	_bullet_lands(bullet, Vector2(bullet.pos), {}, data.talents[talent], rt, talent)
+	_talent_hit = false
+	_spell_hit = false
+
+
+## What a projectile talent leaves where it lands at `at` (on `enemy`, or {} on the floor):
+## the splash and its explosion, else its element there, the stain, Nachhall's carried element.
+func _bullet_lands(bullet: Dictionary, at: Vector2, enemy: Dictionary, info: Dictionary, rt: Dictionary, talent: String) -> void:
+	var id := int(bullet.owner)
 	if info.has("splash_m"):
 		var reach := float(info.splash_m) * float(data.meter_px)
 		for other: Dictionary in _living():
-			if other != enemy and Vector2(other.pos).distance_to(enemy.pos) <= reach + float(other.radius):
+			if other != enemy and Vector2(other.pos).distance_to(at) <= reach + float(other.radius):
 				_hit(id, other, float(bullet.damage) * float(info.splash), info, rt, talent)
-		_event("explosion", enemy.pos, reach, {"fx": "fire", "life": 0.6, "talent": talent, "owner": id})
+		_event("explosion", at, reach, {"fx": "fire", "life": 0.6, "talent": talent, "owner": id})
 	elif str(bullet.get("style", "")) in ["fireball", "infernospear"]:
 		# a fire shot without a splash (Infernospeer) still lands as fire where it struck
-		_element("fire", Vector2(enemy.pos), 20.0, id)
+		_element("fire", at, 20.0, id)
 	elif str(bullet.get("style", "")) == "frost_lance":
 		# Frostlanze, Splittersalve: frost where it struck (water freezes, steam falls as rain)
-		_element("ice", Vector2(enemy.pos), 20.0, id)
+		_element("ice", at, 20.0, id)
 	elif str(bullet.get("style", "")) == "arcane" and talent.begins_with("arcane_"):
 		# Leerengeschoss, Leerenlanze: the void eats the puddles and gas where it struck (into the Gefüge)
-		_element("void", Vector2(enemy.pos), 28.0, id)
+		_element("void", at, 28.0, id)
 		# Leerengeschoss leaves its stain: a small void pool of the hero's that eats what lies near it
 		var stain: Dictionary = info.get("stain", {})
 		if not stain.is_empty():
-			_pool_at(id, "void", Vector2(enemy.pos), float(stain.radius_m) * float(data.meter_px), float(stain.time),
+			_pool_at(id, "void", at, float(stain.radius_m) * float(data.meter_px), float(stain.time),
 				float(stain.get("dps", 0.0)) * float(game.players.get(id, {}).get("damage", 1.0)), str(stain.get("status", "")))
 	# Nachhall: the element the echoed shot carries lands where it struck
 	if bullet.has("gefuege_el"):
-		_drop_now(id, str(bullet.gefuege_el), Vector2(enemy.pos), talent, float(game.players.get(id, {}).get("damage", 1.0)))
+		_drop_now(id, str(bullet.gefuege_el), at, talent, float(game.players.get(id, {}).get("damage", 1.0)))
 		bullet.erase("gefuege_el")
-	_talent_hit = false
-	_spell_hit = false
+
+
+## How far a projectile talent of `rt` flies from `from` before it bursts on the floor: to
+## `target`, held between land.min_px and `flight`; -1 for the classes whose shots fly on to
+## the wall (talents.json land: user wish 02.11.2026, the mage places his elements), and in
+## hosts that do not stop shots there (only the story's hell_talents.gd sets shots_land).
+func _land_reach(rt: Dictionary, from: Vector2, target: Vector2, flight: float) -> float:
+	var land: Dictionary = data.get("land", {})
+	if game == null or game.get("shots_land") != true or not str(rt["class"]) in land.get("classes", []) or not target.is_finite(): return -1.0
+	return clampf(from.distance_to(target), minf(float(land.get("min_px", 40.0)), flight), flight)
 
 
 ## The companion kind of a build ("wolf", "bear"; talents.json "pet.kinds"), the default when unknown.
@@ -1888,7 +1936,7 @@ func _step_zones(delta: float) -> void:
 			var rt := runtime(int(zone.owner))
 			_talent_hit = true
 			for enemy: Dictionary in _living():
-				if _in_zone(zone, enemy):
+				if _zone_reach(zone, enemy):
 					if soul_field and _blocked(zone.pos, enemy.pos, 1.0): continue
 					if float(zone.dmg) <= 0.0: continue
 					_hit(int(zone.owner), enemy, float(zone.dmg), zone.get("info", data.talents[str(zone.talent)]), rt, str(zone.talent))
@@ -1916,12 +1964,12 @@ func _step_zones(delta: float) -> void:
 # ---------- the Arkane Gefüge (Leerenmagier, user design 2026-10-31) ----------
 # FEED (his own void eats puddles, gas, shots and essences) -> LOAD (Nachhall
 # and Leerenlanze spend a little) -> EJECT (the Singularität's collapse spends
-# it all). Rules: assets/data/element_rules.json "gefuege".
+# it all). Rules: assets/data/madness_rules.json "gefuege" (src/combat/madness_rules.gd).
 
 ## The Gefüge's rules: capacity, what a swallowed thing is worth, the
 ## essences, the landings, the Singularität's ejection and fling.
 func _gf_cfg() -> Dictionary:
-	return ElementRules.data().get("gefuege", {})
+	return MadnessRules.gefuege()
 
 
 ## True for the Leerenmagier: a hero with a learned talent of the Gefüge's
@@ -2167,12 +2215,13 @@ func _echo_point(player: Dictionary, info: Dictionary, target: Vector2) -> Vecto
 
 ## Leerenlanze: spends its units (oldest first) and drops them evenly along
 ## the lance's flight (up to a wall), each when the lance passes there.
-func _lance_drops(id: int, rt: Dictionary, talent: String, info: Dictionary, from: Vector2, aim: Vector2, speed: float, base: float) -> void:
+func _lance_drops(id: int, rt: Dictionary, talent: String, info: Dictionary, from: Vector2, aim: Vector2, speed: float, base: float, reach := -1.0) -> void:
 	var els := spend(id, int(_value(info, "spend", rt, talent)))
 	var book := _gf_log(rt)
 	book.lance = els.size()
 	if els.is_empty(): return
-	var end := _move(from, aim * speed * 1.6, 4.0, game.current_layout)
+	# the lance ends where the mouse pointed (`reach`, _land_reach) or at the wall
+	var end := _move(from, aim * (reach if reach > 0.0 else speed * 1.6), 4.0, game.current_layout)
 	for k in range(els.size()):
 		var at := from.lerp(end, float(k + 1) / float(els.size() + 1))
 		drops.append({"time": from.distance_to(at) / maxf(1.0, speed), "el": str(els[k]), "n": 1, "pos": at, "owner": id, "talent": talent, "base": base})
@@ -2190,7 +2239,9 @@ func _step_drops(delta: float) -> void:
 		drop.time = float(drop.time) - delta
 		if float(drop.time) > 0.0: continue
 		drops.remove_at(i)
-		_land(drop)
+		# the Singularität's spat-out mixture lands as all its elements at once
+		if drop.has("mix"): _land_mix(drop)
+		else: _land(drop)
 
 
 ## A Gefüge element lands (gefuege.land[el]): it hurts the enemies round it
@@ -2199,18 +2250,21 @@ func _step_drops(delta: float) -> void:
 ## poison goes off, water boils or freezes; the chains stay capped by
 ## element_rules.json reactions); bone, soul and gold are shards that only
 ## hurt. A bundle of n units hits harder (bundle_scale); Entfesselte Leere
-## (eject_pct) makes every landing stronger. Event "land" {el, n, owner, eject}.
-func _land(drop: Dictionary) -> void:
+## (eject_pct) makes every landing stronger; drop.grow spreads it wider (the spat-out mixture).
+## Event "land" {el, n, owner, eject}. Returns its radius (0 when it does not land).
+func _land(drop: Dictionary) -> float:
 	var owner := int(drop.owner)
 	var rt := runtime(owner)
 	var cfg := _gf_cfg()
 	var lands: Dictionary = cfg.get("land", {})
 	var land: Dictionary = lands.get(str(drop.el), {})
-	if land.is_empty() or rt.is_empty(): return
+	if land.is_empty() or rt.is_empty(): return 0.0
 	var at: Vector2 = drop.pos
-	var size := 1.0 + float(int(drop.n) - 1) * float(cfg.get("bundle_scale", 0.5))
+	# a share below one unit lands in proportion to it, a bundle of more grows by bundle_scale per unit
+	var units := float(drop.n)
+	var size := units if units < 1.0 else 1.0 + (units - 1.0) * float(cfg.get("bundle_scale", 0.5))
 	var power := size * (1.0 + _sum(rt, "eject_pct", "pct") / 100.0)
-	var radius := float(land.get("radius_m", 0.8)) * float(data.meter_px) * minf(sqrt(size), 2.0)
+	var radius := float(land.get("radius_m", 0.8)) * float(data.meter_px) * minf(sqrt(size), 2.0) * float(drop.get("grow", 1.0))
 	var base := float(drop.get("base", 1.0))
 	var status := str(land.get("status", ""))
 	if float(land.get("dmg", 0.0)) > 0.0:
@@ -2223,7 +2277,8 @@ func _land(drop: Dictionary) -> void:
 	if not pool.is_empty(): _pool_at(owner, pool, at, radius, float(land.get("time", 5.0)), float(land.get("dps", 0.0)) * base * power, status)
 	var react := str(land.get("react", ""))
 	if not react.is_empty(): _react(react, at, radius, owner)
-	_event("land", at, radius, {"el": str(drop.el), "n": int(drop.n), "owner": owner, "eject": bool(drop.get("eject", false)), "life": 0.6})
+	_event("land", at, radius, {"el": str(drop.el), "n": float(drop.n), "owner": owner, "eject": bool(drop.get("eject", false)), "life": 0.6})
+	return radius
 
 
 ## A pool of `style` the hero owns at `at`: the host's (the story worlds'
@@ -2274,57 +2329,108 @@ func _catch_step(zone: Dictionary, delta: float) -> void:
 		var angle := float(zone.spin) + TAU * float(k) / float(held.size())
 		_shove(enemy, Vector2(zone.pos) + Vector2.from_angle(angle) * float(zone.core) * float(cfg.get("orbit_r", 0.6)))
 		_hold_enemy(enemy, float(cfg.get("hold_s", 0.25)))
+	# what the Gefüge holds, for the whirl's look: its elements swirl inside the core and blend into
+	# one mixture until the collapse spits it out (src/vfx/talent_fx.gd, TalentPixels.mixing)
+	zone.mix = Array(gefuege_state(runtime(int(zone.owner))).get("units", []))
 
 
-## The Singularität collapses: the whole Gefüge breaks out chaotically (at
-## most gefuege.eject_max bolts, a golden-angle spiral to spots eject_m away,
-## each landing as its element: _land), event "eject" {els: [{el, n, tx, ty,
-## t}], owner}; the caught enemies (and minibosses pulled into the core) fly
-## radially outward (_step_flung).
+## The Singularität collapses (user, 2026-11-01): the elements were mixed inside the Gefüge into
+## one clump, and only that mixture comes out. gefuege.spit stay of every element stays in the
+## explosion zone: it lands on the core at once as one wide mixed field (stay_scale wider), where
+## its elements go on mixing (event "churn" {els, owner} for churn_s s); the rest flies out into
+## every corner as min_count..count globs (about per_glob units each), every glob the same
+## mixture, an equal share of every element (_mix_globs), spread evenly round the core (turned by
+## up to jitter of a step) to spots spit.m [min, max] metres away (walls permitting, spit.speed
+## px/s, spit.delay s apart); each lands as all its elements at once (_land_mix). Event "spit"
+## {globs: [{els: [{el, n}] in landing order, n, tx, ty, d launch s, t landing s}], els (the
+## whole mixture), stay, zone (the whirl's id), owner}; the caught enemies (and minibosses pulled
+## into the core) were flung outward before (_fling_caught).
 func _collapse(zone: Dictionary) -> void:
 	var owner := int(zone.owner)
 	var rt := runtime(owner)
-	var cfg := _gf_cfg()
+	var spit: Dictionary = _gf_cfg().get("spit", {})
 	var meter := float(data.meter_px)
 	var center: Vector2 = zone.pos
 	var book := _gf_log(rt)
 	var els := spend(owner, gefuege_units(rt))
-	var bolts := _bundle(els, int(cfg.get("eject_max", 24)))
-	var span: Array = cfg.get("eject_m", [6, 8])
+	book.eject_units = els.size()
+	book.ejected = 0
+	if els.is_empty(): return
+	var whole := _mixture(els)
+	var stay := clampf(float(spit.get("stay", 0.4)), 0.0, 1.0)
+	var flying := float(els.size()) * (1.0 - stay)
+	var count := 0
+	if flying > 0.0:
+		count = clampi(ceili(flying / maxf(1.0, float(spit.get("per_glob", 4)))), maxi(1, int(spit.get("min_count", 3))), maxi(1, int(spit.get("count", 6))))
+	var globs := _mix_globs(whole, 1.0 - stay, count)
+	var span: Array = spit.get("m", [6, 8])
 	var start := _rng.randf() * TAU
+	var step := TAU / float(maxi(1, globs.size()))
 	var out: Array = []
 	var longest := 0.0
-	for k in range(bolts.size()):
-		var bolt: Dictionary = bolts[k]
-		var away := Vector2.from_angle(start + float(k) * 2.399963)
+	for k in range(globs.size()):
+		var mix: Array = globs[k]
+		var units := 0.0
+		for part: Dictionary in mix: units += float(part.n)
+		var away := Vector2.from_angle(start + step * (float(k) + (_rng.randf() - 0.5) * float(spit.get("jitter", 0.3))))
 		var at := _move(center, away * lerpf(float(span[0]), float(span[1]), _rng.randf()) * meter, 6.0, game.current_layout)
-		var delay := float(cfg.get("eject_delay", 0.04)) * float(k) + center.distance_to(at) / maxf(1.0, float(cfg.get("eject_speed", 520)))
+		var launch := float(spit.get("delay", 0.04)) * float(k)
+		var delay := launch + maxf(0.05, center.distance_to(at) / maxf(1.0, float(spit.get("speed", 420.0))))
 		longest = maxf(longest, delay)
-		drops.append({"time": delay, "el": str(bolt.el), "n": int(bolt.n), "pos": at, "owner": owner, "talent": str(zone.talent), "base": float(zone.get("base", 1.0)), "eject": true})
-		out.append({"el": str(bolt.el), "n": int(bolt.n), "tx": at.x, "ty": at.y, "t": delay})
+		drops.append({"time": delay, "mix": mix, "n": units, "pos": at, "owner": owner, "talent": str(zone.talent), "base": float(zone.get("base", 1.0)), "eject": true})
+		out.append({"els": mix, "n": units, "tx": at.x, "ty": at.y, "d": launch, "t": delay})
 	book.ejected = out.size()
-	book.eject_units = els.size()
-	if not out.is_empty(): _event("eject", center, float(zone.r), {"els": out, "owner": owner, "life": longest + 0.4})
-	# the caught were flung out before the blast (_fling_caught)
+	_event("spit", center, float(zone.r), {"globs": out, "els": whole, "stay": stay, "zone": int(zone.id), "owner": owner, "life": longest + 0.4})
+	if stay <= 0.0: return
+	# what stays: one wide mixed field on the core, its elements going on mixing there
+	var kept: Array = _mix_globs(whole, stay, 1)[0]
+	var wide := _land_mix({"mix": kept, "n": float(els.size()) * stay, "pos": center, "owner": owner, "talent": str(zone.talent),
+		"base": float(zone.get("base", 1.0)), "grow": float(spit.get("stay_scale", 1.6)), "stay": true})
+	_event("churn", center, wide, {"els": kept, "owner": owner, "life": maxf(0.1, float(spit.get("churn_s", 2.5)))})
 
 
-## Bundles element units (oldest first) into at most `most` bolts: runs of
-## one element stay together; with too many, the smallest joins a neighbour.
-func _bundle(els: Array, most: int) -> Array:
-	var bolts: Array = []
-	if els.is_empty() or most <= 0: return bolts
-	var per := ceili(float(els.size()) / float(most))
-	for el: Variant in els:
-		if not bolts.is_empty() and str(bolts[-1].el) == str(el) and int(bolts[-1].n) < per: bolts[-1].n = int(bolts[-1].n) + 1
-		else: bolts.append({"el": str(el), "n": 1})
-	while bolts.size() > most:
-		var small := 0
-		for k in range(bolts.size()):
-			if int(bolts[k].n) < int(bolts[small].n): small = k
-		var into := small - 1 if small > 0 else 1
-		bolts[into].n = int(bolts[into].n) + int(bolts[small].n)
-		bolts.remove_at(small)
-	return bolts
+## `share` (0..1) of a mixture split into `count` globs that are all the same mixture: each holds
+## every element, an equal part of its share (n may be a fraction: _land scales by it). Each glob:
+## [{el, n}] in the mixture's (landing) order; none for count 0.
+func _mix_globs(whole: Array, share: float, count: int) -> Array:
+	var globs: Array = []
+	for k in range(maxi(0, count)):
+		var glob: Array = []
+		for part: Dictionary in whole: glob.append({"el": str(part.el), "n": float(part.n) * share / float(count)})
+		globs.append(glob)
+	return globs
+
+
+## Element units as a mixture: [{el, n}] per element, in gefuege.spit.order (the liquids first,
+## fire last, so on landing the fire sets off the poison and boils the water), any element not
+## named there before the fire.
+func _mixture(els: Array) -> Array:
+	var counts := {}
+	for el: Variant in els: counts[str(el)] = int(counts.get(str(el), 0)) + 1
+	var order: Array = (_gf_cfg().get("spit", {}) as Dictionary).get("order", [])
+	var out: Array = []
+	for el: String in counts:
+		if not order.has(el): out.append({"el": el, "n": int(counts[el])})
+	for el: Variant in order:
+		if counts.has(str(el)): out.append({"el": str(el), "n": int(counts[str(el)])})
+	return out
+
+
+## The spat-out mixture lands: every element of it at once on its spot (_land, in the mixture's
+## order), each spread wider (drop.grow, else spit.radius_scale) and stronger by spit.mix_bonus
+## for every kind beyond the first; then event "mix_land" {els, n, stay, owner} for its splash.
+## Returns the widest radius it landed with.
+func _land_mix(drop: Dictionary) -> float:
+	var spit: Dictionary = _gf_cfg().get("spit", {})
+	var mix: Array = drop.mix
+	var bonus := 1.0 + float(spit.get("mix_bonus", 0.1)) * float(maxi(0, mix.size() - 1))
+	var widest := 0.0
+	for part: Dictionary in mix:
+		var radius := _land({"el": str(part.el), "n": float(part.n), "pos": drop.pos, "owner": int(drop.owner), "talent": str(drop.talent),
+			"base": float(drop.get("base", 1.0)) * bonus, "eject": true, "grow": float(drop.get("grow", spit.get("radius_scale", 1.2)))})
+		widest = maxf(widest, radius)
+	_event("mix_land", drop.pos, widest, {"els": mix, "n": float(drop.get("n", 0)), "stay": bool(drop.get("stay", false)), "talent": str(drop.talent), "owner": int(drop.owner), "life": 0.9})
+	return widest
 
 
 ## Flung enemies fly on outward (gefuege.fling_speed px/s) until fling_m is
@@ -2347,6 +2453,17 @@ func _step_flung(delta: float) -> void:
 		_hold_enemy(enemy, float(cfg.get("hold_s", 0.25)))
 		# it turns over as it flies (the rig draws enemy.tumble, src/rig/rig_renderer.gd)
 		enemy.tumble = float(enemy.get("tumble", 0.0)) + float(cfg.get("fling_spin", 12.0)) * float(fly.get("turn", 1.0)) * delta
+		# a body flying through others knocks them aside, each once (physics plan R23: momentum
+		# passes on): gefuege.bump_m along its flight and half across, never a boss
+		var bumped: Dictionary = fly.get("bumped", {})
+		for other: Dictionary in _living():
+			if is_same(other, enemy) or _boss(other) or bumped.has(other.id): continue
+			if Vector2(other.pos).distance_to(to) > float(other.radius) + float(enemy.radius): continue
+			bumped[other.id] = true
+			var side := (Vector2(other.pos) - to).normalized() if Vector2(other.pos).distance_to(to) > 0.5 else dir.orthogonal()
+			_shove(other, _move(Vector2(other.pos), (dir + side * 0.5).normalized() * float(cfg.get("bump_m", 0.8)) * float(data.meter_px), float(other.radius), game.current_layout))
+			_hold_enemy(other, float(cfg.get("hold_s", 0.25)))
+		fly.bumped = bumped
 		fly.left = float(fly.left) - step
 		if step > 1.0 and (to - from).dot(dir) < step * 0.5:
 			flung.remove_at(i)
@@ -2446,6 +2563,26 @@ func _soul(rt: Dictionary, talent: String, kind: String) -> float:
 func cost_of(rt: Dictionary, talent: String) -> float:
 	var info: Dictionary = data.talents.get(talent, {})
 	return float(info.get("cost", 0.0)) * maxf(0.5, 1.0 - _sum(rt, "cost_pct", "pct") / 100.0)
+
+
+## Fills a hero's resource (Mana, Ausdauer or Zorn) to the top and resets every
+## cooldown it has: its talents, the global cooldown, its companion's abilities,
+## the companion guard and the Shift defense (charges back, no longer broken).
+## The mana fountain of the story worlds. Returns true when the hero has a runtime.
+func refill(id: int) -> bool:
+	var rt := runtime(id)
+	if rt.is_empty(): return false
+	rt.res = float(rt.res_max)
+	rt.cds = {}
+	rt.gcd = 0.0
+	rt.pet_cds = {}
+	rt.guard_cd = 0.0
+	var guard: Dictionary = rt.get("defense", {})
+	if not guard.is_empty():
+		guard.left = float(guard.max)
+		guard.broken = 0.0
+		guard.timer = 0.0
+	return true
 
 
 ## Refills `share` (0..1) of a hero's mana; heroes with Ausdauer or Zorn are
@@ -2553,6 +2690,31 @@ func _in_zone(zone: Dictionary, enemy: Dictionary) -> bool:
 func zone_center(player: Dictionary, target: Vector2) -> Vector2:
 	var spot: Vector2 = player.pos+(target-Vector2(player.pos)).limit_length(7.0*float(data.meter_px))
 	return _move(player.pos,spot-Vector2(player.pos),8.0)
+
+
+## Whether a zone's tick reaches `enemy`: a zone lying as a pool of its own (talents.json "pool":
+## the Seuchenfeld's plague) reaches whoever stands in that pool, so it stops at the walls like the
+## pool does (the host's talent_ground_covers; physics plan R14); until its pool lies, and in a
+## world without a pool layer, its circle (_in_zone). The caster and his side are never enemies.
+func _zone_reach(zone: Dictionary, enemy: Dictionary) -> bool:
+	if str(zone.get("pool", "")) != "" and game != null and game.has_method("talent_ground_covers"):
+		var inside := int(game.talent_ground_covers(int(zone.id), Vector2(enemy.pos), float(enemy.radius)))
+		if inside >= 0: return inside == 1
+	return _in_zone(zone, enemy)
+
+
+## The zones lying as pools of their own (talents.json "pool"), as pool-layer entries ({id, k
+## "pool", st, x, y, r, p 0..1 of their time gone, L, owner}) for the host to lay on its clock
+## (source "talent_ground", src/hell/hell_talents.gd update).
+func ground_pools() -> Array:
+	var out: Array = []
+	for zone: Dictionary in zones:
+		if str(zone.get("pool", "")) == "": continue
+		var total := maxf(0.01, float(zone.get("total", zone.time)))
+		out.append({"id": int(zone.id), "k": "pool", "st": str(zone.pool), "x": Vector2(zone.pos).x, "y": Vector2(zone.pos).y, "r": float(zone.r),
+			"p": clampf(1.0 - float(zone.time) / total, 0.0, 1.0), "L": total, "owner": int(zone.owner)})
+	return out
+
 
 ## Where a targeted ultimate lands: the mouse point, at most reach_m away.
 func _spot(player: Dictionary, target: Vector2, info: Dictionary) -> Vector2:
@@ -2812,7 +2974,10 @@ func _fling_caught(zone: Dictionary) -> void:
 func _flight_over(fly: Dictionary, enemy: Dictionary) -> void:
 	enemy.erase("flung_out")
 	if float(enemy.hp) <= 0.0: return
-	enemy.erase("tumble")
+	# it rolls on to its feet (the nearest full turn) instead of snapping upright (physics plan F41)
+	var spin := float(enemy.get("tumble", 0.0))
+	if absf(spin) > 0.01: rolling.append({"enemy": enemy, "from": spin, "to": round(spin / TAU) * TAU, "t": 0.0})
+	else: enemy.erase("tumble")
 	var late := float(fly.get("late", 0.0))
 	if late <= 0.0: return
 	var dir: Vector2 = fly.dir
@@ -2823,6 +2988,20 @@ func _flight_over(fly: Dictionary, enemy: Dictionary) -> void:
 	if float(enemy.hp) <= 0.0 and _void_talent(str(fly.talent)): enemy.void_kill = int(fly.owner)
 	_cur_talent = ""
 	_talent_hit = false
+
+
+## Flung bodies that landed roll on to their feet over gefuege.roll_s (0.25 s), easing out.
+func _step_rolling(delta: float) -> void:
+	var span := maxf(0.05, float(_gf_cfg().get("roll_s", 0.25)))
+	for i in range(rolling.size() - 1, -1, -1):
+		var roll: Dictionary = rolling[i]
+		var enemy: Dictionary = roll.enemy
+		roll.t = float(roll.t) + delta
+		var k := clampf(float(roll.t) / span, 0.0, 1.0)
+		enemy.tumble = lerpf(float(roll.from), float(roll.to), 1.0 - pow(1.0 - k, 3.0))
+		if k >= 1.0 or float(enemy.get("hp", 0.0)) <= 0.0 or enemy.has("flung_out"):
+			if k >= 1.0: enemy.erase("tumble")
+			rolling.remove_at(i)
 
 
 ## The Gletschergrab lands (its first tick): enemies at its heart freeze, bosses only slow.

@@ -21,23 +21,24 @@ const C = 96, SW = 14, SH = 11;
 const CIRCLES = ['Kreis I · Aschenvorhof', 'Kreis II · Lavaschlund', 'Kreis III · Kettenkerker', 'Kreis IV · Höllenthron'];
 const FLOORS = [
   null,
-  { n: 1, title: 'Aschenvorhof', circle: 0, handmade: true, boss: { name: 'Glutwächter', hp: 46, summon: 4, ring: 0 } },
-  { n: 2, title: 'Rußgalerien', circle: 0, seed: 7101, gc: 7, gr: 6, path: 13, rooms: 22, lava: .25, spikes: .2, vents: .25, holes: .45, pits: .3, loops: .35, mainLock: true, fire: 3, seq: false, boss: { name: 'Dreischlund', hp: 60, summon: 4, ring: 0 } },
-  { n: 3, title: 'Schwefelpforte', circle: 0, seed: 7303, gc: 7, gr: 6, path: 14, rooms: 23, lava: .3, spikes: .25, vents: .3, holes: .45, pits: .35, loops: .35, mainLock: true, fire: 0, seq: true, boss: { name: 'Ignaroth · Salamander', hp: 90, summon: 3.6, ring: 3.4, mini: true } },
-  { n: 4, title: 'Glutkessel', circle: 1, seed: 8404, gc: 8, gr: 6, path: 15, rooms: 25, lava: .55, river: .45, spikes: .25, vents: .45, holes: .35, pits: .2, loops: .3, mainLock: true, fire: 4, seq: false, shooters: true, boss: { name: 'Kesselbrut', hp: 105, summon: 3.6, ring: 3.2 } },
-  { n: 5, title: 'Schlackenstrom', circle: 1, seed: 8505, gc: 8, gr: 6, path: 16, rooms: 26, lava: .6, river: .55, spikes: .3, vents: .5, holes: .35, pits: .2, loops: .3, mainLock: true, fire: 3, seq: true, shooters: true, boss: { name: 'Seelenhirte', hp: 120, summon: 3.4, ring: 3.0 } },
-  { n: 6, title: 'Feuerschlund', circle: 1, seed: 8606, gc: 8, gr: 6, path: 16, rooms: 26, lava: .7, river: .6, spikes: .3, vents: .55, holes: .3, pits: .25, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, boss: { name: 'Ignaroth · Jungdrache', hp: 160, summon: 3.2, ring: 2.6, mini: true } },
-  { n: 7, title: 'Kettenzwinger', circle: 2, seed: 9707, gc: 8, gr: 7, path: 17, rooms: 28, lava: .4, river: .3, spikes: .5, vents: .4, holes: .5, pits: .45, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, boss: { name: 'Kerkermeister', hp: 175, summon: 3.0, ring: 2.6 } },
-  { n: 8, title: 'Klagegruben', circle: 2, seed: 9808, gc: 8, gr: 7, path: 18, rooms: 29, lava: .45, river: .35, spikes: .55, vents: .45, holes: .5, pits: .5, loops: .3, mainLock: true, fire: 3, seq: true, shooters: true, boss: { name: 'Klagender Hüter', hp: 190, summon: 2.8, ring: 2.4 } },
-  { n: 9, title: 'Blutrunen', circle: 2, seed: 9909, gc: 8, gr: 7, path: 18, rooms: 30, lava: .55, river: .4, spikes: .6, vents: .5, holes: .5, pits: .5, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, boss: { name: 'Ignaroth · Glutdrache', hp: 240, summon: 2.6, ring: 2.0, mini: true } },
-  { n: 10, title: 'Thron der Tiefe', circle: 3, seed: 11010, gc: 8, gr: 7, path: 18, rooms: 30, lava: .75, river: .6, spikes: .55, vents: .6, holes: .45, pits: .45, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, final: true, boss: { name: 'Ignaroth · Obsidianform', hp: 340, summon: 2.4, ring: 1.6, final: true } },
+  { n: 1, title: 'Aschenvorhof', circle: 0, handmade: true, boss: { name: 'Glutwächter', hp: 115, summon: 4, ring: 0 } },
+  { n: 2, title: 'Rußgalerien', circle: 0, seed: 7101, gc: 7, gr: 6, path: 13, rooms: 22, lava: .25, spikes: .2, vents: .25, holes: .45, pits: .3, loops: .35, mainLock: true, fire: 3, seq: false, boss: { name: 'Dreischlund', hp: 150, summon: 4, ring: 0 } },
+  { n: 3, title: 'Schwefelpforte', circle: 0, seed: 7303, gc: 7, gr: 6, path: 14, rooms: 23, lava: .3, spikes: .25, vents: .3, holes: .45, pits: .35, loops: .35, mainLock: true, fire: 0, seq: true, boss: { name: 'Ignaroth · Salamander', hp: 225, summon: 3.6, ring: 3.4, mini: true } },
+  { n: 4, title: 'Glutkessel', circle: 1, seed: 8404, gc: 8, gr: 6, path: 15, rooms: 25, lava: .55, river: .45, spikes: .25, vents: .45, holes: .35, pits: .2, loops: .3, mainLock: true, fire: 4, seq: false, shooters: true, boss: { name: 'Kesselbrut', hp: 260, summon: 3.6, ring: 3.2 } },
+  { n: 5, title: 'Schlackenstrom', circle: 1, seed: 8505, gc: 8, gr: 6, path: 16, rooms: 26, lava: .6, river: .55, spikes: .3, vents: .5, holes: .35, pits: .2, loops: .3, mainLock: true, fire: 3, seq: true, shooters: true, boss: { name: 'Seelenhirte', hp: 300, summon: 3.4, ring: 3.0 } },
+  { n: 6, title: 'Feuerschlund', circle: 1, seed: 8606, gc: 8, gr: 6, path: 16, rooms: 26, lava: .7, river: .6, spikes: .3, vents: .55, holes: .3, pits: .25, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, boss: { name: 'Ignaroth · Jungdrache', hp: 400, summon: 3.2, ring: 2.6, mini: true } },
+  { n: 7, title: 'Kettenzwinger', circle: 2, seed: 9707, gc: 8, gr: 7, path: 17, rooms: 28, lava: .4, river: .3, spikes: .5, vents: .4, holes: .5, pits: .45, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, boss: { name: 'Kerkermeister', hp: 440, summon: 3.0, ring: 2.6 } },
+  { n: 8, title: 'Klagegruben', circle: 2, seed: 9808, gc: 8, gr: 7, path: 18, rooms: 29, lava: .45, river: .35, spikes: .55, vents: .45, holes: .5, pits: .5, loops: .3, mainLock: true, fire: 3, seq: true, shooters: true, boss: { name: 'Klagender Hüter', hp: 475, summon: 2.8, ring: 2.4 } },
+  { n: 9, title: 'Blutrunen', circle: 2, seed: 9909, gc: 8, gr: 7, path: 18, rooms: 30, lava: .55, river: .4, spikes: .6, vents: .5, holes: .5, pits: .5, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, boss: { name: 'Ignaroth · Glutdrache', hp: 600, summon: 2.6, ring: 2.0, mini: true } },
+  { n: 10, title: 'Thron der Tiefe', circle: 3, seed: 11010, gc: 8, gr: 7, path: 18, rooms: 30, lava: .75, river: .6, spikes: .55, vents: .6, holes: .45, pits: .45, loops: .3, mainLock: true, fire: 4, seq: true, shooters: true, final: true, boss: { name: 'Ignaroth · Obsidianform', hp: 1200, summon: 2.4, ring: 1.6, final: true } },
 ];
 // look per floor: darkness, red grade, ember density, hot floor share
 function themeFor(n, P = FLOORS[n]) {
   const t = (n - 1) / 9;
   return { dark: .6 + t * .2, grade: t * .16, vignette: .25 + t * .45, embers: 2 + Math.round(t * 5), hot: .18 + t * .4, wallGlow: t, circle: P.circle };
 }
-function difficultyFor(n, P = FLOORS[n]) { return { hp: 1 + (n - 1) * .16, speed: 1 + (n - 1) * .04, extra: Math.floor((n - 1) / 3), shooters: !!P.shooters }; }
+// D: the world's curve (pack key diff: hp_step, speed_step, extra_every); without one the old shared curve.
+function difficultyFor(n, P = FLOORS[n], D = {}) { return { hp: 1 + (n - 1) * (D.hp_step ?? .16), speed: 1 + (n - 1) * (D.speed_step ?? .04), extra: Math.floor((n - 1) / (D.extra_every || 3)), shooters: !!P.shooters }; }
 
 // ---------- floor 1: the approved handmade layout ----------
 const F1 = {
@@ -347,7 +348,7 @@ function buildFloor(n, SIZES, opts = {}) {
   const P = (opts.floors || FLOORS)[n], theme = themeFor(n, P);
   const plan = P.handmade ? JSON.parse(JSON.stringify(F1)) : describe(P, generate(P), mulberry32(P.seed + 99), opts.names, opts.suffixes);
   const GC = plan.gc, GR = plan.gr, COLS = GC * SW, ROWS = GR * SH;
-  const W = { n, seed: P.seed || 1, title: P.title, circle: (opts.circles || CIRCLES)[P.circle], theme, boss: P.boss, diff: difficultyFor(n, P), final: !!P.final, COLS, ROWS, C, SW, SH,
+  const W = { n, seed: P.seed || 1, title: P.title, circle: (opts.circles || CIRCLES)[P.circle], theme, boss: P.boss, diff: difficultyFor(n, P, opts.diff), final: !!P.final, COLS, ROWS, C, SW, SH,
     grid: new Uint8Array(COLS * ROWS), roomAt: new Int16Array(COLS * ROWS).fill(-1), holeAt: new Uint8Array(COLS * ROWS), tileAt: new Array(COLS * ROWS),
     rooms: plan.rooms, doors: [], props: [], decals: [], wallDecor: [], ents: [], lights: [], groups: plan.groups || {}, occupied: new Set(), sizes: SIZES };
   const idx = (x, y) => y * COLS + x, inGrid = (x, y) => x >= 0 && y >= 0 && x < COLS && y < ROWS;
