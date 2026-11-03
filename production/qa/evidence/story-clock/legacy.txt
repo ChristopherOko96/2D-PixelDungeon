@@ -1,0 +1,39 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+STORY_CLOCK_INTEGRATION_FAIL krypta 15 FPS: world time = 1 s (got 0.750000)
+STORY_CLOCK_INTEGRATION_FAIL krypta 15 FPS: cooldown retains 0.2 s (got 0.450000)
+STORY_CLOCK_RATE world=krypta fps=15 simulated=0.750000 cooldown=0.450000
+STORY_CLOCK_RATE world=krypta fps=30 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_RATE world=krypta fps=60 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_RATE world=krypta fps=144 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_RATE world=krypta fps=240 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_INTEGRATION_FAIL krypta: resuming drops menu time
+STORY_CLOCK_INTEGRATION_FAIL krypta: the next tick resumes normally
+STORY_CLOCK_INTEGRATION_FAIL krypta: hitstop ends without fast-forwarding combat
+STORY_CLOCK_INTEGRATION_FAIL krypta: loading time is not played as combat
+STORY_CLOCK_INTEGRATION_FAIL krypta: the new floor begins with one normal tick
+STORY_CLOCK_INTEGRATION_FAIL frost 15 FPS: world time = 1 s (got 0.750000)
+STORY_CLOCK_INTEGRATION_FAIL frost 15 FPS: cooldown retains 0.2 s (got 0.450000)
+STORY_CLOCK_RATE world=frost fps=15 simulated=0.750000 cooldown=0.450000
+STORY_CLOCK_RATE world=frost fps=30 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_RATE world=frost fps=60 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_RATE world=frost fps=144 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_RATE world=frost fps=240 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_INTEGRATION_FAIL frost: resuming drops menu time
+STORY_CLOCK_INTEGRATION_FAIL frost: the next tick resumes normally
+STORY_CLOCK_INTEGRATION_FAIL frost: hitstop ends without fast-forwarding combat
+STORY_CLOCK_INTEGRATION_FAIL frost: loading time is not played as combat
+STORY_CLOCK_INTEGRATION_FAIL frost: the new floor begins with one normal tick
+STORY_CLOCK_INTEGRATION_FAIL hell 15 FPS: world time = 1 s (got 0.750000)
+STORY_CLOCK_INTEGRATION_FAIL hell 15 FPS: cooldown retains 0.2 s (got 0.450000)
+STORY_CLOCK_RATE world=hell fps=15 simulated=0.750000 cooldown=0.450000
+STORY_CLOCK_RATE world=hell fps=30 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_RATE world=hell fps=60 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_RATE world=hell fps=144 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_RATE world=hell fps=240 simulated=1.000000 cooldown=0.200000
+STORY_CLOCK_INTEGRATION_FAIL hell: resuming drops menu time
+STORY_CLOCK_INTEGRATION_FAIL hell: the next tick resumes normally
+STORY_CLOCK_INTEGRATION_FAIL hell: hitstop ends without fast-forwarding combat
+STORY_CLOCK_INTEGRATION_FAIL hell: loading time is not played as combat
+STORY_CLOCK_INTEGRATION_FAIL hell: the new floor begins with one normal tick
+STORY_CLOCK_INTEGRATION mode=legacy checked=60 failures=21

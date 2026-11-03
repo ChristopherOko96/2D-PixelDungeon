@@ -1,0 +1,6 @@
+{
+  "schema_version": 1,
+  "_note": "Story simulation scheduler: tick_hz = fixed gameplay updates per second; max_steps_per_frame = maximum catch-up updates before drawing the next frame. Excess time is retained, not clipped. Pause and floor loads explicitly reset the clock. Rendering has no FPS cap from this file. Details: docs/FESTER-SIMULATIONSTAKT.de.md.",
+  "tick_hz": 60,
+  "max_steps_per_frame": 8
+}

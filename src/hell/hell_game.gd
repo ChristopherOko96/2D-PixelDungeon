@@ -79,6 +79,7 @@ const WorldPack = preload("res://src/world_kit/world_pack.gd")
 const StoryWreck = preload("res://src/hell/story_wreck.gd")
 const StoryMotionHost = preload("res://src/hell/story_motion_host.gd")
 const StoryExposureHost = preload("res://src/hell/story_exposure_host.gd")
+const FixedStepClock = preload("res://src/physics_kit/fixed_step_clock.gd")
 const CustomStoryData = preload("res://src/custom/custom_story_data.gd")
 const CustomStoryWorld = preload("res://src/custom/custom_story_world.gd")
 const BALANCE_PATH := "res://assets/data/hell_balance.json"
@@ -127,6 +128,11 @@ const THEME_DEFAULT := {
 ## Tests may redirect all Custom files to their own disposable directory.
 var custom_storage_root: String = ""
 var _custom_load_failed: bool = false
+
+## Story gameplay advances in fixed ticks; drawing still follows display frames.
+var _simulation_clock: FixedStepClock = FixedStepClock.new()
+## A floor load or paused frame is deliberately excluded from the next time sample.
+var _skip_simulation_delta: bool = true
 ## Hero class from theme.classes (menu choice); empty takes theme.default_class.
 @export var class_id := ""
 ## A loaded save (src/save/story_save.gd): set before the node enters the tree to continue on its floor.
@@ -824,6 +830,10 @@ func _layer(kind: String, z: int, area := Rect2()) -> Layer:
 ## blessings and the paused clone skill.
 func load_floor(n: int, carry: bool) -> void:
 	_custom_load_failed = false
+	# A generated floor can take much longer than a frame. Neither that loading time
+	# nor the old floor's remaining catch-up ticks belongs to the new floor.
+	_simulation_clock.reset()
+	_skip_simulation_delta = true
 	# a generated world keeps its run number from floor to floor (and in saves); a fresh run rolls one
 	var world_run := 0
 	if world != null:
@@ -2688,22 +2698,31 @@ func _toggle_fullscreen() -> void:
 
 
 func _process(delta: float) -> void:
-	var dt := minf(delta, 0.05)
 	_sync_overlays()
-	# the world stands still while the pause menu, the talent menu (K), the run talents (B) or a
-	# broken seal's blessing cards (CardKit.seal_open) are open
-	if (pause_menu != null and pause_menu.visible) or (run_talents != null and run_talents.visible) or bool(state.get("tree_open", false)) \
-			or CardKit.seal_open(self):
+	if _simulation_paused():
+		_simulation_clock.reset()
+		_skip_simulation_delta = true
 		hud.queue_redraw()
 		return
-	# a kill or a hurt holds the picture for a moment, as in the crypt (hitstop, src/hero/story_feel.gd)
-	if feel != null and feel.frozen():
-		feel.freeze(dt)
-	elif drake_rig != null and drake_rig.frozen():
-		# a severed part holds the picture without the feel too (src/hell/drake_rig_host.gd hold)
-		drake_rig.freeze(dt)
-	else:
-		_update(dt)
+	# Several gameplay ticks may be due after a slow picture. Keep all elapsed
+	# time, with a bounded amount of catch-up work per picture (no 50-ms clip).
+	_simulation_clock.begin_frame(0.0 if _skip_simulation_delta else delta)
+	_skip_simulation_delta = false
+	while _simulation_clock.take_step():
+		_step_simulation(_simulation_clock.step_seconds)
+		# A seal may open a blocking choice during a tick. Do not let later ticks
+		# attack through that modal. Floor loads reset the clock inside load_floor.
+		if _simulation_paused():
+			_simulation_clock.reset()
+			_skip_simulation_delta = true
+			break
+	# Presentation work only once per rendered frame, never once per catch-up tick.
+	if inventory_panel != null and story_items != null:
+		inventory_panel.set_view(story_items.view())
+		inventory_panel.quick = story_items.quick_slot()
+	if not _simulation_paused() and not _simulation_frozen() and not bool(state.get("won", false)) \
+			and float(state.get("dead", 0.0)) <= 0.0 and (state.get("over", {}) as Dictionary).is_empty():
+		_update_camera(delta)
 	actors.queue_redraw()
 	glow.queue_redraw()
 	# the darkness's lights and the bloom, after the actors (their glowing parts follow the drawn bodies)
@@ -2713,15 +2732,35 @@ func _process(delta: float) -> void:
 	hud.queue_redraw()
 
 
+## Menus that intentionally suspend gameplay also suspend the clock (no debt on resume).
+func _simulation_paused() -> bool:
+	return (pause_menu != null and pause_menu.visible) or (run_talents != null and run_talents.visible) \
+		or bool(state.get("tree_open", false)) or CardKit.seal_open(self)
+
+
+## A hitstop consumes scheduled time without advancing the combat simulation.
+func _simulation_frozen() -> bool:
+	return (feel != null and feel.frozen()) or (drake_rig != null and drake_rig.frozen())
+
+
+## One fixed tick, including intentional hitstop. Every world uses this same path.
+func _step_simulation(dt: float) -> void:
+	# a kill or a hurt holds the picture for a moment, as in the crypt (hitstop, src/hero/story_feel.gd)
+	if feel != null and feel.frozen():
+		feel.freeze(dt)
+	elif drake_rig != null and drake_rig.frozen():
+		# a severed part holds the picture without the feel too (src/hell/drake_rig_host.gd hold)
+		drake_rig.freeze(dt)
+	else:
+		_update(dt)
+
+
 func _update(dt: float) -> void:
 	PerfMarks.begin()
 	state.t += dt
 	story_hero.update(dt)
 	if story_items != null:
 		story_items.update(dt)
-		if inventory_panel != null:
-			inventory_panel.set_view(story_items.view())
-			inventory_panel.quick = story_items.quick_slot()
 	for k in ["inv", "flash", "cool", "chill", "slow"]:
 		state[k] = maxf(0.0, state[k] - dt)
 	state.shake = maxf(0.0, state.shake - dt * 30.0)
@@ -2820,8 +2859,7 @@ func _update(dt: float) -> void:
 	PerfMarks.add("u.embers+elements")
 	if wreck != null:
 		wreck.update(dt)
-	_update_camera(dt)
-	PerfMarks.add("u.wreck+camera")
+	PerfMarks.add("u.wreck")
 
 
 ## The hero's skills, relic and subclass per frame (their allies and timed blows).

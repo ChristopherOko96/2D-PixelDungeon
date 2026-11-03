@@ -43,6 +43,7 @@ func _run() -> void:
 		check(game.W.props.any(func(p: Dictionary) -> bool: return str(p.name) == "shop_table"), world + ": the shop has its merchant table")
 		game._process(0.0)
 		game._process(1.0 / 15.0)
+		check(is_equal_approx(float(game.state.t), 4.0 / 60.0), world + ": Custom run retains fixed simulation timing")
 		check(game.save_slot(1), world + ": Custom save writes")
 		var saved: Dictionary = game.saves.read(world, 1)
 		var seed_before: int = int(game.state.world_run)

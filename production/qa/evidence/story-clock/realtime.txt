@@ -1,0 +1,9 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+STORY_CLOCK_REALTIME world=krypta cap=15 frames=31 wall=2.000003 simulated=2.050000 drift=0.049997
+STORY_CLOCK_REALTIME world=krypta cap=60 frames=121 wall=2.016611 simulated=2.033333 drift=0.016722
+STORY_CLOCK_REALTIME world=frost cap=15 frames=31 wall=2.052063 simulated=2.000000 drift=-0.052063
+STORY_CLOCK_REALTIME world=frost cap=60 frames=121 wall=2.016592 simulated=2.033333 drift=0.016741
+STORY_CLOCK_REALTIME world=hell cap=15 frames=31 wall=2.047246 simulated=1.983333 drift=-0.063913
+STORY_CLOCK_REALTIME world=hell cap=60 frames=121 wall=2.016582 simulated=2.016667 drift=0.000085
+STORY_CLOCK_INTEGRATION mode=realtime checked=6 failures=0
