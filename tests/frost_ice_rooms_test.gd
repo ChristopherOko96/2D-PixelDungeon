@@ -6,7 +6,10 @@ extends SceneTree
 ##   godot --headless --path . --script res://tests/frost_ice_rooms_test.gd
 const FrostScene = preload("res://src/hell/frost_dungeon.tscn")
 const KryptaScene = preload("res://src/hell/krypta_dungeon.tscn")
-const FLOORS_CHECKED := [1, 2, 3, 4, 5]
+const FLOORS_CHECKED := [1, 2, 3, 4, 5, 6, 7, 8, 9]
+const ROUNDS := 4
+const MOST_PER_FLOOR := 1
+const TEST_SEED := 4711
 const DT := 1.0 / 60.0
 
 var _failed := 0
@@ -23,7 +26,8 @@ func _check(ok: bool, what: String) -> void:
 
 
 func _run() -> void:
-	await _test_rooms_on_every_floor()
+	seed(TEST_SEED)
+	await _test_at_most_one_room_per_floor()
 	await _test_only_frost()
 	await _test_sliding()
 	print("FROST_ICE_ROOMS_TEST_PASS" if _failed == 0 else "FROST_ICE_ROOMS_TEST_FAILED %d" % _failed)
@@ -41,23 +45,54 @@ func _ice_rooms(game: Node) -> Array:
 	return (game.W.rooms as Array).filter(func(r: Dictionary) -> bool: return bool(r.get("ice", false)))
 
 
-func _test_rooms_on_every_floor() -> void:
+func _test_at_most_one_room_per_floor() -> void:
 	var game: Node = await _new_game(FrostScene)
 	var limits: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://assets/data/frost_world.json")).ice_rooms
-	for n: int in FLOORS_CHECKED:
-		game.load_floor(n, false)
-		var ice := _ice_rooms(game)
-		_check(ice.size() >= int(limits.min) and ice.size() <= int(limits.max), "floor %d: %d ice rooms" % [n, ice.size()])
-		for r: Dictionary in ice:
-			_check(str(r.type) in limits.types, "floor %d: only fight rooms, was %s" % [n, r.type])
-			_check((r.cells as Array).size() >= int(limits.min_cells), "floor %d: the room is big enough" % n)
-			for c: Vector2i in r.cells:
-				var i: int = c.y * int(game.W.cols) + c.x
-				_check(not game.frost_snow.snow.has(i), "floor %d: no snow in an ice room" % n)
-		var others: Array = (game.W.rooms as Array).filter(func(r: Dictionary) -> bool: return not bool(r.get("ice", false)) and str(r.type) == "start")
-		_check(not others.is_empty(), "floor %d: the start room stays snow" % n)
+	var counts := {}
+	for round_index in range(ROUNDS):
+		for n: int in FLOORS_CHECKED:
+			game.load_floor(n, false)
+			var ice := _ice_rooms(game)
+			counts[ice.size()] = int(counts.get(ice.size(), 0)) + 1
+			_check(ice.size() <= MOST_PER_FLOOR, "floor %d: %d ice rooms" % [n, ice.size()])
+			for r: Dictionary in ice:
+				_check(str(r.type) in limits.types, "floor %d: only fight rooms, was %s" % [n, r.type])
+				_check((r.cells as Array).size() >= int(limits.min_cells), "floor %d: the room is big enough" % n)
+				for c: Vector2i in r.cells:
+					var i: int = c.y * int(game.W.cols) + c.x
+					_check(not game.frost_snow.snow.has(i), "floor %d: no snow in an ice room" % n)
+			var others: Array = (game.W.rooms as Array).filter(func(r: Dictionary) -> bool: return not bool(r.get("ice", false)) and str(r.type) == "start")
+			_check(not others.is_empty(), "floor %d: the start room stays snow" % n)
+	print("FROST_ICE_ROOMS_COUNTS ", counts)
+	_check(int(counts.get(1, 0)) > 0, "ice rooms still come")
 	game.queue_free()
 	await process_frame
+
+
+## Loads floors until one has an ice room, so the sliding checks always have one to stand in.
+func _load_floor_with_ice(game: Node) -> void:
+	for round_index in range(ROUNDS):
+		for n: int in FLOORS_CHECKED:
+			game.load_floor(n, false)
+			if not _ice_rooms(game).is_empty():
+				return
+
+
+## The cell of `room` with the longest open row to its right, so a glide has room to run.
+func _open_cell(room: Dictionary) -> Vector2i:
+	var cells := {}
+	for c: Vector2i in room.cells:
+		cells[c] = true
+	var best: Vector2i = room.cells[0]
+	var best_run := -1
+	for c: Vector2i in room.cells:
+		var run := 0
+		while cells.has(c + Vector2i(run + 1, 0)):
+			run += 1
+		if run > best_run:
+			best = c
+			best_run = run
+	return best
 
 
 func _test_only_frost() -> void:
@@ -88,9 +123,10 @@ func _hero_glide(game: Node, at: Vector2) -> float:
 
 func _test_sliding() -> void:
 	var game: Node = await _new_game(FrostScene)
+	_load_floor_with_ice(game)
 	var ice: Dictionary = _ice_rooms(game)[0]
-	var cell: Vector2i = ice.cells[(ice.cells as Array).size() / 2]
-	var on_ice := Vector2((cell.x + 0.5) * game.C, (cell.y + 0.5) * game.C)
+	var cell := _open_cell(ice)
+	var on_ice :=Vector2((cell.x + 0.5) * game.C, (cell.y + 0.5) * game.C)
 	_check(game.ice_room_at(on_ice), "the room's middle is ice")
 	var on_snow := Vector2(game.player.x, game.player.y)
 	_check(not game.ice_room_at(on_snow), "the start room is not")

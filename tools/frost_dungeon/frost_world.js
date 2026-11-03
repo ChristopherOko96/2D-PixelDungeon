@@ -62,7 +62,7 @@
     snowman: .35, glacier: .45, glaciers: ['glacier_a', 'glacier_b'],
   };
   // Whole rooms of nothing but ice (world_pack.gd _ice_rooms; how they play: frost_theme.json ice_room).
-  const ICE_ROOMS = { _note: "Ice rooms (src/world_kit/world_pack.gd _ice_rooms): whole rooms whose floor is nothing but ice, how they play: frost_theme.json ice_room. share = chance of each eligible room (r.type in types, at least min_cells cells); min and max = rooms per floor (min is filled up if the roll falls short); kind = the room's label.", share: .25, min: 1, max: 2, types: ['combat'], min_cells: 24, kind: 'Eisfläche' };
+  const ICE_ROOMS = { _note: "Ice rooms (src/world_kit/world_pack.gd _ice_rooms): whole rooms whose floor is nothing but ice, how they play: frost_theme.json ice_room. share = chance of each eligible room (r.type in types, at least min_cells cells); min and max = rooms per floor (min is filled up if the roll falls short); kind = the room's label.", share: .25, min: 0, max: 1, types: ['combat'], min_cells: 24, kind: 'Eisfläche' };
   const WALL_SET = ['table_a', 'table_b', 'table_c', 'candelabra', 'crate_pile', 'moss_ruin', 'sacks_b', 'candelabra', 'moss_rubble_a', 'moss_rubble_b'];
   const BREAK_SET = ['barrel_a', 'barrel_b', 'barrel_c', 'urn_a', 'urn_b', 'urn_c', 'urn_d', 'urn_e', 'crate_a', 'crate_b', 'crate_c'];
   // no mimics in the Frostgruft

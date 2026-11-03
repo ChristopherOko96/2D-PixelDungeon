@@ -69,12 +69,31 @@
       bossGate(W);
       decorate(W);
       if (PACK.winter) winter(W);
+      if (PACK.ice_rooms) iceRooms(W);
       tidy(W);
       blueLight(W);
       // last: mire, pits, furniture and fountain never block a way (world kit rule)
       const core = (typeof self !== 'undefined' && self.WorldCore) || (typeof require === 'function' && require('../world_kit/world_core.js'));
       core.clearWays(W);
       return W;
+    }
+    // Whole rooms of nothing but ice (PACK.ice_rooms): each eligible room by chance, at least min and at
+    // most max on a floor. The grid stays floor; the room's flag `ice` makes it ice. No ground decal on it.
+    function iceRooms(W) {
+      const C = 96, P = PACK.ice_rooms;
+      let a = (W.seed * 13 + 29) | 0;
+      const rnd = () => { a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+      const fits = W.rooms.filter(r => P.types.includes(r.type) && r.cells.length >= P.min_cells);
+      for (let k = fits.length - 1; k > 0; k--) { const j = Math.floor(rnd() * (k + 1)); [fits[k], fits[j]] = [fits[j], fits[k]]; }
+      const picked = [];
+      for (const r of fits) if (picked.length < P.max && (picked.length < P.min || rnd() < P.share)) picked.push(r);
+      for (const r of picked) { r.ice = true; r.kind = P.kind; }
+      W.decals = W.decals.filter(d => {
+        const at = Math.floor(d.y / C) * W.COLS + Math.floor(d.x / C);
+        if (at < 0 || at >= W.grid.length) return true;
+        const room = W.roomAt[at];
+        return room < 0 || !W.rooms[room].ice;
+      });
     }
     // Nothing overlaps (world kit rule): a decoration prop (TIDY) whose lower part reaches into a
     // wall, whose foot sits right on the edge of a south wall, or whose foot overlaps another
