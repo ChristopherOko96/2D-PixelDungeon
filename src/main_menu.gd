@@ -25,6 +25,10 @@ signal multiplayer_requested
 signal story_floor_requested(scene_path: String, class_id: String, floor_number: int, boss: bool)
 ## The player picked a hero for a story that runs in its own scene (story "scene" in story_campaigns.json).
 signal story_scene_requested(scene_path: String, class_id: String)
+## A user-authored story uses the normal story runtime after the hero choice.
+signal custom_story_requested(story: Dictionary, class_id: String, preview_room: String)
+## Continue a save from this custom story's own slot directory.
+signal custom_continue_requested(story: Dictionary, slot: int)
 signal quit_requested
 ## The talent build changed (the game resends it to the host in multiplayer).
 signal talents_changed
@@ -53,6 +57,7 @@ const Profile = preload("res://src/progress/profile.gd")
 const AudioMix = preload("res://src/audio/audio_mix.gd")
 const SoundWorkshop = preload("res://src/ui/sound_workshop.gd")
 const RoomEditor = preload("res://src/editor/room_editor.gd")
+const CustomStoryPanel = preload("res://src/custom/custom_story_panel.gd")
 const ElementSkin = preload("res://src/hero/element_skin.gd")
 const SCREEN := Vector2(1280, 720)
 const SPRITE_ROOT := "res://assets/sprites/0x72/"
@@ -85,6 +90,11 @@ var debug_entries: Array = []
 var story_worlds: Array = []
 ## The debug floor start waiting for the hero choice: {scene, floor, boss}; empty otherwise.
 var _story_jump: Dictionary = {}
+var custom_story_panel: Control
+## Tools/tests may isolate authored stories without changing the real library.
+var custom_story_directory: String = "user://custom_stories"
+var _pending_custom_story: Dictionary = {}
+var _pending_custom_room: String = ""
 ## The hero cards of the hero choice by class id, set by the game (game.gd _hero_cards):
 ## {name, sprite, role, hp, resource, kind, paths: [{name, color}]}; a class without one
 ## falls back to `classes` (the old crypt balance).
@@ -204,7 +214,7 @@ func _ready() -> void:
 	# The menu card: one framed column for the four title entries.
 	var card := Panel.new()
 	card.position = Vector2(446, 190)
-	card.size = Vector2(388, 284)
+	card.size = Vector2(388, 342)
 	card.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(card)
 	var title := _label(CryptUI.GAME_TITLE, Vector2(0, 52), Vector2(SCREEN.x, 90), 64, GOLD, HORIZONTAL_ALIGNMENT_CENTER)
@@ -218,9 +228,10 @@ func _ready() -> void:
 	# Only the player's entries (UX review 2026-11-01): Endlos waits until it exists;
 	# Mehrspieler, Editor and the save slots live in the DEBUG hub.
 	_buttons.append(_button("SPIELEN", Vector2(470, 210), Vector2(340, 64), 32, _open_stories))
-	_buttons.append(_button("TALENTE", Vector2(470, 290), Vector2(340, 48), 24, _open_talents))
-	_buttons.append(_button("OPTIONEN", Vector2(470, 348), Vector2(340, 48), 24, _open_options))
-	_buttons.append(_button("BEENDEN", Vector2(470, 406), Vector2(340, 48), 24, quit_requested.emit))
+	_buttons.append(_button("CUSTOM STORYS", Vector2(470, 290), Vector2(340, 48), 24, open_custom_stories))
+	_buttons.append(_button("TALENTE", Vector2(470, 348), Vector2(340, 48), 24, _open_talents))
+	_buttons.append(_button("OPTIONEN", Vector2(470, 406), Vector2(340, 48), 24, _open_options))
+	_buttons.append(_button("BEENDEN", Vector2(470, 464), Vector2(340, 48), 24, quit_requested.emit))
 	# the DEBUG hub (debug builds only): one button bottom-left opens the panel with the
 	# level choice, the Testraum, the talent test, the workshops, the old lobby and the saves
 	_debug_button = _button("DEBUG", Vector2(16, 676), Vector2(140, 32), 16, _open_debug_hub)
@@ -663,7 +674,7 @@ func _build_class_panel() -> void:
 func _build_debug_hub() -> void:
 	_hub_panel = _panel("DEBUG")
 	var entries := [["LEVEL-AUSWAHL", _open_debug], ["TESTRAUM", _open_arena], ["", _toggle_talent_test],
-		["KLANGWERKSTATT", open_sound_workshop], ["EDITOR", open_room_editor.bind("")],
+		["KLANGWERKSTATT", open_sound_workshop], ["CUSTOM-EDITOR", open_custom_stories],
 		["MEHRSPIELER (ALT)", _open_multiplayer], ["SPIELSTÄNDE", _open_saves]]
 	_hub_panel.size = Vector2(420, 66 + entries.size() * 46 + 76)
 	_hub_panel.position = (SCREEN - _hub_panel.size) * 0.5 + Vector2(0, 20)
@@ -835,7 +846,11 @@ func _open_classes(endless: bool = false, hint: String = "") -> void:
 ## ZURÜCK / Esc in the hero choice: back to where it was opened from (a world's floor
 ## list, the debug hub, the story choice) or the title.
 func _class_back() -> void:
-	if not _story_jump.is_empty():
+	if not _pending_custom_story.is_empty():
+		_pending_custom_story = {}
+		_pending_custom_room = ""
+		_show_panel(custom_story_panel)
+	elif not _story_jump.is_empty():
 		_open_world(str(_story_jump.get("world", "")))
 	elif _arena_pick or not _debug_start.is_empty():
 		_open_debug_hub()
@@ -872,7 +887,14 @@ func _cycle_difficulty() -> void:
 
 
 func _choose_class(id: String) -> void:
+	var custom: Dictionary = _pending_custom_story
+	var preview: String = _pending_custom_room
+	_pending_custom_story = {}
+	_pending_custom_room = ""
 	_close_panels()
+	if not custom.is_empty():
+		custom_story_requested.emit(custom, id, preview)
+		return
 	if _arena_pick:
 		_arena_pick = false
 		# the story Testraum: the Krypta first, the world switch sits in its panel
@@ -977,7 +999,7 @@ func _apply_settings() -> void:
 ## True while any panel of the menu is open (story, heroes, options, login, the talent
 ## screen, the debug panels or a workshop): the scene dims and the title card hides.
 func _panel_open() -> bool:
-	for panel: Control in [_login_panel, _options_panel, _story_panel, _class_panel, _hub_panel, _debug_panel, _saves_panel, _talent_panel, _talent_screen, sound_workshop, room_editor] + _world_panels.values():
+	for panel: Control in [_login_panel, _options_panel, _story_panel, _class_panel, _hub_panel, _debug_panel, _saves_panel, _talent_panel, _talent_screen, sound_workshop, room_editor, custom_story_panel] + _world_panels.values():
 		if panel != null and panel.visible: return true
 	return false
 
@@ -998,6 +1020,7 @@ func _sync_title() -> void:
 
 ## Hides every panel without moving the focus (openers then use _show_panel).
 func _hide_panels() -> void:
+	if custom_story_panel != null: custom_story_panel.visible = false
 	_login_panel.visible = false
 	_options_panel.visible = false
 	if _hub_panel != null: _hub_panel.visible = false
@@ -1049,6 +1072,8 @@ func _unhandled_input(event: InputEvent) -> void:
 ## Level-Auswahl → Debug-Hub → Titel; Spielstände → Debug-Hub; Talente, Optionen and
 ## Anmelden → Titel. False on the bare title and while a workshop owns the input.
 func go_back() -> bool:
+	if custom_story_panel != null and custom_story_panel.visible:
+		return bool(custom_story_panel.go_back())
 	if (sound_workshop != null and sound_workshop.visible) or (room_editor != null and room_editor.visible):
 		return false
 	if _talent_screen != null and _talent_screen.visible:
@@ -1064,6 +1089,34 @@ func go_back() -> bool:
 	else:
 		return false
 	return true
+
+
+## The normal title entry for user stories. A return context can restore an unsaved test draft.
+func open_custom_stories(context: Dictionary = {}) -> void:
+	_pending_custom_story = {}
+	_pending_custom_room = ""
+	if custom_story_panel == null:
+		custom_story_panel = CustomStoryPanel.new()
+		custom_story_panel.storage_dir = custom_story_directory
+		add_child(custom_story_panel)
+		custom_story_panel.closed.connect(_close_panels)
+		custom_story_panel.play_requested.connect(func(story: Dictionary) -> void: _choose_custom_hero(story, ""))
+		custom_story_panel.test_requested.connect(_choose_custom_hero)
+		custom_story_panel.continue_requested.connect(func(story: Dictionary, slot: int) -> void: custom_continue_requested.emit(story, slot))
+	_show_panel(custom_story_panel)
+	custom_story_panel.open()
+	if bool(context.get("edit", false)) and context.get("story", {}) is Dictionary and not context.get("story", {}).is_empty():
+		custom_story_panel.edit_story(context.story, str(context.get("room_id", "")))
+	if not str(context.get("error", "")).is_empty(): show_toast(str(context.error))
+
+
+func _choose_custom_hero(story: Dictionary, preview_room: String) -> void:
+	if class_order.is_empty():
+		custom_story_requested.emit(story.duplicate(true), "mage", preview_room)
+		return
+	_open_classes(false, "CUSTOM · %s" % str(story.get("title", "Eigene Geschichte")))
+	_pending_custom_story = story.duplicate(true)
+	_pending_custom_room = preview_room
 
 
 # --- Save slots ----------------------------------------------------------------

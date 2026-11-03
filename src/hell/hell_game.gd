@@ -79,6 +79,8 @@ const WorldPack = preload("res://src/world_kit/world_pack.gd")
 const StoryWreck = preload("res://src/hell/story_wreck.gd")
 const StoryMotionHost = preload("res://src/hell/story_motion_host.gd")
 const StoryExposureHost = preload("res://src/hell/story_exposure_host.gd")
+const CustomStoryData = preload("res://src/custom/custom_story_data.gd")
+const CustomStoryWorld = preload("res://src/custom/custom_story_world.gd")
 const BALANCE_PATH := "res://assets/data/hell_balance.json"
 const HERO := "res://assets/sprites/0x72/%s_%s_anim_f%d.png"
 const WEAPON := "res://assets/sprites/0x72/%s.png"
@@ -116,6 +118,15 @@ const THEME_DEFAULT := {
 @export var start_at_boss := false
 ## Theme JSON over THEME_DEFAULT; empty keeps the hell look.
 @export var theme_path := ""
+## A user-authored story uses this runtime and the selected current world's assets.
+@export var custom_story: Dictionary = {}
+## Nonempty tests this unsaved module directly; it has no normal save slots.
+@export var custom_preview_room: String = ""
+## A run started from an unsaved editor draft returns to that draft, not just its list.
+@export var custom_return_to_editor: bool = false
+## Tests may redirect all Custom files to their own disposable directory.
+var custom_storage_root: String = ""
+var _custom_load_failed: bool = false
 ## Hero class from theme.classes (menu choice); empty takes theme.default_class.
 @export var class_id := ""
 ## A loaded save (src/save/story_save.gd): set before the node enters the tree to continue on its floor.
@@ -346,13 +357,19 @@ class Hud extends Control:
 
 
 func _ready() -> void:
+	if not _configure_custom_story():
+		return
 	# the Testraum points the profile and soul-crystal files at its own before they load
 	if not testraum.is_empty():
 		var testraum_script: Variant = load(TESTRAUM_SCRIPT)
 		testraum_script.prepare(self)
 	_load_theme()
 	balance = JSON.parse_string(FileAccess.get_file_as_string(theme.balance))
-	if theme.has("world_pack"):
+	if not custom_story.is_empty():
+		world = CustomStoryWorld.new(custom_story, custom_preview_room)
+		floors_raw = []
+		floors_raw.resize(world.floor_count())
+	elif theme.has("world_pack"):
 		# a generated world: floors are built when entered (load_floor); only their number is known
 		# world_sizes: the sprite sizes the generator reads (lights over props); a world with two graphics
 		# sets names one, so both build the same floor from the same run number
@@ -488,11 +505,11 @@ func _ready() -> void:
 	ui.add_child(pause_menu)
 	pause_menu.use_story_mode(story_controls(CardKit.offers_cards(self)))
 	pause_menu.save_rows = func() -> Array: return saves.summaries(StorySave.mode(self))
-	pause_menu.set_save_enabled(true)
+	pause_menu.set_save_enabled(custom_preview_room.is_empty())
 	pause_menu.story_map_draw = func(canvas: Control) -> void: _draw_map(canvas, canvas.size, true, true)
 	pause_menu.resume_pressed.connect(func() -> void: pause_menu.visible = false)
 	pause_menu.save_requested.connect(save_slot)
-	pause_menu.leave_pressed.connect(func() -> void: get_tree().change_scene_to_file(MENU_SCENE))
+	pause_menu.leave_pressed.connect(_return_to_menu)
 	pause_menu.display_mode_requested.connect(_toggle_fullscreen)
 	# the pause's Talente / Inventar pages open the run's own windows; its options reach the camera
 	pause_menu.talents_requested.connect(open_run_talents)
@@ -510,10 +527,14 @@ func _ready() -> void:
 		_resuming = true
 		load_floor(clampi(int(resume.get("floor", 1)), 1, floors_raw.size()), true)
 		_resuming = false
+		if _custom_load_failed: return
 		_start_items(ui)
 		return
 	load_floor(clampi(start_floor, 1, floors_raw.size()), false)
+	if _custom_load_failed: return
 	_start_items(ui)
+	if not custom_preview_room.is_empty():
+		_start_custom_preview()
 	if not testraum.is_empty():
 		# one test room without the story; its panel mounts in the HUD layer
 		var testraum_room: Variant = load(TESTRAUM_SCRIPT)
@@ -521,6 +542,56 @@ func _ready() -> void:
 		return
 	if start_at_boss:
 		enter_boss_room()
+
+
+## A selected combat module is playable immediately, after its start position exists.
+func _start_custom_preview() -> void:
+	if W.get("rooms", []).is_empty(): return
+	var selected: Dictionary = W.rooms[0]
+	var role := str(selected.get("preview_role", "start"))
+	if role not in ["combat", "boss"]: return
+	selected.type = role
+	selected.cleared = false
+	if role == "boss":
+		for ent: Dictionary in W.ents:
+			if ent.type == "portal": ent.active = false
+	_start_fight(selected)
+
+
+## Selects the real story theme and isolates user content, slots and progression.
+## Resumes use the embedded room revision, never a changed file with the same id.
+func _configure_custom_story() -> bool:
+	if resume.get("custom_story") is Dictionary and not (resume.custom_story as Dictionary).is_empty():
+		custom_story = (resume.custom_story as Dictionary).duplicate(true)
+		custom_preview_room = str(resume.get("custom_preview_room", ""))
+	if custom_story.is_empty(): return true
+	var problems: Array[String] = CustomStoryData.validate(custom_story, custom_preview_room.is_empty())
+	if not problems.is_empty():
+		_return_to_menu.call_deferred("Die eigene Geschichte ist noch nicht spielbar: " + problems[0])
+		return false
+	var themes := {"krypta": "res://assets/data/krypta_theme.json", "frost": "res://assets/data/frost_theme.json", "hell": "res://assets/data/hell_theme.json"}
+	theme_path = str(themes.get(str(custom_story.get("world", "krypta")), themes.krypta))
+	var preview := not custom_preview_room.is_empty()
+	saves = SaveStore.new(StorySave.custom_saves_dir(custom_story, preview, custom_storage_root))
+	var source_profile := profile_path
+	profile_path = StorySave.custom_profile_path(custom_story, preview, custom_storage_root)
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(profile_path.get_base_dir()))
+	# Familiar learned talents are copied once, then all Custom progress stays separate.
+	# A room preview gets a fresh copy each time and cannot earn into the main profile.
+	if preview or not FileAccess.file_exists(profile_path):
+		var copy := Profile.load_profile(Profile.data(), source_profile)
+		Profile.save_profile(copy, profile_path)
+	meta_path = profile_path.trim_suffix(".json") + ".meta.cfg"
+	return true
+
+
+## Returns to the Custom list/editor after a user run, or the usual title screen.
+func _return_to_menu(error: String = "") -> void:
+	if not custom_story.is_empty():
+		get_tree().set_meta("custom_story_return", {"story_id": str(custom_story.get("id", "")),
+			"edit": custom_return_to_editor or not custom_preview_room.is_empty() or not error.is_empty(), "room_id": custom_preview_room,
+			"story": custom_story.duplicate(true), "error": error})
+	get_tree().change_scene_to_file(MENU_SCENE)
 
 
 ## Item system 2 for a class hero (src/hero/story_items.gd): the bag and its window (I).
@@ -752,13 +823,20 @@ func _layer(kind: String, z: int, area := Rect2()) -> Layer:
 ## Builds floor n (1-10). With carry the hero keeps hearts, rune stones, seal
 ## blessings and the paused clone skill.
 func load_floor(n: int, carry: bool) -> void:
+	_custom_load_failed = false
 	# a generated world keeps its run number from floor to floor (and in saves); a fresh run rolls one
 	var world_run := 0
 	if world != null:
 		world_run = int(state.get("world_run", 0)) if carry and not state.is_empty() else 0
 		if world_run == 0:
 			world_run = WorldPack.new_run()
-		W = FloorData.prepare(world.build_raw(n, world_run))
+		var raw: Dictionary = world.build_raw(n, world_run)
+		if raw.is_empty():
+			_custom_load_failed = true
+			var problem := str(world.get("error_message")) if not custom_story.is_empty() else "Keine gültige Etage erzeugt."
+			_return_to_menu.call_deferred(problem)
+			return
+		W = FloorData.prepare(raw)
 	else:
 		W = FloorData.prepare(floors_raw[n - 1])
 	stairs_pick = {}
@@ -1227,8 +1305,8 @@ func _build_result_buttons(ui: CanvasLayer) -> void:
 	result_main = Button.new()
 	result_main.pressed.connect(act)
 	result_menu = Button.new()
-	result_menu.text = "HAUPTMENÜ"
-	result_menu.pressed.connect(func() -> void: get_tree().change_scene_to_file(MENU_SCENE))
+	result_menu.text = "ZUR WERKSTATT" if not custom_preview_room.is_empty() else ("CUSTOM-STORYS" if not custom_story.is_empty() else "HAUPTMENÜ")
+	result_menu.pressed.connect(_return_to_menu)
 	for button: Button in [result_main, result_menu]:
 		button.add_theme_font_size_override("font_size", int(HudStyle.size("font_body")))
 		result_ui.add_child(button)
@@ -1723,6 +1801,13 @@ func new_run() -> void:
 	scene.class_id = class_id
 	scene.graphics_path = graphics_path
 	scene.meta_path = meta_path
+	if not custom_story.is_empty():
+		scene.custom_story = custom_story.duplicate(true)
+		scene.custom_preview_room = custom_preview_room
+		scene.custom_return_to_editor = custom_return_to_editor
+		scene.custom_storage_root = custom_storage_root
+		scene.profile_path = profile_path
+		scene.settings_path = settings_path
 	var tree := get_tree()
 	tree.root.add_child(scene)
 	if tree.current_scene == self:
@@ -2120,6 +2205,17 @@ func _start_fight(r: Dictionary) -> void:
 		if W.grid[c.y * W.cols + c.x] == 1 and p.distance_to(me) > 4.5 * C and not _near_door(r, p, 2.0) and solid_grid.get(c.y * W.cols + c.x, []).is_empty():
 			cells.append(p)
 	cells.shuffle()
+	# Authored encounter markers lead; valid fallback cells still prevent empty encounters.
+	if r.has("spawn_cells"):
+		var authored: Array = []
+		for cell: Array in r.spawn_cells:
+			var point := Vector2((float(cell[0]) + 0.5) * C, (float(cell[1]) + 0.7) * C)
+			if _room_at_world(point.x, point.y) == int(r.index) and not box_blocked(Rect2(point - Vector2(28, 20), Vector2(56, 24)), true) \
+					and point.distance_to(me) > C * 1.5 and not _near_door(r, point, 1.0):
+				authored.append(point)
+		for point: Vector2 in cells:
+			if not authored.has(point): authored.append(point)
+		cells = authored
 	# with the feel every fight locks its doors and a guardian's arrival stings once (feedback.gd boss_intro), like the crypt
 	if monsters != null:
 		monsters.populate(r, cells)
@@ -2535,6 +2631,7 @@ func _update_clone(dt: float) -> void:
 
 ## Writes the floor-start state into save slot 1..3 of this world; true on success.
 func save_slot(slot: int) -> bool:
+	if not custom_preview_room.is_empty(): return false
 	if sound != null: sound.at("save_ok", Vector2.INF)
 	var ok := not floor_save.is_empty() and saves.write(StorySave.mode(self), slot, floor_save)
 	if ok:

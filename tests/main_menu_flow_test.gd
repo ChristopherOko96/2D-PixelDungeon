@@ -1,5 +1,5 @@
 extends SceneTree
-## Main menu flow: the title shows SPIELEN · TALENTE · OPTIONEN · BEENDEN (Mehrspieler,
+## Main menu flow: the title shows SPIELEN · CUSTOM STORYS · TALENTE · OPTIONEN · BEENDEN (Mehrspieler,
 ## Editor and the saves sit in the DEBUG hub); story cards start NEU through the hero
 ## choice or continue their world's newest save; Esc / Pad-B goes back one level in
 ## every panel and each panel dims the title; the hero cards come from the story
@@ -96,8 +96,8 @@ func _test_title_shows_four_entries_and_the_hub_the_rest() -> void:
 	var texts: Array = menu._buttons.map(func(b: Button) -> String: return b.text)
 	var hub: Array = menu._hub_buttons.map(func(b: Button) -> String: return b.text)
 	check(menu.visible and not game.lobby_ui.visible and not game.active, "the game opens on the main menu, not the lobby")
-	check(texts == ["SPIELEN", "TALENTE", "OPTIONEN", "BEENDEN"], "the title shows only SPIELEN · TALENTE · OPTIONEN · BEENDEN (%s)" % [texts])
-	check(hub.has("MEHRSPIELER (ALT)") and hub.has("EDITOR") and hub.has("SPIELSTÄNDE"), "Mehrspieler, Editor and the saves sit in the DEBUG hub (%s)" % [hub])
+	check(texts == ["SPIELEN", "CUSTOM STORYS", "TALENTE", "OPTIONEN", "BEENDEN"], "the title includes the normal Custom Story entry (%s)" % [texts])
+	check(hub.has("MEHRSPIELER (ALT)") and hub.has("CUSTOM-EDITOR") and hub.has("SPIELSTÄNDE"), "the debug editor opens the new custom area (%s)" % [hub])
 	check(not menu._account_button.visible and not menu._account_label.visible, "without online accounts the account row is hidden")
 	check(not game.solo_button.visible, "solo starts from the menu, not from the lobby")
 	game.queue_free()

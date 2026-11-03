@@ -1,5 +1,14 @@
 # Basement Run — development notes
 
+- Latest user clarification (2026-11-03): provide a dedicated Custom Story
+  area for making and playing user-authored stories, with its editor there.
+  Reuse the main stories' characters, talents, inventory, enemies, sounds and
+  effects; custom stories may assemble authored room modules procedurally.
+  Separate content/menu area, shared gameplay runtime. Do NOT replace the main
+  stories' generation or inject personal rooms into them as part of this scope.
+  This does not reinstate the old fixed-sequence Custom Run proposal. Implemented
+  (src/custom/*): library with delete, room editor, floor preview,
+  generator, runs in hell_game. Read `docs/STORY-RAUMMODULE.de.md` first.
 - Work on a feature branch (`codex/…` by default); never edit `main` directly.
 - The user explicitly requested publication to `codex_v2` in the brother's
   `ChristopherOko96/2D-PixelDungeon` repository on 2026-10-25. Remote `origin`

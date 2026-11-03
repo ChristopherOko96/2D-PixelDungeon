@@ -208,6 +208,7 @@ var menu_button: Button
 ## Title screen (ported from main). Shown while no session runs and the player
 ## has not switched to the multiplayer lobby; leaving a session returns to it.
 var main_menu: MainMenu
+var _custom_return_pending: bool = false
 var menu_open := true
 var lobby_menu_button: Button
 ## Host-side hero class per peer id, chosen in the menu (solo) or the lobby.
@@ -604,7 +605,8 @@ func _read_arguments() -> void:
 		match args[i]:
 			"--host": should_host = true
 			# Dungeon-Editor.cmd: straight into the Dungeon-Werkstatt.
-			"--werkstatt": if is_instance_valid(main_menu): main_menu.open_room_editor.call_deferred("")
+			"--werkstatt", "--custom-stories":
+				if is_instance_valid(main_menu) and not _custom_return_pending: main_menu.open_custom_stories.call_deferred()
 			"--auto-start": auto_start = true
 			"--join":
 				if i + 1 < args.size(): address = args[i + 1]
@@ -2648,7 +2650,14 @@ func _build_main_menu() -> void:
 	main_menu.test_arena_requested.connect(start_test_arena)
 	main_menu.story_floor_requested.connect(_start_story_floor)
 	main_menu.story_scene_requested.connect(_open_story_scene)
+	main_menu.custom_story_requested.connect(_open_custom_story)
+	main_menu.custom_continue_requested.connect(_continue_custom_story)
 	main_menu.save_load_requested.connect(_load_save)
+	if get_tree().has_meta("custom_story_return"):
+		_custom_return_pending = true
+		var context: Dictionary = get_tree().get_meta("custom_story_return", {})
+		get_tree().remove_meta("custom_story_return")
+		main_menu.call_deferred("open_custom_stories", context)
 	# Saved fullscreen is applied in _ready, only when the game opens on the menu.
 	view.shake_scale = 1.0 if bool(main_menu.settings.get("shake", true)) else 0.0
 
@@ -2726,6 +2735,38 @@ func _world_floors(theme_path: String) -> Array:
 ## entrance or, with `boss`, inside its boss room (hell_game.gd start_floor / start_at_boss).
 func _start_story_floor(path: String, class_id: String, floor_number: int, boss: bool) -> void:
 	_open_story_scene(path, class_id, {}, {"start_floor": floor_number, "start_at_boss": boss})
+
+
+## User stories enter the same scenes as their selected current world.
+func _open_custom_story(story: Dictionary, class_id: String, preview_room: String = "") -> void:
+	var data: GDScript = load("res://src/custom/custom_story_data.gd")
+	var problems: Array = data.validate(story, preview_room.is_empty())
+	if not problems.is_empty():
+		main_menu.show_toast(str(problems[0]))
+		return
+	var scenes := {"krypta": "res://src/hell/krypta_dungeon.tscn", "frost": "res://src/hell/frost_dungeon.tscn", "hell": "res://src/hell/hell_dungeon.tscn"}
+	var path: String = str(scenes.get(str(story.get("world", "")), ""))
+	if path.is_empty():
+		main_menu.show_toast("Diese Story-Welt ist nicht verfügbar.")
+		return
+	var from_editor: bool = main_menu.custom_story_panel != null and bool(main_menu.custom_story_panel._editing)
+	_open_story_scene(path, class_id, {}, {"custom_story": story.duplicate(true), "custom_preview_room": preview_room, "custom_return_to_editor": from_editor})
+
+
+## Custom saves live beside their own story and embed the version that was played.
+func _continue_custom_story(story: Dictionary, slot: int) -> void:
+	var id: String = str(story.get("id", ""))
+	if id.is_empty() or id != id.validate_filename() or slot < 1 or slot > 3: return
+	for character: String in id:
+		if character not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-": return
+	var mode: String = str(story.get("world", ""))
+	var store := SaveStore.new("user://custom_story_saves/%s/" % id)
+	var saved: Dictionary = store.read(mode, slot)
+	if saved.is_empty() or not saved.get("custom_story", {}) is Dictionary or saved.get("custom_story", {}).is_empty():
+		main_menu.show_toast("Dieser Custom-Spielstand ist leer oder nicht lesbar.")
+		return
+	saved.slot = slot
+	_open_story_scene(str(saved.get("scene", "")), str(saved.get("class_id", "")), saved)
 
 
 ## Swaps the menu for a story's own scene (e.g. the Frostgruft) with the chosen hero class;

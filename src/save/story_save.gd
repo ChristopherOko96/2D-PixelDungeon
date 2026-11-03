@@ -59,5 +59,35 @@ static func capture(game: Node) -> Dictionary:
 		if game.state.has(key):
 			var value: Variant = game.state[key]
 			keep[key] = value.duplicate(true) if value is Dictionary or value is Array else value
-	return {"class_id": str(game.class_id), "scene": str(game.scene_file_path), "floor": int(game.state.floor), "run_id": str(game.state.get("run_id", "")),
+	var record := {"class_id": str(game.class_id), "scene": str(game.scene_file_path), "floor": int(game.state.floor), "run_id": str(game.state.get("run_id", "")),
 		"title": str(game.W.get("title", "")), "level": int(game.state.get("level", 1)), "keep": keep}
+	var custom: Variant = game.get("custom_story")
+	if custom is Dictionary and not custom.is_empty():
+		# A run keeps the exact room revision it began with even if its editor draft changes.
+		record.custom_story = custom.duplicate(true)
+		record.custom_preview_room = str(game.get("custom_preview_room"))
+	return record
+
+
+## A safe local filename component, also for an untrusted save snapshot.
+static func custom_key(story: Dictionary) -> String:
+	var id := str(story.get("id", ""))
+	if id.is_empty() or id.length() > 80:
+		return id.sha256_text().substr(0, 24)
+	for character: String in id:
+		if character not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-":
+			return id.sha256_text().substr(0, 24)
+	return id
+
+
+## Custom run saves never share the main story's slots. `root` isolates test fixtures.
+static func custom_saves_dir(story: Dictionary, preview: bool = false, root: String = "") -> String:
+	var base := (root.trim_suffix("/") + "/saves/" + ("preview/" if preview else "")) if not root.is_empty() \
+		else ("user://custom_story_preview_saves/" if preview else "user://custom_story_saves/")
+	return base + custom_key(story) + "/"
+
+
+## A copied profile belongs to this Custom story; preview profiles are disposable copies.
+static func custom_profile_path(story: Dictionary, preview: bool = false, root: String = "") -> String:
+	var base := root.trim_suffix("/") + "/profiles/" if not root.is_empty() else "user://custom_story_profiles/"
+	return base + ("preview/" if preview else "") + custom_key(story) + ".json"
