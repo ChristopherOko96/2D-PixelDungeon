@@ -13,6 +13,7 @@
   "catch_up_ms": 8,
   "thread_cells": 600,
   "materials": {
+    "soul": {"style": "lava", "droplets": 3, "bubbles": 2, "ramp": {"spec": "c5ede3", "hi": "70bdb9", "lite": "448c92", "body": "2b5068", "shade": "29384e", "deep": "241e3b", "outline": "20172f"}, "splash": "embers", "ripple": 0.35, "steps": false, "spread_scale": 3, "glow": 0.12},
     "poison": {"style": "liquid", "droplets": 3, "bubbles": 3, "ramp": {"spec": "e8ff9a", "hi": "a8e04a", "lite": "6fae3a", "body": "3b6b2a", "shade": "2c5222", "deep": "24401c", "outline": "1f2b16"}, "splash": "drops", "ripple": 1, "steps": true},
     "void": {"style": "void", "droplets": 2, "bubbles": 2, "ramp": {"spec": "f2d9ff", "hi": "c27bff", "lite": "7a3fb8", "body": "3a1f5c", "shade": "241238", "deep": "1a0d2a", "outline": "120a1c"}, "splash": "drops", "ripple": 0.8, "steps": false, "void_pull": [140, 90], "void_motes": 6},
     "ice": {"style": "ice", "droplets": 0, "bubbles": 0, "ramp": {"spec": "ffffff", "hi": "e6fbff", "lite": "a6e3f7", "body": "6fbde8", "shade": "3b84c4", "deep": "23599a", "outline": "0d1a38"}, "splash": "chips", "ripple": 0, "steps": false, "crack": true, "melt_to": "water"},

@@ -1,0 +1,93 @@
+<div id="necro-attacks-20261101">
+  <style>
+    #necro-attacks-20261101 {display:grid;gap:calc(var(--font-size-base)*1);color:var(--foreground)}
+    #necro-attacks-20261101 .necro-stage {width:100%;aspect-ratio:16/9;image-rendering:pixelated;display:block;object-fit:contain}
+    #necro-attacks-20261101 [hidden] {display:none}
+    #necro-attacks-20261101 .necro-heading {display:flex;align-items:center;gap:calc(var(--font-size-base)*.5)}
+    #necro-attacks-20261101 .necro-heading img {width:36px;height:36px;image-rendering:pixelated}
+    #necro-attacks-20261101 .necro-detail {display:grid;gap:calc(var(--font-size-base)*.5)}
+    #necro-attacks-20261101 .necro-passives {display:grid;gap:calc(var(--font-size-base)*.75);margin-top:calc(var(--font-size-base)*.75)}
+    #necro-attacks-20261101 .necro-passives div {display:grid;gap:calc(var(--font-size-base)*.25)}
+    #necro-attacks-20261101 .necro-title {padding-right:90px}
+  </style>
+  <div class="necro-title"><h2>Nekromant · Angriffsauswahl</h2><p class="text-small">38 Spielaufnahmen · alle drei Zweige</p></div>
+  <div class="nav nav-pills" role="tablist" aria-label="Talentzweig">
+    <button class="nav-link" id="necro-tab-minion" role="tab" aria-controls="necro-attack-panel" aria-selected="false" type="button" data-spec="minion">Diener</button>
+    <button class="nav-link active" id="necro-tab-curse" role="tab" aria-controls="necro-attack-panel" aria-selected="true" type="button" data-spec="curse">Fluch</button>
+    <button class="nav-link" id="necro-tab-soul" role="tab" aria-controls="necro-attack-panel" aria-selected="false" type="button" data-spec="soul">Seele</button>
+  </div>
+  <div id="necro-attack-panel" role="tabpanel" aria-labelledby="necro-tab-curse" class="necro-detail">
+    <label class="form-label" for="necro-attack-select">Fähigkeit</label>
+    <select class="form-select" id="necro-attack-select"></select>
+    <video class="necro-stage" id="necro-attack-video" muted playsinline preload="auto" aria-label="Spielaufnahme der gewählten Fähigkeit" hidden></video>
+    <img class="necro-stage" id="necro-still" alt="Schlüsselmoment der gewählten Fähigkeit">
+    <span class="text-small" id="necro-still-label">Standbild · Schlüsselmoment</span>
+    <div class="viz-controls">
+      <button class="btn btn-primary" id="necro-play" type="button">Abspielen</button>
+      <button class="btn" id="necro-restart" type="button">Von vorn</button>
+      <span class="text-small tabular-nums" id="necro-progress">0,0 s</span>
+    </div>
+    <div class="necro-detail" aria-live="polite">
+      <div class="necro-heading"><img id="necro-icon" alt="" hidden><h3 id="necro-name">Blutstrahl</h3></div>
+      <p id="necro-stats" class="text-small"></p>
+      <p id="necro-description"></p>
+    </div>
+    <details><summary>Passive Talente dieses Zweigs</summary><div class="necro-passives" id="necro-passives"></div></details>
+  </div>
+  <p class="text-small">Kontrollierte Spielvorschau · 15 Bilder/s · Grundkosten vor Talentboni</p>
+  <script type="application/json" id="necro-catalog-data">__DATA__</script>
+  <script type="application/json" id="necro-catalog-media">__VIDEO__</script>
+  <script>
+  (()=>{
+    const root=document.getElementById('necro-attacks-20261101');
+    const data=JSON.parse(root.querySelector('#necro-catalog-data').textContent);
+    const video=root.querySelector('video'),select=root.querySelector('select'),play=root.querySelector('#necro-play');
+    const packed=JSON.parse(root.querySelector('#necro-catalog-media').textContent),bytes=new Uint8Array(packed.length),alphabet=packed.alphabet;
+    for(let i=0,j=0;i<packed.text.length;i+=5){let value=0;for(let n=0;n<5;n++)value=value*85+alphabet.indexOf(packed.text[i+n]);for(let n=3;n>=0;n--)if(j+3-n<bytes.length)bytes[j+3-n]=(value/256**n)&255;j+=4;}
+    let binary='';for(let i=0;i<bytes.length;i+=16384)binary+=String.fromCharCode(...bytes.subarray(i,i+16384));video.src='data:video/webm;base64,'+btoa(binary);
+    const still=root.querySelector('#necro-still'),stillLabel=root.querySelector('#necro-still-label');
+    const tabs=[...root.querySelectorAll('[data-spec]')],progress=root.querySelector('#necro-progress');
+    let spec='curse',selected='curse_9',clip=null,wantsPlay=false,pendingSeek=false;
+    const saved=window.openai?.widgetState;
+    const state=saved?.modelContent||saved;
+    if(state&&data.specs.some(s=>s.id===state.spec))spec=state.spec;
+    if(state&&data.clips.some(c=>c.id===state.attack))selected=state.attack;
+    const fmt=n=>Number(n).toLocaleString('de-DE',{maximumFractionDigits:1});
+    const save=()=>{try{window.openai?.setWidgetState?.({modelContent:{spec,attack:selected},privateContent:null})?.catch(()=>{});}catch{}};
+    function seek(){if(!clip)return;if(video.readyState<1){pendingSeek=true;return;}pendingSeek=false;video.currentTime=clip.start+.025;}
+    function setPlaying(on){wantsPlay=on;play.textContent=on?'Pause':'Abspielen';still.hidden=on;stillLabel.hidden=on;video.hidden=!on;if(on)video.play().catch(()=>setPlaying(false));else video.pause();}
+    function show(id){
+      clip=data.clips.find(c=>c.id===id);selected=id;select.value=id;
+      root.querySelector('#necro-name').textContent=clip.name;
+      root.querySelector('#necro-description').textContent=clip.text;
+      root.querySelector('#necro-stats').textContent=clip.stats;
+      const icon=root.querySelector('#necro-icon');icon.hidden=!clip.icon;if(clip.icon)icon.src=clip.icon;
+      video.setAttribute('aria-label','Spielaufnahme: '+clip.name);progress.textContent='0,0 s / '+fmt(clip.end-clip.start)+' s';
+      still.src=clip.still;still.alt='Schlüsselmoment: '+clip.name;
+      seek();if(wantsPlay)setPlaying(true);
+    }
+    function branch(value,keep){
+      spec=value;tabs.forEach(t=>{const on=t.dataset.spec===spec;t.classList.toggle('active',on);t.setAttribute('aria-selected',String(on));});
+      const panel=root.querySelector('#necro-attack-panel');panel.hidden=false;panel.setAttribute('aria-labelledby','necro-tab-'+spec);
+      select.replaceChildren();
+      for(const [label,test] of [['Aktive Fähigkeiten',c=>!c.extra&&!c.variant&&!c.common],['Ultimate-Aufwertungen',c=>c.variant&&c.id.includes('stage')],['Begleiter & Auslöser',c=>c.extra&&c.spec===spec],['Weitere Angriffe',c=>c.variant&&!c.id.includes('stage')],['Grundangriff & Verteidigung',c=>c.common]]){
+        const items=data.clips.filter(c=>(c.spec===spec||c.common)&&test(c));if(!items.length)continue;
+        const group=document.createElement('optgroup');group.label=label;
+        items.forEach(c=>{const option=document.createElement('option');option.value=c.id;option.textContent=c.name;group.append(option);});select.append(group);
+      }
+      const passives=root.querySelector('#necro-passives');passives.replaceChildren();
+      data.passives.filter(p=>p.spec===spec).forEach(p=>{const item=document.createElement('div'),title=document.createElement('strong'),text=document.createElement('p');title.textContent=p.name;text.textContent=p.text;item.append(title,text);passives.append(item);});
+      show(keep&&[...select.options].some(o=>o.value===keep)?keep:data.clips.find(c=>c.spec===spec&&!c.extra&&!c.variant&&!c.common).id);
+    }
+    tabs.forEach(t=>t.addEventListener('click',()=>{branch(t.dataset.spec);save();}));
+    select.addEventListener('change',()=>{show(select.value);save();});
+    play.addEventListener('click',()=>setPlaying(!wantsPlay));
+    root.querySelector('#necro-restart').addEventListener('click',()=>{seek();setPlaying(true);});
+    video.addEventListener('loadedmetadata',()=>{if(pendingSeek)seek();});
+    video.addEventListener('timeupdate',()=>{if(!clip)return;const time=Math.max(0,Math.min(clip.end-clip.start,video.currentTime-clip.start));progress.textContent=fmt(time)+' s / '+fmt(clip.end-clip.start)+' s';if(wantsPlay&&video.currentTime>=clip.end-.06){video.currentTime=clip.start+.025;}});
+    video.addEventListener('ended',()=>{if(wantsPlay){seek();setPlaying(true);}});
+    window.addEventListener('openai:set_globals',event=>{const snapshot=event.detail?.globals?.widgetState,value=snapshot?.modelContent||snapshot;if(value&&data.specs.some(s=>s.id===value.spec))branch(value.spec,value.attack);});
+    branch(spec,selected);
+  })();
+  </script>
+</div>

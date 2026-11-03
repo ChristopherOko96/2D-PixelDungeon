@@ -1,0 +1,32 @@
+{
+  "passed": true,
+  "scope": "local loopback, not LAN/WAN/performance",
+  "results": [
+    {
+      "damage": true,
+      "expired": true,
+      "failures": [],
+      "max_rings": 2,
+      "owners": [
+        "1",
+        "1463381927"
+      ],
+      "passed": true,
+      "role": "host",
+      "scope": "two real local ENet processes, validated skill input, synthetic encounter"
+    },
+    {
+      "damage": true,
+      "expired": true,
+      "failures": [],
+      "max_rings": 2,
+      "owners": [
+        "1",
+        "1463381927"
+      ],
+      "passed": true,
+      "role": "client",
+      "scope": "two real local ENet processes, validated skill input, synthetic encounter"
+    }
+  ]
+}

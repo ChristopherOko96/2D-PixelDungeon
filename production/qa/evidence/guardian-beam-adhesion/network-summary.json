@@ -1,0 +1,62 @@
+{
+  "passed": true,
+  "scope": "local loopback, not LAN/WAN/performance",
+  "results": [
+    {
+      "beam": true,
+      "beam_followed": true,
+      "converted": true,
+      "damage": true,
+      "expired": true,
+      "failures": [],
+      "max_guardians": 2,
+      "motions": [
+        "spawn",
+        "grasp",
+        "beam",
+        "hover",
+        "dissolve"
+      ],
+      "owners": [
+        "1",
+        "289238234"
+      ],
+      "passed": true,
+      "retained": true,
+      "role": "host",
+      "scope": "two real local ENet processes, synthetic encounter, validated R input",
+      "seal": true,
+      "slots": true,
+      "souls": true,
+      "wave": true
+    },
+    {
+      "beam": true,
+      "beam_followed": true,
+      "converted": true,
+      "damage": true,
+      "expired": true,
+      "failures": [],
+      "max_guardians": 2,
+      "motions": [
+        "spawn",
+        "grasp",
+        "beam",
+        "hover",
+        "dissolve"
+      ],
+      "owners": [
+        "1",
+        "289238234"
+      ],
+      "passed": true,
+      "retained": true,
+      "role": "client",
+      "scope": "two real local ENet processes, synthetic encounter, validated R input",
+      "seal": true,
+      "slots": true,
+      "souls": true,
+      "wave": true
+    }
+  ]
+}

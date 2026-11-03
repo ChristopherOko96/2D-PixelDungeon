@@ -132,9 +132,6 @@ func observe(snapshot: Dictionary, local_peer: int) -> void:
 		elif fx_kind == "wall_hit":
 			var wall_style := str(event.get("style", "arrow"))
 			var shooter: Dictionary = snapshot.get("players", {}).get(int(event.get("o", 0)), {})
-			if wall_style == "magic" and str(shooter.get("class_id", "")) == "mage" and str(shooter.get("glow", "")).is_empty():
-				# the mage's fireball scorches the wall too (its burst is the shot's own: src/vfx/attack_fx.gd)
-				wall_style = "fire"
 			_wall_hit(fx_point, Vector2(float(event.get("nx", 0.0)), float(event.get("ny", 0.0))), wall_style, str(shooter.get("glow", "")))
 		elif fx_kind == "crate_break":
 			particles.kick(fx_point, 20.0, 0.6)

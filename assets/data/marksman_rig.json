@@ -1,0 +1,9 @@
+{
+ "_note":"Existing licensed 0x72 weapon_arrow.png, native 7x21, split once. Shared RigRenderer, fixed shaft/head and independently flexing feather joints. No new actor art.",
+ "images":{"marksman_arrow":"res://assets/sprites/0x72/weapon_arrow.png"},
+ "rigs":{"marksman_arrow":{"img":"marksman_arrow","family":"marksman_arrow","ground":[3,10],"width":7,"parts":[
+  {"id":"tip","rects":[[0,0,6,5]],"pivot":[3,5],"parent":"shaft","z":3,"hp":1},
+  {"id":"feather_l","rects":[[0,15,2,20]],"pivot":[3,15],"parent":"shaft","z":2,"hp":1},
+  {"id":"feather_r","rects":[[4,15,6,20]],"pivot":[3,15],"parent":"shaft","z":2,"hp":1},
+  {"id":"shaft","rects":[[0,0,6,20]],"pivot":[3,10],"parent":null,"z":1,"hp":1}],"items":[]}}
+}

@@ -787,6 +787,7 @@ func load_floor(n: int, carry: bool) -> void:
 	shots = []
 	eshots = []
 	zones = []
+	if story_elements != null: story_elements.reset()
 	if monsters != null:
 		monsters.reset()
 		drake_rig.reset()
@@ -1763,6 +1764,7 @@ func _fire(dir: Vector2) -> void:
 
 ## One attack of the class weapon (or the relic) towards `dir`.
 func _attack(dir: Vector2) -> void:
+	if talents != null and (talents.tc.runtime(1).has("soul_charge") or talents.tc.runtime(1).has("soul_leap")): return
 	state.cool = float(state.rate) * HeroKit.rate_scale(self) * CardKit.rate_mult(self)
 	player.aim = dir.normalized()
 	if absf(dir.x) > 0.01:
@@ -1776,8 +1778,8 @@ func _attack(dir: Vector2) -> void:
 			_sound("swing")
 		return
 	var v := dir.normalized() * float(weapon.get("speed", balance.shot.speed))
-	# the mage's left-click is a small fireball that bursts where it strikes (user wish 30.10.2026)
-	var shot_kind := "pyro" if class_id == "mage" and str(weapon.get("shot", "")) == "magic" else str(weapon.get("shot", ""))
+	# Standard staff attacks are neutral magic; fireball belongs to the talent tree.
+	var shot_kind := str(weapon.get("shot", ""))
 	shots.append({"p": Vector2(player.x, player.y - 40), "v": v, "t": float(state.range), "kind": shot_kind, "splash": float(weapon.get("splash", 0.0)), "hits": []})
 	story_hero.on_shot()
 	if feel == null:
@@ -2182,6 +2184,7 @@ func _fall_into_pit() -> void:
 	eshots = []
 	zones = []
 	state.storm = false
+	if story_elements != null: story_elements.reset()
 	if monsters != null:
 		monsters.reset()
 		drake_rig.reset()
@@ -2312,6 +2315,7 @@ func _process(delta: float) -> void:
 	_sync_overlays()
 	# the world stands still while the pause menu, the talent menu (K) or the run talents (B) are open
 	if (pause_menu != null and pause_menu.visible) or (run_talents != null and run_talents.visible) or bool(state.get("tree_open", false)):
+		if talents != null: talents.tc.runtime(1).erase("soul_charge")
 		hud.queue_redraw()
 		return
 	# a kill or a hurt holds the picture for a moment, as in the crypt (hitstop, src/hero/story_feel.gd)
@@ -2533,7 +2537,6 @@ func _update_shots(dt: float) -> void:
 				feel.wall_hit((s.p as Vector2) - (s.v as Vector2) * dt, s.p, StoryFeel.shot_wall_style(s), 1)
 			else:
 				_burst(s.p, 5)
-			if s.get("kind", "") == "pyro" and talents != null: talents.tc.show_effect("explosion", s.p, 34.0, {"fx": "fire", "life": 0.5})
 			continue
 		if s.get("kind", "") == "gravity":
 			# the gravity ball drags enemies towards itself while it flies
@@ -2844,7 +2847,6 @@ func _explode(s: Dictionary, first: Dictionary) -> void:
 		feel.perk("blast", s.p)
 		return
 	fx.append({"kind": "blast", "p": s.p, "r": radius, "t": 0.3, "max": 0.3, "gravity": s.get("kind", "") in ["gravity", "rock"], "shot": s.get("kind", "")})
-	if s.get("kind", "") == "pyro" and talents != null: talents.tc.show_effect("explosion", s.p, radius * 0.45, {"fx": "fire", "life": 0.55})
 	if int(s.get("split", 0)) > 0:
 		RelicKit.split_rock(self, s)
 	_burst(s.p, 18)
@@ -3008,6 +3010,7 @@ func _step_elements(dt: float) -> void:
 	var layer := _pool_layer()
 	if layer != null:
 		var under: Array = layer.materials_at(feet)
+		if story_elements != null: under = under.filter(func(mat: String) -> bool: return not story_elements.safe_medium(feet, mat))
 		if not under.is_empty():
 			hero_medium_style = ElementRules.top(under)
 			# burning, he sets the poison he steps in off (element_rules.json combos)
@@ -3050,6 +3053,7 @@ func _step_elements(dt: float) -> void:
 		if float(cloud.d) >= ElementRules.dense_from() and not _hero_combo(str(cloud.mat)):
 			hero_gas_mat = str(cloud.mat)
 			hero_gas = ElementRules.gas(hero_gas_mat)
+			if story_elements != null and story_elements.safe_gas(feet, hero_gas_mat): hero_gas = {}
 			if hero_gas_mat == "void" and _void_mind():
 				hero_gas = {}
 	if not hero_gas.is_empty():
@@ -3718,9 +3722,6 @@ func _draw_actors(l: Layer) -> void:
 			l.draw_set_transform(s.p, (s.v as Vector2).angle() + PI / 2.0)
 			l.draw_texture_rect(arrow_tex, Rect2(-asz / 2.0, asz), false)
 			l.draw_set_transform(Vector2.ZERO)
-			continue
-		if s.get("kind", "") == "pyro":
-			l.draw_circle(s.p, 26.0, Color(1.0, 0.45, 0.12, 0.25))
 			continue
 		var big := (1.5 if s.get("kind", "") == "magic" else 1.0) * float(s.get("big", 1.0))
 		l.draw_circle(s.p, 16.0 * big, col("shot_glow"))

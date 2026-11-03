@@ -958,7 +958,10 @@ func _peer_disconnected(id: int) -> void:
 func _build_session_identity() -> Dictionary:
 	var engine := Engine.get_version_info()
 	var engine_version := "%d.%d.%d" % [engine.major,engine.minor,engine.patch]
-	return SessionProtocol.manifest(balance,dungeon_config,Dungeon.GENERATOR_VERSION,engine_version)
+	var content := balance.duplicate()
+	content["talents_sha256"] = JSON.stringify(talent_combat.data, "", true, true).sha256_text()
+	content["necromancer_sha256"] = JSON.stringify(talent_combat.necromancer.cfg, "", true, true).sha256_text()
+	return SessionProtocol.manifest(content,dungeon_config,Dungeon.GENERATOR_VERSION,engine_version)
 
 
 func _reset_session_admission() -> void:
@@ -1064,6 +1067,7 @@ func _add_player(id: int) -> void:
 
 
 func _send_local_input() -> void:
+	if pause_open and hosting: talent_combat.runtime(1).erase("soul_charge")
 	var local_player: Dictionary = state.get("players", {}).get(multiplayer.get_unique_id(), {})
 	if local_player.is_empty() or local_player.get("hp", 0) <= 0: return
 	if pause_open or is_transitioning():
@@ -1071,8 +1075,8 @@ func _send_local_input() -> void:
 			commands[1].move = Vector2.ZERO
 			commands[1].fire = false
 		input_sequence += 1
-		if hosting: _accept_input(1,Vector2.ZERO,Vector2.RIGHT,false,input_sequence,0)
-		elif peer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTED: _input_packet.rpc_id(1,Vector2.ZERO,Vector2.RIGHT,false,input_sequence)
+		if hosting: _accept_input(1,Vector2.ZERO,Vector2.RIGHT,false,input_sequence,1 << TalentCombat.CANCEL_BIT)
+		elif peer.get_connection_status() == MultiplayerPeer.CONNECTION_CONNECTED: _input_packet.rpc_id(1,Vector2.ZERO,Vector2.RIGHT,false,input_sequence,1 << TalentCombat.CANCEL_BIT)
 		return
 	var movement := Vector2(float(Input.is_physical_key_pressed(KEY_D)) - float(Input.is_physical_key_pressed(KEY_A)), float(Input.is_physical_key_pressed(KEY_S)) - float(Input.is_physical_key_pressed(KEY_W))).limit_length()
 	var position := Vector2(local_player.x, local_player.y)
@@ -1704,6 +1708,7 @@ func _simulate_players(delta: float) -> void:
 			talent_combat.handle_input(id, player, command)
 		var move_scale: float = hero_skills.move_scale(player) * player_effects.move_scale(player)
 		var wanted: Vector2 = command.move * player.speed * move_scale
+		if talent_combat.runtime(id).has("soul_leap"): wanted = Vector2.ZERO
 		# On ice the hero keeps sliding: the new direction only takes over slowly.
 		var slip: float = player_effects.slip(player)
 		if slip > 0.0: wanted = Vector2(player.get("slide", Vector2.ZERO)).lerp(wanted, 1.0 - pow(slip, delta * 60.0))
@@ -1713,7 +1718,7 @@ func _simulate_players(delta: float) -> void:
 			player.pos = Dungeon.move_actor(player.pos, wanted * delta, float(balance.player.radius), current_layout)
 			player.moving = player.pos.distance_squared_to(before) > 0.001
 			player.motion = (player.pos-before)/maxf(delta,0.000001)
-		if acting and command.fire and phase != "reward" and player.shot_timer <= 0.0 and hero_skills.can_attack(player):
+		if acting and command.fire and phase != "reward" and player.shot_timer <= 0.0 and hero_skills.can_attack(player) and not talent_combat.runtime(id).has("soul_charge") and not talent_combat.runtime(id).has("soul_leap"):
 			player.shot_timer = perk_combat.shot_interval(player) * player_effects.attack_scale(player) * talent_combat.interval_scale(player, id)
 			inventory.on_attack(player)
 			if bool(player.get("melee",false)): perk_combat.melee(id,command.aim)
@@ -1929,6 +1934,9 @@ func _update_boss_attack(enemy: Dictionary, delta: float) -> void:
 func _simulate_bullets(delta: float) -> void:
 	for i in range(bullets.size() - 1, -1, -1):
 		var bullet: Dictionary = bullets[i]
+		if TalentCombat.SoulProjectiles.owns(bullet):
+			if TalentCombat.SoulProjectiles.step(talent_combat, bullet, delta): bullets.remove_at(i)
+			continue
 		var radius: float = float(bullet.get("radius",balance.bullet.radius))
 		var previous: Vector2 = bullet.pos
 		if int(bullet.owner) > 0: perk_combat.steer(bullet,delta)
@@ -2063,6 +2071,7 @@ func _damage_enemy(enemy: Dictionary, damage: float, direction: Vector2 = Vector
 	if boss and players.has(owner): progress.mark_fight(enemy)
 	damage *= hero_skills.damage_scale(enemy) * boss_moves.damage_scale(enemy)
 	if players.has(owner): damage = talent_combat.outgoing(owner,enemy,damage,feedback)
+	var resolved_hp := minf(float(enemy.hp), damage)
 	if body_parts.has_parts(enemy):
 		# The part at the impact point takes the damage; all of it counts against the total HP.
 		var impact: String = body_parts.take_pending(enemy)
@@ -2081,7 +2090,7 @@ func _damage_enemy(enemy: Dictionary, damage: float, direction: Vector2 = Vector
 		var heavy: float = float(players.get(owner,{}).get("build",{}).get("heavy",0.0))
 		var knockback_scale: float = float(balance.get("perk_rules",{}).get("mechanics",{}).get("heavy_knockback_scale",1.7)) if heavy > 0 else 1.0
 		enemy.knockback = direction.normalized() * float(balance.feedback.boss_knockback if boss else balance.feedback.enemy_knockback)*knockback_scale
-	if players.has(owner): talent_combat.dealt(owner,enemy,damage,feedback)
+	if players.has(owner): talent_combat.dealt(owner,enemy,damage,feedback,resolved_hp)
 	if enemy.hp <= 0 and boss_moves.hold_death(enemy): return damage
 	if enemy.hp <= 0: _enemy_fell(enemy,direction,owner,kill_effects)
 	# Return resolved damage before HP clamping, so lethal surplus remains measurable.
@@ -2391,7 +2400,7 @@ func _make_snapshot(advance_sequence: bool = true) -> Dictionary:
 		visible_enemies[-1].merge({"enemy_name":str(enemy.get("enemy_name","Kryptawesen")),"attack_kind":str(enemy.get("attack_kind","")),"attack_length":attack_length,"aim_x":attack_aim.x,"aim_y":attack_aim.y,"tx":point.x,"ty":point.y,"blocks":int(enemy.get("blocks",0)),"cast_count":int(enemy.get("summons_cast",0)),"caster_id":int(enemy.get("caster_id",0))})
 		if bool(enemy.get("sheet",false)): sheet_monsters.snapshot_entry(enemy,visible_enemies[-1])
 	var visible_bullets: Array = []
-	for bullet in bullets: visible_bullets.append({"id":bullet.get("id",-1),"radius":float(bullet.get("radius",balance.bullet.radius)),"x": bullet.pos.x, "y": bullet.pos.y, "owner": bullet.owner,"element":str(bullet.get("element","")),"critical":bool(bullet.get("critical",false)),"style":str(bullet.get("style","")),"talent":str(bullet.get("talent","")),"stage":int(bullet.get("stage",0)),"vx":float(bullet.velocity.x),"vy":float(bullet.velocity.y)})
+	for bullet in bullets: visible_bullets.append({"id":bullet.get("id",-1),"radius":float(bullet.get("radius",balance.bullet.radius)),"x": bullet.pos.x, "y": bullet.pos.y, "owner": bullet.owner,"element":str(bullet.get("element","")),"critical":bool(bullet.get("critical",false)),"style":str(bullet.get("style","")),"talent":str(bullet.get("talent","")),"stage":int(bullet.get("stage",0)),"vx":float(bullet.velocity.x),"vy":float(bullet.velocity.y),"charge":float(bullet.get("charge",0.0))})
 	if advance_sequence: packet_sequence += 1
 	var map_rooms: Array[Dictionary] = []
 	for i in range(floor_layouts.size()):

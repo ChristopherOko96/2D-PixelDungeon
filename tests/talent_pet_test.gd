@@ -256,22 +256,19 @@ func test_hud_shows_companion_slots_and_life() -> void:
 	var slots: Array = TalentBar.new().skill_slots(state)
 	# Assert
 	check(str(state.pet.name) == "Wasserelementar" and float(state.pet.hp) > 0.0, "the HUD knows the companion and its life")
-	# 1-4, R, Shift (the defense), then the companion on 5 and 6
-	check(slots.size() == 8 and str(slots[6].key) == "5" and str(slots[7].key) == "6", "the companion's abilities sit on 5 and 6 after R and Shift")
-	check(bool(slots[6].auto) and not bool(slots[7].auto), "the slot shows whether auto-cast is on")
-	check(TalentBar.pet_slot(slots, 7) == 1 and TalentBar.pet_slot(slots, 4) == -1 and TalentBar.pet_slot(slots, 5) == -1, "a click on slot 6 is the second ability, R and Shift are none")
-	var screen := Vector2(1280, 720)
-	var found := -1
-	for x in range(0, 1280, 4):
-		if SkillBar.slot_at(screen, slots, Vector2(x, SkillBar.top(screen, false) + 20.0)) == 6:
-			found = x
-			break
-	check(found > 0, "the HUD finds the companion icon under the mouse")
+	# Current main puts companion actions in HudKit.pet_panel above the world.
+	# The main skill bar retains 1–4, R and Shift; no duplicated pet slots.
+	check(slots.size() == 6 and str(slots[4].key) == "R", "main bar retains six hero slots")
+	var abilities: Array = state.pet.abilities
+	check(abilities.size() == 2 and abilities[0].key == "5" and abilities[1].key == "6", "companion row owns keys five and six")
+	check(bool(abilities[0].auto) and not bool(abilities[1].auto), "companion row carries independent auto flags")
+	check(float(abilities[0].cd_max) > 0.0 and not str(abilities[0].icon).is_empty(), "companion row receives cooldown and icon data")
 
 
 func test_bone_warrior_and_wolf_have_their_abilities() -> void:
 	# Arrange / Act
 	_hero("necromancer", {"minion_1": 1})
+	check(tc.cast(1,"minion_1",{"aim":Vector2.RIGHT}),"bone warrior is explicitly summoned")
 	var warrior: Dictionary = tc.permanent_pet(1)
 	_hero("archer", {"beast_1": 1}, "bear")
 	var bear: Dictionary = tc.permanent_pet(1)
@@ -283,6 +280,10 @@ func test_bone_warrior_and_wolf_have_their_abilities() -> void:
 
 func test_falcon_dives_bleeds_and_blinds() -> void:
 	# Arrange (user wish 30.10.2026: a falcon beside wolf and bear)
+	var saved_layout: Dictionary = game.current_layout
+	# This is an ability-range fixture. The old target was inside the narrow
+	# campaign room's void; it must not rely on attacking through that wall.
+	game.current_layout = {"world_size": [896, 480], "play_bounds": [32, 32, 832, 416], "obstacles": [], "exits": []}
 	check(d.pet.kinds.has("falcon") and not bool(d.pet.kinds.falcon.get("summon_only", false)), "the beast master can choose a falcon")
 	_hero("archer", {"beast_1": 1}, "falcon")
 	var falcon: Dictionary = tc.permanent_pet(1)
@@ -298,6 +299,7 @@ func test_falcon_dives_bleeds_and_blinds() -> void:
 	check(tc.events.any(func(e: Dictionary) -> bool: return str(e.kind) == "pet_strike" and str(e.wound) == "blood"), "the wound shows blood")
 	var blind: bool = tc.pet_cast(1, 1, true)
 	check(blind and Dictionary(prey.get("statuses", {})).has("freeze"), "Augenhacker blinds: the enemy stands still")
+	game.current_layout = saved_layout
 
 
 func test_wolf_and_bear_wounds_bleed() -> void:

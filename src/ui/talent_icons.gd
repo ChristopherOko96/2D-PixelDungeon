@@ -1,7 +1,7 @@
 extends RefCounted
-## Talent icons in the 0x72 look: a 14x14 pixel motif with a dark outline and
+## Detailed native 48px icons: the familiar 14x14 motif receives fine facets,
 ## a four-step ramp from the branch colours (talents.json "classes": color,
-## color2), on an 18x18 bevelled tile; ultimates get a gold frame. Drawn at 2x
+## color2), on a 48x48 bevelled tile; ultimates get a gold frame. Nearest filtered
 ## with nearest filtering like every 0x72 sprite. Shared by the talent screen
 ## and the talent bar of every map; textures are built once per look.
 
@@ -641,24 +641,48 @@ static func make(spec: Dictionary, motif: String, on: bool, ultimate := false) -
 		base = Color("5a5560")
 		light = Color("a39cab")
 	var ramp := {"o": INK, "d": base.darkened(0.45), "m": base, "l": light, "w": light.lerp(Color.WHITE, 0.6)}
-	var image := Image.create(18, 18, false, Image.FORMAT_RGBA8)
+	var image := Image.create(48, 48, false, Image.FORMAT_RGBA8)
 	# the tile: ink edge, a bevel (light top-left, dark bottom-right) and a
 	# dark fill that brightens toward the middle in a 2x2 dither
 	var edge := (GOLD if on else Color("8a8490")) if ultimate else base.darkened(0.15)
 	image.fill(INK)
-	image.fill_rect(Rect2i(1, 1, 16, 16), edge)
-	image.fill_rect(Rect2i(2, 2, 15, 15), edge.darkened(0.45) if not ultimate else GOLD_DARK)
-	image.fill_rect(Rect2i(2, 2, 14, 14), base.darkened(0.72))
-	for y in range(2, 16):
-		for x in range(2, 16):
-			var near := Vector2(x - 8.5, y - 8.5).length() < 5.5
-			if near and (x + y) % 2 == 0: image.set_pixel(x, y, base.darkened(0.58))
-	var rows: Array = MOTIF.get(motif, MOTIF.burst)
-	for y in range(14):
+	image.fill_rect(Rect2i(1, 1, 46, 46), edge)
+	image.fill_rect(Rect2i(2, 2, 45, 45), edge.darkened(0.45) if not ultimate else GOLD_DARK)
+	image.fill_rect(Rect2i(3, 3, 42, 42), base.darkened(0.77))
+	for y in range(3, 45):
+		for x in range(3, 45):
+			var dist := Vector2(x-23.5,y-23.5).length()/29.0
+			image.set_pixel(x,y,base.darkened(0.60+0.19*clampf(dist,0,1)))
+	for at: Vector2i in [Vector2i(2,2),Vector2i(43,2),Vector2i(2,43),Vector2i(43,43)]:
+		image.fill_rect(Rect2i(at,Vector2i(3,3)),edge.lightened(0.2))
+	var rows: Array = MOTIF.get(motif, MOTIF.burst) if motif!="worms" else []
+	for y in range(rows.size()):
 		var row := str(rows[y])
 		for x in range(mini(14, row.length())):
 			var c := row[x]
-			if ramp.has(c): image.set_pixel(2 + x, 2 + y, ramp[c])
+			if not ramp.has(c): continue
+			var at := Vector2i(3+x*3,3+y*3)
+			var color: Color = ramp[c]
+			image.fill_rect(Rect2i(at,Vector2i(3,3)),color)
+			if c not in ["o","d"]:
+				# Native facets and inner shadows add detail beyond resizing the motif.
+				image.set_pixelv(at,color.lightened(0.20))
+				image.set_pixelv(at+Vector2i(1,0),color.lightened(0.10))
+				image.set_pixelv(at+Vector2i(2,2),color.darkened(0.22))
 	var texture := ImageTexture.create_from_image(image)
+	if motif=="worms":
+		# Approved native companion art, cached only once per icon state.
+		for index in range(2):
+			var name: String = ["poison","fire"][index]
+			var source := Image.load_from_file("res://assets/sprites/companions/forest_worms/"+name+".png")
+			source.resize(20,25,Image.INTERPOLATE_NEAREST)
+			if not on:
+				for y in range(25):
+					for x in range(20):
+						var col := source.get_pixel(x,y)
+						var grey := (col.r+col.g+col.b)/3
+						source.set_pixel(x,y,Color(grey,grey,grey,col.a))
+			image.blend_rect(source,Rect2i(0,0,20,25),Vector2i(4+index*20,12))
+		texture = ImageTexture.create_from_image(image)
 	_cache[key] = texture
 	return texture

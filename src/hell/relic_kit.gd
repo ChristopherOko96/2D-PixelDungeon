@@ -1,4 +1,5 @@
 extends RefCounted
+const CompanionTargets = preload("res://src/combat/companion_targets.gd")
 ## Class relics of themed runs (the Frostgruft): each run hides one relic for
 ## the hero's class (theme.relics.pools) in the secret room of a random floor,
 ## sealed by four plates stepped in order. A wielded relic replaces the attack
@@ -333,20 +334,13 @@ static func _update_allies(g: Node, dt: float) -> void:
 		if float(a.rise) > 0.0:
 			continue
 		var s: Dictionary = a.s
-		var best: Dictionary = {}
-		var bd := INF
-		for m: Dictionary in g.mobs:
-			if m.spawn <= 0.0 and (a.p as Vector2).distance_to(m.p) < bd:
-				bd = (a.p as Vector2).distance_to(m.p)
-				best = m
+		var best := CompanionTargets.story_pick(g, a)
 		var goal: Vector2 = best.p if not best.is_empty() else Vector2(g.player.x - 80.0, g.player.y + 20.0)
 		var to: Vector2 = goal - a.p
-		if to.length() > float(s.reach) * 0.8:
-			var step: Vector2 = to.normalized() * float(s.speed) * dt
-			if not g.box_blocked(Rect2(a.p.x + step.x - 30, a.p.y + step.y - 24, 60, 24), true):
-				a.p += step
+		if to.length() > float(s.reach) * 0.8 or (not best.is_empty() and not CompanionTargets.story_visible(g, a.p, best.p)):
+			CompanionTargets.story_follow(g, a, goal, float(s.speed), dt, 24.0)
 			a.face = signf(to.x) if absf(to.x) > 1.0 else a.face
-		elif not best.is_empty() and float(a.cool) <= 0.0:
+		elif not best.is_empty() and float(a.cool) <= 0.0 and CompanionTargets.story_visible(g, a.p, best.p):
 			a.cool = float(s.every)
 			a.slam = 0.3
 			_area(g, best.p, 70.0, float(a.dmg), 0.0)

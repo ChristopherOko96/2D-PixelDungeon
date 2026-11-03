@@ -69,7 +69,7 @@ func step(enemy: Dictionary, target_id: int, delta: float) -> bool:
 	# Negative ids are mirror-image decoys (HeroSkills); they draw but never take hits.
 	var target: Dictionary = _game.players.get(target_id,_game.decoys.get(target_id,{})) if "decoys" in _game else _game.players.get(target_id,{})
 	if target.is_empty() or int(target.get("hp",0)) <= 0: return true
-	if float(enemy.get("hitstun",0.0)) > 0 or enemy.get("statuses",{}).has("freeze"): return true
+	if float(enemy.get("hitstun",0.0)) > 0 or enemy.get("statuses",{}).has("freeze") or enemy.get("statuses",{}).has("soul_bind"): return true
 	# Extra moves (boss_moves.gd) between the ordinary attacks.
 	if target_id > 0 and "boss_moves" in _game and _game.boss_moves.step(enemy,target_id,delta): return true
 	var attack: String = str(enemy.get("attack",""))
@@ -256,7 +256,7 @@ func _move(enemy: Dictionary, target_point: Vector2, data: Dictionary, visible: 
 func guard_multiplier(enemy: Dictionary, incoming_direction: Vector2, feedback: bool = true) -> float:
 	if bool(enemy.get("boss",false)): return 1.0
 	if not feedback or str(enemy.get("kind","")) != "skeleton_guard" or float(enemy.get("hp",0)) <= 0: return 1.0
-	if not str(enemy.get("attack","")).is_empty() or float(enemy.get("hitstun",0.0)) > 0 or enemy.get("statuses",{}).has("freeze"): return 1.0
+	if not str(enemy.get("attack","")).is_empty() or float(enemy.get("hitstun",0.0)) > 0 or enemy.get("statuses",{}).has("freeze") or enemy.get("statuses",{}).has("soul_bind"): return 1.0
 	if incoming_direction.length_squared() <= 0.00001: return 1.0
 	# A broken shield no longer blocks.
 	var parts := _parts()

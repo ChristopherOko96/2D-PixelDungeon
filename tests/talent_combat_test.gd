@@ -46,6 +46,7 @@ func _run() -> void:
 	for talent: Dictionary in d.talents.values(): _test_talent(talent)
 	_test_resources_and_cooldowns()
 	_test_bosses_resist_freeze()
+	_test_soul_field_control()
 	_test_ultimate_stages()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(game.progress.save_path))
 	print("TALENT_COMBAT checked=%d failures=%d" % [checked, failures.size()])
@@ -83,6 +84,11 @@ func _setup(talent: Dictionary, with_talent: bool = true) -> Dictionary:
 	game.enemies.clear()
 	game.bullets.clear()
 	var rt: Dictionary = tc.runtime(1)
+	# Scenarios for other Diener skills explicitly arrange their required warrior.
+	# The warrior's own summon test starts empty and checks the paid cast itself.
+	if str(talent.spec) == "minion" and str(talent.id) != "minion_1" and int(rt.ranks.get("minion_1",0)) > 0:
+		tc.cast(1,"minion_1",{"aim":Vector2.RIGHT})
+		rt.gcd = 0.0
 	rt.res = float(rt.res_max)
 	return rt
 
@@ -106,7 +112,11 @@ func _tick(seconds: float) -> void:
 func _cast(talent: Dictionary, command: Dictionary = {}) -> bool:
 	var base := {"aim": Vector2.RIGHT, "target": Vector2(420, 240)}
 	base.merge(command, true)
-	return tc.cast(1, str(talent.id), base)
+	var casted: bool = tc.cast(1, str(talent.id), base)
+	# This catalog helper represents a tap. Held/max-power behavior has its
+	# own input/resource/authority regression in necro_soul_attacks_test.
+	if casted and talent.has("charge"): tc.SoulCharge.hold(tc, 1, false, Vector2(base.aim))
+	return casted
 
 
 func _test_talent(talent: Dictionary) -> void:
@@ -115,10 +125,46 @@ func _test_talent(talent: Dictionary) -> void:
 	var rt := _setup(talent)
 	var player: Dictionary = game.players[1]
 	match type:
+		"blood_mark":
+			var enemy := _dummy(Vector2(420,240))
+			check(_cast(talent),"%s casts" % id)
+			check(enemy.get("blood_marks",{}).has("1"),"%s: marks actual target" % id)
+			game._damage_enemy(enemy,99999,Vector2.ZERO,1,true,false)
+			check(tc.necromancer.media(tc).any(func(z:Dictionary)->bool:return bool(z.get("necro_mark_pool",false))),"%s: real death creates blood" % id)
+		"blood_beam":
+			var enemy := _dummy(Vector2(420,240))
+			check(_cast(talent,{"target":enemy.pos}), "%s casts" % id)
+			check(not tc.snapshot().get("blood_links",[]).is_empty(), "%s: connects to an actual target" % id)
+			_tick(0.8)
+			check(float(enemy.hp)<float(enemy.max_hp), "%s: sustained channel deals damage" % id)
+		"siege_command":
+			var enemy := _dummy(Vector2(420, 240))
+			var pet: Dictionary = tc.permanent_pet(1)
+			var at := Vector2(pet.pos)
+			check(_cast(talent) and int(pet.target) == int(enemy.id), "%s: targets the enemy" % id)
+			check(Vector2(pet.pos) == at and float(pet.protect) > 0, "%s: protects companion without teleport" % id)
+		"death_pact":
+			check(_cast(talent) and rt.buffs.has("death_pact"), "%s: pact starts" % id)
+			var pet: Dictionary = tc.permanent_pet(1)
+			var hp := float(pet.hp)
+			check(tc.incoming(1, 10, Vector2.RIGHT) < 10 and float(pet.hp) < hp, "%s: transfer really damages companion" % id)
+		"corpse_burst", "curse_harvest", "blood_tether":
+			var enemy := _dummy(Vector2(350, 240))
+			var at := Vector2(player.pos)
+			check(_cast(talent, {"target": Vector2(350, 240)}), "%s casts" % id)
+			check(float(enemy.hp) < float(enemy.max_hp) and Vector2(player.pos) == at, "%s: hits without relocating hero" % id)
+		"bone_ascension":
+			var enemy := _dummy(Vector2(360, 240))
+			tc.permanent_pet(1).blood = 100.0
+			check(_cast(talent), "%s casts" % id)
+			var pet: Dictionary = tc.permanent_pet(1)
+			check(str(pet.rig) == "blood_colossus" and pet.parts.has("arm_l"), "%s: proper articulated skeleton" % id)
+			_tick(3.0)
+			check(float(enemy.hp) < float(enemy.max_hp), "%s: large skeleton really fights" % id)
 		"projectile":
 			var enemy := _dummy(Vector2(420, 240))
 			check(_cast(talent), "%s casts" % id)
-			_tick(0.6)
+			_tick(0.6+float(talent.get("cast_time",0)))
 			check(enemy.hp < enemy.max_hp, "%s: the shot hits" % id)
 			if talent.has("status"): check(enemy.statuses.has(str(talent.status)), "%s: applies %s" % [id, talent.status])
 			if talent.has("slow"): check(enemy.statuses.has("slow"), "%s: slows" % id)
@@ -154,7 +200,8 @@ func _test_talent(talent: Dictionary) -> void:
 			var at_start := _dummy(Vector2(320, 240))
 			var from: Vector2 = player.pos
 			check(_cast(talent), "%s casts" % id)
-			check(Vector2(player.pos).distance_to(from) > 60.0, "%s: teleports the hero" % id)
+			if id == "soul_7": _tick(0.8)
+			check(Vector2(player.pos).distance_to(from) > 60.0, "%s: relocates the hero" % id)
 			if talent.has("dmg"): check(at_start.hp < at_start.max_hp, "%s: damages around the starting point" % id)
 		"dash":
 			var on_path := _dummy(Vector2(380, 240))
@@ -193,6 +240,15 @@ func _test_talent(talent: Dictionary) -> void:
 			var shots: int = game.bullets.size()
 			_tick(0.5)
 			check(float(rt.echo) == 0.0 and not rt.has("echo_cast") and shots >= 1, "%s: the next spell repeats once" % id)
+		"curse_aura":
+			var enemy := _dummy(Vector2(420,240))
+			check(_cast(talent) and enemy.get("necro_curses",{}).has("1"),"%s: curses the surrounding enemy"%id)
+			check(tc.outgoing(1,enemy,10.0,false)>10.0,"%s: curse increases own damage"%id)
+		"forest_worms":
+			check(_cast(talent) and tc.pets.filter(func(p:Dictionary)->bool:return str(p.kind) in ["poison_worm","fire_worm"]).size()==2,"%s: calls the elemental worm pair"%id)
+		"marksman":
+			var enemy:=_dummy(Vector2(420,240))
+			check(_cast(talent) and enemy.get("marksman_marks",{}).has("1"),"%s: owns a one-use arrow mark"%id)
 		"mark":
 			var enemy := _dummy(Vector2(420, 240))
 			check(_cast(talent) and enemy.has("talent_mark"), "%s: marks the target" % id)
@@ -200,7 +256,7 @@ func _test_talent(talent: Dictionary) -> void:
 		"trap":
 			check(_cast(talent, {"target": Vector2(420, 240)}) and tc.traps.size() == 1, "%s: sets a trap" % id)
 			var enemy := _dummy(Vector2(422, 240))
-			_tick(0.1)
+			_tick(float(talent.get("arm_s",0))+0.1)
 			check(enemy.hp < enemy.max_hp and tc.traps.is_empty(), "%s: the trap springs" % id)
 			if talent.has("root"): check(float(enemy.statuses.get("slow", {}).get("power", 0.0)) >= 1.0, "%s: holds the enemy" % id)
 		"drawn":
@@ -224,7 +280,8 @@ func _test_talent(talent: Dictionary) -> void:
 			check(_cast(talent, {"target": Vector2(420, 240)}) and tc.zones.size() == 1, "%s: creates the zone" % id)
 			_tick(2.2)
 			check(enemy.hp < enemy.max_hp, "%s: the zone hurts" % id)
-			if talent.has("status"): check(enemy.statuses.has(str(talent.status)), "%s: the zone applies %s" % [id, talent.status])
+			if not str(talent.get("status", "")).is_empty(): check(enemy.statuses.has(str(talent.status)), "%s: the zone applies %s" % [id, talent.status])
+			if talent.has("decay"): check(enemy.get("necro_curses", {}).has("1"), "%s: magical decay persists" % id)
 			if talent.has("slow"): check(enemy.statuses.has("slow"), "%s: the zone slows" % id)
 			if str(talent.get("look", "")) == "arrows":
 				# Pfeilhagel: the last volley strikes at once when the field ends
@@ -234,6 +291,10 @@ func _test_talent(talent: Dictionary) -> void:
 		"summon":
 			var enemy := _dummy(Vector2(360, 240))
 			if bool(talent.get("permanent", false)):
+				if bool(talent.get("manual_summon",false)):
+					check(tc.permanent_pet(1).is_empty() and _cast(talent),"%s: paid explicit summon starts empty" % id)
+					rt.cds.erase(id)
+					rt.gcd = 0.0
 				# a permanent companion is there with the build and is called again only after it fell
 				check(not tc.permanent_pet(1).is_empty() and not _cast(talent), "%s: the companion stands there from the start, once" % id)
 				if talent.has("pet_kind"): check(str(tc.permanent_pet(1).kind) == str(talent.pet_kind), "%s: summons %s" % [id, talent.pet_kind])
@@ -292,7 +353,9 @@ func _test_talent(talent: Dictionary) -> void:
 		"glacier":
 			var middle := _dummy(Vector2(420, 240))
 			var edge := _dummy(Vector2(420 + float(talent.radius_m) * 32.0 - 20.0, 240))
-			check(_cast(talent) and middle.statuses.has("freeze") and not edge.statuses.has("freeze"), "%s: freezes the middle of the block only" % id)
+			check(_cast(talent) and not middle.statuses.has("freeze"), "%s: freeze waits for the block to land" % id)
+			_tick(float(talent.get("land_s", tc.GLACIER_LAND_S)) + 0.1)
+			check(middle.statuses.has("freeze") and not edge.statuses.has("freeze"), "%s: landing freezes the middle of the block only" % id)
 			_tick(1.2)
 			check(edge.hp < edge.max_hp and edge.statuses.has("slow"), "%s: the block chills and slows" % id)
 		"singularity":
@@ -340,6 +403,11 @@ func _test_talent(talent: Dictionary) -> void:
 			rt.res = 60.0
 			check(_cast(talent) and float(weak.hp) <= 0.0 and float(strong.hp) > 0.0, "%s: a weak normal enemy falls at once" % id)
 			check(int(player.hp) > 500 and float(rt.res) > 60.0 - float(talent.cost), "%s: each hit heals and gives mana" % id)
+		"soul_guardian":
+			var prey := _dummy(Vector2(360, 240))
+			check(_cast(talent) and tc.guardians.actors.size() == 1, "%s: summons the approved guardian" % id)
+			_tick(2.0)
+			check(float(prey.hp) < float(prey.max_hp), "%s: guardian attacks in real combat" % id)
 		_:
 			_test_passive(talent, rt)
 
@@ -355,6 +423,8 @@ func _test_passive(talent: Dictionary, rt: Dictionary) -> void:
 	var id := str(talent.id)
 	var enemy := _dummy(Vector2(420, 240))
 	match str(talent.type):
+		"blood_provision":
+			check(tc._value(talent, "speed_pct", rt) > 0 and tc._value(talent, "heal_pct", rt) > 0, "%s: ranked blood absorption and healing values" % id)
 		"bonus_vs_status":
 			for status: String in talent.statuses: enemy.statuses[status] = {"power": 0.1, "time": 5.0, "owner": 1, "tick": 0.0}
 			var with_bonus: float = tc.outgoing(1, enemy, 10.0, false)
@@ -406,9 +476,11 @@ func _test_passive(talent: Dictionary, rt: Dictionary) -> void:
 			with_bonus[str(talent.id)] = 3
 			tc.reset(7)
 			tc.set_build(1, {"class": str(talent["class"]), "level": 30, "ranks": with_bonus, "bar": [summoner]})
+			if bool(d.talents[summoner].get("manual_summon",false)): tc.cast(1,summoner)
 			var hp: float = float(tc.permanent_pet(1).get("hp", 0.0))
 			tc.reset(7)
 			tc.set_build(1, {"class": str(talent["class"]), "level": 30, "ranks": base_ranks, "bar": [summoner]})
+			if bool(d.talents[summoner].get("manual_summon",false)): tc.cast(1,summoner)
 			check(hp > float(tc.permanent_pet(1).get("hp", INF)), "%s: a tougher companion" % id)
 		"bonus_vs_pet_target":
 			rt.pet_target = int(enemy.id)
@@ -461,6 +533,28 @@ func _test_passive(talent: Dictionary, rt: Dictionary) -> void:
 			victim.hp = 1.0
 			game._damage_enemy(victim, 5.0, Vector2.RIGHT, 1, true)
 			check(float(rt.res) >= _value(talent, "amount"), "%s: a kill refills the resource (%.1f)" % [id, rt.res])
+		"devour":
+			rt.res = 0.0
+			tc.feed(1, "fire", 2)
+			check(float(rt.res) >= 2.0 * _value(talent, "amount"), "%s: swallowed units restore mana" % id)
+		"gefuege_cap":
+			tc.feed(1, "fire", 1000)
+			var full := int(tc.gefuege_units(rt))
+			var plain := _setup(talent, false)
+			tc.feed(1, "fire", 1000)
+			check(full > int(tc.gefuege_units(plain)), "%s: real pocket stores more swallowed matter" % id)
+		"eject_pct":
+			tc._land({"owner": 1, "el": "bone", "n": 1, "pos": Vector2(enemy.pos), "talent": id, "base": 10.0})
+			var boosted := 5000.0 - float(enemy.hp)
+			_setup(talent, false)
+			var plain := _dummy(Vector2(420, 240))
+			tc._land({"owner": 1, "el": "bone", "n": 1, "pos": Vector2(plain.pos), "talent": id, "base": 10.0})
+			check(boosted > 5000.0 - float(plain.hp), "%s: ejected matter deals greater landing damage" % id)
+		"mix_pct":
+			var empty := float(tc.outgoing(1, enemy, 10.0, false))
+			tc.feed(1, "fire", 1)
+			tc.feed(1, "ice", 1)
+			check(float(tc.outgoing(1, enemy, 10.0, false)) > empty, "%s: distinct swallowed elements increase real outgoing damage" % id)
 		_:
 			check(false, "%s: no test for type %s" % [id, talent.type])
 
@@ -516,11 +610,75 @@ func _test_resources_and_cooldowns() -> void:
 	check(float(warrior.cds.get(str(warrior.bar[0]), 0.0)) > 0.0, "key 1 casts the first bar slot")
 
 
+func _test_soul_field_control() -> void:
+	_setup(d.talents.soul_11)
+	var saved: Dictionary = game.current_layout
+	game.current_layout = {"play_bounds": [0, 0, 896, 480], "world_size": [896, 480], "obstacles": []}
+	var normal := _dummy(Vector2(412, 240))
+	var boss := _dummy(Vector2(340, 245), true)
+	var mini := _dummy(Vector2(345, 245))
+	mini.miniboss = true
+	var outside := _dummy(Vector2(470, 240))
+	var dead := _dummy(Vector2(350, 245))
+	dead.hp = 0.0
+	check(_cast(d.talents.soul_11, {"target": Vector2(300, 240)}), "soul field cast accepted")
+	check(is_equal_approx(float(tc.zones[0].r), 115.2), "field radius grows to 3.6m")
+	_tick(0.05)
+	check(normal.hp < normal.max_hp and normal.statuses.has("soul_bind"), "enemy in expanded area takes real damage and stun")
+	check(game.perk_combat.frozen(normal), "soul bind stops native movement and attacks")
+	check(not normal.statuses.has("freeze"), "soul stun is not a frost status")
+	var entering := _dummy(Vector2(330, 240))
+	tc.zones[0].tick = 0.7
+	_tick(0.05)
+	check(entering.statuses.has("soul_bind"), "entering enemy is grasped immediately between damage ticks")
+	check(not boss.statuses.has("soul_bind") and boss.hp < boss.max_hp, "boss takes damage but resists stun")
+	check(not mini.statuses.has("soul_bind"), "miniboss resists stun")
+	check(outside.hp == outside.max_hp and not outside.statuses.has("soul_bind"), "outside enemy is unaffected")
+	check(not tc.events.any(func(e: Dictionary) -> bool: return str(e.get("kind", "")) == "soul_grasp" and int(e.target_id) == int(dead.id)), "dead targets produce no grasp")
+	var before := float(normal.soul_grasp_wait)
+	tc._soul_grasp(tc.zones[0], normal)
+	check(float(normal.soul_grasp_wait) == before, "overlapping fields share one lockout")
+	_tick(0.55)
+	check(not normal.statuses.has("soul_bind"), "stun expires while field remains active")
+	_tick(0.3)
+	check(not normal.statuses.has("soul_bind"), "next damage tick cannot perpetually stun")
+	_tick(0.85)
+	check(normal.statuses.has("soul_bind"), "grasp can recur after its bounded lockout")
+	var old_pos: Vector2 = normal.pos
+	normal.pos += Vector2(5, 0)
+	tc.step(0.01)
+	check(tc.events.any(func(e: Dictionary) -> bool: return str(e.get("kind", "")) == "soul_grasp" and int(e.target_id) == int(normal.id) and float(e.x) == normal.pos.x), "replicated wrap follows the actual target")
+	normal.pos = old_pos
+	tc.room_changed()
+	check(not tc.events.any(func(e: Dictionary) -> bool: return str(e.get("kind", "")) == "soul_grasp"), "room change clears wraps")
+	_setup(d.talents.soul_11)
+	game.current_layout = {"play_bounds": [0, 0, 896, 480], "obstacles": [[350, 0, 16, 480]]}
+	var behind_wall := _dummy(Vector2(410, 240))
+	_cast(d.talents.soul_11, {"target": Vector2(300, 240)})
+	_tick(0.05)
+	check(behind_wall.hp == behind_wall.max_hp and not behind_wall.statuses.has("soul_bind"), "grasp and field damage do not cross walls")
+	game.current_layout = {"play_bounds": [0, 0, 896, 480], "obstacles": []}
+	tc.events.clear()
+	for n in range(24):
+		var victim := _dummy(Vector2(320 + n, 240))
+		tc._soul_grasp(tc.zones[0], victim)
+	check(tc.events.size() == int(d.talents.soul_11.bind_visual_cap), "host bounds simultaneous grasp visuals")
+	var packet: Dictionary = bytes_to_var(var_to_bytes(tc.snapshot()))
+	check(packet.events.size() == tc.events.size() and packet.events[0].target_id == tc.events[0].target_id, "host target events survive snapshot transport")
+	var late := _dummy(Vector2(320, 240))
+	tc.zones[0].time = 0.01
+	tc.zones[0].tick = 0.0
+	_tick(0.05)
+	check(late.hp == late.max_hp and not late.statuses.has("soul_bind"), "expired soul field cannot attack or stun")
+	game.current_layout = saved
+
+
 func _test_bosses_resist_freeze() -> void:
 	_setup(d.talents.frost_14)
 	var boss := _dummy(Vector2(420, 240), true)
 	var normal := _dummy(Vector2(430, 245))
 	_cast(d.talents.frost_14)
+	_tick(float(d.talents.frost_14.get("land_s", tc.GLACIER_LAND_S)) + 0.1)
 	check(not boss.statuses.has("freeze") and boss.statuses.has("slow") and normal.statuses.has("freeze"), "Gletschergrab freezes normal enemies and only slows bosses")
 	var guard := _setup(d.talents.guard_1)
 	var big := _dummy(Vector2(345, 240), true)
@@ -570,14 +728,15 @@ func _test_ultimate_stages() -> void:
 	rt.soul_tier = 2
 	_cast(d.talents.trapper_14)
 	check(tc.traps.size() == int(d.talents.trapper_14.traps) + 2, "Treibjagd lays five traps")
+	tc.traps[0].pos = Vector2(game.players[1].pos)
 	_dummy(Vector2(tc.traps[0].pos))
 	_tick(0.1)
 	check(tc.zones.any(func(z: Dictionary) -> bool: return str(z.status) == "poison"), "Giftköder leaves a poison cloud")
-	# Wildes Erwachen Stufe 3: two spirit wolves
+	# Urwürmer Stufe 3: the approved elemental pair
 	rt = _setup(d.talents.beast_14)
 	rt.soul_tier = 2
 	_cast(d.talents.beast_14)
-	check(tc.pets.filter(func(p: Dictionary) -> bool: return bool(p.pack)).size() == 2, "Geisterrudel calls two spirit wolves")
+	check(tc.pets.filter(func(p: Dictionary) -> bool: return str(p.kind) in ["poison_worm","fire_worm"]).size() == 2, "Urwürmer calls both elemental worms")
 	# Erdspalter Stufe 2: the impact stuns
 	rt = _setup(d.talents.berserk_14)
 	rt.soul_tier = 1
@@ -603,14 +762,15 @@ func _test_ultimate_stages() -> void:
 	# Knochenkoloss Stufe 3: it bursts when it falls
 	rt = _setup(d.talents.minion_14)
 	rt.soul_tier = 2
+	tc.permanent_pet(1).blood = 100.0
 	_cast(d.talents.minion_14)
-	var colossus: Dictionary = tc.pets.filter(func(p: Dictionary) -> bool: return str(p.kind) == "colossus")[0]
+	var colossus: Dictionary = tc.pets.filter(func(p: Dictionary) -> bool: return str(p.kind) == "blood_colossus")[0]
 	var close := _dummy(Vector2(colossus.pos) + Vector2(40, 0))
 	colossus.hp = 0.0
 	hp_before = float(close.hp)
 	_tick(0.1)
 	check(float(close.hp) < hp_before, "Knochensplitter burst when the colossus falls")
-	# Seuchengrube: the pit weakens; Totenruf raises the dead
+	# Blood ritual weakens without duplicating the minion branch's army.
 	rt = _setup(d.talents.curse_14)
 	rt.soul_tier = 1
 	var sick := _dummy(Vector2(310, 240))
@@ -620,11 +780,13 @@ func _test_ultimate_stages() -> void:
 	check(tc.incoming(1, 10, Vector2.LEFT) < 10, "a weakened enemy hits softer")
 	var pets_before: int = tc.pets.size()
 	tc.enemy_killed(sick, 1)
-	check(tc.pets.size() == pets_before + 1 and str(tc.pets[-1].kind) == "skeleton", "Totenruf raises the fallen as a skeleton")
-	# Seelenernte Stufe 3: a second wave and every other talent reloads
+	check(tc.pets.size() == pets_before and float(tc.zones[0].time) >= 9.0, "Blutgericht strengthens ritual without creating a duplicate army")
+	# Seelenwaechter Stufe 3: longer service and a stronger directional wave
 	rt = _setup(d.talents.soul_14)
 	rt.soul_tier = 2
 	rt.cds.soul_1 = 9.0
 	_dummy(Vector2(340, 240))
 	_cast(d.talents.soul_14)
-	check(float(rt.cds.soul_1) == 0.0 and (rt.after as Array).size() == 1, "Seelensturm reloads and queues a second wave")
+	check(float(rt.cds.soul_1) > 0.0 and (rt.after as Array).is_empty(), "guardian does not use obsolete harvest stages")
+	check(tc.guardians.actors.size() == 1 and is_equal_approx(float(tc.guardians.actors[0].total), 16.0), "Langer Dienst extends guardian service")
+	check(is_equal_approx(float(tc.guardians.actors[0].info.wave_damage), 1.0), "Seelenchor strengthens the guardian wave")

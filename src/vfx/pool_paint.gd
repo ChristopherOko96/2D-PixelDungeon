@@ -49,6 +49,8 @@ extends RefCounted
 ## and drops into it (a particles well per pool, materials.void_pull).
 
 const SplatShape = preload("res://src/vfx/splat_shape.gd")
+const SoulRingShape = preload("res://src/combat/soul_ring_shape.gd")
+const SoulTrail = preload("res://src/vfx/soul_trail.gd")
 const Glow = preload("res://src/vfx/glow.gd")
 const DATA_PATH := "res://assets/data/vfx_pools.json"
 const FPS := 12.0
@@ -193,6 +195,47 @@ func add(id: int, style: String, at: Vector2, dir: Vector2, radius: float, start
 	_lay(key, id, mat, shape(at, dir, radius, mat, art, open, id), at, dir, radius, start, end, source, splash)
 
 
+## A true hollow material field. Use the existing shading, merging and expiry,
+## but never flood liquid through its inner hole or splash from its empty center.
+func add_ring(id: int, style: String, at: Vector2, outer: float, inner: float, start: float, end: float, source := "") -> void:
+	var key := _key(source, id)
+	if _pools.has(key) or _shaping.has(key): return
+	var mat := material_for(style)
+	if mat.is_empty(): return
+	if int(PI * (outer * outer - inner * inner) / (art * art)) >= int(cfg.get("thread_cells", 600)):
+		var job := {"key": key, "id": id, "mat": mat, "at": at, "dir": Vector2.ZERO, "radius": outer, "start": start, "end": end, "source": source, "splash": false, "cells": {}, "timed": {}}
+		var feel := art
+		var floor_open := open
+		var spread := _spread_of(mat)
+		var edge := _edge_of(start, end)
+		job.task = WorkerThreadPool.add_task(func() -> void:
+			var cells := SoulRingShape.cells(at, outer, inner, feel, floor_open)
+			job.timed = _timings(cells, start, end, spread, edge)
+			job.cells = cells)
+		_shaping[key] = job
+		return
+	_lay(key, id, mat, SoulRingShape.cells(at, outer, inner, art, open), at, Vector2.ZERO, outer, start, end, source, false)
+
+
+## Static narrow trail uses the same merged soul material and expiry as fields.
+func add_strip(id: int, style: String, from: Vector2, to: Vector2, half: float, start: float, end: float, source: String) -> void:
+	var key := _key(source, id)
+	if _pools.has(key) or _shaping.has(key): return
+	var mat := material_for(style)
+	if mat.is_empty(): return
+	var middle := (from + to) * 0.5
+	var job := {"key": key, "id": id, "mat": mat, "at": middle, "dir": Vector2.ZERO, "radius": from.distance_to(to) * 0.5 + half,
+		"start": start, "end": end, "source": source, "splash": false, "cells": {}, "timed": {}}
+	var feel := art
+	var floor_open := open
+	var spread := _spread_of(mat)
+	var edge := _edge_of(start, end)
+	job.task = WorkerThreadPool.add_task(func() -> void:
+		var cells := SoulTrail.cells(from, to, half, feel, floor_open)
+		job.timed = _timings(cells, start, end, spread, edge)
+		job.cells = cells)
+	_shaping[key] = job
+
 ## Lays the pools whose shapes the worker threads have finished.
 func _collect_shapes() -> void:
 	for key: String in _shaping.keys():
@@ -243,7 +286,7 @@ func _lay(key: String, id: int, mat: String, cells: Dictionary, at: Vector2, dir
 	if timed.is_empty():
 		timed = _timings(cells, start, end, _spread_of(mat), _edge_of(start, end))
 	var keys := timed.keys()
-	_pools[key] = {"mat": mat, "cells": keys, "end": end, "source": source, "at": at, "r": radius}
+	_pools[key] = {"mat": mat, "cells": keys, "timed": timed.duplicate(true), "end": end, "source": source, "at": at, "r": radius}
 	if (field.cells as Dictionary).is_empty() and _laying.is_empty():
 		# nothing lies there: all of it at once
 		(field.cells as Dictionary).merge(timed)
@@ -294,6 +337,7 @@ func _lay_step(job: Dictionary, until: int) -> bool:
 			fresh[2] = minf(float(have[2]), float(fresh[2]))
 		if ended:
 			fresh[1] = minf(float(fresh[1]), float(job.finish) + float(job.finish_edge) * (1.0 - float(fresh[2])))
+			fresh[1] = maxf(float(fresh[1]), _other_pool_until(str(job.key), q, float(job.finish)))
 		cells[q] = fresh
 		if i & 63 == 0 and Time.get_ticks_usec() >= until:
 			break
@@ -309,6 +353,7 @@ func finish(key: String, now: float) -> void:
 		return
 	var field: Dictionary = _field(str(pool.mat))
 	var edge := float(cfg.get("edge_time", 0.7)) * 0.5
+	pool.end = now
 	# its cells not laid yet go the same way when they are
 	for job: Dictionary in _laying:
 		if str(job.key) == key:
@@ -318,9 +363,23 @@ func finish(key: String, now: float) -> void:
 		var have: Array = field.cells.get(q, [])
 		if not have.is_empty():
 			have[1] = minf(float(have[1]), now + edge * (1.0 - float(have[2])))
-	pool.end = now
+			have[1] = maxf(float(have[1]), _other_pool_until(key, q, now))
 	field.next = now
 	field.dirty = true
+
+
+## A shared material cell remains wet while another real source still owns it.
+## Evaluated only on early finish/lay, never by scanning all pools every draw.
+func _other_pool_until(key: String, cell: Vector2i, now: float) -> float:
+	var mat := str(_pools.get(key, {}).get("mat", ""))
+	var until := -INF
+	for other_key: String in _pools:
+		if other_key == key: continue
+		var other: Dictionary = _pools[other_key]
+		if str(other.mat) != mat or float(other.end) <= now: continue
+		var own: Array = other.get("timed", {}).get(cell, [])
+		if not own.is_empty(): until = maxf(until, minf(float(other.end), float(own[1])))
+	return until
 
 
 ## Takes in a source's zones ({id, k "pool", st style, x, y, r, dx, dy, p 0..1,
@@ -340,7 +399,13 @@ func sync(zones: Array, now: float, source := "") -> void:
 		if not _pools.has(key):
 			var length := float(zone.get("L", 4.0))
 			var start := now - float(zone.get("p", 0.0)) * length
-			add(id, str(zone.st), Vector2(float(zone.x), float(zone.y)), Vector2(float(zone.get("dx", 0.0)), float(zone.get("dy", 0.0))), float(zone.r), start, start + length, source, now - start <= window)
+			if zone.get("path", []).size() >= 2:
+				var path: Array = zone.path
+				add_strip(id, str(zone.st), Vector2(path[0][0], path[0][1]), Vector2(path[-1][0], path[-1][1]), float(zone.w), start, start + length, source)
+			elif float(zone.get("inner_r", 0.0)) > 0.0:
+				add_ring(id, str(zone.st), Vector2(float(zone.x), float(zone.y)), float(zone.r), float(zone.inner_r), start, start + length, source)
+			else:
+				add(id, str(zone.st), Vector2(float(zone.x), float(zone.y)), Vector2(float(zone.get("dx", 0.0)), float(zone.get("dy", 0.0))), float(zone.r), start, start + length, source, now - start <= window)
 		if float(zone.get("ch", 0.0)) > 0.0:
 			_charge(key, now + float(zone.ch))
 		if float(zone.get("cr", 0.0)) > 0.0:

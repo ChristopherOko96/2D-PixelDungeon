@@ -267,7 +267,7 @@ static func skeleton(rig: Dictionary, a: Dictionary) -> Dictionary:
 	var torso: bool = not lost.has("torso")
 	var variant: String = str(rig.variant)
 	P(pose, head).dy = -0.5 * sin(t * TAU / 1.1)
-	if sin(t * 0.9) > 0.985: P(pose, head).rot = 0.09 * sin(t * 70.0)
+	if str(rig.name) not in ["bone_warrior", "bone_archer", "blood_colossus"] and sin(t * 0.9) > 0.985: P(pose, head).rot = 0.09 * sin(t * 70.0)
 	I(pose, "weapon").rot = 0.06 * sin(t * TAU / 1.1)
 	if not torso:
 		var hop := absf(sin(t * TAU / 0.9))
@@ -298,6 +298,20 @@ static func skeleton(rig: Dictionary, a: Dictionary) -> Dictionary:
 	if variant == "guard" and not lost.has("shield"): I(pose, "shield").dy = -0.4 * sin(t * TAU / 1.1)
 	var u: float = a.u
 	match str(a.clip):
+		"stomp":
+			var lift := ease_in_out(seg(u, 0.0, 0.45)) * (1.0 - ease_out(seg(u, 0.45, 0.6)))
+			var settle := sin(PI * seg(u, 0.55, 1.0))
+			P(pose, "leg_r").dy -= lift * 7.0
+			P(pose, "torso").dy += lift * 2.0 + settle * 2.0
+			P(pose, "arm_l").rot += lift * 0.45
+			P(pose, "arm_r").rot -= lift * 0.5
+			I(pose, "weapon").rot -= lift * 0.55
+		"bonecast":
+			var raise := ease_out(seg(u, 0.0, 0.5)) * (1.0 - ease_in_out(seg(u, 0.65, 1.0)))
+			P(pose, "arm_l").rot -= raise * 0.65
+			P(pose, "arm_r").rot += raise * 0.7
+			P(pose, head).dy -= raise
+			I(pose, "weapon").rot -= raise * 0.85
 		"attack":
 			if variant == "bow":
 				_bow_draw(pose, u, 0.7)
@@ -347,6 +361,34 @@ static func skeleton(rig: Dictionary, a: Dictionary) -> Dictionary:
 				p.dx += (1.0 - k) * float(start.dx)
 				p.dy += (1.0 - k) * float(start.dy) - sin(PI * k) * 6.0
 				p.rot += (1.0 - k) * float(start.rot)
+	# The large companion assembles along its actual limb pivots, never a scaled zombie.
+	var morph := clampf(float(a.get("blood_morph", 0.0)) / 1.1, 0.0, 1.0)
+	if rig.name == "blood_colossus":
+		var whirl: Dictionary = a.get("bone_whirl",{})
+		if not whirl.is_empty():
+			var age := float(whirl.age)
+			var spin := maxf(0,age-float(whirl.windup))
+			var blend := smoothstep(0,float(whirl.windup),age)*(1.0-smoothstep(float(whirl.time)-0.3,float(whirl.time),age))
+			P(pose,"torso").rot += sin(spin*9.0)*0.13*blend
+			P(pose,"arm_l").rot -= (0.6+sin(spin*8.0)*0.3)*blend
+			P(pose,"arm_r").rot += (0.6+sin(spin*8.0+1.0)*0.3)*blend
+			I(pose,"weapon").rot += sin(spin*10.0)*1.2*blend
+			P(pose,head).rot -= sin(spin*9.0)*0.06*blend
+		P(pose, "arm_l").rot += 0.08 * sin(t * 2.6 + 0.7)
+		P(pose, "arm_r").rot -= 0.1 * sin(t * 2.6 + 0.3)
+		if a.moving:
+			P(pose, "arm_l").rot += 0.2 * sin(t * TAU / 0.5)
+			P(pose, "arm_r").rot -= 0.2 * sin(t * TAU / 0.5)
+		if str(a.clip) == "attack":
+			var swing := sin(PI * u)
+			P(pose, "arm_r").rot -= swing * 0.7
+			P(pose, "arm_l").rot += swing * 0.25
+		if morph > 0:
+			for part_id: String in ["leg_l", "leg_r", "torso", "arm_l", "arm_r", "skull"]:
+				var limb := P(pose, part_id)
+				limb.dy += morph * (12.0 if part_id == "skull" else 7.0 if part_id == "torso" else 4.0)
+				limb.dx += morph * (-3.0 if part_id.ends_with("_l") else 3.0 if part_id.ends_with("_r") else 0.0)
+				limb.rot += sin(morph * PI) * (-0.18 if part_id.ends_with("_l") else 0.18)
 	return pose
 
 

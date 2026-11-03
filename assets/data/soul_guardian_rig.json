@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "_note": "Presentation only. Same layered part schema as RigLibrary. cut_rects are inclusive bind-pixel ownership masks, evaluated in array order; leftover pixels belong to torso. joint_radius duplicates original pixels beneath joints. See docs/NEKROMANT-SEELENWAECHTER.de.md.",
+  "rigs": {
+    "soul_guardian": {
+      "family": "soul_guardian",
+      "size": [128, 80],
+      "ground": [48, 64],
+      "width": 48,
+      "scale": 1,
+      "parts": [
+        {"id": "head", "parent": "torso", "pivot": [54, 25], "z": 4, "joint_radius": 3, "cut_rects": [[43, 0, 127, 26]], "img": "res://assets/vfx/soul_guardian/rig/head.png"},
+        {"id": "hand_l", "parent": "arm_l", "pivot": [30, 35], "z": 6, "joint_radius": 3, "cut_rects": [[0, 34, 40, 79]], "img": "res://assets/vfx/soul_guardian/rig/hand_l.png"},
+        {"id": "hand_r", "parent": "arm_r", "pivot": [63, 38], "z": 7, "joint_radius": 3, "cut_rects": [[59, 38, 127, 79]], "img": "res://assets/vfx/soul_guardian/rig/hand_r.png"},
+        {"id": "arm_l", "parent": "torso", "pivot": [44, 26], "z": 2, "joint_radius": 3, "cut_rects": [[0, 0, 45, 33], [0, 34, 42, 38]], "img": "res://assets/vfx/soul_guardian/rig/arm_l.png"},
+        {"id": "arm_r", "parent": "torso", "pivot": [59, 28], "z": 5, "joint_radius": 3, "cut_rects": [[58, 27, 127, 79]], "img": "res://assets/vfx/soul_guardian/rig/arm_r.png"},
+        {"id": "tail_tip", "parent": "tail_mid", "pivot": [49, 51], "z": 0, "joint_radius": 3, "cut_rects": [[0, 51, 127, 79]], "img": "res://assets/vfx/soul_guardian/rig/tail_tip.png"},
+        {"id": "tail_mid", "parent": "tail_root", "pivot": [53, 44], "z": 0, "joint_radius": 3, "cut_rects": [[0, 44, 127, 79]], "img": "res://assets/vfx/soul_guardian/rig/tail_mid.png"},
+        {"id": "tail_root", "parent": "torso", "pivot": [47, 39], "z": 1, "joint_radius": 3, "cut_rects": [[0, 39, 127, 79]], "img": "res://assets/vfx/soul_guardian/rig/tail_root.png"},
+        {"id": "torso", "parent": "", "pivot": [49, 35], "z": 3, "joint_radius": 0, "cut_rects": [[0, 0, 127, 79]], "img": "res://assets/vfx/soul_guardian/rig/torso.png"}
+      ]
+    }
+  }
+}

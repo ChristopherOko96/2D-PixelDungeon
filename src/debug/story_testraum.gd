@@ -258,6 +258,9 @@ func _apply_build() -> void:
 			ult = id
 		elif kind == "active" and bar.size() < int(_tdata.get("bar_slots", 4)):
 			bar.append(id)
+	if str(spec.id) == "minion": bar = ["minion_1", "minion_9", "minion_5", "minion_7"]
+	if str(spec.id) == "curse": bar = ["curse_1", "curse_3", "curse_7", "curse_9"]
+	if str(spec.id) == "soul": bar = ["soul_1", "soul_3", "soul_7", "soul_11"]
 	var tier := clampi(int(o.stage) - 1, 0, 2)
 	var level := int(o.level)
 	var profile: Dictionary = g.profile
@@ -691,7 +694,8 @@ func _rows_npcs(out: Array, q: String) -> void:
 
 
 func _tool_ok(group: String, kind: Dictionary) -> bool:
-	if group == "puddle" or str(kind.get("needs", "")) == "monsters":
+	if group == "puddle": return g.get("story_elements") != null
+	if str(kind.get("needs", "")) == "monsters":
 		return g.get("monsters") != null
 	return true
 
@@ -986,10 +990,10 @@ func _place(at: Vector2) -> void:
 	var mons: Variant = g.get("monsters")
 	match group:
 		"puddle":
-			if mons == null:
+			if g.get("story_elements") == null:
 				_say(str(cfg.texts.no_runtime))
 				return
-			mons._zone({"kind": "puddle", "p": at, "r": r, "T": float(spec.time), "dmg": 0, "st": str(tool.st), "dir": Vector2.ZERO,
+			g.story_elements.add_pool({"kind": "puddle", "p": at, "r": r, "T": float(spec.time), "dmg": 0, "st": str(tool.st), "dir": Vector2.ZERO,
 				"m": {"id": "testraum", "boss": false, "def": {"name": "Testraum"}}})
 			if bool(tool.get("frozen", false)):
 				_later.append({"t": float(spec.get("freeze_delay", 0.35)), "do": "frost", "p": at, "r": r})
@@ -1034,6 +1038,7 @@ func _react(what: String, at: Vector2, r: float) -> void:
 
 ## PFÜTZEN/GASE WEG: the puddle zones, the pools drawn from them, every gas cloud and storm.
 func _wipe() -> void:
+	if g.get("story_elements") != null: g.story_elements.reset()
 	var mons: Variant = g.get("monsters")
 	if mons != null:
 		var zs: Array = mons.zones

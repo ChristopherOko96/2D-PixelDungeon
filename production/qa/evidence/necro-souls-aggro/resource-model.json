@@ -1,0 +1,219 @@
+{
+  "scope": "Deterministic resource arithmetic only; no earned run, DPS/TTK, long-term balance or performance verdict",
+  "base_capacity": 100,
+  "start": 50,
+  "combat_per_second": 2,
+  "normal_kill": 8,
+  "boss_model_seconds": 60,
+  "boss_model_kills": 0,
+  "boss_model_trace": [
+    {
+      "time": 0.0,
+      "talent": "soul_14",
+      "cost": 40.0,
+      "left": 10.0
+    },
+    {
+      "time": 4.0,
+      "talent": "soul_1",
+      "cost": 8.0,
+      "left": 10.0
+    },
+    {
+      "time": 10.0,
+      "talent": "soul_1",
+      "cost": 8.0,
+      "left": 14.0
+    },
+    {
+      "time": 15.0,
+      "talent": "soul_11",
+      "cost": 24.0,
+      "left": 0.0
+    },
+    {
+      "time": 24.0,
+      "talent": "soul_1",
+      "cost": 8.0,
+      "left": 10.0
+    },
+    {
+      "time": 30.0,
+      "talent": "soul_1",
+      "cost": 8.0,
+      "left": 14.0
+    },
+    {
+      "time": 35.0,
+      "talent": "soul_11",
+      "cost": 24.0,
+      "left": 0.0
+    },
+    {
+      "time": 44.0,
+      "talent": "soul_1",
+      "cost": 8.0,
+      "left": 10.0
+    },
+    {
+      "time": 50.0,
+      "talent": "soul_1",
+      "cost": 8.0,
+      "left": 14.0
+    },
+    {
+      "time": 55.0,
+      "talent": "soul_11",
+      "cost": 24.0,
+      "left": 0.0
+    }
+  ],
+  "boss_model_final_souls": 10.0,
+  "cooldown_demand": [
+    {
+      "branch": "minion",
+      "hypothetical_all_abilities_on_cooldown": 8.667,
+      "abilities": [
+        {
+          "id": "minion_1",
+          "cost": 25.0,
+          "cooldown": 30.0,
+          "demand_per_second": 0.833
+        },
+        {
+          "id": "minion_3",
+          "cost": 10.0,
+          "cooldown": 5.0,
+          "demand_per_second": 2.0
+        },
+        {
+          "id": "minion_5",
+          "cost": 10.0,
+          "cooldown": 10.0,
+          "demand_per_second": 1.0
+        },
+        {
+          "id": "minion_7",
+          "cost": 24.0,
+          "cooldown": 12.0,
+          "demand_per_second": 2.0
+        },
+        {
+          "id": "minion_9",
+          "cost": 28.0,
+          "cooldown": 24.0,
+          "demand_per_second": 1.167
+        },
+        {
+          "id": "minion_11",
+          "cost": 16.0,
+          "cooldown": 16.0,
+          "demand_per_second": 1.0
+        },
+        {
+          "id": "minion_14",
+          "cost": 40.0,
+          "cooldown": 60.0,
+          "demand_per_second": 0.667
+        }
+      ]
+    },
+    {
+      "branch": "curse",
+      "hypothetical_all_abilities_on_cooldown": 9.167,
+      "abilities": [
+        {
+          "id": "curse_1",
+          "cost": 8.0,
+          "cooldown": 4.0,
+          "demand_per_second": 2.0
+        },
+        {
+          "id": "curse_3",
+          "cost": 12.0,
+          "cooldown": 14.0,
+          "demand_per_second": 0.857
+        },
+        {
+          "id": "curse_5",
+          "cost": 20.0,
+          "cooldown": 14.0,
+          "demand_per_second": 1.429
+        },
+        {
+          "id": "curse_7",
+          "cost": 24.0,
+          "cooldown": 16.0,
+          "demand_per_second": 1.5
+        },
+        {
+          "id": "curse_9",
+          "cost": 12.0,
+          "cooldown": 7.0,
+          "demand_per_second": 1.714
+        },
+        {
+          "id": "curse_11",
+          "cost": 16.0,
+          "cooldown": 16.0,
+          "demand_per_second": 1.0
+        },
+        {
+          "id": "curse_14",
+          "cost": 40.0,
+          "cooldown": 60.0,
+          "demand_per_second": 0.667
+        }
+      ]
+    },
+    {
+      "branch": "soul",
+      "hypothetical_all_abilities_on_cooldown": 10.158,
+      "abilities": [
+        {
+          "id": "soul_1",
+          "cost": 8.0,
+          "cooldown": 4.0,
+          "demand_per_second": 2.0
+        },
+        {
+          "id": "soul_3",
+          "cost": 22.0,
+          "cooldown": 11.0,
+          "demand_per_second": 2.0
+        },
+        {
+          "id": "soul_5",
+          "cost": 24.0,
+          "cooldown": 22.0,
+          "demand_per_second": 1.091
+        },
+        {
+          "id": "soul_7",
+          "cost": 16.0,
+          "cooldown": 15.0,
+          "demand_per_second": 1.067
+        },
+        {
+          "id": "soul_9",
+          "cost": 22.0,
+          "cooldown": 12.0,
+          "demand_per_second": 1.833
+        },
+        {
+          "id": "soul_11",
+          "cost": 24.0,
+          "cooldown": 16.0,
+          "demand_per_second": 1.5
+        },
+        {
+          "id": "soul_14",
+          "cost": 40.0,
+          "cooldown": 60.0,
+          "demand_per_second": 0.667
+        }
+      ]
+    }
+  ],
+  "missing": "Independent numerical balance targets and longitudinal play telemetry; registry constants/formulas and system GDD are empty/absent"
+}

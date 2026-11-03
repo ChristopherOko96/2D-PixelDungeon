@@ -102,8 +102,6 @@ static func watches(bullet: Dictionary) -> bool:
 static func tint_for(bullet: Dictionary, player: Dictionary) -> Color:
 	var glow := str(player.get("glow", ""))
 	if not glow.is_empty(): return Color(glow)
-	# the mage's shots are fireballs (user wish 30.10.2026): their light and trail burn orange
-	if str(player.get("class_id", "")) == "mage" and str(bullet.get("style", "")) == "magic": return Color("ff8a2a")
 	var element := str(bullet.get("element", ""))
 	if ELEMENT_TINTS.has(element): return ELEMENT_TINTS[element]
 	return ORB_TINT if str(bullet.get("style", "")) == "magic" else ARROW_TINT
@@ -116,7 +114,6 @@ static func element_for(bullet: Dictionary, player: Dictionary) -> String:
 	var style := str(bullet.get("style", ""))
 	if int(bullet.get("owner", 0)) <= 0: return str(ENEMY_ELEMENTS.get(style, "magic"))
 	if style == "arrow": return "steel"
-	if str(player.get("class_id", "")) == "mage": return "fire"
 	return str(BUILD_ELEMENTS.get(str(bullet.get("element", "")), "magic"))
 
 

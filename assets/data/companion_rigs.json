@@ -5,7 +5,9 @@
   "bear": "res://assets/sprites/forest_0x72/bear_idle_f0.png",
   "falcon": "res://assets/sprites/companions/falcon_idle_f0.png",
   "water_elemental": "res://assets/sprites/companions/water_elemental_idle_f0.png",
-  "pyro_demon": "res://assets/sprites/companions/pyro_demon_idle_f0.png"
+  "pyro_demon": "res://assets/sprites/companions/pyro_demon_idle_f0.png",
+  "poison_worm": "res://assets/sprites/companions/forest_worms/poison.png",
+  "fire_worm": "res://assets/sprites/companions/forest_worms/fire.png"
  },
  "scales": {},
  "rigs": {
@@ -14,14 +16,109 @@
    "family": "beast",
    "variant": "bite",
    "material": "blood",
-   "ground": [16, 31],
+   "ground": [
+    16,
+    31
+   ],
    "width": 20,
    "parts": [
-    {"id": "head", "rects": [[17, 15, 28, 26]], "pivot": [19, 24], "parent": "body", "z": 3, "hp": 4, "label": "Kopf", "vital": true},
-    {"id": "tail", "rects": [[3, 15, 8, 25]], "pivot": [8, 24], "parent": "body", "z": 1, "hp": 1, "label": "Schwanz"},
-    {"id": "paws", "rects": [[16, 29, 23, 31]], "pivot": [19, 29], "parent": "body", "z": 1, "hp": 2, "label": "Vorderläufe"},
-    {"id": "hind", "rects": [[8, 29, 15, 31]], "pivot": [11, 29], "parent": "body", "z": 1, "hp": 2, "label": "Hinterläufe"},
-    {"id": "body", "rects": [[8, 22, 24, 28]], "pivot": [15, 28], "parent": null, "z": 2, "hp": 6, "label": "Rumpf", "vital": true}
+    {
+     "id": "head",
+     "rects": [
+      [
+       17,
+       15,
+       28,
+       26
+      ]
+     ],
+     "pivot": [
+      19,
+      24
+     ],
+     "parent": "body",
+     "z": 3,
+     "hp": 4,
+     "label": "Kopf",
+     "vital": true
+    },
+    {
+     "id": "tail",
+     "rects": [
+      [
+       3,
+       15,
+       8,
+       25
+      ]
+     ],
+     "pivot": [
+      8,
+      24
+     ],
+     "parent": "body",
+     "z": 1,
+     "hp": 1,
+     "label": "Schwanz"
+    },
+    {
+     "id": "paws",
+     "rects": [
+      [
+       16,
+       29,
+       23,
+       31
+      ]
+     ],
+     "pivot": [
+      19,
+      29
+     ],
+     "parent": "body",
+     "z": 1,
+     "hp": 2,
+     "label": "Vorderläufe"
+    },
+    {
+     "id": "hind",
+     "rects": [
+      [
+       8,
+       29,
+       15,
+       31
+      ]
+     ],
+     "pivot": [
+      11,
+      29
+     ],
+     "parent": "body",
+     "z": 1,
+     "hp": 2,
+     "label": "Hinterläufe"
+    },
+    {
+     "id": "body",
+     "rects": [
+      [
+       8,
+       22,
+       24,
+       28
+      ]
+     ],
+     "pivot": [
+      15,
+      28
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 6,
+     "label": "Rumpf",
+     "vital": true
+    }
    ],
    "items": []
   },
@@ -30,13 +127,90 @@
    "family": "beast",
    "variant": "swipe",
    "material": "blood",
-   "ground": [14, 31],
+   "ground": [
+    14,
+    31
+   ],
    "width": 26,
    "parts": [
-    {"id": "head", "rects": [[18, 13, 31, 24]], "pivot": [19, 20], "parent": "body", "z": 3, "hp": 4, "label": "Kopf", "vital": true},
-    {"id": "paws", "rects": [[14, 26, 25, 31]], "pivot": [19, 26], "parent": "body", "z": 1, "hp": 3, "label": "Pranken"},
-    {"id": "hind", "rects": [[2, 26, 13, 31]], "pivot": [7, 26], "parent": "body", "z": 1, "hp": 3, "label": "Hinterläufe"},
-    {"id": "body", "rects": [[2, 10, 21, 25]], "pivot": [10, 25], "parent": null, "z": 2, "hp": 7, "label": "Rumpf", "vital": true}
+    {
+     "id": "head",
+     "rects": [
+      [
+       18,
+       13,
+       31,
+       24
+      ]
+     ],
+     "pivot": [
+      19,
+      20
+     ],
+     "parent": "body",
+     "z": 3,
+     "hp": 4,
+     "label": "Kopf",
+     "vital": true
+    },
+    {
+     "id": "paws",
+     "rects": [
+      [
+       14,
+       26,
+       25,
+       31
+      ]
+     ],
+     "pivot": [
+      19,
+      26
+     ],
+     "parent": "body",
+     "z": 1,
+     "hp": 3,
+     "label": "Pranken"
+    },
+    {
+     "id": "hind",
+     "rects": [
+      [
+       2,
+       26,
+       13,
+       31
+      ]
+     ],
+     "pivot": [
+      7,
+      26
+     ],
+     "parent": "body",
+     "z": 1,
+     "hp": 3,
+     "label": "Hinterläufe"
+    },
+    {
+     "id": "body",
+     "rects": [
+      [
+       2,
+       10,
+       21,
+       25
+      ]
+     ],
+     "pivot": [
+      10,
+      25
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 7,
+     "label": "Rumpf",
+     "vital": true
+    }
    ],
    "items": []
   },
@@ -44,13 +218,95 @@
    "img": "falcon",
    "family": "bird",
    "material": "blood",
-   "ground": [16, 24],
+   "ground": [
+    16,
+    24
+   ],
    "width": 18,
    "parts": [
-    {"id": "wing_near", "rects": [[0, 10, 18, 15], [2, 16, 7, 16]], "pivot": [18, 15], "parent": "body", "z": 3, "hp": 2, "label": "Flügel (vorn)"},
-    {"id": "wing_far", "rects": [[0, 16, 8, 20]], "pivot": [9, 17], "parent": "body", "z": 0, "hp": 2, "label": "Flügel (hinten)"},
-    {"id": "tail", "rects": [[9, 18, 15, 21]], "pivot": [16, 19], "parent": "body", "z": 1, "hp": 1, "label": "Schwanzfedern"},
-    {"id": "body", "rects": [[8, 11, 28, 24]], "pivot": [19, 18], "parent": null, "z": 2, "hp": 5, "label": "Leib", "vital": true}
+    {
+     "id": "wing_near",
+     "rects": [
+      [
+       0,
+       10,
+       18,
+       15
+      ],
+      [
+       2,
+       16,
+       7,
+       16
+      ]
+     ],
+     "pivot": [
+      18,
+      15
+     ],
+     "parent": "body",
+     "z": 3,
+     "hp": 2,
+     "label": "Flügel (vorn)"
+    },
+    {
+     "id": "wing_far",
+     "rects": [
+      [
+       0,
+       16,
+       8,
+       20
+      ]
+     ],
+     "pivot": [
+      9,
+      17
+     ],
+     "parent": "body",
+     "z": 0,
+     "hp": 2,
+     "label": "Flügel (hinten)"
+    },
+    {
+     "id": "tail",
+     "rects": [
+      [
+       9,
+       18,
+       15,
+       21
+      ]
+     ],
+     "pivot": [
+      16,
+      19
+     ],
+     "parent": "body",
+     "z": 1,
+     "hp": 1,
+     "label": "Schwanzfedern"
+    },
+    {
+     "id": "body",
+     "rects": [
+      [
+       8,
+       11,
+       28,
+       24
+      ]
+     ],
+     "pivot": [
+      19,
+      18
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 5,
+     "label": "Leib",
+     "vital": true
+    }
    ],
    "items": []
   },
@@ -58,14 +314,108 @@
    "img": "water_elemental",
    "family": "elemental",
    "material": "frost",
-   "ground": [8, 21],
+   "ground": [
+    8,
+    21
+   ],
    "width": 12,
    "parts": [
-    {"id": "shard_top", "rects": [[5, 0, 10, 3]], "pivot": [8, 4], "parent": "core", "z": 3, "hp": 1, "label": "Splitter (oben)"},
-    {"id": "shard_l", "rects": [[0, 7, 2, 11]], "pivot": [3, 9], "parent": "core", "z": 1, "hp": 1, "label": "Splitter (links)"},
-    {"id": "shard_r", "rects": [[13, 7, 15, 11]], "pivot": [12, 9], "parent": "core", "z": 3, "hp": 1, "label": "Splitter (rechts)"},
-    {"id": "shard_low", "rects": [[3, 16, 12, 21]], "pivot": [8, 16], "parent": "core", "z": 1, "hp": 1, "label": "Splitter (unten)"},
-    {"id": "core", "rects": [[2, 2, 13, 15]], "pivot": [8, 12], "parent": null, "z": 2, "hp": 6, "label": "Kern", "vital": true}
+    {
+     "id": "shard_top",
+     "rects": [
+      [
+       5,
+       0,
+       10,
+       3
+      ]
+     ],
+     "pivot": [
+      8,
+      4
+     ],
+     "parent": "core",
+     "z": 3,
+     "hp": 1,
+     "label": "Splitter (oben)"
+    },
+    {
+     "id": "shard_l",
+     "rects": [
+      [
+       0,
+       7,
+       2,
+       11
+      ]
+     ],
+     "pivot": [
+      3,
+      9
+     ],
+     "parent": "core",
+     "z": 1,
+     "hp": 1,
+     "label": "Splitter (links)"
+    },
+    {
+     "id": "shard_r",
+     "rects": [
+      [
+       13,
+       7,
+       15,
+       11
+      ]
+     ],
+     "pivot": [
+      12,
+      9
+     ],
+     "parent": "core",
+     "z": 3,
+     "hp": 1,
+     "label": "Splitter (rechts)"
+    },
+    {
+     "id": "shard_low",
+     "rects": [
+      [
+       3,
+       16,
+       12,
+       21
+      ]
+     ],
+     "pivot": [
+      8,
+      16
+     ],
+     "parent": "core",
+     "z": 1,
+     "hp": 1,
+     "label": "Splitter (unten)"
+    },
+    {
+     "id": "core",
+     "rects": [
+      [
+       2,
+       2,
+       13,
+       15
+      ]
+     ],
+     "pivot": [
+      8,
+      12
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 6,
+     "label": "Kern",
+     "vital": true
+    }
    ],
    "items": []
   },
@@ -73,22 +423,173 @@
    "img": "pyro_demon",
    "family": "demon",
    "material": "ember",
-   "ground": [16, 35],
+   "ground": [
+    16,
+    35
+   ],
    "width": 18,
    "parts": [
-    {"id": "horns", "rects": [[13, 6, 21, 9]], "pivot": [17, 10], "parent": "head", "z": 4, "hp": 1, "label": "Hörner"},
-    {"id": "head", "rects": [[5, 9, 27, 19]], "pivot": [16, 20], "parent": "torso", "z": 3, "hp": 4, "label": "Kopf", "vital": true},
-    {"id": "arm_l", "rects": [[4, 23, 7, 32]], "pivot": [6, 23], "parent": "torso", "z": 1, "hp": 1, "label": "Linker Arm"},
-    {"id": "arm_r", "rects": [[25, 23, 27, 31]], "pivot": [26, 23], "parent": "torso", "z": 4, "hp": 2, "label": "Rechter Arm", "disables": "attack"},
-    {"id": "leg_l", "rects": [[8, 32, 13, 35]], "pivot": [10, 32], "parent": null, "z": 1, "hp": 2, "label": "Linkes Bein"},
-    {"id": "leg_r", "rects": [[18, 32, 23, 35]], "pivot": [20, 32], "parent": null, "z": 1, "hp": 2, "label": "Rechtes Bein"},
-    {"id": "torso", "rects": [[5, 20, 27, 31]], "pivot": [16, 31], "parent": null, "z": 2, "hp": 6, "label": "Rumpf", "vital": true}
+    {
+     "id": "horns",
+     "rects": [
+      [
+       13,
+       6,
+       21,
+       9
+      ]
+     ],
+     "pivot": [
+      17,
+      10
+     ],
+     "parent": "head",
+     "z": 4,
+     "hp": 1,
+     "label": "Hörner"
+    },
+    {
+     "id": "head",
+     "rects": [
+      [
+       5,
+       9,
+       27,
+       19
+      ]
+     ],
+     "pivot": [
+      16,
+      20
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 4,
+     "label": "Kopf",
+     "vital": true
+    },
+    {
+     "id": "arm_l",
+     "rects": [
+      [
+       4,
+       23,
+       7,
+       32
+      ]
+     ],
+     "pivot": [
+      6,
+      23
+     ],
+     "parent": "torso",
+     "z": 1,
+     "hp": 1,
+     "label": "Linker Arm"
+    },
+    {
+     "id": "arm_r",
+     "rects": [
+      [
+       25,
+       23,
+       27,
+       31
+      ]
+     ],
+     "pivot": [
+      26,
+      23
+     ],
+     "parent": "torso",
+     "z": 4,
+     "hp": 2,
+     "label": "Rechter Arm",
+     "disables": "attack"
+    },
+    {
+     "id": "leg_l",
+     "rects": [
+      [
+       8,
+       32,
+       13,
+       35
+      ]
+     ],
+     "pivot": [
+      10,
+      32
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Linkes Bein"
+    },
+    {
+     "id": "leg_r",
+     "rects": [
+      [
+       18,
+       32,
+       23,
+       35
+      ]
+     ],
+     "pivot": [
+      20,
+      32
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Rechtes Bein"
+    },
+    {
+     "id": "torso",
+     "rects": [
+      [
+       5,
+       20,
+       27,
+       31
+      ]
+     ],
+     "pivot": [
+      16,
+      31
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 6,
+     "label": "Rumpf",
+     "vital": true
+    }
    ],
    "items": [],
    "burn": {
     "_note": "The flame crest: 5 px of flickering tongues on the skull between the horns, drawn by rig_renderer._draw_burn (not baked into the frame); two embers glow in the belly mouth.",
-    "flames": [["head", 15, 9, 5, 4]],
-    "glow": [["torso", 15, 24], ["torso", 21, 24]]
+    "flames": [
+     [
+      "head",
+      15,
+      9,
+      5,
+      4
+     ]
+    ],
+    "glow": [
+     [
+      "torso",
+      15,
+      24
+     ],
+     [
+      "torso",
+      21,
+      24
+     ]
+    ]
    }
   },
   "bone_warrior": {
@@ -96,18 +597,594 @@
    "family": "skeleton",
    "variant": "guard",
    "material": "bone",
-   "ground": [8, 15],
+   "ground": [
+    8,
+    15
+   ],
    "width": 9,
    "parts": [
-    {"id": "leg_l", "rects": [[4, 14, 7, 15]], "pivot": [6, 14], "parent": null, "z": 1, "hp": 2, "label": "Linkes Bein"},
-    {"id": "leg_r", "rects": [[8, 14, 11, 15]], "pivot": [10, 14], "parent": null, "z": 1, "hp": 2, "label": "Rechtes Bein"},
-    {"id": "torso", "rects": [[4, 11, 11, 13]], "pivot": [8, 13], "parent": null, "z": 2, "hp": 3, "label": "Rumpf", "alsoDetach": ["leg_l", "leg_r"]},
-    {"id": "skull", "rects": [[3, 2, 12, 10]], "pivot": [8, 10], "parent": "torso", "z": 3, "hp": 3, "label": "Schädel", "vital": true}
+    {
+     "id": "leg_l",
+     "rects": [
+      [
+       4,
+       14,
+       7,
+       15
+      ]
+     ],
+     "pivot": [
+      6,
+      14
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Linkes Bein"
+    },
+    {
+     "id": "leg_r",
+     "rects": [
+      [
+       8,
+       14,
+       11,
+       15
+      ]
+     ],
+     "pivot": [
+      10,
+      14
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Rechtes Bein"
+    },
+    {
+     "id": "torso",
+     "rects": [
+      [
+       4,
+       11,
+       11,
+       13
+      ]
+     ],
+     "pivot": [
+      8,
+      13
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 3,
+     "label": "Rumpf",
+     "alsoDetach": [
+      "leg_l",
+      "leg_r"
+     ]
+    },
+    {
+     "id": "skull",
+     "rects": [
+      [
+       3,
+       2,
+       12,
+       10
+      ]
+     ],
+     "pivot": [
+      8,
+      10
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 3,
+     "label": "Schädel",
+     "vital": true
+    }
    ],
    "items": [
-    {"id": "weapon", "img": "rusty_sword", "grip": [4.5, 18], "hand": [5, 13], "parent": "torso", "rest": -0.3, "z": 0, "tip": [4.5, 1], "hp": 1, "label": "Schwert", "disables": "attack"},
-    {"id": "shield", "img": "shield", "grip": [4, 5], "hand": [12, 11], "parent": "torso", "rest": 0, "z": 5, "tip": [4, 5], "hp": 3, "label": "Schild", "disables": "block"}
+    {
+     "id": "weapon",
+     "img": "rusty_sword",
+     "grip": [
+      4.5,
+      18
+     ],
+     "hand": [
+      5,
+      13
+     ],
+     "parent": "torso",
+     "rest": -0.3,
+     "z": 0,
+     "tip": [
+      4.5,
+      1
+     ],
+     "hp": 1,
+     "label": "Schwert",
+     "disables": "attack"
+    },
+    {
+     "id": "shield",
+     "img": "shield",
+     "grip": [
+      4,
+      5
+     ],
+     "hand": [
+      12,
+      11
+     ],
+     "parent": "torso",
+     "rest": 0,
+     "z": 5,
+     "tip": [
+      4,
+      5
+     ],
+     "hp": 3,
+     "label": "Schild",
+     "disables": "block"
+    }
    ]
+  },
+  "bone_archer": {
+   "img": "skelet",
+   "family": "skeleton",
+   "variant": "bow",
+   "ground": [
+    8,
+    15
+   ],
+   "width": 9,
+   "parts": [
+    {
+     "id": "leg_l",
+     "rects": [
+      [
+       4,
+       14,
+       7,
+       15
+      ]
+     ],
+     "pivot": [
+      6,
+      14
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Linkes Bein"
+    },
+    {
+     "id": "leg_r",
+     "rects": [
+      [
+       8,
+       14,
+       11,
+       15
+      ]
+     ],
+     "pivot": [
+      10,
+      14
+     ],
+     "parent": null,
+     "z": 1,
+     "hp": 2,
+     "label": "Rechtes Bein"
+    },
+    {
+     "id": "torso",
+     "rects": [
+      [
+       4,
+       11,
+       11,
+       13
+      ]
+     ],
+     "pivot": [
+      8,
+      13
+     ],
+     "parent": null,
+     "z": 2,
+     "hp": 3,
+     "label": "Rumpf",
+     "alsoDetach": [
+      "leg_l",
+      "leg_r"
+     ]
+    },
+    {
+     "id": "skull",
+     "rects": [
+      [
+       3,
+       2,
+       12,
+       10
+      ]
+     ],
+     "pivot": [
+      8,
+      10
+     ],
+     "parent": "torso",
+     "z": 3,
+     "hp": 3,
+     "label": "Schädel",
+     "vital": true
+    }
+   ],
+   "items": [
+    {
+     "id": "weapon",
+     "img": "bow",
+     "bow": true,
+     "grip": [
+      10.5,
+      13
+     ],
+     "hand": [
+      12,
+      12
+     ],
+     "parent": "torso",
+     "rest": 0,
+     "z": 4,
+     "tip": [
+      7.5,
+      13
+     ],
+     "hp": 1,
+     "label": "Bogen",
+     "disables": "attack"
+    }
+   ]
+  },
+  "poison_worm": {
+   "img": "poison_worm",
+   "family": "forest_worm",
+   "material": "blood",
+   "ground": [
+    16,
+    39
+   ],
+   "width": 30,
+   "parts": [
+    {
+     "id": "jaw",
+     "rects": [
+      [
+       18,
+       21,
+       31,
+       24
+      ]
+     ],
+     "pivot": [
+      19,
+      22
+     ],
+     "parent": "head",
+     "z": 7,
+     "hp": 2,
+     "label": "Kiefer",
+     "disables": "attack"
+    },
+    {
+     "id": "head",
+     "rects": [
+      [
+       14,
+       0,
+       31,
+       23
+      ]
+     ],
+     "pivot": [
+      20,
+      21
+     ],
+     "parent": "body",
+     "z": 6,
+     "hp": 4,
+     "label": "Kopf",
+     "vital": true
+    },
+    {
+     "id": "body",
+     "rects": [
+      [
+       7,
+       14,
+       22,
+       27
+      ]
+     ],
+     "pivot": [
+      16,
+      27
+     ],
+     "parent": null,
+     "z": 5,
+     "hp": 5,
+     "label": "Rumpf",
+     "vital": true
+    },
+    {
+     "id": "segment_1",
+     "rects": [
+      [
+       7,
+       26,
+       22,
+       30
+      ]
+     ],
+     "pivot": [
+      16,
+      28
+     ],
+     "parent": "body",
+     "z": 4,
+     "hp": 2,
+     "label": "Segment 1"
+    },
+    {
+     "id": "segment_2",
+     "rects": [
+      [
+       5,
+       29,
+       20,
+       34
+      ]
+     ],
+     "pivot": [
+      13,
+      31
+     ],
+     "parent": "segment_1",
+     "z": 3,
+     "hp": 2,
+     "label": "Segment 2"
+    },
+    {
+     "id": "segment_3",
+     "rects": [
+      [
+       4,
+       33,
+       17,
+       38
+      ]
+     ],
+     "pivot": [
+      10,
+      35
+     ],
+     "parent": "segment_2",
+     "z": 2,
+     "hp": 1,
+     "label": "Segment 3"
+    },
+    {
+     "id": "segment_4",
+     "rects": [
+      [
+       3,
+       35,
+       13,
+       39
+      ]
+     ],
+     "pivot": [
+      7,
+      37
+     ],
+     "parent": "segment_3",
+     "z": 1,
+     "hp": 1,
+     "label": "Segment 4"
+    },
+    {
+     "id": "tail",
+     "rects": [
+      [
+       0,
+       0,
+       31,
+       39
+      ]
+     ],
+     "pivot": [
+      4,
+      37
+     ],
+     "parent": "segment_4",
+     "z": 0,
+     "hp": 1,
+     "label": "Schwanz"
+    }
+   ],
+   "items": []
+  },
+  "fire_worm": {
+   "img": "fire_worm",
+   "family": "forest_worm",
+   "material": "blood",
+   "ground": [
+    16,
+    39
+   ],
+   "width": 30,
+   "parts": [
+    {
+     "id": "jaw",
+     "rects": [
+      [
+       18,
+       21,
+       31,
+       24
+      ]
+     ],
+     "pivot": [
+      19,
+      22
+     ],
+     "parent": "head",
+     "z": 7,
+     "hp": 2,
+     "label": "Kiefer",
+     "disables": "attack"
+    },
+    {
+     "id": "head",
+     "rects": [
+      [
+       14,
+       0,
+       31,
+       23
+      ]
+     ],
+     "pivot": [
+      20,
+      21
+     ],
+     "parent": "body",
+     "z": 6,
+     "hp": 4,
+     "label": "Kopf",
+     "vital": true
+    },
+    {
+     "id": "body",
+     "rects": [
+      [
+       7,
+       14,
+       22,
+       27
+      ]
+     ],
+     "pivot": [
+      16,
+      27
+     ],
+     "parent": null,
+     "z": 5,
+     "hp": 5,
+     "label": "Rumpf",
+     "vital": true
+    },
+    {
+     "id": "segment_1",
+     "rects": [
+      [
+       7,
+       26,
+       22,
+       30
+      ]
+     ],
+     "pivot": [
+      16,
+      28
+     ],
+     "parent": "body",
+     "z": 4,
+     "hp": 2,
+     "label": "Segment 1"
+    },
+    {
+     "id": "segment_2",
+     "rects": [
+      [
+       5,
+       29,
+       20,
+       34
+      ]
+     ],
+     "pivot": [
+      13,
+      31
+     ],
+     "parent": "segment_1",
+     "z": 3,
+     "hp": 2,
+     "label": "Segment 2"
+    },
+    {
+     "id": "segment_3",
+     "rects": [
+      [
+       4,
+       33,
+       17,
+       38
+      ]
+     ],
+     "pivot": [
+      10,
+      35
+     ],
+     "parent": "segment_2",
+     "z": 2,
+     "hp": 1,
+     "label": "Segment 3"
+    },
+    {
+     "id": "segment_4",
+     "rects": [
+      [
+       3,
+       35,
+       13,
+       39
+      ]
+     ],
+     "pivot": [
+      7,
+      37
+     ],
+     "parent": "segment_3",
+     "z": 1,
+     "hp": 1,
+     "label": "Segment 4"
+    },
+    {
+     "id": "tail",
+     "rects": [
+      [
+       0,
+       0,
+       31,
+       39
+      ]
+     ],
+     "pivot": [
+      4,
+      37
+     ],
+     "parent": "segment_4",
+     "z": 0,
+     "hp": 1,
+     "label": "Schwanz"
+    }
+   ],
+   "items": []
   }
  }
 }

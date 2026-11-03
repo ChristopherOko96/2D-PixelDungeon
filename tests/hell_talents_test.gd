@@ -24,9 +24,41 @@ func _initialize() -> void:
 
 
 func _run() -> void:
+	for scene: PackedScene in [HellScene, FrostScene]:
+		var necro := await _new("necromancer", "soul", scene)
+		var target := _mob(necro, Vector2(30, 0))
+		target.act = {"kind": "sweep"}
+		necro.talents._status(target, "soul_bind", 1.0, 0.45, 1)
+		check(float(target.get("stun", 0.0)) >= 0.45 and target.act == null, "soul bind pauses and interrupts enemy attacks in " + scene.resource_path)
+		check(not target.has("frozen"), "soul stun is not an ice effect in " + scene.resource_path)
+		var hp_before := float(target.hp)
+		_key(necro, KEY_R, false)
+		check(necro.talents.tc.guardians.actors.size() == 1, "R summons soul guardian in " + scene.resource_path)
+		check(float(target.hp) == hp_before, "guardian deals no instant harvest damage in " + scene.resource_path)
+		_tick(necro, 1.05)
+		check(float(target.hp) < hp_before, "animated guardian applies real mob damage in " + scene.resource_path)
+		check(necro.talents.tc.snapshot().guardians.size() == 1, "same guardian presentation reaches story renderer in " + scene.resource_path)
+		var rt: Dictionary = necro.talents.tc.runtime(1)
+		check(str(rt.res_kind) == "souls", "story necromancer uses souls in " + scene.resource_path)
+		rt.res = 0.0
+		var dead := {"p": Vector2(necro.player.x + 10, necro.player.y), "hp": 0.0, "boss": false, "kind": "skeleton"}
+		necro.talents.killed(dead)
+		var income := float(rt.res)
+		check(income >= 8.0, "actual story kill adapter grants souls in " + scene.resource_path)
+		necro.talents.killed(dead)
+		check(float(rt.res) == income, "duplicate story death cannot mint souls in " + scene.resource_path)
+		await _free(necro)
+	for scene: PackedScene in [HellScene, FrostScene]:
+		var mage := await _new("mage", "fire", scene)
+		mage.shots.clear()
+		var mana := float(mage.talents.tc.runtime(1).res)
+		mage._attack(Vector2.RIGHT)
+		check(not mage.shots.is_empty() and str(mage.shots[-1].kind) == "magic", "standard mage attack is neutral magic in " + scene.resource_path)
+		check(is_equal_approx(float(mage.talents.tc.runtime(1).res), mana), "standard attack spends no talent mana in " + scene.resource_path)
+		await _free(mage)
 	await test_mage_in_the_frostgruft()
 	await test_archer_wolf_and_warrior_shield_in_the_hell()
-	DirAccess.remove_absolute(ProjectSettings.globalize_path(Profile.default_path()))
+	DirAccess.remove_absolute(ProjectSettings.globalize_path("user://hell_talents_test_profile.json"))
 	print("HELL_TALENTS checked=%d failures=%d" % [checked, failures.size()])
 	quit(1 if failures.size() > 0 else 0)
 
@@ -35,6 +67,7 @@ func _run() -> void:
 ## down (in branch order), then the ultimate; the first four actives on keys 1-4.
 func _new(class_id: String, spec: String, scene: PackedScene) -> Node:
 	var game: Node = scene.instantiate()
+	game.profile_path = "user://hell_talents_test_profile.json"
 	game.start_floor = 2
 	game.class_id = class_id
 	root.add_child(game)

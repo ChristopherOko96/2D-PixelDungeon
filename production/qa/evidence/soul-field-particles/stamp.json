@@ -1,0 +1,54 @@
+[
+  {
+    "path": "src/vfx/soul_field.gd",
+    "sha256": "97A4059FDCFD9AA11DF7AB65A304A87F704BE763CA87A0E98D016B63A8316354"
+  },
+  {
+    "path": "src/vfx/soul_fragments.gd",
+    "sha256": "EE83B0D0D38545855761A42834F299E0BF2CB585B2751646AB2CC4D6490A4A29"
+  },
+  {
+    "path": "src/vfx/soul_guardian_art.gd",
+    "sha256": "F284186377F40EF7E6C08EE8DC165E8B9040E249AB6E9894E2E7C3CBB7886485"
+  },
+  {
+    "path": "src/vfx/soul_patterns.gd",
+    "sha256": "B2BBBA2D6F4C978C7A0F53F56358CF401FC468D3F450CB637C5394785A279135"
+  },
+  {
+    "path": "src/vfx/talent_fx.gd",
+    "sha256": "85984E9231F94EAC2EB764DC2A287C96021655AB52C749C4A683FC47C02899BA"
+  },
+  {
+    "path": "src/rig/soul_spirit_rig.gd",
+    "sha256": "680EC86BD9AEADC8792A279069388C19DDC2F75824352F108786544EB2A40A38"
+  },
+  {
+    "path": "assets/data/soul_spirit_rig.json",
+    "sha256": "BBA791BD3C3132CBB189CF0A4688CC79B016BFEA6453B0D35E28A67D63137558"
+  },
+  {
+    "path": "assets/data/vfx_talents.json",
+    "sha256": "6244235E48D763CB4171DC60E19FEA416C25E09076CDAD2822B0EDE38C6EB4E9"
+  },
+  {
+    "path": "assets/vfx/soul_field/rig/bind.png",
+    "sha256": "D1BB8C66EDD1D669217062B82CF9DF4427CB59BC4DAE43B224D2545F59B8BA64"
+  },
+  {
+    "path": "assets/vfx/soul_field/rig/head.png",
+    "sha256": "27A52C91968DBD7F22739B3FAF99919D7D5B46852DAFFEAFF44868F201F2A2F6"
+  },
+  {
+    "path": "assets/vfx/soul_field/rig/body.png",
+    "sha256": "647D31621EB6F4BBF8FB6BC92B8DA1C0805CA685E715B6EB1ADDE7F5F5919D9A"
+  },
+  {
+    "path": "assets/vfx/soul_field/rig/tail_mid.png",
+    "sha256": "C6837AE81FDC6E93DA0222BE2B94668AB2AC0AD470092D5F66527EE08E792FC0"
+  },
+  {
+    "path": "assets/vfx/soul_field/rig/tail_tip.png",
+    "sha256": "FBE2055E26B8D4CBBE74C33F292B6D0B9647A99C28CF5E75DD089F40EA8FA6A1"
+  }
+]

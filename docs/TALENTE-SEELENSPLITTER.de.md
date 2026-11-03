@@ -27,9 +27,10 @@ Seelenkristalle, Talentbäume und Unterklassen der Frostgruft
    ist, kann nicht in Frost oder Arkan lernen. Die anderen Zweige öffnen sich
    erst nach dem Zurücksetzen (kostet Gold). Pro Zweig sind 40 Punkte
    möglich, bis Level 30 gibt es 29: Man muss auswählen.
-9. **Ressourcen:** Magier und Nekromant zahlen mit Mana, der Bogenschütze mit
-   Ausdauer, der Krieger mit Zorn. Der Magier hat am meisten Mana (150), der
-   Nekromant 120. Mana-Kugeln am Boden und Mana-Tränke füllen nach.
+9. **Ressourcen (aktualisiert 31.10.2026):** Magier zahlen mit Mana (120 Basis),
+   Bogenschützen mit Ausdauer und Krieger mit Zorn. Nekromanten sammeln
+   **Seelen**: 100 Grundkapazität, 50 Startseelen, Kill-Erträge und angeborener
+   Seelensog. Mana-Kugeln/Tränke füllen ausschließlich Mana auf.
 7. **Tempo:** Max-Level erst nach mehreren kompletten Läufen (etwa drei Läufe
    zu je 10 Etagen; geändert am 29.10.2026, vorher eineinhalb Etagen).
 6. **Maßstab:** 1 Meter entspricht einer Kachel (32 Pixel).
@@ -225,12 +226,12 @@ große Ultimate (Meteor, Eisblock usw.), „nicht zu broken“. Frostmagier,
 Bestienmeister und Nekromant-Diener bekommen einen dauerhaften Begleiter mit
 eigener Leiste.
 
-### Mana
+### Ressourcen (Werte vom 31.10.2026)
 
 | Klasse | Max. | Erholung |
 |---|---|---|
-| Magier | 120 Mana | +3 / s |
-| Nekromant | 100 Mana | +2,5 / s |
+| Magier | 120 Mana | +0,67 / s, Mana-Kugeln/Tränke |
+| Nekromant | 100 Seelen Basis | Start 50; Seelensog +2/s im Kampf, außerhalb +1/s bis 40 Reserve; Kill-Erträge |
 | Bogenschütze | 100 Ausdauer | +5 / s |
 | Krieger | 100 Zorn | durch Treffer |
 
@@ -248,7 +249,7 @@ eigener Leiste.
 - `frost_4` heißt jetzt Elementarbund (+Leben, +Schaden des Elementars).
 - Ein gelernter Begleiter steht ab Laufbeginn da, kommt in jeden Raum mit und springt zum Helden zurück, wenn er mehr als 14 m entfernt ist. Nach 4 s ohne Kampf heilt er 8 % pro Sekunde.
 - Er greift Gegner an, die seinen Helden angreifen, sonst den nächsten in 6 m.
-- Ist er tot, bleibt er tot, bis das Talent erneut gewirkt wird (30 s Abklingzeit, Mana). Solange er lebt, sperrt das Talent („Begleiter lebt noch“).
+- Ist er tot, bleibt er tot, bis das Talent erneut gewirkt wird (30 s Abklingzeit, jeweilige Klassenressource). Solange er lebt, sperrt das Talent („Begleiter lebt noch“).
 - Tasten 5/6 (Eingabe-Bits 9/10) lösen die Fähigkeiten aus. Ein Rechtsklick aufs Symbol (Bits 11/12) schaltet Auto. Bei Auto setzt der Begleiter die Fähigkeit im Kampf selbst ein, sonst macht er nur normale Angriffe. Bei Auto laufen zwei helle Funken um das Symbol.
 - HUD: Der Begleiter-Balken steht unter dem Heldenstreifen (`HudKit.pet_panel`), dazu ein kleiner Balken über dem Begleiter.
 - Sprites: Wasserelementar und Knochenkrieger sind im 0x72-Stil neu gezeichnet (`scripts/make_companion_sprites.py` → `assets/sprites/companions/`). Der Knochenkoloss nutzt `big_zombie` aus dem Archiv.
@@ -275,7 +276,19 @@ eigener Leiste.
 | Klingenmeister | Klingensturm | 4 s, alle 0,4 s 50 % in 3 m, laufen möglich | Blutung | 6 Geisterklingen je 100 % |
 | Diener | Knochenkoloss | 20 s, verspottet in 5 m, 120 % in 2 m alle 1,5 s | +10 s, mehr Leben | zerfällt: 200 % in 4 m |
 | Fluch | Seuchengrube | 5 m, 8 s: 30 %/s, Gift, Gegner darin −25 % Schaden | Gefallene stehen 10 s als Skelett auf (max. 4) | +2 m, +4 s |
-| Seele | Seelenernte | 200 % in 6 m, je Treffer 2 % Leben und 4 Mana, normale Gegner unter 15 % sterben | +2 m | zweite Welle 150 % in 8 m, alle anderen Fähigkeiten laden nach |
+| Seele | Ruf des Seelenwächters | 12 s beschworener Geist, Greifangriff 100 % alle 1,6 s; gelegentlich Seelenwelle 60 % bis 4 m; normale Gegner kurz festgehalten | +4 s Dauer | Seelenwelle 100 % bis 5 m |
+
+31.10.2026: Der ausdrücklich freigegebene **Seelenwächter ersetzt Seelenernte**
+auf derselben ID `soul_14`. Bestehende Seele-Builds behalten ihre Freischaltung
+und gekauften Stufen. Keine zusätzliche Taste: die Seele-Ultimate liegt auf **R**.
+40 Seelen und 60 s Abklingzeit. Der Diener-Knochenkoloss bleibt eigenständig.
+
+Vier Animationsclips zeigen Erscheinen, Schweben, Seelengriff und Auflösen.
+Treffer erfolgen erst nach dem Ausholen. Der Wächter bevorzugt dein Angriffsziel,
+danach Gegner im eigenen Seelenfeld. 0,45 s `soul_bind` teilt sich die Sperre von
+1,6 s mit Seelensturm; Bosse/Minibosse werden nicht betäubt. Er bleibt ein
+zeitlich begrenzter Geist ohne eigenen Lebensbalken. Details, Datenfelder,
+Testweg und Nachweise: [Seelenwächter](NEKROMANT-SEELENWAECHTER.de.md).
 
 Bosse frieren nie ein, werden nicht festgehalten, nicht gezogen und nicht
 sofort getötet, sie werden stattdessen verlangsamt. Die neuen Effekt-Sheets
@@ -348,7 +361,7 @@ Bilder: `production/qa/evidence/fire-mage/`.
 
 ### Zweite Runde Feuermagier (30.10.2026)
 
-- **Mana:** Magier und Nekromant erholen 0,67 Mana pro Sekunde, also etwa 2 Mana alle 3 s. Eine Taste ohne genug Ressource zeigt „Wenig Mana“, „Wenig Ausdauer“ oder „Wenig Zorn“ über dem Helden (Ereignis `no_res`, höchstens alle 0,8 s).
+- **Mana/Seelen:** Magier erholen 0,67 Mana/s. Nekromanten verwenden seit 31.10.2026 Seelen und Seelensog; Details in [Seelenökonomie und Begleiter](NEKROMANT-SEELEN-BEGLEITER.de.md). Fehlende Ressource zeigt passend „Wenig Mana“, „Wenig Seelen“, „Wenig Ausdauer“ oder „Wenig Zorn“ (`no_res`, höchstens alle 0,8 s).
 - **Leiste:** Die Felder sind jetzt 56 px groß, die Symbole 44 px (`ui_run_hud.json`).
 - **Feuerball:** Neues großes Sheet `fireball_big` (40 px, 8 Bilder) und die Explosion `fire_explosion` (96 px, 10 Bilder: Blitz, Feuerball, Flammenring, Rauch).
 - **Skillen im Lauf:** **K** öffnet das Talentmenü in Krypta, Frostgruft und Hölle. Solo steht das Spiel still. Ein neuer Build gilt sofort. `set_build(..., keep = true)` behält Mana und Abklingzeiten, damit Umskillen nichts auffüllt.

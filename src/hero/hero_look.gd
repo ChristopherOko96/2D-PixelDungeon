@@ -35,6 +35,7 @@ const SMEAR_RAGE := Color("#ff6a4a")
 const ItemArt = preload("res://src/item_art.gd")
 ## How many motes a held weapon of an element sheds at a time (src/item_art.gd).
 const WEAPON_MOTES := 3
+const MageFireball = preload("res://src/vfx/mage_fireball.gd")
 
 var px := 2.0
 ## World pixels per hero art pixel (the staff is sized and placed by the body).
@@ -42,6 +43,12 @@ var hero_px := 2.0
 ## The staff hand relative to the hero's anchor point, in hero art pixels
 ## (x toward the facing side), about halfway up the figure.
 var staff_hand := Vector2(5, 0)
+var _staff_sockets: Dictionary = {}
+
+## Last drawn staff orb, bounded in age to avoid binding a beam to a stale pose.
+func staff_socket(key: String, fallback: Vector2, clock: float) -> Vector2:
+	var socket: Dictionary = _staff_sockets.get(key,{})
+	return Vector2(socket.at) if not socket.is_empty() and absf(clock-float(socket.clock)) < 0.12 else fallback
 ## Off-hand blade drawn in Rage (and by the second swing).
 var off_blade: Texture2D
 var nocked_arrow: Texture2D
@@ -49,6 +56,24 @@ var _swing: Dictionary = {}
 var _shot: Dictionary = {}
 var _trail: Dictionary = {}
 var _bows: Dictionary = {}
+var _fireballs: Dictionary = {}
+
+## Follows host event age (including late snapshots); never restarts a cast per draw.
+func observe_fireball(key: String, owner: int, events: Array, clock: float, alive: bool = true) -> void:
+	_fireballs.erase(key)
+	if not alive: return
+	for event: Dictionary in events:
+		if str(event.get("kind", "")) != "cast" or str(event.get("talent", "")) != "fire_1" or int(event.get("owner", -1)) != owner: continue
+		var age := float(event.get("span", 0.5)) - float(event.get("life", 0.0))
+		var windup := float(event.get("windup", 0.0))
+		if age < 0.0 or age >= windup + 0.28: continue
+		_fireballs[key] = {"start": clock - age, "windup": windup, "aim": Vector2.from_angle(float(event.get("angle", 0.0)))}
+
+## Locked casting direction; looking elsewhere never swaps the staff hand mid-cast.
+func casting_aim(key: String, fallback: Vector2, clock: float) -> Vector2:
+	var cast: Dictionary = _fireballs.get(key, {})
+	if cast.is_empty() or clock - float(cast.start) >= float(cast.windup) + 0.28: return fallback
+	return cast.aim
 
 
 func _init(pixel: float = 2.0, sword: Texture2D = null, arrow: Texture2D = null) -> void:
@@ -101,6 +126,11 @@ func face(player: Dictionary, aim: Vector2, clock: float) -> float:
 
 ## The hero sprite leans into a sword swing: forward with the blade, then back.
 func body_offset(key: String, player: Dictionary, aim: Vector2, clock: float) -> Vector2:
+	var leap: Dictionary = player.get("leap", player.get("talents", {}).get("leap", {}))
+	if not leap.is_empty(): return Vector2(0, -preload("res://src/combat/soul_leap.gd").lift(leap))
+	var cast: Dictionary = _fireballs.get(key, {})
+	if not cast.is_empty() and clock - float(cast.start) < float(cast.windup) + 0.28:
+		return (Vector2(MageFireball.pose(clock - float(cast.start), float(cast.windup), cast.aim).body) * hero_px).round()
 	var p := swing_progress(key, clock)
 	if p < 0.0 or not bool(player.get("melee", false)): return Vector2.ZERO
 	return (aim * sin(p * PI) * 3.0 * px).round()
@@ -136,7 +166,16 @@ func draw_dash_lines(canvas: CanvasItem, key: String, player: Dictionary, point:
 ## from the player's inventory view, none for an unknown or plain weapon).
 func draw_weapon(canvas: CanvasItem, key: String, player: Dictionary, point: Vector2, aim: Vector2, clock: float, texture: Texture2D, glow: Color = Color(1, 0.95, 0.8), element: String = "") -> void:
 	if texture == null: return
+	var leap: Dictionary = player.get("leap", player.get("talents", {}).get("leap", {}))
+	if not leap.is_empty():
+		var tuck := sin(clampf(float(leap.age) / float(leap.duration), 0.0, 1.0) * PI)
+		point += Vector2(2.0, -1.0) * tuck * hero_px
+		aim = aim.rotated(-tuck * 0.3)
 	var skills: Dictionary = player.get("skills", {})
+	var charge: Dictionary=player.get("talents",{}).get("charge",{})
+	if str(charge.get("talent",""))=="sniper_14":
+		skills=skills.duplicate()
+		skills.charge=float(charge.power)
 	if element.is_empty():
 		var held: Dictionary = (player.get("inventory", {}) as Dictionary).get("weapon", {})
 		element = str(held.get("element", ""))
@@ -321,6 +360,24 @@ func _bow(texture: Texture2D) -> Dictionary:
 ## leaning slightly toward the aim. A spell lifts it and tips it at the target,
 ## then it settles back.
 func _draw_staff(canvas: CanvasItem, key: String, point: Vector2, aim: Vector2, clock: float, texture: Texture2D, glow: Color = Color(1, 0.95, 0.8), element: String = "") -> void:
+	var fireball: Dictionary = _fireballs.get(key, {})
+	if not fireball.is_empty() and clock - float(fireball.start) < float(fireball.windup) + 0.28:
+		var pose := MageFireball.pose(clock - float(fireball.start), float(fireball.windup), fireball.aim)
+		var length := STAFF_LENGTH * hero_px
+		var size := Vector2(texture.get_width() * length / texture.get_height(), length)
+		var hand := point + (staff_hand * Vector2(float(pose.side), 1.0) + Vector2(pose.hand) - Vector2(5.0 * float(pose.side), 0.0)) * hero_px
+		canvas.draw_set_transform(hand.round(), float(pose.tilt), Vector2.ONE)
+		canvas.draw_texture_rect(texture, Rect2(Vector2(-size.x * 0.5, -size.y * STAFF_GRIP), size), false)
+		canvas.draw_rect(Rect2(Vector2(-1, -1) * hero_px, Vector2(2, 2) * hero_px), Color("d9a66a"))
+		canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+		var tip := hand + Vector2(0, -length * STAFF_GRIP).rotated(float(pose.tilt))
+		_staff_sockets[key] = {"at":tip,"clock":clock}
+		var power := maxf(float(pose.charge) * 0.6, float(pose.flash))
+		if power > 0.0:
+			var q := (tip / hero_px).round() * hero_px
+			canvas.draw_rect(Rect2(q - Vector2.ONE * 2.0 * hero_px, Vector2.ONE * 4.0 * hero_px), Color("f56819"))
+			canvas.draw_rect(Rect2(q - Vector2.ONE * hero_px, Vector2.ONE * 2.0 * hero_px), Color("fff2ad"))
+		return
 	var side := -1.0 if aim.x < -0.1 else 1.0
 	var since := clock - float(_shot.get(key, {}).get("start", -INF))
 	var cast := (1.0 - clampf(since / STAFF_CAST_TIME, 0.0, 1.0)) if since >= 0.0 else 0.0
@@ -331,6 +388,7 @@ func _draw_staff(canvas: CanvasItem, key: String, point: Vector2, aim: Vector2, 
 	# upright, leaning a little toward the aim; a cast tips it further at the target
 	var toward := wrapf(aim.angle() + PI * 0.5, -PI, PI)
 	var tilt := clampf(toward, -STAFF_LEAN, STAFF_LEAN) * 0.4 + clampf(toward, -STAFF_CAST_LEAN, STAFF_CAST_LEAN) * 0.6 * cast
+	_staff_sockets[key] = {"at":hand+Vector2(0,-size.y*STAFF_GRIP+2.0*hero_px).rotated(tilt),"clock":clock}
 	canvas.draw_set_transform(hand, tilt, Vector2.ONE)
 	canvas.draw_texture_rect(texture, Rect2(Vector2(-size.x * 0.5, -size.y * STAFF_GRIP), size), false)
 	canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

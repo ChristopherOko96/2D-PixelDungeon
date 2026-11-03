@@ -354,7 +354,7 @@ func pet_slot_at(point: Vector2) -> int:
 # --- Talent bar and rewards (src/ui/talent_bar.gd, the same in every map) -----
 
 func _draw_talents(local: Dictionary) -> void:
-	_talent_bar.draw_resource(_canvas, local.get("talents", {}), size.x * 0.5, skill_bar_top() - 14.0)
+	_talent_bar.draw_resource(_canvas, local.get("talents", {}), size.x * 0.5, skill_bar_top() - 14.0, 236.0, get_local_mouse_position(), size)
 
 
 ## Shows a reward on this machine (soul shard, level up); queued, one at a time.

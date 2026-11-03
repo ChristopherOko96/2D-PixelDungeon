@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "_note": "Presentation only. Two 24-joint skin chains reuse approved guardian tail pixels through RigRenderer. Width/amplitude in native pixels, rates radians or cycles per second. Gameplay range/damage stay in talents.json.",
+  "segments": 24,
+  "source_parts": ["tail_mid", "tail_tip"],
+  "width_px": 4.2,
+  "core_width": 0.42,
+  "amplitude_px": 1.8,
+  "wave_rate": 2.2,
+  "travelers": 3,
+  "travel_rate": 0.55,
+  "impact_orbit_rate": 1.2
+}

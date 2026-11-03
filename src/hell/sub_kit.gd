@@ -1,4 +1,5 @@
 extends RefCounted
+const CompanionTargets = preload("res://src/combat/companion_targets.gd")
 ## The six further subclasses of the Frostgruft (assets/data/frost_talents.json):
 ## Frostmagier, Nekromant, Tankkrieger, Axtkrieger, Schattenläufer and
 ## Tierbändiger. Each brings its own attack (shot or melee), four skills on keys
@@ -93,7 +94,8 @@ static func apply(g: Node, talent: Dictionary) -> void:
 			if str(n.get("buff", "")) == "transform":
 				kit.ogre = _frames(str(n.sprite))
 	if g.weapon.has("sprite"):
-		g.weapon_tex = load(WEAPON % str(g.weapon.sprite))
+		var weapon_sprite := str(g.weapon.sprite)
+		g.weapon_tex = load("res://assets/sprites/%s.png" % weapon_sprite) if weapon_sprite.contains("/") else load(WEAPON % weapon_sprite)
 	g.hero_frames = _frames(sprite)
 
 
@@ -655,26 +657,15 @@ static func _update_allies(g: Node, dt: float) -> void:
 				a.heal_t = 4.0
 				heal(g, int(s.get("heal", 0)))
 			continue
-		var best: Dictionary = {}
-		var bd := 900.0
-		for m: Dictionary in g.mobs:
-			if m.spawn <= 0.0 and (a.p as Vector2).distance_to(m.p) < bd:
-				bd = (a.p as Vector2).distance_to(m.p)
-				best = m
+		var best := CompanionTargets.story_pick(g, a)
 		var goal: Vector2 = best.p if not best.is_empty() else hero + Vector2(-float(g.player.face) * 90.0, 30.0)
 		var to: Vector2 = goal - a.p
 		var want := float(s.reach) * (0.7 if bool(s.get("ranged", false)) else 0.8) if not best.is_empty() else 100.0
-		if to.length() > want and speed > 0.0:
-			var step: Vector2 = to.normalized() * speed * dt
-			if not g.box_blocked(Rect2(a.p.x + step.x - 20, a.p.y + step.y - 16, 40, 16), true):
-				a.p += step
-			elif not g.box_blocked(Rect2(a.p.x + step.x - 20, a.p.y - 16, 40, 16), true):
-				a.p += Vector2(step.x, 0)
-			elif not g.box_blocked(Rect2(a.p.x - 20, a.p.y + step.y - 16, 40, 16), true):
-				a.p += Vector2(0, step.y)
+		if (to.length() > want or (not best.is_empty() and not CompanionTargets.story_visible(g, a.p, best.p))) and speed > 0.0:
+			CompanionTargets.story_follow(g, a, goal, speed, dt, 16.0)
 		if absf(to.x) > 1.0:
 			a.face = signf(to.x)
-		if best.is_empty() or to.length() > float(s.reach) + float(best.r) or float(a.cool) > 0.0:
+		if best.is_empty() or to.length() > float(s.reach) + float(best.r) or float(a.cool) > 0.0 or not CompanionTargets.story_visible(g, a.p, best.p):
 			continue
 		a.cool = float(s.every)
 		a.slam = 0.3

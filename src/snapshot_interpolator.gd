@@ -146,6 +146,9 @@ func sample(shown: Dictionary, transition_active: bool = false) -> Dictionary:
 	result.players = players
 	result.enemies = _render_list(shown.get("enemies",[]),lower.enemies,upper.enemies,latest.enemies,ratio)
 	result.bullets = _render_list(shown.get("bullets",[]),lower.bullets,upper.bullets,latest.bullets,ratio)
+	if shown.has("talents"):
+		result.talents = shown.talents.duplicate()
+		result.talents.guardians = _render_list(shown.talents.get("guardians", []), lower.guardians, upper.guardians, latest.guardians, ratio)
 	result.local_visual_tick = _visual_tick
 	_cache_key = cache_key
 	_cached = result
@@ -172,7 +175,8 @@ func _capture(snapshot: Dictionary, stamp: float, previous: Dictionary) -> Dicti
 		var entity: Variant = snapshot.players[peer]
 		if entity is Dictionary and _point(entity).is_finite():
 			players[str(peer)] = _capture_entity(entity,previous.get("players",{}).get(str(peer),{}),layout)
-	return {"stamp":stamp,"players":players,"enemies":_capture_list(snapshot.get("enemies",[]),previous.get("enemies",{}),layout),"bullets":_capture_list(snapshot.get("bullets",[]),previous.get("bullets",{}),layout)}
+	return {"stamp":stamp,"players":players,"enemies":_capture_list(snapshot.get("enemies",[]),previous.get("enemies",{}),layout),"bullets":_capture_list(snapshot.get("bullets",[]),previous.get("bullets",{}),layout),
+		"guardians": _capture_list(snapshot.get("talents", {}).get("guardians", []), previous.get("guardians", {}), layout)}
 
 func _capture_list(entities: Array, previous: Dictionary, layout: Dictionary) -> Dictionary:
 	var captured: Dictionary = {}

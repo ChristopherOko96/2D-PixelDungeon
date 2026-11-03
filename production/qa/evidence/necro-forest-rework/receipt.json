@@ -1,0 +1,416 @@
+{
+  "date": "2026-11-03",
+  "branch": "codex/port-0x72-onto-main",
+  "rules": 24,
+  "protocol": 4,
+  "checks": [
+    {
+      "log": "Logs/necro-forest-green.log",
+      "checks": 29,
+      "failures": 0
+    },
+    {
+      "log": "Logs/forest-traps-green.log",
+      "checks": 7,
+      "failures": 0
+    },
+    {
+      "log": "Logs/forest-worms-green.log",
+      "checks": 13,
+      "failures": 0
+    },
+    {
+      "log": "Logs/forest-necro-art.log",
+      "checks": 27,
+      "failures": 0
+    },
+    {
+      "log": "Logs/forest-lab.log",
+      "checks": 11,
+      "failures": 0
+    },
+    {
+      "log": "Logs/necro-forest-lab-regression.log",
+      "checks": 22,
+      "failures": 0
+    },
+    {
+      "log": "Logs/necro-forest-blood-cycle.log",
+      "checks": 25,
+      "failures": 0
+    },
+    {
+      "log": "Logs/necro-forest-giant.log",
+      "checks": 57,
+      "failures": 0
+    },
+    {
+      "log": "Logs/necro-forest-talents.log",
+      "checks": 361,
+      "failures": 0
+    },
+    {
+      "log": "Logs/necro-forest-defense.log",
+      "checks": 28,
+      "failures": 0
+    },
+    {
+      "log": "Logs/forest-floor-snapshot.log",
+      "checks": 6,
+      "failures": 0
+    }
+  ],
+  "total_checks": 586,
+  "network": {
+    "necromancer": {
+      "path": "Logs/necro-blood/20261103-112114-fbf73637/summary.json",
+      "result": {
+        "passed": true,
+        "scope": "local loopback, not LAN/WAN/performance",
+        "results": [
+          {
+            "blood": true,
+            "command": true,
+            "curse_evolution": {
+              "brood": true,
+              "charge": true,
+              "wave": true
+            },
+            "curse_monster": true,
+            "failures": [],
+            "large": true,
+            "linked_target_moved": true,
+            "multi_drain_and_death_curse": true,
+            "passed": true,
+            "poison": true,
+            "role": "host",
+            "scope": "two real local ENet peers, controlled fixture; no LAN/performance claim",
+            "visible_source_uptake": true,
+            "whirl": true
+          },
+          {
+            "blood": true,
+            "command": true,
+            "curse_evolution": {
+              "brood": true,
+              "charge": true,
+              "wave": true
+            },
+            "curse_monster": true,
+            "failures": [],
+            "large": true,
+            "linked_target_moved": true,
+            "multi_drain_and_death_curse": true,
+            "passed": true,
+            "poison": true,
+            "role": "client",
+            "scope": "two real local ENet peers, controlled fixture; no LAN/performance claim",
+            "visible_source_uptake": true,
+            "whirl": true
+          }
+        ]
+      }
+    },
+    "worms": {
+      "path": "Logs/forest-worms/20261103-112958-a1a562a2/summary.json",
+      "result": {
+        "passed": true,
+        "scope": "local loopback, not LAN/WAN/performance",
+        "results": [
+          {
+            "failures": [],
+            "flight": true,
+            "materials": {
+              "fire": true,
+              "poison": true
+            },
+            "own_r_input": true,
+            "passed": true,
+            "role": "host",
+            "scope": "two real local ENet processes, controlled fixture; not LAN/performance",
+            "species": {
+              "fire_worm": true,
+              "poison_worm": true
+            }
+          },
+          {
+            "failures": [],
+            "flight": true,
+            "materials": {
+              "fire": true,
+              "poison": true
+            },
+            "own_r_input": true,
+            "passed": true,
+            "role": "client",
+            "scope": "two real local ENet processes, controlled fixture; not LAN/performance",
+            "species": {
+              "fire_worm": true,
+              "poison_worm": true
+            }
+          }
+        ]
+      }
+    }
+  },
+  "gpu_log": "Logs/necro-forest-capture.log",
+  "hashes": [
+    {
+      "path": "src/combat/forest_summons.gd",
+      "bytes": 3021,
+      "sha256": "7cc75ca37021febbb7c70099d13dab81168803b8ab9c6608a7e5f1c57555e81b"
+    },
+    {
+      "path": "src/combat/talent_combat.gd",
+      "bytes": 154024,
+      "sha256": "7f6aefe215774c76915abd7f5a0e60ba6bd75632262bfc496958cbc9014b0648"
+    },
+    {
+      "path": "src/combat/curse_monster_host.gd",
+      "bytes": 6935,
+      "sha256": "b8b628edd165bb9a60dfb3d92797b1be44556c17c724ae288988d7737ab88d9e"
+    },
+    {
+      "path": "src/combat/necromancer_branches.gd",
+      "bytes": 32580,
+      "sha256": "1338f5332fce8fde80f3d16e94f8f2b18be5976ce43e36f2e19aa9420777565e"
+    },
+    {
+      "path": "src/combat/companion_targets.gd",
+      "bytes": 6609,
+      "sha256": "813869573e2c30d93648b6e4f94b20226391be9ec24d59293d22605921b919ee"
+    },
+    {
+      "path": "src/combat/boss_moves.gd",
+      "bytes": 44881,
+      "sha256": "a510e4ef51c19e313f5553f931cdb25c1f4fb18316136428e2cc0abe01e83251"
+    },
+    {
+      "path": "src/vfx/necro_art.gd",
+      "bytes": 12844,
+      "sha256": "84faaf1d734242e3c5d1da6de5aafd939eabfa93cbe03ec5cc335a06a88f1ab3"
+    },
+    {
+      "path": "src/vfx/talent_fx.gd",
+      "bytes": 142664,
+      "sha256": "7fa4a4ab4b219045cd92fdd5af0d6b31d50fa7382223d467b8f5a8e53bbbcdea"
+    },
+    {
+      "path": "src/vfx/companion_rigs.gd",
+      "bytes": 23527,
+      "sha256": "ed332fb45345f487a5d4696be18f1d832789ed92ec10b01028765c509f56e1ab"
+    },
+    {
+      "path": "src/vfx/particles.gd",
+      "bytes": 108291,
+      "sha256": "077e6dcd4a6bd41eebcdd6107ad24e3de0bcce0bfbe90c1baa53aec8eacf06a3"
+    },
+    {
+      "path": "src/rig/forest_trap_rig.gd",
+      "bytes": 2015,
+      "sha256": "59b401175299b1cd3687484a854526d509d5738dd9a8fa43cee3113591693124"
+    },
+    {
+      "path": "src/ui/talent_icons.gd",
+      "bytes": 15449,
+      "sha256": "09d56ce2af418106a4b87a87a389fc0eb3efdfc52af34f511d39bc1fd5ecf047"
+    },
+    {
+      "path": "src/debug/necro_lab_game.gd",
+      "bytes": 9509,
+      "sha256": "3ef4f08dc6c5ed819fc65226f5196bbd98a48c656f8adb2db9dd0567411b7f5d"
+    },
+    {
+      "path": "src/debug/necro_lab_panel.gd",
+      "bytes": 3470,
+      "sha256": "4cede2f2a5b76a4e855fa1c6eb9838f7ab37cee5378f1ae59e6e672e0311a2ea"
+    },
+    {
+      "path": "src/debug/necro_lab_art.gd",
+      "bytes": 3502,
+      "sha256": "46469ccfea3ef6016db3bf97d25202d42d6541d00aa713f827fc234149043f17"
+    },
+    {
+      "path": "src/session_protocol.gd",
+      "bytes": 5017,
+      "sha256": "9b10482ec9a1acadc0540999bdb1234de58d4cde5ff3da1bdce7ed0b2f3159f6"
+    },
+    {
+      "path": "assets/data/talents.json",
+      "bytes": 104570,
+      "sha256": "6b8b1c3c17f5a5efa4b5cf4a3ec98a53684c08aa3f9b461dbf8e0b45a7ad7685"
+    },
+    {
+      "path": "assets/data/necromancer_rules.json",
+      "bytes": 1727,
+      "sha256": "4356b21b5c35cffcd771d9c2ec99b7457b4ad45111326744a7dbfea4a0264f2e"
+    },
+    {
+      "path": "assets/data/necro_spell_rigs.json",
+      "bytes": 6315,
+      "sha256": "3a774e63e3b3348800f48e8c28c307da0415f9bcfbe0690c53763dcae2df3ba3"
+    },
+    {
+      "path": "assets/data/companion_rigs.json",
+      "bytes": 16387,
+      "sha256": "3b0f5b57c572ebb36e667a59066be7c0b87e20e540cfd0443cd195ba118b4081"
+    },
+    {
+      "path": "assets/data/forest_trap_rig.json",
+      "bytes": 402,
+      "sha256": "a54145f2e90ec3c559ae051cf134a9e279207d3f03566ef7c9cb17436004e3a8"
+    },
+    {
+      "path": "assets/data/debug_forest_lab.json",
+      "bytes": 2427,
+      "sha256": "528f519d89a1ae929b2c1ed0b03dc49d8303c4cafba6ffe9406c3c78ea84cfa2"
+    },
+    {
+      "path": "assets/data/debug_necro_lab.json",
+      "bytes": 2299,
+      "sha256": "107e4096e06da475a54c07b2907ed2186e3ddfd56a2c3fbc398c29a6bc15b2b4"
+    },
+    {
+      "path": "assets/sprites/companions/forest_worms/poison.png",
+      "bytes": 967,
+      "sha256": "dc757f94e49fc9861fc0abf09457cbe9dabf4ee5dee997592e3c043090357df6"
+    },
+    {
+      "path": "assets/sprites/companions/forest_worms/fire.png",
+      "bytes": 915,
+      "sha256": "798dd4721415608bee2d2eaa232e84aef491ef19947626f3f6ca259993f8021e"
+    },
+    {
+      "path": "assets/sprites/companions/forest_worms/source/poison.png",
+      "bytes": 565133,
+      "sha256": "4c02da47c6ee2b1f537762700c57a6fa4842381df2c7f5c609eb429597d988c7"
+    },
+    {
+      "path": "assets/sprites/companions/forest_worms/source/fire.png",
+      "bytes": 530913,
+      "sha256": "6a9b3f8a2f98b177a1d598cab866ff4e75783aa612b7a5ba93cac97031a6f6ac"
+    },
+    {
+      "path": "scripts/import_forest_worms.gd",
+      "bytes": 2396,
+      "sha256": "382aa8508a5bab1bd7bac1ae7abbecca05a9cc28c66446ca15a74fe3e3f733ee"
+    },
+    {
+      "path": "scripts/apply_necro_forest_data.cjs",
+      "bytes": 6747,
+      "sha256": "3a050d1973e5119a35e23d9c952830b9427c29cd466cf971655028552288caed"
+    },
+    {
+      "path": "scripts/capture_necro_forest.gd",
+      "bytes": 3243,
+      "sha256": "7f867be55adeedaf5e90901ffe2931a4c71617cc6fa147360cb90a0cb4a38f00"
+    },
+    {
+      "path": "scripts/run_forest_lab.gd",
+      "bytes": 386,
+      "sha256": "d606e859c7276c638109250f6242c6ec8c833879329880e490ff3a497cefc2f1"
+    },
+    {
+      "path": "scripts/Dev.ps1",
+      "bytes": 11352,
+      "sha256": "863ac35f3f36b2150d768723731b652cac6d8a0d76041d0c533856263d9b8876"
+    },
+    {
+      "path": "Waldmeister-Testraum.cmd",
+      "bytes": 121,
+      "sha256": "600ce20b236688a3f9e7cb854a473944a0d45414bc9b0c43f29022debd89b18b"
+    },
+    {
+      "path": "src/vfx/fx_sprites.gd",
+      "bytes": 23505,
+      "sha256": "6c107a11f2ccdf36ede9b149f0cbd723680cfa23b4edd5fe6b4f92e0b34256e5"
+    },
+    {
+      "path": "tests/forest_worms_network_peer.gd",
+      "bytes": 4220,
+      "sha256": "77143088140c287893e16fbf71be88f7c982d2e2af9c5ab15a3cbaf69bbf8515"
+    },
+    {
+      "path": "tests/forest_worms_network_smoke.ps1",
+      "bytes": 3799,
+      "sha256": "31dad74fe3ae6a9370c195079b0cbda20d618584decebdeb7e4adb4cc2276ce2"
+    },
+    {
+      "path": "tests/forest_worms_test.gd",
+      "bytes": 3690,
+      "sha256": "4dd370d60d47e848a41a569be5ad704c494b2c998c654bc582bb9a5df2920547"
+    },
+    {
+      "path": "tests/necro_forest_rework_test.gd",
+      "bytes": 4454,
+      "sha256": "985c137cb3a196673a51561dfa19ac8dd4fa356ae399026160ed30ffc6e09364"
+    },
+    {
+      "path": "tests/forest_necro_art_test.gd",
+      "bytes": 2369,
+      "sha256": "3c412a55e8f84e79e37a5c4b00483dc8bb504b89f3c288c7d8f5de68b77e68c2"
+    },
+    {
+      "path": "tests/forest_traps_rework_test.gd",
+      "bytes": 1870,
+      "sha256": "b0c4358648f9a1f02a9c6fbf5e90ce2ed181db977ac09f8545fefb54cdba5ad3"
+    },
+    {
+      "path": "tests/pool_floor_snapshot_test.gd",
+      "bytes": 1636,
+      "sha256": "98713958e8a17b9fa3f29efc27c990191d6746e8bd08d1fd83ee4a4a51521739"
+    },
+    {
+      "path": "production/qa/evidence/necro-forest-rework/01-aufsteigende-flueche.png",
+      "bytes": 74743,
+      "sha256": "34503d4dff6676287e77814f8db22840ad34b9d680bb43a3c674ab04fd49a261"
+    },
+    {
+      "path": "production/qa/evidence/necro-forest-rework/02-knochenkern.png",
+      "bytes": 48942,
+      "sha256": "5ee7431cfa3868a802df86bcb3dd1438be5799e69e0319814b646fbcce6d9d34"
+    },
+    {
+      "path": "production/qa/evidence/necro-forest-rework/03-knochenspur.png",
+      "bytes": 49689,
+      "sha256": "15d8909670a0e53d5092bc861727a506d546928157913f72a93cbf4f47c72696"
+    },
+    {
+      "path": "production/qa/evidence/necro-forest-rework/04-knochenburst.png",
+      "bytes": 55319,
+      "sha256": "f68b79333e7afb1482958b9453be02b9b980adfdaedc6a5529e6293fdb20b639"
+    },
+    {
+      "path": "production/qa/evidence/necro-forest-rework/05-knochenwelle.png",
+      "bytes": 87666,
+      "sha256": "3f8b4f589f04336d31b7b6e51ed6a258c2e77fad6b106f99299ecdeee7a2ce68"
+    },
+    {
+      "path": "production/qa/evidence/necro-forest-rework/06-seelenring.png",
+      "bytes": 69227,
+      "sha256": "d4589577057f794ee7f59eef8c68ef4cc98e636ba3ccb67303b85cd0c7ef28c4"
+    },
+    {
+      "path": "production/qa/evidence/necro-forest-rework/07-wuermer-spucken.png",
+      "bytes": 60594,
+      "sha256": "1444850296189f01651c39877dde120b6f5846e90c61fc7baeebfae335ec8a0b"
+    },
+    {
+      "path": "production/qa/evidence/necro-forest-rework/08-wuermer-felder.png",
+      "bytes": 60269,
+      "sha256": "ebc13f1e78cc013a9b2f5648ac9737e6c18973385493a652016d48d2c1b7b885"
+    },
+    {
+      "path": "production/qa/evidence/necro-forest-rework/09-geriggte-falle.png",
+      "bytes": 50373,
+      "sha256": "f6eee47ae07a2b0dd0a7d23c2122b2680bf91ad55a32e22d9ab91fcd5ab31342"
+    },
+    {
+      "path": "production/qa/evidence/necro-forest-rework/10-waldmeister-baum.png",
+      "bytes": 146750,
+      "sha256": "80600166b7e88ad54b04b267e7c5f62ad912546a70a41573f24d20907548f603"
+    }
+  ],
+  "art_approval": "Ja, beide so übernehmen",
+  "scope": "Focused tests and controlled GPU/native ENet loopback fixtures; no campaign, LAN, WAN or FPS acceptance."
+}

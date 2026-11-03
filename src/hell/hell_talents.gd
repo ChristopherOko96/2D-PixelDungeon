@@ -72,6 +72,8 @@ func bind(game: Node, profile_ref: Dictionary, path: String, class_name_id: Stri
 	# the companions' part rigs draw through the story hero's rig renderer (debris, clocks)
 	if g.get("story_hero") != null and g.story_hero.get("rigs") != null:
 		fx.rigs = g.story_hero.rigs
+		fx.necro_staff = Callable(g.story_hero.look,"staff_socket")
+		fx.necro_staff_key = "hero"
 		fx.to_particles = 1.0 / g.feel.scale
 	# bound to the game node, not to this object: a callable on self kept by fx would
 	# hold this object (and fx) alive forever (a reference cycle)
@@ -195,6 +197,10 @@ func update(dt: float) -> void:
 func _hold() -> void:
 	var rt := tc.runtime(1)
 	if rt.is_empty(): return
+	if rt.has("soul_charge"):
+		var charge_held := Input.is_physical_key_pressed(KEY_1 + int(rt.soul_charge.slot))
+		var charge_aim := (HeroKit.target(g) - Vector2(g.player.x, g.player.y)).normalized()
+		TalentCombat.SoulCharge.hold(tc, 1, charge_held, charge_aim)
 	var drawing: Dictionary = rt.get("drawing", {})
 	var draw_held := not drawing.is_empty() and Input.is_physical_key_pressed(KEY_1 + int(drawing.get("slot", 0)))
 	var move := Vector2(float(Input.is_physical_key_pressed(KEY_D)) - float(Input.is_physical_key_pressed(KEY_A)), float(Input.is_physical_key_pressed(KEY_S)) - float(Input.is_physical_key_pressed(KEY_W)))
@@ -233,9 +239,12 @@ func incoming(n: int, from := Vector2.ZERO) -> int:
 
 ## The hero's basic hit on a mob: talent bonuses, crits, rage, lifesteal.
 func basic_hit(m: Dictionary, dealt: float) -> float:
+	_sync_hero()
 	_sync_mobs()
+	var hp_before := int(players[1].hp)
 	var out := tc.outgoing(1, m, dealt, true)
-	tc.dealt(1, m, out, true)
+	tc.dealt(1, m, out, true, minf(float(m.hp), out))
+	_write_hero(Vector2(g.player.x, g.player.y), hp_before)
 	return out
 
 
@@ -247,6 +256,7 @@ func interval_scale() -> float:
 ## A mob fell: Blutdurst, EXP and gold into the profile.
 func killed(m: Dictionary) -> void:
 	_sync_hero()
+	m.pos = Vector2(m.get("pos", m.get("p", Vector2.ZERO)))
 	tc.enemy_killed(m, 1)
 	_write_hero(players[1].pos, int(g.state.hp))
 	if bool(m.get("summoned", false)): return
@@ -319,9 +329,19 @@ func _catch_shots(dt: float) -> void:
 ## own Gefüge drop (fed_by) so his void does not eat it again. The Frostgruft
 ## has no monster runtime: no pool there (the landing still hurts and reacts).
 func talent_pool(style: String, at: Vector2, r: float, time: float, owner: int) -> void:
-	if g.get("monsters") == null: return
-	g.monsters._zone({"kind": "puddle", "p": at, "r": r, "T": time, "dmg": 0, "friend": true, "st": style, "owner": owner, "fed_by": owner,
+	if g.story_elements == null: return
+	g.story_elements.add_pool({"kind": "puddle", "p": at, "r": r, "T": time, "dmg": 0, "friend": true, "st": style, "owner": owner, "fed_by": owner,
 		"m": {"id": "leere", "def": {"name": "Leere"}, "boss": false}, "dir": Vector2.ZERO})
+
+
+## Authoritative media references shared with the necromancer's finite absorption.
+func talent_media() -> Array:
+	return g.story_elements.media() if g.story_elements != null else []
+
+
+## The real zone expires; the ordinary pool renderer observes that expiration.
+func talent_consume_pool(zone: Dictionary) -> void:
+	zone.t = float(zone.T)
 
 
 # --- what talent_combat calls on its "game" ---------------------------------------
@@ -351,11 +371,37 @@ func talent_move(from: Vector2, step: Vector2, radius: float) -> Vector2:
 	return pos
 
 
-func talent_blocked(from: Vector2, to: Vector2, _radius: float) -> bool:
-	var steps := maxi(1, ceili(from.distance_to(to) / 12.0))
-	for i in range(1, steps):
-		if g.box_blocked(Rect2(from.lerp(to, float(i) / steps) - Vector2(3, 3), Vector2(6, 6))): return true
+## Include both endpoints and the full shot/actor radius, even on short steps.
+func talent_blocked(from: Vector2, to: Vector2, radius: float) -> bool:
+	var steps := maxi(1, ceili(from.distance_to(to) / 4.0))
+	for i in range(steps + 1):
+		if g.box_blocked(Rect2(from.lerp(to, float(i) / steps) - Vector2.ONE * radius, Vector2.ONE * radius * 2.0)): return true
 	return false
+
+## Bounded local navigation around story cover, cached by CompanionTargets.
+func talent_path(from: Vector2, to: Vector2, radius: float) -> PackedVector2Array:
+	var low := Vector2i((from.min(to) / 32.0).floor()) - Vector2i(5, 5)
+	var high := Vector2i((from.max(to) / 32.0).floor()) + Vector2i(5, 5)
+	if high.x - low.x > 100 or high.y - low.y > 100: return PackedVector2Array()
+	var grid := AStarGrid2D.new()
+	grid.region = Rect2i(low, high - low + Vector2i.ONE)
+	grid.cell_size = Vector2(32, 32)
+	grid.offset = Vector2(16, 16)
+	grid.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_ONLY_IF_NO_OBSTACLES
+	grid.update()
+	for y in range(low.y, high.y + 1):
+		for x in range(low.x, high.x + 1):
+			var point := (Vector2(x, y) + Vector2.ONE * 0.5) * 32.0
+			grid.set_point_solid(Vector2i(x, y), talent_blocked(point, point, radius))
+	var result := grid.get_point_path(Vector2i((from / 32.0).floor()), Vector2i((to / 32.0).floor()))
+	if result.is_empty(): return result
+	result.remove_at(0)
+	result.append(to)
+	return result
+
+## Preserve story spawn/invulnerability rules during shared soul collision.
+func talent_hittable(enemy: Dictionary) -> bool:
+	return g._hittable(enemy)
 
 
 func _solid(p: Vector2, radius: float) -> bool:
@@ -368,6 +414,7 @@ func _damage_enemy(m: Dictionary, damage: float, direction: Vector2 = Vector2.ZE
 	var factor := BossKit.damage_factor(g, m) if m.has("kit") else 1.0
 	if factor <= 0.0: return 0.0
 	damage = tc.outgoing(owner, m, damage * factor, feedback)
+	var resolved_hp := minf(float(m.hp), damage)
 	m.hp = float(m.hp) - damage
 	if feedback:
 		m.hit = 0.12
@@ -375,7 +422,7 @@ func _damage_enemy(m: Dictionary, damage: float, direction: Vector2 = Vector2.ZE
 		# sound hook: the talent hit in the monster's material at the monster, with its voice and coat
 		if g.get("sound") != null: g.sound.mob_hit(m)
 		else: g._sound("hit_" + str(m.get("def", {}).get("material", "void")))
-	tc.dealt(owner, m, damage, feedback)
+	tc.dealt(owner, m, damage, feedback, resolved_hp)
 	return damage
 
 
@@ -397,6 +444,9 @@ func _status(m: Dictionary, key: String, power: float, duration: float, _owner: 
 	statuses[key] = {"power": maxf(power, float(old.get("power", 0.0))), "time": maxf(duration, float(old.get("time", 0.0)))}
 	m.statuses = statuses
 	match key:
+		"soul_bind":
+			m.stun = maxf(float(m.get("stun", 0.0)), duration)
+			if m.has("act"): m.act = null
 		"burn", "poison", "bleed":
 			HeroKit.burn_mob(m, power, duration)
 			# on fire for the element physics (a burning monster sets poison off; water puts it out)
@@ -418,6 +468,9 @@ func _step_statuses(dt: float) -> void:
 func _step_bullets(dt: float) -> void:
 	for i in range(bullets.size() - 1, -1, -1):
 		var b: Dictionary = bullets[i]
+		if TalentCombat.SoulProjectiles.owns(b):
+			if TalentCombat.SoulProjectiles.step(tc, b, dt): bullets.remove_at(i)
+			continue
 		var from: Vector2 = b.pos
 		b.pos = from + Vector2(b.velocity) * dt
 		b.life = float(b.life) - dt
@@ -427,9 +480,9 @@ func _step_bullets(dt: float) -> void:
 		var gone: bool = float(b.life) <= 0.0 or talent_blocked(from, b.pos, 3.0)
 		if not gone:
 			for m: Dictionary in enemies:
-				if float(m.hp) <= 0.0 or b.hit_ids.has(int(m.id)) or not g._hittable(m): continue
+				if float(m.hp) <= 0.0 or b.hit_ids.has(tc._eid(m)) or not g._hittable(m): continue
 				if Geometry2D.get_closest_point_to_segment(m.p, from, b.pos).distance_to(m.p) > float(m.radius) + 10.0: continue
-				b.hit_ids.append(int(m.id))
+				b.hit_ids.append(tc._eid(m))
 				tc.bullet_hit(b, m)
 				if int(b.pierce) <= 0:
 					gone = true
@@ -471,7 +524,7 @@ func draw_world(canvas: CanvasItem, clock: float) -> void:
 		var at := Vector2(b.pos) - Vector2(0, 30)
 		var colour: Color = {"fireball": Color("ff7a2a"), "frost_lance": Color("8fd8e6"), "arcane": Color("b07bff")}.get(str(b.get("style", "")), Color("f3e2b0"))
 		var shot := {"x": at.x, "y": at.y, "vx": Vector2(b.velocity).x, "vy": Vector2(b.velocity).y, "style": str(b.get("style", "")),
-			"talent": str(b.get("talent", "")), "stage": int(b.get("stage", 0))}
+			"talent": str(b.get("talent", "")), "stage": int(b.get("stage", 0)), "charge": float(b.get("charge", 0.0)), "radius": float(b.get("radius", 6.0))}
 		if fx.draw_bullet(canvas, shot, clock): continue
 		if str(b.get("style", "")) == "arrow":
 			# a shaft of pixels with a white tip and a dark outline
@@ -482,9 +535,6 @@ func draw_world(canvas: CanvasItem, clock: float) -> void:
 				PixelPaint.cell(canvas, q, Color.WHITE if i == 0 else colour, 3.0)
 		else:
 			PixelPaint.ball(canvas, at, 2, [colour.lightened(0.5), colour.lightened(0.3), colour, colour.darkened(0.3)], Color("1a1414"), 3.0)
-	# the mage's left-click fireballs (hell_game shots of kind "pyro")
-	for s: Dictionary in g.shots:
-		if str(s.get("kind", "")) == "pyro": fx.draw_basic_fireball(canvas, Vector2(s.p), Vector2(s.v), clock)
 	PixelPaint.clip = Callable()
 
 
@@ -492,6 +542,10 @@ func draw_world(canvas: CanvasItem, clock: float) -> void:
 ## rage, the ultimates' auras), stopping at the walls.
 func draw_over(canvas: CanvasItem, clock: float) -> void:
 	var snap := tc.snapshot()
+	var actors: Array = []
+	for m: Dictionary in g.mobs:
+		actors.append({"id":int(m.get("tid",-1)),"x":Vector2(m.p).x,"y":Vector2(m.p).y-float(m.get("cy",14))*0.65,"rig":str(m.get("rig",""))})
+	fx.set_necro_actors({1:{"x":g.player.x,"y":g.player.y}},actors)
 	PixelPaint.clip = _open_floor
 	fx.draw_events(canvas, snap, clock)
 	fx.draw_auras(canvas, snap, clock, _hero_at)
@@ -510,5 +564,5 @@ func _hero_at(_owner: int) -> Vector2:
 
 ## HUD: the talent bar above the skill bar and the reward banner.
 func draw_hud(canvas: CanvasItem, screen: Vector2, bar_top: float) -> void:
-	bar.draw_resource(canvas, hud_state(), screen.x * 0.5, bar_top)
+	bar.draw_resource(canvas, hud_state(), screen.x * 0.5, bar_top, 236.0, g.get_viewport().get_mouse_position(), screen)
 	bar.draw_reward(canvas, Vector2(screen.x * 0.5, screen.y * 0.24))

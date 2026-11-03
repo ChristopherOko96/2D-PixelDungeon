@@ -1,0 +1,46 @@
+{
+  "passed": true,
+  "scope": "local loopback, not LAN/WAN/performance",
+  "results": [
+    {
+      "blood": true,
+      "command": true,
+      "curse_evolution": {
+        "brood": true,
+        "charge": true,
+        "wave": true
+      },
+      "curse_monster": true,
+      "failures": [],
+      "large": true,
+      "linked_target_moved": true,
+      "multi_drain_and_death_curse": true,
+      "passed": true,
+      "poison": true,
+      "role": "host",
+      "scope": "two real local ENet peers, controlled fixture; no LAN/performance claim",
+      "visible_source_uptake": true,
+      "whirl": true
+    },
+    {
+      "blood": true,
+      "command": true,
+      "curse_evolution": {
+        "brood": true,
+        "charge": true,
+        "wave": true
+      },
+      "curse_monster": true,
+      "failures": [],
+      "large": true,
+      "linked_target_moved": true,
+      "multi_drain_and_death_curse": true,
+      "passed": true,
+      "poison": true,
+      "role": "client",
+      "scope": "two real local ENet peers, controlled fixture; no LAN/performance claim",
+      "visible_source_uptake": true,
+      "whirl": true
+    }
+  ]
+}

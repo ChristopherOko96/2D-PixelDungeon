@@ -1,0 +1,136 @@
+{
+ "schema_version": 1,
+ "title": "NEKROMANT · KAMPFLABOR",
+ "short_title": "LAB",
+ "camera_zoom": 1,
+ "profile_path": "user://necro_lab_profile.json",
+ "world_size": [
+  1600,
+  960
+ ],
+ "spawn": [
+  640,
+  480
+ ],
+ "obstacles": [
+  [
+   1120,
+   256,
+   32,
+   160
+  ],
+  [
+   1120,
+   608,
+   32,
+   160
+  ]
+ ],
+ "auto_range_m": 8,
+ "enemy_cap": 12,
+ "group_count": 6,
+ "group_radius": 72,
+ "group_distance": 210,
+ "enemy_hp": 32,
+ "dummy_hp": 10000,
+ "default_spec": "curse",
+ "specs": {
+  "minion": {
+   "name": "DIENER",
+   "color": "d4bb86",
+   "ultimate": "minion_14",
+   "kits": [
+    {
+     "name": "Beschwören",
+     "bar": [
+      "minion_1",
+      "minion_9",
+      "minion_5",
+      "minion_7"
+     ]
+    },
+    {
+     "name": "Knochen & Pakt",
+     "bar": [
+      "minion_1",
+      "minion_3",
+      "minion_11",
+      "minion_5"
+     ]
+    }
+   ]
+  },
+  "curse": {
+   "name": "FLUCH",
+   "color": "bd8de3",
+   "ultimate": "curse_14",
+   "kits": [
+    {
+     "name": "Gift & Blut",
+     "bar": [
+      "curse_1",
+      "curse_3",
+      "curse_7",
+      "curse_9"
+     ]
+    },
+    {
+     "name": "Fessel & Ernte",
+     "bar": [
+      "curse_1",
+      "curse_5",
+      "curse_11",
+      "curse_9"
+     ]
+    }
+   ]
+  },
+  "soul": {
+   "name": "SEELE",
+   "color": "79e0cb",
+   "ultimate": "soul_14",
+   "kits": [
+    {
+     "name": "Ring & Lanze",
+     "bar": [
+      "soul_1",
+      "soul_3",
+      "soul_9",
+      "soul_7"
+     ]
+    },
+    {
+     "name": "Feld & Schild",
+     "bar": [
+      "soul_1",
+      "soul_5",
+      "soul_11",
+      "soul_7"
+     ]
+    }
+   ]
+  }
+ },
+ "labels": {
+  "group": "Gegner +6",
+  "dummy": "Zielpuppe",
+  "clear": "Leeren",
+  "reset": "Reset",
+  "souls": "Seelen +",
+  "blood": "Blut +4",
+  "auto": "Auto",
+  "god": "Üben",
+  "rings": "Ringe",
+  "hint": "WASD bewegen · 1–4 Fähigkeiten · R Ulti · 5/6 Begleiter · Shift Dash\nRechts halten: zielen · loslassen: gewählte Fähigkeit wirken",
+  "preset": "Zielvorschau",
+  "ready": "Bereit",
+  "full": "Gegnerlimit erreicht",
+  "reset_done": "Kampffläche zurückgesetzt"
+ },
+ "sources": [
+  "https://www.youtube.com/watch?v=ADPKIacCenk",
+  "https://www.youtube.com/watch?v=PQhFthfMzdA",
+  "https://www.youtube.com/watch?v=SpVhPCla38k",
+  "https://www.youtube.com/watch?v=_iryXMIMcGA"
+ ]
+}

@@ -21,6 +21,12 @@ func _initialize() -> void:
 	_test_handles_and_tints()
 	_test_release_trail_and_impact()
 	_test_weapon_glows()
+	var basic := AttackFx.new()
+	basic.observe({"players": {1: {"class_id": "mage"}}, "bullets": [_bullet(77, Vector2(100, 100), "magic")]}, 1.0)
+	check(not bool(basic._tracks[77].get("fireball", false)), "mage basic shot is neutral magic, not the fireball talent")
+	check(AttackFx.tint_for(_bullet(77, Vector2.ZERO, "magic"), {"class_id": "mage"}) == AttackFx.ORB_TINT, "plain mage attack has neutral magic colour")
+	basic.observe({"players": {1: {"class_id": "mage"}}, "bullets": []}, 1.05)
+	check(not basic._flashes.any(func(f: Dictionary) -> bool: return bool(f.get("fireball", false))), "basic impact has no fireball effect")
 	print("ATTACK_FX checked=%d failures=%d" % [checked, failures.size()])
 	quit(1 if failures.size() > 0 else 0)
 
@@ -66,7 +72,7 @@ func _test_release_trail_and_impact() -> void:
 	view.observe({"players": players, "bullets": [_bullet(11, Vector2(320, 200), "magic")]}, 0.72)
 	check(not view._tracks.has(10) and view._flashes.any(func(flash: Dictionary) -> bool: return str(flash.kind) == "pierce"), "a shot that ends bursts where it was")
 	view.observe({"players": players, "bullets": []}, 0.74)
-	check(view._flashes.any(func(flash: Dictionary) -> bool: return str(flash.kind) == "nova"), "a spell that ends bursts in a nova")
+	check(view._flashes.any(func(flash: Dictionary) -> bool: return str(flash.kind) == "blast" and (flash.get("ramp", []) as Array).size() == 5), "a spell that ends bursts in the current five-shade pixel impact")
 	view.observe({"players": players, "bullets": []}, 5.0)
 	check(view._flashes.is_empty() and view._tracks.is_empty(), "flashes fade and nothing is kept")
 	# A shot unseen for a while (effects hidden) does not burst late.

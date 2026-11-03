@@ -58,7 +58,7 @@ const CryptAtmosphere = preload("res://src/vfx/crypt_atmosphere.gd")
 ## Hero class -> part rig of its 0x72 figure (assets/data/rigs.json).
 ## The mage is the wizard rig again, its parts recoloured by his element
 ## (src/hero/element_skin.gd, hero_skins.json; user decision 31.10.2026).
-const CLASS_RIGS := {"swordsman":"knight","archer":"elf","mage":"wizard"}
+const CLASS_RIGS := {"swordsman":"knight","archer":"elf","mage":"wizard","necromancer":"necro"}
 
 @export var style_profile: Resource = preload("res://assets/data/art_style_reference.tres")
 
@@ -68,6 +68,8 @@ var _clock: float = 0.0
 var _effects_visible := true
 ## Editor/reference previews may show spawn health; live play uses the heart HUD.
 var show_player_health := true
+## Opt-in targeting marker for the separate Necromancer combat study.
+var round_actor_markers := false
 var audio_enabled := false
 var _animation_enabled := true
 var _environment_animation_enabled := false
@@ -161,6 +163,7 @@ func _ready() -> void:
 	_rigs = RigRenderer.new()
 	_slices = SliceFx.new(_rigs.library)
 	_talent_fx.rigs = _rigs
+	_talent_fx.necro_staff = Callable(_hero_look,"staff_socket")
 	# the rigs' debris bounces off the room's walls (the particles know the walkable cells; _feedback is renewed per room)
 	_rigs.solid = func(point: Vector2) -> bool: return _feedback != null and _feedback.particles != null and _feedback.particles.solid(point)
 	if not Engine.is_editor_hint():
@@ -402,10 +405,11 @@ func _draw_view() -> void:
 			# one layer for the room: the same liquid from boss moves, skills and
 			# talents is one pool; its drops fly in the feedback's particles and
 			# blasts ring it (src/vfx/pool_paint.gd, src/vfx/particles.gd)
-			var pools := PoolPaint.new(2.0, func(point: Vector2) -> bool: return not _feedback.particles.solid(point))
+			var floor_open := _feedback.particles.open_floor_test()
+			var pools := PoolPaint.new(2.0, floor_open)
 			pools.particles = _feedback.particles
 			# the room's gas: clouds of puffs that spread, flow and are blown away (src/vfx/gas.gd)
-			_gas = Gas.new(2.0, func(point: Vector2) -> bool: return not _feedback.particles.solid(point))
+			_gas = Gas.new(2.0, floor_open)
 			_feedback.particles.set_liquids([[pools, 1.0], [_gas, 1.0]])
 			_boss_fx.gas = _gas
 			_boss_fx.particles = _feedback.particles
@@ -531,6 +535,7 @@ func _draw_view() -> void:
 		# talent effects and what lasts on the heroes stop at the walls (src/vfx/talent_fx.gd)
 		PixelPaint.clip = _open_floor
 		_sec_t = Time.get_ticks_usec()
+		_talent_fx.set_necro_actors(_snapshot.get("players",{}),_snapshot.get("enemies",[]))
 		_talent_fx.draw_events(self,_snapshot.get("talents",{}),_clock)
 		_sec("talent.events")
 		_sec_t = Time.get_ticks_usec()
@@ -911,6 +916,14 @@ func _player_color(player: Dictionary, peer_id: int) -> Color:
 		return PLAYER_COLORS[absi(int(value)) % PLAYER_COLORS.size()]
 	return fallback
 
+func _hero_marker(point: Vector2, color: Color) -> void:
+	if not round_actor_markers:
+		draw_rect(Rect2(point+Vector2(-20,8),Vector2(40,15)),color,false,2)
+		return
+	var points := PackedVector2Array()
+	for n in range(49): points.append(point+Vector2(cos(n*TAU/48)*21,12+sin(n*TAU/48)*8))
+	draw_polyline(points,color,2,false)
+
 func _draw_player(player: Dictionary, peer_id: int) -> void:
 	if CLASS_SPRITES.has(str(player.get("class_id",""))):
 		_draw_class_hero(player, peer_id)
@@ -921,7 +934,7 @@ func _draw_player(player: Dictionary, peer_id: int) -> void:
 	var role: String = str(player.get("skin",PLAYER_ACTORS[_sprite_index(color)]))
 	var record: Dictionary = _actor_record(role,"p"+str(peer_id),player,true)
 	if not record.is_empty():
-		if peer_id == _local_peer and hp > 0: draw_rect(Rect2(point+Vector2(-20,8),Vector2(40,15)),Color(0.45,0.91,0.81,0.7),false,2)
+		if peer_id == _local_peer and hp > 0: _hero_marker(point,Color(0.45,0.91,0.81,0.7))
 		var pose: Dictionary = _feedback.pose("p%d"%peer_id,player,_clock,true)
 		if hp > 0 and float(player.get("invulnerable",0)) > 0: pose.alpha *= 0.55 if fmod(_clock,0.16) < 0.08 else 1.0
 		_draw_sprite(record.texture,point,1.0,float(record.feet),pose,float(record.scale),record.flash_texture,record.anchor)
@@ -935,7 +948,7 @@ func _draw_player(player: Dictionary, peer_id: int) -> void:
 		return
 	if peer_id == _local_peer:
 		var ring_color := Color(0.45, 0.91, 0.81, 0.7)
-		draw_rect(Rect2(point.x - 20, point.y + 8, 40, 15), ring_color, false, 2.0)
+		_hero_marker(point,ring_color)
 		_box(point.x - 4, point.y - 24, 8, 3, color)
 		_box(point.x - 2, point.y - 21, 4, 3, color)
 	# Optional aim vector; no input is sampled by the presentation layer.
@@ -977,7 +990,7 @@ func _draw_class_hero(player: Dictionary, peer_id: int) -> void:
 		_box(point.x - 1, point.y - 11, 3, 10, MUTED)
 		return
 	if peer_id == _local_peer:
-		draw_rect(Rect2(point.x - 20, point.y + 8, 40, 15), Color(0.45, 0.91, 0.81, 0.7), false, 2.0)
+		_hero_marker(point,Color(0.45, 0.91, 0.81, 0.7))
 	else:
 		draw_rect(Rect2(point.x - 16, point.y + 10, 32, 10), Color(color, 0.6), false, 2.0)
 	var aim := Vector2(float(player.get("ax", 1.0)), float(player.get("ay", 0.0)))
@@ -988,6 +1001,9 @@ func _draw_class_hero(player: Dictionary, peer_id: int) -> void:
 	var face: float = _hero_look.face(player, aim, _clock)
 	# Shared hero look (src/hero/hero_look.gd): lean into swings, dash afterimages.
 	var look_key := "p%d" % peer_id
+	_hero_look.observe_fireball(look_key, peer_id, _snapshot.get("talents", {}).get("events", []), _clock, hp > 0.0)
+	aim = _hero_look.casting_aim(look_key, aim, _clock)
+	face = _hero_look.face(player, aim, _clock)
 	_hero_look.observe(look_key, player, point, _clock)
 	var rigged: bool = _rigs != null and _rigs.is_ready() and CLASS_RIGS.has(str(player.class_id))
 	if rigged:
@@ -1167,10 +1183,6 @@ func _draw_bullet(bullet: Dictionary) -> void:
 		var talent_shot: bool = _talent_fx.draw_bullet(self,bullet,_clock)
 		PixelPaint.clip = Callable()
 		if talent_shot: return
-	# the mage's left-click: a small fireball (user wish 30.10.2026)
-	if style == "magic" and str(bullet.get("talent","")).is_empty() and str(_snapshot.get("players", {}).get(owner, {}).get("class_id", "")) == "mage":
-		_talent_fx.draw_basic_fireball(self, point, Vector2(float(bullet.get("vx", 1.0)), float(bullet.get("vy", 0.0))), _clock)
-		return
 	if AttackFx.handles(bullet):
 		# a hero's streak, rune ring and motes never shine through a wall
 		PixelPaint.clip = _open_floor

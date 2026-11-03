@@ -1,0 +1,7 @@
+const fs=require('fs'),path=require('path'),crypto=require('crypto');
+const root=path.resolve(__dirname,'..'),out=path.join(root,'production/qa/evidence/guardian-beam-adhesion');
+fs.copyFileSync(path.join(root,'Logs/guardian-commands/20261101-225154-1743d722/summary.json'),path.join(out,'network-summary.json'));
+fs.copyFileSync(path.join(root,'production/qa/evidence/necromancer-catalog-hq/guardian_beam/frame-045.png'),path.join(out,'beam-moving-target.png'));
+const files=['src/combat/soul_guardian.gd','src/rig/soul_guardian_rig.gd','src/rig/soul_beam_rig.gd','src/vfx/soul_beam.gd','src/vfx/talent_fx.gd','src/session_protocol.gd','assets/data/soul_beam_rig.json','assets/data/talents.json','tests/guardian_beam_adhesion_test.gd','tests/guardian_beam_rig_test.gd','tests/guardian_commands_network_peer.gd','tests/necro_story_attacks_test.gd','scripts/capture_necromancer_catalog.gd','scripts/build_necromancer_original.cjs','output/necromancer-catalog/waechterstrahl-original.png','output/necromancer-catalog/original-browser-review.json'];
+fs.writeFileSync(path.join(out,'source-hashes.json'),JSON.stringify({scope:'Targeted host/rig/world tests, two local peers and native controlled GPU footage; no LAN/campaign/performance acceptance.',files:files.map(file=>({file,sha256:crypto.createHash('sha256').update(fs.readFileSync(path.join(root,file))).digest('hex')}))},null,2));
+console.log('GUARDIAN_BEAM_RECEIPT files='+files.length);

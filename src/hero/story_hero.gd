@@ -32,7 +32,7 @@ const RigLibrary = preload("res://src/rig/rig_library.gd")
 const RigRenderer = preload("res://src/rig/rig_renderer.gd")
 ## The crypt's class figures (src/dungeon_view.gd CLASS_RIGS). The mage is the
 ## 0x72 wizard rig, recoloured by his element (hero_skins.json).
-const CLASS_RIGS := {"swordsman": "knight", "archer": "elf", "mage": "wizard"}
+const CLASS_RIGS := {"swordsman": "knight", "archer": "elf", "mage": "wizard", "necromancer": "necro"}
 const KEY := "hero"
 ## How often the mage's element is read again from the profile (s): a talent
 ## build changed mid-run recolours him at the next check.
@@ -215,7 +215,7 @@ func update(dt: float) -> void:
 		var v: Vector2 = s.v
 		bullets.append({"id": int(s.look_id), "x": (s.p as Vector2).x / scale, "y": (s.p as Vector2).y / scale, "vx": v.x, "vy": v.y, "owner": 1,
 			"style": SHOT_STYLES[str(s.kind)], "critical": float(s.get("big", 1.0)) > 1.5})
-	_snapshot = {"bullets": bullets, "players": {1: {"glow": str(g.state.get("glow", ""))}}}
+	_snapshot = {"bullets": bullets, "players": {1: {"glow": str(g.state.get("glow", "")), "class_id": str(g.class_id)}}}
 	attack.observe(_snapshot, float(g.state.t))
 	skill_fx.update(dt, float(g.state.t))
 	_shot_layer.queue_redraw()
@@ -259,7 +259,7 @@ func view_state() -> Dictionary:
 		skills.charge = clampf(float(g.hold.get("t", 0.0)) / maxf(0.1, charge_time), 0.0, 1.0)
 	return {"class_id": str(g.class_id), "melee": str(weapon.get("type", "")) == "melee", "reach": float(weapon.get("reach", 120.0)),
 		"swings": swings, "swing_angle": float(g.swing.a), "swing_arc": float(weapon.get("arc", 2.0)), "swing_dir": swing_dir,
-		"shots": shots, "shot_interval": float(g.state.rate), "skills": skills}
+		"shots": shots, "shot_interval": float(g.state.rate), "skills": skills, "leap": g.talents.tc.SoulLeap.snapshot(g.talents.tc.runtime(1)) if g.talents != null else {}}
 
 
 ## Draws the hero through the shared look. `draw_body(feet, alpha)` draws the
@@ -268,6 +268,7 @@ func view_state() -> Dictionary:
 ## as the crypt's part rig; a changed figure (the ogre form) keeps `draw_body`.
 func draw_hero(canvas: CanvasItem, t: float, lift: float, draw_body: Callable, hero_look: Dictionary = {}) -> void:
 	var view := view_state()
+	look.observe_fireball(KEY, 1, g.talents.tc.events if g.talents != null else [], t, float(g.state.get("hp", 0)) > 0.0)
 	var rig := rig_name(hero_look)
 	if not rig.is_empty():
 		var size := scale * float(hero_look.get("scale", 1.0))
@@ -276,6 +277,7 @@ func draw_hero(canvas: CanvasItem, t: float, lift: float, draw_body: Callable, h
 		var pace := maxf(60.0, (g.player.get("vel", Vector2.ZERO) as Vector2).length())
 		# the element goes with the view: the rig draws the mage's parts in its colours
 		var body_view := {"moving": bool(g.player.get("moving", false)), "hp": float(g.state.get("hp", 1)), "hurts": hurts, "step_time": 32.0 * scale / pace, "element": element}
+		body_view.leap = view.get("leap", {})
 		var facing := face(t)
 		# the rig is placed by its centre; the story worlds give the feet
 		var shape: Dictionary = rigs.library.rig(rig)
@@ -285,7 +287,7 @@ func draw_hero(canvas: CanvasItem, t: float, lift: float, draw_body: Callable, h
 			rigs.draw_hero(canvas, key, body_view, feet - up, rig, facing, tint.a * alpha, size, Color(tint.r, tint.g, tint.b))
 	var feet := Vector2(g.player.x, g.player.y)
 	var chest := feet - Vector2(0, lift)
-	var aim: Vector2 = g.HeroKit._aim(g)
+	var aim: Vector2 = look.casting_aim(KEY, g.HeroKit._aim(g), t)
 	look.observe(KEY, view, chest, t)
 	look.draw_dash_lines(canvas, KEY, view, chest, t)
 	look.draw_afterimages(KEY, t, func(at: Vector2, alpha: float) -> void: draw_body.call(at + Vector2(0, lift), alpha))
@@ -329,7 +331,7 @@ func rig_name(hero_look: Dictionary) -> String:
 
 ## The way the hero faces: the aim, or turning with a whirling blade.
 func face(t: float) -> float:
-	return look.face(view_state(), g.HeroKit._aim(g), t)
+	return look.face(view_state(), look.casting_aim(KEY, g.HeroKit._aim(g), t), t)
 
 
 func draw_layer(canvas: CanvasItem, glow: bool) -> void:
