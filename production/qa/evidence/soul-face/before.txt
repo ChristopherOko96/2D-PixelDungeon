@@ -1,0 +1,5 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+SOUL_FACE_FAIL: one coherent soul head is part of the real particle simulation
+SOUL_FACE_FAIL: a small bounded chain of physical tail pixels accompanies the head
+SOUL_FACE checked=3 failures=2

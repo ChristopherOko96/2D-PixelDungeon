@@ -1,5 +1,43 @@
 # Basement Run — development notes
 
+- Soul release staging (2026-11-04): pickup pixels gather from the corpse,
+  rise before flight (0.48s gather, 0.42s rise, 0.16s pull ramp), then seek
+  the live staff. Face forms during the rise. Local presentation lasts 1.4s;
+  TalentFx retains it beyond the unchanged 0.7s host event. No grant, combat
+  or protocol changes. soul_release 16/0, soul_matter 24/0, soul_face 7/0,
+  soul_absorption 17/0 (64 checks). Real Krypta kill/GIF and exit-warning
+  limitations: production/qa/evidence/soul-rise/README.md. Local, not pushed.
+
+- Soul pickup face (2026-11-04): one simulated leading particle now draws a
+  tiny 7x7 face with two dark eyes and a short blink; up to eight (default six)
+  velocity-coupled tail particles follow it. Remaining dust, wind, pressure,
+  wall collisions and the 900-particle budget stay in the shared solver.
+  No new sprite generation. soul_face 7/0, soul_matter 24/0, particles 26/0.
+  See docs/SEELEN-MATERIE.de.md and production/qa/evidence/soul-face/.
+
+- Soul matter follow-up (2026-11-04): active soul pickups/fields/ring/trail,
+  shot wakes, impacts, binds, charge and guardian dust now emit shared-solver
+  pixels, rather than moving whole spirit pictures. PoolPaint surface_motion
+  reacts to Particles.blow/kick through existing scaled weak liquid links;
+  common fluid surfaces of every class, bounded 60Hz cosmetic spring mass.
+  No damage-cell, resource, talent timing or network-authority changes.
+  Read docs/SEELEN-MATERIE.de.md. Original soul_ring_test used obsolete 0.7s
+  expansion assumptions; current HEAD data is 1s, test now follows that data.
+  Verified: soul_matter 24/0, particles 26/0, pool_field 58/0, pickup 17/0,
+  soul_ring 19/0 (144 total). CPU surface bench: 651 nodes, mean 3.60ms,
+  8ms budget. Controlled current Krypta GPU: real boss force-front hook,
+  offset 10.8 -> 0.037 world px, max 101 pixels. Evidence/GIFs under
+  production/qa/evidence/soul-matter. No full FPS/network acceptance. Local only.
+
+- Seelensog visual (2026-11-04, base ab181e4a): soul reward spirits now fly
+  into the current recipient's drawn staff socket and pulse on arrival.
+  Shared TalentFx / vfx/soul_absorption.gd, existing approved spirit cutouts;
+  vfx_talents.json soul_absorption controls presentation. Resource grants,
+  gauge and class-revamp rules unchanged. Checks: soul_absorption 17/0,
+  necro_souls_aggro 89/0; actual Krypta GPU receipt and animated crop under
+  production/qa/evidence/soul-absorption. No new multiplayer acceptance.
+  Existing test cleanup warnings also occurred before this change. Not pushed.
+
 - Story timing (2026-11-03): local fixed-step scheduler in hell_game.gd,
   physics_kit/fixed_step_clock.gd and assets/data/physics_clock.json (60 Hz,
   8 catch-up steps/frame; debt retained). Menus/floor loads reset the clock;

@@ -113,6 +113,9 @@ const DATA_PATH := "res://assets/data/vfx_talents.json"
 const TALENTS_PATH := "res://assets/data/talents.json"
 const SoulProjectileArt = preload("res://src/vfx/soul_projectile_art.gd")
 const SoulTrail = preload("res://src/vfx/soul_trail.gd")
+const SoulAbsorption = preload("res://src/vfx/soul_absorption.gd")
+const SoulMatter = preload("res://src/vfx/soul_matter.gd")
+var soul_matter := SoulMatter.new()
 ## Shot styles drawn here as element matter (talents.json "style"); arrows are the host's.
 const SHOT_STYLES := {"frost_lance": "ice", "arcane": "void", "fireball": "fire", "infernospear": "fire", "blade": "steel"}
 ## Shots that keep a sheet because its shape reads (a knife, a dart): sheet and scale.
@@ -171,6 +174,24 @@ func _necro_socket(key: String, fallback: Vector2) -> Vector2:
 			break
 	return at
 
+## Current-owner staff endpoint and smooth presentation age for a paid soul event.
+## The host still owns the resource grant; this sample never changes gameplay.
+func soul_absorption(event: Dictionary, clock: float) -> Dictionary:
+	_clock = clock
+	var owner_key := "p%d" % int(event.get("owner", -1))
+	var fallback := Vector2(float(event.get("tx", event.x)), float(event.get("ty", event.y)))
+	var target := _necro_socket(owner_key, fallback) + body
+	if necro_staff.is_valid():
+		target = necro_staff.call(necro_staff_key if not necro_staff_key.is_empty() else owner_key, target, clock)
+	var span := maxf(0.05, float(event.get("span", 0.7)))
+	var id := int(event.get("id", 0))
+	var age := _smooth_soul_age("absorb:%d" % id, float(event.get("life", 0.0)), span)
+	var spec: Dictionary = cfg.get("soul_absorption", {})
+	var source := Vector2(float(event.x), float(event.y)) - Vector2(0, float(spec.get("source_lift", 5.0)) * art)
+	var frame := SoulAbsorption.sample(source, target, age / span, art, id, spec)
+	if not frame.is_empty(): frame.span = span
+	return frame
+
 func _draw_necro_links(canvas: CanvasItem, state: Dictionary, clock: float) -> void:
 	for l: Dictionary in state.get("blood_links",[]):
 		var from := _necro_socket("p%d" % int(l.owner),Vector2(l.x,l.y))-Vector2(0,12*art)
@@ -225,6 +246,43 @@ var cfg: Dictionary = {}
 
 var _clock := 0.0
 var _soul_age: Dictionary = {}
+var _soul_pickups: Dictionary = {}
+var _soul_pickup_seen: Dictionary = {}
+var _soul_pickup_clock := -1.0
+var _soul_pickup_scope := ""
+
+## Keep the cinematic release alive locally after the short host event ends.
+## The endpoint still follows the current recipient and no rewards are minted.
+func soul_pickup_frames(state: Dictionary, clock: float) -> Array:
+	var scope := str(particles.layout_key) if particles!=null else "preview"
+	if scope!=_soul_pickup_scope or clock<_soul_pickup_clock:
+		_soul_pickups.clear()
+		_soul_pickup_seen.clear()
+		_soul_pickup_scope=scope
+	_soul_pickup_clock=clock
+	var spec:Dictionary=cfg.get("soul_absorption",{})
+	var duration:=maxf(0.7,float(spec.get("release_duration",1.4)))
+	for id:Variant in _soul_pickup_seen.keys():
+		if clock>float(_soul_pickup_seen[id]):_soul_pickup_seen.erase(id)
+	for event:Dictionary in state.get("events",[]):
+		if str(event.get("kind",""))!="souls":continue
+		var id:=int(event.get("id",0))
+		if _soul_pickup_seen.has(id) or _soul_pickups.size()>=clampi(int(spec.get("max_visible",24)),1,32):continue
+		var age:=maxf(0,float(event.get("span",0.7))-float(event.get("life",0.7)))
+		_soul_pickups[id]={"event":event.duplicate(),"start":clock-age}
+		_soul_pickup_seen[id]=clock+duration+2.0
+	var frames:Array=[]
+	for id:Variant in _soul_pickups.keys():
+		var record:Dictionary=_soul_pickups[id]
+		var age:=clock-float(record.start)
+		if age>=duration:
+			_soul_pickups.erase(id)
+			continue
+		var event:Dictionary=record.event.duplicate()
+		event.span=duration
+		event.life=duration-age
+		frames.append({"id":int(id),"frame":soul_absorption(event,clock)})
+	return frames
 
 ## Extrapolate a short presentation interval between host snapshots, never combat.
 func _smooth_soul_age(key: String, remaining: float, total: float) -> float:
@@ -390,6 +448,8 @@ func draw_ground(canvas: CanvasItem, state: Dictionary, clock: float) -> void:
 	var age_keys := {}
 	for zone: Dictionary in state.get("zones", []): age_keys["zone:%d" % int(zone.get("id", 0))] = true
 	for event: Dictionary in state.get("events", []): age_keys["grasp:%d" % int(event.get("id", 0))] = true
+	for event: Dictionary in state.get("events", []):
+		if str(event.get("kind","")) == "souls": age_keys["absorb:%d"%int(event.get("id",0))] = true
 	for guardian: Dictionary in state.get("guardians", []): age_keys["guardian:%d:%d" % [int(guardian.id), int(guardian.phase_seq)]] = true
 	for guardian: Dictionary in state.get("guardians", []): age_keys["guardian_life:%d" % int(guardian.id)] = true
 	for key: String in _soul_age.keys():
@@ -559,6 +619,9 @@ func _tick(key: String, every: float, clock: float) -> bool:
 ## are swallowed; the puddles and the gas are the host's).
 func _zone_matter(zone: Dictionary, clock: float) -> void:
 	var look := str(zone.get("look", ""))
+	if particles != null and look in ["souls","souls_ring","souls_trail"]:
+		soul_matter.field(zone,clock,particles,to_particles,pools,cfg.get("soul_physics",{}))
+		return
 	if not look in ["snow", "arcane", "crater", "ice", "souls", "plague"]: return
 	var id := int(zone.get("id", 0))
 	var at := Vector2(float(zone.x), float(zone.y))
@@ -734,7 +797,13 @@ func draw_pets(canvas: CanvasItem, state: Dictionary, clock: float) -> void:
 	_clock = clock
 	NecroArt.corpses(canvas, state, art, sprites)
 	for charge: Dictionary in state.get("charges", []):
-		if str(charge.get("talent",""))!="sniper_14": SoulProjectileArt.charge(canvas, charge, clock, art, sprites)
+		if str(charge.get("talent",""))!="sniper_14":
+			if particles != null:
+				soul_matter.charge(charge,clock,particles,to_particles,cfg.get("soul_physics",{}))
+				var ground := Vector2(charge.x,charge.y)
+				canvas.draw_rect(Rect2(ground+Vector2(-12,8)*art,Vector2(24,2)*art),Pal.ramp("soul")[0])
+				canvas.draw_rect(Rect2(ground+Vector2(-12,8)*art,Vector2(24*float(charge.power),2)*art),Pal.ramp("soul")[3])
+			else: SoulProjectileArt.charge(canvas, charge, clock, art, sprites)
 	for seal: Dictionary in state.get("claims", []):
 		SoulGuardianArt.seal(canvas, Vector2(seal.x, seal.y), clock, art, false, clampf(float(seal.time), 0.0, 1.0))
 	for guardian: Dictionary in state.get("guardians", []):
@@ -747,7 +816,12 @@ func draw_pets(canvas: CanvasItem, state: Dictionary, clock: float) -> void:
 			var socket := _necro_socket("e%d" % int(guardian.beam_target_id),fallback)
 			guardian.beam_socket_x = socket.x
 			guardian.beam_socket_y = socket.y
-		SoulGuardianArt.draw(canvas, guardian, age, art, sprites, lifetime, cfg.get("soul_motion", {}))
+		var motion: Dictionary = cfg.get("soul_motion",{})
+		if particles != null:
+			motion = motion.duplicate()
+			motion.aura_count = 0
+			soul_matter.aura(guardian,clock,particles,to_particles,cfg.get("soul_physics",{}))
+		SoulGuardianArt.draw(canvas, guardian, age, art, sprites, lifetime, motion)
 	for pet: Dictionary in state.get("pets", []):
 		var at := _snap(Vector2(float(pet.x), float(pet.y)))
 		if not pet.get("whirl",{}).is_empty():
@@ -839,7 +913,10 @@ func draw_bullet(canvas: CanvasItem, bullet: Dictionary, clock: float) -> bool:
 	var style := str(bullet.get("style", ""))
 	if NecroArt.projectile(canvas,bullet,clock,art,sprites): return true
 	if talent in ["soul_1", "soul_9"]:
-		SoulProjectileArt.flight(canvas, bullet, clock, art, shot_lift, sprites)
+		if particles != null:
+			soul_matter.projectile(bullet,clock,particles,to_particles,shot_lift,cfg.get("soul_physics",{}))
+			PixelPaint.ball(canvas,at,1,Pal.ramp_hot("soul"),INK,art)
+		else: SoulProjectileArt.flight(canvas, bullet, clock, art, shot_lift, sprites)
 		return true
 	var element := Pal.element_of(talent, str(SHOT_STYLES.get(style, "steel")))
 	_shed_flight(bullet, at, aim, element, clock)
@@ -1169,6 +1246,7 @@ func draw_events(canvas: CanvasItem, state: Dictionary, clock: float = -1.0) -> 
 		if necro_staff.is_valid(): at = necro_staff.call(necro_staff_key if not necro_staff_key.is_empty() else "p%d"%int(charge.owner),at,clock)
 		NecroArt.bone_charge(canvas,charge,at,clock,art,sprites)
 	if clock >= 0.0: _clock = clock
+	clock = _clock
 	_draw_necro_links(canvas,state,_clock)
 	TalentPixels.paint_matter = particles == null
 	PerfMarks.begin()
@@ -1194,6 +1272,8 @@ func draw_events(canvas: CanvasItem, state: Dictionary, clock: float = -1.0) -> 
 			continue
 		TalentPixels.flames(canvas, burn.at, body, 0.7 * clampf(left / 0.25, 0.0, 1.0), "fire", art, _clock, int(burn.seed))
 	PerfMarks.add("te.impacts")
+	for pickup:Dictionary in soul_pickup_frames(state,_clock):
+		SoulAbsorption.draw(canvas,pickup.frame,_clock,art,int(pickup.id),sprites,cfg.get("soul_absorption",{}),particles,to_particles)
 	for event: Dictionary in state.get("events", []):
 		var at := Vector2(float(event.x), float(event.y))
 		var span := maxf(0.05, float(event.get("span", 0.5)))
@@ -1205,6 +1285,9 @@ func draw_events(canvas: CanvasItem, state: Dictionary, clock: float = -1.0) -> 
 		var ult := bool(event.get("ult", false))
 		var stage := int(event.get("stage", 0))
 		var r := float(event.get("r", 0.0))
+		if particles != null and (str(event.kind) in ["soul_impact","soul_grasp","guardian_wave"] or (talent.begins_with("soul_") and str(event.kind) == "nova")):
+			soul_matter.event(event,clock,particles,to_particles,cfg.get("soul_physics",{}))
+			continue
 		if str(event.kind) == "cast" and NecroArt.cast(canvas,event,at,p,clock,art,sprites): continue
 		if str(event.kind)=="spear" and str(event.get("talent",""))=="sniper_14":
 			MarksmanArt.spear(canvas,event,p,clock,art,sprites)
@@ -1225,11 +1308,7 @@ func draw_events(canvas: CanvasItem, state: Dictionary, clock: float = -1.0) -> 
 			"soul_takeoff", "soul_landing":
 				SoulGuardianArt.seal(canvas, at, clock, art, true, 1.0 - p)
 			"souls":
-				var to := Vector2(float(event.tx), float(event.ty))
-				for mote in range(5):
-					var q := clampf(p * 1.4 - mote * 0.08, 0.0, 1.0)
-					var point := at.lerp(to, q * q) + Vector2(sin(q * PI) * (mote - 2) * art, -sin(q * PI) * 12.0 * art)
-					canvas.draw_rect(Rect2(point.round(), Vector2.ONE * art), Color(Pal.ramp("soul")[3], sin(q * PI)))
+				pass # Drawn by the retained cinematic pickup above.
 			"guardian_wave":
 				SoulGuardianArt.wave(canvas, at, r, float(event.angle), float(event.arc), p, art, sprites)
 			"soul_grasp":
@@ -1956,9 +2035,11 @@ func _draw_looks(canvas: CanvasItem, zones: Array, clock: float) -> void:
 				var total := maxf(0.3, float(zone.get("total", left)))
 				TalentPixels.crater(canvas, at, r, clampf(left / 1.0, 0.0, 1.0) * clampf((total - left) / 0.2, 0.0, 1.0), art, clock, int(zone.get("id", 0)))
 			"souls_trail":
+				if particles != null: continue
 				var trail_age := _smooth_soul_age("zone:%d" % int(zone.id), float(zone.time), float(zone.total))
 				SoulTrail.draw(canvas, zone, trail_age, art, sprites)
 			"souls", "souls_ring":
+				if particles != null: continue
 				var total := float(zone.get("total", 4.0))
 				var left := float(zone.get("time", 4.0))
 				var age := _smooth_soul_age("zone:%d" % int(zone.get("id", 0)), left, total)

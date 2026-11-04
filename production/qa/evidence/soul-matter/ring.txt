@@ -1,0 +1,8 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+TALENT_COMBAT_FAIL: host publishes rim after expansion
+TALENT_COMBAT_FAIL: only annulus binds, center stays free
+TALENT_COMBAT_FAIL: guardian prefers an enemy in its owner's ring over a closer enemy in the hole
+TALENT_COMBAT_FAIL: rim expires five seconds after expansion
+TALENT_COMBAT_FAIL: ring shares existing field/guardian lockout
+SOUL_RING checked=18 failures=5

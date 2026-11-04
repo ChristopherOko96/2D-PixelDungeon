@@ -88,12 +88,16 @@ const MAX_PARTICLES := 600
 const GORE_PATH := "res://assets/data/vfx_gore.json"
 ## A rolling skull's 3x3 cells, row by row: 0 bone, 1 shade, 2 socket.
 const SKULL := ["000", "202", "101"]
+## A tiny face painted on the simulated leading particle, not a travelling sheet.
+const SOUL_FACE := ["..111..", ".12221.", "1222221", "12e2e21", "12e2e21", ".12221.", "..121.."]
 ## The gore table, read on first use.
 static var _gore: Dictionary = {}
 
 ## Room key of the floor cells in use (the view sets the layout when it changes).
 var layout_key := ""
 var _particles: Array[Dictionary] = []
+## Live cosmetic guides, keyed by host event. Pixels remain normal particle matter.
+var _soul_targets: Dictionary = {}
 ## The world's wind (particle px/s; the Frostgruft's snowstorm, physics plan F58/D12): light
 ## matter drifts towards it by its mode's "wind" share (vfx_particles.json modes), heavy matter
 ## not at all.
@@ -297,6 +301,81 @@ func _mode(mode: String) -> Dictionary:
 	if modes is Dictionary and (modes as Dictionary).has(mode):
 		return modes[mode]
 	return {"gravity": 1.0, "lift": [40, 150], "settle": true, "glow": false, "fade": false}
+
+## Emit a soul once as independent pixels; later calls only move its staff guide.
+## All coordinates are particle-world pixels, before this world's display scale.
+func soul_stream(key: String, origin: Vector2, target: Vector2, count: int = 18, life: float = 0.7, staged := false) -> void:
+	var existing: Dictionary = _soul_targets.get(key,{})
+	if not existing.is_empty():
+		existing.to = target
+		return
+	var spec: Dictionary = _data.get("soul",{})
+	_soul_targets[key] = {"to":target,"until":_time+maxf(life,0.05)+0.15,"origin":origin+Vector2(0,12),"born":_time,"staged":staged}
+	var colours: Array = spec.get("colours",["326d79","70bdb9","c5ede3"])
+	var tail_count := clampi(int(spec.get("tail_count",6)),0,8)
+	var gap := float(spec.get("tail_gap",3.5))
+	var aim := (target-origin).normalized()
+	var previous := {}
+	for i in range(room(count)):
+		var angle := i*2.39996+float(key.hash()&255)
+		var spread := Vector2.from_angle(angle)*float(spec.get("spread",6))*sqrt(float(i+1)/maxi(1,count))
+		if i==0: spread=Vector2.ZERO
+		elif i<=tail_count: spread=-aim*(float(spec.get("head_tail_gap",8))+(i-1)*gap)
+		var velocity := (target-origin).normalized()*float(spec.get("launch_speed",130))+Vector2.from_angle(angle)*18
+		if staged:
+			spread=Vector2.from_angle(angle)*float(spec.get("release_body_spread",16))*sqrt(float(i)/maxi(1,count-1))*Vector2(1,0.5)
+			velocity=Vector2.ZERO if i==0 else Vector2.from_angle(angle)*8
+		var pixel := emit(origin+spread,velocity,Color(str(colours[i%colours.size()])),life,"mote",PIXEL,12,0,0.6)
+		pixel.soul_key = key
+		pixel.z_to = 12.0
+		pixel.glow_a = 0.08
+		pixel.soul_staged = staged
+		if staged: pixel.z_ease=float(spec.get("release_height_ease",10))
+		if i==0:
+			pixel.soul_head = true
+			_soul_targets[key].head = pixel
+		elif i<=tail_count:
+			pixel.soul_parent = previous
+			pixel.soul_gap = float(spec.get("head_tail_gap",8)) if i==1 else gap
+			pixel.size = PIXEL*2 if i<=2 else PIXEL
+			pixel.color = Color(str(colours[1 if i<=3 else 0]))
+		previous = pixel
+
+## A pickup first coalesces above its corpse, then seeks the moving staff.
+## This extends presentation only; no resource transaction occurs here.
+func release_soul(key: String, origin: Vector2, target: Vector2, count: int = 18, life: float = 1.4) -> void:
+	soul_stream(key,origin,target,count,life,true)
+
+func _steer_souls(delta: float) -> void:
+	if _soul_targets.is_empty(): return
+	var spec: Dictionary = _data.get("soul",{})
+	for key: String in _soul_targets.keys():
+		if _time > float(_soul_targets[key].until): _soul_targets.erase(key)
+	for pixel: Dictionary in _particles:
+		var guide: Dictionary = _soul_targets.get(str(pixel.get("soul_key","")),{})
+		if guide.is_empty(): continue
+		var age:=maxf(0,_time-float(guide.born))
+		var gather:=float(spec.get("release_gather_s",0.48)) if bool(guide.staged) else 0.0
+		var destination:=Vector2(guide.to)+Vector2(0,float(pixel.z))
+		if bool(guide.staged):
+			pixel.z_to=12.0+float(spec.get("release_rise",18))*smoothstep(0,float(spec.get("release_rise_s",0.42)),age)
+			destination=Vector2(guide.origin).lerp(destination,smoothstep(gather,gather+float(spec.get("release_pull_ramp",0.16)),age))
+		var off := destination-Vector2(pixel.pos)
+		var acceleration := off*float(spec.get("homing",100))-Vector2(pixel.vel)*float(spec.get("damping",18))
+		var parent: Dictionary = pixel.get("soul_parent",{})
+		if age>=gather and not parent.is_empty() and float(parent.life)>0:
+			var heading := Vector2(parent.vel).normalized()
+			if heading.is_zero_approx(): heading=off.normalized()
+			var follow := Vector2(parent.pos)-heading*float(pixel.soul_gap)
+			acceleration = (follow-Vector2(pixel.pos))*float(spec.get("tail_spring",180))+(Vector2(parent.vel)-Vector2(pixel.vel))*float(spec.get("tail_damping",26))
+		pixel.vel = (Vector2(pixel.vel)+acceleration*delta).limit_length(float(spec.get("max_speed",700)))
+
+func _pressure_layers(origin: Vector2, r0: float, r1: float, angle: float, arc: float, speed: float, squash: float) -> void:
+	for link: Array in _liquids:
+		var layer: Object = (link[0] as WeakRef).get_ref()
+		if layer != null and layer.has_method("pressure_front"):
+			var s := float(link[1])
+			layer.pressure_front(origin*s,r0*s,r1*s,angle,arc,speed*s,squash)
 
 
 ## How many of `count` cosmetic particles may still be thrown: all of them
@@ -1715,6 +1794,8 @@ func wet(point: Vector2, color: Color, dry_after: float) -> void:
 ## the liquid of the pools nearby rings (set_liquids).
 ## `strength` 1 is an ordinary explosion (vfx_particles.json "kick").
 func kick(point: Vector2, radius: float, strength: float = 1.0) -> void:
+	# A blast also pushes already flying material and the visible liquid mass.
+	blow(point,0,radius,0,TAU,float(_data.get("kick",{}).get("speed",260))*strength,1.0,0,false)
 	for link: Array in _liquids:
 		var layer: Object = (link[0] as WeakRef).get_ref()
 		if layer != null: layer.ripple_near(point * float(link[1]), radius * float(link[1]), strength)
@@ -1769,9 +1850,10 @@ func kick(point: Vector2, radius: float, strength: float = 1.0) -> void:
 ## that lie down again as embers further on, loose rubble hops along with it.
 ## At most `limit` floor pixels lift per call (vfx_particles.json "blow").
 ## Returns how many pixels it moved.
-func blow(origin: Vector2, r0: float, r1: float, angle: float, arc: float, speed: float, squash: float = 1.0, limit: int = -1) -> int:
-	_sound("blow", origin, 8)
+func blow(origin: Vector2, r0: float, r1: float, angle: float, arc: float, speed: float, squash: float = 1.0, limit: int = -1, play_sound := true) -> int:
+	if play_sound: _sound("blow", origin, 8)
 	if r1 <= r0 or speed <= 0.0: return 0
+	_pressure_layers(origin,r0,r1,angle,arc,speed,squash)
 	var settings_for_blow: Dictionary = _data.get("blow", {})
 	var hop: Array = settings_for_blow.get("hop", [30, 90])
 	var cap: int = limit if limit >= 0 else int(settings_for_blow.get("max_lift", 60))
@@ -1864,6 +1946,7 @@ func sinks(point: Vector2) -> bool:
 ## Removes every particle and floor mark (a new room).
 func clear() -> void:
 	_particles.clear()
+	_soul_targets.clear()
 	_chunks.clear()
 	_marks = 0
 	_time = 0.0
@@ -1922,6 +2005,7 @@ func mark_at(point: Vector2) -> Color:
 
 func update(delta: float) -> void:
 	_time += delta
+	_steer_souls(delta)
 	_grow_rime(delta)
 	_step_wells(delta)
 	_step_fusion(delta)
@@ -1976,6 +2060,11 @@ func update(delta: float) -> void:
 func _move(particle: Dictionary, delta: float) -> void:
 	var position: Vector2 = particle.pos
 	var velocity: Vector2 = particle.vel
+	# Guided pickups can be fast; sweep in short physical steps at low FPS too.
+	if particle.has("soul_key") and velocity.length()*delta > 8.0:
+		var steps := ceili(velocity.length()*delta/8.0)
+		for i in range(steps): _move(particle,delta/steps)
+		return
 	if wind != Vector2.ZERO and float(particle.z) > 0.5:
 		var share := float(_mode(str(particle.get("mode", ""))).get("wind", 0.0))
 		if share > 0.0:
@@ -2068,7 +2157,7 @@ func _move(particle: Dictionary, delta: float) -> void:
 				particle.vz = 0.0
 	elif particle.has("z_to"):
 		# weightless matter sinks (or rises) to the height it is pulled to
-		particle.z = lerpf(float(particle.z), float(particle.z_to), 1.0 - exp(-float(_data.get("z_ease", 5.0)) * delta))
+		particle.z = lerpf(float(particle.z), float(particle.z_to), 1.0 - exp(-float(particle.get("z_ease",_data.get("z_ease",5.0))) * delta))
 	var on_floor: bool = float(particle.z) <= 0.0 and float(particle.vz) == 0.0 and gravity > 0.0
 	if on_floor and particle.has("shard"):
 		# ice on stone: an even grip (dry friction), so it skids a short way and stops
@@ -2259,6 +2348,7 @@ func draw_particles(canvas: CanvasItem, only: Array = [], part := 0) -> void:
 	var beat := int(_time * 12.0)
 	var high := float(_data.get("depth_high", 26.0))
 	var src: Array = only if part == 1 else _particles
+	var soul_heads: Array = []
 	for particle: Dictionary in src:
 		if part == 2 and float(particle.z) <= high: continue
 		var alpha := 1.0
@@ -2267,6 +2357,9 @@ func draw_particles(canvas: CanvasItem, only: Array = [], part := 0) -> void:
 		var ground: Vector2 = particle.pos
 		var height: float = particle.z
 		var color: Color = particle.color
+		if bool(particle.get("soul_head",false)):
+			soul_heads.append([particle,alpha])
+			continue
 		if particle.has("ramp"):
 			# a flame: hot to cool as it ages, thinner, and it changes its shape on the beat
 			var age := 1.0 - clampf(float(particle.life) / float(particle.max_life), 0.0, 1.0)
@@ -2363,7 +2456,29 @@ func draw_particles(canvas: CanvasItem, only: Array = [], part := 0) -> void:
 				var q := corner + Vector2i(x, y)
 				if MatterKit.bayer(q) < alpha * 16.0:
 					canvas.draw_rect(Rect2(Vector2(q) * PIXEL, Vector2(PIXEL, PIXEL)), color)
+	# Faces are last within their depth band, so their own loose motes cannot
+	# paint over the dark eyes. The head still moves in the normal solver.
+	for face: Array in soul_heads: _draw_soul_face(canvas,face[0],float(face[1]))
 
+func _draw_soul_face(canvas: CanvasItem, particle: Dictionary, alpha: float) -> void:
+	var spec: Dictionary = _data.get("soul",{})
+	var colours: Array = spec.get("face_colours",["326d79","70bdb9","c5ede3","182235"])
+	var age := float(particle.max_life)-float(particle.life)
+	if bool(particle.get("soul_staged",false)):
+		alpha*=smoothstep(float(spec.get("release_face_begin",0.2)),float(spec.get("release_face_end",0.42)),age)
+	var blink := age>=float(spec.get("blink_at",0.22)) and age<float(spec.get("blink_at",0.22))+float(spec.get("blink_for",0.06))
+	var center := Vector2(particle.pos)-Vector2(0,float(particle.z))
+	var corner := Vector2i((center/PIXEL).round())-Vector2i(3,3)
+	for y in range(SOUL_FACE.size()):
+		for x in range(SOUL_FACE[y].length()):
+			var code: String = SOUL_FACE[y].substr(x,1)
+			if code==".": continue
+			var q := corner+Vector2i(x,y)
+			if MatterKit.bayer(q)>=alpha*16: continue
+			if solid(Vector2(q)*PIXEL+Vector2(0,float(particle.z))): continue
+			var colour := 3 if code=="e" else int(code)
+			if code=="e" and blink and y==3: colour=2
+			canvas.draw_rect(Rect2(Vector2(q)*PIXEL,Vector2.ONE*PIXEL),Color(str(colours[colour])))
 
 ## The growing tips of the rime: a bright pixel where each branch grows.
 func draw_rime_tips(canvas: CanvasItem) -> void:

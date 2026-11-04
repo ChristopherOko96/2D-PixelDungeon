@@ -772,6 +772,7 @@ func draw_world(canvas: CanvasItem, clock: float) -> void:
 			if g.feel != null:
 				fx.pools.particles = g.feel.feedback.particles
 				fx.pools.to_particles = 1.0 / g.feel.scale
+				g.feel.feedback.particles.add_liquid(fx.pools,g.feel.scale)
 	if fx.gas == null and g.get("gas") != null:
 		fx.gas = g.gas
 	PixelPaint.clip = _open_floor
