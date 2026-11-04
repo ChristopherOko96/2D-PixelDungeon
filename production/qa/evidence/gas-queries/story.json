@@ -1,0 +1,50 @@
+[
+	{
+		"affected_mobs": 2,
+		"after": {
+			"mean_ms": 22.657375,
+			"p95_ms": 25.89
+		},
+		"before": {
+			"mean_ms": 27.7337083333333,
+			"p95_ms": 31.819
+		},
+		"clouds": 4,
+		"exact_match": true,
+		"median_ratio": 0.825526009826351,
+		"mobs": 32,
+		"ratio_budget": 1.15
+	},
+	{
+		"affected_mobs": 0,
+		"after": {
+			"mean_ms": 44.9402083333333,
+			"p95_ms": 48.877
+		},
+		"before": {
+			"mean_ms": 74.9779583333333,
+			"p95_ms": 81.771
+		},
+		"clouds": 0,
+		"exact_match": true,
+		"median_ratio": 0.614159527130238,
+		"mobs": 128,
+		"ratio_budget": 1.15
+	},
+	{
+		"affected_mobs": 16,
+		"after": {
+			"mean_ms": 85.965375,
+			"p95_ms": 97.26
+		},
+		"before": {
+			"mean_ms": 134.258291666667,
+			"p95_ms": 145.543
+		},
+		"clouds": 12,
+		"exact_match": true,
+		"median_ratio": 0.626907063360236,
+		"mobs": 128,
+		"ratio_budget": 0.9
+	}
+]

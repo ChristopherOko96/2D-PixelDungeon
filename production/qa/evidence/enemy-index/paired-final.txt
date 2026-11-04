@@ -1,0 +1,13 @@
+ERROR: Failed to open log file for writing: user://logs/godot.log
+   at: rotate_file (core/io/logger.cpp:169)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+ENEMY_PAIRED {"after":{"mean_ms":13.7470333333333,"p95_ms":16.79},"before":{"mean_ms":13.256,"p95_ms":16.988},"chase_after":{"mean_ms":0.039275,"p95_ms":0.118},"chase_before":{"mean_ms":0.0956,"p95_ms":0.188},"dense":false,"mobs":8,"motion_same":true,"paired_speedup_median":0.952426996712435}
+ENEMY_PAIRED {"after":{"mean_ms":30.4476166666667,"p95_ms":35.024},"before":{"mean_ms":30.5535166666667,"p95_ms":35.997},"chase_after":{"mean_ms":0.2662,"p95_ms":0.464},"chase_before":{"mean_ms":1.2609,"p95_ms":2.316},"dense":false,"mobs":32,"motion_same":true,"paired_speedup_median":0.996224884562586}
+ENEMY_PAIRED {"after":{"mean_ms":50.08435,"p95_ms":57.213},"before":{"mean_ms":57.1879833333333,"p95_ms":65.107},"chase_after":{"mean_ms":0.66415,"p95_ms":1.943},"chase_before":{"mean_ms":5.0677,"p95_ms":8.114},"dense":false,"mobs":64,"motion_same":true,"paired_speedup_median":1.1394789406989}
+ENEMY_PAIRED {"after":{"mean_ms":95.2903666666667,"p95_ms":107.987},"before":{"mean_ms":144.798416666667,"p95_ms":177.208},"chase_after":{"mean_ms":0.953025,"p95_ms":1.891},"chase_before":{"mean_ms":21.22395,"p95_ms":25.824},"dense":false,"mobs":128,"motion_same":true,"paired_speedup_median":1.49087100803755}
+ENEMY_PAIRED {"after":{"mean_ms":12.9999,"p95_ms":16.578},"before":{"mean_ms":13.1493,"p95_ms":16.038},"chase_after":{"mean_ms":0.033425,"p95_ms":0.106},"chase_before":{"mean_ms":0.080425,"p95_ms":0.219},"dense":true,"mobs":8,"motion_same":true,"paired_speedup_median":1.01864049532341}
+ENEMY_PAIRED {"after":{"mean_ms":29.5836833333333,"p95_ms":35.607},"before":{"mean_ms":29.1503666666667,"p95_ms":36.268},"chase_after":{"mean_ms":0.183225,"p95_ms":0.338},"chase_before":{"mean_ms":1.223525,"p95_ms":2.675},"dense":true,"mobs":32,"motion_same":true,"paired_speedup_median":0.991681521093286}
+ENEMY_PAIRED {"after":{"mean_ms":56.8143,"p95_ms":66.83},"before":{"mean_ms":61.1380666666667,"p95_ms":70.074},"chase_after":{"mean_ms":0.499,"p95_ms":1.263},"chase_before":{"mean_ms":4.770775,"p95_ms":6.464},"dense":true,"mobs":64,"motion_same":true,"paired_speedup_median":1.07841835932724}
+ENEMY_PAIRED {"after":{"mean_ms":115.566266666667,"p95_ms":142.216},"before":{"mean_ms":152.321816666667,"p95_ms":196.585},"chase_after":{"mean_ms":1.1881,"p95_ms":3.242},"chase_before":{"mean_ms":21.036375,"p95_ms":26.32},"dense":true,"mobs":128,"motion_same":true,"paired_speedup_median":1.32159011993468}
+ENEMY_PAIRED_DONE

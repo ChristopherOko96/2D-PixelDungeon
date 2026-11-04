@@ -1,0 +1,47 @@
+[
+	{
+		"after": {
+			"mean_ms": 32.33075,
+			"p95_ms": 39.077
+		},
+		"before": {
+			"mean_ms": 39.6387083333333,
+			"p95_ms": 47.233
+		},
+		"clouds": 4,
+		"exact_match": true,
+		"median_ratio": 0.825247909780284,
+		"mobs": 32,
+		"ratio_budget": 1.15
+	},
+	{
+		"after": {
+			"mean_ms": 93.8240416666667,
+			"p95_ms": 105.473
+		},
+		"before": {
+			"mean_ms": 94.022875,
+			"p95_ms": 104.766
+		},
+		"clouds": 0,
+		"exact_match": true,
+		"median_ratio": 1.00623382174832,
+		"mobs": 128,
+		"ratio_budget": 1.15
+	},
+	{
+		"after": {
+			"mean_ms": 106.619333333333,
+			"p95_ms": 116.461
+		},
+		"before": {
+			"mean_ms": 173.355083333333,
+			"p95_ms": 185.42
+		},
+		"clouds": 12,
+		"exact_match": true,
+		"median_ratio": 0.626173734687349,
+		"mobs": 128,
+		"ratio_budget": 0.9
+	}
+]

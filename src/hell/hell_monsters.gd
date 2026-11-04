@@ -238,6 +238,7 @@ func spawn(room: int, pos: Vector2, id: String, boss := false) -> Dictionary:
 	if rig_host != null:
 		rig_host.attach(m)
 	g.mobs.append(m)
+	g.mob_moved(m)
 	return m
 
 
@@ -429,6 +430,7 @@ func _step_medium(m: Dictionary, dt: float) -> void:
 ## Moves, aims and attacks every monster, ends Ignaroth's phases, removes the dead
 ## and clears a room when its last monster falls.
 func update(dt: float) -> void:
+	g.prepare_mob_queries()
 	var me := _me()
 	for m: Dictionary in g.mobs:
 		_mad_from = {}
@@ -455,9 +457,11 @@ func update(dt: float) -> void:
 			_start_lord_end(m)
 		if m.intro != null:
 			_update_intro(m, dt)
+			g.mob_moved(m)
 			continue
 		if m.trans != null or m.dying != null:
 			_update_lord_end(m, dt)
+			g.mob_moved(m)
 			if m.anim != m.get("last_anim", ""):
 				m.last_anim = m.anim
 				m.at = 0.0
@@ -519,8 +523,8 @@ func update(dt: float) -> void:
 		var locked: bool = act != null and ((act.kind == "dash" and not act.get("warn", false)) or act.kind == "sweep" or act.kind == "mimic_bite")
 		if not locked and absf(to.x) > (float(cfg.lord_face_deadzone) if lord else 10.0):
 			m.face = signf(to.x)
-		for o: Dictionary in g.mobs:
-			if o != m:
+		for o: Dictionary in g.mob_candidates(m.p,float(m.r)*0.8):
+			if not is_same(o,m):
 				var off: Vector2 = m.p - o.p
 				var od := off.length()
 				if od > 0.0 and od < (m.r + o.r) * 0.8:
@@ -543,6 +547,7 @@ func update(dt: float) -> void:
 		m.k = step.push
 		m.k_in = step.push_in
 		m.p = step.p
+		g.mob_moved(m)
 		# a body thrown by Rage slams into the wall it meets (src/hero/story_hero.gd)
 		if g.story_hero != null and m.has("slam"):
 			# sound hook: the slam is the hero's (src/hero/story_sound.gd source "hero")
@@ -596,6 +601,7 @@ func update(dt: float) -> void:
 			# sound hook: the death voice and the coat's end at the monster (story_sound.gd mob_died)
 			if g.sound != null: g.sound.mob_died(m)
 		g.mobs.erase(m)
+		g.mob_removed(m)
 		var rest: Array = g.mobs.filter(func(o: Dictionary) -> bool: return o.room == m.room and o.hp > 0.0 and not o.get("remove", false))
 		if rest.is_empty():
 			if m.boss:

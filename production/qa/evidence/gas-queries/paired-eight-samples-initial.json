@@ -1,0 +1,114 @@
+[
+	{
+		"actors": 128,
+		"after": {
+			"mean_ms": 35.8128214285714,
+			"p95_ms": 54.181
+		},
+		"before": {
+			"mean_ms": 39.8297142857143,
+			"p95_ms": 62.322
+		},
+		"clouds": 0,
+		"dense": false,
+		"exact_match": true,
+		"median_ratio": 0.948412929811262,
+		"ratio_budget": 1.15
+	},
+	{
+		"actors": 32,
+		"after": {
+			"mean_ms": 15.1246785714286,
+			"p95_ms": 19.379
+		},
+		"before": {
+			"mean_ms": 22.8820892857143,
+			"p95_ms": 27.288
+		},
+		"clouds": 4,
+		"dense": false,
+		"exact_match": true,
+		"median_ratio": 0.681275784057135,
+		"ratio_budget": 1.15
+	},
+	{
+		"actors": 64,
+		"after": {
+			"mean_ms": 38.5636785714286,
+			"p95_ms": 48.441
+		},
+		"before": {
+			"mean_ms": 89.5157857142857,
+			"p95_ms": 106.259
+		},
+		"clouds": 12,
+		"dense": false,
+		"exact_match": true,
+		"median_ratio": 0.434370301838788,
+		"ratio_budget": 0.7
+	},
+	{
+		"actors": 128,
+		"after": {
+			"mean_ms": 59.562,
+			"p95_ms": 68.778
+		},
+		"before": {
+			"mean_ms": 159.409017857143,
+			"p95_ms": 185.289
+		},
+		"clouds": 12,
+		"dense": false,
+		"exact_match": true,
+		"median_ratio": 0.368345752608048,
+		"ratio_budget": 0.7
+	},
+	{
+		"actors": 128,
+		"after": {
+			"mean_ms": 82.0417857142857,
+			"p95_ms": 120.914
+		},
+		"before": {
+			"mean_ms": 311.373125,
+			"p95_ms": 425.447
+		},
+		"clouds": 24,
+		"dense": false,
+		"exact_match": true,
+		"median_ratio": 0.271474187247272,
+		"ratio_budget": 0.7
+	},
+	{
+		"actors": 128,
+		"after": {
+			"mean_ms": 89.3677678571429,
+			"p95_ms": 131.606
+		},
+		"before": {
+			"mean_ms": 82.3856785714286,
+			"p95_ms": 104.271
+		},
+		"clouds": 4,
+		"dense": true,
+		"exact_match": true,
+		"median_ratio": 1.03954052933862,
+		"ratio_budget": 1.15
+	},
+	{
+		"actors": 8,
+		"after": {
+			"mean_ms": 8.22491071428572,
+			"p95_ms": 11.901
+		},
+		"before": {
+			"mean_ms": 7.71814285714286,
+			"p95_ms": 12.385
+		},
+		"clouds": 4,
+		"dense": true,
+		"exact_match": true,
+		"median_ratio": 1.01073105298457,
+		"ratio_budget": 1.15
+	}
+]

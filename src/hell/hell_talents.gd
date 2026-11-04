@@ -64,10 +64,32 @@ var _next_mob_id := 1
 var _damage_debt := 0.0
 var _save_timer := 0.0
 var _dirty := false
+var _talent_queries_ready := false
+var _talent_queries_full := false
+var _render_frame := -1
+var _render_clock := -INF
+var _render_snapshot: Dictionary = {}
+
+
+func _invalidate_render_state() -> void:
+	_render_frame = -1
+	_render_snapshot = {}
+
+
+# Read-only presentation state shared by ground, actors and additive bloom.
+# Gameplay feedback still takes its own snapshot on every simulation step.
+func _render_state(clock: float) -> Dictionary:
+	var frame := Engine.get_process_frames()
+	if frame != _render_frame or clock != _render_clock:
+		_render_snapshot = tc.snapshot()
+		_render_frame = frame
+		_render_clock = clock
+	return _render_snapshot
 
 
 ## Binds the hell game and its profile; sets the hero's build for `class_name_id`.
 func bind(game: Node, profile_ref: Dictionary, path: String, class_name_id: String) -> void:
+	_invalidate_render_state()
 	g = game
 	perk_combat = self
 	profile = profile_ref
@@ -98,6 +120,7 @@ func bind(game: Node, profile_ref: Dictionary, path: String, class_name_id: Stri
 ## talent runtime's game is this object), so a finished run is freed with its
 ## effects and their textures. The game calls it when it drops this object.
 func release() -> void:
+	_invalidate_render_state()
 	perk_combat = null
 	tc.game = null
 
@@ -140,22 +163,27 @@ func _write_hero(before: Vector2, hp_before: int) -> void:
 
 
 func _sync_mobs() -> void:
+	_talent_queries_ready = false
 	enemies = g.mobs
 	for m: Dictionary in enemies:
-		# the talents key monsters by a number; a story monster's "id" is its kind
-		if not m.has("tid"):
-			m.tid = _next_mob_id
-			_next_mob_id += 1
-		if not m.has("id"):
-			m.id = m.tid
-		m.pos = m.p
-		m.radius = float(m.get("r", 14.0))
-		if not m.has("statuses"): m.statuses = {}
-		if not m.has("boss"): m.boss = str(m.get("kind", "")) == "boss"
+		_sync_mob(m)
+
+
+func _sync_mob(m: Dictionary) -> void:
+	# Individual target/hit queries must not resynchronise every other body.
+	if not m.has("tid"):
+		m.tid = _next_mob_id
+		_next_mob_id += 1
+	if not m.has("id"): m.id = m.tid
+	m.pos = m.p
+	m.radius = float(m.get("r",14.0))
+	if not m.has("statuses"): m.statuses = {}
+	if not m.has("boss"): m.boss = str(m.get("kind",""))=="boss"
 
 
 ## Runs a talent action with the hero and mobs in sync before and after.
 func _with_sync(action: Callable) -> void:
+	_invalidate_render_state()
 	_sync_hero()
 	_sync_mobs()
 	var before: Vector2 = players[1].pos
@@ -229,6 +257,7 @@ var _wrecked := {}
 
 
 func update(dt: float) -> void:
+	_invalidate_render_state()
 	_with_sync(func():
 		_hold()
 		_catch_shots(dt)
@@ -323,7 +352,8 @@ func incoming(n: int, from := Vector2.ZERO) -> int:
 ## The hero's basic hit on a mob: talent bonuses, crits, rage, lifesteal.
 func basic_hit(m: Dictionary, dealt: float) -> float:
 	_sync_hero()
-	_sync_mobs()
+	enemies = g.mobs
+	_sync_mob(m)
 	var hp_before := int(players[1].hp)
 	var out := tc.outgoing(1, m, dealt, true)
 	tc.dealt(1, m, out, true, minf(float(m.hp), out))
@@ -390,7 +420,7 @@ func hp_scale() -> float:
 
 ## Where an enemy should walk: a wolf that drew it (Fass!) wins over the hero.
 func chase_goal(m: Dictionary, goal: Vector2) -> Vector2:
-	_sync_mobs()
+	_sync_mob(m)
 	var forced := tc.forced_target(m)
 	return Vector2(forced.pos) if not forced.is_empty() and int(forced.id) < 0 else goal
 
@@ -706,6 +736,8 @@ func _step_statuses(dt: float) -> void:
 
 
 func _step_bullets(dt: float) -> void:
+	if bullets.is_empty(): return
+	g.prepare_mob_queries()
 	for i in range(bullets.size() - 1, -1, -1):
 		var b: Dictionary = bullets[i]
 		if TalentCombat.SoulProjectiles.owns(b):
@@ -731,7 +763,7 @@ func _step_bullets(dt: float) -> void:
 		if walled: b.pos = contact
 		var gone: bool = (float(b.life) <= 0.0 and not landed) or walled
 		if not gone:
-			for m: Dictionary in enemies:
+			for m: Dictionary in talent_candidates(from,b.pos,10.0):
 				if float(m.hp) <= 0.0 or b.hit_ids.has(tc._eid(m)) or not g._hittable(m): continue
 				if Geometry2D.get_closest_point_to_segment(m.p, from, b.pos).distance_to(m.p) > float(m.radius) + 10.0: continue
 				b.hit_ids.append(tc._eid(m))
@@ -751,6 +783,29 @@ func _step_bullets(dt: float) -> void:
 		if gone: bullets.remove_at(i)
 
 
+## The shared projectile solver can use the story world's ordered broad phase.
+func talent_candidates(from: Vector2, to: Vector2, padding: float) -> Array:
+	return g.mob_segment_candidates(from,to,padding)
+
+
+## Ordered nearby bodies for circular talent queries; exact ranges stay in combat.
+func talent_near(point: Vector2, radius: float) -> Array:
+	# No extra phase rebuild when no bounded talent query is needed.
+	if not _talent_queries_ready:
+		_talent_queries_full = g.mob_queries_dense()
+		if not _talent_queries_full:
+			g.prepare_mob_queries()
+			_talent_queries_full = g.mob_queries_dense()
+		_talent_queries_ready = true
+	if _talent_queries_full: return enemies
+	return g.mob_candidates(point, radius, true)
+
+
+## Combat shoves immediately update spatial membership as well as both aliases.
+func talent_moved(enemy: Dictionary) -> void:
+	g.mob_moved(enemy)
+
+
 # --- drawing ------------------------------------------------------------------------
 
 ## True on walkable floor at world point `p`: where pools and pixels may show.
@@ -760,7 +815,7 @@ func _open_floor(p: Vector2) -> bool:
 
 ## World layer (under the actors): zones, traps, wolves and projectiles.
 func draw_world(canvas: CanvasItem, clock: float) -> void:
-	var snap := tc.snapshot()
+	var snap := _render_state(clock)
 	# world px here: the world's 3 px art pixel; pools and pixels stop at the walls
 	if fx.pools == null:
 		if g.get("pools") != null:
@@ -802,7 +857,7 @@ func draw_world(canvas: CanvasItem, clock: float) -> void:
 ## Over the actors: the talent events and what lasts on the hero (shields,
 ## rage, the ultimates' auras), stopping at the walls.
 func draw_over(canvas: CanvasItem, clock: float) -> void:
-	var snap := tc.snapshot()
+	var snap := _render_state(clock)
 	var actors: Array = []
 	for m: Dictionary in g.mobs:
 		actors.append({"id":int(m.get("tid",-1)),"x":Vector2(m.p).x,"y":Vector2(m.p).y-float(m.get("cy",14))*0.65,"rig":str(m.get("rig",""))})
@@ -815,7 +870,7 @@ func draw_over(canvas: CanvasItem, clock: float) -> void:
 
 ## Bloom of the talents on the additive glow layer.
 func draw_glow(canvas: CanvasItem, clock: float) -> void:
-	fx.draw_glow(canvas, tc.snapshot(), 1.0, clock, _hero_at)
+	fx.draw_glow(canvas, _render_state(clock), 1.0, clock, _hero_at)
 
 
 ## The hero's ground point (the only hero here).

@@ -855,8 +855,7 @@ func step(delta: float) -> void:
 		if enemy.has("soul_push"):
 			var push: Dictionary = enemy.soul_push
 			var duration := minf(delta, float(push.left))
-			enemy.pos = _move(enemy.pos, Vector2(push.velocity) * duration, float(enemy.radius))
-			if enemy.has("p"): enemy.p = enemy.pos
+			_shove(enemy, _move(enemy.pos, Vector2(push.velocity) * duration, float(enemy.radius)))
 			push.left = float(push.left) - duration
 			if float(push.left) <= 0.0: enemy.erase("soul_push")
 		enemy.soul_grasp_wait = maxf(0.0, float(enemy.get("soul_grasp_wait", 0.0)) - delta)
@@ -1265,7 +1264,7 @@ func pet_cast(id: int, slot: int, manual: bool = false) -> bool:
 			hit = true
 		"nova", "cleave":
 			var radius := float(ability.radius_m) * meter
-			var inside := _living().filter(func(e: Dictionary) -> bool: return Vector2(e.pos).distance_to(pet.pos) <= radius + float(e.radius) and not _blocked(pet.pos, e.pos, 1.0))
+			var inside := _near_living(pet.pos, radius).filter(func(e: Dictionary) -> bool: return Vector2(e.pos).distance_to(pet.pos) <= radius + float(e.radius) and not _blocked(pet.pos, e.pos, 1.0))
 			if inside.is_empty() and not manual: return false
 			for enemy: Dictionary in inside:
 				_pet_hit(pet, rt, enemy, dmg, ability)
@@ -1290,7 +1289,7 @@ func pet_cast(id: int, slot: int, manual: bool = false) -> bool:
 			# companion for `taunt` s (forced_target, the hell's chase_goal).
 			var radius := float(ability.radius_m) * meter * _world_scale()
 			var drawn := 0
-			for enemy: Dictionary in _living():
+			for enemy: Dictionary in _near_living(pet.pos, radius):
 				if not _boss(enemy) and Vector2(enemy.pos).distance_to(pet.pos) <= radius and not _blocked(pet.pos, enemy.pos, 1.0):
 					enemy.pet_taunt = {"pet": int(pet.id), "time": float(ability.taunt)}
 					drawn += 1
@@ -1473,7 +1472,7 @@ func trap_limit(rt: Dictionary) -> int:
 func _area(id: int, rt: Dictionary, talent: String, info: Dictionary, center: Vector2, radius: float, dmg: float) -> void:
 	var outer := _blast_at
 	_blast_at = center
-	for enemy: Dictionary in _living():
+	for enemy: Dictionary in _near_living(center, radius):
 		# flung by the Urknall: it dies at the wall it flies into, not here (_fling_caught)
 		if bool(enemy.get("flung_out", false)): continue
 		if enemy.pos.distance_to(center) > radius + float(enemy.radius): continue
@@ -1588,7 +1587,7 @@ func _bullet_lands(bullet: Dictionary, at: Vector2, enemy: Dictionary, info: Dic
 	var id := int(bullet.owner)
 	if info.has("splash_m"):
 		var reach := float(info.splash_m) * float(data.meter_px)
-		for other: Dictionary in _living():
+		for other: Dictionary in _near_living(at, reach):
 			if other != enemy and Vector2(other.pos).distance_to(at) <= reach + float(other.radius):
 				_hit(id, other, float(bullet.damage) * float(info.splash), info, rt, talent)
 		_event("explosion", at, reach, {"fx": "fire", "life": 0.6, "talent": talent, "owner": id})
@@ -1884,13 +1883,13 @@ func _step_traps(delta: float) -> void:
 			continue
 		if float(trap.arm)>0: continue
 		var sprung := false
-		for enemy: Dictionary in _living():
+		for enemy: Dictionary in _near_living(trap.pos, float(trap.trigger)):
 			if enemy.pos.distance_to(trap.pos) <= float(trap.trigger) + float(enemy.radius) and not _blocked(trap.pos,enemy.pos,1):
 				sprung = true
 				break
 		if not sprung: continue
 		_talent_hit = true
-		for enemy: Dictionary in _living():
+		for enemy: Dictionary in _near_living(trap.pos, maxf(float(trap.r), float(trap.trigger))):
 			if enemy.pos.distance_to(trap.pos) > maxf(float(trap.r), float(trap.trigger)) + float(enemy.radius): continue
 			if _blocked(trap.pos,enemy.pos,1): continue
 			game._damage_enemy(enemy, float(trap.dmg), (Vector2(enemy.pos) - Vector2(trap.pos)).normalized(), int(trap.owner), true)
@@ -2199,7 +2198,7 @@ func _hold_enemy(enemy: Dictionary, time: float) -> void:
 ## Leerenriss: drags the enemies within `radius` of `center` up to `dist` px
 ## towards it (never past it, never bosses).
 func _drag_in(center: Vector2, radius: float, dist: float) -> void:
-	for enemy: Dictionary in _living():
+	for enemy: Dictionary in _near_living(center, radius):
 		if bool(enemy.get("boss", false)) or Vector2(enemy.pos).distance_to(center) > radius + float(enemy.radius): continue
 		var way := center - Vector2(enemy.pos)
 		var reach := minf(dist, maxf(0.0, way.length() - float(enemy.radius)))
@@ -2725,6 +2724,7 @@ func _spot(player: Dictionary, target: Vector2, info: Dictionary) -> Vector2:
 func _shove(enemy: Dictionary, to: Vector2) -> void:
 	enemy.pos = to
 	if enemy.has("p"): enemy.p = to
+	if game.has_method("talent_moved"): game.talent_moved(enemy)
 
 
 ## After a meteor lands: its crater burns, and Meteorschauer drops small
@@ -2738,7 +2738,7 @@ func _meteor_aftermath(id: int, wave: Dictionary, at: Vector2) -> void:
 			"every": float(crater.every), "tick": float(crater.every), "dmg": float(crater.dmg) * base, "status": str(crater.status), "info": {"status": str(crater.status)}, "look": "crater"})
 	var shower: Dictionary = wave.get("shower", {})
 	if shower.is_empty(): return
-	var near := _living().filter(func(e: Dictionary) -> bool: return Vector2(e.pos).distance_to(at) <= float(shower.search_m) * meter)
+	var near := _near_living(at, float(shower.search_m) * meter).filter(func(e: Dictionary) -> bool: return Vector2(e.pos).distance_to(at) <= float(shower.search_m) * meter)
 	var rt := runtime(id)
 	for k in range(int(shower.count)):
 		var spot := at + Vector2.from_angle(_rng.randf() * TAU) * meter * (2.0 + _rng.randf() * 3.0)
@@ -2853,10 +2853,22 @@ func _living() -> Array:
 	return game.enemies.filter(func(e: Dictionary) -> bool: return float(e.hp) > 0.0)
 
 
+# Read-only ordered broad candidates, filtered into a private living list.
+# Native/older hosts and unlimited searches retain the original full scan.
+func _near_living(point: Vector2, radius: float) -> Array:
+	if game.enemies.size() < 24 or not point.is_finite() or not is_finite(radius) or not game.has_method("talent_near"):
+		return _living()
+	var candidates: Array = game.talent_near(point, maxf(0.0, radius))
+	var living: Array = []
+	for enemy: Dictionary in candidates:
+		if float(enemy.hp) > 0.0: living.append(enemy)
+	return living
+
+
 func _nearest(point: Vector2, reach: float) -> Dictionary:
 	var best := {}
 	var best_distance := reach
-	for enemy: Dictionary in _living():
+	for enemy: Dictionary in _near_living(point, reach):
 		var distance: float = enemy.pos.distance_to(point)
 		if distance <= best_distance:
 			best_distance = distance
@@ -3010,6 +3022,6 @@ func _land_freeze(zone: Dictionary) -> void:
 	zone.erase("land_freeze")
 	var owner := int(zone.owner)
 	var rt := runtime(owner)
-	for enemy: Dictionary in _living():
+	for enemy: Dictionary in _near_living(zone.pos, float(spec.r)):
 		if Vector2(enemy.pos).distance_to(zone.pos) <= float(spec.r) + float(enemy.radius):
 			_apply_status(owner, enemy, spec.info, rt, str(zone.talent))

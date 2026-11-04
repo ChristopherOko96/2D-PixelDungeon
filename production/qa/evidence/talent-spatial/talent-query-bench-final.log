@@ -1,0 +1,13 @@
+ERROR: Failed to open log file for writing: user://logs/godot.log
+   at: rotate_file (core/io/logger.cpp:169)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+TALENT_QUERY_CPU count=8 dense=false before_us=783.175 after_us=826.775 ratio=1.05567082708207 parity=true
+TALENT_QUERY_CPU count=32 dense=false before_us=2415.775 after_us=1850.65 ratio=0.76606885988968 parity=true
+TALENT_QUERY_CPU count=128 dense=false before_us=9505.775 after_us=3803.8 ratio=0.4001567468197 parity=true
+TALENT_QUERY_CPU count=256 dense=false before_us=15860.375 after_us=5059.55 ratio=0.31900569816287 parity=true
+TALENT_QUERY_CPU count=8 dense=true before_us=867.25 after_us=783.7 ratio=0.90366099740559 parity=true
+TALENT_QUERY_CPU count=32 dense=true before_us=2740.1 after_us=2412.825 ratio=0.88056092843327 parity=true
+TALENT_QUERY_CPU count=128 dense=true before_us=10331.225 after_us=9239.15 ratio=0.89429375509681 parity=true
+TALENT_QUERY_CPU count=256 dense=true before_us=19886.625 after_us=19393.25 ratio=0.97519061178053 parity=true
+TALENT_QUERY_CPU_DONE failures=0

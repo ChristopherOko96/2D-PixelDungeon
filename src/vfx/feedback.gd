@@ -81,6 +81,21 @@ static func gore(kind: String) -> Dictionary:
 	return material
 
 
+var _enemy_materials: Dictionary = {}
+
+
+# Immutable presentation data: prepare once per kind, not per enemy per tick.
+# Public gore() still returns an independent dictionary to its callers.
+func _enemy_material(kind: String) -> Dictionary:
+	if not _enemy_materials.has(kind):
+		var material := gore(kind)
+		_enemy_materials[kind] = {"material": material,
+			"blood": Color(str(material.get("color", "c8323a"))),
+			"stain": Color(str(material.get("stain", "7a1a22"))),
+			"alpha": float(material.get("stain_alpha", 0.6))}
+	return _enemy_materials[kind]
+
+
 ## Sound event of a hero skill (hero_skills.json "sound"), cached.
 static func skill_sound(skill_id: String) -> String:
 	if _skill_sounds.is_empty():
@@ -446,10 +461,11 @@ func _observe_enemy(state: Dictionary, enemy: Dictionary) -> void:
 	var origin := Vector2(float(enemy.get("x", 0.0)), float(enemy.get("y", 0.0)))
 	var direction := Vector2(float(enemy.get("dx", 0.0)), float(enemy.get("dy", 0.0)))
 	# the story worlds name their monsters' material directly (src/hero/story_feel.gd)
-	var material := gore(str(enemy.get("gore", kind)))
-	var blood: Color = Color(str(material.get("color", "c8323a")))
-	var stain_color: Color = Color(str(material.get("stain", "7a1a22")))
-	var stain_alpha: float = float(material.get("stain_alpha", 0.6))
+	var prepared := _enemy_material(str(enemy.get("gore", kind)))
+	var material: Dictionary = prepared.material
+	var blood: Color = prepared.blood
+	var stain_color: Color = prepared.stain
+	var stain_alpha: float = prepared.alpha
 	var hits := int(enemy.get("hits", 0))
 	var dying: bool = float(enemy.get("dying_p", -1.0)) >= 0.0
 	if dying and not state.dying:

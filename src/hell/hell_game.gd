@@ -82,6 +82,8 @@ const StoryWreck = preload("res://src/hell/story_wreck.gd")
 const StoryMotionHost = preload("res://src/hell/story_motion_host.gd")
 const StoryExposureHost = preload("res://src/hell/story_exposure_host.gd")
 const FixedStepClock = preload("res://src/physics_kit/fixed_step_clock.gd")
+const StoryEnemyIndex = preload("res://src/physics_kit/story_enemy_index.gd")
+var _mob_space := StoryEnemyIndex.new(C)
 const CustomStoryData = preload("res://src/custom/custom_story_data.gd")
 const CustomStoryWorld = preload("res://src/custom/custom_story_world.gd")
 const BALANCE_PATH := "res://assets/data/hell_balance.json"
@@ -949,6 +951,7 @@ func load_floor(n: int, carry: bool) -> void:
 		saves.write(StorySave.mode(self), run_slot, floor_save)
 	_relic_texture()
 	mobs = []
+	_mob_space.clear()
 	shots = []
 	eshots = []
 	zones = []
@@ -1854,6 +1857,7 @@ func end_run(won: bool) -> void:
 	state.over = {"won": won, "why": str(state.get("death_why", "")), "floor": int(state.floor), "title": str(W.get("title", "")),
 		"level": int(state.get("level", 1)), "crystals": int(state.get("crystals_run", 0))}
 	mobs = []
+	_mob_space.clear()
 	eshots = []
 	zones = []
 	hold = {}
@@ -2286,6 +2290,7 @@ func _spawn_mob(room: int, pos: Vector2, kind: String) -> void:
 		if tex.has(first):
 			m.cy = (tex[first] as Texture2D).get_height() * float(m.look.get("scale", 1.0)) * 0.5
 			m.ds = float(m.look.get("scale", 1.0))
+	mob_moved(mobs.back())
 
 
 func _start_fight(r: Dictionary) -> void:
@@ -2648,6 +2653,7 @@ func _fall_into_pit() -> void:
 		if r.fight:
 			r.fight = false
 			mobs = mobs.filter(func(m: Dictionary) -> bool: return m.room != r.index)
+	prepare_mob_queries()
 	eshots = []
 	zones = []
 	state.storm = false
@@ -3087,6 +3093,7 @@ func _update_player(dt: float) -> void:
 
 
 func _update_shots(dt: float) -> void:
+	if not shots.is_empty(): prepare_mob_queries()
 	for s: Dictionary in shots:
 		s.p += s.v * dt
 		s.t -= dt
@@ -3139,14 +3146,15 @@ func _update_shots(dt: float) -> void:
 		if s.get("kind", "") == "gravity":
 			# the gravity ball drags enemies towards itself while it flies
 			var ball: Dictionary = RelicKit.wielded(self).get("ball", theme.gravity_staff.ball)
-			for m: Dictionary in mobs:
+			for m: Dictionary in mob_candidates(s.p,float(ball.pull_radius)):
 				var to: Vector2 = s.p - m.p
 				if m.spawn <= 0.0 and not m.has("kit") and m.kind != "boss" and to.length() < float(ball.pull_radius) and to.length() > 10.0:
 					var step: Vector2 = to.normalized() * float(ball.pull) * dt
 					if not box_blocked(Rect2(m.p.x + step.x - m.r * 0.7, m.p.y + step.y - m.r * 0.7, m.r * 1.4, m.r * 0.7), true):
 						m.p += step
+						mob_moved(m)
 		var big := float(s.get("big", 1.0))
-		for m: Dictionary in mobs:
+		for m: Dictionary in mob_segment_candidates(s.p-s.v*dt,s.p,12.0*big):
 			# Ignaroth's rig: the shot must cross a part where it is drawn; the part takes the hit (src/hell/drake_rig_host.gd)
 			var rigged: bool = drake_rig != null and drake_rig.has_rig(m)
 			if _hittable(m) and not (s.get("hits", []) as Array).has(m) and (drake_rig.shot_hits(m, s.p - s.v * dt, s.p, 12.0 * big) if rigged else s.p.distance_to(m.p - Vector2(0, m.cy)) < m.r + 12.0 * big):
@@ -3279,6 +3287,37 @@ func _update_matter_blockers() -> void:
 var _wade_serial := 0
 
 
+## Refresh once before a phase that may move bodies or query many projectiles.
+func prepare_mob_queries() -> void:
+	_mob_space.rebuild(mobs)
+
+
+## Keep current phase candidates and the combat position alias live after a move.
+func mob_moved(m: Dictionary) -> void:
+	if m.has("pos"): m.pos = m.p
+	_mob_space.upsert(m)
+
+
+## Remove a despawned body before any further queries in this phase.
+func mob_removed(m: Dictionary) -> void:
+	_mob_space.remove(m)
+
+
+## Ordered conservative candidates; callers retain their exact hit predicates.
+func mob_candidates(at: Vector2, radius: float, adaptive := false) -> Array:
+	return _mob_space.near_adaptive(at, radius) if adaptive else _mob_space.near(at,radius)
+
+
+## Dense-body hint permits full-list talent queries without another index rebuild.
+func mob_queries_dense() -> bool:
+	return _mob_space.prefers_full_scan()
+
+
+## Includes bodies anywhere along a fast shot's swept path and raised centre.
+func mob_segment_candidates(from: Vector2, to: Vector2, padding: float) -> Array:
+	return _mob_space.swept(from,to,padding)
+
+
 func _update_mobs(dt: float) -> void:
 	if monsters != null:
 		monsters.update(dt)
@@ -3290,6 +3329,7 @@ func _update_mobs(dt: float) -> void:
 				# a monster's steps show by its moving point (wade sees it move)
 				if m.has("id"): pools.wade("m" + str(m.id), Vector2(m.p), false, float(state.t))
 		return
+	prepare_mob_queries()
 	# the Frostgruft wades too: the hero and its figures through the talents' pools (physics plan
 	# R26/F55; its figures get a stable wading key at their first step)
 	var layer := _pool_layer()
@@ -3354,8 +3394,8 @@ func _update_mobs(dt: float) -> void:
 				if d < float(def.pull_radius):
 					# axis by axis against the walls (MotionKit.move_hero)
 					motion_kit().move_hero(-dir * float(def.pull) * dt)
-		for o: Dictionary in mobs:
-			if o != m:
+		for o: Dictionary in mob_candidates(m.p,float(m.r)):
+			if not is_same(o,m):
 				var off: Vector2 = m.p - o.p
 				var od := off.length()
 				if od > 0.0 and od < m.r + o.r:
@@ -3396,6 +3436,7 @@ func _update_mobs(dt: float) -> void:
 		m.k = step.push
 		m.k_in = step.push_in
 		m.p = step.p
+		mob_moved(m)
 		if m.has("slam"):
 			as_source("hero", func() -> void: story_hero.check_slam(m, moved_from, dt))
 		# reeling from a perfect block (HeroKit.stagger) its touch hurts nobody
@@ -3473,6 +3514,7 @@ func _update_mobs(dt: float) -> void:
 		if feel == null:
 			_burst(m.p - Vector2(0, 30), 70 if m.kind == "boss" else 16)
 		mobs.erase(m)
+		mob_removed(m)
 		# with the feel the kill sounds in the crypt material (feedback.gd via FrostCombat.after_kill)
 		if feel == null:
 			_sound("kill_" + str((m.def as Dictionary).get("material", "void")))

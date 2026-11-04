@@ -1,5 +1,68 @@
 # Basement Run — development notes
 
+- Publication request (2026-11-05): user authorized committing the completed
+  enemy/talent spatial, gas and render/feedback performance work and publishing
+  it to origin/main. Keep codex_v2 as the working branch. Earlier "local only"
+  notes describe validation-time status; consult Git for publication status.
+  Unrelated editor audio/room data and generated import files are excluded.
+
+- Talent spatial queries (2026-11-05): bounded target, area, splash, traps,
+  pet nova/cleave/taunt, drag, meteor and landing-freeze queries use ordered
+  nearby living bodies. Exact ranges/walls/ties remain authoritative. Under
+  24 bodies, unlimited queries and native hosts retain full scans; dense
+  story phases use the live full list without another index rebuild. Sparse
+  talent phases rebuild lazily once. Soul push uses _shove to refresh membership.
+  Global/ground-field queries remain full scans. Targeted checks: 252 + 208 +
+  36 integration + 36 talents + 30 necro = 562/0; known exit resource warnings.
+  Paired isolated query CPU: sparse 128/256 bodies ~60/68% lower; dense uses
+  fallback. Not whole-game FPS. See docs/GEGNER-SUCHE.de.md and
+  production/qa/evidence/talent-spatial/README.md. Local on codex_v2, not pushed.
+
+- Feedback follow-up (2026-11-05): _feedback_enemies skips live preparation
+  for bodies already represented by _fallen, preserving their detached
+  dying_p view for rigs. 128 corpses + 1 living enemy now build one live view;
+  regression observed 2 failures before fix, then 8/0. Living _enemy() remains
+  unchanged: dictionary-reuse experiment regressed with sound and was reverted.
+  Story sound suite: 110 checks, one pre-existing catalogue failure for
+  curse_colossus/curse_spawn (same missing entries verified in HEAD JSON).
+  See render-preparation QA notes and exit warnings. Local only.
+
+- Render preparation (2026-11-04): story talent ground/over/bloom share one
+  read-only snapshot per process frame and clock. Bind/release, sync actions
+  and update invalidate it; simulation take_feel retains its own fresh snapshot.
+  Feedback caches enemy material copies and parsed colors per kind/instance;
+  public gore() remains copy-returning. Full enemy lists/event observation still
+  run every simulation step; no throttling. Cache 8/0, material 18/0, feedback
+  19/0, real story talents 36/0 (81). Red regressions observed first.
+  Isolated 256-event serialization fixture: three builds -> one, >20% CPU gate
+  passed; no whole-game FPS gain claimed. Evidence and known exit warnings:
+  production/qa/evidence/render-preparation/README.md. Local, not pushed.
+
+- Gas queries (2026-11-04, atop local enemy-index work): GasField tracks
+  conservative actual-puff bounds; culls distant clouds for actor, density,
+  shot, blast, suction and reaction queries. Ring candidates selected once;
+  empty-field fast paths. Spawn/step/part keep bounds current in host order.
+  No formulas, damage, puff counts, renderer or simulation-rate changes.
+  Read docs/GAS-PERFORMANCE.de.md and production/qa/evidence/gas-queries/README.md.
+  Queries 1250/0 (red first), field 28/0, exposure 49/0: 1327 checks.
+  Paired frozen-field benchmark 7/0 and actual Krypta CPU cases 3/0; exact
+  state parity. Full 128-mob step: ~36% less CPU with 12 gas clouds, ~40%
+  without gas; dense all-in-gas queries retain a small maintenance cost.
+  Still no 60-FPS/render/multiplayer acceptance. Next: feedback preparation.
+  All changes local on codex_v2, not committed or pushed.
+
+- Story enemy search (2026-11-04, base 7c39036e): chase_goal/basic_hit synchronise
+  only the queried body. Shared StoryEnemyIndex supplies ordered broad candidates
+  for separation, gravity and story shots; incremental move/spawn/despawn hooks,
+  phase rebuilds, floor/run reset. Boss/large-body fallback; animated parts stay
+  conservative shot candidates, without disabling spatial body separation.
+  Read docs/GEGNER-SUCHE.de.md and production/qa/evidence/enemy-index/README.md
+  for checks, paired CPU measurements and limits. Unit 208/0, three-world
+  integration 27/0, story talents 36/0, necro story shots 30/0 (301 total).
+  Paired CPU at 128 mobs: 24–34% lower step time; no reliable small-horde gain.
+  Gameplay time/damage unchanged.
+  No whole-game or four-peer FPS acceptance. Local implementation, not pushed.
+
 - Soul release staging (2026-11-04): pickup pixels gather from the corpse,
   rise before flight (0.48s gather, 0.42s rise, 0.16s pull ramp), then seek
   the live staff. Face forms during the rise. Local presentation lasts 1.4s;
