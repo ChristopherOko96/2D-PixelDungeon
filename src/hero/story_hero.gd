@@ -347,6 +347,7 @@ func draw_hero(canvas: CanvasItem, t: float, lift: float, draw_body: Callable, h
 		var pace := maxf(60.0, (g.player.get("vel", Vector2.ZERO) as Vector2).length())
 		# the element goes with the view: the rig draws the mage's parts in its colours
 		var body_view := {"moving": bool(g.player.get("moving", false)), "hp": float(g.state.get("hp", 1)), "hurts": hurts, "step_time": 32.0 * scale / pace, "element": element}
+		body_view.render_shift = _draw_feet() - Vector2(g.player.x, g.player.y)
 		body_view.leap = view.get("leap", {})
 		# the world's rim round the hero (theme "outline": the Frostgruft's dark rim on the snow)
 		if Color.html_is_valid(str(outline.hero)):
@@ -366,7 +367,7 @@ func draw_hero(canvas: CanvasItem, t: float, lift: float, draw_body: Callable, h
 			var tint: Color=hero_look.get("tint",Color.WHITE)
 			draw_body=func(feet:Vector2,alpha:float)->void:
 				CutoutMotion.draw(canvas,CutoutMotion.actor(bind,"hero_form",feet,size,face(t),t,view,Color(tint,tint.a*alpha)))
-	var feet := Vector2(g.player.x, g.player.y)
+	var feet := _draw_feet()
 	var chest := feet - Vector2(0, lift)
 	var aim: Vector2 = look.casting_aim(KEY, g.HeroKit._aim(g), t)
 	var fallen := float(g.state.get("hp", 1)) <= 0.0
@@ -394,7 +395,7 @@ func draw_hero(canvas: CanvasItem, t: float, lift: float, draw_body: Callable, h
 ## The hero's body in world px (his rig figure's height over the feet and its
 ## body width; GUARD_SIZE without a rig): what enemy weapons pass behind.
 func guard_box() -> Rect2:
-	var feet := Vector2(g.player.x, g.player.y)
+	var feet := _draw_feet()
 	var size := GUARD_SIZE
 	var rig_id := str(CLASS_RIGS.get(str(g.class_id), ""))
 	var shape: Dictionary = rigs.library.rig(rig_id) if rigs != null and not rig_id.is_empty() else {}
@@ -402,6 +403,10 @@ func guard_box() -> Rect2:
 		var px := float(shape.scale) * scale
 		size = Vector2(float(shape.width) * px, (float(shape.ground.y) - float(shape.top) + 1.0) * px)
 	return Rect2(feet.x - size.x / 2.0, feet.y - size.y, size.x, size.y)
+
+
+func _draw_feet() -> Vector2:
+	return g.render_hero_position() if g.has_method("render_hero_position") else Vector2(g.player.x, g.player.y)
 
 
 ## Starts a frame of the world's actors on `canvas`: the enemies' rig renderers

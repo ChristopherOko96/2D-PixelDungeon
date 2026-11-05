@@ -1,0 +1,18 @@
+ERROR: Failed to open log file for writing: user://logs/godot.log
+   at: rotate_file (core/io/logger.cpp:169)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+PENDING PART-03 drache1: own sound break_ember is not in audio_sfx.json yet (audio owner); the cut plays ["break_flesh"] meanwhile
+PENDING PART-03 drache4: own sound break_obsidian is not in audio_sfx.json yet (audio owner); the cut plays ["break_void"] meanwhile
+SWING the far wing pixel lies 479 px from the old centre (m.r 190)
+BOSS-04 drache3 bombenflug: circling 3.46 s (data 4.20 s), out of reach 4.60 s, airborne 4.86 s
+BOSS-04 drache4 leerenregen: circling 3.46 s (data 4.60 s), out of reach 4.60 s, airborne 4.86 s
+GLOW drache1 [5.0, 29.5] anchor (443.0, 469.0) lies 14 world px from the rig's tail_tip
+GLOW drache1 [68.0, 18.0] anchor (758.0, 412.0) lies 32 world px from the rig's mouth
+GLOW drache2 [6.5, 42.5] anchor (428.0, 449.0) lies 17 world px from the rig's tail_tip
+GLOW drache2 [86.0, 22.0] anchor (825.0, 347.0) lies 22 world px from the rig's mouth
+GLOW drache3 [11.5, 73.5] anchor (388.0, 419.0) lies 15 world px from the rig's tail_tip
+GLOW drache3 [112.0, 43.0] anchor (890.0, 267.0) lies 38 world px from the rig's mouth
+GLOW drache4 [43.5, 118.5] anchor (305.0, 379.0) lies 25 world px from the rig's tail_tip
+GLOW drache4 [176.0, 79.0] anchor (968.0, 182.0) lies 47 world px from the rig's mouth
+DRAKE_RIG_HOST checked=457 failures=0

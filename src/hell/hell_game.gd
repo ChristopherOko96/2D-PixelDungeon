@@ -75,6 +75,9 @@ const HudKit = preload("res://src/ui/hud_kit.gd")
 const HudStyle = preload("res://src/ui/hud_style.gd")
 ## The camera's lead, fight framing, zoom breathing, punch and kick (src/hell/story_camera.gd).
 const StoryCamera = preload("res://src/hell/story_camera.gd")
+const StoryPresentation = preload("res://src/hell/story_presentation.gd")
+var presentation := StoryPresentation.new()
+var _camera_written := Vector2.INF
 ## The world kit (src/world_kit): a world with theme.world_pack builds every floor live from the
 ## run number instead of reading baked floors (Story 1 the crypt, Story 3 the hell).
 const WorldPack = preload("res://src/world_kit/world_pack.gd")
@@ -857,6 +860,7 @@ func _layer(kind: String, z: int, area := Rect2()) -> Layer:
 ## Builds floor n (1-10). With carry the hero keeps hearts, rune stones, seal
 ## blessings and the paused clone skill.
 func load_floor(n: int, carry: bool) -> void:
+	presentation.reset()
 	_custom_load_failed = false
 	# A generated floor can take much longer than a frame. Neither that loading time
 	# nor the old floor's remaining catch-up ticks belongs to the new floor.
@@ -1847,6 +1851,7 @@ func _new_run_id() -> String:
 ## otherwise by death. The run's saves are deleted (saving only pauses a run);
 ## soul crystals already banked stay. The result panel waits for E (new run).
 func end_run(won: bool) -> void:
+	presentation.reset()
 	if not (state.get("over", {}) as Dictionary).is_empty():
 		return
 	# a won run's saves are done with; a lost run keeps them: the character dies with its gold,
@@ -2448,6 +2453,7 @@ func _gold_lost() -> void:
 ## Leaving the world (the menu, a closed window): the profile's last seconds (EXP, rune stones,
 ## talents) are saved, not lost with the scene.
 func _exit_tree() -> void:
+	presentation.reset()
 	if talents != null:
 		talents.save()
 	elif not profile.is_empty():
@@ -2789,6 +2795,7 @@ func _toggle_fullscreen() -> void:
 func _process(delta: float) -> void:
 	_sync_overlays()
 	if _simulation_paused():
+		presentation.reset()
 		_simulation_clock.reset()
 		_skip_simulation_delta = true
 		if talents != null: talents.tc.runtime(1).erase("soul_charge")
@@ -2799,13 +2806,16 @@ func _process(delta: float) -> void:
 	_simulation_clock.begin_frame(0.0 if _skip_simulation_delta else delta)
 	_skip_simulation_delta = false
 	while _simulation_clock.take_step():
+		presentation.begin_tick(player, mobs)
 		_step_simulation(_simulation_clock.step_seconds)
 		# A seal may open a blocking choice during a tick. Do not let later ticks
 		# attack through that modal. Floor loads reset the clock inside load_floor.
 		if _simulation_paused():
+			presentation.reset()
 			_simulation_clock.reset()
 			_skip_simulation_delta = true
 			break
+	presentation.frame(_simulation_clock.pending_seconds, _simulation_clock.step_seconds)
 	# Presentation work only once per rendered frame, never once per catch-up tick.
 	if inventory_panel != null and story_items != null:
 		inventory_panel.set_view(story_items.view())
@@ -4002,18 +4012,31 @@ func _draw_lava_bubbles(l: CanvasItem) -> void:
 				l.draw_rect(Rect2(c + (d * reach).round() * px, Vector2(px, px)), spec if s < 0.5 else hi)
 
 
+## Rendered feet shared by the hero's body, weapon, guard, light and camera.
+func render_hero_position() -> Vector2:
+	return presentation.hero_position(player)
+
+
+## Rendered enemy feet; collision, aiming and damage retain authoritative p/pos.
+func render_mob_position(mob: Dictionary) -> Vector2:
+	return presentation.mob_position(mob)
+
+
 func _update_camera(dt: float) -> void:
 	var r: Dictionary = W.rooms[state.room]
-	var hero := Vector2(player.x, player.y - 40)
+	# External jumps are detected against the last written camera, never against
+	# a rounded presentation centre. Otherwise pixel snapping can reset follow.
+	if not _camera_written.is_finite() or not camera.position.is_equal_approx(_camera_written):
+		presentation.reset()
+		cam_rig.reset(Vector2(player.x, player.y - 40))
+	presentation.teleport_distance = float(cam_rig.cfg.get("presentation", {}).get("teleport_distance", 192.0))
+	var hero := render_hero_position() - Vector2(0, 40)
 	var view := Vector2(float(balance.view.width), float(balance.view.width) * 9.0 / 16.0)
 	var bounds := Rect2()
 	if _room_at_world(player.x, player.y - 12.0) >= 0:
 		var lo := Vector2(r.bx * C - 70, r.by * C - 110)
 		var hi := Vector2((r.bx + r.bw) * C + 70, (r.by + r.bh) * C + 80)
 		bounds = Rect2(lo, hi - lo)
-	# a jump made elsewhere (floor load, respawn, a Testraum teleport) starts the camera fresh
-	if camera.position.distance_to(cam_rig.position) > 1.0:
-		cam_rig.reset(hero)
 	var foes := _camera_foes()
 	# a big jump of the shake (a slam, a blast, a heavy hit) also shoves the view away from the fight
 	var shake := float(state.shake)
@@ -4022,11 +4045,18 @@ func _update_camera(dt: float) -> void:
 	_shake_was = shake
 	var aim := get_global_mouse_position() if heroic() and not _window_open() else Vector2.INF
 	cam_rig.step(dt, {"hero": hero, "aim": aim, "foes": foes, "boss": _camera_boss, "bounds": bounds,
-		"view": view, "shake": shake, "t": float(state.t)})
+		"view": view, "shake": shake, "t": float(state.t), "pixel": bool(theme.get("pixel", true))})
 	camera.position = cam_rig.position
 	camera.zoom = Vector2.ONE * float(balance.view.base_width) / float(balance.view.width) * float(cam_rig.zoom)
 	# view_shift: the view sits lower so the skill bar covers none of the fight
 	camera.offset = cam_rig.offset + cam_rig.view_shift
+	if bool(theme.get("pixel", true)) and bool(cam_rig.cfg.get("pixel", {}).get("snap_translation", true)):
+		var viewport := get_viewport()
+		camera.offset = StoryPresentation.pixel_center(camera.position + camera.offset, camera.zoom,
+			viewport.get_visible_rect().size, viewport.get_stretch_transform()) - camera.position
+	_camera_written = camera.position
+	# Keep drawing, darkness and mouse conversion on this same frame's transform.
+	camera.force_update_scroll()
 
 
 var _camera_boss := false
@@ -4042,7 +4072,7 @@ func _camera_foes() -> Array:
 	for m: Dictionary in mobs:
 		if int(m.get("room", -1)) != int(state.room) or float(m.get("hp", 0.0)) <= 0.0 or bool(m.get("remove", false)) or m.get("dying") != null:
 			continue
-		var at: Vector2 = (m.p as Vector2) - Vector2(0, float(m.get("cy", 20.0)))
+		var at: Vector2 = render_mob_position(m) - Vector2(0, float(m.get("cy", 20.0)))
 		if bool(m.get("boss", false)) or str(m.get("kind", "")) == "boss":
 			_camera_boss = true
 			out.push_front(at)
@@ -4410,7 +4440,7 @@ func _draw_actors(l: Layer) -> void:
 			list.append([d.cy + 60.0, "gate", d])
 	for m: Dictionary in mobs:
 		if view.grow(300 if monsters != null else 0).has_point(m.p):
-			list.append([m.p.y, "mob", m])
+			list.append([render_mob_position(m).y, "mob", m])
 	# felled monsters without a death animation fall and fade like the crypt's (src/hero/story_feel.gd)
 	if feel != null:
 		for m: Dictionary in feel.fallen():
@@ -4420,7 +4450,7 @@ func _draw_actors(l: Layer) -> void:
 		for c: Dictionary in monsters.corpses:
 			if view.has_point(c.p):
 				list.append([c.p.y, "corpse", c])
-	list.append([player.y, "hero", player])
+	list.append([render_hero_position().y, "hero", player])
 	list.sort_custom(func(x: Array, y: Array) -> bool: return x[0] < y[0])
 	# depth bands (decision D11): the particles low over the floor are drawn between the actors by
 	# their floor point, so what lies behind a monster, a pillar or the hero is hidden by it
@@ -4925,11 +4955,12 @@ func _draw_mob(l: Layer, m: Dictionary, t: float) -> void:
 		tint = Color(3, 3, 3)
 	var bob := sin(t * 6.0 + m.seed) * 6.0
 	var size := im.get_size() * s
-	l.draw_texture_rect(im, Rect2(m.p - Vector2(size.x / 2.0, size.y + 14 - bob), size), false, tint)
+	var at := render_mob_position(m)
+	l.draw_texture_rect(im, Rect2(at - Vector2(size.x / 2.0, size.y + 14 - bob), size), false, tint)
 	if m.kind == "boss":
 		var icon: Texture2D = tex.icon_demon_big if W.final else tex.icon_demon
 		var k := s / 2.7
-		l.draw_texture_rect(icon, Rect2(m.p.x - 46 * k, m.p.y - size.y - 4 + bob, 92 * k, 96 * k), false)
+		l.draw_texture_rect(icon, Rect2(at.x - 46 * k, at.y - size.y - 4 + bob, 92 * k, 96 * k), false)
 
 
 ## A themed enemy: its animated skin sprite, turned towards the hero, grown in while spawning.
@@ -4951,7 +4982,7 @@ func _draw_mob_sprite(l: Layer, m: Dictionary, t: float) -> void:
 		tint.a *= float(pose.alpha)
 	if float(m.get("inv", 0.0)) > 0.0:
 		tint.a = 0.45 + 0.35 * sin(t * 30.0)
-	var feet: Vector2 = m.p + (pose.get("offset", Vector2.ZERO) as Vector2)
+	var feet: Vector2 = render_mob_position(m) + (pose.get("offset", Vector2.ZERO) as Vector2)
 	# glow hook (src/hero/story_glow.gd): where the body is drawn this frame, so its glowing parts follow it
 	story_glow.mark(m, {"foot": feet, "size": size, "src": im.get_size(), "face": -1.0 if (m.face as Vector2).x < 0.0 else 1.0,
 		"lean": float(pose.get("lean", 0.0)), "alpha": tint.a})
@@ -5093,23 +5124,24 @@ func _draw_hero(l: Layer, t: float) -> void:
 		# the class figure as the crypt's part rig (src/hero/story_hero.gd), else this frame
 		story_hero.draw_hero(l, t, size.y * 0.45, body, look)
 		return
-	body.call(Vector2(player.x, player.y), 1.0)
+	body.call(render_hero_position(), 1.0)
 	_draw_weapon(l, size)
 
 
 ## The class weapon in the hero's hand: bow and staff held upright, the sword
 ## swept through its arc while a swing lasts; the gravity staff glows violet.
 func _draw_weapon(l: Layer, hero_size: Vector2) -> void:
+	var feet := render_hero_position()
 	if relic_on() and relic_tex != null:
 		var rel := RelicKit.wielded(self)
 		var rk := float(theme.get("weapon_scale", 2.0))
 		var rsz := relic_tex.get_size() * rk
-		var rhand := Vector2(player.x + float(player.face) * hero_size.x * 0.32, player.y - hero_size.y * 0.38)
+		var rhand := Vector2(feet.x + float(player.face) * hero_size.x * 0.32, feet.y - hero_size.y * 0.38)
 		var tilt := 0.0
 		if rel.has("attack") and swing.t > 0.0:
 			# the hammer comes down through its arc
 			tilt = float(swing.a) + PI / 2.0 + float(rel.attack.arc) * (0.5 - swing.t / 0.22)
-			l.draw_set_transform(Vector2(player.x, player.y - 40), tilt)
+			l.draw_set_transform(Vector2(feet.x, feet.y - 40), tilt)
 			l.draw_texture_rect(relic_tex, Rect2(Vector2(-rsz.x / 2.0, -rsz.y - 10.0), rsz), false, _color(rel.tint))
 			l.draw_set_transform(Vector2.ZERO)
 			return
@@ -5121,12 +5153,12 @@ func _draw_weapon(l: Layer, hero_size: Vector2) -> void:
 		return
 	var k := float(theme.get("weapon_scale", theme.hero_scale))
 	var wsz := weapon_tex.get_size() * k
-	var hand := Vector2(player.x + float(player.face) * hero_size.x * 0.32, player.y - hero_size.y * 0.38)
+	var hand := Vector2(feet.x + float(player.face) * hero_size.x * 0.32, feet.y - hero_size.y * 0.38)
 	if weapon.type == "melee" and swing.t > 0.0:
 		var a: float = swing.a + float(weapon.arc) * (0.5 - swing.t / 0.16)
 		var tip := Vector2(cos(a), sin(a))
-		l.draw_line(Vector2(player.x, player.y - 40) + tip * 30.0, Vector2(player.x, player.y - 40) + tip * float(weapon.reach), Color(col("shot_core"), 0.5), 6.0)
-		l.draw_set_transform(Vector2(player.x, player.y - 40), a + PI / 2.0)
+		l.draw_line(Vector2(feet.x, feet.y - 40) + tip * 30.0, Vector2(feet.x, feet.y - 40) + tip * float(weapon.reach), Color(col("shot_core"), 0.5), 6.0)
+		l.draw_set_transform(Vector2(feet.x, feet.y - 40), a + PI / 2.0)
 		l.draw_texture_rect(weapon_tex, Rect2(Vector2(-wsz.x / 2.0, -wsz.y - 12.0), wsz), false)
 		l.draw_set_transform(Vector2.ZERO)
 		return

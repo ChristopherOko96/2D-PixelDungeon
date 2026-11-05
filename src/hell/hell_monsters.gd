@@ -1931,6 +1931,7 @@ func _pose(m: Dictionary, tint: Color) -> Array:
 
 ## Draws a monster (sorted with the other actors by its feet).
 func draw_mob(l: CanvasItem, m: Dictionary) -> void:
+	var drawn_at: Vector2 = g.render_mob_position(m) if g.has_method("render_mob_position") else Vector2(m.p)
 	if Rules.is_lord(m.def):
 		_draw_lord(l, m)
 		return
@@ -1939,10 +1940,10 @@ func draw_mob(l: CanvasItem, m: Dictionary) -> void:
 		return
 	var air := float(m.act.get("air", 0.0)) if m.act != null else 0.0
 	var w := float(m.def.w) * sc
-	_ellipse(l, m.p, w * 0.34, w * 0.1 + 4.0, Color(0, 0, 0, 0.45))
+	_ellipse(l, drawn_at, w * 0.34, w * 0.1 + 4.0, Color(0, 0, 0, 0.45))
 	var hov := -10.0 + sin(g.state.t * 4.0 + m.seed) * 5.0 if m.st.ai in ["hover", "drift"] else 0.0
 	var look := _pose(m, Color(1, 1, 1, m.alpha))
-	var feet: Vector2 = m.p + Vector2(0, 4.0 + hov - air)
+	var feet: Vector2 = drawn_at + Vector2(0, 4.0 + hov - air)
 	# a mimic winding up its bite: the bite zone warns on the floor, it rattles and its lid lifts
 	var tell := _mimic_tell(m)
 	if not tell.is_empty():
@@ -1951,7 +1952,7 @@ func draw_mob(l: CanvasItem, m: Dictionary) -> void:
 	# a mob with a part rig (assets/data/hell_rigs.json) moves part by part like the crypt's skeletons
 	# and falls apart when it dies (src/hell/drake_rig_host.gd); the atlas otherwise
 	if rig_host != null and rig_host.draws(m):
-		rig_host.draw(l, m, feet, sc / m.s, look[1], 0.0, look[0])
+		rig_host.draw(l, m, feet, sc / m.s, look[1], 0.0, look[0], drawn_at - Vector2(m.p))
 	else:
 		_mark(m, feet, sc, 0.0, look[1], look[0])
 		_sprite(l, m.id, Rules.frame_of(m.def, m.anim, m.at), feet, sc, m.face, look[1], 0.0, look[0])
@@ -1960,6 +1961,7 @@ func draw_mob(l: CanvasItem, m: Dictionary) -> void:
 
 
 func _draw_lord(l: CanvasItem, m: Dictionary) -> void:
+	var drawn_at: Vector2 = g.render_mob_position(m) if g.has_method("render_mob_position") else Vector2(m.p)
 	if m.burrowed and m.sink >= 1.0:
 		_draw_mound(l, m)
 		return
@@ -1973,7 +1975,7 @@ func _draw_lord(l: CanvasItem, m: Dictionary) -> void:
 	var w := float(m.def.w) * sc
 	var h := float(m.def.h) * sc
 	var shade := maxf(0.25, 1.0 - alt / 900.0)
-	_ellipse(l, m.p, w * 0.34 * shade, (w * 0.1 + 4.0) * shade, Color(0, 0, 0, 0.45 * shade))
+	_ellipse(l, drawn_at, w * 0.34 * shade, (w * 0.1 + 4.0) * shade, Color(0, 0, 0, 0.45 * shade))
 	var glow := _glow(m)
 	var look := _pose(m, Color(1, 1, 1, m.alpha))
 	var tint: Color = look[1]
@@ -1985,10 +1987,10 @@ func _draw_lord(l: CanvasItem, m: Dictionary) -> void:
 	# altitude in the feet, sink 0..1 cuts him at the floor; it hands the glow record to story_glow itself.
 	# The atlas otherwise.
 	if rig_host != null and rig_host.draws(m):
-		rig_host.draw(l, m, m.p + Vector2(0, 4.0 - alt), sc / m.s, tint, m.sink, look[0])
+		rig_host.draw(l, m, drawn_at + Vector2(0, 4.0 - alt), sc / m.s, tint, m.sink, look[0], drawn_at - Vector2(m.p))
 	else:
-		_mark(m, m.p + Vector2(0, 4.0 - alt), sc, m.sink * h, tint, look[0])
-		_sprite(l, m.id, Rules.frame_of(m.def, m.anim, m.at), m.p + Vector2(0, 4.0 - alt), sc, m.face, tint, m.sink * h, look[0])
+		_mark(m, drawn_at + Vector2(0, 4.0 - alt), sc, m.sink * h, tint, look[0])
+		_sprite(l, m.id, Rules.frame_of(m.def, m.anim, m.at), drawn_at + Vector2(0, 4.0 - alt), sc, m.face, tint, m.sink * h, look[0])
 	if m.sink > 0.0 and m.sink < 1.0:
 		_draw_mound(l, m)
 
@@ -2016,19 +2018,20 @@ func _glow(m: Dictionary) -> float:
 
 ## Dust mound of a burrowed dragon, drawn on the floor.
 func _draw_mound(l: CanvasItem, m: Dictionary) -> void:
+	var drawn_at: Vector2 = g.render_mob_position(m) if g.has_method("render_mob_position") else Vector2(m.p)
 	var t: float = g.state.t
 	var r: float = m.r * 0.9
 	var bob := sin(t * 18.0) * 3.0
-	_ellipse(l, m.p + Vector2(0, 4), r * 1.1, r * 0.4, Color(0, 0, 0, 0.4))
+	_ellipse(l, drawn_at + Vector2(0, 4), r * 1.1, r * 0.4, Color(0, 0, 0, 0.4))
 	for part: Array in [[Vector2(0, -6 + bob), r, r * 0.38, Color("#3b3332")], [Vector2(-r * 0.2, -10 + bob), r * 0.55, r * 0.2, Color("#483b3a")]]:
 		var pts := PackedVector2Array()
 		for k in range(17):
 			var a := PI + k / 16.0 * PI
-			pts.append(m.p + part[0] + Vector2(cos(a) * part[1], sin(a) * part[2]))
+			pts.append(drawn_at + part[0] + Vector2(cos(a) * part[1], sin(a) * part[2]))
 		l.draw_colored_polygon(pts, part[3])
 	for k in range(4):
-		var x: float = m.p.x + sin(t * 5.0 + k * 1.7) * r * 0.7
-		l.draw_rect(Rect2(x - 3, m.p.y - 8 - (k % 2) * 6 + bob, 6, 4), Color(1, 0.6, 0.25, 0.8))
+		var x: float = drawn_at.x + sin(t * 5.0 + k * 1.7) * r * 0.7
+		l.draw_rect(Rect2(x - 3, drawn_at.y - 8 - (k % 2) * 6 + bob, 6, 4), Color(1, 0.6, 0.25, 0.8))
 
 
 ## Draws a crumbling dead monster.

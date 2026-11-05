@@ -535,6 +535,7 @@ func draw_enemy(canvas: CanvasItem, enemy: Dictionary, point: Vector2) -> float:
 	var rig: Dictionary = library.rig(rig_name)
 	if rig.is_empty(): return NAN
 	var a := _actor(_key(enemy), enemy)
+	a.render_shift = enemy.get("render_shift", Vector2.ZERO)
 	a.rig = rig_name
 	a.moving = bool(enemy.get("moving", false))
 	a.blood_morph = float(enemy.get("blood_morph", 0.0))
@@ -599,6 +600,7 @@ func draw_hero(canvas: CanvasItem, key: String, player: Dictionary, point: Vecto
 	var rig: Dictionary = library.rig(rig_name)
 	if rig.is_empty(): return
 	var a := track_steps(key, player)
+	a.render_shift = player.get("render_shift", Vector2.ZERO)
 	a.rig = rig_name
 	a.alpha_mul = alpha
 	a.size_mul = size
@@ -1181,7 +1183,8 @@ func _hold(rig: Dictionary, a: Dictionary, host: RigHeldHost, feet: Vector2, fac
 	var scale := _actor_scale(rig, a)
 	# the figure standing still: _solve's base for a neutral pose (every part's rest)
 	var rest := _t(feet) * _s(Vector2(face * scale, scale)) * _t(-Vector2(rig.ground))
-	rest.origin = rest.origin.round()
+	var render_shift: Vector2 = a.get("render_shift", Vector2.ZERO)
+	rest.origin = (rest.origin - render_shift).round() + render_shift
 	for item: Dictionary in rig.items:
 		if RigHeld.spec(item).is_empty() or a.lost.has(item.id) or (a.get("shed", {}) as Dictionary).has(item.id): continue
 		var pieces: Array[Dictionary] = host.pieces(str(a.key), item, rest)
@@ -1652,7 +1655,11 @@ func _solve(rig: Dictionary, a: Dictionary, pose: Dictionary, feet: Vector2, fac
 	# axis, 1 -> -1 -> 1, mirrored about the feet.
 	var turn := float(whole.get("turn", 1.0))
 	var base := _t(feet + Vector2(float(whole.dx) * face * S, float(whole.dy) * S)) * _s(Vector2(face * turn * S, S)) * _t(-ground) * _tumble(rig, a) * _t(pivot) * Transform2D(float(whole.rot), Vector2.ZERO) * _s(Vector2(float(whole.sx), float(whole.sy))) * _t(-pivot)
-	if snap_origin: base.origin = base.origin.round()
+	if snap_origin:
+		# Snap the simulation pose first, then add render-only interpolation.
+		# The host can undo that exact shift for hit masks and attack sockets.
+		var render_shift: Vector2 = a.get("render_shift", Vector2.ZERO)
+		base.origin = (base.origin - render_shift).round() + render_shift
 	var world: Dictionary = {"base": base}
 	for part: Dictionary in rig.parts: _part_world(rig, a, pose, world, part.id)
 	if with_items:
