@@ -804,10 +804,16 @@ func _pixel_distance(part: Dictionary, local: Vector2, radius: float, rig_scale:
 	var best := INF
 	var span := int(ceil(radius))
 	var base := Vector2i(floori(probe.x), floori(probe.y))
-	for dy in range(-span, span + 1):
-		for dx in range(-span, span + 1):
-			var pixel := base + Vector2i(dx, dy)
-			if pixel.x < 0 or pixel.y < 0 or pixel.x >= image.get_width() or pixel.y >= image.get_height(): continue
+	# only the part's visible pixels can count: the window is cut to the image's used rect (every
+	# pixel outside it is fully clear), rows and columns in the same order as before
+	var used := image.get_used_rect()
+	var y0 := maxi(base.y - span, used.position.y)
+	var y1 := mini(base.y + span, used.end.y - 1)
+	var x0 := maxi(base.x - span, used.position.x)
+	var x1 := mini(base.x + span, used.end.x - 1)
+	for py in range(y0, y1 + 1):
+		for px in range(x0, x1 + 1):
+			var pixel := Vector2i(px, py)
 			if image.get_pixelv(pixel).a < 0.5: continue
 			var distance := probe.distance_to(Vector2(pixel) + Vector2(0.5, 0.5))
 			if distance <= radius + 0.71 and distance < best: best = distance

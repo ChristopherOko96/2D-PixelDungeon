@@ -1,7 +1,9 @@
 extends RefCounted
 ## Fixed simulation time fed by rendered frame time (physics_clock.json).
 ## begin_frame() adds real elapsed time; take_step() spends exactly one tick.
-## The per-frame work budget never discards time: excess remains pending.
+## Excess beyond the per-frame work budget stays pending, up to max_pending_steps
+## ticks; time beyond that limit is dropped (0 = keep all time), so an overloaded
+## frame cannot pile up more catch-up work for the next ones (the world slows instead).
 ## reset() is only for deliberate suspension (menus, floor loads), not slow FPS.
 
 const DATA_PATH := "res://assets/data/physics_clock.json"
@@ -10,6 +12,8 @@ const EPSILON := 0.000000001
 
 var step_seconds: float = 1.0 / 60.0
 var max_steps_per_frame: int = 8
+## The most ticks of time that may wait; more is dropped. 0 keeps all elapsed time.
+var max_pending_steps: int = 0
 var pending_seconds: float = 0.0
 var _steps_left: int = 0
 
@@ -21,14 +25,18 @@ func _init(config: Dictionary = {}) -> void:
 	if not is_finite(hz) or hz <= 0.0: hz = 60.0
 	step_seconds = 1.0 / clampf(hz, 1.0, 240.0)
 	max_steps_per_frame = clampi(int(settings.get("max_steps_per_frame", 8)), 1, 64)
+	max_pending_steps = clampi(int(settings.get("max_pending_steps", 0)), 0, 64)
 
 
 ## Adds this frame's elapsed seconds and replenishes its work budget.
 ## A zero delta may drain previous debt; invalid elapsed time is ignored.
+## With max_pending_steps, time beyond that many ticks is dropped here.
 func begin_frame(delta: float) -> void:
 	_steps_left = max_steps_per_frame
 	if is_finite(delta) and delta > 0.0:
 		pending_seconds += delta
+		if max_pending_steps > 0:
+			pending_seconds = minf(pending_seconds, step_seconds * float(max_pending_steps))
 
 
 ## True exactly once for each due tick, up to this frame's budget.

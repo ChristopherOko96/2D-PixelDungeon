@@ -82,10 +82,21 @@ func _test_frame_rates(game: Node, world: String) -> void:
 		_prime(game)
 		# Act: one elapsed second at the chosen render rate.
 		for frame in range(fps): game._process(1.0 / float(fps))
-		# Assert: both the world clock and the real cooldown advance equally.
-		_check(is_equal_approx(float(game.state.t), 1.0), "%s %d FPS: world time = 1 s (got %.6f)" % [world, fps, float(game.state.t)])
-		_check(is_equal_approx(float(game.state.cool), 0.2), "%s %d FPS: cooldown retains 0.2 s (got %.6f)" % [world, fps, float(game.state.cool)])
+		# Assert: both the world clock and the real cooldown advance equally. Below the rate the
+		# catch-up budget covers (physics_clock.json max_steps_per_frame per frame) the world
+		# runs slower on purpose instead of piling up debt.
+		var expected: float = _expected_seconds(game, fps, 1.0)
+		_check(is_equal_approx(float(game.state.t), expected), "%s %d FPS: world time = %.3f s (got %.6f)" % [world, fps, expected, float(game.state.t)])
+		_check(is_equal_approx(float(game.state.cool), 1.2 - expected), "%s %d FPS: cooldown retains %.3f s (got %.6f)" % [world, fps, 1.2 - expected, float(game.state.cool)])
 		print("STORY_CLOCK_RATE world=%s fps=%d simulated=%.6f cooldown=%.6f" % [world, fps, float(game.state.t), float(game.state.cool)])
+
+
+## Simulated seconds for `wall` seconds at `fps`: all of it while a frame's due ticks fit the
+## catch-up budget, otherwise the budget's ticks per frame (the legacy script: all of it).
+func _expected_seconds(game: Node, fps: int, wall: float) -> float:
+	if _legacy: return wall
+	var clock: RefCounted = game._simulation_clock
+	return minf(wall, wall * float(fps * int(clock.max_steps_per_frame)) * float(clock.step_seconds))
 
 
 func _test_pause(game: Node, world: String) -> void:
@@ -108,8 +119,9 @@ func _test_hitstop(game: Node, world: String) -> void:
 	_prime(game)
 	var before: float = float(game.state.t)
 	game.feel.feedback.hitstop = 0.11
-	# Act: six held ticks, then a final held tick and one normal tick.
-	game._process(0.1)
+	# Act: six held ticks (one per 60-FPS frame, inside any catch-up budget), then a final
+	# held tick and one normal tick.
+	for frame in range(6): game._process(1.0 / 60.0)
 	_check(is_equal_approx(float(game.state.t), before), world + ": hitstop consumes time without combat updates")
 	game._process(1.0 / 60.0)
 	_check(is_equal_approx(float(game.state.t), before), world + ": the last partial hitstop tick stays frozen")
@@ -159,6 +171,7 @@ func _test_realtime(game: Node, world: String) -> void:
 		var wall: float = float(Time.get_ticks_usec() - started) / 1000000.0
 		var simulated: float = float(game.state.t) - before
 		game.set_process(false)
-		_check(absf(simulated - wall) <= 0.1, "%s cap %d: real callbacks keep wall time (wall %.4f, sim %.4f)" % [world, cap, wall, simulated])
+		var expected: float = _expected_seconds(game, cap, wall)
+		_check(absf(simulated - expected) <= 0.1, "%s cap %d: real callbacks keep %.4f s of %.4f s wall time (sim %.4f)" % [world, cap, expected, wall, simulated])
 		print("STORY_CLOCK_REALTIME world=%s cap=%d frames=%d wall=%.6f simulated=%.6f drift=%.6f" % [world, cap, frames, wall, simulated, simulated - wall])
 	Engine.max_fps = old_cap
