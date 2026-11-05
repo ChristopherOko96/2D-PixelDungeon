@@ -465,6 +465,92 @@ Weltgeschwindigkeit mit neuem Stand: Krypta 93 %, Hölle 88 %, Frostgruft 93 % d
 Zum Vergleich mit dem Nachtrag oben: Diese Zahlen sind ohne Deadlock gemessen, die früheren mit. Sie
 lassen sich deshalb nicht direkt gegenüberstellen.
 
+## Release-Export gegen Editor (2026-11-05, spät)
+
+- **Vorlagen:** Die offiziellen Export-Vorlagen 4.7.2 kamen von GitHub (1,28 GB). Die SHA512 stimmt
+  mit `SHA512-SUMS.txt` des Releases überein. Nur die Windows-Vorlagen liegen jetzt unter
+  `%APPDATA%\Godot\export_templates\4.7.2.stable\`, das Archiv ist wieder gelöscht.
+- **Preset:** Neue `export_presets.cfg` (Windows Desktop). Sie nimmt alle Ressourcen plus `*.json`
+  mit und lässt `production/`, `output/`, `docs/`, `tests/`, `prototypes/` und `studio-tests/` weg.
+  Die Datei ist per `.gitignore` ausgeschlossen und liegt nur lokal.
+- **Messweg:** Die Release-Vorlage kennt `--script` nicht. Gemessen wurde deshalb mit einer
+  Bench-Szene, die nur für diesen Export im Projekt lag und danach wieder gelöscht wurde. Im Release
+  startet sie per `override.cfg` neben der `.exe`, im Editor über ihren Szenenpfad: in beiden derselbe
+  Code (Zaubern nach Spielzeit, Ladebildschirm sofort geschlossen). Der Testbuild liegt nur im
+  Scratchpad.
+
+Abwechselnd E1 R1 R2 E2, Deadlock lief im Hintergrund (daher hohe Streuung), ms je Bild:
+
+| Welt | Editor (E1 / E2) | Release (R1 / R2) | Faktor |
+|---|---|---|---|
+| Krypta | 46,1 / 47,0 | 20,9 / 32,8 | ~1,7× |
+| Hölle | 59,1 / 54,9 | 43,4 / 39,5 | ~1,4× |
+| Frostgruft | 47,4 / 47,3 | 38,6 / 31,7 | ~1,3× |
+
+Weltgeschwindigkeit Editor 53–69 %, Release 72–94 % der Echtzeit. Die Skript-Zeit (Messpunkte) sinkt
+im Release um 20–60 %. Engine und Grafikkarte bleiben gleich und klein.
+
+**Einordnung:** Ohne Deadlock lag der Editor zuletzt bei 22 / 27 / 26 ms. Mit dem Release-Faktor wären
+das grob 13–16 ms (Krypta), ~20 ms (Hölle) und 15–19 ms (Frostgruft). Das ist eine Schätzung, kein
+Messwert. Im schweren Kampf wäre die Krypta damit etwa bei 60 FPS, die Frostgruft knapp darunter und
+die Hölle bei ~50 FPS. Für durchgehend 60 FPS mit Reserve bleiben die Stufen 1 und 2 nötig (Trümmer
+backen, HUD/Licht nur bei Änderung, Partikel nativ).
+
+## Stufe 1 (2026-11-05/06, Nacht)
+
+### Feinmessung (vorübergehende Messpunkte, danach byte-gleich zurück)
+
+- **Trümmer-Zeichnen** (`rig_renderer.draw_under`) kostet 0,9 / 2,7 / 5,0 ms je Bild (Frostgruft /
+  Krypta / Hölle). Davon sind 0,5 / 2 / 4 ms `_turned`, also das Erzeugen neuer gedrehter Trümmer-Bilder
+  in GDScript, höchstens `turn_new` (3) neue je Bild. Das Zeichnen selbst ist billig.
+- **HUD** 3,0–3,6 ms: Heldenleiste 1,5–1,7 ms (viele Umriss-Texte, `talents.hud_state`), Zauberleiste
+  0,7 ms, Etagen-Panel 0,2–0,4 ms, `_nearest` 0,2–0,3 ms.
+- **Licht** 1,7–2,4 ms: Partikel-Leuchten (`particles.draw_glow`) 1,1–1,3 ms, `story_glow.map_items`
+  0,4–0,75 ms.
+
+### Was geändert ist (Bild bewiesen gleich)
+
+- `src/vfx/particles.gd` `draw_glow`: Die Prüfung und das Rechteck aus `Glow.dot` stehen direkt in
+  der Schleife, der weiche Punkt wird einmal geholt, die Glut-Radien einmal gelesen. Gleiche
+  Bedingungen, gleiche Ausdrücke.
+- `src/rig/rig_renderer.gd` `_turned`:
+  - Dreh-Schleife mit vorgezogenen Zeilen- und Stückwerten, die Summen in derselben Reihenfolge.
+  - Umriss-Schleife ohne neue Liste von vier Nachbarn je leerem Pixel, Prüfreihenfolge unverändert
+    rechts, links, unten, oben.
+  - Bröckel-Muster mit vorgezogener Zeile.
+  - Die nicht committeten Änderungen der Kamera-Sitzung in derselben Datei (`draw_enemy`,
+    `draw_hero`, `_hold`, `_solve`) sind unberührt.
+
+### Beweise
+
+- Partikel alt gegen neu: 600 Schritte, alle Member gleich. Das gezeichnete Bild aus Bändern, hohen
+  Partikeln und Leuchten auf zwei Stufen (auch 0,004 für den Schwellwert) ist Byte für Byte gleich.
+- `_turned` alt gegen neu: alle 74 Rigs, jedes Teil und Item, 16 Drehstufen, beide Blickrichtungen,
+  Bröckel-Stufen 0–3: 51 328 Drehbilder, Bild, weiße Silhouette, Halbmaß, Winkel und Mitte gleich,
+  0 Abweichungen. Ein Kontrolllauf mit Fenster verglich echte Bilddaten (16 MB, 431 234 sichtbare
+  Pixel). Erzeugen 2,0× schneller.
+- Tests: `hell_rig_renderer` 73/0, `particles_physics` 26/0, `drake_rig_host` 457/0. Load-Check
+  `particles.gd`, `rig_renderer.gd`, `hell_game.gd`, `game.gd` OK.
+
+### Messung (Editor, abwechselnd O1 N1 N2 O2, Deadlock lief)
+
+O1 war deutlich gestört (Krypta 29, Hölle 38 ms). Verglichen wird deshalb O2 mit dem Mittel von N1/N2:
+
+| Welt | alt (O2) | neu | längstes Bild alt → neu |
+|---|---|---|---|
+| Krypta | 23,3 ms | 21,4 ms | 62 → 54 ms |
+| Hölle | 28,8 ms | 25,7 ms | 107 → 73 ms |
+| Frostgruft | 27,7 ms | 26,2 ms | 111 → 107 ms |
+
+### Bewusst nicht gemacht
+
+- **HUD und Lichtliste:** Sie liegen in `hell_game.gd` und `story_glow.gd`, die noch nicht committete
+  Änderungen der Kamera-Sitzung enthalten. Bildgleich wären ohne Umbau der Leiste nur ~0,5 ms drin.
+  Erst nach deren Commit.
+- **Drehbilder vorab oder im Hintergrund erzeugen** (bis 4 ms Hölle): Das würde den Zeitpunkt
+  verschieben, an dem ein Trümmerteil vom glatt gedrehten Notbild zum Pixel-Drehbild wechselt, also
+  das Bild in den ersten Augenblicken nach einem Tod ändern. Nur mit deiner Freigabe.
+
 ## Hinweise zur Messung
 
 - Ein Lauf je Zahl; die Zeiten schwanken stark mit dem Datei-Cache von Windows (Story-`_ready` kalt

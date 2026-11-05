@@ -1778,14 +1778,23 @@ func _turned(d: Dictionary, level: int) -> Dictionary:
 	var sn := sin(-theta)
 	var body := PackedInt32Array()
 	body.resize(size * size)
+	# the same sums in the same order as per pixel before; only what a row or the piece shares
+	# is read or worked out once
+	var cx := c.x
+	var cy := c.y
+	var ox := origin.x
+	var oy := origin.y
 	for j in range(size):
 		var qy := float(j) + 0.5 - float(half)
+		var ysn := qy * sn
+		var ycs := qy * cs
+		var row := j * size
 		for i in range(size):
 			var qx := float(i) + 0.5 - float(half)
-			var u := floori((c.x + qx * cs - qy * sn - origin.x) * f)
-			var v := floori((c.y + qx * sn + qy * cs - origin.y) * f)
+			var u := floori((cx + qx * cs - ysn - ox) * f)
+			var v := floori((cy + qx * sn + ycs - oy) * f)
 			if u < 0 or v < 0 or u >= w or v >= h: continue
-			body[j * size + i] = px[v * w + u]
+			body[row + i] = px[v * w + u]
 	# the white silhouette (hot hell debris glows through it), before the ring
 	var white := PackedInt32Array()
 	white.resize(size * size)
@@ -1793,21 +1802,42 @@ func _turned(d: Dictionary, level: int) -> Dictionary:
 		if body[k] != 0: white[k] = -1
 	var ink := _rgba_int(_hex(_rag("outline"), INK))
 	var shape := body.duplicate()
+	# an empty pixel next to a lit one becomes the rim; its neighbours checked right, left, down,
+	# up as before, without a list of them per pixel
 	for j in range(size):
+		var row := j * size
 		for i in range(size):
-			if shape[j * size + i] != 0: continue
-			for n: Vector2i in [Vector2i(i + 1, j), Vector2i(i - 1, j), Vector2i(i, j + 1), Vector2i(i, j - 1)]:
-				if n.x < 0 or n.y < 0 or n.x >= size or n.y >= size: continue
-				var col := shape[n.y * size + n.x]
+			var at := row + i
+			if shape[at] != 0: continue
+			var col := 0
+			if i + 1 < size:
+				col = shape[at + 1]
 				if col != 0 and not _dark_int(col):
-					body[j * size + i] = ink
-					break
+					body[at] = ink
+					continue
+			if i > 0:
+				col = shape[at - 1]
+				if col != 0 and not _dark_int(col):
+					body[at] = ink
+					continue
+			if j + 1 < size:
+				col = shape[at + size]
+				if col != 0 and not _dark_int(col):
+					body[at] = ink
+					continue
+			if j > 0:
+				col = shape[at - size]
+				if col != 0 and not _dark_int(col):
+					body[at] = ink
 	if level > 0:
+		var cut := level * 4
 		for j in range(size):
+			var row := j * size
+			var bayer_row := (j % 4) * 4
 			for i in range(size):
-				if BAYER[(j % 4) * 4 + i % 4] < level * 4:
-					body[j * size + i] = 0
-					white[j * size + i] = 0
+				if BAYER[bayer_row + i % 4] < cut:
+					body[row + i] = 0
+					white[row + i] = 0
 	var out := {"tex": ImageTexture.create_from_image(Image.create_from_data(size, size, false, Image.FORMAT_RGBA8, body.to_byte_array())),
 		"white": ImageTexture.create_from_image(Image.create_from_data(size, size, false, Image.FORMAT_RGBA8, white.to_byte_array())),
 		"half": Vector2(half, half), "theta": theta, "c": c}

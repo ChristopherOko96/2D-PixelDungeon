@@ -2551,18 +2551,30 @@ func draw_glow(canvas: CanvasItem, level: float) -> void:
 	var base := float(spec.get("radius", 3.0))
 	var per := float(spec.get("per_size", 1.0))
 	var cap := float(spec.get("alpha_cap", 0.22))
+	# Glow.dot's own test and rectangle written out here, the soft dot fetched once: the same
+	# lights, without two function calls per glowing particle
+	var dot := Glow.dot_texture()
 	for particle: Dictionary in _particles:
 		if not bool(particle.glow): continue
 		var alpha := clampf(float(particle.life) / (float(particle.max_life) * 0.5), 0.0, 1.0) if bool(particle.fade) else 1.0
 		var point: Vector2 = Vector2(particle.pos) - Vector2(0.0, float(particle.z))
 		# a spark seen against a wall does not light the wall up (no glow through walls)
 		if solid(point): continue
-		Glow.dot(canvas, point, base + float(particle.size) * per, Color(particle.color, minf(cap, float(particle.get("glow_a", 0.32))) * alpha * level))
+		var radius := base + float(particle.size) * per
+		var color := Color(particle.color, minf(cap, float(particle.get("glow_a", 0.32))) * alpha * level)
+		if radius < 1.0 or color.a <= 0.003: continue
+		canvas.draw_texture_rect(dot, Rect2(point - Vector2(radius, radius), Vector2(radius, radius) * 2.0), false, color)
 	var ember_r: Array = spec.get("ember_r", [2.0, 5.0])
 	var ember_a := float(spec.get("ember_alpha", 0.2))
+	var ember_lo := float(ember_r[0])
+	var ember_hi := float(ember_r[1])
 	for ember: Dictionary in _embers:
 		var heat := float(ember.life) / float(ember.max)
-		Glow.dot(canvas, _world(ember.art), lerpf(float(ember_r[0]), float(ember_r[1]), heat), Color(1.0, 0.5, 0.15, ember_a * heat * level))
+		var radius := lerpf(ember_lo, ember_hi, heat)
+		var color := Color(1.0, 0.5, 0.15, ember_a * heat * level)
+		if radius < 1.0 or color.a <= 0.003: continue
+		var point := _world(ember.art)
+		canvas.draw_texture_rect(dot, Rect2(point - Vector2(radius, radius), Vector2(radius, radius) * 2.0), false, color)
 
 
 func count() -> int:
