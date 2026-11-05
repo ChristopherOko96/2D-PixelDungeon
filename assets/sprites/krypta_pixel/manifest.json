@@ -1204,5 +1204,17 @@
   "kind": "sprite",
   "src": "drawn side wall + crypt_props wall_torch",
   "w": 69
+ },
+ "side_slab": {
+  "w": 62,
+  "h": 192,
+  "kind": "sprite",
+  "src": "stone slab from wall_v"
+ },
+ "side_slab_open": {
+  "w": 62,
+  "h": 192,
+  "kind": "sprite",
+  "src": "stone slab from wall_v"
  }
 }

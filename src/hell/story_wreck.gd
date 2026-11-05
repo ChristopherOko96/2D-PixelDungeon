@@ -624,6 +624,9 @@ func _smash_prop(p: Dictionary, kind: Dictionary, m: Dictionary, dir: Vector2, p
 	var near := rect.grow(30.0)
 	g.W.lights = lights.filter(func(li: Dictionary) -> bool: return not near.has_point(Vector2(float(li.x), float(li.y))))
 	_sound(str(m.get("break", "")), at, 0.05)
+	# what the Weltbauer put in this prop replaces the chance loot
+	if g.has_method("world_room_smashed") and g.world_room_smashed(p, Vector2(float(p.x), float(p.y) + 6.0)):
+		return
 	var loot: Dictionary = kind.get("loot", {})
 	if not loot.is_empty() and _rng.randf() < float(loot.get("chance", 0.0)):
 		var room: int = g._room_at_world(float(p.x), float(p.y))

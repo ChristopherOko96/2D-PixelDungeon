@@ -1,0 +1,38 @@
+{
+ "_note": "What chests and breakable pieces of Weltbauer rooms may hold (src/world_kit/room_contents.gd). chest_mobs: monsters that never stand as monsters when placed, they wait as a chest. mimic_chance: share of chests set to Mimik 'Zufällig' that bite (0 to 1). max_enemies: enemies one chest or piece lets out. random_chest: gold of a chest with content 'Zufällig' is gems_base + gems_per_floor * floor, heart_chance its share with a heart; items come from the game's chest drops (items.json drops.chest). random_piece: chances (sum 1) of a broken piece with content 'Zufällig': nothing, gold_amount gold or a heart; items come from items.json drops.crate. hoard: the Schatz chest of a solved puzzle (content type hoard): gold gems_base + gems_per_floor * floor, always a heart, rolls = item drop sources of items.json drops rolled one after another (gold_crate: a rare weapon or gear plus crystal and stone), rune = gold_loot rune source. tablet: the Inschrift stone (Weltbauer part tablet): asset = its picture, foot = px it blocks (width, height), reach = px from the hero within which its text shows.",
+ "chest_mobs": [
+  "mimik",
+  "truhenfresser"
+ ],
+ "mimic_chance": 0.35,
+ "max_enemies": 2,
+ "random_chest": {
+  "gems_base": 3,
+  "gems_per_floor": 1,
+  "heart_chance": 0.25
+ },
+ "random_piece": {
+  "nothing": 0.35,
+  "gold": 0.45,
+  "heart": 0.2,
+  "gold_amount": 3
+ },
+ "hoard": {
+  "gems_base": 14,
+  "gems_per_floor": 3,
+  "rolls": [
+   "gold_crate",
+   "chest",
+   "chest"
+  ],
+  "rune": "vault"
+ },
+ "tablet": {
+  "asset": "obelisk",
+  "foot": [
+   56,
+   24
+  ],
+  "reach": 150
+ }
+}

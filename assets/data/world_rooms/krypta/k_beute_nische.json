@@ -1,0 +1,139 @@
+{
+	"schema_version": 1,
+	"id": "k_beute_nische",
+	"title": "Beute: Nische",
+	"world": "krypta",
+	"role": "treasure",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		]
+	],
+	"width": 14,
+	"height": 11,
+	"cells": [
+		"00000000000000",
+		"00001111110000",
+		"00001111110000",
+		"00001111110000",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"00001111110000",
+		"00001111110000",
+		"00001111110000",
+		"00000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				6,
+				0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				6,
+				10
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0,
+				5
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				13,
+				5
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 432,
+			"y": 274.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				26,
+				18
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 912,
+			"y": 274.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				26,
+				18
+			]
+		},
+		{
+			"kind": "raw",
+			"x": 432,
+			"y": 849.6,
+			"ent": {
+				"type": "crate",
+				"look": "crate_a",
+				"hp": 2,
+				"drop": "random"
+			}
+		},
+		{
+			"kind": "raw",
+			"x": 912,
+			"y": 849.6,
+			"ent": {
+				"type": "crate",
+				"look": "crate_c",
+				"hp": 2,
+				"drop": "random"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "rug_red",
+			"x": 672,
+			"y": 516,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 84,
+				"w": 170,
+				"h": 300,
+				"a": 1
+			}
+		},
+		{
+			"kind": "start",
+			"x": 624,
+			"y": 547.2
+		}
+	]
+}

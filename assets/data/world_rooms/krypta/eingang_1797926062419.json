@@ -1,0 +1,280 @@
+{
+	"schema_version": 1,
+	"id": "eingang_1797926062419",
+	"title": "Eingang",
+	"world": "krypta",
+	"role": "start",
+	"width": 14,
+	"height": 11,
+	"cells": [
+		"00000000000000",
+		"00001111110000",
+		"00011111111000",
+		"00111111111100",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"00111111111100",
+		"00011111111000",
+		"00001111110000",
+		"00000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "door",
+			"cell": [
+				6,
+				10
+			],
+			"dir": "v"
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "prop",
+			"asset": "brazier_bowl",
+			"x": 432.0,
+			"y": 180.5,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				56.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_big_b",
+			"x": 144.0,
+			"y": 558.7,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				70.0,
+				36.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_g",
+			"x": 555.3,
+			"y": 544.4,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_d",
+			"x": 311.5,
+			"y": 261.5,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 705.9,
+			"y": 909.5,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_t",
+			"x": 991.2,
+			"y": 733.8,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rubble",
+			"x": 341.5,
+			"y": 813.8,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile_t",
+			"x": 714.2,
+			"y": 461.6,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_d",
+			"x": 168.4,
+			"y": 432.3,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_big",
+			"x": 624.0,
+			"y": 571.5,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_f",
+			"x": 528.0,
+			"y": 184.5,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_b",
+			"x": 432.0,
+			"y": 286.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_c",
+			"x": 240.0,
+			"y": 768.5,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_a",
+			"x": 528.0,
+			"y": 102.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 854.4,
+			"y": 102.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "raw",
+			"x": 1104.0,
+			"y": 753.6,
+			"ent": {
+				"type": "crate",
+				"x": 1104.0,
+				"y": 4977.6,
+				"room": 0,
+				"look": "barrel_b",
+				"hp": 1,
+				"drop": "none"
+			}
+		},
+		{
+			"kind": "raw",
+			"x": 1104.0,
+			"y": 369.6,
+			"ent": {
+				"type": "crate",
+				"x": 1104.0,
+				"y": 4593.6,
+				"room": 0,
+				"look": "crate_b",
+				"hp": 2,
+				"drop": "none"
+			}
+		},
+		{
+			"kind": "start",
+			"x": 624.0,
+			"y": 566.400390625
+		}
+	]
+}

@@ -1,0 +1,649 @@
+{
+	"schema_version": 1,
+	"id": "k_prunksaal_lc",
+	"title": "Prunksaal (Winkel)",
+	"world": "krypta",
+	"role": "combat",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		],
+		[
+			0,
+			1
+		],
+		[
+			1,
+			1
+		]
+	],
+	"width": 31,
+	"height": 25,
+	"cells": [
+		"0000000000000000000000000000000",
+		"0000000000000000000000000000000",
+		"0000000000000000000000000000000",
+		"0000000000000000000000000000000",
+		"0000000000000000000000000000000",
+		"0001111111111000000000000000000",
+		"0001111111111000000000000000000",
+		"0001111111111000000000000000000",
+		"0001111111111000000000000000000",
+		"0001111111111000000000000000000",
+		"0001111111111000000000000000000",
+		"0001111111111000000000000000000",
+		"0001111111111000000000000000000",
+		"0001111111111000000000000000000",
+		"0001111111111000000000000000000",
+		"0001111111111111111111111100000",
+		"0001111111111111111111111100000",
+		"0001111111111111111111111100000",
+		"0001111111111111111111111100000",
+		"0001111111111111111111111100000",
+		"0001111111111111111111111100000",
+		"0001111111111111111111111100000",
+		"0001111111111111111111111100000",
+		"0001111111111111111111111100000",
+		"0000000000000000000000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				6,
+				4
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				2,
+				5
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				13,
+				5
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				6,
+				24
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				2,
+				19
+			]
+		},
+		{
+			"side": "north",
+			"cell": [
+				23,
+				14
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				23,
+				24
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				26,
+				19
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 816,
+			"y": 658.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				26,
+				18
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bench",
+			"x": 432,
+			"y": 850.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				120,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bench",
+			"x": 1104,
+			"y": 850.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				120,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bench",
+			"x": 432,
+			"y": 1042.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				120,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bench",
+			"x": 1104,
+			"y": 1042.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				120,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bench",
+			"x": 432,
+			"y": 1234.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				120,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bench",
+			"x": 1104,
+			"y": 1234.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				120,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_angel",
+			"x": 432,
+			"y": 1618.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				50,
+				26
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 816,
+			"y": 1618.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				26,
+				18
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_angel",
+			"x": 1200,
+			"y": 1618.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				50,
+				26
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 1584,
+			"y": 1618.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				26,
+				18
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_angel",
+			"x": 1968,
+			"y": 1618.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				50,
+				26
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bench",
+			"x": 816,
+			"y": 1810.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				120,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bench",
+			"x": 1296,
+			"y": 1810.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				120,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bench",
+			"x": 1776,
+			"y": 1810.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				120,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bench",
+			"x": 816,
+			"y": 2002.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				120,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bench",
+			"x": 1296,
+			"y": 2002.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				120,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bench",
+			"x": 1776,
+			"y": 2002.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				120,
+				30
+			]
+		},
+		{
+			"kind": "raw",
+			"x": 432,
+			"y": 2193.6,
+			"ent": {
+				"type": "crate",
+				"look": "crate_b",
+				"hp": 2,
+				"drop": "random"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "rug_red",
+			"x": 768,
+			"y": 1044,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 84,
+				"w": 170,
+				"h": 760,
+				"a": 1
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "carpet",
+			"x": 1632,
+			"y": 1945,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 73,
+				"w": 1100,
+				"h": 150,
+				"a": 1
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 1392,
+			"y": 1446,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 1660.8,
+			"y": 1446,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_b",
+			"x": 1929.6,
+			"y": 1446,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 1488,
+			"y": 2290.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				26,
+				18
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_monk",
+			"x": 1008,
+			"y": 2290.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				24
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 1968,
+			"y": 2290.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				26,
+				18
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_a",
+			"x": 336,
+			"y": 1533,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_small",
+			"x": 624,
+			"y": 860,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 44,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_b",
+			"x": 1104,
+			"y": 1246,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 46,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 1104,
+			"y": 1732,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 528,
+			"y": 1252,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_b",
+			"x": 1200,
+			"y": 2110,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 46,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 1104,
+			"y": 1056,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "start",
+			"x": 1200,
+			"y": 1219.2
+		}
+	]
+}

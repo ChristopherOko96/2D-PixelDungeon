@@ -1,0 +1,590 @@
+{
+	"schema_version": 1,
+	"id": "k_saeulengang_b3",
+	"title": "Säulengang (lang)",
+	"world": "krypta",
+	"role": "combat",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		],
+		[
+			1,
+			0
+		],
+		[
+			2,
+			0
+		]
+	],
+	"width": 48,
+	"height": 11,
+	"cells": [
+		"000000000000000000000000000000000000000000000000",
+		"000000001111111111111111111111111111111100000000",
+		"000000001111111111111111111111111111111100000000",
+		"000000001111111111111111111111111111111100000000",
+		"000000001111111111111111111111111111111100000000",
+		"000000001111111111111111111111111111111100000000",
+		"000000001111111111111111111111111111111100000000",
+		"000000001111111111111111111111111111111100000000",
+		"000000001111111111111111111111111111111100000000",
+		"000000001111111111111111111111111111111100000000",
+		"000000000000000000000000000000000000000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				8,
+				0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				8,
+				10
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				7,
+				5
+			]
+		},
+		{
+			"side": "north",
+			"cell": [
+				23,
+				0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				23,
+				10
+			]
+		},
+		{
+			"side": "north",
+			"cell": [
+				38,
+				0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				38,
+				10
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				40,
+				5
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "prop",
+			"asset": "rune_pillar_a",
+			"x": 1296,
+			"y": 274.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				50,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_pillar_a",
+			"x": 1680,
+			"y": 274.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				50,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "torch_pillar",
+			"x": 2064,
+			"y": 274.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				26
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_pillar_a",
+			"x": 2736,
+			"y": 274.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				50,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_pillar_a",
+			"x": 3120,
+			"y": 274.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				50,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_pillar_a",
+			"x": 3504,
+			"y": 274.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				50,
+				28
+			]
+		},
+		{
+			"kind": "plate",
+			"x": 1488,
+			"y": 432,
+			"group": "seq",
+			"order": 0
+		},
+		{
+			"kind": "plate",
+			"x": 2256,
+			"y": 432,
+			"group": "seq",
+			"order": 0
+		},
+		{
+			"kind": "plate",
+			"x": 3024,
+			"y": 432,
+			"group": "seq",
+			"order": 0
+		},
+		{
+			"kind": "plate",
+			"x": 1488,
+			"y": 624,
+			"group": "seq",
+			"order": 0
+		},
+		{
+			"kind": "plate",
+			"x": 2256,
+			"y": 624,
+			"group": "seq",
+			"order": 0
+		},
+		{
+			"kind": "plate",
+			"x": 3024,
+			"y": 624,
+			"group": "seq",
+			"order": 0
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_pillar_a",
+			"x": 1296,
+			"y": 850.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				50,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_pillar_a",
+			"x": 1680,
+			"y": 850.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				50,
+				28
+			]
+		},
+		{
+			"kind": "raw",
+			"x": 2064,
+			"y": 849.6,
+			"ent": {
+				"type": "crate",
+				"look": "crate_c",
+				"hp": 2,
+				"drop": "random"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_pillar_a",
+			"x": 2736,
+			"y": 850.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				50,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_pillar_a",
+			"x": 3120,
+			"y": 850.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				50,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_pillar_a",
+			"x": 3504,
+			"y": 850.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				50,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "carpet",
+			"x": 2304,
+			"y": 601,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 73,
+				"w": 2000,
+				"h": 150,
+				"a": 1
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_plate",
+			"x": 2304,
+			"y": 574,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45.5,
+				"w": 0,
+				"h": 0,
+				"a": 1
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_1",
+			"x": 1180.8,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 1449.6,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_b",
+			"x": 1718.4,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_a",
+			"x": 2793.6,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 3062.4,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_a",
+			"x": 3331.2,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "grate_a",
+			"x": 2640,
+			"y": 850,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 33.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "grate",
+			"x": 3312,
+			"y": 956,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 44,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 3024,
+			"y": 288,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_c",
+			"x": 3408,
+			"y": 385,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 48.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "grate_b",
+			"x": 3408,
+			"y": 171,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 26.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "grate",
+			"x": 1200,
+			"y": 188,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 44,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_f",
+			"x": 2823.3,
+			"y": 621.6,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rubble",
+			"x": 2903.7,
+			"y": 816,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "start",
+			"x": 2256,
+			"y": 547.2
+		}
+	]
+}

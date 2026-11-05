@@ -1,0 +1,379 @@
+{
+	"schema_version": 1,
+	"id": "k_ritual_b2",
+	"title": "Ritualkreis (breit)",
+	"world": "krypta",
+	"role": "combat",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		],
+		[
+			1,
+			0
+		]
+	],
+	"width": 31,
+	"height": 11,
+	"cells": [
+		"0000000000000000000000000000000",
+		"0000000011111111111111100000000",
+		"0000000111111111111111110000000",
+		"0000001111111111111111111100000",
+		"0000011111111111111111111100000",
+		"0000011111111111111111111100000",
+		"0000011111111111111111111100000",
+		"0000011111111111111111111100000",
+		"0000001111111111111111111000000",
+		"0000000011111111111111100000000",
+		"0000000000000000000000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				8,
+				0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				6,
+				9
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				4,
+				5
+			]
+		},
+		{
+			"side": "north",
+			"cell": [
+				24,
+				2
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				23,
+				9
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				26,
+				5
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "prop",
+			"asset": "torch_pillar_blue",
+			"x": 1008,
+			"y": 274.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				26
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "torch_pillar_blue",
+			"x": 1968,
+			"y": 274.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				26
+			]
+		},
+		{
+			"kind": "plate",
+			"x": 912,
+			"y": 432,
+			"group": "seq",
+			"order": 0
+		},
+		{
+			"kind": "plate",
+			"x": 1488,
+			"y": 432,
+			"group": "seq",
+			"order": 0
+		},
+		{
+			"kind": "plate",
+			"x": 2064,
+			"y": 432,
+			"group": "seq",
+			"order": 0
+		},
+		{
+			"kind": "plate",
+			"x": 912,
+			"y": 720,
+			"group": "seq",
+			"order": 0
+		},
+		{
+			"kind": "plate",
+			"x": 1488,
+			"y": 720,
+			"group": "seq",
+			"order": 0
+		},
+		{
+			"kind": "plate",
+			"x": 2064,
+			"y": 720,
+			"group": "seq",
+			"order": 0
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_rune",
+			"x": 912,
+			"y": 850.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				50,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_rune",
+			"x": 2064,
+			"y": 850.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				50,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_big",
+			"x": 1488,
+			"y": 572,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 43.5,
+				"w": 0,
+				"h": 0,
+				"a": 1
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "demon_plate",
+			"x": 1056,
+			"y": 623,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 46.5,
+				"w": 0,
+				"h": 0,
+				"a": 1
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "demon_plate",
+			"x": 1920,
+			"y": 623,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 46.5,
+				"w": 0,
+				"h": 0,
+				"a": 1
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "icon_demon",
+			"x": 1180.8,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_chain",
+			"x": 1449.6,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "icon_demon",
+			"x": 1718.4,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 1987.2,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_c",
+			"x": 1680,
+			"y": 385,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 48.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 1104,
+			"y": 484,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "grate_a",
+			"x": 1872,
+			"y": 370,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 33.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 1770,
+			"y": 357.6,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "start",
+			"x": 1488,
+			"y": 547.2
+		}
+	]
+}

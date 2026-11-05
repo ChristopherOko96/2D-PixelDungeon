@@ -1,0 +1,1247 @@
+{
+	"schema_version": 1.0,
+	"id": "k_sprung_kammern",
+	"title": "Sprung: Vier Kammern (lang)",
+	"world": "krypta",
+	"role": "jump",
+	"in_floors": true,
+	"slots": [
+		[
+			0.0,
+			0.0
+		],
+		[
+			1.0,
+			0.0
+		],
+		[
+			2.0,
+			0.0
+		]
+	],
+	"width": 48.0,
+	"height": 11.0,
+	"cells": [
+		"000000000000000000000000000000000000000000000000",
+		"011111111111111111111111111111111111111111111110",
+		"011111111111111111111111111111111111111111111110",
+		"011110000000000000000000000000000000000000011110",
+		"011110111444444011111111101122112220111111011110",
+		"011110111444444011111111101122112220111111011110",
+		"011110111444444011111111101122233330111111011110",
+		"011110111411144011111111101112212220111111011110",
+		"011110111444444011111111101122222220111111011110",
+		"011110111444444011111111101122222220111111011110",
+		"000000000000000000000000000000000000000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				6.0,
+				0.0
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0.0,
+				5.0
+			]
+		},
+		{
+			"side": "north",
+			"cell": [
+				23.0,
+				0.0
+			]
+		},
+		{
+			"side": "north",
+			"cell": [
+				40.0,
+				0.0
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				47.0,
+				5.0
+			]
+		}
+	],
+	"auto_mobs": 0.0,
+	"objects": [
+		{
+			"kind": "prop",
+			"asset": "wall_skull_b",
+			"x": 240.0,
+			"y": 102.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_long",
+			"x": 1008.0,
+			"y": 102.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_long",
+			"x": 1296.0,
+			"y": 102.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_skull_a",
+			"x": 1584.0,
+			"y": 102.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_skull",
+			"x": 1872.0,
+			"y": 102.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_long",
+			"x": 2640.0,
+			"y": 102.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 2928.0,
+			"y": 102.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_2",
+			"x": 3216.0,
+			"y": 102.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_skull",
+			"x": 3504.0,
+			"y": 102.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_2",
+			"x": 4272.0,
+			"y": 102.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 720.0,
+			"y": 390.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_skull_b",
+			"x": 1488.0,
+			"y": 456.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_long",
+			"x": 1968.0,
+			"y": 390.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_skull_b",
+			"x": 2448.0,
+			"y": 456.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 2544.0,
+			"y": 432.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "cage_hang",
+			"x": 2928.0,
+			"y": 390.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 3216.0,
+			"y": 390.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 3600.0,
+			"y": 432.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 3888.0,
+			"y": 432.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_d",
+			"x": 739.8,
+			"y": 172.5,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_b",
+			"x": 1483.6,
+			"y": 157.9,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 1770.0,
+			"y": 163.9,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_a",
+			"x": 1872.0,
+			"y": 187.2,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 45.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_g",
+			"x": 2901.7,
+			"y": 171.2,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_b",
+			"x": 3292.8,
+			"y": 157.9,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rubble",
+			"x": 3864.9,
+			"y": 169.1,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_e",
+			"x": 155.6,
+			"y": 232.8,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_small",
+			"x": 336.0,
+			"y": 283.2,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 45.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_e",
+			"x": 731.4,
+			"y": 237.9,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rubble",
+			"x": 1178.9,
+			"y": 266.4,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 1608.8,
+			"y": 229.5,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 1680.0,
+			"y": 283.2,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 45.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_g",
+			"x": 2045.8,
+			"y": 267.1,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_c",
+			"x": 2252.9,
+			"y": 227.7,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_small",
+			"x": 3984.0,
+			"y": 283.2,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 45.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_c",
+			"x": 144.0,
+			"y": 475.2,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 45.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_a",
+			"x": 2064.0,
+			"y": 456.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_b",
+			"x": 336.0,
+			"y": 571.2,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 45.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "rubble",
+			"x": 3680.7,
+			"y": 555.9,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_f",
+			"x": 4171.9,
+			"y": 530.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_small",
+			"x": 4464.0,
+			"y": 571.2,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 45.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_b",
+			"x": 4178.9,
+			"y": 649.2,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_a",
+			"x": 4296.2,
+			"y": 631.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rubble",
+			"x": 266.0,
+			"y": 707.7,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_c",
+			"x": 1872.0,
+			"y": 763.2,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 45.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_c",
+			"x": 352.1,
+			"y": 805.1,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rubble",
+			"x": 1666.9,
+			"y": 841.7,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_small",
+			"x": 3888.0,
+			"y": 859.2,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 45.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_a",
+			"x": 4339.4,
+			"y": 827.3,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_g",
+			"x": 727.6,
+			"y": 913.5,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_scatter",
+			"x": 1575.5,
+			"y": 893.2,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_c",
+			"x": 1961.8,
+			"y": 926.4,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_f",
+			"x": 2278.3,
+			"y": 897.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_e",
+			"x": 2654.8,
+			"y": 926.6,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "plate",
+			"group": "C",
+			"order": 2.0,
+			"x": 1776.0,
+			"y": 528.0,
+			"enemies": [
+				"random"
+			]
+		},
+		{
+			"kind": "plate",
+			"group": "C",
+			"order": 1.0,
+			"x": 2064.0,
+			"y": 816.0
+		},
+		{
+			"kind": "plate",
+			"group": "C",
+			"order": 3.0,
+			"x": 2256.0,
+			"y": 528.0,
+			"enemies": [
+				"random"
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_b",
+			"x": 1008.0,
+			"y": 268.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				16.0
+			],
+			"loot": {
+				"type": "random"
+			},
+			"enemies": [
+				"random"
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_a",
+			"x": 3216.0,
+			"y": 268.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				16.0
+			],
+			"loot": {
+				"type": "random"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "crate_a",
+			"x": 4368.0,
+			"y": 268.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				48.0,
+				22.0
+			],
+			"loot": {
+				"type": "random"
+			},
+			"enemies": [
+				"random",
+				"random"
+			]
+		},
+		{
+			"kind": "start",
+			"x": 336.0,
+			"y": 360.0
+		},
+		{
+			"kind": "tablet",
+			"text": "Vier Kammern, vier Schlösser.\nJedes geöffnete weckt den Sprung in die nächste.",
+			"x": 240.0,
+			"y": 456.0
+		},
+		{
+			"kind": "launch",
+			"dir": "n",
+			"cells": 3.0,
+			"x": 720.0,
+			"y": 432.0
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 1776.0,
+			"y": 480.0,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				40.0,
+				20.0
+			]
+		},
+		{
+			"kind": "launch",
+			"dir": "n",
+			"cells": 3.0,
+			"x": 1968.0,
+			"y": 432.0
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile",
+			"x": 2256.0,
+			"y": 460.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				76.0,
+				26.0
+			]
+		},
+		{
+			"kind": "launch",
+			"dir": "n",
+			"cells": 3.0,
+			"x": 2640.0,
+			"y": 432.0
+		},
+		{
+			"kind": "lever",
+			"group": "D",
+			"x": 3024.0,
+			"y": 412.8
+		},
+		{
+			"kind": "launch",
+			"dir": "n",
+			"cells": 3.0,
+			"x": 3504.0,
+			"y": 432.0
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_pillar",
+			"x": 3984.0,
+			"y": 528.0,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				50.0,
+				26.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_low",
+			"x": 4272.0,
+			"y": 460.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				57.0,
+				26.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_low",
+			"x": 4272.0,
+			"y": 940.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				57.0,
+				26.0
+			]
+		},
+		{
+			"kind": "launch",
+			"dir": "e",
+			"cells": 9.0,
+			"x": 816.0,
+			"y": 528.0,
+			"wake": "B"
+		},
+		{
+			"kind": "launch",
+			"dir": "w",
+			"cells": 3.0,
+			"x": 2928.0,
+			"y": 528.0
+		},
+		{
+			"kind": "launch",
+			"dir": "e",
+			"cells": 3.0,
+			"x": 2352.0,
+			"y": 624.0,
+			"wake": "C"
+		},
+		{
+			"kind": "secret",
+			"dir": "h",
+			"group": "D",
+			"x": 3360.0,
+			"y": 576.0
+		},
+		{
+			"kind": "launch",
+			"dir": "e",
+			"cells": 3.0,
+			"x": 432.0,
+			"y": 720.0
+		},
+		{
+			"kind": "launch",
+			"dir": "e",
+			"cells": 3.0,
+			"x": 816.0,
+			"y": 720.0
+		},
+		{
+			"kind": "launch",
+			"dir": "w",
+			"cells": 3.0,
+			"x": 1008.0,
+			"y": 720.0
+		},
+		{
+			"kind": "brazier",
+			"group": "B",
+			"x": 1200.0,
+			"y": 744.0
+		},
+		{
+			"kind": "launch",
+			"dir": "e",
+			"cells": 3.0,
+			"x": 2736.0,
+			"y": 720.0
+		},
+		{
+			"kind": "launch",
+			"dir": "n",
+			"cells": 2.0,
+			"x": 3024.0,
+			"y": 720.0
+		},
+		{
+			"kind": "chest",
+			"loot": {
+				"type": "hoard"
+			},
+			"x": 3696.0,
+			"y": 744.0
+		},
+		{
+			"kind": "chest",
+			"loot": {
+				"type": "random"
+			},
+			"x": 4464.0,
+			"y": 840.0,
+			"mimic": "random",
+			"mimic_mob": "mimik"
+		},
+		{
+			"kind": "tablet",
+			"text": "Licht, Himmel, Tod.\nDer Tod kommt nicht zuerst.\nDer Himmel geht dem Licht voran.\nDas Licht ist nicht das Letzte.",
+			"x": 1680.0,
+			"y": 936.0
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_angel",
+			"x": 2064.0,
+			"y": 940.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				28.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 3600.0,
+			"y": 940.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				40.0,
+				20.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 3888.0,
+			"y": 940.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				40.0,
+				20.0
+			]
+		}
+	],
+	"kind_label": "Sprungrätsel",
+	"spawn_mode": "manual"
+}

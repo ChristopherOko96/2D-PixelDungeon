@@ -8,6 +8,7 @@ extends RefCounted
 ## the same run number always rebuilds the same world (saves), a new one gives new layouts.
 
 const Core = preload("res://src/world_kit/world_core.gd")
+const RoomFloor = preload("res://src/world_kit/room_floor.gd")
 const PACK_PATH := "res://assets/data/krypta_world.json"
 const C := 96.0
 
@@ -58,8 +59,22 @@ func for_run(run: int) -> Dictionary:
 	return {"floors": floors, "circles": pack.circles, "names": pack.names, "suffixes": pack.suffixes, "diff": pack.get("diff", {})}
 
 
-## Floor n of a run, dressed, in the runtime schema (src/hell/hell_floor_data.gd).
+## Floor n of a run, dressed, in the runtime schema (src/hell/hell_floor_data.gd). A world with a
+## room_library (pack key) builds it from its room files, joined by corridors (room_floor.gd).
 func build_raw(n: int, run: int) -> Dictionary:
+	if pack.has("room_library"):
+		var library_floor := RoomFloor.build(n, run, self)
+		if not library_floor.is_empty():
+			dress_library(library_floor)
+			var library_raw := Core.to_raw(library_floor)
+			library_raw.run = run
+			return library_raw
+		push_warning("floor %d: the room files do not fit its plan, generating it instead" % n)
+	return build_generated(n, run)
+
+
+## Floor n of a run from the generator alone, whatever the world's room_library says.
+func build_generated(n: int, run: int) -> Dictionary:
 	var W := Core.build_floor(n, sizes, for_run(run))
 	dress(W)
 	var raw := Core.to_raw(W)
@@ -101,6 +116,33 @@ func dress(W: Dictionary) -> Dictionary:
 	# last: mire, pits, furniture and fountain never block a way (world kit rule)
 	Core.clear_ways(W)
 	return W
+
+
+## The world's touches on a floor built from room files: its pieces are the files', so no furniture or
+## clutter comes on top, only wording, the world's light, the banners' colours and the way check.
+func dress_library(W: Dictionary) -> Dictionary:
+	for r: Dictionary in W.rooms:
+		r.name = wording(r.name)
+		r.kind = wording(r.kind)
+		r.info = wording(r.get("info", ""))
+	for g: Dictionary in W.groups.values():
+		if g.has("label"):
+			g.label = wording(g.label)
+	if pack.get("theme_flag") != null:
+		W.theme[str(pack.theme_flag)] = true
+	if pack.get("light") != null:
+		W.theme.dark = float(W.theme.dark) * float(pack.light.dark)
+		W.theme.vignette = float(W.theme.vignette) * float(pack.light.vignette)
+	_boss_gate(W)
+	_blue_light(W)
+	Core.clear_ways(W)
+	return W
+
+
+## Adds the pictures the world's room files use to `tex`, in both graphics views.
+func fill_textures(tex: Dictionary, theme: Dictionary) -> void:
+	if pack.has("room_library"):
+		RoomFloor.fill_textures(str(pack.room_library.world), tex, theme)
 
 
 ## Each connected bridge becomes one straight crossing, two cells wide, across the full river,

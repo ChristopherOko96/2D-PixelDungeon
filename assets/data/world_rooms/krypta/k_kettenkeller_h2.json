@@ -1,0 +1,483 @@
+{
+	"schema_version": 1,
+	"id": "k_kettenkeller_h2",
+	"title": "Kettenkeller (hoch)",
+	"world": "krypta",
+	"role": "combat",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		],
+		[
+			0,
+			1
+		]
+	],
+	"width": 14,
+	"height": 25,
+	"cells": [
+		"00000000000000",
+		"00000000000000",
+		"00000000000000",
+		"00000000000000",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01110011001110",
+		"01110011001110",
+		"01110011001110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01110011001110",
+		"01110011001110",
+		"01110011001110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"00000000000000",
+		"00000000000000",
+		"00000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				6,
+				3
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0,
+				5
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				13,
+				5
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				6,
+				22
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0,
+				19
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				13,
+				19
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "prop",
+			"asset": "spike_block",
+			"x": 432,
+			"y": 562.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				70,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spike_block",
+			"x": 912,
+			"y": 562.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				70,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "cage_small",
+			"x": 240,
+			"y": 850.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				46,
+				24
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "cage_small",
+			"x": 1104,
+			"y": 850.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				46,
+				24
+			]
+		},
+		{
+			"kind": "spikes",
+			"x": 240,
+			"y": 1104,
+			"phase": 1
+		},
+		{
+			"kind": "spikes",
+			"x": 336,
+			"y": 1104,
+			"phase": 0
+		},
+		{
+			"kind": "spikes",
+			"x": 1008,
+			"y": 1104,
+			"phase": 1
+		},
+		{
+			"kind": "spikes",
+			"x": 1104,
+			"y": 1104,
+			"phase": 0
+		},
+		{
+			"kind": "spikes",
+			"x": 240,
+			"y": 1200,
+			"phase": 0
+		},
+		{
+			"kind": "spikes",
+			"x": 336,
+			"y": 1200,
+			"phase": 1
+		},
+		{
+			"kind": "vent",
+			"x": 624,
+			"y": 1200,
+			"offset": 2.1
+		},
+		{
+			"kind": "vent",
+			"x": 720,
+			"y": 1200,
+			"offset": 2.1
+		},
+		{
+			"kind": "spikes",
+			"x": 1008,
+			"y": 1200,
+			"phase": 0
+		},
+		{
+			"kind": "spikes",
+			"x": 1104,
+			"y": 1200,
+			"phase": 1
+		},
+		{
+			"kind": "spikes",
+			"x": 240,
+			"y": 1296,
+			"phase": 1
+		},
+		{
+			"kind": "spikes",
+			"x": 336,
+			"y": 1296,
+			"phase": 0
+		},
+		{
+			"kind": "spikes",
+			"x": 1008,
+			"y": 1296,
+			"phase": 1
+		},
+		{
+			"kind": "spikes",
+			"x": 1104,
+			"y": 1296,
+			"phase": 0
+		},
+		{
+			"kind": "prop",
+			"asset": "cage_small",
+			"x": 240,
+			"y": 1618.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				46,
+				24
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "cage_small",
+			"x": 1104,
+			"y": 1618.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				46,
+				24
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "coal_skulls",
+			"x": 432,
+			"y": 1906.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile",
+			"x": 912,
+			"y": 1906.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				76,
+				26
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_low",
+			"x": 720,
+			"y": 850.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_low",
+			"x": 624,
+			"y": 1618.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "grate_a",
+			"x": 240,
+			"y": 1618,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 33.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 1008,
+			"y": 1344,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_small",
+			"x": 240,
+			"y": 956,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 44,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 1021.6,
+			"y": 1430.2,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rubble",
+			"x": 214.6,
+			"y": 1392.1,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 245.5,
+			"y": 1523,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rubble",
+			"x": 602.5,
+			"y": 1794.9,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_c",
+			"x": 356.1,
+			"y": 1600.1,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_b",
+			"x": 362.8,
+			"y": 1770.7,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_b",
+			"x": 1093,
+			"y": 1812.9,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "start",
+			"x": 624,
+			"y": 1123.2
+		}
+	]
+}

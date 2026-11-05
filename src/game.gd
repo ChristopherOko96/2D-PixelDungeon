@@ -605,6 +605,9 @@ func _read_arguments() -> void:
 		match args[i]:
 			"--host": should_host = true
 			# Dungeon-Editor.cmd: straight into the Dungeon-Werkstatt.
+			# Weltbauer: straight into a room of its files (world_editor.gd TESTEN)
+			"--world-room":
+				if i + 1 < args.size() and is_instance_valid(main_menu): _open_world_room.call_deferred(args[i + 1], _arg_after(args, "--hero"))
 			"--werkstatt", "--custom-stories":
 				if is_instance_valid(main_menu) and not _custom_return_pending: main_menu.open_custom_stories.call_deferred()
 			"--auto-start": auto_start = true
@@ -2660,6 +2663,7 @@ func _build_main_menu() -> void:
 	main_menu.story_floor_requested.connect(_start_story_floor)
 	main_menu.story_scene_requested.connect(_open_story_scene)
 	main_menu.custom_story_requested.connect(_open_custom_story)
+	main_menu.world_room_requested.connect(_open_world_room)
 	main_menu.custom_continue_requested.connect(_continue_custom_story)
 	main_menu.save_load_requested.connect(_load_save)
 	if get_tree().has_meta("custom_story_return"):
@@ -2744,6 +2748,27 @@ func _world_floors(theme_path: String) -> Array:
 ## entrance or, with `boss`, inside its boss room (hell_game.gd start_floor / start_at_boss).
 func _start_story_floor(path: String, class_id: String, floor_number: int, boss: bool) -> void:
 	_open_story_scene(path, class_id, {}, {"start_floor": floor_number, "start_at_boss": boss})
+
+
+## The value after `flag` in the launch arguments, "" without.
+func _arg_after(args: Array, flag: String) -> String:
+	var at := args.find(flag)
+	return str(args[at + 1]) if at >= 0 and at + 1 < args.size() else ""
+
+
+## A room of the Weltbauer in the real game: its world's scene with the chosen hero. The file is
+## read there, so what was saved last is what plays.
+func _open_world_room(path: String, class_id: String) -> void:
+	var data: GDScript = load("res://src/world_editor/world_room_data.gd")
+	var room: Dictionary = data.load_file(path)
+	if room.is_empty() or not data.WORLDS.has(str(room.get("world", ""))):
+		main_menu.show_toast("Dieser Raum lässt sich nicht lesen.")
+		return
+	var problems: Array = data.problems(room)
+	if not problems.is_empty():
+		main_menu.show_toast("Der Raum ist noch nicht spielbar: " + str(problems[0]))
+		return
+	_open_story_scene(str(data.WORLDS[str(room.world)].scene), class_id, {}, {"world_room_path": path})
 
 
 ## User stories enter the same scenes as their selected current world.

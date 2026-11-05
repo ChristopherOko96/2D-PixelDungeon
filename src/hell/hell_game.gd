@@ -15,6 +15,7 @@ const FloorData = preload("res://src/hell/hell_floor_data.gd")
 const Walls = preload("res://src/hell/hell_walls.gd")
 const Rules = preload("res://src/hell/hell_rules.gd")
 const Monsters = preload("res://src/hell/hell_monsters.gd")
+const RoomContents = preload("res://src/world_kit/room_contents.gd")
 const DrakeRigHost = preload("res://src/hell/drake_rig_host.gd")
 const FrostRigs = preload("res://src/hell/frost_rigs.gd")
 const FrostFx = preload("res://src/hell/frost_fx.gd")
@@ -38,6 +39,8 @@ const TalentRules = preload("res://src/progress/talent_rules.gd")
 const SoulDrops = preload("res://src/progress/soul_drops.gd")
 const HellTalents = preload("res://src/hell/hell_talents.gd")
 const FrostHud = preload("res://src/hell/frost_hud.gd")
+## How far a gate's front picture stands below its cells.
+const GATE_FOOT := 8.0
 const HEART := "res://assets/sprites/0x72/ui_heart_%s.png"
 const Sfx = preload("res://src/vfx/sfx.gd")
 const Music = preload("res://src/audio/music.gd")
@@ -78,6 +81,10 @@ const StoryCamera = preload("res://src/hell/story_camera.gd")
 ## The world kit (src/world_kit): a world with theme.world_pack builds every floor live from the
 ## run number instead of reading baked floors (Story 1 the crypt, Story 3 the hell).
 const WorldPack = preload("res://src/world_kit/world_pack.gd")
+const WorldRoomWorld = preload("res://src/world_editor/world_room_world.gd")
+const WorldRoomData = preload("res://src/world_editor/world_room_data.gd")
+const WorldTerrain = preload("res://src/world_editor/world_terrain.gd")
+const LaunchPads = preload("res://src/hell/launch_pads.gd")
 const StoryWreck = preload("res://src/hell/story_wreck.gd")
 const StoryMotionHost = preload("res://src/hell/story_motion_host.gd")
 const StoryExposureHost = preload("res://src/hell/story_exposure_host.gd")
@@ -125,6 +132,9 @@ const THEME_DEFAULT := {
 @export var custom_story: Dictionary = {}
 ## Nonempty tests this unsaved module directly; it has no normal save slots.
 @export var custom_preview_room: String = ""
+## A Weltbauer room to play instead of a generated floor; world_room_path: its file, read anew by F9.
+@export var world_room: Dictionary = {}
+@export var world_room_path: String = ""
 ## A run started from an unsaved editor draft returns to that draft, not just its list.
 @export var custom_return_to_editor: bool = false
 ## Tests may redirect all Custom files to their own disposable directory.
@@ -189,6 +199,8 @@ var balance: Dictionary = {}
 var floors_raw: Array = []
 ## The world pack of a generated world (theme.world_pack); null for baked floors.
 var world: RefCounted
+## The Sprungplatten of the floor (src/hell/launch_pads.gd).
+var launch_pads: RefCounted
 ## Floor choice of the hidden stairs (key 1-9), open while not empty.
 var stairs_pick: Dictionary = {}
 var tex: Dictionary = {}
@@ -384,7 +396,12 @@ func _ready() -> void:
 		testraum_script.prepare(self)
 	_load_theme()
 	balance = JSON.parse_string(FileAccess.get_file_as_string(theme.balance))
-	if not custom_story.is_empty():
+	launch_pads = LaunchPads.new(self)
+	if not world_room.is_empty():
+		world = WorldRoomWorld.new(world_room)
+		floors_raw = []
+		floors_raw.resize(1)
+	elif not custom_story.is_empty():
 		world = CustomStoryWorld.new(custom_story, custom_preview_room)
 		floors_raw = []
 		floors_raw.resize(world.floor_count())
@@ -524,7 +541,7 @@ func _ready() -> void:
 	ui.add_child(pause_menu)
 	pause_menu.use_story_mode(story_controls(CardKit.offers_cards(self)))
 	pause_menu.save_rows = func() -> Array: return saves.summaries(StorySave.mode(self))
-	pause_menu.set_save_enabled(custom_preview_room.is_empty())
+	pause_menu.set_save_enabled(custom_preview_room.is_empty() and world_room.is_empty())
 	pause_menu.story_map_draw = func(canvas: Control) -> void: _draw_map(canvas, canvas.size, true, true)
 	pause_menu.resume_pressed.connect(func() -> void: pause_menu.visible = false)
 	pause_menu.save_requested.connect(save_slot)
@@ -554,6 +571,8 @@ func _ready() -> void:
 	_start_items(ui)
 	if not custom_preview_room.is_empty():
 		_start_custom_preview()
+	if not world_room.is_empty():
+		_start_world_room()
 	if not testraum.is_empty():
 		# one test room without the story; its panel mounts in the HUD layer
 		var testraum_room: Variant = load(TESTRAUM_SCRIPT)
@@ -577,9 +596,116 @@ func _start_custom_preview() -> void:
 	_start_fight(selected)
 
 
+## A Weltbauer room in play: its placed monsters wake at once at their spots, its random ones
+## through the usual fight; either way the gates fall until they are beaten.
+func _start_world_room() -> void:
+	var r: Dictionary = W.rooms[0]
+	var placed: Array = r.get("placed_mobs", [])
+	if placed.is_empty() and int(r.mobs) <= 0:
+		return
+	if placed.is_empty():
+		_start_fight(r)
+		return
+	r.fight = true
+	r.cleared = false
+	for m: Dictionary in placed:
+		var at := Vector2(float(m.x), float(m.y))
+		if monsters != null and (monsters.defs as Dictionary).has(str(m.mob)):
+			monsters.spawn(0, at, str(m.mob))
+		elif theme.has("mobs") and (theme.mobs as Dictionary).has(str(m.mob)):
+			_spawn_mob(0, at, str(m.mob))
+	if mobs.is_empty():
+		r.fight = false
+		r.cleared = true
+		return
+	_toast("Die Gitter fallen. Besiege alle Gegner.")
+	_sound("fight_start")
+
+
+## Enemies come out of a chest or a broken piece of a Weltbauer room: at most max_enemies, each a kind of
+## this world or "random" for one of the floor's. The room locks until they are beaten.
+func release_room_enemies(ids: Array, at: Vector2, room: int) -> void:
+	if room < 0 or room >= W.rooms.size():
+		return
+	var count := 0
+	for id: Variant in ids.slice(0, int(RoomContents.cfg().get("max_enemies", 2))):
+		var kind := _floor_enemy() if str(id) == "random" else str(id)
+		if monsters != null and (monsters.defs as Dictionary).has(kind):
+			monsters.spawn(room, monsters.free_spot(room, at, 70.0, 200.0), kind)
+			count += 1
+		elif theme.has("mobs") and (theme.mobs as Dictionary).has(kind):
+			_spawn_mob(room, free_floor(room, at, 70.0, 200.0), kind)
+			count += 1
+	if count == 0:
+		return
+	var r: Dictionary = W.rooms[room]
+	r.fight = true
+	r.cleared = false
+	_toast("Gegner brechen hervor! Die Gitter fallen.")
+
+
+## One of the floor's plain monsters; no chest monster, which would show itself without its chest.
+func _floor_enemy() -> String:
+	var roster: Array = []
+	if monsters != null:
+		roster = ((monsters.floors as Dictionary).get(str(state.floor), {}) as Dictionary).get("mobs", [])
+	elif theme.has("mobs"):
+		roster = (theme.mobs as Dictionary).keys()
+	roster = roster.filter(func(id: Variant) -> bool: return not RoomContents.is_chest_mob(str(id)))
+	return str(roster[randi() % roster.size()]) if not roster.is_empty() else ""
+
+
+## What a chest or a smashed prop holds in a Weltbauer room: {type, id, amount}.
+func world_room_drop(loot: Dictionary, at: Vector2, room: int) -> void:
+	match str(loot.get("type", "none")):
+		"random":
+			match RoomContents.piece_drop(randf()):
+				"gold": gold_loot.spew(at, int((RoomContents.cfg().get("random_piece", {}) as Dictionary).get("gold_amount", 3)))
+				"heart": _drop("heart", room, at)
+			if story_items != null: story_items.loot("crate", at)
+		"gold": gold_loot.spew(at, int(loot.get("amount", 1)))
+		"heart": _drop("heart", room, at)
+		"key": _drop("key", room, at, {"key": str(loot.get("id", "A"))})
+		"potion":
+			if story_items != null: story_items.give(story_items.inventory.make_stack("potion", str(loot.get("id", "")), int(loot.get("amount", 1))), at)
+		"crystal", "stone":
+			if story_items != null: story_items.give(story_items.inventory.make_stack(str(loot.type), "", int(loot.get("amount", 1))), at)
+		"weapon":
+			if story_items != null: story_items.give(story_items.inventory.make_weapon(str(loot.get("id", "")), true, ""), at)
+
+
+## A prop broke (src/hell/story_wreck.gd): what the Weltbauer put in it comes out, what it opens opens.
+func world_room_smashed(p: Dictionary, at: Vector2) -> bool:
+	var exact: bool = p.has("loot") or p.has("opens") or p.has("enemies")
+	var room := _room_at_world(at.x, at.y)
+	if p.has("loot"):
+		world_room_drop(p.loot, at, maxi(room, 0))
+	if p.has("enemies"):
+		release_room_enemies(p.enemies, at, room)
+	if str(p.get("opens", "")) != "" and W.groups.has(str(p.opens)) and not W.groups[str(p.opens)].solved:
+		_solve_group(str(p.opens))
+	return exact
+
+
 ## Selects the real story theme and isolates user content, slots and progression.
 ## Resumes use the embedded room revision, never a changed file with the same id.
 func _configure_custom_story() -> bool:
+	if not world_room_path.is_empty():
+		world_room = WorldRoomData.load_file(world_room_path)
+	if not world_room.is_empty():
+		var room_problems := WorldRoomData.problems(world_room)
+		if not room_problems.is_empty():
+			_return_to_menu.call_deferred("Der Raum ist noch nicht spielbar: " + room_problems[0])
+			return false
+		theme_path = str(WorldRoomData.WORLDS[str(world_room.world)].theme)
+		var as_story := {"id": "weltbauer_" + str(world_room.id)}
+		saves = SaveStore.new(StorySave.custom_saves_dir(as_story, true, custom_storage_root))
+		var hero_profile := profile_path
+		profile_path = StorySave.custom_profile_path(as_story, true, custom_storage_root)
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(profile_path.get_base_dir()))
+		Profile.save_profile(Profile.load_profile(Profile.data(), hero_profile), profile_path)
+		meta_path = profile_path.trim_suffix(".json") + ".meta.cfg"
+		return true
 	if resume.get("custom_story") is Dictionary and not (resume.custom_story as Dictionary).is_empty():
 		custom_story = (resume.custom_story as Dictionary).duplicate(true)
 		custom_preview_room = str(resume.get("custom_preview_room", ""))
@@ -817,6 +943,9 @@ func _load_textures() -> void:
 		if not tex.has(n):
 			tex[n] = load(str(extra.dir) + n + ".png")
 	# the set's fires and fountains get their moving pictures (a pixel set keeps its 3 px grid)
+	# a Weltbauer room also uses pictures from outside this set (world_room_world.gd fill_textures)
+	if world != null and world.has_method("fill_textures"):
+		world.fill_textures(tex, theme)
 	fire_anim.build(tex, 3 if bool(theme.get("pixel", false)) else 1)
 
 
@@ -883,10 +1012,12 @@ func load_floor(n: int, carry: bool) -> void:
 				e.type = "chest"
 				e.loot = {"gems": 0, "key": e.key}
 				e.magic = false
-	walls = Walls.build(W.grid, W.cols, W.rows, C)
+	walls = Walls.build(W.grid, W.cols, W.rows, C, W.get("doorways", []))
 	_index_solids()
 	if frost_snow != null:
 		frost_snow.reset()
+	if launch_pads != null:
+		launch_pads.reset()
 	# the floor's loose finds lie there as gold (the world's "gem" finds: one gold each)
 	if gold_loot != null:
 		gold_loot.reset()
@@ -1003,7 +1134,7 @@ func _enter_floor(n: int, carry: bool) -> void:
 ## Screens come in the game, not in tests, the test room, a custom room preview or a debug start at
 ## the boss.
 func _loading_allowed() -> bool:
-	if _leaving or start_at_boss or not testraum.is_empty() or not custom_preview_room.is_empty():
+	if _leaving or start_at_boss or not testraum.is_empty() or not custom_preview_room.is_empty() or not world_room.is_empty():
 		return false
 	return loading_forced or Engine.get_main_loop().get_script() == null
 
@@ -1300,9 +1431,19 @@ func free_floor(room: int, near: Vector2, min_d: float, max_d: float) -> Vector2
 	for k in range(40):
 		var p := near + Vector2.from_angle(randf() * TAU) * randf_range(min_d, max_d)
 		if _room_at_world(p.x, p.y) == room and _cell(int(floor(p.x / C)), int(floor(p.y / C))) == 1 \
-				and not box_blocked(Rect2(p.x - 30, p.y - 30, 60, 30), true):
+				and not box_blocked(Rect2(p.x - 30, p.y - 30, 60, 30), true) and not pit_at(p):
 			return p
 	return near
+
+
+## True when world point `p` lies in a pit cell: an enemy let out there would stand over the hole.
+func pit_at(p: Vector2) -> bool:
+	var cx := int(floor(p.x / C))
+	var cy := int(floor(p.y / C))
+	for e: Dictionary in pits:
+		if int(floor(float(e.x) / C)) == cx and int(floor(float(e.y) / C)) == cy:
+			return true
+	return false
 
 
 func _near_door(r: Dictionary, p: Vector2, dist: float) -> bool:
@@ -1467,6 +1608,11 @@ func _pet_idle(pet: Dictionary) -> bool:
 # ---------- input ----------
 
 func _unhandled_input(event: InputEvent) -> void:
+	# F9 in a Weltbauer room: its file again, as just saved, from the start
+	if not world_room_path.is_empty() and event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F9:
+		new_run()
+		get_viewport().set_input_as_handled()
+		return
 	# while paused only Esc counts (it closes the menu again)
 	if pause_menu != null and pause_menu.visible and not (event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE):
 		return
@@ -1682,7 +1828,7 @@ func _toast(text: String) -> void:
 ## `shot`: the projectile that hit, when it was one: a perfect block or roll breaks it,
 ## and its shooter reels only in melee reach).
 func _hurt(why: String, n := 1, from := Vector2.ZERO, by: Dictionary = {}, shot: Dictionary = {}) -> void:
-	if state.inv > 0.0 or state.dead > 0.0:
+	if state.inv > 0.0 or state.dead > 0.0 or launch_pads.flying():
 		return
 	if SubKit.guard(self):
 		return
@@ -1811,7 +1957,7 @@ func _interactables() -> Array:
 	for d: Dictionary in W.doors:
 		var p := Vector2(d.cx, d.cy)
 		if d.kind == "lock" and not d.unlocked:
-			out.append({"e": d, "label": ("%s benutzen" if state.keys[d.key] else "Verschlossen: %s fehlt") % key_name[d.key], "p": p, "r": 190.0})
+			out.append({"e": d, "label": ("%s benutzen" if bool(state.keys.get(d.key, false)) else "Verschlossen: %s fehlt") % key_label(d.key), "p": p, "r": 190.0})
 		elif d.kind == "puzzle" and _door_closed(d) and not W.rooms[d.a].fight and not W.rooms[d.b].fight:
 			var g: Dictionary = W.groups[d.group]
 			var label := "Gittertor: alle Feuerschalen der Etage entzünden" if g.get("spread", false) else ("Rätseltor: alle Feuerschalen entzünden" if g.kind == "braziers" else "Rätseltor: alle Runenplatten betreten")
@@ -1821,6 +1967,19 @@ func _interactables() -> Array:
 		elif d.kind == "boss" and _door_closed(d):
 			out.append({"e": d, "label": "Versiegelt bis %s fällt" % W.boss.name, "p": p, "r": 190.0})
 	return out
+
+
+## The text of the Inschrift the hero stands at (within world_room_contents.json tablet.reach of
+## its stone), "" when none is near. The HUD shows it while he stays there.
+func inscription() -> String:
+	var reach := float((RoomContents.cfg().get("tablet", {}) as Dictionary).get("reach", 150.0))
+	var me := Vector2(player.x, player.y - 20.0)
+	var best := ""
+	for e: Dictionary in W.ents:
+		if e.type == "tablet" and me.distance_to(Vector2(e.x, e.y - 20.0)) < reach:
+			reach = me.distance_to(Vector2(e.x, e.y - 20.0))
+			best = str(e.get("text", ""))
+	return best
 
 
 func _nearest() -> Dictionary:
@@ -1898,6 +2057,11 @@ func new_run() -> void:
 		scene.custom_storage_root = custom_storage_root
 		scene.profile_path = profile_path
 		scene.settings_path = settings_path
+	if not world_room.is_empty():
+		scene.world_room = world_room
+		scene.world_room_path = world_room_path
+		scene.custom_storage_root = custom_storage_root
+		scene.settings_path = settings_path
 	var tree := get_tree()
 	tree.root.add_child(scene)
 	if tree.current_scene == self:
@@ -1946,6 +2110,11 @@ func act() -> void:
 				# pickup sheet and its sound) and its loot is taken like the crypt's (loot_taken)
 				if feel == null:
 					_sound("chest")
+				if e.has("give"):
+					world_room_drop(e.give, Vector2(e.x, e.y + 40.0), int(e.room))
+				if e.has("enemies"):
+					release_room_enemies(e.enemies, Vector2(e.x, e.y), int(e.room))
+					e.erase("enemies")
 				if e.loot.has("key"):
 					e.state = "empty"
 					state.keys[e.loot.key] = true
@@ -1953,16 +2122,26 @@ func act() -> void:
 						feel.fx_event("chest_open", Vector2(e.x, e.y - 30))
 					else:
 						_burst(Vector2(e.x, e.y - 40), 30, true)
-					_toast("Truhe geöffnet: %s genommen!" % key_name[e.loot.key])
+					_toast("Truhe geöffnet: %s genommen!" % key_label(e.loot.key))
 				elif e.get("state", "") == "":
 					# the gold flies out at once; a heart stays inside to be taken
 					e.state = "open" if e.loot.get("heart", false) else "empty"
 					if feel != null:
 						feel.fx_event("chest_open", Vector2(e.x, e.y - 30))
 					gold_loot.spew(Vector2(e.x, e.y - 10), int(e.loot.gems))
-					gold_loot.roll_rune("chest", Vector2(e.x, e.y - 10))
+					if not e.has("exact"):
+						gold_loot.roll_rune("chest", Vector2(e.x, e.y - 10))
 					_toast("Truhe geöffnet: %d Gold%s" % [e.loot.gems, " und ein Herz" if e.loot.get("heart", false) else ""])
-					if story_items != null:
+					if e.has("hoard"):
+						# the Schatz of a solved puzzle: every one of its item rolls, and the vault's rune chance
+						_toast("Ein Schatz! Die Truhe ist randvoll.")
+						gold_loot.roll_rune(str((RoomContents.cfg().get("hoard", {}) as Dictionary).get("rune", "vault")), Vector2(e.x, e.y - 10))
+						if story_items != null:
+							var k := 0
+							for source: Variant in e.hoard:
+								story_items.loot(str(source), Vector2(e.x - 60.0 + 60.0 * (k % 3), e.y + 40.0 + 30.0 * (k / 3)))
+								k += 1
+					elif story_items != null and not e.has("exact"):
 						story_items.loot("chest", Vector2(e.x, e.y + 40))
 				else:
 					e.state = "empty"
@@ -2039,7 +2218,7 @@ func act() -> void:
 				_solve_group(e.group)
 		return
 	if e.kind == "lock":
-		if state.keys[e.key]:
+		if bool(state.keys.get(e.key, false)):
 			state.keys[e.key] = false
 			state.used[e.key] = true
 			e.unlocked = true
@@ -2047,7 +2226,13 @@ func act() -> void:
 			_toast("Das Tor öffnet sich.")
 		else:
 			_sound("gate_locked")
-			_toast("%s %s" % [key_name[e.key], key_hint[e.key]])
+			_toast("%s %s" % [key_label(e.key), str(key_hint.get(e.key, key_hint.get(str(e.key).right(1), "")))])
+
+
+## The name of key `k`: a floor key A, B or C, or a room's own key ("4A": key A of room 4 of a floor,
+## room_floor.gd own_key) by its letter.
+func key_label(k: String) -> String:
+	return str(key_name.get(k, key_name.get(k.right(1), "Schlüssel")))
 
 
 func _open_secret(d: Dictionary) -> void:
@@ -2064,7 +2249,7 @@ func _open_secret(d: Dictionary) -> void:
 	# the opened cells are floor for the crypt's rubble and marks now (like the crypt's new layout)
 	if feel != null:
 		feel.open_cells(d.cells)
-	walls = Walls.build(W.grid, W.cols, W.rows, C)
+	walls = Walls.build(W.grid, W.cols, W.rows, C, W.get("doorways", []))
 	if frost_snow != null:
 		frost_snow.walls_changed()
 	for node: Layer in _chunk_nodes:
@@ -2084,6 +2269,18 @@ func _solve_group(group: String) -> void:
 				else:
 					_burst(Vector2(e.x, e.y - 50), 50, true)
 		_toast("Das Gravitationssiegel bricht. Ein Stab liegt frei!")
+		return
+	# the pads that slept for this group wake with a flash
+	var woke := 0
+	for e: Dictionary in W.ents:
+		if e.type == "launch" and str(e.get("wake", "")) == group:
+			woke += 1
+			if feel != null:
+				feel.spawn("level_up", Vector2(e.x, e.y), 0.6)
+			else:
+				_burst(Vector2(e.x, e.y - 20), 16, true)
+	if woke > 0 and not W.doors.any(func(d: Dictionary) -> bool: return str(d.get("group", "")) == group):
+		_toast("Ein Beben geht durch den Raum: %s." % ("eine Sprungplatte erwacht" if woke == 1 else "%d Sprungplatten erwachen" % woke))
 		return
 	var opened := false
 	for d: Dictionary in W.doors:
@@ -2290,6 +2487,19 @@ func _spawn_mob(room: int, pos: Vector2, kind: String) -> void:
 
 func _start_fight(r: Dictionary) -> void:
 	r.fight = true
+	# a room file's own monsters stand where they were placed (world_room_floor: placed_mobs)
+	if not (r.get("placed_mobs", []) as Array).is_empty() and world_room.is_empty():
+		for m: Dictionary in r.placed_mobs:
+			var at := Vector2(float(m.x), float(m.y))
+			if monsters != null and (monsters.defs as Dictionary).has(str(m.mob)):
+				monsters.spawn(int(r.index), at, str(m.mob))
+			elif theme.has("mobs") and (theme.mobs as Dictionary).has(str(m.mob)):
+				_spawn_mob(int(r.index), at, str(m.mob))
+		# a set enemy this world does not know must not leave the gates shut for good: then by chance
+		if not mobs.is_empty():
+			_toast("Die Gitter fallen. Besiege alle Gegner.")
+			_sound("fight_start")
+			return
 	var me := Vector2(player.x, player.y)
 	var cells: Array = []
 	for c: Vector2i in r.cells:
@@ -2355,6 +2565,10 @@ func _clear_room(r: Dictionary, at: Vector2) -> void:
 	if story_items != null:
 		for mimic: Dictionary in r.get("mimic_loot", []):
 			story_items.loot("mimic", mimic.get("p", at))
+	# what the chest was set to hold (a key, say) is not lost with the chest
+	for mimic: Dictionary in r.get("mimic_loot", []):
+		for held: Dictionary in mimic.get("chest_holds", []):
+			world_room_drop(held, mimic.get("p", at), int(r.index))
 	r.mimic_loot = []
 	if r.drop != "" and not again:
 		_drop("key", r.index, at, {"key": r.drop})
@@ -2566,6 +2780,8 @@ func _break_crate(e: Dictionary) -> void:
 			_toast("Aus der Kiste kriechen Untote! Die Gitter fallen.")
 		_:
 			_toast("Zerbrochen. Nichts darin.")
+	if e.has("enemies"):
+		release_room_enemies(e.enemies, Vector2(e.x, e.y + 60.0), int(e.room))
 
 
 ## A chest that was a mimic: it wakes on opening, the room locks and the fight is on.
@@ -2582,7 +2798,8 @@ func _wake_mimic(e: Dictionary) -> void:
 			W.ents.remove_at(i)
 			break
 	_index_solids()
-	var kind := str(theme.get("mimic_kind", "mimik"))
+	var plain := str(theme.get("mimic_kind", "mimik"))
+	var kind := str(e.get("mimic_mob", plain))
 	if monsters != null and monsters.defs.has(kind):
 		var m: Dictionary = monsters.spawn(r.index, monsters.free_spot(r.index, Vector2(e.x, e.y), 0.0, 60.0), kind)
 		m.spawn = 0.0
@@ -2590,12 +2807,19 @@ func _wake_mimic(e: Dictionary) -> void:
 		monsters.reveal_mimic(m)
 		# a beaten mimic pays once (R2 of the gameplay review): _clear_room drops drops.mimic where it fell
 		var owed: Array = r.get("mimic_loot", [])
+		m.chest_holds = RoomContents.drops_of(e)
 		owed.append(m)
 		r.mimic_loot = owed
+	else:
+		for held: Dictionary in RoomContents.drops_of(e):
+			world_room_drop(held, Vector2(e.x, e.y + 40.0), int(e.room))
+	if e.has("enemies"):
+		release_room_enemies(e.enemies, Vector2(e.x, e.y), int(e.room))
 	_burst(Vector2(e.x, e.y - 40), 30, true)
 	state.shake = 0.4
 	_sound("boss_intro")
-	_toast("Die Truhe hat Zähne! Ein Mimik greift an. Die Gitter fallen.")
+	var who: String = "Ein Mimik" if kind == plain or monsters == null or not monsters.defs.has(kind) else str(monsters.defs[kind].get("name", kind))
+	_toast("Die Truhe hat Zähne! %s greift an. Die Gitter fallen." % who)
 
 
 ## The hidden stairs: a choice of every earlier floor (keys 1-9, Esc closes). The world is rolled
@@ -2643,6 +2867,10 @@ func _fall_into_pit() -> void:
 		_gold_lost()
 		state.death_why = "in eine Grube gestürzt"
 		_toast("In die Grube gestürzt.")
+		return
+	# in a jump puzzle a wrong throw costs the fall, not the way back: on the pad again
+	if str(W.rooms[state.room].get("type", "")) == "jump" and launch_pads.back_on_pad():
+		_toast("Falscher Sprung.")
 		return
 	for r: Dictionary in W.rooms:
 		if r.fight:
@@ -3037,6 +3265,11 @@ func exposure() -> ElementExposure:
 
 
 func _update_player(dt: float) -> void:
+	# thrown by a Sprungplatte: in the air until he lands, nothing on the floor touches him
+	if launch_pads.flying():
+		player.anim += dt * 5.0
+		launch_pads.step(dt)
+		return
 	var move := Vector2(_axis(KEY_A, KEY_D), _axis(KEY_W, KEY_S))
 	# WAHN: mad, he walks and aims mirrored (src/hell/hero_fx.gd inverted)
 	var mirror := -1.0 if FrostCombat.HeroFx.inverted(self) else 1.0
@@ -3582,6 +3815,10 @@ func _update_hazards(dt: float) -> void:
 		if e.get("hit", 0.0) > 0.0:
 			e.hit = maxf(0.0, e.hit - dt)
 		match e.type:
+			"launch":
+				# a sleeping pad waits for its group (a plate, lever or fire bowl of its room)
+				if dash.is_empty() and LaunchPads.awake(e, W.groups):
+					launch_pads.update_pad(e, me, dt)
 			"spikes":
 				e.up = int(state.t / float(hz.spike_period)) % 2 == int(e.phase)
 				# the spikes shoot up and sink back over 0.08 s instead of popping (physics plan R21);
@@ -3611,7 +3848,7 @@ func _update_hazards(dt: float) -> void:
 						e.vent_due = float(e.vent_due) - 1.0
 						_vent_matter(e)
 			"plate":
-				if e.get("on", false) or absf(me.x - e.x) > 44 or absf(me.y - 10 - e.y) > 44:
+				if launch_pads.flying() or e.get("on", false) or absf(me.x - e.x) > 44 or absf(me.y - 10 - e.y) > 44:
 					continue
 				var g: Dictionary = W.groups[e.group]
 				if g.solved:
@@ -3629,7 +3866,15 @@ func _update_hazards(dt: float) -> void:
 						_toast("Platte %d von %d richtig." % [p.x, p.y])
 					elif res == "wrong":
 						e.wrong = 0.8
-						_toast("Falsche Reihenfolge. Die Platten erlöschen.")
+						# a trap plate: its number is never due (higher than its group has plates)
+						if int(e.order) > int(g.get("count", 99)):
+							_toast("Eine Fallenplatte!")
+						else:
+							_toast("Falsche Reihenfolge. Die Platten erlöschen.")
+						# a guarded plate lets its enemies out, once
+						if e.has("enemies"):
+							release_room_enemies(e.enemies, Vector2(e.x, e.y), int(e.room))
+							e.erase("enemies")
 				else:
 					e.on = true
 					var p := Rules.group_progress(W.ents, e.group)
@@ -3648,7 +3893,7 @@ func _update_hazards(dt: float) -> void:
 					# with the feel the key is a crypt pickup like the others (loot_taken below)
 					if feel == null:
 						_sound("key")
-					_toast("%s aufgehoben." % key_name[e.key])
+					_toast("%s aufgehoben." % key_label(e.key))
 				elif e.type == "heart":
 					state.hp = mini(state.max_hp, state.hp + 2)
 					# effect hook: the crypt's heal marker over the hero
@@ -4051,12 +4296,12 @@ func _draw_layer_kind(l: Layer) -> void:
 				pools.draw_glow(l, 1.0, float(state.t))
 
 
-func _tex(ci: CanvasItem, name: String, pos: Vector2, flip := false, tint := Color.WHITE, scale := 1.0) -> void:
+func _tex(ci: CanvasItem, name: String, pos: Vector2, flip := false, tint := Color.WHITE, scale := 1.0, scale_y := -1.0) -> void:
 	# a fire or a fountain: its picture of the moment (src/vfx/fire_anim.gd)
 	var t: Texture2D = fire_anim.frame(name, pos, float(state.get("t", 0.0))) if fire_anim.has(name) else tex.get(name)
 	if t == null:
 		return
-	var size := t.get_size() * scale
+	var size := t.get_size() * Vector2(scale, scale_y if scale_y >= 0.0 else scale)
 	if flip:
 		ci.draw_set_transform(pos + Vector2(size.x, 0), 0.0, Vector2(-1, 1))
 		ci.draw_texture_rect(t, Rect2(Vector2.ZERO, size), false, tint)
@@ -4171,11 +4416,12 @@ func _draw_back(l: Layer) -> void:
 			l.set_meta("lava_crust", made)
 		if made.has("tex"):
 			l.draw_texture_rect(made.tex, made.rect, false)
+	_draw_world_ground(l, x0, y0)
 	for d: Dictionary in W.decals:
 		if not a.has_point(Vector2(d.x, d.y)):
 			continue
 		var t: Texture2D = tex[d.name]
-		var size := Vector2(d.w, d.h) if float(d.w) > 0.0 else t.get_size()
+		var size := (Vector2(d.w, d.h) if float(d.w) > 0.0 else t.get_size()) * Vector2(float(d.get("sx", 1.0)), float(d.get("sy", 1.0)))
 		var rect := Rect2(Vector2(d.x, d.y) - size / 2.0, size)
 		if tiles_1to1 and str(d.name).begins_with("bridge") and _tile_bridge(l, t, rect, d.name == "bridge_h", Color(1, 1, 1, float(d.a))):
 			continue
@@ -4218,7 +4464,8 @@ func _draw_back(l: Layer) -> void:
 		# burning wall decor moves: drawn every frame with the actors (_draw_wall_fires)
 		if a.has_point(Vector2(w.x, w.y + 74)) and not fire_anim.has(w.name):
 			var t: Texture2D = tex[w.name]
-			_tex(l, w.name, Vector2(w.x - t.get_width() / 2.0, w.y), w.flip)
+			var sx := float(w.get("sx", 1.0))
+			_tex(l, w.name, Vector2(w.x - t.get_width() * sx / 2.0, w.y), w.flip, Color.WHITE, sx, float(w.get("sy", 1.0)))
 
 
 ## The lit wall fires (torches, wall braziers) near the view throw real embers and a wisp of
@@ -4268,10 +4515,12 @@ func _wall_fire_matter() -> void:
 ## The burning wall decor (torches, wall braziers) in `view`, every frame and behind everyone
 ## standing in the room, so their flames move (src/vfx/fire_anim.gd).
 func _draw_wall_fires(l: CanvasItem, view: Rect2) -> void:
+	_draw_launch_shadow(l)
 	for w: Dictionary in W.wall_decor:
 		if fire_anim.has(w.name) and view.has_point(Vector2(w.x, w.y + 74)):
 			var t: Texture2D = tex[w.name]
-			_tex(l, w.name, Vector2(w.x - t.get_width() / 2.0, w.y), w.flip)
+			var sx := float(w.get("sx", 1.0))
+			_tex(l, w.name, Vector2(w.x - t.get_width() * sx / 2.0, w.y), w.flip, Color.WHITE, sx, float(w.get("sy", 1.0)))
 
 
 func _draw_front(l: Layer) -> void:
@@ -4333,12 +4582,20 @@ func _draw_actors(l: Layer) -> void:
 				l.draw_texture(tex.vent, Vector2(e.x, e.y) - tex.vent.get_size() / 2.0)
 			"plate":
 				_draw_plate(l, e, t)
+			"launch":
+				var woke := LaunchPads.awake(e, W.groups)
+				WorldTerrain.draw_pad(l, Vector2(e.x, e.y), str(e.dir), t, float(e.get("press", 0.0)), tex.get("rune_plate"), WorldTerrain.config().pad, bool(e.get("armed", true)) and woke)
+				if woke:
+					launch_pads.draw_preview(l, e, Vector2(player.x, player.y))
+				else:
+					# asleep: a dark, cold stone without its arc
+					l.draw_rect(Rect2(e.x - 40.0, e.y - 40.0, 80.0, 80.0), Color(0.02, 0.03, 0.05, 0.55))
 	if monsters != null:
 		monsters.draw_warnings(l)
 	var list: Array = []
 	for p: Dictionary in W.props:
 		if p.name != "" and view.has_point(Vector2(p.x, p.y)):
-			list.append([p.y - (200.0 if p.low else 0.0), "prop", p])
+			list.append([p.y - (200.0 if p.low else 0.0) + float(p.get("z", 0.0)), "prop", p])
 	for e: Dictionary in W.ents:
 		if view.has_point(Vector2(e.x, e.y)) and e.type in ["chest", "vault", "portal", "brazier", "key", "heart", "gem", "relic", "well", "npc", "stairs"] and not e.get("taken", false):
 			list.append([e.y - (60.0 if e.type == "stairs" else 0.0), "ent", e])
@@ -4348,6 +4605,15 @@ func _draw_actors(l: Layer) -> void:
 	for d: Dictionary in W.doors:
 		if d.get("boss_gate", false) and tex.has("boss_arch") and view.has_point(Vector2(d.cx, d.cy)) and not _door_closed(d):
 			list.append([float(d.y0) * C, "arch", d])
+		# a Weltbauer gate may leave a picture when open
+		elif d.has("pictures") and view.has_point(Vector2(d.cx, d.cy)) and not _door_closed(d):
+			var left: String = str(d.pictures.open_side if d.dir == "h" else d.pictures.open_front)
+			if left != "":
+				list.append([_gate_depth(d), "passage", {"name": left, "gate": d}])
+	# a Weltbauer room's open passages: the hero walks under them
+	for p: Dictionary in W.get("passages", []):
+		if view.has_point(Vector2(p.cx, p.cy)):
+			list.append([_gate_depth(p), "passage", {"name": str(p.pictures.side if p.dir == "h" else p.pictures.front), "gate": p}])
 	for e: Dictionary in breakables:
 		if view.has_point(Vector2(e.x, e.y)):
 			list.append([e.y - (200.0 if e.get("broken", false) else 0.0), "breakable", e])
@@ -4396,10 +4662,16 @@ func _draw_actors(l: Layer) -> void:
 		match item[1]:
 			"prop":
 				var p: Dictionary = item[2]
-				var im: Texture2D = tex[p.name]
-				_tex(l, p.name, Vector2(p.x - im.get_width() / 2.0, p.y - im.get_height()), p.flip)
+				# a Weltbauer prop may have its own pictures in turn and its own size
+				var shown: String = p.name if not p.has("frames") else str(p.frames[int(t * float(p.fps) + float(p.x) * 0.013) % (p.frames as Array).size()])
+				var im: Texture2D = tex[shown]
+				var ps := float(p.get("scale", 1.0))
+				var sx := ps * float(p.get("sx", 1.0))
+				var sy := ps * float(p.get("sy", 1.0))
+				_tex(l, shown, Vector2(p.x - im.get_width() * sx / 2.0, p.y - im.get_height() * sy), p.flip, Color.WHITE, sx, sy)
 			"ent": _draw_ent(l, item[2], t)
 			"gate": _draw_gate(l, item[2], t)
+			"passage": _draw_gate_picture(l, item[2].gate, str(item[2].name), Color.WHITE, 1.0)
 			"arch":
 				var arch: Texture2D = tex.boss_arch
 				l.draw_texture(arch, Vector2(item[2].cx - arch.get_width() / 2.0, (item[2].y1 + 1) * C + 6 - arch.get_height()))
@@ -4713,6 +4985,59 @@ func _draw_ent(l: Layer, e: Dictionary, t: float) -> void:
 			l.draw_texture_rect(im, Rect2(Vector2(e.x - size.x / 2.0, e.y - size.y - 10 + bob), size), false, key_tint.get(e.get("key", ""), Color.WHITE))
 
 
+## Where a gate sorts among the actors: whoever stands before its foot walks over it.
+func _gate_depth(d: Dictionary) -> float:
+	return float(d.cy) if d.dir == "h" else float(d.cy) + C * 0.5 + GATE_FOOT
+
+
+## One gate picture: a side view round the doorway's middle, a front view on its foot.
+func _draw_gate_picture(l: CanvasItem, d: Dictionary, name: String, tint: Color, drop: float) -> void:
+	var im: Texture2D = tex.get(name)
+	if im == null:
+		return
+	if d.dir == "h":
+		l.draw_set_transform(Vector2(float(d.cx) + float(d.get("art_dx", 0.0)), d.cy))
+		_draw_sliding(l, im, Rect2(-im.get_size() / 2.0, im.get_size()), tint, drop)
+	else:
+		var size: Vector2 = im.get_size() * float(d.get("art_scale", 1.0))
+		l.draw_set_transform(Vector2(d.cx, d.cy + C * 0.5 + GATE_FOOT))
+		_draw_falling(l, im, Rect2(Vector2(-size.x / 2.0, -size.y), size), tint, drop)
+	l.draw_set_transform(Vector2.ZERO)
+
+
+## A stone slab shuts from both ends and meets in the middle (drop 0..1, eased in).
+func _draw_sliding(l: CanvasItem, im: Texture2D, rect: Rect2, tint: Color, drop: float) -> void:
+	if drop >= 1.0:
+		l.draw_texture_rect(im, rect, false, tint)
+		return
+	var part := drop * drop * 0.5
+	var from := float(im.get_height()) * part
+	var mid := float(im.get_height()) * 0.5
+	var shown := rect.size.y * part
+	var w := float(im.get_width())
+	l.draw_texture_rect_region(im, Rect2(rect.position, Vector2(rect.size.x, shown)), Rect2(0.0, mid - from, w, from), tint)
+	l.draw_texture_rect_region(im, Rect2(rect.position.x, rect.end.y - shown, rect.size.x, shown), Rect2(0.0, mid, w, from), tint)
+
+
+## Only the part of a gate that has come down shows (it falls from the top: drop 0..1, eased in).
+func _draw_falling(l: CanvasItem, im: Texture2D, rect: Rect2, tint: Color, drop: float) -> void:
+	if drop >= 1.0:
+		l.draw_texture_rect(im, rect, false, tint)
+		return
+	var part := drop * drop
+	var from := float(im.get_height()) * part
+	l.draw_texture_rect_region(im, Rect2(rect.position, Vector2(rect.size.x, rect.size.y * part)), Rect2(0.0, float(im.get_height()) - from, float(im.get_width()), from), tint)
+
+
+## A generated floor's side gate leans away from the side with more room in its doorway.
+func _side_gate_flip(d: Dictionary) -> bool:
+	var left := _walkable(_cell(int(d.x0) - 1, int(d.y0)))
+	var right := _walkable(_cell(int(d.x0) + 1, int(d.y0)))
+	if left != right:
+		return left
+	return float(d.cx) > float(W.cols) * C * 0.5
+
+
 func _draw_gate(l: Layer, d: Dictionary, t: float) -> void:
 	if d.get("boss_gate", false) and tex.has("boss_gate"):
 		# the dressed boss gate stands in the wall below the boss room, facing the hero
@@ -4725,21 +5050,20 @@ func _draw_gate(l: Layer, d: Dictionary, t: float) -> void:
 		else:
 			l.draw_texture_rect(tex[key_sprite[d.key]], Rect2(d.cx - 15, bottom - gate.get_height() * 0.52, 30, 56), false, key_tint[d.key])
 		return
-	var im: Texture2D = tex.portcullis
-	l.draw_set_transform(Vector2(d.cx, d.cy), PI / 2 if d.dir == "h" else 0.0)
 	var fight: bool = W.rooms[d.a].fight or W.rooms[d.b].fight
 	var tint := Color.WHITE
 	if fight or d.kind == "boss":
 		tint = Color(1.0 + 0.4 * (0.5 + 0.5 * sin(t * 5.0)), 0.75, 0.7)
-	# only the part that has come down shows (it falls from the top: drop 0..1, eased in)
 	var drop := float(d.get("drop", 1.0))
-	if drop >= 1.0:
-		l.draw_texture(im, -im.get_size() / 2.0, tint)
+	if d.has("pictures"):
+		_draw_gate_picture(l, d, str(d.pictures.side if d.dir == "h" else d.pictures.front), tint, drop)
+	elif d.dir == "h" and tex.has("side_slab"):
+		_draw_gate_picture(l, d, "side_slab", tint, drop)
 	else:
-		var size := im.get_size()
-		var shown := roundf(size.y * drop * drop)
-		l.draw_texture_rect_region(im, Rect2(Vector2(-size.x / 2.0, -size.y / 2.0), Vector2(size.x, shown)), Rect2(Vector2(0.0, size.y - shown), Vector2(size.x, shown)), tint)
-	l.draw_set_transform(Vector2.ZERO)
+		var im: Texture2D = tex.portcullis
+		l.draw_set_transform(Vector2(d.cx, d.cy), PI / 2 if d.dir == "h" else 0.0)
+		_draw_falling(l, im, Rect2(-im.get_size() / 2.0, im.get_size()), tint, drop)
+		l.draw_set_transform(Vector2.ZERO)
 	if not fight and d.kind == "lock":
 		l.draw_texture_rect(tex[key_sprite[d.key]], Rect2(d.cx - 15, d.cy - 30, 30, 56), false, key_tint[d.key])
 	elif not fight and d.kind == "puzzle":
@@ -5017,6 +5341,49 @@ func _draw_ice_burst(l: Layer, at: Vector2, since: float, scale: float, sink := 
 
 
 func _draw_hero(l: Layer, t: float) -> void:
+	# thrown by a Sprungplatte: drawn up in the air, all of it, over his shadow on the floor
+	var air: float = launch_pads.lift()
+	if air > 0.0:
+		player.y -= air
+		_draw_hero_body(l, t)
+		player.y += air
+		return
+	_draw_hero_body(l, t)
+
+
+## The hero's shadow far below him while he flies.
+func _draw_launch_shadow(l: CanvasItem) -> void:
+	var air: float = launch_pads.lift()
+	if air > 0.0:
+		var r := clampf(30.0 - air * 0.08, 14.0, 30.0)
+		l.draw_set_transform(Vector2(player.x, player.y), 0.0, Vector2(1.0, 0.45))
+		l.draw_circle(Vector2.ZERO, r, Color(0, 0, 0, 0.42))
+		l.draw_set_transform(Vector2.ZERO)
+
+
+## The Weltbauer's ground of chunk (x0, y0): area brushes and pits that grow together.
+func _draw_world_ground(l: Layer, x0: int, y0: int) -> void:
+	var areas: Dictionary = W.get("areas", {})
+	var holes: Dictionary = W.get("pit_cells", {})
+	if areas.is_empty() and holes.is_empty():
+		return
+	var cfg := WorldTerrain.config()
+	var cols: int = W.cols
+	var art := float(cfg.art_px)
+	var look: Dictionary = cfg.pit.get(StorySave.mode(self), cfg.pit.krypta)
+	for y in range(y0, mini(y0 + CHUNK.y, W.rows)):
+		for x in range(x0, mini(x0 + CHUNK.x, cols)):
+			var i := y * cols + x
+			var at := Vector2(x, y) * C
+			if areas.has(i):
+				var same := func(c: Vector2i) -> bool: return str(areas.get(c.y * cols + c.x, "")) == str(areas[i])
+				WorldTerrain.draw_area(l, tex.get(str(areas[i])), Vector2i(x, y), at, C, same, cfg.area, art)
+			if holes.has(i):
+				var same_pit := func(c: Vector2i) -> bool: return holes.has(c.y * cols + c.x)
+				WorldTerrain.draw_pit(l, Vector2i(x, y), at, C, same_pit, look, art)
+
+
+func _draw_hero_body(l: Layer, t: float) -> void:
 	# effect hook: with the feel the crypt's invulnerability look (45 % blink and the hit frame,
 	# src/hero/story_feel.gd invulnerable_look) instead of vanishing; its conditions are boss_fx.gd's (no tint)
 	var blink: Dictionary = StoryFeel.invulnerable_look(t) if feel != null and state.inv > 0.0 and state.dead <= 0.0 else {}
@@ -5168,6 +5535,10 @@ func _draw_hud(h: Control) -> void:
 		elif state.dead <= 0.0:
 			# a demon seal near the hero says before the first blow what it offers and costs (D1)
 			FrostHud.seal_hint(self, h, size)
+		# an Inschrift near the hero is read out above him while he stays (a puzzle's riddle)
+		var words := inscription()
+		if words != "" and state.dead <= 0.0:
+			HudKit.inscription(h, FONT, size, "INSCHRIFT", words)
 		_draw_toast(h, size)
 	if theme.placeholder_note:
 		_text(h, "Figur: Platzhalter" if monsters != null else "Figur und Gegner: Platzhalter", Vector2(20, size.y - 14), 16, Color(ink, 0.45))
@@ -5450,6 +5821,8 @@ func _draw_map(h: Control, screen: Vector2, big: bool, framed := false, area := 
 		var hx := 0.5 if d.dir == "h" else 0.0
 		var vy := 0.5 if d.dir == "v" else 0.0
 		h.draw_rect(Rect2(d.x0 - hx, d.y0 - vy, d.x1 - d.x0 + 1 + hx * 2, d.y1 - d.y0 + 1 + vy * 2), _door_color(d))
+		for c: Array in d.get("corridor", []):
+			h.draw_rect(Rect2(float(c[0]), float(c[1]), 1.0, 1.0), col("map_seen"))
 	for r: Dictionary in W.rooms:
 		if not known.has(r.index):
 			continue

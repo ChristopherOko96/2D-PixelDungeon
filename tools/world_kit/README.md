@@ -38,6 +38,13 @@ Hölle und Frostgruft ihre gebackenen Etagen daraus beziehen.
 
 `tools/krypta_dungeon/check_runs.js` prüft diese Regeln über beliebig viele zufällige Läufe.
 
+## Etagen aus Raumdateien
+
+Hat ein Weltpaket den Schlüssel `room_library` (bisher nur die Krypta), kommt der Bauplan weiter aus `generate`, die
+Räume aber aus Weltbauer-Dateien, verbunden durch Korridore: `src/world_kit/room_floor.gd`, Prüfung
+`tests/room_floor_test.gd`. Das betrifft nur Godot. Der JS-Generator und der Gleichheitstest laufen unverändert über den
+reinen Generatorweg (`build_generated`), die Browser-Vorschau zeigt also den alten Aufbau.
+
 ## In Godot
 
 `src/world_kit/world_core.gd` ist die GDScript-Fassung dieses Generators und baut aus derselben

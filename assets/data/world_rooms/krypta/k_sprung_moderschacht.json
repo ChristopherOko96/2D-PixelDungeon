@@ -1,0 +1,621 @@
+{
+	"schema_version": 1.0,
+	"id": "k_sprung_moderschacht",
+	"title": "Sprung: Der Abstieg (Turm)",
+	"world": "krypta",
+	"role": "jump",
+	"in_floors": true,
+	"slots": [
+		[
+			0.0,
+			0.0
+		],
+		[
+			0.0,
+			1.0
+		],
+		[
+			0.0,
+			2.0
+		]
+	],
+	"width": 14.0,
+	"height": 39.0,
+	"cells": [
+		"00000000000000",
+		"01111111111110",
+		"01111111111110",
+		"01104144441440",
+		"01104444444440",
+		"01104444444440",
+		"01104444444440",
+		"01104444444440",
+		"01101114411140",
+		"01101144441140",
+		"01104444444440",
+		"01104444444440",
+		"01104444444440",
+		"01104444444440",
+		"01104444444440",
+		"01104444444440",
+		"01101114411140",
+		"01101114411140",
+		"01101114411140",
+		"01101114411140",
+		"01104444444440",
+		"01104444444440",
+		"01104444444440",
+		"01104444444440",
+		"01104444444440",
+		"01104444444440",
+		"01101114411140",
+		"01101114411140",
+		"01101114411140",
+		"01101144441140",
+		"01104444444440",
+		"01111111111110",
+		"01111111111110",
+		"01100000000000",
+		"01101111111110",
+		"01101111111110",
+		"01101111111110",
+		"01101111111110",
+		"00000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				6.0,
+				0.0
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0.0,
+				5.0
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0.0,
+				19.0
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0.0,
+				33.0
+			]
+		}
+	],
+	"auto_mobs": 0.0,
+	"objects": [
+		{
+			"kind": "prop",
+			"asset": "banner_2",
+			"x": 240.0,
+			"y": 102.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 1008.0,
+			"y": 102.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_long",
+			"x": 912.0,
+			"y": 3270.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 1104.0,
+			"y": 3264.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_b",
+			"x": 144.0,
+			"y": 475.2,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 45.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 216.4,
+			"y": 1949.3,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 128.9,
+			"y": 2089.4,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_a",
+			"x": 546.2,
+			"y": 3427.9,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_d",
+			"x": 986.3,
+			"y": 3432.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_f",
+			"x": 124.5,
+			"y": 3488.6,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_a",
+			"x": 1200.0,
+			"y": 3547.2,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 45.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "tablet",
+			"text": "Lies den Schacht, wie die alten Schreiber schrieben:\nZeile um Zeile, von oben nach unten,\ndoch jede Zeile kehrt um.\nWer falsch liest, weckt die Toten.",
+			"x": 720.0,
+			"y": 168.0
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_low",
+			"x": 1104.0,
+			"y": 172.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				57.0,
+				26.0
+			]
+		},
+		{
+			"kind": "launch",
+			"dir": "s",
+			"cells": 5.0,
+			"x": 528.0,
+			"y": 336.0
+		},
+		{
+			"kind": "launch",
+			"dir": "s",
+			"cells": 5.0,
+			"x": 1008.0,
+			"y": 336.0
+		},
+		{
+			"kind": "start",
+			"x": 240.0,
+			"y": 456.0
+		},
+		{
+			"kind": "plate",
+			"group": "A",
+			"order": 1.0,
+			"x": 528.0,
+			"y": 816.0
+		},
+		{
+			"kind": "launch",
+			"dir": "e",
+			"cells": 4.0,
+			"x": 624.0,
+			"y": 816.0
+		},
+		{
+			"kind": "launch",
+			"dir": "w",
+			"cells": 4.0,
+			"x": 912.0,
+			"y": 816.0
+		},
+		{
+			"kind": "plate",
+			"group": "A",
+			"order": 2.0,
+			"x": 1008.0,
+			"y": 816.0
+		},
+		{
+			"kind": "launch",
+			"dir": "s",
+			"cells": 8,
+			"x": 528.0,
+			"y": 912.0
+		},
+		{
+			"kind": "launch",
+			"dir": "s",
+			"cells": 8,
+			"x": 1008.0,
+			"y": 912.0
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile",
+			"x": 144.0,
+			"y": 1228.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				76.0,
+				26.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile",
+			"x": 240.0,
+			"y": 2572.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				76.0,
+				26.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_a",
+			"x": 240.0,
+			"y": 1804.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				16.0
+			],
+			"loot": {
+				"type": "random"
+			}
+		},
+		{
+			"kind": "plate",
+			"group": "A",
+			"order": 4.0,
+			"x": 528.0,
+			"y": 1776.0,
+			"enemies": [
+				"random"
+			]
+		},
+		{
+			"kind": "launch",
+			"dir": "e",
+			"cells": 5,
+			"x": 624.0,
+			"y": 1776.0
+		},
+		{
+			"kind": "launch",
+			"dir": "w",
+			"cells": 5,
+			"x": 912.0,
+			"y": 1776.0
+		},
+		{
+			"kind": "plate",
+			"group": "A",
+			"order": 3.0,
+			"x": 1008.0,
+			"y": 1776.0
+		},
+		{
+			"kind": "launch",
+			"dir": "s",
+			"cells": 8,
+			"x": 528.0,
+			"y": 1872.0
+		},
+		{
+			"kind": "launch",
+			"dir": "s",
+			"cells": 8,
+			"x": 1008.0,
+			"y": 1872.0
+		},
+		{
+			"kind": "plate",
+			"group": "A",
+			"order": 5.0,
+			"x": 528.0,
+			"y": 2736.0,
+			"enemies": [
+				"random",
+				"random"
+			]
+		},
+		{
+			"kind": "launch",
+			"dir": "e",
+			"cells": 5,
+			"x": 624.0,
+			"y": 2736.0
+		},
+		{
+			"kind": "launch",
+			"dir": "w",
+			"cells": 5,
+			"x": 912.0,
+			"y": 2736.0
+		},
+		{
+			"kind": "plate",
+			"group": "A",
+			"order": 6.0,
+			"x": 1008.0,
+			"y": 2736.0,
+			"enemies": [
+				"random",
+				"random"
+			]
+		},
+		{
+			"kind": "launch",
+			"dir": "s",
+			"cells": 2.0,
+			"x": 528.0,
+			"y": 2832.0
+		},
+		{
+			"kind": "launch",
+			"dir": "s",
+			"cells": 2.0,
+			"x": 1008.0,
+			"y": 2832.0
+		},
+		{
+			"kind": "prop",
+			"asset": "crate_a",
+			"x": 432.0,
+			"y": 3148.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				48.0,
+				22.0
+			],
+			"loot": {
+				"type": "random"
+			},
+			"enemies": [
+				"random"
+			]
+		},
+		{
+			"kind": "chest",
+			"loot": {
+				"type": "random"
+			},
+			"x": 1200.0,
+			"y": 3144.0,
+			"mimic": "random",
+			"mimic_mob": "truhenfresser"
+		},
+		{
+			"kind": "gate",
+			"dir": "h",
+			"group": "A",
+			"lock": "",
+			"x": 288.0,
+			"y": 3264.0
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_pillar",
+			"x": 1200.0,
+			"y": 3648.0,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				50.0,
+				26.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_pillar",
+			"x": 1200.0,
+			"y": 3408.0,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				50.0,
+				26.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_b",
+			"x": 144.0,
+			"y": 3436.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				16.0
+			],
+			"loot": {
+				"type": "random"
+			},
+			"enemies": [
+				"random"
+			]
+		},
+		{
+			"kind": "chest",
+			"loot": {
+				"type": "hoard"
+			},
+			"x": 816.0,
+			"y": 3528.0
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 528.0,
+			"y": 3628.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				40.0,
+				20.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 1104.0,
+			"y": 3628.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				40.0,
+				20.0
+			]
+		},
+		{
+			"kind": "enemy",
+			"mob": "truhenfresser",
+			"x": 1008.0,
+			"y": 3528.0
+		}
+	],
+	"kind_label": "Sprungrätsel",
+	"spawn_mode": "manual"
+}

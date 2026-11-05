@@ -1,0 +1,12 @@
+{
+ "_note": "How the Weltbauer's merged ground looks in the editor and in the game (src/world_editor/world_terrain.gd). pit: colours of a pit, per world, where neighbouring pit cells form one hole: void = inside, face = the far wall seen inside the hole, face_px = its height, rim = lit edge, rim_px = its width, grain = share of edge pixels that break the straight line. area: an area brush keeps its tile running across cells and only its outer edge gets edge (colour) over edge_px, grain as above. pad: the Sprungplatte's chevrons, idle = dim colour, live = bright colour, base = plate tint.",
+ "art_px": 3,
+ "pit": {
+  "krypta": {"void": "#07060a", "face": "#1b1820", "rim": "#4a4348", "face_px": 30, "rim_px": 6, "grain": 0.34},
+  "frost": {"void": "#050a12", "face": "#14283a", "rim": "#7fa6c4", "face_px": 30, "rim_px": 6, "grain": 0.34},
+  "hell": {"void": "#090304", "face": "#2a0f0c", "rim": "#6a3424", "face_px": 30, "rim_px": 6, "grain": 0.34}
+ },
+ "area": {"edge": "#00000066", "edge_px": 9, "grain": 0.4},
+ "pad": {"idle": "#5fd0e8", "live": "#fff2a8", "base": "#c8d4e0"},
+ "lights": {"match": ["brazier", "torch", "candle", "flame", "lamp", "fire", "lantern"], "radius": 240, "height": 50, "colors": {"krypta": "255,170,80", "frost": "120,180,255", "hell": "255,150,70"}}
+}

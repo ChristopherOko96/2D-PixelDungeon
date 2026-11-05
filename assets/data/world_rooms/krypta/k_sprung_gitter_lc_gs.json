@@ -1,0 +1,796 @@
+{
+	"schema_version": 1.0,
+	"id": "k_sprung_gitter_lc_gs",
+	"title": "Sprung: Der Kerkermeister (Winkel)",
+	"world": "krypta",
+	"role": "jump",
+	"in_floors": true,
+	"slots": [
+		[
+			1.0,
+			0.0
+		],
+		[
+			0.0,
+			1.0
+		],
+		[
+			1.0,
+			1.0
+		]
+	],
+	"width": 31.0,
+	"height": 25.0,
+	"cells": [
+		"0000000000000000000000000000000",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000000000111000000",
+		"0000000000000000001110111011110",
+		"0000000000000000001110111011110",
+		"0000000000000000001110111011110",
+		"0000000000000000001110111011110",
+		"0000000000000000001110111011110",
+		"0000000000000000000000111000000",
+		"0000000000000000000000111011110",
+		"0444444444444444411100111011110",
+		"0411444144411144411100111011110",
+		"0444444144444444411100111011110",
+		"0444444444444444411100111000000",
+		"0444444444444444411111111111110",
+		"0114444444441444411111111111110",
+		"0111111114411444111111111111110",
+		"0114444444444444411111111111110",
+		"0444444444444444411111111111110",
+		"0000000000000000000000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				23.0,
+				0.0
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				30.0,
+				5.0
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				17.0,
+				5.0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				23.0,
+				24.0
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				30.0,
+				19.0
+			]
+		}
+	],
+	"auto_mobs": 0.0,
+	"objects": [
+		{
+			"kind": "prop",
+			"asset": "cage_hang",
+			"x": 2640.0,
+			"y": 102.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_long",
+			"x": 2640.0,
+			"y": 774.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 2640.0,
+			"y": 1350.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_2",
+			"x": 1776.0,
+			"y": 1446.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_skull",
+			"x": 2064.0,
+			"y": 1830.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_long",
+			"x": 2544.0,
+			"y": 1830.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_2",
+			"x": 2448.0,
+			"y": 1800.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_scatter",
+			"x": 1760.7,
+			"y": 222.1,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_f",
+			"x": 2822.1,
+			"y": 234.2,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_c",
+			"x": 2475.6,
+			"y": 319.8,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 2150.8,
+			"y": 424.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_scatter",
+			"x": 1853.3,
+			"y": 632.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_d",
+			"x": 1946.7,
+			"y": 912.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_f",
+			"x": 2619.7,
+			"y": 1011.9,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rubble",
+			"x": 1872.5,
+			"y": 1098.5,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_d",
+			"x": 2543.4,
+			"y": 1194.5,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_c",
+			"x": 2352.0,
+			"y": 1627.2,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 45.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "grate_a",
+			"x": 2160.0,
+			"y": 1723.2,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 45.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "rubble",
+			"x": 2539.5,
+			"y": 1698.6,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_f",
+			"x": 2239.5,
+			"y": 1970.3,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_c",
+			"x": 1955.8,
+			"y": 2073.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_a",
+			"x": 2172.8,
+			"y": 2088.7,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_c",
+			"x": 2526.7,
+			"y": 2086.6,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_c",
+			"x": 2062.4,
+			"y": 2155.1,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_low",
+			"x": 1872.0,
+			"y": 172.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				57.0,
+				26.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_low",
+			"x": 2736.0,
+			"y": 172.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				57.0,
+				26.0
+			]
+		},
+		{
+			"kind": "tablet",
+			"text": "Der Kerkermeister hat einen Schlüssel verloren.\nEr liegt jenseits der Stacheln.\nZwei Türen wollen ihn, und er bricht im Schloss:\nHinter einer liegt der zweite Schlüssel, hinter der anderen nur Zähne.\nLies die Inschriften an den Türen.",
+			"x": 2256.0,
+			"y": 360.0
+		},
+		{
+			"kind": "start",
+			"x": 2640.0,
+			"y": 360.0
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 1776.0,
+			"y": 652.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				40.0,
+				20.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 2832.0,
+			"y": 652.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				40.0,
+				20.0
+			]
+		},
+		{
+			"kind": "gate",
+			"dir": "h",
+			"group": "E",
+			"lock": "A",
+			"x": 2016.0,
+			"y": 864.0
+		},
+		{
+			"kind": "gate",
+			"dir": "h",
+			"group": "W",
+			"lock": "A",
+			"x": 2400.0,
+			"y": 864.0
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile",
+			"x": 2640.0,
+			"y": 940.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				76.0,
+				26.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile",
+			"x": 1776.0,
+			"y": 1132.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				76.0,
+				26.0
+			]
+		},
+		{
+			"kind": "chest",
+			"loot": {
+				"type": "random"
+			},
+			"x": 1872.0,
+			"y": 1032.0,
+			"mimic": "yes",
+			"mimic_mob": "truhenfresser"
+		},
+		{
+			"kind": "chest",
+			"loot": {
+				"type": "key",
+				"id": "B"
+			},
+			"x": 2736.0,
+			"y": 1032.0
+		},
+		{
+			"kind": "tablet",
+			"text": "Hinter der anderen Tür liegt der Schlüssel.",
+			"x": 2160.0,
+			"y": 1224.0
+		},
+		{
+			"kind": "tablet",
+			"text": "Beide Inschriften lügen.",
+			"x": 2352.0,
+			"y": 1224.0
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_pillar",
+			"x": 2544.0,
+			"y": 1488.0,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				50.0,
+				26.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_pillar",
+			"x": 2832.0,
+			"y": 1488.0,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				50.0,
+				26.0
+			]
+		},
+		{
+			"kind": "gate",
+			"dir": "h",
+			"group": "B",
+			"lock": "B",
+			"x": 2400.0,
+			"y": 1440.0
+		},
+		{
+			"kind": "launch",
+			"dir": "e",
+			"cells": 14.0,
+			"x": 336.0,
+			"y": 1584.0
+		},
+		{
+			"kind": "launch",
+			"dir": "w",
+			"cells": 4.0,
+			"x": 1104.0,
+			"y": 1584.0
+		},
+		{
+			"kind": "launch",
+			"dir": "e",
+			"cells": 4.0,
+			"x": 1296.0,
+			"y": 1584.0
+		},
+		{
+			"kind": "chest",
+			"loot": {
+				"type": "hoard"
+			},
+			"x": 2736.0,
+			"y": 1608.0
+		},
+		{
+			"kind": "launch",
+			"dir": "s",
+			"cells": 4.0,
+			"x": 720.0,
+			"y": 1680.0
+		},
+		{
+			"kind": "launch",
+			"dir": "n",
+			"cells": 4.0,
+			"x": 240.0,
+			"y": 1968.0
+		},
+		{
+			"kind": "launch",
+			"dir": "n",
+			"cells": 4.0,
+			"x": 1200.0,
+			"y": 1968.0
+		},
+		{
+			"kind": "key",
+			"key": "A",
+			"x": 144.0,
+			"y": 2064.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 336.0,
+			"y": 2064.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 528.0,
+			"y": 2064.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 720.0,
+			"y": 2064.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 432.0,
+			"y": 2064.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 624.0,
+			"y": 2064.0
+		},
+		{
+			"kind": "launch",
+			"dir": "w",
+			"cells": 3.0,
+			"x": 1104.0,
+			"y": 2064.0
+		},
+		{
+			"kind": "launch",
+			"dir": "w",
+			"cells": 4.0,
+			"x": 1584.0,
+			"y": 2064.0
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_b",
+			"x": 2064.0,
+			"y": 2092.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				16.0
+			],
+			"loot": {
+				"type": "random"
+			},
+			"enemies": [
+				"random"
+			]
+		},
+		{
+			"kind": "chest",
+			"loot": {
+				"type": "random"
+			},
+			"x": 2736.0,
+			"y": 2184.0,
+			"mimic": "random",
+			"mimic_mob": "mimik"
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_a",
+			"x": 1968.0,
+			"y": 2284.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				16.0
+			],
+			"loot": {
+				"type": "random"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "crate_a",
+			"x": 2448.0,
+			"y": 2284.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				48.0,
+				22.0
+			],
+			"loot": {
+				"type": "random"
+			},
+			"enemies": [
+				"random",
+				"random"
+			]
+		}
+	],
+	"kind_label": "Sprungrätsel",
+	"spawn_mode": "manual"
+}

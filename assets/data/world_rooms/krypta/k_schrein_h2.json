@@ -1,0 +1,397 @@
+{
+	"schema_version": 1,
+	"id": "k_schrein_h2",
+	"title": "Totenschrein (hoch)",
+	"world": "krypta",
+	"role": "combat",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		],
+		[
+			0,
+			1
+		]
+	],
+	"width": 14,
+	"height": 25,
+	"cells": [
+		"00000000000000",
+		"00000000000000",
+		"00000000000000",
+		"00000000000000",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111100111110",
+		"01111100111110",
+		"01111100111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111100111110",
+		"01111100111110",
+		"01111100111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"00000000000000",
+		"00000000000000",
+		"00000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				6,
+				3
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0,
+				5
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				13,
+				5
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				6,
+				22
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0,
+				19
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				13,
+				19
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "prop",
+			"asset": "bench",
+			"x": 240,
+			"y": 754.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				120,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bench",
+			"x": 1104,
+			"y": 754.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				120,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bench",
+			"x": 240,
+			"y": 946.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				120,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bench",
+			"x": 1104,
+			"y": 946.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				120,
+				30
+			]
+		},
+		{
+			"kind": "plate",
+			"x": 336,
+			"y": 1104,
+			"group": "seq",
+			"order": 0
+		},
+		{
+			"kind": "plate",
+			"x": 720,
+			"y": 1104,
+			"group": "seq",
+			"order": 0
+		},
+		{
+			"kind": "plate",
+			"x": 1008,
+			"y": 1104,
+			"group": "seq",
+			"order": 0
+		},
+		{
+			"kind": "plate",
+			"x": 336,
+			"y": 1296,
+			"group": "seq",
+			"order": 0
+		},
+		{
+			"kind": "plate",
+			"x": 720,
+			"y": 1296,
+			"group": "seq",
+			"order": 0
+		},
+		{
+			"kind": "plate",
+			"x": 1008,
+			"y": 1296,
+			"group": "seq",
+			"order": 0
+		},
+		{
+			"kind": "prop",
+			"asset": "bench",
+			"x": 240,
+			"y": 1522.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				120,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bench",
+			"x": 1104,
+			"y": 1522.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				120,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bench",
+			"x": 240,
+			"y": 1714.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				120,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bench",
+			"x": 1104,
+			"y": 1714.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				120,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rug_blue",
+			"x": 672,
+			"y": 1283,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 83,
+				"w": 150,
+				"h": 300,
+				"a": 1
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_monk",
+			"x": 720,
+			"y": 1810.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				24
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_c",
+			"x": 336,
+			"y": 865,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 48.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_c",
+			"x": 816,
+			"y": 865,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 48.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_c",
+			"x": 912,
+			"y": 1249,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 48.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_c",
+			"x": 1008,
+			"y": 1537,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 48.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 132.9,
+			"y": 1792.8,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_b",
+			"x": 500.3,
+			"y": 1992.5,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "start",
+			"x": 624,
+			"y": 1219.2
+		}
+	]
+}

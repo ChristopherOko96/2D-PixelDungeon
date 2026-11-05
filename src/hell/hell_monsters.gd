@@ -246,7 +246,7 @@ func free_spot(room: int, near: Vector2, min_d: float, max_d: float) -> Vector2:
 	for k in range(40):
 		var p := near + Vector2.from_angle(randf() * TAU) * randf_range(min_d, max_d)
 		if g._room_at_world(p.x, p.y) == room and g._cell(int(floor(p.x / g.C)), int(floor(p.y / g.C))) == 1 \
-				and not g.box_blocked(Rect2(p.x - 30, p.y - 30, 60, 30), true):
+				and not g.box_blocked(Rect2(p.x - 30, p.y - 30, 60, 30), true) and not (g.has_method("pit_at") and g.pit_at(p)):
 			return p
 	return near
 

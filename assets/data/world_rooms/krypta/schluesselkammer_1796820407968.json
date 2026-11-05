@@ -1,0 +1,285 @@
+{
+	"schema_version": 1,
+	"id": "schluesselkammer_1796820407968",
+	"title": "Schlüsselkammer",
+	"world": "krypta",
+	"role": "key",
+	"width": 14,
+	"height": 11,
+	"cells": [
+		"00000000000000",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"00000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "door",
+			"cell": [
+				13,
+				8
+			],
+			"dir": "h"
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "prop",
+			"asset": "shelf",
+			"x": 168.0,
+			"y": 235.2,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				62.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "shelf",
+			"x": 475.2,
+			"y": 235.2,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				62.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "shop_table",
+			"x": 321.6,
+			"y": 345.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				150.0,
+				40.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_angel",
+			"x": 859.2,
+			"y": 249.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				50.0,
+				26.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_angel",
+			"x": 1099.2,
+			"y": 249.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				50.0,
+				26.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 504.0,
+			"y": 518.4,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				26.0,
+				18.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bench",
+			"x": 436.8,
+			"y": 768.0,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				120.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 840.0,
+			"y": 518.4,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				26.0,
+				18.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bench",
+			"x": 907.2,
+			"y": 768.0,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				120.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_monk",
+			"x": 182.4,
+			"y": 950.4,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				40.0,
+				24.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "mat",
+			"x": 321.6,
+			"y": 454.7,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rug_square",
+			"x": 979.2,
+			"y": 355.9,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rug_red",
+			"x": 672.0,
+			"y": 717.6,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "boss_banner_blue",
+			"x": 576.0,
+			"y": 192.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "boss_banner_blue",
+			"x": 744.0,
+			"y": 192.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "raw",
+			"x": 321.6,
+			"y": 264.0,
+			"ent": {
+				"type": "npc",
+				"x": 4353.6,
+				"y": 1320.0,
+				"room": 15
+			}
+		},
+		{
+			"kind": "raw",
+			"x": 321.6,
+			"y": 355.2,
+			"ent": {
+				"type": "shop",
+				"x": 4353.6,
+				"y": 1411.2,
+				"room": 15
+			}
+		},
+		{
+			"kind": "well",
+			"x": 979.2,
+			"y": 244.8
+		},
+		{
+			"kind": "key",
+			"x": 672.0,
+			"y": 576.0,
+			"key": "C"
+		},
+		{
+			"kind": "start",
+			"x": 672.0,
+			"y": 528.0
+		}
+	]
+}

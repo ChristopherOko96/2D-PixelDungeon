@@ -1,0 +1,205 @@
+{
+	"schema_version": 1,
+	"id": "k_beute_halle",
+	"title": "Beute: Halle",
+	"world": "krypta",
+	"role": "treasure",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		]
+	],
+	"width": 14,
+	"height": 11,
+	"cells": [
+		"00000000000000",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"00000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				6,
+				0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				6,
+				10
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0,
+				5
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				13,
+				5
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "prop",
+			"asset": "crate_pile",
+			"x": 240,
+			"y": 274.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				34
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "sacks_b",
+			"x": 1104,
+			"y": 274.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				90,
+				26
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_bowl",
+			"x": 432,
+			"y": 562.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				30
+			]
+		},
+		{
+			"kind": "chest",
+			"x": 624,
+			"y": 561.6,
+			"loot": {
+				"type": "auto"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_bowl",
+			"x": 912,
+			"y": 562.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				30
+			]
+		},
+		{
+			"kind": "raw",
+			"x": 240,
+			"y": 849.6,
+			"ent": {
+				"type": "crate",
+				"look": "urn_a",
+				"hp": 1,
+				"drop": "random"
+			}
+		},
+		{
+			"kind": "raw",
+			"x": 1104,
+			"y": 849.6,
+			"ent": {
+				"type": "crate",
+				"look": "urn_c",
+				"hp": 1,
+				"drop": "random"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "rug_square",
+			"x": 672,
+			"y": 654,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 29.5,
+				"w": 200,
+				"h": 200,
+				"a": 1
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 384,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 960,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "start",
+			"x": 720,
+			"y": 547.2
+		}
+	]
+}

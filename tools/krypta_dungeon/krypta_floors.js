@@ -58,7 +58,7 @@
   // one extra enemy per fight room every extra_every floors. The crypt is the gentle entry world.
   const DIFF = { hp_step: .22, speed_step: .03, extra_every: 3 };
   // the pack as plain data (the Godot port reads it from assets/data/krypta_world.json, see export_world.js)
-  const PACK = { floors: FLOORS, circles: CIRCLES, names: NAMES, suffixes: SUFFIXES, words: WORDS, theme_flag: 'crypt', light: LIGHT, gate_banner: GATE_BANNER, blue: BLUE, blue_props: BLUE_PROPS, foot: FOOT, wall_set: WALL_SET, break_set: BREAK_SET, mimic_fight: MIMIC_FIGHT, mimic_treasure: MIMIC_TREASURE, diff: DIFF };
+  const PACK = { floors: FLOORS, circles: CIRCLES, names: NAMES, suffixes: SUFFIXES, words: WORDS, theme_flag: 'crypt', light: LIGHT, gate_banner: GATE_BANNER, blue: BLUE, blue_props: BLUE_PROPS, foot: FOOT, wall_set: WALL_SET, break_set: BREAK_SET, mimic_fight: MIMIC_FIGHT, mimic_treasure: MIMIC_TREASURE, diff: DIFF, room_library: {"world":"krypta","slot_size":[14,11],"slot_gap":[3,3],"margin":3,"gate_style":"portcullis","boss_gate_reach":4,"boss_gate_depth":3,"chest_share":0.35,"jump_rooms":2,"jump_share":0.6} };
   const world = WorldPack.make(PACK);
   return Object.assign(world, { crypt: world.wording });
 });

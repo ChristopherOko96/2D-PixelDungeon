@@ -1204,5 +1204,17 @@
   "kind": "sprite",
   "src": "hell wall_v_glow_blue in the 0x72 manner (build_hell_extras.py)",
   "w": 62
+ },
+ "side_slab": {
+  "w": 62,
+  "h": 192,
+  "kind": "sprite",
+  "src": "stone slab from wall_v"
+ },
+ "side_slab_open": {
+  "w": 62,
+  "h": 192,
+  "kind": "sprite",
+  "src": "stone slab from wall_v"
  }
 }

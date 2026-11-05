@@ -13,6 +13,7 @@ const TEST_SEED := 4711
 const DT := 1.0 / 60.0
 
 var _failed := 0
+var _checked := 0
 
 
 func _initialize() -> void:
@@ -20,6 +21,7 @@ func _initialize() -> void:
 
 
 func _check(ok: bool, what: String) -> void:
+	_checked += 1
 	if not ok:
 		_failed += 1
 		print("FROST_ICE_ROOMS_FAIL: ", what)
@@ -30,6 +32,7 @@ func _run() -> void:
 	await _test_at_most_one_room_per_floor()
 	await _test_only_frost()
 	await _test_sliding()
+	print("FROST_ICE_ROOMS checked=%d failed=%d" % [_checked, _failed])
 	print("FROST_ICE_ROOMS_TEST_PASS" if _failed == 0 else "FROST_ICE_ROOMS_TEST_FAILED %d" % _failed)
 	quit(1 if _failed > 0 else 0)
 

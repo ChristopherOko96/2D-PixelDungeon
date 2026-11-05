@@ -1,0 +1,245 @@
+{
+	"schema_version": 1.0,
+	"id": "k_eingang_halle",
+	"title": "Abstieg: Halle",
+	"world": "krypta",
+	"role": "start",
+	"in_floors": true,
+	"slots": [
+		[
+			0.0,
+			0.0
+		]
+	],
+	"width": 14.0,
+	"height": 11.0,
+	"cells": [
+		"00000000000000",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"00000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				6.0,
+				0.0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				6.0,
+				10.0
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0.0,
+				5.0
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				13.0,
+				5.0
+			]
+		}
+	],
+	"auto_mobs": 0.0,
+	"objects": [
+		{
+			"kind": "prop",
+			"asset": "rune_pillar_c",
+			"x": 240.0,
+			"y": 274.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				50.0,
+				28.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_pillar_c",
+			"x": 1104.0,
+			"y": 274.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				50.0,
+				28.0
+			]
+		},
+		{
+			"kind": "start",
+			"x": 624.0,
+			"y": 547.2
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_pillar_c",
+			"x": 240.0,
+			"y": 754.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				50.0,
+				28.0
+			]
+		},
+		{
+			"kind": "raw",
+			"x": 528.0,
+			"y": 753.6,
+			"ent": {
+				"type": "crate",
+				"look": "barrel_b",
+				"hp": 1.0,
+				"drop": "random"
+			}
+		},
+		{
+			"kind": "raw",
+			"x": 816.0,
+			"y": 753.6,
+			"ent": {
+				"type": "crate",
+				"look": "urn_d",
+				"hp": 1.0,
+				"drop": "random"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_pillar_c",
+			"x": 1104.0,
+			"y": 754.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				50.0,
+				28.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "carpet",
+			"x": 672.0,
+			"y": 409.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 73.0,
+				"w": 150.0,
+				"h": 300.0,
+				"a": 1.0
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_plate",
+			"x": 672.0,
+			"y": 718.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 45.5,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 1.0
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "door_stairs",
+			"x": 672.0,
+			"y": 70.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 336.0,
+			"y": 102.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 1008.0,
+			"y": 102.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "enemy",
+			"mob": "mimik",
+			"x": 816.0,
+			"y": 552.0
+		},
+		{
+			"kind": "enemy",
+			"mob": "truhenfresser",
+			"x": 408.0,
+			"y": 552.0
+		}
+	],
+	"spawn_mode": "manual"
+}

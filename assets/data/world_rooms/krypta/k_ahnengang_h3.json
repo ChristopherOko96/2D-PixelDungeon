@@ -1,0 +1,737 @@
+{
+	"schema_version": 1.0,
+	"id": "k_ahnengang_h3",
+	"title": "Ahnengang (Turm)",
+	"world": "krypta",
+	"role": "combat",
+	"in_floors": true,
+	"slots": [
+		[
+			0.0,
+			0.0
+		],
+		[
+			0.0,
+			1.0
+		],
+		[
+			0.0,
+			2.0
+		]
+	],
+	"width": 14.0,
+	"height": 39.0,
+	"cells": [
+		"00000000000000",
+		"00000000000000",
+		"00000000000000",
+		"00000000000000",
+		"00000000000000",
+		"00000000000000",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"00000000000000",
+		"00000000000000",
+		"00000000000000",
+		"00000000000000",
+		"00000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				6.0,
+				5.0
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0.0,
+				6.0
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				13.0,
+				6.0
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0.0,
+				19.0
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				13.0,
+				19.0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				6.0,
+				34.0
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0.0,
+				32.0
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				13.0,
+				32.0
+			]
+		}
+	],
+	"auto_mobs": 0.0,
+	"objects": [
+		{
+			"kind": "plate",
+			"x": 432.0,
+			"y": 816.0,
+			"group": "seq",
+			"order": 0.0
+		},
+		{
+			"kind": "plate",
+			"x": 912.0,
+			"y": 816.0,
+			"group": "seq",
+			"order": 0.0
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_monk",
+			"x": 240.0,
+			"y": 946.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				40.0,
+				24.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_monk",
+			"x": 1104.0,
+			"y": 946.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				40.0,
+				24.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_obelisk",
+			"x": 240.0,
+			"y": 1138.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				46.0,
+				28.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_obelisk",
+			"x": 1104.0,
+			"y": 1138.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				46.0,
+				28.0
+			]
+		},
+		{
+			"kind": "plate",
+			"x": 432.0,
+			"y": 1200.0,
+			"group": "seq",
+			"order": 0.0
+		},
+		{
+			"kind": "plate",
+			"x": 912.0,
+			"y": 1200.0,
+			"group": "seq",
+			"order": 0.0
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_angel",
+			"x": 240.0,
+			"y": 1330.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				50.0,
+				26.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_angel",
+			"x": 1104.0,
+			"y": 1330.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				50.0,
+				26.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_monk",
+			"x": 240.0,
+			"y": 1522.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				40.0,
+				24.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_monk",
+			"x": 1104.0,
+			"y": 1522.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				40.0,
+				24.0
+			]
+		},
+		{
+			"kind": "plate",
+			"x": 432.0,
+			"y": 1584.0,
+			"group": "seq",
+			"order": 0.0
+		},
+		{
+			"kind": "plate",
+			"x": 912.0,
+			"y": 1584.0,
+			"group": "seq",
+			"order": 0.0
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_obelisk",
+			"x": 240.0,
+			"y": 1714.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				46.0,
+				28.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 480.0,
+			"y": 1800.0,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				26.0,
+				18.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 864.0,
+			"y": 1800.0,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				26.0,
+				18.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_obelisk",
+			"x": 1104.0,
+			"y": 1714.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				46.0,
+				28.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_monk",
+			"x": 240.0,
+			"y": 2098.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				40.0,
+				24.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_monk",
+			"x": 1104.0,
+			"y": 2098.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				40.0,
+				24.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_obelisk",
+			"x": 240.0,
+			"y": 2290.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				46.0,
+				28.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_obelisk",
+			"x": 1104.0,
+			"y": 2290.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				46.0,
+				28.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_angel",
+			"x": 240.0,
+			"y": 2482.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				50.0,
+				26.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_angel",
+			"x": 1104.0,
+			"y": 2482.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				50.0,
+				26.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_monk",
+			"x": 240.0,
+			"y": 2674.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				40.0,
+				24.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_monk",
+			"x": 1104.0,
+			"y": 2674.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				40.0,
+				24.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_obelisk",
+			"x": 240.0,
+			"y": 2866.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				46.0,
+				28.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_obelisk",
+			"x": 1104.0,
+			"y": 2866.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				46.0,
+				28.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_angel",
+			"x": 240.0,
+			"y": 3058.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				50.0,
+				26.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_angel",
+			"x": 1104.0,
+			"y": 3058.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				50.0,
+				26.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rug_red",
+			"x": 672.0,
+			"y": 1332.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 84.0,
+				"w": 170.0,
+				"h": 800.0,
+				"a": 1.0
+			},
+			"scale_w": 2.0
+		},
+		{
+			"kind": "prop",
+			"asset": "rug_blue",
+			"x": 672.0,
+			"y": 2616.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 83.0,
+				"w": 170.0,
+				"h": 800.0,
+				"a": 1.0
+			},
+			"scale_w": 2.0
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 1008.0,
+			"y": 2500.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "grate_b",
+			"x": 624.0,
+			"y": 1803.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 26.5,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 432.0,
+			"y": 2116.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "grate_b",
+			"x": 1200.0,
+			"y": 1323.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 26.5,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "grate",
+			"x": 720.0,
+			"y": 1820.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 44.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 432.0,
+			"y": 1444.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.95
+			},
+			"scale_w": 1.1
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 912.0,
+			"y": 1632.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_scatter",
+			"x": 516.4,
+			"y": 2102.1,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_g",
+			"x": 362.0,
+			"y": 2829.8,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_d",
+			"x": 1026.9,
+			"y": 3113.1,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "start",
+			"x": 624.0,
+			"y": 1891.2
+		}
+	],
+	"spawn_mode": "random"
+}

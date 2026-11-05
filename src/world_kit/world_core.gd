@@ -785,25 +785,8 @@ static func build_floor(n: int, sizes: Dictionary, opts: Dictionary) -> Dictiona
 		B.doors.append(d)
 		W.doors.append(d)
 	# floor tiles: deeper floors show more cracks
-	var hot: float = theme.hot
 	for i in range(count):
-		var x := i % COLS
-		var y := i / COLS
-		var h := hash3(x, y, 3 + n)
-		if W.roomAt[i] < 0:
-			W.tileAt[i] = "floor_10" if h < 0.5 else ("floor_11" if h < 0.8 else "floor_01")
-			continue
-		var cold := 1.0 - hot
-		var tn := "floor_09"
-		if h < cold * 0.5: tn = "floor_00"
-		elif h < cold * 0.7: tn = "floor_04"
-		elif h < cold * 0.85: tn = "floor_01"
-		elif h < cold: tn = "floor_10"
-		elif h < cold + hot * 0.25: tn = "floor_02"
-		elif h < cold + hot * 0.45: tn = "floor_03"
-		elif h < cold + hot * 0.65: tn = "floor_07"
-		elif h < cold + hot * 0.85: tn = "floor_08"
-		W.tileAt[i] = tn
+		W.tileAt[i] = floor_tile(i % COLS, i / COLS, n, theme.hot, W.roomAt[i] >= 0)
 	# per-room features
 	var rnd := Rng.new(int(W.seed) + 4242)
 	var gate: Variant = null
@@ -832,6 +815,24 @@ static func build_floor(n: int, sizes: Dictionary, opts: Dictionary) -> Dictiona
 		r.cells = cells_of(W, r)
 	W.byId = by_id
 	return W
+
+
+## The floor tile of cell (x, y) on floor n: deeper floors show more cracks. `inside`: part of a room.
+static func floor_tile(x: int, y: int, n: int, hot: float, inside: bool) -> String:
+	var h := hash3(x, y, 3 + n)
+	if not inside:
+		return "floor_10" if h < 0.5 else ("floor_11" if h < 0.8 else "floor_01")
+	var cold := 1.0 - hot
+	var tn := "floor_09"
+	if h < cold * 0.5: tn = "floor_00"
+	elif h < cold * 0.7: tn = "floor_04"
+	elif h < cold * 0.85: tn = "floor_01"
+	elif h < cold: tn = "floor_10"
+	elif h < cold + hot * 0.25: tn = "floor_02"
+	elif h < cold + hot * 0.45: tn = "floor_03"
+	elif h < cold + hot * 0.65: tn = "floor_07"
+	elif h < cold + hot * 0.85: tn = "floor_08"
+	return tn
 
 
 static func cells_of(W: Dictionary, r: Dictionary) -> Array:
@@ -1662,6 +1663,9 @@ static func blocked_ways(W: Dictionary, r: Dictionary) -> Array:
 static func clear_ways(W: Dictionary) -> Dictionary:
 	var cols: int = W.COLS
 	for r: Dictionary in W.rooms:
+		# a jump puzzle blocks its ways on purpose (room_floor.gd)
+		if str(r.type) == "jump":
+			continue
 		for round in range(12):
 			var bad := blocked_ways(W, r)
 			if bad.is_empty():
@@ -1726,6 +1730,9 @@ static func critical_rooms(W: Dictionary) -> Variant:
 	for r: Dictionary in W.rooms:
 		adj[int(r.index)] = []
 	for d: Dictionary in W.doors:
+		# the far gate of a corridor (room_floor.gd) never opens a way its near gate keeps shut
+		if d.get("far_end", false):
+			continue
 		adj[int(d.a.index)].append([int(d.b.index), d])
 		adj[int(d.b.index)].append([int(d.a.index), d])
 	var start := -1
@@ -1799,6 +1806,13 @@ static func critical_rooms(W: Dictionary) -> Variant:
 
 # ---------- the floor schema of the runtime ----------
 
+## What a door or prop of a floor built from room files may carry on top (room_floor.gd).
+const OPTIONAL_DOOR := ["pictures", "art_scale", "art_dx", "far_end", "corridor"]
+const OPTIONAL_PROP := ["z", "sx", "sy", "frames", "fps", "loot", "opens", "enemies"]
+## How a picture on the floor or a wall of a room file is stretched.
+const OPTIONAL_STRETCH := ["sx", "sy"]
+
+
 static func _r1(v: float) -> float:
 	return jround(v * 10) / 10.0
 
@@ -1813,10 +1827,11 @@ static func to_raw(W: Dictionary) -> Dictionary:
 	holes.resize(count)
 	var tiles := PackedByteArray()
 	tiles.resize(count)
+	var tile_names: Array = W.get("tile_names", TILE_NAMES)
 	for i in range(count):
 		grid[i] = 48 + int(W.grid[i])
 		holes[i] = 48 + int(W.holeAt[i])
-		var t := TILE_NAMES.find(str(W.tileAt[i]))
+		var t := tile_names.find(str(W.tileAt[i]))
 		t = maxi(t, 0)
 		tiles[i] = (48 + t) if t < 10 else (87 + t)
 	var quick: Variant = critical_rooms(W)
@@ -1825,21 +1840,35 @@ static func to_raw(W: Dictionary) -> Dictionary:
 		rooms.append({"index": r.index, "id": r.id, "name": r.name, "kind": r.kind, "type": r.type, "gtype": r.gtype, "icon": r.get("icon", ""), "icon_key": r.get("iconKey", ""),
 			"bx": r.bx, "by": r.by, "bw": r.bw, "bh": r.bh, "mobs": r.get("mobs", 0), "drop": r.get("drop", ""), "reward": r.get("reward"),
 			"spawn": r.get("spawn"), "cleared": r.cleared, "info": r.get("info", ""), "on_path": r.get("onPath", false), "seq": r.get("seq", false), "tidy": r.get("tidy", false), "ice": r.get("ice", false)})
+		if r.has("placed_mobs"):
+			rooms[-1].placed_mobs = r.placed_mobs
 	var doors: Array = []
 	for d: Dictionary in W.doors:
 		doors.append({"a": int(d.a.index), "b": int(d.b.index), "kind": d.kind, "key": d.get("key", ""), "group": d.get("group", ""), "hidden": d.get("hidden", false), "dir": d.dir,
 			"cells": d.cells, "x0": d.x0, "y0": d.y0, "x1": d.x1, "y1": d.y1, "cx": d.cx, "cy": d.cy, "crack_x": d.crackX, "crack_y": d.crackY,
 			"boss_gate": d.kind == "lock" and d.get("key", "") == "C" and d.dir == "v" and (d.a.type == "boss" or d.b.type == "boss")})
+		for k: String in OPTIONAL_DOOR:
+			if d.has(k):
+				doors[-1][k] = d[k]
 	var props: Array = []
 	for p: Dictionary in W.props:
 		props.append({"name": p.get("name", ""), "x": _r1(p.x), "y": _r1(p.y), "flip": p.get("flip", false), "low": p.get("layer", "obj") == "low",
 			"solid": (p.solid as Array).map(func(v: float) -> float: return _r1(v)) if p.has("solid") else null})
+		for k: String in OPTIONAL_PROP:
+			if p.has(k):
+				props[-1][k] = p[k]
 	var decals: Array = []
 	for d: Dictionary in W.decals:
 		decals.append({"name": d.name, "x": _r1(d.x), "y": _r1(d.y), "w": d.get("w", 0), "h": d.get("h", 0), "a": d.get("a", 1.0)})
+		for k: String in OPTIONAL_STRETCH:
+			if d.has(k):
+				decals[-1][k] = d[k]
 	var wall_decor: Array = []
 	for w: Dictionary in W.wallDecor:
 		wall_decor.append({"name": w.name, "x": _r1(w.x), "y": _r1(w.y), "flip": w.get("flip", false)})
+		for k: String in OPTIONAL_STRETCH:
+			if w.has(k):
+				wall_decor[-1][k] = w[k]
 	var ents: Array = []
 	for e: Dictionary in W.ents:
 		var o := {"type": e.type, "x": _r1(e.x), "y": _r1(e.y), "room": e.room}
@@ -1858,9 +1887,14 @@ static func to_raw(W: Dictionary) -> Dictionary:
 	for k: String in th:
 		if th[k] is bool:
 			theme[k] = th[k]
-	return {"n": W.n, "title": W.title, "circle": W.circle, "final": W.final, "seed": W.seed,
+	var raw := {"n": W.n, "title": W.title, "circle": W.circle, "final": W.final, "seed": W.seed,
 		"theme": theme,
 		"boss": W.boss, "diff": W.diff, "cols": cols, "rows": W.ROWS, "cell": int(C),
-		"grid": grid.get_string_from_ascii(), "holes": holes.get_string_from_ascii(), "tile_names": TILE_NAMES, "tiles": tiles.get_string_from_ascii(),
+		"grid": grid.get_string_from_ascii(), "holes": holes.get_string_from_ascii(), "tile_names": tile_names, "tiles": tiles.get_string_from_ascii(),
 		"room_at": Array(W.roomAt), "quick": quick.size() if quick != null else -1,
 		"rooms": rooms, "doors": doors, "groups": W.groups, "props": props, "decals": decals, "wall_decor": wall_decor, "ents": ents, "lights": lights}
+	# what a floor built from room files carries on top (room_floor.gd)
+	for k: String in ["areas", "pit_cells", "passages", "doorways"]:
+		if W.has(k):
+			raw[k] = W[k]
+	return raw

@@ -1,0 +1,236 @@
+{
+	"schema_version": 1,
+	"id": "feuerschalen_tresor_1796907518771",
+	"title": "Feuerschalen-Tresor",
+	"world": "krypta",
+	"role": "treasure",
+	"width": 14,
+	"height": 11,
+	"cells": [
+		"00000000000000",
+		"00001111110000",
+		"00011111111000",
+		"00111111111100",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"00111111111100",
+		"00022111122000",
+		"00001111110000",
+		"00000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "door",
+			"cell": [
+				6,
+				-1
+			],
+			"dir": "v"
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "prop",
+			"asset": "rune_pillar_c",
+			"x": 288.0,
+			"y": 729.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				66.0,
+				38.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_pillar_c",
+			"x": 950.4,
+			"y": 729.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				66.0,
+				38.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_rune",
+			"x": 144.0,
+			"y": 468.5,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				52.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_bowl",
+			"x": 1200.0,
+			"y": 468.5,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				56.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_e",
+			"x": 939.6,
+			"y": 462.8,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_b",
+			"x": 605.8,
+			"y": 932.1,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rocks_b",
+			"x": 408.8,
+			"y": 549.4,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_e",
+			"x": 543.5,
+			"y": 828.3,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_f",
+			"x": 237.9,
+			"y": 528.5,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_e",
+			"x": 520.2,
+			"y": 136.7,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_big",
+			"x": 624.0,
+			"y": 561.9,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "boss_banner_blue",
+			"x": 489.6,
+			"y": 102.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "boss_banner_blue",
+			"x": 854.4,
+			"y": 102.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "raw",
+			"x": 624.0,
+			"y": 576.0,
+			"ent": {
+				"type": "vault",
+				"x": 6000.0,
+				"y": 3744.0,
+				"room": 18,
+				"tier": 4
+			}
+		},
+		{
+			"kind": "start",
+			"x": 672.0,
+			"y": 528.0
+		}
+	]
+}

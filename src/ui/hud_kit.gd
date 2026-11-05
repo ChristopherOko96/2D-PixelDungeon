@@ -676,6 +676,30 @@ static func toast(canvas: CanvasItem, font: Font, screen: Vector2, y: float, val
 	HudStyle.text(canvas, font, Vector2(screen.x * 0.5 + 1, y + 6), value, body, Color(HudStyle.color("text"), alpha), 1)
 
 
+## A stone's inscription read out: a panel centred in the upper third of the `screen` with a small
+## `title` and `value` wrapped to at most rule inscription_lines lines of rule inscription_width px.
+static func inscription(canvas: CanvasItem, font: Font, screen: Vector2, title: String, value: String) -> Rect2:
+	var body := int(HudStyle.size("font_body"))
+	var small := maxi(10, body - 4)
+	var most := minf(rule("inscription_width", 640.0), screen.x - 2.0 * HudStyle.size("margin"))
+	# a line break in the text starts a new line (a riddle's verses)
+	var lines: Array[String] = []
+	for verse: String in value.split("\n"):
+		lines.append_array(_wrap(font, verse, body, most - 40.0, int(rule("inscription_lines", 7.0))))
+	lines = lines.slice(0, int(rule("inscription_lines", 7.0)))
+	var width := HudStyle.width(font, title, small)
+	for line: String in lines: width = maxf(width, HudStyle.width(font, line, body))
+	var line_h := float(body) + 8.0
+	var height := 30.0 + small + lines.size() * line_h
+	var rect := Rect2((screen.x - width - 40.0) * 0.5, screen.y * 0.18, width + 40.0, height)
+	HudStyle.panel(canvas, rect)
+	canvas.draw_rect(Rect2(rect.position, Vector2(rect.size.x, 3)), HudStyle.color("accent"))
+	HudStyle.text(canvas, font, Vector2(rect.get_center().x, rect.position.y + 10.0 + small), title, small, HudStyle.color("accent"), 1)
+	for i in range(lines.size()):
+		HudStyle.text(canvas, font, Vector2(rect.get_center().x, rect.position.y + 22.0 + small + body + i * line_h), lines[i], body, HudStyle.color("text"), 1)
+	return rect
+
+
 ## The story worlds' one toast: its lower left corner at `corner`, one line,
 ## two when longer than `max_width` (the rest cut with "..."). Returns its rectangle.
 static func toast_at(canvas: CanvasItem, font: Font, corner: Vector2, value: String, alpha: float, max_width: float = 620.0) -> Rect2:

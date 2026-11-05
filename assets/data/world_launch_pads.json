@@ -1,0 +1,17 @@
+{
+ "_note": "Sprungplatten (src/hell/launch_pads.gd, placed in the Weltbauer): a pad throws the hero `cells` cells in its direction. air_base + air_per_cell * cells = seconds in the air; height_base + height_per_cell * cells = height of the arc in world px; reach = half size in px of the spot that fires it, measured from the pad's middle; windup = seconds on the pad before the throw, so it is seen and heard; default_cells and max_cells bound the Weltbauer's choice; step = px the landing search goes back when the wanted spot is blocked; shake = camera jolt on landing. preview_cells: how near (in cells) the hero must stand to see where a pad throws, preview_dot_cells the space between the dots of its arc, preview_color their colour, preview_mark the radius in px of the ring at the landing spot.",
+ "air_base": 0.22,
+ "air_per_cell": 0.055,
+ "height_base": 40,
+ "height_per_cell": 22,
+ "reach": 38,
+ "windup": 0.1,
+ "default_cells": 4,
+ "max_cells": 16,
+ "step": 12,
+ "shake": 0.16,
+ "preview_cells": 3.2,
+ "preview_dot_cells": 0.6,
+ "preview_color": "#fff2a8",
+ "preview_mark": 42
+}

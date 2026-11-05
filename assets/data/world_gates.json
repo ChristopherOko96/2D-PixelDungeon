@@ -1,0 +1,173 @@
+{
+ "_note": "The gates of the Weltbauer (src/world_editor/world_gates.gd) and the stone slab that closes doorways in walls running up and down (tools/world_kit/build_side_gates.gd). tunnel_cells: how many wall cells a gate digs through towards the room behind it. styles: label, front picture, closes (shut until opened; false: an open passage), open_front (what stays once it is open, may be missing), scale (of the front picture), worlds (only there, missing: all). Every style shows side_picture or, open, open_side_picture in a wall running up and down. slab: the art of the slab; length in px, stone_light how much brighter than the wall (a set may have its own), rail_px the capstone-coloured rail along each side, glow_px the seam glow, bands as parts of the length, band_px and stub_px in px, colours, palette_from the pictures whose colours a pixel set's slab may use. sets: the graphics sets with their pixel grid and seam colour. picture_labels: names of the slab pictures in the parts list, and the style they set.",
+ "tunnel_cells": 8,
+ "sets": [
+  {
+   "folder": "res://assets/sprites/krypta/",
+   "grid": 1,
+   "seam": "#ffb45a"
+  },
+  {
+   "folder": "res://assets/sprites/krypta_pixel/",
+   "grid": 3,
+   "seam": "#ffb45a"
+  },
+  {
+   "folder": "res://assets/sprites/hell/",
+   "grid": 1,
+   "seam": "#ff4a2a"
+  },
+  {
+   "folder": "res://assets/sprites/hell_0x72/",
+   "grid": 3,
+   "seam": "#ff4a2a"
+  },
+  {
+   "folder": "res://assets/sprites/frost/",
+   "grid": 3,
+   "seam": "#9fe0ff",
+   "stone_light": 1
+  },
+  {
+   "folder": "res://assets/sprites/frost_hd/",
+   "grid": 1,
+   "seam": "#9fe0ff",
+   "stone_light": 1
+  },
+  {
+   "folder": "res://assets/sprites/frost_hd/frost_ohne_schnee/",
+   "grid": 1,
+   "seam": "#ffb45a",
+   "stone_light": 1
+  }
+ ],
+ "styles": {
+  "portcullis": {
+   "label": "Fallgitter",
+   "front": "portcullis",
+   "closes": true
+  },
+  "boss_gate": {
+   "label": "Bosstor",
+   "front": "boss_gate",
+   "open_front": "boss_arch",
+   "closes": true
+  },
+  "boss_gate_blue": {
+   "label": "Bosstor blau",
+   "front": "boss_gate_blue",
+   "open_front": "boss_arch",
+   "closes": true
+  },
+  "boss_arch": {
+   "label": "Bossbogen (offen)",
+   "front": "boss_arch",
+   "closes": false
+  },
+  "doorway": {
+   "label": "Durchgang (offen)",
+   "front": "gate_side",
+   "closes": false
+  },
+  "demon_lintel": {
+   "label": "Dämonensturz (offen)",
+   "front": "demon_lintel",
+   "closes": false
+  },
+  "door_stairs": {
+   "label": "Treppentor (offen)",
+   "front": "door_stairs",
+   "closes": false
+  },
+  "door_stairs_small": {
+   "label": "Kleines Treppentor (offen)",
+   "front": "door_stairs_small",
+   "closes": false
+  },
+  "wood_door": {
+   "label": "Holztür",
+   "front": "@res://assets/sprites/0x72/doors_leaf_closed.png",
+   "open_front": "@res://assets/sprites/0x72/doors_leaf_open.png",
+   "closes": true,
+   "scale": 3,
+   "worlds": [
+    "krypta"
+   ]
+  },
+  "wood_doorway": {
+   "label": "Offene Holztür",
+   "front": "@res://assets/sprites/0x72/doors_leaf_open.png",
+   "closes": false,
+   "scale": 3,
+   "worlds": [
+    "krypta"
+   ]
+  },
+  "crypt_door": {
+   "label": "Gruftportal",
+   "front": "@res://assets/crypt/props/crypt_012.png",
+   "open_front": "@res://assets/crypt/props/crypt_013.png",
+   "closes": true,
+   "scale": 3,
+   "worlds": [
+    "krypta"
+   ]
+  },
+  "crypt_doorway": {
+   "label": "Offenes Gruftportal",
+   "front": "@res://assets/crypt/props/crypt_013.png",
+   "closes": false,
+   "scale": 3,
+   "worlds": [
+    "krypta"
+   ]
+  },
+  "crypt_cave": {
+   "label": "Eingestürzter Bogen",
+   "front": "@res://assets/crypt/props/crypt_014.png",
+   "closes": false,
+   "scale": 3,
+   "worlds": [
+    "krypta"
+   ]
+  }
+ },
+ "side_picture": "side_slab",
+ "open_side_picture": "side_slab_open",
+ "slab": {
+  "shut_name": "side_slab",
+  "open_name": "side_slab_open",
+  "length": 192,
+  "bands": [
+   0.16,
+   0.78
+  ],
+  "band_px": 15,
+  "stub_px": 18,
+  "edge": "#14131a",
+  "iron": "#1d1e24",
+  "iron_light": "#9a9da6",
+  "seam": "#ffb45a",
+  "seam_dark": "#0d0c10",
+  "palette_from": [
+   "wall_v",
+   "portcullis",
+   "torch_a",
+   "wall_h"
+  ],
+  "stone_light": 1.5,
+  "rail_px": 6,
+  "glow_px": 12
+ },
+ "picture_labels": {
+  "side_slab": {
+   "style": "portcullis",
+   "label": "Steinschieber"
+  },
+  "side_slab_open": {
+   "style": "doorway",
+   "label": "Steinschieber offen"
+  }
+ },
+ "wall_shift": 17
+}

@@ -1,0 +1,820 @@
+{
+	"schema_version": 1,
+	"id": "k_kerkerwinkel_lc",
+	"title": "Kerkerwinkel (Winkel)",
+	"world": "krypta",
+	"role": "combat",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		],
+		[
+			0,
+			1
+		],
+		[
+			1,
+			1
+		]
+	],
+	"width": 31,
+	"height": 25,
+	"cells": [
+		"0000000000000000000000000000000",
+		"0000000000000000000000000000000",
+		"0000000000000000000000000000000",
+		"0000000000000000000000000000000",
+		"0000000000000000000000000000000",
+		"0001111011111000000000000000000",
+		"0001111011111000000000000000000",
+		"0001111011111000000000000000000",
+		"0001111111111000000000000000000",
+		"0001111111111000000000000000000",
+		"0001111111111000000000000000000",
+		"0001111011111000000000000000000",
+		"0001111011111000000000000000000",
+		"0001111011111000000000000000000",
+		"0001111111111000000000000000000",
+		"0001111111111111111111111100000",
+		"0001111111111111111111111100000",
+		"0001111111111111111111111100000",
+		"0001111111111111111111111100000",
+		"0001111111111111111111111100000",
+		"0001111111111111111111111100000",
+		"0001111111111111111111111100000",
+		"0001111111111111111111111100000",
+		"0001111111111111111111111100000",
+		"0000000000000000000000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				5,
+				4
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				2,
+				5
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				13,
+				5
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				6,
+				24
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				2,
+				19
+			]
+		},
+		{
+			"side": "north",
+			"cell": [
+				23,
+				14
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				23,
+				24
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				26,
+				19
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "prop",
+			"asset": "spike_block",
+			"x": 528,
+			"y": 946.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				70,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spike_block",
+			"x": 1008,
+			"y": 946.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				70,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "cage_small",
+			"x": 432,
+			"y": 1234.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				46,
+				24
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "cage_small",
+			"x": 1104,
+			"y": 1234.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				46,
+				24
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile",
+			"x": 432,
+			"y": 1618.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				76,
+				26
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spike_block",
+			"x": 720,
+			"y": 1618.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				70,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "coal_skulls",
+			"x": 1680,
+			"y": 1618.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spike_block",
+			"x": 2064,
+			"y": 1618.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				70,
+				30
+			]
+		},
+		{
+			"kind": "spikes",
+			"x": 912,
+			"y": 1776,
+			"phase": 1
+		},
+		{
+			"kind": "spikes",
+			"x": 1008,
+			"y": 1776,
+			"phase": 0
+		},
+		{
+			"kind": "spikes",
+			"x": 1104,
+			"y": 1776,
+			"phase": 1
+		},
+		{
+			"kind": "spikes",
+			"x": 1680,
+			"y": 1776,
+			"phase": 1
+		},
+		{
+			"kind": "spikes",
+			"x": 1776,
+			"y": 1776,
+			"phase": 0
+		},
+		{
+			"kind": "spikes",
+			"x": 1872,
+			"y": 1776,
+			"phase": 1
+		},
+		{
+			"kind": "spikes",
+			"x": 912,
+			"y": 1872,
+			"phase": 0
+		},
+		{
+			"kind": "spikes",
+			"x": 1008,
+			"y": 1872,
+			"phase": 1
+		},
+		{
+			"kind": "spikes",
+			"x": 1104,
+			"y": 1872,
+			"phase": 0
+		},
+		{
+			"kind": "spikes",
+			"x": 1680,
+			"y": 1872,
+			"phase": 0
+		},
+		{
+			"kind": "spikes",
+			"x": 1776,
+			"y": 1872,
+			"phase": 1
+		},
+		{
+			"kind": "spikes",
+			"x": 1872,
+			"y": 1872,
+			"phase": 0
+		},
+		{
+			"kind": "prop",
+			"asset": "cage_small",
+			"x": 432,
+			"y": 2098.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				46,
+				24
+			]
+		},
+		{
+			"kind": "vent",
+			"x": 816,
+			"y": 2064,
+			"offset": 2.1
+		},
+		{
+			"kind": "prop",
+			"asset": "cage_small",
+			"x": 1488,
+			"y": 2098.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				46,
+				24
+			]
+		},
+		{
+			"kind": "vent",
+			"x": 1872,
+			"y": 2064,
+			"offset": 2.9
+		},
+		{
+			"kind": "prop",
+			"asset": "cage_small",
+			"x": 2352,
+			"y": 2098.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				46,
+				24
+			]
+		},
+		{
+			"kind": "raw",
+			"x": 432,
+			"y": 2193.6,
+			"ent": {
+				"type": "crate",
+				"look": "urn_c",
+				"hp": 1,
+				"drop": "random"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_hang",
+			"x": 912,
+			"y": 486,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 1392,
+			"y": 1446,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag_b",
+			"x": 1660.8,
+			"y": 1446,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag_b",
+			"x": 1929.6,
+			"y": 1446,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "spike_block",
+			"x": 912,
+			"y": 562.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				70,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "cage_small",
+			"x": 1104,
+			"y": 2290.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				46,
+				24
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile",
+			"x": 1296,
+			"y": 1522.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				76,
+				26
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 816,
+			"y": 1828,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "grate_b",
+			"x": 1680,
+			"y": 1899,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 26.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "grate",
+			"x": 1680,
+			"y": 1820,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 44,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "grate_b",
+			"x": 720,
+			"y": 939,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 26.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "grate_b",
+			"x": 1392,
+			"y": 2091,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 26.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "grate",
+			"x": 1488,
+			"y": 1820,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 44,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "grate_a",
+			"x": 816,
+			"y": 850,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 33.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_c",
+			"x": 796.2,
+			"y": 817.8,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 904.9,
+			"y": 630.5,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_a",
+			"x": 1465.4,
+			"y": 1577.8,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_g",
+			"x": 1852.7,
+			"y": 2195.7,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rubble",
+			"x": 1462.1,
+			"y": 1581.3,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_scatter",
+			"x": 1098.5,
+			"y": 744.6,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_e",
+			"x": 1026.8,
+			"y": 2073.2,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rubble",
+			"x": 2367,
+			"y": 1997.3,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_g",
+			"x": 1668.6,
+			"y": 1681.5,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 1303.8,
+			"y": 1865.9,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_a",
+			"x": 408.8,
+			"y": 1045.8,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_g",
+			"x": 2132.1,
+			"y": 1806.4,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_f",
+			"x": 1221.1,
+			"y": 1588.2,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 1105.3,
+			"y": 1317.7,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_g",
+			"x": 2379,
+			"y": 1882.7,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "start",
+			"x": 1200,
+			"y": 1219.2
+		}
+	]
+}

@@ -1198,5 +1198,17 @@
   "h": 179,
   "kind": "sprite",
   "src": "B051 blue flames"
+ },
+ "side_slab": {
+  "w": 62,
+  "h": 192,
+  "kind": "sprite",
+  "src": "stone slab from wall_v"
+ },
+ "side_slab_open": {
+  "w": 62,
+  "h": 192,
+  "kind": "sprite",
+  "src": "stone slab from wall_v"
  }
 }

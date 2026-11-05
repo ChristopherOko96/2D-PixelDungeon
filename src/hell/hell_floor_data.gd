@@ -92,6 +92,7 @@ static func prepare(raw: Dictionary) -> Dictionary:
 		"grid": grid, "holes": holes, "tiles": tiles, "room_at": room_at,
 		"rooms": rooms, "doors": doors, "groups": groups, "ents": ents,
 		"props": raw.props, "decals": raw.decals, "wall_decor": raw.wall_decor, "lights": raw.lights.duplicate(true),
+		"areas": raw.get("areas", {}), "pit_cells": raw.get("pit_cells", {}), "passages": raw.get("passages", []), "doorways": raw.get("doorways", []),
 	}
 
 

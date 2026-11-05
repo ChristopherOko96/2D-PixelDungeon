@@ -7,6 +7,7 @@ const LoadingScreen = preload("res://src/ui/loading_screen.gd")
 const SCENES := {"krypta": "res://src/hell/krypta_dungeon.tscn", "hell": "res://src/hell/hell_dungeon.tscn", "frost": "res://src/hell/frost_dungeon.tscn"}
 
 var _failed := 0
+var _checked := 0
 
 
 func _initialize() -> void:
@@ -14,6 +15,7 @@ func _initialize() -> void:
 
 
 func _check(ok: bool, what: String) -> void:
+	_checked += 1
 	if not ok:
 		_failed += 1
 		print("LOADING_SCREEN_FAIL: ", what)
@@ -29,6 +31,7 @@ func _run() -> void:
 	await _test_walking_down()
 	await _test_menu()
 	await _test_way_back()
+	print("LOADING_SCREEN checked=%d failed=%d" % [_checked, _failed])
 	print("LOADING_SCREEN_TEST_PASS" if _failed == 0 else "LOADING_SCREEN_TEST_FAILED %d" % _failed)
 	quit(1 if _failed > 0 else 0)
 

@@ -1,0 +1,384 @@
+{
+	"schema_version": 1,
+	"id": "eingang_1793853409833",
+	"title": "Eingang",
+	"world": "krypta",
+	"role": "start",
+	"width": 20,
+	"height": 11,
+	"cells": [
+		"00000000000000000110",
+		"00001111110000011110",
+		"00011111111000011110",
+		"00111111111100111110",
+		"01111111111110111110",
+		"01111111111110111110",
+		"01111111111110111111",
+		"00111111111100001110",
+		"00011111111000000010",
+		"00001111110000000000",
+		"00000000000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "door",
+			"cell": [
+				6,
+				10
+			],
+			"dir": "v"
+		},
+		{
+			"side": "west",
+			"cell": [
+				0,
+				5
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				13,
+				5
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "prop",
+			"asset": "brazier_bowl",
+			"x": 432.0,
+			"y": 180.5,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				56.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_g",
+			"x": 555.3,
+			"y": 544.4,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_d",
+			"x": 311.5,
+			"y": 261.5,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 705.9,
+			"y": 909.5,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_t",
+			"x": 991.2,
+			"y": 733.8,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rubble",
+			"x": 341.5,
+			"y": 813.8,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile_t",
+			"x": 720.0,
+			"y": 456.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_d",
+			"x": 168.4,
+			"y": 432.3,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_big",
+			"x": 624.0,
+			"y": 576.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_f",
+			"x": 528.0,
+			"y": 184.5,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_b",
+			"x": 432.0,
+			"y": 286.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_c",
+			"x": 240.0,
+			"y": 768.5,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_a",
+			"x": 528.0,
+			"y": 102.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 854.4,
+			"y": 102.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "raw",
+			"x": 1104.0,
+			"y": 753.6,
+			"ent": {
+				"type": "crate",
+				"x": 1104.0,
+				"y": 4977.6,
+				"room": 0,
+				"look": "barrel_b",
+				"hp": 1,
+				"drop": "none"
+			}
+		},
+		{
+			"kind": "raw",
+			"x": 1104.0,
+			"y": 369.6,
+			"ent": {
+				"type": "crate",
+				"x": 1104.0,
+				"y": 4593.6,
+				"room": 0,
+				"look": "crate_b",
+				"hp": 2,
+				"drop": "none"
+			}
+		},
+		{
+			"kind": "start",
+			"x": 624.0,
+			"y": 528.0
+		},
+		{
+			"kind": "prop",
+			"asset": "bowl_blue",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.5,
+			"foot": [
+				56.0,
+				21.0
+			],
+			"x": 456.0,
+			"y": 984.0
+		},
+		{
+			"kind": "prop",
+			"asset": "bowl_blue",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.5,
+			"foot": [
+				56.0,
+				21.0
+			],
+			"x": 936.0,
+			"y": 984.0
+		},
+		{
+			"kind": "prop",
+			"asset": "@res://assets/sprites/0x72_extended/wall_torch_anim_f0.png",
+			"flip": false,
+			"layer": "normal",
+			"block": false,
+			"scale": 3.0,
+			"foot": [
+				34.0,
+				18.0
+			],
+			"frames": [
+				"@res://assets/sprites/0x72_extended/wall_torch_anim_f0.png",
+				"@res://assets/sprites/0x72_extended/wall_torch_anim_f1.png",
+				"@res://assets/sprites/0x72_extended/wall_torch_anim_f2.png",
+				"@res://assets/sprites/0x72_extended/wall_torch_anim_f3.png",
+				"@res://assets/sprites/0x72_extended/wall_torch_anim_f4.png",
+				"@res://assets/sprites/0x72_extended/wall_torch_anim_f5.png",
+				"@res://assets/sprites/0x72_extended/wall_torch_anim_f6.png",
+				"@res://assets/sprites/0x72_extended/wall_torch_anim_f7.png"
+			],
+			"fps": 8.0,
+			"x": 624.0,
+			"y": 96.0
+		},
+		{
+			"kind": "prop",
+			"asset": "@res://assets/sprites/0x72_extended/wall_torch_anim_f0.png",
+			"flip": false,
+			"layer": "normal",
+			"block": false,
+			"scale": 3.0,
+			"foot": [
+				34.0,
+				18.0
+			],
+			"frames": [
+				"@res://assets/sprites/0x72_extended/wall_torch_anim_f0.png",
+				"@res://assets/sprites/0x72_extended/wall_torch_anim_f1.png",
+				"@res://assets/sprites/0x72_extended/wall_torch_anim_f2.png",
+				"@res://assets/sprites/0x72_extended/wall_torch_anim_f3.png",
+				"@res://assets/sprites/0x72_extended/wall_torch_anim_f4.png",
+				"@res://assets/sprites/0x72_extended/wall_torch_anim_f5.png",
+				"@res://assets/sprites/0x72_extended/wall_torch_anim_f6.png",
+				"@res://assets/sprites/0x72_extended/wall_torch_anim_f7.png"
+			],
+			"fps": 8.0,
+			"x": 792.0,
+			"y": 96.0
+		},
+		{
+			"kind": "gate",
+			"style": "doorway",
+			"dir": "v",
+			"group": "A",
+			"lock": "",
+			"x": 576.0,
+			"y": 960.0
+		},
+		{
+			"kind": "gate",
+			"style": "door_stairs_small",
+			"dir": "h",
+			"group": "A",
+			"lock": "",
+			"x": 0.0,
+			"y": 384.0
+		},
+		{
+			"kind": "gate",
+			"dir": "h",
+			"group": "A",
+			"lock": "",
+			"x": 1248.0,
+			"y": 384.0
+		}
+	]
+}

@@ -2428,5 +2428,17 @@
   "kind": "sprite",
   "src": "0x72 weapon_knife",
   "w": 6
+ },
+ "side_slab": {
+  "w": 62,
+  "h": 192,
+  "kind": "sprite",
+  "src": "stone slab from wall_v"
+ },
+ "side_slab_open": {
+  "w": 62,
+  "h": 192,
+  "kind": "sprite",
+  "src": "stone slab from wall_v"
  }
 }

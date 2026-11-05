@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [ValidateSet('Doctor', 'Open', 'Run', 'Host', 'Join', 'Check', 'Tests', 'DungeonEditor', 'AnimationStudio', 'HellDungeon', 'NecroLab', 'ForestLab')]
+    [ValidateSet('Doctor', 'Open', 'Run', 'Host', 'Join', 'Check', 'Tests', 'DungeonEditor', 'WorldEditor', 'AnimationStudio', 'HellDungeon', 'NecroLab', 'ForestLab')]
     [string]$Action = 'Doctor',
     [string]$GodotPath,
     [ValidatePattern('^[A-Za-z0-9_.:\-\[\]]+$')]
@@ -363,6 +363,12 @@ switch ($Action) {
         # The game opens straight into the Dungeon-Werkstatt (main menu EDITOR).
         $arguments = @('--path', $repositoryRoot, '--windowed', '--', '--werkstatt')
         # Explicit interactive authoring window, also used by Dungeon-Editor.cmd.
+        Start-Process -FilePath $editorPath -ArgumentList (ConvertTo-ProcessArguments $arguments) `
+            -WorkingDirectory $repositoryRoot -WindowStyle Normal | Out-Null
+    }
+    'WorldEditor' {
+        $arguments = @('--path', $repositoryRoot, '--windowed', 'res://src/world_editor/world_editor.tscn')
+        # Explicit interactive authoring window, also used by Weltbauer.cmd.
         Start-Process -FilePath $editorPath -ArgumentList (ConvertTo-ProcessArguments $arguments) `
             -WorkingDirectory $repositoryRoot -WindowStyle Normal | Out-Null
     }

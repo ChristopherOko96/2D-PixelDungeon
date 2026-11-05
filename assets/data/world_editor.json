@@ -1,0 +1,621 @@
+{
+ "_note": "The Weltbauer's parts list (src/world_editor/world_asset_catalog.gd). world_folders: folders under assets/ that belong to a world besides its two graphics sets; every other picture under assets/ shows under the tab Weitere. categories: the order of the list, with each one's default layer and whether its pieces block the way. rules: sorted by looking at every picture; the first whose name (regular expression on the file name without its ending) and folder (on the path under assets/) match wins; may add area (paints a surface), layer and block. Gates come from world_gates.json. strip_folders: folders whose wide pictures are film strips. parts: the game pieces and ground of every world (kind, label, preview picture, cat). small_art: a picture from outside the world's sets no bigger than this (px) is old small art, shown at scale small_scale.",
+ "world_folders": {
+  "krypta": [
+   "sprites/crypt_props",
+   "sprites/crypt_enemies",
+   "sprites/0x72",
+   "sprites/0x72_extended",
+   "sprites/decor",
+   "sprites/props",
+   "sprites/bosses_0x72",
+   "sprites/orcs_0x72",
+   "sprites/orcs",
+   "sprites/golem",
+   "sprites/void",
+   "sprites/forest_0x72",
+   "crypt"
+  ],
+  "frost": [
+   "sprites/frost",
+   "sprites/frost_hd"
+  ],
+  "hell": [
+   "sprites/hell",
+   "sprites/hell_0x72",
+   "sprites/infernal",
+   "sprites/nebenbosse"
+  ]
+ },
+ "skip_folders": [
+  "monsters/.import",
+  ".godot"
+ ],
+ "gate_category": "Tore und Durchgänge",
+ "small_art": 48,
+ "small_scale": 3,
+ "strip_folders": [
+  "fx",
+  "vfx",
+  "effects",
+  "living"
+ ],
+ "parts": [
+  {
+   "kind": "floor",
+   "label": "Boden",
+   "preview": "floor_00",
+   "cat": "Gelände"
+  },
+  {
+   "kind": "wall",
+   "label": "Mauer",
+   "preview": "wall_h",
+   "cat": "Gelände"
+  },
+  {
+   "kind": "liquid",
+   "label": "Lava / Moder / Eis",
+   "preview": "lava_00",
+   "cat": "Gelände"
+  },
+  {
+   "kind": "bridge",
+   "label": "Überquerbar",
+   "preview": "lava_01",
+   "cat": "Gelände"
+  },
+  {
+   "kind": "pit",
+   "label": "Grube",
+   "preview": "",
+   "cat": "Gelände"
+  },
+  {
+   "kind": "start",
+   "label": "Spielerstart",
+   "preview": "",
+   "cat": "Spielteile"
+  },
+  {
+   "kind": "launch",
+   "label": "Sprungplatte",
+   "preview": "rune_plate",
+   "cat": "Spielteile",
+   "defaults": {
+    "dir": "n",
+    "cells": 4
+   }
+  },
+  {
+   "kind": "plate",
+   "label": "Druckplatte",
+   "preview": "rune_plate",
+   "cat": "Spielteile",
+   "defaults": {
+    "group": "A",
+    "order": 0
+   }
+  },
+  {
+   "kind": "lever",
+   "label": "Hebel-Fackel",
+   "preview": "torch_dead",
+   "cat": "Spielteile",
+   "defaults": {
+    "group": "A"
+   }
+  },
+  {
+   "kind": "brazier",
+   "label": "Feuerschale (Rätsel)",
+   "preview": "brazier_bowl",
+   "cat": "Spielteile",
+   "defaults": {
+    "group": "A"
+   }
+  },
+  {
+   "kind": "gate",
+   "label": "Tor",
+   "preview": "portcullis",
+   "cat": "Spielteile",
+   "defaults": {
+    "dir": "v",
+    "group": "A",
+    "lock": ""
+   }
+  },
+  {
+   "kind": "secret",
+   "label": "Geheimgang",
+   "preview": "wall_h",
+   "cat": "Spielteile",
+   "defaults": {
+    "dir": "v",
+    "group": "A"
+   }
+  },
+  {
+   "kind": "skullheap",
+   "label": "Schädelhaufen (öffnet)",
+   "preview": "skull_pile",
+   "cat": "Spielteile",
+   "defaults": {
+    "group": "A",
+    "hp": 3
+   }
+  },
+  {
+   "kind": "chest",
+   "label": "Truhe",
+   "preview": "chest_closed",
+   "cat": "Spielteile",
+   "defaults": {
+    "loot": {
+     "type": "gold",
+     "amount": 6
+    }
+   }
+  },
+  {
+   "kind": "tablet",
+   "label": "Inschrift",
+   "preview": "obelisk",
+   "cat": "Spielteile",
+   "defaults": {
+    "text": "Hier steht ein Rätsel."
+   }
+  },
+  {
+   "kind": "key",
+   "label": "Schlüssel",
+   "preview": "key",
+   "cat": "Spielteile",
+   "defaults": {
+    "key": "A"
+   }
+  },
+  {
+   "kind": "heart",
+   "label": "Herz",
+   "preview": "heart",
+   "cat": "Spielteile"
+  },
+  {
+   "kind": "gem",
+   "label": "Gold",
+   "preview": "rune_gem",
+   "cat": "Spielteile"
+  },
+  {
+   "kind": "well",
+   "label": "Manabrunnen",
+   "preview": "fountain",
+   "cat": "Spielteile"
+  },
+  {
+   "kind": "portal",
+   "label": "Portal",
+   "preview": "portal",
+   "cat": "Spielteile"
+  },
+  {
+   "kind": "spikes",
+   "label": "Stachelfalle",
+   "preview": "spike_trap",
+   "cat": "Fallen",
+   "defaults": {
+    "phase": 0
+   }
+  },
+  {
+   "kind": "vent",
+   "label": "Dampfschlot",
+   "preview": "vent",
+   "cat": "Fallen",
+   "defaults": {
+    "offset": 0
+   }
+  }
+ ],
+ "loot_types": {
+  "none": "Nichts",
+  "random": "Zufällig (die Etage entscheidet)",
+  "auto": "Wie die Etage (Truhe kann fehlen)",
+  "hoard": "Schatz (Belohnung für ein Rätsel)",
+  "gold": "Gold",
+  "heart": "Herz",
+  "key": "Schlüssel",
+  "potion": "Trank",
+  "weapon": "Waffe",
+  "crystal": "Kristall",
+  "stone": "Stein"
+ },
+ "templates": [
+  {
+   "gtype": "key",
+   "label": "Schlüsselkammer"
+  },
+  {
+   "gtype": "portal",
+   "label": "Portalkammer"
+  },
+  {
+   "gtype": "boss",
+   "label": "Bossraum"
+  },
+  {
+   "gtype": "start",
+   "label": "Eingang"
+  },
+  {
+   "gtype": "vault",
+   "label": "Feuerschalen-Tresor"
+  },
+  {
+   "gtype": "pvault",
+   "label": "Riesentresor"
+  },
+  {
+   "gtype": "treasure",
+   "label": "Beutekammer"
+  },
+  {
+   "gtype": "shrine",
+   "label": "Herzschrein"
+  },
+  {
+   "gtype": "hidden",
+   "label": "Geheimraum"
+  },
+  {
+   "gtype": "combat",
+   "label": "Kampfraum"
+  }
+ ],
+ "rules": [
+  {
+   "cat": "Übersichten und Quellen",
+   "folder": "(^|/)source(/|$)"
+  },
+  {
+   "cat": "Übersichten und Quellen",
+   "folder": "^tilesets$"
+  },
+  {
+   "cat": "Übersichten und Quellen",
+   "name": "^(crypt_layout_overview|crypt_style_detail|preview_.*|asset_sheet_ui|animation_sheet_items|item_sheet_items|.*_atlas|.*_atlas_.*|.*_poses.*|.*_flash|living_preview|living_sheet_[ab]|crypt_furnishings_atlas|crypt_material_atlas|approved_sheet|smooth_sheet.*|guardian_atlas|source_sheet)$"
+  },
+  {
+   "cat": "Knochen und Gräber",
+   "folder": "^crypt/props$",
+   "name": "^crypt_00[01478]$",
+   "block": true
+  },
+  {
+   "cat": "Möbel und Altäre",
+   "folder": "^crypt/props$",
+   "name": "^crypt_00[29]$"
+  },
+  {
+   "cat": "Truhen und Behälter",
+   "folder": "^crypt/props$",
+   "name": "^crypt_0(03|11)$"
+  },
+  {
+   "cat": "Licht und Feuer",
+   "folder": "^crypt/props$",
+   "name": "^crypt_00[56]$",
+   "block": true
+  },
+  {
+   "cat": "Säulen, Statuen, Felsen",
+   "folder": "^crypt/props$",
+   "name": "^crypt_010$"
+  },
+  {
+   "cat": "Tore und Durchgänge",
+   "folder": "^crypt/props$",
+   "name": "^crypt_01[234]$"
+  },
+  {
+   "cat": "Treppen, Portale, Brunnen",
+   "folder": "^crypt/props$",
+   "name": "^crypt_015$"
+  },
+  {
+   "cat": "Treppen, Portale, Brunnen",
+   "folder": "^crypt/unified/materials$",
+   "name": "^material_012$"
+  },
+  {
+   "cat": "Boden und Flächen",
+   "folder": "^crypt/unified/materials$",
+   "name": "^material_0(0[01236]|1[013])$",
+   "area": true
+  },
+  {
+   "cat": "Mauern und Wandteile",
+   "folder": "^crypt/unified/materials$"
+  },
+  {
+   "cat": "Pflanzen",
+   "folder": "^crypt/living",
+   "name": "^living_0(0[0-5]|13)$"
+  },
+  {
+   "cat": "Licht und Feuer",
+   "folder": "^crypt/living",
+   "name": "^living_00[678]$"
+  },
+  {
+   "cat": "Fallen und Rätsel",
+   "folder": "^crypt/living",
+   "name": "^living_009$"
+  },
+  {
+   "cat": "Möbel und Altäre",
+   "folder": "^crypt/living",
+   "name": "^living_010$"
+  },
+  {
+   "cat": "Truhen und Behälter",
+   "folder": "^crypt/living",
+   "name": "^living_011$"
+  },
+  {
+   "cat": "Treppen, Portale, Brunnen",
+   "folder": "^crypt/living",
+   "name": "^living_012$",
+   "block": true
+  },
+  {
+   "cat": "Effekte",
+   "folder": "^crypt/living",
+   "name": "^living_01[45]$"
+  },
+  {
+   "cat": "Boden und Flächen",
+   "folder": "^tilesets/cells32$",
+   "name": "_0(09|11|17|18|19|24|25|26|30|32)$",
+   "area": true
+  },
+  {
+   "cat": "Treppen, Portale, Brunnen",
+   "folder": "^tilesets/cells32$",
+   "name": "_0(00|06|35|41)$"
+  },
+  {
+   "cat": "Bodendeko",
+   "folder": "^tilesets/cells32$",
+   "name": "_0(49|5[0-4])$"
+  },
+  {
+   "cat": "Gegenstände und Waffen",
+   "folder": "^tilesets/cells32$",
+   "name": "_055$"
+  },
+  {
+   "cat": "Mauern und Wandteile",
+   "folder": "^tilesets/cells32$"
+  },
+  {
+   "cat": "Effekte",
+   "folder": "^vfx(/|$)"
+  },
+  {
+   "cat": "Treppen, Portale, Brunnen",
+   "folder": "^sprites/fx$",
+   "name": "^stairwell_"
+  },
+  {
+   "cat": "Fallen und Rätsel",
+   "folder": "^sprites/fx$",
+   "name": "^spike_trap$"
+  },
+  {
+   "cat": "Effekte",
+   "folder": "^sprites/fx$"
+  },
+  {
+   "cat": "Gegenstände und Waffen",
+   "folder": "^(sprites/items|sprites/loot|items|items/perks)$"
+  },
+  {
+   "cat": "Effekte",
+   "folder": "^sprites/golem",
+   "name": "^(burst|blast|boulder|quake_burst|rock|slash|spike|thorns)$"
+  },
+  {
+   "cat": "Fallen und Rätsel",
+   "folder": "^sprites/orcs$",
+   "name": "^trap$"
+  },
+  {
+   "cat": "Figuren",
+   "folder": "^(actors|sprites/bosses_0x72|sprites/orcs|sprites/orcs_0x72|sprites/golem|sprites/nebenbosse|sprites/crypt_enemies|sprites/companions|sprites/infernal|sprites/forest_0x72|sprites/void|sprites/krypta/monsters|sprites/hell/monsters|sprites/hell/bosses|sprites/hell/rigs|sprites/frost/rigs)(/|$)"
+  },
+  {
+   "cat": "Tore und Durchgänge",
+   "name": "^(side_slab|side_slab_open|portcullis|gate_side|boss_gate|boss_gate_blue|boss_arch|demon_lintel|door_stairs|door_stairs_small|doors_leaf_closed|doors_leaf_open)$"
+  },
+  {
+   "cat": "Mauern und Wandteile",
+   "name": "^(wall_h|wall_h_bare|wall_v|wall_top|wall_h_glowpost|wall_post_slit|corner_cap|jamb_[ab]|snow_wall_.*|wall_mid|wall_top_mid|wall_edge_mid_.*|wall_outer_mid_.*|wall_hole_\\d|doors_frame_.*|column_wall|wall_crack_\\d|wall_goo|wall_goo_base)$"
+  },
+  {
+   "cat": "Wandschmuck",
+   "name": "^(banner|banner_.*|boss_banner|boss_banner_.*|chains|chain_.*|shackle_.*|cage|cage_lit|cage_hang|cage_small|wall_skull_[ab]|grate|grate_[ab]|wall_grate|wall_ring|wall_banner_.*|sign_\\d|demon_head)$"
+  },
+  {
+   "cat": "Wandschmuck",
+   "name": "^signpost_\\d$",
+   "block": true
+  },
+  {
+   "cat": "Boden und Flächen",
+   "name": "^(floor_\\d+|floor_stone|lava_0\\d)$",
+   "area": true
+  },
+  {
+   "cat": "Boden und Flächen",
+   "name": "^(lava_edge_top|bridge_[hv])$"
+  },
+  {
+   "cat": "Bodendeko",
+   "name": "^(blood_[a-f]|moss_[abc]|carpet|carpet_.*|rug_.*|mat|thaw_[abc]|snow_[abcd]|drift_\\d|ice_crack|floor_crack_\\d|floor_dark_\\d|floor_moss|lava_[lms]|rock_throw)$"
+  },
+  {
+   "cat": "Licht und Feuer",
+   "name": "^(brazier_.*|bowl_blue|torch_pillar|torch_pillar_blue|candelabra|candle_column|cauldron)$",
+   "block": true
+  },
+  {
+   "cat": "Licht und Feuer",
+   "name": "^(torch|torch_[abc]|torch_dead|wall_torch|wall_torch_.*|wall_brazier|wall_v_glow|wall_v_glow_.*|hanging_brazier|fire|fire_orb)$"
+  },
+  {
+   "cat": "Truhen und Behälter",
+   "name": "^(barrel_[abc]|crate|crate_.*|urn_[a-e]|sacks_[abc]|chest_.*)$"
+  },
+  {
+   "cat": "Möbel und Altäre",
+   "name": "^(altar|bench|table_[abc]|shelf|shop_table|cabinet)$"
+  },
+  {
+   "cat": "Säulen, Statuen, Felsen",
+   "name": "^(obelisk|rune_pillar_[a-d]|statue_.*|gargoyle|skull_obelisk|column|spire|spire_.*|spires_.*|rocks_.*|rubble|boulders|glacier_[ab]|moss_rubble_[ab]|moss_ruin|snowman|crystal|crystals|rune_gem|totem|coal)$"
+  },
+  {
+   "cat": "Knochen und Gräber",
+   "name": "^(bone_[a-g]|bones|bones_.*|skull|skull_.*|skulls|coal_skulls)$"
+  },
+  {
+   "cat": "Knochen und Gräber",
+   "name": "^rune_[rsx]$",
+   "block": true
+  },
+  {
+   "cat": "Fallen und Rätsel",
+   "name": "^(spike_.*|spikes|vent|rune_plate|rune_big|rune_small|demon_plate|fire_plate|pit|button_.*|ice_burst|rock_spike)$"
+  },
+  {
+   "cat": "Treppen, Portale, Brunnen",
+   "name": "^(stairs_down|floor_stairs|portal|portal_dark)$"
+  },
+  {
+   "cat": "Treppen, Portale, Brunnen",
+   "name": "^(fountain|wall_fountain_.*)$",
+   "block": true
+  },
+  {
+   "cat": "Symbole und Tafeln",
+   "name": "^(icon_.*|ui_heart_.*)$"
+  },
+  {
+   "cat": "Gegenstände und Waffen",
+   "name": "^(key|key_.*|heart|weapon_.*|flask_.*|coin)$"
+  },
+  {
+   "cat": "Figuren",
+   "name": "^(npc_idle|ally_.*|mob_.*|boss_golem_.*|angel|bat|big_demon|big_zombie|chort|custom_pyromancer|doc|dwarf_m|elf_[fm]|goblin|ice_zombie|imp|knight_[fm]|lizard_[fm]|masked_orc|necromancer|ogre|orc_shaman|orc_warrior|pumpkin_dude|skelet|tiny_zombie|wizzard_[fm]|wogol|zombie)(_idle|_run|_hit)?$"
+  },
+  {
+   "cat": "Figuren",
+   "name": "^(boss|slime|player_\\d)$"
+  }
+ ],
+ "categories": [
+  {
+   "name": "Tore und Durchgänge",
+   "layer": "normal",
+   "block": false
+  },
+  {
+   "name": "Mauern und Wandteile",
+   "layer": "normal",
+   "block": true
+  },
+  {
+   "name": "Wandschmuck",
+   "layer": "normal",
+   "block": false
+  },
+  {
+   "name": "Boden und Flächen",
+   "layer": "floor",
+   "block": false
+  },
+  {
+   "name": "Bodendeko",
+   "layer": "floor",
+   "block": false
+  },
+  {
+   "name": "Licht und Feuer",
+   "layer": "normal",
+   "block": false
+  },
+  {
+   "name": "Truhen und Behälter",
+   "layer": "normal",
+   "block": true
+  },
+  {
+   "name": "Möbel und Altäre",
+   "layer": "normal",
+   "block": true
+  },
+  {
+   "name": "Säulen, Statuen, Felsen",
+   "layer": "normal",
+   "block": true
+  },
+  {
+   "name": "Knochen und Gräber",
+   "layer": "normal",
+   "block": false
+  },
+  {
+   "name": "Pflanzen",
+   "layer": "normal",
+   "block": false
+  },
+  {
+   "name": "Fallen und Rätsel",
+   "layer": "floor",
+   "block": false
+  },
+  {
+   "name": "Treppen, Portale, Brunnen",
+   "layer": "normal",
+   "block": false
+  },
+  {
+   "name": "Figuren",
+   "layer": "normal",
+   "block": false
+  },
+  {
+   "name": "Gegenstände und Waffen",
+   "layer": "normal",
+   "block": false
+  },
+  {
+   "name": "Symbole und Tafeln",
+   "layer": "normal",
+   "block": false
+  },
+  {
+   "name": "Effekte",
+   "layer": "normal",
+   "block": false
+  },
+  {
+   "name": "Übersichten und Quellen",
+   "layer": "normal",
+   "block": false
+  }
+ ]
+}

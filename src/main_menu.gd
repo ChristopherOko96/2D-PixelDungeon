@@ -27,6 +27,8 @@ signal story_floor_requested(scene_path: String, class_id: String, floor_number:
 signal story_scene_requested(scene_path: String, class_id: String)
 ## A user-authored story uses the normal story runtime after the hero choice.
 signal custom_story_requested(story: Dictionary, class_id: String, preview_room: String)
+## A room of the Weltbauer to play with this hero (debug hub).
+signal world_room_requested(path: String, class_id: String)
 ## Continue a save from this custom story's own slot directory.
 signal custom_continue_requested(story: Dictionary, slot: int)
 signal quit_requested
@@ -182,6 +184,9 @@ var _sliders: Dictionary = {}
 var sound_workshop: Control
 ## Dungeon-Werkstatt (main menu EDITOR), made when first opened.
 var room_editor: Control
+## The list of Weltbauer rooms and the room picked there, waiting for its hero.
+var _world_rooms_panel: Control
+var _world_room_pick: String = ""
 var _fullscreen_check: CheckButton
 ## Pixel / HD graphics for every world (src/core/graphics_settings.gd).
 var _graphics_check: CheckButton
@@ -674,7 +679,7 @@ func _build_class_panel() -> void:
 func _build_debug_hub() -> void:
 	_hub_panel = _panel("DEBUG")
 	var entries := [["LEVEL-AUSWAHL", _open_debug], ["TESTRAUM", _open_arena], ["", _toggle_talent_test],
-		["KLANGWERKSTATT", open_sound_workshop], ["CUSTOM-EDITOR", open_custom_stories],
+		["KLANGWERKSTATT", open_sound_workshop], ["CUSTOM-EDITOR", open_custom_stories], ["WELTBAUER-RÄUME", _open_world_rooms],
 		["MEHRSPIELER (ALT)", _open_multiplayer], ["SPIELSTÄNDE", _open_saves]]
 	_hub_panel.size = Vector2(420, 66 + entries.size() * 46 + 76)
 	_hub_panel.position = (SCREEN - _hub_panel.size) * 0.5 + Vector2(0, 20)
@@ -685,6 +690,51 @@ func _build_debug_hub() -> void:
 	_refresh_talent_test()
 	_hub_buttons.append(_panel_button(_hub_panel, "ZURÜCK", Vector2(30, 66 + entries.size() * 46 + 14), Vector2(360, 38), _close_panels))
 	_chain_focus(_hub_buttons)
+
+
+## WELTBAUER-RÄUME (debug hub): the rooms built in the Weltbauer, per world, read anew each time.
+## A pick goes through the hero choice and plays the room in the real game (world_room_requested).
+func _open_world_rooms() -> void:
+	if _world_rooms_panel != null:
+		_world_rooms_panel.queue_free()
+	_world_rooms_panel = _panel("WELTBAUER-RÄUME")
+	_world_rooms_panel.size = Vector2(820, 600)
+	_world_rooms_panel.position = (SCREEN - _world_rooms_panel.size) * 0.5
+	var data: GDScript = load("res://src/world_editor/world_room_data.gd")
+	var scroll := ScrollContainer.new()
+	scroll.position = Vector2(30, 66)
+	scroll.size = Vector2(760, 460)
+	_world_rooms_panel.add_child(scroll)
+	var list := VBoxContainer.new()
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(list)
+	var first: Control = null
+	for world: String in data.WORLDS:
+		var rooms: Array = data.list_rooms(world)
+		var title := Label.new()
+		title.text = "%s · %d RÄUME" % [str(data.WORLDS[world].name).to_upper(), rooms.size()]
+		list.add_child(title)
+		for room: Dictionary in rooms:
+			var row := Button.new()
+			row.text = "%s · %s" % [str(room.title), str(data.ROLES.get(str(room.get("role", "")), ""))]
+			row.pressed.connect(_pick_world_room.bind(str(room._path), str(room.title)))
+			list.add_child(row)
+			if first == null: first = row
+	if first == null:
+		var none := Label.new()
+		none.text = "Noch keine Räume. Baue welche mit Weltbauer.cmd."
+		list.add_child(none)
+	var back := _panel_button(_world_rooms_panel, "ZURÜCK", Vector2(30, 540), Vector2(760, 38), _open_debug_hub)
+	_show_panel(_world_rooms_panel, first if first != null else back)
+
+
+func _pick_world_room(path: String, title: String) -> void:
+	if class_order.is_empty():
+		_close_panels()
+		world_room_requested.emit(path, "")
+		return
+	_open_classes(false, "WELTBAUER · " + title)
+	_world_room_pick = path
 
 
 func _open_debug_hub() -> void:
@@ -828,6 +878,7 @@ func _open_arena() -> void:
 ## Opens the hero choice, focus on the first hero card; `hint` names what it starts.
 ## Without hero classes the run starts at once (start_requested).
 func _open_classes(endless: bool = false, hint: String = "") -> void:
+	_world_room_pick = ""
 	_debug_start = {}
 	_story_jump = {}
 	_arena_pick = false
@@ -906,6 +957,11 @@ func _choose_class(id: String) -> void:
 		var jump := _story_jump
 		_story_jump = {}
 		story_floor_requested.emit(str(jump.scene), id, int(jump.floor), bool(jump.boss))
+		return
+	if _world_room_pick != "":
+		var room_path := _world_room_pick
+		_world_room_pick = ""
+		world_room_requested.emit(room_path, id)
 		return
 	var scene := _story_scene() if not _class_endless else ""
 	if scene != "":

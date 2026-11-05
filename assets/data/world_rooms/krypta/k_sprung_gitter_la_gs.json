@@ -1,0 +1,1742 @@
+{
+	"schema_version": 1.0,
+	"id": "k_sprung_gitter_la_gs",
+	"title": "Sprung: Eisenhalle (Winkel)",
+	"world": "krypta",
+	"role": "jump",
+	"in_floors": true,
+	"slots": [
+		[
+			0.0,
+			0.0
+		],
+		[
+			1.0,
+			0.0
+		],
+		[
+			1.0,
+			1.0
+		]
+	],
+	"width": 31.0,
+	"height": 25.0,
+	"cells": [
+		"0000000010100000000000000011000",
+		"0111111011110111111111111011110",
+		"0111111011110111111111111011110",
+		"0111111000000111111111111011110",
+		"0111111111110111111111111000000",
+		"0111111111110111112222332222220",
+		"0111111111110111112111111111120",
+		"0011111111110111112111111111120",
+		"0011111111110111112111111111120",
+		"0011111111110111112111111111120",
+		"0000000000000000002111111111120",
+		"0000000000000000002111111111120",
+		"0000000000000000002112332111120",
+		"0000000000000000002222112222220",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000002222112222220",
+		"0000000000000000001111111111110",
+		"0000000000000000002222112222220",
+		"0000000000000000001111111111110",
+		"0000000000000000002222112222220",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000000000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "south",
+			"cell": [
+				22.0,
+				24.0
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0.0,
+				5.0
+			]
+		}
+	],
+	"auto_mobs": 0.0,
+	"objects": [
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 2736.0,
+			"y": 102.0,
+			"flip": true,
+			"layer": "front",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 1929.6,
+			"y": 102.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "cage_hang",
+			"x": 1392.0,
+			"y": 102.0,
+			"flip": true,
+			"layer": "front",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_skull",
+			"x": 1123.2,
+			"y": 102.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 240.0,
+			"y": 936.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_a",
+			"x": 1219.2,
+			"y": 390.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_a",
+			"x": 2544.0,
+			"y": 1533.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 45.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_b",
+			"x": 2640.0,
+			"y": 1054.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 46.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.95
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_d",
+			"x": 2530.8,
+			"y": 1715.9,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_f",
+			"x": 1686.0,
+			"y": 526.5,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_e",
+			"x": 2431.5,
+			"y": 837.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_f",
+			"x": 1605.4,
+			"y": 451.5,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_b",
+			"x": 2664.0,
+			"y": 744.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rubble",
+			"x": 2352.0,
+			"y": 1128.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			]
+		},
+		{
+			"kind": "start",
+			"x": 2184.0,
+			"y": 2232.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 1776.0,
+			"y": 2256.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2736.0,
+			"y": 2160.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2640.0,
+			"y": 2160.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2640.0,
+			"y": 2256.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2832.0,
+			"y": 2256.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 1776.0,
+			"y": 2160.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 1872.0,
+			"y": 2160.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 1968.0,
+			"y": 2160.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2064.0,
+			"y": 2160.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2064.0,
+			"y": 2256.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 1968.0,
+			"y": 2256.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 1872.0,
+			"y": 2256.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2352.0,
+			"y": 2256.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2352.0,
+			"y": 2160.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2448.0,
+			"y": 2160.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2544.0,
+			"y": 2160.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2544.0,
+			"y": 2256.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2448.0,
+			"y": 2256.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2832.0,
+			"y": 2160.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2832.0,
+			"y": 2064.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2736.0,
+			"y": 2064.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2640.0,
+			"y": 2064.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2544.0,
+			"y": 2064.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2448.0,
+			"y": 2064.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2352.0,
+			"y": 2064.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2256.0,
+			"y": 2064.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2160.0,
+			"y": 2064.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2064.0,
+			"y": 2064.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 1968.0,
+			"y": 2064.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 1872.0,
+			"y": 2064.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 1776.0,
+			"y": 2064.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2256.0,
+			"y": 1872.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2352.0,
+			"y": 1872.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2448.0,
+			"y": 1872.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2544.0,
+			"y": 1872.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2640.0,
+			"y": 1872.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2736.0,
+			"y": 1872.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2832.0,
+			"y": 1872.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2160.0,
+			"y": 1872.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2064.0,
+			"y": 1872.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 1968.0,
+			"y": 1872.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 1872.0,
+			"y": 1872.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 1776.0,
+			"y": 1872.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 1776.0,
+			"y": 1680.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 1872.0,
+			"y": 1680.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 1968.0,
+			"y": 1680.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2064.0,
+			"y": 1680.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2160.0,
+			"y": 1680.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2256.0,
+			"y": 1680.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2352.0,
+			"y": 1680.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2448.0,
+			"y": 1680.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2544.0,
+			"y": 1680.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2640.0,
+			"y": 1680.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2736.0,
+			"y": 1680.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 0.0,
+			"x": 2832.0,
+			"y": 1680.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2832.0,
+			"y": 1488.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2832.0,
+			"y": 1392.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2736.0,
+			"y": 1488.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2736.0,
+			"y": 1392.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2640.0,
+			"y": 1392.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2640.0,
+			"y": 1488.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2544.0,
+			"y": 1488.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2544.0,
+			"y": 1392.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2448.0,
+			"y": 1488.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2448.0,
+			"y": 1392.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2352.0,
+			"y": 1488.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2352.0,
+			"y": 1392.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2256.0,
+			"y": 1392.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2256.0,
+			"y": 1488.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2160.0,
+			"y": 1392.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2160.0,
+			"y": 1488.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2064.0,
+			"y": 1488.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 2064.0,
+			"y": 1392.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 1968.0,
+			"y": 1488.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 1968.0,
+			"y": 1392.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 1872.0,
+			"y": 1392.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 1872.0,
+			"y": 1488.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 1776.0,
+			"y": 1392.0
+		},
+		{
+			"kind": "spikes",
+			"phase": 1.0,
+			"x": 1776.0,
+			"y": 1488.0
+		},
+		{
+			"kind": "lever",
+			"group": "A",
+			"x": 2736.0,
+			"y": 2328.0
+		},
+		{
+			"kind": "chest",
+			"loot": {
+				"type": "gold",
+				"amount": 6.0
+			},
+			"x": 2832.0,
+			"y": 144.0
+		},
+		{
+			"kind": "chest",
+			"loot": {
+				"type": "gold",
+				"amount": 6.0
+			},
+			"x": 2688.0,
+			"y": 384.0
+		},
+		{
+			"kind": "chest",
+			"loot": {
+				"type": "gold",
+				"amount": 6.0
+			},
+			"x": 2688.0,
+			"y": 144.0
+		},
+		{
+			"kind": "chest",
+			"loot": {
+				"type": "gold",
+				"amount": 6.0
+			},
+			"x": 2832.0,
+			"y": 384.0
+		},
+		{
+			"kind": "chest",
+			"loot": {
+				"type": "gold",
+				"amount": 6.0
+			},
+			"x": 2544.0,
+			"y": 384.0
+		},
+		{
+			"kind": "gate",
+			"dir": "h",
+			"group": "A",
+			"lock": "",
+			"x": 2400.0,
+			"y": 96.0
+		},
+		{
+			"kind": "prop",
+			"asset": "bridge_v",
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				148.0,
+				40.0
+			],
+			"x": 2208.0,
+			"y": 1320.0
+		},
+		{
+			"kind": "prop",
+			"asset": "@res://assets/sprites/decor/carpet_red.png",
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 3.0,
+			"foot": [
+				101.0,
+				36.0
+			],
+			"x": 2208.0,
+			"y": 1104.0,
+			"scale_w": 2.5,
+			"scale_h": 3.1
+		},
+		{
+			"kind": "prop",
+			"asset": "bridge_v",
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				148.0,
+				40.0
+			],
+			"x": 2208.0,
+			"y": 672.0
+		},
+		{
+			"kind": "launch",
+			"dir": "w",
+			"cells": 16.0,
+			"x": 2544.0,
+			"y": 48.0
+		},
+		{
+			"kind": "chest",
+			"loot": {
+				"type": "gold",
+				"amount": 6.0
+			},
+			"x": 816.0,
+			"y": 288.0
+		},
+		{
+			"kind": "chest",
+			"loot": {
+				"type": "gold",
+				"amount": 6.0
+			},
+			"x": 912.0,
+			"y": 288.0
+		},
+		{
+			"kind": "chest",
+			"loot": {
+				"type": "gold",
+				"amount": 6.0
+			},
+			"x": 1008.0,
+			"y": 288.0
+		},
+		{
+			"kind": "chest",
+			"loot": {
+				"type": "gold",
+				"amount": 6.0
+			},
+			"x": 1104.0,
+			"y": 288.0
+		},
+		{
+			"kind": "launch",
+			"dir": "s",
+			"cells": 4.0,
+			"x": 816.0,
+			"y": 48.0
+		},
+		{
+			"kind": "gem",
+			"x": 1272.0,
+			"y": 144.0
+		},
+		{
+			"kind": "gem",
+			"x": 1296.0,
+			"y": 144.0
+		},
+		{
+			"kind": "gem",
+			"x": 1272.0,
+			"y": 192.0
+		},
+		{
+			"kind": "enemy",
+			"mob": "mimik",
+			"x": 2640.0,
+			"y": 912.0
+		},
+		{
+			"kind": "enemy",
+			"mob": "truhenfresser",
+			"x": 1968.0,
+			"y": 912.0
+		},
+		{
+			"kind": "gate",
+			"dir": "h",
+			"group": "B",
+			"lock": "",
+			"x": 1152.0,
+			"y": 576.0
+		},
+		{
+			"kind": "lever",
+			"group": "B",
+			"x": 144.0,
+			"y": 168.0
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_5",
+			"flip": false,
+			"layer": "normal",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				44.0,
+				28.0
+			],
+			"x": 1584.0,
+			"y": 144.0
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_5",
+			"flip": false,
+			"layer": "normal",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				44.0,
+				28.0
+			],
+			"x": 1704.0,
+			"y": 144.0
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_5",
+			"flip": false,
+			"layer": "normal",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				44.0,
+				28.0
+			],
+			"x": 1824.0,
+			"y": 144.0
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_5",
+			"flip": false,
+			"layer": "normal",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				44.0,
+				28.0
+			],
+			"x": 1992.0,
+			"y": 144.0
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_5",
+			"flip": false,
+			"layer": "normal",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				44.0,
+				28.0
+			],
+			"x": 2112.0,
+			"y": 144.0
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_5",
+			"flip": false,
+			"layer": "normal",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				44.0,
+				28.0
+			],
+			"x": 2208.0,
+			"y": 144.0
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_5",
+			"flip": false,
+			"layer": "normal",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				44.0,
+				28.0
+			],
+			"x": 2328.0,
+			"y": 144.0
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_skull",
+			"flip": false,
+			"layer": "normal",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				17.0
+			],
+			"x": 1488.0,
+			"y": 120.0
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_skull",
+			"flip": false,
+			"layer": "normal",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				17.0
+			],
+			"x": 1704.0,
+			"y": 1032.0
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_skull",
+			"flip": false,
+			"layer": "normal",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				17.0
+			],
+			"x": 1608.0,
+			"y": 1032.0
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_skull",
+			"flip": false,
+			"layer": "normal",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				17.0
+			],
+			"x": 1440.0,
+			"y": 1032.0
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_skull",
+			"flip": false,
+			"layer": "normal",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				17.0
+			],
+			"x": 1296.0,
+			"y": 1032.0
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_skull",
+			"flip": false,
+			"layer": "front",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				17.0
+			],
+			"x": 2448.0,
+			"y": 456.0
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				67.0,
+				24.0
+			],
+			"x": 2448.0,
+			"y": 768.0
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_low",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				57.0,
+				26.0
+			],
+			"x": 1680.0,
+			"y": 960.0
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_low",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				57.0,
+				26.0
+			],
+			"x": 1296.0,
+			"y": 960.0
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"flip": false,
+			"layer": "normal",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				49.0,
+				26.0
+			],
+			"x": 1200.0,
+			"y": 888.0
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"flip": false,
+			"layer": "normal",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				49.0,
+				26.0
+			],
+			"x": 1200.0,
+			"y": 240.0
+		},
+		{
+			"kind": "prop",
+			"asset": "crate_a",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				48.0,
+				22.0
+			],
+			"x": 1296.0,
+			"y": 480.0,
+			"enemies": [
+				"random"
+			],
+			"loot": {
+				"type": "heart",
+				"amount": 1.0,
+				"id": "healing"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "crate_a",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				48.0,
+				22.0
+			],
+			"x": 1464.0,
+			"y": 912.0,
+			"enemies": [
+				"random",
+				"random"
+			],
+			"loot": {
+				"type": "heart",
+				"amount": 1.0,
+				"id": "healing"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "crate_a",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				48.0,
+				22.0
+			],
+			"x": 1392.0,
+			"y": 192.0,
+			"enemies": [
+				"random",
+				"archivar"
+			],
+			"loot": {
+				"type": "heart",
+				"amount": 1.0,
+				"id": "healing"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "crate_a",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				48.0,
+				22.0
+			],
+			"x": 2088.0,
+			"y": 288.0,
+			"loot": {
+				"type": "heart",
+				"amount": 1.0,
+				"id": "healing"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_b",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				16.0
+			],
+			"x": 2256.0,
+			"y": 120.0
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_b",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				16.0
+			],
+			"x": 2160.0,
+			"y": 120.0
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_b",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				16.0
+			],
+			"x": 2064.0,
+			"y": 120.0
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_b",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				16.0
+			],
+			"x": 1920.0,
+			"y": 120.0
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_b",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				16.0
+			],
+			"x": 1776.0,
+			"y": 120.0
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_b",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				16.0
+			],
+			"x": 1632.0,
+			"y": 120.0
+		},
+		{
+			"kind": "prop",
+			"asset": "gargoyle",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				73.0,
+				34.0
+			],
+			"x": 1896.0,
+			"y": 672.0
+		},
+		{
+			"kind": "prop",
+			"asset": "gargoyle",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				73.0,
+				34.0
+			],
+			"x": 2712.0,
+			"y": 672.0
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_t",
+			"flip": false,
+			"layer": "normal",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				48.0,
+				16.0
+			],
+			"x": 1440.0,
+			"y": 336.0
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_t",
+			"flip": false,
+			"layer": "normal",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				48.0,
+				16.0
+			],
+			"x": 1920.0,
+			"y": 792.0
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_scatter",
+			"flip": false,
+			"layer": "normal",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				48.0,
+				16.0
+			],
+			"x": 1680.0,
+			"y": 264.0
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_scatter",
+			"flip": false,
+			"layer": "normal",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				48.0,
+				16.0
+			],
+			"x": 1488.0,
+			"y": 528.0
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_scatter",
+			"flip": false,
+			"layer": "normal",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				48.0,
+				16.0
+			],
+			"x": 2040.0,
+			"y": 432.0
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_scatter",
+			"flip": false,
+			"layer": "normal",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				48.0,
+				16.0
+			],
+			"x": 2520.0,
+			"y": 912.0
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_heap",
+			"flip": false,
+			"layer": "normal",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				74.0,
+				21.0
+			],
+			"x": 1968.0,
+			"y": 1128.0
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_b",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				16.0
+			],
+			"x": 960.0,
+			"y": 528.0,
+			"enemies": [
+				"skelettwache",
+				"skelettwache"
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_b",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				16.0
+			],
+			"x": 648.0,
+			"y": 672.0,
+			"enemies": [
+				"skelettwache",
+				"skelettwache"
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_b",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				16.0
+			],
+			"x": 240.0,
+			"y": 528.0,
+			"enemies": [
+				"skelettwache",
+				"skelettwache"
+			],
+			"loot": {
+				"type": "heart",
+				"amount": 1.0,
+				"id": "healing"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_b",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				16.0
+			],
+			"x": 240.0,
+			"y": 480.0,
+			"loot": {
+				"type": "gold",
+				"amount": 1.0,
+				"id": "healing"
+			},
+			"enemies": [
+				"nekromant",
+				"nekromant"
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_b",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				16.0
+			],
+			"x": 504.0,
+			"y": 528.0,
+			"loot": {
+				"type": "potion",
+				"amount": 1.0,
+				"id": "healing"
+			},
+			"enemies": [
+				"random",
+				"random"
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_b",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				16.0
+			],
+			"x": 600.0,
+			"y": 888.0,
+			"loot": {
+				"type": "gold",
+				"amount": 10.0,
+				"id": "healing"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_b",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				16.0
+			],
+			"x": 864.0,
+			"y": 816.0,
+			"enemies": [
+				"skelettschuetze",
+				"skelett"
+			],
+			"loot": {
+				"type": "heart",
+				"amount": 1.0,
+				"id": "healing"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_b",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				16.0
+			],
+			"x": 1056.0,
+			"y": 840.0,
+			"enemies": [
+				"skelettschuetze"
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_b",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				16.0
+			],
+			"x": 408.0,
+			"y": 744.0,
+			"loot": {
+				"type": "stone",
+				"amount": 1.0,
+				"id": "healing"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_b",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				16.0
+			],
+			"x": 1032.0,
+			"y": 648.0,
+			"loot": {
+				"type": "weapon",
+				"amount": 1.0,
+				"id": "void_staff"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_b",
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				29.0,
+				16.0
+			],
+			"x": 240.0,
+			"y": 504.0,
+			"enemies": [
+				"nekromant",
+				"skelettwache"
+			]
+		},
+		{
+			"kind": "enemy",
+			"mob": "truhenfresser",
+			"x": 240.0,
+			"y": 240.0
+		},
+		{
+			"kind": "enemy",
+			"mob": "truhenfresser",
+			"x": 528.0,
+			"y": 240.0
+		}
+	],
+	"kind_label": "Sprungrätsel",
+	"spawn_mode": "manual"
+}
