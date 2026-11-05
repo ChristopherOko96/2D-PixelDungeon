@@ -1842,6 +1842,9 @@ static func to_raw(W: Dictionary) -> Dictionary:
 			"spawn": r.get("spawn"), "cleared": r.cleared, "info": r.get("info", ""), "on_path": r.get("onPath", false), "seq": r.get("seq", false), "tidy": r.get("tidy", false), "ice": r.get("ice", false)})
 		if r.has("placed_mobs"):
 			rooms[-1].placed_mobs = r.placed_mobs
+		# a labyrinth's dark part (room_floor.gd maze_zone)
+		if r.has("maze_zone"):
+			rooms[-1].maze_zone = r.maze_zone
 	var doors: Array = []
 	for d: Dictionary in W.doors:
 		doors.append({"a": int(d.a.index), "b": int(d.b.index), "kind": d.kind, "key": d.get("key", ""), "group": d.get("group", ""), "hidden": d.get("hidden", false), "dir": d.dir,

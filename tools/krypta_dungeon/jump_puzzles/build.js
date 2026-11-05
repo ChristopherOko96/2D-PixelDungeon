@@ -223,7 +223,7 @@ function plans() {
   return all;
 }
 
-module.exports = { build, plans, ascii };
+module.exports = { build, plans, ascii, decorate, prop, rng };
 
 if (require.main === module) {
   const args = process.argv.slice(2);

@@ -270,6 +270,9 @@ func _check_floor(pack: Pack, n: int, run: int) -> void:
 		if str(r.type) == "jump":
 			_jump_rooms += 1
 			_check(int(r.mobs) == 0 and bool(r.cleared), "%s room %s: no fight in a jump puzzle" % [tag, r.id])
+			# a labyrinth keeps its dark part (file key maze)
+			if bool(t.get("maze", false)):
+				_check(not (r.get("maze_zone", []) as Array).is_empty(), "%s room %s: a labyrinth knows its dark part" % [tag, r.id])
 			_check(not r.has("drop") and not r.get("seq", false) and not r.has("gate"), "%s room %s holds nothing the floor needs" % [tag, r.id])
 			continue
 		_check(Core.blocked_ways(W, r).is_empty(), "%s room %s (%s): every door and thing reachable" % [tag, r.id, t.id])

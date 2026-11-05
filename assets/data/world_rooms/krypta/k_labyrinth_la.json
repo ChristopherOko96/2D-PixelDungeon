@@ -1,7 +1,7 @@
 {
 	"schema_version": 1,
 	"id": "k_labyrinth_la",
-	"title": "Labyrinth: Irrgarten (Winkel)",
+	"title": "Labyrinth: Knochenirrgarten (Winkel)",
 	"world": "krypta",
 	"role": "jump",
 	"in_floors": true,
@@ -24,28 +24,28 @@
 	"cells": [
 		"0000000000000000000000000000000",
 		"0111111111111111111111111111110",
-		"0111111111111111111111111111110",
-		"0111111111111111111111111111110",
-		"0111111111111100000011000011110",
-		"0111111111111111111111111111110",
-		"0111111111111111111111111111110",
-		"0111111111111100000000000000110",
-		"0111111111111100000000011000110",
-		"0111111111111111111111111111110",
-		"0111111111111000000000000000000",
-		"0111111111001000000000000000000",
-		"0111111111001000000000000000000",
-		"0100000011001000000000000000000",
-		"0111111111001000000000000000000",
-		"0111111111001000000000000000000",
-		"0111011000001000000000000000000",
-		"0111111111001000000000000000000",
-		"0111111111001000000000000000000",
-		"0110000000011000000000000000000",
-		"0110000000011000000000000000000",
-		"0111111111111000000000000000000",
-		"0111111111111000000000000000000",
-		"0111111111111000000000000000000",
+		"0100000000000000000000000001110",
+		"0101110111111111111111110111010",
+		"0101001110000000000001011111010",
+		"0101111111110111011111011111010",
+		"0101001111000100001110001111010",
+		"0101111111111101111111010111000",
+		"0101000101111001011110010101000",
+		"0101011101111111011111110101110",
+		"0100000101111000000000000000000",
+		"0101110101010000000000000000000",
+		"0101010100010000000000000000000",
+		"0101011111010000000000000000000",
+		"0101010000010000000000000000000",
+		"0101011101010000000000000000000",
+		"0101111001000000000000000000000",
+		"0101111101110000000000000000000",
+		"0101111100010000000000000000000",
+		"0101111111010000000000000000000",
+		"0100000001010000000000000000000",
+		"0111111111110000000000000000000",
+		"0110000000010000000000000000000",
+		"0111111101110000000000000000000",
 		"0000000000000000000000000000000"
 	],
 	"tiles": {},
@@ -59,13 +59,6 @@
 			]
 		},
 		{
-			"side": "west",
-			"cell": [
-				0,
-				5
-			]
-		},
-		{
 			"side": "north",
 			"cell": [
 				23,
@@ -73,10 +66,17 @@
 			]
 		},
 		{
-			"side": "south",
+			"side": "west",
 			"cell": [
-				23,
-				10
+				0,
+				5
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0,
+				19
 			]
 		},
 		{
@@ -92,72 +92,143 @@
 				6,
 				24
 			]
-		},
-		{
-			"side": "west",
-			"cell": [
-				0,
-				19
-			]
-		},
-		{
-			"side": "east",
-			"cell": [
-				13,
-				19
-			]
 		}
 	],
 	"auto_mobs": 0,
+	"maze": true,
+	"maze_zone": [
+		[
+			3,
+			3,
+			27,
+			3
+		],
+		[
+			3,
+			4,
+			27,
+			4
+		],
+		[
+			3,
+			5,
+			27,
+			5
+		],
+		[
+			3,
+			6,
+			27,
+			6
+		],
+		[
+			3,
+			7,
+			27,
+			7
+		],
+		[
+			3,
+			8,
+			29,
+			8
+		],
+		[
+			3,
+			9,
+			29,
+			9
+		],
+		[
+			3,
+			10,
+			29,
+			10
+		],
+		[
+			3,
+			11,
+			13,
+			11
+		],
+		[
+			3,
+			12,
+			13,
+			12
+		],
+		[
+			3,
+			13,
+			13,
+			13
+		],
+		[
+			3,
+			14,
+			13,
+			14
+		],
+		[
+			3,
+			15,
+			13,
+			15
+		],
+		[
+			3,
+			16,
+			13,
+			16
+		],
+		[
+			3,
+			17,
+			13,
+			17
+		],
+		[
+			3,
+			18,
+			13,
+			18
+		],
+		[
+			3,
+			19,
+			13,
+			19
+		],
+		[
+			3,
+			20,
+			13,
+			20
+		],
+		[
+			3,
+			21,
+			13,
+			21
+		],
+		[
+			9,
+			22,
+			13,
+			22
+		],
+		[
+			9,
+			23,
+			13,
+			23
+		]
+	],
 	"objects": [
-		{
-			"kind": "chest",
-			"x": 1968,
-			"y": 465.6,
-			"loot": {
-				"type": "auto",
-				"heart": true
-			}
-		},
-		{
-			"kind": "gem",
-			"x": 528,
-			"y": 1521.6
-		},
 		{
 			"kind": "prop",
 			"asset": "wall_torch_hook",
-			"x": 240,
-			"y": 102,
-			"flip": false,
-			"layer": "floor",
-			"block": false,
-			"scale": 1,
-			"foot": [
-				60,
-				30
-			],
-			"wall_decor": true
-		},
-		{
-			"kind": "prop",
-			"asset": "shackle_skull",
-			"x": 1046.4,
-			"y": 102,
-			"flip": false,
-			"layer": "floor",
-			"block": false,
-			"scale": 1,
-			"foot": [
-				60,
-				30
-			],
-			"wall_decor": true
-		},
-		{
-			"kind": "prop",
-			"asset": "wall_skull_a",
-			"x": 1315.2,
+			"x": 1296,
 			"y": 102,
 			"flip": true,
 			"layer": "floor",
@@ -171,7 +242,7 @@
 		},
 		{
 			"kind": "prop",
-			"asset": "wall_skull_b",
+			"asset": "chain_swag",
 			"x": 1584,
 			"y": 102,
 			"flip": true,
@@ -186,8 +257,8 @@
 		},
 		{
 			"kind": "prop",
-			"asset": "chain_long",
-			"x": 1852.8,
+			"asset": "cage_hang",
+			"x": 1872,
 			"y": 102,
 			"flip": false,
 			"layer": "floor",
@@ -201,69 +272,9 @@
 		},
 		{
 			"kind": "prop",
-			"asset": "shackle_skull",
-			"x": 2659.2,
-			"y": 102,
-			"flip": true,
-			"layer": "floor",
-			"block": false,
-			"scale": 1,
-			"foot": [
-				60,
-				30
-			],
-			"wall_decor": true
-		},
-		{
-			"kind": "prop",
-			"asset": "shackle_skull",
-			"x": 1488,
-			"y": 486,
-			"flip": false,
-			"layer": "floor",
-			"block": false,
-			"scale": 1,
-			"foot": [
-				60,
-				30
-			],
-			"wall_decor": true
-		},
-		{
-			"kind": "prop",
-			"asset": "wall_torch_hook",
-			"x": 1756.8,
-			"y": 486,
-			"flip": true,
-			"layer": "floor",
-			"block": false,
-			"scale": 1,
-			"foot": [
-				60,
-				30
-			],
-			"wall_decor": true
-		},
-		{
-			"kind": "prop",
-			"asset": "chain_long",
-			"x": 2256,
-			"y": 486,
-			"flip": true,
-			"layer": "floor",
-			"block": false,
-			"scale": 1,
-			"foot": [
-				60,
-				30
-			],
-			"wall_decor": true
-		},
-		{
-			"kind": "prop",
-			"asset": "chain_long",
-			"x": 1488,
-			"y": 870,
+			"asset": "wall_skull_b",
+			"x": 432,
+			"y": 294,
 			"flip": true,
 			"layer": "floor",
 			"block": false,
@@ -277,67 +288,292 @@
 		{
 			"kind": "prop",
 			"asset": "wall_torch_hook",
-			"x": 1756.8,
-			"y": 870,
-			"flip": false,
-			"layer": "floor",
-			"block": false,
-			"scale": 1,
-			"foot": [
-				60,
-				30
-			],
-			"wall_decor": true
-		},
-		{
-			"kind": "prop",
-			"asset": "chain_long",
-			"x": 2544,
-			"y": 870,
-			"flip": false,
-			"layer": "floor",
-			"block": false,
-			"scale": 1,
-			"foot": [
-				60,
-				30
-			],
-			"wall_decor": true
-		},
-		{
-			"kind": "prop",
-			"asset": "wall_skull_a",
-			"x": 336,
-			"y": 1350,
-			"flip": false,
-			"layer": "floor",
-			"block": false,
-			"scale": 1,
-			"foot": [
-				60,
-				30
-			],
-			"wall_decor": true
-		},
-		{
-			"kind": "prop",
-			"asset": "wall_skull_a",
-			"x": 604.8,
-			"y": 1350,
-			"flip": false,
-			"layer": "floor",
-			"block": false,
-			"scale": 1,
-			"foot": [
-				60,
-				30
-			],
-			"wall_decor": true
-		},
-		{
-			"kind": "prop",
-			"asset": "shackle_skull",
 			"x": 816,
+			"y": 294,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_skull",
+			"x": 1104,
+			"y": 294,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "cage_hang",
+			"x": 1392,
+			"y": 294,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_skull_b",
+			"x": 1680,
+			"y": 294,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_skull",
+			"x": 2256,
+			"y": 294,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_skull_b",
+			"x": 2544,
+			"y": 294,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_skull",
+			"x": 528,
+			"y": 486,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_skull_a",
+			"x": 1008,
+			"y": 486,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_long",
+			"x": 1392,
+			"y": 486,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_skull_a",
+			"x": 1776,
+			"y": 486,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 1104,
+			"y": 678,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "cage_hang",
+			"x": 1584,
+			"y": 678,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 624,
+			"y": 870,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_skull_a",
+			"x": 1392,
+			"y": 870,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 2160,
+			"y": 870,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 2832,
+			"y": 870,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_skull",
+			"x": 432,
+			"y": 1062,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_skull",
+			"x": 912,
+			"y": 1254,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 720,
+			"y": 1446,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_skull_a",
+			"x": 1104,
 			"y": 1638,
 			"flip": false,
 			"layer": "floor",
@@ -352,7 +588,22 @@
 		{
 			"kind": "prop",
 			"asset": "wall_torch_hook",
-			"x": 432,
+			"x": 912,
+			"y": 1830,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "cage_hang",
+			"x": 336,
 			"y": 2022,
 			"flip": true,
 			"layer": "floor",
@@ -366,9 +617,39 @@
 		},
 		{
 			"kind": "prop",
-			"asset": "shackle_skull",
-			"x": 700.8,
+			"asset": "chain_swag",
+			"x": 624,
 			"y": 2022,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_long",
+			"x": 432,
+			"y": 2214,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 1008,
+			"y": 2214,
 			"flip": true,
 			"layer": "floor",
 			"block": false,
@@ -378,12 +659,484 @@
 				30
 			],
 			"wall_decor": true
+		},
+		{
+			"kind": "chest",
+			"loot": {
+				"type": "hoard"
+			},
+			"x": 1104,
+			"y": 840
+		},
+		{
+			"kind": "chest",
+			"loot": {
+				"type": "random"
+			},
+			"x": 1008,
+			"y": 840,
+			"mimic": "no"
+		},
+		{
+			"kind": "chest",
+			"loot": {
+				"type": "random"
+			},
+			"x": 1200,
+			"y": 840,
+			"mimic": "no"
+		},
+		{
+			"kind": "heart",
+			"x": 1104,
+			"y": 1008
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_pillar",
+			"x": 1008,
+			"y": 1036.8000000000002,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				50,
+				26
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_pillar",
+			"x": 1200,
+			"y": 1036.8000000000002,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				50,
+				26
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_big",
+			"x": 1104,
+			"y": 912,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.9
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_b",
+			"x": 528,
+			"y": 364.79999999999995,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				29,
+				16
+			],
+			"loot": {
+				"type": "random"
+			},
+			"enemies": [
+				"random"
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_a",
+			"x": 1104,
+			"y": 556.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				29,
+				16
+			],
+			"loot": {
+				"type": "random"
+			},
+			"enemies": [
+				"random"
+			]
+		},
+		{
+			"kind": "chest",
+			"loot": {
+				"type": "random"
+			},
+			"x": 1488,
+			"y": 552,
+			"mimic": "random",
+			"mimic_mob": "mimik",
+			"enemies": [
+				"random"
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_scatter",
+			"x": 1680,
+			"y": 528,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_a",
+			"x": 2064,
+			"y": 748.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				29,
+				16
+			],
+			"loot": {
+				"type": "random"
+			},
+			"enemies": [
+				"random"
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "crate_a",
+			"x": 2256,
+			"y": 748.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				48,
+				22
+			],
+			"loot": {
+				"type": "random"
+			},
+			"enemies": [
+				"random",
+				"random"
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_a",
+			"x": 336,
+			"y": 940.8000000000001,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				29,
+				16
+			],
+			"loot": {
+				"type": "random"
+			},
+			"enemies": [
+				"random"
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_b",
+			"x": 528,
+			"y": 940.8000000000001,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				29,
+				16
+			],
+			"loot": {
+				"type": "random"
+			},
+			"enemies": [
+				"random"
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_a",
+			"x": 2448,
+			"y": 940.8000000000001,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				29,
+				16
+			],
+			"loot": {
+				"type": "random"
+			},
+			"enemies": [
+				"random"
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_a",
+			"x": 2832,
+			"y": 940.8000000000001,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				29,
+				16
+			],
+			"loot": {
+				"type": "random"
+			},
+			"enemies": [
+				"random"
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_b",
+			"x": 912,
+			"y": 1132.8000000000002,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				29,
+				16
+			],
+			"loot": {
+				"type": "random"
+			},
+			"enemies": [
+				"random"
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_b",
+			"x": 912,
+			"y": 1324.8000000000002,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				29,
+				16
+			],
+			"loot": {
+				"type": "random"
+			},
+			"enemies": [
+				"random"
+			]
+		},
+		{
+			"kind": "gem",
+			"x": 720,
+			"y": 1488
+		},
+		{
+			"kind": "gem",
+			"x": 912,
+			"y": 1488
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_a",
+			"x": 1104,
+			"y": 1516.8000000000002,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				29,
+				16
+			],
+			"loot": {
+				"type": "random"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_b",
+			"x": 912,
+			"y": 2284.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				29,
+				16
+			],
+			"loot": {
+				"type": "random"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile_t",
+			"x": 317,
+			"y": 318,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile_t",
+			"x": 2041,
+			"y": 528,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "urn_b",
+			"x": 624,
+			"y": 460.79999999999995,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				29,
+				16
+			],
+			"loot": {
+				"type": "random"
+			}
 		},
 		{
 			"kind": "prop",
 			"asset": "bone_e",
-			"x": 159.5,
-			"y": 1038.3,
+			"x": 417,
+			"y": 329,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_t",
+			"x": 722,
+			"y": 347,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "grate_a",
+			"x": 720,
+			"y": 336,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.9
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_d",
+			"x": 840,
+			"y": 356,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_b",
+			"x": 927,
+			"y": 348,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_f",
+			"x": 998,
+			"y": 335,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
@@ -396,50 +1149,8 @@
 		{
 			"kind": "prop",
 			"asset": "bone_c",
-			"x": 541.8,
-			"y": 1228.9,
-			"flip": false,
-			"layer": "floor",
-			"block": false,
-			"scale": 1,
-			"foot": [
-				60,
-				30
-			]
-		},
-		{
-			"kind": "prop",
-			"asset": "coal",
-			"x": 1020.1,
-			"y": 430.5,
-			"flip": false,
-			"layer": "floor",
-			"block": false,
-			"scale": 1,
-			"foot": [
-				60,
-				30
-			]
-		},
-		{
-			"kind": "prop",
-			"asset": "bones_scatter",
-			"x": 2828,
-			"y": 933,
-			"flip": false,
-			"layer": "floor",
-			"block": false,
-			"scale": 1,
-			"foot": [
-				60,
-				30
-			]
-		},
-		{
-			"kind": "prop",
-			"asset": "bone_g",
-			"x": 2739.7,
-			"y": 711.2,
+			"x": 1081,
+			"y": 351,
 			"flip": true,
 			"layer": "floor",
 			"block": false,
@@ -451,23 +1162,9 @@
 		},
 		{
 			"kind": "prop",
-			"asset": "bone_b",
-			"x": 249.7,
-			"y": 238.2,
-			"flip": true,
-			"layer": "floor",
-			"block": false,
-			"scale": 1,
-			"foot": [
-				60,
-				30
-			]
-		},
-		{
-			"kind": "prop",
-			"asset": "rubble",
-			"x": 319,
-			"y": 1806.5,
+			"asset": "bone_e",
+			"x": 1319,
+			"y": 350,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
@@ -480,8 +1177,8 @@
 		{
 			"kind": "prop",
 			"asset": "bone_e",
-			"x": 1560.3,
-			"y": 658.9,
+			"x": 1508,
+			"y": 340,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
@@ -493,23 +1190,9 @@
 		},
 		{
 			"kind": "prop",
-			"asset": "coal",
-			"x": 1215.2,
-			"y": 1982.9,
-			"flip": false,
-			"layer": "floor",
-			"block": false,
-			"scale": 1,
-			"foot": [
-				60,
-				30
-			]
-		},
-		{
-			"kind": "prop",
-			"asset": "coal",
-			"x": 2559.1,
-			"y": 232.4,
+			"asset": "skull_pile_t",
+			"x": 1680,
+			"y": 331,
 			"flip": true,
 			"layer": "floor",
 			"block": false,
@@ -520,10 +1203,1921 @@
 			]
 		},
 		{
+			"kind": "prop",
+			"asset": "bone_g",
+			"x": 1675,
+			"y": 329,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_b",
+			"x": 1759,
+			"y": 331,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_g",
+			"x": 1877,
+			"y": 324,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_e",
+			"x": 2429,
+			"y": 335,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_f",
+			"x": 2562,
+			"y": 350,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_b",
+			"x": 2562,
+			"y": 337,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_f",
+			"x": 2660,
+			"y": 318,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile_t",
+			"x": 348,
+			"y": 423,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_e",
+			"x": 319,
+			"y": 432,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_b",
+			"x": 336,
+			"y": 432,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.9
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_e",
+			"x": 711,
+			"y": 438,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_c",
+			"x": 816,
+			"y": 432,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.9
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_g",
+			"x": 2279,
+			"y": 419,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 2352,
+			"y": 432,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.9
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_a",
+			"x": 2557,
+			"y": 433,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_e",
+			"x": 2623,
+			"y": 450,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_scatter",
+			"x": 314,
+			"y": 546,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_t",
+			"x": 453,
+			"y": 530,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rubble",
+			"x": 638,
+			"y": 524,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 1008,
+			"y": 528,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.9
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_f",
+			"x": 1316,
+			"y": 528,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_g",
+			"x": 1387,
+			"y": 527,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_scatter",
+			"x": 1377,
+			"y": 525,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 2256,
+			"y": 528,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.9
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_d",
+			"x": 2650,
+			"y": 529,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_g",
+			"x": 342,
+			"y": 622,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_scatter",
+			"x": 821,
+			"y": 624,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_t",
+			"x": 937,
+			"y": 636,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_a",
+			"x": 1296,
+			"y": 624,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.9
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile_t",
+			"x": 2341,
+			"y": 644,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_c",
+			"x": 2460,
+			"y": 625,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_g",
+			"x": 356,
+			"y": 702,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile_t",
+			"x": 628,
+			"y": 728,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_e",
+			"x": 1110,
+			"y": 715,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_c",
+			"x": 1312,
+			"y": 710,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_f",
+			"x": 1689,
+			"y": 737,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_c",
+			"x": 1681,
+			"y": 717,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_scatter",
+			"x": 1987,
+			"y": 705,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_t",
+			"x": 2621,
+			"y": 724,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_b",
+			"x": 912,
+			"y": 816,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.9
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_c",
+			"x": 1467,
+			"y": 829,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile_t",
+			"x": 1505,
+			"y": 831,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_c",
+			"x": 1784,
+			"y": 811,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_c",
+			"x": 1865,
+			"y": 820,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_e",
+			"x": 2276,
+			"y": 834,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_e",
+			"x": 2470,
+			"y": 825,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_e",
+			"x": 2652,
+			"y": 801,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_f",
+			"x": 741,
+			"y": 903,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_c",
+			"x": 720,
+			"y": 912,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.9
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_c",
+			"x": 914,
+			"y": 897,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 912,
+			"y": 912,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.9
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_g",
+			"x": 1288,
+			"y": 915,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_c",
+			"x": 1481,
+			"y": 913,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_d",
+			"x": 1496,
+			"y": 895,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_a",
+			"x": 1682,
+			"y": 895,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_t",
+			"x": 1765,
+			"y": 906,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rubble",
+			"x": 1868,
+			"y": 921,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_e",
+			"x": 1858,
+			"y": 899,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 1872,
+			"y": 912,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.9
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_b",
+			"x": 1992,
+			"y": 910,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_t",
+			"x": 1986,
+			"y": 896,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rubble",
+			"x": 2051,
+			"y": 928,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_a",
+			"x": 2061,
+			"y": 932,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_scatter",
+			"x": 2176,
+			"y": 926,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_c",
+			"x": 2637,
+			"y": 928,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rubble",
+			"x": 2716,
+			"y": 894,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_scatter",
+			"x": 714,
+			"y": 997,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_t",
+			"x": 358,
+			"y": 1118,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "grate_a",
+			"x": 432,
+			"y": 1104,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.9
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile_t",
+			"x": 533,
+			"y": 1109,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_b",
+			"x": 512,
+			"y": 1099,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "grate_a",
+			"x": 528,
+			"y": 1104,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.9
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_t",
+			"x": 705,
+			"y": 1088,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_d",
+			"x": 1082,
+			"y": 1111,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile_t",
+			"x": 340,
+			"y": 1189,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_a",
+			"x": 528,
+			"y": 1200,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.9
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_scatter",
+			"x": 720,
+			"y": 1215,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_scatter",
+			"x": 723,
+			"y": 1204,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile_t",
+			"x": 1100,
+			"y": 1217,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_g",
+			"x": 353,
+			"y": 1281,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_e",
+			"x": 521,
+			"y": 1314,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_e",
+			"x": 793,
+			"y": 1276,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_d",
+			"x": 324,
+			"y": 1388,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_c",
+			"x": 336,
+			"y": 1392,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.9
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_f",
+			"x": 533,
+			"y": 1396,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_g",
+			"x": 1111,
+			"y": 1382,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_a",
+			"x": 350,
+			"y": 1496,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile_t",
+			"x": 611,
+			"y": 1493,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rubble",
+			"x": 332,
+			"y": 1599,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_t",
+			"x": 645,
+			"y": 1585,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_f",
+			"x": 890,
+			"y": 1579,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile_t",
+			"x": 350,
+			"y": 1671,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_c",
+			"x": 341,
+			"y": 1666,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_f",
+			"x": 434,
+			"y": 1687,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_e",
+			"x": 512,
+			"y": 1694,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile_t",
+			"x": 607,
+			"y": 1691,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_c",
+			"x": 720,
+			"y": 1680,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.9
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_e",
+			"x": 913,
+			"y": 1695,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_a",
+			"x": 912,
+			"y": 1680,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.9
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile_t",
+			"x": 1032,
+			"y": 1697,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_b",
+			"x": 338,
+			"y": 1772,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_a",
+			"x": 432,
+			"y": 1776,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.9
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_b",
+			"x": 508,
+			"y": 1778,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rubble",
+			"x": 624,
+			"y": 1776,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_t",
+			"x": 710,
+			"y": 1769,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_t",
+			"x": 351,
+			"y": 1864,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rubble",
+			"x": 532,
+			"y": 1873,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 816,
+			"y": 1872,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.9
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_b",
+			"x": 918,
+			"y": 1887,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_c",
+			"x": 909,
+			"y": 1858,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_t",
+			"x": 891,
+			"y": 1985,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_f",
+			"x": 1128,
+			"y": 1982,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile_t",
+			"x": 315,
+			"y": 2072,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_t",
+			"x": 526,
+			"y": 2066,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_d",
+			"x": 648,
+			"y": 2045,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "grate_a",
+			"x": 624,
+			"y": 2064,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.9
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_t",
+			"x": 927,
+			"y": 2082,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_b",
+			"x": 912,
+			"y": 2064,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.9
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile_t",
+			"x": 1006,
+			"y": 2246,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_d",
+			"x": 1027,
+			"y": 2259,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile_t",
+			"x": 993,
+			"y": 142,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile_t",
+			"x": 1224,
+			"y": 152,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile_t",
+			"x": 1853,
+			"y": 151,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_t",
+			"x": 2634,
+			"y": 147,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_c",
+			"x": 145,
+			"y": 609,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_scatter",
+			"x": 167,
+			"y": 1697,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "skull_pile_t",
+			"x": 160,
+			"y": 2150,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "tablet",
+			"text": "Vor dir liegt der Irrgarten der Verlorenen.\nGeh außen herum und lass ihn hinter dir, oder tritt ein.\nDrinnen wird es dunkel, und viele Gänge enden blind.\nZerschlage nicht jede Vase, öffne nicht jede Truhe:\nManches darin wartet nur auf dich.\nIm Herzen des Irrgartens liegt ein Schatz, der jeden Schritt lohnt.",
+			"x": 240,
+			"y": 2184
+		},
+		{
+			"kind": "tablet",
+			"text": "Vor dir liegt der Irrgarten der Verlorenen.\nGeh außen herum und lass ihn hinter dir, oder tritt ein.\nDrinnen wird es dunkel, und viele Gänge enden blind.\nZerschlage nicht jede Vase, öffne nicht jede Truhe:\nManches darin wartet nur auf dich.\nIm Herzen des Irrgartens liegt ein Schatz, der jeden Schritt lohnt.",
+			"x": 2736,
+			"y": 264
+		},
+		{
 			"kind": "start",
-			"x": 1488,
-			"y": 931.2
+			"x": 624,
+			"y": 168
 		}
 	],
-	"kind_label": "Labyrinth"
+	"kind_label": "Labyrinth",
+	"spawn_mode": "manual"
 }

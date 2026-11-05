@@ -211,6 +211,15 @@ zwischen seinen Türen, das Rätsel ist der Weg zum Schatz:
 | Der Abstieg | Sechs Platten auf drei Ebenen, gelesen in Schlangenlinien |
 | Der Stufenturm | Stacheltakt, Reihenfolge, zwei Truhen von Lügner und Ehrlichem |
 
+**Die Labyrinthe der Krypta** (`k_labyrinth_*`, seit 05.11.2026): Ein Rundgang außen verbindet alle Türen, man kann
+vorbeigehen. Zwei Eingänge mit Inschrift führen in den Irrgarten: schmale Gänge, viele Sackgassen, kleine Kammern,
+Knochen und Schädel, in der Mitte die Schatzkammer. In der Datei steht `"maze": true` und `maze_zone` (der Irrgarten
+als Reihen von Feldern). Dort wird es im Spiel dunkel, Mauern verdecken die anderen Gänge, die Kamera kommt näher,
+und die Karte zeigt den Irrgarten als einen Block. Kein Gegner steht dort von Anfang an: Die Untoten stecken in Vasen,
+Kisten und Truhen, kommen genau in deren Gang heraus und jagen nur, was sie sehen. Die Werte stehen in
+`assets/data/world_maze.json`. `tools/krypta_dungeon/mazes/build_mazes.js` baut die Labyrinthe, auch hier nur die genannten
+Räume mit `--write`.
+
 Die Pläne stehen in `tools/krypta_dungeon/jump_puzzles/rooms/`, `build.js` baut und prüft sie, `solver.js` spielt jeden
 Raum durch (Würfe, Gruben, Platten, Tore, Schlüssel) und meldet Lösungsweg, Türen ohne freien Weg, Stellen ohne Rückweg
 und Endlosschleifen. `node tools/krypta_dungeon/jump_puzzles/solver.js <raum.json>` prüft auch einen selbst gebauten Raum.

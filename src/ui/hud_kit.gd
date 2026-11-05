@@ -681,12 +681,12 @@ static func toast(canvas: CanvasItem, font: Font, screen: Vector2, y: float, val
 static func inscription(canvas: CanvasItem, font: Font, screen: Vector2, title: String, value: String) -> Rect2:
 	var body := int(HudStyle.size("font_body"))
 	var small := maxi(10, body - 4)
-	var most := minf(rule("inscription_width", 640.0), screen.x - 2.0 * HudStyle.size("margin"))
+	var most := minf(rule("inscription_width", 820.0), screen.x - 2.0 * HudStyle.size("margin"))
 	# a line break in the text starts a new line (a riddle's verses)
 	var lines: Array[String] = []
 	for verse: String in value.split("\n"):
-		lines.append_array(_wrap(font, verse, body, most - 40.0, int(rule("inscription_lines", 7.0))))
-	lines = lines.slice(0, int(rule("inscription_lines", 7.0)))
+		lines.append_array(_wrap(font, verse, body, most - 40.0, int(rule("inscription_lines", 9.0))))
+	lines = lines.slice(0, int(rule("inscription_lines", 9.0)))
 	var width := HudStyle.width(font, title, small)
 	for line: String in lines: width = maxf(width, HudStyle.width(font, line, body))
 	var line_h := float(body) + 8.0

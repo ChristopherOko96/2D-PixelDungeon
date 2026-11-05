@@ -481,6 +481,10 @@ func update(dt: float) -> void:
 				_taunt_at = drawn
 		var to: Vector2 = _aim_goal() - m.p
 		var d := maxf(to.length(), 1.0)
+		# in a labyrinth it chases only what it sees: near enough and no wall between (world_maze.json)
+		if float(m.get("sight", 0.0)) > 0.0 and _taunt_at == Vector2.INF and _mad_on.is_empty():
+			if d > float(m.sight) or not g.clear_line(m.p - Vector2(0.0, 20.0), me - Vector2(0.0, 20.0)):
+				held = true
 		var v := Vector2.ZERO
 		if bool(m.get("ai_off", false)):
 			# a training dummy of the debug Testraum (src/debug/story_testraum_tools.gd): no act, no walking

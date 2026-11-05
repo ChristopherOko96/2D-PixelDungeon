@@ -286,6 +286,8 @@ func build_raw(n: int, run: int) -> Dictionary:
 	if not by_hand:
 		enemies = []
 	var title := str(room.get("title", "Raum"))
+	# a labyrinth's dark part, in the floor's cells (room_floor.gd maze_zone)
+	var zone: Array = RoomFloor.maze_zone(room, Vector2i(MARGIN, MARGIN)) if bool(room.get("maze", false)) else []
 	var kind_name := str(Data.ROLES.get(str(room.get("role", "combat")), "Raum")).to_upper()
 	return {"n": n, "title": title, "circle": str(Data.WORLDS[str(room.world)].name), "final": false,
 		"seed": WorldPack.floor_seed(run, n), "run": run, "cell": int(C), "cols": cols, "rows": rows, "theme": look,
@@ -293,7 +295,7 @@ func build_raw(n: int, run: int) -> Dictionary:
 		"grid": grid_text, "holes": _holes(grid, cols, rows), "tiles": tile_text, "tile_names": tile_names, "room_at": room_at, "quick": -1,
 		"rooms": [{"index": 0, "id": str(room.id), "name": title, "kind": kind_name, "type": "start", "gtype": "start", "icon": "", "icon_key": "",
 			"bx": MARGIN, "by": MARGIN, "bw": w, "bh": h, "mobs": 0 if by_hand else int(room.get("auto_mobs", 0)), "spawn": [start.x, start.y], "drop": "", "reward": null,
-			"cleared": true, "info": title, "on_path": true, "seq": false, "tidy": true, "placed_mobs": enemies}],
+			"cleared": true, "info": title, "on_path": true, "seq": false, "tidy": true, "placed_mobs": enemies, "maze_zone": zone}],
 		"doors": doors, "groups": groups, "ents": ents, "props": props, "decals": decals, "wall_decor": wall_decor, "lights": lights,
 		"areas": areas, "pit_cells": pit_cells, "passages": passages, "doorways": _doorways()}
 

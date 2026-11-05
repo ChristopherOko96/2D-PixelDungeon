@@ -513,6 +513,10 @@ static func _assemble(n: int, P: Dictionary, plan: Dictionary, picks: Dictionary
 		if str(r.gtype) == "jump":
 			r.kind = str(t.get("kind_label", "Sprungrätsel"))
 			r.info = "Kein Kampf. Sieh dir an, wohin die Platten werfen, bevor du sie betrittst."
+			# a labyrinth: its maze part turns dark (hell_game.gd maze darkness), its dead hide in the pieces
+			if bool(t.get("maze", false)):
+				r.maze_zone = maze_zone(t, r.origin)
+				r.info = "Ein Irrgarten. Außen führt ein Gang vorbei, drinnen ist es dunkel."
 		by_id[r.id] = r
 		_stamp_cells(W, r, t)
 	for spec: Dictionary in plan.doors:
@@ -729,6 +733,15 @@ static func _set_enemies(r: Dictionary, t: Dictionary, placed: Array) -> void:
 	elif not r.has("drop") and not r.has("reward") and str(r.gtype) != "shrine":
 		r.mobs = 0
 		r.cleared = true
+
+
+## The dark part of labyrinth file `t` (its maze_zone: row runs [x0, y, x1, y] in room cells) in the
+## floor's cells, moved to the room's place `origin`.
+static func maze_zone(t: Dictionary, origin: Vector2i) -> Array:
+	var out: Array = []
+	for run: Array in t.get("maze_zone", []):
+		out.append([int(run[0]) + origin.x, int(run[1]) + origin.y, int(run[2]) + origin.x, int(run[3]) + origin.y])
+	return out
 
 
 ## The key id a room's own key and lock use on a floor. A jump puzzle's keys belong to its room ("4A"),

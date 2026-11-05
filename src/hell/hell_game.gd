@@ -251,6 +251,9 @@ var zones: Array = []
 var skills: Array = []
 var hold: Dictionary = {}
 var dash: Dictionary = {}
+## How dark the labyrinth around the hero is now (0 outside a maze zone, 1 deep inside; world_maze.json).
+var maze_dark := 0.0
+const MAZE_PATH := "res://assets/data/world_maze.json"
 var fx: Array = []
 var levelfx: Dictionary = {}
 var gwalls: Array = []
@@ -630,11 +633,16 @@ func release_room_enemies(ids: Array, at: Vector2, room: int) -> void:
 	var count := 0
 	for id: Variant in ids.slice(0, int(RoomContents.cfg().get("max_enemies", 2))):
 		var kind := _floor_enemy() if str(id) == "random" else str(id)
+		# out in the very corridor of the piece, never in or behind a wall
+		var spot := corridor_spot(room, at, count)
 		if monsters != null and (monsters.defs as Dictionary).has(kind):
-			monsters.spawn(room, monsters.free_spot(room, at, 70.0, 200.0), kind)
+			var m: Dictionary = monsters.spawn(room, spot, kind)
+			# in a labyrinth it chases only what it sees (hell_monsters.gd sight)
+			if W.rooms[room].has("maze_zone"):
+				m.sight = float(maze_cfg().get("monster_sight_cells", 6)) * C
 			count += 1
 		elif theme.has("mobs") and (theme.mobs as Dictionary).has(kind):
-			_spawn_mob(room, free_floor(room, at, 70.0, 200.0), kind)
+			_spawn_mob(room, spot, kind)
 			count += 1
 	if count == 0:
 		return
@@ -1265,8 +1273,17 @@ func _minimap_shape(r: Dictionary) -> Dictionary:
 	var rects: Array[Rect2] = []
 	var edges := PackedVector2Array()
 	var cols: int = W.cols
-	var run := Rect2()
+	# a labyrinth shows as one block: its corridors are for the hero to find
+	var own := {}
 	for c: Vector2i in r.cells:
+		own[c] = true
+	for run_cells: Array in r.get("maze_zone", []):
+		for x in range(int(run_cells[0]), int(run_cells[2]) + 1):
+			own[Vector2i(x, int(run_cells[1]))] = true
+	var cells: Array = own.keys()
+	cells.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return a.y < b.y or (a.y == b.y and a.x < b.x))
+	var run := Rect2()
+	for c: Vector2i in cells:
 		if run.size.x > 0.0 and int(run.position.y) == c.y and int(run.end.x) == c.x:
 			run.size.x += 1.0
 		else:
@@ -1275,10 +1292,10 @@ func _minimap_shape(r: Dictionary) -> Dictionary:
 			run = Rect2(c.x, c.y, 1, 1)
 	if run.size.x > 0.0:
 		rects.append(run)
-	for c: Vector2i in r.cells:
+	for c: Vector2i in cells:
 		for side: Vector2i in [Vector2i(0, -1), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(1, 0)]:
 			var n := c + side
-			var outside: bool = n.x < 0 or n.y < 0 or n.x >= cols or n.y >= W.rows or W.room_at[n.y * cols + n.x] != r.index
+			var outside: bool = not own.has(n)
 			if not outside:
 				continue
 			var a := Vector2(c.x + (1 if side.x > 0 else 0), c.y + (1 if side.y > 0 else 0))
@@ -1427,6 +1444,65 @@ func _room_at_world(x: float, y: float) -> int:
 ## A spot of free floor in room `room` between min_d and max_d px from `near` (no wall, prop or
 ## liquid under a 60 x 30 px foot); `near` when none is found. The worlds without hell monsters
 ## (the Frostgruft) place their spawns with it, as hell_monsters.gd free_spot does.
+## The labyrinth values (assets/data/world_maze.json).
+func maze_cfg() -> Dictionary:
+	return DataCache.load_dict(MAZE_PATH)
+
+
+## True while the hero stands in the dark part of his room (its maze_zone, row runs of cells).
+func in_maze() -> bool:
+	if W.is_empty() or state.is_empty() or int(state.room) < 0 or int(state.room) >= (W.rooms as Array).size():
+		return false
+	var zone: Array = (W.rooms[state.room] as Dictionary).get("maze_zone", [])
+	if zone.is_empty():
+		return false
+	var cx := int(floor(player.x / C))
+	var cy := int(floor((player.y - 6.0) / C))
+	for run: Array in zone:
+		if cy == int(run[1]) and cx >= int(run[0]) and cx <= int(run[2]):
+			return true
+	return false
+
+
+## True when nothing but open ground lies on the straight line from a to b (walls block it).
+func clear_line(a: Vector2, b: Vector2) -> bool:
+	var steps := int(a.distance_to(b) / 16.0)
+	for k in range(1, steps):
+		var p := a.lerp(b, float(k) / float(steps))
+		if _cell(int(floor(p.x / C)), int(floor(p.y / C))) == 0:
+			return false
+	return true
+
+
+## Where the `k`-th enemy let out at `at` stands: on free ground of room `room` reached from `at` along
+## the floor (never through a wall), nearest first, within world_maze.json spawn_cells; the old free
+## spot around `at` when the piece stands somewhere open.
+func corridor_spot(room: int, at: Vector2, k: int) -> Vector2:
+	var start := Vector2i(int(floor(at.x / C)), int(floor((at.y - 10.0) / C)))
+	var reach := int(maze_cfg().get("spawn_cells", 3))
+	var seen := {start: 0}
+	var order: Array[Vector2i] = []
+	var todo: Array[Vector2i] = [start]
+	while not todo.is_empty():
+		var c: Vector2i = todo.pop_front()
+		if int(seen[c]) >= reach:
+			continue
+		for n: Vector2i in [c + Vector2i(1, 0), c + Vector2i(-1, 0), c + Vector2i(0, 1), c + Vector2i(0, -1)]:
+			if seen.has(n) or _cell(n.x, n.y) != 1 or _room_at_world((n.x + 0.5) * C, (n.y + 0.5) * C) != room:
+				continue
+			seen[n] = int(seen[c]) + 1
+			var p := Vector2((n.x + 0.5) * C, (n.y + 0.7) * C)
+			if pit_at(p):
+				continue
+			todo.append(n)
+			if not box_blocked(Rect2(p.x - 30, p.y - 30, 60, 30), true):
+				order.append(n)
+	if order.is_empty():
+		return free_floor(room, at, 70.0, 200.0)
+	var c := order[k % order.size()]
+	return Vector2((c.x + 0.5) * C, (c.y + 0.7) * C)
+
+
 func free_floor(room: int, near: Vector2, min_d: float, max_d: float) -> Vector2:
 	for k in range(40):
 		var p := near + Vector2.from_angle(randf() * TAU) * randf_range(min_d, max_d)
@@ -4228,6 +4304,9 @@ func _update_camera(dt: float) -> void:
 		"view": view, "shake": shake, "t": float(state.t)})
 	camera.position = cam_rig.position
 	camera.zoom = Vector2.ONE * float(balance.view.base_width) / float(balance.view.width) * float(cam_rig.zoom)
+	# in a labyrinth the darkness closes in and the camera comes a little nearer
+	maze_dark = move_toward(maze_dark, 1.0 if in_maze() else 0.0, dt * float(maze_cfg().get("fade", 2.5)))
+	camera.zoom *= lerpf(1.0, float(maze_cfg().get("zoom", 1.2)), maze_dark)
 	# view_shift: the view sits lower so the skill bar covers none of the fight
 	camera.offset = cam_rig.offset + cam_rig.view_shift
 
@@ -5493,6 +5572,9 @@ func _draw_hud(h: Control) -> void:
 		h.draw_rect(Rect2(Vector2.ZERO, size), Color(1, 0.925, 0.82, minf(1.0, state.white)))
 	# blindness darkens the view around the hero, under the HUD panels
 	FrostCombat.draw_hud(self, h, size)
+	# a labyrinth: dark beyond what the hero sees, walls stop the view
+	if maze_dark > 0.0:
+		_draw_maze_dark(h, size)
 	# the life shown, for the status sheet too (src/hell/frost_hud.gd reads state.hp_f)
 	state.hp_f = hp_f()
 	_windows = _window_open()
@@ -5683,6 +5765,41 @@ func _draw_floor_panel(h: Control, size: Vector2, boss_up: bool) -> void:
 
 ## The one toast on screen: bottom left above the skill bar's row, clear of the
 ## hero and the resource bar, fading in and out.
+## The labyrinth's dark (maze_dark): from the hero rays run over the floor until a wall stops them
+## (or sight_cells); beyond the rays everything is black, and towards their end the light fades out.
+## Walls hide the corridors behind them, so the hero sees only the way he stands in.
+func _draw_maze_dark(h: Control, size: Vector2) -> void:
+	var cfg := maze_cfg()
+	var eye := Vector2(player.x, player.y - 30.0)
+	var reach := float(cfg.get("sight_cells", 4.2)) * C
+	var soft := float(cfg.get("soft_from", 0.5))
+	var rays := int(cfg.get("rays", 180))
+	var black := Color(0.0, 0.0, 0.0, float(cfg.get("dark", 0.96)) * maze_dark)
+	var clear := Color(black, 0.0)
+	var far_px := size.length()
+	var near_pts: Array[Vector2] = []
+	var hit_pts: Array[Vector2] = []
+	var far_pts: Array[Vector2] = []
+	var centre := _to_screen(eye, size)
+	for k in range(rays + 1):
+		var dir := Vector2.from_angle(TAU * float(k) / float(rays))
+		var d := 0.0
+		while d < reach:
+			var p := eye + dir * d
+			if _cell(int(floor(p.x / C)), int(floor(p.y / C))) == 0:
+				# a wall: its face is still seen
+				d = minf(d + 40.0, reach)
+				break
+			d += 12.0
+		var hit := _to_screen(eye + dir * minf(d, reach), size)
+		hit_pts.append(hit)
+		near_pts.append(centre + (hit - centre) * soft)
+		far_pts.append(centre + dir * far_px)
+	for k in range(rays):
+		h.draw_polygon(PackedVector2Array([hit_pts[k], hit_pts[k + 1], far_pts[k + 1], far_pts[k]]), PackedColorArray([black, black, black, black]))
+		h.draw_polygon(PackedVector2Array([near_pts[k], near_pts[k + 1], hit_pts[k + 1], hit_pts[k]]), PackedColorArray([clear, clear, black, black]))
+
+
 func _draw_toast(h: Control, size: Vector2) -> void:
 	var queue: Array = state.toasts
 	if queue.is_empty():
