@@ -40,6 +40,15 @@ func _place(c: Array) -> void:
 	game.place_player(_centre(c))
 
 
+## Waits until the game's puzzle step has seen the hero on cell c: the fixed 60 Hz story clock may run no
+## step in a frame, and a cell left unseen would be one long step to the next (ember counts it by its end).
+func _seen(c: Array) -> void:
+	for i in range(30):
+		if game.frost_puzzles.last_cell == Vector2i(int(c[0]) + M, int(c[1]) + M):
+			return
+		await _frames(1)
+
+
 func _cell() -> Vector2i:
 	var p: Vector2i = game.player_cell()
 	return p - Vector2i(M, M)
@@ -86,16 +95,21 @@ func _room(id: String, steps: Array) -> void:
 		if st.has("at"):
 			_place(st.at)
 			await _frames(3)
+			await _seen(st.at)
 		elif st.has("walk"):
 			for c: Array in st.walk:
 				_place(c)
 				await _frames(2)
+				await _seen(c)
+				if OS.get_environment("FR_DEBUG") != "":
+					print("  at ", c, " cell ", _cell(), " seen ", game.frost_puzzles.last_cell - Vector2i(M, M), " carry ", game.frost_puzzles.carry.get("left", "-"))
 				if _cell() != Vector2i(int(c[0]), int(c[1])):
 					_fail("step %d: walking to %s the hero stands at %s (fell?)" % [k, str(c), str(_cell())])
 					break
 		elif st.has("use"):
 			_place(st.use)
 			await _frames(2)
+			await _seen(st.use)
 			var near: Dictionary = game._nearest()
 			var label := str(near.get("label", ""))
 			if st.has("what") and not label.begins_with(str(st.what)):
@@ -106,6 +120,7 @@ func _room(id: String, steps: Array) -> void:
 		elif st.has("push"):
 			_place(st.push)
 			await _frames(2)
+			await _seen(st.push)
 			var before := _pieces()
 			var key: Key = KEYS[str(st.dir)]
 			_key(key, true)
