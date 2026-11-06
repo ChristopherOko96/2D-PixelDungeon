@@ -1,6 +1,9 @@
 {
   "_doc": "Story camera (src/hell/story_camera.gd): follow, lead, fight framing, zoom breathing, ultimate punch, impact kick. Distances in world px, rates per second (exponential smoothing 1 - exp(-rate * dt)), zoom values multiply the base zoom.",
   "follow_rate": 6.5,
+  "_pixel_doc": "Pixel skins retain the base zoom and snap the combined camera translation in physical screen pixels, including window stretch. HD keeps breathing/punch zoom. teleport_distance is the maximum per-tick world-pixel displacement to interpolate; larger jumps snap. Rendering lags simulation by up to one fixed tick; gameplay positions are never changed.",
+  "pixel": {"fixed_zoom": true, "snap_translation": true},
+  "presentation": {"teleport_distance": 192.0},
   "snap_distance": 1400.0,
   "velocity_rate": 8.0,
   "max_offset": 240.0,

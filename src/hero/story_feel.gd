@@ -503,15 +503,7 @@ func update(dt: float) -> void:
 		hero_event("level_up", {"r": 48.0})
 	_level = level
 	_count_casts()
-	var enemies: Array = []
-	var seen := {}
-	for f: Dictionary in _fallen:
-		enemies.append(f.m.feel_e)
-		seen[int(f.m.feel_e.id)] = true
-	for m: Dictionary in g.mobs:
-		var e := _enemy(m)
-		if not seen.has(int(e.id)):
-			enemies.append(e)
+	var enemies := _feedback_enemies()
 	# phase and team level drive the crypt's room clear, defeat and level-up stingers
 	feedback.observe({"room_layout": {"id": "story"}, "floor_index": int(g.state.get("floor", 0)), "room_serial": _serial,
 		"phase": StorySound.phase(g), "team": {"level": level}, "enemies": enemies, "players": {1: _hero()}, "fx_events": _events, "perk_events": _perks}, 1)
@@ -527,6 +519,20 @@ func update(dt: float) -> void:
 
 
 # --- poses for the world's drawing ------------------------------------------------------
+
+func _feedback_enemies() -> Array:
+	var enemies: Array = []
+	var seen := {}
+	for f: Dictionary in _fallen:
+		enemies.append(f.m.feel_e)
+		seen[int(f.m.feel_e.id)] = true
+	for m: Dictionary in g.mobs:
+		# A falling body already owns its detached death view. Rebuilding its
+		# live view here both wastes work and overwrites dying_p used by rigs.
+		if seen.has(int(m.get("feel_id", -1))):
+			continue
+		enemies.append(_enemy(m))
+	return enemies
 
 ## The crypt pose of monster `m` (scale, lean, offset in world px, alpha, flash).
 func pose(m: Dictionary) -> Dictionary:

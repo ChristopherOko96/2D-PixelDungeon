@@ -141,11 +141,17 @@ func _process(dt: float) -> void:
 	var s := _screen()
 	var w := wind()
 	var st := storm()
+	# the settings each flake reads, read once (the same numbers in the same sums as before)
+	var fall_a := float(cfg.fall[0])
+	var fall_b := float(cfg.fall[1])
+	var fall_k := 1.0 - st * 0.35
+	var sway_k := 1.0 - st * 0.6
+	var shift := _cam_shift
 	for f: Dictionary in _flakes:
 		var d: float = f.d
-		var fall := lerpf(float(cfg.fall[0]), float(cfg.fall[1]), d) * (1.0 - st * 0.35)
-		var sway := sin(_t * float(f.rate) + float(f.sway)) * 18.0 * (1.0 - st * 0.6)
-		f.p += Vector2(w.x * (0.5 + d * 0.7) + sway, fall + w.y) * dt - _cam_shift * (0.35 + 0.65 * d)
+		var fall := lerpf(fall_a, fall_b, d) * fall_k
+		var sway := sin(_t * float(f.rate) + float(f.sway)) * 18.0 * sway_k
+		f.p += Vector2(w.x * (0.5 + d * 0.7) + sway, fall + w.y) * dt - shift * (0.35 + 0.65 * d)
 		# off one edge: back in at the opposite one
 		if f.p.y > s.y + 8.0:
 			f.p = Vector2(_rng.randf() * s.x, -6.0)
@@ -191,11 +197,15 @@ func _draw() -> void:
 			draw_rect(Rect2(p + Vector2(seg * k, px), Vector2(snappedf(seg, px), px)), Color(0.42, 0.56, 0.8, a * 0.8 * fade))
 			draw_rect(Rect2(p + Vector2(seg * k, 0), Vector2(snappedf(seg, px), px)), Color(0.9, 0.95, 1.0, a * fade))
 	var n_flakes := int(cfg.flakes) + int(round(float(cfg.storm_flakes) * st))
+	var size_a := float(cfg.size[0])
+	var size_b := float(cfg.size[1])
+	var alpha_a := float(cfg.alpha[0])
+	var alpha_b := float(cfg.alpha[1])
 	for i in range(mini(n_flakes, _flakes.size())):
 		var f: Dictionary = _flakes[i]
 		var d: float = f.d
-		var size := maxf(px, snappedf(lerpf(float(cfg.size[0]), float(cfg.size[1]), d), px))
-		var a := lerpf(float(cfg.alpha[0]), float(cfg.alpha[1]), d)
+		var size := maxf(px, snappedf(lerpf(size_a, size_b, d), px))
+		var a := lerpf(alpha_a, alpha_b, d)
 		var p := Vector2(snappedf(f.p.x, px), snappedf(f.p.y, px))
 		var col := Color(0.93, 0.97, 1.0, a)
 		draw_rect(Rect2(p, Vector2(size, size)), col)

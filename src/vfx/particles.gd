@@ -160,6 +160,8 @@ var _liquids: Array = []
 ## landing ticks of _settle; null keeps the particles silent (tests, the crypt).
 var sound: Object = null
 const STEPS := [Vector2i.LEFT, Vector2i.RIGHT, Vector2i.UP, Vector2i.DOWN]
+## The wall boxes of a cell without any (solid): one shared empty list, read only.
+const _NO_WALLS: Array = []
 
 
 func _init() -> void:
@@ -228,8 +230,10 @@ func sees(from: Vector2, to: Vector2, seen: Dictionary = {}) -> bool:
 ## True when `point` (world px) is inside a wall. Without a room every point is open.
 func solid(point: Vector2) -> bool:
 	if _floor_bounds.has_area() and not _floor_bounds.has_point(point): return true
-	for wall: Rect2 in _floor_walls.get(Vector2i((point/32).floor()),[]):
-		if wall.has_point(point): return true
+	# the story worlds have no wall boxes: no lookup there, and no empty default array per call
+	if not _floor_walls.is_empty():
+		for wall: Rect2 in _floor_walls.get(Vector2i((point/32).floor()), _NO_WALLS):
+			if wall.has_point(point): return true
 	if _walkable.is_empty(): return false
 	var cell := Vector2i(floori(point.x / 32.0), floori(point.y / 32.0))
 	return not _walkable.has(cell) or blocked_cells.has(cell)
@@ -292,6 +296,35 @@ func emit(origin: Vector2, velocity: Vector2, color: Color, life: float, mode: S
 	if bool(settings_for_mode.get("melts", false)): particle.melts = true
 	_particles.append(particle)
 	return particle
+
+
+## The vfx_particles.json values _move reads for every particle, read once per update
+## (_step_settings); _data never changes while the particles move.
+var _wall_bounce := 0.4
+var _wind_air := 1.5
+var _bounce_min := 70.0
+var _bounce := 0.35
+var _ground_friction := 9.0
+var _z_ease: Variant = 5.0
+var _ice_shatter := 150.0
+var _ice_scratch := 0.0
+var _ice_bounce := 0.15
+var _ice_slide := 280.0
+var _ice_friction := 1.4
+
+
+func _step_settings() -> void:
+	_wall_bounce = float(_data.get("wall_bounce", 0.4))
+	_wind_air = float(_data.get("wind_air", 1.5))
+	_bounce_min = float(_data.get("bounce_min", 70))
+	_bounce = float(_data.get("bounce", 0.35))
+	_ground_friction = float(_data.get("ground_friction", 9))
+	_z_ease = _data.get("z_ease", 5.0)
+	_ice_shatter = _ice("shatter_speed", 150.0)
+	_ice_scratch = _ice("scratch_every", 0.0)
+	_ice_bounce = _ice("bounce", 0.15)
+	_ice_slide = _ice("slide_decel", 280.0)
+	_ice_friction = _ice("friction", 1.4)
 
 
 func _mode(mode: String) -> Dictionary:
@@ -2015,17 +2048,19 @@ func update(delta: float) -> void:
 	_burn_embers(delta)
 	_melt()
 	var settle_speed := float(_data.get("settle_speed", 12))
+	_step_settings()
 	for i in range(_particles.size() - 1, -1, -1):
 		var particle: Dictionary = _particles[i]
-		particle.life = float(particle.life) - delta
+		var life := float(particle.life) - delta
+		particle.life = life
 		var grounded: bool = float(particle.z) <= 0.0 and float(particle.vz) <= 0.0
 		if bool(particle.settle):
 			# Debris lives until it lies still on the floor, then becomes part of it.
-			if grounded and (Vector2(particle.vel).length() < settle_speed or float(particle.life) <= 0.0):
+			if grounded and (Vector2(particle.vel).length() < settle_speed or life <= 0.0):
 				_settle(particle)
 				_particles.remove_at(i)
 				continue
-			if float(particle.life) < -2.0:
+			if life < -2.0:
 				_particles.remove_at(i)
 				continue
 		elif particle.has("shaft") and float(particle.z) <= 0.5:
@@ -2034,7 +2069,7 @@ func update(delta: float) -> void:
 			star.plus = true
 			_particles.remove_at(i)
 			continue
-		elif float(particle.life) <= 0.0:
+		elif life <= 0.0:
 			# a soul comet puffs into motes where it arrives
 			if particle.has("pop"):
 				var pop: Array = particle.pop
@@ -2065,10 +2100,14 @@ func _move(particle: Dictionary, delta: float) -> void:
 		var steps := ceili(velocity.length()*delta/8.0)
 		for i in range(steps): _move(particle,delta/steps)
 		return
+	# its mode's settings and its kind, looked up once (_mode is a pure lookup, nothing here
+	# changes the particle's mode or whether it is a shard)
+	var spec := _mode(str(particle.get("mode", "")))
+	var shard := particle.has("shard")
 	if wind != Vector2.ZERO and float(particle.z) > 0.5:
-		var share := float(_mode(str(particle.get("mode", ""))).get("wind", 0.0))
+		var share := float(spec.get("wind", 0.0))
 		if share > 0.0:
-			velocity += (wind * share - velocity) * minf(1.0, float(_data.get("wind_air", 1.5)) * delta)
+			velocity += (wind * share - velocity) * minf(1.0, _wind_air * delta)
 	var next := position + velocity * delta
 	# a comet's blob flying high passes over the walls on its arc (it lands on the gameplay spot)
 	var over_walls := particle.has("splash") and float(particle.z) > 24.0
@@ -2077,12 +2116,12 @@ func _move(particle: Dictionary, delta: float) -> void:
 		if not solid(next): particle.free = false
 	elif not over_walls and solid(next):
 		# a shard hitting a wall hard breaks; a slow one clinks off it
-		if particle.has("shard") and velocity.length() > _ice("shatter_speed", 150.0) and int(particle.len) > 1:
+		if shard and velocity.length() > _ice_shatter and int(particle.len) > 1:
 			particle.burst = true
-		var keep := float(_data.get("wall_bounce", 0.4))
+		var keep := _wall_bounce
 		# flame, smoke and motes slide along a wall instead of bouncing off it (modes wall "slide",
 		# physics plan F1): the part into the wall is gone, the part along it stays
-		var slide := str(_mode(str(particle.get("mode", ""))).get("wall", "bounce")) == "slide"
+		var slide := str(spec.get("wall", "bounce")) == "slide"
 		if not solid(Vector2(next.x, position.y)):
 			next = Vector2(next.x, position.y)
 			velocity.y = 0.0 if slide else -velocity.y * keep
@@ -2093,7 +2132,7 @@ func _move(particle: Dictionary, delta: float) -> void:
 			next = position
 			velocity = Vector2.ZERO if slide else -velocity * keep
 	particle.pos = next
-	if particle.has("shard"):
+	if shard:
 		if float(particle.z) > 0.5:
 			# a flying shard turns in steps, one facing at a time
 			particle.turn = float(particle.get("turn", 0.0)) + delta * 12.0
@@ -2107,7 +2146,7 @@ func _move(particle: Dictionary, delta: float) -> void:
 				particle.turn = float(particle.turn) - 1.0
 				particle.shard = posmod(int(particle.shard) + int(particle.spin), 8)
 			# a frost trail only when asked for (scratch_every 0: none)
-			var every := _ice("scratch_every", 0.0)
+			var every := _ice_scratch
 			if every > 0.0:
 				particle.scratch = float(particle.get("scratch", 0.0)) + velocity.length() * delta
 				if float(particle.scratch) >= every:
@@ -2117,7 +2156,7 @@ func _move(particle: Dictionary, delta: float) -> void:
 	if gravity != 0.0:
 		# the height on its exact arc (z += vz dt - g dt^2 / 2): comets land where they were aimed,
 		# not early and short (physics plan F9)
-		var air := float(_mode(str(particle.get("mode", ""))).get("air", 0.0))
+		var air := float(spec.get("air", 0.0))
 		if air > 0.0 and not particle.has("splash"):
 			# light matter meets the air (modes air 1/s, physics plan F2): it falls or rises no
 			# faster than gravity / air, smoke and embers no longer shoot up for ever
@@ -2137,13 +2176,12 @@ func _move(particle: Dictionary, delta: float) -> void:
 			particle.z = 0.0
 			# a drop splats where it lands instead of bouncing (modes floor "splat", F1): it stays
 			# down, slows hard and lies as a floor pixel
-			if str(_mode(str(particle.get("mode", ""))).get("floor", "bounce")) == "splat":
+			if str(spec.get("floor", "bounce")) == "splat":
 				particle.vz = 0.0
 				velocity *= 0.15
-			elif float(particle.vz) < -float(_data.get("bounce_min", 70)):
+			elif float(particle.vz) < -_bounce_min:
 				# ice hardly bounces and keeps sliding
-				var shard := particle.has("shard")
-				particle.vz = -float(particle.vz) * (_ice("bounce", 0.15) if shard else float(_data.get("bounce", 0.35)))
+				particle.vz = -float(particle.vz) * (_ice_bounce if shard else _bounce)
 				velocity *= 0.9 if shard else 0.6
 				# where ice strikes the floor it leaves a fleck of frost
 				if shard:
@@ -2157,14 +2195,14 @@ func _move(particle: Dictionary, delta: float) -> void:
 				particle.vz = 0.0
 	elif particle.has("z_to"):
 		# weightless matter sinks (or rises) to the height it is pulled to
-		particle.z = lerpf(float(particle.z), float(particle.z_to), 1.0 - exp(-float(particle.get("z_ease",_data.get("z_ease",5.0))) * delta))
+		particle.z = lerpf(float(particle.z), float(particle.z_to), 1.0 - exp(-float(particle.get("z_ease", _z_ease)) * delta))
 	var on_floor: bool = float(particle.z) <= 0.0 and float(particle.vz) == 0.0 and gravity > 0.0
-	if on_floor and particle.has("shard"):
+	if on_floor and shard:
 		# ice on stone: an even grip (dry friction), so it skids a short way and stops
 		var speed := velocity.length()
 		if speed > 0.01:
-			velocity *= maxf(0.0, speed - _ice("slide_decel", 280.0) * delta) / speed
-	var friction := _ice("friction", 1.4) if particle.has("shard") else (18.0 if particle.has("rock") else float(_data.get("ground_friction", 9)))
+			velocity *= maxf(0.0, speed - _ice_slide * delta) / speed
+	var friction := _ice_friction if shard else (18.0 if particle.has("rock") else _ground_friction)
 	var drag := float(particle.drag) + (friction if on_floor else 0.0)
 	particle.vel = velocity * maxf(0.0, 1.0 - drag * delta)
 
@@ -2326,9 +2364,18 @@ var _low_i := 0
 ## Collects this frame's low matter, sorted by its floor point's y, for draw_band.
 func begin_bands() -> void:
 	var high := float(_data.get("depth_high", 26.0))
-	_low = _particles.filter(func(p: Dictionary) -> bool: return float(p.z) <= high)
-	_low.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float((a.pos as Vector2).y) < float((b.pos as Vector2).y))
+	# a loop instead of filter and a comparison without conversions: the same particles in the
+	# same order (the same sort sees the same comparisons), only cheaper every frame
+	_low = []
+	for p: Dictionary in _particles:
+		if float(p.z) <= high: _low.append(p)
+	_low.sort_custom(_floor_y_before)
 	_low_i = 0
+
+
+## Sort order of the depth bands: the floor point further up first.
+static func _floor_y_before(a: Dictionary, b: Dictionary) -> bool:
+	return (a.pos as Vector2).y < (b.pos as Vector2).y
 
 
 ## Draws the low matter whose floor point lies above `to_y` (particle px) and not drawn yet.
@@ -2336,20 +2383,23 @@ func draw_band(canvas: CanvasItem, to_y: float) -> void:
 	var start := _low_i
 	while _low_i < _low.size() and float((_low[_low_i].pos as Vector2).y) < to_y:
 		_low_i += 1
-	if _low_i > start: draw_particles(canvas, _low.slice(start, _low_i), 1)
+	if _low_i > start: draw_particles(canvas, _low, 1, start, _low_i)
 
 
 ## The particles over the actors. `part` 0: all of them; 1: only `only` (a depth band, without the
 ## rime tips and implosions); 2: only matter higher than depth_high (the rest is in the bands).
-func draw_particles(canvas: CanvasItem, only: Array = [], part := 0) -> void:
+## `from`/`to`: only that index range of the list (a band without copying it); -1 to the end.
+func draw_particles(canvas: CanvasItem, only: Array = [], part := 0, from := 0, to := -1) -> void:
 	if part != 1:
 		draw_rime_tips(canvas)
 		_draw_implosions(canvas)
 	var beat := int(_time * 12.0)
 	var high := float(_data.get("depth_high", 26.0))
 	var src: Array = only if part == 1 else _particles
+	var stop: int = src.size() if to < 0 else to
 	var soul_heads: Array = []
-	for particle: Dictionary in src:
+	for index in range(from, stop):
+		var particle: Dictionary = src[index]
 		if part == 2 and float(particle.z) <= high: continue
 		var alpha := 1.0
 		if bool(particle.fade): alpha = clampf(float(particle.life) / (float(particle.max_life) * 0.5), 0.0, 1.0)
@@ -2512,18 +2562,30 @@ func draw_glow(canvas: CanvasItem, level: float) -> void:
 	var base := float(spec.get("radius", 3.0))
 	var per := float(spec.get("per_size", 1.0))
 	var cap := float(spec.get("alpha_cap", 0.22))
+	# Glow.dot's own test and rectangle written out here, the soft dot fetched once: the same
+	# lights, without two function calls per glowing particle
+	var dot := Glow.dot_texture()
 	for particle: Dictionary in _particles:
 		if not bool(particle.glow): continue
 		var alpha := clampf(float(particle.life) / (float(particle.max_life) * 0.5), 0.0, 1.0) if bool(particle.fade) else 1.0
 		var point: Vector2 = Vector2(particle.pos) - Vector2(0.0, float(particle.z))
 		# a spark seen against a wall does not light the wall up (no glow through walls)
 		if solid(point): continue
-		Glow.dot(canvas, point, base + float(particle.size) * per, Color(particle.color, minf(cap, float(particle.get("glow_a", 0.32))) * alpha * level))
+		var radius := base + float(particle.size) * per
+		var color := Color(particle.color, minf(cap, float(particle.get("glow_a", 0.32))) * alpha * level)
+		if radius < 1.0 or color.a <= 0.003: continue
+		canvas.draw_texture_rect(dot, Rect2(point - Vector2(radius, radius), Vector2(radius, radius) * 2.0), false, color)
 	var ember_r: Array = spec.get("ember_r", [2.0, 5.0])
 	var ember_a := float(spec.get("ember_alpha", 0.2))
+	var ember_lo := float(ember_r[0])
+	var ember_hi := float(ember_r[1])
 	for ember: Dictionary in _embers:
 		var heat := float(ember.life) / float(ember.max)
-		Glow.dot(canvas, _world(ember.art), lerpf(float(ember_r[0]), float(ember_r[1]), heat), Color(1.0, 0.5, 0.15, ember_a * heat * level))
+		var radius := lerpf(ember_lo, ember_hi, heat)
+		var color := Color(1.0, 0.5, 0.15, ember_a * heat * level)
+		if radius < 1.0 or color.a <= 0.003: continue
+		var point := _world(ember.art)
+		canvas.draw_texture_rect(dot, Rect2(point - Vector2(radius, radius), Vector2(radius, radius) * 2.0), false, color)
 
 
 func count() -> int:

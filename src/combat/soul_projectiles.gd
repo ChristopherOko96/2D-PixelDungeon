@@ -20,6 +20,7 @@ static func step(tc: RefCounted, bullet: Dictionary, delta: float) -> bool:
 	var count := maxi(1, ceili(travel.length() / 2.0))
 	var part := travel / count
 	var body: Variant = tc.game.get("body_parts")
+	var spatial: bool = tc.game.has_method("talent_candidates")
 	for i in range(count):
 		var from: Vector2 = bullet.pos
 		var to := from + part
@@ -30,7 +31,9 @@ static func step(tc: RefCounted, bullet: Dictionary, delta: float) -> bool:
 			impact(tc, bullet)
 			return true
 		bullet.pos = to
-		for enemy: Dictionary in tc._living():
+		var candidates: Array = tc.game.talent_candidates(from,to,radius+32.0) if spatial else tc._living()
+		for enemy: Dictionary in candidates:
+			if float(enemy.hp)<=0.0:continue
 			if int(tc._eid(enemy)) in bullet.get("hit_ids",[]): continue
 			if tc.game.has_method("talent_hittable") and not tc.game.talent_hittable(enemy): continue
 			if Geometry2D.get_closest_point_to_segment(enemy.pos, from, to).distance_to(enemy.pos) > float(enemy.radius) + radius + 32.0: continue

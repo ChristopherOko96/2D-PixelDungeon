@@ -535,6 +535,7 @@ func draw_enemy(canvas: CanvasItem, enemy: Dictionary, point: Vector2) -> float:
 	var rig: Dictionary = library.rig(rig_name)
 	if rig.is_empty(): return NAN
 	var a := _actor(_key(enemy), enemy)
+	a.render_shift = enemy.get("render_shift", Vector2.ZERO)
 	a.rig = rig_name
 	a.moving = bool(enemy.get("moving", false))
 	a.blood_morph = float(enemy.get("blood_morph", 0.0))
@@ -599,6 +600,7 @@ func draw_hero(canvas: CanvasItem, key: String, player: Dictionary, point: Vecto
 	var rig: Dictionary = library.rig(rig_name)
 	if rig.is_empty(): return
 	var a := track_steps(key, player)
+	a.render_shift = player.get("render_shift", Vector2.ZERO)
 	a.rig = rig_name
 	a.alpha_mul = alpha
 	a.size_mul = size
@@ -1182,7 +1184,8 @@ func _hold(rig: Dictionary, a: Dictionary, host: RigHeldHost, feet: Vector2, fac
 	var scale := _actor_scale(rig, a)
 	# the figure standing still: _solve's base for a neutral pose (every part's rest)
 	var rest := _t(feet) * _s(Vector2(face * scale, scale)) * _t(-Vector2(rig.ground))
-	rest.origin = rest.origin.round()
+	var render_shift: Vector2 = a.get("render_shift", Vector2.ZERO)
+	rest.origin = (rest.origin - render_shift).round() + render_shift
 	for item: Dictionary in rig.items:
 		if RigHeld.spec(item).is_empty() or a.lost.has(item.id) or (a.get("shed", {}) as Dictionary).has(item.id): continue
 		var pieces: Array[Dictionary] = host.pieces(str(a.key), item, rest)
@@ -1653,7 +1656,11 @@ func _solve(rig: Dictionary, a: Dictionary, pose: Dictionary, feet: Vector2, fac
 	# axis, 1 -> -1 -> 1, mirrored about the feet.
 	var turn := float(whole.get("turn", 1.0))
 	var base := _t(feet + Vector2(float(whole.dx) * face * S, float(whole.dy) * S)) * _s(Vector2(face * turn * S, S)) * _t(-ground) * _tumble(rig, a) * _t(pivot) * Transform2D(float(whole.rot), Vector2.ZERO) * _s(Vector2(float(whole.sx), float(whole.sy))) * _t(-pivot)
-	if snap_origin: base.origin = base.origin.round()
+	if snap_origin:
+		# Snap the simulation pose first, then add render-only interpolation.
+		# The host can undo that exact shift for hit masks and attack sockets.
+		var render_shift: Vector2 = a.get("render_shift", Vector2.ZERO)
+		base.origin = (base.origin - render_shift).round() + render_shift
 	var world: Dictionary = {"base": base}
 	for part: Dictionary in rig.parts: _part_world(rig, a, pose, world, part.id)
 	if with_items:
@@ -1779,14 +1786,23 @@ func _turned(d: Dictionary, level: int) -> Dictionary:
 	var sn := sin(-theta)
 	var body := PackedInt32Array()
 	body.resize(size * size)
+	# the same sums in the same order as per pixel before; only what a row or the piece shares
+	# is read or worked out once
+	var cx := c.x
+	var cy := c.y
+	var ox := origin.x
+	var oy := origin.y
 	for j in range(size):
 		var qy := float(j) + 0.5 - float(half)
+		var ysn := qy * sn
+		var ycs := qy * cs
+		var row := j * size
 		for i in range(size):
 			var qx := float(i) + 0.5 - float(half)
-			var u := floori((c.x + qx * cs - qy * sn - origin.x) * f)
-			var v := floori((c.y + qx * sn + qy * cs - origin.y) * f)
+			var u := floori((cx + qx * cs - ysn - ox) * f)
+			var v := floori((cy + qx * sn + ycs - oy) * f)
 			if u < 0 or v < 0 or u >= w or v >= h: continue
-			body[j * size + i] = px[v * w + u]
+			body[row + i] = px[v * w + u]
 	# the white silhouette (hot hell debris glows through it), before the ring
 	var white := PackedInt32Array()
 	white.resize(size * size)
@@ -1794,21 +1810,42 @@ func _turned(d: Dictionary, level: int) -> Dictionary:
 		if body[k] != 0: white[k] = -1
 	var ink := _rgba_int(_hex(_rag("outline"), INK))
 	var shape := body.duplicate()
+	# an empty pixel next to a lit one becomes the rim; its neighbours checked right, left, down,
+	# up as before, without a list of them per pixel
 	for j in range(size):
+		var row := j * size
 		for i in range(size):
-			if shape[j * size + i] != 0: continue
-			for n: Vector2i in [Vector2i(i + 1, j), Vector2i(i - 1, j), Vector2i(i, j + 1), Vector2i(i, j - 1)]:
-				if n.x < 0 or n.y < 0 or n.x >= size or n.y >= size: continue
-				var col := shape[n.y * size + n.x]
+			var at := row + i
+			if shape[at] != 0: continue
+			var col := 0
+			if i + 1 < size:
+				col = shape[at + 1]
 				if col != 0 and not _dark_int(col):
-					body[j * size + i] = ink
-					break
+					body[at] = ink
+					continue
+			if i > 0:
+				col = shape[at - 1]
+				if col != 0 and not _dark_int(col):
+					body[at] = ink
+					continue
+			if j + 1 < size:
+				col = shape[at + size]
+				if col != 0 and not _dark_int(col):
+					body[at] = ink
+					continue
+			if j > 0:
+				col = shape[at - size]
+				if col != 0 and not _dark_int(col):
+					body[at] = ink
 	if level > 0:
+		var cut := level * 4
 		for j in range(size):
+			var row := j * size
+			var bayer_row := (j % 4) * 4
 			for i in range(size):
-				if BAYER[(j % 4) * 4 + i % 4] < level * 4:
-					body[j * size + i] = 0
-					white[j * size + i] = 0
+				if BAYER[bayer_row + i % 4] < cut:
+					body[row + i] = 0
+					white[row + i] = 0
 	var out := {"tex": ImageTexture.create_from_image(Image.create_from_data(size, size, false, Image.FORMAT_RGBA8, body.to_byte_array())),
 		"white": ImageTexture.create_from_image(Image.create_from_data(size, size, false, Image.FORMAT_RGBA8, white.to_byte_array())),
 		"half": Vector2(half, half), "theta": theta, "c": c}

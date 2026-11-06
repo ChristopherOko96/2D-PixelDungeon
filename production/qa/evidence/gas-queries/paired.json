@@ -1,0 +1,114 @@
+[
+	{
+		"actors": 128,
+		"after": {
+			"mean_ms": 1.72958928571429,
+			"p95_ms": 2.512
+		},
+		"before": {
+			"mean_ms": 26.0712857142857,
+			"p95_ms": 38.02
+		},
+		"clouds": 0,
+		"dense": false,
+		"exact_match": true,
+		"median_ratio": 0.0654785305551916,
+		"ratio_budget": 1.15
+	},
+	{
+		"actors": 32,
+		"after": {
+			"mean_ms": 8.13358928571429,
+			"p95_ms": 10.002
+		},
+		"before": {
+			"mean_ms": 11.1061964285714,
+			"p95_ms": 14.451
+		},
+		"clouds": 4,
+		"dense": false,
+		"exact_match": true,
+		"median_ratio": 0.739325384693774,
+		"ratio_budget": 1.15
+	},
+	{
+		"actors": 64,
+		"after": {
+			"mean_ms": 20.117,
+			"p95_ms": 25.465
+		},
+		"before": {
+			"mean_ms": 38.0259107142857,
+			"p95_ms": 44.476
+		},
+		"clouds": 12,
+		"dense": false,
+		"exact_match": true,
+		"median_ratio": 0.530644329896907,
+		"ratio_budget": 0.7
+	},
+	{
+		"actors": 128,
+		"after": {
+			"mean_ms": 42.7400357142857,
+			"p95_ms": 49.241
+		},
+		"before": {
+			"mean_ms": 86.4892857142857,
+			"p95_ms": 98.527
+		},
+		"clouds": 12,
+		"dense": false,
+		"exact_match": true,
+		"median_ratio": 0.494241690373206,
+		"ratio_budget": 0.7
+	},
+	{
+		"actors": 128,
+		"after": {
+			"mean_ms": 46.4792321428572,
+			"p95_ms": 59.15
+		},
+		"before": {
+			"mean_ms": 125.709803571429,
+			"p95_ms": 149.814
+		},
+		"clouds": 24,
+		"dense": false,
+		"exact_match": true,
+		"median_ratio": 0.369272702842774,
+		"ratio_budget": 0.7
+	},
+	{
+		"actors": 128,
+		"after": {
+			"mean_ms": 38.8458928571429,
+			"p95_ms": 46.209
+		},
+		"before": {
+			"mean_ms": 38.2148214285714,
+			"p95_ms": 45.032
+		},
+		"clouds": 4,
+		"dense": true,
+		"exact_match": true,
+		"median_ratio": 1.01507706053161,
+		"ratio_budget": 1.15
+	},
+	{
+		"actors": 8,
+		"after": {
+			"mean_ms": 2.751375,
+			"p95_ms": 4.413
+		},
+		"before": {
+			"mean_ms": 2.59039285714286,
+			"p95_ms": 3.819
+		},
+		"clouds": 4,
+		"dense": true,
+		"exact_match": true,
+		"median_ratio": 1.04797535211268,
+		"ratio_budget": 1.15
+	}
+]

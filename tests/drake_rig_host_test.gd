@@ -106,11 +106,33 @@ func _run() -> void:
 		await _test_glow_record_goes_to_the_hook()
 		await _test_sunk_parts_cannot_be_hit()
 		await _test_muzzles_follow_the_pose()
+		await _test_render_translation_keeps_collision_and_sockets()
 	print("DRAKE_RIG_HOST checked=%d failures=%d" % [checked, failures.size()])
 	quit(1 if failures.size() > 0 else 0)
 
 
 # ------------------------------------------------------------------ fixtures
+
+func _test_render_translation_keeps_collision_and_sockets() -> void:
+	for id: String in FORMS:
+		var host := _host()
+		var m := _attached(host, id)
+		host.frame([m], [], 0.0)
+		var foot := _foot(m)
+		await _draw(func() -> void: host.draw(_canvas, m, foot))
+		var candidates: Array = host._candidates(m)
+		var centre: Vector2 = host.centre(m)
+		var socket: Vector2 = host.point(m, "core", Vector2.ZERO)
+		var shift := Vector2(-3.25, 1.75)
+		await _draw(func() -> void: host.draw(_canvas, m, foot + shift, 1.0, Color.WHITE, 0.0, {}, shift))
+		check(host.centre(m).is_equal_approx(centre), id + ": render interpolation leaves collision centre unchanged")
+		check(host.point(m, "core", Vector2.ZERO).is_equal_approx(socket), id + ": attack socket stays authoritative")
+		var moved: Array = host._candidates(m)
+		var same := candidates.size() == moved.size() and not candidates.is_empty()
+		for i in range(mini(candidates.size(), moved.size())):
+			same = same and Transform2D(candidates[i].xform).is_equal_approx(Transform2D(moved[i].xform))
+		check(same, id + ": every animated part keeps its collision transform")
+		check(Vector2(m.p).is_equal_approx(AT), id + ": drawing never moves monster p")
 
 ## A monster dict as hell_monsters.gd spawn() builds it (shared def.stats).
 func _spawn(id: String, boss := true) -> Dictionary:
