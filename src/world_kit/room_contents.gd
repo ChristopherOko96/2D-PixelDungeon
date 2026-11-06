@@ -42,10 +42,14 @@ static func finish_chest(e: Dictionary, o: Dictionary, floor_number: int, roll: 
 		e.erase("exact")
 		e.erase("give")
 	if str((o.get("loot", {}) as Dictionary).get("type", "")) == "hoard":
-		# the Schatz of a solved puzzle: much gold, a heart, several of the game's item rolls
-		var hoard: Dictionary = c.get("hoard", {})
+		# the Schatz of a solved puzzle, by its tier: much gold, a heart, heart containers (hoard_hearts,
+		# taken when opened) and several of the game's item rolls, up to a legendary piece of the class
+		var tier := hoard_tier(o)
+		var hoard: Dictionary = (c.get("hoard", {}) as Dictionary).merged(((c.get("hoard", {}) as Dictionary).get("tiers", {}) as Dictionary).get(str(tier), {}), true)
 		e.loot = {"gems": int(hoard.get("gems_base", 14)) + int(hoard.get("gems_per_floor", 3)) * floor_number, "heart": true}
 		e.hoard = (hoard.get("rolls", ["gold_crate"]) as Array).duplicate()
+		e.hoard_hearts = int(hoard.get("hearts", 1))
+		e.tier = tier
 		e.magic = true
 		e.erase("exact")
 		e.erase("give")
@@ -67,6 +71,13 @@ static func finish_chest(e: Dictionary, o: Dictionary, floor_number: int, roll: 
 	var out := enemies_of(o)
 	if not out.is_empty():
 		e.enemies = out
+
+
+## The tier of Schatz chest `o` (its loot.tier, 1 to the file's highest), the file's default_tier when unset.
+static func hoard_tier(o: Dictionary) -> int:
+	var hoard: Dictionary = cfg().get("hoard", {})
+	var top := maxi(1, (hoard.get("tiers", {}) as Dictionary).size())
+	return clampi(int((o.get("loot", {}) as Dictionary).get("tier", hoard.get("default_tier", 1))), 1, top)
 
 
 ## The stone an Inschrift (part `tablet` at x, y in room px) stands as: a blocking prop of the file's

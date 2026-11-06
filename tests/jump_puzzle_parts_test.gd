@@ -147,7 +147,8 @@ func _test_tablet_is_text_and_stone() -> void:
 func _test_hoard_chest_pays_much() -> void:
 	# Arrange
 	var room := _jump_room([{"kind": "chest", "loot": {"type": "hoard"}}, {"kind": "chest", "loot": {"type": "random"}}])
-	var paid: Dictionary = Contents.cfg().hoard
+	# a Schatz without a tier pays tier 1 (room_contents.gd hoard_tier)
+	var paid: Dictionary = (Contents.cfg().hoard as Dictionary).merged(((Contents.cfg().hoard as Dictionary).get("tiers", {}) as Dictionary).get("1", {}), true)
 	# Act
 	var on_3 := _ents(_raw(room, 3), "chest")
 	var on_7 := _ents(_raw(room, 7), "chest")

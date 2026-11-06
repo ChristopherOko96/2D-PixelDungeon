@@ -1,0 +1,19 @@
+REPLAY k_sprung_gitter_la steps=13 fails=0 solved=[] gold={ "gems": 37, "heart": true }
+REPLAY k_sprung_gitter_la_gs steps=3 fails=0 solved=["B"] gold={ "gems": 28, "heart": true }
+REPLAY k_sprung_gitter_lc steps=9 fails=0 solved=[] gold={ "gems": 28, "heart": true }
+REPLAY k_sprung_gitter_lc_gs steps=9 fails=0 solved=[] gold={ "gems": 28, "heart": true }
+REPLAY k_sprung_grubenring_la steps=10 fails=0 solved=["A"] gold={ "gems": 28, "heart": true }
+REPLAY k_sprung_grubenring_la_gs steps=10 fails=0 solved=["B"] gold={ "gems": 28, "heart": true }
+REPLAY k_sprung_grubenring_lc steps=18 fails=0 solved=["A"] gold={ "gems": 37, "heart": true }
+REPLAY k_sprung_grubenring_lc_gs steps=15 fails=0 solved=["A"] gold={ "gems": 28, "heart": true }
+REPLAY k_sprung_grubensteg steps=14 fails=0 solved=["A"] gold={ "gems": 28, "heart": true }
+REPLAY k_sprung_kammern steps=12 fails=0 solved=["C", "D", "B"] gold={ "gems": 28, "heart": true }
+REPLAY k_sprung_moderbecken_la steps=17 fails=0 solved=["B", "A", "C"] gold={ "gems": 37, "heart": true }
+REPLAY k_sprung_moderbecken_la_gs steps=16 fails=0 solved=["A"] gold={ "gems": 37, "heart": true }
+REPLAY k_sprung_moderbecken_lc steps=11 fails=0 solved=["A"] gold={ "gems": 19, "heart": true }
+REPLAY k_sprung_moderbecken_lc_gs steps=12 fails=0 solved=["A"] gold={ "gems": 19, "heart": true }
+REPLAY k_sprung_moderschacht steps=19 fails=0 solved=["A"] gold={ "gems": 28, "heart": true }
+REPLAY k_sprung_stufen steps=9 fails=0 solved=["C", "B"] gold={ "gems": 28, "heart": true }
+REPLAY done bad=0
+
+[exited with code 0]

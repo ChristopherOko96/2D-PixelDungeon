@@ -624,7 +624,8 @@
 		{
 			"kind": "chest",
 			"loot": {
-				"type": "hoard"
+				"type": "hoard",
+				"tier": 3
 			},
 			"x": 816.0,
 			"y": 1032.0

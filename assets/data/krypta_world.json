@@ -1,5 +1,5 @@
 {
- "_note": "Story 1 Krypta der Verdammten: the world pack for the world kit generator (src/world_kit/world_core.gd, src/world_kit/world_pack.gd). Written by tools/krypta_dungeon/export_world.js from krypta_floors.js; the browser preview reads the same values. floors: per floor title, ring (circle), boss, size of the slot grid (gc x gr), critical path length, hazard shares (lava = mire, river, spikes, vents, holes, pits), loop share, soul bowls (fire), shooters, final. names/suffixes: room name parts per ring. words: hell wording -> crypt wording. gate_banner: banner colour per floor (red when missing). foot: furniture footprints [solid width, depth, cells]. mimic_fight / mimic_treasure: share of chests that are mimics. diff: the difficulty curve of the world per floor n (src/world_kit/world_core.gd difficulty_for): enemy hp x (1 + (n-1) hp_step), speed x (1 + (n-1) speed_step), one more enemy per fight room every extra_every floors. room_library: floors are built from the Weltbauer's room files of this world marked in_floors (src/world_kit/room_floor.gd): slot_size cells per slot of the plan, slot_gap cells for the corridor between two slots, margin free cells round the floor, gate_style the gates of a corridor, boss_gate_reach and boss_gate_depth the free wall and floor the boss gate's dressing needs, chest_share how often a chest spot of a fight room holds a chest, jump_rooms the most big jump puzzles or mazes on a floor, jump_share the chance that a free fight room of three slots becomes one.",
+ "_note": "Story 1 Krypta der Verdammten: the world pack for the world kit generator (src/world_kit/world_core.gd, src/world_kit/world_pack.gd). Written by tools/krypta_dungeon/export_world.js from krypta_floors.js; the browser preview reads the same values. floors: per floor title, ring (circle), boss, size of the slot grid (gc x gr), critical path length, hazard shares (lava = mire, river, spikes, vents, holes, pits), loop share, soul bowls (fire), shooters, final. names/suffixes: room name parts per ring. words: hell wording -> crypt wording. gate_banner: banner colour per floor (red when missing). foot: furniture footprints [solid width, depth, cells]. mimic_fight / mimic_treasure: share of chests that are mimics. diff: the difficulty curve of the world per floor n (src/world_kit/world_core.gd difficulty_for): enemy hp x (1 + (n-1) hp_step), speed x (1 + (n-1) speed_step), one more enemy per fight room every extra_every floors. room_library: floors are built from the Weltbauer's room files of this world marked in_floors (src/world_kit/room_floor.gd): slot_size cells per slot of the plan, slot_gap cells for the corridor between two slots, margin free cells round the floor, gate_style the gates of a corridor, boss_gate_reach and boss_gate_depth the free wall and floor the boss gate's dressing needs, chest_share how often a chest spot of a fight room holds a chest, jump_rooms the most big jump puzzles or mazes on a floor, jump_share the chance that a free fight room of three slots becomes one. mobs_by_area: a fight room drawn in the Weltbauer with enemies by chance gets one enemy per cells_per_mob cells of ground (floor, Moder, bridges), at least min and at most max, plus the floor's extra, so a big hall holds more than a small chamber.",
  "schema": 1,
  "floors": [
   null,
@@ -519,6 +519,11 @@
   "boss_gate_depth": 3,
   "chest_share": 0.35,
   "jump_rooms": 2,
-  "jump_share": 0.6
+  "jump_share": 0.6,
+  "mobs_by_area": {
+   "cells_per_mob": 28,
+   "min": 4,
+   "max": 12
+  }
  }
 }

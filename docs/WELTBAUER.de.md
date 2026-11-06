@@ -46,9 +46,11 @@ Rechts stehen die Einstellungen des gewählten Teils.
 - **Inhalt beim Zerbrechen:** gilt für zerbrechliche Teile wie Vasen und Fässer: Gold, Herz, Schlüssel,
   bestimmter Trank, bestimmte Waffe, oder **Zufällig**: Dann entscheidet die Etage. Ein gelber Punkt markiert gefüllte Teile.
 - **Truhe:** **Inhalt** wie oben. **Wie die Etage** zahlt, was die Etage in dieser Raumart zahlt, die Truhe kann dann aber
-  auch fehlen. **Schatz (Belohnung für ein Rätsel)** ist die große Truhe: viel Gold (mehr auf tieferen Etagen), ein Herz,
-  eine seltene Waffe oder Rüstung mit Kristall und Stein und zwei weitere Funde. Die Werte stehen in
-  `assets/data/world_room_contents.json` (`hoard`). **Mimik** ist Nein, Ja oder Zufällig, dazu wählst du das Monster. Den eingestellten Inhalt gibt es,
+  auch fehlen. **Schatz (Belohnung für ein Rätsel)** ist die große Truhe, mit einer **Stufe** nach der Schwierigkeit des Rätsels:
+  Stufe 1 gibt viel Gold, ein Herz, einen Herzcontainer (die Lebensgrenze steigt um ein Herz) und eine seltene Waffe oder
+  Rüstung mit Kristall und Stein. Stufe 2 legt einen epischen Fund dazu. Stufe 3 gibt zwei Herzcontainer und eine
+  **legendäre Waffe oder Rüstung für die Klasse, die gerade spielt**, nie verflucht. Die Werte stehen in
+  `assets/data/world_room_contents.json` (`hoard.tiers`). **Mimik** ist Nein, Ja oder Zufällig, dazu wählst du das Monster. Den eingestellten Inhalt gibt es,
   wenn das Monster besiegt ist. Ein rotes M markiert die Falle, M? die zufällige.
 - **Mimik und Truhenfresser als Gegner gesetzt:** Sie stehen im Spiel als gewöhnliche Truhe da und werden beim Öffnen zum Monster.
 - **Gegner 1 und 2:** Truhen und zerbrechliche Teile lassen bis zu zwei Gegner heraus, jeder einzeln wählbar oder zufällig
@@ -190,12 +192,25 @@ Kampfraum. Eine Tür kann ungenutzt bleiben, plane das Rätsel also auch als Sac
 - **Zufällig im Raum:** Das Spiel verteilt die Gegner beim Betreten. **Zufallsgegner** ist ihre Anzahl, bei 0 bestimmt die Etage sie.
 - **Von Hand gesetzt:** Es kommen genau die Gegner, die du setzt. Du findest sie in den Kategorien **Gegner** und **Bossgegner**, die Art lässt sich danach rechts ändern. Wählst du einen Gegner aus, stellt sich der Raum von selbst darauf um. Ohne gesetzte Gegner gibt es keinen Kampf, außer der Raum muss auf der Etage einen Schlüssel fallen lassen.
 
+**Wie viele Gegner:** Ein Kampfraum mit zufälligen Gegnern bekommt auf der Etage einen Gegner je 28 Felder Boden
+(höchstens 12, mindestens 4, dazu der Zuschlag tiefer Etagen): Eine große Halle hat also deutlich mehr Gegner als eine
+kleine Kammer. Der Wert steht in `assets/data/krypta_world.json` (`room_library.mobs_by_area`). **Zufallsgegner** über 0 gilt weiter.
+
+**Geheimräume** zahlen auf der Etage immer einen Schatz und nie eine Mimik: hinter einer Geheimwand Stufe 1,
+hinter dem Druckplatten-Rätsel Stufe 2 (`world_room_contents.json` `secret_rooms`).
+
 Im Bossraum setzt die Etage immer den Boss.
 
 Die Treppenkammer zeigt ihre Treppe nur auf einer echten Etage, beim Einzeltest fehlt sie.
 
-**Die Sprungrätsel der Krypta** (seit 05.11.2026): 14 Räume sind echte Rätsel mit Schatztruhe. Jeder hat einen freien Weg
-zwischen seinen Türen, das Rätsel ist der Weg zum Schatz:
+**Rätsel bleiben freiwillig** (seit 06.11.2026): In jedem Rätselraum, Sprungrätsel wie Labyrinth, verbindet ein freier Weg
+alle Türen. Wer nicht will, läuft vorbei. Wer das Rätsel löst, bekommt den Schatz seiner Stufe. Die Stufe setzt
+`tools/krypta_dungeon/hoard_tiers.js` aus Würfen, Treffern, Rätselgruppen, Platten und Schlüsseln (Labyrinth: Sackgassen
+und Weglänge); mit `--write` trägt es nur die Stufe ein. `"hoard_tier"` oben in der Datei legt sie fest
+(die Eisenhalle: Stufe 3).
+
+**Die Sprungrätsel der Krypta** (seit 05.11.2026): 14 Räume sind echte Rätsel mit Schatztruhe, dazu deine zwei Eisenhallen.
+Jeder hat einen freien Weg zwischen seinen Türen, das Rätsel ist der Weg zum Schatz:
 
 | Raum | Rätsel |
 |---|---|
@@ -225,6 +240,13 @@ Raum durch (Würfe, Gruben, Platten, Tore, Schlüssel) und meldet Lösungsweg, T
 und Endlosschleifen. `node tools/krypta_dungeon/jump_puzzles/solver.js <raum.json>` prüft auch einen selbst gebauten Raum.
 **`build.js` überschreibt Räume**, und nur die genannten, mit `--write`: Nach deinen Änderungen im Weltbauer nicht mehr für
 diesen Raum ausführen.
+
+**Prüfen:** `node tools/krypta_dungeon/room_audit.js` geht alle Räume der Etagen durch und meldet Teile aufeinander,
+in der Wand oder über einer Grube, versperrte Türen, Truhen ohne freies Feld daneben und Türen, die nur über das Rätsel
+verbunden sind. `node tools/krypta_dungeon/jump_puzzles/free_ways.js <raum.json> --map` zeigt die freien Bereiche.
+`node tools/krypta_dungeon/jump_puzzles/steps.js` und danach `tools/krypta_dungeon/jump_puzzles/replay.gd` spielen jeden
+Schatzweg im echten Spiel nach. `tools/krypta_dungeon/playthrough.gd` spielt Kapitel 1 von Etage 1 bis zum Ende durch
+(Kämpfe, Schlüssel, Tore, Boss, Portal) und meldet jede Etage, auf der man nicht weiterkommt.
 
 Die Dateien haben `tools/krypta_dungeon/build_room_library.js` und die gezeichneten Grundrisse in `room_maps.js` einmalig erzeugt, die Schlüsselkammer
 `tools/world_kit/export_key_room.gd`. **Beide überschreiben Räume**, führe sie nach eigenen Änderungen nicht mehr aus

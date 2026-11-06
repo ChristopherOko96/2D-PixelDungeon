@@ -427,7 +427,7 @@ function printLines(report) {
   return lines.join('\n');
 }
 
-module.exports = { analyze, print, prepare };
+module.exports = { analyze, print, prepare, cellKind };
 
 if (require.main === module) {
   let bad = 0;

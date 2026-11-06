@@ -1,5 +1,5 @@
 {
-	"schema_version": 1,
+	"schema_version": 1.0,
 	"id": "k_modereck_la_gs",
 	"title": "Moderwinkel (Winkel)",
 	"world": "krypta",
@@ -7,20 +7,20 @@
 	"in_floors": true,
 	"slots": [
 		[
-			0,
-			0
+			0.0,
+			0.0
 		],
 		[
-			1,
-			0
+			1.0,
+			0.0
 		],
 		[
-			1,
-			1
+			1.0,
+			1.0
 		]
 	],
-	"width": 31,
-	"height": 25,
+	"width": 31.0,
+	"height": 25.0,
 	"cells": [
 		"0000000000000000000000000000000",
 		"0000011111111111111111111111000",
@@ -54,162 +54,162 @@
 		{
 			"side": "north",
 			"cell": [
-				6,
-				0
+				6.0,
+				0.0
 			]
 		},
 		{
 			"side": "south",
 			"cell": [
-				6,
-				10
+				6.0,
+				10.0
 			]
 		},
 		{
 			"side": "west",
 			"cell": [
-				4,
-				5
+				4.0,
+				5.0
 			]
 		},
 		{
 			"side": "north",
 			"cell": [
-				23,
-				0
+				23.0,
+				0.0
 			]
 		},
 		{
 			"side": "east",
 			"cell": [
-				28,
-				5
+				28.0,
+				5.0
 			]
 		},
 		{
 			"side": "south",
 			"cell": [
-				23,
-				21
+				23.0,
+				21.0
 			]
 		},
 		{
 			"side": "west",
 			"cell": [
-				17,
-				19
+				17.0,
+				19.0
 			]
 		},
 		{
 			"side": "east",
 			"cell": [
-				28,
-				19
+				28.0,
+				19.0
 			]
 		}
 	],
-	"auto_mobs": 0,
+	"auto_mobs": 0.0,
 	"objects": [
 		{
 			"kind": "prop",
 			"asset": "spires_lava",
-			"x": 2544,
+			"x": 2544.0,
 			"y": 274.6,
 			"flip": true,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				66,
-				30
+				66.0,
+				30.0
 			]
 		},
 		{
 			"kind": "raw",
-			"x": 816,
+			"x": 816.0,
 			"y": 273.6,
 			"ent": {
 				"type": "crate",
 				"look": "crate_c",
-				"hp": 2,
+				"hp": 2.0,
 				"drop": "random"
 			}
 		},
 		{
 			"kind": "prop",
 			"asset": "brazier_floor",
-			"x": 2448,
+			"x": 2448.0,
 			"y": 1138.6,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				56,
-				28
+				56.0,
+				28.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "brazier_floor",
-			"x": 1968,
+			"x": 1968.0,
 			"y": 1138.6,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				56,
-				28
+				56.0,
+				28.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "moss_rubble_a",
-			"x": 2544,
+			"x": 2544.0,
 			"y": 1714.6,
 			"flip": true,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				70,
-				28
+				70.0,
+				28.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "boulders",
-			"x": 1872,
+			"x": 1872.0,
 			"y": 1714.6,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				28
+				60.0,
+				28.0
 			]
 		},
 		{
 			"kind": "raw",
-			"x": 2544,
+			"x": 2544.0,
 			"y": 1809.6,
 			"ent": {
 				"type": "crate",
 				"look": "urn_c",
-				"hp": 1,
+				"hp": 1.0,
 				"drop": "random"
 			}
 		},
 		{
 			"kind": "raw",
-			"x": 1872,
+			"x": 1872.0,
 			"y": 1809.6,
 			"ent": {
 				"type": "crate",
 				"look": "barrel_a",
-				"hp": 1,
+				"hp": 1.0,
 				"drop": "random"
 			}
 		},
@@ -217,14 +217,14 @@
 			"kind": "prop",
 			"asset": "wall_torch_hook",
 			"x": 2006.4,
-			"y": 102,
+			"y": 102.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
@@ -232,14 +232,14 @@
 			"kind": "prop",
 			"asset": "chain_hook",
 			"x": 1737.6,
-			"y": 102,
+			"y": 102.0,
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
@@ -247,145 +247,145 @@
 			"kind": "prop",
 			"asset": "chain_hook",
 			"x": 1468.8,
-			"y": 102,
+			"y": 102.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
 		{
 			"kind": "prop",
 			"asset": "torch_dead",
-			"x": 1200,
-			"y": 102,
+			"x": 1200.0,
+			"y": 102.0,
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
 		{
 			"kind": "prop",
 			"asset": "spires_lava",
-			"x": 1200,
-			"y": 946.6,
+			"x": 1200.0,
+			"y": 1008.0,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				66,
-				30
+				66.0,
+				30.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "moss_ruin",
-			"x": 1968,
+			"x": 1968.0,
 			"y": 178.6,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				66,
-				30
+				66.0,
+				30.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "moss_ruin",
-			"x": 1680,
-			"y": 946.6,
+			"x": 1680.0,
+			"y": 1008.0,
 			"flip": true,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				66,
-				30
+				66.0,
+				30.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "brazier_floor",
-			"x": 1488,
+			"x": 1488.0,
 			"y": 178.6,
 			"flip": true,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				56,
-				28
+				56.0,
+				28.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "grate",
-			"x": 2064,
-			"y": 1628,
+			"x": 2064.0,
+			"y": 1628.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"decal": {
-				"dy": 44,
-				"w": 0,
-				"h": 0,
+				"dy": 44.0,
+				"w": 0.0,
+				"h": 0.0,
 				"a": 0.95
 			}
 		},
 		{
 			"kind": "prop",
 			"asset": "moss_b",
-			"x": 1008,
-			"y": 382,
+			"x": 1008.0,
+			"y": 382.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"decal": {
-				"dy": 46,
-				"w": 0,
-				"h": 0,
+				"dy": 46.0,
+				"w": 0.0,
+				"h": 0.0,
 				"a": 0.95
 			}
 		},
 		{
 			"kind": "prop",
 			"asset": "blood_a",
-			"x": 1008,
-			"y": 192,
+			"x": 1008.0,
+			"y": 192.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"decal": {
 				"dy": 47.5,
-				"w": 0,
-				"h": 0,
+				"w": 0.0,
+				"h": 0.0,
 				"a": 0.95
 			}
 		},
@@ -393,14 +393,14 @@
 			"kind": "prop",
 			"asset": "bones_scatter",
 			"x": 2276.9,
-			"y": 1793,
+			"y": 1793.0,
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			]
 		},
 		{
@@ -411,10 +411,10 @@
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			]
 		},
 		{
@@ -425,10 +425,10 @@
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			]
 		},
 		{
@@ -439,15 +439,15 @@
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			]
 		},
 		{
 			"kind": "start",
-			"x": 1776,
+			"x": 1776.0,
 			"y": 1219.2
 		}
 	]

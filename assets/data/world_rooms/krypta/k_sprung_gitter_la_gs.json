@@ -1,5 +1,5 @@
 {
-	"schema_version": 1.0,
+	"schema_version": 1,
 	"id": "k_sprung_gitter_la_gs",
 	"title": "Sprung: Eisenhalle (Winkel)",
 	"world": "krypta",
@@ -7,20 +7,20 @@
 	"in_floors": true,
 	"slots": [
 		[
-			0.0,
-			0.0
+			0,
+			0
 		],
 		[
-			1.0,
-			0.0
+			1,
+			0
 		],
 		[
-			1.0,
-			1.0
+			1,
+			1
 		]
 	],
-	"width": 31.0,
-	"height": 25.0,
+	"width": 31,
+	"height": 25,
 	"cells": [
 		"0000000010100000000000000011000",
 		"0111111011110111111111111011110",
@@ -29,23 +29,23 @@
 		"0111111111110111111111111000000",
 		"0111111111110111112222332222220",
 		"0111111111110111112111111111120",
-		"0011111111110111112111111111120",
-		"0011111111110111112111111111120",
-		"0011111111110111112111111111120",
-		"0000000000000000002111111111120",
-		"0000000000000000002111111111120",
-		"0000000000000000002112332111120",
-		"0000000000000000002222112222220",
-		"0000000000000000001111111111110",
-		"0000000000000000001111111111110",
-		"0000000000000000002222112222220",
-		"0000000000000000001111111111110",
-		"0000000000000000002222112222220",
-		"0000000000000000001111111111110",
-		"0000000000000000002222112222220",
-		"0000000000000000001111111111110",
-		"0000000000000000001111111111110",
-		"0000000000000000001111111111110",
+		"0111111111110111112111111111120",
+		"0111111111110111112111111111120",
+		"0111111111110111112111111111120",
+		"0110000000000000002111111111120",
+		"0110000000000000002111111111120",
+		"0110000000000000002112332111120",
+		"0110000000000000002222112222220",
+		"0110000000000000001111111111110",
+		"0110000000000000001111111111110",
+		"0110000000000000002222112222220",
+		"0110000000000000001111111111110",
+		"0110000000000000002222112222220",
+		"0110000000000000001111111111110",
+		"0110000000000000002222112222220",
+		"0110000000000000001111111111110",
+		"0111111111111111111111111111110",
+		"0111111111111111111111111111110",
 		"0000000000000000000000000000000"
 	],
 	"tiles": {},
@@ -54,32 +54,32 @@
 		{
 			"side": "south",
 			"cell": [
-				22.0,
-				24.0
+				22,
+				24
 			]
 		},
 		{
 			"side": "west",
 			"cell": [
-				0.0,
-				5.0
+				0,
+				5
 			]
 		}
 	],
-	"auto_mobs": 0.0,
+	"auto_mobs": 0,
 	"objects": [
 		{
 			"kind": "prop",
 			"asset": "chain_swag",
-			"x": 2736.0,
-			"y": 102.0,
+			"x": 2736,
+			"y": 102,
 			"flip": true,
 			"layer": "front",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			],
 			"wall_decor": true
 		},
@@ -87,29 +87,29 @@
 			"kind": "prop",
 			"asset": "chain_swag",
 			"x": 1929.6,
-			"y": 102.0,
+			"y": 102,
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			],
 			"wall_decor": true
 		},
 		{
 			"kind": "prop",
 			"asset": "cage_hang",
-			"x": 1392.0,
-			"y": 102.0,
+			"x": 1392,
+			"y": 102,
 			"flip": true,
 			"layer": "front",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			],
 			"wall_decor": true
 		},
@@ -117,29 +117,29 @@
 			"kind": "prop",
 			"asset": "shackle_skull",
 			"x": 1123.2,
-			"y": 102.0,
+			"y": 102,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			],
 			"wall_decor": true
 		},
 		{
 			"kind": "prop",
 			"asset": "wall_torch_hook",
-			"x": 240.0,
-			"y": 936.0,
+			"x": 240,
+			"y": 936,
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			],
 			"wall_decor": true
 		},
@@ -147,54 +147,54 @@
 			"kind": "prop",
 			"asset": "shackle_a",
 			"x": 1219.2,
-			"y": 390.0,
+			"y": 390,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			],
 			"wall_decor": true
 		},
 		{
 			"kind": "prop",
 			"asset": "moss_a",
-			"x": 2544.0,
-			"y": 1533.0,
+			"x": 2544,
+			"y": 1533,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			],
 			"decal": {
-				"dy": 45.0,
-				"w": 0.0,
-				"h": 0.0,
+				"dy": 45,
+				"w": 0,
+				"h": 0,
 				"a": 0.95
 			}
 		},
 		{
 			"kind": "prop",
 			"asset": "moss_b",
-			"x": 2640.0,
-			"y": 1054.0,
+			"x": 2640,
+			"y": 1054,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			],
 			"decal": {
-				"dy": 46.0,
-				"w": 0.0,
-				"h": 0.0,
+				"dy": 46,
+				"w": 0,
+				"h": 0,
 				"a": 0.95
 			}
 		},
@@ -206,38 +206,38 @@
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "bone_f",
-			"x": 1686.0,
+			"x": 1686,
 			"y": 526.5,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "bone_e",
 			"x": 2431.5,
-			"y": 837.0,
+			"y": 837,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			]
 		},
 		{
@@ -248,577 +248,549 @@
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "bone_b",
-			"x": 2664.0,
-			"y": 744.0,
+			"x": 2664,
+			"y": 744,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "rubble",
-			"x": 2352.0,
-			"y": 1128.0,
+			"x": 2352,
+			"y": 1128,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			]
 		},
 		{
 			"kind": "start",
-			"x": 2184.0,
-			"y": 2232.0
+			"x": 2184,
+			"y": 2232
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 1776.0,
-			"y": 2256.0
+			"phase": 0,
+			"x": 2736,
+			"y": 2160
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2736.0,
-			"y": 2160.0
+			"phase": 0,
+			"x": 2640,
+			"y": 2160
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2640.0,
-			"y": 2160.0
+			"phase": 0,
+			"x": 2640,
+			"y": 2256
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2640.0,
-			"y": 2256.0
+			"phase": 0,
+			"x": 2832,
+			"y": 2256
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2832.0,
-			"y": 2256.0
+			"phase": 0,
+			"x": 1776,
+			"y": 2160
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 1776.0,
-			"y": 2160.0
+			"phase": 0,
+			"x": 1872,
+			"y": 2160
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 1872.0,
-			"y": 2160.0
+			"phase": 0,
+			"x": 1968,
+			"y": 2160
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 1968.0,
-			"y": 2160.0
+			"phase": 0,
+			"x": 2064,
+			"y": 2160
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2064.0,
-			"y": 2160.0
+			"phase": 0,
+			"x": 2352,
+			"y": 2256
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2064.0,
-			"y": 2256.0
+			"phase": 0,
+			"x": 2352,
+			"y": 2160
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 1968.0,
-			"y": 2256.0
+			"phase": 0,
+			"x": 2448,
+			"y": 2160
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 1872.0,
-			"y": 2256.0
+			"phase": 0,
+			"x": 2544,
+			"y": 2160
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2352.0,
-			"y": 2256.0
+			"phase": 0,
+			"x": 2544,
+			"y": 2256
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2352.0,
-			"y": 2160.0
+			"phase": 0,
+			"x": 2448,
+			"y": 2256
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2448.0,
-			"y": 2160.0
+			"phase": 0,
+			"x": 2832,
+			"y": 2160
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2544.0,
-			"y": 2160.0
+			"phase": 0,
+			"x": 2832,
+			"y": 2064
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2544.0,
-			"y": 2256.0
+			"phase": 0,
+			"x": 2736,
+			"y": 2064
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2448.0,
-			"y": 2256.0
+			"phase": 0,
+			"x": 2640,
+			"y": 2064
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2832.0,
-			"y": 2160.0
+			"phase": 0,
+			"x": 2544,
+			"y": 2064
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2832.0,
-			"y": 2064.0
+			"phase": 0,
+			"x": 2448,
+			"y": 2064
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2736.0,
-			"y": 2064.0
+			"phase": 0,
+			"x": 2352,
+			"y": 2064
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2640.0,
-			"y": 2064.0
+			"phase": 0,
+			"x": 2256,
+			"y": 2064
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2544.0,
-			"y": 2064.0
+			"phase": 0,
+			"x": 2160,
+			"y": 2064
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2448.0,
-			"y": 2064.0
+			"phase": 0,
+			"x": 2064,
+			"y": 2064
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2352.0,
-			"y": 2064.0
+			"phase": 0,
+			"x": 1968,
+			"y": 2064
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2256.0,
-			"y": 2064.0
+			"phase": 0,
+			"x": 1872,
+			"y": 2064
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2160.0,
-			"y": 2064.0
+			"phase": 0,
+			"x": 1776,
+			"y": 2064
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2064.0,
-			"y": 2064.0
+			"phase": 1,
+			"x": 2256,
+			"y": 1872
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 1968.0,
-			"y": 2064.0
+			"phase": 1,
+			"x": 2352,
+			"y": 1872
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 1872.0,
-			"y": 2064.0
+			"phase": 1,
+			"x": 2448,
+			"y": 1872
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 1776.0,
-			"y": 2064.0
+			"phase": 1,
+			"x": 2544,
+			"y": 1872
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2256.0,
-			"y": 1872.0
+			"phase": 1,
+			"x": 2640,
+			"y": 1872
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2352.0,
-			"y": 1872.0
+			"phase": 1,
+			"x": 2736,
+			"y": 1872
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2448.0,
-			"y": 1872.0
+			"phase": 1,
+			"x": 2832,
+			"y": 1872
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2544.0,
-			"y": 1872.0
+			"phase": 1,
+			"x": 2160,
+			"y": 1872
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2640.0,
-			"y": 1872.0
+			"phase": 1,
+			"x": 2064,
+			"y": 1872
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2736.0,
-			"y": 1872.0
+			"phase": 1,
+			"x": 1968,
+			"y": 1872
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2832.0,
-			"y": 1872.0
+			"phase": 1,
+			"x": 1872,
+			"y": 1872
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2160.0,
-			"y": 1872.0
+			"phase": 1,
+			"x": 1776,
+			"y": 1872
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2064.0,
-			"y": 1872.0
+			"phase": 0,
+			"x": 1776,
+			"y": 1680
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 1968.0,
-			"y": 1872.0
+			"phase": 0,
+			"x": 1872,
+			"y": 1680
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 1872.0,
-			"y": 1872.0
+			"phase": 0,
+			"x": 1968,
+			"y": 1680
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 1776.0,
-			"y": 1872.0
+			"phase": 0,
+			"x": 2064,
+			"y": 1680
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 1776.0,
-			"y": 1680.0
+			"phase": 0,
+			"x": 2160,
+			"y": 1680
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 1872.0,
-			"y": 1680.0
+			"phase": 0,
+			"x": 2256,
+			"y": 1680
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 1968.0,
-			"y": 1680.0
+			"phase": 0,
+			"x": 2352,
+			"y": 1680
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2064.0,
-			"y": 1680.0
+			"phase": 0,
+			"x": 2448,
+			"y": 1680
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2160.0,
-			"y": 1680.0
+			"phase": 0,
+			"x": 2544,
+			"y": 1680
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2256.0,
-			"y": 1680.0
+			"phase": 0,
+			"x": 2640,
+			"y": 1680
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2352.0,
-			"y": 1680.0
+			"phase": 0,
+			"x": 2736,
+			"y": 1680
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2448.0,
-			"y": 1680.0
+			"phase": 0,
+			"x": 2832,
+			"y": 1680
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2544.0,
-			"y": 1680.0
+			"phase": 1,
+			"x": 2832,
+			"y": 1488
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2640.0,
-			"y": 1680.0
+			"phase": 1,
+			"x": 2832,
+			"y": 1392
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2736.0,
-			"y": 1680.0
+			"phase": 1,
+			"x": 2736,
+			"y": 1488
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 2832.0,
-			"y": 1680.0
+			"phase": 1,
+			"x": 2736,
+			"y": 1392
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2832.0,
-			"y": 1488.0
+			"phase": 1,
+			"x": 2640,
+			"y": 1392
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2832.0,
-			"y": 1392.0
+			"phase": 1,
+			"x": 2640,
+			"y": 1488
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2736.0,
-			"y": 1488.0
+			"phase": 1,
+			"x": 2544,
+			"y": 1488
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2736.0,
-			"y": 1392.0
+			"phase": 1,
+			"x": 2544,
+			"y": 1392
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2640.0,
-			"y": 1392.0
+			"phase": 1,
+			"x": 2448,
+			"y": 1488
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2640.0,
-			"y": 1488.0
+			"phase": 1,
+			"x": 2448,
+			"y": 1392
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2544.0,
-			"y": 1488.0
+			"phase": 1,
+			"x": 2352,
+			"y": 1488
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2544.0,
-			"y": 1392.0
+			"phase": 1,
+			"x": 2352,
+			"y": 1392
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2448.0,
-			"y": 1488.0
+			"phase": 1,
+			"x": 2256,
+			"y": 1392
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2448.0,
-			"y": 1392.0
+			"phase": 1,
+			"x": 2256,
+			"y": 1488
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2352.0,
-			"y": 1488.0
+			"phase": 1,
+			"x": 2160,
+			"y": 1392
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2352.0,
-			"y": 1392.0
+			"phase": 1,
+			"x": 2160,
+			"y": 1488
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2256.0,
-			"y": 1392.0
+			"phase": 1,
+			"x": 2064,
+			"y": 1488
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2256.0,
-			"y": 1488.0
+			"phase": 1,
+			"x": 2064,
+			"y": 1392
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2160.0,
-			"y": 1392.0
+			"phase": 1,
+			"x": 1968,
+			"y": 1488
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2160.0,
-			"y": 1488.0
+			"phase": 1,
+			"x": 1968,
+			"y": 1392
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2064.0,
-			"y": 1488.0
+			"phase": 1,
+			"x": 1872,
+			"y": 1392
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 2064.0,
-			"y": 1392.0
+			"phase": 1,
+			"x": 1872,
+			"y": 1488
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 1968.0,
-			"y": 1488.0
+			"phase": 1,
+			"x": 1776,
+			"y": 1392
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 1968.0,
-			"y": 1392.0
-		},
-		{
-			"kind": "spikes",
-			"phase": 1.0,
-			"x": 1872.0,
-			"y": 1392.0
-		},
-		{
-			"kind": "spikes",
-			"phase": 1.0,
-			"x": 1872.0,
-			"y": 1488.0
-		},
-		{
-			"kind": "spikes",
-			"phase": 1.0,
-			"x": 1776.0,
-			"y": 1392.0
-		},
-		{
-			"kind": "spikes",
-			"phase": 1.0,
-			"x": 1776.0,
-			"y": 1488.0
+			"phase": 1,
+			"x": 1776,
+			"y": 1488
 		},
 		{
 			"kind": "lever",
 			"group": "A",
-			"x": 2736.0,
-			"y": 2328.0
+			"x": 2736,
+			"y": 2328
 		},
 		{
 			"kind": "chest",
 			"loot": {
-				"type": "gold",
-				"amount": 6.0
+				"type": "random"
 			},
-			"x": 2832.0,
-			"y": 144.0
+			"x": 2832,
+			"y": 144
 		},
 		{
 			"kind": "chest",
 			"loot": {
-				"type": "gold",
-				"amount": 6.0
+				"type": "random"
 			},
-			"x": 2688.0,
-			"y": 384.0
+			"x": 2688,
+			"y": 384
 		},
 		{
 			"kind": "chest",
 			"loot": {
-				"type": "gold",
-				"amount": 6.0
+				"type": "hoard",
+				"tier": 2
 			},
-			"x": 2688.0,
-			"y": 144.0
+			"x": 2688,
+			"y": 144
 		},
 		{
 			"kind": "chest",
 			"loot": {
-				"type": "gold",
-				"amount": 6.0
+				"type": "random"
 			},
-			"x": 2832.0,
-			"y": 384.0
+			"x": 2832,
+			"y": 384
 		},
 		{
 			"kind": "chest",
 			"loot": {
-				"type": "gold",
-				"amount": 6.0
+				"type": "random"
 			},
-			"x": 2544.0,
-			"y": 384.0
+			"x": 2544,
+			"y": 384
 		},
 		{
 			"kind": "gate",
 			"dir": "h",
 			"group": "A",
 			"lock": "",
-			"x": 2400.0,
-			"y": 96.0
+			"x": 2400,
+			"y": 96
 		},
 		{
 			"kind": "prop",
@@ -826,13 +798,13 @@
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				148.0,
-				40.0
+				148,
+				40
 			],
-			"x": 2208.0,
-			"y": 1320.0
+			"x": 2208,
+			"y": 1320
 		},
 		{
 			"kind": "prop",
@@ -840,13 +812,13 @@
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 3.0,
+			"scale": 3,
 			"foot": [
-				101.0,
-				36.0
+				101,
+				36
 			],
-			"x": 2208.0,
-			"y": 1104.0,
+			"x": 2208,
+			"y": 1104,
 			"scale_w": 2.5,
 			"scale_h": 3.1
 		},
@@ -856,104 +828,104 @@
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				148.0,
-				40.0
+				148,
+				40
 			],
-			"x": 2208.0,
-			"y": 672.0
+			"x": 2208,
+			"y": 672
 		},
 		{
 			"kind": "launch",
 			"dir": "w",
-			"cells": 16.0,
-			"x": 2544.0,
-			"y": 48.0
+			"cells": 16,
+			"x": 2544,
+			"y": 48
 		},
 		{
 			"kind": "chest",
 			"loot": {
 				"type": "gold",
-				"amount": 6.0
+				"amount": 12
 			},
-			"x": 816.0,
-			"y": 288.0
+			"x": 816,
+			"y": 288
 		},
 		{
 			"kind": "chest",
 			"loot": {
 				"type": "gold",
-				"amount": 6.0
+				"amount": 12
 			},
-			"x": 912.0,
-			"y": 288.0
+			"x": 912,
+			"y": 288
 		},
 		{
 			"kind": "chest",
 			"loot": {
 				"type": "gold",
-				"amount": 6.0
+				"amount": 12
 			},
-			"x": 1008.0,
-			"y": 288.0
+			"x": 1008,
+			"y": 288
 		},
 		{
 			"kind": "chest",
 			"loot": {
 				"type": "gold",
-				"amount": 6.0
+				"amount": 12
 			},
-			"x": 1104.0,
-			"y": 288.0
+			"x": 1104,
+			"y": 288
 		},
 		{
 			"kind": "launch",
 			"dir": "s",
-			"cells": 4.0,
-			"x": 816.0,
-			"y": 48.0
+			"cells": 4,
+			"x": 816,
+			"y": 48
 		},
 		{
 			"kind": "gem",
-			"x": 1272.0,
-			"y": 144.0
+			"x": 1272,
+			"y": 144
 		},
 		{
 			"kind": "gem",
-			"x": 1296.0,
-			"y": 144.0
+			"x": 1296,
+			"y": 240
 		},
 		{
 			"kind": "gem",
-			"x": 1272.0,
-			"y": 192.0
+			"x": 1368,
+			"y": 288
 		},
 		{
 			"kind": "enemy",
 			"mob": "mimik",
-			"x": 2640.0,
-			"y": 912.0
+			"x": 2640,
+			"y": 912
 		},
 		{
 			"kind": "enemy",
 			"mob": "truhenfresser",
-			"x": 1968.0,
-			"y": 912.0
+			"x": 1968,
+			"y": 912
 		},
 		{
 			"kind": "gate",
 			"dir": "h",
 			"group": "B",
 			"lock": "",
-			"x": 1152.0,
-			"y": 576.0
+			"x": 1152,
+			"y": 576
 		},
 		{
 			"kind": "lever",
 			"group": "B",
-			"x": 144.0,
-			"y": 168.0
+			"x": 144,
+			"y": 168
 		},
 		{
 			"kind": "prop",
@@ -961,13 +933,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				44.0,
-				28.0
+				44,
+				28
 			],
-			"x": 1584.0,
-			"y": 144.0
+			"x": 1584,
+			"y": 144
 		},
 		{
 			"kind": "prop",
@@ -975,13 +947,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				44.0,
-				28.0
+				44,
+				28
 			],
-			"x": 1704.0,
-			"y": 144.0
+			"x": 1704,
+			"y": 144
 		},
 		{
 			"kind": "prop",
@@ -989,13 +961,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				44.0,
-				28.0
+				44,
+				28
 			],
-			"x": 1824.0,
-			"y": 144.0
+			"x": 1824,
+			"y": 144
 		},
 		{
 			"kind": "prop",
@@ -1003,13 +975,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				44.0,
-				28.0
+				44,
+				28
 			],
-			"x": 1992.0,
-			"y": 144.0
+			"x": 1992,
+			"y": 144
 		},
 		{
 			"kind": "prop",
@@ -1017,13 +989,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				44.0,
-				28.0
+				44,
+				28
 			],
-			"x": 2112.0,
-			"y": 144.0
+			"x": 2112,
+			"y": 144
 		},
 		{
 			"kind": "prop",
@@ -1031,13 +1003,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				44.0,
-				28.0
+				44,
+				28
 			],
-			"x": 2208.0,
-			"y": 144.0
+			"x": 2208,
+			"y": 144
 		},
 		{
 			"kind": "prop",
@@ -1045,13 +1017,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				44.0,
-				28.0
+				44,
+				28
 			],
-			"x": 2328.0,
-			"y": 144.0
+			"x": 2328,
+			"y": 144
 		},
 		{
 			"kind": "prop",
@@ -1059,13 +1031,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				29.0,
-				17.0
+				29,
+				17
 			],
-			"x": 1488.0,
-			"y": 120.0
+			"x": 1488,
+			"y": 120
 		},
 		{
 			"kind": "prop",
@@ -1073,13 +1045,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				29.0,
-				17.0
+				29,
+				17
 			],
-			"x": 1704.0,
-			"y": 1032.0
+			"x": 1704,
+			"y": 1032
 		},
 		{
 			"kind": "prop",
@@ -1087,13 +1059,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				29.0,
-				17.0
+				29,
+				17
 			],
-			"x": 1608.0,
-			"y": 1032.0
+			"x": 1608,
+			"y": 1032
 		},
 		{
 			"kind": "prop",
@@ -1101,13 +1073,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				29.0,
-				17.0
+				29,
+				17
 			],
-			"x": 1440.0,
-			"y": 1032.0
+			"x": 1440,
+			"y": 1032
 		},
 		{
 			"kind": "prop",
@@ -1115,13 +1087,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				29.0,
-				17.0
+				29,
+				17
 			],
-			"x": 1296.0,
-			"y": 1032.0
+			"x": 1296,
+			"y": 1032
 		},
 		{
 			"kind": "prop",
@@ -1129,13 +1101,13 @@
 			"flip": false,
 			"layer": "front",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				29.0,
-				17.0
+				29,
+				17
 			],
-			"x": 2448.0,
-			"y": 456.0
+			"x": 2448,
+			"y": 456
 		},
 		{
 			"kind": "prop",
@@ -1143,13 +1115,13 @@
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				67.0,
-				24.0
+				67,
+				24
 			],
-			"x": 2448.0,
-			"y": 768.0
+			"x": 2448,
+			"y": 768
 		},
 		{
 			"kind": "prop",
@@ -1157,13 +1129,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				57.0,
-				26.0
+				57,
+				26
 			],
-			"x": 1680.0,
-			"y": 960.0
+			"x": 1680,
+			"y": 960
 		},
 		{
 			"kind": "prop",
@@ -1171,13 +1143,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				57.0,
-				26.0
+				57,
+				26
 			],
-			"x": 1296.0,
-			"y": 960.0
+			"x": 1296,
+			"y": 960
 		},
 		{
 			"kind": "prop",
@@ -1185,13 +1157,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				49.0,
-				26.0
+				49,
+				26
 			],
-			"x": 1200.0,
-			"y": 888.0
+			"x": 1200,
+			"y": 888
 		},
 		{
 			"kind": "prop",
@@ -1199,13 +1171,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				49.0,
-				26.0
+				49,
+				26
 			],
-			"x": 1200.0,
-			"y": 240.0
+			"x": 1200,
+			"y": 240
 		},
 		{
 			"kind": "prop",
@@ -1213,19 +1185,19 @@
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				48.0,
-				22.0
+				48,
+				22
 			],
-			"x": 1296.0,
-			"y": 480.0,
+			"x": 1296,
+			"y": 480,
 			"enemies": [
 				"random"
 			],
 			"loot": {
 				"type": "heart",
-				"amount": 1.0,
+				"amount": 1,
 				"id": "healing"
 			}
 		},
@@ -1235,20 +1207,20 @@
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				48.0,
-				22.0
+				48,
+				22
 			],
-			"x": 1464.0,
-			"y": 912.0,
+			"x": 1464,
+			"y": 912,
 			"enemies": [
 				"random",
 				"random"
 			],
 			"loot": {
 				"type": "heart",
-				"amount": 1.0,
+				"amount": 1,
 				"id": "healing"
 			}
 		},
@@ -1258,20 +1230,20 @@
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				48.0,
-				22.0
+				48,
+				22
 			],
-			"x": 1392.0,
-			"y": 192.0,
+			"x": 1392,
+			"y": 192,
 			"enemies": [
 				"random",
 				"archivar"
 			],
 			"loot": {
 				"type": "heart",
-				"amount": 1.0,
+				"amount": 1,
 				"id": "healing"
 			}
 		},
@@ -1281,16 +1253,16 @@
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				48.0,
-				22.0
+				48,
+				22
 			],
-			"x": 2088.0,
-			"y": 288.0,
+			"x": 2088,
+			"y": 288,
 			"loot": {
 				"type": "heart",
-				"amount": 1.0,
+				"amount": 1,
 				"id": "healing"
 			}
 		},
@@ -1300,13 +1272,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				29.0,
-				16.0
+				29,
+				16
 			],
-			"x": 2256.0,
-			"y": 120.0
+			"x": 2256,
+			"y": 120
 		},
 		{
 			"kind": "prop",
@@ -1314,13 +1286,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				29.0,
-				16.0
+				29,
+				16
 			],
-			"x": 2160.0,
-			"y": 120.0
+			"x": 2160,
+			"y": 120
 		},
 		{
 			"kind": "prop",
@@ -1328,13 +1300,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				29.0,
-				16.0
+				29,
+				16
 			],
-			"x": 2064.0,
-			"y": 120.0
+			"x": 2064,
+			"y": 120
 		},
 		{
 			"kind": "prop",
@@ -1342,13 +1314,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				29.0,
-				16.0
+				29,
+				16
 			],
-			"x": 1920.0,
-			"y": 120.0
+			"x": 1920,
+			"y": 120
 		},
 		{
 			"kind": "prop",
@@ -1356,13 +1328,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				29.0,
-				16.0
+				29,
+				16
 			],
-			"x": 1776.0,
-			"y": 120.0
+			"x": 1776,
+			"y": 120
 		},
 		{
 			"kind": "prop",
@@ -1370,13 +1342,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				29.0,
-				16.0
+				29,
+				16
 			],
-			"x": 1632.0,
-			"y": 120.0
+			"x": 1632,
+			"y": 120
 		},
 		{
 			"kind": "prop",
@@ -1384,13 +1356,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				73.0,
-				34.0
+				73,
+				34
 			],
-			"x": 1896.0,
-			"y": 672.0
+			"x": 1896,
+			"y": 672
 		},
 		{
 			"kind": "prop",
@@ -1398,13 +1370,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				73.0,
-				34.0
+				73,
+				34
 			],
-			"x": 2712.0,
-			"y": 672.0
+			"x": 2712,
+			"y": 672
 		},
 		{
 			"kind": "prop",
@@ -1412,13 +1384,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				48.0,
-				16.0
+				48,
+				16
 			],
-			"x": 1440.0,
-			"y": 336.0
+			"x": 1440,
+			"y": 336
 		},
 		{
 			"kind": "prop",
@@ -1426,13 +1398,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				48.0,
-				16.0
+				48,
+				16
 			],
-			"x": 1920.0,
-			"y": 792.0
+			"x": 1920,
+			"y": 792
 		},
 		{
 			"kind": "prop",
@@ -1440,13 +1412,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				48.0,
-				16.0
+				48,
+				16
 			],
-			"x": 1680.0,
-			"y": 264.0
+			"x": 1680,
+			"y": 264
 		},
 		{
 			"kind": "prop",
@@ -1454,13 +1426,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				48.0,
-				16.0
+				48,
+				16
 			],
-			"x": 1488.0,
-			"y": 528.0
+			"x": 1488,
+			"y": 528
 		},
 		{
 			"kind": "prop",
@@ -1468,13 +1440,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				48.0,
-				16.0
+				48,
+				16
 			],
-			"x": 2040.0,
-			"y": 432.0
+			"x": 2040,
+			"y": 432
 		},
 		{
 			"kind": "prop",
@@ -1482,13 +1454,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				48.0,
-				16.0
+				48,
+				16
 			],
-			"x": 2520.0,
-			"y": 912.0
+			"x": 2520,
+			"y": 912
 		},
 		{
 			"kind": "prop",
@@ -1496,13 +1468,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				74.0,
-				21.0
+				74,
+				21
 			],
-			"x": 1968.0,
-			"y": 1128.0
+			"x": 1968,
+			"y": 1128
 		},
 		{
 			"kind": "prop",
@@ -1510,13 +1482,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				29.0,
-				16.0
+				29,
+				16
 			],
-			"x": 960.0,
-			"y": 528.0,
+			"x": 960,
+			"y": 528,
 			"enemies": [
 				"skelettwache",
 				"skelettwache"
@@ -1528,13 +1500,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				29.0,
-				16.0
+				29,
+				16
 			],
-			"x": 648.0,
-			"y": 672.0,
+			"x": 648,
+			"y": 672,
 			"enemies": [
 				"skelettwache",
 				"skelettwache"
@@ -1546,20 +1518,20 @@
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				29.0,
-				16.0
+				29,
+				16
 			],
-			"x": 240.0,
-			"y": 528.0,
+			"x": 240,
+			"y": 528,
 			"enemies": [
 				"skelettwache",
 				"skelettwache"
 			],
 			"loot": {
 				"type": "heart",
-				"amount": 1.0,
+				"amount": 1,
 				"id": "healing"
 			}
 		},
@@ -1569,16 +1541,16 @@
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				29.0,
-				16.0
+				29,
+				16
 			],
-			"x": 240.0,
-			"y": 480.0,
+			"x": 240,
+			"y": 480,
 			"loot": {
 				"type": "gold",
-				"amount": 1.0,
+				"amount": 1,
 				"id": "healing"
 			},
 			"enemies": [
@@ -1592,16 +1564,16 @@
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				29.0,
-				16.0
+				29,
+				16
 			],
-			"x": 504.0,
-			"y": 528.0,
+			"x": 504,
+			"y": 528,
 			"loot": {
 				"type": "potion",
-				"amount": 1.0,
+				"amount": 1,
 				"id": "healing"
 			},
 			"enemies": [
@@ -1615,16 +1587,16 @@
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				29.0,
-				16.0
+				29,
+				16
 			],
-			"x": 600.0,
-			"y": 888.0,
+			"x": 600,
+			"y": 888,
 			"loot": {
 				"type": "gold",
-				"amount": 10.0,
+				"amount": 10,
 				"id": "healing"
 			}
 		},
@@ -1634,20 +1606,20 @@
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				29.0,
-				16.0
+				29,
+				16
 			],
-			"x": 864.0,
-			"y": 816.0,
+			"x": 864,
+			"y": 816,
 			"enemies": [
 				"skelettschuetze",
 				"skelett"
 			],
 			"loot": {
 				"type": "heart",
-				"amount": 1.0,
+				"amount": 1,
 				"id": "healing"
 			}
 		},
@@ -1657,13 +1629,13 @@
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				29.0,
-				16.0
+				29,
+				16
 			],
-			"x": 1056.0,
-			"y": 840.0,
+			"x": 1056,
+			"y": 840,
 			"enemies": [
 				"skelettschuetze"
 			]
@@ -1674,16 +1646,16 @@
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				29.0,
-				16.0
+				29,
+				16
 			],
-			"x": 408.0,
-			"y": 744.0,
+			"x": 408,
+			"y": 744,
 			"loot": {
 				"type": "stone",
-				"amount": 1.0,
+				"amount": 1,
 				"id": "healing"
 			}
 		},
@@ -1693,48 +1665,197 @@
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				29.0,
-				16.0
+				29,
+				16
 			],
-			"x": 1032.0,
-			"y": 648.0,
+			"x": 1032,
+			"y": 648,
 			"loot": {
 				"type": "weapon",
-				"amount": 1.0,
+				"amount": 1,
 				"id": "void_staff"
 			}
 		},
 		{
+			"kind": "enemy",
+			"mob": "truhenfresser",
+			"x": 240,
+			"y": 240
+		},
+		{
+			"kind": "enemy",
+			"mob": "truhenfresser",
+			"x": 528,
+			"y": 240
+		},
+		{
+			"kind": "chest",
+			"loot": {
+				"type": "random"
+			},
+			"x": 1608,
+			"y": 360,
+			"mimic": "no"
+		},
+		{
 			"kind": "prop",
-			"asset": "urn_b",
+			"asset": "wall_torch_hook",
+			"x": 432,
+			"y": 2118,
 			"flip": false,
-			"layer": "normal",
-			"block": true,
-			"scale": 1.0,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
 			"foot": [
-				29.0,
-				16.0
+				60,
+				30
 			],
-			"x": 240.0,
-			"y": 504.0,
-			"enemies": [
-				"nekromant",
-				"skelettwache"
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 816,
+			"y": 2118,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 1200,
+			"y": 2118,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 1584,
+			"y": 2118,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_a",
+			"x": 144,
+			"y": 1108.8000000000002,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
 			]
 		},
 		{
-			"kind": "enemy",
-			"mob": "truhenfresser",
-			"x": 240.0,
-			"y": 240.0
+			"kind": "prop",
+			"asset": "bones_scatter",
+			"x": 240,
+			"y": 1396.8000000000002,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
 		},
 		{
-			"kind": "enemy",
-			"mob": "truhenfresser",
-			"x": 528.0,
-			"y": 240.0
+			"kind": "prop",
+			"asset": "bone_c",
+			"x": 144,
+			"y": 1780.8000000000002,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rubble",
+			"x": 240,
+			"y": 1972.8000000000002,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_e",
+			"x": 624,
+			"y": 2260.8,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bones_scatter",
+			"x": 1008,
+			"y": 2164.8,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bone_g",
+			"x": 1392,
+			"y": 2260.8,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			]
 		}
 	],
 	"kind_label": "Sprungrätsel",

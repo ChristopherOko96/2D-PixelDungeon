@@ -1,5 +1,5 @@
 {
-	"schema_version": 1,
+	"schema_version": 1.0,
 	"id": "k_moderbruecke_b3",
 	"title": "Moderbrücken (lang)",
 	"world": "krypta",
@@ -7,26 +7,26 @@
 	"in_floors": true,
 	"slots": [
 		[
-			0,
-			0
+			0.0,
+			0.0
 		],
 		[
-			1,
-			0
+			1.0,
+			0.0
 		],
 		[
-			2,
-			0
+			2.0,
+			0.0
 		]
 	],
-	"width": 48,
-	"height": 11,
+	"width": 48.0,
+	"height": 11.0,
 	"cells": [
 		"000000000000000000000000000000000000000000000000",
 		"000000001111111122222211112222221111111100000000",
 		"000000001111111122222211112222221111111100000000",
 		"000000001111111122222211112222221111111100000000",
-		"000000001111111122222211112222221111111100000000",
+		"000000001111111133333311113333331111111100000000",
 		"000000001111111133333311113333331111111100000000",
 		"000000001111111133333311113333331111111100000000",
 		"000000001111111122222211112222221111111100000000",
@@ -40,145 +40,145 @@
 		{
 			"side": "north",
 			"cell": [
-				8,
-				0
+				8.0,
+				0.0
 			]
 		},
 		{
 			"side": "south",
 			"cell": [
-				8,
-				10
+				8.0,
+				10.0
 			]
 		},
 		{
 			"side": "west",
 			"cell": [
-				7,
-				5
+				7.0,
+				5.0
 			]
 		},
 		{
 			"side": "north",
 			"cell": [
-				23,
-				0
+				23.0,
+				0.0
 			]
 		},
 		{
 			"side": "south",
 			"cell": [
-				23,
-				10
+				23.0,
+				10.0
 			]
 		},
 		{
 			"side": "north",
 			"cell": [
-				38,
-				0
+				38.0,
+				0.0
 			]
 		},
 		{
 			"side": "south",
 			"cell": [
-				38,
-				10
+				38.0,
+				10.0
 			]
 		},
 		{
 			"side": "east",
 			"cell": [
-				40,
-				5
+				40.0,
+				5.0
 			]
 		}
 	],
-	"auto_mobs": 0,
+	"auto_mobs": 0.0,
 	"objects": [
 		{
 			"kind": "raw",
-			"x": 1200,
+			"x": 1200.0,
 			"y": 273.6,
 			"ent": {
 				"type": "crate",
 				"look": "barrel_c",
-				"hp": 1,
+				"hp": 1.0,
 				"drop": "random"
 			}
 		},
 		{
 			"kind": "raw",
-			"x": 3408,
+			"x": 3408.0,
 			"y": 273.6,
 			"ent": {
 				"type": "crate",
 				"look": "crate_b",
-				"hp": 2,
+				"hp": 2.0,
 				"drop": "random"
 			}
 		},
 		{
 			"kind": "prop",
 			"asset": "brazier_floor",
-			"x": 1008,
+			"x": 1008.0,
 			"y": 466.6,
 			"flip": true,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				56,
-				28
+				56.0,
+				28.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "brazier_floor",
-			"x": 3600,
+			"x": 3600.0,
 			"y": 466.6,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				56,
-				28
+				56.0,
+				28.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "boulders",
-			"x": 2256,
+			"x": 2256.0,
 			"y": 754.6,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				28
+				60.0,
+				28.0
 			]
 		},
 		{
 			"kind": "raw",
-			"x": 1200,
+			"x": 1200.0,
 			"y": 849.6,
 			"ent": {
 				"type": "crate",
 				"look": "barrel_a",
-				"hp": 1,
+				"hp": 1.0,
 				"drop": "random"
 			}
 		},
 		{
 			"kind": "raw",
-			"x": 3408,
+			"x": 3408.0,
 			"y": 849.6,
 			"ent": {
 				"type": "crate",
 				"look": "urn_d",
-				"hp": 1,
+				"hp": 1.0,
 				"drop": "random"
 			}
 		},
@@ -186,14 +186,14 @@
 			"kind": "prop",
 			"asset": "chain_long",
 			"x": 1180.8,
-			"y": 102,
+			"y": 102.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
@@ -201,29 +201,29 @@
 			"kind": "prop",
 			"asset": "wall_torch_hook",
 			"x": 1449.6,
-			"y": 102,
+			"y": 102.0,
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
 		{
 			"kind": "prop",
 			"asset": "wall_skull_b",
-			"x": 1718.4,
-			"y": 102,
+			"x": 1824.0,
+			"y": 72.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
@@ -231,14 +231,14 @@
 			"kind": "prop",
 			"asset": "wall_torch_hook",
 			"x": 2793.6,
-			"y": 102,
+			"y": 102.0,
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
@@ -246,14 +246,14 @@
 			"kind": "prop",
 			"asset": "torch_dead",
 			"x": 3062.4,
-			"y": 102,
+			"y": 102.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
@@ -261,74 +261,74 @@
 			"kind": "prop",
 			"asset": "wall_skull_b",
 			"x": 3331.2,
-			"y": 102,
+			"y": 102.0,
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
 		{
 			"kind": "prop",
 			"asset": "grate_a",
-			"x": 2352,
-			"y": 562,
+			"x": 2352.0,
+			"y": 562.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"decal": {
 				"dy": 33.5,
-				"w": 0,
-				"h": 0,
+				"w": 0.0,
+				"h": 0.0,
 				"a": 0.95
 			}
 		},
 		{
 			"kind": "prop",
 			"asset": "moss_b",
-			"x": 1200,
-			"y": 670,
+			"x": 1200.0,
+			"y": 670.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"decal": {
-				"dy": 46,
-				"w": 0,
-				"h": 0,
+				"dy": 46.0,
+				"w": 0.0,
+				"h": 0.0,
 				"a": 0.95
 			}
 		},
 		{
 			"kind": "prop",
 			"asset": "grate_b",
-			"x": 3408,
-			"y": 459,
+			"x": 3408.0,
+			"y": 459.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"decal": {
 				"dy": 26.5,
-				"w": 0,
-				"h": 0,
+				"w": 0.0,
+				"h": 0.0,
 				"a": 0.95
 			}
 		},
@@ -336,28 +336,28 @@
 			"kind": "prop",
 			"asset": "bone_a",
 			"x": 3145.6,
-			"y": 258,
+			"y": 258.0,
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "rubble",
 			"x": 923.4,
-			"y": 461,
+			"y": 461.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			]
 		},
 		{
@@ -368,16 +368,100 @@
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			]
 		},
 		{
 			"kind": "start",
-			"x": 2256,
+			"x": 2256.0,
 			"y": 547.2
+		},
+		{
+			"kind": "prop",
+			"asset": "bridge_h",
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				148.0,
+				40.0
+			],
+			"x": 1632.0,
+			"y": 648.0
+		},
+		{
+			"kind": "prop",
+			"asset": "bridge_h",
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				148.0,
+				40.0
+			],
+			"x": 1824.0,
+			"y": 648.0
+		},
+		{
+			"kind": "prop",
+			"asset": "bridge_h",
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				148.0,
+				40.0
+			],
+			"x": 2016.0,
+			"y": 648.0
+		},
+		{
+			"kind": "prop",
+			"asset": "bridge_h",
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				148.0,
+				40.0
+			],
+			"x": 2592.0,
+			"y": 648.0
+		},
+		{
+			"kind": "prop",
+			"asset": "bridge_h",
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				148.0,
+				40.0
+			],
+			"x": 2784.0,
+			"y": 648.0
+		},
+		{
+			"kind": "prop",
+			"asset": "bridge_h",
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				148.0,
+				40.0
+			],
+			"x": 2976.0,
+			"y": 648.0
 		}
 	]
 }

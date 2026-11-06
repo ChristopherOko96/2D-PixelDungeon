@@ -708,7 +708,7 @@ static func _stamp_objects(W: Dictionary, r: Dictionary, t: Dictionary, P: Dicti
 				_stamp_prop(W, Contents.tablet_prop(a), x, y, light_cfg)
 			_:
 				_put_own(W, r, a, x, y, door_of_group)
-	_set_enemies(r, t, placed)
+	_set_enemies(r, t, placed, ((pack.pack as Dictionary).get("room_library", {}) as Dictionary).get("mobs_by_area", {}))
 	for l: Dictionary in t.get("lights", []):
 		W.lights.append({"x": float(l.x) + off.x, "y": float(l.y) + off.y, "r": l.r, "c": l.c})
 	if str(t.get("floor_tile", "")) != "" and str(r.gtype) == "key":
@@ -718,21 +718,41 @@ static func _stamp_objects(W: Dictionary, r: Dictionary, t: Dictionary, P: Dicti
 			W.reserved[int(c[1]) * int(W.COLS) + int(c[0])] = true
 
 
-## The room's enemies by the file's choice. By chance: the plan's number, or the file's own count. By
-## hand: those set; none set makes a room without a fight. The boss stays the floor's, and a room whose
+## The room's enemies by the file's choice. By chance: the file's own count, else one per by_area
+## cells_per_mob cells of the file's ground (a big hall holds more than a chamber), else the plan's number.
+## By hand: those set; none set makes a room without a fight. The boss stays the floor's, and a room whose
 ## fight pays a key or reward keeps its fight, else the floor could not be finished.
-static func _set_enemies(r: Dictionary, t: Dictionary, placed: Array) -> void:
+static func _set_enemies(r: Dictionary, t: Dictionary, placed: Array, by_area: Dictionary = {}) -> void:
 	if str(r.type) not in ["combat", "boss"]:
 		return
 	if Data.spawn_mode(t) != "manual" or str(r.type) == "boss":
 		if int(t.get("auto_mobs", 0)) > 0:
 			r.mobs = int(t.auto_mobs)
+		elif str(r.type) == "combat" and not by_area.is_empty():
+			r.mobs = mobs_for_area(ground_of(t), by_area, int(r.index))
 		return
 	if not placed.is_empty():
 		r.placed_mobs = placed
 	elif not r.has("drop") and not r.has("reward") and str(r.gtype) != "shrine":
 		r.mobs = 0
 		r.cleared = true
+
+
+## Enemies of a fight room with ground cells by by_area (cells_per_mob, min, max); k adds one now and
+## then so two rooms of one size differ.
+static func mobs_for_area(ground: int, by_area: Dictionary, k: int) -> int:
+	var n := roundi(float(ground) / maxf(1.0, float(by_area.get("cells_per_mob", 28)))) + absi(k) % 2
+	return clampi(n, int(by_area.get("min", 4)), int(by_area.get("max", 12)))
+
+
+## Cells of file t a monster can stand on: floor, Moder and bridges.
+static func ground_of(t: Dictionary) -> int:
+	var n := 0
+	for row: Variant in t.get("cells", []):
+		for ch: String in str(row):
+			if ch in ["1", "2", "3"]:
+				n += 1
+	return n
 
 
 ## The dark part of labyrinth file `t` (its maze_zone: row runs [x0, y, x1, y] in room cells) in the
@@ -834,10 +854,13 @@ static func _stamp_chest(W: Dictionary, r: Dictionary, a: Dictionary, x: float, 
 			e.loot = {"gems": 6 + n, "heart": true}
 			e.mimic = rnd.next() < float(cfg.mimic_treasure)
 		"secret", "hidden":
+			# a room found behind a secret wall or a plate riddle pays a Schatz of its tier
+			# (world_room_contents.json secret_rooms), never a Mimik
 			var tier := _tier(W, r)
-			e.loot = {"gems": Core.jround((6 + n) * (1 + (tier - 4) * 0.5)), "heart": tier >= 5}
-			e.magic = true
-			e.mimic = str(r.gtype) == "secret" and rnd.next() < float(cfg.mimic_treasure)
+			var paid := int((Contents.cfg().get("secret_rooms", {}) as Dictionary).get(str(r.gtype), 1))
+			Contents.finish_chest(e, {"loot": {"type": "hoard", "tier": paid}}, n, rnd.next)
+			e.loot.gems = maxi(int(e.loot.gems), Core.jround((6 + n) * (1 + (tier - 4) * 0.5)))
+			e.mimic = false
 		_:
 			if r.get("seq", false) or rnd.next() >= float(cfg.room_library.get("chest_share", 0.35)):
 				return

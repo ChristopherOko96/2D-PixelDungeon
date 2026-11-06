@@ -1,5 +1,5 @@
 {
-	"schema_version": 1.0,
+	"schema_version": 1,
 	"id": "k_sprung_stufen",
 	"title": "Sprung: Der Stufenturm (Turm)",
 	"world": "krypta",
@@ -7,20 +7,20 @@
 	"in_floors": true,
 	"slots": [
 		[
-			0.0,
-			0.0
+			0,
+			0
 		],
 		[
-			0.0,
-			1.0
+			0,
+			1
 		],
 		[
-			0.0,
-			2.0
+			0,
+			2
 		]
 	],
-	"width": 14.0,
-	"height": 39.0,
+	"width": 14,
+	"height": 39,
 	"cells": [
 		"00000000000000",
 		"01111111111110",
@@ -68,143 +68,143 @@
 		{
 			"side": "north",
 			"cell": [
-				6.0,
-				0.0
+				6,
+				0
 			]
 		},
 		{
 			"side": "east",
 			"cell": [
-				13.0,
-				5.0
+				13,
+				5
 			]
 		},
 		{
 			"side": "east",
 			"cell": [
-				13.0,
-				19.0
+				13,
+				19
 			]
 		},
 		{
 			"side": "east",
 			"cell": [
-				13.0,
-				33.0
+				13,
+				33
 			]
 		},
 		{
 			"side": "south",
 			"cell": [
-				6.0,
-				38.0
+				6,
+				38
 			]
 		}
 	],
-	"auto_mobs": 0.0,
+	"auto_mobs": 0,
 	"objects": [
 		{
 			"kind": "prop",
 			"asset": "wall_torch_hook",
-			"x": 240.0,
-			"y": 102.0,
+			"x": 240,
+			"y": 102,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			],
 			"wall_decor": true
 		},
 		{
 			"kind": "prop",
 			"asset": "wall_skull_b",
-			"x": 1008.0,
-			"y": 102.0,
+			"x": 1008,
+			"y": 102,
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			],
 			"wall_decor": true
 		},
 		{
 			"kind": "prop",
 			"asset": "wall_skull_b",
-			"x": 336.0,
-			"y": 456.0,
+			"x": 336,
+			"y": 456,
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			],
 			"wall_decor": true
 		},
 		{
 			"kind": "prop",
 			"asset": "wall_torch_hook",
-			"x": 720.0,
-			"y": 432.0,
+			"x": 720,
+			"y": 432,
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			],
 			"wall_decor": true
 		},
 		{
 			"kind": "prop",
 			"asset": "cage_hang",
-			"x": 240.0,
-			"y": 2406.0,
+			"x": 240,
+			"y": 2406,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			],
 			"wall_decor": true
 		},
 		{
 			"kind": "prop",
 			"asset": "chain_swag",
-			"x": 816.0,
-			"y": 2406.0,
+			"x": 816,
+			"y": 2406,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			],
 			"wall_decor": true
 		},
 		{
 			"kind": "prop",
 			"asset": "bone_b",
-			"x": 980.0,
+			"x": 980,
 			"y": 158.4,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			]
 		},
 		{
@@ -215,29 +215,29 @@
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "grate_a",
-			"x": 528.0,
+			"x": 528,
 			"y": 571.2,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			],
 			"decal": {
-				"dy": 45.0,
-				"w": 0.0,
-				"h": 0.0,
+				"dy": 45,
+				"w": 0,
+				"h": 0,
 				"a": 0.95
 			}
 		},
@@ -249,10 +249,10 @@
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			]
 		},
 		{
@@ -263,24 +263,24 @@
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "bones_scatter",
 			"x": 444.2,
-			"y": 1697.0,
+			"y": 1697,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			]
 		},
 		{
@@ -291,49 +291,49 @@
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "grate_a",
-			"x": 1104.0,
+			"x": 1104,
 			"y": 1723.2,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			],
 			"decal": {
-				"dy": 45.0,
-				"w": 0.0,
-				"h": 0.0,
+				"dy": 45,
+				"w": 0,
+				"h": 0,
 				"a": 0.95
 			}
 		},
 		{
 			"kind": "prop",
 			"asset": "moss_c",
-			"x": 336.0,
+			"x": 336,
 			"y": 1819.2,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			],
 			"decal": {
-				"dy": 45.0,
-				"w": 0.0,
-				"h": 0.0,
+				"dy": 45,
+				"w": 0,
+				"h": 0,
 				"a": 0.95
 			}
 		},
@@ -345,10 +345,10 @@
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			]
 		},
 		{
@@ -359,10 +359,10 @@
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			]
 		},
 		{
@@ -373,29 +373,29 @@
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "grate_a",
-			"x": 720.0,
+			"x": 720,
 			"y": 2491.2,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			],
 			"decal": {
-				"dy": 45.0,
-				"w": 0.0,
-				"h": 0.0,
+				"dy": 45,
+				"w": 0,
+				"h": 0,
 				"a": 0.95
 			}
 		},
@@ -407,10 +407,10 @@
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			]
 		},
 		{
@@ -421,29 +421,29 @@
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "rune_small",
-			"x": 720.0,
+			"x": 720,
 			"y": 2779.2,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			],
 			"decal": {
-				"dy": 45.0,
-				"w": 0.0,
-				"h": 0.0,
+				"dy": 45,
+				"w": 0,
+				"h": 0,
 				"a": 0.95
 			}
 		},
@@ -455,29 +455,29 @@
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "blood_a",
-			"x": 240.0,
+			"x": 240,
 			"y": 3547.2,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			],
 			"decal": {
-				"dy": 45.0,
-				"w": 0.0,
-				"h": 0.0,
+				"dy": 45,
+				"w": 0,
+				"h": 0,
 				"a": 0.95
 			}
 		},
@@ -489,10 +489,10 @@
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			]
 		},
 		{
@@ -503,10 +503,10 @@
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			]
 		},
 		{
@@ -517,10 +517,10 @@
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			]
 		},
 		{
@@ -531,25 +531,25 @@
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				30.0
+				60,
+				30
 			]
 		},
 		{
 			"kind": "plate",
 			"group": "C",
-			"order": 1.0,
-			"x": 336.0,
-			"y": 1680.0
+			"order": 1,
+			"x": 336,
+			"y": 1680
 		},
 		{
 			"kind": "plate",
 			"group": "C",
-			"order": 2.0,
-			"x": 528.0,
-			"y": 1872.0,
+			"order": 2,
+			"x": 528,
+			"y": 1872,
 			"enemies": [
 				"random",
 				"nekromant"
@@ -558,9 +558,9 @@
 		{
 			"kind": "plate",
 			"group": "C",
-			"order": 3.0,
-			"x": 720.0,
-			"y": 1680.0,
+			"order": 3,
+			"x": 720,
+			"y": 1680,
 			"enemies": [
 				"random",
 				"leerenbomber"
@@ -569,86 +569,87 @@
 		{
 			"kind": "prop",
 			"asset": "candelabra",
-			"x": 144.0,
+			"x": 144,
 			"y": 172.8,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				40.0,
-				20.0
+				40,
+				20
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "candelabra",
-			"x": 912.0,
+			"x": 912,
 			"y": 3628.8,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				40.0,
-				20.0
+				40,
+				20
 			]
 		},
 		{
 			"kind": "launch",
 			"dir": "n",
-			"cells": 3.0,
-			"x": 528.0,
-			"y": 432.0
+			"cells": 3,
+			"x": 528,
+			"y": 432
 		},
 		{
 			"kind": "chest",
 			"loot": {
 				"type": "random"
 			},
-			"x": 336.0,
-			"y": 552.0,
+			"x": 336,
+			"y": 552,
 			"mimic": "yes",
 			"mimic_mob": "truhenfresser"
 		},
 		{
 			"kind": "chest",
 			"loot": {
-				"type": "hoard"
+				"type": "hoard",
+				"tier": 2
 			},
-			"x": 720.0,
-			"y": 552.0
+			"x": 720,
+			"y": 552
 		},
 		{
 			"kind": "tablet",
 			"text": "Der Schatz liegt in der anderen Truhe.",
-			"x": 336.0,
-			"y": 648.0
+			"x": 336,
+			"y": 648
 		},
 		{
 			"kind": "tablet",
 			"text": "Wir beide sagen die Wahrheit.",
-			"x": 720.0,
-			"y": 648.0
+			"x": 720,
+			"y": 648
 		},
 		{
 			"kind": "tablet",
 			"text": "Eine der beiden Truhen lügt immer,\ndie andere nie.",
-			"x": 528.0,
-			"y": 744.0
+			"x": 528,
+			"y": 744
 		},
 		{
 			"kind": "prop",
 			"asset": "urn_b",
-			"x": 1200.0,
+			"x": 1200,
 			"y": 1228.8,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				29.0,
-				16.0
+				29,
+				16
 			],
 			"loot": {
 				"type": "random"
@@ -660,51 +661,51 @@
 		{
 			"kind": "launch",
 			"dir": "n",
-			"cells": 7.0,
-			"x": 528.0,
-			"y": 1488.0,
+			"cells": 7,
+			"x": 528,
+			"y": 1488,
 			"wake": "C"
 		},
 		{
 			"kind": "prop",
 			"asset": "skull_obelisk",
-			"x": 336.0,
+			"x": 336,
 			"y": 1612.8,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				28.0
+				60,
+				28
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "statue_monk",
-			"x": 720.0,
+			"x": 720,
 			"y": 1612.8,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				28.0
+				60,
+				28
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "statue_angel",
-			"x": 528.0,
-			"y": 2016.0,
+			"x": 528,
+			"y": 2016,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				60.0,
-				28.0
+				60,
+				28
 			]
 		},
 		{
@@ -712,64 +713,64 @@
 			"loot": {
 				"type": "random"
 			},
-			"x": 1200.0,
-			"y": 1992.0,
+			"x": 1200,
+			"y": 2088,
 			"mimic": "random",
 			"mimic_mob": "mimik"
 		},
 		{
 			"kind": "tablet",
 			"text": "Monster, Engel, Mönch.\nDer Engel schweigt, bis das Monster gesprochen hat.\nDer Mönch hat das letzte Wort.",
-			"x": 240.0,
-			"y": 2088.0
+			"x": 240,
+			"y": 2088
 		},
 		{
 			"kind": "launch",
 			"dir": "e",
-			"cells": 3.0,
-			"x": 816.0,
-			"y": 2160.0
+			"cells": 3,
+			"x": 816,
+			"y": 2160
 		},
 		{
 			"kind": "launch",
 			"dir": "n",
-			"cells": 4.0,
-			"x": 528.0,
-			"y": 2448.0,
+			"cells": 4,
+			"x": 528,
+			"y": 2448,
 			"wake": "B"
 		},
 		{
 			"kind": "brazier",
 			"group": "B",
-			"x": 240.0,
-			"y": 2568.0
+			"x": 240,
+			"y": 2568
 		},
 		{
 			"kind": "prop",
 			"asset": "brazier_low",
-			"x": 816.0,
+			"x": 816,
 			"y": 2572.8,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				57.0,
-				26.0
+				57,
+				26
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "urn_a",
-			"x": 1104.0,
+			"x": 1104,
 			"y": 2764.8,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1.0,
+			"scale": 1,
 			"foot": [
-				29.0,
-				16.0
+				29,
+				16
 			],
 			"loot": {
 				"type": "random"
@@ -777,75 +778,75 @@
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 528.0,
-			"y": 2832.0
+			"phase": 0,
+			"x": 528,
+			"y": 2832
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 528.0,
-			"y": 3024.0
+			"phase": 0,
+			"x": 528,
+			"y": 3024
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 528.0,
-			"y": 3216.0
+			"phase": 0,
+			"x": 528,
+			"y": 3216
 		},
 		{
 			"kind": "spikes",
-			"phase": 0.0,
-			"x": 528.0,
-			"y": 3408.0
+			"phase": 0,
+			"x": 528,
+			"y": 3408
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 528.0,
-			"y": 2928.0
+			"phase": 1,
+			"x": 528,
+			"y": 2928
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 528.0,
-			"y": 3120.0
+			"phase": 1,
+			"x": 528,
+			"y": 3120
 		},
 		{
 			"kind": "spikes",
-			"phase": 1.0,
-			"x": 528.0,
-			"y": 3312.0
+			"phase": 1,
+			"x": 528,
+			"y": 3312
 		},
 		{
 			"kind": "start",
-			"x": 336.0,
-			"y": 3528.0
+			"x": 336,
+			"y": 3528
 		},
 		{
 			"kind": "tablet",
 			"text": "Drei Stufen bis zum Schatz.\nGlut, Ordnung, Wahrheit.",
-			"x": 240.0,
-			"y": 3624.0
+			"x": 240,
+			"y": 3624
 		},
 		{
 			"kind": "brazier",
 			"group": "B",
-			"x": 912.0,
-			"y": 2568.0
+			"x": 912,
+			"y": 2568
 		},
 		{
 			"kind": "brazier",
 			"group": "B",
-			"x": 1104.0,
-			"y": 2568.0
+			"x": 1104,
+			"y": 2568
 		},
 		{
 			"kind": "launch",
 			"dir": "n",
 			"cells": 5,
-			"x": 816.0,
-			"y": 2640.0
+			"x": 816,
+			"y": 2640
 		}
 	],
 	"kind_label": "Sprungrätsel",

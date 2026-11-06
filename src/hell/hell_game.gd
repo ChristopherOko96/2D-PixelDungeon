@@ -2211,6 +2211,15 @@ func act() -> void:
 					if e.has("hoard"):
 						# the Schatz of a solved puzzle: every one of its item rolls, and the vault's rune chance
 						_toast("Ein Schatz! Die Truhe ist randvoll.")
+						# its heart containers raise the life cap at once (room_contents.gd hoard tiers)
+						if int(e.get("hoard_hearts", 0)) > 0:
+							var max_before := int(state.max_hp)
+							state.max_hp = Rules.raised_max_hp(state, 2 * int(e.hoard_hearts), int(balance.player.max_hp_cap))
+							state.hp = mini(int(state.max_hp), int(state.hp) + int(state.max_hp) - max_before)
+							if int(state.max_hp) > max_before:
+								_toast("+%d Herz%s: Deine Lebensgrenze steigt!" % [(int(state.max_hp) - max_before) / 2, "" if int(state.max_hp) - max_before <= 2 else "en"])
+								if feel != null:
+									feel.hero_perk("heal")
 						gold_loot.roll_rune(str((RoomContents.cfg().get("hoard", {}) as Dictionary).get("rune", "vault")), Vector2(e.x, e.y - 10))
 						if story_items != null:
 							var k := 0
@@ -2303,6 +2312,12 @@ func act() -> void:
 		else:
 			_sound("gate_locked")
 			_toast("%s %s" % [key_label(e.key), str(key_hint.get(e.key, key_hint.get(str(e.key).right(1), "")))])
+
+
+## The floor key whose look key k takes: k itself (A, B, C), or the letter of a room's own key ("15A").
+func key_letter(k: Variant) -> String:
+	var id := str(k)
+	return id if key_sprite.has(id) or not key_sprite.has(id.right(1)) else id.right(1)
 
 
 ## The name of key `k`: a floor key A, B or C, or a room's own key ("4A": key A of room 4 of a floor,
@@ -2690,8 +2705,37 @@ func _drop(kind: String, room: int, at: Vector2, extra := {}) -> void:
 		return
 	if sound != null: sound.at("drop_" + kind, at)
 	var e := {"type": kind, "x": at.x + randf_range(-30, 30), "y": at.y + randf_range(-20, 20), "room": room}
+	# a key must be taken, or the floor cannot be finished: it lies on free floor of its room even
+	# when the last monster fell over a pit, in the Moder or against a wall
+	if kind == "key":
+		var safe := _free_drop_spot(room, Vector2(e.x, e.y))
+		e.x = safe.x
+		e.y = safe.y
 	e.merge(extra)
 	W.ents.append(e)
+
+
+## `p` when the hero can stand there in room `room` (no wall, pit, Moder or solid piece, and clear of the
+## fall pits by their reach and a step more), else the middle of the nearest cell of that room where he can.
+func _free_drop_spot(room: int, p: Vector2) -> Vector2:
+	var reach := Vector2(float(balance.pit.reach_x), float(balance.pit.reach_y)) + Vector2(24.0, 24.0)
+	var fits := func(q: Vector2) -> bool:
+		for e: Dictionary in pits:
+			if absf(q.x - float(e.x)) < reach.x and absf(q.y - 8.0 - float(e.y)) < reach.y:
+				return false
+		return _room_at_world(q.x, q.y) == room and not box_blocked(Rect2(q.x - 22.0, q.y - 12.0, 44.0, 24.0), true)
+	if fits.call(p):
+		return p
+	var best := p
+	var bd := INF
+	if room >= 0 and room < W.rooms.size():
+		for c: Vector2i in W.rooms[room].cells:
+			var q := Vector2((c.x + 0.5) * C, (c.y + 0.5) * C)
+			var d := q.distance_squared_to(p)
+			if d < bd and fits.call(q):
+				bd = d
+				best = q
+	return best
 
 
 ## The character's gold: the run's own (a new character starts with 0), carried from floor to
@@ -5056,7 +5100,7 @@ func _draw_ent(l: Layer, e: Dictionary, t: float) -> void:
 				var cut := 46.0
 				l.draw_texture_rect_region(im, Rect2(e.x - im.get_width() / 2.0, e.y - im.get_height() + cut, im.get_width(), im.get_height() - cut), Rect2(0, cut, im.get_width(), im.get_height() - cut))
 		"key", "heart", "gem":
-			var name: String = "rune_gem" if e.type == "gem" else (key_sprite[e.key] if e.type == "key" else e.type)
+			var name: String = "rune_gem" if e.type == "gem" else (key_sprite[key_letter(e.key)] if e.type == "key" else e.type)
 			var im: Texture2D = tex[name]
 			var s := 0.9 if e.type == "key" else (0.55 if e.type == "gem" else 0.7)
 			var bob := sin(t * 3.0 + e.x) * 6.0
@@ -5127,7 +5171,7 @@ func _draw_gate(l: Layer, d: Dictionary, t: float) -> void:
 		if fight:
 			l.draw_texture(gate, Vector2(d.cx - gate.get_width() / 2.0, bottom - gate.get_height()), Color(1.6, 0.6, 0.5, 0.25 + 0.15 * sin(t * 5.0)))
 		else:
-			l.draw_texture_rect(tex[key_sprite[d.key]], Rect2(d.cx - 15, bottom - gate.get_height() * 0.52, 30, 56), false, key_tint[d.key])
+			l.draw_texture_rect(tex[key_sprite[key_letter(d.key)]], Rect2(d.cx - 15, bottom - gate.get_height() * 0.52, 30, 56), false, key_tint[key_letter(d.key)])
 		return
 	var fight: bool = W.rooms[d.a].fight or W.rooms[d.b].fight
 	var tint := Color.WHITE
@@ -5144,7 +5188,7 @@ func _draw_gate(l: Layer, d: Dictionary, t: float) -> void:
 		_draw_falling(l, im, Rect2(-im.get_size() / 2.0, im.get_size()), tint, drop)
 		l.draw_set_transform(Vector2.ZERO)
 	if not fight and d.kind == "lock":
-		l.draw_texture_rect(tex[key_sprite[d.key]], Rect2(d.cx - 15, d.cy - 30, 30, 56), false, key_tint[d.key])
+		l.draw_texture_rect(tex[key_sprite[key_letter(d.key)]], Rect2(d.cx - 15, d.cy - 30, 30, 56), false, key_tint[key_letter(d.key)])
 	elif not fight and d.kind == "puzzle":
 		var icon: Texture2D = tex.brazier_bowl if W.groups[d.group].kind == "braziers" else tex.icon_scroll
 		l.draw_texture_rect(icon, Rect2(d.cx - 22, d.cy - 30, 44, 44 * icon.get_height() / icon.get_width()), false)
@@ -5902,7 +5946,8 @@ func _door_color(d: Dictionary) -> Color:
 	if W.rooms[d.a].fight or W.rooms[d.b].fight:
 		return Color("#d8382a")
 	if d.kind == "lock" and not d.unlocked:
-		return key_color[d.key]
+		# a room's own key ("15A", room_floor.gd own_key) takes the colour of its letter
+		return key_color[key_letter(d.key)]
 	if d.kind == "puzzle" and _door_closed(d):
 		return Color("#f2c14e")
 	if d.kind == "boss" and _door_closed(d):

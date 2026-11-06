@@ -1,5 +1,5 @@
 {
-	"schema_version": 1,
+	"schema_version": 1.0,
 	"id": "k_kapelle_b2",
 	"title": "Seitenkapelle (breit)",
 	"world": "krypta",
@@ -7,16 +7,16 @@
 	"in_floors": true,
 	"slots": [
 		[
-			0,
-			0
+			0.0,
+			0.0
 		],
 		[
-			1,
-			0
+			1.0,
+			0.0
 		]
 	],
-	"width": 31,
-	"height": 11,
+	"width": 31.0,
+	"height": 11.0,
 	"cells": [
 		"0000000000000000000000000000000",
 		"0000011111111111111111111100000",
@@ -36,277 +36,277 @@
 		{
 			"side": "north",
 			"cell": [
-				6,
-				0
+				6.0,
+				0.0
 			]
 		},
 		{
 			"side": "south",
 			"cell": [
-				6,
-				10
+				6.0,
+				10.0
 			]
 		},
 		{
 			"side": "west",
 			"cell": [
-				4,
-				5
+				4.0,
+				5.0
 			]
 		},
 		{
 			"side": "north",
 			"cell": [
-				23,
-				0
+				23.0,
+				0.0
 			]
 		},
 		{
 			"side": "south",
 			"cell": [
-				23,
-				10
+				23.0,
+				10.0
 			]
 		},
 		{
 			"side": "east",
 			"cell": [
-				26,
-				5
+				26.0,
+				5.0
 			]
 		}
 	],
-	"auto_mobs": 0,
+	"auto_mobs": 0.0,
 	"objects": [
 		{
 			"kind": "prop",
 			"asset": "candelabra",
-			"x": 1008,
+			"x": 1008.0,
 			"y": 274.6,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				26,
-				18
+				26.0,
+				18.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "candelabra",
-			"x": 1968,
+			"x": 1968.0,
 			"y": 274.6,
 			"flip": true,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				26,
-				18
+				26.0,
+				18.0
 			]
 		},
 		{
 			"kind": "plate",
-			"x": 816,
-			"y": 432,
+			"x": 816.0,
+			"y": 432.0,
 			"group": "seq",
-			"order": 0
+			"order": 0.0
 		},
 		{
 			"kind": "plate",
-			"x": 1392,
-			"y": 432,
+			"x": 1392.0,
+			"y": 432.0,
 			"group": "seq",
-			"order": 0
+			"order": 0.0
 		},
 		{
 			"kind": "plate",
-			"x": 1968,
-			"y": 432,
+			"x": 1968.0,
+			"y": 432.0,
 			"group": "seq",
-			"order": 0
+			"order": 0.0
 		},
 		{
 			"kind": "prop",
 			"asset": "bench",
-			"x": 720,
+			"x": 720.0,
 			"y": 562.6,
 			"flip": true,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				120,
-				30
+				120.0,
+				30.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "bench",
-			"x": 1296,
+			"x": 1296.0,
 			"y": 562.6,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				120,
-				30
+				120.0,
+				30.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "bench",
-			"x": 1680,
+			"x": 1680.0,
 			"y": 562.6,
 			"flip": true,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				120,
-				30
+				120.0,
+				30.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "bench",
-			"x": 2256,
+			"x": 2256.0,
 			"y": 562.6,
 			"flip": true,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				120,
-				30
+				120.0,
+				30.0
 			]
 		},
 		{
 			"kind": "plate",
-			"x": 816,
-			"y": 624,
+			"x": 816.0,
+			"y": 624.0,
 			"group": "seq",
-			"order": 0
+			"order": 0.0
 		},
 		{
 			"kind": "plate",
-			"x": 1392,
-			"y": 624,
+			"x": 1392.0,
+			"y": 624.0,
 			"group": "seq",
-			"order": 0
+			"order": 0.0
 		},
 		{
 			"kind": "plate",
-			"x": 1968,
-			"y": 624,
+			"x": 1968.0,
+			"y": 624.0,
 			"group": "seq",
-			"order": 0
+			"order": 0.0
 		},
 		{
 			"kind": "prop",
 			"asset": "bench",
-			"x": 720,
+			"x": 720.0,
 			"y": 754.6,
 			"flip": true,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				120,
-				30
+				120.0,
+				30.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "bench",
-			"x": 1296,
+			"x": 1296.0,
 			"y": 754.6,
 			"flip": true,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				120,
-				30
+				120.0,
+				30.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "bench",
-			"x": 1680,
+			"x": 1680.0,
 			"y": 754.6,
 			"flip": true,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				120,
-				30
+				120.0,
+				30.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "bench",
-			"x": 2256,
+			"x": 2256.0,
 			"y": 754.6,
 			"flip": true,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				120,
-				30
+				120.0,
+				30.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "rug_red",
-			"x": 1488,
-			"y": 612,
+			"x": 1488.0,
+			"y": 612.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"decal": {
-				"dy": 84,
-				"w": 170,
-				"h": 800,
-				"a": 1
+				"dy": 84.0,
+				"w": 170.0,
+				"h": 800.0,
+				"a": 1.0
 			}
 		},
 		{
 			"kind": "prop",
 			"asset": "banner_b",
-			"x": 1161.6,
-			"y": 102,
+			"x": 1104.0,
+			"y": 96.0,
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
 		{
 			"kind": "prop",
 			"asset": "banner_b",
-			"x": 1430.4,
-			"y": 102,
+			"x": 1344.0,
+			"y": 96.0,
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
@@ -314,157 +314,157 @@
 			"kind": "prop",
 			"asset": "banner_1",
 			"x": 1699.2,
-			"y": 102,
+			"y": 102.0,
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
 		{
 			"kind": "prop",
 			"asset": "banner_b",
-			"x": 1968,
-			"y": 102,
+			"x": 1968.0,
+			"y": 102.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
 		{
 			"kind": "prop",
 			"asset": "statue_monk",
-			"x": 1968,
+			"x": 1968.0,
 			"y": 946.6,
 			"flip": true,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				40,
-				24
+				40.0,
+				24.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "brazier_bowl",
-			"x": 1584,
-			"y": 178.6,
+			"x": 1632.0,
+			"y": 168.0,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				56,
-				30
+				56.0,
+				30.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "candelabra",
-			"x": 1008,
+			"x": 1008.0,
 			"y": 946.6,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				26,
-				18
+				26.0,
+				18.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "grate",
-			"x": 1968,
-			"y": 668,
+			"x": 1968.0,
+			"y": 668.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"decal": {
-				"dy": 44,
-				"w": 0,
-				"h": 0,
+				"dy": 44.0,
+				"w": 0.0,
+				"h": 0.0,
 				"a": 0.95
 			}
 		},
 		{
 			"kind": "prop",
 			"asset": "blood_a",
-			"x": 912,
-			"y": 384,
+			"x": 912.0,
+			"y": 384.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"decal": {
 				"dy": 47.5,
-				"w": 0,
-				"h": 0,
+				"w": 0.0,
+				"h": 0.0,
 				"a": 0.95
 			}
 		},
 		{
 			"kind": "prop",
 			"asset": "grate_b",
-			"x": 912,
-			"y": 363,
+			"x": 912.0,
+			"y": 363.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"decal": {
 				"dy": 26.5,
-				"w": 0,
-				"h": 0,
+				"w": 0.0,
+				"h": 0.0,
 				"a": 0.95
 			}
 		},
 		{
 			"kind": "prop",
 			"asset": "blood_a",
-			"x": 1872,
-			"y": 960,
+			"x": 1872.0,
+			"y": 960.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"decal": {
 				"dy": 47.5,
-				"w": 0,
-				"h": 0,
+				"w": 0.0,
+				"h": 0.0,
 				"a": 0.95
 			}
 		},
 		{
 			"kind": "start",
-			"x": 1488,
+			"x": 1488.0,
 			"y": 547.2
 		}
 	]

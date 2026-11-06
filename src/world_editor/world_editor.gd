@@ -931,6 +931,8 @@ func _loot(o: Dictionary, label: String) -> void:
 		_fill_inspector.call_deferred())
 	_inspector.add_child(_row(label, pick))
 	var type := str(loot.get("type", "none"))
+	if type == "hoard":
+		_hoard_tier(o)
 	if type in ["gold", "potion", "crystal", "stone"]:
 		_number("Anzahl", float(loot.get("amount", 1)), 1.0, 200.0, 1.0, func(v: float) -> void: (o.loot as Dictionary).amount = int(v))
 	if type in ["potion", "weapon", "key"]:
@@ -946,6 +948,23 @@ func _loot(o: Dictionary, label: String) -> void:
 			(o.loot as Dictionary).id = str(items.get_item_metadata(i))
 			_touched())
 		_inspector.add_child(_row("Welche", items))
+
+
+## How much a Schatz pays, by how hard its puzzle is (world_editor.json hoard_tiers, room_contents.gd).
+func _hoard_tier(o: Dictionary) -> void:
+	var tiers: Dictionary = catalog.cfg.get("hoard_tiers", {"1": "Stufe 1", "2": "Stufe 2", "3": "Stufe 3"})
+	var pick := OptionButton.new()
+	var now := str(Contents.hoard_tier(o))
+	for id: String in tiers:
+		pick.add_item(str(tiers[id]))
+		pick.set_item_metadata(pick.item_count - 1, id)
+		if id == now:
+			pick.select(pick.item_count - 1)
+	pick.item_selected.connect(func(i: int) -> void:
+		canvas.checkpoint()
+		(o.loot as Dictionary).tier = int(str(pick.get_item_metadata(i)))
+		_touched())
+	_inspector.add_child(_row("Stufe", pick))
 
 
 ## Whether a chest bites: never, always or by chance, and which monster hides in it.

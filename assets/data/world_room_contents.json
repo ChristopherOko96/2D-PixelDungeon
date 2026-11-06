@@ -1,5 +1,5 @@
 {
- "_note": "What chests and breakable pieces of Weltbauer rooms may hold (src/world_kit/room_contents.gd). chest_mobs: monsters that never stand as monsters when placed, they wait as a chest. mimic_chance: share of chests set to Mimik 'Zufällig' that bite (0 to 1). max_enemies: enemies one chest or piece lets out. random_chest: gold of a chest with content 'Zufällig' is gems_base + gems_per_floor * floor, heart_chance its share with a heart; items come from the game's chest drops (items.json drops.chest). random_piece: chances (sum 1) of a broken piece with content 'Zufällig': nothing, gold_amount gold or a heart; items come from items.json drops.crate. hoard: the Schatz chest of a solved puzzle (content type hoard): gold gems_base + gems_per_floor * floor, always a heart, rolls = item drop sources of items.json drops rolled one after another (gold_crate: a rare weapon or gear plus crystal and stone), rune = gold_loot rune source. tablet: the Inschrift stone (Weltbauer part tablet): asset = its picture, foot = px it blocks (width, height), reach = px from the hero within which its text shows.",
+ "_note": "What chests and breakable pieces of Weltbauer rooms may hold (src/world_kit/room_contents.gd). chest_mobs: monsters that never stand as monsters when placed, they wait as a chest. mimic_chance: share of chests set to Mimik 'Zufällig' that bite (0 to 1). max_enemies: enemies one chest or piece lets out. random_chest: gold of a chest with content 'Zufällig' is gems_base + gems_per_floor * floor, heart_chance its share with a heart; items come from the game's chest drops (items.json drops.chest). random_piece: chances (sum 1) of a broken piece with content 'Zufällig': nothing, gold_amount gold or a heart; items come from items.json drops.crate. hoard: the Schatz chest of a solved puzzle (content type hoard, loot.tier 1 to 3 by how hard the puzzle is, default_tier when unset): gold gems_base + gems_per_floor * floor, always a heart, hearts = heart containers (each raises the life cap by one heart up to krypta_balance player.max_hp_cap), rolls = item drop sources of items.json drops rolled one after another (gold_crate: a rare weapon or gear plus crystal and stone; puzzle_epic: an epic piece, puzzle_legendary: a legendary weapon or armour of the class being played, both never cursed); tiers override the base values. rune = gold_loot rune source. secret_rooms: the Schatz tier of the chest (loot auto) in a floor's secret room behind a secret wall (secret) or a plate riddle (hidden); such a chest is never a Mimik. tablet: the Inschrift stone (Weltbauer part tablet): asset = its picture, foot = px it blocks (width, height), reach = px from the hero within which its text shows.",
  "chest_mobs": [
   "mimik",
   "truhenfresser"
@@ -25,7 +25,43 @@
    "chest",
    "chest"
   ],
-  "rune": "vault"
+  "rune": "vault",
+  "default_tier": 1,
+  "tiers": {
+   "1": {
+    "gems_base": 16,
+    "gems_per_floor": 3,
+    "rolls": [
+     "gold_crate",
+     "chest"
+    ],
+    "hearts": 1
+   },
+   "2": {
+    "gems_base": 24,
+    "gems_per_floor": 4,
+    "rolls": [
+     "puzzle_epic",
+     "gold_crate",
+     "chest"
+    ],
+    "hearts": 1
+   },
+   "3": {
+    "gems_base": 32,
+    "gems_per_floor": 5,
+    "rolls": [
+     "puzzle_legendary",
+     "puzzle_epic",
+     "gold_crate"
+    ],
+    "hearts": 2
+   }
+  }
+ },
+ "secret_rooms": {
+  "secret": 1,
+  "hidden": 2
  },
  "tablet": {
   "asset": "obelisk",

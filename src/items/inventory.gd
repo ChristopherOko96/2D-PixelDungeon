@@ -134,8 +134,8 @@ func _roll_kind(spec: Dictionary, depth: float, class_id: String) -> Dictionary:
 			chosen = kind
 			break
 	match chosen:
-		"weapon": return _roll_weapon(depth, class_id, str(spec.get("min_rarity", "common")))
-		"gear": return _roll_gear(depth, str(spec.get("min_rarity", "common")))
+		"weapon": return _roll_weapon(depth, class_id, str(spec.get("min_rarity", "common")), _gear_class(spec, class_id), bool(spec.get("clean", false)))
+		"gear": return _roll_gear(depth, str(spec.get("min_rarity", "common")), _gear_class(spec, class_id), bool(spec.get("clean", false)))
 		"potion": return make_stack("potion", _roll_potion())
 	return make_stack(chosen)
 
@@ -155,7 +155,14 @@ func _roll_potion() -> String:
 	return chosen
 
 
-func _roll_weapon(depth: float, class_id: String, minimum: String) -> Dictionary:
+## The class a source's gear must be made for: the hero's with own_class, else "" (any piece).
+func _gear_class(spec: Dictionary, class_id: String) -> String:
+	return class_id if bool(spec.get("own_class", false)) else ""
+
+
+## A weapon of the hero's class of a rolled rarity; own and clean pass to the gear rolled in its
+## place when the class has none of that rarity (clean: never cursed).
+func _roll_weapon(depth: float, class_id: String, minimum: String, own := "", clean := false) -> Dictionary:
 	var weights: Dictionary = data.get("rarity_weights", {})
 	var lowest := RARITIES.find(minimum)
 	var total := 0.0
@@ -173,9 +180,9 @@ func _roll_weapon(depth: float, class_id: String, minimum: String) -> Dictionary
 	var pool: Array = data.get("weapons", []).filter(func(entry: Dictionary) -> bool: return str(entry.rarity) == rarity and str(entry["class"]) == class_id and not bool(entry.get("start", false)))
 	# no weapon of the hero's class at this rarity (the necromancer has only his start staff):
 	# a piece of gear he can wear instead of another class's weapon (gameplay review R1)
-	if pool.is_empty(): return _roll_gear(depth, minimum)
+	if pool.is_empty(): return _roll_gear(depth, minimum, own, clean)
 	var spec: Dictionary = pool[_rng.randi_range(0, pool.size() - 1)]
-	return make_weapon(str(spec.id), false, _roll_curse("weapon"))
+	return make_weapon(str(spec.id), false, "" if clean else _roll_curse("weapon"))
 
 
 ## A rarity from the floor's weights, at least `minimum`.
@@ -194,14 +201,18 @@ func _roll_rarity(depth: float, minimum: String) -> String:
 	return RARITIES[lowest]
 
 
-## An armour, ring or amulet of a rolled rarity (the nearest one that exists).
-func _roll_gear(depth: float, minimum: String) -> Dictionary:
+## An armour, ring or amulet of a rolled rarity (the nearest one that exists). With own a class: a
+## piece made for that class, else one made for no class. clean: never cursed.
+func _roll_gear(depth: float, minimum: String, own := "", clean := false) -> Dictionary:
 	var rarity := _roll_rarity(depth, minimum)
 	var all: Array = data.get("gear", [])
 	var pool: Array = all.filter(func(entry: Dictionary) -> bool: return str(entry.rarity) == rarity)
+	if own != "":
+		var mine := pool.filter(func(entry: Dictionary) -> bool: return str(entry.get("class", "")) == own)
+		pool = mine if not mine.is_empty() else pool.filter(func(entry: Dictionary) -> bool: return str(entry.get("class", "")) == "")
 	if pool.is_empty(): pool = all
 	var spec: Dictionary = pool[_rng.randi_range(0, pool.size() - 1)]
-	return make_gear(str(spec.id), false, _roll_curse(str(spec.slot)))
+	return make_gear(str(spec.id), false, "" if clean else _roll_curse(str(spec.slot)))
 
 
 ## A curse for a found piece in `slot` ("" for none); gear never gets the burning blade.

@@ -750,7 +750,7 @@
 		{
 			"kind": "launch",
 			"dir": "e",
-			"cells": 5.0,
+			"cells": 5,
 			"x": 1104.0,
 			"y": 624.0
 		},
@@ -922,7 +922,7 @@
 		{
 			"kind": "plate",
 			"group": "A",
-			"order": 0.0,
+			"order": 0,
 			"x": 1968.0,
 			"y": 1392.0
 		},
@@ -958,7 +958,8 @@
 		{
 			"kind": "chest",
 			"loot": {
-				"type": "hoard"
+				"type": "hoard",
+				"tier": 3
 			},
 			"x": 2448.0,
 			"y": 1608.0

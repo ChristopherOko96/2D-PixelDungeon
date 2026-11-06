@@ -570,7 +570,7 @@
 			"kind": "prop",
 			"asset": "candelabra",
 			"x": 144,
-			"y": 652.8,
+			"y": 844.8,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
@@ -584,7 +584,7 @@
 			"kind": "prop",
 			"asset": "candelabra",
 			"x": 1200,
-			"y": 652.8,
+			"y": 844.8,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
@@ -708,7 +708,8 @@
 		{
 			"kind": "chest",
 			"loot": {
-				"type": "hoard"
+				"type": "hoard",
+				"tier": 2
 			},
 			"x": 240,
 			"y": 1608

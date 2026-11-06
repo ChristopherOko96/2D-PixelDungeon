@@ -219,6 +219,11 @@
    }
   }
  ],
+ "hoard_tiers": {
+  "1": "Stufe 1: leichtes Rätsel (Gold, 1 Herzcontainer, seltener Fund)",
+  "2": "Stufe 2: schweres Rätsel (+ epischer Fund)",
+  "3": "Stufe 3: sehr schwer (Legendär für die Klasse, 2 Herzcontainer)"
+ },
  "loot_types": {
   "none": "Nichts",
   "random": "Zufällig (die Etage entscheidet)",
