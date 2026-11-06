@@ -1,0 +1,692 @@
+{
+	"schema_version": 1,
+	"id": "f_glut_lb",
+	"title": "Rätsel: Glut tragen (Winkel)",
+	"world": "frost",
+	"role": "jump",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		],
+		[
+			1,
+			0
+		],
+		[
+			1,
+			1
+		]
+	],
+	"width": 31,
+	"height": 25,
+	"cells": [
+		"0000000000000000000000000000000",
+		"0111011111111111101111111111110",
+		"0111011111111111101111111111110",
+		"0000011111111111101111111111110",
+		"0111000000000011101111111111110",
+		"0111111100000000111111111111110",
+		"0111111111111111101111111111110",
+		"0111111111101101101111111111110",
+		"0111111111101101101111111111110",
+		"0111111111101101101111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000000000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				24,
+				0
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				30,
+				13
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				24,
+				24
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "frost_rune",
+			"x": 1776,
+			"y": 528
+		},
+		{
+			"kind": "tablet",
+			"x": 1776,
+			"y": 369.6,
+			"text": "Die Schalen sind kalt.\nTrag die Glut vom Herd, sie stirbt nach wenigen Schritten,\nim Nebel noch schneller. Brennende Schalen geben neue."
+		},
+		{
+			"kind": "gate",
+			"x": 192,
+			"y": 288,
+			"dir": "v",
+			"group": "A",
+			"lock": "",
+			"style": "portcullis"
+		},
+		{
+			"kind": "chest",
+			"x": 240,
+			"y": 177.6,
+			"loot": {
+				"type": "hoard",
+				"tier": 2
+			},
+			"mimic": "no"
+		},
+		{
+			"kind": "cold_fog",
+			"x": 1008,
+			"y": 240
+		},
+		{
+			"kind": "cold_fog",
+			"x": 912,
+			"y": 240
+		},
+		{
+			"kind": "cold_fog",
+			"x": 1008,
+			"y": 336
+		},
+		{
+			"kind": "cold_fog",
+			"x": 912,
+			"y": 336
+		},
+		{
+			"kind": "cold_fog",
+			"x": 1392,
+			"y": 144
+		},
+		{
+			"kind": "cold_fog",
+			"x": 1296,
+			"y": 144
+		},
+		{
+			"kind": "cold_fog",
+			"x": 1392,
+			"y": 240
+		},
+		{
+			"kind": "cold_fog",
+			"x": 1296,
+			"y": 240
+		},
+		{
+			"kind": "cold_fog",
+			"x": 336,
+			"y": 720
+		},
+		{
+			"kind": "cold_fog",
+			"x": 240,
+			"y": 720
+		},
+		{
+			"kind": "cold_fog",
+			"x": 336,
+			"y": 816
+		},
+		{
+			"kind": "cold_fog",
+			"x": 240,
+			"y": 816
+		},
+		{
+			"kind": "ember_source",
+			"x": 528,
+			"y": 144
+		},
+		{
+			"kind": "brazier",
+			"x": 1296,
+			"y": 168,
+			"group": "A",
+			"cold": true
+		},
+		{
+			"kind": "brazier",
+			"x": 240,
+			"y": 936,
+			"group": "A",
+			"cold": true
+		},
+		{
+			"kind": "brazier",
+			"x": 720,
+			"y": 936,
+			"group": "A",
+			"cold": true
+		},
+		{
+			"kind": "brazier",
+			"x": 1584,
+			"y": 936,
+			"group": "A",
+			"cold": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_v_glow_blue",
+			"x": 2736,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_v_glow_blue",
+			"x": 1929.6,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_v_glow_blue",
+			"x": 1488,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_v_glow_blue",
+			"x": 1219.2,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_long",
+			"x": 950.4,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 681.6,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_v_glow_blue",
+			"x": 240,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_v_glow_blue",
+			"x": 624,
+			"y": 486,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_v_glow_blue",
+			"x": 1392,
+			"y": 582,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_long",
+			"x": 1123.2,
+			"y": 582,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_b",
+			"x": 1872,
+			"y": 204,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_b",
+			"x": 2448,
+			"y": 300,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_d",
+			"x": 1776,
+			"y": 588,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_b",
+			"x": 2352,
+			"y": 780,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_a",
+			"x": 2352,
+			"y": 876,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_c",
+			"x": 2352,
+			"y": 972,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_b",
+			"x": 2832,
+			"y": 1260,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_b",
+			"x": 2832,
+			"y": 1356,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_b",
+			"x": 1776,
+			"y": 1644,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_b",
+			"x": 2640,
+			"y": 1740,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_a",
+			"x": 2544,
+			"y": 2220,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "boulders",
+			"x": 1776,
+			"y": 1426.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				60,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "boulders",
+			"x": 2832,
+			"y": 850.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				60,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rocks_a",
+			"x": 2832,
+			"y": 466.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				60,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rocks_a",
+			"x": 1776,
+			"y": 2098.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				60,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "boulders",
+			"x": 2832,
+			"y": 1714.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				60,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rocks_a",
+			"x": 2736,
+			"y": 2290.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				60,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rocks_a",
+			"x": 1776,
+			"y": 1042.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				60,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "boulders",
+			"x": 2064,
+			"y": 178.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				60,
+				28
+			]
+		},
+		{
+			"kind": "start",
+			"x": 1488,
+			"y": 931.2
+		}
+	],
+	"kind_label": "Frosträtsel",
+	"info": "Kein Kampf. Trag die Glut vom Herd zu den kalten Schalen.",
+	"weather": "snow"
+}

@@ -12,6 +12,7 @@ extends SceneTree
 ##
 ##   godot --headless --path . -s tools/krypta_dungeon/playthrough.gd            (4 classes, 1 run each)
 ##   PT_RUNS=3 PT_SEED=5 PT_CLASSES=swordsman,mage godot --headless --path . -s tools/krypta_dungeon/playthrough.gd
+##   PT_SCENE=res://src/hell/frost_dungeon.tscn ...   plays Story 2 (the Frostgruft) the same way
 
 const KryptaScene = preload("res://src/hell/krypta_dungeon.tscn")
 const C := 96.0
@@ -66,7 +67,8 @@ func _frames(n: int) -> void:
 
 
 func _play(cid: String) -> void:
-	game = KryptaScene.instantiate()
+	var scene: PackedScene = load(OS.get_environment("PT_SCENE")) if OS.get_environment("PT_SCENE") != "" else KryptaScene
+	game = scene.instantiate()
 	game.class_id = cid
 	game.graphics_path = "user://playthrough_graphics.cfg"
 	root.add_child(game)

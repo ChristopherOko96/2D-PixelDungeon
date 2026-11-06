@@ -27,6 +27,8 @@ const LaunchPads = preload("res://src/hell/launch_pads.gd")
 const Monsters = preload("res://src/hell/hell_monsters.gd")
 const Gates = preload("res://src/world_editor/world_gates.gd")
 const Contents = preload("res://src/world_kit/room_contents.gd")
+const FrostPuzzles = preload("res://src/world_kit/frost_puzzles.gd")
+const RoomWeather = preload("res://src/world_kit/room_weather.gd")
 const CELL := 96.0
 const SNAP := 24.0
 const CELL_KINDS := ["launch", "plate", "spikes", "vent"]
@@ -47,6 +49,9 @@ var feet_on: bool = true
 var catalog: RefCounted
 var picked: Dictionary = {}
 var time: float = 0.0
+## The room's weather drawn over it (room_weather.gd draw_preview).
+var weather_on := true
+var _weather: RefCounted = RoomWeather.new()
 
 var _world := Node2D.new()
 var _ground := Node2D.new()
@@ -239,7 +244,7 @@ func _cell_of(p: Vector2) -> Vector2i:
 ## grid, free with Alt.
 func _placed_at(p: Vector2, kind: String) -> Vector2:
 	var cell := _cell_of(p)
-	if kind in CELL_KINDS:
+	if kind in CELL_KINDS or FrostPuzzles.KINDS.has(kind):
 		return (Vector2(cell) + Vector2.ONE * 0.5) * CELL
 	if kind in ["gate", "secret"]:
 		var at := Gates.spot(room, p)
@@ -516,6 +521,10 @@ func box_of(o: Dictionary) -> Rect2:
 			return _picture_rect(o, t.get_size() if t != null else Vector2(48, 48))
 		"launch", "plate", "spikes", "vent":
 			return Rect2(x - 44.0, y - 44.0, 88.0, 88.0)
+		_ when FrostPuzzles.FLAT.has(str(o.kind)):
+			return Rect2(x - 44.0, y - 44.0, 88.0, 88.0)
+		_ when FrostPuzzles.KINDS.has(str(o.kind)):
+			return Rect2(x - 44.0, y - 70.0, 88.0, 110.0)
 		"gate", "secret":
 			var two := Gates.cells(o)
 			return Rect2(Vector2(two[0]) * CELL, Vector2(two[1] - two[0] + Vector2i.ONE) * CELL)
@@ -561,7 +570,8 @@ func _draw_ground() -> void:
 					elif tex.has("wall_v"):
 						ci.draw_texture_rect(tex.wall_v, r, true, Color(0.75, 0.68, 0.7))
 				continue
-			if cell == Data.LIQUID or cell == Data.BRIDGE:
+			# an ice lake (room ice_lake): its whole floor is the ice the game draws
+			if cell == Data.LIQUID or cell == Data.BRIDGE or (cell == Data.FLOOR and bool(room.get("ice_lake", false))):
 				var lt: Texture2D = tex.get("lava_01") if (x * 7 + y * 13) % 10 > 6 else tex.get("lava_00")
 				if lt != null:
 					if one_to_one:
@@ -692,7 +702,7 @@ func _sort_key(o: Dictionary) -> float:
 	match str(o.get("layer", "normal")):
 		"floor": return float(o.y) - 1000000.0
 		"front": return float(o.y) + 1000000.0
-	if str(o.kind) in ["launch", "plate", "spikes", "vent"]:
+	if str(o.kind) in ["launch", "plate", "spikes", "vent"] or FrostPuzzles.FLAT.has(str(o.kind)):
 		return float(o.y) - 500000.0
 	if str(o.kind) == "gate":
 		return box_of(o).end.y
@@ -749,6 +759,10 @@ func _draw_object(ci: CanvasItem, o: Dictionary, cfg: Dictionary) -> void:
 			_draw_enemy(ci, o)
 		"raw":
 			_foot_picture(ci, tex.get(_raw_picture(o)), x, y)
+		_ when FrostPuzzles.FLAT.has(str(o.kind)):
+			FrostPuzzles.draw_flat(ci, str(o.kind), o, Vector2(x, y), time, tex)
+		_ when FrostPuzzles.KINDS.has(str(o.kind)):
+			FrostPuzzles.draw_standing(ci, str(o.kind), o, Vector2(x, y), time, tex)
 		_:
 			var name := str(_PICTURES.get(str(o.kind), ""))
 			_foot_picture(ci, art.moving(name, Vector2(x, y), time), x, y)
@@ -883,6 +897,9 @@ func _draw_marks() -> void:
 	var line := 1.0 / _world.scale.x
 	var w := int(room.width)
 	var h := int(room.height)
+	if weather_on:
+		_weather.draw_preview(ci, Rect2(0, 0, w * CELL, h * CELL), room, 1.0 / 15.0)
+	_draw_frost_light(ci)
 	if grid_on:
 		for x in range(w + 1):
 			ci.draw_line(Vector2(x * CELL, 0), Vector2(x * CELL, h * CELL), Color(0.7, 0.85, 1, 0.13), line)
@@ -895,7 +912,7 @@ func _draw_marks() -> void:
 			# a sleeping pad shows the group that wakes it
 			if str(o.get("wake", "")) != "":
 				_draw_group_tag(ci, o, line, str(o.wake))
-		elif kind in ["gate", "secret", "plate", "lever", "brazier", "skullheap"] or str(o.get("opens", "")) != "":
+		elif kind in ["gate", "secret", "plate", "lever", "brazier", "skullheap"] or str(o.get("opens", "")) != "" or (FrostPuzzles.KINDS.has(kind) and str(o.get("group", "")) != ""):
 			_draw_group_tag(ci, o, line)
 		elif kind == "prop" and feet_on and bool(o.get("block", false)):
 			var foot: Array = o.get("foot", [60, 30])
@@ -986,6 +1003,36 @@ func _draw_throw(ci: CanvasItem, o: Dictionary, line: float) -> void:
 			ci.draw_line(last, p, color, 3.0 * line)
 		last = p
 	ci.draw_rect(Rect2(to - Vector2.ONE * 34.0, Vector2.ONE * 68.0), color, false, 3.0 * line)
+
+
+## The aurora light of the room's sources as the game will run it, through the prisms as they are set.
+func _draw_frost_light(ci: CanvasItem) -> void:
+	var at := {}
+	for o: Dictionary in room.objects:
+		if FrostPuzzles.SOLID.has(str(o.kind)):
+			at[FrostPuzzles.cell_of(o)] = o
+	var what := func(c: Vector2i) -> String:
+		var cell := Data.cell_at(room, c.x, c.y)
+		if cell == Data.WALL:
+			return "wall"
+		var o: Variant = at.get(c)
+		if o == null:
+			return "free"
+		match str(o.kind):
+			"prism": return "prism%d" % int(o.get("turn", 0))
+			"beam_seal": return "seal"
+		return "stop"
+	for o: Dictionary in room.objects:
+		if str(o.kind) != "beam_source":
+			continue
+		var start := FrostPuzzles.cell_of(o)
+		var res := FrostPuzzles.trace(start, FrostPuzzles.DIRS.get(str(o.get("dir", "e")), Vector2i(1, 0)), what)
+		var from := FrostPuzzles.centre(start)
+		for c: Vector2i in res.turns:
+			FrostPuzzles.draw_beam(ci, from, FrostPuzzles.centre(c), time, {"width": 5.0})
+			from = FrostPuzzles.centre(c)
+		var tip := FrostPuzzles.centre(res.seal) if res.seal != null else FrostPuzzles.centre(res.end)
+		FrostPuzzles.draw_beam(ci, from, tip, time, {"width": 5.0})
 
 
 func _draw_group_tag(ci: CanvasItem, o: Dictionary, line: float, own := "") -> void:

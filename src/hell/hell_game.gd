@@ -85,6 +85,8 @@ const WorldRoomWorld = preload("res://src/world_editor/world_room_world.gd")
 const WorldRoomData = preload("res://src/world_editor/world_room_data.gd")
 const WorldTerrain = preload("res://src/world_editor/world_terrain.gd")
 const LaunchPads = preload("res://src/hell/launch_pads.gd")
+const FrostPuzzles = preload("res://src/world_kit/frost_puzzles.gd")
+const RoomWeather = preload("res://src/world_kit/room_weather.gd")
 const StoryWreck = preload("res://src/hell/story_wreck.gd")
 const StoryMotionHost = preload("res://src/hell/story_motion_host.gd")
 const StoryExposureHost = preload("res://src/hell/story_exposure_host.gd")
@@ -201,6 +203,10 @@ var floors_raw: Array = []
 var world: RefCounted
 ## The Sprungplatten of the floor (src/hell/launch_pads.gd).
 var launch_pads: RefCounted
+## The Frostgruft's puzzle pieces (src/world_kit/frost_puzzles.gd).
+var frost_puzzles: RefCounted
+## The weather of the hero's room, drawn over the picture (src/world_kit/room_weather.gd).
+var room_weather: RefCounted = RoomWeather.new()
 ## Floor choice of the hidden stairs (key 1-9), open while not empty.
 var stairs_pick: Dictionary = {}
 var tex: Dictionary = {}
@@ -400,6 +406,7 @@ func _ready() -> void:
 	_load_theme()
 	balance = JSON.parse_string(FileAccess.get_file_as_string(theme.balance))
 	launch_pads = LaunchPads.new(self)
+	frost_puzzles = FrostPuzzles.new(self)
 	if not world_room.is_empty():
 		world = WorldRoomWorld.new(world_room)
 		floors_raw = []
@@ -1114,6 +1121,7 @@ func load_floor(n: int, carry: bool) -> void:
 	breakables = W.ents.filter(func(e: Dictionary) -> bool: return e.type == "seal" or e.type == "skullheap" or e.type == "crate")
 	_index_breakables()
 	pits = W.ents.filter(func(e: Dictionary) -> bool: return e.type == "pit")
+	frost_puzzles.setup()
 	for e: Dictionary in breakables:
 		e.max_hp = int(e.hp)
 	if wreck != null:
@@ -1316,7 +1324,24 @@ func _cell(x: int, y: int) -> int:
 ## True at world place `p` in a room of nothing but ice (frost_world.json ice_rooms, theme ice_room).
 func ice_room_at(p: Vector2) -> bool:
 	var room := _room_at_world(p.x, p.y)
-	return room >= 0 and room < (W.rooms as Array).size() and bool(W.rooms[room].get("ice", false))
+	if room < 0 or room >= (W.rooms as Array).size() or not bool(W.rooms[room].get("ice", false)):
+		return false
+	# an ice lake (a Weltbauer room with ice_lake): its painted ground (area brush) is a firm snowfield
+	if bool(W.rooms[room].get("ice_lake", false)):
+		var cell := int(floor((p.y) / C)) * int(W.cols) + int(floor(p.x / C))
+		return not (W.get("areas", {}) as Dictionary).has(cell)
+	return true
+
+
+## The footing at world place `p` in a room of nothing but ice (theme ice_room): grip, or mob_grip for
+## a monster; an ice lake takes it harder (lake_grip, lake_mob_grip).
+func ice_room_grip(p: Vector2, mob: bool) -> float:
+	var room := _room_at_world(p.x, p.y)
+	var lake := room >= 0 and room < (W.rooms as Array).size() and bool(W.rooms[room].get("ice_lake", false))
+	var ice: Dictionary = theme.ice_room
+	if lake:
+		return float(ice.get("lake_mob_grip" if mob else "lake_grip", ice.mob_grip if mob else ice.grip))
+	return float(ice.mob_grip if mob else ice.grip)
 
 
 ## World px per art pixel (the floor tiles' 16 px art drawn x3 at 48 px).
@@ -1379,6 +1404,9 @@ func box_blocked(box: Rect2, avoid_lava := false) -> bool:
 			for s: Rect2 in solid_grid.get(cy * int(W.cols) + cx, _NOTHING):
 				if s.intersects(box):
 					return true
+	# the Frostgruft's blocks, balls, prisms and crystals stand in their cells
+	if frost_puzzles != null and frost_puzzles.box_blocked(box):
+		return true
 	# the breakables: only those filed under a cell the box touches (each one the box
 	# overlaps shares a point with it, and that point's cell lists it); the same test
 	var filed := (_breakable_grid_n == breakables.size() and is_same(_breakable_grid_of, breakables)
@@ -1425,6 +1453,101 @@ func _breakable_box(e: Dictionary) -> Rect2:
 		return Rect2(e.x - 30.0, e.y - 30.0, 60.0, 30.0)
 	var hw := 42.0 if e.type == "seal" else 48.0
 	return Rect2(e.x - hw, e.y - 40.0, hw * 2.0, 40.0)
+
+
+# ---------- what the Frostgruft's puzzles ask of the game (src/world_kit/frost_puzzles.gd) ----------
+
+## The cell the hero's feet stand in.
+func player_cell() -> Vector2i:
+	return Vector2i(int(floor(float(player.x) / C)), int(floor((float(player.y) - 6.0) / C)))
+
+
+## Puts the hero at world place p, standing still.
+func place_player(p: Vector2) -> void:
+	player.x = p.x
+	player.y = p.y
+	player.vel = Vector2.ZERO
+
+
+## The grid value of cell (x, y): 0 wall, 1 floor, 2 liquid, 3 bridge.
+func cell(x: int, y: int) -> int:
+	return _cell(x, y)
+
+
+## The room index of cell c, -1 outside every room.
+func room_at_cell(c: Vector2i) -> int:
+	return _room_at_world((c.x + 0.5) * C, (c.y + 0.5) * C)
+
+
+## The hero's box at x, y.
+func player_box(x: float, y: float) -> Rect2:
+	return _player_box(x, y)
+
+
+## A movement key pair as -1, 0 or 1 (0 while keys are taken by a window).
+func input_axis(neg: Key, pos: Key) -> float:
+	return _axis(neg, pos)
+
+
+func toast(text: String) -> void:
+	_toast(text)
+
+
+func solve_group(group: String) -> void:
+	_solve_group(group)
+
+
+func light_brazier(e: Dictionary) -> void:
+	_light_brazier(e)
+
+
+func fall_into_pit() -> void:
+	_fall_into_pit()
+
+
+## The crevasse at cell c is ground now: nobody falls there.
+func pit_filled(c: Vector2i) -> void:
+	var k := c.y * int(W.cols) + c.x
+	(W.get("pit_cells", {}) as Dictionary).erase(k)
+	for e: Dictionary in pits:
+		if int(floor(float(e.x) / C)) == c.x and int(floor(float(e.y) / C)) == c.y:
+			e.filled = true
+	pits = pits.filter(func(e: Dictionary) -> bool: return not e.get("filled", false))
+	for node: Layer in _chunk_nodes:
+		node.queue_redraw()
+
+
+## The crevasse at cell c opens again (the puzzle room was reset).
+func pit_restored(c: Vector2i) -> void:
+	for e: Dictionary in W.ents:
+		if e.type == "pit" and e.get("filled", false) and int(floor(float(e.x) / C)) == c.x and int(floor(float(e.y) / C)) == c.y:
+			e.filled = false
+			pits.append(e)
+			W.pit_cells[c.y * int(W.cols) + c.x] = true
+	for node: Layer in _chunk_nodes:
+		node.queue_redraw()
+
+
+## A puzzle piece's moment: chips, snow, a flash, its sound.
+func puzzle_effect(kind: String, at: Vector2) -> void:
+	match kind:
+		"ice_break", "lost":
+			_sound("secret")
+			if frost_fx != null:
+				frost_fx.shatter(at, 12, 30.0, Vector2.UP, 140.0)
+			elif feel != null:
+				feel.spawn("dust", at, 1.0)
+		"slide", "snow", "fill":
+			if frost_fx != null:
+				frost_fx.kick(at, 10)
+			if kind == "fill":
+				_sound("plate")
+		"plate", "prism":
+			_sound("plate")
+		"ember":
+			_burst(at, 10)
+		"ember_out":
+			_sound("plate_wrong")
 
 
 func _player_box(x: float, y: float) -> Rect2:
@@ -2010,7 +2133,8 @@ func _interactables() -> Array:
 					label = "Die Hölle verlassen" if W.final else "Portal zu Etage %d" % (state.floor + 1)
 				out.append({"e": e, "label": label, "p": Vector2(e.x, e.y - 20), "r": 230.0})
 			"brazier":
-				if not e.get("lit", false):
+				# a cold bowl of the Frostgruft takes carried ember (frost_puzzles.gd)
+				if not e.get("lit", false) and not e.get("cold", false):
 					out.append({"e": e, "label": "Erst die Gegner besiegen" if W.rooms[e.room].fight else "Feuerschale entzünden", "p": Vector2(e.x, e.y - 30), "r": 115.0})
 			# the world kit's key room, hidden stairs and their trigger
 			"well":
@@ -2037,11 +2161,15 @@ func _interactables() -> Array:
 		elif d.kind == "puzzle" and _door_closed(d) and not W.rooms[d.a].fight and not W.rooms[d.b].fight:
 			var g: Dictionary = W.groups[d.group]
 			var label := "Gittertor: alle Feuerschalen der Etage entzünden" if g.get("spread", false) else ("Rätseltor: alle Feuerschalen entzünden" if g.kind == "braziers" else "Rätseltor: alle Runenplatten betreten")
+			# a Frostgruft puzzle (frost_puzzles.gd): its own riddle opens it
+			if g.kind == "frost":
+				label = "Rätseltor: öffnet sich, wenn das Rätsel dieses Raums gelöst ist"
 			if g.kind == "sequence" and g.has("count"):
 				label = "Gittertor: die %d Druckplatten in der richtigen Reihenfolge betreten" % int(g.count)
 			out.append({"e": d, "label": label, "p": p, "r": 190.0})
 		elif d.kind == "boss" and _door_closed(d):
 			out.append({"e": d, "label": "Versiegelt bis %s fällt" % W.boss.name, "p": p, "r": 190.0})
+	out.append_array(frost_puzzles.interactables())
 	return out
 
 
@@ -2159,6 +2287,8 @@ func act() -> void:
 	if n.is_empty():
 		return
 	var e: Dictionary = n.e
+	if e.has("type") and frost_puzzles.use(e):
+		return
 	if e.has("type"):
 		match e.type:
 			"relic":
@@ -2826,7 +2956,7 @@ func _light_brazier(e: Dictionary) -> void:
 ## lights a whole puzzle out of order).
 func fire_hits_brazier(at: Vector2) -> void:
 	for e: Dictionary in W.ents:
-		if e.type != "brazier" or e.get("lit", false): continue
+		if e.type != "brazier" or e.get("lit", false) or e.get("cold", false): continue
 		if not Rect2(e.x - 36, e.y - 44, 72, 54).has_point(at): continue
 		if W.rooms[e.room].fight: return
 		_light_brazier(e)
@@ -2973,6 +3103,11 @@ func choose_stairs(n: int) -> void:
 
 func _fall_into_pit() -> void:
 	if sound != null: sound.hero("pit_fall")
+	# in a Frostgruft puzzle room a fall puts the hero back on firm ground (frost_puzzles.gd)
+	if frost_puzzles.puzzle_room(int(state.room)) and not frost_puzzles.fall_hurts() and frost_puzzles.catch_fall():
+		if feel != null:
+			feel.spawn("dust", Vector2(player.x, player.y), 1.2)
+		return
 	state.hp = maxi(0, state.hp - int(balance.pit.damage))
 	# the fall hurts like a hit: the crypt's hurt (feedback.gd: flash, blood, shake, hitstop), dust
 	# rising from the pit, no red wash over the screen (the crypt has none)
@@ -3282,6 +3417,7 @@ func _update(dt: float) -> void:
 	PerfMarks.add("u.rigs")
 	_update_zones(dt)
 	_update_hazards(dt)
+	frost_puzzles.update(dt)
 	if frost_snow != null:
 		frost_snow.update(dt)
 	gold_loot.update(dt)
@@ -3390,6 +3526,10 @@ func _update_player(dt: float) -> void:
 		player.anim += dt * 5.0
 		launch_pads.step(dt)
 		return
+	# the mirror shows its way: the hero is walked (src/world_kit/frost_puzzles.gd)
+	if frost_puzzles.showing():
+		frost_puzzles.drive(dt)
+		return
 	var move := Vector2(_axis(KEY_A, KEY_D), _axis(KEY_W, KEY_S))
 	# WAHN: mad, he walks and aims mirrored (src/hell/hero_fx.gd inverted)
 	var mirror := -1.0 if FrostCombat.HeroFx.inverted(self) else 1.0
@@ -3412,7 +3552,7 @@ func _update_player(dt: float) -> void:
 	var mover := motion_kit()
 	var grip := MotionKit.FIRM
 	if ice_room_at(Vector2(player.x, player.y - 6.0)):
-		grip = float(theme.ice_room.grip)
+		grip = ice_room_grip(Vector2(player.x, player.y - 6.0), false)
 	elif here == 2 and liquid.slide:
 		grip = float(liquid.grip)
 	elif bool(hero_medium.get("slide", false)):
@@ -3465,7 +3605,7 @@ func _update_shots(dt: float) -> void:
 		# the hero's fire shot that strikes an unlit fire bowl lights it (decision D7)
 		if str(s.get("kind", "")) in ["pyro", "fireball"]:
 			for e: Dictionary in W.ents:
-				if e.type == "brazier" and not e.get("lit", false) and Rect2(e.x - 36, e.y - 44, 72, 54).has_point(s.p):
+				if e.type == "brazier" and not e.get("lit", false) and not e.get("cold", false) and Rect2(e.x - 36, e.y - 44, 72, 54).has_point(s.p):
 					s.t = 0.0
 					fire_hits_brazier(s.p)
 					break
@@ -3728,7 +3868,7 @@ func _update_mobs(dt: float) -> void:
 		var grip := MotionKit.FIRM
 		# a room of nothing but ice takes everybody's footing, the creatures of frost too; not the flyers'
 		if float(m.get("alt", 0.0)) <= 0.0 and ice_room_at(m.p - Vector2(0.0, 6.0)):
-			grip = float(theme.ice_room.mob_grip)
+			grip = ice_room_grip(m.p - Vector2(0.0, 6.0), true)
 		elif bool(theme.liquid.get("slide", false)) and _cell(int(floor(m.p.x / C)), int(floor((m.p.y - 6.0) / C))) == 2 and not "frost" in m.tags:
 			grip = float(theme.liquid.get("grip", mover.grip("glaze")))
 		elif bool(env.get("slide", false)):
@@ -4329,6 +4469,13 @@ func _update_camera(dt: float) -> void:
 	var r: Dictionary = W.rooms[state.room]
 	var hero := Vector2(player.x, player.y - 40)
 	var view := Vector2(float(balance.view.width), float(balance.view.width) * 9.0 / 16.0)
+	# a mirror room of the Frostgruft (src/world_kit/frost_puzzles.gd): the camera zooms out and looks
+	# between hero and ghost, so both and both their fields stay on screen
+	view_far = frost_puzzles.view_zoom(dt) if frost_puzzles != null else 1.0
+	var ghost: Dictionary = frost_puzzles.room_ghost() if frost_puzzles != null else {}
+	if not ghost.is_empty():
+		hero = hero.lerp(Vector2(float(ghost.x), float(ghost.y) - 30.0), 0.5)
+	view /= view_far
 	var bounds := Rect2()
 	if _room_at_world(player.x, player.y - 12.0) >= 0:
 		var lo := Vector2(r.bx * C - 70, r.by * C - 110)
@@ -4351,11 +4498,14 @@ func _update_camera(dt: float) -> void:
 	# in a labyrinth the darkness closes in and the camera comes a little nearer
 	maze_dark = move_toward(maze_dark, 1.0 if in_maze() else 0.0, dt * float(maze_cfg().get("fade", 2.5)))
 	camera.zoom *= lerpf(1.0, float(maze_cfg().get("zoom", 1.2)), maze_dark)
+	camera.zoom *= view_far
 	# view_shift: the view sits lower so the skill bar covers none of the fight
 	camera.offset = cam_rig.offset + cam_rig.view_shift
 
 
 var _camera_boss := false
+## The camera's extra zoom of the room (below 1 = farther out: a Frostgruft mirror room).
+var view_far := 1.0
 
 
 ## The live foes of the fight the hero is in (their middles), the boss first.
@@ -4653,7 +4803,7 @@ func _draw_front(l: Layer) -> void:
 
 
 func _view_rect() -> Rect2:
-	var size := Vector2(float(balance.view.width), float(balance.view.width) * 9.0 / 16.0) / (float(cam_rig.zoom) if cam_rig != null else 1.0)
+	var size := Vector2(float(balance.view.width), float(balance.view.width) * 9.0 / 16.0) / (float(cam_rig.zoom) if cam_rig != null else 1.0) / view_far
 	return Rect2(camera.position + camera.offset - size / 2.0, size)
 
 
@@ -4713,6 +4863,7 @@ func _draw_actors(l: Layer) -> void:
 				else:
 					# asleep: a dark, cold stone without its arc
 					l.draw_rect(Rect2(e.x - 40.0, e.y - 40.0, 80.0, 80.0), Color(0.02, 0.03, 0.05, 0.55))
+	frost_puzzles.draw_under(l, view, t)
 	if monsters != null:
 		monsters.draw_warnings(l)
 	var list: Array = []
@@ -4740,6 +4891,7 @@ func _draw_actors(l: Layer) -> void:
 	for e: Dictionary in breakables:
 		if view.has_point(Vector2(e.x, e.y)):
 			list.append([e.y - (200.0 if e.get("broken", false) else 0.0), "breakable", e])
+	frost_puzzles.sort_into(list, view)
 	if not clone.is_empty():
 		list.append([clone.p.y, "clone", clone])
 	for d: Dictionary in W.doors:
@@ -4793,6 +4945,7 @@ func _draw_actors(l: Layer) -> void:
 				var sy := ps * float(p.get("sy", 1.0))
 				_tex(l, shown, Vector2(p.x - im.get_width() * sx / 2.0, p.y - im.get_height() * sy), p.flip, Color.WHITE, sx, sy)
 			"ent": _draw_ent(l, item[2], t)
+			"frost": frost_puzzles.draw_piece(l, item[2], t)
 			"gate": _draw_gate(l, item[2], t)
 			"passage": _draw_gate_picture(l, item[2].gate, str(item[2].name), Color.WHITE, 1.0)
 			"arch":
@@ -5545,6 +5698,25 @@ func _draw_hero_body(l: Layer, t: float) -> void:
 	_draw_weapon(l, size)
 
 
+## The hero once more at `feet`, facing the other way, at `alpha` and tinted `tint`: the Frostgruft's
+## mirror ghost (src/world_kit/frost_puzzles.gd) wears the figure of whoever plays, his class, his
+## subclass form and his element's colours. False when nothing could be drawn.
+func draw_mirror_hero(l: CanvasItem, feet: Vector2, t: float, alpha: float, tint: Color) -> bool:
+	var look := SubKit.look(self)
+	if story_hero != null and not relic_on() and story_hero.draw_mirror(l, feet, -float(story_hero.face(t)), alpha, look, tint):
+		return true
+	var frames: Array = (look.get("frames", {}) as Dictionary).get("run" if player.moving else "idle", [])
+	if frames.is_empty():
+		return false
+	var im: Texture2D = frames[int(player.anim) % frames.size()]
+	var size := im.get_size() * float(theme.hero_scale) * float(look.scale)
+	var own: Color = look.tint
+	l.draw_set_transform(Vector2(feet.x, feet.y + 6.0), 0.0, Vector2(1.0 if float(player.face) < 0 else -1.0, 1.0))
+	l.draw_texture_rect(im, Rect2(Vector2(-size.x / 2.0, -size.y), size), false, Color(own.r * tint.r, own.g * tint.g, own.b * tint.b, own.a * alpha))
+	l.draw_set_transform(Vector2.ZERO)
+	return true
+
+
 ## The class weapon in the hero's hand: bow and staff held upright, the sword
 ## swept through its arc while a swing lasts; the gravity staff glows violet.
 func _draw_weapon(l: Layer, hero_size: Vector2) -> void:
@@ -5619,6 +5791,9 @@ func _draw_hud(h: Control) -> void:
 	# a labyrinth: dark beyond what the hero sees, walls stop the view
 	if maze_dark > 0.0:
 		_draw_maze_dark(h, size)
+	# the room's weather of the Weltbauer (src/world_kit/room_weather.gd), then what the hero carries
+	room_weather.draw(h, size, self)
+	frost_puzzles.draw_hud(h, size)
 	# the life shown, for the status sheet too (src/hell/frost_hud.gd reads state.hp_f)
 	state.hp_f = hp_f()
 	_windows = _window_open()

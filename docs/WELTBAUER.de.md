@@ -152,7 +152,7 @@ davon (2 Plätze rund 21 x 9, 3 Plätze rund 32 x 9, Winkel rund 23 x 20), der R
 dann bis zum Raum weiter. Einen neuen Raum beginnst du am einfachsten mit **KOPIE** eines Raums derselben Form. Passt
 die Leinwand nicht, bleibt der Raum draußen, die Prüfung rechts sagt, was fehlt.
 
-**Sprungrätsel und Labyrinthe** haben die Raumart „Sprungrätsel / Labyrinth“. Bis zu zwei freie Räume mit 3 Plätzen pro
+**Sprungrätsel und Labyrinthe** haben die Raumart „Großes Rätsel (Sprung, Labyrinth, Frost)“. Bis zu zwei freie Räume mit 3 Plätzen pro
 Etage werden dazu, ohne Kampf und immer dort, wo die Etage keinen Kampf braucht. Sie nutzen die ganze Leinwand. Nahe
 einer Sprungplatte siehst du im Spiel den Bogen und die Landestelle. Fällst du in einem solchen Raum nach einem Sprung
 in eine Grube, kostet das Leben, du stehst aber wieder auf der Platte. Wichtig beim Nachbauen: Das Spiel räumt in
@@ -252,7 +252,63 @@ Die Dateien haben `tools/krypta_dungeon/build_room_library.js` und die gezeichne
 `tools/world_kit/export_key_room.gd`. **Beide überschreiben Räume**, führe sie nach eigenen Änderungen nicht mehr aus
 oder gib beim JS-Werkzeug nur die Namen der gewünschten Räume an.
 
+## Räume der Frostgruft
+
+Seit November 2026 baut auch die Frostgruft (Story 2) jede Etage aus Weltbauer-Räumen, genau wie die Krypta: die Dateien
+`f_*.json` der Welt Frostgruft mit dem Haken **In Etagen verwenden**. Die Schlüsselkammer mit dem Laden hat denselben
+Grundriss wie in der Krypta, nur mit den Grafiken der Frostgruft. Kampfräume bekommen ihre Gegner wieder nach Bodenfläche
+(`frost_world.json` `room_library.mobs_by_area`). Statt Sprungrätseln und Labyrinthen hat die Frostgruft eigene
+**Frosträtsel**: große Räume ohne Kampf, bis zu zwei je Etage.
+
+Jeder Frosträtselraum hat eine Halle, durch die alle Türen frei verbunden sind (das Rätsel bleibt freiwillig), am Eingang
+des Rätsels eine **Inschrift** auf einer Säule und eine **Rücksetzrune**, dahinter den Schatz der Stufe 2 oder 3.
+
+### Frosträtsel-Teile
+
+Sie stehen nur in der Welt Frostgruft unter **Frosträtsel**. Jedes Teil belegt ein Feld.
+
+| Teil | Wirkung |
+|---|---|
+| **Brüchiges Eis** | Trägt 2 oder 1 Schritt. Wird es zum letzten Mal verlassen, bricht es ein. Wer ins Loch tritt, steht wieder an der Rune (sonst am letzten festen Boden), das Eis ist wieder ganz. Mit **Eisgang-Gruppe** und einem **Eisgang-Ziel** derselben Gruppe muss jede Platte brechen, bevor das Ziel betreten wird. |
+| **Frostherz** und **Frostherz-Altar** | Das Herz wird mit E getragen und am Altar eingesetzt, das löst die Gruppe. |
+| **Eisblock** | Der Held lehnt sich dagegen, der Block rutscht bis zum nächsten Hindernis. In einer Grube (Gletscherspalte) friert er fest und wird Boden. |
+| **Schneeball** und **Tiefschnee** | Der Ball rollt je Stoß ein Feld und wächst auf Tiefschnee (Größe 1 bis 3). Erst ab Größe 3 füllt er eine Spalte, kleiner versinkt er. |
+| **Glutherd**, **Kältenebel**, Feuerschale mit **Kalt** | Am Herd nimmt der Held Glut, sie hält 14 Schritte, im Kältenebel zählt jeder Schritt doppelt. Kalte Schalen haben keine Flamme und brennen nur mit getragener Glut. Eine brennende kalte Schale gibt selbst wieder Glut. |
+| **Polarlicht-Quelle**, **Eisprisma**, **Lichtsiegel** | Das Licht läuft geradeaus, ein Prisma lenkt es um (mit E drehen, oder **Fest**). Trifft es alle Siegel der Gruppe, ist sie gelöst. Der Weltbauer zeichnet den Weg des Lichts. |
+| **Spiegelgeist**, **Spiegelplatte**, **Spiegelhebel** | Der Geist ist das Spiegelbild des Helden: dieselbe Klasse, Unterform und Elementfarbe, blass und durchscheinend. Er geht jeden Schritt seitenverkehrt mit. Held und Geist auf ihren Platten lösen die Gruppe. In seinem Raum zoomt die Kamera heraus und schaut zwischen Held und Geist, darum Spielfelder klein halten (zusammen höchstens etwa 24 Felder breit). Nach 5 Minuten im Raum taut der Hebel auf und führt den Weg einmal vor, danach steht alles wieder wie vorher. |
+| **Singende Statue**, **Kristallglocke**, **Glockenplatte** | Die Statue singt ihre **Melodie** (Töne der Kristalle, etwa 5,4,2,1,3). Jeder Ton hat seine Farbe (1 Rot, 2 Orange, 3 Gelb, 4 Grün, 5 Blau, 6 Lila, 7 Türkis, 8 Rosa), das Bild ist der Eiszapfen der Frostgruft in dieser Farbe. Die Kristalle stehen am besten nebeneinander in einer Reihe, der Spieler probiert sie aus. Erst nach dem Betreten der Platte zählen die Anschläge, ein falscher Ton heißt: zurück auf die Platte. |
+| **Rücksetzrune** | Mit E steht alles im Raum wieder wie am Anfang. Gelöste Gruppen bleiben gelöst. |
+
+Die Werte stehen in `assets/data/world_frost_puzzles.json`. Die Kristallbilder macht
+`tools/frost_dungeon/make_bell_crystals.gd` aus `spire_big.png` (Farben: `bells.crystals`).
+
+### Eissee
+
+Der Haken **Eissee** bei **RAUM** (nur Frostgruft) macht den ganzen Raum zu Eis: Held und alle Gegner auf ihren Füßen
+rutschen stark, auch die Frostwesen. Gemalter Boden (der Flächen-Pinsel, etwa `floor_00`) ist ein festes Schneefeld, dort
+rutscht niemand. Steine und Eiszapfen halten auf. Höchstens ein Eissee je Etage, und nur auf etwa 40 % der Etagen
+(`frost_world.json` `room_library.ice_lake_share`); wie stark es rutscht, steht in `frost_theme.json` `ice_room.lake_grip`.
+Die drei Kampfräume **Eissee: Spiegelsee**, **Weiter See** und **Gefrorene Bucht** sind solche Räume, mit weniger
+Gegnern als ihre Fläche hergäbe.
+
+### Wetter
+
+Rechts bei **RAUM** wählt jeder Raum sein **Wetter**: kein Wetter, Schneefall, Schneesturm oder Graupel. Dazu kommen
+beliebig viele Zusätze: Eisnebel, Diamantstaub, Polarlicht, Raureif am Bildrand, Polarnacht. Die Polarnacht liegt über
+dem Nebel, Polarlicht und Glitzer leuchten darüber. Die Glocken- und Prismenräume haben alle fünf Zusätze. Das Spiel zeigt es, solange
+der Held im Raum ist, und blendet beim Raumwechsel über. Der Weltbauer zeigt es über dem Raum, oben schaltet **Wetter**
+die Anzeige ab. Die Werte stehen in `assets/data/world_weather.json`.
+
+### Werkzeuge
+
+`node tools/frost_dungeon/rooms/build_frost_rooms.js` hat die Räume erzeugt (Grundrisse in `rooms/maps.js`, Rätsel in
+`rooms/puzzle_rooms.js`). Jedes Rätsel wurde dabei von einem Löser (`puzzles/solvers.js`) nach denselben Regeln wie im
+Spiel gelöst und nur behalten, wenn es schwer genug ist. **Das Werkzeug überschreibt Räume**: nach eigenen Änderungen
+nicht mehr ausführen oder nur die gewünschten Namen angeben. `tools/frost_dungeon/puzzles/replay.gd` spielt jeden
+Lösungsweg im echten Spiel nach, `PT_SCENE=res://src/hell/frost_dungeon.tscn` mit `tools/krypta_dungeon/playthrough.gd`
+spielt Story 2 durch.
+
 ## Noch nicht fertig
 
-- Hölle und Frostgruft bauen ihre Etagen noch mit dem Generator.
+- Die Hölle baut ihre Etagen noch mit dem Generator.
 - Das Spiel liest die Räume beim Start. Nach einer Änderung also das Spiel neu starten.

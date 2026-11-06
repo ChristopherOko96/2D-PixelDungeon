@@ -26,7 +26,7 @@ const WORLDS := {
 }
 ## What a door spot is for. Unmarked spots serve either way.
 const PORT_USES := {"": "Ein- und Ausgang", "in": "Eingang", "out": "Ausgang"}
-const ROLES := {"combat": "Kampfraum", "start": "Eingang", "key": "Schlüsselraum", "shop": "Shop", "treasure": "Schatzraum", "puzzle": "Rätselraum", "secret": "Geheimraum", "boss": "Bossraum", "portal": "Portalraum", "vault": "Tresorkammer", "stairs": "Treppenkammer", "jump": "Sprungrätsel / Labyrinth"}
+const ROLES := {"combat": "Kampfraum", "start": "Eingang", "key": "Schlüsselraum", "shop": "Shop", "treasure": "Schatzraum", "puzzle": "Rätselraum", "secret": "Geheimraum", "boss": "Bossraum", "portal": "Portalraum", "vault": "Tresorkammer", "stairs": "Treppenkammer", "jump": "Großes Rätsel (Sprung, Labyrinth, Frost)"}
 
 
 ## A new room: floor inside a wall frame, the hero's start in the middle.

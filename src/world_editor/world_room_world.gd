@@ -9,6 +9,7 @@ const WorldPack = preload("res://src/world_kit/world_pack.gd")
 const Gates = preload("res://src/world_editor/world_gates.gd")
 const RoomFloor = preload("res://src/world_kit/room_floor.gd")
 const Contents = preload("res://src/world_kit/room_contents.gd")
+const FrostPuzzles = preload("res://src/world_kit/frost_puzzles.gd")
 const C := 96.0
 ## Free cells round the room in the floor's grid, so the outer walls have room to stand.
 const MARGIN := 2
@@ -295,7 +296,9 @@ func build_raw(n: int, run: int) -> Dictionary:
 		"grid": grid_text, "holes": _holes(grid, cols, rows), "tiles": tile_text, "tile_names": tile_names, "room_at": room_at, "quick": -1,
 		"rooms": [{"index": 0, "id": str(room.id), "name": title, "kind": kind_name, "type": "start", "gtype": "start", "icon": "", "icon_key": "",
 			"bx": MARGIN, "by": MARGIN, "bw": w, "bh": h, "mobs": 0 if by_hand else int(room.get("auto_mobs", 0)), "spawn": [start.x, start.y], "drop": "", "reward": null,
-			"cleared": true, "info": title, "on_path": true, "seq": false, "tidy": true, "placed_mobs": enemies, "maze_zone": zone}],
+			"cleared": true, "info": title, "on_path": true, "seq": false, "tidy": true, "placed_mobs": enemies, "maze_zone": zone,
+			"weather": str(room.get("weather", "")), "weather_extra": room.get("weather_extra", []),
+			"ice": bool(room.get("ice_lake", false)), "ice_lake": bool(room.get("ice_lake", false))}],
 		"doors": doors, "groups": groups, "ents": ents, "props": props, "decals": decals, "wall_decor": wall_decor, "lights": lights,
 		"areas": areas, "pit_cells": pit_cells, "passages": passages, "doorways": _doorways()}
 
@@ -325,7 +328,11 @@ static func ent_of(o: Dictionary, x: float, y: float) -> Dictionary:
 		"lever":
 			return {"type": "lever", "x": x, "y": y, "wy": y - 98.0, "group": str(o.get("group", "A")), "lit": false}
 		"brazier":
-			return {"type": "brazier", "x": x, "y": y, "group": str(o.get("group", "A")), "lit": false}
+			var bowl := {"type": "brazier", "x": x, "y": y, "group": str(o.get("group", "A")), "lit": false}
+			# a cold bowl of the Frostgruft is lit only by carried ember (frost_puzzles.gd)
+			if bool(o.get("cold", false)):
+				bowl.cold = true
+			return bowl
 		"launch":
 			var pad := {"type": "launch", "x": x, "y": y, "dir": str(o.get("dir", "n")), "cells": int(o.get("cells", 4))}
 			# a pad that sleeps until this group is solved (launch_pads.gd awake)
@@ -348,6 +355,14 @@ static func ent_of(o: Dictionary, x: float, y: float) -> Dictionary:
 			return {"type": kind, "x": x, "y": y, "active": true}
 		"skullheap":
 			return {"type": "skullheap", "x": x, "y": y, "room": 0, "hp": int(o.get("hp", 3))}
+	# the Frostgruft's puzzle pieces keep their settings as they are (src/world_kit/frost_puzzles.gd)
+	if FrostPuzzles.KINDS.has(kind):
+		var piece := o.duplicate(true)
+		piece.erase("kind")
+		piece.type = kind
+		piece.x = x
+		piece.y = y
+		return piece
 	return {}
 
 
@@ -357,7 +372,8 @@ func _groups() -> Dictionary:
 	for o: Dictionary in room.objects:
 		var kind := str(o.kind)
 		var opens := str(o.get("opens", "")) if kind == "prop" else ""
-		if kind not in ["plate", "lever", "brazier", "gate", "secret", "skullheap"] and opens == "":
+		var frost := FrostPuzzles.KINDS.has(kind) and str(o.get("group", "")) != ""
+		if kind not in ["plate", "lever", "brazier", "gate", "secret", "skullheap"] and opens == "" and not frost:
 			continue
 		if kind == "gate" and not Gates.closes(o):
 			continue
@@ -371,6 +387,9 @@ func _groups() -> Dictionary:
 					out[id].count = int(out[id].get("count", 0)) + 1
 			"lever": out[id].kind = "lever"
 			"brazier": out[id].kind = "braziers"
+			_:
+				if frost and str(out[id].kind) == "plates":
+					out[id].kind = "frost"
 	return out
 
 

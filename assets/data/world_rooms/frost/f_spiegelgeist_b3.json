@@ -1,0 +1,1095 @@
+{
+	"schema_version": 1,
+	"id": "f_spiegelgeist_b3",
+	"title": "Rätsel: Spiegelgeist (lang)",
+	"world": "frost",
+	"role": "jump",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		],
+		[
+			1,
+			0
+		],
+		[
+			2,
+			0
+		]
+	],
+	"width": 48,
+	"height": 11,
+	"cells": [
+		"000000000000000000000000000000000000000000000000",
+		"011111111111111111111111111111111111111111111110",
+		"011111111111111111111111111111111111111111111110",
+		"000000000000010000000000000000000000000000000000",
+		"000000000000011111111100001111111110000000000000",
+		"000000000000011111111101101111111110000000000000",
+		"000000000000011111111101101111111110000000000000",
+		"000000000000011111111101101111111110000000000000",
+		"000000000000011111111100001111111110000000000000",
+		"000000000000011111111100001111111110000000000000",
+		"000000000000000000000000000000000000000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "west",
+			"cell": [
+				0,
+				1
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				47,
+				1
+			]
+		},
+		{
+			"side": "north",
+			"cell": [
+				23,
+				0
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "frost_rune",
+			"x": 1296,
+			"y": 432
+		},
+		{
+			"kind": "tablet",
+			"x": 1104,
+			"y": 177.6,
+			"text": "Dein Spiegelbild geht, wie du gehst,\nnur links und rechts vertauscht.\nStellt euch beide auf eure Platten.\nDie Rune ruft das Bild zurück."
+		},
+		{
+			"kind": "mirror_lever",
+			"x": 1584,
+			"y": 144,
+			"group": "A"
+		},
+		{
+			"kind": "gate",
+			"x": 2112,
+			"y": 576,
+			"dir": "h",
+			"group": "A",
+			"lock": "",
+			"style": "portcullis"
+		},
+		{
+			"kind": "chest",
+			"x": 2256,
+			"y": 657.6,
+			"loot": {
+				"type": "hoard",
+				"tier": 3
+			},
+			"mimic": "no"
+		},
+		{
+			"kind": "prop",
+			"asset": "boulders",
+			"x": 1488,
+			"y": 572,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_big",
+			"x": 2064,
+			"y": 572,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_mid",
+			"x": 1680,
+			"y": 668,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_big",
+			"x": 1776,
+			"y": 668,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_big",
+			"x": 1392,
+			"y": 764,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rocks_a",
+			"x": 1680,
+			"y": 764,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rocks_a",
+			"x": 1968,
+			"y": 764,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_mid",
+			"x": 1680,
+			"y": 860,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rocks_a",
+			"x": 1296,
+			"y": 956,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rocks_a",
+			"x": 1392,
+			"y": 956,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "boulders",
+			"x": 1488,
+			"y": 956,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_mid",
+			"x": 1680,
+			"y": 956,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "glacier_a",
+			"x": 2832,
+			"y": 476,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "glacier_a",
+			"x": 3312,
+			"y": 476,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "glacier_b",
+			"x": 2544,
+			"y": 572,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_t",
+			"x": 3120,
+			"y": 668,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "glacier_a",
+			"x": 3312,
+			"y": 668,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_t",
+			"x": 2640,
+			"y": 764,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "glacier_a",
+			"x": 2832,
+			"y": 764,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_t",
+			"x": 3312,
+			"y": 764,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_t",
+			"x": 2832,
+			"y": 860,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_t",
+			"x": 2928,
+			"y": 860,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_mid",
+			"x": 3216,
+			"y": 956,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "mirror_ghost",
+			"x": 2640,
+			"y": 624,
+			"group": "A",
+			"show": [
+				[
+					-14,
+					-2
+				],
+				[
+					-13,
+					-2
+				],
+				[
+					-12,
+					-2
+				],
+				[
+					-11,
+					-2
+				],
+				[
+					-10,
+					-2
+				],
+				[
+					-9,
+					-2
+				],
+				[
+					-8,
+					-2
+				],
+				[
+					-7,
+					-2
+				],
+				[
+					-6,
+					-2
+				],
+				[
+					-7,
+					-2
+				],
+				[
+					-8,
+					-2
+				],
+				[
+					-9,
+					-2
+				],
+				[
+					-10,
+					-2
+				],
+				[
+					-10,
+					-1
+				],
+				[
+					-9,
+					-1
+				],
+				[
+					-8,
+					-1
+				],
+				[
+					-7,
+					-1
+				],
+				[
+					-8,
+					-1
+				],
+				[
+					-8,
+					0
+				],
+				[
+					-7,
+					0
+				],
+				[
+					-6,
+					0
+				],
+				[
+					-7,
+					0
+				],
+				[
+					-8,
+					0
+				],
+				[
+					-8,
+					1
+				],
+				[
+					-9,
+					1
+				],
+				[
+					-9,
+					2
+				],
+				[
+					-8,
+					2
+				],
+				[
+					-7,
+					2
+				],
+				[
+					-7,
+					3
+				],
+				[
+					-7,
+					2
+				],
+				[
+					-6,
+					2
+				],
+				[
+					-6,
+					3
+				],
+				[
+					-6,
+					2
+				],
+				[
+					-6,
+					1
+				],
+				[
+					-6,
+					0
+				]
+			]
+		},
+		{
+			"kind": "ghost_plate",
+			"x": 2064,
+			"y": 624,
+			"group": "A",
+			"who": "hero"
+		},
+		{
+			"kind": "ghost_plate",
+			"x": 3216,
+			"y": 528,
+			"group": "A",
+			"who": "ghost"
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 508.8,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 777.6,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_1",
+			"x": 1046.4,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 1315.2,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 1584,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 1852.8,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_3",
+			"x": 2659.2,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 2928,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_3",
+			"x": 3196.8,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 3465.6,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_v_glow_blue",
+			"x": 3734.4,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 4003.2,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 1488,
+			"y": 390,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 1756.8,
+			"y": 390,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 2640,
+			"y": 390,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 2908.8,
+			"y": 390,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 3177.6,
+			"y": 390,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_d",
+			"x": 144,
+			"y": 204,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_c",
+			"x": 624,
+			"y": 204,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_d",
+			"x": 720,
+			"y": 204,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_b",
+			"x": 2736,
+			"y": 204,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_d",
+			"x": 3216,
+			"y": 204,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_b",
+			"x": 3600,
+			"y": 204,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_d",
+			"x": 432,
+			"y": 300,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_a",
+			"x": 1296,
+			"y": 300,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "glacier_a",
+			"x": 3792,
+			"y": 178.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				32
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "boulders",
+			"x": 528,
+			"y": 178.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				60,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_blue",
+			"x": 1776,
+			"y": 274.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_mid",
+			"x": 4176,
+			"y": 178.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				44,
+				24
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "boulders",
+			"x": 3024,
+			"y": 178.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				60,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_blue",
+			"x": 2640,
+			"y": 178.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "start",
+			"x": 2256,
+			"y": 547.2
+		}
+	],
+	"kind_label": "Frosträtsel",
+	"info": "Kein Kampf. Führe dein Spiegelbild auf seine Platte.",
+	"weather_extra": [
+		"fog",
+		"diamond"
+	]
+}

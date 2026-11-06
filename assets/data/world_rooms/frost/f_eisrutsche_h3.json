@@ -1,0 +1,438 @@
+{
+	"schema_version": 1,
+	"id": "f_eisrutsche_h3",
+	"title": "Rätsel: Eisrutsche (Turm)",
+	"world": "frost",
+	"role": "jump",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		],
+		[
+			0,
+			1
+		],
+		[
+			0,
+			2
+		]
+	],
+	"width": 14,
+	"height": 39,
+	"cells": [
+		"00000000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01101111111110",
+		"01101111111110",
+		"01101111111110",
+		"01111111111110",
+		"01101111111110",
+		"01101111111110",
+		"01101111111110",
+		"01101111111110",
+		"01101111111110",
+		"01101111111110",
+		"01101111111110",
+		"01101111111110",
+		"01101111111110",
+		"01104444444440",
+		"01104444444440",
+		"01101111111110",
+		"01101111111110",
+		"01101111111110",
+		"01101111111110",
+		"01101111111110",
+		"01101111111110",
+		"00000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				1,
+				0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				1,
+				38
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0,
+				18
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "frost_rune",
+			"x": 240,
+			"y": 1968
+		},
+		{
+			"kind": "tablet",
+			"x": 144,
+			"y": 2289.6,
+			"text": "Eis gleitet, bis es stößt.\nWas in die Spalte fällt, wird zur Brücke.\nDie Rune setzt alles zurück."
+		},
+		{
+			"kind": "prop",
+			"asset": "glacier_b",
+			"x": 1200,
+			"y": 2012,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rocks_a",
+			"x": 1104,
+			"y": 2684,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "glacier_b",
+			"x": 624,
+			"y": 1724,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "glacier_b",
+			"x": 816,
+			"y": 2012,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "boulders",
+			"x": 624,
+			"y": 2300,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "glacier_b",
+			"x": 1104,
+			"y": 1916,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "boulders",
+			"x": 624,
+			"y": 2780,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rocks_b",
+			"x": 912,
+			"y": 2108,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rocks_a",
+			"x": 1104,
+			"y": 2012,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "ice_block",
+			"x": 912,
+			"y": 1680
+		},
+		{
+			"kind": "ice_block",
+			"x": 1008,
+			"y": 2736
+		},
+		{
+			"kind": "ice_block",
+			"x": 912,
+			"y": 2352
+		},
+		{
+			"kind": "chest",
+			"x": 816,
+			"y": 3537.6,
+			"loot": {
+				"type": "hoard",
+				"tier": 2
+			},
+			"mimic": "no"
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 528,
+			"y": 1638,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_1",
+			"x": 796.8,
+			"y": 1638,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 1065.6,
+			"y": 1638,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_c",
+			"x": 240,
+			"y": 1836,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_d",
+			"x": 240,
+			"y": 2604,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_d",
+			"x": 144,
+			"y": 3564,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "glacier_a",
+			"x": 240,
+			"y": 466.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				32
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "glacier_b",
+			"x": 144,
+			"y": 946.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				70,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_blue",
+			"x": 144,
+			"y": 1330.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_mid",
+			"x": 144,
+			"y": 3058.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				44,
+				24
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "glacier_b",
+			"x": 240,
+			"y": 2674.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				70,
+				30
+			]
+		},
+		{
+			"kind": "start",
+			"x": 624,
+			"y": 1891.2
+		}
+	],
+	"kind_label": "Frosträtsel",
+	"info": "Kein Kampf. Schieb die Eisblöcke in die Spalte.",
+	"weather": "hail"
+}

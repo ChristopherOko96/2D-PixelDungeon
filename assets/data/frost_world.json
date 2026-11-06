@@ -1,6 +1,30 @@
 {
- "_note": "Story 2 Die Frostgruft: the world pack for the world kit generator (src/world_kit/world_core.gd, src/world_kit/world_pack.gd). Written by tools/frost_dungeon/export_world.js from frost_world.js; the browser preview reads the same values. floors: per floor title, ring (circle), boss, size of the slot grid (gc x gr), critical path length, hazard shares (lava = glaze ice, river, spikes, vents, holes, pits), loop share, frost flames (fire), shooters, final. names/suffixes: room name parts per ring. words: generator wording -> frost wording. gate_banner: banner colour per floor (red when missing). blue / blue_props: floor 10 blue fire. foot: furniture footprints [solid width, depth, cells]. mimic_fight / mimic_treasure: 0, the Frostgruft has no mimics. diff: the difficulty curve of the world per floor n (src/world_kit/world_core.gd difficulty_for): enemy hp x (1 + (n-1) hp_step), speed x (1 + (n-1) speed_step), one more enemy per fight room every extra_every floors.",
+ "_note": "Story 2 Die Frostgruft: the world pack for the world kit generator (src/world_kit/world_core.gd, src/world_kit/world_pack.gd). Written by tools/frost_dungeon/export_world.js from frost_world.js; the browser preview reads the same values. floors: per floor title, ring (circle), boss, size of the slot grid (gc x gr), critical path length, hazard shares (lava = glaze ice, river, spikes, vents, holes, pits), loop share, frost flames (fire), shooters, final. names/suffixes: room name parts per ring. words: generator wording -> frost wording. gate_banner: banner colour per floor (red when missing). blue / blue_props: floor 10 blue fire. foot: furniture footprints [solid width, depth, cells]. mimic_fight / mimic_treasure: 0, the Frostgruft has no mimics. diff: the difficulty curve of the world per floor n (src/world_kit/world_core.gd difficulty_for): enemy hp x (1 + (n-1) hp_step), speed x (1 + (n-1) speed_step), one more enemy per fight room every extra_every floors. room_library: floors are built from the Weltbauer room files of the Frostgruft marked in_floors (src/world_kit/room_floor.gd), see krypta_world.json for its keys; jump rooms are the big puzzle rooms of the Frostgruft.",
  "schema": 1,
+ "room_library": {
+  "world": "frost",
+  "slot_size": [
+   14,
+   11
+  ],
+  "slot_gap": [
+   3,
+   3
+  ],
+  "margin": 3,
+  "gate_style": "portcullis",
+  "boss_gate_reach": 4,
+  "boss_gate_depth": 3,
+  "chest_share": 0.35,
+  "jump_rooms": 2,
+  "jump_share": 0.75,
+  "ice_lake_share": 0.4,
+  "mobs_by_area": {
+   "cells_per_mob": 28,
+   "min": 4,
+   "max": 12
+  }
+ },
  "floors": [
   null,
   {

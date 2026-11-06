@@ -391,6 +391,25 @@ func draw_hero(canvas: CanvasItem, t: float, lift: float, draw_body: Callable, h
 		familiar.draw(canvas, float(g.theme.get("hero_scale", 3.0)), t)
 
 
+## The hero's figure once more at `feet` (the Frostgruft's mirror ghost, src/world_kit/frost_puzzles.gd):
+## his rig with his subclass look and element colours, walking when he walks, faced `facing`, at
+## `alpha` and tinted `tint`, holding his weapon; no effects. False without a rig (the caller then
+## draws his frames).
+func draw_mirror(canvas: CanvasItem, feet: Vector2, facing: float, alpha: float, hero_look: Dictionary, tint: Color) -> bool:
+	var rig := rig_name(hero_look)
+	if rig.is_empty() or rigs == null:
+		return false
+	var size := scale * float(hero_look.get("scale", 1.0))
+	var own: Color = hero_look.get("tint", Color.WHITE)
+	var pace := maxf(60.0, (g.player.get("vel", Vector2.ZERO) as Vector2).length())
+	var body_view := {"moving": bool(g.player.get("moving", false)), "hp": 1.0, "hurts": 0, "step_time": 32.0 * scale / pace, "element": element}
+	var shape: Dictionary = rigs.library.rig(rig)
+	var up := Vector2(0, (float(shape.ground.y) - float(shape.center.y)) * float(shape.scale) * size)
+	var held := RigHeld.holds(shape) and g.weapon_tex != null
+	rigs.draw_hero(canvas, "mirror", body_view, feet - up, rig, facing, own.a * alpha, size, Color(own.r * tint.r, own.g * tint.g, own.b * tint.b), weapon_host if held else null)
+	return true
+
+
 ## The hero's body in world px (his rig figure's height over the feet and its
 ## body width; GUARD_SIZE without a rig): what enemy weapons pass behind.
 func guard_box() -> Rect2:

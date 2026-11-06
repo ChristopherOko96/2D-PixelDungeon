@@ -1,0 +1,296 @@
+{
+	"schema_version": 1,
+	"id": "f_eissee_spiegel_b2",
+	"title": "Eissee: Spiegelsee (breit)",
+	"world": "frost",
+	"role": "combat",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		],
+		[
+			1,
+			0
+		]
+	],
+	"width": 31,
+	"height": 11,
+	"cells": [
+		"0000000000000000000000000000000",
+		"0000011111111111111111111100000",
+		"0000011111111111111111111100000",
+		"0000011111111111111111111100000",
+		"0000011111111111111111111100000",
+		"0000011111111111111111111100000",
+		"0000011111111111111111111100000",
+		"0000011111111111111111111100000",
+		"0000011111111111111111111100000",
+		"0000011111111111111111111100000",
+		"0000000000000000000000000000000"
+	],
+	"tiles": {},
+	"areas": {
+		"6,2": "floor_00",
+		"7,2": "floor_00",
+		"23,2": "floor_00",
+		"24,2": "floor_00",
+		"6,3": "floor_00",
+		"7,3": "floor_00",
+		"23,3": "floor_00",
+		"24,3": "floor_00",
+		"12,4": "floor_00",
+		"13,4": "floor_00",
+		"14,4": "floor_00",
+		"16,4": "floor_00",
+		"17,4": "floor_00",
+		"18,4": "floor_00",
+		"12,5": "floor_00",
+		"13,5": "floor_00",
+		"14,5": "floor_00",
+		"16,5": "floor_00",
+		"17,5": "floor_00",
+		"18,5": "floor_00",
+		"12,6": "floor_00",
+		"13,6": "floor_00",
+		"14,6": "floor_00",
+		"16,6": "floor_00",
+		"17,6": "floor_00",
+		"18,6": "floor_00",
+		"6,7": "floor_00",
+		"7,7": "floor_00",
+		"23,7": "floor_00",
+		"24,7": "floor_00",
+		"6,8": "floor_00",
+		"7,8": "floor_00",
+		"23,8": "floor_00",
+		"24,8": "floor_00"
+	},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				6,
+				0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				6,
+				10
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				4,
+				5
+			]
+		},
+		{
+			"side": "north",
+			"cell": [
+				23,
+				0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				23,
+				10
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				26,
+				5
+			]
+		}
+	],
+	"auto_mobs": 6,
+	"objects": [
+		{
+			"kind": "prop",
+			"asset": "boulders",
+			"x": 1488,
+			"y": 274.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				60,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rocks_a",
+			"x": 720,
+			"y": 562.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				60,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rocks_b",
+			"x": 2256,
+			"y": 562.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				26
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "boulders",
+			"x": 1488,
+			"y": 850.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				60,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_3",
+			"x": 1161.6,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 1430.4,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 1699.2,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 1968,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_mid",
+			"x": 1968,
+			"y": 178.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				44,
+				24
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "boulders",
+			"x": 1008,
+			"y": 178.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				60,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_mid",
+			"x": 1872,
+			"y": 946.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				44,
+				24
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "glacier_b",
+			"x": 1104,
+			"y": 946.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				70,
+				30
+			]
+		},
+		{
+			"kind": "start",
+			"x": 1488,
+			"y": 547.2
+		}
+	],
+	"ice_lake": true,
+	"info": "Ein Eissee: alle rutschen, du und die Gegner. Nur auf den Schneefeldern steht man fest."
+}

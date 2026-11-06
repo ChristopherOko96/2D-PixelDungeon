@@ -70,7 +70,11 @@
   // difficulty per floor n (world_core difficultyFor): enemy hp x (1 + (n-1) hp_step), speed x (1 + (n-1) speed_step),
   // one extra enemy per fight room every extra_every floors. The Frostgruft is the middle curve.
   const DIFF = { hp_step: .30, speed_step: .04, extra_every: 3 };
+  // Floors from the Weltbauer's room files of the Frostgruft (src/world_kit/room_floor.gd, built by
+  // tools/frost_dungeon/rooms/build_frost_rooms.js): fight rooms get one enemy per cells_per_mob cells of
+  // ground, up to jump_rooms big puzzle rooms per floor take free fight rooms of three slots.
+  const ROOM_LIBRARY = { world: 'frost', slot_size: [14, 11], slot_gap: [3, 3], margin: 3, gate_style: 'portcullis', boss_gate_reach: 4, boss_gate_depth: 3, chest_share: 0.35, jump_rooms: 2, jump_share: 0.75, ice_lake_share: 0.4, mobs_by_area: { cells_per_mob: 28, min: 4, max: 12 } };
   // the pack as plain data (the Godot port reads it from assets/data/frost_world.json, see export_world.js)
-  const PACK = { floors: FLOORS, circles: CIRCLES, names: NAMES, suffixes: SUFFIXES, words: WORDS, theme_flag: 'frost', light: null, gate_banner: GATE_BANNER, blue: BLUE, blue_props: BLUE_PROPS, foot: FOOT, wall_set: WALL_SET, break_set: BREAK_SET, mimic_fight: MIMIC_FIGHT, mimic_treasure: MIMIC_TREASURE, diff: DIFF, ice_rooms: ICE_ROOMS, winter: WINTER };
+  const PACK = { room_library: ROOM_LIBRARY, floors: FLOORS, circles: CIRCLES, names: NAMES, suffixes: SUFFIXES, words: WORDS, theme_flag: 'frost', light: null, gate_banner: GATE_BANNER, blue: BLUE, blue_props: BLUE_PROPS, foot: FOOT, wall_set: WALL_SET, break_set: BREAK_SET, mimic_fight: MIMIC_FIGHT, mimic_treasure: MIMIC_TREASURE, diff: DIFF, ice_rooms: ICE_ROOMS, winter: WINTER };
   return WorldPack.make(PACK);
 });

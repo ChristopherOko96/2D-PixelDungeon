@@ -1,0 +1,20 @@
+{
+	"_note": "Weather of a Weltbauer room (src/world_kit/room_weather.gd): a room file names one `weather` (falling: what comes down) and any `weather_extra` (laid over it). The game draws it over the picture while the hero is in that room and fades it in and out over `fade` s. falls: count = particles on a 1920 wide screen, speed = [min, max] px per second down, drift = px per second sideways, size = [min, max] px, alpha, streak = length of a streak in px (0 = round flake), haze = a white wash at most this strong, gust = seconds of one gust of the haze. extras: fog = drifting banks (count, size, alpha, speed), diamond = twinkling sparkles (count, alpha), aurora = curtains at the top (bands, height share of the screen, alpha, colours), rime = frost creeping in from the edges (width share, alpha), night = a cold dark over all (alpha). labels: what the Weltbauer shows.",
+	"fade": 0.8,
+	"falls": {
+		"snow": {"count": 140, "speed": [40, 95], "drift": 24, "size": [1.6, 3.8], "alpha": 0.85, "streak": 0, "haze": 0.0, "gust": 0},
+		"blizzard": {"count": 460, "speed": [240, 380], "drift": 760, "size": [1.2, 2.6], "alpha": 0.8, "streak": 22, "haze": 0.24, "gust": 3.2},
+		"hail": {"count": 190, "speed": [640, 820], "drift": 90, "size": [1.8, 3.0], "alpha": 0.9, "streak": 7, "haze": 0.04, "gust": 0}
+	},
+	"extras": {
+		"fog": {"count": 9, "size": [260, 520], "alpha": 0.11, "speed": 22, "color": "b8d4f2"},
+		"diamond": {"count": 70, "alpha": 0.95, "color": "e6fbff"},
+		"aurora": {"bands": 3, "height": 0.34, "alpha": 0.22, "colors": ["5dffb0", "57d8ff", "b48cff"]},
+		"rime": {"width": 0.09, "alpha": 0.55, "color": "e9f6ff"},
+		"night": {"alpha": 0.46, "color": "06101f"}
+	},
+	"labels": {
+		"falls": {"": "Kein Wetter", "snow": "Schneefall", "blizzard": "Schneesturm", "hail": "Graupel"},
+		"extras": {"fog": "Eisnebel", "diamond": "Diamantstaub (glitzernde Eiskristalle)", "aurora": "Polarlicht", "rime": "Raureif am Bildrand", "night": "Polarnacht (dunkler)"}
+	}
+}

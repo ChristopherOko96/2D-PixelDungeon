@@ -1,0 +1,783 @@
+{
+	"schema_version": 1.0,
+	"id": "f_prismen_ld",
+	"title": "Rätsel: Polarlichtprismen (Winkel)",
+	"world": "frost",
+	"role": "jump",
+	"in_floors": true,
+	"slots": [
+		[
+			1.0,
+			0.0
+		],
+		[
+			0.0,
+			1.0
+		],
+		[
+			1.0,
+			1.0
+		]
+	],
+	"width": 31.0,
+	"height": 25.0,
+	"cells": [
+		"0000000000000000000000000000000",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0111111111111111101111111111110",
+		"0111111111111111101111111111110",
+		"0111111111111111101111111111110",
+		"0111111111111111101111111111110",
+		"0111111111111111111111111111110",
+		"0111111111111111101111111111110",
+		"0000011111111111101111111111110",
+		"0111011111111111101111111111110",
+		"0111011111111111101111111111110",
+		"0000000000000000000000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				24.0,
+				0.0
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				30.0,
+				4.0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				24.0,
+				24.0
+			]
+		}
+	],
+	"auto_mobs": 0.0,
+	"objects": [
+		{
+			"kind": "frost_rune",
+			"x": 1776.0,
+			"y": 1872.0
+		},
+		{
+			"kind": "tablet",
+			"x": 1776.0,
+			"y": 1713.6,
+			"text": "Lenke das Polarlicht auf das Siegel.\nJedes Prisma kennt zwei Wege.\nNicht jedes Prisma braucht das Licht."
+		},
+		{
+			"kind": "gate",
+			"x": 192.0,
+			"y": 2016.0,
+			"dir": "v",
+			"group": "A",
+			"lock": "",
+			"style": "portcullis"
+		},
+		{
+			"kind": "chest",
+			"x": 240.0,
+			"y": 2193.6,
+			"loot": {
+				"type": "hoard",
+				"tier": 3.0
+			},
+			"mimic": "no"
+		},
+		{
+			"kind": "prop",
+			"asset": "rocks_a",
+			"x": 912.0,
+			"y": 2108.0,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				80.0,
+				88.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_big",
+			"x": 144.0,
+			"y": 2012.0,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				80.0,
+				88.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rocks_a",
+			"x": 432.0,
+			"y": 1628.0,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				80.0,
+				88.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rocks_a",
+			"x": 336.0,
+			"y": 1820.0,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				80.0,
+				88.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rocks_a",
+			"x": 912.0,
+			"y": 2012.0,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				80.0,
+				88.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_t",
+			"x": 816.0,
+			"y": 1628.0,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				80.0,
+				88.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_mid",
+			"x": 624.0,
+			"y": 1628.0,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				80.0,
+				88.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_t",
+			"x": 1392.0,
+			"y": 1916.0,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				80.0,
+				88.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_mid",
+			"x": 1104.0,
+			"y": 2012.0,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				80.0,
+				88.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_t",
+			"x": 1296.0,
+			"y": 1916.0,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				80.0,
+				88.0
+			]
+		},
+		{
+			"kind": "beam_source",
+			"x": 1104.0,
+			"y": 2160.0,
+			"dir": "w"
+		},
+		{
+			"kind": "beam_seal",
+			"x": 1584.0,
+			"y": 1488.0,
+			"group": "A"
+		},
+		{
+			"kind": "prism",
+			"x": 720.0,
+			"y": 2160.0,
+			"turn": 0.0,
+			"fixed": false
+		},
+		{
+			"kind": "prism",
+			"x": 720.0,
+			"y": 1776.0,
+			"turn": 1.0,
+			"fixed": false
+		},
+		{
+			"kind": "prism",
+			"x": 1104.0,
+			"y": 1776.0,
+			"turn": 1.0,
+			"fixed": false
+		},
+		{
+			"kind": "prism",
+			"x": 1104.0,
+			"y": 1584.0,
+			"turn": 1.0,
+			"fixed": false
+		},
+		{
+			"kind": "prism",
+			"x": 1296.0,
+			"y": 1584.0,
+			"turn": 1.0,
+			"fixed": false
+		},
+		{
+			"kind": "prism",
+			"x": 1296.0,
+			"y": 1488.0,
+			"turn": 1.0,
+			"fixed": false
+		},
+		{
+			"kind": "prism",
+			"x": 720.0,
+			"y": 2256.0,
+			"turn": 0.0,
+			"fixed": false
+		},
+		{
+			"kind": "prism",
+			"x": 624.0,
+			"y": 1680.0,
+			"turn": 0.0,
+			"fixed": false
+		},
+		{
+			"kind": "prism",
+			"x": 1488.0,
+			"y": 1680.0,
+			"turn": 1.0,
+			"fixed": false
+		},
+		{
+			"kind": "prism",
+			"x": 1104.0,
+			"y": 2256.0,
+			"turn": 0.0,
+			"fixed": false
+		},
+		{
+			"kind": "prism",
+			"x": 1296.0,
+			"y": 1680.0,
+			"turn": 0.0,
+			"fixed": false
+		},
+		{
+			"kind": "prop",
+			"asset": "icon_scroll",
+			"x": 2736.0,
+			"y": 102.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_b",
+			"x": 1929.6,
+			"y": 102.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 1488.0,
+			"y": 1446.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 1219.2,
+			"y": 1446.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_1",
+			"x": 950.4,
+			"y": 1446.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_b",
+			"x": 681.6,
+			"y": 1446.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 412.8,
+			"y": 1446.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_c",
+			"x": 2256.0,
+			"y": 300.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_a",
+			"x": 2736.0,
+			"y": 492.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_c",
+			"x": 2448.0,
+			"y": 1164.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_b",
+			"x": 2064.0,
+			"y": 1740.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_c",
+			"x": 2736.0,
+			"y": 1932.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_b",
+			"x": 1680.0,
+			"y": 1932.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_b",
+			"x": 2544.0,
+			"y": 2124.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_d",
+			"x": 1872.0,
+			"y": 2220.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_b",
+			"x": 2352.0,
+			"y": 2316.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_a",
+			"x": 2064.0,
+			"y": 2316.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_monk",
+			"x": 2064.0,
+			"y": 178.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				40.0,
+				24.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 2832.0,
+			"y": 1426.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				26.0,
+				18.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "torch_pillar_blue",
+			"x": 2832.0,
+			"y": 850.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				40.0,
+				26.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bowl_blue",
+			"x": 1776.0,
+			"y": 1234.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				56.0,
+				28.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 2064.0,
+			"y": 2290.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				26.0,
+				18.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_monk",
+			"x": 2832.0,
+			"y": 1810.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				40.0,
+				24.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 1776.0,
+			"y": 562.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				26.0,
+				18.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 2736.0,
+			"y": 178.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				26.0,
+				18.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "torch_pillar_blue",
+			"x": 2736.0,
+			"y": 2290.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				40.0,
+				26.0
+			]
+		},
+		{
+			"kind": "start",
+			"x": 1488.0,
+			"y": 1507.2
+		}
+	],
+	"kind_label": "Frosträtsel",
+	"info": "Kein Kampf. Lenke das Polarlicht mit den Prismen auf das Siegel.",
+	"weather_extra": [
+		"diamond",
+		"fog",
+		"rime",
+		"night",
+		"aurora"
+	]
+}

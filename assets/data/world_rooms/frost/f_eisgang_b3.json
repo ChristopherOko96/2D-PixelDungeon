@@ -1,0 +1,1009 @@
+{
+	"schema_version": 1,
+	"id": "f_eisgang_b3",
+	"title": "Rätsel: Eisgang (lang)",
+	"world": "frost",
+	"role": "jump",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		],
+		[
+			1,
+			0
+		],
+		[
+			2,
+			0
+		]
+	],
+	"width": 48,
+	"height": 11,
+	"cells": [
+		"000000000000000000000000000000000000000000000000",
+		"011111111111111111111111111111111111111111111110",
+		"011111111111111111111111111111111111111111111110",
+		"000000000000010000000000000000000000000000000000",
+		"000000000000011111111111000000000000000000000000",
+		"000000000000001111111111000000000000000000000000",
+		"000000000000001111111111000000000000000000000000",
+		"000000000000001111111111001110000000000000000000",
+		"000000000000001111111111101110000000000000000000",
+		"000000000000001111111111001110000000000000000000",
+		"000000000000000000000000000000000000000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "west",
+			"cell": [
+				0,
+				1
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				47,
+				1
+			]
+		},
+		{
+			"side": "north",
+			"cell": [
+				23,
+				0
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "frost_rune",
+			"x": 1296,
+			"y": 432
+		},
+		{
+			"kind": "tablet",
+			"x": 1104,
+			"y": 177.6,
+			"text": "Jede Platte trägt nur, was sie tragen kann.\nDie dunklen tragen einen Schritt, die hellen zwei.\nBreche jede, ehe du das Ziel betrittst. Wer fällt, beginnt von vorn."
+		},
+		{
+			"kind": "gate",
+			"x": 2400,
+			"y": 768,
+			"dir": "h",
+			"group": "A",
+			"lock": "",
+			"style": "portcullis"
+		},
+		{
+			"kind": "chest",
+			"x": 2640,
+			"y": 849.6,
+			"loot": {
+				"type": "hoard",
+				"tier": 3
+			},
+			"mimic": "no"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1392,
+			"y": 432,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1488,
+			"y": 432,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1584,
+			"y": 432,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1680,
+			"y": 432,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1776,
+			"y": 432,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1872,
+			"y": 432,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "prop",
+			"asset": "rocks_a",
+			"x": 1968,
+			"y": 476,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "boulders",
+			"x": 2064,
+			"y": 476,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rocks_a",
+			"x": 2160,
+			"y": 476,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2256,
+			"y": 432,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "prop",
+			"asset": "boulders",
+			"x": 1392,
+			"y": 572,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1488,
+			"y": 528,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1584,
+			"y": 528,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1680,
+			"y": 528,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1776,
+			"y": 528,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1872,
+			"y": 528,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_mid",
+			"x": 1968,
+			"y": 572,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2064,
+			"y": 528,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2160,
+			"y": 528,
+			"holds": 2,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2256,
+			"y": 528,
+			"holds": 2,
+			"group": "A"
+		},
+		{
+			"kind": "prop",
+			"asset": "rocks_a",
+			"x": 1392,
+			"y": 668,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1488,
+			"y": 624,
+			"holds": 2,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1584,
+			"y": 624,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1680,
+			"y": 624,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1776,
+			"y": 624,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1872,
+			"y": 624,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1968,
+			"y": 624,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2064,
+			"y": 624,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2160,
+			"y": 624,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "prop",
+			"asset": "boulders",
+			"x": 2256,
+			"y": 668,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1392,
+			"y": 720,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1488,
+			"y": 720,
+			"holds": 2,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1584,
+			"y": 720,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1680,
+			"y": 720,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1776,
+			"y": 720,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1872,
+			"y": 720,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1968,
+			"y": 720,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2064,
+			"y": 720,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2160,
+			"y": 720,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_big",
+			"x": 2256,
+			"y": 764,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				88
+			]
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1392,
+			"y": 816,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1488,
+			"y": 816,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1584,
+			"y": 816,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1680,
+			"y": 816,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1776,
+			"y": 816,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1872,
+			"y": 816,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1968,
+			"y": 816,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2064,
+			"y": 816,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2160,
+			"y": 816,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2256,
+			"y": 816,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1392,
+			"y": 912,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1488,
+			"y": 912,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1584,
+			"y": 912,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1680,
+			"y": 912,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1776,
+			"y": 912,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1872,
+			"y": 912,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1968,
+			"y": 912,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2064,
+			"y": 912,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2160,
+			"y": 912,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2256,
+			"y": 912,
+			"holds": 1,
+			"group": "A"
+		},
+		{
+			"kind": "ice_goal",
+			"x": 2352,
+			"y": 816,
+			"group": "A"
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_v_glow_blue",
+			"x": 508.8,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_1",
+			"x": 777.6,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 1046.4,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_v_glow_blue",
+			"x": 1315.2,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_3",
+			"x": 1584,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_1",
+			"x": 1852.8,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_3",
+			"x": 2659.2,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 2928,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 3196.8,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_v_glow_blue",
+			"x": 3465.6,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 3734.4,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 4003.2,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_v_glow_blue",
+			"x": 1488,
+			"y": 390,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_1",
+			"x": 1756.8,
+			"y": 390,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_3",
+			"x": 2025.6,
+			"y": 390,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 2640,
+			"y": 678,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_a",
+			"x": 816,
+			"y": 204,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_c",
+			"x": 2640,
+			"y": 204,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_c",
+			"x": 2832,
+			"y": 204,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_a",
+			"x": 3600,
+			"y": 204,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_b",
+			"x": 816,
+			"y": 300,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 60,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_blue",
+			"x": 624,
+			"y": 178.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_blue",
+			"x": 3504,
+			"y": 274.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "glacier_b",
+			"x": 1776,
+			"y": 178.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				70,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_blue",
+			"x": 4176,
+			"y": 178.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_mid",
+			"x": 3120,
+			"y": 274.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				44,
+				24
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "glacier_a",
+			"x": 2736,
+			"y": 178.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				32
+			]
+		},
+		{
+			"kind": "start",
+			"x": 2256,
+			"y": 259.2
+		}
+	],
+	"kind_label": "Frosträtsel",
+	"info": "Kein Kampf. Betritt jede Eisplatte so oft, wie sie trägt.",
+	"weather": "snow"
+}

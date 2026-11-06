@@ -22,6 +22,8 @@ const Monsters = preload("res://src/hell/hell_monsters.gd")
 const Graphics = preload("res://src/core/graphics_settings.gd")
 const Gates = preload("res://src/world_editor/world_gates.gd")
 const Contents = preload("res://src/world_kit/room_contents.gd")
+const FrostPuzzles = preload("res://src/world_kit/frost_puzzles.gd")
+const RoomWeather = preload("res://src/world_kit/room_weather.gd")
 const CryptUI = preload("res://src/ui/crypt_ui.gd")
 const WINDOW := Vector2i(1600, 900)
 const GROUPS := ["A", "B", "C", "D", "E", "F"]
@@ -70,6 +72,11 @@ var _h_spin: SpinBox
 var _mobs_spin: SpinBox
 var _spawn_pick: OptionButton
 var _spawn_note: Label
+## The room's weather: what falls, and the extras by id.
+var _weather_pick: OptionButton
+var _weather_checks: Dictionary = {}
+## The Frostgruft's ice lake: the whole room is ice (game: hell_game.gd ice_room_at).
+var _lake_check: CheckBox
 var _template_menu: PopupMenu
 var _tool_buttons := {}
 var _size_buttons := {}
@@ -242,6 +249,11 @@ func _tool_bar() -> Control:
 	feet_box.button_pressed = true
 	feet_box.toggled.connect(func(on: bool) -> void: canvas.feet_on = on)
 	_brush_row.add_child(feet_box)
+	var weather_box := CheckBox.new()
+	weather_box.text = "Wetter"
+	weather_box.button_pressed = true
+	weather_box.toggled.connect(func(on: bool) -> void: canvas.weather_on = on)
+	_brush_row.add_child(weather_box)
 	_brush_row.add_child(_button("ZURÜCK", func() -> void: canvas.undo()))
 	_brush_row.add_child(_button("VOR", func() -> void: canvas.redo()))
 	_brush_row.add_child(_button("EINPASSEN", func() -> void: canvas.fit()))
@@ -294,6 +306,50 @@ func _right_side() -> Control:
 		_mark_dirty())
 	_room_box.add_child(_row("Gegner", _spawn_pick))
 	_room_box.add_child(_row("Zufallsgegner", _mobs_spin))
+	# the room's weather (src/world_kit/room_weather.gd): one thing falling, any extras over it
+	var labels: Dictionary = RoomWeather.load_config().get("labels", {})
+	_weather_pick = OptionButton.new()
+	for id: String in labels.get("falls", {}):
+		_weather_pick.add_item(str(labels.falls[id]))
+		_weather_pick.set_item_metadata(_weather_pick.item_count - 1, id)
+	_weather_pick.item_selected.connect(func(i: int) -> void:
+		room.weather = str(_weather_pick.get_item_metadata(i))
+		if str(room.weather) == "":
+			room.erase("weather")
+		_mark_dirty())
+	_room_box.add_child(_row("Wetter", _weather_pick))
+	for id: String in labels.get("extras", {}):
+		var extra := CheckBox.new()
+		extra.text = str(labels.extras[id])
+		extra.toggled.connect(func(on: bool) -> void:
+			var list: Array = room.get("weather_extra", [])
+			list.erase(id)
+			if on:
+				list.append(id)
+			room.weather_extra = list
+			if list.is_empty():
+				room.erase("weather_extra")
+			_mark_dirty())
+		_weather_checks[id] = extra
+		_room_box.add_child(extra)
+	var weather_note := Label.new()
+	weather_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	weather_note.custom_minimum_size.x = 280
+	weather_note.modulate = Color(0.75, 0.78, 0.86)
+	weather_note.text = "Wetter: Was im Raum fällt, dazu beliebig viele Zusätze. Das Spiel zeigt es, solange der Held im Raum ist. Der Weltbauer zeigt es über dem Raum, oben schaltet „Wetter“ die Anzeige ab."
+	_room_box.add_child(weather_note)
+	_lake_check = CheckBox.new()
+	_lake_check.text = "Eissee: der ganze Raum ist Eis, alle rutschen stark. Gemalter Boden (Flächen-Pinsel) ist ein festes Schneefeld."
+	_lake_check.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_lake_check.custom_minimum_size.x = 280
+	_lake_check.toggled.connect(func(on: bool) -> void:
+		if on:
+			room.ice_lake = true
+		else:
+			room.erase("ice_lake")
+		canvas.queue_redraw()
+		_mark_dirty())
+	_room_box.add_child(_lake_check)
 	_spawn_note = Label.new()
 	_spawn_note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_spawn_note.custom_minimum_size.x = 280
@@ -421,6 +477,9 @@ func _fill_parts() -> void:
 	_entries = []
 	if _tab != Catalog.OTHER:
 		for part: Dictionary in catalog.cfg.parts:
+			# a world's own parts (the Frostgruft's puzzles) only in that world
+			if part.has("worlds") and not (part.worlds as Array).has(world):
+				continue
 			_entries.append(part.duplicate(true))
 		_entries.append_array(_monster_parts())
 	_entries.append_array(catalog.entries(_tab, art.theme))
@@ -546,6 +605,13 @@ func _open_room(value: Dictionary) -> void:
 	_h_spin.set_value_no_signal(int(room.height))
 	_mobs_spin.set_value_no_signal(int(room.get("auto_mobs", 0)))
 	_show_spawn_mode()
+	for i in range(_weather_pick.item_count):
+		if str(_weather_pick.get_item_metadata(i)) == str(room.get("weather", "")):
+			_weather_pick.select(i)
+	for id: String in _weather_checks:
+		(_weather_checks[id] as CheckBox).set_pressed_no_signal((room.get("weather_extra", []) as Array).has(id))
+	_lake_check.set_pressed_no_signal(bool(room.get("ice_lake", false)))
+	_lake_check.visible = str(room.get("world", "")) == "frost"
 	canvas.show_room(room, art)
 	_fill_inspector()
 	_check_room()
@@ -767,6 +833,11 @@ func _fill_inspector() -> void:
 		"brazier":
 			_group(o)
 			_note("Gruppe: Brennen alle Schalen der Gruppe, öffnet sich Tor oder Geheimgang derselben Gruppe. Das gilt nur in diesem Raum. Die Feuerschalen über die ganze Etage setzt die Etage selbst.")
+			if world == "frost":
+				_check(o, "cold", "Kalt: nur getragene Glut entzündet sie")
+				_note("Kalt: Die Schale hat keine Flamme. Der Held nimmt am Glutherd Glut und trägt sie her, sie hält nur einige Schritte, im Kältenebel weniger. Eine brennende kalte Schale gibt selbst wieder Glut.")
+		_ when FrostPuzzles.KINDS.has(str(o.kind)):
+			_frost_inspector(o)
 		"skullheap":
 			_group(o)
 			_number("Treffer", float(o.get("hp", 3)), 1.0, 20.0, 1.0, func(v: float) -> void: o.hp = int(v))
@@ -828,6 +899,77 @@ func _fill_inspector() -> void:
 			if Data.spawn_mode(room) != "manual" and not Contents.is_chest_mob(str(o.get("mob", ""))):
 				_note("Der Raum steht auf „Zufällig“, dieser Gegner kommt deshalb nicht. Stelle rechts oben „Von Hand gesetzt“ ein.")
 	_inspector.add_child(_button("LÖSCHEN (Entf)", func() -> void: canvas.delete_picked()))
+
+
+## The settings of a Frostgruft puzzle piece (src/world_kit/frost_puzzles.gd).
+func _frost_inspector(o: Dictionary) -> void:
+	var data: Dictionary = FrostPuzzles.load_config()
+	match str(o.kind):
+		"thin_ice":
+			_number("Trägt Schritte", float(o.get("holds", 2)), 1.0, 2.0, 1.0, func(v: float) -> void: o.holds = int(v))
+			_text_group(o, "group", "Eisgang-Gruppe")
+			_note("Brüchiges Eis: Es trägt so viele Schritte (2 oder 1). Verlässt der Held es zum letzten Mal, bricht es ein. Wer ins Loch tritt, steht wieder am letzten festen Boden, und das Eis des Raums ist wieder ganz.")
+			_note("Eisgang-Gruppe: Mit einem Eisgang-Ziel derselben Gruppe ist das Rätsel gelöst, wenn das Ziel betreten wird und jede Eisplatte der Gruppe gebrochen ist. So muss jede Platte genau einmal betreten werden.")
+		"ice_goal":
+			_group(o)
+			_note("Eisgang-Ziel: Betritt der Held es, nachdem jede brüchige Eisplatte derselben Gruppe gebrochen ist, öffnet sich Tor oder Geheimgang der Gruppe.")
+		"deep_snow":
+			_note("Tiefschnee: Rollt ein Schneeball darüber, wird er eine Stufe größer und der Schnee ist weg, bis die Rune den Raum zurücksetzt.")
+		"cold_fog":
+			_note("Kältenebel: Getragene Glut verbraucht hier %d statt einem Schritt." % int((data.get("ember", {}) as Dictionary).get("fog_cost", 2)))
+		"ice_block":
+			_note("Eisblock: Der Held lehnt sich dagegen, der Block rutscht, bis ihn etwas aufhält. In einer Grube (Gletscherspalte) friert er fest und wird Boden.")
+		"snowball":
+			_number("Größe", float(o.get("size", 1)), 1.0, 3.0, 1.0, func(v: float) -> void: o.size = int(v))
+			_note("Schneeball: rollt je Stoß ein Feld und wächst auf Tiefschnee. Erst ab Größe %d füllt er eine Gletscherspalte, kleiner versinkt er darin." % int((data.get("push", {}) as Dictionary).get("fill_size", 3)))
+		"ember_source":
+			_note("Glutherd: brennt immer. Hier nimmt der Held Glut (E). Sie hält %d Schritte." % int((data.get("ember", {}) as Dictionary).get("steps", 14)))
+		"beam_source":
+			_choice(o, "dir", "Richtung", DIRS, "e")
+			_note("Polarlicht-Quelle: Das Licht läuft in die Richtung, bis eine Mauer oder ein Teil es aufhält. Eisprismen lenken es um. Der Weltbauer zeigt den Weg des Lichts.")
+		"prism":
+			_choice(o, "turn", "Stellung", {"0": "/ (schräg nach oben)", "1": "\\ (schräg nach unten)"}, str(int(o.get("turn", 0))))
+			o.turn = int(o.get("turn", 0))
+			_check(o, "fixed", "Fest (lässt sich nicht drehen)")
+			_note("Eisprisma: lenkt das Licht um eine Ecke. Der Held dreht es mit E zwischen den beiden Stellungen.")
+		"beam_seal":
+			_group(o)
+			_note("Lichtsiegel: Trifft das Licht alle Siegel einer Gruppe zugleich, öffnet sich Tor oder Geheimgang derselben Gruppe.")
+		"mirror_ghost":
+			_group(o)
+			_note("Spiegelgeist: Er geht jeden Schritt des Helden seitenverkehrt mit (links und rechts getauscht), wo sein Weg frei ist. Steht der Held auf seiner Spiegelplatte und der Geist auf seiner, ist die Gruppe gelöst.")
+			_note("Nach %d Minuten im Raum taut der Spiegelhebel auf und zeigt den Weg vor. Den Weg (show) rechnet tools/frost_dungeon/puzzles/solve.js aus." % int(float((data.get("ghost", {}) as Dictionary).get("hint_after", 300.0)) / 60.0))
+		"ghost_plate":
+			_group(o)
+			_choice(o, "who", "Für", {"hero": "den Helden", "ghost": "den Spiegelgeist"}, "hero")
+		"mirror_lever":
+			_group(o)
+			_note("Spiegelhebel: ist eingefroren, bis der Held einige Minuten mit dem Spiegelgeist gerätselt hat. Dann zeigt er bei jedem Zug den Weg vor und stellt danach alles zurück.")
+		"crystal":
+			_group(o)
+			_number("Ton", float(o.get("note", 1)), 1.0, 8.0, 1.0, func(v: float) -> void: o.note = int(v))
+			_note("Kristallglocke: klingt beim Anschlagen (E) in ihrem Ton. 1 ist der tiefste, 8 der höchste.")
+		"bell_statue":
+			_group(o)
+			var words := LineEdit.new()
+			words.text = str(o.get("melody", "1,2,3"))
+			words.text_changed.connect(func(t: String) -> void:
+				o.melody = t
+				_touched())
+			words.focus_entered.connect(func() -> void: canvas.checkpoint())
+			_inspector.add_child(_row("Melodie", words))
+			_check(o, "glow", "Kristalle leuchten beim Vorsingen mit")
+			_note("Singende Statue: Mit E singt sie die Melodie, die Töne als Nummern der Kristalle, etwa 5,4,2,1,3. Ein Ton darf mehrmals vorkommen. Ohne Leuchten muss man die Töne heraushören.")
+		"bell_plate":
+			_group(o)
+			_note("Glockenplatte: Erst nach dem Betreten zählen die Anschläge. Bei einem falschen Ton muss man wieder auf die Platte.")
+		"frost_core":
+			_note("Frostherz: wird mit E getragen und am Frostherz-Altar eingesetzt. Bricht der Held ins Eis ein, liegt es wieder an seinem Platz.")
+		"core_altar":
+			_group(o)
+			_note("Frostherz-Altar: Setzt der Held das Frostherz ein, öffnet sich Tor oder Geheimgang derselben Gruppe.")
+		"frost_rune":
+			_note("Rücksetzrune: Mit E steht alles im Raum wieder wie am Anfang (Blöcke, Bälle, Schnee, Eis, Geist). Gelöste Gruppen bleiben gelöst. Setze sie an den Eingang des Rätsels.")
 
 
 ## The world's timing of its floor traps (balance.hazards).

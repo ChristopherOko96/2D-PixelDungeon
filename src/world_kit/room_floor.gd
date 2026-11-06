@@ -74,7 +74,10 @@ static func build(n: int, run: int, pack: RefCounted) -> Dictionary:
 	for attempt in range(ATTEMPTS):
 		P.seed = floor_seed + attempt * 7919
 		var plan := Core.describe(P, Core.generate(P), Core.Rng.new(int(P.seed) + 99), opts.names, opts.suffixes)
-		var picks := _pick_files(plan, files, cfg, Core.Rng.new(int(P.seed) + 31))
+		# an ice lake (a file with ice_lake) on this floor only by chance (room_library ice_lake_share), from a
+		# draw of its own so the floor's other picks stay as they were
+		var lake_ok := Core.Rng.new(int(P.seed) + 57).next() < float(cfg.get("ice_lake_share", 1.0))
+		var picks := _pick_files(plan, files, cfg, Core.Rng.new(int(P.seed) + 31), lake_ok)
 		if picks.is_empty():
 			continue
 		P.seed = floor_seed
@@ -87,12 +90,15 @@ static func build(n: int, run: int, pack: RefCounted) -> Dictionary:
 ## The file of each room of the plan: rooms.size() files by room id, {} when one has none that fits.
 ## Files are not repeated on a floor while others fit. Puzzle and riddle rooms choose first, their doors
 ## are the few set by hand; the plan's doors move to suit them.
-static func _pick_files(plan: Dictionary, files: Array, cfg: Dictionary, rnd: Core.Rng) -> Dictionary:
+static func _pick_files(plan: Dictionary, files: Array, cfg: Dictionary, rnd: Core.Rng, lake_ok: bool = true) -> Dictionary:
 	var by_id := {}
 	for r: Dictionary in plan.rooms:
 		by_id[r.id] = r
 	var ctx := {"plan": plan, "files": files, "cfg": cfg, "rnd": rnd, "by_id": by_id, "picks": {}, "used": {},
 		"entries": _entry_doors(plan), "before_boss": _room_before_boss(plan)}
+	# no ice lake on a floor whose draw said so
+	if not lake_ok:
+		ctx.lake = true
 	_choose_jump_rooms(ctx)
 	var riddle_first: Array = (plan.rooms as Array).filter(func(r: Dictionary) -> bool: return r.get("seq", false))
 	riddle_first.append_array((plan.rooms as Array).filter(func(r: Dictionary) -> bool: return not r.get("seq", false)))
@@ -155,10 +161,17 @@ static func _fitting(r: Dictionary, role: String, ctx: Dictionary) -> Array:
 static func _take(r: Dictionary, fits: Array, ctx: Dictionary) -> void:
 	var best: int = fits.map(func(f: Dictionary) -> int: return int(f.cost)).min()
 	var right := fits.filter(func(f: Dictionary) -> bool: return int(f.cost) == best)
+	# one ice lake (a file with ice_lake) a floor at most, none on a floor the roll left dry, while other files fit
+	if ctx.has("lake"):
+		var dry := right.filter(func(f: Dictionary) -> bool: return not bool(f.file.get("ice_lake", false)))
+		if not dry.is_empty():
+			right = dry
 	var fresh := right.filter(func(f: Dictionary) -> bool: return not ctx.used.has(f.file.id))
 	var pool: Array = fresh if not fresh.is_empty() else right
 	var chosen: Dictionary = pool[int(floor(ctx.rnd.next() * pool.size()))]
 	ctx.used[chosen.file.id] = true
+	if bool(chosen.file.get("ice_lake", false)):
+		ctx.lake = true
 	ctx.picks[r.id] = chosen.file
 	if chosen.has("route"):
 		ctx.plan.doors = chosen.route.doors
@@ -510,9 +523,19 @@ static func _assemble(n: int, P: Dictionary, plan: Dictionary, picks: Dictionary
 		r.origin = Vector2i(margin, margin) + lo * pitch
 		_box_of_floor(r, t)
 		r.cleared = r.type != "combat" and r.type != "boss"
+		# the file's weather (src/world_kit/room_weather.gd)
+		if str(t.get("weather", "")) != "" or not (t.get("weather_extra", []) as Array).is_empty():
+			r.weather = str(t.get("weather", ""))
+			r.weather_extra = (t.get("weather_extra", []) as Array).duplicate()
+		# an ice lake: the whole room is ice for everyone (hell_game.gd ice_room_at), painted ground firm
+		if bool(t.get("ice_lake", false)):
+			r.ice = true
+			r.ice_lake = true
+			r.kind = "Eissee"
+			r.info = str(t.get("info", "")) if str(t.get("info", "")) != "" else "Ein Eissee: alle rutschen. Nur auf den Schneefeldern steht man fest."
 		if str(r.gtype) == "jump":
 			r.kind = str(t.get("kind_label", "Sprungrätsel"))
-			r.info = "Kein Kampf. Sieh dir an, wohin die Platten werfen, bevor du sie betrittst."
+			r.info = str(t.get("info", "")) if str(t.get("info", "")) != "" else "Kein Kampf. Sieh dir an, wohin die Platten werfen, bevor du sie betrittst."
 			# a labyrinth: its maze part turns dark (hell_game.gd maze darkness), its dead hide in the pieces
 			if bool(t.get("maze", false)):
 				r.maze_zone = maze_zone(t, r.origin)

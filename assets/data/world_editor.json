@@ -1,5 +1,5 @@
 {
- "_note": "The Weltbauer's parts list (src/world_editor/world_asset_catalog.gd). world_folders: folders under assets/ that belong to a world besides its two graphics sets; every other picture under assets/ shows under the tab Weitere. categories: the order of the list, with each one's default layer and whether its pieces block the way. rules: sorted by looking at every picture; the first whose name (regular expression on the file name without its ending) and folder (on the path under assets/) match wins; may add area (paints a surface), layer and block. Gates come from world_gates.json. strip_folders: folders whose wide pictures are film strips. parts: the game pieces and ground of every world (kind, label, preview picture, cat). small_art: a picture from outside the world's sets no bigger than this (px) is old small art, shown at scale small_scale.",
+ "_note": "The Weltbauer's parts list (src/world_editor/world_asset_catalog.gd). world_folders: folders under assets/ that belong to a world besides its two graphics sets; every other picture under assets/ shows under the tab Weitere. categories: the order of the list, with each one's default layer and whether its pieces block the way. rules: sorted by looking at every picture; the first whose name (regular expression on the file name without its ending) and folder (on the path under assets/) match wins; may add area (paints a surface), layer and block. Gates come from world_gates.json. strip_folders: folders whose wide pictures are film strips. parts: the game pieces and ground of every world (kind, label, preview picture, cat). small_art: a picture from outside the world's sets no bigger than this (px) is old small art, shown at scale small_scale. A part with worlds shows only in those worlds (the Frostgruft puzzle pieces of src/world_kit/frost_puzzles.gd).",
  "world_folders": {
   "krypta": [
    "sprites/crypt_props",
@@ -216,6 +216,222 @@
    "cat": "Fallen",
    "defaults": {
     "offset": 0
+   }
+  },
+  {
+   "kind": "thin_ice",
+   "label": "Brüchiges Eis",
+   "preview": "ice_crack",
+   "cat": "Frosträtsel",
+   "worlds": [
+    "frost"
+   ],
+   "defaults": {
+    "holds": 2,
+    "group": ""
+   }
+  },
+  {
+   "kind": "ice_goal",
+   "label": "Eisgang-Ziel",
+   "preview": "rune_big",
+   "cat": "Frosträtsel",
+   "worlds": [
+    "frost"
+   ],
+   "defaults": {
+    "group": "A"
+   }
+  },
+  {
+   "kind": "frost_rune",
+   "label": "Rücksetzrune",
+   "preview": "rune_small",
+   "cat": "Frosträtsel",
+   "worlds": [
+    "frost"
+   ]
+  },
+  {
+   "kind": "ice_block",
+   "label": "Eisblock",
+   "preview": "glacier_a",
+   "cat": "Frosträtsel",
+   "worlds": [
+    "frost"
+   ]
+  },
+  {
+   "kind": "snowball",
+   "label": "Schneeball",
+   "preview": "snowman",
+   "cat": "Frosträtsel",
+   "worlds": [
+    "frost"
+   ],
+   "defaults": {
+    "size": 1
+   }
+  },
+  {
+   "kind": "deep_snow",
+   "label": "Tiefschnee",
+   "preview": "snow_a",
+   "cat": "Frosträtsel",
+   "worlds": [
+    "frost"
+   ]
+  },
+  {
+   "kind": "ember_source",
+   "label": "Glutherd",
+   "preview": "brazier_floor",
+   "cat": "Frosträtsel",
+   "worlds": [
+    "frost"
+   ]
+  },
+  {
+   "kind": "cold_fog",
+   "label": "Kältenebel",
+   "preview": "snow_c",
+   "cat": "Frosträtsel",
+   "worlds": [
+    "frost"
+   ]
+  },
+  {
+   "kind": "beam_source",
+   "label": "Polarlicht-Quelle",
+   "preview": "rune_pillar_c",
+   "cat": "Frosträtsel",
+   "worlds": [
+    "frost"
+   ],
+   "defaults": {
+    "dir": "e"
+   }
+  },
+  {
+   "kind": "prism",
+   "label": "Eisprisma",
+   "preview": "rune_gem",
+   "cat": "Frosträtsel",
+   "worlds": [
+    "frost"
+   ],
+   "defaults": {
+    "turn": 0,
+    "fixed": false
+   }
+  },
+  {
+   "kind": "beam_seal",
+   "label": "Lichtsiegel",
+   "preview": "rune_plate",
+   "cat": "Frosträtsel",
+   "worlds": [
+    "frost"
+   ],
+   "defaults": {
+    "group": "A"
+   }
+  },
+  {
+   "kind": "mirror_ghost",
+   "label": "Spiegelgeist",
+   "preview": "statue_monk",
+   "cat": "Frosträtsel",
+   "worlds": [
+    "frost"
+   ],
+   "defaults": {
+    "group": "A"
+   }
+  },
+  {
+   "kind": "ghost_plate",
+   "label": "Spiegelplatte",
+   "preview": "rune_plate",
+   "cat": "Frosträtsel",
+   "worlds": [
+    "frost"
+   ],
+   "defaults": {
+    "group": "A",
+    "who": "hero"
+   }
+  },
+  {
+   "kind": "mirror_lever",
+   "label": "Spiegelhebel (Vorführung)",
+   "preview": "rune_pillar_d",
+   "cat": "Frosträtsel",
+   "worlds": [
+    "frost"
+   ],
+   "defaults": {
+    "group": "A"
+   }
+  },
+  {
+   "kind": "crystal",
+   "label": "Kristallglocke",
+   "preview": "rune_gem",
+   "cat": "Frosträtsel",
+   "worlds": [
+    "frost"
+   ],
+   "defaults": {
+    "group": "A",
+    "note": 1
+   }
+  },
+  {
+   "kind": "bell_statue",
+   "label": "Singende Statue",
+   "preview": "statue_angel",
+   "cat": "Frosträtsel",
+   "worlds": [
+    "frost"
+   ],
+   "defaults": {
+    "group": "A",
+    "melody": "1,2,3",
+    "glow": false
+   }
+  },
+  {
+   "kind": "bell_plate",
+   "label": "Glockenplatte (Start)",
+   "preview": "rune_plate",
+   "cat": "Frosträtsel",
+   "worlds": [
+    "frost"
+   ],
+   "defaults": {
+    "group": "A"
+   }
+  },
+  {
+   "kind": "frost_core",
+   "label": "Frostherz",
+   "preview": "key_crystal",
+   "cat": "Frosträtsel",
+   "worlds": [
+    "frost"
+   ]
+  },
+  {
+   "kind": "core_altar",
+   "label": "Frostherz-Altar",
+   "preview": "altar",
+   "cat": "Frosträtsel",
+   "worlds": [
+    "frost"
+   ],
+   "defaults": {
+    "group": "A"
    }
   }
  ],

@@ -119,7 +119,7 @@ func dress(W: Dictionary) -> Dictionary:
 
 
 ## The world's touches on a floor built from room files: its pieces are the files', so no furniture or
-## clutter comes on top, only wording, the world's light, the banners' colours and the way check.
+## clutter comes on top, only wording, the world's light, the banners' colours, its ice rooms and the way check.
 func dress_library(W: Dictionary) -> Dictionary:
 	for r: Dictionary in W.rooms:
 		r.name = wording(r.name)
@@ -134,6 +134,9 @@ func dress_library(W: Dictionary) -> Dictionary:
 		W.theme.dark = float(W.theme.dark) * float(pack.light.dark)
 		W.theme.vignette = float(W.theme.vignette) * float(pack.light.vignette)
 	_boss_gate(W)
+	# whole fight rooms of ice, as on generated floors (the Frostgruft)
+	if pack.get("ice_rooms") != null:
+		_ice_rooms(W)
 	_blue_light(W)
 	Core.clear_ways(W)
 	return W
@@ -419,11 +422,16 @@ func _ice_rooms(W: Dictionary) -> void:
 	var fits: Array = W.rooms.filter(func(r: Dictionary) -> bool:
 		return str(r.type) in P.types and (r.cells as Array).size() >= int(P.min_cells))
 	Core.shuffle(fits, rnd)
-	var picked: Array = []
+	# an ice lake of the room files (room_floor.gd) counts as this floor's ice room already
+	var picked: Array = W.rooms.filter(func(r: Dictionary) -> bool: return bool(r.get("ice_lake", false)))
 	for r: Dictionary in fits:
+		if bool(r.get("ice", false)):
+			continue
 		if picked.size() < int(P.max) and (picked.size() < int(P.min) or rnd.next() < float(P.share)):
 			picked.append(r)
 	for r: Dictionary in picked:
+		if bool(r.get("ice_lake", false)):
+			continue
 		r.ice = true
 		r.kind = str(P.kind)
 	W.decals = W.decals.filter(func(d: Dictionary) -> bool:

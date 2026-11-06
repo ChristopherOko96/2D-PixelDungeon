@@ -1,0 +1,1474 @@
+{
+	"schema_version": 1.0,
+	"id": "f_eissee_b3",
+	"title": "Rätsel: Brüchiger See (lang)",
+	"world": "frost",
+	"role": "jump",
+	"in_floors": true,
+	"slots": [
+		[
+			0.0,
+			0.0
+		],
+		[
+			1.0,
+			0.0
+		],
+		[
+			2.0,
+			0.0
+		]
+	],
+	"width": 48.0,
+	"height": 11.0,
+	"cells": [
+		"000000000000000000000000000000000000000000000000",
+		"011111111111111111111111111111111111111111111110",
+		"011111111111111111111111111111111111111111111110",
+		"000000010000000000000000000000000000000000000000",
+		"000000014400000000044400004400000000000000000000",
+		"001111010000000004000000000000000444000111000000",
+		"001111010000044000444444444400040444000111000000",
+		"001111010004400400004044044004440044404111000000",
+		"001111010444440440000000004004440000004111000000",
+		"000000014004400400400404400004400444044000000000",
+		"000000000000000000000000000000000000000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "west",
+			"cell": [
+				0.0,
+				1.0
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				47.0,
+				1.0
+			]
+		},
+		{
+			"side": "north",
+			"cell": [
+				23.0,
+				0.0
+			]
+		}
+	],
+	"auto_mobs": 0.0,
+	"objects": [
+		{
+			"kind": "thin_ice",
+			"x": 1008.0,
+			"y": 432.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1104.0,
+			"y": 432.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1200.0,
+			"y": 432.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1296.0,
+			"y": 432.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1392.0,
+			"y": 432.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1488.0,
+			"y": 432.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1584.0,
+			"y": 432.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1680.0,
+			"y": 432.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1776.0,
+			"y": 432.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2160.0,
+			"y": 432.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2256.0,
+			"y": 432.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2352.0,
+			"y": 432.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2448.0,
+			"y": 432.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2736.0,
+			"y": 432.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2832.0,
+			"y": 432.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2928.0,
+			"y": 432.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3024.0,
+			"y": 432.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3120.0,
+			"y": 432.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3216.0,
+			"y": 432.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3312.0,
+			"y": 432.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3408.0,
+			"y": 432.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3504.0,
+			"y": 432.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3600.0,
+			"y": 432.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3696.0,
+			"y": 432.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 816.0,
+			"y": 528.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 912.0,
+			"y": 528.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1008.0,
+			"y": 528.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1104.0,
+			"y": 528.0,
+			"holds": 2.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1200.0,
+			"y": 528.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1296.0,
+			"y": 528.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1392.0,
+			"y": 528.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1488.0,
+			"y": 528.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1584.0,
+			"y": 528.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1776.0,
+			"y": 528.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1872.0,
+			"y": 528.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1968.0,
+			"y": 528.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2064.0,
+			"y": 528.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2160.0,
+			"y": 528.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2256.0,
+			"y": 528.0,
+			"holds": 2.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2352.0,
+			"y": 528.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2448.0,
+			"y": 528.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2544.0,
+			"y": 528.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2640.0,
+			"y": 528.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2736.0,
+			"y": 528.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2832.0,
+			"y": 528.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2928.0,
+			"y": 528.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3024.0,
+			"y": 528.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3120.0,
+			"y": 528.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3504.0,
+			"y": 528.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3600.0,
+			"y": 528.0,
+			"holds": 2.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3696.0,
+			"y": 528.0,
+			"holds": 2.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 816.0,
+			"y": 624.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 912.0,
+			"y": 624.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1008.0,
+			"y": 624.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1104.0,
+			"y": 624.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1200.0,
+			"y": 624.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1488.0,
+			"y": 624.0,
+			"holds": 2.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1584.0,
+			"y": 624.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1680.0,
+			"y": 624.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2736.0,
+			"y": 624.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2832.0,
+			"y": 624.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2928.0,
+			"y": 624.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3120.0,
+			"y": 624.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3504.0,
+			"y": 624.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3600.0,
+			"y": 624.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3696.0,
+			"y": 624.0,
+			"holds": 2.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 816.0,
+			"y": 720.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 912.0,
+			"y": 720.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1008.0,
+			"y": 720.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1296.0,
+			"y": 720.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1392.0,
+			"y": 720.0,
+			"holds": 2.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1584.0,
+			"y": 720.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1680.0,
+			"y": 720.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1776.0,
+			"y": 720.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1872.0,
+			"y": 720.0,
+			"holds": 2.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2064.0,
+			"y": 720.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2352.0,
+			"y": 720.0,
+			"holds": 2.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2640.0,
+			"y": 720.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2736.0,
+			"y": 720.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3120.0,
+			"y": 720.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3216.0,
+			"y": 720.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3600.0,
+			"y": 720.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 816.0,
+			"y": 816.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1392.0,
+			"y": 816.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1680.0,
+			"y": 816.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1776.0,
+			"y": 816.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1872.0,
+			"y": 816.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1968.0,
+			"y": 816.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2064.0,
+			"y": 816.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2160.0,
+			"y": 816.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2256.0,
+			"y": 816.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2352.0,
+			"y": 816.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2448.0,
+			"y": 816.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2640.0,
+			"y": 816.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2736.0,
+			"y": 816.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3120.0,
+			"y": 816.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3216.0,
+			"y": 816.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3312.0,
+			"y": 816.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3408.0,
+			"y": 816.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3504.0,
+			"y": 816.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3600.0,
+			"y": 816.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 912.0,
+			"y": 912.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1008.0,
+			"y": 912.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1296.0,
+			"y": 912.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1392.0,
+			"y": 912.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1584.0,
+			"y": 912.0,
+			"holds": 2.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1680.0,
+			"y": 912.0,
+			"holds": 2.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1872.0,
+			"y": 912.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 1968.0,
+			"y": 912.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2160.0,
+			"y": 912.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2448.0,
+			"y": 912.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2544.0,
+			"y": 912.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2640.0,
+			"y": 912.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 2736.0,
+			"y": 912.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3024.0,
+			"y": 912.0,
+			"holds": 1.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3120.0,
+			"y": 912.0,
+			"holds": 2.0
+		},
+		{
+			"kind": "thin_ice",
+			"x": 3504.0,
+			"y": 912.0,
+			"holds": 2.0
+		},
+		{
+			"kind": "frost_core",
+			"x": 3984.0,
+			"y": 624.0
+		},
+		{
+			"kind": "frost_rune",
+			"x": 720.0,
+			"y": 432.0
+		},
+		{
+			"kind": "tablet",
+			"x": 912.0,
+			"y": 177.6,
+			"text": "Hol das Frostherz von der Insel\nund bring es zum Altar.\nDas Eis trägt dich nicht zweimal denselben Weg."
+		},
+		{
+			"kind": "core_altar",
+			"x": 720.0,
+			"y": 912.0,
+			"group": "A"
+		},
+		{
+			"kind": "gate",
+			"x": 576.0,
+			"y": 576.0,
+			"dir": "h",
+			"group": "A",
+			"lock": "",
+			"style": "portcullis"
+		},
+		{
+			"kind": "chest",
+			"x": 336.0,
+			"y": 657.6,
+			"loot": {
+				"type": "hoard",
+				"tier": 3.0
+			},
+			"mimic": "no"
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_3",
+			"x": 508.8,
+			"y": 102.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_v_glow_blue",
+			"x": 777.6,
+			"y": 102.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_v_glow_blue",
+			"x": 1046.4,
+			"y": 102.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_3",
+			"x": 1315.2,
+			"y": 102.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_1",
+			"x": 1584.0,
+			"y": 102.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_3",
+			"x": 1852.8,
+			"y": 102.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 2659.2,
+			"y": 102.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 2928.0,
+			"y": 102.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_3",
+			"x": 3196.8,
+			"y": 102.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 3465.6,
+			"y": 102.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_3",
+			"x": 3734.4,
+			"y": 102.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_1",
+			"x": 4003.2,
+			"y": 102.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 1968.0,
+			"y": 390.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 336.0,
+			"y": 486.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_1",
+			"x": 3312.0,
+			"y": 486.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_3",
+			"x": 3888.0,
+			"y": 486.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_v_glow_blue",
+			"x": 1872.0,
+			"y": 582.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_v_glow_blue",
+			"x": 2140.8,
+			"y": 582.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 2409.6,
+			"y": 582.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 3312.0,
+			"y": 870.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_a",
+			"x": 144.0,
+			"y": 204.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_a",
+			"x": 720.0,
+			"y": 204.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_b",
+			"x": 1872.0,
+			"y": 204.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_c",
+			"x": 1968.0,
+			"y": 204.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_b",
+			"x": 2640.0,
+			"y": 204.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_c",
+			"x": 3792.0,
+			"y": 204.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_b",
+			"x": 624.0,
+			"y": 300.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_b",
+			"x": 816.0,
+			"y": 300.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_c",
+			"x": 1872.0,
+			"y": 300.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_a",
+			"x": 2160.0,
+			"y": 300.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_b",
+			"x": 2640.0,
+			"y": 300.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_a",
+			"x": 4368.0,
+			"y": 300.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_b",
+			"x": 4464.0,
+			"y": 300.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_mid",
+			"x": 3888.0,
+			"y": 274.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				44.0,
+				24.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_blue",
+			"x": 2736.0,
+			"y": 178.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				56.0,
+				28.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_blue",
+			"x": 1968.0,
+			"y": 178.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				56.0,
+				28.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "glacier_a",
+			"x": 3120.0,
+			"y": 274.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				80.0,
+				32.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "glacier_a",
+			"x": 1584.0,
+			"y": 178.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				80.0,
+				32.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_mid",
+			"x": 432.0,
+			"y": 178.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				44.0,
+				24.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_blue",
+			"x": 3504.0,
+			"y": 274.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				56.0,
+				28.0
+			]
+		},
+		{
+			"kind": "start",
+			"x": 2256.0,
+			"y": 259.2
+		}
+	],
+	"kind_label": "Frosträtsel",
+	"info": "Kein Kampf. Hol das Frostherz über den brüchigen See.",
+	"weather": "blizzard"
+}

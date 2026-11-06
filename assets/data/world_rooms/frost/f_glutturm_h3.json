@@ -1,0 +1,563 @@
+{
+	"schema_version": 1.0,
+	"id": "f_glutturm_h3",
+	"title": "Rätsel: Glutturm (Turm)",
+	"world": "frost",
+	"role": "jump",
+	"in_floors": true,
+	"slots": [
+		[
+			0.0,
+			0.0
+		],
+		[
+			0.0,
+			1.0
+		],
+		[
+			0.0,
+			2.0
+		]
+	],
+	"width": 14.0,
+	"height": 39.0,
+	"cells": [
+		"00000000000000",
+		"01100111111100",
+		"01100111111100",
+		"01100111111100",
+		"01100000000000",
+		"01101111111110",
+		"01101111111110",
+		"01101111111110",
+		"01101111111110",
+		"01101100000110",
+		"01101111111110",
+		"01101111111110",
+		"01101111110000",
+		"01101111111110",
+		"01101111100000",
+		"01101111111110",
+		"01101111111110",
+		"01101111111110",
+		"01101111111110",
+		"01101111111110",
+		"01111111111110",
+		"01101111100000",
+		"01101111111000",
+		"01101111101110",
+		"01101111101110",
+		"01101110000010",
+		"01101111101110",
+		"01101111100000",
+		"01101111101110",
+		"01101111101110",
+		"01101111101110",
+		"01101111101110",
+		"01101111101110",
+		"01101111101110",
+		"01101111101110",
+		"01101111101110",
+		"01101111101110",
+		"01101111101110",
+		"00000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				1.0,
+				0.0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				1.0,
+				38.0
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0.0,
+				18.0
+			]
+		}
+	],
+	"auto_mobs": 0.0,
+	"objects": [
+		{
+			"kind": "frost_rune",
+			"x": 240.0,
+			"y": 1968.0
+		},
+		{
+			"kind": "tablet",
+			"x": 144.0,
+			"y": 2289.6,
+			"text": "Die Schalen sind kalt.\nTrag die Glut vom Herd, sie stirbt nach wenigen Schritten,\nim Nebel noch schneller. Brennende Schalen geben neue."
+		},
+		{
+			"kind": "gate",
+			"x": 672.0,
+			"y": 384.0,
+			"dir": "v",
+			"group": "A",
+			"lock": "",
+			"style": "portcullis"
+		},
+		{
+			"kind": "chest",
+			"x": 912.0,
+			"y": 273.6,
+			"loot": {
+				"type": "hoard",
+				"tier": 3.0
+			},
+			"mimic": "no"
+		},
+		{
+			"kind": "cold_fog",
+			"x": 720.0,
+			"y": 3600.0
+		},
+		{
+			"kind": "cold_fog",
+			"x": 816.0,
+			"y": 3600.0
+		},
+		{
+			"kind": "cold_fog",
+			"x": 1200.0,
+			"y": 1968.0
+		},
+		{
+			"kind": "cold_fog",
+			"x": 912.0,
+			"y": 1584.0
+		},
+		{
+			"kind": "cold_fog",
+			"x": 1008.0,
+			"y": 1584.0
+		},
+		{
+			"kind": "cold_fog",
+			"x": 912.0,
+			"y": 1680.0
+		},
+		{
+			"kind": "cold_fog",
+			"x": 1008.0,
+			"y": 1680.0
+		},
+		{
+			"kind": "cold_fog",
+			"x": 1200.0,
+			"y": 2736.0
+		},
+		{
+			"kind": "cold_fog",
+			"x": 1200.0,
+			"y": 2832.0
+		},
+		{
+			"kind": "cold_fog",
+			"x": 816.0,
+			"y": 3408.0
+		},
+		{
+			"kind": "cold_fog",
+			"x": 816.0,
+			"y": 3504.0
+		},
+		{
+			"kind": "cold_fog",
+			"x": 816.0,
+			"y": 816.0
+		},
+		{
+			"kind": "cold_fog",
+			"x": 912.0,
+			"y": 816.0
+		},
+		{
+			"kind": "cold_fog",
+			"x": 720.0,
+			"y": 3312.0
+		},
+		{
+			"kind": "cold_fog",
+			"x": 816.0,
+			"y": 3312.0
+		},
+		{
+			"kind": "cold_fog",
+			"x": 720.0,
+			"y": 3408.0
+		},
+		{
+			"kind": "ember_source",
+			"x": 432.0,
+			"y": 3600.0
+		},
+		{
+			"kind": "brazier",
+			"x": 1008.0,
+			"y": 648.0,
+			"group": "A",
+			"cold": true
+		},
+		{
+			"kind": "brazier",
+			"x": 912.0,
+			"y": 1896.0,
+			"group": "A",
+			"cold": true
+		},
+		{
+			"kind": "brazier",
+			"x": 1200.0,
+			"y": 1320.0,
+			"group": "A",
+			"cold": true
+		},
+		{
+			"kind": "brazier",
+			"x": 1200.0,
+			"y": 2568.0,
+			"group": "A",
+			"cold": true
+		},
+		{
+			"kind": "brazier",
+			"x": 720.0,
+			"y": 2760.0,
+			"group": "A",
+			"cold": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_3",
+			"x": 624.0,
+			"y": 102.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 892.8,
+			"y": 102.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_1",
+			"x": 528.0,
+			"y": 486.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 1065.6,
+			"y": 486.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_1",
+			"x": 720.0,
+			"y": 966.0,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_1",
+			"x": 1104.0,
+			"y": 1254.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 1008.0,
+			"y": 1446.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_3",
+			"x": 1104.0,
+			"y": 2694.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_c",
+			"x": 144.0,
+			"y": 588.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_c",
+			"x": 240.0,
+			"y": 1644.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_d",
+			"x": 240.0,
+			"y": 2220.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_d",
+			"x": 144.0,
+			"y": 3084.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_c",
+			"x": 240.0,
+			"y": 3084.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "snow_a",
+			"x": 240.0,
+			"y": 3180.0,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				30.0
+			],
+			"decal": {
+				"dy": 60.0,
+				"w": 0.0,
+				"h": 0.0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "glacier_b",
+			"x": 144.0,
+			"y": 3058.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				70.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "glacier_b",
+			"x": 240.0,
+			"y": 466.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				70.0,
+				30.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_blue",
+			"x": 240.0,
+			"y": 1330.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				56.0,
+				28.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "boulders",
+			"x": 144.0,
+			"y": 2674.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				60.0,
+				28.0
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "glacier_b",
+			"x": 144.0,
+			"y": 850.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1.0,
+			"foot": [
+				70.0,
+				30.0
+			]
+		},
+		{
+			"kind": "start",
+			"x": 624.0,
+			"y": 1891.2
+		}
+	],
+	"kind_label": "Frosträtsel",
+	"info": "Kein Kampf. Trag die Glut durch den Turm.",
+	"weather_extra": [
+		"night"
+	]
+}

@@ -112,7 +112,8 @@ func _hero_glide(game: Node, at: Vector2) -> float:
 	game.player.y = at.y
 	var grip := MotionKit.FIRM
 	if game.ice_room_at(at - Vector2(0.0, 6.0)):
-		grip = float(game.theme.ice_room.grip)
+		# an ice lake (a room file with ice_lake) has its own, harder grip
+		grip = float(game.ice_room_grip(at - Vector2(0.0, 6.0), false))
 	var mover: Variant = game.motion_kit()
 	# the same grip the host reports for a knock
 	_check(is_equal_approx(float(mover.host.hero_grip()), grip), "the host knows the hero's footing at %s" % at)
@@ -161,7 +162,7 @@ func _test_real_monster(game: Node, ice: Dictionary, on_ice: Vector2, on_snow: V
 	_check(on_snow_px <= 1.0, "it stands firm on the snow, %.0f px" % on_snow_px)
 	var flying_px := _mob_glide(game, kind, ice, on_ice, 40.0)
 	_check(flying_px <= 1.0, "a flyer does not slide on the ice, %.0f px" % flying_px)
-	_check(ice.get("kind", "") == "Eisfläche", "the room is labelled, was %s" % ice.get("kind", ""))
+	_check(str(ice.get("kind", "")) in ["Eisfläche", "Eissee"], "the room is labelled, was %s" % ice.get("kind", ""))
 
 
 func _frost_kind(game: Node) -> String:
