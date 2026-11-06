@@ -1,27 +1,27 @@
 {
-	"schema_version": 1,
+	"schema_version": 1.0,
 	"id": "k_sprung_gitter_la",
 	"title": "Sprung: Eisenhalle (Winkel)",
 	"world": "krypta",
 	"role": "jump",
 	"in_floors": true,
-	"hoard_tier": 3,
+	"hoard_tier": 3.0,
 	"slots": [
 		[
-			0,
-			0
+			0.0,
+			0.0
 		],
 		[
-			1,
-			0
+			1.0,
+			0.0
 		],
 		[
-			0,
-			1
+			0.0,
+			1.0
 		]
 	],
-	"width": 31,
-	"height": 25,
+	"width": 31.0,
+	"height": 25.0,
 	"cells": [
 		"0000000000000000000000000000000",
 		"0111111111111111111111111111110",
@@ -43,10 +43,10 @@
 		"0112221222222011000444444444010",
 		"0112222222111111111000000000010",
 		"0222222222111011111111111111110",
-		"0222222222111111111000000000000",
+		"0222222222111011111000000000000",
 		"0000000000110011111000000000000",
 		"0211201101110011111000000000000",
-		"0222201111110010000000000000000",
+		"0222201101110010000000000000000",
 		"0000001100000000000000000000000"
 	],
 	"tiles": {},
@@ -55,68 +55,68 @@
 		{
 			"side": "east",
 			"cell": [
-				30,
-				5
+				30.0,
+				5.0
 			]
 		},
 		{
 			"side": "west",
 			"cell": [
-				0,
-				1
+				0.0,
+				1.0
 			]
 		},
 		{
 			"side": "south",
 			"cell": [
-				6,
-				25
+				6.0,
+				25.0
 			]
 		},
 		{
 			"side": "south",
 			"cell": [
-				28,
-				20
+				28.0,
+				20.0
 			]
 		},
 		{
 			"side": "east",
 			"cell": [
-				30,
-				18
+				30.0,
+				18.0
 			]
 		},
 		{
 			"side": "west",
 			"cell": [
-				-1,
-				13
+				-1.0,
+				13.0
 			]
 		},
 		{
 			"side": "north",
 			"cell": [
-				20,
-				0
+				20.0,
+				0.0
 			]
 		}
 	],
-	"auto_mobs": 0,
+	"auto_mobs": 0.0,
 	"objects": [
 		{
 			"kind": "chest",
-			"x": 1680,
-			"y": 648,
+			"x": 2256.0,
+			"y": 1152.0,
 			"loot": {
 				"type": "hoard",
-				"tier": 3
+				"tier": 3.0
 			}
 		},
 		{
 			"kind": "chest",
-			"x": 2736,
-			"y": 576,
+			"x": 2736.0,
+			"y": 576.0,
 			"loot": {
 				"type": "auto"
 			}
@@ -124,15 +124,15 @@
 		{
 			"kind": "prop",
 			"asset": "chain_swag",
-			"x": 240,
-			"y": 102,
+			"x": 240.0,
+			"y": 102.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
@@ -140,29 +140,29 @@
 			"kind": "prop",
 			"asset": "chain_swag",
 			"x": 1046.4,
-			"y": 102,
+			"y": 102.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
 		{
 			"kind": "prop",
 			"asset": "cage_hang",
-			"x": 1584,
-			"y": 102,
+			"x": 1584.0,
+			"y": 102.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
@@ -170,208 +170,191 @@
 			"kind": "prop",
 			"asset": "shackle_skull",
 			"x": 1852.8,
-			"y": 102,
+			"y": 102.0,
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
 		{
 			"kind": "prop",
 			"asset": "wall_torch_hook",
-			"x": 1224,
-			"y": 72,
+			"x": 1224.0,
+			"y": 72.0,
 			"flip": false,
 			"layer": "front",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
 		{
 			"kind": "start",
-			"x": 672,
-			"y": 2280
+			"x": 672.0,
+			"y": 2280.0
 		},
 		{
 			"kind": "gate",
 			"dir": "h",
 			"group": "A",
 			"lock": "",
-			"x": 1248,
-			"y": 1728
+			"x": 1248.0,
+			"y": 1728.0
 		},
 		{
 			"kind": "launch",
 			"dir": "e",
-			"cells": 3,
-			"x": 720,
-			"y": 2160
+			"cells": 3.0,
+			"x": 720.0,
+			"y": 2160.0
 		},
 		{
 			"kind": "plate",
 			"group": "A",
-			"order": 0,
-			"x": 1584,
-			"y": 528
+			"order": 0.0,
+			"x": 1584.0,
+			"y": 528.0
 		},
 		{
 			"kind": "launch",
 			"dir": "e",
-			"cells": 14,
-			"x": 336,
-			"y": 528
+			"cells": 14.0,
+			"x": 336.0,
+			"y": 528.0
 		},
 		{
 			"kind": "launch",
 			"dir": "w",
-			"cells": 9,
-			"x": 1488,
-			"y": 624
+			"cells": 9.0,
+			"x": 1488.0,
+			"y": 624.0
 		},
 		{
 			"kind": "launch",
 			"dir": "s",
-			"cells": 3,
-			"x": 624,
-			"y": 624
+			"cells": 3.0,
+			"x": 624.0,
+			"y": 624.0
 		},
 		{
 			"kind": "launch",
 			"dir": "w",
-			"cells": 4,
-			"x": 624,
-			"y": 912
+			"cells": 4.0,
+			"x": 624.0,
+			"y": 912.0
 		},
 		{
 			"kind": "launch",
 			"dir": "s",
-			"cells": 8,
-			"x": 240,
-			"y": 912
+			"cells": 8.0,
+			"x": 240.0,
+			"y": 912.0
 		},
 		{
 			"kind": "launch",
 			"dir": "s",
-			"cells": 5,
-			"x": 624,
-			"y": 1680
+			"cells": 5.0,
+			"x": 624.0,
+			"y": 1680.0
 		},
 		{
 			"kind": "launch",
 			"dir": "n",
-			"cells": 4,
-			"x": 1008,
-			"y": 1104
+			"cells": 4.0,
+			"x": 1008.0,
+			"y": 1104.0
 		},
 		{
 			"kind": "launch",
 			"dir": "n",
-			"cells": 3,
-			"x": 336,
-			"y": 1200
+			"cells": 3.0,
+			"x": 336.0,
+			"y": 1200.0
 		},
 		{
 			"kind": "launch",
 			"dir": "w",
-			"cells": 7,
-			"x": 1104,
-			"y": 1200
+			"cells": 7.0,
+			"x": 1104.0,
+			"y": 1200.0
 		},
 		{
 			"kind": "launch",
 			"dir": "n",
-			"cells": 11,
-			"x": 1104,
-			"y": 2160
+			"cells": 11.0,
+			"x": 1104.0,
+			"y": 2160.0
 		},
 		{
 			"kind": "launch",
 			"dir": "w",
-			"cells": 4,
-			"x": 1776,
-			"y": 432
+			"cells": 4.0,
+			"x": 1776.0,
+			"y": 432.0
 		},
 		{
 			"kind": "launch",
 			"dir": "n",
-			"cells": 5,
-			"x": 2640,
-			"y": 816
+			"cells": 5.0,
+			"x": 2640.0,
+			"y": 816.0
 		},
 		{
 			"kind": "launch",
 			"dir": "w",
-			"cells": 4,
-			"x": 2544,
-			"y": 336
+			"cells": 4.0,
+			"x": 2544.0,
+			"y": 336.0
 		},
 		{
 			"kind": "launch",
 			"dir": "s",
-			"cells": 4,
-			"x": 2256,
-			"y": 336
+			"cells": 4.0,
+			"x": 2256.0,
+			"y": 336.0
 		},
 		{
 			"kind": "launch",
 			"dir": "w",
-			"cells": 13,
-			"x": 2064,
-			"y": 1200
+			"cells": 13.0,
+			"x": 2064.0,
+			"y": 1200.0
 		},
 		{
 			"kind": "launch",
 			"dir": "w",
-			"cells": 6,
-			"x": 816,
-			"y": 1200
+			"cells": 6.0,
+			"x": 816.0,
+			"y": 1200.0
 		},
 		{
 			"kind": "launch",
 			"dir": "s",
-			"cells": 10,
-			"x": 240,
-			"y": 1200
+			"cells": 10.0,
+			"x": 240.0,
+			"y": 1200.0
 		},
 		{
 			"kind": "launch",
 			"dir": "e",
-			"cells": 4,
-			"x": 240,
-			"y": 2160
-		},
-		{
-			"kind": "prop",
-			"asset": "chest_gold",
-			"flip": false,
-			"layer": "normal",
-			"block": true,
-			"scale": 2,
-			"foot": [
-				47,
-				20
-			],
-			"x": 2328,
-			"y": 1224,
-			"loot": {
-				"type": "random"
-			}
+			"cells": 4.0,
+			"x": 240.0,
+			"y": 2160.0
 		},
 		{
 			"kind": "launch",
 			"dir": "e",
-			"cells": 16,
-			"x": 1008,
-			"y": 816
+			"cells": 16.0,
+			"x": 1008.0,
+			"y": 816.0
 		},
 		{
 			"kind": "prop",
@@ -379,139 +362,147 @@
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				77,
-				26
+				77.0,
+				26.0
 			],
-			"x": 2256,
-			"y": 768
+			"x": 2256.0,
+			"y": 768.0
 		},
 		{
 			"kind": "launch",
 			"dir": "s",
-			"cells": 4,
-			"x": 1392,
-			"y": 528
+			"cells": 4.0,
+			"x": 1392.0,
+			"y": 528.0
 		},
 		{
 			"kind": "launch",
 			"dir": "w",
-			"cells": 7,
-			"x": 1296,
-			"y": 912
+			"cells": 7.0,
+			"x": 1296.0,
+			"y": 912.0
 		},
 		{
 			"kind": "launch",
 			"dir": "e",
-			"cells": 4,
-			"x": 1488,
-			"y": 912
+			"cells": 4.0,
+			"x": 1488.0,
+			"y": 912.0
 		},
 		{
 			"kind": "launch",
 			"dir": "n",
-			"cells": 10,
-			"x": 2256,
-			"y": 1584
+			"cells": 10.0,
+			"x": 2256.0,
+			"y": 1584.0
 		},
 		{
 			"kind": "launch",
 			"dir": "s",
-			"cells": 7,
-			"x": 2064,
-			"y": 912
+			"cells": 7.0,
+			"x": 2064.0,
+			"y": 912.0
 		},
 		{
 			"kind": "launch",
 			"dir": "n",
-			"cells": 6,
-			"x": 2256,
-			"y": 1392
+			"cells": 6.0,
+			"x": 2256.0,
+			"y": 1392.0
 		},
 		{
 			"kind": "launch",
 			"dir": "w",
-			"cells": 15,
-			"x": 2256,
-			"y": 816
+			"cells": 15.0,
+			"x": 2256.0,
+			"y": 816.0
 		},
 		{
 			"kind": "launch",
 			"dir": "s",
-			"cells": 4,
-			"x": 816,
-			"y": 816
+			"cells": 4.0,
+			"x": 816.0,
+			"y": 816.0
 		},
 		{
 			"kind": "launch",
 			"dir": "w",
-			"cells": 13,
-			"x": 2160,
-			"y": 624
+			"cells": 13.0,
+			"x": 2160.0,
+			"y": 624.0
 		},
 		{
 			"kind": "launch",
 			"dir": "w",
-			"cells": 6,
-			"x": 912,
-			"y": 624
+			"cells": 6.0,
+			"x": 912.0,
+			"y": 624.0
 		},
 		{
 			"kind": "launch",
 			"dir": "e",
-			"cells": 4,
-			"x": 240,
-			"y": 1680
+			"cells": 4.0,
+			"x": 240.0,
+			"y": 1680.0
 		},
 		{
 			"kind": "launch",
 			"dir": "n",
-			"cells": 4,
-			"x": 2256,
-			"y": 1488
+			"cells": 4.0,
+			"x": 2256.0,
+			"y": 1488.0
 		},
 		{
 			"kind": "launch",
 			"dir": "w",
-			"cells": 4,
-			"x": 1104,
-			"y": 2256
+			"cells": 4.0,
+			"x": 1104.0,
+			"y": 2256.0
 		},
 		{
 			"kind": "launch",
 			"dir": "w",
-			"cells": 3,
-			"x": 1392,
-			"y": 2256
+			"cells": 3.0,
+			"x": 1392.0,
+			"y": 2256.0
 		},
 		{
 			"kind": "prop",
 			"asset": "skull_pile",
-			"x": 2736,
+			"x": 2736.0,
 			"y": 652.8,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				76,
-				26
+				76.0,
+				26.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "bones_scatter",
-			"x": 816,
-			"y": 2256,
+			"x": 1512.0,
+			"y": 1920.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			]
+		},
+		{
+			"kind": "chest",
+			"loot": {
+				"type": "hoard"
+			},
+			"x": 2352.0,
+			"y": 1152.0
 		}
 	],
 	"kind_label": "Sprungrätsel",
