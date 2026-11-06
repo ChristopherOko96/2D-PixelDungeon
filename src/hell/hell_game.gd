@@ -78,6 +78,9 @@ const HudKit = preload("res://src/ui/hud_kit.gd")
 const HudStyle = preload("res://src/ui/hud_style.gd")
 ## The camera's lead, fight framing, zoom breathing, punch and kick (src/hell/story_camera.gd).
 const StoryCamera = preload("res://src/hell/story_camera.gd")
+const StoryPresentation = preload("res://src/hell/story_presentation.gd")
+var presentation := StoryPresentation.new()
+var _camera_written := Vector2.INF
 ## The world kit (src/world_kit): a world with theme.world_pack builds every floor live from the
 ## run number instead of reading baked floors (Story 1 the crypt, Story 3 the hell).
 const WorldPack = preload("res://src/world_kit/world_pack.gd")
@@ -91,6 +94,8 @@ const StoryWreck = preload("res://src/hell/story_wreck.gd")
 const StoryMotionHost = preload("res://src/hell/story_motion_host.gd")
 const StoryExposureHost = preload("res://src/hell/story_exposure_host.gd")
 const FixedStepClock = preload("res://src/physics_kit/fixed_step_clock.gd")
+const StoryEnemyIndex = preload("res://src/physics_kit/story_enemy_index.gd")
+var _mob_space := StoryEnemyIndex.new(C)
 const CustomStoryData = preload("res://src/custom/custom_story_data.gd")
 const CustomStoryWorld = preload("res://src/custom/custom_story_world.gd")
 const BALANCE_PATH := "res://assets/data/hell_balance.json"
@@ -999,6 +1004,7 @@ func _layer(kind: String, z: int, area := Rect2()) -> Layer:
 ## Builds floor n (1-10). With carry the hero keeps hearts, rune stones, seal
 ## blessings and the paused clone skill.
 func load_floor(n: int, carry: bool) -> void:
+	presentation.reset()
 	_custom_load_failed = false
 	# A generated floor can take much longer than a frame. Neither that loading time
 	# nor the old floor's remaining catch-up ticks belongs to the new floor.
@@ -1095,6 +1101,7 @@ func load_floor(n: int, carry: bool) -> void:
 		saves.write(StorySave.mode(self), run_slot, floor_save)
 	_relic_texture()
 	mobs = []
+	_mob_space.clear()
 	shots = []
 	eshots = []
 	zones = []
@@ -2207,6 +2214,7 @@ func _new_run_id() -> String:
 ## otherwise by death. The run's saves are deleted (saving only pauses a run);
 ## soul crystals already banked stay. The result panel waits for E (new run).
 func end_run(won: bool) -> void:
+	presentation.reset()
 	if not (state.get("over", {}) as Dictionary).is_empty():
 		return
 	# a won run's saves are done with; a lost run keeps them: the character dies with its gold,
@@ -2217,6 +2225,7 @@ func end_run(won: bool) -> void:
 	state.over = {"won": won, "why": str(state.get("death_why", "")), "floor": int(state.floor), "title": str(W.get("title", "")),
 		"level": int(state.get("level", 1)), "crystals": int(state.get("crystals_run", 0))}
 	mobs = []
+	_mob_space.clear()
 	eshots = []
 	zones = []
 	hold = {}
@@ -2704,6 +2713,7 @@ func _spawn_mob(room: int, pos: Vector2, kind: String) -> void:
 		if tex.has(first):
 			m.cy = (tex[first] as Texture2D).get_height() * float(m.look.get("scale", 1.0)) * 0.5
 			m.ds = float(m.look.get("scale", 1.0))
+	mob_moved(mobs.back())
 
 
 func _start_fight(r: Dictionary) -> void:
@@ -2907,6 +2917,7 @@ func _gold_lost() -> void:
 ## Leaving the world (the menu, a closed window): the profile's last seconds (EXP, rune stones,
 ## talents) are saved, not lost with the scene.
 func _exit_tree() -> void:
+	presentation.reset()
 	if talents != null:
 		talents.save()
 	elif not profile.is_empty():
@@ -3131,6 +3142,7 @@ func _fall_into_pit() -> void:
 		if r.fight:
 			r.fight = false
 			mobs = mobs.filter(func(m: Dictionary) -> bool: return m.room != r.index)
+	prepare_mob_queries()
 	eshots = []
 	zones = []
 	state.storm = false
@@ -3266,6 +3278,7 @@ func _toggle_fullscreen() -> void:
 func _process(delta: float) -> void:
 	_sync_overlays()
 	if _simulation_paused():
+		presentation.reset()
 		_simulation_clock.reset()
 		_skip_simulation_delta = true
 		if talents != null: talents.tc.runtime(1).erase("soul_charge")
@@ -3276,13 +3289,16 @@ func _process(delta: float) -> void:
 	_simulation_clock.begin_frame(0.0 if _skip_simulation_delta else delta)
 	_skip_simulation_delta = false
 	while _simulation_clock.take_step():
+		presentation.begin_tick(player, mobs)
 		_step_simulation(_simulation_clock.step_seconds)
 		# A seal may open a blocking choice during a tick. Do not let later ticks
 		# attack through that modal. Floor loads reset the clock inside load_floor.
 		if _simulation_paused():
+			presentation.reset()
 			_simulation_clock.reset()
 			_skip_simulation_delta = true
 			break
+	presentation.frame(_simulation_clock.pending_seconds, _simulation_clock.step_seconds)
 	# Presentation work only once per rendered frame, never once per catch-up tick.
 	if inventory_panel != null and story_items != null:
 		inventory_panel.set_view(story_items.view())
@@ -3580,7 +3596,9 @@ func _update_player(dt: float) -> void:
 
 
 func _update_shots(dt: float) -> void:
+	if not shots.is_empty(): prepare_mob_queries()
 	for s: Dictionary in shots:
+		var alchemy_from: Vector2 = s.p
 		s.p += s.v * dt
 		s.t -= dt
 		# the mage's shot reaches the point the mouse showed (MageBolt.aim): it stops there; still
@@ -3629,17 +3647,20 @@ func _update_shots(dt: float) -> void:
 			MageBolt.burst(self, s, {})
 			continue
 		MageBolt.fly(self, s, dt)
+		if str(s.get("kind","")) == "arrow" and talents != null:
+			talents.tc.alchemist.arrow(talents.tc,1,alchemy_from,s.p)
 		if s.get("kind", "") == "gravity":
 			# the gravity ball drags enemies towards itself while it flies
 			var ball: Dictionary = RelicKit.wielded(self).get("ball", theme.gravity_staff.ball)
-			for m: Dictionary in mobs:
+			for m: Dictionary in mob_candidates(s.p,float(ball.pull_radius)):
 				var to: Vector2 = s.p - m.p
 				if m.spawn <= 0.0 and not m.has("kit") and m.kind != "boss" and to.length() < float(ball.pull_radius) and to.length() > 10.0:
 					var step: Vector2 = to.normalized() * float(ball.pull) * dt
 					if not box_blocked(Rect2(m.p.x + step.x - m.r * 0.7, m.p.y + step.y - m.r * 0.7, m.r * 1.4, m.r * 0.7), true):
 						m.p += step
+						mob_moved(m)
 		var big := float(s.get("big", 1.0))
-		for m: Dictionary in mobs:
+		for m: Dictionary in mob_segment_candidates(s.p-s.v*dt,s.p,12.0*big):
 			# Ignaroth's rig: the shot must cross a part where it is drawn; the part takes the hit (src/hell/drake_rig_host.gd)
 			var rigged: bool = drake_rig != null and drake_rig.has_rig(m)
 			if _hittable(m) and not (s.get("hits", []) as Array).has(m) and (drake_rig.shot_hits(m, s.p - s.v * dt, s.p, 12.0 * big) if rigged else s.p.distance_to(m.p - Vector2(0, m.cy)) < m.r + 12.0 * big):
@@ -3772,6 +3793,37 @@ func _update_matter_blockers() -> void:
 var _wade_serial := 0
 
 
+## Refresh once before a phase that may move bodies or query many projectiles.
+func prepare_mob_queries() -> void:
+	_mob_space.rebuild(mobs)
+
+
+## Keep current phase candidates and the combat position alias live after a move.
+func mob_moved(m: Dictionary) -> void:
+	if m.has("pos"): m.pos = m.p
+	_mob_space.upsert(m)
+
+
+## Remove a despawned body before any further queries in this phase.
+func mob_removed(m: Dictionary) -> void:
+	_mob_space.remove(m)
+
+
+## Ordered conservative candidates; callers retain their exact hit predicates.
+func mob_candidates(at: Vector2, radius: float, adaptive := false) -> Array:
+	return _mob_space.near_adaptive(at, radius) if adaptive else _mob_space.near(at,radius)
+
+
+## Dense-body hint permits full-list talent queries without another index rebuild.
+func mob_queries_dense() -> bool:
+	return _mob_space.prefers_full_scan()
+
+
+## Includes bodies anywhere along a fast shot's swept path and raised centre.
+func mob_segment_candidates(from: Vector2, to: Vector2, padding: float) -> Array:
+	return _mob_space.swept(from,to,padding)
+
+
 func _update_mobs(dt: float) -> void:
 	if monsters != null:
 		monsters.update(dt)
@@ -3783,6 +3835,7 @@ func _update_mobs(dt: float) -> void:
 				# a monster's steps show by its moving point (wade sees it move)
 				if m.has("id"): pools.wade("m" + str(m.id), Vector2(m.p), false, float(state.t))
 		return
+	prepare_mob_queries()
 	# the Frostgruft wades too: the hero and its figures through the talents' pools (physics plan
 	# R26/F55; its figures get a stable wading key at their first step)
 	var layer := _pool_layer()
@@ -3800,6 +3853,18 @@ func _update_mobs(dt: float) -> void:
 			m.spawn -= dt
 			continue
 		m.hit = maxf(0.0, m.hit - dt)
+		var env := _step_mob_medium(m,dt)
+		if preload("res://src/combat/enemy_sight.gd").blocked(m):
+			HeroKit.tick_mob(self,m,dt)
+			m.erase("tell")
+			if m.has("busy"): m.busy = {}
+			if m.has("dash"): m.dash = 0.0
+			m.sv = Vector2.ZERO
+			# External force remains physical; no sight-driven walking or tracking.
+			var blinded_step: Dictionary = motion_kit().step_body(m.p,Vector2.ZERO,Vector2.ZERO,MotionKit.FIRM,Vector2.ZERO,m.k,dt,motion_kit().host.mob_solid(m.r*0.7,m.kind!="boss"))
+			m.p = blinded_step.p
+			m.k = blinded_step.push
+			continue
 		if hidden and m.kind != "boss":
 			# hidden hero: they stop, look about and turn their backs now and then
 			m.face = Vector2(cos(state.t * 1.5 + m.seed), sin(state.t * 1.5 + m.seed))
@@ -3847,8 +3912,8 @@ func _update_mobs(dt: float) -> void:
 				if d < float(def.pull_radius):
 					# axis by axis against the walls (MotionKit.move_hero)
 					motion_kit().move_hero(-dir * float(def.pull) * dt)
-		for o: Dictionary in mobs:
-			if o != m:
+		for o: Dictionary in mob_candidates(m.p,float(m.r)):
+			if not is_same(o,m):
 				var off: Vector2 = m.p - o.p
 				var od := off.length()
 				if od > 0.0 and od < m.r + o.r:
@@ -3863,7 +3928,6 @@ func _update_mobs(dt: float) -> void:
 		# is a creature of frost, sure-footed on its own ice
 		if not m.has("tags"):
 			m.tags = ElementRules.tags(str(m.kind), str(def.get("shot", "")), str(def.get("material", "")), ["frost"] if def.has("chill") else [])
-		var env := _step_mob_medium(m, dt)
 		var mover := motion_kit()
 		var grip := MotionKit.FIRM
 		# a room of nothing but ice takes everybody's footing, the creatures of frost too; not the flyers'
@@ -3889,6 +3953,7 @@ func _update_mobs(dt: float) -> void:
 		m.k = step.push
 		m.k_in = step.push_in
 		m.p = step.p
+		mob_moved(m)
 		if m.has("slam"):
 			as_source("hero", func() -> void: story_hero.check_slam(m, moved_from, dt))
 		# reeling from a perfect block (HeroKit.stagger) its touch hurts nobody
@@ -3966,6 +4031,7 @@ func _update_mobs(dt: float) -> void:
 		if feel == null:
 			_burst(m.p - Vector2(0, 30), 70 if m.kind == "boss" else 16)
 		mobs.erase(m)
+		mob_removed(m)
 		# with the feel the kill sounds in the crypt material (feedback.gd via FrostCombat.after_kill)
 		if feel == null:
 			_sound("kill_" + str((m.def as Dictionary).get("material", "void")))
@@ -4273,6 +4339,7 @@ func _step_elements(dt: float) -> void:
 ## included. A gas that blinds holds its shot back (m.shoot). Returns the
 ## medium's rule ({} on firm floor) for the movement (slide, pull).
 func _step_mob_medium(m: Dictionary, dt: float) -> Dictionary:
+	preload("res://src/combat/enemy_sight.gd").step(m,dt)
 	var met: Dictionary = exposure().step(m, dt)
 	if float(met.blind) > 0.0:
 		m.shoot = maxf(float(m.get("shoot", 0.0)), float(met.blind))
@@ -4465,9 +4532,25 @@ func _draw_lava_bubbles(l: CanvasItem) -> void:
 				l.draw_rect(Rect2(c + (d * reach).round() * px, Vector2(px, px)), spec if s < 0.5 else hi)
 
 
+## Rendered feet shared by the hero's body, weapon, guard, light and camera.
+func render_hero_position() -> Vector2:
+	return presentation.hero_position(player)
+
+
+## Rendered enemy feet; collision, aiming and damage retain authoritative p/pos.
+func render_mob_position(mob: Dictionary) -> Vector2:
+	return presentation.mob_position(mob)
+
+
 func _update_camera(dt: float) -> void:
 	var r: Dictionary = W.rooms[state.room]
-	var hero := Vector2(player.x, player.y - 40)
+	# External jumps are detected against the last written camera, never against
+	# a rounded presentation centre. Otherwise pixel snapping can reset follow.
+	if not _camera_written.is_finite() or not camera.position.is_equal_approx(_camera_written):
+		presentation.reset()
+		cam_rig.reset(Vector2(player.x, player.y - 40))
+	presentation.teleport_distance = float(cam_rig.cfg.get("presentation", {}).get("teleport_distance", 192.0))
+	var hero := render_hero_position() - Vector2(0, 40)
 	var view := Vector2(float(balance.view.width), float(balance.view.width) * 9.0 / 16.0)
 	# a mirror room of the Frostgruft (src/world_kit/frost_puzzles.gd): the camera zooms out and looks
 	# between hero and ghost, so both and both their fields stay on screen
@@ -4481,9 +4564,6 @@ func _update_camera(dt: float) -> void:
 		var lo := Vector2(r.bx * C - 70, r.by * C - 110)
 		var hi := Vector2((r.bx + r.bw) * C + 70, (r.by + r.bh) * C + 80)
 		bounds = Rect2(lo, hi - lo)
-	# a jump made elsewhere (floor load, respawn, a Testraum teleport) starts the camera fresh
-	if camera.position.distance_to(cam_rig.position) > 1.0:
-		cam_rig.reset(hero)
 	var foes := _camera_foes()
 	# a big jump of the shake (a slam, a blast, a heavy hit) also shoves the view away from the fight
 	var shake := float(state.shake)
@@ -4492,7 +4572,7 @@ func _update_camera(dt: float) -> void:
 	_shake_was = shake
 	var aim := get_global_mouse_position() if heroic() and not _window_open() else Vector2.INF
 	cam_rig.step(dt, {"hero": hero, "aim": aim, "foes": foes, "boss": _camera_boss, "bounds": bounds,
-		"view": view, "shake": shake, "t": float(state.t)})
+		"view": view, "shake": shake, "t": float(state.t), "pixel": bool(theme.get("pixel", true))})
 	camera.position = cam_rig.position
 	camera.zoom = Vector2.ONE * float(balance.view.base_width) / float(balance.view.width) * float(cam_rig.zoom)
 	# in a labyrinth the darkness closes in and the camera comes a little nearer
@@ -4501,6 +4581,13 @@ func _update_camera(dt: float) -> void:
 	camera.zoom *= view_far
 	# view_shift: the view sits lower so the skill bar covers none of the fight
 	camera.offset = cam_rig.offset + cam_rig.view_shift
+	if bool(theme.get("pixel", true)) and bool(cam_rig.cfg.get("pixel", {}).get("snap_translation", true)):
+		var viewport := get_viewport()
+		camera.offset = StoryPresentation.pixel_center(camera.position + camera.offset, camera.zoom,
+			viewport.get_visible_rect().size, viewport.get_stretch_transform()) - camera.position
+	_camera_written = camera.position
+	# Keep drawing, darkness and mouse conversion on this same frame's transform.
+	camera.force_update_scroll()
 
 
 var _camera_boss := false
@@ -4518,7 +4605,7 @@ func _camera_foes() -> Array:
 	for m: Dictionary in mobs:
 		if int(m.get("room", -1)) != int(state.room) or float(m.get("hp", 0.0)) <= 0.0 or bool(m.get("remove", false)) or m.get("dying") != null:
 			continue
-		var at: Vector2 = (m.p as Vector2) - Vector2(0, float(m.get("cy", 20.0)))
+		var at: Vector2 = render_mob_position(m) - Vector2(0, float(m.get("cy", 20.0)))
 		if bool(m.get("boss", false)) or str(m.get("kind", "")) == "boss":
 			_camera_boss = true
 			out.push_front(at)
@@ -4909,7 +4996,7 @@ func _draw_actors(l: Layer) -> void:
 			list.append([d.cy + 60.0, "gate", d])
 	for m: Dictionary in mobs:
 		if view.grow(300 if monsters != null else 0).has_point(m.p):
-			list.append([m.p.y, "mob", m])
+			list.append([render_mob_position(m).y, "mob", m])
 	# felled monsters without a death animation fall and fade like the crypt's (src/hero/story_feel.gd)
 	if feel != null:
 		for m: Dictionary in feel.fallen():
@@ -4919,7 +5006,7 @@ func _draw_actors(l: Layer) -> void:
 		for c: Dictionary in monsters.corpses:
 			if view.has_point(c.p):
 				list.append([c.p.y, "corpse", c])
-	list.append([player.y, "hero", player])
+	list.append([render_hero_position().y, "hero", player])
 	list.sort_custom(func(x: Array, y: Array) -> bool: return x[0] < y[0])
 	# depth bands (decision D11): the particles low over the floor are drawn between the actors by
 	# their floor point, so what lies behind a monster, a pillar or the hero is hidden by it
@@ -5483,11 +5570,12 @@ func _draw_mob(l: Layer, m: Dictionary, t: float) -> void:
 		tint = Color(3, 3, 3)
 	var bob := sin(t * 6.0 + m.seed) * 6.0
 	var size := im.get_size() * s
-	l.draw_texture_rect(im, Rect2(m.p - Vector2(size.x / 2.0, size.y + 14 - bob), size), false, tint)
+	var at := render_mob_position(m)
+	l.draw_texture_rect(im, Rect2(at - Vector2(size.x / 2.0, size.y + 14 - bob), size), false, tint)
 	if m.kind == "boss":
 		var icon: Texture2D = tex.icon_demon_big if W.final else tex.icon_demon
 		var k := s / 2.7
-		l.draw_texture_rect(icon, Rect2(m.p.x - 46 * k, m.p.y - size.y - 4 + bob, 92 * k, 96 * k), false)
+		l.draw_texture_rect(icon, Rect2(at.x - 46 * k, at.y - size.y - 4 + bob, 92 * k, 96 * k), false)
 
 
 ## A themed enemy: its animated skin sprite, turned towards the hero, grown in while spawning.
@@ -5509,7 +5597,7 @@ func _draw_mob_sprite(l: Layer, m: Dictionary, t: float) -> void:
 		tint.a *= float(pose.alpha)
 	if float(m.get("inv", 0.0)) > 0.0:
 		tint.a = 0.45 + 0.35 * sin(t * 30.0)
-	var feet: Vector2 = m.p + (pose.get("offset", Vector2.ZERO) as Vector2)
+	var feet: Vector2 = render_mob_position(m) + (pose.get("offset", Vector2.ZERO) as Vector2)
 	# glow hook (src/hero/story_glow.gd): where the body is drawn this frame, so its glowing parts follow it
 	story_glow.mark(m, {"foot": feet, "size": size, "src": im.get_size(), "face": -1.0 if (m.face as Vector2).x < 0.0 else 1.0,
 		"lean": float(pose.get("lean", 0.0)), "alpha": tint.a})
@@ -5694,7 +5782,7 @@ func _draw_hero_body(l: Layer, t: float) -> void:
 		# the class figure as the crypt's part rig (src/hero/story_hero.gd), else this frame
 		story_hero.draw_hero(l, t, size.y * 0.45, body, look)
 		return
-	body.call(Vector2(player.x, player.y), 1.0)
+	body.call(render_hero_position(), 1.0)
 	_draw_weapon(l, size)
 
 
@@ -5720,16 +5808,17 @@ func draw_mirror_hero(l: CanvasItem, feet: Vector2, t: float, alpha: float, tint
 ## The class weapon in the hero's hand: bow and staff held upright, the sword
 ## swept through its arc while a swing lasts; the gravity staff glows violet.
 func _draw_weapon(l: Layer, hero_size: Vector2) -> void:
+	var feet := render_hero_position()
 	if relic_on() and relic_tex != null:
 		var rel := RelicKit.wielded(self)
 		var rk := float(theme.get("weapon_scale", 2.0))
 		var rsz := relic_tex.get_size() * rk
-		var rhand := Vector2(player.x + float(player.face) * hero_size.x * 0.32, player.y - hero_size.y * 0.38)
+		var rhand := Vector2(feet.x + float(player.face) * hero_size.x * 0.32, feet.y - hero_size.y * 0.38)
 		var tilt := 0.0
 		if rel.has("attack") and swing.t > 0.0:
 			# the hammer comes down through its arc
 			tilt = float(swing.a) + PI / 2.0 + float(rel.attack.arc) * (0.5 - swing.t / 0.22)
-			l.draw_set_transform(Vector2(player.x, player.y - 40), tilt)
+			l.draw_set_transform(Vector2(feet.x, feet.y - 40), tilt)
 			l.draw_texture_rect(relic_tex, Rect2(Vector2(-rsz.x / 2.0, -rsz.y - 10.0), rsz), false, _color(rel.tint))
 			l.draw_set_transform(Vector2.ZERO)
 			return
@@ -5741,12 +5830,12 @@ func _draw_weapon(l: Layer, hero_size: Vector2) -> void:
 		return
 	var k := float(theme.get("weapon_scale", theme.hero_scale))
 	var wsz := weapon_tex.get_size() * k
-	var hand := Vector2(player.x + float(player.face) * hero_size.x * 0.32, player.y - hero_size.y * 0.38)
+	var hand := Vector2(feet.x + float(player.face) * hero_size.x * 0.32, feet.y - hero_size.y * 0.38)
 	if weapon.type == "melee" and swing.t > 0.0:
 		var a: float = swing.a + float(weapon.arc) * (0.5 - swing.t / 0.16)
 		var tip := Vector2(cos(a), sin(a))
-		l.draw_line(Vector2(player.x, player.y - 40) + tip * 30.0, Vector2(player.x, player.y - 40) + tip * float(weapon.reach), Color(col("shot_core"), 0.5), 6.0)
-		l.draw_set_transform(Vector2(player.x, player.y - 40), a + PI / 2.0)
+		l.draw_line(Vector2(feet.x, feet.y - 40) + tip * 30.0, Vector2(feet.x, feet.y - 40) + tip * float(weapon.reach), Color(col("shot_core"), 0.5), 6.0)
+		l.draw_set_transform(Vector2(feet.x, feet.y - 40), a + PI / 2.0)
 		l.draw_texture_rect(weapon_tex, Rect2(Vector2(-wsz.x / 2.0, -wsz.y - 12.0), wsz), false)
 		l.draw_set_transform(Vector2.ZERO)
 		return

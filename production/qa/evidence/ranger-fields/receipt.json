@@ -1,0 +1,298 @@
+{
+  "date": "2026-11-03",
+  "branch": "codex/port-0x72-onto-main",
+  "base": "7ca463de8fab9db47d594ea9e4987b5e6fe372ab",
+  "protocol": 4,
+  "rules": 27,
+  "total_checks": 542,
+  "checks": [
+    {
+      "path": "Logs/ranger-final-ranger_fields_test.log",
+      "bytes": 361,
+      "sha256": "743864d97e32abe17e3030aee47daa4e99e5c273edf1308b47a59ba8c41dd166",
+      "checks": 27,
+      "failures": 0
+    },
+    {
+      "path": "Logs/ranger-final-ranger_vfx_test.log",
+      "bytes": 109,
+      "sha256": "d2e841ae2d76fced0db65898463553b359af8b684a1f699b30acefe78b623cbd",
+      "checks": 21,
+      "failures": 0
+    },
+    {
+      "path": "Logs/ranger-final-archer_rework_test.log",
+      "bytes": 361,
+      "sha256": "bc29154e9823f54030edb55904f0ef6ef65b2905f0521e897dbcb28529b62276",
+      "checks": 37,
+      "failures": 0
+    },
+    {
+      "path": "Logs/ranger-final-forest_traps_rework_test.log",
+      "bytes": 359,
+      "sha256": "932409007cdd972918d12dbd953da2e7c18881d132eb5ae51c163a28090e6d51",
+      "checks": 7,
+      "failures": 0
+    },
+    {
+      "path": "Logs/ranger-final-talent_combat_test.log",
+      "bytes": 590,
+      "sha256": "5c60332c3baeb0cfe9b8d07455a4172d2b40ab3cb085a67140885c0bfc719483",
+      "checks": 359,
+      "failures": 0
+    },
+    {
+      "path": "Logs/ranger-final-element_reactions_test.log",
+      "bytes": 929,
+      "sha256": "365ad6f1fe426385624d77be3e559e13be989914bcd75ca18d0772ac7362a5b5",
+      "checks": 32,
+      "failures": 0
+    },
+    {
+      "path": "Logs/ranger-final-marksman_rig_test.log",
+      "bytes": 474,
+      "sha256": "7b2734969420eef8d5e7a855c3c2d256eec6f394b77d8e86daf674680b5152cb",
+      "checks": 9,
+      "failures": 0
+    },
+    {
+      "path": "Logs/ranger-final-talent_defense_test.log",
+      "bytes": 590,
+      "sha256": "3a694503f197076b0a65eb5c64d51494d4b6e2ddf60ab4579b235fa477dae285",
+      "checks": 40,
+      "failures": 0
+    },
+    {
+      "path": "Logs/ranger-final-ranger_story_fields_test.log",
+      "bytes": 471,
+      "sha256": "d9da269d418228611a5d1847a9d336a3d06d00afcf14a091a53ae4e755ee27c6",
+      "checks": 10,
+      "failures": 0
+    }
+  ],
+  "network": {
+    "path": "Logs/archer-rework/20261103-173713-6be32ecf/summary.json",
+    "bytes": 958,
+    "sha256": "bf9e3dd08c4f48719ff53c23b0c906b9397d6043260cd79ec6481945a964575c",
+    "result": {
+      "passed": true,
+      "scope": "local loopback, not LAN/WAN/performance",
+      "results": [
+        {
+          "boss_safe": true,
+          "charge": true,
+          "charge_counts": {
+            "0": true,
+            "1": true,
+            "2": true,
+            "3": true
+          },
+          "failures": [],
+          "marks": true,
+          "passed": true,
+          "pins": true,
+          "role": "host",
+          "scope": "two real local ENet processes, controlled fixture; not LAN/performance",
+          "traps": true,
+          "wide_wall": true
+        },
+        {
+          "boss_safe": true,
+          "charge": true,
+          "charge_counts": {
+            "0": true,
+            "1": true,
+            "2": true,
+            "3": true
+          },
+          "failures": [],
+          "marks": true,
+          "passed": true,
+          "pins": true,
+          "role": "client",
+          "scope": "two real local ENet processes, controlled fixture; not LAN/performance",
+          "traps": true,
+          "wide_wall": true
+        }
+      ]
+    }
+  },
+  "capture": {
+    "path": "Logs/ranger-capture.log",
+    "bytes": 826,
+    "sha256": "f7f3857c89b56c3eb7528db79099981e85be1f276268ec55a54528bf34a15b09"
+  },
+  "parse": {
+    "path": "Logs/ranger-check.log",
+    "bytes": 590,
+    "sha256": "e6dddb48743ad8775d540b293001601b7a3e1a5126e8507b0fd00c26e05b4134"
+  },
+  "red_before_fix": [
+    {
+      "path": "Logs/ranger-fields-red.log",
+      "bytes": 949,
+      "sha256": "c9f086eb3f79dc866d462bf8b1637f80149a54146ee358cb721562a4d3f059ff"
+    },
+    {
+      "path": "Logs/ranger-vfx-wall-red.log",
+      "bytes": 271,
+      "sha256": "dec4c02083a58c4c08d5ca95302f180aabc3edc8f99be0dc89900900fca601f5"
+    }
+  ],
+  "images": [
+    {
+      "path": "production/qa/evidence/ranger-fields/01-himmelsspeer-laden.png",
+      "bytes": 43522,
+      "sha256": "61c18af06c0e90ecfee694564a8e4f36683e3a0264aab528a808068dbe6bb82c"
+    },
+    {
+      "path": "production/qa/evidence/ranger-fields/02-breiter-pfeil.png",
+      "bytes": 49134,
+      "sha256": "2fd594e4f857b8486aca9071072c57d743e738b75bce7bb815599934032ba803"
+    },
+    {
+      "path": "production/qa/evidence/ranger-fields/03-wandkontakt-splitter.png",
+      "bytes": 48585,
+      "sha256": "7f2a7732cdb5605f73f4f5a90b547065f449acb1c866a8a8326de8ea59b52923"
+    },
+    {
+      "path": "production/qa/evidence/ranger-fields/04-giftfalle-scharf.png",
+      "bytes": 42761,
+      "sha256": "b0cfb713fb6f1769ecfc95b66614dd88e41bda3e9725720d260036e908189db2"
+    },
+    {
+      "path": "production/qa/evidence/ranger-fields/05-vorhandene-giftpfuetze-und-wolke.png",
+      "bytes": 62476,
+      "sha256": "999446930f7d2a796df52709edd831571c908ceb3fbbbcf53f77c6f70be38177"
+    },
+    {
+      "path": "production/qa/evidence/ranger-fields/06-rankensog-beginn.png",
+      "bytes": 46828,
+      "sha256": "8df731af6e282808a95fe1fdf3bcfa317cfcae85a28e388b353dcc285ebda5c8"
+    },
+    {
+      "path": "production/qa/evidence/ranger-fields/07-rankensog-zusammengezogen.png",
+      "bytes": 48254,
+      "sha256": "c5d251a0db880409172e6edb311d3acd0d8b6a52862984cb504c7ea5ab87402e"
+    },
+    {
+      "path": "production/qa/evidence/ranger-fields/08-fallenbaum-giftfalle.png",
+      "bytes": 84210,
+      "sha256": "b0941c9e358a20764454cefadba1370ad5d76a3e9b28e677bc1ae88d424aa4f1"
+    }
+  ],
+  "sources": [
+    {
+      "path": "assets/data/talents.json",
+      "bytes": 109250,
+      "sha256": "4a1fc9f7d565021ebe9dcec0d498975fbcac89b8415736744d119229cbbf3e0a"
+    },
+    {
+      "path": "assets/data/debug_forest_lab.json",
+      "bytes": 2428,
+      "sha256": "b4fba6d2b294f4fa285364e33854c2f81efb92dec6e0df08dadee1cb64308f16"
+    },
+    {
+      "path": "assets/data/vfx_talents.json",
+      "bytes": 31173,
+      "sha256": "543327fad9f18ff2c33a6d318dcd1053ab58cb811713cbb4a8b593053cb41a3a"
+    },
+    {
+      "path": "src/combat/marksman_combat.gd",
+      "bytes": 4856,
+      "sha256": "d3c1edcd312a836f23abfa36021f8ab524fc6288fccb2cbe87cb1df1c4ee5db3"
+    },
+    {
+      "path": "src/combat/talent_combat.gd",
+      "bytes": 169034,
+      "sha256": "8523ec2cc738b42a634cebe2c3367ca8420a03b853f3db71caeed40e255808c9"
+    },
+    {
+      "path": "src/combat/elements.gd",
+      "bytes": 21537,
+      "sha256": "266218e291cd5f4528125fc9ae7b5567e11fde9b7377981cd40c032c167d3fe7"
+    },
+    {
+      "path": "src/vfx/marksman_art.gd",
+      "bytes": 6674,
+      "sha256": "f273271441d6e4b4ec1223715c553603f6ed16b8066689f7e00a829cf5e56214"
+    },
+    {
+      "path": "src/vfx/talent_fx.gd",
+      "bytes": 160274,
+      "sha256": "68964ccc538e7aaa7d2eee2d493420650e37024f65f519fd71596cbe535a424f"
+    },
+    {
+      "path": "src/rig/forest_trap_rig.gd",
+      "bytes": 3280,
+      "sha256": "11b3c3b8c0413c8a45ddab948e546378ef1b9e78b62a51fd5a624e92aef7dc24"
+    },
+    {
+      "path": "src/session_protocol.gd",
+      "bytes": 5029,
+      "sha256": "3ffc4aa0b0f783a6b0fd24c04de639d043599f44a4c1b264f237f755b8a8c5c0"
+    },
+    {
+      "path": "tests/ranger_fields_test.gd",
+      "bytes": 6150,
+      "sha256": "55da0fbee926e58462a0b270c6f3584176e5f2d64e93027a60be1346248f9eb3"
+    },
+    {
+      "path": "tests/ranger_vfx_test.gd",
+      "bytes": 3062,
+      "sha256": "4116788ca59b0c999cc28614ed3099625c9e6e4b53c3eeed52790057aee18a04"
+    },
+    {
+      "path": "tests/ranger_story_fields_test.gd",
+      "bytes": 1606,
+      "sha256": "1976562a5cfdc4013cc39f96000ef9036acb5c70242ea4c2f3a737d9e55b167c"
+    },
+    {
+      "path": "tests/archer_network_peer.gd",
+      "bytes": 5914,
+      "sha256": "1789d7c9d8716a90f84af83fcbc0397e54eb5ca69b3de96f48e6478f19b821f5"
+    },
+    {
+      "path": "tests/talent_combat_test.gd",
+      "bytes": 41937,
+      "sha256": "97719ba9e1d0969f5b9c044e1a33c73bed1c065b49c51481ef468905a039e106"
+    },
+    {
+      "path": "scripts/apply_ranger_fields_data.cjs",
+      "bytes": 2620,
+      "sha256": "9bc12affda54038ac02f67e675fddd0d611def7eee4972a1675528a57707df76"
+    },
+    {
+      "path": "scripts/apply_archer_rework_data.cjs",
+      "bytes": 2064,
+      "sha256": "43e5643ff36b6975b7944d62ab7a63a7b41cb539240e80549a406add7e0a0399"
+    },
+    {
+      "path": "scripts/capture_ranger_fields.gd",
+      "bytes": 2293,
+      "sha256": "5f6673bfc620b0195eab36ac4fc12c13fd4ca2796ee18384687b87221b30bfa8"
+    },
+    {
+      "path": "scripts/receipt_ranger_fields.cjs",
+      "bytes": 3430,
+      "sha256": "51e356a843d1b6cc552ecd3b9ca590a81ddc685f6dadb43cc640c4e43005c56c"
+    },
+    {
+      "path": "docs/WALDLAEUFER-FELDER.de.md",
+      "bytes": 5835,
+      "sha256": "048d0245fab58eed0dc162f5d77b5a8869bef9ccb62cb7c16242aa887b28ecab"
+    },
+    {
+      "path": "docs/SCHUETZE-FALLEN-REWORK.de.md",
+      "bytes": 5375,
+      "sha256": "33f7921f62580b60a16ff09c241f3d601dda2a5f195f9cdcd3b858a6ad1837a5"
+    },
+    {
+      "path": "production/qa/evidence/ranger-fields/README.md",
+      "bytes": 1500,
+      "sha256": "24f288ec28e97d65c907d340af0179c30be769e3777ad84d82ae3fa20162a23e"
+    }
+  ],
+  "scope": "Focused host rules, native fragment/wall geometry and particle timing, actual Hell/Frost media integration, two real local ENet processes, eight real renderer training captures; not campaign/LAN/WAN/performance or user art acceptance.",
+  "remaining": "Known fixture exit diagnostics (ObjectDB/resources; multi-world DummyTexture). New changes are local, no commit/push for this request."
+}

@@ -1,5 +1,39 @@
 {
 	"_note": "Weight of the talent effects on the view (src/vfx/talent_fx.gd take_feel), by importance: per tier the crypt's shake trauma (0..1, src/vfx/feedback.gd), the story worlds' shake in px (hell_game state.shake), a hold of the picture (hitstop, s) for the hero's own casts only, and a bloom flash in the element's colour (flash s, flash_r art cells). Events pick a tier; an ultimate's cast and its waves weigh most, each bought stage a bit more (stage_bonus). Client-side pools of the ultimates (pools): material, radius as a share of the hit radius (or art cells), length in s (0 = as long as the ultimate's buff). aura_glow: bloom strength of a lasting buff on the hero. Game feel review 2026-10-30 (production/qa/evidence/talent-vfx-review). The Elementsprache (docs/ZAUBER-SPRACHE.de.md, 2026-10-31): shots (flight language per tier, impact size, the tier of each shot talent, the feel tier of an impact), cast (the CAST beat: element pixels gathering at the hand), residue (what an element leaves on the floor after an impact or a zone's end: a pool material with its radius in art cells per shot tier [small, huge] or as a share of a zone's radius, and how long it lies [min, max] s; elements without a pool leave settled chips only) and traps (the pixel traps' sizes). Fire overhaul (user feedback 2026-10-31: the fire mage's attacks looked weak, no pixel animation, the Flammenmeer drawn as lines): the fire section below carries the Feuermagier's own language (a white-hot heart, an ember tail, the fat explosion in pushes, the Flammenmeer's tongues and smoke, the spear's shimmer and lava, the chain's burning, the meteor's crater, the phoenix's fire trail); shots.talent_feel and residue.talent_residue let a talent override its tier's feel and its element's residue material. Frost and void overhaul (2026-10-31): the frost and void sections carry the Frostmagier's and the Leerenmagier's languages (lance, shatter, blizzard, Frostsprung, Kristallschild, Gletschergrab; implosion, Leerenriss, Raumsprung, Echo, Manaschild, Singularitaet). Matter, not paint (review 2026-10-31, BEFUND.md 5/7/9/10): glow caps the bloom so it never washes out the pixels: a flash lasts at most flash_s s of its tier, reaches flash_r art cells at flash_alpha; an impact's light (boom, shatter, implode, impact = the rest) lives s seconds (about 2 frames) at r x its size and alpha; a shot glows shot.r x its tier glow cells at shot.alpha. talent_events: a talent's own feel tier for one of its events ('talent:kind'; the small mage talents). matter.rim: a ring's matter on its rim when its front gets there (front share of the event's span): one particle every 'every' art cells, at least min, at most max (max_heavy for an ultimate), fire sparks at fire_speed x their speed, shards at shard_speed px/s.",
+	"soul_physics": {
+		"_note": "Shared-solver soul VFX. Emission intervals/lifetimes/travel in seconds; drift/speed in particle px/s; lift in particle px. Budget is vfx_particles.max_particles. See docs/SEELEN-MATERIE.de.md.",
+		"field_every": 0.08,
+		"field_count": 4,
+		"field_drift": 14,
+		"field_life": 1.4,
+		"field_lift": 28,
+		"burst_count": 32,
+		"burst_travel": 0.55,
+		"burst_life": 0.9,
+		"burst_lift": 18,
+		"bind_count": 18,
+		"shot_every": 0.04,
+		"shot_count": 3,
+		"shot_life": 0.55,
+		"charge_count": 3,
+		"charge_hand_lift": 26,
+		"guardian_count": 2,
+		"guardian_radius": 20,
+		"guardian_lift": 72
+	},
+	"soul_absorption": {
+		"release_duration": 1.4,
+		"_note": "Cosmetic corpse gathering, rise and flight into the current staff socket. release_duration: local seconds, retained beyond the unchanged 0.7s host event. Phase ratios: arrival, shrink_start. Sizes: art pixels except spirit_scale (native spirit pixels per art pixel). No resource or damage changes. See docs/SEELEN-MATERIE.de.md.",
+		"arrival": 0.76,
+		"shrink_start": 0.62,
+		"source_lift": 5.0,
+		"bend": 3.0,
+		"rise": 8.0,
+		"spirit_scale": 0.28,
+		"trail_count": 5,
+		"pulse_radius": 3.0,
+		"max_visible": 24
+	},
 	"soul_motion": {
 		"_note": "31.10.2026: cosmetic rig spirits, rising field motes and bone-attached fragment tails. Counts bounded; cycle seconds; travel/spread native rig pixels; field rise/radius ratios. See docs/NEKROMANT-SEELENPARTIKEL.de.md. Host stun/cooldown unchanged.",
 		"grasp_turns": 0.55,
@@ -17,14 +51,14 @@
 		"field_mote_cycle": 2.6,
 		"field_mote_rise": 0.42,
 		"fragment_cycle": 1.8,
-		"fragment_spread": 4.0,
-		"fragment_travel": 8.0
+		"fragment_spread": 4,
+		"fragment_travel": 8
 	},
 	"tiers": {
 		"small": {
 			"trauma": 0.1,
 			"shake_px": 3,
-			"hitstop": 0.0,
+			"hitstop": 0,
 			"flash": 0.12,
 			"flash_r": 16
 		},
@@ -260,7 +294,7 @@
 			"cap": 44,
 			"time": [
 				2.5,
-				4.0
+				4
 			]
 		},
 		"poison": {
@@ -272,7 +306,7 @@
 			"share": 0.3,
 			"cap": 40,
 			"time": [
-				2.0,
+				2,
 				3.5
 			]
 		},
@@ -285,8 +319,8 @@
 			"share": 0.26,
 			"cap": 36,
 			"time": [
-				3.0,
-				5.0
+				3,
+				5
 			]
 		},
 		"void": {
@@ -311,8 +345,8 @@
 			"share": 0.3,
 			"cap": 36,
 			"time": [
-				2.0,
-				3.0
+				2,
+				3
 			]
 		},
 		"lava": {
@@ -324,8 +358,8 @@
 			"share": 0.4,
 			"cap": 44,
 			"time": [
-				3.0,
-				5.0
+				3,
+				5
 			]
 		},
 		"chips": [
@@ -333,8 +367,8 @@
 			12
 		],
 		"zone_time": [
-			2.0,
-			4.0
+			2,
+			4
 		],
 		"path_every": 3,
 		"talent_residue": {
@@ -353,7 +387,7 @@
 			"cap": 40,
 			"time": [
 				1.2,
-				2.0
+				2
 			]
 		},
 		"glatteis": {
@@ -365,8 +399,8 @@
 			"share": 0.7,
 			"cap": 64,
 			"time": [
-				4.0,
-				6.0
+				4,
+				6
 			]
 		}
 	},
@@ -415,7 +449,7 @@
 				22
 			],
 			"lie": [
-				1.0,
+				1,
 				1.8
 			],
 			"scorch": 0.7
@@ -489,7 +523,7 @@
 				2,
 				5
 			],
-			"rime_reach": 1.0,
+			"rime_reach": 1,
 			"freeze": 1.4
 		},
 		"blizzard": {
@@ -502,7 +536,7 @@
 			"pool_share": 0.3,
 			"rime_every": 1.2,
 			"rime_reach": 0.35,
-			"mist_every": 1.0,
+			"mist_every": 1,
 			"mist_share": 0.6,
 			"mist_dense": 0.5,
 			"flake_rate": 60,
@@ -532,7 +566,7 @@
 			"throw": 0.35,
 			"wave": 0.12,
 			"sink": 0.6,
-			"spires": 1.0,
+			"spires": 1,
 			"pool_share": 0.75,
 			"burst_size": 16,
 			"end_size": 14,
@@ -620,7 +654,7 @@
 			"leave": 0.55,
 			"travel": 0.4,
 			"mouth": 2,
-			"mouth_lift": 1.0,
+			"mouth_lift": 1,
 			"well_r": 20,
 			"well_pull": 300,
 			"well_swirl": 160,
@@ -666,10 +700,10 @@
 			"merge_w": 0.4,
 			"flash": 0.18,
 			"chunk": 0.06,
-			"chunk_max": 5.0,
+			"chunk_max": 5,
 			"reach": 0.42,
 			"spin": 2.4,
-			"pack_spin": 3.0,
+			"pack_spin": 3,
 			"react_max": 6
 		},
 		"fuse": {
@@ -680,11 +714,11 @@
 			"feed_throw": 40
 		},
 		"churn": {
-			"per_unit": 2.0,
+			"per_unit": 2,
 			"cap": 30,
 			"particles": 16,
 			"chunk": 0.12,
-			"chunk_max": 5.0,
+			"chunk_max": 5,
 			"grow_t": 0.35,
 			"start": 0.3,
 			"spread": 0.75,
@@ -697,29 +731,32 @@
 			"hop_arc": 8,
 			"comets": 8,
 			"comet_share": 0.6,
-			"comet_reach": [0.45, 0.95],
+			"comet_reach": [
+				0.45,
+				0.95
+			],
 			"comet_fly": 0.35,
 			"drop_fly": 0.15,
 			"bits_every": 0.3
 		},
 		"spit": {
 			"cap": 24,
-			"per_unit": 2.0,
+			"per_unit": 2,
 			"arc": 8,
-			"size": 3.0,
-			"size_per": 1.0,
-			"size_max": 8.0,
+			"size": 3,
+			"size_per": 1,
+			"size_max": 8,
 			"tail": 4,
 			"chunks": 6,
 			"chunk_cells": 2.2,
-			"spin": 6.0,
+			"spin": 6,
 			"react_max": 2,
 			"spread": 6,
 			"burst": 4
 		},
 		"tether": {
 			"chest": 0.6,
-			"sway": 2.0,
+			"sway": 2,
 			"flow": 0.9,
 			"motes": 5,
 			"shimmer": 10,
@@ -747,7 +784,7 @@
 		"splat": {
 			"smack": 9,
 			"radius": 14,
-			"fling": 1.0,
+			"fling": 1,
 			"fling_reach": 48,
 			"element": {
 				"flesh": "blood",
@@ -758,13 +795,13 @@
 		},
 		"mad": {
 			"swirl": 4,
-			"head_share": 1.0,
+			"head_share": 1,
 			"head_px": 8,
 			"swirl_r": [
 				8,
 				3
 			],
-			"swirl_speed": 4.0,
+			"swirl_speed": 4,
 			"eye_dx": 3,
 			"glyph_every": 2.6,
 			"glyph_time": 0.7,
@@ -809,7 +846,7 @@
 		},
 		"shatter": {
 			"s": 0.035,
-			"r": 1.0,
+			"r": 1,
 			"alpha": 0.28
 		},
 		"implode": {
@@ -836,12 +873,39 @@
 	"matter": {
 		"rim": {
 			"front": 0.21,
-			"every": 5.0,
+			"every": 5,
 			"min": 8,
 			"max": 14,
 			"max_heavy": 22,
 			"fire_speed": 0.45,
 			"shard_speed": 90
+		}
+	},
+	"ranger": {
+		"_note": "2026-11-03: native joint-solved arrow width follows authoritative r. flight_share is derived from host flight_s/span; debris seconds, speeds in art pixels/s, kick in art pixels, kick_rate in 1/s. Lure draws the existing trap tooth parts and moves existing particle matter, without another puddle.",
+		"arrow": {
+			"trail_count": 8,
+			"trail_spacing": 8,
+			"flight_share": 0.3,
+			"width_share": 0.82,
+			"min_scale": 1.4,
+			"fragment_speed": 48,
+			"fragment_kick": 9,
+			"fragment_kick_rate": 32,
+			"fragment_lift": 18,
+			"fragment_gravity": 46,
+			"fragment_spin": 7,
+			"chip_count": 24,
+			"spark_count": 12
+		},
+		"lure": {
+			"speed": 1.4,
+			"turns": 0.22,
+			"min_radius": 0.12,
+			"part_scale": 0.6,
+			"well_pull": 180,
+			"well_swirl": 24,
+			"mote_rate": 18
 		}
 	}
 }

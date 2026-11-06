@@ -1,0 +1,11 @@
+Actual process-output excerpts after the successful GPU capture summaries.
+Engine log files do not retain these final teardown messages. This is not full stderr.
+
+Laboratory capture:
+WARNING: 6 ObjectDB instances were leaked at exit (run with --verbose for details).
+ERROR: 2 resources still in use at exit (run with --verbose for details).
+
+Story capture:
+ERROR: Texture with GL ID of 461: leaked 2380 bytes.
+WARNING: 1357 ObjectDB instances were leaked at exit (run with --verbose for details).
+ERROR: 6 resources still in use at exit (run with --verbose for details).

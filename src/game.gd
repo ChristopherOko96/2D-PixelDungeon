@@ -1758,6 +1758,7 @@ func _simulate_enemies(delta: float) -> void:
 	# Summoning may append a new actor; it first participates on the next tick.
 	for enemy in enemies.duplicate():
 		_mad_actor = {}
+		preload("res://src/combat/enemy_sight.gd").step(enemy,delta)
 		enemy.moving = false
 		enemy.motion = Vector2.ZERO
 		var simulation_start: Vector2 = enemy.pos
@@ -1779,6 +1780,10 @@ func _simulate_enemies(delta: float) -> void:
 		hero_skills.check_slam(enemy, knock_from, push, delta)
 		if enemy.hitstun > 0.0: continue
 		if perk_combat.frozen(enemy): continue
+		if preload("res://src/combat/enemy_sight.gd").blocked(enemy):
+			enemy.attack = ""
+			enemy.attack_time = 0.0
+			continue
 		# Aggro: unaware enemies stand still; a locked one hunts its hero to the end.
 		var target: int = Aggro.pick_target(enemy, players, _sees, balance.aggro)
 		if target < 0: continue
@@ -1956,6 +1961,8 @@ func _simulate_bullets(delta: float) -> void:
 		var wall_radius: float = float(bullet.get("wall_radius",radius))
 		var blocked: bool = Dungeon.segment_blocked(previous,bullet.pos,wall_radius,current_layout)
 		var removed: bool = bullet.life <= 0.0
+		if not removed and int(bullet.owner)>0 and (_shot_style(bullet) == "arrow" or str(bullet.get("style","")) == "arrow"):
+			talent_combat.alchemist.arrow(talent_combat,int(bullet.owner),previous,bullet.pos)
 		# A player shot that runs into a chest or crate strikes it.
 		if blocked and int(bullet.owner) > 0 and chests.hit_segment(previous,bullet.pos,radius+10.0,int(bullet.owner),bullet):
 			if int(bullet.get("pierce",0)) <= 0: removed = true

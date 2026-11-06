@@ -167,3 +167,7 @@ func set_timer(_actor: Variant, _key: String, _seconds: float) -> void:
 ## worth showing: "freeze" (wet, frost froze it solid).
 func show_combo(_actor: Variant, _combo: String) -> void:
 	pass
+
+## A dense sight-obscuring gas; hosts decide which actors have enemy perception.
+func blind_sight(_actor: Variant, _seconds: float) -> void:
+	pass

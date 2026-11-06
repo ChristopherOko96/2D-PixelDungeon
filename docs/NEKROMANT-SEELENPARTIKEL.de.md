@@ -1,5 +1,10 @@
 # Seelenfeld und Partikelschweif
 
+Aktueller Stand 04.11.2026: Die aktive Darstellung verwendet jetzt echte
+simulierte Pixel für Seelen-VFX und reagierende Bodenoberflächen. Der frühere
+Rig-/Sprite-Ansatz unten ist historisch bzw. Vorschau-Fallback. Siehe
+[Seelen-Materie](SEELEN-MATERIE.de.md) für den aktuellen Anschluss.
+
 31.10.2026. Nutzerwunsch: fließend aufsteigende Feldgeister mit Rig und
 Partikelcharakter; entsprechender Schweif am großen Seelenwächter aus der
 vorherigen Vorschau. Dieser Schritt bearbeitet diesen beschworenen Geist.
@@ -84,3 +89,45 @@ Präsentationsfläche. Die Nahansicht ist kein Kampf oder Beleg für Felddauer.
 Selbst ansehen: **Testraum → Nekromant → Seele**, **4** für das Feld und **R**
 für den großen Seelenwächter. Gegner auf das Feld locken, um die kleinen
 Festhalte-Geister zu sehen. Benötigte Seelen wie zuvor sammeln.
+
+## Seelensog: Aufnahme im Stab (04.11.2026)
+
+Ausgangspunkt ist der Klassen-Revamp auf `ab181e4a`. Bestätigte Seelenbelohnungen
+(`souls`-Event) zeigen jetzt den vorhandenen kleinen Seelengeist: Er steigt am
+gefallenen Gegner auf, fliegt mit kurzem Pixelschweif zum Stab, schrumpft in die
+Kugel und löst dort einen kurzen grünen Aufnahmeblitz aus. Es werden vorhandene
+Cutouts und Texturcaches verwendet; keine neuen generierten Bilder.
+
+Der Endpunkt stammt aus `HeroLook.staff_socket()` nach dem Zeichnen des Helden.
+Damit folgt er Bewegung, Blickrichtung und der aktuellen Stabpose. In der
+Story-Laufzeit heißt der Socket `hero`, im bisherigen Koop-Renderer `p<owner>`.
+Fehlt die aktuelle Pose, dient die aktuelle Brustposition des empfangenden
+Helden als Ersatz, zuletzt die im Event gespeicherte Position. Die gemeinsame
+Darstellung gilt für Krypta, Frostgruft und Hölle sowie Custom Storys mit
+derselben Laufzeit. Andere Klassen und die Effekte des Leerenmagiers bleiben
+unverändert.
+
+`src/vfx/soul_absorption.gd` zeichnet ausschließlich. Der Host schreibt die
+Seelen wie zuvor unmittelbar beim bestätigten Tod gut. Die Leiste, Obergrenze,
+Beute-/Assistregeln und das bestehende 0,7-Sekunden-Event bleiben erhalten.
+Die kurze Flugdarstellung verschiebt keine Ressourcenbuchung. Passive
+Seelenregeneration erzeugt keinen Gegnergeist.
+
+Einstellungen: `assets/data/vfx_talents.json`, Abschnitt `soul_absorption`:
+
+| Feld | Bedeutung |
+|---|---|
+| arrival = 0,76 | Ankunft als Anteil der 0,7 Sekunden; Rest ist Aufnahmeblitz |
+| shrink_start = 0,62 | Schrumpfen ab diesem Anteil der Flugphase |
+| source_lift = 5 | Abstand des Startpunkts über dem Todesort in Kunstpixeln |
+| bend = 3, rise = 8 | Seitliche Kurve und Bogenhöhe in Kunstpixeln |
+| spirit_scale = 0,28 | Native Geistpixel je Kunstpixel vor dem Schrumpfen |
+| trail_count = 5 | Schweifpunkte, technisch auf 0–8 begrenzt |
+| pulse_radius = 3 | Maximaler Aufnahmeblitz-Radius in Kunstpixeln |
+| max_visible = 24 | Gleichzeitige Aufnahmeeffekte je Bild, technisch höchstens 32 |
+
+Prüfung: `tests/soul_absorption_test.gd` prüft bewegte und veraltete Sockets,
+Empfängerzuordnung, Ankunft, Ausblenden und unveränderte tatsächliche
+Seelenbuchung. `scripts/capture_soul_absorption.gd` zeichnet eine kontrollierte
+Todesbelohnung auf einer aktuellen Krypta-Karte mit bewegtem Nekromanten auf.
+Das ist eine Darstellungsprobe, kein vollständiger Kampagnen- oder Netzwerktest.

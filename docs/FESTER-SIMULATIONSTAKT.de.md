@@ -51,7 +51,15 @@ Datei: `assets/data/physics_clock.json`, Schema 1.
 | --- | --- | --- |
 | `schema_version` | 1 | Version dieses Datenformats. |
 | `tick_hz` | 60 | Gameplay-Schritte je simulierter Sekunde; Ladegrenzen 1 bis 240. |
-| `max_steps_per_frame` | 8 | Maximale Nachholarbeit vor dem nächsten Bild; Ladegrenzen 1 bis 64. |
+| `max_steps_per_frame` | 2 | Maximale Nachholarbeit vor dem nächsten Bild; Ladegrenzen 1 bis 64 (Code-Standard 8). |
+| `max_pending_steps` | 3 | Höchstens so viele Schritte Zeit warten; mehr verfällt. 0 = alles behalten (Code-Standard). |
+
+**Änderung 05.11.2026 (Nutzerentscheid):** 8 Nachholschritte ohne Verfall erzeugten im Kampf eine
+Spirale: Ein Schritt kostete 12–20 ms, also fast so viel, wie er simuliert. Jedes langsame Bild
+holte dann mehr Schritte nach und wurde noch langsamer (gemessen 3–6 Schritte je Bild,
+Frostgruft 110–129 ms je Bild). Jetzt gibt es höchstens 2 Schritte je Bild, und Restzeit über
+3 Schritte verfällt. Ab 30 FPS läuft die Welt in Echtzeit wie zuvor. Darunter läuft sie langsamer,
+statt zu stocken. Belege: `production/qa/evidence/perf/code-pruefung-2026-11-05.md`.
 
 Die Werte werden beim Erzeugen der Story-Laufzeit geladen. Eine Änderung der
 Tickrate kann das Spielgefühl und die CPU-Kosten beeinflussen und braucht
@@ -61,10 +69,10 @@ eine eigene Abnahme; sie ist keine gewöhnliche FPS- oder Grafikoption.
 
 Ein fester Takt erhöht nicht automatisch die FPS. Reicht die CPU dauerhaft
 nicht für 60 Schritte je Sekunde oder wird das Nachholbudget dauerhaft
-überschritten, bleibt die Simulation zurück. Acht Schritte je Bild reichen
-rechnerisch bis 7,5 Render-Bildern je Sekunde; darunter wächst der Rückstand,
-bis wieder genügend Rechenzeit verfügbar ist. Der Puffer wird bei langsamen
-Bildern bewusst nicht stillschweigend gelöscht.
+überschritten, bleibt die Simulation zurück. Zwei Schritte je Bild reichen
+für Echtzeit bis 30 Render-Bilder je Sekunde. Darunter verfällt Zeit über
+`max_pending_steps`, und die Welt läuft entsprechend langsamer (seit
+05.11.2026; vorher acht Schritte ohne Verfall).
 
 Diese Änderung ergänzt weder Render-Interpolation für alle Figuren noch eine
 deterministische Wiederholung von Eingaben und Zufallsentscheidungen. Eingaben

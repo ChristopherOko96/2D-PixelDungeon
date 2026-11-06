@@ -218,3 +218,7 @@ func show_combo(actor: Variant, combo: String) -> void:
 		g.monsters._burst_in(at, int(bursts.get("monster", 10)), "frost")
 	elif g.get("frost_fx") != null:
 		g.frost_fx.shatter(at, int(bursts.get("monster", 10)), float(actor.get("r", 0.0)))
+
+## Steam/smoke occludes monster vision independently from heat/poison resistance.
+func blind_sight(actor: Variant, seconds: float) -> void:
+	if not is_hero(actor): preload("res://src/combat/enemy_sight.gd").expose(actor,seconds)

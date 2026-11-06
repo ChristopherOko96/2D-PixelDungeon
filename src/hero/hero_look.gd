@@ -79,10 +79,18 @@ var _held: Dictionary = {}
 ## (a RigDebris with the one piece), steps (fixed steps done)} (drop_weapon).
 var _dropped: Dictionary = {}
 var _fireballs: Dictionary = {}
+var marksman := preload("res://src/hero/marksman_motion.gd").new()
 var _staff_sockets: Dictionary = {}
+var _bow_sockets: Dictionary = {}
+
+## This frame's actual nocked-arrow centre after the bow followed the hero's rig.
+func bow_socket(key: String, fallback: Vector2, clock: float) -> Vector2:
+	var socket: Dictionary=_bow_sockets.get(key,{})
+	return Vector2(socket.at) if not socket.is_empty() and absf(clock-float(socket.clock))<0.05 else fallback
 
 ## Track host cast age once; late snapshots never restart the charge.
 func observe_fireball(key: String, owner: int, events: Array, clock: float, alive: bool = true) -> void:
+	marksman.observe(key,owner,events,clock,alive)
 	_fireballs.erase(key)
 	if not alive: return
 	for event: Dictionary in events:
@@ -253,6 +261,9 @@ func hold(key: String, player: Dictionary, point: Vector2, aim: Vector2, clock: 
 		var carried: Dictionary = (player.get("inventory", {}) as Dictionary).get("weapon", {})
 		element = str(carried.get("element", ""))
 	var style := style_of(player)
+	if style == "bow":
+		skills = skills.duplicate()
+		skills.marksman = marksman.frame(key,player,clock)
 	var spec: Dictionary = held if str(held.get("style", "")) == style else {}
 	match style:
 		"sword": return _sword(key, player, point, aim, clock, texture, skills, glow, element, spec)
@@ -426,6 +437,9 @@ func _whirl(point: Vector2, reach: float, clock: float, texture: Texture2D, rage
 ## The bow drawn from the side: wood toward the target, string pulled toward
 ## the hero (string, nocked arrow and glow go over the bow, with its hand).
 func _bow_held(key: String, player: Dictionary, point: Vector2, aim: Vector2, clock: float, texture: Texture2D, skills: Dictionary, glow: Color, element: String, spec: Dictionary) -> Array[Dictionary]:
+	var motion: Dictionary = skills.get("marksman",{})
+	if str(motion.get("talent","")) == "sniper_11":
+		aim = aim.lerp(Vector2.UP,sin(float(motion.p)*PI)*0.8).normalized()
 	var bow: Dictionary = _bow(texture)
 	var grip: Vector2 = spec.get("grip", BOW_GRIP)
 	var k := px * float(spec.get("scale", 1.0))
@@ -442,12 +456,17 @@ func _bow_held(key: String, player: Dictionary, point: Vector2, aim: Vector2, cl
 	var bottom: Vector2 = xf * ((Vector2(bow.tip_b) - bow.size * grip) * k)
 	var nock := (top + bottom) * 0.5 - aim * (draw * 6.0 * px) + aim.orthogonal() * shake
 	var arrow := nocked_arrow
+	if not motion.is_empty():
+		var sprite := "spear_arrow" if str(motion.talent) == "charge" else str(preload("res://src/vfx/marksman_sprites.gd").ARROWS.get(str(motion.talent),"aimed_arrow"))
+		arrow = preload("res://src/vfx/marksman_sprites.gd").texture(sprite)
 	var over := func(canvas: CanvasItem, follow: Transform2D) -> void:
 		canvas.draw_line(top, nock, STRING_COLOR, maxf(1.0, px * 0.5))
 		canvas.draw_line(nock, bottom, STRING_COLOR, maxf(1.0, px * 0.5))
 		if draw > 0.15 and arrow != null:
 			var length := arrow.get_size().y * px
 			var center := nock + aim * (length * 0.5 - px)
+			_bow_sockets[key]={"at":follow*center,"clock":clock}
+			if str(motion.get("talent",""))=="charge": return
 			canvas.draw_set_transform_matrix(follow * Transform2D(angle + PI * 0.5, center))
 			var arrow_size := arrow.get_size() * px
 			canvas.draw_texture_rect(arrow, Rect2(-arrow_size * 0.5, arrow_size), false, Color(1, 1, 1, clampf(draw * 2.0, 0.0, 1.0)))
@@ -466,6 +485,10 @@ func _bow_held(key: String, player: Dictionary, point: Vector2, aim: Vector2, cl
 ## shooting, slack when idle, full while Ballistapfeil charges.
 func _draw_amount(key: String, player: Dictionary, clock: float, skills: Dictionary) -> float:
 	if skills.has("charge"): return 0.45 + 0.55 * clampf(float(skills.charge), 0.0, 1.0)
+	var motion: Dictionary = skills.get("marksman",{})
+	if not motion.is_empty():
+		if str(motion.talent) in ["sniper_5","sniper_9"]: return 0
+		return 0.85*(1.0-smoothstep(0,0.35,float(motion.p)))
 	var interval := maxf(0.08, float(player.get("shot_interval", 0.5)))
 	var since := clock - float(_shot.get(key, {}).get("start", -INF))
 	if since > interval * 2.5: return 0.0

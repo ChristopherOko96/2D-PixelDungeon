@@ -1,0 +1,17 @@
+{
+  "_note": "Cosmetic enemy status emitters, shared particle solver. Rates particles/s; life seconds; speed and gravity in crypt px/s and px/s^2. No gameplay pools or status grants. See docs/GEGNER-STATUSEFFEKTE.de.md.",
+  "schema_version": 1,
+  "soft_cap": 650,
+  "frame_budget": 24,
+  "max_dt": 0.1,
+  "radius_min": 6,
+  "radius_max": 24,
+  "height_min": 22,
+  "height_max": 72,
+  "styles": {
+    "burn": {"rate": 26, "life": 0.58, "size": 6, "mode": "ember", "gravity": -85, "lift": 20, "speed": 7, "colours": ["fff0a0", "ffb43d", "ed6628", "9b3525"]},
+    "poison": {"rate": 14, "life": 0.72, "size": 4, "mode": "smoke", "gravity": -25, "lift": 9, "speed": 6, "colours": ["d6ff73", "94d24a", "518d37"]},
+    "wet": {"rate": 16, "life": 0.55, "size": 2, "mode": "dust", "gravity": 160, "lift": -15, "speed": 7, "colours": ["c0edff", "50b4ff", "286be0"]},
+    "freeze": {"rate": 7, "life": 0.6, "size": 2, "mode": "dust", "gravity": 35, "lift": 4, "speed": 8, "colours": ["e3ffff", "9bdce8", "6ca5ca"]}
+  }
+}

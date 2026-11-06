@@ -13,6 +13,7 @@ extends RefCounted
 ## `sees` is a Callable(from: Vector2, to: Vector2) -> bool for line of sight;
 ## `config` is balance.aggro (`range`).
 static func pick_target(enemy: Dictionary, players: Dictionary, sees: Callable, config: Dictionary) -> int:
+	if float(enemy.get("sight_blind_s",0)) > 0: return -1
 	# Bosses fight the whole party: always on the nearest hero, so their arena
 	# patterns keep reading the closest threat. A boss placed `asleep` (open
 	# floors) first has to notice a hero like any other enemy.
@@ -37,6 +38,7 @@ static func pick_target(enemy: Dictionary, players: Dictionary, sees: Callable, 
 ## Locks `enemy` onto `target` (a peer id). An enemy hurt by a player locks
 ## onto that player even when it was hunting someone else.
 static func lock(enemy: Dictionary, target: int) -> void:
+	if float(enemy.get("sight_blind_s",0)) > 0: return
 	enemy.asleep = false
 	enemy.aggro = true
 	enemy.aggro_target = target
@@ -51,6 +53,7 @@ static func alert_pack(enemy: Dictionary, enemies: Array, config: Dictionary) ->
 	enemy.aggro_fresh = false
 	var called := 0
 	for other: Dictionary in enemies:
+		if float(other.get("sight_blind_s",0)) > 0: continue
 		if other == enemy or bool(other.get("aggro", false)) or int(other.get("hp", 0)) <= 0:
 			continue
 		if Vector2(other.pos).distance_to(enemy.pos) <= float(config.call_range):

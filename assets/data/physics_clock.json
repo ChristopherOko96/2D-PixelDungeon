@@ -1,6 +1,7 @@
 {
   "schema_version": 1,
-  "_note": "Story simulation scheduler: tick_hz = fixed gameplay updates per second; max_steps_per_frame = maximum catch-up updates before drawing the next frame. Excess time is retained, not clipped. Pause and floor loads explicitly reset the clock. Rendering has no FPS cap from this file. Details: docs/FESTER-SIMULATIONSTAKT.de.md.",
+  "_note": "Story simulation scheduler: tick_hz = fixed gameplay updates per second; max_steps_per_frame = maximum catch-up updates before drawing the next frame; max_pending_steps = the most ticks of time that may wait, more is dropped (0 = keep all, the world never slows). With 2 and 3 a slow frame cannot pile up catch-up work (no spiral): below 30 FPS the world runs slower instead of stuttering. Pause and floor loads explicitly reset the clock. Rendering has no FPS cap from this file. Details: docs/FESTER-SIMULATIONSTAKT.de.md.",
   "tick_hz": 60,
-  "max_steps_per_frame": 8
+  "max_steps_per_frame": 2,
+  "max_pending_steps": 3
 }

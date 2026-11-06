@@ -1,0 +1,6 @@
+ERROR: Failed to open log file for writing: user://logs/godot.log
+   at: rotate_file (core/io/logger.cpp:169)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+FEEDBACK_VIEWS_CPU sound=false before_us=3010.22222222222 after_us=2587.95555555556 same=true ratio=0.85972242728481
+FEEDBACK_VIEWS_CPU sound=true before_us=2558.94444444444 after_us=3323.65555555556 same=true ratio=1.29883849677601

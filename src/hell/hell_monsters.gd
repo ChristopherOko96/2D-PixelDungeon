@@ -238,6 +238,7 @@ func spawn(room: int, pos: Vector2, id: String, boss := false) -> Dictionary:
 	if rig_host != null:
 		rig_host.attach(m)
 	g.mobs.append(m)
+	g.mob_moved(m)
 	return m
 
 
@@ -398,7 +399,7 @@ func _released(m: Dictionary) -> void:
 		rig_host.on_release(m)
 
 
-## The attacks a blinded monster (in steam or smoke) can still make: blows at arm's length.
+## Legacy shot-only blindness permits nearby blows; full sight loss is gated separately.
 const BLIND_ATTACKS := ["swing", "dash", "slam", "ring", "sweep"]
 
 
@@ -419,6 +420,7 @@ static func mob_tags(m: Dictionary) -> Array:
 ## the pool's rule the movement in update reads (slide, grip, pull), m.blind
 ## the s its shots are blind (steam, smoke).
 func _step_medium(m: Dictionary, dt: float) -> void:
+	preload("res://src/combat/enemy_sight.gd").step(m,dt)
 	m.blind = maxf(0.0, float(m.get("blind", 0.0)) - dt)
 	var met: Dictionary = g.exposure().step(m, dt)
 	m.env = met.medium
@@ -429,6 +431,7 @@ func _step_medium(m: Dictionary, dt: float) -> void:
 ## Moves, aims and attacks every monster, ends Ignaroth's phases, removes the dead
 ## and clears a room when its last monster falls.
 func update(dt: float) -> void:
+	g.prepare_mob_queries()
 	var me := _me()
 	for m: Dictionary in g.mobs:
 		_mad_from = {}
@@ -455,9 +458,11 @@ func update(dt: float) -> void:
 			_start_lord_end(m)
 		if m.intro != null:
 			_update_intro(m, dt)
+			g.mob_moved(m)
 			continue
 		if m.trans != null or m.dying != null:
 			_update_lord_end(m, dt)
+			g.mob_moved(m)
 			if m.anim != m.get("last_anim", ""):
 				m.last_anim = m.anim
 				m.at = 0.0
@@ -473,22 +478,24 @@ func update(dt: float) -> void:
 		# hero skills: slows, burns and stuns tick here; a stunned or held monster waits
 		var pace := HeroKit.tick_mob(g, m, dt)
 		# a dragon reeling from a severed part (src/hell/drake_rig_host.gd) stands and starts no attack
-		var held: bool = pace <= 0.0 or m.get("hold", false) or (rig_host != null and rig_host.staggered(m))
+		var sight_lost: bool = preload("res://src/combat/enemy_sight.gd").blocked(m)
+		var held: bool = sight_lost or pace <= 0.0 or m.get("hold", false) or (rig_host != null and rig_host.staggered(m))
 		# a companion's taunt (Brüllen, Heulen, Fass!) draws it from the hero, as in the Frostgruft
-		if _mad_on.is_empty() and g.talents != null and not m.boss:
+		if not sight_lost and _mad_on.is_empty() and g.talents != null and not m.boss:
 			var drawn: Vector2 = g.talents.chase_goal(m, me)
 			if drawn != me:
 				_taunt_at = drawn
-		var to: Vector2 = _aim_goal() - m.p
-		var d := maxf(to.length(), 1.0)
+		var to: Vector2 = Vector2.ZERO if sight_lost else _aim_goal() - m.p
+		var d := INF if sight_lost else maxf(to.length(), 1.0)
 		# in a labyrinth it chases only what it sees: near enough and no wall between (world_maze.json)
-		if float(m.get("sight", 0.0)) > 0.0 and _taunt_at == Vector2.INF and _mad_on.is_empty():
+		if not sight_lost and float(m.get("sight", 0.0)) > 0.0 and _taunt_at == Vector2.INF and _mad_on.is_empty():
 			if d > float(m.sight) or not g.clear_line(m.p - Vector2(0.0, 20.0), me - Vector2(0.0, 20.0)):
 				held = true
 		var v := Vector2.ZERO
-		if bool(m.get("ai_off", false)):
+		if sight_lost or bool(m.get("ai_off", false)):
 			# a training dummy of the debug Testraum (src/debug/story_testraum_tools.gd): no act, no walking
 			m.act = null
+			m.erase("wait")
 		elif m.act != null:
 			m.erase("wait")
 			# the look of the shots this act fires (a bone arrow: src/vfx/shot_looks.gd, shot_looks.json)
@@ -523,8 +530,8 @@ func update(dt: float) -> void:
 		var locked: bool = act != null and ((act.kind == "dash" and not act.get("warn", false)) or act.kind == "sweep" or act.kind == "mimic_bite")
 		if not locked and absf(to.x) > (float(cfg.lord_face_deadzone) if lord else 10.0):
 			m.face = signf(to.x)
-		for o: Dictionary in g.mobs:
-			if o != m:
+		for o: Dictionary in g.mob_candidates(m.p,float(m.r)*0.8):
+			if not is_same(o,m):
 				var off: Vector2 = m.p - o.p
 				var od := off.length()
 				if od > 0.0 and od < (m.r + o.r) * 0.8:
@@ -547,6 +554,7 @@ func update(dt: float) -> void:
 		m.k = step.push
 		m.k_in = step.push_in
 		m.p = step.p
+		g.mob_moved(m)
 		# a body thrown by Rage slams into the wall it meets (src/hero/story_hero.gd)
 		if g.story_hero != null and m.has("slam"):
 			# sound hook: the slam is the hero's (src/hero/story_sound.gd source "hero")
@@ -600,6 +608,7 @@ func update(dt: float) -> void:
 			# sound hook: the death voice and the coat's end at the monster (story_sound.gd mob_died)
 			if g.sound != null: g.sound.mob_died(m)
 		g.mobs.erase(m)
+		g.mob_removed(m)
 		var rest: Array = g.mobs.filter(func(o: Dictionary) -> bool: return o.room == m.room and o.hp > 0.0 and not o.get("remove", false))
 		if rest.is_empty():
 			if m.boss:
@@ -1929,6 +1938,7 @@ func _pose(m: Dictionary, tint: Color) -> Array:
 
 ## Draws a monster (sorted with the other actors by its feet).
 func draw_mob(l: CanvasItem, m: Dictionary) -> void:
+	var drawn_at: Vector2 = g.render_mob_position(m) if g.has_method("render_mob_position") else Vector2(m.p)
 	if Rules.is_lord(m.def):
 		_draw_lord(l, m)
 		return
@@ -1937,10 +1947,10 @@ func draw_mob(l: CanvasItem, m: Dictionary) -> void:
 		return
 	var air := float(m.act.get("air", 0.0)) if m.act != null else 0.0
 	var w := float(m.def.w) * sc
-	_ellipse(l, m.p, w * 0.34, w * 0.1 + 4.0, Color(0, 0, 0, 0.45))
+	_ellipse(l, drawn_at, w * 0.34, w * 0.1 + 4.0, Color(0, 0, 0, 0.45))
 	var hov := -10.0 + sin(g.state.t * 4.0 + m.seed) * 5.0 if m.st.ai in ["hover", "drift"] else 0.0
 	var look := _pose(m, Color(1, 1, 1, m.alpha))
-	var feet: Vector2 = m.p + Vector2(0, 4.0 + hov - air)
+	var feet: Vector2 = drawn_at + Vector2(0, 4.0 + hov - air)
 	# a mimic winding up its bite: the bite zone warns on the floor, it rattles and its lid lifts
 	var tell := _mimic_tell(m)
 	if not tell.is_empty():
@@ -1949,7 +1959,7 @@ func draw_mob(l: CanvasItem, m: Dictionary) -> void:
 	# a mob with a part rig (assets/data/hell_rigs.json) moves part by part like the crypt's skeletons
 	# and falls apart when it dies (src/hell/drake_rig_host.gd); the atlas otherwise
 	if rig_host != null and rig_host.draws(m):
-		rig_host.draw(l, m, feet, sc / m.s, look[1], 0.0, look[0])
+		rig_host.draw(l, m, feet, sc / m.s, look[1], 0.0, look[0], drawn_at - Vector2(m.p))
 	else:
 		_mark(m, feet, sc, 0.0, look[1], look[0])
 		_sprite(l, m.id, Rules.frame_of(m.def, m.anim, m.at), feet, sc, m.face, look[1], 0.0, look[0])
@@ -1958,6 +1968,7 @@ func draw_mob(l: CanvasItem, m: Dictionary) -> void:
 
 
 func _draw_lord(l: CanvasItem, m: Dictionary) -> void:
+	var drawn_at: Vector2 = g.render_mob_position(m) if g.has_method("render_mob_position") else Vector2(m.p)
 	if m.burrowed and m.sink >= 1.0:
 		_draw_mound(l, m)
 		return
@@ -1971,7 +1982,7 @@ func _draw_lord(l: CanvasItem, m: Dictionary) -> void:
 	var w := float(m.def.w) * sc
 	var h := float(m.def.h) * sc
 	var shade := maxf(0.25, 1.0 - alt / 900.0)
-	_ellipse(l, m.p, w * 0.34 * shade, (w * 0.1 + 4.0) * shade, Color(0, 0, 0, 0.45 * shade))
+	_ellipse(l, drawn_at, w * 0.34 * shade, (w * 0.1 + 4.0) * shade, Color(0, 0, 0, 0.45 * shade))
 	var glow := _glow(m)
 	var look := _pose(m, Color(1, 1, 1, m.alpha))
 	var tint: Color = look[1]
@@ -1983,10 +1994,10 @@ func _draw_lord(l: CanvasItem, m: Dictionary) -> void:
 	# altitude in the feet, sink 0..1 cuts him at the floor; it hands the glow record to story_glow itself.
 	# The atlas otherwise.
 	if rig_host != null and rig_host.draws(m):
-		rig_host.draw(l, m, m.p + Vector2(0, 4.0 - alt), sc / m.s, tint, m.sink, look[0])
+		rig_host.draw(l, m, drawn_at + Vector2(0, 4.0 - alt), sc / m.s, tint, m.sink, look[0], drawn_at - Vector2(m.p))
 	else:
-		_mark(m, m.p + Vector2(0, 4.0 - alt), sc, m.sink * h, tint, look[0])
-		_sprite(l, m.id, Rules.frame_of(m.def, m.anim, m.at), m.p + Vector2(0, 4.0 - alt), sc, m.face, tint, m.sink * h, look[0])
+		_mark(m, drawn_at + Vector2(0, 4.0 - alt), sc, m.sink * h, tint, look[0])
+		_sprite(l, m.id, Rules.frame_of(m.def, m.anim, m.at), drawn_at + Vector2(0, 4.0 - alt), sc, m.face, tint, m.sink * h, look[0])
 	if m.sink > 0.0 and m.sink < 1.0:
 		_draw_mound(l, m)
 
@@ -2014,19 +2025,20 @@ func _glow(m: Dictionary) -> float:
 
 ## Dust mound of a burrowed dragon, drawn on the floor.
 func _draw_mound(l: CanvasItem, m: Dictionary) -> void:
+	var drawn_at: Vector2 = g.render_mob_position(m) if g.has_method("render_mob_position") else Vector2(m.p)
 	var t: float = g.state.t
 	var r: float = m.r * 0.9
 	var bob := sin(t * 18.0) * 3.0
-	_ellipse(l, m.p + Vector2(0, 4), r * 1.1, r * 0.4, Color(0, 0, 0, 0.4))
+	_ellipse(l, drawn_at + Vector2(0, 4), r * 1.1, r * 0.4, Color(0, 0, 0, 0.4))
 	for part: Array in [[Vector2(0, -6 + bob), r, r * 0.38, Color("#3b3332")], [Vector2(-r * 0.2, -10 + bob), r * 0.55, r * 0.2, Color("#483b3a")]]:
 		var pts := PackedVector2Array()
 		for k in range(17):
 			var a := PI + k / 16.0 * PI
-			pts.append(m.p + part[0] + Vector2(cos(a) * part[1], sin(a) * part[2]))
+			pts.append(drawn_at + part[0] + Vector2(cos(a) * part[1], sin(a) * part[2]))
 		l.draw_colored_polygon(pts, part[3])
 	for k in range(4):
-		var x: float = m.p.x + sin(t * 5.0 + k * 1.7) * r * 0.7
-		l.draw_rect(Rect2(x - 3, m.p.y - 8 - (k % 2) * 6 + bob, 6, 4), Color(1, 0.6, 0.25, 0.8))
+		var x: float = drawn_at.x + sin(t * 5.0 + k * 1.7) * r * 0.7
+		l.draw_rect(Rect2(x - 3, drawn_at.y - 8 - (k % 2) * 6 + bob, 6, 4), Color(1, 0.6, 0.25, 0.8))
 
 
 ## Draws a crumbling dead monster.

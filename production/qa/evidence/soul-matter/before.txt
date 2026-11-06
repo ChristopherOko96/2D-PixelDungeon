@@ -1,0 +1,5 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+
+SOUL_MATTER_FAIL: soul stream lives in the shared particle solver
+SOUL_MATTER_FAIL: pool surface accepts the actual pressure front
+SOUL_MATTER checked=2 failures=2

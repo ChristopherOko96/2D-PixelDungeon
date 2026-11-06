@@ -125,6 +125,19 @@ func _test_talent(talent: Dictionary) -> void:
 	var rt := _setup(talent)
 	var player: Dictionary = game.players[1]
 	match type:
+		"alchemy_trap":
+			var enemy := _dummy(Vector2(420,240))
+			check(_cast(talent) and tc.traps.size()==1,"%s: places a paid capsule" % id)
+			_tick(0.2)
+			check(tc.traps.size()==1,"%s: arming delay protects fresh capsule" % id)
+			_tick(0.5)
+			check(tc.traps.is_empty() and float(enemy.hp)<float(enemy.max_hp),"%s: armed contact opens once and damages target" % id)
+		"alchemy_detonate":
+			check(_cast(talent) and tc.events.any(func(e: Dictionary) -> bool: return str(e.kind)=="alchemy_trigger"),"%s: manual trigger uses shared paid cast" % id)
+		"alchemy_field":
+			check(_cast(talent) and tc.alchemist.fields.size()==1,"%s: deploys delayed apparatus" % id)
+			_tick(2.8)
+			check(tc.alchemist.fields.is_empty(),"%s: staged reaction finishes" % id)
 		"blood_mark":
 			var enemy := _dummy(Vector2(420,240))
 			check(_cast(talent),"%s casts" % id)
@@ -278,7 +291,9 @@ func _test_talent(talent: Dictionary) -> void:
 		"zone":
 			var enemy := _dummy(Vector2(420, 240))
 			check(_cast(talent, {"target": Vector2(420, 240)}) and tc.zones.size() == 1, "%s: creates the zone" % id)
-			_tick(2.2)
+			# Check short control zones while they are active, not after their
+			# duration and final slow have already expired (Rankensog: 1.5 s).
+			_tick(minf(2.2,float(talent.time)*0.8))
 			check(enemy.hp < enemy.max_hp, "%s: the zone hurts" % id)
 			if not str(talent.get("status", "")).is_empty(): check(enemy.statuses.has(str(talent.status)), "%s: the zone applies %s" % [id, talent.status])
 			if talent.has("decay"): check(enemy.get("necro_curses", {}).has("1"), "%s: magical decay persists" % id)
@@ -723,15 +738,12 @@ func _test_ultimate_stages() -> void:
 	_cast(d.talents.sniper_14)
 	check(int(branded.get("talent_mark", {}).get("owner", -1)) == 1, "Brandmal marks every enemy hit")
 	check(tc.events.any(func(e: Dictionary) -> bool: return str(e.kind) == "nova" and str(e.talent) == "sniper_14"), "Sternenfall bursts at the end of the line")
-	# Jagdgrund Stufe 3: a sprung trap leaves a poison cloud
+	# Alchemistischer Jagdgrund: larger staged apparatus and stronger final ignition.
 	rt = _setup(d.talents.trapper_14)
 	rt.soul_tier = 2
 	_cast(d.talents.trapper_14)
-	check(tc.traps.size() == int(d.talents.trapper_14.traps) + 2, "Treibjagd lays five traps")
-	tc.traps[0].pos = Vector2(game.players[1].pos)
-	_dummy(Vector2(tc.traps[0].pos))
-	_tick(0.1)
-	check(tc.zones.any(func(z: Dictionary) -> bool: return str(z.status) == "poison"), "Giftköder leaves a poison cloud")
+	check(tc.alchemist.fields.size()==1 and float(tc.alchemist.fields[0].r)>float(d.talents.trapper_14.radius_m)*float(d.meter_px),"Großes Labor expands the actual apparatus")
+	check(is_equal_approx(float(tc.alchemist.fields[0].power),1.5),"Meisterreaktion increases final ignition power")
 	# Urwürmer Stufe 3: the approved elemental pair
 	rt = _setup(d.talents.beast_14)
 	rt.soul_tier = 2

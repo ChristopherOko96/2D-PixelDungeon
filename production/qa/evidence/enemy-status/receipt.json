@@ -1,0 +1,27 @@
+{
+  "date": "2026-11-05",
+  "checks": 98,
+  "failures": 0,
+  "training": true,
+  "hashes": {
+    "src/vfx/enemy_status_fx.gd": "5517d09639d3cc98c061771565f4ad234b1e0c7ec46e8c8a20d26c2f3fe1cded",
+    "src/vfx/feedback.gd": "4a1595372b9d2cd96ff6ac525003f3b11a77819183cbe4974b632b0c2dc436bd",
+    "src/vfx/particles.gd": "e50e343e3c6d4f62e7301d1a41b80ff444bcabf7a05351a8a3fd45db50716971",
+    "src/hero/story_feel.gd": "a9b1d3650d491d3ef22664c7503fc75623963396179a49c1f9ab3962ecb74d0a",
+    "src/dungeon_view.gd": "4322822682fda434398ee9196adb5bdb549f8dfd7a574db5c9a3cfa76128959c",
+    "assets/data/enemy_status_fx.json": "eae2bba77bff60f5fb98b14f1ae2b4e41fce0e091e717c032d07a6c94780651f",
+    "tests/enemy_status_fx_test.gd": "5792ae098c263177e4edfaf6c0dfa2c9e5c2b1152b09cfdaeb4990c0702f052e",
+    "scripts/capture_enemy_status.gd": "6ddb01fb9ae38009ec2e2c992f636016ec42fd58114ffb63e92c5f5b21c7591a",
+    "scripts/capture_enemy_status_story.gd": "9bd4d6861de13fa9659fe32afab9f1e40186ef3551597bac26ff0d84229f258a",
+    "production/qa/evidence/enemy-status/01-status-detail.png": "c60ac4efbe500e8946e47118c88b86938422c4d093449f386acfc3f4198e96ba",
+    "production/qa/evidence/enemy-status/01-status-overview.png": "69d97d60ff58b17b8dc04c3f6ed3454b59b3010a1190caba8becbb0124512a19",
+    "production/qa/evidence/enemy-status/02-status-motion.png": "9ae52dd8a3b9b2c23fee01b0c98ab87520d52d6cbd400eceba8dec743247ddf2",
+    "production/qa/evidence/enemy-status/03-cleansed.png": "7fdc52c73c9c6dd5ce2d080cdb17eddb86fbb7fc3a90892a18b4207256a3e06c",
+    "production/qa/evidence/enemy-status/04-hell-detail.png": "109660d12d2edde1576f5517b1278fbb98d151a5584a7330d2082bc7e8b15fa5",
+    "production/qa/evidence/enemy-status/04-hell.png": "e4a9c97aae7278c9ca44edd2ac42eb3b763f8b99d080ea665bdc74e3fe173bbe",
+    "production/qa/evidence/enemy-status/05-frost-detail.png": "dd178ad27ea3e5960f3a83ae8355beba64b5bfd1bb6ddaa31e532ee15689ba6b",
+    "production/qa/evidence/enemy-status/05-frost.png": "27cf75bca5a3539d1074ef5286f156a0fbc29e1539e157b1af2401d004d3c61f",
+    "production/qa/evidence/enemy-status/06-krypta-detail.png": "8e997e272851122770d39963609a0acefa48273daa3880b7d26b4fc009a8ebbc",
+    "production/qa/evidence/enemy-status/06-krypta.png": "fd966e79c02c3778fff7fae2d93539cecccd45aa283730314377d4507f49413a"
+  }
+}

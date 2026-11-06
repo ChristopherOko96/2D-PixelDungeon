@@ -39,7 +39,9 @@ func test_ring_leaves_a_delayed_hollow_field() -> void:
 	check(tc.snapshot().zones.is_empty(), "rim hidden while rig souls expand outward")
 	_tick(0.3)
 	check(not edge.statuses.has("soul_bind"), "rim has no control before wave arrives")
-	_tick(0.45)
+	# The current class revamp expands for ring_expand=1s; old 0.75s
+	# assumptions observed a still-pending field. Follow the shared data.
+	_tick(float(d.talents.soul_3.ring_expand)-0.3+0.1)
 	check(tc.snapshot().zones.size() == 1, "host publishes rim after expansion")
 	check(not center.statuses.has("soul_bind") and edge.statuses.has("soul_bind"), "only annulus binds, center stays free")
 	rt.hero_target = -1
@@ -51,7 +53,7 @@ func test_ring_leaves_a_delayed_hollow_field() -> void:
 	check(is_equal_approx(float(edge.hp), hp), "rim adds control without multiplying nova damage")
 	game.players[1].pos = Vector2(500, 240)
 	check(Vector2(zone.pos) == Vector2(300, 240), "cast ring remains at its original ground position")
-	_tick(4.3)
+	_tick(float(d.talents.soul_3.ring_time)-0.9+0.2)
 	check(tc.zones.is_empty(), "rim expires five seconds after expansion")
 
 func test_ring_uses_shared_grasp_lockout_and_wall_checks() -> void:
@@ -59,7 +61,7 @@ func test_ring_uses_shared_grasp_lockout_and_wall_checks() -> void:
 	var enemy := _dummy(Vector2(400, 240))
 	var boss := _dummy(Vector2(300, 340), true)
 	_cast(d.talents.soul_3)
-	_tick(0.7)
+	_tick(float(d.talents.soul_3.ring_expand)+0.1)
 	if tc.zones.is_empty():
 		check(false, "rim exists for shared control checks")
 		return
@@ -73,7 +75,7 @@ func test_ring_uses_shared_grasp_lockout_and_wall_checks() -> void:
 	game.current_layout.obstacles = [[335, 0, 12, 480]]
 	var hidden := _dummy(Vector2(400, 240))
 	_cast(d.talents.soul_3)
-	_tick(0.8)
+	_tick(float(d.talents.soul_3.ring_expand)+0.1)
 	check(not hidden.statuses.has("soul_bind") and hidden.hp == hidden.max_hp, "nova and rim cannot affect enemies behind wall")
 	game.current_layout.obstacles = []
 

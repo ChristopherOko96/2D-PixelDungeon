@@ -103,6 +103,7 @@ func draw(l: CanvasItem, m: Dictionary, feet: Vector2, size: float, tint: Color,
 		return false
 	var rig: Dictionary = library.rig(name)
 	var e: Dictionary = (m.rig_e as Dictionary).duplicate()
+	e.render_shift = g.render_mob_position(m) - Vector2(m.p) if g.has_method("render_mob_position") else Vector2.ZERO
 	e.tint = Color(tint.r, tint.g, tint.b, 1.0)
 	e.alpha = tint.a
 	e.size = size

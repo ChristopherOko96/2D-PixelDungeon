@@ -25,7 +25,7 @@ static func prepare() -> void:
 	solver = Renderer.new(library)
 
 ## Independently breathing jaws spring outward on trigger, then fade.
-static func parts(at: Vector2, art: float, clock: float, seed: int, progress := -1.0, spread := 1.0) -> Array:
+static func parts(at: Vector2, art: float, clock: float, seed: int, progress := -1.0, spread := 1.0, tint := Color.WHITE) -> Array:
 	prepare()
 	var pose := Poses.blank()
 	var root_transform := Transform2D.IDENTITY
@@ -40,5 +40,25 @@ static func parts(at: Vector2, art: float, clock: float, seed: int, progress := 
 	var world: Dictionary = solver.solve_pose(rig,pose,at,1,art)
 	var out: Array = []
 	for part: Dictionary in rig.parts:
-		out.append({"id":part.id,"texture":part.texture,"bounds":part.bounds,"transform":world[part.id],"tint":Color(1,1,1,1.0 if progress<0 else 1-progress)})
+		out.append({"id":part.id,"texture":part.texture,"bounds":part.bounds,"transform":world[part.id],"tint":Color(tint,tint.a*(1.0 if progress<0 else 1-progress))})
+	return out
+
+## Existing native tooth cutouts travel inward on independent curved joints.
+static func lure_parts(at: Vector2, radius: float, art: float, clock: float, seed: int, fade: float, config: Dictionary = {}) -> Array:
+	prepare()
+	var pose:=Poses.blank()
+	var root_transform:=Transform2D.IDENTITY
+	for n in range(rig.parts.size()):
+		var part: Dictionary=rig.parts[n]
+		var p:=fposmod(clock*float(config.get("speed",1.4))+n*0.618,1)
+		var angle:=float(n-1)*TAU/8+seed*0.17+p*float(config.get("turns",0.22))*TAU
+		var r:=0.0 if n==0 else radius/art*lerpf(1.0,float(config.get("min_radius",0.12)),p)
+		var size:=float(config.get("part_scale",0.6))*(0.7+sin(p*PI)*0.6)
+		var desired:=Transform2D(angle+PI*0.5,Vector2.from_angle(angle)*r)*Transform2D(0,Vector2.ONE*size,0,Vector2.ZERO)*Transform2D(0,-Vector2(part.center))
+		Poses.P(pose,str(part.id)).local_transform=desired if n==0 else root_transform.affine_inverse()*desired
+		if n==0: root_transform=desired
+	var world: Dictionary=solver.solve_pose(rig,pose,at,1,art)
+	var out: Array=[]
+	for part: Dictionary in rig.parts:
+		out.append({"id":part.id,"texture":part.texture,"bounds":part.bounds,"transform":world[part.id],"tint":Color(0.75,1.5,0.65,fade)})
 	return out

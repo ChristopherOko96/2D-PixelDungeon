@@ -8,7 +8,8 @@ func check(ok: bool, label: String) -> void:
 func _initialize() -> void:
 	var parts:=Art.parts(Vector2(100,100),Vector2.RIGHT,0.2,2)
 	check(parts.size()==4,"four real articulated source masks")
-	var source:=Image.load_from_file("res://assets/sprites/0x72/weapon_arrow.png")
+	var spec: Dictionary=JSON.parse_string(FileAccess.get_file_as_string("res://assets/data/marksman_rig.json"))
+	var source: Image=(load(str(spec.images.marksman_arrow)) as Texture2D).get_image()
 	var total:=0
 	var assigned:=0
 	for y in range(source.get_height()):

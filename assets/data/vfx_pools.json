@@ -1,5 +1,18 @@
 {
  "_note": "Physics-based pools on the art grid (src/vfx/splat_shape.gd shape, src/vfx/pool_paint.gd drawing). A pool runs out from where it lands along its flight; walls and solid props stop it and its volume runs on along them (a corner fills, the open floor gets a stretched blot). squash = how flat it lies (the floor seen at a slant); momentum 0..1 = how far it keeps sliding along its flight; spread_time = s it takes to run out to its rim; edge_time = s its rim goes before its middle at the end; rebake_hz = how often a changing pool is shaded again at most; anim_hz = the frame rate of living materials (fire, lava); bake_budget_ms = ms per frame for working out and shading the fields again, in slices (the one waiting longest first, a new one at once; the last picture shows until the new one is done), so their costs do not pile up in one frame; lay_budget_ms = ms per frame for laying a pool into a field that holds cells already (from its middle out, far ahead of its spreading; on empty floor it goes in at once), lay_now_cells = a pool of at most this many cells is laid at once; catch_up_after_ms / catch_up_ms = a picture or pool waiting longer than this gets this many ms a frame instead of the budget above (a huge field does not lag far behind, the frames stay bounded); thread_cells = a pool of this many cells or more gets its shape worked out on a worker thread (see _field_note). materials: style (liquid, void, ice, fire, lava), droplets = drops a thrown splat flings ahead, bubbles = bubbles at a time, splash = what a landing pool throws (drops, chips, embers, none), ripple = speed of its rings (0 none), steps = wet steps behind waders, ramp = opaque colours by role (spec specular, hi highlight and north rim, lite light swirls, body, shade, deep south row and lip, outline). Materials are opaque (no alpha); see production/qa/evidence/crypt-vfx-review. void_pull = [pull, spin] px/s of a void pool's well (it pulls loose things in), void_motes = streaks circling in per second.",
+ "surface_motion": {
+  "_note": "Cosmetic fixed-step spring mass shared by all fluid pool surfaces. Units documented in docs/SEELEN-MATERIE.de.md; gameplay cells stay authoritative.",
+  "spacing_art": 12,
+  "mesh_axis_max": 32,
+  "max_nodes": 2048,
+  "spring": 75,
+  "damping": 9,
+  "coupling": 35,
+  "pressure_share": 0.3,
+  "max_speed_art": 70,
+  "max_offset_art": 4,
+  "idle_ttl": 4
+ },
  "squash": 0.75,
  "momentum": 0.55,
  "spread_time": 0.35,
@@ -15,7 +28,7 @@
  "materials": {
   "poison": {
    "style": "liquid",
-   "look": "miasma",
+   "look": "liquid",
    "churn_hz": 2.5,
    "veil": [
     0.88,

@@ -1,59 +1,146 @@
-# Krieger – drei Spezialisierungen
+# Krieger: Einhandkrieger, Berserker und Paladin
 
-**Konzept vom 03.11.2026, noch nicht implementiert.** Grundlage sind die vorhandenen Zweige Berserker, Schildwächter und Klingenmeister. Der Auftrag ist hier zunächst ein Konzept; bestehende Krieger-Fähigkeiten werden dadurch nicht ersetzt.
+Stand: 06.11.2026. **Vorschlag zur Abstimmung**, einschließlich drei statischer
+Sprite-Entwurfstafeln. Kein Rigging, keine Aktivierung im Spiel und keine
+Balancefreigabe. Die vorhandenen Talentbäume funktionieren weiterhin unverändert.
 
-## Gemeinsamer Kern
+## Gemeinsame Grundlage
 
-Der Krieger kämpft tatsächlich im Nahkampf. Er erzeugt **Wut** durch bestätigte eigene Treffer und erlittenen Schaden. Vorschlag zum ersten Abstimmen: 100 Wut Maximum, acht Wut je eigenem Nahkampftreffer mit begrenzter Vergabe pro Sekunde; zehn Wut bei einem wirklichen eingehenden Treffer, höchstens einmal pro Sekunde. Nach vier Sekunden ohne Kampf sinkt Wut langsam. Keine Wut durch Luftschläge, eigenes Blut, Pfützen oder bloße Trefferanimationen.
+Der Krieger bleibt eine Klasse mit drei erkennbar verschiedenen Wegen.
+Einhandkrieger: Timing und verlässliche Schwertkontrolle. Berserker: aggressive
+Angriffe und ein sichtbarer, zeitlich begrenzter Wutrausch. Paladin: Schwert,
+Schild, heilige Bodenflächen und Schutz, auch im Solospiel sinnvoll.
 
-Alle drei Zweige behalten den gemeinsamen **Shift-Dash**: drei Meter, eine Ladung, vier Sekunden Wiederaufladung, kurze Unverwundbarkeit. Schildheben liegt auf einer eigenen Fähigkeit. Ultimates setzen den Dash nicht zurück. Vier aktive Leistenplätze und R bleiben erhalten; Alternativfähigkeiten werden im Baum ausgetauscht.
+Die bestehenden 14 Plätze je Spezialisierung bleiben als Ziel erhalten:
+sechs aktive Fähigkeiten auf 1/3/5/7/9/11, sechs passende passive Vertiefungen
+auf 2/4/6/8/10/12, ein Meisterschaftspassiv auf 13 und die Ultimative auf 14.
+Aktive Fähigkeiten haben drei Ränge; die Ultimative bleibt ein besonderer
+Ein-Rang-Abschluss mit ihren bestehenden späteren Ausbauplätzen. Es entstehen
+keine zusätzlichen Tastenleisten. Alle Zahlen unten sind erste Tuningvorschläge.
 
-| Zweig | Schwerpunkt | Ultimate |
+## 1. Einhandkrieger — präzise und körperlich
+
+**Aussehen:** blauer Waffenrock, offener Stahlhelm, kurzes blaues Helmbuschband,
+ein gerades Einhandschwert. Freie Nebenhand. Goldmagie und großer Schild gehören
+zum Paladin, damit die Silhouetten unterscheidbar bleiben.
+
+**Kampfschleife:** Gegner lesen → parieren oder vorstoßen → kurze Öffnung
+nutzen → mit kontrollierten Hieben abschließen. Ein verpasster Konter ist kein
+kostenloser Schutz; Richtung und Timing sind entscheidend.
+
+| Platz | Fähigkeit | Vorgeschlagene Wirkung und sichtbare Aktion |
 | --- | --- | --- |
-| **Berserker / Koloss** | Große Nahkampftreffer, Gruppen zerschlagen, Wut bewusst ausgeben | **Koloss der Raserei**: vorübergehend größer, breitere Hiebe und mächtiger Abschluss |
-| **Schildwächter / Bastion** | Gegner binden, frontale Treffer abfangen, Verbündete schützen | **Lebende Festung**: bewegliche Schutzstellung mit klarer Vorderseite |
-| **Klingenmeister / Duellant** | Präzise Trefferketten, Paraden und gezieltes Ausschalten | **Klingenrausch**: kurze kontrollierte Schlagfolge mit schwerem Abschluss |
+| 1 | Spaltschlag | Ein kräftiger frontaler Schwerthieb. Kurzes Ausholen, breiter stahlweißer Schnitt und klarer Trefferimpuls. |
+| 3 | Parade und Riposte | Etwa 0,45 s gerichtete Parade gegen einen direkten Treffer. Erfolg öffnet einen kurzen Konter; ein Funkenschlag bestätigt die tatsächliche Parade. DoT bleibt wirksam. |
+| 5 | Vorstoß | Kurzer gerader Antritt mit Schwertspitze nach vorn. Stoppt an Wänden; keine Teleportation durch Hindernisse. |
+| 7 | Rundschnitt | Breiter Schnitt vor und seitlich um den Krieger. Der Rücken bleibt eine erkennbare Schwachstelle. |
+| 9 | Knaufstoß | Naher Unterbrecher gegen normale Gegner. Bosse erhalten nur eine begrenzte, gegen Dauerverkettung geschützte Reaktion. |
+| 11 | Kampfruf | Kurzer persönlicher Standhaftigkeitsbonus und begrenzter Schutzpuffer. Sichtbarer bodennaher Druckring, der keine Gegner durch Wände trifft. |
+| 14 | Meister der Klinge | Drei schwere, gezielt ausgerichtete Schläge in etwa 2,2 s: links, rechts, abschließender Vorwärtshieb. Jeder Schlag mit eigener Vorbereitung und Trefferbestätigung. Keine bildschirmfüllende Lichtwolke. |
 
-## 1. Berserker – Koloss der Raserei
+**Passive Vertiefungen:** Blutung des Spaltschlags, bessere Riposte, geringere
+Vorstoßkosten, breiterer Rundschnitt, längeres Unterbrechungsfenster gegen normale
+Gegner und effizienterer Kampfruf. Meisterschaft: belohnt wechselnde Angriffe
+nach erfolgreicher Parade, ohne ein endloses Parieren zu ermöglichen.
 
-Er soll sich wie ein schwerer, aggressiver Frontkämpfer anfühlen. Die Verwandlung verändert seine Angriffe, statt nur Schadenszahlen zu erhöhen.
+## 2. Berserker — Wut wird zum sichtbaren Ausnahmezustand
 
-- **Spalter:** schwerer Hieb im breiten Bogen; trifft mehrere erreichbare Gegner.
-- **Blutspalt:** Schlag mit Blutung. Erfolgreiche Nahkampftreffer verlängern die selbst verursachte Blutung am Gegner begrenzt, ohne endlos stapelnde DoTs.
-- **Erdbruch:** kurzes Ausholen, Stampfen und eine sichtbare Bodenwelle; normale Gegner taumeln, Bosse werden nicht festgesetzt.
-- **Kriegsschrei:** Gegner im Umkreis auf sich ziehen und kurz robuster werden; keine Schadensimmunität.
-- **R: Koloss der Raserei:** Vorschlag 60 Wut, acht Sekunden, 60 Sekunden Abklingzeit. Größere Silhouette und Reichweite, rund 40 % mehr Nahkampfschaden, dafür etwas langsamer. Spalter wird zum beidhändigen Flächenschlag, Erdbruch zum schweren Stampfer. Am Ende ein vorbereiteter Schlussstoß statt einer automatischen zweiten Ulti.
+**Aussehen:** breite Zweihandaxt, rotbraunes wildes Haar, Fellschulter, dunkles
+Eisen und weinrotes Tuch. Gleiche kleine Chibi-Grundproportionen. Im Rausch
+angespannter Stand, glühende Augen und einzelne rotorange Wutfetzen; die Figur
+bleibt vollständig lesbar. Die Wutfarbe ist keine neue Feuer-Schadensart.
 
-Passive Richtung: Wut bei mehreren tatsächlich getroffenen Gegnern, begrenzter Schaden gegen blutende Ziele, kurze Zähigkeit nach einem schweren Treffer. Kein pauschales permanentes Lebenssaugen, keine Unverwundbarkeit während der gesamten Verwandlung. Gegnerangriffe bleiben sichtbar und müssen weiter ausgewichen werden.
+**Kampfschleife:** Nahkampftreffer bauen Wut auf → einen guten Moment suchen →
+Rausch entfesseln → während der begrenzten Dauer aggressiv bleiben. Wut ist ein
+vorgeschlagener Zusatz zur bisherigen Ausdauer, kein neuer gemeinsamer Pool für
+alle Kriegerwege. Die Anzeige gehört an die Fähigkeit, nicht in ein neues HUD.
 
-**Rig-Idee:** vorhandene Hand-, Arm-, Waffen- und Rumpfgelenke. Gewicht durch Schultervorbereitung, verzögerten Armzug, Rückstoß und Erholung. Keine starre Ganzbild-Vergrößerung als fertige Animation. Eine konkrete Koloss-Grafik würde vor Aktivierung wie vereinbart separat gezeigt und freigegeben.
+| Platz | Fähigkeit | Vorgeschlagene Wirkung und sichtbare Aktion |
+| --- | --- | --- |
+| 1 | Spaltende Axt | Schwerer Axthieb mit kurzer Blutung. Hoher Rückstoß der eigenen Schultern; Gegnerreaktion erst beim echten Treffer. |
+| 3 | Wutschrei | Unterbricht nahe normale Gegner kurz und erzeugt etwas Wut. Keine automatische Bossbetäubung. |
+| 5 | Brechersprung | Kurzer Sprung mit bodennahem Einschlag. Ziel wird gegen Wände und begehbaren Boden geprüft. |
+| 7 | Wildhieb | Langsamer, breiter Schlag mit deutlich sichtbarer Vorbereitung. Trifft hart, lässt aber ein kurzes Erholungsfenster. |
+| 9 | Eisenwirbel | Etwa 1,2 s beweglicher Axtwirbel bei reduzierter Laufgeschwindigkeit. Begrenzte Trefferintervalle je Ziel statt Schaden pro Bild. |
+| 11 | Blutdurst | Die nächsten wenigen echten Waffentreffer heilen einen begrenzten Betrag. Kein Heilen an Kulisse, eigenen Beschwörungen oder bereits toten Gegnern. |
+| 14 | Entfesselter Berserker | Der Kern des Weges: etwa 8 s Rausch, vorgeschlagen +35 % Nahkampfschaden und +25 % Angriffstempo. Kurzer Schrei beim Start, tieferer Stand, beschleunigte Axtschwünge und echte Einschlagsimpulse. Keine pauschale Unverwundbarkeit. |
 
-## 2. Schildwächter – Bastion der Gruppe
+**Wut-Regeln als Startpunkt:** 0–100; tatsächliche eigene Nahkampftreffer und
+erlittener Gegnerschaden erzeugen Wut mit einem zeitlichen Limit. Kein Aufbau
+durch Selbstschaden, Pfützen im leeren Raum oder beschworene Verbündete. Rausch
+benötigt mindestens 60 Wut und verbraucht sie. Seine normale Abklingzeit bleibt
+eine zusätzliche Grenze. Keine automatische Aufladung durch Raumwechsel.
 
-Sein Vorteil ist kontrollierte Sicherheit. Er kann Räume ordnen, verliert aber Angriffstempo und Ressourcen, wenn er jeden Treffer stehen bleibt.
+**Passive Vertiefungen:** Wutaufbau, Schrei-Reichweite, Brecherlandung,
+Wildhieb-Durchschlag, Wirbelkontrolle und begrenzte Blutdurst-Heilung.
+Meisterschaft: echte aufeinanderfolgende Treffer verlängern den Rausch nur bis
+zu einer festen Obergrenze, etwa insgesamt 10 s. Kein endloser Rausch.
 
-- **Schildschlag:** kurzer Nahkampftreffer, unterbricht normale Gegner. Bosse erhalten nur den Schaden.
-- **Schildhaltung:** eine gehaltene Fähigkeit mit klarer Front, kurzer Höchstdauer und eigener Abklingzeit. Von hinten und durch Bodenfelder bleibt er verwundbar. Abfangen kostet Wut; echte blockierte Treffer können begrenzt Wut zurückgeben.
-- **Herausforderung:** sichtbarer Ruf, der normale Gegner im Umkreis bindet. Kein blindes Teleportieren und keine erzwungene Boss-Starre.
-- **Schutzstoß:** Schildschub, der Platz schafft und eine begrenzte Schutzreserve für nahe Verbündete erzeugt. Keine beliebig erneuerbare Vollheilung.
-- **R: Lebende Festung:** Vorschlag 60 Wut, acht Sekunden, 60 Sekunden Abklingzeit. Breitere Frontabwehr und begrenzte gemeinsame Schadensabfangreserve für nahe Gruppenmitglieder; eigener Schaden und Bewegung sinken. Die Reserve ist endlich und zerbricht sichtbar.
+**Spätere Ultimative-Ausbauideen:** ein einmaliger kräftiger Einschlag bei
+Aktivierung; danach ein begrenzter Abschluss-Axthieb, dessen Stärke von
+gelandeten Angriffen während des Rauschs abhängt. Nicht bereits Teil des Spiels.
 
-Passive Richtung: zusätzliche Wut für echte Blocks, längere Bedrohungsbindung, begrenzte Schutzreserve nach erfolgreicher Parade. Der Schild muss als eigenes Rig-Teil reagieren: Handgelenk federt, Schulter nimmt den Treffer auf, Schild kippt beim Brechen. Keine unsichtbare Rundum-Schutzblase als Hauptlesbarkeit.
+## 3. Paladin — heiliger Frontkämpfer
 
-## 3. Klingenmeister – präziser Duellant
+**Aussehen:** silberne und elfenbeinfarbene Rüstung, zurückhaltende Goldkanten,
+pflaumenfarbener Umhang, gerades Schwert und großer Sonnenschild. Goldene
+Partikel steigen ruhig auf; Segenszeichen bleiben klein und bodennah.
 
-Er setzt einzelne Ziele unter Druck und lebt von gutem Timing. Seine Identität ist keine zweite Koloss-Verwandlung und kein dauerhafter Wirbel.
+**Kampfschleife:** Gegner in die geweihte Fläche führen → mit Schwert und Schild
+kämpfen → Schutz oder Heilung im passenden Moment einsetzen. Kein dauerhafter
+Heilautomat und kein ausschließlich für Gruppen nützlicher Unterstützer.
 
-- **Kreuzhieb:** zwei klar erkennbare Schnitte; der zweite trifft bei korrekter Position besonders gut.
-- **Parade:** kurzes aktives Zeitfenster. Ein wirklich abgewehrter frontaler Treffer schaltet einen Gegenstoß frei; bloßes Drücken gibt keinen Bonus.
-- **Durchstoß:** schmaler Nahkampfangriff mit begrenzter Rüstungsdurchdringung.
-- **Hinrichtung:** hoher Schaden gegen angeschlagene normale Ziele; Bosse bekommen einen begrenzten Schadensbonus und werden nicht automatisch getötet.
-- **R: Klingenrausch:** Vorschlag 50 Wut, 60 Sekunden Abklingzeit. Drei vorbereitete Nahkampfaktionen über wenige Sekunden, dann ein schwerer Abschluss. Ziele und Bewegungen bleiben kollisionsgeprüft; kein unkontrollierter Sprung durch eine Wand. Ein fehlender oder toter Gegner beendet die betreffende Aktion sauber.
+| Platz | Fähigkeit | Vorgeschlagene Wirkung und sichtbare Aktion |
+| --- | --- | --- |
+| 1 | Lichtklinge | Frontaler Schwerthieb mit kurzem goldenen Schnittbogen. Heiliger Stil, keine zusätzliche unsichtbare Fernkampfexplosion. |
+| 3 | Schildstoß | Kurzer Schritt und körperlicher Schildtreffer. Unterbricht normale Gegner; Bossreaktion bleibt begrenzt. |
+| 5 | Weihe | Etwa 5 s klar begrenztes, festes Bodensiegel mit diskreten Schadenspulsen gegen Gegner. Kein Feuer und keine Flüssigkeit; vorhandene Elementpfützen werden nicht verdeckt. |
+| 7 | Handauflegen | Begrenzte Heilung für sich selbst oder einen nahen, lebenden Verbündeten in Zielrichtung. Außer Reichweite bleibt die Aktivierung gesperrt. Keine Wiederbelebung als Nebeneffekt. |
+| 9 | Urteil | Markiert einen sichtbaren Gegner. Eigene direkte Treffer lösen begrenzte Lichtimpulse aus; keine rekursiven Ketten aus DoT, Pfützen oder Impulsen. |
+| 11 | Glaubensschild | Kurzer Schutzpuffer für sich oder einen nahen Verbündeten. Bricht sichtbar beim Verbrauch; wiederholte Anwendungen stapeln keine endlose Schutzmenge. |
+| 14 | Sonnenbollwerk | Etwa 6 s festes Schutzsiegel: Verbündete darin erhalten begrenzten Schutz, Gegner erhalten langsame heilige Pulse. Aufgerichteter Schild, klarer goldener Rand und anfangs ein geteilter Sonnenring über dem Helm. Keine pauschale Unverwundbarkeit und kein voller Weißblitz. |
 
-Passive Richtung: begrenzte Kombostufen, Wut-Rückgabe nach einer echten Parade, Präzisionsbonus beim Wechsel von schwachem zu schwerem Angriff. Trefferketten enden bei Untätigkeit; kein endloser Krit-Bonus auf allen Schadensquellen.
+**Passive Vertiefungen:** stärkere Lichtklinge, Schildkontrolle, Weihe-Dauer,
+Heileffizienz, begrenzte Urteilsimpulse und Schutzpuffer. Meisterschaft: eine
+erfolgreiche Schutzaktion stärkt den nächsten eigenen Lichtklingenhieb, mit
+Auslösegrenze und ohne Selbstrekursion.
 
-## Was vor Umsetzung festzulegen wäre
+## Sprite-Vorschauen
 
-Die Zahlen oben sind **Startvorschläge für einen späteren Prototyp**, keine bereits gültigen Balanceregeln. Zuerst den Berserker mit normalen Hieben und achtsekündigem Koloss prüfen, danach Schildfront/Parade, anschließend den Duellanten. Neue Umrissgrafik erst als kleine freizugebende Art-Probe. Zustandsdauer, Wutkosten, Abfangreserven und Treffergrenzen kommen in Daten statt in UI-Logik.
+- [Einhandkrieger](../assets/concepts/warrior-v1/einhandkrieger-sheet.png)
+- [Berserker](../assets/concepts/warrior-v1/berserker-sheet.png)
+- [Paladin](../assets/concepts/warrior-v1/paladin-sheet.png)
 
-Abnahmekriterien: Gegner vor und hinter der Figur unterscheiden sich, Wände begrenzen jeden Angriff, Bosse werden nicht dauerhaft kontrolliert, kein Wutgewinn durch Nullschaden und keine Gratis-Ulti durch Menüwechsel. Im Koop rechnet allein der Host Treffer, Wut, Schutz und Bedrohung ab. Zwei lokale Prozesse wären ein Techniknachweis, keine LAN- oder Spielgefühl-Abnahme.
+Je Tafel: oben Vorderansicht, Seitenansicht und Rückansicht; unten Angriff,
+charakteristische Aktion und Ultimative. Das sind generierte große
+Pixelstil-Masterbilder zur Beurteilung von Figur, Palette, Waffe und Effekten.
+Sie sind **keine fertigen nativen 32×32-Dateien** und keine Animationssequenzen.
+Die Ansichten sind vor einem späteren Rigging noch auf Waffenhand, Proportionen,
+Fußanker und tatsächlich verfügbare Pixel zu vereinheitlichen. Die Goldbarriere
+der Paladin-Tafel zeigt das visuelle Motiv, noch keine physische Projektilwand.
+
+Ziel für die spätere Produktion: 32×32-Körper, harte Pixel, ganzzahlige
+Darstellung, getrennte Waffen- und Effektbereiche. Figurenteile: Kopf, Torso,
+Arme/Hände und Beine; dazu Schwert, Axt beziehungsweise Schild und Umhang.
+Keine Änderung an Raumgrafik, Kollisionsradien oder anderen Klassen.
+
+Generiert mit dem eingebauten Imagegen-Werkzeug. Die vollständigen drei Prompts
+werden in `assets/concepts/warrior-v1/prompts.json` aufbewahrt. Der Ordner ist
+per `.gdignore` aus dem Godot-Import ausgeschlossen.
+
+## Spätere Umsetzung und offene Entscheidung
+
+Vorgeschlagene Zuordnung: `blade` → Einhandkrieger, `berserk` → Berserker,
+`guard` → Paladin. Das ist erst ein Plan: bestehende Speicherdaten behalten
+ihre IDs, erhalten aber keine stillschweigend andere Mechanik. Vor dem Umbau
+braucht es eine bewusste Zuordnung beziehungsweise Talent-Rückerstattung für
+betroffene Bäume und einen kompatiblen Regelstand für Mehrspieler.
+
+Vor Rigging zuerst die drei Erscheinungsbilder und die Waffenauswahl abstimmen.
+Danach native Schlüsselbilder und Körper-/Waffentrennung erstellen. Anschließend
+Rigging, Bewegungen und getroffene Gegner mit den bestehenden Effekt- und
+Partikelsystemen verbinden. Kampfwerte und Schutz/Heilung/Wut werden erst dann
+hostseitig umgesetzt und in den realen Story-Welten überprüft.
+
+Diese Lieferung ist ein Konzept mit statischen Vorschauen; es wurden dafür
+keine neuen Gameplay-, Netzwerk- oder Performance-Ergebnisse behauptet.

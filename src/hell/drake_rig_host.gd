@@ -688,8 +688,9 @@ func draws(m: Dictionary) -> bool:
 ## swelling), `tint` (rgb multiplier: the transformation glow, an echo's
 ## violet; alpha fades the figure) and `sink` 0..1 of its height under the
 ## floor (burrowing). Hit flash, attack clip, lost parts and the death follow
-## m. Hands the glow record to glow_mark. Returns the figure's top y or NAN.
-func draw(l: CanvasItem, m: Dictionary, foot: Vector2, size: float = 1.0, tint: Color = Color.WHITE, sink: float = 0.0, pose: Dictionary = {}) -> float:
+## m. render_shift is presentation-only and is undone for collision/sockets.
+## Hands the glow record to glow_mark. Returns the figure's top y or NAN.
+func draw(l: CanvasItem, m: Dictionary, foot: Vector2, size: float = 1.0, tint: Color = Color.WHITE, sink: float = 0.0, pose: Dictionary = {}, render_shift := Vector2.ZERO) -> float:
 	if not draws(m): return NAN
 	var rig: Dictionary = library.rig(rig_of(m))
 	var S := float(rig.scale) * size
@@ -704,9 +705,13 @@ func draw(l: CanvasItem, m: Dictionary, foot: Vector2, size: float = 1.0, tint: 
 		"shadow": false, "hit_part": "" if whole_flash else str(m.get("rig_hit_part", "")), "hit_flash": flash,
 		"hits": int(m.get("rig_hits", 0)), "lost": Array(m.get("parts_lost", [])).duplicate(), "dying_p": _dying_p(m), "tumble": float(m.get("tumble", 0.0))}
 	e.merge(phase, true)
+	e.render_shift = render_shift
 	var top: float = renderer.draw_enemy(l, e, foot - Vector2(0, (float(rig.ground.y) - float(rig.center.y)) * S))
 	m.rig_drawn = frame_index
-	m.rig_foot = foot
+	# Renderer/lighting use interpolated feet; collision and attack sockets undo
+	# only that translation and retain the same animated part pose as before.
+	m.rig_foot = foot - render_shift
+	m.rig_render_shift = render_shift
 	m.rig_cut = cut
 	var def: Variant = m.get("def")
 	if def is Dictionary and def.has("w") and def.has("h"): _atlas[int(m.uid)] = Vector2(float(def.w), float(def.h))
@@ -751,7 +756,7 @@ func bind_world(blocked: Callable) -> void:
 func point(m: Dictionary, id: String, fallback: Vector2) -> Vector2:
 	if not _fresh(m): return fallback
 	var at: Variant = _records.get(int(m.uid), {}).get("points", {}).get(id)
-	return at if at is Vector2 and (at as Vector2).is_finite() else fallback
+	return at - Vector2(m.get("rig_render_shift", Vector2.ZERO)) if at is Vector2 and (at as Vector2).is_finite() else fallback
 
 
 ## Where source point `at` of part `id` of `m` was last drawn (world px): a
@@ -760,7 +765,7 @@ func point(m: Dictionary, id: String, fallback: Vector2) -> Vector2:
 func part_point(m: Dictionary, id: String, at: Vector2, fallback: Vector2) -> Vector2:
 	if renderer == null or not _fresh(m): return fallback
 	var p: Vector2 = renderer.world_point(RigRenderer.key_of(m), id, at)
-	return p if p.is_finite() and p != Vector2.ZERO else fallback
+	return p - Vector2(m.get("rig_render_shift", Vector2.ZERO)) if p.is_finite() and p != Vector2.ZERO else fallback
 
 
 ## Where an act of `kind` starts (cfg.muzzles: bolts, breath and sweep from
@@ -959,6 +964,7 @@ func _candidates(m: Dictionary) -> Array[Dictionary]:
 		if _fresh(m):
 			if not drawn.has(id): continue
 			xform = drawn[id]
+			xform.origin -= Vector2(m.get("rig_render_shift", Vector2.ZERO))
 		else:
 			if _hidden(rig, m, id): continue
 			xform = rest

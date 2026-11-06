@@ -126,6 +126,7 @@ func step(actor: Variant, dt: float) -> Dictionary:
 			return out
 		out.gas_mat = mat
 		var rule := ElementRules.gas(mat)
+		if not rule.is_empty() and not host.gas_exempt(actor,mat): host.blind_sight(actor,float(rule.get("blind_sight_s",0)))
 		if not rule.is_empty() and not host.gas_exempt(actor, mat) and not ElementRules.immune(tags, rule):
 			out.gas = rule
 			out.blind = float(rule.get("blind_shots", 0.0))

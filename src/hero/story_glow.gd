@@ -187,9 +187,9 @@ func frame() -> void:
 		var full := float(ElementRules.vision().get("dark", 0.94))
 		dark.configure({"darkness": maxf(darkness(), lerpf(darkness(), full, closed)), "shade_color": shade().lerp(Color(0.02, 0.02, 0.03), closed * 0.8)})
 		var keep := float(vision.get("r", 200.0))
-		var seen: Array = [Vector4(g.player.x, g.player.y - 40, keep, 1.0)]
+		var seen: Array = [Vector4(_hero_feet().x, _hero_feet().y - 40, keep, 1.0)]
 		for l: Vector4 in last_lights.slice(1):
-			var d := Vector2(l.x, l.y).distance_to(Vector2(g.player.x, g.player.y - 40))
+			var d := Vector2(l.x, l.y).distance_to(_hero_feet() - Vector2(0, 40))
 			# a light inside the cloud still shows, dimmer the more the view is closed
 			if d + l.z * 0.5 < keep:
 				seen.append(Vector4(l.x, l.y, l.z * (1.0 - 0.6 * closed), l.w * (1.0 - 0.5 * closed)))
@@ -298,7 +298,7 @@ func lights() -> Array:
 	# a world with fog may give the hero a smaller light of its own (theme fog.player_light)
 	var reach_own := float(g.theme.get("fog", {}).get("player_light", g.balance.view.player_light))
 	var own := reach_own * (0.55 if g.story_items != null and g.story_items.dim() else 1.0)
-	var out: Array = [Vector4(g.player.x, g.player.y - 40, own, 1.0)]
+	var out: Array = [Vector4(_hero_feet().x, _hero_feet().y - 40, own, 1.0)]
 	if not (g.clone as Dictionary).is_empty():
 		out.append(Vector4(g.clone.p.x, g.clone.p.y - 40, 240, 0.9))
 	var fires := _split(fire_lights(), view.grow(FIRE_MARGIN), reach, centre)
@@ -547,13 +547,14 @@ func mob_lights() -> Array:
 	var out: Array = []
 	var crypt: Array = []
 	for m: Dictionary in g.mobs:
+		var at: Vector2 = g.render_mob_position(m) if g.has_method("render_mob_position") else Vector2(m.p)
 		if g.monsters != null:
 			var reach: float = 90.0 + float(m.r) * 2.2 * (1.3 if str(m.def.get("kind", "")) == "lord" else 1.0)
-			out.append(Vector4(m.p.x, m.p.y - m.cy - m.alt, reach, 1.0))
+			out.append(Vector4(at.x, at.y - m.cy - m.alt, reach, 1.0))
 		elif str((m.def as Dictionary).get("behavior", "")) == "puller":
-			crypt.append(_crypt_zone(m.p, float(m.def.get("pull_radius", 300.0)) * _size("pull"), "frost", "vortex"))
+			crypt.append(_crypt_zone(at, float(m.def.get("pull_radius", 300.0)) * _size("pull"), "frost", "vortex"))
 		else:
-			out.append(Vector4(m.p.x, m.p.y - 40.0 * m.s, 120.0 * m.s, 0.8))
+			out.append(Vector4(at.x, at.y - 40.0 * m.s, 120.0 * m.s, 0.8))
 	for l: Vector4 in _boss_fx.lights({"boss_zones": crypt}):
 		out.append(_world(l))
 	return out
@@ -1165,3 +1166,7 @@ func draw(canvas: CanvasItem) -> void:
 			canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2(k, k))
 		g.feel.feedback.particles.draw_glow(canvas, glow.level("particles"))
 		canvas.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+func _hero_feet() -> Vector2:
+	return g.render_hero_position() if g.has_method("render_hero_position") else Vector2(g.player.x, g.player.y)

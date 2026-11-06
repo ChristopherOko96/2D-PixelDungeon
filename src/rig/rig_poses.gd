@@ -255,6 +255,8 @@ static func hero(rig: Dictionary, a: Dictionary) -> Dictionary:
 			pose.whole.dy = 2.0 * fall
 			if has.call("plume"): P(pose, "plume").rot = 0.5 * fall
 			if has.call("hat"): P(pose, "hat").dx = -3.0 * fall
+	if str(a.clip) not in ["hit","death"]:
+		preload("res://src/hero/marksman_motion.gd").apply(rig,a.get("marksman_motion",{}),pose)
 	return pose
 
 

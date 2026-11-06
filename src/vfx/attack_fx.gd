@@ -32,6 +32,7 @@ const ART := 2.0
 const INK := Color("1a1414")
 const ARROW := preload("res://assets/sprites/0x72/weapon_arrow.png")
 const MarksmanArt = preload("res://src/vfx/marksman_art.gd")
+const MarksmanSprites = preload("res://src/vfx/marksman_sprites.gd")
 const Cutouts = preload("res://src/rig/cutout_motion.gd")
 const ELEMENT_TINTS := {"cinder": Color("f7b46b"), "venom": Color("b8d878"), "frost": Color("9bdde6"), "storm": Color("baabe9")}
 ## The build's shot element (bullet "element") -> palette element.
@@ -196,7 +197,7 @@ func _track(bullet: Dictionary, player: Dictionary, point: Vector2, aim: Vector2
 		ramp = [ramp[0], ramp[1], (ramp[2] as Color).lerp(CRIT_TINT, 0.35), (ramp[3] as Color).lerp(CRIT_TINT, 0.5), (ramp[4] as Color).lerp(CRIT_TINT, 0.5)]
 	var tint: Color = tint_for(bullet, player) if style == "arrow" else ramp[3]
 	return {"path": PackedVector2Array([point]), "aim": aim, "style": style, "tint": tint, "crit": crit, "seen": clock,
-		"element": element, "ramp": ramp, "drawn": handles(bullet), "enemy": owner <= 0, "shed": 0.0}
+		"element": element, "ramp": ramp, "drawn": handles(bullet), "enemy": owner <= 0, "shed": 0.0, "talent":str(bullet.get("talent",""))}
 
 
 ## Forgets every shot (room change).
@@ -264,7 +265,7 @@ func _impact(track: Dictionary) -> void:
 	var aim: Vector2 = track.aim
 	if str(track.style) == "arrow":
 		var tint: Color = CRIT_TINT if crit else track.tint
-		_flashes.append({"kind": "pierce", "pos": point, "aim": aim, "tint": tint, "born": _clock, "life": 0.22, "crit": crit})
+		_flashes.append({"kind": "pierce", "pos": point, "aim": aim, "tint": tint, "born": _clock, "life": 0.22, "crit": crit, "talent":str(track.get("talent",""))})
 		if particles != null: particles.burst(point, tint.lightened(0.3), 8, 150.0, 0.3, -aim, 1.0, 2.0, 6.0, "spark", 12.0)
 		return
 	var ramp: Array = track.ramp
@@ -362,7 +363,8 @@ func draw_arrow(canvas: CanvasItem, bullet: Dictionary, point: Vector2, clock: f
 	if aim.is_zero_approx(): aim = Vector2.RIGHT
 	var trail := _trail(id, point, CRIT_STREAK if crit else STREAK)
 	_streak(canvas, trail, tint, 2 if crit else 1)
-	Cutouts.draw(canvas,MarksmanArt.parts(point.snapped(Vector2(ART,ART)),aim,clock,ART))
+	if not MarksmanSprites.arrow(canvas,str(bullet.get("talent","")),point,aim,ART):
+		MarksmanSprites.draw(canvas,"basic_arrow",point,aim.angle()+PI*0.5,ART)
 	PixelPaint.cell(canvas, PixelPaint.at(point + aim * 9.0, ART), Color(1, 1, 1), ART)
 	if crit:
 		# a four-point star at its head, turning in steps: plus, then cross
@@ -530,6 +532,9 @@ func draw_flashes(canvas: CanvasItem, clock: float) -> void:
 				if k > 0.6:
 					PixelPaint.cell(canvas, PixelPaint.at(point, ART), Color(1, 1, 1), ART)
 			"pierce":
+				if MarksmanSprites.ARROWS.has(str(flash.get("talent",""))):
+					MarksmanSprites.impact(canvas,point,grow,ART,fx)
+					continue
 				# a four-point star where the arrow struck
 				var reach := int(((8.0 + 8.0 * grow) * (1.5 if bool(flash.crit) else 1.0)) / ART)
 				var c := PixelPaint.at(point, ART)

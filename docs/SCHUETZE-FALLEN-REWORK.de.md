@@ -2,6 +2,8 @@
 
 Implementiert auf `codex/port-0x72-onto-main`. Der Krieger bleibt bis auf den gemeinsamen Standard-Dash unverändert; sein gesondertes Konzept steht in [KRIEGER-KONZEPT.de.md](KRIEGER-KONZEPT.de.md).
 
+**Aktueller Nachtrag:** Der Himmelsspeer ist jetzt 2,4 m breit und reicht bis zur ersten Wand durch den Raum, wo seine Rig-Teile zerspringen. Giftwolke wurde zu Giftfalle mit echter Pfütze/Wolke; Rauchsprung wurde zu Rankensog. Aktueller Regelstand 27. Die Zahlen und Belegungen im folgenden ursprünglichen Bericht sind insoweit historisch. Aktuelle Regeln, Datenfelder, Tests und genaue Bedienung: [WALDLAEUFER-FELDER.de.md](WALDLAEUFER-FELDER.de.md).
+
 ## Direkt ausprobieren
 
 `Waldmeister-Testraum.cmd` starten. **FERN → Präzision**: 1 gezielter Schuss, 2 Durchschuss, **3 Jägermal**, 4 Salve. **FERN → Fernkampf**: 1 gezielter Schuss, 2 Jägermal, 3 Rückwärtssalto, **4 normaler Pfeilhagel**. In beiden Belegungen: **R halten zum Laden, loslassen zum Schuss**. Der Pfeilhagel und die vorhandenen Mehrfachschüsse bleiben.

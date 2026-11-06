@@ -121,7 +121,14 @@ func step(dt: float, frame: Dictionary) -> void:
 	var boss := bool(frame.get("boss", false)) and not foes.is_empty()
 	_step_lead(dt, hero, frame.get("aim", Vector2.INF))
 	_step_pull(dt, hero, foes, boss)
-	_step_zoom(dt, hero, foes, boss, view)
+	if bool(frame.get("pixel", false)) and bool(cfg.get("pixel", {}).get("fixed_zoom", true)):
+		# Fractional animated zoom resamples every floor texel on every picture.
+		_zoom_base = 1.0
+		_punch = 0.0
+		_punch_goal = 0.0
+		zoom = 1.0
+	else:
+		_step_zoom(dt, hero, foes, boss, view)
 	_step_kick(dt)
 	# lead and lean together stay within max_offset, flatter vertically (16:9)
 	var lean := _lead + _pull

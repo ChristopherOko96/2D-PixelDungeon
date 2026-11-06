@@ -345,7 +345,7 @@ func _refresh() -> void:
 	companion.text = "Begleiter: %s (wechseln)" % str(kinds.get(str(state.get("companion", "wolf")), {}).get("name", "Wolf"))
 	if _font != null and _font.get_string_size(companion.text, HORIZONTAL_ALIGNMENT_LEFT, -1, TEXT).x > companion.size.x - 12.0:
 		companion.text = "Begleiter: %s" % str(kinds.get(str(state.get("companion", "wolf")), {}).get("name", "Wolf"))
-	companion.tooltip_text = "Klick wechselt den Begleiter."
+	companion.tooltip_text = "Auswahl ändern. Tiergefährte erneut wirken, um den lebenden Begleiter auszutauschen."
 	var cost := Rules.reset_cost(data, profile, class_id)
 	_buttons.reset.text = "Zurücksetzen · %d %s" % [cost, "Rune" if cost == 1 else "Runen"]
 	_buttons.reset.disabled = state.ranks.is_empty() or int(profile.get("runes", 0)) < Rules.reset_cost(data, profile, class_id)
@@ -458,7 +458,7 @@ func _cycle_companion() -> void:
 	var kinds: Array = all_kinds.keys().filter(func(k: String) -> bool: return not bool(all_kinds[k].get("summon_only", false)))
 	var state := _state()
 	state.companion = kinds[(kinds.find(str(state.get("companion", "wolf"))) + 1) % kinds.size()]
-	_commit("", "Dein Begleiter ist jetzt: %s." % str(data.pet.kinds[state.companion].name))
+	_commit("", "%s gewählt. Tiergefährte erneut wirken zum Wechseln." % str(data.pet.kinds[state.companion].name))
 
 
 # ---------- drawing ----------

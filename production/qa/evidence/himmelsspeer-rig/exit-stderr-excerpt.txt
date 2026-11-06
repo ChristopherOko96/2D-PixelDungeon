@@ -1,0 +1,12 @@
+Actual excerpts from process output after the successful capture summaries.
+This is not full stderr. Godot's own log omits these last teardown messages.
+
+Laboratory capture and ranger_fields_test:
+WARNING: 6 ObjectDB instances were leaked at exit (run with --verbose for details).
+ERROR: 2 resources still in use at exit (run with --verbose for details).
+
+Story capture:
+ERROR: Texture with GL ID of 461: leaked 2380 bytes.
+WARNING: 1357 ObjectDB instances were leaked at exit (run with --verbose for details).
+ERROR: 6 resources still in use at exit (run with --verbose for details).
+ERROR: 887 RID allocations of type 'N5GLES37TextureE' were leaked at exit.

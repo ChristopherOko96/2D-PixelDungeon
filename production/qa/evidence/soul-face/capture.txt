@@ -1,0 +1,9 @@
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+ERROR: Can't create shader cache folder, no shader caching will happen: user://
+   at: RasterizerGLES3 (drivers/gles3/rasterizer_gles3.cpp:345)
+OpenGL API 3.3.0 Core Profile Context 26.10.1.261008 - Compatibility - Using Device: ATI Technologies Inc. - AMD Radeon RX 6600
+
+SOUL_CAPTURE frame=8 soul=(7850.188, 918.929) target=(8033.771, 891.3215) resource=8.0
+SOUL_CAPTURE frame=22 soul=(7939.296, 880.8905) target=(8034.564, 881.6273) resource=8.0
+SOUL_CAPTURE frame=35 soul=(8033.925, 872.0079) target=(8033.925, 872.0079) resource=8.0
+SOUL_CAPTURE frame=42 soul=done target=done resource=8.0

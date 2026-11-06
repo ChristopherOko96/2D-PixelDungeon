@@ -40,6 +40,8 @@ extends RefCounted
 const Host := preload("res://src/physics_kit/field_host.gd")
 const CallableHost := preload("res://src/physics_kit/callable_field_host.gd")
 const DATA_PATH := "res://assets/data/vfx_gas.json"
+## Conservative envelope for rotated shot cuts as well as circular contacts.
+const BOUNDS_REACH := 1.414214
 
 ## World px per art pixel of the world (the gas's lengths scale with it).
 var art := 2.0
@@ -158,6 +160,33 @@ func _add(key: String, mat: String, at: Vector2, r: float, end: float, source: S
 	# a thrown cloud (not a zone) travels as a whole along its push until it slows or meets a wall
 	var travel := push if source == "fx" else Vector2.ZERO
 	_clouds[key] = {"mat": mat, "puffs": puffs, "end": end, "at": at, "av": travel, "r": r, "source": source, "dense": dense}
+	_reset_bounds(_clouds[key])
+	for puff: Dictionary in puffs:
+		_include_bounds(_clouds[key], puff)
+
+
+# Bounds follow actual puffs, never the emitter/zone centre: wind, blasts and
+# parting may move gas far from it. Keep cloud and puff order for exact sums,
+# material ties, and the RNG used by a blast at a puff's centre.
+func _reset_bounds(cloud: Dictionary) -> void:
+	cloud._lo = Vector2(INF, INF)
+	cloud._hi = Vector2(-INF, -INF)
+
+
+func _include_bounds(cloud: Dictionary, puff: Dictionary) -> void:
+	var pad := Vector2.ONE * float(puff.r) * maxf(1.0, float(puff.get("g", 1.0))) * BOUNDS_REACH
+	var point: Vector2 = puff.p
+	cloud._lo = Vector2(cloud._lo).min(point - pad)
+	cloud._hi = Vector2(cloud._hi).max(point + pad)
+
+
+func _may_touch(cloud: Dictionary, point: Vector2, padding: float = 0.0) -> bool:
+	var lo: Vector2 = cloud._lo
+	var hi: Vector2 = cloud._hi
+	# Inclusive edges also preserve touching()'s <= contact rule. Empty clouds
+	# have inverted infinite bounds and are rejected without examining puffs.
+	padding = absf(padding)
+	return point.x + padding >= lo.x and point.y + padding >= lo.y and point.x - padding <= hi.x and point.y - padding <= hi.y
 
 
 ## Ends cloud `key` at `now`: it thins out from its rim (a reaction used it up).
@@ -181,7 +210,10 @@ func impulse(at: Vector2, radius: float, strength: float) -> void:
 	var speed := _u(_f("blast_speed", 220.0)) * strength
 	var thin := _f("blast_thin", 0.3) * strength
 	for key: String in _clouds:
-		for puff: Dictionary in _clouds[key].puffs:
+		var cloud: Dictionary = _clouds[key]
+		if not _may_touch(cloud, at, radius):
+			continue
+		for puff: Dictionary in cloud.puffs:
 			var off: Vector2 = Vector2(puff.p) - at
 			var reach := radius + float(puff.r)
 			var dist := off.length()
@@ -201,6 +233,8 @@ func suck(at: Vector2, radius: float, pull: float, thin: float, dt: float, now: 
 	var any := false
 	for key: String in _clouds:
 		var cloud: Dictionary = _clouds[key]
+		if not _may_touch(cloud, at, radius):
+			continue
 		var touched := false
 		for puff: Dictionary in cloud.puffs:
 			var off: Vector2 = Vector2(puff.p) - at
@@ -240,9 +274,14 @@ func wet_at(_point: Vector2) -> bool:
 ## Someone standing at `at` (world px), `radius` wide, parts the gas round them over `dt` s
 ## (per second, so the parting and the dose do not change with the frame rate; F22).
 func part(at: Vector2, radius: float, dt: float = 1.0 / 60.0) -> void:
+	if _clouds.is_empty():
+		return
 	var speed := _u(_f("part_speed", 70.0))
 	for key: String in _clouds:
-		for puff: Dictionary in _clouds[key].puffs:
+		var cloud: Dictionary = _clouds[key]
+		if not _may_touch(cloud, at, radius):
+			continue
+		for puff: Dictionary in cloud.puffs:
 			var off: Vector2 = Vector2(puff.p) - at
 			var reach := radius + float(puff.r) * 0.6
 			var dist := off.length()
@@ -251,6 +290,9 @@ func part(at: Vector2, radius: float, dt: float = 1.0 / 60.0) -> void:
 			var k := 1.0 - dist / reach
 			puff.v = Vector2(puff.v) + off / dist * speed * k * 12.0 * dt
 			puff.p = Vector2(puff.p) + off / dist * k * 36.0 * dt
+			# The next actor/query in this same tick must see this displacement.
+			# Expand here; step() tightens the envelope again after movement.
+			_include_bounds(cloud, puff)
 
 
 ## A shot at `at` flying along `dir` cuts a lane `width` wide through the gas:
@@ -262,7 +304,10 @@ func cut(at: Vector2, dir: Vector2, width: float, dt: float = 1.0 / 60.0) -> voi
 	var side := along.orthogonal()
 	var speed := _u(_f("cut_speed", 110.0))
 	for key: String in _clouds:
-		for puff: Dictionary in _clouds[key].puffs:
+		var cloud: Dictionary = _clouds[key]
+		if not _may_touch(cloud, at, absf(width) * BOUNDS_REACH):
+			continue
+		for puff: Dictionary in cloud.puffs:
 			var off: Vector2 = Vector2(puff.p) - at
 			if absf(off.dot(along)) > float(puff.r) + width:
 				continue
@@ -277,7 +322,7 @@ func cut(at: Vector2, dir: Vector2, width: float, dt: float = 1.0 / 60.0) -> voi
 ## are held in their zone, slow down and slide along walls; ended clouds thin
 ## out rim first and are forgotten when gone.
 func step(dt: float, now: float) -> void:
-	if dt <= 0.0:
+	if dt <= 0.0 or _clouds.is_empty():
 		return
 	dt = minf(dt, 0.05)
 	var spread := _f("spread", 5.0)
@@ -339,6 +384,7 @@ func step(dt: float, now: float) -> void:
 				var push := (delta / d if d > 0.01 else Vector2.from_angle(float(i + j))) * (least - d) * spread * dt
 				a.v = Vector2(a.v) - push * 8.0
 				b.v = Vector2(b.v) + push * 8.0
+		_reset_bounds(cloud)
 		for index in range(puffs.size() - 1, -1, -1):
 			var puff: Dictionary = puffs[index]
 			# a burning cloud: the flame front reaches this puff and it goes up (ignite)
@@ -386,6 +432,8 @@ func step(dt: float, now: float) -> void:
 			puff.d = d
 			if d <= 0.02:
 				puffs.remove_at(index)
+			else:
+				_include_bounds(cloud, puff)
 		if puffs.is_empty() and fading:
 			_clouds.erase(key)
 
@@ -401,6 +449,8 @@ func at(point: Vector2) -> Dictionary:
 	var best := 0.0
 	for key: String in _clouds:
 		var cloud: Dictionary = _clouds[key]
+		if not _may_touch(cloud, point):
+			continue
 		var sum := _cover(cloud.puffs, point)
 		if sum > best:
 			best = sum
@@ -413,12 +463,33 @@ func at(point: Vector2) -> Dictionary:
 ## points on a ring of `radius` round the feet (and the feet themselves) is
 ## what they breathe. Same result as at().
 func around(point: Vector2, radius: float, samples := 8) -> Dictionary:
-	var best := at(point)
+	if _clouds.is_empty():
+		return {"mat": "", "d": 0.0}
+	# Select once for the entire breathing ring, not once for every sample.
+	var nearby: Array = []
+	for key: String in _clouds:
+		var cloud: Dictionary = _clouds[key]
+		if _may_touch(cloud, point, radius):
+			nearby.append(cloud)
+	if nearby.is_empty():
+		return {"mat": "", "d": 0.0}
+	var best := _sample_clouds(point, nearby)
 	for i in range(samples):
-		var sample := at(point + Vector2.from_angle(TAU * float(i) / float(samples)) * radius)
+		var sample := _sample_clouds(point + Vector2.from_angle(TAU * float(i) / float(samples)) * radius, nearby)
 		if float(sample.d) > float(best.d):
 			best = sample
 	return best
+
+
+func _sample_clouds(point: Vector2, clouds: Array) -> Dictionary:
+	var best_mat := ""
+	var best := 0.0
+	for cloud: Dictionary in clouds:
+		var sum := _cover(cloud.puffs, point)
+		if sum > best:
+			best = sum
+			best_mat = str(cloud.mat)
+	return {"mat": best_mat, "d": clampf(best, 0.0, 1.0)}
 
 
 ## The clouds of `mat` alive at `now` (for the reactions: fire sets poison gas
@@ -431,6 +502,8 @@ func touching(mat: String, at: Vector2, r: float, now := -INF) -> Array:
 	for key: String in _clouds:
 		var cloud: Dictionary = _clouds[key]
 		if str(cloud.mat) != mat or float(cloud.end) <= now or bool(cloud.get("burning", false)):
+			continue
+		if not _may_touch(cloud, at, r):
 			continue
 		var best := INF
 		var near := Vector2.ZERO
@@ -499,7 +572,7 @@ func thickness(point: Vector2, mat: String) -> float:
 	var sum := 0.0
 	for key: String in _clouds:
 		var cloud: Dictionary = _clouds[key]
-		if str(cloud.mat) == mat:
+		if str(cloud.mat) == mat and _may_touch(cloud, point):
 			sum += _cover(cloud.puffs, point)
 	return clampf(sum, 0.0, 1.0)
 
@@ -537,7 +610,10 @@ func extent(point: Vector2, mat: String, thin: float, step: float, max_len: floa
 ## True when gas of any kind lies at `point` (world px), thick enough to see.
 func covers(point: Vector2) -> bool:
 	for key: String in _clouds:
-		for puff: Dictionary in _clouds[key].puffs:
+		var cloud: Dictionary = _clouds[key]
+		if not _may_touch(cloud, point):
+			continue
+		for puff: Dictionary in cloud.puffs:
 			if Vector2(puff.p).distance_to(point) < float(puff.r) * 0.8 and float(puff.d) > 0.2:
 				return true
 	return false

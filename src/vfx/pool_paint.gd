@@ -58,18 +58,21 @@ extends RefCounted
 ## dither, the darkness creeping in towards it) and pulls loose things, embers
 ## and drops into it (a particles well per pool, materials.void_pull).
 ##
-## Poison (look "miasma"; review A6 2026-11-01): a see-through sludge under
-## its own fumes, never an opaque sheet: a grain of its colours with alpha
+## Materials with look "miasma" (review A6 2026-11-01): see-through sludge under
+## their own fumes, rather than an opaque sheet: a grain of colours with alpha
 ## and dither holes (the floor and whoever stands in it show through), thick
 ## in its middle and fraying towards its rim with no outline, the grain
 ## churning slowly; wisps of fume rise off it. It is still a liquid for the
-## rules and reactions (its style). The Hölle's lava floor gets a ragged
+## rules and reactions (its style). Plain poison uses a visible liquid surface
+## after the user's 2026-11-05 trap correction; gas remains separate.
+## The Hölle's lava floor gets a ragged
 ## crust of pixels along its edge (lava_rim) instead of a straight frame.
 
 const SplatShape = preload("res://src/vfx/splat_shape.gd")
 const Glow = preload("res://src/vfx/glow.gd")
 const ElementRules = preload("res://src/combat/element_rules.gd")
 const DATA_PATH := "res://assets/data/vfx_pools.json"
+const SurfaceMotion = preload("res://src/vfx/surface_motion.gd")
 const FPS := 12.0
 
 ## World px per art pixel of the canvas it draws on.
@@ -137,6 +140,7 @@ var _ramps: Dictionary = {}
 ## The picture's clock: the host's time of the last sync / advance / draw (drop
 ## puddles, ripples and arcs start from it; the field keeps its own).
 var _now := 0.0
+var surface: RefCounted
 
 
 ## A painter on a canvas of `art_px` world px per art pixel with its own pool
@@ -147,6 +151,7 @@ func _init(art_px: float, open_floor: Callable) -> void:
 	pool_field = PoolField.new(art_px, PoolField.CallableHost.new(open_floor))
 	pool_field.track_events = true
 	cfg = settings()
+	surface = SurfaceMotion.new(art,open_floor,cfg.get("surface_motion",{}))
 	for mat: String in cfg.get("materials", {}):
 		var ramp := {}
 		var spec: Dictionary = cfg.materials[mat].get("ramp", {})
@@ -196,8 +201,64 @@ func add(id: int, style: String, at: Vector2, dir: Vector2, radius: float, start
 ## worker shaped count from their moment on) and puts what changed into the picture.
 func advance(now: float) -> void:
 	_now = now
+	surface.advance(now)
 	pool_field.advance(now)
 	_take_field_events()
+
+## Visible spring-mass displacement in this world's units, never a damage grant.
+func surface_offset(point: Vector2) -> Vector2:
+	return surface.offset(point)
+
+## The same pressure band that pushes particles also displaces fluid surfaces.
+func pressure_front(origin: Vector2, r0: float, r1: float, angle: float, arc: float, speed: float, squash := 1.0) -> void:
+	surface.pressure(origin,r0,r1,angle,arc,speed,squash)
+
+func _draw_surface(canvas: CanvasItem, field: Dictionary, mat: String, now: float) -> void:
+	var box: Rect2i = field.box
+	var rect := Rect2(Vector2(box.position)*art,Vector2(box.size)*art)
+	if mat == "ice":
+		canvas.draw_texture_rect(field.tex,rect,false)
+		return
+	if not surface.active:
+		surface.touch_box(rect)
+		canvas.draw_texture_rect(field.tex,rect,false)
+		return
+	var spec: Dictionary = cfg.get("surface_motion",{})
+	var step := art*float(spec.get("spacing_art",12))
+	var axis_cap := clampi(int(spec.get("mesh_axis_max",32)),1,32)
+	var columns := clampi(ceili(rect.size.x/step),1,axis_cap)
+	var rows := clampi(ceili(rect.size.y/step),1,axis_cap)
+	var vertices := PackedVector2Array()
+	var uvs := PackedVector2Array()
+	var active := false
+	for y in range(rows+1):
+		for x in range(columns+1):
+			var uv := Vector2(float(x)/columns,float(y)/rows)
+			var point := rect.position+uv*rect.size
+			var delta: Vector2 = surface.offset(point)
+			active = active or delta.length_squared()>0.01
+			vertices.append(point+(delta/art).round()*art)
+			uvs.append(uv)
+	if not active:
+		canvas.draw_texture_rect(field.tex,rect,false)
+		return
+	if int(field.get("surface_revision",-1)) != int(surface.revision) or field.get("surface_box") != box:
+		var indices := PackedInt32Array()
+		for y in range(rows):
+			for x in range(columns):
+				var i := y*(columns+1)+x
+				indices.append_array(PackedInt32Array([i,i+1,i+columns+1,i+1,i+columns+2,i+columns+1]))
+		var arrays := []
+		arrays.resize(Mesh.ARRAY_MAX)
+		arrays[Mesh.ARRAY_VERTEX] = vertices
+		arrays[Mesh.ARRAY_TEX_UV] = uvs
+		arrays[Mesh.ARRAY_INDEX] = indices
+		var mesh := ArrayMesh.new()
+		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
+		field.surface_mesh = mesh
+		field.surface_revision = int(surface.revision)
+		field.surface_box = box
+	canvas.draw_mesh(field.surface_mesh,field.tex)
 
 
 ## Hollow field, delegated to the same gameplay field as ordinary liquid.
@@ -364,6 +425,7 @@ func sync(zones: Array, now: float, source := "") -> void:
 ## Forgets every pool, the field's and the picture's (a new room, the end of
 ## a world). The field waits for its worker threads first.
 func clear() -> void:
+	surface.clear()
 	pool_field.clear()
 	_laying.clear()
 	_fields.clear()
@@ -432,6 +494,7 @@ func _draw_order() -> Array:
 
 
 func draw(canvas: CanvasItem, now: float) -> void:
+	surface.advance(now)
 	var frame_now := Engine.get_process_frames()
 	if frame_now == _drawn_frame:
 		return
@@ -495,7 +558,7 @@ func draw(canvas: CanvasItem, now: float) -> void:
 		var style := _look(mat)
 		if field.tex != null:
 			var box: Rect2i = field.box
-			canvas.draw_texture_rect(field.tex, Rect2(Vector2(box.position) * art, Vector2(box.size) * art), false)
+			_draw_surface(canvas,field,mat,now)
 			_overlay(canvas, field, mat, style, now)
 		# rings and the landing crown (the crown shows before the pool has run out)
 		_draw_ripples(canvas, field, mat, now)
@@ -1621,7 +1684,7 @@ func _style(mat: String) -> String:
 
 
 ## How material `mat` is drawn: its "look" (vfx_pools.json; "miasma": the
-## poison's see-through fuming sludge) or else its style. The rules and
+## see-through fuming sludge) or else its style. The rules and
 ## reactions keep asking _style.
 func _look(mat: String) -> String:
 	return str(cfg.materials.get(mat, {}).get("look", _style(mat)))
