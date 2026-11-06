@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "_note": "Host alchemist rules: seconds, meters, damage multipliers. Draw values are art pixels. See docs/FALLENALCHEMIST.de.md.",
+  "arrow_trigger_m": 0.38,
+  "arrow_height_m": 1.1,
+  "pulse_s": 1.0,
+  "poison_tick": [0.15,0.2,0.25],
+  "fire_tick": 0.2,
+  "shatter_thaw_s": 1.0,
+  "pool_limit": 6,
+  "boss_slow": 0.35,
+  "boss_slow_s": 2,
+  "field": {
+    "capsules": 6,
+    "spread": 0.5,
+    "capsule_radius_m": 2.2,
+    "pool_s": 6,
+    "water_at_s": 0.5,
+    "poison_at_s": 0.7,
+    "frost_at_s": 1.5,
+    "fire_at_s": 2.5,
+    "freeze_s": 1.5,
+    "fire_damage": 2.2
+  },
+  "art": {"spread": 1.35, "open_s": 0.55, "flight_px": 14, "cap_lift": 12},
+  "colours": {"poison":"94d24a", "water":"50b4ff", "fire":"ff923b", "frost":"b5edfa", "shatter":"dfd9cd", "detonate":"ffd268"}
+}

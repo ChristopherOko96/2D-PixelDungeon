@@ -398,7 +398,7 @@ func _released(m: Dictionary) -> void:
 		rig_host.on_release(m)
 
 
-## The attacks a blinded monster (in steam or smoke) can still make: blows at arm's length.
+## Legacy shot-only blindness permits nearby blows; full sight loss is gated separately.
 const BLIND_ATTACKS := ["swing", "dash", "slam", "ring", "sweep"]
 
 
@@ -419,6 +419,7 @@ static func mob_tags(m: Dictionary) -> Array:
 ## the pool's rule the movement in update reads (slide, grip, pull), m.blind
 ## the s its shots are blind (steam, smoke).
 func _step_medium(m: Dictionary, dt: float) -> void:
+	preload("res://src/combat/enemy_sight.gd").step(m,dt)
 	m.blind = maxf(0.0, float(m.get("blind", 0.0)) - dt)
 	var met: Dictionary = g.exposure().step(m, dt)
 	m.env = met.medium
@@ -473,18 +474,20 @@ func update(dt: float) -> void:
 		# hero skills: slows, burns and stuns tick here; a stunned or held monster waits
 		var pace := HeroKit.tick_mob(g, m, dt)
 		# a dragon reeling from a severed part (src/hell/drake_rig_host.gd) stands and starts no attack
-		var held: bool = pace <= 0.0 or m.get("hold", false) or (rig_host != null and rig_host.staggered(m))
+		var sight_lost: bool = preload("res://src/combat/enemy_sight.gd").blocked(m)
+		var held: bool = sight_lost or pace <= 0.0 or m.get("hold", false) or (rig_host != null and rig_host.staggered(m))
 		# a companion's taunt (Brüllen, Heulen, Fass!) draws it from the hero, as in the Frostgruft
-		if _mad_on.is_empty() and g.talents != null and not m.boss:
+		if not sight_lost and _mad_on.is_empty() and g.talents != null and not m.boss:
 			var drawn: Vector2 = g.talents.chase_goal(m, me)
 			if drawn != me:
 				_taunt_at = drawn
-		var to: Vector2 = _aim_goal() - m.p
-		var d := maxf(to.length(), 1.0)
+		var to: Vector2 = Vector2.ZERO if sight_lost else _aim_goal() - m.p
+		var d := INF if sight_lost else maxf(to.length(), 1.0)
 		var v := Vector2.ZERO
-		if bool(m.get("ai_off", false)):
+		if sight_lost or bool(m.get("ai_off", false)):
 			# a training dummy of the debug Testraum (src/debug/story_testraum_tools.gd): no act, no walking
 			m.act = null
+			m.erase("wait")
 		elif m.act != null:
 			m.erase("wait")
 			# the look of the shots this act fires (a bone arrow: src/vfx/shot_looks.gd, shot_looks.json)

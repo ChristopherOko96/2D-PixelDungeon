@@ -1,0 +1,9 @@
+Excerpt of actual process output after MARKSMAN_STORY_CAPTURE checked=2 failures=0 images=2 training=true.
+The tool output contained many GL texture release messages; this is an excerpt, not the full stderr log.
+
+ERROR: Texture with GL ID of 461: leaked 2380 bytes.
+   at: ~Utilities (drivers/gles3/storage/utilities.cpp:82)
+WARNING: 1357 ObjectDB instances were leaked at exit (run with --verbose for details).
+   at: cleanup (core/object/object.cpp:2536)
+ERROR: 6 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)

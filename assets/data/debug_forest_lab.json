@@ -66,7 +66,7 @@
    "ultimate": "trapper_14",
    "kits": [
     {
-     "name": "Gift & Dornen",
+     "name": "Gift, Wasser & Elemente",
      "bar": [
       "trapper_1",
       "trapper_3",
@@ -75,7 +75,7 @@
      ]
     },
     {
-     "name": "Netz & Rückzug",
+     "name": "Splitter & Kettenzünder",
      "bar": [
       "trapper_1",
       "trapper_9",

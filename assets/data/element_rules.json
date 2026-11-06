@@ -152,11 +152,13 @@
     "hell"
    ],
    "douse": true,
-   "why": "im Dampf verbrüht"
+   "why": "im Dampf verbrüht",
+   "blind_sight_s": 3
   },
   "smoke": {
    "vision": 0.85,
-   "blind_shots": 0.3
+   "blind_shots": 0.3,
+   "blind_sight_s": 3
   },
   "poison": {
    "hurt": 0.4,
@@ -166,7 +168,7 @@
    "status": {
     "poison": [
      0.3,
-     2.0
+     2
     ]
    },
    "immune": [
@@ -375,9 +377,55 @@
  "_exposure_note": "How the element physics reaches a creature (src/physics_kit/element_exposure.gd, ElementExposure; the story worlds' adapter src/hell/story_exposure_host.gd): every frame it reads the pool under the creature's feet and the gas round it and applies that medium's or gas's rule (mediums, gases above) through the game's host. air_above = world px of altitude from which a creature counts as in the air (no pool or gas reaches it, nor one burrowed under the floor). One profile per kind of creature (the host names it): gas_body + gas_pad = how far round its feet it breathes the gas (it parts the gas round itself, src/vfx/gas.gd part; gas_body counts in crypt px x the world's scale when gas_body_crypt_px), gas_samples = points on that ring; ticked = its hurt lands every rule's tick s as hurt_key per second x tick (the monsters: enemy_hurt hero hits, boss_hurt of it on a boss), else it drains continuously per second (the hero: hurt half hearts); dot_kinds x dot_scale = the damage over time a condition puts on (status values are half hearts per s: 1 for the hero, 0.5 hero hits for a monster); freeze_on = materials whose frost freezes a wet one solid for combos.freeze_wet s (the hero only in frost gas: a frost pool is ice he slips on; a monster on ice too); own_clock = conditions the host keeps on a clock of its own instead (the hero's WAHN: src/hell/hero_fx.gd mad_step); why = what the hero reads when a rule without its own why hurts him (%s = the pool style or gas). story = the story adapter's feedback: hit_flash = s a monster flashes on a tick, freeze_burst = frost pixels when wet freezes solid, hero_chest = px above his feet they burst from.",
  "exposure": {
   "air_above": 20,
-  "hero": {"gas_body": 22, "gas_body_crypt_px": true, "gas_pad": 24, "gas_samples": 8, "ticked": false, "hurt_key": "hurt", "boss_hurt": 1.0, "dot_kinds": ["burn", "poison"], "dot_scale": 1.0, "freeze_on": ["frost"], "own_clock": ["mad"], "why": "im %s"},
-  "monster": {"gas_body": 18, "gas_body_crypt_px": false, "gas_pad": 24, "gas_samples": 4, "ticked": true, "hurt_key": "enemy_hurt", "boss_hurt": 0.5, "dot_kinds": ["burn", "poison"], "dot_scale": 0.5, "freeze_on": ["frost", "ice"], "own_clock": [], "why": "im %s"},
-  "story": {"hit_flash": 0.12, "freeze_burst": {"hero": 12, "monster": 10}, "hero_chest": 40}
+  "hero": {
+   "gas_body": 22,
+   "gas_body_crypt_px": true,
+   "gas_pad": 24,
+   "gas_samples": 8,
+   "ticked": false,
+   "hurt_key": "hurt",
+   "boss_hurt": 1,
+   "dot_kinds": [
+    "burn",
+    "poison"
+   ],
+   "dot_scale": 1,
+   "freeze_on": [
+    "frost"
+   ],
+   "own_clock": [
+    "mad"
+   ],
+   "why": "im %s"
+  },
+  "monster": {
+   "gas_body": 18,
+   "gas_body_crypt_px": false,
+   "gas_pad": 24,
+   "gas_samples": 4,
+   "ticked": true,
+   "hurt_key": "enemy_hurt",
+   "boss_hurt": 0.5,
+   "dot_kinds": [
+    "burn",
+    "poison"
+   ],
+   "dot_scale": 0.5,
+   "freeze_on": [
+    "frost",
+    "ice"
+   ],
+   "own_clock": [],
+   "why": "im %s"
+  },
+  "story": {
+   "hit_flash": 0.12,
+   "freeze_burst": {
+    "hero": 12,
+    "monster": 10
+   },
+   "hero_chest": 40
+  }
  },
  "_breath_gas_note": "The gas a breath or cone of an element leaves hanging (src/vfx/gas.gd materials): poison and frost their own, fire and lava smoke; none for bone, gold or souls. breath_r = share of the breath's reach the cloud is wide, breath_time = s it hangs.",
  "breath_gas": {

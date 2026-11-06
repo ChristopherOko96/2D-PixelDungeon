@@ -458,6 +458,8 @@ func open_cells(world_cells: Array) -> void:
 
 ## A new floor: nothing of the last one lingers (the marks go with the world change).
 func reset() -> void:
+	feedback.hit_rigs.clear()
+	feedback.status_fx.clear()
 	_fallen.clear()
 	_events.clear()
 	_perks.clear()
@@ -657,6 +659,7 @@ func draw_layer(canvas: CanvasItem, mode: String) -> void:
 			if adapter != null and adapter.get("fx") != null and not (adapter.fx.get("enemy_at") as Callable).is_valid(): adapter.fx.enemy_at = mob_at
 			# with depth bands (the host draws low matter between its actors) only high matter here
 			feedback.particles.draw_particles(canvas, [], 2 if bool(g.get("depth_bands")) else 0)
+			feedback.hit_rigs.draw(canvas,feedback.fx)
 		"glow":
 			var kit: RefCounted = g.story_hero.skill_fx if g.story_hero != null else null
 			feedback.particles.draw_glow(canvas, kit.glow.level("particles") if kit != null else 1.0)
@@ -697,6 +700,9 @@ func _enemy(m: Dictionary) -> Dictionary:
 		"blocks": int(m.get("feel_blocks", 0)), "boss": str(m.get("kind", "")) == "boss" or bool(m.get("boss", false)), "kind": "mob",
 		"gore": _gore(m), "hp": float(m.hp), "max_hp": float(m.get("max", m.hp)), "moving": at.distance_to(last) > 0.2,
 		"face": (face as Vector2).x if face is Vector2 else float(face)}
+	e.statuses = feedback.status_fx.story_statuses(m)
+	e.status_foot = LIFT
+	e.status_radius = float(m.get("r", 18)) / scale
 	# its sound: crypt rig material, windup and attacks, lost and regrown parts (story_sound.gd)
 	if g.get("sound") != null:
 		e.merge(g.sound.enemy(m))
@@ -802,6 +808,8 @@ func _set_floor() -> void:
 					if burns and (t == 2 or t == 3):
 						sink[Vector2i(cx * per + x, cy * per + y)] = true
 	feedback.particles.clear()
+	feedback.hit_rigs.clear()
+	feedback.status_fx.clear()
 	feedback.particles.set_walkable(cells, "feel_%d" % _serial)
 	feedback.particles.set_sink(sink)
 	_cells = cells

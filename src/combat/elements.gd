@@ -18,6 +18,7 @@ extends RefCounted
 
 const PoolPaint = preload("res://src/vfx/pool_paint.gd")
 const ElementRules = preload("res://src/combat/element_rules.gd")
+const Dungeon = preload("res://src/dungeon/dungeon_generator.gd")
 
 var game: Node
 ## Gas clouds: {id, mat, pos, radius, timer, length, owner, tick}.
@@ -135,9 +136,12 @@ func update(delta: float) -> void:
 		var rule := ElementRules.gas(str(cloud.mat))
 		if not rule.is_empty():
 			for enemy: Dictionary in _enemies_in(Vector2(cloud.pos), float(cloud.radius)):
+				if bool(cloud.get("line_of_sight",false)) and Dungeon.segment_blocked(cloud.pos,enemy.pos,1,game.current_layout): continue
 				# a burning one sets poison gas off, a wet one freezes in frost mist (whatever its element)
 				combo_enemy(enemy, str(cloud.mat), Vector2(enemy.pos))
 				if not clouds.has(cloud): break
+				# Obscured eyes lose sight even when the creature resists scalding heat.
+				preload("res://src/combat/enemy_sight.gd").expose(enemy,float(rule.get("blind_sight_s",0)))
 				if ElementRules.immune(enemy_tags(enemy), rule): continue
 				if rule.has("blind_shots"): enemy.shot_timer = maxf(float(enemy.get("shot_timer", 0.0)), float(rule.blind_shots))
 				if due and rule.has("enemy_hurt"):
@@ -146,6 +150,7 @@ func update(delta: float) -> void:
 			if not clouds.has(cloud): continue
 			for id: int in game.players:
 				var player: Dictionary = game.players[id]
+				if bool(cloud.get("friendly",false)) and int(cloud.get("owner",0))>0: continue
 				if int(player.hp) <= 0 or Vector2(player.pos).distance_to(cloud.pos) > float(cloud.radius): continue
 				combo_player(id, player, str(cloud.mat))
 				if not clouds.has(cloud): break

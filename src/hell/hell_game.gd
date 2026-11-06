@@ -3088,6 +3088,7 @@ func _update_player(dt: float) -> void:
 
 func _update_shots(dt: float) -> void:
 	for s: Dictionary in shots:
+		var alchemy_from: Vector2 = s.p
 		s.p += s.v * dt
 		s.t -= dt
 		# the mage's shot reaches the point the mouse showed (MageBolt.aim): it stops there; still
@@ -3136,6 +3137,8 @@ func _update_shots(dt: float) -> void:
 			MageBolt.burst(self, s, {})
 			continue
 		MageBolt.fly(self, s, dt)
+		if str(s.get("kind","")) == "arrow" and talents != null:
+			talents.tc.alchemist.arrow(talents.tc,1,alchemy_from,s.p)
 		if s.get("kind", "") == "gravity":
 			# the gravity ball drags enemies towards itself while it flies
 			var ball: Dictionary = RelicKit.wielded(self).get("ball", theme.gravity_staff.ball)
@@ -3307,6 +3310,18 @@ func _update_mobs(dt: float) -> void:
 			m.spawn -= dt
 			continue
 		m.hit = maxf(0.0, m.hit - dt)
+		var env := _step_mob_medium(m,dt)
+		if preload("res://src/combat/enemy_sight.gd").blocked(m):
+			HeroKit.tick_mob(self,m,dt)
+			m.erase("tell")
+			if m.has("busy"): m.busy = {}
+			if m.has("dash"): m.dash = 0.0
+			m.sv = Vector2.ZERO
+			# External force remains physical; no sight-driven walking or tracking.
+			var blinded_step: Dictionary = motion_kit().step_body(m.p,Vector2.ZERO,Vector2.ZERO,MotionKit.FIRM,Vector2.ZERO,m.k,dt,motion_kit().host.mob_solid(m.r*0.7,m.kind!="boss"))
+			m.p = blinded_step.p
+			m.k = blinded_step.push
+			continue
 		if hidden and m.kind != "boss":
 			# hidden hero: they stop, look about and turn their backs now and then
 			m.face = Vector2(cos(state.t * 1.5 + m.seed), sin(state.t * 1.5 + m.seed))
@@ -3370,7 +3385,6 @@ func _update_mobs(dt: float) -> void:
 		# is a creature of frost, sure-footed on its own ice
 		if not m.has("tags"):
 			m.tags = ElementRules.tags(str(m.kind), str(def.get("shot", "")), str(def.get("material", "")), ["frost"] if def.has("chill") else [])
-		var env := _step_mob_medium(m, dt)
 		var mover := motion_kit()
 		var grip := MotionKit.FIRM
 		# a room of nothing but ice takes everybody's footing, the creatures of frost too; not the flyers'
@@ -3768,6 +3782,7 @@ func _step_elements(dt: float) -> void:
 ## included. A gas that blinds holds its shot back (m.shoot). Returns the
 ## medium's rule ({} on firm floor) for the movement (slide, pull).
 func _step_mob_medium(m: Dictionary, dt: float) -> Dictionary:
+	preload("res://src/combat/enemy_sight.gd").step(m,dt)
 	var met: Dictionary = exposure().step(m, dt)
 	if float(met.blind) > 0.0:
 		m.shoot = maxf(float(m.get("shoot", 0.0)), float(met.blind))

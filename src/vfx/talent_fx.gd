@@ -1,7 +1,10 @@
 extends RefCounted
 const NecroArt = preload("res://src/vfx/necro_art.gd")
 const ForestTrapRig = preload("res://src/rig/forest_trap_rig.gd")
+const AlchemistArt = preload("res://src/vfx/alchemist_art.gd")
 const MarksmanArt=preload("res://src/vfx/marksman_art.gd")
+var marksman_matter:=preload("res://src/vfx/marksman_matter.gd").new()
+const MarksmanSprites=preload("res://src/vfx/marksman_sprites.gd")
 ## Client art of the talents (snapshot "talents", src/combat/talent_combat.gd)
 ## on the art grid of the world it is drawn in (`art` world px per art pixel:
 ## the crypt 2, the story worlds 3): zones as physics pools with gas or flames
@@ -131,7 +134,7 @@ const LOOK_ELEMENT := {"mana_bubble": "void", "gold_bubble": "gold", "soul_bubbl
 const TIER_K := {"small": 0.0, "medium": 0.34, "large": 0.67, "huge": 1.0}
 const INK := Color("1a1414")
 ## Zone looks drawn here as their own art (not as a pool or gas).
-const LOOKS := ["flames", "firewall", "lava", "ice", "arcane", "snow", "arrows", "crater", "souls", "souls_ring", "souls_trail", "plague", "external_pool"]
+const LOOKS := ["flames", "firewall", "lava", "ice", "arcane", "snow", "arrows", "crater", "souls", "souls_ring", "souls_trail", "plague", "external_pool", "ranger_pull"]
 ## How long a shot's painted impact plays (s).
 const IMPACT_TIME := 0.45
 ## "KRIT" over a critical hit (vfx_talents.json "crit_text" overrides): at least
@@ -148,6 +151,8 @@ var companion_rigs := CompanionRigs.new()
 var rigs: RefCounted = null
 var necro_staff := Callable()
 var necro_staff_key := ""
+var marksman_socket := Callable()
+var marksman_socket_key := ""
 var _necro_actors: Dictionary = {}
 var _blood_ripple_tick := -1
 
@@ -534,7 +539,11 @@ func draw_ground(canvas: CanvasItem, state: Dictionary, clock: float) -> void:
 	var traps: Dictionary = cfg.get("traps", {})
 	for trap: Dictionary in state.get("traps", []):
 		var trap_at := Vector2(float(trap.x),float(trap.y))
-		sprites.draw_external_rig(canvas,ForestTrapRig.parts(trap_at,art,clock,int(trap.get("id",0)),-1,float(trap.get("vs",1))),trap_at)
+		if not str(trap.get("recipe","" )).is_empty():
+			sprites.draw_external_rig(canvas,AlchemistArt.parts(trap_at,str(trap.recipe),art,clock,-1,bool(trap.get("armed",true))),trap_at)
+			continue
+		var tint:=Color(1.05,1.6,0.65) if str(trap.get("fx",""))=="poison" else Color.WHITE
+		sprites.draw_external_rig(canvas,ForestTrapRig.parts(trap_at,art,clock,int(trap.get("id",0)),-1,float(trap.get("vs",1)),tint),trap_at)
 		var kind := _trap_kind(trap)
 		TalentPixels.trap(canvas, Vector2(float(trap.x), float(trap.y)), kind, float(traps.get("radius", {}).get(kind, 7))*float(trap.get("vs",1)),
 			float(traps.get("pulse", {}).get(kind, 1.0)), art, clock, int(trap.get("id", 0)))
@@ -621,6 +630,11 @@ func _zone_matter(zone: Dictionary, clock: float) -> void:
 	var look := str(zone.get("look", ""))
 	if particles != null and look in ["souls","souls_ring","souls_trail"]:
 		soul_matter.field(zone,clock,particles,to_particles,pools,cfg.get("soul_physics",{}))
+		return
+	if look=="ranger_pull":
+		if particles!=null:
+			var root: Dictionary=cfg.get("ranger",{}).get("lure",{})
+			particles.well("ranger:%d"%int(zone.id),Vector2(zone.x,zone.y)*to_particles,float(zone.r)*to_particles,float(root.get("well_pull",180)),float(root.get("well_swirl",24)),art,0.2,float(root.get("mote_rate",18)),Pal.ramp_hot("beast"),false)
 		return
 	if not look in ["snow", "arcane", "crater", "ice", "souls", "plague"]: return
 	var id := int(zone.get("id", 0))
@@ -778,6 +792,7 @@ func _smoke_along(path: Array, stride: int, every: float, r: float, id: int, clo
 ## without a root (boom) is an iron trap (Explosionsfalle, Jagdgrund), a wide
 ## one with a root the Netzfalle, a small one the Dornenfalle.
 func _trap_kind(trap: Dictionary) -> String:
+	if str(trap.get("fx",""))=="poison": return "thorn"
 	if bool(trap.get("boom", false)): return "iron"
 	return "net" if float(trap.get("r", 0.0)) > _u(float(cfg.get("traps", {}).get("net_over", 40))) else "thorn"
 
@@ -1239,7 +1254,10 @@ func _crit_word(canvas: CanvasItem, at: Vector2, p: float, span: float, fade: fl
 func draw_events(canvas: CanvasItem, state: Dictionary, clock: float = -1.0) -> void:
 	MarksmanArt.statuses(canvas,state,clock,art,sprites)
 	for charge: Dictionary in state.get("charges",[]):
-		if str(charge.get("talent",""))=="sniper_14": MarksmanArt.charge(canvas,charge,clock,art,sprites)
+		if str(charge.get("talent",""))=="sniper_14":
+			var socket:=Vector2.INF
+			if marksman_socket.is_valid(): socket=marksman_socket.call(marksman_socket_key if not marksman_socket_key.is_empty() else "p%d"%int(charge.owner),socket,clock)
+			MarksmanArt.charge(canvas,charge,clock,art,sprites,socket)
 	# Foreground charge uses this frame's staff socket, after the hero was drawn.
 	for charge: Dictionary in state.get("bone_charges", []):
 		var at := Vector2(charge.x,charge.y)-Vector2(0,12*art)+Vector2(charge.ax,charge.ay)*8*art
@@ -1290,7 +1308,8 @@ func draw_events(canvas: CanvasItem, state: Dictionary, clock: float = -1.0) -> 
 			continue
 		if str(event.kind) == "cast" and NecroArt.cast(canvas,event,at,p,clock,art,sprites): continue
 		if str(event.kind)=="spear" and str(event.get("talent",""))=="sniper_14":
-			MarksmanArt.spear(canvas,event,p,clock,art,sprites)
+			p=marksman_matter.age_for(event,clock)/span
+			MarksmanArt.spear(canvas,event,p,clock,art,sprites,cfg.get("ranger",{}).get("arrow",{}))
 			continue
 		if str(event.kind) == "necro_drain":
 			if state.get("blood_links",[]).any(func(l: Dictionary)->bool:return int(l.owner)==int(event.get("owner",-1)) and int(l.target_id)==int(event.get("target_id",-2))): continue
@@ -1335,6 +1354,9 @@ func draw_events(canvas: CanvasItem, state: Dictionary, clock: float = -1.0) -> 
 				TalentPixels.waves(canvas, at, r, p, "beast" if bool(event.get("pet", false)) else element, art, id)
 			"blink", "dash", "leap":
 				var to := Vector2(float(event.get("tx", at.x)), float(event.get("ty", at.y)))
+				if talent == "sniper_9":
+					MarksmanSprites.backflip(canvas,at,to,p,art,sprites)
+					continue
 				var kind := str(event.kind)
 				if kind == "blink" and (talent == "frost_11" or talent == "arcane_5"):
 					_mage_blink(canvas, talent, at, to, p, id)
@@ -1369,10 +1391,18 @@ func draw_events(canvas: CanvasItem, state: Dictionary, clock: float = -1.0) -> 
 			"parry":
 				TalentPixels.burst(canvas, at + body, 7, p, "steel", art, id)
 			"mark":
-				TalentPixels.reticle(canvas, at + body * 1.6, p, 1.0 - smoothstep(0.85, 1.0, p), art, _clock)
+				if talent == "sniper_5": MarksmanSprites.draw(canvas,"hunters_mark",at+body*1.6,0,art,null,fade)
+				else: TalentPixels.reticle(canvas, at + body * 1.6, p, 1.0 - smoothstep(0.85, 1.0, p), art, _clock)
+			"alchemy_burst":
+				sprites.draw_external_rig(canvas,AlchemistArt.parts(at,str(event.get("recipe","poison")),art,clock,p),at)
+			"alchemy_field":
+				AlchemistArt.field(canvas,event,p,art,clock,sprites)
+			"alchemy_trigger":
+				TalentPixels.reticle(canvas,at,p,fade,art,clock)
 			"trap":
 				_sprung_trap(canvas, event, at, r, p, id)
-				sprites.draw_external_rig(canvas,ForestTrapRig.parts(at,art,clock,id,p),at)
+				var tint:=Color(1.05,1.6,0.65) if str(event.get("fx",""))=="poison" else Color.WHITE
+				sprites.draw_external_rig(canvas,ForestTrapRig.parts(at,art,clock,id,p,1,tint),at)
 			"echo":
 				_echo(canvas, at, r, p, id)
 			"swallow":
@@ -1478,6 +1508,9 @@ func _gather(canvas: CanvasItem, at: Vector2, angle: float, p: float, span: floa
 ## in its matter (the iron trap's fire with the hit ring, the thorns' poison,
 ## the net's rope) over the event.
 func _sprung_trap(canvas: CanvasItem, event: Dictionary, at: Vector2, r: float, p: float, id: int) -> void:
+	if str(event.get("fx",""))=="poison":
+		TalentPixels.burst(canvas,at,10,p,"poison",art,id)
+		return
 	var kind := _trap_kind(event)
 	var traps: Dictionary = cfg.get("traps", {})
 	var spring := clampf(p / float(traps.get("spring", 0.45)), 0.0, 1.0)
@@ -1671,6 +1704,9 @@ func _boost(event: Dictionary) -> float:
 ## the physics of its matter (particles, residue); and the residue of the
 ## zones that ended since the last frame.
 func _observe(state: Dictionary, clock: float) -> void:
+	marksman_matter.socket=marksman_socket
+	marksman_matter.socket_key=marksman_socket_key
+	marksman_matter.update(state,clock,particles,to_particles,art)
 	var now := {}
 	for event: Dictionary in state.get("events", []):
 		var id := int(event.get("id", 0))
@@ -1691,6 +1727,11 @@ func _observe(state: Dictionary, clock: float) -> void:
 				"T": float(spec.get("flash", 0.15)) * _boost(event), "r": float(spec.get("flash_r", 20.0)) * art * _boost(event), "strength": 0.5, "tier": tier})
 		if bool(event.get("ult", false)): _ult_pool(event, state, clock)
 		match kind:
+			"spear":
+				if talent=="sniper_14" and bool(event.get("wall",false)):
+					var span:=float(event.get("span",0.93))
+					var remaining:=span*float(event.get("flight",0.3))-(span-float(event.life))
+					_defer(clock+maxf(0,remaining),{"kind":"ranger_wall","at":Vector2(event.tx,event.ty),"dir":(Vector2(event.tx,event.ty)-at).normalized()})
 			"cast":
 				# the mages remember what they cast: the shield's element, the echo's spell, the ultimate's stage
 				var owner := int(event.get("owner", -1))
@@ -1748,7 +1789,17 @@ func _observe(state: Dictionary, clock: float) -> void:
 					var entry := {"kind": "link", "at": hit, "prev": prev, "element": element, "n": int(ch.get("sparks", 6)), "burn": float(ch.get("burn", 0.6)), "seed": id + i, "sparks": int(ch.get("link_sparks", 3))}
 					if particles == null: _link_hit(entry, clock)
 					else: _defer(clock + strikes, entry)
+			"alchemy_burst":
+				var recipe := str(event.get("recipe","poison"))
+				element = "ice" if recipe in ["frost","shatter"] else recipe
+				_matter(at,Vector2.ZERO,element,18 if bool(event.get("ult",false)) else 12,0,minf(r,_u(28)))
+				if particles != null:
+					if recipe == "fire": particles.fire_burst(at*to_particles,minf(r,_u(48))*to_particles)
+					particles.kick(at*to_particles,minf(r,_u(48))*to_particles,0.4)
 			"trap":
+				if str(event.get("fx",""))=="poison":
+					_matter(at,Vector2.ZERO,"poison",14,0,_u(18))
+					continue
 				match _trap_kind(event):
 					"iron": _burst_physics(at, r, "fire", false, false, clock)
 					"thorn":
@@ -1973,6 +2024,9 @@ func _draw_looks(canvas: CanvasItem, zones: Array, clock: float) -> void:
 		var at := Vector2(float(zone.x), float(zone.y))
 		var r := float(zone.r)
 		match str(zone.get("look", "")):
+			"ranger_pull":
+				var roots: Dictionary=cfg.get("ranger",{}).get("lure",{})
+				sprites.draw_external_rig(canvas,ForestTrapRig.lure_parts(at,r,art,clock,int(zone.id),clampf(float(zone.time)/0.3,0,1),roots),at)
 			"external_pool":
 				if str(zone.get("talent","")) in ["curse_7","curse_14"]: NecroArt.field(canvas,zone,clock,art,sprites)
 			"flames":
@@ -2026,8 +2080,7 @@ func _draw_looks(canvas: CanvasItem, zones: Array, clock: float) -> void:
 					var u := cycle - float(round_index)
 					var seed_value := absi(hash(Vector3i(i, round_index, int(zone.get("id", 0)))))
 					var spot := at + Vector2.from_angle(float(seed_value % 628) / 100.0) * r * sqrt(float((seed_value / 628) % 100) / 100.0) * 0.92
-					if u < 0.3: sprites.draw_loop(canvas, "hail_arrow", spot + Vector2(18, -150) * (1.0 - u / 0.3), 0.12, 1.0, clock + i * 0.1)
-					else: sprites.draw_at(canvas, "arrow_impact", spot, 0.0, 1.0, (u - 0.3) / 0.7)
+					MarksmanSprites.hail(canvas,spot,u,art,sprites)
 			"crater":
 				# the meteor's crater: a lava pool (draw_ground) with glowing cracks,
 				# tongues and rising embers over it, cooling towards its end
@@ -2295,8 +2348,7 @@ func _extra_event(canvas: CanvasItem, event: Dictionary, at: Vector2, p: float, 
 				var spot := at + Vector2.from_angle(i * 2.39996) * r * sqrt((i + 0.5) / 12.0) * 0.9
 				var start := float(i % 4) * 0.08
 				var k := clampf((p - start) / (1.0 - start), 0.0, 1.0)
-				if k <= 0.0: sprites.draw_loop(canvas, "hail_arrow", spot + Vector2(18, -150) * (1.0 - p / start), 0.12, 1.0, p)
-				else: sprites.draw_at(canvas, "arrow_impact", spot, 0.0, 1.2, k)
+				MarksmanSprites.hail(canvas,spot,clampf((p-start+0.12)/0.55,0,1),art,sprites)
 			TalentPixels.nova(canvas, at, r, p, "stone", art, id, true)
 			TalentPixels.impact(canvas, at, Vector2.ZERO, p, "stone", art, int(clampf(r / art * 0.25, 6.0, 12.0)), id)
 		"dive":
@@ -2646,6 +2698,10 @@ func _run_deferred(clock: float) -> void:
 			_deferred.remove_at(i)
 	for entry: Dictionary in due:
 		match str(entry.kind):
+			"ranger_wall":
+				var arrow: Dictionary=cfg.get("ranger",{}).get("arrow",{})
+				particles.chips(Vector2(entry.at)*to_particles,int(arrow.get("chip_count",24)),-Vector2(entry.dir),[Color("c8985c"),Color("f4dfad"),Color("826349")])
+				particles.sparks(Vector2(entry.at)*to_particles,-Vector2(entry.dir),int(arrow.get("spark_count",12)),[Color("f6cf78"),Color("fff1ca")])
 			"rim": _rim(entry.at, float(entry.r), str(entry.element), bool(entry.heavy))
 			"link": _link_hit(entry, clock)
 			"comet": _comet(entry)

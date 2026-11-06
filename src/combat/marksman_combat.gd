@@ -2,6 +2,25 @@ extends RefCounted
 ## Host-only one-use marks and bounded arrow pinning. No client damage values.
 var context: Dictionary = {}
 
+## Clip a projectile on its aim ray. Actor movement slides on walls; arrows do not.
+func trace(tc: RefCounted, from: Vector2, aim: Vector2, distance: float, radius: float) -> Dictionary:
+	var step:=aim.normalized()*distance
+	if not tc._blocked(from,from+step,radius): return {"to":from+step,"wall":false}
+	var low:=0.0
+	var high:=1.0
+	for iteration in range(24):
+		var mid:=(low+high)*0.5
+		if tc._blocked(from,from+step*mid,radius): high=mid
+		else: low=mid
+	var at:=from+step*low
+	var normal:=Vector2.ZERO
+	# Probe the contacting axes against the same grown walls/bounds. This also
+	# handles room edges and corners without trusting a client-provided normal.
+	if absf(aim.x)>0.001 and tc._blocked(at,at+Vector2(signf(aim.x),0),radius): normal.x=-signf(aim.x)
+	if absf(aim.y)>0.001 and tc._blocked(at,at+Vector2(0,signf(aim.y)),radius): normal.y=-signf(aim.y)
+	if normal==Vector2.ZERO: normal=-aim.normalized()
+	return {"to":at,"wall":true,"normal":normal.normalized()}
+
 ## Mark every visible nearby foe independently for this owner.
 func mark(tc: RefCounted, owner: int, info: Dictionary, rt: Dictionary) -> void:
 	var at: Vector2=tc.game.players[owner].pos

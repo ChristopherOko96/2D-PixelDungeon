@@ -58,12 +58,14 @@ extends RefCounted
 ## dither, the darkness creeping in towards it) and pulls loose things, embers
 ## and drops into it (a particles well per pool, materials.void_pull).
 ##
-## Poison (look "miasma"; review A6 2026-11-01): a see-through sludge under
-## its own fumes, never an opaque sheet: a grain of its colours with alpha
+## Materials with look "miasma" (review A6 2026-11-01): see-through sludge under
+## their own fumes, rather than an opaque sheet: a grain of colours with alpha
 ## and dither holes (the floor and whoever stands in it show through), thick
 ## in its middle and fraying towards its rim with no outline, the grain
 ## churning slowly; wisps of fume rise off it. It is still a liquid for the
-## rules and reactions (its style). The Hölle's lava floor gets a ragged
+## rules and reactions (its style). Plain poison uses a visible liquid surface
+## after the user's 2026-11-05 trap correction; gas remains separate.
+## The Hölle's lava floor gets a ragged
 ## crust of pixels along its edge (lava_rim) instead of a straight frame.
 
 const SplatShape = preload("res://src/vfx/splat_shape.gd")
@@ -1682,7 +1684,7 @@ func _style(mat: String) -> String:
 
 
 ## How material `mat` is drawn: its "look" (vfx_pools.json; "miasma": the
-## poison's see-through fuming sludge) or else its style. The rules and
+## see-through fuming sludge) or else its style. The rules and
 ## reactions keep asking _style.
 func _look(mat: String) -> String:
 	return str(cfg.materials.get(mat, {}).get("look", _style(mat)))

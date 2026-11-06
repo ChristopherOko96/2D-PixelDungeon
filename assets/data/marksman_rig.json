@@ -1,9 +1,258 @@
 {
- "_note":"Existing licensed 0x72 weapon_arrow.png, native 7x21, split once. Shared RigRenderer, fixed shaft/head and independently flexing feather joints. No new actor art.",
- "images":{"marksman_arrow":"res://assets/sprites/0x72/weapon_arrow.png"},
- "rigs":{"marksman_arrow":{"img":"marksman_arrow","family":"marksman_arrow","ground":[3,10],"width":7,"parts":[
-  {"id":"tip","rects":[[0,0,6,5]],"pivot":[3,5],"parent":"shaft","z":3,"hp":1},
-  {"id":"feather_l","rects":[[0,15,2,20]],"pivot":[3,15],"parent":"shaft","z":2,"hp":1},
-  {"id":"feather_r","rects":[[4,15,6,20]],"pivot":[3,15],"parent":"shaft","z":2,"hp":1},
-  {"id":"shaft","rects":[[0,0,6,20]],"pivot":[3,10],"parent":null,"z":1,"hp":1}],"items":[]}}
+  "_note": "Original four-part arrow preserved; ultimate uses code-authored 11x41 celestial_lance.png, nine independently owned masks. See docs/HIMMELSSPEER-RIG.de.md.",
+  "images": {
+    "marksman_arrow": "res://assets/sprites/marksman/spear_arrow.png",
+    "celestial_lance": "res://assets/sprites/marksman/celestial_lance.png"
+  },
+  "rigs": {
+    "marksman_arrow": {
+      "img": "marksman_arrow",
+      "family": "marksman_arrow",
+      "ground": [
+        3,
+        10
+      ],
+      "width": 7,
+      "parts": [
+        {
+          "id": "tip",
+          "rects": [
+            [
+              0,
+              0,
+              6,
+              5
+            ]
+          ],
+          "pivot": [
+            3,
+            5
+          ],
+          "parent": "shaft",
+          "z": 3,
+          "hp": 1
+        },
+        {
+          "id": "feather_l",
+          "rects": [
+            [
+              0,
+              15,
+              2,
+              20
+            ]
+          ],
+          "pivot": [
+            3,
+            15
+          ],
+          "parent": "shaft",
+          "z": 2,
+          "hp": 1
+        },
+        {
+          "id": "feather_r",
+          "rects": [
+            [
+              4,
+              15,
+              6,
+              20
+            ]
+          ],
+          "pivot": [
+            3,
+            15
+          ],
+          "parent": "shaft",
+          "z": 2,
+          "hp": 1
+        },
+        {
+          "id": "shaft",
+          "rects": [
+            [
+              0,
+              0,
+              6,
+              20
+            ]
+          ],
+          "pivot": [
+            3,
+            10
+          ],
+          "parent": null,
+          "z": 1,
+          "hp": 1
+        }
+      ],
+      "items": []
+    },
+    "marksman_spear": {
+      "img": "celestial_lance",
+      "family": "marksman_arrow",
+      "ground": [
+        5,
+        20
+      ],
+      "width": 11,
+      "parts": [
+        {
+          "id": "blade_l",
+          "rects": [
+            [
+              0,
+              0,
+              4,
+              15
+            ]
+          ],
+          "pivot": [
+            5,
+            15
+          ],
+          "parent": "tip",
+          "z": 3
+        },
+        {
+          "id": "blade_r",
+          "rects": [
+            [
+              6,
+              0,
+              10,
+              15
+            ]
+          ],
+          "pivot": [
+            5,
+            15
+          ],
+          "parent": "tip",
+          "z": 3
+        },
+        {
+          "id": "tip",
+          "rects": [
+            [
+              5,
+              0,
+              5,
+              15
+            ]
+          ],
+          "pivot": [
+            5,
+            15
+          ],
+          "parent": "shaft_front",
+          "z": 3
+        },
+        {
+          "id": "feather_l",
+          "rects": [
+            [
+              0,
+              30,
+              4,
+              40
+            ]
+          ],
+          "pivot": [
+            5,
+            33
+          ],
+          "parent": "shaft_back",
+          "z": 2
+        },
+        {
+          "id": "feather_r",
+          "rects": [
+            [
+              6,
+              30,
+              10,
+              40
+            ]
+          ],
+          "pivot": [
+            5,
+            33
+          ],
+          "parent": "shaft_back",
+          "z": 2
+        },
+        {
+          "id": "nock",
+          "rects": [
+            [
+              5,
+              34,
+              5,
+              40
+            ]
+          ],
+          "pivot": [
+            5,
+            35
+          ],
+          "parent": "shaft_back",
+          "z": 2
+        },
+        {
+          "id": "shaft_front",
+          "rects": [
+            [
+              0,
+              16,
+              10,
+              19
+            ]
+          ],
+          "pivot": [
+            5,
+            20
+          ],
+          "parent": "shaft_mid",
+          "z": 1
+        },
+        {
+          "id": "shaft_back",
+          "rects": [
+            [
+              0,
+              25,
+              10,
+              33
+            ]
+          ],
+          "pivot": [
+            5,
+            24
+          ],
+          "parent": "shaft_mid",
+          "z": 1
+        },
+        {
+          "id": "shaft_mid",
+          "rects": [
+            [
+              0,
+              20,
+              10,
+              24
+            ]
+          ],
+          "pivot": [
+            5,
+            20
+          ],
+          "parent": null,
+          "z": 1
+        }
+      ],
+      "items": []
+    }
+  }
 }

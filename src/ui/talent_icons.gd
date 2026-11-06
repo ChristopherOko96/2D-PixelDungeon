@@ -7,6 +7,7 @@ extends RefCounted
 
 ## 14x14 motifs. o outline, d dark, m mid, l light, w highlight, . clear.
 const MOTIF := {
+	"ice": ["......oo......","..o...lo...o..","..ol..lo..lo..","...olloollo...","....olllo.....","oooooolloooooo","ollllllllllllo","oooooolloooooo","....olllo.....","...olloollo...","..ol..lo..lo..","..o...lo...o..","......oo......",".............."],
 	# the fire mage after the concept sheet (30.10.2026)
 	"fireball": [
 		"..........ooo.",
@@ -637,6 +638,12 @@ static func make(spec: Dictionary, motif: String, on: bool, ultimate := false) -
 	if _cache.has(key): return _cache[key]
 	var base := Color(str(spec.get("color", "#777777")))
 	var light := Color(str(spec.get("color2", "#ffffff")))
+	if motif.begins_with("alchemy_"):
+		var recipe := motif.trim_prefix("alchemy_")
+		var alchemy: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://assets/data/alchemist_rules.json"))
+		base = Color(str(alchemy.colours.get(recipe,"94d24a")))
+		light = base.lightened(0.4)
+		motif = {"poison":"flask","water":"drop","fire":"bomb","frost":"ice","shatter":"spikes","detonate":"burst"}.get(recipe,"flask")
 	if not on:
 		base = Color("5a5560")
 		light = Color("a39cab")

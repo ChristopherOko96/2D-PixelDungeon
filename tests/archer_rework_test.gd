@@ -75,7 +75,7 @@ func test_traps_have_three_charges_and_six_ground_slots() -> void:
 		rt.gcd=0
 		check(_cast(d.talents.trapper_3,{"target":Vector2(400+n*32,180)}),"paid trap charge "+str(n+1))
 	check(tc.traps.size()==3,"three placements without waiting a whole cooldown")
-	check(tc.traps.all(func(t:Dictionary)->bool:return float(t.r)>=64),"thorn trap hit area is larger")
+	check(tc.traps.all(func(t:Dictionary)->bool:return float(t.r)>=64),"water capsule has substantial hit area")
 	rt.gcd=0
 	check(not tc.cast(1,"trapper_3"),"fourth cast waits for a charge")
 	_tick(12.2)
@@ -89,7 +89,7 @@ func test_traps_have_three_charges_and_six_ground_slots() -> void:
 	check(tc.traps.size()==6,"three charges of each trap coexist before expiry")
 	rt.gcd=0
 	tc.cast(1,"trapper_14")
-	check(tc.traps.size()==6,"six simultaneous ground traps, oldest replaced at limit")
+	check(tc.traps.size()==6 and tc.alchemist.fields.size()==1,"six capsules coexist with the separate staged apparatus")
 	var slot: Dictionary=tc.player_state(1).slots.filter(func(s:Dictionary)->bool:return str(s.id)=="trapper_3")[0]
 	check(int(slot.get("charges_max",0))==3,"HUD exposes trap charges")
 	var spent: int=rt.ability_charges.trapper_3.left

@@ -300,7 +300,8 @@
     "speed": 0.9,
     "ranged": true,
     "range_m": 7,
-    "abilities": []
+    "abilities": [],
+    "summon_only": true
    },
    "fire_worm": {
     "rig": "fire_worm",
@@ -312,7 +313,8 @@
     "speed": 0.9,
     "ranged": true,
     "range_m": 7,
-    "abilities": []
+    "abilities": [],
+    "summon_only": true
    }
   },
   "_skeleton_note": "skeleton: the necromancer's summons (talent key pet_kind), drawn with the 0x72 skelet frames; never offered as the beast master's companion.",
@@ -696,7 +698,7 @@
       "trapper_13",
       "trapper_14"
      ],
-     "name": "Fallensteller",
+     "name": "Fallenalchemist",
      "color": "#7cc23a",
      "color2": "#e2ff9e"
     },
@@ -2192,14 +2194,14 @@
    "name": "Himmelsspeer",
    "icon": "pierce",
    "type": "line",
-   "length_m": 14,
-   "width_m": 1.2,
+   "length_m": 96,
+   "width_m": 2.4,
    "dmg": [
     3.5
    ],
    "always_crit": true,
    "fx": "steel",
-   "text": "R halten: Himmelsspeer bis 1,5 s aufladen, loslassen: durchbohrt alle sichtbaren Ziele auf einer 14-m-Linie. 350 bis 700 % Schaden, garantiert kritisch. Normale Gegner werden mitgerissen und 1 bis 2 s angepinnt. Bosse erhalten nur Schaden. 50 Ausdauer plus bis zu 25 fürs Laden.",
+   "text": "R halten: Himmelsspeer bis 1,5 s aufladen. Ein 2,4 m breiter Pfeil durchbohrt den Raum bis zur ersten Wand und zerspringt dort. 350 bis 700 % Schaden, garantiert kritisch. Normale Gegner werden mitgerissen und 1 bis 2 s angepinnt; Bosse erhalten nur Schaden. 50 Ausdauer plus bis zu 25 fürs Laden.",
    "stages": [
     {
      "name": "Brandmal",
@@ -2236,29 +2238,39 @@
     "push_time": 0.25,
     "time_min": 1,
     "time": 2
-   }
+   },
+   "wall_radius": 4,
+   "flight_s": 0.28,
+   "impact_s": 0.65
   },
   "trapper_1": {
-   "name": "Giftpfeil",
-   "kind": "active",
-   "icon": "arrow",
-   "text": "90/105/120 % Schaden, vergiftet 5 s.",
-   "ranks": 3,
-   "type": "projectile",
-   "dmg": [
-    0.9,
-    1.05,
-    1.2
-   ],
-   "status": "poison",
-   "style": "arrow",
-   "cost": 15,
-   "cd": 5,
    "id": "trapper_1",
    "class": "archer",
    "spec": "trapper",
    "index": 0,
-   "tier": 1
+   "tier": 1,
+   "kind": "active",
+   "ranks": 3,
+   "type": "alchemy_trap",
+   "reach_m": 7,
+   "name": "Giftköder",
+   "icon": "alchemy_poison",
+   "recipe": "poison",
+   "dmg": [
+    0.2,
+    0.25,
+    0.3
+   ],
+   "cost": 15,
+   "cd": 10,
+   "radius_m": 2.5,
+   "pool_time": 7,
+   "lure_m": 5,
+   "text": "Giftköder: lockt normale Gegner in 5 m an. Nach 0,5 s scharf; Kontakt oder eigener Pfeil öffnet eine echte Giftpfütze in 2,5 m für 7 s. Beim Öffnen 20/25/30 % Schaden, danach je Sekunde 15/20/25 % und Gift. Feuer verbraucht das Gift als Explosion.",
+   "charges": 3,
+   "arm_s": 0.5,
+   "trigger_m": 0.8,
+   "status": "poison"
   },
   "trapper_2": {
    "name": "Giftmischer",
@@ -2280,34 +2292,32 @@
    "tier": 1
   },
   "trapper_3": {
-   "name": "Dornenfalle",
-   "kind": "active",
-   "icon": "spikes",
-   "text": "Große Dornenfalle: 90/110/130 % Schaden in 2 m, Fessel 1/1,5/2 s. Drei Ladungen, eine lädt in 12 s nach. Höchstens sechs Fallen; nach 0,5 s scharf.",
-   "ranks": 3,
-   "type": "trap",
-   "dmg": [
-    0.9,
-    1.1,
-    1.3
-   ],
-   "root": [
-    1,
-    1.5,
-    2
-   ],
-   "radius_m": 2,
-   "cost": 25,
-   "cd": 12,
    "id": "trapper_3",
    "class": "archer",
    "spec": "trapper",
    "index": 2,
    "tier": 2,
-   "visual_spread": 2,
-   "trigger_m": 1.2,
+   "kind": "active",
+   "ranks": 3,
+   "type": "alchemy_trap",
+   "reach_m": 7,
+   "name": "Wasserkapsel",
+   "icon": "alchemy_water",
+   "recipe": "water",
+   "dmg": [
+    0.1,
+    0.15,
+    0.2
+   ],
+   "cost": 15,
+   "cd": 10,
+   "radius_m": 3,
+   "pool_time": 8,
+   "wet_time": 4,
+   "text": "Wasserkapsel: beim Auslösen 10/15/20 % Schaden und Nässe für 4 s in 3 m. Hinterlässt 8 s Wasser. Frost gefriert die Pfütze, Feuer erzeugt Dampf. Drei Ladungen; nach 0,5 s scharf.",
    "charges": 3,
-   "arm_s": 0.5
+   "arm_s": 0.5,
+   "trigger_m": 0.8
   },
   "trapper_4": {
    "name": "Hinterhalt",
@@ -2328,36 +2338,40 @@
    "tier": 2
   },
   "trapper_5": {
-   "name": "Explosionsfalle",
-   "kind": "active",
-   "icon": "bomb",
-   "text": "Große Explosionsfalle: 140/165/190 % Schaden in 4 m. Drei Ladungen, eine lädt in 18 s nach. Höchstens sechs Fallen; nach 0,5 s scharf.",
-   "ranks": 3,
-   "type": "trap",
-   "dmg": [
-    1.4,
-    1.65,
-    1.9
-   ],
-   "radius_m": 4,
-   "cost": 30,
-   "cd": 18,
    "id": "trapper_5",
    "class": "archer",
    "spec": "trapper",
    "index": 4,
    "tier": 3,
-   "visual_spread": 2.4,
-   "trigger_m": 1.3,
+   "kind": "active",
+   "ranks": 3,
+   "type": "alchemy_trap",
+   "reach_m": 7,
+   "name": "Zündfalle",
+   "icon": "alchemy_fire",
+   "recipe": "fire",
+   "dmg": [
+    1.1,
+    1.35,
+    1.6
+   ],
+   "cost": 25,
+   "cd": 16,
+   "radius_m": 3,
+   "status": "burn",
+   "status_time": 3,
+   "text": "Zündfalle: 110/135/160 % Schaden und 3 s Brennen in 3 m. Entzündet echte Giftpfützen zur Explosion, Wasser wird zu Dampf und Eis taut. Drei Ladungen; nach 0,5 s scharf. Hinterlässt eine echte Feuerfläche für 4 s.",
    "charges": 3,
-   "arm_s": 0.5
+   "arm_s": 0.5,
+   "trigger_m": 0.8,
+   "pool_time": 4
   },
   "trapper_6": {
-   "name": "Ätzende Spitzen",
+   "name": "Konzentriertes Gift",
    "kind": "passive",
    "icon": "arrow",
    "type": "talent_pct",
-   "text": "Giftpfeil verursacht +15/30/45 % Schaden.",
+   "text": "Der direkte Öffnungstreffer und die Pfützenimpulse des Giftköders verursachen +15/30/45 % Schaden.",
    "target": "trapper_1",
    "pct": [
     15,
@@ -2372,28 +2386,38 @@
    "ranks": 3
   },
   "trapper_7": {
-   "name": "Giftwolke",
-   "kind": "active",
-   "icon": "flask",
-   "type": "zone",
-   "text": "Giftwolke am Zielort, 2,5 m Radius, 6 s: jede Sekunde 20/25/30 % Schaden und Gift.",
-   "radius_m": 2.5,
-   "time": 6,
-   "every": 1,
-   "dmg": [
-    0.2,
-    0.25,
-    0.3
-   ],
-   "status": "poison",
-   "cost": 25,
-   "cd": 14,
    "id": "trapper_7",
    "class": "archer",
    "spec": "trapper",
    "index": 6,
    "tier": 4,
-   "ranks": 3
+   "kind": "active",
+   "ranks": 3,
+   "type": "alchemy_trap",
+   "reach_m": 7,
+   "name": "Frostfalle",
+   "icon": "alchemy_frost",
+   "recipe": "frost",
+   "dmg": [
+    0.45,
+    0.6,
+    0.75
+   ],
+   "cost": 20,
+   "cd": 14,
+   "radius_m": 3,
+   "slow": 0.35,
+   "slow_time": 2,
+   "freeze_wet": [
+    1,
+    1.3,
+    1.6
+   ],
+   "text": "Frostfalle: 45/60/75 % Schaden und 35 % Verlangsamung für 2 s. Nasse normale Gegner frieren 1/1,3/1,6 s ein; Wasser wird zu Eis. Bosse werden nur gebremst. Drei Ladungen; nach 0,5 s scharf. Hinterlässt eine echte Frostfläche für 5 s.",
+   "charges": 3,
+   "arm_s": 0.5,
+   "trigger_m": 0.8,
+   "pool_time": 5
   },
   "trapper_8": {
    "name": "Fallenkunde",
@@ -2414,43 +2438,46 @@
    "ranks": 3
   },
   "trapper_9": {
-   "name": "Netzfalle",
-   "kind": "active",
-   "icon": "trap",
-   "type": "trap",
-   "text": "Große Netzfalle: 30 % Schaden in 3 m, Fessel 2/2,5/3 s. Drei Ladungen, eine lädt in 14 s nach. Höchstens sechs Fallen; nach 0,5 s scharf.",
-   "dmg": [
-    0.3,
-    0.3,
-    0.3
-   ],
-   "root": [
-    2,
-    2.5,
-    3
-   ],
-   "radius_m": 3,
-   "cost": 20,
-   "cd": 14,
    "id": "trapper_9",
    "class": "archer",
    "spec": "trapper",
    "index": 8,
    "tier": 5,
+   "kind": "active",
    "ranks": 3,
-   "visual_spread": 2.2,
-   "trigger_m": 1.2,
+   "type": "alchemy_trap",
+   "reach_m": 7,
+   "name": "Splitterfalle",
+   "icon": "alchemy_shatter",
+   "recipe": "shatter",
+   "dmg": [
+    1,
+    1.25,
+    1.5
+   ],
+   "cost": 20,
+   "cd": 12,
+   "radius_m": 2.5,
+   "shatter_bonus": [
+    0.5,
+    0.75,
+    1
+   ],
+   "text": "Splitterfalle: 100/125/150 % Schaden in 2,5 m. Gegen tatsächlich eingefrorene normale Gegner zusätzlich 50/75/100 % Schaden als Splitterstoß; verbraucht das Einfrieren. Drei Ladungen; nach 0,5 s scharf.",
    "charges": 3,
-   "arm_s": 0.5
+   "arm_s": 0.5,
+   "trigger_m": 0.8
   },
   "trapper_10": {
-   "name": "Lähmgift",
+   "name": "Reaktionsfenster",
    "kind": "passive",
    "icon": "skull",
    "type": "bonus_vs_status",
-   "text": "+4/8/12 % direkter Schaden gegen vergiftete Gegner.",
+   "text": "+4/8/12 % direkter Schaden gegen vergiftete, brennende oder eingefrorene Gegner.",
    "statuses": [
-    "poison"
+    "poison",
+    "burn",
+    "freeze"
    ],
    "pct": [
     4,
@@ -2465,36 +2492,29 @@
    "ranks": 3
   },
   "trapper_11": {
-   "name": "Rauchsprung",
-   "kind": "active",
-   "icon": "dash",
-   "type": "blink",
-   "text": "Springt 4/5/6 m zurück. Wo du warst: 30 % Schaden, Gegner 40 % langsamer.",
-   "dist_m": [
-    -4,
-    -5,
-    -6
-   ],
-   "dmg": [
-    0.3,
-    0.3,
-    0.3
-   ],
-   "radius_m": 2,
-   "slow": 0.4,
-   "slow_time": 3,
-   "cost": 20,
-   "cd": 14,
-   "fx": "arcane",
    "id": "trapper_11",
    "class": "archer",
    "spec": "trapper",
    "index": 10,
    "tier": 6,
-   "ranks": 3
+   "kind": "active",
+   "ranks": 3,
+   "type": "alchemy_detonate",
+   "reach_m": 7,
+   "name": "Kettenzünder",
+   "icon": "alchemy_detonate",
+   "dmg": [
+    0,
+    0,
+    0
+   ],
+   "cost": 10,
+   "cd": 8,
+   "radius_m": 5,
+   "text": "Kettenzünder: aktiviert eigene scharfe Fallen in 5 m um das Ziel in sicherer Reihenfolge: Wasser und Gift zuerst, dann Frost, Splitter und Feuer. Keine Aktivierung durch Wände oder fremde Fallen. 10 Ausdauer, 8 s Abklingzeit."
   },
   "trapper_12": {
-   "name": "Wildnisinstinkt",
+   "name": "Schutzkleidung",
    "kind": "passive",
    "icon": "shield",
    "type": "damage_reduction",
@@ -2512,7 +2532,7 @@
    "ranks": 3
   },
   "trapper_13": {
-   "name": "Seuchenkundiger",
+   "name": "Meisteralchemist",
    "kind": "passive",
    "icon": "burst",
    "type": "damage_pct",
@@ -2537,53 +2557,42 @@
    "tier": 8,
    "kind": "ultimate",
    "ranks": 1,
-   "soul": "damage",
-   "name": "Jagdgrund",
-   "icon": "trap",
-   "type": "net",
+   "type": "alchemy_field",
    "reach_m": 7,
-   "radius_m": 4,
-   "root": 2.5,
-   "boss_slow": 0.5,
-   "boss_slow_time": 3,
-   "traps": 3,
-   "trap_dmg": [
-    1
+   "name": "Alchemistischer Jagdgrund",
+   "icon": "alchemy_detonate",
+   "dmg": [
+    0
    ],
-   "trap_radius_m": 1.5,
-   "fx": "poison",
-   "text": "Ein Netz hält alle Gegner in 4 m um die Zielstelle 2,5 s fest (Bosse werden nur langsamer). Dazu legen sich 3 Fallen ringsum (je 100 %).",
+   "cost": 55,
+   "cd": 60,
+   "radius_m": 4,
+   "time": 3.3,
+   "field_power": 1,
+   "field_radius": 1,
+   "text": "Ein großer Fallenapparat entfaltet sich: nach 0,5 s Wasser- und Giftkapseln, nach 1,5 s eine Frostwelle und nach 2,5 s die Zündung. Echte Flächen reagieren miteinander. Normale nasse Gegner frieren ein; Bosse werden nur gebremst.",
    "stages": [
     {
-     "name": "Treibjagd",
-     "text": "5 Fallen, das Netz hält 1 s länger.",
-     "add": {
-      "traps": 2,
-      "root": 1
+     "name": "Großes Labor",
+     "text": "Der Jagdgrund und seine Kapselverteilung werden 25 % größer.",
+     "set": {
+      "field_radius": 1.25
      }
     },
     {
-     "name": "Giftköder",
-     "text": "Ausgelöste Fallen hinterlassen eine Giftwolke (2 m, 5 s, jede Sekunde 30 % und Gift).",
+     "name": "Meisterreaktion",
+     "text": "Die abschließende Zündung verursacht 50 % mehr direkten Schaden.",
      "set": {
-      "trap_cloud": {
-       "time": 5,
-       "every": 1,
-       "dmg": 0.3,
-       "radius_m": 2,
-       "status": "poison"
-      }
+      "field_power": 1.5
      }
     }
-   ],
-   "cd": 60,
-   "cost": 55
+   ]
   },
   "beast_1": {
    "name": "Tiergefährte",
    "kind": "active",
    "icon": "wolf",
-   "text": "Ein Wolf, ein Bär oder ein Falke (im Talentmenü wählbar) kämpft dauerhaft an deiner Seite und greift alle 2 s an: 25/35/45 % Schaden. Fähigkeiten auf 5 und 6. Stirbt er, rufst du ihn hiermit neu (30 s).",
+   "text": "Ein Wolf, ein Bär oder ein Falke (im Talentmenü wählbar) kämpft dauerhaft an deiner Seite und greift alle 2 s an: 25/35/45 % Schaden. Fähigkeiten auf 5 und 6. Stirbt er, rufst du ihn hiermit neu (30 s). Nach einer anderen Begleiterwahl tauscht erneutes Beschwören den lebenden Begleiter gegen die neue Auswahl aus; Kosten und Nachladezeit gelten weiterhin.",
    "ranks": 3,
    "type": "summon",
    "count": 1,

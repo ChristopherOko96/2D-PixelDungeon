@@ -604,6 +604,7 @@ func draw_hero(canvas: CanvasItem, key: String, player: Dictionary, point: Vecto
 	a.size_mul = size
 	a.tint = tint
 	a.soul_leap = player.get("leap", player.get("talents", {}).get("leap", {}))
+	a.marksman_motion = player.get("_marksman_motion",{})
 	a.held = held
 	# the element skin (src/hero/element_skin.gd): the mage's parts in his main spec's colours;
 	# the story worlds give the element with the player, the crypt's comes from its talents

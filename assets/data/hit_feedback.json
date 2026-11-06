@@ -1,0 +1,31 @@
+{
+  "_note": "Local presentation only. Existing approved 16x16 hit_large.png, partitioned once by the inclusive rig masks below. Seconds: life, core_s. Native source pixels: travel, lift. Native pixels/s: chip_speed, chip_lift; pixels/s squared: gravity. cap bounds simultaneous bursts. No combat, hitstop or RPC changes. See docs/TREFFER-RIG.de.md.",
+  "source": "res://assets/sprites/marksman/hit_large.png",
+  "cap": 24,
+  "life": 0.34,
+  "core_s": 0.055,
+  "travel": 7.0,
+  "chip_speed": 28.0,
+  "chip_lift": 18.0,
+  "gravity": 110.0,
+  "spin": 7.0,
+  "lift": 5.0,
+  "contact_inset": 3.0,
+  "rig": {
+    "family": "hit_burst",
+    "ground": [8, 8],
+    "width": 16,
+    "parts": [
+      {"id":"core","rects":[[5,5,10,10]],"pivot":[8,8],"parent":null,"z":3},
+      {"id":"ray_up","rects":[[5,0,10,4]],"pivot":[8,5],"parent":"core","z":2},
+      {"id":"ray_right","rects":[[11,5,15,10]],"pivot":[11,8],"parent":"core","z":2},
+      {"id":"ray_down","rects":[[5,11,10,15]],"pivot":[8,11],"parent":"core","z":2},
+      {"id":"ray_left","rects":[[0,5,4,10]],"pivot":[5,8],"parent":"core","z":2},
+      {"id":"chip_nw","rects":[[0,0,4,4]],"pivot":[3,3],"parent":"core","z":1},
+      {"id":"chip_ne","rects":[[11,0,15,4]],"pivot":[13,3],"parent":"core","z":1},
+      {"id":"chip_se","rects":[[11,11,15,15]],"pivot":[13,13],"parent":"core","z":1},
+      {"id":"chip_sw","rects":[[0,11,4,15]],"pivot":[3,13],"parent":"core","z":1}
+    ],
+    "items": []
+  }
+}

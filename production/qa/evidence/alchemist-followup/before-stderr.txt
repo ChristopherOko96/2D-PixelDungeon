@@ -1,0 +1,13 @@
+TALENT_COMBAT_FAIL: poison presents a liquid surface rather than miasma
+TALENT_COMBAT_FAIL: element capsule leaves real fire ground medium
+TALENT_COMBAT_FAIL: element capsule leaves real ice ground medium
+TALENT_COMBAT_FAIL: actual steam exposure applies three seconds of lost sight
+TALENT_COMBAT_FAIL: blinded enemy drops focus and stops chasing
+TALENT_COMBAT_FAIL: enemy can see and reacquire normally after blindness expires
+TALENT_COMBAT_FAIL: first wolf is normally summoned
+TALENT_COMBAT_FAIL: reactivation after selecting bear can replace live wolf
+TALENT_COMBAT_FAIL: exactly the selected bear is present after reactivation
+WARNING: 6 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
+ERROR: 2 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)

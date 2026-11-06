@@ -16,6 +16,7 @@ extends RefCounted
 const HudKit = preload("res://src/ui/hud_kit.gd")
 const TalentCombat = preload("res://src/combat/talent_combat.gd")
 const TalentFx = preload("res://src/vfx/talent_fx.gd")
+const MarksmanSprites = preload("res://src/vfx/marksman_sprites.gd")
 const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
 const PoolPaint = preload("res://src/vfx/pool_paint.gd")
 const TalentBar = preload("res://src/ui/talent_bar.gd")
@@ -85,6 +86,8 @@ func bind(game: Node, profile_ref: Dictionary, path: String, class_name_id: Stri
 	if g.get("story_hero") != null and g.story_hero.get("rigs") != null:
 		fx.rigs = g.story_hero.rigs
 		fx.necro_staff = Callable(g.story_hero.look,"staff_socket")
+		fx.marksman_socket = Callable(g.story_hero.look,"bow_socket")
+		fx.marksman_socket_key = "hero"
 		fx.necro_staff_key = "hero"
 		fx.to_particles = 1.0 / g.feel.scale
 	# bound to the game node, not to this object: a callable on self kept by fx would
@@ -458,6 +461,10 @@ func talent_pool(style: String, at: Vector2, r: float, time: float, owner: int) 
 func talent_media() -> Array:
 	return g.story_elements.media() if g.story_elements != null else []
 
+## Reuse the story world's authoritative drawn-liquid footprint for alchemy ticks.
+func talent_stands_in(pool: Dictionary, enemy: Dictionary) -> bool:
+	return g.story_elements != null and g.story_elements._stands_in(pool,enemy)
+
 
 ## The real zone expires; the ordinary pool renderer observes that expiration.
 func talent_consume_pool(zone: Dictionary) -> void:
@@ -731,6 +738,7 @@ func _step_bullets(dt: float) -> void:
 		if walled: b.pos = contact
 		var gone: bool = (float(b.life) <= 0.0 and not landed) or walled
 		if not gone:
+			if str(b.get("style","")) == "arrow": tc.alchemist.arrow(tc,int(b.get("owner",1)),from,b.pos)
 			for m: Dictionary in enemies:
 				if float(m.hp) <= 0.0 or b.hit_ids.has(tc._eid(m)) or not g._hittable(m): continue
 				if Geometry2D.get_closest_point_to_segment(m.p, from, b.pos).distance_to(m.p) > float(m.radius) + 10.0: continue
@@ -788,6 +796,7 @@ func draw_world(canvas: CanvasItem, clock: float) -> void:
 			"talent": str(b.get("talent", "")), "stage": int(b.get("stage", 0)), "charge": float(b.get("charge", 0.0)), "radius": float(b.get("radius", 6.0)), "id": int(b.get("id", 0))}
 		if fx.draw_bullet(canvas, shot, clock): continue
 		if str(b.get("style", "")) == "arrow":
+			if MarksmanSprites.arrow(canvas,str(b.get("talent","")),at,Vector2(b.velocity).normalized(),3.0,fx.sprites,Vector2(b.pos)): continue
 			# a shaft of pixels with a white tip and a dark outline
 			var along := Vector2(b.velocity).normalized()
 			for i in range(7):

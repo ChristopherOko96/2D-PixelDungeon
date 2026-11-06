@@ -1,0 +1,40 @@
+{
+  "date": "2026-11-05",
+  "branch": "codex/port-0x72-onto-main",
+  "checks": 564,
+  "failures": 0,
+  "network": {
+    "roles": 2,
+    "passed": true,
+    "scope": "local loopback outside network sandbox; not LAN/WAN/performance"
+  },
+  "known_progress_failures": 2,
+  "hashes": {
+    "assets/data/talents.json": "bce42d7014c14b67795082f9188c59b309eff2f4295a553ed37d81ec2e531b0f",
+    "assets/data/alchemist_rules.json": "a2b9f996a6f5b8b3694a60a0f4366909342ba837b083901e63510f4207638f9f",
+    "assets/data/debug_forest_lab.json": "f6ef1c4bfd8f6e5c510fdaf4a7ef72d039be5e7ad5296c78543486fdfd1325ea",
+    "src/combat/alchemist_traps.gd": "3593b362238ad45898d096f1789ac3925fa9ea77abd7398df0e6e28b852a5db9",
+    "src/combat/talent_combat.gd": "4c1e73457db165de74bda6579e90af57e138ceab6f79431aebf8a8894228bbb2",
+    "src/game.gd": "49067771b9151c2009069cd7dadaf6d502bfc5b7b31b973d7399b17c8b72ee51",
+    "src/hell/hell_game.gd": "c10a077d3976b6d9fcd1c9ddc53c98f4bb590213ade9dec6ae0f3f7ad06f400d",
+    "src/hell/hell_talents.gd": "ae12c8d2e06952950b2761d2c7233b36ec6d3764fc31706fe36c3ecaabe1046c",
+    "src/vfx/alchemist_art.gd": "9424d5fb449093c35a98bcb877d37112c3984d259a84c24861d4e0f457afbb23",
+    "src/vfx/talent_fx.gd": "b51d797d30c008e476af71c806567448f35fe6c611a29daae0bb8764b1a84bea",
+    "src/ui/talent_icons.gd": "31190d2710f8d8547ba00ac5da7dff390e86cfaad4f5e1bfbea37ef70cb14e88",
+    "src/session_protocol.gd": "3fcd8b39a71b39405ee994e36daf6b9b8963ba1ffd0c4aff24de99a7d80a579a",
+    "tests/alchemist_traps_test.gd": "0ddb31a8853eb554c021e3689d467b925a93558dbe4f8a75fac4d0c3810f7288",
+    "tests/alchemist_story_test.gd": "068394c05c8e1288495d71249a0f9e103c0fcbb2d772175baa551089853ec3fe",
+    "tests/alchemist_art_test.gd": "9d43f0ddb5bed17a6d7012eefecfa68159dd4ffefbdafa062fe0e3323c82150d",
+    "tests/talent_combat_test.gd": "584d2e47a315e6352c127947817520c322f05a9119b9350422debb5be373e10f",
+    "tests/archer_network_peer.gd": "4ae992c7211714d26d824e93df40a358cf5cfeae414d89b95ef529cc8c39102c",
+    "scripts/capture_alchemist.gd": "b76add7213c91d2155e4933a3f85cdf8ec46f4fa3e85d8ba5ed7bd0b570c3b34",
+    "docs/FALLENALCHEMIST.de.md": "660b2ecfe3d8611684d775e301051a3d56eb6c1fb444b56c4ff218376ab56201",
+    "production/qa/evidence/alchemist/01-five-capsules.png": "db7dac66bed5e517342eccf79218772f69c4377710470496ecc3996b8305b3ad",
+    "production/qa/evidence/alchemist/02-water-poison.png": "a713eee3a75f359411bf334d21035d04409b1b22fb1450c7bbfcb596dd413454",
+    "production/qa/evidence/alchemist/03-apparatus.png": "5d6fc2d05b7ce3b771e4156293a36da355ba7a2251b040699c4e08f852696a6f",
+    "production/qa/evidence/alchemist/04-deployed.png": "320f7b8d78d0e4a0bdbc9fc67cdb4a94cec4fcc7dc4e0e3e7cac1e90f8a331a3",
+    "production/qa/evidence/alchemist/05-frozen.png": "9b44c7b1f97da6312f7c78e64c1d43f950de6452091bd4ee2138a4ed023f652d",
+    "production/qa/evidence/alchemist/06-ignition.png": "3bc1477bf94df42bc4108379e92b7b9d3476ec33075cb4a3a417246bd5cf524a",
+    "production/qa/evidence/alchemist/07-talent-tree.png": "878b684976a66fa2c150382be2745e9411910eac81adaec467ba4952142f8488"
+  }
+}

@@ -167,6 +167,7 @@ func _ready() -> void:
 	_slices = SliceFx.new(_rigs.library)
 	_talent_fx.rigs = _rigs
 	_talent_fx.necro_staff = Callable(_hero_look,"staff_socket")
+	_talent_fx.marksman_socket = Callable(_hero_look,"bow_socket")
 	# the rigs' debris bounces off the room's walls (the particles know the walkable cells; _feedback is renewed per room)
 	_rigs.solid = func(point: Vector2) -> bool: return _feedback != null and _feedback.particles != null and _feedback.particles.solid(point)
 	if not Engine.is_editor_hint():
@@ -550,6 +551,7 @@ func _draw_view() -> void:
 		PixelPaint.clip = Callable()
 		_sec_t = Time.get_ticks_usec()
 		_feedback.particles.draw_particles(self)
+		_feedback.hit_rigs.draw(self,_fx)
 		_sec("particles")
 		_sec_t = Time.get_ticks_usec()
 		_fx.draw(self)
@@ -815,6 +817,7 @@ func _exit_tree() -> void:
 
 ## Drops previous-run particles, springs, flash, hitstop and shake immediately.
 func reset_feedback() -> void:
+	_hero_look.marksman.reset()
 	_feedback = Feedback.new()
 	_fx.clear()
 	_feedback.fx = _fx
@@ -1012,6 +1015,8 @@ func _draw_class_hero(player: Dictionary, peer_id: int) -> void:
 	# Shared hero look (src/hero/hero_look.gd): lean into swings, dash afterimages.
 	var look_key := "p%d" % peer_id
 	_hero_look.observe_fireball(look_key, peer_id, _snapshot.get("talents", {}).get("events", []), _clock, hp > 0.0)
+	player = player.duplicate()
+	player._marksman_motion = _hero_look.marksman.frame(look_key,player,_clock)
 	aim = _hero_look.casting_aim(look_key, aim, _clock)
 	face = _hero_look.face(player, aim, _clock)
 	_hero_look.observe(look_key, player, point, _clock)
@@ -1119,6 +1124,7 @@ func _draw_enemy(enemy: Dictionary) -> void:
 	_draw_sprite(texture,point,1.0 if not record.is_empty() else float(enemy.get("face",-1.0)),feet,_feedback.pose("e%d"%id,enemy,_clock,not record.is_empty()),pixel_scale,record.get("flash_texture"),record.get("anchor",Vector2(-1,-1)))
 	var statuses: Array = enemy.get("statuses",[])
 	for index: int in range(statuses.size()):
+		if statuses[index] in ["burn", "poison", "wet", "freeze"]: continue
 		var tint: Color = Color("f7a34b") if statuses[index] == "burn" else Color("a8d568") if statuses[index] == "poison" else Color("8fd8e6")
 		_box(point.x-12+index*8,point.y+feet+3,5,3,tint)
 	var hp: float = float(enemy.get("hp", 1.0))
@@ -1145,6 +1151,7 @@ func _draw_rig_enemy(enemy: Dictionary, point: Vector2, is_boss: bool) -> void:
 	if is_nan(top) or dying: return
 	var statuses: Array = enemy.get("statuses", [])
 	for index: int in range(statuses.size()):
+		if statuses[index] in ["burn", "poison", "wet", "freeze"]: continue
 		var tint: Color = Color("f7a34b") if statuses[index] == "burn" else Color("a8d568") if statuses[index] == "poison" else Color("8fd8e6")
 		_box(point.x-12+index*8, top-14, 5, 3, tint)
 	var hp: float = float(enemy.get("hp", 1.0))

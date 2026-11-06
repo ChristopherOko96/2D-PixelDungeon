@@ -28,6 +28,7 @@ const CompanionTargets = preload("res://src/combat/companion_targets.gd")
 const SoulRingShape = preload("res://src/combat/soul_ring_shape.gd")
 const SoulCharge = preload("res://src/combat/soul_charge.gd")
 const MarksmanCombat = preload("res://src/combat/marksman_combat.gd")
+const AlchemistTraps = preload("res://src/combat/alchemist_traps.gd")
 const TalentCharges = preload("res://src/combat/talent_charges.gd")
 const SoulLeap = preload("res://src/combat/soul_leap.gd")
 const SoulProjectiles = preload("res://src/combat/soul_projectiles.gd")
@@ -64,6 +65,7 @@ var pet_parts: RefCounted = BodyParts.new()
 var guardians := SoulGuardian.new()
 var forest_summons := ForestSummons.new()
 var marksman := MarksmanCombat.new()
+var alchemist := AlchemistTraps.new()
 var necromancer := NecromancerBranches.new()
 var traps: Array = []
 var zones: Array = []
@@ -120,6 +122,7 @@ func bind(owner: Object, talent_data: Dictionary = {}) -> void:
 
 ## New run: everything transient goes; builds are set again per player.
 func reset(seed_value: int = 0) -> void:
+	alchemist.clear()
 	marksman.context.clear()
 	forest_summons.flights.clear()
 	necromancer.clear()
@@ -138,6 +141,7 @@ func reset(seed_value: int = 0) -> void:
 ## Leaving a room: summons, traps and zones stay behind, channels end. A
 ## permanent companion comes along and appears beside its hero.
 func room_changed() -> void:
+	alchemist.clear()
 	forest_summons.flights.clear()
 	necromancer.clear()
 	guardians.actors.clear()
@@ -352,7 +356,12 @@ func cast_blocker(id: int, talent: String) -> String:
 		if warrior.is_empty(): return "Knochenkrieger beschwören"
 		if str(warrior.kind) != "bone_warrior": return "bereits verwandelt"
 		if float(warrior.get("blood",0)) < float(necromancer.cfg.blood.min_activation): return "mindestens %d Blut" % int(necromancer.cfg.blood.min_activation)
-	if bool(info.get("permanent", false)) and not permanent_pet(id).is_empty(): return "Begleiter lebt noch"
+	if bool(info.get("permanent", false)):
+		var living := permanent_pet(id)
+		if not living.is_empty():
+			# A menu choice is applied by the next paid summon, never by a free rebuild.
+			var replacement := talent == "beast_1" and str(living.kind) != str(rt.companion)
+			if not replacement: return "Begleiter lebt noch"
 	return ""
 
 
@@ -427,6 +436,9 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 	var base := float(player.get("damage", 1.0)) * scale * _soul(rt, talent, "damage")
 	var dmg := _value(info, "dmg", rt, talent) * base
 	_talent_hit = true
+	if alchemist.cast(self, id, player, rt, talent, info, target, base):
+		_talent_hit = false
+		return
 	if necromancer.cast(self, id, player, rt, talent, info, target, dmg):
 		_talent_hit = false
 		return
@@ -609,7 +621,8 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 				"on_end": {"dmg": float(collapse.dmg) * base, "r": float(collapse.radius_m) * meter, "fx": "arcane", "reset_cds": bool(collapse.get("reset_cds", false)), "info": {}}})
 		"line":
 			# Himmelsspeer: a giant arrow through everything in a line, up to a wall
-			var end := _move(player.pos, aim * float(info.length_m) * meter, 4.0, game.current_layout)
+			var flight:=marksman.trace(self,player.pos,aim,float(info.length_m)*meter,float(info.get("wall_radius",4)))
+			var end: Vector2=flight.to
 			var half := float(info.width_m) * meter * 0.5
 			rt.force_crit = bool(info.get("always_crit", false))
 			var mark: Dictionary = info.get("mark", {})
@@ -622,7 +635,10 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 				marksman.pin(self,id,enemy,aim,info)
 				if not mark.is_empty() and float(enemy.hp) > 0.0: enemy.talent_mark = {"owner": id, "pct": float(mark.pct), "time": float(mark.time)}
 			rt.force_crit = false
-			_event("spear", player.pos, 0.0, {"tx": end.x, "ty": end.y, "life": 0.6,"talent":talent,"charge":float(info.get("charge_power",0))})
+			var fly:=float(info.get("flight_s",0.28))
+			var span:=fly+float(info.get("impact_s",0.65))
+			var normal: Vector2=flight.get("normal",Vector2.ZERO)
+			_event("spear", player.pos, half, {"tx":end.x,"ty":end.y,"life":span,"flight":fly/span,"wall":bool(flight.wall),"nx":normal.x,"ny":normal.y,"owner":id,"talent":talent,"charge":float(info.get("charge_power",0))})
 			var burst: Dictionary = info.get("end_burst", {})
 			if not burst.is_empty():
 				_area(id, rt, talent, {}, end, float(burst.radius_m) * meter, float(burst.dmg) * base)
@@ -697,8 +713,10 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 			spot = _move(player.pos, spot - player.pos, 10.0, game.current_layout)
 			var mine := traps.filter(func(t: Dictionary) -> bool: return int(t.owner) == id)
 			if mine.size() >= trap_limit(rt): traps.erase(mine[0])
-			traps.append({"id": _take_id(), "owner": id, "talent": talent, "pos": spot, "r": float(info.radius_m) * meter, "trigger": float(info.get("trigger_m",0.875))*meter,"visual_spread":float(info.get("visual_spread",1)),
+			var cloud: Dictionary=info.get("cloud",{})
+			traps.append({"id": _take_id(), "owner": id, "talent": talent, "pos": spot, "r": float(info.radius_m) * meter, "trigger": float(info.get("trigger_m",0.875))*meter,"visual_spread":float(info.get("visual_spread",1)),"fx":str(info.get("fx","")),
 				"dmg": dmg * (1.0 + _sum(rt, "trap_bonus", "pct") / 100.0), "root": _value(info, "root", rt, talent), "life": float(data.trap_life),"arm":float(info.get("arm_s",0)),"ground_pool":info.get("ground_pool",{}),"base":float(player.get("damage",1))})
+			if not cloud.is_empty(): traps[-1].cloud={"time":float(cloud.time),"every":float(cloud.every),"dmg":_value(cloud,"dmg",rt,talent)*base*(1+_sum(rt,"trap_bonus","pct")/100),"r":float(cloud.radius_m)*meter,"gas_r":float(cloud.get("gas_radius_m",cloud.radius_m))*meter,"status":str(cloud.status)}
 		"drawn":
 			# Flammenmeer: the line starts at the mouse; hold() draws the rest
 			var start: Vector2 = player.pos + (target - player.pos).limit_length(9.0 * meter)
@@ -717,6 +735,9 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 				"every": maxf(0.25, float(info.every)), "tick": 0.0, "dmg": dmg, "status": str(info.get("status", "")), "info": info,
 				"weaken": float(info.get("weaken", 0.0)), "raise": info.get("raise", {}), "look": str(info.get("look", "")),
 				"total": float(info.time), "stage": maxi(0, _ult_stage), "pool": str(info.get("pool", ""))})
+			if info.has("pull_mps"):
+				zones[-1].pull=float(info.pull_mps)*meter
+				zones[-1].pull_los=true
 			if talent in ["curse_7", "curse_14"]:
 				zones[-1].look = "external_pool"
 				var all: Array = necromancer.media(self)
@@ -724,7 +745,7 @@ func _run(id: int, player: Dictionary, rt: Dictionary, talent: String, info: Dic
 				if talent=="curse_14": CurseMonsterHost.manifest(self,zones[-1],id,rt)
 		"summon":
 			if bool(info.get("permanent", false)):
-				# a permanent companion: called anew only after it fell (cast_blocker)
+				# A fallen companion or a deliberately selected different kind (cast_blocker).
 				for pet: Dictionary in _own_pets(id).filter(func(p: Dictionary) -> bool: return bool(p.get("permanent", false))): pets.erase(pet)
 				rt.pet_fell = false
 				_spawn_pet(id, rt, talent, info, player.pos + aim * 24.0, false, INF)
@@ -850,6 +871,7 @@ func step(delta: float) -> void:
 					rt.channel = {}
 		_step_after(int(id), player, rt, delta)
 	_step_pets(delta)
+	alchemist.step(self, delta)
 	_step_traps(delta)
 	for enemy: Dictionary in game.enemies:
 		if enemy.has("soul_push"):
@@ -1153,7 +1175,10 @@ func enemy_killed(enemy: Dictionary, owner: int) -> void:
 ## or companion); a new target needs talents.json pet.threat.switch_pct more.
 func forced_target(enemy: Dictionary) -> Dictionary:
 	enemy.pet_focus = -1
+	if preload("res://src/combat/enemy_sight.gd").blocked(enemy): return {}
 	if _boss(enemy): return {}
+	var bait := alchemist.target(self, enemy)
+	if not bait.is_empty(): return bait
 	if enemy.has("pet_taunt"):
 		for pet: Dictionary in pets:
 			if int(pet.id) == int(enemy.pet_taunt.pet) and not pet.has("dying"):
@@ -1364,7 +1389,7 @@ func snapshot() -> Dictionary:
 		# the part rig (src/vfx/companion_rigs.gd): which rig, the parts fallen off, hits for the hurt clip, the bite's wind-up and the crumbling progress
 		"rig": str(pet.get("rig", "")), "parts_lost": Array(pet.get("parts_lost", [])).duplicate(), "hits": int(pet.get("hits", 0)), "wind": float(pet.get("wind", 0.0)),
 		"dying_p": clampf(float(pet.dying) / maxf(0.01, _pet_rig_cfg("death_s", 0.9)), 0.0, 1.0) if pet.has("dying") else -1.0})
-	for trap: Dictionary in traps: out.traps.append({"id": trap.id, "x": trap.pos.x, "y": trap.pos.y, "r": trap.r,"vs":float(trap.get("visual_spread",1)), "owner": trap.owner, "boom": float(trap.root) <= 0.0, "cloud": not Dictionary(trap.get("cloud", {})).is_empty()})
+	for trap: Dictionary in traps: out.traps.append({"id": trap.id, "x": trap.pos.x, "y": trap.pos.y, "r": trap.r,"vs":float(trap.get("visual_spread",1)), "owner": trap.owner,"fx":str(trap.get("fx","")), "boom": float(trap.root) <= 0.0, "cloud": not Dictionary(trap.get("cloud", {})).is_empty(), "recipe":str(trap.get("recipe","")),"armed":float(trap.get("arm",0))<=0})
 	for zone: Dictionary in zones:
 		if float(zone.get("delay", 0.0)) > 0.0: continue
 		out.zones.append({"id": zone.id, "owner": int(zone.owner), "x": zone.pos.x, "y": zone.pos.y, "r": zone.r, "inner_r": float(zone.get("inner_r", 0.0)), "time": zone.time, "status": str(zone.get("status", "")), "look": str(zone.get("look", "")),
@@ -1622,10 +1647,10 @@ func _land_reach(rt: Dictionary, from: Vector2, target: Vector2, flight: float) 
 	return clampf(from.distance_to(target), minf(float(land.get("min_px", 40.0)), flight), flight)
 
 
-## The companion kind of a build ("wolf", "bear"; talents.json "pet.kinds"), the default when unknown.
+## Selectable companion (wolf, bear, falcon); unknown and summon-only kinds use the default.
 func _companion(kind: String) -> String:
 	var kinds: Dictionary = data.get("pet", {}).get("kinds", {})
-	return kind if kinds.has(kind) else str(data.get("pet", {}).get("default_kind", "wolf"))
+	return kind if kinds.has(kind) and not bool(kinds[kind].get("summon_only",false)) else str(data.get("pet", {}).get("default_kind", "wolf"))
 
 
 func _spawn_pet(id: int, rt: Dictionary, talent: String, info: Dictionary, at: Vector2, pack: bool, life: float) -> void:
@@ -1877,6 +1902,7 @@ func _care(pet: Dictionary, owner: Dictionary, prey: Dictionary, delta: float) -
 func _step_traps(delta: float) -> void:
 	for i in range(traps.size() - 1, -1, -1):
 		var trap: Dictionary = traps[i]
+		if trap.has("recipe"): continue # Alchemist owner already stepped these.
 		trap.life = float(trap.life) - delta
 		trap.arm = maxf(0,float(trap.get("arm",0))-delta)
 		if float(trap.life) <= 0.0:
@@ -1896,13 +1922,21 @@ func _step_traps(delta: float) -> void:
 			game._damage_enemy(enemy, float(trap.dmg), (Vector2(enemy.pos) - Vector2(trap.pos)).normalized(), int(trap.owner), true)
 			if float(trap.root) > 0.0 and not _boss(enemy): _status(enemy, "slow", 1.0, float(trap.root), int(trap.owner))
 		_talent_hit = false
-		_event("trap", trap.pos, float(trap.r), {"boom": float(trap.root) <= 0.0})
+		_event("trap", trap.pos, float(trap.r), {"boom":float(trap.root)<=0,"fx":str(trap.get("fx","")),"talent":str(trap.talent),"owner":int(trap.owner)})
 		var ground: Dictionary = trap.get("ground_pool",{})
 		if not ground.is_empty(): _pool_at(int(trap.owner),str(ground.style),trap.pos,float(ground.radius_m)*float(data.meter_px),float(ground.time),float(ground.dps)*float(trap.get("base",1)),str(ground.status))
 		var cloud: Dictionary = trap.get("cloud", {})
 		if not cloud.is_empty():
+			# Reuse the native pool and gas media; the zone supplies only the
+			# rank-scaled skill tick, not a second visible puddle or a second DPS pool.
+			if ground.is_empty(): _pool_at(int(trap.owner),"poison",trap.pos,float(cloud.r),float(cloud.time),0,"")
+			var elements: Variant=game.get("elements")
+			if elements!=null and elements.has_method("add_gas"):
+				var mist: Dictionary=elements.add_gas("poison",trap.pos,float(cloud.get("gas_r",cloud.r)),float(cloud.time),int(trap.owner))
+				mist.friendly=true
+				mist.line_of_sight=true
 			zones.append({"id": _take_id(), "owner": int(trap.owner), "talent": str(trap.talent), "pos": Vector2(trap.pos), "r": float(cloud.r), "time": float(cloud.time),
-				"every": float(cloud.every), "tick": 0.0, "dmg": float(cloud.dmg), "status": str(cloud.status), "info": {"status": str(cloud.status)}})
+				"every":float(cloud.every),"tick":0.0,"dmg":float(cloud.dmg),"status":str(cloud.status),"info":{"status":str(cloud.status)},"look":"external_pool","total":float(cloud.time),"pull_los":true})
 		traps.remove_at(i)
 
 
@@ -1922,7 +1956,9 @@ func _step_zones(delta: float) -> void:
 			# Singularität drags everything but bosses towards its heart (minibosses too: they are only never caught)
 			for enemy: Dictionary in _living():
 				if bool(enemy.get("boss", false)) or int(enemy.get("caught_by", -1)) == int(zone.id) or enemy.pos.distance_to(zone.pos) > float(zone.r) + float(enemy.radius): continue
-				_shove(enemy, _move(enemy.pos, (Vector2(zone.pos) - Vector2(enemy.pos)).limit_length(float(zone.pull) * delta), float(enemy.radius), game.current_layout))
+				if bool(zone.get("pull_los",false)) and (_boss(enemy) or _blocked(zone.pos,enemy.pos,1)): continue
+				var pull_delta:=minf(active_delta,maxf(0,float(zone.time)+active_delta)) if bool(zone.get("pull_los",false)) else delta
+				_shove(enemy, _move(enemy.pos, (Vector2(zone.pos) - Vector2(enemy.pos)).limit_length(float(zone.pull) * pull_delta), float(enemy.radius), game.current_layout))
 			if float(zone.get("core", 0.0)) > 0.0: _catch_step(zone, delta)
 		var soul_field := str(zone.get("look", "")) in ["souls", "souls_ring", "souls_trail"]
 		if soul_field and float(zone.time) > 0.0:
@@ -2697,6 +2733,7 @@ func zone_center(player: Dictionary, target: Vector2) -> Vector2:
 ## pool does (the host's talent_ground_covers; physics plan R14); until its pool lies, and in a
 ## world without a pool layer, its circle (_in_zone). The caster and his side are never enemies.
 func _zone_reach(zone: Dictionary, enemy: Dictionary) -> bool:
+	if bool(zone.get("pull_los",false)) and _blocked(zone.pos,enemy.pos,1): return false
 	if str(zone.get("pool", "")) != "" and game != null and game.has_method("talent_ground_covers"):
 		var inside := int(game.talent_ground_covers(int(zone.id), Vector2(enemy.pos), float(enemy.radius)))
 		if inside >= 0: return inside == 1

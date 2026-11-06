@@ -1,0 +1,18 @@
+{
+  "date": "2026-11-05",
+  "checks": 154,
+  "failures": 0,
+  "training": true,
+  "hashes": {
+    "assets/sprites/marksman/celestial_lance.png": "c2f773a69f6e21587774a2670534f6722d0f5f0b659aed8e6bb489c4eca3e96e",
+    "assets/data/marksman_rig.json": "c4e5c41ecb3d80e107bc6cdbb3489f1ad798e4cc6e87af2efd2be5555f7a7347",
+    "assets/data/marksman_ultimate_fx.json": "11bbfd69316bccfcdafcd28d4d5de9c6a0a37bc359c66f7f8705b5c6e0870c50",
+    "src/vfx/marksman_art.gd": "f594b34b91d911e21fb218795d3f26321a66a037b905f7da9c93178fcfd56d43",
+    "production/qa/evidence/himmelsspeer-lance/01-aufbau.png": "cdb67d414f29bb1eaaaa7c8c780296cae3767548bec7f6d8ad23308ffcd4fce2",
+    "production/qa/evidence/himmelsspeer-lance/02-gespannt.png": "36a26fa4bf3dd76b091802c975d62b95635f441d64dfd5795a33770a7e947b3c",
+    "production/qa/evidence/himmelsspeer-lance/03-abschuss.png": "85bea2eaaaf1d042135e925a2a724c3cc3ffd8c6ed93b9540e8696b635c6c4ee",
+    "production/qa/evidence/himmelsspeer-lance/04-flug.png": "e63ac0a7237ab440ee14640f6a2de82f7a83548f6424b6f1be52b9324250f0cf",
+    "production/qa/evidence/himmelsspeer-lance/05-wandkontakt.png": "69d834c74fb8f5e6959dcffb0133c073bb48881539b27ca6a780bb02e29d7bbe",
+    "production/qa/evidence/himmelsspeer-lance/06-einzelteile.png": "8ff3f860624a5a67629bb7107e7a5de8338cf78f5b4b32a49788c454b19d563a"
+  }
+}

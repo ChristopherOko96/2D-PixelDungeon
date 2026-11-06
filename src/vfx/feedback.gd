@@ -26,6 +26,10 @@ const STIFFNESS := 320.0
 const DAMPING := 13.0
 
 var particles := Particles.new()
+## Real hit counters drive locally articulated impact rays and chips.
+var hit_rigs := preload("res://src/rig/hit_burst_rig.gd").new()
+## Conditions use the same bounded physical particle world as confirmed hits.
+var status_fx := preload("res://src/vfx/enemy_status_fx.gd").new()
 ## Effect animations (FxSprites), set by the view; null in tests.
 var fx: RefCounted = null
 ## Optional sound player with play(name); null in tests and headless runs.
@@ -107,6 +111,8 @@ func observe(snapshot: Dictionary, local_peer: int) -> void:
 		_room_id = room_id
 		_actors.clear()
 		particles.clear()
+		hit_rigs.clear()
+		status_fx.clear()
 		if fx != null: fx.clear()
 		shake = 0.0
 		hitstop = 0.0
@@ -273,6 +279,7 @@ func observe(snapshot: Dictionary, local_peer: int) -> void:
 		# (src/vfx/attack_fx.gd _impact, element_burst): only the sound here, no sheet
 		_play("blast")
 	var seen: Dictionary = {}
+	status_fx.observe(snapshot.get("enemies", []))
 	for value: Variant in snapshot.get("enemies", []):
 		var enemy: Dictionary = value
 		var key := "e%d" % int(enemy.get("id", -1))
@@ -306,6 +313,8 @@ func update(delta: float) -> void:
 		_step_timer = 0.05
 	shake = maxf(0.0, shake - delta * 1.8)
 	particles.update(delta)
+	hit_rigs.update(delta)
+	status_fx.update(delta, particles)
 	for state: Dictionary in _actors.values():
 		var force: Vector2 = -state.squash * STIFFNESS - state.squash_vel * DAMPING
 		state.squash_vel += force * delta
@@ -452,6 +461,10 @@ func _observe_enemy(state: Dictionary, enemy: Dictionary) -> void:
 	var stain_alpha: float = float(material.get("stain_alpha", 0.6))
 	var hits := int(enemy.get("hits", 0))
 	var dying: bool = float(enemy.get("dying_p", -1.0)) >= 0.0
+	if hits > int(state.hits):
+		# One reaction per new authoritative counter, including a lethal direct hit.
+		# Blocks, first sight and repeated packets never enter this path.
+		hit_rigs.spawn(origin,direction,hits+int(enemy.get("id",0))*31,dying or boss,float(fx.pixel) if fx != null else 2.0)
 	if dying and not state.dying:
 		# Killing blow: everything at once, strongest on the boss.
 		particles.kick(origin + Vector2(0, 10), 48.0 if boss else 20.0, 1.0 if boss else 0.5)
@@ -480,7 +493,6 @@ func _observe_enemy(state: Dictionary, enemy: Dictionary) -> void:
 			_flash(state, HIT_FLASH, 0.08, 0.85)
 		_kick(state, Vector2(0.14, -0.12) if boss else Vector2(0.34, -0.3), direction.x * (0.1 if boss else 0.3))
 		particles.burst(origin - direction * 6.0, SPARK, 6, 170.0, 0.22, -direction, 0.7, 2.0, 8.0, "spark")
-		_fx_spawn("hit_spark", origin - direction * 10.0 + Vector2(0, -10), float(hits) * 0.7, 1.3 if boss else 1.0)
 		particles.burst(origin, blood, 6 if boss else 4, 130.0, 0.45, direction, 0.6, 3.0, 5.0, "debris" if bool(material.get("chips", false)) else "drop")
 		# Liquids spray onto the floor behind the target; bone only chips.
 		if float(material.get("hit_splat", 0)) > 0.0: particles.splat(origin + Vector2(0, 8) + direction * 10.0, stain_color, stain_alpha * 0.85, float(material.hit_splat) * (1.6 if boss else 1.0), direction)

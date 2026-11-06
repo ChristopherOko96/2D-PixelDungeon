@@ -9,3 +9,5 @@ d.talents.trapper_9.text='Große Netzfalle: 30 % Schaden in 3 m, Fessel 2/2,5/3 
 d.trap_limits={trapper:6};
 for(const cls of Object.keys(d.defense)) d.defense[cls]={type:'dodge',name:'Ausweichschritt',icon:'dash',charges:1,recharge:4,dist_m:3,iframes:0.25,text:'Shift: 3 m in Laufrichtung ausweichen, 0,25 s unverwundbar. Eine Ladung, 4 s Abklingzeit. Wände stoppen den Dash.'};
 fs.writeFileSync(p,JSON.stringify(d,null,1)+'\n');
+// Later accepted ranger rules remain authoritative when this migration is rerun.
+require('./apply_ranger_fields_data.cjs');

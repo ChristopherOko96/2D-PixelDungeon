@@ -28,7 +28,7 @@
  "materials": {
   "poison": {
    "style": "liquid",
-   "look": "miasma",
+   "look": "liquid",
    "churn_hz": 2.5,
    "veil": [
     0.88,

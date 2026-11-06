@@ -1,0 +1,23 @@
+{
+  "date": "2026-11-04",
+  "branch": "codex/port-0x72-onto-main",
+  "focused_checks": 58,
+  "failures": 0,
+  "actual_story_hit_assertions": 4,
+  "story_failures": 0,
+  "training_fixtures": true,
+  "images": 4,
+  "network_tested": false,
+  "sha256": {
+    "assets/data/hit_feedback.json": "9104536cbf792ac7a40f59d75ff4f01b29d7014f3f59bc838eae5929197ba307",
+    "src/rig/hit_burst_rig.gd": "7f2c0622a1c52094f8cd04d03bb4ca1f63f1a09d5861d3bc2c90a752d4f5daa0",
+    "src/vfx/feedback.gd": "777cdc34f2f678a4b79d16d9b6463e473ed8ed99fe8a2b9e4b4680e94797b93d",
+    "src/dungeon_view.gd": "15766968dbe83c0b12d0bb3b64f99002688df08a6fa0c3d0f4afa3ee1313fd18",
+    "src/hero/story_feel.gd": "c4216c21a88dad758b6ad9f269b206db5ee001d95d47c6d9cb7a930fbc8b8e8e",
+    "tests/hit_burst_rig_test.gd": "0839c5c95f2b8559e0c2467408455453f00ec245d0d756a5acd041ce31b07eb1",
+    "production/qa/evidence/hit-rig/01-confirmed-hit.png": "1b5d1d3aff81d12e031d53c1d5d10e1b95c403f8d5b8bcf88cbd70b05b0d99ea",
+    "production/qa/evidence/hit-rig/02-rays-and-chips.png": "186c6ef7c3f6e5765529b6b66d326a3bad36f17546c98a794110e101794ecfd5",
+    "production/qa/evidence/hit-rig/03-hell-hit.png": "6f712ddeedf83b24b65b72b47eef832381cb74fe38546686ce6ff04acd85d9f0",
+    "production/qa/evidence/hit-rig/04-frost-hit.png": "7927ed9095c56967268a6585c6a112f22f73dc0e00f60ecb8ace4fc6a35978ad"
+  }
+}

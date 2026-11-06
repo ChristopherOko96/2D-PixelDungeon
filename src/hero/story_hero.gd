@@ -312,8 +312,10 @@ func handles_hold(id: String) -> bool:
 func view_state() -> Dictionary:
 	var weapon: Dictionary = g.weapon
 	var skills := {}
+	var archer_charge: Dictionary = {}
 	if g.talents!=null:
 		var charge: Dictionary=g.talents.tc.player_state(1).get("charge",{})
+		archer_charge = charge
 		if str(charge.get("talent",""))=="sniper_14": skills.charge=float(charge.power)
 	if rage_on(): skills.rage = float(g.state.rage)
 	for f: Dictionary in g.fx:
@@ -324,7 +326,7 @@ func view_state() -> Dictionary:
 		skills.charge = clampf(float(g.hold.get("t", 0.0)) / maxf(0.1, charge_time), 0.0, 1.0)
 	return {"class_id": str(g.class_id), "melee": str(weapon.get("type", "")) == "melee", "reach": float(weapon.get("reach", 120.0)),
 		"swings": swings, "swing_angle": float(g.swing.a), "swing_arc": float(weapon.get("arc", 2.0)), "swing_dir": swing_dir,
-		"shots": shots, "shot_interval": float(g.state.rate), "skills": skills, "leap": g.talents.tc.SoulLeap.snapshot(g.talents.tc.runtime(1)) if g.talents != null else {}}
+		"shots": shots, "shot_interval": float(g.state.rate), "skills": skills, "talents":{"charge":archer_charge}, "leap": g.talents.tc.SoulLeap.snapshot(g.talents.tc.runtime(1)) if g.talents != null else {}}
 
 
 ## Draws the hero through the shared look. `draw_body(feet, alpha)` draws the
@@ -348,6 +350,9 @@ func draw_hero(canvas: CanvasItem, t: float, lift: float, draw_body: Callable, h
 		# the element goes with the view: the rig draws the mage's parts in its colours
 		var body_view := {"moving": bool(g.player.get("moving", false)), "hp": float(g.state.get("hp", 1)), "hurts": hurts, "step_time": 32.0 * scale / pace, "element": element}
 		body_view.leap = view.get("leap", {})
+		var marksman_view := view.duplicate()
+		marksman_view.hp = float(g.state.get("hp",1))
+		body_view._marksman_motion = look.marksman.frame(KEY,marksman_view,t)
 		# the world's rim round the hero (theme "outline": the Frostgruft's dark rim on the snow)
 		if Color.html_is_valid(str(outline.hero)):
 			body_view.outline = Color(Color.html(str(outline.hero)), float(outline.alpha))

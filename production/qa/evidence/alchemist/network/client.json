@@ -1,0 +1,18 @@
+{
+	"boss_safe": true,
+	"charge": true,
+	"charge_counts": {
+		"0": true,
+		"1": true,
+		"2": true,
+		"3": true
+	},
+	"failures": [],
+	"marks": true,
+	"passed": true,
+	"pins": true,
+	"role": "client",
+	"scope": "two real local ENet processes, controlled fixture; not LAN/performance",
+	"traps": true,
+	"wide_wall": true
+}

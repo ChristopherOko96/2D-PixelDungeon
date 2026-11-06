@@ -3,10 +3,12 @@ extends "res://tests/necro_blood_network_peer.gd"
 func _run() -> void:
 	var args:=OS.get_cmdline_user_args()
 	var host: bool="--ring-host" in args
+	print("ARCHER_BOOT role=", "host" if host else "client", " step=instantiate")
 	var game:=Game.new()
 	game.name="Main"
 	root.add_child(game)
 	await process_frame
+	print("ARCHER_BOOT role=", "host" if host else "client", " step=ready")
 	game.view.set_audio_enabled(false)
 	game.progress.save_path="user://archer_network_fixture.json"
 	game.session_bind_ip="127.0.0.1"
@@ -14,17 +16,21 @@ func _run() -> void:
 	game.port_input.text=args[args.find("--ring-port")+1]
 	if host: game._host_session()
 	else: game._join_session()
+	print("ARCHER_BOOT role=", "host" if host else "client", " step=session phase=",game.phase," active=",game.active," status=",game.status_message)
 	var started:=false
 	var ready_at:=-1
 	var clock:=-1
 	var marked:=false
 	var charged:=false
 	var pinned:=false
+	var wide_wall:=false
 	var boss_safe:=true
 	var trap_charges:={}
 	var traps_seen:=false
+	var alchemy_seen:=false
 	var diagnosed:=false
-	var deadline:=Time.get_ticks_msec()+50000
+	# Startup/admission has its own bound; combat retains a separate 30 s deadline.
+	var deadline:=Time.get_ticks_msec()+120000
 	while Time.get_ticks_msec()<deadline:
 		await process_frame
 		if host and not started and game.phase=="lobby" and game.players.size()==2:
@@ -79,10 +85,12 @@ func _run() -> void:
 			var place: bool=(age>800 and age<1000) or (age>2100 and age<2300) or (age>3400 and age<3600)
 			game.scripted_skills=(1<<game.talent_combat.BAR_BIT) if place else 0
 		var talents: Dictionary=state.get("talents",{})
+		wide_wall=wide_wall or talents.get("events",[]).any(func(e:Dictionary)->bool:return str(e.get("kind",""))=="spear" and str(e.get("talent",""))=="sniper_14" and bool(e.get("wall",false)) and float(e.get("r",0))>=32 and Vector2(e.get("nx",0),e.get("ny",0)).length()>0.9)
 		marked=marked or not talents.get("archer_marks",[]).is_empty()
 		charged=charged or talents.get("charges",[]).any(func(c:Dictionary)->bool:return str(c.talent)=="sniper_14" and float(c.power)>0.15 and int(c.owner)==1)
 		pinned=pinned or talents.get("archer_pins",[]).size()>=2
 		traps_seen=traps_seen or talents.get("traps",[]).size()>=3
+		alchemy_seen=alchemy_seen or talents.get("traps",[]).any(func(t: Dictionary) -> bool: return str(t.get("recipe",""))=="water" and bool(t.get("armed",false)) and int(t.get("owner",1))!=1)
 		for p: Dictionary in state.get("players",{}).values():
 			for slot: Dictionary in p.get("talents",{}).get("slots",[]):
 				if str(slot.id)=="trapper_3": trap_charges[str(int(slot.get("charges_left",-1)))]=true
@@ -99,8 +107,10 @@ func _run() -> void:
 	check(charged,"host R hold produces a paid charge snapshot")
 	check(pinned,"normal line victims are carried and pinned in snapshots")
 	check(boss_safe,"boss never receives pin")
+	check(wide_wall,"wide lane and first-wall contact normal replicate to both peers")
 	check(traps_seen and trap_charges.has("0"),"client trap inputs consume three actual charges")
-	var result:={"passed":failures.is_empty(),"role":"host" if host else "client","failures":failures,"marks":marked,"charge":charged,"pins":pinned,"boss_safe":boss_safe,"traps":traps_seen,"charge_counts":trap_charges,"scope":"two real local ENet processes, controlled fixture; not LAN/performance"}
+	check(alchemy_seen,"client-owned armed water capsules replicate their actual recipe")
+	var result:={"passed":failures.is_empty(),"role":"host" if host else "client","failures":failures,"marks":marked,"charge":charged,"pins":pinned,"boss_safe":boss_safe,"wide_wall":wide_wall,"traps":traps_seen,"charge_counts":trap_charges,"scope":"two real local ENet processes, controlled fixture; not LAN/performance"}
 	FileAccess.open(args[args.find("--ring-result")+1],FileAccess.WRITE).store_string(JSON.stringify(result,"\t"))
 	game._leave_session()
 	game.queue_free()

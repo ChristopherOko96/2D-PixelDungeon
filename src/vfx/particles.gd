@@ -2393,6 +2393,17 @@ func draw_particles(canvas: CanvasItem, only: Array = [], part := 0) -> void:
 				for x in range(w):
 					canvas.draw_rect(Rect2(Vector2(corner + Vector2i(x, y)) * PIXEL, Vector2(PIXEL, PIXEL)), rc[0] if y == 0 else (rc[2] if y == w - 1 and w > 1 else rc[1]))
 			continue
+		if str(particle.get("status_kind", "")) in ["poison", "wet"]:
+			# Poison bubbles rise; wet droplets have a pale cap and a falling blue tail.
+			var q := _snap(ground - Vector2(0, height))
+			if alpha < 0.35: continue
+			if str(particle.status_kind) == "poison":
+				for d: Vector2 in [Vector2(0,-2), Vector2(-2,0), Vector2(2,0), Vector2(0,2)]:
+					canvas.draw_rect(Rect2(q+d, Vector2(PIXEL,PIXEL)), color)
+			else:
+				canvas.draw_rect(Rect2(q-Vector2(0,PIXEL), Vector2(PIXEL,PIXEL)), color.lightened(0.3))
+				canvas.draw_rect(Rect2(q, Vector2(PIXEL,PIXEL*2)), color)
+			continue
 		if particle.has("shaft"):
 			# a shaft of light falling: a short vertical streak
 			var q := Vector2i(((ground - Vector2(0.0, height)) / PIXEL).floor())
