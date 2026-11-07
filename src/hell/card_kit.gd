@@ -59,7 +59,7 @@ static func pool(g: Node) -> Array:
 		if c.has("skill") and not _skill_open(g, set, str(c.skill)):
 			continue
 		# a heart card at the life cap would give nothing
-		if c.has("hearts") and not Rules.heart_room(g.state, int(g.balance.player.max_hp_cap)):
+		if c.has("hearts") and not Rules.heart_room(g.state, int(g.life_cap())):
 			continue
 		out.append(c)
 	return out
@@ -114,7 +114,7 @@ static func _node(c: Dictionary, g: Node) -> Dictionary:
 	var crypt := ClassPerks.find(str(g.class_id), str(c.id))
 	var node := {"id": str(c.id), "name": str(c.name), "text": str(c.get("desc", "")), "max": int(c.max),
 		"icon": SkillIcons.card(crypt if not crypt.is_empty() else {"id": str(c.id)}, str(g.class_id))}
-	if c.has("hearts") and not Rules.heart_room(g.state, int(g.balance.player.max_hp_cap)):
+	if c.has("hearts") and not Rules.heart_room(g.state, int(g.life_cap())):
 		node.closed = "Leben am Höchstwert, mehr Herzen gehen nicht"
 		node.closed_tag = "LEBEN VOLL"
 	return node
@@ -134,7 +134,7 @@ static func take_node(g: Node, id: String) -> bool:
 	for c: Dictionary in _all(g):
 		if str(c.id) == id:
 			# a heart card at the life cap would take the point for nothing
-			if c.has("hearts") and not Rules.heart_room(g.state, int(g.balance.player.max_hp_cap)):
+			if c.has("hearts") and not Rules.heart_room(g.state, int(g.life_cap())):
 				g._sound("no_cooldown")
 				g._toast("Mehr Herzen gehen nicht: das Leben ist am Höchstwert.")
 				return false
@@ -171,7 +171,7 @@ static func take(g: Node, c: Dictionary) -> void:
 	ups[str(c.id)] = level(g, str(c.id)) + 1
 	g.state.upgrades = ups
 	if c.has("hearts"):
-		g.state.max_hp = Rules.raised_max_hp(g.state, int(c.hearts), int(g.balance.player.max_hp_cap))
+		g.state.max_hp = Rules.raised_max_hp(g.state, int(c.hearts), int(g.life_cap()))
 		g.state.hp = mini(int(g.state.max_hp), int(g.state.hp) + int(c.hearts))
 	g._sound("level_up")
 	g._toast("%s (Stufe %d)" % [c.name, level(g, str(c.id))])
@@ -208,13 +208,13 @@ static func seal_offer(g: Node, e: Dictionary, rng: RandomNumberGenerator = null
 	if rng == null:
 		rng = RandomNumberGenerator.new()
 		rng.seed = randi()
-	var ids := Rules.seal_offer(g.state, g.balance.blessings, int(cfg.get("offers", 2)), rng, int(g.balance.player.max_hp_cap))
+	var ids := Rules.seal_offer(g.state, g.balance.blessings, int(cfg.get("offers", 2)), rng, int(g.life_cap()))
 	if ids.is_empty():
 		return
 	# the cards say what taking each really gives: a dry run on a copy (a step shortened at its cap included)
 	var texts: Array = []
 	for id: Variant in ids:
-		texts.append(Rules.apply_blessing(g.state.duplicate(true), str(id), g.balance.blessings, int(g.balance.player.max_hp_cap)))
+		texts.append(Rules.apply_blessing(g.state.duplicate(true), str(id), g.balance.blessings, int(g.life_cap())))
 	g.state.seal_pick = {"ids": ids, "texts": texts, "price": int(cfg.get("price_hp", 2)), "x": float(e.get("x", 0.0)), "y": float(e.get("y", 0.0)), "ms": Time.get_ticks_msec()}
 	# nothing covers the cards: the map, the status sheet and the bag close
 	g.state.map = false
@@ -237,7 +237,7 @@ static func seal_choose(g: Node, i: int) -> bool:
 		g._toast("Zu wenig Leben für den Preis des Siegels.")
 		return false
 	var hero_at := Vector2(float(g.player.x), float(g.player.y))
-	var text := Rules.take_seal_blessing(g.state, str(ids[i]), g.balance.blessings, int(g.balance.player.max_hp_cap), price)
+	var text := Rules.take_seal_blessing(g.state, str(ids[i]), g.balance.blessings, int(g.life_cap()), price)
 	g.state.seal_pick = {}
 	# the blessing shines on the hero like the crypt's cleanse (gold motes, sheet, chime);
 	# the price drips from him as a few drops of blood (src/hero/story_hero.gd matter)

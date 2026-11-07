@@ -8,7 +8,7 @@
     "spucker": { "hp": 4, "speed": 95, "scale": 0.95, "radius": 28, "fire_every": 2.4, "keep_away": 320 },
     "boss": { "speed": 85, "scale": 2.7, "radius": 70, "max_adds": 5 }
   },
-  "monsters": { "hit_mob": 1, "hit_boss": 2, "contact_reach": 22, "lord_face_deadzone": 40, "echo_hp_share": 0.03, "echo_kinds": ["bolt", "dash", "slam", "swing", "sweep", "ring"], "burrow_speed": 560, "flight_altitude": 320, "immune_altitude": 30, "spawn_grow": 0.5, "seal_demon": "glutimp",
+  "monsters": { "hit_mob": 1, "hit_boss": 2, "lava_bosses": ["glutwaechter", "kesselbrut"], "boss_leap": { "cells": 4, "time": 0.7, "height": 110 }, "contact_reach": 22, "lord_face_deadzone": 40, "echo_hp_share": 0.03, "echo_kinds": ["bolt", "dash", "slam", "swing", "sweep", "ring"], "burrow_speed": 560, "flight_altitude": 320, "immune_altitude": 30, "spawn_grow": 0.5, "seal_demon": "glutimp",
     "feel": { "_note": "Game feel of the monsters' attack impacts by importance (src/hell/hell_monsters.gd _impact; skill gamedev:game-feel): shake = view shake in px (it decays at 30 px/s, smooth sines), hitstop = s the picture holds (only the large tier: a boss's heavy blow), flash = s a white-hot pixel flash lasts at the impact, flash_r = its radius in world px. A mob's impact is one tier below its boss tier (tiny, small, medium). shake_scale scales every shake (accessibility: lower it for less shaking).",
       "shake_scale": 1.0,
       "tiny": { "shake": 0, "hitstop": 0.0, "flash": 0.05, "flash_r": 18 },

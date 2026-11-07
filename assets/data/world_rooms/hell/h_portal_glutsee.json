@@ -1,0 +1,300 @@
+{
+	"schema_version": 1,
+	"id": "h_portal_glutsee",
+	"title": "Treppe: Glutsee",
+	"world": "hell",
+	"role": "portal",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		]
+	],
+	"width": 14,
+	"height": 11,
+	"cells": [
+		"00000000000000",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"02221111112220",
+		"02221111112220",
+		"01111111111110",
+		"00000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				6,
+				0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				6,
+				10
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0,
+				5
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				13,
+				5
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "prop",
+			"asset": "statue_angel",
+			"x": 240,
+			"y": 274.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				50,
+				26
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_angel",
+			"x": 1008,
+			"y": 274.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				50,
+				26
+			]
+		},
+		{
+			"kind": "portal",
+			"x": 624,
+			"y": 369.6
+		},
+		{
+			"kind": "prop",
+			"asset": "rocks_lava",
+			"x": 240,
+			"y": 946.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				32
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spires_lava",
+			"x": 1104,
+			"y": 946.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				70,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_plate",
+			"x": 672,
+			"y": 578,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 49.5,
+				"w": 0,
+				"h": 0,
+				"a": 1
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 432,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_blue",
+			"x": 912,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_a",
+			"x": 720,
+			"y": 189,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_b",
+			"x": 144,
+			"y": 579,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 912,
+			"y": 580,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_b",
+			"x": 432,
+			"y": 771,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 816,
+			"y": 772,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 816,
+			"y": 960,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "start",
+			"x": 624,
+			"y": 547.2
+		}
+	]
+}

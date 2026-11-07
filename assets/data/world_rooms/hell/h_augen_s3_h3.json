@@ -1,0 +1,419 @@
+{
+	"schema_version": 1,
+	"id": "h_augen_s3_h3",
+	"title": "Rätsel: Dämonenaugen (Stufe 3)",
+	"world": "hell",
+	"role": "jump",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		],
+		[
+			0,
+			1
+		],
+		[
+			0,
+			2
+		]
+	],
+	"width": 14,
+	"height": 39,
+	"cells": [
+		"00000000000000",
+		"01111111111110",
+		"01101111111110",
+		"01101111101110",
+		"01101111111110",
+		"01101111110110",
+		"01101111111110",
+		"01101011111110",
+		"01101111111110",
+		"01101111111010",
+		"01101111111110",
+		"01101111111110",
+		"01101111111110",
+		"01101111011110",
+		"01101111111110",
+		"01101101111110",
+		"01101111111110",
+		"01101011111110",
+		"01101111111110",
+		"01101101111110",
+		"01101111111110",
+		"01101111011110",
+		"01101111111110",
+		"01101110111110",
+		"01101111111110",
+		"01101111111110",
+		"01101111111110",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"00000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				1,
+				0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				1,
+				38
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0,
+				18
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "hell_eye",
+			"x": 336,
+			"y": 336,
+			"group": "A",
+			"dir": "e",
+			"open": 2,
+			"closed": 2,
+			"off": 0
+		},
+		{
+			"kind": "hell_eye",
+			"x": 1296,
+			"y": 528,
+			"group": "A",
+			"dir": "w",
+			"open": 2,
+			"closed": 2,
+			"off": 1
+		},
+		{
+			"kind": "hell_eye",
+			"x": 336,
+			"y": 720,
+			"group": "A",
+			"dir": "e",
+			"open": 2,
+			"closed": 2,
+			"off": 0
+		},
+		{
+			"kind": "hell_eye",
+			"x": 1296,
+			"y": 912,
+			"group": "A",
+			"dir": "w",
+			"open": 2,
+			"closed": 2,
+			"off": 1
+		},
+		{
+			"kind": "hell_eye",
+			"x": 336,
+			"y": 1104,
+			"group": "A",
+			"dir": "e",
+			"open": 2,
+			"closed": 2,
+			"off": 3
+		},
+		{
+			"kind": "hell_eye",
+			"x": 1296,
+			"y": 1296,
+			"group": "A",
+			"dir": "w",
+			"open": 2,
+			"closed": 2,
+			"off": 0
+		},
+		{
+			"kind": "hell_eye",
+			"x": 336,
+			"y": 1488,
+			"group": "A",
+			"dir": "e",
+			"open": 2,
+			"closed": 2,
+			"off": 1
+		},
+		{
+			"kind": "hell_eye",
+			"x": 1296,
+			"y": 1680,
+			"group": "A",
+			"dir": "w",
+			"open": 2,
+			"closed": 2,
+			"off": 2
+		},
+		{
+			"kind": "hell_eye",
+			"x": 336,
+			"y": 1872,
+			"group": "A",
+			"dir": "e",
+			"open": 2,
+			"closed": 2,
+			"off": 0
+		},
+		{
+			"kind": "hell_eye",
+			"x": 1296,
+			"y": 2064,
+			"group": "A",
+			"dir": "w",
+			"open": 2,
+			"closed": 2,
+			"off": 3
+		},
+		{
+			"kind": "hell_eye",
+			"x": 336,
+			"y": 2256,
+			"group": "A",
+			"dir": "e",
+			"open": 2,
+			"closed": 2,
+			"off": 1
+		},
+		{
+			"kind": "hell_rune",
+			"x": 240,
+			"y": 240,
+			"group": "A"
+		},
+		{
+			"kind": "tablet",
+			"x": 144,
+			"y": 369.6,
+			"text": "Sie schlafen nie zugleich.\nZähl ihre Lider, nicht deine Schritte.\nDer Schatten einer Säule ist dein Freund."
+		},
+		{
+			"kind": "chest",
+			"x": 816,
+			"y": 2577.6,
+			"loot": {
+				"type": "hoard",
+				"tier": 3
+			},
+			"mimic": "no"
+		},
+		{
+			"kind": "prop",
+			"asset": "cage_hang",
+			"x": 508.8,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 777.6,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 1046.4,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 144,
+			"y": 192,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 240,
+			"y": 1152,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 240,
+			"y": 1421,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 29,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 144,
+			"y": 3172,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 240,
+			"y": 3360,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_monk",
+			"x": 144,
+			"y": 3346.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				24
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_bowl",
+			"x": 144,
+			"y": 2578.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_bowl",
+			"x": 144,
+			"y": 2962.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "start",
+			"x": 720,
+			"y": 1891.2
+		}
+	],
+	"kind_label": "Höllenrätsel",
+	"info": "Dämonenaugen, Stufe 3: 11 Schritte im Löser"
+}

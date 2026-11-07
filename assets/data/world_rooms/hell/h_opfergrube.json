@@ -1,0 +1,191 @@
+{
+	"schema_version": 1,
+	"id": "h_opfergrube",
+	"title": "Preisraum: Opfergrube",
+	"world": "hell",
+	"role": "treasure",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		]
+	],
+	"width": 14,
+	"height": 11,
+	"cells": [
+		"00000000000000",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"00000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				6,
+				0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				6,
+				10
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0,
+				5
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				13,
+				5
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "hell_pit_altar",
+			"x": 624,
+			"y": 336,
+			"group": "P"
+		},
+		{
+			"kind": "tablet",
+			"x": 240,
+			"y": 273.6,
+			"text": "Die Grube gibt, was du ihr abringst.\nRuf eine Welle nach der anderen, bis zu fünf.\nNach jeder Welle steigt der Schatz eine Stufe. Nimm ihn, wann du willst."
+		},
+		{
+			"kind": "prop",
+			"asset": "rune_big",
+			"x": 624,
+			"y": 578,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50,
+				"w": 0,
+				"h": 0,
+				"a": 1
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_skull_a",
+			"x": 240,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "icon_demon_big",
+			"x": 1046.4,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 336,
+			"y": 676,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 144,
+			"y": 864,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_a",
+			"x": 432,
+			"y": 957,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "start",
+			"x": 624,
+			"y": 739.2
+		}
+	]
+}

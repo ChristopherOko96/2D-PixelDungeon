@@ -58,7 +58,11 @@
   // a little lighter than the floors' own dark and red rim (x these shares); the hero's wider light
   // (hell_balance.json view.player_light) clears more round him, the edge stays dark
   const LIGHT = { dark: .75, vignette: .8 };
+  // the floors come from the hell's Weltbauer rooms (assets/data/world_rooms/hell, tools/hell_dungeon/rooms/
+  // build_hell_rooms.js, docs/HOELLE-RAETSEL.de.md): two puzzle rooms a floor where a three-slot fight room
+  // may become one (jump_share), joined by corridors like the Krypta's and the Frostgruft's
+  const ROOM_LIBRARY = { world: 'hell', slot_size: [14, 11], slot_gap: [3, 3], margin: 3, gate_style: 'portcullis', boss_gate_reach: 4, boss_gate_depth: 3, chest_share: 0.35, jump_rooms: 2, jump_share: 0.7, mobs_by_area: { cells_per_mob: 28, min: 4, max: 12 } };
   // the pack as plain data (the Godot port reads it from assets/data/hell_world.json, see export_world.js)
-  const PACK = { floors: FLOORS, circles: CIRCLES, names: NAMES, suffixes: SUFFIXES, words: WORDS, theme_flag: null, light: LIGHT, gate_banner: GATE_BANNER, blue: BLUE, blue_props: BLUE_PROPS, foot: FOOT, wall_set: WALL_SET, break_set: BREAK_SET, mimic_fight: MIMIC_FIGHT, mimic_treasure: MIMIC_TREASURE, diff: DIFF };
+  const PACK = { room_library: ROOM_LIBRARY, floors: FLOORS, circles: CIRCLES, names: NAMES, suffixes: SUFFIXES, words: WORDS, theme_flag: null, light: LIGHT, gate_banner: GATE_BANNER, blue: BLUE, blue_props: BLUE_PROPS, foot: FOOT, wall_set: WALL_SET, break_set: BREAK_SET, mimic_fight: MIMIC_FIGHT, mimic_treasure: MIMIC_TREASURE, diff: DIFF };
   return WorldPack.make(PACK);
 });

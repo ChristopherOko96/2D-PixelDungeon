@@ -295,12 +295,17 @@ func _test_drops_and_pickup() -> void:
 	check(rolled.count == 40 and rolled.rare_plus == 40, "a Mimik always drops a rare or better weapon or piece of gear")
 	var gold: Array = inv.roll("gold_crate", 5, "archer")
 	check(gold.size() == 3 and gold.any(func(item: Dictionary) -> bool: return str(item.type) == "crystal") and gold.any(func(item: Dictionary) -> bool: return str(item.type) == "stone"), "a gold crate gives a weapon, a crystal and a stone")
+	# the Beuteordnung (docs/BEUTEORDNUNG.de.md 4): normal rolls never give a legendary piece, epic ones grow
+	# common deeper down
 	var legendary := [0, 0]
+	var epic := [0, 0]
 	for depth in range(2):
 		for index in range(600):
 			var weapon: Dictionary = inv._roll_weapon(float(depth), "archer", "common")
 			if str(ItemRules.weapon(str(weapon.id)).rarity) == "legendary": legendary[depth] += 1
-	check(legendary[1] > legendary[0] * 3, "legendaries grow common deeper down (%d vs %d)" % [legendary[0], legendary[1]])
+			if str(ItemRules.weapon(str(weapon.id)).rarity) == "epic": epic[depth] += 1
+	check(legendary[0] == 0 and legendary[1] == 0, "normal rolls never give a legendary (%d, %d)" % [legendary[0], legendary[1]])
+	check(epic[1] > epic[0] * 3, "epic pieces grow common deeper down (%d vs %d)" % [epic[0], epic[1]])
 	var cursed := 0
 	for index in range(400):
 		if not str(inv._roll_weapon(0.5, "archer", "common").curse).is_empty(): cursed += 1

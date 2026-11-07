@@ -5,7 +5,7 @@ extends RefCounted
 ## Loading opens the same scene on that floor with these values.
 
 ## The state keys hell_game.load_floor carries from floor to floor.
-const CARRIED := ["hp", "max_hp", "gems", "gold", "dmg", "rate", "speed_mul", "range", "buffs", "skill", "level", "exp", "relic", "relic_on",
+const CARRIED := ["hp", "max_hp", "gems", "gold", "dmg", "rate", "speed_mul", "range", "buffs", "skill", "level", "exp", "relic", "relic_on", "chapters_done",
 	"upgrades", "offer", "cards_due", "relic_floor", "relic_item", "talent", "crystals_run", "run_id", "items", "world_run"]
 
 
@@ -60,13 +60,23 @@ static func capture(game: Node) -> Dictionary:
 			var value: Variant = game.state[key]
 			keep[key] = value.duplicate(true) if value is Dictionary or value is Array else value
 	var record := {"class_id": str(game.class_id), "scene": str(game.scene_file_path), "floor": int(game.state.floor), "run_id": str(game.state.get("run_id", "")),
-		"title": str(game.W.get("title", "")), "level": int(game.state.get("level", 1)), "keep": keep}
+		"title": str(game.W.get("title", "")), "level": int(game.state.get("level", 1)), "keep": keep,
+		"spec": _spec_of(game)}
 	var custom: Variant = game.get("custom_story")
 	if custom is Dictionary and not custom.is_empty():
 		# A run keeps the exact room revision it began with even if its editor draft changes.
 		record.custom_story = custom.duplicate(true)
 		record.custom_preview_room = str(game.get("custom_preview_room"))
 	return record
+
+
+## The hero's main specialisation when the save is written (src/hero/element_skin.gd main_spec), "" without.
+static func _spec_of(game: Node) -> String:
+	var profile: Variant = game.get("profile")
+	if not profile is Dictionary or (profile as Dictionary).is_empty():
+		return ""
+	var skin: GDScript = load("res://src/hero/element_skin.gd")
+	return str(skin.main_spec(profile, str(game.class_id)))
 
 
 ## A safe local filename component, also for an untrusted save snapshot.

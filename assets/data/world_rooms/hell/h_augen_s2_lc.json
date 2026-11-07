@@ -1,0 +1,639 @@
+{
+	"schema_version": 1,
+	"id": "h_augen_s2_lc",
+	"title": "Rätsel: Dämonenaugen (Stufe 2)",
+	"world": "hell",
+	"role": "jump",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		],
+		[
+			0,
+			1
+		],
+		[
+			1,
+			1
+		]
+	],
+	"width": 31,
+	"height": 25,
+	"cells": [
+		"0000000000000000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111011111111111111110",
+		"0111111111111011111011111111110",
+		"0111111111111011111111011111110",
+		"0111111111111011111111111111110",
+		"0111111111111111111111111111110",
+		"0111111111111011111111111111110",
+		"0111111111111011111111111111110",
+		"0111111111111011011111111111110",
+		"0111111111111011111111111111110",
+		"0000000000000000000000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				5,
+				0
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0,
+				4
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				5,
+				24
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "hell_eye",
+			"x": 1584,
+			"y": 1392,
+			"group": "A",
+			"dir": "s",
+			"open": 2,
+			"closed": 2,
+			"off": 0
+		},
+		{
+			"kind": "hell_eye",
+			"x": 1872,
+			"y": 2352,
+			"group": "A",
+			"dir": "n",
+			"open": 2,
+			"closed": 2,
+			"off": 0
+		},
+		{
+			"kind": "hell_eye",
+			"x": 2160,
+			"y": 1392,
+			"group": "A",
+			"dir": "s",
+			"open": 2,
+			"closed": 2,
+			"off": 2
+		},
+		{
+			"kind": "hell_eye",
+			"x": 2448,
+			"y": 2352,
+			"group": "A",
+			"dir": "n",
+			"open": 2,
+			"closed": 2,
+			"off": 0
+		},
+		{
+			"kind": "hell_rune",
+			"x": 1200,
+			"y": 1872,
+			"group": "A"
+		},
+		{
+			"kind": "tablet",
+			"x": 1200,
+			"y": 1713.6,
+			"text": "Sie schlafen nie zugleich.\nZähl ihre Lider, nicht deine Schritte.\nDer Schatten einer Säule ist dein Freund."
+		},
+		{
+			"kind": "chest",
+			"x": 2832,
+			"y": 1905.6,
+			"loot": {
+				"type": "hoard",
+				"tier": 2
+			},
+			"mimic": "no"
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 240,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_hang",
+			"x": 1046.4,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_a",
+			"x": 1488,
+			"y": 1446,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "cage_hang",
+			"x": 1756.8,
+			"y": 1446,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_a",
+			"x": 2025.6,
+			"y": 1446,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 2294.4,
+			"y": 1446,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag_b",
+			"x": 2563.2,
+			"y": 1446,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_b",
+			"x": 912,
+			"y": 387,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_a",
+			"x": 1104,
+			"y": 381,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 1104,
+			"y": 461,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 29,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 144,
+			"y": 653,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 29,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 336,
+			"y": 941,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 29,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_b",
+			"x": 1200,
+			"y": 1155,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_b",
+			"x": 144,
+			"y": 1251,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 240,
+			"y": 1536,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 336,
+			"y": 1517,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 29,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_a",
+			"x": 912,
+			"y": 1725,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_b",
+			"x": 1200,
+			"y": 1827,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 1200,
+			"y": 2212,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_b",
+			"x": 1008,
+			"y": 2307,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_bowl",
+			"x": 1200,
+			"y": 274.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_bowl",
+			"x": 1200,
+			"y": 754.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_monk",
+			"x": 144,
+			"y": 2194.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				24
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "torch_pillar",
+			"x": 144,
+			"y": 1714.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				26
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 144,
+			"y": 178.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				26,
+				18
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_bowl",
+			"x": 144,
+			"y": 1234.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 1200,
+			"y": 1234.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				26,
+				18
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 1104,
+			"y": 2290.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				26,
+				18
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_monk",
+			"x": 144,
+			"y": 850.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				24
+			]
+		},
+		{
+			"kind": "start",
+			"x": 1488,
+			"y": 1507.2
+		}
+	],
+	"kind_label": "Höllenrätsel",
+	"info": "Dämonenaugen, Stufe 2: 4 Schritte im Löser"
+}

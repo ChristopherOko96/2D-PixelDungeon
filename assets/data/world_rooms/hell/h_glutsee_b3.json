@@ -1,0 +1,563 @@
+{
+	"schema_version": 1,
+	"id": "h_glutsee_b3",
+	"title": "Glutsee (lang)",
+	"world": "hell",
+	"role": "combat",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		],
+		[
+			1,
+			0
+		],
+		[
+			2,
+			0
+		]
+	],
+	"width": 48,
+	"height": 11,
+	"cells": [
+		"000000000000000000000000000000000000000000000000",
+		"000000001111111111111111111111111111111100000000",
+		"000000001111111122222221112222222111111100000000",
+		"000000001111111222222222122222222211111100000000",
+		"000000001111111222222222122222222211111100000000",
+		"000000001111111222222222122222222211111100000000",
+		"000000001111111222222222122222222211111100000000",
+		"000000001111111222222222122222222211111100000000",
+		"000000001111111122222221112222222111111100000000",
+		"000000001111111111111111111111111111111100000000",
+		"000000000000000000000000000000000000000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				8,
+				0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				8,
+				10
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				7,
+				5
+			]
+		},
+		{
+			"side": "north",
+			"cell": [
+				23,
+				0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				23,
+				10
+			]
+		},
+		{
+			"side": "north",
+			"cell": [
+				38,
+				0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				38,
+				10
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				40,
+				5
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "raw",
+			"x": 1200,
+			"y": 273.6,
+			"ent": {
+				"type": "crate",
+				"look": "urn_a",
+				"hp": 1,
+				"drop": "random"
+			}
+		},
+		{
+			"kind": "raw",
+			"x": 3408,
+			"y": 273.6,
+			"ent": {
+				"type": "crate",
+				"look": "urn_b",
+				"hp": 1,
+				"drop": "random"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_demon",
+			"x": 1008,
+			"y": 466.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_demon",
+			"x": 3696,
+			"y": 466.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_demon",
+			"x": 1008,
+			"y": 658.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "raw",
+			"x": 1200,
+			"y": 849.6,
+			"ent": {
+				"type": "crate",
+				"look": "crate_b",
+				"hp": 2,
+				"drop": "random"
+			}
+		},
+		{
+			"kind": "raw",
+			"x": 3408,
+			"y": 849.6,
+			"ent": {
+				"type": "crate",
+				"look": "crate_c",
+				"hp": 2,
+				"drop": "random"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 1180.8,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_1",
+			"x": 1449.6,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 1718.4,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 2793.6,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 3062.4,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 3331.2,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_mid",
+			"x": 1680,
+			"y": 178.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				44,
+				24
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_demon",
+			"x": 2640,
+			"y": 946.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rocks_lava",
+			"x": 3024,
+			"y": 946.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				32
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 1392,
+			"y": 196,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_b",
+			"x": 1584,
+			"y": 195,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 1680,
+			"y": 173,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 29,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 2928,
+			"y": 196,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_a",
+			"x": 3024,
+			"y": 189,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_b",
+			"x": 816,
+			"y": 387,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 912,
+			"y": 480,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 1008,
+			"y": 480,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 3504,
+			"y": 580,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 2352,
+			"y": 653,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 29,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 1008,
+			"y": 864,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_b",
+			"x": 1296,
+			"y": 867,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "start",
+			"x": 2352,
+			"y": 547.2
+		}
+	]
+}

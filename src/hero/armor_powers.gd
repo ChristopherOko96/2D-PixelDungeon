@@ -139,9 +139,13 @@ static func worn_power(inventory: Dictionary) -> String:
 
 ## A power armour id for a find: of the hero's class with the share
 ## drops.own_class, else of any class ("" when there are none).
-static func pick_armor(class_id: String, roll: RandomNumberGenerator) -> String:
+static func pick_armor(class_id: String, roll: RandomNumberGenerator, rarity := "") -> String:
 	var own := armor_ids(class_id)
 	var all := armor_ids()
+	# a find on the side gives only armours of `rarity` (Beuteordnung: epic; legendary ones only from its map)
+	if not rarity.is_empty():
+		own = own.filter(func(id: String) -> bool: return str(ItemRules.gear(id).get("rarity", "")) == rarity)
+		all = all.filter(func(id: String) -> bool: return str(ItemRules.gear(id).get("rarity", "")) == rarity)
 	if all.is_empty(): return ""
 	var pool := own if not own.is_empty() and roll.randf() < float(data().get("drops", {}).get("own_class", 0.8)) else all
 	return str(pool[roll.randi_range(0, pool.size() - 1)])

@@ -1,0 +1,254 @@
+{
+	"schema_version": 1,
+	"id": "h_tresor_kreuz",
+	"title": "Tresor: Teufelskreuz",
+	"world": "hell",
+	"role": "vault",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		]
+	],
+	"width": 14,
+	"height": 11,
+	"cells": [
+		"00000000000000",
+		"00001111110000",
+		"00001111110000",
+		"00001111110000",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"00001111110000",
+		"00001111110000",
+		"00001111110000",
+		"00000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				6,
+				0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				6,
+				10
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0,
+				5
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				13,
+				5
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "prop",
+			"asset": "torch_pillar",
+			"x": 432,
+			"y": 274.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				26
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "torch_pillar",
+			"x": 912,
+			"y": 274.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				26
+			]
+		},
+		{
+			"kind": "raw",
+			"x": 624,
+			"y": 561.6,
+			"ent": {
+				"type": "vault",
+				"tier": 4
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "rocks_lava",
+			"x": 432,
+			"y": 850.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				32
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spires_lava",
+			"x": 912,
+			"y": 850.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				70,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "demon_plate",
+			"x": 672,
+			"y": 475,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 43,
+				"w": 0,
+				"h": 0,
+				"a": 1
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 624,
+			"y": 192,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 144,
+			"y": 576,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 1008,
+			"y": 576,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_a",
+			"x": 240,
+			"y": 669,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_b",
+			"x": 1008,
+			"y": 675,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "start",
+			"x": 720,
+			"y": 547.2
+		}
+	]
+}

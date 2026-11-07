@@ -1,0 +1,717 @@
+{
+	"schema_version": 1,
+	"id": "h_lavaschacht_h3",
+	"title": "Lavaschacht (Turm)",
+	"world": "hell",
+	"role": "combat",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		],
+		[
+			0,
+			1
+		],
+		[
+			0,
+			2
+		]
+	],
+	"width": 14,
+	"height": 39,
+	"cells": [
+		"00000000000000",
+		"00000000000000",
+		"00000000000000",
+		"00000000000000",
+		"00000000000000",
+		"00000000000000",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01112222221110",
+		"01112222221110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01110011001110",
+		"01110011001110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01112222221110",
+		"01112222221110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01110011001110",
+		"01110011001110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01112222221110",
+		"01112222221110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"00000000000000",
+		"00000000000000",
+		"00000000000000",
+		"00000000000000",
+		"00000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				6,
+				5
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0,
+				6
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				13,
+				6
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0,
+				19
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				13,
+				19
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				6,
+				34
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0,
+				32
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				13,
+				32
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "raw",
+			"x": 432,
+			"y": 753.6,
+			"ent": {
+				"type": "crate",
+				"look": "urn_e",
+				"hp": 1,
+				"drop": "random"
+			}
+		},
+		{
+			"kind": "raw",
+			"x": 912,
+			"y": 753.6,
+			"ent": {
+				"type": "crate",
+				"look": "crate_a",
+				"hp": 2,
+				"drop": "random"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_demon",
+			"x": 240,
+			"y": 1234.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_demon",
+			"x": 1104,
+			"y": 1234.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_big",
+			"x": 240,
+			"y": 1714.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				60,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_big",
+			"x": 1104,
+			"y": 1714.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				60,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_mid",
+			"x": 240,
+			"y": 2194.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				44,
+				24
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spire_mid",
+			"x": 1104,
+			"y": 2194.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				44,
+				24
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_demon",
+			"x": 240,
+			"y": 2674.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_demon",
+			"x": 1104,
+			"y": 2674.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "raw",
+			"x": 432,
+			"y": 3153.6,
+			"ent": {
+				"type": "crate",
+				"look": "barrel_c",
+				"hp": 1,
+				"drop": "random"
+			}
+		},
+		{
+			"kind": "raw",
+			"x": 912,
+			"y": 3153.6,
+			"ent": {
+				"type": "crate",
+				"look": "crate_a",
+				"hp": 2,
+				"drop": "random"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "rocks_lava",
+			"x": 624,
+			"y": 1426.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				32
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "rocks_lava",
+			"x": 720,
+			"y": 2482.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				32
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 528,
+			"y": 676,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_a",
+			"x": 720,
+			"y": 669,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 336,
+			"y": 1152,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 912,
+			"y": 1152,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_a",
+			"x": 144,
+			"y": 1245,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 1008,
+			"y": 1229,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 29,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_a",
+			"x": 1200,
+			"y": 1437,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 240,
+			"y": 1517,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 29,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 912,
+			"y": 1805,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 29,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_b",
+			"x": 144,
+			"y": 1923,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_a",
+			"x": 144,
+			"y": 2205,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 336,
+			"y": 2208,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_a",
+			"x": 816,
+			"y": 2301,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 1200,
+			"y": 2500,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_b",
+			"x": 336,
+			"y": 2595,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 240,
+			"y": 3076,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 144,
+			"y": 3168,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_a",
+			"x": 720,
+			"y": 3165,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 336,
+			"y": 3264,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_b",
+			"x": 528,
+			"y": 3267,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "start",
+			"x": 624,
+			"y": 1795.2
+		}
+	]
+}

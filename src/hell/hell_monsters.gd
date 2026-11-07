@@ -224,7 +224,7 @@ static func hit_cy(def: Dictionary) -> float:
 func spawn(room: int, pos: Vector2, id: String, boss := false) -> Dictionary:
 	var def: Dictionary = defs[id]
 	var st: Dictionary = def.stats
-	var hp: float = Rules.spawn_hp(st, boss, float(g.W.boss.hp), float(g.W.diff.hp)) * (g.talents.hp_scale() if g.talents != null else 1.0)
+	var hp: float = Rules.spawn_hp(st, boss, float(g.W.boss.hp), float(g.W.diff.hp)) * (g.monster_hp_scale() if g.has_method("monster_hp_scale") else (g.talents.hp_scale() if g.talents != null else 1.0))
 	var cds: Array = []
 	for a: Dictionary in st.attacks:
 		cds.append(Rules.first_cooldown(a, randf()))
@@ -548,7 +548,21 @@ func update(dt: float) -> void:
 		var moved_from: Vector2 = m.p
 		var rr := minf(m.r * 0.7, 40.0)
 		var avoid: bool = not m.boss and m.st.ai != "hover" and m.st.ai != "drift"
-		var step: Dictionary = mover.step_body(m.p, m.get("sv", v), v, grip, pull, m.k, dt, mover.host.mob_solid(rr, avoid))
+		# bosses and lava (docs/BEUTEORDNUNG.de.md 8): a boss of the lava (cfg lava_bosses: the Glutwächter, the
+		# Kesselbrut) walks through it; every other one that walks keeps out of it and leaps over a narrow stream
+		var keep_dry := keeps_dry(m)
+		var solid: Callable = mover.host.mob_solid(rr, avoid)
+		if keep_dry:
+			var base := solid
+			solid = func(x: float, y: float) -> bool: return bool(base.call(x, y)) or lava_at(Vector2(x, y))
+		var step: Dictionary
+		if m.has("leap"):
+			step = _leap_step(m, dt)
+		else:
+			step = mover.step_body(m.p, m.get("sv", v), v, grip, pull, m.k, dt, solid)
+			# the way it wants to go runs into lava just ahead: it leaps (instead of sliding along the bank)
+			if keep_dry and v.length() > 20.0 and lava_at(m.p + v.normalized() * (rr + 30.0)):
+				_try_leap(m, v)
 		v = step.v
 		m.sv = step.vel
 		m.k = step.push
@@ -619,6 +633,50 @@ func update(dt: float) -> void:
 	_update_zones(dt)
 	_update_scorches(dt)
 	_update_pixel_fx(dt)
+
+
+## True for a walking boss that is no creature of the lava (cfg lava_bosses), on a lava floor.
+func keeps_dry(m: Dictionary) -> bool:
+	if not bool(m.get("boss", false)) or str(m.st.get("ai", "")) in ["hover", "drift"]:
+		return false
+	if not g.has_method("_floor_mat") or str(g._floor_mat()) != "lava":
+		return false
+	return not (cfg.get("lava_bosses", []) as Array).has(str(m.get("id", "")))
+
+
+## True when world point p lies in lava (the floor's liquid cells).
+func lava_at(p: Vector2) -> bool:
+	return int(g._cell(int(floor(p.x / g.C)), int(floor(p.y / g.C)))) == 2
+
+
+## A boss stopped at the lava's edge leaps over when firm ground lies within boss_leap.cells cells ahead.
+func _try_leap(m: Dictionary, v: Vector2) -> void:
+	var spec: Dictionary = cfg.get("boss_leap", {})
+	var dir := v.normalized()
+	var over_lava := false
+	for k in range(1, int(spec.get("cells", 3)) * 4 + 1):
+		var p: Vector2 = m.p + dir * g.C * 0.25 * k
+		if lava_at(p):
+			over_lava = true
+			continue
+		if over_lava and int(g._cell(int(floor(p.x / g.C)), int(floor(p.y / g.C)))) == 1 and not g.box_blocked(Rect2(p.x - 30, p.y - 30, 60, 30), false):
+			m.leap = {"from": m.p, "to": p + dir * g.C * 0.3, "t": 0.0, "T": float(spec.get("time", 0.7)), "alt": float(m.get("alt", 0.0))}
+			return
+		if over_lava:
+			return
+
+
+## One frame of a leap over lava: the boss flies in an arc to its landing place.
+func _leap_step(m: Dictionary, dt: float) -> Dictionary:
+	var L: Dictionary = m.leap
+	L.t = float(L.t) + dt
+	var u := clampf(float(L.t) / maxf(0.05, float(L.T)), 0.0, 1.0)
+	m.p = (L.from as Vector2).lerp(L.to, u)
+	m.alt = float(L.alt) + sin(u * PI) * float((cfg.get("boss_leap", {}) as Dictionary).get("height", 110))
+	if u >= 1.0:
+		m.alt = float(L.alt)
+		m.erase("leap")
+	return {"p": m.p, "v": Vector2.ZERO, "vel": Vector2.ZERO, "push": m.k, "push_in": m.get("k_in", Vector2.ZERO)}
 
 
 func _move(m: Dictionary, dt: float, to: Vector2, d: float) -> Vector2:

@@ -1,0 +1,790 @@
+{
+	"schema_version": 1,
+	"id": "h_blut_s2_lc",
+	"title": "Rätsel: Blutpreis (Stufe 2)",
+	"world": "hell",
+	"role": "jump",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		],
+		[
+			0,
+			1
+		],
+		[
+			1,
+			1
+		]
+	],
+	"width": 31,
+	"height": 25,
+	"cells": [
+		"0000000000000000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111000000000000000000",
+		"0111111111111011000000000000110",
+		"0111111111111011111111111111110",
+		"0111111111111011000000000000110",
+		"0111111111111011000000000000110",
+		"0111111111111111111111111111110",
+		"0111111111111011000000000000110",
+		"0111111111111011000000000000110",
+		"0111111111111011111111111111110",
+		"0111111111111011000000000000110",
+		"0000000000000000000000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				5,
+				0
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0,
+				4
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				5,
+				24
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "hell_thorns",
+			"x": 1680,
+			"y": 1584,
+			"group": "A"
+		},
+		{
+			"kind": "hell_thorns",
+			"x": 1872,
+			"y": 1584,
+			"group": "A"
+		},
+		{
+			"kind": "hell_thorns",
+			"x": 2160,
+			"y": 1584,
+			"group": "A"
+		},
+		{
+			"kind": "hell_thorns",
+			"x": 1872,
+			"y": 1872,
+			"group": "A"
+		},
+		{
+			"kind": "hell_thorns",
+			"x": 1968,
+			"y": 1872,
+			"group": "A"
+		},
+		{
+			"kind": "hell_thorns",
+			"x": 2064,
+			"y": 1872,
+			"group": "A"
+		},
+		{
+			"kind": "hell_thorns",
+			"x": 2160,
+			"y": 1872,
+			"group": "A"
+		},
+		{
+			"kind": "hell_thorns",
+			"x": 1872,
+			"y": 2160,
+			"group": "A"
+		},
+		{
+			"kind": "hell_thorns",
+			"x": 2160,
+			"y": 2160,
+			"group": "A"
+		},
+		{
+			"kind": "hell_blood_bowl",
+			"x": 2832,
+			"y": 1776,
+			"group": "A"
+		},
+		{
+			"kind": "hell_rune",
+			"x": 1200,
+			"y": 1872,
+			"group": "A"
+		},
+		{
+			"kind": "tablet",
+			"x": 1200,
+			"y": 1713.6,
+			"text": "Drei Wege führen zum Schatz, und jeder will Blut.\nWer wenig gibt, bekommt wenig.\nWer viel gibt, dem öffnet sich die Truhe weit.\nDie Schale vor dem Schatz zählt jeden Tropfen. Wer nicht zahlen will, geht vorüber."
+		},
+		{
+			"kind": "chest",
+			"x": 2832,
+			"y": 1905.6,
+			"loot": {
+				"type": "hoard",
+				"tier": 2
+			},
+			"mimic": "no"
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 240,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_a",
+			"x": 1046.4,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "cage_hang",
+			"x": 1680,
+			"y": 1542,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 1948.8,
+			"y": 1542,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "cage_hang",
+			"x": 2217.6,
+			"y": 1542,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 2486.4,
+			"y": 1542,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_a",
+			"x": 1680,
+			"y": 1830,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag_b",
+			"x": 1948.8,
+			"y": 1830,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "cage_hang",
+			"x": 2217.6,
+			"y": 1830,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_a",
+			"x": 2486.4,
+			"y": 1830,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 1680,
+			"y": 2118,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_hang",
+			"x": 1948.8,
+			"y": 2118,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_a",
+			"x": 2217.6,
+			"y": 2118,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 2486.4,
+			"y": 2118,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 528,
+			"y": 192,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 432,
+			"y": 292,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_b",
+			"x": 528,
+			"y": 291,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 1104,
+			"y": 676,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 240,
+			"y": 768,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 1008,
+			"y": 868,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_b",
+			"x": 912,
+			"y": 963,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_a",
+			"x": 720,
+			"y": 1245,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_b",
+			"x": 432,
+			"y": 1443,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 1200,
+			"y": 1421,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 29,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_b",
+			"x": 1296,
+			"y": 1923,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 1008,
+			"y": 2112,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_b",
+			"x": 528,
+			"y": 2307,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_b",
+			"x": 720,
+			"y": 2307,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_b",
+			"x": 1200,
+			"y": 2307,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 144,
+			"y": 1138.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				26,
+				18
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_monk",
+			"x": 1200,
+			"y": 1330.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				24
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 1008,
+			"y": 2290.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				26,
+				18
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "torch_pillar",
+			"x": 1200,
+			"y": 178.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				26
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_bowl",
+			"x": 240,
+			"y": 2290.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_monk",
+			"x": 1200,
+			"y": 850.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				24
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 240,
+			"y": 178.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				26,
+				18
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_monk",
+			"x": 144,
+			"y": 1618.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				24
+			]
+		},
+		{
+			"kind": "start",
+			"x": 1200,
+			"y": 1219.2
+		}
+	],
+	"kind_label": "Höllenrätsel",
+	"info": "Blutpreis: drei Wege, 2, 3 oder 4 Herzen; je mehr Blut, desto höher die Truhe."
+}

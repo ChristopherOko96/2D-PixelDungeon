@@ -2669,6 +2669,7 @@ func _build_main_menu() -> void:
 	main_menu.test_arena_requested.connect(start_test_arena)
 	main_menu.story_floor_requested.connect(_start_story_floor)
 	main_menu.story_scene_requested.connect(_open_story_scene)
+	main_menu.story_run_requested.connect(func(path: String, class_id: String, jump: Dictionary) -> void: _open_story_scene(path, class_id, {}, jump))
 	main_menu.custom_story_requested.connect(_open_custom_story)
 	main_menu.world_room_requested.connect(_open_world_room)
 	main_menu.custom_continue_requested.connect(_continue_custom_story)
@@ -2754,7 +2755,7 @@ func _world_floors(theme_path: String) -> Array:
 ## Debug level choice: a story world's scene with the chosen hero on `floor_number`, at its
 ## entrance or, with `boss`, inside its boss room (hell_game.gd start_floor / start_at_boss).
 func _start_story_floor(path: String, class_id: String, floor_number: int, boss: bool) -> void:
-	_open_story_scene(path, class_id, {}, {"start_floor": floor_number, "start_at_boss": boss})
+	_open_story_scene(path, class_id, {}, {"start_floor": floor_number, "start_at_boss": boss, "debug_run": true})
 
 
 ## The value after `flag` in the launch arguments, "" without.

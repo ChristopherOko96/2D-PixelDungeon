@@ -15,10 +15,12 @@ const path = require('path');
 const solver = require('./jump_puzzles/solver');
 
 const DIR = path.resolve(__dirname, '../../assets/data/world_rooms/krypta');
-const JUMP = [12, 21];   // score from which tier 2, tier 3 start
-const MAZE = [0, 31];    // a labyrinth is at least tier 2; from this score tier 3
+// The Beuteordnung's five tiers (docs/BEUTEORDNUNG.de.md 3): the Krypta's rooms start at tier 2 (the old
+// scale 1-3 became 2-4); tier 5 needs a really long puzzle.
+const JUMP = [12, 21, 28];   // score from which tier 3, 4, 5 start (below: tier 2)
+const MAZE = [0, 31, 40];    // a labyrinth is at least tier 3; from 31 tier 4, from 40 tier 5
 
-function tierOf(score, cut) { return score >= cut[1] ? 3 : score >= cut[0] ? 2 : 1; }
+function tierOf(score, cut) { return score >= cut[2] ? 5 : score >= cut[1] ? 4 : score >= cut[0] ? 3 : 2; }
 
 /** Dead ends and the shortest way door -> heart chest of a labyrinth, on its free floor. */
 function mazeScore(room) {

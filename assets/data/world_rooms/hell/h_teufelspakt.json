@@ -1,0 +1,166 @@
+{
+	"schema_version": 1,
+	"id": "h_teufelspakt",
+	"title": "Preisraum: Teufelspakt",
+	"world": "hell",
+	"role": "treasure",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		]
+	],
+	"width": 14,
+	"height": 11,
+	"cells": [
+		"00000000000000",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"00000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				6,
+				0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				6,
+				10
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0,
+				5
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				13,
+				5
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "hell_pact",
+			"x": 336,
+			"y": 336,
+			"group": "P",
+			"offer": 0
+		},
+		{
+			"kind": "hell_pact",
+			"x": 624,
+			"y": 336,
+			"group": "P",
+			"offer": 1
+		},
+		{
+			"kind": "hell_pact",
+			"x": 912,
+			"y": 336,
+			"group": "P",
+			"offer": 2
+		},
+		{
+			"kind": "tablet",
+			"x": 624,
+			"y": 657.6,
+			"text": "Drei Altäre, drei Angebote. Nur einen Pakt gewährt die Hölle.\nDer Preis: zwei Treffer deiner Lebensgrenze, für immer.\nLinks ein episches Stück deiner Klasse, in der Mitte zwei Dämonensegen,\nrechts drei Runen und ein Aufwertungsstein. Wer nicht zahlen will, geht."
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_skull_a",
+			"x": 240,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_2",
+			"x": 1046.4,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_a",
+			"x": 720,
+			"y": 477,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 1200,
+			"y": 557,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 29,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "start",
+			"x": 624,
+			"y": 739.2
+		}
+	]
+}

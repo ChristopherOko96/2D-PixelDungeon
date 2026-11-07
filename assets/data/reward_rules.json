@@ -1,0 +1,52 @@
+{
+ "_note": "Beuteordnung der Welten (docs/BEUTEORDNUNG.de.md, read by src/progress/reward_rules.gd). Life in LP (1 heart = 2 LP). depth T = floor + 10 x chapters the hero already finished. dmg: hit size per depth (steps: T up to `to` -> lp; past the last step 1 + floor((T-1)/3)); every hit on the hero is its base damage x dmg(T); bosses keep their double base. cap_hits: the life cap is cap_hits x dmg(T). heal_hits: a heal heart heals heal_hits x dmg(T). life_heart: guardian = LP of a floor or mini guardian (not the final boss); puzzle = ceil(T / 2) + (tier - 3) from tier 3 on. chapter_hp: monster and boss HP x (1 + chapter_hp x chapters the hero finished). loot value W = T + tier_step x (tier - 1); gold = gold_base + gold_per_value x W; min_rarity by W (first band whose `to` >= W). rarity_weights: normal rolls, [floor 1, floor 10] per rarity (deeper = floor 10). tiers: per puzzle tier the chest's parts: guaranteed = pieces of at least the min rarity (own = of the hero's class), extra = plain chest rolls, heal = heal hearts, rune = chance of one rune stone, stones = consumables, clean = guaranteed pieces never cursed, up_one = one guaranteed piece a rarity higher (at most epic). tier_share: chance per tier of a puzzle room by floor band. legendary: chance that the best piece of a puzzle chest turns legendary by floor (of the chapter) and tier; sure = clean; the rest roll a curse chance in curse_range. special: chest values of rooms that count as a tier (secret, hidden), the vault, guardians and the final boss. blood: the path costs (thorn hearts of heart_hits x dmg) and the tier shift per path. pact / sacrifice: the price rooms of the hell.",
+ "schema_version": 1,
+ "start_lp": 12,
+ "chapter_depth": 10,
+ "dmg": {"steps": [{"to": 3, "lp": 1}, {"to": 6, "lp": 2}, {"to": 10, "lp": 3}]},
+ "cap_hits": 20,
+ "heal_hits": 2,
+ "life_heart": {"guardian": 4},
+ "chapter_hp": 0.6,
+ "tier_step": 2,
+ "gold_base": 10,
+ "gold_per_value": 4,
+ "min_rarity": [{"to": 3, "rarity": "uncommon"}, {"to": 9, "rarity": "rare"}, {"to": 9999, "rarity": "epic"}],
+ "rarity_weights": {"common": [60, 15], "uncommon": [28, 30], "rare": [10, 35], "epic": [2, 20], "legendary": [0, 0]},
+ "tiers": {
+  "1": {"name": "Leicht", "guaranteed": 1, "own": 0, "extra": 0, "heal": 1, "rune": 0.0, "stones": [], "clean": false, "up_one": false},
+  "2": {"name": "Etwas schwerer", "guaranteed": 1, "own": 0, "extra": 1, "heal": 1, "rune": 0.1, "stones": [], "clean": false, "up_one": false},
+  "3": {"name": "Mittelschwer", "guaranteed": 1, "own": 1, "extra": 1, "heal": 2, "rune": 0.25, "stones": ["crystal_or_stone"], "clean": true, "up_one": false},
+  "4": {"name": "Schwer", "guaranteed": 2, "own": 1, "extra": 0, "heal": 2, "rune": 0.5, "stones": ["upgrade_stone"], "clean": true, "up_one": false},
+  "5": {"name": "Sehr schwer", "guaranteed": 2, "own": 2, "extra": 1, "heal": 3, "rune": 1.0, "stones": ["upgrade_stone", "dice_stone"], "clean": true, "up_one": true}
+ },
+ "tier_share": [
+  {"floors": [1, 2], "share": [70, 30, 0, 0, 0]},
+  {"floors": [3, 4], "share": [25, 45, 30, 0, 0]},
+  {"floors": [5, 6], "share": [5, 25, 40, 22, 8]},
+  {"floors": [7, 8], "share": [0, 10, 35, 38, 17]},
+  {"floors": [9, 10], "share": [0, 5, 15, 45, 35]}
+ ],
+ "legendary": {
+  "curse_range": [0.75, 0.9],
+  "cells": {
+   "10-5": {"p": 1.0, "sure": true},
+   "10-4": {"p": 0.35}, "9-5": {"p": 0.35},
+   "10-3": {"p": 0.03}, "9-3": {"p": 0.03}, "9-4": {"p": 0.03}, "8-4": {"p": 0.03}, "8-5": {"p": 0.03},
+   "7-4": {"p": 0.03}, "7-5": {"p": 0.03}, "6-5": {"p": 0.03}, "5-5": {"p": 0.03}
+  },
+  "final_boss": {"count": 1, "clean": true, "own_class": true}
+ },
+ "special": {
+  "secret": {"tier": 2},
+  "hidden": {"tier": 3},
+  "vault": {"value_add": 4, "gold_mul": 2, "rune": 1, "min_rarity": "rare", "life_tier": 3, "heal": 1},
+  "guardian": {"min_rarity": "rare", "epic_from": 7, "mini_epic_from": 9, "armor_power_rarity": "epic"},
+  "final": {"runes": 2, "gold": 40}
+ },
+ "armor_power_rarity": "epic",
+ "blood": {"heart_hits": 2, "paths": [{"hearts": 2, "shift": -1}, {"hearts": 3, "shift": 0}, {"hearts": 4, "shift": 1}]},
+ "pact": {"price_hits": 2, "min_lp": 12, "value_add": 10},
+ "sacrifice": {"price_hits": 2, "steps": [{"gold_tier": 2}, {"tier": 3}, {"tier": 4}, {"tier": 5, "life": true, "no_legendary": true}]},
+ "pit": {"waves": 5}
+}

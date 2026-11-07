@@ -1,0 +1,13 @@
+{
+ "_note": "The hell's puzzle pieces (src/world_kit/hell_puzzles.gd, docs/HOELLE-RAETSEL.de.md). reach = px within which a piece is used with E (pipes: pipe_reach). burn: what a hot cell does (hits = hits of the depth's dmg, back to the room's rune). vent: beat = s per beat of the Flammentakt, period = beats of a wave (a vent fires on beat 0 and glows on the last). flood: cycle s of one ebb-warn-flood round, ebb and warn = s from its start where they end. eye: beat = s per beat, open / closed = beats an eye stays open / shut (pieces may set their own). thorns: hits one thorn heart costs (hits x dmg LP, never below 1 LP). flow: s the lava stays in the pipes after a failed sluice. look: colours of the drawn pieces (hex).",
+ "schema_version": 1,
+ "reach": 120,
+ "pipe_reach": 70,
+ "burn": {"hits": 1},
+ "vent": {"beat": 0.62, "period": 3},
+ "flood": {"cycle": 3.2, "ebb": 1.1, "warn": 1.6},
+ "eye": {"beat": 0.7, "open": 2, "closed": 2},
+ "thorns": {"hits": 2},
+ "flow": {"show": 1.4},
+ "look": {"lava": "ff6a1a", "lava_dark": "8a2410", "dry": "2a1a16", "metal": "5a4a44", "chain": "b9a58a", "sight": "ff2a1e", "blood": "b0182a", "stone": "3a302c"}
+}

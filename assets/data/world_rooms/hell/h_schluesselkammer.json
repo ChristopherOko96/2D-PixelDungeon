@@ -1,0 +1,345 @@
+{
+	"schema_version": 1,
+	"id": "h_schluesselkammer",
+	"title": "Schlüsselkammer",
+	"world": "hell",
+	"role": "key",
+	"width": 14,
+	"height": 11,
+	"cells": [
+		"00000000000000",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"00000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "east",
+			"cell": [
+				13,
+				8
+			],
+			"dir": "h"
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "prop",
+			"asset": "shelf",
+			"x": 168,
+			"y": 235.2,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				62,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "shelf",
+			"x": 475.2,
+			"y": 235.2,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				62,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "shop_table",
+			"x": 321.6,
+			"y": 345.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				150,
+				40
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_angel",
+			"x": 859.2,
+			"y": 249.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				50,
+				26
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_angel",
+			"x": 1099.2,
+			"y": 249.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				50,
+				26
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 504,
+			"y": 518.4,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				26,
+				18
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bench",
+			"x": 436.8,
+			"y": 768,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				120,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 840,
+			"y": 518.4,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				26,
+				18
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "bench",
+			"x": 907.2,
+			"y": 768,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				120,
+				30
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_monk",
+			"x": 182.4,
+			"y": 950.4,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				24
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "mat",
+			"x": 321.6,
+			"y": 454.7,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 27.5,
+				"w": 170,
+				"h": 112,
+				"a": 1
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "rug_square",
+			"x": 979.2,
+			"y": 355.9,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 29.5,
+				"w": 112,
+				"h": 124,
+				"a": 1
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "rug_red",
+			"x": 672,
+			"y": 717.6,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 84,
+				"w": 250,
+				"h": 460,
+				"a": 1
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_1",
+			"x": 595.2,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_1",
+			"x": 748.8,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "raw",
+			"x": 321.6,
+			"y": 264,
+			"ent": {
+				"type": "npc",
+				"x": 4353.6,
+				"y": 1320,
+				"room": 15
+			}
+		},
+		{
+			"kind": "raw",
+			"x": 321.6,
+			"y": 355.2,
+			"ent": {
+				"type": "shop",
+				"x": 4353.6,
+				"y": 1411.2,
+				"room": 15
+			}
+		},
+		{
+			"kind": "well",
+			"x": 979.2,
+			"y": 244.8
+		},
+		{
+			"kind": "key",
+			"x": 672,
+			"y": 576,
+			"key": "C"
+		},
+		{
+			"kind": "start",
+			"x": 672,
+			"y": 528
+		}
+	],
+	"lights": [
+		{
+			"x": 321.6,
+			"y": 249.6,
+			"r": 300,
+			"c": "255,200,140"
+		},
+		{
+			"x": 979.2,
+			"y": 164.8,
+			"r": 260,
+			"c": "190,205,245"
+		},
+		{
+			"x": 504,
+			"y": 418.4,
+			"r": 260,
+			"c": "255,195,120"
+		},
+		{
+			"x": 840,
+			"y": 418.4,
+			"r": 260,
+			"c": "255,195,120"
+		},
+		{
+			"x": 672,
+			"y": 528,
+			"r": 640,
+			"c": "255,215,170"
+		}
+	],
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		]
+	],
+	"floor_tile": "floor_00"
+}

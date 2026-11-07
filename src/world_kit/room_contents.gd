@@ -42,13 +42,12 @@ static func finish_chest(e: Dictionary, o: Dictionary, floor_number: int, roll: 
 		e.erase("exact")
 		e.erase("give")
 	if str((o.get("loot", {}) as Dictionary).get("type", "")) == "hoard":
-		# the Schatz of a solved puzzle, by its tier: much gold, a heart, heart containers (hoard_hearts,
-		# taken when opened) and several of the game's item rolls, up to a legendary piece of the class
+		# the Schatz of a solved puzzle, by its tier 1 to 5: what it pays is worked out when it is opened, by
+		# the Beuteordnung (src/progress/reward_rules.gd, hell_game.gd _open_hoard), from the hero's depth
 		var tier := hoard_tier(o)
-		var hoard: Dictionary = (c.get("hoard", {}) as Dictionary).merged(((c.get("hoard", {}) as Dictionary).get("tiers", {}) as Dictionary).get(str(tier), {}), true)
-		e.loot = {"gems": int(hoard.get("gems_base", 14)) + int(hoard.get("gems_per_floor", 3)) * floor_number, "heart": true}
-		e.hoard = (hoard.get("rolls", ["gold_crate"]) as Array).duplicate()
-		e.hoard_hearts = int(hoard.get("hearts", 1))
+		e.loot = {"gems": 0, "heart": false}
+		e.hoard = []
+		e.hoard_tier = tier
 		e.tier = tier
 		e.magic = true
 		e.erase("exact")

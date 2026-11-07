@@ -1,0 +1,585 @@
+{
+	"schema_version": 1,
+	"id": "h_schleuse_s1_lb",
+	"title": "Rätsel: Lavaschleusen (Stufe 1)",
+	"world": "hell",
+	"role": "jump",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		],
+		[
+			1,
+			0
+		],
+		[
+			1,
+			1
+		]
+	],
+	"width": 31,
+	"height": 25,
+	"cells": [
+		"0000000000000000000000000000000",
+		"0101111111111111101111111111110",
+		"0101111111111111101111111111110",
+		"0101111111111111101111111111110",
+		"0101111111111111101111111111110",
+		"0101111111111111111111111111110",
+		"0101111111111111101111111111110",
+		"0101111111111111101111111111110",
+		"0101111111111111101111111111110",
+		"0101111111111111101111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000000000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				24,
+				0
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				30,
+				13
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				24,
+				24
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "gate",
+			"x": 192,
+			"y": 384,
+			"dir": "h",
+			"group": "A",
+			"lock": "",
+			"style": "portcullis"
+		},
+		{
+			"kind": "hell_pipe",
+			"x": 1008,
+			"y": 432,
+			"group": "A",
+			"shape": "L",
+			"rot": 3
+		},
+		{
+			"kind": "hell_pipe",
+			"x": 1008,
+			"y": 528,
+			"group": "A",
+			"shape": "I",
+			"rot": 1
+		},
+		{
+			"kind": "hell_pipe",
+			"x": 1008,
+			"y": 624,
+			"group": "A",
+			"shape": "I",
+			"rot": 1
+		},
+		{
+			"kind": "hell_pipe",
+			"x": 912,
+			"y": 432,
+			"group": "A",
+			"shape": "I",
+			"rot": 0
+		},
+		{
+			"kind": "hell_pipe",
+			"x": 912,
+			"y": 528,
+			"group": "A",
+			"shape": "L",
+			"rot": 0
+		},
+		{
+			"kind": "hell_pipe",
+			"x": 912,
+			"y": 624,
+			"group": "A",
+			"shape": "I",
+			"rot": 1
+		},
+		{
+			"kind": "hell_pipe",
+			"x": 816,
+			"y": 432,
+			"group": "A",
+			"shape": "L",
+			"rot": 2
+		},
+		{
+			"kind": "hell_pipe",
+			"x": 816,
+			"y": 528,
+			"group": "A",
+			"shape": "I",
+			"rot": 0
+		},
+		{
+			"kind": "hell_pipe",
+			"x": 816,
+			"y": 624,
+			"group": "A",
+			"shape": "L",
+			"rot": 2
+		},
+		{
+			"kind": "hell_spout",
+			"x": 1104,
+			"y": 624,
+			"group": "A",
+			"dir": "e"
+		},
+		{
+			"kind": "hell_forge",
+			"x": 720,
+			"y": 432,
+			"group": "A"
+		},
+		{
+			"kind": "hell_sluice",
+			"x": 1584,
+			"y": 432,
+			"group": "A"
+		},
+		{
+			"kind": "hell_rune",
+			"x": 1776,
+			"y": 528,
+			"group": "A"
+		},
+		{
+			"kind": "tablet",
+			"x": 1776,
+			"y": 369.6,
+			"text": "Das Feuer kennt nur einen Weg: den, den man ihm baut.\nDreh die Rinnen, bis das Maul die Schmiede erreicht.\nÖffne die Schleuse erst, wenn jede Rinne zur nächsten führt."
+		},
+		{
+			"kind": "chest",
+			"x": 144,
+			"y": 561.6,
+			"loot": {
+				"type": "hoard",
+				"tier": 1
+			},
+			"mimic": "no"
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_a",
+			"x": 2736,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag_b",
+			"x": 1929.6,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "cage_hang",
+			"x": 1488,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 1219.2,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 950.4,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_hang",
+			"x": 681.6,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 412.8,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 1872,
+			"y": 269,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 29,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 1776,
+			"y": 480,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 2544,
+			"y": 676,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 2640,
+			"y": 768,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_a",
+			"x": 2160,
+			"y": 957,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_b",
+			"x": 2640,
+			"y": 1923,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "moss_a",
+			"x": 2544,
+			"y": 1917,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 45,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 2640,
+			"y": 2285,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 29,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_monk",
+			"x": 1776,
+			"y": 1714.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				24
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_bowl",
+			"x": 1776,
+			"y": 2194.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 1776,
+			"y": 1138.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				26,
+				18
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "torch_pillar",
+			"x": 2832,
+			"y": 1714.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				26
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_monk",
+			"x": 2832,
+			"y": 2098.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				24
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "torch_pillar",
+			"x": 2832,
+			"y": 466.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				26
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "torch_pillar",
+			"x": 2832,
+			"y": 850.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				26
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 2064,
+			"y": 178.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				26,
+				18
+			]
+		},
+		{
+			"kind": "start",
+			"x": 1488,
+			"y": 931.2
+		}
+	],
+	"kind_label": "Höllenrätsel",
+	"info": "Lavaschleusen, Stufe 1: 5 Schritte im Löser"
+}

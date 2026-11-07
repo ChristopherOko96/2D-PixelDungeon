@@ -1,5 +1,5 @@
 {
-	"schema_version": 1,
+	"schema_version": 1.0,
 	"id": "k_sprung_gitter_lc",
 	"title": "Sprung: Der Kerkermeister (Winkel)",
 	"world": "krypta",
@@ -7,20 +7,20 @@
 	"in_floors": true,
 	"slots": [
 		[
-			0,
-			0
+			0.0,
+			0.0
 		],
 		[
-			0,
-			1
+			0.0,
+			1.0
 		],
 		[
-			1,
-			1
+			1.0,
+			1.0
 		]
 	],
-	"width": 31,
-	"height": 25,
+	"width": 31.0,
+	"height": 25.0,
 	"cells": [
 		"0000000000000000000000000000000",
 		"0111111111111000000000000000000",
@@ -54,158 +54,158 @@
 		{
 			"side": "north",
 			"cell": [
-				6,
-				0
+				6.0,
+				0.0
 			]
 		},
 		{
 			"side": "west",
 			"cell": [
-				0,
-				5
+				0.0,
+				5.0
 			]
 		},
 		{
 			"side": "east",
 			"cell": [
-				13,
-				5
+				13.0,
+				5.0
 			]
 		},
 		{
 			"side": "south",
 			"cell": [
-				6,
-				24
+				6.0,
+				24.0
 			]
 		},
 		{
 			"side": "west",
 			"cell": [
-				0,
-				19
+				0.0,
+				19.0
 			]
 		}
 	],
-	"auto_mobs": 0,
+	"auto_mobs": 0.0,
 	"objects": [
 		{
 			"kind": "prop",
 			"asset": "wall_torch_hook",
-			"x": 240,
-			"y": 102,
+			"x": 240.0,
+			"y": 102.0,
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
 		{
 			"kind": "prop",
 			"asset": "wall_torch_hook",
-			"x": 1008,
-			"y": 102,
+			"x": 1008.0,
+			"y": 102.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
 		{
 			"kind": "prop",
 			"asset": "cage_hang",
-			"x": 240,
-			"y": 774,
+			"x": 240.0,
+			"y": 774.0,
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
 		{
 			"kind": "prop",
 			"asset": "chain_swag",
-			"x": 240,
-			"y": 1350,
+			"x": 240.0,
+			"y": 1350.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
 		{
 			"kind": "prop",
 			"asset": "cage_hang",
-			"x": 1200,
-			"y": 1446,
+			"x": 1200.0,
+			"y": 1446.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
 		{
 			"kind": "prop",
 			"asset": "cage_hang",
-			"x": 240,
-			"y": 1830,
+			"x": 240.0,
+			"y": 1830.0,
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
 		{
 			"kind": "prop",
 			"asset": "wall_torch_hook",
-			"x": 528,
-			"y": 1830,
+			"x": 528.0,
+			"y": 1830.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
 		{
 			"kind": "prop",
 			"asset": "chain_swag",
-			"x": 1008,
-			"y": 1830,
+			"x": 1008.0,
+			"y": 1830.0,
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"wall_decor": true
 		},
@@ -217,29 +217,29 @@
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "grate_a",
-			"x": 1104,
-			"y": 283.20000000000005,
+			"x": 1104.0,
+			"y": 283.2,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"decal": {
-				"dy": 45,
-				"w": 0,
-				"h": 0,
+				"dy": 45.0,
+				"w": 0.0,
+				"h": 0.0,
 				"a": 0.95
 			}
 		},
@@ -251,10 +251,10 @@
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			]
 		},
 		{
@@ -265,29 +265,29 @@
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "moss_b",
-			"x": 1200,
-			"y": 475.20000000000005,
+			"x": 1200.0,
+			"y": 475.2,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"decal": {
-				"dy": 45,
-				"w": 0,
-				"h": 0,
+				"dy": 45.0,
+				"w": 0.0,
+				"h": 0.0,
 				"a": 0.95
 			}
 		},
@@ -299,10 +299,10 @@
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			]
 		},
 		{
@@ -313,10 +313,10 @@
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			]
 		},
 		{
@@ -327,10 +327,10 @@
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			]
 		},
 		{
@@ -341,24 +341,24 @@
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "coal",
-			"x": 404,
+			"x": 404.0,
 			"y": 927.1,
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			]
 		},
 		{
@@ -369,10 +369,10 @@
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			]
 		},
 		{
@@ -383,29 +383,29 @@
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "moss_b",
-			"x": 720,
-			"y": 1435.1999999999998,
+			"x": 720.0,
+			"y": 1435.2,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"decal": {
-				"dy": 45,
-				"w": 0,
-				"h": 0,
+				"dy": 45.0,
+				"w": 0.0,
+				"h": 0.0,
 				"a": 0.95
 			}
 		},
@@ -417,10 +417,10 @@
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			]
 		},
 		{
@@ -431,10 +431,10 @@
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			]
 		},
 		{
@@ -445,29 +445,29 @@
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "grate_a",
-			"x": 240,
-			"y": 2011.1999999999998,
+			"x": 240.0,
+			"y": 2011.2,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			],
 			"decal": {
-				"dy": 45,
-				"w": 0,
-				"h": 0,
+				"dy": 45.0,
+				"w": 0.0,
+				"h": 0.0,
 				"a": 0.95
 			}
 		},
@@ -475,14 +475,14 @@
 			"kind": "prop",
 			"asset": "coal",
 			"x": 410.7,
-			"y": 2051,
+			"y": 2051.0,
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			]
 		},
 		{
@@ -493,24 +493,24 @@
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "bone_a",
 			"x": 820.6,
-			"y": 2063,
+			"y": 2063.0,
 			"flip": true,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			]
 		},
 		{
@@ -521,105 +521,105 @@
 			"flip": false,
 			"layer": "floor",
 			"block": false,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				60,
-				30
+				60.0,
+				30.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "brazier_low",
-			"x": 240,
+			"x": 240.0,
 			"y": 172.8,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				57,
-				26
+				57.0,
+				26.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "brazier_low",
-			"x": 1104,
+			"x": 1104.0,
 			"y": 172.8,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				57,
-				26
+				57.0,
+				26.0
 			]
 		},
 		{
 			"kind": "start",
-			"x": 336,
-			"y": 360
+			"x": 336.0,
+			"y": 360.0
 		},
 		{
 			"kind": "tablet",
 			"text": "Der Kerkermeister hat einen Schlüssel verloren.\nEr liegt jenseits der Stacheln.\nZwei Türen wollen ihn, und er bricht im Schloss:\nHinter einer liegt der zweite Schlüssel, hinter der anderen nur Zähne.\nLies die Inschriften an den Türen.",
-			"x": 720,
-			"y": 360
+			"x": 720.0,
+			"y": 360.0
 		},
 		{
 			"kind": "prop",
 			"asset": "candelabra",
-			"x": 144,
+			"x": 144.0,
 			"y": 844.8,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				40,
-				20
+				40.0,
+				20.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "candelabra",
-			"x": 1200,
+			"x": 1200.0,
 			"y": 844.8,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				40,
-				20
+				40.0,
+				20.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "skull_pile",
-			"x": 336,
-			"y": 940.8000000000001,
+			"x": 336.0,
+			"y": 940.8,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				76,
-				26
+				76.0,
+				26.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "skull_pile",
-			"x": 1200,
-			"y": 1132.8000000000002,
+			"x": 1200.0,
+			"y": 1132.8,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				76,
-				26
+				76.0,
+				26.0
 			]
 		},
 		{
@@ -627,16 +627,16 @@
 			"dir": "h",
 			"group": "W",
 			"lock": "A",
-			"x": 480,
-			"y": 864
+			"x": 480.0,
+			"y": 864.0
 		},
 		{
 			"kind": "gate",
 			"dir": "h",
 			"group": "E",
 			"lock": "A",
-			"x": 864,
-			"y": 864
+			"x": 864.0,
+			"y": 864.0
 		},
 		{
 			"kind": "chest",
@@ -644,57 +644,57 @@
 				"type": "key",
 				"id": "B"
 			},
-			"x": 240,
-			"y": 1032
+			"x": 240.0,
+			"y": 1032.0
 		},
 		{
 			"kind": "chest",
 			"loot": {
 				"type": "random"
 			},
-			"x": 1104,
-			"y": 1032,
+			"x": 1104.0,
+			"y": 1032.0,
 			"mimic": "yes",
 			"mimic_mob": "truhenfresser"
 		},
 		{
 			"kind": "tablet",
 			"text": "Hinter dieser Tür liegt kein Schlüssel.",
-			"x": 624,
-			"y": 1224
+			"x": 624.0,
+			"y": 1224.0
 		},
 		{
 			"kind": "tablet",
 			"text": "Genau eine dieser beiden Inschriften lügt.",
-			"x": 816,
-			"y": 1224
+			"x": 816.0,
+			"y": 1224.0
 		},
 		{
 			"kind": "prop",
 			"asset": "brazier_pillar",
-			"x": 144,
-			"y": 1420.8000000000002,
+			"x": 144.0,
+			"y": 1420.8,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				50,
-				26
+				50.0,
+				26.0
 			]
 		},
 		{
 			"kind": "prop",
 			"asset": "brazier_pillar",
-			"x": 432,
-			"y": 1420.8000000000002,
+			"x": 432.0,
+			"y": 1420.8,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				50,
-				26
+				50.0,
+				26.0
 			]
 		},
 		{
@@ -702,72 +702,72 @@
 			"dir": "h",
 			"group": "B",
 			"lock": "B",
-			"x": 480,
-			"y": 1440
+			"x": 480.0,
+			"y": 1440.0
 		},
 		{
 			"kind": "chest",
 			"loot": {
 				"type": "hoard",
-				"tier": 2
+				"tier": 3.0
 			},
-			"x": 240,
-			"y": 1608
+			"x": 240.0,
+			"y": 1608.0
 		},
 		{
 			"kind": "launch",
 			"dir": "w",
-			"cells": 4,
-			"x": 1680,
-			"y": 1584
+			"cells": 4.0,
+			"x": 1680.0,
+			"y": 1584.0
 		},
 		{
 			"kind": "launch",
 			"dir": "e",
-			"cells": 4,
-			"x": 1872,
-			"y": 1584
+			"cells": 4.0,
+			"x": 1872.0,
+			"y": 1584.0
 		},
 		{
 			"kind": "launch",
 			"dir": "w",
-			"cells": 14,
-			"x": 2640,
-			"y": 1584
+			"cells": 14.0,
+			"x": 2640.0,
+			"y": 1584.0
 		},
 		{
 			"kind": "launch",
 			"dir": "s",
-			"cells": 4,
-			"x": 2256,
-			"y": 1680
+			"cells": 4.0,
+			"x": 2256.0,
+			"y": 1680.0
 		},
 		{
 			"kind": "launch",
 			"dir": "n",
-			"cells": 4,
-			"x": 1776,
-			"y": 1968
+			"cells": 4.0,
+			"x": 1776.0,
+			"y": 1968.0
 		},
 		{
 			"kind": "launch",
 			"dir": "n",
-			"cells": 4,
-			"x": 2736,
-			"y": 1968
+			"cells": 4.0,
+			"x": 2736.0,
+			"y": 1968.0
 		},
 		{
 			"kind": "prop",
 			"asset": "urn_b",
-			"x": 912,
+			"x": 912.0,
 			"y": 2092.8,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				29,
-				16
+				29.0,
+				16.0
 			],
 			"loot": {
 				"type": "random"
@@ -779,75 +779,75 @@
 		{
 			"kind": "launch",
 			"dir": "e",
-			"cells": 4,
-			"x": 1392,
-			"y": 2064
+			"cells": 4.0,
+			"x": 1392.0,
+			"y": 2064.0
 		},
 		{
 			"kind": "launch",
 			"dir": "e",
-			"cells": 3,
-			"x": 1872,
-			"y": 2064
+			"cells": 3.0,
+			"x": 1872.0,
+			"y": 2064.0
 		},
 		{
 			"kind": "spikes",
-			"phase": 0,
-			"x": 2256,
-			"y": 2064
+			"phase": 0.0,
+			"x": 2256.0,
+			"y": 2064.0
 		},
 		{
 			"kind": "spikes",
-			"phase": 0,
-			"x": 2448,
-			"y": 2064
+			"phase": 0.0,
+			"x": 2448.0,
+			"y": 2064.0
 		},
 		{
 			"kind": "spikes",
-			"phase": 0,
-			"x": 2640,
-			"y": 2064
+			"phase": 0.0,
+			"x": 2640.0,
+			"y": 2064.0
 		},
 		{
 			"kind": "spikes",
-			"phase": 1,
-			"x": 2352,
-			"y": 2064
+			"phase": 1.0,
+			"x": 2352.0,
+			"y": 2064.0
 		},
 		{
 			"kind": "spikes",
-			"phase": 1,
-			"x": 2544,
-			"y": 2064
+			"phase": 1.0,
+			"x": 2544.0,
+			"y": 2064.0
 		},
 		{
 			"kind": "key",
 			"key": "A",
-			"x": 2832,
-			"y": 2064
+			"x": 2832.0,
+			"y": 2064.0
 		},
 		{
 			"kind": "chest",
 			"loot": {
 				"type": "random"
 			},
-			"x": 240,
-			"y": 2184,
+			"x": 240.0,
+			"y": 2184.0,
 			"mimic": "random",
 			"mimic_mob": "mimik"
 		},
 		{
 			"kind": "prop",
 			"asset": "crate_a",
-			"x": 528,
+			"x": 528.0,
 			"y": 2284.8,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				48,
-				22
+				48.0,
+				22.0
 			],
 			"loot": {
 				"type": "random"
@@ -860,15 +860,15 @@
 		{
 			"kind": "prop",
 			"asset": "urn_a",
-			"x": 1008,
+			"x": 1008.0,
 			"y": 2284.8,
 			"flip": false,
 			"layer": "normal",
 			"block": true,
-			"scale": 1,
+			"scale": 1.0,
 			"foot": [
-				29,
-				16
+				29.0,
+				16.0
 			],
 			"loot": {
 				"type": "random"

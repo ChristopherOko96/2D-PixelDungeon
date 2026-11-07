@@ -433,12 +433,274 @@
    "defaults": {
     "group": "A"
    }
+  },
+  {
+   "kind": "hell_bridge",
+   "label": "Kettenbrücke",
+   "preview": "bridge_v",
+   "cat": "Höllenrätsel",
+   "worlds": [
+    "hell"
+   ],
+   "defaults": {
+    "group": "A",
+    "nr": 1,
+    "up": true
+   }
+  },
+  {
+   "kind": "hell_winch",
+   "label": "Winde",
+   "preview": "chain_hook",
+   "cat": "Höllenrätsel",
+   "worlds": [
+    "hell"
+   ],
+   "defaults": {
+    "group": "A",
+    "sets": [
+     1
+    ]
+   }
+  },
+  {
+   "kind": "hell_shield",
+   "label": "Kettenschild",
+   "preview": "gate_side",
+   "cat": "Höllenrätsel",
+   "worlds": [
+    "hell"
+   ],
+   "defaults": {
+    "group": "A",
+    "nr": 1,
+    "down": false
+   }
+  },
+  {
+   "kind": "hell_vent",
+   "label": "Flammenschlot",
+   "preview": "grate",
+   "cat": "Höllenrätsel",
+   "worlds": [
+    "hell"
+   ],
+   "defaults": {
+    "group": "A",
+    "period": 3
+   }
+  },
+  {
+   "kind": "hell_flood",
+   "label": "Flutboden",
+   "preview": "lava_00",
+   "cat": "Höllenrätsel",
+   "worlds": [
+    "hell"
+   ],
+   "defaults": {
+    "group": "A"
+   }
+  },
+  {
+   "kind": "hell_stone",
+   "label": "Basaltstein",
+   "preview": "rocks_dark",
+   "cat": "Höllenrätsel",
+   "worlds": [
+    "hell"
+   ],
+   "defaults": {
+    "group": "A"
+   }
+  },
+  {
+   "kind": "hell_channel",
+   "label": "Lavarinne",
+   "preview": "lava_01",
+   "cat": "Höllenrätsel",
+   "worlds": [
+    "hell"
+   ],
+   "defaults": {
+    "group": "A",
+    "wet": "!A"
+   }
+  },
+  {
+   "kind": "hell_valve",
+   "label": "Ventil",
+   "preview": "rune_plate",
+   "cat": "Höllenrätsel",
+   "worlds": [
+    "hell"
+   ],
+   "defaults": {
+    "group": "A",
+    "label": "A",
+    "open": false
+   }
+  },
+  {
+   "kind": "hell_eye",
+   "label": "Dämonenauge",
+   "preview": "demon_head",
+   "cat": "Höllenrätsel",
+   "worlds": [
+    "hell"
+   ],
+   "defaults": {
+    "group": "A",
+    "dir": "e",
+    "open": 2,
+    "closed": 2,
+    "off": 0,
+    "always": false
+   }
+  },
+  {
+   "kind": "hell_thorns",
+   "label": "Dornen (Blutpreis)",
+   "preview": "spike_trap",
+   "cat": "Höllenrätsel",
+   "worlds": [
+    "hell"
+   ],
+   "defaults": {
+    "group": "A"
+   }
+  },
+  {
+   "kind": "hell_blood_gate",
+   "label": "Blutgitter",
+   "preview": "portcullis",
+   "cat": "Höllenrätsel",
+   "worlds": [
+    "hell"
+   ],
+   "defaults": {
+    "group": "A"
+   }
+  },
+  {
+   "kind": "hell_blood_bowl",
+   "label": "Blutschale",
+   "preview": "brazier_bowl",
+   "cat": "Höllenrätsel",
+   "worlds": [
+    "hell"
+   ],
+   "defaults": {
+    "group": "A"
+   }
+  },
+  {
+   "kind": "hell_pipe",
+   "label": "Drehbare Rinne",
+   "preview": "grate_a",
+   "cat": "Höllenrätsel",
+   "worlds": [
+    "hell"
+   ],
+   "defaults": {
+    "group": "A",
+    "shape": "I",
+    "rot": 0
+   }
+  },
+  {
+   "kind": "hell_spout",
+   "label": "Dämonenmaul",
+   "preview": "demon_head",
+   "cat": "Höllenrätsel",
+   "worlds": [
+    "hell"
+   ],
+   "defaults": {
+    "group": "A",
+    "dir": "e"
+   }
+  },
+  {
+   "kind": "hell_forge",
+   "label": "Glutschmiede",
+   "preview": "brazier_demon",
+   "cat": "Höllenrätsel",
+   "worlds": [
+    "hell"
+   ],
+   "defaults": {
+    "group": "A"
+   }
+  },
+  {
+   "kind": "hell_sluice",
+   "label": "Schleusenhebel",
+   "preview": "torch_dead",
+   "cat": "Höllenrätsel",
+   "worlds": [
+    "hell"
+   ],
+   "defaults": {
+    "group": "A"
+   }
+  },
+  {
+   "kind": "hell_rune",
+   "label": "Rune (Rätselanfang)",
+   "preview": "rune_plate",
+   "cat": "Höllenrätsel",
+   "worlds": [
+    "hell"
+   ],
+   "defaults": {
+    "group": "A"
+   }
+  },
+  {
+   "kind": "hell_sacrifice",
+   "label": "Opferstein",
+   "preview": "skull_obelisk",
+   "cat": "Höllenrätsel",
+   "worlds": [
+    "hell"
+   ],
+   "defaults": {
+    "group": "P"
+   }
+  },
+  {
+   "kind": "hell_pact",
+   "label": "Paktaltar",
+   "preview": "altar",
+   "cat": "Höllenrätsel",
+   "worlds": [
+    "hell"
+   ],
+   "defaults": {
+    "group": "P",
+    "offer": 0
+   }
+  },
+  {
+   "kind": "hell_pit_altar",
+   "label": "Grubenaltar (Wellen)",
+   "preview": "brazier_rune",
+   "cat": "Höllenrätsel",
+   "worlds": [
+    "hell"
+   ],
+   "defaults": {
+    "group": "P"
+   }
   }
  ],
  "hoard_tiers": {
-  "1": "Stufe 1: leichtes Rätsel (Gold, 1 Herzcontainer, seltener Fund)",
-  "2": "Stufe 2: schweres Rätsel (+ epischer Fund)",
-  "3": "Stufe 3: sehr schwer (Legendär für die Klasse, 2 Herzcontainer)"
+  "1": "Stufe 1: leicht (1 Stück, 1 Heilherz)",
+  "2": "Stufe 2: etwas schwerer (+ Truhenwurf, Rune möglich)",
+  "3": "Stufe 3: mittelschwer (eigene Klasse, Lebensherz)",
+  "4": "Stufe 4: schwer (2 Stücke, Aufwertungsstein)",
+  "5": "Stufe 5: sehr schwer (Rune, auf Etage 10 legendär)"
  },
  "loot_types": {
   "none": "Nichts",

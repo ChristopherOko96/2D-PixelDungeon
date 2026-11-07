@@ -1,0 +1,219 @@
+{
+	"schema_version": 1,
+	"id": "h_beute_nische",
+	"title": "Beute: Schlackenische",
+	"world": "hell",
+	"role": "treasure",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		]
+	],
+	"width": 14,
+	"height": 11,
+	"cells": [
+		"00000000000000",
+		"00001111110000",
+		"00001111110000",
+		"00001111110000",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"00001111110000",
+		"00001111110000",
+		"00001111110000",
+		"00000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				6,
+				0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				6,
+				10
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0,
+				5
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				13,
+				5
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "prop",
+			"asset": "rocks_lava",
+			"x": 432,
+			"y": 274.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				80,
+				32
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "spires_lava",
+			"x": 912,
+			"y": 274.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				70,
+				30
+			]
+		},
+		{
+			"kind": "raw",
+			"x": 432,
+			"y": 849.6,
+			"ent": {
+				"type": "crate",
+				"look": "urn_d",
+				"hp": 1,
+				"drop": "random"
+			}
+		},
+		{
+			"kind": "raw",
+			"x": 912,
+			"y": 849.6,
+			"ent": {
+				"type": "crate",
+				"look": "barrel_a",
+				"hp": 1,
+				"drop": "random"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "rug_blue",
+			"x": 672,
+			"y": 515,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 83,
+				"w": 170,
+				"h": 300,
+				"a": 1
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 912,
+			"y": 288,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_b",
+			"x": 528,
+			"y": 387,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 432,
+			"y": 576,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 720,
+			"y": 845,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 29,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "start",
+			"x": 624,
+			"y": 547.2
+		}
+	]
+}

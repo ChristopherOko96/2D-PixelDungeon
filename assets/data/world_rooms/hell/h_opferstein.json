@@ -1,0 +1,165 @@
+{
+	"schema_version": 1,
+	"id": "h_opferstein",
+	"title": "Preisraum: Opferstein",
+	"world": "hell",
+	"role": "treasure",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		]
+	],
+	"width": 14,
+	"height": 11,
+	"cells": [
+		"00000000000000",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"00000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				6,
+				0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				6,
+				10
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0,
+				5
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				13,
+				5
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "hell_sacrifice",
+			"x": 624,
+			"y": 432,
+			"group": "P"
+		},
+		{
+			"kind": "tablet",
+			"x": 336,
+			"y": 273.6,
+			"text": "Der Stein will Blut, ein Opfer nach dem anderen.\nJedes kostet zwei Treffer deines Lebens und gibt mehr als das letzte:\nGold, ein Stück, ein besseres Stück, zuletzt ein Stück und ein Lebensherz.\nHör auf, wann du willst. Der Stein tötet nie, aber der Wächter wartet."
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_demon",
+			"x": 912,
+			"y": 268.8,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "banner_2",
+			"x": 240,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag",
+			"x": 1046.4,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 816,
+			"y": 173,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 29,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_b",
+			"x": 624,
+			"y": 771,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "start",
+			"x": 624,
+			"y": 739.2
+		}
+	]
+}

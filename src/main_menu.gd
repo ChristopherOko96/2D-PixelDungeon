@@ -25,6 +25,9 @@ signal multiplayer_requested
 signal story_floor_requested(scene_path: String, class_id: String, floor_number: int, boss: bool)
 ## The player picked a hero for a story that runs in its own scene (story "scene" in story_campaigns.json).
 signal story_scene_requested(scene_path: String, class_id: String)
+## A story start of the chapter system (docs/BEUTEORDNUNG.de.md 1): `jump` holds carry_hero (the hero who
+## finished the story before) or debug_run (STORY (DEBUG): every world open, nothing saved).
+signal story_run_requested(scene_path: String, class_id: String, jump: Dictionary)
 ## A user-authored story uses the normal story runtime after the hero choice.
 signal custom_story_requested(story: Dictionary, class_id: String, preview_room: String)
 ## A room of the Weltbauer to play with this hero (debug hub).
@@ -48,6 +51,7 @@ signal save_load_requested(mode: String, slot: int)
 
 const SaveStore = preload("res://src/save/save_store.gd")
 const StorySave = preload("res://src/save/story_save.gd")
+const StoryProgress = preload("res://src/progress/story_progress.gd")
 ## The save tabs in story order (the endless tab left with the mode).
 const SAVE_MODES := ["krypta", "frost", "hell"]
 const Progress = preload("res://src/online/progress.gd")
@@ -126,6 +130,34 @@ var _story_continue: Dictionary = {}
 ## Story id -> the save FORTSETZEN loads: {mode, slot, floor, saved_at, text}.
 var _story_resume: Dictionary = {}
 var _story_back: Button
+## The second line of each story card by story id (open, locked or waiting heroes).
+var _story_sub: Dictionary = {}
+## The grey lock in the middle of each locked story card, by story id.
+var _story_lock: Dictionary = {}
+
+
+## A padlock drawn in pixel steps (no picture needed): shackle and body, greyed with its card.
+class LockMark extends Control:
+	func _draw() -> void:
+		var s := size
+		var ink := Color(0.62, 0.6, 0.58)
+		var dark := Color(0.32, 0.3, 0.29)
+		var body := Rect2(Vector2(s.x * 0.15, s.y * 0.45), Vector2(s.x * 0.7, s.y * 0.5))
+		draw_arc(Vector2(s.x * 0.5, s.y * 0.45), s.x * 0.24, PI, TAU, 16, ink, s.x * 0.1)
+		draw_rect(body, ink)
+		draw_rect(body, dark, false, 3.0)
+		draw_circle(body.get_center() - Vector2(0, s.y * 0.04), s.x * 0.08, dark)
+		draw_rect(Rect2(body.get_center() + Vector2(-s.x * 0.03, -s.y * 0.02), Vector2(s.x * 0.06, s.y * 0.14)), dark)
+## True while the story choice was opened from the DEBUG hub: every world open, no saves.
+var _debug_stories := false
+## The question before a story start when a hero waits (carry on, start fresh, back).
+var _carry_panel: Panel
+var _carry_text: Label
+var _carry_go: Button
+var _carry_fresh: Button
+var _carry_back: Button
+## The start the carry question is about: {scene, class_id, hero}.
+var _carry_pick: Dictionary = {}
 ## The title card, game title and tagline: hidden while a panel is open.
 var _title_nodes: Array[Control] = []
 var _debug_button: Button
@@ -267,6 +299,7 @@ func _ready() -> void:
 	_build_login_panel()
 	_build_options_panel()
 	_build_story_panel()
+	_build_carry_panel()
 	_build_class_panel()
 	_build_debug_hub()
 	_build_debug_panel()
@@ -477,8 +510,16 @@ func _build_story_panel() -> void:
 			label.add_theme_color_override("font_color", line[2])
 			label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			card.add_child(label)
+		_story_sub[id] = card.get_child(2)
 		if not playable:
 			continue
+		var lock := LockMark.new()
+		lock.size = Vector2(54, 62)
+		lock.position = (card.size - lock.size) * 0.5
+		lock.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		lock.visible = false
+		card.add_child(lock)
+		_story_lock[id] = lock
 		var half := (card.size.y - 26.0) * 0.5
 		var resume := _make_button("", Vector2(280, half), 16, _continue_story.bind(id))
 		resume.position = Vector2(740, 12)
@@ -498,25 +539,61 @@ func _build_story_panel() -> void:
 func _refresh_story_saves() -> void:
 	_story_resume.clear()
 	var order: Array = []
+	var progress := StoryProgress.load_progress()
+	if _story_panel != null and _story_panel.get_child_count() > 0:
+		(_story_panel.get_child(0) as Label).text = "STORY (DEBUG) · ALLES OFFEN, OHNE SPEICHERN" if _debug_stories else "WÄHLE DEINE STORY"
 	for story: Dictionary in stories:
 		var id := str(story.id)
 		if not _story_new.has(id):
 			continue
 		var resume: Button = _story_continue[id]
 		var fresh: Button = _story_new[id]
-		var found := _latest_save(_save_mode_of(story))
+		var number := int(story.get("number", 1))
+		var open := _debug_stories or StoryProgress.is_open(progress, number)
+		var sub: Label = _story_sub.get(id)
+		# a locked story: the whole card greyed, a grey lock in its middle; unlocked it plays as ever
+		var card_node := fresh.get_parent() as Control
+		card_node.modulate = Color.WHITE if open else Color(0.5, 0.5, 0.5, 0.85)
+		if _story_lock.has(id): (_story_lock[id] as Control).visible = not open
+		fresh.visible = open
+		fresh.focus_mode = Control.FOCUS_ALL if open else Control.FOCUS_NONE
+		fresh.text = "NEU · OHNE SPEICHERN" if _debug_stories else "NEU"
+		if sub != null:
+			sub.text = _story_line(story, progress, open)
+			sub.add_theme_color_override("font_color", TEXT if open else MUTED)
+		var found := _latest_save(_save_mode_of(story)) if open and not _debug_stories else {}
 		resume.visible = not found.is_empty()
 		resume.focus_mode = Control.FOCUS_ALL if resume.visible else Control.FOCUS_NONE
 		var card_h: float = (fresh.get_parent() as Control).size.y
 		fresh.position.y = resume.position.y + resume.size.y + 4.0 if resume.visible else (card_h - fresh.size.y) * 0.5
 		if resume.visible:
 			_story_resume[id] = found
-			resume.text = "FORTSETZEN · ETAGE %d" % int(found.floor)
-			resume.tooltip_text = str(found.text)
+			resume.text = "FORTSETZEN"
+			resume.tooltip_text = "Wähle, mit welchem Helden du weiterspielst."
 			order.append(resume)
-		order.append(fresh)
+		if fresh.visible:
+			order.append(fresh)
 	if _story_back != null: order.append(_story_back)
 	_chain_focus(order)
+
+
+## The second line of a story card: its subtitle, the heroes waiting for it, or why it is locked.
+func _story_line(story: Dictionary, progress: Dictionary, open: bool) -> String:
+	var number := int(story.get("number", 1))
+	if not open:
+		return "GESPERRT · Spiele zuerst Story %d durch." % (number - 1)
+	var waiting: Array = []
+	for cid: String in class_order:
+		if not StoryProgress.waiting(progress, cid, number).is_empty() and not _debug_stories:
+			waiting.append(str(hero_cards.get(cid, {}).get("name", cid)).to_upper())
+	if not waiting.is_empty():
+		return "HELD WARTET: %s · %s" % [", ".join(waiting), str(story.get("subtitle", ""))]
+	return str(story.get("subtitle", ""))
+
+
+## STORY (DEBUG) in the DEBUG hub: the story choice with every world open, runs without saving.
+func _open_debug_stories() -> void:
+	_open_stories(true)
 
 
 ## The newest save of a story mode: {mode, slot, floor, saved_at, text}; empty without one.
@@ -539,17 +616,86 @@ static func _save_mode_of(story: Dictionary) -> String:
 	return StorySave.world_of_scene(str(story.get("scene", "")))
 
 
-## FORTSETZEN on a story card: loads that world's newest save (as LADEN does in the saves).
+## FORTSETZEN on a story card: the heroes of that world's saves, one card each (figure in its
+## specialisation, floor, run level, gold, life, when); a pick loads that save.
 func _continue_story(id: String) -> void:
 	var found: Dictionary = _story_resume.get(id, {})
 	if found.is_empty():
 		return
 	selected_story = id
-	_close_panels()
-	save_load_requested.emit(str(found.mode), int(found.slot))
+	_open_save_pick(str(found.mode))
 
 
-func _open_stories() -> void:
+var _pick_panel: Panel
+
+
+func _open_save_pick(mode: String) -> void:
+	if _pick_panel != null:
+		_pick_panel.queue_free()
+	_pick_panel = _panel("MIT WELCHEM HELDEN WEITER?")
+	_pick_panel.size = Vector2(1004, 470)
+	_pick_panel.position = (SCREEN - _pick_panel.size) * 0.5
+	var cards: Array = []
+	var k := 0
+	var profile: Dictionary = progress.profile if progress != null and progress.get("profile") is Dictionary else {}
+	var talents: Dictionary = progress.data if progress != null and progress.get("data") is Dictionary else {}
+	for slot in range(1, SaveStore.SLOTS + 1):
+		var data: Dictionary = saves.read(mode, slot)
+		if data.is_empty():
+			continue
+		var cid := str(data.get("class_id", ""))
+		var keep: Dictionary = data.get("keep", {})
+		var spec := str(data.get("spec", ElementSkin.main_spec(profile, cid)))
+		var spec_name := ""
+		for s: Dictionary in ((talents.get("classes", {}) as Dictionary).get(cid, {}) as Dictionary).get("specs", []):
+			if str(s.get("id", "")) == spec: spec_name = str(s.get("name", ""))
+		var hero_name := spec_name.to_upper() if spec_name != "" else str(hero_cards.get(cid, {}).get("name", cid)).to_upper()
+		var card := _make_button("", Vector2(300, 330), 16, func() -> void:
+			_close_panels()
+			save_load_requested.emit(mode, slot))
+		card.position = Vector2(30 + k * 320, 70)
+		_pick_panel.add_child(card)
+		cards.append(card)
+		# the figure: the class sprite, the mage in the colours of the spec the save was made with
+		var sprite := ElementSkin.source(cid) if not ElementSkin.source(cid).is_empty() else str(hero_cards.get(cid, {}).get("sprite", classes.get(cid, {}).get("sprite", "")))
+		var path := "%s%s_idle_anim_f0.png" % [SPRITE_ROOT, sprite]
+		if ResourceLoader.exists(path):
+			var pic := TextureRect.new()
+			var tex: Texture2D = load(path)
+			pic.texture = ElementSkin.texture(tex, ElementSkin.element_of(spec), cid) if not ElementSkin.source(cid).is_empty() else tex
+			pic.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			pic.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			pic.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			pic.size = Vector2(64, 112)
+			pic.position = Vector2(118, 14)
+			pic.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			card.add_child(pic)
+		var t := Time.get_datetime_dict_from_unix_time(int(data.get("saved_at", 0)))
+		var lines := [[hero_name, GOLD, 136], ["ETAGE %d · %s" % [int(data.get("floor", 1)), str(data.get("title", "")).to_upper()], TEXT, 168],
+			["LAUFSTUFE %d" % int(data.get("level", 1)), TEXT, 196], ["%d GOLD · %d/%d LP" % [int(keep.get("gold", 0)), int(keep.get("hp", 0)), int(keep.get("max_hp", 0))], Color("ef8a9a"), 224],
+			["%02d.%02d. · %02d:%02d UHR" % [t.day, t.month, t.hour, t.minute], MUTED, 260], ["PLATZ %d" % slot, MUTED, 288]]
+		for line: Array in lines:
+			var label := Label.new()
+			label.text = str(line[0])
+			label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			label.clip_text = true
+			label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+			label.add_theme_font_size_override("font_size", 16)
+			label.add_theme_color_override("font_color", line[1])
+			label.position = Vector2(10, float(line[2]))
+			label.size = Vector2(280, 24)
+			label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			card.add_child(label)
+		k += 1
+	var back := _panel_button(_pick_panel, "ZURÜCK", Vector2(30, 416), Vector2(944, 36), func() -> void: _open_stories())
+	cards.append(back)
+	_chain_focus(cards)
+	_show_panel(_pick_panel, cards[0])
+
+
+## `debug`: the DEBUG hub's story choice (every world open, nothing saved).
+func _open_stories(debug := false) -> void:
+	_debug_stories = debug
 	_refresh_story_saves()
 	# focus the card the player came from, else the first playable one
 	var focus: Control = _story_back
@@ -678,7 +824,7 @@ func _build_class_panel() -> void:
 ## and Esc lead back here.
 func _build_debug_hub() -> void:
 	_hub_panel = _panel("DEBUG")
-	var entries := [["LEVEL-AUSWAHL", _open_debug], ["TESTRAUM", _open_arena], ["", _toggle_talent_test],
+	var entries := [["STORY (DEBUG)", _open_debug_stories], ["LEVEL-AUSWAHL", _open_debug], ["TESTRAUM", _open_arena], ["", _toggle_talent_test],
 		["KLANGWERKSTATT", open_sound_workshop], ["CUSTOM-EDITOR", open_custom_stories], ["WELTBAUER-RÄUME", _open_world_rooms],
 		["MEHRSPIELER (ALT)", _open_multiplayer], ["SPIELSTÄNDE", _open_saves]]
 	_hub_panel.size = Vector2(420, 66 + entries.size() * 46 + 76)
@@ -686,7 +832,7 @@ func _build_debug_hub() -> void:
 	_hub_buttons.clear()
 	for i in range(entries.size()):
 		_hub_buttons.append(_panel_button(_hub_panel, str(entries[i][0]), Vector2(30, 66 + i * 46), Vector2(360, 40), entries[i][1]))
-	_talent_test_button = _hub_buttons[2]
+	_talent_test_button = _hub_buttons[3]
 	_refresh_talent_test()
 	_hub_buttons.append(_panel_button(_hub_panel, "ZURÜCK", Vector2(30, 66 + entries.size() * 46 + 14), Vector2(360, 38), _close_panels))
 	_chain_focus(_hub_buttons)
@@ -906,7 +1052,7 @@ func _class_back() -> void:
 	elif _arena_pick or not _debug_start.is_empty():
 		_open_debug_hub()
 	elif _class_from_story:
-		_open_stories()
+		_open_stories(_debug_stories)
 	else:
 		_close_panels()
 
@@ -965,9 +1111,78 @@ func _choose_class(id: String) -> void:
 		return
 	var scene := _story_scene() if not _class_endless else ""
 	if scene != "":
-		story_scene_requested.emit(scene, id)
+		_start_story(scene, id)
 		return
 	start_requested.emit(_class_endless, id)
+
+
+## A story start (docs/BEUTEORDNUNG.de.md 1): debug runs straight away; otherwise a hero of this class who
+## finished the story before may carry on, and a fresh start asks first when it would lose a waiting hero.
+func _start_story(scene: String, class_id: String) -> void:
+	if _debug_stories:
+		story_run_requested.emit(scene, class_id, {"debug_run": true})
+		return
+	var progress := StoryProgress.load_progress()
+	var number := _story_number()
+	var hero := StoryProgress.waiting(progress, class_id, number)
+	var other := StoryProgress.hero_of(progress, class_id)
+	if hero.is_empty() and other.is_empty():
+		story_run_requested.emit(scene, class_id, {})
+		return
+	_carry_pick = {"scene": scene, "class_id": class_id, "hero": hero}
+	var name := str(hero_cards.get(class_id, {}).get("name", class_id)).to_upper()
+	if not hero.is_empty():
+		_carry_text.text = "Dein %s hat Story %d durchgespielt und wartet hier.\n%s\n\nMit ihm weiterspielen (Gold, Gegenstände, Leben bleiben) oder ganz neu beginnen? Neu beginnen löscht ihn." % [name, number - 1, StoryProgress.describe(hero)]
+	else:
+		_carry_text.text = "Dein %s wartet auf Story %d.\n%s\n\nEin neuer Lauf mit dieser Klasse löscht ihn mitsamt Gold und Gegenständen." % [name, int(other.get("next", 2)), StoryProgress.describe(other)]
+	_carry_go.visible = not hero.is_empty()
+	_show_panel(_carry_panel, _carry_go if _carry_go.visible else _carry_back)
+
+
+## The chosen story's number (1 Krypta, 2 Frostgruft, 3 Hölle).
+func _story_number() -> int:
+	for story: Dictionary in stories:
+		if str(story.id) == selected_story:
+			return int(story.get("number", 1))
+	return 1
+
+
+## The carry question (built once): text, MIT HELD WEITER, NEU BEGINNEN, ZURÜCK.
+func _build_carry_panel() -> void:
+	_carry_panel = _panel("HELD ÜBERNEHMEN?")
+	_carry_panel.size = Vector2(720, 330)
+	_carry_panel.position = (SCREEN - _carry_panel.size) * 0.5
+	_carry_text = _panel_label(_carry_panel, "", Vector2(30, 64))
+	_carry_text.size = Vector2(660, 130)
+	_carry_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_carry_go = _panel_button(_carry_panel, "MIT HELD WEITER", Vector2(30, 206), Vector2(660, 34), _carry_continue)
+	_carry_go.add_theme_color_override("font_color", GOLD)
+	_carry_fresh = _panel_button(_carry_panel, "NEU BEGINNEN", Vector2(30, 246), Vector2(660, 34), _carry_restart)
+	_carry_back = _panel_button(_carry_panel, "ZURÜCK", Vector2(30, 286), Vector2(660, 30), _carry_cancel)
+	_chain_focus([_carry_go, _carry_fresh, _carry_back])
+
+
+func _carry_continue() -> void:
+	var pick := _carry_pick
+	_carry_pick = {}
+	_close_panels()
+	story_run_requested.emit(str(pick.scene), str(pick.class_id), {"carry_hero": pick.hero})
+
+
+func _carry_restart() -> void:
+	var pick := _carry_pick
+	_carry_pick = {}
+	var progress := StoryProgress.load_progress()
+	StoryProgress.drop_hero(progress, str(pick.class_id))
+	StoryProgress.save_progress(progress)
+	_close_panels()
+	story_run_requested.emit(str(pick.scene), str(pick.class_id), {})
+
+
+func _carry_cancel() -> void:
+	_carry_pick = {}
+	_open_classes(false, _class_hint.text)
+	_class_from_story = true
 
 
 ## The scene of the chosen story, or "" when it plays as a crypt run.
@@ -1055,7 +1270,7 @@ func _apply_settings() -> void:
 ## True while any panel of the menu is open (story, heroes, options, login, the talent
 ## screen, the debug panels or a workshop): the scene dims and the title card hides.
 func _panel_open() -> bool:
-	for panel: Control in [_login_panel, _options_panel, _story_panel, _class_panel, _hub_panel, _debug_panel, _saves_panel, _talent_panel, _talent_screen, sound_workshop, room_editor, custom_story_panel] + _world_panels.values():
+	for panel: Control in [_login_panel, _options_panel, _story_panel, _class_panel, _hub_panel, _debug_panel, _saves_panel, _talent_panel, _talent_screen, sound_workshop, room_editor, custom_story_panel, _carry_panel, _pick_panel] + _world_panels.values():
 		if panel != null and panel.visible: return true
 	return false
 
@@ -1087,6 +1302,8 @@ func _hide_panels() -> void:
 	if _talent_panel != null: _talent_panel.visible = false
 	if _talent_screen != null: _talent_screen.visible = false
 	if _saves_panel != null: _saves_panel.visible = false
+	if _carry_panel != null: _carry_panel.visible = false
+	if _pick_panel != null: _pick_panel.visible = false
 	_password_input.text = ""
 	_refresh_account()
 
@@ -1136,6 +1353,10 @@ func go_back() -> bool:
 		_close_panels()
 	elif _class_panel.visible:
 		_class_back()
+	elif _carry_panel != null and _carry_panel.visible:
+		_carry_cancel()
+	elif _pick_panel != null and _pick_panel.visible:
+		_open_stories()
 	elif _world_panels.values().any(func(panel: Panel) -> bool: return panel.visible):
 		_open_debug()
 	elif _debug_panel.visible or _saves_panel.visible:

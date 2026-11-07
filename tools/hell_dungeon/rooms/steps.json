@@ -1,0 +1,618 @@
+{
+ "h_ketten_s1_la": {
+  "steps": [
+   {
+    "kind": "ketten",
+    "tier": 1,
+    "moves": 2
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_ketten_s1_lb": {
+  "steps": [
+   {
+    "kind": "ketten",
+    "tier": 1,
+    "moves": 2
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_ketten_s2_lc": {
+  "steps": [
+   {
+    "kind": "ketten",
+    "tier": 2,
+    "moves": 2
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_ketten_s2_ld": {
+  "steps": [
+   {
+    "kind": "ketten",
+    "tier": 2,
+    "moves": 2
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_ketten_s3_h3": {
+  "steps": [
+   {
+    "kind": "ketten",
+    "tier": 3,
+    "moves": 3
+   }
+  ],
+  "w": 14,
+  "h": 39
+ },
+ "h_ketten_s4_b3": {
+  "steps": [
+   {
+    "kind": "ketten",
+    "tier": 4,
+    "moves": 4
+   }
+  ],
+  "w": 48,
+  "h": 11
+ },
+ "h_ketten_s5_h3": {
+  "steps": [
+   {
+    "kind": "ketten",
+    "tier": 5,
+    "moves": 5
+   }
+  ],
+  "w": 14,
+  "h": 39
+ },
+ "h_takt_s1_la": {
+  "steps": [
+   {
+    "kind": "takt",
+    "tier": 1,
+    "moves": 0
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_takt_s1_lb": {
+  "steps": [
+   {
+    "kind": "takt",
+    "tier": 1,
+    "moves": 0
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_takt_s2_lc": {
+  "steps": [
+   {
+    "kind": "takt",
+    "tier": 2,
+    "moves": 0
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_takt_s2_ld": {
+  "steps": [
+   {
+    "kind": "takt",
+    "tier": 2,
+    "moves": 0
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_takt_s3_h3": {
+  "steps": [
+   {
+    "kind": "takt",
+    "tier": 3,
+    "moves": 0
+   }
+  ],
+  "w": 14,
+  "h": 39
+ },
+ "h_takt_s4_b3": {
+  "steps": [
+   {
+    "kind": "takt",
+    "tier": 4,
+    "moves": 0
+   }
+  ],
+  "w": 48,
+  "h": 11
+ },
+ "h_takt_s5_h3": {
+  "steps": [
+   {
+    "kind": "takt",
+    "tier": 5,
+    "moves": 0
+   }
+  ],
+  "w": 14,
+  "h": 39
+ },
+ "h_flut_s1_la": {
+  "steps": [
+   {
+    "kind": "flut",
+    "tier": 1,
+    "moves": 7
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_flut_s1_lb": {
+  "steps": [
+   {
+    "kind": "flut",
+    "tier": 1,
+    "moves": 7
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_flut_s2_lc": {
+  "steps": [
+   {
+    "kind": "flut",
+    "tier": 2,
+    "moves": 6
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_flut_s2_ld": {
+  "steps": [
+   {
+    "kind": "flut",
+    "tier": 2,
+    "moves": 6
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_flut_s3_h3": {
+  "steps": [
+   {
+    "kind": "flut",
+    "tier": 3,
+    "moves": 11
+   }
+  ],
+  "w": 14,
+  "h": 39
+ },
+ "h_flut_s4_b3": {
+  "steps": [
+   {
+    "kind": "flut",
+    "tier": 4,
+    "moves": 15
+   }
+  ],
+  "w": 48,
+  "h": 11
+ },
+ "h_flut_s5_h3": {
+  "steps": [
+   {
+    "kind": "flut",
+    "tier": 5,
+    "moves": 15
+   }
+  ],
+  "w": 14,
+  "h": 39
+ },
+ "h_blut_s1_la": {
+  "steps": [
+   {
+    "kind": "blut",
+    "tier": 1,
+    "moves": 3
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_blut_s1_lb": {
+  "steps": [
+   {
+    "kind": "blut",
+    "tier": 1,
+    "moves": 3
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_blut_s2_lc": {
+  "steps": [
+   {
+    "kind": "blut",
+    "tier": 2,
+    "moves": 3
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_blut_s2_ld": {
+  "steps": [
+   {
+    "kind": "blut",
+    "tier": 2,
+    "moves": 3
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_blut_s3_h3": {
+  "steps": [
+   {
+    "kind": "blut",
+    "tier": 3,
+    "moves": 3
+   }
+  ],
+  "w": 14,
+  "h": 39
+ },
+ "h_blut_s4_b3": {
+  "steps": [
+   {
+    "kind": "blut",
+    "tier": 4,
+    "moves": 3
+   }
+  ],
+  "w": 48,
+  "h": 11
+ },
+ "h_blut_s5_h3": {
+  "steps": [
+   {
+    "kind": "blut",
+    "tier": 5,
+    "moves": 3
+   }
+  ],
+  "w": 14,
+  "h": 39
+ },
+ "h_schleuse_s1_la": {
+  "steps": [
+   {
+    "kind": "schleuse",
+    "tier": 1,
+    "moves": 5
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_schleuse_s1_lb": {
+  "steps": [
+   {
+    "kind": "schleuse",
+    "tier": 1,
+    "moves": 5
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_schleuse_s2_lc": {
+  "steps": [
+   {
+    "kind": "schleuse",
+    "tier": 2,
+    "moves": 6
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_schleuse_s2_ld": {
+  "steps": [
+   {
+    "kind": "schleuse",
+    "tier": 2,
+    "moves": 6
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_schleuse_s3_h3": {
+  "steps": [
+   {
+    "kind": "schleuse",
+    "tier": 3,
+    "moves": 13
+   }
+  ],
+  "w": 14,
+  "h": 39
+ },
+ "h_schleuse_s4_b3": {
+  "steps": [
+   {
+    "kind": "schleuse",
+    "tier": 4,
+    "moves": 16
+   }
+  ],
+  "w": 48,
+  "h": 11
+ },
+ "h_schleuse_s5_h3": {
+  "steps": [
+   {
+    "kind": "schleuse",
+    "tier": 5,
+    "moves": 26
+   }
+  ],
+  "w": 14,
+  "h": 39
+ },
+ "h_augen_s1_la": {
+  "steps": [
+   {
+    "kind": "augen",
+    "tier": 1,
+    "moves": 4
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_augen_s1_lb": {
+  "steps": [
+   {
+    "kind": "augen",
+    "tier": 1,
+    "moves": 4
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_augen_s2_lc": {
+  "steps": [
+   {
+    "kind": "augen",
+    "tier": 2,
+    "moves": 4
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_augen_s2_ld": {
+  "steps": [
+   {
+    "kind": "augen",
+    "tier": 2,
+    "moves": 4
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_augen_s3_h3": {
+  "steps": [
+   {
+    "kind": "augen",
+    "tier": 3,
+    "moves": 11
+   }
+  ],
+  "w": 14,
+  "h": 39
+ },
+ "h_augen_s4_b3": {
+  "steps": [
+   {
+    "kind": "augen",
+    "tier": 4,
+    "moves": 21
+   }
+  ],
+  "w": 48,
+  "h": 11
+ },
+ "h_augen_s5_h3": {
+  "steps": [
+   {
+    "kind": "augen",
+    "tier": 5,
+    "moves": 17
+   }
+  ],
+  "w": 14,
+  "h": 39
+ },
+ "h_werk_s1_la": {
+  "steps": [
+   {
+    "kind": "werk",
+    "tier": 1,
+    "moves": 2
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_werk_s1_lb": {
+  "steps": [
+   {
+    "kind": "werk",
+    "tier": 1,
+    "moves": 2
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_werk_s2_lc": {
+  "steps": [
+   {
+    "kind": "werk",
+    "tier": 2,
+    "moves": 3
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_werk_s2_ld": {
+  "steps": [
+   {
+    "kind": "werk",
+    "tier": 2,
+    "moves": 3
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_werk_s3_h3": {
+  "steps": [
+   {
+    "kind": "werk",
+    "tier": 3,
+    "moves": 4
+   }
+  ],
+  "w": 14,
+  "h": 39
+ },
+ "h_werk_s4_b3": {
+  "steps": [
+   {
+    "kind": "werk",
+    "tier": 4,
+    "moves": 5
+   }
+  ],
+  "w": 48,
+  "h": 11
+ },
+ "h_werk_s5_h3": {
+  "steps": [
+   {
+    "kind": "werk",
+    "tier": 5,
+    "moves": 6
+   }
+  ],
+  "w": 14,
+  "h": 39
+ },
+ "h_wacht_s1_la": {
+  "steps": [
+   {
+    "kind": "wacht",
+    "tier": 1,
+    "moves": 2
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_wacht_s1_lb": {
+  "steps": [
+   {
+    "kind": "wacht",
+    "tier": 1,
+    "moves": 2
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_wacht_s2_lc": {
+  "steps": [
+   {
+    "kind": "wacht",
+    "tier": 2,
+    "moves": 3
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_wacht_s2_ld": {
+  "steps": [
+   {
+    "kind": "wacht",
+    "tier": 2,
+    "moves": 3
+   }
+  ],
+  "w": 31,
+  "h": 25
+ },
+ "h_wacht_s3_h3": {
+  "steps": [
+   {
+    "kind": "wacht",
+    "tier": 3,
+    "moves": 3
+   }
+  ],
+  "w": 14,
+  "h": 39
+ },
+ "h_wacht_s4_b3": {
+  "steps": [
+   {
+    "kind": "wacht",
+    "tier": 4,
+    "moves": 4
+   }
+  ],
+  "w": 48,
+  "h": 11
+ },
+ "h_wacht_s5_h3": {
+  "steps": [
+   {
+    "kind": "wacht",
+    "tier": 5,
+    "moves": 5
+   }
+  ],
+  "w": 14,
+  "h": 39
+ }
+}

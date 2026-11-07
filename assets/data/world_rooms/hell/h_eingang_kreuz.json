@@ -1,0 +1,160 @@
+{
+	"schema_version": 1,
+	"id": "h_eingang_kreuz",
+	"title": "Abstieg: Brandkreuz",
+	"world": "hell",
+	"role": "start",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		]
+	],
+	"width": 14,
+	"height": 11,
+	"cells": [
+		"00000000000000",
+		"00001111110000",
+		"00011111111000",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"01111111111110",
+		"00011111111000",
+		"00001111110000",
+		"00000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				6,
+				0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				6,
+				10
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0,
+				5
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				13,
+				5
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "prop",
+			"asset": "brazier_bowl",
+			"x": 816,
+			"y": 274.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "start",
+			"x": 624,
+			"y": 547.2
+		},
+		{
+			"kind": "raw",
+			"x": 432,
+			"y": 849.6,
+			"ent": {
+				"type": "crate",
+				"look": "barrel_a",
+				"hp": 1,
+				"drop": "random"
+			}
+		},
+		{
+			"kind": "raw",
+			"x": 912,
+			"y": 849.6,
+			"ent": {
+				"type": "crate",
+				"look": "barrel_c",
+				"hp": 1,
+				"drop": "random"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "door_stairs",
+			"x": 672,
+			"y": 70,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_b",
+			"x": 912,
+			"y": 195,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_b",
+			"x": 240,
+			"y": 483,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 50.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		}
+	]
+}

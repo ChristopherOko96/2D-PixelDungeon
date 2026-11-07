@@ -1,0 +1,125 @@
+{
+	"schema_version": 1,
+	"id": "h_beute_steg",
+	"title": "Beute: Lavasteg",
+	"world": "hell",
+	"role": "treasure",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		]
+	],
+	"width": 14,
+	"height": 11,
+	"cells": [
+		"00000000000000",
+		"01111133111110",
+		"01444433444410",
+		"01411111111410",
+		"01411111111410",
+		"03333311333330",
+		"03333311333330",
+		"01444444444410",
+		"01111133111110",
+		"01111133111110",
+		"00000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				6,
+				0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				6,
+				10
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0,
+				5
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				13,
+				5
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "prop",
+			"asset": "brazier_bowl",
+			"x": 432,
+			"y": 370.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "chest",
+			"x": 624,
+			"y": 369.6,
+			"loot": {
+				"type": "auto"
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_bowl",
+			"x": 912,
+			"y": 370.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 816,
+			"y": 192,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "start",
+			"x": 624,
+			"y": 547.2
+		}
+	]
+}

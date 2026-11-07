@@ -86,7 +86,8 @@ class Room {
     this.raw('crate', x + 0.5, y + 0.85, { look, hp: look.startsWith('crate') ? 2 : 1, drop: 'random' });
   }
   chest(x, y, loot = { type: 'auto' }) { this.thing('chest', x + 0.5, y + 0.85, { loot }); }
-  hoard(x, y, tier) { this.thing('chest', x + 0.5, y + 0.85, { loot: { type: 'hoard', tier }, mimic: 'no' }); }
+  // `tier` is given on the old scale 1-3; the Beuteordnung's five tiers (docs/BEUTEORDNUNG.de.md 3) are one higher
+  hoard(x, y, tier) { this.thing('chest', x + 0.5, y + 0.85, { loot: { type: 'hoard', tier: Math.min(5, tier + 1) }, mimic: 'no' }); }
   tablet(x, y, text) { this.thing('tablet', x + 0.5, y + 0.85, { text }); }
   /** A gate over wall cells (x, y) and the next one: dir 'v' in a wall running sideways, 'h' in one running up and down. */
   gate(x, y, dir, group, extra = {}) { this.objects.push(Object.assign({ kind: 'gate', x: x * C, y: y * C, dir, group, lock: '' }, extra)); }

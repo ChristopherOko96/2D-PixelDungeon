@@ -29,6 +29,7 @@ const ItemRules = preload("res://src/items/item_rules.gd")
 const PerkRules = preload("res://src/perk_rules.gd")
 const HeroClass = preload("res://src/player/hero_class.gd")
 const ArmorPowers = preload("res://src/hero/armor_powers.gd")
+const RewardRules = preload("res://src/progress/reward_rules.gd")
 const TalentBar = preload("res://src/ui/talent_bar.gd")
 const BALANCE_PATH := "res://src/data/balance.json"
 ## Effect strengths in the story worlds (shares of the world's own values).
@@ -302,12 +303,14 @@ func _weigh_armor(items: Array) -> void:
 	for item: Dictionary in items:
 		if ArmorPowers.power_of(item).is_empty() or ArmorPowers.class_of(item) == cid: continue
 		if powers.rng.randf() < float(ArmorPowers.data().get("drops", {}).get("own_class", 0.8)):
-			item.id = str(own[powers.rng.randi_range(0, own.size() - 1)])
+			# the same rarity: an epic find never turns into a legendary armour of the class
+			var same := own.filter(func(id: String) -> bool: return str(ItemRules.gear(id).get("rarity", "")) == str(ItemRules.gear(str(item.id)).get("rarity", "")))
+			if not same.is_empty(): item.id = str(same[powers.rng.randi_range(0, same.size() - 1)])
 
 
 ## A found power armour (class-weighted, unknown, sometimes cursed); {} when there are none.
 func _power_armor() -> Dictionary:
-	var id := ArmorPowers.pick_armor(str(g.class_id), powers.rng)
+	var id := ArmorPowers.pick_armor(str(g.class_id), powers.rng, RewardRules.armor_power_rarity())
 	if id.is_empty(): return {}
 	var curse := ""
 	if powers.rng.randf() < float(ArmorPowers.data().get("drops", {}).get("curse_chance", 0.2)):
@@ -338,14 +341,48 @@ func power_slots() -> Array:
 	return [] if v.is_empty() else [TalentBar.power_slot(v)]
 
 
-## A mini guardian's rare piece.
-func guardian_drop(at: Vector2) -> void:
-	var items: Array = [inventory.guardian_drop(int(g.state.floor), str(g.class_id))]
+## A guardian's piece (docs/BEUTEORDNUNG.de.md section 5): rare or better, epic from floor epic_from on
+## (mini guardians mini_epic_from), never legendary; a power armour on the side is epic.
+func guardian_drop(at: Vector2, mini := true) -> void:
+	var spec := RewardRules.special("guardian")
+	var floor_number := int(g.state.floor)
+	var epic_from := int(spec.get("mini_epic_from" if mini else "epic_from", 99))
+	var minimum := "epic" if floor_number >= epic_from else str(spec.get("min_rarity", "rare"))
+	var items: Array = [inventory.reward_piece(int(g.call("depth")) if g.has_method("depth") else floor_number, str(g.class_id), minimum, false, false)]
 	_weigh_armor(items)
 	if powers.rng.randf() < float(ArmorPowers.data().get("drops", {}).get("boss", 0.0)):
 		var extra := _power_armor()
 		if not extra.is_empty(): items.append(extra)
 	for item: Dictionary in items: give(item, at)
+
+
+## The final guardian's one legendary piece (weapon, armour, ring or amulet of the hero's class, clean).
+func final_drop(at: Vector2) -> void:
+	var item := inventory.legendary_piece(str(g.class_id), 0.0)
+	if not item.is_empty(): give(item, at)
+
+
+## A piece of a reward chest at `at`: at least `minimum`, of the hero's class with `own`, clean with `clean`;
+## with chance `legendary_p` it turns legendary instead (clean when `sure`, else cursed with a chance of the
+## Beuteordnung's curse range). Returns the rarity given.
+func reward_item(at: Vector2, minimum: String, own: bool, clean: bool, legendary_p := 0.0, sure := false) -> String:
+	var t := int(g.call("depth")) if g.has_method("depth") else int(g.state.floor)
+	if legendary_p > 0.0 and inventory.roll01() < legendary_p:
+		var leg := inventory.legendary_piece(str(g.class_id), 0.0 if sure else RewardRules.legendary_curse_chance(inventory.roll01()))
+		if not leg.is_empty():
+			give(leg, at)
+			return "legendary"
+	var item := inventory.reward_piece(t, str(g.class_id), minimum, own, clean)
+	if item.is_empty(): return ""
+	give(item, at)
+	return str(ItemRules.weapon(str(item.id)).get("rarity", ItemRules.gear(str(item.id)).get("rarity", ""))) if item.type == "weapon" else str(ItemRules.gear(str(item.id)).get("rarity", ""))
+
+
+## A consumable of the chest (crystal, stone, upgrade_stone, dice_stone; crystal_or_stone picks one).
+func reward_stack(at: Vector2, kind: String) -> void:
+	var pick := kind
+	if kind == "crystal_or_stone": pick = "crystal" if inventory.roll01() < 0.5 else "stone"
+	give(inventory.make_stack(pick), at)
 
 
 ## Into the bag, or onto the floor when it is full.

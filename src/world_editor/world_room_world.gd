@@ -10,6 +10,7 @@ const Gates = preload("res://src/world_editor/world_gates.gd")
 const RoomFloor = preload("res://src/world_kit/room_floor.gd")
 const Contents = preload("res://src/world_kit/room_contents.gd")
 const FrostPuzzles = preload("res://src/world_kit/frost_puzzles.gd")
+const HellPuzzles = preload("res://src/world_kit/hell_puzzles.gd")
 const C := 96.0
 ## Free cells round the room in the floor's grid, so the outer walls have room to stand.
 const MARGIN := 2
@@ -356,7 +357,7 @@ static func ent_of(o: Dictionary, x: float, y: float) -> Dictionary:
 		"skullheap":
 			return {"type": "skullheap", "x": x, "y": y, "room": 0, "hp": int(o.get("hp", 3))}
 	# the Frostgruft's puzzle pieces keep their settings as they are (src/world_kit/frost_puzzles.gd)
-	if FrostPuzzles.KINDS.has(kind):
+	if FrostPuzzles.KINDS.has(kind) or HellPuzzles.KINDS.has(kind):
 		var piece := o.duplicate(true)
 		piece.erase("kind")
 		piece.type = kind
@@ -372,7 +373,7 @@ func _groups() -> Dictionary:
 	for o: Dictionary in room.objects:
 		var kind := str(o.kind)
 		var opens := str(o.get("opens", "")) if kind == "prop" else ""
-		var frost := FrostPuzzles.KINDS.has(kind) and str(o.get("group", "")) != ""
+		var frost := (FrostPuzzles.KINDS.has(kind) or HellPuzzles.KINDS.has(kind)) and str(o.get("group", "")) != ""
 		if kind not in ["plate", "lever", "brazier", "gate", "secret", "skullheap"] and opens == "" and not frost:
 			continue
 		if kind == "gate" and not Gates.closes(o):

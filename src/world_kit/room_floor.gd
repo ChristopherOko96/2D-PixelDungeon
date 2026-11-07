@@ -16,6 +16,7 @@ const Data = preload("res://src/world_editor/world_room_data.gd")
 const Gates = preload("res://src/world_editor/world_gates.gd")
 const RoomWorld = preload("res://src/world_editor/world_room_world.gd")
 const Contents = preload("res://src/world_kit/room_contents.gd")
+const RewardRules = preload("res://src/progress/reward_rules.gd")
 const C := 96.0
 ## How often a new plan is tried when the room files do not fit one.
 const ATTEMPTS := 60
@@ -77,7 +78,7 @@ static func build(n: int, run: int, pack: RefCounted) -> Dictionary:
 		# an ice lake (a file with ice_lake) on this floor only by chance (room_library ice_lake_share), from a
 		# draw of its own so the floor's other picks stay as they were
 		var lake_ok := Core.Rng.new(int(P.seed) + 57).next() < float(cfg.get("ice_lake_share", 1.0))
-		var picks := _pick_files(plan, files, cfg, Core.Rng.new(int(P.seed) + 31), lake_ok)
+		var picks := _pick_files(plan, files, cfg, Core.Rng.new(int(P.seed) + 31), lake_ok, n, Core.Rng.new(int(P.seed) + 63))
 		if picks.is_empty():
 			continue
 		P.seed = floor_seed
@@ -90,12 +91,12 @@ static func build(n: int, run: int, pack: RefCounted) -> Dictionary:
 ## The file of each room of the plan: rooms.size() files by room id, {} when one has none that fits.
 ## Files are not repeated on a floor while others fit. Puzzle and riddle rooms choose first, their doors
 ## are the few set by hand; the plan's doors move to suit them.
-static func _pick_files(plan: Dictionary, files: Array, cfg: Dictionary, rnd: Core.Rng, lake_ok: bool = true) -> Dictionary:
+static func _pick_files(plan: Dictionary, files: Array, cfg: Dictionary, rnd: Core.Rng, lake_ok: bool = true, floor_number := 0, tier_rnd: Core.Rng = null) -> Dictionary:
 	var by_id := {}
 	for r: Dictionary in plan.rooms:
 		by_id[r.id] = r
 	var ctx := {"plan": plan, "files": files, "cfg": cfg, "rnd": rnd, "by_id": by_id, "picks": {}, "used": {},
-		"entries": _entry_doors(plan), "before_boss": _room_before_boss(plan)}
+		"entries": _entry_doors(plan), "before_boss": _room_before_boss(plan), "floor": floor_number, "tier_rnd": tier_rnd}
 	# no ice lake on a floor whose draw said so
 	if not lake_ok:
 		ctx.lake = true
@@ -166,6 +167,12 @@ static func _take(r: Dictionary, fits: Array, ctx: Dictionary) -> void:
 		var dry := right.filter(func(f: Dictionary) -> bool: return not bool(f.file.get("ice_lake", false)))
 		if not dry.is_empty():
 			right = dry
+	# a puzzle room takes the tier the floor rolls (docs/BEUTEORDNUNG.de.md 3, tier_share), the nearest one
+	# there is; from a draw of its own, so the floor's other picks stay as they were
+	if str(r.get("gtype", "")) == "jump" and int(ctx.get("floor", 0)) > 0 and ctx.get("tier_rnd") != null:
+		var wanted := RewardRules.tier_for_floor(int(ctx.floor), (ctx.tier_rnd as Core.Rng).next())
+		var near: int = right.map(func(f: Dictionary) -> int: return absi(file_tier(f.file) - wanted)).min()
+		right = right.filter(func(f: Dictionary) -> bool: return absi(file_tier(f.file) - wanted) == near)
 	var fresh := right.filter(func(f: Dictionary) -> bool: return not ctx.used.has(f.file.id))
 	var pool: Array = fresh if not fresh.is_empty() else right
 	var chosen: Dictionary = pool[int(floor(ctx.rnd.next() * pool.size()))]
@@ -181,6 +188,15 @@ static func _take(r: Dictionary, fits: Array, ctx: Dictionary) -> void:
 	for c: Dictionary in chosen.doors:
 		c.door.slots = c.slots
 		c.door["port_" + str(r.id)] = c.port
+
+
+## The tier of a room file: the highest tier of its Schatz chests (world_room_contents.json default_tier when unset).
+static func file_tier(t: Dictionary) -> int:
+	var best := 0
+	for o: Dictionary in t.get("objects", []):
+		if str(o.get("kind", "")) == "chest" and str((o.get("loot", {}) as Dictionary).get("type", "")) == "hoard":
+			best = maxi(best, Contents.hoard_tier(o))
+	return best if best > 0 else int((Contents.cfg().get("hoard", {}) as Dictionary).get("default_tier", 2))
 
 
 ## Where the doors of room `r` lie on file `t`, the fewest used against their mark: {doors, cost}, {} when
@@ -882,8 +898,9 @@ static func _stamp_chest(W: Dictionary, r: Dictionary, a: Dictionary, x: float, 
 			var tier := _tier(W, r)
 			var paid := int((Contents.cfg().get("secret_rooms", {}) as Dictionary).get(str(r.gtype), 1))
 			Contents.finish_chest(e, {"loot": {"type": "hoard", "tier": paid}}, n, rnd.next)
-			e.loot.gems = maxi(int(e.loot.gems), Core.jround((6 + n) * (1 + (tier - 4) * 0.5)))
-			e.mimic = false
+			e.erase("mimic")
+			e.secret_find = true
+			var _unused_tier := tier
 		_:
 			if r.get("seq", false) or rnd.next() >= float(cfg.room_library.get("chest_share", 0.35)):
 				return

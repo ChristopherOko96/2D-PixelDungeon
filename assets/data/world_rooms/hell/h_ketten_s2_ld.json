@@ -1,0 +1,776 @@
+{
+	"schema_version": 1,
+	"id": "h_ketten_s2_ld",
+	"title": "Rätsel: Kettenbrücken (Stufe 2)",
+	"world": "hell",
+	"role": "jump",
+	"in_floors": true,
+	"slots": [
+		[
+			1,
+			0
+		],
+		[
+			0,
+			1
+		],
+		[
+			1,
+			1
+		]
+	],
+	"width": 31,
+	"height": 25,
+	"cells": [
+		"0000000000000000000000000000000",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0000000000000000001111111111110",
+		"0111111111111111101111111111110",
+		"0111111111111111101111111111110",
+		"0111111111111111101111111111110",
+		"0111111111111111101111111111110",
+		"0111111111111111111111111111110",
+		"0111111111111111101111111111110",
+		"0111111111111111101111111111110",
+		"0111111111111111101111111111110",
+		"0111111111111111101111111111110",
+		"0000000000000000000000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				24,
+				0
+			]
+		},
+		{
+			"side": "east",
+			"cell": [
+				30,
+				4
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				24,
+				24
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "hell_channel",
+			"x": 1008,
+			"y": 1488,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 1008,
+			"y": 1584,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 1008,
+			"y": 1680,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_bridge",
+			"x": 1008,
+			"y": 1776,
+			"group": "A",
+			"nr": 1,
+			"up": true
+		},
+		{
+			"kind": "hell_channel",
+			"x": 1008,
+			"y": 1872,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 1008,
+			"y": 1968,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 1008,
+			"y": 2064,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 1008,
+			"y": 2160,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 1008,
+			"y": 2256,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 912,
+			"y": 1488,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 912,
+			"y": 1584,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 912,
+			"y": 1680,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_bridge",
+			"x": 912,
+			"y": 1776,
+			"group": "A",
+			"nr": 2,
+			"up": true
+		},
+		{
+			"kind": "hell_channel",
+			"x": 912,
+			"y": 1872,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 912,
+			"y": 1968,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 912,
+			"y": 2064,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 912,
+			"y": 2160,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 912,
+			"y": 2256,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 816,
+			"y": 1488,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 816,
+			"y": 1584,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 816,
+			"y": 1680,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_bridge",
+			"x": 816,
+			"y": 1776,
+			"group": "A",
+			"nr": 3,
+			"up": true
+		},
+		{
+			"kind": "hell_channel",
+			"x": 816,
+			"y": 1872,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 816,
+			"y": 1968,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 816,
+			"y": 2064,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 816,
+			"y": 2160,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 816,
+			"y": 2256,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 720,
+			"y": 1488,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 720,
+			"y": 1584,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 720,
+			"y": 1680,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_bridge",
+			"x": 720,
+			"y": 1776,
+			"group": "A",
+			"nr": 4,
+			"up": true
+		},
+		{
+			"kind": "hell_channel",
+			"x": 720,
+			"y": 1872,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 720,
+			"y": 1968,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 720,
+			"y": 2064,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 720,
+			"y": 2160,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_channel",
+			"x": 720,
+			"y": 2256,
+			"group": "A",
+			"wet": ""
+		},
+		{
+			"kind": "hell_winch",
+			"x": 1296,
+			"y": 1584,
+			"group": "A",
+			"sets": [
+				1,
+				3,
+				4
+			]
+		},
+		{
+			"kind": "hell_winch",
+			"x": 1392,
+			"y": 1584,
+			"group": "A",
+			"sets": [
+				2,
+				3,
+				4
+			]
+		},
+		{
+			"kind": "hell_winch",
+			"x": 1584,
+			"y": 1488,
+			"group": "A",
+			"sets": [
+				2
+			]
+		},
+		{
+			"kind": "hell_winch",
+			"x": 1392,
+			"y": 1488,
+			"group": "A",
+			"sets": [
+				3,
+				4
+			]
+		},
+		{
+			"kind": "hell_rune",
+			"x": 1776,
+			"y": 1872,
+			"group": "A"
+		},
+		{
+			"kind": "tablet",
+			"x": 1776,
+			"y": 1713.6,
+			"text": "Jede Kette zieht an mehr als einer Last.\nWer eine Brücke senkt, hebt vielleicht die nächste.\nErst wenn der Schacht geschlossen ist, trägt er dich.\nDie Rune setzt alle Ketten zurück."
+		},
+		{
+			"kind": "chest",
+			"x": 144,
+			"y": 1905.6,
+			"loot": {
+				"type": "hoard",
+				"tier": 2
+			},
+			"mimic": "no"
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_a",
+			"x": 2736,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_hang",
+			"x": 1929.6,
+			"y": 102,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_hang",
+			"x": 1488,
+			"y": 1446,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_hang",
+			"x": 1219.2,
+			"y": 1446,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 950.4,
+			"y": 1446,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag_b",
+			"x": 681.6,
+			"y": 1446,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "shackle_a",
+			"x": 412.8,
+			"y": 1446,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 1776,
+			"y": 461,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 29,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 2448,
+			"y": 1056,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_a",
+			"x": 1776,
+			"y": 1056,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 47.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 2064,
+			"y": 1156,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 2544,
+			"y": 1828,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 2544,
+			"y": 1901,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 29,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 2352,
+			"y": 2308,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "torch_pillar",
+			"x": 1776,
+			"y": 754.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				26
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_monk",
+			"x": 2832,
+			"y": 178.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				24
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_bowl",
+			"x": 2064,
+			"y": 2290.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 2832,
+			"y": 850.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				26,
+				18
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_monk",
+			"x": 2736,
+			"y": 2290.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				24
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_bowl",
+			"x": 2832,
+			"y": 1714.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "brazier_bowl",
+			"x": 1776,
+			"y": 1138.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				56,
+				28
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "torch_pillar",
+			"x": 1776,
+			"y": 178.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				26
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 2832,
+			"y": 1234.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				26,
+				18
+			]
+		},
+		{
+			"kind": "start",
+			"x": 1776,
+			"y": 1219.2
+		}
+	],
+	"kind_label": "Höllenrätsel",
+	"info": "Kettenbrücken, Stufe 2: 2 Schritte im Löser"
+}

@@ -13,6 +13,7 @@ const SaveStore = preload("res://src/save/save_store.gd")
 const TalentScreen = preload("res://src/ui/talent_screen.gd")
 const Profile = preload("res://src/progress/profile.gd")
 const SAVE_DIR := "user://main_menu_flow_test/"
+const StoryProgress = preload("res://src/progress/story_progress.gd")
 var checked := 0
 var failures: Array[String] = []
 
@@ -58,6 +59,7 @@ func _run() -> void:
 	await _test_story_choice_lists_numbered_stories_and_locks_unfinished_ones()
 	await _test_story_card_continues_the_newest_save_of_its_world()
 	await _test_story_two_frostgruft_requests_its_own_scene_with_the_hero()
+	await _test_chapters_lock_carry_the_hero_and_debug_opens_all()
 	await _test_story_three_hell_dungeon_starts_with_the_hero_and_story_four_is_coming()
 	await _test_back_goes_one_level_and_panels_dim_the_title()
 	await _test_hero_cards_come_from_the_story_classes()
@@ -126,6 +128,7 @@ func _test_story_card_continues_the_newest_save_of_its_world() -> void:
 	var store = _empty_store()
 	store.write("frost", 2, {"class_id": "archer", "floor": 4, "level": 2, "scene": "res://src/hell/frost_dungeon.tscn", "keep": {}})
 	menu.saves = store
+	_open_all_stories()
 	for c: Dictionary in menu.save_load_requested.get_connections():
 		menu.save_load_requested.disconnect(c.callable)
 	var asked: Array = []
@@ -136,25 +139,91 @@ func _test_story_card_continues_the_newest_save_of_its_world() -> void:
 	var none: Button = menu._story_continue["krypta"]
 	var focus: Control = menu.get_viewport().gui_get_focus_owner()
 	# Assert
-	check(resume.visible and resume.text == "FORTSETZEN · ETAGE 4", "a world with a save offers FORTSETZEN · ETAGE n (%s)" % resume.text)
+	check(resume.visible and resume.text == "FORTSETZEN", "a world with a save offers FORTSETZEN (%s)" % resume.text)
 	check(not none.visible and none.focus_mode == Control.FOCUS_NONE and menu._story_new["krypta"].visible, "a world without a save shows NEU alone; the hidden button takes no focus")
 	check(focus == menu._story_new["krypta"], "the story choice focuses the first playable card")
-	# Act
+	# Act: FORTSETZEN first shows the heroes of the world's saves
 	resume.pressed.emit()
+	var pick: Panel = menu._pick_panel
+	check(pick != null and pick.visible and asked.is_empty(), "FORTSETZEN shows the heroes of the saves first")
+	var hero_card: Button = null
+	if pick != null:
+		for n: Node in pick.get_children():
+			if n is Button and n.size.y > 200.0: hero_card = n
+	check(hero_card != null and hero_card.get_children().any(func(c: Node) -> bool: return c is TextureRect), "the save's hero is shown with its figure")
+	if hero_card != null:
+		hero_card.pressed.emit()
 	# Assert
-	check(asked == [["frost", 2]] and menu.selected_story == "frostgruft" and not menu._story_panel.visible, "FORTSETZEN loads that world's save slot")
+	check(asked == [["frost", 2]] and menu.selected_story == "frostgruft" and not menu._story_panel.visible, "picking the hero loads that save slot")
 	store.erase("frost", 2)
 	game.queue_free()
 	await process_frame
+
+## This test's story progress: every story open, no hero waiting (StoryProgress uses its test file here).
+func _open_all_stories() -> void:
+	var p := StoryProgress.fresh()
+	p.unlocked = 3
+	StoryProgress.save_progress(p)
+
+
+## The chapter system (docs/BEUTEORDNUNG.de.md 1): a fresh account has only story 1; a hero who won story 1
+## is asked to carry on in story 2; NEU BEGINNEN drops it; STORY (DEBUG) opens every world without saving.
+func _test_chapters_lock_carry_the_hero_and_debug_opens_all() -> void:
+	# Arrange: a fresh account
+	StoryProgress.save_progress(StoryProgress.fresh())
+	var game = await _new_game()
+	var menu = game.main_menu
+	for c: Dictionary in menu.story_run_requested.get_connections():
+		menu.story_run_requested.disconnect(c.callable)
+	var asked: Array = []
+	menu.story_run_requested.connect(func(path: String, class_id: String, jump: Dictionary): asked.append([path, class_id, jump]))
+	# Act
+	menu._open_stories()
+	# Assert
+	check(menu._story_new["krypta"].visible and not menu._story_new["frostgruft"].visible and not menu._story_new["hell_dungeon"].visible, "a fresh account opens only story 1")
+	check(str((menu._story_sub["frostgruft"] as Label).text).begins_with("GESPERRT"), "a locked story says why")
+	# Arrange: the mage won story 1
+	var p := StoryProgress.fresh()
+	StoryProgress.on_win(p, "mage", 1, {"gold": 99, "level": 5, "hp": 9, "max_hp": 16}, 1, 3)
+	StoryProgress.save_progress(p)
+	menu._open_stories()
+	check(menu._story_new["frostgruft"].visible and str((menu._story_sub["frostgruft"] as Label).text).begins_with("HELD WARTET"), "story 2 opens and names the waiting hero")
+	# Act: the mage picks story 2
+	menu._choose_story("frostgruft")
+	menu._choose_class("mage")
+	check(menu._carry_panel.visible and menu._carry_go.visible and asked.is_empty(), "the waiting hero is offered before the start")
+	menu._carry_go.pressed.emit()
+	check(asked.size() == 1 and int(((asked[0][2] as Dictionary).get("carry_hero", {}) as Dictionary).get("keep", {}).get("gold", 0)) == 99, "MIT HELD WEITER starts story 2 with the hero")
+	# Act: the archer has no hero and starts story 2 fresh
+	menu._choose_story("frostgruft")
+	menu._choose_class("archer")
+	check(asked.size() == 2 and (asked[1][2] as Dictionary).is_empty(), "another class starts story 2 fresh")
+	# Act: the mage starts story 1 anew: asked first, NEU BEGINNEN drops the hero
+	menu._choose_story("krypta")
+	menu._choose_class("mage")
+	check(menu._carry_panel.visible and not menu._carry_go.visible, "a fresh start that would lose a waiting hero asks first")
+	menu._carry_fresh.pressed.emit()
+	check(asked.size() == 3 and StoryProgress.hero_of(StoryProgress.load_progress(), "mage").is_empty(), "NEU BEGINNEN drops the waiting hero")
+	# Act: the debug story choice
+	menu._open_debug_stories()
+	check(menu._story_new["hell_dungeon"].visible and not menu._story_continue["hell_dungeon"].visible, "STORY (DEBUG) opens every world, without saves")
+	menu._choose_story("hell_dungeon")
+	menu._choose_class("swordsman")
+	check(asked.size() == 4 and bool((asked[3][2] as Dictionary).get("debug_run", false)), "a debug story run does not save")
+	StoryProgress.save_progress(StoryProgress.fresh())
+	game.queue_free()
+	await process_frame
+
 
 func _test_story_two_frostgruft_requests_its_own_scene_with_the_hero() -> void:
 	# Arrange: the game's own handler would swap the scene, so only this test listens.
 	var game = await _new_game()
 	var menu = game.main_menu
-	for c: Dictionary in menu.story_scene_requested.get_connections():
-		menu.story_scene_requested.disconnect(c.callable)
+	_open_all_stories()
+	for c: Dictionary in menu.story_run_requested.get_connections():
+		menu.story_run_requested.disconnect(c.callable)
 	var requested: Array = []
-	menu.story_scene_requested.connect(func(path: String, class_id: String): requested.append([path, class_id]))
+	menu.story_run_requested.connect(func(path: String, class_id: String, jump: Dictionary): requested.append([path, class_id]))
 	menu._open_stories()
 	# Act: NEU first shows the hero cards, the hero choice opens the scene
 	menu._choose_story("frostgruft")
@@ -172,10 +241,11 @@ func _test_story_three_hell_dungeon_starts_with_the_hero_and_story_four_is_comin
 	# Arrange: only this test listens for the scene request
 	var game = await _new_game()
 	var menu = game.main_menu
-	for c: Dictionary in menu.story_scene_requested.get_connections():
-		menu.story_scene_requested.disconnect(c.callable)
+	_open_all_stories()
+	for c: Dictionary in menu.story_run_requested.get_connections():
+		menu.story_run_requested.disconnect(c.callable)
 	var requested: Array = []
-	menu.story_scene_requested.connect(func(path: String, class_id: String): requested.append([path, class_id]))
+	menu.story_run_requested.connect(func(path: String, class_id: String, jump: Dictionary): requested.append([path, class_id]))
 	menu._open_stories()
 	var ids: Array = menu.stories.map(func(story: Dictionary) -> String: return str(story.id))
 	var three: int = ids.find("hell_dungeon")

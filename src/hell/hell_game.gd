@@ -58,6 +58,8 @@ const GoldLoot = preload("res://src/hell/gold_loot.gd")
 const LoadingScreen = preload("res://src/ui/loading_screen.gd")
 const FrostSnow = preload("res://src/hero/frost_snow.gd")
 const StorySave = preload("res://src/save/story_save.gd")
+const RewardRules = preload("res://src/progress/reward_rules.gd")
+const StoryProgress = preload("res://src/progress/story_progress.gd")
 ## The crypt's pause menu, in its story mode (overview, quest, map, controls, display, save).
 const PauseMenu = preload("res://src/pause_menu.gd")
 ## The pause page's controls in groups: a blank line between groups, each
@@ -89,6 +91,7 @@ const WorldRoomData = preload("res://src/world_editor/world_room_data.gd")
 const WorldTerrain = preload("res://src/world_editor/world_terrain.gd")
 const LaunchPads = preload("res://src/hell/launch_pads.gd")
 const FrostPuzzles = preload("res://src/world_kit/frost_puzzles.gd")
+const HellPuzzles = preload("res://src/world_kit/hell_puzzles.gd")
 const RoomWeather = preload("res://src/world_kit/room_weather.gd")
 const StoryWreck = preload("res://src/hell/story_wreck.gd")
 const StoryMotionHost = preload("res://src/hell/story_motion_host.gd")
@@ -156,6 +159,11 @@ var _skip_simulation_delta: bool = true
 @export var class_id := ""
 ## A loaded save (src/save/story_save.gd): set before the node enters the tree to continue on its floor.
 var resume: Dictionary = {}
+## A hero who finished the story before this one (src/progress/story_progress.gd): set before the node enters
+## the tree, the run starts on floor 1 with everything that hero carried (docs/BEUTEORDNUNG.de.md 1.2).
+var carry_hero: Dictionary = {}
+## A debug run (main menu DEBUG, STORY (DEBUG) and the level choice): no save slots, no story progress.
+var debug_run := false
 ## Debug Testraum (src/debug/story_testraum.gd): its settings, set before the node enters
 ## the tree. Non-empty: floor 1 becomes one test room with the debug panel under the
 ## mini-map and the Testraum's own profile file; empty plays the story.
@@ -210,6 +218,8 @@ var world: RefCounted
 var launch_pads: RefCounted
 ## The Frostgruft's puzzle pieces (src/world_kit/frost_puzzles.gd).
 var frost_puzzles: RefCounted
+## The hell's puzzle pieces (src/world_kit/hell_puzzles.gd).
+var hell_puzzles: RefCounted
 ## The weather of the hero's room, drawn over the picture (src/world_kit/room_weather.gd).
 var room_weather: RefCounted = RoomWeather.new()
 ## Floor choice of the hidden stairs (key 1-9), open while not empty.
@@ -412,6 +422,7 @@ func _ready() -> void:
 	balance = JSON.parse_string(FileAccess.get_file_as_string(theme.balance))
 	launch_pads = LaunchPads.new(self)
 	frost_puzzles = FrostPuzzles.new(self)
+	hell_puzzles = HellPuzzles.new(self)
 	if not world_room.is_empty():
 		world = WorldRoomWorld.new(world_room)
 		floors_raw = []
@@ -580,6 +591,20 @@ func _ready() -> void:
 		_resuming = false
 		if _custom_load_failed: return
 		_start_items(ui)
+		return
+	if not carry_hero.is_empty():
+		# the hero of the story before: floor 1 of this world with all it carried, one chapter deeper
+		state = (carry_hero.get("keep", {}) as Dictionary).duplicate(true)
+		state.chapters_done = int(carry_hero.get("done", 1))
+		state.run_id = _new_run_id()
+		state.world_run = 0
+		state.relic_floor = 0
+		_resuming = true
+		load_floor(1, true)
+		_resuming = false
+		if _custom_load_failed: return
+		_start_items(ui)
+		_toast("Dein Held geht weiter: Kapitel %d, Tiefe %d." % [int(state.chapters_done) + 1, depth()])
 		return
 	load_floor(clampi(start_floor, 1, floors_raw.size()), false)
 	if _custom_load_failed: return
@@ -1073,14 +1098,14 @@ func load_floor(n: int, carry: bool) -> void:
 		"rate": float(weapon.get("cooldown", balance.shot.cooldown)), "speed_mul": 1.0, "range": float(weapon.get("life", balance.shot.life)), "buffs": [],
 		"skill": {"owned": false, "active": false, "left": float(balance.clone.duration)},
 		"level": 1, "exp": 0, "skill_cd": {}, "relic": "", "relic_on": false, "upgrades": {}, "offer": [], "cards_due": 0,
-		"relic_floor": 0, "relic_item": "", "talent": talent, "crystals_run": 0, "run_id": _new_run_id(), "world_run": world_run}
+		"relic_floor": 0, "relic_item": "", "talent": talent, "crystals_run": 0, "run_id": _new_run_id(), "world_run": world_run, "chapters_done": 0}
 	if carry and not state.is_empty():
 		keep = {"hp": state.hp, "max_hp": state.max_hp, "gems": state.gems, "gold": int(state.get("gold", 0)), "dmg": state.dmg, "rate": state.rate,
 			"speed_mul": state.speed_mul, "range": state.range, "buffs": state.buffs, "skill": state.skill,
 			"level": state.level, "exp": state.exp, "skill_cd": {}, "relic": state.relic, "relic_on": state.relic_on, "upgrades": state.upgrades,
 			"offer": state.offer, "cards_due": state.cards_due, "relic_floor": state.relic_floor, "relic_item": state.relic_item,
 			"talent": state.talent, "crystals_run": state.crystals_run, "run_id": str(state.get("run_id", _new_run_id())), "items": state.get("items", {}),
-			"world_run": world_run}
+			"world_run": world_run, "chapters_done": int(state.get("chapters_done", 0))}
 		keep.skill.active = false
 	state = {"floor": n, "keys": {"A": false, "B": false, "C": false}, "used": {"A": false, "B": false, "C": false},
 		"visited": {start.index: true}, "room": start.index, "banner": {"text": W.title, "sub": "Etage %d · %s" % [n, W.circle], "t": 0.0},
@@ -1090,7 +1115,8 @@ func load_floor(n: int, carry: bool) -> void:
 	state.merge(keep)
 	# the phoenix master skill lifts the hero once per floor
 	state.phoenix_life = str(state.talent.get("master", "")) == "phoenix"
-	if not carry:
+	# a new run, or the first floor of a hero carried over from the story before: this world picks its relic
+	if not carry or (n == 1 and not carry_hero.is_empty() and int(state.get("relic_floor", 0)) == 0):
 		RelicKit.choose_run(self)
 	if feel != null:
 		feel.reset()
@@ -1129,6 +1155,7 @@ func load_floor(n: int, carry: bool) -> void:
 	_index_breakables()
 	pits = W.ents.filter(func(e: Dictionary) -> bool: return e.type == "pit")
 	frost_puzzles.setup()
+	hell_puzzles.setup()
 	for e: Dictionary in breakables:
 		e.max_hp = int(e.hp)
 	if wreck != null:
@@ -1413,6 +1440,9 @@ func box_blocked(box: Rect2, avoid_lava := false) -> bool:
 					return true
 	# the Frostgruft's blocks, balls, prisms and crystals stand in their cells
 	if frost_puzzles != null and frost_puzzles.box_blocked(box):
+		return true
+	# the hell's winches, valves, shields and gates (hell_puzzles.gd)
+	if hell_puzzles != null and hell_puzzles.box_blocked(box):
 		return true
 	# the breakables: only those filed under a cell the box touches (each one the box
 	# overlaps shares a point with it, and that point's cell lists it); the same test
@@ -2045,6 +2075,8 @@ func _hurt(why: String, n := 1, from := Vector2.ZERO, by: Dictionary = {}, shot:
 	if story_items != null and story_items.consume_shield(from):
 		state.inv = float(balance.player.invulnerable)
 		return
+	# the Beuteordnung: a hit is worth more the deeper the hero is (1, 2, 3 LP ...)
+	n *= hit_scale()
 	if story_items != null:
 		n += story_items.extra_damage()
 	state.inv = float(balance.player.invulnerable)
@@ -2072,7 +2104,7 @@ func dot_hurt(n: int, why: String) -> void:
 func dot_hurt_f(amount: float, why: String) -> void:
 	if amount <= 0.0 or state.dead > 0.0 or state.won or int(state.hp) <= 0:
 		return
-	state.dot = float(state.get("dot", 0.0)) + amount
+	state.dot = float(state.get("dot", 0.0)) + amount * hit_scale()
 	while float(state.dot) >= 1.0 and int(state.hp) > 0:
 		state.dot = float(state.dot) - 1.0
 		_lose_hp(1, why, Vector2.ZERO, true)
@@ -2177,6 +2209,7 @@ func _interactables() -> Array:
 		elif d.kind == "boss" and _door_closed(d):
 			out.append({"e": d, "label": "Versiegelt bis %s fällt" % W.boss.name, "p": p, "r": 190.0})
 	out.append_array(frost_puzzles.interactables())
+	out.append_array(hell_puzzles.interactables())
 	return out
 
 
@@ -2186,10 +2219,19 @@ func inscription() -> String:
 	var reach := float((RoomContents.cfg().get("tablet", {}) as Dictionary).get("reach", 150.0))
 	var me := Vector2(player.x, player.y - 20.0)
 	var best := ""
+	var stone: Dictionary = {}
 	for e: Dictionary in W.ents:
 		if e.type == "tablet" and me.distance_to(Vector2(e.x, e.y - 20.0)) < reach:
 			reach = me.distance_to(Vector2(e.x, e.y - 20.0))
 			best = str(e.get("text", ""))
+			stone = e
+	# the Beuteordnung's fixed line: what the Schatz of this room pays (docs/BEUTEORDNUNG.de.md 7)
+	if not stone.is_empty():
+		for c: Dictionary in W.ents:
+			if c.type == "chest" and c.has("hoard_tier") and not c.get("secret_find", false) and int(c.get("room", -1)) == int(stone.get("room", -2)):
+				best += ("
+" if not best.is_empty() else "") + RewardRules.reward_line(depth(), int(state.floor), int(c.hoard_tier))
+				break
 	return best
 
 
@@ -2222,6 +2264,7 @@ func end_run(won: bool) -> void:
 	if won:
 		saves.erase_run(StorySave.mode(self), str(state.get("run_id", "")))
 	run_slot = 0
+	_story_progress(won)
 	state.over = {"won": won, "why": str(state.get("death_why", "")), "floor": int(state.floor), "title": str(W.get("title", "")),
 		"level": int(state.get("level", 1)), "crystals": int(state.get("crystals_run", 0))}
 	mobs = []
@@ -2254,13 +2297,32 @@ func run_result(over: Dictionary) -> Dictionary:
 		var gold_note := ("%d GOLD VERLOREN" % int(state.get("gold_lost", 0))) if not won else ("%d GOLD" % gold_count())
 		note = "%s · %d RUNENSTEINE · %d SEELENSPLITTER" % [gold_note, int(profile.get("runes", 0)), int(profile.shards.have)]
 	return {"title": say("Die Hölle ist bezwungen").to_upper() if won else "LAUF BEENDET", "tone": "win" if won else "loss",
-		"lines": lines, "note": note, "hints": "E · NEUER LAUF   ESC · MENÜ"}
+		"lines": lines, "note": note, "hints": ("E · WEITER IN STORY %d   ESC · MENÜ" % int(_next_story().get("number", 0))) if won and not _next_story().is_empty() and (_story_run() or debug_run) else "E · NEUER LAUF   ESC · MENÜ"}
 
 
 ## A new run of this zone from its first floor: the same scene and class, fresh.
 func new_run() -> void:
+	# a won story with a next one: the hero goes on there (docs/BEUTEORDNUNG.de.md 1.2)
+	var next := _next_story()
+	if bool((state.get("over", {}) as Dictionary).get("won", false)) and not next.is_empty() and ResourceLoader.exists(str(next.get("scene", ""))):
+		var progress := StoryProgress.load_progress()
+		var hero_next := StoryProgress.waiting(progress, class_id, int(next.number))
+		if not hero_next.is_empty() or debug_run:
+			var onward: Node = (load(str(next.scene)) as PackedScene).instantiate()
+			onward.class_id = class_id
+			onward.graphics_path = graphics_path
+			onward.meta_path = meta_path
+			onward.debug_run = debug_run
+			onward.carry_hero = hero_next if not debug_run else {"done": int(state.get("chapters_done", 0)) + 1, "keep": _carry_keep(int(state.get("chapters_done", 0)) + 1)}
+			var tree_next := get_tree()
+			tree_next.root.add_child(onward)
+			if tree_next.current_scene == self:
+				tree_next.current_scene = onward
+			queue_free()
+			return
 	var scene: Node = (load(scene_file_path) as PackedScene).instantiate()
 	scene.class_id = class_id
+	scene.debug_run = debug_run
 	scene.graphics_path = graphics_path
 	scene.meta_path = meta_path
 	if not custom_story.is_empty():
@@ -2282,6 +2344,61 @@ func new_run() -> void:
 	queue_free()
 
 
+## The stories of the main menu (assets/data/story_campaigns.json), playable ones only.
+func _stories() -> Array:
+	var data: Dictionary = DataCache.load_dict("res://assets/data/story_campaigns.json")
+	return (data.get("stories", []) as Array).filter(func(s: Dictionary) -> bool: return bool(s.get("playable", false)) and s.has("scene"))
+
+
+## This scene's story number (1 Krypta, 2 Frostgruft, 3 Hölle); 0 when it is none of them.
+func story_number() -> int:
+	for s: Dictionary in _stories():
+		if str(s.scene) == scene_file_path:
+			return int(s.get("number", 0))
+	return 0
+
+
+## The story after this one ({} for the last).
+func _next_story() -> Dictionary:
+	var me := story_number()
+	for s: Dictionary in _stories():
+		if int(s.get("number", 0)) == me + 1:
+			return s
+	return {}
+
+
+## True for a real story run: the menu's story, not a debug, custom, Weltbauer or Testraum run.
+func _story_run() -> bool:
+	return not debug_run and custom_story.is_empty() and world_room.is_empty() and testraum.is_empty() \
+		and custom_preview_room.is_empty() and story_number() > 0
+
+
+## What a hero who just finished this story takes along: everything the run carries, the world's run
+## number reset, `done` chapters finished.
+func _carry_keep(done: int) -> Dictionary:
+	var keep: Dictionary = (StorySave.capture(self).get("keep", {}) as Dictionary).duplicate(true)
+	keep.chapters_done = done
+	keep.world_run = 0
+	keep.relic_floor = 0
+	return keep
+
+
+## The run ended: a win opens the next story and keeps the hero for it; a death loses the hero.
+func _story_progress(won: bool) -> void:
+	if not _story_run():
+		return
+	var progress := StoryProgress.load_progress()
+	var stories := _stories()
+	var last := 0
+	for s: Dictionary in stories: last = maxi(last, int(s.get("number", 0)))
+	if won:
+		var done := int(state.get("chapters_done", 0)) + 1
+		StoryProgress.on_win(progress, class_id, story_number(), _carry_keep(done), done, last, str(W.get("title", "")))
+	else:
+		StoryProgress.drop_hero(progress, class_id)
+	StoryProgress.save_progress(progress)
+
+
 ## Uses whatever stands next to the hero (E / Space / Enter).
 func act() -> void:
 	if not (state.get("over", {}) as Dictionary).is_empty():
@@ -2297,6 +2414,8 @@ func act() -> void:
 		return
 	var e: Dictionary = n.e
 	if e.has("type") and frost_puzzles.use(e):
+		return
+	if e.has("type") and hell_puzzles.use(e):
 		return
 	if e.has("type"):
 		match e.type:
@@ -2343,6 +2462,9 @@ func act() -> void:
 					e.state = "open" if e.loot.get("heart", false) else "empty"
 					if feel != null:
 						feel.fx_event("chest_open", Vector2(e.x, e.y - 30))
+					if e.has("hoard_tier"):
+						_open_hoard(e)
+						return
 					gold_loot.spew(Vector2(e.x, e.y - 10), int(e.loot.gems))
 					if not e.has("exact"):
 						gold_loot.roll_rune("chest", Vector2(e.x, e.y - 10))
@@ -2372,22 +2494,22 @@ func act() -> void:
 					if feel != null:
 						feel.fx_event("loot_taken", Vector2(e.x, e.y - 30))
 					if e.loot.get("heart", false):
-						state.hp = mini(state.max_hp, state.hp + 2)
+						state.hp = mini(state.max_hp, state.hp + RewardRules.heal(depth()))
 						if feel != null:
 							feel.hero_perk("heal")
 			"vault":
 				e.opened = true
-				# a plate vault pays more the more plates guarded it (tier = plate count, 4 = base)
+				# the Schatztresor of the Beuteordnung (docs/BEUTEORDNUNG.de.md 5): double gold of loot value
+				# depth + 4, a rune, a piece rare or better, a life heart like tier 3 and a heal heart
 				var tier := int(e.get("tier", 4))
-				var hearts := int(balance.vault.heart_containers) + (1 if tier >= 6 else 0)
-				var gems: int = roundi((int(balance.vault.gems_base) + state.floor * int(balance.vault.gems_per_floor)) * (1.0 + (tier - 4) * 0.5))
+				var vault := RewardRules.special("vault")
+				var vw := depth() + int(vault.get("value_add", 4))
+				var gems: int = RewardRules.gold(vw) * int(vault.get("gold_mul", 2))
 				gold_loot.spew(Vector2(e.x, e.y - 20), gems)
-				gold_loot.roll_rune("vault", Vector2(e.x, e.y - 20))
-				var max_before := int(state.max_hp)
-				state.max_hp = Rules.raised_max_hp(state, 2 * hearts, int(balance.player.max_hp_cap))
-				state.hp = state.max_hp
-				# the toast tells what the life cap let through, not what the vault held
-				var gained := int(state.max_hp) - max_before
+				gold_loot.spew_runes(Vector2(e.x, e.y - 20), int(vault.get("rune", 1)))
+				var gained := gain_life(RewardRules.puzzle_life(depth(), int(vault.get("life_tier", 3))))
+				for i in range(int(vault.get("heal", 1))):
+					_drop("heart", int(e.get("room", state.room)), Vector2(e.x - 40.0 + 80.0 * i, e.y + 90.0))
 				# effect hook: with the feel the vault opens like the crypt's chests (chest_open)
 				if feel != null:
 					feel.fx_event("chest_open", Vector2(e.x, e.y - 60), {"r": 24.0})
@@ -2396,7 +2518,7 @@ func act() -> void:
 					_burst(Vector2(e.x, e.y - 60), 60 + maxi(0, tier - 4) * 10, true)
 				_toast(Rules.vault_note(gained, gems))
 				if story_items != null:
-					story_items.loot("gold_crate", Vector2(e.x, e.y + 60))
+					story_items.reward_item(Vector2(e.x, e.y + 60), str(vault.get("min_rarity", "rare")), false, false)
 			"portal":
 				if e.get("active", false):
 					_sound("stairs")
@@ -2690,7 +2812,7 @@ func _spawn_mob(room: int, pos: Vector2, kind: String) -> void:
 	if sound != null: sound.at("enemy_spawn", pos)
 	var def := _mob_def(kind)
 	var diff: Dictionary = W.diff
-	var hp: float = (float(W.boss.hp) if kind == "boss" else round(float(def.hp) * float(diff.hp))) * (talents.hp_scale() if talents != null else 1.0)
+	var hp: float = (float(W.boss.hp) if kind == "boss" else round(float(def.hp) * float(diff.hp))) * monster_hp_scale()
 	var scale := float(def.get("scale", 1.0))
 	if kind == "boss" and (W.boss.get("mini", false) or W.final):
 		scale *= 1.25 if W.final else 1.05
@@ -2807,12 +2929,16 @@ func _clear_room(r: Dictionary, at: Vector2) -> void:
 	elif r.type == "boss":
 		state.boss_dead = true
 		RelicKit.drop(self, at)
-		# a mini guardian leaves a rare piece, a floor guardian its loot (the last one nothing)
-		if story_items != null and not W.final:
-			if W.boss.get("mini", false):
-				story_items.guardian_drop(at)
+		# the Beuteordnung (docs/BEUTEORDNUNG.de.md 5): a guardian leaves a piece (epic deeper down) and a
+		# life heart; the final guardian its one legendary piece and two rune stones
+		if story_items != null:
+			if W.final:
+				# its two rune stones come with its fall (loot_runes.json final)
+				story_items.final_drop(at)
 			else:
-				story_items.loot("mimic", at)
+				story_items.guardian_drop(at, bool(W.boss.get("mini", false)))
+		if not W.final:
+			drop_life_heart(RewardRules.guardian_life(), int(r.index), at + Vector2(0, 60))
 		eshots = []
 		zones = []
 		state.storm = false
@@ -2881,6 +3007,88 @@ func _free_drop_spot(room: int, p: Vector2) -> Vector2:
 ## The character's gold: the run's own (a new character starts with 0), carried from floor to
 ## floor and kept in its saved games (src/save/story_save.gd CARRIED); gone when it dies or is
 ## left unsaved. The round shop will take it.
+## The Schatz of a solved puzzle or a found room (docs/BEUTEORDNUNG.de.md 3, 4): gold by loot value, heal
+## hearts and a life heart lying before it, the rune chance, its guaranteed pieces (the best one may turn
+## legendary by the map), plain chest rolls and stones. `hoard_shift` (blood price paths) moves the tier,
+## `legendary_twice` gives the map a second chance, `no_legendary` keeps it out.
+func _open_hoard(e: Dictionary) -> void:
+	var t := depth()
+	var floor_number := int(state.floor)
+	var tier_n := clampi(int(e.hoard_tier) + int(e.get("hoard_shift", 0)), 1, 5)
+	var spec := RewardRules.tier(tier_n)
+	var w := RewardRules.value(t, tier_n)
+	var at := Vector2(e.x, e.y)
+	gold_loot.spew(at - Vector2(0, 10), RewardRules.gold(w))
+	for i in range(int(spec.get("heal", 1))):
+		_drop("heart", int(e.get("room", state.room)), at + Vector2(-50.0 + 50.0 * i, 70.0))
+	drop_life_heart(RewardRules.puzzle_life(t, tier_n), int(e.get("room", state.room)), at + Vector2(0, 110))
+	if story_items != null and story_items.inventory.roll01() < float(spec.get("rune", 0.0)):
+		gold_loot.spew_runes(at - Vector2(0, 10), 1)
+	var leg := RewardRules.legendary(floor_number, tier_n) if not e.get("no_legendary", false) else {"p": 0.0, "sure": false}
+	var minimum := RewardRules.min_rarity(w)
+	var got: Array = []
+	if story_items != null:
+		var k := 0
+		for i in range(int(spec.get("guaranteed", 1))):
+			var rarity := RewardRules.rarity_up(minimum) if bool(spec.get("up_one", false)) and i == 0 else minimum
+			var lp := float(leg.p) if i == 0 else (float(leg.p) if e.get("legendary_twice", false) and i == 1 else 0.0)
+			got.append(story_items.reward_item(_hoard_spot(e, k), rarity, i < int(spec.get("own", 0)), bool(spec.get("clean", false)), lp, bool(leg.sure)))
+			k += 1
+		for i in range(int(spec.get("extra", 0))):
+			story_items.loot("chest", _hoard_spot(e, k))
+			k += 1
+		for kind: Variant in spec.get("stones", []):
+			story_items.reward_stack(_hoard_spot(e, k), str(kind))
+			k += 1
+	var note := "Schatz der Stufe %d: %d Gold" % [tier_n, RewardRules.gold(w)]
+	if "legendary" in got:
+		note = "Ein legendäres Stück! " + note
+		_sound("level_up")
+	_toast(note)
+	if feel != null:
+		feel.hero_perk("heal")
+
+
+## Where the k-th find of a Schatz lands: rows of three before the chest.
+func _hoard_spot(e: Dictionary, k: int) -> Vector2:
+	return Vector2(e.x - 60.0 + 60.0 * (k % 3), e.y + 40.0 + 30.0 * floorf(k / 3.0))
+
+
+## Depth of this floor (docs/BEUTEORDNUNG.de.md 1.4): floor + 10 x the chapters this hero already finished.
+func depth() -> int:
+	return RewardRules.depth(int(state.get("floor", 1)), int(state.get("chapters_done", 0)))
+
+
+## Monster and boss HP factor: the difficulty's (talents) times the chapter hardness of a carried hero.
+func monster_hp_scale() -> float:
+	return (talents.hp_scale() if talents != null else 1.0) * RewardRules.chapter_hp(int(state.get("chapters_done", 0)))
+
+
+## LP one hit is worth here (every blow, shot, trap and flame on the hero counts this many times).
+func hit_scale() -> int:
+	return RewardRules.dmg(depth())
+
+
+## The life cap here (20 hits); gear hearts sit on top as before.
+func life_cap() -> int:
+	return RewardRules.cap(depth())
+
+
+## A life heart worth `lp`: the cap rises by it (up to life_cap) and the hero heals the same.
+func gain_life(lp: int) -> int:
+	var before := int(state.max_hp)
+	state.max_hp = maxi(before, mini(life_cap(), before + lp))
+	state.hp = mini(int(state.max_hp), int(state.hp) + lp)
+	return int(state.max_hp) - before
+
+
+## Drops a life heart worth `lp` at `at` in room `room` (golden, always taken).
+func drop_life_heart(lp: int, room: int, at: Vector2) -> void:
+	if lp <= 0:
+		return
+	_drop("life_heart", room, at, {"value": lp})
+
+
 func gold_count() -> int:
 	return int(state.get("gold", 0))
 
@@ -3219,7 +3427,7 @@ func _update_clone(dt: float) -> void:
 
 ## Writes the floor-start state into save slot 1..3 of this world; true on success.
 func save_slot(slot: int) -> bool:
-	if not custom_preview_room.is_empty(): return false
+	if not custom_preview_room.is_empty() or debug_run: return false
 	if sound != null: sound.at("save_ok", Vector2.INF)
 	var ok := not floor_save.is_empty() and saves.write(StorySave.mode(self), slot, floor_save)
 	if ok:
@@ -3434,6 +3642,7 @@ func _update(dt: float) -> void:
 	_update_zones(dt)
 	_update_hazards(dt)
 	frost_puzzles.update(dt)
+	hell_puzzles.update(dt)
 	if frost_snow != null:
 		frost_snow.update(dt)
 	gold_loot.update(dt)
@@ -4208,7 +4417,7 @@ func _update_hazards(dt: float) -> void:
 						_solve_group(e.group)
 					else:
 						_toast("Runenplatte %d von %d aktiviert." % [p.x, p.y])
-			"key", "heart", "gem":
+			"key", "heart", "gem", "life_heart":
 				if e.get("taken", false) or me.distance_to(Vector2(e.x, e.y)) > 52:
 					continue
 				if e.type == "heart" and state.hp >= state.max_hp:
@@ -4220,8 +4429,13 @@ func _update_hazards(dt: float) -> void:
 					if feel == null:
 						_sound("key")
 					_toast("%s aufgehoben." % key_label(e.key))
+				elif e.type == "life_heart":
+					var grown := gain_life(int(e.get("value", 2)))
+					if feel != null:
+						feel.hero_perk("heal")
+					_toast("Lebensherz: +%d LP Lebensgrenze" % grown if grown > 0 else "Lebensherz: +%d LP geheilt (Lebensgrenze voll)" % int(e.get("value", 2)))
 				elif e.type == "heart":
-					state.hp = mini(state.max_hp, state.hp + 2)
+					state.hp = mini(state.max_hp, state.hp + RewardRules.heal(depth()))
 					# effect hook: the crypt's heal marker over the hero
 					if feel != null:
 						feel.hero_perk("heal")
@@ -4951,6 +5165,7 @@ func _draw_actors(l: Layer) -> void:
 					# asleep: a dark, cold stone without its arc
 					l.draw_rect(Rect2(e.x - 40.0, e.y - 40.0, 80.0, 80.0), Color(0.02, 0.03, 0.05, 0.55))
 	frost_puzzles.draw_under(l, view, t)
+	hell_puzzles.draw_under(l, view, t)
 	if monsters != null:
 		monsters.draw_warnings(l)
 	var list: Array = []
@@ -4958,7 +5173,7 @@ func _draw_actors(l: Layer) -> void:
 		if p.name != "" and view.has_point(Vector2(p.x, p.y)):
 			list.append([p.y - (200.0 if p.low else 0.0) + float(p.get("z", 0.0)), "prop", p])
 	for e: Dictionary in W.ents:
-		if view.has_point(Vector2(e.x, e.y)) and e.type in ["chest", "vault", "portal", "brazier", "key", "heart", "gem", "relic", "well", "npc", "stairs"] and not e.get("taken", false):
+		if view.has_point(Vector2(e.x, e.y)) and e.type in ["chest", "vault", "portal", "brazier", "key", "heart", "gem", "life_heart", "relic", "well", "npc", "stairs"] and not e.get("taken", false):
 			list.append([e.y - (60.0 if e.type == "stairs" else 0.0), "ent", e])
 		elif e.type == "lever" and view.has_point(Vector2(e.x, e.y)):
 			list.append([float(e.wy), "ent", e])
@@ -4979,6 +5194,7 @@ func _draw_actors(l: Layer) -> void:
 		if view.has_point(Vector2(e.x, e.y)):
 			list.append([e.y - (200.0 if e.get("broken", false) else 0.0), "breakable", e])
 	frost_puzzles.sort_into(list, view)
+	hell_puzzles.sort_into(list, view)
 	if not clone.is_empty():
 		list.append([clone.p.y, "clone", clone])
 	for d: Dictionary in W.doors:
@@ -5033,6 +5249,7 @@ func _draw_actors(l: Layer) -> void:
 				_tex(l, shown, Vector2(p.x - im.get_width() * sx / 2.0, p.y - im.get_height() * sy), p.flip, Color.WHITE, sx, sy)
 			"ent": _draw_ent(l, item[2], t)
 			"frost": frost_puzzles.draw_piece(l, item[2], t)
+			"hellp": hell_puzzles.draw_piece(l, item[2], t)
 			"gate": _draw_gate(l, item[2], t)
 			"passage": _draw_gate_picture(l, item[2].gate, str(item[2].name), Color.WHITE, 1.0)
 			"arch":
@@ -5339,6 +5556,12 @@ func _draw_ent(l: Layer, e: Dictionary, t: float) -> void:
 			else:
 				var cut := 46.0
 				l.draw_texture_rect_region(im, Rect2(e.x - im.get_width() / 2.0, e.y - im.get_height() + cut, im.get_width(), im.get_height() - cut), Rect2(0, cut, im.get_width(), im.get_height() - cut))
+		"life_heart":
+			# the golden heart of the Beuteordnung: raises the life cap
+			var im_life: Texture2D = tex["heart"]
+			var life_size := im_life.get_size() * 0.85
+			var life_bob := sin(t * 3.0 + e.x) * 6.0
+			l.draw_texture_rect(im_life, Rect2(Vector2(e.x - life_size.x / 2.0, e.y - life_size.y - 10 + life_bob), life_size), false, Color(1.0, 0.82, 0.25))
 		"key", "heart", "gem":
 			var name: String = "rune_gem" if e.type == "gem" else (key_sprite[key_letter(e.key)] if e.type == "key" else e.type)
 			var im: Texture2D = tex[name]
@@ -5883,6 +6106,7 @@ func _draw_hud(h: Control) -> void:
 	# the room's weather of the Weltbauer (src/world_kit/room_weather.gd), then what the hero carries
 	room_weather.draw(h, size, self)
 	frost_puzzles.draw_hud(h, size)
+	hell_puzzles.draw_hud(h, size)
 	# the life shown, for the status sheet too (src/hell/frost_hud.gd reads state.hp_f)
 	state.hp_f = hp_f()
 	_windows = _window_open()

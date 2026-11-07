@@ -1,0 +1,357 @@
+{
+	"schema_version": 1,
+	"id": "h_blut_s3_h3",
+	"title": "Rätsel: Blutpreis (Stufe 3)",
+	"world": "hell",
+	"role": "jump",
+	"in_floors": true,
+	"slots": [
+		[
+			0,
+			0
+		],
+		[
+			0,
+			1
+		],
+		[
+			0,
+			2
+		]
+	],
+	"width": 14,
+	"height": 39,
+	"cells": [
+		"00000000000000",
+		"01111111111110",
+		"01101111111110",
+		"01100100100100",
+		"01100100100100",
+		"01100100100100",
+		"01100100100100",
+		"01100100100100",
+		"01100100100100",
+		"01100100100100",
+		"01100100100100",
+		"01100100100100",
+		"01100100100100",
+		"01100100100100",
+		"01100100100100",
+		"01100100100100",
+		"01100100100100",
+		"01100100100100",
+		"01100100100100",
+		"01100100100100",
+		"01100100100100",
+		"01100100100100",
+		"01100100100100",
+		"01100100100100",
+		"01100100100100",
+		"01101111111110",
+		"01101111111110",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"01100000000000",
+		"00000000000000"
+	],
+	"tiles": {},
+	"areas": {},
+	"ports": [
+		{
+			"side": "north",
+			"cell": [
+				1,
+				0
+			]
+		},
+		{
+			"side": "south",
+			"cell": [
+				1,
+				38
+			]
+		},
+		{
+			"side": "west",
+			"cell": [
+				0,
+				18
+			]
+		}
+	],
+	"auto_mobs": 0,
+	"objects": [
+		{
+			"kind": "hell_blood_gate",
+			"x": 528,
+			"y": 528,
+			"group": "A"
+		},
+		{
+			"kind": "hell_thorns",
+			"x": 528,
+			"y": 912,
+			"group": "A"
+		},
+		{
+			"kind": "hell_thorns",
+			"x": 528,
+			"y": 1680,
+			"group": "A"
+		},
+		{
+			"kind": "hell_thorns",
+			"x": 816,
+			"y": 528,
+			"group": "A"
+		},
+		{
+			"kind": "hell_thorns",
+			"x": 816,
+			"y": 1776,
+			"group": "A"
+		},
+		{
+			"kind": "hell_blood_gate",
+			"x": 1104,
+			"y": 528,
+			"group": "A"
+		},
+		{
+			"kind": "hell_thorns",
+			"x": 1104,
+			"y": 1104,
+			"group": "A"
+		},
+		{
+			"kind": "hell_thorns",
+			"x": 1104,
+			"y": 1968,
+			"group": "A"
+		},
+		{
+			"kind": "hell_thorns",
+			"x": 1104,
+			"y": 2160,
+			"group": "A"
+		},
+		{
+			"kind": "hell_blood_bowl",
+			"x": 720,
+			"y": 2544,
+			"group": "A"
+		},
+		{
+			"kind": "hell_rune",
+			"x": 240,
+			"y": 240,
+			"group": "A"
+		},
+		{
+			"kind": "tablet",
+			"x": 144,
+			"y": 369.6,
+			"text": "Drei Wege führen zum Schatz, und jeder will Blut.\nWer wenig gibt, bekommt wenig.\nWer viel gibt, dem öffnet sich die Truhe weit.\nDie Schale vor dem Schatz zählt jeden Tropfen. Wer nicht zahlen will, geht vorüber."
+		},
+		{
+			"kind": "chest",
+			"x": 816,
+			"y": 2577.6,
+			"loot": {
+				"type": "hoard",
+				"tier": 3
+			},
+			"mimic": "no"
+		},
+		{
+			"kind": "prop",
+			"asset": "cage_hang",
+			"x": 508.8,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "chain_swag_b",
+			"x": 777.6,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "wall_torch_hook",
+			"x": 1046.4,
+			"y": 102,
+			"flip": true,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"wall_decor": true
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 144,
+			"y": 484,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "blood_c",
+			"x": 144,
+			"y": 2116,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 51.5,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "coal",
+			"x": 240,
+			"y": 3437,
+			"flip": false,
+			"layer": "floor",
+			"block": false,
+			"scale": 1,
+			"foot": [
+				60,
+				30
+			],
+			"decal": {
+				"dy": 29,
+				"w": 0,
+				"h": 0,
+				"a": 0.92
+			}
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 144,
+			"y": 946.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				26,
+				18
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 240,
+			"y": 1426.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				26,
+				18
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "statue_monk",
+			"x": 240,
+			"y": 3250.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				24
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "torch_pillar",
+			"x": 144,
+			"y": 2386.6,
+			"flip": true,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				40,
+				26
+			]
+		},
+		{
+			"kind": "prop",
+			"asset": "candelabra",
+			"x": 144,
+			"y": 2770.6,
+			"flip": false,
+			"layer": "normal",
+			"block": true,
+			"scale": 1,
+			"foot": [
+				26,
+				18
+			]
+		},
+		{
+			"kind": "start",
+			"x": 528,
+			"y": 1891.2
+		}
+	],
+	"kind_label": "Höllenrätsel",
+	"info": "Blutpreis: drei Wege, 2, 3 oder 4 Herzen; je mehr Blut, desto höher die Truhe."
+}

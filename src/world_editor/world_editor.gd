@@ -23,6 +23,7 @@ const Graphics = preload("res://src/core/graphics_settings.gd")
 const Gates = preload("res://src/world_editor/world_gates.gd")
 const Contents = preload("res://src/world_kit/room_contents.gd")
 const FrostPuzzles = preload("res://src/world_kit/frost_puzzles.gd")
+const HellPuzzles = preload("res://src/world_kit/hell_puzzles.gd")
 const RoomWeather = preload("res://src/world_kit/room_weather.gd")
 const CryptUI = preload("res://src/ui/crypt_ui.gd")
 const WINDOW := Vector2i(1600, 900)
@@ -838,6 +839,8 @@ func _fill_inspector() -> void:
 				_note("Kalt: Die Schale hat keine Flamme. Der Held nimmt am Glutherd Glut und trägt sie her, sie hält nur einige Schritte, im Kältenebel weniger. Eine brennende kalte Schale gibt selbst wieder Glut.")
 		_ when FrostPuzzles.KINDS.has(str(o.kind)):
 			_frost_inspector(o)
+		_ when HellPuzzles.KINDS.has(str(o.kind)):
+			_hell_inspector(o)
 		"skullheap":
 			_group(o)
 			_number("Treffer", float(o.get("hp", 3)), 1.0, 20.0, 1.0, func(v: float) -> void: o.hp = int(v))
@@ -899,6 +902,45 @@ func _fill_inspector() -> void:
 			if Data.spawn_mode(room) != "manual" and not Contents.is_chest_mob(str(o.get("mob", ""))):
 				_note("Der Raum steht auf „Zufällig“, dieser Gegner kommt deshalb nicht. Stelle rechts oben „Von Hand gesetzt“ ein.")
 	_inspector.add_child(_button("LÖSCHEN (Entf)", func() -> void: canvas.delete_picked()))
+
+
+## The settings of a hell puzzle piece (src/world_kit/hell_puzzles.gd, docs/HOELLE-RAETSEL.de.md): its group
+## and the one or two values that piece has.
+func _hell_inspector(o: Dictionary) -> void:
+	_group(o)
+	match str(o.kind):
+		"hell_bridge":
+			_number("Brücke Nr.", float(o.get("nr", 0)), 0.0, 20.0, 1.0, func(v: float) -> void: o.nr = int(v))
+			_check(o, "up", "Hängt oben (am Anfang gesperrt)")
+			_note("Kettenbrücke über dem Lavaschacht: oben = Lava, unten = begehbar. Winden derselben Gruppe schalten sie.")
+		"hell_shield":
+			_number("Schild Nr.", float(o.get("nr", 0)), 0.0, 20.0, 1.0, func(v: float) -> void: o.nr = int(v))
+			_check(o, "down", "Hängt unten (deckt am Anfang)")
+			_note("Eisenschild an einer Kette: unten verdeckt es die Sicht der Dämonenaugen.")
+		"hell_winch":
+			_text_row("Schaltet Nr.", ",".join((o.get("sets", []) as Array).map(func(v: Variant) -> String: return str(int(v)))), func(s: String) -> void:
+				o.sets = Array(s.split(",", false)).map(func(v: String) -> int: return int(v.strip_edges())))
+			_note("E an der Winde schaltet jede Brücke und jedes Schild der Gruppe mit diesen Nummern.")
+		"hell_valve":
+			_text_row("Name", str(o.get("label", "A")), func(s: String) -> void: o.label = s.strip_edges())
+			_check(o, "open", "Am Anfang offen")
+		"hell_channel":
+			_text_row("Nass wenn", str(o.get("wet", "")), func(s: String) -> void: o.wet = s.strip_edges())
+			_note("Ventilformel: A = Ventil A offen, !A = zu, | = oder, & = und. Leer = immer Lava.")
+		"hell_vent":
+			_number("Takte der Welle", float(o.get("period", 3)), 2.0, 8.0, 1.0, func(v: float) -> void: o.period = int(v))
+		"hell_eye":
+			_text_row("Blickrichtung (n/e/s/w)", str(o.get("dir", "e")), func(s: String) -> void: o.dir = s.strip_edges())
+			_number("Takte offen", float(o.get("open", 2)), 1.0, 8.0, 1.0, func(v: float) -> void: o.open = int(v))
+			_number("Takte zu", float(o.get("closed", 2)), 1.0, 8.0, 1.0, func(v: float) -> void: o.closed = int(v))
+			_number("Versatz", float(o.get("off", 0)), 0.0, 8.0, 1.0, func(v: float) -> void: o.off = int(v))
+			_check(o, "always", "Immer offen (Kettenwacht)")
+		"hell_pipe":
+			_text_row("Form (I/L)", str(o.get("shape", "I")), func(s: String) -> void: o.shape = s.strip_edges().to_upper())
+			_number("Drehung", float(o.get("rot", 0)), 0.0, 3.0, 1.0, func(v: float) -> void: o.rot = int(v))
+		"hell_spout":
+			_text_row("Richtung (n/e/s/w)", str(o.get("dir", "e")), func(s: String) -> void: o.dir = s.strip_edges())
+	_note("Höllenrätsel: Alle Teile einer Gruppe gehören zusammen. Brand kostet einen Treffer und führt zur Rune.")
 
 
 ## The settings of a Frostgruft puzzle piece (src/world_kit/frost_puzzles.gd).
@@ -1029,6 +1071,17 @@ func _number(label: String, value: float, low: float, high: float, step: float, 
 		action.call(v)
 		_touched())
 	_inspector.add_child(_row(label, s))
+
+
+## A text field of the inspector: `action` gets the new text.
+func _text_row(label: String, value: String, action: Callable) -> void:
+	var field := LineEdit.new()
+	field.text = value
+	field.text_changed.connect(func(t: String) -> void:
+		action.call(t)
+		_touched())
+	field.focus_entered.connect(func() -> void: canvas.checkpoint())
+	_inspector.add_child(_row(label, field))
 
 
 func _group(o: Dictionary) -> void:

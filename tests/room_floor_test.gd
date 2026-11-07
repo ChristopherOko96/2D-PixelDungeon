@@ -243,12 +243,12 @@ func _key_view(raw: Dictionary) -> Dictionary:
 	return {"props": props, "ents": ents, "wall": wall, "decals": decals, "lights": lights, "size": [r.bw, r.bh], "cells": cells}
 
 
-## The hell has no room files and stays as it is (the Frostgruft builds from its own since 06.11.2026,
-## tests/frost_room_floors_test.gd).
+## Every story world builds from its own room files: the Frostgruft since 06.11.2026
+## (tests/frost_room_floors_test.gd), the hell since 07.11.2026 (tests/hell_room_floors_test.gd).
 func _check_other_worlds() -> void:
-	for world: String in ["hell"]:
+	for world: String in ["frost", "hell"]:
 		var p: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://assets/data/%s_world.json" % world))
-		_check(not p.has("room_library"), world + " still comes from the generator")
+		_check(str((p.get("room_library", {}) as Dictionary).get("world", "")) == world, world + " builds from its room files")
 
 
 func _check_floor(pack: Pack, n: int, run: int) -> void:

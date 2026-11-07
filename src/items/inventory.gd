@@ -33,6 +33,7 @@ extends RefCounted
 const ItemRules = preload("res://src/items/item_rules.gd")
 const PerkRules = preload("res://src/perk_rules.gd")
 const Dungeon = preload("res://src/dungeon/dungeon_generator.gd")
+const RewardRules = preload("res://src/progress/reward_rules.gd")
 const RARITIES := ["common", "uncommon", "rare", "epic", "legendary"]
 ## Slot value meaning "the weapon in hand" for identify / cleanse.
 const EQUIPPED := 99
@@ -160,10 +161,49 @@ func _gear_class(spec: Dictionary, class_id: String) -> String:
 	return class_id if bool(spec.get("own_class", false)) else ""
 
 
+## The rarity weights of normal rolls: the Beuteordnung's (reward_rules.json, never legendary), else items.json.
+func _weights() -> Dictionary:
+	var rules: Dictionary = RewardRules.rarity_weights()
+	return rules if not rules.is_empty() else data.get("rarity_weights", {})
+
+
+## A piece of a reward chest (docs/BEUTEORDNUNG.de.md): a weapon or gear of at least `minimum` rarity, of the
+## hero's class with `own`, never cursed with `clean`. The rarity rolls with the weights of depth `t`.
+func reward_piece(t: int, class_id: String, minimum: String, own: bool, clean: bool) -> Dictionary:
+	var depth := clampf((float(t) - 1.0) / 9.0, 0.0, 1.0)
+	var mine := class_id if own else ""
+	if _rng.randf() < 0.5:
+		return _roll_weapon(depth, class_id, minimum, mine, clean)
+	return _roll_gear(depth, minimum, mine, clean)
+
+
+## A legendary piece for `class_id` (weapon, armour, ring or amulet), cursed with `curse_chance`.
+func legendary_piece(class_id: String, curse_chance: float) -> Dictionary:
+	var pool: Array = []
+	for w: Dictionary in data.get("weapons", []):
+		if str(w.rarity) == "legendary" and str(w["class"]) == class_id: pool.append(["weapon", w])
+	for g: Dictionary in data.get("gear", []):
+		if str(g.rarity) == "legendary" and str(g.get("class", "")) in [class_id, ""]: pool.append(["gear", g])
+	if pool.is_empty(): return {}
+	var pick: Array = pool[_rng.randi_range(0, pool.size() - 1)]
+	var curse := ""
+	if _rng.randf() < curse_chance:
+		var curses: Array = data.get("curses", {}).keys()
+		if str(pick[0]) != "weapon": curses.erase("burning_blade")
+		if not curses.is_empty(): curse = str(curses[_rng.randi_range(0, curses.size() - 1)])
+	var spec: Dictionary = pick[1]
+	return make_weapon(str(spec.id), false, curse) if str(pick[0]) == "weapon" else make_gear(str(spec.id), false, curse)
+
+
+## A number 0..1 from the run's item dice (the chest's legendary and rune rolls use it).
+func roll01() -> float:
+	return _rng.randf()
+
+
 ## A weapon of the hero's class of a rolled rarity; own and clean pass to the gear rolled in its
 ## place when the class has none of that rarity (clean: never cursed).
 func _roll_weapon(depth: float, class_id: String, minimum: String, own := "", clean := false) -> Dictionary:
-	var weights: Dictionary = data.get("rarity_weights", {})
+	var weights: Dictionary = _weights()
 	var lowest := RARITIES.find(minimum)
 	var total := 0.0
 	for index in range(lowest, RARITIES.size()):
@@ -187,7 +227,7 @@ func _roll_weapon(depth: float, class_id: String, minimum: String, own := "", cl
 
 ## A rarity from the floor's weights, at least `minimum`.
 func _roll_rarity(depth: float, minimum: String) -> String:
-	var weights: Dictionary = data.get("rarity_weights", {})
+	var weights: Dictionary = _weights()
 	var lowest := RARITIES.find(minimum)
 	var total := 0.0
 	for index in range(lowest, RARITIES.size()):

@@ -5,7 +5,7 @@
 	"world": "krypta",
 	"role": "jump",
 	"in_floors": true,
-	"hoard_tier": 3.0,
+	"hoard_tier": 4.0,
 	"slots": [
 		[
 			0.0,
@@ -110,7 +110,7 @@
 			"y": 1152.0,
 			"loot": {
 				"type": "hoard",
-				"tier": 3.0
+				"tier": 4.0
 			}
 		},
 		{
@@ -500,7 +500,7 @@
 			"kind": "chest",
 			"loot": {
 				"type": "hoard",
-				"tier": 3.0
+				"tier": 4.0
 			},
 			"x": 2352.0,
 			"y": 1152.0
