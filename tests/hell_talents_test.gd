@@ -58,6 +58,7 @@ func _run() -> void:
 		await _free(mage)
 	await test_mage_in_the_frostgruft()
 	await test_archer_wolf_and_warrior_shield_in_the_hell()
+	await test_berserker_tempo_and_directional_stagger()
 	DirAccess.remove_absolute(ProjectSettings.globalize_path("user://hell_talents_test_profile.json"))
 	print("HELL_TALENTS checked=%d failures=%d" % [checked, failures.size()])
 	quit(1 if failures.size() > 0 else 0)
@@ -192,6 +193,40 @@ func test_archer_wolf_and_warrior_shield_in_the_hell() -> void:
 	var plain: Dictionary = hard.monsters.spawn(hard.state.room, Vector2(hard.player.x + 80, hard.player.y), id)
 	check(float(tough.hp) > float(plain.hp) * 2.0, "Albtraum gives hell monsters more health")
 	await _free(hard)
+
+
+func test_berserker_tempo_and_directional_stagger() -> void:
+	var game := await _new("swordsman", "berserk", HellScene)
+	var state := Profile.class_state(game.profile, "swordsman")
+	state.ranks.berserk_9 = 3
+	state.bar[3] = "berserk_9"
+	game.talents.bind(game, game.profile, game.profile_path, "swordsman")
+	var runtime: Dictionary = game.talents.tc.runtime(1)
+	var front := _mob(game, Vector2(42, 0))
+	var rear := _mob(game, Vector2(-36, 0))
+	var elite := _mob(game, Vector2(60, 12))
+	elite.miniboss = true
+
+	runtime.res = 15.0
+	_key(game, KEY_1, false)
+	check(float(front.hp) < 400.0 and is_zero_approx(float(runtime.res)), "Wutschlag can be paid with 15 rage")
+	_tick(game, 1.05)
+	runtime.res = 20.0
+	_key(game, KEY_3, false)
+	check(is_zero_approx(float(runtime.res)) and is_equal_approx(game.talents.interval_scale(), 0.8), "20 rage buys Raserei and speeds up standard attacks at rank 3")
+
+	_tick(game, 1.05)
+	runtime.res = 30.0
+	var front_hp := float(front.hp)
+	_key(game, KEY_4, false)
+	check(float(front.hp) < front_hp and float(front.get("stun", 0.0)) >= 0.6, "Knochenbrecher hits and staggers a normal enemy in front")
+	check(not front.has("frozen"), "Knochenbrecher adds no ice effect")
+	check(float(rear.hp) == 400.0 and is_zero_approx(float(rear.get("stun", 0.0))), "Knochenbrecher leaves enemies behind the hero alone")
+	check(float(elite.hp) < 400.0 and float(elite.get("stun", 0.0)) < 0.6, "Knochenbrecher damages a miniboss without adding the stagger")
+	check(is_zero_approx(float(runtime.res)), "Knochenbrecher pays its existing rage cost")
+	_tick(game, 7.1)
+	check(is_equal_approx(game.talents.interval_scale(), 1.0), "Raserei expires and restores the normal attack interval")
+	await _free(game)
 
 
 func _free(game: Node) -> void:

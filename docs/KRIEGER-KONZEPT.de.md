@@ -1,8 +1,8 @@
 # Krieger: Einhandkrieger, Berserker und Paladin
 
-Stand: 06.11.2026. **Vorschlag zur Abstimmung**, einschließlich drei statischer
-Sprite-Entwurfstafeln. Kein Rigging, keine Aktivierung im Spiel und keine
-Balancefreigabe. Die vorhandenen Talentbäume funktionieren weiterhin unverändert.
+**Verworfener Entwurf.** Der Stand vom 06.11.2026 bleibt als Archiv erhalten.
+Die drei Sprite-Entwurfstafeln waren statische Vorschauen. Die beschriebenen
+Talente und Mechaniken wurden für diesen Entwurf nicht ins Spiel übernommen.
 
 ## Gemeinsame Grundlage
 

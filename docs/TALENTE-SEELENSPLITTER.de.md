@@ -207,7 +207,7 @@ laufenden Spiel schützt das trotzdem.
 | Scharfschütze | Gezielter Schuss, Durchschuss, Jägermarkierung, Salve, Rückwärtssalto, Pfeilregen | Letzter Pfeil |
 | Fallensteller | Giftpfeil, Dornenfalle, Explosionsfalle, Giftwolke, Netzfalle, Rauchsprung | Todeszone |
 | Bestienmeister | Tiergefährte, Fass!, Doppelschuss, Jagdruf, Raubtiersprung | Alpharuf |
-| Berserker | Wutschlag, Wirbelsturm, Raserei, Ansturm, Erdspalter, Blutiger Schrei | Blutrausch |
+| Berserker | Wutschlag, Wirbelsturm, Raserei, Ansturm, Knochenbrecher, Blutiger Schrei | Erdspalter |
 | Schildwächter | Schildstoß, Schutzwall, Kampfgeschrei, Wächtereid, Erderschütterung, Schildwall, Vorstoß | Unbezwingbar |
 | Klingenmeister | Schnittwunde, Konterschlag, Klingensturm, Fächerschnitt, Wurfmesser, Schattenschritt | Klingentanz |
 | Diener (Nekromant) | Skelett erheben, Knochenspeer, Befehl, Leichenexplosion, Skelettwache, Grabessprung | Armee der Toten |
@@ -316,7 +316,7 @@ Seelen, Eis und Arkan.
 | Scharfschütze | Rückwärtssalto als Rauchwolke, Pfeilregen mit fallenden Pfeilen |
 | Fallensteller | Giftpfeil als grüner Pfeil, Rauchsprung als Rauchwolke |
 | Bestienmeister | Raubtiersprung mit Krallen |
-| Berserker | Wutschlag und Erdspalter mit Wut-Hieb, Erdspalter dazu mit Steinsplittern, Blutiger Schrei mit Blutring, Ansturm mit Staubspur |
+| Berserker | Wutschlag und Knochenbrecher mit Wut-Hieb, Erdspalter mit Steinsplittern, Blutiger Schrei mit Blutring, Ansturm mit Staubspur |
 | Schildwächter | Schildstoß und Schildwall in Gold, Erderschütterung mit Bebenring, Vorstoß mit Goldschild |
 | Klingenmeister | Wurfmesser dreht sich, Schnitte mit Blut, Schattenschritt als Schattenwolke |
 | Diener | Knochenspeer, Leichenexplosion und Grabessprung mit Knochensplittern, Skelettwache |

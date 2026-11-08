@@ -1506,7 +1506,7 @@ func _area(id: int, rt: Dictionary, talent: String, info: Dictionary, center: Ve
 	_blast_at = outer
 
 
-## One talent hit on an enemy: damage plus the talent's status, slow, freeze or root.
+## One talent hit on an enemy: damage plus any status or crowd control.
 func _hit(id: int, enemy: Dictionary, dmg: float, info: Dictionary, rt: Dictionary, talent: String) -> void:
 	if float(enemy.hp) <= 0.0: return
 	if talent.begins_with("curse_"): necromancer.tag(self, id, enemy, info, talent)
@@ -1534,6 +1534,8 @@ func _apply_status(id: int, enemy: Dictionary, info: Dictionary, rt: Dictionary,
 		var dps := base * float(config.pct) / 100.0 * (1.0 + _dot_bonus(rt, status) / 100.0)
 		_status(enemy, status, dps, float(info.get("status_time", config.time)), id)
 	if info.has("slow"): _status(enemy, "slow", _value(info, "slow", rt, talent), float(info.get("slow_time", 4)), id)
+	if info.has("stagger_s") and not _boss(enemy):
+		_hold_enemy(enemy, float(info.stagger_s))
 	# the Leerenmagier's void hits drive their victims mad for a moment (talents.json mad_s)
 	if info.has("mad_s"): _madden(id, enemy, _value(info, "mad_s", rt, talent))
 	if info.has("freeze"):

@@ -2916,7 +2916,7 @@
    "name": "Wutschlag",
    "kind": "active",
    "icon": "axe",
-   "text": "145/170/195 % Schaden.",
+   "text": "Breiter Hieb nach vorn: 145/170/195 % Schaden.",
    "ranks": 3,
    "type": "melee",
    "dmg": [
@@ -2926,7 +2926,7 @@
    ],
    "reach_m": 2.2,
    "arc": 2.2,
-   "cost": 20,
+   "cost": 15,
    "cd": 5,
    "id": "berserk_1",
    "class": "swordsman",
@@ -2996,7 +2996,7 @@
    "name": "Raserei",
    "kind": "active",
    "icon": "clock",
-   "text": "8 s: +15/20/25 % Angriffstempo.",
+   "text": "8 s lang +15/20/25 % Tempo für normale Angriffe.",
    "ranks": 3,
    "type": "buff",
    "buff": "frenzy",
@@ -3006,7 +3006,7 @@
     20,
     25
    ],
-   "cost": 35,
+   "cost": 20,
    "cd": 22,
    "id": "berserk_5",
    "class": "swordsman",
@@ -3077,11 +3077,11 @@
    "ranks": 3
   },
   "berserk_9": {
-   "name": "Erdspalter",
+   "name": "Knochenbrecher",
    "kind": "active",
    "icon": "axe",
    "type": "melee",
-   "text": "Wuchtiger Hieb nach vorn, 3 m weit: 160/190/220 % Schaden.",
+   "text": "Gezielter Hieb nach vorn, 3 m weit: 160/190/220 % Schaden. Normale Gegner taumeln 0,6 s.",
    "dmg": [
     1.6,
     1.9,
@@ -3089,6 +3089,7 @@
    ],
    "reach_m": 3,
    "arc": 1,
+   "stagger_s": 0.6,
    "cost": 30,
    "cd": 10,
    "id": "berserk_9",
