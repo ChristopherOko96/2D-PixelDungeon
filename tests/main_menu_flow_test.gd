@@ -326,6 +326,11 @@ func _test_hero_cards_come_from_the_story_classes() -> void:
 	check((menu.hero_cards.mage.paths as Array).size() == (Profile.data().classes.mage.specs as Array).size(), "the mage card lists every talent path")
 	check(joined.contains("%d LP" % int(story.swordsman.hp)) and not joined.contains("HERZEN") and not joined.contains("TEMPO"), "the cards show LP, not the old crypt hearts and speed")
 	check(joined.contains(str(story.swordsman.name)) and not joined.to_upper().contains("KRIEGER"), "the sword hero is the Schwertkämpfer")
+	var sword_card: int = menu.class_order.find("swordsman")
+	check(sword_card >= 0 and menu._class_frames[sword_card][0].resource_path.ends_with("/knight_m_idle_anim_f0.png"),
+		"the sword hero card uses the original blue knight")
+	check("knight_m" in menu.HEROES and menu._frames["knight_m"][0].resource_path.ends_with("/knight_m_run_anim_f0.png"),
+		"the title chase uses the original blue knight")
 	game.queue_free()
 	await process_frame
 

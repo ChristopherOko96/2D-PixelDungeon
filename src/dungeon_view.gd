@@ -512,7 +512,15 @@ func _draw_view() -> void:
 				else: Tiles.draw_obstacle(self,layout,entry.rect)
 			"enemy": _draw_enemy(entry.data)
 			"player": _draw_player(entry.data,entry.peer)
-			"bullet": _draw_bullet(entry.data)
+			"bullet":
+				var shot: Dictionary = entry.data
+				_draw_bullet(shot)
+				if int(shot.get("owner", 1)) == 0:
+					PixelPaint.clip = _open_floor
+					var velocity := Vector2(float(shot.get("vx", 0.0)), float(shot.get("vy", 0.0)))
+					var extent := clampf(float(shot.get("radius", 5.0)), 4.0, 22.0)
+					preload("res://src/vfx/shot_looks.gd").draw_hostile_cue(self, _position(shot), velocity, extent, 2.0)
+					PixelPaint.clip = Callable()
 			"chest": _skill_fx.draw_chest(self,entry.data,_clock)
 			"loot": _skill_fx.draw_loot(self,entry.data,_clock)
 			"reward": _draw_pedestal()

@@ -134,6 +134,7 @@ func _test_in_game() -> void:
 	for world: String in SCENES:
 		var game: Node = (load(SCENES[world]) as PackedScene).instantiate()
 		game.loading_forced = true
+		game.class_id = "swordsman"
 		root.add_child(game)
 		await process_frame
 		_check(game.loading_screen != null, "%s: a screen on entering" % world)
@@ -142,6 +143,8 @@ func _test_in_game() -> void:
 			continue
 		_check(game.loading_screen.title == str(_data().worlds[world].title), "%s: the world's title, was %s" % [world, game.loading_screen.title])
 		_check(game.loading_screen.hero_sprite == str(game.hero.get("sprite", "knight_m")), "%s: the played hero" % world)
+		_check(game.loading_screen.hero_sprite == "knight_m" and game.story_hero.rig_name({"frames": game.hero_frames}) == "knight",
+			"%s: the original blue knight in the loading screen and the game" % world)
 		_check(game._simulation_paused(), "%s: the world waits" % world)
 		game.loading_screen.hold = 0.0
 		game.loading_screen._end()
@@ -220,6 +223,9 @@ func _test_menu() -> void:
 	screen.start_menu("res://src/main.tscn")
 	_check(screen.variant == "menu", "the parade")
 	_check(screen._parade.size() == 4, "four heroes, %d" % screen._parade.size())
+	_check(screen._parade.any(func(frames: Array) -> bool:
+		return not frames.is_empty() and frames[0].resource_path.ends_with("/knight_m_run_anim_f0.png")),
+		"the return-to-menu parade uses the original blue knight")
 	var got: Array = []
 	screen.finished.connect(func(scene: PackedScene) -> void: got.append(scene))
 	var key := InputEventKey.new()

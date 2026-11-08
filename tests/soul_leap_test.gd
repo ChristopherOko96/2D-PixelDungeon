@@ -11,7 +11,7 @@ func _run() -> void:
 	game.phase = "combat"
 	tc = game.talent_combat
 	d = tc.data
-	check(str(game.view.CLASS_RIGS.get("necromancer", "")) == "necro", "playable necromancer actually uses existing source cutout rig")
+	check(str(game.view.CLASS_RIGS.get("necromancer", "")) == "necro_hero", "playable necromancer uses the current hero cutout rig")
 	var rt := _setup(d.talents.soul_7)
 	var before := Vector2(game.players[1].pos)
 	check(_cast(d.talents.soul_7), "learned shadow jump casts")

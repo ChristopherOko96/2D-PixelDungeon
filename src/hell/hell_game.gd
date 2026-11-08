@@ -49,6 +49,7 @@ const CryptUI = preload("res://src/ui/crypt_ui.gd")
 const StoryHero = preload("res://src/hero/story_hero.gd")
 const MageBolt = preload("res://src/vfx/mage_bolt.gd")
 const ShotLooks = preload("res://src/vfx/shot_looks.gd")
+const PixelPaint = preload("res://src/vfx/pixel_paint.gd")
 ## The crypt's darkness and bloom in this world (src/hero/story_glow.gd).
 const StoryGlow = preload("res://src/hero/story_glow.gd")
 const Darkness = preload("res://src/vfx/darkness.gd")
@@ -363,6 +364,7 @@ var story_glow: StoryGlow
 ## Additive layer for attack glows and enemy shots of the hell monsters (under the
 ## darkness, like the crypt's bullets; their bloom is story_glow's).
 var glow: Layer
+var hostile_shots: Layer
 ## The hell monsters (hell_monsters.gd); null in a themed world with its own enemies.
 var monsters: Monsters
 ## Ignaroth's part rig (src/hell/drake_rig_host.gd): body parts, part hits, rig drawing; null without monsters.
@@ -524,6 +526,7 @@ func _ready() -> void:
 	dark.z_index = 30
 	add_child(dark)
 	story_glow = StoryGlow.new(self)
+	hostile_shots = _layer("hostile_shots", dark.z_index + 2)
 	# the element reactions, the same in every story world (src/hell/story_elements.gd)
 	story_elements = StoryElements.new(self)
 	if theme.has("snow"):
@@ -3516,6 +3519,8 @@ func _process(delta: float) -> void:
 		_update_camera(delta)
 	actors.queue_redraw()
 	glow.queue_redraw()
+	hostile_shots.visible = not eshots.is_empty()
+	if hostile_shots.visible: hostile_shots.queue_redraw()
 	# the darkness's lights and the bloom, after the actors (their glowing parts follow the drawn bodies)
 	PerfMarks.begin()
 	story_glow.frame()
@@ -4860,6 +4865,7 @@ func _draw_layer_kind(l: Layer) -> void:
 			if not frost_snow.baked():
 				frost_snow.walls.draw(l, l.area, l.kind.trim_prefix("snow_"))
 		"actors": _draw_actors(l)
+		"hostile_shots": _draw_hostile_shots(l)
 		"glow":
 			if monsters != null:
 				monsters.draw_fx(l)
@@ -4868,6 +4874,21 @@ func _draw_layer_kind(l: Layer) -> void:
 			# the warm light breathing over the lava and fire puddles (src/vfx/pool_paint.gd)
 			if pools != null:
 				pools.draw_glow(l, 1.0, float(state.t))
+
+
+func _draw_hostile_shots(layer: Layer) -> void:
+	if eshots.is_empty(): return
+	var view := _view_rect().grow(48.0)
+	PixelPaint.clip = _floor_open
+	for shot: Dictionary in eshots:
+		var point: Vector2 = shot.p
+		if not view.has_point(point): continue
+		var extent := clampf(float(shot.get("size", 10.0)), 6.0, 22.0)
+		if ShotLooks.is_arrow(shot): extent = 5.0
+		elif bool(shot.get("fist", false)): extent = 22.0
+		elif bool(shot.get("small", false)): extent = 7.0
+		ShotLooks.draw_hostile_cue(layer, point, shot.get("v", Vector2.ZERO), extent, PIXEL_WORLD)
+	PixelPaint.clip = Callable()
 
 
 func _tex(ci: CanvasItem, name: String, pos: Vector2, flip := false, tint := Color.WHITE, scale := 1.0, scale_y := -1.0) -> void:

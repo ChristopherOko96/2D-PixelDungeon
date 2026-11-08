@@ -11,6 +11,7 @@ extends RefCounted
 
 const PATH := "res://assets/data/shot_looks.json"
 const OUTLINE := Color("1c1117")
+const Pixel = preload("res://src/vfx/pixel_paint.gd")
 ## Beats per second of the vanes' flicker (the pixel shots' LASER_FPS).
 const FPS := 12.0
 
@@ -57,6 +58,25 @@ static func tag(s: Dictionary, id: String, attack := "") -> void:
 ## True for a bone arrow.
 static func is_arrow(s: Dictionary) -> bool:
 	return str(s.get("look", "")) == "arrow"
+
+
+## Two high-contrast brackets frame the shot without obscuring its own sprite.
+## Their opening points forward, including on ice and bright lava.
+static func draw_hostile_cue(canvas: CanvasItem, point: Vector2, velocity: Vector2, extent: float, art: float) -> void:
+	var forward := velocity.normalized() if velocity.length_squared() > 1.0 else Vector2.RIGHT
+	var across := forward.orthogonal()
+	var reach := maxf(extent, art * 2.0) + art * 2.0
+	for side: float in [-1.0, 1.0]:
+		var edge := point + across * reach * side
+		var front := Pixel.at(edge + forward * art * 1.2, art)
+		var back := Pixel.at(edge - forward * art, art)
+		var tail := Pixel.at(edge - forward * art * 2.0 - across * art * side, art)
+		for cell: Vector2i in [front, back, tail]:
+			for offset: Vector2i in [Vector2i.UP, Vector2i.LEFT, Vector2i.RIGHT, Vector2i.DOWN]:
+				Pixel.cell(canvas, cell + offset, OUTLINE, art)
+		Pixel.cell(canvas, tail, Color("e87582"), art)
+		Pixel.cell(canvas, back, Color("ff9d9c"), art)
+		Pixel.cell(canvas, front, Color("fff2db"), art)
 
 
 static func _arrow() -> Dictionary:
