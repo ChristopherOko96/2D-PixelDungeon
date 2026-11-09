@@ -47,6 +47,8 @@ var rooms: Dictionary = {}
 var carry: Dictionary = {}
 ## The hero's cell last frame; where he last stood on firm ground per room.
 var last_cell := Vector2i(-99999, -99999)
+## More cells than this between two frames is a teleport, not a step (update).
+const TELEPORT_CELLS := 2
 var firm: Dictionary = {}
 ## The lean into a block or ball: {"e", "t"}.
 var lean: Dictionary = {}
@@ -321,7 +323,10 @@ func update(dt: float) -> void:
 		return
 	var here: Vector2i = g.player_cell()
 	if here != last_cell:
-		if last_cell.x > -99999:
+		# a walk moves a cell or a slant at a time; a jump of more cells is a teleport (a fall back
+		# to the start, a door): nothing was walked, so no ember burns and no ice plate was left
+		var jump := maxi(absi(here.x - last_cell.x), absi(here.y - last_cell.y))
+		if last_cell.x > -99999 and jump <= TELEPORT_CELLS:
 			_stepped(last_cell, here)
 		last_cell = here
 	var room := int(g.state.room)
@@ -791,7 +796,8 @@ func catch_fall() -> bool:
 	_index()
 	g.place_player(centre(back) + Vector2(0, 10))
 	last_cell = back
-	g.toast("Eingebrochen! Zurück an den Rand. Das Eis ist wieder ganz.")
+	# the hero stands at the puzzle's rune again (above), so the note names the rune, not "the edge"
+	g.toast("Eingebrochen! Zurück an der Rune. Das Eis ist wieder ganz.")
 	return true
 
 
@@ -960,11 +966,12 @@ func draw_piece(l: CanvasItem, e: Dictionary, t: float) -> void:
 var _zoom := 1.0
 
 
-## The camera's extra zoom in the hero's room, eased: ghost.zoom (farther out) in a mirror room, else 1.
-func view_zoom(dt: float) -> float:
+## The mirror needs the wider ghost.zoom to show both puzzle fields. Pixel
+## cameras select that scale at the room boundary; other skins ease into it.
+func view_zoom(dt: float, fixed_pixel_zoom := false) -> float:
 	var ghost: Dictionary = cfg.get("ghost", {})
 	var want := float(ghost.get("zoom", 0.72)) if not room_ghost().is_empty() else 1.0
-	_zoom = move_toward(_zoom, want, dt * float(ghost.get("zoom_speed", 0.8)))
+	_zoom = want if fixed_pixel_zoom else move_toward(_zoom, want, dt * float(ghost.get("zoom_speed", 0.8)))
 	return _zoom
 
 

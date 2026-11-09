@@ -37,6 +37,10 @@ static var _pet_slots: Array = []
 static var _pet_canvas: CanvasItem = null
 # The HUD rules (ui_hud_style.json "rules"), read once.
 static var _rules: Dictionary = {}
+## False: no mini-map corner panel (the story worlds; the map lives on M and in
+## the pause). floor_rect then has no height, so the ESC and talent chips move
+## up into the corner. The story game sets it while it runs and restores it.
+static var map_corner := true
 
 
 ## The companion bar right under the hero strip (the "Begleiterleiste", user
@@ -238,6 +242,8 @@ static func _spec(id: String) -> Dictionary:
 ## the resources left, the status lines right-aligned in one line, cut with
 ## "+n" when they do not fit). Returns the strip's rectangle.
 static func hero_panel(canvas: CanvasItem, font: Font, origin: Vector2, data: Dictionary) -> Rect2:
+	if bool(data.get("compact", false)):
+		return hero_compact(canvas, font, origin, data)
 	var pad := HudStyle.size("pad")
 	var bar_w := HudStyle.size("bar_width")
 	var bar_h := HudStyle.size("bar_height")
@@ -366,6 +372,83 @@ static func _status_row(canvas: CanvasItem, font: Font, area: Rect2, status: Arr
 			right -= gap
 	if shown < status.size():
 		HudStyle.text(canvas, font, Vector2(right - (gap if shown > 0 else 0.0), baseline), "+%d" % (status.size() - shown), size, HudStyle.color("text_dim"), 2)
+
+
+## The slim hero strip of the story worlds (hero_panel with compact): one row
+## with the life bar, the life numbers and the level badge, the thin EXP line
+## under it, and one more row only while there is something to say (resources,
+## conditions, blessings: the resources fade after a quiet while). No name: the
+## character window (C) carries it. Same `data` as hero_panel; bar_width
+## (ui_hud_style.json compact_bar_width) narrows the bar.
+static func hero_compact(canvas: CanvasItem, font: Font, origin: Vector2, data: Dictionary) -> Rect2:
+	var pad := HudStyle.size("pad")
+	var bar_w := HudStyle.size("compact_bar_width") if HudStyle.size("compact_bar_width") > 0.0 else HudStyle.size("bar_width")
+	var bar_h := HudStyle.size("bar_height")
+	var small := int(HudStyle.size("font_small"))
+	var body := int(HudStyle.size("font_body"))
+	var hp := int(data.get("hp", 0))
+	var max_hp := int(data.get("max_hp", 0))
+	var hp_f := clampf(float(data.get("hp_f", hp)), 0.0, float(maxi(max_hp, 0)))
+	var level := int(data.get("level", -1))
+	var experience := float(data.get("exp", -1.0))
+	var resource_alpha := clampf(float(data.get("resource_alpha", 1.0)), 0.0, 1.0)
+	var resources: Array = data.get("resources", []) if resource_alpha > 0.0 else []
+	var status: Array = data.get("status", [])
+	var unit := str(data.get("hp_unit", ""))
+	var hp_text := ("%d / %d" % [life_shown(hp, hp_f), max_hp] + (" " + unit if unit != "" else "")) if hp > 0 else "GEFALLEN"
+	var level_label := str(data.get("level_label", "LV"))
+	var badge := Vector2(18.0 + HudStyle.width(font, level_label, small) + HudStyle.width(font, str(level), body), HudStyle.size("badge_height")) if level >= 0 else Vector2.ZERO
+	var points := int(data.get("points", 0))
+	var points_w := (HudStyle.width(font, "+%d" % points, body) + 10.0) if points > 0 and level >= 0 else 0.0
+	var row_h := maxf(bar_h, badge.y)
+	# the numbers stand in a fixed width (the widest they get), so the badge never jumps while the life drains
+	var hp_w := maxf(HudStyle.width(font, hp_text, small), HudStyle.width(font, "%d / %d" % [max_hp, max_hp] + (" " + unit if unit != "" else ""), small))
+	var inner_w := bar_w + 10.0 + hp_w + (10.0 + badge.x + points_w if level >= 0 else 0.0)
+	var extra := not resources.is_empty() or not status.is_empty()
+	var height := pad + row_h + (8.0 if experience >= 0.0 else 0.0) + (30.0 if extra else 0.0) + pad
+	var rect := Rect2(origin, Vector2(inner_w + pad * 2.0, height))
+	HudStyle.panel(canvas, rect)
+	var x := rect.position.x + pad
+	var y := rect.position.y + pad
+	var clock := float(data.get("clock", 0.0))
+	var low := bool(data.get("low", false))
+	life_bar(canvas, Rect2(Vector2(x, y + floorf((row_h - bar_h) * 0.5)), Vector2(bar_w, bar_h)), hp_f, max_hp, str(data.get("key", data.get("title", ""))), clock, low)
+	HudStyle.text(canvas, font, Vector2(x + bar_w + 10.0, y + floorf(row_h * 0.5) + floorf(small * 0.5) - 1.0), hp_text, small, HudStyle.color("text") if hp > 0 else HudStyle.color("danger"))
+	if level >= 0:
+		var b := Rect2(Vector2(x + bar_w + 10.0 + hp_w + 10.0, y + floorf((row_h - badge.y) * 0.5)), badge)
+		canvas.draw_rect(b, HudStyle.color("slot"))
+		canvas.draw_rect(b, HudStyle.color("panel_edge"), false, 1.0)
+		HudStyle.text(canvas, font, Vector2(b.position.x + 6, b.get_center().y + floorf(small * 0.5) - 1.0), level_label, small, HudStyle.color("text_dim"))
+		HudStyle.text(canvas, font, Vector2(b.end.x - 6, b.get_center().y + 7), str(level), body, HudStyle.color("accent"), 2)
+		if points > 0:
+			var glow := 0.65 + 0.35 * sin(clock * 5.0)
+			HudStyle.text(canvas, font, Vector2(b.end.x + 8, b.get_center().y + 7), "+%d" % points, body, Color(HudStyle.color("accent"), glow))
+	y += row_h
+	if experience >= 0.0:
+		HudStyle.bar(canvas, Rect2(x, y + 4, inner_w, 3), experience, HudStyle.color("exp"))
+		y += 8.0
+	if not extra:
+		return rect
+	var rx := x
+	for r: Dictionary in resources:
+		var icon: Texture2D = r.get("icon", null)
+		var dim := bool(r.get("dim", false))
+		if icon != null:
+			var s := icon.get_size()
+			var draw_size := (s * (20.0 / maxf(s.y, 1.0))).round()
+			var tint: Color = r.get("tint", Color.WHITE)
+			if dim: tint.a *= 0.25
+			tint.a *= resource_alpha
+			canvas.draw_texture_rect(icon, Rect2(Vector2(rx, y + 7 + (20.0 - draw_size.y) * 0.5), draw_size), false, tint)
+			rx += draw_size.x + 4.0
+		var label := str(r.get("text", ""))
+		if not label.is_empty():
+			var ink: Color = HudStyle.color("text_muted") if dim else r.get("ink", HudStyle.color("text"))
+			HudStyle.text(canvas, font, Vector2(rx, y + 24), label, body, Color(ink, ink.a * resource_alpha))
+			rx += HudStyle.width(font, label, body)
+		rx += 14.0
+	_status_row(canvas, font, Rect2(rx, y, x + inner_w - rx, 30.0), status, small)
+	return rect
 
 
 ## A blood-filled life bar in `rect` (its ink outline included): `hp_f` of
@@ -523,6 +606,8 @@ static func map_area(screen: Vector2) -> Rect2:
 static func floor_rect(screen: Vector2) -> Rect2:
 	var margin := HudStyle.size("margin")
 	var width := HudStyle.size("map_panel_width")
+	if not map_corner:
+		return Rect2(screen.x - margin - width, margin - 6.0, width, 0.0)
 	return Rect2(screen.x - margin - width, margin, width, HudStyle.size("map_panel_height"))
 
 

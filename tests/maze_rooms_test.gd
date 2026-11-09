@@ -103,13 +103,18 @@ func _test_dark_only_in_the_maze() -> void:
 	var zoom_out: float = game.camera.zoom.x
 	# Assert
 	check(not game.in_maze() and game.maze_dark < 0.05, "the walkway stays lit (%.2f)" % game.maze_dark)
+	check(game.maze_cover_alpha() > 0.9, "from the walkway the maze's corridors stay dark, never read through (%.2f)" % game.maze_cover_alpha())
 	# Act: into the maze
 	_place(_maze_cell(room, 2))
 	await _frames(60)
 	# Assert
 	check(game.in_maze(), "a corridor of the maze is the maze")
 	check(game.maze_dark > 0.9, "it turns dark inside (%.2f)" % game.maze_dark)
-	check(game.camera.zoom.x > zoom_out * 1.05, "the camera comes nearer (%.2f > %.2f)" % [game.camera.zoom.x, zoom_out])
+	check(game.maze_cover_alpha() < 0.1, "inside, the hero's own sight takes over from the outside cover (%.2f)" % game.maze_cover_alpha())
+	if bool(game.theme.get("pixel", true)) and bool(game.cam_rig.cfg.get("pixel", {}).get("fixed_zoom", true)):
+		check(is_equal_approx(game.camera.zoom.x, zoom_out), "pixel maze keeps the floor's scale while darkness closes in")
+	else:
+		check(game.camera.zoom.x > zoom_out * 1.05, "the non-pixel camera comes nearer (%.2f > %.2f)" % [game.camera.zoom.x, zoom_out])
 
 
 func _test_released_dead_stand_in_the_corridor() -> void:

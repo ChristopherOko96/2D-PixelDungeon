@@ -570,6 +570,15 @@ func _pit_chest(e: Dictionary, tier: int) -> void:
 	g.toast("Die Grube gibt ihren Schatz frei: Stufe %d." % tier)
 
 
+## The hero fell out of the fight (hell_game _fall_into_pit clears every fight): a running pit
+## wave ends unfought, so it does not count as survived and the Schatz keeps its tier.
+func abort_waves() -> void:
+	for e: Dictionary in pieces:
+		if str(e.type) == "hell_pit_altar" and bool(e.get("fighting", false)):
+			e.fighting = false
+			g.toast("Die Welle verebbt ungeschlagen. E am Altar ruft sie erneut.")
+
+
 ## The pit's wave ends when its room is clear again.
 func _watch_pits() -> void:
 	for e: Dictionary in pieces:

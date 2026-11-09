@@ -143,12 +143,15 @@ static func banner(g: Node, h: Control, size: Vector2, y: float) -> void:
 
 # ---------- status ----------
 
-## The status sheet (C / Tab): who the hero is and what the numbers are now.
-## The card list only in a run that hands out level-up cards.
-static func status(g: Node, h: Control, size: Vector2) -> void:
+## The character sheet for the one character & inventory window (C, Tab or I;
+## src/ui/inventory_panel.gd set_character_view): who the hero is and what the
+## numbers are now. Short values only, so they stand right-aligned in a narrow
+## column; the cards only in a run that hands out level-up cards.
+static func status_sheet(g: Node) -> Dictionary:
 	var rel: Dictionary = RelicKit.wielded(g)
 	var rate: float = float(g.state.rate) * CardKit.rate_mult(g)
 	var atk: Dictionary = rel.get("ball", rel.get("attack", {}))
+	# the damage a hit deals now: base, the held relic, cards, talents and the worn items (CardKit.damage_mult)
 	var dmg: float = (float(atk.damage) if not atk.is_empty() else float(g.state.dmg)) * CardKit.damage_mult(g)
 	if not atk.is_empty():
 		rate = float(atk.cooldown) * CardKit.rate_mult(g)
@@ -156,38 +159,20 @@ static func status(g: Node, h: Control, size: Vector2) -> void:
 	# the life as the bar shows it: hp minus what a poison or burn has already taken (hp_f)
 	var hp_f := clampf(float(g.state.get("hp_f", g.state.hp)), 0.0, float(g.state.max_hp))
 	var rows := [
-		["Klasse", str(g.hero.get("name", "-"))],
-		["Waffe", str(rel.get("name", g.weapon.get("name", "-")))],
-		["Laufstufe", "%d  (%d / %d EP)" % [int(g.state.level), int(g.state.exp), HeroKit.need(cfg, int(g.state.level))]],
 		["LP", "%d / %d" % [HudKit.life_shown(int(g.state.hp), hp_f), int(g.state.max_hp)]],
-		["Schaden", "%.1f je Treffer" % dmg],
-		["Angriffe", "%.1f pro Sekunde" % (1.0 / maxf(0.05, rate))],
-		["Lauftempo", "%d" % int(float(g.hero.get("speed", 300)) * CardKit.speed_mult(g) * float(g.state.speed_mul))],
-		["Gold", str(g.gold_count())], ["Runensteine", str(g.rune_count())]]
-	var cards := CardKit.offers_cards(g)
-	var row_h := 28.0
-	var r := Rect2(40, 200, 440, 70.0 + rows.size() * row_h + (40.0 + 6 * 22.0 if cards else 0.0) + 34.0)
-	frame(h, r)
-	g._text(h, "STATUS", Vector2(r.position.x + 20, r.position.y + 34), 20, HudStyle.color("accent"))
-	var y := r.position.y + 70.0
-	for row: Array in rows:
-		g._text(h, str(row[0]), Vector2(r.position.x + 20, y), 16, Color(HudStyle.color("text_dim"), 0.9))
-		g._text(h, HudKit.ellipsis(FONT, str(row[1]), 16, r.size.x - 200.0), Vector2(r.position.x + 180, y), 16, HudStyle.color("text"))
-		y += row_h
-	if cards:
-		g._text(h, "KARTEN", Vector2(r.position.x + 20, y + 10), 16, HudStyle.color("accent"))
-		y += 40.0
+		["Treffer", "%.1f" % dmg],
+		["Angriffe", "%.1f/s" % (1.0 / maxf(0.05, rate))],
+		["Tempo", "%d" % int(float(g.hero.get("speed", 300)) * CardKit.speed_mult(g) * float(g.state.speed_mul))],
+		["Gold", str(g.gold_count())], ["Runen", str(g.rune_count())]]
+	var cards: Array = []
+	if CardKit.offers_cards(g):
 		var ups: Dictionary = g.state.get("upgrades", {})
-		var names: Array = []
 		for c: Dictionary in CardKit._all(g):
 			if ups.has(str(c.id)):
-				names.append("%s %d/%d" % [c.name, int(ups[c.id]), int(c.max)])
-		if names.is_empty():
-			names = ["noch keine"]
-		for n: String in names.slice(0, 6):
-			g._text(h, n, Vector2(r.position.x + 20, y), 16, HudStyle.color("text"))
-			y += 22.0
-	g._text(h, "C / Tab / Esc schließt", Vector2(r.position.x + 20, r.end.y - 14), 16, Color(HudStyle.color("text"), 0.5))
+				cards.append("%s %d/%d" % [c.name, int(ups[c.id]), int(c.max)])
+	return {"name": str(g.hero.get("name", "-")).to_upper(),
+		"level": "Laufstufe %d · %d/%d EP" % [int(g.state.level), int(g.state.exp), HeroKit.need(cfg, int(g.state.level))],
+		"weapon": str(rel.get("name", "")), "rows": rows, "cards": cards, "has_cards": CardKit.offers_cards(g)}
 
 
 # ---------- level-up cards ----------

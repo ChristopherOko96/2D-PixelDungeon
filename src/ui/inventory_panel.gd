@@ -1,6 +1,8 @@
 extends Control
-## The hero's inventory (key I or Tab; the game keeps running), the same in
-## every world and in the neutral HUD look (src/ui/hud_style.gd): the four
+## The hero's character & inventory window (keys C, Tab or I: one window, no
+## stack; the story worlds pause while it is open), the same in every world and
+## in the neutral HUD look (src/ui/hud_style.gd). With a character view
+## (set_character_view) a left column shows the hero's numbers; then the four
 ## equipment slots (weapon, armour, ring, amulet), the bag's slots with rarity
 ## frames, the chosen item's text and the actions that fit it: equip or take
 ## off, identify with a crystal, break a curse with a stone, raise a stage
@@ -24,6 +26,8 @@ signal noted(text: String)
 ## A right-click on a potion: that bag slot becomes the quick potion (keys H / G,
 ## src/hero/story_items.gd set_quick).
 signal quick_chosen(slot: int)
+## The window closed (any way: a key, Esc, a click outside, a throw).
+signal closed
 
 const PixelStyle = preload("res://src/pixel_style.gd")
 const HudStyle = preload("res://src/ui/hud_style.gd")
@@ -38,10 +42,14 @@ const SLOT := 60.0
 const GAP := 6.0
 ## The equipment column: wide enough for its 16 px labels under the slots; the bag sits right of it.
 const EQUIP_COLUMN := 112.0
+## The character column left of the inventory, while a character view is set.
+const CHARACTER_W := 300.0
 const BAG_X := 16.0 + EQUIP_COLUMN + 12.0
 ## Ends above the resource label over the skill bar (y 637), never covering it.
 ## Where the window sits unless fit_below() moves it under the HUD's left column.
 const PANEL := Rect2(280, 64, 720, 552)
+## The window with the character column: centred, the inventory part as wide as PANEL.
+const PANEL_WIDE := Rect2(130, 64, 720 + CHARACTER_W, 552)
 ## Height the equipment column needs besides its three steps between slots:
 ## its top row (72), the last slot, its label under it, the footer line and a
 ## few px between the label and the footer.
@@ -57,6 +65,9 @@ var panel: Rect2 = PANEL
 ## Px from one equipment slot's top to the next (the slot and its label under it).
 var equip_step := SLOT + 30.0
 var _view: Dictionary = {}
+## The character column (src/hell/frost_hud.gd status_sheet): name, level, rows
+## [label, value], cards; empty = no column (the window is PANEL wide).
+var _character: Dictionary = {}
 var _textures: Dictionary = {}
 var _buttons: Dictionary = {}
 var _toggle: Button
@@ -86,6 +97,7 @@ func _ready() -> void:
 	_font = PixelStyle.create_font()
 	# The toggle sits in the bottom-right corner, as wide as its longest text.
 	_toggle = _button("INVENTAR · I  12/12", Rect2(0, 676, 10, 28), func(): set_open(not open))
+	_toggle.focus_mode = Control.FOCUS_NONE
 	_toggle.add_theme_font_size_override("font_size", 16)
 	# the HUD's neutral look, like the menu button (src/ui/hud_style.gd)
 	HudStyle.style_button(_toggle)
@@ -108,10 +120,11 @@ func _ready() -> void:
 ## slot every inventory_equip_step_min px at least); the actions line up right
 ## of it. A `top` at or above PANEL's top keeps PANEL.
 func fit_below(top: float) -> void:
-	var next := PANEL
-	if top > PANEL.position.y:
-		var bottom := maxf(PANEL.end.y, HudStyle.size("inventory_bottom"))
-		next = Rect2(PANEL.position.x, top, PANEL.size.x, maxf(0.0, bottom - top))
+	var base := _base_panel()
+	var next := base
+	if top > base.position.y:
+		var bottom := maxf(base.end.y, HudStyle.size("inventory_bottom"))
+		next = Rect2(base.position.x, top, base.size.x, maxf(0.0, bottom - top))
 	var step := clampf(floorf((next.size.y - EQUIP_ROOM) / 3.0), HudStyle.size("inventory_equip_step_min"), SLOT + 30.0)
 	if next == panel and is_equal_approx(step, equip_step): return
 	panel = next
@@ -120,23 +133,46 @@ func fit_below(top: float) -> void:
 	queue_redraw()
 
 
+## PANEL, or PANEL_WIDE while the character column shows.
+func _base_panel() -> Rect2:
+	return PANEL_WIDE if not _character.is_empty() else PANEL
+
+
+## The hero's numbers for the character column (frost_hud.gd status_sheet); {} drops the column.
+func set_character_view(sheet: Dictionary) -> void:
+	var had := not _character.is_empty()
+	_character = sheet
+	if had != (not sheet.is_empty()):
+		panel = Rect2(_base_panel().position.x, panel.position.y, _base_panel().size.x, panel.size.y)
+		_refresh_buttons()
+	if open: queue_redraw()
+
+
+## Where the inventory part starts: right of the character column when it shows.
+func _inner() -> Vector2:
+	return panel.position + Vector2(CHARACTER_W if not _character.is_empty() else 0.0, 0.0)
+
+
 func _button(text: String, area: Rect2, callback: Callable) -> Button:
 	var button := Button.new()
 	button.text = text
 	button.position = area.position
 	button.size = area.size
-	button.focus_mode = Control.FOCUS_NONE
+	# keyboard and pad reach the actions too (Enter on the focused one); the bag chip only by mouse
+	button.focus_mode = Control.FOCUS_ALL
 	button.pressed.connect(callback)
 	add_child(button)
 	return button
 
 
 func set_open(value: bool) -> void:
+	var was := open
 	open = value
 	mouse_filter = Control.MOUSE_FILTER_STOP if open else Control.MOUSE_FILTER_IGNORE
 	_refresh_buttons()
 	_update_chip(0.0)
 	queue_redraw()
+	if was and not open: closed.emit()
 
 
 ## The local hero's part of the snapshot.
@@ -290,13 +326,13 @@ func _refresh_buttons() -> void:
 		button.visible = open and not button.disabled
 		if not button.visible: continue
 		button.size = Vector2(maxf(120.0, button.get_combined_minimum_size().x + 16.0), 36.0)
-		if used > 0.0 and used + button.size.x > panel.size.x - BAG_X - 16.0:
+		if used > 0.0 and used + button.size.x > panel.end.x - _inner().x - BAG_X - 16.0:
 			rows.append([])
 			used = 0.0
 		(rows[rows.size() - 1] as Array).append(button)
 		used += button.size.x + 8.0
 	for index in range(rows.size()):
-		var x := panel.position.x + BAG_X
+		var x := _inner().x + BAG_X
 		for button: Button in rows[index]:
 			button.position = Vector2(x, panel.end.y - 92.0 - (rows.size() - 1 - index) * 42.0)
 			x += button.size.x + 8.0
@@ -316,11 +352,11 @@ func _act(action: String) -> void:
 # --- Layout and input ----------------------------------------------------------------
 
 func _equip_rect(index: int) -> Rect2:
-	return Rect2(panel.position + Vector2(16.0 + (EQUIP_COLUMN - SLOT) * 0.5, 72 + index * equip_step), Vector2(SLOT, SLOT))
+	return Rect2(_inner() + Vector2(16.0 + (EQUIP_COLUMN - SLOT) * 0.5, 72 + index * equip_step), Vector2(SLOT, SLOT))
 
 
 func _slot_rect(index: int) -> Rect2:
-	var origin := panel.position + Vector2(BAG_X, 72)
+	var origin := _inner() + Vector2(BAG_X, 72)
 	return Rect2(origin + Vector2((index % 6) * (SLOT + GAP), (index / 6) * (SLOT + GAP)), Vector2(SLOT, SLOT))
 
 
@@ -363,17 +399,22 @@ func _draw() -> void:
 	if not open:
 		if _toast_time > 0.0: _draw_toast()
 		return
+	# the world behind steps back: one window, nothing of the HUD reads through it
+	if not _character.is_empty():
+		draw_rect(Rect2(-size, size * 3.0), Color(HudStyle.color("outline"), 0.55))
 	# the pause menu's panel look (src/ui/crypt_ui.gd)
 	draw_rect(panel, Color(HudStyle.color("outline"), 0.6))
 	draw_style_box(CryptUI.box("panel"), panel)
-	_text(panel.position + Vector2(18, 38), "INVENTAR", 24, HudStyle.color("text"))
-	var title_width := _font.get_string_size("INVENTAR", HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x
-	# the window's own messages take the hint's place in the header while they show
-	if _toast_time <= 0.0:
-		_text(panel.position + Vector2(18.0 + title_width + 24.0, 36), "Doppelklick: anlegen / benutzen", 16, HudStyle.color("text_dim"))
+	if not _character.is_empty(): _draw_character()
+	var inner := _inner()
+	_text(inner + Vector2(18, 38), "INVENTAR", 24, HudStyle.color("text"))
 	if float(_view.get("clone", 0.0)) > 0.0 and _toast_time <= 0.0:
 		_text(Vector2(panel.end.x - 18 - _font.get_string_size("KLON %d s" % int(_view.clone), HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x, panel.position.y + 36), "KLON %d s" % int(_view.clone), 16, HudStyle.color("accent"))
-	_text(Vector2(panel.position.x + 18, panel.end.y - 20), "I / Esc schließt", 16, Color(HudStyle.color("text_dim"), 0.9))
+	# one footer line: how to close left, the mouse hint right; both in the same small dim type
+	var close_hint := "C / Tab / I / Esc schließt" if not _character.is_empty() else "I / Esc schließt"
+	_text(Vector2(panel.position.x + 18, panel.end.y - 20), close_hint, 16, HudStyle.color("text_dim"))
+	var mouse_hint := "Doppelklick: anlegen / benutzen"
+	_text(Vector2(panel.end.x - 18 - _font.get_string_size(mouse_hint, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x, panel.end.y - 20), mouse_hint, 16, HudStyle.color("text_dim"))
 	var keys := EQUIP.keys()
 	for index in range(keys.size()):
 		var rect := _equip_rect(index)
@@ -413,8 +454,49 @@ func _draw_slot(rect: Rect2, item: Dictionary, chosen: bool) -> void:
 	if bool(item.get("blessed", false)): draw_circle(rect.position + Vector2(rect.size.x - 9, 9), 4.0, HudStyle.color("accent"))
 
 
+## The character column: the hero's name and level, the numbers right-aligned
+## under each other, then the run's cards as far as there is room ("+n" for the rest).
+func _draw_character() -> void:
+	var x := panel.position.x + 18.0
+	var right := panel.position.x + CHARACTER_W - 14.0
+	var room := right - x
+	_text(Vector2(x, panel.position.y + 38), "CHARAKTER", 24, HudStyle.color("text"))
+	_text(Vector2(x, panel.position.y + 86), HudKit.ellipsis(_font, str(_character.get("name", "")), 18, room), 18, HudStyle.color("accent"))
+	_text(Vector2(x, panel.position.y + 110), HudKit.ellipsis(_font, str(_character.get("level", "")), 16, room), 16, HudStyle.color("text_dim"))
+	var y := panel.position.y + 150.0
+	for row: Array in _character.get("rows", []):
+		var value := str(row[1])
+		var value_w := _font.get_string_size(value, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
+		_text(Vector2(x, y), HudKit.ellipsis(_font, str(row[0]), 16, room - value_w - 12.0), 16, HudStyle.color("text_dim"))
+		_text(Vector2(right - value_w, y), value, 16, HudStyle.color("text"))
+		y += 26.0
+	if bool(_character.get("has_cards", false)):
+		y += 14.0
+		_text(Vector2(x, y), "KARTEN", 16, HudStyle.color("accent"))
+		y += 26.0
+		var cards: Array = _character.get("cards", [])
+		if cards.is_empty(): cards = ["noch keine"]
+		var limit := panel.end.y - 48.0
+		for index in range(cards.size()):
+			var last := y + 26.0 > limit and index < cards.size() - 1
+			var line := ("+%d weitere" % (cards.size() - index)) if last else str(cards[index])
+			_text(Vector2(x, y), HudKit.ellipsis(_font, line, 16, room), 16, HudStyle.color("text"))
+			y += 26.0
+			if last or y > limit: break
+	# a thin line between the column and the inventory
+	draw_rect(Rect2(panel.position.x + CHARACTER_W - 1.0, panel.position.y + 16.0, 1.0, panel.size.y - 52.0), Color(HudStyle.color("panel_edge"), 0.8))
+
+
+## Top of the action rows (or the footer): the details text ends above it.
+func _details_end() -> float:
+	var top := panel.end.y - 40.0
+	for button: Button in _buttons.values():
+		if button.visible: top = minf(top, button.position.y)
+	return top - 6.0
+
+
 func _draw_details(item: Dictionary) -> void:
-	var at := panel.position + Vector2(BAG_X, 72 + 2.0 * (SLOT + GAP) + 34.0)
+	var at := _inner() + Vector2(BAG_X, 72 + 2.0 * (SLOT + GAP) + 34.0)
 	if item.is_empty():
 		_text(at, "Leerer Platz.", 16, HudStyle.color("text_dim"))
 		return
@@ -422,20 +504,25 @@ func _draw_details(item: Dictionary) -> void:
 	if not str(item.get("rarity_label", "")).is_empty(): _text(at + Vector2(0, 22), str(item.rarity_label), 16, Color(str(item.get("color", "d3bfa9"))))
 	var y := 48.0
 	var room := panel.end.x - at.x - 18.0
+	# the text never runs into the action buttons: what does not fit ends in "..."
+	var limit := _details_end() - at.y
+	var lines: Array = []
 	for line: String in item.get("lines", []):
 		var colour := HudStyle.color("danger") if line.begins_with("FLUCH") else HudStyle.color("accent") if line.begins_with("SEGEN") or line.begins_with("STUFE") else HudStyle.color("text")
 		# the element line in the element's own light
 		if line.begins_with("ELEMENT"): colour = ItemArt.glow(str(item.get("element", "")), colour)
 		# long lines wrap inside the panel
-		for part: String in _wrap(line, 16, room):
-			_text(at + Vector2(0, y), part, 16, colour)
-			y += 22.0
+		for part: String in _wrap(line, 16, room): lines.append([part, colour])
 	# a potion says how it becomes the quick potion, or that it is one
 	if str(item.get("type", "")) == "potion" and not _is_equip(selected):
 		var hint := "SCHNELLTRANK · H trinken · G werfen" if selected == quick else "Rechtsklick: Schnelltrank (H trinken · G werfen)"
-		for part: String in _wrap(hint, 16, room):
-			_text(at + Vector2(0, y), part, 16, HudStyle.color("accent") if selected == quick else HudStyle.color("text_dim"))
-			y += 22.0
+		for part: String in _wrap(hint, 16, room): lines.append([part, HudStyle.color("accent") if selected == quick else HudStyle.color("text_dim")])
+	for index in range(lines.size()):
+		if y + 22.0 > limit and index < lines.size() - 1:
+			_text(at + Vector2(0, y), "...", 16, HudStyle.color("text_dim"))
+			break
+		_text(at + Vector2(0, y), str(lines[index][0]), 16, lines[index][1])
+		y += 22.0
 
 
 ## The quick potion's mark: a small "H" plate in the slot's lower left corner.
@@ -470,7 +557,7 @@ func _draw_toast() -> void:
 	# In the open window it sits in the header beside the title (never over the HUD), in
 	# up to two lines; a longer note sits centred above the panel, as wide as it needs.
 	var title_width := _font.get_string_size("INVENTAR", HORIZONTAL_ALIGNMENT_LEFT, -1, 24).x
-	var at := panel.position + Vector2(18.0 + title_width + 16.0, 14.0)
+	var at := _inner() + Vector2(18.0 + title_width + 16.0, 14.0)
 	var room := panel.end.x - 18.0 - (at.x + 14.0)
 	var lines: Array[String] = [text]
 	if width > room:

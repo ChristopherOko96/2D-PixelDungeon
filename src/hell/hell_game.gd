@@ -414,6 +414,8 @@ class Hud extends Control:
 
 
 func _ready() -> void:
+	# the story worlds keep the corner free: the map is on M and in the pause (ui_hud_style.json story_minimap)
+	HudKit.map_corner = HudKit.rule("story_minimap", 0.0) > 0.0
 	if not _configure_custom_story():
 		return
 	# the Testraum points the profile and soul-crystal files at its own before they load
@@ -578,8 +580,10 @@ func _ready() -> void:
 	pause_menu.display_mode_requested.connect(_toggle_fullscreen)
 	# the pause's Talente / Inventar pages open the run's own windows; its options reach the camera
 	pause_menu.talents_requested.connect(open_run_talents)
+	# from the pause the character window comes back to the pause when it closes, and the run stays paused
 	pause_menu.inventory_requested.connect(func() -> void:
-		if inventory_panel != null and heroic(): inventory_panel.set_open(true))
+		if inventory_panel != null and heroic():
+			_open_character(true))
 	pause_menu.option_changed.connect(func(key: String, value: Variant) -> void: cam_rig.set_option(key, value))
 	if pause_menu.options_panel != null: pause_menu.options_panel.setup(settings_path)
 	pause_menu.graphics_mode_requested.connect(func() -> void:
@@ -810,7 +814,14 @@ func _start_items(ui: CanvasLayer) -> void:
 	inventory_panel = InventoryPanel.new()
 	ui.add_child(inventory_panel)
 	inventory_panel.acted.connect(func(action: String, value: int) -> void: story_items.act(action, value))
-	inventory_panel.throw_armed.connect(func(slot: int) -> void: throw_slot = slot)
+	inventory_panel.throw_armed.connect(func(slot: int) -> void:
+		# a throw goes to the world, not back to the pause
+		_character_from_pause = false
+		throw_slot = slot)
+	inventory_panel.closed.connect(func() -> void:
+		if _character_from_pause:
+			_character_from_pause = false
+			open_pause())
 	inventory_panel.quick_chosen.connect(func(slot: int) -> void: story_items.set_quick(slot))
 	# the bag's notes join the one message channel; its chip shows only when it matters
 	inventory_panel.noted.connect(_toast)
@@ -1721,6 +1732,10 @@ func _run_points_left() -> int:
 ## K (or the pause's Talente) opens the talent window; B opens it on the LAUF tab.
 func open_run_talents(on_run_page := false) -> void:
 	if sound != null: sound.at("talent_open", Vector2.INF)
+	# one window at a time: the talents replace the character window, never stack on it
+	if inventory_panel != null and inventory_panel.open:
+		_character_from_pause = false
+		inventory_panel.set_open(false)
 	if run_talents == null:
 		run_talents = TalentScreenScript.new()
 		pause_menu.get_parent().add_child(run_talents)
@@ -1806,8 +1821,37 @@ func _sync_overlays() -> void:
 		result_main.grab_focus()
 
 
-## True while a window covers the HUD: pause, talent menu (K), inventory (I),
-## run talents (B), status (C) or the big map (M).
+## True when the character & inventory window was opened from the pause menu
+## (it returns there when it closes).
+var _character_from_pause := false
+
+
+## Opens the one character & inventory window (C, Tab, I or the pause's
+## Inventar page): the hero's numbers left, the bag right. Nothing else stays
+## open under it; the solo run pauses while it shows (_simulation_paused).
+func _open_character(from_pause := false) -> void:
+	if inventory_panel == null:
+		return
+	state.status = false
+	state.map = false
+	state.tree_open = false
+	_character_from_pause = from_pause
+	inventory_panel.set_character_view(FrostHud.status_sheet(self))
+	inventory_panel.set_open(true)
+
+
+## C, Tab and I: the same window opens, and the same keys close it.
+func _toggle_character() -> void:
+	if inventory_panel == null or not heroic():
+		return
+	if inventory_panel.open:
+		inventory_panel.set_open(false)
+	else:
+		_open_character()
+
+
+## True while a window covers the HUD: pause, talent menu (K), the character &
+## inventory window (C, Tab, I), run talents (B) or the big map (M).
 func _window_open() -> bool:
 	return (pause_menu != null and pause_menu.visible) or (run_talents != null and run_talents.visible) \
 		or (inventory_panel != null and inventory_panel.open) or bool(state.get("tree_open", false)) \
@@ -1918,6 +1962,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if not (event is InputEventKey) or event.echo:
 		return
+	# the character & inventory window holds the paused run: only its own keys and the
+	# run talents (B, which replace it) pass; no skill or potion fires from behind it
+	if inventory_panel != null and inventory_panel.open and event.pressed \
+			and event.keycode not in [KEY_C, KEY_TAB, KEY_I, KEY_ESCAPE, KEY_B]:
+		return
 	if not stairs_pick.is_empty() and event.pressed:
 		# the floor choice of the hidden stairs takes the number keys; Esc or E closes it
 		if event.keycode >= KEY_1 and event.keycode <= KEY_9:
@@ -1985,11 +2034,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		KEY_5:
 			if heroic() and FrostCombat.can_cast(self, "5") and not SubKit.master(self):
 				as_source("hero", func() -> void: HeroKit.master_press(self))
-		KEY_C, KEY_TAB:
-			state.status = not state.get("status", false)
-		KEY_I:
-			if inventory_panel != null and heroic():
-				inventory_panel.set_open(not inventory_panel.open)
+		KEY_C, KEY_TAB, KEY_I:
+			_toggle_character()
 		KEY_B:
 			# the run talent tree (docs/LAUF-DESIGN.de.md); the world waits while it is open (_process)
 			if heroic():
@@ -3128,6 +3174,7 @@ func _gold_lost() -> void:
 ## Leaving the world (the menu, a closed window): the profile's last seconds (EXP, rune stones,
 ## talents) are saved, not lost with the scene.
 func _exit_tree() -> void:
+	HudKit.map_corner = true
 	presentation.reset()
 	if talents != null:
 		talents.save()
@@ -3349,6 +3396,9 @@ func _fall_into_pit() -> void:
 	if str(W.rooms[state.room].get("type", "")) == "jump" and launch_pads.back_on_pad():
 		_toast("Falscher Sprung.")
 		return
+	# a pit wave the fall broke off is not survived (src/world_kit/hell_puzzles.gd abort_waves)
+	if hell_puzzles != null:
+		hell_puzzles.abort_waves()
 	for r: Dictionary in W.rooms:
 		if r.fight:
 			r.fight = false
@@ -3514,6 +3564,9 @@ func _process(delta: float) -> void:
 	if inventory_panel != null and story_items != null:
 		inventory_panel.set_view(story_items.view())
 		inventory_panel.quick = story_items.quick_slot()
+		# the character column follows what the bag changed (equipping alters the numbers)
+		if inventory_panel.open:
+			inventory_panel.set_character_view(FrostHud.status_sheet(self))
 	if not _simulation_paused() and not _simulation_frozen() and not bool(state.get("won", false)) \
 			and float(state.get("dead", 0.0)) <= 0.0 and (state.get("over", {}) as Dictionary).is_empty():
 		_update_camera(delta)
@@ -3530,7 +3583,10 @@ func _process(delta: float) -> void:
 
 ## Menus that intentionally suspend gameplay also suspend the clock (no debt on resume).
 func _simulation_paused() -> bool:
+	# the character & inventory window pauses too, like the talents: reading and equipping is
+	# management, not a fight (docs/MENUE-UX-REVIEW.de.md); the story worlds are solo
 	return (pause_menu != null and pause_menu.visible) or (run_talents != null and run_talents.visible) \
+		or (inventory_panel != null and inventory_panel.open) \
 		or bool(state.get("tree_open", false)) or CardKit.seal_open(self) or loading_screen != null or _leaving
 
 
@@ -4770,10 +4826,15 @@ func _update_camera(dt: float) -> void:
 		cam_rig.reset(Vector2(player.x, player.y - 40))
 	presentation.teleport_distance = float(cam_rig.cfg.get("presentation", {}).get("teleport_distance", 192.0))
 	var hero := render_hero_position() - Vector2(0, 40)
-	var view := Vector2(float(balance.view.width), float(balance.view.width) * 9.0 / 16.0)
+	var viewport := get_viewport()
+	var base_zoom := float(balance.view.base_width) / float(balance.view.width)
+	var fixed_pixel_zoom := bool(theme.get("pixel", true)) and bool(cam_rig.cfg.get("pixel", {}).get("fixed_zoom", true))
+	# canvas_items/expand can expose more world on wide or tall windows. Use
+	# that actual view for framing, clamping and culling instead of assuming 16:9.
+	var view := viewport.get_visible_rect().size / base_zoom
 	# a mirror room of the Frostgruft (src/world_kit/frost_puzzles.gd): the camera zooms out and looks
 	# between hero and ghost, so both and both their fields stay on screen
-	view_far = frost_puzzles.view_zoom(dt) if frost_puzzles != null else 1.0
+	view_far = frost_puzzles.view_zoom(dt, fixed_pixel_zoom) if frost_puzzles != null else 1.0
 	var ghost: Dictionary = frost_puzzles.room_ghost() if frost_puzzles != null else {}
 	if not ghost.is_empty():
 		hero = hero.lerp(Vector2(float(ghost.x), float(ghost.y) - 30.0), 0.5)
@@ -4793,15 +4854,16 @@ func _update_camera(dt: float) -> void:
 	cam_rig.step(dt, {"hero": hero, "aim": aim, "foes": foes, "boss": _camera_boss, "bounds": bounds,
 		"view": view, "shake": shake, "t": float(state.t), "pixel": bool(theme.get("pixel", true))})
 	camera.position = cam_rig.position
-	camera.zoom = Vector2.ONE * float(balance.view.base_width) / float(balance.view.width) * float(cam_rig.zoom)
-	# in a labyrinth the darkness closes in and the camera comes a little nearer
+	camera.zoom = Vector2.ONE * base_zoom * float(cam_rig.zoom)
+	# Darkness still fades in pixel mode; only non-pixel cameras animate scale.
+	# A multiplier after the rig must not bypass the pixel zoom lock.
 	maze_dark = move_toward(maze_dark, 1.0 if in_maze() else 0.0, dt * float(maze_cfg().get("fade", 2.5)))
-	camera.zoom *= lerpf(1.0, float(maze_cfg().get("zoom", 1.2)), maze_dark)
+	if not fixed_pixel_zoom:
+		camera.zoom *= lerpf(1.0, float(maze_cfg().get("zoom", 1.2)), maze_dark)
 	camera.zoom *= view_far
 	# view_shift: the view sits lower so the skill bar covers none of the fight
 	camera.offset = cam_rig.offset + cam_rig.view_shift
 	if bool(theme.get("pixel", true)) and bool(cam_rig.cfg.get("pixel", {}).get("snap_translation", true)):
-		var viewport := get_viewport()
 		camera.offset = StoryPresentation.pixel_center(camera.position + camera.offset, camera.zoom,
 			viewport.get_visible_rect().size, viewport.get_stretch_transform()) - camera.position
 	_camera_written = camera.position
@@ -5125,7 +5187,9 @@ func _draw_front(l: Layer) -> void:
 
 
 func _view_rect() -> Rect2:
-	var size := Vector2(float(balance.view.width), float(balance.view.width) * 9.0 / 16.0) / (float(cam_rig.zoom) if cam_rig != null else 1.0) / view_far
+	# Use the final zoom, including special rooms, and the expanded viewport.
+	# Otherwise visible effects/actors can disappear at ultrawide window edges.
+	var size := get_viewport().get_visible_rect().size / camera.zoom
 	return Rect2(camera.position + camera.offset - size / 2.0, size)
 
 
@@ -6124,6 +6188,9 @@ func _draw_hud(h: Control) -> void:
 	# a labyrinth: dark beyond what the hero sees, walls stop the view
 	if maze_dark > 0.0:
 		_draw_maze_dark(h, size)
+	# from outside a labyrinth stays dark: its corridors are found inside, never read from the door
+	if maze_dark < 1.0:
+		_draw_maze_cover(h, size)
 	# the room's weather of the Weltbauer (src/world_kit/room_weather.gd), then what the hero carries
 	room_weather.draw(h, size, self)
 	frost_puzzles.draw_hud(h, size)
@@ -6181,9 +6248,6 @@ func _draw_hud(h: Control) -> void:
 		h.draw_rect(Rect2(Vector2.ZERO, size), Color(0.12, 0, 0, 0.55))
 	# the goal list sits in the pause menu now; finished goals still ring and show a note
 	FrostHud.track(self)
-	if theme.get("styled_hud", false) and not state.won:
-		if state.get("status", false):
-			FrostHud.status(self, h, size)
 	# the run talent tree window (B), the same in every world; the world waits while it is open
 	if state.get("tree_open", false) and heroic():
 		RunTreeView.draw(h, FONT, size, CardKit.tree(self), CardKit.ranks(self), int(state.level), {"title": str(hero.get("name", class_id)), "mouse": h.get_local_mouse_position()})
@@ -6206,7 +6270,10 @@ func _draw_hero_strip(h: Control) -> float:
 	var fire := Rules.group_progress(W.ents, "feuer")
 	if fire.y > 0:
 		resources.append({"icon": tex.brazier_bowl, "text": "%d/%d" % [fire.x, fire.y], "dim": fire.x >= fire.y})
-	var sig := "%s%s%s|%d" % [state.keys["A"], state.keys["B"], state.keys["C"], fire.x]
+	# gold and rune stones join the row that fades: shown when they change, always in the character window (C)
+	resources.append({"icon": gold_loot.coin(float(state.t)), "text": str(gold_count()), "ink": Color(1.0, 0.84, 0.3)})
+	resources.append({"icon": gold_loot.rune(), "text": str(rune_count()), "ink": Color(0.62, 0.86, 1.0)})
+	var sig := "%s%s%s|%d|%d|%d" % [state.keys["A"], state.keys["B"], state.keys["C"], fire.x, gold_count(), rune_count()]
 	if str(state.get("res_sig", "")) != sig:
 		state.res_sig = sig
 		state.res_t = float(state.t)
@@ -6228,18 +6295,17 @@ func _draw_hero_strip(h: Control) -> float:
 	var need := maxf(1.0, float(HeroKit.need(theme.leveling, int(state.level)))) if leveled else 1.0
 	var margin := HudStyle.size("margin")
 	var hero_rect := HudKit.hero_panel(h, FONT, Vector2(margin, margin), {"title": str(hero.get("name", class_id)).to_upper(),
-		"level_label": "LAUFSTUFE", "hp_unit": "LP", "fixed_rows": true,
+		"level_label": "STUFE", "hp_unit": "LP", "fixed_rows": true, "compact": true,
 		"points": _run_points_left() if leveled else 0,
 		"hp": int(state.hp), "hp_f": float(state.hp_f), "max_hp": int(state.max_hp), "hearts": hearts, "level": int(state.level) if leveled else -1,
 		"exp": float(state.exp) / need if leveled else -1.0, "resources": resources, "resource_alpha": res_alpha, "status": status,
 		"low": int(state.hp) <= 2 and int(state.hp) > 0, "clock": float(state.t)})
 	var edge := hero_rect.end.x
-	# the purse, always shown: the character's gold and the account's rune stones
-	var purse := _draw_purse(h, Vector2(hero_rect.position.x, hero_rect.end.y + 6.0), hero_rect.size.x)
-	var bottom := purse.end.y
+	# the purse rides in the strip's fading resource row (no panel of its own)
+	var bottom := hero_rect.end.y
 	if talents != null:
 		var pet: Dictionary = talents.hud_state().get("pet", {})
-		var pet_rect := HudKit.pet_panel(h, FONT, Vector2(hero_rect.position.x, purse.end.y + 6.0), hero_rect.size.x, pet, float(state.t),
+		var pet_rect := HudKit.pet_panel(h, FONT, Vector2(hero_rect.position.x, hero_rect.end.y + 6.0), hero_rect.size.x, pet, float(state.t),
 			HudKit.rule("pet_idle_alpha", 0.6) if _pet_idle(pet) else 1.0)
 		edge = maxf(edge, pet_rect.end.x)
 		bottom = maxf(bottom, pet_rect.end.y)
@@ -6309,6 +6375,15 @@ func _draw_floor_panel(h: Control, size: Vector2, boss_up: bool) -> void:
 		for m: Dictionary in mobs:
 			if m.room == cr.index:
 				locked += 1
+	# no mini-map in the corner (ui_hud_style.json story_minimap): only a locked room says so, as a chip
+	# under the menu chips; the map itself is on M and in the pause
+	if not HudKit.map_corner:
+		if cr.fight and not boss_up:
+			var under := HudKit.talent_rect(size) if talents != null else HudKit.menu_rect(size)
+			var chip := Rect2(under.position.x, under.end.y + 4.0, under.size.x, under.size.y)
+			HudStyle.panel(h, chip)
+			HudStyle.text(h, FONT, Vector2(chip.get_center().x, chip.get_center().y + 5.0), "VERRIEGELT · %d" % locked, int(HudStyle.size("font_small")), HudStyle.color("danger"), 1)
+		return
 	var map_area := HudKit.floor_panel(h, FONT, size, {"title": "ETAGE %d" % int(state.floor), "subtitle": str(W.title).to_upper(),
 		"tag": ("VERRIEGELT · %d" % locked) if cr.fight else "", "tag_color": HudStyle.color("danger")})
 	_draw_map(h, size, false, false, map_area)
@@ -6351,6 +6426,45 @@ func _draw_maze_dark(h: Control, size: Vector2) -> void:
 	for k in range(rays):
 		h.draw_polygon(PackedVector2Array([hit_pts[k], hit_pts[k + 1], far_pts[k + 1], far_pts[k]]), PackedColorArray([black, black, black, black]))
 		h.draw_polygon(PackedVector2Array([near_pts[k], near_pts[k + 1], hit_pts[k + 1], hit_pts[k]]), PackedColorArray([clear, clear, black, black]))
+
+
+## How dark a labyrinth zone is seen from outside it now: the unseen's dark while the
+## hero is out, fading to 0 as he steps in (maze_dark rises).
+func maze_cover_alpha() -> float:
+	var cfg := maze_cfg()
+	return float(cfg.get("dark", 0.96)) * float(cfg.get("outside_cover", 1.0)) * (1.0 - maze_dark)
+
+
+## Every labyrinth zone on screen, seen from outside it, as dark as the unseen inside
+## (world_maze.json dark, outside_cover): its corridors and inner walls cannot be read
+## through the door or across the room. The cover fades while the hero steps in and the
+## ray light of _draw_maze_dark takes over (maze_dark), so nothing is lit twice.
+func _draw_maze_cover(h: Control, size: Vector2) -> void:
+	var cfg := maze_cfg()
+	var alpha := maze_cover_alpha()
+	if alpha <= 0.0:
+		return
+	var black := Color(0.0, 0.0, 0.0, alpha)
+	var view := _view_rect()
+	# a wall's face stands up into the row above it; the top row covers that much too
+	var lift := float(cfg.get("cover_lift_cells", 0.5)) * C
+	for r: Dictionary in W.rooms:
+		var zone: Array = r.get("maze_zone", [])
+		if zone.is_empty():
+			continue
+		var top := INF
+		for run: Array in zone:
+			top = minf(top, float(run[1]))
+		for run: Array in zone:
+			var rect := Rect2(float(run[0]) * C, float(run[1]) * C, (float(run[2]) - float(run[0]) + 1.0) * C, C)
+			if is_equal_approx(float(run[1]), top):
+				rect = rect.grow_side(SIDE_TOP, lift)
+			if not rect.intersects(view):
+				continue
+			var a := _to_screen(rect.position, size)
+			var b := _to_screen(rect.end, size)
+			# whole screen pixels and a 1 px overlap: no seams between the rows
+			h.draw_rect(Rect2(a.floor(), (b - a).ceil() + Vector2(0.0, 1.0)), black)
 
 
 func _draw_toast(h: Control, size: Vector2) -> void:

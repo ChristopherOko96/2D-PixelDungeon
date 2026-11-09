@@ -1,5 +1,19 @@
 # Entwicklungsplan: Basement Run mit Godot und Multiplayer
 
+## Aktueller Auftrag 09.11.2026: Dungeonfehler und Menüführung
+
+Arbeitsbasis ist `676af43a` auf `codex_v2`, nach Fast-forward von `origin/main`.
+Rätsel-Kernlogik erhalten; nachgewiesene Fehler in Sichtbarkeit, Rückmeldung und
+Bedienung gezielt beheben. Prioritäten: Labyrinth vor Betreten verdecken,
+Pause-/Inventarübergang korrigieren, Status und Inventar gemeinsam rastern,
+HUD entlasten und die tatsächlichen Dungeonmechaniken prüfen.
+Die zusätzliche Literatur- und UX-Prüfung ist in
+[Menü-UX: Befunde und Kriterien](../docs/MENUE-UX-REVIEW.de.md) festgehalten.
+Sechs GPU-Aufnahmen bestätigen insbesondere überlagerte Status-/Inventarfenster
+und die ungewollte Fortsetzung des Solo-Laufs beim Wechsel Pause → Inventar.
+Das ist ein offener Arbeitsauftrag, keine abgeschlossene Abnahme. Historische
+Meilensteine und Testergebnisse darunter gelten nur für ihren jeweiligen Stand.
+
 ## Aktuell: Krypta-Stil festgelegt und drei Untotenrollen
 
 Der Nutzer priorisiert die Art Direction vor der Balanceabnahme. Story022

@@ -1,0 +1,19 @@
+ERROR: Failed to open log file for writing: user://logs/godot.log
+   at: rotate_file (core/io/logger.cpp:169)
+Godot Engine v4.7.2.stable.official.ed1daf0bf - https://godotengine.org
+ERROR: Can't create shader cache folder, no shader caching will happen: user://
+   at: RasterizerGLES3 (drivers/gles3/rasterizer_gles3.cpp:345)
+OpenGL API 3.3.0 Core Profile Context 26.10.1.261008 - Compatibility - Using Device: ATI Technologies Inc. - AMD Radeon RX 6600
+
+MENU_CAPTURE 01-hud error=0
+MENU_CAPTURE 02-status error=0
+MENU_AUDIT status=true paused=false
+MENU_CAPTURE 03-status-and-inventory error=0
+MENU_AUDIT stacked status=true inventory=true paused=false rect=[P: (280.0, 178.0), S: (720.0, 446.0)]
+MENU_AUDIT first_escape status=true inventory=false
+MENU_CAPTURE 04-inventory error=0
+MENU_CAPTURE 05-pause error=0
+MENU_AUDIT pause_visible=true paused=true
+MENU_CAPTURE 06-inventory-from-pause error=0
+MENU_AUDIT inventory_from_pause visible=true paused=false
+MENU_AUDIT completed

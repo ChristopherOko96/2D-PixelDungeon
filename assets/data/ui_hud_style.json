@@ -38,6 +38,8 @@
   "heart_gap": 3,
   "hearts_per_row": 10,
   "bar_width": 287,
+  "_compact_note": "compact_bar_width: px of the life bar in the slim story hero strip (hud_kit.gd hero_compact); story_minimap 0 hides the corner mini-map in the story worlds (map on M and in the pause), 1 shows it.",
+  "compact_bar_width": 180,
   "bar_height": 14,
   "badge_height": 26,
   "life_ghost_hold": 0.1,
@@ -91,7 +93,8 @@
     "floor_calm_alpha": 0.7,
     "menu_chip_alpha": 0.5,
     "resource_label_size": 16,
-    "resource_low_share": 0.25
+    "resource_low_share": 0.25,
+    "story_minimap": 0
   },
   "gefuege": {
     "_note": "The Leerenmagier's Arkanes Gefüge beside his mana (src/ui/talent_bar.gd draw_gefuege), screen px: radius of the orb, cell the pixel size of its art (one unit = one cell), gap between the mana bar's end and the orb, lift of its centre from the bar's top, glow dither coverage of the violet rim glow, pulse_time s of the pulse when units enter, burst_time s and burst_speed px/s of the burst when it empties, orbit_speed rad/s of the outer orbit (inner ones faster), squash of the orbits, core cells of the tiny core. tone: the ramp step (src/vfx/talent_palette.gd, 0 deep .. 4 spec; default 3 lite) a unit of that element is drawn in.",

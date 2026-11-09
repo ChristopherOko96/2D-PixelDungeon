@@ -1,11 +1,13 @@
 {
- "_note": "Labyrinth rooms of the Weltbauer (room key maze, its maze_zone; src/hell/hell_game.gd maze darkness, src/hell/hell_monsters.gd sight). Inside the maze zone the view turns dark: dark = how black the unseen is (0 to 1), sight_cells = how far the hero sees along open ground in cells (walls stop the view), soft_from = share of sight_cells from where the light fades out, rays = how finely the view is traced, fade = how fast the dark comes and goes (share per second), zoom = how much nearer the camera comes in the maze (1 = not at all). Monsters let out in a maze stand in that corridor (spawn_cells: how many cells along the corridor from the broken piece they may stand) and chase only while they see the hero within monster_sight_cells with no wall between.",
+ "_note": "Labyrinth rooms of the Weltbauer (room key maze, its maze_zone; src/hell/hell_game.gd maze darkness, src/hell/hell_monsters.gd sight). Inside the maze zone the view turns dark: dark = how black the unseen is (0 to 1), sight_cells = how far the hero sees along open ground in cells (walls stop the view), soft_from = share of sight_cells from where the light fades out, rays = how finely the view is traced, fade = how fast the dark comes and goes (share per second), zoom = how much nearer the camera comes in the maze (1 = not at all; pixel cameras keep their scale). From outside a maze zone is covered as dark as the unseen inside: outside_cover = share of dark (1 = all, 0 = see through), cover_lift_cells = how far the top row covers up for the wall faces standing into it. Monsters let out in a maze stand in that corridor (spawn_cells: how many cells along the corridor from the broken piece they may stand) and chase only while they see the hero within monster_sight_cells with no wall between.",
  "dark": 0.96,
  "sight_cells": 4.2,
  "soft_from": 0.5,
  "rays": 180,
  "fade": 2.5,
  "zoom": 1.2,
+ "outside_cover": 1.0,
+ "cover_lift_cells": 0.5,
  "spawn_cells": 3,
  "monster_sight_cells": 6
 }

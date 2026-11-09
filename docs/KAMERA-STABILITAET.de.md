@@ -1,6 +1,7 @@
 # Ruhige Pixelkamera und Zwischenbilder
 
-05.11.2026, auf Basis `1e417341`, lokale Änderung auf `codex_v2`.
+Grundkorrektur vom 05.11.2026; Ergänzung vom 09.11.2026 auf Basis
+`676af43a`, lokal auf `codex_v2`.
 
 ## Ursache und Korrektur
 
@@ -17,6 +18,21 @@ werden Fenster-Stretch und die Bildschirmmitte berücksichtigt. Der interne
 Kamerazustand bleibt ungerundet, damit kleine Bewegungen nicht verloren gehen.
 HD-Skins behalten ihre dynamischen Zooms. Der Ausschnitt im Pixelmodus wird
 bei großen Gegnergruppen somit nicht mehr automatisch weiter.
+
+Die Ergänzung vom 09.11. schließt zwei Umgehungen dieser Regel: Das Labyrinth
+blendet seine Dunkelheit weiterhin ein, verändert im Pixelmodus aber nicht
+mehr zusätzlich den Zoom. Spiegelräume behalten den für beide Rätselfelder
+notwendigen weiten Ausschnitt. Im Pixelmodus wird dessen konfigurierter Zoom
+beim Raumwechsel direkt gewählt und dann konstant gehalten; beim Verlassen
+gilt wieder der Basiszoom. Der einmalige Ausschnittwechsel bleibt sichtbar.
+Nicht-Pixel-Darstellung behält die bisherigen weichen Zoomübergänge. Das folgt
+dem tatsächlich geladenen `theme.pixel` und `pixel.fixed_zoom`, nicht dem
+Anzeigenamen eines Grafiksets.
+
+Kamera-Framing und Sichtbarkeitsprüfung nutzen jetzt die tatsächliche Größe
+des erweiterten Viewports. Die bisherige feste 16:9-Annahme konnte bei breiten
+oder hohen Fenstern sichtbare Objekte und Effekte zu früh ausblenden. Der
+Prüfbereich berücksichtigt auch den endgültigen Zoom der Sonderräume.
 
 `StoryPresentation` speichert vor jedem Spielschritt nur Spieler- und
 Gegnerpositionen. Die übrige Zeit im festen Takt liefert den Interpolationsanteil.
@@ -55,7 +71,7 @@ Optionale Felder in `assets/data/story_camera.json`:
 
 | Feld | Standard | Bedeutung |
 | --- | --- | --- |
-| `pixel.fixed_zoom` | `true` | Pixelkamera behält Zoomfaktor 1 über dem Basiszoom. |
+| `pixel.fixed_zoom` | `true` | Pixelkamera behält Basiszoom; Spiegelräume wählen ihren festen Rätselzoom. |
 | `pixel.snap_translation` | `true` | Gemeinsame Kameratranslation auf Bildschirmraster ausrichten. |
 | `presentation.teleport_distance` | `192.0` | Maximale Strecke in Weltpixeln pro Tick, die noch interpoliert wird. |
 

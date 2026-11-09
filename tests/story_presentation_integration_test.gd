@@ -40,7 +40,7 @@ func _run() -> void:
 	game.cam_rig.calm = true
 	game.cam_rig.shake_on = false
 	game.talents._sync_mobs()
-	for size: Vector2i in [Vector2i(1280, 720), Vector2i(1365, 767), Vector2i(1920, 1080)]:
+	for size: Vector2i in [Vector2i(1280, 720), Vector2i(1365, 767), Vector2i(1920, 1080), Vector2i(2560, 1080), Vector2i(1024, 768)]:
 		root.size = size
 		await process_frame
 		for i in range(24):
@@ -57,6 +57,9 @@ func _run() -> void:
 			var point := before + Vector2(170, 45)
 			var screen: Vector2 = game._to_screen(point, root.get_visible_rect().size)
 			check(screen.is_equal_approx(root.canvas_transform * point), "HUD/aim conversion matches the current camera transform")
+			var visible: Rect2 = game._view_rect()
+			var inverse := root.canvas_transform.affine_inverse()
+			check(visible.position.is_equal_approx(inverse * Vector2.ZERO) and visible.end.is_equal_approx(inverse * root.get_visible_rect().size), "culling rectangle covers the actual expanded viewport at " + str(size))
 			check(is_equal_approx(game.camera.zoom.x, float(game.balance.view.base_width) / float(game.balance.view.width)), "pixel base zoom remains fixed")
 			game.actors.queue_redraw()
 			game.story_glow.frame()
@@ -79,6 +82,7 @@ func _run() -> void:
 	game._process(2.0)
 	check(game.render_hero_position() == now, "pause uses the current position without old interpolation")
 	game.pause_menu.visible = false
+	_test_special_room_zoom(game)
 	if "--profile" in OS.get_cmdline_user_args(): await _profile(game)
 	game.queue_free()
 	await process_frame
@@ -89,6 +93,47 @@ func _run() -> void:
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(scratch))
 	print("PRESENTATION_INTEGRATION checks=", checks, " failures=", failures)
 	quit(1 if failures else 0)
+
+
+func _test_special_room_zoom(game: Node) -> void:
+	# Exercise the final game camera, not only the rig: room effects used to
+	# multiply a continuously changing zoom after the rig's pixel lock.
+	var room: Dictionary = game.W.rooms[game.state.room]
+	var had_zone := room.has("maze_zone")
+	var saved_zone: Variant = room.get("maze_zone")
+	var cell := Vector2i(floori(game.player.x / game.C), floori((game.player.y - 6.0) / game.C))
+	room.maze_zone = [[cell.x, cell.y, cell.x, cell.y]]
+	var base := float(game.balance.view.base_width) / float(game.balance.view.width)
+	for i in range(12):
+		game._update_camera(1.0 / 60.0)
+		check(is_equal_approx(game.camera.zoom.x, base), "maze fade cannot rescale pixel floor, frame %d" % i)
+	check(game.maze_dark > 0.0, "pixel zoom lock retains maze darkness")
+	game.theme.pixel = false
+	game._update_camera(1.0 / 60.0)
+	check(game.camera.zoom.x > base, "non-pixel maze retains cinematic zoom")
+	game.theme.pixel = true
+	if had_zone: room.maze_zone = saved_zone
+	else: room.erase("maze_zone")
+	game.maze_dark = 0.0
+	# The mirror needs its wider view to solve the puzzle, but not animated
+	# fractional resampling. Keep the exact configured wider scale throughout.
+	var saved_puzzles: Variant = game.frost_puzzles
+	var puzzles := preload("res://src/world_kit/frost_puzzles.gd").new(game)
+	puzzles.pieces = [{"type": "mirror_ghost", "room": int(game.state.room), "x": game.player.x + 400.0, "y": game.player.y}]
+	game.frost_puzzles = puzzles
+	for i in range(12):
+		game._update_camera(1.0 / 60.0)
+		check(is_equal_approx(game.camera.zoom.x, base * float(puzzles.cfg.ghost.zoom)), "mirror has stable wide pixel framing, frame %d" % i)
+	puzzles.pieces.clear()
+	game._update_camera(1.0 / 60.0)
+	check(is_equal_approx(game.camera.zoom.x, base), "leaving mirror restores stable base zoom")
+	game.theme.pixel = false
+	puzzles.pieces = [{"type": "mirror_ghost", "room": int(game.state.room), "x": game.player.x + 400.0, "y": game.player.y}]
+	game._update_camera(1.0 / 60.0)
+	check(game.view_far < 1.0 and game.view_far > float(puzzles.cfg.ghost.zoom), "non-pixel mirror keeps its eased transition")
+	game.theme.pixel = true
+	game.frost_puzzles = saved_puzzles
+	game._update_camera(1.0 / 60.0)
 
 
 # Diagnostic, not a pass/fail FPS benchmark: one fixed tick per captured picture
